@@ -54,6 +54,7 @@ import argparse
 import csv
 import json
 import math
+import os
 import random
 import sys
 from collections import OrderedDict
@@ -164,6 +165,52 @@ def load_cost_model(device: str = "sata") -> CostModel:
 
 
 # ────────────────────────── 工作負載 ──────────────────────────
+
+TRACES = BIG_TRACES = Path(
+    os.environ.get("PAPER_HKV_TRACES",
+                   "/ssd7/hungwei/paper-hkv/datasets/traces"))
+
+
+def mooncake_trace(name: str, limit: int | None = None) -> list[list[int]]:
+    """讀 Mooncake 的**真實生產流量** trace。
+
+    這是 Zipf 合成 trace 的替代品，也是它的檢驗。
+
+    來源：Mooncake (FAST'25, Moonshot AI) 隨論文釋出的 trace
+    https://github.com/kvcache-ai/Mooncake/tree/main/FAST25-release/traces
+
+    格式每列一個請求：
+        {"timestamp": ms, "input_length": n, "output_length": n,
+         "hash_ids": [block hash...]}
+
+    `hash_ids` **就是 block 層級的前綴共用資訊**——共用前綴的請求會共用開頭的
+    hash_ids。這跟模擬器需要的 `list[list[block_id]]` 完全同構，可直接餵入。
+
+    實測解析結果（與論文回報值相符，可作為解析正確的佐證）：
+
+    | trace | 請求數 | 前綴重用率 | 論文回報 | 擬合 Zipf α |
+    |---|---|---|---|---|
+    | conversation | 12,031 | **36.6%** | ~40% | **0.37** |
+    | toolagent | 23,608 | **55.3%** | 59% | **0.58** |
+
+    ⚠️ **真實 α 落在 0.37–0.58，是我先前合成掃描（0.4–1.5）的最低端**，
+    而那正是 Oracle headroom 最大的區域。所以合成掃描不但涵蓋了真實情況，
+    還把大部分算力花在比真實更「集中」（headroom 更小）的區域——**偏保守**。
+    但這仍是事後的比對，正式結果要用真實 trace 直接跑。
+    """
+    p = TRACES / f"{name}_trace.jsonl"
+    if not p.exists():
+        raise SystemExit(
+            f"🔴 找不到 {p}\n"
+            f"   下載：curl -L -o {p} https://raw.githubusercontent.com/"
+            f"kvcache-ai/Mooncake/main/FAST25-release/traces/{name}_trace.jsonl")
+    out = []
+    for i, line in enumerate(p.open()):
+        if limit and i >= limit:
+            break
+        out.append(json.loads(line)["hash_ids"])
+    return out
+
 
 def zipf_trace(n_docs: int, doc_blocks: int, n_requests: int,
                alpha: float, seed: int) -> list[list[int]]:
@@ -443,6 +490,11 @@ def main() -> int:
                     help="只跑模擬器驗證（比對 M3 實測），不做 go/no-go")
     ap.add_argument("--alpha", type=float, nargs="*", default=[0.6, 0.9, 1.2],
                     help="Zipf 偏斜參數；headroom 對它的敏感度是結果的一部分")
+    ap.add_argument("--trace", choices=["conversation", "toolagent", "mooncake"],
+                    help="改用 Mooncake 的真實生產 trace，取代合成的 Zipf。"
+                         "給了這個就忽略 --alpha")
+    ap.add_argument("--trace-limit", type=int, default=None,
+                    help="只取前 N 個請求（trace 很大時用）")
     ap.add_argument("--docs", type=int, default=64)
     ap.add_argument("--doc-tokens", type=int, default=4096)
     ap.add_argument("--requests", type=int, default=400)
@@ -523,8 +575,17 @@ def main() -> int:
           f"({a.docs * doc_blocks / gpu_blocks:.1f}× GPU 預算)")
 
     rows = []
-    for alpha in a.alpha:
-        trace = zipf_trace(a.docs, doc_blocks, a.requests, alpha, a.seed)
+    cases = ([("trace:" + a.trace, None)] if a.trace
+             else [(f"zipf:{al}", al) for al in a.alpha])
+    for label, alpha in cases:
+        if a.trace:
+            trace = mooncake_trace(a.trace, a.trace_limit)
+            nb = len({b for r in trace for b in r})
+            print(f"\n[oracle] 真實 trace「{a.trace}」：{len(trace):,} 個請求，"
+                  f"{sum(len(r) for r in trace):,} 次 block 存取，"
+                  f"{nb:,} 個不重複 block（工作集 = {nb / gpu_blocks:.1f}× GPU 預算）")
+        else:
+            trace = zipf_trace(a.docs, doc_blocks, a.requests, alpha, a.seed)
         sim = Sim(cm, gpu_blocks, cpu_blocks, ssd_blocks=10**9)
         res = {
             "full_gpu": sim.run_online(trace, "lru", False, False),
@@ -540,7 +601,7 @@ def main() -> int:
         verdict = ("GO" if head > 15 else
                    "MARGINAL_ASK_HUMAN" if head >= 5 else "NO_GO")
 
-        print(f"\n--- Zipf α = {alpha} ---")
+        print(f"\n--- {label} ---")
         print(f"{'policy':10s}{'total ms':>12s}{'gpu hit':>9s}{'cpu':>8s}"
               f"{'ssd':>8s}{'recompute':>11s}")
         for k, v in res.items():
@@ -552,7 +613,8 @@ def main() -> int:
         for k, v in res.items():
             rows.append({
                 "ts": datetime.now().astimezone().isoformat(),
-                "alpha": alpha, "policy": k,
+                "alpha": alpha if alpha is not None else "",
+                "workload": label, "policy": k,
                 "total_ms": round(v["total_ms"], 2),
                 "gpu_hits": v["hits"]["gpu"], "cpu_hits": v["hits"]["cpu"],
                 "ssd_hits": v["hits"]["ssd"], "recompute": v["hits"]["drop"],
