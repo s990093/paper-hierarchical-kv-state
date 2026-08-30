@@ -84,7 +84,15 @@ KV_DTYPES = [
 ]
 
 CPU_BYTES = 24 * 1024**3
-FS_ROOT = BIG / "kv_fs_tier"
+
+# 量 SSD 階時用的 CPU 階大小。必須 << 工作集，否則東西不會 cascade 下去。
+SSD_TEST_CPU_BYTES = 1 * 1024**3
+
+# 磁碟階的位置。⚠️ 論文的動作空間寫的是「SSD：NVMe I/O + PCIe」，
+# 而 /ssd1..8 全部是 Samsung 870 QVO（SATA QLC，消費級最慢的一檔，
+# 實測寫入 ~380 MB/s）。這台機器唯一可寫的 NVMe 是 /（Crucial P3）。
+# 用 PAPER_HKV_FS_TIER 環境變數切換，兩個都量，並在結果裡標明裝置。
+FS_ROOT = Path(os.environ.get("PAPER_HKV_FS_TIER", str(BIG / "kv_fs_tier")))
 
 TIERS = [
     ("gpu_resident", None, "block 沒被逐出，warm 直接命中 GPU prefix cache（≈0 的基準）"),
@@ -93,12 +101,22 @@ TIERS = [
                  "spec_name": "CPUOffloadingSpec",
                  "cpu_bytes_to_use": CPU_BYTES, "eviction_policy": "lru"}},
      "CPU 階：PCIe 搬回來"),
+    # 🔴 CPU 階刻意縮到 1 GiB，遠小於工作集（4 × 16384 tok × 128 KiB = 8 GiB）。
+    #
+    # 為什麼：2026-08-30 第一次量的時候 CPU 階開 24 GiB，工作集整個塞得進去，
+    # 於是東西**根本沒 cascade 到磁碟**。vLLM 的 metrics 說得很清楚：
+    #     kv_offload_tiering_chunk_queries:('0:primary',) = 2048   ← CPU 階
+    #     kv_offload_tiering_chunk_queries:('1:fs',)      =    2   ← 磁碟階
+    # 磁碟階只被查 2 次。那次量到的「SSD 550.9 ms」其實是 CPU 階，
+    # 難怪它跟 cpu 只差 1.2%。**那不是「SSD 跟 CPU 一樣快」，是根本沒量到 SSD。**
+    #
+    # 縮小 CPU 階之後，block 才會真的落到磁碟上，warm 取回才會真的讀磁碟。
     ("ssd", {"kv_connector": "OffloadingConnector", "kv_role": "kv_both",
              "kv_connector_extra_config": {
                  "spec_name": "TieringOffloadingSpec",
-                 "cpu_bytes_to_use": CPU_BYTES, "eviction_policy": "lru",
+                 "cpu_bytes_to_use": SSD_TEST_CPU_BYTES, "eviction_policy": "lru",
                  "secondary_tiers": [{"type": "fs", "root_dir": str(FS_ROOT)}]}},
-     "CPU + 磁碟兩階"),
+     "CPU 階刻意縮小 → 強迫 cascade 到磁碟，量的才是真的磁碟階"),
     ("drop", None, "沒有第二階，warm 只能整段重算"),
 ]
 
@@ -187,6 +205,14 @@ class Server:
         self.kv_tokens = int(m.group(1).replace(",", "")) if m else None
         m = re.search(r"Available KV cache memory:\s*([\d.]+)\s*GiB", t, re.I)
         self.kv_gib = float(m.group(1)) if m else None
+        # cascade 統計：磁碟階到底被查了幾次。若接近 0，代表沒量到磁碟。
+        self.fs_queries = self.cpu_queries = None
+        for pat, attr in ((r"chunk_queries:\('1:fs',\)=(\d+)", "fs_queries"),
+                          (r"chunk_queries:\('0:primary',\)=(\d+)", "cpu_queries")):
+            hits = re.findall(pat, t)
+            if hits:
+                setattr(self, attr, int(hits[-1]))
+        self.o_direct = "falling back to buffered" not in t
 
     def __exit__(self, *exc) -> None:
         if self.p and self.p.poll() is None:
@@ -372,6 +398,10 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int) -> int:
                             "prefix_idx": i, "ttft_ms": r["ttft_ms"],
                             "total_ms": r["total_ms"],
                             "gpu_kv_cache_tokens": s.kv_tokens,
+                            "fs_tier_queries": s.fs_queries,
+                            "cpu_tier_queries": s.cpu_queries,
+                            "o_direct": s.o_direct,
+                            "fs_root": str(FS_ROOT),
                             "desc": desc, **_hc(gpu),
                             "log": str(out / "server.log"),
                         })

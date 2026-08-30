@@ -87,6 +87,28 @@ CONFIGS: dict[str, dict] = {
         "extra": ["--kv-cache-dtype", "fp8"],
         "note": "同上，驗證 Ampere 的 KV dtype 支援度",
     },
+    # ── MLA：論文動作空間的第三個 κ 點 ────────────────────────────────
+    # Llama(GQA) 128 KiB/tok、Qwen(GQA) 56 KiB/tok、DeepSeek-V2-Lite(MLA) 30.4 KiB/tok
+    #   = 27 層 × (kv_lora_rank 512 + qk_rope_head_dim 64) × 2 bytes
+    # 同一張卡上 4.2× 的 κ 跨度，而且 MLA 是 2026 年長上下文的主流架構
+    # （DeepSeek-V3 70 KB/tok vs Llama-3.1-405B 516 KB/tok，93% 壓縮）。
+    # BF16 權重 31 GB 放不下 24 GB，所以只有 AWQ 版本可用。
+    # 預期：AWQ 權重 ~7.8 GB → 剩 ~13.4 GiB 給 KV → 約 462K tokens
+    #   → **單請求容量壓力消失，瓶頸完全轉到 PCIe**，正是論文演算法的目標情境。
+    "mla-awq": {
+        "model": "TechxGenus/DeepSeek-V2-Lite-Chat-AWQ",
+        "weight_dtype": "AWQ-INT4",
+        "kv_dtype": "auto",
+        "extra": ["--trust-remote-code"],
+        "note": "MLA 架構，KV/token 只有 GQA 的 1/4.2",
+    },
+    "mla-awq-kvfp8": {
+        "model": "TechxGenus/DeepSeek-V2-Lite-Chat-AWQ",
+        "weight_dtype": "AWQ-INT4",
+        "kv_dtype": "fp8",
+        "extra": ["--trust-remote-code", "--kv-cache-dtype", "fp8"],
+        "note": "MLA + FP8 KV，容量的理論上限",
+    },
 }
 
 # vLLM 把可用 KV 容量印成這一行；版本間措辭會變，所以多留幾個 pattern。
