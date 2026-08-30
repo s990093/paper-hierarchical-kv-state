@@ -148,9 +148,15 @@ make check    # 列出所有 TODO 與佔位符
 | 大檔案 | `/ssd7/hungwei/paper-hkv/`（TeX、venv、模型、原始 log、profile） |
 | sudo | 無（所有安裝都是 user-level） |
 
-**Ampere 的兩個硬限制**（會影響論文哪些章節能在此驗證）：
-1. **不支援原生 FP8** → 動作空間裡的 `GPU-FP8` 在平台 A 量不到，標 `NOT_SUPPORTED`，不要用估的填
-2. **無記憶體/計算分軌能耗計數器** → 論文 §6.7 的能耗分析不適用於平台 A
+**Ampere 的限制**（2026-08-30 實測修正）：
+1. ~~不支援原生 FP8~~ → **這條原本是錯的。** `--kv-cache-dtype fp8` 在 sm_86 可用，
+   實測給出恰好 2 倍的 KV 容量。錯在混淆 FP8 **運算**（Ampere 沒有）與 FP8 **儲存**（可以）。
+2. **無記憶體/計算分軌能耗計數器** → 論文 §6.7 的能耗分析不適用於平台 A（仍成立）
+3. **vLLM 0.28.0 的 V1 engine 沒有可用的 DCA 路徑** → Qwen2.5-7B-1M 要用 no-DCA 變體，
+   評測上限 262,144
+
+**這是共用機器**（`/ssd7` 下有二十幾個使用者），所以每次量測都要防插隊：
+`code/gpu_guard.py`（GPU 佔用）與 `code/shm_gc.py`（`/dev/shm` 洩漏）是必用的。
 
 詳見 [`CLAUDE.md`](CLAUDE.md) §3。
 
@@ -196,13 +202,17 @@ make check    # 列出所有 TODO 與佔位符
 
 ## 下一步
 
-1. **完成環境驗收 A1–A3**，特別是 **A3（`OffloadingConnector` 可用）**——
-   若失敗，整個計畫要重新設計
-2. **Milestone 1**：容量懸崖實測，比對論文 §2.5 的算術值
-3. **Milestone 2**：成本模型 **2×5 矩陣**（平時成本 vs 被需要時的成本）+ `recompute_chain.csv`
-4. **Milestone 3**：Tier 0 baselines
-5. **🔴 Milestone 4：Oracle** ← 決定性。有 headroom 才動手實作 §5 的預測器
-6. 投稿前需補：作者資訊、CRediT、Funding、COI（§Statements 已留空格）
+1. ~~環境驗收 A1–A3~~ ✅ 全過
+2. ~~Milestone 1：容量懸崖~~ ✅ 完成
+3. **Milestone 3 收尾**：Qwen 的五個 baseline + **用 `--serial` 重跑定稿數字**
+   （目前的絕對毫秒數是平行跑的，PCIe 被自己的其他 job 共用）
+4. **Milestone 2**：成本模型 **2×5 矩陣**（平時成本 vs 被需要時的成本）+ `recompute_chain.csv`
+   ← FP8 那一階現在**量得到**了，見上面的發現 1
+5. **🔴 Milestone 4：Oracle** ← 決定性。`> 15%` GO、`5–15%` 停下來問人、`< 5%` **停止**
+6. 品質評測（multi-fact extraction）目前是 `NOT_MEASURED`——M3 只量了延遲
+7. AWQ-INT4 權重待決策：`Qwen2.5-7B-Instruct-1M` 沒有官方 AWQ，
+   用社群版 vs 自行量化需要決定
+8. 投稿前需補：作者資訊、CRediT、Funding、COI（§Statements 已留空格）
 
 ## 相關筆記
 - [[idea-20260828-hierarchical-kv-state]]
