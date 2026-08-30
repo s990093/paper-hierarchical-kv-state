@@ -256,7 +256,16 @@ GH200 的 9:1 是例外：藉由 NVLink-C2C 的 450\,GB/s，其卸載經濟性�
 \end{tabular}
 \end{table}
 
-且重算成本隨上下文長度增長（attention 的二次項在 128K 上下文下對 Llama-3.1-8B 平均再增加約 34\,GFLOP/token，使 $\kappa$ 再增約 3 倍），而傳輸成本則保持恆定。\emph{表 \ref{tab:kappa} 的數值應視為 $\kappa$ 的下界。}
+且重算成本隨 block 的\emph{絕對位置}增長，而傳輸成本則保持恆定。\emph{表 \ref{tab:kappa} 的數值應視為 $\kappa$ 的下界。}
+
+此處須區分兩個容易混淆的量。整段 prefill 的總成本確為序列長度的二次式（attention 為 $O(L^2)$）；但本文的動作空間作用於\emph{固定大小的 block}，而在位置 $P$ 重算一個大小為 $C$ 的 block，其 attention 需讀取前序的 $P$ 個 token，成本為 $O(C\cdot P)$——\textbf{對 $P$ 為線性}。我們在平台 A 上以 $C=2048$、$P\in\{0,4\text{K},8\text{K},16\text{K},24\text{K}\}$ 實測 Llama-3.1-8B（每點三次取中位數），得
+
+\begin{equation}
+C_{\text{recompute}}(P) \;=\; 513.0\;\text{ms} \;+\; 26.9\;\text{ms}\times\frac{P}{1000},
+\label{eq:recompute-position}
+\end{equation}
+
+線性擬合的最大偏差為 1.6\%，五個量測點皆落於直線上，\emph{未觀察到二次成分}。自 $P=0$ 至 $P=24{,}576$ 成本成長 2.29 倍。此係數依平台與模型而定，但\emph{線性}這個形式來自 $O(C\cdot P)$，與平台無關。將重算視為單一常數會在長上下文下系統性低估其成本。
 
 \paragraph{$\kappa$ 亦隨模型架構變動，且方向可事先計算。}
 $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，而 MoE 使兩者解耦：其 KV 由 attention 層決定（與同規模 dense 模型相同），但重算僅需啟用的專家。以 Qwen3-30B-A3B 為例（48 層、4 個 KV head、128 個專家中啟用 8 個，啟用參數約 3\,B），其 $\kappa$ 在 RTX 3090 上為 27，\emph{僅為同平台 dense 模型（48--108）的約一半}。
@@ -337,7 +346,7 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
   at ($(\xB,\yf)+(0,-0.42)$) {SSD 載入與重算成本相當 $\Rightarrow$ 重算應是階梯上的一層，而非失敗路徑};
 
 \end{tikzpicture}
-\caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）「丟棄後重算」是階梯上的一層，而非檢索失敗後的補救。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。關鍵的非對稱性在「平時成本」欄：\textbf{重算在被需要之前不佔用任何資源}，這是它唯一的優勢，也是它唯一的正當理由。右下虛線框標示一個常被忽略的事實：以 Llama-3.1-8B 計，自 SSD 載入（$\sim$9\,$\mu$s/token @ 7\,GB/s）與重算（12.3\,$\mu$s/token @ 100\% MFU）處於同一數量級，兩者本就應在同一個決策中被比較。}
+\caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）「丟棄後重算」是階梯上的一層，而非檢索失敗後的補救。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。關鍵的非對稱性在「平時成本」欄：\textbf{重算在被需要之前不佔用任何資源}，這是它唯一的優勢，也是它唯一的正當理由。右下虛線框標示一個常被忽略的事實：自 SSD 載入與重算處於同一數量級，兩者本就應在同一個決策中被比較。此點已由平台 A 的端到端量測證實，但\emph{量級與歸因均與純頻寬推算不同}——以 Llama-3.1-8B 於 16K 上下文計，自磁碟階取回為 346\,$\mu$s/token、重算為 326\,$\mu$s/token（皆已扣除 GPU 命中的基準），確為同一數量級，然其絕對值較「$\sim$9\,$\mu$s/token @ 7\,GB/s」的理想頻寬推算高出約 30 倍。分解後可見磁碟 I/O 僅佔搬運成本的約 35\%，其餘為分層機制的查表、cascade 排程與 promotion 開銷；將裝置由 SATA SSD（實測 0.49\,GB/s）換為 NVMe（1.65\,GB/s，頻寬 3.4 倍）後端到端成本\emph{未降反升}。詳見第 \ref{sec:eval} 節。}
 \label{fig:ladder}
 \end{figure*}
 
@@ -1006,7 +1015,26 @@ B (MI300X) & FP8 & 對照：CDNA3 之後的常見配置 \\
 
 \textbf{待檢驗的問題}：在固定的硬體與模型下，最佳 KV 策略是否隨權重精度改變？我們預期\emph{會}——因為權重精度決定 KV 預算，而預算改變會移動式 \eqref{eq:opt} 的容量約束。但這是\emph{間接}影響，與第 \ref{sec:twoplatform} 節的 $\kappa$ 軸（直接改變成本比）性質不同。
 
-⚠️ Ampere（sm\_86）不支援原生 FP8，故平台 A 無 FP8 設定。
+\paragraph{一個須澄清的區分：FP8 運算與 FP8 儲存。}
+Ampere（sm\_86）確無原生 FP8 \emph{tensor core 運算}，但本文動作空間中的 \act{GPU-FP8} 是\emph{儲存}狀態——KV 以 FP8 存放、讀取時反量化——與 tensor core 無關。我們在平台 A 上實測 \texttt{-{}-kv-cache-dtype fp8} 可正常運作：Llama-3.1-8B 的 KV 容量由 41{,}648 增至 83{,}312 token、Qwen2.5-7B-1M 由 106{,}512 增至 213{,}040 token，二者皆為\emph{恰好兩倍}且位元組佔用不變。
+
+更進一步，vLLM 亦提供 \texttt{int8\_per\_token\_head} 與 \texttt{int4\_per\_token\_head}，故\textbf{動作空間中位於 GPU 上的四個精度階，在平台 A 上皆為同一旗標的不同取值}，無須額外實作。以每 GiB 可容 token 數正規化後（消除 KV pool 大小的 run-to-run 抖動，全距降至 0.04\%）實測得：
+
+\begin{center}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+KV dtype & KiB/tok & 理想 & 額外 & vs BF16 \\
+\midrule
+\texttt{auto} (BF16) & 128.11 & 128 & $+0.11$ & 1.00$\times$ \\
+\texttt{fp8} & 64.04 & 64 & $+0.04$ & \textbf{2.00}$\times$ \\
+\texttt{int8\_per\_tok\_head} & 66.04 & 64 & $\mathbf{+2.04}$ & 1.94$\times$ \\
+\texttt{int4\_per\_tok\_head} & 34.02 & 32 & $\mathbf{+2.02}$ & \textbf{3.77}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\texttt{fp8} 為純格式轉換故恰為 $2\times$；兩個 per-token-head 量化階則各固定多出 2\,KiB/token。此開銷可由架構直接算出：Llama-3.1-8B 有 32 層、8 個 KV head，K 與 V 各一份，故每 token 有 $2\times32\times8=512$ 個 scale，以 FP32 儲存即 $512\times4=2{,}048$\,bytes $=2$\,KiB，與實測相符（int8 為 4.1\,bytes/scale、int4 為 4.0）。\textbf{故精度階梯的收益並非 $2\times$/$4\times$，而是 $2.00\times$/$1.94\times$/$3.77\times$}；式 \eqref{eq:kvsize} 若僅以每元素位元組數計算，將系統性高估低精度階的收益。量化中繼資料是與序列長度成正比的固定成本，必須進入成本模型。
 
 \subsection{Oracle 上界與 go/no-go 判準}
 
