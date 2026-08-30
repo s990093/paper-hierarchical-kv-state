@@ -89,7 +89,7 @@ for Long-Context LLM Inference}
 
 Transformer 模型在自回歸生成時，會將每個已處理 token 的 key 與 value 向量保存下來，避免在生成每個新 token 時重算整段前綴。這組中間狀態即 KV cache，是以記憶體換取計算時間的經典設計。其代價是記憶體佔用隨上下文長度線性成長：對 Llama-3.1-8B（32 層、8 個 KV head、head dimension 128、BF16），每個 token 需要 128\,KiB，1M token 的上下文即需要 122\,GB。在 80\,GB 級的加速器上，這使得系統的限制因素從計算能力轉移到記憶體容量。
 
-圍繞此問題的研究已相當密集。既有工作大致沿四條軸線展開：（i）\textbf{分層儲存}，將 KV 卸載到 CPU DRAM 或 SSD~\cite{flexgen2023,infinigen2024,cachedattention2024,kvdrive2026,tutti2026}；（ii）\textbf{可恢復驅逐}，使被降級的 KV 在重新變得重要時能夠召回~\cite{arkvale2024,qevict2026}；（iii）\textbf{學習式未來效用預測}，以訓練得到的策略取代手寫啟發式規則~\cite{kvp2026,foresightkv2026,lookaheadkv2026}；（iv）\textbf{重算與傳輸的取捨}~\cite{cake2025,kvpr2025,hcache2025}。此外，KVServe~\cite{kvserve2026} 首次將模型品質寫為壓縮決策的硬性約束，而 Fang 等人~\cite{hetmem2025} 首次將分層 KV 放置形式化並推導理論上界。
+圍繞此問題的研究已密集展開。既有工作大致沿四條軸線展開：（i）\textbf{分層儲存}，將 KV 卸載到 CPU DRAM 或 SSD~\cite{flexgen2023,infinigen2024,cachedattention2024,kvdrive2026,tutti2026}；（ii）\textbf{可恢復驅逐}，使被降級的 KV 在重新變得重要時能夠召回~\cite{arkvale2024,qevict2026}；（iii）\textbf{學習式未來效用預測}，以訓練得到的策略取代手寫啟發式規則~\cite{kvp2026,foresightkv2026,lookaheadkv2026}；（iv）\textbf{重算與傳輸的取捨}~\cite{cake2025,kvpr2025,hcache2025}。此外，KVServe~\cite{kvserve2026} 首次將模型品質寫為壓縮決策的硬性約束，而 Fang 等人~\cite{hetmem2025} 首次將分層 KV 放置形式化並推導理論上界。
 
 \paragraph{本文的出發點：一個不再成立的前提。}
 上述工作幾乎全部在 NVIDIA A100/H100 級硬體（40--80\,GB HBM）上評估。我們的量化分析（第 \ref{sec:motivation} 節）顯示，在 AMD Instinct MI300X（192\,GB HBM3）上，8B--14B 級模型於 128K 上下文下的單請求 KV footprint 僅 15.6--19.5\,GB，佔 HBM 不到 10\%。\emph{在此類硬體上，既有文獻用以立論的「單請求容量壓力」場景幾乎不存在}。
@@ -270,7 +270,7 @@ C_{\text{recompute}}(P) \;=\; 513.0\;\text{ms} \;+\; 26.9\;\text{ms}\times\frac{
 \paragraph{$\kappa$ 亦隨模型架構變動，且方向可事先計算。}
 $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，而 MoE 使兩者解耦：其 KV 由 attention 層決定（與同規模 dense 模型相同），但重算僅需啟用的專家。以 Qwen3-30B-A3B 為例（48 層、4 個 KV head、128 個專家中啟用 8 個，啟用參數約 3\,B），其 $\kappa$ 在 RTX 3090 上為 27，\emph{僅為同平台 dense 模型（48--108）的約一半}。
 
-這產生一個可證偽的預測：\textbf{在固定平台上，MoE 模型的最佳 \act{Drop} 觸發門檻應顯著高於 dense 模型}。第 \ref{sec:eval} 節將檢驗之。此軸與硬體軸正交，兩者共同構成本文「成本結構決定策略」主張的雙重檢驗。
+這產生一個可證偽的預測：\textbf{在固定平台上，MoE 模型的最佳 \act{Drop} 觸發門檻應高於 dense 模型}。第 \ref{sec:eval} 節將檢驗之。此軸與硬體軸正交，兩者共同構成本文「成本結構決定策略」主張的雙重檢驗。
 
 圖 \ref{fig:ladder} 揭示了一個關鍵的非對稱性：\emph{重算的價值不在於其單次事件成本，而在於它在被需要之前不佔用任何資源}。因此重算的正確條件是「該 KV block 未來被存取的機率足夠低」——低到節省的容量與頻寬能夠抵償萬一被需要時 6--190 倍的代價。
 
@@ -343,7 +343,7 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
 \draw[dropcol,thick,dashed,rounded corners=3pt]
   ($(\xB,\ye)+(-1.5,0.32)$) rectangle ($(\xB,\yf)+(1.5,-0.32)$);
 \node[font=\scriptsize\bfseries\sffamily,text=dropcol!55!black,anchor=north]
-  at ($(\xB,\yf)+(0,-0.42)$) {SSD 載入與重算成本相當 $\Rightarrow$ 重算應是階梯上的一層，而非失敗路徑};
+  at ($(\xB,\yf)+(0,-0.42)$) {平台 A 實測：SSD 取回不快於重算 $\Rightarrow$ 重算是階梯上的一層，而非失敗路徑};
 
 \end{tikzpicture}
 \caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）「丟棄後重算」是階梯上的一層，而非檢索失敗後的補救。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。關鍵的非對稱性在「平時成本」欄：\textbf{重算在被需要之前不佔用任何資源}，這是它唯一的優勢，也是它唯一的正當理由。右下虛線框標示一個常被忽略的事實：自 SSD 載入與重算處於同一數量級，兩者本就應在同一個決策中被比較。此點已由平台 A 的端到端量測證實，但\emph{量級與歸因均與純頻寬推算不同}——以 Llama-3.1-8B 於 16K 上下文計，自磁碟階取回為 346\,$\mu$s/token、重算為 326\,$\mu$s/token（皆已扣除 GPU 命中的基準），確為同一數量級，然其絕對值較「$\sim$9\,$\mu$s/token @ 7\,GB/s」的理想頻寬推算高出約 30 倍。分解後可見磁碟 I/O 僅佔搬運成本的約 35\%，其餘為分層機制的查表、cascade 排程與 promotion 開銷；將裝置由 SATA SSD（實測 0.49\,GB/s）換為 NVMe（1.65\,GB/s，頻寬 3.4 倍）後端到端成本\emph{未降反升}。詳見第 \ref{sec:eval} 節。}
@@ -721,7 +721,7 @@ LRB 明確比較過 GBM、線性迴歸、邏輯迴歸、SVM 與 2 層 16 隱藏�
 訓練與測試集依 trace 的\emph{時間順序}切分（前 70\% 訓練、後 30\% 測試），不作隨機切分。隨機切分會使訓練集含有測試期之後的存取事件，而 EDC 與 delta 特徵本身即為時間的函數，此洩漏將系統性地高估預測品質。此點在快取預測文獻中屬常識，但其違反不易由結果察覺，我們因此明確記載。
 
 \paragraph{決定六：以線上重訓因應工作負載飄移。}
-不同工作負載的重用結構差異極大：多輪對話的前綴重複命中，RAG 的文件塊多為一次性讀取，agent 流量則呈現極熱的系統提示與極冷的工具輸出。SAECache~\cite{saecache2026} 所量到的 756 倍重用率差異即為此分布差異的直接證據。我們以三個層次因應：(i) \texttt{token\_type} 作為特徵，使模型得以在單一模型內區分語意類型；(ii) \emph{週期性重訓}，利用 GBDT 300\,ms 的訓練成本，以最近一段時窗的樣本重新擬合；(iii) 第 \ref{sec:eval} 節報告\emph{跨工作負載泛化}，即於工作負載 A 訓練並於 B 測試的退化幅度。
+不同工作負載的重用結構不同：多輪對話的前綴重複命中，RAG 的文件塊多為一次性讀取，agent 流量則呈現極熱的系統提示與極冷的工具輸出。SAECache~\cite{saecache2026} 所量到的 756 倍重用率差異即為此分布差異的直接證據。我們以三個層次因應：(i) \texttt{token\_type} 作為特徵，使模型得以在單一模型內區分語意類型；(ii) \emph{週期性重訓}，利用 GBDT 300\,ms 的訓練成本，以最近一段時窗的樣本重新擬合；(iii) 第 \ref{sec:eval} 節報告\emph{跨工作負載泛化}，即於工作負載 A 訓練並於 B 測試的退化幅度。
 
 第 (ii) 項是 GBDT 選擇的直接後果而非附帶效果。KVP~\cite{kvp2026} 的 112 個強化學習 agent 需 8 GPU DDP 訓練，其重訓週期以日計，結構上無法追隨以分鐘計的流量變化。\emph{對分布飄移的適應成本，是預測器族選擇的一部分，而非可事後補救的工程細節。}
 
@@ -1123,6 +1123,67 @@ Q(\pi) \;=\; \min_{t \in \mathcal{T}} \; r_t(\pi),
 \paragraph{跨工作負載泛化。}
 承第 \ref{sec:predictor} 節的分布飄移討論，我們額外回報一組交叉實驗：於單一工作負載訓練並於其餘工作負載測試，回報上述兩個診斷量與 $Q(\pi)$ 的退化幅度。此結果同時界定週期性重訓的必要性——若跨工作負載退化可忽略，重訓機制即為不必要的複雜度，我們將據以移除。
 
+\subsection{已完成的量測推翻了本文的四項前提}
+\label{sec:measured}
+
+我們在平台 A 上完成成本常數與容量的量測。四項結果與本文原先的敘述相牴觸，其中兩項擴大了可驗證的範圍，兩項要求修正成本模型。表 \ref{tab:measured} 列出每項量測、其推翻的敘述、以及對論文的後果；量測協定與逐設定的完整數據見附錄 \ref{app:measurements}。
+
+\begin{table*}[t]
+\centering\small
+\caption{平台 A（RTX 3090, sm\_86）的已完成量測。每列給出一項與本文原敘述相牴觸的結果。}
+\label{tab:measured}
+\begin{tabular}{p{0.20\textwidth}p{0.30\textwidth}p{0.42\textwidth}}
+\toprule
+\textbf{量測} & \textbf{原敘述 $\rightarrow$ 實測} & \textbf{對本文的後果} \\
+\midrule
+FP8 KV 於 sm\_86 &
+「Ampere 無原生 FP8，平台 A 無此設定」$\rightarrow$ 可用，容量恰增 $2.00\times$（41{,}648$\rightarrow$83{,}312 token） &
+混淆了 FP8 \emph{運算}與 FP8 \emph{儲存}。動作空間中位於 GPU 的四個精度階皆為同一旗標的取值，單一平台即可驗證五階 \\
+\addlinespace
+精度階梯的實際收益 &
+$2\times$/$4\times$ $\rightarrow$ $2.00\times$/$1.94\times$/$3.77\times$ &
+per-token-head 量化固定多帶 2\,KiB/token 的 scale（$2\times32\times8$ 個 FP32），式 \eqref{eq:kvsize} 僅計每元素位元組數會高估低精度階 \\
+\addlinespace
+$C_{\text{recompute}}$ 對位置的形式 &
+「attention 的二次項」$\rightarrow$ 對位置線性，式 \eqref{eq:recompute-position}，擬合偏差 $<1.6\%$ &
+整段 prefill 為 $O(L^2)$，但固定大小 block 在位置 $P$ 重算為 $O(C\cdot P)$。原敘述混用了兩個量 \\
+\addlinespace
+\act{SSD} 與 \act{Drop} 的支配關係 &
+「兩者同數量級，應共同決策」$\rightarrow$ 同數量級成立，但 \act{SSD}（346\,$\mu$s/token）\emph{劣於} \act{Drop}（326\,$\mu$s/token） &
+\act{Drop} 在平時成本與被需要時成本兩軸皆不劣於 \act{SSD}，故 \act{SSD} 於本平台為被支配的動作。\textbf{最佳動作空間本身隨硬體而變}——此即本文主張的一個實例 \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\paragraph{Takeaway.}
+四項結果中，兩項擴大了平台 A 的可驗證範圍（FP8 儲存可用、四個精度階同旗標可切），兩項要求修正成本模型（量化中繼資料、重算的位置依賴形式）。第四項的性質不同：它不是修正，而是本文核心主張的直接實例——\act{SSD} 在平台 A 被 \act{Drop} 支配，故六階動作空間並非普遍適用。論文若宣稱六階皆為必要，此結果即為反例；改為「動作空間的\emph{有效}子集隨平台而定」則與證據一致，且更強。
+
+\subsection{權重精度決定平台 A 能否進入長上下文區間}
+\label{sec:awq-unlock}
+
+BF16 權重在 24\,GB 卡上佔 15\,GB，KV 預算僅餘 5.9\,GB，容量上限 41{,}648 token。此配置\emph{無法}進入本文關心的 128K 區間。AWQ-INT4 權重佔 4.7\,GB，KV 預算增至約 15\,GB：
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+設定 & KV 容量 & 定址上限 & 有效上限 \\
+\midrule
+Llama-8B BF16 權重 & 41{,}648 & 131{,}072 & 41{,}648 \\
+Llama-8B AWQ 權重 & 120{,}320 & 131{,}072 & 120{,}320 \\
+Llama-8B AWQ $+$ FP8-KV & 240{,}656 & 131{,}072 & \textbf{131{,}072}$^\dagger$ \\
+Qwen-7B-1M AWQ 權重 & 273{,}872 & 262{,}144 & \textbf{262{,}144}$^\dagger$ \\
+Qwen-7B-1M AWQ $+$ FP8-KV & \textbf{547{,}744} & 262{,}144 & \textbf{262{,}144}$^\dagger$ \\
+DeepSeek-V2-Lite MLA AWQ & \textbf{399{,}376} & 163{,}840 & \textbf{163{,}840}$^\dagger$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+$^\dagger$ 記憶體容量超出模型的可定址長度，瓶頸由硬體轉為架構。
+
+\paragraph{Takeaway.}
+在正確的權重配置下，24\,GB 消費級 GPU 的 KV 記憶體\emph{不是}長上下文的瓶頸；模型的可定址長度才是。六個設定中有四個的 KV 容量超出模型可定址長度，其中 Qwen-7B-1M 於 AWQ 權重加 FP8-KV 下達 547{,}744 token，為其可定址上限的 $2.1$ 倍。此點對本文的雙平台設計有兩個後果。其一，平台 A 足以驗證 128K 區間的容量與成本主張，無須更大的加速器。其二，MLA 架構將 KV 壓至 30.4\,KiB/token（GQA 的 $1/4.2$），使單卡容量達 399{,}376 token——\emph{單請求的容量壓力於此消失}，壓力轉為 PCIe 頻寬與多租戶下的機會成本，即第 \ref{sec:twoplatform} 節所述平台 B 的情境。此結果將 MLA 納入本文的 $\kappa$ 軸，且在單一平台上提供 $4.2\times$ 的跨度。
+
 \subsection{預期結果（佔位）}
 
 \begin{table}[t]
@@ -1186,7 +1247,15 @@ ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer 與 ParisKV 因 \texttt{rapi
 % =====================================================================
 \section{Conclusion}
 
-本文的核心論點是：\emph{當動作成本相差 6--190 倍、且該比值本身隨硬體變動 32 倍時，以對稱損失訓練的效用預測器會系統性地錯置決策邊界。}我們將 KV 放置形式化為受品質約束的序列決策問題，其動作空間統一了位置分層與精度分層，並將「丟棄後重算」視為階梯上一個具明確標價的層級。我們並指出既有 KV 卸載文獻的容量前提在大容量 HBM 加速器上不再成立（問題性質轉為多租戶下的機會成本），而在容量受限的加速器上依然成立——兩種情境的最佳策略不同，這正是硬體條件化主張的實證基礎。我們論證重算的價值來自其資源佔用特性而非單次成本，因而其正確性完全取決於未來效用預測——這使得預測成為系統的核心而非附加元件。實驗計畫與 go/no-go 判準已於第 \ref{sec:eval} 節給出。
+本文的核心論點是：\emph{當動作成本相差 6--190 倍、且該比值本身隨硬體變動 32 倍時，以對稱損失訓練的效用預測器會系統性地錯置決策邊界。}我們將 KV 放置形式化為受品質約束的序列決策問題，其動作空間統一了位置分層與精度分層，並將「丟棄後重算」視為階梯上一個具明確標價的層級。
+
+平台 A 的量測支持此論點，並在四處修正了本文的敘述（第 \ref{sec:measured} 節）。其中兩處擴大了可驗證範圍：FP8 為\emph{儲存}狀態而非運算狀態，故 sm\_86 可量測，且動作空間中位於 GPU 的四個精度階皆為同一旗標的取值。另兩處要求修正成本模型：per-token-head 量化固定多帶 2\,KiB/token 的中繼資料，使精度階梯的收益為 $2.00\times$/$1.94\times$/$3.77\times$ 而非 $2\times$/$4\times$；而固定大小 block 的重算成本對其絕對位置為\emph{線性}，非二次。
+
+第四處修正的性質不同。\act{SSD} 在平台 A 的取回成本（346\,$\mu$s/token）高於 \act{Drop}（326\,$\mu$s/token），而 \act{Drop} 的平時成本為零，故 \act{SSD} 在兩軸上皆被支配。這不是本文主張的反例，而是其直接實例：\emph{最佳動作空間本身隨硬體而變}。六階動作空間應理解為候選集合，其有效子集由平台決定。
+
+量測亦劃清了品質約束的作用範圍。\act{CPU} 與 \act{SSD} 的輸出與 \act{GPU-BF16} 逐字元相同（60/60），故位置分層的三階在 $\epsilon$ 約束下等價；$\epsilon$ 的實質內容全部落在精度分層上。我們目前的樣本量（$n=120$）不足以分辨各精度階之間的品質差異，故不作此宣稱。
+
+尚未完成的部分決定了本文的下一步。策略的實作與 Oracle 的 go/no-go 判定尚待乾淨環境下的量測；本文的 $\kappa$ 跨硬體主張需要平台 B 的數據；而多租戶下的機會成本情境在 24\,GB 卡上無法驗證——單卡放不下兩個 128K session。第 \ref{sec:eval} 節給出的判準與第 \ref{app:oracle} 節給出的求解方法效力範圍共同約束了這些後續工作可以宣稱什麼。
 
 % =====================================================================
 \section*{Statements}
@@ -1208,6 +1277,49 @@ ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer 與 ParisKV 因 \texttt{rapi
 
 \paragraph{AI Usage Disclosure.}
 本稿的文獻調查、比對分析與初稿撰寫過程使用了 AI 輔助研究工具。所有引用文獻均經作者查證其存在性與內容；所有量化分析均可由公開規格與模型組態重現。AI 工具未用於產生實驗數據。
+
+% =====================================================================
+\appendix
+
+\section{平台 A 的量測明細}
+\label{app:measurements}
+
+本附錄給出第 \ref{sec:measured} 節所引數字的量測協定與逐設定數據。所有量測於單張 RTX 3090（sm\_86, driver 550.163.01）上以 vLLM 0.28.0+cu129 執行，每列數據可由 \texttt{run\_id} 追溯至指令與輸出檔。
+
+\subsection{量測衛生}
+\label{app:hygiene}
+
+該機器由二十餘位使用者共用，此事實決定了三項協定。
+
+\paragraph{每卡獨佔不足以保證乾淨。}
+GPU 的 SM 為各卡獨佔，但 PCIe、host RAM 頻寬與 \texttt{/dev/shm} 為全機共用。他人於其他卡上的負載不會出現在本卡的 compute-apps 中，卻會拖慢搬移量測。我們逐格比較序列執行與五卡並行執行的 80 個量測點：不經 PCIe 搬移 KV 的 \texttt{full\_gpu} 差異在 $\pm2\%$ 內，而經 PCIe 的 warm TTFT 差異達 $-26\%$ 至 $-52\%$。故每列數據記錄整機爭用等級，且僅序列模式的數據進入論文。
+
+\paragraph{KV pool 大小在同一設定下並非常數。}
+同一模型、同一卡、同一 \texttt{gpu\_memory\_utilization}，\texttt{GPU KV cache size} 在 5.09 與 5.88\,GiB 兩值間擺動（原始 token 數全距 13.5\%）。以每 GiB 可容 token 數正規化後全距降至 0.04\%，故容量的平時成本一律以 KiB/token 報告，而非原始 token 數。前一行程結束至驅動釋放記憶體之間存在延遲，我們要求連續三次取樣皆達標才啟動下一次量測。
+
+\paragraph{分層量測須驗證資料確實落到目標層。}
+量測 \act{SSD} 時若 CPU 階容量大於工作集，資料不會 cascade 至磁碟。我們的首次量測即因此失效：CPU 階 24\,GiB、工作集 8\,GiB，vLLM 的 \texttt{chunk\_queries} 顯示磁碟階僅被查詢 2 次而 CPU 階 2{,}048 次，所得「\act{SSD} 與 \act{CPU} 僅差 1.2\%」實為 CPU 階的數字。將 CPU 階縮至 1\,GiB 後磁碟階被查詢 2{,}048 次，實際讀取 3\,GiB。每列數據記錄兩層的 \texttt{chunk\_queries}。
+
+\subsection{成本常數}
+\label{app:cost}
+
+\paragraph{平時成本。}
+以每 GiB 可容 token 數量測，每設定重複三次取中位數（全距 $\le0.04\%$）：BF16 128.11、\texttt{fp8} 64.04、\texttt{int8\_per\_tok\_head} 66.04、\texttt{int4\_per\_tok\_head} 34.02\,KiB/token。後兩者各多出約 2.03\,KiB/token，與 $2\times32\times8=512$ 個 FP32 scale 的 2{,}048\,bytes 相符（實測每 scale 4.0--4.1\,bytes）。
+
+\paragraph{被需要時的成本。}
+以 16K 上下文、四個共用前綴的兩輪工作負載量測 warm TTFT，並扣除 GPU 命中的基準（134.4\,ms）：\act{CPU} 736.9\,ms、\act{SSD} 5{,}803.3\,ms、\act{Drop} 5{,}467.5\,ms。換算每 block（16 token）分別為 0.588、5.536、4.008\,ms。
+
+\paragraph{磁碟階的成本並非由 I/O 主導。}
+我們於 SATA SSD（Samsung 870 QVO）與 NVMe（Crucial P3）各量一次。裝置頻寬分別為 0.49 與 1.65\,GB/s（相差 $3.4\times$），而端到端 warm TTFT 為 5{,}803 與 6{,}600\,ms——\emph{頻寬較高者反而較慢}。磁碟讀取僅佔搬移成本的約 35\%，其餘為分層機制的查表、cascade 排程與 promotion 開銷。故成本模型應拆為 $C_{\text{ssd}}=C_{\text{lookup}}+C_{\text{sched}}+C_{\text{io}}(\text{device})$，僅末項與裝置有關。
+
+\subsection{Oracle 的求解方法與其效力範圍}
+\label{app:oracle}
+
+我們以 trace 驅動的模擬求解上界：GPU 階的逐出以 Bélády/MIN 決定，跨階的目的地以成本感知貪婪決定。後者非加權多階快取問題的最佳解，故所得 headroom 為\emph{下界}——真正的最佳解只會更好。此不對稱使 GO 判定安全，而 NO-GO 判定須額外審視。
+
+模擬器的效力取決於兩個前提。其一，成本常數須為實測；程式在讀不到 \S\ref{app:cost} 的量測檔時中止，不使用預設值。其二，模擬器須能複現已量測的行為；我們以第 \ref{sec:eval} 節的工作負載比對 \texttt{full\_gpu} 相對 \texttt{cpu\_lru} 的 warm 段成本比，方向一致（2/2），但量級高估約 $1.5\times$（實測 9.00 對模擬 14.33）。\textbf{故本文僅引用 headroom 隨工作負載偏斜的趨勢，不引用其絕對值。}
+
+已知的偏差來源為前綴語意：vLLM 的 prefix cache 於中間缺塊時須重算其後全部，而模擬器記為重算單一 block，因而低估 \texttt{full\_gpu} 的成本。修正此項後 headroom 只會上升。
 
 % =====================================================================
 \bibliographystyle{plain}
