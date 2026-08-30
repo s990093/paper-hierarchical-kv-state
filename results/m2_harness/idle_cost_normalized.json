@@ -1,0 +1,34 @@
+{
+  "bf16": {
+    "tok_per_gib": 8185.0,
+    "kib_per_token": 128.11,
+    "ideal_kib": 128.0,
+    "overhead_kib": 0.11,
+    "rel_bf16": 1.0,
+    "spread_pct": 0.0
+  },
+  "fp8": {
+    "tok_per_gib": 16372.8,
+    "kib_per_token": 64.04,
+    "ideal_kib": 64.0,
+    "overhead_kib": 0.04,
+    "rel_bf16": 2.0,
+    "spread_pct": 0.0
+  },
+  "int8": {
+    "tok_per_gib": 15877.6,
+    "kib_per_token": 66.04,
+    "ideal_kib": 64.0,
+    "overhead_kib": 2.04,
+    "rel_bf16": 1.94,
+    "spread_pct": 0.04
+  },
+  "int4": {
+    "tok_per_gib": 30819.0,
+    "kib_per_token": 34.02,
+    "ideal_kib": 32.0,
+    "overhead_kib": 2.02,
+    "rel_bf16": 3.765,
+    "spread_pct": 0.02
+  }
+}

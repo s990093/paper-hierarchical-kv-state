@@ -434,9 +434,70 @@ BF16 懸崖 106,512 遠低於此；即使換成 AWQ-INT4，推估的懸崖也在
 
 ---
 
-## Milestone 2 — 量測工具鏈
+## Milestone 2 — 成本常數 2×N 矩陣 🟡 部分完成
 
-**狀態**: `NOT_STARTED`
+**狀態**: capacity ✅ / recompute 🟡 進行中 / retrieval ⏳ 排到凌晨（見下）
+**指令**: `python code/m2_cost_model.py --gpu 0 --stage <capacity|recompute|retrieval>`
+**產出**: `results/m2_harness/capacity_by_dtype.csv`、`idle_cost_normalized.json`
+
+### 🟢 發現 7：論文動作空間的**四個精度階全部可在單卡量到**
+
+`EXPERIMENT_PLAN.md` 原本把 `GPU-FP8` 判為平台 A 量不到（M1 已推翻）。
+這裡更進一步：vLLM 的 `--kv-cache-dtype` 除了 `fp8` 還提供
+`int8_per_token_head` 與 `int4_per_token_head`。
+
+**論文六階動作空間裡「住在 GPU 上」的四階，全部是同一個旗標的不同取值**，
+換一個字串就換一階，不需要任何額外實作。
+
+### 平時成本（每個狀態佔多少位元組）
+
+⚠️ **必須除以 GiB 正規化**。原始 token 數 run-to-run 會跳（全距 13.5%），
+因為 KV pool 的大小本身在 5.09 / 5.88 GiB 兩個值之間擺動（見發現 6）。
+**正規化之後全距降到 0.00–0.04%**，抖動完全來自 pool 大小而非 dtype。
+
+| dtype | tok/GiB | 全距 | **KiB/token** | 理想值 | 額外 | **相對 BF16** |
+|---|---|---|---|---|---|---|
+| `auto`(BF16) | 8,185.0 | 0.00% | **128.11** | 128 | +0.11 | 1.00× |
+| `fp8` | 16,372.8 | 0.00% | **64.04** | 64 | +0.04 | **2.00×** |
+| `int8_per_token_head` | 15,877.6 | 0.04% | **66.04** | 64 | **+2.04** | 1.94× |
+| `int4_per_token_head` | 30,819.0 | 0.02% | **34.02** | 32 | **+2.02** | **3.77×** |
+
+### 🔵 那多出來的 2 KiB/token 算得出來是什麼
+
+Llama-3.1-8B：32 層 × 8 個 KV head，K 與 V 各一份
+→ 每個 token 有 `2 × 32 × 8 = 512` 個 per-token-head 的 scale。
+512 × 4 bytes（fp32）= **2,048 bytes = 2 KiB**。
+
+實測額外開銷：int8 = 2,089 bytes（4.1 B/scale）、int4 = 2,068 bytes（4.0 B/scale）。
+**與算術完全吻合。這不是量測誤差，是量化中繼資料。**
+
+**對論文的影響**：動作空間的精度階梯**不是 2×/4×**，而是 **2.00× / 1.94× / 3.77×**。
+* `fp8` 是純格式轉換，沒有額外中繼資料 → 恰好 2×
+* `int8` / `int4` 走 per-token-head 量化，固定多帶 2 KiB/token
+* → **把 FP8 與 INT8 當成同一階（都是 1 byte）會失準 3%**；
+  INT4 的實際收益是 3.77× 不是 4×
+* 式(1) 的成本模型若只寫 `bytes/elem`，會系統性高估低精度階的收益。
+  中繼資料開銷是**與序列長度成正比的固定成本**，必須進成本模型。
+
+### ⏳ retrieval（被需要時的成本）—— 刻意延後
+
+這一項量的是「把 block 從 CPU/SSD 搬回來要多久」，**走的正是 PCIe**。
+量測當下整機是 `HEAVY`（6 個外來 process 在 GPU 1–6，97% 使用率），
+而本專案已實測整機忙碌會讓卸載的 warm TTFT **灌水 26–52%**（見發現 5）。
+
+→ 排進凌晨批次 `_big/logs/overnight_quiet.sh`（cron `0 3 * * *`，一次性），
+開跑前先等整機 `QUIET`。
+
+`code/gpu_guard.py` 新增 `host_contention()`：`GpuWatcher` 只看本卡有沒有別人，
+但 PCIe / host RAM / `/dev/shm` 是**全機共用**——別人在其他卡上跑不會出現在
+本卡的 compute-apps 裡。M2/M3 的每一列現在都帶
+`host_contention` / `foreign_gpu_count` / `foreign_max_util`。
+
+⚠️ **既有 640 列的 `host_contention` 是 `UNKNOWN` 不是 `QUIET`**——
+那些 run 量測時根本沒有記錄整機狀態，無法回溯。
+把「沒量」寫成「乾淨」就是編造數字。凌晨批次會重跑 M3 serial 全套並如實標記。
+
+---
 
 ## Milestone 3 — Tier 0 Baselines ✅ PASS（兩個模型 × 5 baselines，parallel mode）
 
