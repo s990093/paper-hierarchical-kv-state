@@ -76,7 +76,8 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from gpu_guard import GpuWatcher, idle_gpus, wait_until_free  # noqa: E402
+from gpu_guard import (GpuWatcher, host_contention, idle_gpus,  # noqa: E402
+                       wait_until_free)
 
 BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
 VENV = BIG / "venv/vllm"
@@ -168,6 +169,13 @@ BASELINES: dict[str, dict] = {
 N_PREFIXES = 4
 GEN_TOKENS = 32          # 每個請求產生的 token 數，用來算 TPOT
 CTX_LADDER = [4096, 8192, 16384, 32768]
+
+
+def _host(gpu: int) -> dict:
+    h = host_contention(exclude_gpu=gpu)
+    return {"host_contention": h["level"],
+            "foreign_gpu_count": h["foreign_gpu_count"],
+            "foreign_max_util": h["foreign_max_util"]}
 
 
 def shm_free_bytes() -> int:
@@ -368,7 +376,10 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
     run_id = f"{stamp}-m3-{model_key}-{baseline}"
     root = BIG / "runs" / run_id
     root.mkdir(parents=True, exist_ok=True)
+    h0 = host_contention(exclude_gpu=gpu)
     print(f"[m3] run_id={run_id} gpu={gpu} baseline={baseline} model={mdl['path']}")
+    print(f"[m3] 整機爭用：{h0['level']}  外來 process {h0['foreign_procs']} 個"
+          f" 在 GPU {h0['foreign_gpus']}，最高使用率 {h0['foreign_max_util']}%")
 
     if baseline == "tier_fs":
         FS_ROOT.mkdir(parents=True, exist_ok=True)
@@ -439,6 +450,11 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                                 # mode_source 放在最後，這裡要一致，否則
                                 # write_csv 的 schema 檢查會擋下來。
                                 "mode_source": "recorded",
+                                # 整機爭用：gpu_guard 只看本卡，但 PCIe /
+                                # host RAM / /dev/shm 是全機共用的。別人在其他
+                                # 卡上跑不會出現在本卡的 compute-apps 裡，
+                                # 卻會拖慢搬運量測（實測 warm TTFT 灌水 26–52%）。
+                                **_host(gpu),
                             })
                             print(f"[m3]   ctx={ctx:>6} {rnd:<4} #{i} "
                                   f"ttft={r['ttft_ms']}ms tpot={r['tpot_ms']}ms")

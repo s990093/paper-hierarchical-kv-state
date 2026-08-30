@@ -66,7 +66,12 @@ SCHEMAS = {
     22: HEAD + ["caveat"] + TAIL,
     23: HEAD + ["caveat", "concurrency_mode"] + TAIL,
 }
-CANONICAL = SCHEMAS[23] + ["mode_source"]
+SCHEMAS[24] = SCHEMAS[23] + ["mode_source"]
+
+# 2026-08-30 晚間再加三欄：整機爭用狀態。
+# 早先的列**無法回溯**這個值——當時根本沒有量——所以補 UNKNOWN 而不是 QUIET。
+# 把「沒量」寫成「乾淨」就是編造數字。
+CANONICAL = SCHEMAS[24] + ["host_contention", "foreign_gpu_count", "foreign_max_util"]
 
 
 def main() -> int:
@@ -92,6 +97,10 @@ def main() -> int:
             continue
         d = dict(zip(sch, r))
         d.setdefault("caveat", "")
+        # 早先的 run 沒有記錄整機爭用，不能假裝它是乾淨的
+        d.setdefault("host_contention", "UNKNOWN")
+        d.setdefault("foreign_gpu_count", "")
+        d.setdefault("foreign_max_util", "")
         if "concurrency_mode" in d:
             d["mode_source"] = "recorded"
         else:
@@ -109,6 +118,7 @@ def main() -> int:
     print("  model × mode    :", dict(Counter(
         (r["model_key"], r["concurrency_mode"]) for r in out)))
     print("  quality_score   :", dict(Counter(r["quality_score"] for r in out)))
+    print("  host_contention :", dict(Counter(r["host_contention"] for r in out)))
 
     # 抽驗：ttft_ms 必須全部是數字，否則代表還是錯位
     nonnum = [r for r in out if r["ttft_ms"] and not r["ttft_ms"]
