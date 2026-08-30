@@ -193,7 +193,14 @@ class Sim:
 
     # -- 線上策略 --------------------------------------------------
     def run_online(self, trace: list[list[int]], policy: str,
-                   use_cpu: bool, use_ssd: bool) -> dict:
+                   use_cpu: bool, use_ssd: bool,
+                   split_at: int | None = None) -> dict:
+        """split_at 給定時，另外回報第 split_at 個請求之後的成本（warm 段）。
+
+        ⚠️ 為什麼需要這個：M3 的實測量的是**warm 那一輪**的 TTFT，
+        模擬若回報兩輪加總，就是拿不同的量在比對，驗證會失去意義。
+        2026-08-30 第一版驗證就犯了這個錯（實測比 9.0，模擬比 1.87，
+        看起來像模擬器壞掉，其實是比錯東西）。"""
         gpu: OrderedDict[int, None] = OrderedDict()
         cpu: OrderedDict[int, None] = OrderedDict()
         ssd: OrderedDict[int, None] = OrderedDict()
@@ -205,7 +212,9 @@ class Sim:
         target_t1 = 0
 
         total = 0.0
+        warm_total = 0.0
         hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
+        warm_hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
 
         def demote(blk: int) -> None:
             if use_cpu:
@@ -218,10 +227,13 @@ class Sim:
                         while len(ssd) > self.cap["ssd"]:
                             ssd.popitem(last=False)
 
-        for req in trace:
+        for ri, req in enumerate(trace):
+            warm = split_at is not None and ri >= split_at
             for pos, blk in enumerate(req):
                 if blk in gpu:
                     hits["gpu"] += 1
+                    if warm:
+                        warm_hits["gpu"] += 1
                     total += self.cm.cost("gpu", pos * BLOCK)
                     gpu.move_to_end(blk)
                     if policy == "arc":
@@ -233,15 +245,22 @@ class Sim:
                     continue
                 if blk in cpu:
                     hits["cpu"] += 1
-                    total += self.cm.cost("cpu", pos * BLOCK)
+                    c = self.cm.cost("cpu", pos * BLOCK)
                     del cpu[blk]
+                    tier_hit = "cpu"
                 elif blk in ssd:
                     hits["ssd"] += 1
-                    total += self.cm.cost("ssd", pos * BLOCK)
+                    c = self.cm.cost("ssd", pos * BLOCK)
                     del ssd[blk]
+                    tier_hit = "ssd"
                 else:
                     hits["drop"] += 1
-                    total += self.cm.cost("drop", pos * BLOCK)
+                    c = self.cm.cost("drop", pos * BLOCK)
+                    tier_hit = "drop"
+                total += c
+                if warm:
+                    warm_total += c
+                    warm_hits[tier_hit] += 1
 
                 # 放進 GPU，必要時逐出
                 if policy == "arc":
@@ -271,7 +290,8 @@ class Sim:
                         continue
                     gpu.pop(ev, None)
                     demote(ev)
-        return {"total_ms": total, "hits": hits}
+        return {"total_ms": total, "hits": hits,
+                "warm_ms": warm_total, "warm_hits": warm_hits}
 
     # -- Oracle ----------------------------------------------------
     def run_oracle(self, trace: list[list[int]], use_cpu: bool,
@@ -382,18 +402,22 @@ def validate(cm: CostModel) -> dict:
         sim = Sim(cm, gpu_blocks=kv_tokens // BLOCK,
                   cpu_blocks=(24 * 1024**3) // (BLOCK * 128 * 1024),
                   ssd_blocks=10**9)
-        s_full = sim.run_online(trace, "lru", use_cpu=False, use_ssd=False)
-        s_lru = sim.run_online(trace, "lru", use_cpu=True, use_ssd=False)
-        # 只比第二輪（warm）：總成本的後半
+        # split_at=n：trace 前 n 個請求是 cold、其後 n 個是 warm。
+        # 實測量的是 warm 那一輪的 TTFT，所以模擬也只能取 warm 段來比。
+        s_full = sim.run_online(trace, "lru", False, False, split_at=n)
+        s_lru = sim.run_online(trace, "lru", True, False, split_at=n)
+        sim_ratio = s_full["warm_ms"] / max(1e-9, s_lru["warm_ms"])
         out.append({
             "ctx": ctx, "n_prefixes": n,
             "measured_full_warm_ms": round(m_full, 1),
             "measured_lru_warm_ms": round(m_lru, 1),
             "measured_ratio": round(m_full / m_lru, 2),
-            "sim_full_total_ms": round(s_full["total_ms"], 1),
-            "sim_lru_total_ms": round(s_lru["total_ms"], 1),
-            "sim_ratio": round(s_full["total_ms"] / max(1e-9, s_lru["total_ms"]), 2),
-            "sim_full_hits": s_full["hits"], "sim_lru_hits": s_lru["hits"],
+            # 模擬的 warm 段成本除以請求數，才和「每個請求的 TTFT」可比
+            "sim_full_warm_ms_per_req": round(s_full["warm_ms"] / n, 1),
+            "sim_lru_warm_ms_per_req": round(s_lru["warm_ms"] / n, 1),
+            "sim_ratio": round(sim_ratio, 2),
+            "sim_full_warm_hits": s_full["warm_hits"],
+            "sim_lru_warm_hits": s_lru["warm_hits"],
         })
     return {"gpu_kv_tokens": kv_tokens, "rows": out}
 
@@ -435,17 +459,38 @@ def main() -> int:
     if a.validate:
         v = validate(cm)
         print(f"\n=== 模擬器驗證（GPU KV = {v['gpu_kv_tokens']:,} tokens）===")
-        print(f"{'ctx':>7}{'實測 full/lru':>15}{'模擬 full/lru':>15}  判定")
-        ok = 0
+        print("比的是同一個量：warm 那一輪，full_gpu 相對 cpu_lru 的成本倍數\n")
+        print(f"{'ctx':>7}{'實測':>10}{'模擬':>10}{'比值差':>9}  判定")
+        ok = agree_mag = n_cmp = 0
         for r in v["rows"]:
-            agree = "✅ 同向" if (r["measured_ratio"] > 1) == (r["sim_ratio"] > 1) else "🔴 反向"
-            ok += agree.startswith("✅")
-            print(f"{r['ctx']:>7}{r['measured_ratio']:>15.2f}{r['sim_ratio']:>15.2f}  {agree}")
+            # 退化情況：工作集塞得進 GPU，模擬裡兩者成本都是 0，比值無定義。
+            # 這不是「對不上」，是「這個點沒有鑑別力」，不該計入判定。
+            if r["sim_full_warm_ms_per_req"] < 1e-6 and r["sim_lru_warm_ms_per_req"] < 1e-6:
+                print(f"{r['ctx']:>7}{r['measured_ratio']:>10.2f}{'—':>10}"
+                      f"{'—':>9}  ⚪ 工作集塞得下，無鑑別力")
+                continue
+            n_cmp += 1
+            same_dir = (r["measured_ratio"] > 1) == (r["sim_ratio"] > 1)
+            rel = abs(r["sim_ratio"] - r["measured_ratio"]) / max(r["measured_ratio"], 1e-9)
+            mag = rel <= 0.5                       # 倍數差在 50% 以內才算量級相符
+            ok += same_dir
+            agree_mag += mag
+            tag = ("✅ 相符" if same_dir and mag else
+                   "🟡 同向但量級偏離" if same_dir else "🔴 反向")
+            print(f"{r['ctx']:>7}{r['measured_ratio']:>10.2f}{r['sim_ratio']:>10.2f}"
+                  f"{rel*100:>8.0f}%  {tag}")
         (OUT / "simulator_validation.json").write_text(
             json.dumps(v, indent=2, ensure_ascii=False) + "\n")
-        print(f"\n{ok}/{len(v['rows'])} 個 ctx 的方向一致。")
-        print("⚠️ 方向一致只是最低門檻。比值差很多時，Oracle 的絕對 headroom 不可信。")
-        return 0
+        n = n_cmp
+        print(f"\n有鑑別力的點 {n} 個：方向一致 {ok}/{n}；量級也相符 {agree_mag}/{n}")
+        if n and agree_mag < n:
+            print("\n🟡 有 ctx 的量級對不上。可能的原因：")
+            print("   * 模擬把「miss」記成重算**一個 block**，但 vLLM 的 prefix cache 是")
+            print("     前綴語意——中間缺一塊，其後全部要重算。模擬會低估 full_gpu 的成本。")
+            print("   * 實測的 TTFT 含排程、tokenize、取樣等固定開銷，模擬只有搬運與計算。")
+            print("   → **此時 Oracle 的絕對 headroom 不可引用**，只能用它的"
+                  "『隨 α 如何變化』這個相對趨勢。")
+        return 0 if n and agree_mag == n else 1
 
     gpu_tokens = a.gpu_tokens
     if gpu_tokens is None:
