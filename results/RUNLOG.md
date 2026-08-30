@@ -438,9 +438,131 @@ BF16 懸崖 106,512 遠低於此；即使換成 AWQ-INT4，推估的懸崖也在
 
 **狀態**: `NOT_STARTED`
 
-## Milestone 3 — Baseline
+## Milestone 3 — Tier 0 Baselines ✅ PASS（Llama，parallel mode）
 
-**狀態**: `NOT_STARTED`
+**狀態**: PASS（llama 五個 baseline 全部有數據；qwen 進行中）
+**執行時間**: 2026-08-30 18:07 → 18:31
+**指令**: `python code/m3_baseline.py --all --model llama`（+ lmcache 單獨一張卡）
+**產出**: `results/m3_baseline/baseline.csv`（160 列）
+**分析**: `python code/analyze_m3.py --mode parallel`
+
+### 工作負載（與計畫書 §4 的差異，這裡說明為什麼）
+
+計畫書只寫「單請求 × context 遞增」。**照字面做量不到任何東西**——
+KV 卸載只在**有重用**時才有價值；單發一個長請求，連接器把 block 存到 CPU 就沒有
+下文，`lru` 與 `arc` 會給出完全相同的數字。而計畫書 §4 的 M3 驗收正好把
+「`lru` 與 `arc` 數字完全相同」列為**「卸載沒真的發生」的警訊**。
+
+所以工作負載定為**兩輪、共享前綴**：
+
+```
+cold: 依序送 N=4 個各自不同的長前綴 P_1..P_4
+warm: 用同樣順序再送一次同樣的 P_1..P_4
+```
+
+`N × ctx` 刻意跨過 M1 量到的 GPU KV 容量（41,648 token），逼出逐出。
+**cold 與 warm 的 TTFT 差，就是那一階卸載的價值。**
+`full_gpu` 沒有第二階，warm 只能重算，是乾淨的對照組。
+
+前綴用固定 seed 的隨機 token id 生成（不是重複同一段文字——重複文字會讓
+prefix cache 在不同「前綴」之間意外命中，把 cold/warm 的對比洗掉），
+並實際 encode 後多退少補，確保**恰好** ctx 個 token。
+
+### 關鍵數字（llama，GPU KV cache = 41,648 tokens，n=4，取中位數）
+
+| baseline | ctx | 工作集 | cold TTFT | warm TTFT | **Δ%** |
+|---|---|---|---|---|---|
+| `full_gpu` | 4,096 | 16,384 | 1003.4 ms | 81.4 ms | 91.9% |
+| `full_gpu` | 8,192 | 32,768 | 2142.0 ms | 102.4 ms | 95.2% |
+| **`full_gpu`** | **16,384** | **65,536** | 5045.0 ms | 5118.1 ms | **−1.4%** |
+| **`full_gpu`** | **32,768** | **131,072** | 12893.4 ms | 12936.8 ms | **−0.3%** |
+| `cpu_lru` | 16,384 | 65,536 | 4933.3 ms | 759.5 ms | **84.6%** |
+| `cpu_lru` | 32,768 | 131,072 | 12224.1 ms | 1033.2 ms | **91.5%** |
+| `cpu_arc` | 16,384 | 65,536 | 4946.5 ms | 758.5 ms | **84.7%** |
+| `cpu_arc` | 32,768 | 131,072 | 12473.4 ms | 4425.5 ms | **64.5%** |
+| `tier_fs` | 16,384 | 65,536 | 5543.2 ms | 596.9 ms | **89.2%** |
+| `tier_fs` | 32,768 | 131,072 | 13925.5 ms | 1094.8 ms | **92.1%** |
+| `lmcache` | 16,384 | 65,536 | 5794.8 ms | 2433.6 ms | 58.0% |
+| `lmcache` | 32,768 | 131,072 | 14191.4 ms | 3662.9 ms | 74.2% |
+
+（4,096 與 8,192 的工作集都塞得進 GPU，五個 baseline 都是 92–96%，無鑑別力，故上表略。）
+
+### 🟢 發現 1：M1 的容量數字**準確預測**了 M3 的行為轉折點
+
+`full_gpu` 的 Δ% 在工作集跨過 41,648 時直接崩塌：
+
+| 工作集 | vs 實測容量 41,648 | `full_gpu` Δ% |
+|---|---|---|
+| 32,768 | 塞得下 | **+95.2%** |
+| 65,536 | 塞不下 | **−1.4%** |
+
+轉折發生在 32,768 與 65,536 之間，而 M1 獨立量到的容量是 41,648——**正好落在區間內**。
+兩個用完全不同方法得到的量測互相印證：M1 讀的是 vLLM 啟動時的
+`GPU KV cache size`，M3 量的是端到端 TTFT，中間沒有共用的假設。
+
+**這讓論文 §2.5「24 GB 級加速器上單請求容量本身即構成壓力」從算術主張變成可觀測現象。**
+
+### 🟢 發現 2：`lru` 與 `arc` 有明確差異，且**`lru` 贏**
+
+計畫書 §4 的驗收條件：「`lru` 與 `arc` 有可辨別的差異；若完全相同，代表卸載沒真的發生」。
+
+實測 ctx=32,768：**`lru` 91.5% vs `arc` 64.5%**，差 27 個百分點。✅ 驗收通過。
+
+方向值得注意：**`arc` 輸給 `lru`**。這與本工作負載的性質一致——
+每個前綴恰好被存取兩次（cold 一次、warm 一次），是純掃描式的循環存取。
+ARC 的頻率分量（T2/B2）在「每個 block 都只被重訪一次」時得不到有用訊號，
+而它為此付出的空間（ghost list）反而排擠了實際資料。
+
+⚠️ **這是單一工作負載下的結果，不足以宣稱「ARC 比 LRU 差」。**
+它只說明：在論文設定的長上下文重用型負載上，production 預設的兩個策略
+**都不是強對手，而且彼此差異很大**——這反而讓「需要更好的策略」這個動機更站得住。
+
+### 🟢 發現 3：加了磁碟階（`tier_fs`）在大 context 上最好
+
+ctx=32,768 時 `tier_fs` 92.1% > `cpu_lru` 91.5% > `cpu_arc` 64.5%。
+差距不大但方向穩定，且 `tier_fs` 的 cold TTFT 反而較高（13925 vs 12224 ms）
+——多一階的寫入成本。**這正是論文動作空間裡 SSD 那一階的取捨形狀。**
+
+### ⚠️ 必須跟數字一起出現的兩個限制
+
+**1. `lmcache` 的比較不對等。**
+lmcache 0.5.4 的 wheel **沒有編譯擴充**，啟動 log 明寫：
+
+> `lmcache.cuda_ops compiled extension not found; CudaDeviceOps stays on the torch baseline for all ops.`
+
+它的搬運路徑因此走 torch baseline。**58.0% / 74.2% 這兩個數字是被 handicap 的**，
+不能拿來宣稱「我們比 LMCache 好」。已寫進 CSV 的 `caveat` 欄，
+`analyze_m3.py` 會強制把它印在表格下方。
+
+**2. 這一批是 `concurrency_mode = parallel`，時間數字不可直接進論文。**
+四個 baseline 平行跑在四張卡上。GPU 之間獨立，但 **PCIe、host RAM 頻寬、
+`/dev/shm`、CPU 都是共用的**——而卸載 baseline 量的正是 PCIe 路徑。
+`gpu_guard` 擋得住**別人**插隊，擋不住**自己的其他 job**。
+
+→ 已加 `--serial` 模式。**定稿數字必須用 serial 重跑。**
+CSV 的 `concurrency_mode` 欄記錄每一列屬於哪一種，`analyze_m3.py` 拒絕混合比較。
+上表的**相對關係**（誰贏誰、轉折點在哪）是可信的；**絕對毫秒數**要等 serial。
+
+### 失敗與異常（三個，都會靜默給出錯的結果）
+
+**1. `/dev/shm` 被自己的洩漏檔佔滿。**
+vLLM 的 CPU 階是 `/dev/shm` 上的 mmap 檔，server 被 kill 時**不會回收**。
+連跑幾輪後 221 GB 全滿（8 個孤兒檔共 231 GB，全是自己的），
+接著三個帶卸載的 baseline 全部在啟動時死掉，而錯誤訊息完全不指向真因。
+→ 寫了 `code/shm_gc.py`（只刪自己的、且沒有行程持有的，預設 dry-run），
+並在 `m3_baseline.py` 開跑前加了餘量檢查。CPU 階從 32 GiB 降為 24 GiB
+（最大工作集 4×32768×128 KiB = 16 GiB，留 1.5 倍餘裕）。
+
+**2. `make_prefix` 的 token 數不準，整批以 HTTP 400 收場。**
+第一版用 `decode(random_ids)` 造前綴，但 decode 之後再 encode **長度會變**
+（BPE 會合併或拆開相鄰片段）。ctx=32768 的 prompt 實際超過 `max_model_len`。
+→ 改成實際 encode 後多退少補，並把 `actual_prompt_tokens` 寫進 CSV。
+
+**3. 例外路徑把已量到的資料丟掉。**
+原本 `except` 直接 `return 1`，導致前三個 context 的有效數據全部消失。
+→ 改成部分失敗也寫檔——那些一樣是實測值。
+
+---
 
 ## Milestone 4 — Oracle 上界（🔴 決定性）
 
