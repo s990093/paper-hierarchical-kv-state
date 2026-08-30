@@ -116,16 +116,22 @@ MODELS = {
     "llama-awq": {
         "path": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
         "kv_kib_per_token": 128.0,
-        "measured_kv_capacity_tokens": 122_060,   # ESTIMATE，待 M1 實測
-        "ctx_ladder": [16384, 32768, 65536, 131072],
+        "measured_kv_capacity_tokens": 120_320,   # M1 實測
+        "model_max_len": 131_072,                 # config 的 max_position_embeddings
+        # 🔴 ctx 頂端不能等於模型上限：max_len = ctx + GEN_TOKENS + 餘裕 會超過。
+        #    2026-08-30 踩過——ctx=131,072 → max_len=132,128 > 131,072，
+        #    五個 baseline 全部在啟動時死掉，錯誤訊息是 pydantic 的 ValidationError。
+        #    頂端留 4,096 餘裕。
+        "ctx_ladder": [16384, 32768, 65536, 126976],
         "extra": ["--kv-cache-dtype", "fp8"],     # FP8 KV 才放得下 131,072
         "note": "對照組長 context。FP8-KV 讓容量 244K > 模型上限 131,072",
     },
     "qwen-awq": {
         "path": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
         "kv_kib_per_token": 56.0,
-        "measured_kv_capacity_tokens": 282_000,   # ESTIMATE，待 M1 實測
-        "ctx_ladder": [32768, 65536, 131072, 262144],
+        "measured_kv_capacity_tokens": 273_872,   # M1 實測
+        "model_max_len": 262_144,
+        "ctx_ladder": [32768, 65536, 131072, 258048],
         "extra": [],
         "note": "主力長 context。⚠️ 社群 AWQ（592 下載），無官方版",
     },
@@ -421,6 +427,11 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
 
     # 餘裕：GEN_TOKENS + BOS/EOS + tokenizer 邊界誤差。寧可多給也不要撞 400。
     max_len = max(ctxs) + GEN_TOKENS + 1024
+    # 但不得超過模型的可定址長度，否則 vLLM 直接拒絕啟動（pydantic ValidationError）。
+    cap = mdl.get("model_max_len")
+    if cap and max_len > cap:
+        print(f"[m3] max_model_len {max_len:,} > 模型上限 {cap:,}，夾到 {cap:,}")
+        max_len = cap
     rows: list[dict] = []
 
     with GpuWatcher(gpu=gpu, out_path=str(root / "gpu_guard.json")) as guard:
