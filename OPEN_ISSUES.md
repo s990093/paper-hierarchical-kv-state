@@ -105,6 +105,30 @@ GRU 那列不可省略：**LRB 比的 2 層 NN 同樣吃攤平輸入，所以「
 
 ---
 
+### B7. `CachePolicy` 介面表達不了完整的動作空間 ← 2026-08-30 實測新增
+
+| | |
+|---|---|
+| **現況** | Fig. 2 把 Tiara 畫成「插在 vLLM 的 `CachePolicy` 介面」，藉此劃清貢獻邊界（機制屬 vLLM、策略屬本文） |
+| **實測到的好消息** | 這個掛載點**真的存在且是官方支援的**。`CachePolicyFactory` 的 docstring 明寫 out-of-tree policy「no vLLM fork/patch required」，`CPUOffloadingSpec` 讀 `cache_policy_module_path`。Tiara 可以是純 plugin |
+| **實測到的問題** | `CachePolicy` ABC 的方法只有 `get / insert / remove / touch / evict / clear`——它決定的是**「CPU 階裡該淘汰哪個 block」**。論文的六元動作空間裡，**`DROP → 重算` 與 GPU 內的精度降級（BF16→FP8→INT4）表達不了** |
+| **影響** | §5.1 與 Fig. 2 若讓讀者以為「整個 Tiara 都能靠這個介面實現」，那是**過度宣稱**。實情是：位置分層（GPU↔CPU↔SSD）落在這個介面內，精度分層與 DROP 落在介面外，需要改動 `OffloadingSpec` 甚至 attention 路徑 |
+| **處置** | 寫 §5 時把邊界講清楚：哪一部分是 plugin、哪一部分需要更深的改動。**這反而是有利的**——它說明本文不只是一個 policy plugin，而是需要擴充機制，正好回應「這是不是只是個 plugin」的質疑 |
+| **何時做** | 實作 §5 之前。介面的實際形狀會決定實作切分 |
+
+證據：`results/RUNLOG.md` A3 附帶發現；`vllm/v1/kv_offload/cpu/policies/base.py`
+
+### B8. 頁數會隨字型而變 ← 2026-08-30 新增
+
+| | |
+|---|---|
+| **現況** | 同一份 `main.tex`，macOS（Songti TC + Times New Roman）建置為 **15 頁**，Linux（Noto Serif CJK TC + TeX Gyre Termes）為 **16 頁** |
+| **原因** | TeX Gyre Termes 與 Times New Roman 度量相容但非位元相同；Noto Serif CJK 的字身高與 Songti 不同。兩者累積出一頁 |
+| **風險** | EuroMLSys 有 **6 頁**上限，MLSys 有頁數限制。**在 A 機器上壓到剛好上限，投稿時在 B 機器上就會超頁** |
+| **處置** | 投稿前必須在**實際產生投稿 PDF 的那台機器**上重新確認頁數。壓縮階段要留至少半頁餘裕 |
+
+---
+
 ## ⚪ C 級：文字與一致性
 
 | # | 問題 | 位置 |
@@ -127,6 +151,9 @@ C5／C6 若查出來是真的且高度重疊，會升為 🔴。
 | K 是否比 V 對量化更敏感 | **是**，且有 2025 年多篇獨立驗證 | 2026-08-29 |
 | 三個學習式 baseline 有無權重 | **均無**，只有程式碼 | 2026-08-28 |
 | **論文標題** | 已改為平台中性：**Cost-Asymmetric Hierarchical KV State Management for Long-Context LLM Inference**。摘要、貢獻列表、結論同步以成本不對稱為主軸，容量觀察降為輔證。「光譜兩端」措辭（原 C4）一併修正為「相距 2.8 倍、位於光譜中段」 | 2026-08-30 |
+| **Ampere 能否用 FP8 KV cache** | **能。** `--kv-cache-dtype fp8` 在 sm_86 實測可用，兩個模型都給出恰好 2 倍的 KV token 數而位元組佔用不變（llama 41,648→83,312；qwen 106,512→213,040）。計畫書原本寫「平台 A 量不到 GPU-FP8」是錯的——混淆了 FP8 **運算**（Ampere 沒有）與 FP8 **儲存**（可以）。論文的動作空間是儲存狀態 | 2026-08-30 |
+| **vLLM 0.28.0 能否跑 Qwen2.5-7B-1M 的 DCA** | **不能。** V1 engine 沒有可用的 dual-chunk attention 路徑（`FlashAttentionImpl` 不吃 `layer_idx`，`v1/attention/` 下無對應 backend）。`--hf-overrides` 設 null 或 `{}` 都繞不過。已建 no-DCA 變體，評測上限因此是 **262,144**（該模型真正訓練的長度）而非宣稱的 1M | 2026-08-30 |
+| **M1 的容量量測能否預測 M3 的行為** | **能，而且很準。** llama 的 GPU KV 容量實測 41,648 token；M3 的 `full_gpu` 在工作集 32,768（ctx 8K×4）時 warm 仍快 95%，在 65,536（ctx 16K×4）時掉到 −1.4%。轉折點正好落在量到的容量上 | 2026-08-30 |
 | **RTX 3090 dense BF16 峰值算力** | **71.2 TFLOPS，論文原值正確**。$328\times1{,}695\,\text{MHz}\times128\,\text{FLOP/clk}$，兩個獨立來源 + 第一原理算術三方一致。<br>⚠️ **35.6 TFLOPS 是 TF32（64 FLOP/clk）或非 tensor FP32，資料路徑不同，不可誤用**。κ(3090)=54/190 與 FLOP/byte=2,254 全部維持不變 | 2026-08-30 |
 
 ---
