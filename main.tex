@@ -1045,6 +1045,50 @@ Fang 等人~\cite{hetmem2025} 已為兩層（HBM 與 off-package DRAM）的無�
 \paragraph{停止條件。}
 若 oracle 相對於最佳簡單策略的改善幅度小於 5\%，我們將終止此研究方向並報告此負面結果。此判準於實驗計畫的第 5--6 週執行，早於任何策略實作。
 
+\subsection{品質約束的兩類動作}
+\label{sec:quality-two-classes}
+
+式 \eqref{eq:opt} 的 $\epsilon$ 約束對動作空間中的兩類動作意義不同，量法亦須不同。
+
+\paragraph{無損動作：$\epsilon=0$ 是可驗證的斷言，不是假設。}
+\act{CPU} 與 \act{SSD} 僅搬移位元組，理應不改變輸出。此為\emph{正確性}斷言而非品質取捨：若輸出有異，即為實作錯誤。我們以逐字元比對驗證之——以 64-shot GSM8K（共用前綴 11{,}029 token）於平台 A 對 60 題取輸出的 SHA-1，與 \act{GPU-BF16} 基準比對：
+
+\begin{center}
+\small
+\begin{tabular}{lrr}
+\toprule
+設定 & 正確率 & 逐字元相同 \\
+\midrule
+\texttt{full\_gpu}（基準） & 76.67\% & --- \\
+\texttt{cpu\_lru} & 76.67\% & \textbf{60/60} \\
+\texttt{tier\_fs}（CPU$+$磁碟） & 76.67\% & \textbf{60/60} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\emph{位置分層的三階在 $\epsilon$ 約束下等價}；$\epsilon$ 的實質內容全部落在精度分層上。
+
+\paragraph{有損動作：目前的樣本數不足以分辨各精度階。}
+我們以同一工作負載量測精度階梯（$n=120$，貪婪解碼，固定 seed）：
+
+\begin{center}
+\small
+\begin{tabular}{lrrr}
+\toprule
+KV dtype & 正確率 & 相對 BF16 & $z$ \\
+\midrule
+\texttt{auto} (BF16) & 79.17\% & --- & --- \\
+\texttt{fp8} & 73.33\% & $-5.83$\,pt & 1.11 \\
+\texttt{int8\_per\_tok\_head} & 80.00\% & $+0.83$\,pt & 0.16 \\
+\texttt{int4\_per\_tok\_head} & 75.83\% & $-3.33$\,pt & 0.64 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{三個差值皆不顯著。} $n=120$、$p\approx0.79$ 時單組標準誤為 3.71\,pt，兩組差值的標準誤為 5.24\,pt，95\% 信賴區間為 $\pm10.3$\,pt；三個 $z$ 值均遠低於 1.96。差值亦非單調（\texttt{int8} 高於 BF16，而 \texttt{fp8} 低於 \texttt{int4}），此非單調性本身即為樣本量不足的徵候。
+
+\emph{我們因此不宣稱任何精度階之間存在品質差異。} 欲以 80\% 檢定力分辨 5\,pt 的差距（$\alpha=0.05$）需每組約 1{,}055 題；GSM8K 測試集有 1{,}319 題，故此量測可行，將於定稿版本補足。在此之前，表 \ref{tab:results} 中 $\epsilon$ 相關的欄位一律標記為 \texttt{NOT\_MEASURED}。
+
 \subsection{評估指標與工作負載}
 
 系統指標：TTFT、TPOT、端到端延遲、GPU/CPU/SSD 佔用、PCIe traffic、throughput、服務層級分佈（見下）、重算成本。
