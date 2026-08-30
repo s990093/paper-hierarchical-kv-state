@@ -107,6 +107,28 @@ MODELS = {
         "ctx_ladder": [8192, 16384, 32768, 65536],
         "note": "主力模型，已移除 DCA（見 code/make_nodca_model.py）",
     },
+    # ══ 真正的長 context 設定（AWQ 權重）════════════════════════════
+    # BF16 權重吃掉 24GB 裡的 15GB，只剩 5.9GB 給 KV → 容量 48K
+    #   → 上面兩個設定的 ctx 階梯最高只到 32K/64K，**進不了論文關心的 128K 區間**。
+    # AWQ-INT4 權重只要 ~4.7GB → 剩 ~15GB 給 KV → 單請求可跑滿 128K–262K。
+    # 這才是 EXPERIMENT_PLAN §2 寫的「主力設定」。
+    # 容量欄先填推估值，M1 量到之後要改成實測值。
+    "llama-awq": {
+        "path": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+        "kv_kib_per_token": 128.0,
+        "measured_kv_capacity_tokens": 122_060,   # ESTIMATE，待 M1 實測
+        "ctx_ladder": [16384, 32768, 65536, 131072],
+        "extra": ["--kv-cache-dtype", "fp8"],     # FP8 KV 才放得下 131,072
+        "note": "對照組長 context。FP8-KV 讓容量 244K > 模型上限 131,072",
+    },
+    "qwen-awq": {
+        "path": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
+        "kv_kib_per_token": 56.0,
+        "measured_kv_capacity_tokens": 282_000,   # ESTIMATE，待 M1 實測
+        "ctx_ladder": [32768, 65536, 131072, 262144],
+        "extra": [],
+        "note": "主力長 context。⚠️ 社群 AWQ（592 下載），無官方版",
+    },
 }
 
 # CPU 階大小。vLLM 把它配置成 /dev/shm 上的 mmap 檔，而 /dev/shm 只有 220 GB
@@ -306,10 +328,12 @@ def make_prefix(tokenizer, n_tokens: int, seed: int) -> tuple[str, int]:
 
 class Server:
     def __init__(self, model: str, max_len: int, gpu: int, kv: dict | None, out: Path,
-                 venv: Path | None = None, extra_env: dict | None = None):
+                 venv: Path | None = None, extra_env: dict | None = None,
+                 extra_args: list[str] | None = None):
         self.model, self.max_len, self.gpu, self.kv, self.out = model, max_len, gpu, kv, out
         self.venv = Path(venv) if venv else VENV
         self.extra_env = extra_env or {}
+        self.extra_args = extra_args or []
         self.port = free_port()
         self.p: subprocess.Popen | None = None
 
@@ -319,6 +343,7 @@ class Server:
                "--port", str(self.port),
                "--max-model-len", str(self.max_len),
                "--gpu-memory-utilization", "0.90"]
+        cmd += self.extra_args
         if self.kv:
             cmd += ["--kv-transfer-config", json.dumps(self.kv)]
         (self.out / "cmd.txt").write_text(" ".join(shlex.quote(c) for c in cmd) + "\n")
@@ -410,7 +435,8 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
             return 5
         try:
             with Server(mdl["path"], max_len, gpu, cfg["kv"], root,
-                        venv=cfg.get("venv"), extra_env=cfg.get("env")) as srv:
+                        venv=cfg.get("venv"), extra_env=cfg.get("env"),
+                        extra_args=mdl.get("extra")) as srv:
                 kvtok = srv.kv_cache_tokens()
                 print(f"[m3]   server up in {srv.startup_s}s  "
                       f"GPU KV cache = {kvtok:,} tokens" if kvtok else "[m3]   server up")

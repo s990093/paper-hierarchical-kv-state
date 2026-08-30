@@ -48,21 +48,30 @@ import sys
 from pathlib import Path
 
 BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+# 預設是 BF16 原版；用 --src / --dst 可指向 AWQ 版本。
+# AWQ 版同樣帶 dual_chunk_attention_config，同樣要拿掉才跑得起來。
 SRC_REPO = "Qwen/Qwen2.5-7B-Instruct-1M"
 DST = BIG / "models" / "Qwen2.5-7B-Instruct-1M-noDCA"
 
 
 def main() -> int:
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--src", default=SRC_REPO, help="HF repo id")
+    ap.add_argument("--dst", default=str(DST), help="輸出目錄")
+    a = ap.parse_args()
+    dst_dir = Path(a.dst)
+
     os.environ.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
     from huggingface_hub import snapshot_download
 
-    src = Path(snapshot_download(SRC_REPO, local_files_only=True))
+    src = Path(snapshot_download(a.src, local_files_only=True))
     print(f"source snapshot: {src}")
 
-    DST.mkdir(parents=True, exist_ok=True)
+    dst_dir.mkdir(parents=True, exist_ok=True)
     linked, patched = 0, []
     for f in sorted(src.iterdir()):
-        dst = DST / f.name
+        dst = dst_dir / f.name
         if f.name == "config.json":
             cfg = json.loads(f.read_text())
             removed = cfg.pop("dual_chunk_attention_config", None)
@@ -87,12 +96,12 @@ def main() -> int:
             dst.symlink_to(f.resolve())
             linked += 1
 
-    print(f"symlinked {linked} files -> {DST}")
+    print(f"symlinked {linked} files -> {dst_dir}")
     for old, new, removed in patched:
         print(f"config.json patched:")
         print(f"  removed dual_chunk_attention_config = {removed}")
         print(f"  max_position_embeddings: {old:,} -> {new:,}")
-    print(f"\nuse this path as the model id:\n  {DST}")
+    print(f"\nuse this path as the model id:\n  {dst_dir}")
     return 0
 
 

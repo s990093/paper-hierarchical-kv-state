@@ -87,6 +87,64 @@ CONFIGS: dict[str, dict] = {
         "extra": ["--kv-cache-dtype", "fp8"],
         "note": "同上，驗證 Ampere 的 KV dtype 支援度",
     },
+    # ══ 主力設定：AWQ-INT4 權重 ══════════════════════════════════════
+    # EXPERIMENT_PLAN §2 的表格寫得很清楚：
+    #   Qwen2.5-7B-Instruct-1M | AWQ-INT4 | ~315K | **主力設定**
+    #   Qwen2.5-7B-Instruct-1M | BF16     | 較早  | 敏感度分析
+    # 先前一路跑的是 BF16（敏感度那列），因為當時沒有 AWQ 權重。
+    # 後果：BF16 權重吃掉 24GB 裡的 15GB，只剩 5.9GB 給 KV → 容量只有 48K
+    #      → **整個實驗被鎖在短 context，量不到論文真正關心的 128K+ 區間**。
+    # AWQ-INT4 權重只要 ~4.7GB → 剩 ~15GB 給 KV → 容量 122K–565K。
+    "llama-awq": {
+        "model": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+        "weight_dtype": "AWQ-INT4",
+        "kv_dtype": "auto",
+        "extra": [],
+        "note": "對照組主力。推估容量 ~122K，模型上限 131,072",
+    },
+    "llama-awq-kvfp8": {
+        "model": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+        "weight_dtype": "AWQ-INT4",
+        "kv_dtype": "fp8",
+        "extra": ["--kv-cache-dtype", "fp8"],
+        "note": "推估容量 ~244K > 模型上限 131,072 → 可跑滿 128K",
+    },
+    "qwen-awq": {
+        # ⚠️ 只有社群 AWQ（graelo，592 下載），無官方版。已知限制。
+        # noDCA 變體由 code/make_nodca_model.py 產生（vLLM 0.28 跑不了 DCA）
+        "model": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
+        "weight_dtype": "AWQ-INT4",
+        "kv_dtype": "auto",
+        "extra": [],
+        "note": "主力設定。推估容量 ~282K，模型上限 262,144（移除 DCA 後）",
+    },
+    "qwen-awq-kvfp8": {
+        "model": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
+        "weight_dtype": "AWQ-INT4",
+        "kv_dtype": "fp8",
+        "extra": ["--kv-cache-dtype", "fp8"],
+        "note": "推估容量 ~565K > 模型上限 → 記憶體不再是瓶頸",
+    },
+    # ══ 512K 探測：刻意超出模型定址上限 ═══════════════════════════
+    # 記憶體算得出來放得下（AWQ 權重 + FP8-KV 可容 565K），
+    # 卡住的是模型只能定址 262,144。用 VLLM_ALLOW_LONG_MAX_MODEL_LEN=1 繞過。
+    #
+    # 🔴 **這個設定只能用於「容量」與「時間」，絕對不能用於品質。**
+    #    vLLM 原始碼的警告寫得很清楚：超出 derived_max_model_len 的位置，
+    #    RoPE 會產生 NaN。所以輸出內容是垃圾，但：
+    #      * 容量  = KV pool 配得出來嗎 → 純記憶體問題，與 RoPE 無關 ✅
+    #      * 時間  = prefill 的計算量只跟 token 數有關，與內容無關 ✅
+    #      * 品質  = 🔴 完全無效，不要量、不要報
+    #    每一列都會標 extrapolated=True，分析時必須排除品質欄位。
+    "qwen-awq-512k": {
+        "model": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
+        "weight_dtype": "AWQ-INT4",
+        "kv_dtype": "fp8",
+        "extra": ["--kv-cache-dtype", "fp8"],
+        "env": {"VLLM_ALLOW_LONG_MAX_MODEL_LEN": "1"},
+        "probe_len": 524288,
+        "note": "🔴 外推到 512K：只驗容量與時間，品質無效（RoPE 超界會 NaN）",
+    },
     # ── MLA：論文動作空間的第三個 κ 點 ────────────────────────────────
     # Llama(GQA) 128 KiB/tok、Qwen(GQA) 56 KiB/tok、DeepSeek-V2-Lite(MLA) 30.4 KiB/tok
     #   = 27 層 × (kv_lora_rank 512 + qk_rope_head_dim 64) × 2 bytes
@@ -127,7 +185,7 @@ def free_port() -> int:
 
 
 def launch(model: str, max_len: int, gpu: int, extra: list[str], out: Path,
-           timeout: int = 900) -> dict:
+           timeout: int = 900, extra_env: dict | None = None) -> dict:
     """啟一個 vLLM server，等它 ready 或死掉。回傳量到的東西，不做任何推估。"""
     out.mkdir(parents=True, exist_ok=True)
     port = free_port()
@@ -139,6 +197,7 @@ def launch(model: str, max_len: int, gpu: int, extra: list[str], out: Path,
     (out / "cmd.txt").write_text(" ".join(shlex.quote(c) for c in cmd) + "\n")
 
     env = dict(os.environ)
+    env.update(extra_env or {})
     env["CUDA_VISIBLE_DEVICES"] = str(gpu)
     env["PATH"] = f"{VENV / 'bin'}:{env.get('PATH', '')}"
     env.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
@@ -240,6 +299,7 @@ def main() -> int:
                        if r["kv_cache_tokens"] and kv_bytes_per_tok else None),
             "elapsed_s": r["elapsed_s"], "gpu": args.gpu,
             "error_line": r["error_line"] or "",
+            "extrapolated": bool(cfg.get("env", {}).get("VLLM_ALLOW_LONG_MAX_MODEL_LEN")),
             "log": r["log"], "note": cfg["note"],
         })
 
@@ -257,11 +317,13 @@ def main() -> int:
         kv_bytes_per_tok //= 2  # FP8 是 1 byte/elem，BF16 是 2
 
     # ---- 1. 量測 ----
-    print(f"[m1] phase=measure  max_model_len={PROBE_LEN}")
-    r = launch(cfg["model"], PROBE_LEN, args.gpu, cfg["extra"], root / "measure")
+    print(f"[m1] phase=measure  max_model_len={cfg.get('probe_len', PROBE_LEN)}")
+    probe = cfg.get("probe_len", PROBE_LEN)
+    r = launch(cfg["model"], probe, args.gpu, cfg["extra"], root / "measure",
+               extra_env=cfg.get("env"))
     print(f"     ready={r['ready']} kv_cache_tokens={r['kv_cache_tokens']} "
           f"({r['elapsed_s']}s) err={r['error_line']}")
-    record("measure", PROBE_LEN, r, "OK" if r["ready"] else "FAIL")
+    record("measure", probe, r, "OK" if r["ready"] else "FAIL")
 
     cliff = r["kv_cache_tokens"]
     if not r["ready"] or not cliff:
@@ -272,14 +334,16 @@ def main() -> int:
     # ---- 2. 驗證下界：懸崖本身應該起得來 ----
     at = cliff
     print(f"[m1] phase=verify_at  max_model_len={at}")
-    r_at = launch(cfg["model"], at, args.gpu, cfg["extra"], root / "verify_at")
+    r_at = launch(cfg["model"], at, args.gpu, cfg["extra"], root / "verify_at",
+                  extra_env=cfg.get("env"))
     print(f"     ready={r_at['ready']} ({r_at['elapsed_s']}s) err={r_at['error_line']}")
     record("verify_at", at, r_at, "OK" if r_at["ready"] else "UNEXPECTED_FAIL")
 
     # ---- 3. 驗證上界：超過懸崖應該失敗 ----
     over = int(cliff * OVERSHOOT)
     print(f"[m1] phase=verify_over  max_model_len={over}")
-    r_ov = launch(cfg["model"], over, args.gpu, cfg["extra"], root / "verify_over")
+    r_ov = launch(cfg["model"], over, args.gpu, cfg["extra"], root / "verify_over",
+                  extra_env=cfg.get("env"))
     print(f"     ready={r_ov['ready']} ({r_ov['elapsed_s']}s) err={r_ov['error_line']}")
     record("verify_over", over, r_ov,
            "UNEXPECTED_OK" if r_ov["ready"] else "OK_FAILED_AS_EXPECTED")
