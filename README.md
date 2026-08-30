@@ -99,6 +99,7 @@ FP8 在兩個模型上都給出**恰好 2 倍**的 token 數而位元組佔用�
 | 決定投哪裡 | [`VENUES.md`](VENUES.md) |
 | 知道裝了哪些 skill、為什麼 | [`docs/SKILLS.md`](docs/SKILLS.md) |
 | 看實驗做到哪 | [`results/RUNLOG.md`](results/RUNLOG.md) |
+| **快速看懂目前的量測狀態** | **[視覺化報告](https://claude.ai/code/artifact/abef2cd7-4c8c-4dcf-8089-335218b4813d)**（原始碼 `docs/measurement-log.html`） |
 
 > **不要把 `main.pdf` 交給執行 agent。** 那是主張文件，不是執行文件。
 > 執行 agent 只該拿到 `CLAUDE.md` + `EXPERIMENT_PLAN.md`。

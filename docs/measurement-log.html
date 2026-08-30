@@ -1,0 +1,681 @@
+<title>Tiara 量測記錄</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700;900&display=swap">
+
+<style>
+:root{
+  --paper:#f4f6f6; --card:#ffffff; --sunk:#eaeeee;
+  --ink:#131a1d; --ink-2:#3d4a4e; --ink-3:#6b7a7e;
+  --rule:#d3dcdc; --rule-2:#e4ebeb;
+  --signal:#0b6f66; --signal-soft:#dcefec; --signal-ink:#075049;
+  --caution:#95530a; --caution-soft:#f7ead7; --caution-ink:#6d3d06;
+  --overturn:#93291d; --overturn-soft:#f8e3df; --overturn-ink:#6d1e15;
+  --void:#8b979a; --void-soft:#e9eded;
+  --grid:#dfe7e7;
+  --shadow:0 1px 2px rgba(19,26,29,.05),0 8px 24px -18px rgba(19,26,29,.35);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0c1114; --card:#131a1e; --sunk:#0f1518;
+    --ink:#e6edee; --ink-2:#a9b8bb; --ink-3:#7d8d90;
+    --rule:#253135; --rule-2:#1c262a;
+    --signal:#4bc3b3; --signal-soft:#0e2b28; --signal-ink:#7fd8ca;
+    --caution:#dfa45c; --caution-soft:#2c2113; --caution-ink:#efc188;
+    --overturn:#e2705f; --overturn-soft:#2e1613; --overturn-ink:#f0998a;
+    --void:#6d7b7e; --void-soft:#182023;
+    --grid:#202b2f;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -20px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0c1114; --card:#131a1e; --sunk:#0f1518;
+  --ink:#e6edee; --ink-2:#a9b8bb; --ink-3:#7d8d90;
+  --rule:#253135; --rule-2:#1c262a;
+  --signal:#4bc3b3; --signal-soft:#0e2b28; --signal-ink:#7fd8ca;
+  --caution:#dfa45c; --caution-soft:#2c2113; --caution-ink:#efc188;
+  --overturn:#e2705f; --overturn-soft:#2e1613; --overturn-ink:#f0998a;
+  --void:#6d7b7e; --void-soft:#182023;
+  --grid:#202b2f;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -20px rgba(0,0,0,.9);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Noto Sans TC","Hiragino Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:15px; line-height:1.72; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px 96px}
+h1,h2,h3{font-family:"Noto Serif TC",Georgia,"Songti TC",serif;text-wrap:balance;margin:0}
+h1{font-weight:900;font-size:clamp(30px,4.6vw,50px);line-height:1.14;letter-spacing:-.01em}
+h2{font-weight:700;font-size:clamp(21px,2.5vw,27px);line-height:1.3}
+h3{font-weight:700;font-size:17px;line-height:1.4}
+p{margin:0}
+a{color:var(--signal)}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  font-variant-numeric:tabular-nums}
+code{font-size:.88em;background:var(--sunk);padding:.1em .38em;border-radius:3px;
+  border:1px solid var(--rule-2)}
+
+/* ── masthead ───────────────────────────────────────────── */
+.mast{padding:64px 0 34px;border-bottom:2px solid var(--ink);display:flex;
+  flex-direction:column;gap:20px}
+.kicker{font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--signal);font-weight:600}
+.sub{color:var(--ink-2);max-width:64ch;font-size:16px}
+.mast-meta{display:flex;flex-wrap:wrap;gap:8px 26px;font-family:"IBM Plex Mono",monospace;
+  font-size:12px;color:var(--ink-3)}
+
+/* ── provenance chips: the page's structural primitive ──── */
+.pv{display:inline-flex;align-items:center;gap:5px;font-family:"IBM Plex Mono",monospace;
+  font-size:10.5px;font-weight:600;letter-spacing:.05em;padding:2px 7px;border-radius:2px;
+  white-space:nowrap;vertical-align:middle;border:1px solid transparent}
+.pv::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;
+  flex:none}
+.pv-m{color:var(--signal-ink);background:var(--signal-soft);border-color:var(--signal)}
+.pv-c{color:var(--caution-ink);background:var(--caution-soft);border-color:var(--caution)}
+.pv-d{color:var(--ink-2);background:var(--sunk);border-color:var(--rule)}
+.pv-s{color:var(--caution-ink);background:var(--caution-soft);border-color:var(--caution)}
+.pv-n{color:var(--void);background:var(--void-soft);border-color:var(--rule);
+  border-style:dashed}
+
+.legend{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:20px 22px;
+  margin:30px 0 0;box-shadow:var(--shadow)}
+.legend > div{display:flex;flex-direction:column;gap:5px}
+.legend p{font-size:12.5px;color:var(--ink-3);line-height:1.5}
+
+/* ── milestone strip ────────────────────────────────────── */
+.ms{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden;
+  margin:26px 0 0}
+.ms > div{background:var(--card);padding:14px 15px;display:flex;flex-direction:column;gap:3px}
+.ms .n{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.1em;
+  color:var(--ink-3);text-transform:uppercase}
+.ms .t{font-weight:700;font-size:14px}
+.ms .s{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600}
+.ms .done .s,.s.done{color:var(--signal)}
+.s.part{color:var(--caution)}
+.s.none{color:var(--void)}
+.ms > div.hi{background:var(--signal-soft)}
+
+/* ── sections ───────────────────────────────────────────── */
+section{padding-top:64px}
+.sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  border-bottom:1px solid var(--rule);padding-bottom:11px;margin-bottom:26px}
+.sec-num{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  color:var(--signal);letter-spacing:.08em}
+.lede{color:var(--ink-2);max-width:68ch;margin-bottom:24px}
+
+/* ── readouts ───────────────────────────────────────────── */
+.reads{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;
+  margin:22px 0}
+.read{background:var(--card);border:1px solid var(--rule);border-radius:6px;padding:16px 18px;
+  display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow)}
+.read .lab{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ink-3)}
+.read .val{font-family:"IBM Plex Mono",monospace;font-size:27px;font-weight:600;
+  line-height:1.05;letter-spacing:-.02em}
+.read .val small{font-size:14px;font-weight:500;color:var(--ink-3);margin-left:3px}
+.read .note{font-size:12.5px;color:var(--ink-3);line-height:1.5}
+.read.hi{border-color:var(--signal);border-width:1.5px}
+.read.hi .val{color:var(--signal)}
+.read.warn{border-color:var(--caution);border-width:1.5px}
+.read.warn .val{color:var(--caution)}
+
+/* ── tables ─────────────────────────────────────────────── */
+.tw{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--card);
+  margin:20px 0;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:min-content}
+th,td{padding:9px 14px;text-align:right;white-space:nowrap;
+  border-bottom:1px solid var(--rule-2)}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:600;background:var(--sunk);
+  border-bottom:1px solid var(--rule);position:sticky;top:0}
+tbody tr:last-child td{border-bottom:none}
+td.num,th.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+td.k{font-family:"IBM Plex Mono",monospace;font-size:12.5px}
+tr.em td{background:var(--signal-soft)}
+tr.dim td{color:var(--ink-3)}
+.good{color:var(--signal);font-weight:600}
+.bad{color:var(--overturn);font-weight:600}
+.warnc{color:var(--caution);font-weight:600}
+caption{caption-side:bottom;text-align:left;padding:11px 14px;font-size:12.5px;
+  color:var(--ink-3);border-top:1px solid var(--rule-2);line-height:1.55}
+
+/* ── findings ───────────────────────────────────────────── */
+.find{background:var(--card);border:1px solid var(--rule);border-left:3px solid var(--overturn);
+  border-radius:4px;padding:18px 22px;margin:16px 0;display:flex;flex-direction:column;gap:9px}
+.find.ok{border-left-color:var(--signal)}
+.find .fh{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap}
+.find .fn{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600;
+  color:var(--ink-3);letter-spacing:.07em}
+.find p{font-size:14px;color:var(--ink-2)}
+.was{color:var(--ink-3);text-decoration:line-through;text-decoration-color:var(--overturn);
+  text-decoration-thickness:1.5px}
+.now{color:var(--ink);font-weight:600}
+
+.callout{background:var(--overturn-soft);border:1px solid var(--overturn);border-radius:6px;
+  padding:20px 24px;margin:24px 0;display:flex;flex-direction:column;gap:10px}
+.callout h3{color:var(--overturn-ink)}
+.callout p{font-size:14px;color:var(--ink-2)}
+.callout.warn{background:var(--caution-soft);border-color:var(--caution)}
+.callout.warn h3{color:var(--caution-ink)}
+
+/* ── charts ─────────────────────────────────────────────── */
+figure{margin:24px 0;background:var(--card);border:1px solid var(--rule);border-radius:6px;
+  padding:20px 22px 14px;box-shadow:var(--shadow)}
+figcaption{font-size:12.5px;color:var(--ink-3);margin-top:8px;line-height:1.55}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.ax{stroke:var(--rule);stroke-width:1}
+.gl{stroke:var(--grid);stroke-width:1;stroke-dasharray:2 4}
+.al{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--ink-3)}
+.vl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;fill:var(--ink)}
+
+ul{margin:12px 0;padding-left:20px;color:var(--ink-2);font-size:14px}
+li{margin:5px 0}
+li::marker{color:var(--signal)}
+.foot{margin-top:70px;padding-top:22px;border-top:1px solid var(--rule);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);line-height:1.8}
+@media (max-width:620px){
+  .wrap{padding:0 18px 70px}
+  th,td{padding:8px 10px;font-size:12.5px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+
+<header class="mast">
+  <div class="kicker">平台 A · RTX 3090 · 2026-08-30</div>
+  <h1>哪些數字可以相信</h1>
+  <p class="sub">Tiara（成本不對稱下的階層式 KV state 管理）的實測記錄。這一天量到的東西裡，
+    有八項推翻了實驗計畫書原本的假設——包含一項讓論文的動作空間多出一整個可量測的維度，
+    以及一項若寫進論文會被審稿人當場抓到的技術描述錯誤。</p>
+  <div class="mast-meta">
+    <span>7 × RTX 3090 24GB / sm_86</span>
+    <span>driver 550.163.01 · CUDA 12.4</span>
+    <span>vLLM 0.28.0+cu129</span>
+    <span>Llama-3.1-8B · Qwen2.5-7B-1M</span>
+  </div>
+</header>
+
+<div class="ms">
+  <div class="hi"><span class="n">A1–A3</span><span class="t">環境驗收</span><span class="s done">PASS 3/3</span></div>
+  <div class="hi"><span class="n">M1</span><span class="t">容量懸崖</span><span class="s done">4 設定完成</span></div>
+  <div class="hi"><span class="n">M2</span><span class="t">成本矩陣</span><span class="s part">2/3 · 搬運待重量</span></div>
+  <div class="hi"><span class="n">M3</span><span class="t">Tier 0 對照</span><span class="s done">2 模型 × 5</span></div>
+  <div><span class="n">M4</span><span class="t">Oracle</span><span class="s part">初步 · 未判定</span></div>
+  <div><span class="n">品質</span><span class="t">multi-fact</span><span class="s none">未開始</span></div>
+</div>
+
+<div class="legend">
+  <div>
+    <span class="pv pv-m">量測</span>
+    <p>在乾淨條件下實際跑出來的。可直接引用。</p>
+  </div>
+  <div>
+    <span class="pv pv-c">量測·爭用</span>
+    <p>量到了，但當時機器上有別人的負載。方向可信，數值偏高。</p>
+  </div>
+  <div>
+    <span class="pv pv-d">推導</span>
+    <p>由量測值算出來的，算式在頁面上寫明。</p>
+  </div>
+  <div>
+    <span class="pv pv-s">模擬</span>
+    <p>用實測常數餵進模擬器得到的。上界，非端到端量測。</p>
+  </div>
+  <div>
+    <span class="pv pv-n">未量</span>
+    <p>還沒做。<strong>沒有估計值，也不會有。</strong></p>
+  </div>
+</div>
+
+<!-- ═══════════════ M1 ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">M1</span><h2>容量懸崖</h2><span class="pv pv-m">量測</span></div>
+  <p class="lede">論文 §2.5 宣稱「3090 上 64K 可置入、128K 超出」——那是<strong>算出來的</strong>。
+    這裡量真的懸崖在哪。做法不是逐步加大直到 OOM，而是讀 vLLM 啟動時印出的
+    <code>GPU KV cache size</code>，再<strong>雙向驗證</strong>：用讀到的 N 啟動一次（應該成功），
+    再用 N×1.15 啟動一次（應該失敗）。沒有後兩步就只是抄 log，不算量測。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>設定</th><th class="num">懸崖 (token)</th><th class="num">KV GiB</th>
+        <th>在懸崖啟動</th><th>超出 1.15×</th></tr></thead>
+      <tbody>
+        <tr><td class="k">llama · KV BF16</td><td class="num">41,648</td><td class="num">5.084</td>
+          <td class="good">✓ 成功</td><td class="good">✓ 如預期失敗</td></tr>
+        <tr class="em"><td class="k">llama · KV FP8</td><td class="num">83,312</td><td class="num">5.085</td>
+          <td class="good">✓ 成功</td><td class="good">✓ 如預期失敗</td></tr>
+        <tr><td class="k">qwen · KV BF16</td><td class="num">106,512</td><td class="num">5.688</td>
+          <td class="good">✓ 成功</td><td class="good">✓ 如預期失敗</td></tr>
+        <tr class="em"><td class="k">qwen · KV FP8</td><td class="num">213,040</td><td class="num">5.689</td>
+          <td class="good">✓ 成功</td><td class="good">✓ 如預期失敗</td></tr>
+      </tbody>
+      <caption>FP8 在兩個模型上都給出<strong>恰好 2 倍</strong>的 token 數，而佔用的 GiB 不變
+        （5.084→5.085、5.688→5.689）。同樣的位元組裝兩倍的 token——這是這批數字沒量錯的強證據。</caption>
+    </table>
+  </div>
+
+  <p class="lede">把權重精度的差補回去做一致比較（計畫書預期的是 AWQ-INT4 權重，我們量的是 BF16）：
+    Llama 推估 ~124,000 vs 計畫書 ~132,000（−6%）；Qwen 推估 ~283,500 vs ~315,000（−10%）。
+    <strong>論文 §2.5 的算術在 6–10% 內成立</strong>，差距來自算術沒扣掉 activation 與
+    CUDA graph 的常數開銷（實測約 1.5–2 GiB）。
+    <span class="pv pv-d">推導</span></p>
+</section>
+
+<!-- ═══════════════ M2 idle ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">M2·A</span><h2>平時成本：每個狀態佔多少</h2><span class="pv pv-m">量測</span></div>
+  <p class="lede">計畫書把成本常數定義成 <strong>2×N 矩陣而非 1×N 向量</strong>——「閒置時持續付出的」
+    和「被需要時一次性付出的」性質完全不同。這是矩陣的第一列。</p>
+
+  <div class="callout">
+    <h3>發現 7 · 論文動作空間的四個精度階，全部是同一個旗標的不同取值</h3>
+    <p>vLLM 的 <code>--kv-cache-dtype</code> 除了 <code>fp8</code>，還提供
+      <code>int8_per_token_head</code> 與 <code>int4_per_token_head</code>。
+      也就是說六階動作空間裡「住在 GPU 上」的四階，<strong>換一個字串就換一階</strong>，
+      不需要任何額外實作。計畫書原本判定平台 A 只能量到 BF16 一階。</p>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>KV dtype</th><th class="num">tok / GiB</th><th class="num">全距</th>
+        <th class="num">KiB / token</th><th class="num">理想值</th><th class="num">額外</th>
+        <th class="num">相對 BF16</th></tr></thead>
+      <tbody>
+        <tr><td class="k">auto (BF16)</td><td class="num">8,185.0</td><td class="num">0.00%</td>
+          <td class="num">128.11</td><td class="num">128</td><td class="num">+0.11</td>
+          <td class="num">1.00×</td></tr>
+        <tr class="em"><td class="k">fp8</td><td class="num">16,372.8</td><td class="num">0.00%</td>
+          <td class="num">64.04</td><td class="num">64</td><td class="num">+0.04</td>
+          <td class="num good">2.00×</td></tr>
+        <tr><td class="k">int8_per_token_head</td><td class="num">15,877.6</td><td class="num">0.04%</td>
+          <td class="num">66.04</td><td class="num">64</td><td class="num warnc">+2.04</td>
+          <td class="num">1.94×</td></tr>
+        <tr class="em"><td class="k">int4_per_token_head</td><td class="num">30,819.0</td><td class="num">0.02%</td>
+          <td class="num">34.02</td><td class="num">32</td><td class="num warnc">+2.02</td>
+          <td class="num good">3.77×</td></tr>
+      </tbody>
+      <caption><strong>必須除以 GiB 正規化。</strong>原始 token 數 run-to-run 會跳（全距 13.5%），
+        因為 KV pool 本身在 5.09 / 5.88 GiB 兩個值之間擺動。正規化後全距降到 0.00–0.04%——
+        證明抖動完全來自 pool 大小，不是 dtype。</caption>
+    </table>
+  </div>
+
+  <div class="reads">
+    <div class="read hi"><span class="lab">額外開銷</span>
+      <span class="val">2.03<small>KiB/tok</small></span>
+      <span class="note">int8 與 int4 都是這個數，與 dtype 無關</span></div>
+    <div class="read"><span class="lab">scale 個數</span>
+      <span class="val">512</span>
+      <span class="note">2 × 32 層 × 8 個 KV head</span></div>
+    <div class="read"><span class="lab">每個 scale</span>
+      <span class="val">4.0<small>bytes</small></span>
+      <span class="note">實測 int8 4.1 / int4 4.0 → fp32</span></div>
+    <div class="read hi"><span class="lab">算術驗證</span>
+      <span class="val">2,048<small>bytes</small></span>
+      <span class="note">512 × 4 = 2 KiB，與實測吻合</span></div>
+  </div>
+
+  <p class="lede"><strong>那多出來的位元組算得出來是什麼</strong>——不是量測誤差，是
+    <code>per_token_head</code> 量化的中繼資料。這對論文有直接影響：
+    動作空間的精度階梯<strong>不是 2×/4×，而是 2.00× / 1.94× / 3.77×</strong>。
+    <code>fp8</code> 是純格式轉換所以恰好 2×；int8/int4 走 per-token-head 量化，
+    固定多帶 2 KiB/token。把 FP8 與 INT8 當成同一階（都是 1 byte）會失準 3%；
+    式(1) 若只寫 <code>bytes/elem</code>，會系統性高估低精度階的收益。</p>
+</section>
+
+<!-- ═══════════════ M2 recompute ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">M2·C</span><h2>重算成本隨位置怎麼變</h2><span class="pv pv-m">量測</span></div>
+  <p class="lede">送一個長度 P 的前綴讓它進 prefix cache，再送「同樣的 P + 新的 2048 個 token」。
+    第二次的 TTFT 就是「在位置 P 重算 2048 個 token」的成本。</p>
+
+  <figure>
+    <svg viewBox="0 0 720 290" role="img" aria-label="重算 2048 個 token 的成本隨前序已快取 token 數線性上升，從 513 毫秒增加到 1173.5 毫秒">
+      <line class="ax" x1="62" y1="18" x2="62" y2="238"/>
+      <line class="ax" x1="62" y1="238" x2="690" y2="238"/>
+      <g class="gl">
+        <line x1="62" y1="238" x2="690" y2="238"/><line x1="62" y1="183" x2="690" y2="183"/>
+        <line x1="62" y1="128" x2="690" y2="128"/><line x1="62" y1="73" x2="690" y2="73"/>
+        <line x1="62" y1="18" x2="690" y2="18"/>
+      </g>
+      <g class="al" text-anchor="end">
+        <text x="55" y="242">0</text><text x="55" y="187">300</text>
+        <text x="55" y="132">600</text><text x="55" y="77">900</text><text x="55" y="22">1200</text>
+      </g>
+      <!-- 線性擬合 -->
+      <line x1="62" y1="144.0" x2="690" y2="22.7" stroke="var(--void)" stroke-width="1.5"
+            stroke-dasharray="5 4"/>
+      <!-- 實測折線: y = 238 - ms*(220/1200) -->
+      <polyline points="62,144.0 166.7,124.9 271.3,104.8 480.7,065.7 690,022.8"
+        fill="none" stroke="var(--signal)" stroke-width="2.5" stroke-linejoin="round"/>
+      <g fill="var(--signal)">
+        <circle cx="62" cy="144.0" r="4.5"/><circle cx="166.7" cy="124.9" r="4.5"/>
+        <circle cx="271.3" cy="104.8" r="4.5"/><circle cx="480.7" cy="65.7" r="4.5"/>
+        <circle cx="690" cy="22.8" r="4.5"/>
+      </g>
+      <g class="vl" text-anchor="middle">
+        <text x="62" y="163">513.0</text><text x="166.7" y="144">616.7</text>
+        <text x="271.3" y="124">726.2</text><text x="480.7" y="85">938.7</text>
+        <text x="655" y="42">1173.5</text>
+      </g>
+      <g class="al" text-anchor="middle">
+        <text x="62" y="256">0</text><text x="166.7" y="256">4,096</text>
+        <text x="271.3" y="256">8,192</text><text x="480.7" y="256">16,384</text>
+        <text x="690" y="256">24,576</text>
+        <text x="376" y="278">前序已快取的 token 數 P</text>
+      </g>
+      <text class="al" x="70" y="34" fill="var(--void)">虛線 = 線性擬合（誤差 &lt; 1.6%）</text>
+    </svg>
+    <figcaption><code>C_recompute(P) = 513.0 ms + 26.9 ms × (P/1000)</code>　·
+      從 P=0 到 P=24,576 成長 <strong>2.29×</strong>　·　每個點 3 次重複取中位數</figcaption>
+  </figure>
+
+  <div class="find ok">
+    <div class="fh"><span class="fn">計畫書對的地方</span><h3>C_recompute 確實不是常數</h3></div>
+    <p>同樣重算 2048 個 token，在位置 24,576 要 <strong>2.29 倍</strong>的時間。
+      把重算當成單一純量會在長 context 系統性低估它的成本。</p>
+  </div>
+
+  <div class="find">
+    <div class="fh"><span class="fn">發現 8 · 要修</span><h3>但是線性，不是二次</h3></div>
+    <p><span class="was">「隨 block 的絕對位置成長（attention 二次項）」</span>　→
+      <span class="now">對固定大小的 block，重算成本隨其絕對位置線性成長</span></p>
+    <p>成長的<strong>來源</strong>確實是 attention 的二次項（整段 prefill 是 O(L²)），
+      但對固定大小的 chunk，觀察量是 O(chunk × P)——<strong>對 P 線性</strong>。
+      實測線性擬合誤差 &lt; 1.6%，五個點都在線上，找不到二次成分。
+      論文若寫「二次成長」，審稿人只要做這個實驗就會抓到。</p>
+  </div>
+
+  <p class="lede">這條曲線的意義：<code>DROP</code> 的「平時成本 = 0」是它唯一的優勢，
+    而它要付的代價<strong>隨位置線性上升</strong>——這正是論文「重算的價值取決於未來效用預測品質」
+    的量化基礎。越晚才被需要的 block，重算越貴。</p>
+</section>
+
+<!-- ═══════════════ M3 ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">M3</span><h2>Tier 0 對照組</h2><span class="pv pv-c">量測·爭用</span></div>
+  <p class="lede">KV 卸載<strong>只在有重用時才有價值</strong>。單發一個長請求，連接器把 block 存到 CPU
+    就沒有下文，<code>lru</code> 與 <code>arc</code> 會給出完全相同的數字——而計畫書正把
+    「兩者相同」列為「卸載沒真的發生」的警訊。所以工作負載是<strong>兩輪、共享前綴</strong>：
+    cold 依序送 N=4 個不同的長前綴，warm 用同樣順序再送一次。
+    <code>N × ctx</code> 刻意跨過實測的 GPU KV 容量，逼出逐出。
+    <strong>cold 與 warm 的 TTFT 差，就是那一階卸載的價值。</strong></p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>baseline</th>
+        <th class="num">llama<br>WS 65,536</th><th class="num">llama<br>WS 131,072</th>
+        <th class="num">qwen<br>WS 131,072</th><th class="num">qwen<br>WS 262,144</th></tr></thead>
+      <tbody>
+        <tr><td class="k">full_gpu <span style="color:var(--ink-3)">（無第二階）</span></td>
+          <td class="num bad">−2.2%</td><td class="num bad">−0.6%</td>
+          <td class="num warnc">59.8%</td><td class="num bad">−0.8%</td></tr>
+        <tr class="em"><td class="k">cpu_lru</td><td class="num good">89.6%</td>
+          <td class="num good">92.2%</td><td class="num good">96.6%</td>
+          <td class="num good">95.2%</td></tr>
+        <tr><td class="k">cpu_arc</td><td class="num">89.6%</td><td class="num warnc">62.6%</td>
+          <td class="num">96.6%</td><td class="num warnc">82.7%</td></tr>
+        <tr class="em"><td class="k">tier_fs <span style="color:var(--ink-3)">（CPU+磁碟）</span></td>
+          <td class="num">89.4%</td><td class="num good">92.3%</td>
+          <td class="num">96.5%</td><td class="num good">94.9%</td></tr>
+        <tr class="dim"><td class="k">lmcache ⚠</td><td class="num">70.6%</td><td class="num">76.7%</td>
+          <td class="num">93.0%</td><td class="num">88.5%</td></tr>
+      </tbody>
+      <caption>warm 相對 cold 的 TTFT 改善，n=4 取中位數。GPU KV 容量：llama 48,128 / qwen 121,072 tokens。
+        ⚠ <code>lmcache</code> 的 wheel 沒有編譯擴充（啟動 log 明寫走 torch baseline），
+        <strong>它的數字是被 handicap 的</strong>，不能用來宣稱我們比它好。</caption>
+    </table>
+  </div>
+
+  <div class="find ok">
+    <div class="fh"><span class="fn">發現 3</span><h3>容量量測準確預測了行為轉折</h3></div>
+    <p>兩個模型的 <code>full_gpu</code> 都在工作集跨過自己的實測容量時崩塌，
+      而且崩塌點都夾住那個容量值。Qwen 在工作集 131,072（容量 121,072，只大 8%）
+      給出 <strong>59.8%</strong>——<strong>轉折不是階梯而是斜坡，斜坡位置正好落在容量上</strong>。
+      兩個量測沒有共用假設：一個讀 vLLM 啟動時的 KV pool，一個量端到端 TTFT。
+      <strong>論文 §2.5 從算術主張變成可觀測現象。</strong></p>
+  </div>
+
+  <div class="find ok">
+    <div class="fh"><span class="fn">發現 2</span><h3>ARC 在最大 context 輸給 LRU，兩個模型方向一致</h3></div>
+    <p>llama 62.6% vs 92.2%；qwen 82.7% vs 95.2%。與工作負載性質相符——每個 block 恰好被重訪一次，
+      ARC 的頻率分量（T2/B2）拿不到有用訊號，而 ghost list 佔的空間反而排擠實際資料。
+      這通過了計畫書「兩者若相同代表卸載沒真的發生」的驗收。
+      <strong>但這是單一工作負載，不足以宣稱「ARC 普遍較差」</strong>——
+      它只說明 production 預設的兩個策略在長上下文重用型負載上都不是強對手。</p>
+  </div>
+</section>
+
+<!-- ═══════════════ 量測衛生 ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">HYG</span><h2>共用機器：污染是真的，而且只打在一條路上</h2><span class="pv pv-m">量測</span></div>
+  <p class="lede">這台機器 <code>/ssd7</code> 底下有二十幾個使用者。把 serial（一次一個 server）
+    與 parallel（五個同時跑）逐格相比，80 個格子給出乾淨的因果證據。</p>
+
+  <div class="reads">
+    <div class="read"><span class="lab">full_gpu 全部格子</span>
+      <span class="val">±2<small>%</small></span>
+      <span class="note">不走 PCIe 搬 KV — 對照組</span></div>
+    <div class="read"><span class="lab">卸載 cold TTFT</span>
+      <span class="val">+3~10<small>%</small></span>
+      <span class="note">算力為主</span></div>
+    <div class="read warn"><span class="lab">卸載 warm TTFT</span>
+      <span class="val">−26~52<small>%</small></span>
+      <span class="note">PCIe 搬運為主 — 被灌水</span></div>
+    <div class="read"><span class="lab">|Δ|&gt;12% 的格子</span>
+      <span class="val">12<small>/80</small></span>
+      <span class="note">其中 11 個是卸載的 warm</span></div>
+  </div>
+
+  <p class="lede">GPU 的 SM 是各卡獨占的，但 <strong>PCIe、host RAM 頻寬、<code>/dev/shm</code>
+    是全機共用</strong>。別人在 GPU 1–6 上跑，不會出現在 GPU 0 的 compute-apps 裡，
+    卻會實實在在拖慢搬運量測。所以 <code>gpu_guard</code> 擋得住別人插隊，
+    <strong>擋不住自己的其他 job</strong>——而卸載量的正是最容易被自己人污染的那條路。</p>
+
+  <div class="callout warn">
+    <h3>三個會靜默給出錯誤結果的坑</h3>
+    <p><strong>1 · <code>/dev/shm</code> 被自己的洩漏檔塞爆。</strong>
+      vLLM 的 CPU 階是 <code>/dev/shm</code> 上的 mmap 檔，server 被 kill 時不會回收。
+      連跑幾輪後 221 GB 全滿（8 個孤兒檔共 231 GB），接著每個帶卸載的 baseline
+      都在啟動時死掉，而錯誤訊息完全不指向真因。</p>
+    <p><strong>2 · CSV 欄位錯位。</strong>
+      <code>write_csv</code> 只在檔案不存在時寫 header，而欄位取自當下的 row dict。
+      實驗跑到一半加了兩欄 → <strong>608 列全部往右錯位</strong>，
+      而 <code>csv.DictReader</code> 讀起來<strong>完全不報錯</strong>。
+      靠「這列有幾個值」分辨三個 schema 版本後全數救回（640 列，<code>ttft_ms</code> 非數字 0 列）。</p>
+    <p><strong>3 · <code>torch.cuda.is_available()</code> 回傳 True 但 kernel 會爆。</strong>
+      vLLM 的預設 wheel 是 CUDA 13 編的，本機 driver 只到 12.4。天真的檢查會通過，
+      跑一個 matmul 才爆。驗收條件因此改成「跑成一個真的 kernel」。</p>
+  </div>
+</section>
+
+<!-- ═══════════════ M4 ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">M4</span><h2>Oracle 上界</h2><span class="pv pv-s">模擬</span></div>
+  <p class="lede">計畫書把這一步定為<strong>整個研究的停損點</strong>：一個「知道未來」的完美策略，
+    比最好的簡單策略好多少？&gt;15% 繼續、5–15% 停下來問人、&lt;5% 停止。
+    做法是 trace-driven 模擬——單階用 Bélády/MIN（可證明最優），多階用成本感知貪婪。
+    工作負載用 Zipf 偏斜而非 M3 的兩輪重放，因為後者每個前綴恰好被存取兩次，
+    Bélády 與 LRU 幾乎沒差別，<strong>會系統性低估 headroom</strong>。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>階</th><th class="num">ms / block</th><th>算式</th></tr></thead>
+      <tbody>
+        <tr><td class="k">GPU</td><td class="num">0.0</td><td>定義上的基準</td></tr>
+        <tr><td class="k">CPU</td><td class="num">0.3996</td><td class="k">(546.0 − 136.8) ÷ 1024</td></tr>
+        <tr><td class="k">SSD</td><td class="num">0.4044</td><td class="k">(550.9 − 136.8) ÷ 1024</td></tr>
+        <tr class="em"><td class="k">DROP（位置 0）</td><td class="num">4.0079</td><td class="k">513.0 ÷ 128</td></tr>
+        <tr><td class="k">DROP 位置斜率</td><td class="num">0.00021</td><td>ms / block / 前序 token</td></tr>
+      </tbody>
+      <caption><strong>重算比從 CPU 取回貴 10 倍</strong>（4.01 vs 0.40 ms/block）——
+        這是論文 κ 論述在本平台的直接量測。⚠ CPU/SSD 兩列是在整機 HEAVY 下量的。</caption>
+    </table>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 720 250" role="img" aria-label="Oracle 相對最佳 baseline 的改善隨 Zipf 偏斜參數下降，從 20.5% 降到 14.1%">
+      <line class="ax" x1="58" y1="16" x2="58" y2="196"/>
+      <line class="ax" x1="58" y1="196" x2="690" y2="196"/>
+      <line x1="58" y1="61" x2="690" y2="61" stroke="var(--signal)" stroke-width="1.5"
+            stroke-dasharray="6 4" opacity=".8"/>
+      <text class="al" x="686" y="55" text-anchor="end" fill="var(--signal)">GO 門檻 15%</text>
+      <g class="gl"><line x1="58" y1="196" x2="690" y2="196"/><line x1="58" y1="151" x2="690" y2="151"/>
+        <line x1="58" y1="106" x2="690" y2="106"/><line x1="58" y1="16" x2="690" y2="16"/></g>
+      <g class="al" text-anchor="end"><text x="51" y="200">0</text><text x="51" y="155">5</text>
+        <text x="51" y="110">10</text><text x="51" y="65">15</text><text x="51" y="20">20</text></g>
+      <!-- bars: y = 196 - pct*9 -->
+      <g>
+        <rect x="88"  y="16.4"  width="72" height="179.6" fill="var(--signal)" opacity=".82" rx="2"/>
+        <rect x="222" y="11.3"  width="72" height="184.7" fill="var(--signal)" opacity=".82" rx="2"/>
+        <rect x="356" y="40.5"  width="72" height="155.5" fill="var(--signal)" opacity=".82" rx="2"/>
+        <rect x="490" y="45.2"  width="72" height="150.8" fill="var(--signal)" opacity=".82" rx="2"/>
+        <rect x="624" y="69.0"  width="66" height="127.0" fill="var(--caution)" opacity=".82" rx="2"/>
+      </g>
+      <g class="vl" text-anchor="middle">
+        <text x="124" y="10">19.96%</text><text x="258" y="10">20.52%</text>
+        <text x="392" y="34">17.28%</text><text x="526" y="39">16.76%</text>
+        <text x="657" y="63" fill="var(--caution)">14.11%</text>
+      </g>
+      <g class="al" text-anchor="middle">
+        <text x="124" y="212">α = 0.4</text><text x="258" y="212">0.6</text>
+        <text x="392" y="212">0.9</text><text x="526" y="212">1.2</text><text x="657" y="212">1.5</text>
+        <text x="124" y="228" fill="var(--ink-3)">tier_fs</text><text x="258" y="228" fill="var(--ink-3)">tier_fs</text>
+        <text x="392" y="228" fill="var(--ink-3)">cpu_arc</text><text x="526" y="228" fill="var(--ink-3)">cpu_arc</text>
+        <text x="657" y="228" fill="var(--ink-3)">cpu_arc</text>
+        <text x="374" y="244">Zipf 偏斜參數（下排 = 當時最佳的 baseline）</text>
+      </g>
+    </svg>
+    <figcaption>64 個文件 × 4,096 tokens，400 個請求，GPU 預算 48,128 tokens，
+      工作集 = <strong>5.4× GPU 預算</strong>。趨勢清楚且合理：偏斜越大 headroom 越小——
+      α 大時熱門集合小，LRU/ARC 本來就抓得住；α 小時存取分散，「知道未來」的價值才顯現。</figcaption>
+  </figure>
+
+  <p class="lede">Oracle 的優勢來源也很一致：它把 GPU 命中從 ~19K 拉到 ~51K（α=0.4），
+    而<strong>重算次數完全相同</strong>（16,128 vs 16,128）。也就是說
+    <strong>Oracle 贏在「該把誰留在 GPU」，不是贏在「少重算」</strong>。</p>
+
+  <div class="callout">
+    <h3>🔴 這組 14–20% <strong>還不能</strong>拿來做 go/no-go 判定</h3>
+    <p>模擬器的 docstring 自己寫了兩個前提，缺一則數字不可用。<strong>第二個沒過。</strong></p>
+    <p><strong>前提 1（成本常數來自實測）</strong>　✓ 通過。讀不到 M2 的檔案就中止，不使用預設值。</p>
+    <p><strong>前提 2（模擬器能複現已量到的行為）</strong>　🟡 只過了一半。
+      拿模擬的 warm 段成本比對實測的 warm TTFT：
+      ctx=16,384 實測 9.00 vs 模擬 14.33（偏 59%）；ctx=32,768 實測 12.27 vs 模擬 18.64（偏 52%）。
+      <strong>方向 2/2 正確，量級高估約 1.5 倍。</strong></p>
+    <p>而且 <strong>CPU 取回成本是在整機 HEAVY 下量的</strong>（6 個外來 process、97% 使用率），
+      已實測這會讓卸載的 warm TTFT 灌水 26–52%。CPU 成本被高估 →
+      Oracle「少去 CPU 拿東西」的優勢被放大 → <strong>headroom 很可能也是高估的</strong>。</p>
+    <p style="margin-top:4px"><strong>可引用的是趨勢（headroom 隨偏斜下降），不是絕對數字。</strong>
+      在凌晨批次的乾淨資料出來之前，不得宣稱「Oracle 顯示有 headroom，可以繼續」。</p>
+  </div>
+
+  <p class="lede">順帶修掉一個會讓驗證失去意義的錯誤：第一版拿「模擬的<strong>兩輪總成本</strong>」
+    去比「實測的 <strong>warm 那一輪</strong> TTFT」，是蘋果比橘子。
+    實測 9.00 vs 模擬 1.87 看起來像模擬器壞掉，其實是比錯東西。</p>
+</section>
+
+<!-- ═══════════════ 推翻 ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">Δ</span><h2>推翻計畫書的地方</h2></div>
+  <p class="lede">實驗計畫書是在沒有這台機器的情況下寫的。這一天量到的東西裡有八項與它不符，
+    其中兩項會讓論文變強，一項若寫進去會被審稿人抓到。</p>
+
+  <div class="find">
+    <div class="fh"><span class="fn">發現 1</span><h3>Ampere 可以用 FP8 KV cache</h3></div>
+    <p><span class="was">「sm_86 不支援原生 FP8 → 平台 A 量不到 GPU-FP8 那一階，標 NOT_SUPPORTED」</span></p>
+    <p>錯在混淆了 <strong>FP8 運算</strong>（tensor core 原生 matmul，Ampere 確實沒有）與
+      <strong>FP8 儲存</strong>（KV 以 fp8 存、讀取時反量化，與 tensor core 無關）。
+      論文的動作空間是<strong>儲存</strong>狀態。<span class="now">六階裡有五階在平台 A 就量得到。</span></p>
+  </div>
+
+  <div class="find">
+    <div class="fh"><span class="fn">發現 2</span><h3>vLLM 0.28.0 跑不了 Qwen2.5-1M 的 Dual Chunk Attention</h3></div>
+    <p>V1 engine 沒有可用的 DCA 路徑（<code>FlashAttentionImpl</code> 不吃 <code>layer_idx</code>，
+      <code>v1/attention/</code> 下無對應 backend），<code>--hf-overrides</code> 設 <code>null</code>
+      或 <code>{}</code> 都繞不過。已建 no-DCA 變體，評測上限因此是 <strong>262,144</strong>
+      ——那本來就是它真正訓練的長度。<span class="now">這對品質歸因反而更乾淨。</span></p>
+  </div>
+
+  <div class="find">
+    <div class="fh"><span class="fn">發現 6</span><h3>容量懸崖不是單一常數</h3></div>
+    <p>同模型、同卡、同 utilization，KV pool 在 <strong>5.09 / 5.88 GiB</strong> 兩個值之間擺動
+      （raw token 全距 13.5%）。<code>capacity.csv</code> 的四個數字只在
+      <code>max_model_len=8192</code> 下成立。<span class="now">論文 §2.5 要補一句：
+      懸崖位置與部署設定耦合，不是純硬體常數。</span>正確的報法是
+      <strong>KiB/token</strong> 而非原始 token 數——正規化後全距 0.00–0.04%。</p>
+  </div>
+
+  <div class="find ok">
+    <div class="fh"><span class="fn">發現 7</span><h3>四個精度階全部可在單卡量到</h3></div>
+    <p>見上。這讓論文的動作空間從「需要兩個平台才驗證得完」變成
+      <span class="now">「五階在一張消費卡上就量得到」</span>。</p>
+  </div>
+
+  <div class="find">
+    <div class="fh"><span class="fn">發現 8</span><h3>重算成本是線性成長，不是二次</h3></div>
+    <p>見上。<span class="now">論文 §2.6 與計畫書 §3 的措辭都要改。</span></p>
+  </div>
+
+  <div class="find ok">
+    <div class="fh"><span class="fn">附帶</span><h3><code>CachePolicy</code> 的 out-of-tree 掛載點真的存在</h3></div>
+    <p>官方支援、不需 fork vLLM（<code>cache_policy_module_path</code>）。
+      <strong>但那個介面只有 <code>get/insert/remove/touch/evict/clear</code></strong>，
+      決定的是「CPU 階裡淘汰哪個 block」——六階動作空間裡的
+      <code>DROP→重算</code> 與 GPU 內降精度<strong>表達不了</strong>。
+      Fig. 2 若讓讀者以為整個 Tiara 都靠這個介面實現就是過度宣稱。
+      <span class="now">這反而有利：說明本文不只是一個 policy plugin。</span></p>
+  </div>
+</section>
+
+<!-- ═══════════════ 接下來 ═══════════════ -->
+<section>
+  <div class="sec-head"><span class="sec-num">NEXT</span><h2>凌晨 03:00 的批次</h2><span class="pv pv-n">未量</span></div>
+  <p class="lede">整機爭用是這批數字最大的不確定性來源。已排入 cron（一次性，跑完留 marker 自動跳過），
+    開跑前先等整機 <code>QUIET</code>，最多等 60 分鐘。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>步驟</th><th>內容</th><th>為什麼要重跑</th></tr></thead>
+      <tbody>
+        <tr><td class="k">1</td><td>M2 retrieval</td>
+          <td>量的就是 PCIe 搬運成本，最脆弱的一項</td></tr>
+        <tr><td class="k">2</td><td>M2 capacity 複驗</td><td>確認 run-to-run 穩定性</td></tr>
+        <tr class="em"><td class="k">3</td><td>M3 serial 全套（兩模型）</td>
+          <td>先前那批「定稿」數字是在還沒有 <code>host_contention()</code> 之前量的，
+            <strong>當時整機狀態沒有記錄</strong></td></tr>
+        <tr><td class="k">4</td><td>Oracle 模擬器驗證</td><td>用乾淨的成本常數</td></tr>
+        <tr class="em"><td class="k">5</td><td>Oracle go/no-go</td><td>掃 α = 0.4 ~ 1.5</td></tr>
+      </tbody>
+      <caption>既有 640 列的 <code>host_contention</code> 欄是 <code>UNKNOWN</code> 不是
+        <code>QUIET</code>——那些 run 量測時根本沒記錄整機狀態，無法回溯。
+        <strong>把「沒量」寫成「乾淨」就是編造數字。</strong></caption>
+    </table>
+  </div>
+
+  <p class="lede">除此之外還沒做的：<strong>品質評測</strong>（multi-fact extraction）目前是
+    <code>NOT_MEASURED</code>——M3 只量了延遲，沒有量 ε。以及 <strong>AWQ-INT4 權重</strong>
+    待決策：<code>Qwen2.5-7B-Instruct-1M</code> 沒有官方 AWQ，只有社群版
+    （592 / 6 downloads），用社群版還是自行量化需要決定。</p>
+
+  <p class="lede" style="margin-top:22px">若量級偏離在乾淨資料下仍然存在，下一步是改模擬器讓 miss 走
+    <strong>前綴語意</strong>（中間缺一塊則其後全部重算），而不是只算一個 block——
+    那才是 vLLM prefix cache 的真實行為。</p>
+</section>
+
+<div class="foot">
+  repo　github.com/s990093/paper-hierarchical-kv-state　·　16 commits<br>
+  原始資料　results/{m1_capacity,m2_harness,m3_baseline,m4_oracle}/　·
+  逐步流水帳　results/RUNLOG.md<br>
+  大檔案（TeX、venv、模型、server log、profile）　/ssd7/hungwei/paper-hkv　75 GB<br>
+  每一個數字都可追溯到一條指令與一個輸出檔；沒量到的一律寫 NOT_MEASURED。
+</div>
+
+</div>
