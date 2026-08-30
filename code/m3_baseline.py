@@ -76,21 +76,34 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from gpu_guard import GpuWatcher, idle_gpus  # noqa: E402
+from gpu_guard import GpuWatcher, idle_gpus, wait_until_free  # noqa: E402
 
 BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
 VENV = BIG / "venv/vllm"
 REPO = Path(__file__).resolve().parent.parent
 
+# ctx 階梯必須跟著各模型的**實測**容量走，兩個模型不能共用一組。
+# 判準：工作集 = N_PREFIXES × ctx，要有 2 個點在容量之下、2 個點在容量之上，
+# 才看得到「塞得下 → 塞不下」的轉折。容量取自 M1 的實測值
+# （results/m1_capacity/capacity.csv，BF16 KV）。
+#
+#   llama  容量  41,648 → 工作集  16K /  33K | 66K / 131K   （2 下 2 上）
+#   qwen   容量 106,512 → 工作集  33K /  66K | 131K / 262K  （2 下 2 上）
+#
+# 用同一組階梯的話 qwen 只有最後一點超過容量，轉折看不出來。
 MODELS = {
     "llama": {
         "path": "NousResearch/Meta-Llama-3.1-8B-Instruct",
         "kv_kib_per_token": 128.0,
+        "measured_kv_capacity_tokens": 41_648,
+        "ctx_ladder": [4096, 8192, 16384, 32768],
         "note": "對照模型（官方 meta-llama 為 gated，用無門檻鏡像）",
     },
     "qwen": {
         "path": str(BIG / "models/Qwen2.5-7B-Instruct-1M-noDCA"),
         "kv_kib_per_token": 56.0,
+        "measured_kv_capacity_tokens": 106_512,
+        "ctx_ladder": [8192, 16384, 32768, 65536],
         "note": "主力模型，已移除 DCA（見 code/make_nodca_model.py）",
     },
 }
@@ -378,6 +391,12 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
         if not guard.started_clean:
             print(f"[m3] 🔴 GPU {gpu} 開跑前就不乾淨，放棄。intruders={guard.intruders}")
             return 2
+        # 「沒有行程」不等於「記憶體可用」——行程結束到 driver 把記憶體還回去
+        # 之間有延遲。0.90 utilization 需要 ~21.3 GiB，這裡要求 22 GiB 才開跑。
+        ok, got = wait_until_free(gpu, need_mib=22 * 1024, timeout_s=300)
+        if not ok:
+            print(f"[m3] 🔴 GPU {gpu} 等了 300s 仍只有 {got} MiB 可用，放棄。")
+            return 5
         try:
             with Server(mdl["path"], max_len, gpu, cfg["kv"], root,
                         venv=cfg.get("venv"), extra_env=cfg.get("env")) as srv:
@@ -479,18 +498,29 @@ def main() -> int:
     ap.add_argument("--serial", action="store_true",
                     help="所有 baseline 逐一跑在同一張卡上（定稿數字用）")
     ap.add_argument("--list", action="store_true")
-    ap.add_argument("--ctx", type=int, nargs="*", default=CTX_LADDER)
+    ap.add_argument("--ctx", type=int, nargs="*", default=None,
+                    help="不給就用該模型的 ctx_ladder（依 M1 實測容量訂）")
     ap.add_argument("--csv", default=str(REPO / "results/m3_baseline/baseline.csv"))
     ap.add_argument("--mode", default="parallel", choices=["parallel", "serial"],
                     help="只是標記，寫進 CSV 的 concurrency_mode 欄")
     a = ap.parse_args()
+    if a.ctx is None:
+        a.ctx = MODELS[a.model]["ctx_ladder"]
 
     if a.list:
         for k, v in BASELINES.items():
             print(f"  {k:12s} {v['desc']}")
         print()
         for k, v in MODELS.items():
-            print(f"  {k:12s} {v['path']}  ({v['note']})")
+            cap, lad = v["measured_kv_capacity_tokens"], v["ctx_ladder"]
+            ws = [c * N_PREFIXES for c in lad]
+            print(f"  {k:12s} {v['path']}")
+            print(f"  {'':12s}   M1 實測容量 {cap:,} tok")
+            print(f"  {'':12s}   ctx {lad}")
+            print(f"  {'':12s}   工作集 {ws}"
+                  f"  → {sum(w <= cap for w in ws)} 個塞得下 / "
+                  f"{sum(w > cap for w in ws)} 個塞不下")
+            print(f"  {'':12s}   {v['note']}")
         return 0
 
     if a.all:

@@ -187,6 +187,32 @@ class GpuWatcher:
         return "CLEAN"
 
 
+def free_mib(gpu: int) -> int | None:
+    """這張卡目前的可用記憶體（MiB）。"""
+    for r in _smi("gpu=index,memory.free"):
+        if len(r) >= 2 and int(r[0]) == gpu:
+            return int(r[1])
+    return None
+
+
+def wait_until_free(gpu: int, need_mib: int, timeout_s: float = 300.0,
+                    poll_s: float = 5.0) -> tuple[bool, int | None]:
+    """等到這張卡真的有 need_mib 可用為止。
+
+    為什麼不能只看 compute-apps：行程結束到 driver 把記憶體還回去之間有延遲。
+    2026-08-30 實測踩到——`idle_gpus()` 說卡是空的，但 vLLM 啟動時看到
+    `Free memory on device cuda:0 (8.51/23.68 GiB)` 而直接失敗。
+    也就是說「沒有行程」不等於「記憶體可用」，兩個都要檢查。
+    """
+    t0 = time.time()
+    while time.time() - t0 < timeout_s:
+        f = free_mib(gpu)
+        if f is not None and f >= need_mib:
+            return True, f
+        time.sleep(poll_s)
+    return False, free_mib(gpu)
+
+
 def idle_gpus(own_root: int | None = None) -> list[int]:
     busy = {a["gpu"] for a in compute_apps()
             if a["pid"] not in _descendants(own_root if own_root is not None else os.getpid())}
