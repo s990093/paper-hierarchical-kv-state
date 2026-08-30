@@ -435,6 +435,10 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                                 "contaminated": guard.contaminated,
                                 "guard_verdict": guard.verdict(),
                                 "log": str(root / "server.log"),
+                                # repair_csv_schema.py 的 canonical schema 把
+                                # mode_source 放在最後，這裡要一致，否則
+                                # write_csv 的 schema 檢查會擋下來。
+                                "mode_source": "recorded",
                             })
                             print(f"[m3]   ctx={ctx:>6} {rnd:<4} #{i} "
                                   f"ttft={r['ttft_ms']}ms tpot={r['tpot_ms']}ms")
@@ -476,13 +480,46 @@ def summarise(rows: list[dict]) -> None:
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
+    """append 到 CSV，但**拒絕**在 schema 改變時默默寫進去。
+
+    🔴 2026-08-30 踩過的坑：原本的寫法是
+
+        new = not path.exists()
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        if new: w.writeheader()
+
+    `fieldnames` 取自**當下**的 row dict。實驗跑到一半往 row dict 加了兩個欄位，
+    後來的列就變成 22 / 23 個值，而檔案開頭的 header 還是 21 欄
+    → **608 列欄位全部往右錯位**，`caveat` 的文字跑進 `quality_score` 欄。
+
+    最糟的是 `csv.DictReader` 讀起來**完全不報錯**，它只是把多的值塞進 `None` key。
+    這就是禁令 1 要防的「看起來完全正常的錯誤數字」。
+
+    所以現在：header 與待寫入的欄位不合就**中止**，並告訴使用者怎麼修。
+    """
     if not rows:
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    new = not path.exists()
+    fields = list(rows[0])
+
+    if path.exists() and path.stat().st_size > 0:
+        with path.open(newline="") as f:
+            existing = next(csv.reader(f), [])
+        if existing != fields:
+            missing = [c for c in fields if c not in existing]
+            extra = [c for c in existing if c not in fields]
+            raise SystemExit(
+                f"\n🔴 CSV schema 不合，拒絕寫入 {path}\n"
+                f"   檔案 header {len(existing)} 欄，這批資料 {len(fields)} 欄\n"
+                f"   資料多出來的欄位: {missing or '無'}\n"
+                f"   檔案多出來的欄位: {extra or '無'}\n"
+                f"   直接 append 會讓所有列錯位，而讀取時不會報錯。\n"
+                f"   修法：python code/repair_csv_schema.py --apply\n"
+                f"        或把舊檔移走，讓這批資料重新建立 header。\n")
+
     with path.open("a", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0]))
-        if new:
+        w = csv.DictWriter(f, fieldnames=fields)
+        if not (path.exists() and path.stat().st_size > 0) or path.stat().st_size == 0:
             w.writeheader()
         w.writerows(rows)
     print(f"[m3] appended {len(rows)} rows -> {path}")

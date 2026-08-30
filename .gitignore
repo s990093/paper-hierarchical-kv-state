@@ -42,3 +42,4 @@ results/**/*.jsonl
 .DS_Store
 *.swp
 .claude/settings.local.json
+results/m3_baseline/*.bak-*
