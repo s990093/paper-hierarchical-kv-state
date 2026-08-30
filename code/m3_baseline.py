@@ -78,7 +78,11 @@ MODELS = {
     },
 }
 
-CPU_BYTES = 32 * 1024**3   # 32 GiB CPU 階（/dev/shm 有 221 GB，不是瓶頸）
+# CPU 階大小。vLLM 把它配置成 /dev/shm 上的 mmap 檔，而 /dev/shm 只有 220 GB
+# 且是**全機共用**的。四個 baseline 平行跑 = 4 份，所以不能開太大。
+# 24 GiB 的依據：最大工作集是 4 個前綴 × 32768 token × 128 KiB = 16 GiB，
+# 留 1.5 倍餘裕，確保量到的是「能不能取回」而不是「CPU 階也在 thrash」。
+CPU_BYTES = 24 * 1024**3
 FS_ROOT = BIG / "kv_fs_tier"
 
 BASELINES: dict[str, dict] = {
@@ -108,12 +112,52 @@ BASELINES: dict[str, dict] = {
                    "secondary_tiers": [{"type": "fs", "root_dir": str(FS_ROOT)}]}},
         "desc": "CPU + 磁碟兩階。對應論文動作空間的 SSD 那一階",
     },
+    "lmcache": {
+        "kv": {"kv_connector": "LMCacheConnectorV1", "kv_role": "kv_both"},
+        # ⚠️ 跑在**獨立的 venv**：lmcache 會把 prometheus-client 從 0.26.0 降到
+        #    0.24.1，而 vLLM 的 /metrics 正是我們量 baseline 用的端點。
+        #    已經量完的四個 baseline 不能因為裝第五個而失效。
+        "venv": BIG / "venv/lmcache",
+        "env": {
+            "LMCACHE_CHUNK_SIZE": "256",
+            "LMCACHE_LOCAL_CPU": "True",
+            "LMCACHE_MAX_LOCAL_CPU_SIZE": str(CPU_BYTES // 1024**3),
+        },
+        # ⚠️ 必須記錄的不對等：lmcache 0.5.4 的 wheel 沒有 lmcache.c_ops /
+        #    lmcache.cuda_ops 編譯擴充（啟動時 log 明白寫著
+        #    "compiled extension not found; CudaDeviceOps stays on the torch
+        #    baseline for all ops"）。它的搬運路徑因此走 torch baseline，
+        #    比有編譯擴充時慢。**拿它的數字跟 vLLM 原生卸載比時要註明這一點**，
+        #    否則就是拿一個被handicap的對手來凸顯自己。
+        "caveat": "no compiled c_ops/cuda_ops; transfer path on torch baseline",
+        "desc": "LMCache（EXPERIMENT_PLAN Tier 0 #5）。獨立 venv，且無編譯擴充",
+    },
 }
 
 # 每個 context 長度送幾個不同前綴。N × ctx 要大於 GPU KV 容量才會逼出逐出。
 N_PREFIXES = 4
 GEN_TOKENS = 32          # 每個請求產生的 token 數，用來算 TPOT
 CTX_LADDER = [4096, 8192, 16384, 32768]
+
+
+def shm_free_bytes() -> int:
+    st = os.statvfs("/dev/shm")
+    return st.f_bavail * st.f_frsize
+
+
+def check_shm(need: int) -> str | None:
+    """/dev/shm 夠不夠放 CPU 階。不夠就回傳訊息（呼叫端負責中止）。
+
+    2026-08-30 踩過：killed 的 vLLM server 會把 32 GiB 的 mmap 檔留在 /dev/shm，
+    累積幾輪之後 220 GB 全滿，接著每個帶卸載的 baseline 都在啟動時死掉，
+    而錯誤訊息完全不指向真因。先檢查，並提示怎麼清。
+    """
+    free = shm_free_bytes()
+    if free >= need:
+        return None
+    return (f"/dev/shm 只剩 {free / 1024**3:.1f} GB，這個 baseline 需要 "
+            f"{need / 1024**3:.1f} GB。先跑 `python code/shm_gc.py --apply` "
+            f"清掉自己洩漏的 mmap 檔。")
 
 
 def free_port() -> int:
@@ -190,29 +234,50 @@ def scrape_metrics(port: int) -> dict:
     return out
 
 
-def make_prefix(tokenizer, n_tokens: int, seed: int) -> str:
-    """造一個約 n_tokens 長、彼此不重疊的前綴。
+def make_prefix(tokenizer, n_tokens: int, seed: int) -> tuple[str, int]:
+    """造一個**恰好** n_tokens 長、彼此不重疊的前綴。回傳 (text, 實際 token 數)。
 
-    用固定 seed 的隨機英文詞，而不是重複同一段文字——重複的文字會讓
+    用固定 seed 的隨機 token id 而不是重複同一段文字——重複的文字會讓
     vLLM 的 prefix cache 在不同「前綴」之間意外命中，把 cold/warm 的對比洗掉。
+
+    ⚠️ decode(ids) 之後再 encode 回來**不會**得到同樣的長度（BPE 會把相鄰的
+    片段合併或拆開）。2026-08-30 第一版沒處理這件事，結果 ctx=32768 的 prompt
+    實際超過 max_model_len，整批 run 以 `HTTP 400 Bad Request` 收場。
+    所以這裡實際 encode 一次，多退少補，直到長度正確為止。
     """
     rng = random.Random(seed)
-    vocab_size = getattr(tokenizer, "vocab_size", 32000)
-    # 避開特殊 token 區間，取中段
-    ids = [rng.randrange(1000, max(1001, vocab_size - 100)) for _ in range(n_tokens)]
+    vocab_size = getattr(tokenizer, "vocab_size", None) or len(tokenizer)
+    lo, hi = 1000, max(1001, vocab_size - 100)   # 避開特殊 token 區間
+
+    ids = [rng.randrange(lo, hi) for _ in range(n_tokens)]
     text = tokenizer.decode(ids, skip_special_tokens=True)
-    return text
+    for _ in range(12):
+        got = tokenizer(text, add_special_tokens=False)["input_ids"]
+        if len(got) == n_tokens:
+            return text, n_tokens
+        if len(got) > n_tokens:
+            # 太長就從 token 層面截斷，再 decode 回去
+            text = tokenizer.decode(got[:n_tokens], skip_special_tokens=True)
+        else:
+            text = text + " " + tokenizer.decode(
+                [rng.randrange(lo, hi) for _ in range(n_tokens - len(got))],
+                skip_special_tokens=True)
+    # 收斂不了就回報實際長度，不要假裝是 n_tokens
+    return text, len(tokenizer(text, add_special_tokens=False)["input_ids"])
 
 
 class Server:
-    def __init__(self, model: str, max_len: int, gpu: int, kv: dict | None, out: Path):
+    def __init__(self, model: str, max_len: int, gpu: int, kv: dict | None, out: Path,
+                 venv: Path | None = None, extra_env: dict | None = None):
         self.model, self.max_len, self.gpu, self.kv, self.out = model, max_len, gpu, kv, out
+        self.venv = Path(venv) if venv else VENV
+        self.extra_env = extra_env or {}
         self.port = free_port()
         self.p: subprocess.Popen | None = None
 
     def __enter__(self) -> Server:
         self.out.mkdir(parents=True, exist_ok=True)
-        cmd = [str(VENV / "bin/vllm"), "serve", self.model,
+        cmd = [str(self.venv / "bin/vllm"), "serve", self.model,
                "--port", str(self.port),
                "--max-model-len", str(self.max_len),
                "--gpu-memory-utilization", "0.90"]
@@ -222,8 +287,9 @@ class Server:
 
         env = dict(os.environ)
         env["CUDA_VISIBLE_DEVICES"] = str(self.gpu)
-        env["PATH"] = f"{VENV / 'bin'}:{env.get('PATH', '')}"
+        env["PATH"] = f"{self.venv / 'bin'}:{env.get('PATH', '')}"
         env.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
+        env.update(self.extra_env)
         for k, v in (("XDG_CACHE_HOME", "xdg-cache"), ("TRITON_CACHE_DIR", "triton-cache"),
                      ("VLLM_CACHE_ROOT", "vllm-cache"),
                      ("FLASHINFER_WORKSPACE_BASE", "flashinfer-cache")):
@@ -277,10 +343,18 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
     if baseline == "tier_fs":
         FS_ROOT.mkdir(parents=True, exist_ok=True)
 
+    # 帶 CPU 階的 baseline 開跑前先確認 /dev/shm 放得下
+    if cfg["kv"] and "cpu_bytes_to_use" in cfg["kv"].get("kv_connector_extra_config", {}):
+        msg = check_shm(cfg["kv"]["kv_connector_extra_config"]["cpu_bytes_to_use"])
+        if msg:
+            print(f"[m3] 🔴 {msg}")
+            return 4
+
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(mdl["path"])
 
-    max_len = max(ctxs) + GEN_TOKENS + 256
+    # 餘裕：GEN_TOKENS + BOS/EOS + tokenizer 邊界誤差。寧可多給也不要撞 400。
+    max_len = max(ctxs) + GEN_TOKENS + 1024
     rows: list[dict] = []
 
     with GpuWatcher(gpu=gpu, out_path=str(root / "gpu_guard.json")) as guard:
@@ -288,15 +362,18 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
             print(f"[m3] 🔴 GPU {gpu} 開跑前就不乾淨，放棄。intruders={guard.intruders}")
             return 2
         try:
-            with Server(mdl["path"], max_len, gpu, cfg["kv"], root) as srv:
+            with Server(mdl["path"], max_len, gpu, cfg["kv"], root,
+                        venv=cfg.get("venv"), extra_env=cfg.get("env")) as srv:
                 kvtok = srv.kv_cache_tokens()
                 print(f"[m3]   server up in {srv.startup_s}s  "
                       f"GPU KV cache = {kvtok:,} tokens" if kvtok else "[m3]   server up")
                 url = f"http://127.0.0.1:{srv.port}/v1/completions"
 
                 for ctx in ctxs:
-                    prefixes = [make_prefix(tok, ctx, seed=1000 * ctx + i)
-                                for i in range(N_PREFIXES)]
+                    built = [make_prefix(tok, ctx, seed=1000 * ctx + i)
+                             for i in range(N_PREFIXES)]
+                    prefixes = [b[0] for b in built]
+                    actual_toks = [b[1] for b in built]
                     for rnd in ("cold", "warm"):
                         for i, pref in enumerate(prefixes):
                             r = stream_ttft(url, {
@@ -309,11 +386,13 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                                 "ts": datetime.now().astimezone().isoformat(),
                                 "baseline": baseline, "model_key": model_key,
                                 "model": mdl["path"], "gpu": gpu,
-                                "ctx": ctx, "round": rnd, "prefix_idx": i,
+                                "ctx": ctx, "actual_prompt_tokens": actual_toks[i],
+                                "round": rnd, "prefix_idx": i,
                                 "ttft_ms": r["ttft_ms"], "tpot_ms": r["tpot_ms"],
                                 "total_ms": r["total_ms"], "gen_tokens": r["n_chunks"],
                                 "gpu_kv_cache_tokens": kvtok,
                                 "n_prefixes": N_PREFIXES,
+                                "caveat": cfg.get("caveat", ""),
                                 "quality_score": "NOT_MEASURED",
                                 "quality_metric": "NOT_MEASURED",
                                 "contaminated": guard.contaminated,
@@ -325,8 +404,12 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                     (root / f"metrics_ctx{ctx}.json").write_text(
                         json.dumps(scrape_metrics(srv.port), indent=2))
         except Exception as e:  # noqa: BLE001
-            print(f"[m3] 🔴 FAILED: {type(e).__name__}: {e}")
+            # 部分失敗不該讓已經量到的資料消失 —— 它們一樣是實測值。
+            print(f"[m3] 🔴 FAILED after {len(rows)} rows: {type(e).__name__}: {e}")
             (root / "error.txt").write_text(f"{type(e).__name__}: {e}\n")
+            if rows and not guard.contaminated:
+                write_csv(csv_path, rows)
+                summarise(rows)
             return 1
 
     # 禁令 1：被污染的數字不寫進結果。
