@@ -33,6 +33,23 @@ context 上限由 M1 實測的懸崖決定（`results/m1_capacity/capacity.csv`�
 只要出現外來 process 就把該 run 標成 `CONTAMINATED` 並且**不寫進結果 CSV**。
 見 `code/gpu_guard.py` 的說明。
 
+## 🔴 平行跑會污染時間數字（--all 只適合探索，不適合定稿）
+
+`--all` 把每個 baseline 排到一張自己的卡上。**GPU 之間是獨立的，但下面這些不是**：
+
+* **PCIe**：卸載的搬運全走 PCIe。多個 server 同時搬 KV 會互相排隊。
+* **host RAM 頻寬 / `/dev/shm`**：CPU 階就住在這裡。
+* **CPU**：tokenizer、排程、connector 的 worker thread。
+
+也就是說 `gpu_guard` 擋得住**別人**插隊，擋不住**自己的其他 job**。
+而卸載 baseline 量的正是 PCIe 路徑——這剛好是最容易被自己人污染的那條路。
+
+**用法規則**：
+* `--all`（平行）→ 探索、找形狀、debug。**數字不進論文。**
+* `--serial`（逐一）→ 定稿數字。一次只有一個 server 在動 PCIe。
+
+CSV 的 `concurrency_mode` 欄記錄該列是哪一種，**不要混著比較**。
+
 ## 用法
 
     python code/m3_baseline.py --list
@@ -331,7 +348,7 @@ class Server:
 
 
 def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
-            csv_path: Path) -> int:
+            csv_path: Path, concurrency_mode: str = "parallel") -> int:
     cfg = BASELINES[baseline]
     mdl = MODELS[model_key]
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -393,6 +410,7 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                                 "gpu_kv_cache_tokens": kvtok,
                                 "n_prefixes": N_PREFIXES,
                                 "caveat": cfg.get("caveat", ""),
+                                "concurrency_mode": concurrency_mode,
                                 "quality_score": "NOT_MEASURED",
                                 "quality_metric": "NOT_MEASURED",
                                 "contaminated": guard.contaminated,
@@ -456,10 +474,15 @@ def main() -> int:
     ap.add_argument("--baseline", choices=list(BASELINES))
     ap.add_argument("--model", default="llama", choices=list(MODELS))
     ap.add_argument("--gpu", type=int)
-    ap.add_argument("--all", action="store_true", help="所有 baseline 平行排到空閒的卡")
+    ap.add_argument("--all", action="store_true",
+                    help="所有 baseline 平行排到空閒的卡（探索用，時間數字會被自己人污染）")
+    ap.add_argument("--serial", action="store_true",
+                    help="所有 baseline 逐一跑在同一張卡上（定稿數字用）")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--ctx", type=int, nargs="*", default=CTX_LADDER)
     ap.add_argument("--csv", default=str(REPO / "results/m3_baseline/baseline.csv"))
+    ap.add_argument("--mode", default="parallel", choices=["parallel", "serial"],
+                    help="只是標記，寫進 CSV 的 concurrency_mode 欄")
     a = ap.parse_args()
 
     if a.list:
@@ -493,10 +516,24 @@ def main() -> int:
             rc = rc or r
         return rc
 
+    if a.serial:
+        free = idle_gpus()
+        if not free:
+            print("[m3] 沒有空閒的卡")
+            return 2
+        g = a.gpu if a.gpu is not None else free[0]
+        rc = 0
+        for b in BASELINES:
+            print(f"\n[m3] ===== serial: {b} on gpu{g} =====")
+            r = run_one(b, a.model, g, a.ctx, Path(a.csv), concurrency_mode="serial")
+            print(f"[m3] {b} -> rc={r}")
+            rc = rc or r
+        return rc
+
     if not a.baseline or a.gpu is None:
         ap.print_help()
         return 2
-    return run_one(a.baseline, a.model, a.gpu, a.ctx, Path(a.csv))
+    return run_one(a.baseline, a.model, a.gpu, a.ctx, Path(a.csv), a.mode)
 
 
 if __name__ == "__main__":
