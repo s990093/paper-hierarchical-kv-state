@@ -89,11 +89,22 @@ CSV 摘要、JSON 指紋、Markdown 記錄 → git。
 | TeX | `/ssd7/hungwei/paper-hkv/texlive/.TinyTeX`，已 symlink 進 `~/.local/bin` | |
 | CJK 字型 | `Noto Serif CJK TC` / `Noto Sans CJK TC`（系統已有） | **不是** macOS 的 Songti/Heiti |
 
-### ⚠️ Ampere 的兩個硬限制
+### ⚠️ Ampere 的限制（2026-08-30 實測修正）
 
-1. **sm_86 不支援原生 FP8。** 論文動作空間裡的 `GPU-FP8` 在這台機器上量不到 →
-   `cost_model.json` 標 `NOT_SUPPORTED`，**不要用估的值填**。FP8 是平台 B（MI300X）的事。
+1. ~~sm_86 不支援原生 FP8~~ → **這條原本是錯的，已由 M1 實測推翻。**
+   `--kv-cache-dtype fp8` **在 sm_86 上可用**，且給出乾淨的 2 倍 KV 容量
+   （llama 41,648 → 83,312；qwen 106,512 → 213,040，GiB 佔用不變）。
+   原本的錯誤在於混淆了兩件事：
+   * **FP8 運算**（tensor core 原生 FP8 matmul）—— Ampere 確實沒有
+   * **FP8 儲存**（KV 以 fp8 存、讀取時反量化）—— **與 tensor core 無關，可以做**
+
+   論文動作空間的 `GPU-FP8` 是**儲存**狀態，所以**平台 A 量得到**。
+   反量化的一次性成本仍待 M2 量。見 `results/RUNLOG.md` M1 發現 1。
 2. **沒有記憶體/計算分軌的能耗計數器。** 論文 §6.7 的能耗分析**不適用於平台 A**，不要嘗試。
+   （這一條仍然成立。）
+3. **vLLM 0.28.0 的 V1 engine 沒有可用的 DCA 路徑**，所以 Qwen2.5-7B-Instruct-1M
+   要用 no-DCA 變體 `/ssd7/hungwei/paper-hkv/models/Qwen2.5-7B-Instruct-1M-noDCA`
+   （`code/make_nodca_model.py`）。上限因此是 **262,144** 不是 1M。
 
 ### 多卡的正確用法
 
@@ -101,6 +112,35 @@ CSV 摘要、JSON 指紋、Markdown 記錄 → git。
 多卡的用途是：**平行掃不同的 (model, 量化, context) 設定**，每個 job 綁一張卡
 （`CUDA_VISIBLE_DEVICES=<i>`），**不是** tensor parallel。
 容量懸崖必須在**單卡 24 GB** 上量，TP 會讓 §2.5 的算術失去意義。
+
+`code/m3_baseline.py --all` 會自動把每個 baseline 排到一張空閒的卡上。
+
+### 🔴 這是共用機器：每次量測都要防插隊
+
+`/ssd7` 底下有二十幾個使用者的目錄，**隨時可能有人佔用 GPU**。被污染的量測會：
+* 時間數字被 SM 爭用拉高，而且**偏多少無法事後修正**
+* `peak_vram` 讀成兩個 process 的總和 → 容量結論直接錯
+* **靜默發生**——跑出來的數字看起來完全正常
+
+所以 **`code/gpu_guard.py` 是必用的，不是選用的**：
+
+```bash
+python code/gpu_guard.py --idle-gpus     # 目前乾淨的卡
+python code/gpu_guard.py --check 3       # 這張卡乾不乾淨（乾淨回 0）
+```
+
+程式內用 `GpuWatcher` 包住整段量測：
+
+```python
+from gpu_guard import GpuWatcher
+with GpuWatcher(gpu=g, out_path=...) as w:
+    ...量測...
+if w.contaminated:      # 開跑前不乾淨，或中途出現外來 PID
+    ...結果作廢，重量...
+```
+
+**規則**：`contaminated == True` 的 run，結果**不得寫進 `results/`**，必須重量。
+`m3_baseline.py` 已內建這個行為（會在 run 目錄留下 `CONTAMINATED` 檔）。
 
 ### 環境啟動
 
