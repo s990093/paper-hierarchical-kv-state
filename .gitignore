@@ -1,0 +1,44 @@
+# ── 大檔案的出口：一律指向 /ssd7/hungwei/paper-hkv，永遠不進 git ──────────
+_big
+_big/
+
+# ── LaTeX 中間檔（main.pdf 有進 git，方便沒裝 TeX 的人看）────────────────
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+
+# ── Python ────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.ipynb_checkpoints/
+
+# ── 實驗產物：只有「摘要級」的才進 git（見 CLAUDE.md §2）─────────────────
+# 原始 log / server stdout / profiler trace / 權重 一律在 /ssd7
+*.nsys-rep
+*.sqlite
+*.qdrep
+*.pt
+*.safetensors
+*.bin
+*.gguf
+results/**/raw/
+results/**/*.log
+results/**/*.jsonl
+
+# ── 環境 ──────────────────────────────────────────────────────────────────
+.env
+.DS_Store
+*.swp
+.claude/settings.local.json

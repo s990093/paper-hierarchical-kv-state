@@ -1,0 +1,43 @@
+{
+  "$comment": "Tiara / paper-hierarchical-kv-state — 專案層設定。所有快取與大檔案導向 /ssd7/hungwei/paper-hkv（見 CLAUDE.md §2）。",
+  "env": {
+    "PAPER_HKV_BIG": "/ssd7/hungwei/paper-hkv",
+    "HF_HOME": "/ssd7/hungwei/paper-hkv/hf-cache/huggingface",
+    "HF_HUB_ENABLE_HF_TRANSFER": "1",
+    "UV_CACHE_DIR": "/ssd7/hungwei/paper-hkv/uv-cache",
+    "UV_PYTHON_INSTALL_DIR": "/ssd7/hungwei/paper-hkv/uv-python",
+    "TORCH_HOME": "/ssd7/hungwei/paper-hkv/torch-home",
+    "TRITON_CACHE_DIR": "/ssd7/hungwei/paper-hkv/triton-cache",
+    "VLLM_CACHE_ROOT": "/ssd7/hungwei/paper-hkv/vllm-cache",
+    "XDG_CACHE_HOME": "/ssd7/hungwei/paper-hkv/xdg-cache",
+    "TMPDIR": "/ssd7/hungwei/paper-hkv/tmp",
+    "PATH": "/ssd7/hungwei/paper-hkv/texlive/.TinyTeX/bin/x86_64-linux:/ssd7/hungwei/dynamic_k/tools:/home/hungwei/.local/bin:/usr/local/bin:/usr/bin:/bin"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(nvidia-smi*)",
+      "Bash(nvtop*)",
+      "Bash(df *)",
+      "Bash(du *)",
+      "Bash(free *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(sed -n *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(find *)",
+      "Bash(ls *)",
+      "Bash(wc *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(make*)",
+      "Bash(xelatex*)",
+      "Bash(bibtex*)",
+      "Bash(tlmgr*)",
+      "Bash(fc-list*)"
+    ]
+  }
+}

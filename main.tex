@@ -1,0 +1,1144 @@
+% =====================================================================
+%  Adaptive Hierarchical KV State Management
+%  Cost-Asymmetric Hierarchical KV State Management for Long-Context LLM Inference
+%
+%  編譯方式（必須用 XeLaTeX，因為含中文）：
+%     xelatex main
+%     bibtex  main
+%     xelatex main
+%     xelatex main
+%
+%  ⚠️ 本稿為初稿（draft）。Evaluation 章為「實驗計畫」，
+%     所有結果表格均為佔位符，尚未執行實驗。
+% =====================================================================
+\documentclass[10pt,twocolumn]{article}
+
+% ---------- 中文支援 ----------
+% 西文字型（XeLaTeX 下用 fontspec，不要用 times/helvet 套件）
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Termes}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{TeX Gyre Cursor}[Scale=0.9]
+
+\usepackage{xeCJK}
+% Linux（本機）字型。macOS 上可改回 Songti TC / Heiti TC。
+\setCJKmainfont{Noto Serif CJK TC}[AutoFakeSlant=0.15]
+\setCJKsansfont{Noto Sans CJK TC}[AutoFakeSlant=0.15]
+\setCJKmonofont{Noto Sans Mono CJK TC}
+\xeCJKsetup{CJKmath=true}
+
+% ---------- 版面 ----------
+\usepackage[letterpaper,margin=0.75in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds,shapes.geometric,calc,decorations.pathreplacing}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cite}
+\usepackage{caption}
+\captionsetup{font=small,labelfont=bf}
+
+% ---------- 自訂 ----------
+\newcommand{\sys}{\mbox{Tiara}\xspace} % Tiered, quality-Aware, Recompute-Aware KV manager
+\usepackage{xspace}
+\definecolor{gpucol}{HTML}{C0392B}
+\definecolor{cpucol}{HTML}{2980B9}
+\definecolor{ssdcol}{HTML}{27AE60}
+\definecolor{dropcol}{HTML}{7F8C8D}
+\definecolor{hlbox}{HTML}{FDF2E9}
+
+\newcommand{\todo}[1]{{\color{red}\textbf{[TODO: #1]}}}
+\newcommand{\placeholder}[1]{{\color{gray}\textit{#1}}}
+\newcommand{\act}[1]{\textsf{\footnotesize #1}}  % 動作名稱
+
+\title{\vspace{-1.5em}\textbf{成本不對稱下以品質為約束的\\
+可恢復階層式 KV State 管理}\\[0.3em]
+\large Cost-Asymmetric Hierarchical KV State Management\\
+for Long-Context LLM Inference}
+
+\author{\textit{（作者資訊於投稿時填入）}}
+\date{}
+
+\begin{document}
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+\noindent
+長上下文（long-context）LLM 推論的核心系統瓶頸之一，是 KV cache 隨上下文長度線性成長並耗盡 GPU 高頻寬記憶體（HBM）。既有工作已分別處理了這個問題的各個面向：可恢復的驅逐、學習式的未來效用預測、重算與傳輸的取捨，以及以品質為約束的壓縮。然而，據我們所知，尚無工作將這些決策整合到\emph{單一的線上決策}之中。
+
+本文的出發點是一個橫跨硬體的量化事實：\emph{重算與傳輸的成本比 $\kappa$ 隨平台變動達 32 倍}——於 AMD Instinct MI300X（192\,GB HBM3）為 6--21 倍，於 NVIDIA RTX 3090（24\,GB GDDR6X）則為 54--190 倍。此差異使「單一套 KV 放置策略適用於所有硬體」的隱含前提不成立。
+
+問題的\emph{性質}同樣隨平台改變。在 MI300X 上，8B 至 14B 級模型於 128K 上下文的單請求 KV footprint 僅佔 HBM 的 8--10\%，Llama-3.1-8B 甚至可在單卡容納 1M token 的上下文（需 YaRN 外推）；此處的壓力來自多租戶下的\emph{機會成本}，而非容量本身。在 24\,GB 級的加速器上，單請求上下文本身即構成容量壓力，既有文獻的經典設定依然成立。兩者皆為真實的部署情境，而最佳策略在二者上並不相同。
+
+基於此，我們將 KV 放置形式化為一個受品質約束的序列決策問題，其動作空間包含 GPU 全精度、GPU FP8、GPU INT4、CPU、SSD 與「丟棄後重算」六種狀態，並在「品質退化不超過 $\epsilon$」的硬性約束下，聯合最佳化未來效用、傳輸成本、重算成本與記憶體壓力。我們特別論證：重算的價值不在於單次事件的成本（其代價比傳輸高 6--21 倍於 MI300X，54--190 倍於 RTX 3090），而在於它在被需要之前不佔用任何資源；其正確性因而完全取決於未來效用預測的品質。
+
+我們設計了雙平台實驗（RTX 3090 的 30:1 與 MI300X 的 84:1，相距 2.8 倍），使硬體條件化的主張成為可證偽的。二者\emph{並非}此光譜的兩端——GH200 的 9:1 更低，MI355X 的 127:1 更高——但構成我們實際可取得的最大跨度。\textbf{本文為初稿。}第 \ref{sec:eval} 節給出完整的實驗計畫與消融設計，實驗結果尚未取得。
+\end{abstract}
+
+\vspace{0.5em}
+\noindent\textbf{Keywords:} LLM inference; KV cache; memory hierarchy; long context; quality-constrained optimization; cost-sensitive learning; AMD MI300X; NVIDIA RTX 3090; vLLM
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+
+Transformer 模型在自回歸生成時，會將每個已處理 token 的 key 與 value 向量保存下來，避免在生成每個新 token 時重算整段前綴。這組中間狀態即 KV cache，是以記憶體換取計算時間的經典設計。其代價是記憶體佔用隨上下文長度線性成長：對 Llama-3.1-8B（32 層、8 個 KV head、head dimension 128、BF16），每個 token 需要 128\,KiB，1M token 的上下文即需要 122\,GB。在 80\,GB 級的加速器上，這使得系統的限制因素從計算能力轉移到記憶體容量。
+
+圍繞此問題的研究已相當密集。既有工作大致沿四條軸線展開：（i）\textbf{分層儲存}，將 KV 卸載到 CPU DRAM 或 SSD~\cite{flexgen2023,infinigen2024,cachedattention2024,kvdrive2026,tutti2026}；（ii）\textbf{可恢復驅逐}，使被降級的 KV 在重新變得重要時能夠召回~\cite{arkvale2024,qevict2026}；（iii）\textbf{學習式未來效用預測}，以訓練得到的策略取代手寫啟發式規則~\cite{kvp2026,foresightkv2026,lookaheadkv2026}；（iv）\textbf{重算與傳輸的取捨}~\cite{cake2025,kvpr2025,hcache2025}。此外，KVServe~\cite{kvserve2026} 首次將模型品質寫為壓縮決策的硬性約束，而 Fang 等人~\cite{hetmem2025} 首次將分層 KV 放置形式化並推導理論上界。
+
+\paragraph{本文的出發點：一個不再成立的前提。}
+上述工作幾乎全部在 NVIDIA A100/H100 級硬體（40--80\,GB HBM）上評估。我們的量化分析（第 \ref{sec:motivation} 節）顯示，在 AMD Instinct MI300X（192\,GB HBM3）上，8B--14B 級模型於 128K 上下文下的單請求 KV footprint 僅 15.6--19.5\,GB，佔 HBM 不到 10\%。\emph{在此類硬體上，既有文獻用以立論的「單請求容量壓力」場景幾乎不存在}。
+
+這並不代表問題消失，而是問題的\emph{性質改變}了。在 192\,GB 的 HBM 上，一個 session 的冷 KV 所佔據的每 GB，都是其他請求無法用來擴大批次的容量。問題因此從「放不下，該驅逐什麼」轉變為「放得下，但該保留嗎」，成為一個機會成本問題，而機會成本只在多租戶場景中存在。
+
+\paragraph{第二個觀察：卸載在大容量 HBM 硬體上更昂貴。}
+MI300X 的 HBM 頻寬（5.3\,TB/s 峰值）與主機鏈路頻寬（PCIe Gen5 $\times$16，單向理論 63.0\,GB/s）之比為 84:1，而 H100 為 52:1，MI355X 更達 127:1。此比值持續惡化，因為 HBM 容量與頻寬逐代成長，而主機鏈路自 MI300X 至 MI355X 完全未變。灌滿或抽乾 MI300X 上 Llama-3.1-8B 的 157.8\,GiB KV 預算，經 PCIe 需 2.69 秒，而在 HBM 內僅需 32 毫秒。此比值必然等於頻寬比 84 倍。
+
+\paragraph{貢獻。}
+\begin{enumerate}\itemsep0.2em
+  \item 我們量化了\emph{重算對傳輸的成本比 $\kappa$ 隨平台變動達 32 倍}（MI300X 上 6--21 倍、RTX 3090 上 54--190 倍），並指出正確的判準是 FLOPS 對主機鏈路之比而非 HBM 頻寬比。同一組量化分析亦顯示，既有 KV 卸載文獻的容量前提在大容量 HBM 加速器上不成立，問題性質由容量轉為機會成本，而在 24\,GB 級加速器上則仍然成立（第 \ref{sec:motivation} 節）。
+  \item 我們系統性地比對了 15 篇近期工作，指出四項成本（未來效用、傳輸成本、重算成本、記憶體壓力）從未在單一線上決策中同時出現；現有最高覆蓋為 Marconi~\cite{marconi2025} 的三項，其因僅在 GPU 上運作而結構性地缺少傳輸成本（第 \ref{sec:related} 節）。
+  \item 我們將 KV 放置形式化為受品質約束的序列決策問題，動作空間包含六種狀態且明確納入「丟棄後重算」；並論證重算的價值來自其資源佔用特性而非單次成本，因而其正確性取決於未來效用預測（第 \ref{sec:formulation} 節）。
+  \item 我們提出 \sys 的設計，透過 vLLM 的 \texttt{CachePolicy} 介面實作，可在 CUDA 與 ROCm 上零程式碼修改部署（ROCm 上的執行期限制見第 \ref{sec:limitations} 節）。
+  \item 我們指出既有學習式 KV 管理方法所用的\emph{對稱}損失函數，在動作成本相差 6--190 倍（隨平台而異）的設定下失準（10 倍不對稱下，Bayes 最佳門檻自 $p=0.5$ 移至 $p\approx0.09$），並提出將動作成本納入損失的兩種形式。經比對 8 個既有學習式系統，尚無工作將\emph{異質動作成本}編碼進 KV 管理的損失函數（第 \ref{sec:loss} 節）。
+  \item 我們給出完整的實驗計畫，包含以成本項為單位（而非以模組為單位）的消融設計，以及一個離線最優 oracle 作為 go/no-go 判準（第 \ref{sec:eval} 節）。
+\end{enumerate}
+
+\paragraph{本稿狀態。}
+本文為初稿。第 \ref{sec:motivation} 節的量化分析與第 \ref{sec:related} 節的文獻比對均已完成並經查證；第 \ref{sec:eval} 節為實驗計畫，尚未執行。我們在第 \ref{sec:limitations} 節誠實說明此一狀態的意涵。
+
+% =====================================================================
+\section{Background and Motivation}
+\label{sec:motivation}
+
+\subsection{KV cache 的記憶體佔用}
+
+對採用 grouped-query attention（GQA）的模型，每 token 的 KV 佔用為
+\begin{equation}
+  b_{\text{tok}} = 2 \times L \times H_{kv} \times d_{h} \times s
+  \label{eq:kvsize}
+\end{equation}
+其中 $L$ 為層數，$H_{kv}$ 為 KV head 數，$d_h$ 為 head dimension，$s$ 為每元素位元組數，前導的 2 對應 K 與 V。
+
+表 \ref{tab:kvsize} 給出代表模型的實際數值。所有組態均直接取自 HuggingFace \texttt{config.json}。
+
+\paragraph{權重精度是正交的部署參數。}
+本文將 LLM 權重視為 frozen，\emph{且不修改其精度}。式 \eqref{eq:actions} 的動作空間描述的是 \textbf{KV cache 的儲存精度}，與模型權重的精度是兩個獨立的維度：
+
+\begin{center}\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}ll@{}}
+\toprule
+維度 & 取值 \\
+\midrule
+權重精度（\emph{非本文變數}） & BF16 / FP8 / INT8 / AWQ-INT4 \\
+KV 狀態（\emph{本文的決策}） & 式 \eqref{eq:actions} 的六個動作 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+我們因此不假設任何特定權重精度為「主流」。實驗在代表性的部署配置下進行——平台 A 採 AWQ-INT4（記憶體受限的消費級 GPU 之常見配置），平台 B 採 BF16 與 FP8——並將權重精度的影響列為\emph{敏感度分析}（第 \ref{sec:eval} 節），而非主要貢獻。將兩個維度混為一談會使本文同時變成權重量化、KV 卸載、驅逐與重算四個研究問題，模糊真正的貢獻。
+
+\paragraph{關於 BF16 與 FP16。}
+本文所檢視的六個模型其 \texttt{config.json} 的 \texttt{torch\_dtype} 均為 \texttt{bfloat16}。二者皆為 2 位元組，故式 \eqref{eq:kvsize} 的算術不變，但本文一律使用 \textbf{BF16} 以與實際發布的權重一致。
+
+\begin{table}[t]
+\centering\small
+\caption{KV footprint 與原生上下文長度。所有組態均經 HuggingFace \texttt{config.json} 直接驗證（2026-08-29）。\textbf{原生 ctx} 欄是選模的硬條件：低於評測長度者必須施加 RoPE 外推，而外推本身會降低品質，混淆 $\epsilon$ 的量測。$^{M}$ 為 MoE。}
+\label{tab:kvsize}
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+模型 & $L$ & $H_{kv}$ & $d_h$ & KV/tok & 原生 ctx \\
+\midrule
+Qwen2.5-7B-Inst-1M & 28 & 4 & 128 & \textbf{56\,Ki}  & \textbf{1{,}010{,}000} \\
+Llama-3.1-8B-Inst  & 32 & 8 & 128 & 128\,Ki & 131{,}072 \\
+Qwen3-8B           & 36 & 8 & 128 & 144\,Ki & 40{,}960 \\
+Qwen3-14B          & 40 & 8 & 128 & 160\,Ki & 40{,}960 \\
+Qwen3-30B-A3B$^{M}$ & 48 & 4 & 128 & 96\,Ki  & 40{,}960 \\
+Llama-4-Scout$^{M}$ & 48 & 8 & 128 & 192\,Ki & \textbf{10{,}485{,}760} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{觀察一：單請求容量壓力在 MI300X 上幾乎不存在（但在 24\,GB 級加速器上成立）}
+
+表 \ref{tab:fit} 比較同一組模型在 H100（80\,GB）與 MI300X（192\,GB）上的容納能力。此處固定為 \textbf{BF16 權重}以隔離變因（權重精度的影響見上文與敏感度分析），並保留 10\% 記憶體作為 activation 與碎片化餘裕。平台 A 的實際實驗採 AWQ-INT4 權重，其容納能力見第 \ref{sec:twoplatform} 節。
+
+\begin{table}[t]
+\centering\small
+\caption{單請求 KV footprint 與容納情形（BF16 權重 + BF16 KV）。\checkmark 表示權重加 KV 可置入。$^\S$ 超出原生 \texttt{max\_position\_embeddings}，需 YaRN 外推（見第 \ref{sec:eval} 節）。}
+\label{tab:fit}
+\begin{tabular}{llrcc}
+\toprule
+模型 & ctx & KV & H100 & MI300X \\
+ & & & 80\,GB & 192\,GB \\
+\midrule
+\multirow{3}{*}{Llama-3.1-8B}
+ & 128K & 15.6\,GB & \checkmark & \checkmark \\
+ & 256K & 31.2\,GB & \checkmark & \checkmark \\
+ & \textbf{1M}$^\S$ & \textbf{122\,GB} & $\times$ & \textbf{\checkmark} \\
+\midrule
+\multirow{2}{*}{Qwen2.5-7B-1M}
+ & 256K & 13.7\,GB & \checkmark & \checkmark \\
+ & 1M   & 53.4\,GB & \checkmark & \checkmark \\
+\midrule
+Llama-3.1-70B & 128K & 39.1\,GB & $\times$ & $\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+三個結論值得強調：
+
+\textbf{(a)} 在 MI300X 上，8B--14B 模型於 128K 上下文僅消耗 HBM 的 8--10\%。既有文獻普遍採用的「單請求、上下文遞增」實驗設定，在此硬體上\emph{量測不到記憶體壓力}。相對地，既有的卸載瓶頸量測~\cite{bottlenecks2026} 顯示在 80\,GB 級硬體上 99\% 的延遲花在傳輸，但該結論建立在容量壓力存在的前提上。
+
+\textbf{(b)} Llama-3.1-8B 的 1M token 上下文（122\,GB KV 加 16\,GB 權重）可完整置入單張 MI300X，而 H100 無法。若啟用 MI300X 原生支援的 FP8，Llama-3.1-70B 的 256K 上下文亦可置入。
+
+\textbf{(c)} 在 \emph{MI300X 上}，真實壓力來自三處：\emph{並行度}（Llama-3.1-8B 在 BF16 權重下約 10 個並行 128K 請求即耗盡 HBM，FP8 權重下約 21 個）、\emph{更大的模型}、以及\emph{跨 session 的 KV 保留}（唯一無上界的需求來源）。前二者是靜態的容量問題，第三者才是真正的策略問題。\emph{在記憶體較小的加速器上（如本文的平台 A，24\,GB）則存在第四個來源：單請求上下文本身}（見第 \ref{sec:twoplatform} 節）。
+
+\subsection{觀察二：卸載的相對代價隨硬體世代惡化}
+
+表 \ref{tab:ratio} 給出關鍵比值。
+
+\begin{table}[t]
+\centering\small
+\caption{記憶體階層比值與計算-傳輸比。規格取自~\cite{cdna3,mi300xperf2025}。主機鏈路為單向理論值；FLOP/byte 為 dense BF16 峰值除以單向鏈路頻寬，代表一位元組穿越鏈路的時間內可 retire 的算術運算量。}
+\label{tab:ratio}
+\setlength{\tabcolsep}{3.2pt}
+\begin{tabular}{lrrrr}
+\toprule
+ & Mem BW & Host link & \textbf{Mem:link} & FLOP/byte \\
+\midrule
+RTX 3090$^{\dagger\ddagger}$ & 0.94\,TB/s & 31.5\,GB/s & \textbf{30:1} & 2{,}254 \\
+H100 SXM     & 3.35\,TB/s & 64.0\,GB/s & 52:1  & 15{,}459 \\
+H200 SXM     & 4.8\,TB/s  & 64.0\,GB/s & 75:1  & 15{,}459 \\
+MI300X       & 5.3\,TB/s  & 63.0\,GB/s & \textbf{84:1}  & \textbf{20{,}752} \\
+MI355X       & 8.0\,TB/s  & 63.0\,GB/s & \textbf{127:1} & --- \\
+GH200        & $\sim$4\,TB/s & 450\,GB/s & $\sim$9:1 & --- \\
+\bottomrule
+\end{tabular}
+\\[2pt]
+{\scriptsize $^\dagger$ RTX 3090 使用 GDDR6X 而非 HBM，PCIe 4.0$\times$16。$^\ddagger$ RTX 3090 之值由 $328\ \text{TC} \times 1{,}695\,\text{MHz} \times 128\,\text{FLOP/clk} = 71.2$\,TFLOPS 除以 31.5\,GB/s 得出~\cite{ga102}。GA10x 的 tensor core 於 \emph{FP32 累加}下為 128 FLOP/clk（FP16 累加為 256），BF16 與 FP16-FP32累加同速。此處易誤取 35.6\,TFLOPS——該值對應 64 FLOP/clk，為 TF32 tensor 或非 tensor FP32 的峰值，與 BF16 GEMM 的資料路徑不同。\par}
+\end{table}
+
+比值持續惡化的原因是結構性的：HBM 容量與頻寬逐代提升，而 PCIe Gen5 $\times$16 自 MI300X 至 MI355X 完全未變。其後果是，任何卸載策略都必須掩蓋一個比 HBM 存取高近兩個數量級的延遲。
+
+GH200 的 9:1 是例外：藉由 NVLink-C2C 的 450\,GB/s，其卸載經濟性優於任何 x86 主機的加速器約 7--14 倍。\emph{同一套 KV 放置策略不可能同時在 9:1 與 127:1 的平台上最佳}，這是硬體條件化策略的直接論據。
+
+\subsection{觀察三：重算的價值不在單次成本}
+\label{sec:recompute-econ}
+
+決定「重算或傳輸」的正確指標並非 HBM 頻寬比，而是 FLOPS 對主機鏈路之比，即一個位元組穿越 PCIe 的時間內，加速器能retire 多少算術運算。MI300X 的 dense BF16 峰值為 1307.4\,TFLOPS，故每傳輸一位元組可換得約 20{,}750 FLOP；H100 為 989.4\,TFLOPS，對應 15{,}460 FLOP。MI300X 在此指標上優於 H100 約 1.34 倍。
+
+然而，在絕對值上傳輸仍然較便宜，且\emph{便宜的程度隨平台劇烈變動}。以簡化的 prefill 模型（線性層約 $2N_{\text{params}}$ FLOP/token，100\% MFU）估算，成本比 $\kappa = t_{\text{recompute}} / t_{\text{transfer}}$ 如表 \ref{tab:kappa}。
+
+\begin{table}[t]
+\centering\small
+\caption{重算對傳輸的成本比 $\kappa$。$\kappa$ 跨平台變動達 \textbf{32 倍}，這是本文「硬體條件化策略」主張最直接的量化依據。}
+\label{tab:kappa}
+\begin{tabular}{llrrr}
+\toprule
+平台 & 模型 & 重算 & 傳輸 & $\boldsymbol{\kappa}$ \\
+\midrule
+\multirow{2}{*}{MI300X}
+ & Llama-3.1-8B & 12.2\,$\mu$s & 2.08\,$\mu$s & \textbf{6}$\times$ \\
+ & Llama-3.1-70B & 107\,$\mu$s  & 5.20\,$\mu$s & \textbf{21}$\times$ \\
+\midrule
+\multirow{2}{*}{RTX 3090}
+ & Llama-3.1-8B & 225\,$\mu$s  & 4.16\,$\mu$s & \textbf{54}$\times$ \\
+ & Llama-3.1-70B & 1{,}972\,$\mu$s & 10.4\,$\mu$s & \textbf{190}$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+且重算成本隨上下文長度增長（attention 的二次項在 128K 上下文下對 Llama-3.1-8B 平均再增加約 34\,GFLOP/token，使 $\kappa$ 再增約 3 倍），而傳輸成本則保持恆定。\emph{表 \ref{tab:kappa} 的數值應視為 $\kappa$ 的下界。}
+
+\paragraph{$\kappa$ 亦隨模型架構變動，且方向可事先計算。}
+$\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，而 MoE 使兩者解耦：其 KV 由 attention 層決定（與同規模 dense 模型相同），但重算僅需啟用的專家。以 Qwen3-30B-A3B 為例（48 層、4 個 KV head、128 個專家中啟用 8 個，啟用參數約 3\,B），其 $\kappa$ 在 RTX 3090 上為 27，\emph{僅為同平台 dense 模型（48--108）的約一半}。
+
+這產生一個可證偽的預測：\textbf{在固定平台上，MoE 模型的最佳 \act{Drop} 觸發門檻應顯著高於 dense 模型}。第 \ref{sec:eval} 節將檢驗之。此軸與硬體軸正交，兩者共同構成本文「成本結構決定策略」主張的雙重檢驗。
+
+圖 \ref{fig:ladder} 揭示了一個關鍵的非對稱性：\emph{重算的價值不在於其單次事件成本，而在於它在被需要之前不佔用任何資源}。因此重算的正確條件是「該 KV block 未來被存取的機率足夠低」——低到節省的容量與頻寬能夠抵償萬一被需要時 6--190 倍的代價。
+
+這個推論的重要後果是：\textbf{未來效用預測不是系統的附加元件，而是決定重算動作正確與否的唯一依據}。這與第 \ref{sec:related} 節的文獻分析指向同一結論。
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize\sffamily,
+  >={Stealth[length=2.2mm]},
+  tier/.style={draw,rounded corners=3pt,thick,minimum width=4.3cm,minimum height=0.78cm,
+               align=center,font=\small\sffamily},
+  hdr/.style ={font=\scriptsize\bfseries\sffamily,text=black!70,align=center},
+  cell/.style={font=\scriptsize\sffamily,align=center,text=black!80},
+  note/.style={font=\scriptsize\sffamily,align=left,text=black!65},
+]
+% ---- 各層 y 座標 ----
+\def\ya{0}    \def\yb{-0.92} \def\yc{-1.84} \def\yd{-2.76} \def\ye{-3.68} \def\yf{-4.60}
+\def\xt{3.3}  % 階梯中心
+
+\node[tier,fill=gpucol!20,draw=gpucol]  (t1) at (\xt,\ya) {GPU \;·\; BF16};
+\node[tier,fill=gpucol!13,draw=gpucol]  (t2) at (\xt,\yb) {GPU \;·\; FP8};
+\node[tier,fill=gpucol!6, draw=gpucol]  (t3) at (\xt,\yc) {GPU \;·\; INT4};
+\node[tier,fill=cpucol!14,draw=cpucol]  (t4) at (\xt,\yd) {CPU DRAM \;·\; INT8};
+\node[tier,fill=ssdcol!14,draw=ssdcol]  (t5) at (\xt,\ye) {SSD \;·\; compressed};
+\node[tier,fill=dropcol!16,draw=dropcol,thick] (t6) at (\xt,\yf) {DROP $\rightarrow$ recompute};
+
+% ---- 左：降級 ----
+\draw[->,very thick,black!45] (0.75,\ya+0.30) -- (0.75,\yf-0.30);
+\node[rotate=90,anchor=south,font=\scriptsize\sffamily,text=black!55] at (0.42,-2.3) {降級 (demote)};
+\foreach \y in {\ya,\yb,\yc,\yd,\ye}
+  \draw[->,semithick,black!35] (1.25,\y-0.37) -- (1.25,\y-0.55);
+
+% ---- 右：升級 / restore ----
+\draw[->,very thick,orange!65!black] (5.9,\yf-0.30) -- (5.9,\ya+0.30);
+\node[rotate=90,anchor=north,font=\scriptsize\sffamily,text=orange!55!black] at (6.24,-2.3) {升級 / restore};
+\foreach \y in {\yb,\yc,\yd,\ye,\yf}
+  \draw[->,semithick,orange!45!black] (5.42,\y+0.55) -- (5.42,\y+0.37);
+
+% ---- 成本欄 ----
+\def\xA{8.0}  \def\xB{11.3} \def\xC{14.9}
+\node[hdr] at (\xA,0.95) {平時成本\\[-1pt]\scriptsize\mdseries（未被使用時）};
+\node[hdr] at (\xB,0.95) {被需要時的成本\\[-1pt]\scriptsize\mdseries（Llama-3.1-8B, /token）};
+\node[hdr] at (\xC,0.95) {說明};
+
+\draw[black!25] (6.9,0.52) -- (17.2,0.52);
+
+\node[cell] at (\xA,\ya) {\textbf{最高}（HBM 最稀缺）};
+\node[cell] at (\xA,\yb) {$\tfrac{1}{2}$ of BF16};
+\node[cell] at (\xA,\yc) {$\tfrac{1}{4}$ of BF16};
+\node[cell] at (\xA,\yd) {低（DRAM）};
+\node[cell] at (\xA,\ye) {極低（NVMe）};
+\node[cell,text=dropcol!60!black] at (\xA,\yf) {\textbf{零}};
+
+\node[cell] at (\xB,\ya) {0};
+\node[cell] at (\xB,\yb) {$\approx$0（反量化）};
+\node[cell] at (\xB,\yc) {$\approx$0（反量化）};
+\node[cell] at (\xB,\yd) {$\sim$1.0\,$\mu$s};
+\node[cell] at (\xB,\ye) {$\sim$9\,$\mu$s};
+\node[cell,text=dropcol!60!black] at (\xB,\yf) {\textbf{12.3\,$\mu$s} @100\% MFU};
+
+\node[note,text width=2.5cm] at (\xC,\ya) {最快，但佔用最貴的資源};
+\node[note,text width=2.5cm] at (\xC,\yb) {\textbf{生產環境最常見的量化}};
+\node[note,text width=2.5cm] at (\xC,\yc) {精度分層};
+\node[note,text width=2.5cm] at (\xC,\yd) {位置分層};
+\node[note,text width=2.5cm] at (\xC,\ye) {容量近乎無限};
+\node[note,text width=2.5cm,text=dropcol!60!black] at (\xC,\yf) {\textbf{與 SSD 同數量級}};
+
+% ---- 關鍵標註 ----
+\draw[dropcol,thick,dashed,rounded corners=3pt]
+  ($(\xB,\ye)+(-1.5,0.32)$) rectangle ($(\xB,\yf)+(1.5,-0.32)$);
+\node[font=\scriptsize\bfseries\sffamily,text=dropcol!55!black,anchor=north]
+  at ($(\xB,\yf)+(0,-0.42)$) {SSD 載入與重算成本相當 $\Rightarrow$ 重算應是階梯上的一層，而非失敗路徑};
+
+\end{tikzpicture}
+\caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）「丟棄後重算」是階梯上的一層，而非檢索失敗後的補救。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。關鍵的非對稱性在「平時成本」欄：\textbf{重算在被需要之前不佔用任何資源}，這是它唯一的優勢，也是它唯一的正當理由。右下虛線框標示一個常被忽略的事實：以 Llama-3.1-8B 計，自 SSD 載入（$\sim$9\,$\mu$s/token @ 7\,GB/s）與重算（12.3\,$\mu$s/token @ 100\% MFU）處於同一數量級，兩者本就應在同一個決策中被比較。}
+\label{fig:ladder}
+\end{figure*}
+
+\subsection{雙平台實驗設計}
+\label{sec:twoplatform}
+
+表 \ref{tab:ratio} 的 FLOP/byte 欄位揭示了一個跨越一個數量級的光譜：RTX 3090 為 2{,}254，MI300X 為 20{,}752，相差 9.2 倍。此差距的來源是結構性的：3090 的 GDDR6X 頻寬與 PCIe 4.0 鏈路較為接近，而 MI300X 的 HBM3 遠快於其 PCIe 5.0 鏈路。
+
+這使得本文的核心主張成為可證偽的：\emph{若最佳 KV 放置策略確實隨硬體比值結構性改變，則同一組策略在相距 9.2 倍的此二平台上應展現不同的最佳動作組合}。須說明的是，此二平台位於該光譜的中段而非兩端（表 \ref{tab:ratio} 中 GH200 為 9:1、MI355X 為 127:1），我們的可證偽性主張因而受限於實際可取得的硬體跨度。具體而言，我們預測\act{Drop}$\rightarrow$重算動作在 MI300X 上的最佳觸發門檻，應顯著低於在 RTX 3090 上的門檻。
+
+兩個平台因此承擔不同的實驗職責（表 \ref{tab:platforms}）。值得強調的是，這並非資源限制下的妥協：\emph{單一平台無法檢驗硬體條件化的主張}。
+
+\begin{table}[t]
+\centering\small
+\caption{雙平台的實驗職責分工。}
+\label{tab:platforms}
+\begin{tabular}{p{2.3cm}p{2.4cm}p{2.4cm}}
+\toprule
+ & \textbf{RTX 3090} & \textbf{MI300X} \\
+\midrule
+記憶體 & 24\,GB GDDR6X & 192\,GB HBM3 \\
+壓力來源 & 單請求上下文 & 並行度／跨 session \\
+主要壓力軸 & context 8K$\rightarrow$64K & 並行度 1$\rightarrow$32 \\
+問題性質 & 容量 & 機會成本 \\
+生態 & CUDA（baseline 齊全） & ROCm（部分受限） \\
+能耗量測 & 整卡 & \textbf{HBM 分軌} \\
+角色 & 機制驗證 + 完整對照 & 規模 + 主要科學主張 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{RTX 3090 上的容量分析。}
+以 8-bit 權重的 Llama-3.1-8B 計算，24\,GB 中約 13.6\,GB 可供 KV 使用，對應約 111K token。單請求在 64K 上下文需 7.8\,GB（總計 15.8\,GB，可置入），而 128K 需 15.6\,GB（總計 23.6\,GB，\emph{超出}）。64K 與 128K 之間存在一道明確的容量懸崖，\emph{既有文獻所預設的場景在此平台上完全成立}。
+
+\paragraph{CUDA 生態的對照組優勢。}
+第 \ref{sec:eval} 節指出 ArkVale、Quest、ShadowKV、ClusterKV 與 RetroInfer 因 \texttt{rapidsai/raft} 缺乏 ROCm 移植而無法在 MI300X 上執行。這些系統在 RTX 3090 上均可執行，雙平台設計同時解決了 AMD 平台上對照組不足的問題。
+
+% =====================================================================
+\section{Related Work}
+\label{sec:related}
+
+我們依動作與訊號兩個維度組織既有工作，並在表 \ref{tab:matrix} 給出特徵矩陣。判準從嚴：「未來預測」欄僅在該工作預測\emph{尚未發生}的存取時才標記，僅使用當前步 attention 分數者不計。
+
+\subsection{分層儲存}
+FlexGen~\cite{flexgen2023} 首次以線性規劃決定 KV 在 GPU/CPU/disk 三層間的比例配置，但其策略為離線靜態。CachedAttention~\cite{cachedattention2024} 針對多輪對話保留 session 級 KV 於 HBM/DRAM/SSD，並利用排程器佇列進行預取。Mooncake~\cite{mooncake2025} 將叢集中閒置的 CPU/DRAM/SSD 池化為共享 KVCache 層。KVDrive~\cite{kvdrive2026} 以 prefill 階段的 attention 重要性剖析決定 HBM/DRAM/SSD 的初始配置，並將全量 KV 寫入 SSD 作為後備。Tutti~\cite{tutti2026} 則專注於 SSD I/O 路徑本身，透過 GPU 發起的儲存存取消除 CPU 瓶頸。
+
+這些工作共同的限制是：放置訊號來自當前或過去的觀測，且不將重算視為動作。
+
+\subsection{可恢復驅逐}
+ArkVale~\cite{arkvale2024} 觀察到 token 重要性隨解碼步驟變動，早期被驅逐者可能重新變得重要，因而以 page digest（key 向量的包絡體）估計已驅逐頁的重要性並召回。QEvict~\cite{qevict2026} 則將可恢復性建立在\emph{精度}維度：中等信心的視窗被量化保存，重新變重要時反量化升回全精度。
+
+這兩類工作分居兩個正交維度：ArkVale 及其後繼者~\cite{quest2024,shadowkv2025} 做\emph{位置分層}（GPU$\leftrightarrow$CPU，且兩層皆為全精度），QEvict 做\emph{精度分層}（全精度$\leftrightarrow$量化，但僅一個位置）。據我們所知，尚無工作以單一重要性驅動策略統一管理兩者。
+
+\subsection{學習式未來效用預測}
+2026 年出現多篇以學習方法預測 KV 未來效用的工作：KVP~\cite{kvp2026} 以 per-head 的強化學習代理排序 token，其 reward 直接導自未來效用；ForesightKV~\cite{foresightkv2026} 建構以真實未來 attention 分數計算的 golden eviction oracle 並以模仿學習逼近；LookaheadKV~\cite{lookaheadkv2026} 則以可學習的 lookahead token 預測模型真實回應所導出的重要性。Marconi~\cite{marconi2025} 的效用函數同時包含預測重用機率、計算節省與記憶體佔用。
+
+這些工作的動作空間\emph{均為單層的保留/丟棄}，且無一支援恢復。\emph{最強的未來預測器沒有安全網，而最完善的安全網沒有未來預測器}。
+
+\subsection{重算與傳輸}
+Cake~\cite{cake2025} 讓 GPU 正向計算與 I/O 反向載入同時進行並在中點會合。KVPR~\cite{kvpr2025} 以 profiler 與 scheduler 求解活化值傳輸與 KV 重算的最佳切分。HCache~\cite{hcache2025} 儲存中間 hidden state（約為 KV 的一半大小）並由其重建 KV，實質上在階梯上增加了第三階。
+
+這些工作共同的時序特性是\emph{檢索時的反應式決策}：它們回答「此刻需要這段 KV，如何最快取得」，而非「未來可能需要，現在應置於何處」。ACL 2026 的綜述~\cite{kvsurvey2026} 中，整理「GPU KV 重算 $\leftrightarrow$ KV 傳輸」重疊的表格僅列出一個範例（KVPR）。
+
+\paragraph{以 query 為訊號者無法取代放置決策。}
+Quest~\cite{quest2024}、InfiniGen~\cite{infinigen2024}、ArkVale~\cite{arkvale2024} 與 ShadowKV~\cite{shadowkv2025} 皆以\emph{當下的 query 向量}估計各 block 的重要性並取 top-$k$。這是取得單步 attention 稀疏性最直接的訊號，其準確度上限也高於任何以存取歷史為輸入的預測器。然而該類方法在本文的問題上有兩個結構性障礙。
+
+\emph{(i) query 只覆蓋當下這一步。}$q \cdot k$ 回答的是「此刻這個 query 需要哪些 KV」。跨請求的重用——一段前綴在數分鐘後被另一個尚未抵達的請求命中——所對應的 query \emph{尚不存在}，因而無法由此類訊號涵蓋。這正是上一段所述反應式與前瞻式的分界。
+
+\emph{(ii) 計算 $q \cdot k$ 預設 $k$ 仍可取得。}要以 query 判斷是否保留某 block，必須先讀取該 block 的 key；而是否保留該 key 正是待決策的變數。此依賴使 query 訊號無法用於\emph{已降級至 SSD 或已丟棄}的 block，亦即無法用於階梯下緣——而階梯下緣正是成本差異最大之處。以 query 為訊號的方法因此運作於「內容皆可取得，僅需挑選搬運對象」的前提之上，其前一步（內容該置於何處、是否保留）即為本文所處理的問題。
+
+本文不將二者視為競爭關係：query 側訊號可作為\emph{特徵}併入前瞻式預測器（第 \ref{sec:predictor} 節），對仍可取得的 block 提供高品質輸入，而預測器負責覆蓋 query 無法觸及的跨請求與已降級情形。
+
+\subsection{品質作為約束}
+KVServe~\cite{kvserve2026} 將壓縮 profile 選擇形式化為
+$\arg\min_p T_p(c)$ s.t. $T_p(c) \le T_{\text{SLO}} \wedge q_p(w) \ge q_{\min}$，是我們所知唯一在 Tier-1 場所將模型品質寫為硬性約束的 KV 工作，但其決策變數不含放置。EvicPress~\cite{evicpress2025} 與 AdaptCache~\cite{adaptcache2025} 將品質納入效用函數，但作為可調權重而非約束。LeoAM~\cite{leoam2025} 是我們調查中唯一給出數值上界者（宣稱準確度下降小於 1\%）。OrbitFlow~\cite{orbitflow2026} 以 ILP 於延遲 SLO 與記憶體容量約束下決定逐層放置，但因其為無損設計，ILP 中不存在品質變數。
+
+\subsection{形式化與上界}
+Fang 等人~\cite{hetmem2025} 將異質記憶體系統中的 KV 放置問題數學形式化並推導理論上界，明確指出「存在可觀的執行期最佳化空間」，但同樣明確表示\emph{不提出具體排程策略}。本文正是填補其留下的策略空缺。
+
+\subsection{特徵矩陣}
+
+\begin{table*}[t]
+\centering\small
+\caption{特徵矩陣。$\bullet$ 表示明確支援，$\circ$ 表示部分或間接支援。判準從嚴（見正文）。「未來預測」不含僅使用當前步 attention 估計者。}
+\label{tab:matrix}
+\begin{tabular}{llccccccc}
+\toprule
+工作 & 場所 & GPU/CPU & SSD & 未來預測 & 壓縮 & 恢復 & \textbf{重算} & \textbf{品質約束} \\
+\midrule
+FlexGen~\cite{flexgen2023}        & ICML'23      & $\bullet$ & $\bullet$ &           & $\bullet$ & $\bullet$ &           &           \\
+InfiniGen~\cite{infinigen2024}    & OSDI'24      & $\bullet$ &           & $\circ$   &           & $\bullet$ &           &           \\
+ArkVale~\cite{arkvale2024}        & NeurIPS'24   & $\bullet$ &           &           &           & $\bullet$ &           &           \\
+Cake~\cite{cake2025}              & ICML'25      & $\bullet$ & $\bullet$ &           &           & $\bullet$ & $\bullet$ &           \\
+HCache~\cite{hcache2025}          & EuroSys'25   & $\bullet$ & $\bullet$ &           & $\circ$   & $\bullet$ & $\bullet$ &           \\
+Marconi~\cite{marconi2025}        & MLSys'25     &           &           & $\bullet$ &           &           & $\circ$   &           \\
+ShadowKV~\cite{shadowkv2025}      & ICML'25      & $\bullet$ &           &           & $\bullet$ & $\bullet$ & $\circ$   &           \\
+OrbitFlow~\cite{orbitflow2026}    & VLDB'26      & $\bullet$ &           &           &           & $\bullet$ &           &           \\
+KVServe~\cite{kvserve2026}        & SIGCOMM'26   & $\bullet$ &           &           & $\bullet$ &           &           & $\bullet$ \\
+KVP~\cite{kvp2026}                & ICML'26      &           &           & $\bullet$ &           &           &           &           \\
+Het-Mem~\cite{hetmem2025}         & IEEE CAL'25  & $\bullet$ &           &           &           & $\bullet$ &           &           \\
+MTDS~\cite{mtds2026}              & C\&IS'26     & $\bullet$ & $\bullet$ & $\circ$   &           & $\bullet$ & $\bullet$ &           \\
+KVDrive~\cite{kvdrive2026}        & preprint     & $\bullet$ & $\bullet$ &           &           & $\bullet$ &           &           \\
+EvicPress~\cite{evicpress2025}    & preprint     & $\bullet$ & $\bullet$ & $\circ$   & $\bullet$ & $\bullet$ &           & $\circ$   \\
+QEvict~\cite{qevict2026}          & preprint     &           &           &           & $\bullet$ & $\bullet$ &           &           \\
+\midrule
+\textbf{\sys（本文）}              & ---          & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\subsection{研究缺口}
+
+由表 \ref{tab:matrix} 可得三項觀察：
+
+\textbf{(1) 「重算」與「品質約束」兩欄從未在同一列同時標記。}
+
+\textbf{(2) 四項成本從未同時進入單一線上決策。}傳輸成本見於 CacheGen 一系，重算成本見於 Cake/KVPR/HCache，記憶體成本見於 EvicPress，未來效用見於 Marconi/KVP。最高覆蓋為 Marconi 的三項（未來效用、計算節省、記憶體佔用），其因僅在 GPU 上運作而\emph{結構性地}不可能具備傳輸成本。
+
+\textbf{(3) 兩條研究血脈互不交會。}以 FlexGen 為基礎的一系（IMPRESS、LeoAM、InfiniGen）具備重要性感知與有損處理，但無跨請求重用；以 vLLM 為基礎的一系（CacheBlend~\cite{cacheblend2025}、LMCache~\cite{lmcache2025}、Cake、MTDS）具備跨請求重用，但將 KV 視為精確且不可分割。\emph{尚無系統同時具備重要性感知的有損分層與跨請求重用}。
+
+綜述~\cite{kvsurvey2026} 自身的 Observation O7 指出壓縮與放置的協同設計是「a missed opportunity」，Challenge C5 呼籲在共享預算下聯合最佳化 eviction、offload 與 prefetch，而該清單\emph{未包含重算}。
+
+% =====================================================================
+\section{Problem Formulation}
+\label{sec:formulation}
+
+\subsection{狀態與動作}
+
+設 KV cache 被劃分為 block 集合 $\mathcal{B}$。於決策時刻 $t$，系統狀態為
+\begin{equation}
+  s_t = \Big( \{ \ell_i, \pi_i, a_i, n_i \}_{i \in \mathcal{B}},\; C^{\text{gpu}}, C^{\text{cpu}}, C^{\text{ssd}},\; Q_{\text{pcie}},\; \phi_t \Big)
+\end{equation}
+其中 $\ell_i$ 為 block $i$ 的所在層級，$\pi_i$ 為其精度，$a_i$ 為上次存取時刻，$n_i$ 為 token 數，$C^{\ast}$ 為各層剩餘容量，$Q_{\text{pcie}}$ 為互連佇列深度，$\phi_t$ 為當前查詢特徵。
+
+動作空間為
+\begin{equation}
+  \mathcal{A} = \{\, \act{Gpu}_{16},\; \act{Gpu}_{8},\; \act{Gpu}_{4},\; \act{Cpu}_{8},\; \act{Ssd},\; \act{Drop} \,\}
+  \label{eq:actions}
+\end{equation}
+對應圖 \ref{fig:ladder}。\act{Drop} 動作意味著該 block 不被儲存於任何位置，若後續被需要則由 token 重算。
+
+\paragraph{階梯是示意，量化器可替換。}
+式 \eqref{eq:actions} 的六個狀態代表\emph{典型}部署選項，而非本文主張的特定量化方案。實務上 KV 量化存在一個重要的非對稱性：\textbf{key 對量化誤差遠比 value 敏感}，故生產系統普遍採 K/V 分離的精度配置——LMCache 的預設 \texttt{turboquant\_k8v4} 為 key 8 位元、value 4 位元；KIVI~\cite{kivi2024} 對 key 採 per-channel、對 value 採 per-token 量化，因二者離群值結構不同。
+
+本文的決策框架與此正交：任何量化器只要能給出「容量佔用」與「存取延遲」兩個數字，即可作為階梯的一階。將 \act{Gpu}$_{8}$ 替換為 K8V4、或將 \act{Gpu}$_{4}$ 替換為 KIVI 的 2 位元方案，均不改變式 \eqref{eq:opt} 的形式，只改變成本常數。
+
+\paragraph{\act{Drop} 的可行性受前序 block 約束。}
+其餘五個動作彼此獨立——一個 block 放在哪一層，不影響其他 block 能否被取回。\textbf{\act{Drop} 是唯一的例外。}
+
+重算 block $i$ 並不需要自 token 0 重跑整個序列：以 chunked prefill 的方式，只需將 block $i$ 的 token 前向通過模型，其 attention 讀取\emph{前序 block 既有的 KV}。這使重算成本為 $O(|b_i|)$ 而非 $O(i)$。但這也意味著：
+
+\begin{equation}
+  a_i = \act{Drop}\ \text{可行} \iff \forall j < i:\ \text{block } j \text{ 的 KV 可取得}
+  \label{eq:dropdep}
+\end{equation}
+
+若前序 block 亦被丟棄，必須先重算它們，成本沿依賴鏈累積：
+\begin{equation}
+\begin{aligned}
+  \mathrm{recomp}(i) &= \sum_{j \in \mathcal{D}(i)} \Big( 2 N_{\text{active}} |b_j| + \mathrm{attn}(j) \Big) \\
+  \mathcal{D}(i) &= \{i\} \cup \{\, j < i : a_j = \act{Drop} \,\}
+\end{aligned}
+\end{equation}
+
+\textbf{此約束的意涵是 \act{Drop} 決策彼此耦合，不可獨立最佳化。} 一個只看單一 block 效用的策略會系統性地低估連續丟棄的代價。我們以「同一序列內連續 \act{Drop} 的 block 數上限」作為可行性約束處理之，並於第 \ref{sec:eval} 節量測該上限對 Pareto 前緣的影響。這也是 HCache~\cite{hcache2025} 儲存 hidden state 的動機：由 hidden state 可單步重建 KV，從而\emph{切斷依賴鏈}。
+
+\subsection{成本模型}
+
+對 block $i$ 採取動作 $a$ 的即時成本為
+\begin{align}
+  c(i,a) ={}& \underbrace{\lambda_{m} \cdot \mathrm{mem}(i,a)}_{\text{容量佔用}}
+             + \underbrace{\lambda_{x} \cdot \mathrm{xfer}(i,a)}_{\text{搬移成本}} \nonumber\\
+            &+ \underbrace{p_i \cdot \big[\, \mathrm{fetch}(i,a) + \mathrm{recomp}(i,a) \,\big]}_{\text{期望存取成本}}
+  \label{eq:cost}
+\end{align}
+其中 $p_i = \Pr[\text{block } i \text{ 於未來視窗內被存取}]$ 為\emph{未來效用預測}，$\mathrm{fetch}$ 為自 $\ell_i$ 載回 GPU 的延遲，$\mathrm{recomp}$ 僅在 $a = \act{Drop}$ 時非零，且依第 \ref{sec:recompute-econ} 節之模型隨 block 的絕對位置增長。
+
+\subsection{受約束的最佳化問題}
+
+給定品質預算 $\epsilon$，
+\begin{equation}
+\begin{aligned}
+  \min_{\{a_i\}} \quad & \sum_{i \in \mathcal{B}} c(i, a_i) \\
+  \text{s.t.} \quad & \Delta\mathcal{Q}\big(\{a_i\}\big) \le \epsilon \\
+                    & \textstyle\sum_i \mathrm{mem}^{\text{gpu}}(i,a_i) \le C^{\text{gpu}} \\
+                    & \text{(對 CPU/SSD 同理)} \\
+                    & \mathrm{TTFT} \le T_{\text{SLO}},\;\; \mathrm{TPOT} \le P_{\text{SLO}} \\
+                    & \text{式 \eqref{eq:dropdep} 的可行性約束}
+\end{aligned}
+\label{eq:opt}
+\end{equation}
+
+此形式化與既有工作的差異有三：（i）動作空間 \eqref{eq:actions} 同時跨越位置與精度兩個維度，並將 \act{Drop} 視為一個具明確標價的層級而非失敗路徑；（ii）品質為\emph{硬性約束}而非目標函數中的加權項，此點與 KVServe~\cite{kvserve2026} 一致但作用於放置而非壓縮；（iii）成本函數 \eqref{eq:cost} 中四項成本同時出現。
+
+\paragraph{$\epsilon$ 的可操作性。}
+$\Delta\mathcal{Q}$ 於執行期不可直接觀測，這是所有品質約束工作面臨的共同困難。KVServe 採用離線 profiling 加上 $\epsilon$-greedy bandit 修正。我們規劃在第 \ref{sec:eval} 節評估兩種代理訊號：（a）離線 profile 建立的 (壓縮率, 任務類型) $\rightarrow$ 品質查找表；（b）模型輸出分佈的信心值作為線上回饋。此為本設計最主要的風險點，我們於第 \ref{sec:limitations} 節說明。
+
+% =====================================================================
+\section{Design}
+\label{sec:design}
+
+\subsection{系統架構}
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize\sffamily,
+  >={Stealth[length=2.2mm]},
+  eng/.style  ={draw,rounded corners=3pt,fill=black!4,draw=black!45,thick,align=center},
+  sig/.style  ={draw,rounded corners=2pt,fill=white,draw=black!35,font=\scriptsize\sffamily,
+                align=center,minimum height=0.58cm,minimum width=3.15cm,inner sep=2.5pt},
+  stage/.style={draw,rounded corners=3pt,fill=white,draw=orange!65!black,thick,align=center,
+                minimum height=1.15cm,minimum width=2.35cm},
+  tier/.style ={draw,rounded corners=3pt,thick,align=center,minimum height=0.74cm,
+                minimum width=2.75cm,font=\scriptsize\sffamily},
+  ar/.style   ={->,thick,black!62},
+  tar/.style  ={->,semithick,black!40},
+]
+
+% ================= Row 1 : 既有引擎 =================
+\node[eng,minimum width=3.8cm,minimum height=0.85cm] (llm)  at (3.0,0)
+      {Frozen Llama / Qwen\\[-2pt]\scriptsize Attention};
+\node[eng,minimum width=5.4cm,minimum height=0.85cm] (vllm) at (9.1,0)
+      {vLLM \;\textbf{·}\; \texttt{OffloadingConnector}\\[-2pt]\scriptsize PagedAttention · prefix cache};
+\draw[ar] (llm) -- (vllm);
+
+% ================= Row 2 : 訊號 + Tiara =================
+\node[sig] (s1) at (2.78,-1.28) {block 狀態 $\ell_i,\pi_i,a_i,n_i$};
+\node[sig] (s2) at (2.78,-1.90) {query 特徵 $\phi_t$};
+\node[sig] (s3) at (2.78,-2.52) {剩餘容量 $C^{\text{gpu/cpu/ssd}}$};
+\node[sig] (s4) at (2.78,-3.14) {互連佇列深度 $Q_{\text{pcie}}$};
+\node[font=\scriptsize\itshape,text=black!55,anchor=south] at (2.78,-1.02) {執行期訊號};
+
+\node[stage] (pred)  at (6.30,-2.15) {未來效用預測器\\[2pt]$p_i=\Pr[\text{未來被存取}]$};
+\node[stage] (cost)  at (9.05,-2.15) {成本模型\\[2pt]式~\eqref{eq:cost}};
+\node[stage] (qgate) at (11.80,-2.15) {品質閘\\[2pt]$\Delta\mathcal{Q}\le\epsilon$};
+\draw[ar] (pred) -- (cost);
+\draw[ar] (cost) -- (qgate);
+
+\begin{scope}[on background layer]
+  \node[draw=orange!70!black,thick,rounded corners=4pt,fill=hlbox,
+        fit=(pred)(cost)(qgate),inner sep=9pt] (tiara) {};
+\end{scope}
+\node[anchor=south west,font=\scriptsize\bfseries\sffamily,text=orange!55!black]
+  at ($(tiara.north west)+(0.05,0.04)$) {\sys \;— 本文貢獻};
+
+\foreach \n in {s1,s2,s3,s4} \draw[tar] (\n.east) -- (tiara.west);
+
+% CachePolicy hook：從 vLLM 垂直下到 Tiara
+\draw[ar,dashed,black!55] (vllm.south) -- (tiara.north)
+  node[midway,left=3pt,font=\scriptsize\itshape,text=black!55,align=right]
+  {掛載於\\[-1pt]\texttt{CachePolicy}};
+
+% 動作輸出
+\node[anchor=west,align=left,font=\scriptsize\sffamily] (actlbl) at (14.35,-2.15)
+  {動作 $a_i\in\mathcal{A}$\\[-1pt]\scriptsize 式~\eqref{eq:actions}};
+\draw[ar] (tiara.east) -- (actlbl.west);
+
+% ================= Row 3 : Memory Manager（匯流排） =================
+\node[eng,minimum width=15.0cm,minimum height=0.62cm] (mm) at (8.72,-4.15)
+      {Memory Manager \;\scriptsize（執行搬移 / 壓縮 / 重算）};
+\draw[ar] (tiara.south) -- (tiara.south|-mm.north);
+
+% ================= Row 4 : 六個層級 =================
+\node[tier,fill=gpucol!18,draw=gpucol]  (t1) at (2.58,-5.45) {GPU · BF16};
+\node[tier,fill=gpucol!8, draw=gpucol]  (t2) at (5.65,-5.45) {GPU · INT4};
+\node[tier,fill=cpucol!14,draw=cpucol]  (t3) at (8.72,-5.45) {CPU · INT8};
+\node[tier,fill=ssdcol!14,draw=ssdcol]  (t4) at (11.79,-5.45) {SSD · 壓縮};
+\node[tier,fill=dropcol!16,draw=dropcol](t5) at (14.86,-5.45) {DROP\\[-3pt]$\rightarrow$ recompute};
+
+\foreach \t in {t1,t2,t3,t4,t5} \draw[tar] (\t.north|-mm.south) -- (\t.north);
+
+% ================= restore：最左側獨立通道 =================
+\coordinate (rl) at (0.42,-5.45);
+\draw[ar,dashed,orange!60!black]
+  (t1.west) -- (rl) -- (0.42,0) -- (llm.west);
+\node[rotate=90,anchor=south,font=\scriptsize\itshape,text=orange!55!black] at (0.10,-2.7)
+  {restore / recompute};
+
+\end{tikzpicture}
+\caption{\sys 架構與資料流。灰底為既有基礎設施，橘框為本文貢獻。控制器接收四類執行期訊號，經「未來效用預測 $\rightarrow$ 成本模型 $\rightarrow$ 品質閘」三階段，為每個 KV block 產生一個動作 $a_i\in\mathcal{A}$，交由 Memory Manager 執行。關鍵設計決定是\emph{不自行實作推論引擎}：\sys 掛載於 vLLM 既有的 \texttt{CachePolicy} 介面，貢獻邊界因而清晰（\textbf{機制屬於 vLLM，策略屬於本文}），且可在 CUDA 與 ROCm 上零移植部署，並直接與內建的 \texttt{lru}/\texttt{arc} 對照。左側橘色虛線為恢復路徑：被降級或丟棄的 block 在重新變得重要時可升回上層或重算，單次誤判不會造成資訊的永久損失。}
+\label{fig:arch}
+\end{figure*}
+
+圖 \ref{fig:arch} 給出整體架構。設計上的關鍵決定是：\emph{不自行實作推論引擎}。vLLM~\cite{vllm2023} 的 \texttt{OffloadingConnector} 已提供 GPU$\rightarrow$CPU$\rightarrow$（FS/物件儲存/P2P）的搬移機制，且官方文件明確載明支援 CUDA、ROCm 與 XPU；其上游 CI 於實體 gfx942 硬體上執行 KV offload 測試。該連接器內建的置換策略僅有 \texttt{lru} 與 \texttt{arc}，並透過 \texttt{CachePolicy} 介面開放自訂實作。
+
+此決定有三個後果：（i）\sys 可在 CUDA 與 ROCm 兩個平台上零移植部署；（ii）對照組為 production 級實作而非我們自行撰寫的弱化版本；（iii）貢獻邊界清晰：\emph{機制屬於 vLLM，策略屬於本文}。
+
+\subsection{未來效用預測器}
+\label{sec:predictor}
+
+預測器輸出 $p_i$，即 block $i$ 於未來視窗內被存取的機率。我們對 8 個既有的學習式快取／放置系統做了設計層級的比對（表 \ref{tab:predictors}），並據此做出四項設計決定。
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{既有學習式快取／放置預測器的設計比對。最後一欄為本文關注的重點：損失函數是否對不同錯誤方向給予不同代價。}
+\label{tab:predictors}
+\begin{tabular}{llcl}
+\toprule
+系統 & 模型 & 動作數 & 成本不對稱 \\
+\midrule
+KVP~\cite{kvp2026}          & 112$\times$MLP & 2 & 否 \\
+ForesightKV~\cite{foresightkv2026} & MLP(16) & 2 & 部分（單邊） \\
+LookaheadKV~\cite{lookaheadkv2026} & LoRA $r{=}8$ & 2 & 否 \\
+Marconi~\cite{marconi2025}  & 啟發式 & 2 & 否（但有 value/byte） \\
+Mockingjay~\cite{mockingjay2022} & 表格+TD & 2 & 否 \\
+LRB~\cite{lrb2020}          & GBDT & 2 & 否（L2） \\
+\textbf{PARROT}~\cite{parrot2020} & LSTM+attn & 2 & \textbf{是（NDCG gain）} \\
+\textbf{Sibyl}~\cite{sibyl2022} & C51 DQN & $n$ & \textbf{是（實測延遲）} \\
+\midrule
+\textbf{\sys（本文）} & GBDT & \textbf{6} & \textbf{是（動作成本加權）} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{規格。}
+預測器是一個獨立於 LLM 之外的\emph{小型模型}，不參與 attention 計算，亦不修改模型權重。其介面如下：
+
+\vspace{2pt}
+\noindent\fbox{\parbox{0.955\columnwidth}{\footnotesize\sffamily
+\textbf{輸入}（每個 KV block，全部於服務時免費取得）\\[2pt]
+\hspace*{6pt}$\bullet$ \texttt{deltas[0..31]}：前 32 次存取的時間間隔（未填滿為 $\infty$）\\
+\hspace*{6pt}$\bullet$ \texttt{edc[0..9]}：指數衰減計數器，僅於存取時更新\\
+\hspace*{6pt}$\bullet$ \texttt{block\_size}, \texttt{layer\_id}, \texttt{head\_id}, \texttt{token\_type}\\
+\hspace*{6pt}$\bullet$ block 內 key/value 向量的池化統計\\
+\hspace*{6pt}$\bullet$ \texttt{attn\_mass[0..7]}：最近 8 個解碼步中，該 block 取得的\\
+\hspace*{20pt}attention 質量佔比（forward 已算出，記錄成本近零）\\[4pt]
+\textbf{輸出}\\[2pt]
+\hspace*{6pt}$\hat{y}_i = \log \tau_i$ \quad（迴歸；$\tau_i$ 為距下次存取的時間）\\
+\hspace*{14pt}$\downarrow$ isotonic regression（驗證集上校準）\\
+\hspace*{6pt}$\hat{p}_i = \Pr[\tau_i \le W]$ \quad（$W$ 為決策視窗長度）\\[4pt]
+\textbf{模型}：GBDT，單一全域模型，\texttt{layer\_id}/\texttt{head\_id} 作為特徵
+}}
+\vspace{3pt}
+
+\emph{門檻永遠施加於 $\hat{p}_i$，不施加於 $\hat{y}_i$}——式 \eqref{eq:cost} 與式 \eqref{eq:threshold} 使用的皆為機率。此區分是必要的：對 $\hat{y}_i$ 直接閾值化在數學上不對應式 \eqref{eq:threshold} 的最佳邊界（見第 \ref{sec:loss} 節）。
+
+\paragraph{決定一：預測連續量，而非二元分類。}
+所有預測連續量並延後閾值化的系統，都勝過其二元分類的前身，且 Mockingjay~\cite{mockingjay2022} 與 LRB~\cite{lrb2020} 均明確報告此點。LRB 嘗試過對 Belady 邊界的二元分類並依 good-decision-ratio 拒絕之。我們因此回歸 $\log(\text{距下次存取的時間})$。取對數的理由與 LRB 相同：真正重要的是落在邊界的哪一側，100K 與 2M 的差異遠比 2M 與 3M 重要。
+
+\paragraph{決定二：特徵取自 LRB 的三個家族，全部在服務時免費。}
+(i) \emph{deltas}，即距該 block 前 $k$ 次存取的時間間隔（$k \le 32$，未填滿者為 $\infty$），此設計涵蓋 LRU、LRU-$K$ 與 S4LRU；(ii) \emph{EDC}，即 10 個指數衰減計數器 $C_i \leftarrow 1 + C_i \cdot 2^{-\Delta_1 / 2^{9+i}}$，僅在存取時更新；(iii) \emph{靜態特徵}，即 block 大小、layer id、head id 與 \emph{token 類型}。最後一項的依據是 SAECache~\cite{saecache2026} 量到不同語意類型（system prompt / 使用者查詢 / 工具輸出 / 推理鏈）的重用率差異達 \textbf{756 倍}，而該特徵取得成本為零。
+
+\paragraph{決定二之補充：必須納入模型內部表徵。}
+上述特徵全部來自\emph{存取歷史}，不含模型自身的表徵。這與三個學習式先例形成對比：KVP~\cite{kvp2026} 明確「僅使用 key 與 value 向量」，LookaheadKV~\cite{lookaheadkv2026} 透過層內 adapter 讀取，ForesightKV~\cite{foresightkv2026} 蒸餾真實的未來 attention。\emph{「在不看 KV 的情況下預測 KV 的重用」作為服務層的低成本選擇是合理的，但作為學習貢獻則站不住腳。}我們因此將 block 內 key/value 向量的池化統計併入特徵集，並在第 \ref{sec:eval} 節以消融比較「僅存取歷史」與「存取歷史 + 模型內部表徵」兩種特徵集。
+
+\paragraph{決定二之補充二：納入 query 側訊號，但作為特徵而非機制。}
+第 \ref{sec:related} 節論證以 query 為訊號者無法取代放置決策，原因是 $q \cdot k$ 對已降級的 block 不可得。但對\emph{仍位於 GPU} 的 block，該訊號的品質高於任何存取歷史特徵，捨棄它並無理由。我們因此記錄 \texttt{attn\_mass}，即最近 8 個解碼步中該 block 取得的 attention 質量佔總質量之比。此量在 forward pass 中已被計算，記錄它僅需一次 per-block 的規約，不引入額外的 $q \cdot k$。
+
+此設計使特徵集在階梯上呈\emph{降級退化}的形態：位於 GPU 的 block 同時具備存取歷史與 query 側訊號，位於 CPU/SSD 者僅有存取歷史，已丟棄者僅有靜態特徵。GBDT 原生處理缺失值，此結構無須額外處理。我們在第 \ref{sec:eval} 節以消融量測 \texttt{attn\_mass} 的邊際貢獻。
+
+\paragraph{決定三：GBDT 而非神經網路。}
+LRB 明確比較過 GBM、線性迴歸、邏輯迴歸、SVM 與 2 層 16 隱藏單元的 NN，GBM 在不同 trace 與快取大小下穩定勝出，且訓練僅需 300\,ms、對 64 個候選推論僅需 \textbf{30\,$\mu$s}。GBDT 亦能原生處理 $\infty$ 值的 delta 特徵。我們採用單一全域模型並以 layer/head id 作為特徵；KVP~\cite{kvp2026} 的 112 個獨立 agent 帶來可觀的工程成本，而其論文並未提供「per-head 模型優於帶 head-id 特徵的共享模型」的消融證據。
+
+此決定另有兩個本設定特有的理由。\emph{(i) 預測器的成本自其收益中扣除。}預測器運行於服務熱路徑，其延遲直接抵銷所避免的重算或傳輸。以表 \ref{tab:kappa} 的區間為參照，單次重算為 12--1{,}972\,$\mu$s，而對 64 個候選的 GBDT 推論為 30\,$\mu$s；若改以需要一次 forward pass 的模型評分，僅 kernel launch 與排隊即進入相同數量級，收益隨即被抵銷。\emph{(ii) 神經預測器與主模型競爭同一加速器。}GBDT 於 CPU 上執行，完全不佔用 GPU；任何在 GPU 上評分的預測器都會插入主模型的 decode 批次，其代價不僅是預測器本身的延遲，還包括對批次結構的擾動。
+
+此外，主模型規模上升時此權衡\emph{朝有利於 GBDT 的方向移動}：$\kappa$ 隨模型增大而上升（表 \ref{tab:kappa}：8B 至 70B 由 6 增至 21，於平台 A 由 54 增至 190），而 GBDT 的推論成本不隨模型規模改變，因其特徵取自存取歷史而非模型參數。
+
+我們不要求讀者接受此論證，而以實驗回答：表 \ref{tab:ablation} 的 (D) 區塊於相同特徵集與相同損失下比較四種預測器，並同時量測\emph{品質收益與熱路徑延遲}。
+
+前三者（GBDT、小型 MLP、其容量放大一階者）皆接受攤平後的特徵向量，故僅檢驗\emph{容量}。第四者為直接消費 \texttt{deltas} 時間序列的小型 GRU，檢驗的是\emph{結構}——即時序資訊應由手工特徵編碼（本文與 LRB 的作法），抑或應由模型自行學習。此對照不可省略：LRB 所比較的 2 層 16 隱藏單元 NN 同樣接受攤平輸入，其「GBM 勝出」的結論因而\emph{不涵蓋}序列模型，本文若僅援引該結論即屬過度推論。
+
+\texttt{deltas} 與 EDC 事實上已是時序的手工編碼——前者為存取間隔序列的截斷，後者為 512 至 262{,}144 十種半衰期上的指數加權和，其功能與循環網路的隱藏狀態同構，差別在於前者的更新規則寫死而後者由訓練得到。(D) 區塊所檢驗的正是此差別是否重要。若 GRU 在計入自身延遲後仍佔優，第 \ref{sec:predictor} 節的整條特徵工程路線即被推翻，我們將據以修改。
+
+\paragraph{決定四：標籤取得採用 LRB 的雙機制。}
+標籤 $\tau_i$ 無法在記錄特徵的當下取得，因其定義涉及未來。我們於取樣時記錄特徵並將該樣本置入待標記佇列，其後由兩個機制之一完成標記：\textbf{(a)} 該 block 下次被存取時，以兩次存取的間隔為標籤；或 \textbf{(b)} 當該樣本離開一個長於 relaxed-Belady 邊界的滑動視窗 $W$ 而仍未被存取時，立即以「$>W$」標記。
+
+機制 (b) 是取得\emph{負樣本}的唯一途徑。僅有機制 (a) 時，訓練集只會包含「後來確實被重用」的 block——從未被重用者永遠等不到第二次存取，因而永遠不進入訓練集。模型將完全未見過應被丟棄的樣本長何模樣，而那正是 \act{Drop} 動作的目標群體。取樣以 block 為單位而非以請求為單位，以避免偏向熱門 block。
+
+\paragraph{決定五：以時間切分而非隨機切分評估。}
+訓練與測試集依 trace 的\emph{時間順序}切分（前 70\% 訓練、後 30\% 測試），不作隨機切分。隨機切分會使訓練集含有測試期之後的存取事件，而 EDC 與 delta 特徵本身即為時間的函數，此洩漏將系統性地高估預測品質。此點在快取預測文獻中屬常識，但其違反不易由結果察覺，我們因此明確記載。
+
+\paragraph{決定六：以線上重訓因應工作負載飄移。}
+不同工作負載的重用結構差異極大：多輪對話的前綴重複命中，RAG 的文件塊多為一次性讀取，agent 流量則呈現極熱的系統提示與極冷的工具輸出。SAECache~\cite{saecache2026} 所量到的 756 倍重用率差異即為此分布差異的直接證據。我們以三個層次因應：(i) \texttt{token\_type} 作為特徵，使模型得以在單一模型內區分語意類型；(ii) \emph{週期性重訓}，利用 GBDT 300\,ms 的訓練成本，以最近一段時窗的樣本重新擬合；(iii) 第 \ref{sec:eval} 節報告\emph{跨工作負載泛化}，即於工作負載 A 訓練並於 B 測試的退化幅度。
+
+第 (ii) 項是 GBDT 選擇的直接後果而非附帶效果。KVP~\cite{kvp2026} 的 112 個強化學習 agent 需 8 GPU DDP 訓練，其重訓週期以日計，結構上無法追隨以分鐘計的流量變化。\emph{對分布飄移的適應成本，是預測器族選擇的一部分，而非可事後補救的工程細節。}
+
+\subsection{成本敏感的損失函數}
+\label{sec:loss}
+
+這是本文與既有工作差異最大的一點，也是我們認為最具貢獻的設計。
+
+\paragraph{問題：對稱損失在本設定下可證明地失準。}
+既有 KV cache 的學習式方法（KVP、LookaheadKV、SP-KV）與經典快取方法（LRB、Mockingjay）的損失函數對兩種錯誤方向給予相同代價。在單一動作（驅逐）的設定下這是合理的。但本文的動作空間有六個成本迥異的選項，兩種錯誤的下游代價相差 6--190 倍，且\emph{該比值本身隨平台變動達 32 倍}（表 \ref{tab:kappa}）：
+
+\begin{itemize}\itemsep0.1em
+  \item \textbf{False negative}（預測不會被使用 $\rightarrow$ \act{Drop} $\rightarrow$ 後續被需要）：被迫重算，12--108\,$\mu$s/token
+  \item \textbf{False positive}（預測會被使用 $\rightarrow$ 保留 $\rightarrow$ 實際未使用）：僅浪費容量
+\end{itemize}
+
+令 $\kappa = c_{\text{FN}} / c_{\text{FP}}$ 為成本比。保留的期望成本為 $(1-p)\,c_{\text{FP}}$，丟棄的期望成本為 $p\,c_{\text{FN}}$，兩者相等處即為最佳決策門檻：
+\begin{equation}
+  p^{*} = \frac{c_{\text{FP}}}{c_{\text{FP}} + c_{\text{FN}}} = \frac{1}{1+\kappa}
+  \label{eq:threshold}
+\end{equation}
+這是成本敏感學習的標準結果~\cite{elkan2001}，我們不主張其為本文貢獻。其意涵是：在 $\kappa = 10$ 時 $p^{*} = 1/11 \approx 0.09$。\emph{一個以對稱損失訓練、並在 $0.5$ 處閾值化的預測器，其決策門檻被錯置了約一個數量級}。
+
+本文的主張是更具體的一點：\textbf{既有所有學習式 KV 管理方法的動作空間都是二元且成本同質的，因此 $\kappa = 1$、$p^{*} = 0.5$，對稱損失恰好正確；而本文的動作空間成本異質且 $\kappa$ 由硬體決定，對稱損失因而失準。}
+
+\paragraph{做法。}
+我們採用兩種形式，並在第 \ref{sec:eval} 節比較：
+
+\textbf{(L1) 動作成本加權的 L2}。在 $\log(\text{距下次存取時間})$ 的迴歸上，令每個樣本的權重等於「策略對該 block 所採取的動作，在判斷錯誤時的代價」：
+\begin{equation}
+  \mathcal{L}_{\text{L1}} = \sum_i w(a_i) \cdot \big( \hat{y}_i - \log \tau_i \big)^2,
+  \quad w(a_i) = \frac{\mathrm{cost}_{\text{err}}(a_i)}{\mathrm{cost}_{\text{err}}(\act{Cpu}_8)}
+\end{equation}
+此形式是 LRB 的損失加上其不需要的那一項，在 LightGBM 中僅需 \texttt{sample\_weight}，無額外機制。
+
+\textbf{但必須注意一個校準上的限制。} 對連續目標的迴歸加權，改變的是條件期望 $\mathbb{E}[\log \tau \mid x]$，\emph{而非決策門檻}。(L1) 本身因而\textbf{不保證}產生式 \eqref{eq:threshold} 的最佳邊界。我們將 (L1) 定位為啟發式，並在其後串接一個明確的門檻校準步驟：於驗證集上將預測值映射為 $\hat{p}$（例如以 isotonic regression），再依式 \eqref{eq:threshold} 設定各層級的門檻。
+
+\paragraph{兩階段做法是正確的基線，本文須證明加權訓練帶來額外增益。}
+上述步驟指向一個明顯的替代方案：\emph{以對稱損失訓練，僅在決策時將門檻自 $0.5$ 移至 $p^{*}$}。此即 Elkan~\cite{elkan2001} 的結果，且具備一個實際優點——$\kappa$ 隨平台改變時無需重新訓練。若本文的增益全部來自門檻移動，則加權訓練並無貢獻。我們因此在表 \ref{tab:ablation} 的 (B) 區塊納入該基線（「對稱 L2 @ $p^{*}$」一列），使兩者可分。
+
+我們預期加權訓練仍有增益，其理由如下。Elkan 的結果成立於\emph{機率估計在整個值域上等品質}的前提；有限容量的模型並不滿足此前提，它必須決定將擬合能力配置於何處。對稱損失依樣本密度均勻配置，而決策邊界 $p^{*}=1/(1+\kappa)$ 隨 $\kappa$ 增大而深入機率分佈的尾端：於 MI300X／8B（$\kappa=6$）為 $0.14$，於平台 A／70B（$\kappa=190$）則為 $0.005$。\emph{在後者，對稱損失幾乎沒有誘因把該區域學準}——該處樣本稀少且對平均平方誤差的貢獻極低。加權訓練的作用即是將擬合能力重新配置至該區域。
+
+此論證給出一個可證偽的預測：\textbf{(B) 區塊中「對稱 L2 @ $p^{*}$」與 (L1)/(L2) 的差距，應隨 $\kappa$ 增大而擴大}。若兩者在 3090 與 MI300X 上差距相同，則加權訓練的正當性不成立，本文將據此縮減主張至門檻校準。
+
+\textbf{(L2) 動作成本進入排序損失的 gain 項}（原則性版本）。PARROT~\cite{parrot2020} 是我們調查中唯一刻意使用非對稱損失的工作，其 NDCG 形式明確地「重罰把機率放在即將被重用的 line 上，輕罰放在遠期重用的 line 上」，並帶來 3.5\% 的命中率提升。然而 PARROT 只有單一動作，其 gain 項 $(d(l_w)-1)$ 僅編碼\emph{重用距離}，未編碼\emph{動作成本}。我們將動作成本置入該 gain 項：
+\begin{equation}
+  \mathrm{DCG} = \sum_{w} \frac{\mathrm{cost}_{\text{err}}(a_w) \cdot \big(d(l_w) - 1\big)}{\log\big(\mathrm{pos}(l_w) + 1\big)}
+\end{equation}
+
+\paragraph{為何這是可辯護的新意。}
+Sibyl~\cite{sibyl2022} 是唯一處理異質層級放置且考慮成本的系統，但它\emph{迴避}了此問題：其 reward 直接取自實測延遲 $1/L_t$，成本比是硬體量出來的而非猜的。這是優雅的做法，但 Sibyl 的動作\emph{可逆}（頁面可在下次存取時重新放置），而本文的 \act{Drop}$\rightarrow$重算\emph{不可逆}，因此需要 Sibyl 的驅逐懲罰項 $R_p = 0.001 \times L_e$ 推廣為 per-action 懲罰。
+
+\paragraph{硬體條件化。}
+$w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI300X 為 20{,}752（表 \ref{tab:ratio}）。\emph{同一個損失函數在兩個平台上會產生不同的權重，進而學出不同的策略}。第 \ref{sec:twoplatform} 節的硬體條件化主張，在此獲得一個具體且可量測的機制，而非僅是敘述。
+
+此處須明確一項取捨。加權訓練使模型\emph{綁定於特定的} $\kappa$，平台變更即需重訓；上一段的兩階段做法則保持平台無關，但擬合能力的配置不隨決策邊界移動。二者並非優劣關係而是不同的操作點：前者以可移植性換取邊界附近的精度，後者反之。(B) 區塊同時量測二者，使該取捨成為\emph{可報告的結果}而非未言明的假設。
+
+\subsection{推論開銷預算}
+
+既有工作給出三種可行的攤銷方式：KVP~\cite{kvp2026} 於 prefill 後評分一次、decode 期間零額外 FLOP（10K 上下文下 0.71\,ms，相對於 404\,ms 的 prefill）；ForesightKV~\cite{foresightkv2026} 每 256 個新 token 重新評分一次，開銷 2.7\%；TRIM-KV~\cite{trimkv2025} 於 block 建立時評分一次，之後以指數衰減 $\beta^{t-i}$ 免費地重新排序。
+
+我們無法直接採用 TRIM-KV 的「建立時評分一次」，因為第 \ref{sec:predictor} 節的特徵（deltas 與 EDC 計數器）\emph{在每次存取時更新}，一次性評分會立即過時。我們改採三層攤銷：（i）存取時以極低成本更新 EDC；（ii）於驅逐時機依 LRB 的做法\emph{取樣 $k=64$ 個候選評分而非排序整個 cache}，該操作在 CPU 上約需 30\,$\mu$s；（iii）粗粒度的週期性全量重新評分。
+
+線上學習控制器能否符合真實硬體預算，Pythia~\cite{pythia2021} 提供了存在性證據：其線上 RL 硬體 prefetcher 僅佔 1.03\% 的晶片面積。
+
+\subsection{與現有機制的關係}
+
+\sys 不取代壓縮或稀疏注意力，而是決定\emph{何時對哪個 block 施加何種處理}。其與 vLLM 的 paged KV 佈局相容，並可與 LMCache 的分層後端並存。
+
+% =====================================================================
+\section{Evaluation Plan}
+\label{sec:eval}
+
+\textbf{本節為實驗計畫。所有結果表格均為佔位符，實驗尚未執行。}
+
+\subsection{實驗平台}
+
+依第 \ref{sec:twoplatform} 節的分工，實驗於兩個平台執行。
+
+\textbf{平台 A（機制驗證與完整對照）}：NVIDIA RTX 3090（24\,GB GDDR6X，PCIe 4.0$\times$16），CUDA，vLLM。此平台承擔概念驗證、量測工具鏈建立，以及對 CUDA-only baseline（ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer、ParisKV）與三個學習式 baseline 的完整比較。模型依第 \ref{sec:eval} 節的選模準則為 Qwen2.5-7B-Instruct-1M（主力）與 Llama-3.1-8B-Instruct（對照），均以 AWQ int4 權重載入。
+
+\textbf{平台 B（規模與主要科學主張）}：AMD Instinct MI300X（gfx942，192\,GB HBM3），ROCm 7.x，vLLM ROCm wheel（Python 3.12），LMCache ROCm wheel（gfx942），真實 NVMe SSD。此平台承擔並行度／機會成本場景與能耗分析。
+
+\paragraph{可推廣性的界線。}
+我們\emph{不}由平台 A 的結果推論多租戶機會成本場景（24\,GB 無法容納多個長 session），亦\emph{不}由平台 A 提出能耗結論（消費級顯卡缺乏記憶體與計算分軌的能耗計數器）。
+
+\subsection{壓力軸的設計}
+
+壓力軸\emph{隨平台而不同}，這正是第 \ref{sec:twoplatform} 節雙平台設計的直接後果。
+
+\textbf{平台 A（RTX 3090, 24\,GB）}：既有文獻的「單請求、上下文遞增」設定在此\emph{成立}。以 8-bit 權重的 Llama-3.1-8B 計，64K 上下文可置入而 128K 超出，主壓力軸為 context 8K$\rightarrow$16K$\rightarrow$32K$\rightarrow$64K$\rightarrow$（128K，預期失敗）。
+
+\textbf{平台 B（MI300X, 192\,GB）}：同一設定在此\emph{不成立}：8B--14B 模型於 128K 僅佔 HBM 的 8--10\%（第 \ref{sec:motivation} 節），量測不到壓力。此平台改採三軸：
+
+\begin{enumerate}\itemsep0.15em
+  \item \textbf{並行度}（主軸）：1、4、8、16、32 個並行請求 @ 128K 上下文。
+  \item \textbf{模型架構}：見下方選模準則。
+  \item \textbf{跨 session 保留}：多輪對話與 agentic trace。
+\end{enumerate}
+
+\paragraph{選模準則。}
+我們不以「涵蓋愈多模型愈好」為原則，而採一條更嚴格的規則：\emph{僅納入會使 $\kappa$ 產生可事先計算之變化的模型}。據此，選模同時受兩個硬條件約束：
+
+\textbf{(i) 原生上下文長度必須大於評測長度。} 表 \ref{tab:kvsize} 顯示 Qwen3 全系列的 \texttt{max\_position\_embeddings} 僅 40{,}960，於 128K 評測必須施加 RoPE 外推——而外推本身降低品質，將與 KV 管理造成的品質損失混淆，使 $\epsilon$ 失去意義。此條件排除了 Qwen3 全系列。
+
+\textbf{(ii) 必須在目標平台上留有足夠的 KV 預算。} 這排除了在平台 A 上使用 MoE：Qwen3-30B-A3B 即使以 int4 權重載入亦需約 17\,GB，僅餘 4.6\,GB 供 KV 使用。
+
+據此，兩個平台的模型分工如下：
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{選模結果。$^{M}$ 為 MoE。$\kappa$ 於各自平台計算。平台 A 的兩個模型 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點。}
+\label{tab:models}
+\begin{tabular}{@{}llrl@{}}
+\toprule
+平台 & 模型 & $\kappa$ & 角色 \\
+\midrule
+\multirow{2}{*}{A (3090)}
+ & Qwen2.5-7B-Inst-1M & 108 & 主力（懸崖在 315K） \\
+ & Llama-3.1-8B-Inst  & 54  & 對照（$\kappa$ 減半） \\
+\midrule
+\multirow{2}{*}{B (MI300X)}
+ & Llama-4-Scout$^{M}$ & 8 & 規模（原生 10M） \\
+ & Qwen3-30B-A3B$^{M}$ & 3 & MoE 對 $\kappa$ 的影響 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Qwen2.5-7B-Instruct-1M 為平台 A 的主力}，因其原生支援 1M 上下文，而其 24\,GB 上的容量懸崖落在約 315K token——\emph{遠低於模型上限，故量測到的是純粹的記憶體限制而非模型限制}。相對地，Llama-3.1-8B 在同平台的容量懸崖（約 132K）與其原生上限（131{,}072）幾乎重合，兩種限制無法分離，故僅作對照。
+
+\paragraph{明確排除的架構。}
+MLA（如 DeepSeek 系列）改變式 \eqref{eq:kvsize} 本身，其 KV 為壓縮後的潛在向量；hybrid SSM（如 Jamba）的狀態大小不隨序列成長，已由 Marconi~\cite{marconi2025} 處理。二者並非「未評估」，而是\emph{定義上不同的問題}。
+
+\noindent 兩個平台的壓力軸不同並非實驗設計的瑕疵，而是待檢驗的假設本身：\emph{若最佳策略確實隨硬體比值改變，則產生壓力的方式本來就應該不同}。
+
+\paragraph{上下文外推的混淆變因。}
+選模準則 (i) 已排除所有需要外推的模型，故評測長度均在原生範圍內：Qwen2.5-7B-Instruct-1M 的 315K 容量懸崖遠低於其 1M 原生上限，Llama-3.1-8B-Instruct 的 131K 亦在其原生範圍內。\emph{我們因而完全避開了外推造成的品質下降這一混淆變因}，$\epsilon$ 得以純粹反映 KV 管理的影響。若日後需評測超出原生範圍的長度，必須以「full-KV + 相同外推設定」作為品質基準以隔離兩種來源。
+
+\subsection{成本常數的量測協定}
+\label{sec:costmeas}
+
+式 \eqref{eq:cost} 的每一項都需要一組平台與模型相關的常數。這些常數\emph{每個 (平台, 模型) 組合只量一次}，之後由策略直接查用，不隨每次實驗重量。
+
+關鍵在於\textbf{兩類成本必須分開量測}——這正是第 \ref{sec:recompute-econ} 節論證的核心，若壓成單一維度便會得到「重算最貴故永不重算」的錯誤結論：
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{成本常數的量測協定。左欄為 block 閒置時持續付出的代價，右欄為被需要時一次性付出的代價。\act{Drop} 的價值完全來自左欄的零。}
+\label{tab:costmeas}
+\begin{tabular}{@{}lll@{}}
+\toprule
+動作 & 平時成本（閒置） & 被需要時的成本 \\
+\midrule
+\act{Gpu}$_{16}$ & GPU 位元組 & $\approx 0$ \\
+\act{Gpu}$_{8}$  & GPU 位元組 $/2$ & 反量化 kernel \\
+\act{Gpu}$_{4}$  & GPU 位元組 $/4$ & 反量化 kernel \\
+\act{Cpu}$_{8}$  & host 位元組 $/2$ & PCIe + 反量化 \\
+\act{Ssd}        & 磁碟位元組 & NVMe I/O $+$ PCIe \\
+\act{Drop}       & \textbf{0} & 重算$(\ell)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{量測方式。}
+平時成本以 \texttt{torch.cuda.memory\_stats()} 與 host 端計數器直接取得，單位為位元組，可由式 \eqref{eq:kvsize} 驗算。被需要時的成本則以隔離的微基準取得：對每個動作，反覆搬移或重建固定數量的 block 並取中位數延遲，重複三次確認變異小於 10\%。
+
+\paragraph{重算成本不是常數。}
+$\mathrm{recomp}(\ell)$ 隨 block 的絕對位置 $\ell$ 成長，因 attention 的二次項。我們將其量測為位置的函數而非單一純量，並以線性層的 $2N_{\text{active}}$ 項作為 $\ell \to 0$ 的下界檢核。對 MoE 模型，$N_{\text{active}}$ 為啟用專家的參數量而非總參數量。
+
+\subsection{Baselines}
+
+\begin{table}[t]
+\centering\small
+\caption{Baseline 分層與平台可用性。\textbf{平台 A（CUDA）上全部可直接執行}；平台 B 欄為移植至 ROCm 的估計工作量，經逐一檢視 repo 後得出。$^{\dagger}$ 稀疏檢索一系因 \texttt{rapidsai/raft} 無 ROCm 移植而\textbf{結構性地無法於平台 B 執行}——這是平台 A 存在的理由之一。$^{*}$ LMCache 在 ROCm 上雖有官方 wheel，但存在已知執行期問題，見第 \ref{sec:limitations} 節。ClusterKV、RetroInfer、ParisKV 同屬該系，因與上列三者機制高度重疊而未納入。}
+\label{tab:baselines}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+層級 & Baseline & A (CUDA) & B (ROCm) \\
+\midrule
+\multirow{2}{*}{錨點}
+ & Full GPU（無卸載） & \checkmark & \checkmark \\
+ & \textbf{Oracle（離線最優）} & \checkmark & \checkmark \\
+\midrule
+\multirow{4}{*}{Production}
+ & vLLM \texttt{lru} & \checkmark & \checkmark \\
+ & vLLM \texttt{arc} & \checkmark & \checkmark \\
+ & vLLM $+$ \texttt{fs} 磁碟層 & \checkmark & \checkmark \\
+ & LMCache~\cite{lmcache2025} & \checkmark & \checkmark$^{*}$ \\
+\midrule
+\multirow{2}{*}{學術（系統）}
+ & \textbf{InfiniGen}~\cite{infinigen2024} & \checkmark & $\sim$1 週 \\
+ & KIVI~\cite{kivi2024} & \checkmark & 3--7 天 \\
+\midrule
+\multirow{3}{*}{\textbf{學習式}}
+ & \textbf{KVP}~\cite{kvp2026} & \checkmark & 3--7 天 \\
+ & \textbf{ForesightKV}~\cite{foresightkv2026} & \checkmark & 3--7 天 \\
+ & \textbf{LookaheadKV}~\cite{lookaheadkv2026} & \checkmark & 3--7 天 \\
+\midrule
+\multirow{3}{*}{稀疏檢索$^{\dagger}$}
+ & ArkVale~\cite{arkvale2024} & \checkmark & $\times$ \\
+ & Quest~\cite{quest2024} & \checkmark & $\times$ \\
+ & ShadowKV~\cite{shadowkv2025} & \checkmark & $\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+表 \ref{tab:baselines} 給出 baseline 集合。此處須區分兩種用途不同的對照；混淆二者會使核心主張的檢驗失去判別力。
+
+\textbf{(i) 檢驗核心主張者為消融，而非外部系統。}本文主張既有學習式方法所用的對稱損失在異質動作成本下失準。直接比較 \sys 與 KVP 並\emph{不能}檢驗此主張：二者在儲存層數（六階對單階）、預測器族（GBDT 對強化學習）與特徵集上皆不同，量到的差異無法歸因至損失函數。具判別力的實驗是\emph{固定系統、僅替換損失函數}，即表 \ref{tab:ablation} 的 (B) 區塊，其中「對稱 L2」一列即為既有方法的損失置於本文動作空間下的行為。該實驗完全在我們控制之下，不依賴任何外部訓練產物。
+
+\textbf{(ii) 外部學習式系統用於佐證整體競爭力。}KVP、ForesightKV 與 LookaheadKV 均已釋出程式碼，但\emph{未釋出訓練後的權重}，且其預測器為模型專屬（第 \ref{sec:limitations} 節）。我們於平台 A 重訓可得者並回報，未能重訓者引用原論文數值並明確標註未重跑。此列的完整程度不影響 (i) 的結論。
+
+\textbf{(iii) production 策略界定實用價值。}vLLM 的 \texttt{OffloadingConnector} 內建策略\emph{僅有} \texttt{lru} 與 \texttt{arc}，其餘須經 \texttt{CachePolicy} 介面自行註冊；此二者因而構成目前 production 預設策略的完整集合。兩者皆僅依存取歷史決策：以表 \ref{tab:kappa} 的 3090／Llama-3.1-8B 為例，一個「重算需 225\,$\mu$s」的 block 與一個「自 CPU 取回需 4.2\,$\mu$s」的 block 在 LRU 眼中完全等價。本文的成本模型正是針對此空缺。
+
+\textbf{無法於 ROCm 執行者}：ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer、ParisKV。其阻擋原因並非 FlashInfer（AMD 已維護 \texttt{ROCm/flashinfer} 移植），而是 \texttt{rapidsai/raft} 無 ROCm 版本，以及 CUTLASS 的 template 層級耦合。我們將引用其論文回報數值作間接對照，並於第 \ref{sec:limitations} 節誠實說明。
+
+\subsection{消融設計}
+
+此為本文最重要的實驗。表 \ref{tab:ablation} 分為三個區塊，各回應一個不同的質疑。
+
+\textbf{(A) 四項成本}回應「把四項成本組合起來是否構成貢獻」。消融\emph{以成本項為單位而非以模組為單位}：若移除任一項均導致顯著退化，其必要性即為實證結果而非主張。\textbf{我們亦承認相反的可能}：若移除某項不造成退化，正確做法是將其自系統中移除，使貢獻更為聚焦。
+
+\textbf{(B) 損失函數}是核心主張的直接檢驗。若成本敏感損失相對於對稱 L2 無可量測優勢，則第 \ref{sec:loss} 節的整個論證不成立。此區塊不可省略。
+
+\textbf{(C) 機制}為次要，確認品質約束與精度維度確有作用。
+
+\paragraph{兩平台必須分開報告。}
+第 \ref{sec:loss} 節論證 $w(a_i)$ 由 $\kappa$ 決定，而 $\kappa$ 在兩平台相差 32 倍（表 \ref{tab:kappa}）。(B) 區塊在兩平台上\emph{應呈現不同的退化幅度}：在 $\kappa$ 較大的 3090 上，對稱損失的代價應更明顯。\textbf{若兩平台退化幅度相同，則硬體條件化的主張被否證}——這是本文最關鍵的可證偽點。
+
+\begin{table}[t]
+\centering\small
+\caption{消融矩陣。每次移除或替換一項，量測 quality--latency--memory Pareto 前緣的退化。(B) 區塊是本文核心主張的直接檢驗。$^{\dagger}$(D) 區塊另行回報\emph{熱路徑推論延遲}，因較大的預測器須在計入其自身延遲後才可比較。前三列共用攤平特徵，檢驗\emph{容量}；GRU 一列直接消費 \texttt{deltas} 序列，檢驗\emph{結構}。任一列在計入自身延遲後仍佔優，第 \ref{sec:predictor} 節的對應設計選擇即被推翻。}
+\label{tab:ablation}
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{llcc}
+\toprule
+ & & \multicolumn{2}{c}{Pareto 退化} \\
+\cmidrule(l){3-4}
+變體 & 移除／替換 & 3090 & MI300X \\
+\midrule
+\multicolumn{4}{l}{\textit{\textbf{(A) 四項成本}}} \\
+\sys（完整）        & ---                        & \placeholder{基準} & \placeholder{基準} \\
+$-$ 未來效用        & $p_i \rightarrow$ recency  & \placeholder{TBD} & \placeholder{TBD} \\
+$-$ 傳輸成本        & $\lambda_x = 0$            & \placeholder{TBD} & \placeholder{TBD} \\
+$-$ 重算成本        & 移除 \act{Drop}            & \placeholder{TBD} & \placeholder{TBD} \\
+$-$ 記憶體成本      & $\lambda_m = 0$            & \placeholder{TBD} & \placeholder{TBD} \\
+\midrule
+\multicolumn{4}{l}{\textit{\textbf{(B) 損失函數}（核心主張）}} \\
+對稱 L2 @ $0.5$     & $w \equiv 1$，門檻 $0.5$   & \placeholder{TBD} & \placeholder{TBD} \\
+\textbf{對稱 L2 @ $p^{*}$} & \textbf{$w \equiv 1$，門檻式 \eqref{eq:threshold}} & \placeholder{TBD} & \placeholder{TBD} \\
+(L1) 加權 + 校準    & 式 \eqref{eq:threshold}    & \placeholder{TBD} & \placeholder{TBD} \\
+(L2) 成本進 NDCG    & ---                        & \placeholder{TBD} & \placeholder{TBD} \\
+\midrule
+\multicolumn{4}{l}{\textit{\textbf{(C) 機制與特徵}}} \\
+$-$ 品質約束        & $\epsilon \rightarrow$ 固定預算 & \placeholder{TBD} & \placeholder{TBD} \\
+$-$ 壓縮            & 移除精度維度               & \placeholder{TBD} & \placeholder{TBD} \\
+$-$ 模型內部特徵    & 僅存取歷史                 & \placeholder{TBD} & \placeholder{TBD} \\
+$-$ query 側訊號    & 移除 \texttt{attn\_mass}   & \placeholder{TBD} & \placeholder{TBD} \\
+\midrule
+\multicolumn{4}{l}{\textit{\textbf{(D) 預測器容量與結構}}$^{\dagger}$} \\
+GBDT（本文）        & ---                        & \placeholder{基準} & \placeholder{基準} \\
+MLP $2\times64$     & 容量：同特徵、同損失       & \placeholder{TBD} & \placeholder{TBD} \\
+MLP $4\times256$    & 容量：同特徵、同損失       & \placeholder{TBD} & \placeholder{TBD} \\
+\textbf{GRU}（序列） & \textbf{結構}：直接吃 \texttt{deltas} & \placeholder{TBD} & \placeholder{TBD} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+\subsection{權重精度的敏感度分析}
+
+權重精度不是本文的決策變數，但它改變 KV 可用的預算，因而間接影響最佳策略。我們將其列為敏感度分析而非主要結果：
+
+\begin{center}\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lll@{}}
+\toprule
+平台 & 權重 & 目的 \\
+\midrule
+A (3090) & AWQ-INT4 & 主要設定（記憶體受限） \\
+A (3090) & BF16 & 對照：量化對 KV 預算的影響 \\
+B (MI300X) & BF16 & 主要設定 \\
+B (MI300X) & FP8 & 對照：CDNA3 之後的常見配置 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{待檢驗的問題}：在固定的硬體與模型下，最佳 KV 策略是否隨權重精度改變？我們預期\emph{會}——因為權重精度決定 KV 預算，而預算改變會移動式 \eqref{eq:opt} 的容量約束。但這是\emph{間接}影響，與第 \ref{sec:twoplatform} 節的 $\kappa$ 軸（直接改變成本比）性質不同。
+
+⚠️ Ampere（sm\_86）不支援原生 FP8，故平台 A 無 FP8 設定。
+
+\subsection{Oracle 上界與 go/no-go 判準}
+
+我們建構一個離線最優 oracle：給定完整的未來查詢序列，以整數規劃求解式 \eqref{eq:opt}，得到 $p_i \in \{0,1\}$ 為已知時的最佳放置。此為經典快取文獻中 Belady~\cite{belady1966} 分析的直接延伸，並與 Sibyl~\cite{sibyl2022} 報告「達到全知 oracle 的 80\%」的評估傳統一致。
+
+Fang 等人~\cite{hetmem2025} 已為兩層（HBM 與 off-package DRAM）的無損放置推導上界。我們的 oracle 在三點上延伸之：納入 SSD 層、納入 \act{Drop}$\rightarrow$重算動作、納入品質約束。
+
+\paragraph{停止條件。}
+若 oracle 相對於最佳簡單策略的改善幅度小於 5\%，我們將終止此研究方向並報告此負面結果。此判準於實驗計畫的第 5--6 週執行，早於任何策略實作。
+
+\subsection{評估指標與工作負載}
+
+系統指標：TTFT、TPOT、端到端延遲、GPU/CPU/SSD 佔用、PCIe traffic、throughput、服務層級分佈（見下）、重算成本。
+
+\paragraph{ROCm 量測方法。}
+KV 搬移經由 SDMA copy engine 而非 AQL compute queue，\emph{對 \texttt{rocprof-compute} 的 TCC/L2 counter 不可見}。我們將使用 \texttt{rocprofv3 --memory-copy-trace} 取得逐筆傳輸的位元組數、方向與時間戳，並以 \texttt{rocprof-compute} 的 gfx942 "Remote Read Traffic" 指標取得 kernel 側視角。
+
+\paragraph{能耗。}
+MI300X 的 \texttt{amdsmi} 提供 per-rail 能耗累加器，其中 \texttt{hbm\_energy\_acc} \emph{將 HBM 能耗與計算能耗分離}。對一個探討「保留於記憶體或重新計算」的研究問題而言，這是直接對應的量測能力，且在 NVIDIA 平台上不可得。
+
+\paragraph{品質指標。}
+Yandex 的研究~\cite{yakv2026} 顯示 ShadowKV 等方法在 needle-in-a-haystack 上表現良好卻在\emph{多事實抽取}任務上失效。因此我們將 needle-in-a-haystack 降級為 sanity check，改以多事實抽取作為主要品質判準，另納入 LongBench、RULER 與長文本摘要。
+
+\paragraph{品質如何化約為單一數字。}
+表 \ref{tab:results} 的 Quality 欄須為單一純量，其定義如下。設 $\mathcal{T}$ 為上述任務集合，$Q_t(\pi)$ 為策略 $\pi$ 於任務 $t$ 的原始分數，並以 Full GPU 為參照定義相對保留率 $r_t(\pi) = Q_t(\pi)\,/\,Q_t(\textsf{FullGPU})$。我們回報
+\begin{equation}
+Q(\pi) \;=\; \min_{t \in \mathcal{T}} \; r_t(\pi),
+\label{eq:quality}
+\end{equation}
+即\emph{最差任務}的保留率，而非跨任務平均。理由與上一段相同：平均會使單一任務的崩潰被其餘任務的分數掩蓋，而 \cite{yakv2026} 所報告的正是此類崩潰。品質約束因而具體化為 $Q(\pi) \ge 1-\epsilon$。逐任務的 $r_t$ 完整列於附錄，避免式 \eqref{eq:quality} 的化約隱藏任務間的差異。
+
+\paragraph{以服務層級分佈取代單一命中率。}
+「KV hit rate」對單層快取有明確意義，但本文的動作空間有六階，「命中」並非二元事件：自 CPU 取回與自 SSD 取回的成本相差約一個數量級，與重算則相差 6--190 倍（表 \ref{tab:kappa}）。將這些情形壓成單一比率會抹除本文所要量測的成本結構。我們因此回報\emph{服務層級分佈}，即每次 KV 存取由 $\mathcal{A}$ 中哪一階滿足的經驗分佈，並另外給出兩個純量：(i) \textbf{GPU 常駐率}，存取時該 block 已位於 GPU 且為 BF16 的比例（對應傳統命中率）；(ii) \textbf{重算率}，由 \act{Drop} 觸發重算的存取比例。後者為本文特有，直接對應第 \ref{sec:recompute-econ} 節的成本模型，亦是表 \ref{tab:ablation} 中「移除 \act{Drop}」一列的解讀依據。
+
+\paragraph{預測器層級的診斷：為何不回報分類準確度。}
+我們\emph{刻意不}以預測器的分類準確度作為評估指標，並在此說明理由，以免被誤讀為疏漏。成本敏感訓練的作用即是將決策邊界自 $0.5$ 移至 $p^{*}=1/(1+\kappa)$，其必然後果是模型在\emph{廉價方向}上多犯錯以換取在\emph{昂貴方向}上少犯錯。以未加權的準確度衡量，成本敏感模型\emph{應當}劣於對稱模型；若其未劣化，反而意味著加權未生效。準確度因而與本文的目標函數方向相反，不構成有效證據。我們改以兩個量診斷預測器：
+
+\emph{(i) 校準品質。}式 \eqref{eq:threshold} 的最佳門檻僅在 $\hat{p}_i$ 為\emph{校準過的}機率時成立：若模型輸出 $\hat p = 0.1$ 的樣本中實際重用比例並非約 $10\%$，該門檻即失去意義，第 \ref{sec:loss} 節的整個論證隨之失效。我們回報 isotonic regression 校準前後的可靠度圖與 expected calibration error。此量同時是第 \ref{sec:loss} 節所揭露之 L1 缺陷（加權迴歸改變條件均值而非決策門檻）是否被校準步驟補救的\emph{唯一直接證據}；缺少此圖，該缺陷等同未被處理。
+
+\emph{(ii) 成本加權錯誤率。}$\sum_i c\!\left(a_i^{\text{pred}},\, a_i^{\star}\right)$，其中 $a_i^{\star}$ 為 oracle 動作、$c(\cdot,\cdot)$ 為式 \eqref{eq:cost} 的成本函數。此量計的是「錯掉多少微秒」而非「錯了幾次」，是唯一能在預測器層級公平比較兩種損失函數的指標，亦與系統層級的端到端延遲直接可對照。
+
+\paragraph{跨工作負載泛化。}
+承第 \ref{sec:predictor} 節的分布飄移討論，我們額外回報一組交叉實驗：於單一工作負載訓練並於其餘工作負載測試，回報上述兩個診斷量與 $Q(\pi)$ 的退化幅度。此結果同時界定週期性重訓的必要性——若跨工作負載退化可忽略，重訓機制即為不必要的複雜度，我們將據以移除。
+
+\subsection{預期結果（佔位）}
+
+\begin{table}[t]
+\centering\small
+\caption{\placeholder{主結果表（佔位符，實驗尚未執行）}}
+\label{tab:results}
+\begin{tabular}{lccc}
+\toprule
+方法 & Quality & TTFT & GPU mem \\
+\midrule
+Full GPU        & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+vLLM \texttt{lru} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+vLLM \texttt{arc} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+LMCache         & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+InfiniGen       & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+\sys            & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+\midrule
+\textit{Oracle} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Discussion and Limitations}
+\label{sec:limitations}
+
+\paragraph{本稿無實驗結果。}
+這是本稿最主要的限制。第 \ref{sec:motivation} 節的分析與第 \ref{sec:related} 節的比對已完成，但第 \ref{sec:eval} 節的計畫尚未執行。在取得 oracle 結果前，我們無法斷言此問題存在足夠的最佳化空間。
+
+\paragraph{$\epsilon$ 是估計值而非保證。}
+品質約束以 profiling 建立的代理訊號執行，$\Delta\mathcal{Q} \le \epsilon$ 是經驗性的估計而非形式保證。這是所有品質約束工作的共同限制。將其提升為執行期可驗證的界限（例如以 per-head 的注意力分佈失真上界）是自然的後續方向，但其理論難度高。
+
+\paragraph{重算可能不划算。}
+第 \ref{sec:recompute-econ} 節的分析顯示重算的單次成本比傳輸高 6--190 倍。若 $p_i$ 的預測精度不足，\act{Drop} 動作可能持續造成淨損失。消融實驗（表 \ref{tab:ablation}）將直接檢驗此點；若 \act{Drop} 不帶來收益，我們將自系統中移除之。
+
+\paragraph{K 與 V 未分離處理。}
+式 \eqref{eq:kvsize} 前導的 2 對應 key 與 value，本文\emph{將二者綁定於同一動作}：一個 block 的 K 與 V 一同降級、一同量化、一同丟棄。這是刻意的範圍限制，而文獻指出該粒度並非最佳。KIVI~\cite{kivi2024} 顯示二者的元素分佈不同，key cache 宜沿 channel 維度量化而 value cache 宜沿 token 維度量化；Hariri 等人~\cite{kvadaquant2025} 進一步指出在固定記憶體預算下，將位元優先配置給 key（如 4-bit key 搭配 2-bit value）較均勻配置嚴格更優；KVTuner~\cite{kvtuner2025} 則於逐層粒度搜尋混合精度，在 Llama-3.1-8B-Instruct 上達成 3.25 位元的近無損配置。
+
+因此本文階梯上的 \act{Gpu}$_{8}$ 與 \act{Gpu}$_{4}$ 應理解為 K/V 共用精度的\emph{保守設定}，其品質退化為 K/V 分離配置的上界。將動作空間沿 K/V 拆為兩軸是自然的延伸，但會使 $|\mathcal{A}|$ 自 6 增至 36，並使標籤生成與 oracle 求解的成本相應上升。本文不涵蓋此延伸；它與本文的核心主張正交——無論動作以何種粒度定義，「動作成本異質時損失函數須編碼該成本」的論點皆成立，且動作粒度變細只會使成本的離散程度更高，因而強化而非削弱該論點。
+
+\paragraph{ROCm 生態的成熟度。}
+LMCache 無自動化的 on-device ROCm CI；其預設 MP 模式在 ROCm 上存在已知的死鎖問題；vLLM 在 ROCm 上的 KV 傳輸錯誤目前會導致 worker 終止而非降級（相關修正 PR 尚未合併）。此外，啟用 KV connector 會使 vLLM 自候選清單移除 \texttt{ROCM\_ATTN} 後端，我們將記錄每次實驗實際使用的 attention 後端。
+
+\paragraph{與 AMD 生產堆疊的關係。}
+AMD 的 \texttt{ROCm/mori} 中的 MORI-UMBP 提供「具分層儲存與分散式鍵值存取的統一記憶體與頻寬池」，已整合入 SGLang HiCache 並具備 SSD 層。我們不宣稱 AMD 平台上缺乏分層 KV 基礎設施；本文的貢獻在於其\emph{放置策略}，而非分層機制本身。
+
+\paragraph{平台 A（RTX 3090）的限制。}
+24\,GB 的容量意味著平台 A \emph{無法}執行單請求 128K 上下文（第 \ref{sec:twoplatform} 節），亦無法承載多租戶場景，本文不由平台 A 推論機會成本相關結論。此外消費級顯卡缺乏記憶體與計算分軌的能耗計數器，能耗分析僅於平台 B 進行。
+
+\paragraph{學習式對照組未釋出權重。}
+KVP~\cite{kvp2026}、ForesightKV~\cite{foresightkv2026} 與 LookaheadKV~\cite{lookaheadkv2026} 三者\emph{均未釋出訓練後的權重}，且其預測器皆為模型專屬——KVP 需為 Qwen2.5-7B-Instruct 的 112 個 layer-head 各訓練一個 agent（其 README 載明使用 8 GPU DDP），ForesightKV 需至少兩張 GPU 分置訓練模型與參考模型，LookaheadKV 僅提供「minimal training example」。重訓因而是\emph{每個主模型各一次的完整訓練}，且主模型變更時須全部重做。
+
+我們因此\emph{不}以外部學習式系統作為核心主張的檢驗手段。本文的主張是「對稱損失在異質動作成本下失準」，而檢驗該主張的正確方式是\emph{在同一系統內替換損失函數}（表 \ref{tab:ablation} 的 (B) 區塊），此設計消除了系統間的無關差異。外部學習式 baseline 僅用於佐證整體競爭力，其數值取自原論文並明確標註未重跑。
+
+\paragraph{無法重跑的對照組。}
+ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer 與 ParisKV 因 \texttt{rapidsai/raft} 無 ROCm 移植而無法於平台 B 執行；我們於平台 A 執行之，但\emph{無法提供這些方法在 MI300X 上的數值}。
+
+\paragraph{MI300A 的架構差異。}
+若目標平台為 MI300A（APU）而非 MI300X，本文的階梯需重新設計。MI300A 的 CPU 與 GPU 共用同一塊 128\,GB HBM3，單一 OS 管理的實體位址空間，無 DIMM 亦無主機 DDR~\cite{cdna3,upm2025}。「將 KV 卸載至 CPU 記憶體」在該架構上僅為同一記憶體內的頁表變更，不產生容量收益；階梯將塌縮為 HBM $\rightarrow$ 對等 APU HBM $\rightarrow$ NVMe。
+
+% =====================================================================
+\section{Conclusion}
+
+本文的核心論點是：\emph{當動作成本相差 6--190 倍、且該比值本身隨硬體變動 32 倍時，以對稱損失訓練的效用預測器會系統性地錯置決策邊界。}我們將 KV 放置形式化為受品質約束的序列決策問題，其動作空間統一了位置分層與精度分層，並將「丟棄後重算」視為階梯上一個具明確標價的層級。我們並指出既有 KV 卸載文獻的容量前提在大容量 HBM 加速器上不再成立（問題性質轉為多租戶下的機會成本），而在容量受限的加速器上依然成立——兩種情境的最佳策略不同，這正是硬體條件化主張的實證基礎。我們論證重算的價值來自其資源佔用特性而非單次成本，因而其正確性完全取決於未來效用預測——這使得預測成為系統的核心而非附加元件。實驗計畫與 go/no-go 判準已於第 \ref{sec:eval} 節給出。
+
+% =====================================================================
+\section*{Statements}
+
+\paragraph{Data Availability.}
+本稿為初稿，尚無實驗資料。第 \ref{sec:motivation} 節的 KV footprint 計算工具將隨程式碼一併釋出。所引用模型組態均取自公開的 HuggingFace \texttt{config.json}。
+
+\paragraph{Ethics.}
+本研究不涉及人類受試者或個人資料。工作負載將使用公開 benchmark 與已匿名化的公開對話 trace。
+
+\paragraph{Author Contributions (CRediT).}
+\textit{（投稿時填入）} Conceptualization; Methodology; Software; Investigation; Writing --- original draft.
+
+\paragraph{Conflict of Interest.}
+\textit{（投稿時填入）}
+
+\paragraph{Funding.}
+\textit{（投稿時填入）}
+
+\paragraph{AI Usage Disclosure.}
+本稿的文獻調查、比對分析與初稿撰寫過程使用了 AI 輔助研究工具。所有引用文獻均經作者查證其存在性與內容；所有量化分析均可由公開規格與模型組態重現。AI 工具未用於產生實驗數據。
+
+% =====================================================================
+\bibliographystyle{plain}
+\bibliography{refs}
+
+\end{document}
