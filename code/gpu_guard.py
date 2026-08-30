@@ -187,6 +187,43 @@ class GpuWatcher:
         return "CLEAN"
 
 
+def host_contention(exclude_gpu: int | None = None,
+                    own_root: int | None = None) -> dict:
+    """**整台機器**上有多少外來負載——不只自己那張卡。
+
+    為什麼需要這個：`GpuWatcher` 只看目標 GPU 上有沒有別人的 process。
+    但 GPU 的 SM 是各卡獨占的，**PCIe、host RAM 頻寬、/dev/shm 卻是全機共用**。
+    別人在 GPU 1–6 上跑，不會出現在 GPU 0 的 compute-apps 裡，
+    卻會實實在在地拖慢 GPU 0 上「把 KV 從 CPU 搬回來」的量測。
+
+    實測（本專案 RUNLOG 發現 5）：五個 server 同時搶 PCIe 時，
+    卸載 baseline 的 warm TTFT 被灌水 26–52%，而完全不碰 PCIe 的
+    full_gpu 只差 ±2%。
+
+    所以**任何量搬運成本的 run 都要把這個數字記進結果**，
+    否則事後無法判斷該次量測可不可信。
+    """
+    own = _descendants(own_root if own_root is not None else os.getpid())
+    apps = [a for a in compute_apps()
+            if a["pid"] not in own and a["gpu"] != exclude_gpu]
+    util = {int(r[0]): int(r[1]) for r in _smi("gpu=index,utilization.gpu")
+            if len(r) >= 2 and r[1].isdigit()}
+    busy = sorted({a["gpu"] for a in apps})
+    return {
+        "foreign_procs": len(apps),
+        "foreign_gpus": busy,
+        "foreign_gpu_count": len(busy),
+        "foreign_total_mib": sum(a["used_mib"] for a in apps),
+        "foreign_max_util": max((util.get(g, 0) for g in busy), default=0),
+        "mean_util_excl_self": (
+            round(sum(v for k, v in util.items() if k != exclude_gpu)
+                  / max(1, len(util) - (1 if exclude_gpu in util else 0)), 1)),
+        "level": ("QUIET" if not busy
+                  else "LIGHT" if max((util.get(g, 0) for g in busy), default=0) < 30
+                  else "HEAVY"),
+    }
+
+
 def free_mib(gpu: int) -> int | None:
     """這張卡目前的可用記憶體（MiB）。"""
     for r in _smi("gpu=index,memory.free"):
