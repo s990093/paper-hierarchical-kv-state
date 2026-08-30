@@ -1,12 +1,12 @@
 {
   "measured": {
-    "retrieval_csv": "/home/hungwei/llm/POC/paper-hierarchical-kv-state/results/m2_harness/retrieval_cost.csv",
+    "retrieval_csv": "/home/hungwei/llm/POC/paper-hierarchical-kv-state/results/m2_harness/retrieval_cost_sata.csv",
     "recompute_csv": "/home/hungwei/llm/POC/paper-hierarchical-kv-state/results/m2_harness/recompute_position.csv",
     "ctx_used": 16384,
     "blocks_per_ctx": 1024.0,
-    "warm_gpu_ms": 136.813,
-    "warm_cpu_ms": 545.988,
-    "warm_ssd_ms": 550.876,
+    "warm_gpu_ms": 134.415,
+    "warm_cpu_ms": 736.894,
+    "warm_ssd_ms": 5803.3150000000005,
     "recompute_chunk_tokens": 2048,
     "recompute_at_pos0_ms": 513.011,
     "recompute_at_maxpos_ms": 1173.508,
@@ -20,8 +20,8 @@
   },
   "derived_ms_per_block": {
     "gpu": 0.0,
-    "cpu": 0.39958496093750007,
-    "ssd": 0.4043583984375,
+    "cpu": 0.5883583984375,
+    "ssd": 5.5360351562500005,
     "recompute_base": 4.0078984375,
     "recompute_slope_per_token": 0.00020996634165445965
   }

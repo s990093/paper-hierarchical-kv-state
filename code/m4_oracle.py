@@ -101,9 +101,20 @@ class CostModel:
         raise ValueError(tier)
 
 
-def load_cost_model() -> CostModel:
-    """從 results/m2_harness/ 讀實測常數。讀不到就中止——不使用預設值。"""
-    ret = M2 / "retrieval_cost.csv"
+def load_cost_model(device: str = "sata") -> CostModel:
+    """從 results/m2_harness/ 讀實測常數。讀不到就中止——不使用預設值。
+
+    `device` 決定用哪一組 SSD 階的量測。**這不是無關緊要的選項**：
+    2026-08-30 的第一版量測因為 CPU 階開太大（24 GiB > 工作集 8 GiB），
+    東西根本沒 cascade 到磁碟，量到的「SSD 0.4044 ms/block」其實是 CPU 階，
+    **比真值便宜 13.7 倍**。修正後 SSD = 5.54 ms/block，
+    而且**大於 DROP 的 4.01 ms/block**——也就是說 Oracle 舊版以為
+    「放硬碟很便宜所以要多用」，實際上放硬碟比丟掉重算還貴。
+    用錯這個常數，Oracle 的 headroom 就沒有意義。
+    """
+    ret = M2 / f"retrieval_cost_{device}.csv"
+    if not ret.exists():          # 相容舊檔名
+        ret = M2 / "retrieval_cost.csv"
     rec = M2 / "recompute_position.csv"
     missing = [str(p) for p in (ret, rec) if not p.exists()]
     if missing:
@@ -426,6 +437,8 @@ def validate(cm: CostModel) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--device", default="sata", choices=["sata", "nvme"],
+                    help="SSD 階要用哪個裝置的量測。兩者差異見 RUNLOG 發現 11")
     ap.add_argument("--validate", action="store_true",
                     help="只跑模擬器驗證（比對 M3 實測），不做 go/no-go")
     ap.add_argument("--alpha", type=float, nargs="*", default=[0.6, 0.9, 1.2],
@@ -439,8 +452,8 @@ def main() -> int:
     ap.add_argument("--seed", type=int, default=1234)
     a = ap.parse_args()
 
-    cm = load_cost_model()
-    print("=== 成本模型（全部來自 results/m2_harness/ 的實測）===")
+    cm = load_cost_model(a.device)
+    print(f"=== 成本模型（實測，SSD 階用 {a.device} 那組）===")
     print(json.dumps({"gpu_ms_per_block": cm.gpu, "cpu_ms_per_block": round(cm.cpu, 4),
                       "ssd_ms_per_block": round(cm.ssd, 4),
                       "recompute_base_ms_per_block": round(cm.recompute_base, 4),
