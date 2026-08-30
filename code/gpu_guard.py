@@ -233,21 +233,31 @@ def free_mib(gpu: int) -> int | None:
 
 
 def wait_until_free(gpu: int, need_mib: int, timeout_s: float = 300.0,
-                    poll_s: float = 5.0) -> tuple[bool, int | None]:
-    """等到這張卡真的有 need_mib 可用為止。
+                    poll_s: float = 5.0, consecutive: int = 3
+                    ) -> tuple[bool, int | None]:
+    """等到這張卡**連續** `consecutive` 次取樣都有 need_mib 可用為止。
 
     為什麼不能只看 compute-apps：行程結束到 driver 把記憶體還回去之間有延遲。
-    2026-08-30 實測踩到——`idle_gpus()` 說卡是空的，但 vLLM 啟動時看到
+    實測踩到兩次——`idle_gpus()` 說卡是空的，但 vLLM 啟動時看到
     `Free memory on device cuda:0 (8.51/23.68 GiB)` 而直接失敗。
-    也就是說「沒有行程」不等於「記憶體可用」，兩個都要檢查。
+
+    為什麼不能只取樣一次：釋放過程中的瞬間值會忽高忽低。2026-08-30 第二次踩到
+    ——單次取樣通過了，等 vLLM 真的載完模型要配置 KV pool 時只剩 12.32 GiB。
+    所以要連續數次都達標才算數。
     """
     t0 = time.time()
+    hits = 0
+    last = None
     while time.time() - t0 < timeout_s:
-        f = free_mib(gpu)
-        if f is not None and f >= need_mib:
-            return True, f
+        last = free_mib(gpu)
+        if last is not None and last >= need_mib:
+            hits += 1
+            if hits >= consecutive:
+                return True, last
+        else:
+            hits = 0
         time.sleep(poll_s)
-    return False, free_mib(gpu)
+    return False, last
 
 
 def idle_gpus(own_root: int | None = None) -> list[int]:

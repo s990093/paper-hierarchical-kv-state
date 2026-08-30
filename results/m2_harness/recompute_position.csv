@@ -1,0 +1,16 @@
+run_id,ts,model_key,gpu,cached_prefix_tokens,recomputed_tokens,rep,ttft_ms,total_ms,gpu_kv_cache_tokens,host_contention,foreign_gpu_count,foreign_max_util,log
+20260830-195552-m2-recompute,2026-08-30T19:57:01.371097+08:00,llama,0,0,2048,0,548.879,667.841,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:02.293492+08:00,llama,0,0,2048,1,513.011,631.92,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:03.207813+08:00,llama,0,0,2048,2,511.938,630.964,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:05.604644+08:00,llama,0,4096,2048,0,596.69,735.411,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:06.659582+08:00,llama,0,4096,2048,1,641.669,769.862,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:07.713888+08:00,llama,0,4096,2048,2,616.739,739.792,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:11.486182+08:00,llama,0,8192,2048,0,726.207,852.843,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:12.615910+08:00,llama,0,8192,2048,1,719.295,845.702,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:13.761588+08:00,llama,0,8192,2048,2,729.607,855.948,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:20.856434+08:00,llama,0,16384,2048,0,972.335,1100.237,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:22.213944+08:00,llama,0,16384,2048,1,938.693,1068.131,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:23.578332+08:00,llama,0,16384,2048,2,927.408,1066.068,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:34.704753+08:00,llama,0,24576,2048,0,1173.508,1314.425,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:36.316341+08:00,llama,0,24576,2048,1,1191.292,1319.982,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
+20260830-195552-m2-recompute,2026-08-30T19:57:37.926011+08:00,llama,0,24576,2048,2,1161.601,1290.411,41648,HEAVY,6,97,/ssd7/hungwei/paper-hkv/runs/20260830-195552-m2-recompute/server.log
