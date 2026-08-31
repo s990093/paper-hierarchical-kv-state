@@ -75,8 +75,8 @@ def main() -> int:
     ap.add_argument("--max-accesses", type=int, default=1_500_000,
                     help="放大後的 block 存取總數上限。S 越大取越少請求，"
                          "讓每個 S 的模擬工作量相當、執行時間可控")
-    ap.add_argument("--oracle-dest", default="cost-aware",
-                    choices=["cost-aware", "cascade"],
+    ap.add_argument("--oracle-dest", default="best",
+                    choices=["best", "cost-aware", "cascade"],
                     help="Oracle 逐出後的目的地選擇。cost-aware=比較各去處在"
                          "『下次使用的位置』上的實際成本（放 SSD 5.536 ms 對上"
                          "重算 4.008+0.00021×位置，交叉點 7,278 token）；"
@@ -133,6 +133,12 @@ def main() -> int:
                 / res[best]["total_ms"]
             # baseline 的時間有多少花在重算？這決定「省重算」的空間有多大
             bh = res[best]["hits"]
+            if head < -1e-9:
+                raise SystemExit(
+                    f"🔴 headroom = {head:.2f}% < 0：Oracle 輸給了 baseline "
+                    f"{best}。Oracle 是上界，這在定義上不可能，代表模擬器有錯"
+                    f"（最可能是目的地規則的邊際成本估計不對）。停止，不要"
+                    f"把這個數字寫進任何地方。")
             verdict = ("GO" if head > 15 else
                        "MARGINAL" if head >= 5 else "NO_GO")
             rec_share = 100 * bh["drop"] / sum(bh.values())

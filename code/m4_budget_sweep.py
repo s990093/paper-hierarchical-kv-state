@@ -55,8 +55,8 @@ def main() -> int:
     ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix")
     ap.add_argument("--prefetch", action="store_true", default=True)
     ap.add_argument("--no-prefetch", dest="prefetch", action="store_false")
-    ap.add_argument("--oracle-dest", default="cost-aware",
-                    choices=["cost-aware", "cascade"],
+    ap.add_argument("--oracle-dest", default="best",
+                    choices=["best", "cost-aware", "cascade"],
                     help="Oracle 逐出後的目的地選擇。cost-aware=比較各去處在"
                          "『下次使用的位置』上的實際成本（放 SSD 5.536 ms 對上"
                          "重算 4.008+0.00021×位置，交叉點 7,278 token）；"
@@ -95,6 +95,11 @@ def main() -> int:
                        key=lambda k: res[k]["total_ms"])
             head = 100 * (res[best]["total_ms"] - res["oracle"]["total_ms"]) \
                 / res[best]["total_ms"]
+            if head < -1e-9:
+                raise SystemExit(
+                    f"🔴 headroom = {head:.2f}% < 0：Oracle 輸給了 baseline {best}。"
+                    f"Oracle 是上界，這在定義上不可能，代表模擬器有錯（最可能是"
+                    f"目的地規則的邊際成本估計不對）。停止，不要把這個數字寫進任何地方。")
             ev = res["oracle"]["evict"]
             nev = sum(ev.values())
             free_pct = 100 * ev["free"] / nev if nev else float("nan")

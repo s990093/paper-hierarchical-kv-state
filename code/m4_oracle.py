@@ -529,7 +529,7 @@ class Sim:
     # -- Oracle ----------------------------------------------------
     def run_oracle(self, trace: list[list[int]], use_cpu: bool,
                    use_ssd: bool, prefix_semantics: bool = True,
-                   prefetch: bool = False, dest: str = "cost-aware") -> dict:
+                   prefetch: bool = False, dest: str = "best") -> dict:
         """知道未來的最佳放置。
 
         單階時 Bélády/MIN（逐出下次使用最遠的）是**可證明最優**的。
@@ -542,6 +542,23 @@ class Sim:
         block 構成連續前綴（避免製造缺口），那是逐出與前綴結構的聯合最佳化。
         現在的版本一樣會被缺口懲罰，所以它仍然是下界，headroom 仍為保守估計。
         """
+        # dest="best"：兩種目的地規則都跑，取較佳者。
+        # 這是合法的——Oracle 的定義是「我們能構造出的最佳**離線**策略」，
+        # 而兩種規則都是可實作的策略，取其較佳者仍然可實作。
+        # 需要這個安全網是因為：成本感知規則用的是**邊際成本的估計**，
+        # 估計不準時可能做出比無腦 cascade 更差的決策
+        # （2026-08-31 實測 headroom 掉到 -3.16%）。
+        # Oracle 若輸給 baseline，go/no-go 就失去意義。
+        if dest == "best":
+            outs = {d: self.run_oracle(trace, use_cpu, use_ssd,
+                                       prefix_semantics, prefetch, d)
+                    for d in ("cascade", "cost-aware")}
+            k = min(outs, key=lambda d: outs[d]["total_ms"])
+            outs[k]["dest_chosen"] = k
+            outs[k]["dest_alternatives_ms"] = {d: round(v["total_ms"], 2)
+                                               for d, v in outs.items()}
+            return outs[k]
+
         # (請求序號, block, 該 block 在請求中的序號)
         # 第三項不可省：重算成本隨 block 的絕對位置線性成長
         # （式 eq:recompute-position）。先前這裡固定用 0，等於讓 Oracle 永遠
@@ -550,10 +567,24 @@ class Sim:
         # 這個矛盾抓出來。
         flat: list[tuple[int, int, int]] = []
         pos_of: list[int] = []      # 每一次存取的**絕對位置**（token）
+        # 🔴 tail_of[i]：若第 i 次存取的 block 未命中，這個請求要付的重算總量。
+        #    前綴語意下，缺一塊 -> 其後全部重算，所以「丟掉一個 block」的
+        #    真實邊際成本不是它自己那一塊，而是**它到請求結尾的整條尾巴**。
+        #    先前的成本感知規則只比單一 block，於是做出局部便宜、全域昂貴的
+        #    決策——2026-08-31 實測在 SSD=2 TiB 時讓 Oracle 反而**輸給**
+        #    tier_fs（headroom -3.16%），那在定義上不可能，就是這個 bug。
+        tail_of: list[float] = []
         for ti, req in enumerate(trace):
+            n = len(req)
+            acc = 0.0
+            tails = [0.0] * n
+            for k in range(n - 1, -1, -1):
+                acc += self.cm.cost("drop", k * BLOCK)
+                tails[k] = acc
             for pi, blk in enumerate(req):
                 flat.append((ti, blk, pi))
                 pos_of.append(pi * BLOCK)
+                tail_of.append(tails[pi])
         nxt: dict[int, list[int]] = {}
         for i, (_, blk, _pi) in enumerate(flat):
             nxt.setdefault(blk, []).append(i)
@@ -652,8 +683,12 @@ class Sim:
                     #
                     # 這一項讓 Oracle 變強 → headroom 上升。因為 NO-GO 判定
                     # 依賴「Oracle 已經夠強」，這個修正對 NO-GO 的可信度是必要的。
-                    nu_pos = pos_of[j]
-                    drop_c = self.cm.cost("drop", nu_pos)
+                    # 丟掉的邊際成本：前綴語意下是「整條尾巴」，
+                    # 不是單一 block。這是上界（尾巴也可能因為別的缺口而
+                    # 本來就要重算），所以它讓 Oracle **偏向保留**——
+                    # 保守的方向，不會高估 headroom。
+                    drop_c = (tail_of[j] if prefix_semantics
+                              else self.cm.cost("drop", pos_of[j]))
                     if dest == "cascade":
                         cpu_ok = use_cpu
                         ssd_ok = use_ssd
@@ -685,7 +720,8 @@ class Sim:
                             if j is math.inf:
                                 evict["free"] += 1
                                 continue
-                            drop_c = self.cm.cost("drop", pos_of[j])
+                            drop_c = (tail_of[j] if prefix_semantics
+                                      else self.cm.cost("drop", pos_of[j]))
                             ssd_ok = (use_ssd and
                                       (dest == "cascade" or self.cm.ssd < drop_c))
                         # else: victim 留著往 SSD 試
