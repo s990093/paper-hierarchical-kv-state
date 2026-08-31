@@ -1,0 +1,59 @@
+{
+  "//": "Tiara 專案的 VS Code 設定。venv 在 /ssd7（根分割區只剩幾百 G 且共用），",
+  "//2": "所以 VS Code 的自動偵測找不到它，必須明寫路徑。",
+
+  "python.defaultInterpreterPath": "/ssd7/hungwei/paper-hkv/venv/vllm/bin/python",
+  "python.terminal.activateEnvironment": true,
+
+  "//3": "notebook 預設用具名 kernel。它已把 CUDA_VISIBLE_DEVICES 設成空字串——",
+  "//4": "分析用的 kernel 不該碰 GPU，否則會默默佔住一張卡，而這台機器是共用的。",
+  "jupyter.kernels.filter": [
+    { "path": "/usr/bin/python3", "type": "pythonEnvironment" },
+    { "path": "/home/hungwei/miniforge3/bin/python", "type": "pythonEnvironment" }
+  ],
+  "notebook.output.textLineLimit": 60,
+  "notebook.output.scrolling": true,
+
+  "//5": "跑實驗的終端機需要這些；kernel 自己帶了一份，但終端機沒有。",
+  "terminal.integrated.env.linux": {
+    "PAPER_HKV_BIG": "/ssd7/hungwei/paper-hkv",
+    "HF_HOME": "/ssd7/hungwei/paper-hkv/hf-cache/huggingface",
+    "UV_CACHE_DIR": "/ssd7/hungwei/paper-hkv/uv-cache",
+    "UV_PYTHON_INSTALL_DIR": "/ssd7/hungwei/paper-hkv/uv-python",
+    "XDG_CACHE_HOME": "/ssd7/hungwei/paper-hkv/xdg-cache",
+    "TRITON_CACHE_DIR": "/ssd7/hungwei/paper-hkv/triton-cache",
+    "VLLM_CACHE_ROOT": "/ssd7/hungwei/paper-hkv/vllm-cache",
+    "FLASHINFER_WORKSPACE_BASE": "/ssd7/hungwei/paper-hkv/flashinfer-cache",
+    "PATH": "/ssd7/hungwei/paper-hkv/texlive/.TinyTeX/bin/x86_64-linux:/ssd7/hungwei/paper-hkv/venv/vllm/bin:/home/hungwei/.local/bin:/usr/local/bin:/usr/bin:/bin"
+  },
+
+  "//6": "LaTeX：TinyTeX 裝在 /ssd7，且必須用 XeLaTeX（內文中文，用 xeCJK）。",
+  "latex-workshop.latex.outDir": "%DIR%",
+  "latex-workshop.latex.tools": [
+    {
+      "name": "xelatex",
+      "command": "/ssd7/hungwei/paper-hkv/texlive/.TinyTeX/bin/x86_64-linux/xelatex",
+      "args": ["-interaction=nonstopmode", "-file-line-error", "%DOC%"]
+    },
+    {
+      "name": "bibtex",
+      "command": "/ssd7/hungwei/paper-hkv/texlive/.TinyTeX/bin/x86_64-linux/bibtex",
+      "args": ["%DOCFILE%"]
+    }
+  ],
+  "latex-workshop.latex.recipes": [
+    { "name": "xelatex×2 + bibtex", "tools": ["xelatex", "bibtex", "xelatex", "xelatex"] }
+  ],
+
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.ipynb_checkpoints": true,
+    "_big": true
+  },
+  "files.watcherExclude": { "**/_big/**": true },
+  "search.exclude": { "_big": true, "notebooks/executed.ipynb": true },
+
+  "editor.rulers": [88],
+  "[python]": { "editor.rulers": [88] },
+  "[latex]": { "editor.wordWrap": "on", "editor.rulers": [] }
+}
