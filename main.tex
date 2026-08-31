@@ -77,7 +77,7 @@ for Long-Context LLM Inference}
 
 基於此，我們將 KV 放置形式化為一個受品質約束的序列決策問題，其動作空間包含 GPU 全精度、GPU FP8、GPU INT4、CPU、SSD 與「丟棄後重算」六種狀態，並在「品質退化不超過 $\epsilon$」的硬性約束下，聯合最佳化未來效用、傳輸成本、重算成本與記憶體壓力。我們特別論證：重算的價值不在於單次事件的成本（其代價比傳輸高 6--21 倍於 MI300X，54--190 倍於 RTX 3090），而在於它在被需要之前不佔用任何資源；其正確性因而完全取決於未來效用預測的品質。
 
-我們設計了雙平台實驗（RTX 3090 的 30:1 與 MI300X 的 84:1，相距 2.8 倍），使硬體條件化的主張成為可證偽的。二者\emph{並非}此光譜的兩端——GH200 的 9:1 更低，MI355X 的 127:1 更高——但構成我們實際可取得的最大跨度。\textbf{本文為初稿。}第 \ref{sec:eval} 節給出完整的實驗計畫與消融設計，實驗結果尚未取得。
+我們設計了雙平台實驗（RTX 3090 的 30:1 與 MI300X 的 84:1，相距 2.8 倍），使硬體條件化的主張成為可證偽的。二者\emph{並非}此光譜的兩端——GH200 的 9:1 更低，MI355X 的 127:1 更高——但構成我們實際可取得的最大跨度。\textbf{本文為初稿。}第 \ref{sec:eval} 節給出完整的實驗計畫與消融設計；第 \ref{sec:measured-results} 節列出已完成的量測，其中數項推翻了本文原先的前提。主結果表格尚未取得。
 \end{abstract}
 
 \vspace{0.5em}
@@ -110,7 +110,7 @@ MI300X 的 HBM 頻寬（5.3\,TB/s 峰值）與主機鏈路頻寬（PCIe Gen5 $\t
 \end{enumerate}
 
 \paragraph{本稿狀態。}
-本文為初稿。第 \ref{sec:motivation} 節的量化分析與第 \ref{sec:related} 節的文獻比對均已完成並經查證；第 \ref{sec:eval} 節為實驗計畫，尚未執行。我們在第 \ref{sec:limitations} 節誠實說明此一狀態的意涵。
+本文為初稿。第 \ref{sec:motivation} 節的量化分析與第 \ref{sec:related} 節的文獻比對均已完成並經查證；第 \ref{sec:eval} 節為實驗計畫，尚未執行完畢；第 \ref{sec:measured-results} 節列出已完成的量測，每個數字均可追溯至一條指令與一個輸出檔。我們在第 \ref{sec:limitations} 節誠實說明此一狀態的意涵。
 
 % =====================================================================
 \section{Background and Motivation}
@@ -853,7 +853,7 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 \section{Evaluation Plan}
 \label{sec:eval}
 
-\textbf{本節為實驗計畫。所有結果表格均為佔位符，實驗尚未執行。}
+\textbf{本節為實驗\emph{計畫}：它說明要量什麼、怎麼量、以及什麼結果會推翻本文的主張。本節的結果表格均為佔位符。}已經完成的量測另列於第 \ref{sec:measured-results} 節，兩者分開陳述是因為證據地位不同。
 
 \subsection{實驗平台}
 
@@ -1181,6 +1181,35 @@ Q(\pi) \;=\; \min_{t \in \mathcal{T}} \; r_t(\pi),
 \paragraph{跨工作負載泛化。}
 承第 \ref{sec:predictor} 節的分布飄移討論，我們額外回報一組交叉實驗：於單一工作負載訓練並於其餘工作負載測試，回報上述兩個診斷量與 $Q(\pi)$ 的退化幅度。此結果同時界定週期性重訓的必要性——若跨工作負載退化可忽略，重訓機制即為不必要的複雜度，我們將據以移除。
 
+\subsection{預期結果（佔位）}
+
+\begin{table}[t]
+\centering\small
+\caption{\placeholder{主結果表（佔位符，實驗尚未執行）}}
+\label{tab:results}
+\begin{tabular}{lccc}
+\toprule
+方法 & Quality & TTFT & GPU mem \\
+\midrule
+Full GPU        & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+vLLM \texttt{lru} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+vLLM \texttt{arc} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+LMCache         & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+InfiniGen       & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+\sys            & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+\midrule
+\textit{Oracle} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+% =====================================================================
+\section{已完成的量測}
+\label{sec:measured-results}
+
+本節僅列出\emph{已經量到}的結果。第 \ref{sec:eval} 節的計畫尚未執行完畢，其結果表格仍為佔位符。分開陳述的理由是兩者的證據地位不同：本節的每一個數字都可追溯至一條指令與一個輸出檔，而該節的表格是待填的。
+
 \subsection{已完成的量測推翻了本文的四項前提}
 \label{sec:measured}
 
@@ -1242,29 +1271,6 @@ $^\dagger$ 記憶體容量超出模型的可定址長度，瓶頸由硬體轉為
 \paragraph{Takeaway.}
 在正確的權重配置下，24\,GB 消費級 GPU 的 KV 記憶體\emph{不是}長上下文的瓶頸；模型的可定址長度才是。六個設定中有四個的 KV 容量超出模型可定址長度，其中 Qwen-7B-1M 於 AWQ 權重加 FP8-KV 下達 547{,}744 token，為其可定址上限的 $2.1$ 倍。此點對本文的雙平台設計有兩個後果。其一，平台 A 足以驗證 128K 區間的容量與成本主張，無須更大的加速器。其二，MLA 架構將 KV 壓至 30.4\,KiB/token（GQA 的 $1/4.2$），使單卡容量達 399{,}376 token——\emph{單請求的容量壓力於此消失}，壓力轉為 PCIe 頻寬與多租戶下的機會成本，即第 \ref{sec:twoplatform} 節所述平台 B 的情境。此結果將 MLA 納入本文的 $\kappa$ 軸，且在單一平台上提供 $4.2\times$ 的跨度。
 
-\subsection{預期結果（佔位）}
-
-\begin{table}[t]
-\centering\small
-\caption{\placeholder{主結果表（佔位符，實驗尚未執行）}}
-\label{tab:results}
-\begin{tabular}{lccc}
-\toprule
-方法 & Quality & TTFT & GPU mem \\
-\midrule
-Full GPU        & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
-vLLM \texttt{lru} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
-vLLM \texttt{arc} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
-LMCache         & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
-InfiniGen       & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
-\sys            & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
-\midrule
-\textit{Oracle} & \placeholder{---} & \placeholder{---} & \placeholder{---} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-% =====================================================================
 \section{Discussion and Limitations}
 \label{sec:limitations}
 
