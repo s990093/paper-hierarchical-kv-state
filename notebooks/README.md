@@ -21,7 +21,22 @@ P=/ssd7/hungwei/paper-hkv/venv/vllm/bin/python
 
 $P notebooks/analysis.py                  # 印出關鍵數字
 $P notebooks/analysis.py --figures        # 另外產生 figures/
-$P -m jupyter lab notebooks/              # 互動式
+$P -m jupyter lab notebooks/              # 互動式，選 kernel「Tiara (vLLM venv)」
+```
+
+### Kernel
+
+已註冊具名 kernel `tiara-vllm`（顯示為 **Tiara (vLLM venv)**），
+在 Jupyter 的下拉選單直接選即可，不必自己設環境變數。
+
+它在啟動時就帶好 `PAPER_HKV_BIG`、`HF_HOME` 與各項快取路徑，
+並且**刻意把 `CUDA_VISIBLE_DEVICES` 設成空字串**——分析用的 kernel 不該碰 GPU，
+否則它會默默佔住一張卡，而這台機器是共用的。
+
+重裝：
+```bash
+$P -m ipykernel install --user --name tiara-vllm --display-name "Tiara (vLLM venv)"
+# 然後把 env 區塊補回 ~/.local/share/jupyter/kernels/tiara-vllm/kernel.json
 ```
 
 ## 不使用預設值
