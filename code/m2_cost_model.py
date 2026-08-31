@@ -398,6 +398,34 @@ def stage_capacity(gpu: int, repeats: int, max_len: int) -> int:
 
 # ─────────────── B. 取回成本（被需要時的成本） ───────────────
 
+def _check_workset_exceeds_capacity(ctx: int, n_prefixes: int,
+                                    kv_tokens: int | None) -> None:
+    """工作集必須**大於** GPU KV 容量，否則量不到任何搬運成本。
+
+    🔴 2026-08-31 踩到：AWQ 剖面沿用了 llama-bf16 的 ctx=16,384。
+       但 AWQ-INT4 權重只有 5.7 GB（BF16 是 15.2），KV 預算因此從
+       48,128 變成 120,320，工作集 4 × 16,384 = 65,536 整個塞得進去，
+       **一次都沒有逐出**。結果四階的 warm TTFT 全都是 133–143 ms
+       （全部直接命中 GPU prefix cache），推出來的 CPU 成本是
+       0.002 ms/block（真值 0.543，差 270 倍）、SSD 的換算頻寬 220 GB/s
+       （物理上不可能）、重算與 SSD 的交叉點是負的。
+
+       這與同一天在 SSD 掃描上踩到的是同一個坑：
+       **工作集小於容量時，什麼都不會發生，而數字看起來完全正常。**
+    """
+    if kv_tokens is None:
+        return
+    ws = ctx * n_prefixes
+    if ws <= kv_tokens:
+        raise SystemExit(
+            f"🔴 工作集 {ws:,} token（{n_prefixes} × {ctx:,}）"
+            f"≤ GPU KV 容量 {kv_tokens:,} token。\n"
+            f"   東西整個塞得進去，不會逐出，量到的四階會一模一樣，"
+            f"而且看起來完全正常。\n"
+            f"   請把 --ctx 調到大於 {kv_tokens // n_prefixes:,}"
+            f"（或增加 --n-prefixes）。")
+
+
 def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
                     only_tiers: set[str] | None = None,
                     repeats: int = 1) -> int:
@@ -436,6 +464,11 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
             print(f"[m2] retrieval {name:13s} n_prefixes={n} ctx={ctx} ...", flush=True)
             try:
                 with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv) as s:
+                    if name == "gpu_resident":
+                        # gpu_resident 刻意只送 1 個前綴（要它塞得下），
+                        # 但它報回的 kv_tokens 正好可以檢查其餘各階的設定
+                        _check_workset_exceeds_capacity(ctx, n_prefixes,
+                                                        s.kv_tokens)
                     url = s.url()
                     texts = [make_text(ctx, seed=7000 + ctx * 10 + i) for i in range(n)]
                     for rnd in ("cold", "warm"):
