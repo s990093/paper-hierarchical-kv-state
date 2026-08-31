@@ -35,6 +35,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+from m4_invariants import check_results, preflight
 from m4_oracle import (BLOCK, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile, trace_duration_s)
 
@@ -108,6 +109,8 @@ def main() -> int:
         for g in a.ssd_gib:
             ssd_blocks = 10**9 if g < 0 else int(g * 1024**3) // bytes_per_block
             use_ssd_possible = ssd_blocks > 0
+            pre = preflight(cm, trace, tname, gpu_blocks, cpu_blocks,
+                            ssd_blocks, bytes_per_block, a.fs_root)
             sim = Sim(cm, gpu_blocks, cpu_blocks, ssd_blocks=ssd_blocks)
             res = {}
             for k, (pol, uc, us) in POLICIES.items():
@@ -118,6 +121,7 @@ def main() -> int:
                                            dest=a.oracle_dest, **sem)
             best = min((k for k in res if k != "oracle"),
                        key=lambda k: res[k]["total_ms"])
+            check_results(res, trace, best)
             head = 100 * (res[best]["total_ms"] - res["oracle"]["total_ms"]) \
                 / res[best]["total_ms"]
             if head < -1e-9:
