@@ -75,7 +75,14 @@ REPO = Path(__file__).resolve().parent.parent
 OUT = REPO / "results/m5_quality"
 GSM = BIG / "datasets/gsm8k"
 
-MODEL = "NousResearch/Meta-Llama-3.1-8B-Instruct"
+# 品質量測的模型。先前寫死 llama BF16；長上下文的檢索實驗要用 AWQ 的
+# qwen（BF16 權重的 llama 只有 41,648 token 的 KV 預算，放不下長 context）。
+MODEL_CHOICES = {
+    "llama": "NousResearch/Meta-Llama-3.1-8B-Instruct",
+    "llama-awq": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
+    "qwen-awq": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
+}
+MODEL = MODEL_CHOICES["llama"]
 MODEL_KEY = "llama"
 
 # 精度階梯：論文動作空間裡「住在 GPU 上」的四階。
@@ -492,6 +499,9 @@ def main() -> int:
                          "needle = 長距離檢索（對 KV 量化敏感得多，"
                          "GSM8K 在 n=1000 下四個精度全部與 0 無法區分）；"
                          "needle-mixed = 用檢索任務掃 f")
+    ap.add_argument("--model", default="llama", choices=list(MODEL_CHOICES),
+                    help="品質量測用哪個模型。長上下文檢索要用 AWQ 權重的，"
+                         "BF16 權重的 llama 只有 41,648 token 的 KV 預算")
     ap.add_argument("--needle-ctx", type=int, default=32768,
                     help="大海撈針的 context 長度")
     ap.add_argument("--needle-depths", type=float, nargs="*",
@@ -509,6 +519,9 @@ def main() -> int:
     ap.add_argument("--n-test", type=int, default=120)
     ap.add_argument("--csv", default=None)
     a = ap.parse_args()
+    global MODEL, MODEL_KEY
+    MODEL, MODEL_KEY = MODEL_CHOICES[a.model], a.model
+    print(f"[m5] 模型 {a.model} -> {MODEL}")
 
     train, test = load_gsm8k("train"), load_gsm8k("test")
     prefix = build_prefix(train, a.n_shot)
@@ -523,6 +536,7 @@ def main() -> int:
     print(f"[m5] {a.n_shot}-shot 共用前綴 = {plen:,} tokens；"
           f"最長題目 {qmax} tokens；max_model_len = {max_len:,}")
     print(f"[m5] 測 {a.n_test} 題，mode={a.mode}")
+
 
     h = host_contention(exclude_gpu=a.gpu)
     print(f"[m5] 整機爭用：{h['level']}（外來 process {h['foreign_procs']} 個）")
