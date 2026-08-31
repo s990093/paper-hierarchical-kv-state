@@ -135,8 +135,19 @@ def load_oracle_scenarios() -> list[dict]:
     return out
 
 
+# vLLM 的 block 是 16 token；Mooncake 的 hash_id 是 512 token。兩者不可混用。
+VLLM_BLOCK = 16
+MOONCAKE_BLOCK = 512
+
+
 def load_trace_stats() -> list[dict]:
-    """真實 trace 的重用結構。這決定 headroom 的第二個自變數。"""
+    """真實 trace 的重用結構。這決定 headroom 的第二個自變數。
+
+    🔴 單位：Mooncake 的 `hash_ids` 是 **512-token** 的 block，不是 vLLM 的
+       16-token block。2026-08-31 曾因為把兩者當成同一個東西，
+       導致工作集少算 32 倍、每個 block 的絕對位置少算 32 倍。
+       這裡用資料自身（input_length ÷ len(hash_ids)）驗算，對不上就中止。
+    """
     out = []
     for name in ("conversation", "toolagent"):
         p = BIG / f"datasets/traces/{name}_trace.jsonl"
@@ -146,9 +157,27 @@ def load_trace_stats() -> list[dict]:
         blocks = [b for r in reqs for b in r["hash_ids"]]
         lens = sorted(r["input_length"] for r in reqs)
         uniq = len(set(blocks))
+
+        # 用資料自身驗算 hash_id 的粒度（CLAUDE.md 禁令 6）
+        ratios = sorted(r["input_length"] / len(r["hash_ids"])
+                        for r in reqs if r["hash_ids"])
+        med_ratio = ratios[len(ratios) // 2]
+        if not 0.9 * MOONCAKE_BLOCK <= med_ratio <= 1.05 * MOONCAKE_BLOCK:
+            raise ValueError(
+                f"{name}：每個 hash_id 的 token 數中位為 {med_ratio:.1f}，"
+                f"與假設的 MOONCAKE_BLOCK={MOONCAKE_BLOCK} 不符。"
+                f"單位若變了，所有位置相關的成本都會錯——先確認再繼續。")
+
         out.append({
             "trace": name, "requests": len(reqs),
-            "accesses": len(blocks), "unique_blocks": uniq,
+            # hash_id 單位（trace 的原生粒度）
+            "hash_accesses": len(blocks), "unique_hash_ids": uniq,
+            # vLLM 的 16-token block 單位（模擬器實際使用的）
+            "accesses": len(blocks) * (MOONCAKE_BLOCK // VLLM_BLOCK),
+            "unique_blocks": uniq * (MOONCAKE_BLOCK // VLLM_BLOCK),
+            "unique_tokens": uniq * MOONCAKE_BLOCK,
+            "hash_block_tokens": round(med_ratio, 1),
+            # 重用率與粒度無關（展開是均勻的），所以兩種單位下相同
             "reuse_pct": round(100 * (len(blocks) - uniq) / len(blocks), 1),
             "compulsory_pct": round(100 * uniq / len(blocks), 1),
             "median_input": lens[len(lens) // 2],

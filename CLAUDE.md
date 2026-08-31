@@ -33,6 +33,19 @@
 5. **實驗 agent 不准改 `main.tex`。** 產出是 `results/` 與 `RUNLOG.md`。
    論文的修改是另一個工作階段（用 `paper-writing` skill），且必須先有 `results/` 的證據。
 
+6. **外部資料集的單位，一律用資料自身交叉驗證，不准看欄位名推斷。**
+   2026-08-31 踩到：Mooncake 的 `hash_ids` 是 **512-token** 的 block，
+   我當成 16-token，於是工作集少算 32 倍、**每個 block 的絕對位置少算 32 倍**
+   （重算成本是位置的線性函數，所以 DROP 被算得太便宜），
+   所有 trace 驅動的結果全部作廢重跑。
+   能抓到只是因為同一個量（請求長度中位數）碰巧被兩條路徑算過而對不上。
+   **匯入任何 trace 時，載入函式裡就要寫一條「用 A 欄位驗算 B 欄位」的斷言。**
+
+7. **「查不到」不等於「沒有」。** 偵測類函式（爭用、容量、佇列）在查詢失敗時
+   必須讓上層知道，不可以回傳空值。`gpu_guard._smi()` 原本查詢失敗回傳 `[]`，
+   會被 `host_contention()` 讀成「整機沒有外來負載」= QUIET，
+   等於把污染的量測標成乾淨的。現已改成丟 `SmiUnavailable`。
+
 ---
 
 ## 2. 🗂 目錄配置（大檔案一律放 /ssd7）
@@ -105,6 +118,24 @@ CSV 摘要、JSON 指紋、Markdown 記錄 → git。
 3. **vLLM 0.28.0 的 V1 engine 沒有可用的 DCA 路徑**，所以 Qwen2.5-7B-Instruct-1M
    要用 no-DCA 變體 `/ssd7/hungwei/paper-hkv/models/Qwen2.5-7B-Instruct-1M-noDCA`
    （`code/make_nodca_model.py`）。上限因此是 **262,144** 不是 1M。
+
+### 🔀 平台 B（AMD MI300X）的移植面
+
+**策略：在 3090 上打磨方法，AMD 上只做量測。** 所以 harness 必須先在這裡就
+把廠商相依收斂到最小面積。目前的移植面只有三處：
+
+| 位置 | 相依 | 移植做法 |
+|---|---|---|
+| `gpu_guard.py` 的 `vendor()` / `_amd_compute_apps()` / `gpu_util()` | `nvidia-smi` ↔ `amd-smi`/`rocm-smi` | **已寫好 AMD 後端**，但**尚未在真機驗證**。第一次在 MI300X 上跑之前，必須先對照 `amd-smi process` 的輸出確認 pid 與 gpu index 對得上 |
+| `env_fingerprint.py` | `torch.cuda` + `nvidia-smi` | `torch.cuda` 在 ROCm 上就是 HIP，可直接用；用 `torch.version.hip` 區分平台 |
+| `CUDA_VISIBLE_DEVICES` | 各 mN 腳本 | ROCm 亦接受此變數（HIP 別名），但保險起見在 AMD 上同時設 `HIP_VISIBLE_DEVICES` |
+
+模擬器（`m4_*.py`）與品質量測（`m5_quality.py`）**完全不碰 GPU 廠商 API**，
+只吃 `results/` 的 CSV 與 HTTP API，所以零移植成本。
+
+平台 B 上真正要重量的只有 **M1 容量** 與 **M2 成本模型**——
+κ 的跨硬體主張就是由這兩者構成。其餘（Oracle、預算掃描、語意消融、
+長上下文外插）都是拿新的成本常數重跑同一批腳本。
 
 ### 多卡的正確用法
 
