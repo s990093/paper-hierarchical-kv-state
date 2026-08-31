@@ -1,0 +1,16 @@
+{
+  "run_id": "20260831-203348-dca-probe",
+  "model": "graelo/Qwen2.5-7B-Instruct-1M-AWQ",
+  "max_len": 524288,
+  "kv_dtype": "fp8",
+  "log": "/ssd7/hungwei/paper-hkv/runs/20260831-203348-dca-probe/server.log",
+  "host_contention": "HEAVY",
+  "ts": "2026-08-31T20:34:04.925529+08:00",
+  "verdict": "SERVER_DIED",
+  "exit_code": 1,
+  "error_tail": [
+    "(APIServer pid=2500247)     raise RuntimeError(",
+    "(APIServer pid=2500247) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}"
+  ],
+  "contaminated": false
+}

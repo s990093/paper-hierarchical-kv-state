@@ -1851,3 +1851,60 @@ headroom 不只由重用率決定，也由「放錯地方的代價」決定，
 Mooncake 的輸出長度分佈很偏（toolagent 中位 30、p90 507、max 2,000）。
 按輸出長度分箱之後，**短輸出的那群請求 headroom 應該遠高於平均**，
 而那群在真實流量裡佔多數。這個切分尚未做。
+
+## 🔴 決定性結果：vLLM 0.28 的 V1 engine **無法**執行 DCA（2026-08-31 20:35）
+
+**run_id**: `20260831-203348-dca-probe`
+**產出**: `results/m1_capacity/dca_probe.json`（`verdict: SERVER_DIED`）
+**指令**: `python code/dca_probe.py --gpu 0`
+（模型 `graelo/Qwen2.5-7B-Instruct-1M-AWQ`，DCA config 完整，`max_model_len=524288`）
+
+### 錯誤
+
+```
+File ".../vllm/model_executor/models/qwen2.py", line 189, in __init__
+File ".../vllm/model_executor/layers/attention/attention.py", line 410, in __init__
+TypeError: FlashInferImpl.__init__() got an unexpected keyword argument 'layer_idx'
+```
+
+### 為什麼這是 DCA 專屬的路徑（不是別的問題）
+
+`qwen2.py` 只有在 `dual_chunk_attention_config` 存在時才會多傳兩個參數：
+
+```python
+**{
+    "layer_idx": extract_layer_index(prefix),
+    "dual_chunk_attention_config": dual_chunk_attention_config,
+}
+if dual_chunk_attention_config
+else {},
+```
+
+而 `FlashInferImpl.__init__()` 不接受 `layer_idx`。
+同一顆模型移除 DCA config 之後（`Qwen2.5-7B-Instruct-1M-AWQ-noDCA`）**整天都跑得好好的**，
+所以差別就是這個設定。
+
+這與先前讀原始碼得到的推論一致：`DualChunkRotaryEmbedding` 完整存在並產生
+5 倍寬的 query，但 `v1/attention/backends/` 底下沒有任何一支消化它。
+**這次是崩潰而不是靜默給錯結果，所以結論是硬的。**
+
+### 影響
+
+* 手上的 Qwen2.5-7B-Instruct-1M（AWQ 或 BF16）在 vLLM 0.28 上的**有效位置範圍是 262,144**
+* 超過之後 RoPE 落在未訓練區間，vLLM 自己警告 "lead to nan"
+* **512K 的品質評估在這個 vLLM 版本上做不到，而且換更大的卡也解決不了**
+  （限制在模型／框架，不在記憶體）
+* 512K 的**延遲與記憶體**仍可量（計算照樣發生），但必須標明品質無效
+
+### 可能的出路（都未驗證）
+
+1. 升級 vLLM 到有 DCA 的 V1 實作的版本（需查 upstream 是否已支援）
+2. 換原生支援 ≥512K 且不靠 DCA 的模型
+3. 只做 ≤262,144 的品質評估，512K 只報延遲
+
+### 測試方法的一個修正
+
+探針原本預設 `--kv-cache-dtype fp8`。但當天稍早量到**未校正的 fp8 在大海撈針
+上只有 5% 正確率**（BF16 100%、int8 95%），拿它做 DCA 測試會讓對照組也失敗，
+測不出 DCA 的效果。已改預設為 `int8_per_token_head`
+（容量 531,312 > 524,288，檢索 95%）。這個 confound 是在啟動前發現並修掉的。

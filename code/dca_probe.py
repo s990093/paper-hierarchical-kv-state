@@ -110,7 +110,11 @@ def main() -> int:
     ap.add_argument("--gpu", type=int, default=0)
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--max-len", type=int, default=524_288)
-    ap.add_argument("--kv-dtype", default="fp8")
+    ap.add_argument("--kv-dtype", default="int8_per_token_head",
+                    help="🔴 不要用 fp8。2026-08-31 實測：未校正縮放的 fp8 在"
+                         "大海撈針上只有 5% 正確率（BF16 100%、int8 95%），"
+                         "拿它做 DCA 測試會讓對照組也失敗，測不出 DCA 的效果。"
+                         "int8_per_token_head 的容量 531,312 > 524,288，夠用。")
     ap.add_argument("--probes", type=int, nargs="*",
                     default=[131_072, 393_216],
                     help="針要放在哪些 token 位置。預設一個在 262,144 之內"
