@@ -393,7 +393,8 @@ class Sim:
                    use_cpu: bool, use_ssd: bool,
                    split_at: int | None = None,
                    prefix_semantics: bool = True,
-                   prefetch: bool = False) -> dict:
+                   prefetch: bool = False,
+                   per_request: bool = False) -> dict:
         """split_at 給定時，另外回報第 split_at 個請求之後的成本（warm 段）。
 
         ⚠️ 為什麼需要這個：M3 的實測量的是**warm 那一輪**的 TTFT，
@@ -421,6 +422,7 @@ class Sim:
         warm_hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
         prev_compute = 0.0        # 上一個請求的計算時間，供預取重疊用
         writes = {"cpu": 0, "ssd": 0}
+        per_req: list[float] = []
 
         def demote(blk: int) -> None:
             # 🔴 寫入計量。模擬的成本模型只有「讀回來」的價格，
@@ -521,15 +523,21 @@ class Sim:
             c_req, prev_compute = self._flush(req_compute, req_transfer,
                                               prev_compute, prefetch)
             total += c_req
+            if per_request:
+                per_req.append(c_req)
             if warm:
                 warm_total += c_req
-        return {"total_ms": total, "hits": hits, "writes": writes,
-                "warm_ms": warm_total, "warm_hits": warm_hits}
+        out = {"total_ms": total, "hits": hits, "writes": writes,
+               "warm_ms": warm_total, "warm_hits": warm_hits}
+        if per_request:
+            out["per_request_ms"] = per_req
+        return out
 
     # -- Oracle ----------------------------------------------------
     def run_oracle(self, trace: list[list[int]], use_cpu: bool,
                    use_ssd: bool, prefix_semantics: bool = True,
-                   prefetch: bool = False, dest: str = "best") -> dict:
+                   prefetch: bool = False, dest: str = "best",
+                   per_request: bool = False) -> dict:
         """知道未來的最佳放置。
 
         單階時 Bélády/MIN（逐出下次使用最遠的）是**可證明最優**的。
@@ -551,7 +559,8 @@ class Sim:
         # Oracle 若輸給 baseline，go/no-go 就失去意義。
         if dest == "best":
             outs = {d: self.run_oracle(trace, use_cpu, use_ssd,
-                                       prefix_semantics, prefetch, d)
+                                       prefix_semantics, prefetch, d,
+                                       per_request)
                     for d in ("cascade", "cost-aware")}
             k = min(outs, key=lambda d: outs[d]["total_ms"])
             outs[k]["dest_chosen"] = k
@@ -596,6 +605,7 @@ class Sim:
         heap: list[tuple[float, int]] = []   # (-next_use, blk)，max-heap
         nu_cache: dict[int, float] = {}      # blk -> 入堆時記錄的 next_use
         total = 0.0
+        per_req: list[float] = []
         hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
         # 逐出的去向。`free` = 該 block 之後再也用不到，丟掉成本 0。
         # 🔴 這個計數是檢驗「多階層有沒有用」的關鍵：若 free 佔 100%，
@@ -756,9 +766,14 @@ class Sim:
             c_req, prev_compute = self._flush(req_compute, req_transfer,
                                               prev_compute, prefetch)
             total += c_req
-        return {"total_ms": total, "hits": hits, "evict": evict,
-                "writes": {"cpu": evict["to_cpu"] + evict["swap_cpu"],
-                           "ssd": evict["to_ssd"] + evict["swap_ssd"]}}
+            if per_request:
+                per_req.append(c_req)
+        out = {"total_ms": total, "hits": hits, "evict": evict,
+               "writes": {"cpu": evict["to_cpu"] + evict["swap_cpu"],
+                          "ssd": evict["to_ssd"] + evict["swap_ssd"]}}
+        if per_request:
+            out["per_request_ms"] = per_req
+        return out
 
 
 # ────────────────────────── 驗證 ──────────────────────────
