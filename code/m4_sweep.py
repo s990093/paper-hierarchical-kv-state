@@ -94,7 +94,8 @@ class Ctx:
         self.device_total_tib = du.total / 1024**4
         self.device_free_gib = du.free / 1024**3
 
-    def run(self, trace, tname, ssd_blocks, gpu_blocks=None, per_request=False):
+    def run(self, trace, tname, ssd_blocks, gpu_blocks=None, per_request=False,
+            outputs=None):
         """跑一輪五個策略，回傳 (res, best, headroom)。"""
         gb = gpu_blocks or self.gpu_blocks
         preflight(self.cm, trace, tname, gb, self.cpu_blocks, ssd_blocks,
@@ -102,8 +103,19 @@ class Ctx:
         sim = Sim(self.cm, gb, self.cpu_blocks, ssd_blocks=ssd_blocks,
                   decode=self.decode)
         kw = dict(self.sem, per_request=per_request)
-        if self.decode is not None and tname:
-            kw["outputs"] = mooncake_outputs(tname)
+        if self.decode is not None:
+            # 🔴 合成 trace 沒有 output_length 欄，若不明確給就等於沒有 decode，
+            #    整張含 decode 的地圖會跟只算 prefill 的一模一樣。
+            #    2026-08-31 實測踩到：B 半段輸出與 A 完全相同。
+            if outputs is not None:
+                kw["outputs"] = outputs
+            elif tname:
+                kw["outputs"] = mooncake_outputs(tname)
+            else:
+                raise SystemExit(
+                    "🔴 開了 --decode 但這個工作負載沒有輸出長度。"
+                    "合成 trace 必須明確傳入 outputs，否則 decode 成本會是 0，"
+                    "而結果看起來完全正常。")
         res = {k: sim.run_online(trace, *v, **kw)
                for k, v in POLICIES.items() if not (v[2] and ssd_blocks == 0)}
         res["oracle"] = sim.run_oracle(trace, True, ssd_blocks > 0,
@@ -417,9 +429,17 @@ def axis_surface(ctx: Ctx) -> list[dict]:
             tail_b = max(1, int(doc_b * a.surface_tail_frac))
             tr = longctx_trace(n_docs, doc_b, tail_b, n_req, 0.9, a.seed)
             ru = reuse_rate(tr)
+            # 合成請求的輸出長度：從真實 Mooncake 的分佈抽樣，
+            # 這樣「decode 佔多少」不是我編的
+            outs = None
+            if ctx.decode is not None:
+                import random as _r
+                pool = mooncake_outputs(a.surface_output_from)
+                rr_ = _r.Random(a.seed)
+                outs = [pool[rr_.randrange(len(pool))] for _ in range(len(tr))]
             uniq = len({b for r in tr for b in r})
             fits = L <= gpu_tok
-            res, best, head = ctx.run(tr, None, sb)
+            res, best, head = ctx.run(tr, None, sb, outputs=outs)
             print(f"{L:>10,}{rq:>10.1f}{100 * ru:>8.1f}%"
                   f"{uniq / ctx.gpu_blocks:>8.0f}×{'✅' if fits else '🔴':>12s}"
                   f"{best:>10s}{head:>9.2f}%{verdict(head):>9s}")
@@ -478,6 +498,9 @@ def main() -> int:
                     help="每份文件被查幾次。決定重用率："
                          "1.2 次≈55%、2 次≈66%、25 次≈95%")
     ap.add_argument("--surface-requests", type=int, default=200)
+    ap.add_argument("--surface-output-from", default="conversation",
+                    choices=["toolagent", "conversation"],
+                    help="合成請求的輸出長度從哪條真實 trace 抽樣")
     ap.add_argument("--surface-tail-frac", type=float, default=0.02,
                     help="每個請求各自不同的尾巴佔多少（2% = 512K 裡的 10K 問題）")
     ap.add_argument("--decode", action="store_true",
