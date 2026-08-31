@@ -67,6 +67,7 @@ from statistics import median
 REPO = Path(__file__).resolve().parent.parent
 M2 = REPO / "results/m2_harness"
 M5 = REPO / "results/m5_quality"
+M3 = REPO / "results/m3_baseline"
 M3_CSV = REPO / "results/m3_baseline/baseline.csv"
 OUT = REPO / "results/m4_oracle"
 
@@ -218,6 +219,98 @@ def profile(name: str) -> dict:
     if name not in MODEL_PROFILES:
         raise SystemExit(f"🔴 未知剖面 {name}；可用：{list(MODEL_PROFILES)}")
     return MODEL_PROFILES[name]
+
+
+def load_decode_model(model_key: str = "llama") -> dict:
+    """從 M3 的實測擬合 decode 每一步的成本。
+
+    ## 為什麼需要
+
+    模擬器原本只模 prefill。但用 trace 裡真實的 `output_length` 換算，
+    decode 佔了總時間的 **48.8%（toolagent）／53.8%（conversation）**。
+    我先前以為是 0.2%，那是因為 M3 的 harness 只生成 12–28 個 token。
+
+    **放置決策只能優化 prefill**：decode 期間該請求的 KV 必須整份在 GPU 裡，
+    每一步都要讀完，沒有放置的自由度。所以端到端的 headroom
+    等於 prefill 的 headroom 乘上 prefill 的時間佔比。
+
+    ## 模型
+
+        每步成本 = base + slope × 該請求的 block 數
+
+    base 是讀權重的固定成本，slope 是讀 KV 的成本（與 KV 大小成正比）。
+    擬合自 `results/m3_baseline/baseline*.csv` 的
+    `(total_ms − ttft_ms) / gen_tokens`。
+
+    ## 物理檢查（這是抓錯的關鍵）
+
+    slope 換算成頻寬必須低於卡的峰值（3090 是 936 GB/s）：
+
+        llama-bf16（128 KiB/token）  381 GB/s = 41%   ✅ R²=0.9999
+        qwen-bf16 （ 56 KiB/token）  839 GB/s = 90%   ✅ R²=0.8378
+        llama-awq 若誤用 128 KiB    1030 GB/s = 110%  🔴 不可能
+
+    最後那一列就是這樣抓到 `llama-awq` 其實跑 FP8 KV（64 KiB/token）的。
+    """
+    from statistics import median
+    files = [M3 / "baseline.csv", M3 / "baseline_longctx.csv"]
+    pts: list[tuple[int, float]] = []
+    for f in files:
+        if not f.exists():
+            continue
+        rows = [x for x in csv.DictReader(f.open())
+                if x.get("model_key") == model_key
+                and x.get("baseline") in (None, "", "full_gpu")
+                and x.get("ttft_ms") and x.get("total_ms")
+                and str(x.get("gen_tokens", "")).isdigit()
+                and int(x["gen_tokens"]) > 0]
+        g: dict[int, list] = {}
+        for x in rows:
+            c = int(x.get("actual_prompt_tokens") or x["ctx"])
+            g.setdefault(c, []).append(x)
+        for c, v in g.items():
+            t = median(float(x["ttft_ms"]) for x in v)
+            tot = median(float(x["total_ms"]) for x in v)
+            n = median(int(x["gen_tokens"]) for x in v)
+            if tot > t and n:
+                pts.append((c // BLOCK, (tot - t) / n))
+    if len(pts) < 2:
+        raise SystemExit(
+            f"🔴 找不到 model_key={model_key!r} 的 decode 量測，拒絕用預設值。\n"
+            f"   需要 results/m3_baseline/baseline*.csv 裡至少兩個不同 ctx 的"
+            f" full_gpu serial 列。")
+    n = len(pts)
+    sx = sum(a for a, _ in pts); sy = sum(b for _, b in pts)
+    sxx = sum(a * a for a, _ in pts); sxy = sum(a * b for a, b in pts)
+    slope = (n * sxy - sx * sy) / max(1e-12, n * sxx - sx * sx)
+    base = (sy - slope * sx) / n
+    mean = sy / n
+    ss = sum((b - mean) ** 2 for _, b in pts)
+    r2 = 1 - sum((b - (base + slope * a)) ** 2 for a, b in pts) / ss if ss else 1.0
+    return {"decode_base_ms": base, "decode_ms_per_block": slope,
+            "r2": r2, "n_points": n, "model_key": model_key,
+            "source": [str(f) for f in files if f.exists()]}
+
+
+def check_decode_bandwidth(dm: dict, kv_bytes_per_block: int,
+                           peak_gbps: float = 936.0) -> float:
+    """decode 的 slope 換算成 KV 讀取頻寬，超過卡的峰值就中止。
+
+    🔴 這個檢查抓到過真實的錯誤：把 llama-awq（實際跑 FP8 KV，64 KiB/token）
+       當成 128 KiB/token 去算，得到 1030 GB/s = 峰值的 110%。
+       物理上不可能，代表 KV 大小用錯了。
+    """
+    ms = dm["decode_ms_per_block"]
+    if ms <= 0:
+        return float("nan")
+    gbps = kv_bytes_per_block / (ms / 1000) / 1e9
+    if gbps > peak_gbps:
+        raise SystemExit(
+            f"🔴 decode 的擬合斜率換算出 {gbps:,.0f} GB/s 的 KV 讀取頻寬，"
+            f"超過卡的峰值 {peak_gbps:,.0f} GB/s。\n"
+            f"   物理上不可能 -> 最可能是 kv_bytes_per_token 用錯了"
+            f"（例如把跑 FP8 KV 的設定當成 BF16）。")
+    return gbps
 
 
 # ────────────────── GPU 上的精度階（六階動作空間缺的兩階） ──────────────────
@@ -479,6 +572,7 @@ def mooncake_trace(name: str, limit: int | None = None) -> list[list[int]]:
     #    這是**資料的正確解碼**，不是假設。
     exp = MOONCAKE_BLOCK // BLOCK
     out = []
+    _MOONCAKE_OUTPUTS[name] = outs = []
     for i, line in enumerate(p.open()):
         if limit and i >= limit:
             break
@@ -486,7 +580,22 @@ def mooncake_trace(name: str, limit: int | None = None) -> list[list[int]]:
         want = max(1, -(-int(rec["input_length"]) // BLOCK))   # ceil
         out.append([h * exp + k for h in rec["hash_ids"]
                     for k in range(exp)][:want])
+        outs.append(int(rec.get("output_length", 0)))
     return out
+
+
+# 每條 trace 的輸出長度，由 mooncake_trace() 順便填好。
+# 🔴 decode 佔真實負載的 48.8%（toolagent）／53.8%（conversation）的時間，
+#    而放置決策對它無能為力——decode 期間該請求的 KV 必須整份在 GPU 裡。
+#    模擬器若只算 prefill，回報的 headroom 會是端到端值的兩倍。
+_MOONCAKE_OUTPUTS: dict[str, list[int]] = {}
+
+
+def mooncake_outputs(name: str) -> list[int]:
+    """該條 trace 每個請求的輸出（生成）token 數。需先呼叫 mooncake_trace()。"""
+    if name not in _MOONCAKE_OUTPUTS:
+        mooncake_trace(name)
+    return _MOONCAKE_OUTPUTS[name]
 
 
 def trace_duration_s(name: str) -> float | None:
@@ -529,15 +638,83 @@ def zipf_trace(n_docs: int, doc_blocks: int, n_requests: int,
             for d in (pick() for _ in range(n_requests))]
 
 
+def longctx_trace(n_docs: int, doc_blocks: int, tail_blocks: int,
+                  n_requests: int, alpha: float, seed: int) -> list[list[int]]:
+    """長上下文的合成流量：**一份長的共用文件 + 每個請求各自不同的尾巴**。
+
+    `zipf_trace` 產生的是「整份文件」的請求，重用不是 0% 就是 100%。
+    真實的長上下文服務不長那樣——典型形態是一份很長的文件（合約、程式庫、
+    對話歷史）被反覆查詢，每次附上不同的問題。共用的是前綴，不同的是尾巴。
+    這正是 prefix cache 的目標情境，也是論文要談的。
+
+    參數與可觀察量的關係（重用率是 headroom 天花板的唯一決定因素）：
+
+        總存取     = n_requests × (doc_blocks + tail_blocks)
+        不重複     = 實際碰到的文件數 × doc_blocks + n_requests × tail_blocks
+        重用率     = 1 − 不重複 / 總存取
+
+    所以要瞄準某個重用率，就調 `tail_blocks`。這比調 alpha 直觀得多，
+    也讓「我們假設了什麼」變成一個可以寫進論文的數字。
+
+    ⚠️ 這是合成資料。真實 trace（Mooncake）最長只有 126,195 token，
+       沒有 512K 的資料可以驗證這個形態。用它產生的結果必須標明
+       `synthetic=longctx` 與所用的重用率。
+    """
+    rng = random.Random(seed)
+    w = [1.0 / ((i + 1) ** alpha) for i in range(n_docs)]
+    tot = sum(w)
+    cum, acc = [], 0.0
+    for x in w:
+        acc += x / tot
+        cum.append(acc)
+
+    def pick() -> int:
+        u = rng.random()
+        for i, c in enumerate(cum):
+            if u <= c:
+                return i
+        return n_docs - 1
+
+    # 尾巴用獨立的 id 空間，保證每個請求的尾巴都是新的
+    tail_base = n_docs * doc_blocks
+    out = []
+    for j in range(n_requests):
+        d = pick()
+        body = [d * doc_blocks + b for b in range(doc_blocks)]
+        tail = [tail_base + j * tail_blocks + b for b in range(tail_blocks)]
+        out.append(body + tail)
+    return out
+
+
+def reuse_rate(trace: list[list[int]]) -> float:
+    """實際的重用率 = 1 − 不重複 block 數 / 總存取數。"""
+    acc = sum(len(r) for r in trace)
+    return 1.0 - len({b for r in trace for b in r}) / max(1, acc)
+
+
 # ────────────────────────── 策略 ──────────────────────────
 
 class Sim:
     """單一策略在 trace 上的模擬。回傳總成本（ms）與各階命中次數。"""
 
     def __init__(self, cm: CostModel, gpu_blocks: int, cpu_blocks: int,
-                 ssd_blocks: int):
+                 ssd_blocks: int, decode: dict | None = None):
         self.cm = cm
         self.cap = {"gpu": gpu_blocks, "cpu": cpu_blocks, "ssd": ssd_blocks}
+        # decode 的成本模型（load_decode_model 的回傳）。None = 只模 prefill。
+        self.decode = decode
+
+    def decode_ms(self, n_blocks: int, out_tokens: int) -> float:
+        """一個請求的 decode 總成本。
+
+        🔴 這一項**與放置無關**：decode 期間該請求的 KV 必須整份在 GPU 裡，
+           每一步都要讀完，沒有搬到 CPU/SSD 或丟掉重算的自由度。
+           所以它對每個策略都是同一個常數，只會**稀釋** headroom。
+        """
+        if not self.decode or out_tokens <= 0:
+            return 0.0
+        return out_tokens * (self.decode["decode_base_ms"]
+                             + self.decode["decode_ms_per_block"] * n_blocks)
 
     # -- 系統語意的兩個共用模型 -----------------------------------
     @staticmethod
@@ -587,7 +764,8 @@ class Sim:
                    split_at: int | None = None,
                    prefix_semantics: bool = True,
                    prefetch: bool = False,
-                   per_request: bool = False) -> dict:
+                   per_request: bool = False,
+                   outputs: list[int] | None = None) -> dict:
         """split_at 給定時，另外回報第 split_at 個請求之後的成本（warm 段）。
 
         ⚠️ 為什麼需要這個：M3 的實測量的是**warm 那一輪**的 TTFT，
@@ -616,6 +794,7 @@ class Sim:
         prev_compute = 0.0        # 上一個請求的計算時間，供預取重疊用
         writes = {"cpu": 0, "ssd": 0}
         per_req: list[float] = []
+        decode_total = 0.0
 
         def demote(blk: int) -> None:
             # 🔴 寫入計量。模擬的成本模型只有「讀回來」的價格，
@@ -715,12 +894,18 @@ class Sim:
                 admit(blk)
             c_req, prev_compute = self._flush(req_compute, req_transfer,
                                               prev_compute, prefetch)
+            # decode 接在 prefill 之後，與放置無關（見 decode_ms 的說明）
+            d_req = self.decode_ms(len(req), outputs[ri]) if outputs else 0.0
+            decode_total += d_req
+            c_req += d_req
             total += c_req
             if per_request:
                 per_req.append(c_req)
             if warm:
                 warm_total += c_req
         out = {"total_ms": total, "hits": hits, "writes": writes,
+               "decode_ms": decode_total,
+               "prefill_ms": total - decode_total,
                "warm_ms": warm_total, "warm_hits": warm_hits}
         if per_request:
             out["per_request_ms"] = per_req
@@ -730,7 +915,8 @@ class Sim:
     def run_oracle(self, trace: list[list[int]], use_cpu: bool,
                    use_ssd: bool, prefix_semantics: bool = True,
                    prefetch: bool = False, dest: str = "best",
-                   per_request: bool = False) -> dict:
+                   per_request: bool = False,
+                   outputs: list[int] | None = None) -> dict:
         """知道未來的最佳放置。
 
         單階時 Bélády/MIN（逐出下次使用最遠的）是**可證明最優**的。
@@ -753,7 +939,7 @@ class Sim:
         if dest == "best":
             outs = {d: self.run_oracle(trace, use_cpu, use_ssd,
                                        prefix_semantics, prefetch, d,
-                                       per_request)
+                                       per_request, outputs)
                     for d in ("cascade", "cost-aware")}
             k = min(outs, key=lambda d: outs[d]["total_ms"])
             outs[k]["dest_chosen"] = k
@@ -798,6 +984,7 @@ class Sim:
         heap: list[tuple[float, int]] = []   # (-next_use, blk)，max-heap
         nu_cache: dict[int, float] = {}      # blk -> 入堆時記錄的 next_use
         total = 0.0
+        decode_total = 0.0
         per_req: list[float] = []
         hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
         # 逐出的去向。`free` = 該 block 之後再也用不到，丟掉成本 0。
@@ -823,7 +1010,7 @@ class Sim:
             return lst[p] if p < len(lst) else math.inf
 
         i = -1
-        for req in trace:
+        for ri, req in enumerate(trace):
             gap = self._gap_index(req, gpu, cpu, ssd, prefix_semantics)
             req_compute = 0.0
             req_transfer = 0.0
@@ -958,10 +1145,14 @@ class Sim:
                         evict["lost"] += 1
             c_req, prev_compute = self._flush(req_compute, req_transfer,
                                               prev_compute, prefetch)
+            d_req = self.decode_ms(len(req), outputs[ri]) if outputs else 0.0
+            decode_total += d_req
+            c_req += d_req
             total += c_req
             if per_request:
                 per_req.append(c_req)
         out = {"total_ms": total, "hits": hits, "evict": evict,
+               "decode_ms": decode_total, "prefill_ms": total - decode_total,
                "writes": {"cpu": evict["to_cpu"] + evict["swap_cpu"],
                           "ssd": evict["to_ssd"] + evict["swap_ssd"]}}
         if per_request:

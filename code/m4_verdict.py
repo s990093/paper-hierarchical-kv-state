@@ -43,7 +43,15 @@ _WARNED: set[str] = set()          # 每個檔案的警告只印一次
 
 
 def expected_uniq(tname: str) -> int | None:
-    """現算這條 trace 的不重複 block 數，當作資料版本的指紋。"""
+    """現算這條 trace 的不重複 block 數，當作資料版本的指紋。
+
+    🔴 語意消融的 `trace` 欄存的是**工作負載標籤**（`trace:toolagent`、
+       `pressure:2.0x(nom 2x)`），不是 trace 名。直接拿去組檔名會找不到檔
+       而中止整份報表。合成工作負載沒有對應的 trace 檔，回傳 None。
+    """
+    if tname.startswith("pressure:"):
+        return None
+    tname = tname.removeprefix("trace:")
     if tname not in _EXPECTED_UNIQ:
         try:
             import sys
@@ -51,6 +59,8 @@ def expected_uniq(tname: str) -> int | None:
             from m4_oracle import mooncake_trace
             tr = mooncake_trace(tname)
             _EXPECTED_UNIQ[tname] = len({b for r in tr for b in r})
+        except SystemExit:
+            _EXPECTED_UNIQ[tname] = None
         except Exception:  # noqa: BLE001
             _EXPECTED_UNIQ[tname] = None
     return _EXPECTED_UNIQ[tname]
@@ -90,7 +100,10 @@ def rows(p: Path, check_stale: bool = True) -> list[dict]:
         if _cur and sv and sv != _cur:
             oldsim += 1
         t = r.get("trace") or ""
-        exp = expected_uniq(t) if t else None
+        try:
+            exp = expected_uniq(t) if t else None
+        except SystemExit:
+            exp = None
         got = r.get("unique_blocks")
         if exp is None or not got:
             fresh.append(r)
@@ -104,8 +117,7 @@ def rows(p: Path, check_stale: bool = True) -> list[dict]:
     msgs = []
     if stale:
         msgs.append(f"{stale} 列 trace 解碼過期"
-                    f"（unique_blocks 應為 "
-                    f"{expected_uniq(out[0].get('trace', '')):,}）")
+                    f"（unique_blocks 與現行 trace 解碼不符）")
     if neg:
         msgs.append(f"{neg} 列 headroom 為負（Oracle 輸給 baseline，不可能）")
     if oldsim:
@@ -198,9 +210,11 @@ def main() -> int:
     if not r:
         print(f"   {NM}")
     else:
-        for w in sorted({x["workload"] for x in r}):
+        # 舊腳本把工作負載寫在 workload 欄，合併版寫在 trace 欄。兩種都吃。
+        wk = "workload" if "workload" in r[0] else "trace"
+        for w in sorted({x[wk] for x in r}):
             rr = {x["semantics"]: float(x["oracle_headroom_pct"])
-                  for x in r if x["workload"] == w}
+                  for x in r if x[wk] == w}
             base = rr.get("per-block/no-prefetch")
             out = "　".join(f"{k}={v:.2f}%" for k, v in rr.items())
             print(f"   {w:32s}{out}")

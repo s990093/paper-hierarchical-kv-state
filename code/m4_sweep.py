@@ -30,6 +30,8 @@ from pathlib import Path
 
 from m4_invariants import check_results, preflight
 from m4_oracle import (BLOCK, DEVICE_FS_ROOT, DEVICE_WRITE_MIBPS,
+                       check_decode_bandwidth, load_decode_model,
+                       mooncake_outputs,
                        MODEL_PROFILES, OUT, SIM_VERSION, Sim, load_cost_model,
                        mooncake_trace, profile, trace_duration_s, zipf_trace)
 
@@ -67,6 +69,17 @@ class Ctx:
         self.fs_root = a.fs_root or DEVICE_FS_ROOT[a.device]
         self.sem = {"prefix_semantics": a.lookup == "prefix",
                     "prefetch": a.prefetch}
+        # 🔴 decode。放置決策只能優化 prefill；decode 期間該請求的 KV 必須
+        #    整份在 GPU 裡，沒有自由度。不模它，回報的 headroom 會是端到端
+        #    值的約兩倍（真實負載裡 decode 佔 48.8%–53.8% 的時間）。
+        self.decode = None
+        if a.decode:
+            dm = load_decode_model(self.prof["cost_model_key"])
+            check_decode_bandwidth(dm, self.bpb)
+            self.decode = dm
+            print(f"[decode] 每步 = {dm['decode_base_ms']:.3f} ms + "
+                  f"{dm['decode_ms_per_block']:.6f} × blocks"
+                  f"（R²={dm['r2']:.4f}，擬合自 {dm['n_points']} 個 ctx）")
         du = shutil.disk_usage(self.fs_root)
         print(f"[剖面] {a.model}：GPU {self.prof['gpu_kv_tokens']:,} token = "
               f"{self.gpu_blocks:,} blocks；每 block "
@@ -85,8 +98,11 @@ class Ctx:
         gb = gpu_blocks or self.gpu_blocks
         preflight(self.cm, trace, tname, gb, self.cpu_blocks, ssd_blocks,
                   self.bpb, self.fs_root)
-        sim = Sim(self.cm, gb, self.cpu_blocks, ssd_blocks=ssd_blocks)
+        sim = Sim(self.cm, gb, self.cpu_blocks, ssd_blocks=ssd_blocks,
+                  decode=self.decode)
         kw = dict(self.sem, per_request=per_request)
+        if self.decode is not None and tname:
+            kw["outputs"] = mooncake_outputs(tname)
         res = {k: sim.run_online(trace, *v, **kw)
                for k, v in POLICIES.items() if not (v[2] and ssd_blocks == 0)}
         res["oracle"] = sim.run_oracle(trace, True, ssd_blocks > 0,
@@ -128,6 +144,8 @@ def policy_rows(ctx: Ctx, res: dict, best: str, head: float,
                     "gpu_hits": v["hits"]["gpu"], "cpu_hits": v["hits"]["cpu"],
                     "ssd_hits": v["hits"]["ssd"], "recompute": v["hits"]["drop"],
                     "ssd_writes": w.get("ssd", ""), "cpu_writes": w.get("cpu", ""),
+                    "decode_ms": round(v.get("decode_ms", 0), 2),
+                    "prefill_ms": round(v.get("prefill_ms", v["total_ms"]), 2),
                     "evict_free": e.get("free", ""),
                     "evict_to_cpu": e.get("to_cpu", ""),
                     "evict_to_ssd": e.get("to_ssd", ""),
@@ -382,6 +400,10 @@ def main() -> int:
     ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix")
     ap.add_argument("--prefetch", action="store_true", default=True)
     ap.add_argument("--no-prefetch", dest="prefetch", action="store_false")
+    ap.add_argument("--decode", action="store_true",
+                    help="把 decode 的成本也算進去（用 trace 裡真實的 "
+                         "output_length）。放置只能優化 prefill，所以開了之後 "
+                         "headroom 會降到端到端的真值")
     ap.add_argument("--oracle-dest", default="best",
                     choices=["best", "cost-aware", "cascade"])
     ap.add_argument("--device-write-mibps", type=float, default=None)
