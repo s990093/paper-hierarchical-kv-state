@@ -30,6 +30,10 @@ BIG = Path("/ssd7/hungwei/paper-hkv")
 
 BLOCK = 16          # vLLM 預設 block size，非本專案選擇
 
+REPO = Path(__file__).resolve().parent.parent
+M2 = REPO / "results/m2_harness"
+M4 = REPO / "results/m4_oracle"
+
 
 # ─────────────────────────── 讀取 ───────────────────────────
 
@@ -187,6 +191,141 @@ def load_trace_stats() -> list[dict]:
     return out
 
 
+# ───────────────── 2026-08-31 新增的資料集 ─────────────────
+
+def _csv(name: str) -> list[dict]:
+    p = M4 / name
+    if not p.exists():
+        return []
+    return list(csv.DictReader(p.open()))
+
+
+def load_ssd_sweep() -> list[dict]:
+    """SSD 容量 vs headroom vs **寫入可行性**。
+
+    這是 2026-08-31 之後最重要的一張表：模擬的成本模型只向「讀回來」收費，
+    寫下去是免費的；但 /ssd7 的持續寫入實測只有 181 MiB/s，
+    而勝出的 baseline（tier_fs）需要 4,666 MiB/s。
+    也就是說延遲上只差 8%，可行性上卻是「能跑 vs 不能跑」。
+    """
+    return _csv("ssd_sweep.csv")
+
+
+def load_budget_sweep() -> list[dict]:
+    """GPU 預算 vs headroom。免費逐出的存量決定階層有沒有價值。"""
+    return _csv("budget_sweep.csv")
+
+
+def load_semantics() -> list[dict]:
+    """模擬器的系統語意假設各自把 headroom 推動多少。"""
+    return _csv("semantics_ablation.csv")
+
+
+def load_by_length() -> list[dict]:
+    """Oracle 的節省按請求長度分箱——回答「長上下文才需要嗎」。"""
+    return _csv("by_length.csv")
+
+
+def load_disk_bw() -> list[dict]:
+    """磁碟頻寬實測。QLC 的持續寫入遠低於短測（SLC 快取）。"""
+    out = []
+    for n in ("disk_bw.csv", "disk_bw_sustained.csv"):
+        p = M2 / n
+        if p.exists():
+            for r in csv.DictReader(p.open()):
+                r["test"] = "sustained" if "sustained" in n else "burst"
+                out.append(r)
+    return out
+
+
+def fig_ssd_feasibility(D, ax=None):
+    """SSD 容量掃描：headroom（線）與寫入頻寬需求（柱），加上裝置能力的紅線。
+
+    一張圖說完「延遲差 8%，可行性差 25.8 倍」。
+    """
+    rows = [r for r in D["ssd_sweep"] if r["policy"] == "oracle"]
+    if not rows:
+        raise ValueError("results/m4_oracle/ssd_sweep.csv 還沒有資料")
+    import matplotlib.pyplot as plt
+    if ax is None:
+        _, ax = plt.subplots(figsize=(9, 4.5))
+    traces = sorted({r["trace"] for r in rows})
+    for t in traces:
+        rr = [r for r in rows if r["trace"] == t]
+        rr.sort(key=lambda r: (float("inf") if r["ssd_gib"] == "unlimited"
+                               else float(r["ssd_gib"])))
+        x = range(len(rr))
+        ax.plot(list(x), [float(r["oracle_headroom_pct"]) for r in rr],
+                marker="o", label=f"{t} headroom")
+        ax.set_xticks(list(x))
+        ax.set_xticklabels([r["ssd_gib"] if r["ssd_gib"] != "unlimited"
+                            else "∞" for r in rr])
+    ax.axhline(15, ls="--", c="green", lw=1, label="GO 門檻 15%")
+    ax.axhline(5, ls="--", c="red", lw=1, label="NO-GO 門檻 5%")
+    ax.set_xlabel("SSD 階容量（GiB）")
+    ax.set_ylabel("Oracle headroom (%)")
+    ax.set_title("SSD 容量與 Oracle headroom")
+    ax.legend(fontsize=8)
+    return ax
+
+
+def fig_write_feasibility(D, ax=None):
+    """各策略需要的持續寫入頻寬 vs 兩顆碟的實測能力。"""
+    rows = D["ssd_sweep"]
+    if not rows:
+        raise ValueError("results/m4_oracle/ssd_sweep.csv 還沒有資料")
+    import matplotlib.pyplot as plt
+    if ax is None:
+        _, ax = plt.subplots(figsize=(9, 4.5))
+    t = sorted({r["trace"] for r in rows})[0]
+    rr = [r for r in rows if r["trace"] == t and r.get("ssd_write_mibps")]
+    pols = ["tier_fs", "oracle"]
+    labels = sorted({r["ssd_gib"] for r in rr},
+                    key=lambda g: float("inf") if g == "unlimited" else float(g))
+    w = 0.35
+    for i, pol in enumerate(pols):
+        vals = []
+        for g in labels:
+            m = [r for r in rr if r["policy"] == pol and r["ssd_gib"] == g]
+            vals.append(float(m[0]["ssd_write_mibps"]) if m else 0.0)
+        ax.bar([j + i * w for j in range(len(labels))], vals, w, label=pol)
+    ax.axhline(181, c="red", lw=2, label="SATA QLC 持續寫入 181 MiB/s（實測）")
+    ax.axhline(2512, c="orange", lw=2, ls="--",
+               label="NVMe 寫入 2,512 MiB/s（實測）")
+    ax.set_yscale("symlog")
+    ax.set_xticks([j + w / 2 for j in range(len(labels))])
+    ax.set_xticklabels([g if g != "unlimited" else "∞" for g in labels])
+    ax.set_xlabel("SSD 階容量（GiB）")
+    ax.set_ylabel("需要的持續寫入頻寬（MiB/s）")
+    ax.set_title(f"寫入可行性（{t}）——超過紅線的策略在這顆碟上跑不起來")
+    ax.legend(fontsize=8)
+    return ax
+
+
+def fig_saving_by_length(D, ax=None):
+    """Oracle 的節省集中在哪一段請求長度。"""
+    rows = D["by_length"]
+    if not rows:
+        raise ValueError("results/m4_oracle/by_length.csv 還沒有資料")
+    import matplotlib.pyplot as plt
+    if ax is None:
+        _, ax = plt.subplots(figsize=(9, 4.5))
+    traces = sorted({r["trace"] for r in rows})
+    bins = [r["bin"] for r in rows if r["trace"] == traces[0]]
+    w = 0.8 / len(traces)
+    for i, t in enumerate(traces):
+        rr = [r for r in rows if r["trace"] == t]
+        ax.bar([j + i * w for j in range(len(rr))],
+               [float(r["saving_pct_within_bin"] or 0) for r in rr], w, label=t)
+    ax.set_xticks([j + 0.4 - w / 2 for j in range(len(bins))])
+    ax.set_xticklabels(bins, rotation=30, ha="right")
+    ax.set_xlabel("請求長度（token）")
+    ax.set_ylabel("Oracle 相對最佳 baseline 的節省 (%)")
+    ax.set_title("節省是否集中在長請求？（真實 trace，零假設）")
+    ax.legend(fontsize=8)
+    return ax
+
+
 def load_all() -> dict:
     return {
         "cost": load_cost_model(),
@@ -196,6 +335,11 @@ def load_all() -> dict:
         "m3": load_m3("longctx"),
         "oracle": load_oracle_scenarios(),
         "traces": load_trace_stats(),
+        "ssd_sweep": load_ssd_sweep(),
+        "budget_sweep": load_budget_sweep(),
+        "semantics": load_semantics(),
+        "by_length": load_by_length(),
+        "disk_bw": load_disk_bw(),
     }
 
 
