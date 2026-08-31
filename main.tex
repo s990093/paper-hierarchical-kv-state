@@ -1368,16 +1368,20 @@ GPU 的 SM 為各卡獨佔，但 PCIe、host RAM 頻寬與 \texttt{/dev/shm} 為
 以 16K 上下文、四個共用前綴的兩輪工作負載量測 warm TTFT，並扣除 GPU 命中的基準（134.4\,ms）：\act{CPU} 736.9\,ms、\act{SSD} 5{,}803.3\,ms、\act{Drop} 5{,}467.5\,ms。換算每 block（16 token）分別為 0.588、5.536、4.008\,ms。
 
 \paragraph{磁碟階的成本並非由 I/O 主導。}
-我們於 SATA SSD（Samsung 870 QVO）與 NVMe（Crucial P3）各量一次。裝置頻寬分別為 0.49 與 1.65\,GB/s（相差 $3.4\times$），而端到端 warm TTFT 為 5{,}803 與 6{,}600\,ms——\emph{頻寬較高者反而較慢}。磁碟讀取僅佔搬移成本的約 35\%，其餘為分層機制的查表、cascade 排程與 promotion 開銷。故成本模型應拆為 $C_{\text{ssd}}=C_{\text{lookup}}+C_{\text{sched}}+C_{\text{io}}(\text{device})$，僅末項與裝置有關。
+我們以 \texttt{O\_DIRECT} 循序存取量測兩顆裝置，各重複三次取中位數。SATA QLC（Samsung 870 QVO，\texttt{/ssd7}）讀 522\,MiB/s，NVMe（Crucial P3，\texttt{/}）讀 2{,}085\,MiB/s，相差 $4.0\times$；端到端 warm TTFT 卻是 5{,}803 與 6{,}600\,ms，頻寬較高者反而較慢。由端到端延遲反推的 \act{SSD} 取回成本 5.536\,ms/block 換算為 344\,MiB/s，僅達裸讀的 66\%，其餘為分層機制的查表、cascade 排程與 promotion 開銷。成本模型因此拆為 $C_{\text{ssd}}=C_{\text{lookup}}+C_{\text{sched}}+C_{\text{io}}(\text{device})$，僅末項與裝置有關。兩條互相獨立的路徑（端到端 TTFT 與原始 I/O）在 66\% 這個比例上互相印證。
+
+\paragraph{QLC 的持續寫入只有短測的 37\%。}
+1\,GiB 的短測給出 492\,MiB/s，16\,GiB 的長測只剩 181\,MiB/s；短測整個落在 QLC 的 SLC 寫入快取內。KV 階持續寫入，可行性判定因此須採用 181\,MiB/s。同一台機器上的 NVMe 寫入為 2{,}512\,MiB/s，兩者相差 $13.9\times$。\act{SSD} 這個動作的成本因此在單一台機器內就相差一個數量級，而表 \ref{tab:kappa} 的 $\kappa$ 僅涵蓋加速器與主機之間的傳輸，未涵蓋磁碟階。
 
 \subsection{Oracle 的求解方法與其效力範圍}
 \label{app:oracle}
 
 我們以 trace 驅動的模擬求解上界：GPU 階的逐出以 Bélády/MIN 決定，跨階的目的地以成本感知貪婪決定。後者非加權多階快取問題的最佳解，故所得 headroom 為\emph{下界}——真正的最佳解只會更好。此不對稱使 GO 判定安全，而 NO-GO 判定須額外審視。
 
-模擬器的效力取決於兩個前提。其一，成本常數須為實測；程式在讀不到 \S\ref{app:cost} 的量測檔時中止，不使用預設值。其二，模擬器須能複現已量測的行為；我們以第 \ref{sec:eval} 節的工作負載比對 \texttt{full\_gpu} 相對 \texttt{cpu\_lru} 的 warm 段成本比，方向一致（2/2），但量級高估約 $1.5\times$（實測 9.00 對模擬 14.33）。\textbf{故本文僅引用 headroom 隨工作負載偏斜的趨勢，不引用其絕對值。}
+模擬器的效力取決於兩個前提。其一，成本常數須為實測；程式在讀不到 \S\ref{app:cost} 的量測檔時中止，且模型剖面（GPU 預算、KV 每 token 位元組、成本常數的來源模型）三者必須一致，否則拒絕執行。其二，模擬器須能複現已量測的行為。我們以第 \ref{sec:eval} 節的工作負載比對 \texttt{full\_gpu} 相對 \texttt{cpu\_lru} 的 warm 段成本比：16K 上下文實測 9.00 對模擬 9.73（差 8\%），32K 上下文實測 12.27 對模擬 12.66（差 3\%）。絕對值同樣相符，\texttt{full\_gpu} 為 5{,}033 對 5{,}864\,ms、\texttt{cpu\_lru} 為 559 對 603\,ms。\textbf{驗證僅涵蓋一種工作負載形狀與兩個有鑑別力的上下文長度，本文引用 headroom 的絕對值時一併標明此範圍。}
 
-已知的偏差來源為前綴語意：vLLM 的 prefix cache 於中間缺塊時須重算其後全部，而模擬器記為重算單一 block，因而低估 \texttt{full\_gpu} 的成本。修正此項後 headroom 只會上升。
+\paragraph{逐 block 的簡化對前綴結構的工作負載無害。}
+vLLM 的查詢語意是連續前綴：\texttt{\_lookup\_complete\_chunks} 回傳一個 token 數，而 token 數無法表達「block 0、1、4、5 命中，2、3 未命中」這種形狀，因此第一個缺口之後的 block 一律重算。我們把模擬器改為此語意並量化其影響：缺口之後的 block 中仍留在任一階的比例為 0.000\% 至 0.464\%（兩條 trace $\times$ 三個策略），其中 61.8\% 至 80.1\% 是首次出現的 block，本來就必須重算。真實流量的重用本身即為前綴結構，Mooncake 的 \texttt{hash\_ids} 就是前綴雜湊，第一個未命中因此恰好落在共用前綴的結尾，缺口之後沒有可供損失的快取內容。此結果同時構成模擬器的一項有效性證據。
 
 % =====================================================================
 \bibliographystyle{plain}
