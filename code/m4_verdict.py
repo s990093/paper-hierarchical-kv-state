@@ -228,6 +228,30 @@ def main() -> int:
                 print(f"   {tag:18s}{path:18s}寫 {median(w):>8,.0f}"
                       f"　讀 {median(rd):>8,.0f} MiB/s")
 
+    print("\n## F2. GPU 上的精度階（六階動作空間缺的兩階）")
+    try:
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from m4_oracle import load_precision_tiers
+        pt = load_precision_tiers("nvme")
+    except Exception as e:  # noqa: BLE001
+        pt = {}
+        print(f"   讀取失敗：{e}")
+    if pt:
+        print(f"   {'精度':8s}{'容量倍數':>10s}{'反量化 ms/block':>18s}"
+              f"{'品質 ε':>14s}")
+        for k, v in pt.items():
+            print(f"   {k:8s}{v['capacity_x']:>9.2f}×"
+                  f"{str(v[chr(39)+chr(100)+chr(101)+chr(113)]):>18s}")
+        miss = [k for k, v in pt.items() if v["dequant_ms_per_block"] == NM]
+        if miss:
+            print(f"   🔴 {len(miss)} 階的反量化成本未量：{miss}")
+            print("      在量到之前，Oracle 的動作空間只有四階"
+                  "（GPU-BF16 / CPU / SSD / DROP），")
+            print("      論文的六階主張無法用模擬驗證。")
+            print("      量法見 overnight_v2.sh 步驟 1；"
+                  "解析器 m4_oracle.load_precision_tiers 已用假輸入驗證。")
+
     print("\n## G. 只比「在真機上跑得起來」的策略")
     print("   模擬的成本模型只向讀取收費，寫入免費。加上實測的持續寫入頻寬之後，")
     print("   有些策略根本寫不下去。此節把不可行的策略排除後重新比較。")
