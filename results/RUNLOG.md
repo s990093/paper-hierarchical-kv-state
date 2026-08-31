@@ -1573,3 +1573,45 @@ Oracle 知道全部的未來，這在定義上不可能。
 
 → CLAUDE.md 新增禁令 6（外部資料集的單位要用資料自身交叉驗證）
    與禁令 7（「查不到」不等於「沒有」）。
+
+## 凌晨批次 v2 的乾跑驗證（2026-08-31 16:55）
+
+**動機**：今晚 03:00 的批次會跑今天才改的三條 M2 新路徑。
+沒驗證就排上去，等於賭一整夜——失敗要到明天早上才會發現。
+
+**做法**：把 `Server` 換成假的，只檢查「哪些階會被跑到、每一階用什麼
+`kv_dtype`、CSV 欄位與檔名對不對」。不碰 GPU，因此可以在 GPU 0 忙碌時做。
+
+**🔴 抓到一個會讓批次直接崩掉的 bug**：
+
+    ValueError: too many values to unpack (expected 3)
+    m2_cost_model.py:455  for name, _, _ in TIERS:
+
+我把 `TIERS` 從 3 元組改成可選 4 元組（新增 `kv_dtype`）時，只改了主迴圈，
+漏了摘要輸出那個迴圈。**步驟 1 會在印摘要時崩掉，且前面的量測結果不會寫檔。**
+已改為 `for name, *_rest in TIERS`。
+
+**修正後的乾跑結果**：
+
+| 步驟 | 起幾個 server | kv_dtype |
+|---|---|---|
+| 1（精度階） | 3 | `auto`、`fp8`、`int4_per_token_head` |
+| 2/3（四階） | 4 | 全部 `auto`，spec 為 None／CPUOffloadingSpec／TieringOffloadingSpec／None |
+| `--stage all` | 6 | 上述聯集 |
+
+檔名互不覆蓋：`retrieval_cost.csv`、`retrieval_cost_precision_tiers.csv`、
+`retrieval_cost_sata_quiet.csv`、`retrieval_cost_llama-awq.csv`、
+`retrieval_cost_qwen-awq.csv`。
+
+**重算位置掃到 114,688 的可行性**（步驟 4b）：
+
+    max_len = 114,688 + 2,048 + 1,024 = 117,760 ≤ llama-awq 實測容量 120,320  ✅
+    117,760 token 的 KV = 14.4 GiB；AWQ 權重約 5.7 GB，
+    24 GB 卡 @ gpu_memory_utilization 0.90 可用 21.6 GB → 剩 15.9 GiB 給 KV  ✅
+
+**模型可用性**：`llama-awq` 已在 HF 快取（5.4 GB）；
+`qwen-awq` 為本機路徑，`config.json` 確認 `quant_method=awq`、
+`max_position_embeddings=262144`、`rope_scaling=None`（無 DCA）。
+
+**教訓**：排進 cron 的東西要先用假的外部相依乾跑一次。
+這次省下的是一整夜。

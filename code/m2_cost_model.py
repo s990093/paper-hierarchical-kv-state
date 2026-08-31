@@ -452,7 +452,7 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
     print(f"GPU-resident warm TTFT = {b:.1f} ms（≈0 成本的基準）\n" if b else
           "🔴 沒有基準值\n")
     print(f"{'tier':14s}{'warm ms':>10s}{'減基準':>10s}{'µs/token':>11s}")
-    for name, _, _ in TIERS:
+    for name, *_rest in TIERS:
         v = [r["ttft_ms"] for r in rows
              if r["tier"] == name and r["round"] == "warm" and r["ttft_ms"]]
         if not v or b is None:
