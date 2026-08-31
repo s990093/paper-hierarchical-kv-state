@@ -1,0 +1,498 @@
+<title>KV 放置決策儀表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700;900&display=swap">
+
+<style>
+:root{
+  --bg:#f2f4f5; --panel:#ffffff; --sunk:#e7ebec; --edge:#d0d9db; --edge-2:#e3e9ea;
+  --ink:#111819; --ink-2:#404d4f; --ink-3:#6d7c7e;
+  /* 階層以「深度」編碼：GPU 最亮最暖 → 往下逐漸冷、暗 */
+  --t-gpu:#b4551f; --t-gpu-bg:#fbeadf;
+  --t-cpu:#8a6a2f; --t-cpu-bg:#f7efdc;
+  --t-ssd:#3f6b78; --t-ssd-bg:#e2eef1;
+  --t-drop:#7b8688; --t-drop-bg:#eceff0;
+  --live:#0a6f68; --live-bg:#dcefed;
+  --warn:#94550c; --warn-bg:#f8ecd9;
+  --bad:#93291d;
+  --shadow:0 1px 2px rgba(17,24,25,.05),0 10px 28px -20px rgba(17,24,25,.4);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b0f10; --panel:#141a1c; --sunk:#101617; --edge:#263033; --edge-2:#1b2325;
+    --ink:#e8eeef; --ink-2:#a6b4b6; --ink-3:#78888a;
+    --t-gpu:#e8894f; --t-gpu-bg:#2b1811;
+    --t-cpu:#d3ad61; --t-cpu-bg:#261e10;
+    --t-ssd:#68a7b8; --t-ssd-bg:#132329;
+    --t-drop:#8b9799; --t-drop-bg:#191f20;
+    --live:#4fc7bd; --live-bg:#0c2c29;
+    --warn:#dfa45c; --warn-bg:#2a2013;
+    --bad:#e2705f;
+    --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px -22px rgba(0,0,0,.95);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b0f10; --panel:#141a1c; --sunk:#101617; --edge:#263033; --edge-2:#1b2325;
+  --ink:#e8eeef; --ink-2:#a6b4b6; --ink-3:#78888a;
+  --t-gpu:#e8894f; --t-gpu-bg:#2b1811;
+  --t-cpu:#d3ad61; --t-cpu-bg:#261e10;
+  --t-ssd:#68a7b8; --t-ssd-bg:#132329;
+  --t-drop:#8b9799; --t-drop-bg:#191f20;
+  --live:#4fc7bd; --live-bg:#0c2c29;
+  --warn:#dfa45c; --warn-bg:#2a2013;
+  --bad:#e2705f;
+  --shadow:0 1px 2px rgba(0,0,0,.5),0 12px 32px -22px rgba(0,0,0,.95);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","Hiragino Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1000px;margin:0 auto;padding:0 24px 80px}
+h1{font-family:"Noto Serif TC",Georgia,serif;font-weight:900;
+  font-size:clamp(27px,4vw,42px);line-height:1.15;margin:0;text-wrap:balance}
+h2{font-family:"Noto Serif TC",Georgia,serif;font-weight:700;
+  font-size:clamp(19px,2.3vw,24px);margin:0;text-wrap:balance}
+h3{font-size:15px;font-weight:700;margin:0}
+p{margin:0}
+.mono,code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  font-variant-numeric:tabular-nums}
+code{font-size:.87em;background:var(--sunk);padding:.08em .36em;border-radius:3px;
+  border:1px solid var(--edge-2)}
+
+header{padding:56px 0 28px;border-bottom:2px solid var(--ink);
+  display:flex;flex-direction:column;gap:16px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--live);font-weight:600}
+.sub{color:var(--ink-2);max-width:62ch}
+
+section{padding-top:52px}
+.head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;
+  border-bottom:1px solid var(--edge);padding-bottom:10px;margin-bottom:20px}
+.num{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;
+  color:var(--live);letter-spacing:.08em}
+.lede{color:var(--ink-2);max-width:66ch;margin-bottom:18px;font-size:14.5px}
+
+/* ── controls ─────────────────────────────────── */
+.ctl{background:var(--panel);border:1px solid var(--edge);border-radius:7px;
+  padding:16px 18px;margin:18px 0;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;gap:14px}
+.ctl-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ctl-lab{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-3);min-width:90px}
+input[type=range]{flex:1;min-width:180px;accent-color:var(--live);height:22px}
+.readout{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:600;
+  color:var(--live);min-width:112px;text-align:right}
+.segs{display:flex;gap:0;border:1px solid var(--edge);border-radius:6px;overflow:hidden;
+  flex-wrap:wrap}
+.segs button{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;
+  padding:7px 13px;border:0;border-right:1px solid var(--edge);background:var(--panel);
+  color:var(--ink-2);cursor:pointer;transition:background .12s,color .12s}
+.segs button:last-child{border-right:0}
+.segs button:hover{background:var(--sunk)}
+.segs button[aria-pressed=true]{background:var(--live);color:var(--panel);font-weight:600}
+.segs button:focus-visible{outline:2px solid var(--live);outline-offset:-2px}
+label.chk{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer;
+  color:var(--ink-2)}
+label.chk input{accent-color:var(--live);width:16px;height:16px}
+
+/* ── the ladder ───────────────────────────────── */
+.ladder{display:flex;flex-direction:column;gap:1px;background:var(--edge);
+  border:1px solid var(--edge);border-radius:7px;overflow:hidden;box-shadow:var(--shadow)}
+.rung{background:var(--panel);padding:12px 16px;display:grid;
+  grid-template-columns:132px 1fr 96px 96px 62px;align-items:center;gap:12px;
+  transition:background .15s,opacity .15s}
+.rung.hd{background:var(--sunk);font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:600}
+.rung .nm{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:7px}
+.dot{width:9px;height:9px;border-radius:2px;flex:none}
+.bar{height:9px;border-radius:2px;position:relative;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:2px;transition:width .25s ease}
+.val{font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:right;
+  font-variant-numeric:tabular-nums}
+.rank{font-family:"IBM Plex Mono",monospace;font-size:11px;text-align:center;
+  padding:2px 0;border-radius:3px;font-weight:600}
+.rank.win{background:var(--live-bg);color:var(--live)}
+.rank.dom{background:var(--sunk);color:var(--ink-3);text-decoration:line-through}
+.rung.off{opacity:.34}
+.rung.hl{background:var(--live-bg)}
+.na{color:var(--ink-3);font-style:italic;font-size:11.5px}
+
+.note{background:var(--warn-bg);border:1px solid var(--warn);border-radius:6px;
+  padding:13px 16px;margin:16px 0;font-size:13.5px;color:var(--ink-2)}
+.note b{color:var(--warn)}
+.note.live{background:var(--live-bg);border-color:var(--live)}
+.note.live b{color:var(--live)}
+
+/* ── flow bars ────────────────────────────────── */
+.flow{display:flex;flex-direction:column;gap:9px;margin:16px 0}
+.frow{display:grid;grid-template-columns:96px 1fr 88px;align-items:center;gap:12px}
+.fname{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-2)}
+.fname.best{color:var(--ink);font-weight:600}
+.fbar{display:flex;height:24px;border-radius:4px;overflow:hidden;background:var(--sunk);
+  border:1px solid var(--edge-2)}
+.fbar span{transition:width .3s ease;position:relative}
+.fbar span[data-t=gpu]{background:var(--t-gpu)}
+.fbar span[data-t=cpu]{background:var(--t-cpu)}
+.fbar span[data-t=ssd]{background:var(--t-ssd)}
+.fbar span[data-t=rec]{background:repeating-linear-gradient(45deg,
+  var(--t-drop) 0 4px,transparent 4px 8px);border-left:1px solid var(--t-drop)}
+.fcost{font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:right}
+.fcost.o{color:var(--live);font-weight:600}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;margin-top:4px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;
+  margin-right:5px;vertical-align:-1px}
+
+.verdict{display:inline-flex;align-items:center;gap:6px;font-family:"IBM Plex Mono",monospace;
+  font-size:12px;font-weight:600;padding:3px 10px;border-radius:3px;border:1px solid}
+.v-go{color:var(--live);background:var(--live-bg);border-color:var(--live)}
+.v-mid{color:var(--warn);background:var(--warn-bg);border-color:var(--warn)}
+.v-no{color:var(--bad);background:var(--t-gpu-bg);border-color:var(--bad)}
+
+.tw{overflow-x:auto;border:1px solid var(--edge);border-radius:7px;background:var(--panel);
+  margin:18px 0;box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 13px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--edge-2)}
+th:first-child,td:first-child{text-align:left}
+thead th{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-3);font-weight:600;background:var(--sunk)}
+tbody tr:last-child td{border-bottom:none}
+td.k{font-family:"IBM Plex Mono",monospace;font-size:12px}
+td.n{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+caption{caption-side:bottom;text-align:left;padding:10px 13px;font-size:12.5px;
+  color:var(--ink-3);border-top:1px solid var(--edge-2);line-height:1.55}
+tr.em td{background:var(--live-bg)}
+
+svg{display:block;width:100%;height:auto;overflow:visible}
+figure{margin:18px 0;background:var(--panel);border:1px solid var(--edge);
+  border-radius:7px;padding:18px 20px 12px;box-shadow:var(--shadow)}
+figcaption{font-size:12.5px;color:var(--ink-3);margin-top:8px;line-height:1.55}
+.ax{stroke:var(--edge);stroke-width:1}
+.gl{stroke:var(--edge-2);stroke-width:1;stroke-dasharray:2 4}
+.al{font-family:"IBM Plex Mono",monospace;font-size:10px;fill:var(--ink-3)}
+.vl{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;fill:var(--ink)}
+
+.foot{margin-top:64px;padding-top:20px;border-top:1px solid var(--edge);
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);line-height:1.85}
+@media (max-width:660px){
+  .wrap{padding:0 16px 60px}
+  .rung{grid-template-columns:104px 1fr 76px 60px;font-size:13px}
+  .rung .bar{display:none}
+  .frow{grid-template-columns:78px 1fr 72px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">RTX 3090 · 平台 A · 全部為實測</div>
+  <h1>KV 放置決策儀表</h1>
+  <p class="sub">六個動作、兩種成本、四種策略。拉動下面的控制項，看哪一個動作在什麼條件下勝出——
+    以及哪一個在什麼條件下<strong>根本不該被選</strong>。</p>
+</header>
+
+<!-- ═══════════ 1. 動作階梯 ═══════════ -->
+<section>
+  <div class="head"><span class="num">01</span><h2>每個動作有兩種成本，不是一種</h2></div>
+  <p class="lede">「平時成本」是這個狀態<strong>閒著時佔多少 GPU 記憶體</strong>；
+    「取回成本」是<strong>被需要時要花多久</strong>才能用。兩者性質不同，不能壓成一個數字。
+    只看取回成本會得到「重算最貴所以永不重算」的錯誤結論。</p>
+
+  <div class="ctl">
+    <div class="ctl-row">
+      <span class="ctl-lab">block 位置</span>
+      <input type="range" id="pos" min="0" max="262144" step="1024" value="8192"
+             aria-label="block 在序列中的絕對位置">
+      <span class="readout" id="posOut">8,192</span>
+    </div>
+    <div class="ctl-row">
+      <label class="chk"><input type="checkbox" id="cpuFull"> CPU 階已滿（放不下了）</label>
+      <span style="font-size:12.5px;color:var(--ink-3)">勾起來才看得到 SSD 與重算的真正競爭</span>
+    </div>
+  </div>
+
+  <div class="ladder" id="ladder"></div>
+
+  <div class="note live" id="verdictNote"></div>
+
+  <p class="lede" style="margin-top:16px">
+    <strong>重算的成本隨位置線性成長</strong>：<code>4.008 + 0.00021 × 位置</code> ms/block。
+    實測 <code>C(P) = 513.0 ms + 26.9 ms × (P/1000)</code>，線性擬合最大偏差 1.6%，
+    五個量測點全在線上——<strong>不是二次成長</strong>。</p>
+</section>
+
+<!-- ═══════════ 2. 交叉點 ═══════════ -->
+<section>
+  <div class="head"><span class="num">02</span><h2>SSD 與重算的優劣，在 7,277 token 處反轉</h2></div>
+  <p class="lede">SSD 的取回成本是常數（5.54 ms/block），重算隨位置成長。兩條線必然相交，
+    而交叉點決定了「該存還是該丟」。</p>
+
+  <figure>
+    <svg viewBox="0 0 720 260" role="img"
+      aria-label="重算成本隨位置線性上升並與 SSD 的水平線在 7277 token 處相交，其後 SSD 較便宜">
+      <line class="ax" x1="58" y1="16" x2="58" y2="206"/>
+      <line class="ax" x1="58" y1="206" x2="690" y2="206"/>
+      <g class="gl"><line x1="58" y1="206" x2="690" y2="206"/><line x1="58" y1="158" x2="690" y2="158"/>
+        <line x1="58" y1="111" x2="690" y2="111"/><line x1="58" y1="63" x2="690" y2="63"/>
+        <line x1="58" y1="16" x2="690" y2="16"/></g>
+      <g class="al" text-anchor="end"><text x="51" y="210">0</text><text x="51" y="162">5</text>
+        <text x="51" y="115">10</text><text x="51" y="67">15</text><text x="51" y="20">20</text></g>
+      <!-- SSD 水平線 5.536 → y = 206 - 5.536*9.5 = 153.4 -->
+      <line x1="58" y1="153.4" x2="690" y2="153.4" stroke="var(--t-ssd)" stroke-width="2.5"/>
+      <text class="vl" x="666" y="147" text-anchor="end" fill="var(--t-ssd)">SSD 5.54 ms（常數）</text>
+      <!-- 重算：4.008 + 0.00021*P，P: 0..65536 → y -->
+      <line x1="58" y1="167.9" x2="690" y2="75.1" stroke="var(--t-drop)" stroke-width="2.5"
+            stroke-dasharray="6 3"/>
+      <text class="vl" x="472" y="98" fill="var(--t-drop)">重算 4.008 + 0.00021·P</text>
+      <!-- 交叉點 P=7277 → x = 58 + 7277/65536*632 = 128.2 -->
+      <circle cx="128.2" cy="153.4" r="5.5" fill="var(--live)"/>
+      <line x1="128.2" y1="153.4" x2="128.2" y2="206" stroke="var(--live)" stroke-width="1.5"
+            stroke-dasharray="3 3"/>
+      <text class="vl" x="136" y="140" fill="var(--live)">交叉點 P = 7,277</text>
+      <!-- 區域標註 -->
+      <text class="al" x="92" y="228" text-anchor="middle" fill="var(--t-drop)">重算較廉</text>
+      <text class="al" x="420" y="228" text-anchor="middle" fill="var(--t-ssd)">SSD 較廉（128K 時佔 94.4% 的 block）</text>
+      <g class="al" text-anchor="middle">
+        <text x="58" y="222">0</text><text x="216" y="222">16K</text>
+        <text x="374" y="222">32K</text><text x="532" y="222">48K</text><text x="690" y="222">64K</text>
+        <text x="374" y="248">block 的絕對位置（token）</text>
+      </g>
+      <text class="al" x="20" y="12">ms/block</text>
+    </svg>
+    <figcaption>先前在 ctx=16,384 量測，平均位置恰好落在交叉點附近，因此得出「SSD 被重算支配」的
+      錯誤結論。<strong>量分層成本必須掃 context 長度，單點取值會得到相反的答案。</strong></figcaption>
+  </figure>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>context</th><th>平均位置</th><th>平均重算</th><th>SSD</th><th>誰便宜</th></tr></thead>
+      <tbody>
+        <tr><td class="k">8,192</td><td class="n">4,096</td><td class="n">4.87 ms</td><td class="n">5.54 ms</td><td style="color:var(--t-drop)">重算</td></tr>
+        <tr><td class="k">16,384</td><td class="n">8,192</td><td class="n">5.73 ms</td><td class="n">5.54 ms</td><td style="color:var(--t-ssd)">SSD</td></tr>
+        <tr class="em"><td class="k">131,072</td><td class="n">65,536</td><td class="n">17.77 ms</td><td class="n">5.54 ms</td><td style="color:var(--t-ssd)"><b>SSD</b></td></tr>
+        <tr class="em"><td class="k">524,288</td><td class="n">262,144</td><td class="n">59.06 ms</td><td class="n">5.54 ms</td><td style="color:var(--t-ssd)"><b>SSD</b></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ═══════════ 3. 策略比較 ═══════════ -->
+<section>
+  <div class="head"><span class="num">03</span><h2>切換策略，看 block 最後落在哪裡</h2></div>
+  <p class="lede">同一份工作負載，四種線上策略加一個「知道未來」的 Oracle。
+    橫條是每個 block 最後從哪一層取得——<strong>越靠左（GPU 命中）越好</strong>。</p>
+
+  <div class="ctl">
+    <div class="ctl-row">
+      <span class="ctl-lab">工作負載</span>
+      <div class="segs" id="scen" role="group" aria-label="選擇工作負載"></div>
+    </div>
+  </div>
+
+  <div class="flow" id="flow"></div>
+  <div class="legend">
+    <span><i style="background:var(--t-gpu)"></i>GPU 命中</span>
+    <span><i style="background:var(--t-cpu)"></i>從 CPU 取回</span>
+    <span><i style="background:var(--t-ssd)"></i>從 SSD 取回</span>
+    <span><i style="background:repeating-linear-gradient(45deg,var(--t-drop) 0 3px,transparent 3px 6px)"></i>重算</span>
+  </div>
+
+  <div class="note" id="scenNote"></div>
+</section>
+
+<!-- ═══════════ 4. 為什麼 decode 不能卸載 ═══════════ -->
+<section>
+  <div class="head"><span class="num">04</span><h2>Decode 每一步都要讀完整個 KV，所以卸載在那裡不可行</h2></div>
+  <p class="lede">prefill 一次算 N 個 token，KV 只讀一次；decode 一次算一個，
+    但<strong>每一步都要把整個 KV cache 讀一遍</strong>。同一筆搬運，
+    prefill 攤在 12 萬個 token 上，decode 每個 token 都要付一次。</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>上下文</th><th>prefill / token</th><th>decode / token</th><th>倍數</th></tr></thead>
+      <tbody>
+        <tr><td class="k">16,384</td><td class="n">0.316 ms</td><td class="n">17.0 ms</td><td class="n">54×</td></tr>
+        <tr><td class="k">65,536</td><td class="n">0.591 ms</td><td class="n">23.5 ms</td><td class="n">40×</td></tr>
+        <tr><td class="k">126,976</td><td class="n">0.903 ms</td><td class="n">29.7 ms</td><td class="n">33×</td></tr>
+        <tr><td class="k">258,048</td><td class="n">1.264 ms</td><td class="n">29.4 ms</td><td class="n">23×</td></tr>
+      </tbody>
+      <caption>Llama-3.1-8B 與 Qwen2.5-7B-1M，AWQ 權重。decode 受限於記憶體頻寬，
+        prefill 受限於算力。</caption>
+    </table>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>卸載比例</th><th>decode 每步增加</th><th>相對全駐留</th></tr></thead>
+      <tbody>
+        <tr><td class="k">5%</td><td class="n">+24.6 ms</td><td class="n">3.0×</td></tr>
+        <tr><td class="k">20%</td><td class="n">+98.4 ms</td><td class="n">11.9×</td></tr>
+        <tr class="em"><td class="k">100%</td><td class="n">+492.1 ms</td><td class="n"><b>59.3×</b></td></tr>
+      </tbody>
+      <caption>Llama-3.1-8B、126,976 token、FP8-KV（KV 共 7.75 GiB），PCIe Gen3 ×16。
+        全駐留於 HBM 時同一次讀取為 8.3 ms。<strong>即使只卸載 5% 也不划算。</strong></caption>
+    </table>
+  </div>
+
+  <div class="note"><b>後果：</b>三種工作負載的有效動作空間不同。
+    <strong>prefill 為主</strong>與<strong>多輪對話</strong>可用六階全部；
+    <strong>生成為主</strong>只剩 GPU 內的精度階，CPU/SSD 慢 3–59 倍。
+    後者唯一的出路是稀疏 attention（只取回當步分數高的 block），
+    而那時預測的是 attention 分數而非存取機率——<strong>不同的預測問題</strong>。</div>
+</section>
+
+<div class="foot">
+  資料來源　results/{m1_capacity,m2_harness,m3_baseline,m4_oracle}/　·
+  逐步記錄　results/RUNLOG.md<br>
+  repo　github.com/s990093/paper-hierarchical-kv-state<br>
+  ⚠️ Oracle 目前尚未模擬精度階、前綴語意與預取，三者皆使其結果<strong>偏低</strong>；
+  故上列 headroom 為下界。
+</div>
+
+</div>
+
+<script>
+"use strict";
+/* ── 實測常數（全部來自 results/，非估計）───────────────── */
+const COST = {gpu:0, cpu:0.5884, ssd:5.5360, dropBase:4.0079, dropSlope:0.00020997};
+const IDLE = {bf16:128.11, fp8:64.04, int8:66.04, int4:34.02};   // KiB/token
+const CROSS = Math.round((COST.ssd - COST.dropBase) / COST.dropSlope);   // 7277
+
+const TIERS = [
+  {id:"bf16", nm:"GPU BF16",  c:"--t-gpu",  idle:IDLE.bf16, ret:()=>0,      retNA:false},
+  {id:"fp8",  nm:"GPU FP8",   c:"--t-gpu",  idle:IDLE.fp8,  ret:()=>null,   retNA:true},
+  {id:"int8", nm:"GPU INT8",  c:"--t-gpu",  idle:IDLE.int8, ret:()=>null,   retNA:true},
+  {id:"int4", nm:"GPU INT4",  c:"--t-gpu",  idle:IDLE.int4, ret:()=>null,   retNA:true},
+  {id:"cpu",  nm:"CPU",       c:"--t-cpu",  idle:0, ret:()=>COST.cpu,       retNA:false},
+  {id:"ssd",  nm:"SSD",       c:"--t-ssd",  idle:0, ret:()=>COST.ssd,       retNA:false},
+  {id:"drop", nm:"丟棄+重算", c:"--t-drop", idle:0,
+   ret:p=>COST.dropBase + COST.dropSlope*p, retNA:false},
+];
+
+const posEl = document.getElementById("pos");
+const posOut = document.getElementById("posOut");
+const cpuFull = document.getElementById("cpuFull");
+const ladder = document.getElementById("ladder");
+const vNote = document.getElementById("verdictNote");
+const maxIdle = IDLE.bf16, maxRet = 60;
+
+function drawLadder(){
+  const p = +posEl.value;
+  posOut.textContent = p.toLocaleString();
+
+  // 只有「釋放 GPU 記憶體」的三階彼此競爭；CPU 滿了才輪到 SSD vs 重算
+  const free = TIERS.filter(t => t.idle === 0);
+  const avail = cpuFull.checked ? free.filter(t => t.id !== "cpu") : free;
+  const costs = avail.map(t => ({id:t.id, v:t.ret(p)})).filter(x => x.v !== null);
+  costs.sort((a,b) => a.v - b.v);
+  const winner = costs.length ? costs[0].id : null;
+
+  let h = `<div class="rung hd"><span>動作</span><span></span>
+    <span style="text-align:right">平時佔 GPU</span>
+    <span style="text-align:right">取回成本</span><span style="text-align:center">排序</span></div>`;
+
+  for (const t of TIERS){
+    const isFree = t.idle === 0;
+    const dis = isFree && cpuFull.checked && t.id === "cpu";
+    const r = t.ret(p);
+    const idleW = Math.round(t.idle / maxIdle * 100);
+    const retW = r === null ? 0 : Math.min(100, Math.round(r / maxRet * 100));
+    const bar = isFree
+      ? `<i style="width:${retW}%;background:var(${t.c})"></i>`
+      : `<i style="width:${idleW}%;background:var(${t.c})"></i>`;
+    let rank = "";
+    if (isFree && !dis && r !== null){
+      const i = costs.findIndex(x => x.id === t.id);
+      rank = i === 0 ? `<span class="rank win">最廉</span>`
+                     : `<span class="rank dom">#${i+1}</span>`;
+    }
+    h += `<div class="rung ${dis ? "off" : ""} ${t.id === winner ? "hl" : ""}">
+      <span class="nm"><i class="dot" style="background:var(${t.c})"></i>${t.nm}</span>
+      <span class="bar">${bar}</span>
+      <span class="val">${t.idle ? t.idle.toFixed(2)+" KiB" : "<span class='na'>0</span>"}</span>
+      <span class="val">${r === null ? "<span class='na'>未量</span>"
+                                     : (r === 0 ? "≈0" : r.toFixed(2)+" ms")}</span>
+      ${rank || "<span></span>"}</div>`;
+  }
+  ladder.innerHTML = h;
+
+  const dropC = COST.dropBase + COST.dropSlope*p;
+  if (!cpuFull.checked){
+    vNote.innerHTML = `<b>CPU 還有位子，所以它一定勝出</b>（0.59 ms，比 SSD 的 5.54 與
+      重算的 ${dropC.toFixed(2)} 都低，且同樣不佔 GPU 記憶體）。
+      真正的取捨要等 CPU 階滿了才出現——把上面的核取方塊勾起來。`;
+  } else if (p < CROSS){
+    vNote.innerHTML = `<b>位置 ${p.toLocaleString()} &lt; ${CROSS.toLocaleString()}，重算較廉</b>
+      （${dropC.toFixed(2)} ms vs SSD 的 5.54 ms）。前面的 token 少，重算時要讀的前序 KV 也少。`;
+  } else {
+    const pct = (100*CROSS/Math.max(p,1)).toFixed(1);
+    vNote.innerHTML = `<b>位置 ${p.toLocaleString()} &gt; ${CROSS.toLocaleString()}，SSD 較廉</b>
+      （5.54 ms vs 重算的 ${dropC.toFixed(2)} ms，差 ${(dropC/COST.ssd).toFixed(1)} 倍）。
+      在長度 ${p.toLocaleString()} 的上下文裡，只有前 ${pct}% 的 block 適合丟掉重算。`;
+  }
+}
+posEl.addEventListener("input", drawLadder);
+cpuFull.addEventListener("change", drawLadder);
+
+/* ── 策略比較（實測 Oracle 模擬結果）──────────────────── */
+const SCEN = [
+  {k:"pressure:2x",  nm:"壓力 1.8×",
+   note:"工作集只比容量大 1.8 倍，多數 block 仍留得住，策略的差異有限。"},
+  {k:"pressure:5x",  nm:"壓力 3.3×",
+   note:"合成負載的重用率 85.1%，遠高於真實流量的 36–55%。此值因此偏樂觀。"},
+  {k:"pressure:40x", nm:"壓力 6.5×",
+   note:"壓力再加大，headroom 反而略降——曲線在 3.3× 之後就平了。"},
+  {k:"trace:conv48", nm:"真實對話 @小預算",
+   note:"Mooncake 生產 trace，12,031 個請求。BF16 權重下容量只有 48,128，壓力 60.8×。"},
+  {k:"trace:tool274",nm:"真實 agent @大預算",
+   note:"同一份流量，改用 AWQ 權重（論文自己的主力設定）後容量 273,872、壓力降到 10.7×，headroom 掉到 4.6%。配置越好，可最佳化的空間越小。"},
+];
+const POLDATA = {"pressure:1x":{"full_gpu":[187904,0,0,16896,74955],"cpu_lru":[187904,0,0,16896,74955],"cpu_arc":[187904,0,0,16896,74955],"tier_fs":[187904,0,0,16896,74955],"oracle":[187904,0,0,16896,74955]},"pressure:2x":{"full_gpu":[151296,0,0,53504,237356],"cpu_lru":[151296,22016,0,31488,152641],"cpu_arc":[152456,20856,0,31488,151959],"tier_fs":[151296,22016,1280,30208,154049],"oracle":[169181,5411,0,30208,137193]},"pressure:5x":{"full_gpu":[111104,0,0,93696,415657],"cpu_lru":[111104,23040,0,70656,327002],"cpu_arc":[116189,18944,0,69667,320192],"tier_fs":[111104,23040,14336,56320,342769],"oracle":[142301,6179,0,56320,253484]},"pressure:10x":{"full_gpu":[84992,0,0,119808,531496],"cpu_lru":[84992,21248,0,98560,449736],"cpu_arc":[94720,15104,0,94976,430222],"tier_fs":[84992,21248,20224,78336,471979],"oracle":[122077,4387,0,78336,350098]},"pressure:20x":{"full_gpu":[68608,0,0,136192,604179],"cpu_lru":[68608,17920,0,118272,535225],"cpu_arc":[75229,13568,0,116003,522586],"tier_fs":[68608,17920,21504,96768,558875],"oracle":[104413,3619,0,96768,431414]},"pressure:40x":{"full_gpu":[56064,0,0,148736,659827],"cpu_lru":[56064,14080,0,134656,605649],"cpu_arc":[62685,11299,0,130816,586978],"tier_fs":[56064,14080,24064,110592,632115],"oracle":[92125,2083,0,110592,491837]},"trace:conv48":{"full_gpu":[18832,0,0,269668,1110714],"cpu_lru":[18832,55355,0,214313,916032],"cpu_arc":[18905,55354,0,214241,915731],"tier_fs":[18832,55355,31523,182790,960488],"oracle":[85025,20685,0,182790,765577]},"trace:tool48":{"full_gpu":[145834,0,0,263782,1084078],"cpu_lru":[145834,55955,0,207827,887293],"cpu_arc":[141605,60200,0,207811,889719],"tier_fs":[145834,55955,24527,183300,922048],"oracle":[211694,14622,0,183300,761947]},"trace:conv274":{"full_gpu":[77975,0,0,210525,867908],"cpu_lru":[77975,15609,0,194916,812874],"cpu_arc":[77744,15009,0,195747,815822],"tier_fs":[77975,15609,12126,182790,829721],"oracle":[105710,0,0,182790,753407]},"trace:tool274":{"full_gpu":[205516,0,0,204100,839068],"cpu_lru":[205516,14089,0,190011,789428],"cpu_arc":[205974,13339,0,190303,790063],"tier_fs":[205516,14089,6711,183300,798785],"oracle":[226316,0,0,183300,753344]}};
+const POLMETA = {"pressure:1x":{"head":0.0,"v":"NO_GO","best":"full_gpu"},"pressure:2x":{"head":9.7,"v":"MARGINAL_ASK_HUMAN","best":"cpu_arc"},"pressure:5x":{"head":20.8,"v":"GO","best":"cpu_arc"},"pressure:10x":{"head":18.6,"v":"GO","best":"cpu_arc"},"pressure:20x":{"head":17.4,"v":"GO","best":"cpu_arc"},"pressure:40x":{"head":16.2,"v":"GO","best":"cpu_arc"},"trace:conv48":{"head":16.4,"v":"GO","best":"cpu_arc"},"trace:tool48":{"head":14.1,"v":"MARGINAL_ASK_HUMAN","best":"cpu_lru"},"trace:conv274":{"head":7.3,"v":"MARGINAL_ASK_HUMAN","best":"cpu_lru"},"trace:tool274":{"head":4.6,"v":"NO_GO","best":"cpu_lru"}};
+const POLS = [["full_gpu","不卸載"],["cpu_lru","CPU + LRU"],["cpu_arc","CPU + ARC"],
+              ["tier_fs","CPU + 磁碟"],["oracle","Oracle"]];
+const scenEl = document.getElementById("scen");
+const flowEl = document.getElementById("flow");
+const scenNote = document.getElementById("scenNote");
+let cur = SCEN[3].k;
+
+scenEl.innerHTML = SCEN.map(s =>
+  `<button data-k="${s.k}" aria-pressed="${s.k===cur}">${s.nm}</button>`).join("");
+scenEl.addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  cur = b.dataset.k;
+  [...scenEl.children].forEach(x => x.setAttribute("aria-pressed", x.dataset.k === cur));
+  drawFlow();
+});
+
+function drawFlow(){
+  const s = {...SCEN.find(x => x.k === cur), ...POLMETA[cur]};   // head/v/best 一律取自實測
+  const d = POLDATA[cur];
+  const maxMs = Math.max(...POLS.map(([p]) => d[p][4]));
+  flowEl.innerHTML = POLS.map(([p, nm]) => {
+    const [g,c,sd,r,ms] = d[p];
+    const tot = g+c+sd+r;
+    const w = v => (100*v/tot).toFixed(2)+"%";
+    const isO = p === "oracle", isB = p === s.best;
+    return `<div class="frow">
+      <span class="fname ${isO||isB ? "best":""}">${nm}${isB ? " ★":""}</span>
+      <span class="fbar">
+        <span data-t="gpu" style="width:${w(g)}" title="GPU 命中 ${g.toLocaleString()}"></span>
+        <span data-t="cpu" style="width:${w(c)}" title="CPU ${c.toLocaleString()}"></span>
+        <span data-t="ssd" style="width:${w(sd)}" title="SSD ${sd.toLocaleString()}"></span>
+        <span data-t="rec" style="width:${w(r)}" title="重算 ${r.toLocaleString()}"></span>
+      </span>
+      <span class="fcost ${isO ? "o":""}">${(ms/1000).toFixed(1)} s</span></div>`;
+  }).join("");
+  const vc = s.v === "GO" ? "v-go" : s.v === "NO_GO" ? "v-no" : "v-mid";
+  const vt = s.v === "GO" ? "✅ 繼續" : s.v === "NO_GO" ? "🔴 停止" : "🟡 停下來問人";
+  scenNote.innerHTML = `<span class="verdict ${vc}">${vt} · Oracle 改善 ${s.head}%</span><br>
+    <span style="display:inline-block;margin-top:8px">★ = 最好的線上策略（${s.best}）。${s.note}</span>`;
+}
+
+drawLadder();
+drawFlow();
+</script>

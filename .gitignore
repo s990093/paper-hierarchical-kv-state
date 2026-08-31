@@ -43,3 +43,7 @@ results/**/*.jsonl
 *.swp
 .claude/settings.local.json
 results/m3_baseline/*.bak-*
+
+# notebook 執行後的版本（輸出含圖片，體積大）；analysis.ipynb 是原始檔
+notebooks/executed.ipynb
+notebooks/.ipynb_checkpoints/
