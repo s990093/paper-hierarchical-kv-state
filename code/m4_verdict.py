@@ -242,7 +242,7 @@ def main() -> int:
               f"{'品質 ε':>14s}")
         for k, v in pt.items():
             print(f"   {k:8s}{v['capacity_x']:>9.2f}×"
-                  f"{str(v[chr(39)+chr(100)+chr(101)+chr(113)]):>18s}")
+                  f"{str(v['dequant_ms_per_block']):>18s}{NM:>14s}")
         miss = [k for k, v in pt.items() if v["dequant_ms_per_block"] == NM]
         if miss:
             print(f"   🔴 {len(miss)} 階的反量化成本未量：{miss}")
