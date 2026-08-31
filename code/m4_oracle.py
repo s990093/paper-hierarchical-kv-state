@@ -167,6 +167,65 @@ def profile(name: str) -> dict:
     return MODEL_PROFILES[name]
 
 
+# ────────────────── GPU 上的精度階（六階動作空間缺的兩階） ──────────────────
+# 論文的動作空間有六階，但 M2 原本只量了四階
+# （gpu_resident / cpu / ssd / drop）。GPU-FP8 與 GPU-INT4 是
+# 「住在 GPU 但精度降低」的狀態：容量變大，但每次讀取要反量化。
+#
+# 一個精度階由三個數字描述：
+#   capacity_x    容量倍數        —— M1 實測（results/m1_capacity/capacity.csv）
+#   dequant_ms    每 block 的反量化成本 —— M2 的 retrieval_cost*_precision_tiers.csv
+#   epsilon       品質代價        —— M5（results/m5_quality/）
+#
+# 🔴 三個都量到之前，不得把精度階加進 Oracle 的動作空間。
+#    缺任何一個就回報 NOT_MEASURED，不用預設值（禁令 1）。
+
+# M1 實測的容量倍數。三個剖面都恰好 2.00×（fp8），故直接記為常數；
+# int4 的 3.77× 來自 llama-bf16 那組（34.02 vs 128.11 KiB/token）。
+PRECISION_CAPACITY_X = {"bf16": 1.00, "fp8": 2.00, "int8": 1.94, "int4": 3.77}
+
+
+def load_precision_tiers(device: str = "nvme") -> dict:
+    """讀 GPU 精度階的反量化成本。量不到就回報 NOT_MEASURED，不猜。
+
+    量法（見 overnight_v2.sh 步驟 1）：與 `gpu_resident` 完全相同的設定
+    （工作集塞得進 GPU、不逐出），只換 `--kv-cache-dtype`。
+    warm TTFT 減掉 bf16 那一列，差額即為每 block 的反量化成本。
+    """
+    cands = [M2 / f"retrieval_cost_precision_tiers_{device}.csv",
+             M2 / "retrieval_cost_precision_tiers.csv"]
+    p = next((c for c in cands if c.exists()), None)
+    out: dict[str, dict] = {}
+    for name, mult in PRECISION_CAPACITY_X.items():
+        out[name] = {"capacity_x": mult, "dequant_ms_per_block": "NOT_MEASURED",
+                     "source": str(cands[-1])}
+    if p is None:
+        return out
+    rows = list(csv.DictReader(p.open()))
+    ctxs = {int(r["ctx"]) for r in rows if r.get("ctx")}
+    if not ctxs:
+        return out
+    nblk = max(ctxs) / BLOCK
+
+    def warm(tier: str) -> float | None:
+        v = [float(r["ttft_ms"]) for r in rows
+             if r["tier"] == tier and r["round"] == "warm" and r["ttft_ms"]]
+        return median(v) if v else None
+
+    base = warm("gpu_resident")
+    if base is None:
+        return out
+    for name, tier in (("fp8", "gpu_fp8"), ("int4", "gpu_int4")):
+        w = warm(tier)
+        if w is None:
+            continue
+        out[name]["dequant_ms_per_block"] = round(max(0.0, w - base) / nblk, 4)
+        out[name]["warm_ms"] = w
+        out[name]["baseline_warm_ms"] = base
+    out["bf16"]["dequant_ms_per_block"] = 0.0
+    return out
+
+
 def load_cost_model(device: str = "sata",
                     require_model_key: str | None = None) -> CostModel:
     """從 results/m2_harness/ 讀實測常數。讀不到就中止——不使用預設值。
