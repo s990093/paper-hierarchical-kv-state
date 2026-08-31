@@ -343,7 +343,7 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
 \draw[dropcol,thick,dashed,rounded corners=3pt]
   ($(\xB,\ye)+(-1.5,0.32)$) rectangle ($(\xB,\yf)+(1.5,-0.32)$);
 \node[font=\scriptsize\bfseries\sffamily,text=dropcol!55!black,anchor=north]
-  at ($(\xB,\yf)+(0,-0.42)$) {平台 A 實測：SSD 取回不快於重算 $\Rightarrow$ 重算是階梯上的一層，而非失敗路徑};
+  at ($(\xB,\yf)+(0,-0.42)$) {平台 A 實測：位置 $>$7K 後 SSD 較重算廉 $\Rightarrow$ 二者應同時決策};
 
 \end{tikzpicture}
 \caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）「丟棄後重算」是階梯上的一層，而非檢索失敗後的補救。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。關鍵的非對稱性在「平時成本」欄：\textbf{重算在被需要之前不佔用任何資源}，這是它唯一的優勢，也是它唯一的正當理由。右下虛線框標示一個常被忽略的事實：自 SSD 載入與重算處於同一數量級，兩者本就應在同一個決策中被比較。此點已由平台 A 的端到端量測證實，但\emph{量級與歸因均與純頻寬推算不同}——以 Llama-3.1-8B 於 16K 上下文計，自磁碟階取回為 346\,$\mu$s/token、重算為 326\,$\mu$s/token（皆已扣除 GPU 命中的基準），確為同一數量級，然其絕對值較「$\sim$9\,$\mu$s/token @ 7\,GB/s」的理想頻寬推算高出約 30 倍。分解後可見磁碟 I/O 僅佔搬運成本的約 35\%，其餘為分層機制的查表、cascade 排程與 promotion 開銷；將裝置由 SATA SSD（實測 0.49\,GB/s）換為 NVMe（1.65\,GB/s，頻寬 3.4 倍）後端到端成本\emph{未降反升}。詳見第 \ref{sec:eval} 節。}
@@ -1206,9 +1206,9 @@ $C_{\text{recompute}}$ 對位置的形式 &
 「attention 的二次項」$\rightarrow$ 對位置線性，式 \eqref{eq:recompute-position}，擬合偏差 $<1.6\%$ &
 整段 prefill 為 $O(L^2)$，但固定大小 block 在位置 $P$ 重算為 $O(C\cdot P)$。原敘述混用了兩個量 \\
 \addlinespace
-\act{SSD} 與 \act{Drop} 的支配關係 &
-「兩者同數量級，應共同決策」$\rightarrow$ 同數量級成立，但 \act{SSD}（346\,$\mu$s/token）\emph{劣於} \act{Drop}（326\,$\mu$s/token） &
-\act{Drop} 在平時成本與被需要時成本兩軸皆不劣於 \act{SSD}，故 \act{SSD} 於本平台為被支配的動作。\textbf{最佳動作空間本身隨硬體而變}——此即本文主張的一個實例 \\
+\act{SSD} 與 \act{Drop} 的優劣次序 &
+「兩者同數量級」$\rightarrow$ 成立，且\emph{次序隨 block 的絕對位置反轉}，交叉點在 7{,}277\,token &
+\act{Drop} 的成本隨位置線性成長而 \act{SSD} 為常數，故位置 $<7{,}277$ 時 \act{Drop} 較廉、其後 \act{SSD} 較廉。於 128K 上下文，僅 5.6\% 的 block 落在 \act{Drop} 一側。\textbf{動作空間的有效子集隨上下文長度而變}——此即本文主張的一個實例 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -1309,7 +1309,7 @@ ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer 與 ParisKV 因 \texttt{rapi
 
 平台 A 的量測支持此論點，並在四處修正了本文的敘述（第 \ref{sec:measured} 節）。其中兩處擴大了可驗證範圍：FP8 為\emph{儲存}狀態而非運算狀態，故 sm\_86 可量測，且動作空間中位於 GPU 的四個精度階皆為同一旗標的取值。另兩處要求修正成本模型：per-token-head 量化固定多帶 2\,KiB/token 的中繼資料，使精度階梯的收益為 $2.00\times$/$1.94\times$/$3.77\times$ 而非 $2\times$/$4\times$；而固定大小 block 的重算成本對其絕對位置為\emph{線性}，非二次。
 
-第四處修正的性質不同。\act{SSD} 在平台 A 的取回成本（346\,$\mu$s/token）高於 \act{Drop}（326\,$\mu$s/token），而 \act{Drop} 的平時成本為零，故 \act{SSD} 在兩軸上皆被支配。這不是本文主張的反例，而是其直接實例：\emph{最佳動作空間本身隨硬體而變}。六階動作空間應理解為候選集合，其有效子集由平台決定。
+第四處修正的性質不同。\act{SSD} 的取回成本為常數（5.54\,ms/block），而 \act{Drop} 的成本隨 block 的絕對位置線性成長（式 \eqref{eq:recompute-position}），二者於位置 7{,}277\,token 處交叉：其前 \act{Drop} 較廉，其後 \act{SSD} 較廉。於 128K 上下文，僅 5.6\% 的 block 落在 \act{Drop} 一側；於 512K 則為 1.4\%。這不是本文主張的反例，而是其直接實例：\emph{最佳動作空間的有效子集隨上下文長度與平台共同決定}，而二者皆可事先算出。六階動作空間應理解為候選集合。
 
 量測亦劃清了品質約束的作用範圍。\act{CPU} 與 \act{SSD} 的輸出與 \act{GPU-BF16} 逐字元相同（60/60），故位置分層的三階在 $\epsilon$ 約束下等價；$\epsilon$ 的實質內容全部落在精度分層上。我們目前的樣本量（$n=120$）不足以分辨各精度階之間的品質差異，故不作此宣稱。
 

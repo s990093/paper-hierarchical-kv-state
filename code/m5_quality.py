@@ -86,6 +86,43 @@ PRECISIONS = [
     ("int4", "int4_per_token_head", "per-token-head 量化，最低精度階"),
 ]
 
+# ── 部分量化：品質 ↔ 容量的取捨曲線 ──────────────────────────────
+#
+# 精度與 CPU/SSD/DROP 的性質不同：後者換的是**時間**，精度換的是
+# **容量 ↔ 品質**。所以它不該進 Oracle 的動作空間，而是外層的旋鈕：
+#
+#   給定量化比例 f → 容量放大 m(f)（已量到）→ 用 gpu_blocks × m(f) 跑 Oracle
+#                  → 品質損失 ε(f)（本實驗要量）
+#   兩者合起來畫出 (ε, T) 的 Pareto 曲線，即式 (eq:opt) 的可行前緣。
+#
+# vLLM 用 --kv-cache-dtype-skip-layers 支援**逐層**混合精度
+# （欄位定義見 vllm/config/cache.py:114）。Llama-3.1-8B 有 32 層，
+# 故 f 的粒度是 1/32。這與 KVTuner（ICML'25）的逐層混合精度做法一致。
+N_LAYERS = 32
+
+def mixed_precision_configs(dtype: str, fractions: list[float]) -> list[tuple]:
+    """回傳 (名稱, kv_dtype, 額外旗標, 說明) 的清單。
+
+    f = 被量化的層數比例。skip 清單裡的層維持 BF16。
+    為使被量化的層分散於整個網路（而非集中在頭或尾），採等間距取樣——
+    若集中在前段，量到的會是「淺層對量化的敏感度」而非「整體 f 的效果」。
+    """
+    out = []
+    for f in fractions:
+        n_q = round(f * N_LAYERS)
+        if n_q == 0:
+            out.append((f"f0.00", "auto", [], "全 BF16（基準）"))
+            continue
+        # 等間距選出要量化的層，其餘進 skip 清單
+        q = {round(i * N_LAYERS / n_q) % N_LAYERS for i in range(n_q)}
+        skip = [str(i) for i in range(N_LAYERS) if i not in q]
+        extra = ["--kv-cache-dtype", dtype]
+        if skip:
+            extra += ["--kv-cache-dtype-skip-layers", ",".join(skip)]
+        out.append((f"f{f:.2f}", dtype, extra,
+                    f"{n_q}/{N_LAYERS} 層量化為 {dtype}"))
+    return out
+
 CPU_BYTES = 24 * 1024**3
 FS_ROOT = BIG / "kv_fs_tier_q"
 
@@ -147,9 +184,11 @@ def build_prefix(train: list[dict], k: int) -> str:
 
 class Server:
     def __init__(self, gpu: int, max_len: int, out: Path,
-                 kv_dtype: str = "auto", kv_cfg: dict | None = None):
+                 kv_dtype: str = "auto", kv_cfg: dict | None = None,
+                 extra_args: list[str] | None = None):
         self.gpu, self.max_len, self.out = gpu, max_len, out
         self.kv_dtype, self.kv_cfg = kv_dtype, kv_cfg
+        self.extra_args = extra_args or []
         self.port = free_port()
         self.p: subprocess.Popen | None = None
         self.kv_tokens = None
@@ -159,7 +198,9 @@ class Server:
         cmd = [str(VENV / "bin/vllm"), "serve", MODEL, "--port", str(self.port),
                "--max-model-len", str(self.max_len),
                "--gpu-memory-utilization", "0.90"]
-        if self.kv_dtype != "auto":
+        if self.extra_args:
+            cmd += self.extra_args           # 已含 --kv-cache-dtype
+        elif self.kv_dtype != "auto":
             cmd += ["--kv-cache-dtype", self.kv_dtype]
         if self.kv_cfg:
             cmd += ["--kv-transfer-config", json.dumps(self.kv_cfg)]
@@ -220,12 +261,14 @@ class Server:
 
 def run_config(name: str, kv_dtype: str, kv_cfg: dict | None, desc: str,
                gpu: int, prefix: str, tests: list[dict], max_len: int,
-               root: Path, run_id: str, mode: str) -> list[dict]:
+               root: Path, run_id: str, mode: str,
+               extra_args: list[str] | None = None) -> list[dict]:
     rows = []
     out = root / name
     print(f"\n[m5] === {name} （{desc}）===", flush=True)
     try:
-        with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv_cfg) as s:
+        with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv_cfg,
+                    extra_args=extra_args) as s:
             print(f"[m5]   server up, GPU KV = {s.kv_tokens:,} tokens" if s.kv_tokens
                   else "[m5]   server up")
             ok = 0
@@ -295,7 +338,24 @@ def summarise(rows: list[dict], mode: str) -> None:
     acc = {c: sum(r["correct"] for r in rows if r["config"] == c) for c in cfgs}
     n = {c: sum(1 for r in rows if r["config"] == c) for c in cfgs}
 
-    if mode == "precision":
+    if mode == "mixed":
+        print(f"\n{'=' * 66}\n品質 ↔ 容量的取捨曲線（GSM8K many-shot）\n{'=' * 66}")
+        print(f"{'量化比例 f':>12}{'正確率':>10}{'ε (掉幅)':>12}{'容量放大':>10}{'n':>6}")
+        b = 100 * acc[base] / max(1, n[base])
+        COMP = {"fp8": 2.00, "int8_per_token_head": 1.94, "int4_per_token_head": 3.77}
+        for c in cfgs:
+            a2 = 100 * acc[c] / max(1, n[c])
+            f = float(c.lstrip("f"))
+            # 容量放大 = 1 / (量化層佔的比例/壓縮率 + 未量化層佔的比例)
+            comp = next((v for k, v in COMP.items() if k in
+                         (rows[0].get("kv_dtype") or "")), 3.77)
+            m = 1.0 / (f / comp + (1 - f)) if f > 0 else 1.0
+            print(f"{c:>12}{a2:>9.2f}%"
+                  f"{('—' if c == base else f'{b - a2:+.2f} pt'):>12}"
+                  f"{m:>9.2f}×{n[c]:>6}")
+        print("\n下一步：用 gpu_blocks × 容量放大 跑 Oracle，得到 T(f)，"
+              "再畫 (ε, T) 的 Pareto 前緣。")
+    elif mode == "precision":
         print(f"\n{'=' * 62}\n精度階梯的 ε（GSM8K many-shot，相對 BF16）\n{'=' * 62}")
         print(f"{'設定':10s}{'正確率':>10s}{'n':>6s}{'ε (掉幅)':>12s}")
         b = 100 * acc[base] / max(1, n[base])
@@ -319,7 +379,14 @@ def summarise(rows: list[dict], mode: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", type=int, default=0)
-    ap.add_argument("--mode", default="precision", choices=["precision", "lossless"])
+    ap.add_argument("--mode", default="precision",
+                    choices=["precision", "lossless", "mixed"],
+                    help="mixed = 掃量化比例 f，畫 ε(f) 曲線")
+    ap.add_argument("--mixed-dtype", default="int4_per_token_head",
+                    help="mixed 模式要量化成哪種 dtype")
+    ap.add_argument("--fractions", type=float, nargs="*",
+                    default=[0.0, 0.25, 0.5, 0.75, 1.0],
+                    help="被量化的層數比例")
     ap.add_argument("--n-shot", type=int, default=64,
                     help="共用前綴的範例數。要夠長才會進卸載路徑")
     ap.add_argument("--n-test", type=int, default=120)
@@ -353,8 +420,12 @@ def main() -> int:
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m5-{a.mode}"
     root = BIG / "runs" / run_id
     tests = test[: a.n_test]
-    todo = (PRECISIONS if a.mode == "precision"
-            else [(n, "auto", c, d) for n, c, d in LOSSLESS])
+    if a.mode == "precision":
+        todo = PRECISIONS
+    elif a.mode == "mixed":
+        todo = mixed_precision_configs(a.mixed_dtype, a.fractions)
+    else:
+        todo = [(n, "auto", c, d) for n, c, d in LOSSLESS]
 
     rows: list[dict] = []
     with GpuWatcher(gpu=a.gpu, out_path=str(OUT / f"gpu_guard_{a.mode}.json")) as g:
@@ -366,6 +437,10 @@ def main() -> int:
                 name, dtype, desc = item
                 rows += run_config(name, dtype, None, desc, a.gpu, prefix, tests,
                                    max_len, root, run_id, a.mode)
+            elif a.mode == "mixed":
+                name, dtype, extra, desc = item
+                rows += run_config(name, dtype, None, desc, a.gpu, prefix, tests,
+                                   max_len, root, run_id, a.mode, extra_args=extra)
             else:
                 name, dtype, cfg, desc = item
                 rows += run_config(name, dtype, cfg, desc, a.gpu, prefix, tests,
