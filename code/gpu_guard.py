@@ -42,6 +42,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import json
+import shutil
 import subprocess
 import sys
 import threading
@@ -53,16 +55,63 @@ from pathlib import Path
 POLL_S = 3.0
 
 
-def _smi(query: str, extra: list[str] | None = None) -> list[list[str]]:
-    cmd = ["nvidia-smi", f"--query-{query}", "--format=csv,noheader,nounits", *(extra or [])]
+# ─────────────────────── 廠商抽象（NVIDIA / AMD） ───────────────────────
+# 目前在 RTX 3090 上打磨方法；平台 B 是 AMD MI300X（論文的 κ 第二個點）。
+# 只有這一層碰得到廠商工具，其餘程式碼一律走 compute_apps() / gpu_util()
+# / free_mib() 這三個介面。搬到 ROCm 只需要這裡能跑。
+#
+# 🔴 查詢失敗**不可以**回傳空清單。空清單會被 host_contention() 讀成
+#    「整機沒有外來負載」= QUIET，等於把「沒量到」寫成「沒人用」，
+#    然後把污染的數字標成乾淨的——這正是 EXPERIMENT_PLAN §0 禁令 1
+#    要防的失敗模式。查不到就要讓上層知道。
+class SmiUnavailable(RuntimeError):
+    """找不到（或無法執行）GPU 查詢工具。呼叫端必須顯式處理，不可當成乾淨。"""
+
+
+def _which(*names: str) -> str | None:
+    for n in names:
+        p = shutil.which(n)
+        if p:
+            return p
+    return None
+
+
+def vendor() -> str:
+    """'nvidia' / 'amd'；都找不到就丟 SmiUnavailable。"""
+    if _which("nvidia-smi"):
+        return "nvidia"
+    if _which("amd-smi", "rocm-smi"):
+        return "amd"
+    raise SmiUnavailable(
+        "找不到 nvidia-smi 也找不到 amd-smi/rocm-smi。\n"
+        "爭用偵測無法運作 → 不得進行任何計時量測（無法判斷機器是否乾淨）。")
+
+
+def _run(cmd: list[str]) -> str:
     try:
         out = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
-    except (OSError, subprocess.TimeoutExpired):
-        return []
+    except (OSError, subprocess.TimeoutExpired) as e:
+        raise SmiUnavailable(f"{cmd[0]} 執行失敗：{e}") from e
     if out.returncode != 0:
-        return []
+        raise SmiUnavailable(
+            f"{cmd[0]} 回傳 {out.returncode}：{out.stderr.strip()[:200]}")
+    return out.stdout
+
+
+def _smi(query: str, extra: list[str] | None = None) -> list[list[str]]:
+    """NVIDIA 專用的原始查詢。AMD 路徑不走這裡。"""
+    out = _run(["nvidia-smi", f"--query-{query}",
+                "--format=csv,noheader,nounits", *(extra or [])])
     return [[c.strip() for c in line.split(",")]
-            for line in out.stdout.strip().splitlines() if line.strip()]
+            for line in out.strip().splitlines() if line.strip()]
+
+
+def _amd_json(args: list[str]) -> dict | list:
+    """amd-smi / rocm-smi 的 JSON 輸出。兩者格式不同，各自解析。"""
+    exe = _which("amd-smi", "rocm-smi")
+    if exe is None:
+        raise SmiUnavailable("amd-smi/rocm-smi 不存在")
+    return json.loads(_run([exe, *args, "--json"]))
 
 
 def uuid_to_index() -> dict[str, int]:
@@ -70,7 +119,9 @@ def uuid_to_index() -> dict[str, int]:
 
 
 def compute_apps() -> list[dict]:
-    """目前所有 GPU 上的 compute process。"""
+    """目前所有 GPU 上的 compute process。查不到就丟 SmiUnavailable。"""
+    if vendor() == "amd":
+        return _amd_compute_apps()
     idx = uuid_to_index()
     rows = []
     for r in _smi("compute-apps=gpu_uuid,pid,used_memory"):
@@ -82,6 +133,59 @@ def compute_apps() -> list[dict]:
         except ValueError:
             continue
     return rows
+
+
+def _amd_compute_apps() -> list[dict]:
+    """AMD 後端。amd-smi（ROCm 6+）與 rocm-smi（舊版）的欄位名不同，兩種都試。
+
+    ⚠️ 這條路徑**尚未在真機驗證過**（本機只有 NVIDIA）。
+       第一次在 MI300X 上跑時，必須先用
+       `python code/gpu_guard.py --selftest` 對照 `amd-smi process` 的輸出，
+       確認 pid 與 gpu index 都對得上，再開始任何計時量測。
+    """
+    data = _amd_json(["process"])
+    rows: list[dict] = []
+    items = data if isinstance(data, list) else list(data.values())
+    for i, entry in enumerate(items):
+        gpu = entry.get("gpu", entry.get("gpu_id", entry.get("card", i)))
+        procs = entry.get("process_list", entry.get("process_info", []))
+        if isinstance(procs, dict):
+            procs = list(procs.values())
+        for pr in procs or []:
+            info = pr.get("process_info", pr)
+            pid = info.get("pid", info.get("PID"))
+            mem = (info.get("memory_usage", {}) or {}).get("vram_mem",
+                                                           info.get("VRAM", 0))
+            if pid is None:
+                continue
+            try:
+                rows.append({"gpu": int(gpu), "pid": int(pid),
+                             "used_mib": int(mem) // (1024 * 1024)
+                             if int(mem) > 1 << 20 else int(mem)})
+            except (TypeError, ValueError):
+                continue
+    return rows
+
+
+def gpu_util() -> dict[int, int]:
+    """每張卡目前的使用率（%）。"""
+    if vendor() == "amd":
+        data = _amd_json(["metric", "-u"])
+        items = data if isinstance(data, list) else list(data.values())
+        out = {}
+        for i, e in enumerate(items):
+            g = e.get("gpu", e.get("gpu_id", i))
+            u = (e.get("usage", {}) or {}).get("gfx_activity",
+                                               e.get("GPU use (%)", 0))
+            if isinstance(u, dict):
+                u = u.get("value", 0)
+            try:
+                out[int(g)] = int(u)
+            except (TypeError, ValueError):
+                continue
+        return out
+    return {int(r[0]): int(r[1]) for r in _smi("gpu=index,utilization.gpu")
+            if len(r) >= 2 and r[1].isdigit()}
 
 
 def _descendants(root: int) -> set[int]:
@@ -206,8 +310,7 @@ def host_contention(exclude_gpu: int | None = None,
     own = _descendants(own_root if own_root is not None else os.getpid())
     apps = [a for a in compute_apps()
             if a["pid"] not in own and a["gpu"] != exclude_gpu]
-    util = {int(r[0]): int(r[1]) for r in _smi("gpu=index,utilization.gpu")
-            if len(r) >= 2 and r[1].isdigit()}
+    util = gpu_util()
     busy = sorted({a["gpu"] for a in apps})
     return {
         "foreign_procs": len(apps),

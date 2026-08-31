@@ -70,6 +70,8 @@ M3_CSV = REPO / "results/m3_baseline/baseline.csv"
 OUT = REPO / "results/m4_oracle"
 
 BLOCK = 16          # vLLM 預設 block size（token）
+# Mooncake trace 的 hash_id 粒度（token）。由資料實測得到，見 mooncake_trace()。
+MOONCAKE_BLOCK = 512
 
 
 # ────────────────────────── 成本模型 ──────────────────────────
@@ -151,16 +153,22 @@ def load_cost_model(device: str = "sata",
     「放硬碟很便宜所以要多用」，實際上放硬碟比丟掉重算還貴。
     用錯這個常數，Oracle 的 headroom 就沒有意義。
     """
-    ret = M2 / f"retrieval_cost_{device}.csv"
-    if not ret.exists():          # 相容舊檔名
-        ret = M2 / "retrieval_cost.csv"
-    rec = M2 / "recompute_position.csv"
+    # 檔名慣例（見 m2_cost_model.out_csv）：
+    #   llama（BF16 權重）維持舊檔名；其他模型帶 model_key。
+    #   device 後綴只有 SSD 階需要（SATA vs NVMe 差 13.7 倍）。
+    mk = require_model_key or "llama"
+    tag = "" if mk == "llama" else f"_{mk}"
+    cands = [M2 / f"retrieval_cost{tag}_{device}.csv",
+             M2 / f"retrieval_cost{tag}.csv"]
+    ret = next((c for c in cands if c.exists()), cands[0])
+    rec_c = [M2 / f"recompute_position{tag}.csv"]
+    rec = next((c for c in rec_c if c.exists()), rec_c[0])
     missing = [str(p) for p in (ret, rec) if not p.exists()]
     if missing:
         raise SystemExit(
             "🔴 缺少 M2 的實測成本常數，拒絕用假設值跑 Oracle。\n"
             f"   缺少：{missing}\n"
-            "   先跑：python code/m2_cost_model.py --gpu 0 --stage all\n"
+            f"   先跑：python code/m2_cost_model.py --gpu 0 --stage all --model {mk}\n"
             "   （EXPERIMENT_PLAN §0 禁令 1：不准編造任何數字）")
 
     rows = list(csv.DictReader(ret.open()))
@@ -253,11 +261,30 @@ def mooncake_trace(name: str, limit: int | None = None) -> list[list[int]]:
             f"🔴 找不到 {p}\n"
             f"   下載：curl -L -o {p} https://raw.githubusercontent.com/"
             f"kvcache-ai/Mooncake/main/FAST25-release/traces/{name}_trace.jsonl")
+    # 🔴 2026-08-31 修正：Mooncake 的 hash_ids 是 **512-token 的 block**，
+    #    不是本模擬器的 16-token block。實測（input_length / len(hash_ids)）：
+    #        conversation 中位 496.3、平均 483.3、5-95% 416-511
+    #        toolagent    中位 487.9、平均 482.3、5-95% 444-510
+    #    先前直接把每個 hash_id 當成一個 block，造成三重低估：
+    #      1. 工作集少算 32 倍
+    #      2. **每個 block 的絕對位置少算 32 倍** -> 重算成本被算得太便宜
+    #         （式 eq:recompute-position 是位置的線性函數），
+    #         於是 DROP 這個動作看起來比實際划算太多
+    #      3. 請求長度中位數 6,909 token 被當成 216 token
+    #    所有 2026-08-31 16:30 之前的 trace 類數字都受影響，已作廢重跑。
+    #
+    #    修法：每個 hash_id 展開成 MOONCAKE_BLOCK // BLOCK = 32 個連續 block，
+    #    並依 input_length 裁掉最後一塊多出來的部分（最後一塊通常不滿 512）。
+    #    這是**資料的正確解碼**，不是假設。
+    exp = MOONCAKE_BLOCK // BLOCK
     out = []
     for i, line in enumerate(p.open()):
         if limit and i >= limit:
             break
-        out.append(json.loads(line)["hash_ids"])
+        rec = json.loads(line)
+        want = max(1, -(-int(rec["input_length"]) // BLOCK))   # ceil
+        out.append([h * exp + k for h in rec["hash_ids"]
+                    for k in range(exp)][:want])
     return out
 
 

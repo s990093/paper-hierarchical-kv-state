@@ -71,9 +71,25 @@ VENV = BIG / "venv/vllm"
 REPO = Path(__file__).resolve().parent.parent
 OUT = REPO / "results/m2_harness"
 
-MODEL = "NousResearch/Meta-Llama-3.1-8B-Instruct"
+# 模型剖面。成本常數只在「同一個剖面內」可通約——
+# 用 A 模型的預算配 B 模型的搬運成本是無意義的（見 m4_oracle.MODEL_PROFILES）。
+MODEL_CHOICES = {
+    "llama": ("NousResearch/Meta-Llama-3.1-8B-Instruct", 128.0),
+    "llama-awq": ("hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4", 128.0),
+    "qwen-awq": (str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"), 128.0),
+}
+MODEL = MODEL_CHOICES["llama"][0]
 MODEL_KEY = "llama"
 KV_KIB_PER_TOKEN_BF16 = 128.0
+# 輸出檔名後綴。🔴 檔名必須帶模型，否則量 qwen-awq 會直接蓋掉 llama 的常數，
+# 而兩者不可通約——覆蓋等於靜默地製造混用。
+CSV_SUFFIX = ""
+
+
+def out_csv(stem: str) -> Path:
+    """llama 維持既有檔名（向後相容），其他模型一律帶 model_key。"""
+    tag = "" if MODEL_KEY == "llama" else f"_{MODEL_KEY}"
+    return OUT / f"{stem}{tag}{CSV_SUFFIX}.csv"
 
 # 論文動作空間裡「住在 GPU 上」的四階，全部是同一個旗標的不同取值。
 KV_DTYPES = [
@@ -118,6 +134,19 @@ TIERS = [
                  "secondary_tiers": [{"type": "fs", "root_dir": str(FS_ROOT)}]}},
      "CPU 階刻意縮小 → 強迫 cascade 到磁碟，量的才是真的磁碟階"),
     ("drop", None, "沒有第二階，warm 只能整段重算"),
+    # 🔴 論文的動作空間有六階，先前的 M2 只量了四階
+    #    （gpu_resident / cpu / ssd / drop）。GPU-FP8 與 GPU-INT4 是
+    #    「住在 GPU 但精度降低」的狀態：容量變大，但每次讀取要反量化。
+    #    這兩階的成本從來沒被量過，Oracle 因此無法把它們納入決策。
+    #
+    #    量法與 gpu_resident 完全相同（工作集塞得進 GPU、不逐出），
+    #    只換 --kv-cache-dtype。warm TTFT 減掉 bf16 的 gpu_resident，
+    #    差額就是**反量化的每 block 成本**。
+    #    ⚠️ sm_86 沒有原生 FP8 tensor core，但 FP8/INT4 **儲存**可用
+    #       （M1 已實測），反量化在 attention kernel 內做。
+    ("gpu_fp8", None, "GPU FP8 儲存：容量 2×，讀取要反量化", "fp8"),
+    ("gpu_int4", None, "GPU INT4 儲存：容量 4×，讀取要反量化",
+     "int4_per_token_head"),
 ]
 
 
@@ -347,7 +376,7 @@ def stage_capacity(gpu: int, repeats: int, max_len: int) -> int:
             })
             if ok:
                 print(f"        kv_tokens={kvt:,} kv_gib={kvg}")
-    write_rows(OUT / "capacity_by_dtype.csv", rows)
+    write_rows(out_csv("capacity_by_dtype"), rows)
 
     print(f"\n[m2] === 平時成本（容量越大 = 每 token 佔越少位元組）===")
     print(f"{'dtype':8s}{'n':>3s}{'median tok':>12s}{'min':>10s}{'max':>10s}"
@@ -369,7 +398,8 @@ def stage_capacity(gpu: int, repeats: int, max_len: int) -> int:
 
 # ─────────────── B. 取回成本（被需要時的成本） ───────────────
 
-def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int) -> int:
+def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
+                    only_tiers: set[str] | None = None) -> int:
     """每一階的「把 block 變回可用」要多久。
 
     gpu_resident 那一列刻意讓工作集塞得進 GPU（不逐出），
@@ -378,13 +408,17 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int) -> int:
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m2-retrieval"
     root = BIG / "runs" / run_id
     rows = []
-    for name, kv, desc in TIERS:
-        # gpu_resident：只送 1 個前綴，保證塞得下 → warm 是純 prefix-cache 命中
-        n = 1 if name == "gpu_resident" else n_prefixes
+    for entry in TIERS:
+        name, kv, desc = entry[0], entry[1], entry[2]
+        kv_dtype = entry[3] if len(entry) > 3 else "auto"
+        if only_tiers and name not in only_tiers:
+            continue
+        # 常駐 GPU 的各階：只送 1 個前綴，保證塞得下 → warm 是純 prefix-cache 命中
+        n = 1 if name.startswith("gpu_") else n_prefixes
         out = root / name
         print(f"[m2] retrieval {name:13s} n_prefixes={n} ctx={ctx} ...", flush=True)
         try:
-            with Server(gpu, max_len, out, kv_cfg=kv) as s:
+            with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv) as s:
                 url = s.url()
                 texts = [make_text(ctx, seed=7000 + ctx * 10 + i) for i in range(n)]
                 for rnd in ("cold", "warm"):
@@ -395,6 +429,7 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int) -> int:
                             "ts": datetime.now().astimezone().isoformat(),
                             "model_key": MODEL_KEY, "tier": name, "gpu": gpu,
                             "ctx": ctx, "n_prefixes": n, "round": rnd,
+                            "kv_dtype": kv_dtype,
                             "prefix_idx": i, "ttft_ms": r["ttft_ms"],
                             "total_ms": r["total_ms"],
                             "gpu_kv_cache_tokens": s.kv_tokens,
@@ -408,7 +443,7 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int) -> int:
                         print(f"        {rnd:<4} #{i} ttft={r['ttft_ms']}ms")
         except Exception as e:  # noqa: BLE001
             print(f"        🔴 {type(e).__name__}: {e}")
-    write_rows(OUT / "retrieval_cost.csv", rows)
+    write_rows(out_csv("retrieval_cost"), rows)
 
     base = [r["ttft_ms"] for r in rows
             if r["tier"] == "gpu_resident" and r["round"] == "warm" and r["ttft_ms"]]
@@ -464,7 +499,7 @@ def stage_recompute(gpu: int, max_len: int, chunk: int, positions: list[int]) ->
                     "log": str(out / "server.log"),
                 })
                 print(f"        P={P:>6} rep{rep} ttft={r['ttft_ms']}ms")
-    write_rows(OUT / "recompute_position.csv", rows)
+    write_rows(out_csv("recompute_position"), rows)
 
     print(f"\n[m2] === C_recompute(position)，每次重算 {chunk} 個 token ===")
     print(f"{'cached prefix':>14s}{'median ms':>11s}{'vs P=0':>9s}{'µs/token':>10s}")
@@ -493,7 +528,20 @@ def main() -> int:
     ap.add_argument("--chunk", type=int, default=2048)
     ap.add_argument("--positions", type=int, nargs="*",
                     default=[0, 4096, 8192, 16384, 24576])
+    ap.add_argument("--model", default="llama", choices=list(MODEL_CHOICES),
+                    help="要量哪個模型的成本常數。🔴 成本常數只在同一個剖面內"
+                         "可通約，換模型就要整組重量")
+    ap.add_argument("--tiers", nargs="*", default=None,
+                    help="只量指定的階（如 gpu_fp8 gpu_int4）。預設全部")
+    ap.add_argument("--csv-suffix", default="",
+                    help="輸出檔名後綴，避免覆蓋既有結果（如 _quiet）")
     a = ap.parse_args()
+
+    global MODEL, MODEL_KEY, KV_KIB_PER_TOKEN_BF16, CSV_SUFFIX
+    MODEL, KV_KIB_PER_TOKEN_BF16 = MODEL_CHOICES[a.model]
+    MODEL_KEY, CSV_SUFFIX = a.model, a.csv_suffix
+    print(f"[m2] 模型剖面 {a.model} → {MODEL}")
+    print(f"[m2] 輸出檔：{out_csv('retrieval_cost')}")
 
     ok, got = wait_until_free(a.gpu, need_mib=22 * 1024, timeout_s=600)
     if not ok:
@@ -518,7 +566,8 @@ def main() -> int:
             rc |= stage_capacity(a.gpu, a.repeats, max_len=8192)
         if a.stage in ("all", "retrieval"):
             rc |= stage_retrieval(a.gpu, a.ctx, a.n_prefixes,
-                                  max_len=a.ctx + 1024)
+                                  max_len=a.ctx + 1024,
+                                  only_tiers=set(a.tiers) if a.tiers else None)
         if a.stage in ("all", "recompute"):
             rc |= stage_recompute(a.gpu, max_len=max(a.positions) + a.chunk + 1024,
                                   chunk=a.chunk, positions=a.positions)
