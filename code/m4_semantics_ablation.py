@@ -47,11 +47,12 @@ SEMANTICS = [
 ]
 
 
-def one(sim: Sim, trace, prefix: bool, prefetch: bool) -> dict:
+def one(sim: Sim, trace, prefix: bool, prefetch: bool,
+        dest: str = "cost-aware") -> dict:
     res = {k: sim.run_online(trace, *a, prefix_semantics=prefix,
                              prefetch=prefetch)
            for k, a in POLICIES.items()}
-    res["oracle"] = sim.run_oracle(trace, True, True,
+    res["oracle"] = sim.run_oracle(trace, True, True, dest=dest,
                                    prefix_semantics=prefix, prefetch=prefetch)
     best = min((k for k in res if k != "oracle"), key=lambda k: res[k]["total_ms"])
     head = 100 * (res[best]["total_ms"] - res["oracle"]["total_ms"]) \
@@ -72,6 +73,12 @@ def main() -> int:
     ap.add_argument("--requests", type=int, default=0,
                     help="0 = 自動取 10×文件數")
     ap.add_argument("--seed", type=int, default=1234)
+    ap.add_argument("--oracle-dest", default="cost-aware",
+                    choices=["cost-aware", "cascade"],
+                    help="Oracle 逐出後的目的地選擇。cost-aware=比較各去處在"
+                         "『下次使用的位置』上的實際成本（放 SSD 5.536 ms 對上"
+                         "重算 4.008+0.00021×位置，交叉點 7,278 token）；"
+                         "cascade=無條件往下推（舊行為，會系統性低估 Oracle）")
     ap.add_argument("--out", default=str(OUT / "semantics_ablation.csv"))
     a = ap.parse_args()
 
@@ -106,7 +113,7 @@ def main() -> int:
         base_head = None
         for name, prefix, prefetch in SEMANTICS:
             sim = Sim(cm, gpu_blocks, cpu_blocks, ssd_blocks=10**9)
-            o = one(sim, trace, prefix, prefetch)
+            o = one(sim, trace, prefix, prefetch, a.oracle_dest)
             if base_head is None:
                 base_head = o["head"]
             delta = o["head"] - base_head
@@ -120,6 +127,7 @@ def main() -> int:
                     "ts": datetime.now().astimezone().isoformat(),
                     "workload": label, "semantics": name,
                     "lookup": "prefix" if prefix else "per-block",
+                    "oracle_dest": a.oracle_dest,
                     "prefetch": int(prefetch),
                     "policy": pol, "total_ms": round(v["total_ms"], 2),
                     "gpu_hits": v["hits"]["gpu"], "cpu_hits": v["hits"]["cpu"],

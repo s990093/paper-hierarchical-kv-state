@@ -60,6 +60,12 @@ def main() -> int:
     ap.add_argument("--no-prefetch", dest="prefetch", action="store_false")
     ap.add_argument("--fs-root", default="/ssd7",
                     help="用來報告實體可用空間的掛載點")
+    ap.add_argument("--oracle-dest", default="cost-aware",
+                    choices=["cost-aware", "cascade"],
+                    help="Oracle 逐出後的目的地選擇。cost-aware=比較各去處在"
+                         "『下次使用的位置』上的實際成本（放 SSD 5.536 ms 對上"
+                         "重算 4.008+0.00021×位置，交叉點 7,278 token）；"
+                         "cascade=無條件往下推（舊行為，會系統性低估 Oracle）")
     ap.add_argument("--out", default=str(OUT / "ssd_sweep.csv"))
     a = ap.parse_args()
 
@@ -98,7 +104,8 @@ def main() -> int:
                 if us and not use_ssd_possible:
                     continue          # 沒有磁碟階時 tier_fs 不存在
                 res[k] = sim.run_online(trace, pol, uc, us, **sem)
-            res["oracle"] = sim.run_oracle(trace, True, use_ssd_possible, **sem)
+            res["oracle"] = sim.run_oracle(trace, True, use_ssd_possible,
+                                           dest=a.oracle_dest, **sem)
             best = min((k for k in res if k != "oracle"),
                        key=lambda k: res[k]["total_ms"])
             head = 100 * (res[best]["total_ms"] - res["oracle"]["total_ms"]) \
@@ -134,6 +141,7 @@ def main() -> int:
                     "gpu_budget_tokens": prof["gpu_kv_tokens"],
                     "cpu_budget_gib": a.cpu_gib, "unique_blocks": uniq,
                     "lookup": a.lookup, "prefetch": int(a.prefetch),
+                    "oracle_dest": a.oracle_dest,
                     "device": a.device,
                     "cost_model": str(OUT / "cost_model.json"),
                 })

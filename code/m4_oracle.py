@@ -496,7 +496,7 @@ class Sim:
     # -- Oracle ----------------------------------------------------
     def run_oracle(self, trace: list[list[int]], use_cpu: bool,
                    use_ssd: bool, prefix_semantics: bool = True,
-                   prefetch: bool = False) -> dict:
+                   prefetch: bool = False, dest: str = "cost-aware") -> dict:
         """知道未來的最佳放置。
 
         單階時 Bélády/MIN（逐出下次使用最遠的）是**可證明最優**的。
@@ -516,9 +516,11 @@ class Sim:
         # 2026-08-31 由「壓力 0.5× 時五個策略命中數完全相同、時間卻差 9.7%」
         # 這個矛盾抓出來。
         flat: list[tuple[int, int, int]] = []
+        pos_of: list[int] = []      # 每一次存取的**絕對位置**（token）
         for ti, req in enumerate(trace):
             for pi, blk in enumerate(req):
                 flat.append((ti, blk, pi))
+                pos_of.append(pi * BLOCK)
         nxt: dict[int, list[int]] = {}
         for i, (_, blk, _pi) in enumerate(flat):
             nxt.setdefault(blk, []).append(i)
@@ -536,7 +538,13 @@ class Sim:
         #    代表最佳策略永遠找得到免費的犧牲者，CPU/SSD 階對最佳解毫無貢獻，
         #    此時量到的 headroom 全部來自 **GPU 階內的逐出選擇**，
         #    不能拿來支持論文的六階動作空間。
-        evict = {"free": 0, "to_cpu": 0, "to_ssd": 0, "swap_cpu": 0, "lost": 0}
+        evict = {"free": 0, "to_cpu": 0, "to_ssd": 0, "swap_cpu": 0, "lost": 0,
+                 "drop_by_choice": 0, "swap_ssd": 0}
+        # CPU 階：max-heap on next_use（留下次使用最近的）
+        # SSD 階：min-heap on 節省量（把最不划算的先換掉）
+        # 兩者都用 lazy deletion，否則每次逐出要掃整個集合。
+        cpu_h: list[tuple[float, int]] = []
+        ssd_h: list[tuple[float, int]] = []
         prev_compute = 0.0
 
         def next_use(blk: int, now: int) -> float:
@@ -595,29 +603,87 @@ class Sim:
                     else:
                         victim = heapq.heappop(heap)[1]
                     gpu.discard(victim)
-                    if next_use(victim, i) is math.inf:
+                    j = next_use(victim, i)
+                    if j is math.inf:
                         evict["free"] += 1
                         continue                   # 不再用到 -> 丟掉，成本 0
-                    if use_cpu and len(cpu) < self.cap["cpu"]:
-                        cpu.add(victim)
-                        evict["to_cpu"] += 1
-                    elif use_ssd and len(ssd) < self.cap["ssd"]:
-                        ssd.add(victim)
-                        evict["to_ssd"] += 1
+
+                    # 🔴 成本感知的目的地選擇（dest="cost-aware"）
+                    #
+                    # 舊版（dest="cascade"）無條件往下推：CPU 有位子就放 CPU、
+                    # 否則放 SSD。但 SSD 是**固定** 5.536 ms/block，而丟掉重算是
+                    # 4.008 + 0.00021×位置——位置 < 7,278 token 時**丟掉比放 SSD 便宜**。
+                    # 真實 trace 的中位請求只有 6,352 token，整段都在交叉點以下，
+                    # 所以舊版把大量 block 塞進 SSD，之後用比重算更貴的價格讀回來。
+                    # 那不是「成本感知貪婪」，那只是 cascade。
+                    #
+                    # 這一項讓 Oracle 變強 → headroom 上升。因為 NO-GO 判定
+                    # 依賴「Oracle 已經夠強」，這個修正對 NO-GO 的可信度是必要的。
+                    nu_pos = pos_of[j]
+                    drop_c = self.cm.cost("drop", nu_pos)
+                    if dest == "cascade":
+                        cpu_ok = use_cpu
+                        ssd_ok = use_ssd
                     else:
-                        # 兩階都滿：把 CPU 裡下次使用最遠的換下去
-                        if use_cpu and cpu:
-                            far = max(cpu, key=lambda b: next_use(b, i))
-                            if next_use(far, i) > next_use(victim, i):
-                                cpu.discard(far)
-                                cpu.add(victim)
-                                evict["swap_cpu"] += 1
-                                if use_ssd and len(ssd) < self.cap["ssd"]:
-                                    ssd.add(far)
-                            else:
-                                evict["lost"] += 1
+                        cpu_ok = use_cpu and self.cm.cpu < drop_c
+                        ssd_ok = use_ssd and self.cm.ssd < drop_c
+
+                    if cpu_ok and len(cpu) < self.cap["cpu"]:
+                        cpu.add(victim)
+                        heapq.heappush(cpu_h, (-j, victim))
+                        evict["to_cpu"] += 1
+                    elif cpu_ok and cpu:
+                        # CPU 滿：換掉「下次使用最遠」的那個（CPU 永遠比重算便宜，
+                        # 所以這裡純粹是 Bélády，跟成本無關）
+                        while cpu_h:
+                            nj, bh = cpu_h[0]
+                            if bh not in cpu:
+                                heapq.heappop(cpu_h)
+                                continue
+                            break
+                        if cpu_h and -cpu_h[0][0] > j:
+                            far = heapq.heappop(cpu_h)[1]
+                            cpu.discard(far)
+                            cpu.add(victim)
+                            heapq.heappush(cpu_h, (-j, victim))
+                            evict["swap_cpu"] += 1
+                            victim = far          # 被擠下來的往下一階試
+                            j = next_use(far, i)
+                            if j is math.inf:
+                                evict["free"] += 1
+                                continue
+                            drop_c = self.cm.cost("drop", pos_of[j])
+                            ssd_ok = (use_ssd and
+                                      (dest == "cascade" or self.cm.ssd < drop_c))
+                        # else: victim 留著往 SSD 試
+
+                    if victim in cpu:
+                        continue
+                    save = drop_c - self.cm.ssd      # 放 SSD 相對丟掉省多少
+                    if ssd_ok and len(ssd) < self.cap["ssd"]:
+                        ssd.add(victim)
+                        heapq.heappush(ssd_h, (save, victim))
+                        evict["to_ssd"] += 1
+                    elif ssd_ok and ssd:
+                        while ssd_h:
+                            sv, bh = ssd_h[0]
+                            if bh not in ssd:
+                                heapq.heappop(ssd_h)
+                                continue
+                            break
+                        if ssd_h and ssd_h[0][0] < save:
+                            out = heapq.heappop(ssd_h)[1]
+                            ssd.discard(out)
+                            ssd.add(victim)
+                            heapq.heappush(ssd_h, (save, victim))
+                            evict["swap_ssd"] += 1
                         else:
                             evict["lost"] += 1
+                    elif use_cpu or use_ssd:
+                        # 有階層可用，但成本上不划算 -> 主動丟掉
+                        evict["drop_by_choice" if dest != "cascade" else "lost"] += 1
+                    else:
+                        evict["lost"] += 1
             c_req, prev_compute = self._flush(req_compute, req_transfer,
                                               prev_compute, prefetch)
             total += c_req

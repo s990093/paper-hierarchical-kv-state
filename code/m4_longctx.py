@@ -75,6 +75,12 @@ def main() -> int:
     ap.add_argument("--max-accesses", type=int, default=1_500_000,
                     help="放大後的 block 存取總數上限。S 越大取越少請求，"
                          "讓每個 S 的模擬工作量相當、執行時間可控")
+    ap.add_argument("--oracle-dest", default="cost-aware",
+                    choices=["cost-aware", "cascade"],
+                    help="Oracle 逐出後的目的地選擇。cost-aware=比較各去處在"
+                         "『下次使用的位置』上的實際成本（放 SSD 5.536 ms 對上"
+                         "重算 4.008+0.00021×位置，交叉點 7,278 token）；"
+                         "cascade=無條件往下推（舊行為，會系統性低估 Oracle）")
     ap.add_argument("--out", default=str(OUT / "longctx.csv"))
     a = ap.parse_args()
 
@@ -119,7 +125,8 @@ def main() -> int:
             uniq = len({b for r in tr for b in r})
             sim = Sim(cm, gpu_blocks, cpu_blocks, ssd_blocks=10**9)
             res = {k: sim.run_online(tr, *v, **sem) for k, v in POLICIES.items()}
-            res["oracle"] = sim.run_oracle(tr, True, True, **sem)
+            res["oracle"] = sim.run_oracle(tr, True, True,
+                                           dest=a.oracle_dest, **sem)
             best = min((k for k in res if k != "oracle"),
                        key=lambda k: res[k]["total_ms"])
             head = 100 * (res[best]["total_ms"] - res["oracle"]["total_ms"]) \
@@ -154,6 +161,7 @@ def main() -> int:
                     "gpu_budget_tokens": prof["gpu_kv_tokens"],
                     "cpu_budget_gib": a.cpu_gib,
                     "lookup": a.lookup, "prefetch": int(a.prefetch),
+                    "oracle_dest": a.oracle_dest,
                     "device": a.device,
                     # 🔴 兩個必須跟著數字一起走的標記
                     "assumption": "reuse_structure_invariant_to_length",
