@@ -44,6 +44,6 @@ results/**/*.jsonl
 .claude/settings.local.json
 results/m3_baseline/*.bak-*
 
-# notebook 執行後的版本（輸出含圖片，體積大）；analysis.ipynb 是原始檔
-notebooks/executed.ipynb
+# notebook：analysis.ipynb **含輸出**進 git——它的用途就是打開就能看到圖表。
+# diff 會比較吵，但這份 notebook 是整份重新產生的，不是手改的。
 notebooks/.ipynb_checkpoints/
