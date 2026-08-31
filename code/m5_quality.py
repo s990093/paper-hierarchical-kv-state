@@ -259,10 +259,103 @@ class Server:
             return json.load(r)["choices"][0]["text"]
 
 
+# ─────────────────────── 大海撈針（長距離檢索） ───────────────────────
+#
+# 🔴 為什麼要換任務。2026-08-31 用 n=1000 量到：
+#
+#     BF16 77.9%　INT8 76.4%（+1.50pp）　FP8 76.2%（+1.70pp）　INT4 75.1%（+2.80pp）
+#     差值的 95% 信賴區間是 ±3.7pp -> **四個都與 0 無法區分**
+#
+#   要在 95% 信心下區分 2.8pp，每個設定需要 n≈1,760；ε(f) 曲線有 7 個 f 值
+#   就是 12,320 個請求 ≈ 8.6 小時。而且 2.8pp 是 f=1.0 的**上限**效果，
+#   中間的 f 只會更小。**GSM8K many-shot 在可行樣本數下量不出 ε(f)。**
+#
+#   原因是任務不對：GSM8K many-shot 的推理靠的是最近的幾個範例，
+#   KV 量化對「長距離、精確位置的檢索」傷害才大——而那正是論文的目標區間。
+#
+#   大海撈針直接壓迫這一點，預期效果量大一個數量級（檢索是「找得到／找不到」），
+#   因此每個設定只需要數十個樣本。
+
+NEEDLE_FILLER = (
+    "The archives of the northern observatory record the passage of comets, "
+    "the drift of ice shelves, and the slow rotation of distant galaxies. "
+    "Each observation is logged with the date, the instrument used, and the "
+    "name of the astronomer on duty. The logs span several decades and are "
+    "kept in bound volumes on the third floor. "
+)
+NEEDLE_TEXT = "The magic access code for the {place} tower is {code}."
+NEEDLE_Q = ("\n\nQuestion: What is the magic access code for the {place} tower? "
+            "Answer with the number only.\n\nAnswer:")
+NEEDLE_PLACES = ["north", "south", "east", "west", "central",
+                 "harbour", "ridge", "valley", "summit", "delta"]
+
+
+def build_needle(tok, total_tokens: int, depth: float, code: str,
+                 place: str) -> tuple[str, int, int]:
+    """做一個長 prompt，把針放在深度 `depth`（0.0=最前、1.0=最後）。
+
+    回傳 (prompt, 實際 token 數, **針的實際 token 位置**)。
+
+    🔴 兩個實作細節，都是踩過才知道的：
+
+    1. **插入點對齊到填充單元的邊界。** 第一版在任意 token 位置插入，
+       decode 之後再編碼時 BPE 會跨邊界重新合併，針的 token 序列就變了，
+       10 個樣本裡有 4 個找不到針而被靜默丟棄——深度分佈因此產生偏差。
+       填充單元以 ". " 結尾，是自然的文字邊界，不會有這個問題。
+
+    2. **用字串位置定位，再換算成 token 位置。** 比對 token 序列會受
+       BPE 合併影響；比對字串不會，因為針是逐字插入的。
+    """
+    unit_txt = NEEDLE_FILLER
+    unit = tok(unit_txt, add_special_tokens=False)["input_ids"]
+    need_txt = NEEDLE_TEXT.format(place=place, code=code)
+    tail_txt = NEEDLE_Q.format(place=place)
+    n_need = len(tok(need_txt, add_special_tokens=False)["input_ids"])
+    n_tail = len(tok(tail_txt, add_special_tokens=False)["input_ids"])
+
+    body_tokens = max(n_need + 8, total_tokens - n_tail)
+    n_units = max(2, body_tokens // len(unit))
+    # 對齊到單元邊界
+    at_unit = min(max(0, round(depth * n_units)), n_units)
+    text = (unit_txt * at_unit) + need_txt + " " + (unit_txt * (n_units - at_unit))
+    text += tail_txt
+
+    ids = tok(text, add_special_tokens=False)["input_ids"]
+    ci = text.index(need_txt)
+    pos = len(tok(text[:ci], add_special_tokens=False)["input_ids"])
+    return text, len(ids), pos
+
+
+def needle_cases(tok, ctx: int, depths: list[float], repeats: int,
+                 seed: int = 20260831) -> list[dict]:
+    """產生 (深度 × 重複) 個測資。每個都用不同的密碼與地名，避免模型猜。"""
+    import random
+    rng = random.Random(seed)
+    out = []
+    for d in depths:
+        for r in range(repeats):
+            code = str(rng.randrange(1000, 9999))
+            place = NEEDLE_PLACES[rng.randrange(len(NEEDLE_PLACES))]
+            prompt, n, pos = build_needle(tok, ctx, d, code, place)
+            if pos < 0:
+                continue          # BPE 把針切碎了，跳過（會如實少一個樣本）
+            out.append({"prompt": prompt, "gold": code, "depth": d,
+                        "repeat": r, "place": place,
+                        "prompt_tokens": n, "needle_pos": pos,
+                        "needle_depth_actual": round(pos / max(1, n), 4)})
+    return out
+
+
 def run_config(name: str, kv_dtype: str, kv_cfg: dict | None, desc: str,
                gpu: int, prefix: str, tests: list[dict], max_len: int,
                root: Path, run_id: str, mode: str,
-               extra_args: list[str] | None = None) -> list[dict]:
+               extra_args: list[str] | None = None,
+               task: str = "gsm8k") -> list[dict]:
+    """task="gsm8k"：many-shot 推理。task="needle"：長距離檢索。
+
+    換任務的理由見 build_needle 上方的註解——GSM8K 對 KV 量化不敏感，
+    n=1000 下四個精度的差異全部與 0 無法區分。
+    """
     rows = []
     out = root / name
     print(f"\n[m5] === {name} （{desc}）===", flush=True)
@@ -273,12 +366,20 @@ def run_config(name: str, kv_dtype: str, kv_cfg: dict | None, desc: str,
                   else "[m5]   server up")
             ok = 0
             for i, ex in enumerate(tests):
-                prompt = prefix + f"Question: {ex['question'].strip()}\nAnswer:"
+                if task == "needle":
+                    prompt = ex["prompt"]
+                else:
+                    prompt = prefix + f"Question: {ex['question'].strip()}\nAnswer:"
                 t0 = time.perf_counter()
                 text = s.ask(prompt)
                 dt = (time.perf_counter() - t0) * 1000
-                pred, g = extract(text), gold(ex["answer"])
-                correct = pred is not None and pred == g
+                if task == "needle":
+                    g = ex["gold"]
+                    pred = g if g in (text or "") else (extract(text) or "")
+                    correct = g in (text or "")
+                else:
+                    pred, g = extract(text), gold(ex["answer"])
+                    correct = pred is not None and pred == g
                 ok += correct
                 rows.append({
                     "run_id": run_id, "ts": datetime.now().astimezone().isoformat(),
@@ -290,7 +391,12 @@ def run_config(name: str, kv_dtype: str, kv_cfg: dict | None, desc: str,
                     "out_sha1": hashlib.sha1(text.encode()).hexdigest()[:16],
                     "out_len": len(text),
                     "gpu_kv_cache_tokens": s.kv_tokens,
-                    "n_shot": prefix.count("Question:"),
+                    "n_shot": 0 if task == "needle" else prefix.count("Question:"),
+                    "task": task,
+                    "needle_depth": ex.get("depth", ""),
+                    "needle_depth_actual": ex.get("needle_depth_actual", ""),
+                    "needle_pos": ex.get("needle_pos", ""),
+                    "prompt_tokens": ex.get("prompt_tokens", ""),
                     "desc": desc,
                     **{k: v for k, v in host_contention(exclude_gpu=gpu).items()
                        if k in ("level", "foreign_gpu_count", "foreign_max_util")},
@@ -380,8 +486,19 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--gpu", type=int, default=0)
     ap.add_argument("--mode", default="precision",
-                    choices=["precision", "lossless", "mixed"],
-                    help="mixed = 掃量化比例 f，畫 ε(f) 曲線")
+                    choices=["precision", "lossless", "mixed",
+                             "needle", "needle-mixed"],
+                    help="mixed = 掃量化比例 f，畫 ε(f) 曲線；"
+                         "needle = 長距離檢索（對 KV 量化敏感得多，"
+                         "GSM8K 在 n=1000 下四個精度全部與 0 無法區分）；"
+                         "needle-mixed = 用檢索任務掃 f")
+    ap.add_argument("--needle-ctx", type=int, default=32768,
+                    help="大海撈針的 context 長度")
+    ap.add_argument("--needle-depths", type=float, nargs="*",
+                    default=[0.05, 0.25, 0.5, 0.75, 0.95],
+                    help="針放在多深（0.0=最前、1.0=最後）")
+    ap.add_argument("--needle-repeats", type=int, default=4,
+                    help="每個深度重複幾次（每次用不同的密碼與地名）")
     ap.add_argument("--mixed-dtype", default="int4_per_token_head",
                     help="mixed 模式要量化成哪種 dtype")
     ap.add_argument("--fractions", type=float, nargs="*",
@@ -419,10 +536,24 @@ def main() -> int:
 
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m5-{a.mode}"
     root = BIG / "runs" / run_id
-    tests = test[: a.n_test]
-    if a.mode == "precision":
+    task = "needle" if a.mode.startswith("needle") else "gsm8k"
+    if task == "needle":
+        from transformers import AutoTokenizer
+        tk = AutoTokenizer.from_pretrained(MODEL)
+        tests = needle_cases(tk, a.needle_ctx, a.needle_depths, a.needle_repeats)
+        max_len = a.needle_ctx + 512
+        prefix = ""
+        n_uniq = len({t["needle_pos"] for t in tests})
+        print(f"[m5] 大海撈針：ctx={a.needle_ctx:,}、"
+              f"{len(a.needle_depths)} 個深度 × {a.needle_repeats} 次重複 "
+              f"= {len(tests)} 個樣本／設定")
+        print(f"[m5]   針的實際位置有 {n_uniq} 個相異值"
+              f"（decode/encode 會讓深度漂移約 1.5%，以實際值為準）")
+    else:
+        tests = test[: a.n_test]
+    if a.mode in ("precision", "needle"):
         todo = PRECISIONS
-    elif a.mode == "mixed":
+    elif a.mode in ("mixed", "needle-mixed"):
         todo = mixed_precision_configs(a.mixed_dtype, a.fractions)
     else:
         todo = [(n, "auto", c, d) for n, c, d in LOSSLESS]
@@ -433,14 +564,15 @@ def main() -> int:
             print(f"[m5] 🔴 GPU {a.gpu} 開跑前就不乾淨：{g.intruders}")
             return 2
         for item in todo:
-            if a.mode == "precision":
+            if a.mode in ("precision", "needle"):
                 name, dtype, desc = item
                 rows += run_config(name, dtype, None, desc, a.gpu, prefix, tests,
-                                   max_len, root, run_id, a.mode)
-            elif a.mode == "mixed":
+                                   max_len, root, run_id, a.mode, task=task)
+            elif a.mode in ("mixed", "needle-mixed"):
                 name, dtype, extra, desc = item
                 rows += run_config(name, dtype, None, desc, a.gpu, prefix, tests,
-                                   max_len, root, run_id, a.mode, extra_args=extra)
+                                   max_len, root, run_id, a.mode,
+                                   extra_args=extra, task=task)
             else:
                 name, dtype, cfg, desc = item
                 rows += run_config(name, dtype, cfg, desc, a.gpu, prefix, tests,
