@@ -94,6 +94,11 @@ MOONCAKE_BLOCK = 512
 # nvme：Crucial P3（/）。1 GiB 測試 2,512。
 DEVICE_WRITE_MIBPS = {"sata": 181.0, "nvme": 2512.0}
 
+# 各裝置的掛載點。用來回報「這顆碟到底有多大／還剩多少」。
+# 🔴 這也必須跟著 --device 走：先前 --device nvme 但 fs-root 仍指 /ssd7，
+#    於是報表印出 SATA 的 7.2 TiB 容量，卻在講 NVMe 的結果。
+DEVICE_FS_ROOT = {"sata": "/ssd7", "nvme": "/home/hungwei"}
+
 
 # ────────────────────────── 成本模型 ──────────────────────────
 

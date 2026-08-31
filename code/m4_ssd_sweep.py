@@ -36,7 +36,8 @@ from datetime import datetime
 from pathlib import Path
 
 from m4_invariants import check_results, preflight
-from m4_oracle import (BLOCK, DEVICE_WRITE_MIBPS, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
+from m4_oracle import (BLOCK, DEVICE_FS_ROOT, DEVICE_WRITE_MIBPS,
+                       SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile, trace_duration_s)
 
 POLICIES = {
@@ -69,8 +70,9 @@ def main() -> int:
                          "所以要用後者。NVMe（Crucial P3）實測為 2,512。"
                          "見 results/m2_harness/disk_bw*.csv。"
                          "預設由 --device 決定，避免裝置混用")
-    ap.add_argument("--fs-root", default="/ssd7",
-                    help="用來報告實體可用空間的掛載點")
+    ap.add_argument("--fs-root", default=None,
+                    help="用來報告實體可用空間的掛載點。預設由 --device 決定，"
+                         "避免『裝置選 nvme 但報表印 SATA 容量』")
     ap.add_argument("--oracle-dest", default="best",
                     choices=["best", "cost-aware", "cascade"],
                     help="Oracle 逐出後的目的地選擇。cost-aware=比較各去處在"
@@ -82,6 +84,8 @@ def main() -> int:
 
     if a.device_write_mibps is None:
         a.device_write_mibps = DEVICE_WRITE_MIBPS[a.device]
+    if a.fs_root is None:
+        a.fs_root = DEVICE_FS_ROOT[a.device]
     prof = profile(a.model)
     cm = load_cost_model(a.device, require_model_key=prof["cost_model_key"])
     print(f"[裝置] {a.device}：成本常數與持續寫入上限 "
@@ -169,6 +173,7 @@ def main() -> int:
                     "ssd_covers_working_set_pct": round(100 * cover, 2),
                     "working_set_tib": round(need_tib, 2),
                     "device_total_tib": round(du.total / 1024**4, 2),
+                    "fs_root": a.fs_root,
                     "device_free_gib": round(du.free / 1024**3, 1),
                     "policy": pol, "total_ms": round(v["total_ms"], 2),
                     "gpu_hits": v["hits"]["gpu"], "cpu_hits": v["hits"]["cpu"],
