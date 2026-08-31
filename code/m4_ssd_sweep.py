@@ -140,8 +140,8 @@ def main() -> int:
             wo = res["oracle"].get("writes", {}).get("ssd", 0)
             feas = "✅" if bw(wb) <= DEV_MBPS else "🔴"
             print(f"{label:>11s}{100 * cover:>6.1f}%{best:>9s}{head:>9.2f}%"
-                  f"{verdict:>9s}{wb:>13,}{bw(wb):>10,.0f}MB/s{feas:>6s}"
-                  f"{wo:>14,}{bw(wo):>10,.0f}MB/s")
+                  f"{verdict:>9s}{wb:>13,}{bw(wb):>9,.0f}MiB/s{feas:>6s}"
+                  f"{wo:>14,}{bw(wo):>9,.0f}MiB/s")
             for pol, v in res.items():
                 e = v.get("evict", {})
                 rows.append({
