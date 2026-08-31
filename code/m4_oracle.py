@@ -205,6 +205,13 @@ def load_cost_model(device: str = "sata",
     blocks_in_chunk = chunk / BLOCK
     slope = ((yN - y0) / (pts[-1] - pts[0])) / blocks_in_chunk if pts[-1] > pts[0] else 0.0
 
+    # 🔴 外插警示：重算成本是位置的線性函數，也是模擬裡的主導成本項。
+    #    擬合的位置上限若遠小於工作負載的最大位置，該係數就是外插而非量測。
+    #    理論上 prefill 的每個 block 要對前面所有 block 做注意力，
+    #    成本本來就隨位置線性成長，所以線性外插有依據——但仍是外插。
+    fit_max = max(pts) if pts else 0
+    print(f"[cost] 重算成本的位置擬合上限 = {fit_max:,} token。"
+          f"超過此位置的成本為線性外插。")
     return CostModel(
         gpu=0.0,
         cpu=max(0.0, (c - g)) / nblk,
@@ -218,6 +225,7 @@ def load_cost_model(device: str = "sata",
             "recompute_chunk_tokens": chunk,
             "recompute_at_pos0_ms": y0, "recompute_at_maxpos_ms": yN,
             "positions": pts,
+            "position_fit_max_tokens": fit_max,
         })
 
 
@@ -692,7 +700,7 @@ class Sim:
 
 # ────────────────────────── 驗證 ──────────────────────────
 
-def validate(cm: CostModel) -> dict:
+def validate(cm: CostModel, sem: dict | None = None) -> dict:
     """用 M3 的工作負載跑模擬，跟**實測**比對。
 
     模擬器若複現不出已經量到的 full_gpu vs cpu_lru 差距，
@@ -726,8 +734,9 @@ def validate(cm: CostModel) -> dict:
                   ssd_blocks=10**9)
         # split_at=n：trace 前 n 個請求是 cold、其後 n 個是 warm。
         # 實測量的是 warm 那一輪的 TTFT，所以模擬也只能取 warm 段來比。
-        s_full = sim.run_online(trace, "lru", False, False, split_at=n)
-        s_lru = sim.run_online(trace, "lru", True, False, split_at=n)
+        sem = sem or {}
+        s_full = sim.run_online(trace, "lru", False, False, split_at=n, **sem)
+        s_lru = sim.run_online(trace, "lru", True, False, split_at=n, **sem)
         sim_ratio = s_full["warm_ms"] / max(1e-9, s_lru["warm_ms"])
         out.append({
             "ctx": ctx, "n_prefixes": n,
@@ -812,7 +821,7 @@ def main() -> int:
         indent=2, ensure_ascii=False) + "\n")
 
     if a.validate:
-        v = validate(cm)
+        v = validate(cm, SEM)
         print(f"\n=== 模擬器驗證（GPU KV = {v['gpu_kv_tokens']:,} tokens）===")
         print("比的是同一個量：warm 那一輪，full_gpu 相對 cpu_lru 的成本倍數\n")
         print(f"{'ctx':>7}{'實測':>10}{'模擬':>10}{'比值差':>9}  判定")

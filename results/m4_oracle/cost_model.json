@@ -16,7 +16,8 @@
       8192,
       16384,
       24576
-    ]
+    ],
+    "position_fit_max_tokens": 24576
   },
   "derived_ms_per_block": {
     "gpu": 0.0,
