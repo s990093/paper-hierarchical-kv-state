@@ -73,12 +73,32 @@ OUT = REPO / "results/m4_oracle"
 # 每一份結果 CSV 都要帶著它。2026-08-31 一天之內改了六次模擬器語意，
 # 而每一版的輸出看起來都完全正常——沒有戳記就無法事後分辨哪一列是哪一版產生的。
 def sim_version() -> str:
+    """只雜湊「會影響模擬數字」的那些原始碼，不是整個檔案。
+
+    🔴 第一版雜湊整個檔案，結果在掃描跑到一半時新增一個
+       `load_precision_tiers`（模擬路徑根本不會呼叫它）就讓戳記改變，
+       整批有效資料被當成舊版丟掉。
+       戳記要反映**行為**，不是檔案位元組。
+
+    納入雜湊的是：Sim 類別（逐出、成本記帳、前綴語意、預取、目的地規則）、
+    成本模型的載入與推導、以及兩個工作負載產生器。
+    改這些之中任何一個，數字就可能改變，戳記就該改變。
+    加註解、加無關的載入器、改 CLI 說明，則不影響。
+    """
     import hashlib
-    from pathlib import Path as _P
-    return hashlib.sha1(_P(__file__).read_bytes()).hexdigest()[:8]
-
-
-SIM_VERSION = sim_version()
+    import inspect
+    parts = []
+    for name in ("Sim", "load_cost_model", "mooncake_trace", "zipf_trace",
+                 "CostModel"):
+        obj = globals().get(name)
+        if obj is not None:
+            try:
+                parts.append(inspect.getsource(obj))
+            except OSError:
+                parts.append(name)
+    parts.append(f"BLOCK={BLOCK};MOONCAKE_BLOCK={MOONCAKE_BLOCK}")
+    parts.append(repr(sorted(MODEL_PROFILES.items())))
+    return hashlib.sha1("".join(parts).encode()).hexdigest()[:8]
 
 BLOCK = 16          # vLLM 預設 block size（token）
 # Mooncake trace 的 hash_id 粒度（token）。由資料實測得到，見 mooncake_trace()。
@@ -1134,3 +1154,7 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+# 必須在 Sim / load_cost_model / MODEL_PROFILES 都定義完之後才算得出來。
+SIM_VERSION = sim_version()

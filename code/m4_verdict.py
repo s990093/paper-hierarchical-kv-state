@@ -39,6 +39,7 @@ def verdict(h: float) -> str:
 #    只是每個數字都錯——把它們混進判定材料，就是拿錯的證據做決定。
 #    每個 trace 的正確不重複 block 數是可以現算的，拿來當版本戳記。
 _EXPECTED_UNIQ: dict[str, int] = {}
+_WARNED: set[str] = set()          # 每個檔案的警告只印一次
 
 
 def expected_uniq(tname: str) -> int | None:
@@ -78,11 +79,16 @@ def rows(p: Path, check_stale: bool = True) -> list[dict]:
         if h not in (None, "") and float(h) < 0:
             neg += 1
             continue
-        # 🔴 第三層：模擬器版本戳記。任何對 m4_oracle.py 的改動都會改變它。
+        # 第三層：模擬器版本戳記（`m4_oracle.sim_version()`，只雜湊會影響
+        # 數字的那些原始碼）。
+        # 🔴 這一層**只警告、不剔除**。版本不同是「來歷問題」，不是
+        #    「錯誤的證明」——我無法從雜湊值反推行為是否真的改變。
+        #    剔除留給可證明的錯誤（前兩層）。
+        #    2026-08-31 學到：第一版雜湊整個檔案並直接剔除，結果掃描跑到
+        #    一半新增一個模擬路徑不會呼叫的載入器，整批有效資料就被丟光。
         sv = r.get("sim_version")
         if _cur and sv and sv != _cur:
             oldsim += 1
-            continue
         t = r.get("trace") or ""
         exp = expected_uniq(t) if t else None
         got = r.get("unique_blocks")
@@ -92,6 +98,9 @@ def rows(p: Path, check_stale: bool = True) -> list[dict]:
             fresh.append(r)
         else:
             stale += 1
+    if p.name in _WARNED:
+        return fresh
+    _WARNED.add(p.name)
     msgs = []
     if stale:
         msgs.append(f"{stale} 列 trace 解碼過期"
@@ -100,7 +109,8 @@ def rows(p: Path, check_stale: bool = True) -> list[dict]:
     if neg:
         msgs.append(f"{neg} 列 headroom 為負（Oracle 輸給 baseline，不可能）")
     if oldsim:
-        msgs.append(f"{oldsim} 列由舊版模擬器產生（sim_version != {_cur}）")
+        print(f"   ⚠️ {p.name}：{oldsim} 列的 sim_version 與現行不符"
+              f"（現行 {_cur}）。**已保留**，但引用前請確認那一版的行為。")
     if msgs:
         print(f"   ⚠️ {p.name}：剔除 " + "、".join(msgs))
     return fresh
