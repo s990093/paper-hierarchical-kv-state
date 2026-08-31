@@ -1805,3 +1805,49 @@ headroom 不只由重用率決定，也由「放錯地方的代價」決定，
 
 今天量到的長度分箱在 ~16K 就飽和，但那條曲線只到 128K；
 **512K 那一段沒有任何人量過。**
+
+## 🔴 端到端（含 decode）的 headroom 落入 NO_GO（2026-08-31 20:35）
+
+**run_id**: `20260831-200058-m4-decode`
+**指令**: `python code/m4_sweep.py --axis ssd --ssd-gib 512 --decode`
+**產出**: `results/m4_oracle/ssd_sweep.csv`（含 `decode_ms` / `prefill_ms` 欄）
+
+| trace | 只算 prefill | **端到端（含 decode）** | 判定 |
+|---|---|---|---|
+| toolagent | 11.51% | **2.83%** | 🔴 NO_GO |
+| conversation | 12.58% | **3.34%** | 🔴 NO_GO |
+
+### 為什麼
+
+放置決策只能優化 prefill。decode 期間該請求的 KV 必須整份在 GPU 裡，
+每一步都要讀完，沒有搬到 CPU/SSD 或丟掉重算的自由度。
+
+用 M3 實測擬合的 decode 成本（llama-bf16 剖面）：
+
+    每步 = 36.768 ms + 0.005581 ms × block 數　（R² = 0.9994）
+
+36.768 ms 的固定項是讀 BF16 權重（15.2 GB）。輸出長的請求
+（p90 = 507 token、max = 2,000）因此讓 decode 主導總時間。
+
+我先前用 qwen 的 decode 成本估出 5.9%，實際用自洽的 llama-bf16 剖面
+量出 2.83%。**估計與量測差了一倍，理由是模型不同（BF16 權重 vs AWQ 權重）。**
+
+### 🔴 這是 EXPERIMENT_PLAN §0 禁令 4 的停損點
+
+「`< 5%` headroom = 停止」。端到端是 2.83% / 3.34%。
+
+### 但有一個明確的保留條件，不可略過
+
+這是 **llama-bf16 剖面**（BF16 權重）的結果。論文的主設定是 **AWQ-INT4 權重**，
+其 decode 的固定項只有約一半（qwen-awq 實測 18.158 ms/步 vs llama-bf16 的
+36.768）。decode 變便宜 -> prefill 佔比上升 -> 端到端 headroom 上升。
+
+**在 AWQ 剖面的成本模型量到之前（凌晨批次步驟 4），不得宣稱這個 NO_GO
+適用於論文的主設定。** 目前只能說：
+「在 BF16 權重的剖面上，端到端 headroom 為 2.83–3.34%，落入 NO_GO。」
+
+### 另一個尚未做的切分
+
+Mooncake 的輸出長度分佈很偏（toolagent 中位 30、p90 507、max 2,000）。
+按輸出長度分箱之後，**短輸出的那群請求 headroom 應該遠高於平均**，
+而那群在真實流量裡佔多數。這個切分尚未做。

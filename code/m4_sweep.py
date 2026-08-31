@@ -33,7 +33,8 @@ from m4_oracle import (BLOCK, DEVICE_FS_ROOT, DEVICE_WRITE_MIBPS,
                        check_decode_bandwidth, load_decode_model,
                        mooncake_outputs,
                        MODEL_PROFILES, OUT, SIM_VERSION, Sim, load_cost_model,
-                       mooncake_trace, profile, trace_duration_s, zipf_trace)
+                       longctx_trace, mooncake_trace, profile, reuse_rate,
+                       trace_duration_s, zipf_trace)
 
 POLICIES = {
     "full_gpu": ("lru", False, False),
@@ -369,11 +370,80 @@ def axis_prefix(ctx: Ctx) -> list[dict]:
     return rows
 
 
+def axis_surface(ctx: Ctx) -> list[dict]:
+    """**headroom 的地圖**：掃（請求長度 × 重用率），找方法適用的區間。
+
+    ## 為什麼要這張圖
+
+    今天量到的都是單點，而且都在 Mooncake 上（中位 6.3K、重用 37–57%）。
+    論文的目標是 512K，那裡沒有任何量測。與其挑一個好看的設定，
+    不如把整個空間掃出來，**並把真實資料的位置標在圖上**。
+
+    ## 兩個自變數
+
+    * **長度**：決定「放錯地方的代價」。重算成本隨絕對位置線性成長，
+      所以 6K 時重算只比 CPU 貴 9.8 倍，512K 時貴 210 倍。
+    * **重用率**：決定「天花板」。低重用 -> 強制未命中多 -> 誰都省不掉。
+      由「每份文件被查幾次」控制（reuse = 1 − 1/次數，再扣掉尾巴）。
+
+    ## 真實資料的位置（會標在輸出裡）
+
+        Mooncake toolagent      6,346 token　重用 57.0%
+        Mooncake conversation   6,909 token　重用 37.3%
+        SCBench qa_eng        745,586 token　重用 80.0%
+
+    ## ⚠️ 兩個必須跟著數字走的標記
+
+    1. `synthetic=longctx`——這是合成流量，不是真實 trace。
+    2. 單一請求的 KV 必須整份放得進 GPU（vLLM 的啟動檢查）。
+       請求長度超過 GPU 預算的點標為 `single_request_fits=False`，
+       那是**不可部署**的設定，只能當上界參考。
+    """
+    a, rows = ctx.a, []
+    lengths = [int(x) for x in a.surface_lengths]
+    reqs_per_doc = [float(x) for x in a.surface_requeries]
+    gpu_tok = ctx.prof["gpu_kv_tokens"]
+    print(f"\n{'=' * 100}")
+    print(f"headroom 地圖：長度 × 重用率（GPU 預算 {gpu_tok:,} token）")
+    print(f"真實資料的位置：Mooncake 6.3K/57%、6.9K/37%　SCBench 746K/80%")
+    print(f"{'請求長度':>10s}{'每份被查':>10s}{'重用率':>9s}{'壓力':>9s}"
+          f"{'單請求塞得下?':>14s}{'best':>10s}{'headroom':>10s}{'判定':>9s}")
+    sb = int(a.ssd_gib_fixed * 1024**3) // ctx.bpb
+    for L in lengths:
+        doc_b = max(1, L // BLOCK)
+        for rq in reqs_per_doc:
+            n_req = a.surface_requests
+            n_docs = max(1, round(n_req / rq))
+            tail_b = max(1, int(doc_b * a.surface_tail_frac))
+            tr = longctx_trace(n_docs, doc_b, tail_b, n_req, 0.9, a.seed)
+            ru = reuse_rate(tr)
+            uniq = len({b for r in tr for b in r})
+            fits = L <= gpu_tok
+            res, best, head = ctx.run(tr, None, sb)
+            print(f"{L:>10,}{rq:>10.1f}{100 * ru:>8.1f}%"
+                  f"{uniq / ctx.gpu_blocks:>8.0f}×{'✅' if fits else '🔴':>12s}"
+                  f"{best:>10s}{head:>9.2f}%{verdict(head):>9s}")
+            rows += policy_rows(ctx, res, best, head,
+                                f"surface:L{L}:rq{rq:g}", {
+                "axis": "surface", "synthetic": "longctx",
+                "request_tokens": L, "requeries_per_doc": rq,
+                "reuse_pct": round(100 * ru, 2),
+                "tail_frac": a.surface_tail_frac,
+                "n_docs": n_docs, "requests": n_req,
+                "unique_blocks": uniq,
+                "pressure_x": round(uniq / ctx.gpu_blocks, 2),
+                "single_request_fits": int(fits),
+                "ssd_gib": a.ssd_gib_fixed,
+            })
+    return rows
+
+
 AXES = {"ssd": (axis_ssd, "ssd_sweep.csv"),
         "budget": (axis_budget, "budget_sweep.csv"),
         "length": (axis_length, "by_length.csv"),
         "semantics": (axis_semantics, "semantics_ablation.csv"),
-        "prefix": (axis_prefix, "prefix_gap_probe.csv")}
+        "prefix": (axis_prefix, "prefix_gap_probe.csv"),
+        "surface": (axis_surface, "headroom_surface.csv")}
 
 
 def main() -> int:
@@ -400,6 +470,16 @@ def main() -> int:
     ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix")
     ap.add_argument("--prefetch", action="store_true", default=True)
     ap.add_argument("--no-prefetch", dest="prefetch", action="store_false")
+    ap.add_argument("--surface-lengths", nargs="*",
+                    default=[8192, 32768, 131072, 262144, 524288],
+                    help="axis=surface 的請求長度（token）")
+    ap.add_argument("--surface-requeries", nargs="*",
+                    default=[1.2, 2, 4, 10, 25],
+                    help="每份文件被查幾次。決定重用率："
+                         "1.2 次≈55%、2 次≈66%、25 次≈95%")
+    ap.add_argument("--surface-requests", type=int, default=200)
+    ap.add_argument("--surface-tail-frac", type=float, default=0.02,
+                    help="每個請求各自不同的尾巴佔多少（2% = 512K 裡的 10K 問題）")
     ap.add_argument("--decode", action="store_true",
                     help="把 decode 的成本也算進去（用 trace 裡真實的 "
                          "output_length）。放置只能優化 prefill，所以開了之後 "
