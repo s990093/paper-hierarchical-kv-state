@@ -1244,3 +1244,150 @@ Oracle 的優勢來源也很一致：它把 GPU 命中從 ~19K 拉到 ~51K（α=
 `EXPERIMENT_PLAN.md` §0 禁令 4 與 §5 的停損點都指向這裡。
 
 ---
+
+## Milestone 4 補充 — 模擬器的三項系統語意修正與模型混用修復
+**狀態**: PASS（模擬部分）／部分 BLOCKED（精度階需要新的 GPU 量測）
+**執行時間**: 2026-08-31 15:37 → 16:4x
+**run_id**:
+* `20260831-153729-m4-semantics`（第一版語意消融，**已被下一項取代**）
+* `20260831-15xxxx-m4-budget-sweep`（第一版預算掃描，**已被下一項取代**）
+* `20260831-16xxxx-m4-rerun-llama-profile`（正式結果，llama-bf16 剖面）
+**指令**:
+```
+python code/m4_budget_sweep.py
+python code/m4_semantics_ablation.py --trace toolagent conversation --pressure 1 2 4 8
+python code/m4_oracle.py --pressure 0.5 1 2 4 8 16 32 --lookup prefix --prefetch
+```
+**產出檔**: `results/m4_oracle/{budget_sweep,semantics_ablation,oracle}.csv`
+
+---
+
+### 🔴 發現 A — 模型混用（先前結果的錯誤來源）
+
+先前的 Oracle trace 跑法用 `--gpu-tokens 273872`（**qwen-awq** 的實測容量）
+去配 M2 的成本常數，而 **M2 整組都是在 `model_key=llama`、BF16 權重、
+`gpu_kv_cache_tokens=48128`、ctx=16384 量的**。
+等於「A 模型的記憶體預算 × B 模型的搬運/重算成本」。
+`cpu_blocks` 也寫死 128 KiB/token（Llama GQA BF16 的值）。
+
+**受影響的結論**：混用時預算大了 5.69 倍，Oracle 的逐出變成 **100% 免費**
+（被逐出的 block 之後再也用不到，丟掉成本 0），CPU/SSD 階完全沒被用到。
+我一度把這寫成「多階層對最佳解毫無貢獻」——**那是混用造成的假象，已作廢**。
+
+**修法**：`m4_oracle.py` 新增 `MODEL_PROFILES`，把
+「GPU 預算 + KV 每 token 位元組 + 成本模型 model_key」綁成一個剖面；
+`load_cost_model(require_model_key=...)` 在 model_key 對不上時**直接拒跑**。
+實測驗證：`--model qwen-awq` 現在會被擋下並印出該跑哪一條 M2 指令。
+
+目前**只有 `llama-bf16` 有自洽的成本量測**。`llama-awq` / `qwen-awq`
+的容量已由 M1 量到（120,320 / 273,872 token），但成本模型尚未量 → 不可用。
+
+### 發現 B — 前綴語意的修正對結果幾乎沒有影響（與我的預測相反）
+
+修正內容：vLLM 的 cache lookup 是**連續前綴**
+（`OffloadingConnectorScheduler._lookup_complete_chunks` 的 docstring 明寫
+"prefix lookup"，且回傳 token 數——token 數表達不了「0,1,4,5 命中」的形狀）。
+模擬器原本把每個 block 當獨立事件，理論上會低估 baseline 的重算量。
+
+**預測**：修正後 baseline 變慢、headroom 上升。
+**實測**：headroom 變化 **≤ 0.22 個百分點**（多數情形為 0.00）。
+
+原因量到了，不是 bug：
+
+| trace / 策略 | 缺口後的 block | 其中仍在某一階 | 其中是第一次出現 |
+|---|---|---|---|
+| toolagent / full_gpu | 180,699 | **144** | 160,975 (89.1%) |
+| toolagent / cpu_lru | 166,646 | **7** | 160,269 (96.2%) |
+| toolagent / tier_fs | 159,950 | **0** | 159,950 (100%) |
+| conversation / full_gpu | 198,587 | **0** | 172,070 (86.6%) |
+| conversation / tier_fs | 170,877 | **0** | 170,877 (100%) |
+
+**真實 LLM 流量的重用本身就是前綴結構的**（Mooncake 的 `hash_ids` 就是前綴雜湊），
+所以第一個未命中剛好落在共用前綴的結尾，其後 87–100% 是這輩子第一次出現的
+block——本來就要重算。**「缺口之後還有東西可以損失」這件事幾乎不發生。**
+
+合成 Zipf trace 的中間缺口次數是 **0**：文件大小固定、請求整篇取用，
+LRU 逐出剛好以整篇為單位，永遠不會出現半篇。
+
+→ 這反過來是模擬器的一項**有效性證據**：per-block 這個簡化對前綴結構的工作負載無害。
+
+### 發現 C — 預取的修正讓 headroom **下降**（也與預測相反）
+
+修正內容：卸載連接器的取回是非同步的，可與前一個請求的計算重疊。
+原模型在存取當下才計價 = 假設預取從不發生。
+重疊上界取「前一個請求的計算時間」，**同時套用於 Oracle 與所有 baseline**。
+
+| 工作負載 | 無預取 | 有預取 | 差 |
+|---|---|---|---|
+| trace:toolagent | 14.13% | **12.86%** | −1.27 |
+| trace:conversation | 16.40% | **15.16%** | −1.24 |
+| pressure 2.0× | 19.75% | **19.25%** | −0.50 |
+| pressure 4.0× | 14.97% | **13.97%** | −1.00 |
+| pressure 7.8× | 24.84% | **22.55%** | −2.29 |
+
+方向可解釋：預取只能隱藏**傳輸**，而 Oracle 的傳輸量遠少於 baseline
+（Bélády 把該留的都留在 GPU），所以 baseline 受益較多，差距縮小。
+
+### 發現 D — 免費逐出的存量，以及 headroom 的飽和
+
+Bélády 逐出時優先挑「之後再也用不到」的 block，成本 0。
+在正確的 48,128 預算下，這種免費逐出佔 **89.7–92.5%**——
+CPU 階確實會被用到，但用得不多。壓力升高，免費存量才被吃掉：
+
+| GPU 預算 (token) | 壓力 | 免費逐出 | headroom (toolagent / conversation) |
+|---|---|---|---|
+| **48,128（實測值）** | 60.9× | 92.5% / 89.7% | **12.86% / 15.16%** |
+| 24,064 | 121.9× | 84.2% / 81.9% | 13.34% / 15.94% |
+| 12,032 | 243.8× | 77.9% / 76.0% | 13.62% / 16.24% |
+| 6,016 | 487.5× | 73.5% / 71.9% | 13.58% / 16.29% |
+| 3,008 | 975.0× | 70.9% / 69.5% | 13.51% / 16.31% |
+| 188 | 16,663× | 60.8% / 66.4% | 14.29% / 16.27% |
+
+**headroom 在 ~240× 之後就飽和了**（13.5% / 16.3%），
+跨四個數量級的壓力幾乎不動。這是一個可引用的形狀：
+「壓力越大 headroom 越大」**不成立**，它有上界。
+
+上界的來源也量到了：Oracle 的 `recompute` 在每一個預算下都**恰好等於
+不重複 block 數**（toolagent 183,300、conversation 182,790）——
+即強制未命中下限。Oracle 從不重算同一個 block 兩次。
+真實 trace 有 45–63% 的 block 一生只被存取一次，這部分誰都省不掉。
+（這同時是模擬器正確性的獨立驗證。）
+
+### 發現 E — 合成工作負載的壓力標籤先前名不副實
+
+`pressure:8x` 只配了文件數，但請求數固定 400，Zipf 抽樣根本碰不到那麼多文件：
+
+| 標籤 | 配了幾篇 | 名目工作集 | 400 請求實際碰到 | **實際壓力** |
+|---|---|---|---|---|
+| pressure:8x | 535 | 136,960 | 47,360 | **2.8×** |
+| pressure:16x | 1,070 | 273,920 | 56,320 | **3.3×** |
+| pressure:32x | 2,140 | 547,840 | 63,744 | **3.7×** |
+
+**修法**：請求數自動取 10×文件數；CSV 新增 `realized_pressure_x` 與
+`unique_blocks` 欄；標籤改印實際值。舊檔留在
+`/ssd7/hungwei/paper-hkv/runs/superseded/oracle.csv.mislabeled-pressure`。
+
+### 修正後的正式數字（llama-bf16 剖面，語意 prefix + prefetch）
+
+| 工作負載 | 最佳 baseline | baseline ms | oracle ms | headroom | 判定 |
+|---|---|---|---|---|---|
+| trace:toolagent（真實） | cpu_arc | 869,109 | 757,344 | **12.86%** | MARGINAL |
+| trace:conversation（真實） | cpu_arc | 892,932 | 757,581 | **15.16%** | GO |
+| pressure 1.0× | cpu_arc | 14,677 | 13,703 | 6.63% | MARGINAL |
+| pressure 2.0× | cpu_arc | 42,426 | 34,260 | 19.25% | GO |
+| pressure 4.0× | cpu_arc | 77,364 | 66,556 | 13.97% | MARGINAL |
+| pressure 7.8× | cpu_lru | 259,768 | 200,955 | 22.64% | GO |
+
+### 失敗與異常
+無指令失敗。三項需要記錄的**方法錯誤**（均已修復並重跑）：
+模型混用（發現 A）、壓力標籤名不副實（發現 E）、
+以及先前基於混用結果所寫的「多階層無用」結論已作廢。
+
+### 尚未完成（需要 GPU，排凌晨 3 點）
+1. **M2 的 qwen-awq / llama-awq 成本模型** —— 沒有它就不能在 AWQ 預算下跑 Oracle
+2. **GPU-FP8 / GPU-INT4 的取回（反量化）成本** —— M2 目前只有 4 階
+   （`gpu_resident` / `cpu` / `ssd` / `drop`），論文的六階動作空間缺兩階的成本。
+   **在量到之前不做精度階的 Oracle**（禁令 1）
+3. M2 retrieval 在整機 `QUIET` 下重量（成本常數目前量自 `HEAVY`）
+
+---

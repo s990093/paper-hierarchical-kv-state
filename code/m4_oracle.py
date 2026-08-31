@@ -103,7 +103,44 @@ class CostModel:
         raise ValueError(tier)
 
 
-def load_cost_model(device: str = "sata") -> CostModel:
+# ────────────────────── 模型剖面（防止混用） ──────────────────────
+# 🔴 2026-08-31 抓到的錯誤：先前用 `--gpu-tokens 273872`（qwen-awq 的實測容量）
+#    去配 M2 的成本常數，而 M2 **整組都是在 llama、BF16 權重、ctx=16384 量的**。
+#    等於「A 模型的記憶體預算 × B 模型的搬運/重算成本」，兩邊不可通約。
+#    CPU 階的 blocks 數也一樣：128 KiB/token 是 Llama-3.1-8B 的 GQA BF16 值，
+#    換模型就不對。
+#
+#    修法：把「預算 / KV 每 token 大小 / 成本模型來源」綁成一個剖面，
+#    要換模型就得整組換，且成本模型的 model_key 必須對得上，對不上直接拒跑。
+#
+# kv_bytes_per_token 的算法（BF16 KV）：
+#   層數 × KV head 數 × head_dim × 2(K,V) × 2 bytes
+#   Llama-3.1-8B: 32 × 8 × 128 × 2 × 2 = 131,072 = 128 KiB  ✔ 與實測 kv_gib 相符
+MODEL_PROFILES = {
+    # 唯一一個目前有**自洽成本模型**的剖面。M2 全部量自這個設定。
+    "llama-bf16": {
+        "gpu_kv_tokens": 48_128,          # M2/M3 serial 實測（gpu_mem_util 相同）
+        "kv_bytes_per_token": 131_072,    # 32×8×128×2×2
+        "cost_model_key": "llama",
+        "source": "results/m2_harness/*.csv (model_key=llama, ctx=16384)",
+    },
+    # 以下剖面**沒有**對應的成本量測。要用必須先跑 M2 的對應設定，
+    # 否則 load_cost_model 會拒絕。列在這裡是為了記錄實測容量。
+    "llama-awq": {"gpu_kv_tokens": 120_320, "kv_bytes_per_token": 131_072,
+                  "cost_model_key": "llama-awq", "source": "M1 capacity.csv"},
+    "qwen-awq": {"gpu_kv_tokens": 273_872, "kv_bytes_per_token": 131_072,
+                 "cost_model_key": "qwen-awq", "source": "M1 capacity.csv"},
+}
+
+
+def profile(name: str) -> dict:
+    if name not in MODEL_PROFILES:
+        raise SystemExit(f"🔴 未知剖面 {name}；可用：{list(MODEL_PROFILES)}")
+    return MODEL_PROFILES[name]
+
+
+def load_cost_model(device: str = "sata",
+                    require_model_key: str | None = None) -> CostModel:
     """從 results/m2_harness/ 讀實測常數。讀不到就中止——不使用預設值。
 
     `device` 決定用哪一組 SSD 階的量測。**這不是無關緊要的選項**：
@@ -127,6 +164,17 @@ def load_cost_model(device: str = "sata") -> CostModel:
             "   （EXPERIMENT_PLAN §0 禁令 1：不准編造任何數字）")
 
     rows = list(csv.DictReader(ret.open()))
+    if require_model_key is not None:
+        have = sorted({r.get("model_key", "") for r in rows})
+        if have != [require_model_key]:
+            raise SystemExit(
+                f"🔴 成本模型與所選剖面不相容，拒絕混用。\n"
+                f"   剖面要求 model_key = {require_model_key!r}\n"
+                f"   但 {ret} 裡是 {have}\n"
+                f"   「A 模型的記憶體預算 × B 模型的搬運成本」不可通約。\n"
+                f"   要用這個剖面，先跑該模型的 M2：\n"
+                f"     python code/m2_cost_model.py --gpu 0 --stage all "
+                f"--model {require_model_key}")
     def warm(tier: str) -> float | None:
         v = [float(r["ttft_ms"]) for r in rows
              if r["tier"] == tier and r["round"] == "warm" and r["ttft_ms"]]
@@ -250,16 +298,65 @@ class Sim:
         self.cm = cm
         self.cap = {"gpu": gpu_blocks, "cpu": cpu_blocks, "ssd": ssd_blocks}
 
-    # -- 線上策略 --------------------------------------------------
+    # -- 系統語意的兩個共用模型 -----------------------------------
+    @staticmethod
+    def _gap_index(req, gpu, cpu, ssd, enabled: bool) -> int:
+        """回傳「第一個在任何一階都找不到的 block」在請求中的序號。
+
+        🔴 前綴語意：vLLM 的 cache lookup 是**連續前綴**，不是任意集合。
+           GPU 端的 `find_longest_cache_hit` 與卸載端的
+           `_lookup_complete_chunks`（docstring 明寫 "prefix lookup"）
+           都只回傳一個 **token 數**——一個 token 數表達不了
+           「block 0,1,4,5 命中、2,3 沒有」這種形狀。
+           所以第一個缺口之後的 block **全部要重算**，即使它們還躺在 CPU 裡。
+
+           先前的模型把每個 block 當成獨立事件，系統性**低估**了
+           full_gpu 的成本，因而低估 headroom。
+           這個修正對 Oracle 與所有 baseline 一致套用。
+        """
+        if not enabled:
+            return len(req)
+        for j, b in enumerate(req):
+            if b not in gpu and b not in cpu and b not in ssd:
+                return j
+        return len(req)
+
+    @staticmethod
+    def _flush(compute: float, transfer: float, prev_compute: float,
+               prefetch: bool) -> tuple[float, float]:
+        """把一個請求的「計算」與「傳輸」合成關鍵路徑上的時間。
+
+        🔴 預取：卸載連接器的取回是**非同步**的——vLLM 的
+           `OffloadingConnectorScheduler` 在排程階段就發出 load，
+           與前一個請求的 forward 重疊。原本的模型在存取當下才記傳輸成本，
+           等於假設預取從不發生，**高估**了所有用到 CPU/SSD 的策略。
+
+           重疊的上界取「前一個請求的計算時間」：計算佔 SM、傳輸走
+           PCIe/NVMe，硬體不同可以並行；而預取所需的 GPU 空間來自
+           前一個請求已消化完的 block（prefill 每個 block 只讀一次）。
+           這是**上界不是實測**，開啟時結果要在論文裡明確標註。
+        """
+        if prefetch:
+            return compute + max(0.0, transfer - prev_compute), compute
+        return compute + transfer, compute
+
+    # -- 線上策略 ---------------------------------------------------
     def run_online(self, trace: list[list[int]], policy: str,
                    use_cpu: bool, use_ssd: bool,
-                   split_at: int | None = None) -> dict:
+                   split_at: int | None = None,
+                   prefix_semantics: bool = True,
+                   prefetch: bool = False) -> dict:
         """split_at 給定時，另外回報第 split_at 個請求之後的成本（warm 段）。
 
         ⚠️ 為什麼需要這個：M3 的實測量的是**warm 那一輪**的 TTFT，
         模擬若回報兩輪加總，就是拿不同的量在比對，驗證會失去意義。
         2026-08-30 第一版驗證就犯了這個錯（實測比 9.0，模擬比 1.87，
-        看起來像模擬器壞掉，其實是比錯東西）。"""
+        看起來像模擬器壞掉，其實是比錯東西）。
+
+        prefix_semantics：見 `_gap_index` 的說明。
+        prefetch：見 `_flush` 的說明。兩者都同樣套用在 Oracle 上，
+        因為它們是**系統能力**，不是策略能力——只給 Oracle 就是作弊。
+        """
         gpu: OrderedDict[int, None] = OrderedDict()
         cpu: OrderedDict[int, None] = OrderedDict()
         ssd: OrderedDict[int, None] = OrderedDict()
@@ -274,6 +371,7 @@ class Sim:
         warm_total = 0.0
         hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
         warm_hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
+        prev_compute = 0.0        # 上一個請求的計算時間，供預取重疊用
 
         def demote(blk: int) -> None:
             if use_cpu:
@@ -286,14 +384,52 @@ class Sim:
                         while len(ssd) > self.cap["ssd"]:
                             ssd.popitem(last=False)
 
+        def admit(blk: int) -> None:
+            """放進 GPU，必要時逐出（含 ARC 的 ghost list 記帳）。"""
+            nonlocal target_t1
+            if policy == "arc":
+                if blk in b1:
+                    target_t1 = min(self.cap["gpu"],
+                                    target_t1 + max(1, len(b2) // max(1, len(b1))))
+                    del b1[blk]
+                elif blk in b2:
+                    target_t1 = max(0, target_t1 - max(1, len(b1) // max(1, len(b2))))
+                    del b2[blk]
+                if blk not in t1 and blk not in t2:
+                    t1[blk] = None
+            gpu[blk] = None
+            while len(gpu) > self.cap["gpu"]:
+                if policy == "arc" and len(t1) > target_t1 and t1:
+                    ev, _ = t1.popitem(last=False)
+                    b1[ev] = None
+                    while len(b1) > self.cap["gpu"]:
+                        b1.popitem(last=False)
+                elif policy == "arc" and t2:
+                    ev, _ = t2.popitem(last=False)
+                    b2[ev] = None
+                    while len(b2) > self.cap["gpu"]:
+                        b2.popitem(last=False)
+                else:
+                    ev, _ = gpu.popitem(last=False)
+                    demote(ev)
+                    continue
+                gpu.pop(ev, None)
+                demote(ev)
+
         for ri, req in enumerate(trace):
             warm = split_at is not None and ri >= split_at
-            for pos, blk in enumerate(req):
-                if blk in gpu:
-                    hits["gpu"] += 1
-                    if warm:
-                        warm_hits["gpu"] += 1
-                    total += self.cm.cost("gpu", pos * BLOCK)
+            gap = self._gap_index(req, gpu, cpu, ssd, prefix_semantics)
+            req_compute = 0.0      # 重算 + GPU 命中：佔用 SM，無法與傳輸重疊
+            req_transfer = 0.0     # CPU/SSD 取回：走 PCIe/NVMe，可被預取隱藏
+            for pos_i, blk in enumerate(req):
+                pos = pos_i * BLOCK
+                if pos_i > gap:
+                    # 落在前綴缺口之後：即使還在某一層也用不到，一律重算
+                    tier_hit, c = "drop", self.cm.cost("drop", pos)
+                    cpu.pop(blk, None)
+                    ssd.pop(blk, None)
+                elif blk in gpu:
+                    tier_hit, c = "gpu", self.cm.cost("gpu", pos)
                     gpu.move_to_end(blk)
                     if policy == "arc":
                         if blk in t1:
@@ -301,60 +437,39 @@ class Sim:
                             t2[blk] = None
                         elif blk in t2:
                             t2.move_to_end(blk)
-                    continue
-                if blk in cpu:
-                    hits["cpu"] += 1
-                    c = self.cm.cost("cpu", pos * BLOCK)
+                    hits["gpu"] += 1
+                    if warm:
+                        warm_hits["gpu"] += 1
+                    req_compute += c
+                    continue                      # 已在 GPU，不需重新 admit
+                elif blk in cpu:
+                    tier_hit, c = "cpu", self.cm.cost("cpu", pos)
                     del cpu[blk]
-                    tier_hit = "cpu"
                 elif blk in ssd:
-                    hits["ssd"] += 1
-                    c = self.cm.cost("ssd", pos * BLOCK)
+                    tier_hit, c = "ssd", self.cm.cost("ssd", pos)
                     del ssd[blk]
-                    tier_hit = "ssd"
                 else:
-                    hits["drop"] += 1
-                    c = self.cm.cost("drop", pos * BLOCK)
-                    tier_hit = "drop"
-                total += c
+                    tier_hit, c = "drop", self.cm.cost("drop", pos)
+                hits[tier_hit] += 1
                 if warm:
-                    warm_total += c
                     warm_hits[tier_hit] += 1
-
-                # 放進 GPU，必要時逐出
-                if policy == "arc":
-                    if blk in b1:
-                        target_t1 = min(self.cap["gpu"],
-                                        target_t1 + max(1, len(b2) // max(1, len(b1))))
-                        del b1[blk]
-                    elif blk in b2:
-                        target_t1 = max(0, target_t1 - max(1, len(b1) // max(1, len(b2))))
-                        del b2[blk]
-                    t1[blk] = None
-                gpu[blk] = None
-                while len(gpu) > self.cap["gpu"]:
-                    if policy == "arc" and len(t1) > target_t1 and t1:
-                        ev, _ = t1.popitem(last=False)
-                        b1[ev] = None
-                        while len(b1) > self.cap["gpu"]:
-                            b1.popitem(last=False)
-                    elif policy == "arc" and t2:
-                        ev, _ = t2.popitem(last=False)
-                        b2[ev] = None
-                        while len(b2) > self.cap["gpu"]:
-                            b2.popitem(last=False)
-                    else:
-                        ev, _ = gpu.popitem(last=False)
-                        demote(ev)
-                        continue
-                    gpu.pop(ev, None)
-                    demote(ev)
+                if tier_hit in ("cpu", "ssd"):
+                    req_transfer += c
+                else:
+                    req_compute += c
+                admit(blk)
+            c_req, prev_compute = self._flush(req_compute, req_transfer,
+                                              prev_compute, prefetch)
+            total += c_req
+            if warm:
+                warm_total += c_req
         return {"total_ms": total, "hits": hits,
                 "warm_ms": warm_total, "warm_hits": warm_hits}
 
     # -- Oracle ----------------------------------------------------
     def run_oracle(self, trace: list[list[int]], use_cpu: bool,
-                   use_ssd: bool) -> dict:
+                   use_ssd: bool, prefix_semantics: bool = True,
+                   prefetch: bool = False) -> dict:
         """知道未來的最佳放置。
 
         單階時 Bélády/MIN（逐出下次使用最遠的）是**可證明最優**的。
@@ -362,8 +477,11 @@ class Sim:
         近的留在 CPU、遠的下放 SSD、不再用到的直接丟掉（成本 0）。
         這不保證全域最優，所以它是**下界的 Oracle**——真正的最優只會更好，
         因此用它做 go/no-go 是保守的（不會高估 headroom）。
+
+        ⚠️ Oracle 的逐出**沒有**做成前綴感知。真正的最佳解會刻意讓保留的
+        block 構成連續前綴（避免製造缺口），那是逐出與前綴結構的聯合最佳化。
+        現在的版本一樣會被缺口懲罰，所以它仍然是下界，headroom 仍為保守估計。
         """
-        # 預計算每個 (請求序號, block) 的下一次使用時間
         # (請求序號, block, 該 block 在請求中的序號)
         # 第三項不可省：重算成本隨 block 的絕對位置線性成長
         # （式 eq:recompute-position）。先前這裡固定用 0，等於讓 Oracle 永遠
@@ -386,6 +504,13 @@ class Sim:
         nu_cache: dict[int, float] = {}      # blk -> 入堆時記錄的 next_use
         total = 0.0
         hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
+        # 逐出的去向。`free` = 該 block 之後再也用不到，丟掉成本 0。
+        # 🔴 這個計數是檢驗「多階層有沒有用」的關鍵：若 free 佔 100%，
+        #    代表最佳策略永遠找得到免費的犧牲者，CPU/SSD 階對最佳解毫無貢獻，
+        #    此時量到的 headroom 全部來自 **GPU 階內的逐出選擇**，
+        #    不能拿來支持論文的六階動作空間。
+        evict = {"free": 0, "to_cpu": 0, "to_ssd": 0, "swap_cpu": 0, "lost": 0}
+        prev_compute = 0.0
 
         def next_use(blk: int, now: int) -> float:
             lst = nxt[blk]
@@ -395,58 +520,81 @@ class Sim:
             ptr[blk] = p
             return lst[p] if p < len(lst) else math.inf
 
-        for i, (_, blk, pi) in enumerate(flat):
-            pos = pi * BLOCK          # 與 run_online 一致
-            if blk in gpu:
-                hits["gpu"] += 1
-            elif blk in cpu:
-                hits["cpu"] += 1
-                total += self.cm.cost("cpu", pos)
-                cpu.discard(blk)
-            elif blk in ssd:
-                hits["ssd"] += 1
-                total += self.cm.cost("ssd", pos)
-                ssd.discard(blk)
-            else:
-                hits["drop"] += 1
-                total += self.cm.cost("drop", pos)
-            gpu.add(blk)
-            nu = next_use(blk, i)
-            nu_cache[blk] = nu
-            heapq.heappush(heap, (-nu if nu != math.inf else float("-inf"), blk))
+        i = -1
+        for req in trace:
+            gap = self._gap_index(req, gpu, cpu, ssd, prefix_semantics)
+            req_compute = 0.0
+            req_transfer = 0.0
+            for pi, blk in enumerate(req):
+                i += 1
+                pos = pi * BLOCK          # 與 run_online 一致
+                if pi > gap:
+                    hits["drop"] += 1
+                    req_compute += self.cm.cost("drop", pos)
+                    cpu.discard(blk)
+                    ssd.discard(blk)
+                elif blk in gpu:
+                    hits["gpu"] += 1
+                    req_compute += self.cm.cost("gpu", pos)
+                elif blk in cpu:
+                    hits["cpu"] += 1
+                    req_transfer += self.cm.cost("cpu", pos)
+                    cpu.discard(blk)
+                elif blk in ssd:
+                    hits["ssd"] += 1
+                    req_transfer += self.cm.cost("ssd", pos)
+                    ssd.discard(blk)
+                else:
+                    hits["drop"] += 1
+                    req_compute += self.cm.cost("drop", pos)
+                gpu.add(blk)
+                nu = next_use(blk, i)
+                nu_cache[blk] = nu
+                heapq.heappush(heap, (-nu if nu != math.inf else float("-inf"), blk))
 
-            while len(gpu) > self.cap["gpu"]:
-                # 用 max-heap + lazy deletion 取代 max(gpu, key=...)。
-                # 原本每次逐出要掃整個 GPU 集合：預算 17,117 blocks、20 萬次存取
-                # = 35 億次運算，Python 跑不完（2026-08-31 實測卡死）。
-                # heap 版每次逐出是 O(log n)。lazy deletion：條目過期就丟掉重取。
-                while heap:
-                    negu, blk_h = heap[0]
-                    if blk_h not in gpu or -negu != nu_cache.get(blk_h):
-                        heapq.heappop(heap)      # 過期條目
-                        continue
-                    break
-                if not heap:
-                    victim = next(iter(gpu))
-                else:
-                    victim = heapq.heappop(heap)[1]
-                gpu.discard(victim)
-                if next_use(victim, i) is math.inf:
-                    continue                       # 不再用到 -> 丟掉，成本 0
-                if use_cpu and len(cpu) < self.cap["cpu"]:
-                    cpu.add(victim)
-                elif use_ssd and len(ssd) < self.cap["ssd"]:
-                    ssd.add(victim)
-                else:
-                    # 兩階都滿：把 CPU 裡下次使用最遠的換下去
-                    if use_cpu and cpu:
-                        far = max(cpu, key=lambda b: next_use(b, i))
-                        if next_use(far, i) > next_use(victim, i):
-                            cpu.discard(far)
-                            cpu.add(victim)
-                            if use_ssd and len(ssd) < self.cap["ssd"]:
-                                ssd.add(far)
-        return {"total_ms": total, "hits": hits}
+                while len(gpu) > self.cap["gpu"]:
+                    # 用 max-heap + lazy deletion 取代 max(gpu, key=...)。
+                    # 原本每次逐出要掃整個 GPU 集合：預算 17,117 blocks、
+                    # 20 萬次存取 = 35 億次運算，Python 跑不完（2026-08-31 卡死）。
+                    # heap 版每次逐出 O(log n)。lazy deletion：條目過期就丟掉重取。
+                    while heap:
+                        negu, blk_h = heap[0]
+                        if blk_h not in gpu or -negu != nu_cache.get(blk_h):
+                            heapq.heappop(heap)      # 過期條目
+                            continue
+                        break
+                    if not heap:
+                        victim = next(iter(gpu))
+                    else:
+                        victim = heapq.heappop(heap)[1]
+                    gpu.discard(victim)
+                    if next_use(victim, i) is math.inf:
+                        evict["free"] += 1
+                        continue                   # 不再用到 -> 丟掉，成本 0
+                    if use_cpu and len(cpu) < self.cap["cpu"]:
+                        cpu.add(victim)
+                        evict["to_cpu"] += 1
+                    elif use_ssd and len(ssd) < self.cap["ssd"]:
+                        ssd.add(victim)
+                        evict["to_ssd"] += 1
+                    else:
+                        # 兩階都滿：把 CPU 裡下次使用最遠的換下去
+                        if use_cpu and cpu:
+                            far = max(cpu, key=lambda b: next_use(b, i))
+                            if next_use(far, i) > next_use(victim, i):
+                                cpu.discard(far)
+                                cpu.add(victim)
+                                evict["swap_cpu"] += 1
+                                if use_ssd and len(ssd) < self.cap["ssd"]:
+                                    ssd.add(far)
+                            else:
+                                evict["lost"] += 1
+                        else:
+                            evict["lost"] += 1
+            c_req, prev_compute = self._flush(req_compute, req_transfer,
+                                              prev_compute, prefetch)
+            total += c_req
+        return {"total_ms": total, "hits": hits, "evict": evict}
 
 
 # ────────────────────────── 驗證 ──────────────────────────
@@ -523,14 +671,37 @@ def main() -> int:
                          "使每個比例都有意義。這是 headroom 的主要自變數")
     ap.add_argument("--docs", type=int, default=64)
     ap.add_argument("--doc-tokens", type=int, default=4096)
-    ap.add_argument("--requests", type=int, default=400)
+    ap.add_argument("--requests", type=int, default=0,
+                    help="請求數。0 = 自動取 10×文件數。"
+                         "🔴 固定 400 會讓高壓力設定名不副實："
+                         "『pressure:8x』配了 535 篇文件，但 400 個請求只碰得到"
+                         "其中一部分，實際壓力只有 2.8×。標籤是旋鈕設定值，"
+                         "實際值一律以 realized_pressure_x 欄位為準")
+    ap.add_argument("--model", default="llama-bf16", choices=list(MODEL_PROFILES),
+                    help="模型剖面：一次鎖定「GPU 預算 + KV 每 token 大小 + "
+                         "成本模型來源」三者，避免混用。目前只有 llama-bf16 "
+                         "有對應的 M2 成本量測")
     ap.add_argument("--gpu-tokens", type=int, default=None,
-                    help="GPU KV 預算（token）；預設取 M3 實測值")
+                    help="覆寫剖面的 GPU KV 預算（token）。"
+                         "⚠️ 覆寫成別的模型的容量就是混用，只在做敏感度分析時用")
     ap.add_argument("--cpu-gib", type=float, default=24.0)
     ap.add_argument("--seed", type=int, default=1234)
+    ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix",
+                    help="cache 查詢語意。prefix=照 vLLM 實際行為（缺口之後全部重算）；"
+                         "per-block=舊模型，每個 block 獨立命中（會低估 baseline 成本）")
+    ap.add_argument("--prefetch", action="store_true",
+                    help="允許 CPU/SSD 取回與前一個請求的計算重疊（非同步 load 的上界）。"
+                         "同時套用於 Oracle 與所有 baseline")
     a = ap.parse_args()
+    SEM = {"prefix_semantics": a.lookup == "prefix", "prefetch": a.prefetch}
+    print(f"[語意] lookup={a.lookup}  prefetch={a.prefetch}")
 
-    cm = load_cost_model(a.device)
+    prof = profile(a.model)
+    cm = load_cost_model(a.device, require_model_key=prof["cost_model_key"])
+    print(f"=== 模型剖面 {a.model} ===")
+    print(f"  GPU KV 預算       : {prof['gpu_kv_tokens']:,} tokens")
+    print(f"  KV 每 token 大小  : {prof['kv_bytes_per_token'] / 1024:.0f} KiB")
+    print(f"  成本模型來源      : {prof['source']}")
     print(f"=== 成本模型（實測，SSD 階用 {a.device} 那組）===")
     print(json.dumps({"gpu_ms_per_block": cm.gpu, "cpu_ms_per_block": round(cm.cpu, 4),
                       "ssd_ms_per_block": round(cm.ssd, 4),
@@ -583,13 +754,12 @@ def main() -> int:
                   "『隨 α 如何變化』這個相對趨勢。")
         return 0 if n and agree_mag == n else 1
 
-    gpu_tokens = a.gpu_tokens
-    if gpu_tokens is None:
-        rows = [r for r in csv.DictReader(M3_CSV.open())
-                if r.get("concurrency_mode") == "serial" and r["model_key"] == "llama"]
-        gpu_tokens = int(median([int(r["gpu_kv_cache_tokens"]) for r in rows]))
+    gpu_tokens = a.gpu_tokens or prof["gpu_kv_tokens"]
+    if a.gpu_tokens and a.gpu_tokens != prof["gpu_kv_tokens"]:
+        print(f"  ⚠️ 覆寫 GPU 預算 {prof['gpu_kv_tokens']:,} → {a.gpu_tokens:,}"
+              f"（敏感度分析；不是剖面的自洽值）")
     gpu_blocks = gpu_tokens // BLOCK
-    cpu_blocks = int(a.cpu_gib * 1024**3 // (BLOCK * 128 * 1024))
+    cpu_blocks = int(a.cpu_gib * 1024**3 // (BLOCK * prof["kv_bytes_per_token"]))
     doc_blocks = a.doc_tokens // BLOCK
 
     print(f"\n=== Oracle 設定 ===")
@@ -616,26 +786,30 @@ def main() -> int:
         if a.pressure:
             ratio = float(label.split(":")[1].rstrip("x"))
             n_docs = max(2, round(ratio * gpu_blocks / doc_blocks))
-            trace = zipf_trace(n_docs, doc_blocks, a.requests, 0.9, a.seed)
+            n_req = a.requests or max(400, 10 * n_docs)
+            trace = zipf_trace(n_docs, doc_blocks, n_req, 0.9, a.seed)
             uniq = len({b for r in trace for b in r})
-            print(f"\n[oracle] 壓力 {ratio:g}×：{n_docs} 個文件 × {a.doc_tokens} token"
-                  f"，{uniq:,} 個不重複 block / 預算 {gpu_blocks:,} blocks"
-                  f" = {uniq / gpu_blocks:.1f}×")
+            print(f"\n[oracle] 名目壓力 {ratio:g}×：{n_docs} 個文件 × "
+                  f"{a.doc_tokens} token、{n_req:,} 個請求；"
+                  f"實際碰到 {uniq:,} 個不重複 block / 預算 {gpu_blocks:,} blocks"
+                  f" = **實際壓力 {uniq / gpu_blocks:.1f}×**")
         elif a.trace:
+            n_req = 0
             trace = mooncake_trace(a.trace, a.trace_limit)
             nb = len({b for r in trace for b in r})
             print(f"\n[oracle] 真實 trace「{a.trace}」：{len(trace):,} 個請求，"
                   f"{sum(len(r) for r in trace):,} 次 block 存取，"
                   f"{nb:,} 個不重複 block（工作集 = {nb / gpu_blocks:.1f}× GPU 預算）")
         else:
-            trace = zipf_trace(a.docs, doc_blocks, a.requests, alpha, a.seed)
+            n_req = a.requests or 400
+            trace = zipf_trace(a.docs, doc_blocks, n_req, alpha, a.seed)
         sim = Sim(cm, gpu_blocks, cpu_blocks, ssd_blocks=10**9)
         res = {
-            "full_gpu": sim.run_online(trace, "lru", False, False),
-            "cpu_lru": sim.run_online(trace, "lru", True, False),
-            "cpu_arc": sim.run_online(trace, "arc", True, False),
-            "tier_fs": sim.run_online(trace, "lru", True, True),
-            "oracle": sim.run_oracle(trace, True, True),
+            "full_gpu": sim.run_online(trace, "lru", False, False, **SEM),
+            "cpu_lru": sim.run_online(trace, "lru", True, False, **SEM),
+            "cpu_arc": sim.run_online(trace, "arc", True, False, **SEM),
+            "tier_fs": sim.run_online(trace, "lru", True, True, **SEM),
+            "oracle": sim.run_oracle(trace, True, True, **SEM),
         }
         best_base = min((k for k in res if k != "oracle"),
                         key=lambda k: res[k]["total_ms"])
@@ -661,9 +835,16 @@ def main() -> int:
                 "total_ms": round(v["total_ms"], 2),
                 "gpu_hits": v["hits"]["gpu"], "cpu_hits": v["hits"]["cpu"],
                 "ssd_hits": v["hits"]["ssd"], "recompute": v["hits"]["drop"],
+                "model_profile": a.model,
                 "gpu_budget_tokens": gpu_tokens, "cpu_budget_gib": a.cpu_gib,
                 "docs": a.docs, "doc_tokens": a.doc_tokens,
-                "requests": a.requests, "seed": a.seed,
+                "requests": len(trace), "seed": a.seed,
+                "lookup": a.lookup, "prefetch": int(a.prefetch),
+                # 🔴 workload 標籤是旋鈕的**設定值**；實際壓力以此欄為準。
+                #    兩者在高壓力時差很多（名目 8× → 實際 2.8×）。
+                "unique_blocks": len({b for r_ in trace for b in r_}),
+                "realized_pressure_x": round(
+                    len({b for r_ in trace for b in r_}) / gpu_blocks, 3),
                 "best_baseline": best_base,
                 "oracle_headroom_pct": round(head, 2) if k == "oracle" else "",
                 "verdict": verdict if k == "oracle" else "",
