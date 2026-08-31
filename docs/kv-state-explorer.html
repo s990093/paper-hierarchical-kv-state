@@ -1,3 +1,15 @@
+<div id="SUPERSEDED-BANNER" style="background:#7f1d1d;color:#fff;padding:14px 18px;
+     font:600 14px/1.6 system-ui,sans-serif;border-bottom:3px solid #dc2626">
+  🔴 這頁的數字已於 2026-08-31 作廢，請勿引用。
+  <div style="font-weight:400;margin-top:6px">
+    當日在模擬器裡找到六個錯誤，其中三個會改變結論：
+    <b>(1)</b> Mooncake 的 <code>hash_ids</code> 是 512-token 的 block 不是 16-token，
+    工作集與每個 block 的<b>絕對位置</b>都少算 32 倍；
+    <b>(2)</b> Oracle 的「成本感知」目的地選擇實際上只是無條件下放；
+    <b>(3)</b> 用了 qwen-awq 的記憶體預算配 llama 的成本常數。
+    完整清單見 <code>results/RUNLOG.md</code>。修正後的數字重跑中。
+  </div>
+</div>
 <title>KV 放置決策儀表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
