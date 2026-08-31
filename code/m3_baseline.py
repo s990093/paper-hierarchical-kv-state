@@ -154,18 +154,26 @@ MODELS = {
     # 3. 執行時間：258,048 的 prefill 實測 322,949 ms。以量到的兩點
     #    （131,072→99,946ms、258,048→322,949ms）擬合指數約 1.72，
     #    外插到 524,288 約 18 分鐘/請求。所以只跑 1 個前綴、2 個 baseline。
-    "qwen-awq-fp8-512k": {
+    "qwen-awq-int8-512k": {
         "path": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
-        "kv_kib_per_token": 28.0,                 # FP8 = BF16 的一半
-        "measured_kv_capacity_tokens": 547_744,   # M1 實測
+        # 🔴 2026-08-31 18:43 改用 int8_per_token_head，不用 fp8。
+        #    大海撈針（qwen-awq、ctx=32,768、20 樣本／精度）實測：
+        #        BF16 100%　FP8 **5%**　INT8 **95%**　INT4 **0%**
+        #    同樣 8 位元，fp8 只有 5% 而 int8 有 95%——差別在縮放係數：
+        #    int8_per_token_head 每 token 每 head 動態算，fp8 用未校正的
+        #    靜態值（vLLM 啟動時就警告過 "without a proper scaling factor"）。
+        #    int8 的容量 531,136 > 524,288，塞得下，且是唯一同時
+        #    「放得下」又「檢索得到」的精度。
+        "kv_kib_per_token": 28.9,                 # 56 / 1.94（int8 含縮放中繼資料）
+        "measured_kv_capacity_tokens": 531_136,   # 本次 needle 實測
         "model_max_len": 528_384,                 # 524,288 + GEN + 餘裕
         "ctx_ladder": [258048, 524288],
-        "extra": ["--kv-cache-dtype", "fp8"],
+        "extra": ["--kv-cache-dtype", "int8_per_token_head"],
         "env": {"VLLM_ALLOW_LONG_MAX_MODEL_LEN": "1"},
         "n_prefixes": 1,                          # 見上方註解 3
         "quality_valid": False,
-        "note": "512K 延遲/記憶體量測。⚠️ 位置 >262,144 超出 RoPE 訓練範圍，"
-                "輸出品質無效，不得用於品質評估",
+        "note": "512K 延遲/記憶體量測（int8 KV，唯一放得下又檢索得到的精度）。"
+                "⚠️ 位置 >262,144 超出 RoPE 訓練範圍，輸出品質無效",
     },
 }
 
