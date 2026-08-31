@@ -36,19 +36,27 @@
 
 ## ⚠️ 已知的設定不一致（2026-08-31，待重跑）
 
-`budget_sweep.csv` 是用舊的 `m4_budget_sweep.py` 產生的，該腳本把 SSD 階
-**寫死成無限大**（`ssd_blocks=10**9`）——那是今天早上判定為「物理上不可能」
+`budget_sweep.csv` **與** `semantics_ablation.csv` 是用舊的
+`m4_budget_sweep.py` / `m4_semantics_ablation.py` 產生的，
+兩支都把 SSD 階**寫死成無限大**（`ssd_blocks=10**9`）——那是今天早上判定為「物理上不可能」
 的設定（工作集要 10.4 TiB，NVMe 只有 3.6 TiB）。它在加入 SSD 容量軸時
 沒有跟著更新。
 
 證據：`budget_sweep.csv` 在預算 48,128 給出 7.41%，這個值對得上
 `ssd_sweep.csv` 的**無限**那一列（7.41%），而不是 512 GiB 那一列（11.51%）。
 
-合併後的 `m4_sweep.py --axis budget` 用 `--ssd-gib-fixed 512`（實體上放得下）。
-語意軸跑完後會用新版重跑，屆時本節刪除。
+合併後的 `m4_sweep.py --axis budget length semantics` 一律用
+`--ssd-gib-fixed 512`（實體上放得下）。會用新版重跑，屆時本節刪除。
 
-**在重跑之前，`budget_sweep.csv` 只能用來看「headroom 對 GPU 預算不敏感」
-這個趨勢，不能引用絕對值。**
+**在重跑之前只能引用趨勢，不能引用絕對值：**
+* `budget_sweep.csv` → headroom 對 GPU 預算不敏感（16 倍範圍內 7.41%→6.89%）
+* `semantics_ablation.csv` → 前綴語意的代價**落在 Oracle 身上而非 baseline**
+  （toolagent：baseline 兩種語意下完全相同 58,562,989 ms，
+   Oracle 由 51,968,919 變成 53,314,230，差 2.6%）。
+  這與 `prefix_gap_probe.csv` 一致：缺口之後只有 0.000–0.464% 的 block
+  還留在某一階，baseline 沒有東西可以損失；被罰的是 Oracle，
+  因為它的逐出不是前綴感知的，會製造自己避不開的缺口。
+  **淨效果是讓 Oracle 成為更保守的下界。**
 
 ## 不在這裡的東西
 
