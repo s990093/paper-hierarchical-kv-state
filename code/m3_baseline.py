@@ -288,7 +288,15 @@ def post(url: str, payload: dict, timeout: float = 600.0) -> dict:
         return json.load(r)
 
 
-def stream_ttft(url: str, payload: dict, timeout: float = 600.0) -> dict:
+# 單一請求的逾時（秒）。
+# 🔴 600 秒不夠：512K 的 prefill 實測外插約 18 分鐘（258K 量到 322,949 ms，
+#    由兩個點擬合的指數 1.72 外插到 524,288 得 ~1,080 秒）。
+#    2026-08-31 的 512K 量測就是因此 TimeoutError 而 0 rows。
+#    設 3,600 秒（含 2 倍餘裕），並可用 PAPER_HKV_REQ_TIMEOUT 覆寫。
+REQ_TIMEOUT = float(os.environ.get("PAPER_HKV_REQ_TIMEOUT", "3600"))
+
+
+def stream_ttft(url: str, payload: dict, timeout: float = REQ_TIMEOUT) -> dict:
     """串流送一個請求，量 TTFT 與總時間。回傳實測值，不做任何推估。"""
     payload = {**payload, "stream": True}
     req = urllib.request.Request(
