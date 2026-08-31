@@ -66,6 +66,7 @@ from statistics import median
 
 REPO = Path(__file__).resolve().parent.parent
 M2 = REPO / "results/m2_harness"
+M5 = REPO / "results/m5_quality"
 M3_CSV = REPO / "results/m3_baseline/baseline.csv"
 OUT = REPO / "results/m4_oracle"
 
@@ -176,9 +177,41 @@ MODEL_PROFILES = {
     # 否則 load_cost_model 會拒絕。列在這裡是為了記錄實測容量。
     "llama-awq": {"gpu_kv_tokens": 120_320, "kv_bytes_per_token": 131_072,
                   "cost_model_key": "llama-awq", "source": "M1 capacity.csv"},
-    "qwen-awq": {"gpu_kv_tokens": 273_872, "kv_bytes_per_token": 131_072,
+    # 🔴 Qwen2.5-7B 的 KV 幾何與 Llama-3.1-8B 不同：
+    #    28 層 × 4 KV head × 128 dim × 2(K,V) × 2 bytes = 57,344 = 56 KiB/token。
+    #    先前這裡照抄 Llama 的 128 KiB，錯了 2.29 倍。
+    #    自我檢查：273,872 × 56 KiB = 14.6 GiB（24 GB 卡放得下 ✅）
+    #             273,872 × 128 KiB = 33.4 GiB（放不下 🔴）
+    #    這個矛盾本來就該被抓到，所以下面加了 _check_profiles()。
+    "qwen-awq": {"gpu_kv_tokens": 273_872, "kv_bytes_per_token": 57_344,
                  "cost_model_key": "qwen-awq", "source": "M1 capacity.csv"},
 }
+
+
+# 這張卡的實體上限。KV 預算 × 每 token 大小若超過它，剖面一定寫錯了。
+CARD_VRAM_GIB = 24.0
+
+
+def _check_profiles() -> None:
+    """剖面的自我一致性檢查。在匯入時就跑，錯了立刻中止。
+
+    🔴 2026-08-31 抓到：qwen-awq 的 kv_bytes_per_token 照抄了 Llama 的
+       128 KiB，但 Qwen2.5-7B 是 56 KiB。照錯的值算，273,872 token 要
+       33.4 GiB，超過整張 24 GB 的卡——這個矛盾在程式裡放了一整天沒被發現，
+       因為沒有人去乘那兩個數字。
+    """
+    for name, p in MODEL_PROFILES.items():
+        gib = p["gpu_kv_tokens"] * p["kv_bytes_per_token"] / 1024**3
+        if gib > CARD_VRAM_GIB:
+            raise SystemExit(
+                f"🔴 剖面 {name} 自相矛盾：KV 預算 {p['gpu_kv_tokens']:,} token "
+                f"× {p['kv_bytes_per_token'] / 1024:.0f} KiB/token = {gib:.1f} GiB，"
+                f"超過整張卡的 {CARD_VRAM_GIB:.0f} GiB。\n"
+                f"   最可能的原因：kv_bytes_per_token 照抄了別的模型。"
+                f"算法 = 層數 × KV head 數 × head_dim × 2(K,V) × 2 bytes。")
+
+
+_check_profiles()
 
 
 def profile(name: str) -> dict:
@@ -203,6 +236,61 @@ def profile(name: str) -> dict:
 # M1 實測的容量倍數。三個剖面都恰好 2.00×（fp8），故直接記為常數；
 # int4 的 3.77× 來自 llama-bf16 那組（34.02 vs 128.11 KiB/token）。
 PRECISION_CAPACITY_X = {"bf16": 1.00, "fp8": 2.00, "int8": 1.94, "int4": 3.77}
+
+
+def load_quality(pattern: str = "gsm8k_precision*.csv") -> dict:
+    """讀 M5 的品質量測，算出每個 KV 精度的正確率與**相對 BF16 的退化 ε**。
+
+    🔴 一定要跟著回報信賴區間。n=120 時單一比例的標準誤約 3.7 個百分點，
+       兩個比例相減的標準誤約 5.2 個百分點——那組資料的排序是非單調的
+       （int8 竟高於 bf16、int4 高於 fp8），那是雜訊不是訊號。
+       n=1000 才把單點標準誤壓到約 1.3、差值到約 1.8 個百分點。
+
+    回傳 {dtype: {n, correct, acc, epsilon_pp, ci95_pp, distinguishable}}。
+    `distinguishable` 為 False 時，該 ε 與 0 無法區分，**不得寫進論文當作
+    「精度降低造成 X 個百分點的損失」**。
+    """
+    import glob
+    from math import sqrt
+    files = sorted(glob.glob(str(M5 / pattern)))
+    if not files:
+        return {}
+    # 取樣本數最多的那一份（n=1000 優先於 n=120）
+    best, best_n = None, -1
+    for f in files:
+        rows = list(csv.DictReader(open(f)))
+        if len(rows) > best_n:
+            best, best_n = rows, len(rows)
+    if not best:
+        return {}
+    agg: dict[str, list[int]] = {}
+    for r in best:
+        k = r.get("kv_dtype") or r.get("config") or "?"
+        ok = str(r.get("correct", "")).strip().lower() in ("true", "1")
+        a = agg.setdefault(k, [0, 0])
+        a[0] += ok
+        a[1] += 1
+    base_key = next((k for k in agg if k in ("auto", "bf16")), None)
+    base_acc = agg[base_key][0] / agg[base_key][1] if base_key else None
+    out = {}
+    for k, (c, n) in agg.items():
+        acc = c / n
+        se = sqrt(acc * (1 - acc) / n)
+        row = {"n": n, "correct": c, "acc_pct": round(100 * acc, 2),
+               "se_pp": round(100 * se, 2), "source": files[0]}
+        if base_acc is not None and k != base_key:
+            b_acc = base_acc
+            b_n = agg[base_key][1]
+            se_d = sqrt(acc * (1 - acc) / n + b_acc * (1 - b_acc) / b_n)
+            eps = 100 * (b_acc - acc)
+            ci = 1.96 * 100 * se_d
+            row.update({"epsilon_pp": round(eps, 2), "ci95_pp": round(ci, 2),
+                        "distinguishable": abs(eps) > ci})
+        elif k == base_key:
+            row.update({"epsilon_pp": 0.0, "ci95_pp": 0.0,
+                        "distinguishable": True, "is_baseline": True})
+        out[k] = row
+    return out
 
 
 def load_precision_tiers(device: str = "nvme") -> dict:

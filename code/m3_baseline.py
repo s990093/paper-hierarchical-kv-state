@@ -135,6 +135,38 @@ MODELS = {
         "extra": [],
         "note": "主力長 context。⚠️ 社群 AWQ（592 下載），無官方版",
     },
+    # 🔴 512K 的**延遲與記憶體**量測。品質無效，理由如下：
+    #
+    # 1. 單一請求的 KV 必須整份放在 GPU 裡。vLLM 的
+    #    `_check_enough_kv_cache_memory` 是啟動時的無條件檢查
+    #    （"serve at least one request with the model's max seq len"），
+    #    而且在任何 connector 介入之前就跑。
+    #    **卸載完全不能延長單請求的上下文長度**——它處理的是跨請求重用。
+    #    所以 512K 在 24 GB 卡上只有一條路：把 KV 降成 FP8
+    #    （BF16 上限 273,872 token，FP8 上限 547,664）。
+    #
+    # 2. 這個 no-DCA 變體的 max_position_embeddings 是 262,144。
+    #    超過之後 RoPE 的位置落在模型從未訓練過的區間，
+    #    vLLM 自己警告 "positions exceeding derived_max_model_len lead to nan"。
+    #    **所以這一組的輸出品質沒有意義，只能引用延遲與記憶體。**
+    #    需要 VLLM_ALLOW_LONG_MAX_MODEL_LEN=1。
+    #
+    # 3. 執行時間：258,048 的 prefill 實測 322,949 ms。以量到的兩點
+    #    （131,072→99,946ms、258,048→322,949ms）擬合指數約 1.72，
+    #    外插到 524,288 約 18 分鐘/請求。所以只跑 1 個前綴、2 個 baseline。
+    "qwen-awq-fp8-512k": {
+        "path": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
+        "kv_kib_per_token": 28.0,                 # FP8 = BF16 的一半
+        "measured_kv_capacity_tokens": 547_744,   # M1 實測
+        "model_max_len": 528_384,                 # 524,288 + GEN + 餘裕
+        "ctx_ladder": [258048, 524288],
+        "extra": ["--kv-cache-dtype", "fp8"],
+        "env": {"VLLM_ALLOW_LONG_MAX_MODEL_LEN": "1"},
+        "n_prefixes": 1,                          # 見上方註解 3
+        "quality_valid": False,
+        "note": "512K 延遲/記憶體量測。⚠️ 位置 >262,144 超出 RoPE 訓練範圍，"
+                "輸出品質無效，不得用於品質評估",
+    },
 }
 
 # CPU 階大小。vLLM 把它配置成 /dev/shm 上的 mmap 檔，而 /dev/shm 只有 220 GB
@@ -194,7 +226,10 @@ BASELINES: dict[str, dict] = {
 }
 
 # 每個 context 長度送幾個不同前綴。N × ctx 要大於 GPU KV 容量才會逼出逐出。
-N_PREFIXES = 4
+N_PREFIXES = int(os.environ.get("PAPER_HKV_N_PREFIXES", "4"))
+# 🔴 512K 那組必須降到 1：工作集 = N_PREFIXES × ctx，
+#    4 × 524,288 = 2,097,152 token 遠超過 547,744 的容量，會直接 OOM。
+#    而且 512K 的 prefill 外插約 18 分鐘/請求，4 個前綴 × 2 輪 = 2.4 小時/baseline。
 # 🔴 每個請求生成幾個 token。原本設 32，實測導致 **99.8% 的時間都是 prefill**
 #    （ctx=258K 時 TTFT 佔總時間 99.8%），等於只測到 prefix cache 的效果，
 #    完全沒測到 decode 期間的行為，且 TPOT 是用 11–23 個 token 算的，雜訊極大。
@@ -431,6 +466,8 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
     tok = AutoTokenizer.from_pretrained(mdl["path"])
 
     # 餘裕：GEN_TOKENS + BOS/EOS + tokenizer 邊界誤差。寧可多給也不要撞 400。
+    # 模型設定可覆寫前綴數（512K 只能跑 1 個，見該設定的註解）
+    n_prefixes = int(mdl.get("n_prefixes", N_PREFIXES))
     max_len = max(ctxs) + GEN_TOKENS + 1024
     # 但不得超過模型的可定址長度，否則 vLLM 直接拒絕啟動（pydantic ValidationError）。
     cap = mdl.get("model_max_len")
@@ -451,7 +488,13 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
             return 5
         try:
             with Server(mdl["path"], max_len, gpu, cfg["kv"], root,
-                        venv=cfg.get("venv"), extra_env=cfg.get("env"),
+                        venv=cfg.get("venv"),
+                        # 🔴 baseline 與模型都可能要求環境變數，兩邊都要帶。
+                        #    先前只取 baseline 的，模型設定裡的 env
+                        #    （如 512K 需要的 VLLM_ALLOW_LONG_MAX_MODEL_LEN）
+                        #    會被靜默忽略，然後 server 起不來。
+                        extra_env={**(mdl.get("env") or {}),
+                                   **(cfg.get("env") or {})},
                         extra_args=mdl.get("extra")) as srv:
                 kvtok = srv.kv_cache_tokens()
                 print(f"[m3]   server up in {srv.startup_s}s  "
@@ -460,7 +503,7 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
 
                 for ctx in ctxs:
                     built = [make_prefix(tok, ctx, seed=1000 * ctx + i)
-                             for i in range(N_PREFIXES)]
+                             for i in range(n_prefixes)]
                     prefixes = [b[0] for b in built]
                     actual_toks = [b[1] for b in built]
                     for rnd in ("cold", "warm"):
@@ -480,7 +523,7 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                                 "ttft_ms": r["ttft_ms"], "tpot_ms": r["tpot_ms"],
                                 "total_ms": r["total_ms"], "gen_tokens": r["n_chunks"],
                                 "gpu_kv_cache_tokens": kvtok,
-                                "n_prefixes": N_PREFIXES,
+                                "n_prefixes": n_prefixes,
                                 "caveat": cfg.get("caveat", ""),
                                 "concurrency_mode": concurrency_mode,
                                 "quality_score": "NOT_MEASURED",
@@ -608,7 +651,7 @@ def main() -> int:
         print()
         for k, v in MODELS.items():
             cap, lad = v["measured_kv_capacity_tokens"], v["ctx_ladder"]
-            ws = [c * N_PREFIXES for c in lad]
+            ws = [c * int(v.get("n_prefixes", N_PREFIXES)) for c in lad]
             print(f"  {k:12s} {v['path']}")
             print(f"  {'':12s}   M1 實測容量 {cap:,} tok")
             print(f"  {'':12s}   ctx {lad}")
