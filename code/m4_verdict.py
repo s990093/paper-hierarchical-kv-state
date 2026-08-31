@@ -228,6 +228,42 @@ def main() -> int:
                 print(f"   {tag:18s}{path:18s}寫 {median(w):>8,.0f}"
                       f"　讀 {median(rd):>8,.0f} MiB/s")
 
+    print("\n## G. 只比「在真機上跑得起來」的策略")
+    print("   模擬的成本模型只向讀取收費，寫入免費。加上實測的持續寫入頻寬之後，")
+    print("   有些策略根本寫不下去。此節把不可行的策略排除後重新比較。")
+    r = rows(M4 / "ssd_sweep.csv")
+    if not r:
+        print(f"   {NM}")
+    else:
+        DEV = {"SATA QLC /ssd7": 181.0, "NVMe /": 2512.0}
+        by = {}
+        for x in r:
+            by.setdefault((x["trace"], x["ssd_gib"]), {})[x["policy"]] = x
+        print(f"   {'trace':13s}{'SSD':>10s}{'裝置':>16s}"
+              f"{'可行的 best':>13s}{'oracle 可行?':>13s}{'headroom':>10s}{'判定':>10s}")
+        for (t, g), pol in sorted(by.items(),
+                                  key=lambda kv: (kv[0][0],
+                                                  float("inf") if kv[0][1] == "unlimited"
+                                                  else float(kv[0][1]))):
+            for dname, cap in DEV.items():
+                def w(p_):
+                    v = pol.get(p_, {}).get("ssd_write_mibps")
+                    return float(v) if v not in (None, "") else 0.0
+                feas_base = [k for k in pol
+                             if k != "oracle" and w(k) <= cap]
+                if not feas_base:
+                    print(f"   {t:13s}{g:>10s}{dname:>16s}"
+                          f"{'（無可行 baseline）':>15s}")
+                    continue
+                b = min(feas_base, key=lambda k: float(pol[k]["total_ms"]))
+                o_ok = w("oracle") <= cap
+                h = 100 * (float(pol[b]["total_ms"])
+                           - float(pol["oracle"]["total_ms"])) \
+                    / float(pol[b]["total_ms"])
+                print(f"   {t:13s}{g:>10s}{dname:>16s}{b:>13s}"
+                      f"{'✅' if o_ok else '🔴':>10s}"
+                      f"{h:>9.2f}%{verdict(h) if o_ok else '（不可行）':>12s}")
+
     print("\n" + "=" * 78)
     if all_h:
         vs = {verdict(h) for h in all_h}
