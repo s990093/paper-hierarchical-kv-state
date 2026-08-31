@@ -86,11 +86,17 @@ MODEL = MODEL_CHOICES["llama"]
 MODEL_KEY = "llama"
 
 # 精度階梯：論文動作空間裡「住在 GPU 上」的四階。
+# 🔴 fp8 與 int8 的比較必須公平。2026-08-31 第一版拿
+#    「動態縮放的 int8_per_token_head」對上「靜態、未校正的 fp8」，
+#    量到 95% vs 5%，然後差點寫成「FP8 會破壞檢索」。
+#    但那不是位元寬的差別，是縮放方式的差別。
+#    vLLM 有 `fp8_per_token_head`，那才是對等的比較。
 PRECISIONS = [
     ("bf16", "auto", "無損基準"),
-    ("fp8", "fp8", "純格式轉換，無額外中繼資料"),
-    ("int8", "int8_per_token_head", "per-token-head 量化"),
-    ("int4", "int4_per_token_head", "per-token-head 量化，最低精度階"),
+    ("fp8", "fp8", "靜態縮放、未校正（vLLM 啟動時會警告）"),
+    ("fp8_ptk", "fp8_per_token_head", "per-token-head 動態縮放 ← 與 int8 對等"),
+    ("int8", "int8_per_token_head", "per-token-head 動態縮放"),
+    ("int4", "int4_per_token_head", "per-token-head 動態縮放，最低精度階"),
 ]
 
 # ── 部分量化：品質 ↔ 容量的取捨曲線 ──────────────────────────────
