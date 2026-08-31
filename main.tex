@@ -350,6 +350,64 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
 \label{fig:ladder}
 \end{figure*}
 
+\subsection{觀察四：prefill 與 decode 的卸載經濟性相差五個數量級}
+\label{sec:prefill-decode}
+
+同一筆搬移在 prefill 攤提於整段前綴，在 decode 則每產生一個 token 就重付一次。這個不對稱決定了動作空間的哪些層在何種工作負載下可用，而既有工作多半只在其中一側成立。
+
+兩個階段的瓶頸不同。prefill 一次處理 $N$ 個 token，算術強度高，受限於算力；decode 一次處理一個 token，但\emph{每一步都須讀取整個 KV cache}，算術強度趨近 1，受限於記憶體頻寬。我們在平台 A 上實測此差距（Llama-3.1-8B 與 Qwen2.5-7B-1M，AWQ 權重，四個上下文長度）：
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}lrrr@{}}
+\toprule
+上下文 & prefill (ms/tok) & decode (ms/tok) & 倍數 \\
+\midrule
+16{,}384 & 0.316 & 17.0 & 54$\times$ \\
+65{,}536 & 0.591 & 23.5 & 40$\times$ \\
+126{,}976 & 0.903 & 29.7 & 33$\times$ \\
+258{,}048 & 1.264 & 29.4 & 23$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+此差距使卸載的成本結構在兩階段完全不同。以 Llama-3.1-8B 於 126{,}976 上下文、FP8-KV 計，KV 總量為 7.75\,GiB。該平台的 PCIe 為 Gen3 $\times$16（15.75\,GB/s），故將全部 KV 移至主機需 492\,ms。在 prefill，此成本攤提於 126{,}976 個 token，等於每 token 0.0024\,ms；在 decode，\emph{每一步都要重付}，而全駐留於 HBM 的同一次讀取僅需 8.3\,ms。
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}lrr@{}}
+\toprule
+卸載比例 & decode 每步增加 & 相對全駐留 \\
+\midrule
+5\% & $+$24.6\,ms & 3.0$\times$ \\
+20\% & $+$98.4\,ms & 11.9$\times$ \\
+100\% & $+$492.1\,ms & 59.3$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{在 full attention 下，decode 階段的卸載在任何比例都不可行。} 即使僅卸載 5\%，每步仍付出全駐留 3 倍的代價。唯一可行的路徑是稀疏 attention——僅取回當步 attention 分數高的 block，即 Quest~\cite{quest2024}、InfiniGen~\cite{infinigen2024} 與 ArkVale~\cite{arkvale2024} 的做法。
+
+\paragraph{三種工作負載型態的有效動作空間不同。}
+
+\begin{center}
+\footnotesize
+\begin{tabular}{@{}p{0.13\columnwidth}p{0.23\columnwidth}p{0.20\columnwidth}p{0.26\columnwidth}@{}}
+\toprule
+型態 & 決策點 & 預測的對象 & 有效動作空間 \\
+\midrule
+prefill 為主 & 請求\emph{之間}保留哪些前綴 & 該前綴是否再被請求（時序） & 六階全部 \\
+\addlinespace
+多輪對話 & 同上，另含思考空窗的機會成本 & 同上 & 六階全部 \\
+\addlinespace
+生成為主 & 請求\emph{之內}哪些 block 可離開 GPU & 該 block 的 attention 分數（語意） & \textbf{僅 GPU 內的精度階}；CPU/SSD 慢 3--59$\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Takeaway.}
+第 \ref{sec:eval} 節的實驗涵蓋前兩種型態：其工作負載為「同一前綴送兩次」，prompt 與生成的比例為 1092:1，故 99.8\% 的時間落在 prefill。第三種型態的決策點在請求之內，且預測的對象是 attention 分數而非存取機率——那是不同的預測問題，本文不處理。此界線與觀察三的 \act{SSD} 結果同構：\emph{六階是候選集合，其有效子集由平台與工作負載型態共同決定，而兩者皆可事先算出。}
+
 \subsection{雙平台實驗設計}
 \label{sec:twoplatform}
 
@@ -638,7 +696,7 @@ $\Delta\mathcal{Q}$ 於執行期不可直接觀測，這是所有品質約束工
 \subsection{未來效用預測器}
 \label{sec:predictor}
 
-預測器輸出 $p_i$，即 block $i$ 於未來視窗內被存取的機率。我們對 8 個既有的學習式快取／放置系統做了設計層級的比對（表 \ref{tab:predictors}），並據此做出四項設計決定。
+預測器輸出 $p_i$，即 block $i$ 於未來視窗內\emph{被後續請求命中}的機率。此定義的範圍須明確：$p_i$ 是跨請求的時序量，而非請求之內的 attention 分數。在 full attention 的 decode 階段，每個 block 於每一步皆被讀取，$p_i$ 恆為 1，預測無從施力（第 \ref{sec:prefill-decode} 節）。請求之內的取捨由稀疏 attention 處理，其預測對象為 $q \cdot k$，屬不同問題。我們對 8 個既有的學習式快取／放置系統做了設計層級的比對（表 \ref{tab:predictors}），並據此做出四項設計決定。
 
 \begin{table}[t]
 \centering\small

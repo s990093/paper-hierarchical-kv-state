@@ -52,8 +52,8 @@
       "measured_lru_warm_ms": 559.4,
       "measured_ratio": 9.0,
       "sim_full_warm_ms_per_req": 5863.7,
-      "sim_lru_warm_ms_per_req": 409.2,
-      "sim_ratio": 14.33,
+      "sim_lru_warm_ms_per_req": 602.5,
+      "sim_ratio": 9.73,
       "sim_full_warm_hits": {
         "gpu": 0,
         "cpu": 0,
@@ -74,8 +74,8 @@
       "measured_lru_warm_ms": 1043.4,
       "measured_ratio": 12.27,
       "sim_full_warm_ms_per_req": 15250.0,
-      "sim_lru_warm_ms_per_req": 818.3,
-      "sim_ratio": 18.64,
+      "sim_lru_warm_ms_per_req": 1205.0,
+      "sim_ratio": 12.66,
       "sim_full_warm_hits": {
         "gpu": 0,
         "cpu": 0,

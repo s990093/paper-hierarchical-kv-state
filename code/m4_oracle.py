@@ -53,6 +53,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import heapq
 import math
 import os
 import random
@@ -363,18 +364,26 @@ class Sim:
         因此用它做 go/no-go 是保守的（不會高估 headroom）。
         """
         # 預計算每個 (請求序號, block) 的下一次使用時間
-        flat: list[tuple[int, int]] = []   # (time, blk)
+        # (請求序號, block, 該 block 在請求中的序號)
+        # 第三項不可省：重算成本隨 block 的絕對位置線性成長
+        # （式 eq:recompute-position）。先前這裡固定用 0，等於讓 Oracle 永遠
+        # 以位置 0 的價格重算，而線上策略付全價——**Oracle 自己作弊**。
+        # 2026-08-31 由「壓力 0.5× 時五個策略命中數完全相同、時間卻差 9.7%」
+        # 這個矛盾抓出來。
+        flat: list[tuple[int, int, int]] = []
         for ti, req in enumerate(trace):
-            for blk in req:
-                flat.append((ti, blk))
+            for pi, blk in enumerate(req):
+                flat.append((ti, blk, pi))
         nxt: dict[int, list[int]] = {}
-        for i, (_, blk) in enumerate(flat):
+        for i, (_, blk, _pi) in enumerate(flat):
             nxt.setdefault(blk, []).append(i)
         ptr = {b: 0 for b in nxt}
 
         gpu: set[int] = set()
         cpu: set[int] = set()
         ssd: set[int] = set()
+        heap: list[tuple[float, int]] = []   # (-next_use, blk)，max-heap
+        nu_cache: dict[int, float] = {}      # blk -> 入堆時記錄的 next_use
         total = 0.0
         hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
 
@@ -386,10 +395,8 @@ class Sim:
             ptr[blk] = p
             return lst[p] if p < len(lst) else math.inf
 
-        for i, (_, blk) in enumerate(flat):
-            pos = 0
-            # 位置 = 該 block 在其請求中的序號 × BLOCK
-            # （flat 保序，直接用該 block 在 req 內的 index）
+        for i, (_, blk, pi) in enumerate(flat):
+            pos = pi * BLOCK          # 與 run_online 一致
             if blk in gpu:
                 hits["gpu"] += 1
             elif blk in cpu:
@@ -404,9 +411,25 @@ class Sim:
                 hits["drop"] += 1
                 total += self.cm.cost("drop", pos)
             gpu.add(blk)
+            nu = next_use(blk, i)
+            nu_cache[blk] = nu
+            heapq.heappush(heap, (-nu if nu != math.inf else float("-inf"), blk))
 
             while len(gpu) > self.cap["gpu"]:
-                victim = max(gpu, key=lambda b: next_use(b, i))
+                # 用 max-heap + lazy deletion 取代 max(gpu, key=...)。
+                # 原本每次逐出要掃整個 GPU 集合：預算 17,117 blocks、20 萬次存取
+                # = 35 億次運算，Python 跑不完（2026-08-31 實測卡死）。
+                # heap 版每次逐出是 O(log n)。lazy deletion：條目過期就丟掉重取。
+                while heap:
+                    negu, blk_h = heap[0]
+                    if blk_h not in gpu or -negu != nu_cache.get(blk_h):
+                        heapq.heappop(heap)      # 過期條目
+                        continue
+                    break
+                if not heap:
+                    victim = next(iter(gpu))
+                else:
+                    victim = heapq.heappop(heap)[1]
                 gpu.discard(victim)
                 if next_use(victim, i) is math.inf:
                     continue                       # 不再用到 -> 丟掉，成本 0
@@ -495,6 +518,9 @@ def main() -> int:
                          "給了這個就忽略 --alpha")
     ap.add_argument("--trace-limit", type=int, default=None,
                     help="只取前 N 個請求（trace 很大時用）")
+    ap.add_argument("--pressure", type=float, nargs="*", default=None,
+                    help="掃『工作集 / GPU 預算』比。合成工作負載會依此縮放，"
+                         "使每個比例都有意義。這是 headroom 的主要自變數")
     ap.add_argument("--docs", type=int, default=64)
     ap.add_argument("--doc-tokens", type=int, default=4096)
     ap.add_argument("--requests", type=int, default=400)
@@ -575,10 +601,27 @@ def main() -> int:
           f"({a.docs * doc_blocks / gpu_blocks:.1f}× GPU 預算)")
 
     rows = []
-    cases = ([("trace:" + a.trace, None)] if a.trace
-             else [(f"zipf:{al}", al) for al in a.alpha])
+    if a.pressure:
+        # 🔴 為什麼需要這個：headroom 的主要自變數是「工作集 / GPU 預算」，
+        # 不是 Zipf 的 α。2026-08-31 實測——把預算從 48,128 換成 273,872 之後，
+        # 合成工作負載（64 文件 × 4,096 token = 16,384 blocks）竟然小於預算
+        # （17,117 blocks），整個塞得進 GPU、完全不逐出，三個 α 因此給出
+        # 完全相同的 9.66%——那是**假的 headroom**。
+        # 固定文件大小、依目標比例調整文件數，讓每個點都真的有記憶體壓力。
+        cases = [(f"pressure:{r:g}x", None) for r in a.pressure]
+    else:
+        cases = ([("trace:" + a.trace, None)] if a.trace
+                 else [(f"zipf:{al}", al) for al in a.alpha])
     for label, alpha in cases:
-        if a.trace:
+        if a.pressure:
+            ratio = float(label.split(":")[1].rstrip("x"))
+            n_docs = max(2, round(ratio * gpu_blocks / doc_blocks))
+            trace = zipf_trace(n_docs, doc_blocks, a.requests, 0.9, a.seed)
+            uniq = len({b for r in trace for b in r})
+            print(f"\n[oracle] 壓力 {ratio:g}×：{n_docs} 個文件 × {a.doc_tokens} token"
+                  f"，{uniq:,} 個不重複 block / 預算 {gpu_blocks:,} blocks"
+                  f" = {uniq / gpu_blocks:.1f}×")
+        elif a.trace:
             trace = mooncake_trace(a.trace, a.trace_limit)
             nb = len({b for r in trace for b in r})
             print(f"\n[oracle] 真實 trace「{a.trace}」：{len(trace):,} 個請求，"

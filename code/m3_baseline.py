@@ -195,7 +195,12 @@ BASELINES: dict[str, dict] = {
 
 # 每個 context 長度送幾個不同前綴。N × ctx 要大於 GPU KV 容量才會逼出逐出。
 N_PREFIXES = 4
-GEN_TOKENS = 32          # 每個請求產生的 token 數，用來算 TPOT
+# 🔴 每個請求生成幾個 token。原本設 32，實測導致 **99.8% 的時間都是 prefill**
+#    （ctx=258K 時 TTFT 佔總時間 99.8%），等於只測到 prefix cache 的效果，
+#    完全沒測到 decode 期間的行為，且 TPOT 是用 11–23 個 token 算的，雜訊極大。
+#    文獻的設定：CoKV 掃 1/512/1024/2048/4096、KVSwap 連續生成 1000 個 token、
+#    多數論文固定 256。改為 256 使 decode 佔比可觀且與文獻可比。
+GEN_TOKENS = int(os.environ.get("PAPER_HKV_GEN_TOKENS", "256"))
 CTX_LADDER = [4096, 8192, 16384, 32768]
 
 
