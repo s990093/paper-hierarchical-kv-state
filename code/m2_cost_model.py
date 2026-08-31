@@ -399,7 +399,8 @@ def stage_capacity(gpu: int, repeats: int, max_len: int) -> int:
 # ─────────────── B. 取回成本（被需要時的成本） ───────────────
 
 def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
-                    only_tiers: set[str] | None = None) -> int:
+                    only_tiers: set[str] | None = None,
+                    repeats: int = 1) -> int:
     """每一階的「把 block 變回可用」要多久。
 
     gpu_resident 那一列刻意讓工作集塞得進 GPU（不逐出），
@@ -408,41 +409,57 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m2-retrieval"
     root = BIG / "runs" / run_id
     rows = []
-    for entry in TIERS:
-        name, kv, desc = entry[0], entry[1], entry[2]
-        kv_dtype = entry[3] if len(entry) > 3 else "auto"
-        if only_tiers and name not in only_tiers:
-            continue
-        # 常駐 GPU 的各階：只送 1 個前綴，保證塞得下 → warm 是純 prefix-cache 命中
-        n = 1 if name.startswith("gpu_") else n_prefixes
-        out = root / name
-        print(f"[m2] retrieval {name:13s} n_prefixes={n} ctx={ctx} ...", flush=True)
-        try:
-            with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv) as s:
-                url = s.url()
-                texts = [make_text(ctx, seed=7000 + ctx * 10 + i) for i in range(n)]
-                for rnd in ("cold", "warm"):
-                    for i, t in enumerate(texts):
-                        r = stream_ttft(url, t)
-                        rows.append({
-                            "run_id": run_id,
-                            "ts": datetime.now().astimezone().isoformat(),
-                            "model_key": MODEL_KEY, "tier": name, "gpu": gpu,
-                            "ctx": ctx, "n_prefixes": n, "round": rnd,
-                            "kv_dtype": kv_dtype,
-                            "prefix_idx": i, "ttft_ms": r["ttft_ms"],
-                            "total_ms": r["total_ms"],
-                            "gpu_kv_cache_tokens": s.kv_tokens,
-                            "fs_tier_queries": s.fs_queries,
-                            "cpu_tier_queries": s.cpu_queries,
-                            "o_direct": s.o_direct,
-                            "fs_root": str(FS_ROOT),
-                            "desc": desc, **_hc(gpu),
-                            "log": str(out / "server.log"),
-                        })
-                        print(f"        {rnd:<4} #{i} ttft={r['ttft_ms']}ms")
-        except Exception as e:  # noqa: BLE001
-            print(f"        🔴 {type(e).__name__}: {e}")
+    # 🔴 交錯量測，不是一階量完再量下一階。
+    #
+    #    2026-08-31 的資料顯示這台機器**24 小時都是 HEAVY**
+    #    （每個小時都是 6 張外來 GPU、100% 使用率，一次 QUIET 都沒有），
+    #    所以「排凌晨等安靜」不可能成功——昨晚等滿 60 分鐘還是 HEAVY。
+    #
+    #    但負載是**穩定的**，不是忽高忽低。穩定的背景干擾下，
+    #    絕對值被一致地灌水，而**相對比較仍然有效**——只要各階在相同條件下量。
+    #    一階量完再量下一階會讓「階別」與「時間」混淆；
+    #    輪替順序重複多輪則讓漂移對每一階平均地作用。
+    #
+    #    每一輪把順序旋轉一格，取各階的中位數。
+    order = [e for e in TIERS if not only_tiers or e[0] in only_tiers]
+    for rep in range(max(1, repeats)):
+        rot = order[rep % len(order):] + order[:rep % len(order)]
+        if repeats > 1:
+            print(f"[m2] === 第 {rep + 1}/{repeats} 輪，順序 "
+                  f"{[e[0] for e in rot]} ===", flush=True)
+        for entry in rot:
+            name, kv, desc = entry[0], entry[1], entry[2]
+            kv_dtype = entry[3] if len(entry) > 3 else "auto"
+            # 常駐 GPU 的各階：只送 1 個前綴，保證塞得下 → warm 是純 prefix-cache 命中
+            n = 1 if name.startswith("gpu_") else n_prefixes
+            out = root / (name if repeats == 1 else f"{name}_r{rep}")
+            print(f"[m2] retrieval {name:13s} n_prefixes={n} ctx={ctx} ...", flush=True)
+            try:
+                with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv) as s:
+                    url = s.url()
+                    texts = [make_text(ctx, seed=7000 + ctx * 10 + i) for i in range(n)]
+                    for rnd in ("cold", "warm"):
+                        for i, t in enumerate(texts):
+                            r = stream_ttft(url, t)
+                            rows.append({
+                                "run_id": run_id,
+                                "ts": datetime.now().astimezone().isoformat(),
+                                "model_key": MODEL_KEY, "tier": name, "gpu": gpu,
+                                "ctx": ctx, "n_prefixes": n, "round": rnd,
+                                "kv_dtype": kv_dtype,
+                                "prefix_idx": i, "ttft_ms": r["ttft_ms"],
+                                "total_ms": r["total_ms"],
+                                "gpu_kv_cache_tokens": s.kv_tokens,
+                                "fs_tier_queries": s.fs_queries,
+                                "cpu_tier_queries": s.cpu_queries,
+                                "o_direct": s.o_direct,
+                                "fs_root": str(FS_ROOT),
+                                "desc": desc, **_hc(gpu),
+                                "log": str(out / "server.log"),
+                            })
+                            print(f"        {rnd:<4} #{i} ttft={r['ttft_ms']}ms")
+            except Exception as e:  # noqa: BLE001
+                print(f"        🔴 {type(e).__name__}: {e}")
     write_rows(out_csv("retrieval_cost"), rows)
 
     base = [r["ttft_ms"] for r in rows
@@ -531,6 +548,12 @@ def main() -> int:
     ap.add_argument("--model", default="llama", choices=list(MODEL_CHOICES),
                     help="要量哪個模型的成本常數。🔴 成本常數只在同一個剖面內"
                          "可通約，換模型就要整組重量")
+    ap.add_argument("--retrieval-repeats", type=int, default=3,
+                    help="retrieval 階段重複幾輪，**每輪旋轉各階的順序**。"
+                         "🔴 這台機器 24 小時都是 HEAVY（每小時 6 張外來 GPU、"
+                         "100% 使用率，一次 QUIET 都沒有），等安靜不可能成功。"
+                         "但負載是穩定的，所以交錯量測讓漂移對每一階平均作用，"
+                         "相對比較仍然有效。取各階的中位數。")
     ap.add_argument("--tiers", nargs="*", default=None,
                     help="只量指定的階（如 gpu_fp8 gpu_int4）。預設全部")
     ap.add_argument("--csv-suffix", default="",
@@ -567,7 +590,8 @@ def main() -> int:
         if a.stage in ("all", "retrieval"):
             rc |= stage_retrieval(a.gpu, a.ctx, a.n_prefixes,
                                   max_len=a.ctx + 1024,
-                                  only_tiers=set(a.tiers) if a.tiers else None)
+                                  only_tiers=set(a.tiers) if a.tiers else None,
+                                  repeats=a.retrieval_repeats)
         if a.stage in ("all", "recompute"):
             rc |= stage_recompute(a.gpu, max_len=max(a.positions) + a.chunk + 1024,
                                   chunk=a.chunk, positions=a.positions)
