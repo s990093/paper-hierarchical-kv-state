@@ -296,6 +296,19 @@ def mooncake_trace(name: str, limit: int | None = None) -> list[list[int]]:
     return out
 
 
+def trace_duration_s(name: str) -> float | None:
+    """trace 的真實牆鐘時長（秒）。用來把「寫了幾個 block」換算成頻寬需求。
+
+    沒有這個就無法判斷一個策略在真機上跑不跑得動：
+    寫入次數再多，攤在一小時上跟攤在一秒上是兩回事。
+    """
+    p = TRACES / f"{name}_trace.jsonl"
+    if not p.exists():
+        return None
+    ts = [json.loads(l)["timestamp"] for l in p.open()]
+    return (max(ts) - min(ts)) / 1000.0
+
+
 def zipf_trace(n_docs: int, doc_blocks: int, n_requests: int,
                alpha: float, seed: int) -> list[list[int]]:
     """回傳每個請求需要的 block id 序列。
@@ -407,15 +420,27 @@ class Sim:
         hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
         warm_hits = {"gpu": 0, "cpu": 0, "ssd": 0, "drop": 0}
         prev_compute = 0.0        # 上一個請求的計算時間，供預取重疊用
+        writes = {"cpu": 0, "ssd": 0}
 
         def demote(blk: int) -> None:
+            # 🔴 寫入計量。模擬的成本模型只有「讀回來」的價格，
+            #    **把 block 寫下去是免費的**——但真實硬體不是。
+            #    toolagent 若把每個新 block 都寫一份到磁碟，需要持續
+            #    7,172 MiB/s；這台機器的 SATA QLC 只有 ~380 MB/s（差 19 倍），
+            #    NVMe 標稱 3,000 MB/s 也差 2.4 倍。
+            #    所以「寫入次數」本身就是一個可行性判準：
+            #    寫入頻寬需求超過裝置能力的策略，在真機上根本跑不出來。
+            #    這一項對 tier_fs（無差別下放）的傷害大於 Oracle（選擇性下放），
+            #    所以忽略它會**低估** headroom。
             if use_cpu:
                 cpu[blk] = None
                 cpu.move_to_end(blk)
+                writes["cpu"] += 1
                 while len(cpu) > self.cap["cpu"]:
                     ev, _ = cpu.popitem(last=False)
                     if use_ssd:
                         ssd[ev] = None
+                        writes["ssd"] += 1
                         while len(ssd) > self.cap["ssd"]:
                             ssd.popitem(last=False)
 
@@ -498,7 +523,7 @@ class Sim:
             total += c_req
             if warm:
                 warm_total += c_req
-        return {"total_ms": total, "hits": hits,
+        return {"total_ms": total, "hits": hits, "writes": writes,
                 "warm_ms": warm_total, "warm_hits": warm_hits}
 
     # -- Oracle ----------------------------------------------------
@@ -695,7 +720,9 @@ class Sim:
             c_req, prev_compute = self._flush(req_compute, req_transfer,
                                               prev_compute, prefetch)
             total += c_req
-        return {"total_ms": total, "hits": hits, "evict": evict}
+        return {"total_ms": total, "hits": hits, "evict": evict,
+                "writes": {"cpu": evict["to_cpu"] + evict["swap_cpu"],
+                           "ssd": evict["to_ssd"] + evict["swap_ssd"]}}
 
 
 # ────────────────────────── 驗證 ──────────────────────────

@@ -36,7 +36,7 @@ from datetime import datetime
 from pathlib import Path
 
 from m4_oracle import (BLOCK, MODEL_PROFILES, OUT, Sim, load_cost_model,
-                       mooncake_trace, profile)
+                       mooncake_trace, profile, trace_duration_s)
 
 POLICIES = {
     "full_gpu": ("lru", False, False),
@@ -58,6 +58,13 @@ def main() -> int:
     ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix")
     ap.add_argument("--prefetch", action="store_true", default=True)
     ap.add_argument("--no-prefetch", dest="prefetch", action="store_false")
+    ap.add_argument("--device-write-mibps", type=float, default=181.0,
+                    help="磁碟的**持續**寫入頻寬（MiB/s），用於可行性判定。"
+                         "預設 181 = /ssd7（Samsung 870 QVO, SATA QLC）實測值。"
+                         "⚠️ 1 GiB 的短測會落在 QLC 的 SLC 快取裡量到 492；"
+                         "16 GiB 的長測才是持續值 181。KV 階是持續寫入，"
+                         "所以要用後者。NVMe（Crucial P3）實測為 2,512。"
+                         "見 results/m2_harness/disk_bw*.csv")
     ap.add_argument("--fs-root", default="/ssd7",
                     help="用來報告實體可用空間的掛載點")
     ap.add_argument("--oracle-dest", default="cost-aware",
@@ -86,15 +93,18 @@ def main() -> int:
     rows: list[dict] = []
     for tname in a.trace:
         trace = mooncake_trace(tname)
+        dur = trace_duration_s(tname)
         uniq = len({b for r in trace for b in r})
         need_tib = uniq * bytes_per_block / 1024**4
         print(f"\n{'=' * 104}\ntrace「{tname}」：{len(trace):,} 請求、"
               f"{sum(len(r) for r in trace):,} 次存取、{uniq:,} 不重複 block")
         print(f"  整個工作集若全部放磁碟需要 **{need_tib:.1f} TiB**"
               f"（裝置只有 {du.total / 1024**4:.1f} TiB）")
-        print(f"{'SSD 容量':>12s}{'blocks':>12s}{'覆蓋工作集':>12s}"
-              f"{'tier_fs ms':>14s}{'oracle ms':>13s}{'best':>10s}"
-              f"{'headroom':>10s}{'判定':>9s}")
+        print(f"  trace 時長 {dur / 60:.1f} 分鐘；每個 block 寫一次 = "
+              f"{bytes_per_block / 1024**2:.0f} MiB")
+        print(f"{'SSD 容量':>11s}{'覆蓋':>7s}{'best':>9s}{'headroom':>10s}"
+              f"{'判定':>9s}{'best 寫 SSD':>13s}{'需要頻寬':>12s}"
+              f"{'可行?':>7s}{'oracle 寫 SSD':>14s}{'需要頻寬':>12s}")
         for g in a.ssd_gib:
             ssd_blocks = 10**9 if g < 0 else int(g * 1024**3) // bytes_per_block
             use_ssd_possible = ssd_blocks > 0
@@ -115,9 +125,23 @@ def main() -> int:
             cover = min(1.0, ssd_blocks / uniq)
             label = "無限" if g < 0 else f"{g:,.0f} GiB"
             fs_ms = res.get("tier_fs", {}).get("total_ms", math.nan)
-            print(f"{label:>12s}{ssd_blocks:>12,}{100 * cover:>11.1f}%"
-                  f"{fs_ms:>14,.0f}{res['oracle']['total_ms']:>13,.0f}"
-                  f"{best:>10s}{head:>9.2f}%{verdict:>9s}")
+            # 🔴 可行性：把「寫了幾個 block」換算成需要的持續寫入頻寬，
+            #    與裝置實測能力比較。模擬的成本模型沒有向寫入收費，
+            #    所以一個策略可能在模擬裡很快、在真機上根本寫不下去。
+            #    /ssd7（Samsung 870 QVO, SATA QLC）**持續**寫入實測 181 MiB/s
+            #    （短測 492，但那是 SLC 快取；KV 階是持續寫入）。
+            #    /（Crucial P3, NVMe）實測 2,512 MiB/s —— 差 13.9 倍。
+            #    同一個策略在一顆碟上可行、在另一顆上不可行，
+            #    這就是論文 κ 主張的實證。
+            DEV_MBPS = a.device_write_mibps
+            def bw(w):
+                return w * bytes_per_block / 1024**2 / dur if dur else float("nan")
+            wb = res[best].get("writes", {}).get("ssd", 0)
+            wo = res["oracle"].get("writes", {}).get("ssd", 0)
+            feas = "✅" if bw(wb) <= DEV_MBPS else "🔴"
+            print(f"{label:>11s}{100 * cover:>6.1f}%{best:>9s}{head:>9.2f}%"
+                  f"{verdict:>9s}{wb:>13,}{bw(wb):>10,.0f}MB/s{feas:>6s}"
+                  f"{wo:>14,}{bw(wo):>10,.0f}MB/s")
             for pol, v in res.items():
                 e = v.get("evict", {})
                 rows.append({
@@ -134,6 +158,13 @@ def main() -> int:
                     "evict_free": e.get("free", ""),
                     "evict_to_cpu": e.get("to_cpu", ""),
                     "evict_to_ssd": e.get("to_ssd", ""),
+                    "ssd_writes": v.get("writes", {}).get("ssd", ""),
+                    "cpu_writes": v.get("writes", {}).get("cpu", ""),
+                    "trace_duration_s": round(dur, 1) if dur else "",
+                    "ssd_write_mibps": round(
+                        v.get("writes", {}).get("ssd", 0) * bytes_per_block
+                        / 1024**2 / dur, 1) if dur else "",
+                    "device_write_mibps_sustained": a.device_write_mibps,
                     "best_baseline": best,
                     "oracle_headroom_pct": round(head, 3) if pol == "oracle" else "",
                     "verdict": verdict if pol == "oracle" else "",
