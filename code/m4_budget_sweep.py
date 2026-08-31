@@ -30,7 +30,7 @@ import csv
 from datetime import datetime
 from pathlib import Path
 
-from m4_oracle import (BLOCK, MODEL_PROFILES, OUT, Sim, load_cost_model,
+from m4_oracle import (BLOCK, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile)
 
 POLICIES = {
@@ -111,6 +111,7 @@ def main() -> int:
                 e = v.get("evict", {})
                 rows.append({
                     "ts": datetime.now().astimezone().isoformat(),
+                    "sim_version": SIM_VERSION,
                     "trace": tname, "gpu_budget_tokens": bt, "gpu_blocks": gb,
                     "unique_blocks": uniq, "accesses": acc,
                     "requests": len(trace),

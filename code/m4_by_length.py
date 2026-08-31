@@ -29,7 +29,7 @@ from datetime import datetime
 from pathlib import Path
 
 from m4_invariants import check_results, preflight
-from m4_oracle import (BLOCK, MODEL_PROFILES, OUT, Sim, load_cost_model,
+from m4_oracle import (BLOCK, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile)
 
 POLICIES = {
@@ -105,6 +105,7 @@ def main() -> int:
                   f"{100 * save / tot_save if tot_save else 0:>9.1f}%")
             rows.append({
                 "ts": datetime.now().astimezone().isoformat(),
+                    "sim_version": SIM_VERSION,
                 "trace": tname, "bin": label(lo, hi),
                 "bin_lo_tokens": lo, "bin_hi_tokens": hi,
                 "requests": len(idx),

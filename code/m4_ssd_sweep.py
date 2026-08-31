@@ -36,7 +36,7 @@ from datetime import datetime
 from pathlib import Path
 
 from m4_invariants import check_results, preflight
-from m4_oracle import (BLOCK, MODEL_PROFILES, OUT, Sim, load_cost_model,
+from m4_oracle import (BLOCK, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile, trace_duration_s)
 
 POLICIES = {
@@ -156,6 +156,7 @@ def main() -> int:
                 e = v.get("evict", {})
                 rows.append({
                     "ts": datetime.now().astimezone().isoformat(),
+                    "sim_version": SIM_VERSION,
                     "trace": tname, "ssd_gib": g if g >= 0 else "unlimited",
                     "ssd_blocks": ssd_blocks,
                     "ssd_covers_working_set_pct": round(100 * cover, 2),

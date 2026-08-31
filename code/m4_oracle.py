@@ -69,6 +69,17 @@ M2 = REPO / "results/m2_harness"
 M3_CSV = REPO / "results/m3_baseline/baseline.csv"
 OUT = REPO / "results/m4_oracle"
 
+# 模擬器的版本戳記 = 本檔內容的 SHA-1 前 8 碼。
+# 每一份結果 CSV 都要帶著它。2026-08-31 一天之內改了六次模擬器語意，
+# 而每一版的輸出看起來都完全正常——沒有戳記就無法事後分辨哪一列是哪一版產生的。
+def sim_version() -> str:
+    import hashlib
+    from pathlib import Path as _P
+    return hashlib.sha1(_P(__file__).read_bytes()).hexdigest()[:8]
+
+
+SIM_VERSION = sim_version()
+
 BLOCK = 16          # vLLM 預設 block size（token）
 # Mooncake trace 的 hash_id 粒度（token）。由資料實測得到，見 mooncake_trace()。
 MOONCAKE_BLOCK = 512
