@@ -84,6 +84,16 @@ BLOCK = 16          # vLLM 預設 block size（token）
 # Mooncake trace 的 hash_id 粒度（token）。由資料實測得到，見 mooncake_trace()。
 MOONCAKE_BLOCK = 512
 
+# 各裝置的**持續**寫入頻寬（MiB/s），實測值，見 results/m2_harness/disk_bw*.csv。
+# 🔴 這張表必須與 `--device` 綁在一起使用：用 A 裝置的成本常數配 B 裝置的
+#    頻寬上限，就是裝置混用。2026-08-31 的第一版可行性分析正是這樣做的
+#    （SATA 的成本常數 + NVMe 的頻寬），結論因此不成立。
+#
+# sata：Samsung 870 QVO（/ssd7）。1 GiB 短測 492，但那落在 QLC 的 SLC 快取裡；
+#       16 GiB 長測只剩 181。KV 階是持續寫入，所以用 181。
+# nvme：Crucial P3（/）。1 GiB 測試 2,512。
+DEVICE_WRITE_MIBPS = {"sata": 181.0, "nvme": 2512.0}
+
 
 # ────────────────────────── 成本模型 ──────────────────────────
 

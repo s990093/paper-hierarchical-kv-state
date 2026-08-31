@@ -62,7 +62,7 @@ def scale_trace(trace: list[list[int]], s: int) -> list[list[int]]:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--device", default="sata", choices=["sata", "nvme"])
+    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
     ap.add_argument("--model", default="llama-bf16", choices=list(MODEL_PROFILES))
     ap.add_argument("--trace", nargs="*", default=["toolagent", "conversation"])
     ap.add_argument("--targets", type=int, nargs="*",

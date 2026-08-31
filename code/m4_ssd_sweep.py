@@ -36,7 +36,7 @@ from datetime import datetime
 from pathlib import Path
 
 from m4_invariants import check_results, preflight
-from m4_oracle import (BLOCK, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
+from m4_oracle import (BLOCK, DEVICE_WRITE_MIBPS, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile, trace_duration_s)
 
 POLICIES = {
@@ -49,7 +49,9 @@ POLICIES = {
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--device", default="sata", choices=["sata", "nvme"])
+    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"],
+                    help="磁碟階用哪個裝置的量測。成本常數與寫入頻寬上限"
+                         "會一起切換，不可混用")
     ap.add_argument("--model", default="llama-bf16", choices=list(MODEL_PROFILES))
     ap.add_argument("--trace", nargs="*", default=["toolagent", "conversation"])
     ap.add_argument("--ssd-gib", type=float, nargs="*",
@@ -59,13 +61,14 @@ def main() -> int:
     ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix")
     ap.add_argument("--prefetch", action="store_true", default=True)
     ap.add_argument("--no-prefetch", dest="prefetch", action="store_false")
-    ap.add_argument("--device-write-mibps", type=float, default=181.0,
+    ap.add_argument("--device-write-mibps", type=float, default=None,
                     help="磁碟的**持續**寫入頻寬（MiB/s），用於可行性判定。"
                          "預設 181 = /ssd7（Samsung 870 QVO, SATA QLC）實測值。"
                          "⚠️ 1 GiB 的短測會落在 QLC 的 SLC 快取裡量到 492；"
                          "16 GiB 的長測才是持續值 181。KV 階是持續寫入，"
                          "所以要用後者。NVMe（Crucial P3）實測為 2,512。"
-                         "見 results/m2_harness/disk_bw*.csv")
+                         "見 results/m2_harness/disk_bw*.csv。"
+                         "預設由 --device 決定，避免裝置混用")
     ap.add_argument("--fs-root", default="/ssd7",
                     help="用來報告實體可用空間的掛載點")
     ap.add_argument("--oracle-dest", default="best",
@@ -77,8 +80,12 @@ def main() -> int:
     ap.add_argument("--out", default=str(OUT / "ssd_sweep.csv"))
     a = ap.parse_args()
 
+    if a.device_write_mibps is None:
+        a.device_write_mibps = DEVICE_WRITE_MIBPS[a.device]
     prof = profile(a.model)
     cm = load_cost_model(a.device, require_model_key=prof["cost_model_key"])
+    print(f"[裝置] {a.device}：成本常數與持續寫入上限 "
+          f"{a.device_write_mibps:,.0f} MiB/s 同時來自這顆碟")
     gpu_blocks = prof["gpu_kv_tokens"] // BLOCK
     bytes_per_block = prof["kv_bytes_per_token"] * BLOCK
     cpu_blocks = int(a.cpu_gib * 1024**3) // bytes_per_block

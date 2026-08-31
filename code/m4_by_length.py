@@ -50,7 +50,7 @@ def label(lo: int, hi: int) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--device", default="sata", choices=["sata", "nvme"])
+    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
     ap.add_argument("--model", default="llama-bf16", choices=list(MODEL_PROFILES))
     ap.add_argument("--trace", nargs="*", default=["toolagent", "conversation"])
     ap.add_argument("--ssd-gib", type=float, default=512.0,

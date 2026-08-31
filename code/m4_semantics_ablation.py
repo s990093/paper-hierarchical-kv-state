@@ -67,7 +67,7 @@ def one(sim: Sim, trace, prefix: bool, prefetch: bool,
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--device", default="sata", choices=["sata", "nvme"])
+    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
     ap.add_argument("--trace", nargs="*", default=[],
                     choices=["conversation", "toolagent", "mooncake"])
     ap.add_argument("--pressure", type=float, nargs="*", default=[])

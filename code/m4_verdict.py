@@ -235,7 +235,25 @@ def main() -> int:
     if not r:
         print(f"   {NM}")
     else:
-        DEV = {"SATA QLC /ssd7": 181.0, "NVMe /": 2512.0}
+        # 🔴 可行性判定用的裝置，必須與成本常數的來源裝置一致。
+        #    第一版這裡同時列了兩顆碟，但成本常數只有一份（SATA），
+        #    等於「SATA 的成本 × NVMe 的頻寬」——裝置混用，結論不成立。
+        #    現在只取 CSV 裡記載的那一顆。
+        dev_used = sorted({x.get("device", "") for x in r}) or [""]
+        try:
+            import sys
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            from m4_oracle import DEVICE_WRITE_MIBPS
+        except Exception:  # noqa: BLE001
+            DEVICE_WRITE_MIBPS = {}
+        DEV = {d: DEVICE_WRITE_MIBPS[d] for d in dev_used
+               if d in DEVICE_WRITE_MIBPS}
+        if not DEV:
+            print(f"   {NM}（CSV 沒有記 device 欄，或該裝置沒有實測寫入頻寬）")
+            DEV = {}
+        else:
+            print(f"   成本常數與寫入頻寬上限同時來自："
+                  + "、".join(f"{d} ({v:,.0f} MiB/s)" for d, v in DEV.items()))
         by = {}
         for x in r:
             by.setdefault((x["trace"], x["ssd_gib"]), {})[x["policy"]] = x
