@@ -2115,3 +2115,74 @@ derived_max_model_len will cause a CUDA array out-of-bounds error.」
 階梯從 `[258048, 524288]` 改為 `[131072, 258048]`，
 `model_max_len` 從 528,384 改為 262,144。
 失敗的資料移到 `results/superseded/baseline_512k_cuda_assert.csv`。
+
+---
+
+## 論文修訂 — 成本模型剖面混用（2026-09-01 14:00）
+
+**狀態**: FIXED（程式）／PARTIAL（結果待重跑）
+**觸發**: 以 `paper-writing` skill 檢視 `main.pdf` 時，發現同一份稿子裡有
+兩個交叉點（7,277 與 37,615）與三個位置擬合上限（24,576、114,688、258,048），
+全都沒標剖面。
+
+### 根因
+
+`m4_oracle.py` 把成本模型寫到 `OUT/cost_model.json`（**固定路徑**），
+而 `m4_sweep.py` 的 CSV `cost_model` 欄也硬寫同一個路徑。於是：
+
+* 每一次掃描都覆蓋上一次的 JSON
+* 各剖面子目錄（`qwen-awq/`、`qwen-awq-surface-*/`）的 CSV 全部指向那個共用檔
+* **`results/m4_oracle/cost_model.json` 現在裝的是 `llama-bf16`/SATA 的常數，
+  不描述任何一份 CSV**
+
+論文的 §A.2 就是從那個檔抄到 SATA 常數（CPU 0.588 / SSD 5.536 / Drop 4.008），
+而同一份稿子的 §7.6 用的是 `qwen-awq`/NVMe 的交叉點。兩者相差 5.2 倍。
+
+### 修法
+
+`m4_sweep.py`：成本模型改寫進 `--out-dir`（每次掃描自己的目錄），
+JSON 自帶 `model_profile` / `cost_model_key` / `device` / `crossover_tokens`，
+CSV 的 `cost_model` 欄指向該檔。讀的人不必再從 `retrieval_csv` 的檔名反推剖面。
+
+### 🔴 連帶發現：qwen-awq 的掃描結果早於其成本模型的最後一次更新
+
+`recompute_position_qwen-awq.csv` 含兩個 run：
+
+| run_id | 時間 | 位置擬合上限 | P\* |
+|---|---|---|---|
+| `20260831-223228-m2-recompute` | 08-31 22:32 | 較短 | 37,615 |
+| `+ 20260901-131533-m2-recompute` | 09-01 13:15 | 258,048 | **37,717** |
+
+而 `qwen-awq/ssd_sweep.csv`（12:25）與 `qwen-awq-surface-e2e/`（12:51）
+**都在 13:15 之前跑完**，用的是舊擬合。
+
+* `m4_hw_sweep.py` 已用新擬合重跑：峰值百分比只有三格差 0.1pp（穩健），
+  交叉點 37,615 → 37,717，docstring 已更新
+* `ssd_sweep`：**另一個並行的 session 已在 14:14--14:42 用新擬合重跑完**
+  （58 列、6 個 SSD 容量，較原本的 10 列完整）。512 GiB 的端到端 headroom
+  自 8.465% / 9.28% 變為 **8.415% / 9.226%**；`best_baseline` 仍為 `cpu_arc`，
+  `tier_fs` 與 Oracle 的寫入頻寬（2,016 / 2,122 與 283 / 330 MiB/s）不變。
+  論文已改用新值。我自己起的重跑因為會覆蓋該 session 的輸出而中止
+  （`20260901-144213-m4-qwen-awq-ssd-refit`，未寫入 `results/`）。
+
+### ⚠️ 這台機器上有並行的實驗 session
+
+本次修訂期間，另一個 session 於 13:35--14:50 產出了
+`results/m4_oracle/llama-awq/`、`llama-awq-surface/`、`qwen-awq-surface/`
+與 `qwen-awq/by_length.csv`。**這些檔案未納入本次 commit**，因為不是本次工作的產出，
+且當時可能仍在寫入。`qwen-awq-surface/headroom_surface.csv` 的 `cost_model` 欄
+已指向該目錄自己的 JSON——**此即上述修法生效的證據**（該 session 用到了改過的
+`m4_sweep.py`）。
+
+**教訓**：成本常數的來源檔一旦追加量測，所有下游掃描結果即過期。
+`sim_version` 只涵蓋模擬器程式碼，不涵蓋成本模型的資料版本。
+應把成本模型的來源 CSV 摘要（run_id 集合）納入指紋。
+
+### 論文端已改
+
+* 新增 `tab:costmodels`（附錄 A.2）：三組常數並列，NVMe 為主、SATA 僅對照
+* NVMe 持續寫入標為 `NOT_MEASURED`（`disk_bw_sustained.csv` 只有 `/ssd7` 兩列），
+  並刪除靠它成立的「Oracle 於 NVMe 上可行」
+* §7.5 原標題「寫入頻寬使勝出的 baseline 不可部署」在主設定不成立
+  （`qwen-awq` 的最佳 baseline 是 `cpu_arc`，不用磁碟階），改為跨剖面都成立的
+  「Oracle 寫入需求是 `tier_fs` 的 1/4--1/7」

@@ -23,6 +23,7 @@
 from __future__ import annotations
 import argparse
 import csv
+import json
 import math
 import shutil
 from datetime import datetime
@@ -61,6 +62,15 @@ class Ctx:
         self.prof = profile(a.model)
         self.cm = load_cost_model(a.device,
                                   require_model_key=self.prof["cost_model_key"])
+        # 🔴 2026-09-01：成本模型必須寫進「這次掃描自己的」目錄。
+        #    先前一律寫到 OUT/cost_model.json，於是每一次掃描都覆蓋上一次，
+        #    而各 CSV 的 cost_model 欄又都指向那個共用路徑——結果是
+        #    results/m4_oracle/cost_model.json 裡裝的是「最後跑的那次」的常數，
+        #    不描述任何一份 CSV。論文因此把 llama-bf16/SATA 的常數
+        #    當成 qwen-awq/NVMe 的來引用（見 main.tex §A.2）。
+        #    JSON 現在自帶 model_profile 與 device，讀的人不必再從
+        #    retrieval_csv 的檔名反推。
+        self.cm_path = self.dump_cost_model(Path(a.out_dir))
         self.bpb = self.prof["kv_bytes_per_token"] * BLOCK   # 每 block 幾個 byte
         # --gpu-tokens 覆寫：讓「壓力固定、長度變化」的掃描成為可能。
         # 🔴 覆寫成剖面實測值以外的數字時，那個設定**在這張卡上不可部署**，
@@ -137,6 +147,27 @@ class Ctx:
             / res[best]["total_ms"]
         return res, best, head
 
+    def dump_cost_model(self, out_dir: Path) -> Path:
+        """把這次掃描實際用的成本常數寫成自我描述的 JSON，回傳其路徑。"""
+        out_dir.mkdir(parents=True, exist_ok=True)
+        path = out_dir / "cost_model.json"
+        path.write_text(json.dumps(
+            {"model_profile": self.a.model,
+             "cost_model_key": self.prof["cost_model_key"],
+             "device": self.a.device,
+             "sim_version": SIM_VERSION,
+             "measured": self.cm.source,
+             "derived_ms_per_block": {
+                 "gpu": self.cm.gpu, "cpu": self.cm.cpu, "ssd": self.cm.ssd,
+                 "recompute_base": self.cm.recompute_base,
+                 "recompute_slope_per_token": self.cm.recompute_slope_per_token},
+             "crossover_tokens": round(
+                 (self.cm.ssd - self.cm.recompute_base)
+                 / self.cm.recompute_slope_per_token)},
+            indent=2, ensure_ascii=False) + "\n")
+        print(f"[成本模型] {self.a.model}/{self.a.device} -> {path}")
+        return path
+
     def base_row(self, tname: str) -> dict:
         return {
             "ts": datetime.now().astimezone().isoformat(),
@@ -150,7 +181,7 @@ class Ctx:
             "oracle_dest": self.a.oracle_dest,
             "device_write_mibps_sustained": self.dev_write,
             "fs_root": self.fs_root,
-            "cost_model": str(OUT / "cost_model.json"),
+            "cost_model": str(self.cm_path),
         }
 
 

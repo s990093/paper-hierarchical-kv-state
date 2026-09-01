@@ -1,0 +1,40 @@
+{
+  "model_profile": "qwen-awq",
+  "cost_model_key": "qwen-awq",
+  "device": "nvme",
+  "sim_version": "b0d39dd4",
+  "measured": {
+    "retrieval_csv": "/home/hungwei/llm/POC/paper-hierarchical-kv-state/results/m2_harness/retrieval_cost_qwen-awq.csv",
+    "recompute_csv": "/home/hungwei/llm/POC/paper-hierarchical-kv-state/results/m2_harness/recompute_position_qwen-awq.csv",
+    "ctx_used": 96000,
+    "blocks_per_ctx": 6000.0,
+    "warm_gpu_ms": 860.71,
+    "warm_cpu_ms": 2651.6645,
+    "warm_ssd_ms": 62328.880000000005,
+    "recompute_chunk_tokens": 2048,
+    "recompute_at_pos0_ms": 453.8775,
+    "recompute_at_maxpos_ms": 6320.168,
+    "positions": [
+      0,
+      4096,
+      8192,
+      16384,
+      24576,
+      49152,
+      81920,
+      114688,
+      163840,
+      212992,
+      258048
+    ],
+    "position_fit_max_tokens": 258048
+  },
+  "derived_ms_per_block": {
+    "gpu": 0.0,
+    "cpu": 0.29849241666666665,
+    "ssd": 10.244695,
+    "recompute_base": 3.54591796875,
+    "recompute_slope_per_token": 0.00017760414547390407
+  },
+  "crossover_tokens": 37717
+}
