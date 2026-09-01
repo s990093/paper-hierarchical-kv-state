@@ -37,6 +37,8 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,positioning,fit,backgrounds,shapes.geometric,calc,decorations.pathreplacing}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[hidelinks]{hyperref}
 \usepackage{cite}
 \usepackage{caption}
@@ -855,148 +857,65 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 
 本節報告平台 A 上已完成的量測。每一個數字皆可追溯至一條指令與一個輸出檔，追溯表見附錄 \ref{app:measurements}；凡尚未量到者一律標為 \texttt{NOT\_MEASURED}，不以推算值替代。尚未執行的實驗設計（消融矩陣、平台 B 的移植量測）列於附錄 \ref{app:notyet}，其結果不進入本節的任何主張。
 
-本節的組織依證據強度而非依實驗編號：\S\ref{sec:platform-setup}--\S\ref{sec:baseline-design} 給出設定，\S\ref{sec:measured}--\S\ref{sec:awq-unlock} 給出七項量測結果，\S\ref{sec:verdict} 依 \S\ref{sec:eval} 開篇訂定的判準給出 go/no-go 判定。
+\S\ref{sec:platform-setup} 給出設定，\S\ref{sec:oracle-method} 給出產生本節全部 headroom 數字的 oracle 構造，\S\ref{sec:measured}--\S\ref{sec:awq-unlock} 給出七項量測結果，\S\ref{sec:verdict} 依預先訂定的判準給出 go/no-go 判定。
 
-\subsection{實驗平台}
+\subsection{設定}
 \label{sec:platform-setup}
 
-依第 \ref{sec:twoplatform} 節的分工，實驗於兩個平台執行。
+\textbf{平台 A}：NVIDIA RTX 3090（24\,GB GDDR6X，PCIe 4.0$\times$16、sm\_86），vLLM 0.28.0，CUDA 12.4。本節全部量測皆在此平台完成。第 \ref{sec:twoplatform} 節設計的平台 B（MI300X）尚無機器，其實驗設計列於附錄 \ref{app:notyet}。
 
-\textbf{平台 A（機制驗證與完整對照）}：NVIDIA RTX 3090（24\,GB GDDR6X，PCIe 4.0$\times$16），CUDA，vLLM。此平台承擔概念驗證、量測工具鏈建立，以及對 CUDA-only baseline（ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer、ParisKV）與三個學習式 baseline 的完整比較。模型依第 \ref{sec:eval} 節的選模準則為 Qwen2.5-7B-Instruct-1M（主力）與 Llama-3.1-8B-Instruct（對照），均以 AWQ int4 權重載入。
+\textbf{模型剖面}。主設定為 Qwen2.5-7B-Instruct-1M（AWQ-INT4 權重，記為 \texttt{qwen-awq}），對照為 Llama-3.1-8B-Instruct 的 BF16 與 AWQ 權重（\texttt{llama-bf16}、\texttt{llama-awq}）。兩個剖面的 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點。成本常數隨剖面變動，三組並列於表 \ref{tab:costmodels}；本節每一處引用皆標明用的是哪一組。
 
-\textbf{平台 B（規模與主要科學主張）}：AMD Instinct MI300X（gfx942，192\,GB HBM3），ROCm 7.x，vLLM ROCm wheel（Python 3.12），LMCache ROCm wheel（gfx942），真實 NVMe SSD。此平台承擔並行度／機會成本場景與能耗分析。
+\textbf{工作負載}。生產 trace 取自 Mooncake~\cite{mooncake2025} 的 \texttt{toolagent}（23{,}608 請求）與 \texttt{conversation}（12{,}031 請求），中位長度 6{,}352\,token、最長 126{,}208。目標長度區間（65K--524K）無公開 trace 可用，以合成長上下文補足，其重用率與長度分布由我們設定，此限制於 \S\ref{sec:verdict} 明確標註。
+
+\textbf{Baselines}。我們量測五個現成系統：\texttt{full\_gpu}（不卸載，vLLM 預設）、\texttt{cpu\_lru} 與 \texttt{cpu\_arc}（vLLM \texttt{OffloadingConnector} 的兩個內建策略）、\texttt{tier\_fs}（CPU 加磁碟兩階）、以及 LMCache~\cite{lmcache2025}。\texttt{lru} 與 \texttt{arc} 構成 vLLM 目前 production 預設策略的\emph{完整}集合，其餘策略須經 \texttt{CachePolicy} 介面自行註冊。二者皆僅依存取歷史決策：一個「重算需 225\,$\mu$s」的 block 與一個「自 CPU 取回需 4.2\,$\mu$s」的 block 在 LRU 眼中完全等價，而本文的成本模型正是針對此空缺。學術與學習式對照（InfiniGen、KIVI、KVP、ForesightKV、LookaheadKV、稀疏檢索一系）尚未執行，其選取理由與可行性評估見附錄 \ref{app:notyet}。
 
 \paragraph{可推廣性的界線。}
-我們\emph{不}由平台 A 的結果推論多租戶機會成本場景（24\,GB 無法容納多個長 session），亦\emph{不}由平台 A 提出能耗結論（消費級顯卡缺乏記憶體與計算分軌的能耗計數器）。
+我們\emph{不}由平台 A 的結果推論多租戶機會成本場景（24\,GB 無法容納多個長 session），亦\emph{不}提出能耗結論（消費級顯卡缺乏記憶體與計算分軌的能耗計數器）。
 
-\subsection{壓力軸的設計}
+\subsection{Oracle：headroom 的量測工具}
+\label{sec:oracle-method}
 
-壓力軸\emph{隨平台而不同}，這正是第 \ref{sec:twoplatform} 節雙平台設計的直接後果。
+本節其後每一個 headroom 數字都來自同一個離線 oracle，故先給出其構造。oracle 取得整條 trace 的完整未來存取序列，據此構造一個離線放置策略（演算法 \ref{alg:oracle}）。GPU 階的逐出用 Bélády/MIN，單階時此規則可證明最優~\cite{belady1966}。被逐出的 block 需再選一個目的地，我們跑兩條規則並取較佳者：\emph{cascade} 無條件往下推，\emph{cost-aware} 只在該階成本低於丟棄的邊際成本時才放。兩條都是可實作的離線策略，取其較佳者仍然可實作。Fang 等人~\cite{hetmem2025} 已為兩層（HBM 與 off-package DRAM）的無損放置推導上界；本文的 oracle 在兩點上延伸之：納入 SSD 層，以及納入 \act{Drop}$\rightarrow$重算動作。
 
-\textbf{平台 A（RTX 3090, 24\,GB）}：既有文獻的「單請求、上下文遞增」設定在此\emph{成立}。以 8-bit 權重的 Llama-3.1-8B 計，64K 上下文可置入而 128K 超出，主壓力軸為 context 8K$\rightarrow$16K$\rightarrow$32K$\rightarrow$64K$\rightarrow$（128K，預期失敗）。
+\begin{algorithm}[t]
+\caption{離線 oracle（單趟重放；兩條目的地規則各跑一次取較佳者）}
+\label{alg:oracle}
+\small
+\begin{algorithmic}[1]
+\Require trace $T$、成本模型 $C$、各階容量 $\mathrm{cap}_{\ell}$、規則 $d\in\{\textsc{cascade},\textsc{cost-aware}\}$
+\State $\mathrm{nxt}[b] \gets$ $b$ 的所有未來存取索引，$\forall b$
+\State $\mathrm{tail}[r,p] \gets \sum_{k \ge p} C_{\act{Drop}}(k\!\cdot\!B)$ \Comment{前綴語意下丟棄的邊際成本}
+\State $\mathcal{G},\mathcal{C},\mathcal{S} \gets \emptyset$ \Comment{GPU、CPU、SSD 階}
+\For{每個請求 $r \in T$}
+  \State $g \gets$ 第一個未命中的位置 \Comment{vLLM 回傳 token 數，缺口後全數重算}
+  \For{每個位置 $p$ 與其 block $b$}
+    \If{$p > g$} \State $\mathrm{cost} \mathrel{+}= C_{\act{Drop}}(p\!\cdot\!B)$
+    \Else \State $\mathrm{cost} \mathrel{+}= C_{\mathrm{tier}(b)}(p\!\cdot\!B)$ \Comment{依 $b$ 所在階計價}
+    \EndIf
+    \State $\mathcal{G} \gets \mathcal{G} \cup \{b\}$
+    \While{$|\mathcal{G}| > \mathrm{cap}_{\mathrm{gpu}}$}
+      \State $v \gets \arg\max_{b \in \mathcal{G}} \mathrm{nextuse}(b)$ \Comment{Bélády/MIN}
+      \State $\mathcal{G} \gets \mathcal{G} \setminus \{v\}$
+      \If{$\mathrm{nextuse}(v) = \infty$} \State \textbf{continue} \Comment{不再用到，丟棄成本 $0$}
+      \EndIf
+      \State $\delta \gets \mathrm{tail}[\,\mathrm{nextuse}(v)\,]$ \Comment{丟棄 $v$ 的邊際成本}
+      \State $\mathrm{ok}_{\ell} \gets (d = \textsc{cascade}) \lor (C_{\ell} < \delta)$，$\ell \in \{\mathcal{C},\mathcal{S}\}$
+      \State 依序試 $\mathcal{C}$、$\mathcal{S}$：可放則放；該階已滿則與其中最不划算者交換，被擠出者續試下一階；皆不可則丟棄 $v$
+    \EndWhile
+  \EndFor
+\EndFor
+\end{algorithmic}
+\end{algorithm}
 
-\textbf{平台 B（MI300X, 192\,GB）}：同一設定在此\emph{不成立}：8B--14B 模型於 128K 僅佔 HBM 的 8--10\%（第 \ref{sec:motivation} 節），量測不到壓力。此平台改採三軸：
+\paragraph{三項細節決定數字是否可信。}
+其一，重算按 block 的\emph{絕對位置}計價（式 \eqref{eq:recompute-position}）；若讓 oracle 一律以位置 0 的價格重算，它付的價會低於線上策略，等於 oracle 自己作弊。其二，前綴語意下丟棄一個 block 的邊際成本是它到請求結尾的\emph{整條尾巴}（演算法 \ref{alg:oracle} 第 2 行）而非它自己那一塊。其三，逐出去向逐項計數：若「不再用到、丟棄成本為零」的逐出（第 16--17 行）佔滿全部，則 CPU 與 SSD 階對最優解毫無貢獻，量到的 headroom 全部來自 GPU 階內的逐出選擇，不足以支持多階動作空間。
 
-\begin{enumerate}\itemsep0.15em
-  \item \textbf{並行度}（主軸）：1、4、8、16、32 個並行請求 @ 128K 上下文。
-  \item \textbf{模型架構}：見下方選模準則。
-  \item \textbf{跨 session 保留}：多輪對話與 agentic trace。
-\end{enumerate}
+\paragraph{此 oracle 給的是下界，不是上界。}
+多階且動作成本異質的最佳放置我們並未求解。第 20--21 行的貪婪選擇不保證全域最優，且逐出\emph{未}做前綴感知——真正的最優解會刻意讓保留的 block 構成連續前綴以避免製造缺口，而本 oracle 一樣會被缺口懲罰。兩項都使其偏弱，故所報 headroom 為\textbf{下界}，真正的最優只會更高。此不對稱使 GO 判定安全，NO-GO 判定則須額外審視。與 Sibyl~\cite{sibyl2022} 報告「達到全知 oracle 的 80\%」的評估傳統一致，我們以此上界作為判準而非成績。
 
-\paragraph{選模準則。}
-我們不以「涵蓋愈多模型愈好」為原則，而採一條更嚴格的規則：\emph{僅納入會使 $\kappa$ 產生可事先計算之變化的模型}。據此，選模受一個硬條件約束：\textbf{必須在目標平台上留有足夠的 KV 預算。}這排除了在平台 A 上使用 MoE：Qwen3-30B-A3B 即使以 int4 權重載入亦需約 17\,GB，僅餘 4.6\,GB 供 KV 使用。
-
-據此，兩個平台的模型分工如下：
-
-\begin{table}[t]
-\centering\small
-\setlength{\tabcolsep}{3pt}
-\caption{選模結果。$^{M}$ 為 MoE。$\kappa$ 於各自平台計算。平台 A 的兩個模型 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點。}
-\label{tab:models}
-\begin{tabular}{@{}llrl@{}}
-\toprule
-平台 & 模型 & $\kappa$ & 角色 \\
-\midrule
-\multirow{2}{*}{A (3090)}
- & Qwen2.5-7B-Inst-1M & 108 & 主力（懸崖在 315K） \\
- & Llama-3.1-8B-Inst  & 54  & 對照（$\kappa$ 減半） \\
-\midrule
-\multirow{2}{*}{B (MI300X)}
- & Llama-4-Scout$^{M}$ & 8 & 規模（原生 10M） \\
- & Qwen3-30B-A3B$^{M}$ & 3 & MoE 對 $\kappa$ 的影響 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{Qwen2.5-7B-Instruct-1M 為平台 A 的主力}，因其原生支援 1M 上下文，而其 24\,GB 上的容量懸崖落在約 315K token——\emph{遠低於模型上限，故量測到的是純粹的記憶體限制而非模型限制}。相對地，Llama-3.1-8B 在同平台的容量懸崖（約 132K）與其原生上限（131{,}072）幾乎重合，兩種限制無法分離，故僅作對照。
-
-\paragraph{明確排除的架構。}
-MLA（如 DeepSeek 系列）改變式 \eqref{eq:kvsize} 本身，其 KV 為壓縮後的潛在向量；hybrid SSM（如 Jamba）的狀態大小不隨序列成長，已由 Marconi~\cite{marconi2025} 處理。二者並非「未評估」，而是\emph{定義上不同的問題}。
-
-\noindent 兩個平台的壓力軸不同並非實驗設計的瑕疵，而是待檢驗的假設本身：\emph{若最佳策略確實隨硬體比值改變，則產生壓力的方式本來就應該不同}。
-
-\subsection{Baselines}
-\label{sec:baseline-design}
-
-\begin{table}[t]
-\centering\small
-\caption{Baseline 分層與平台可用性。\textbf{平台 A（CUDA）上全部可直接執行}；平台 B 欄為移植至 ROCm 的估計工作量，經逐一檢視 repo 後得出。$^{\dagger}$ 稀疏檢索一系因 \texttt{rapidsai/raft} 無 ROCm 移植而\textbf{結構性地無法於平台 B 執行}——這是平台 A 存在的理由之一。$^{*}$ LMCache 在 ROCm 上雖有官方 wheel，但存在已知執行期問題，見第 \ref{sec:limitations} 節。ClusterKV、RetroInfer、ParisKV 同屬該系，因與上列三者機制高度重疊而未納入。}
-\label{tab:baselines}
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}llcc@{}}
-\toprule
-層級 & Baseline & A (CUDA) & B (ROCm) \\
-\midrule
-\multirow{2}{*}{錨點}
- & Full GPU（無卸載） & \checkmark & \checkmark \\
- & \textbf{Oracle（離線最優）} & \checkmark & \checkmark \\
-\midrule
-\multirow{4}{*}{Production}
- & vLLM \texttt{lru} & \checkmark & \checkmark \\
- & vLLM \texttt{arc} & \checkmark & \checkmark \\
- & vLLM $+$ \texttt{fs} 磁碟層 & \checkmark & \checkmark \\
- & LMCache~\cite{lmcache2025} & \checkmark & \checkmark$^{*}$ \\
-\midrule
-\multirow{2}{*}{學術（系統）}
- & \textbf{InfiniGen}~\cite{infinigen2024} & \checkmark & $\sim$1 週 \\
- & KIVI~\cite{kivi2024} & \checkmark & 3--7 天 \\
-\midrule
-\multirow{3}{*}{\textbf{學習式}}
- & \textbf{KVP}~\cite{kvp2026} & \checkmark & 3--7 天 \\
- & \textbf{ForesightKV}~\cite{foresightkv2026} & \checkmark & 3--7 天 \\
- & \textbf{LookaheadKV}~\cite{lookaheadkv2026} & \checkmark & 3--7 天 \\
-\midrule
-\multirow{3}{*}{稀疏檢索$^{\dagger}$}
- & ArkVale~\cite{arkvale2024} & \checkmark & $\times$ \\
- & Quest~\cite{quest2024} & \checkmark & $\times$ \\
- & ShadowKV~\cite{shadowkv2025} & \checkmark & $\times$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-表 \ref{tab:baselines} 給出 baseline 集合。此處須區分兩種用途不同的對照；混淆二者會使核心主張的檢驗失去判別力。
-
-\textbf{(i) 檢驗核心主張者為消融，而非外部系統。}本文主張既有學習式方法所用的對稱損失在異質動作成本下失準。直接比較 \sys 與 KVP 並\emph{不能}檢驗此主張：二者在儲存層數（六階對單階）、預測器族（GBDT 對強化學習）與特徵集上皆不同，量到的差異無法歸因至損失函數。具判別力的實驗是\emph{固定系統、僅替換損失函數}，即表 \ref{tab:ablation} 的 (B) 區塊，其中「對稱 L2」一列即為既有方法的損失置於本文動作空間下的行為。該實驗完全在我們控制之下，不依賴任何外部訓練產物。
-
-\textbf{(ii) 外部學習式系統用於佐證整體競爭力。}KVP、ForesightKV 與 LookaheadKV 均已釋出程式碼，但\emph{未釋出訓練後的權重}，且其預測器為模型專屬（第 \ref{sec:limitations} 節）。我們於平台 A 重訓可得者並回報，未能重訓者引用原論文數值並明確標註未重跑。此列的完整程度不影響 (i) 的結論。
-
-\textbf{(iii) production 策略界定實用價值。}vLLM 的 \texttt{OffloadingConnector} 內建策略\emph{僅有} \texttt{lru} 與 \texttt{arc}，其餘須經 \texttt{CachePolicy} 介面自行註冊；此二者因而構成目前 production 預設策略的完整集合。兩者皆僅依存取歷史決策：以表 \ref{tab:kappa} 的 3090／Llama-3.1-8B 為例，一個「重算需 225\,$\mu$s」的 block 與一個「自 CPU 取回需 4.2\,$\mu$s」的 block 在 LRU 眼中完全等價。本文的成本模型正是針對此空缺。
-
-\textbf{無法於 ROCm 執行者}：ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer、ParisKV。其阻擋原因並非 FlashInfer（AMD 已維護 \texttt{ROCm/flashinfer} 移植），而是 \texttt{rapidsai/raft} 無 ROCm 版本，以及 CUTLASS 的 template 層級耦合。我們將引用其論文回報數值作間接對照，並於第 \ref{sec:limitations} 節誠實說明。
-
-\subsection{評估指標與工作負載}
-
-系統指標：TTFT、TPOT、端到端延遲、GPU/CPU/SSD 佔用、PCIe traffic、throughput、服務層級分佈（見下）、重算成本。
-
-\paragraph{ROCm 量測方法。}
-KV 搬移經由 SDMA copy engine 而非 AQL compute queue，\emph{對 \texttt{rocprof-compute} 的 TCC/L2 counter 不可見}。我們將使用 \texttt{rocprofv3 --memory-copy-trace} 取得逐筆傳輸的位元組數、方向與時間戳，並以 \texttt{rocprof-compute} 的 gfx942 "Remote Read Traffic" 指標取得 kernel 側視角。
-
-\paragraph{能耗。}
-MI300X 的 \texttt{amdsmi} 提供 per-rail 能耗累加器，其中 \texttt{hbm\_energy\_acc} \emph{將 HBM 能耗與計算能耗分離}。對一個探討「保留於記憶體或重新計算」的研究問題而言，這是直接對應的量測能力，且在 NVIDIA 平台上不可得。
-
-\paragraph{品質指標。}
-Yandex 的研究~\cite{yakv2026} 顯示 ShadowKV 等方法在 needle-in-a-haystack 上表現良好卻在\emph{多事實抽取}任務上失效。因此我們將 needle-in-a-haystack 降級為 sanity check，改以多事實抽取作為主要品質判準，另納入 LongBench、RULER 與長文本摘要。
-
-\paragraph{品質如何化約為單一數字。}
-評估表的 Quality 欄須為單一純量，其定義如下。設 $\mathcal{T}$ 為上述任務集合，$Q_t(\pi)$ 為策略 $\pi$ 於任務 $t$ 的原始分數，並以 Full GPU 為參照定義相對保留率 $r_t(\pi) = Q_t(\pi)\,/\,Q_t(\textsf{FullGPU})$。我們回報
-\begin{equation}
-Q(\pi) \;=\; \min_{t \in \mathcal{T}} \; r_t(\pi),
-\label{eq:quality}
-\end{equation}
-即\emph{最差任務}的保留率，而非跨任務平均。理由與上一段相同：平均會使單一任務的崩潰被其餘任務的分數掩蓋，而 \cite{yakv2026} 所報告的正是此類崩潰。品質約束因而具體化為 $Q(\pi) \ge 1-\epsilon$。逐任務的 $r_t$ 完整列於附錄，避免式 \eqref{eq:quality} 的化約隱藏任務間的差異。
-
-\paragraph{以服務層級分佈取代單一命中率。}
-「KV hit rate」對單層快取有明確意義，但本文的動作空間有六階，「命中」並非二元事件：自 CPU 取回與自 SSD 取回的成本相差約一個數量級，與重算則相差 6--190 倍（表 \ref{tab:kappa}）。將這些情形壓成單一比率會抹除本文所要量測的成本結構。我們因此回報\emph{服務層級分佈}，即每次 KV 存取由 $\mathcal{A}$ 中哪一階滿足的經驗分佈，並另外給出兩個純量：(i) \textbf{GPU 常駐率}，存取時該 block 已位於 GPU 且為 BF16 的比例（對應傳統命中率）；(ii) \textbf{重算率}，由 \act{Drop} 觸發重算的存取比例。後者為本文特有，直接對應第 \ref{sec:recompute-econ} 節的成本模型，亦是表 \ref{tab:ablation} 中「移除 \act{Drop}」一列的解讀依據。
-
-\paragraph{預測器層級的診斷：為何不回報分類準確度。}
-我們\emph{刻意不}以預測器的分類準確度作為評估指標，並在此說明理由，以免被誤讀為疏漏。成本敏感訓練的作用即是將決策邊界自 $0.5$ 移至 $p^{*}=1/(1+\kappa)$，其必然後果是模型在\emph{廉價方向}上多犯錯以換取在\emph{昂貴方向}上少犯錯。以未加權的準確度衡量，成本敏感模型\emph{應當}劣於對稱模型；若其未劣化，反而意味著加權未生效。準確度因而與本文的目標函數方向相反，不構成有效證據。我們改以兩個量診斷預測器：
-
-\emph{(i) 校準品質。}式 \eqref{eq:threshold} 的最佳門檻僅在 $\hat{p}_i$ 為\emph{校準過的}機率時成立：若模型輸出 $\hat p = 0.1$ 的樣本中實際重用比例並非約 $10\%$，該門檻即失去意義，第 \ref{sec:loss} 節的整個論證隨之失效。我們回報 isotonic regression 校準前後的可靠度圖與 expected calibration error。此量同時是第 \ref{sec:loss} 節所揭露之 L1 缺陷（加權迴歸改變條件均值而非決策門檻）是否被校準步驟補救的\emph{唯一直接證據}；缺少此圖，該缺陷等同未被處理。
-
-\emph{(ii) 成本加權錯誤率。}$\sum_i c\!\left(a_i^{\text{pred}},\, a_i^{\star}\right)$，其中 $a_i^{\star}$ 為 oracle 動作、$c(\cdot,\cdot)$ 為式 \eqref{eq:cost} 的成本函數。此量計的是「錯掉多少微秒」而非「錯了幾次」，是唯一能在預測器層級公平比較兩種損失函數的指標，亦與系統層級的端到端延遲直接可對照。
-
-\paragraph{跨工作負載泛化。}
-承第 \ref{sec:predictor} 節的分布飄移討論，我們額外回報一組交叉實驗：於單一工作負載訓練並於其餘工作負載測試，回報上述兩個診斷量與 $Q(\pi)$ 的退化幅度。此結果同時界定週期性重訓的必要性——若跨工作負載退化可忽略，重訓機制即為不必要的複雜度，我們將據以移除。
+\paragraph{動作集合是四個無損動作，不是六階。}
+oracle 只在 \act{Gpu}$_{16}$、\act{Cpu}、\act{Ssd}、\act{Drop} 上求解，\textbf{未納入三個精度階}。這四個動作於 \S\ref{sec:eps-task} 已驗證為逐字元無損，故 $\epsilon$ 約束在此自動滿足，本節的 headroom 是\emph{位置分層本身}在 $\epsilon = 0$ 下可得的空間。精度階能額外帶來多少空間，本文未量。實作、複雜度與不變量檢查見附錄 \ref{app:oracle}。
 
 \subsection{四項成本量測決定了動作空間的有效子集}
 \label{sec:measured}
@@ -1161,7 +1080,7 @@ GSM8K 上四者的差異均與零無法區分（$n=1{,}000$ 時差值的 95\% �
 
 兩個剖面的可部署性結論不同。於 \texttt{llama-bf16}，\texttt{tier\_fs} 既是最佳 baseline，又需要 4{,}666--4{,}892\,MiB/s，超出唯一做過持續寫入量測的裝置（SATA QLC，181\,MiB/s）$26\times$，亦超出 NVMe 的短測上界 2{,}512\,MiB/s。即使以「每個不重複 block 僅寫一次」的下界計算仍需 3{,}086--3{,}208\,MiB/s，故此結論不依賴 load-and-evict 的建模選擇。於 \texttt{qwen-awq}（本文主設定），最佳 baseline 為 \texttt{cpu\_arc}，它完全不使用磁碟階；\texttt{tier\_fs} 的需求降至 2{,}016--2{,}122\,MiB/s，其下界為 1{,}350--1{,}404\,MiB/s。
 
-\textbf{我們不宣稱磁碟階於 NVMe 上不可部署。}該判定需要 NVMe 的持續寫入量測，而 \S\ref{app:cost} 記錄我們沒有做。可宣稱者為兩點：寫入頻寬是磁碟階一道獨立於延遲的可行性約束，而表 \ref{tab:baselines} 的五個 baseline 無一將其納入設計；成本感知放置把這道約束放寬 4--7 倍。
+\textbf{我們不宣稱磁碟階於 NVMe 上不可部署。}該判定需要 NVMe 的持續寫入量測，而 \S\ref{app:cost} 記錄我們沒有做。可宣稱者為兩點：寫入頻寬是磁碟階一道獨立於延遲的可行性約束，而 \S\ref{sec:platform-setup} 的五個 baseline 無一將其納入設計；成本感知放置把這道約束放寬 4--7 倍。
 
 \subsection{headroom 的峰值出現在成本交叉點的 2--3.5 倍處}
 \label{sec:sweet-spot}
@@ -1275,17 +1194,6 @@ DeepSeek-V2-Lite MLA AWQ & \textbf{399{,}376} \\
 
 \subsection{go/no-go 判定：條件式 GO，且條件可事先算出}
 \label{sec:verdict}
-
-\paragraph{oracle 如何計算。}
-oracle 取得整條 trace 的完整未來存取序列，據此構造一個離線放置策略。GPU 階的逐出用 Bélády/MIN（逐出下次使用最遠者），單階時此規則可證明最優~\cite{belady1966}。被逐出的 block 需再選一個目的地，我們跑兩條規則並取較佳者：\emph{cascade} 無條件往下推（CPU 有位子就放 CPU、否則放 SSD），\emph{cost-aware} 只在該階成本低於丟棄的邊際成本時才放。兩條都是可實作的離線策略，取其較佳者仍然可實作。Fang 等人~\cite{hetmem2025} 已為兩層（HBM 與 off-package DRAM）的無損放置推導上界；我們的 oracle 在兩點上延伸之：納入 SSD 層，以及納入 \act{Drop}$\rightarrow$重算動作。
-
-三項細節決定數字的正確性。其一，重算按 block 的\emph{絕對位置}計價（式 \eqref{eq:recompute-position}）；若讓 oracle 一律以位置 0 的價格重算，它付的價會低於線上策略，等於 oracle 自己作弊。其二，前綴語意下丟棄一個 block 的邊際成本是它到請求結尾的\emph{整條尾巴}而非它自己那一塊，因為第一個缺口之後的 block 一律重算。其三，逐出去向逐項計數：若「不再用到、丟棄成本為零」的逐出佔滿全部，則 CPU 與 SSD 階對最優解毫無貢獻，量到的 headroom 全部來自 GPU 階內的逐出選擇，不足以支持多階動作空間。
-
-\paragraph{此 oracle 給的是下界，不是上界。}
-多階且動作成本異質的最佳放置我們並未求解。貪婪的目的地選擇不保證全域最優，且 oracle 的逐出\emph{未}做前綴感知——真正的最優解會刻意讓保留的 block 構成連續前綴以避免製造缺口，而本 oracle 一樣會被缺口懲罰。兩項都使其偏弱，故所報 headroom 為\textbf{下界}，真正的最優只會更高。此不對稱使 GO 判定安全，NO-GO 判定則須額外審視。與 Sibyl~\cite{sibyl2022} 報告「達到全知 oracle 的 80\%」的評估傳統一致，我們以此上界作為判準而非成績。
-
-\paragraph{oracle 的動作集合是四個無損動作，不是六階。}
-本節的 oracle 只在 \act{Gpu}$_{16}$、\act{Cpu}、\act{Ssd}、\act{Drop} 上求解，\textbf{未納入三個精度階}。這四個動作於 \S\ref{sec:eps-task} 已驗證為逐字元無損，故 $\epsilon$ 約束在此自動滿足，表 \ref{tab:verdict} 的 headroom 是\emph{位置分層本身}在 $\epsilon = 0$ 下可得的空間。精度階能額外帶來多少空間，本文未量。
 
 \paragraph{停止條件。}
 若 oracle 相對於最佳\emph{可部署}策略的改善幅度小於 5\%，我們終止此研究方向並報告此負面結果。此判準訂於任何策略實作之前，本節依其判定。
@@ -1586,6 +1494,139 @@ B (MI300X) & FP8 & 對照：CDNA3 之後的常見配置 \\
 \end{center}
 
 \textbf{待檢驗的問題}：在固定的硬體與模型下，最佳 KV 策略是否隨權重精度改變？我們預期\emph{會}——因為權重精度決定 KV 預算，而預算改變會移動式 \eqref{eq:opt} 的容量約束。但這是\emph{間接}影響，與第 \ref{sec:twoplatform} 節的 $\kappa$ 軸（直接改變成本比）性質不同。
+
+\subsection{平台 B（MI300X）的實驗設計}
+
+\textbf{平台 B（規模與主要科學主張）}：AMD Instinct MI300X（gfx942，192\,GB HBM3），ROCm 7.x，vLLM ROCm wheel（Python 3.12），LMCache ROCm wheel（gfx942），真實 NVMe SSD。此平台承擔並行度／機會成本場景與能耗分析。
+
+\paragraph{壓力軸。}
+
+壓力軸\emph{隨平台而不同}，這正是第 \ref{sec:twoplatform} 節雙平台設計的直接後果。
+
+\textbf{平台 A（RTX 3090, 24\,GB）}：既有文獻的「單請求、上下文遞增」設定在此\emph{成立}。以 8-bit 權重的 Llama-3.1-8B 計，64K 上下文可置入而 128K 超出，主壓力軸為 context 8K$\rightarrow$16K$\rightarrow$32K$\rightarrow$64K$\rightarrow$（128K，預期失敗）。
+
+\textbf{平台 B（MI300X, 192\,GB）}：同一設定在此\emph{不成立}：8B--14B 模型於 128K 僅佔 HBM 的 8--10\%（第 \ref{sec:motivation} 節），量測不到壓力。此平台改採三軸：
+
+\begin{enumerate}\itemsep0.15em
+  \item \textbf{並行度}（主軸）：1、4、8、16、32 個並行請求 @ 128K 上下文。
+  \item \textbf{模型架構}：見下方選模準則。
+  \item \textbf{跨 session 保留}：多輪對話與 agentic trace。
+\end{enumerate}
+
+\paragraph{選模準則。}
+我們不以「涵蓋愈多模型愈好」為原則，而採一條更嚴格的規則：\emph{僅納入會使 $\kappa$ 產生可事先計算之變化的模型}。據此，選模受一個硬條件約束：\textbf{必須在目標平台上留有足夠的 KV 預算。}這排除了在平台 A 上使用 MoE：Qwen3-30B-A3B 即使以 int4 權重載入亦需約 17\,GB，僅餘 4.6\,GB 供 KV 使用。
+
+據此，兩個平台的模型分工如下：
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\caption{選模結果。$^{M}$ 為 MoE。$\kappa$ 於各自平台計算。平台 A 的兩個模型 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點。}
+\label{tab:models}
+\begin{tabular}{@{}llrl@{}}
+\toprule
+平台 & 模型 & $\kappa$ & 角色 \\
+\midrule
+\multirow{2}{*}{A (3090)}
+ & Qwen2.5-7B-Inst-1M & 108 & 主力（懸崖在 315K） \\
+ & Llama-3.1-8B-Inst  & 54  & 對照（$\kappa$ 減半） \\
+\midrule
+\multirow{2}{*}{B (MI300X)}
+ & Llama-4-Scout$^{M}$ & 8 & 規模（原生 10M） \\
+ & Qwen3-30B-A3B$^{M}$ & 3 & MoE 對 $\kappa$ 的影響 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Qwen2.5-7B-Instruct-1M 為平台 A 的主力}，因其原生支援 1M 上下文，而其 24\,GB 上的容量懸崖落在約 315K token——\emph{遠低於模型上限，故量測到的是純粹的記憶體限制而非模型限制}。相對地，Llama-3.1-8B 在同平台的容量懸崖（約 132K）與其原生上限（131{,}072）幾乎重合，兩種限制無法分離，故僅作對照。
+
+\paragraph{明確排除的架構。}
+MLA（如 DeepSeek 系列）改變式 \eqref{eq:kvsize} 本身，其 KV 為壓縮後的潛在向量；hybrid SSM（如 Jamba）的狀態大小不隨序列成長，已由 Marconi~\cite{marconi2025} 處理。二者並非「未評估」，而是\emph{定義上不同的問題}。
+
+\noindent 兩個平台的壓力軸不同並非實驗設計的瑕疵，而是待檢驗的假設本身：\emph{若最佳策略確實隨硬體比值改變，則產生壓力的方式本來就應該不同}。
+
+\subsection{尚未執行的 baseline 對照}
+\label{sec:baseline-design}
+
+\begin{table}[t]
+\centering\small
+\caption{Baseline 分層與平台可用性。\textbf{平台 A（CUDA）上全部可直接執行}；平台 B 欄為移植至 ROCm 的估計工作量，經逐一檢視 repo 後得出。$^{\dagger}$ 稀疏檢索一系因 \texttt{rapidsai/raft} 無 ROCm 移植而\textbf{結構性地無法於平台 B 執行}——這是平台 A 存在的理由之一。$^{*}$ LMCache 在 ROCm 上雖有官方 wheel，但存在已知執行期問題，見第 \ref{sec:limitations} 節。ClusterKV、RetroInfer、ParisKV 同屬該系，因與上列三者機制高度重疊而未納入。}
+\label{tab:baselines}
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+層級 & Baseline & A (CUDA) & B (ROCm) \\
+\midrule
+\multirow{2}{*}{錨點}
+ & Full GPU（無卸載） & \checkmark & \checkmark \\
+ & \textbf{Oracle（離線最優）} & \checkmark & \checkmark \\
+\midrule
+\multirow{4}{*}{Production}
+ & vLLM \texttt{lru} & \checkmark & \checkmark \\
+ & vLLM \texttt{arc} & \checkmark & \checkmark \\
+ & vLLM $+$ \texttt{fs} 磁碟層 & \checkmark & \checkmark \\
+ & LMCache~\cite{lmcache2025} & \checkmark & \checkmark$^{*}$ \\
+\midrule
+\multirow{2}{*}{學術（系統）}
+ & \textbf{InfiniGen}~\cite{infinigen2024} & \checkmark & $\sim$1 週 \\
+ & KIVI~\cite{kivi2024} & \checkmark & 3--7 天 \\
+\midrule
+\multirow{3}{*}{\textbf{學習式}}
+ & \textbf{KVP}~\cite{kvp2026} & \checkmark & 3--7 天 \\
+ & \textbf{ForesightKV}~\cite{foresightkv2026} & \checkmark & 3--7 天 \\
+ & \textbf{LookaheadKV}~\cite{lookaheadkv2026} & \checkmark & 3--7 天 \\
+\midrule
+\multirow{3}{*}{稀疏檢索$^{\dagger}$}
+ & ArkVale~\cite{arkvale2024} & \checkmark & $\times$ \\
+ & Quest~\cite{quest2024} & \checkmark & $\times$ \\
+ & ShadowKV~\cite{shadowkv2025} & \checkmark & $\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+表 \ref{tab:baselines} 給出 baseline 集合。此處須區分兩種用途不同的對照；混淆二者會使核心主張的檢驗失去判別力。
+
+\textbf{(i) 檢驗核心主張者為消融，而非外部系統。}本文主張既有學習式方法所用的對稱損失在異質動作成本下失準。直接比較 \sys 與 KVP 並\emph{不能}檢驗此主張：二者在儲存層數（六階對單階）、預測器族（GBDT 對強化學習）與特徵集上皆不同，量到的差異無法歸因至損失函數。具判別力的實驗是\emph{固定系統、僅替換損失函數}，即表 \ref{tab:ablation} 的 (B) 區塊，其中「對稱 L2」一列即為既有方法的損失置於本文動作空間下的行為。該實驗完全在我們控制之下，不依賴任何外部訓練產物。
+
+\textbf{(ii) 外部學習式系統用於佐證整體競爭力。}KVP、ForesightKV 與 LookaheadKV 均已釋出程式碼，但\emph{未釋出訓練後的權重}，且其預測器為模型專屬（第 \ref{sec:limitations} 節）。我們於平台 A 重訓可得者並回報，未能重訓者引用原論文數值並明確標註未重跑。此列的完整程度不影響 (i) 的結論。
+
+\textbf{(iii) production 策略界定實用價值。}vLLM 的 \texttt{OffloadingConnector} 內建策略\emph{僅有} \texttt{lru} 與 \texttt{arc}，其餘須經 \texttt{CachePolicy} 介面自行註冊；此二者因而構成目前 production 預設策略的完整集合。兩者皆僅依存取歷史決策：以表 \ref{tab:kappa} 的 3090／Llama-3.1-8B 為例，一個「重算需 225\,$\mu$s」的 block 與一個「自 CPU 取回需 4.2\,$\mu$s」的 block 在 LRU 眼中完全等價。本文的成本模型正是針對此空缺。
+
+\textbf{無法於 ROCm 執行者}：ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer、ParisKV。其阻擋原因並非 FlashInfer（AMD 已維護 \texttt{ROCm/flashinfer} 移植），而是 \texttt{rapidsai/raft} 無 ROCm 版本，以及 CUTLASS 的 template 層級耦合。我們將引用其論文回報數值作間接對照，並於第 \ref{sec:limitations} 節誠實說明。
+
+\subsection{尚未執行的評估指標}
+
+系統指標：TTFT、TPOT、端到端延遲、GPU/CPU/SSD 佔用、PCIe traffic、throughput、服務層級分佈（見下）、重算成本。
+
+\paragraph{ROCm 量測方法。}
+KV 搬移經由 SDMA copy engine 而非 AQL compute queue，\emph{對 \texttt{rocprof-compute} 的 TCC/L2 counter 不可見}。我們將使用 \texttt{rocprofv3 --memory-copy-trace} 取得逐筆傳輸的位元組數、方向與時間戳，並以 \texttt{rocprof-compute} 的 gfx942 "Remote Read Traffic" 指標取得 kernel 側視角。
+
+\paragraph{能耗。}
+MI300X 的 \texttt{amdsmi} 提供 per-rail 能耗累加器，其中 \texttt{hbm\_energy\_acc} \emph{將 HBM 能耗與計算能耗分離}。對一個探討「保留於記憶體或重新計算」的研究問題而言，這是直接對應的量測能力，且在 NVIDIA 平台上不可得。
+
+\paragraph{品質指標。}
+Yandex 的研究~\cite{yakv2026} 顯示 ShadowKV 等方法在 needle-in-a-haystack 上表現良好卻在\emph{多事實抽取}任務上失效。因此我們將 needle-in-a-haystack 降級為 sanity check，改以多事實抽取作為主要品質判準，另納入 LongBench、RULER 與長文本摘要。
+
+\paragraph{品質如何化約為單一數字。}
+評估表的 Quality 欄須為單一純量，其定義如下。設 $\mathcal{T}$ 為上述任務集合，$Q_t(\pi)$ 為策略 $\pi$ 於任務 $t$ 的原始分數，並以 Full GPU 為參照定義相對保留率 $r_t(\pi) = Q_t(\pi)\,/\,Q_t(\textsf{FullGPU})$。我們回報
+\begin{equation}
+Q(\pi) \;=\; \min_{t \in \mathcal{T}} \; r_t(\pi),
+\label{eq:quality}
+\end{equation}
+即\emph{最差任務}的保留率，而非跨任務平均。理由與上一段相同：平均會使單一任務的崩潰被其餘任務的分數掩蓋，而 \cite{yakv2026} 所報告的正是此類崩潰。品質約束因而具體化為 $Q(\pi) \ge 1-\epsilon$。逐任務的 $r_t$ 完整列於附錄，避免式 \eqref{eq:quality} 的化約隱藏任務間的差異。
+
+\paragraph{以服務層級分佈取代單一命中率。}
+「KV hit rate」對單層快取有明確意義，但本文的動作空間有六階，「命中」並非二元事件：自 CPU 取回與自 SSD 取回的成本相差約一個數量級，與重算則相差 6--190 倍（表 \ref{tab:kappa}）。將這些情形壓成單一比率會抹除本文所要量測的成本結構。我們因此回報\emph{服務層級分佈}，即每次 KV 存取由 $\mathcal{A}$ 中哪一階滿足的經驗分佈，並另外給出兩個純量：(i) \textbf{GPU 常駐率}，存取時該 block 已位於 GPU 且為 BF16 的比例（對應傳統命中率）；(ii) \textbf{重算率}，由 \act{Drop} 觸發重算的存取比例。後者為本文特有，直接對應第 \ref{sec:recompute-econ} 節的成本模型，亦是表 \ref{tab:ablation} 中「移除 \act{Drop}」一列的解讀依據。
+
+\paragraph{預測器層級的診斷：為何不回報分類準確度。}
+我們\emph{刻意不}以預測器的分類準確度作為評估指標，並在此說明理由，以免被誤讀為疏漏。成本敏感訓練的作用即是將決策邊界自 $0.5$ 移至 $p^{*}=1/(1+\kappa)$，其必然後果是模型在\emph{廉價方向}上多犯錯以換取在\emph{昂貴方向}上少犯錯。以未加權的準確度衡量，成本敏感模型\emph{應當}劣於對稱模型；若其未劣化，反而意味著加權未生效。準確度因而與本文的目標函數方向相反，不構成有效證據。我們改以兩個量診斷預測器：
+
+\emph{(i) 校準品質。}式 \eqref{eq:threshold} 的最佳門檻僅在 $\hat{p}_i$ 為\emph{校準過的}機率時成立：若模型輸出 $\hat p = 0.1$ 的樣本中實際重用比例並非約 $10\%$，該門檻即失去意義，第 \ref{sec:loss} 節的整個論證隨之失效。我們回報 isotonic regression 校準前後的可靠度圖與 expected calibration error。此量同時是第 \ref{sec:loss} 節所揭露之 L1 缺陷（加權迴歸改變條件均值而非決策門檻）是否被校準步驟補救的\emph{唯一直接證據}；缺少此圖，該缺陷等同未被處理。
+
+\emph{(ii) 成本加權錯誤率。}$\sum_i c\!\left(a_i^{\text{pred}},\, a_i^{\star}\right)$，其中 $a_i^{\star}$ 為 oracle 動作、$c(\cdot,\cdot)$ 為式 \eqref{eq:cost} 的成本函數。此量計的是「錯掉多少微秒」而非「錯了幾次」，是唯一能在預測器層級公平比較兩種損失函數的指標，亦與系統層級的端到端延遲直接可對照。
+
+\paragraph{跨工作負載泛化。}
+承第 \ref{sec:predictor} 節的分布飄移討論，我們額外回報一組交叉實驗：於單一工作負載訓練並於其餘工作負載測試，回報上述兩個診斷量與 $Q(\pi)$ 的退化幅度。此結果同時界定週期性重訓的必要性——若跨工作負載退化可忽略，重訓機制即為不必要的複雜度，我們將據以移除。
 
 % =====================================================================
 \bibliographystyle{plain}
