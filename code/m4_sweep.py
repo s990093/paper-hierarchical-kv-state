@@ -62,7 +62,14 @@ class Ctx:
         self.cm = load_cost_model(a.device,
                                   require_model_key=self.prof["cost_model_key"])
         self.bpb = self.prof["kv_bytes_per_token"] * BLOCK   # 每 block 幾個 byte
-        self.gpu_blocks = self.prof["gpu_kv_tokens"] // BLOCK
+        # --gpu-tokens 覆寫：讓「壓力固定、長度變化」的掃描成為可能。
+        # 🔴 覆寫成剖面實測值以外的數字時，那個設定**在這張卡上不可部署**，
+        #    必須在結果裡標明（欄位 gpu_tokens_override）。
+        #    它回答的是「若預算跟著工作負載一起變大（換卡或降 KV 精度），
+        #    長度本身是好是壞」——與「同一張卡塞更大的東西」是不同的問題。
+        self.gpu_tokens = a.gpu_tokens or self.prof["gpu_kv_tokens"]
+        self.gpu_tokens_override = bool(a.gpu_tokens)
+        self.gpu_blocks = self.gpu_tokens // BLOCK
         self.cpu_blocks = int(a.cpu_gib * 1024**3) // self.bpb
         self.dev_write = (a.device_write_mibps
                           if a.device_write_mibps is not None
@@ -82,9 +89,12 @@ class Ctx:
                   f"{dm['decode_ms_per_block']:.6f} × blocks"
                   f"（R²={dm['r2']:.4f}，擬合自 {dm['n_points']} 個 ctx）")
         du = shutil.disk_usage(self.fs_root)
-        print(f"[剖面] {a.model}：GPU {self.prof['gpu_kv_tokens']:,} token = "
+        print(f"[剖面] {a.model}：GPU {self.gpu_tokens:,} token = "
               f"{self.gpu_blocks:,} blocks；每 block "
-              f"{self.bpb / 1024**2:.1f} MiB")
+              f"{self.bpb / 1024**2:.1f} MiB"
+              + ("　⚠️ 已覆寫（剖面實測值 "
+                 f"{self.prof['gpu_kv_tokens']:,}），此設定不可部署"
+                 if self.gpu_tokens_override else ""))
         print(f"[裝置] {a.device}：成本常數與持續寫入上限 "
               f"{self.dev_write:,.0f} MiB/s 同時來自這顆碟")
         print(f"[實體] {self.fs_root}：裝置 {du.total / 1024**4:.1f} TiB、"
@@ -132,7 +142,9 @@ class Ctx:
             "ts": datetime.now().astimezone().isoformat(),
             "sim_version": SIM_VERSION, "trace": tname,
             "model_profile": self.a.model, "device": self.a.device,
-            "gpu_budget_tokens": self.prof["gpu_kv_tokens"],
+            "gpu_budget_tokens": self.gpu_tokens,
+            "gpu_tokens_override": int(self.gpu_tokens_override),
+            "profile_gpu_tokens": self.prof["gpu_kv_tokens"],
             "cpu_budget_gib": self.a.cpu_gib,
             "lookup": self.a.lookup, "prefetch": int(self.a.prefetch),
             "oracle_dest": self.a.oracle_dest,
@@ -490,6 +502,11 @@ def main() -> int:
     ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix")
     ap.add_argument("--prefetch", action="store_true", default=True)
     ap.add_argument("--no-prefetch", dest="prefetch", action="store_false")
+    ap.add_argument("--gpu-tokens", type=int, default=None,
+                    help="覆寫剖面的 GPU KV 預算。用於「壓力固定、長度變化」"
+                         "的掃描——回答「若預算跟著工作負載變大（換卡或降 KV "
+                         "精度），長度本身是好是壞」。⚠️ 覆寫的設定在這張卡上"
+                         "不可部署，結果會標記 gpu_tokens_override=1")
     ap.add_argument("--surface-lengths", nargs="*",
                     default=[8192, 32768, 131072, 262144, 524288],
                     help="axis=surface 的請求長度（token）")

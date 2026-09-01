@@ -176,8 +176,15 @@ MODEL_PROFILES = {
     },
     # 以下剖面**沒有**對應的成本量測。要用必須先跑 M2 的對應設定，
     # 否則 load_cost_model 會拒絕。列在這裡是為了記錄實測容量。
-    "llama-awq": {"gpu_kv_tokens": 120_320, "kv_bytes_per_token": 131_072,
-                  "cost_model_key": "llama-awq", "source": "M1 capacity.csv"},
+    # 🔴 llama-awq 在 M3 跑的是 **FP8 KV**（m3_baseline 的設定裡就寫著
+    #    "extra": ["--kv-cache-dtype", "fp8"]），所以每 token 是 64 KiB 不是 128。
+    #    寫成 128 會讓 decode 的擬合斜率換算出 1,030 GB/s——超過 3090 的峰值
+    #    936 GB/s，物理上不可能。check_decode_bandwidth 抓到了這個錯。
+    #    自我檢查：120,320 token × 64 KiB = 7.3 GiB，加 AWQ 權重 5.7 GB
+    #    在 24 GB 卡上合理。
+    "llama-awq": {"gpu_kv_tokens": 120_320, "kv_bytes_per_token": 65_536,
+                  "cost_model_key": "llama-awq", "source": "M1 capacity.csv",
+                  "kv_dtype": "fp8"},
     # 🔴 Qwen2.5-7B 的 KV 幾何與 Llama-3.1-8B 不同：
     #    28 層 × 4 KV head × 128 dim × 2(K,V) × 2 bytes = 57,344 = 56 KiB/token。
     #    先前這裡照抄 Llama 的 128 KiB，錯了 2.29 倍。

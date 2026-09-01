@@ -1,0 +1,100 @@
+==============================================================================
+ Milestone 4 — go/no-go 判定材料
+ 全部數字自 results/ 讀出。找不到的印 NOT_MEASURED。
+==============================================================================
+
+## 成本模型（來源：retrieval_cost_sata.csv）
+   GPU 0.000、CPU 0.588、SSD 5.536 ms/block
+   重算 4.008 + 0.000210 × 位置 ms/block
+   SSD 與重算的交叉點：位置 7,278 token
+   位置擬合上限：24576 token
+
+## A. SSD 容量掃描（主結果）
+   trace               SSD  best baseline  headroom        判定   baseline 寫入    可行?
+   toolagent         512.0        tier_fs     2.83%     NO_GO      4,666MiB/s     🔴
+   conversation      512.0        tier_fs     3.34%     NO_GO      4,892MiB/s     🔴
+   裝置持續寫入能力（實測）：2,512 MiB/s
+
+## B. GPU 預算掃描
+   toolagent    預算  48,128 token　壓力    1,814×　免費逐出  62.0%　headroom   7.41% MARGINAL
+   toolagent    預算  24,064 token　壓力    3,628×　免費逐出  61.3%　headroom   6.94% MARGINAL
+   toolagent    預算  12,032 token　壓力    7,257×　免費逐出  60.8%　headroom   6.76% MARGINAL
+   toolagent    預算   6,016 token　壓力   14,514×　免費逐出  56.0%　headroom   7.24% MARGINAL
+   toolagent    預算   3,008 token　壓力   29,028×　免費逐出  47.5%　headroom   6.89% MARGINAL
+   toolagent    預算   1,504 token　壓力   58,055×　免費逐出  44.1%　headroom   6.63% MARGINAL
+   toolagent    預算     752 token　壓力  116,110×　免費逐出  42.6%　headroom   6.47% MARGINAL
+   toolagent    預算     376 token　壓力  237,269×　免費逐出  41.7%　headroom   6.36% MARGINAL
+   toolagent    預算     188 token　壓力  496,107×　免費逐出  41.1%　headroom   6.30% MARGINAL
+   conversation 預算  48,128 token　壓力    1,886×　免費逐出  61.7%　headroom   6.05% MARGINAL
+   conversation 預算  24,064 token　壓力    3,773×　免費逐出  61.0%　headroom   5.61% MARGINAL
+   conversation 預算  12,032 token　壓力    7,545×　免費逐出  60.6%　headroom   5.39% MARGINAL
+   conversation 預算   6,016 token　壓力   15,090×　免費逐出  60.4%　headroom   5.29% MARGINAL
+   conversation 預算   3,008 token　壓力   30,181×　免費逐出  60.3%　headroom   5.25% MARGINAL
+   conversation 預算   1,504 token　壓力   60,362×　免費逐出  60.2%　headroom   5.24% MARGINAL
+   conversation 預算     752 token　壓力  120,724×　免費逐出  60.2%　headroom   5.25% MARGINAL
+   conversation 預算     376 token　壓力  246,697×　免費逐出  59.5%　headroom   5.22% MARGINAL
+   conversation 預算     188 token　壓力  515,820×　免費逐出  58.6%　headroom   5.18% MARGINAL
+
+## C. 節省按請求長度分箱
+   conversation（最佳 baseline = tier_fs）
+            0–4K   4,093 筆　佔時間   2.1%　節省  11.32%　佔總節省   1.9%
+           4K–8K   2,518 筆　佔時間   6.0%　節省  10.57%　佔總節省   5.1%
+          8K–16K   2,686 筆　佔時間  15.6%　節省  11.55%　佔總節省  14.4%
+         16K–32K   1,903 筆　佔時間  26.3%　節省  13.03%　佔總節省  27.2%
+         32K–64K     576 筆　佔時間  21.0%　節省  12.12%　佔總節省  20.2%
+        64K–128K     255 筆　佔時間  29.0%　節省  13.55%　佔總節省  31.2%
+   toolagent（最佳 baseline = tier_fs）
+            0–4K   6,928 筆　佔時間   3.2%　節省   9.30%　佔總節省   2.6%
+           4K–8K  11,548 筆　佔時間   9.2%　節省   7.87%　佔總節省   6.3%
+          8K–16K   2,688 筆　佔時間  16.2%　節省  10.85%　佔總節省  15.3%
+         16K–32K   1,716 筆　佔時間  25.9%　節省  12.54%　佔總節省  28.3%
+         32K–64K     516 筆　佔時間  20.3%　節省  12.00%　佔總節省  21.2%
+        64K–128K     212 筆　佔時間  25.1%　節省  12.08%　佔總節省  26.4%
+
+## D. 模擬器的系統語意假設各自的影響
+   ⚠️ semantics_ablation.csv：120 列的 sim_version 與現行不符（現行 0e7b989d）。**已保留**，但引用前請確認那一版的行為。
+   pressure:1.0x(nom 1x)           per-block/no-prefetch=6.15%　prefix/no-prefetch=6.15%　per-block/prefetch=6.15%　prefix/prefetch=6.15%
+                                   → 兩項修正合計 +0.00 個百分點
+   pressure:2.0x(nom 2x)           per-block/no-prefetch=18.75%　prefix/no-prefetch=18.75%　per-block/prefetch=18.27%　prefix/prefetch=18.27%
+                                   → 兩項修正合計 -0.48 個百分點
+   pressure:4.0x(nom 4x)           per-block/no-prefetch=14.17%　prefix/no-prefetch=14.17%　per-block/prefetch=13.21%　prefix/prefetch=13.21%
+                                   → 兩項修正合計 -0.96 個百分點
+   pressure:7.8x(nom 8x)           per-block/no-prefetch=38.76%　prefix/no-prefetch=35.66%　per-block/prefetch=37.66%　prefix/prefetch=33.75%
+                                   → 兩項修正合計 -5.00 個百分點
+   trace:conversation              per-block/no-prefetch=13.04%　prefix/no-prefetch=10.81%　per-block/prefetch=12.58%　prefix/prefetch=12.58%
+                                   → 兩項修正合計 -0.46 個百分點
+   trace:toolagent                 per-block/no-prefetch=13.40%　prefix/no-prefetch=11.16%　per-block/prefetch=12.06%　prefix/prefetch=11.51%
+                                   → 兩項修正合計 -1.89 個百分點
+
+## E. 前綴語意為什麼幾乎沒有影響
+   缺口之後仍留在任一階的 block：0.000% – 0.464%（6 組 trace × 策略）
+   缺口之後是首次出現的 block：61.8% – 80.1%
+
+## F. 磁碟頻寬（可行性判定的依據）
+   burst 1 GiB       /ssd7/hungwei     寫      492　讀      522 MiB/s
+   burst 1 GiB       /home/hungwei     寫    2,512　讀    2,085 MiB/s
+   sustained 16 GiB  /ssd7/hungwei     寫      181　讀      515 MiB/s
+
+## F2. GPU 上的精度階（六階動作空間缺的兩階）
+   精度            容量倍數      反量化 ms/block          品質 ε
+   bf16         1.00×               0.0  NOT_MEASURED
+   fp8          2.00×             0.025  NOT_MEASURED
+   int8         1.94×      NOT_MEASURED  NOT_MEASURED
+   int4         3.77×            0.0165  NOT_MEASURED
+   🔴 1 階的反量化成本未量：['int8']
+      在量到之前，Oracle 的動作空間只有四階（GPU-BF16 / CPU / SSD / DROP），
+      論文的六階主張無法用模擬驗證。
+      量法見 overnight_v2.sh 步驟 1；解析器 m4_oracle.load_precision_tiers 已用假輸入驗證。
+
+## G. 只比「在真機上跑得起來」的策略
+   模擬的成本模型只向讀取收費，寫入免費。加上實測的持續寫入頻寬之後，
+   有些策略根本寫不下去。此節把不可行的策略排除後重新比較。
+   成本常數與寫入頻寬上限同時來自：nvme (2,512 MiB/s)
+   trace               SSD              裝置     可行的 best   oracle 可行?  headroom        判定
+   conversation      512.0            nvme      cpu_lru         ✅     5.11%    MARGINAL
+   toolagent         512.0            nvme      cpu_arc         ✅     4.00%       NO_GO
+
+==============================================================================
+ headroom 全距：2.83% – 7.41%（20 個設定）
+ 判定分佈：MARGINAL 18 個、NO_GO 2 個
+==============================================================================
