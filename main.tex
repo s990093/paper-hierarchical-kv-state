@@ -110,7 +110,7 @@ MI300X 的 HBM 頻寬（5.3\,TB/s 峰值）與主機鏈路頻寬（PCIe Gen5 $\t
 \end{enumerate}
 
 \paragraph{本稿狀態。}
-本文為初稿。第 \ref{sec:motivation} 節的量化分析與第 \ref{sec:related} 節的文獻比對均已完成並經查證。第 \ref{sec:eval} 節的每一個數字均可追溯至一條指令與一個輸出檔，凡未量到者標為 \texttt{NOT\_MEASURED}；其中四項量測推翻了本文原先的前提，我們保留被推翻的敘述並逐項列出後果，而非改寫成事後看來正確的樣子。\textbf{第 \ref{sec:design} 節的線上策略尚未實作}，故本文不報告任何線上策略的效能；已設計但未執行的實驗列於附錄 \ref{app:notyet}。我們在第 \ref{sec:limitations} 節說明此一狀態的意涵。
+本文為初稿。第 \ref{sec:motivation} 節的量化分析與第 \ref{sec:related} 節的文獻比對均已完成並經查證。第 \ref{sec:eval} 節的每一個數字均可追溯至一條指令與一個輸出檔，凡未量到者標為 \texttt{NOT\_MEASURED}；其中數項量測推翻了我們在動手之前的假設，論文按量測結果陳述，並在 \S\ref{sec:verdict} 與第 \ref{sec:limitations} 節標明證據到哪裡為止。\textbf{第 \ref{sec:design} 節的線上策略尚未實作}，故本文不報告任何線上策略的效能；已設計但未執行的實驗列於附錄 \ref{app:notyet}。我們在第 \ref{sec:limitations} 節說明此一狀態的意涵。
 
 % =====================================================================
 \section{Background and Motivation}
@@ -998,40 +998,40 @@ Q(\pi) \;=\; \min_{t \in \mathcal{T}} \; r_t(\pi),
 \paragraph{跨工作負載泛化。}
 承第 \ref{sec:predictor} 節的分布飄移討論，我們額外回報一組交叉實驗：於單一工作負載訓練並於其餘工作負載測試，回報上述兩個診斷量與 $Q(\pi)$ 的退化幅度。此結果同時界定週期性重訓的必要性——若跨工作負載退化可忽略，重訓機制即為不必要的複雜度，我們將據以移除。
 
-\subsection{已完成的量測推翻了本文的四項前提}
+\subsection{四項成本量測決定了動作空間的有效子集}
 \label{sec:measured}
 
-我們在平台 A 上完成成本常數與容量的量測。四項結果與本文原先的敘述相牴觸，其中兩項擴大了可驗證的範圍，兩項要求修正成本模型。表 \ref{tab:measured} 列出每項量測、其推翻的敘述、以及對論文的後果；量測協定與逐設定的完整數據見附錄 \ref{app:measurements}。
+動作空間 $\mathcal{A}$ 的六個狀態並非在每個平台上都存在，也並非在每個上下文長度下都有意義。表 \ref{tab:measured} 給出四項決定其有效子集的量測：前兩項確立 GPU 上四個精度階的\emph{可用性}與\emph{實際容量收益}，後兩項確立 \act{Drop} 的成本形式與它相對 \act{SSD} 的適用區間。量測協定與逐設定的完整數據見附錄 \ref{app:measurements}。
 
 \begin{table*}[t]
 \centering\small
-\caption{平台 A（RTX 3090, sm\_86）的已完成量測。每列給出一項與本文原敘述相牴觸的結果。}
+\caption{決定動作空間有效子集的四項量測（平台 A，RTX 3090, sm\_86）。}
 \label{tab:measured}
-\begin{tabular}{p{0.20\textwidth}p{0.30\textwidth}p{0.42\textwidth}}
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.19\textwidth}>{\raggedright\arraybackslash}p{0.29\textwidth}>{\raggedright\arraybackslash}p{0.44\textwidth}}
 \toprule
-\textbf{量測} & \textbf{原敘述 $\rightarrow$ 實測} & \textbf{對本文的後果} \\
+\textbf{量測} & \textbf{結果} & \textbf{對動作空間與成本模型的意涵} \\
 \midrule
 FP8 KV 於 sm\_86 &
-「Ampere 無原生 FP8，平台 A 無此設定」$\rightarrow$ 可用，容量恰增 $2.00\times$（41{,}648$\rightarrow$83{,}312 token） &
-混淆了 FP8 \emph{運算}與 FP8 \emph{儲存}。動作空間中位於 GPU 的四個精度階皆為同一旗標的取值，單一平台即可驗證五階 \\
+可用，容量恰增 $2.00\times$（41{,}648$\rightarrow$83{,}312\,token） &
+sm\_86 無原生 FP8 \emph{tensor core 運算}，但 \act{Gpu}$_8$ 是\emph{儲存}狀態，與 tensor core 無關。GPU 上的四個精度階皆為 \texttt{-{}-kv-cache-dtype} 的取值，單一平台即可驗證 \\
 \addlinespace
 精度階梯的實際收益 &
-$2\times$/$4\times$ $\rightarrow$ $2.00\times$/$1.94\times$/$3.77\times$ &
-per-token-head 量化固定多帶 2\,KiB/token 的 scale（$2\times32\times8$ 個 FP32），式 \eqref{eq:kvsize} 僅計每元素位元組數會高估低精度階 \\
+$2.00\times$/$1.94\times$/$3.77\times$，而非位元寬度所示的 $2\times$/$4\times$ &
+per-token-head 量化固定多帶 2\,KiB/token 的 scale（$2\times32\times8$ 個 FP32）。量化中繼資料與序列長度成正比，必須進入成本模型；僅以每元素位元組數計算會高估低精度階 \\
 \addlinespace
 $C_{\text{recompute}}$ 對位置的形式 &
-「attention 的二次項」$\rightarrow$ 對位置線性，式 \eqref{eq:recompute-position}，擬合偏差 $<1.6\%$ &
-整段 prefill 為 $O(L^2)$，但固定大小 block 在位置 $P$ 重算為 $O(C\cdot P)$。原敘述混用了兩個量 \\
+對位置\emph{線性}，式 \eqref{eq:recompute-position}，擬合偏差 $<1.6\%$ &
+整段 prefill 為 $O(L^2)$，但固定大小 block 在位置 $P$ 重算只需與既有前綴做 attention，為 $O(C\cdot P)$。二者是不同的量，將 \act{Drop} 視為單一常數會在長上下文下系統性低估其成本 \\
 \addlinespace
 \act{SSD} 與 \act{Drop} 的優劣次序 &
-「兩者同數量級」$\rightarrow$ 成立，且\emph{次序隨 block 的絕對位置反轉}，交叉點 $P^{*}$ 落在 10{,}851（\texttt{llama-bf16}）至 37{,}717\,token（\texttt{qwen-awq}），二者皆於 NVMe&
-\act{Drop} 的成本隨位置線性成長而 \act{SSD} 為常數，故位置 $<P^{*}$ 時 \act{Drop} 較廉、其後 \act{SSD} 較廉。於 128K 上下文，落在 \act{Drop} 一側的 block 佔 8.3\%（\texttt{llama-bf16}）或 28.8\%（\texttt{qwen-awq}）。\textbf{動作空間的有效子集隨上下文長度\emph{與成本剖面}而變}——此即本文主張的一個實例 \\
+同數量級，且\emph{次序隨 block 的絕對位置反轉}，交叉點 $P^{*}$ 落在 10{,}851（\texttt{llama-bf16}）至 37{,}717\,token（\texttt{qwen-awq}），二者皆於 NVMe &
+\act{Drop} 的成本隨位置線性成長而 \act{SSD} 為常數，故位置 $<P^{*}$ 時 \act{Drop} 較廉、其後 \act{SSD} 較廉。於 128K 上下文，落在 \act{Drop} 一側的 block 佔 8.3\%（\texttt{llama-bf16}）或 28.8\%（\texttt{qwen-awq}）。\textbf{動作空間的有效子集隨上下文長度\emph{與成本剖面}而變}，且可由成本常數事先算出 \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \paragraph{Takeaway.}
-四項結果中，兩項擴大了平台 A 的可驗證範圍（FP8 儲存可用、四個精度階同旗標可切），兩項要求修正成本模型（量化中繼資料、重算的位置依賴形式）。第四項的性質不同：它不是修正，而是本文核心主張的直接實例——\act{SSD} 在平台 A 被 \act{Drop} 支配，故六階動作空間並非普遍適用。論文若宣稱六階皆為必要，此結果即為反例；改為「動作空間的\emph{有效}子集隨平台而定」則與證據一致，且更強。
+四項量測共同給出一個結論：\textbf{六階動作空間是候選集合，不是每個平台上都成立的必要集合。}其有效子集由兩個可事先計算的量決定——精度階由硬體與後端支援與否決定（\S\ref{sec:eps-task} 顯示於 sm\_86 只有一階保住檢索品質），位置階由 $P^{*}$ 與請求長度的關係決定。二者皆不需試跑即可算出，這正是「策略須隨硬體條件化」主張的可操作形式。
 
 \subsection{Tier 0 baselines：長上下文下五者有四者失效}
 \label{sec:baselines-measured}
@@ -1354,7 +1354,7 @@ ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer 與 ParisKV 因 \texttt{rapi
 
 本文的核心論點是：\emph{當動作成本相差 6--190 倍、且該比值本身隨硬體變動 32 倍時，以對稱損失訓練的效用預測器會系統性地錯置決策邊界。}我們將 KV 放置形式化為受品質約束的序列決策問題，其動作空間統一了位置分層與精度分層，並將「丟棄後重算」視為階梯上一個具明確標價的層級。
 
-平台 A 的量測支持此論點，並在四處修正了本文的敘述（第 \ref{sec:measured} 節）。其中兩處擴大了可驗證範圍：FP8 為\emph{儲存}狀態而非運算狀態，故 sm\_86 可量測，且動作空間中位於 GPU 的四個精度階皆為同一旗標的取值。另兩處要求修正成本模型：per-token-head 量化固定多帶 2\,KiB/token 的中繼資料，使精度階梯的收益為 $2.00\times$/$1.94\times$/$3.77\times$ 而非 $2\times$/$4\times$；而固定大小 block 的重算成本對其絕對位置為\emph{線性}，非二次。
+平台 A 的量測支持此論點（第 \ref{sec:measured} 節）。其中兩項確立了 GPU 精度階的可用性：FP8 為\emph{儲存}狀態而非運算狀態，故 sm\_86 可量測，且動作空間中位於 GPU 的四個精度階皆為同一旗標的取值。另兩項確立了成本模型的形式：per-token-head 量化固定多帶 2\,KiB/token 的中繼資料，使精度階梯的收益為 $2.00\times$/$1.94\times$/$3.77\times$ 而非 $2\times$/$4\times$；而固定大小 block 的重算成本對其絕對位置為\emph{線性}，非二次。
 
 第四處修正的性質不同。\act{SSD} 的取回成本為常數，而 \act{Drop} 的成本隨 block 的絕對位置線性成長（式 \eqref{eq:recompute-position}），二者於 $P^{*}$ 交叉：其前 \act{Drop} 較廉，其後 \act{SSD} 較廉。$P^{*}$ 本身隨模型剖面變動 $3.5\times$（表 \ref{tab:costmodels}），故落在 \act{Drop} 一側的 block 比例於 128K 上下文為 8.3\%（\texttt{llama-bf16}）至 28.8\%（\texttt{qwen-awq}）。這不是本文主張的反例，而是其直接實例：\emph{最佳動作空間的有效子集由上下文長度與成本剖面共同決定}，而二者皆可事先算出。六階動作空間應理解為候選集合。
 
@@ -1497,7 +1497,7 @@ vLLM 的查詢語意是連續前綴：\texttt{\_lookup\_complete\_chunks} 回傳
 平時成本以 \texttt{torch.cuda.memory\_stats()} 與 host 端計數器直接取得，單位為位元組，可由式 \eqref{eq:kvsize} 驗算。被需要時的成本則以隔離的微基準取得：對每個動作，反覆搬移或重建固定數量的 block 並取中位數延遲，重複三次確認變異小於 10\%。
 
 \paragraph{重算成本不是常數。}
-$\mathrm{recomp}(\ell)$ 隨 block 的絕對位置 $\ell$ 成長。\textbf{此處原先寫「因 attention 的二次項」，已由 \S\ref{sec:measured} 的量測推翻：形式為線性。}我們將其量測為位置的函數而非單一純量，並以線性層的 $2N_{\text{active}}$ 項作為 $\ell \to 0$ 的下界檢核。對 MoE 模型，$N_{\text{active}}$ 為啟用專家的參數量而非總參數量。
+$\mathrm{recomp}(\ell)$ 隨 block 的絕對位置 $\ell$ 成長。\textbf{此協定設計時假設其為 attention 的二次項；\S\ref{sec:measured} 的量測顯示形式為線性。}我們將其量測為位置的函數而非單一純量，並以線性層的 $2N_{\text{active}}$ 項作為 $\ell \to 0$ 的下界檢核。對 MoE 模型，$N_{\text{active}}$ 為啟用專家的參數量而非總參數量。
 
 \subsection{消融設計}
 
