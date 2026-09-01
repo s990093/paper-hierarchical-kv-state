@@ -1245,6 +1245,93 @@ $C_{\text{recompute}}$ 對位置的形式 &
 \paragraph{Takeaway.}
 四項結果中，兩項擴大了平台 A 的可驗證範圍（FP8 儲存可用、四個精度階同旗標可切），兩項要求修正成本模型（量化中繼資料、重算的位置依賴形式）。第四項的性質不同：它不是修正，而是本文核心主張的直接實例——\act{SSD} 在平台 A 被 \act{Drop} 支配，故六階動作空間並非普遍適用。論文若宣稱六階皆為必要，此結果即為反例；改為「動作空間的\emph{有效}子集隨平台而定」則與證據一致，且更強。
 
+\subsection{Tier 0 baselines：長上下文下五者有四者失效}
+\label{sec:baselines-measured}
+
+我們以兩輪相同長前綴的工作負載量測五個現成系統：第一輪（cold）無任何快取，第二輪（warm）量其保留能力。二者的比值即為該系統卸載機制的價值。
+
+\begin{table}[t]
+\centering\small
+\caption{Tier 0 baselines 的 warm 加速比（\texttt{qwen-awq}、4 個前綴、平台 A）。ctx 32K--65K 時五者相近（42--77$\times$），因工作集仍可置入 GPU，卸載階未被使用。}
+\label{tab:baseline-measured}
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+對照組 & 機制 & cold\,(ms) & warm\,(ms) & 加速 \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{ctx = 131{,}072}}\\
+\texttt{full\_gpu} & 不卸載 & 99{,}681 & 100{,}152 & 1.0$\times$ \\
+\texttt{cpu\_arc} & CPU 階 + ARC & 102{,}702 & 72{,}883 & 1.4$\times$ \\
+\texttt{tier\_fs} & CPU + 磁碟兩階 & 101{,}518 & \textbf{13{,}626} & \textbf{7.5$\times$} \\
+\texttt{lmcache} & LMCache & 102{,}248 & 102{,}603 & 1.0$\times$ \\
+\midrule
+\multicolumn{5}{@{}l}{\emph{ctx = 258{,}048}}\\
+\texttt{full\_gpu} & 不卸載 & 325{,}520 & 322{,}579 & 1.0$\times$ \\
+\texttt{cpu\_arc} & CPU 階 + ARC & 327{,}295 & 325{,}767 & 1.0$\times$ \\
+\texttt{tier\_fs} & CPU + 磁碟兩階 & 326{,}393 & \textbf{43{,}664} & \textbf{7.5$\times$} \\
+\texttt{lmcache} & LMCache & 333{,}046 & 335{,}034 & 1.0$\times$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+於 258K，五個系統中僅 \texttt{tier\_fs} 保有效益（省下 282.7 秒），其餘四者的 warm 與 cold 幾無差異。CPU 階於 131K 尚有 1.4$\times$，至 258K 即失效：24\,GiB 的 CPU 階可容 449{,}536\,token，而 4 個 258K 前綴的工作集為 1{,}032{,}192\,token。
+
+\paragraph{一項保留。}
+\texttt{lmcache} 於全部長度皆為 1.0$\times$。此\emph{可能}為我們的組態錯誤而非該系統的能力上限；在排除此可能之前，本文不宣稱 LMCache 於長上下文無效。
+
+\subsection{decode 佔總時間的四分之三，而放置決策對其無自由度}
+\label{sec:decode-share}
+
+放置決策僅能作用於 prefill。decode 期間該請求的 KV 必須整份駐留於 GPU：每一步皆需讀取完整 KV，無搬移至 CPU/SSD 或丟棄重算的餘地。
+
+以 Mooncake trace 的真實 \texttt{output\_length}（toolagent 中位 30、p90 507；conversation 中位 350、p90 597）與實測的每步成本換算，decode 佔端到端時間的 48.8\%（toolagent）與 53.8\%（conversation）。於 \texttt{llama-bf16} 剖面（BF16 權重 15.2\,GB）此比例升至 75\%，因每一步的固定成本包含讀取權重。
+
+\begin{equation}
+t_{\text{decode/step}} = \beta + \gamma \cdot N_{\text{blocks}}
+\label{eq:decode}
+\end{equation}
+
+實測擬合（$R^2 = 0.999$）：\texttt{llama-bf16} 為 $36.768 + 0.005581 N$，\texttt{qwen-awq} 為 $18.158 + 0.001267 N$\,ms。$\gamma$ 換算之 KV 讀取頻寬分別為 376 與 581\,GB/s，皆低於 RTX 3090 的 936\,GB/s 峰值，構成一項物理合理性檢查。
+
+\paragraph{此項使端到端 headroom 約為 prefill headroom 的 0.88 倍。}
+於真實 trace 上，\texttt{qwen-awq} 剖面的端到端 headroom 為 8.46\%（toolagent）與 9.28\%（conversation），落於 \S\ref{sec:eval} 判準的 5--15\% 區間。\textbf{但 Mooncake 的請求長度中位數僅 6{,}352\,token}，遠低於本文目標區間；於 65K--262K 的長度上端到端 headroom 為 17\%--29\%（\S\ref{sec:sweet-spot}）。
+
+\subsection{品質退化是「精度 $\times$ 任務」的性質，而非精度的性質}
+\label{sec:eps-task}
+
+\begin{table}[t]
+\centering\small
+\caption{同一組 KV 精度於兩種任務的正確率（\texttt{qwen-awq}、平台 A）。GSM8K 為 $n=1{,}000$ 的 many-shot 推理；大海撈針為 32K 上下文、5 個深度 $\times$ 4 次重複的字串檢索。}
+\label{tab:eps-task}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+KV 精度 & 容量 & 縮放 & GSM8K & 檢索 \\
+\midrule
+BF16 & 1.00$\times$ & --- & 77.9\% & \textbf{100\%} \\
+\texttt{fp8} & 2.00$\times$ & 靜態未校正 & 76.2\% & \textbf{5\%} \\
+\texttt{int8\_per\_tok\_head} & 1.94$\times$ & 動態 & 76.4\% & \textbf{95\%} \\
+\texttt{int4\_per\_tok\_head} & 3.77$\times$ & 動態 & 75.1\% & \textbf{0\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+GSM8K 上四者的差異均與零無法區分（$n=1{,}000$ 時差值的 95\% 信賴區間為 $\pm3.7$ 個百分點）；同一組設定於檢索任務上由 100\% 降至 0\%。\textbf{僅以推理任務評測會得出「KV 量化幾無代價」的錯誤結論。}
+
+功效分析顯示 GSM8K 無法用於量測 $\epsilon(f)$ 曲線：區分 2.8 個百分點需每設定 $n \approx 1{,}760$，7 個 $f$ 值即 12{,}320 次請求，而 2.8 個百分點已是 $f=1$ 的上界效果。
+
+\paragraph{主因為格式而非縮放方式。}
+數值分析（\texttt{code/quant\_error.py}）顯示：FP8 靜態縮放的相對誤差為 2.64\%，改用 per-token-head 動態縮放僅降至 2.56\%，而 INT8 動態縮放為 0.65\%。FP8 e4m3 的 3 個尾數位元將相對精度鎖定於約 12.5\%，縮放方式無法改變；INT8 於指定範圍內有 255 個刻度。理論值（FP8 $12.5\%/\sqrt{12}=3.6\%$、INT8 $3/440=0.68\%$）與實測吻合。數值誤差並可單調預測檢索結果：0.65\%$\to$95\%、2.64\%$\to$5\%、11.76\%$\to$0\%。
+
+\paragraph{於 sm\_86，動態縮放的 FP8 不可用。}
+\texttt{fp8\_per\_token\_head} 需 Triton attention backend，該後端於 compute capability 8.6 上拒絕 FP8 KV cache。因此平台 A 的精度階實際僅有一級可用（BF16 $\to$ INT8）。此為 $\kappa$ 主張的另一實例：\emph{同一動作在不同硬體上是否存在，本身即隨平台而變}。
+
+\subsection{寫入頻寬使勝出的 baseline 不可部署}
+\label{sec:write-feasibility}
+
+模擬的成本模型僅對「取回」計價，而寫入亦消耗頻寬。以 trace 的真實時長換算，\texttt{tier\_fs} 於 toolagent 上需 4{,}666\,MiB/s 的持續磁碟寫入。實測（\S\ref{app:cost}）SATA QLC 為 190\,MiB/s、NVMe 為 2{,}512\,MiB/s，\textbf{兩者皆無法達成}；即使以「每個不重複 block 僅寫一次」的下界計算仍需 3{,}086\,MiB/s。Oracle 的成本感知放置僅需 1{,}114--1{,}214\,MiB/s，於 NVMe 上可行。
+
+其意涵為：\texttt{tier\_fs} 雖於模擬中勝出，卻非可部署的對照組。\textbf{成本感知放置的價值因此不僅是延遲，更是使磁碟階成為可用選項的前提。}
+
 \subsection{headroom 的峰值出現在成本交叉點的 2--3.5 倍處}
 \label{sec:sweet-spot}
 
@@ -1357,6 +1444,11 @@ LMCache 無自動化的 on-device ROCm CI；其預設 MP 模式在 ROCm 上存�
 
 \paragraph{與 AMD 生產堆疊的關係。}
 AMD 的 \texttt{ROCm/mori} 中的 MORI-UMBP 提供「具分層儲存與分散式鍵值存取的統一記憶體與頻寬池」，已整合入 SGLang HiCache 並具備 SSD 層。我們不宣稱 AMD 平台上缺乏分層 KV 基礎設施；本文的貢獻在於其\emph{放置策略}，而非分層機制本身。
+
+\paragraph{平台 A 的上下文上限為 262{,}144，且換卡無法解除。}
+Qwen2.5-7B-Instruct-1M 的原生 1M 上下文依賴 Dual Chunk Attention。vLLM 0.28.0 的 V1 engine 無法執行該路徑：載入含 \texttt{dual\_chunk\_attention\_config} 的 checkpoint 時，\texttt{qwen2.py} 會向 attention 實作額外傳入 \texttt{layer\_idx}，而 \texttt{FlashInferImpl} 不接受此參數，engine 於初始化即崩潰。改用移除該設定的變體後上限為 \texttt{max\_position\_embeddings} 的 262{,}144；於 524{,}288 送出請求會觸發 \texttt{CUDA error: device-side assert triggered}（RoPE 索引越界），\emph{延遲亦無法量測}，而非僅品質無效。
+
+此限制源於模型與框架而非記憶體：該組態的 KV 容量為 559{,}584\,token，遠超 525{,}568 的需求。\textbf{因此更大的加速器無法解除此上限}；欲於本文的目標區間取得品質數據，需更換模型或 vLLM 版本。第 \ref{sec:sweet-spot} 節於 524K 的數值因而標為外插，不作為結論依據。
 
 \paragraph{平台 A（RTX 3090）的限制。}
 24\,GB 的容量意味著平台 A \emph{無法}執行單請求 128K 上下文（第 \ref{sec:twoplatform} 節），亦無法承載多租戶場景，本文不由平台 A 推論機會成本相關結論。此外消費級顯卡缺乏記憶體與計算分軌的能耗計數器，能耗分析僅於平台 B 進行。
