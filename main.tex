@@ -75,7 +75,7 @@ for Long-Context LLM Inference}
 
 本文的出發點是一個橫跨硬體的量化事實：\emph{重算與傳輸的成本比 $\kappa$ 隨平台變動達 32 倍}——於 AMD Instinct MI300X（192\,GB HBM3）為 6--21 倍，於 NVIDIA RTX 3090（24\,GB GDDR6X）則為 54--190 倍。此差異使「單一套 KV 放置策略適用於所有硬體」的隱含前提不成立。
 
-問題的\emph{性質}同樣隨平台改變。在 MI300X 上，8B 至 14B 級模型於 128K 上下文的單請求 KV footprint 僅佔 HBM 的 8--10\%；此處的壓力來自多租戶下的\emph{機會成本}，而非容量本身。在 24\,GB 級的加速器上，我們的量測顯示壓力源取決於權重精度：BF16 權重僅餘 41{,}648 token 的 KV 預算，無法進入 128K 區間；改用 AWQ-INT4 權重後，同一張卡的 KV 容量升至 120{,}320--547{,}744 token，\textbf{相差 $13.2\times$}。兩者皆為真實的部署情境，而最佳策略在二者上並不相同。
+本文全程採\emph{單卡、單請求、上下文遞增}的壓力軸，加速器決定的是這條軸能推多遠，而非換一個問題。在 24\,GB 級的卡上，可推的距離由權重精度決定：BF16 權重僅餘 41{,}648 token 的 KV 預算，改用 AWQ-INT4 後同一張卡升至 120{,}320--547{,}744 token，\textbf{相差 $13.2\times$}。在 192\,GB 級的卡上，同一條軸延伸至更大的模型與 1M 級上下文。兩端皆為真實的部署情境，而最佳策略在二者上並不相同。
 
 基於此，我們將 KV 放置形式化為一個受品質約束的序列決策問題，其動作\emph{候選}集合包含 GPU 全精度、GPU FP8、GPU INT4、CPU、SSD 與「丟棄後重算」六種狀態，並在「品質退化不超過 $\epsilon$」的硬性約束下，聯合最佳化未來效用、傳輸成本、重算成本與記憶體壓力。量測顯示\emph{有效}子集隨平台與上下文長度而變：於 sm\_86，三個低精度階中僅 INT8 一階在檢索任務上保住品質（95\%，而 FP8 為 5\%、INT4 為 0\%）；\act{SSD} 與\act{Drop} 的優劣次序在成本交叉點 $P^{*}$ 處反轉，而 $P^{*}$ 在同一台機器上隨模型剖面即變動 $3.5\times$。\textbf{「動作空間的有效子集可事先算出」本身即為本文的主張。}我們特別論證：重算的價值不在於單次事件的成本（其代價比傳輸高 6--21 倍於 MI300X，54--190 倍於 RTX 3090），而在於它在被需要之前不佔用任何資源；其正確性因而完全取決於未來效用預測的品質。
 
@@ -96,7 +96,7 @@ Transformer 模型在自回歸生成時，會將每個已處理 token 的 key �
 \paragraph{本文的出發點：一個不再成立的前提。}
 上述工作幾乎全部在 NVIDIA A100/H100 級硬體（40--80\,GB HBM）上評估。我們的量化分析（第 \ref{sec:motivation} 節）顯示，在 AMD Instinct MI300X（192\,GB HBM3）上，8B--14B 級模型於 128K 上下文下的單請求 KV footprint 僅 15.6--19.5\,GB，佔 HBM 不到 10\%。\emph{在此類硬體上，既有文獻用以立論的「單請求容量壓力」場景幾乎不存在}。
 
-這並不代表問題消失，而是問題的\emph{性質改變}了。在 192\,GB 的 HBM 上，一個 session 的冷 KV 所佔據的每 GB，都是其他請求無法用來擴大批次的容量。問題因此從「放不下，該驅逐什麼」轉變為「放得下，但該保留嗎」，成為一個機會成本問題，而機會成本只在多租戶場景中存在。
+這並不代表問題消失，而是\emph{同一條壓力軸上的位置不同}。KV 佔用隨上下文線性成長，故任何容量都有耗盡的長度；192\,GB 只是把那個長度往後推。Llama-3.1-8B 於 1M token 上下文需 122\,GB KV，單張 MI300X 恰可容納而 H100 不能——\textbf{壓力軸不變，可達的區間變了}。本文因此在兩張卡上量同一件事：單請求、上下文遞增、直到 KV 耗盡。多租戶下的機會成本是另一個問題，本文不處理（第 \ref{sec:limitations} 節）。
 
 \paragraph{第二個觀察：卸載在大容量 HBM 硬體上更昂貴。}
 MI300X 的 HBM 頻寬（5.3\,TB/s 峰值）與主機鏈路頻寬（PCIe Gen5 $\times$16，單向理論 63.0\,GB/s）之比為 84:1，而 H100 為 52:1，MI355X 更達 127:1。此比值持續惡化，因為 HBM 容量與頻寬逐代成長，而主機鏈路自 MI300X 至 MI355X 完全未變。灌滿或抽乾 MI300X 上 Llama-3.1-8B 的 157.8\,GiB KV 預算，經 PCIe 需 2.69 秒，而在 HBM 內僅需 32 毫秒。此比值必然等於頻寬比 84 倍。
@@ -244,7 +244,7 @@ Llama-3.1-70B & 128K & 39.1\,GB & $\times$ & $\times$ \\
 
 \textbf{(b)} Llama-3.1-8B 的 1M token 上下文（122\,GB KV 加 16\,GB 權重）可完整置入單張 MI300X，而 H100 無法。若啟用 MI300X 原生支援的 FP8，Llama-3.1-70B 的 256K 上下文亦可置入。
 
-\textbf{(c)} 在 \emph{MI300X 上}，真實壓力來自三處：\emph{並行度}（Llama-3.1-8B 在 BF16 權重下約 10 個並行 128K 請求即耗盡 HBM，FP8 權重下約 21 個）、\emph{更大的模型}、以及\emph{跨 session 的 KV 保留}（唯一無上界的需求來源）。前二者是靜態的容量問題，第三者才是真正的策略問題。\emph{在記憶體較小的加速器上（如本文的平台 A，24\,GB）則存在第四個來源：單請求上下文本身}（見第 \ref{sec:twoplatform} 節）。
+\textbf{(c)} 單請求壓力在 MI300X 上並未消失，只是需要更大的模型或更長的上下文才能觸及：Llama-3.1-8B 需 1M 上下文（122\,GB KV），Llama-3.1-70B 於 256K 需 FP8 才置入。\textbf{這正是本文在該平台的實驗設定}——同一條壓力軸推到這張卡的盡頭，而非改量並行度。並行度與跨 session 保留同樣會耗盡 HBM（8B 模型於 BF16 下約 10 個並行 128K 請求），但那是多租戶下的機會成本問題，與單請求的放置決策正交，本文不涵蓋（第 \ref{sec:limitations} 節）。
 
 \subsection{觀察二：卸載的相對代價隨硬體世代惡化}
 
@@ -321,79 +321,57 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
 
 這個推論的重要後果是：\textbf{未來效用預測不是系統的附加元件，而是決定重算動作正確與否的唯一依據}。這與第 \ref{sec:related} 節的文獻分析指向同一結論。
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
 \begin{tikzpicture}[
-  font=\footnotesize\sffamily,
-  >={Stealth[length=2.2mm]},
-  tier/.style={draw,rounded corners=3pt,thick,minimum width=4.3cm,minimum height=0.78cm,
-               align=center,font=\small\sffamily},
-  hdr/.style ={font=\scriptsize\bfseries\sffamily,text=black!70,align=center},
-  cell/.style={font=\scriptsize\sffamily,align=center,text=black!80},
-  note/.style={font=\scriptsize\sffamily,align=left,text=black!65},
+  font=\scriptsize\sffamily,
+  >={Stealth[length=1.8mm]},
+  tier/.style={draw,rounded corners=2pt,semithick,minimum width=2.55cm,
+               minimum height=0.52cm,align=center,font=\scriptsize\sffamily,
+               inner sep=1pt},
+  hdr/.style={font=\tiny\bfseries\sffamily,text=black!65,align=center},
+  val/.style={font=\tiny\sffamily,text=black!75},
 ]
-% ---- 各層 y 座標 ----
-\def\ya{0}    \def\yb{-0.92} \def\yc{-1.84} \def\yd{-2.76} \def\ye{-3.68} \def\yf{-4.60}
-\def\xt{3.3}  % 階梯中心
+\def\xt{0}          % 階梯中心
+\def\hw{1.275}      % 階梯半寬
+\def\bmax{1.55}     % 長條最大長度
+\def\rh{0.62}       % 列高
 
-\node[tier,fill=gpucol!20,draw=gpucol]  (t1) at (\xt,\ya) {GPU \;·\; BF16};
-\node[tier,fill=gpucol!13,draw=gpucol]  (t2) at (\xt,\yb) {GPU \;·\; FP8};
-\node[tier,fill=gpucol!6, draw=gpucol]  (t3) at (\xt,\yc) {GPU \;·\; INT4};
-\node[tier,fill=cpucol!14,draw=cpucol]  (t4) at (\xt,\yd) {CPU DRAM \;·\; INT8};
-\node[tier,fill=ssdcol!14,draw=ssdcol]  (t5) at (\xt,\ye) {SSD \;·\; compressed};
-\node[tier,fill=dropcol!16,draw=dropcol,thick] (t6) at (\xt,\yf) {DROP $\rightarrow$ recompute};
+% 每列：y、標籤、顏色、閒置成本（0-1）、被需要成本（0-1）、閒置文字、需要文字
+\foreach \i/\lbl/\c/\idle/\need/\it/\nt in {
+  0/{GPU · BF16}/gpucol/1.00/0.00/{最高}/{0},
+  1/{GPU · FP8}/gpucol/0.50/0.02/{$\frac{1}{2}$}/{$\approx$0},
+  2/{GPU · INT4}/gpucol/0.25/0.02/{$\frac{1}{4}$}/{$\approx$0},
+  3/{CPU DRAM · INT8}/cpucol/0.12/0.08/{低}/{1.0},
+  4/{SSD}/ssdcol/0.04/0.73/{極低}/{9},
+  5/{DROP $\rightarrow$ 重算}/dropcol/0.00/1.00/{\textbf{零}}/{\textbf{12.3}}}{
+  \pgfmathsetmacro{\y}{-\i*\rh}
+  % 左：平時（閒置）成本
+  \pgfmathsetmacro{\lw}{\idle*\bmax}
+  \fill[\c!45] (\xt-\hw-0.06-\lw,\y-0.17) rectangle (\xt-\hw-0.06,\y+0.17);
+  \node[val,anchor=east] at (\xt-\hw-0.10-\bmax,\y) {\it};
+  % 右：被需要時的成本
+  \pgfmathsetmacro{\rw}{\need*\bmax}
+  \fill[\c!45] (\xt+\hw+0.06,\y-0.17) rectangle (\xt+\hw+0.06+\rw,\y+0.17);
+  \node[val,anchor=west] at (\xt+\hw+0.10+\bmax,\y) {\nt};
+  \node[tier,fill=\c!12,draw=\c] at (\xt,\y) {\lbl};
+}
 
-% ---- 左：降級 ----
-\draw[->,very thick,black!45] (0.75,\ya+0.30) -- (0.75,\yf-0.30);
-\node[rotate=90,anchor=south,font=\scriptsize\sffamily,text=black!55] at (0.42,-2.3) {降級 (demote)};
-\foreach \y in {\ya,\yb,\yc,\yd,\ye}
-  \draw[->,semithick,black!35] (1.25,\y-0.37) -- (1.25,\y-0.55);
+% 欄標題
+\node[hdr,anchor=south] at (\xt-\hw-0.06-\bmax/2,0.36) {平時成本\\（閒置時）};
+\node[hdr,anchor=south] at (\xt,0.36) {狀態};
+\node[hdr,anchor=south] at (\xt+\hw+0.06+\bmax/2,0.36) {被需要時\\($\mu$s/token)};
 
-% ---- 右：升級 / restore ----
-\draw[->,very thick,orange!65!black] (5.9,\yf-0.30) -- (5.9,\ya+0.30);
-\node[rotate=90,anchor=north,font=\scriptsize\sffamily,text=orange!55!black] at (6.24,-2.3) {升級 / restore};
-\foreach \y in {\yb,\yc,\yd,\ye,\yf}
-  \draw[->,semithick,orange!45!black] (5.42,\y+0.55) -- (5.42,\y+0.37);
-
-% ---- 成本欄 ----
-\def\xA{8.0}  \def\xB{11.3} \def\xC{14.9}
-\node[hdr] at (\xA,0.95) {平時成本\\[-1pt]\scriptsize\mdseries（未被使用時）};
-\node[hdr] at (\xB,0.95) {被需要時的成本\\[-1pt]\scriptsize\mdseries（Llama-3.1-8B, /token）};
-\node[hdr] at (\xC,0.95) {說明};
-
-\draw[black!25] (6.9,0.52) -- (17.2,0.52);
-
-\node[cell] at (\xA,\ya) {\textbf{最高}（HBM 最稀缺）};
-\node[cell] at (\xA,\yb) {$\tfrac{1}{2}$ of BF16};
-\node[cell] at (\xA,\yc) {$\tfrac{1}{4}$ of BF16};
-\node[cell] at (\xA,\yd) {低（DRAM）};
-\node[cell] at (\xA,\ye) {極低（NVMe）};
-\node[cell,text=dropcol!60!black] at (\xA,\yf) {\textbf{零}};
-
-\node[cell] at (\xB,\ya) {0};
-\node[cell] at (\xB,\yb) {$\approx$0（反量化）};
-\node[cell] at (\xB,\yc) {$\approx$0（反量化）};
-\node[cell] at (\xB,\yd) {$\sim$1.0\,$\mu$s};
-\node[cell] at (\xB,\ye) {$\sim$9\,$\mu$s};
-\node[cell,text=dropcol!60!black] at (\xB,\yf) {\textbf{12.3\,$\mu$s} @100\% MFU};
-
-\node[note,text width=2.5cm] at (\xC,\ya) {最快，但佔用最貴的資源};
-\node[note,text width=2.5cm] at (\xC,\yb) {\textbf{生產環境最常見的量化}};
-\node[note,text width=2.5cm] at (\xC,\yc) {精度分層};
-\node[note,text width=2.5cm] at (\xC,\yd) {位置分層};
-\node[note,text width=2.5cm] at (\xC,\ye) {容量近乎無限};
-\node[note,text width=2.5cm,text=dropcol!60!black] at (\xC,\yf) {\textbf{與 SSD 同數量級}};
-
-% ---- 關鍵標註 ----
-\draw[dropcol,thick,dashed,rounded corners=3pt]
-  ($(\xB,\ye)+(-1.5,0.32)$) rectangle ($(\xB,\yf)+(1.5,-0.32)$);
-\node[font=\scriptsize\bfseries\sffamily,text=dropcol!55!black,anchor=north]
-  at ($(\xB,\yf)+(0,-0.42)$) {平台 A 實測：位置 $>$7K 後 SSD 較重算廉 $\Rightarrow$ 二者應同時決策};
+% 降級 / 升級
+\draw[->,black!45,semithick] (\xt-\hw-0.06-\bmax-0.62,0.20) -- (\xt-\hw-0.06-\bmax-0.62,-3.30)
+  node[midway,rotate=90,anchor=south,font=\tiny,text=black!55] {降級};
+\draw[->,ssdcol,semithick] (\xt+\hw+0.10+\bmax+0.60,-3.30) -- (\xt+\hw+0.10+\bmax+0.60,0.20)
+  node[midway,rotate=270,anchor=south,font=\tiny,text=ssdcol] {升級};
 
 \end{tikzpicture}
-\caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）「丟棄後重算」是階梯上的一層，而非檢索失敗後的補救。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。關鍵的非對稱性在「平時成本」欄：\textbf{重算在被需要之前不佔用任何資源}，這是它唯一的優勢，也是它唯一的正當理由。右下虛線框標示一個常被忽略的事實：自 SSD 載入與重算處於同一數量級，兩者本就應在同一個決策中被比較。此點已由平台 A 的端到端量測證實，但\emph{量級與歸因均與純頻寬推算不同}——以 Llama-3.1-8B 於 16K 上下文計，自磁碟階取回為 346\,$\mu$s/token、重算為 326\,$\mu$s/token（皆已扣除 GPU 命中的基準），確為同一數量級，然其絕對值較「$\sim$9\,$\mu$s/token @ 7\,GB/s」的理想頻寬推算高出約 30 倍。分解後可見磁碟 I/O 僅佔搬運成本的約 35\%，其餘為分層機制的查表、cascade 排程與 promotion 開銷；將裝置由 SATA SSD（實測 0.49\,GB/s）換為 NVMe（1.65\,GB/s，頻寬 3.4 倍）後端到端成本\emph{未降反升}。詳見第 \ref{sec:eval} 節。}
+\caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）\act{Drop} 是階梯上的一層，而非檢索失敗後的補救。\textbf{兩側長條的長度即為成本，其反向增長是本文的出發點}：\act{Drop} 閒置時不佔用任何資源，被需要時卻最貴，故其正確性完全取決於未來效用預測。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。}
 \label{fig:ladder}
-\end{figure*}
+\end{figure}
 
 \subsection{觀察四：prefill 與 decode 的卸載經濟性相差五個數量級}
 \label{sec:prefill-decode}
@@ -471,12 +449,12 @@ prefill 為主 & 請求\emph{之間}保留哪些前綴 & 該前綴是否再被�
  & \textbf{RTX 3090} & \textbf{MI300X} \\
 \midrule
 記憶體 & 24\,GB GDDR6X & 192\,GB HBM3 \\
-壓力來源 & 單請求上下文 & 並行度／跨 session \\
-主要壓力軸 & context 8K$\rightarrow$64K & 並行度 1$\rightarrow$32 \\
-問題性質 & 容量 & 機會成本 \\
+壓力來源 & \multicolumn{2}{c}{單請求上下文（同一條軸）} \\
+主要壓力軸 & context 8K$\rightarrow$262K & context 128K$\rightarrow$1M \\
+可達區間 & 8B 模型 & 更大模型 $+$ 1M \\
 生態 & CUDA（baseline 齊全） & ROCm（部分受限） \\
 能耗量測 & 整卡 & \textbf{HBM 分軌} \\
-角色 & 機制驗證 + 完整對照 & 規模 + 主要科學主張 \\
+角色 & 機制驗證 + 完整對照 & 軸的遠端 + $\kappa$ 的第二點 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -926,7 +904,7 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 \textbf{Baselines}。我們量測五個現成系統：\texttt{full\_gpu}（不卸載，vLLM 預設）、\texttt{cpu\_lru} 與 \texttt{cpu\_arc}（vLLM \texttt{OffloadingConnector} 的兩個內建策略）、\texttt{tier\_fs}（CPU 加磁碟兩階）、以及 LMCache~\cite{lmcache2025}。\texttt{lru} 與 \texttt{arc} 構成 vLLM 目前 production 預設策略的\emph{完整}集合，其餘策略須經 \texttt{CachePolicy} 介面自行註冊。二者皆僅依存取歷史決策：一個「重算需 225\,$\mu$s」的 block 與一個「自 CPU 取回需 4.2\,$\mu$s」的 block 在 LRU 眼中完全等價，而本文的成本模型正是針對此空缺。學術與學習式對照（InfiniGen、KIVI、KVP、ForesightKV、LookaheadKV、稀疏檢索一系）尚未執行，其選取理由與可行性評估見附錄 \ref{app:notyet}。
 
 \paragraph{可推廣性的界線。}
-我們\emph{不}由平台 A 的結果推論多租戶機會成本場景（24\,GB 無法容納多個長 session），亦\emph{不}提出能耗結論（消費級顯卡缺乏記憶體與計算分軌的能耗計數器）。
+本文只處理\emph{單請求}的放置決策。多租戶下的機會成本、以及並行度造成的容量壓力，與此正交且未涵蓋（第 \ref{sec:limitations} 節）。我們亦不提出能耗結論，消費級顯卡缺乏記憶體與計算分軌的能耗計數器。
 
 \subsection{Oracle：headroom 的量測工具}
 \label{sec:oracle-method}
@@ -1172,9 +1150,7 @@ $6\times$ 算力 & 226{,}3\,K & 5.8 & 18.9 & 34.7 & \textbf{39.5} & 29.7 \\
 \paragraph{於 MI300X，單請求長度\emph{不可能}到達峰值。}
 以表 \ref{tab:ratio} 的 BF16 峰值算力比（$1{,}307.4 / 71.2 = 18.4\times$）外推，平台 B 的 $P^{*}$ 為 346K--693K（視 MFU 而定），對應的峰值長度為 1.2M--2.4M\,token。\textbf{此長度遠超出生產工作負載中的單請求長度}：Mooncake 的最長請求為 126{,}208\,token，僅為該峰值的 1/10 至 1/19。
 
-其推論是：於 MI300X，記憶體壓力\emph{不可能}來自單一請求的長度，而必須來自並行請求數。這與第 \ref{sec:motivation} 節的觀察一致：該節指出 MI300X 上的壓力源是多租戶下的機會成本而非容量本身。\textbf{本節的成本模型與該節的容量分析由兩條獨立的推理得到相同結論}，構成一項內部一致性檢查。
-
-平台 B 的實驗設計因此與平台 A 不同：平台 A 掃描單請求長度（本節），平台 B 必須掃描並行度。第 \ref{sec:eval} 節的壓力軸設計已反映此差異。
+其推論是一項\textbf{可直接驗證的預測}：於 MI300X，$2$--$3.5\,P^{*}$ 的甜蜜點落在 692K--2.4M\,token，故 \textbf{1M 級的單請求上下文恰落於該區間之內}。Llama-3.1-8B 於 1M 上下文需 122\,GB KV，單張 MI300X 可容納（表 \ref{tab:fit}），因此這個預測在單卡上就能證實或推翻——這正是平台 B 的實驗設定。若於 1M 量到的 headroom 顯著低於平台 A 峰值的量級，本節的機制解釋即被推翻。
 
 \paragraph{以上三段為可證偽的預測。}
 $\alpha$ 的縮放假設 prefill 時間與峰值算力成反比，忽略了 MFU 隨模型與序列長度的變化、kernel 實作差異、以及 ROCm 與 CUDA 的成熟度落差。驗證方式明確：於目標加速器上重量 \S\ref{app:cost} 的四項成本常數（\act{CPU}、\act{SSD}、$C^{0}_{\text{recompute}}$、$\alpha$），代入式 \ref{eq:crossover} 求 $P^{*}$，再以本節的方法掃描長度。若峰值不落在 $2$--$3.5\,P^{*}$，本節的機制解釋即被推翻。
@@ -1284,7 +1260,7 @@ LMCache 無自動化的 on-device ROCm CI；其預設 MP 模式在 ROCm 上存�
 AMD 的 \texttt{ROCm/mori} 中的 MORI-UMBP 提供「具分層儲存與分散式鍵值存取的統一記憶體與頻寬池」，已整合入 SGLang HiCache 並具備 SSD 層。我們不宣稱 AMD 平台上缺乏分層 KV 基礎設施；本文的貢獻在於其\emph{放置策略}，而非分層機制本身。
 
 \paragraph{平台 A（RTX 3090）的限制。}
-24\,GB 的容量意味著平台 A \emph{無法}執行單請求 128K 上下文（第 \ref{sec:twoplatform} 節），亦無法承載多租戶場景，本文不由平台 A 推論機會成本相關結論。此外消費級顯卡缺乏記憶體與計算分軌的能耗計數器，能耗分析僅於平台 B 進行。
+消費級顯卡缺乏記憶體與計算分軌的能耗計數器，能耗分析僅於平台 B 進行。
 
 \paragraph{學習式對照組未釋出權重。}
 KVP~\cite{kvp2026}、ForesightKV~\cite{foresightkv2026} 與 LookaheadKV~\cite{lookaheadkv2026} 三者\emph{均未釋出訓練後的權重}，且其預測器皆為模型專屬——KVP 需為 Qwen2.5-7B-Instruct 的 112 個 layer-head 各訓練一個 agent（其 README 載明使用 8 GPU DDP），ForesightKV 需至少兩張 GPU 分置訓練模型與參考模型，LookaheadKV 僅提供「minimal training example」。重訓因而是\emph{每個主模型各一次的完整訓練}，且主模型變更時須全部重做。
@@ -1541,9 +1517,9 @@ B (MI300X) & FP8 & 對照：CDNA3 之後的常見配置 \\
 \textbf{平台 B（MI300X, 192\,GB）}：同一設定在此\emph{不成立}：8B--14B 模型於 128K 僅佔 HBM 的 8--10\%（第 \ref{sec:motivation} 節），量測不到壓力。此平台改採三軸：
 
 \begin{enumerate}\itemsep0.15em
-  \item \textbf{並行度}（主軸）：1、4、8、16、32 個並行請求 @ 128K 上下文。
+  \item \textbf{上下文長度}（主軸）：128K、256K、512K、1M 的單請求上下文。
   \item \textbf{模型架構}：見下方選模準則。
-  \item \textbf{跨 session 保留}：多輪對話與 agentic trace。
+  \item \textbf{模型規模}：8B 至 70B，檢驗 $\kappa$ 隨模型增大而上升。
 \end{enumerate}
 
 \paragraph{選模準則。}
