@@ -79,7 +79,11 @@ def _save(fig, name: str) -> None:
     for ext in ("pdf", "png"):
         fig.savefig(OUT / f"{name}.{ext}")
     plt.close(fig)
-    print(f"  wrote {OUT.relative_to(REPO)}/{name}.pdf")
+    try:
+        rel = OUT.relative_to(REPO)
+    except ValueError:                     # OUT 被指到 repo 外（測試繪圖路徑時）
+        rel = OUT
+    print(f"  wrote {rel}/{name}.pdf")
 
 
 # ────────────────────────── 成本模型 ──────────────────────────
@@ -189,51 +193,11 @@ def fig_sweetspot(profile: str = "qwen-awq") -> None:
     _save(fig, "fig_sweetspot")
 
 
-# ───────────────── 圖 3：ε 是「精度 × 任務」的性質 ─────────────────
-
-def _acc(rows: list[dict], key: str = "config") -> dict[str, float]:
-    n: dict[str, int] = defaultdict(int)
-    ok: dict[str, int] = defaultdict(int)
-    for r in rows:
-        n[r[key]] += 1
-        ok[r[key]] += r["correct"] == "True"
-    return {k: 100.0 * ok[k] / n[k] for k in n}
-
-
-def fig_quality() -> None:
-    order = ["bf16", "fp8", "int8", "int4"]
-    label = {"bf16": "BF16", "fp8": "FP8", "int8": "INT8", "int4": "INT4"}
-    gsm = _acc(_rows(RESULTS / "m5_quality" / "gsm8k_precision_n1000.csv"))
-    ndl = _rows(RESULTS / "m5_quality" / "needle_ctx_sweep.csv")
-    ctxs = sorted({int(r["prompt_tokens"]) for r in ndl})
-
-    fig, axes = plt.subplots(1, 2, figsize=(COL2 * 0.72, 2.0),
-                             gridspec_kw={"wspace": 0.30})
-    a = axes[0]
-    a.bar(range(len(order)), [gsm[c] for c in order], width=0.62,
-          color=[CLR["ink"] if c == "bf16" else CLR["cpu"] for c in order])
-    a.set_xticks(range(len(order)), [label[c] for c in order])
-    a.set_ylim(0, 100)
-    a.set_ylabel("正確率（%）")
-    a.set_xlabel("(a) GSM8K 推理（n = 1,000）")
-    for i, c in enumerate(order):
-        a.annotate(f"{gsm[c]:.1f}", (i, gsm[c]), ha="center", va="bottom",
-                   fontsize=6.5, xytext=(0, 1), textcoords="offset points")
-
-    b = axes[1]
-    for c in order:
-        pts = [(x, _acc([r for r in ndl if int(r["prompt_tokens"]) == x])[c])
-               for x in ctxs]
-        b.plot([x for x, _ in pts], [y for _, y in pts], "o-",
-               color=CLR["ink"] if c == "bf16" else None, label=label[c])
-    b.set_xscale("log", base=2)
-    b.set_ylim(-3, 103)
-    b.set_xlabel("(b) 大海撈針檢索：上下文長度")
-    b.set_ylabel("檢索正確率（%）")
-    b.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{int(v//1000)}K"))
-    b.legend(loc="center left", ncol=1)
-    _save(fig, "fig_quality")
-
+# ε 的「精度 × 任務」那張圖已移除（2026-09-01）。
+# 它與表 9 顯示同一批數字，圖表並列是重複；論文改為只用表
+# （表 9 的四個任務型態摘要 + 附錄表 13 的逐任務值）。
+# 數字的正確性改由 `code/audit_m5c_claims.py` 對 results/ 的 CSV 逐格驗證。
+# 需要投影片版的長條圖時，從 git history 取回本檔此處的 fig_quality()。
 
 # ─────────────── 圖 4：峰值隨算力移動 ───────────────
 
@@ -282,7 +246,6 @@ def main() -> int:
     print("產生論文圖表：")
     fig_crossover()
     fig_sweetspot()
-    fig_quality()
     fig_hwpeak()
     print("完成。")
     return 0
