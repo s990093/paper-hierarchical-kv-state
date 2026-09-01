@@ -421,7 +421,7 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
 \midrule
 prefill 為主 & 請求\emph{之間}保留哪些前綴 & 該前綴是否再被請求（時序） & 六階全部 \\
 \addlinespace
-多輪對話 & 同上，另含思考空窗的機會成本 & 同上 & 六階全部 \\
+多輪對話 & 同上，另含思考空窗期間的保留成本 & 同上 & 六階全部 \\
 \addlinespace
 生成為主 & 請求\emph{之內}哪些 block 可離開 GPU & 該 block 的 attention 分數（語意） & \textbf{僅 GPU 內的精度階}；CPU/SSD 慢 3--59$\times$ \\
 \bottomrule
@@ -438,26 +438,7 @@ prefill 為主 & 請求\emph{之間}保留哪些前綴 & 該前綴是否再被�
 
 這使得本文的核心主張成為可證偽的：\emph{若最佳 KV 放置策略確實隨硬體比值結構性改變，則同一組策略在相距 9.2 倍的此二平台上應展現不同的最佳動作組合}。須說明的是，此二平台位於該光譜的中段而非兩端（表 \ref{tab:ratio} 中 GH200 為 9:1、MI355X 為 127:1），我們的可證偽性主張因而受限於實際可取得的硬體跨度。具體而言，我們預測\act{Drop}$\rightarrow$重算動作在 MI300X 上的最佳觸發門檻，應顯著低於在 RTX 3090 上的門檻。
 
-兩個平台因此承擔不同的實驗職責（表 \ref{tab:platforms}）。值得強調的是，這並非資源限制下的妥協：\emph{單一平台無法檢驗硬體條件化的主張}。
-
-\begin{table}[t]
-\centering\small
-\caption{雙平台的實驗職責分工。}
-\label{tab:platforms}
-\begin{tabular}{p{2.3cm}p{2.4cm}p{2.4cm}}
-\toprule
- & \textbf{RTX 3090} & \textbf{MI300X} \\
-\midrule
-記憶體 & 24\,GB GDDR6X & 192\,GB HBM3 \\
-壓力來源 & \multicolumn{2}{c}{單請求上下文（同一條軸）} \\
-主要壓力軸 & context 8K$\rightarrow$262K & context 128K$\rightarrow$1M \\
-可達區間 & 8B 模型 & 更大模型 $+$ 1M \\
-生態 & CUDA（baseline 齊全） & ROCm（部分受限） \\
-能耗量測 & 整卡 & \textbf{HBM 分軌} \\
-角色 & 機制驗證 + 完整對照 & 軸的遠端 + $\kappa$ 的第二點 \\
-\bottomrule
-\end{tabular}
-\end{table}
+兩個平台承擔的是同一條壓力軸的兩端：RTX 3090（24\,GB GDDR6X）可推至 8B 模型的約 262K 上下文，MI300X（192\,GB HBM3）則延伸至更大的模型與 1M 級上下文。這不是資源限制下的妥協：\emph{單一平台無法檢驗硬體條件化的主張}，因為該主張的內容正是「常數改變時最佳策略隨之改變」。
 
 \paragraph{RTX 3090 上的容量分析。}
 以 8-bit 權重的 Llama-3.1-8B 計算，24\,GB 中約 13.6\,GB 可供 KV 使用，對應約 111K token。單請求在 64K 上下文需 7.8\,GB（總計 15.8\,GB，可置入），而 128K 需 15.6\,GB（總計 23.6\,GB，\emph{超出}）。64K 與 128K 之間存在一道明確的容量懸崖，\emph{既有文獻所預設的場景在此平台上完全成立}。
@@ -1199,7 +1180,7 @@ DeepSeek-V2-Lite MLA AWQ & \textbf{399{,}376} \\
 \end{center}
 
 \paragraph{Takeaway.}
-在正確的權重配置下，24\,GB 消費級 GPU 的 KV 容量\emph{不是}長上下文的瓶頸。BF16 權重僅餘 41{,}648\,token，而 AWQ-INT4 權重加 FP8-KV 使同一張卡達 240{,}656（Llama-8B）與 547{,}744\,token（Qwen-7B-1M），相差 $13.2\times$。此點對本文的雙平台設計有兩個後果。其一，平台 A 足以驗證 128K 區間的容量與成本主張，無須更大的加速器。其二，MLA 架構將 KV 壓至 30.4\,KiB/token（GQA 的 $1/4.2$），使單卡容量達 399{,}376 token——\emph{單請求的容量壓力於此消失}，壓力轉為 PCIe 頻寬與多租戶下的機會成本，即第 \ref{sec:twoplatform} 節所述平台 B 的情境。此結果將 MLA 納入本文的 $\kappa$ 軸，且在單一平台上提供 $4.2\times$ 的跨度。
+在正確的權重配置下，24\,GB 消費級 GPU 的 KV 容量\emph{不是}長上下文的瓶頸。BF16 權重僅餘 41{,}648\,token，而 AWQ-INT4 權重加 FP8-KV 使同一張卡達 240{,}656（Llama-8B）與 547{,}744\,token（Qwen-7B-1M），相差 $13.2\times$。此點對本文的雙平台設計有兩個後果。其一，平台 A 足以驗證 128K 區間的容量與成本主張，無須更大的加速器。其二，MLA 架構將 KV 壓至 30.4\,KiB/token（GQA 的 $1/4.2$），使單卡容量達 399{,}376 token，即在同一張 24\,GB 卡上把壓力軸往後推了 $4.2\times$——與換一張大卡的效果同向。\textbf{這使 MLA 成為 $\kappa$ 軸上的第三個資料點，且不需要第二台機器。}
 
 \subsection{go/no-go 判定：條件式 GO，且條件可事先算出}
 \label{sec:verdict}
@@ -1260,7 +1241,7 @@ LMCache 無自動化的 on-device ROCm CI；其預設 MP 模式在 ROCm 上存�
 AMD 的 \texttt{ROCm/mori} 中的 MORI-UMBP 提供「具分層儲存與分散式鍵值存取的統一記憶體與頻寬池」，已整合入 SGLang HiCache 並具備 SSD 層。我們不宣稱 AMD 平台上缺乏分層 KV 基礎設施；本文的貢獻在於其\emph{放置策略}，而非分層機制本身。
 
 \paragraph{平台 A（RTX 3090）的限制。}
-消費級顯卡缺乏記憶體與計算分軌的能耗計數器，能耗分析僅於平台 B 進行。
+消費級顯卡缺乏記憶體與計算分軌的能耗計數器，故本文\emph{不}提出任何能耗結論。MI300X 的 \texttt{amdsmi} 具備 HBM 與計算分軌的累加器，是做此分析的正確平台，但我們尚無該機器。
 
 \paragraph{學習式對照組未釋出權重。}
 KVP~\cite{kvp2026}、ForesightKV~\cite{foresightkv2026} 與 LookaheadKV~\cite{lookaheadkv2026} 三者\emph{均未釋出訓練後的權重}，且其預測器皆為模型專屬——KVP 需為 Qwen2.5-7B-Instruct 的 112 個 layer-head 各訓練一個 agent（其 README 載明使用 8 GPU DDP），ForesightKV 需至少兩張 GPU 分置訓練模型與參考模型，LookaheadKV 僅提供「minimal training example」。重訓因而是\emph{每個主模型各一次的完整訓練}，且主模型變更時須全部重做。
@@ -1506,7 +1487,7 @@ B (MI300X) & FP8 & 對照：CDNA3 之後的常見配置 \\
 
 \subsection{平台 B（MI300X）的實驗設計}
 
-\textbf{平台 B（規模與主要科學主張）}：AMD Instinct MI300X（gfx942，192\,GB HBM3），ROCm 7.x，vLLM ROCm wheel（Python 3.12），LMCache ROCm wheel（gfx942），真實 NVMe SSD。此平台承擔並行度／機會成本場景與能耗分析。
+\textbf{平台 B（壓力軸的遠端）}：AMD Instinct MI300X（gfx942，192\,GB HBM3），ROCm 7.x，vLLM ROCm wheel（Python 3.12），LMCache ROCm wheel（gfx942），真實 NVMe SSD。此平台承擔並行度／機會成本場景與能耗分析。
 
 \paragraph{壓力軸。}
 
