@@ -1245,6 +1245,43 @@ $C_{\text{recompute}}$ 對位置的形式 &
 \paragraph{Takeaway.}
 四項結果中，兩項擴大了平台 A 的可驗證範圍（FP8 儲存可用、四個精度階同旗標可切），兩項要求修正成本模型（量化中繼資料、重算的位置依賴形式）。第四項的性質不同：它不是修正，而是本文核心主張的直接實例——\act{SSD} 在平台 A 被 \act{Drop} 支配，故六階動作空間並非普遍適用。論文若宣稱六階皆為必要，此結果即為反例；改為「動作空間的\emph{有效}子集隨平台而定」則與證據一致，且更強。
 
+\subsection{headroom 的峰值出現在成本交叉點的 2--3.5 倍處}
+\label{sec:sweet-spot}
+
+放置決策的價值不隨上下文長度單調成長，而是在特定長度見頂。此現象由三個動作的成本結構決定：\act{CPU} 與 \act{SSD} 的成本與位置無關，而 \act{Drop} 的成本隨 block 的絕對位置線性成長（式 \ref{eq:recompute-position}）。二者的交叉點
+
+\begin{equation}
+P^{*} = \frac{C_{\text{ssd}} - C_{\text{recompute}}^{0}}{\alpha}
+\label{eq:crossover}
+\end{equation}
+
+將請求分為兩段：位置在 $P^{*}$ 之前的 block 重算較便宜，之後的 block 搬移較便宜。當請求長度遠小於 $P^{*}$ 時所有 block 皆應重算，遠大於時所有 block 皆應搬移；兩種情形下放置策略均無選擇餘地。\textbf{只有當 $P^{*}$ 落在請求內部，同一請求的不同位置才需要不同決策。}
+
+我們固定記憶體壓力為 $5\times$、重用率 80.9\%，僅改變請求長度（GPU 預算隨工作集等比放大）。平台 A 上 $P^{*} = 37{,}615$\,token，量測結果見表 \ref{tab:sweet-spot}：headroom 於 32K 時僅 8.94\%，於 65K--131K 升至 31.75\%--33.50\%，於 262K 降至 24.44\%，於 524K 進一步降至 12.71\%。\textbf{峰值落在 $3.5 P^{*}$ 處。}
+
+\begin{table}[t]
+\centering\small
+\caption{固定壓力（$5\times$）與重用率（80.9\%）下，headroom 隨請求長度的變化。平台 A、\texttt{qwen-awq} 剖面、NVMe 磁碟階、僅計 prefill。$P^{*} = 37{,}615$。}
+\label{tab:sweet-spot}
+\begin{tabular}{rrl}
+\toprule
+請求長度 & headroom & 判定 \\
+\midrule
+32{,}768 & 8.94\% & MARGINAL \\
+65{,}536 & \textbf{31.75\%} & GO \\
+131{,}072 & \textbf{33.50\%} & GO \\
+262{,}144 & 24.44\% & GO \\
+524{,}288 & 12.71\% & MARGINAL$^\dagger$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+{\footnotesize $^\dagger$ 該設定下單一請求的 KV 超出 GPU 預算，且 78.6\% 的存取位置超出成本模型的擬合上限（114{,}688\,token），為線性外插。}
+\end{table}
+
+\paragraph{峰值位置隨硬體移動，此為 $\kappa$ 主張的直接推論。}
+式 \ref{eq:crossover} 的分母 $\alpha$ 由 prefill 吞吐決定。加速器越快則 $\alpha$ 越小、$P^{*}$ 越大、峰值長度越長。以實測的 $\alpha$ 按倍率縮放模擬，峰值自平台 A 的 256K 移至 6 倍算力下的 512K，且峰值 headroom 自 18.7\% 升至 39.5\%。\textbf{此為可證偽的預測}：$\alpha$ 的縮放為推算而非量測，於 A100 或 H100 上重量 \S\ref{app:cost} 的成本常數即可驗證。其政策意涵為\emph{同一套放置策略不可能同時適用於不同加速器}，即本文第 \ref{sec:motivation} 節主張的量化形式。
+
 \subsection{權重精度決定平台 A 能否進入長上下文區間}
 \label{sec:awq-unlock}
 
