@@ -1280,7 +1280,34 @@ P^{*} = \frac{C_{\text{ssd}} - C_{\text{recompute}}^{0}}{\alpha}
 \end{table}
 
 \paragraph{峰值位置隨硬體移動，此為 $\kappa$ 主張的直接推論。}
-式 \ref{eq:crossover} 的分母 $\alpha$ 由 prefill 吞吐決定。加速器越快則 $\alpha$ 越小、$P^{*}$ 越大、峰值長度越長。以實測的 $\alpha$ 按倍率縮放模擬，峰值自平台 A 的 256K 移至 6 倍算力下的 512K，且峰值 headroom 自 18.7\% 升至 39.5\%。\textbf{此為可證偽的預測}：$\alpha$ 的縮放為推算而非量測，於 A100 或 H100 上重量 \S\ref{app:cost} 的成本常數即可驗證。其政策意涵為\emph{同一套放置策略不可能同時適用於不同加速器}，即本文第 \ref{sec:motivation} 節主張的量化形式。
+式 \ref{eq:crossover} 的分母 $\alpha$ 由 prefill 吞吐決定。加速器越快則 $\alpha$ 越小、$P^{*}$ 越大、峰值長度越長。以實測的 $\alpha$ 按倍率縮放模擬（表 \ref{tab:hw-peak}），峰值自平台 A 的 256K 移至 6 倍算力下的 512K，且峰值 headroom 自 18.7\% 升至 39.5\%。其政策意涵為\emph{同一套放置策略不可能同時適用於不同加速器}，即本文第 \ref{sec:motivation} 節主張的量化形式。
+
+\begin{table}[t]
+\centering\small
+\caption{headroom 隨請求長度與加速器算力的變化（壓力 $5\times$、重用率 80.9\%、僅計 prefill）。\textbf{粗體為每一列的峰值。}算力倍率係將平台 A 實測的 $\alpha$ 按比例縮放，為推算而非量測。}
+\label{tab:hw-peak}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+加速器 & $P^{*}$ & 64K & 128K & 256K & 512K & 768K \\
+\midrule
+平台 A（實測） & 37{,}7\,K & 0.0 & 17.5 & \textbf{18.7} & 15.5 & 8.7 \\
+$2\times$ 算力 & 75{,}2\,K & 2.6 & 23.8 & \textbf{28.3} & 25.2 & 16.3 \\
+$4\times$ 算力 & 150{,}5\,K & 5.0 & 20.6 & \textbf{37.5} & 34.7 & 25.0 \\
+$6\times$ 算力 & 225{,}7\,K & 5.8 & 18.9 & 34.7 & \textbf{39.5} & 29.7 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{於 MI300X，單請求長度\emph{不可能}到達峰值。}
+以表 \ref{tab:ratio} 的 BF16 峰值算力比（$1{,}307.4 / 71.2 = 18.4\times$）外推，平台 B 的 $P^{*}$ 為 346K--693K（視 MFU 而定），對應的峰值長度為 1.2M--2.4M\,token。\textbf{此長度超出所有可取得模型的原生上下文上限}（表 \ref{tab:kvsize} 中最長者為 Llama-4-Scout 的 10.5M，但其 KV 為 192\,KiB/token；Qwen2.5-1M 為 1.01M）。
+
+其推論是：於 MI300X，記憶體壓力\emph{不可能}來自單一請求的長度，而必須來自並行請求數。這與第 \ref{sec:motivation} 節的觀察一致：該節指出 MI300X 上的壓力源是多租戶下的機會成本而非容量本身。\textbf{本節的成本模型與該節的容量分析由兩條獨立的推理得到相同結論}，構成一項內部一致性檢查。
+
+平台 B 的實驗設計因此與平台 A 不同：平台 A 掃描單請求長度（本節），平台 B 必須掃描並行度。第 \ref{sec:eval} 節的壓力軸設計已反映此差異。
+
+\paragraph{以上三段皆為\emph{可證偽的預測}，而非量測。}
+$\alpha$ 的縮放假設 prefill 時間與峰值算力成反比，忽略了 MFU 隨模型與序列長度的變化、kernel 實作差異、以及 ROCm 與 CUDA 的成熟度落差。驗證方式明確：於目標加速器上重量 \S\ref{app:cost} 的四項成本常數（\act{CPU}、\act{SSD}、$C^{0}_{\text{recompute}}$、$\alpha$），代入式 \ref{eq:crossover} 求 $P^{*}$，再以本節的方法掃描長度。若峰值不落在 $2$--$3.5\,P^{*}$，本節的機制解釋即被推翻。
 
 \subsection{權重精度決定平台 A 能否進入長上下文區間}
 \label{sec:awq-unlock}
@@ -1311,7 +1338,7 @@ $^\dagger$ 記憶體容量超出模型的可定址長度，瓶頸由硬體轉為
 \section{Discussion and Limitations}
 \label{sec:limitations}
 
-\paragraph{本稿無實驗結果。}
+\paragraph{主結果表格尚未取得。}
 這是本稿最主要的限制。第 \ref{sec:motivation} 節的分析與第 \ref{sec:related} 節的比對已完成，但第 \ref{sec:eval} 節的計畫尚未執行。在取得 oracle 結果前，我們無法斷言此問題存在足夠的最佳化空間。
 
 \paragraph{$\epsilon$ 是估計值而非保證。}
