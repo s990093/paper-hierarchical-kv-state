@@ -1,0 +1,8 @@
+{
+  "gpu": 1,
+  "started_clean": true,
+  "contaminated": false,
+  "verdict": "CLEAN",
+  "intruders": [],
+  "n_dirty_samples": 0
+}

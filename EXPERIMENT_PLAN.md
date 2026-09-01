@@ -342,9 +342,18 @@ chunk_queries:('1:fs',)      =    2   ← 磁碟階   ← 只有 2 次！
 **不要只用 needle-in-a-haystack。** 論文 §6.7 引用 YAKV 的發現：某些方法在單針測試上表現良好，卻在多事實抽取上崩潰。
 
 - 主要判準：**multi-fact extraction**（YAKV 的 Text2JSON，`github.com/yandex-research/context-intensive-kv-offloading`）
-- 次要：LongBench 子集
-- sanity check：needle-in-a-haystack
-- **🆕 推理任務：GSM8K many-shot**（`code/m5_quality.py`）
+  ⏳ 尚未跑。合成版的多事實抽取（RULER `niah_multivalue` / `niah_multiquery`）已跑，見下。
+- ✅ **LongBench**（7 個英文任務、n=50、32K 視窗，`code/m5_understanding.py --suite longbench`）
+- ✅ **RULER**（7 個合成任務、n=30、16K，`code/m5_understanding.py --suite ruler`）
+  —— 產生器是 `code/ruler_tasks.py`，計分對上游驗證（`code/test_m5c_metrics.py`）
+- sanity check：needle-in-a-haystack ✅
+- **🆕 推理任務：GSM8K many-shot** ✅（`code/m5_quality.py`）
+
+> **2026-09-01 的結果改寫了這一節的預設。** 原本假設「不同任務會給出程度不同的退化」，
+> 實測是**兩群**：GSM8K（全距 2.8 pp）對上其餘三者（全距 58–100 pp）。
+> 且 INT8 在 GSM8K、LongBench、大海撈針上都讀起來無損，卻在 RULER 的
+> `niah_multikey_3`（UUID 鍵值 + 同構干擾針）掉到 53.3。
+> **「哪個精度安全」取決於評測選了哪個 benchmark。** 見 RUNLOG「Milestone 5-(c)」。
 
 ### 🆕 品質量測分兩類，量法不同
 

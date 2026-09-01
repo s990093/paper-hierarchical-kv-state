@@ -2186,3 +2186,143 @@ CSV 的 `cost_model` 欄指向該檔。讀的人不必再從 `retrieval_csv` 的
 * §7.5 原標題「寫入頻寬使勝出的 baseline 不可部署」在主設定不成立
   （`qwen-awq` 的最佳 baseline 是 `cpu_arc`，不用磁碟階），改為跨剖面都成立的
   「Oracle 寫入需求是 `tier_fs` 的 1/4--1/7」
+
+---
+
+## Milestone 5-(c) — 長上下文理解：LongBench 與 RULER（2026-09-01 20:20）
+
+**狀態**: PASS
+**執行時間**: 2026-09-01 19:33 → 20:20（8 個 job 分散在 7 張卡上平行跑）
+**run_id**:
+* LongBench：`20260901-193344/46/48/50-m5-longbench`（bf16 / fp8 / int8 / int4，GPU 0–3）
+* RULER：`20260901-193408/10/13-m5-ruler`（int4 / bf16 / fp8，GPU 4–6）
+  ＋ `20260901-195709-m5-ruler`（int8，GPU 0，等 LongBench bf16 讓出卡）
+* 啟動殼：`20260901-193314-m5c-longbench-par`、`20260901-193338-m5c-ruler-par`（cmd_*.sh、context.txt、各設定的 stdout）
+
+**指令**（每個設定一張卡，四個設定平行）:
+```
+python code/m5_understanding.py --suite longbench --n-per-task 50 --gpu <i> --configs <cfg>
+python code/m5_understanding.py --suite ruler --n-per-task 30 --ctx 16384 --gpu <i> --configs <cfg>
+```
+
+**產出檔**:
+* `results/m5_quality/longbench_precision.csv`（1,400 列 = 7 任務 × 50 題 × 4 精度）
+* `results/m5_quality/ruler_precision.csv`（840 列 = 7 任務 × 30 題 × 4 精度）
+* `results/m5_quality/gpu_guard_{longbench,ruler}_gpu{0..6}.json`
+* 新程式：`code/ruler_tasks.py`、`code/m5_understanding.py`、`code/analyze_m5c.py`、
+  `code/test_m5c_metrics.py`
+
+**失敗與異常**:
+* RULER `int4` 的 job 以 exit 1 結束，**CSV 已完整寫出（210 列）之後**才炸在
+  `summarise()`：該設定 14 個任務全 0，計算「相對基準保留率」時 0/0。
+  已修（`ref` 為 0 時印 `—`）。資料不受影響。
+* 開跑前殺掉一輪已跑 12 分鐘的序列版本，因為原本的
+  `if g.contaminated: return 3` 會在共用機器被插隊時丟掉整輪三小時的量測。
+  改為「保留分數、逐列記 `own_gpu_intruders`」後重跑。理由見 CLAUDE.md §3。
+* 八個 job 的 `own_gpu_intruders` 全為 0：本輪量測期間七張卡都乾淨。
+
+---
+
+### 🔴 發現 1：真實文件的長上下文理解，落差與**檢索**一致，不與推理一致
+
+LongBench 7 個英文任務（`qwen-awq`、32K 視窗、n=50/任務、上游 `pred.py` 協定）：
+
+| 任務 | 類別 | BF16 | FP8 | INT8 | INT4 |
+|---|---|---|---|---|---|
+| MultiFieldQA | 單文件 QA | 51.46 | 7.42 | 51.29 | 0.23 |
+| Qasper | 單文件 QA | 41.37 | 2.80 | 40.79 | 0.54 |
+| HotpotQA | 多跳 QA | 53.45 | 2.20 | 54.14 | 0.00 |
+| 2WikiMQA | 多跳 QA | 52.23 | 7.49 | 50.87 | 0.00 |
+| GovReport | 摘要 | 33.96 | 2.09 | 34.09 | 1.45 |
+| TREC | few-shot 分類 | 76.00 | 22.00 | 74.00 | 0.00 |
+| PassageRetrieval | 合成檢索 | 100.00 | 2.00 | 94.00 | 0.29 |
+| **巨觀平均** | | **58.35** | **6.57** | **57.02** | **0.36** |
+| 相對 BF16 保留 | | 100% | 11.3% | 97.7% | 0.6% |
+
+配對差值（BF16 − X，逐題相減後 bootstrap，10,000 次）：
+FP8 **51.8 pp [47.3, 56.3]**、INT8 **1.3 pp [0.0, 2.8]**、INT4 **58.0 pp [53.7, 62.3]**。
+
+**GSM8K 說「量化幾乎免費」，LongBench 說「掉掉九成」。同一組設定、同一台機器。**
+
+---
+
+### 🔴 發現 2：INT8 不是無條件安全——RULER 的 UUID 多鍵檢索掉掉一半
+
+RULER 7 個合成任務（16K 上下文、n=30/任務）：
+
+| 任務 | 類別 | BF16 | FP8 | INT8 | INT4 |
+|---|---|---|---|---|---|
+| NIAH multikey-2 | 多鍵檢索（干擾針為海） | 100.00 | 0.00 | 90.00 | 0.00 |
+| NIAH multikey-3 | 多鍵檢索（UUID） | 100.00 | 0.00 | **53.33** | 0.00 |
+| NIAH multivalue | 一鍵四值 | 100.00 | 0.00 | 93.33 | 0.00 |
+| NIAH multiquery | 四鍵各查一次 | 100.00 | 0.00 | 92.50 | 0.00 |
+| VT | 多跳追蹤 | 83.33 | 1.33 | 76.67 | 0.00 |
+| CWE | 詞頻聚合（前 10） | 72.33 | 0.67 | 60.33 | 0.00 |
+| FWE | 詞頻聚合（Zipf 前 3） | 85.56 | 21.11 | 87.78 | 0.00 |
+| **巨觀平均** | | **91.60** | **3.30** | **79.13** | **0.00** |
+| 相對 BF16 保留 | | 100% | 3.6% | 86.4% | 0% |
+
+INT8 的配對差值：合併 **12.5 pp [8.6, 16.7]**——**與 0 可區分**。
+其中絕大部分來自 `niah_multikey_3`：**46.7 pp [30.0, 63.3]**。
+
+**這改寫了 M5 先導的結論。** 先導說「INT8 動態縮放不破壞檢索（95%）」，
+那是**單鍵、有語意的針**。換成 **UUID 的鍵與值、且整片海都是同構的干擾針**，
+同一個 INT8 只剩 53.3%。可宣稱的是：
+
+> INT8 per-token-head 在 GSM8K（−1.5 pp，n.s.）、LongBench（−1.3 pp，CI 觸 0）
+> 上讀起來無損，卻在 RULER 最難的檢索變體上掉掉一半。
+> **「這個精度安全」這句話，取決於你跑的是哪個 benchmark。**
+
+---
+
+### 發現 3：答案是「整份上下文的統計量」的任務，對 KV 雜訊有抵抗力
+
+FWE（找 Zipf 分佈下最高頻的三個詞）是唯一 FP8 沒有全失的任務（21.11 vs 其餘 ≤ 7.49），
+也是唯一 INT8 沒有掉的任務（87.78 vs BF16 85.56，差值 −2.2 pp [−6.7, 2.2]）。
+CWE（前 10 高頻詞，要精確列出 10 個詞）則掉 12.0 pp [4.7, 20.3]。
+
+**梯度是「答案有多依賴精確位置的精確 token」**：
+全域統計量（FWE）> 聚合但要逐項列出（CWE）> 多跳追蹤（VT）> 精確檢索（NIAH）。
+
+---
+
+### 方法學紀錄
+
+* **配對統計**。四個設定吃同一批 prompt（同題目、同順序、`temperature=0`、
+  `seed=12345`），所以差值逐題相減再 bootstrap。GSM8K 那輪的 ±3.7 pp
+  有一部分就是沒用上這一點。
+* **計分函式已對上游驗證**。`code/test_m5c_metrics.py`：9,500 組隨機字串 +
+  真實預測，自寫的 `qa_f1`/`rouge_l`/`classification`/`retrieval`
+  與 LongBench 上游 `metrics.py` **零筆不一致**。
+* **與公開榜單不可直接比**：AWQ-INT4 權重 + 移除 DCA 的 Qwen2.5-7B-1M、
+  每任務只取前 50 筆、32K 視窗。**但四個設定吃的是同一批 prompt，
+  所以跨精度的相對變化不受影響**——論文要宣稱的正是這個。
+* **RULER 的兩處刻意差異**：haystack 一律用上游自己的 `noise` 選項
+  （essay 版需要爬 paulgraham.com，HF 鏡像需授權），且不含需要 SQuAD/HotpotQA
+  原始檔的 `qa_1/qa_2`（真實文件由 LongBench 那一半負責）。
+  影響 `niah_multivalue` 與 `niah_multiquery`：任務語意不變，難度略降。
+
+### 論文端已改
+
+* 表 9（`tab:eps-task`）由「兩種任務」擴為「四種任務型態」：
+  GSM8K 推理 / 大海撈針檢索 / LongBench 理解 / RULER 整合，並加一列**全距**
+  （2.8、100.0、58.0、91.6 pp）——同一組設定換個任務型態，$\epsilon$ 差 21 至 36 倍
+* §6.6 新增三段：〈真實文件上的長上下文理解與檢索同側〉、
+  〈「哪個精度安全」的答案取決於評測選了哪個 benchmark〉、
+  〈梯度由「答案是否為某個確切位置的確切 token」決定〉
+* 附錄新增 A.5〈長上下文品質評測的逐任務分數〉+ 表 13：
+  LongBench 7 列、大海撈針 4 個長度、RULER 7 列 × 4 個精度，
+  另附配對 bootstrap 的說明、與公開榜單不可並列的三項理由、計分函式的驗證
+* §8 結論段與附錄 B「尚未執行的評估指標」一段同步更新
+* **原本畫的三面板圖 4 已刪**：它與表 9 是同一批數字，圖表並列屬重複
+  （2026-09-01 使用者決定）。`notebooks/paper_figures.py` 的 `fig_quality()`
+  一併移除，需要投影片版時自 git history 取回
+
+### 數字的可追溯性
+
+新增 `code/audit_m5c_claims.py`：把表 9、表 13 的每一格、表題的極值句、
+以及正文引用的 9 組配對 bootstrap 區間，對 `results/m5_quality/*.csv` 重算比對。
+判準是**「論文印的一位小數 == CSV 值的一位小數」**，不是容忍值——
+第一次跑就抓到 HotpotQA 的 BF16 被寫成 53.5（實為 53.448 → 53.4），
+以及表 9 表題把全距倍數寫成「20 至 33 倍」（實為 20.7--35.7 → 21 至 36 倍）。
+兩處已修，現在 `python code/audit_m5c_claims.py` 回傳 0。

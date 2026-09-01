@@ -77,7 +77,13 @@
 ├── models/                 自行量化的 AWQ 權重
 ├── runs/                   ★ 原始 log、vLLM server stdout、每次 run 的完整輸出
 ├── profiles/               nsys / torch profiler 產物
-├── datasets/               LongBench / Text2JSON 等評測資料
+├── datasets/               評測資料
+│   ├── gsm8k/              GSM8K train/test jsonl
+│   ├── traces/             Mooncake 等 trace
+│   ├── longbench/          LongBench v1 的 data/ + config/ + 上游 metrics.py、eval.py、pred.py
+│   └── ruler_ref/          RULER 上游合成腳本（**對照用**，實際產生器是 code/ruler_tasks.py）
+├── pylibs/                 側裝的純 Python 套件（rouge / fuzzywuzzy / wonderwords）
+│                           ↳ 用 `--target` 裝在這裡而不是 venv，避免污染 vLLM 的相依
 ├── logs/                   安裝與環境建置腳本 + log
 └── vendor-skills/          上游 skill repo 的 clone（供更新比對）
 ```
@@ -172,6 +178,14 @@ if w.contaminated:      # 開跑前不乾淨，或中途出現外來 PID
 
 **規則**：`contaminated == True` 的 run，結果**不得寫進 `results/`**，必須重量。
 `m3_baseline.py` 已內建這個行為（會在 run 目錄留下 `CONTAMINATED` 檔）。
+
+**這條規則的範圍是「時間」欄位。** 品質量測（`m5_quality.py`、`m5_understanding.py`）
+量的是**分數**：同一批 prompt、`temperature=0`、固定 seed，外來 process 不改變輸出。
+所以那兩支腳本在污染時**保留分數、逐列記錄爭用**
+（`own_gpu_intruders`、`level`、`foreign_gpu_count`、`foreign_max_util`），
+同樣在 run 目錄留下 `CONTAMINATED` 檔，但**該 run 的 `latency_ms` 欄作廢**，
+不得用來下任何時間結論。丟掉一整輪三小時的品質量測換取一個與結論無關的乾淨度，
+是拿嚴謹當儀式。
 
 ### 環境啟動
 
