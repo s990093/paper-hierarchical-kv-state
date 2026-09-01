@@ -726,22 +726,32 @@ LRB~\cite{lrb2020}          & GBDT & 2 & 否（L2） \\
 \paragraph{規格。}
 預測器是一個獨立於 LLM 之外的\emph{小型模型}，不參與 attention 計算，亦不修改模型權重。其介面如下：
 
-\vspace{2pt}
-\noindent\fbox{\parbox{0.955\columnwidth}{\footnotesize\sffamily
-\textbf{輸入}（每個 KV block，全部於服務時免費取得）\\[2pt]
-\hspace*{6pt}$\bullet$ \texttt{deltas[0..31]}：前 32 次存取的時間間隔（未填滿為 $\infty$）\\
-\hspace*{6pt}$\bullet$ \texttt{edc[0..9]}：指數衰減計數器，僅於存取時更新\\
-\hspace*{6pt}$\bullet$ \texttt{block\_size}, \texttt{layer\_id}, \texttt{head\_id}, \texttt{token\_type}\\
-\hspace*{6pt}$\bullet$ block 內 key/value 向量的池化統計\\
-\hspace*{6pt}$\bullet$ \texttt{attn\_mass[0..7]}：最近 8 個解碼步中，該 block 取得的\\
-\hspace*{20pt}attention 質量佔比（forward 已算出，記錄成本近零）\\[4pt]
-\textbf{輸出}\\[2pt]
-\hspace*{6pt}$\hat{y}_i = \log \tau_i$ \quad（迴歸；$\tau_i$ 為距下次存取的時間）\\
-\hspace*{14pt}$\downarrow$ isotonic regression（驗證集上校準）\\
-\hspace*{6pt}$\hat{p}_i = \Pr[\tau_i \le W]$ \quad（$W$ 為決策視窗長度）\\[4pt]
-\textbf{模型}：GBDT，單一全域模型，\texttt{layer\_id}/\texttt{head\_id} 作為特徵
-}}
-\vspace{3pt}
+\begin{algorithm}[t]
+\caption{預測器的服務時流程（每個 KV block 一次）}
+\label{alg:predictor}
+\small
+\begin{algorithmic}[1]
+\Require block $b$、決策視窗 $W$、GBDT $f$、校準映射 $g$、各階成本比 $\kappa_{\ell}$
+\Ensure 動作 $a \in \mathcal{A}$
+\Statex \textbf{特徵抽取}\Comment{六族特徵，全部於服務時免費取得}
+\State $\mathrm{deltas} \gets$ 前 32 次存取的時間間隔 \Comment{未填滿者為 $\infty$}
+\State $\mathrm{edc}[i] \gets 1 + \mathrm{edc}[i]\cdot 2^{-\Delta_1/2^{9+i}}$, $i=0..9$ \Comment{僅於存取時更新}
+\State $\mathrm{static} \gets (\texttt{block\_size}, \texttt{layer\_id}, \texttt{head\_id}, \texttt{token\_type})$
+\State $\mathrm{pooled} \gets$ block 內 key/value 向量的池化統計
+\State $\mathrm{attn} \gets$ 最近 8 個解碼步中 $b$ 取得的 attention 質量佔比 \Comment{forward 已算出}
+\State $\phi \gets \mathrm{concat}(\mathrm{deltas}, \mathrm{edc}, \mathrm{static}, \mathrm{pooled}, \mathrm{attn})$
+\Statex \textbf{評分}\Comment{迴歸連續量，不做二元分類}
+\State $\hat{y} \gets f(\phi) = \log \hat{\tau}$ \Comment{$\hat\tau$ 為距下次存取的時間}
+\State $\hat{p} \gets g(\hat{y}) = \Pr[\tau \le W]$ \Comment{isotonic regression，驗證集上校準}
+\Statex \textbf{依成本設門檻}\Comment{門檻由式 \eqref{eq:threshold} 給出，非 $0.5$}
+\For{每個階 $\ell$，由廉至貴}
+  \If{$\hat{p} \ge p^{*}_{\ell} = 1/(1+\kappa_{\ell})$} \State \Return $a \gets \ell$ \EndIf
+\EndFor
+\State \Return $a \gets \act{Drop}$
+\end{algorithmic}
+\end{algorithm}
+
+模型為單一全域 GBDT，\texttt{layer\_id} 與 \texttt{head\_id} 作為特徵而非分模型的依據。
 
 \emph{門檻永遠施加於 $\hat{p}_i$，不施加於 $\hat{y}_i$}——式 \eqref{eq:cost} 與式 \eqref{eq:threshold} 使用的皆為機率。此區分是必要的：對 $\hat{y}_i$ 直接閾值化在數學上不對應式 \eqref{eq:threshold} 的最佳邊界（見第 \ref{sec:loss} 節）。
 
@@ -864,6 +874,8 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 
 \textbf{平台 A}：NVIDIA RTX 3090（24\,GB GDDR6X，PCIe 4.0$\times$16、sm\_86），vLLM 0.28.0，CUDA 12.4。本節全部量測皆在此平台完成。第 \ref{sec:twoplatform} 節設計的平台 B（MI300X）尚無機器，其實驗設計列於附錄 \ref{app:notyet}。
 
+\textbf{這張卡不是主張的一部分。}本文的主張以\emph{成本常數}表述——$\kappa$、$P^{*}$、$\alpha$——而非以特定加速器表述。3090 是目前可取得、能把這些常數量到的機器；換一張卡，常數改變而形式不變，所有判別式照樣算得出來（\S\ref{sec:sweet-spot} 以縮放後的 $\alpha$ 給出四個算力級距的預測）。本節凡出現「平台 A」處，讀者應理解為「常數取自表 \ref{tab:costmodels} 的這一組」，而非「此結論僅適用於 3090」。反過來說，凡是真正只在 sm\_86 成立的結果（如 \S\ref{sec:eps-task} 的 FP8 後端限制），我們明確標為硬體相依。
+
 \textbf{模型剖面}。主設定為 Qwen2.5-7B-Instruct-1M（AWQ-INT4 權重，記為 \texttt{qwen-awq}），對照為 Llama-3.1-8B-Instruct 的 BF16 與 AWQ 權重（\texttt{llama-bf16}、\texttt{llama-awq}）。兩個剖面的 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點。成本常數隨剖面變動，三組並列於表 \ref{tab:costmodels}；本節每一處引用皆標明用的是哪一組。
 
 \textbf{工作負載}。生產 trace 取自 Mooncake~\cite{mooncake2025} 的 \texttt{toolagent}（23{,}608 請求）與 \texttt{conversation}（12{,}031 請求），中位長度 6{,}352\,token、最長 126{,}208。目標長度區間（65K--524K）無公開 trace 可用，以合成長上下文補足，其重用率與長度分布由我們設定，此限制於 \S\ref{sec:verdict} 明確標註。
@@ -917,40 +929,17 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 \paragraph{動作集合是四個無損動作，不是六階。}
 oracle 只在 \act{Gpu}$_{16}$、\act{Cpu}、\act{Ssd}、\act{Drop} 上求解，\textbf{未納入三個精度階}。這四個動作於 \S\ref{sec:eps-task} 已驗證為逐字元無損，故 $\epsilon$ 約束在此自動滿足，本節的 headroom 是\emph{位置分層本身}在 $\epsilon = 0$ 下可得的空間。精度階能額外帶來多少空間，本文未量。實作、複雜度與不變量檢查見附錄 \ref{app:oracle}。
 
-\subsection{四項成本量測決定了動作空間的有效子集}
+\subsection{動作空間的有效子集由成本常數決定，可事先算出}
 \label{sec:measured}
 
-動作空間 $\mathcal{A}$ 的六個狀態並非在每個平台上都存在，也並非在每個上下文長度下都有意義。表 \ref{tab:measured} 給出四項決定其有效子集的量測：前兩項確立 GPU 上四個精度階的\emph{可用性}與\emph{實際容量收益}，後兩項確立 \act{Drop} 的成本形式與它相對 \act{SSD} 的適用區間。量測協定與逐設定的完整數據見附錄 \ref{app:measurements}。
+動作空間 $\mathcal{A}$ 的六個狀態並非在每個平台上都存在，也並非在每個上下文長度下都有意義。其有效子集由兩個量決定，二者皆自成本常數（表 \ref{tab:costmodels}）算出，不需試跑。
 
-\begin{table*}[t]
-\centering\small
-\caption{決定動作空間有效子集的四項量測（平台 A，RTX 3090, sm\_86）。}
-\label{tab:measured}
-\begin{tabular}{>{\raggedright\arraybackslash}p{0.19\textwidth}>{\raggedright\arraybackslash}p{0.29\textwidth}>{\raggedright\arraybackslash}p{0.44\textwidth}}
-\toprule
-\textbf{量測} & \textbf{結果} & \textbf{對動作空間與成本模型的意涵} \\
-\midrule
-FP8 KV 於 sm\_86 &
-可用，容量恰增 $2.00\times$（41{,}648$\rightarrow$83{,}312\,token） &
-sm\_86 無原生 FP8 \emph{tensor core 運算}，但 \act{Gpu}$_8$ 是\emph{儲存}狀態，與 tensor core 無關。GPU 上的四個精度階皆為 \texttt{-{}-kv-cache-dtype} 的取值，單一平台即可驗證 \\
-\addlinespace
-精度階梯的實際收益 &
-$2.00\times$/$1.94\times$/$3.77\times$，而非位元寬度所示的 $2\times$/$4\times$ &
-per-token-head 量化固定多帶 2\,KiB/token 的 scale（$2\times32\times8$ 個 FP32）。量化中繼資料與序列長度成正比，必須進入成本模型；僅以每元素位元組數計算會高估低精度階 \\
-\addlinespace
-$C_{\text{recompute}}$ 對位置的形式 &
-對位置\emph{線性}，式 \eqref{eq:recompute-position}，擬合偏差 $<1.6\%$ &
-整段 prefill 為 $O(L^2)$，但固定大小 block 在位置 $P$ 重算只需與既有前綴做 attention，為 $O(C\cdot P)$。二者是不同的量，將 \act{Drop} 視為單一常數會在長上下文下系統性低估其成本 \\
-\addlinespace
-\act{SSD} 與 \act{Drop} 的優劣次序 &
-同數量級，且\emph{次序隨 block 的絕對位置反轉}，交叉點 $P^{*}$ 落在 10{,}851（\texttt{llama-bf16}）至 37{,}717\,token（\texttt{qwen-awq}），二者皆於 NVMe &
-\act{Drop} 的成本隨位置線性成長而 \act{SSD} 為常數，故位置 $<P^{*}$ 時 \act{Drop} 較廉、其後 \act{SSD} 較廉。於 128K 上下文，落在 \act{Drop} 一側的 block 佔 8.3\%（\texttt{llama-bf16}）或 28.8\%（\texttt{qwen-awq}）。\textbf{動作空間的有效子集隨上下文長度\emph{與成本剖面}而變}，且可由成本常數事先算出 \\
-\bottomrule
-\end{tabular}
-\end{table*}
+\textbf{精度階由硬體與後端支援決定。}\act{Gpu}$_8$ 是\emph{儲存}狀態而非運算狀態，故不受 tensor core 是否原生支援 FP8 所限；我們實測四個 GPU 精度階皆為 \texttt{-{}-kv-cache-dtype} 的取值，無須額外實作（\S\ref{sec:awq-unlock}）。但可切換不等於可用：\S\ref{sec:eps-task} 顯示三個低精度階中僅 INT8 一階在檢索任務上保住品質。\textbf{同一個動作在不同硬體上是否存在，本身即隨平台而變。}
+
+\textbf{位置階由 $P^{*}$ 與請求長度的關係決定。}\act{Cpu} 與 \act{Ssd} 的取回成本與位置無關，而 \act{Drop} 隨 block 的絕對位置線性成長（式 \eqref{eq:recompute-position}，48 個量測點、擬合偏差 $<1.6\%$）。二者於 $P^{*}$ 交叉：其前 \act{Drop} 較廉，其後 \act{Ssd} 較廉。$P^{*}$ 隨成本剖面變動 $3.5\times$（表 \ref{tab:costmodels}），故於 128K 上下文落在 \act{Drop} 一側的 block 佔 8.3\%（\texttt{llama-bf16}）至 28.8\%（\texttt{qwen-awq}）。
 
 \paragraph{Takeaway.}
-四項量測共同給出一個結論：\textbf{六階動作空間是候選集合，不是每個平台上都成立的必要集合。}其有效子集由兩個可事先計算的量決定——精度階由硬體與後端支援與否決定（\S\ref{sec:eps-task} 顯示於 sm\_86 只有一階保住檢索品質），位置階由 $P^{*}$ 與請求長度的關係決定。二者皆不需試跑即可算出，這正是「策略須隨硬體條件化」主張的可操作形式。
+六階動作空間是\emph{候選}集合，不是每個平台上都成立的必要集合。這不是本文主張的反例，而是其可操作形式：兩個判別式都只需要成本常數，因此「該用哪些動作」可以在部署前算出，而非試出來。
 
 \subsection{Tier 0 baselines：長上下文下五者有四者失效}
 \label{sec:baselines-measured}
@@ -1146,7 +1135,7 @@ $6\times$ 算力 & 226{,}3\,K & 5.8 & 18.9 & 34.7 & \textbf{39.5} & 29.7 \\
 \paragraph{以上三段皆為\emph{可證偽的預測}，而非量測。}
 $\alpha$ 的縮放假設 prefill 時間與峰值算力成反比，忽略了 MFU 隨模型與序列長度的變化、kernel 實作差異、以及 ROCm 與 CUDA 的成熟度落差。驗證方式明確：於目標加速器上重量 \S\ref{app:cost} 的四項成本常數（\act{CPU}、\act{SSD}、$C^{0}_{\text{recompute}}$、$\alpha$），代入式 \ref{eq:crossover} 求 $P^{*}$，再以本節的方法掃描長度。若峰值不落在 $2$--$3.5\,P^{*}$，本節的機制解釋即被推翻。
 
-\subsection{權重精度決定平台 A 能否進入長上下文區間}
+\subsection{權重精度決定 24\,GB 級加速器能否進入長上下文區間}
 \label{sec:awq-unlock}
 
 \paragraph{一個須澄清的區分：FP8 運算與 FP8 儲存。}
