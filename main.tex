@@ -1276,9 +1276,16 @@ DeepSeek-V2-Lite MLA AWQ & \textbf{399{,}376} \\
 \subsection{go/no-go 判定：條件式 GO，且條件可事先算出}
 \label{sec:verdict}
 
-我們建構一個離線最優 oracle：給定完整的未來查詢序列，以整數規劃求解式 \eqref{eq:opt}，得到 $p_i \in \{0,1\}$ 為已知時的最佳放置。此為經典快取文獻中 Belady~\cite{belady1966} 分析的直接延伸，並與 Sibyl~\cite{sibyl2022} 報告「達到全知 oracle 的 80\%」的評估傳統一致。
+\paragraph{oracle 如何計算。}
+oracle 取得整條 trace 的完整未來存取序列，據此構造一個離線放置策略。GPU 階的逐出用 Bélády/MIN（逐出下次使用最遠者），單階時此規則可證明最優~\cite{belady1966}。被逐出的 block 需再選一個目的地，我們跑兩條規則並取較佳者：\emph{cascade} 無條件往下推（CPU 有位子就放 CPU、否則放 SSD），\emph{cost-aware} 只在該階成本低於丟棄的邊際成本時才放。兩條都是可實作的離線策略，取其較佳者仍然可實作。Fang 等人~\cite{hetmem2025} 已為兩層（HBM 與 off-package DRAM）的無損放置推導上界；我們的 oracle 在兩點上延伸之：納入 SSD 層，以及納入 \act{Drop}$\rightarrow$重算動作。
 
-Fang 等人~\cite{hetmem2025} 已為兩層（HBM 與 off-package DRAM）的無損放置推導上界。我們的 oracle 在三點上延伸之：納入 SSD 層、納入 \act{Drop}$\rightarrow$重算動作、納入品質約束。
+三項細節決定數字的正確性。其一，重算按 block 的\emph{絕對位置}計價（式 \eqref{eq:recompute-position}）；若讓 oracle 一律以位置 0 的價格重算，它付的價會低於線上策略，等於 oracle 自己作弊。其二，前綴語意下丟棄一個 block 的邊際成本是它到請求結尾的\emph{整條尾巴}而非它自己那一塊，因為第一個缺口之後的 block 一律重算。其三，逐出去向逐項計數：若「不再用到、丟棄成本為零」的逐出佔滿全部，則 CPU 與 SSD 階對最優解毫無貢獻，量到的 headroom 全部來自 GPU 階內的逐出選擇，不足以支持多階動作空間。
+
+\paragraph{此 oracle 給的是下界，不是上界。}
+多階且動作成本異質的最佳放置我們並未求解。貪婪的目的地選擇不保證全域最優，且 oracle 的逐出\emph{未}做前綴感知——真正的最優解會刻意讓保留的 block 構成連續前綴以避免製造缺口，而本 oracle 一樣會被缺口懲罰。兩項都使其偏弱，故所報 headroom 為\textbf{下界}，真正的最優只會更高。此不對稱使 GO 判定安全，NO-GO 判定則須額外審視。與 Sibyl~\cite{sibyl2022} 報告「達到全知 oracle 的 80\%」的評估傳統一致，我們以此上界作為判準而非成績。
+
+\paragraph{oracle 的動作集合是四個無損動作，不是六階。}
+本節的 oracle 只在 \act{Gpu}$_{16}$、\act{Cpu}、\act{Ssd}、\act{Drop} 上求解，\textbf{未納入三個精度階}。這四個動作於 \S\ref{sec:eps-task} 已驗證為逐字元無損，故 $\epsilon$ 約束在此自動滿足，表 \ref{tab:verdict} 的 headroom 是\emph{位置分層本身}在 $\epsilon = 0$ 下可得的空間。精度階能額外帶來多少空間，本文未量。
 
 \paragraph{停止條件。}
 若 oracle 相對於最佳\emph{可部署}策略的改善幅度小於 5\%，我們終止此研究方向並報告此負面結果。此判準訂於任何策略實作之前，本節依其判定。
@@ -1452,9 +1459,18 @@ SATA QLC 的 1\,GiB 短測給出 492\,MiB/s（$n=3$），16\,GiB 的長測只剩
 \subsection{Oracle 的求解方法與其效力範圍}
 \label{app:oracle}
 
-我們以 trace 驅動的模擬求解上界：GPU 階的逐出以 Bélády/MIN 決定，跨階的目的地以成本感知貪婪決定。後者非加權多階快取問題的最佳解，故所得 headroom 為\emph{下界}——真正的最佳解只會更好。此不對稱使 GO 判定安全，而 NO-GO 判定須額外審視。
+\S\ref{sec:verdict} 給出 oracle 的構造與其為何是下界。本節補充實作與驗證。
 
-模擬器的效力取決於兩個前提。其一，成本常數須為實測；程式在讀不到 \S\ref{app:cost} 的量測檔時中止，且模型剖面（GPU 預算、KV 每 token 位元組、成本常數的來源模型）三者必須一致，否則拒絕執行。其二，模擬器須能複現已量測的行為。我們以第 \ref{sec:eval} 節的工作負載比對 \texttt{full\_gpu} 相對 \texttt{cpu\_lru} 的 warm 段成本比：16K 上下文實測 9.00 對模擬 9.73（差 8\%），32K 上下文實測 12.27 對模擬 12.66（差 3\%）。絕對值同樣相符，\texttt{full\_gpu} 為 5{,}033 對 5{,}864\,ms、\texttt{cpu\_lru} 為 559 對 603\,ms。\textbf{驗證僅涵蓋一種工作負載形狀與兩個有鑑別力的上下文長度，本文引用 headroom 的絕對值時一併標明此範圍。}
+\paragraph{實作。}
+oracle 先對整條 trace 建立每個 block 的未來存取索引表，再單趟重放。GPU 階以 max-heap 搭配 lazy deletion 取 Bélády 犧牲者，每次逐出 $O(\log n)$；先前的版本每次逐出掃描整個 GPU 集合，於 17{,}117 blocks 的預算與 20 萬次存取下約需 $3.5\times10^{9}$ 次比較而無法完成。CPU 階以 next-use 的 max-heap 保留下次使用最近者，SSD 階以「相對丟棄的節省量」min-heap 先換掉最不划算者，兩者同樣採 lazy deletion。被 CPU 階擠下來的 block 會再往 SSD 階試一次，而非直接丟棄。
+
+\paragraph{不變量檢查。}
+\texttt{code/m4\_invariants.py} 在每次掃描前後自動執行。開跑前檢驗 trace 的單位、成本模型的外插範圍、以及磁碟階容量是否物理可行；跑完後檢驗三項：命中數守恆（各階命中與重算之和等於總存取數）、強制未命中下限（重算次數不得低於不重複 block 數）、以及 oracle 為上界（oracle 的總成本不得高於任一線上策略）。任一項失敗即代表模擬器有錯，結果不得採用。
+
+第三項曾在 2026-08-31 失敗：SSD 階 2\,TiB 時 oracle 的 headroom 為 $-3.16\%$，依定義不可能。原因是成本感知規則以\emph{單一 block} 而非整條尾巴估計丟棄成本，做出局部便宜、全域昂貴的決策。修正後全部通過。
+
+\paragraph{效力前提。}
+其一，成本常數須為實測；程式在讀不到 \S\ref{app:cost} 的量測檔時中止，且模型剖面（GPU 預算、KV 每 token 位元組、成本常數的來源模型）三者必須一致，否則拒絕執行。其二，模擬器須能複現已量測的行為。我們以第 \ref{sec:eval} 節的工作負載比對 \texttt{full\_gpu} 相對 \texttt{cpu\_lru} 的 warm 段成本比：16K 上下文實測 9.00 對模擬 9.73（差 8\%），32K 上下文實測 12.27 對模擬 12.66（差 3\%）。絕對值同樣相符，\texttt{full\_gpu} 為 5{,}033 對 5{,}864\,ms、\texttt{cpu\_lru} 為 559 對 603\,ms。\textbf{驗證僅涵蓋一種工作負載形狀與兩個有鑑別力的上下文長度，本文引用 headroom 的絕對值時一併標明此範圍。}
 
 \paragraph{逐 block 的簡化對前綴結構的工作負載無害。}
 vLLM 的查詢語意是連續前綴：\texttt{\_lookup\_complete\_chunks} 回傳一個 token 數，而 token 數無法表達「block 0、1、4、5 命中，2、3 未命中」這種形狀，因此第一個缺口之後的 block 一律重算。我們把模擬器改為此語意並量化其影響：缺口之後的 block 中仍留在任一階的比例為 0.000\% 至 0.464\%（兩條 trace $\times$ 三個策略），其中 61.8\% 至 80.1\% 是首次出現的 block，本來就必須重算。真實流量的重用本身即為前綴結構，Mooncake 的 \texttt{hash\_ids} 就是前綴雜湊，第一個未命中因此恰好落在共用前綴的結尾，缺口之後沒有可供損失的快取內容。此結果同時構成模擬器的一項有效性證據。
