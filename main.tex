@@ -118,6 +118,49 @@ MI300X 的 HBM 頻寬（5.3\,TB/s 峰值）與主機鏈路頻寬（PCIe Gen5 $\t
 \section{Background and Motivation}
 \label{sec:motivation}
 
+\begin{table}[t]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{符號與代號。上半為全文使用的符號，下半為量測設定的代號。}
+\label{tab:notation}
+\begin{tabular}{@{}l>{\raggedright\arraybackslash}p{0.60\columnwidth}@{}}
+\toprule
+\multicolumn{2}{@{}l}{\textbf{符號}} \\
+\midrule
+$\mathcal{A}$ & 動作空間，式 \eqref{eq:actions} 的六個候選狀態 \\
+$\kappa$ & 重算對傳輸的成本比 \\
+$P^{*}$ & \act{Ssd} 與 \act{Drop} 的成本交叉位置（token） \\
+$\alpha$ & 重算成本對 block 絕對位置的斜率 \\
+$\epsilon$ & 品質退化的上限，約束 $\Delta\mathcal{Q}\le\epsilon$ \\
+$p_i$ & block $i$ 於決策視窗內被再次存取的機率 \\
+$\hat{p}_i$ & 上式的校準後估計值 \\
+$p^{*}$ & 最佳決策門檻 $1/(1+\kappa)$，式 \eqref{eq:threshold} \\
+$\ell_i,\ \pi_i$ & block $i$ 的所在層級與精度 \\
+$\lambda_m,\ \lambda_x$ & 容量佔用與搬移成本的權重，式 \eqref{eq:cost} \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{模型剖面}（權重精度 $+$ 成本常數來源）} \\
+\midrule
+\texttt{qwen-awq} & Qwen2.5-7B-Instruct-1M，AWQ-INT4（主設定） \\
+\texttt{llama-awq} & Llama-3.1-8B-Instruct，AWQ-INT4 權重 \\
+\texttt{llama-bf16} & Llama-3.1-8B-Instruct，BF16 權重 \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Baseline}} \\
+\midrule
+\texttt{full\_gpu} & 不卸載，vLLM 預設 \\
+\texttt{cpu\_lru}, \texttt{cpu\_arc} & vLLM 內建的兩個 CPU 階策略 \\
+\texttt{tier\_fs} & CPU 加磁碟兩階 \\
+\texttt{lmcache} & LMCache~\cite{lmcache2025} \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{KV 精度}（vLLM \texttt{-{}-kv-cache-dtype} 的取值）} \\
+\midrule
+\texttt{auto} & BF16，無損基準 \\
+\texttt{fp8} & 純格式轉換，靜態縮放 \\
+\texttt{int8\_per\_tok\_head} & per-token-head 動態縮放 \\
+\texttt{int4\_per\_tok\_head} & 同上，最低精度階 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{KV cache 的記憶體佔用}
 
 對採用 grouped-query attention（GQA）的模型，每 token 的 KV 佔用為
@@ -267,7 +310,7 @@ C_{\text{recompute}}(P) \;=\; 513.0\;\text{ms} \;+\; 26.9\;\text{ms}\times\frac{
 \label{eq:recompute-position}
 \end{equation}
 
-此式擬合自 \texttt{llama-bf16} 剖面的五個位置（$P\le24{,}576$），最大偏差 1.6\%，五點皆落於直線上，\emph{未觀察到二次成分}；自 $P=0$ 至 $P=24{,}576$ 成本成長 2.29 倍。\texttt{qwen-awq} 剖面另有十一個位置的量測（$P\le258{,}048$），線性形式在放大 $10.5\times$ 的位置範圍上仍成立，成本自 453.9 成長至 6{,}320.2\,ms（$13.9\times$）。係數依平台與模型而定（表 \ref{tab:costmodels}），但\emph{線性}這個形式來自 $O(C\cdot P)$，與平台無關。將重算視為單一常數會在長上下文下系統性低估其成本。
+此式擬合自 \texttt{llama-bf16} 的五個位置（$P\le24{,}576$），最大偏差 1.6\%，五點皆落於直線上，\emph{未觀察到二次成分}；自 $P=0$ 至 $P=24{,}576$ 成本成長 2.29 倍。\texttt{qwen-awq} 另有十一個位置的量測（$P\le258{,}048$），線性形式在放大 $10.5\times$ 的位置範圍上仍成立，成本自 453.9 成長至 6{,}320.2\,ms（$13.9\times$）。係數依平台與模型而定（表 \ref{tab:costmodels}），但\emph{線性}這個形式來自 $O(C\cdot P)$，與平台無關。將重算視為單一常數會在長上下文下系統性低估其成本。
 
 \paragraph{$\kappa$ 亦隨模型架構變動，且方向可事先計算。}
 $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，而 MoE 使兩者解耦：其 KV 由 attention 層決定（與同規模 dense 模型相同），但重算僅需啟用的專家。以 Qwen3-30B-A3B 為例（48 層、4 個 KV head、128 個專家中啟用 8 個，啟用參數約 3\,B），其 $\kappa$ 在 RTX 3090 上為 27，\emph{僅為同平台 dense 模型（48--108）的約一半}。
@@ -876,7 +919,7 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 
 本文的主張以\emph{成本常數}表述——$\kappa$、$P^{*}$、$\alpha$——而非以特定加速器表述。3090 是目前可取得、能把這些常數量到的機器；換一張卡，常數改變而判別式的形式不變（\S\ref{sec:sweet-spot} 以縮放後的 $\alpha$ 給出四個算力級距的預測）。文中「平台 A」一詞指的是表 \ref{tab:costmodels} 的該組常數。真正只在 sm\_86 成立的結果，如 \S\ref{sec:eps-task} 的 FP8 後端限制，我們標為硬體相依。
 
-\textbf{模型剖面}。主設定為 Qwen2.5-7B-Instruct-1M（AWQ-INT4 權重，記為 \texttt{qwen-awq}），對照為 Llama-3.1-8B-Instruct 的 BF16 與 AWQ 權重（\texttt{llama-bf16}、\texttt{llama-awq}）。兩個剖面的 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點。成本常數隨剖面變動，三組並列於表 \ref{tab:costmodels}；本節每一處引用皆標明用的是哪一組。
+\textbf{模型剖面}。我們量測表 \ref{tab:notation} 的三個剖面。兩個模型的 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點；同一模型的 BF16 與 AWQ 則隔離出權重精度的影響。三組成本常數並列於表 \ref{tab:costmodels}，本節每一處引用皆標明用的是哪一組。
 
 \textbf{工作負載}。生產 trace 取自 Mooncake~\cite{mooncake2025} 的 \texttt{toolagent}（23{,}608 請求）與 \texttt{conversation}（12{,}031 請求），中位長度 6{,}352\,token、最長 126{,}208。目標長度區間（65K--524K）無公開 trace 可用，以合成長上下文補足，其重用率與長度分布由我們設定，此限制於 \S\ref{sec:verdict} 明確標註。
 
@@ -996,7 +1039,7 @@ t_{\text{decode/step}} = \beta + \gamma \cdot N_{\text{blocks}}
 實測擬合（$R^2 = 0.999$）：\texttt{llama-bf16} 為 $36.768 + 0.005581 N$，\texttt{qwen-awq} 為 $18.158 + 0.001267 N$\,ms。$\gamma$ 換算之 KV 讀取頻寬分別為 376 與 581\,GB/s，皆低於 RTX 3090 的 936\,GB/s 峰值，構成一項物理合理性檢查。
 
 \paragraph{此項使端到端 headroom 約為 prefill headroom 的 0.88 倍。}
-於真實 trace 上，\texttt{qwen-awq} 剖面的端到端 headroom 為 8.42\%（toolagent）與 9.23\%（conversation），落於 \S\ref{sec:eval} 判準的 5--15\% 區間。\textbf{但 Mooncake 的請求長度中位數僅 6{,}352\,token}，遠低於本文目標區間；於 65K--262K 的長度上端到端 headroom 為 17\%--29\%（\S\ref{sec:sweet-spot}）。
+於真實 trace 上，\texttt{qwen-awq} 的端到端 headroom 為 8.42\%（toolagent）與 9.23\%（conversation），落於 \S\ref{sec:eval} 判準的 5--15\% 區間。\textbf{但 Mooncake 的請求長度中位數僅 6{,}352\,token}，遠低於本文目標區間；於 65K--262K 的長度上端到端 headroom 為 17\%--29\%（\S\ref{sec:sweet-spot}）。
 
 \subsection{品質約束的作用範圍：位置分層無損，退化是「精度 $\times$ 任務」的性質}
 \label{sec:eps-task}
@@ -1052,7 +1095,7 @@ GSM8K 上四者的差異均與零無法區分（$n=1{,}000$ 時差值的 95\% �
 功效分析顯示 GSM8K 無法用於量測 $\epsilon(f)$ 曲線：區分 2.8 個百分點需每設定 $n \approx 1{,}760$，7 個 $f$ 值即 12{,}320 次請求，而 2.8 個百分點已是 $f=1$ 的上界效果。
 
 \paragraph{主因為格式而非縮放方式。}
-數值分析（\texttt{code/quant\_error.py}）顯示：FP8 靜態縮放的相對誤差為 2.64\%，改用 per-token-head 動態縮放僅降至 2.56\%，而 INT8 動態縮放為 0.65\%。FP8 e4m3 的 3 個尾數位元將相對精度鎖定於約 12.5\%，縮放方式無法改變；INT8 於指定範圍內有 255 個刻度。理論值（FP8 $12.5\%/\sqrt{12}=3.6\%$、INT8 $3/440=0.68\%$）與實測吻合。數值誤差並可單調預測檢索結果：0.65\%$\to$95\%、2.64\%$\to$5\%、11.76\%$\to$0\%。
+數值分析顯示：FP8 靜態縮放的相對誤差為 2.64\%，改用 per-token-head 動態縮放僅降至 2.56\%，而 INT8 動態縮放為 0.65\%。FP8 e4m3 的 3 個尾數位元將相對精度鎖定於約 12.5\%，縮放方式無法改變；INT8 於指定範圍內有 255 個刻度。理論值（FP8 $12.5\%/\sqrt{12}=3.6\%$、INT8 $3/440=0.68\%$）與實測吻合。數值誤差並可單調預測檢索結果：0.65\%$\to$95\%、2.64\%$\to$5\%、11.76\%$\to$0\%。
 
 \paragraph{於 sm\_86，動態縮放的 FP8 不可用。}
 \texttt{fp8\_per\_token\_head} 需 Triton attention backend，該後端於 compute capability 8.6 上拒絕 FP8 KV cache。因此平台 A 的精度階實際僅有一級可用（BF16 $\to$ INT8）。此為 $\kappa$ 主張的另一實例：\emph{同一動作在不同硬體上是否存在，本身即隨平台而變}。
@@ -1097,7 +1140,7 @@ P^{*} = \frac{C_{\text{ssd}} - C_{\text{recompute}}^{0}}{\alpha}
 
 將請求分為兩段：位置在 $P^{*}$ 之前的 block 重算較便宜，之後的 block 搬移較便宜。當請求長度遠小於 $P^{*}$ 時所有 block 皆應重算，遠大於時所有 block 皆應搬移；兩種情形下放置策略均無選擇餘地。\textbf{只有當 $P^{*}$ 落在請求內部，同一請求的不同位置才需要不同決策。}
 
-我們固定記憶體壓力為 $5\times$、重用率 80.9\%，僅改變請求長度（GPU 預算隨工作集等比放大）。平台 A 上 \texttt{qwen-awq} 剖面的 $P^{*} = 37{,}717$\,token（表 \ref{tab:costmodels}），量測結果見圖 \ref{fig:sweetspot}：headroom 於 32K 僅 8.94\%（MARGINAL），於 65K--262K 為 24.44\%--33.50\%（三者皆 GO），於 524K 降至 12.71\%（MARGINAL）。\textbf{峰值落在 $3.5 P^{*}$ 處。}524K 一列另有兩項限制：單請求的 KV 超出 GPU 預算，且該長度的上半段（位置 258{,}048 以上）超出 \texttt{qwen-awq} 成本模型的擬合上限，為線性外插。
+我們固定記憶體壓力為 $5\times$、重用率 80.9\%，僅改變請求長度（GPU 預算隨工作集等比放大）。平台 A 上 \texttt{qwen-awq} 的 $P^{*} = 37{,}717$\,token（表 \ref{tab:costmodels}），量測結果見圖 \ref{fig:sweetspot}：headroom 於 32K 僅 8.94\%（MARGINAL），於 65K--262K 為 24.44\%--33.50\%（三者皆 GO），於 524K 降至 12.71\%（MARGINAL）。\textbf{峰值落在 $3.5 P^{*}$ 處。}524K 一列另有兩項限制：單請求的 KV 超出 GPU 預算，且該長度的上半段（位置 258{,}048 以上）超出 \texttt{qwen-awq} 成本模型的擬合上限，為線性外插。
 
 \begin{figure}[t]
 \centering
@@ -1271,7 +1314,7 @@ ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer 與 ParisKV 因 \texttt{rapi
 \section*{Statements}
 
 \paragraph{Data Availability.}
-本稿為初稿，尚無實驗資料。第 \ref{sec:motivation} 節的 KV footprint 計算工具將隨程式碼一併釋出。所引用模型組態均取自公開的 HuggingFace \texttt{config.json}。
+第 \ref{sec:eval} 節的全部量測、產生它們的指令、以及成本常數的原始量測檔，將與量測工具鏈一併公開釋出。每一列結果均帶有可反查原始輸出的識別碼。所引用模型組態取自公開的 HuggingFace \texttt{config.json}。線上策略尚未實作，故無對應的程式碼可釋出。
 
 \paragraph{Ethics.}
 本研究不涉及人類受試者或個人資料。工作負載將使用公開 benchmark 與已匿名化的公開對話 trace。
@@ -1340,7 +1383,7 @@ $P^{*}$（token） & \textbf{37{,}717} & 10{,}851 & 7{,}278 \\
 \end{tabular}
 \end{table}
 
-常數的來源檔記於 \texttt{results/m2\_harness/retrieval\_cost\_*.csv} 與 \texttt{recompute\_position*.csv}。\texttt{qwen-awq} 的取回量測只在 NVMe 上進行，故該剖面沒有 SATA 的對應值。
+\texttt{qwen-awq} 的取回量測只在 NVMe 上進行，故該剖面沒有 SATA 的對應值。原始量測與其來源指令隨論文一併釋出。
 
 $P^{*}$ 在固定裝置（NVMe）上換模型剖面即相差 $3.5\times$，換磁碟裝置再得 $1.5\times$。\textbf{兩項皆發生在同一台機器上，未換加速器。}這是 \S\ref{sec:recompute-econ} 之 $\kappa$ 主張的一個單平台實例：動作成本的比值不只隨加速器世代變動，在固定加速器上也隨模型剖面與儲存裝置變動。
 
@@ -1363,12 +1406,12 @@ SATA QLC 的 1\,GiB 短測給出 492\,MiB/s（$n=3$），16\,GiB 的長測只剩
 oracle 先對整條 trace 建立每個 block 的未來存取索引表，再單趟重放。GPU 階以 max-heap 搭配 lazy deletion 取 Bélády 犧牲者，每次逐出 $O(\log n)$；先前的版本每次逐出掃描整個 GPU 集合，於 17{,}117 blocks 的預算與 20 萬次存取下約需 $3.5\times10^{9}$ 次比較而無法完成。CPU 階以 next-use 的 max-heap 保留下次使用最近者，SSD 階以「相對丟棄的節省量」min-heap 先換掉最不划算者，兩者同樣採 lazy deletion。被 CPU 階擠下來的 block 會再往 SSD 階試一次，而非直接丟棄。
 
 \paragraph{不變量檢查。}
-\texttt{code/m4\_invariants.py} 在每次掃描前後自動執行。開跑前檢驗 trace 的單位、成本模型的外插範圍、以及磁碟階容量是否物理可行；跑完後檢驗三項：命中數守恆（各階命中與重算之和等於總存取數）、強制未命中下限（重算次數不得低於不重複 block 數）、以及 oracle 為上界（oracle 的總成本不得高於任一線上策略）。任一項失敗即代表模擬器有錯，結果不得採用。
+模擬器在每次掃描前後自動執行不變量檢查。開跑前檢驗 trace 的單位、成本模型的外插範圍、以及磁碟階容量是否物理可行；跑完後檢驗三項：命中數守恆（各階命中與重算之和等於總存取數）、強制未命中下限（重算次數不得低於不重複 block 數）、以及 oracle 為上界（oracle 的總成本不得高於任一線上策略）。任一項失敗即代表模擬器有錯，結果不得採用。
 
 第三項曾在 2026-08-31 失敗：SSD 階 2\,TiB 時 oracle 的 headroom 為 $-3.16\%$，依定義不可能。原因是成本感知規則以\emph{單一 block} 而非整條尾巴估計丟棄成本，做出局部便宜、全域昂貴的決策。修正後全部通過。
 
 \paragraph{效力前提。}
-其一，成本常數須為實測；程式在讀不到 \S\ref{app:cost} 的量測檔時中止，且模型剖面（GPU 預算、KV 每 token 位元組、成本常數的來源模型）三者必須一致，否則拒絕執行。其二，模擬器須能複現已量測的行為。我們以第 \ref{sec:eval} 節的工作負載比對 \texttt{full\_gpu} 相對 \texttt{cpu\_lru} 的 warm 段成本比：16K 上下文實測 9.00 對模擬 9.73（差 8\%），32K 上下文實測 12.27 對模擬 12.66（差 3\%）。絕對值同樣相符，\texttt{full\_gpu} 為 5{,}033 對 5{,}864\,ms、\texttt{cpu\_lru} 為 559 對 603\,ms。\textbf{驗證僅涵蓋一種工作負載形狀與兩個有鑑別力的上下文長度，本文引用 headroom 的絕對值時一併標明此範圍。}
+其一，成本常數須為實測：模擬器不接受推估值，且要求 GPU 預算、KV 每 token 位元組數與成本常數三者取自同一個模型剖面，否則拒絕執行。其二，模擬器須能複現已量測的行為。我們以第 \ref{sec:eval} 節的工作負載比對 \texttt{full\_gpu} 相對 \texttt{cpu\_lru} 的 warm 段成本比：16K 上下文實測 9.00 對模擬 9.73（差 8\%），32K 上下文實測 12.27 對模擬 12.66（差 3\%）。絕對值同樣相符，\texttt{full\_gpu} 為 5{,}033 對 5{,}864\,ms、\texttt{cpu\_lru} 為 559 對 603\,ms。\textbf{驗證僅涵蓋一種工作負載形狀與兩個有鑑別力的上下文長度，本文引用 headroom 的絕對值時一併標明此範圍。}
 
 \paragraph{逐 block 的簡化對前綴結構的工作負載無害。}
 vLLM 的查詢語意是連續前綴：\texttt{\_lookup\_complete\_chunks} 回傳一個 token 數，而 token 數無法表達「block 0、1、4、5 命中，2、3 未命中」這種形狀，因此第一個缺口之後的 block 一律重算。我們把模擬器改為此語意並量化其影響：缺口之後的 block 中仍留在任一階的比例為 0.000\% 至 0.464\%（兩條 trace $\times$ 三個策略），其中 61.8\% 至 80.1\% 是首次出現的 block，本來就必須重算。真實流量的重用本身即為前綴結構，Mooncake 的 \texttt{hash\_ids} 就是前綴雜湊，第一個未命中因此恰好落在共用前綴的結尾，缺口之後沒有可供損失的快取內容。此結果同時構成模擬器的一項有效性證據。
