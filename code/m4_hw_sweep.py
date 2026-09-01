@@ -44,9 +44,12 @@ GPU 越快 -> 重算越便宜 -> slope 越小 -> **交叉點越往後** -> 峰�
 
 用法：python code/m4_hw_sweep.py
 """
-import dataclasses, sys
+import csv, dataclasses, sys
+from datetime import datetime
+from pathlib import Path
 sys.path.insert(0,'code')
-from m4_oracle import BLOCK, Sim, load_cost_model, longctx_trace, profile
+from m4_oracle import (BLOCK, SIM_VERSION, Sim, load_cost_model,
+                       longctx_trace, profile)
 prof = profile("qwen-awq"); cm0 = load_cost_model("nvme", require_model_key="qwen-awq")
 bpb = prof["kv_bytes_per_token"]*BLOCK
 P = {"full_gpu":("lru",0,0),"cpu_lru":("lru",1,0),"cpu_arc":("arc",1,0),"tier_fs":("lru",1,1)}
@@ -62,12 +65,36 @@ def run(L, mul, pressure=5.0, nreq=40):
     b=min((k for k in res if k!="oracle"), key=lambda k:res[k]["total_ms"])
     return 100*(res[b]["total_ms"]-res["oracle"]["total_ms"])/res[b]["total_ms"]
 Ls=[65536,131072,262144,524288,786432]
+HW = (("3090（實測）", 1.0), ("快 2 倍（5090 級）", 0.5),
+      ("快 4 倍（A100 級）", 0.25), ("快 6 倍（H100 級）", 1/6))
+# 🔴 2026-09-01：先前只印到 stdout，於是論文的表只能手打，
+#    重擬合成本模型之後就對不上（37,615 vs 37,717）。現在一律寫 CSV，
+#    圖表與論文都從檔案讀（CLAUDE.md 禁令 3）。
+OUT_CSV = Path(__file__).resolve().parent.parent / "results/m4_oracle/hw_sweep.csv"
+RUN_ID = datetime.now().strftime("%Y%m%d-%H%M%S") + "-m4-hw-sweep"
+TS = datetime.now().astimezone().isoformat()
+
 print("壓力固定 5×、重用 81%（40 請求 × 8 文件），只變「prefill 有多快」\n")
 print(f"{'':30s}" + "".join(f"{L//1024:>8d}K" for L in Ls))
-for lab,mul in (("3090（實測）",1.0),("快 2 倍（5090 級）",0.5),
-                ("快 4 倍（A100 級）",0.25),("快 6 倍（H100 級）",1/6)):
-    xo=(cm0.ssd-cm0.recompute_base)/(cm0.recompute_slope_per_token*mul)
-    row=f"{lab:16s}交叉 {xo:>7,.0f}  "
+rows = []
+for lab, mul in HW:
+    xo = (cm0.ssd - cm0.recompute_base) / (cm0.recompute_slope_per_token * mul)
+    row = f"{lab:16s}交叉 {xo:>7,.0f}  "
     for L in Ls:
-        row += f"{run(L,mul):>8.1f}%"
+        h = run(L, mul)
+        row += f"{h:>8.1f}%"
+        rows.append({"run_id": RUN_ID, "ts": TS, "sim_version": SIM_VERSION,
+                     "model_profile": "qwen-awq", "device": "nvme",
+                     "hardware": lab, "compute_multiplier": round(1 / mul, 4),
+                     "slope_scale": mul, "crossover_tokens": round(xo),
+                     "request_tokens": L, "pressure_x": 5.0, "reuse_pct": 81.0,
+                     "timing": "prefill", "oracle_headroom_pct": round(h, 3),
+                     "measured": int(mul == 1.0)})
     print(row, flush=True)
+
+OUT_CSV.parent.mkdir(parents=True, exist_ok=True)
+with OUT_CSV.open("w", newline="") as f:
+    w = csv.DictWriter(f, fieldnames=list(rows[0]))
+    w.writeheader(); w.writerows(rows)
+print(f"\nwrote {OUT_CSV}  ({len(rows)} rows)")
+print("⚠️ measured=1 的一列為實測；其餘為將 α 按比例縮放的推算，非量測。")

@@ -120,8 +120,8 @@ def fig_crossover(profile: str = "qwen-awq") -> None:
     ax.set_ylabel("成本（ms / block）")
     ax.set_xlim(0, xmax)
     ax.set_ylim(0, max(drop) * 1.02)
-    ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(65536))
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v/1024:.0f}K"))
+    ax.xaxis.set_major_locator(matplotlib.ticker.MultipleLocator(50000))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{int(v//1000)}K"))
     ax.legend(loc="upper left", bbox_to_anchor=(0.0, 1.03))
     _save(fig, "fig_crossover")
 
@@ -183,7 +183,7 @@ def fig_sweetspot(profile: str = "qwen-awq") -> None:
     ax.set_xlabel("請求長度（token）")
     ax.set_ylabel("Oracle headroom（%）")
     ax.set_xticks([32768, 65536, 131072, 262144, 524288])
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v/1024:.0f}K"))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{int(v//1000)}K"))
     ax.set_ylim(0, 40)
     ax.legend(loc="upper right", handlelength=1.4)
     _save(fig, "fig_sweetspot")
@@ -230,9 +230,51 @@ def fig_quality() -> None:
     b.set_ylim(-3, 103)
     b.set_xlabel("(b) 大海撈針檢索：上下文長度")
     b.set_ylabel("檢索正確率（%）")
-    b.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v/1024:.0f}K"))
+    b.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{int(v//1000)}K"))
     b.legend(loc="center left", ncol=1)
     _save(fig, "fig_quality")
+
+
+# ─────────────── 圖 4：峰值隨算力移動 ───────────────
+
+def fig_hwpeak() -> None:
+    """headroom 的峰值隨加速器算力往更長的上下文移動。
+
+    表格給不出「移動」；折線可以。實測線為實心，推算線為虛線並標明。
+    """
+    rows = _rows(RESULTS / "m4_oracle" / "hw_sweep.csv")
+    hw: dict[str, list] = defaultdict(list)
+    meta: dict[str, tuple] = {}
+    for r in rows:
+        k = r["hardware"]
+        hw[k].append((int(r["request_tokens"]), float(r["oracle_headroom_pct"])))
+        meta[k] = (int(r["crossover_tokens"]), r["measured"] == "1")
+    order = sorted(hw, key=lambda k: meta[k][0])
+
+    fig, ax = plt.subplots(figsize=(COL, 2.2))
+    cmap = plt.get_cmap("plasma")
+    for i, k in enumerate(order):
+        pts = sorted(hw[k])
+        xo, measured = meta[k]
+        c = CLR["ink"] if measured else cmap(0.18 + 0.24 * i)
+        ax.plot([x for x, _ in pts], [y for _, y in pts],
+                "o-" if measured else "o--", color=c, lw=1.6 if measured else 1.1,
+                ms=4.0 if measured else 3.0, zorder=4 if measured else 2,
+                label=f"{k}　$P^{{*}}${xo/1000:.0f}K")
+        px, py = max(pts, key=lambda t: t[1])
+        ax.plot([px], [py], "*", color=c, ms=8, zorder=5)
+
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(sorted({x for v in hw.values() for x, _ in v}))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{int(v//1000)}K"))
+    ax.set_xlabel("請求長度（token）")
+    ax.set_ylabel("Oracle headroom（%）")
+    ax.set_ylim(0, 46)
+    ax.legend(loc="upper left", fontsize=6.0, handlelength=1.5,
+              labelspacing=0.25, borderpad=0.2)
+    ax.annotate("$\\star$ 為每條線的峰值", (0.97, 0.04), xycoords="axes fraction",
+                ha="right", fontsize=6.2, color=CLR["ink"])
+    _save(fig, "fig_hwpeak")
 
 
 def main() -> int:
@@ -241,6 +283,7 @@ def main() -> int:
     fig_crossover()
     fig_sweetspot()
     fig_quality()
+    fig_hwpeak()
     print("完成。")
     return 0
 

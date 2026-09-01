@@ -1109,29 +1109,19 @@ P^{*} = \frac{C_{\text{ssd}} - C_{\text{recompute}}^{0}}{\alpha}
 \end{figure}
 
 \paragraph{峰值位置隨硬體移動，此為 $\kappa$ 主張的直接推論。}
-式 \ref{eq:crossover} 的分母 $\alpha$ 由 prefill 吞吐決定。加速器越快則 $\alpha$ 越小、$P^{*}$ 越大、峰值長度越長。以實測的 $\alpha$ 按倍率縮放模擬（表 \ref{tab:hw-peak}），峰值自平台 A 的 256K 移至 6 倍算力下的 512K，且峰值 headroom 自 18.7\% 升至 39.5\%。其政策意涵為\emph{同一套放置策略不可能同時適用於不同加速器}，即本文第 \ref{sec:motivation} 節主張的量化形式。
+式 \ref{eq:crossover} 的分母 $\alpha$ 由 prefill 吞吐決定。加速器越快則 $\alpha$ 越小、$P^{*}$ 越大、峰值長度越長。以實測的 $\alpha$ 按倍率縮放模擬（圖 \ref{fig:hwpeak}），峰值自平台 A 的 256K 移至 6 倍算力下的 512K，且峰值 headroom 自 18.7\% 升至 39.5\%。其政策意涵為\emph{同一套放置策略不可能同時適用於不同加速器}，即本文第 \ref{sec:motivation} 節主張的量化形式。
 
-\begin{table}[t]
-\centering\small
-\caption{headroom 隨請求長度與加速器算力的變化（壓力 $5\times$、重用率 80.9\%、僅計 prefill）。\textbf{粗體為每一列的峰值。}算力倍率係將平台 A 實測的 $\alpha$ 按比例縮放，為推算而非量測。}
-\label{tab:hw-peak}
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{@{}lrrrrrr@{}}
-\toprule
-加速器 & $P^{*}$ & 64K & 128K & 256K & 512K & 768K \\
-\midrule
-平台 A（實測） & 37{,}7\,K & 0.0 & 17.5 & \textbf{18.7} & 15.5 & 8.7 \\
-$2\times$ 算力 & 75{,}4\,K & 2.7 & 23.8 & \textbf{28.3} & 25.2 & 16.4 \\
-$4\times$ 算力 & 150{,}9\,K & 5.1 & 20.6 & \textbf{37.5} & 34.7 & 25.0 \\
-$6\times$ 算力 & 226{,}3\,K & 5.8 & 18.9 & 34.7 & \textbf{39.5} & 29.7 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{notebooks/figures/fig_hwpeak.pdf}
+\caption{headroom 的峰值隨加速器算力往更長的上下文移動（壓力 $5\times$、重用率 80.9\%、僅計 prefill）。$\star$ 為每條線的峰值：自平台 A 的 262K 移至 $6\times$ 算力下的 524K，峰值 headroom 自 18.7\% 升至 39.5\%。實線為平台 A 的實測；\textbf{虛線係將實測的 $\alpha$ 按算力倍率縮放，為推算而非量測}，其驗證方式見下段。}
+\label{fig:hwpeak}
+\end{figure}
 
-\paragraph{於 MI300X，單請求長度\emph{不可能}到達峰值。}
-以表 \ref{tab:ratio} 的 BF16 峰值算力比（$1{,}307.4 / 71.2 = 18.4\times$）外推，平台 B 的 $P^{*}$ 為 346K--693K（視 MFU 而定），對應的峰值長度為 1.2M--2.4M\,token。\textbf{此長度遠超出生產工作負載中的單請求長度}：Mooncake 的最長請求為 126{,}208\,token，僅為該峰值的 1/10 至 1/19。
+\paragraph{於 MI300X，峰值落在 1M 級的單請求上下文。}
+以表 \ref{tab:ratio} 的 BF16 峰值算力比（$1{,}307.4 / 71.2 = 18.4\times$）外推，該平台的 $P^{*}$ 為 346K--693K（視 MFU 而定），$2$--$3.5\,P^{*}$ 的甜蜜點因而落在 692K--2.4M\,token。\textbf{1M 級的單請求上下文正落於此區間之內}，而 Llama-3.1-8B 於 1M 需 122\,GB KV，單張 MI300X 可容納（表 \ref{tab:fit}）。此預測因此在\emph{一張卡}上就能證實或推翻，不需要多租戶設定。
 
-其推論是一項\textbf{可直接驗證的預測}：於 MI300X，$2$--$3.5\,P^{*}$ 的甜蜜點落在 692K--2.4M\,token，故 \textbf{1M 級的單請求上下文恰落於該區間之內}。Llama-3.1-8B 於 1M 上下文需 122\,GB KV，單張 MI300X 可容納（表 \ref{tab:fit}），因此這個預測在單卡上就能證實或推翻——這正是平台 B 的實驗設定。若於 1M 量到的 headroom 顯著低於平台 A 峰值的量級，本節的機制解釋即被推翻。
+同一組數字也界定了生產工作負載的位置：Mooncake 的最長請求為 126{,}208\,token，僅為該峰值的 1/10 至 1/19，故\textbf{今日的生產流量在此類硬體上量不到放置決策的價值}——這不是方法的缺陷，而是 $P^{*}$ 隨算力右移的直接推論。若於 1M 量到的 headroom 顯著低於平台 A 峰值的量級，本節的機制解釋即被推翻。
 
 \paragraph{以上三段為可證偽的預測。}
 $\alpha$ 的縮放假設 prefill 時間與峰值算力成反比，忽略了 MFU 隨模型與序列長度的變化、kernel 實作差異、以及 ROCm 與 CUDA 的成熟度落差。驗證方式明確：於目標加速器上重量 \S\ref{app:cost} 的四項成本常數（\act{CPU}、\act{SSD}、$C^{0}_{\text{recompute}}$、$\alpha$），代入式 \ref{eq:crossover} 求 $P^{*}$，再以本節的方法掃描長度。若峰值不落在 $2$--$3.5\,P^{*}$，本節的機制解釋即被推翻。
