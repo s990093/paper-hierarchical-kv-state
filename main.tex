@@ -761,15 +761,15 @@ LRB~\cite{lrb2020}          & GBDT & 2 & 否（L2） \\
 \paragraph{決定二：特徵取自 LRB 的三個家族，全部在服務時免費。}
 (i) \emph{deltas}，即距該 block 前 $k$ 次存取的時間間隔（$k \le 32$，未填滿者為 $\infty$），此設計涵蓋 LRU、LRU-$K$ 與 S4LRU；(ii) \emph{EDC}，即 10 個指數衰減計數器 $C_i \leftarrow 1 + C_i \cdot 2^{-\Delta_1 / 2^{9+i}}$，僅在存取時更新；(iii) \emph{靜態特徵}，即 block 大小、layer id、head id 與 \emph{token 類型}。最後一項的依據是 SAECache~\cite{saecache2026} 量到不同語意類型（system prompt / 使用者查詢 / 工具輸出 / 推理鏈）的重用率差異達 \textbf{756 倍}，而該特徵取得成本為零。
 
-\paragraph{決定二之補充：必須納入模型內部表徵。}
+\paragraph{決定三：納入模型內部表徵。}
 上述特徵全部來自\emph{存取歷史}，不含模型自身的表徵。這與三個學習式先例形成對比：KVP~\cite{kvp2026} 明確「僅使用 key 與 value 向量」，LookaheadKV~\cite{lookaheadkv2026} 透過層內 adapter 讀取，ForesightKV~\cite{foresightkv2026} 蒸餾真實的未來 attention。\emph{「在不看 KV 的情況下預測 KV 的重用」作為服務層的低成本選擇是合理的，但作為學習貢獻則站不住腳。}我們因此將 block 內 key/value 向量的池化統計併入特徵集，並在第 \ref{sec:eval} 節以消融比較「僅存取歷史」與「存取歷史 + 模型內部表徵」兩種特徵集。
 
-\paragraph{決定二之補充二：納入 query 側訊號，但作為特徵而非機制。}
+\paragraph{決定四：query 側訊號作為特徵。}
 第 \ref{sec:related} 節論證以 query 為訊號者無法取代放置決策，原因是 $q \cdot k$ 對已降級的 block 不可得。但對\emph{仍位於 GPU} 的 block，該訊號的品質高於任何存取歷史特徵，捨棄它並無理由。我們因此記錄 \texttt{attn\_mass}，即最近 8 個解碼步中該 block 取得的 attention 質量佔總質量之比。此量在 forward pass 中已被計算，記錄它僅需一次 per-block 的規約，不引入額外的 $q \cdot k$。
 
 此設計使特徵集在階梯上呈\emph{降級退化}的形態：位於 GPU 的 block 同時具備存取歷史與 query 側訊號，位於 CPU/SSD 者僅有存取歷史，已丟棄者僅有靜態特徵。GBDT 原生處理缺失值，此結構無須額外處理。我們在第 \ref{sec:eval} 節以消融量測 \texttt{attn\_mass} 的邊際貢獻。
 
-\paragraph{決定三：GBDT 而非神經網路。}
+\paragraph{決定五：GBDT 而非神經網路。}
 LRB 明確比較過 GBM、線性迴歸、邏輯迴歸、SVM 與 2 層 16 隱藏單元的 NN，GBM 在不同 trace 與快取大小下穩定勝出，且訓練僅需 300\,ms、對 64 個候選推論僅需 \textbf{30\,$\mu$s}。GBDT 亦能原生處理 $\infty$ 值的 delta 特徵。我們採用單一全域模型並以 layer/head id 作為特徵；KVP~\cite{kvp2026} 的 112 個獨立 agent 帶來可觀的工程成本，而其論文並未提供「per-head 模型優於帶 head-id 特徵的共享模型」的消融證據。
 
 此決定另有兩個本設定特有的理由。\emph{(i) 預測器的成本自其收益中扣除。}預測器運行於服務熱路徑，其延遲直接抵銷所避免的重算或傳輸。以表 \ref{tab:kappa} 的區間為參照，單次重算為 12--1{,}972\,$\mu$s，而對 64 個候選的 GBDT 推論為 30\,$\mu$s；若改以需要一次 forward pass 的模型評分，僅 kernel launch 與排隊即進入相同數量級，收益隨即被抵銷。\emph{(ii) 神經預測器與主模型競爭同一加速器。}GBDT 於 CPU 上執行，完全不佔用 GPU；任何在 GPU 上評分的預測器都會插入主模型的 decode 批次，其代價不僅是預測器本身的延遲，還包括對批次結構的擾動。
@@ -782,15 +782,15 @@ LRB 明確比較過 GBM、線性迴歸、邏輯迴歸、SVM 與 2 層 16 隱藏�
 
 \texttt{deltas} 與 EDC 事實上已是時序的手工編碼——前者為存取間隔序列的截斷，後者為 512 至 262{,}144 十種半衰期上的指數加權和，其功能與循環網路的隱藏狀態同構，差別在於前者的更新規則寫死而後者由訓練得到。(D) 區塊所檢驗的正是此差別是否重要。若 GRU 在計入自身延遲後仍佔優，第 \ref{sec:predictor} 節的整條特徵工程路線即被推翻，我們將據以修改。
 
-\paragraph{決定四：標籤取得採用 LRB 的雙機制。}
+\paragraph{決定六：標籤取得採用 LRB 的雙機制。}
 標籤 $\tau_i$ 無法在記錄特徵的當下取得，因其定義涉及未來。我們於取樣時記錄特徵並將該樣本置入待標記佇列，其後由兩個機制之一完成標記：\textbf{(a)} 該 block 下次被存取時，以兩次存取的間隔為標籤；或 \textbf{(b)} 當該樣本離開一個長於 relaxed-Belady 邊界的滑動視窗 $W$ 而仍未被存取時，立即以「$>W$」標記。
 
 機制 (b) 是取得\emph{負樣本}的唯一途徑。僅有機制 (a) 時，訓練集只會包含「後來確實被重用」的 block——從未被重用者永遠等不到第二次存取，因而永遠不進入訓練集。模型將完全未見過應被丟棄的樣本長何模樣，而那正是 \act{Drop} 動作的目標群體。取樣以 block 為單位而非以請求為單位，以避免偏向熱門 block。
 
-\paragraph{決定五：以時間切分而非隨機切分評估。}
+\paragraph{決定七：以時間切分評估。}
 訓練與測試集依 trace 的\emph{時間順序}切分（前 70\% 訓練、後 30\% 測試），不作隨機切分。隨機切分會使訓練集含有測試期之後的存取事件，而 EDC 與 delta 特徵本身即為時間的函數，此洩漏將系統性地高估預測品質。此點在快取預測文獻中屬常識，但其違反不易由結果察覺，我們因此明確記載。
 
-\paragraph{決定六：以線上重訓因應工作負載飄移。}
+\paragraph{決定八：以線上重訓因應工作負載飄移。}
 不同工作負載的重用結構不同：多輪對話的前綴重複命中，RAG 的文件塊多為一次性讀取，agent 流量則呈現極熱的系統提示與極冷的工具輸出。SAECache~\cite{saecache2026} 所量到的 756 倍重用率差異即為此分布差異的直接證據。我們以三個層次因應：(i) \texttt{token\_type} 作為特徵，使模型得以在單一模型內區分語意類型；(ii) \emph{週期性重訓}，利用 GBDT 300\,ms 的訓練成本，以最近一段時窗的樣本重新擬合；(iii) 第 \ref{sec:eval} 節報告\emph{跨工作負載泛化}，即於工作負載 A 訓練並於 B 測試的退化幅度。
 
 第 (ii) 項是 GBDT 選擇的直接後果而非附帶效果。KVP~\cite{kvp2026} 的 112 個強化學習 agent 需 8 GPU DDP 訓練，其重訓週期以日計，結構上無法追隨以分鐘計的流量變化。\emph{對分布飄移的適應成本，是預測器族選擇的一部分，而非可事後補救的工程細節。}
@@ -829,7 +829,7 @@ LRB 明確比較過 GBM、線性迴歸、邏輯迴歸、SVM 與 2 層 16 隱藏�
 
 \textbf{但必須注意一個校準上的限制。} 對連續目標的迴歸加權，改變的是條件期望 $\mathbb{E}[\log \tau \mid x]$，\emph{而非決策門檻}。(L1) 本身因而\textbf{不保證}產生式 \eqref{eq:threshold} 的最佳邊界。我們將 (L1) 定位為啟發式，並在其後串接一個明確的門檻校準步驟：於驗證集上將預測值映射為 $\hat{p}$（例如以 isotonic regression），再依式 \eqref{eq:threshold} 設定各層級的門檻。
 
-\paragraph{兩階段做法是正確的基線，本文須證明加權訓練帶來額外增益。}
+\paragraph{對稱訓練加事後移動門檻是本文的基線。}
 上述步驟指向一個明顯的替代方案：\emph{以對稱損失訓練，僅在決策時將門檻自 $0.5$ 移至 $p^{*}$}。此即 Elkan~\cite{elkan2001} 的結果，且具備一個實際優點——$\kappa$ 隨平台改變時無需重新訓練。若本文的增益全部來自門檻移動，則加權訓練並無貢獻。我們因此在表 \ref{tab:ablation} 的 (B) 區塊納入該基線（「對稱 L2 @ $p^{*}$」一列），使兩者可分。
 
 我們預期加權訓練仍有增益，其理由如下。Elkan 的結果成立於\emph{機率估計在整個值域上等品質}的前提；有限容量的模型並不滿足此前提，它必須決定將擬合能力配置於何處。對稱損失依樣本密度均勻配置，而決策邊界 $p^{*}=1/(1+\kappa)$ 隨 $\kappa$ 增大而深入機率分佈的尾端：於 MI300X／8B（$\kappa=6$）為 $0.14$，於平台 A／70B（$\kappa=190$）則為 $0.005$。\emph{在後者，對稱損失幾乎沒有誘因把該區域學準}——該處樣本稀少且對平均平方誤差的貢獻極低。加權訓練的作用即是將擬合能力重新配置至該區域。
@@ -841,7 +841,7 @@ LRB 明確比較過 GBM、線性迴歸、邏輯迴歸、SVM 與 2 層 16 隱藏�
   \mathrm{DCG} = \sum_{w} \frac{\mathrm{cost}_{\text{err}}(a_w) \cdot \big(d(l_w) - 1\big)}{\log\big(\mathrm{pos}(l_w) + 1\big)}
 \end{equation}
 
-\paragraph{為何這是可辯護的新意。}
+\paragraph{與 Sibyl 的差異在於成本是否進入訓練。}
 Sibyl~\cite{sibyl2022} 是唯一處理異質層級放置且考慮成本的系統，但它\emph{迴避}了此問題：其 reward 直接取自實測延遲 $1/L_t$，成本比是硬體量出來的而非猜的。這是優雅的做法，但 Sibyl 的動作\emph{可逆}（頁面可在下次存取時重新放置），而本文的 \act{Drop}$\rightarrow$重算\emph{不可逆}，因此需要 Sibyl 的驅逐懲罰項 $R_p = 0.001 \times L_e$ 推廣為 per-action 懲罰。
 
 \paragraph{硬體條件化。}
@@ -874,7 +874,7 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 
 \textbf{平台 A}：NVIDIA RTX 3090（24\,GB GDDR6X，PCIe 4.0$\times$16、sm\_86），vLLM 0.28.0，CUDA 12.4。本節全部量測皆在此平台完成。第 \ref{sec:twoplatform} 節設計的平台 B（MI300X）尚無機器，其實驗設計列於附錄 \ref{app:notyet}。
 
-\textbf{這張卡不是主張的一部分。}本文的主張以\emph{成本常數}表述——$\kappa$、$P^{*}$、$\alpha$——而非以特定加速器表述。3090 是目前可取得、能把這些常數量到的機器；換一張卡，常數改變而形式不變，所有判別式照樣算得出來（\S\ref{sec:sweet-spot} 以縮放後的 $\alpha$ 給出四個算力級距的預測）。本節凡出現「平台 A」處，讀者應理解為「常數取自表 \ref{tab:costmodels} 的這一組」，而非「此結論僅適用於 3090」。反過來說，凡是真正只在 sm\_86 成立的結果（如 \S\ref{sec:eps-task} 的 FP8 後端限制），我們明確標為硬體相依。
+本文的主張以\emph{成本常數}表述——$\kappa$、$P^{*}$、$\alpha$——而非以特定加速器表述。3090 是目前可取得、能把這些常數量到的機器；換一張卡，常數改變而判別式的形式不變（\S\ref{sec:sweet-spot} 以縮放後的 $\alpha$ 給出四個算力級距的預測）。文中「平台 A」一詞指的是表 \ref{tab:costmodels} 的該組常數。真正只在 sm\_86 成立的結果，如 \S\ref{sec:eps-task} 的 FP8 後端限制，我們標為硬體相依。
 
 \textbf{模型剖面}。主設定為 Qwen2.5-7B-Instruct-1M（AWQ-INT4 權重，記為 \texttt{qwen-awq}），對照為 Llama-3.1-8B-Instruct 的 BF16 與 AWQ 權重（\texttt{llama-bf16}、\texttt{llama-awq}）。兩個剖面的 $\kappa$ 相差 2 倍，提供\emph{同一硬體上}的第二個資料點。成本常數隨剖面變動，三組並列於表 \ref{tab:costmodels}；本節每一處引用皆標明用的是哪一組。
 
@@ -920,13 +920,13 @@ $w(a_i)$ 由 FLOP/byte 比值決定，而該比值在 RTX 3090 為 2{,}254、MI3
 \end{algorithmic}
 \end{algorithm}
 
-\paragraph{三項細節決定數字是否可信。}
+\paragraph{oracle 付的價與線上策略相同。}
 其一，重算按 block 的\emph{絕對位置}計價（式 \eqref{eq:recompute-position}）；若讓 oracle 一律以位置 0 的價格重算，它付的價會低於線上策略，等於 oracle 自己作弊。其二，前綴語意下丟棄一個 block 的邊際成本是它到請求結尾的\emph{整條尾巴}（演算法 \ref{alg:oracle} 第 2 行）而非它自己那一塊。其三，逐出去向逐項計數：若「不再用到、丟棄成本為零」的逐出（第 16--17 行）佔滿全部，則 CPU 與 SSD 階對最優解毫無貢獻，量到的 headroom 全部來自 GPU 階內的逐出選擇，不足以支持多階動作空間。
 
-\paragraph{此 oracle 給的是下界，不是上界。}
+\paragraph{所報 headroom 為下界。}
 多階且動作成本異質的最佳放置我們並未求解。第 20--21 行的貪婪選擇不保證全域最優，且逐出\emph{未}做前綴感知——真正的最優解會刻意讓保留的 block 構成連續前綴以避免製造缺口，而本 oracle 一樣會被缺口懲罰。兩項都使其偏弱，故所報 headroom 為\textbf{下界}，真正的最優只會更高。此不對稱使 GO 判定安全，NO-GO 判定則須額外審視。與 Sibyl~\cite{sibyl2022} 報告「達到全知 oracle 的 80\%」的評估傳統一致，我們以此上界作為判準而非成績。
 
-\paragraph{動作集合是四個無損動作，不是六階。}
+\paragraph{求解範圍限於四個無損動作。}
 oracle 只在 \act{Gpu}$_{16}$、\act{Cpu}、\act{Ssd}、\act{Drop} 上求解，\textbf{未納入三個精度階}。這四個動作於 \S\ref{sec:eps-task} 已驗證為逐字元無損，故 $\epsilon$ 約束在此自動滿足，本節的 headroom 是\emph{位置分層本身}在 $\epsilon = 0$ 下可得的空間。精度階能額外帶來多少空間，本文未量。實作、複雜度與不變量檢查見附錄 \ref{app:oracle}。
 
 \subsection{動作空間的有效子集由成本常數決定，可事先算出}
@@ -1132,7 +1132,7 @@ $6\times$ 算力 & 226{,}3\,K & 5.8 & 18.9 & 34.7 & \textbf{39.5} & 29.7 \\
 
 平台 B 的實驗設計因此與平台 A 不同：平台 A 掃描單請求長度（本節），平台 B 必須掃描並行度。第 \ref{sec:eval} 節的壓力軸設計已反映此差異。
 
-\paragraph{以上三段皆為\emph{可證偽的預測}，而非量測。}
+\paragraph{以上三段為可證偽的預測。}
 $\alpha$ 的縮放假設 prefill 時間與峰值算力成反比，忽略了 MFU 隨模型與序列長度的變化、kernel 實作差異、以及 ROCm 與 CUDA 的成熟度落差。驗證方式明確：於目標加速器上重量 \S\ref{app:cost} 的四項成本常數（\act{CPU}、\act{SSD}、$C^{0}_{\text{recompute}}$、$\alpha$），代入式 \ref{eq:crossover} 求 $P^{*}$，再以本節的方法掃描長度。若峰值不落在 $2$--$3.5\,P^{*}$，本節的機制解釋即被推翻。
 
 \subsection{權重精度決定 24\,GB 級加速器能否進入長上下文區間}
@@ -1212,8 +1212,8 @@ DeepSeek-V2-Lite MLA AWQ & \textbf{399{,}376} \\
 \paragraph{判定：條件式 GO。}
 我們不終止此方向，並將主張限縮為條件式。兩個條件各有已量到的機制。其一，\textbf{權重須量化}：BF16 權重使 decode 佔端到端時間的 75\%，而放置決策對 decode 無自由度（\S\ref{sec:decode-share}），故 \texttt{llama-bf16} 的 headroom 落在停止條件之下；AWQ-INT4 權重使 decode 的固定成本減半，headroom 隨之升至 8--9\%。其二，\textbf{請求長度須落在 $2$--$3.5\,P^{*}$}：Mooncake 的中位長度 6{,}352\,token 僅為 $P^{*}$ 的 $0.17$ 倍，遠在甜蜜點之外；於 65K--131K，同一剖面的 prefill headroom 為 31.8\%--33.5\%（\S\ref{sec:sweet-spot}）。兩個條件皆可由表 \ref{tab:costmodels} 的成本常數事先算出，無須試跑。
 
-\paragraph{此判定不宣稱什麼。}
-我們\emph{不}宣稱一個適用於一般情形的 headroom 數字：表 \ref{tab:verdict} 的五列相差 $12\times$，取其一為代表皆為誤導。我們\emph{不}宣稱線上策略能取得 oracle 的任何比例，該量測需策略實作，尚未進行。我們\emph{不}宣稱平台 B 的任何數字。末列的 65K--131K 為合成長上下文，其重用率與長度分布由我們設定而非取自生產環境；\textbf{目前沒有公開 trace 同時具備長上下文與真實的低重用率}，這是本文最實質的證據缺口（\S\ref{sec:limitations}）。
+\paragraph{判定的適用範圍。}
+表 \ref{tab:verdict} 的五列相差 $12\times$，因此 headroom 是一條隨剖面與長度變動的曲線，取其中任一列為代表都會誤導；本文引用時一律標明設定。三處尚無數據：線上策略能取得 oracle 的多少比例，需策略實作後才可量；平台 B 的常數需要機器；而末列 65K--131K 為合成長上下文，其重用率與長度分布由我們設定。\textbf{目前沒有公開 trace 同時具備長上下文與真實的低重用率}，這是本文最實質的證據缺口（\S\ref{sec:limitations}）。
 
 % =====================================================================
 \section{Discussion and Limitations}
