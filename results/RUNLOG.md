@@ -2066,3 +2066,52 @@ ValueError: Free memory on device cuda:0 (17.7/23.68 GiB) on startup is less
 * GPU 0 也會被搶（雖然頻率低）
 
 所以量測的設計必須假設**隨時會被打斷**，而不是「找一個安靜的時段」。
+
+## 🔴 512K 在這顆模型上連延遲都量不到（2026-09-01 08:32）
+
+**這比昨天的 DCA 結論更強。** 昨天寫「品質無效但延遲仍可量」，實測推翻了後半。
+
+**run_id**: `20260901-074723-m3-qwen-awq-int8-512k-full_gpu`（五次嘗試皆同）
+
+```
+CUDA error: device-side assert triggered
+```
+
+vLLM 啟動時就警告過：
+「If the model uses absolute position encoding, positions exceeding
+derived_max_model_len will cause a CUDA array out-of-bounds error.」
+
+位置超過 `max_position_embeddings = 262,144` 之後 RoPE 索引越界，
+**kernel 直接掛掉**，不是記憶體不足（KV 容量 559,584 > 525,568，綽綽有餘）。
+
+### 成功的部分
+
+| ctx | cold TTFT | warm TTFT | 比值 |
+|---|---|---|---|
+| **258,048** | **1,286,524 ms（21.4 分鐘）** | **1,762 ms** | **730×** |
+| 524,288 | 🔴 CUDA assert | — | — |
+
+258,048 的 730 倍 cold/warm 落差是目前量到最極端的 prefix cache 效益。
+
+### 兩個結論合起來
+
+* DCA 在 vLLM 0.28 的 V1 無法執行（昨天，崩潰佐證）
+* 位置 > 262,144 觸發 CUDA assert（今天，崩潰佐證）
+
+→ **這顆模型在這個框架上的硬上限就是 262,144，且換更大的卡無效。**
+要做 512K 必須換模型或換 vLLM 版本。
+
+### 🔴 我的重試設計有缺陷，白跑了 4 小時
+
+`run_queue.sh` 對**所有**非零 rc 都重試。但這個錯誤是**確定性**的——
+五次嘗試每次都在第 3 列之後死在同一個地方，04:24 到 08:32 白花 4 小時。
+
+**修法**：只有 `rc=3`（被插隊污染）與 `rc=5`（記憶體不足）算環境問題、值得重試；
+其餘視為確定性錯誤，立刻標記失敗並往下一個工作走。
+
+### ctx 階梯已收到模型的實際能力
+
+`qwen-awq-int8-512k` 改名為 `qwen-awq-int8-256k`，
+階梯從 `[258048, 524288]` 改為 `[131072, 258048]`，
+`model_max_len` 從 528,384 改為 262,144。
+失敗的資料移到 `results/superseded/baseline_512k_cuda_assert.csv`。

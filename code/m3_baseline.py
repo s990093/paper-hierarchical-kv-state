@@ -154,7 +154,7 @@ MODELS = {
     # 3. 執行時間：258,048 的 prefill 實測 322,949 ms。以量到的兩點
     #    （131,072→99,946ms、258,048→322,949ms）擬合指數約 1.72，
     #    外插到 524,288 約 18 分鐘/請求。所以只跑 1 個前綴、2 個 baseline。
-    "qwen-awq-int8-512k": {
+    "qwen-awq-int8-256k": {
         "path": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
         # 🔴 2026-08-31 18:43 改用 int8_per_token_head，不用 fp8。
         #    大海撈針（qwen-awq、ctx=32,768、20 樣本／精度）實測：
@@ -166,14 +166,23 @@ MODELS = {
         #    「放得下」又「檢索得到」的精度。
         "kv_kib_per_token": 28.9,                 # 56 / 1.94（int8 含縮放中繼資料）
         "measured_kv_capacity_tokens": 531_136,   # 本次 needle 實測
-        "model_max_len": 528_384,                 # 524,288 + GEN + 餘裕
-        "ctx_ladder": [258048, 524288],
+        "model_max_len": 262_144,                 # 模型的實際上限，超過會 CUDA assert
+        # 🔴 524,288 已於 2026-09-01 實測**做不到**，不是記憶體不足：
+        #        CUDA error: device-side assert triggered
+        #    位置超過 max_position_embeddings=262,144 之後 RoPE 索引越界，
+        #    kernel 直接掛掉（vLLM 啟動時就警告過 "will cause a CUDA array
+        #    out-of-bounds error"）。連**延遲**都量不到，不只是品質無效。
+        #    這與 DCA 測試的結論一致（vLLM 0.28 的 V1 無法執行 DCA），
+        #    兩者都指向同一件事：這顆模型在這個框架上的上限就是 262,144。
+        #    258,048 是成功的：cold 1,286,524 ms（21.4 分鐘）、warm 1,762 ms。
+        "ctx_ladder": [131072, 258048],
         "extra": ["--kv-cache-dtype", "int8_per_token_head"],
         "env": {"VLLM_ALLOW_LONG_MAX_MODEL_LEN": "1"},
         "n_prefixes": 1,                          # 見上方註解 3
         "quality_valid": False,
-        "note": "512K 延遲/記憶體量測（int8 KV，唯一放得下又檢索得到的精度）。"
-                "⚠️ 位置 >262,144 超出 RoPE 訓練範圍，輸出品質無效",
+        "note": "長 context 延遲量測（int8 KV）。⚠️ 原本設 524,288，"
+                "實測 CUDA device-side assert（RoPE 索引越界），已降到 258,048。"
+                "輸出品質仍無效（接近 RoPE 訓練範圍上限）",
     },
 }
 

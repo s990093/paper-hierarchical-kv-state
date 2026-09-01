@@ -35,7 +35,7 @@ export PAPER_HKV_FS_TIER=/home/hungwei/kv_fs_tier_nvme
 
 JOBS=(
   "01-qwen-awq-cost:GPU:qwen-awq 成本模型（ctx=96,000）"
-  "02-512k-latency:GPU:512K 延遲（INT8 KV，逾時 3600s）"
+  "02-256k-latency:GPU:長 context 延遲（INT8 KV，258,048 上限）"
   "03-oracle-awq:CPU:用 AWQ 常數重跑 Oracle 與 headroom 地圖"
   "04-notebook:CPU:notebook 重跑並存回圖"
   "05-verdict:CPU:產生判定材料"
@@ -96,8 +96,17 @@ run_job() {    # $1=id  $2=kind  $3=desc  $4...=指令
       date -Is > "$STATE/$id.done"; rm -f "$STATE/$id.failed"
       echo "   ✅ $id 完成"; return 0
     fi
-    # rc=3 被插隊污染、rc=5 記憶體不足 -> 可重試；其餘也重試但記下來
-    echo "   ⚠️ rc=$rc，5 分鐘後重試"
+    # 🔴 只有「環境問題」該重試。
+    #    rc=3 被插隊污染、rc=5 記憶體不足 -> 環境問題，重試有意義。
+    #    其餘（rc=1 程式或設定錯）是**確定性**的，重試只是白跑。
+    #    2026-09-01 踩到：512K 因 CUDA device-side assert 失敗（RoPE 索引越界），
+    #    五次嘗試每次都在第 3 列後死在同一個地方，白花了 4 小時。
+    if [ $rc -ne 3 ] && [ $rc -ne 5 ]; then
+      echo "   🔴 rc=$rc 是確定性錯誤（非環境問題），不重試。看 log 修完再跑。"
+      date -Is > "$STATE/$id.failed"
+      return 1
+    fi
+    echo "   ⚠️ rc=$rc（環境問題），5 分鐘後重試"
     sleep 300
   done
   echo "$(date -Is) rc=fail-after-5" > "$STATE/$id.failed"
@@ -112,13 +121,12 @@ run_job 01-qwen-awq-cost GPU "qwen-awq 成本模型" \
 
 # ── 02 512K 的延遲 ──────────────────────────────────────
 for B in full_gpu tier_fs; do
-  run_job "02-512k-$B" GPU "512K 延遲（$B）" \
-    "$P" -u code/m3_baseline.py --mode serial --model qwen-awq-int8-512k \
+  run_job "02-256k-$B" GPU "長 context 延遲（$B，ctx 到 258,048）" \
+    "$P" -u code/m3_baseline.py --mode serial --model qwen-awq-int8-256k \
          --baseline "$B" --gpu 0 \
-         --csv "$REPO/results/m3_baseline/baseline_512k.csv"
+         --csv "$REPO/results/m3_baseline/baseline_longctx_int8.csv"
 done
-touch "$STATE/02-512k-latency.done" 2>/dev/null || true
-date -Is > "$STATE/02-512k-latency.done"
+date -Is > "$STATE/02-256k-latency.done"
 
 # ── 03 用新常數重跑模擬（純 CPU，不搶 GPU）──────────────
 run_job 03-oracle-awq CPU "Oracle + headroom 地圖（AWQ 常數）" bash -c '
