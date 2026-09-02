@@ -394,13 +394,27 @@ def load_quality(pattern: str = "gsm8k_precision*.csv") -> dict:
 
 
 def load_precision_tiers(device: str = "nvme") -> dict:
-    """讀 GPU 精度階的反量化成本。量不到就回報 NOT_MEASURED，不猜。
+    """讀 GPU 精度階的反量化成本。量不到、或量得到但與零無法區分，一律回
+    NOT_MEASURED，不猜。
 
     量法（見 overnight_v2.sh 步驟 1）：與 `gpu_resident` 完全相同的設定
     （工作集塞得進 GPU、不逐出），只換 `--kv-cache-dtype`。
     warm TTFT 減掉 bf16 那一列，差額即為每 block 的反量化成本。
+
+    🔴 兩道守門，兩道都是踩過坑才加的：
+
+    1. **只吃 `host_contention == QUIET` 的列。** 2026-08-31 那份
+       `retrieval_cost_precision_tiers.csv` 18 列全是 HEAVY，依 CLAUDE.md §3
+       時間欄作廢；但這支函式照樣從它算出 fp8=0.025、int4=0.0165 ms/block，
+       而且 **int4 比 fp8 便宜**——物理上說不通。污染的數字看起來完全正常，
+       所以必須在載入端擋掉，不能靠人記得。
+
+    2. **階內全距與階間差同量級時，回 NOT_MEASURED。** n=3 時單看中位數會
+       把雜訊讀成訊號。判準用非參數的「全距是否重疊」：某階的最小值若不高於
+       基準的最大值，該階的反量化成本就與零無法區分。
     """
-    cands = [M2 / f"retrieval_cost_precision_tiers_{device}.csv",
+    cands = [M2 / "retrieval_cost_precision_tiers_quiet.csv",
+             M2 / f"retrieval_cost_precision_tiers_{device}.csv",
              M2 / "retrieval_cost_precision_tiers.csv"]
     p = next((c for c in cands if c.exists()), None)
     out: dict[str, dict] = {}
@@ -409,28 +423,50 @@ def load_precision_tiers(device: str = "nvme") -> dict:
                      "source": str(cands[-1])}
     if p is None:
         return out
-    rows = list(csv.DictReader(p.open()))
+    all_rows = list(csv.DictReader(p.open()))
+    rows = [r for r in all_rows if r.get("host_contention") == "QUIET"]
+    for v in out.values():
+        v["source"] = str(p)
+    if not rows:
+        levels = sorted({r.get("host_contention", "?") for r in all_rows})
+        for v in out.values():
+            v["reason"] = f"{p.name} 的整機爭用為 {levels}，非 QUIET → 時間欄作廢"
+        return out
     ctxs = {int(r["ctx"]) for r in rows if r.get("ctx")}
     if not ctxs:
         return out
     nblk = max(ctxs) / BLOCK
 
-    def warm(tier: str) -> float | None:
-        v = [float(r["ttft_ms"]) for r in rows
-             if r["tier"] == tier and r["round"] == "warm" and r["ttft_ms"]]
-        return median(v) if v else None
+    def warm(tier: str) -> list[float]:
+        return [float(r["ttft_ms"]) for r in rows
+                if r["tier"] == tier and r["round"] == "warm" and r["ttft_ms"]]
 
-    base = warm("gpu_resident")
-    if base is None:
+    b = warm("gpu_resident")
+    if not b:
         return out
+    base = median(b)
+    out["bf16"].update({"dequant_ms_per_block": 0.0, "warm_ms": round(base, 2),
+                        "warm_range": [round(min(b), 2), round(max(b), 2)], "n": len(b)})
     for name, tier in (("fp8", "gpu_fp8"), ("int4", "gpu_int4")):
         w = warm(tier)
-        if w is None:
+        if not w:
             continue
-        out[name]["dequant_ms_per_block"] = round(max(0.0, w - base) / nblk, 4)
-        out[name]["warm_ms"] = w
-        out[name]["baseline_warm_ms"] = base
-    out["bf16"]["dequant_ms_per_block"] = 0.0
+        med = median(w)
+        rec = out[name]
+        rec.update({"warm_ms": round(med, 2),
+                    "warm_range": [round(min(w), 2), round(max(w), 2)],
+                    "baseline_warm_ms": round(base, 2),
+                    "baseline_range": [round(min(b), 2), round(max(b), 2)],
+                    "n": len(w),
+                    "delta_ms": round(med - base, 2)})
+        # 全距重疊 → 與零無法區分（n 小，用非參數判準）
+        if min(w) <= max(b):
+            rec["distinguishable"] = False
+            rec["reason"] = (f"warm 全距 {min(w):.1f}–{max(w):.1f} 與基準 "
+                             f"{min(b):.1f}–{max(b):.1f} 重疊，n={len(w)}")
+            continue
+        rec["distinguishable"] = True
+        rec["dequant_ms_per_block"] = round((med - base) / nblk, 5)
     return out
 
 
