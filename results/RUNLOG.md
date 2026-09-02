@@ -2326,3 +2326,100 @@ CWE（前 10 高頻詞，要精確列出 10 個詞）則掉 12.0 pp [4.7, 20.3]�
 第一次跑就抓到 HotpotQA 的 BF16 被寫成 53.5（實為 53.448 → 53.4），
 以及表 9 表題把全距倍數寫成「20 至 33 倍」（實為 20.7--35.7 → 21 至 36 倍）。
 兩處已修，現在 `python code/audit_m5c_claims.py` 回傳 0。
+
+---
+
+## Milestone 2 補充 — GPU 精度階的反量化成本（QUIET 重量）
+**狀態**: PASS（int4）／PARTIAL（fp8 與零無法區分）
+**執行時間**: 2026-09-01 23:25 → 23:5x
+**run_id**: `20260901-232519-m2-prec-tiers-quiet`
+（前一次 `20260901-225552-m2-prec-tiers-quiet` **FAIL，exit 1**，被工作集守門擋下，見下）
+**指令**:
+```
+python code/m2_cost_model.py --gpu 0 --stage retrieval \
+  --tiers gpu_resident gpu_fp8 gpu_int4 --ctx 16384 --n-prefixes 1 \
+  --retrieval-repeats 3 --csv-suffix _precision_tiers_quiet
+```
+**產出檔**: `results/m2_harness/retrieval_cost_precision_tiers_quiet.csv`（18 列，全部 `host_contention=QUIET`）
+
+### 關鍵數字（warm TTFT，ctx=16,384，n=3 取中位數）
+
+| 階 | 中位數 (ms) | 全距 (ms) | 相對基準 | 每 block 反量化 |
+|---|---|---|---|---|
+| `gpu_resident`（BF16） | 143.26 | 140.8–147.1 | — | 0（基準） |
+| `gpu_fp8` | 145.49 | 137.8–149.1 | +2.22 | **NOT_MEASURED** |
+| `gpu_int4` | 155.97 | 149.9–176.7 | +12.71 | **0.0124 ms/block** |
+
+`fp8` 判為 NOT_MEASURED 的理由：warm 全距 137.8–149.1 與基準 140.8–147.1 **完全重疊**，
+n=3 下與零無法區分。中位數的 +2.22 ms 小於階內全距（6.3–11.3 ms），是雜訊不是訊號。
+
+### 🔴 發現 1 — 污染版的排序是錯的，而且錯得看不出來
+
+舊檔 `retrieval_cost_precision_tiers.csv`（run_id `20260831-210558`）18 列**全部 HEAVY**
+（外來 5–6 張卡、util 96–100%），依 CLAUDE.md §3 時間欄本應作廢，但
+`m4_oracle.load_precision_tiers` 照樣從它算出常數：
+
+| 階 | 污染版中位數 | 污染版換算 | 乾淨版中位數 | 乾淨版換算 |
+|---|---|---|---|---|
+| BF16 | 138.48 | 0 | 143.26 | 0 |
+| FP8 | 164.12 | 0.0250 ms/blk | 145.49 | NOT_MEASURED |
+| INT4 | 155.34 | **0.0165 ms/blk** | 155.97 | 0.0124 ms/blk |
+
+污染版讓 **INT4 的反量化比 FP8 便宜**——位元更少、縮放更複雜卻更快，物理上說不通。
+乾淨版恢復單調：BF16 < FP8 < INT4。
+
+另一個獨立證據：污染版同一階的 `gpu_kv_cache_tokens` 逐列不同
+（fp8 有 83,312 與 96,272 兩個值、int4 有 156,832 與 181,216），
+代表那幾列根本不是同一個設定；乾淨版每階只有一個值（fp8 96,272、int4 181,216）。
+
+### 發現 2 — 精度階的取回成本相對其他動作可忽略
+
+以 `llama-bf16` 剖面的其他常數為參照（`results/m4_oracle/cost_model.json`）：
+
+| 動作 | ms/block |
+|---|---|
+| `Gpu4` 反量化 | **0.0124** |
+| `Cpu` 取回 | 0.588（**47×**） |
+| `Ssd` 取回 | 5.536（**446×**） |
+| `Drop` 重算（位置 0） | 4.008（**323×**） |
+
+**意涵**：GPU 精度階在成本模型裡近似一個**純容量乘數**，取回端的附加費可忽略。
+因此「該不該用精度階」不是成本問題，是 $\epsilon$ 問題——
+而 §6.5 的品質量測顯示三個低精度階在檢索任務上都不合格。
+
+### 失敗與異常
+
+**第一次 run 失敗（exit 1）**，完整錯誤：
+```
+🔴 工作集 16,384 token（1 × 16,384）≤ GPU KV 容量 48,128 token。
+   東西整個塞得進去，不會逐出，量到的四階會一模一樣，而且看起來完全正常。
+   請把 --ctx 調到大於 48,128（或增加 --n-prefixes）。
+```
+原因：`_check_workset_exceeds_capacity` 是為**搬運階**（cpu/ssd/drop）寫的——那三階
+必須發生逐出才量得到。GPU 常駐的精度階量法剛好相反：工作集必須**塞得進** GPU，
+warm 才是純 prefix-cache 命中。守門對每次 `--stage retrieval` 都跑，於是擋掉了
+唯一合法的精度階設定。照它的提示調大 `--n-prefixes` 也不行：fp8 的 KV 容量是
+bf16 的 2 倍，同一工作集會讓 `gpu_resident` 逐出而 `gpu_fp8` 不逐出，兩邊條件不同。
+
+**修法**（`code/m2_cost_model.py`）：把守門限定在有非 GPU 階的 run，其餘行為不變。
+```python
+needs_evict = any(not e[0].startswith("gpu_") for e in order)
+...
+if name == "gpu_resident" and needs_evict:
+    _check_workset_exceeds_capacity(ctx, n_prefixes, s.kv_tokens)
+```
+
+### 連帶修正
+
+`m4_oracle.load_precision_tiers` 加了兩道守門，並新增
+`code/test_precision_tiers.py`（四條假輸入測試，全過）：
+1. **只吃 `host_contention == QUIET` 的列**；否則回 NOT_MEASURED 並附原因。
+2. **階內全距與基準重疊時回 NOT_MEASURED**（非參數判準，n 小時不得把雜訊讀成訊號）。
+
+檔案優先序改為 `_quiet` > `_{device}` > 無後綴，舊的污染檔保留供對照，不刪。
+
+### 與論文假設的差異
+
+論文 §6.2 寫「精度階能額外帶來多少空間，本文未量」——這句仍然成立，
+但現在有了成本側的答案：**取回成本可忽略（發現 2）**，所以缺的只有 $\epsilon$ 側。
+`int8` 一階的反量化成本仍未量（本次未納入 `--tiers`）。

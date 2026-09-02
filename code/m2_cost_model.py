@@ -450,6 +450,17 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
     #
     #    每一輪把順序旋轉一格，取各階的中位數。
     order = [e for e in TIERS if not only_tiers or e[0] in only_tiers]
+    # 🔴 工作集守門（_check_workset_exceeds_capacity）只適用於「必須發生逐出
+    #    才量得到」的搬運階（cpu / ssd / drop）。GPU 常駐的精度階
+    #    （gpu_resident / gpu_fp8 / gpu_int4）的量法剛好相反：工作集必須
+    #    **塞得進** GPU，warm 才是純 prefix-cache 命中，兩階相減才等於反量化成本
+    #    （見 m4_oracle.load_precision_tiers 的 docstring 與 overnight_v2.sh 步驟 1）。
+    #
+    #    2026-09-01 踩到：`--tiers gpu_resident gpu_fp8 gpu_int4` 被這道守門擋下，
+    #    但那是唯一合法的精度階設定。照守門的提示把 --n-prefixes 調大也不行：
+    #    fp8 的 KV 容量是 bf16 的 2 倍，同一個工作集會讓 gpu_resident 逐出而
+    #    gpu_fp8 不逐出，兩邊條件不同，差值失去意義。
+    needs_evict = any(not e[0].startswith("gpu_") for e in order)
     for rep in range(max(1, repeats)):
         rot = order[rep % len(order):] + order[:rep % len(order)]
         if repeats > 1:
@@ -464,7 +475,7 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
             print(f"[m2] retrieval {name:13s} n_prefixes={n} ctx={ctx} ...", flush=True)
             try:
                 with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv) as s:
-                    if name == "gpu_resident":
+                    if name == "gpu_resident" and needs_evict:
                         # gpu_resident 刻意只送 1 個前綴（要它塞得下），
                         # 但它報回的 kv_tokens 正好可以檢查其餘各階的設定
                         _check_workset_exceeds_capacity(ctx, n_prefixes,
