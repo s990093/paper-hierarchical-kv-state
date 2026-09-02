@@ -325,7 +325,7 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
   0/{GPU · BF16}/gpucol/1.00/0.00/{最高}/{0},
   1/{GPU · FP8}/gpucol/0.50/0.02/{$\frac{1}{2}$}/{$\approx$0},
   2/{GPU · INT4}/gpucol/0.25/0.02/{$\frac{1}{4}$}/{$\approx$0},
-  3/{CPU DRAM · INT8}/cpucol/0.12/0.08/{低}/{1.0},
+  3/{CPU DRAM}/cpucol/0.12/0.08/{低}/{1.0},
   4/{SSD}/ssdcol/0.04/0.73/{極低}/{9},
   5/{DROP $\rightarrow$ 重算}/dropcol/0.00/1.00/{\textbf{零}}/{\textbf{12.3}}}{
   \pgfmathsetmacro{\y}{-\i*\rh}
@@ -352,7 +352,7 @@ $\kappa$ 的分子由\emph{啟用}參數量決定，分母由 KV 大小決定，
   node[midway,rotate=270,anchor=south,font=\tiny,text=ssdcol] {升級};
 
 \end{tikzpicture}
-\caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD）與\emph{精度分層}（BF16/FP8/INT4/INT8）被統一為單一階梯，而既有工作只做其中之一；（ii）\act{Drop} 是階梯上的一層，而非檢索失敗後的補救。\textbf{兩側長條的長度即為成本，其反向增長是本文的出發點}：\act{Drop} 閒置時不佔用任何資源，被需要時卻最貴，故其正確性完全取決於未來效用預測。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。}
+\caption{\sys 的動作空間與其成本結構。與既有工作的差異有二：（i）\emph{位置分層}（GPU/CPU/SSD，無損）與\emph{精度分層}（BF16/FP8/INT4，有損）被統一為單一階梯，而既有工作只做其中之一；（ii）\act{Drop} 是階梯上的一層，而非檢索失敗後的補救。\textbf{兩側長條的長度即為成本，其反向增長是本文的出發點}：\act{Drop} 閒置時不佔用任何資源，被需要時卻最貴，故其正確性完全取決於未來效用預測。此六階為典型配置之示意，量化器可替換（見第 \ref{sec:formulation} 節）。}
 \label{fig:ladder}
 \end{figure}
 
@@ -524,10 +524,10 @@ QEvict~\cite{qevict2026}          & preprint     &           &           &      
 
 動作空間為
 \begin{equation}
-  \mathcal{A} = \{\, \act{Gpu}_{16},\; \act{Gpu}_{8},\; \act{Gpu}_{4},\; \act{Cpu}_{8},\; \act{Ssd},\; \act{Drop} \,\}
+  \mathcal{A} = \{\, \act{Gpu}_{16},\; \act{Gpu}_{8},\; \act{Gpu}_{4},\; \act{Cpu},\; \act{Ssd},\; \act{Drop} \,\}
   \label{eq:actions}
 \end{equation}
-對應圖 \ref{fig:ladder}。\act{Drop} 動作意味著該 block 不被儲存於任何位置，若後續被需要則由 token 重算。
+對應圖 \ref{fig:ladder}。\act{Drop} 動作意味著該 block 不被儲存於任何位置，若後續被需要則由 token 重算。\textbf{\act{Cpu} 與 \act{Ssd} 儲存未經壓縮的位元組}——二者只改變 block 所在的位置，不改變其內容；此無損性於 \S\ref{sec:eps-task} 以逐字元比對驗證（60/60）。精度維度因而只存在於 GPU 常駐的三階，$\epsilon$ 約束的實質內容亦全部落在該三階上。
 
 \paragraph{階梯是示意，量化器可替換。}
 式 \eqref{eq:actions} 的六個狀態代表\emph{典型}部署選項，而非本文主張的特定量化方案。實務上 KV 量化存在一個重要的非對稱性：\textbf{key 對量化誤差遠比 value 敏感}，故生產系統普遍採 K/V 分離的精度配置——LMCache 的預設 \texttt{turboquant\_k8v4} 為 key 8 位元、value 4 位元；KIVI~\cite{kivi2024} 對 key 採 per-channel、對 value 採 per-token 量化，因二者離群值結構不同。
@@ -594,81 +594,163 @@ $\Delta\mathcal{Q}$ 於執行期不可直接觀測，這是所有品質約束工
 \begin{figure*}[t]
 \centering
 \begin{tikzpicture}[
-  font=\footnotesize\sffamily,
-  >={Stealth[length=2.2mm]},
-  eng/.style  ={draw,rounded corners=3pt,fill=black!4,draw=black!45,thick,align=center},
-  sig/.style  ={draw,rounded corners=2pt,fill=white,draw=black!35,font=\scriptsize\sffamily,
-                align=center,minimum height=0.58cm,minimum width=3.15cm,inner sep=2.5pt},
-  stage/.style={draw,rounded corners=3pt,fill=white,draw=orange!65!black,thick,align=center,
-                minimum height=1.15cm,minimum width=2.35cm},
-  tier/.style ={draw,rounded corners=3pt,thick,align=center,minimum height=0.74cm,
-                minimum width=2.75cm,font=\scriptsize\sffamily},
-  ar/.style   ={->,thick,black!62},
-  tar/.style  ={->,semithick,black!40},
+  font=\scriptsize\sffamily,
+  >={Stealth[length=2.4mm]},
+  eng/.style  ={draw=black!52,rounded corners=6pt,line width=1.1pt,fill=black!3},
+  grp/.style  ={draw=black!45,rounded corners=3pt,line width=0.75pt,fill=white},
+  bx/.style   ={font=\scriptsize\bfseries\sffamily,text=black!85,anchor=north},
+  sb/.style   ={font=\scriptsize\sffamily,text=black!58,anchor=north},
+  tny/.style  ={font=\tiny,text=black!55},
+  ar/.style   ={->,line width=0.9pt,black!60},
 ]
 
-% ================= Row 1 : 既有引擎 =================
-\node[eng,minimum width=3.8cm,minimum height=0.85cm] (llm)  at (3.0,0)
-      {Frozen Llama / Qwen\\[-2pt]\scriptsize Attention};
-\node[eng,minimum width=5.4cm,minimum height=0.85cm] (vllm) at (9.1,0)
-      {vLLM \;\textbf{·}\; \texttt{OffloadingConnector}\\[-2pt]\scriptsize PagedAttention · prefix cache};
-\draw[ar] (llm) -- (vllm);
-
-% ================= Row 2 : 訊號 + Tiara =================
-\node[sig] (s1) at (2.78,-1.28) {block 狀態 $\ell_i,\pi_i,a_i,n_i$};
-\node[sig] (s2) at (2.78,-1.90) {query 特徵 $\phi_t$};
-\node[sig] (s3) at (2.78,-2.52) {剩餘容量 $C^{\text{gpu/cpu/ssd}}$};
-\node[sig] (s4) at (2.78,-3.14) {互連佇列深度 $Q_{\text{pcie}}$};
-\node[font=\scriptsize\itshape,text=black!55,anchor=south] at (2.78,-1.02) {執行期訊號};
-
-\node[stage] (pred)  at (6.30,-2.15) {未來效用預測器\\[2pt]$p_i=\Pr[\text{未來被存取}]$};
-\node[stage] (cost)  at (9.05,-2.15) {成本模型\\[2pt]式~\eqref{eq:cost}};
-\node[stage] (qgate) at (11.80,-2.15) {品質閘\\[2pt]$\Delta\mathcal{Q}\le\epsilon$};
-\draw[ar] (pred) -- (cost);
-\draw[ar] (cost) -- (qgate);
-
+%% ══════════════ 外層：vLLM 引擎 ══════════════
 \begin{scope}[on background layer]
-  \node[draw=orange!70!black,thick,rounded corners=4pt,fill=hlbox,
-        fit=(pred)(cost)(qgate),inner sep=9pt] (tiara) {};
+  \node[eng,fit={(0.25,-7.86) (17.25,0.98)},inner sep=0pt] {};
 \end{scope}
-\node[anchor=south west,font=\scriptsize\bfseries\sffamily,text=orange!55!black]
-  at ($(tiara.north west)+(0.05,0.04)$) {\sys \;— 本文貢獻};
+\node[font=\footnotesize\bfseries\sffamily,text=black!75,anchor=north west] at (0.48,0.86)
+  {vLLM 推論引擎};
+\node[tny,anchor=north west] at (2.72,0.82) {既有機制，本文不修改};
 
-\foreach \n in {s1,s2,s3,s4} \draw[tar] (\n.east) -- (tiara.west);
+%% ── 第一列：forward 與 block table ──
+\node[grp,minimum width=3.30cm,minimum height=0.86cm,anchor=north west] (mdl) at (0.55,0.28) {};
+\node[bx] at (2.20,0.10) {模型 forward};
+\node[sb] at (2.20,-0.16) {權重不改};
 
-% CachePolicy hook：從 vLLM 垂直下到 Tiara
-\draw[ar,dashed,black!55] (vllm.south) -- (tiara.north)
-  node[midway,left=3pt,font=\scriptsize\itshape,text=black!55,align=right]
-  {掛載於\\[-1pt]\texttt{CachePolicy}};
+\node[grp,minimum width=6.60cm,minimum height=0.86cm,anchor=north west] (pa) at (4.35,0.28) {};
+\node[bx] at (7.65,0.10) {PagedAttention · block table};
+\node[sb] at (7.65,-0.16) {以 token 為索引、跨層共用};
+\draw[ar] (3.90,-0.15) -- (4.30,-0.15);
 
-% 動作輸出
-\node[anchor=west,align=left,font=\scriptsize\sffamily] (actlbl) at (14.35,-2.15)
-  {動作 $a_i\in\mathcal{A}$\\[-1pt]\scriptsize 式~\eqref{eq:actions}};
-\draw[ar] (tiara.east) -- (actlbl.west);
+\node[tny,anchor=north west,align=left] at (11.30,0.14)
+  {執行期訊號：block 狀態、\texttt{attn\_mass}、\\ 剩餘容量、互連佇列深度};
+\draw[ar,black!45] (11.20,-0.15) -- (10.99,-0.15);
 
-% ================= Row 3 : Memory Manager（匯流排） =================
-\node[eng,minimum width=15.0cm,minimum height=0.62cm] (mm) at (8.72,-4.15)
-      {Memory Manager \;\scriptsize（執行搬移 / 壓縮 / 重算）};
-\draw[ar] (tiara.south) -- (tiara.south|-mm.north);
+%% ══════════════ 中層：可插拔的策略槽（本文） ══════════════
+\node[draw=orange!70!black,rounded corners=5pt,line width=1.3pt,fill=hlbox,
+      minimum width=16.30cm,minimum height=2.28cm,anchor=north west] (slot) at (0.55,-0.92) {};
+\node[font=\scriptsize\bfseries\sffamily,text=orange!50!black,anchor=north west] at (0.78,-1.06)
+  {放置策略——引擎裡\emph{可插拔}的一層};
+\node[tny,anchor=north east,text=black!50] at (16.62,-1.06)
+  {預設實作：\texttt{lru} / \texttt{arc}\quad$\rightarrow$\quad 本文替換為 \sys};
 
-% ================= Row 4 : 六個層級 =================
-\node[tier,fill=gpucol!18,draw=gpucol]  (t1) at (2.58,-5.45) {GPU · BF16};
-\node[tier,fill=gpucol!8, draw=gpucol]  (t2) at (5.65,-5.45) {GPU · INT4};
-\node[tier,fill=cpucol!14,draw=cpucol]  (t3) at (8.72,-5.45) {CPU · INT8};
-\node[tier,fill=ssdcol!14,draw=ssdcol]  (t4) at (11.79,-5.45) {SSD · 壓縮};
-\node[tier,fill=dropcol!16,draw=dropcol](t5) at (14.86,-5.45) {DROP\\[-3pt]$\rightarrow$ recompute};
+\foreach \x/\t/\a/\b in {%
+  1.05/{未來效用預測器}/{$\hat{p}_i=\Pr[\tau\le W]$}/{門檻 $p^{*}_{\ell}=1/(1+\kappa_{\ell})$，非 $0.5$},%
+  6.42/{成本模型}/{\act{Ssd} 常數 vs \act{Drop} 線性}/{交叉點 $P^{*}$},%
+  11.79/{品質閘}/{取\emph{最差任務}保留率}/{$\Delta\mathcal{Q}\le\epsilon$}}{
+  \node[grp,draw=orange!60!black,minimum width=4.90cm,minimum height=1.44cm,anchor=north west]
+    at (\x,-1.42) {};
+  \node[font=\scriptsize\bfseries\sffamily,text=black!85,anchor=north west] at ({\x+0.20},-1.54) {\t};
+  \node[tny,anchor=north west] at ({\x+0.20},-1.86) {\a};
+  \node[tny,anchor=north west] at ({\x+0.20},-2.16) {\b};}
 
-\foreach \t in {t1,t2,t3,t4,t5} \draw[tar] (\t.north|-mm.south) -- (\t.north);
+\begin{scope}[shift={(4.28,-2.72)},xscale=0.80]
+  \draw[black!40,line width=0.45pt] (0,0) -- (1.70,0);
+  \fill[gpucol!16] plot[smooth,tension=0.7]
+    coordinates {(0.06,0.02)(0.32,0.40)(0.66,0.52)(1.04,0.27)(1.42,0.08)(1.68,0.02)}
+    -- (1.68,0) -- (0.06,0) -- cycle;
+  \draw[gpucol!75,line width=0.9pt] plot[smooth,tension=0.7]
+    coordinates {(0.06,0.02)(0.32,0.40)(0.66,0.52)(1.04,0.27)(1.42,0.08)(1.68,0.02)};
+  \draw[dashed,orange!80!black,line width=0.8pt] (0.26,-0.06) -- (0.26,0.66);
+\end{scope}
+\begin{scope}[shift={(9.65,-2.72)},xscale=0.80]
+  \draw[black!40,line width=0.45pt] (0,0) -- (1.70,0);
+  \draw[ssdcol!85,line width=1.0pt] (0.06,0.28) -- (1.68,0.28);
+  \draw[dropcol,line width=1.0pt]   (0.06,0.05) -- (1.68,0.62);
+  \fill[orange!85!black] (0.70,0.28) circle (0.06);
+\end{scope}
+\begin{scope}[shift={(15.02,-2.72)},xscale=0.80]
+  \draw[black!40,line width=0.45pt] (0,0) -- (1.70,0);
+  \foreach \i/\h/\cl in {0/0.56/cpucol,1/0.51/cpucol,2/0.13/gpucol,3/0.48/cpucol,4/0.54/cpucol}
+    \draw[draw=\cl!70,fill=\cl!42,line width=0.4pt]
+      ({0.16+\i*0.30},0) rectangle ++(0.21,\h);
+  \draw[dashed,orange!80!black,line width=0.8pt] (0.06,0.38) -- (1.68,0.38);
+\end{scope}
 
-% ================= restore：最左側獨立通道 =================
-\coordinate (rl) at (0.42,-5.45);
-\draw[ar,dashed,orange!60!black]
-  (t1.west) -- (rl) -- (0.42,0) -- (llm.west);
-\node[rotate=90,anchor=south,font=\scriptsize\itshape,text=orange!55!black] at (0.10,-2.7)
-  {restore / recompute};
+\draw[ar,orange!75!black,line width=1.1pt] (8.70,-3.28) -- (8.70,-3.86)
+  node[midway,right=3pt,font=\scriptsize\sffamily,text=orange!50!black]
+  {每個 KV block 一個動作 $a_i\in\mathcal{A}$};
+
+%% ══════════════ 底層：記憶體階層（真實硬體） ══════════════
+\node[font=\scriptsize\bfseries\sffamily,text=black!75,anchor=north west] at (0.55,-3.88)
+  {記憶體階層};
+\node[tny,anchor=north west,text=black!50] at (2.06,-3.88)
+  {格內小塊＝同一位元組預算下裝得下的 block 數};
+
+% ---- 四個裝置：共用同一條上緣與下緣 ----
+\foreach \x/\w/\cl/\t/\c in {0.55/5.20/gpucol/{GPU · HBM}/{命中 $\approx0$},
+                             6.30/3.55/cpucol/{CPU DRAM}/{取回 0.59\,ms/blk},
+                             10.40/3.55/ssdcol/{NVMe SSD}/{取回 5.5\,ms/blk},
+                             14.50/2.35/dropcol/{DROP · 不存}/{重算 $4.0+\alpha p$}}{
+  \node[font=\scriptsize\bfseries\sffamily,text=\cl!72!black,anchor=south west] at (\x,-4.74) {\t};
+  \node[tny,anchor=north,text=black!52] at ({\x+\w/2},-6.68) {\c};}
+
+% GPU：顯示卡（PCIe 金手指 + 兩顆風扇）
+\draw[draw=gpucol,fill=gpucol!7,line width=1.1pt,rounded corners=3pt]
+  (0.55,-4.82) rectangle (5.75,-6.52);
+\foreach \i in {0,...,9}
+  \draw[draw=gpucol!65,fill=gpucol!45,line width=0.25pt]
+    ({0.90+\i*0.26},-6.52) rectangle ++(0.17,-0.11);
+\foreach \cx in {4.62,5.30}{
+  \draw[draw=gpucol!50,fill=gpucol!10,line width=0.5pt] (\cx,-6.08) circle (0.29);
+  \foreach \a in {0,72,...,288}
+    \draw[gpucol!42,line width=0.35pt] (\cx,-6.08) -- ++({\a}:0.24);}
+\foreach \i/\lb/\mult/\nc/\s in {0/{BF16}/{$1.00\times$}/4/0.155,
+                                 1/{FP8}/{$2.00\times$}/8/0.105,
+                                 2/{INT4}/{$3.77\times$}/11/0.076}{
+  \node[tny,anchor=west,text=gpucol!72!black] at (0.72,{-5.08-\i*0.50}) {\lb};
+  \node[tny,anchor=west,text=black!45] at (1.36,{-5.08-\i*0.50}) {\mult};
+  \foreach \j in {1,...,\nc}
+    \draw[draw=gpucol!65,fill=gpucol!38,line width=0.25pt]
+      ({2.14+(\j-1)*(\s+0.045)},{-5.01-\i*0.50}) rectangle ++(\s,-\s);}
+
+% CPU DRAM：記憶體條
+\draw[draw=cpucol,fill=cpucol!7,line width=1.1pt,rounded corners=2pt]
+  (6.30,-4.82) rectangle (9.85,-6.52);
+\foreach \i in {0,...,5}
+  \draw[draw=cpucol!62,fill=cpucol!26,line width=0.35pt]
+    ({6.50+\i*0.56},-4.94) rectangle ++(0.42,-0.34);
+\foreach \i in {0,...,22}
+  \draw[cpucol!58,line width=0.35pt] ({6.44+\i*0.14},-6.52) -- ++(0,-0.11);
+\draw[fill=black!3,draw=cpucol!58,line width=0.55pt] (7.86,-6.52) rectangle ++(0.24,-0.12);
+\foreach \r in {0,1,2}\foreach \j in {1,...,13}
+  \draw[draw=cpucol!62,fill=cpucol!34,line width=0.22pt]
+    ({6.48+(\j-1)*0.245},{-5.52-\r*0.28}) rectangle ++(0.15,-0.15);
+
+% NVMe：M.2
+\draw[draw=ssdcol,fill=ssdcol!7,line width=1.1pt,rounded corners=2pt]
+  (10.62,-4.82) rectangle (13.95,-6.52);
+\foreach \i in {0,...,8}
+  \draw[ssdcol!62,line width=0.5pt] (10.62,{-4.96-\i*0.16}) -- ++(-0.22,0);
+\draw[draw=ssdcol!58,fill=black!3,line width=0.55pt] (13.72,-5.08) circle (0.12);
+\foreach \i in {0,1}
+  \draw[draw=ssdcol!62,fill=ssdcol!26,line width=0.35pt]
+    ({10.86+\i*1.22},-4.94) rectangle ++(0.98,-0.38);
+\foreach \r in {0,1,2}\foreach \j in {1,...,12}
+  \draw[draw=ssdcol!62,fill=ssdcol!34,line width=0.22pt]
+    ({10.82+(\j-1)*0.255},{-5.56-\r*0.28}) rectangle ++(0.15,-0.15);
+
+% DROP：空的虛線框
+\draw[draw=dropcol,line width=1.1pt,rounded corners=2pt,dash pattern=on 4pt off 3pt]
+  (14.50,-4.82) rectangle (16.85,-6.52);
+\foreach \i in {0,...,3}\foreach \j in {0,1}
+  \draw[draw=dropcol!52,line width=0.3pt,dash pattern=on 1.6pt off 1.6pt]
+    ({14.72+\i*0.50},{-5.06-\j*0.44}) rectangle ++(0.34,-0.32);
+\node[tny,anchor=north,text=dropcol!85!black] at (15.67,-6.06) {平時成本 $=0$};
+
+% ---- 階間箭頭 ----
+\foreach \x/\lb in {5.82/{降級}, 9.92/{降級}, 14.02/{丟棄}}{
+  \draw[ar,black!45] (\x,-5.67) -- ({\x+0.36},-5.67);
+  \node[tny,anchor=south,text=black!45] at ({\x+0.18},-5.62) {\lb};}
+
+% ---- 重算迴路 ----
+\draw[->,line width=1.1pt,orange!75!black]
+  (16.60,-6.63) -- (16.60,-7.22) -- (0.72,-7.22) -- (0.72,-6.63);
+\node[font=\scriptsize\sffamily,text=orange!50!black,anchor=north] at (8.66,-7.28)
+  {\textbf{重算}：唯一能回到 BF16 的路徑，成本隨 block 的絕對位置線性成長};
 
 \end{tikzpicture}
-\caption{\sys 架構與資料流。灰底為既有基礎設施，橘框為本文貢獻。控制器接收四類執行期訊號，經「未來效用預測 $\rightarrow$ 成本模型 $\rightarrow$ 品質閘」三階段，為每個 KV block 產生一個動作 $a_i\in\mathcal{A}$，交由 Memory Manager 執行。關鍵設計決定是\emph{不自行實作推論引擎}：\sys 掛載於 vLLM 既有的 \texttt{CachePolicy} 介面，貢獻邊界因而清晰（\textbf{機制屬於 vLLM，策略屬於本文}），且可在 CUDA 與 ROCm 上零移植部署，並直接與內建的 \texttt{lru}/\texttt{arc} 對照。左側橘色虛線為恢復路徑：被降級或丟棄的 block 在重新變得重要時可升回上層或重算，單次誤判不會造成資訊的永久損失。}
+\caption{\sys 在 vLLM 裡的位置。\textbf{整張圖都在 vLLM 引擎之內}：模型 forward、PagedAttention 的 block table、以及底層的記憶體階層皆為既有機制，本文不修改。本文替換的是中間那一層——引擎原本就開放的\emph{可插拔放置策略}，其預設實作只有 \texttt{lru} 與 \texttt{arc}。該層接收四類執行期訊號，經「未來效用預測 $\rightarrow$ 成本模型 $\rightarrow$ 品質閘」為每個 KV block 產生一個動作 $a_i\in\mathcal{A}$。三個階段各以其判準的形狀表示：預測器的門檻取自式 \eqref{eq:threshold} 的 $p^{*}_{\ell}=1/(1+\kappa_{\ell})$ 而非 $0.5$；成本模型中 \act{Ssd} 為常數而 \act{Drop} 隨位置線性成長，二者交於 $P^{*}$；品質閘取\emph{最差任務}的保留率（式 \eqref{eq:quality}）。底層四個狀態即動作空間 \eqref{eq:actions}：精度的三階同住在 GPU 上（格數比為實測容量倍數，\S\ref{sec:awq-unlock}），\act{Drop} 則平時成本為零而取回最貴。\textbf{機制屬於 vLLM，策略屬於本文}，故 \sys 是一個 plugin 而非 fork。}
 \label{fig:arch}
 \end{figure*}
 
@@ -735,6 +817,106 @@ LRB~\cite{lrb2020}          & GBDT & 2 & 否（L2） \\
 模型為單一全域 GBDT，\texttt{layer\_id} 與 \texttt{head\_id} 作為特徵而非分模型的依據。
 
 \emph{門檻永遠施加於 $\hat{p}_i$，不施加於 $\hat{y}_i$}——式 \eqref{eq:cost} 與式 \eqref{eq:threshold} 使用的皆為機率。此區分是必要的：對 $\hat{y}_i$ 直接閾值化在數學上不對應式 \eqref{eq:threshold} 的最佳邊界（見第 \ref{sec:loss} 節）。
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize\sffamily,
+  >={Stealth[length=2.4mm]},
+  pnl/.style  ={draw=black!45,rounded corners=3pt,line width=0.7pt,fill=white},
+  ph/.style   ={font=\scriptsize\bfseries\sffamily,text=black!80,anchor=north west},
+  lb/.style   ={font=\scriptsize\sffamily,text=black!58},
+  st/.style   ={draw,rounded corners=3pt,line width=0.85pt,align=center,
+                minimum width=1.95cm,minimum height=0.62cm,font=\scriptsize\sffamily},
+  ar/.style   ={->,line width=0.85pt,black!62},
+]
+\colorlet{sG16}{gpucol!45}\colorlet{sG8}{gpucol!22}
+\colorlet{sCPU}{cpucol!35}\colorlet{sSSD}{ssdcol!35}\colorlet{sDROP}{black!8}
+
+%% ───────── (a) 一個動作的作用範圍 ─────────
+\node[pnl,fit={(0.10,-2.92) (6.85,0.34)},inner sep=0pt] {};
+\node[ph] at (0.26,0.24) {(a) 一個動作 $a_i$ 作用的範圍};
+\begin{scope}[shift={(1.42,-0.72)},lb/.style={font=\scriptsize\sffamily,text=black!58}]
+  \foreach \d in {2,1}
+    \draw[draw=black!25,line width=0.35pt,fill=white]
+      ({\d*0.13},{\d*0.11}) rectangle ({4.30+\d*0.13},{-1.30+\d*0.11});
+  \foreach \r in {0,1,3}{
+    \foreach \c in {0,1,2,3,5}
+      \draw[draw=black!45,fill=black!6,line width=0.35pt]
+        ({\c*0.74},{-\r*0.325}) rectangle ++(0.62,-0.285);
+    \draw[draw=black!45,fill=orange!34,line width=0.35pt]
+      ({2*0.74},{-\r*0.325}) rectangle ++(0.62,-0.285);
+    \node[lb] at ({4*0.74+0.31},{-\r*0.325-0.14}) {$\cdots$};}
+  \foreach \c in {0,1,2,3,5} \node[lb] at ({\c*0.74+0.31},{-2*0.325-0.14}) {$\vdots$};
+  \draw[orange!80!black,line width=1.0pt,rounded corners=1.5pt] (1.42,0.06) rectangle (2.14,-1.34);
+  \node[lb,anchor=east] at (-0.08,-0.14) {layer $0$};
+  \node[lb,anchor=east] at (-0.08,-0.47) {$\vdots$};
+  \node[lb,anchor=east] at (-0.08,-1.12) {layer $L\!-\!1$};
+  \foreach \c/\t in {0/$b_0$,1/$b_1$,2/$b_2$,3/$b_3$} \node[lb] at ({\c*0.74+0.31},-1.52) {\t};
+  \node[lb,anchor=north] at (2.15,-1.70) {token（每格 $=$ 16 token）；重影＝$H_{kv}$ head $\times$ (K,\,V)};
+\end{scope}
+
+%% ───────── (b) 狀態隨時間演化 ─────────
+\node[pnl,fit={(7.15,-2.92) (17.30,0.34)},inner sep=0pt] {};
+\node[ph] at (7.31,0.24) {(b) 同一時刻，不同 block 在不同狀態\ \textnormal{\scriptsize（橫軸＝連續的請求）}};
+\foreach \r/\states in {%
+  0/{sG16,sG16,sG16,sG16,sG16,sG16},%
+  1/{sG16,sG16,sG16,sG8,sG8,sG16},%
+  2/{sG16,sG8,sCPU,sCPU,sG16,sG16},%
+  3/{sG16,sCPU,sSSD,sSSD,sCPU,sG16},%
+  4/{sG16,sCPU,sSSD,sDROP,sDROP,sG16},%
+  5/{sG16,sDROP,sDROP,sDROP,sDROP,sG16}}{
+  \foreach \c [count=\i from 0] in \states
+    \draw[draw=black!30,fill=\c,line width=0.35pt]
+      ({8.95+\i*0.96},{-0.62-\r*0.325}) rectangle ++(0.90,-0.285);}
+\foreach \r/\t in {0/{$b_0$（系統提示）},1/$b_1$,2/$b_2$,3/$b_3$,4/$b_4$,5/{$b_5$（尾端）}}
+  \node[lb,anchor=east] at (8.85,{-0.76-\r*0.325}) {\t};
+\foreach \i/\t in {0/$r_1$,1/$r_2$,2/$r_3$,3/$r_4$,4/$r_5$,5/$r_6$}
+  \node[lb,anchor=south] at ({8.95+\i*0.96+0.45},-0.58) {\t};
+\draw[orange!80!black,line width=1.0pt,rounded corners=1.5pt] (11.82,-0.58) rectangle (12.79,-2.52);
+\node[lb,anchor=north,text=orange!50!black] at (12.30,-2.56) {$r_4$：四種狀態並存};
+\begin{scope}[shift={(15.00,-0.62)}]
+  \foreach \j/\cl/\t in {0/sG16/{GPU BF16},1/sG8/{GPU FP8},2/sCPU/{CPU},3/sSSD/{SSD},4/sDROP/{DROP}}{
+    \draw[draw=black!35,fill=\cl,line width=0.35pt] (0,{-\j*0.34}) rectangle ++(0.40,-0.24);
+    \node[lb,anchor=west] at (0.50,{-\j*0.34-0.12}) {\t};}
+\end{scope}
+
+%% ───────── (c) 合法轉移 ─────────
+\node[pnl,fit={(0.10,-6.62) (17.30,-3.22)},inner sep=0pt] {};
+\node[ph] at (0.26,-3.32) {(c) 合法轉移：精度只能往下，位置可以來回};
+\node[st,fill=gpucol!45,draw=gpucol] (g16) at (2.35,-4.28) {GPU BF16};
+\node[st,fill=gpucol!22,draw=gpucol] (g8)  at (5.55,-4.28) {GPU FP8};
+\node[st,fill=gpucol!10,draw=gpucol] (g4)  at (8.75,-4.28) {GPU INT4};
+\node[st,fill=cpucol!35,draw=cpucol] (cpu) at (2.35,-5.62) {CPU};
+\node[st,fill=ssdcol!35,draw=ssdcol] (ssd) at (5.55,-5.62) {SSD};
+\node[st,fill=black!8,draw=dropcol]  (drp) at (8.75,-5.62) {DROP};
+\draw[->,line width=0.9pt,dashed,gpucol!80!black] (g16) -- node[above=-1pt,lb,text=gpucol!75!black] {降級} (g8);
+\draw[->,line width=0.9pt,dashed,gpucol!80!black] (g8)  -- node[above=-1pt,lb,text=gpucol!75!black] {降級} (g4);
+\draw[<->,line width=0.9pt,black!62] (g16) -- node[right=1pt,lb] {搬移（無損）} (cpu);
+\draw[<->,line width=0.9pt,black!62] (cpu) -- (ssd);
+\draw[->,line width=0.9pt,black!62]  (ssd) -- node[above=-1pt,lb] {丟棄} (drp);
+\draw[->,line width=0.9pt,black!45]  (g4.south) -- (8.75,-5.28);
+\draw[->,line width=1.1pt,orange!80!black]
+  (drp.south) -- (8.75,-6.08) -- (1.05,-6.08) -- (1.05,-4.28) -- (g16.west);
+\node[lb,anchor=north,text=orange!50!black] at (4.90,-6.14)
+  {\textbf{重算}：唯一能回到 BF16 的路徑，成本隨 block 位置線性成長};
+\node[lb,anchor=north west,align=left] at (10.45,-3.98)
+  {\textcolor{black!62}{\rule[0.12em]{1.0em}{0.9pt}}\ \ 實線＝可逆（位置搬移，$\epsilon=0$，60/60 逐字元相同）\\[3pt]
+   \textcolor{gpucol!80!black}{\rule[0.12em]{0.32em}{0.9pt}\hspace{0.14em}\rule[0.12em]{0.32em}{0.9pt}}\ \ 虛線＝不可逆（精度：丟掉的位元取不回來）\\[3pt]
+   \textcolor{orange!80!black}{\rule[0.12em]{1.0em}{1.1pt}}\ \ 橘線＝重算，成本 $C_{\act{Drop}}(p)=C^{0}+\alpha p$};
+\node[lb,anchor=north west,text=orange!50!black,font=\scriptsize\bfseries\sffamily]
+  at (10.45,-5.52) {圖中沒有任何一條箭頭是「精度往上」。};
+
+\end{tikzpicture}
+\caption{動作 $a_i$ 是什麼。\textbf{(a)} 一個動作作用的範圍：vLLM 的 block table 以 token 為索引且跨層共用，故一個 $a_i$ 同時套用於 16 token 的全部 layer、全部 KV head 與 K/V 兩者（橘色整欄）；\texttt{layer\_id} 與 \texttt{head\_id} 僅作為預測器的特徵（\S\ref{sec:predictor}），不切分動作空間。\textbf{(b)} 同一前綴的六個 block 在六個連續請求中所處的狀態：\emph{任一時刻的垂直切片上不同 block 位於不同狀態}，這正是 $a_i$ 為逐 block 決策而非全域設定的原因（示意，非量測資料）。\textbf{(c)} 狀態之間的合法轉移：位置的三階之間只是位元組往返，\S\ref{sec:eps-task} 以 60/60 逐字元比對驗證為無損，故可逆；精度降級丟棄位元，故單向。\textbf{圖中沒有「精度往上」的箭頭}——唯一能回到 \act{Gpu}$_{16}$ 的路徑是 \act{Drop} 之後重算，其成本隨 block 的絕對位置線性成長（式 \eqref{eq:recompute-position}）。此不對稱有兩個後果：$\epsilon$ 約束只作用於虛線，故 \S\ref{sec:oracle-method} 的 oracle 在四個無損動作上求解時 $\epsilon$ 自動滿足；以及預測器的一次誤判在位置維度上可廉價更正、在精度維度上則不行。}
+\label{fig:action}
+\end{figure*}
+
+\paragraph{精度只能往下，位置可以來回。}
+圖 \ref{fig:action} 給出動作 $a_i$ 的三個面。其一，作用範圍是 16 token 的整欄（圖 \ref{fig:action}a）：vLLM 的 block table 以 token 為索引且跨層共用，故 \texttt{layer\_id} 與 \texttt{head\_id} 只能作為特徵，不切分動作空間。其二，\emph{任一時刻的垂直切片上不同 block 位於不同狀態}（圖 \ref{fig:action}b），故 $a_i$ 是逐 block 的決策而非全域設定。其三，位置與精度兩個維度的可逆性不同（圖 \ref{fig:action}c）：位置搬移只是位元組往返（\S\ref{sec:eps-task} 以 60/60 逐字元比對驗證），因而可逆；而精度降級丟棄位元，\textbf{階梯上沒有任何一條「精度往上」的轉移}——唯一能回到 \act{Gpu}$_{16}$ 的路徑是 \act{Drop} 之後重算，其成本隨 block 的絕對位置線性成長（式 \eqref{eq:recompute-position}）。此不對稱是預測器設計的一個前提：位置維度上的一次誤判可以廉價更正，精度維度上則不行。
+
+\paragraph{標籤的取得比決策慢一整個視窗。}
+決策是 $t_d$ 當下的一次前向流程（演算法 \ref{alg:predictor}），約 30\,$\mu$s 且執行於 CPU；但標籤 $\tau_i$ 的定義涉及未來，無法於同一時刻取得——樣本須進入待標記佇列，由「下次被存取」或「等滿視窗 $W$ 仍未被存取」兩個機制之一完成標記（見本節稍後〈標籤〉一段）。兩者的時間尺度不同，混為一談會誤以為訓練集可由「後來確實被重用的 block」單獨構成。
 
 \paragraph{預測目標是連續量，而非二元分類。}
 所有預測連續量並延後閾值化的系統，都勝過其二元分類的前身，且 Mockingjay~\cite{mockingjay2022} 與 LRB~\cite{lrb2020} 均明確報告此點。LRB 嘗試過對 Belady 邊界的二元分類並依 good-decision-ratio 拒絕之。我們因此回歸 $\log(\text{距下次存取的時間})$。取對數的理由與 LRB 相同：真正重要的是落在邊界的哪一側，100K 與 2M 的差異遠比 2M 與 3M 重要。
@@ -804,7 +986,7 @@ LRB 明確比較過 GBM、線性迴歸、邏輯迴歸、SVM 與 2 層 16 隱藏�
 \textbf{(L1) 動作成本加權的 L2}。在 $\log(\text{距下次存取時間})$ 的迴歸上，令每個樣本的權重等於「策略對該 block 所採取的動作，在判斷錯誤時的代價」：
 \begin{equation}
   \mathcal{L}_{\text{L1}} = \sum_i w(a_i) \cdot \big( \hat{y}_i - \log \tau_i \big)^2,
-  \quad w(a_i) = \frac{\mathrm{cost}_{\text{err}}(a_i)}{\mathrm{cost}_{\text{err}}(\act{Cpu}_8)}
+  \quad w(a_i) = \frac{\mathrm{cost}_{\text{err}}(a_i)}{\mathrm{cost}_{\text{err}}(\act{Cpu})}
 \end{equation}
 此形式是 LRB 的損失加上其不需要的那一項，在 LightGBM 中僅需 \texttt{sample\_weight}，無額外機制。
 
@@ -1434,7 +1616,7 @@ LongBench 上游的 \texttt{metrics.py} 依賴 \texttt{jieba}（僅中文任務�
 \act{Gpu}$_{16}$ & GPU 位元組 & $\approx 0$ \\
 \act{Gpu}$_{8}$  & GPU 位元組 $/2$ & 反量化 kernel \\
 \act{Gpu}$_{4}$  & GPU 位元組 $/4$ & 反量化 kernel \\
-\act{Cpu}$_{8}$  & host 位元組 $/2$ & PCIe + 反量化 \\
+\act{Cpu}        & host 位元組 & PCIe（無反量化） \\
 \act{Ssd}        & 磁碟位元組 & NVMe I/O $+$ PCIe \\
 \act{Drop}       & \textbf{0} & 重算$(\ell)$ \\
 \bottomrule
@@ -1449,7 +1631,7 @@ $\mathrm{recomp}(\ell)$ 隨 block 的絕對位置 $\ell$ 成長。\textbf{此協
 
 \subsection{消融設計}
 
-此為本文最重要的實驗。表 \ref{tab:ablation} 分為三個區塊，各回應一個不同的質疑。
+此為本文最重要的實驗。表 \ref{tab:ablation} 分為五個區塊，各回應一個不同的質疑。
 
 \textbf{(A) 四項成本}回應「把四項成本組合起來是否構成貢獻」。消融\emph{以成本項為單位而非以模組為單位}：若移除任一項均導致顯著退化，其必要性即為實證結果而非主張。\textbf{我們亦承認相反的可能}：若移除某項不造成退化，正確做法是將其自系統中移除，使貢獻更為聚焦。
 
@@ -1457,12 +1639,25 @@ $\mathrm{recomp}(\ell)$ 隨 block 的絕對位置 $\ell$ 成長。\textbf{此協
 
 \textbf{(C) 機制}為次要，確認品質約束與精度維度確有作用。
 
+\textbf{(D) 預測器}檢驗第 \ref{sec:predictor} 節「選 GBDT 而非神經網路」的取捨：前三列共用攤平特徵，檢驗\emph{容量}；GRU 一列直接消費 \texttt{deltas} 序列，檢驗\emph{結構}。
+
+\textbf{(E) 決策粒度}檢驗一個至今為預設值而非量測結論的參數，見下文。
+
 \paragraph{兩平台必須分開報告。}
 第 \ref{sec:loss} 節論證 $w(a_i)$ 由 $\kappa$ 決定，而 $\kappa$ 在兩平台相差 32 倍（表 \ref{tab:kappa}）。(B) 區塊在兩平台上\emph{應呈現不同的退化幅度}：在 $\kappa$ 較大的 3090 上，對稱損失的代價應更明顯。\textbf{若兩平台退化幅度相同，則硬體條件化的主張被否證}——這是本文最關鍵的可證偽點。
 
+\paragraph{最佳的決策粒度由 attention tile 的大小決定，故隨後端而變。}
+式 \eqref{eq:actions} 的動作逐 block 施加（圖 \ref{fig:action}a，16\,token），但\emph{這是預設值而非量測結論}：\S\ref{sec:eps-task} 的四個精度階皆以 \texttt{-{}-kv-cache-dtype} 量得，而該旗標作用於整個引擎，故所有 block 同一格式；\S\ref{sec:oracle-method} 的 oracle 又未納入精度階。\textbf{本文因而從未執行過混合精度的 attention。}
+
+令 $g$ 為精度決策的粒度。其兩端各有代價：$g$ 小則保留逐 block 調整的自由度，但 KV block 為 16\,token 而 attention kernel 的 tile 典型為 $64$--$128$\,token，格式邊界因而落在 tile 內部，同一次載入須以兩套佈局解讀——\S\ref{sec:awq-unlock} 量到的 $2$\,KiB/token 量化中繼資料正是使兩種格式佈局不同的原因。$g$ 大則 tile 恆為單一格式，但冷熱 block 併入同一段後只能取折衷精度，容量收益隨之下降。\textbf{兩者相互抵扣，故存在中間的最佳點，其位置由 tile 大小 $g_{\text{tile}}$ 決定。}
+
+此結構與 \S\ref{sec:sweet-spot} 的 $P^{*}$ 同形：一個自常數算出的特徵尺度，界定策略的有效操作區間。$g_{\text{tile}}$ 因而是第五個須逐平台量測的常數，而 tile 幾何隨 attention 後端而變——\S\ref{app:rocm-status} 已記載啟用 KV connector 會使 vLLM 自候選清單移除 \texttt{ROCM\_ATTN} 後端。(E) 區塊因此是「常數改變則最佳策略隨之改變」的第三個實例，前兩者為加速器世代（表 \ref{tab:kappa}）與模型剖面（表 \ref{tab:costmodels}）。
+
+\textbf{此區塊於平台 A 不具鑑別力，須待平台 B。}\S\ref{sec:eps-task} 顯示三個低精度階中僅 INT8 保住品質，且 \texttt{fp8\_per\_token\_head} 所需的 Triton 後端於 sm\_86 拒絕 FP8 KV cache，故平台 A 實際只有 BF16 與 INT8 兩階可選；兩階之下，逐 block 與逐段的差異無從展開。CDNA3 具原生 FP8，若 \texttt{fp8\_per\_token\_head} 於 ROCm 上可用（此為 \texttt{NOT\_MEASURED}，列為平台 B 到手後的第一項驗證），該平台方有三階以上。\emph{若三個粒度於兩平台上的差異均不顯著，則粒度不是有意義的設計維度}，我們將據以把圖 \ref{fig:action}a 的作用範圍改以段表述，並將此軸降為實作細節。
+
 \begin{table}[t]
 \centering\small
-\caption{消融矩陣。每次移除或替換一項，量測 quality--latency--memory Pareto 前緣的退化。(B) 區塊是本文核心主張的直接檢驗。$^{\dagger}$(D) 區塊另行回報\emph{熱路徑推論延遲}，因較大的預測器須在計入其自身延遲後才可比較。前三列共用攤平特徵，檢驗\emph{容量}；GRU 一列直接消費 \texttt{deltas} 序列，檢驗\emph{結構}。任一列在計入自身延遲後仍佔優，第 \ref{sec:predictor} 節的對應設計選擇即被推翻。}
+\caption{消融矩陣。每次移除或替換一項，量測 quality--latency--memory Pareto 前緣的退化。(B) 區塊是本文核心主張的直接檢驗。$^{\dagger}$(D) 區塊另行回報\emph{熱路徑推論延遲}，因較大的預測器須在計入其自身延遲後才可比較。前三列共用攤平特徵，檢驗\emph{容量}；GRU 一列直接消費 \texttt{deltas} 序列，檢驗\emph{結構}。任一列在計入自身延遲後仍佔優，第 \ref{sec:predictor} 節的對應設計選擇即被推翻。$^{\ddagger}$(E) 區塊另需 attention kernel 層級的延遲，因 tile 破碎會被端到端延遲吸收而無從歸因；其餘三軸沿用式 \eqref{eq:quality} 的 $Q(\pi)$、\emph{有效} KiB/token（含碎片化）與 TTFT/TPOT。$g=\infty$ 一列即 \S\ref{sec:eps-task} 的全域統一設定，作為 harness 的複現錨點。}
 \label{tab:ablation}
 \setlength{\tabcolsep}{3.5pt}
 \begin{tabular}{llcc}
@@ -1495,6 +1690,12 @@ GBDT（本文）        & ---                        & \placeholder{基準} & \p
 MLP $2\times64$     & 容量：同特徵、同損失       & \placeholder{TBD} & \placeholder{TBD} \\
 MLP $4\times256$    & 容量：同特徵、同損失       & \placeholder{TBD} & \placeholder{TBD} \\
 \textbf{GRU}（序列） & \textbf{結構}：直接吃 \texttt{deltas} & \placeholder{TBD} & \placeholder{TBD} \\
+\midrule
+\multicolumn{4}{l}{\textit{\textbf{(E) 精度的決策粒度 $g$}}$^{\ddagger}$} \\
+$g=16$（預設）      & 邊界落於 tile 內           & \placeholder{TBD} & \placeholder{TBD} \\
+$\boldsymbol{g\approx128}$ & \textbf{對齊 tile，邊界重合} & \placeholder{TBD} & \placeholder{TBD} \\
+$g=512$             & 對齊 \texttt{hash\_ids}    & \placeholder{TBD} & \placeholder{TBD} \\
+$g=\infty$（全域）   & 無邊界；\emph{錨點}        & \placeholder{TBD} & \placeholder{TBD} \\
 \bottomrule
 \end{tabular}
 \end{table}
