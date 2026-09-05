@@ -48,6 +48,7 @@ import argparse
 import csv
 import json
 import heapq
+import math
 import os
 import sys
 import time
@@ -88,7 +89,9 @@ class PolicySim(Sim):
                     use_cpu: bool, use_ssd: bool, prefix_semantics: bool = True,
                     prefetch: bool = False, outputs=None, per_request=False,
                     dest: str = "cost-aware", mode: str = "learned",
-                    drop_cost: str = "tail", ordering: str = "predicted") -> dict:
+                    drop_cost: str = "tail", ordering: str = "predicted",
+                    tie_width: float = 0.0, tier_order: str = "predicted",
+                    timeline: dict | None = None) -> dict:
         """`next_use[t]`／`p_hat[t]`：第 t 次存取（全域序號）當下對該 block 的預測。
 
         mode="lru-shim"：忽略預測，改用「上次存取時刻」排序（＝LRU）並走
@@ -96,8 +99,10 @@ class PolicySim(Sim):
         """
         cm = self.cm
         cascade = dest == "cascade" or mode == "lru-shim"
-        gpu: dict[int, float] = {}          # block -> 排序鍵（大＝預測晚用到＝先逐出）
-        heap: list[tuple[float, int]] = []
+        # block -> 逐出鍵（**小的先被逐出**）。用 tuple 是為了 tie_width：
+        # 第一項是預測的分桶、第二項是上次存取時刻，於是同一桶內退回 LRU。
+        gpu: dict[int, tuple] = {}
+        heap: list[tuple[tuple, int]] = []
         # cascade 用 OrderedDict（與 Sim.run_online 同一種語意），
         # cost-aware 用 dict + heap（與 Sim.run_oracle 同一種語意）
         cpu_od: OrderedDict[int, None] = OrderedDict()
@@ -110,6 +115,14 @@ class PolicySim(Sim):
         ssd_set = ssd_od if cascade else ssd
         # blk -> (排序鍵, p̂, 丟掉的邊際成本)。只保留還在某一階的 block，
         # 否則這個 dict 會長到跟工作集一樣大（5.5M 筆）。
+        #
+        # 🔴 `tier_order="lru"`：CPU/SSD 階的**保留順序**改用 recency（上次存取時刻），
+        #    GPU 的逐出順序仍用預測。這是針對量到的失效模式的**定點修正**：
+        #    lc32ks 上 tiara 的 CPU 命中率由 baseline 的 38.3% 崩到 8.1%，
+        #    67.7% 的存取因此落到 SSD（10.245 ms，是 CPU 的 34 倍）。
+        #    原因是 CPU 階滿了之後，「預測最晚用到」的候選會被推到下一階；
+        #    預測是雜訊時，這等於把該留的東西丟到最貴的階。
+        #    而 baseline 的 cascade 永遠把**最近被降級的**留在 CPU——recency 是強先驗。
         st: dict[int, tuple[float, float, float]] = {}
 
         total = decode_total = prev_compute = 0.0
@@ -122,8 +135,8 @@ class PolicySim(Sim):
 
         def pop_victim():
             while heap:
-                negk, b = heap[0]
-                if b not in gpu or -negk != gpu[b]:
+                ek, b = heap[0]
+                if b not in gpu or ek != gpu[b]:
                     heapq.heappop(heap)
                     continue
                 heapq.heappop(heap)
@@ -237,14 +250,33 @@ class PolicySim(Sim):
                     req_compute += cm.cost("drop", pos)
                 if mode == "lru-shim":
                     key, p = -float(t), 1.0
+                    ekey = (float(t), 0.0)          # 小的先逐出 = LRU
                 else:
                     # 🔴 `ordering="lru"` 是**拆解用的控制組**：逐出順序退回 LRU，
                     #    但目的地仍走式 (9) 的門檻與成本模型。它回答唯一重要的問題：
                     #    「增益是預測器帶來的，還是成本模型帶來的？」
                     key = -float(t) if ordering == "lru" else float(next_use[t])
+                    if ordering == "lru":
+                        ekey = (float(t), 0.0)
+                    elif tie_width > 0:
+                        # 🔴 「不確定就回退 LRU」。把預測的下次使用時刻在**對數尺度**
+                        #    上分桶，桶寬 tie_width（0.5 ≈ 65% 的相對差）。
+                        #    同一桶內以 LRU 決定先逐出誰。
+                        #
+                        #    為什麼這樣就等於「不確定時退回 LRU」：桶寬是**絕對值**，
+                        #    所以模型的分數離散度若小於桶寬，所有 block 自動落進同一桶，
+                        #    排序完全由 LRU 決定；模型有真實解析度時桶才會分開。
+                        #    不需要另外量信心分數，也不需要門檻——**桶寬就是你宣稱
+                        #    自己有的解析度**。
+                        #    這條是為了修 lc128ks／lc32ks 上「分數打平 -> 逐出順序等於
+                        #    隨機 -> 比 LRU 差 2.7–5.6 倍」那個失效模式。
+                        q = math.floor(math.log1p(max(0.0, key - t)) / tie_width)
+                        ekey = (-float(q), float(t))
+                    else:
+                        ekey = (-key, 0.0)
                     p = float(p_hat[t])
-                gpu[blk] = key
-                heapq.heappush(heap, (-key, blk))
+                gpu[blk] = ekey
+                heapq.heappush(heap, (ekey, blk))
                 # 🔴 丟掉一個 block 的邊際成本怎麼算，是一個**決定結果的**選擇：
                 #   tail  = 它到請求結尾的整條尾巴（與 run_oracle 的規則相同）
                 #   block = 只算它自己那一塊
@@ -253,7 +285,9 @@ class PolicySim(Sim):
                 # 等於把同一筆成本重複計價，門檻因而被壓得太低（什麼都想留）。
                 # 這一項在 p̂ 呈雙峰時看不出來（W=1×），在 p̂ 有中間質量時
                 # （W=35×）會把 block 大量推進 SSD 階，而 SSD 讀回比重算還貴。
-                st[blk] = (key, p, tails[pi] if drop_cost == "tail"
+                # tier_order="lru"：CPU/SSD 階改用 recency 排序（GPU 仍用預測）
+                tkey = -float(t) if tier_order == "lru" else key
+                st[blk] = (tkey, p, tails[pi] if drop_cost == "tail"
                            else cm.cost("drop", pos))
                 while len(gpu) > cap["gpu"]:
                     v = pop_victim()
@@ -270,6 +304,14 @@ class PolicySim(Sim):
             total += c_req
             if per_request:
                 per_req.append(c_req)
+            # 🔴 時序圖：論文圖 3(b) 目前是**示意圖**（caption 明寫「非量測資料」）。
+            #    這裡把每個請求結束時被追蹤 block 的實際狀態記下來，
+            #    那張圖就可以換成真的量測。
+            if timeline is not None:
+                for b in timeline["blocks"]:
+                    st_ = ("GPU" if b in gpu else "CPU" if b in cpu_set
+                           else "SSD" if b in ssd_set else "DROP")
+                    timeline["rows"].append((ri, b, st_))
         out = {"total_ms": total, "hits": hits, "writes": writes,
                "evict": evict, "decode_ms": decode_total,
                "prefill_ms": total - decode_total,
@@ -386,6 +428,14 @@ def main() -> int:
                     choices=["cost-aware", "cascade"],
                     help="cascade = 只用預測器決定逐出順序，目的地無條件往下推。"
                          "兩個一起跑就能把『預測器』與『成本模型』的貢獻分開")
+    ap.add_argument("--timeline-blocks", type=int, default=0,
+                    help="追蹤前 N 個 block 的狀態隨請求變化，寫成 timeline CSV")
+    ap.add_argument("--tier-order", choices=["predicted", "lru"],
+                    default="predicted",
+                    help="CPU/SSD 階的保留順序。lru = 用 recency（GPU 仍用預測）")
+    ap.add_argument("--tie-width", type=float, default=0.0,
+                    help="逐出鍵的分桶寬度（log 尺度）。0 = 關閉（純預測排序）；"
+                         "值越大越接近 LRU。見 run_learned 的說明")
     ap.add_argument("--ordering", choices=["predicted", "lru"],
                     default="predicted",
                     help="lru = 逐出順序用 LRU、目的地仍用成本模型（拆解控制組）")
@@ -504,17 +554,38 @@ def main() -> int:
         res[name] = sim.run_online(trace, pol, uc, us, **kw)
         print(f"  {name:<10} {res[name]['total_ms']:>16,.0f} ms"
               f"　({time.time() - t0:.0f}s)")
+    tl = None
+    if a.timeline_blocks:
+        # 🔴 追蹤「第一個請求**等距取樣**的 N 個 block」，不是前 N 個。
+        #    前 N 個全部落在最熱前綴的開頭，整張圖會是一片 GPU——沒有資訊。
+        #    等距取樣才會跨到位置 0–131K 的整個範圍，看得到不同位置的命運不同。
+        step = max(1, len(trace[0]) // a.timeline_blocks)
+        tl = {"blocks": trace[0][::step][:a.timeline_blocks], "rows": []}
     for loss in a.losses:
         nxt, p = score_all_accesses(tdir / f"model_{loss}.txt",
                                     tdir / f"calib_{loss}.npz", X)
         for dest in a.dests:
             name = (f"tiara_{loss}" + ("" if dest == "cost-aware" else "_cascade")
                     + ("" if a.drop_cost == "tail" else "_blockcost")
-                    + ("" if a.ordering == "predicted" else "_lruorder"))
+                    + ("" if a.ordering == "predicted" else "_lruorder")
+                    + ("" if a.tie_width == 0 else f"_tie{a.tie_width:g}")
+                    + ("" if a.tier_order == "predicted" else "_tierlru"))
             t0 = time.time()
             res[name] = psim.run_learned(trace, nxt, p, t_off, True, True,
                                          dest=dest, drop_cost=a.drop_cost,
-                                         ordering=a.ordering, **kw)
+                                         ordering=a.ordering,
+                                         tie_width=a.tie_width,
+                                         tier_order=a.tier_order,
+                                         timeline=tl, **kw)
+            if tl is not None and tl["rows"]:
+                out_tl = out_dir / "timeline.csv"
+                write_csv(out_tl, [
+                    {"run_id": f"{datetime.now():%Y%m%d-%H%M%S}-m5p-timeline",
+                     "trace": tag, "workload": wmeta["workload"],
+                     "policy": name, "request": ri_, "block": b_, "state": s_}
+                    for ri_, b_, s_ in tl["rows"]])
+                print(f"[時序] {len(tl['rows']):,} 列 -> {out_tl}")
+                tl["rows"] = []
             print(f"  {name:<18} {res[name]['total_ms']:>16,.0f} ms"
                   f"　({time.time() - t0:.0f}s)")
         del nxt, p
@@ -528,7 +599,8 @@ def main() -> int:
             name = f"diag_true_{kind}"
             res[name] = psim.run_learned(trace, tn, tp if kind == "both" else phat,
                                          t_off, True, True, dest="cost-aware",
-                                         drop_cost=a.drop_cost, **kw)
+                                         drop_cost=a.drop_cost,
+                                         tie_width=a.tie_width, **kw)
             print(f"  {name:<18} {res[name]['total_ms']:>16,.0f} ms"
                   f"　({time.time() - t0:.0f}s)")
         del tn, tp, phat
@@ -576,6 +648,7 @@ def main() -> int:
             "gpu_blocks": gpu_blocks, "cpu_gib": a.cpu_gib, "ssd_gib": a.ssd_gib,
             "lookup": a.lookup, "prefetch": int(a.prefetch),
             "drop_cost_rule": a.drop_cost, "ordering": a.ordering,
+            "tie_width": a.tie_width, "tier_order": a.tier_order,
             "workload": wmeta["workload"],
             "decode": int(bool(decode)), "window_accesses": fm["window_accesses"],
             "features_run": fdir.name, "train_run": tdir.name,

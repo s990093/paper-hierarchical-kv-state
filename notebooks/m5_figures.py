@@ -220,6 +220,44 @@ def fig_horizon(met, pol):
     save(fig, "m5_horizon")
 
 
+def fig_timeline():
+    """**實測的**狀態時序圖：40 個 block 在 120 個請求中所處的階。
+
+    論文圖 3(b) 目前的 caption 明寫「示意，非量測資料」。這張是同一個形狀，
+    但每一格都來自 `m5_policy_sim` 的實際重放，可以直接取代它。
+    """
+    p = M5 / "timeline.csv"
+    if not p.exists():
+        return
+    rows = list(csv.DictReader(p.open()))
+    pol = rows[0]["policy"]
+    rows = [r for r in rows if r["policy"] == pol]
+    blocks = sorted({int(r["block"]) for r in rows})
+    reqs = sorted({int(r["request"]) for r in rows})
+    bi = {b: i for i, b in enumerate(blocks)}
+    ri = {q: i for i, q in enumerate(reqs)}
+    codes = {"GPU": 0, "CPU": 1, "SSD": 2, "DROP": 3}
+    m = np.full((len(blocks), len(reqs)), 3, dtype=int)
+    for r in rows:
+        m[bi[int(r["block"])], ri[int(r["request"])]] = codes[r["state"]]
+    from matplotlib.colors import ListedColormap
+    cmap = ListedColormap([CLR["gpu"], CLR["cpu"], CLR["ssd"], "#DDDDDD"])
+    fig, ax = plt.subplots(figsize=(COL2, 2.4))
+    ax.imshow(m, aspect="auto", cmap=cmap, vmin=0, vmax=3,
+              interpolation="nearest")
+    ax.set_xlabel("請求序號")
+    ax.set_ylabel("同一請求等距取樣的 block")
+    ax.set_yticks([0, len(blocks) - 1])
+    ax.set_yticklabels(["位置 0", "位置 ~131K"])
+    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in
+               (CLR["gpu"], CLR["cpu"], CLR["ssd"], "#DDDDDD")]
+    ax.legend(handles, ["GPU", "CPU", "SSD", "DROP（不在任何階）"],
+              ncol=4, fontsize=7, frameon=False,
+              loc="upper center", bbox_to_anchor=(0.5, 1.22))
+    fig.tight_layout()
+    save(fig, "m5_timeline")
+
+
 def main() -> int:
     plt.rcParams.update({"font.size": 8, "axes.labelsize": 8,
                          "xtick.labelsize": 7, "ytick.labelsize": 7,
@@ -236,6 +274,7 @@ def main() -> int:
     fig_threshold(met, cm)
     fig_calibration(cal)
     fig_horizon(met, pol)
+    fig_timeline()
     return 0
 
 
