@@ -236,26 +236,164 @@ def fig_timeline():
     reqs = sorted({int(r["request"]) for r in rows})
     bi = {b: i for i, b in enumerate(blocks)}
     ri = {q: i for i, q in enumerate(reqs)}
-    codes = {"GPU": 0, "CPU": 1, "SSD": 2, "DROP": 3}
-    m = np.full((len(blocks), len(reqs)), 3, dtype=int)
+    codes = {"GPU-BF16": 0, "GPU": 0, "GPU-INT8": 1, "CPU": 2, "SSD": 3, "DROP": 4}
+    m = np.full((len(blocks), len(reqs)), 4, dtype=int)
     for r in rows:
         m[bi[int(r["block"])], ri[int(r["request"])]] = codes[r["state"]]
     from matplotlib.colors import ListedColormap
-    cmap = ListedColormap([CLR["gpu"], CLR["cpu"], CLR["ssd"], "#DDDDDD"])
+    cmap = ListedColormap([CLR["gpu"], "#E8A29A", CLR["cpu"], CLR["ssd"], "#DDDDDD"])
     fig, ax = plt.subplots(figsize=(COL2, 2.4))
-    ax.imshow(m, aspect="auto", cmap=cmap, vmin=0, vmax=3,
+    ax.imshow(m, aspect="auto", cmap=cmap, vmin=0, vmax=4,
               interpolation="nearest")
     ax.set_xlabel("請求序號")
-    ax.set_ylabel("同一請求等距取樣的 block")
-    ax.set_yticks([0, len(blocks) - 1])
-    ax.set_yticklabels(["位置 0", "位置 ~131K"])
-    handles = [plt.Rectangle((0, 0), 1, 1, color=c) for c in
-               (CLR["gpu"], CLR["cpu"], CLR["ssd"], "#DDDDDD")]
-    ax.legend(handles, ["GPU", "CPU", "SSD", "DROP（不在任何階）"],
-              ncol=4, fontsize=7, frameon=False,
+    ax.set_ylabel("追蹤的 48 個 block")
+    ax.set_yticks([])
+    # 只列出資料裡真的出現過的狀態——沒出現就不要在圖例裡佔位
+    present = sorted({codes[r["state"]] for r in rows})
+    names = {0: "GPU-BF16", 1: "GPU-INT8（降級後）", 2: "CPU", 3: "SSD",
+             4: "DROP（不在任何階）"}
+    cols = [CLR["gpu"], "#E8A29A", CLR["cpu"], CLR["ssd"], "#DDDDDD"]
+    handles = [plt.Rectangle((0, 0), 1, 1, color=cols[i]) for i in present]
+    ax.legend(handles, [names[i] for i in present],
+              ncol=len(present), fontsize=7, frameon=False,
               loc="upper center", bbox_to_anchor=(0.5, 1.22))
     fig.tight_layout()
     save(fig, "m5_timeline")
+
+
+def fig_roc_pr(met):
+    """ROC 與 PR 曲線。分類品質的標準呈現，兩個工作負載對照。"""
+    picks = []
+    for tr, lab in (("toolagent", "Mooncake toolagent（W=1×）"),
+                    ("toolagent", "Mooncake toolagent（W=35×）"),
+                    ("lc128kz", "長上下文 131K（W=6×）")):
+        want = 599095 if "35" in lab else (102702 if tr == "lc128kz" else 17117)
+        c = [r for r in met if r["trace"] == tr and r["loss"] == "sym_l2"
+             and r["threshold_rule"] == "p_star" and r["num_leaves"] == "63"
+             and r.get("label_mode") == "censored"
+             and int(r["window_accesses"]) == want
+             and r.get("feature_groups") == "history+deltas+edc+static"
+             and str(r.get("data_seed")) == "1234"
+             and r.get("sample_rate") in ("0.25", "1.0")]
+        if c:
+            picks.append((c[0], lab))
+    if not picks:
+        return
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(COL2, 2.9))
+    cols = (CLR["cpu"], CLR["hl"], CLR["ssd"])
+    for (r, lab), c in zip(picks, cols):
+        f = latest_train(r) / "curves_sym_l2.npz"
+        if not f.exists():
+            continue
+        z = np.load(f)
+        a1.plot(z["fpr"], z["tpr"], color=c, lw=1.4,
+                label=f"{lab}　AUC {float(r['auc']):.3f}")
+        a2.plot(z["recall"], z["precision"], color=c, lw=1.4,
+                label=f"AP {float(r.get('average_precision') or 0):.3f}")
+    a1.plot([0, 1], [0, 1], color=CLR["drop"], lw=0.8, ls="--")
+    a1.set_xlabel("偽陽性率 FPR"); a1.set_ylabel("真陽性率 TPR")
+    a1.legend(fontsize=6.5, frameon=False, loc="lower right")
+    a2.set_xlabel("召回率（丟棄）"); a2.set_ylabel("精確率（丟棄）")
+    a2.legend(fontsize=6.5, frameon=False, loc="lower left")
+    for a in (a1, a2):
+        a.set_xlim(-0.02, 1.02); a.set_ylim(-0.02, 1.02)
+    fig.tight_layout()
+    save(fig, "m5_roc_pr")
+
+
+def fig_confusion(met):
+    """同一個模型、兩個門檻的混淆矩陣：0.5 與式 (9) 的 p*。"""
+    rows = [r for r in met if r["trace"] == "toolagent" and r["loss"] == "sym_l2"
+            and r["num_leaves"] == "63" and r.get("label_mode") == "censored"
+            and int(r["window_accesses"]) == 599095
+            and r.get("feature_groups") == "history+deltas+edc+static"]
+    by = {r["threshold_rule"]: r for r in rows}
+    if not {"0.5", "p_star"} <= set(by):
+        return
+    fig, axes = plt.subplots(1, 2, figsize=(COL2, 2.5))
+    for ax, rule, title in ((axes[0], "0.5", "門檻 = 0.5（對稱損失的預設）"),
+                            (axes[1], "p_star", r"門檻 = $p^{*}$（式 (9)）")):
+        r = by[rule]
+        m = np.array([[int(r["cm_drop_correct"]), int(r["cm_drop_wrong"])],
+                      [int(r["cm_keep_wrong"]), int(r["cm_keep_correct"])]],
+                     dtype=float)
+        ax.imshow(m / m.sum(), cmap="Blues", vmin=0, vmax=0.6)
+        for i in range(2):
+            for j in range(2):
+                v = m[i, j]
+                ax.text(j, i, f"{v:,.0f}\n{100 * v / m.sum():.1f}%",
+                        ha="center", va="center", fontsize=8,
+                        color="white" if v / m.sum() > 0.3 else CLR["ink"])
+        ax.set_xticks([0, 1]); ax.set_yticks([0, 1])
+        ax.set_xticklabels(["真值：不會再用", "真值：會再用"], fontsize=7)
+        ax.set_yticklabels(["決策：丟掉", "決策：留下"], fontsize=7)
+        ax.set_title(f"{title}\n成本 {float(r['cost_ms']):,.0f} ms",
+                     fontsize=8, pad=6)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+    fig.tight_layout()
+    save(fig, "m5_confusion")
+
+
+def fig_training(met):
+    """訓練曲線：加權 L2 損失隨迭代下降，早停點標出來。"""
+    picks = [r for r in met if r["trace"] == "toolagent" and r["num_leaves"] == "63"
+             and r["threshold_rule"] == "p_star" and r.get("label_mode") == "censored"
+             and int(r["window_accesses"]) == 17117
+             and r.get("feature_groups") == "history+deltas+edc+static"
+             and str(r.get("data_seed")) == "1234"
+             and r.get("sample_rate") == "0.25"]
+    if not picks:
+        return
+    fig, ax = plt.subplots(figsize=(COL, 2.4))
+    for r, c in zip(picks, (CLR["cpu"], CLR["gpu"])):
+        f = latest_train(r) / f"evals_{r['loss']}.json"
+        if not f.exists():
+            continue
+        h = json.loads(f.read_text())
+        for split, ls in (("train", "--"), ("valid", "-")):
+            if split not in h:
+                continue
+            key = list(h[split])[0]
+            y = h[split][key]
+            ax.plot(range(1, len(y) + 1), y, ls, color=c, lw=1.2,
+                    label=f"{r['loss']} / {split}")
+        ax.axvline(int(r["best_iter"]), color=c, lw=0.7, ls=":")
+    ax.set_xlabel("boosting 迭代（虛線 = 早停點）")
+    ax.set_ylabel("加權 L2 損失")
+    ax.legend(fontsize=6.5, frameon=False)
+    fig.tight_layout()
+    save(fig, "m5_training")
+
+
+def fig_importance():
+    """特徵重要度（gain），只看主設定。"""
+    p = M5 / "feature_importance.csv"
+    if not p.exists():
+        return
+    rows = [r for r in csv.DictReader(p.open())
+            if r["trace"] == "toolagent" and r["loss"] == "sym_l2"
+            and r.get("num_leaves") == "63" and r.get("label_mode") == "censored"
+            and r.get("window_accesses") == "17117"
+            and r.get("feature_groups") == "history+deltas+edc+static"
+            and str(r.get("data_seed")) == "1234"
+            and r.get("sample_rate") == "0.25"]
+    if not rows:
+        return
+    rows.sort(key=lambda r: -float(r["gain"]))
+    rows = rows[:12]
+    tot = sum(float(r["gain"]) for r in rows)
+    fam = lambda n: (CLR["ssd"] if n.startswith(("pos", "req", "last"))
+                     else CLR["cpu"] if n.startswith("log_delta")
+                     else CLR["hl"] if n.startswith("edc") else CLR["drop"])
+    fig, ax = plt.subplots(figsize=(COL, 2.9))
+    names = [r["feature"] for r in rows][::-1]
+    vals = [100 * float(r["gain"]) / tot for r in rows][::-1]
+    ax.barh(names, vals, color=[fam(n) for n in names], height=.72)
+    ax.set_xlabel("gain 佔前 12 名的比例（%）")
+    ax.tick_params(axis="y", labelsize=7)
+    fig.tight_layout()
+    save(fig, "m5_importance")
 
 
 def main() -> int:
@@ -275,6 +413,10 @@ def main() -> int:
     fig_calibration(cal)
     fig_horizon(met, pol)
     fig_timeline()
+    fig_roc_pr(met)
+    fig_confusion(met)
+    fig_training(met)
+    fig_importance()
     return 0
 
 

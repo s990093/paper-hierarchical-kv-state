@@ -91,7 +91,8 @@ class PolicySim(Sim):
                     dest: str = "cost-aware", mode: str = "learned",
                     drop_cost: str = "tail", ordering: str = "predicted",
                     tie_width: float = 0.0, tier_order: str = "predicted",
-                    timeline: dict | None = None) -> dict:
+                    timeline: dict | None = None, precision: str = "off",
+                    int8_ratio: float = 1.94, int8_read_ms: float = 0.0124) -> dict:
         """`next_use[t]`／`p_hat[t]`：第 t 次存取（全域序號）當下對該 block 的預測。
 
         mode="lru-shim"：忽略預測，改用「上次存取時刻」排序（＝LRU）並走
@@ -132,6 +133,21 @@ class PolicySim(Sim):
         evict = {"free": 0, "to_cpu": 0, "to_ssd": 0, "swap_cpu": 0, "lost": 0,
                  "drop_by_choice": 0, "swap_ssd": 0}
         cap = self.cap
+        # ── 精度階（只有 INT8，因為量測顯示 sm_86 上只有它過得了品質閘）──
+        # 🔴 三個常數都是實測，不是設定值：
+        #   int8_ratio 1.94 = 同一 5.88 GiB 預算下 int8 的 93,360 對 bf16 的 48,128
+        #     （results/m2_harness/capacity_by_dtype.csv）
+        #   int8_read_ms 0.0124 = **INT4 的實測反量化成本當上界**。INT8 本身未量，
+        #     而反量化成本隨位元數減少而上升（BF16 < FP8 < INT4，見 RUNLOG），
+        #     所以用 INT4 的值對 INT8 是保守的。相對於 CPU 取回 0.298 是 1/24。
+        #   品質：INT8 在大海撈針 90–95%、LongBench 57.0（BF16 58.4），過 ε 閘；
+        #     FP8 與 INT4 掉到個位數，故不放進動作空間。
+        # 降級不可逆（丟掉的位元取不回來），與論文圖 3(c) 一致。
+        prec_on = precision == "int8"
+        w8 = 1.0 / int8_ratio
+        int8: set[int] = set()          # 目前是 INT8 的 block
+        used = 0.0                      # GPU 佔用（以 BF16 的 block 為單位）
+        downgrades = 0
 
         def pop_victim():
             while heap:
@@ -234,9 +250,12 @@ class PolicySim(Sim):
                     req_compute += cm.cost("drop", pos)
                     cpu_set.pop(blk, None)
                     ssd_set.pop(blk, None)
+                    int8.discard(blk)     # 重算出來的是 BF16
                 elif blk in gpu:
                     hits["gpu"] += 1
-                    req_compute += cm.cost("gpu", pos)
+                    # INT8 的 block 讀回要反量化；BF16 不用
+                    req_compute += (cm.cost("gpu", pos)
+                                    + (int8_read_ms if blk in int8 else 0.0))
                 elif blk in cpu_set:
                     hits["cpu"] += 1
                     req_transfer += cm.cost("cpu", pos)
@@ -275,6 +294,8 @@ class PolicySim(Sim):
                     else:
                         ekey = (-key, 0.0)
                     p = float(p_hat[t])
+                if blk not in gpu:
+                    used += w8 if blk in int8 else 1.0
                 gpu[blk] = ekey
                 heapq.heappush(heap, (ekey, blk))
                 # 🔴 丟掉一個 block 的邊際成本怎麼算，是一個**決定結果的**選擇：
@@ -289,12 +310,34 @@ class PolicySim(Sim):
                 tkey = -float(t) if tier_order == "lru" else key
                 st[blk] = (tkey, p, tails[pi] if drop_cost == "tail"
                            else cm.cost("drop", pos))
-                while len(gpu) > cap["gpu"]:
+                # 🔴 精度階的階梯（論文圖 3(c)）：BF16 → INT8 → CPU → SSD → DROP。
+                #    先把最冷的幾個降級（留在 GPU、各省 48.5% 空間），
+                #    已經是 INT8 的才真的搬出去。
+                #    降級過的 block 這一輪**先扣在手上**、最後才放回 heap——
+                #    否則它會立刻又被選為最冷而被逐出，等於白降一次
+                #    （第一版就是這樣，兩者的總時間逐位元相同）。
+                #    逐出的**排序完全沒變**，變的只是「多了一個可以先做的動作」。
+                pending: list[int] = []
+                while (used if prec_on else len(gpu)) > cap["gpu"]:
                     v = pop_victim()
                     if v is None:
                         break
+                    if prec_on and v not in int8:
+                        int8.add(v)
+                        used -= (1.0 - w8)
+                        downgrades += 1
+                        pending.append(v)
+                        # 蒐集「真的會被降級」的 block id，供時序圖第二趟使用
+                        if timeline is not None and "collect" in timeline:
+                            if len(timeline["collect"]) < timeline["cap"]:
+                                timeline["collect"].add(v)
+                        continue
                     gpu.pop(v, None)
+                    used -= w8 if v in int8 else 1.0
+                    int8.discard(v)
                     demote(v)
+                for v in pending:
+                    heapq.heappush(heap, (gpu[v], v))
                 t += 1
             c_req, prev_compute = self._flush(req_compute, req_transfer,
                                               prev_compute, prefetch)
@@ -307,11 +350,14 @@ class PolicySim(Sim):
             # 🔴 時序圖：論文圖 3(b) 目前是**示意圖**（caption 明寫「非量測資料」）。
             #    這裡把每個請求結束時被追蹤 block 的實際狀態記下來，
             #    那張圖就可以換成真的量測。
-            if timeline is not None:
+            if timeline is not None and timeline.get("blocks"):
                 for b in timeline["blocks"]:
-                    st_ = ("GPU" if b in gpu else "CPU" if b in cpu_set
+                    st_ = ("GPU-INT8" if b in gpu and b in int8
+                           else "GPU-BF16" if b in gpu
+                           else "CPU" if b in cpu_set
                            else "SSD" if b in ssd_set else "DROP")
                     timeline["rows"].append((ri, b, st_))
+        evict["downgrade_int8"] = downgrades
         out = {"total_ms": total, "hits": hits, "writes": writes,
                "evict": evict, "decode_ms": decode_total,
                "prefill_ms": total - decode_total,
@@ -430,6 +476,9 @@ def main() -> int:
                          "兩個一起跑就能把『預測器』與『成本模型』的貢獻分開")
     ap.add_argument("--timeline-blocks", type=int, default=0,
                     help="追蹤前 N 個 block 的狀態隨請求變化，寫成 timeline CSV")
+    ap.add_argument("--precision", choices=["off", "int8"], default="off",
+                    help="開啟 GPU 內的精度階（只有 INT8 過得了品質閘）。"
+                         "容量倍數與反量化成本皆為實測，見 run_learned 的說明")
     ap.add_argument("--tier-order", choices=["predicted", "lru"],
                     default="predicted",
                     help="CPU/SSD 階的保留順序。lru = 用 recency（GPU 仍用預測）")
@@ -556,11 +605,33 @@ def main() -> int:
               f"　({time.time() - t0:.0f}s)")
     tl = None
     if a.timeline_blocks:
-        # 🔴 追蹤「第一個請求**等距取樣**的 N 個 block」，不是前 N 個。
-        #    前 N 個全部落在最熱前綴的開頭，整張圖會是一片 GPU——沒有資訊。
-        #    等距取樣才會跨到位置 0–131K 的整個範圍，看得到不同位置的命運不同。
-        step = max(1, len(trace[0]) // a.timeline_blocks)
-        tl = {"blocks": trace[0][::step][:a.timeline_blocks], "rows": []}
+        # 🔴 追蹤兩組 block，各等距取樣一半：
+        #    (a) 第一個請求 —— 最熱的前綴，會一直留在 GPU；
+        #    (b) 中段某個請求 —— 較冷的文件，會經歷降級與下放。
+        #    只取 (a) 的話整張圖是一片 GPU-BF16，沒有資訊；
+        #    只取前 N 個（而非等距）更糟，全部落在同一段位置上。
+        # 三組各取三分之一：最熱的前綴、中段較冷的文件、以及**實際被降級過的** block。
+        # 第三組要先跑一趟才知道是誰（模擬是決定性的，兩趟一致），
+        # 由下面的 collect 流程補上。
+        h = a.timeline_blocks // 3
+        picks = []
+        for req in (trace[0], trace[len(trace) // 3]):
+            step = max(1, len(req) // h)
+            picks += req[::step][:h]
+        tl = {"blocks": list(dict.fromkeys(picks)), "rows": [],
+              "collect": set(), "cap": h}
+    if tl is not None and a.precision != "off":
+        # 第一趟：只蒐集被降級的 block id，不記錄狀態
+        nxt0, p0 = score_all_accesses(tdir / f"model_{a.losses[0]}.txt",
+                                      tdir / f"calib_{a.losses[0]}.npz", X)
+        probe = dict(tl, blocks=[])
+        psim.run_learned(trace, nxt0, p0, t_off, True, True, dest="cost-aware",
+                         precision=a.precision, timeline=probe, **kw)
+        tl["blocks"] = list(dict.fromkeys(tl["blocks"] + sorted(probe["collect"])))
+        tl.pop("collect", None)
+        print(f"[時序] 追蹤 {len(tl['blocks'])} 個 block"
+              f"（含 {len(probe['collect'])} 個實際被降級過的）")
+        del nxt0, p0
     for loss in a.losses:
         nxt, p = score_all_accesses(tdir / f"model_{loss}.txt",
                                     tdir / f"calib_{loss}.npz", X)
@@ -569,14 +640,15 @@ def main() -> int:
                     + ("" if a.drop_cost == "tail" else "_blockcost")
                     + ("" if a.ordering == "predicted" else "_lruorder")
                     + ("" if a.tie_width == 0 else f"_tie{a.tie_width:g}")
-                    + ("" if a.tier_order == "predicted" else "_tierlru"))
+                    + ("" if a.tier_order == "predicted" else "_tierlru")
+                    + ("" if a.precision == "off" else "_int8"))
             t0 = time.time()
             res[name] = psim.run_learned(trace, nxt, p, t_off, True, True,
                                          dest=dest, drop_cost=a.drop_cost,
                                          ordering=a.ordering,
                                          tie_width=a.tie_width,
                                          tier_order=a.tier_order,
-                                         timeline=tl, **kw)
+                                         timeline=tl, precision=a.precision, **kw)
             if tl is not None and tl["rows"]:
                 out_tl = out_dir / "timeline.csv"
                 write_csv(out_tl, [
@@ -649,6 +721,8 @@ def main() -> int:
             "lookup": a.lookup, "prefetch": int(a.prefetch),
             "drop_cost_rule": a.drop_cost, "ordering": a.ordering,
             "tie_width": a.tie_width, "tier_order": a.tier_order,
+            "precision": a.precision,
+            "downgrades": r.get("evict", {}).get("downgrade_int8", ""),
             "workload": wmeta["workload"],
             "decode": int(bool(decode)), "window_accesses": fm["window_accesses"],
             "features_run": fdir.name, "train_run": tdir.name,

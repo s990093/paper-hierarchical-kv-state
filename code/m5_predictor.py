@@ -603,8 +603,23 @@ def cost_weighted_error(p_hat: np.ndarray, y: np.ndarray, thr: np.ndarray,
     ms_fn = float(np.sum(dc[fn] - cm.cpu))
     ms_fp = float(cm.cpu * np.count_nonzero(fp))
     n = len(y)
+    # 🔴 混淆矩陣的命名必須與成本項分開，否則同一組樣本會有兩套名字。
+    #    這裡以「丟掉」為正類的四格，直接用意義命名：
+    #      drop_correct = 丟了而且確實不會再用（TP）
+    #      drop_wrong   = 丟了但其實會再用（FP）—— **貴的那一邊**，付 C_drop − C_cpu
+    #      keep_correct = 留著而且確實會再用（TN）
+    #      keep_wrong   = 留著但其實不會再用（FN）—— 便宜的那一邊，付一個 C_cpu 槽位
+    c_dc = int(np.count_nonzero(dropped & (y == 0)))
+    c_dw = int(np.count_nonzero(dropped & (y == 1)))
+    c_kc = int(np.count_nonzero((~dropped) & (y == 1)))
+    c_kw = int(np.count_nonzero((~dropped) & (y == 0)))
+    prec = c_dc / (c_dc + c_dw) if c_dc + c_dw else float("nan")
+    rec = c_dc / (c_dc + c_kw) if c_dc + c_kw else float("nan")
     return {
         "n": n,
+        "cm_drop_correct": c_dc, "cm_drop_wrong": c_dw,
+        "cm_keep_correct": c_kc, "cm_keep_wrong": c_kw,
+        "precision_drop": round(prec, 4), "recall_drop": round(rec, 4),
         "drop_rate": round(float(dropped.mean()), 4),
         "err_rate": round(float((fn | fp).mean()), 4),
         "fn_rate": round(float(fn.mean()), 4),
@@ -691,6 +706,38 @@ def spearman(a: np.ndarray, b: np.ndarray) -> float:
     return float((ra * rb).sum() / d) if d else float("nan")
 
 
+def roc_curve(p_hat: np.ndarray, y: np.ndarray, n_pts: int = 200):
+    """回傳 (fpr, tpr) 與門檻。以排序後的累積和計算，不需要 sklearn。"""
+    o = np.argsort(-p_hat, kind="mergesort")
+    ys = y[o].astype(np.float64)
+    tp = np.cumsum(ys)
+    fp = np.cumsum(1.0 - ys)
+    P, N = tp[-1], fp[-1]
+    if P == 0 or N == 0:
+        return np.array([0.0, 1.0]), np.array([0.0, 1.0]), np.array([1.0, 0.0])
+    tpr = np.concatenate([[0.0], tp / P])
+    fpr = np.concatenate([[0.0], fp / N])
+    thr = np.concatenate([[1.0], p_hat[o]])
+    idx = np.unique(np.linspace(0, len(tpr) - 1, n_pts).astype(int))
+    return fpr[idx], tpr[idx], thr[idx]
+
+
+def pr_curve(p_hat: np.ndarray, y: np.ndarray, n_pts: int = 200):
+    """回傳 (recall, precision) 與 average precision。"""
+    o = np.argsort(-p_hat, kind="mergesort")
+    ys = y[o].astype(np.float64)
+    tp = np.cumsum(ys)
+    k = np.arange(1, len(ys) + 1)
+    P = tp[-1]
+    if P == 0:
+        return np.array([0.0]), np.array([0.0]), float("nan")
+    rec = tp / P
+    prec = tp / k
+    ap = float(np.sum(np.diff(np.concatenate([[0.0], rec])) * prec))
+    idx = np.unique(np.linspace(0, len(rec) - 1, n_pts).astype(int))
+    return rec[idx], prec[idx], ap
+
+
 def auc(p_hat: np.ndarray, y: np.ndarray) -> float:
     """Mann-Whitney U 形式的 AUC（不依賴 sklearn）。"""
     order = np.argsort(p_hat, kind="mergesort")
@@ -748,9 +795,12 @@ def train_one(X, y, w, Xv, yv, wv, seed: int, rounds: int,
     t0 = time.time()
     ds = lgb.Dataset(X, label=y, weight=w, free_raw_data=False)
     dv = lgb.Dataset(Xv, label=yv, weight=wv, reference=ds, free_raw_data=False)
-    booster = lgb.train(params, ds, num_boost_round=rounds, valid_sets=[dv],
-                        callbacks=[lgb.early_stopping(30, verbose=False)])
-    return booster, round(time.time() - t0, 2)
+    hist: dict = {}
+    booster = lgb.train(params, ds, num_boost_round=rounds,
+                        valid_sets=[ds, dv], valid_names=["train", "valid"],
+                        callbacks=[lgb.early_stopping(30, verbose=False),
+                                   lgb.record_evaluation(hist)])
+    return booster, round(time.time() - t0, 2), hist
 
 
 def predict_latency_us(booster, X: np.ndarray, k: int = 64,
@@ -953,9 +1003,12 @@ def stage_train(a, cm, prof, root: Path) -> dict:
             "feature_groups": "+".join(a.feature_groups),
             "test_trace": fm.get("trace", a.trace)}
     for loss, w in (("sym_l2", w_sym), ("cost_l2", w_cost)):
-        booster, secs = train_one(Xs[i_tr], y_reg[i_tr], w[i_tr],
-                                  Xs[i_cal], y_reg[i_cal], w[i_cal],
-                                  a.seed, a.rounds, a.num_leaves)
+        booster, secs, hist = train_one(Xs[i_tr], y_reg[i_tr], w[i_tr],
+                                        Xs[i_cal], y_reg[i_cal], w[i_cal],
+                                        a.seed, a.rounds, a.num_leaves)
+        (out_root / f"evals_{loss}.json").write_text(
+            json.dumps({k: {m: list(map(float, vv)) for m, vv in v.items()}
+                        for k, v in hist.items()}) + "\n")
         booster.save_model(str(out_root / f"model_{loss}.txt"))
         boosters[loss] = booster
         yhat_cal = booster.predict(Xs[i_cal])
@@ -995,6 +1048,11 @@ def stage_train(a, cm, prof, root: Path) -> dict:
         for b in bins:
             cal_rows.append({**base, "loss": loss, **b})
         # 測試段的預測存起來：門檻掃描與可靠度圖都從這裡畫，不必重訓
+        fpr_, tpr_, thr_ = roc_curve(p_te, y_bin[i_te])
+        rec_, prec_, ap_ = pr_curve(p_te, y_bin[i_te])
+        np.savez_compressed(out_root / f"curves_{loss}.npz",
+                            fpr=fpr_, tpr=tpr_, roc_thr=thr_,
+                            recall=rec_, precision=prec_)
         np.savez_compressed(out_root / f"test_pred_{loss}.npz",
                             p_hat=p_te.astype(np.float32),
                             y_hat=yhat_te.astype(np.float32),
@@ -1022,6 +1080,7 @@ def stage_train(a, cm, prof, root: Path) -> dict:
                          "ece": round(e, 4), "auc": round(auc(p_te, y_bin[i_te]), 4),
                          "rmse_log_tau": round(float(np.sqrt(np.mean(
                              (yhat_te - y_reg[i_te]) ** 2))), 4),
+                         "average_precision": round(ap_, 4),
                          "spearman_positives": round(sp_pos, 4),
                          "spearman_all": round(sp_all, 4),
                          "calib_split": calib_split,
@@ -1040,7 +1099,7 @@ def stage_train(a, cm, prof, root: Path) -> dict:
         rows.append({**base, "loss": name, "threshold_rule": "p_star",
                      "thr_median": round(float(np.median(thr)), 4),
                      "train_seconds": 0.0, "best_iter": 0, "ece": "",
-                     "auc": "", "rmse_log_tau": "",
+                     "auc": "", "rmse_log_tau": "", "average_precision": "",
                      "spearman_positives": "", "spearman_all": "",
                      "calib_split": "", "calib_positive_rate": "", **m,
                      **{f"lat_{k}": "" for k in ("k", "median_us", "p90_us",

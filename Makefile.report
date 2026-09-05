@@ -1,0 +1,21 @@
+# 平台 A 進度報告的建置。必須用 XeLaTeX（含中文，使用 xeCJK）。
+# 先產生 tex（表格全部自 results/ 的 CSV 產生），再編譯。
+REP = report3090
+
+.PHONY: all clean
+all: $(REP).pdf
+
+$(REP).tex: code/make_report3090.py $(wildcard results/m5_predictor/*.csv)
+	python code/make_report3090.py
+
+$(REP).pdf: $(REP).tex
+	xelatex -interaction=nonstopmode $(REP).tex >/dev/null
+	xelatex -interaction=nonstopmode $(REP).tex >/dev/null
+	@echo "--- build summary ---"
+	@echo "font warnings : $$(grep -c 'Font Warning' $(REP).log || true)"
+	@echo "overfull boxes: $$(grep -c 'Overfull'     $(REP).log || true)"
+	@echo "undefined ref : $$(grep -cE 'Reference .* undefined' $(REP).log || true)"
+	@grep -oE 'Output written on $(REP).pdf \(.*\)' $(REP).log || true
+
+clean:
+	rm -f $(REP).aux $(REP).log $(REP).out $(REP).toc
