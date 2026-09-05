@@ -41,11 +41,16 @@ GPU 預算掃描。**作廢原因：Mooncake 的 `hash_ids` 是 512-token 的 bl
 
 第 3 項是 2026-08-31 之後才加的，所以更早的檔案沒有這個欄位。
 
-### `policy_sim_pre_dropcost_schema.csv`（2026-09-05 13:17）
-M5 第二階段的第一版線上策略掃描。**不是數字錯，是欄位不全**：
-後來新增了 `drop_cost_rule` 欄（門檻裡「丟掉的成本」用整條尾巴還是單一 block 計價），
-而 `write_csv` 不准把欄位不同的列 append 進舊檔。
+### `m5_v1/`、`m5_v2/`（2026-09-05）
 
-模擬是決定性的，**這個檔的每一列在新的 `results/m5_predictor/policy_sim.csv`
-裡都有一模一樣的對應列**（例如 `tiara_sym_l2` = 22,793,531.29 ms），
-只是多了那一欄。留著是為了讓「舊檔與新檔的數字相同」這件事可以被驗證。
+M5 第二階段的前兩版 CSV。**不是數字錯，是欄位集合改了**，
+而 `write_csv` 不准把欄位不同的列 append 進舊檔（那會整排錯位而檔案看起來正常）。
+
+* `m5_v1/`——第一輪（只有 Mooncake、只有 censored 標籤）的六個 CSV。
+  第二輪新增了 `workload`／`sample_rate`／`seed`／`label_mode`／`spearman_*`／
+  `calib_split` 等欄位，且工作負載擴到三種，故整批重跑。
+* `m5_v2/policy_sim_wrong_trace_column.csv`——`trace` 欄有 bug：
+  合成工作負載的列也寫成 `toolagent`（`tag` 沒有傳進 row builder）。
+  **其餘欄位都對**，但為了不讓人用錯欄位分組，整批重跑。
+
+模擬是決定性的，這兩批的對應列在新檔裡都找得到一模一樣的值。

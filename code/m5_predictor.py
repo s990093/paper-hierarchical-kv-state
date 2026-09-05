@@ -82,6 +82,7 @@ import csv
 import json
 import math
 import os
+import random
 import sys
 import time
 from collections import defaultdict, deque
@@ -96,7 +97,8 @@ sys.path.insert(0, os.environ.get("PAPER_HKV_PYLIBS",
 
 from m4_invariants import check_trace_units                      # noqa: E402
 from m4_oracle import (BLOCK, MODEL_PROFILES, CostModel,         # noqa: E402
-                       load_cost_model, mooncake_trace, profile)
+                       load_cost_model, longctx_trace, mooncake_outputs,
+                       mooncake_trace, profile, reuse_rate)
 
 REPO = Path(__file__).resolve().parent.parent
 BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
@@ -108,6 +110,117 @@ EDC_N = 10
 EDC_HALFLIVES = np.array([2.0 ** (9 + i) for i in range(EDC_N)], dtype=np.float64)
 
 
+# ────────────────────── 長上下文工作負載 ──────────────────────
+
+def session_trace(doc_blocks: int, turns: int, n_sessions: int,
+                  tail_blocks: int, seed: int = 1234, long_frac: float = 0.5,
+                  long_turns: int = 12, concurrency: int = 4) -> list[list[int]]:
+    r"""長上下文的**多輪會談**：一份長文件被同一個 session 連續查 `turns` 次，
+    每次附上不同的尾巴（新的問題）。
+
+    🔴 為什麼不用 `m4_oracle.longctx_trace`（Zipf 抽文件）：
+    128K 級的請求下，GPU 預算（qwen-awq 273,872 token = 17,117 blocks）只裝得下
+    **約兩個請求**。Zipf 抽樣把同一份文件的兩次查詢隔開幾十上百個請求，
+    重用距離遠超過快取壽命，於是**正樣本率是 0**——量不到任何東西。
+
+    真實世界裡 128K 請求會發生重用的形態就是**多輪對話**：同一份長文件連續被追問。
+    所以重用必須發生在**相鄰請求之間**，這個產生器就照那個形狀造。
+
+    副作用（正是本實驗要的）：重用發生在文件的**所有位置**上（0 到 doc_tokens），
+    於是高 $\kappa$ 區（位置 32K–128K，$\kappa$ 37–60）**第一次有正樣本**。
+    Mooncake 上 8K 以上的位置一個正樣本都沒有，(B) 區塊因此無從檢驗。
+
+    🔴 **會談長度必須是隨機的，否則問題是假的。** 第一版把 turns 寫死成 3，
+    於是「n_acc == 2」就完全等價於「不會再被用到」——AUC 1.0、Bayes 誤差 0，
+    量不出任何與損失函數有關的東西。這裡改成**雙峰混合**：
+    `long_frac` 的會談是長的（平均 `long_turns` 輪），其餘是短的（1–3 輪）。
+    於是 (i) `n_acc` 仍然有訊息（看過五次 -> 多半是長會談），
+    (ii) 但早期的每一次決策都**真的有不確定性**——這正是式 (9) 的門檻
+    與成本敏感損失唯一會產生差別的地方。
+
+    ⚠️ 這是合成流量。回報時必須標 `workload=longctx-session` 與所用的參數。
+    """
+    rng = random.Random(seed)
+    out: list[list[int]] = []
+    nxt = 0
+    started = 0
+
+    def new_session():
+        nonlocal nxt, started
+        base, nxt = nxt, nxt + doc_blocks
+        k = (rng.randint(max(1, long_turns // 2), long_turns * 3 // 2)
+             if rng.random() < long_frac else rng.randint(1, max(1, turns)))
+        started += 1
+        return {"base": base, "left": k}
+
+    # 🔴 `concurrency` 個會談**交錯**進行，不是一個做完再做下一個。
+    #    序列化的版本讓每次重用的距離都恰好是「一個請求」，
+    #    於是 τ 幾乎是常數、排序品質無從量起（Spearman 變成 nan），
+    #    而且快取壓力也不對——真實服務同時有多個 session 在跑。
+    #    交錯之後重用距離 ≈ concurrency 個請求，壓力由
+    #    concurrency × doc_blocks / GPU 容量決定，成為一條可掃的軸。
+    active = [new_session() for _ in range(max(1, concurrency))]
+    while active:
+        s_ = active[rng.randrange(len(active))]
+        tail = [nxt + k for k in range(tail_blocks)]
+        nxt += tail_blocks
+        out.append([s_["base"] + b for b in range(doc_blocks)] + tail)
+        s_["left"] -= 1
+        if s_["left"] <= 0:
+            active.remove(s_)
+            if started < n_sessions:
+                active.append(new_session())
+    return out
+
+
+# 🔴 每個工作負載回報的參數不同，但 `samples.csv` 只能有一組欄位。
+#    不固定 schema 的話，跑完 Mooncake 再跑合成負載就會被 write_csv 的守門擋下
+#    （而那個守門是對的：欄位變動的 append 會整排錯位）。
+WORKLOAD_FIELDS = ("workload", "doc_tokens", "n_docs", "requests_arg",
+                   "tail_frac", "alpha", "turns", "sessions", "long_frac",
+                   "long_turns", "concurrency")
+
+
+def _wmeta(**kw) -> dict:
+    return {k: kw.get(k, "") for k in WORKLOAD_FIELDS}
+
+
+def load_workload(a) -> tuple[list[list[int]], list[int] | None, dict]:
+    """回傳 (trace, outputs, meta)。outputs 用於 decode 成本。"""
+    if a.workload == "mooncake":
+        tr = mooncake_trace(a.trace, limit=a.limit_requests)
+        return tr, mooncake_outputs(a.trace), _wmeta(workload="mooncake")
+    doc_b = max(1, a.doc_tokens // BLOCK)
+    if a.workload == "longctx-zipf":
+        # 🔴 直接重現論文 §6.8 那個 headroom 最高的點（`surface:L131072:rq10`）：
+        #    qwen-awq / NVMe / prefill-only / 重用 89.06% / 壓力 6.41× /
+        #    最佳 baseline = tier_fs / **headroom 34.65%**
+        #    （`results/m4_oracle/qwen-awq-surface-prefill/headroom_surface.csv`）。
+        #    在 Mooncake 上量預測器等於在 headroom 只有 8% 的地方量——
+        #    那裡就算策略完美也拿不到什麼。方法該在它宣稱有用的區間被檢驗。
+        tail_b = max(1, int(doc_b * a.tail_frac))
+        tr = longctx_trace(a.n_docs, doc_b, tail_b, a.requests, a.alpha, a.seed)
+        pool = mooncake_outputs("conversation")
+        rr = random.Random(a.seed)
+        outs = [pool[rr.randrange(len(pool))] for _ in range(len(tr))]
+        return tr, outs, _wmeta(workload="longctx-zipf",
+                                doc_tokens=a.doc_tokens, n_docs=a.n_docs,
+                                requests_arg=a.requests, tail_frac=a.tail_frac,
+                                alpha=a.alpha)
+    tail_b = max(1, int(doc_b * a.tail_frac))
+    tr = session_trace(doc_b, a.turns, a.sessions, tail_b, a.seed,
+                       long_frac=a.long_frac, long_turns=a.long_turns,
+                       concurrency=a.concurrency)
+    # 合成請求的輸出長度：自真實 Mooncake 抽樣，「decode 佔多少」才不是編的
+    pool = mooncake_outputs("conversation")
+    rr = random.Random(a.seed)
+    outs = [pool[rr.randrange(len(pool))] for _ in range(len(tr))]
+    return tr, outs, _wmeta(workload="longctx-session", doc_tokens=a.doc_tokens,
+                            turns=a.turns, sessions=a.sessions,
+                            tail_frac=a.tail_frac, long_frac=a.long_frac,
+                            long_turns=a.long_turns, concurrency=a.concurrency)
+
+
 # ────────────────────────── 特徵 ──────────────────────────
 
 def feature_names(k_deltas: int) -> list[str]:
@@ -116,6 +229,30 @@ def feature_names(k_deltas: int) -> list[str]:
             + [f"edc_{i}" for i in range(EDC_N)]
             + ["pos_tokens", "pos_frac", "req_len_tokens",
                "last_pos_tokens", "pos_delta_tokens", "req_gap"])
+
+
+FEATURE_GROUPS = {
+    "history": ("n_acc", "log_age_since_first"),
+    "deltas": ("log_delta_",),
+    "edc": ("edc_",),
+    "static": ("pos_tokens", "pos_frac", "req_len_tokens", "last_pos_tokens",
+               "pos_delta_tokens", "req_gap"),
+}
+
+
+def group_columns(names: list[str], groups: list[str]) -> list[int]:
+    """回傳所選特徵族對應的欄位索引。用於 (C) 區塊的**簡化版**消融——
+    只涵蓋存取歷史那三族，`pooled KV` 與 `attn_mass` 需要引擎，此處沒有。"""
+    keep = []
+    for i, n in enumerate(names):
+        for g in groups:
+            if any(n == pre or n.startswith(pre)
+                   for pre in FEATURE_GROUPS[g]):
+                keep.append(i)
+                break
+    if not keep:
+        raise SystemExit(f"🔴 特徵族 {groups} 選不到任何欄位")
+    return keep
 
 
 class Replay:
@@ -260,6 +397,64 @@ class Labeler:
                     pass
                 if not lst:
                     self.pending.pop(block, None)
+
+
+def label_only(meta: np.ndarray, window: int, sample_rate: float,
+               max_per_block: int, out_dir: Path, seed: int,
+               uncensored: bool = False) -> dict:
+    r"""不重放、不算特徵，只用既有的 `meta.npy` 重新產生一組標籤。
+
+    敏感度掃描要跑十幾組 (W, 取樣率, seed)，而**特徵完全不受這三者影響**——
+    只有「收哪些樣本」與「標籤怎麼算」會變。重放一次 12.7M 次存取要兩分鐘，
+    只算標籤三十秒。這支函式讓整個掃描從一小時降到十分鐘。
+
+    `uncensored=True`：標籤改用**真實的下次使用時刻**（沒有再被用到就是 $\infty$，
+    以 `n_accesses` 當哨兵），不在 $W$ 處設限。
+    這一版是為了修「排序」：設限會把所有「$W$ 之外」的 block 壓成同分，
+    而策略的逐出順序吃的就是那個排序。
+    **部署上的代價要講清楚**：這種標籤要等到該 block 真的再被用到（或確定不會），
+    延遲遠大於 $W$；線上系統要嘛用很長的 $W$，要嘛接受標籤更慢。
+    $\hat p$ 的目標仍是 $\Pr[\tau \le W]$，所以門檻那一側不受影響。
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    blocks = np.asarray(meta[:, 0])
+    total = len(blocks)
+    rng = np.random.default_rng(seed)
+    take = rng.random(total) < sample_rate
+    if max_per_block:
+        seen: dict[int, int] = {}
+        for i in np.nonzero(take)[0]:
+            b = int(blocks[i])
+            j = seen.get(b, 0) + 1
+            seen[b] = j
+            if not (j <= max_per_block or rng.random() < max_per_block / j):
+                take[i] = False
+    sids = np.nonzero(take)[0].astype(np.int64)
+    # 真實的下次使用時刻（單趟反向掃描）
+    nxt = np.full(total, np.inf)
+    last: dict[int, int] = {}
+    for t in range(total - 1, -1, -1):
+        b = int(blocks[t])
+        nxt[t] = last.get(b, np.inf)
+        last[b] = t
+    gap = nxt[sids] - sids
+    keep = (sids + window) < total            # 視窗完整可觀測
+    sids, gap = sids[keep], gap[keep]
+    cen = (gap > window).astype(np.int8)
+    if uncensored:
+        tau = np.where(np.isinf(gap), float(total), gap)
+    else:
+        tau = np.where(cen == 1, float(window + 1), gap)
+    np.savez(out_dir / "labels.npz", sample_ids=sids, tau=tau, censored=cen)
+    return {"n_accesses": total, "n_samples": int(len(sids)),
+            "n_dropped_tail": int((~keep).sum()),
+            "positive_rate": round(float((cen == 0).mean()), 4),
+            "n_labeled_by_next_access": int((cen == 0).sum()),
+            "n_labeled_by_window": int((cen == 1).sum()),
+            "censored_pct": round(100.0 * float(cen.mean()), 3),
+            "window_accesses": window, "sample_rate": sample_rate,
+            "max_per_block": max_per_block, "label_mode":
+            "uncensored" if uncensored else "censored", "seconds": 0.0}
 
 
 def build_samples(rep: Replay, window: int, sample_rate: float,
@@ -598,6 +793,10 @@ def write_csv(path: Path, rows: list[dict]) -> None:
     if not new:
         with path.open(newline="") as f:
             old = next(csv.reader(f), [])
+        if old and set(old) == set(keys) and old != keys:
+            # 只是順序不同（不同分支組 dict 的次序不一樣）——照既有檔頭重排即可。
+            # 真正該擋的是「欄位集合」變了。
+            keys = old
         if old and old != keys:
             raise SystemExit(
                 f"🔴 {path} 的欄位與這批新列不同，拒絕 append。\n"
@@ -622,41 +821,84 @@ def save_index(d: dict) -> None:
     INDEX.write_text(json.dumps(d, indent=2, ensure_ascii=False) + "\n")
 
 
+# `samples.csv` 的欄位順序。兩條路徑（完整重放 vs 只重算標籤）組 dict 的次序不同，
+# 不釘死就會在 append 時被 schema 守門擋下。
+SAMPLE_FIELDS = (
+    "run_id", "ts", "workload", "trace", "model_profile", "window_accesses",
+    "window_mult", "sample_rate", "seed", "label_mode", "k_deltas",
+    "max_per_block", "n_accesses", "n_samples", "n_dropped_tail",
+    "positive_rate", "n_labeled_by_next_access", "n_labeled_by_window",
+    "censored_pct", "requests", "unique_blocks", "reuse_rate", "gpu_blocks",
+    "median_len_tokens_sim", "median_len_tokens_src", "seconds",
+    "run_dir", "x_dir", "doc_tokens", "n_docs", "requests_arg", "tail_frac",
+    "alpha", "turns", "sessions", "long_frac", "long_turns", "concurrency")
+
+
 def stage_features(a, cm, prof) -> Path:
-    trace = mooncake_trace(a.trace, limit=a.limit_requests)
-    if a.limit_requests:
-        # 單位檢查是拿「整個檔案的長度中位數」比對，截斷的 trace 對不上，
-        # 但那不代表粒度解錯。截斷只用於冒煙測試，其結果不得寫進正式 results/。
-        print(f"  ⚠️ --limit-requests {a.limit_requests}：跳過 trace 單位檢查，"
-              f"這一輪是冒煙測試，不是結果")
-        units = {"checked": False}
-    else:
+    trace, outs, wmeta = load_workload(a)
+    if a.workload == "mooncake" and not a.limit_requests:
         units = check_trace_units(a.trace, trace)
+    else:
+        if a.workload == "mooncake":
+            print(f"  ⚠️ --limit-requests {a.limit_requests}：跳過 trace 單位檢查，"
+                  f"這一輪是冒煙測試，不是結果")
+        units = {"checked": False}
     gpu_blocks = (a.gpu_tokens or prof["gpu_kv_tokens"]) // BLOCK
     window = a.window or int(a.window_mult * gpu_blocks)
-    run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m5p-feat-{a.trace}-{a.model}"
+    tag = (a.trace if a.workload == "mooncake" else
+           f"lc{a.doc_tokens // 1024}k" +
+           ("z" if a.workload == "longctx-zipf" else "s"))
+    run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m5p-feat-{tag}-{a.model}"
     root = BIG / "runs" / run_id
     root.mkdir(parents=True, exist_ok=True)
-    print(f"[特徵] run={run_id}")
+    print(f"[特徵] run={run_id}　workload={wmeta['workload']}")
     print(f"[特徵] W = {window:,} 次存取（= {a.window_mult}× GPU 容量 "
           f"{gpu_blocks:,} blocks）")
-    rep = Replay(trace, k_deltas=a.deltas)
-    stats = build_samples(rep, window, a.sample_rate, a.max_per_block, root,
-                          seed=a.seed)
+    if a.reuse_features:
+        # 特徵不受 (W, 取樣率, seed, 標籤模式) 影響，只重算標籤
+        src = Path(a.reuse_features)
+        srcm = json.loads((src / "features_meta.json").read_text())
+        x_dir = Path(srcm.get("x_dir", str(src)))
+        meta = np.load(x_dir / "meta.npy", mmap_mode="r")
+        t0 = time.time()
+        stats = label_only(meta, window, a.sample_rate, a.max_per_block, root,
+                           a.seed, uncensored=a.label_mode == "uncensored")
+        stats["seconds"] = round(time.time() - t0, 1)
+        stats["k_deltas"] = srcm["k_deltas"]
+        feat_names = srcm["feature_names"]
+        print(f"[特徵] 重用 {x_dir.name} 的特徵矩陣，只重算標籤")
+    else:
+        rep = Replay(trace, k_deltas=a.deltas)
+        stats = build_samples(rep, window, a.sample_rate, a.max_per_block, root,
+                              seed=a.seed)
+        stats["label_mode"] = "censored"
+        stats["k_deltas"] = a.deltas
+        x_dir = root
+        feat_names = feature_names(a.deltas)
+        if a.label_mode == "uncensored":
+            meta = np.load(root / "meta.npy", mmap_mode="r")
+            st2 = label_only(meta, window, a.sample_rate, a.max_per_block, root,
+                             a.seed, uncensored=True)
+            stats.update({k: v for k, v in st2.items() if k != "seconds"})
     stats.update({"run_id": run_id, "ts": datetime.now().astimezone().isoformat(),
-                  "trace": a.trace, "model_profile": a.model,
-                  "requests": len(trace), "k_deltas": a.deltas,
+                  "trace": a.trace if a.workload == "mooncake" else tag,
+                  "model_profile": a.model,
+                  "requests": len(trace),
                   "gpu_blocks": gpu_blocks, "window_mult": a.window_mult,
                   "unique_blocks": len({b for r in trace for b in r}),
-                  "median_len_tokens_sim": units.get("median_sim"),
-                  "median_len_tokens_src": units.get("median_src"),
-                  "run_dir": str(root)})
+                  "reuse_rate": round(1 - len({b for r in trace for b in r})
+                                      / max(1, sum(len(r) for r in trace)), 4),
+                  "seed": a.seed,
+                  "median_len_tokens_sim": units.get("median_sim", ""),
+                  "median_len_tokens_src": units.get("median_src", ""),
+                  "run_dir": str(root), "x_dir": str(x_dir), **wmeta})
     (root / "features_meta.json").write_text(
-        json.dumps({**stats, "feature_names": feature_names(a.deltas)},
+        json.dumps({**stats, "feature_names": feat_names},
                    indent=2, ensure_ascii=False) + "\n")
-    write_csv(OUT / "samples.csv", [stats])
+    write_csv(OUT / "samples.csv", [{k: stats.get(k, "") for k in SAMPLE_FIELDS}])
     idx = load_index()
-    idx[f"{a.trace}:{a.model}:w{a.window_mult}:k{a.deltas}"] = str(root)
+    idx[(f"{stats['trace']}:{a.model}:w{a.window_mult}:k{stats['k_deltas']}"
+         f":r{a.sample_rate}:s{a.seed}:{stats['label_mode']}")] = str(root)
     save_index(idx)
     print(f"[特徵] {stats['n_accesses']:,} 次存取 -> {stats['n_samples']:,} 個樣本"
           f"（機制 a {stats['n_labeled_by_next_access']:,}／"
@@ -670,11 +912,13 @@ def stage_train(a, cm, prof, root: Path) -> dict:
     fm = json.loads((root / "features_meta.json").read_text())
     window = fm["window_accesses"]
     names = fm["feature_names"]
-    X = np.load(root / "X.npy", mmap_mode="r")
-    meta = np.load(root / "meta.npy", mmap_mode="r")
+    x_dir = Path(fm.get("x_dir", str(root)))
+    X = np.load(x_dir / "X.npy", mmap_mode="r")
+    meta = np.load(x_dir / "meta.npy", mmap_mode="r")
     lab = np.load(root / "labels.npz")
     sids, tau, cen = lab["sample_ids"], lab["tau"], lab["censored"]
-    run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m5p-train-{a.trace}-{a.model}"
+    run_id = (f"{datetime.now():%Y%m%d-%H%M%S}-m5p-train-"
+              f"{fm.get('trace', a.trace)}-{a.model}")
     out_root = BIG / "runs" / run_id
     out_root.mkdir(parents=True, exist_ok=True)
 
@@ -683,7 +927,9 @@ def stage_train(a, cm, prof, root: Path) -> dict:
     print(f"[切分] train {len(i_tr):,}／calib {len(i_cal):,}／test {len(i_te):,}"
           f"（embargo 丟掉 {info['embargo_dropped']:,}）")
 
-    Xs = np.asarray(X[sids])                 # 只取被抽樣的列
+    cols = group_columns(names, a.feature_groups)
+    names = [names[i] for i in cols]
+    Xs = np.asarray(X[sids])[:, cols]        # 只取被抽樣的列與所選特徵族
     pos = np.asarray(meta[sids][:, 3], dtype=np.float64)
     y_reg = np.log(np.maximum(tau, 1.0))
     y_bin = (cen == 0).astype(np.int8)
@@ -691,24 +937,53 @@ def stage_train(a, cm, prof, root: Path) -> dict:
     w_sym = np.ones_like(w_cost)
 
     rows, cal_rows, imp_rows, pos_rows = [], [], [], []
+    boosters, calibs = {}, {}
     base = {"run_id": run_id, "ts": datetime.now().astimezone().isoformat(),
-            "trace": a.trace, "model_profile": a.model, "device": a.device,
-            "window_accesses": window, "k_deltas": fm["k_deltas"],
+            "trace": fm.get("trace", a.trace), "model_profile": a.model,
+            "device": a.device, "window_accesses": window, "k_deltas": fm["k_deltas"],
             "n_train": len(i_tr), "n_calib": len(i_cal), "n_test": len(i_te),
             "embargo_dropped": info["embargo_dropped"],
             "num_leaves": a.num_leaves,
             "test_positive_rate": round(float(y_bin[i_te].mean()), 4),
-            "features_run": root.name}
+            "features_run": root.name,
+            "workload": fm.get("workload", "mooncake"),
+            "label_mode": fm.get("label_mode", "censored"),
+            "sample_rate": fm.get("sample_rate", ""),
+            "data_seed": fm.get("seed", ""),
+            "feature_groups": "+".join(a.feature_groups),
+            "test_trace": fm.get("trace", a.trace)}
     for loss, w in (("sym_l2", w_sym), ("cost_l2", w_cost)):
         booster, secs = train_one(Xs[i_tr], y_reg[i_tr], w[i_tr],
                                   Xs[i_cal], y_reg[i_cal], w[i_cal],
                                   a.seed, a.rounds, a.num_leaves)
         booster.save_model(str(out_root / f"model_{loss}.txt"))
+        boosters[loss] = booster
         yhat_cal = booster.predict(Xs[i_cal])
         yhat_te = booster.predict(Xs[i_te])
+        # 🔴 校準集只有單一類別時，isotonic 會把**所有**輸入映到同一個值，
+        #    於是 p̂ 變成常數：AUC 恰為 0.5、Spearman 是 nan、ECE 等於基底率的差。
+        #    指標看起來「有數字」，實際上模型的輸出完全沒被用到。
+        #    合成的會談式工作負載很容易踩到（訓練期尾端剛好全是同一種樣本）。
+        #    退路是**訓練期內等距抽樣**當校準集——它仍然全部早於測試期，不洩漏未來。
+        calib_split = "tail"
+        if y_bin[i_cal].min() == y_bin[i_cal].max():
+            tr_all = np.concatenate([i_tr, i_cal])
+            stride = max(2, len(tr_all) // max(1, len(i_cal)))
+            i_cal2 = tr_all[::stride]
+            print(f"  ⚠️ 校準集只有單一類別（{len(i_cal):,} 列全為 "
+                  f"y={int(y_bin[i_cal][0])}），改用訓練期等距抽樣 "
+                  f"{len(i_cal2):,} 列")
+            i_cal = i_cal2
+            calib_split = "strided"
+            yhat_cal = booster.predict(Xs[i_cal])
+        if y_bin[i_cal].min() == y_bin[i_cal].max():
+            raise SystemExit(
+                "🔴 整個訓練期都只有單一類別，校準無從做起。"
+                "這代表工作負載或視窗 W 設定有問題，不是模型的問題。")
         # 校準：ŷ 越大代表越久才會再被用到 -> 機率越低，故對 -ŷ 做等張迴歸
         xk, yk = isotonic_fit(-yhat_cal, y_bin[i_cal].astype(np.float64))
         np.savez(out_root / f"calib_{loss}.npz", xk=xk, yk=yk)
+        calibs[loss] = (xk, yk)
         p_te = isotonic_predict(xk, yk, -yhat_te)
         e, bins = ece(p_te, y_bin[i_te])
         lat = predict_latency_us(booster, Xs[i_te])
@@ -719,6 +994,12 @@ def stage_train(a, cm, prof, root: Path) -> dict:
                                                    k=256)["median_us"]
         for b in bins:
             cal_rows.append({**base, "loss": loss, **b})
+        # 測試段的預測存起來：門檻掃描與可靠度圖都從這裡畫，不必重訓
+        np.savez_compressed(out_root / f"test_pred_{loss}.npz",
+                            p_hat=p_te.astype(np.float32),
+                            y_hat=yhat_te.astype(np.float32),
+                            y_bin=y_bin[i_te], y_reg=y_reg[i_te].astype(np.float32),
+                            pos_tokens=pos[i_te].astype(np.float32))
         for n_, g in zip(names, booster.feature_importance("gain")):
             imp_rows.append({**base, "loss": loss, "feature": n_,
                              "gain": round(float(g), 2)})
@@ -743,6 +1024,9 @@ def stage_train(a, cm, prof, root: Path) -> dict:
                              (yhat_te - y_reg[i_te]) ** 2))), 4),
                          "spearman_positives": round(sp_pos, 4),
                          "spearman_all": round(sp_all, 4),
+                         "calib_split": calib_split,
+                         "calib_positive_rate": round(
+                             float(y_bin[i_cal].mean()), 4),
                          **m, **{f"lat_{k}": v for k, v in lat.items()}})
         print(f"[{loss}] {secs}s／{booster.best_iteration} 棵　ECE {e:.4f}　"
               f"AUC {auc(p_te, y_bin[i_te]):.4f}　"
@@ -757,7 +1041,8 @@ def stage_train(a, cm, prof, root: Path) -> dict:
                      "thr_median": round(float(np.median(thr)), 4),
                      "train_seconds": 0.0, "best_iter": 0, "ece": "",
                      "auc": "", "rmse_log_tau": "",
-                     "spearman_positives": "", "spearman_all": "", **m,
+                     "spearman_positives": "", "spearman_all": "",
+                     "calib_split": "", "calib_positive_rate": "", **m,
                      **{f"lat_{k}": "" for k in ("k", "median_us", "p90_us",
                                                 "per_candidate_us",
                                                 "loadavg_1m", "n_cpu",
@@ -769,9 +1054,57 @@ def stage_train(a, cm, prof, root: Path) -> dict:
     write_csv(OUT / "cost_by_position.csv", pos_rows)
     (out_root / "train_meta.json").write_text(json.dumps(
         {**base, "split": info, "features_run_dir": str(root),
+         "x_dir": str(x_dir), "feature_cols": cols, "feature_names": names,
          "cost_model": cm.source}, indent=2, ensure_ascii=False) + "\n")
+    # ---- 跨工作負載泛化（main.tex §5.2 承諾要報的第三層因應）----
+    cross_rows = []
+    if a.cross_test:
+        for other in a.cross_test:
+            key = (f"{other}:{a.model}:w{a.window_mult}:k{fm['k_deltas']}"
+                   f":r{fm.get('sample_rate', 0.25)}:s{fm.get('seed', 1234)}"
+                   f":{fm.get('label_mode', 'censored')}")
+            odir = load_index().get(key)
+            if not odir:
+                print(f"  ⚠️ 跨測試找不到 {key} 的特徵，跳過")
+                continue
+            cross_rows += cross_eval(Path(odir), cols, cm, boosters, calibs,
+                                     base, a)
+        if cross_rows:
+            write_csv(OUT / "cross_workload.csv", cross_rows)
     print(f"[訓練] 模型與校準表 -> {out_root}")
     return {"run_dir": out_root, "rows": rows}
+
+
+def cross_eval(odir: Path, cols, cm, boosters, calibs, base, a) -> list[dict]:
+    """於 A 訓練、於 B 測試。B 的**整段**都當測試集（模型沒看過 B 的任何一列）。"""
+    ofm = json.loads((odir / "features_meta.json").read_text())
+    ox = Path(ofm.get("x_dir", str(odir)))
+    X = np.load(ox / "X.npy", mmap_mode="r")
+    meta = np.load(ox / "meta.npy", mmap_mode="r")
+    lab = np.load(odir / "labels.npz")
+    sids, tau, cen = lab["sample_ids"], lab["tau"], lab["censored"]
+    Xs = np.asarray(X[sids])[:, cols]
+    pos = np.asarray(meta[sids][:, 3], dtype=np.float64)
+    y_bin = (cen == 0).astype(np.int8)
+    out = []
+    for loss, booster in boosters.items():
+        yhat = booster.predict(Xs)
+        xk, yk = calibs[loss]
+        p = isotonic_predict(xk, yk, -yhat)
+        e, _ = ece(p, y_bin)
+        m = cost_weighted_error(p, y_bin, p_star(cm, pos, "cpu"), cm, pos)
+        out.append({**base, "loss": loss, "threshold_rule": "p_star",
+                    "test_trace": ofm["trace"],
+                    "test_workload": ofm.get("workload", "mooncake"),
+                    "test_positive_rate": round(float(y_bin.mean()), 4),
+                    "ece": round(e, 4), "auc": round(auc(p, y_bin), 4),
+                    "spearman_positives": round(spearman(
+                        yhat[y_bin == 1], np.log(np.maximum(tau, 1.0))[y_bin == 1]), 4),
+                    **m})
+        print(f"[跨測試] {base['trace']} -> {ofm['trace']}　{loss}　"
+              f"AUC {out[-1]['auc']:.4f}　ECE {e:.4f}　"
+              f"成本 {m['cost_ms']:,.0f} ms")
+    return out
 
 
 def main() -> int:
@@ -780,6 +1113,29 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("stage", choices=["features", "train", "all"])
     ap.add_argument("--trace", default="toolagent")
+    ap.add_argument("--workload", default="mooncake",
+                    choices=["mooncake", "longctx-session", "longctx-zipf"],
+                    help="longctx-session = 合成的長上下文多輪會談，"
+                         "見 session_trace 的說明")
+    ap.add_argument("--doc-tokens", type=int, default=131072,
+                    help="longctx-session：共用文件的長度（token）")
+    ap.add_argument("--turns", type=int, default=4,
+                    help="longctx-session：同一份文件被連續追問幾次")
+    ap.add_argument("--sessions", type=int, default=250)
+    ap.add_argument("--long-frac", type=float, default=0.5,
+                    help="長會談的比例（其餘為 1–turns 輪的短會談）")
+    ap.add_argument("--long-turns", type=int, default=12,
+                    help="長會談的平均輪數")
+    ap.add_argument("--n-docs", type=int, default=12,
+                    help="longctx-zipf：文件數（論文 34.6% 那個點是 12）")
+    ap.add_argument("--requests", type=int, default=120,
+                    help="longctx-zipf：請求數（論文那個點是 120）")
+    ap.add_argument("--alpha", type=float, default=0.9)
+    ap.add_argument("--concurrency", type=int, default=4,
+                    help="同時進行幾個會談。重用距離 ≈ 這個數字（單位：請求），"
+                         "壓力 = concurrency × 文件長度 ÷ GPU 預算")
+    ap.add_argument("--tail-frac", type=float, default=0.02,
+                    help="longctx-session：每輪各自不同的尾巴佔文件的比例")
     ap.add_argument("--model", default="qwen-awq", choices=list(MODEL_PROFILES))
     ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
     ap.add_argument("--gpu-tokens", type=int, default=None,
@@ -806,6 +1162,18 @@ def main() -> int:
                          "把擬合能力放在哪』，所以容量是 (B) 區塊的自變數之一")
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--features-dir", default=None)
+    ap.add_argument("--reuse-features", default=None,
+                    help="重用這個 run 的 X.npy／meta.npy，只重算標籤（快 4 倍）")
+    ap.add_argument("--label-mode", default="censored",
+                    choices=["censored", "uncensored"],
+                    help="uncensored = 標籤用真實的下次使用時刻，不在 W 設限。"
+                         "修的是『排序』那一側，見 label_only 的說明")
+    ap.add_argument("--feature-groups", nargs="*",
+                    default=["history", "deltas", "edc", "static"],
+                    choices=list(FEATURE_GROUPS),
+                    help="(C) 區塊的簡化版消融：只用這些特徵族訓練")
+    ap.add_argument("--cross-test", nargs="*", default=[],
+                    help="於本 trace 訓練後，另外在這些 trace 上測試（跨工作負載泛化）")
     ap.add_argument("--out-dir", default=str(OUT),
                     help="結果 CSV 的目錄。冒煙測試請指到 scratch，不要污染 results/")
     a = ap.parse_args()
@@ -826,8 +1194,18 @@ def main() -> int:
         root = stage_features(a, cm, prof)
     if a.stage in ("train", "all"):
         if root is None:
-            root = Path(a.features_dir) if a.features_dir else Path(
-                load_index()[f"{a.trace}:{a.model}:w{a.window_mult}:k{a.deltas}"])
+            tag = (a.trace if a.workload == "mooncake" else
+                   f"lc{a.doc_tokens // 1024}k" +
+                   ("z" if a.workload == "longctx-zipf" else "s"))
+            key = (f"{tag}:{a.model}:w{a.window_mult}:k{a.deltas}"
+                   f":r{a.sample_rate}:s{a.seed}:{a.label_mode}")
+            idx = load_index()
+            if a.features_dir:
+                root = Path(a.features_dir)
+            elif key in idx:
+                root = Path(idx[key])
+            else:
+                raise SystemExit(f"🔴 找不到特徵 {key}\n   有的是：{list(idx)}")
         stage_train(a, cm, prof, root)
     return 0
 

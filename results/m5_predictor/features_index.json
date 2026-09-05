@@ -1,5 +1,16 @@
 {
-  "conversation:qwen-awq:w1.0:k16": "/ssd7/hungwei/paper-hkv/runs/20260905-131229-m5p-feat-conversation-qwen-awq",
-  "toolagent:qwen-awq:w1.0:k16": "/ssd7/hungwei/paper-hkv/runs/20260905-131229-m5p-feat-toolagent-qwen-awq",
-  "toolagent:qwen-awq:w35.0:k16": "/ssd7/hungwei/paper-hkv/runs/20260905-131946-m5p-feat-toolagent-qwen-awq"
+  "toolagent:qwen-awq:w1.0:k16:r0.25:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-142724-m5p-feat-toolagent-qwen-awq",
+  "conversation:qwen-awq:w1.0:k16:r0.25:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-142918-m5p-feat-conversation-qwen-awq",
+  "lc128kz:qwen-awq:w1.0:k16:r1.0:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143031-m5p-feat-lc128kz-qwen-awq",
+  "lc128kz:qwen-awq:w6.0:k16:r1.0:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143044-m5p-feat-lc128kz-qwen-awq",
+  "lc128kz:qwen-awq:w6.0:k16:r1.0:s1234:uncensored": "/ssd7/hungwei/paper-hkv/runs/20260905-143045-m5p-feat-lc128kz-qwen-awq",
+  "toolagent:qwen-awq:w4.0:k16:r0.25:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143047-m5p-feat-toolagent-qwen-awq",
+  "toolagent:qwen-awq:w35.0:k16:r0.25:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143055-m5p-feat-toolagent-qwen-awq",
+  "toolagent:qwen-awq:w1.0:k16:r0.05:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143102-m5p-feat-toolagent-qwen-awq",
+  "toolagent:qwen-awq:w1.0:k16:r1.0:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143110-m5p-feat-toolagent-qwen-awq",
+  "toolagent:qwen-awq:w1.0:k16:r0.25:s7:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143119-m5p-feat-toolagent-qwen-awq",
+  "toolagent:qwen-awq:w1.0:k16:r0.25:s99:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143127-m5p-feat-toolagent-qwen-awq",
+  "toolagent:qwen-awq:w1.0:k16:r0.25:s1234:uncensored": "/ssd7/hungwei/paper-hkv/runs/20260905-143134-m5p-feat-toolagent-qwen-awq",
+  "lc128ks:qwen-awq:w6.0:k16:r1.0:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143141-m5p-feat-lc128ks-qwen-awq",
+  "lc32ks:qwen-awq:w6.0:k16:r0.25:s1234:censored": "/ssd7/hungwei/paper-hkv/runs/20260905-143910-m5p-feat-lc32ks-qwen-awq"
 }

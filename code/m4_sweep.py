@@ -29,7 +29,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from m4_invariants import check_results, preflight
+from m4_invariants import check_capacity_monotone, check_results, preflight
 from m4_oracle import (BLOCK, DEVICE_FS_ROOT, DEVICE_WRITE_MIBPS,
                        check_decode_bandwidth, load_decode_model,
                        mooncake_outputs,
@@ -242,9 +242,12 @@ def axis_ssd(ctx: Ctx) -> list[dict]:
         print(f"{'SSD 容量':>11s}{'覆蓋':>7s}{'best':>9s}{'headroom':>10s}"
               f"{'判定':>9s}{'best 寫':>12s}{'頻寬':>11s}{'可行?':>7s}"
               f"{'oracle 寫':>12s}{'頻寬':>11s}")
+        mono: list[tuple[float, float]] = []
         for g in a.ssd_gib:
             sb = 10**9 if g < 0 else int(g * 1024**3) // ctx.bpb
             res, best, head = ctx.run(trace, tname, sb)
+            mono.append((g if g >= 0 else float("inf"),
+                         res["oracle"]["total_ms"]))
 
             def bw(p_):
                 w = res.get(p_, {}).get("writes", {}).get("ssd", 0)
@@ -270,6 +273,9 @@ def axis_ssd(ctx: Ctx) -> list[dict]:
                 w = r["ssd_writes"]
                 r["ssd_write_mibps"] = (round(w * ctx.bpb / 1024**2 / dur, 1)
                                         if dur and w != "" else "")
+        # 🔴 多給一階容量，oracle 不可以變慢。見 check_capacity_monotone。
+        if len(mono) > 1:
+            check_capacity_monotone(mono, tag=f"（{tname} 的 SSD 階）")
     return rows
 
 
@@ -556,7 +562,7 @@ def main() -> int:
                          "output_length）。放置只能優化 prefill，所以開了之後 "
                          "headroom 會降到端到端的真值")
     ap.add_argument("--oracle-dest", default="best",
-                    choices=["best", "cost-aware", "cascade"])
+                    choices=["best", "cost-aware", "cascade", "marginal"])
     ap.add_argument("--device-write-mibps", type=float, default=None)
     ap.add_argument("--fs-root", default=None)
     ap.add_argument("--trace-limit", type=int, default=None,

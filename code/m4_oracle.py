@@ -983,7 +983,7 @@ class Sim:
             outs = {d: self.run_oracle(trace, use_cpu, use_ssd,
                                        prefix_semantics, prefetch, d,
                                        per_request, outputs)
-                    for d in ("cascade", "cost-aware")}
+                    for d in ("cascade", "cost-aware", "marginal")}
             k = min(outs, key=lambda d: outs[d]["total_ms"])
             outs[k]["dest_chosen"] = k
             outs[k]["dest_alternatives_ms"] = {d: round(v["total_ms"], 2)
@@ -1120,7 +1120,19 @@ class Sim:
                     # 不是單一 block。這是上界（尾巴也可能因為別的缺口而
                     # 本來就要重算），所以它讓 Oracle **偏向保留**——
                     # 保守的方向，不會高估 headroom。
-                    drop_c = (tail_of[j] if prefix_semantics
+                    # 🔴 2026-09-05：dest="marginal" 是第三條規則。
+                    #
+                    # cost-aware 用 tail_of[j]（整條尾巴）當丟掉的邊際成本。
+                    # 前綴語意下缺一塊會使其後全部重算，所以尾巴是**上界**——
+                    # 但那條尾巴是該請求所有缺塊**共用**的，整條算給每一個 block
+                    # 等於重複計價，門檻因而被壓得太低（什麼都想留）。
+                    # 後果是可量到的：qwen-awq/NVMe 下，多給 oracle 一個
+                    # 512 GiB 的 SSD 階，它反而**慢 3.3%**（21.04M vs 20.35M ms）——
+                    # 最佳策略不可能因為多了一個可用資源而變差。它把 25 萬個 block
+                    # 寫上 SSD 再用 10.245 ms 讀回，而重算只要 3.5–4 ms。
+                    # marginal 改用單一 block 的重算成本（下界），
+                    # 而 dest="best" 取三條規則的較佳者，所以 oracle 只會更緊。
+                    drop_c = (tail_of[j] if (prefix_semantics and dest != "marginal")
                               else self.cm.cost("drop", pos_of[j]))
                     if dest == "cascade":
                         cpu_ok = use_cpu
@@ -1153,7 +1165,8 @@ class Sim:
                             if j is math.inf:
                                 evict["free"] += 1
                                 continue
-                            drop_c = (tail_of[j] if prefix_semantics
+                            drop_c = (tail_of[j]
+                                      if (prefix_semantics and dest != "marginal")
                                       else self.cm.cost("drop", pos_of[j]))
                             ssd_ok = (use_ssd and
                                       (dest == "cascade" or self.cm.ssd < drop_c))

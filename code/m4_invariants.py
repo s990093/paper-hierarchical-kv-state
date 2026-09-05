@@ -161,6 +161,44 @@ def check_hits_conserved(res: dict, trace: list[list[int]]) -> None:
                   f"（差 {s - n:+,}）。有存取被漏記或重複記了。")
 
 
+def check_capacity_monotone(points: list[tuple[float, float]],
+                            tag: str = "") -> dict:
+    """**多給一階容量，oracle 不可以變慢。**
+
+    這是「最佳策略」的定義直接推出來的：多一個可用資源，最差也可以不用它。
+    所以 oracle 的 `total_ms` 必須隨任一階的容量**單調不增**。
+
+    🔴 2026-09-05 這條檢查抓到的事：qwen-awq/NVMe 下，把 SSD 階由 0 開到 512 GiB，
+       `run_oracle` 反而**慢 3.3%**。原因是 `cost-aware` 的目的地規則拿「整條尾巴」
+       當丟棄的邊際成本，而那條尾巴是該請求所有缺塊共用的——重複計價使門檻過低，
+       於是把大量 block 寫上 SSD，再用 10.245 ms 讀回，而重算只要 3.5–4 ms。
+       修法是新增 `dest="marginal"`（逐 block 計價）並讓 `dest="best"` 取三者較佳。
+
+    不中止：違反代表**oracle 的構造不夠緊**（headroom 是下界），
+    不代表這一輪的量測是錯的。但它必須被看見並記錄。
+    """
+    out = {"checked": True, "violations": []}
+    pts = sorted(points)
+    for (c0, t0), (c1, t1) in zip(pts, pts[1:]):
+        if t1 > t0 + 1e-6:
+            out["violations"].append(
+                {"from": c0, "to": c1, "ms_from": t0, "ms_to": t1,
+                 "worse_pct": round(100 * (t1 - t0) / t0, 3)})
+    if out["violations"]:
+        v = out["violations"]
+        print(f"  🔴 容量單調性被違反{(' ' + tag) if tag else ''}："
+              f"{len(v)} 處。oracle 多拿到容量卻變慢——")
+        for x in v:
+            print(f"     {x['from']} -> {x['to']}：{x['ms_from']:,.0f} -> "
+                  f"{x['ms_to']:,.0f} ms（慢 {x['worse_pct']:.2f}%）")
+        print("     這代表 oracle 的構造不是最優的，headroom 是**下界**。"
+              "見 PAPER_DELTAS.md B7。")
+    else:
+        print(f"  ✅ 容量單調性通過{(' ' + tag) if tag else ''}"
+              f"（{len(pts)} 個點）")
+    return out
+
+
 def preflight(cm, trace, tname, gpu_blocks, cpu_blocks, ssd_blocks,
               bytes_per_block, fs_root="/ssd7") -> dict:
     """跑模擬之前的全部檢查。回傳的字典應該原封不動寫進結果 CSV。"""

@@ -69,7 +69,7 @@ from m4_oracle import (BLOCK, DEVICE_FS_ROOT, DEVICE_WRITE_MIBPS,   # noqa: E402
                        load_decode_model, mooncake_outputs, mooncake_trace,
                        profile, trace_duration_s)
 from m5_predictor import (OUT, drop_cost, isotonic_predict,         # noqa: E402
-                          load_index, p_star, write_csv)
+                          load_index, load_workload, p_star, write_csv)
 
 BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
 POLICIES = {"full_gpu": ("lru", False, False), "cpu_lru": ("lru", True, False),
@@ -88,7 +88,7 @@ class PolicySim(Sim):
                     use_cpu: bool, use_ssd: bool, prefix_semantics: bool = True,
                     prefetch: bool = False, outputs=None, per_request=False,
                     dest: str = "cost-aware", mode: str = "learned",
-                    drop_cost: str = "tail") -> dict:
+                    drop_cost: str = "tail", ordering: str = "predicted") -> dict:
         """`next_use[t]`／`p_hat[t]`：第 t 次存取（全域序號）當下對該 block 的預測。
 
         mode="lru-shim"：忽略預測，改用「上次存取時刻」排序（＝LRU）並走
@@ -238,7 +238,11 @@ class PolicySim(Sim):
                 if mode == "lru-shim":
                     key, p = -float(t), 1.0
                 else:
-                    key, p = float(next_use[t]), float(p_hat[t])
+                    # 🔴 `ordering="lru"` 是**拆解用的控制組**：逐出順序退回 LRU，
+                    #    但目的地仍走式 (9) 的門檻與成本模型。它回答唯一重要的問題：
+                    #    「增益是預測器帶來的，還是成本模型帶來的？」
+                    key = -float(t) if ordering == "lru" else float(next_use[t])
+                    p = float(p_hat[t])
                 gpu[blk] = key
                 heapq.heappush(heap, (-key, blk))
                 # 🔴 丟掉一個 block 的邊際成本怎麼算，是一個**決定結果的**選擇：
@@ -343,6 +347,24 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--trace", default="toolagent")
+    # 合成工作負載的參數必須與 m5_predictor 完全一致，否則 trace 對不上特徵矩陣
+    ap.add_argument("--workload", default="mooncake",
+                    choices=["mooncake", "longctx-session", "longctx-zipf"])
+    ap.add_argument("--doc-tokens", type=int, default=131072)
+    ap.add_argument("--turns", type=int, default=4)
+    ap.add_argument("--sessions", type=int, default=250)
+    ap.add_argument("--tail-frac", type=float, default=0.02)
+    ap.add_argument("--long-frac", type=float, default=0.5)
+    ap.add_argument("--long-turns", type=int, default=12)
+    ap.add_argument("--concurrency", type=int, default=4)
+    ap.add_argument("--n-docs", type=int, default=12)
+    ap.add_argument("--requests", type=int, default=120)
+    ap.add_argument("--alpha", type=float, default=0.9)
+    ap.add_argument("--limit-requests", type=int, default=None)
+    ap.add_argument("--seed", type=int, default=1234)
+    ap.add_argument("--sample-rate", type=float, default=0.25)
+    ap.add_argument("--label-mode", default="censored",
+                    choices=["censored", "uncensored"])
     ap.add_argument("--model", default="qwen-awq", choices=list(MODEL_PROFILES))
     ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
     ap.add_argument("--cpu-gib", type=float, default=24.0)
@@ -364,6 +386,9 @@ def main() -> int:
                     choices=["cost-aware", "cascade"],
                     help="cascade = 只用預測器決定逐出順序，目的地無條件往下推。"
                          "兩個一起跑就能把『預測器』與『成本模型』的貢獻分開")
+    ap.add_argument("--ordering", choices=["predicted", "lru"],
+                    default="predicted",
+                    help="lru = 逐出順序用 LRU、目的地仍用成本模型（拆解控制組）")
     ap.add_argument("--drop-cost", choices=["tail", "block"], default="tail",
                     help="門檻裡「丟掉的成本」怎麼算，見 run_learned 的說明")
     ap.add_argument("--oracle-signal", nargs="*", default=[],
@@ -414,24 +439,38 @@ def main() -> int:
         return 0 if ok else 1
 
     # ---- 找特徵與模型 ----
-    key = f"{a.trace}:{a.model}:w{a.window_mult}:k{a.deltas}"
-    fdir = Path(a.features_dir) if a.features_dir else Path(load_index()[key])
+    tag = (a.trace if a.workload == "mooncake" else
+           f"lc{a.doc_tokens // 1024}k" +
+           ("z" if a.workload == "longctx-zipf" else "s"))
+    key = (f"{tag}:{a.model}:w{a.window_mult}:k{a.deltas}"
+           f":r{a.sample_rate}:s{a.seed}:{a.label_mode}")
+    if a.features_dir:
+        fdir = Path(a.features_dir)
+    else:
+        idx = load_index()
+        if key not in idx:
+            raise SystemExit(f"🔴 找不到特徵 {key}\n   有的是：{list(idx)}")
+        fdir = Path(idx[key])
     tdir = (Path(a.train_run) if a.train_run else
-            latest_run(f"*-m5p-train-{a.trace}-{a.model}"))
+            latest_run(f"*-m5p-train-{tag}-{a.model}"))
     if tdir is None:
         raise SystemExit("🔴 找不到訓練好的模型，先跑 m5_predictor.py train")
     fm = json.loads((fdir / "features_meta.json").read_text())
     tm = json.loads((tdir / "train_meta.json").read_text())
     print(f"[來源] 特徵 {fdir.name}　模型 {tdir.name}")
 
-    trace_all = mooncake_trace(a.trace)
-    outs_all = mooncake_outputs(a.trace)
-    # 🔴 單位檢查要對**整條** trace 做。拿切片去比整個檔案的長度中位數會誤報：
-    #    conversation 的後 30% 中位數 6,328 vs 全檔 6,909（差 8%），
-    #    那是「這一段的請求比較短」，不是 hash_id 粒度解錯。
-    check_trace_units(a.trace, trace_all)
-    X = np.load(fdir / "X.npy", mmap_mode="r")
-    meta = np.load(fdir / "meta.npy", mmap_mode="r")
+    trace_all, outs_all, wmeta = load_workload(a)
+    if a.workload == "mooncake":
+        # 🔴 單位檢查要對**整條** trace 做。拿切片去比整個檔案的長度中位數會誤報：
+        #    conversation 的後 30% 中位數 6,328 vs 全檔 6,909（差 8%），
+        #    那是「這一段的請求比較短」，不是 hash_id 粒度解錯。
+        check_trace_units(a.trace, trace_all)
+    else:
+        print(f"[工作負載] {wmeta['workload']}（合成）：{len(trace_all):,} 請求、"
+              f"{sum(len(r) for r in trace_all):,} 次存取")
+    x_dir = Path(fm.get("x_dir", str(fdir)))
+    X = np.load(x_dir / "X.npy", mmap_mode="r")
+    meta = np.load(x_dir / "meta.npy", mmap_mode="r")
     if len(X) != sum(len(r) for r in trace_all):
         raise SystemExit("🔴 特徵矩陣的列數與 trace 的存取數對不上——"
                          "特徵是用不同的 --limit-requests 產生的，不可混用")
@@ -445,10 +484,11 @@ def main() -> int:
     t_off = sum(len(r) for r in trace_all[:r0])
     trace = trace_all[r0:]
     outs = outs_all[r0:] if decode else None
-    dur = segment_duration_s(a.trace, r0, len(trace_all))
+    dur = (segment_duration_s(a.trace, r0, len(trace_all))
+           if a.workload == "mooncake" else None)
     print(f"[評估段] {a.segment}：請求 {r0:,}–{len(trace_all):,}"
-          f"（{len(trace):,} 筆、{sum(len(r) for r in trace):,} 次存取、"
-          f"{dur:,.0f}s）")
+          f"（{len(trace):,} 筆、{sum(len(r) for r in trace):,} 次存取"
+          + (f"、{dur:,.0f}s）" if dur else "、合成流量無牆鐘時長）"))
 
     sem = {"prefix_semantics": a.lookup == "prefix", "prefetch": a.prefetch}
     preflight(cm, trace, None, gpu_blocks, cpu_blocks, ssd_blocks, bpb, fs_root)
@@ -469,10 +509,12 @@ def main() -> int:
                                     tdir / f"calib_{loss}.npz", X)
         for dest in a.dests:
             name = (f"tiara_{loss}" + ("" if dest == "cost-aware" else "_cascade")
-                    + ("" if a.drop_cost == "tail" else "_blockcost"))
+                    + ("" if a.drop_cost == "tail" else "_blockcost")
+                    + ("" if a.ordering == "predicted" else "_lruorder"))
             t0 = time.time()
             res[name] = psim.run_learned(trace, nxt, p, t_off, True, True,
-                                         dest=dest, drop_cost=a.drop_cost, **kw)
+                                         dest=dest, drop_cost=a.drop_cost,
+                                         ordering=a.ordering, **kw)
             print(f"  {name:<18} {res[name]['total_ms']:>16,.0f} ms"
                   f"　({time.time() - t0:.0f}s)")
         del nxt, p
@@ -527,13 +569,14 @@ def main() -> int:
         w = r["writes"]["ssd"] * bpb / 1024**2 / dur if dur else None
         rows.append({
             "run_id": run_id, "ts": datetime.now().astimezone().isoformat(),
-            "sim_version": SIM_VERSION, "trace": a.trace,
+            "sim_version": SIM_VERSION, "trace": tag,
             "model_profile": a.model, "device": a.device, "segment": a.segment,
             "first_request": r0, "requests": len(trace),
             "accesses": sum(len(x) for x in trace),
             "gpu_blocks": gpu_blocks, "cpu_gib": a.cpu_gib, "ssd_gib": a.ssd_gib,
             "lookup": a.lookup, "prefetch": int(a.prefetch),
-            "drop_cost_rule": a.drop_cost,
+            "drop_cost_rule": a.drop_cost, "ordering": a.ordering,
+            "workload": wmeta["workload"],
             "decode": int(bool(decode)), "window_accesses": fm["window_accesses"],
             "features_run": fdir.name, "train_run": tdir.name,
             "policy": name, "total_ms": round(r["total_ms"], 2),
