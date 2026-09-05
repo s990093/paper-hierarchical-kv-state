@@ -40,3 +40,12 @@ GPU 預算掃描。**作廢原因：Mooncake 的 `hash_ids` 是 512-token 的 bl
 3. `sim_version`（`m4_oracle.py` 內容的 SHA-1 前 8 碼）與現行不符 → 舊版模擬器
 
 第 3 項是 2026-08-31 之後才加的，所以更早的檔案沒有這個欄位。
+
+### `policy_sim_pre_dropcost_schema.csv`（2026-09-05 13:17）
+M5 第二階段的第一版線上策略掃描。**不是數字錯，是欄位不全**：
+後來新增了 `drop_cost_rule` 欄（門檻裡「丟掉的成本」用整條尾巴還是單一 block 計價），
+而 `write_csv` 不准把欄位不同的列 append 進舊檔。
+
+模擬是決定性的，**這個檔的每一列在新的 `results/m5_predictor/policy_sim.csv`
+裡都有一模一樣的對應列**（例如 `tiara_sym_l2` = 22,793,531.29 ms），
+只是多了那一欄。留著是為了讓「舊檔與新檔的數字相同」這件事可以被驗證。

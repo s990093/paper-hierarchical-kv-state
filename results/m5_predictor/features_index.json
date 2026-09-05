@@ -1,0 +1,5 @@
+{
+  "conversation:qwen-awq:w1.0:k16": "/ssd7/hungwei/paper-hkv/runs/20260905-131229-m5p-feat-conversation-qwen-awq",
+  "toolagent:qwen-awq:w1.0:k16": "/ssd7/hungwei/paper-hkv/runs/20260905-131229-m5p-feat-toolagent-qwen-awq",
+  "toolagent:qwen-awq:w35.0:k16": "/ssd7/hungwei/paper-hkv/runs/20260905-131946-m5p-feat-toolagent-qwen-awq"
+}
