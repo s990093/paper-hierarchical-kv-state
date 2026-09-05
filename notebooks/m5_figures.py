@@ -195,7 +195,9 @@ def fig_horizon(met, pol):
     """三個量對決策視窗 $W$ 的趨勢：正樣本率、AUC、排序品質。"""
     g = [r for r in met if r["trace"] == "toolagent" and r["loss"] == "sym_l2"
          and r["threshold_rule"] == "p_star" and r["num_leaves"] == "63"
-         and r.get("label_mode", "censored") == "censored"]
+         and r.get("label_mode", "censored") == "censored"
+         and r.get("sample_rate") == "0.25" and str(r.get("data_seed")) == "1234"
+         and r.get("feature_groups") == "history+deltas+edc+static"]
     if len(g) < 2:
         return
     g.sort(key=lambda r: int(r["window_accesses"]))
@@ -208,6 +210,9 @@ def fig_horizon(met, pol):
     ax.plot(w, [float(r["spearman_positives"]) for r in g], "^-",
             color=CLR["ssd"], lw=1.2, ms=4, label="Spearman（正樣本內）")
     ax.set_xscale("log")
+    ax.set_xticks(w)
+    ax.set_xticklabels([f"{x // 1000}K" for x in w])
+    ax.minorticks_off()
     ax.set_xlabel("決策視窗 $W$（次存取）")
     ax.set_ylim(0, 1.05)
     ax.legend(fontsize=7, frameon=False)
