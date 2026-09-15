@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# =============================================================================
+# runsh — 每一個會產生數字的指令都要走這個殼（CLAUDE.md §4.1，平台 B 版）
+#
+#   用法：  ./runsh <短名> <指令...>
+#   例：    ./runsh m1-cap-qwen python code/m1_capacity.py --model qwen --ctx 131072
+#
+# 產出： $TIARA_RUNS/<RUN_ID>/{cmd.sh,context.txt,stdout.log,stderr.log,exit_code}
+# 沒有 run_id 的數字視同不存在。
+# =============================================================================
+set -Eeuo pipefail
+[ $# -ge 2 ] || { echo "用法: $0 <短名> <指令...>" >&2; exit 2; }
+
+SHORT=$1; shift
+RUNS_ROOT="${TIARA_RUNS:-/mlsteam/data/tiara/runs}"
+RUN_ID="$(date +%Y%m%d-%H%M%S)-${SHORT}"
+RUN="$RUNS_ROOT/$RUN_ID"
+mkdir -p "$RUN"
+
+printf '%s\n' "$*" > "$RUN/cmd.sh"
+{
+  date -Is
+  echo "host: $(hostname)"
+  echo "platform: B_MI300X_MLSteam"
+  echo "--- rocm-smi ---"
+  PATH=/opt/rocm/bin:$PATH rocm-smi --showuse --showmemuse --showtemp 2>&1 || true
+  echo "--- repo ---"
+  git -C /mlsteam/workspace/paper-hierarchical-kv-state rev-parse HEAD 2>/dev/null || echo "no repo"
+  echo "--- vllm commit ---"
+  cat /mlsteam/workspace/.vllm_commit 2>/dev/null || echo "vllm not built"
+} > "$RUN/context.txt" 2>&1
+
+echo "[runsh] RUN_ID=$RUN_ID"
+echo "[runsh] dir=$RUN"
+set +e
+bash "$RUN/cmd.sh" > "$RUN/stdout.log" 2> "$RUN/stderr.log"
+rc=$?
+set -e
+echo "$rc" > "$RUN/exit_code"
+echo "[runsh] exit=$rc"
+if [ "$rc" -ne 0 ]; then
+    echo "[runsh] ---- stderr 末 40 行 ----" >&2
+    tail -40 "$RUN/stderr.log" >&2
+    echo "[runsh] 指令失敗。照 CLAUDE.md §1 規則 2：記錄、停下、回報。不要換方法硬幹。" >&2
+fi
+exit "$rc"

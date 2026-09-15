@@ -54,3 +54,7 @@ notebooks/.ipynb_checkpoints/
 # 摘要在同目錄的 alignment_*.json，那些有進 git。
 results/m5_attention_mi300x/attn_importance_b-*.csv
 results/m5_attention/attn_importance_*.csv
+
+# ── MLSteam / MI300X 憑證（絕不進 git：本 repo 是 public） ──────────────
+SECRETS.local.md
+code/mi300x/*.local
