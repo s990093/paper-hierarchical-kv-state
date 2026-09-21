@@ -65,11 +65,19 @@ from pathlib import Path
 from statistics import median
 
 REPO = Path(__file__).resolve().parent.parent
-M2 = REPO / "results/m2_harness"
-M5 = REPO / "results/m5_quality"
-M3 = REPO / "results/m3_baseline"
-M3_CSV = REPO / "results/m3_baseline/baseline.csv"
-OUT = REPO / "results/m4_oracle"
+PLATFORM = os.environ.get("TIARA_PLATFORM") or ("B" if Path("/opt/rocm").exists() else "A")
+if PLATFORM == "B":
+    M2 = REPO / "results/m2_harness_mi300x"
+    M5 = REPO / "results/m5_quality_mi300x"
+    M3 = REPO / "results/m3_baseline_mi300x"
+    M3_CSV = M3 / "baseline_mi300x.csv"
+    OUT = REPO / "results/m4_oracle_mi300x"
+else:
+    M2 = REPO / "results/m2_harness"
+    M5 = REPO / "results/m5_quality"
+    M3 = REPO / "results/m3_baseline"
+    M3_CSV = REPO / "results/m3_baseline/baseline.csv"
+    OUT = REPO / "results/m4_oracle"
 
 # 模擬器的版本戳記 = 本檔內容的 SHA-1 前 8 碼。
 # 每一份結果 CSV 都要帶著它。2026-08-31 一天之內改了六次模擬器語意，
@@ -102,6 +110,7 @@ def sim_version() -> str:
     parts.append(repr(sorted(MODEL_PROFILES.items())))
     return hashlib.sha1("".join(parts).encode()).hexdigest()[:8]
 
+RUN_ID = ""         # main() 設定；寫進每一列以符合規則 3
 BLOCK = 16          # vLLM 預設 block size（token）
 # Mooncake trace 的 hash_id 粒度（token）。由資料實測得到，見 mooncake_trace()。
 MOONCAKE_BLOCK = 512
@@ -116,10 +125,35 @@ MOONCAKE_BLOCK = 512
 # nvme：Crucial P3（/）。1 GiB 測試 2,512。
 DEVICE_WRITE_MIBPS = {"sata": 181.0, "nvme": 2512.0}
 
+
+def _load_device_write_mibps_b() -> dict:
+    """平台 B 的裝置頻寬一律從實測 CSV 讀，不寫死（規則 1）。
+
+    來源：results/m2_harness_mi300x/disk_bw_mi300x.csv（code/disk_bw.py 產生，O_DIRECT 循序）。
+    local = /var/tmp（SSD 階實際用的本地 overlay）、nfs = /mlsteam/data/tiara。
+    """
+    f = REPO / "results/m2_harness_mi300x/disk_bw_mi300x.csv"
+    if not f.exists():
+        return {}
+    want = {"local": "/var/tmp", "nfs": "/mlsteam/data/tiara"}
+    out: dict[str, float] = {}
+    rows = list(csv.DictReader(f.open()))
+    for dev, path in want.items():
+        v = [float(r["write_mibps"]) for r in rows
+             if r.get("path", "").startswith(path) and r.get("write_mibps")]
+        if v:
+            out[dev] = median(v)
+    return out
+
+
 # 各裝置的掛載點。用來回報「這顆碟到底有多大／還剩多少」。
 # 🔴 這也必須跟著 --device 走：先前 --device nvme 但 fs-root 仍指 /ssd7，
 #    於是報表印出 SATA 的 7.2 TiB 容量，卻在講 NVMe 的結果。
 DEVICE_FS_ROOT = {"sata": "/ssd7", "nvme": "/home/hungwei"}
+if PLATFORM == "B":
+    DEVICE_FS_ROOT = {"local": "/var/tmp", "nfs": "/mlsteam/data/tiara"}
+    DEVICE_WRITE_MIBPS = _load_device_write_mibps_b()
+
 
 
 # ────────────────────────── 成本模型 ──────────────────────────
@@ -195,9 +229,70 @@ MODEL_PROFILES = {
                  "cost_model_key": "qwen-awq", "source": "M1 capacity.csv"},
 }
 
+# ══ 平台 B（MI300X 192 GiB，ROCm 7.2.2，vLLM v0.28.0）═══════════════════
+# gpu_kv_tokens 是 M1 的**實測**容量（BF16、gpu_memory_utilization 0.90），
+# 見 results/m1_capacity/capacity_mi300x.csv。
+# retrieval_csv 指定用哪一份取回成本：qwen7b／qwen3／seedoss 要用 _v2
+# （第一批的 CPU 階被 /dev/shm 塞滿而 NOT_MEASURED、SSD 階只部分讀回，見 RUNLOG 發現 7、8）。
+MODEL_PROFILES_B = {
+    "b-llama8b": {
+        "gpu_kv_tokens": 1_271_024, "kv_bytes_per_token": 131_072,   # 32×8×128×2×2
+        "cost_model_key": "b-llama8b",
+        "retrieval_csv": "retrieval_cost_b-llama8b.csv",
+        "source": "M1 capacity_mi300x.csv + M2 retrieval_cost_b-llama8b.csv (ctx=16,384)",
+    },
+    "b-qwen7b-1m": {
+        "gpu_kv_tokens": 2_889_696, "kv_bytes_per_token": 57_344,    # 28×4×128×2×2
+        "cost_model_key": "b-qwen7b-1m",
+        "retrieval_csv": "retrieval_cost_b-qwen7b-1m_v2.csv",
+        "source": "M1 + M2 retrieval_cost_b-qwen7b-1m_v2.csv (ctx=96,000)",
+    },
+    "b-qwen3-30b-a3b": {
+        "gpu_kv_tokens": 948_176, "kv_bytes_per_token": 98_304,      # 48×4×128×2×2
+        "cost_model_key": "b-qwen3-30b-a3b",
+        "retrieval_csv": "retrieval_cost_b-qwen3-30b-a3b_v2.csv",
+        # 🔴 M2 發現 11：這顆的 CPU 階 warm 比 gpu_resident 基準還快（delta −49 ms），
+        #    連接器指標顯示搬運跑 37.8 GB/s。現象已兩次重現，機制未明。
+        #    Oracle 用它時 CPU 階成本會被 clamp 到 0，等於「搬到 CPU 免費」——
+        #    這會系統性高估 headroom，所以這個剖面的結果必須單獨標註。
+        "cpu_tier_anomaly": "M2 finding 11: cpu warm < gpu_resident baseline; cost clamped to 0",
+        "source": "M1 + M2 retrieval_cost_b-qwen3-30b-a3b_v2.csv (ctx=96,000)",
+    },
+    "b-seedoss36b": {
+        "gpu_kv_tokens": 413_632, "kv_bytes_per_token": 262_144,     # 64×8×128×2×2
+        "cost_model_key": "b-seedoss36b",
+        "retrieval_csv": "retrieval_cost_b-seedoss36b_v2.csv",
+        "source": "M1 + M2 retrieval_cost_b-seedoss36b_v2.csv (ctx=96,000)",
+    },
+    "b-ultralong8b-1m": {
+        "gpu_kv_tokens": 1_265_520, "kv_bytes_per_token": 131_072,   # 32×8×128×2×2；M1 實測
+        "cost_model_key": "b-ultralong8b-1m",
+        "retrieval_csv": "retrieval_cost_b-ultralong8b-1m.csv",
+        "source": "M1 capacity_mi300x.csv + M2 retrieval/recompute b-ultralong8b-1m",
+    },
+    # ── 13–15B 級（2026-09-16 加入）。gpu_kv_tokens 由 M1 實測後填入 ──
+    "b-qwen14b-1m": {
+        "gpu_kv_tokens": 769_664, "kv_bytes_per_token": 196_608,     # 48×8×128×2×2；M1 實測
+        "cost_model_key": "b-qwen14b-1m",
+        "retrieval_csv": "retrieval_cost_b-qwen14b-1m.csv",
+        "source": "M1 capacity_mi300x.csv + M2 retrieval_cost_b-qwen14b-1m.csv",
+    },
+    "b-mistral-nemo12b": {
+        "gpu_kv_tokens": 964_144, "kv_bytes_per_token": 163_840,     # 40×8×128×2×2；M1 實測
+        "cost_model_key": "b-mistral-nemo12b",
+        "retrieval_csv": "retrieval_cost_b-mistral-nemo12b.csv",
+        "source": "M1 capacity_mi300x.csv + M2 retrieval_cost_b-mistral-nemo12b.csv",
+    },
+}
+if PLATFORM == "B":
+    MODEL_PROFILES = MODEL_PROFILES_B
+
 
 # 這張卡的實體上限。KV 預算 × 每 token 大小若超過它，剖面一定寫錯了。
-CARD_VRAM_GIB = 24.0
+CARD_VRAM_GIB = 192.0 if PLATFORM == "B" else 24.0
+# 卡的記憶體峰值頻寬（GB/s），用來做「decode 斜率換算出的 KV 讀取頻寬是否物理可能」的檢查。
+# MI300X：HBM3 5.3 TB/s（AMD 規格）；RTX 3090：936 GB/s。
+PEAK_KV_READ_GBPS = 5300.0 if PLATFORM == "B" else 936.0
 
 
 def _check_profiles() -> None:
@@ -209,6 +304,8 @@ def _check_profiles() -> None:
        因為沒有人去乘那兩個數字。
     """
     for name, p in MODEL_PROFILES.items():
+        if not p["gpu_kv_tokens"]:
+            continue          # 尚未有 M1 實測容量的剖面；profile() 會在使用時擋下
         gib = p["gpu_kv_tokens"] * p["kv_bytes_per_token"] / 1024**3
         if gib > CARD_VRAM_GIB:
             raise SystemExit(
@@ -225,7 +322,13 @@ _check_profiles()
 def profile(name: str) -> dict:
     if name not in MODEL_PROFILES:
         raise SystemExit(f"🔴 未知剖面 {name}；可用：{list(MODEL_PROFILES)}")
-    return MODEL_PROFILES[name]
+    p = MODEL_PROFILES[name]
+    if not p.get("gpu_kv_tokens"):
+        raise SystemExit(
+            f"🔴 剖面 {name} 還沒有 M1 實測的 GPU KV 容量（gpu_kv_tokens=0）。\n"
+            f"   先跑：python code/m1_capacity.py --config {name}-bf16\n"
+            f"   再把實測值填進 MODEL_PROFILES_B —— 不要用估算值跑 Oracle。")
+    return p
 
 
 def load_decode_model(model_key: str = "llama") -> dict:
@@ -260,7 +363,10 @@ def load_decode_model(model_key: str = "llama") -> dict:
     最後那一列就是這樣抓到 `llama-awq` 其實跑 FP8 KV（64 KiB/token）的。
     """
     from statistics import median
-    files = [M3 / "baseline.csv", M3 / "baseline_longctx.csv"]
+    # 平台 B 的 M3 檔名是 baseline_mi300x.csv（見 M3_CSV）；沿用同一個來源，
+    # 否則 decode 模型會在 B 上找不到資料而誤判成「沒量過」。
+    files = ([M3_CSV] if PLATFORM == "B"
+             else [M3 / "baseline.csv", M3 / "baseline_longctx.csv"])
     pts: list[tuple[int, float]] = []
     for f in files:
         if not f.exists():
@@ -300,7 +406,7 @@ def load_decode_model(model_key: str = "llama") -> dict:
 
 
 def check_decode_bandwidth(dm: dict, kv_bytes_per_block: int,
-                           peak_gbps: float = 936.0) -> float:
+                           peak_gbps: float | None = None) -> float:
     """decode 的 slope 換算成 KV 讀取頻寬，超過卡的峰值就中止。
 
     🔴 這個檢查抓到過真實的錯誤：把 llama-awq（實際跑 FP8 KV，64 KiB/token）
@@ -311,6 +417,10 @@ def check_decode_bandwidth(dm: dict, kv_bytes_per_block: int,
     if ms <= 0:
         return float("nan")
     gbps = kv_bytes_per_block / (ms / 1000) / 1e9
+    # 🔴 峰值頻寬必須跟著平台：RTX 3090 是 936 GB/s，MI300X 的 HBM3 是 5,300 GB/s。
+    #    用 A 的常數檢查 B 的資料，會把完全合理的 1,781 GB/s 判成「物理上不可能」。
+    if peak_gbps is None:
+        peak_gbps = PEAK_KV_READ_GBPS
     if gbps > peak_gbps:
         raise SystemExit(
             f"🔴 decode 的擬合斜率換算出 {gbps:,.0f} GB/s 的 KV 讀取頻寬，"
@@ -487,10 +597,16 @@ def load_cost_model(device: str = "sata",
     #   device 後綴只有 SSD 階需要（SATA vs NVMe 差 13.7 倍）。
     mk = require_model_key or "llama"
     tag = "" if mk == "llama" else f"_{mk}"
-    cands = [M2 / f"retrieval_cost{tag}_{device}.csv",
-             M2 / f"retrieval_cost{tag}.csv"]
+    # 剖面可以指定要用哪一份取回成本（平台 B 的 _v2 補量檔）
+    named = [MODEL_PROFILES[n]["retrieval_csv"] for n in MODEL_PROFILES
+             if MODEL_PROFILES[n].get("cost_model_key") == mk
+             and MODEL_PROFILES[n].get("retrieval_csv")]
+    cands = [M2 / f for f in named] + [M2 / f"retrieval_cost{tag}_{device}.csv",
+                                       M2 / f"retrieval_cost{tag}.csv"]
     ret = next((c for c in cands if c.exists()), cands[0])
-    rec_c = [M2 / f"recompute_position{tag}.csv"]
+    # 🔴 _v2 是修正後重量的（例如 Mistral-Nemo 加了 min_tokens 才量得到 TTFT），
+    #    存在就優先用；舊檔已移到 results/superseded/。
+    rec_c = [M2 / f"recompute_position{tag}_v2.csv", M2 / f"recompute_position{tag}.csv"]
     rec = next((c for c in rec_c if c.exists()), rec_c[0])
     missing = [str(p) for p in (ret, rec) if not p.exists()]
     if missing:
@@ -524,12 +640,43 @@ def load_cost_model(device: str = "sata",
     if None in (g, c, s) or not nblk:
         raise SystemExit(f"🔴 retrieval_cost.csv 不完整：gpu={g} cpu={c} ssd={s} ctx={ctx}")
 
+    # 🔴 相減法失效時改用連接器指標（RUNLOG 發現 11）。
+    #    Qwen3-30B-A3B 的 CPU 階 warm 比 gpu_resident 基準還快（delta −49 ms），
+    #    clamp 成 0 會讓 Oracle 以為「搬到 CPU 免費」，模擬器驗證直接爆掉。
+    #    vllm:kv_offload_load_bytes / load_time 是連接器層的直接量測，不受計算重疊影響。
+    #    其餘三個模型兩法相差 4–7%，所以這個替代是有交叉驗證的，不是猜的。
+    cpu_ms_per_block = max(0.0, c - g) / nblk
+    cpu_src = "ttft_minus_gpu_resident"
+    if c - g <= 0:
+        conn = M2 / "connector_transfer_mi300x.csv"
+        vals = [float(r["load_ms_per_block"]) for r in csv.DictReader(conn.open())
+                if r["model_key"] == mk] if conn.exists() else []
+        if not vals:
+            raise SystemExit(
+                f"🔴 {mk} 的 CPU 階 warm（{c:.1f} ms）不高於 gpu_resident 基準（{g:.1f} ms），"
+                f"相減法得不到成本；也找不到 {conn} 的連接器指標可替代。\n"
+                f"   先跑：python code/m2_connector_metrics.py")
+        cpu_ms_per_block = median(vals)
+        cpu_src = f"connector_load_metric (n={len(vals)}, {conn.name})"
+        print(f"[cost] ⚠️ {mk} 的 CPU 階相減得到 {c - g:+.1f} ms（≤0，發現 11），"
+              f"改用連接器指標 {cpu_ms_per_block:.4f} ms/block")
+
     rrows = list(csv.DictReader(rec.open()))
-    pts = sorted({int(r["cached_prefix_tokens"]) for r in rrows})
+    # 🔴 2026-09-18：Mistral-Nemo 對隨機 token 提示會立刻吐 EOS，11/27 個請求量不到 TTFT
+    #    （ttft_ms 空白）。原本直接 median([]) 而崩潰。改成只用**有量到值**的位置，
+    #    並印出跳過哪些 —— 不補值、不估算。
+    pts_all = sorted({int(r["cached_prefix_tokens"]) for r in rrows})
+    pts = sorted({int(r["cached_prefix_tokens"]) for r in rrows if r["ttft_ms"]})
+    skipped = [p for p in pts_all if p not in pts]
+    if skipped:
+        print(f"[cost] ⚠️ {rec.name} 有 {len(skipped)} 個位置完全沒量到 TTFT，已跳過：{skipped}")
+    if len(pts) < 2:
+        raise SystemExit(f"🔴 {rec.name} 只有 {len(pts)} 個位置有值，無法擬合重算成本。")
     chunk = int(rrows[0]["recomputed_tokens"])
     def at(p: int) -> float:
-        return median([float(r["ttft_ms"]) for r in rrows
-                       if int(r["cached_prefix_tokens"]) == p and r["ttft_ms"]])
+        v = [float(r["ttft_ms"]) for r in rrows
+             if int(r["cached_prefix_tokens"]) == p and r["ttft_ms"]]
+        return median(v)
     y0, yN = at(pts[0]), at(pts[-1])
     blocks_in_chunk = chunk / BLOCK
     slope = ((yN - y0) / (pts[-1] - pts[0])) / blocks_in_chunk if pts[-1] > pts[0] else 0.0
@@ -543,7 +690,7 @@ def load_cost_model(device: str = "sata",
           f"超過此位置的成本為線性外插。")
     return CostModel(
         gpu=0.0,
-        cpu=max(0.0, (c - g)) / nblk,
+        cpu=cpu_ms_per_block,
         ssd=max(0.0, (s - g)) / nblk,
         recompute_base=y0 / blocks_in_chunk,
         recompute_slope_per_token=slope,
@@ -551,6 +698,7 @@ def load_cost_model(device: str = "sata",
             "retrieval_csv": str(ret), "recompute_csv": str(rec),
             "ctx_used": ctx, "blocks_per_ctx": nblk,
             "warm_gpu_ms": g, "warm_cpu_ms": c, "warm_ssd_ms": s,
+            "cpu_cost_source": cpu_src,
             "recompute_chunk_tokens": chunk,
             "recompute_at_pos0_ms": y0, "recompute_at_maxpos_ms": yN,
             "positions": pts,
@@ -558,11 +706,72 @@ def load_cost_model(device: str = "sata",
         })
 
 
+def calibrate_recompute_from_m3(model_key: str) -> dict:
+    """用 M3 的**整段 prefill** 實測校準重算成本，取代 M2 的分塊量測。
+
+    ## 為什麼需要這一步（2026-09-16 平台 B 的模擬器驗證抓到）
+
+    M2 的 `recompute_position` 量的是「前綴 P 已快取，再補 2,048 個 token」，
+    而模擬器要的是「這個 block 被丟掉了，之後跟著整段 prefill 一起重算」。
+    兩者的批次大小不同：vLLM 的 `max_num_batched_tokens=16384`，整段 prefill
+    一次送 16,384 個 token，2,048 的小塊用不滿 GPU。
+    結果 M2 的斜率比整段 prefill 大 2.2 倍（llama：7.42e-5 vs 3.40e-5 ms/block/token），
+    模擬器因此把 full_gpu 的成本高估 90–102%（驗證只拿到「方向一致、量級不符」）。
+
+    ## 做法
+
+    M3 的 `full_gpu` cold TTFT 就是「從零做一次長度 N 的 prefill」的實測。
+    擬合 T(N) = c + a·N + b·N²/2（注意力的二次項），四個模型的 R² 都是 1.00000。
+    對 N 微分得到「位置 P 處每個 token 的邊際成本」= a + b·P，
+    乘上 BLOCK 就是模擬器要的 per-block 成本。
+
+    c 是每個請求的固定開銷（排程、tokenize、取樣），**不隨 block 數變化**，
+    所以不併進 per-block 成本；一併回傳供記錄。
+    """
+    rows = [r for r in csv.DictReader(M3_CSV.open())
+            if r.get("model_key") == model_key and r.get("baseline") == "full_gpu"
+            and r.get("round") == "cold" and r.get("ttft_ms")]
+    if len({int(r["ctx"]) for r in rows}) < 3:
+        raise SystemExit(
+            f"🔴 {M3_CSV} 裡 {model_key} 的 full_gpu cold 不足 3 個 ctx，無法擬合二次項。")
+    by: dict[int, list[float]] = {}
+    for r in rows:
+        by.setdefault(int(r.get("actual_prompt_tokens") or r["ctx"]), []).append(float(r["ttft_ms"]))
+    xs = sorted(by)
+    ys = [median(by[x]) for x in xs]
+    # 最小平方解 [c, a, b]，設計矩陣 [1, N, N²/2]
+    n = len(xs)
+    A = [[1.0, float(x), x * x / 2.0] for x in xs]
+    M = [[sum(A[k][i] * A[k][j] for k in range(n)) for j in range(3)] for i in range(3)]
+    v = [sum(A[k][i] * ys[k] for k in range(n)) for i in range(3)]
+    for i in range(3):
+        for j in range(i + 1, 3):
+            f = M[j][i] / M[i][i]
+            for k in range(3):
+                M[j][k] -= f * M[i][k]
+            v[j] -= f * v[i]
+    coef = [0.0] * 3
+    for i in (2, 1, 0):
+        coef[i] = (v[i] - sum(M[i][k] * coef[k] for k in range(i + 1, 3))) / M[i][i]
+    c, a, b = coef
+    pred = [c + a * x + b * x * x / 2 for x in xs]
+    mean = sum(ys) / n
+    ss = sum((y - mean) ** 2 for y in ys)
+    r2 = 1 - sum((y - p) ** 2 for y, p in zip(ys, pred)) / ss if ss else 1.0
+    return {"recompute_base_ms_per_block": a * BLOCK,
+            "recompute_slope_ms_per_block_per_token": b * BLOCK,
+            "per_request_overhead_ms": c, "r2": r2,
+            "ctxs": xs, "measured_ms": [round(y, 1) for y in ys],
+            "fitted_ms": [round(p, 1) for p in pred],
+            "source": f"{M3_CSV.name} full_gpu cold, model_key={model_key}"}
+
+
 # ────────────────────────── 工作負載 ──────────────────────────
 
 TRACES = BIG_TRACES = Path(
     os.environ.get("PAPER_HKV_TRACES",
-                   "/ssd7/hungwei/paper-hkv/datasets/traces"))
+                   "/mlsteam/data/tiara/datasets/traces" if PLATFORM == "B"
+                   else "/ssd7/hungwei/paper-hkv/datasets/traces"))
 
 
 def mooncake_trace(name: str, limit: int | None = None) -> list[list[int]]:
@@ -1218,7 +1427,9 @@ class Sim:
 
 # ────────────────────────── 驗證 ──────────────────────────
 
-def validate(cm: CostModel, sem: dict | None = None) -> dict:
+def validate(cm: CostModel, sem: dict | None = None,
+             model_key: str = "llama", kv_bytes_per_token: int = 131_072,
+             cpu_gib: float = 24.0) -> dict:
     """用 M3 的工作負載跑模擬，跟**實測**比對。
 
     模擬器若複現不出已經量到的 full_gpu vs cpu_lru 差距，
@@ -1226,10 +1437,12 @@ def validate(cm: CostModel, sem: dict | None = None) -> dict:
     """
     if not M3_CSV.exists():
         raise SystemExit(f"🔴 找不到 {M3_CSV}，無法驗證模擬器")
+    # 🔴 model_key 與 KV 幾何必須跟著剖面走。寫死 "llama" + 128 KiB/token 會讓
+    #    平台 B 的任何剖面都驗不到（或更糟：拿別的模型的列去驗）。
     rows = [r for r in csv.DictReader(M3_CSV.open())
-            if r.get("concurrency_mode") == "serial" and r["model_key"] == "llama"]
+            if r.get("concurrency_mode") == "serial" and r["model_key"] == model_key]
     if not rows:
-        raise SystemExit("🔴 baseline.csv 沒有 serial 的 llama 資料")
+        raise SystemExit(f"🔴 {M3_CSV} 沒有 serial 的 {model_key} 資料")
 
     kv_tokens = int(median([int(r["gpu_kv_cache_tokens"]) for r in rows]))
     out = []
@@ -1248,7 +1461,7 @@ def validate(cm: CostModel, sem: dict | None = None) -> dict:
         trace = [[d * doc_blocks + b for b in range(doc_blocks)]
                  for d in list(range(n)) * 2]
         sim = Sim(cm, gpu_blocks=kv_tokens // BLOCK,
-                  cpu_blocks=(24 * 1024**3) // (BLOCK * 128 * 1024),
+                  cpu_blocks=int(cpu_gib * 1024**3) // (BLOCK * kv_bytes_per_token),
                   ssd_blocks=10**9)
         # split_at=n：trace 前 n 個請求是 cold、其後 n 個是 warm。
         # 實測量的是 warm 那一輪的 TTFT，所以模擬也只能取 warm 段來比。
@@ -1275,8 +1488,11 @@ def validate(cm: CostModel, sem: dict | None = None) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--device", default="sata", choices=["sata", "nvme"],
-                    help="SSD 階要用哪個裝置的量測。兩者差異見 RUNLOG 發現 11")
+    # 平台 B 的裝置是 local（/var/tmp overlay，SSD 階實際用的）與 nfs（/mlsteam/data）。
+    # 實測：local 寫 1,886 / 讀 5,392 MiB/s；nfs 寫 683 / 讀 289 MiB/s（disk_bw_mi300x.csv）
+    ap.add_argument("--device", default="local" if PLATFORM == "B" else "sata",
+                    choices=["local", "nfs"] if PLATFORM == "B" else ["sata", "nvme"],
+                    help="SSD 階要用哪個裝置的量測")
     ap.add_argument("--validate", action="store_true",
                     help="只跑模擬器驗證（比對 M3 實測），不做 go/no-go")
     ap.add_argument("--alpha", type=float, nargs="*", default=[0.6, 0.9, 1.2],
@@ -1297,18 +1513,27 @@ def main() -> int:
                          "『pressure:8x』配了 535 篇文件，但 400 個請求只碰得到"
                          "其中一部分，實際壓力只有 2.8×。標籤是旋鈕設定值，"
                          "實際值一律以 realized_pressure_x 欄位為準")
-    ap.add_argument("--model", default="llama-bf16", choices=list(MODEL_PROFILES),
+    ap.add_argument("--model", default=next(iter(MODEL_PROFILES)), choices=list(MODEL_PROFILES),
                     help="模型剖面：一次鎖定「GPU 預算 + KV 每 token 大小 + "
                          "成本模型來源」三者，避免混用。目前只有 llama-bf16 "
                          "有對應的 M2 成本量測")
     ap.add_argument("--gpu-tokens", type=int, default=None,
                     help="覆寫剖面的 GPU KV 預算（token）。"
                          "⚠️ 覆寫成別的模型的容量就是混用，只在做敏感度分析時用")
-    ap.add_argument("--cpu-gib", type=float, default=24.0)
+    ap.add_argument("--cpu-gib", type=float, default=96.0 if PLATFORM == "B" else 24.0,
+                    help="CPU 階預算（GiB）。平台 B 的 /dev/shm 是 179 GiB，預設取 96")
     ap.add_argument("--seed", type=int, default=1234)
     ap.add_argument("--lookup", choices=["prefix", "per-block"], default="prefix",
                     help="cache 查詢語意。prefix=照 vLLM 實際行為（缺口之後全部重算）；"
                          "per-block=舊模型，每個 block 獨立命中（會低估 baseline 成本）")
+    ap.add_argument("--cpu-ms-per-block", type=float, default=None,
+                    help="覆寫 CPU 階的每 block 成本（ms），做敏感度分析用。"
+                         "🔴 Qwen3-30B-A3B 的三種量法分歧（相減法無效、連接器指標 0.041、"
+                         "M3 端到端推得 ~0.11），go/no-go 兩種都要跑，結論一致才算數")
+    ap.add_argument("--recompute-source", default="m3", choices=["m2", "m3"],
+                    help="重算成本的來源。m3=用 M3 full_gpu cold 的整段 prefill 擬合"
+                         "（與模擬器的語意一致，預設）；m2=用 M2 的 2,048 token 分塊量測"
+                         "（批次較小，斜率高 2.2 倍，會高估 full_gpu 成本）")
     ap.add_argument("--prefetch", action="store_true",
                     help="允許 CPU/SSD 取回與前一個請求的計算重疊（非同步 load 的上界）。"
                          "同時套用於 Oracle 與所有 baseline")
@@ -1316,6 +1541,8 @@ def main() -> int:
     SEM = {"prefix_semantics": a.lookup == "prefix", "prefetch": a.prefetch}
     print(f"[語意] lookup={a.lookup}  prefetch={a.prefetch}")
 
+    global RUN_ID
+    RUN_ID = f"{datetime.now():%Y%m%d-%H%M%S}-m4-{a.model}"
     prof = profile(a.model)
     cm = load_cost_model(a.device, require_model_key=prof["cost_model_key"])
     print(f"=== 模型剖面 {a.model} ===")
@@ -1329,8 +1556,27 @@ def main() -> int:
                       "recompute_slope_ms_per_block_per_token":
                           round(cm.recompute_slope_per_token, 8)},
                      indent=2, ensure_ascii=False))
+    if a.cpu_ms_per_block is not None:
+        print(f"=== CPU 階成本覆寫：{cm.cpu:.4f} → {a.cpu_ms_per_block:.4f} ms/block（敏感度分析）===")
+        cm.source = {**cm.source, "cpu_ms_per_block_overridden_from": cm.cpu,
+                     "cpu_ms_per_block_override_reason": "sensitivity sweep (finding 11)"}
+        cm.cpu = a.cpu_ms_per_block
+
+    recal = None
+    if a.recompute_source == "m3":
+        recal = calibrate_recompute_from_m3(prof["cost_model_key"])
+        print(f"=== 重算成本改用 M3 整段 prefill 校準（R²={recal['r2']:.5f}）===")
+        print(f"  M2 分塊量測 : base {cm.recompute_base:.4f} ms/block, "
+              f"slope {cm.recompute_slope_per_token:.3e} ms/block/token")
+        print(f"  M3 整段擬合 : base {recal['recompute_base_ms_per_block']:.4f} ms/block, "
+              f"slope {recal['recompute_slope_ms_per_block_per_token']:.3e} ms/block/token"
+              f"（另有每請求固定開銷 {recal['per_request_overhead_ms']:.1f} ms，不計入 per-block）")
+        cm.recompute_base = recal["recompute_base_ms_per_block"]
+        cm.recompute_slope_per_token = recal["recompute_slope_ms_per_block_per_token"]
+        cm.source = {**cm.source, "recompute_recalibrated_from_m3": recal}
+
     OUT.mkdir(parents=True, exist_ok=True)
-    (OUT / "cost_model.json").write_text(json.dumps(
+    (OUT / f"cost_model_{a.model}.json").write_text(json.dumps(
         {"measured": cm.source,
          "derived_ms_per_block": {"gpu": cm.gpu, "cpu": cm.cpu, "ssd": cm.ssd,
                                   "recompute_base": cm.recompute_base,
@@ -1339,7 +1585,9 @@ def main() -> int:
         indent=2, ensure_ascii=False) + "\n")
 
     if a.validate:
-        v = validate(cm, SEM)
+        v = validate(cm, SEM, model_key=prof["cost_model_key"],
+                     kv_bytes_per_token=prof["kv_bytes_per_token"],
+                     cpu_gib=a.cpu_gib)
         print(f"\n=== 模擬器驗證（GPU KV = {v['gpu_kv_tokens']:,} tokens）===")
         print("比的是同一個量：warm 那一輪，full_gpu 相對 cpu_lru 的成本倍數\n")
         print(f"{'ctx':>7}{'實測':>10}{'模擬':>10}{'比值差':>9}  判定")
@@ -1449,6 +1697,8 @@ def main() -> int:
 
         for k, v in res.items():
             rows.append({
+                # 規則 3：每個數字都要能追溯到一次執行。原本只有 ts，自檢抓到缺 run_id。
+                "run_id": RUN_ID,
                 "ts": datetime.now().astimezone().isoformat(),
                 "alpha": alpha if alpha is not None else "",
                 "workload": label, "policy": k,
@@ -1469,10 +1719,21 @@ def main() -> int:
                 "oracle_headroom_pct": round(head, 2) if k == "oracle" else "",
                 "verdict": verdict if k == "oracle" else "",
                 "method": "trace-driven simulation; Belady/MIN + cost-aware greedy",
-                "cost_model": str(OUT / "cost_model.json"),
+                "cost_model": str(OUT / f"cost_model_{a.model}.json"),
             })
 
-    p = OUT / "oracle.csv"
+    # 🔴 2026-09-18 修正：原本固定寫 oracle.csv，7 個模型 × 多種工作負載互相覆蓋，
+    #    只剩最後一次的 20 列（違反規則 3：每個數字都要能追溯）。檔名改帶模型與工作負載。
+    tag = a.model
+    if a.trace:
+        tag += f"_trace-{a.trace}"
+    elif a.pressure:
+        tag += "_pressure"
+    else:
+        tag += "_zipf"
+    if a.cpu_ms_per_block is not None:
+        tag += f"_cpu{a.cpu_ms_per_block:g}"
+    p = OUT / f"oracle_{tag}.csv"
     with p.open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()

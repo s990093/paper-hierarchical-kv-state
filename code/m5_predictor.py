@@ -93,7 +93,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, os.environ.get("PAPER_HKV_PYLIBS",
-                                  "/ssd7/hungwei/paper-hkv/pylibs"))
+                                  "/mlsteam/data/tiara/pylibs" if Path("/opt/rocm").exists()
+                                  else "/ssd7/hungwei/paper-hkv/pylibs"))
 
 from m4_invariants import check_trace_units                      # noqa: E402
 from m4_oracle import (BLOCK, MODEL_PROFILES, CostModel,         # noqa: E402
@@ -101,8 +102,10 @@ from m4_oracle import (BLOCK, MODEL_PROFILES, CostModel,         # noqa: E402
                        mooncake_trace, profile, reuse_rate)
 
 REPO = Path(__file__).resolve().parent.parent
-BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
-OUT = REPO / "results/m5_predictor"
+from m4_oracle import PLATFORM as _PLAT       # 單一平台判斷來源，避免兩個檔各判一次
+BIG = Path(os.environ.get("TIARA_DATA", "/mlsteam/data/tiara") if _PLAT == "B"
+           else os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+OUT = REPO / ("results/m5_predictor_mi300x" if _PLAT == "B" else "results/m5_predictor")
 INDEX = OUT / "features_index.json"
 
 # EDC 的十個半衰期（存取數）。main.tex 演算法 1：C_i <- 1 + C_i * 2^(-Δ1/2^(9+i))
@@ -1196,7 +1199,9 @@ def main() -> int:
     ap.add_argument("--tail-frac", type=float, default=0.02,
                     help="longctx-session：每輪各自不同的尾巴佔文件的比例")
     ap.add_argument("--model", default="qwen-awq", choices=list(MODEL_PROFILES))
-    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
+    # 平台 B 的裝置是 local（/var/tmp overlay）與 nfs；A 是 sata／nvme
+    _dev = ["local", "nfs"] if _PLAT == "B" else ["sata", "nvme"]
+    ap.add_argument("--device", default=_dev[0], choices=_dev)
     ap.add_argument("--gpu-tokens", type=int, default=None,
                     help="覆寫剖面的 GPU 預算（只影響 W 的預設值）")
     ap.add_argument("--window", type=int, default=None,

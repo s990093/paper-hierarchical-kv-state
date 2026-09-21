@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import glob
 import json
 import os
 import random
@@ -66,10 +67,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gpu_guard import GpuWatcher, host_contention, wait_until_free  # noqa: E402
 
-BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
-VENV = BIG / "venv/vllm"
 REPO = Path(__file__).resolve().parent.parent
-OUT = REPO / "results/m2_harness"
+PLATFORM = os.environ.get("TIARA_PLATFORM") or ("B" if Path("/opt/rocm").exists() else "A")
+if PLATFORM == "B":
+    BIG = Path(os.environ.get("TIARA_DATA", "/mlsteam/data/tiara"))
+    VENV = Path(os.environ.get("TIARA_VENV", "/mlsteam/workspace/venv/tiara-v028"))
+    OUT = REPO / "results/m2_harness_mi300x"
+    RUNS = Path(os.environ.get("TIARA_RUNS", str(BIG / "runs")))
+else:
+    BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+    VENV = BIG / "venv/vllm"
+    OUT = REPO / "results/m2_harness"
+    RUNS = BIG / "runs"
 
 # 模型剖面。成本常數只在「同一個剖面內」可通約——
 # 用 A 模型的預算配 B 模型的搬運成本是無意義的（見 m4_oracle.MODEL_PROFILES）。
@@ -78,8 +87,22 @@ MODEL_CHOICES = {
     "llama-awq": ("hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4", 128.0),
     "qwen-awq": (str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"), 128.0),
 }
-MODEL = MODEL_CHOICES["llama"][0]
-MODEL_KEY = "llama"
+# 平台 B（BF16 權重）。第二欄是 BF16 KV 的 KiB/token（由 config 算，M1 會量真值）
+MODEL_CHOICES_B = {
+    "b-llama8b": ("unsloth/Llama-3.1-8B-Instruct", 128.0, []),
+    "b-ultralong8b-1m": ("nvidia/Llama-3.1-Nemotron-8B-UltraLong-1M-Instruct", 128.0, ["--dtype", "bfloat16"]),
+    "b-qwen7b-1m": (str(BIG / "models/Qwen2.5-7B-Instruct-1M-noDCA"), 56.0, []),
+    "b-qwen3-30b-a3b": ("Qwen/Qwen3-30B-A3B-Instruct-2507", 96.0, []),
+    "b-seedoss36b": ("ByteDance-Seed/Seed-OSS-36B-Instruct", 256.0, []),
+    # 13–15B 級：KV = 層數 × 2 × KV head × head_dim × 2 bytes / 1024
+    "b-qwen14b-1m": (str(BIG / "models/Qwen2.5-14B-Instruct-1M-noDCA"), 192.0, []),   # 48×2×8×128×2
+    "b-mistral-nemo12b": ("mistralai/Mistral-Nemo-Instruct-2407", 160.0, []),         # 40×2×8×128×2
+}
+MODEL_EXTRA: list[str] = []
+if PLATFORM == "B":
+    MODEL_CHOICES = {k: v[:2] for k, v in MODEL_CHOICES_B.items()}
+MODEL = next(iter(MODEL_CHOICES.values()))[0]
+MODEL_KEY = next(iter(MODEL_CHOICES))
 KV_KIB_PER_TOKEN_BF16 = 128.0
 # 輸出檔名後綴。🔴 檔名必須帶模型，否則量 qwen-awq 會直接蓋掉 llama 的常數，
 # 而兩者不可通約——覆蓋等於靜默地製造混用。
@@ -88,7 +111,7 @@ CSV_SUFFIX = ""
 
 def out_csv(stem: str) -> Path:
     """llama 維持既有檔名（向後相容），其他模型一律帶 model_key。"""
-    tag = "" if MODEL_KEY == "llama" else f"_{MODEL_KEY}"
+    tag = "" if (MODEL_KEY == "llama" and PLATFORM == "A") else f"_{MODEL_KEY}"
     return OUT / f"{stem}{tag}{CSV_SUFFIX}.csv"
 
 # 論文動作空間裡「住在 GPU 上」的四階，全部是同一個旗標的不同取值。
@@ -98,6 +121,8 @@ KV_DTYPES = [
     ("int8", "int8_per_token_head", "GPU INT8"),
     ("int4", "int4_per_token_head", "GPU INT4 — 論文動作空間的最低精度階"),
 ]
+# 平台 B 用 vLLM v0.28.0（與平台 A 同版），四個 KV dtype 都有，不過濾。
+# （v0.19.1–v0.22.0 的 CacheDType 只有 fp8 系列；若退回舊版要重新過濾。）
 
 CPU_BYTES = 24 * 1024**3
 
@@ -109,6 +134,12 @@ SSD_TEST_CPU_BYTES = 1 * 1024**3
 # 實測寫入 ~380 MB/s）。這台機器唯一可寫的 NVMe 是 /（Crucial P3）。
 # 用 PAPER_HKV_FS_TIER 環境變數切換，兩個都量，並在結果裡標明裝置。
 FS_ROOT = Path(os.environ.get("PAPER_HKV_FS_TIER", str(BIG / "kv_fs_tier")))
+# 平台 B：預設用本地 overlay（/var/tmp，底層是本地 SSD，隨機讀 158 µs 實測）；
+# NFS 另以 TIARA_FS_TIER=/mlsteam/data/tiara/kv_fs_tier 當第二種裝置量。
+# fs 次階類型名稱：v0.28.0 為 "fs"（v0.22.0 叫 "fs_python"）。
+FS_TIER_TYPE = os.environ.get("TIARA_FS_TIER_TYPE", "fs")
+if PLATFORM == "B":
+    FS_ROOT = Path(os.environ.get("TIARA_FS_TIER", "/var/tmp/tiara_kv_fs"))
 
 TIERS = [
     ("gpu_resident", None, "block 沒被逐出，warm 直接命中 GPU prefix cache（≈0 的基準）"),
@@ -131,7 +162,7 @@ TIERS = [
              "kv_connector_extra_config": {
                  "spec_name": "TieringOffloadingSpec",
                  "cpu_bytes_to_use": SSD_TEST_CPU_BYTES, "eviction_policy": "lru",
-                 "secondary_tiers": [{"type": "fs", "root_dir": str(FS_ROOT)}]}},
+                 "secondary_tiers": [{"type": FS_TIER_TYPE, "root_dir": str(FS_ROOT)}]}},
      "CPU 階刻意縮小 → 強迫 cascade 到磁碟，量的才是真的磁碟階"),
     ("drop", None, "沒有第二階，warm 只能整段重算"),
     # 🔴 論文的動作空間有六階，先前的 M2 只量了四階
@@ -148,6 +179,10 @@ TIERS = [
     ("gpu_int4", None, "GPU INT4 儲存：容量 4×，讀取要反量化",
      "int4_per_token_head"),
 ]
+# 平台 B 的 GPU KV pool 大到（Llama-8B 約 127 萬 token）工作集很難超過它。
+# 用 --num-gpu-blocks-override 把 GPU pool 人為縮小，逼出逐出；每個 block 的搬運／重算
+# 成本與 pool 大小無關，但這個設定每列都要記下來。0 = 不覆寫。
+GPU_BLOCKS_OVERRIDE = 0
 
 
 def _hc(gpu: int) -> dict:
@@ -174,6 +209,9 @@ def free_port() -> int:
 def env_for(extra: dict | None = None) -> dict:
     e = dict(os.environ)
     e["PATH"] = f"{VENV / 'bin'}:{e.get('PATH', '')}"
+    if PLATFORM == "B":
+        e["PATH"] = f"{VENV / 'bin'}:/opt/rocm/bin:{os.environ.get('PATH', '')}"
+        e.setdefault("HF_HOME", str(BIG / "hf-cache"))
     e.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
     for k, v in (("XDG_CACHE_HOME", "xdg-cache"), ("TRITON_CACHE_DIR", "triton-cache"),
                  ("VLLM_CACHE_ROOT", "vllm-cache"),
@@ -183,12 +221,17 @@ def env_for(extra: dict | None = None) -> dict:
     return e
 
 
+WATCHER = None   # main() 設定；Server.__exit__ 關 server 時暫停它
+
+
 class Server:
     """起一個 vLLM server，離開時確實收乾淨（含 /dev/shm 的 mmap）。"""
 
     def __init__(self, gpu: int, max_len: int, out: Path,
-                 kv_dtype: str = "auto", kv_cfg: dict | None = None):
+                 kv_dtype: str = "auto", kv_cfg: dict | None = None,
+                 override_ok: bool = True):
         self.gpu, self.max_len, self.out = gpu, max_len, out
+        self.override_ok = override_ok
         self.kv_dtype, self.kv_cfg = kv_dtype, kv_cfg
         self.port = free_port()
         self.p: subprocess.Popen | None = None
@@ -205,9 +248,24 @@ class Server:
             cmd += ["--kv-cache-dtype", self.kv_dtype]
         if self.kv_cfg:
             cmd += ["--kv-transfer-config", json.dumps(self.kv_cfg)]
+        cmd += MODEL_EXTRA
+        if GPU_BLOCKS_OVERRIDE and self.override_ok:
+            cmd += ["--num-gpu-blocks-override", str(GPU_BLOCKS_OVERRIDE)]
         (self.out / "cmd.txt").write_text(" ".join(shlex.quote(c) for c in cmd) + "\n")
+        # 🔴 2026-09-15 平台 B 踩到：CPU 卸載階的 /dev/shm/vllm_offload_<uuid>.mmap 只在正常 close 時 unlink，
+        #    server 被 SIGTERM/SIGKILL 收掉後留著；17 個孤兒檔把 179G 的 /dev/shm 塞到剩 7.7G，
+        #    之後的 cpu/ssd 階全部 "Insufficient space in /dev/shm" 起不來。
+        #    記下開跑前已存在的檔，__exit__ 只刪「這個 server 建的、且沒人持有」的。
+        self._shm_before = set(glob.glob("/dev/shm/vllm_offload_*.mmap"))
+        cpu_bytes = ((self.kv_cfg or {}).get("kv_connector_extra_config") or {}).get("cpu_bytes_to_use")
+        if cpu_bytes:
+            st = os.statvfs("/dev/shm")
+            free = st.f_bavail * st.f_frsize
+            if free < cpu_bytes:
+                raise RuntimeError(f"/dev/shm 只剩 {free / 2**30:.1f} GiB < CPU 階 {cpu_bytes / 2**30:.1f} GiB，"
+                                   f"不開 server（殘留檔：{sorted(self._shm_before)}）")
 
-        e = env_for({"CUDA_VISIBLE_DEVICES": str(self.gpu)})
+        e = env_for({"CUDA_VISIBLE_DEVICES": str(self.gpu), "HIP_VISIBLE_DEVICES": str(self.gpu)})
         self._log = (self.out / "server.log").open("w")
         t0 = time.time()
         self.p = subprocess.Popen(cmd, stdout=self._log, stderr=subprocess.STDOUT,
@@ -242,19 +300,80 @@ class Server:
             if hits:
                 setattr(self, attr, int(hits[-1]))
         self.o_direct = "falling back to buffered" not in t
+        m = re.search(r"max_num_batched_tokens=(\d+)", t)
+        self.max_num_batched_tokens = int(m.group(1)) if m else None
+
+    def offload_metrics(self) -> dict:
+        """vLLM 定期印出的 KV Transfer metrics 最後一次的值（store_bytes、allocation_failure…）。"""
+        import re
+        t = (self.out / "server.log").read_text(errors="replace")
+        out = {}
+        for k in ("kv_offload_store_bytes", "kv_offload_allocation_failure", "kv_offload_store_time",
+                  "kv_offload_cpu_cache_usage_perc",
+                  # 🔴 2026-09-16 加：vLLM 自己量的搬運量與搬運時間。
+                  #    TTFT 減基準會被計算重疊蓋住（發現 11），這兩個是連接器層的直接證據。
+                  "kv_offload_load_bytes", "kv_offload_load_time"):
+            hits = re.findall(rf"vllm:{k}=([0-9.e+-]+)", t)
+            out[k] = float(hits[-1]) if hits else ""
+        return out
+
+    def store_failures(self) -> int:
+        """log 裡 `cannot store chunks` 的次數。>0 代表卸載階拒收（2026-09-15 平台 B 踩到：
+        CPU 主階 512 block < 一個 prefill step 的 1024 block → 什麼都沒寫到磁碟）。"""
+        import re
+        return len(re.findall(r"cannot store chunks", (self.out / "server.log").read_text(errors="replace")))
+
+    def io_bytes(self) -> dict:
+        """server 行程樹累計的實際 I/O（/proc/<pid>/io）。v0.22 沒有 chunk_queries 指標，
+        用它證明磁碟階真的被讀寫：warm 階段 read_bytes 沒增加 = 沒量到磁碟。"""
+        tot = {"rchar": 0, "wchar": 0, "read_bytes": 0, "write_bytes": 0}
+        if not self.p:
+            return tot
+        from gpu_guard import _descendants
+        for pid in _descendants(self.p.pid):
+            try:
+                for line in open(f"/proc/{pid}/io"):
+                    k, v = line.split(":")
+                    if k in tot:
+                        tot[k] += int(v)
+            except OSError:
+                continue
+        return tot
 
     def __exit__(self, *exc) -> None:
-        if self.p and self.p.poll() is None:
-            try:
-                os.killpg(os.getpgid(self.p.pid), signal.SIGTERM)
-                self.p.wait(timeout=90)
-            except Exception:  # noqa: BLE001
+        from contextlib import nullcontext
+        from gpu_guard import wait_until_released
+        with (WATCHER.pause(f"teardown {self.out.name}") if WATCHER else nullcontext()):
+            if self.p and self.p.poll() is None:
                 try:
-                    os.killpg(os.getpgid(self.p.pid), signal.SIGKILL)
+                    os.killpg(os.getpgid(self.p.pid), signal.SIGTERM)
+                    self.p.wait(timeout=90)
                 except Exception:  # noqa: BLE001
-                    pass
-        self._log.close()
-        time.sleep(6)   # 讓 driver 把記憶體收回去
+                    try:
+                        os.killpg(os.getpgid(self.p.pid), signal.SIGKILL)
+                    except Exception:  # noqa: BLE001
+                        pass
+            self._log.close()
+            self._cleanup_shm()
+            time.sleep(6)   # 讓 driver 把記憶體收回去
+            ok, left = wait_until_released(self.gpu, timeout_s=300)
+            if not ok:
+                print(f"[m2] 🔴 server 關閉 300 秒後 GPU 仍有 {left} MiB 被佔用")
+
+    def _cleanup_shm(self) -> None:
+        held = set()
+        for fd in glob.glob("/proc/[0-9]*/fd/*") + glob.glob("/proc/[0-9]*/map_files/*"):
+            try:
+                held.add(os.readlink(fd))
+            except OSError:
+                continue
+        for f in sorted(set(glob.glob("/dev/shm/vllm_offload_*.mmap")) - getattr(self, "_shm_before", set())):
+            if f in held:
+                print(f"[m2] ⚠️ {f} 仍被持有，不刪")
+                continue
+            size = os.path.getsize(f)
+            os.unlink(f)
+            print(f"[m2] 清掉這個 server 留下的 {f}（{size / 2**30:.1f} GiB）")
 
     def url(self) -> str:
         return f"http://127.0.0.1:{self.port}/v1/completions"
@@ -262,7 +381,11 @@ class Server:
 
 def stream_ttft(url: str, prompt: str, max_tokens: int = 8,
                 timeout: float = 900.0) -> dict:
+    # 🔴 2026-09-18：Mistral-Nemo 對隨機 token 的提示會立刻吐 EOS，串流裡一個文字 token 都沒有
+    #    → TTFT 量不到（11/27 個請求空白），Oracle 讀成本模型時直接崩。
+    #    min_tokens 強制至少生成幾個 token；這不改變我們要量的 prefill 成本。
     body = json.dumps({"model": MODEL, "prompt": prompt, "max_tokens": max_tokens,
+                       "min_tokens": min(4, max_tokens),
                        "temperature": 0.0, "seed": 12345, "stream": True}).encode()
     req = urllib.request.Request(url, data=body,
                                  headers={"Content-Type": "application/json"})
@@ -295,7 +418,7 @@ def tok():
     global _TOK
     if _TOK is None:
         from transformers import AutoTokenizer
-        os.environ.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
+        os.environ.setdefault("HF_HOME", str(BIG / ("hf-cache" if PLATFORM == "B" else "hf-cache/huggingface")))
         _TOK = AutoTokenizer.from_pretrained(MODEL)
     return _TOK
 
@@ -350,14 +473,14 @@ def stage_capacity(gpu: int, repeats: int, max_len: int) -> int:
     （llama BF16：41,648 / 48,128，差 15.6%），單次量測會給出假的精確度。
     """
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m2-capacity"
-    root = BIG / "runs" / run_id
+    root = RUNS / run_id
     rows = []
     for name, dtype, desc in KV_DTYPES:
         for i in range(repeats):
             out = root / f"{name}-r{i}"
             print(f"[m2] capacity {name:5s} rep {i + 1}/{repeats} ...", flush=True)
             try:
-                with Server(gpu, max_len, out, kv_dtype=dtype) as s:
+                with Server(gpu, max_len, out, kv_dtype=dtype, override_ok=False) as s:
                     ok, kvt, kvg = True, s.kv_tokens, s.kv_gib
                     err = ""
             except Exception as e:  # noqa: BLE001
@@ -370,7 +493,7 @@ def stage_capacity(gpu: int, repeats: int, max_len: int) -> int:
                 "max_model_len": max_len, "server_ok": ok,
                 "kv_cache_tokens": kvt if kvt else "NOT_MEASURED",
                 "kv_cache_gib": kvg if kvg else "NOT_MEASURED",
-                "error": err, "desc": desc,
+                "error": err, "desc": desc, "platform": PLATFORM, "vllm_venv": str(VENV),
                 **_hc(gpu),
                 "log": str(out / "server.log"),
             })
@@ -435,8 +558,10 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
     它的 warm TTFT 就是「≈0 成本」的基準；其餘各階減掉它即為該階的搬運成本。
     """
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m2-retrieval"
-    root = BIG / "runs" / run_id
+    root = RUNS / run_id
     rows = []
+    invalid_rows = []      # 沒通過「整段從磁碟讀回」檢查的 ssd 列：另存，不進主 CSV
+    failed: list[str] = []
     # 🔴 交錯量測，不是一階量完再量下一階。
     #
     #    2026-08-31 的資料顯示這台機器**24 小時都是 HEAVY**
@@ -473,19 +598,29 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
             n = 1 if name.startswith("gpu_") else n_prefixes
             out = root / (name if repeats == 1 else f"{name}_r{rep}")
             print(f"[m2] retrieval {name:13s} n_prefixes={n} ctx={ctx} ...", flush=True)
+            tier_rows: list[dict] = []
             try:
-                with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv) as s:
+                if name == "ssd":
+                    import shutil
+                    shutil.rmtree(FS_ROOT, ignore_errors=True)   # 上一輪留下的 block 檔會讓 cold 變成命中
+                    FS_ROOT.mkdir(parents=True, exist_ok=True)
+                with Server(gpu, max_len, out, kv_dtype=kv_dtype, kv_cfg=kv,
+                            override_ok=not name.startswith("gpu_")) as s:
                     if name == "gpu_resident" and needs_evict:
                         # gpu_resident 刻意只送 1 個前綴（要它塞得下），
                         # 但它報回的 kv_tokens 正好可以檢查其餘各階的設定
-                        _check_workset_exceeds_capacity(ctx, n_prefixes,
-                                                        s.kv_tokens)
+                        # 搬運階若套用 --num-gpu-blocks-override，它們的容量是 override × 16，不是 gpu_resident 量到的全量
+                        cap = GPU_BLOCKS_OVERRIDE * 16 if GPU_BLOCKS_OVERRIDE else s.kv_tokens
+                        _check_workset_exceeds_capacity(ctx, n_prefixes, cap)
                     url = s.url()
                     texts = [make_text(ctx, seed=7000 + ctx * 10 + i) for i in range(n)]
                     for rnd in ("cold", "warm"):
+                        io0 = s.io_bytes()
                         for i, t in enumerate(texts):
+                            io_i = s.io_bytes()
                             r = stream_ttft(url, t)
-                            rows.append({
+                            io_j = s.io_bytes()
+                            tier_rows.append({
                                 "run_id": run_id,
                                 "ts": datetime.now().astimezone().isoformat(),
                                 "model_key": MODEL_KEY, "tier": name, "gpu": gpu,
@@ -498,13 +633,46 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
                                 "cpu_tier_queries": s.cpu_queries,
                                 "o_direct": s.o_direct,
                                 "fs_root": str(FS_ROOT),
+                                "fs_tier_type": FS_TIER_TYPE if name == "ssd" else "",
+                                "fs_dir_bytes": (sum(f.stat().st_size for f in FS_ROOT.rglob("*") if f.is_file())
+                                                 if name == "ssd" and FS_ROOT.exists() else ""),
+                                "req_read_bytes": io_j["read_bytes"] - io_i["read_bytes"],
+                                "req_write_bytes": io_j["write_bytes"] - io_i["write_bytes"],
+                                "req_rchar": io_j["rchar"] - io_i["rchar"],
+                                "gpu_blocks_override": (GPU_BLOCKS_OVERRIDE if not name.startswith("gpu_") else 0),
+                                "max_num_batched_tokens": s.max_num_batched_tokens,
+                                "store_failures_so_far": s.store_failures(),
+                                **{f"m_{k}": v for k, v in s.offload_metrics().items()},
+                                "cpu_tier_bytes": ((kv or {}).get("kv_connector_extra_config") or {}).get("cpu_bytes_to_use", ""),
+                                "platform": PLATFORM, "vllm_venv": str(VENV),
                                 "desc": desc, **_hc(gpu),
                                 "log": str(out / "server.log"),
                             })
                             print(f"        {rnd:<4} #{i} ttft={r['ttft_ms']}ms")
             except Exception as e:  # noqa: BLE001
                 print(f"        🔴 {type(e).__name__}: {e}")
+                failed.append(f"{out.name}: {type(e).__name__}: {e}"[:300])
+                rows.extend(tier_rows)
+                continue
+            # 🔴 2026-09-15 平台 B 踩到：vLLM 的載入路徑是 secondary → CPU(primary) → GPU
+            #    （vllm/v1/kv_offload/tiering/base.py SecondaryTierManager docstring）。
+            #    CPU 主階小於一個前綴的 KV 時，warm 每請求只從磁碟讀回「CPU 主階大小」那麼多，
+            #    其餘重算 —— 量到的是「部分讀回 + 部分重算」，不是 SSD 階成本。
+            #    所以 ssd 的每一列 warm 都要讀回 ≥ 95% 前綴 KV 位元組，否則整階作廢另存。
+            if name == "ssd":
+                need = 0.95 * ctx * KV_KIB_PER_TOKEN_BF16 * 1024
+                short = [(r["prefix_idx"], r["req_read_bytes"]) for r in tier_rows
+                         if r["round"] == "warm" and r["req_read_bytes"] < need]
+                if short:
+                    msg = (f"{out.name}: warm 讀回不足一個前綴（需 ≥ {need / 2**30:.2f} GiB）："
+                           f"{[(i, round(b / 2**30, 2)) for i, b in short]}")
+                    print(f"        🔴 {msg}")
+                    failed.append(msg)
+                    invalid_rows.extend(tier_rows)
+                    continue
+            rows.extend(tier_rows)
     write_rows(out_csv("retrieval_cost"), rows)
+    write_rows(out_csv("retrieval_cost_INVALID_partial_ssd_read"), invalid_rows)
 
     base = [r["ttft_ms"] for r in rows
             if r["tier"] == "gpu_resident" and r["round"] == "warm" and r["ttft_ms"]]
@@ -521,12 +689,18 @@ def stage_retrieval(gpu: int, ctx: int, n_prefixes: int, max_len: int,
             continue
         m = statistics.median(v)
         print(f"{name:14s}{m:>10.1f}{m - b:>10.1f}{1000 * (m - b) / ctx:>11.2f}")
+    if failed:
+        print(f"\n[m2] 🔴 {len(failed)} 個 tier 執行失敗或未通過檢查（規則 2：回傳非 0）：")
+        for f in failed:
+            print(f"        {f}")
+        return 1
     return 0
 
 
 # ─────────────── C. 重算成本 vs 位置 ───────────────
 
-def stage_recompute(gpu: int, max_len: int, chunk: int, positions: list[int]) -> int:
+def stage_recompute(gpu: int, max_len: int, chunk: int, positions: list[int],
+                    request_timeout: float = 900.0) -> int:
     """C_recompute(position)：在位置 P 重算 `chunk` 個 token 要多久。
 
     `EXPERIMENT_PLAN.md` §3：
@@ -538,29 +712,39 @@ def stage_recompute(gpu: int, max_len: int, chunk: int, positions: list[int]) ->
     P 越大，這 chunk 個 token 的 attention 要讀越多前序 KV → 成本應隨 P 成長。
     """
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m2-recompute"
-    out = BIG / "runs" / run_id
+    out = RUNS / run_id
     rows = []
     print(f"[m2] recompute chunk={chunk} positions={positions}")
-    with Server(gpu, max_len, out) as s:
+    # 🔴 2026-09-15 平台 B 踩到：seedoss36b 在 P=393,216 灌前綴時 900 s 逾時，
+    #    而 rows 只在全部位置跑完才寫 → 已量完的 36 列（P=0…327,680）全部遺失。
+    #    改成每個位置量完就寫；灌前綴的時間也記下（fill_*_ms，= 在位置 0 prefill P 個 token）。
+    with Server(gpu, max_len, out, override_ok=False) as s:
         url = s.url()
         for P in positions:
             pref = make_text(P, seed=9000 + P) if P else ""
+            fill1 = fill2 = None
             if P:
-                stream_ttft(url, pref)          # 先把前綴灌進 prefix cache
-                stream_ttft(url, pref)          # 再一次確保命中（第一次可能還在寫入）
+                fill1 = stream_ttft(url, pref, timeout=request_timeout)["ttft_ms"]   # 先把前綴灌進 prefix cache
+                fill2 = stream_ttft(url, pref, timeout=request_timeout)["ttft_ms"]   # 再一次確保命中（第一次可能還在寫入）
+                print(f"        P={P:>6} fill ttft={fill1}ms / {fill2}ms", flush=True)
+            pos_rows = []
             for rep in range(3):
                 suffix = make_text(chunk, seed=91000 + P * 10 + rep)
-                r = stream_ttft(url, pref + suffix)
-                rows.append({
+                r = stream_ttft(url, pref + suffix, timeout=request_timeout)
+                pos_rows.append({
                     "run_id": run_id, "ts": datetime.now().astimezone().isoformat(),
                     "model_key": MODEL_KEY, "gpu": gpu,
                     "cached_prefix_tokens": P, "recomputed_tokens": chunk,
                     "rep": rep, "ttft_ms": r["ttft_ms"], "total_ms": r["total_ms"],
-                    "gpu_kv_cache_tokens": s.kv_tokens, **_hc(gpu),
+                    "gpu_kv_cache_tokens": s.kv_tokens, "platform": PLATFORM, "vllm_venv": str(VENV),
+                    "fill_first_ttft_ms": fill1, "fill_second_ttft_ms": fill2,
+                    "request_timeout_s": request_timeout,
+                    **_hc(gpu),
                     "log": str(out / "server.log"),
                 })
-                print(f"        P={P:>6} rep{rep} ttft={r['ttft_ms']}ms")
-    write_rows(out_csv("recompute_position"), rows)
+                print(f"        P={P:>6} rep{rep} ttft={r['ttft_ms']}ms", flush=True)
+            write_rows(out_csv("recompute_position"), pos_rows)
+            rows.extend(pos_rows)
 
     print(f"\n[m2] === C_recompute(position)，每次重算 {chunk} 個 token ===")
     print(f"{'cached prefix':>14s}{'median ms':>11s}{'vs P=0':>9s}{'µs/token':>10s}")
@@ -600,17 +784,38 @@ def main() -> int:
                          "相對比較仍然有效。取各階的中位數。")
     ap.add_argument("--tiers", nargs="*", default=None,
                     help="只量指定的階（如 gpu_fp8 gpu_int4）。預設全部")
+    ap.add_argument("--gpu-blocks-override", type=int, default=0,
+                    help="搬運階（cpu/ssd/drop）的 --num-gpu-blocks-override。平台 B 的 GPU pool 太大，"
+                         "不縮小就不會逐出。精度階與重算階不套用")
+    ap.add_argument("--cpu-bytes", type=int, default=None, help="CPU 階大小（位元組）")
+    ap.add_argument("--ssd-cpu-bytes", type=int, default=None,
+                    help="量 SSD 階時的 CPU 主階大小。必須 > 一個 prefill step 的 KV（否則 cannot store chunks），"
+                         "且 << 工作集（否則不會 cascade 到磁碟）")
+    ap.add_argument("--request-timeout", type=float, default=900.0,
+                    help="recompute 每個 HTTP 請求的逾時秒數（長前綴的 prefill 可能超過 900 s）")
     ap.add_argument("--csv-suffix", default="",
                     help="輸出檔名後綴，避免覆蓋既有結果（如 _quiet）")
     a = ap.parse_args()
 
-    global MODEL, MODEL_KEY, KV_KIB_PER_TOKEN_BF16, CSV_SUFFIX
+    global MODEL, MODEL_KEY, KV_KIB_PER_TOKEN_BF16, CSV_SUFFIX, MODEL_EXTRA, GPU_BLOCKS_OVERRIDE
     MODEL, KV_KIB_PER_TOKEN_BF16 = MODEL_CHOICES[a.model]
     MODEL_KEY, CSV_SUFFIX = a.model, a.csv_suffix
+    if PLATFORM == "B":
+        MODEL_EXTRA = MODEL_CHOICES_B[a.model][2]
+    GPU_BLOCKS_OVERRIDE = a.gpu_blocks_override
+    if a.ssd_cpu_bytes:
+        for e in TIERS:
+            if e[1] and e[0] == "ssd":
+                e[1]["kv_connector_extra_config"]["cpu_bytes_to_use"] = a.ssd_cpu_bytes
+    if a.cpu_bytes:
+        for e in TIERS:
+            if e[1] and e[0] == "cpu":
+                e[1]["kv_connector_extra_config"]["cpu_bytes_to_use"] = a.cpu_bytes
     print(f"[m2] 模型剖面 {a.model} → {MODEL}")
     print(f"[m2] 輸出檔：{out_csv('retrieval_cost')}")
 
-    ok, got = wait_until_free(a.gpu, need_mib=22 * 1024, timeout_s=600)
+    need = 22 * 1024 if PLATFORM == "A" else 180 * 1024
+    ok, got = wait_until_free(a.gpu, need_mib=need, timeout_s=600)
     if not ok:
         print(f"[m2] 🔴 GPU {a.gpu} 只有 {got} MiB 可用，不開跑。")
         return 5
@@ -625,7 +830,9 @@ def main() -> int:
         print("[m2]    機器安靜時要重量一次再比對。")
 
     rc = 0
-    with GpuWatcher(gpu=a.gpu, out_path=str(OUT / "gpu_guard_m2.json")) as g:
+    global WATCHER
+    with GpuWatcher(gpu=a.gpu, out_path=str(OUT / f"gpu_guard_m2_{a.model}_{a.stage}{a.csv_suffix}.json")) as g:
+        WATCHER = g
         if not g.started_clean:
             print(f"[m2] 🔴 GPU {a.gpu} 開跑前就不乾淨：{g.intruders}")
             return 2
@@ -638,7 +845,8 @@ def main() -> int:
                                   repeats=a.retrieval_repeats)
         if a.stage in ("all", "recompute"):
             rc |= stage_recompute(a.gpu, max_len=max(a.positions) + a.chunk + 1024,
-                                  chunk=a.chunk, positions=a.positions)
+                                  chunk=a.chunk, positions=a.positions,
+                                  request_timeout=a.request_timeout)
     if g.contaminated:
         print(f"[m2] 🔴 {g.verdict()} — 有人插隊，這批數字作廢，必須重量。")
         return 3

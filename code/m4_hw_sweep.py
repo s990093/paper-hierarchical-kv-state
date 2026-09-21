@@ -48,9 +48,13 @@ import csv, dataclasses, sys
 from datetime import datetime
 from pathlib import Path
 sys.path.insert(0,'code')
+from m4_oracle import PLATFORM  # noqa: E402
 from m4_oracle import (BLOCK, SIM_VERSION, Sim, load_cost_model,
                        longctx_trace, profile)
-prof = profile("qwen-awq"); cm0 = load_cost_model("nvme", require_model_key="qwen-awq")
+# 平台 B 沒有 qwen-awq 剖面；基準剖面與裝置跟著平台走（見 m4_oracle.MODEL_PROFILES）
+_BASE = "b-llama8b" if PLATFORM == "B" else "qwen-awq"
+_DEV = "local" if PLATFORM == "B" else "nvme"
+prof = profile(_BASE); cm0 = load_cost_model(_DEV, require_model_key=_BASE)
 bpb = prof["kv_bytes_per_token"]*BLOCK
 P = {"full_gpu":("lru",0,0),"cpu_lru":("lru",1,0),"cpu_arc":("arc",1,0),"tier_fs":("lru",1,1)}
 SEM = dict(prefix_semantics=True, prefetch=True)
@@ -70,7 +74,8 @@ HW = (("3090（實測）", 1.0), ("快 2 倍（5090 級）", 0.5),
 # 🔴 2026-09-01：先前只印到 stdout，於是論文的表只能手打，
 #    重擬合成本模型之後就對不上（37,615 vs 37,717）。現在一律寫 CSV，
 #    圖表與論文都從檔案讀（CLAUDE.md 禁令 3）。
-OUT_CSV = Path(__file__).resolve().parent.parent / "results/m4_oracle/hw_sweep.csv"
+from m4_oracle import OUT as _M4_OUT          # 已依平台分流（A: m4_oracle、B: m4_oracle_mi300x）
+OUT_CSV = _M4_OUT / "hw_sweep.csv"
 RUN_ID = datetime.now().strftime("%Y%m%d-%H%M%S") + "-m4-hw-sweep"
 TS = datetime.now().astimezone().isoformat()
 
@@ -84,7 +89,7 @@ for lab, mul in HW:
         h = run(L, mul)
         row += f"{h:>8.1f}%"
         rows.append({"run_id": RUN_ID, "ts": TS, "sim_version": SIM_VERSION,
-                     "model_profile": "qwen-awq", "device": "nvme",
+                     "model_profile": _BASE, "device": _DEV,
                      "hardware": lab, "compute_multiplier": round(1 / mul, 4),
                      "slope_scale": mul, "crossover_tokens": round(xo),
                      "request_tokens": L, "pressure_x": 5.0, "reuse_pct": 81.0,

@@ -47,9 +47,17 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
-VENV = BIG / "venv/vllm"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 REPO = Path(__file__).resolve().parent.parent
+# 平台由環境決定：平台 B（MI300X @ MLSteam）大檔在 NFS data、venv 在 workspace
+PLATFORM = os.environ.get("TIARA_PLATFORM") or ("B" if Path("/opt/rocm").exists() else "A")
+if PLATFORM == "B":
+    BIG = Path(os.environ.get("TIARA_DATA", "/mlsteam/data/tiara"))
+    VENV = Path(os.environ.get("TIARA_VENV", "/mlsteam/workspace/venv/tiara-v028"))
+else:
+    BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+    VENV = BIG / "venv/vllm"
 
 # 探測用的起始長度：必須小到「任何設定都裝得下」，否則讀不到 KV cache size。
 PROBE_LEN = 8192
@@ -169,6 +177,69 @@ CONFIGS: dict[str, dict] = {
     },
 }
 
+# ══ 平台 B（單張 MI300X 192 GB）：BF16 權重，選模見 results/model_selection/ ══════
+# 2026-09-15 使用者決定：dense 與 MoE，小模型與 30B 級都做；hybrid 暫不做。
+# vLLM v0.28.0（與平台 A 同版）：KV dtype 有 auto / fp8 / int8_per_token_head / int4_per_token_head。
+CONFIGS_B: dict[str, dict] = {
+    "b-llama8b-bf16": {"model": "unsloth/Llama-3.1-8B-Instruct", "weight_dtype": "BF16", "kv_dtype": "auto",
+                       "extra": [], "category": "dense",
+                       "note": "與平台 A llama-bf16 同架構（官方 repo gated，用 config 逐欄相同的公開鏡像）"},
+    "b-llama8b-bf16-kvfp8": {"model": "unsloth/Llama-3.1-8B-Instruct", "weight_dtype": "BF16", "kv_dtype": "fp8",
+                             "extra": ["--kv-cache-dtype", "fp8"], "category": "dense", "note": "FP8 KV 容量倍數"},
+    "b-ultralong8b-1m-bf16": {"model": "nvidia/Llama-3.1-Nemotron-8B-UltraLong-1M-Instruct", "weight_dtype": "BF16",
+                              "kv_dtype": "auto", "extra": ["--dtype", "bfloat16"], "category": "dense",
+                              "note": "原生 1M 的 dense 錨點。repo 以 F32 發布，載入時轉 BF16"},
+    "b-qwen7b-1m-bf16": {"model": str(BIG / "models/Qwen2.5-7B-Instruct-1M-noDCA"), "weight_dtype": "BF16",
+                         "kv_dtype": "auto", "extra": [], "category": "dense",
+                         "note": "與平台 A 主力同模型。0.19.1 無 DCA 後端 → noDCA 變體，上限 262,144"},
+    "b-qwen3-30b-a3b-bf16": {"model": "Qwen/Qwen3-30B-A3B-Instruct-2507", "weight_dtype": "BF16", "kv_dtype": "auto",
+                             "extra": [], "category": "moe", "note": "MoE 主選。原生 262,144"},
+    "b-qwen3-30b-a3b-bf16-kvfp8": {"model": "Qwen/Qwen3-30B-A3B-Instruct-2507", "weight_dtype": "BF16",
+                                   "kv_dtype": "fp8", "extra": ["--kv-cache-dtype", "fp8"], "category": "moe",
+                                   "note": "MoE + FP8 KV"},
+    "b-seedoss36b-bf16": {"model": "ByteDance-Seed/Seed-OSS-36B-Instruct", "weight_dtype": "BF16", "kv_dtype": "auto",
+                          "extra": [], "category": "dense",
+                          "note": "dense 30B 級主選。估算懸崖 ~399K < 原生 524,288 → 純記憶體限制"},
+    "b-seedoss36b-bf16-kvfp8": {"model": "ByteDance-Seed/Seed-OSS-36B-Instruct", "weight_dtype": "BF16",
+                                "kv_dtype": "fp8", "extra": ["--kv-cache-dtype", "fp8"], "category": "dense",
+                                "note": "dense 30B + FP8 KV"},
+    # ── 13–15B 級（2026-09-16 使用者要求加入）────────────────────────────
+    # Qwen2.5-14B 是這一級在論文裡最常見的（490 篇中 29 篇，5.9%，排第 9；
+    # results/model_selection/paper_model_frequency_min3.csv），而 -1M 變體是
+    # 這一級**上下文最長**的（1,010,000）。DCA 同 7B 版要移除（vLLM v1 無 DCA 後端）。
+    "b-qwen14b-1m-bf16": {"model": str(BIG / "models/Qwen2.5-14B-Instruct-1M-noDCA"), "weight_dtype": "BF16",
+                          "kv_dtype": "auto", "extra": [], "category": "dense",
+                          "note": "13–15B 級主選。48 層 × 8 KV head × 128 = 192 KiB/token。noDCA 後上限 262,144"},
+    # 不同家族的 12B 對照：原生 131,072（不需 YaRN，符合禁令），40 層 × 8 × 128 = 160 KiB/token
+    "b-mistral-nemo12b-bf16": {"model": "mistralai/Mistral-Nemo-Instruct-2407", "weight_dtype": "BF16",
+                               "kv_dtype": "auto", "extra": [], "category": "dense",
+                               "note": "13–15B 級的第二個家族（Mistral/NVIDIA 合作）。原生 131,072，無 rope_scaling"},
+}
+for _k in [k for k in CONFIGS_B if k.endswith("-bf16")]:
+    for _tag, _dt in (("kvfp8", "fp8"), ("kvint8", "int8_per_token_head"), ("kvint4", "int4_per_token_head")):
+        if f"{_k}-{_tag}" in CONFIGS_B:
+            continue
+        _c = dict(CONFIGS_B[_k]); _c["kv_dtype"] = _dt
+        _c["extra"] = CONFIGS_B[_k]["extra"] + ["--kv-cache-dtype", _dt]; _c["note"] = f"{_dt} 容量倍數（含 scale 中繼資料）"
+        CONFIGS_B[f"{_k}-{_tag}"] = _c
+if PLATFORM == "B":
+    CONFIGS = CONFIGS_B
+
+
+def model_max_positions(model: str) -> int | None:
+    """模型可定址長度（config 的 max_position_embeddings）。本地路徑或 HF 快取皆可。"""
+    cand = [Path(model) / "config.json"]
+    hub = Path(os.environ.get("HF_HOME", str(BIG / "hf-cache"))) / "hub" / ("models--" + model.replace("/", "--")) / "snapshots"
+    if hub.exists():
+        cand += sorted(hub.glob("*/config.json"))
+    for c in cand:
+        if c.exists():
+            cfg = json.loads(c.read_text())
+            tc = cfg.get("text_config") or {}
+            return tc.get("max_position_embeddings") or cfg.get("max_position_embeddings")
+    return None
+
+
 # vLLM 把可用 KV 容量印成這一行；版本間措辭會變，所以多留幾個 pattern。
 KV_PATTERNS = [
     re.compile(r"GPU KV cache size:\s*([\d,]+)\s*tokens", re.I),
@@ -182,6 +253,9 @@ def free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
+
+
+WATCHER = None   # main() 設定；launch() 關 server 時暫停它
 
 
 def launch(model: str, max_len: int, gpu: int, extra: list[str], out: Path,
@@ -199,7 +273,12 @@ def launch(model: str, max_len: int, gpu: int, extra: list[str], out: Path,
     env = dict(os.environ)
     env.update(extra_env or {})
     env["CUDA_VISIBLE_DEVICES"] = str(gpu)
-    env["PATH"] = f"{VENV / 'bin'}:{env.get('PATH', '')}"
+    if PLATFORM == "B":
+        env["HIP_VISIBLE_DEVICES"] = str(gpu)
+        env["PATH"] = f"{VENV / 'bin'}:/opt/rocm/bin:{env.get('PATH', '')}"
+        env.setdefault("HF_HOME", str(BIG / "hf-cache"))
+    else:
+        env["PATH"] = f"{VENV / 'bin'}:{env.get('PATH', '')}"
     env.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
     for k, v in (("XDG_CACHE_HOME", "xdg-cache"), ("TRITON_CACHE_DIR", "triton-cache"),
                  ("VLLM_CACHE_ROOT", "vllm-cache"), ("FLASHINFER_WORKSPACE_BASE", "flashinfer-cache")):
@@ -223,15 +302,21 @@ def launch(model: str, max_len: int, gpu: int, extra: list[str], out: Path,
         except Exception:  # noqa: BLE001
             time.sleep(2)
 
-    if not died:
-        try:
-            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
-            p.wait(timeout=60)
-        except Exception:  # noqa: BLE001
+    from contextlib import nullcontext
+    from gpu_guard import wait_until_released
+    with (WATCHER.pause(f"teardown {out.name}") if WATCHER else nullcontext()):
+        if not died:
             try:
-                os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+                os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+                p.wait(timeout=60)
             except Exception:  # noqa: BLE001
-                pass
+                try:
+                    os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+                except Exception:  # noqa: BLE001
+                    pass
+        released, left = wait_until_released(gpu, timeout_s=300)
+        if not released:
+            print(f"[m1] 🔴 server 關閉 300 秒後 GPU 仍有 {left} MiB 被佔用")
     log.close()
 
     text = (out / "server.log").read_text(errors="replace")
@@ -248,7 +333,8 @@ def launch(model: str, max_len: int, gpu: int, extra: list[str], out: Path,
     if not ready:
         for line in text.splitlines():
             if any(k in line for k in ("ValueError", "RuntimeError", "torch.OutOfMemoryError",
-                                       "CUDA out of memory", "Error", "is larger than the maximum")):
+                                       "CUDA out of memory", "HIP out of memory", "Error",
+                                       "is larger than the maximum", "exceeds")):
                 err = line.strip()[:400]
                 break
 
@@ -271,7 +357,8 @@ def main() -> int:
     ap.add_argument("--config", help="CONFIGS 的鍵")
     ap.add_argument("--gpu", type=int, default=0)
     ap.add_argument("--list", action="store_true")
-    ap.add_argument("--csv", default=str(REPO / "results/m1_capacity/capacity.csv"))
+    ap.add_argument("--csv", default=str(REPO / ("results/m1_capacity/capacity_mi300x.csv" if PLATFORM == "B"
+                                                  else "results/m1_capacity/capacity.csv")))
     args = ap.parse_args()
 
     if args.list or not args.config:
@@ -280,9 +367,15 @@ def main() -> int:
         return 0
 
     cfg = CONFIGS[args.config]
+    from gpu_guard import GpuWatcher, foreign_on, wait_until_released
+    wait_until_released(args.gpu, timeout_s=120)     # 上一個設定的 server 可能還在收記憶體
+    pre = foreign_on(args.gpu)
+    if pre:
+        print(f"[m1] 🔴 GPU {args.gpu} 開跑前不乾淨：{pre} —— 不開始（CLAUDE.md §3）")
+        return 5
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = f"{stamp}-m1-{args.config}"
-    root = BIG / "runs" / run_id
+    root = Path(os.environ.get("TIARA_RUNS", str(BIG / "runs"))) / run_id
     print(f"[m1] run_id={run_id} gpu={args.gpu} model={cfg['model']} kv={cfg['kv_dtype']}")
 
     rows = []
@@ -301,6 +394,8 @@ def main() -> int:
             "error_line": r["error_line"] or "",
             "extrapolated": bool(cfg.get("env", {}).get("VLLM_ALLOW_LONG_MAX_MODEL_LEN")),
             "log": r["log"], "note": cfg["note"],
+            "platform": PLATFORM, "category": cfg.get("category", ""), "vllm_version": vllm_version,
+            "model_max_positions": mmax, "guard_verdict": "PENDING",
         })
 
     # 從已驗證的 config 讀 KV/token（results/m1_capacity/model_configs.json）
@@ -316,6 +411,16 @@ def main() -> int:
     if cfg["kv_dtype"] == "fp8" and kv_bytes_per_tok:
         kv_bytes_per_tok //= 2  # FP8 是 1 byte/elem，BF16 是 2
 
+    mmax = model_max_positions(cfg["model"])
+    vllm_version = subprocess.run([str(VENV / "bin/python"), "-c", "import vllm; print(vllm.__version__)"],
+                                  capture_output=True, text=True, cwd="/tmp").stdout.strip().splitlines()[-1:] or ["UNKNOWN"]
+    vllm_version = vllm_version[0]
+    print(f"[m1] venv={VENV} vllm={vllm_version}")
+    global WATCHER
+    watcher = GpuWatcher(gpu=args.gpu, out_path=str(root / "gpu_guard.json"))
+    watcher.__enter__()
+    WATCHER = watcher
+
     # ---- 1. 量測 ----
     print(f"[m1] phase=measure  max_model_len={cfg.get('probe_len', PROBE_LEN)}")
     probe = cfg.get("probe_len", PROBE_LEN)
@@ -328,34 +433,62 @@ def main() -> int:
     cliff = r["kv_cache_tokens"]
     if not r["ready"] or not cliff:
         print("[m1] 量測階段失敗 —— 停下來，不要往下猜。")
+        watcher.__exit__(None, None, None)
+        for row in rows:
+            row["guard_verdict"] = watcher.verdict()
+            row["limited_by"] = ""
         write_csv(args.csv, rows)
         return 1
 
     # ---- 2. 驗證下界：懸崖本身應該起得來 ----
+    # 懸崖超過模型可定址長度時，max_model_len 會被 vLLM 以「超出模型上限」拒絕，
+    # 那不是記憶體訊號 → 夾到模型上限，並記 limited_by=model。
+    limited_by = "memory"
     at = cliff
-    print(f"[m1] phase=verify_at  max_model_len={at}")
+    if mmax and cliff > mmax:
+        at, limited_by = mmax, "model"
+    print(f"[m1] phase=verify_at  max_model_len={at} (limited_by={limited_by})")
     r_at = launch(cfg["model"], at, args.gpu, cfg["extra"], root / "verify_at",
                   extra_env=cfg.get("env"))
-    print(f"     ready={r_at['ready']} ({r_at['elapsed_s']}s) err={r_at['error_line']}")
+    print(f"     ready={r_at['ready']} kv={r_at['kv_cache_tokens']} ({r_at['elapsed_s']}s) err={r_at['error_line']}")
     record("verify_at", at, r_at, "OK" if r_at["ready"] else "UNEXPECTED_FAIL")
 
-    # ---- 3. 驗證上界：超過懸崖應該失敗 ----
-    over = int(cliff * OVERSHOOT)
-    print(f"[m1] phase=verify_over  max_model_len={over}")
-    r_ov = launch(cfg["model"], over, args.gpu, cfg["extra"], root / "verify_over",
-                  extra_env=cfg.get("env"))
-    print(f"     ready={r_ov['ready']} ({r_ov['elapsed_s']}s) err={r_ov['error_line']}")
-    record("verify_over", over, r_ov,
-           "UNEXPECTED_OK" if r_ov["ready"] else "OK_FAILED_AS_EXPECTED")
+    # ---- 3. 驗證上界：超過懸崖應該失敗（只有記憶體是瓶頸時才有意義） ----
+    r_ov = None
+    if limited_by == "memory":
+        # 用 verify_at 那次量到的 KV 容量當懸崖（KV pool 會隨 max_model_len 變動，見平台 A 發現 6）
+        cliff2 = r_at["kv_cache_tokens"] or cliff
+        over = int(cliff2 * OVERSHOOT)
+        if mmax and over > mmax:
+            print(f"[m1] phase=verify_over SKIPPED：{over} > 模型上限 {mmax}")
+        else:
+            print(f"[m1] phase=verify_over  max_model_len={over}")
+            r_ov = launch(cfg["model"], over, args.gpu, cfg["extra"], root / "verify_over",
+                          extra_env=cfg.get("env"))
+            print(f"     ready={r_ov['ready']} ({r_ov['elapsed_s']}s) err={r_ov['error_line']}")
+            record("verify_over", over, r_ov,
+                   "UNEXPECTED_OK" if r_ov["ready"] else "OK_FAILED_AS_EXPECTED")
+    else:
+        print("[m1] phase=verify_over SKIPPED：懸崖受模型上限限制，不是記憶體")
 
+    watcher.__exit__(None, None, None)
+    for row in rows:
+        row["guard_verdict"] = watcher.verdict()
+        row["limited_by"] = limited_by
+    if watcher.contaminated:
+        (root / "CONTAMINATED").write_text(json.dumps(watcher.report(), indent=2))
+        print(f"[m1] 🔴 {watcher.verdict()}：結果不寫進 results/（CLAUDE.md §3），run 目錄保留")
+        return 3
     write_csv(args.csv, rows)
 
     print(f"\n[m1] === {args.config} ===")
-    print(f"  懸崖（實測 KV 容量）: {cliff:,} tokens")
-    if kv_bytes_per_tok:
-        print(f"  ≈ {cliff * kv_bytes_per_tok / 2**30:.2f} GiB KV")
-    print(f"  在懸崖啟動          : {'OK' if r_at['ready'] else '🔴 失敗（與預期不符）'}")
-    print(f"  超出 {OVERSHOOT}× 啟動   : {'🔴 竟然成功（與預期不符）' if r_ov['ready'] else 'OK 如預期失敗'}")
+    print(f"  懸崖（實測 KV 容量，max_model_len={probe}）: {cliff:,} tokens")
+    if r_at["kv_cache_tokens"]:
+        print(f"  懸崖（max_model_len={at}）: {r_at['kv_cache_tokens']:,} tokens")
+    print(f"  模型可定址上限: {mmax}  → limited_by={limited_by}")
+    print(f"  在懸崖啟動: {'OK' if r_at['ready'] else '🔴 失敗（與預期不符）'}")
+    if r_ov is not None:
+        print(f"  超出 {OVERSHOOT}× 啟動: {'🔴 竟然成功（與預期不符）' if r_ov['ready'] else 'OK 如預期失敗'}")
     return 0
 
 
@@ -365,8 +498,13 @@ def write_csv(path: str, rows: list[dict]) -> None:
     new = not p.exists()
     if not rows:
         return
+    fields = list(rows[0])
+    if not new:
+        head = next(csv.reader(p.open(newline="")), [])
+        if head != fields:
+            raise SystemExit(f"🔴 {p} 的欄位與這批資料不同，拒絕 append（會整排錯位）。舊檔先移走。")
     with p.open("a", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w = csv.DictWriter(f, fieldnames=fields)
         if new:
             w.writeheader()
         w.writerows(rows)

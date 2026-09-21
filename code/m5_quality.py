@@ -58,6 +58,7 @@ import os
 import re
 import shlex
 import signal
+import glob
 import socket
 import subprocess
 import sys
@@ -69,10 +70,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gpu_guard import GpuWatcher, host_contention, wait_until_free  # noqa: E402
 
-BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
-VENV = BIG / "venv/vllm"
 REPO = Path(__file__).resolve().parent.parent
-OUT = REPO / "results/m5_quality"
+PLATFORM = os.environ.get("TIARA_PLATFORM") or ("B" if Path("/opt/rocm").exists() else "A")
+if PLATFORM == "B":
+    BIG = Path(os.environ.get("TIARA_DATA", "/mlsteam/data/tiara"))
+    VENV = Path(os.environ.get("TIARA_VENV", "/mlsteam/workspace/venv/tiara-v028"))
+    OUT = REPO / "results/m5_quality_mi300x"
+    RUNS = Path(os.environ.get("TIARA_RUNS", str(BIG / "runs")))
+else:
+    BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+    VENV = BIG / "venv/vllm"
+    OUT = REPO / "results/m5_quality"
+    RUNS = BIG / "runs"
 GSM = BIG / "datasets/gsm8k"
 
 # 品質量測的模型。先前寫死 llama BF16；長上下文的檢索實驗要用 AWQ 的
@@ -82,8 +91,20 @@ MODEL_CHOICES = {
     "llama-awq": "hugging-quants/Meta-Llama-3.1-8B-Instruct-AWQ-INT4",
     "qwen-awq": str(BIG / "models/Qwen2.5-7B-Instruct-1M-AWQ-noDCA"),
 }
-MODEL = MODEL_CHOICES["llama"]
-MODEL_KEY = "llama"
+# 平台 B（BF16 權重）。層數不同 → 混合精度的粒度不同，見 N_LAYERS_BY_MODEL。
+MODEL_CHOICES_B = {
+    "b-llama8b": "unsloth/Llama-3.1-8B-Instruct",
+    "b-ultralong8b-1m": "nvidia/Llama-3.1-Nemotron-8B-UltraLong-1M-Instruct",
+    "b-qwen7b-1m": str(BIG / "models/Qwen2.5-7B-Instruct-1M-noDCA"),
+    "b-qwen3-30b-a3b": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+    "b-seedoss36b": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+    "b-qwen14b-1m": str(BIG / "models/Qwen2.5-14B-Instruct-1M-noDCA"),
+    "b-mistral-nemo12b": "mistralai/Mistral-Nemo-Instruct-2407",
+}
+if PLATFORM == "B":
+    MODEL_CHOICES = MODEL_CHOICES_B
+MODEL = next(iter(MODEL_CHOICES.values()))
+MODEL_KEY = next(iter(MODEL_CHOICES))
 
 # 精度階梯：論文動作空間裡「住在 GPU 上」的四階。
 # 🔴 fp8 與 int8 的比較必須公平。2026-08-31 第一版拿
@@ -112,6 +133,15 @@ PRECISIONS = [
 # （欄位定義見 vllm/config/cache.py:114）。Llama-3.1-8B 有 32 層，
 # 故 f 的粒度是 1/32。這與 KVTuner（ICML'25）的逐層混合精度做法一致。
 N_LAYERS = 32
+# 🔴 混合精度的粒度是 1/層數，所以層數必須跟著模型走。
+#    照抄 Llama 的 32 會讓 skip 清單指向不存在的層（Qwen-7B 只有 28 層），
+#    或漏掉一半的層（Seed-OSS 有 64 層）。
+N_LAYERS_BY_MODEL = {
+    "llama": 32, "llama-awq": 32, "qwen-awq": 28,
+    "b-llama8b": 32, "b-ultralong8b-1m": 32, "b-qwen7b-1m": 28,
+    "b-qwen3-30b-a3b": 48, "b-seedoss36b": 64,
+    "b-qwen14b-1m": 48, "b-mistral-nemo12b": 40,
+}
 
 def mixed_precision_configs(dtype: str, fractions: list[float]) -> list[tuple]:
     """回傳 (名稱, kv_dtype, 額外旗標, 說明) 的清單。
@@ -121,6 +151,8 @@ def mixed_precision_configs(dtype: str, fractions: list[float]) -> list[tuple]:
     若集中在前段，量到的會是「淺層對量化的敏感度」而非「整體 f 的效果」。
     """
     out = []
+    n_layers = N_LAYERS_BY_MODEL.get(MODEL_KEY, N_LAYERS)
+    globals()["N_LAYERS"] = n_layers
     for f in fractions:
         n_q = round(f * N_LAYERS)
         if n_q == 0:
@@ -138,6 +170,8 @@ def mixed_precision_configs(dtype: str, fractions: list[float]) -> list[tuple]:
 
 CPU_BYTES = 24 * 1024**3
 FS_ROOT = BIG / "kv_fs_tier_q"
+if PLATFORM == "B":
+    FS_ROOT = Path(os.environ.get("TIARA_FS_TIER_Q", "/var/tmp/tiara_kv_fs_q"))
 
 # 無損驗證：這三個設定的輸出必須**完全相同**，不同就是 bug。
 LOSSLESS = [
@@ -150,7 +184,12 @@ LOSSLESS = [
     ("tier_fs", {"kv_connector": "OffloadingConnector", "kv_role": "kv_both",
                  "kv_connector_extra_config": {
                      "spec_name": "TieringOffloadingSpec",
-                     "cpu_bytes_to_use": 1 * 1024**3, "eviction_policy": "lru",
+                     # 🔴 平台 B：1 GiB 放不下一個 prefill step（max_num_batched_tokens
+                     #    =16,384，Seed-OSS 一步就要 4 GiB），vLLM 會整批拒收
+                     #    （"cannot store chunks"），磁碟階一個 byte 都寫不進去 —— M2 發現 8。
+                     #    取 8 GiB = 兩步（最大模型 256 KiB/token），仍遠小於工作集。
+                     "cpu_bytes_to_use": (8 if PLATFORM == "B" else 1) * 1024**3,
+                     "eviction_policy": "lru",
                      "secondary_tiers": [{"type": "fs", "root_dir": str(FS_ROOT)}]}},
      "CPU 階縮小以強迫 cascade 到磁碟"),
 ]
@@ -195,6 +234,9 @@ def build_prefix(train: list[dict], k: int) -> str:
     return "\n".join(parts) + "\n"
 
 
+WATCHER = None   # main() 設定；Server.__exit__ 收 server 時暫停它
+
+
 class Server:
     def __init__(self, gpu: int, max_len: int, out: Path,
                  kv_dtype: str = "auto", kv_cfg: dict | None = None,
@@ -222,12 +264,20 @@ class Server:
         e = dict(os.environ)
         e["CUDA_VISIBLE_DEVICES"] = str(self.gpu)
         e["PATH"] = f"{VENV / 'bin'}:{e.get('PATH', '')}"
+        if PLATFORM == "B":
+            e["HIP_VISIBLE_DEVICES"] = str(self.gpu)
+            e["PATH"] = f"{VENV / 'bin'}:/opt/rocm/bin:{os.environ.get('PATH', '')}"
+            e.setdefault("HF_HOME", str(BIG / "hf-cache"))
         e.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
         for k, v in (("XDG_CACHE_HOME", "xdg-cache"), ("TRITON_CACHE_DIR", "triton-cache"),
                      ("VLLM_CACHE_ROOT", "vllm-cache"),
                      ("FLASHINFER_WORKSPACE_BASE", "flashinfer-cache")):
             e.setdefault(k, str(BIG / v))
 
+        # 🔴 M2 發現 7：CPU 卸載階的 /dev/shm mmap 檔只在正常 close 時 unlink，
+        #    被 SIGTERM 收掉就留著。2026-09-17 再次踩到：M5 的 lossless 跑完後留下 12 個檔、
+        #    176/179 GiB 被佔滿，導致 14B 的 M2 CPU 階起不來（m2 與 m3 已修，m5 當時漏了）。
+        self._shm_before = set(glob.glob("/dev/shm/vllm_offload_*.mmap"))
         self._log = (self.out / "server.log").open("w")
         t0 = time.time()
         self.p = subprocess.Popen(cmd, stdout=self._log, stderr=subprocess.STDOUT,
@@ -249,6 +299,20 @@ class Server:
         raise TimeoutError(f"not ready; see {self.out / 'server.log'}")
 
     def __exit__(self, *exc):
+        # 🔴 2026-09-19：M5 的 guard 被標成 CONTAMINATED_DURING_RUN，查下去是
+        #    M2 發現 6 的同一個坑：server 收掉後 amd-smi 還會報告幾秒的 VRAM，
+        #    而該行程已經關掉 /dev/kfd → 被算成「容器外的陌生行程」（pid -1、179 GB，
+        #    其實就是我們自己）。m2／m3 早就加了 pause，m5 漏了。
+        from contextlib import nullcontext
+        from gpu_guard import wait_until_released
+        with (WATCHER.pause(f"teardown {self.out.name}") if WATCHER else nullcontext()):
+            self._teardown()
+            if PLATFORM == "B":
+                ok, left = wait_until_released(self.gpu, timeout_s=300)
+                if not ok:
+                    print(f"[m5] 🔴 server 關閉 300 秒後 GPU 仍有 {left} MiB 被佔用")
+
+    def _teardown(self) -> None:
         if self.p and self.p.poll() is None:
             try:
                 os.killpg(os.getpgid(self.p.pid), signal.SIGTERM)
@@ -259,8 +323,26 @@ class Server:
                 except Exception:  # noqa: BLE001
                     pass
         self._log.close()
+        self._cleanup_shm()
         time.sleep(6)
 
+
+    def _cleanup_shm(self) -> None:
+        """只刪這個 server 新建、且沒有 process 持有的 mmap（見 M2 發現 7）。"""
+        held = set()
+        for fd in glob.glob("/proc/[0-9]*/fd/*") + glob.glob("/proc/[0-9]*/map_files/*"):
+            try:
+                held.add(os.readlink(fd))
+            except OSError:
+                continue
+        for f in sorted(set(glob.glob("/dev/shm/vllm_offload_*.mmap")) - getattr(self, "_shm_before", set())):
+            if f in held:
+                continue
+            try:
+                os.unlink(f)
+                print(f"[m5] 清掉這個 server 留下的 {f}")
+            except OSError:
+                pass
     def ask(self, prompt: str, max_tokens: int = 400) -> str:
         body = json.dumps({"model": MODEL, "prompt": prompt, "max_tokens": max_tokens,
                            "temperature": 0.0, "seed": 12345,
@@ -505,7 +587,7 @@ def main() -> int:
                          "needle = 長距離檢索（對 KV 量化敏感得多，"
                          "GSM8K 在 n=1000 下四個精度全部與 0 無法區分）；"
                          "needle-mixed = 用檢索任務掃 f")
-    ap.add_argument("--model", default="llama", choices=list(MODEL_CHOICES),
+    ap.add_argument("--model", default=next(iter(MODEL_CHOICES)), choices=list(MODEL_CHOICES),
                     help="品質量測用哪個模型。長上下文檢索要用 AWQ 權重的，"
                          "BF16 權重的 llama 只有 41,648 token 的 KV 預算")
     ap.add_argument("--needle-ctx", type=int, default=32768,
@@ -533,7 +615,8 @@ def main() -> int:
     prefix = build_prefix(train, a.n_shot)
 
     from transformers import AutoTokenizer
-    os.environ.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
+    os.environ.setdefault("HF_HOME", str(BIG / ("hf-cache" if PLATFORM == "B"
+                                                 else "hf-cache/huggingface")))
     tok = AutoTokenizer.from_pretrained(MODEL)
     plen = len(tok(prefix, add_special_tokens=False)["input_ids"])
     qmax = max(len(tok(f"Question: {e['question'].strip()}\nAnswer:",
@@ -549,13 +632,14 @@ def main() -> int:
     print("[m5] ℹ️  品質是正確率，不是時間——**整機爭用不影響正確率**，"
           "只影響 latency_ms 欄。")
 
-    ok, got = wait_until_free(a.gpu, need_mib=22 * 1024, timeout_s=900)
+    ok, got = wait_until_free(a.gpu, need_mib=(180 if PLATFORM == "B" else 22) * 1024,
+                              timeout_s=900)
     if not ok:
         print(f"[m5] 🔴 GPU {a.gpu} 只有 {got} MiB 可用，不開跑。")
         return 5
 
     run_id = f"{datetime.now():%Y%m%d-%H%M%S}-m5-{a.mode}"
-    root = BIG / "runs" / run_id
+    root = RUNS / run_id
     task = "needle" if a.mode.startswith("needle") else "gsm8k"
     if task == "needle":
         from transformers import AutoTokenizer
@@ -579,7 +663,9 @@ def main() -> int:
         todo = [(n, "auto", c, d) for n, c, d in LOSSLESS]
 
     rows: list[dict] = []
-    with GpuWatcher(gpu=a.gpu, out_path=str(OUT / f"gpu_guard_{a.mode}.json")) as g:
+    global WATCHER
+    with GpuWatcher(gpu=a.gpu, out_path=str(OUT / f"gpu_guard_{a.mode}_{a.model}.json")) as g:
+        WATCHER = g
         if not g.started_clean:
             print(f"[m5] 🔴 GPU {a.gpu} 開跑前就不乾淨：{g.intruders}")
             return 2

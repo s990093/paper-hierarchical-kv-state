@@ -21,11 +21,13 @@
 from __future__ import annotations
 import csv
 import json
+import os
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-M2 = REPO / "results/m2_harness"
-M4 = REPO / "results/m4_oracle"
+_PLAT = os.environ.get("TIARA_PLATFORM") or ("B" if Path("/opt/rocm").exists() else "A")
+M2 = REPO / ("results/m2_harness_mi300x" if _PLAT == "B" else "results/m2_harness")
+M4 = REPO / ("results/m4_oracle_mi300x" if _PLAT == "B" else "results/m4_oracle")
 NM = "NOT_MEASURED"
 
 

@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import glob
 import json
 import os
 import random
@@ -79,9 +80,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from gpu_guard import (GpuWatcher, host_contention, idle_gpus,  # noqa: E402
                        wait_until_free)
 
-BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
-VENV = BIG / "venv/vllm"
 REPO = Path(__file__).resolve().parent.parent
+PLATFORM = os.environ.get("TIARA_PLATFORM") or ("B" if Path("/opt/rocm").exists() else "A")
+if PLATFORM == "B":
+    BIG = Path(os.environ.get("TIARA_DATA", "/mlsteam/data/tiara"))
+    VENV = Path(os.environ.get("TIARA_VENV", "/mlsteam/workspace/venv/tiara-v028"))
+    RUNS = Path(os.environ.get("TIARA_RUNS", str(BIG / "runs")))
+    DEFAULT_CSV = REPO / "results/m3_baseline_mi300x/baseline_mi300x.csv"
+else:
+    BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+    VENV = BIG / "venv/vllm"
+    RUNS = BIG / "runs"
+    DEFAULT_CSV = REPO / "results/m3_baseline/baseline.csv"
 
 # ctx 階梯必須跟著各模型的**實測**容量走，兩個模型不能共用一組。
 # 判準：工作集 = N_PREFIXES × ctx，要有 2 個點在容量之下、2 個點在容量之上，
@@ -186,12 +196,121 @@ MODELS = {
     },
 }
 
+# ══ 平台 B（MI300X 192 GiB）══════════════════════════════════════════
+# 🔴 這裡不能照抄平台 A。B 的 GPU KV 容量是 A 的 10–30 倍
+#    （M1 實測：Llama-8B 1,271,024 tok、Qwen-7B 2,889,696 tok），
+#    而模型的可定址長度反而是硬上限（Llama-8B 131,072）。
+#    → 4 個前綴 × 模型上限 = 524,288 tok，**還是遠小於容量，一次都不會逐出**，
+#      量出來的五個 baseline 會完全一樣，而且看起來完全正常（M2 發現過同一個坑）。
+#    所以平台 B 一律用 --num-gpu-blocks-override 把 GPU KV 池縮到 override × 16 個 token，
+#    讓工作集有 2 個點在容量之下、2 個點在容量之上。override 每一列都記進 CSV。
+#
+# cpu_bytes：CPU 階要放得下整個工作集（baseline 的 CPU 階是「對手的快取」，
+#            不是要逼它 cascade），取最大工作集的 1.5 倍。
+# fs_cpu_bytes：tier_fs 專用。CPU 階若放得下整個工作集，磁碟階一次都不會被用到
+#            （M2 發現 8 的同一個坑）。取最大工作集的一半，強迫 cascade。
+#            ⚠️ 這與平台 A 的設定不同（A 的 tier_fs 用 24 GiB ≥ 工作集），
+#              兩邊的 tier_fs 因此不可直接比較，要比必須先重量 A。
+MODELS_B = {
+    "b-llama8b": {
+        "path": "unsloth/Llama-3.1-8B-Instruct",
+        "kv_kib_per_token": 128.0,
+        "measured_kv_capacity_tokens": 1_271_024,   # M1 實測 BF16
+        "model_max_len": 131_072,
+        "gpu_blocks_override": 2048,                # → 32,768 tok 的 KV 池
+        "ctx_ladder": [4096, 8192, 16384, 32768],   # 工作集 16K/32K | 64K/128K
+        "extra": [],
+        "cpu_bytes": 24 * 1024**3,
+        "fs_cpu_bytes": 8 * 1024**3,
+        "note": "小型 dense 對照，與平台 A 的 llama 同家族",
+    },
+    "b-qwen7b-1m": {
+        "path": str(BIG / "models/Qwen2.5-7B-Instruct-1M-noDCA"),
+        "kv_kib_per_token": 56.0,
+        "measured_kv_capacity_tokens": 2_889_696,
+        "model_max_len": 262_144,
+        "gpu_blocks_override": 4096,                # → 65,536 tok
+        "ctx_ladder": [8192, 16384, 32768, 65536],  # 工作集 32K/64K | 128K/256K
+        "extra": [],
+        "cpu_bytes": 24 * 1024**3,
+        "fs_cpu_bytes": 7 * 1024**3,
+        "note": "長 context dense，與平台 A 的 qwen 同一顆（no-DCA）",
+    },
+    "b-qwen3-30b-a3b": {
+        "path": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+        "kv_kib_per_token": 96.0,
+        "measured_kv_capacity_tokens": 948_176,
+        "model_max_len": 262_144,
+        "gpu_blocks_override": 4096,
+        "ctx_ladder": [8192, 16384, 32768, 65536],
+        "extra": [],
+        "cpu_bytes": 36 * 1024**3,
+        "fs_cpu_bytes": 12 * 1024**3,
+        "note": "MoE。⚠️ M2 發現 11：這顆的 CPU 搬運跑 37.8 GB/s，其他模型只有 2.3–4.6",
+    },
+    "b-seedoss36b": {
+        "path": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+        "kv_kib_per_token": 256.0,
+        "measured_kv_capacity_tokens": 413_632,     # M1：唯一受記憶體限制的模型
+        "model_max_len": 524_288,
+        "gpu_blocks_override": 4096,
+        "ctx_ladder": [8192, 16384, 32768, 65536],
+        "extra": [],
+        "cpu_bytes": 96 * 1024**3,
+        "fs_cpu_bytes": 32 * 1024**3,
+        "note": "大型 dense。重算最貴（96K 要 63.9 s），最能凸顯階層價值",
+    },
+    # 🔴 2026-09-17：Qwen2.5-7B-1M 在 129K + 低精度 KV 下語言能力崩潰（發現 15），
+    #    不適合當長上下文主力。改用 NVIDIA 原生 1M 的 UltraLong-8B（M1 已量：1,265,520 tok）。
+    #    Qwen2.5-7B-1M 的資料保留，當作「與平台 A 交叉重現的異常」引用。
+    "b-ultralong8b-1m": {
+        "path": "nvidia/Llama-3.1-Nemotron-8B-UltraLong-1M-Instruct",
+        "kv_kib_per_token": 128.0,
+        "measured_kv_capacity_tokens": 1_265_520,
+        "model_max_len": 1_073_152,
+        "gpu_blocks_override": 4096,
+        "ctx_ladder": [8192, 16384, 32768, 65536],
+        "extra": ["--dtype", "bfloat16"],      # repo 以 F32 發布
+        "cpu_bytes": 48 * 1024**3,             # 最大工作集 4×65,536×128 KiB = 32 GiB
+        "fs_cpu_bytes": 16 * 1024**3,
+        "note": "長上下文 dense 主力（原生 1M）。取代 Qwen2.5-7B-1M 的角色",
+    },
+    # ── 13–15B 級（2026-09-16 加入）──────────────────────────────
+    "b-qwen14b-1m": {
+        "path": str(BIG / "models/Qwen2.5-14B-Instruct-1M-noDCA"),
+        "kv_kib_per_token": 192.0,
+        "measured_kv_capacity_tokens": 0,        # M1 量到後填；override 決定有效容量
+        "model_max_len": 262_144,
+        "gpu_blocks_override": 4096,
+        "ctx_ladder": [8192, 16384, 32768, 65536],
+        "extra": [],
+        "cpu_bytes": 72 * 1024**3,               # 最大工作集 4×65,536×192 KiB = 48 GiB 的 1.5 倍
+        "fs_cpu_bytes": 24 * 1024**3,            # 工作集的一半 → 強迫 cascade
+        "note": "13–15B 級主選，論文出現率最高的 14B（5.9%），且是這級上下文最長的（1M，noDCA 後 262,144）",
+    },
+    "b-mistral-nemo12b": {
+        "path": "mistralai/Mistral-Nemo-Instruct-2407",
+        "kv_kib_per_token": 160.0,
+        "measured_kv_capacity_tokens": 0,
+        "model_max_len": 131_072,
+        "gpu_blocks_override": 4096,
+        "ctx_ladder": [8192, 16384, 32768, 65536],
+        "extra": [],
+        "cpu_bytes": 60 * 1024**3,               # 工作集 4×65,536×160 KiB = 40 GiB
+        "fs_cpu_bytes": 20 * 1024**3,
+        "note": "13–15B 級第二家族。原生 131,072，不需 YaRN",
+    },
+}
+
 # CPU 階大小。vLLM 把它配置成 /dev/shm 上的 mmap 檔，而 /dev/shm 只有 220 GB
 # 且是**全機共用**的。四個 baseline 平行跑 = 4 份，所以不能開太大。
 # 24 GiB 的依據：最大工作集是 4 個前綴 × 32768 token × 128 KiB = 16 GiB，
 # 留 1.5 倍餘裕，確保量到的是「能不能取回」而不是「CPU 階也在 thrash」。
 CPU_BYTES = 24 * 1024**3
 FS_ROOT = BIG / "kv_fs_tier"
+if PLATFORM == "B":
+    # 本地 overlay（實測隨機讀 158 µs）；NFS 另以 TIARA_FS_TIER 當第二種裝置量
+    FS_ROOT = Path(os.environ.get("TIARA_FS_TIER", "/var/tmp/tiara_kv_fs"))
 
 BASELINES: dict[str, dict] = {
     "full_gpu": {
@@ -241,6 +360,12 @@ BASELINES: dict[str, dict] = {
         "desc": "LMCache（EXPERIMENT_PLAN Tier 0 #5）。獨立 venv，且無編譯擴充",
     },
 }
+if PLATFORM == "B":
+    MODELS = MODELS_B
+    # LMCache 在 ROCm 上尚未安裝（沒有 venv/lmcache）。留在表裡但跑之前會擋下來，
+    # 不會靜默跳過——規則 2。
+    BASELINES["lmcache"]["venv"] = Path(os.environ.get("TIARA_LMCACHE_VENV",
+                                                       "/mlsteam/workspace/venv/lmcache"))
 
 # 每個 context 長度送幾個不同前綴。N × ctx 要大於 GPU KV 容量才會逼出逐出。
 N_PREFIXES = int(os.environ.get("PAPER_HKV_N_PREFIXES", "4"))
@@ -253,7 +378,25 @@ N_PREFIXES = int(os.environ.get("PAPER_HKV_N_PREFIXES", "4"))
 #    文獻的設定：CoKV 掃 1/512/1024/2048/4096、KVSwap 連續生成 1000 個 token、
 #    多數論文固定 256。改為 256 使 decode 佔比可觀且與文獻可比。
 GEN_TOKENS = int(os.environ.get("PAPER_HKV_GEN_TOKENS", "256"))
+BLOCK_TOKENS = 16      # vLLM 的 block size（token）；--num-gpu-blocks-override 的單位
 CTX_LADDER = [4096, 8192, 16384, 32768]
+
+
+def effective_capacity(mdl: dict) -> int:
+    """這次量測**實際**可用的 GPU KV 容量（token）。
+
+    🔴 不是 M1 的實測容量。平台 B 一律用 --num-gpu-blocks-override 縮小 KV 池，
+       每個 block 16 個 token。拿 M1 的全量容量去判斷「工作集夠不夠大」會得到
+       「4 個都塞得下」的錯誤結論，而那正是「什麼都不會發生、數字看起來正常」的坑。
+    """
+    ovr = int(mdl.get("gpu_blocks_override", 0))
+    if ovr:
+        return ovr * 16
+    cap = int(mdl.get("measured_kv_capacity_tokens") or 0)
+    if not cap:
+        raise SystemExit("🔴 這個模型既沒有 gpu_blocks_override 也沒有 M1 實測容量，"
+                         "無法判斷工作集夠不夠大 —— 先跑 M1。")
+    return cap
 
 
 def _host(gpu: int) -> dict:
@@ -397,11 +540,15 @@ def make_prefix(tokenizer, n_tokens: int, seed: int) -> tuple[str, int]:
     return text, len(tokenizer(text, add_special_tokens=False)["input_ids"])
 
 
+WATCHER = None   # run_one 設定；Server.__exit__ 收 server 時暫停它
+
+
 class Server:
     def __init__(self, model: str, max_len: int, gpu: int, kv: dict | None, out: Path,
                  venv: Path | None = None, extra_env: dict | None = None,
-                 extra_args: list[str] | None = None):
+                 extra_args: list[str] | None = None, gpu_blocks_override: int = 0):
         self.model, self.max_len, self.gpu, self.kv, self.out = model, max_len, gpu, kv, out
+        self.gpu_blocks_override = gpu_blocks_override
         self.venv = Path(venv) if venv else VENV
         self.extra_env = extra_env or {}
         self.extra_args = extra_args or []
@@ -415,6 +562,8 @@ class Server:
                "--max-model-len", str(self.max_len),
                "--gpu-memory-utilization", "0.90"]
         cmd += self.extra_args
+        if self.gpu_blocks_override:
+            cmd += ["--num-gpu-blocks-override", str(self.gpu_blocks_override)]
         if self.kv:
             cmd += ["--kv-transfer-config", json.dumps(self.kv)]
         (self.out / "cmd.txt").write_text(" ".join(shlex.quote(c) for c in cmd) + "\n")
@@ -422,6 +571,10 @@ class Server:
         env = dict(os.environ)
         env["CUDA_VISIBLE_DEVICES"] = str(self.gpu)
         env["PATH"] = f"{self.venv / 'bin'}:{env.get('PATH', '')}"
+        if PLATFORM == "B":
+            env["HIP_VISIBLE_DEVICES"] = str(self.gpu)   # ROCm 的別名，兩個都設
+            env["PATH"] = f"{self.venv / 'bin'}:/opt/rocm/bin:{os.environ.get('PATH', '')}"
+            env.setdefault("HF_HOME", str(BIG / "hf-cache"))
         env.setdefault("HF_HOME", str(BIG / "hf-cache/huggingface"))
         env.update(self.extra_env)
         for k, v in (("XDG_CACHE_HOME", "xdg-cache"), ("TRITON_CACHE_DIR", "triton-cache"),
@@ -429,6 +582,10 @@ class Server:
                      ("FLASHINFER_WORKSPACE_BASE", "flashinfer-cache")):
             env.setdefault(k, str(BIG / v))
 
+        # 🔴 M2 發現 7：CPU 階的 /dev/shm/vllm_offload_<uuid>.mmap 只在正常 close 時 unlink，
+        #    server 被 SIGTERM 收掉就留著，累積到把 /dev/shm 塞滿，之後每個帶卸載的
+        #    baseline 都在啟動時死掉（錯誤訊息不指向真因）。記下開跑前既有的，退出時只刪自己建的。
+        self._shm_before = set(glob.glob("/dev/shm/vllm_offload_*.mmap"))
         self._log = (self.out / "server.log").open("w")
         self.p = subprocess.Popen(cmd, stdout=self._log, stderr=subprocess.STDOUT,
                                   env=env, start_new_session=True)
@@ -446,16 +603,44 @@ class Server:
         raise TimeoutError(f"server not ready in 900s; see {self.out / 'server.log'}")
 
     def __exit__(self, *exc) -> None:
-        if self.p and self.p.poll() is None:
-            try:
-                os.killpg(os.getpgid(self.p.pid), signal.SIGTERM)
-                self.p.wait(timeout=90)
-            except Exception:  # noqa: BLE001
+        # 🔴 M2 發現 6（AMD）：server 關閉後 amd-smi 還會報告幾秒的 VRAM 佔用，
+        #    GpuWatcher 會把它讀成外來 process → 假污染。收 server 全程暫停監看，
+        #    並等 driver 真的把記憶體還回來再繼續。
+        from contextlib import nullcontext
+        from gpu_guard import wait_until_released
+        with (WATCHER.pause(f"teardown {self.out.name}") if WATCHER else nullcontext()):
+            if self.p and self.p.poll() is None:
                 try:
-                    os.killpg(os.getpgid(self.p.pid), signal.SIGKILL)
+                    os.killpg(os.getpgid(self.p.pid), signal.SIGTERM)
+                    self.p.wait(timeout=90)
                 except Exception:  # noqa: BLE001
-                    pass
-        self._log.close()
+                    try:
+                        os.killpg(os.getpgid(self.p.pid), signal.SIGKILL)
+                    except Exception:  # noqa: BLE001
+                        pass
+            self._log.close()
+            self._cleanup_shm()
+            if PLATFORM == "B":
+                time.sleep(6)
+                ok, left = wait_until_released(self.gpu, timeout_s=300)
+                if not ok:
+                    print(f"[m3] 🔴 server 關閉 300 秒後 GPU 仍有 {left} MiB 被佔用")
+
+    def _cleanup_shm(self) -> None:
+        """只刪這個 server 新建、且沒有任何 process 持有的 mmap（見 M2 發現 7）。"""
+        held = set()
+        for fd in glob.glob("/proc/[0-9]*/fd/*") + glob.glob("/proc/[0-9]*/map_files/*"):
+            try:
+                held.add(os.readlink(fd))
+            except OSError:
+                continue
+        for f in sorted(set(glob.glob("/dev/shm/vllm_offload_*.mmap")) - getattr(self, "_shm_before", set())):
+            if f in held:
+                print(f"[m3] ⚠️ {f} 仍被持有，不刪")
+                continue
+            size = os.path.getsize(f)
+            os.unlink(f)
+            print(f"[m3] 清掉這個 server 留下的 {f}（{size / 2**30:.1f} GiB）")
 
     def kv_cache_tokens(self) -> int | None:
         import re
@@ -466,11 +651,23 @@ class Server:
 
 def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
             csv_path: Path, concurrency_mode: str = "parallel") -> int:
-    cfg = BASELINES[baseline]
+    import copy
+    cfg = copy.deepcopy(BASELINES[baseline])
     mdl = MODELS[model_key]
+    # 🔴 平台 B：CPU 階大小依模型而定（工作集差 4 倍），不能用同一個常數。
+    #    cpu_lru / cpu_arc 用 cpu_bytes（放得下工作集 = 對手的快取）；
+    #    tier_fs 用 fs_cpu_bytes（小於工作集，才會真的 cascade 到磁碟）。
+    if cfg["kv"] and "cpu_bytes_to_use" in (cfg["kv"].get("kv_connector_extra_config") or {}):
+        key = "fs_cpu_bytes" if baseline == "tier_fs" else "cpu_bytes"
+        if mdl.get(key):
+            cfg["kv"]["kv_connector_extra_config"]["cpu_bytes_to_use"] = mdl[key]
+    if baseline == "lmcache" and not (Path(cfg["venv"]) / "bin/vllm").exists():
+        print(f"[m3] 🔴 lmcache venv 不存在：{cfg['venv']}\n"
+              f"    平台 B 尚未安裝 LMCache（ROCm）。這一列記為 NOT_MEASURED，不跳過、不替代。")
+        return 6
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     run_id = f"{stamp}-m3-{model_key}-{baseline}"
-    root = BIG / "runs" / run_id
+    root = RUNS / run_id
     root.mkdir(parents=True, exist_ok=True)
     h0 = host_contention(exclude_gpu=gpu)
     print(f"[m3] run_id={run_id} gpu={gpu} baseline={baseline} model={mdl['path']}")
@@ -478,6 +675,9 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
           f" 在 GPU {h0['foreign_gpus']}，最高使用率 {h0['foreign_max_util']}%")
 
     if baseline == "tier_fs":
+        # 上一輪留下的 block 檔會讓 cold 變成命中，先清掉
+        import shutil
+        shutil.rmtree(FS_ROOT, ignore_errors=True)
         FS_ROOT.mkdir(parents=True, exist_ok=True)
 
     # 帶 CPU 階的 baseline 開跑前先確認 /dev/shm 放得下
@@ -499,15 +699,43 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
     if cap and max_len > cap:
         print(f"[m3] max_model_len {max_len:,} > 模型上限 {cap:,}，夾到 {cap:,}")
         max_len = cap
+
+    # 🔴 2026-09-16 踩到：override 2048 block = 32,768 token = 4.0 GiB，
+    #    但 vLLM 啟動時無條件檢查「KV 池要放得下一個 max_model_len 的請求」
+    #    （kv_cache_utils._check_enough_kv_cache_memory），max_len 34,048 需要 4.16 GiB
+    #    → ValueError，server 起不來。
+    #    所以 override 的下限是 max_len / 16，再加一點餘裕。加大之後仍遠小於 M1 的全量容量，
+    #    逐出照樣會發生（守門會再驗一次）。
+    need_blocks = -(-max_len // BLOCK_TOKENS) + 64
+    if int(mdl.get("gpu_blocks_override", 0)) and mdl["gpu_blocks_override"] < need_blocks:
+        print(f"[m3] --num-gpu-blocks-override {mdl['gpu_blocks_override']} 放不下一個 "
+              f"max_model_len={max_len:,} 的請求，提高到 {need_blocks}"
+              f"（= {need_blocks * BLOCK_TOKENS:,} token）")
+        mdl = {**mdl, "gpu_blocks_override": need_blocks}
+
+    # 🔴 守門：工作集必須有點在有效容量之上，否則一次都不會逐出，
+    #    五個 baseline 會量出一模一樣、而且看起來完全正常的數字。
+    cap_eff = effective_capacity(mdl)
+    n_pref_chk = int(mdl.get("n_prefixes", N_PREFIXES))
+    over = [c for c in ctxs if c * n_pref_chk > cap_eff]
+    if not over:
+        print(f"[m3] 🔴 工作集 {[c * n_pref_chk for c in ctxs]} 全部 ≤ 有效容量 "
+              f"{cap_eff:,} token，不會發生逐出，量到的各 baseline 會一模一樣。\n"
+              f"    請加大 --ctx 或調小 gpu_blocks_override。")
+        return 7
+
     rows: list[dict] = []
+    global WATCHER
 
     with GpuWatcher(gpu=gpu, out_path=str(root / "gpu_guard.json")) as guard:
+        WATCHER = guard
         if not guard.started_clean:
             print(f"[m3] 🔴 GPU {gpu} 開跑前就不乾淨，放棄。intruders={guard.intruders}")
             return 2
         # 「沒有行程」不等於「記憶體可用」——行程結束到 driver 把記憶體還回去
         # 之間有延遲。0.90 utilization 需要 ~21.3 GiB，這裡要求 22 GiB 才開跑。
-        ok, got = wait_until_free(gpu, need_mib=22 * 1024, timeout_s=300)
+        ok, got = wait_until_free(gpu, need_mib=(180 if PLATFORM == "B" else 22) * 1024,
+                                  timeout_s=300)
         if not ok:
             print(f"[m3] 🔴 GPU {gpu} 等了 300s 仍只有 {got} MiB 可用，放棄。")
             return 5
@@ -520,7 +748,8 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                         #    會被靜默忽略，然後 server 起不來。
                         extra_env={**(mdl.get("env") or {}),
                                    **(cfg.get("env") or {})},
-                        extra_args=mdl.get("extra")) as srv:
+                        extra_args=mdl.get("extra"),
+                        gpu_blocks_override=int(mdl.get("gpu_blocks_override", 0))) as srv:
                 kvtok = srv.kv_cache_tokens()
                 print(f"[m3]   server up in {srv.startup_s}s  "
                       f"GPU KV cache = {kvtok:,} tokens" if kvtok else "[m3]   server up")
@@ -560,6 +789,15 @@ def run_one(baseline: str, model_key: str, gpu: int, ctxs: list[int],
                                 # mode_source 放在最後，這裡要一致，否則
                                 # write_csv 的 schema 檢查會擋下來。
                                 "mode_source": "recorded",
+                                "platform": PLATFORM,
+                                "vllm_venv": str(cfg.get("venv") or VENV),
+                                "gpu_blocks_override": int(mdl.get("gpu_blocks_override", 0)),
+                                "cpu_tier_bytes": ((cfg["kv"] or {}).get(
+                                    "kv_connector_extra_config") or {}).get("cpu_bytes_to_use", ""),
+                                # 磁碟階到底有沒有被用到。0 = 沒有 cascade（M2 發現 8 的坑）
+                                "fs_dir_bytes": (sum(f.stat().st_size for f in FS_ROOT.rglob("*")
+                                                     if f.is_file())
+                                                 if baseline == "tier_fs" and FS_ROOT.exists() else ""),
                                 # 整機爭用：gpu_guard 只看本卡，但 PCIe /
                                 # host RAM / /dev/shm 是全機共用的。別人在其他
                                 # 卡上跑不會出現在本卡的 compute-apps 裡，
@@ -654,7 +892,7 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--baseline", choices=list(BASELINES))
-    ap.add_argument("--model", default="llama", choices=list(MODELS))
+    ap.add_argument("--model", default=next(iter(MODELS)), choices=list(MODELS))
     ap.add_argument("--gpu", type=int)
     ap.add_argument("--all", action="store_true",
                     help="所有 baseline 平行排到空閒的卡（探索用，時間數字會被自己人污染）")
@@ -663,7 +901,7 @@ def main() -> int:
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--ctx", type=int, nargs="*", default=None,
                     help="不給就用該模型的 ctx_ladder（依 M1 實測容量訂）")
-    ap.add_argument("--csv", default=str(REPO / "results/m3_baseline/baseline.csv"))
+    ap.add_argument("--csv", default=str(DEFAULT_CSV))
     ap.add_argument("--mode", default="parallel", choices=["parallel", "serial"],
                     help="只是標記，寫進 CSV 的 concurrency_mode 欄")
     a = ap.parse_args()
@@ -675,10 +913,15 @@ def main() -> int:
             print(f"  {k:12s} {v['desc']}")
         print()
         for k, v in MODELS.items():
-            cap, lad = v["measured_kv_capacity_tokens"], v["ctx_ladder"]
+            cap, lad = effective_capacity(v), v["ctx_ladder"]
             ws = [c * int(v.get("n_prefixes", N_PREFIXES)) for c in lad]
             print(f"  {k:12s} {v['path']}")
-            print(f"  {'':12s}   M1 實測容量 {cap:,} tok")
+            ovr = int(v.get("gpu_blocks_override", 0))
+            if ovr:
+                print(f"  {'':12s}   M1 實測容量 {v['measured_kv_capacity_tokens']:,} tok，"
+                      f"但本測驗以 --num-gpu-blocks-override {ovr} 縮到 {cap:,} tok")
+            else:
+                print(f"  {'':12s}   M1 實測容量 {cap:,} tok")
             print(f"  {'':12s}   ctx {lad}")
             print(f"  {'':12s}   工作集 {ws}"
                   f"  → {sum(w <= cap for w in ws)} 個塞得下 / "

@@ -47,3 +47,10 @@ results/m3_baseline/*.bak-*
 # notebook：analysis.ipynb **含輸出**進 git——它的用途就是打開就能看到圖表。
 # diff 會比較吵，但這份 notebook 是整份重新產生的，不是手改的。
 notebooks/.ipynb_checkpoints/
+
+# ── M5-C 注意力重要度的逐 block 原始資料（7 檔共 102 MB）────────────────
+# CLAUDE.md §2：進 git 的要「人看得懂、diff 有意義、< 1 MB」。
+# 這些是原始逐列資料不是摘要，留在 results/ 目錄（NFS 已持久化），不進 git。
+# 摘要在同目錄的 alignment_*.json，那些有進 git。
+results/m5_attention_mi300x/attn_importance_b-*.csv
+results/m5_attention/attn_importance_*.csv

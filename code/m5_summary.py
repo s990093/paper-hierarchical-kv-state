@@ -10,7 +10,10 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-OUT = Path(__file__).resolve().parent.parent / "results/m5_predictor"
+import os as _os
+_PLAT = _os.environ.get("TIARA_PLATFORM") or ("B" if Path("/opt/rocm").exists() else "A")
+OUT = Path(__file__).resolve().parent.parent / (
+    "results/m5_predictor_mi300x" if _PLAT == "B" else "results/m5_predictor")
 
 
 def rows(name: str) -> list[dict]:

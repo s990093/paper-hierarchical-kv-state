@@ -29,8 +29,15 @@ from datetime import datetime
 from pathlib import Path
 
 from m4_invariants import check_results, preflight
+from m4_oracle import PLATFORM  # noqa: E402
 from m4_oracle import (BLOCK, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile)
+
+# 平台預設：A 的裝置是 sata/nvme、剖面是 llama-bf16；B 是 local/nfs 與 b-* 剖面。
+_DEV_CHOICES = ["local", "nfs"] if PLATFORM == "B" else ["sata", "nvme"]
+_DEF_DEVICE = _DEV_CHOICES[0]
+_DEF_MODEL = "b-llama8b" if PLATFORM == "B" else "llama-bf16"
+
 
 POLICIES = {
     "full_gpu": ("lru", False, False),
@@ -48,10 +55,13 @@ def label(lo: int, hi: int) -> str:
     return f"{f(lo)}–{f(hi)}"
 
 
+_RUN_ID = f"{datetime.now():%Y%m%d-%H%M%S}-m4-bylen"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
-    ap.add_argument("--model", default="llama-bf16", choices=list(MODEL_PROFILES))
+    ap.add_argument("--device", default=_DEF_DEVICE, choices=_DEV_CHOICES)
+    ap.add_argument("--model", default=_DEF_MODEL, choices=list(MODEL_PROFILES))
     ap.add_argument("--trace", nargs="*", default=["toolagent", "conversation"])
     ap.add_argument("--ssd-gib", type=float, default=512.0,
                     help="SSD 階容量。預設 512 GiB —— 一個實體上放得下的值")
@@ -104,7 +114,8 @@ def main() -> int:
                   f"{100 * save / b if b else 0:>8.2f}%"
                   f"{100 * save / tot_save if tot_save else 0:>9.1f}%")
             rows.append({
-                "ts": datetime.now().astimezone().isoformat(),
+                "run_id": _RUN_ID,  # 規則 3：可追溯到一次執行
+                    "ts": datetime.now().astimezone().isoformat(),
                     "sim_version": SIM_VERSION,
                 "trace": tname, "bin": label(lo, hi),
                 "bin_lo_tokens": lo, "bin_hi_tokens": hi,

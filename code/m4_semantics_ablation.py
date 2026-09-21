@@ -30,8 +30,15 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from m4_oracle import PLATFORM  # noqa: E402
 from m4_oracle import (BLOCK, SIM_VERSION, MODEL_PROFILES, OUT, Sim, load_cost_model,
                        mooncake_trace, profile, zipf_trace)
+
+# 平台預設：A 的裝置是 sata/nvme、剖面是 llama-bf16；B 是 local/nfs 與 b-* 剖面。
+_DEV_CHOICES = ["local", "nfs"] if PLATFORM == "B" else ["sata", "nvme"]
+_DEF_DEVICE = _DEV_CHOICES[0]
+_DEF_MODEL = "b-llama8b" if PLATFORM == "B" else "llama-bf16"
+
 
 POLICIES = {
     "full_gpu": ("lru", False, False),
@@ -65,13 +72,16 @@ def one(sim: Sim, trace, prefix: bool, prefetch: bool,
     return {"res": res, "best": best, "head": head}
 
 
+_RUN_ID = f"{datetime.now():%Y%m%d-%H%M%S}-m4-semantics"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
+    ap.add_argument("--device", default=_DEF_DEVICE, choices=_DEV_CHOICES)
     ap.add_argument("--trace", nargs="*", default=[],
                     choices=["conversation", "toolagent", "mooncake"])
     ap.add_argument("--pressure", type=float, nargs="*", default=[])
-    ap.add_argument("--model", default="llama-bf16", choices=list(MODEL_PROFILES),
+    ap.add_argument("--model", default=_DEF_MODEL, choices=list(MODEL_PROFILES),
                     help="模型剖面，鎖住『預算 + KV/token + 成本模型』三者")
     ap.add_argument("--cpu-gib", type=float, default=24.0)
     ap.add_argument("--doc-tokens", type=int, default=4096)
@@ -129,6 +139,7 @@ def main() -> int:
                   + (f"  ({delta:+.2f})" if delta else "  (基準)"))
             for pol, v in o["res"].items():
                 rows.append({
+                    "run_id": _RUN_ID,  # 規則 3：可追溯到一次執行
                     "ts": datetime.now().astimezone().isoformat(),
                     "sim_version": SIM_VERSION,
                     "workload": label, "semantics": name,

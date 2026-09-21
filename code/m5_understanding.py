@@ -59,9 +59,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import m5_quality as q                                            # noqa: E402
 from gpu_guard import GpuWatcher, host_contention, wait_until_free  # noqa: E402
 
-BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+# 路徑一律沿用 m5_quality 的平台判斷，避免兩個檔各判一次而分岔
+BIG, PLATFORM, OUT = q.BIG, q.PLATFORM, q.OUT
 REPO = Path(__file__).resolve().parent.parent
-OUT = REPO / "results/m5_quality"
 LB = BIG / "datasets/longbench"
 sys.path.insert(0, os.environ.get("PAPER_HKV_PYLIBS", str(BIG / "pylibs")))
 
@@ -69,10 +69,14 @@ sys.path.insert(0, os.environ.get("PAPER_HKV_PYLIBS", str(BIG / "pylibs")))
 # 該後端於 sm_86 拒絕 FP8 KV cache——不是本腳本的限制，是硬體的（見 CLAUDE.md §3）。
 CONFIGS = {
     "bf16": ("auto", "無損基準"),
+    # 🔴 平台 B（MI300X / gfx942）不是 sm_86：M1 實測 fp8_per_token_head 起得來，
+    #    且與 int8 是對等的比較（同為 per-token-head 動態縮放）。平台 A 沒有這一階。
     "fp8": ("fp8", "靜態縮放、未校正"),
     "int8": ("int8_per_token_head", "per-token-head 動態縮放"),
     "int4": ("int4_per_token_head", "per-token-head 動態縮放，最低精度階"),
 }
+if q.PLATFORM == "B":
+    CONFIGS["fp8_ptk"] = ("fp8_per_token_head", "per-token-head 動態縮放 ← 與 int8 對等")
 
 # LongBench 的英文子集。選法：涵蓋「單文件 QA / 多跳 QA / 摘要 / few-shot 分類 /
 # 合成檢索」五類，且 BF16 基準不在地板上（`passage_count` 的基準只有個位數，

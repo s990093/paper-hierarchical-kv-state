@@ -135,55 +135,80 @@ def compute_apps() -> list[dict]:
     return rows
 
 
-def _amd_compute_apps() -> list[dict]:
-    """AMD 後端。amd-smi（ROCm 6+）與 rocm-smi（舊版）的欄位名不同，兩種都試。
+def _amd_val(x) -> float:
+    """amd-smi JSON 的量是 {"value": v, "unit": u}。解析不了就丟例外，不可靜默略過。"""
+    if isinstance(x, dict):
+        v, u = x.get("value"), str(x.get("unit", "")).upper()
+        if v in (None, "N/A"):
+            raise SmiUnavailable(f"amd-smi 欄位無值：{x}")
+        mult = {"B": 1, "KB": 1e3, "KIB": 1024, "MB": 1e6, "MIB": 2**20, "GB": 1e9, "GIB": 2**30}.get(u, 1)
+        return float(v) * mult if u in ("B", "KB", "KIB", "MB", "MIB", "GB", "GIB") else float(v)
+    return float(x)
 
-    ⚠️ 這條路徑**尚未在真機驗證過**（本機只有 NVIDIA）。
-       第一次在 MI300X 上跑時，必須先用
-       `python code/gpu_guard.py --selftest` 對照 `amd-smi process` 的輸出，
-       確認 pid 與 gpu index 都對得上，再開始任何計時量測。
+
+def _amd_compute_apps() -> list[dict]:
+    """AMD 後端（2026-09-15 於 MI300X 真機驗證並改寫）。
+
+    真機上發現的三件事（舊版全部答錯）：
+    1. amd-smi 的記憶體欄位是 {"value","unit"} 物件；舊版 int(dict) 丟例外後被
+       `continue` 靜默略過 → 有行程卻回傳 [] → 被讀成「乾淨」（CLAUDE.md 規則 7）。
+    2. **回報的 pid 是 host PID namespace 的**（實測容器內 pid 46730 ↔ amd-smi 3365442），
+       所以不能用 pid 判斷「是不是自己的」。見 foreign_on() 的 AMD 分支。
+    3. 容器內的監控工具（amdtop）也會出現，VRAM=0。
     """
     data = _amd_json(["process"])
+    if not isinstance(data, list):
+        raise SmiUnavailable(f"amd-smi process 輸出格式非預期：{str(data)[:200]}")
     rows: list[dict] = []
-    items = data if isinstance(data, list) else list(data.values())
-    for i, entry in enumerate(items):
-        gpu = entry.get("gpu", entry.get("gpu_id", entry.get("card", i)))
-        procs = entry.get("process_list", entry.get("process_info", []))
-        if isinstance(procs, dict):
-            procs = list(procs.values())
-        for pr in procs or []:
+    for entry in data:
+        gpu = int(entry["gpu"])
+        for pr in entry.get("process_list") or []:
             info = pr.get("process_info", pr)
-            pid = info.get("pid", info.get("PID"))
-            mem = (info.get("memory_usage", {}) or {}).get("vram_mem",
-                                                           info.get("VRAM", 0))
-            if pid is None:
-                continue
-            try:
-                rows.append({"gpu": int(gpu), "pid": int(pid),
-                             "used_mib": int(mem) // (1024 * 1024)
-                             if int(mem) > 1 << 20 else int(mem)})
-            except (TypeError, ValueError):
-                continue
+            if not isinstance(info, dict) or "pid" not in info:
+                raise SmiUnavailable(f"amd-smi process 條目格式非預期：{str(pr)[:200]}")
+            vram = _amd_val(info["memory_usage"]["vram_mem"])
+            rows.append({"gpu": gpu, "pid": int(info["pid"]), "host_pid": True,
+                         "used_mib": int(vram // 2**20)})
     return rows
+
+
+def _container_kfd_holders() -> dict[int, str]:
+    """本容器內開著 /dev/kfd 的行程 {pid: cmdline}。ROCm 的每個 GPU 行程都會開 kfd。"""
+    out = {}
+    for d in os.listdir("/proc"):
+        if not d.isdigit():
+            continue
+        try:
+            fds = os.listdir(f"/proc/{d}/fd")
+        except OSError:
+            continue
+        for fd in fds:
+            try:
+                if os.readlink(f"/proc/{d}/fd/{fd}") == "/dev/kfd":
+                    with open(f"/proc/{d}/cmdline", "rb") as f:
+                        out[int(d)] = f.read().replace(b"\0", b" ").decode(errors="replace").strip()[:120]
+                    break
+            except OSError:
+                continue
+    return out
+
+
+# 容器內允許並存的監控工具（開 kfd 但不配置 VRAM）。出現時仍逐次記錄，只是不判為污染。
+AMD_MONITOR_CMDS = ("amdtop", "rocm-smi", "amd-smi", "nvtop", "radeontop", "rocmtop", "amdgpu_top")
+
+
+def _amd_gpu_data(flag: str) -> list[dict]:
+    data = _amd_json(["metric", flag])
+    items = data.get("gpu_data") if isinstance(data, dict) else data
+    if not isinstance(items, list):
+        raise SmiUnavailable(f"amd-smi metric {flag} 輸出格式非預期：{str(data)[:200]}")
+    return items
 
 
 def gpu_util() -> dict[int, int]:
     """每張卡目前的使用率（%）。"""
     if vendor() == "amd":
-        data = _amd_json(["metric", "-u"])
-        items = data if isinstance(data, list) else list(data.values())
-        out = {}
-        for i, e in enumerate(items):
-            g = e.get("gpu", e.get("gpu_id", i))
-            u = (e.get("usage", {}) or {}).get("gfx_activity",
-                                               e.get("GPU use (%)", 0))
-            if isinstance(u, dict):
-                u = u.get("value", 0)
-            try:
-                out[int(g)] = int(u)
-            except (TypeError, ValueError):
-                continue
-        return out
+        return {int(e["gpu"]): int(_amd_val(e["usage"]["gfx_activity"])) for e in _amd_gpu_data("-u")}
     return {int(r[0]): int(r[1]) for r in _smi("gpu=index,utilization.gpu")
             if len(r) >= 2 and r[1].isdigit()}
 
@@ -212,7 +237,26 @@ def _descendants(root: int) -> set[int]:
 def foreign_on(gpu: int, own_root: int | None = None) -> list[dict]:
     """gpu 上不屬於我們的 compute process。own_root 預設為本行程。"""
     own = _descendants(own_root if own_root is not None else os.getpid())
-    return [a for a in compute_apps() if a["gpu"] == gpu and a["pid"] not in own]
+    if vendor() != "amd":
+        return [a for a in compute_apps() if a["gpu"] == gpu and a["pid"] not in own]
+    # AMD：amd-smi 給 host pid，對不上容器 pid → 改用「數量」判斷。
+    #   有配置 VRAM 的 amd-smi 行程數  −  本容器內開 /dev/kfd 的行程數  =  容器外的行程數（下界）
+    # VRAM=0 的條目（真機上的 host pid 8110，早於本容器任何 GPU 程式就存在、gfx 用量 0）
+    # 不佔記憶體也不佔算力，只記錄不判污染。
+    # ⚠️ 已知盲點：若本容器某行程已開 kfd 但尚未配置 VRAM，同時外面有一個配置了 VRAM 的行程，
+    #    兩者相抵會漏報。開跑前（本 run 尚無 GPU 行程）的檢查不受此影響，是精確的。
+    apps = [a for a in compute_apps() if a["gpu"] == gpu]
+    holders = _container_kfd_holders()
+    out = []
+    n_external = sum(1 for a in apps if a["used_mib"] > 0) - len(holders)
+    if n_external > 0:
+        out.append({"pid": -1, "kind": "external_namespace", "count": n_external,
+                    "used_mib": sum(a["used_mib"] for a in apps)})
+    for pid, cmd in holders.items():
+        if pid in own or any(m in cmd for m in AMD_MONITOR_CMDS):
+            continue
+        out.append({"pid": pid, "kind": "same_container", "cmd": cmd, "used_mib": -1})
+    return out
 
 
 @dataclass
@@ -230,6 +274,10 @@ class GpuWatcher:
     samples: list[dict] = field(default_factory=list)
     intruders: dict[int, dict] = field(default_factory=dict)
     started_clean: bool | None = None
+    paused_intervals: list[dict] = field(default_factory=list)
+    discarded_samples: int = 0
+    _pause_gen: int = 0
+    _paused: threading.Event = field(default_factory=threading.Event)
     _stop: threading.Event = field(default_factory=threading.Event)
     _t: threading.Thread | None = None
 
@@ -237,8 +285,38 @@ class GpuWatcher:
     def contaminated(self) -> bool:
         return bool(self.intruders) or self.started_clean is False
 
+    def pause(self, reason: str):
+        """自己的 server 關閉期間暫停取樣。
+
+        2026-09-15 MI300X 實測：vLLM 行程結束、容器內 kfd 已關之後，amd-smi（host 端）仍回報
+        那 180 GB 約數秒 → 數量判斷把「自己剛關掉的 server」算成容器外行程 → 假污染。
+        暫停區間逐筆記進報告，不是靜默略過。
+        """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def _cm():
+            t0 = datetime.now().astimezone().isoformat()
+            self._pause_gen += 1
+            self._paused.set()
+            try:
+                yield
+            finally:
+                self._paused.clear()
+                self.paused_intervals.append({"from": t0, "to": datetime.now().astimezone().isoformat(),
+                                              "reason": reason})
+        return _cm()
+
     def _sample(self) -> None:
+        if self._paused.is_set():
+            return
+        gen = self._pause_gen
         f = foreign_on(self.gpu, self.own_root)
+        # 2026-09-15 競態：取樣開始後 12 ms 才進入暫停，這一筆讀到正在關閉的自家 server。
+        # 取樣期間只要碰到暫停（旗標仍在，或暫停次數變了），整筆丟棄並記錄。
+        if self._paused.is_set() or gen != self._pause_gen:
+            self.discarded_samples += 1
+            return
         now = datetime.now().astimezone().isoformat()
         for a in f:
             rec = self.intruders.setdefault(
@@ -281,6 +359,8 @@ class GpuWatcher:
             "verdict": self.verdict(),
             "intruders": list(self.intruders.values()),
             "n_dirty_samples": len(self.samples),
+            "paused_intervals": self.paused_intervals,
+            "discarded_samples_overlapping_pause": self.discarded_samples,
         }
 
     def verdict(self) -> str:
@@ -308,6 +388,14 @@ def host_contention(exclude_gpu: int | None = None,
     否則事後無法判斷該次量測可不可信。
     """
     own = _descendants(own_root if own_root is not None else os.getpid())
+    if vendor() == "amd":
+        # 單一 VF 容器：看得到的只有這張卡。同一台 host 上其他 pod 對 PCIe root complex /
+        # host 記憶體頻寬的負載**觀測不到** → 不能回報 QUIET（規則 7）。
+        util = gpu_util()
+        return {"foreign_procs": 0, "foreign_gpus": [], "foreign_gpu_count": 0,
+                "foreign_total_mib": 0, "foreign_max_util": 0,
+                "mean_util_excl_self": None, "visible_gpus": sorted(util),
+                "level": "UNOBSERVABLE_HOST"}
     apps = [a for a in compute_apps()
             if a["pid"] not in own and a["gpu"] != exclude_gpu]
     util = gpu_util()
@@ -329,10 +417,35 @@ def host_contention(exclude_gpu: int | None = None,
 
 def free_mib(gpu: int) -> int | None:
     """這張卡目前的可用記憶體（MiB）。"""
+    if vendor() == "amd":
+        for e in _amd_gpu_data("-m"):
+            if int(e["gpu"]) == gpu:
+                return int(_amd_val(e["mem_usage"]["free_vram"]) // 2**20)
+        return None
     for r in _smi("gpu=index,memory.free"):
         if len(r) >= 2 and int(r[0]) == gpu:
             return int(r[1])
     return None
+
+
+def wait_until_released(gpu: int, timeout_s: float = 300.0, poll_s: float = 2.0,
+                        consecutive: int = 3, idle_used_mib: int = 2048) -> tuple[bool, int | None]:
+    """等到 GPU 上**沒有任何行程持有 VRAM**（AMD：amd-smi 裡 VRAM>0 的條目為 0），連續數次。
+    用在自己的 server 關掉之後，確認 host 端也真的收回了記憶體。"""
+    t0, hits, last = time.time(), 0, None
+    while time.time() - t0 < timeout_s:
+        if vendor() == "amd":
+            last = sum(a["used_mib"] for a in compute_apps() if a["gpu"] == gpu)
+        else:
+            last = sum(a["used_mib"] for a in compute_apps() if a["gpu"] == gpu)
+        if last <= idle_used_mib:
+            hits += 1
+            if hits >= consecutive:
+                return True, last
+        else:
+            hits = 0
+        time.sleep(poll_s)
+    return False, last
 
 
 def wait_until_free(gpu: int, need_mib: int, timeout_s: float = 300.0,
@@ -364,6 +477,9 @@ def wait_until_free(gpu: int, need_mib: int, timeout_s: float = 300.0,
 
 
 def idle_gpus(own_root: int | None = None) -> list[int]:
+    if vendor() == "amd":
+        gpus = sorted(int(e["gpu"]) for e in _amd_gpu_data("-m"))
+        return [g for g in gpus if not foreign_on(g, own_root)]
     busy = {a["gpu"] for a in compute_apps()
             if a["pid"] not in _descendants(own_root if own_root is not None else os.getpid())}
     n = len(_smi("gpu=index"))

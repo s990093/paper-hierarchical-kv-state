@@ -60,7 +60,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, os.environ.get("PAPER_HKV_PYLIBS",
-                                  "/ssd7/hungwei/paper-hkv/pylibs"))
+                                  "/mlsteam/data/tiara/pylibs" if Path("/opt/rocm").exists()
+                                  else "/ssd7/hungwei/paper-hkv/pylibs"))
 
 from m4_invariants import (check_results, check_trace_units,       # noqa: E402
                            preflight)
@@ -72,7 +73,9 @@ from m4_oracle import (BLOCK, DEVICE_FS_ROOT, DEVICE_WRITE_MIBPS,   # noqa: E402
 from m5_predictor import (OUT, drop_cost, isotonic_predict,         # noqa: E402
                           load_index, load_workload, p_star, write_csv)
 
-BIG = Path(os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
+from m4_oracle import PLATFORM as _PLAT
+BIG = Path(os.environ.get("TIARA_DATA", "/mlsteam/data/tiara") if _PLAT == "B"
+           else os.environ.get("PAPER_HKV_BIG", "/ssd7/hungwei/paper-hkv"))
 POLICIES = {"full_gpu": ("lru", False, False), "cpu_lru": ("lru", True, False),
             "cpu_arc": ("arc", True, False), "tier_fs": ("lru", True, True)}
 
@@ -453,8 +456,11 @@ def main() -> int:
     ap.add_argument("--sample-rate", type=float, default=0.25)
     ap.add_argument("--label-mode", default="censored",
                     choices=["censored", "uncensored"])
-    ap.add_argument("--model", default="qwen-awq", choices=list(MODEL_PROFILES))
-    ap.add_argument("--device", default="nvme", choices=["sata", "nvme"])
+    ap.add_argument("--model", default=("b-llama8b" if _PLAT == "B" else "qwen-awq"),
+                    choices=list(MODEL_PROFILES))
+    # 平台 B 的裝置是 local（/var/tmp overlay）／nfs；A 是 sata／nvme
+    _dev = ["local", "nfs"] if _PLAT == "B" else ["sata", "nvme"]
+    ap.add_argument("--device", default=_dev[0], choices=_dev)
     ap.add_argument("--cpu-gib", type=float, default=24.0)
     ap.add_argument("--ssd-gib", type=float, default=512.0)
     ap.add_argument("--gpu-tokens", type=int, default=None)
