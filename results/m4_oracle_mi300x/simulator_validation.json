@@ -1,0 +1,93 @@
+{
+  "gpu_kv_tokens": 67840,
+  "rows": [
+    {
+      "ctx": 8192,
+      "n_prefixes": 4,
+      "measured_full_warm_ms": 41.8,
+      "measured_lru_warm_ms": 52.7,
+      "measured_ratio": 0.79,
+      "sim_full_warm_ms_per_req": 0.0,
+      "sim_lru_warm_ms_per_req": 0.0,
+      "sim_ratio": 0.0,
+      "sim_full_warm_hits": {
+        "gpu": 2048,
+        "cpu": 0,
+        "ssd": 0,
+        "drop": 0
+      },
+      "sim_lru_warm_hits": {
+        "gpu": 2048,
+        "cpu": 0,
+        "ssd": 0,
+        "drop": 0
+      }
+    },
+    {
+      "ctx": 16384,
+      "n_prefixes": 4,
+      "measured_full_warm_ms": 64.2,
+      "measured_lru_warm_ms": 94.9,
+      "measured_ratio": 0.68,
+      "sim_full_warm_ms_per_req": 0.0,
+      "sim_lru_warm_ms_per_req": 0.0,
+      "sim_ratio": 0.0,
+      "sim_full_warm_hits": {
+        "gpu": 4096,
+        "cpu": 0,
+        "ssd": 0,
+        "drop": 0
+      },
+      "sim_lru_warm_hits": {
+        "gpu": 4096,
+        "cpu": 0,
+        "ssd": 0,
+        "drop": 0
+      }
+    },
+    {
+      "ctx": 32768,
+      "n_prefixes": 4,
+      "measured_full_warm_ms": 2965.5,
+      "measured_lru_warm_ms": 1301.4,
+      "measured_ratio": 2.28,
+      "sim_full_warm_ms_per_req": 2975.9,
+      "sim_lru_warm_ms_per_req": 1248.1,
+      "sim_ratio": 2.38,
+      "sim_full_warm_hits": {
+        "gpu": 0,
+        "cpu": 0,
+        "ssd": 0,
+        "drop": 8192
+      },
+      "sim_lru_warm_hits": {
+        "gpu": 0,
+        "cpu": 8192,
+        "ssd": 0,
+        "drop": 0
+      }
+    },
+    {
+      "ctx": 65536,
+      "n_prefixes": 4,
+      "measured_full_warm_ms": 8881.8,
+      "measured_lru_warm_ms": 2589.1,
+      "measured_ratio": 3.43,
+      "sim_full_warm_ms_per_req": 8855.6,
+      "sim_lru_warm_ms_per_req": 2496.2,
+      "sim_ratio": 3.55,
+      "sim_full_warm_hits": {
+        "gpu": 0,
+        "cpu": 0,
+        "ssd": 0,
+        "drop": 16384
+      },
+      "sim_lru_warm_hits": {
+        "gpu": 0,
+        "cpu": 16384,
+        "ssd": 0,
+        "drop": 0
+      }
+    }
+  ]
+}

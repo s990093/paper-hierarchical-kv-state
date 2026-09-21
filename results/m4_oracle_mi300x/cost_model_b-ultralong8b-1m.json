@@ -1,0 +1,62 @@
+{
+  "measured": {
+    "retrieval_csv": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m2_harness_mi300x/retrieval_cost_b-ultralong8b-1m.csv",
+    "recompute_csv": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m2_harness_mi300x/recompute_position_b-ultralong8b-1m.csv",
+    "ctx_used": 96000,
+    "blocks_per_ctx": 6000.0,
+    "warm_gpu_ms": 283.529,
+    "warm_cpu_ms": 3215.965,
+    "warm_ssd_ms": 6498.743,
+    "cpu_cost_source": "ttft_minus_gpu_resident",
+    "recompute_chunk_tokens": 2048,
+    "recompute_at_pos0_ms": 86.012,
+    "recompute_at_maxpos_ms": 10350.093,
+    "positions": [
+      0,
+      4096,
+      8192,
+      16384,
+      24576,
+      49152,
+      81920,
+      114688,
+      262144,
+      524288,
+      786432,
+      1048576
+    ],
+    "position_fit_max_tokens": 1048576,
+    "recompute_recalibrated_from_m3": {
+      "recompute_base_ms_per_block": 0.5291390892767066,
+      "recompute_slope_ms_per_block_per_token": 3.5101110576301684e-05,
+      "per_request_overhead_ms": 14.089083333338294,
+      "r2": 0.9999975151989433,
+      "ctxs": [
+        8192,
+        16384,
+        32768,
+        65536
+      ],
+      "measured_ms": [
+        354.9,
+        856.8,
+        2272.3,
+        6893.1
+      ],
+      "fitted_ms": [
+        358.6,
+        850.4,
+        2275.6,
+        6892.6
+      ],
+      "source": "baseline_mi300x.csv full_gpu cold, model_key=b-ultralong8b-1m"
+    }
+  },
+  "derived_ms_per_block": {
+    "gpu": 0.0,
+    "cpu": 0.48873933333333336,
+    "ssd": 1.035869,
+    "recompute_base": 0.5291390892767066,
+    "recompute_slope_per_token": 3.5101110576301684e-05
+  }
+}

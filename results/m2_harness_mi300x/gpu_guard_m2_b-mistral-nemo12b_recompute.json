@@ -1,0 +1,16 @@
+{
+  "gpu": 0,
+  "started_clean": true,
+  "contaminated": false,
+  "verdict": "CLEAN",
+  "intruders": [],
+  "n_dirty_samples": 0,
+  "paused_intervals": [
+    {
+      "from": "2026-09-17T18:41:17.072079+00:00",
+      "to": "2026-09-17T18:41:28.443897+00:00",
+      "reason": "teardown 20260917-183735-m2-recompute"
+    }
+  ],
+  "discarded_samples_overlapping_pause": 0
+}

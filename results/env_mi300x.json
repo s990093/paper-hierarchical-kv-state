@@ -1,0 +1,17 @@
+{
+  "ts": "2026-09-15T07:08:47.765029+00:00",
+  "platform": "B_MI300X_MLSteam",
+  "hostname": "lab-u034a318-f7c8b749d-fwzpg",
+  "kernel": "Linux lab-u034a318-f7c8b749d-fwzpg 6.8.0-138-generic #138-Ubuntu SMP PREEMPT_DYNAMIC Fri Jul 31 22:41:49 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux",
+  "os": "Ubuntu 24.04.4 LTS",
+  "rocm_version": "7.2.2",
+  "rocm_smi": "device,Card Series,Card Model,Card Vendor,Card SKU,Subsystem ID,Device Rev,Node ID,GUID,GFX Version\ncard0,AMD Instinct MI300X,0x74a1,Advanced Micro Devices Inc. [AMD/ATI],M3000100,0x74a1,0x00,7,63883,gfx942",
+  "gfx_arch": "gfx942",
+  "cpu_count_host_view": 192,
+  "mem_total_host_view": "MemTotal:       2377690388 kB",
+  "cpu_quota": 32.0,
+  "mem_quota_bytes": 466877906944,
+  "shm_bytes": 192000000000,
+  "amd_smi": "GPU: 0\n    BDF: 0000:a6:00.0\n    UUID: 50ff74a1-0000-1000-80d6-3718e53ea85c\n    KFD_ID: 63883\n    NODE_ID: 7\n    PARTITION_ID: 0",
+  "torch": "NOT_INSTALLED (ModuleNotFoundError(\"No module named 'torch'\"))"
+}

@@ -1,0 +1,21 @@
+{
+  "gpu": 0,
+  "started_clean": true,
+  "contaminated": false,
+  "verdict": "CLEAN",
+  "intruders": [],
+  "n_dirty_samples": 0,
+  "paused_intervals": [
+    {
+      "from": "2026-09-15T12:38:59.085546+00:00",
+      "to": "2026-09-15T12:39:10.534345+00:00",
+      "reason": "teardown gpu_resident"
+    },
+    {
+      "from": "2026-09-15T12:40:46.227554+00:00",
+      "to": "2026-09-15T12:40:57.929306+00:00",
+      "reason": "teardown ssd"
+    }
+  ],
+  "discarded_samples_overlapping_pause": 0
+}

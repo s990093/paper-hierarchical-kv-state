@@ -1,0 +1,572 @@
+[
+ {
+  "category_hint": "dense",
+  "repo": "Qwen/Qwen2.5-7B-Instruct-1M",
+  "note": "平台 A 主力（對照）",
+  "fetched_at": "2026-09-15T08:48:38+0000",
+  "sha": "e28526f7bb80e2a9c8af03b831a9af3812f18fba",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "Qwen/Qwen2.5-14B-Instruct-1M",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:39+0000",
+  "sha": "620fad32de7bdd2293b3d99b39eba2fe63e97438",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "unsloth/Llama-3.1-8B-Instruct",
+  "note": "meta-llama/Llama-3.1-8B-Instruct 的公開鏡像（官方 gated）",
+  "fetched_at": "2026-09-15T08:48:40+0000",
+  "sha": "4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "unsloth/Llama-3.3-70B-Instruct",
+  "note": "meta-llama/Llama-3.3-70B-Instruct 的公開鏡像（官方 gated）",
+  "fetched_at": "2026-09-15T08:48:41+0000",
+  "sha": "99cd0d2c829e92a67c844f9144c2509632e5c87f",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "nvidia/Llama-3.1-Nemotron-8B-UltraLong-1M-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:43+0000",
+  "sha": "fa3a10b9c6ad02f42c81e1d68dcf6967afb230ef",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "nvidia/Llama-3.1-Nemotron-8B-UltraLong-4M-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:44+0000",
+  "sha": "02ae0431f885eb8f4994112a7f132a38451abe52",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "gradientai/Llama-3-70B-Instruct-Gradient-1048k",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:46+0000",
+  "sha": "51bcb55df343f8e9df8484a84be39e1464642400",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "zai-org/glm-4-9b-chat-1m",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:48+0000",
+  "sha": "f8579ac096986e44ba24a5060d2fb79bedb56ef3",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "ByteDance-Seed/Seed-OSS-36B-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:49+0000",
+  "sha": "497f1dca95ebdec98e41d517b9f060ee753c902f",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "Qwen/Qwen3-32B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:50+0000",
+  "sha": "9216db5781bf21249d130ec9da846c4624c16137",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "google/gemma-4-31B-it",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:51+0000",
+  "sha": "842da3794eaa0b77d5f08bae87a17459d91ff475",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "swiss-ai/Apertus-70B-Instruct-2509",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:52+0000",
+  "sha": "0f2767662a013c0fb631079cea883155252bc3b6",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "LGAI-EXAONE/EXAONE-4.5-33B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:54+0000",
+  "sha": "570aa4b15a4f45ba1133072b45f50198f6e3b4fd",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:55+0000",
+  "sha": "95a6d26c4bfb886c58daf9d3f7332c857cb27b43",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "internlm/Intern-S2-Mobius",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:56+0000",
+  "sha": "1b23c974ac860b182c61732299ae4fc432a8cf54",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "dense",
+  "repo": "CohereLabs/North-Mini-Code-1.0",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:57+0000",
+  "sha": "d11e61a842617a22dc328552fa5bb86231ee4f37",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "Qwen/Qwen3-30B-A3B-Instruct-2507",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:58+0000",
+  "sha": "0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:48:59+0000",
+  "sha": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "unsloth/Llama-4-Scout-17B-16E-Instruct",
+  "note": "meta-llama/Llama-4-Scout-17B-16E-Instruct 的公開鏡像（官方 gated）",
+  "fetched_at": "2026-09-15T08:49:00+0000",
+  "sha": "afd8e498c87bda51c7ea8ec68ea2f7c066e6340b",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "tencent/Hunyuan-A13B-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:02+0000",
+  "sha": "290ddb9a56ed23c2c83a1c8081533e58925df952",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "zai-org/GLM-4.7-Flash",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:03+0000",
+  "sha": "7dd20894a642a0aa287e9827cb1a1f7f91386b67",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "zai-org/GLM-4.5-Air",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:04+0000",
+  "sha": "a24ceef6ce4f3536971efe9b778bdaa1bab18daa",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "google/gemma-4-26B-A4B-it",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:05+0000",
+  "sha": "4d7ae4984b7db7de8f8457170b3f1a419ee76d52",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "openai/gpt-oss-120b",
+  "note": "官方發布為 MXFP4",
+  "fetched_at": "2026-09-15T08:49:06+0000",
+  "sha": "b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "openai/gpt-oss-20b",
+  "note": "官方發布為 MXFP4",
+  "fetched_at": "2026-09-15T08:49:07+0000",
+  "sha": "6cee5e81ee83917806bbde320786a8fb61efebee",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "meituan-longcat/LongCat-Flash-Lite",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:08+0000",
+  "sha": "b62b68827ead0b7fef3ba98b57f18484acaaec06",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "baidu/ERNIE-4.5-21B-A3B-PT",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:09+0000",
+  "sha": "87db95487941cb39592ee0abca3b9155a6d19c5c",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "arcee-ai/Trinity-Mini",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:10+0000",
+  "sha": "cdb81e8130815fec299cccc8f8700004b8366e1e",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "mistralai/Mistral-Small-4-119B-2603",
+  "note": "官方發布為 FP8",
+  "fetched_at": "2026-09-15T08:49:12+0000",
+  "sha": "a11f36bebf709121056b1dbcc943d1c6afbe494d",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "microsoft/Phi-3.5-MoE-instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:13+0000",
+  "sha": "43688451b462a3351d8580625ebe1931adb3986d",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "mistralai/Mixtral-8x22B-Instruct-v0.1",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:14+0000",
+  "sha": "cc88a6cc19fbd17d9f1c0ee0b0d70a748dce698d",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "upstage/Solar-Open-100B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:15+0000",
+  "sha": "1f591439b14055004d1a5d1a975608953a022fea",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "Qwen/Qwen-AgentWorld-35B-A3B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:17+0000",
+  "sha": "60d2b0434a53d2e62a7c00a489586815d94ebffb",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "moe",
+  "repo": "nvidia/NVIDIA-Nemotron-Labs-3-Puzzle-75B-A9B-BF16",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:18+0000",
+  "sha": "8fe5546888e9bd03fdbf52d808adebdfca901b52",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3-Next-80B-A3B-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:19+0000",
+  "sha": "9c7f2fbe84465e40164a94cc16cd30b6999b0cc7",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3-Coder-Next",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:20+0000",
+  "sha": "a7fbcb5c0e12d62a448eaa0e260346bf5dcc0feb",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3.5-27B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:21+0000",
+  "sha": "fc05daec18b0a78c049392ed2e771dde82bdf654",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3.5-35B-A3B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:22+0000",
+  "sha": "59d61f3ce65a6d9863b86d2e96597125219dc754",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3.5-122B-A10B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:23+0000",
+  "sha": "dc4d348443bc740c68e2d77492492c11606384d5",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3.6-27B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:24+0000",
+  "sha": "6a9e13bd6fc8f0983b9b99948120bc37f49c13e9",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3.6-35B-A3B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:25+0000",
+  "sha": "995ad96eacd98c81ed38be0c5b274b04031597b0",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3.8-27B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:26+0000",
+  "sha": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "Qwen/Qwen3.8-Flash-Next",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:27+0000",
+  "sha": "de4b8e4d43b917e7706784d8bb445c9af86a3540",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "moonshotai/Kimi-Linear-48B-A3B-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:28+0000",
+  "sha": "e1df551a447157d4658b573f9a695d57658590e9",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B-BF16",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:29+0000",
+  "sha": "bf77c3174f68ad409e1c2aa60daeb46e32d1c606",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:29+0000",
+  "sha": "2dc98e2afe4face0e4ce40972a915c45368bd34a",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "nvidia/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-BF16",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:30+0000",
+  "sha": "a9904d24bcc1d289a1950fa9d2b978c47cf903b9",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "ai21labs/AI21-Jamba2-Mini",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:31+0000",
+  "sha": "24cbbd23e3df170f254aa601d907cdf416ffd344",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "tiiuae/Falcon-H1-34B-Instruct",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:33+0000",
+  "sha": "6e6890e26cba1f58b1e6ee70d654ddf054f9fce8",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "ibm-granite/granite-4.0-h-small",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:34+0000",
+  "sha": "b8c0982bab7fde4eb48110f5a069527c008fab39",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "ibm-granite/granite-4.1-30b",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:36+0000",
+  "sha": "4fae6278f7132abf5e971f9de49ebbad09c54cce",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "ibm-granite/granite-4.2-30b",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:37+0000",
+  "sha": "9e668ce1c538387ef24d3644e9b0606647762636",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "openbmb/MiniCPM-SALA",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:38+0000",
+  "sha": "9180fe1db74f71fb81bc7105efe88f6b19c959b0",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "inclusionAI/Ling-2.6-flash",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:39+0000",
+  "sha": "11236968749136a78d4b7cbfb786c4460f2f353e",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "LiquidAI/LFM2-24B-A2B",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:40+0000",
+  "sha": "a3bbacd91a678b97712f0e323e52f8c24ba29542",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "meituan-longcat/LongCat-Flash-Lite-Sparse",
+  "note": "",
+  "fetched_at": "2026-09-15T08:49:42+0000",
+  "sha": "35de83a18b5838ec1657edb3f885a59bbdd7888f",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "ok"
+ },
+ {
+  "category_hint": "hybrid",
+  "repo": "MiniMaxAI/MiniMax-M1-80k-hf",
+  "note": "456B，單卡放不下，列為上界參考",
+  "fetched_at": "2026-09-15T08:49:43+0000",
+  "sha": "3dbbd8d1e47e262a91086451a1dba347722fa8db",
+  "config.json": "ok",
+  "README.md": "ok",
+  "generation_config.json": "HTTP 404"
+ }
+]
