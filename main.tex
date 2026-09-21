@@ -16,15 +16,38 @@
 % ---------- 中文支援 ----------
 % 西文字型（XeLaTeX 下用 fontspec，不要用 times/helvet 套件）
 \usepackage{fontspec}
-\setmainfont{TeX Gyre Termes}
-\setsansfont{TeX Gyre Heros}
-\setmonofont{TeX Gyre Cursor}[Scale=0.9]
+% 平台 B（MLSteam 容器）沒有 fontconfig，字型必須用**檔案路徑**載入；
+% 平台 A（有系統字型）仍可用字型名稱。用 \IfFontExistsTF 自動選擇，兩邊都能編譯。
+\IfFontExistsTF{TeX Gyre Termes}{%
+  \setmainfont{TeX Gyre Termes}%
+  \setsansfont{TeX Gyre Heros}%
+  \setmonofont{TeX Gyre Cursor}[Scale=0.9]%
+}{%
+  \setmainfont{texgyretermes}[Extension=.otf, UprightFont=*-regular,
+    BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic]%
+  \setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular,
+    BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic]%
+  \setmonofont{texgyrecursor}[Extension=.otf, UprightFont=*-regular,
+    BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic, Scale=0.9]%
+}
 
 \usepackage{xeCJK}
 % Linux（本機）字型。macOS 上可改回 Songti TC / Heiti TC。
-\setCJKmainfont{Noto Serif CJK TC}[AutoFakeSlant=0.15]
-\setCJKsansfont{Noto Sans CJK TC}[AutoFakeSlant=0.15]
-\setCJKmonofont{Noto Sans Mono CJK TC}
+\IfFontExistsTF{Noto Serif CJK TC}{%
+  \setCJKmainfont{Noto Serif CJK TC}[AutoFakeSlant=0.15]%
+  \setCJKsansfont{Noto Sans CJK TC}[AutoFakeSlant=0.15]%
+  % Mono 版本未必裝得到（平台 B 只下載了 Serif/Sans），個別檢查再退回 Sans。
+  \IfFontExistsTF{Noto Sans Mono CJK TC}{\setCJKmonofont{Noto Sans Mono CJK TC}}%
+    {\IfFontExistsTF{Noto Sans CJK TC}{\setCJKmonofont{Noto Sans CJK TC}}%
+      {\setCJKmonofont{NotoSansCJKtc-Regular.otf}[Path=/mlsteam/data/tiara/fonts/]}}%
+}{%
+  % 檔案路徑載入（平台 B）。粗體以 AutoFakeBold 模擬，因為只下載了 Regular。
+  \setCJKmainfont{NotoSerifCJKtc-Regular.otf}[Path=/mlsteam/data/tiara/fonts/,
+    AutoFakeSlant=0.15, AutoFakeBold=2.5]%
+  \setCJKsansfont{NotoSansCJKtc-Regular.otf}[Path=/mlsteam/data/tiara/fonts/,
+    AutoFakeSlant=0.15, AutoFakeBold=2.5]%
+  \setCJKmonofont{NotoSansCJKtc-Regular.otf}[Path=/mlsteam/data/tiara/fonts/]%
+}
 \xeCJKsetup{CJKmath=true}
 
 % ---------- 版面 ----------
@@ -73,7 +96,10 @@ for Long-Context LLM Inference}
 \noindent
 長上下文（long-context）LLM 推論的核心系統瓶頸之一，是 KV cache 隨上下文長度線性成長並耗盡 GPU 高頻寬記憶體（HBM）。既有工作已分別處理了這個問題的各個面向：可恢復的驅逐、學習式的未來效用預測、重算與傳輸的取捨，以及以品質為約束的壓縮。然而，據我們所知，尚無工作將這些決策整合到\emph{單一的線上決策}之中。
 
-本文的出發點是一個橫跨硬體的量化事實：\emph{重算與傳輸的成本比 $\kappa$ 隨平台變動達 32 倍}——於 AMD Instinct MI300X（192\,GB HBM3）為 6--21 倍，於 NVIDIA RTX 3090（24\,GB GDDR6X）則為 54--190 倍。此差異使「單一套 KV 放置策略適用於所有硬體」的隱含前提不成立。
+本文的出發點是一個橫跨硬體的量化事實：\emph{重算與傳輸的成本比 $\kappa$ 隨平台、模型與上下文長度變動達一個數量級以上}。
+在兩個平台上以同一套 harness 實測同一個模型（Llama-3.1-8B、$\text{ctx}=16{,}384$）：RTX 3090 的 $\kappa_\text{cpu}=8.9$，
+AMD Instinct MI300X 則為 $1.5$（跨平台 5.8 倍）；而固定在 MI300X 上、改變模型與上下文（Seed-OSS-36B、$\text{ctx}=96{,}000$）時 $\kappa_\text{cpu}$ 升至 $11.7$
+（實測全距 $0.7$--$11.7$）。此差異使「單一套 KV 放置策略適用於所有硬體」的隱含前提不成立。
 
 本文全程採\emph{單卡、單請求、上下文遞增}的壓力軸，加速器決定的是這條軸能推多遠，而非換一個問題。在 24\,GB 級的卡上，可推的距離由權重精度決定：BF16 權重僅餘 41{,}648 token 的 KV 預算，改用 AWQ-INT4 後同一張卡升至 120{,}320--547{,}744 token，\textbf{相差 $13.2\times$}。在 192\,GB 級的卡上，同一條軸延伸至更大的模型與 1M 級上下文。兩端皆為真實的部署情境，而最佳策略在二者上並不相同。
 
@@ -103,11 +129,11 @@ MI300X 的 HBM 頻寬（5.3\,TB/s 峰值）與主機鏈路頻寬（PCIe Gen5 $\t
 
 \paragraph{貢獻。}
 \begin{enumerate}\itemsep0.2em
-  \item 我們量化了\emph{重算對傳輸的成本比 $\kappa$ 隨平台變動達 32 倍}（MI300X 上 6--21 倍、RTX 3090 上 54--190 倍），並指出正確的判準是 FLOPS 對主機鏈路之比而非 HBM 頻寬比。同一組量化分析亦顯示，既有 KV 卸載文獻的容量前提在大容量 HBM 加速器上不成立，問題性質由容量轉為機會成本，而在 24\,GB 級加速器上則仍然成立（第 \ref{sec:motivation} 節）。
+  \item 我們\emph{實測}了重算對傳輸的成本比 $\kappa$：跨平台（同模型同 ctx）相差 5.8 倍，跨模型與上下文（同一張 MI300X）相差 7.6 倍，實測全距 $0.7$--$11.7$；並指出正確的判準是 FLOPS 對主機鏈路之比而非 HBM 頻寬比。同一組量化分析亦顯示，既有 KV 卸載文獻的容量前提在大容量 HBM 加速器上不成立，問題性質由容量轉為機會成本，而在 24\,GB 級加速器上則仍然成立（第 \ref{sec:motivation} 節）。
   \item 我們系統性地比對了 15 篇近期工作，指出四項成本（未來效用、傳輸成本、重算成本、記憶體壓力）從未在單一線上決策中同時出現；現有最高覆蓋為 Marconi~\cite{marconi2025} 的三項，其因僅在 GPU 上運作而結構性地缺少傳輸成本（第 \ref{sec:related} 節）。
   \item 我們將 KV 放置形式化為受品質約束的序列決策問題，動作空間包含六種狀態且明確納入「丟棄後重算」；並論證重算的價值來自其資源佔用特性而非單次成本，因而其正確性取決於未來效用預測（第 \ref{sec:formulation} 節）。
   \item 我們提出 \sys 的設計，透過 vLLM 的 \texttt{CachePolicy} 介面實作，可在 CUDA 與 ROCm 上零程式碼修改部署（ROCm 上的執行期限制見第 \ref{sec:limitations} 節）。
-  \item 我們指出既有學習式 KV 管理方法所用的\emph{對稱}損失函數，在動作成本相差 6--190 倍（隨平台而異）的設定下失準（10 倍不對稱下，Bayes 最佳門檻自 $p=0.5$ 移至 $p\approx0.09$），並提出將動作成本納入損失的兩種形式。經比對 8 個既有學習式系統，尚無工作將\emph{異質動作成本}編碼進 KV 管理的損失函數（第 \ref{sec:loss} 節）。
+  \item 我們指出既有學習式 KV 管理方法所用的\emph{對稱}損失函數，在動作成本跨階相差一到兩個數量級（實測 $\kappa \in [0.7, 11.7]$，隨平台、模型與 ctx 而異）的設定下失準（10 倍不對稱下，Bayes 最佳門檻自 $p=0.5$ 移至 $p\approx0.09$），並提出將動作成本納入損失的兩種形式。經比對 8 個既有學習式系統，尚無工作將\emph{異質動作成本}編碼進 KV 管理的損失函數（第 \ref{sec:loss} 節）。
   \item 我們以離線最優 oracle 量測此問題的改善空間，依預先訂定的判準給出\emph{條件式 GO}，並給出兩個條件的可計算判別式：權重須量化（BF16 權重使 decode 佔端到端時間的 75\%，而放置對 decode 無自由度），且請求長度須落在成本交叉點的 $2$--$3.5$ 倍（第 \ref{sec:eval} 節）。
 \end{enumerate}
 
@@ -267,24 +293,29 @@ GH200 的 9:1 是例外：藉由 NVLink-C2C 的 450\,GB/s，其卸載經濟性�
 
 \begin{table}[t]
 \centering\small
-\caption{重算對傳輸的成本比 $\kappa$。$\kappa$ 跨平台變動達 \textbf{32 倍}，這是本文「硬體條件化策略」主張最直接的量化依據。}
+\caption{重算對傳輸的成本比 $\kappa$，\textbf{兩平台實測}（同一套 harness、warm TTFT 減「block 仍在 GPU」的基準，再除以 token 數）。
+$\kappa$ 同時隨\emph{平台}、\emph{模型}與\emph{上下文長度}變動：前兩列固定模型與 ctx 只換平台（5.8 倍），末兩列固定平台只換模型與 ctx（7.6 倍）。
+$\kappa_\text{ssd}<1$ 表示在該位置重算比從 SSD 取回更便宜。}
 \label{tab:kappa}
-\begin{tabular}{llrrr}
+\begin{tabular}{llrrrrr}
 \toprule
-平台 & 模型 & 重算 & 傳輸 & $\boldsymbol{\kappa}$ \\
+平台（SSD 裝置） & 模型 & ctx & 重算 & CPU & SSD & $\boldsymbol{\kappa_\text{cpu}}$ \\
 \midrule
-\multirow{2}{*}{MI300X}
- & Llama-3.1-8B & 12.2\,$\mu$s & 2.08\,$\mu$s & \textbf{6}$\times$ \\
- & Llama-3.1-70B & 107\,$\mu$s  & 5.20\,$\mu$s & \textbf{21}$\times$ \\
+RTX 3090（SATA） & Llama-3.1-8B & 16{,}384 & 325.5 & 36.8 & 346.0 & \textbf{8.9}$\times$ \\
+RTX 3090（NVMe） & Llama-3.1-8B & 16{,}384 & 323.6 & 33.9 & 392.9 & \textbf{9.5}$\times$ \\
+MI300X（本地 NVMe） & Llama-3.1-8B & 16{,}384 & 46.7 & 30.5 & 64.9 & \textbf{1.5}$\times$ \\
 \midrule
-\multirow{2}{*}{RTX 3090}
- & Llama-3.1-8B & 225\,$\mu$s  & 4.16\,$\mu$s & \textbf{54}$\times$ \\
- & Llama-3.1-70B & 1{,}972\,$\mu$s & 10.4\,$\mu$s & \textbf{190}$\times$ \\
+MI300X（本地 NVMe） & Qwen2.5-7B & 96{,}000 & 104.8 & 23.5 & 44.4 & \textbf{4.5}$\times$ \\
+MI300X（本地 NVMe） & Seed-OSS-36B & 96{,}000 & 656.8 & 56.4 & 120.4 & \textbf{11.7}$\times$ \\
 \bottomrule
 \end{tabular}
+\\[2pt]
+{\footnotesize 單位：$\mu$s/token。來源：\texttt{results/m2\_harness/retrieval\_cost\_\{sata,nvme\}.csv}（平台 A）、
+\texttt{results/m2\_harness\_mi300x/cost\_constants\_mi300x.csv}（平台 B）。}
 \end{table}
 
-且重算成本隨 block 的\emph{絕對位置}增長，而傳輸成本則保持恆定。\emph{表 \ref{tab:kappa} 的數值應視為 $\kappa$ 的下界。}
+且重算成本隨 block 的\emph{絕對位置}增長，而傳輸成本則保持恆定——這正是表 \ref{tab:kappa} 中同一張 MI300X 上 $\kappa$ 隨 ctx 從 1.5 升到 11.7 的原因。
+\emph{因此引用 $\kappa$ 時必須同時標明模型與上下文長度；單一數值沒有意義。}
 
 此處須區分兩個容易混淆的量。整段 prefill 的總成本確為序列長度的二次式（attention 為 $O(L^2)$）；但本文的動作空間作用於\emph{固定大小的 block}，而在位置 $P$ 重算一個大小為 $C$ 的 block，其 attention 需讀取前序的 $P$ 個 token，成本為 $O(C\cdot P)$——\textbf{對 $P$ 為線性}。我們在平台 A 上以 $C=2048$、$P\in\{0,4\text{K},8\text{K},16\text{K},24\text{K}\}$ 實測 Llama-3.1-8B（每點三次取中位數），得
 
@@ -458,7 +489,14 @@ Quest~\cite{quest2024}、InfiniGen~\cite{infinigen2024}、ArkVale~\cite{arkvale2
 
 \emph{(ii) 計算 $q \cdot k$ 預設 $k$ 仍可取得。}要以 query 判斷是否保留某 block，必須先讀取該 block 的 key；而是否保留該 key 正是待決策的變數。此依賴使 query 訊號無法用於\emph{已降級至 SSD 或已丟棄}的 block，亦即無法用於階梯下緣——而階梯下緣正是成本差異最大之處。以 query 為訊號的方法因此運作於「內容皆可取得，僅需挑選搬運對象」的前提之上，其前一步（內容該置於何處、是否保留）即為本文所處理的問題。
 
-本文不將二者視為競爭關係：query 側訊號可作為\emph{特徵}併入前瞻式預測器（第 \ref{sec:predictor} 節），對仍可取得的 block 提供高品質輸入，而預測器負責覆蓋 query 無法觸及的跨請求與已降級情形。
+本文原本預期 query 側訊號可作為\emph{特徵}併入前瞻式預測器（第 \ref{sec:predictor} 節）。
+\textbf{我們量測了這個假設，結果是否定的。}在 MI300X 上對 7 個模型量測 SnapKV 式觀察窗的注意力質量
+（最後 32 個 query 對全部 key 的分數，逐 block 聚合），並與「該 block 是否於其後 32 個請求內再被存取」的真值比對：
+注意力重要度的 AUC 為 $0.480$--$0.500$（$0.5$ 即隨機），而僅用存取歷史的訊號為 $0.721$，兩者的 Spearman 相關介於 $-0.047$ 與 $+0.051$。
+原因可量化：注意力幾乎完全由\emph{位置}決定——同一 block 位置跨請求的變異係數為 $0.0085$，而不同位置之間為 $0.3306$（相差 38.8 倍），
+同一份文件兩次請求的前 50 名 block 重疊率為 100\%；跨請求重用則取決於「哪一份文件再度被查詢」，與位置正交。
+\emph{兩類訊號測量的是不同的量}：query 側訊號刻畫單次請求\emph{內}的取捨，放置決策需要的是跨請求的未來效用。
+此結果支持本文以存取歷史為特徵的設計，同時也說明現成的驅逐式重要度訊號不可直接移用於放置（詳見第 \ref{sec:eval-b} 節與圖 \ref{fig:b-attention}）。
 
 \subsection{品質作為約束}
 KVServe~\cite{kvserve2026} 將壓縮 profile 選擇形式化為
@@ -1383,7 +1421,7 @@ DeepSeek-V2-Lite MLA AWQ & \textbf{399{,}376} \\
 品質約束以 profiling 建立的代理訊號執行，$\Delta\mathcal{Q} \le \epsilon$ 是經驗性的估計而非形式保證。這是所有品質約束工作的共同限制。將其提升為執行期可驗證的界限（例如以 per-head 的注意力分佈失真上界）是自然的後續方向，但其理論難度高。
 
 \paragraph{重算可能不划算。}
-第 \ref{sec:recompute-econ} 節的分析顯示重算的單次成本比傳輸高 6--190 倍。若 $p_i$ 的預測精度不足，\act{Drop} 動作可能持續造成淨損失。附錄 \ref{app:notyet} 的消融設計將直接檢驗此點；若 \act{Drop} 不帶來收益，我們將自系統中移除之。此檢驗尚未執行。
+第 \ref{sec:recompute-econ} 節的分析與第 \ref{sec:eval-b} 節的實測顯示，重算的單次成本相對傳輸可高出一個數量級（$\kappa$ 實測 $0.7$--$11.7$，視平台、模型與 ctx 而定）。若 $p_i$ 的預測精度不足，\act{Drop} 動作可能持續造成淨損失。附錄 \ref{app:notyet} 的消融設計將直接檢驗此點；若 \act{Drop} 不帶來收益，我們將自系統中移除之。此檢驗尚未執行。
 
 \paragraph{K 與 V 未分離處理。}
 式 \eqref{eq:kvsize} 前導的 2 對應 key 與 value，本文\emph{將二者綁定於同一動作}：一個 block 的 K 與 V 一同降級、一同量化、一同丟棄。這是刻意的範圍限制，而文獻指出該粒度並非最佳。KIVI~\cite{kivi2024} 顯示二者的元素分佈不同，key cache 宜沿 channel 維度量化而 value cache 宜沿 token 維度量化；Hariri 等人~\cite{kvadaquant2025} 進一步指出在固定記憶體預算下，將位元優先配置給 key（如 4-bit key 搭配 2-bit value）較均勻配置嚴格更優；KVTuner~\cite{kvtuner2025} 則於逐層粒度搜尋混合精度，在 Llama-3.1-8B-Instruct 上達成 3.25 位元的近無損配置。
@@ -1411,9 +1449,163 @@ ArkVale、Quest、ShadowKV、ClusterKV、RetroInfer 與 ParisKV 因 \texttt{rapi
 在 CPU 與 GPU 共用同一塊 HBM 的 APU 上（如 MI300A~\cite{cdna3,upm2025}），「卸載至 CPU 記憶體」僅是同一記憶體內的頁表變更，不產生容量收益，階梯塌縮為 HBM $\rightarrow$ 對等 APU HBM $\rightarrow$ NVMe。本文的成本模型形式不變，但 \act{Cpu} 一階須重新標價。
 
 % =====================================================================
+\section{平台 B 實測：AMD MI300X}
+\label{sec:eval-b}
+
+本節報告平台 B（AMD Instinct MI300X、192\,GB HBM3、ROCm 7.2.2、vLLM v0.28.0）的量測。
+七個模型涵蓋 dense 7B--36B、MoE 與 13--15B 級：Llama-3.1-8B、UltraLong-8B-1M、Qwen2.5-7B-1M、
+Mistral-Nemo-12B、Qwen2.5-14B-1M、Qwen3-30B-A3B（MoE）、Seed-OSS-36B。
+全部 77 格（7 模型 $\times$ 11 項量測）皆已完成並通過自動自檢（\texttt{code/verify\_results\_b.py}：
+可追溯性、覆蓋率、完整性、污染、退化訊號、退出碼六類檢查，0 個 FAIL）。
+
+\subsection{容量：低精度換到的空間是跨硬體不變量}
+\label{sec:b-capacity}
+
+七個模型的 KV 容量倍數一致收斂到 FP8 $2.00\times$、INT8 $1.94\times$、INT4 $3.77\times$，
+且與平台 A 相同（INT8 未達 $2\times$ 是每 token 每 head 的縮放中繼資料所致）。
+七者之中僅 Seed-OSS-36B 的 BF16 上限來自\emph{記憶體}（實測 413{,}632 token，低於模型可定址的 524{,}288）；
+其餘六者皆先撞到模型自身的長度上限——這與 \S\ref{sec:motivation} 觀察一的結論一致：
+在 192\,GB 級加速器上，單請求的容量壓力已不再是瓶頸。
+
+\subsection{重算成本隨位置線性成長}
+\label{sec:b-recompute}
+
+圖 \ref{fig:b-recompute} 給出七個模型的 $C_\text{recompute}(P)$。線性擬合 $C_0 + aP$ 的 $R^2$ 皆 $\ge 0.947$（五個 $\ge 0.999$）。
+UltraLong-8B-1M 一路量到 $P=1{,}048{,}576$：從 86\,ms 成長至 10{,}350\,ms（120 倍），斜率 $9.75\,\mu$s/千 token。
+斜率隨模型規模放大：兩個 8B 模型為 $9.25$／$9.75$，Seed-OSS-36B 為 $30.76$（3.3 倍）。
+\emph{這是 \S\ref{sec:recompute-econ} 「$C_\text{recompute}$ 不是常數」在第二個平台上的獨立確認。}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{notebooks/figures/fig_b_recompute_position.pdf}
+\caption{重算 2{,}048 個 token 的成本隨已快取前綴長度 $P$ 成長（雙對數軸）。七個模型、每點取 3 次量測的最小值。
+UltraLong-8B-1M 掃至 1M token。來源：\texttt{results/m2\_harness\_mi300x/recompute\_position\_*.csv}。}
+\label{fig:b-recompute}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{notebooks/figures/fig_b_tier_costs.pdf}
+\caption{六階動作空間的每 token 取回成本（對數軸），七個模型。GPU 內的精度階反量化成本（FP8 $0.17$、INT4 $1.59\,\mu$s/token）
+比跨裝置搬運低一到兩個數量級。Llama-3.1-8B 量於 $\text{ctx}=16{,}384$，其餘為 $96{,}000$；重算成本與位置成正比，故不可跨 ctx 比較。
+來源：\texttt{results/m2\_harness\_mi300x/cost\_constants\_mi300x.csv}。}
+\label{fig:b-tiers}
+\end{figure*}
+
+\subsection{Oracle headroom：口徑必須標明}
+\label{sec:b-headroom}
+
+圖 \ref{fig:b-headroom} 給出 prefill-only 的 oracle headroom 對記憶體壓力的曲線。
+壓力 $1\times$ 時一律為 $0.0\%$——工作集塞得進 GPU，最佳 baseline 即為不卸載，\emph{沒有放置決策可做}；
+壓力 $2$--$8\times$ 時為 $21$--$43\%$，四個模型皆越過 $15\%$ 的 GO 門檻。
+
+\textbf{端到端的天花板由 prefill 佔比決定。}平台 B 上 decode 佔總時間 $78$--$82\%$，而放置決策只能影響 prefill。
+以含 decode 的端到端模擬量測，同一批工作負載的 oracle headroom 為 $3.76$--$4.41\%$；
+除以各自的 prefill 佔比後推算回 prefill-only 為 $18.5$--$24.8\%$，與壓力掃描的 $21$--$43\%$ 量級一致（圖 \ref{fig:b-prefill}）。
+\emph{兩條獨立路徑互相印證，但也說明：引用 headroom 時必須標明是 prefill-only 還是端到端，兩者相差約 5 倍。}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{notebooks/figures/fig_b_headroom.pdf}
+\caption{Oracle headroom（prefill-only）對記憶體壓力。壓力 $1\times$ 時為 0\% 是正確的退化行為。
+來源：\texttt{results/m4\_oracle\_mi300x/oracle\_*.csv}。}
+\label{fig:b-headroom}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{notebooks/figures/fig_b_prefill_share.pdf}
+\caption{端到端 headroom 與 prefill-only 的關係。放置決策只能改變 prefill，而 prefill 僅佔總時間的 $18$--$22\%$。
+來源：\texttt{results/m5\_predictor\_mi300x/policy\_sim.csv}。}
+\label{fig:b-prefill}
+\end{figure}
+
+\subsection{品質代價 $\epsilon$ 是「模型 $\times$ 任務」的性質}
+\label{sec:b-quality}
+
+圖 \ref{fig:b-quality} 以四套評測（大海撈針、GSM8K、LongBench、RULER）$\times$ 五種 KV 精度量測 $\epsilon$。
+Llama-3.1-8B、UltraLong-8B-1M、Qwen3-30B-A3B 與 Seed-OSS-36B 在 $64$K--$129$K 上下文下，
+\emph{連 INT4 都沒有可辨識的損失}（撈針 100\%；LongBench 與 RULER 的五精度差距皆在 $\pm 1$ 分內）。
+
+唯一的例外是 Qwen2.5-7B-1M：撈針正確率自 BF16 的 100\% 跌至 FP8 的 10\%、INT4 的 0\%。
+逐題檢視輸出可知這\emph{不是品質下降而是退化生成}（重複同一字元、空字串、700 token 的無意義輸出），
+且在 $\text{ctx}=3$K 就已發生（非長度效應）；平台 A 在同家族模型上量到相同模式（BF16 100\%／FP8 5\%／INT8 95\%／INT4 0\%），
+構成跨平台、跨權重格式的重現。
+\emph{因此不可由單一模型推論「低位元 KV 量化會毀掉檢索」}——它是該模型族的性質。
+實務上，Oracle 啟用低精度階之前應先對該模型執行一次檢索型檢查。
+
+同時，GSM8K 在七個模型上的五精度差距皆在 $\pm 5$pp 內（$n=120$，95\% CI 約 $\pm 7$pp），
+\emph{與 0 無法區分}——只看推理型評測會得出「KV 量化幾乎免費」的錯誤結論，而同一批設定在檢索任務上可以掉 100pp。
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{notebooks/figures/fig_b_quality.pdf}
+\caption{KV 精度的品質代價。左：大海撈針（檢索型）；右：GSM8K（推理型）。
+同一批精度設定在兩類任務上的 $\epsilon$ 相差兩個數量級。
+來源：\texttt{results/m5\_quality\_mi300x/\{needle,gsm8k\_precision\}\_*.csv}。}
+\label{fig:b-quality}
+\end{figure*}
+
+\subsection{query 側訊號無法預測跨請求重用}
+\label{sec:b-attention}
+
+圖 \ref{fig:b-attention} 檢驗 \S\ref{sec:related} 提出的假設。七個模型的注意力重要度 AUC 為 $0.480$--$0.500$，
+存取歷史為 $0.721$，兩者 Spearman 相關 $\in [-0.047, +0.051]$。
+右圖說明原因：注意力質量的形狀由位置決定——開頭的 attention sink（$6.2\times$ 於中位）與結尾的 recency 上升——
+而這個形狀對同一份文件的每次請求幾乎完全相同（前 50 名 block 重疊率 100\%）。
+此結果將論文表 \ref{tab:ablation} 中原標為不可得的 \texttt{attn\_mass} 特徵族填為\emph{已量測、對此目標無邊際貢獻}。
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{notebooks/figures/fig_b_attention.pdf}
+\caption{左：注意力重要度與存取歷史預測「該 block 會被重用」的能力。右：注意力質量隨 block 位置的形狀（Llama-3.1-8B）。
+來源：\texttt{results/m5\_attention\_mi300x/}。}
+\label{fig:b-attention}
+\end{figure*}
+
+\subsection{負面結果：學習式放置在平台 B 未勝過最簡單的兩階策略}
+\label{sec:b-negative}
+
+以 M5 預測器（LightGBM，特徵為存取間隔與指數衰減計數）驅動線上放置，於四組設定與最佳 baseline 比較：
+
+\begin{center}\small
+\begin{tabular}{llrrr}
+\toprule
+工作負載 & 模型 & oracle 空間 & 對稱損失 & 成本加權 \\
+\midrule
+\texttt{toolagent} & Llama-3.1-8B & 3.76\% & $-33.2\%$ & $-35.0\%$ \\
+合成長上下文 & Llama-3.1-8B & 8.33\% & $-47.3\%$ & $-29.7\%$ \\
+\texttt{conversation} & Llama-3.1-8B & 4.00\% & $-45.3\%$ & $-43.3\%$ \\
+\texttt{toolagent} & Seed-OSS-36B & 4.41\% & $-9.7\%$ & $-9.6\%$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+（數值為「拿到 oracle headroom 的比例」，負數表示劣於最佳 baseline \texttt{tier\_fs}。平台 A 於同類工作負載為 $+81.85\%$。）
+
+\textbf{預測器本身並無問題}：AUC $0.917$--$0.922$、期望校準誤差 ECE $0.003$--$0.004$、正樣本 Spearman $0.99$、
+推論延遲數百 $\mu$s／64 個候選。問題在於\emph{可操作空間過小}：平台 B 的本地 NVMe 循序讀達 5{,}392\,MiB/s、
+GPU 有 192\,GB HBM，使得最簡單的 CPU$+$磁碟兩階策略已接近最佳——四個 baseline 的端到端總時間僅相差 1.6\%。
+在如此壓縮的成本階差下，預測器的少數錯誤即足以抵銷其全部收益。
+Seed-OSS-36B（階差最大、重算最貴）的損失最小（$-9.7\%$ 對 Llama 的 $-33.2\%$），方向與此解釋一致。
+
+\emph{這個負面結果與本文的核心論點自洽而非矛盾}：既然 $\kappa$ 隨硬體變動一個數量級以上，
+則在 $\kappa$ 小、階差被硬體壓縮的平台上，複雜策略本就不應有優勢。
+本文的系統主張因此應\emph{限定於階間成本差距顯著的硬體條件}，而該條件正是 \S\ref{sec:motivation} 量化的對象。
+
+\subsection{實作事實：卸載是位元組無損，但端到端非位元相同}
+\label{sec:b-lossless}
+
+以 60 題 GSM8K 逐題比對輸出雜湊：CPU 階與磁碟階之間 $0/60$ 不同（\emph{位元組搬移本身無損}）；
+同一設定重跑兩次亦為 $0/60$（執行具決定性）。但卸載相對不卸載有 $13$--$25/60$ 的輸出位元不同，
+最終答案差異 $\le 1$ 題。原因是「取回 $+$ 部分重算」與「整段 prefill」的分塊邊界不同，
+導致浮點歸約次序不同。平台 A 當時量到 $60/60$ 完全相同，故此為\emph{平台相依的實作事實}，
+在定義動作空間時應與「位元組無損」分開陳述。
+
+% =====================================================================
 \section{Conclusion}
 
-本文的核心論點是：\emph{當動作成本相差 6--190 倍、且該比值本身隨硬體變動 32 倍時，以對稱損失訓練的效用預測器會系統性地錯置決策邊界。}我們將 KV 放置形式化為受品質約束的序列決策問題，其動作空間統一了位置分層與精度分層，並將「丟棄後重算」視為階梯上一個具明確標價的層級。
+本文的核心論點是：\emph{當動作成本跨階相差一到兩個數量級、且該比值本身隨硬體、模型與上下文長度變動（實測 $\kappa \in [0.7, 11.7]$，跨平台 5.8 倍、跨模型與 ctx 7.6 倍）時，以對稱損失訓練的效用預測器會系統性地錯置決策邊界。}我們將 KV 放置形式化為受品質約束的序列決策問題，其動作空間統一了位置分層與精度分層，並將「丟棄後重算」視為階梯上一個具明確標價的層級。
 
 平台 A 的量測支持此論點（第 \ref{sec:measured} 節）。其中兩項確立了 GPU 精度階的可用性：FP8 為\emph{儲存}狀態而非運算狀態，故 sm\_86 可量測，且動作空間中位於 GPU 的四個精度階皆為同一旗標的取值。另兩項確立了成本模型的形式：per-token-head 量化固定多帶 2\,KiB/token 的中繼資料，使精度階梯的收益為 $2.00\times$/$1.94\times$/$3.77\times$ 而非 $2\times$/$4\times$；而固定大小 block 的重算成本對其絕對位置為\emph{線性}，非二次。
 
