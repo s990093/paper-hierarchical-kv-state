@@ -58,3 +58,6 @@ results/m5_attention/attn_importance_*.csv
 # ── MLSteam / MI300X 憑證（絕不進 git：本 repo 是 public） ──────────────
 SECRETS.local.md
 code/mi300x/*.local
+
+# ── 論文 PDF（版權屬原作者，public repo 不散布）──────────────────────
+papers/*.pdf

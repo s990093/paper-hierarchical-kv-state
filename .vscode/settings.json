@@ -7,10 +7,6 @@
 
   "//3": "notebook 預設用具名 kernel。它已把 CUDA_VISIBLE_DEVICES 設成空字串——",
   "//4": "分析用的 kernel 不該碰 GPU，否則會默默佔住一張卡，而這台機器是共用的。",
-  "jupyter.kernels.filter": [
-    { "path": "/usr/bin/python3", "type": "pythonEnvironment" },
-    { "path": "/home/hungwei/miniforge3/bin/python", "type": "pythonEnvironment" }
-  ],
   "notebook.output.textLineLimit": 60,
   "notebook.output.scrolling": true,
 
@@ -42,7 +38,10 @@
     }
   ],
   "latex-workshop.latex.recipes": [
-    { "name": "xelatex×2 + bibtex", "tools": ["xelatex", "bibtex", "xelatex", "xelatex"] }
+    {
+      "name": "xelatex×2 + bibtex",
+      "tools": ["xelatex", "bibtex", "xelatex", "xelatex"]
+    }
   ],
 
   "files.exclude": {
@@ -55,5 +54,12 @@
 
   "editor.rulers": [88],
   "[python]": { "editor.rulers": [88] },
-  "[latex]": { "editor.wordWrap": "on", "editor.rulers": [] }
+  "[latex]": {
+    "editor.wordWrap": "on",
+    "editor.rulers": []
+  },
+  "jupyter.kernels.excludePythonEnvironments": [
+    "/usr/bin/python3",
+    "/home/hungwei/miniforge3/bin/python"
+  ]
 }
