@@ -144,6 +144,22 @@
 
 ---
 
+## 9. 能不能建立在 Cake 上發表（2026-10-01 評估）
+
+可以。建立在前作上是常態，Cake 本身也是建立在 AttentionStore 上。問題不在能不能，而在會不會被判定為「Cake 多加一步」。目前有三個風險：
+
+1. **自己的初步數據不支持（最嚴重）**。模型撐得住 INT4 時，INT4 單獨就拿走 oracle 空間的 91.8%／103.9%，放置策略只剩 2–3.5%〔AMD 實測，初步〕，低於 `< 5%` 的 NO-GO 線。必須先證明在「不能降精度」或「壓力很大」的情況下，空間明顯大於 5%。
+2. **新穎性窄**。零件都有人做過（見 §6），空白只在「寫入時 × 依位置 × 多層 × 多輪」的組合。組合型貢獻需要一個洞見撐住；候選是「寫入分界 ＝ 讀取會合線」，要有成本模型推導與實測驗證。上次查新是 9/24，動手前要重做。
+3. **硬體條件**。MI300X 沒有 NVMe，SSD 路徑實測 1.3–3.2 GB/s（overlay）。SSD 層要嘛換有 NVMe 的環境，要嘛在論文中明說是以量到的常數模擬。
+
+**最少需要**：
+1. Oracle go/no-go：模擬器加入本提案模式，用 MI300X 實測常數，與 Cake／LRU／Pensieve 比較；`< 5%` 就停。
+2. 反例：找出 Cake 全存磁碟、或 LRU 從尾巴丟，實際造成命中率下降的 workload，並量出差距。
+3. 真實 I/O：Cake 原文的 I/O 是模擬的，以 vLLM 真實搬運量測本身就是差異點。
+4. 重做查新。
+
+**投稿場所**：Oracle 尚無結果，依 CLAUDE.md「9 月底沒有 Oracle 就放棄 MLSys 這一輪」，MLSys 2027（10/30）不實際；目標改為 EuroMLSys 2027（約 2 月，6 頁）。
+
 ## 參考
 
 - Cake：Jin et al., "Compute Or Load KV Cache? Why Not Both?", ICML'25, https://arxiv.org/abs/2410.03065（80% 一句在 Introduction，引用 AttentionStore／CachedAttention）
