@@ -64,6 +64,16 @@
 
 原始檔：`figures/fig_cake_extension.svg`（可編輯）；規格：`figures/specs/fig_cake_extension.json`。圖中的 12 個 chunk 與分界位置是示意，實際分界由實測成本決定。
 
+### 同一件事，用 Cake Fig. 2 的樣式畫
+
+![以 Cake Fig. 2 為底，加入寫入時依位置決定](../figures/fig_cake_fig2_ours.png)
+
+- 下面的 Stage0 到 StageN 跟 Cake 原圖相同：GPU 從前往後算（綠），I/O 從後往前載（紅），在中間會合。
+- 最上面多一列「寫入時（新增）」：讀取時本來就會由 GPU 重算的前 6 格不存；後面的存 SSD，最後兩格重算最貴，存更快的 CPU。
+- 紅色格子的括號標出「從哪一層載入」。
+
+原始檔：`figures/fig_cake_fig2_ours.svg`；規格：`figures/specs/fig_cake_fig2_ours.json`。
+
 | 時機 | Cake | 想做的 |
 |---|---|---|
 | 寫入時 | 全部都存 | 依位置決定：前段（反正會被重算的）不存或只存在便宜的層；後段存在能快速載入的層 |
