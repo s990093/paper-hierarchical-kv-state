@@ -74,6 +74,17 @@
 
 原始檔：`figures/fig_cake_fig2_ours.svg`；規格：`figures/specs/fig_cake_fig2_ours.json`。
 
+### 核心圖：同一條逐位置規則，寫入分界 ＝ 讀取會合線
+
+![逐位置決策：寫入分界等於讀取會合線](../figures/fig_cake_staircase.png)
+
+- **(a)** 每個 chunk 比較「重算成本 R(p)」與「從 SSD 載入的成本 L」。R(p) 隨位置變貴，L 跟位置無關，所以同一條規則自然把序列切成三段：不存、存 SSD、最貴的放容量有限的 CPU。左右不是兩套規則。
+- **(b)** 寫入時照這條規則放置。
+- **(c)** 讀取時跟 Cake 一樣：藍色階梯是 GPU 重算往右推進的前緣，橘色階梯是 I/O 載入往左推進的前緣。兩條前緣最後會合的位置（紅色虛線），正好就是 (b) 的寫入分界。
+- 分界會隨實測成本移動：搬得越慢，會合線越往右，不存的越多。
+
+產生方式：`python3 figures/specs/make_fig_cake_staircase.py`（輸出 `figures/fig_cake_staircase.svg`）；配色用色盲友善的 Okabe–Ito 色系；圖中數值為示意。
+
 | 時機 | Cake | 想做的 |
 |---|---|---|
 | 寫入時 | 全部都存 | 依位置決定：前段（反正會被重算的）不存或只存在便宜的層；後段存在能快速載入的層 |
