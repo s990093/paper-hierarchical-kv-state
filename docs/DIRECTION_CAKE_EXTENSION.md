@@ -50,9 +50,13 @@
 
 把 Cake「讀取時」的雙向還原，延伸成**一套貫穿寫入、放置、逐出、讀取的位置感知（block 級）策略**，涵蓋 GPU／CPU／SSD 三層，context 拉到 32K–128K。
 
-![架構圖：位置感知的 KV 分層（以 Cake 為基底）](../figures/fig_cake_extension.png)
+![架構圖：以 Cake 為基底的位置感知 KV 分層](../figures/fig_cake_extension.png)
 
-上半部是本提案新增的部分：寫入時依位置決定存不存、放哪一層，逐出從前段開始。下半部是 Cake 原有的讀取時雙向還原，本提案改用實測成本，並加上退路。原始檔：`figures/fig_cake_extension.svg`（可編輯），規格：`figures/specs/fig_cake_extension.json`。
+- **(A)** 重繪自 Cake 論文 Fig. 1。請求依序檢查 GPU、CPU、磁碟；三層的頻寬與容量是 Cake 圖上標的數字。Cake 只作用在「磁碟命中後怎麼拿」與「沒命中就重算」這一格，而且前提是 KV 已經全部存好。
+- **(B)** 本提案新增的部分：prefill 完成、產生新的 KV 時，就依位置與實測成本決定這段存不存、放哪一層，逐出則從前段開始。
+- **(C)** 重繪自 Cake 論文 Fig. 2 的雙向還原：GPU 從前往後算，I/O 從後往前載，在中間會合。上兩列是 Cake（全部存在磁碟），下兩列是本提案（前段不存，後段放到 SSD 或更快的 CPU）。讀取時的會合點一樣，但本提案少存了前段，省下的空間讓後段可以放在更快的層。
+
+原始檔：`figures/fig_cake_extension.svg`（可編輯）；規格：`figures/specs/fig_cake_extension.json`。圖中的 12 個 chunk 與分界位置是示意，實際分界由實測成本決定。
 
 | 時機 | Cake | 想做的 |
 |---|---|---|
