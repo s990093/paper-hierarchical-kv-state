@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 980" width="1200" height="980" font-family="WenQuanYi Zen Hei, Noto Sans CJK TC, sans-serif">
-  <rect width="1200" height="980" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1300 1140" width="1300" height="1140" font-family="WenQuanYi Zen Hei, Noto Sans CJK TC, sans-serif">
+  <rect width="1300" height="1140" fill="#FFFFFF"/>
   <defs>
     <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
       <polygon points="0 0, 8 4, 0 8" fill="#555555"/>
@@ -35,192 +35,181 @@
       <polygon points="0 0, 8 4, 0 8" fill="#37474F"/>
     </marker>
   </defs>
-  <rect x="365.0" y="313.0" width="210.0" height="179.0" fill="#DBEAFE" stroke="#60A5FA" stroke-width="1" rx="8"/>
-  <text x="373.0" y="329.0" font-size="12" fill="#999999" font-weight="bold">Cake 只作用在這裡（兩路並行）</text>
-  <rect x="975.0" y="88.0" width="200.0" height="329.0" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" rx="8"/>
-  <text x="983.0" y="104.0" font-size="12" fill="#999999" font-weight="bold">儲存層</text>
-  <rect x="243.0" y="588.0" width="856.0" height="124.0" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" rx="8"/>
-  <rect x="243.0" y="758.0" width="856.0" height="124.0" fill="#EEF2FF" stroke="#C7D2FE" stroke-width="1" rx="8"/>
-  <path d="M 260.0,105.0 L 260.0,133.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <path d="M 325.0,165.0 L 395.0,165.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="350.5" y="147.0" width="19.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="360.0" y="159.0" font-size="11" fill="#777777" text-anchor="middle">是</text>
-  <path d="M 260.0,197.0 L 260.0,233.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="250.5" y="197.0" width="19.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="260.0" y="209.0" font-size="11" fill="#777777" text-anchor="middle">否</text>
-  <path d="M 325.0,265.0 L 395.0,265.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="350.5" y="247.0" width="19.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="360.0" y="259.0" font-size="11" fill="#777777" text-anchor="middle">是</text>
-  <path d="M 260.0,297.0 L 260.0,333.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="250.5" y="297.0" width="19.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="260.0" y="309.0" font-size="11" fill="#777777" text-anchor="middle">否</text>
-  <path d="M 325.0,365.0 L 395.0,365.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="350.5" y="347.0" width="19.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="360.0" y="359.0" font-size="11" fill="#777777" text-anchor="middle">是</text>
-  <path d="M 297.7,378.5 L 408.4,418.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="343.5" y="380.2" width="19.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="353.0" y="392.2" font-size="11" fill="#777777" text-anchor="middle">否</text>
-  <path d="M 800.0,122.0 L 800.0,195.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)" stroke-dasharray="8,4"/>
-  <rect x="774.0" y="140.5" width="52.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="800.0" y="152.5" font-size="11" fill="#777777" text-anchor="middle">決定分界</text>
-  <path d="M 800.0,398.0 L 800.0,315.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <path d="M 910.0,209.0 L 1022.4,162.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="951.2" y="167.5" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="966.2" y="179.5" font-size="11" fill="#777777" text-anchor="middle">最熱</text>
-  <path d="M 910.0,239.0 L 1005.0,225.2" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="942.5" y="214.1" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="957.5" y="226.1" font-size="11" fill="#777777" text-anchor="middle">後段</text>
-  <path d="M 910.0,269.0 L 1005.0,281.1" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="942.5" y="257.0" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="957.5" y="269.0" font-size="11" fill="#777777" text-anchor="middle">中段</text>
-  <path d="M 910.0,299.0 L 1020.0,343.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
-  <rect x="950.0" y="303.0" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
-  <text x="965.0" y="315.0" font-size="11" fill="#777777" text-anchor="middle">前段</text>
-  <rect x="185.0" y="65.0" width="150.0" height="40.0" fill="#dee7fc" stroke="#2563EB" stroke-width="2" rx="8"/>
-  <text x="260.0" y="89.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">請求（prompt）</text>
-  <polygon points="260.0,133.0 325.0,165.0 260.0,197.0 195.0,165.0" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2"/>
-  <text x="260.0" y="169.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">在 GPU？</text>
-  <polygon points="260.0,233.0 325.0,265.0 260.0,297.0 195.0,265.0" fill="#FFEDD5" stroke="#EA580C" stroke-width="2"/>
-  <text x="260.0" y="269.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">在 CPU？</text>
-  <polygon points="260.0,333.0 325.0,365.0 260.0,397.0 195.0,365.0" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
-  <text x="260.0" y="369.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">在磁碟？</text>
-  <rect x="395.0" y="143.0" width="150.0" height="44.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
-  <text x="470.0" y="169.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">直接開始 decode</text>
-  <rect x="395.0" y="243.0" width="150.0" height="44.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
-  <text x="470.0" y="269.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">從 CPU 載入</text>
-  <rect x="395.0" y="343.0" width="150.0" height="44.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
-  <text x="470.0" y="369.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">從磁碟載入</text>
-  <rect x="395.0" y="418.0" width="150.0" height="44.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
-  <text x="470.0" y="444.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">重算</text>
-  <rect x="690.0" y="398.0" width="220.0" height="44.0" fill="#F8FAFC" stroke="#64748B" stroke-width="2" rx="8"/>
-  <text x="800.0" y="424.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">prefill 完成，產生新的 KV</text>
-  <rect x="690.0" y="68.0" width="220.0" height="54.0" fill="#F1F5F9" stroke="#64748B" stroke-width="2" rx="8"/>
-  <text x="800.0" y="91.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">實測成本常數</text>
-  <text x="800.0" y="107.9" font-size="11" fill="#888888" text-anchor="middle">κ＝重算÷傳輸、每筆搬運固定成本</text>
-  <rect x="690.0" y="195.0" width="220.0" height="120.0" fill="#E0E7FF" stroke="#4F46E5" stroke-width="2" rx="8"/>
-  <text x="800.0" y="235.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">位置感知策略</text>
-  <text x="800.0" y="251.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">① 寫入：這段存不存</text>
-  <text x="800.0" y="267.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">② 放置：放哪一層</text>
-  <text x="800.0" y="283.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">③ 逐出：從前段開始丟</text>
-  <rect x="1005.0" y="118.0" width="140.0" height="44.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
-  <text x="1075.0" y="144.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">GPU HBM</text>
-  <rect x="1005.0" y="193.0" width="140.0" height="44.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="8"/>
-  <text x="1075.0" y="219.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">CPU 記憶體</text>
-  <rect x="1005.0" y="268.0" width="140.0" height="44.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="8"/>
-  <text x="1075.0" y="294.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
-  <rect x="1005.0" y="343.0" width="140.0" height="44.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="8"/>
-  <text x="1075.0" y="369.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">不存（要用時重算）</text>
-  <rect x="255.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="286.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="325.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="356.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="395.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="426.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="465.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="496.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="535.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="566.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="605.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="636.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="675.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="706.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="745.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="776.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="815.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="846.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="885.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="916.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="955.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="986.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="1025.0" y="600.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="1056.0" y="624.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
-  <rect x="255.0" y="660.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="286.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="325.0" y="660.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="356.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="395.0" y="660.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="426.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="465.0" y="660.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="496.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="535.0" y="660.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="566.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="605.0" y="660.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="636.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="675.0" y="660.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="706.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="745.0" y="660.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="776.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="815.0" y="660.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="846.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="885.0" y="660.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="916.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="955.0" y="660.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="986.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="1025.0" y="660.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="1056.0" y="684.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="255.0" y="770.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
-  <text x="286.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
-  <rect x="325.0" y="770.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
-  <text x="356.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
-  <rect x="395.0" y="770.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
-  <text x="426.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
-  <rect x="465.0" y="770.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
-  <text x="496.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
-  <rect x="535.0" y="770.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
-  <text x="566.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
-  <rect x="605.0" y="770.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="636.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
-  <rect x="675.0" y="770.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="706.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
-  <rect x="745.0" y="770.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="776.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
-  <rect x="815.0" y="770.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
-  <text x="846.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
-  <rect x="885.0" y="770.0" width="62.0" height="40.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="0"/>
-  <text x="916.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">CPU</text>
-  <rect x="955.0" y="770.0" width="62.0" height="40.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="0"/>
-  <text x="986.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">CPU</text>
-  <rect x="1025.0" y="770.0" width="62.0" height="40.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="0"/>
-  <text x="1056.0" y="794.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">CPU</text>
-  <rect x="255.0" y="830.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="286.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="325.0" y="830.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="356.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="395.0" y="830.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="426.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="465.0" y="830.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="496.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="535.0" y="830.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
-  <text x="566.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
-  <rect x="605.0" y="830.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="636.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="675.0" y="830.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="706.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="745.0" y="830.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="776.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="815.0" y="830.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="846.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="885.0" y="830.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="916.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="955.0" y="830.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="986.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <rect x="1025.0" y="830.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
-  <text x="1056.0" y="854.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
-  <text x="30.0" y="40.0" font-size="15" fill="#111827" text-anchor="start">(A) Cake 原本的流程（重繪自 Cake 論文 Fig. 1）</text>
-  <text x="185.0" y="170.0" font-size="12" fill="#475569" text-anchor="end">2 TB/s，約 80 GB</text>
-  <text x="185.0" y="270.0" font-size="12" fill="#475569" text-anchor="end">25 GB/s，約 1.8 TB</text>
-  <text x="185.0" y="370.0" font-size="12" fill="#475569" text-anchor="end">0.5–4 GB/s，約 26 TB</text>
-  <text x="30.0" y="505.0" font-size="12" fill="#B91C1C" text-anchor="start">前提：KV 已經全部存好；不決定「要不要存、存哪層」</text>
-  <text x="640.0" y="40.0" font-size="15" fill="#111827" text-anchor="start">(B) 本提案新增：寫入時就依位置決定（Cake 沒有）</text>
-  <text x="30.0" y="560.0" font-size="15" fill="#111827" text-anchor="start">(C) 讀取時的雙向還原（重繪自 Cake 論文 Fig. 2），並對比兩種寫入方式</text>
-  <text x="30.0" y="625.0" font-size="13" fill="#111827" text-anchor="start">Cake 寫入時</text>
-  <text x="30.0" y="685.0" font-size="13" fill="#111827" text-anchor="start">Cake 讀取時</text>
-  <text x="30.0" y="795.0" font-size="13" fill="#111827" text-anchor="start">本提案 寫入時</text>
-  <text x="30.0" y="855.0" font-size="13" fill="#111827" text-anchor="start">本提案 讀取時</text>
-  <text x="255.0" y="585.0" font-size="12" fill="#0F766E" text-anchor="start">GPU 從前往後重算 →</text>
-  <text x="1087.0" y="585.0" font-size="12" fill="#DC2626" text-anchor="end">← I/O 從後往前載入</text>
-  <text x="601.0" y="585.0" font-size="12" fill="#4F46E5" text-anchor="middle">▼ 會合點</text>
-  <text x="255.0" y="893.0" font-size="13" fill="#4F46E5" text-anchor="start">▲ 前段讀取時本來就會重算，所以寫入時不必存</text>
-  <text x="255.0" y="920.0" font-size="12" fill="#475569" text-anchor="start">省下的空間讓後段放到更快的層（例如 CPU），讀取時載得更快；退路：一邊明顯較快就只走那一邊。</text>
-  <text x="255.0" y="945.0" font-size="12" fill="#475569" text-anchor="start">前段比例約 1/(1+κ)；κ＝重算÷傳輸。示意圖為 12 個 chunk，實際分界由實測成本決定。</text>
+  <rect x="39.0" y="69.0" width="302.0" height="405.0" fill="#FAF5FF" stroke="#C4B5FD" stroke-width="1" rx="8"/>
+  <text x="47.0" y="85.0" font-size="12" fill="#999999" font-weight="bold">寫入路徑（本提案新增）</text>
+  <rect x="469.0" y="67.0" width="262.0" height="391.0" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" rx="8"/>
+  <text x="477.0" y="83.0" font-size="12" fill="#999999" font-weight="bold">共用儲存層（Cake Fig.1 的三層＋「不存」）</text>
+  <rect x="769.0" y="69.0" width="497.0" height="579.0" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1" rx="8"/>
+  <text x="777.0" y="85.0" font-size="12" fill="#999999" font-weight="bold">讀取路徑（Cake 的雙向還原）</text>
+  <rect x="243.0" y="788.0" width="856.0" height="124.0" fill="#FFFFFF" stroke="#E5E7EB" stroke-width="1" rx="8"/>
+  <rect x="243.0" y="958.0" width="856.0" height="124.0" fill="#FAF5FF" stroke="#C4B5FD" stroke-width="1" rx="8"/>
+  <path d="M 190.0,145.0 L 190.0,217.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 190.0,392.0 L 190.0,313.0" stroke="#7C3AED" stroke-width="2" fill="none" marker-end="url(#arrow-c2)" stroke-dasharray="8,4"/>
+  <rect x="164.0" y="334.5" width="52.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="190.0" y="346.5" font-size="11" fill="#777777" text-anchor="middle">決定分界</text>
+  <path d="M 315.0,249.8 L 495.0,227.8" stroke="#7C3AED" stroke-width="2" fill="none" marker-end="url(#arrow-c2)"/>
+  <rect x="390.0" y="220.8" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="405.0" y="232.8" font-size="11" fill="#777777" text-anchor="middle">後段</text>
+  <path d="M 315.0,278.7 L 495.0,298.5" stroke="#7C3AED" stroke-width="2" fill="none" marker-end="url(#arrow-c2)"/>
+  <rect x="390.0" y="270.6" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="405.0" y="282.6" font-size="11" fill="#777777" text-anchor="middle">中段</text>
+  <path d="M 315.0,307.7 L 520.9,378.0" stroke="#7C3AED" stroke-width="2" fill="none" marker-end="url(#arrow-c2)"/>
+  <rect x="403.0" y="324.8" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="418.0" y="336.8" font-size="11" fill="#777777" text-anchor="middle">前段</text>
+  <path d="M 1035.8,145.0 L 1115.0,240.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 705.0,225.7 L 1040.0,259.8" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <rect x="857.5" y="224.8" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="872.5" y="236.8" font-size="11" fill="#777777" text-anchor="middle">載入</text>
+  <path d="M 705.0,302.2 L 1040.0,277.4" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <rect x="857.5" y="271.8" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="872.5" y="283.8" font-size="11" fill="#777777" text-anchor="middle">載入</text>
+  <path d="M 705.0,399.7 L 795.0,395.1" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)" stroke-dasharray="8,4"/>
+  <rect x="718.5" y="379.4" width="63.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="750.0" y="391.4" font-size="11" fill="#777777" text-anchor="middle">本來就重算</text>
+  <path d="M 1123.7,300.0 L 1033.6,465.8" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 927.7,420.0 L 983.6,471.2" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 1015.0,542.0 L 1015.0,578.0" stroke="#7C3AED" stroke-width="2" fill="none" marker-end="url(#arrow-c2)" stroke-dasharray="8,4"/>
+  <path d="M 1003.9,145.0 L 908.3,360.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <rect x="75.0" y="95.0" width="230.0" height="50.0" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2" rx="8"/>
+  <text x="190.0" y="124.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">prefill 完成，產生新的 KV</text>
+  <rect x="65.0" y="217.0" width="250.0" height="96.0" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2" rx="8"/>
+  <text x="190.0" y="253.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">① 位置感知寫入（新增）</text>
+  <text x="190.0" y="269.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">依位置決定：存不存、放哪層</text>
+  <text x="190.0" y="285.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">逐出時從前段開始丟</text>
+  <rect x="75.0" y="392.0" width="230.0" height="56.0" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2" rx="8"/>
+  <text x="190.0" y="416.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">實測成本常數（新增）</text>
+  <text x="190.0" y="432.9" font-size="11" fill="#888888" text-anchor="middle">κ＝重算÷傳輸、每筆搬運固定成本</text>
+  <rect x="495.0" y="93.0" width="210.0" height="54.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
+  <text x="600.0" y="116.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">GPU HBM</text>
+  <text x="600.0" y="132.9" font-size="11" fill="#888888" text-anchor="middle">2 TB/s，約 80 GB</text>
+  <rect x="495.0" y="188.0" width="210.0" height="54.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
+  <text x="600.0" y="211.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">CPU 記憶體</text>
+  <text x="600.0" y="227.9" font-size="11" fill="#888888" text-anchor="middle">25 GB/s，約 1.8 TB</text>
+  <rect x="495.0" y="283.0" width="210.0" height="54.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
+  <text x="600.0" y="306.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">SSD／磁碟</text>
+  <text x="600.0" y="322.9" font-size="11" fill="#888888" text-anchor="middle">0.5–4 GB/s，約 26 TB</text>
+  <rect x="495.0" y="378.0" width="210.0" height="54.0" fill="#F3F4F6" stroke="#7C3AED" stroke-width="2" rx="8"/>
+  <text x="600.0" y="401.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">不存（新增）</text>
+  <text x="600.0" y="417.9" font-size="11" fill="#888888" text-anchor="middle">要用時重算</text>
+  <rect x="895.0" y="95.0" width="240.0" height="50.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="8"/>
+  <text x="1015.0" y="124.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">新請求用到這段 context</text>
+  <rect x="1040.0" y="240.0" width="200.0" height="60.0" fill="#DBEAFE" stroke="#7C3AED" stroke-width="2" rx="8"/>
+  <text x="1140.0" y="266.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">I/O 從後段往前載入</text>
+  <text x="1140.0" y="282.9" font-size="11" fill="#888888" text-anchor="middle">Cake；② 改造：從 CPU＋SSD 載</text>
+  <rect x="795.0" y="360.0" width="200.0" height="60.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="8"/>
+  <text x="895.0" y="386.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">GPU 從前段往後重算</text>
+  <text x="895.0" y="402.9" font-size="11" fill="#888888" text-anchor="middle">Cake 原有</text>
+  <polygon points="1015.0,458.0 1115.0,500.0 1015.0,542.0 915.0,500.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2"/>
+  <text x="1015.0" y="504.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">會合 → 開始 decode</text>
+  <rect x="865.0" y="578.0" width="300.0" height="44.0" fill="#EDE9FE" stroke="#7C3AED" stroke-width="2" rx="8"/>
+  <text x="1015.0" y="604.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">③ 退路（新增）：一邊明顯較快就只走那一邊</text>
+  <rect x="255.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="286.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="325.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="356.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="395.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="426.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="465.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="496.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="535.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="566.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="605.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="636.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="675.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="706.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="745.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="776.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="815.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="846.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="885.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="916.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="955.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="986.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="1025.0" y="800.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="1056.0" y="824.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">磁碟</text>
+  <rect x="255.0" y="860.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="286.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="325.0" y="860.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="356.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="395.0" y="860.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="426.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="465.0" y="860.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="496.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="535.0" y="860.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="566.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="605.0" y="860.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="636.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="675.0" y="860.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="706.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="745.0" y="860.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="776.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="815.0" y="860.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="846.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="885.0" y="860.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="916.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="955.0" y="860.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="986.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="1025.0" y="860.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="1056.0" y="884.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="255.0" y="970.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
+  <text x="286.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
+  <rect x="325.0" y="970.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
+  <text x="356.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
+  <rect x="395.0" y="970.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
+  <text x="426.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
+  <rect x="465.0" y="970.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
+  <text x="496.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
+  <rect x="535.0" y="970.0" width="62.0" height="40.0" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2" rx="0"/>
+  <text x="566.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
+  <rect x="605.0" y="970.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="636.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
+  <rect x="675.0" y="970.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="706.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
+  <rect x="745.0" y="970.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="776.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
+  <rect x="815.0" y="970.0" width="62.0" height="40.0" fill="#FEF3C7" stroke="#CA8A04" stroke-width="2" rx="0"/>
+  <text x="846.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
+  <rect x="885.0" y="970.0" width="62.0" height="40.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="0"/>
+  <text x="916.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">CPU</text>
+  <rect x="955.0" y="970.0" width="62.0" height="40.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="0"/>
+  <text x="986.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">CPU</text>
+  <rect x="1025.0" y="970.0" width="62.0" height="40.0" fill="#DBEAFE" stroke="#2563EB" stroke-width="2" rx="0"/>
+  <text x="1056.0" y="994.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">CPU</text>
+  <rect x="255.0" y="1030.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="286.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="325.0" y="1030.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="356.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="395.0" y="1030.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="426.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="465.0" y="1030.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="496.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="535.0" y="1030.0" width="62.0" height="40.0" fill="#CCFBF1" stroke="#0F766E" stroke-width="2" rx="0"/>
+  <text x="566.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">算</text>
+  <rect x="605.0" y="1030.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="636.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="675.0" y="1030.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="706.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="745.0" y="1030.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="776.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="815.0" y="1030.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="846.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="885.0" y="1030.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="916.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="955.0" y="1030.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="986.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <rect x="1025.0" y="1030.0" width="62.0" height="40.0" fill="#FECACA" stroke="#DC2626" stroke-width="2" rx="0"/>
+  <text x="1056.0" y="1054.2" font-size="12" fill="#333333" text-anchor="middle" font-weight="bold">載</text>
+  <text x="30.0" y="38.0" font-size="15" fill="#111827" text-anchor="start">(A) 整合後的系統：左邊寫入（新增）→ 中間共用儲存層 → 右邊讀取（Cake，改造後）</text>
+  <text x="30.0" y="665.0" font-size="13" fill="#334155" text-anchor="start">藍色＝Cake 原有　　紫色＝本提案新增或修改</text>
+  <text x="30.0" y="690.0" font-size="13" fill="#B91C1C" text-anchor="start">Cake 原本：沒有左邊整塊，中間只有「全部存在磁碟」，右邊只從磁碟載、沒有退路。</text>
+  <text x="30.0" y="760.0" font-size="15" fill="#111827" text-anchor="start">(B) 同一段 context 的 12 個 chunk：Cake（全存）vs 本提案（前段不存）（重繪自 Cake 論文 Fig. 2）</text>
+  <text x="30.0" y="825.0" font-size="13" fill="#111827" text-anchor="start">Cake 寫入時</text>
+  <text x="30.0" y="885.0" font-size="13" fill="#111827" text-anchor="start">Cake 讀取時</text>
+  <text x="30.0" y="995.0" font-size="13" fill="#111827" text-anchor="start">本提案 寫入時</text>
+  <text x="30.0" y="1055.0" font-size="13" fill="#111827" text-anchor="start">本提案 讀取時</text>
+  <text x="255.0" y="785.0" font-size="12" fill="#0F766E" text-anchor="start">GPU 從前往後重算 →</text>
+  <text x="1087.0" y="785.0" font-size="12" fill="#DC2626" text-anchor="end">← I/O 從後往前載入</text>
+  <text x="601.0" y="785.0" font-size="12" fill="#4F46E5" text-anchor="middle">▼ 會合點</text>
+  <text x="255.0" y="1093.0" font-size="13" fill="#4F46E5" text-anchor="start">▲ 前段讀取時本來就會重算，所以寫入時不必存；省下的空間讓後段放到更快的 CPU。</text>
+  <text x="255.0" y="1118.0" font-size="12" fill="#475569" text-anchor="start">前段比例約 1/(1+κ)；示意為 12 個 chunk，實際分界由實測成本決定。</text>
 </svg>

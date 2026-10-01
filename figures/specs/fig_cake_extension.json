@@ -1,8 +1,8 @@
 {
- "title": "以 Cake 為基底的位置感知 KV 分層",
+ "title": "以 Cake 為基底的位置感知 KV 分層（整合版）",
  "canvas": {
-  "width": 1200,
-  "height": 980
+  "width": 1300,
+  "height": 1140
  },
  "style": {
   "font_family": "WenQuanYi Zen Hei, Noto Sans CJK TC, sans-serif",
@@ -11,162 +11,138 @@
  },
  "nodes": [
   {
-   "id": "prompt",
-   "label": "請求（prompt）",
-   "x": 260,
-   "y": 85,
-   "width": 150,
-   "height": 40
-  },
-  {
-   "id": "d_gpu",
-   "label": "在 GPU？",
-   "x": 260,
-   "y": 165,
-   "width": 130,
-   "height": 64,
-   "shape": "diamond",
+   "id": "newkv",
+   "label": "prefill 完成，產生新的 KV",
+   "x": 190,
+   "y": 120,
+   "width": 230,
+   "height": 50,
    "fill": "#EDE9FE",
    "stroke": "#7C3AED"
   },
   {
-   "id": "d_cpu",
-   "label": "在 CPU？",
-   "x": 260,
+   "id": "policy",
+   "label": "① 位置感知寫入（新增）\n依位置決定：存不存、放哪層\n逐出時從前段開始丟",
+   "x": 190,
    "y": 265,
-   "width": 130,
-   "height": 64,
-   "shape": "diamond",
-   "fill": "#FFEDD5",
-   "stroke": "#EA580C"
-  },
-  {
-   "id": "d_disk",
-   "label": "在磁碟？",
-   "x": 260,
-   "y": 365,
-   "width": 130,
-   "height": 64,
-   "shape": "diamond",
-   "fill": "#DCFCE7",
-   "stroke": "#16A34A"
-  },
-  {
-   "id": "decode",
-   "label": "直接開始 decode",
-   "x": 470,
-   "y": 165,
-   "width": 150,
-   "height": 44,
-   "fill": "#FFFFFF",
-   "stroke": "#334155"
-  },
-  {
-   "id": "loadcpu",
-   "label": "從 CPU 載入",
-   "x": 470,
-   "y": 265,
-   "width": 150,
-   "height": 44,
-   "fill": "#FFFFFF",
-   "stroke": "#334155"
-  },
-  {
-   "id": "cake_load",
-   "label": "從磁碟載入",
-   "x": 470,
-   "y": 365,
-   "width": 150,
-   "height": 44,
-   "fill": "#FFFFFF",
-   "stroke": "#334155"
-  },
-  {
-   "id": "cake_comp",
-   "label": "重算",
-   "x": 470,
-   "y": 440,
-   "width": 150,
-   "height": 44,
-   "fill": "#FFFFFF",
-   "stroke": "#334155"
-  },
-  {
-   "id": "newkv",
-   "label": "prefill 完成，產生新的 KV",
-   "x": 800,
-   "y": 420,
-   "width": 220,
-   "height": 44,
-   "fill": "#F8FAFC",
-   "stroke": "#64748B"
+   "width": 250,
+   "height": 96,
+   "fill": "#EDE9FE",
+   "stroke": "#7C3AED"
   },
   {
    "id": "consts",
-   "label": "實測成本常數",
-   "x": 800,
-   "y": 95,
-   "width": 220,
-   "height": 54,
+   "label": "實測成本常數（新增）",
+   "x": 190,
+   "y": 420,
+   "width": 230,
+   "height": 56,
    "sublabel": "κ＝重算÷傳輸、每筆搬運固定成本",
-   "fill": "#F1F5F9",
-   "stroke": "#64748B"
-  },
-  {
-   "id": "policy",
-   "label": "位置感知策略\n① 寫入：這段存不存\n② 放置：放哪一層\n③ 逐出：從前段開始丟",
-   "x": 800,
-   "y": 255,
-   "width": 220,
-   "height": 120,
-   "fill": "#E0E7FF",
-   "stroke": "#4F46E5"
+   "fill": "#EDE9FE",
+   "stroke": "#7C3AED"
   },
   {
    "id": "gpu",
    "label": "GPU HBM",
-   "x": 1075,
-   "y": 140,
-   "width": 140,
-   "height": 44,
+   "x": 600,
+   "y": 120,
+   "width": 210,
+   "height": 54,
+   "sublabel": "2 TB/s，約 80 GB",
    "fill": "#FFFFFF",
    "stroke": "#334155"
   },
   {
    "id": "cpu",
    "label": "CPU 記憶體",
-   "x": 1075,
+   "x": 600,
    "y": 215,
-   "width": 140,
-   "height": 44,
+   "width": 210,
+   "height": 54,
+   "sublabel": "25 GB/s，約 1.8 TB",
+   "fill": "#FFFFFF",
+   "stroke": "#334155"
+  },
+  {
+   "id": "ssd",
+   "label": "SSD／磁碟",
+   "x": 600,
+   "y": 310,
+   "width": 210,
+   "height": 54,
+   "sublabel": "0.5–4 GB/s，約 26 TB",
+   "fill": "#FFFFFF",
+   "stroke": "#334155"
+  },
+  {
+   "id": "drop",
+   "label": "不存（新增）",
+   "x": 600,
+   "y": 405,
+   "width": 210,
+   "height": 54,
+   "sublabel": "要用時重算",
+   "fill": "#F3F4F6",
+   "stroke": "#7C3AED"
+  },
+  {
+   "id": "req",
+   "label": "新請求用到這段 context",
+   "x": 1015,
+   "y": 120,
+   "width": 240,
+   "height": 50,
    "fill": "#DBEAFE",
    "stroke": "#2563EB"
   },
   {
-   "id": "ssd",
-   "label": "SSD",
-   "x": 1075,
-   "y": 290,
-   "width": 140,
-   "height": 44,
-   "fill": "#FEF3C7",
-   "stroke": "#CA8A04"
+   "id": "rd_load",
+   "label": "I/O 從後段往前載入",
+   "x": 1140,
+   "y": 270,
+   "width": 200,
+   "height": 60,
+   "sublabel": "Cake；② 改造：從 CPU＋SSD 載",
+   "fill": "#DBEAFE",
+   "stroke": "#7C3AED"
   },
   {
-   "id": "drop",
-   "label": "不存（要用時重算）",
-   "x": 1075,
-   "y": 365,
-   "width": 140,
+   "id": "rd_comp",
+   "label": "GPU 從前段往後重算",
+   "x": 895,
+   "y": 390,
+   "width": 200,
+   "height": 60,
+   "sublabel": "Cake 原有",
+   "fill": "#DBEAFE",
+   "stroke": "#2563EB"
+  },
+  {
+   "id": "meet",
+   "label": "會合 → 開始 decode",
+   "x": 1015,
+   "y": 500,
+   "width": 200,
+   "height": 84,
+   "shape": "diamond",
+   "fill": "#DBEAFE",
+   "stroke": "#2563EB"
+  },
+  {
+   "id": "fallback",
+   "label": "③ 退路（新增）：一邊明顯較快就只走那一邊",
+   "x": 1015,
+   "y": 600,
+   "width": 300,
    "height": 44,
-   "fill": "#F3F4F6",
-   "stroke": "#9CA3AF"
+   "fill": "#EDE9FE",
+   "stroke": "#7C3AED"
   },
   {
    "id": "cw0",
    "label": "磁碟",
    "x": 286,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -178,7 +154,7 @@
    "id": "cw1",
    "label": "磁碟",
    "x": 356,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -190,7 +166,7 @@
    "id": "cw2",
    "label": "磁碟",
    "x": 426,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -202,7 +178,7 @@
    "id": "cw3",
    "label": "磁碟",
    "x": 496,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -214,7 +190,7 @@
    "id": "cw4",
    "label": "磁碟",
    "x": 566,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -226,7 +202,7 @@
    "id": "cw5",
    "label": "磁碟",
    "x": 636,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -238,7 +214,7 @@
    "id": "cw6",
    "label": "磁碟",
    "x": 706,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -250,7 +226,7 @@
    "id": "cw7",
    "label": "磁碟",
    "x": 776,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -262,7 +238,7 @@
    "id": "cw8",
    "label": "磁碟",
    "x": 846,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -274,7 +250,7 @@
    "id": "cw9",
    "label": "磁碟",
    "x": 916,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -286,7 +262,7 @@
    "id": "cw10",
    "label": "磁碟",
    "x": 986,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -298,7 +274,7 @@
    "id": "cw11",
    "label": "磁碟",
    "x": 1056,
-   "y": 620,
+   "y": 820,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -310,7 +286,7 @@
    "id": "cr0",
    "label": "算",
    "x": 286,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -322,7 +298,7 @@
    "id": "cr1",
    "label": "算",
    "x": 356,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -334,7 +310,7 @@
    "id": "cr2",
    "label": "算",
    "x": 426,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -346,7 +322,7 @@
    "id": "cr3",
    "label": "算",
    "x": 496,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -358,7 +334,7 @@
    "id": "cr4",
    "label": "算",
    "x": 566,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -370,7 +346,7 @@
    "id": "cr5",
    "label": "載",
    "x": 636,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -382,7 +358,7 @@
    "id": "cr6",
    "label": "載",
    "x": 706,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -394,7 +370,7 @@
    "id": "cr7",
    "label": "載",
    "x": 776,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -406,7 +382,7 @@
    "id": "cr8",
    "label": "載",
    "x": 846,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -418,7 +394,7 @@
    "id": "cr9",
    "label": "載",
    "x": 916,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -430,7 +406,7 @@
    "id": "cr10",
    "label": "載",
    "x": 986,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -442,7 +418,7 @@
    "id": "cr11",
    "label": "載",
    "x": 1056,
-   "y": 680,
+   "y": 880,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -454,7 +430,7 @@
    "id": "pw0",
    "label": "不存",
    "x": 286,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -466,7 +442,7 @@
    "id": "pw1",
    "label": "不存",
    "x": 356,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -478,7 +454,7 @@
    "id": "pw2",
    "label": "不存",
    "x": 426,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -490,7 +466,7 @@
    "id": "pw3",
    "label": "不存",
    "x": 496,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -502,7 +478,7 @@
    "id": "pw4",
    "label": "不存",
    "x": 566,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -514,7 +490,7 @@
    "id": "pw5",
    "label": "SSD",
    "x": 636,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -526,7 +502,7 @@
    "id": "pw6",
    "label": "SSD",
    "x": 706,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -538,7 +514,7 @@
    "id": "pw7",
    "label": "SSD",
    "x": 776,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -550,7 +526,7 @@
    "id": "pw8",
    "label": "SSD",
    "x": 846,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -562,7 +538,7 @@
    "id": "pw9",
    "label": "CPU",
    "x": 916,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -574,7 +550,7 @@
    "id": "pw10",
    "label": "CPU",
    "x": 986,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -586,7 +562,7 @@
    "id": "pw11",
    "label": "CPU",
    "x": 1056,
-   "y": 790,
+   "y": 990,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -598,7 +574,7 @@
    "id": "pr0",
    "label": "算",
    "x": 286,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -610,7 +586,7 @@
    "id": "pr1",
    "label": "算",
    "x": 356,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -622,7 +598,7 @@
    "id": "pr2",
    "label": "算",
    "x": 426,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -634,7 +610,7 @@
    "id": "pr3",
    "label": "算",
    "x": 496,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -646,7 +622,7 @@
    "id": "pr4",
    "label": "算",
    "x": 566,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -658,7 +634,7 @@
    "id": "pr5",
    "label": "載",
    "x": 636,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -670,7 +646,7 @@
    "id": "pr6",
    "label": "載",
    "x": 706,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -682,7 +658,7 @@
    "id": "pr7",
    "label": "載",
    "x": 776,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -694,7 +670,7 @@
    "id": "pr8",
    "label": "載",
    "x": 846,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -706,7 +682,7 @@
    "id": "pr9",
    "label": "載",
    "x": 916,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -718,7 +694,7 @@
    "id": "pr10",
    "label": "載",
    "x": 986,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -730,7 +706,7 @@
    "id": "pr11",
    "label": "載",
    "x": 1056,
-   "y": 850,
+   "y": 1050,
    "width": 62,
    "height": 40,
    "shape": "rect",
@@ -741,85 +717,89 @@
  ],
  "edges": [
   {
-   "from": "prompt",
-   "to": "d_gpu"
-  },
-  {
-   "from": "d_gpu",
-   "to": "decode",
-   "label": "是"
-  },
-  {
-   "from": "d_gpu",
-   "to": "d_cpu",
-   "label": "否"
-  },
-  {
-   "from": "d_cpu",
-   "to": "loadcpu",
-   "label": "是"
-  },
-  {
-   "from": "d_cpu",
-   "to": "d_disk",
-   "label": "否"
-  },
-  {
-   "from": "d_disk",
-   "to": "cake_load",
-   "label": "是"
-  },
-  {
-   "from": "d_disk",
-   "to": "cake_comp",
-   "label": "否"
+   "from": "newkv",
+   "to": "policy"
   },
   {
    "from": "consts",
    "to": "policy",
    "label": "決定分界",
-   "style": "dashed"
-  },
-  {
-   "from": "newkv",
-   "to": "policy"
-  },
-  {
-   "from": "policy",
-   "to": "gpu",
-   "label": "最熱"
+   "style": "dashed",
+   "color": "#7C3AED"
   },
   {
    "from": "policy",
    "to": "cpu",
-   "label": "後段"
+   "label": "後段",
+   "color": "#7C3AED"
   },
   {
    "from": "policy",
    "to": "ssd",
-   "label": "中段"
+   "label": "中段",
+   "color": "#7C3AED"
   },
   {
    "from": "policy",
    "to": "drop",
-   "label": "前段"
+   "label": "前段",
+   "color": "#7C3AED"
+  },
+  {
+   "from": "req",
+   "to": "rd_load"
+  },
+  {
+   "from": "cpu",
+   "to": "rd_load",
+   "label": "載入"
+  },
+  {
+   "from": "ssd",
+   "to": "rd_load",
+   "label": "載入"
+  },
+  {
+   "from": "drop",
+   "to": "rd_comp",
+   "label": "本來就重算",
+   "style": "dashed"
+  },
+  {
+   "from": "rd_load",
+   "to": "meet"
+  },
+  {
+   "from": "rd_comp",
+   "to": "meet"
+  },
+  {
+   "from": "meet",
+   "to": "fallback",
+   "style": "dashed",
+   "color": "#7C3AED"
+  },
+  {
+   "from": "req",
+   "to": "rd_comp"
   }
  ],
  "groups": [
   {
-   "id": "g_cake",
-   "label": "Cake 只作用在這裡（兩路並行）",
+   "id": "g_w",
+   "label": "寫入路徑（本提案新增）",
    "node_ids": [
-    "cake_load",
-    "cake_comp"
+    "newkv",
+    "policy",
+    "consts"
    ],
-   "fill": "#DBEAFE",
-   "stroke": "#60A5FA",
-   "padding": 30
+   "fill": "#FAF5FF",
+   "stroke": "#C4B5FD",
+   "padding": 26
   },
   {
-   "id": "g_tier",
-   "label": "儲存層",
+   "id": "g_t",
+   "label": "共用儲存層（Cake Fig.1 的三層＋「不存」）",
    "node_ids": [
     "gpu",
     "cpu",
@@ -828,10 +808,24 @@
    ],
    "fill": "#F8FAFC",
    "stroke": "#CBD5E1",
-   "padding": 30
+   "padding": 26
   },
   {
-   "id": "g_cake_rows",
+   "id": "g_r",
+   "label": "讀取路徑（Cake 的雙向還原）",
+   "node_ids": [
+    "req",
+    "rd_load",
+    "rd_comp",
+    "meet",
+    "fallback"
+   ],
+   "fill": "#EFF6FF",
+   "stroke": "#93C5FD",
+   "padding": 26
+  },
+  {
+   "id": "gc",
    "label": "",
    "node_ids": [
     "cw0",
@@ -864,7 +858,7 @@
    "padding": 12
   },
   {
-   "id": "g_our_rows",
+   "id": "gp",
    "label": "",
    "node_ids": [
     "pw0",
@@ -892,64 +886,40 @@
     "pr10",
     "pr11"
    ],
-   "fill": "#EEF2FF",
-   "stroke": "#C7D2FE",
+   "fill": "#FAF5FF",
+   "stroke": "#C4B5FD",
    "padding": 12
   }
  ],
  "labels": [
   {
-   "text": "(A) Cake 原本的流程（重繪自 Cake 論文 Fig. 1）",
+   "text": "(A) 整合後的系統：左邊寫入（新增）→ 中間共用儲存層 → 右邊讀取（Cake，改造後）",
    "x": 30,
-   "y": 40,
+   "y": 38,
    "font_size": 15,
    "color": "#111827",
    "anchor": "start"
   },
   {
-   "text": "2 TB/s，約 80 GB",
-   "x": 185,
-   "y": 170,
-   "font_size": 12,
-   "color": "#475569",
-   "anchor": "end"
-  },
-  {
-   "text": "25 GB/s，約 1.8 TB",
-   "x": 185,
-   "y": 270,
-   "font_size": 12,
-   "color": "#475569",
-   "anchor": "end"
-  },
-  {
-   "text": "0.5–4 GB/s，約 26 TB",
-   "x": 185,
-   "y": 370,
-   "font_size": 12,
-   "color": "#475569",
-   "anchor": "end"
-  },
-  {
-   "text": "前提：KV 已經全部存好；不決定「要不要存、存哪層」",
+   "text": "藍色＝Cake 原有　　紫色＝本提案新增或修改",
    "x": 30,
-   "y": 505,
-   "font_size": 12,
+   "y": 665,
+   "font_size": 13,
+   "color": "#334155",
+   "anchor": "start"
+  },
+  {
+   "text": "Cake 原本：沒有左邊整塊，中間只有「全部存在磁碟」，右邊只從磁碟載、沒有退路。",
+   "x": 30,
+   "y": 690,
+   "font_size": 13,
    "color": "#B91C1C",
    "anchor": "start"
   },
   {
-   "text": "(B) 本提案新增：寫入時就依位置決定（Cake 沒有）",
-   "x": 640,
-   "y": 40,
-   "font_size": 15,
-   "color": "#111827",
-   "anchor": "start"
-  },
-  {
-   "text": "(C) 讀取時的雙向還原（重繪自 Cake 論文 Fig. 2），並對比兩種寫入方式",
+   "text": "(B) 同一段 context 的 12 個 chunk：Cake（全存）vs 本提案（前段不存）（重繪自 Cake 論文 Fig. 2）",
    "x": 30,
-   "y": 560,
+   "y": 760,
    "font_size": 15,
    "color": "#111827",
    "anchor": "start"
@@ -957,7 +927,7 @@
   {
    "text": "Cake 寫入時",
    "x": 30,
-   "y": 625,
+   "y": 825,
    "font_size": 13,
    "color": "#111827",
    "anchor": "start"
@@ -965,7 +935,7 @@
   {
    "text": "Cake 讀取時",
    "x": 30,
-   "y": 685,
+   "y": 885,
    "font_size": 13,
    "color": "#111827",
    "anchor": "start"
@@ -973,7 +943,7 @@
   {
    "text": "本提案 寫入時",
    "x": 30,
-   "y": 795,
+   "y": 995,
    "font_size": 13,
    "color": "#111827",
    "anchor": "start"
@@ -981,7 +951,7 @@
   {
    "text": "本提案 讀取時",
    "x": 30,
-   "y": 855,
+   "y": 1055,
    "font_size": 13,
    "color": "#111827",
    "anchor": "start"
@@ -989,7 +959,7 @@
   {
    "text": "GPU 從前往後重算 →",
    "x": 255,
-   "y": 585,
+   "y": 785,
    "font_size": 12,
    "color": "#0F766E",
    "anchor": "start"
@@ -997,7 +967,7 @@
   {
    "text": "← I/O 從後往前載入",
    "x": 1087,
-   "y": 585,
+   "y": 785,
    "font_size": 12,
    "color": "#DC2626",
    "anchor": "end"
@@ -1005,31 +975,23 @@
   {
    "text": "▼ 會合點",
    "x": 601,
-   "y": 585,
+   "y": 785,
    "font_size": 12,
    "color": "#4F46E5",
    "anchor": "middle"
   },
   {
-   "text": "▲ 前段讀取時本來就會重算，所以寫入時不必存",
+   "text": "▲ 前段讀取時本來就會重算，所以寫入時不必存；省下的空間讓後段放到更快的 CPU。",
    "x": 255,
-   "y": 893,
+   "y": 1093,
    "font_size": 13,
    "color": "#4F46E5",
    "anchor": "start"
   },
   {
-   "text": "省下的空間讓後段放到更快的層（例如 CPU），讀取時載得更快；退路：一邊明顯較快就只走那一邊。",
+   "text": "前段比例約 1/(1+κ)；示意為 12 個 chunk，實際分界由實測成本決定。",
    "x": 255,
-   "y": 920,
-   "font_size": 12,
-   "color": "#475569",
-   "anchor": "start"
-  },
-  {
-   "text": "前段比例約 1/(1+κ)；κ＝重算÷傳輸。示意圖為 12 個 chunk，實際分界由實測成本決定。",
-   "x": 255,
-   "y": 945,
+   "y": 1118,
    "font_size": 12,
    "color": "#475569",
    "anchor": "start"
