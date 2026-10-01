@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 760" width="980" height="760" font-family="WenQuanYi Zen Hei, Noto Sans CJK TC, sans-serif">
+  <rect width="980" height="760" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#555555"/>
+    </marker>
+    <marker id="arrow-c0" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#2563EB"/>
+    </marker>
+    <marker id="arrow-c1" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#10B981"/>
+    </marker>
+    <marker id="arrow-c2" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#7C3AED"/>
+    </marker>
+    <marker id="arrow-c3" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#EA580C"/>
+    </marker>
+    <marker id="arrow-c4" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#C62828"/>
+    </marker>
+    <marker id="arrow-c5" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#0D47A1"/>
+    </marker>
+    <marker id="arrow-c6" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#1B5E20"/>
+    </marker>
+    <marker id="arrow-c7" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#4A148C"/>
+    </marker>
+    <marker id="arrow-c8" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#BF360C"/>
+    </marker>
+    <marker id="arrow-c9" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#37474F"/>
+    </marker>
+  </defs>
+  <rect x="25.0" y="127.0" width="190.0" height="286.0" fill="#FAFAFA" stroke="#D4D4D8" stroke-width="1" rx="8"/>
+  <text x="33.0" y="143.0" font-size="12" fill="#999999" font-weight="bold">一段長上下文（32K–128K）</text>
+  <rect x="310.0" y="46.0" width="290.0" height="309.0" fill="#EEF2FF" stroke="#A5B4FC" stroke-width="1" rx="8"/>
+  <text x="318.0" y="62.0" font-size="12" fill="#999999" font-weight="bold">寫入時決定（Cake 沒有，本提案新增）</text>
+  <rect x="715.0" y="103.0" width="210.0" height="349.0" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1" rx="8"/>
+  <text x="723.0" y="119.0" font-size="12" fill="#999999" font-weight="bold">儲存層</text>
+  <rect x="50.0" y="525.0" width="880.0" height="217.0" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1" rx="8"/>
+  <text x="58.0" y="541.0" font-size="12" fill="#999999" font-weight="bold">讀取時：雙向還原（Cake 已有；本提案加入實測成本與退路）</text>
+  <path d="M 195.0,196.3 L 340.0,237.4" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 195.0,270.0 L 340.0,270.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 195.0,343.7 L 340.0,302.6" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 455.0,124.0 L 455.0,205.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)" stroke-dasharray="8,4"/>
+  <rect x="429.0" y="146.5" width="52.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="455.0" y="158.5" font-size="11" fill="#777777" text-anchor="middle">決定分界</text>
+  <path d="M 570.0,232.2 L 737.9,177.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <rect x="638.9" y="186.6" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="653.9" y="198.6" font-size="11" fill="#777777" text-anchor="middle">後段</text>
+  <path d="M 570.0,259.0 L 735.0,243.2" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <rect x="637.5" y="233.1" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="652.5" y="245.1" font-size="11" fill="#777777" text-anchor="middle">中段</text>
+  <path d="M 570.0,285.8 L 735.0,308.4" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <rect x="632.0" y="279.1" width="41.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="652.5" y="291.1" font-size="11" fill="#777777" text-anchor="middle">較冷的</text>
+  <path d="M 570.0,312.5 L 747.0,378.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <rect x="643.5" y="327.3" width="30.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="658.5" y="339.3" font-size="11" fill="#777777" text-anchor="middle">前段</text>
+  <path d="M 280.0,590.0 L 405.0,590.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 700.0,590.0 L 575.0,590.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)"/>
+  <path d="M 490.0,635.0 L 490.0,678.0" stroke="#555555" stroke-width="2" fill="none" marker-end="url(#arrow-default)" stroke-dasharray="8,4"/>
+  <rect x="45.0" y="147.0" width="150.0" height="56.0" fill="#DCFCE7" stroke="#16A34A" stroke-width="2" rx="8"/>
+  <text x="120.0" y="171.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">前段 block</text>
+  <text x="120.0" y="187.9" font-size="11" fill="#888888" text-anchor="middle">重算便宜</text>
+  <rect x="45.0" y="242.0" width="150.0" height="56.0" fill="#FEF9C3" stroke="#CA8A04" stroke-width="2" rx="8"/>
+  <text x="120.0" y="266.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">中段 block</text>
+  <text x="120.0" y="282.9" font-size="11" fill="#888888" text-anchor="middle">重算中等</text>
+  <rect x="45.0" y="337.0" width="150.0" height="56.0" fill="#FEE2E2" stroke="#DC2626" stroke-width="2" rx="8"/>
+  <text x="120.0" y="361.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">後段 block</text>
+  <text x="120.0" y="377.9" font-size="11" fill="#888888" text-anchor="middle">重算最貴</text>
+  <rect x="330.0" y="66.0" width="250.0" height="58.0" fill="#F1F5F9" stroke="#64748B" stroke-width="2" rx="8"/>
+  <text x="455.0" y="91.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">實測成本常數</text>
+  <text x="455.0" y="107.9" font-size="11" fill="#888888" text-anchor="middle">κ＝重算÷傳輸、每筆搬運固定成本</text>
+  <rect x="340.0" y="205.0" width="230.0" height="130.0" fill="#E0E7FF" stroke="#4F46E5" stroke-width="2" rx="8"/>
+  <text x="455.0" y="250.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">位置感知策略</text>
+  <text x="455.0" y="266.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">① 寫入：這段存不存</text>
+  <text x="455.0" y="282.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">② 放置：放哪一層</text>
+  <text x="455.0" y="298.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">③ 逐出：從前段開始丟</text>
+  <rect x="735.0" y="123.0" width="170.0" height="54.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
+  <text x="820.0" y="146.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">GPU HBM</text>
+  <text x="820.0" y="162.9" font-size="11" fill="#888888" text-anchor="middle">最快、最小</text>
+  <rect x="735.0" y="208.0" width="170.0" height="54.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
+  <text x="820.0" y="231.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">CPU 記憶體</text>
+  <text x="820.0" y="247.9" font-size="11" fill="#888888" text-anchor="middle">中等</text>
+  <rect x="735.0" y="293.0" width="170.0" height="54.0" fill="#FFFFFF" stroke="#334155" stroke-width="2" rx="8"/>
+  <text x="820.0" y="316.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">SSD</text>
+  <text x="820.0" y="332.9" font-size="11" fill="#888888" text-anchor="middle">慢、大</text>
+  <rect x="735.0" y="378.0" width="170.0" height="54.0" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2" rx="8"/>
+  <text x="820.0" y="401.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">不存</text>
+  <text x="820.0" y="417.9" font-size="11" fill="#888888" text-anchor="middle">要用時重算</text>
+  <rect x="70.0" y="563.0" width="210.0" height="54.0" fill="#DCFCE7" stroke="#16A34A" stroke-width="2" rx="8"/>
+  <text x="175.0" y="594.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">GPU 從前段往後重算</text>
+  <polygon points="490.0,545.0 575.0,590.0 490.0,635.0 405.0,590.0" fill="#FFFFFF" stroke="#4F46E5" stroke-width="2"/>
+  <text x="490.0" y="586.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">會合點</text>
+  <text x="490.0" y="602.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">跑到哪算到哪</text>
+  <rect x="700.0" y="563.0" width="210.0" height="54.0" fill="#FEE2E2" stroke="#DC2626" stroke-width="2" rx="8"/>
+  <text x="805.0" y="594.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">I/O 從後段往前載入</text>
+  <rect x="325.0" y="678.0" width="330.0" height="44.0" fill="#FFF7ED" stroke="#EA580C" stroke-width="2" rx="8"/>
+  <text x="490.0" y="704.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold">退路：一邊明顯較快，就只走那一邊</text>
+  <text x="490.0" y="492.0" font-size="13" fill="#475569" text-anchor="middle">命中時 ↓（前段大多不必存，因為讀取時本來就會重算）</text>
+</svg>

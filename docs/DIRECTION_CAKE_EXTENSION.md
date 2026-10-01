@@ -50,6 +50,10 @@
 
 把 Cake「讀取時」的雙向還原，延伸成**一套貫穿寫入、放置、逐出、讀取的位置感知（block 級）策略**，涵蓋 GPU／CPU／SSD 三層，context 拉到 32K–128K。
 
+![架構圖：位置感知的 KV 分層（以 Cake 為基底）](../figures/fig_cake_extension.png)
+
+上半部是本提案新增的部分：寫入時依位置決定存不存、放哪一層，逐出從前段開始。下半部是 Cake 原有的讀取時雙向還原，本提案改用實測成本，並加上退路。原始檔：`figures/fig_cake_extension.svg`（可編輯），規格：`figures/specs/fig_cake_extension.json`。
+
 | 時機 | Cake | 想做的 |
 |---|---|---|
 | 寫入時 | 全部都存 | 依位置決定：前段（反正會被重算的）不存或只存在便宜的層；後段存在能快速載入的層 |
