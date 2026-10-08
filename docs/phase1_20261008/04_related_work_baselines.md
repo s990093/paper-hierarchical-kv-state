@@ -20,7 +20,7 @@
 |:--|:--|:--|:--|
 | **Cake**（ICML 2025） | 還原時 GPU 從前面重算、I/O 從後面載入，在中間會合。假設 KV 全部事先存好（「precompute and store all」） | **S0**（純 Cake），以及所有策略共用的還原方式（`03` 演算法 2） | 最接近的 baseline。老師點名要「跑通」 |
 | **LMCache** | 寫穿：寫到所有啟用的層；預設 LRU；只認連續前綴；只存滿 256 token 的 chunk；decode 產生的 KV 不存 | **R0**（業界現狀）、**S1** | 業界最常用的 KV 層，代表「現狀」 |
-| **vLLM `OffloadingConnector`** | `store_threshold=0`，全部都存；LRU（可選 ARC）；用 `TieringOffloadingSpec` 接到檔案層 | C6 真實系統對照；R0 的參考實作 | 這台機器上已經用過（M2、M3），也知道它 SSD 層的行為（RUNLOG 發現 10、11） |
+| **vLLM `OffloadingConnector`** | `store_threshold=0`，全部都存；LRU（可選 ARC）；用 `TieringOffloadingSpec` 接到檔案層 | C6 真實系統對照；R0 的參考實作 | 兩個平台都用過（M2、M3），也知道它 SSD 層的行為（RUNLOG 發現 10、11；RUNLOG_MI300X） |
 | **Mooncake Store** | 先寫進記憶體，**記憶體逐出時才寫 SSD** | **S4**（延後寫入）的實例 | 證明延後寫入不是假想的對手，生產系統就是這樣做 |
 | **SGLang HiCache** | 可選 `write_through`、selective（命中 2 次才寫）、`write_back` | **S1**（寫穿）和 **S4**（延後寫入）的實例 | 同上 |
 | **Pensieve**（EuroSys 2025） | GPU＋CPU 兩層；空間不夠時，優先從閒置久、重算便宜的對話的**開頭**逐出；保留值＝重算成本 ÷ 閒置時間 | **S2b**、**S4+**（成本感知逐出） | 「從前段逐出」最直接的前例。如果它就拿走大部分好處，本研究的新穎性要改寫 |
@@ -49,14 +49,14 @@
 | **Cake** | I/O 用「延遲注入」模擬 | 演算法 4 的限速器 | Cake 沒有和真實裝置校準；我們加 C7，在錨點上和真實的 NVMe、SATA 對照 |
 | Cake | 頻寬點 7、25、32、56、100 Gbps | A0 的敏感度分析 | 單位一律寫 GiB/s。Cake 的 Gbps 單位有歧義（EVAL_FOUNDATIONS §9.3） |
 | Cake | 計算 chunk 512 token（I/O chunk 128） | 計算和 I/O 都用 512 | 統一成 512 是為了簡化對齊。這是和 Cake 不同的地方，結果要註明 |
-| Cake | 長度 4K–16K；Fig. 4 的動機實驗到 32K | 4K、8K、16K、32K | 32K 是 24 GB 卡的上限 |
+| Cake | 長度 4K–16K；Fig. 4 的動機實驗到 32K | 4K、8K、16K、32K | 主表和 Cake 對照；MI300X 顯存夠，時間允許再加 64K |
 | Cake | 用 token budget 的佔比模擬「GPU 被別人用掉多少」（12.5%、50%、87.5%、100%） | C5 的 GPU 忙模擬 | 我們用背景負載，並報**實測**的變慢倍數，不只報設定的比例 |
 | Cake | 同時報「對只載的加速」和「對只算的加速」 | A0 的報法 | Cake 沒有重複、沒有誤差棒；我們每格 ≥6 次，附 95% CI |
 | Cake | 跑通的判準：比趨勢，不比絕對值 | A0 的三個趨勢條件 | — |
 | **Pensieve** | 多輪對話，使用者「思考時間」取指數分布（平均 60 s，另掃 30–600 s） | B 實驗產生回來順序時參考 | B 先用事件順序（不用真實時間）；之後若改用真實時間，就照 Pensieve 的分布 |
 | Pensieve | 實測 GPU↔CPU 雙向同時傳輸時，兩個方向的吞吐都掉 18–20% | 支持 A2「寫入會不會拖慢別人」值得量 | 我們量的是 SSD 的讀寫干擾，以及 PCIe 的雙向干擾 |
 | **Fancy-eviction** | 容量要掃很多點；同時報平均、中位數、P99 | B 的容量掃描；所有 TTFT 都報中位數、平均、P90 | 我們樣本少，不報 P99，報 P90 加 CI |
-| Fancy-eviction | 「Belady vs BeladyCompute」的差距，用來判斷成本感知值不值得做 | 之後可以用 `code/m4_oracle.py` 做 | 第一階段先用真機比較 |
+| Fancy-eviction | 「Belady vs BeladyCompute」的差距，用來判斷成本感知值不值得做 | 之後可以用舊的 M4 模擬器（commit `9deda4f` 的 `code/m4_oracle.py`）做 | 第一階段先用真機比較 |
 | **CacheFlow** | 它的 Fig. 2 顯示每個 chunk 有固定開銷，不能忽略 | 限速器加上「每次固定開銷 c」 | c 由 C2 用迴歸量出來 |
 | **LMCache** | `long_doc_qa`、`multi_round_qa` 兩個官方 benchmark 的結構 | 參考 B 的 session 設計 | 它們的 prompt 由重複的 "hi" 組成，只能量時間；我們第一階段也只量時間 |
 
