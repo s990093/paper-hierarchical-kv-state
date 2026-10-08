@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="380" viewBox="0 0 900 380" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+  <rect width="900" height="380" fill="#ffffff"/>
+  <text x="450" y="28" font-size="17" font-weight="600" fill="#2C2C2A" text-anchor="middle">第一階段在驗證什麼：S5 和 S4+ 最後擺法一樣，只差什麼時候寫</text>
+  <g font-size="12.5" fill="#444441" text-anchor="middle"><text x="280" y="62">一輪結束</text><text x="560" y="62">CPU 快滿了</text><text x="740" y="62">有人回來</text></g>
+  <g stroke="#B4B2A9" stroke-dasharray="3 4"><line x1="280" y1="70" x2="280" y2="250"/><line x1="560" y1="70" x2="560" y2="250"/><line x1="740" y1="70" x2="740" y2="250"/></g>
+  <text x="40" y="110" font-size="15" font-weight="600" fill="#26215C">S5 一開始放好</text>
+  <text x="40" y="130" font-size="12" fill="#5F5E5A">本研究</text>
+  <line x1="200" y1="118" x2="860" y2="118" stroke="#D3D1C7"/>
+  <rect x="284" y="106" width="90" height="24" rx="4" fill="#FAECE7" stroke="#993C1D"/><text x="329" y="148" font-size="12" fill="#712B13" text-anchor="middle">前段寫 SSD（背景）</text>
+  <rect x="564" y="110" width="16" height="16" rx="3" fill="#FAECE7" stroke="#993C1D"/><text x="572" y="148" font-size="12" fill="#712B13" text-anchor="middle">要搬的少</text>
+  <rect x="744" y="106" width="70" height="24" rx="4" fill="#E1F5EE" stroke="#0F6E56"/><text x="779" y="148" font-size="12" fill="#085041" text-anchor="middle">不用等</text>
+  <text x="40" y="205" font-size="15" font-weight="600" fill="#2C2C2A">S4+ 等滿了再搬</text>
+  <text x="40" y="225" font-size="12" fill="#5F5E5A">延後寫入＋成本感知</text>
+  <line x1="200" y1="213" x2="860" y2="213" stroke="#D3D1C7"/>
+  <text x="329" y="243" font-size="12" fill="#5F5E5A" text-anchor="middle">只放 CPU，不寫</text>
+  <rect x="564" y="201" width="210" height="24" rx="4" fill="#FAECE7" stroke="#993C1D"/><text x="650" y="243" font-size="12" fill="#712B13" text-anchor="middle">一口氣寫一批</text>
+  <text x="800" y="243" font-size="12" fill="#712B13" text-anchor="middle">被擋住？</text>
+  <rect x="40" y="272" width="400" height="88" rx="8" fill="#ffffff" stroke="#0F6E56"/>
+  <text x="58" y="298" font-size="14" font-weight="600" fill="#04342C">S5 可能贏的情況</text>
+  <text x="58" y="320" font-size="12.5" fill="#085041">CPU 很擠；延後寫入的「寫入尖峰」剛好撞上</text>
+  <text x="58" y="340" font-size="12.5" fill="#085041">回來的人；SSD 寫得慢或和別人共用</text>
+  <rect x="460" y="272" width="400" height="88" rx="8" fill="#ffffff" stroke="#993C1D"/>
+  <text x="478" y="298" font-size="14" font-weight="600" fill="#712B13">S4+ 可能贏的情況</text>
+  <text x="478" y="320" font-size="12.5" fill="#712B13">使用者常常不回來，或 CPU 一直夠用：</text>
+  <text x="478" y="340" font-size="12.5" fill="#712B13">S5 提早寫的前段都白寫了</text>
+</svg>
