@@ -16,8 +16,7 @@
 動作空間 = {GPU-BF16, GPU-FP8, GPU-INT4, CPU, SSD, DROP+重算}。
 **CPU 與 SSD 兩階是無損的位元組搬移**（2026-09-01 改：原本寫 CPU-INT8，但實作走 vLLM `OffloadingConnector` 搬原始位元組，且 §6.5 已用 60/60 逐字元比對驗證無損，所有成本常數也是從那條無損路徑量的——定義與量測必須一致）。
 
-**目前狀態：論文初稿完成，實驗尚未執行。** §6 是實驗計畫不是結果，表 8 全是灰色佔位符。
-整個專案的下一個決定點是 **Milestone 4 的 Oracle go/no-go**。
+**目前進度不寫在這裡**：以 `results/RUNLOG.md` 最新一節（逐 milestone 判定）與 `docs/` 下最新的 `DIRECTIONS_*.md` 為準。
 
 ---
 
@@ -54,21 +53,7 @@
 **根分割區 `/` 只剩 446G 且是共用的。所有大檔案放 `/ssd7/hungwei/paper-hkv/`。**
 
 ```
-/home/hungwei/llm/POC/paper-hierarchical-kv-state/   ← git repo（推 GitHub）
-├── CLAUDE.md               ← 本檔
-├── main.tex refs.bib Makefile main.pdf              論文
-├── EXPERIMENT_PLAN.md      實驗計畫（給執行 agent 的唯一指令書）
-├── OPEN_ISSUES.md          已知但刻意暫緩的問題（A/B/C 三級）
-├── VENUES.md               投稿場所與截止日
-├── docs/SKILLS.md          skill 選型紀錄（為什麼裝這些）
-├── code/                   實驗 harness（小、進 git）
-├── results/                ★ 只放「小的、可版控的」結果
-│   ├── RUNLOG.md           逐步流水帳
-│   ├── env.json            環境指紋
-│   ├── m1_capacity/  m2_harness/  m3_baseline/  m4_oracle/
-│   └── *.csv *.json        摘要級數據
-├── .claude/skills/         22 個 vendored skills（見 §5）
-└── _big -> /ssd7/hungwei/paper-hkv   ← symlink，已 gitignore
+/home/hungwei/llm/POC/paper-hierarchical-kv-state/   ← git repo（推 GitHub；_big -> /ssd7/hungwei/paper-hkv 已 gitignore）
 
 /ssd7/hungwei/paper-hkv/    ← 大檔案，不進 git
 ├── texlive/.TinyTeX/       TeX Live（無 sudo 安裝）
@@ -191,13 +176,9 @@ if w.contaminated:      # 開跑前不乾淨，或中途出現外來 PID
 ### 環境啟動
 
 ```bash
-export UV_CACHE_DIR=/ssd7/hungwei/paper-hkv/uv-cache
-export UV_PYTHON_INSTALL_DIR=/ssd7/hungwei/paper-hkv/uv-python
-export HF_HOME=/ssd7/hungwei/paper-hkv/hf-cache/huggingface
-export PATH=/ssd7/hungwei/paper-hkv/texlive/.TinyTeX/bin/x86_64-linux:$PATH
 source /ssd7/hungwei/paper-hkv/venv/vllm/bin/activate
 ```
-（`.claude/settings.json` 已把這些設成 session env，新開的 Bash 應該已經有。）
+（UV / HF / TeX 的路徑變數由 `.claude/settings.json` 的 `env` 設定，新開的 Bash 應該已經有。）
 
 ---
 
@@ -320,19 +301,10 @@ make check    # 列出所有 TODO 與佔位符
 
 ---
 
-## 7. 🎯 現在該做什麼（依序）
+## 7. 🎯 現在該做什麼
 
-1. **環境驗收 A1–A3**（`EXPERIMENT_PLAN.md` §1）：`env.json`、vLLM 能起來、
-   **`OffloadingConnector` 可用** ← A3 若失敗，整個計畫要重新設計，立刻回報
-2. **Milestone 1**：容量懸崖實測（`capacity.csv`），比對論文 §2.5 的算術值
-3. **Milestone 2**：成本模型 **2×5 矩陣**（不是 1×5 向量）+ `recompute_chain.csv`
-4. **Milestone 3**：Tier 0 baselines（Full GPU / lru / arc / fs / LMCache）
-5. **🔴 Milestone 4：Oracle** ← **決定性**。`> 15%` GO、`5–15%` 停下來問人、`< 5%` NO-GO 停止
-6. Milestone 5+ 只在 GO 之後做
-
-**時程壓力**：MLSys 2027 截止 2026-10-30（剩 61 天）。
-**9 月底若還沒有 Oracle 結果，放棄 MLSys 這一輪**，改投 EuroMLSys 2027（~2 月，6 頁）。
-見 `VENUES.md`。
+看 `results/RUNLOG.md` 最新一節與 `docs/` 下最新的 `DIRECTIONS_*.md`；投稿時程與截止日見 `VENUES.md`。
+Milestone 順序與 go/no-go 判準見 `EXPERIMENT_PLAN.md`：`> 15%` GO、`5–15%` 停下來問人、`< 5%` NO-GO 停止（§1 規則 4 仍適用）。
 
 ---
 

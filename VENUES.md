@@ -1,15 +1,217 @@
 ---
 type: report
 created: 2026-08-30
-tags: [paper, venues, deadlines, kv-cache, europe]
+updated: 2026-10-08
+tags: [paper, venues, deadlines, kv-cache, europe, usa, australia]
 related_ideas: ["[[idea-20260828-hierarchical-kv-state]]"]
 ---
 
-# 投稿場所調查（查證日：2026-08-30）
+# 投稿場所調查（查證日：2026-08-30；2026-10-08 重新查證）
 
 對應 idea：[[idea-20260828-hierarchical-kv-state]]／論文 `main.tex`
 
 > **前提**：本論文目前**沒有任何實驗結果**。所有建議都以「Oracle + 消融 (B) 何時能跑完」為前提。
+
+---
+
+## 🔄 2026-10-08 重新查證（本節優先於下方 8/30 的內容）
+
+**一句話**：第一篇不再以 ISC 為首選，改成兩條路擇一：
+- **重地點（北歐）與時間 → 路線 W**：11 月做出 6 頁稿，投 1–2 月截稿的 workshop，例如 ICPE workshop（🇸🇪 Gothenburg）或 HotOS（德奧邊境）。**依使用者 10/8 的偏好，預設走這條**，見第十節。
+- **重等級與退路 → 路線 F**：補到 10 頁，投 **CCGrid 2027（12/1 截止，Dallas）**，見第三節。
+
+範圍擴大到歐、美、澳的主要好處是每個學期都有被拒後的退路；真正的瓶頸仍是**論文數量**，不是場所。
+
+**前提（10/8）**：碩一；國科會研究生補助**每年度一次**；目標是**每學期出國一次**；同時在準備雅思。
+研究進度：老師 10/7 指示的兩週驗證（約 10/21 結束），新方向是寫入時依位置放置 vs 寫回 + 成本感知逐出。
+
+✅ = 本次從官方頁面查證　🔶 = 推估或只有第三方來源，**投稿前必須自行確認**
+
+### 一、8/30 版本的錯誤與過時之處
+
+| 項目 | 8/30 寫的 | 10/8 查證 |
+|---|---|---|
+| **ISC 2027 會期** | 6/23–25 | ✅ **6/7–11**（論文場次 6/8–10）。摘要 12/14、全文 12/21（no extension）、rebuttal 3/1、通知 3/15、camera-ready 4/8 |
+| ISC 是否收 AI 主題 | 待確認 | ✅ 有 **Artificial Intelligence** 類別，明列 "Efficient AI – Low-Precision Formats, Sparsity, and Compression" 與 "Foundation Models – Training and Inference at Scale"；系統類明列 "Memory Technologies and Hierarchies" |
+| ISC poster 頁的 6/8–10 | 疑為未更新 | 其實 **6/8–10 才是對的**，錯的是 8/30 寫的 6/23–25。✅ Research Poster 截止 **1/20**、通知 3/2；workshop 日為 **6/11**、tutorial 日為 6/7 |
+| ICPE 2027 | 🔶 ~11/17、通知 ~1/19 | ✅ 摘要 **11/9**、全文 **11/16**、通知 **1/25**、camera-ready 3/12；會期 5/24–28 |
+| CCGrid 2027 | 12/8、通知 2/10 | ✅ 摘要 **11/24**、全文 **12/1**、通知 **2/1**（EasyChair 官方 CFP） |
+| PDP 2027 | 🔶 ~10–11 月 | ✅ 摘要 10/19、全文 10/26、8 頁。**實驗跑不完，不考慮** |
+| EuroSys 2027 秋輪 | 9/24 | ❌ 已過 |
+| **ICPE 與 CVPR 同一天** | — | ✅ CVPR 2027 全文也是 **11/16**（Seattle，約 6/20–25）。同一份工作只能投其中一個 |
+
+### 二、碩一下能投的場所（歐、美、澳合併）
+
+「10/21 後剩」是從兩週驗證結束起算，可以拿來寫論文的天數。
+等級欄來自第三方網站 myhuiban（官方 ICORE 頁面連線回 403，無法直接查）；CVPR 為一般共識；ISC 的 CORE C 來自 ICORE 查詢結果摘要。
+
+| 場所 | 地點 | 會期 | 截止 | 通知 | CCF / CORE | 10/21 後剩 |
+|---|---|---|---|---|---|---|
+| CVPR 2027 | 🇺🇸 Seattle | 約 6/20–25 | ✅ 11/16 | 🔶 約 2/25 | A / — | 26 天 |
+| ICPE 2027 | 🇸🇪 Gothenburg | 5/24–28 | ✅ 11/16 | ✅ 1/25 | — / B | 26 天 |
+| **CCGrid 2027** | 🇺🇸 **Dallas** | 5/24–27 | ✅ **12/1** | ✅ **2/1** | C / B | **41 天** |
+| ISC 2027 | 🇩🇪 Hamburg | 6/7–11 | ✅ 12/21 | ✅ 3/15 | — / C | 61 天 |
+| SIGMETRICS 2027（冬季輪） | 🇺🇸 Atlanta（FCRC） | 6/7–11 | ✅ 1/11（摘要 1/4） | ✅ 3/10 | B / **A*** | 82 天 |
+| HotOS 2027（workshop，5 頁） | 🇩🇪 Burghausen | 5/24–26 | ✅ **2/1** | ✅ 4/9 | B / A | 103 天 |
+| ICDCS 2027 | 🇦🇺 **Melbourne** | 7/5–8 | 🔶 未公布 | — | B / A | — |
+| Euro-Par 2027 | 🇳🇱 Groningen | 8/23–27 | 🔶 約 3 月中（前兩屆 3/17、3/13） | — | B / B | — |
+| EuroMLSys 2027（workshop） | 🇲🇦 Rabat | 約 4/19 | 🔶 CFP 未出 | — | — | — |
+
+已經排除的：IPDPS 2027（Bellevue，6/1–5）摘要 10/1、全文約 10/8，已過；MLSys 2027 10/30，太趕。
+
+### 三、路線 F：為什麼正式論文首選 CCGrid
+
+- **主題最對口。** CFP 有 Track 4 "Systems for LLM Applications and Agentic AI"，明列 LLM serving、scheduling、placement；Track 5 是 "Performance Modeling, Analysis, and Optimization"。
+- **時間和退路平衡最好。** 寫作時間比 ICPE 多 15 天；2/1 就通知，比 ISC 早一個半月。被拒後還能接 ICDCS（墨爾本 7 月）或 Euro-Par（8 月）。
+- **等級和 ICPE 同為 CORE B，高於 ISC 的 C。**
+- 規格：10 頁（**含**參考文獻）、IEEE 格式、雙盲；CFP 沒寫 rebuttal 階段。
+
+ISC 只贏在「在歐洲」和「多 20 天」。只投 ISC 的話，3/15 被拒碩一下就出不去了。
+
+SIGMETRICS 留給第二篇：它是 A*，要 20 頁單欄，被拒之後 12 個月內不能再投 SIGMETRICS；但它是量測與建模的場所，正好適合「預測準則」那篇。
+它有「Resubmit」結果（大修後可投後續三個截止日之一），而且論文刊在 POMACS 期刊。
+
+### 四、國科會規則補充（10/8 查證）
+
+| 規則 | 對你的影響 |
+|---|---|
+| 研究生**每年度一次**；合著論文每篇只補助一位研究生 | 碩士期間可用的只剩 **2027、2028 兩次**。2026 那次因為會議前置時間（截稿到開會約 5–6 個月）本來就用不到 |
+| 論文須為**首次發表** | 同一份工作不能先發 A 會議，再拿去 B 會議當海報申請第二次 |
+| **申請及出席時都要具在學身分** | 碩二下的會議要在畢業前開 |
+| 學生端最遲在**開會前兩個月的月底**送出；接受證明可補送，最晚在會議首日四週前 | CCGrid（5/24）約 3/31 前送；ISC（6/7）約 4/30 前送 |
+| 機票原則上限搭**本國籍班機**，不能搭時要另填申請書；補助屬部分補助 | 去美、澳之前先問系辦補助上限 |
+
+**校內管道**：陽明交大有自己的「獎助研究生出席國際會議」。115 年度的收件已在 9/18 截止，116 年度的時程要問研發處。
+
+### 五、每學期出國的最大化排法
+
+每學期出國 = 3 趟（碩一下、碩二上、碩二下）= **3 篇不同貢獻的被接受論文**，加上**至少一趟不靠國科會**。
+**底線目標**：國科會兩次都用到（2 篇）。第三趟算加分，要看老師計畫裡有沒有國外差旅費。
+
+| 學期 | 作品 | 主投 → 被拒時的備案 | 錢從哪來 |
+|---|---|---|---|
+| **碩一下／暑假** | A：寫入時依位置放置 vs 成本感知逐出，加上「時間花在哪」 | **W**：ICPE workshop 🇸🇪 或 HotOS（德奧邊境）→ ISC workshop 🇩🇪 或 Euro-Par workshop 🇳🇱<br>**F**：CCGrid 12/1 → 2/1 被拒就改投 ICDCS 🇦🇺 或 Euro-Par 🇳🇱 | 國科會 2027 |
+| **碩二上** | B：預測準則（什麼時候值得聰明放置） | 2027 年春天截止的場所。例如 SC27（🔶 Denver 11/14–19，只有第三方來源；照往年約 4 月截稿；CCF A，很難），或 Cluster 2027（未公布） | 老師計畫或學校 |
+| **碩二下** | B 或 C（影片／VLM 場景、DL 預測器） | 2027 年秋天截止的場所：SIGMETRICS／ICPE／ISC／CCGrid 2028 | 國科會 2028 |
+
+碩二上和碩二下的場所多半還沒公布 CFP，上表是照往年時程推估。
+A 若在 CCGrid 被拒，就往暑假的 ICDCS 或 Euro-Par 推，碩一下的機會只會延後，不會整個沒了。
+
+### 六、10/21 的決策規則
+
+| 10/21 的狀況 | 投哪裡 |
+|---|---|
+| 老師要走 CVPR，且有真實的影像場景 | CVPR 11/16（Seattle） |
+| 結果很乾淨、寫得快，想去歐洲 | ICPE 主會 11/16 |
+| **想去北歐、11 月做得出 6 頁（預設）** | **路線 W**：ICPE workshop 或 HotOS 2/1（見第十節）；雅思排 12 月 |
+| 想要正式論文的等級與退路 | **路線 F**：CCGrid 12/1；雅思排在 12 月中到 1 月考 |
+| 結果還需要時間 | ISC 12/21，或路線 W |
+
+這幾個選項只能擇一（一稿不能多投）。例如 ICPE 要 1/25 才通知，所以投了 ICPE 就不能再投 12/1 的 CCGrid。
+
+### 七、分級怎麼看
+
+| 標準 | 說明 |
+|---|---|
+| **CCF**（中國計算機學會推薦目錄） | A / B / C |
+| **CORE**（現改名 **ICORE**） | A* / A / B / C。2026 版約 7.5% A*、13% A、30% B、46% C |
+| 社群口碑 | 看程式委員會裡有誰、領域裡的人去不去 |
+
+三套標準常對不起來：HotOS 是 workshop，卻是 CCF B / CORE A；ISC 只有 CORE C，但它是歐洲 HPC 的主場，TOP500 每年就在 ISC 和 SC 公布。
+**先問老師或系上看哪一套**，台灣各校認定的名單不同。
+
+本論文 `refs.bib` 的會議來源以 ICML、EuroSys、SOSP、ATC、ISCA、MICRO 為主，沒有一篇在 ICPE、ISC 或 Euro-Par。
+所以投中階 HPC 會議時，審稿人可能不熟 KV cache：競爭較少，但要多花篇幅鋪背景。
+
+**Workshop 激烈嗎？要看是哪個。** Hot 系列很競爭：HotOS 2023 為 31/117（約 26.5%）、2025 為 31/150（約 20.7%）（從投稿系統頁首數得，非官方統計）。
+EuroMLSys 找不到官方接受率，不估。主會擋的是「沒做完」，好的 workshop 擋的是「不夠新、引不起討論」。
+
+### 八、仍待確認
+
+| 項目 | 為什麼 |
+|---|---|
+| **ICDCS 2027 截止日** | 若在 2/1 之後，可當 CCGrid 的備案；若在之前，只能二選一 |
+| EuroMLSys 2027、Euro-Par 2027 的 CFP | 尚未發布 |
+| **ICPE 2027 的 workshops／Emerging Research／Poster 三個 track** | 官方頁面都寫 "Details TBA"；是瑞典路線的關鍵 |
+| ISC 2027 各 workshop 的論文截止 | workshop 名單 11/30 才核定 |
+| SC27 地點與截止 | 只有第三方列表，supercomputing.org 尚未公布 |
+| 國科會「首次發表」對 workshop 擴寫版是否成立 | 先發 workshop、再發擴寫的正式論文時，第二次能否申請補助要問系辦 |
+| ICS 2027、ISPASS 2027、HPDC 2027、ARCS 2027 | 本次查無 CFP |
+| CVPR 2027 的強制註冊日（第三方寫 11/10） | 官方頁面未確認 |
+| 各場所的 CCF / CORE 等級 | 本次以 myhuiban 為準，ICORE 官方頁面連線回 403 |
+
+### 九、偏好地區：北歐、瑞典、奧地利、荷蘭
+
+使用者偏好這些高消費國家。**國科會只部分補助經濟艙機票與註冊費**，住宿和生活費不補。
+所以在這些國家，住宿費要靠老師計畫或自費，這點要先問老師。
+
+| 地點 | 場所 | 日期 | 截止 | 備註 |
+|---|---|---|---|---|
+| 🇸🇪 Gothenburg | ICPE 2027 主會 | 5/24–28 | ✅ 11/16 | CORE B |
+| 🇸🇪 Gothenburg | ICPE 2027 的 workshops／Emerging Research／Poster | 5/24–28 | 🔶 TBA（ICPE 2025 的 workshop 截止在 1 月初到 2 月初） | 參考：HotCloudPerf 2026 是 5 頁 + 1 頁參考文獻，摘要 1/19 |
+| 🇩🇪 Burghausen（德奧邊境） | HotOS 2027 | 5/24–26 | ✅ 2/1 | 5 頁（不含參考文獻），4/9 通知，**須親自出席** |
+| 🇳🇱 Groningen | Euro-Par 2027 主會與 workshops | 8/23–27（暑假） | 🔶 主會約 3 月中 | CCF B |
+| 🇩🇪 Hamburg | ISC 2027 workshops | 6/11 | 🔶 由各 workshop 自訂，通知最晚 4/9 | 有 proceedings 的發在 FGCS 期刊 |
+| 🇩🇪 Hamburg | ISC 2027 Research Poster | 6/8–10 | ✅ 1/20（通知 3/2） | non-archival |
+
+- **ICPE 和 HotOS 同一週（5/24 起）**，只能去一個。
+- **維也納、哥本哈根、奧斯陸、赫爾辛基、斯德哥爾摩**：2027 年查不到系統／HPC 的主要會議。斯德哥爾摩只有 ICMLT（見下方 8/30 的分析，不值得投）和 DIS（HCI）。
+- **2028 年**：Euro-Par 2028 在 🇫🇷 Lyon（Euro-Par 歷史頁面所列）；ICPE 2028、EuroSys 2028 未公布；ICML 2027 在南美、2028 在美東（ICML 官方 Future Meetings）。
+- 8/30 版本把「奧」當成澳洲處理；澳洲的 ICDCS（墨爾本 7 月）保留為額外備案。
+
+### 十、「11 月做出 6 頁 workshop 論文」可行嗎
+
+**可行，而且份量剛好對得上兩週驗證之後能做出的東西。但要知道三件事。**
+
+**1. Workshop 截稿多半在 1–2 月，不在 11 月。** 11 月完成等於有餘裕，這份稿子有兩條路，只能選一條：
+
+| 路線 | 做法 | 碩一下去哪 | 代價 |
+|---|---|---|---|
+| **W（workshop，偏歐洲）** | 留著投 1–2 月的 workshop | 🇸🇪 Gothenburg 或德奧邊境 | 第一篇等級較低；之後擴寫成正式論文要 ≥25% 新內容 |
+| **F（正式論文）** | 補到 10 頁，投 CCGrid 12/1 | 🇺🇸 Dallas | 12/1 前要做完完整評估；被拒（2/1）後才能改投 workshop |
+
+走 F 的話，CCGrid 通知（2/1）和 HotOS 截止（2/1）同一天，ICPE 的 workshop 往年在 1 月截止，所以這兩個基本上都接不到；剩下的 workshop 備案是 EuroMLSys 和 ISC workshop。
+
+**2. Workshop 不一定比較好上。** HotOS 要的是 "position papers that propose new directions of systems research"，接受率約 20–26%。單純的量測結果比較適合 ICPE 的 workshop 或 EuroMLSys。
+
+**3. 大多是 archival。** HotOS、EuroMLSys、ISC 有 proceedings 的 workshop 都會正式出版。之後擴寫成正式論文時，要 ≥25% 新內容並主動揭露。國科會要求「首次發表」，擴寫版第二次申請是否成立要問系辦。
+
+**建議（照使用者的偏好）**：走 **W**。
+- 預設投 **ICPE 2027 的 workshop 或 Emerging Research track（瑞典）**，等 CFP 出來確認截止日與頁數。
+- 如果 11 月的稿子能講成一個「系統研究新方向」的論點（例如何時值得聰明放置的準則），就改投 **HotOS（2/1）**。等級最高（CCF B / CORE A），而且就在德奧邊境。
+- 被拒的備案：ISC workshop（漢堡 6/11），或 Euro-Par workshops（格羅寧根，暑假）。
+- 雅思可以排在 12 月考，不會撞到截稿。
+
+### 本節來源（2026-10-08 查閱）
+
+- [HotOS 2027](https://www.sigops.org/s/conferences/hotos/2027) · [HotOS 2027 CFP](https://www.sigops.org/s/conferences/hotos/2027/cfp.html)
+- [ISC 2027 Submissions（所有 track 的日期）](https://isc-hpc.com/submissions/)
+- [ICPE 2027 Tracks](https://icpe2027.spec.org/tracks-and-submissions/) · [ICPE 2027 Emerging Research Track](https://icpe2027.spec.org/tracks-and-submissions/emerging-research-track/)
+- [HotCloudPerf](https://hotcloudperf.spec.org/) · [ICPE 2025 collective CFP for workshops](https://lists.cs.umbc.edu/pipermail/agents/Week-of-Mon-20241209/014867.html)
+- [Euro-Par history（含 2027 Groningen、2028 Lyon）](https://2020.euro-par.org/about-euro-par/history)
+- [ICML Future Meetings](https://icml.cc/Conferences/FutureMeetings)
+- [EuroSys 2027](https://2027.eurosys.org/)
+
+- [ICPE 2027 Important Dates](https://icpe2027.spec.org/important-dates/) · [SPEC news: ICPE 2027 CfC](https://www.spec.org/notes/2026/news260904/)
+- [ISC 2027 Research Paper](https://isc-hpc.com/submissions/research-paper/)
+- [PDP 2027](https://research.ac.upc.edu/PDP2027/index.html)
+- [CCGrid 2027 CFP (EasyChair)](https://easychair.org/cfp/ccgrid27)
+- [SIGMETRICS 2027 CFP](https://sigmetrics.org/sigmetrics2027/pages/cfp.html)
+- [CVPR 2027 Call for Papers](https://cvpr.thecvf.com/Conferences/2027/CallForPapers)
+- [ICDCS 2027](https://icdcs2027.icdcs.org/) · [ICORE: ICDCS](https://portal.core.edu.au/conf-ranks/1002)
+- [HotOS 2027](https://www.sigops.org/s/conferences/hotos/2027) · [HotOS 2023 HotCRP](https://hotos23.hotcrp.com/) · [HotOS 2025 HotCRP](https://hotos25.hotcrp.com/)
+- [IPDPS 2027 (beri.net)](https://www.beri.net/events/ipdps-2027)
+- [SC27 listing (showsbee)](https://www.showsbee.com/fairs/100096-SuperComputing-Conference-2027.html)
+- [Euro-Par 2026 CFP](https://2026.euro-par.org/calls/papers) · [Euro-Par 2025 CFP](https://2025.euro-par.org/calls/papers)
+- [MLSys Deadlines](https://mldeadlines.com/conference/mlsys/)
+- [myhuiban systems ranking](https://www.myhuiban.com/conferences/rank/field/systems.md) · [myhuiban ICPE](https://www.myhuiban.com/conference/1537.md) · [myhuiban SIGMETRICS](https://www.myhuiban.com/conference/327.md)
+- [ICORE: ISC](https://portal.core.edu.au/conf-ranks/1340)
+- [國科會補助國內研究生出席國際學術會議作業要點（政大統計系存檔）](https://stat.nccu.edu.tw/uploads/asset/data/6881a642311fc83967f11c77/%E5%9C%8B%E7%A7%91%E6%9C%83%E8%A3%9C%E5%8A%A9%E5%9C%8B%E5%85%A7%E7%A0%94%E7%A9%B6%E7%94%9F%E5%87%BA%E5%B8%AD%E5%9C%8B%E9%9A%9B%E5%AD%B8%E8%A1%93%E6%9C%83%E8%AD%B0%E4%BD%9C%E6%A5%AD%E8%A6%81%E9%BB%9E.pdf)
+- [陽明交大 研發處學生補助系統](https://spsys.ord.nycu.edu.tw/student)
+
+---
+
+> 以下為 **2026-08-30 原始版本**。事實錯誤已就地修正並標註「10/8」；推薦與時程分析部分已被上方更新節取代，保留作為紀錄。
 
 ---
 
@@ -21,14 +223,14 @@ related_ideas: ["[[idea-20260828-hierarchical-kv-state]]"]
 
 | 場所 | 地點 | 會議日 | **截止日** | 出版 | 難度 |
 |---|---|---|---|---|---|
-| **ISC High Performance 2027**<br>（Research Paper） | 🇩🇪 **Hamburg** | 6/23–25, 2027 | ✅ **12/21/2026**<br>（明載 no extension!） | **IEEE Xplore**<br>開放取用，10 頁 | 🟡 中階 |
-| **ISC 2027 Workshop**<br>（with Proceedings） | 🇩🇪 **Hamburg** | 6/26, 2027 | 🔶 ~3 月初 2027<br>（各 workshop 自訂） | 🌟 **FGCS**<br>Elsevier **Q1**, IF 8.22 | 🟢 較易 |
-| **ICPE 2027** | 🇸🇪 **Gothenburg** | 5/24, 2027 | 🔶 ~11 月 2026<br>（2026 屆 11/17） | ACM | 🟡 中階 |
+| **ISC High Performance 2027**<br>（Research Paper） | 🇩🇪 **Hamburg** | ~~6/23–25~~ ✅ **6/7–11, 2027**（10/8 修正） | ✅ **12/21/2026**<br>（明載 no extension!） | **IEEE Xplore**<br>開放取用，10 頁 | 🟡 中階 |
+| **ISC 2027 Workshop**<br>（with Proceedings） | 🇩🇪 **Hamburg** | ~~6/26~~ ✅ **6/11, 2027**（10/8 修正） | 🔶 ~3 月初 2027<br>（各 workshop 自訂） | 🌟 **FGCS**<br>Elsevier **Q1**, IF 8.22 | 🟢 較易 |
+| **ICPE 2027** | 🇸🇪 **Gothenburg** | 5/24–28, 2027 | ✅ **11/16/2026**<br>（摘要 11/9；10/8 查證） | ACM | 🟡 中階 |
 | **Euro-Par 2027** | 🇳🇱 **Groningen** | 8/23–27, 2027 | 🔶 ~2–3 月 2027 | Springer LNCS | 🟡 CCF B |
-| **PDP 2027**（Euromicro） | 🇪🇸 **Barcelona** | 3/17–19, 2027 | 🔶 ~10–11 月 2026 | IEEE CPS | 🟢 容易 |
+| **PDP 2027**（Euromicro） | 🇪🇸 **Barcelona** | 3/17–19, 2027 | ✅ 10/26/2026<br>（摘要 10/19；10/8 查證） | IEEE CPS | 🟢 容易 |
 | **ARCS 2027**（第 40 屆） | 🇩🇪 德國（城市未定） | 🔶 ~3 月 2027 | 🔶 ~2 月 2027 | Springer LNCS | 🟢 容易 |
 | **EuroMLSys 2027**（workshop） | 🇲🇦 Rabat（隨 EuroSys） | ~4/19, 2027 | 🔶 ~2 月 2027 | ACM DL | 🟢 最容易（**6 頁**）|
-| EuroSys 2027 秋輪 | 🇲🇦 Rabat | 4/19–23, 2027 | ✅ 9/24/2026 | ACM | 🔴 頂會 |
+| EuroSys 2027 秋輪 | 🇲🇦 Rabat | 4/19–23, 2027 | ❌ 9/24/2026（已過） | ACM | 🔴 頂會 |
 | HiPEAC 2027 | 🏴 Glasgow | 1/18–20, 2027 | — | — | 特殊形式 |
 
 ### 非歐洲（對照）
@@ -36,19 +238,21 @@ related_ideas: ["[[idea-20260828-hierarchical-kv-state]]"]
 | 場所 | 地點 | **截止日** | 難度 |
 |---|---|---|---|
 | **MLSys 2027** | 未公布 | ✅ **10/30/2026** | 🔴 頂會 |
-| CCGrid 2027 | 🇺🇸 Dallas | ✅ 12/8/2026 | 🟡 CCF C |
+| **CCGrid 2027** | 🇺🇸 Dallas | ✅ **12/1/2026**（~~12/8~~，10/8 修正；摘要 11/24） | 🟡 CCF C |
 | ~~Middleware 2026~~ | 🇪🇸 Tarragona | ❌ 已過 | — |
 
 ---
 
 ## 🥇 首選：ISC High Performance 2027（Hamburg 🇩🇪）
 
+> ⚠️ **10/8**：已不再是首選，改成路線 W／F 擇一，見最上方更新節。會期與主題的錯誤已在下表修正。
+
 **兼顧「德國 + 時程剛好 + 發表價值高 + 適合申請補助」。**
 
 | | |
 |---|---|
 | 地點 | **Hamburg, 德國** |
-| 會議 | 6/23–25, 2027（tutorial 6/22、workshop 6/26） |
+| 會議 | ~~6/23–25, 2027（tutorial 6/22、workshop 6/26）~~ ✅ **6/7–11, 2027**（tutorial 6/7、論文場次 6/8–10、workshop 6/11；10/8 修正） |
 | **Research Paper 截止** | ✅ **2026-12-21，官網明載「no extension!」** |
 | 通知 | 2027-03-15 |
 | **出版** | **IEEE Xplore，完全開放取用**（會議支付出版費用） |
@@ -65,6 +269,7 @@ related_ideas: ["[[idea-20260828-hierarchical-kv-state]]"]
 
 ISC 的主場是 HPC／超級電腦。本論文的 **MI300X + ROCm + 記憶體階層 + 能耗量測**這條線契合，但**純 LLM 服務的角度可能偏離**。
 👉 **投稿前務必看 9/1 開放的 CFP topics，確認有 AI/ML systems 類別。**
+✅ **10/8 已確認**：有 Artificial Intelligence 類別，也有 "Memory Technologies and Hierarchies"。
 
 ---
 
@@ -280,7 +485,8 @@ CCF B，8/23–27/2027，截止 ~2–3 月 2027。**給你半年做實驗**，Sp
 | **是否 archival** | ❌ **不是**。僅於會場平台提供給與會者，**不進 proceedings** |
 | **截止** | ✅ **2027-01-20**（通知 3/02） |
 
-⚠️ 該頁寫「展示期間 June 8–10, 2027」，與投稿總覽頁的 6/23–25 不符，疑為未更新，投稿前確認。
+~~⚠️ 該頁寫「展示期間 June 8–10, 2027」，與投稿總覽頁的 6/23–25 不符，疑為未更新，投稿前確認。~~
+✅ **10/8 修正**：6/8–10 才是對的，錯的是 6/23–25。截止 1/20、通知 3/2 已重新查證。
 
 **為什麼這是正解**：
 - 工作量極小（1000 字 vs 10 頁）
@@ -378,8 +584,8 @@ EuroMLSys 截止 ~2/24  ← 還來得及 ✅
 | 場所 | 截止 | **通知** | 鎖住期間 |
 |---|---|---|---|
 | MLSys 2027 | ✅ 10/30/26 | ✅ **2/28/27** | 4 個月 |
-| ICPE 2027 | 🔶 ~11/17/26 | 🔶 **~1/19/27** | **2 個月** |
-| CCGrid 2027 | ✅ 12/8/26 | ✅ 2/10/27 | 2 個月 |
+| ICPE 2027 | ✅ 11/16/26（10/8 修正） | ✅ **1/25/27** | **2 個月** |
+| CCGrid 2027 | ✅ 12/1/26（10/8 修正） | ✅ 2/1/27 | 2 個月 |
 | ISC HPC 2027 | ✅ 12/21/26 | ✅ **3/15/27** | **3 個月** |
 | EuroMLSys / ARCS / Euro-Par | 🔶 ~2–3 月 2027 | — | — |
 
@@ -491,7 +697,7 @@ MLSys / EuroSys（~15–20%）
 
 | 會議 | 會議首日 | **校內彙送最遲** |
 |---|---|---|
-| ISC HPC 2027 | 2027-06-22 | **2027-05-01** |
+| ISC HPC 2027 | 2027-06-07（10/8 修正） | **2027-05-01** |
 | ICPE 2027 | 2027-05-24 | **2027-04-01** |
 | Euro-Par 2027 | 2027-08-23 | **2027-07-01** |
 | PDP 2027 | 2027-03-17 | **2027-02-01** |
@@ -531,6 +737,8 @@ MLSys / EuroSys（~15–20%）
 
 ## 建議路線
 
+> ⚠️ **10/8**：本節已被最上方更新節的第五、六、十節取代。MLSys 與 ISC-first 的路線不再適用。
+
 ```
 現在 ──→ 9 月底：Oracle 結果
               │
@@ -560,13 +768,15 @@ MLSys 名氣大但只剩 61 天，且投稿量大、接受率低。
 | 項目 | 為什麼要自己查 |
 |---|---|
 | EuroMLSys 2027 CFP | 尚未發布；~2026 年底至 2027 年初上線，追 `euromlsys.eu` |
-| ICPE 2027 important dates | 官網目前只有 PC 自薦日（9/13/2026），日期頁未上線 |
-| Euro-Par 2027 CFP | 官網只有地點與日期 |
+| ~~ICPE 2027 important dates~~ | ✅ 10/8 已查到：11/9 摘要、11/16 全文、1/25 通知 |
+| Euro-Par 2027 CFP | 官網只有地點與日期（10/8 仍未發布） |
 | MLSys 2027 頁數與格式 | Dates 頁已上線，CFP 細節未上線 |
-| **ISC 2027 的 topics 是否含 AI/ML systems** | **CFP 於 2026-09-01 開放，務必先確認契合度再投** |
-| ARCS 2027 地點與截止日 | 官網仍停在 2026（Mainz） |
-| PDP 2027 截止日 | 已知會議日 3/17–19，截止日未上線 |
+| ~~ISC 2027 的 topics 是否含 AI/ML systems~~ | ✅ 10/8 已確認有 AI 類別 |
+| ARCS 2027 地點與截止日 | 官網仍停在 2026（Mainz）；10/8 未重查 |
+| ~~PDP 2027 截止日~~ | ✅ 10/8 已查到：10/26（摘要 10/19） |
 | 校內補助送件期限 | 通常早於國科會，問系上或研發處 |
+
+> 10/8 新增的待確認事項見最上方更新節的第八節。
 
 ---
 
