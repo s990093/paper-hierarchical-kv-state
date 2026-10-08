@@ -17,7 +17,7 @@
   <g font-size="11.5" fill="#5F5E5A">
     <text x="24" y="137">LMCache、SGLang 上游預設</text>
     <text x="24" y="197">Mooncake Store、HiCache 選項</text>
-    <text x="24" y="257">Strata 預設、store_threshold</text>
+    <text x="24" y="257">Dynamo 磁碟層、store_threshold</text>
     <text x="24" y="317">寫入時依位置決定狀態</text>
   </g>
   <g stroke="#D3D1C7" stroke-width="1"><line x1="250" y1="125" x2="880" y2="125"/><line x1="250" y1="185" x2="880" y2="185"/><line x1="250" y1="245" x2="880" y2="245"/><line x1="250" y1="305" x2="880" y2="305"/></g>

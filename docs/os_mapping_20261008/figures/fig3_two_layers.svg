@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="436" viewBox="0 0 900 436" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+  <rect width="900" height="436" fill="#ffffff"/>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6"/></marker></defs>
+  <text x="450" y="28" font-size="17" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 3　兩套策略：KV 管理器自己一套，作業系統底下還有一套</text>
+  <rect x="40" y="50" width="560" height="96" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.6"/>
+  <text x="60" y="76" font-size="14.5" font-weight="600" fill="#26215C">應用層：KV 管理器（vLLM、LMCache、SGLang、我們的 harness）</text>
+  <text x="60" y="100" font-size="12.5" fill="#3C3489">自己決定：放哪一層、誰被逐出、何時寫、何時預取、要不要重算</text>
+  <text x="60" y="122" font-size="12.5" fill="#3C3489">管理的東西：GPU 的 KV block、pinned CPU 記憶體池、SSD 上的 KV 檔</text>
+  <rect x="40" y="176" width="560" height="96" rx="8" fill="#F1EFE8" stroke="#888780"/>
+  <text x="60" y="202" font-size="14.5" font-weight="600" fill="#2C2C2A">作業系統層</text>
+  <text x="60" y="226" font-size="12.5" fill="#444441">page cache：把讀寫過的檔案頁留在 DRAM（有自己的替換策略）</text>
+  <text x="60" y="248" font-size="12.5" fill="#444441">虛擬記憶體與 swap：一般記憶體可能被換出到磁碟</text>
+  <rect x="40" y="302" width="560" height="60" rx="8" fill="#ffffff" stroke="#888780"/>
+  <text x="60" y="337" font-size="14.5" font-weight="600" fill="#2C2C2A">硬體：GPU HBM ／ CPU DRAM ／ SSD</text>
+  <line x1="200" y1="146" x2="200" y2="172" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="200" y1="272" x2="200" y2="298" stroke="#888780" stroke-width="1.5" marker-end="url(#a)"/>
+  <path d="M520 146 L520 160 L640 160 L640 330 L604 330" fill="none" stroke="#993C1D" stroke-width="1.6" marker-end="url(#a)"/>
+  <rect x="650" y="160" width="230" height="182" rx="8" fill="#FAECE7" stroke="#993C1D"/>
+  <text x="765" y="184" font-size="13.5" font-weight="600" fill="#712B13" text-anchor="middle">繞過作業系統的做法</text>
+  <g font-size="12" fill="#712B13"><text x="664" y="208">• pinned 記憶體：鎖住，不會被 swap</text><text x="664" y="232">• O_DIRECT：讀寫不經 page cache</text><text x="664" y="256">• I/O 直達 GPU：Tutti 由 GPU 發</text><text x="664" y="274">　（io_uring）；HCache 讀回用</text><text x="664" y="292">　SPDK＋GDRCopy 直通</text><text x="664" y="312">• 目的：避免兩套策略互相干擾，</text><text x="664" y="328">　也讓時間可以預測〔判讀〕</text></g>
+  <rect x="40" y="374" width="840" height="50" rx="6" fill="#ffffff" stroke="#D3D1C7"/>
+  <text x="54" y="394" font-size="12" fill="#2C2C2A">對我們的影響：沒繞過 page cache 時，「從 SSD 讀」其實可能是從 DRAM 讀，量測會失真。</text><text x="54" y="412" font-size="12" fill="#2C2C2A">所以 phase1 用 O_DIRECT 或 posix_fadvise，再用 /proc/self/io 確認真的讀了磁碟。</text>
+</svg>

@@ -47,7 +47,7 @@
 
 ### 3.2 建議加一個對照組：選擇性寫入
 
-**「命中 2 次才寫」**是 Strata 論文的預設，SGLang、vLLM、Dynamo 也都有類似的開關，但目前第一階段的 9 個策略裡沒有它。〔複核修正：原寫「都有的開關」。三者的計數語意不同：SGLang `write_through_selective` 門檻寫死為 2（E04 Strata 卡）；vLLM `store_threshold` 的 N 可設，v0.28.0 計的是被 `lookup()` 查到的次數，main 計的是被提議儲存的次數（EVAL §2.3）；Dynamo 磁碟層是「頻率 ≥2」，頻率初值 1、命中加倍、隨時間衰減（E02 B3）。對照組要寫明用的是哪一種〕建議加：
+**「命中 2 次才寫」**有幾種版本：Strata 論文的預設是存取次數超過門檻 2 才從 GPU **備份到 CPU**；Dynamo KVBM 是頻率 ≥2 才**寫進磁碟**；SGLang、vLLM 也有類似的開關〔10/8 修正：原寫「Strata 的預設」而未說明 Strata 備份的是 CPU 層，見 os_mapping 複核〕，但目前第一階段的 9 個策略裡沒有它。〔複核修正：原寫「都有的開關」。三者的計數語意不同：SGLang `write_through_selective` 門檻寫死為 2（E04 Strata 卡）；vLLM `store_threshold` 的 N 可設，v0.28.0 計的是被 `lookup()` 查到的次數，main 計的是被提議儲存的次數（EVAL §2.3）；Dynamo 磁碟層是「頻率 ≥2」，頻率初值 1、命中加倍、隨時間衰減（E02 B3）。對照組要寫明用的是哪一種〕建議加：
 
 ```
 策略 S1s　寫穿＋選擇性（命中 2 次才寫 SSD）

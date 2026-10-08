@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+  <rect width="900" height="360" fill="#ffffff"/>
+  <text x="450" y="28" font-size="17" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 2　寫入配置（write-allocate）vs 不配置：新產生的 KV 要不要佔用 CPU</text>
+  <g font-size="13" font-weight="600" fill="#2C2C2A" text-anchor="middle"><text x="390" y="62">CPU（快、容量小）</text><text x="700" y="62">SSD（慢、容量大）</text></g>
+  <g font-size="13.5" font-weight="600" fill="#2C2C2A">
+    <text x="24" y="102">寫入配置</text><text x="24" y="172">不配置</text><text x="24" y="242" fill="#26215C">本研究 S5</text>
+  </g>
+  <g font-size="11.5" fill="#5F5E5A">
+    <text x="24" y="120">新 KV 放進 CPU（可能也寫 SSD）</text><text x="24" y="190">新 KV 直接寫 SSD，不佔 CPU</text><text x="24" y="260">每段各自選：後段配置、前段不配置</text>
+  </g>
+  <g fill="#E1F5EE" stroke="#0F6E56">
+    <rect x="270" y="88" width="30" height="30" rx="3"/><rect x="305" y="88" width="30" height="30" rx="3"/><rect x="340" y="88" width="30" height="30" rx="3"/><rect x="375" y="88" width="30" height="30" rx="3"/><rect x="410" y="88" width="30" height="30" rx="3"/><rect x="445" y="88" width="30" height="30" rx="3"/><rect x="480" y="88" width="30" height="30" rx="3"/>
+  </g>
+  <text x="700" y="108" font-size="12" fill="#5F5E5A" text-anchor="middle">寫穿時也有一份；延後寫則被擠出才寫</text>
+  <text x="390" y="178" font-size="12" fill="#5F5E5A" text-anchor="middle">（空著，留給別人）</text>
+  <g fill="#F1EFE8" stroke="#888780">
+    <rect x="580" y="158" width="30" height="30" rx="3"/><rect x="615" y="158" width="30" height="30" rx="3"/><rect x="650" y="158" width="30" height="30" rx="3"/><rect x="685" y="158" width="30" height="30" rx="3"/><rect x="720" y="158" width="30" height="30" rx="3"/><rect x="755" y="158" width="30" height="30" rx="3"/><rect x="790" y="158" width="30" height="30" rx="3"/>
+  </g>
+  <g fill="#E1F5EE" stroke="#0F6E56"><rect x="410" y="228" width="30" height="30" rx="3"/><rect x="445" y="228" width="30" height="30" rx="3"/><rect x="480" y="228" width="30" height="30" rx="3"/></g>
+  <g fill="#F1EFE8" stroke="#888780"><rect x="580" y="228" width="30" height="30" rx="3"/><rect x="615" y="228" width="30" height="30" rx="3"/><rect x="650" y="228" width="30" height="30" rx="3"/><rect x="685" y="228" width="30" height="30" rx="3"/></g>
+  <text x="440" y="276" font-size="11.5" fill="#085041" text-anchor="middle">後段（預期會被搬）</text>
+  <text x="650" y="276" font-size="11.5" fill="#444441" text-anchor="middle">前段（預期會被重算）</text>
+  <line x1="545" y1="76" x2="545" y2="290" stroke="#B4B2A9" stroke-dasharray="4 4"/>
+  <rect x="24" y="300" width="852" height="44" rx="6" fill="#ffffff" stroke="#D3D1C7"/>
+  <text x="38" y="319" font-size="12" fill="#2C2C2A">在 CPU 快取裡：寫入未命中時，配置＝先把那塊搬進快取再寫（通常搭延後寫）；不配置＝直接寫到下一層（通常搭寫穿）〔教科書〕。</text>
+  <text x="38" y="337" font-size="12" fill="#2C2C2A">KV 的不同：KV 一定先在 GPU 算出來，所以「配置與否」問的是 CPU 這一層；不配置的段若沒寫 SSD，之後只能重算〔判讀〕。</text>
+</svg>

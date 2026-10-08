@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="520" fill="#ffffff"/>
+<text x="480" y="28" font-size="17" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 4　L0–L3 × 決定的時間點：以前的研究多在「逐出時」和「讀取時」</text>
+<rect x="172" y="48" width="252" height="26" rx="5" fill="#EEEDFE" stroke="none"/>
+<text x="298.0" y="66" font-size="13.5" font-weight="600" fill="#26215C" text-anchor="middle">寫入時決定</text>
+<rect x="428" y="48" width="252" height="26" rx="5" fill="#F1EFE8" stroke="none"/>
+<text x="554.0" y="66" font-size="13.5" font-weight="600" fill="#2C2C2A" text-anchor="middle">逐出時決定</text>
+<rect x="684" y="48" width="252" height="26" rx="5" fill="#F1EFE8" stroke="none"/>
+<text x="810.0" y="66" font-size="13.5" font-weight="600" fill="#2C2C2A" text-anchor="middle">讀取時決定</text>
+<rect x="20" y="78" width="146" height="86" rx="6" fill="#F1EFE8" stroke="#888780"/>
+<text x="93.0" y="124.0" font-size="14" font-weight="600" fill="#2C2C2A" text-anchor="middle">L0 存什麼</text>
+<rect x="172" y="78" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="298.0" y="108.0" font-size="12" fill="#2C2C2A" text-anchor="middle">HCache：依層決定存</text>
+<text x="298.0" y="125.0" font-size="12" fill="#2C2C2A" text-anchor="middle">hidden、KV 或不存（無損）</text>
+<text x="298.0" y="142.0" font-size="12" fill="#2C2C2A" text-anchor="middle">Marconi：准入（混合模型）</text>
+<rect x="428" y="78" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="554.0" y="125.0" font-size="12" fill="#2C2C2A" text-anchor="middle">Marconi：FLOP-aware 逐出</text>
+<rect x="684" y="78" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="810.0" y="125.0" font-size="12" fill="#2C2C2A" text-anchor="middle">—</text>
+<rect x="20" y="170" width="146" height="86" rx="6" fill="#F1EFE8" stroke="#888780"/>
+<text x="93.0" y="216.0" font-size="14" font-weight="600" fill="#2C2C2A" text-anchor="middle">L1 存多細</text>
+<rect x="172" y="170" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="298.0" y="191.5" font-size="12" fill="#2C2C2A" text-anchor="middle">AdaptCache、EvicPress：</text>
+<text x="298.0" y="208.5" font-size="12" fill="#2C2C2A" text-anchor="middle">存入時選壓縮（有損）</text>
+<text x="298.0" y="225.5" font-size="12" fill="#2C2C2A" text-anchor="middle">KVP、LookaheadKV：prefill 後丟 token</text>
+<text x="298.0" y="242.5" font-size="12" fill="#2C2C2A" text-anchor="middle">TRIM-KV：產生時給分（皆有損）</text>
+<rect x="428" y="170" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="554.0" y="200.0" font-size="12" fill="#2C2C2A" text-anchor="middle">ForesightKV：解碼中</text>
+<text x="554.0" y="217.0" font-size="12" fill="#2C2C2A" text-anchor="middle">每 L 步、預算滿時丟 token</text>
+<text x="554.0" y="234.0" font-size="12" fill="#2C2C2A" text-anchor="middle">（有損，單一請求內）</text>
+<rect x="684" y="170" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="810.0" y="217.0" font-size="12" fill="#2C2C2A" text-anchor="middle">—</text>
+<rect x="20" y="262" width="146" height="86" rx="6" fill="#F1EFE8" stroke="#888780"/>
+<text x="93.0" y="308.0" font-size="14" font-weight="600" fill="#2C2C2A" text-anchor="middle">L2 放哪裡</text>
+<rect x="172" y="262" width="252" height="86" rx="6" fill="#EEEDFE" stroke="#534AB7" stroke-width="2"/>
+<text x="298.0" y="283.5" font-size="12" fill="#2C2C2A" text-anchor="middle">KVDrive：依重要度（有損）</text>
+<text x="298.0" y="300.5" font-size="12" fill="#2C2C2A" text-anchor="middle">AdaptCache、EvicPress：依效用（有損）</text>
+<text x="298.0" y="317.5" font-size="12" fill="#2C2C2A" text-anchor="middle">MTDS：卸載的優先順序</text>
+<text x="298.0" y="334.5" font-size="12" font-weight="700" fill="#26215C" text-anchor="middle">本研究 S5：依位置（無損）</text>
+<rect x="428" y="262" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="554.0" y="283.5" font-size="12" fill="#2C2C2A" text-anchor="middle">LRU：LMCache、Mooncake</text>
+<text x="554.0" y="300.5" font-size="12" fill="#2C2C2A" text-anchor="middle">成本感知：Pensieve、AsymCache</text>
+<text x="554.0" y="317.5" font-size="12" fill="#2C2C2A" text-anchor="middle">學習式：LARU、LPC、SAECache</text>
+<text x="554.0" y="334.5" font-size="12" fill="#2C2C2A" text-anchor="middle">CachedAttention、Bidaw</text>
+<rect x="684" y="262" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="810.0" y="283.5" font-size="12" fill="#2C2C2A" text-anchor="middle">Cake、CacheFlow：</text>
+<text x="810.0" y="300.5" font-size="12" fill="#2C2C2A" text-anchor="middle">重算還是載入</text>
+<text x="810.0" y="317.5" font-size="12" fill="#2C2C2A" text-anchor="middle">MTDS：全載、部分載或不載</text>
+<text x="810.0" y="334.5" font-size="12" fill="#2C2C2A" text-anchor="middle">py-kvcache：載不載（門檻）</text>
+<rect x="20" y="354" width="146" height="86" rx="6" fill="#F1EFE8" stroke="#888780"/>
+<text x="93.0" y="400.0" font-size="14" font-weight="600" fill="#2C2C2A" text-anchor="middle">L3 怎麼搬</text>
+<rect x="172" y="354" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="298.0" y="384.0" font-size="12" fill="#2C2C2A" text-anchor="middle">非同步保存：CachedAttention</text>
+<text x="298.0" y="401.0" font-size="12" fill="#2C2C2A" text-anchor="middle">寫入等空檔：Tutti</text>
+<text x="298.0" y="418.0" font-size="12" fill="#2C2C2A" text-anchor="middle">可切換 WT／WB：Strata</text>
+<rect x="428" y="354" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="554.0" y="401.0" font-size="12" fill="#2C2C2A" text-anchor="middle">提前換出：Pensieve</text>
+<rect x="684" y="354" width="252" height="86" rx="6" fill="#ffffff" stroke="#D3D1C7" stroke-width="1"/>
+<text x="810.0" y="392.5" font-size="12" fill="#2C2C2A" text-anchor="middle">GPU 協助搬：Strata、Tutti</text>
+<text x="810.0" y="409.5" font-size="12" fill="#2C2C2A" text-anchor="middle">預取：LMCache、CachedAttention</text>
+<text x="20" y="466" font-size="12" fill="#2C2C2A">讀法：同一個問題（例如 L2「放哪裡」）可以在三個時間點決定。以前的 L2 研究多在逐出時（LRU、成本感知、學習式）或讀取時（Cake、CacheFlow）決定。</text>
+<text x="20" y="486" font-size="12" fill="#2C2C2A">寫入時就決定的 L2 工作有 KVDrive、AdaptCache、EvicPress（皆有損）和 MTDS（優先順序），但沒有看到「無損、依位置」的〔判讀，限於評測卡涵蓋的範圍〕。</text>
+<text x="20" y="506" font-size="11" fill="#5F5E5A">L0–L5 的定義見 RESEARCH_INTRO §3；L4（怎麼找）、L5（使用契約）沒有畫。系統歸類依評測卡 E03–E07 與 write_path_20261008/02，時間點的劃分是本文的整理。</text>
+</svg>
