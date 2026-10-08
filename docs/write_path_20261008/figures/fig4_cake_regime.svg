@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="412" viewBox="0 0 900 412" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+  <rect width="900" height="412" fill="#ffffff"/>
+  <text x="450" y="28" font-size="17" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 4　為什麼 Cake 談的是 SSD 和網路，不是 CPU 記憶體</text>
+  <text x="450" y="50" font-size="12" fill="#5F5E5A" text-anchor="middle">單位 GB/s。前五列是 Cake Fig. 3 的等效吞吐（KV 大小 ÷ 處理時間；LongAlpaca-7B、32K）；CPU 一列是 Fig. 1 的伺服器規格值</text>
+  <g font-size="13" fill="#2C2C2A" text-anchor="end">
+    <text x="220" y="94">HDD</text>
+    <text x="220" y="132">網路</text>
+    <text x="220" y="170">A100 重算（等效）</text>
+    <text x="220" y="208">H100 重算（等效）</text>
+    <text x="220" y="246">NVMe SSD</text>
+    <text x="220" y="284">CPU 記憶體（規格）</text>
+  </g>
+  <g>
+    <rect x="230" y="80" width="4.6" height="20" fill="#1D9E75"/>
+    <rect x="230" y="118" width="23" height="20" fill="#1D9E75"/>
+    <rect x="230" y="156" width="75.9" height="20" fill="#D85A30"/>
+    <rect x="230" y="194" width="92" height="20" fill="#D85A30"/>
+    <rect x="230" y="232" width="92" height="20" fill="#1D9E75"/>
+    <rect x="230" y="270" width="575" height="20" fill="#888780"/>
+  </g>
+  <g font-size="12.5" fill="#2C2C2A">
+    <text x="242" y="95">~0.2</text><text x="261" y="133">~1</text><text x="313" y="171">~3.3</text>
+    <text x="330" y="209">~4</text><text x="330" y="247">~4</text><text x="813" y="285">~25</text>
+  </g>
+  <rect x="226" y="72" width="130" height="190" rx="6" fill="none" stroke="#534AB7" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="370" y="135" font-size="13" font-weight="600" fill="#26215C">Cake 的甜蜜點：搬的速度 ≈ 重算的速度</text>
+  <text x="370" y="155" font-size="12.5" fill="#3C3489">兩條線各做一半，比只算或只搬都快</text>
+  <text x="370" y="175" font-size="12.5" fill="#3C3489">（原文：兩種資源相當時最有利，ICML p6）</text>
+  <text x="560" y="340" font-size="12.5" fill="#444441" text-anchor="middle">CPU 快很多：直接全部搬就好，雙向的好處很小〔判讀〕</text>
+  <line x1="230" y1="300" x2="830" y2="300" stroke="#B4B2A9"/>
+  <g font-size="11.5" fill="#5F5E5A" text-anchor="middle"><text x="230" y="318">0</text><text x="460" y="318">10</text><text x="690" y="318">20</text></g>
+  <rect x="230" y="356" width="14" height="14" fill="#1D9E75"/><text x="250" y="368" font-size="12" fill="#444441">儲存／網路</text>
+  <rect x="340" y="356" width="14" height="14" fill="#D85A30"/><text x="360" y="368" font-size="12" fill="#444441">GPU 重算的等效吞吐</text>
+  <rect x="500" y="356" width="14" height="14" fill="#888780"/><text x="520" y="368" font-size="12" fill="#444441">CPU 記憶體（Fig. 1 規格值，非等效吞吐）</text>
+  <text x="40" y="396" font-size="11.5" fill="#5F5E5A">數字是 Cake 原文的圖讀值（E03 Cake 卡，已複核），不是本研究的量測。Cake 的 Fig. 3 沒有寫儲存欄是量測還是規格值。</text>
+</svg>
