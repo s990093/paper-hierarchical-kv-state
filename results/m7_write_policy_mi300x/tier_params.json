@@ -1,0 +1,36 @@
+{
+ "derate": 0.9,
+ "rule": "min(measured) * 0.9; C0 excludes rep 0 (warm-up); SSD from sustained per-chunk-file I/O, c=0",
+ "source_runs": [
+  "20261008-130257-m7-c0",
+  "20261008-130438-m7-c2"
+ ],
+ "cpu": {
+  "read_GiBps": 35.4159,
+  "write_GiBps": 35.5482,
+  "c_ms": 0.0,
+  "ell_chunk_ms": 1.7647440838719333,
+  "k_read": 1.161
+ },
+ "local": {
+  "read_GiBps": 6.98115234375,
+  "write_GiBps": 1.9106542968750002,
+  "c_ms": 0.0,
+  "measured_min_read_MiBps": 7943.0,
+  "measured_min_write_MiBps": 2173.9,
+  "regression_intercept_ms_info": 2.4945384190160307,
+  "ell_chunk_ms": 8.95267671045085,
+  "k_read": 3.306
+ },
+ "nfs": {
+  "read_GiBps": 0.331083984375,
+  "write_GiBps": 0.60099609375,
+  "c_ms": 0.0,
+  "measured_min_read_MiBps": 376.7,
+  "measured_min_write_MiBps": 683.8,
+  "regression_intercept_ms_info": 0.7935207296849087,
+  "ell_chunk_ms": 188.77385482110728,
+  "k_read": 1.673
+ },
+ "k_read_source": "cpu: calib_c0_duplex.csv median alone/with_d2h (run m7-duplex); local/nfs: a2.csv real, median ms/load S0_full vs none (run m7-a2)"
+}

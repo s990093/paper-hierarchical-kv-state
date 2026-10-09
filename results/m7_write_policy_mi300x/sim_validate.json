@@ -1,0 +1,110 @@
+{
+ "cells": 114,
+ "frac_within_10pct": 1.0,
+ "median_abs_err": 0.39844295680255826,
+ "max_abs_err": 4.976561070259655,
+ "direction": [
+  {
+   "cfg": "('fifo', 35.4159, 'nfs', 0.0, 1.0, 0, 0.25)",
+   "meas_S5_vs_best": -41.2,
+   "sim_S5_vs_best": -41.2,
+   "same_sign": true
+  },
+  {
+   "cfg": "('fifo', 35.4159, 'nfs', 0.0, 1.0, 0, 0.5)",
+   "meas_S5_vs_best": -48.6,
+   "sim_S5_vs_best": -48.3,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 3.69, 'nfs', 0.0, 1.0, 0, 0.25)",
+   "meas_S5_vs_best": -10.8,
+   "sim_S5_vs_best": -10.1,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 3.69, 'nfs', 0.0, 1.0, 0, 0.5)",
+   "meas_S5_vs_best": 0.1,
+   "sim_S5_vs_best": 0.0,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'local', 0.0, 1.0, 0, 0.25)",
+   "meas_S5_vs_best": -14.3,
+   "sim_S5_vs_best": -13.4,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'local', 0.0, 1.0, 0, 0.5)",
+   "meas_S5_vs_best": -3.7,
+   "sim_S5_vs_best": -4.1,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 0.5, 0, 0.25)",
+   "meas_S5_vs_best": -21.9,
+   "sim_S5_vs_best": -22.3,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 0.5, 0, 0.5)",
+   "meas_S5_vs_best": -3.6,
+   "sim_S5_vs_best": -3.5,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 1.0, 0, 0.25)",
+   "meas_S5_vs_best": -22.7,
+   "sim_S5_vs_best": -19.8,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 1.0, 0, 0.5)",
+   "meas_S5_vs_best": -3.6,
+   "sim_S5_vs_best": -3.5,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 1.0, 0, 1.0)",
+   "meas_S5_vs_best": -0.4,
+   "sim_S5_vs_best": 0.0,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 1.0, 1, 0.25)",
+   "meas_S5_vs_best": -24.6,
+   "sim_S5_vs_best": -22.0,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 1.0, 1, 0.5)",
+   "meas_S5_vs_best": -1.0,
+   "sim_S5_vs_best": 0.0,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 1.0, 2, 0.25)",
+   "meas_S5_vs_best": -0.0,
+   "sim_S5_vs_best": -0.0,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 0.0, 1.0, 2, 0.5)",
+   "meas_S5_vs_best": -2.3,
+   "sim_S5_vs_best": -5.0,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 2.0, 1.0, 0, 0.25)",
+   "meas_S5_vs_best": -18.7,
+   "sim_S5_vs_best": -14.4,
+   "same_sign": true
+  },
+  {
+   "cfg": "('share', 35.4159, 'nfs', 2.0, 1.0, 0, 0.5)",
+   "meas_S5_vs_best": -0.4,
+   "sim_S5_vs_best": 0.0,
+   "same_sign": true
+  }
+ ]
+}

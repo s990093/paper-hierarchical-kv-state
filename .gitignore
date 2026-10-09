@@ -61,3 +61,8 @@ code/mi300x/*.local
 
 # ── 論文 PDF（版權屬原作者，public repo 不散布）──────────────────────
 papers/*.pdf
+
+# ── M7：B 實驗的逐事件原始資料 2.1 MB，進 git 的是 .gz（CLAUDE.md §2 <1 MB）──
+results/m7_write_policy_mi300x/b_share.csv
+# 08 消融的 GPU 確認還在跑；跑完再進 git
+results/m7_write_policy_mi300x/b2_*.csv

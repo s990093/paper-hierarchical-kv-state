@@ -6,7 +6,7 @@
 > 3. 延後寫入、成本感知逐出這些簡單策略，會不會追平「寫入時就依位置放」。
 
 **上層**：核心問題見 [../CORE_QUESTION_20261008.md](../CORE_QUESTION_20261008.md)，這個資料夾是回答它的工具之一。
-**狀態**：設計完成，還沒開始跑。這裡沒有任何實驗結果。
+**狀態**：2026-10-08 已在 MI300X 上跑完（C、A0、A1、A2、B、C6）。**結果與判定見 [07_report.md](07_report.md)**；文獻更新見 [report/related_papers_update.md](report/related_papers_update.md)。結論：照 `05` §6 的判準，S5 比最好的簡單策略差或持平（< 5%）→ 簡單策略追平。
 **平台**：AMD MI300X（10/8 由 3090 改過來）。卡是獨佔的，但節點和 7 個鄰居共用；沒有本地 NVMe，所以 SSD 層用限速器模擬。
 **舊資料**：文中引用的舊量測與程式（RUNLOG、RUNLOG_MI300X、`code/` 等）都以 commit `9deda4f` 為準。之後就算 main 刪掉，也可以從這個 commit 取回。
 
@@ -21,6 +21,9 @@
 | [03_strategies.md](03_strategies.md) | 9 個策略的演算法（論文寫法）、每兩組差在哪、和老師點名的做法比較 | 實作前；要說明「我的方法跟別人差在哪」時 |
 | [04_related_work_baselines.md](04_related_work_baselines.md) | 要和哪些論文比、怎麼比才公平、參考它們實驗的地方 | 被問「為什麼選這些對手」時 |
 | [05_experiments.md](05_experiments.md) | 平台、I/O 模擬、實驗 C／A0／A1／A2／B、量測、統計、判準、要給老師的圖 | 執行實驗時 |
+| [07_report.md](07_report.md) | **第一階段實驗報告**：總表、結論、校準、A0–A2、B、敏感度、限制 | 先讀這份 |
+| [QUESTIONS.md](QUESTIONS.md) | **目前的問題與狀態**（已回答／進行中／要找老師的） | 想知道現在卡在哪 |
+| [08_ablation_plan.md](08_ablation_plan.md) | 消融實驗設計：「寫入時決定」在什麼條件下不會被 Cake 抵消（判準開跑前寫死） | 第二輪實驗 |
 | [06_plan_and_logging.md](06_plan_and_logging.md) | 時程、檢查點、平台 B 要注意的事、停止條件、記錄格式、第二和第三階段 | 排進度、要找老師時 |
 
 ---
