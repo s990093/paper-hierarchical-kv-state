@@ -1,0 +1,24 @@
+# A_EfficientAgent EfficientAgent: What Makes KV Cache Offloading Work for Concurrent Agents?
+
+- **出處**：Kunming Shao, Jierun Chen, Jiangnan Yu, Xiao-Hui Li, Chaofan Tao, Yanli Wang, Huanxin Lin, Kwang-Ting Cheng, Chi Ying Tsui, Haoli Bai（HKUST、Huawei、HKU、SYSU）。arXiv 2609.33762v1，2026-09-27，cs.DC，標 Preprint。venue：未查證。<https://arxiv.org/abs/2609.33762>，程式碼 <https://github.com/KunmingSHAO/efficientagent_release>。讀了 p.1–9（頁碼是 PDF 實體頁；附錄沒讀）。
+- **寫入時做了什麼決定**：**存不存**（host 層的寫入准入）。排程器第一次查某個等待中請求的 cached prefix 時，就決定一次「要不要把這個請求的新 KV 存進 host 層」〔原文 p.5〕。
+  - 規則（Eq. 6）：壓力 p_t＝（working set 估計 > host 容量）且（host 層已滿且正在淘汰）；有壓力而且這個請求要新寫的 chunk 數 u > κ 時，**整個請求的新 KV 都不存**〔原文 p.5〕。意思是：有壓力時，只延伸還在 host 裡的 prefix，不重寫已經被淘汰的大段 refill〔原文 p.2、p.5〕。
+  - 寫入前另外做去重〔原文 p.5〕。
+- **用什麼資訊做決定？寫完之後還在不在？（N1）**
+  - 用的是 working set 估計（最近一段時間的 agent 數 A 與平均 prompt 長度）加上 host 層「滿了、正在淘汰」的回報〔原文 p.5〕。這些資訊寫完之後**還在**，不是 N1。
+  - 原文的 Proposition 1：LRU 層只在「下次重用距離 D ≥ 容量」的 miss 上拒絕插入時，原本會命中的仍然命中〔原文 p.5〕。〔判讀〕這等於說：寫入准入的效果是「不讓註定被淘汰的寫入把有用的 prefix 擠掉」（cache pollution），所以理論上，一個「插入在 LRU 尾端」的淘汰時版本也可能做到同樣的事。原文沒有比這個版本。
+- **有沒有和延後版、寫穿版、背景版比較？**
+  - 對照組是「Offload」＝LMCache host 層、不做准入（等於全部寫、滿了 LRU 淘汰），以及「fixed admission」＝每個請求都套用過濾〔原文 p.5、p.6〕。
+  - 5 GiB/rank（容量 < working set）：fixed admission 讓重算的 prefill 少 36%（76.7M→48.9M token）、makespan 少 10.8%（209→186 min）；host 寫入從 81.7M 降到 2.6M token/rank〔原文 p.7〕。
+  - 40 GiB/rank（容量 > working set）：**同一條准入規則反過來有害**：重算的 prefill 變 4.3 倍（5.3M→22.8M）、makespan 長 30.6%（124→162 min）〔原文 p.7〕。
+  - capacity-conditioned admission 兩邊都對：5 GiB 少 35% 重算、makespan 少 10.4%；40 GiB 時壓力訊號從不觸發，等同全部寫〔原文 p.7〕。10 GiB 時重算少 14%、host 寫入少 73%（22.4M→6.0M）〔原文 p.8〕。
+  - 背景：5 GiB 時，寫進 host 的 chunk 有 79.2% 在下一次呼叫前就被淘汰；新 KV 有 97.3% 會在下一次呼叫再出現〔原文 p.2〕。
+  - 沒有和「背景提早搬」或「寫穿到更下一層」比（只有 GPU＋CPU 兩層）〔原文 p.6 設定〕。
+- **硬體**：8×H20（TP8）為主；另有 8×RTX 3090、2×H800、8×H800〔原文 p.6〕。H20 上從 host 還原中位 0.86 µs/token/rank，prefill 至少 5.6 µs/token〔原文 p.4〕。host 容量 3–80 GiB/rank，chunk 1,024 token〔原文 p.6〕。
+- **模型架構、模態**：Qwen3-Coder-30B-A3B（MoE，GQA，L=48、H_kv=4）；另有 dense 的 Qwen2.5-Coder-32B〔原文 p.4、p.6〕。文字，OpenHands coding agent、SWE-bench Verified 的重播（4,427 次呼叫、147.1M prompt token）〔原文 p.6〕。vLLM 0.13.0＋LMCache 0.3.12〔原文 p.6〕。
+- **和本研究的關係**
+  - **支持 H8 的方向，但同時是它的強對照組**：「不寫」在容量不夠時有用（−36% 重算），容量夠時有害（4.3 倍重算）。H8 的 oracle 上限要用「依容量條件准入」當對照，不能只跟全部寫比〔判讀〕。
+  - **威脅 S5 的「依位置」**：它的准入是 position-blind（只看要寫的 chunk 數和壓力），就拿到 35% 的重算減少〔原文 p.7〕。S5 若要宣稱「依位置」有額外價值，必須贏過這種准入〔判讀〕。
+  - **和 Cake 的衝突**：它假設 prefix 覆蓋必須從開頭連續（LMCache 的做法）〔原文 p.4〕，而 Cake 允許「後段有、前段沒有」。在 Cake 下，「不寫前段」不會讓後段失效，所以准入的取捨會不同——這可能是 S5 在 agent 負載上的一個切入點〔判讀〕。
+  - **H3（併發）**：16 個 agent 同時跑、一個 agent 等工具時其他 agent 在跑，所以重用間隔被拉長到中位 9.0 s（5 GiB 時）〔原文 p.2〕。這是真實的「沒有空閒」情境，但它顯示的問題是容量（thrashing），不是搬移時機〔判讀〕。
+- **證據等級**：數字〔原文 p.X〕，實機（H20）重播；Proposition 1 的推論和對 S5 的意義是〔判讀〕。

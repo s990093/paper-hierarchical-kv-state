@@ -64,4 +64,7 @@ papers/*.pdf
 
 # ── M7：B 實驗的逐事件原始資料 2.1 MB，進 git 的是 .gz（CLAUDE.md §2 <1 MB）──
 results/m7_write_policy_mi300x/b_share.csv
-# 08 消融的 GPU 確認還在跑；跑完再進 git
+# 11 第 1 輪：>1 MB 的模擬原始列只進 .gz
+results/m7_explore_mi300x/r1_sim_longalpaca7b.csv
+# GPU 崩潰時的 core dump（幾十 GB）
+gpucore.*

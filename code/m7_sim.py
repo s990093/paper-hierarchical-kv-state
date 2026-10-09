@@ -25,7 +25,7 @@ from m7_restore_harness import GiB, Tier  # noqa: E402
 from m7_write_policy import RES, SCHED, BState, load_f, load_params, make_workload  # noqa: E402
 
 MiB = 1 << 20
-CB = 64 * MiB
+CB = int(os.environ.get("M7_CHUNK_BYTES", 64 * MiB))   # 換模型時和 m7_write_policy 一起設
 D2H_BPS = 44.8 * GiB      # C0（calib_c0.csv）D2H 實測中位數，只用於 capture 的時間
 
 
@@ -174,7 +174,7 @@ def validate(a):
 
 
 # ------------------------------------------------------------------ sweep
-STRATS = ["S0", "S1", "S2b", "S4", "S4+", "S4+P", "S4L", "S4B", "S5", "S5s", "S5L", "S5P", "S5c"]
+STRATS = ["S0", "S1", "S2b", "S4", "S4+", "S4+P", "S4L", "S4B", "S4W", "S4C", "S5", "S5s", "S5L", "S5P", "S5c"]
 BASE = dict(ssd_dev="nfs", io_model="share", gap=0.0, ssd_frac=1.0, wl_seed=0, cpu_gibps=None, release="free",
             workload="chat", f_scale=1.0)
 FACTORS = {

@@ -25,6 +25,9 @@
 | [QUESTIONS.md](QUESTIONS.md) | **目前的問題與狀態**（已回答／進行中／要找老師的） | 想知道現在卡在哪 |
 | [08_ablation_plan.md](08_ablation_plan.md) | 消融實驗設計：「寫入時決定」在什麼條件下不會被 Cake 抵消（判準開跑前寫死） | 第二輪實驗 |
 | [09_ablation_report.md](09_ablation_report.md) | **消融報告**：模擬掃描＋GPU 確認；結論是寫入時決定被 Cake 抵消（GQA），唯一沒排除的例外是重算便宜（MHA） | 讀完 07 之後 |
+| [10_breakthrough_plan.md](10_breakthrough_plan.md) | **破解計劃**（未執行）：給 agent 的搜尋計劃——往哪找「寫入時才有、之後就沒有」的東西；§0 一頁看懂「問題是什麼、要證明什麼」 | 迷失方向時先讀 §0 |
+| [11_round1_plan.md](11_round1_plan.md)、[12_round1_report.md](12_round1_report.md) | 破解第 1 輪：判準與報告 | 想知道第 1 輪找到什麼 |
+| [FULL_REPORT.md](FULL_REPORT.md) | **完整報告**：第一階段＋消融＋第 1 輪，一頁看懂＋下一步選項 | **先讀這份** |
 | [06_plan_and_logging.md](06_plan_and_logging.md) | 時程、檢查點、平台 B 要注意的事、停止條件、記錄格式、第二和第三階段 | 排進度、要找老師時 |
 
 ---

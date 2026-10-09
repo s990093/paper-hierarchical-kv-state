@@ -1,0 +1,21 @@
+# A_SuffixReplay Just Let Linear States Forget the Distant Past: Prefix Caching via SuffixReplay for Hybrid LLMs
+
+- **出處**：Yirui Liu, Ruoling Qi, Xuaner Wu, Yuxin Jin, Jian Chen, Penghang Liu, Yafei Huang, Jiawei Shao, Xuelong Li（TeleAI、SJTU、Tsinghua 等）。arXiv 2609.33477v1，2026-09-27，cs.AI。venue：未查證。<https://arxiv.org/abs/2609.33477>。讀了 p.1–3、p.6–10、p.12（PDF 實體頁）。
+- **寫入時做了什麼決定**：**存什麼格式**——不存線性注意力層的狀態檢查點，改存每層的**輸入 hidden state**（稱為 anchor），而且層與 token 都稀疏取樣（預設 ρ＝1/16、64-token page、每 page 留最後 4 列 anchor）〔原文 p.1 摘要、p.8〕。命中時只重播最近 k 個 anchor 來近似當時的遞迴狀態：S_j ≈ f(h_{j−k+1},…,h_j)〔原文 p.2〕。
+  - anchor 在**每一次 prefill 和 decode 步**都要寫，包括之後永遠不會命中的請求〔原文 p.6〕；寫入做在 CUDA graph 內〔原文 p.6–7〕。
+- **用什麼資訊做決定？寫完之後還在不在？（N1）**
+  - 被存的 hidden state 只在 forward 經過時存在；寫完就沒有了〔判讀，與 HCache 同一類〕。
+  - 遞迴狀態「無法回推到任意較早的 prefix」〔原文 p.1–2〕。這是 N1 的結構原因。
+- **有沒有和延後版、寫穿版、背景版比較？**
+  - 基線是 **SGLang 原生的混合模型 prefix cache**。原文描述它的寫入規則：在 prefill chunk 邊界、請求結束時（向下對齊到 256 token）、以及某個 cached prefix 第一次被分叉延續時存線性狀態檢查點；放在 HBM 的固定 slot pool〔原文 p.8〕；預設每 8192 token 一個檢查點〔原文 p.3〕。
+  - 分叉點落在檢查點之間時，SGLang 要重算 0.6–7.7K token，TTFT 鋸齒狀 30–175 ms，SuffixReplay 約 33 ms；8 個 session 同時跑時中位 TTFT 369 ms → 72–94 ms；即使把 SGLang 的 prefill chunk 縮到 2048（檢查點變密），SGLang 仍慢 1.5–2 倍〔原文 p.10〕。分叉點剛好在檢查點時，兩者差 ≤2 ms〔原文 p.10〕。
+  - 容量實驗：SGLang 的線性狀態檢查點只能留在 HBM slot pool，不會隨 KV page 一起搬到 host；SuffixReplay 的 anchor 是普通 page，會跟 KV 一起搬〔原文 p.9、p.12〕。
+  - 沒有「延後版」（例如事後補存檢查點）可比，因為結構上做不到〔判讀〕。
+- **硬體**：單張 NVIDIA H800 80 GB；容量實驗開 SGLang host KV cache，host 預算 128 GB〔原文 p.8–9〕。
+- **模型架構、模態**：OLMo-Hybrid-7B、Qwen3.5-4B、Qwen3.6-27B-FP8（全注意力層＋線性注意力層的混合模型）；文字；LongBench、RULER（品質），ShareGPT、SWE-rebench、ToolMind、doc QA（服務）〔原文 p.1、p.8–9〕。Qwen3.5-4B 一個線性狀態檢查點約 49 MiB，一個 token 的 KV 約 32 KiB，差約 1,500 倍〔原文 p.2〕。
+- **品質**：**有損**（近似狀態）。三個模型在 LongBench、RULER 上保留 full prefill 品質的 91.4–100%〔原文 p.1〕。
+- **和本研究的關係**
+  - **威脅 H7**：它提供了一個「不用在寫入時選檢查點位置」的做法——改存稀疏的 hidden state，讀取時重播。代價是有損。如果無損是硬條件，H7 仍站得住；否則這是更簡單的做法〔判讀〕。
+  - **支持 N4／H6 的一般論點**：存什麼格式（狀態 vs hidden state anchor）決定讀取時能在哪裡命中、花多少重算〔原文 p.2〕。這是 HCache 思路在混合模型上的延伸〔判讀〕。
+  - **§5.6 查證附帶收穫**：SGLang 對混合模型的檢查點規則（chunk 邊界、請求結束、第一次分叉）與「檢查點留在 HBM、不跟 host 層走」〔原文 p.8–9〕，是 H7 若要做多層放置時的現況基線。
+- **證據等級**：〔原文 p.X〕；威脅判斷〔判讀〕。

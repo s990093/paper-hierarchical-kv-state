@@ -31,6 +31,8 @@ from m7_model import CHUNK, KVModel  # noqa: E402
 from m7_restore_harness import GiB, Restorer, Tier, sleep_until, write_boundary  # noqa: E402
 
 MiB = 1 << 20
+# 每個 chunk 的位元組數；預設 Llama-3.1-8B 的 64 MiB。換模型時用 M7_CHUNK_BYTES 設（第 1 輪破解計劃）
+CHUNK_BYTES = int(os.environ.get("M7_CHUNK_BYTES", 64 * MiB))
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "..", "results", "m7_write_policy_mi300x")
 
@@ -68,7 +70,7 @@ def load_params():
 def load_f():
     """C1 的 f(i)（秒），取每個 chunk 的中位數；GPU 閒。"""
     import pandas as pd
-    d = pd.read_csv(os.path.join(RES, "calib_c1.csv"))
+    d = pd.read_csv(os.environ.get("M7_F_CSV") or os.path.join(RES, "calib_c1.csv"))
     d = d[(d.item == "f_chunk") & (d.gpu_state == "idle")]
     m = d.groupby("chunk_idx").ms.median()
     return [float(m[i]) / 1e3 for i in sorted(m.index)]
@@ -178,7 +180,7 @@ def gpu_states():
 class Session:
     def __init__(self, km: KVModel, n_chunks: int, seed: int):
         g = torch.Generator().manual_seed(seed)
-        self.ids = torch.randint(1000, 120000, (n_chunks * CHUNK + 512,), generator=g).to(km.device)
+        self.ids = torch.randint(1000, min(120000, km.cfg.vocab_size), (n_chunks * CHUNK + 512,), generator=g).to(km.device)
         self.n = n_chunks
 
 
@@ -317,8 +319,8 @@ def a0(a):
 def a1_layout(strategy, n, f, P, tiers):
     """回傳 (存在哪一層的 list, 每層寫入的 chunk 數 dict, b)。"""
     cpu, ssd = tiers["cpu"], tiers["ssd"]
-    ell_ssd = 64 * MiB / ssd.read_Bps + ssd.c_s
-    ell_cpu = 64 * MiB / cpu.read_Bps + cpu.c_s
+    ell_ssd = CHUNK_BYTES / ssd.read_Bps + ssd.c_s
+    ell_cpu = CHUNK_BYTES / cpu.read_Bps + cpu.c_s
     if strategy == "S0":
         return [ssd] * n, {"ssd": n}, 0
     if strategy == "CPUall":
@@ -364,10 +366,10 @@ def a1(a):
                                     now = time.perf_counter()
                                     for k, cnt in w.items():
                                         for _ in range(cnt):
-                                            tiers[k].reserve_write(64 * MiB, now)
+                                            tiers[k].reserve_write(CHUNK_BYTES, now)
                                     t_ws = tiers["ssd"].backlog(now)
                                 else:
-                                    t_ws = w.get("ssd", 0) * 64 * MiB / tiers["ssd"].write_Bps
+                                    t_ws = w.get("ssd", 0) * CHUNK_BYTES / tiers["ssd"].write_Bps
                                 with Guard(allow_pids=[bz.pid] if bz.pid else []) as g:
                                     rec = restore_once(km, rs, s, n, host, loc, "cake")
                                 bad = verify(km, host, loc, n) if (rep == 0 and gap == a.gaps[0]) else ""
@@ -499,7 +501,7 @@ def a2(a):
             real.write_file(f"x{i}", hostX[i]); rr.keys[i] = f"x{i}"
         os.sync()
         sim = mk_tier(f"ssd_{dev}", P[dev])
-        ell = 64 * MiB / sim.read_Bps
+        ell = CHUNK_BYTES / sim.read_Bps
         b = write_boundary(nW, f, ell)
         bg = {"none": 0, "S3_partial": nW - b, "S0_full": nW}
         for bgname, cnt in bg.items():
@@ -523,7 +525,7 @@ def a2(a):
                             else:
                                 now = time.perf_counter()
                                 for _ in range(cnt):
-                                    sim.reserve_write(64 * MiB, now)
+                                    sim.reserve_write(CHUNK_BYTES, now)
                                 bg_t["s"] = sim.backlog(now)
                         km.kv[:, :, :, :nX * CHUNK].zero_(); torch.cuda.synchronize()
                         t0 = time.perf_counter()
@@ -560,6 +562,11 @@ STRATS_B2 = ["S4L", "S5L", "S5P", "S5c"]
 # 08 §8 修正（2026-10-09，看過模擬掃描之後才加，只會讓結論更保守）：S4B＝全寫 CPU，滿了才「延後」套用同一個分界 b：
 # 先搬任何 session 裡 i<b_cpu(目前歷史長度) 的 chunk（最久沒用的 session 先），沒有了才照 S4L。S5L 的延後版對照組
 STRATS_B2 += ["S4B"]
+# 11_round1_plan.md（2026-10-09 晚，開跑前寫死）：S4W＝背景版。寫入同 S4B（全寫 CPU），淘汰順序同 S4B，
+# 但每輪結束就先搬到 CPU 至少空出 25%，不等滿。hold 下它是「延後但不卡請求路徑」的對照組
+STRATS_B2 += ["S4W"]
+# 11 追加 2（2026-10-09 18:05）：S4C＝預先清理版。寫入、淘汰同 S4+；每輪結束後確保淘汰順序最前面的 25%×容量 個 chunk 有 SSD 副本（複製、不移走）
+STRATS_B2 += ["S4C"]
 # 每輪新增的 chunk 數：chat＝每輪 8K；doc＝第 1 輪一次寫 32K，之後每輪問 512 token
 SCHED = {"chat": [16, 16, 16, 16], "doc": [64, 1, 1, 1]}
 
@@ -604,7 +611,7 @@ class BState:
         self.ssd_used = 0
         self.w_bytes = {"cpu": 0, "ssd": 0}
         self.n_demote = 0
-        self.ell = {k: 64 * MiB / v.read_Bps for k, v in tiers.items()}
+        self.ell = {k: CHUNK_BYTES / v.read_Bps for k, v in tiers.items()}
 
     # --- 動作 ---
     def _put(self, key, tier, now):
@@ -615,8 +622,8 @@ class BState:
                 self.cpu_used += 1
             else:
                 self.ssd_used += 1
-            done = self.t[tier].reserve_write(64 * MiB, now)
-            self.w_bytes[tier] += 64 * MiB
+            done = self.t[tier].reserve_write(CHUNK_BYTES, now)
+            self.w_bytes[tier] += CHUNK_BYTES
             if tier == "ssd":
                 c["ssd_done"] = done
                 if not c["cpu"]:
@@ -701,7 +708,7 @@ class BState:
                 self._put(key, "cpu", now); self._put(key, "ssd", now)
             elif S in ("S0", "S3"):
                 self._put(key, "ssd", now)
-            elif S in ("S4", "S4+", "S4+P", "S4L", "S4B"):
+            elif S in ("S4", "S4+", "S4+P", "S4L", "S4B", "S4W", "S4C"):
                 self._put(key, "cpu", now)
             elif S in ("S5", "S5L", "S5P"):
                 self._put(key, "cpu" if i >= b_cpu else "ssd", now)
@@ -725,16 +732,28 @@ class BState:
                 ls = self._lru_session("cpu")
                 for k in sorted(k for k, c in self.c.items() if k[0] == ls and c["cpu"]):
                     self._demote(k, now)
-            elif S in ("S4+", "S5", "S5s", "S5c"):
+            elif S in ("S4+", "S5", "S5s", "S5c", "S4C"):
                 self._demote(self._cheapest("cpu"), now)
             elif S in ("S4+P", "S5P"):
                 self._demote(self._pensieve("cpu", ev_idx), now)
             elif S in ("S4L", "S5L"):
                 self._demote(self._lru_prefix("cpu"), now)
-            elif S == "S4B":
+            elif S in ("S4B", "S4W"):
                 self._demote(self._lazy_b("cpu"), now)
             else:
                 raise RuntimeError(f"{S} has no CPU tier but cpu_used={self.cpu_used}")
+        # S4C（11 追加 2 的預先清理版）：淘汰順序（同 _cheapest）最前面的 25%×容量 個 chunk，沒有 SSD 副本的就複製一份
+        if S == "S4C":
+            k = int(0.25 * self.cpu_cap)
+            order = sorted((kk for kk, c in self.c.items() if c["cpu"]), key=lambda kk: (kk[1], self.last[kk[0]]))
+            for kk in order[:k]:
+                if not self.c[kk]["ssd"]:
+                    self._put(kk, "ssd", now)
+        # S4W（11 第 1 輪新增的背景版）：每輪結束後就先搬，讓 CPU 至少空出 25%，不等到滿
+        if S == "S4W":
+            lo = self.cpu_cap - int(0.25 * self.cpu_cap)
+            while self.cpu_used > lo:
+                self._demote(self._lazy_b("cpu"), now)
         # SSD 滿
         while self.ssd_cap is not None and self.ssd_used > self.ssd_cap:
             if S in ("R0", "S1", "S0", "S3", "S4"):

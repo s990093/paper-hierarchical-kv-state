@@ -1,0 +1,22 @@
+# A_SparsePrefixCaching Sparse Prefix Caching for Hybrid and Recurrent LLM Serving
+
+- **出處**：Mikhail Shirokikh, Sergey Nikolenko。arXiv 2605.05219v1（PDF 日期 2026-05-08；arXiv 標 2026-04-17 提交），cs.LG。venue：未查證。<https://arxiv.org/abs/2605.05219>。讀了 p.1–11（PDF 實體頁；附錄的證明沒讀）。
+- **寫入時做了什麼決定**：**SSM／線性注意力狀態的檢查點放在哪些位置**。在一個 prefix 長度 N、預算 M 個檢查點下，選位置讓「未來請求的重疊深度分布」下的期望重算最少；命中時從最深的檢查點繼續，把剩下的 suffix 精確重算〔原文 p.1 摘要、p.2〕。
+  - 形式化成一維、單邊的加權 k-median，有 O(NM) 的精確 DP〔原文 p.2–3〕。
+  - 用過去請求的經驗重疊分布（指數加權 γ=0.99，每 10 個請求更新一次）〔原文 p.7〕。
+  - 注意力層的 KV 全部照存；只有遞迴層的檢查點位置不同〔原文 p.7〕。
+- **用什麼資訊做決定？寫完之後還在不在？（N1）**
+  - 決定依據（重疊分布）事後還在。但**被存的東西（中間位置的遞迴狀態）只在 prefill 經過那個位置時才存在**：遞迴層是原地更新 h_t＝F(h_{t−1}, x_t)，寫完後無法回推〔原文 p.1–2〕。原文說 Flash Linear Attention 的底層 kernel 其實會在 block-64 的位置回傳遞迴狀態，只是 Python API 沒有開放非最後位置的擷取〔原文 p.8〕。
+  - 〔判讀〕這是 N1 的標準例子：要嘛 prefill 時就存，要嘛之後重跑一次（等於延後版要多付一次 prefill）。
+- **有沒有和延後版、寫穿版、背景版比較？**
+  - 比的是不同的「寫入時」放置規則：dense、balanced、block（每 B 個 token 一個）、logarithmic、sqrt〔原文 p.7、p.9 Fig. 2〕。DP 最佳放置在 QuALITY、System Prompts 上支配所有固定預算的基線，並以較少的檢查點追平或超過最強的 block caching；低預算時差最多〔原文 p.1、p.9〕。
+  - **沒有延後版**（例如「之後被重疊命中再補存」），也沒有和 Marconi 直接比：原文說 Marconi 處理的是條目間的准入／淘汰，這裡固定用「保留最後 K 個條目」來隔離條目內的放置〔原文 p.8〕。
+  - 實驗中檢查點是在**另外一次不計時的 run** 擷取的〔原文 p.8〕，所以寫入端的成本沒有量到。
+- **硬體**：NVIDIA RTX 2080 Super 8 GB、i5-12400F、16 GB DDR4；HF Transformers、PyTorch 2.10、CUDA 13.0；block B＝64（與 FLA kernel 一致；方法段寫 B＝128，兩處不一致，原文如此）〔原文 p.7、p.8〕。只量一個代表性的 layer group（1 個全注意力層＋3 個 GatedDeltaNet 層）〔原文 p.9〕。
+- **模型架構、模態**：Qwen-3.5-0.8B（GatedDeltaNet 混合模型）；文字。資料：QuALITY、NarrativeQA（同一文件多題）、System Prompts（真實 system prompt＋ShareGPT 查詢）〔原文 p.8〕。
+- **原文自己說的限制**：只有在「很多請求共用很長但不完全相同的 prefix」時有用；**append-only 的 chat 只要存最後一個狀態就夠**〔原文 p.2、p.11〕。
+- **和本研究的關係**
+  - **H7 已經被做掉一大半**：「寫入時決定把哪些位置的 SSM 狀態存下來」正是這篇的題目，而且有最佳化理論〔原文 p.2〕。剩下的空白是：多層（CPU／SSD）放置、和 Cake 式還原的互動、真實系統實作（它只有原型）〔判讀〕。
+  - **對 H7 動機的修正**〔判讀〕：10 §3A 寫「Cake 從後面載入需要會合點的 SSM 狀態」。但 Cake 的計算線從 token 0 往後算，本來就會一路算出 SSM 狀態；載入線只載注意力層的 KV；decode 只需要最後一個狀態（原文也說 chat 只需最後一個，p.2）。所以**還原整個 session 時，中間檢查點不是必要的**。中間檢查點只在「從中間某處分叉」（部分 prefix 重用）時才需要。H7 若要成立，負載應該是分叉型（doc 多題、system prompt、agent 分支），不是 chat 或我們的 doc 續問。
+  - 和 Marconi（准入）是互補的兩半：Marconi 決定「存哪幾個條目」，這篇決定「條目內存哪些位置」〔原文 p.2–3〕。
+- **證據等級**：方法與實驗設定〔原文 p.X〕；N1 歸類、H7 動機的修正是〔判讀〕（需要 Lit-C 或實作確認 Cake 在混合模型上的行為）。

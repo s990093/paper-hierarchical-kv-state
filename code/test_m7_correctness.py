@@ -7,6 +7,7 @@
 輸出 JSON 到 argv[1]。
 """
 import json
+import os
 import sys
 import time
 
@@ -17,10 +18,11 @@ from m7_model import CHUNK, KVModel  # noqa: E402
 
 
 def main(out):
-    L = 8192
+    # 預設 8192；M7_TEST_L 可改（第 1 輪加的，沒有用到）
+    L = int(os.environ.get("M7_TEST_L", 8192))
     km = KVModel(max_len=L + 512)
     g = torch.Generator().manual_seed(0)
-    ids = torch.randint(1000, 120000, (L,), generator=g).to(km.device)
+    ids = torch.randint(1000, min(120000, km.cfg.vocab_size), (L,), generator=g).to(km.device)
     res = {"L": L}
 
     with torch.inference_mode():

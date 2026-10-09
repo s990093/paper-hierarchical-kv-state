@@ -1,0 +1,22 @@
+# C_TailReplay Tail-Replay: Escaping the Curse of Linear Attention in Prefix Caching for Hybrid LLMs
+
+- **出處**：Yirui Liu, Ruoling Qi, Xuaner Wu, Penghang Liu, Jian Chen（China Telecom TeleAI、SJTU）。arXiv 2608.30310v1，2026-08-31，cs.LG，頁首標「Preprint」。venue：未查證。<https://arxiv.org/abs/2608.30310>。讀了 p.1–4（全文 7 頁，PDF 實體頁）。
+  - 同一組人之後的 SuffixReplay（arXiv 2609.33477）是加上系統整合的延伸版，Lit-A 已做卡：[A_SuffixReplay](A_SuffixReplay.md)。這張只記 Tail-Replay 本身。
+- **寫入時做了什麼決定**：**存什麼格式**。不存線性注意力層的狀態檢查點；每個 token 只存「全注意力（FA）層的 KV」加上「每個 FA 層的輸出 hidden state」〔原文 p.3 §3〕。
+  - 命中時：FA KV 直接重用；每一組（1 個 FA 層＋後面連續的線性層）各自從零狀態開始，把 matched prefix 最後 k＝⌈r·m⌉ 個 token 的 FA 輸出 hidden 重播一次，近似出線性層在分叉點的狀態〔原文 p.3 式 (2)〕。
+  - 存每個 FA 層的輸出 hidden，是為了讓每組第一個線性層的輸入和原本 prefill 時完全一樣，把誤差關在組內〔原文 p.3〕。
+- **用什麼資訊做決定？寫完之後還在不在？（N1）**
+  - 被存的 FA 輸出 hidden 只在 forward 經過時存在，寫完就沒有了〔判讀，與 HCache 同類〕。
+  - 線性層狀態「不能回捲到任意較早的 prefix 邊界」〔原文 p.1 摘要、p.2〕。這是 N1 的結構原因。
+- **有沒有和延後版、寫穿版、背景版比較？**
+  - 品質對照：full prefill、ZEROONLY（重用 FA KV、線性狀態歸零不重播）〔原文 p.4〕。重播 5–10% 時保留 full prefill 品質的 92.8–99.9%（LongBench、RULER）〔原文 p.1、p.4 表 1〕。
+  - 速度：32K matched prefix 時 TTFT 比 full prefill 快 9.1–14.3 倍〔原文 p.1〕。FA KV 的 host→device 傳輸和重播在不同 stream 上重疊〔原文 p.3〕。
+  - **沒有**和「存檢查點」的系統（Marconi、Sparse Prefix Caching、SGLang 原生）直接比 TTFT；沒有延後版、寫穿版、背景版〔原文 p.4 表 2 只有 FULL 與重播兩種〕。
+- **硬體**：NVIDIA H100、PyTorch 2.9.1〔原文 p.4〕。KV 放在 host memory，命中時搬到 GPU〔原文 p.3〕。
+- **模型架構、模態**：Qwen3.6-27B、Qwen3.5-4B、OLMo-Hybrid-7B，都是 Gated DeltaNet 混合模型；文字〔原文 p.4〕。**有損**（近似狀態）。
+- **和本研究的關係**
+  - **威脅 H7（若容許有損）**：它讓「寫入時選哪些位置存 SSM 檢查點」變成不需要的問題，改成「寫入時多存一份 FA 輸出 hidden」〔原文 p.2〕。
+  - **支持 N4 的一般論點**：寫入時存什麼格式（線性狀態檢查點、或 FA 輸出 hidden），決定讀取時能在哪些位置命中、要重算多少〔原文 p.2〕。
+  - 格式的大小〔算術，以本機沒有的 Qwen3-Next-80B-A3B config 代入，**不是**原文的模型〕：12 個 FA 層 × hidden 2048 × 2 bytes＝48 KiB/token，是同模型 FA KV（24 KiB/token）的 2 倍。所以這個格式在 GQA 型的 FA 層上比 KV 大。
+  - 無損是本研究第一階段的硬條件，所以它不直接取代 H7，但任何 H7 的提案都要說明「為什麼不用 tail replay」〔判讀〕。
+- **證據等級**：方法、結果〔原文 p.X〕；N1 歸類、大小算術、對 H7 的判斷〔判讀〕〔算術〕。

@@ -109,7 +109,7 @@ def c1(a):
     o = Out(a.out, ["item", "chunk_idx", "pos_end", "rep", "ms", "gpu_state"])
     km = KVModel(max_len=a.max_chunks * CHUNK + 512)
     g = torch.Generator().manual_seed(1)
-    ids = torch.randint(1000, 120000, (a.max_chunks * CHUNK + 512,), generator=g).to(km.device)
+    ids = torch.randint(1000, min(120000, km.cfg.vocab_size), (a.max_chunks * CHUNK + 512,), generator=g).to(km.device)
     # 暖機
     for i in range(4):
         km.forward_span(ids[i * CHUNK:(i + 1) * CHUNK], i * CHUNK)

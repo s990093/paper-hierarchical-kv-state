@@ -1,0 +1,23 @@
+# A_Lachesis Lachesis: Lifetime-Aware KV Cache Placement for Agent Serving across HBM and High-Bandwidth Flash
+
+- **出處**：Jaehoon Yang, Jeongmin Lee, Haneul Park, Seung Yul Lee, Nam Sung Kim, Jae W. Lee（SNU、KAIST、UIUC）。arXiv 2610.08378v1，2026-10-06，cs.AR。venue：未查證（arXiv 頁沒有 comment，PDF 沒有會議頁首）。<https://arxiv.org/abs/2610.08378>。讀了全文 p.1–11（頁碼是 PDF 實體頁）。
+- **寫入時做了什麼決定**：**放哪一層**（HBM 或 HBF）。每個「context segment」寫入前就決定：
+  - 短命的 segment 優先放 HBM，長命的放 HBF；segment 一結束就釋放〔原文 p.1 摘要、p.2〕。
+  - 引擎只看到兩個呼叫：從指定的層配一個 block，以及在 harness 回報的邊界釋放一個 segment 的 block〔原文 p.2〕。
+- **用什麼資訊做決定？寫完之後還在不在？（N1）**
+  - 依據是 agent harness 的結構：reasoning 在下一輪就被剝掉（temporal）、sub-agent 回來後只留結果（structural），這兩種「在寫入前就由 harness 決定」；worker 之間的壽命（inter-worker）在 spawn 時用 harness 的紀錄預測排序〔原文 p.2、p.5〕。
+  - 數據：reasoning segment 占一輪寫入的 66–83%，但只活一輪；output segment 活 7.6–17.2 倍久；lead-agent segment 比 sub-agent 活 4.0–6.1 倍久〔原文 p.2〕。
+  - 原文明說：「LRU 這類反應式策略在看到後續存取之前無法指定類別，事後要修正就需要 migration」〔原文 p.5〕。
+  - 〔判讀〕資訊本身（harness 的結構）寫完之後**還在**；寫入時才有的是「還沒寫進 HBF」這個狀態。延後版要多付的是一次 HBF 寫入（N2），不是資訊消失（N1）。
+- **有沒有和延後版、寫穿版、背景版比較？**
+  - **只比了 HBM-first**（HBM 有空位就放 HBM，否則放 HBF；原文說這是引擎沒有 Lachesis 時的做法）〔原文 p.9〕。
+  - 結果：多 agent trace、tight SLO 下 HBF 壽命是 HBM-first 的 1.50–2.95 倍（loose SLO 1.19–1.89 倍）；3.3–9.3 device-years 對 1.9–4.8〔原文 p.9〕。Lachesis 寫進 HBM 的量是 HBM-first 的 8.2–19.5 倍；HBM 吸收一次 run 寫入量的 19–51%，HBM-first 只有 1–7%〔原文 p.10〕。
+  - **沒有**和「先放 HBM、之後依壽命搬到 HBF」（延後版）、寫穿、背景版比較〔原文 p.9 只列 HBM-first〕。p.5 只用一句話論證 LRU 需要 migration，沒有量。
+- **硬體**：全部是模擬。Frontier（引擎）＋ LLMSimulator（硬體，含前作的 HBF 延伸，roofline 計價）〔原文 p.9〕。P/D 分離的 decode 節點；一顆 GPU 的 8 個 stack 槽分給 HBM/HBF：1/7、2/6、3/5、4/4，外加 H3 的 daisy chain（8/8*）；兩層讀頻寬相同，只差寫頻寬〔原文 p.9〕。HBF 每 cell 100,000 P/E（SLC）、每 stack 512 GB、寫放大 1.02〔原文 p.9〕。
+- **模型架構、模態**：Llama-4-Maverick、Qwen3-235B-A22B（都是 MoE），8 GPU，attention 用 DP、專家用 EP；文字 agent trace（τ³-bench、BFCLv4、五個 benchmark 混成的多 agent trace）〔原文 p.9〕。
+- **和本研究的關係**
+  - **支持 H1／N2**：它把「寫入量」當成主要指標，而且證明在 HBF 這種寫入額度稀缺的層，寫入時放置可以把壽命拉長 1.2–3 倍〔原文 p.9〕。這正是 H1「TTFT 一樣、少寫」的那種 Pareto 論點，只是它的稀缺資源是 P/E 次數。
+  - **支持 H8（存不存／放哪，依未來會不會被讀）**：它的資訊來源是 harness，比「預測 session 會不會回來」更確定。
+  - **威脅「寫入時決定」這個新穎性**：「寫入時依段決定放哪一層」已經有人做，而且在 10 月 6 日才出。S5 的差別只剩「依位置／重算成本、配合 Cake 雙向還原」〔判讀〕。
+  - **沒有回答延後測試**：它沒和延後版比，所以「寫入時」本身值多少，原文沒有證據〔判讀〕。如果我們要用 N2，正好可以補上這個比較。
+- **證據等級**：上面的數字都是〔原文 p.X〕（模擬結果，不是實機）；N1／N2 的歸類和威脅評估是〔判讀〕。

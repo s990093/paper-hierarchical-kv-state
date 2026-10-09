@@ -20,7 +20,8 @@ import torch.nn.functional as F
 from torch.nn.attention.bias import causal_lower_right
 
 CHUNK = 512
-MODEL_GLOB = "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*"
+# 預設 Llama-3.1-8B；第 1 輪破解計劃（11）用 M7_MODEL_GLOB 換模型（LongAlpaca-7B、Qwen3-30B-A3B），不設時行為不變
+MODEL_GLOB = os.environ.get("M7_MODEL_GLOB", "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*")
 
 
 def model_path() -> str:
@@ -37,8 +38,11 @@ class KVModel:
 
         self.apply_rope = apply_rotary_pos_emb
         self.device = torch.device(device)
+        kw = {}
+        if os.environ.get("M7_EXPERTS_IMPL"):      # MoE：eager（逐專家迴圈）或 grouped_mm
+            kw["experts_implementation"] = os.environ["M7_EXPERTS_IMPL"]
         self.hf = AutoModelForCausalLM.from_pretrained(
-            model_path(), dtype=torch.bfloat16, attn_implementation="sdpa").to(self.device).eval()
+            model_path(), dtype=torch.bfloat16, attn_implementation="sdpa", **kw).to(self.device).eval()
         cfg = self.hf.config
         self.cfg = cfg
         self.L = cfg.num_hidden_layers
@@ -81,8 +85,11 @@ class KVModel:
         for li, layer in enumerate(m.layers):
             a = layer.self_attn
             h = layer.input_layernorm(x)
-            q = a.q_proj(h).view(1, n, self.Hq, self.D).transpose(1, 2)
-            k = a.k_proj(h).view(1, n, self.H, self.D).transpose(1, 2)
+            q = a.q_proj(h).view(1, n, self.Hq, self.D)
+            k = a.k_proj(h).view(1, n, self.H, self.D)
+            if hasattr(a, "q_norm"):                  # Qwen3：每個 head 先做 RMSNorm 再 RoPE
+                q, k = a.q_norm(q), a.k_norm(k)
+            q, k = q.transpose(1, 2), k.transpose(1, 2)
             v = a.v_proj(h).view(1, n, self.H, self.D).transpose(1, 2)
             q, k = self.apply_rope(q, k, cos, sin)
             self.kv[li, 0, :, start:end].copy_(k[0])

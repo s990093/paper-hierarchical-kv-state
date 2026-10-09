@@ -1,0 +1,21 @@
+# A_Jenga JENGA: Effective Memory Management for Serving LLM with Heterogeneity
+
+- **出處**：Chen Zhang, Kuntai Du, Shu Liu, Woosuk Kwon, Xiangxi Mo, Yufeng Wang, Xiaoxuan Liu, Kaichao You, Zhuohan Li, Mingsheng Long, Jidong Zhai, Joseph Gonzalez, Ion Stoica（Tsinghua、UChicago、UC Berkeley）。arXiv 2503.18292（v1 2025-03-24）。**SOSP 2025**：arXiv PDF 沒有會議頁首；依 web 搜尋，清華翟季冬的論文頁把它列在 SOSP 2025 proceedings（未打開 ACM DL 核對）。<https://arxiv.org/abs/2503.18292>。讀了 p.1–5、p.10、p.13（PDF 實體頁）。
+- **寫入時做了什麼決定**：**配置（allocation）與每種層的快取規則**，不是跨層放置。
+  - 兩層配置器：第一層用各種 embedding 大小的最小公倍數當大 page，第二層再切給各層型〔原文 p.1 摘要〕。
+  - 提供 API 讓每種層型表達自己的 prefix-cache 命中規則與淘汰邏輯〔原文 p.1、p.4〕。
+- **用什麼資訊做決定？（N1）**：用的是**模型結構**（每層的 token 依賴型態），寫完後仍在，不是 N1。
+  - 滑動視窗層：只要視窗內的 token 還在就算命中；例：視窗 2 時 [t1,t2,t3] 中 t1 被淘汰仍算命中〔原文 p.4〕。
+  - 「滑動視窗層裡，視窗外的 token 應該優先被淘汰」〔原文 p.4〕。
+  - 跨層型要「平衡」與「對齊」淘汰：一個 token 要在所有層型都還在才算命中〔原文 p.4〕。
+  - Mamba 狀態「只有最後一個 token 需要」；VLM 的 vision embedding cache 只含圖片 token〔原文 p.1 Fig. 1、p.3〕。
+- **有沒有和延後版、寫穿版、背景版比較？**：沒有。它只管 GPU 記憶體。原文在相關研究裡說 Jenga 可以在延伸 CachedAttention、Mooncake 這類卸載系統時「提供固定大小的卸載粒度並建議 page 的卸載順序」〔原文 p.13〕，但沒有做。
+- **硬體**：預設 NVIDIA H100 80GB（2×Xeon 8480C、CUDA 12.5）；另有 NVIDIA L4〔原文 p.10〕。
+- **模型架構、模態**：Llama 3.2 Vision（mllama）、Gemma-2、Ministral（滑動視窗）、Jamba-1.5（Mamba 混合）、PaliGemma2（vision embedding cache）等〔原文 p.10〕。
+- **結果（摘要）**：GPU 記憶體使用率最多高 79.6%，吞吐最多 4.92 倍（平均 1.80 倍）〔原文 p.1〕。
+- **和本研究的關係**
+  - **H9 的「延後版」已經存在**：在 GPU 上，Jenga 用「視窗外 token 優先淘汰」的淘汰規則處理滑動視窗層〔原文 p.4〕。換到 CPU／SSD 層，延後版就是「全部寫，滿了先丟視窗外的」。所以 H9 的寫入時版本只能省「寫入量」（N2），省不了容量〔判讀〕。
+  - **H9 的條件**：視窗外的 KV 只在「從視窗外某處分叉的 prefix 命中」時有用；整段 session 還原時，滑動視窗層只需要最後 W 個 token〔原文 p.4 的命中規則，套到還原情境是〔判讀〕〕。所以「不寫視窗外的 KV」在 chat／doc 續問下沒有損失，在分叉型負載下有損失——和 H7 是同一個形狀。
+  - **H5（VLM）**：它把 vision embedding cache 當成獨立的層型管理〔原文 p.3〕，是「存 vision embedding」這個格式選擇在 GPU 上的現成實作〔判讀〕。
+  - 這篇是 vLLM 混合模型配置器的論文版（作者含 vLLM 的 Woosuk Kwon）〔原文 p.1 作者欄〕；Lit-C 若查 vLLM 對 Gemma／gpt-oss 的支援，可以從這裡追。
+- **證據等級**：〔原文 p.X〕；SOSP'25 的 venue 是 web 搜尋結果（未打開 ACM DL）；H9／H5 的推論〔判讀〕。

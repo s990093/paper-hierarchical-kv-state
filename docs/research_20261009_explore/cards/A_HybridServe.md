@@ -1,0 +1,21 @@
+# A_HybridServe Efficient LLM Inference with Activation Checkpointing and Hybrid Caching（HybridServe）
+
+- **出處**：Sanghyeon Lee, Hongbeen Kim, Soojin Hwang, Guseul Heo, Minwoo Noh, Jaehyuk Huh（KAIST）。arXiv 2501.01792v1，2025-01-03；arXiv 的 journal-ref 寫「The 43rd IEEE International Conference on Computer Design, 2025」（ICCD'25；未在 IEEE Xplore 核對）。<https://arxiv.org/abs/2501.01792>。讀了 p.1–2、p.7–10（PDF 實體頁）。
+- **寫入時做了什麼決定**：**存什麼格式**——每個 block 存成 KV（KV block）或 activation（ACT block，大小是 KV block 的一半）〔原文 p.1、p.6〕。
+  - 先決定 host 記憶體裡 ACT 與 KV block 的比例；每個請求維持同樣比例：「prefill 結束後，context block 依 Eq. 11 的比例以 activation checkpoint 或 KV 存；decode 時新 block 的配置也維持這個比例（例：3:1 時，已有 5 個 ACT、2 個 KV，下一個就配 ACT）」〔原文 p.9〕。
+  - 讀取時，ACT block 走「從 activation 重算 KV」（跳過 projection 與 FFN），KV block 走 PCIe 載入；比例的目的就是讓 PCIe 與重算平衡〔原文 p.1、p.7〕。
+- **用什麼資訊做決定？寫完之後還在不在？（N1）**
+  - 決定依據是離線的時間模型（PCIe 時間 vs 計算時間）〔原文 p.8〕，事後仍在。
+  - 但**被存的 activation 只在 forward 時存在**；寫成 KV 之後就回不去 activation，反之亦然〔判讀，同 HCache〕。所以格式選擇是 N1＋N4。
+- **有沒有和延後版、寫穿版、背景版比較？**
+  - 對照組：FlexGen、DeepSpeed-Inference、以及「只存 activation」的 HybridServe-ActCache〔原文 p.10〕。
+  - 吞吐對 FlexGen 2.19 倍、對 activation-only 1.35 倍（幾何平均）〔原文 p.2〕。
+  - 沒有延後版（例如「先存 KV，空間不夠時轉成 activation」——這在結構上做不到，因為 activation 已經不在了）〔判讀〕。
+- **硬體**：單張 RTX 4090 24 GB、PCIe 4.0 x16；雙路 Xeon Gold 6326、882 GB DDR4〔原文 p.10〕。權重和 KV 都卸載到 host。
+- **模型架構、模態**：OPT-6.7B／13B／30B／66B（**MHA**），FP16；文字〔原文 p.10〕。50% 重算比例時延遲增加 1.45 倍（OPT-30B）、1.31 倍（OPT-66B）〔原文 p.5〕。
+- **範圍**：單一批次的 decode 卸載（FlexGen 型、吞吐導向），**不是跨請求重用**〔原文 p.1–2〕。
+- **和本研究的關係**
+  - **H6 已經有人做到「寫入時依比例選格式、讀取時一部分重算一部分載入」**，而且比例是為了讓計算與傳輸平衡——這正是 Cake 會合點的精神，只是單位是 block 數量而不是位置〔判讀〕。
+  - 它和 HCache 都只做 MHA（OPT）；§3A 的算術說 GQA 下 hidden state 是 KV 的 2 倍，這個格式選擇在 GQA 上沒有空間。H6 若做，模型只能是 LongAlpaca-7B 這類 MHA〔判讀〕。
+  - 跨請求、多層（CPU／SSD）、依位置選格式，原文都沒做。H6 剩下的空白是「跨請求 × 依位置 × 多層」〔判讀〕。
+- **證據等級**：〔原文 p.X〕；H6 的意義〔判讀〕。

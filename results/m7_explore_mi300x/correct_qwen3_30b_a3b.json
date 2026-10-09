@@ -1,0 +1,19 @@
+{
+ "L": 8192,
+ "hf_twice_bitwise_equal": true,
+ "hf_twice_maxabs": 0.0,
+ "own_vs_hf_maxabs_logit": 0.15625,
+ "own_vs_hf_argmax_equal": true,
+ "own_vs_hf_top5_overlap": 5,
+ "own_vs_hf_K_maxabs_layers_0_mid_last": [
+  0.375,
+  3.1171875,
+  1.515625
+ ],
+ "recompute_same_chunking_bitwise_equal": true,
+ "recompute_same_chunking_maxabs": 0.0,
+ "host_roundtrip_bitwise_equal": true,
+ "chunk_bytes": 50331648,
+ "torch": "2.10.0+rocm7.0",
+ "hip": "7.0.51831"
+}
