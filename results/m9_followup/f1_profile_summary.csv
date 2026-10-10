@@ -1,0 +1,5 @@
+run_id,ts,cfg,backend,wall_s,attention_s,gemm_s,memcpy_s,other_s,top_kernel
+20261010-092136-f1-prof-off,2026-10-10T11:28:56+00:00,off,RocmAttentionBackend,2.23064,1.3667,0.7587,0.0004,0.0757,_fwd_kernel.kd
+20261010-092234-f1-prof-cpu50,2026-10-10T11:28:56+00:00,cpu50,TritonAttentionBackend,30.52064,3.2772,0.7545,0.4337,0.0591,kernel_unified_attention.kd
+20261010-102417-f1-prof-offtri,2026-10-10T11:28:56+00:00,off_triton,TritonAttentionBackend,4.49127,3.6496,0.7531,0.0004,0.0584,kernel_unified_attention.kd
+20261010-102523-f1-prof-rocmfix,2026-10-10T11:28:56+00:00,cpu50_rocmfix,RocmAttentionBackend,109.1051,1.3598,0.7547,0.7795,0.0754,_fwd_kernel.kd

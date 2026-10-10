@@ -1,0 +1,3 @@
+run_id,ts,n_ret,ret_ttft_med,ret_ttft_p90,ret_ttft_max,ret_defer_s_max,n_ret_ttft_gt_10s,ret_prev_recomputed_frac
+20261010-111538-f1-tier50-nfs,2026-10-10T11:28:56+00:00,24,0.3056,48.8982,89.3145,88.18,6,0.0006
+20261010-065309-m8-d2-tier50-doc,2026-10-10T11:28:56+00:00,24,0.7082,56.7911,84.2602,83.1311,6,0.0007

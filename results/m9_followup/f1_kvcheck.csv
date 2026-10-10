@@ -1,0 +1,5 @@
+run_id,ts,cfg,seed,prompt_tokens,reset_ok,pass1_cached,pass2_cached,pass2_loaded_blocks,blocks_nonzero_pass1,blocks_nonzero_pass2,pass2_blocks_matching_pass1,pass1_tok,pass2_tok,coal_d2h_in,coal_d2h_out,coal_h2d_in,coal_h2d_out
+20261010-110725-f1-kvchk-cpu50,2026-10-10T11:08:39+00:00,cpu50,1,8192,True;True,0,8192,512,512,512,511,319,319,,,,
+20261010-110848-f1-kvchk-rocmfix,2026-10-10T11:10:00+00:00,cpu50_rocmfix,1,8192,True;True,0,8192,512,512,512,511,319,319,,,,
+20261010-111008-f1-kvchk-naive,2026-10-10T11:11:19+00:00,cpu50_rocmnaive,1,8192,True;True,0,8192,512,512,1,0,319,279,,,,
+20261010-111954-f1-kvchk-coal,2026-10-10T11:21:09+00:00,cpu50_rocmfix_bs256_coal,1,8192,True;True,0,8192,512,512,512,511,319,319,67584,4224,32768,2048

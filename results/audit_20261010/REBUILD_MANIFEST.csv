@@ -1,0 +1,7 @@
+audit_run_id,ts,file,n_rows,n_source_runs,what
+20261010-075351-f4-rebuild,2026-10-10T07:53:51+00:00,results/audit_20261010/m2_retrieval_rows_mi300x_rebuilt.csv,1057,18,逐請求 TTFT（cold/warm × tier × prefix × repeat），抄自各 m2 retrieval run 的 stdout。缺：req_read_bytes、chunk_queries、逐列 ts、host 爭用細節
+20261010-075351-f4-rebuild,2026-10-10T07:53:51+00:00,results/audit_20261010/m2_recompute_rows_mi300x_rebuilt.csv,277,9,逐 rep 的重算 TTFT（位置 P × rep），抄自 m2 recompute stdout；fill 列不收（原 CSV 也不收）
+20261010-075351-f4-rebuild,2026-10-10T07:53:51+00:00,results/audit_20261010/cost_constants_mi300x_rebuilt.csv,56,7,照 52803bc^:code/m2_analyze_b.py 的算法從上一檔重算；與 20260919-150345-m2-analyze stdout 逐格比對
+20261010-075351-f4-rebuild,2026-10-10T07:53:51+00:00,results/audit_20261010/recompute_fit_mi300x_rebuilt.csv,28,7,照原算法重算 C0 + a·P 擬合，與 analyze stdout 比對
+20261010-075351-f4-rebuild,2026-10-10T07:53:51+00:00,results/audit_20261010/m5_quality_mi300x_summary_rebuilt.csv,1317,52,品質摘要（每設定總分、每任務分數、與基準逐字相同數、GPU KV 容量）。逐題輸出不存在於任何地方 → 無法重建逐題 CSV
+20261010-075351-f4-rebuild,2026-10-10T07:53:51+00:00,results/audit_20261010/m5_server_paperwork_mi300x.csv,950,42,每個品質 run × 精度設定的 server cmd.txt／server.log：實際 --kv-cache-dtype、attention 後端、KV 容量、max-model-len

@@ -264,6 +264,7 @@ vLLM 0.28＋`OffloadingConnector`（CPUOffloadingSpec，48 GiB，LRU），同一
 ＊harness 的「只算」還多算了 256 個新 token；兩者的切法也不同（vLLM chunked prefill 一次 16,384 token）。
 
 - **計算端相當**：harness 的整段重算和 vLLM 在同一個量級（8K 慢 46%、16K 慢 10%，32K 反而快 18%），所以 f(i) 不是一個被做弱的稻草人。
+  - **更正（2026-10-10，F1 發現）**：這裡的 vLLM 開了 OffloadingConnector。在 ROCm 上，vLLM 0.28 只要設定任何 KV connector，就會從 ROCM_ATTN 退回較慢的 TRITON_ATTN。所以這裡比的是 vLLM 的**慢路徑**，「計算端相當」不成立。和預設的 vLLM（ROCM_ATTN，32K cold 2.24 s）比，harness 重算約慢 1.7–2 倍〔實測，見 `docs/research_20261010_followup/F1_offload_slowdown.md`〕。f(i) 偏大會讓 κ＝ℓ／f 偏小、b 偏小，Cake 有效的頻寬帶的絕對數字要重量。**這正好落在 09 標為「還沒排除的例外」的區域**：09 的模擬裡，重算便宜（f×0.25–0.5）時有少數寫入時策略存活。F5 依 f 拆開重算：free 時 f×0.5 是 0／48 格通過、最大領先 3.3%，f×0.25 有 1 個設定存活；hold 時另有 2 個設定存活〔模擬，`sim_sweep_gain.csv`、`sim_probe.csv`，F5 重算〕。這些只比了兩個對手，也沒上 GPU。**要用快的 attention 重量 f(i)，再用完整的對手集合重跑**，結論才算數。
 - **CPU 層差 9–12 倍**：vLLM 的 OffloadingConnector 在 MI300X 上只跑到 4.1 GiB/s（舊紀錄發現 11 也看到 2.3 GB/s），而裸 PCIe 是 53 GiB/s。**本 harness 的 CPU 層代表「做得好的 CPU 層」，比現在的 vLLM 快很多。** 這會直接影響 S5 的結論（CPU 越快，b 越小，S5 越像 S4+），所以 B 另外跑了一組 CPU 層＝vLLM 實測速度的敏感度（§8.4）。
 
 ---

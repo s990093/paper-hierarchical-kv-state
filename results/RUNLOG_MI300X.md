@@ -155,3 +155,34 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
    - Llama 129K 時 FP8 和 BF16 的輸出逐字相同，FP8 疑似沒生效。
    - 都沒改 main.tex。
 
+## Milestone 7e — 後續 F1–F6
+
+**設計**：`docs/research_20261010_followup/README.md`（07:38:27Z；F6 追加 07:57:08Z，都在開 agent 之前）
+**報告**：`docs/research_20261010_followup/SUMMARY.md`（self-review）
+**狀態**：DONE
+**執行時間**：2026-10-10 07:38 → 11:30 UTC
+**GPU**：F1 約 168 分、F2 約 40 分、F3 約 11 分。三個 agent 用 `flock /mlsteam/data/tiara/gpu.lock` 輪流
+**基礎設施**：`/mlsteam/workspace/bin/runsh` 修好引號（`%q`）和 RUN_ID 不一致的問題；測試 run `20261010-073741-infra-runsh-test`；備份 `runsh.bak-20261010`
+**程式**：`code/m9_f1_*`、`m9_f2_*`、`m9_f3_*`、`m9_f4_*`、`m9_f6_analyze.py`（都是新檔）
+**產出檔**：`results/m9_followup/f{1,2,3,6}_*.csv`、`results/audit_20261010/`、`docs/audit_20261010/`、`docs/paper_negative_20261010/`
+**run_id**：完整清單在各文件。主要的有：
+- F1：`20261010-075828-f1-s1-off` 到 `20261010-112119-f1-s1-rocmfixcoal`（25 個），分析 `20261010-112856-f1-analyze-final`
+- F2：`20261010-074627-f2-probe`、`-075158-f2-sweep`、`-082923-f2-sweep-la7b`，計算 `-083136-f2-final`
+- F3：`20261010-074630-f3-dequant`、`-074830-f3-fp8`
+- F4：`20261010-075351-f4-rebuild`、`-075352-f4-kappa`、`-080228-f4-platA`、`-074654-f4-platB`、`-075307-f4-platBc`、`-080301-f4-claims`
+- F6：`20261010-080457-f6-sweep-main`、`-080603-f6-sweep-l8`、`-080637-f6-sweep-l8q16`、`-081031-f6-summary`
+
+**關鍵數字**：
+- F1：attention 1.367→3.277 s（ROCM_ATTN→TRITON_ATTN，33K），doc C＝1 第一輪 2.24→4.40 s（3／3 seed），修法消掉 45–74%〔實測〕。
+- F2：GPU 726.4 W（重算）vs 168.9 W（等待）〔實測〕。
+- F3：INT8 反量化 0.031 ms／chunk；FP8 容量 2.000×〔實測〕。
+- F6：ρ<1 時 0／216〔模擬〕。
+
+### 失敗與異常
+1. **C6 的對照用的是 vLLM 的慢路徑**（F1 發現）：harness 的重算比預設 vLLM 慢約 1.7–2 倍。07 §7 的「計算端相當」不成立，已在 07 和 FULL_REPORT 加上更正。Cake 頻寬帶的絕對數字要重量。真實速度（約 f×0.5–0.6）正好落在 09 唯一還沒排除的例外，要用快的 attention 重量 f(i) 後，用完整的對手集合重跑。我一開始在 07／FULL_REPORT 寫「結構性結論仍成立」，是錯的，F5 指出後改正。
+2. **D2 的 TTFT 比較混了 attention kernel 的差**，doc C＝1「快 2 倍」是兩群中位數在跳的假象（F1）。
+3. **gpu_guard**：F1 有 19 個 run 標成已知假警報；「最後一格」的定義是事後擴充的。
+4. **F2 只有一個 seed**；主機耗電量不到。
+5. **main.tex 稽核**（F4）：241 個數字中 59 個不一致、17 個找不到來源、70 個有疑慮。沒改 main.tex。
+6. **我寫的 SUMMARY 第一版漏了 chat C＝4**（卸載有幫助的格）。F5 指出後改正。
+
