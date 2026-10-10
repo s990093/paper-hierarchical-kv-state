@@ -1,0 +1,118 @@
+run_id,ts,trace,metric,value,unit,note
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,n_req,12031,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,unit_match_rate,1.0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,ts_min,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,ts_max,3536999,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,chain_bad_pos,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,chain_bad_prev,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,req_with_dup_hash,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,max_input_len,126195,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,ts_span_raw,3536999,raw,若單位是 ms 則為 58.9 分鐘
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,n_parent_child_pairs,3975,,子請求的前綴含父請求最後一個完整 block（block≥1）
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_gap_lt_1raw_per_token,0.0,,若單位是 ms：間隔 < 1 ms/輸出 token（物理上不可能的解碼速度）的比例
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,accesses,288500,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,distinct_blocks,182790,block,工作集＝11.2 TiB（×64 MiB）
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_accesses_reuse,0.366412,,無限容量時的命中率上限
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_blocks_reused,0.241501,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_blocks_never_reused,0.758499,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,reads_per_write,1.578314,,總存取 ÷ 不同 block
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,reuses_per_reused_block,2.394663,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_reused_blocks_with_1_reuse,0.576636,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_reused_blocks_with_2_reuse,0.212917,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_reused_blocks_with_3_reuse,0.088596,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_reused_blocks_with_ge4_reuse,0.121851,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_reuse_accesses_from_blocks_with_1_reuse,0.2408,,
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,twohit_lost_frac_of_reuse_accesses,0.417595,,2-hit 准入一定錯過的重用存取比例（每個被重用的 block 錯過第 2 次）
+20261010-054225-d4-char,2026-10-10T05:42:27+00:00,conversation,frac_blocks_never_reused_firsthalf,0.726166,,只看前半段第一次出現的 block（之後還有 ≥30 分鐘未來），去掉 trace 截尾效應
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,distinct_block0,1,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,top1_block0_share_of_requests,1.0,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,top10_block0_share_of_requests,1.0,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,frac_requests_block0_shared_ge2,1.0,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,frac_requests_block0_shared_ge10,1.0,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,frac_requests_return,0.999917,,這個請求寫的任何 block 之後還有人讀
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,frac_requests_with_new_blocks_reused,0.322673,,只看有新 block 的請求：它新寫的 block 之後有人讀（session 回來）
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,conversation,frac_new_blocks_in_returning_req_but_unused,0.255218,,WTP-b 會收、但 WTP-a 不收的新 block 比例
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,n_req,3993,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,unit_match_rate,1.0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,ts_min,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,ts_max,1022025,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,chain_bad_pos,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,chain_bad_prev,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,req_with_dup_hash,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,max_input_len,191378,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,ts_span_raw,1022025,raw,若單位是 ms 則為 17.0 分鐘
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,n_parent_child_pairs,1444,,子請求的前綴含父請求最後一個完整 block（block≥1）
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_gap_lt_1raw_per_token,0.0,,若單位是 ms：間隔 < 1 ms/輸出 token（物理上不可能的解碼速度）的比例
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,accesses,121877,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,distinct_blocks,43924,block,工作集＝2.7 TiB（×64 MiB）
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_accesses_reuse,0.639604,,無限容量時的命中率上限
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_blocks_reused,0.415513,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_blocks_never_reused,0.584487,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,reads_per_write,2.774725,,總存取 ÷ 不同 block
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,reuses_per_reused_block,4.271163,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_reused_blocks_with_1_reuse,0.159224,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_reused_blocks_with_2_reuse,0.183278,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_reused_blocks_with_3_reuse,0.175004,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_reused_blocks_with_ge4_reuse,0.482494,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_reuse_accesses_from_blocks_with_1_reuse,0.037279,,
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,twohit_lost_frac_of_reuse_accesses,0.234128,,2-hit 准入一定錯過的重用存取比例（每個被重用的 block 錯過第 2 次）
+20261010-054225-d4-char,2026-10-10T05:42:28+00:00,synthetic,frac_blocks_never_reused_firsthalf,0.558798,,只看前半段第一次出現的 block（之後還有 ≥30 分鐘未來），去掉 trace 截尾效應
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,distinct_block0,2211,,
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,top1_block0_share_of_requests,0.006011,,
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,top10_block0_share_of_requests,0.047333,,
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,frac_requests_block0_shared_ge2,0.54846,,
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,frac_requests_block0_shared_ge10,0.122214,,
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,frac_requests_return,0.446281,,這個請求寫的任何 block 之後還有人讀
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,frac_requests_with_new_blocks_reused,0.148413,,只看有新 block 的請求：它新寫的 block 之後有人讀（session 回來）
+20261010-054225-d4-char,2026-10-10T05:42:29+00:00,synthetic,frac_new_blocks_in_returning_req_but_unused,0.03709,,WTP-b 會收、但 WTP-a 不收的新 block 比例
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,n_req,23608,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,unit_match_rate,1.0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,ts_min,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,ts_max,3536999,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,chain_bad_pos,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,chain_bad_prev,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,req_with_dup_hash,0,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,max_input_len,126195,,載入驗證
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,ts_span_raw,3536999,raw,若單位是 ms 則為 58.9 分鐘
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,n_parent_child_pairs,16400,,子請求的前綴含父請求最後一個完整 block（block≥1）
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_gap_lt_1raw_per_token,0.010841,,若單位是 ms：間隔 < 1 ms/輸出 token（物理上不可能的解碼速度）的比例
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,accesses,409616,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,distinct_blocks,183300,block,工作集＝11.2 TiB（×64 MiB）
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_accesses_reuse,0.552508,,無限容量時的命中率上限
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_blocks_reused,0.21539,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_blocks_never_reused,0.78461,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,reads_per_write,2.234675,,總存取 ÷ 不同 block
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,reuses_per_reused_block,5.732276,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_reused_blocks_with_1_reuse,0.553887,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_reused_blocks_with_2_reuse,0.213774,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_reused_blocks_with_3_reuse,0.097287,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_reused_blocks_with_ge4_reuse,0.135052,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_reuse_accesses_from_blocks_with_1_reuse,0.096626,,
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,twohit_lost_frac_of_reuse_accesses,0.174451,,2-hit 准入一定錯過的重用存取比例（每個被重用的 block 錯過第 2 次）
+20261010-054225-d4-char,2026-10-10T05:42:30+00:00,toolagent,frac_blocks_never_reused_firsthalf,0.761621,,只看前半段第一次出現的 block（之後還有 ≥30 分鐘未來），去掉 trace 截尾效應
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,distinct_block0,4,,
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,top1_block0_share_of_requests,0.463318,,
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,top10_block0_share_of_requests,1.0,,
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,frac_requests_block0_shared_ge2,1.0,,
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,frac_requests_block0_shared_ge10,1.0,,
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,frac_requests_return,0.999831,,這個請求寫的任何 block 之後還有人讀
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,frac_requests_with_new_blocks_reused,0.16955,,只看有新 block 的請求：它新寫的 block 之後有人讀（session 回來）
+20261010-054225-d4-char,2026-10-10T05:42:31+00:00,toolagent,frac_new_blocks_in_returning_req_but_unused,0.267989,,WTP-b 會收、但 WTP-a 不收的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,conversation,"ts_frac_mod1000_in_{0,999}",0.99626,,timestamp 落在 1000 的整數倍（或差 1）的比例：解析度約 1000 raw
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,conversation,ts_distinct_values,1180,,
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,conversation,frac_requests_session_returns,0.439365,,之後有請求的前綴包含它最後一個完整 block（session 被接著問）
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,conversation,frac_new_blocks_in_session_returning_req,0.250194,,WTP-b 會收的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,conversation,frac_new_blocks_reused,0.241501,,WTP-a 會收的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,conversation,frac_new_reused_blocks_in_nonreturning_req,0.079852,,會被重用、但所屬請求的 session 不回來（被別的 session 分叉讀走）的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,synthetic,"ts_frac_mod1000_in_{0,999}",0.003506,,timestamp 落在 1000 的整數倍（或差 1）的比例：解析度約 1000 raw
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,synthetic,ts_distinct_values,3982,,
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,synthetic,frac_requests_session_returns,0.341848,,之後有請求的前綴包含它最後一個完整 block（session 被接著問）
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,synthetic,frac_new_blocks_in_session_returning_req,0.255692,,WTP-b 會收的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,synthetic,frac_new_blocks_reused,0.415513,,WTP-a 會收的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:23+00:00,synthetic,frac_new_reused_blocks_in_nonreturning_req,0.439921,,會被重用、但所屬請求的 session 不回來（被別的 session 分叉讀走）的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:24+00:00,toolagent,"ts_frac_mod1000_in_{0,999}",0.99623,,timestamp 落在 1000 的整數倍（或差 1）的比例：解析度約 1000 raw
+20261010-054322-d4-char2,2026-10-10T05:43:24+00:00,toolagent,ts_distinct_values,1180,,
+20261010-054322-d4-char2,2026-10-10T05:43:24+00:00,toolagent,frac_requests_session_returns,0.440825,,之後有請求的前綴包含它最後一個完整 block（session 被接著問）
+20261010-054322-d4-char2,2026-10-10T05:43:24+00:00,toolagent,frac_new_blocks_in_session_returning_req,0.253121,,WTP-b 會收的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:24+00:00,toolagent,frac_new_blocks_reused,0.21539,,WTP-a 會收的新 block 比例
+20261010-054322-d4-char2,2026-10-10T05:43:24+00:00,toolagent,frac_new_reused_blocks_in_nonreturning_req,0.079228,,會被重用、但所屬請求的 session 不回來（被別的 session 分叉讀走）的新 block 比例

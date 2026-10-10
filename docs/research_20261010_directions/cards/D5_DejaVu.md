@@ -1,0 +1,22 @@
+# D5_DejaVu DéjàVu: KV-cache Streaming for Fast, Fault-tolerant Generative LLM Serving
+
+- **出處**：Foteini Strati, Sara Mcallister, Amar Phanishayee, Jakub Tarnawski, Ana Klimovic。**ICML 2024**，PMLR vol. 235，pp. 46745–46771（WebFetch 開了 proceedings.mlr.press/v235/strati24a.html 核對）。arXiv 2403.01876v1（arXiv 版沒有 ICML 頁尾）。讀了 PDF 實體頁 p.1、p.5、p.8–10。
+- **寫入時（prefill 端）做了什麼決定**：
+  - 全部傳。prompt 的 KV 先搬到**本機 CPU 記憶體**，再送到 token 機的 CPU 記憶體，以免塞爆 GPU 記憶體〔原文 p.8〕。
+  - 沒有挑層、挑 chunk 或換格式；只有「緩衝拷貝」（把很多不連續的小區塊先在 GPU 裡集中成一塊再搬）這類搬法上的優化〔原文 p.5〕。
+- **有沒有「decode 端重算一部分、只傳另一部分」**：沒有。重算只在故障復原時出現：KV 副本沒涵蓋到的那一步要重新執行〔原文 p.9〕。
+- **KV 傳輸怎麼和 prefill 重疊**：
+  - **逐層**：prompt 本來就逐層算，KV 也逐層串流，類比訓練時的 wait-free backprop；在 pipeline parallel 下，再把 microbatch i 的串流和 microbatch i+1 的計算並行〔原文 p.5〕。
+  - token 階段的串流可以完全被下一步計算蓋住，所以不用逐層〔原文 p.5〕。
+  - 用背景 CPU 執行緒加 CUDA stream 實作〔原文 p.5〕。
+- **報告的網路頻寬、硬體、模型**：
+  - 2×A100-80GB 的 VM，VM 之間 **40 Gbps**；另一組 V100-16GB 的 VM，**32 Gbps**〔原文 p.9〕。
+  - 模型：GPT2、OPT、BLOOM（HuggingFace 版，轉成 FasterTransformer），半精度〔原文 p.9〕。
+  - 微基準：500-token prompt、生成 500 token。串流到本機 SSD 或遠端 CPU 記憶體的減速在 2% 以內（細節在附錄 D）〔原文 p.10〕。Fig. 11（串流到遠端 CPU 記憶體）：天真做法對 GPT2-1.5B／OPT-13B／OPT-66B 的減速標成 131×／92×／69×；緩衝拷貝比天真做法快 95×，另外兩項優化再快 1.4×〔原文 p.10〕。
+- **有沒有報告「傳輸沒被藏住／是瓶頸」**：
+  - 分析模型用 m（串流帶來的額外開銷倍數，m ≥ 1）；「串流開銷太大（m ≥ 2）時，分離就沒有好處」〔原文 p.8〕。這是模型，沒有找出哪個頻寬下 m ≥ 2。
+  - 實測只有 500-token 的 prompt〔原文 p.9–10〕，**沒測長上下文**。〔判讀〕
+- **和 D5(d) 的關係**：
+  - 又一個「逐層邊算邊傳」的前作（D5(d) 的 (2)），頻寬 32–40 Gbps，但 prompt 很短。它「≤2% 減速」的結論**不能外推到 32K**。〔判讀〕
+  - 它的 m ≥ 2 門檻是個可以借用的判準：如果 32K 時傳輸／prefill 比 > 1，逐層管線就藏不住。〔判讀〕
+- **證據等級**：〔原文〕＋ PMLR 頁面核對 venue；外推部分〔判讀〕。

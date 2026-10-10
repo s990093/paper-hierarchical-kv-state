@@ -1,0 +1,7 @@
+run_id,ts,path,size_mib,io_mib,rep,cached_frac_before,cached_frac_after,secs,MiBps,io_p50_ms
+20261010-060332-d7-warm,2026-10-10T06:03:33+00:00,/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/blobs/18ebd81e648667b1513786fc75886044e8ccb06b04562a35cbea59a41e4bcbbf,3812,2,0,1.0,1.0,0.454,8396.8,0.232
+20261010-060332-d7-warm,2026-10-10T06:03:34+00:00,/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/blobs/18ebd81e648667b1513786fc75886044e8ccb06b04562a35cbea59a41e4bcbbf,3812,64,0,1.0,1.0,0.4856,7775.4,7.594
+20261010-060332-d7-warm,2026-10-10T06:03:34+00:00,/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/blobs/18ebd81e648667b1513786fc75886044e8ccb06b04562a35cbea59a41e4bcbbf,3812,2,1,1.0,1.0,0.4562,8355.7,0.233
+20261010-060332-d7-warm,2026-10-10T06:03:35+00:00,/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/blobs/18ebd81e648667b1513786fc75886044e8ccb06b04562a35cbea59a41e4bcbbf,3812,64,1,1.0,1.0,0.4876,7744.4,7.608
+20261010-060332-d7-warm,2026-10-10T06:03:36+00:00,/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/blobs/18ebd81e648667b1513786fc75886044e8ccb06b04562a35cbea59a41e4bcbbf,3812,2,2,1.0,1.0,0.4542,8392.9,0.232
+20261010-060332-d7-warm,2026-10-10T06:03:36+00:00,/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/blobs/18ebd81e648667b1513786fc75886044e8ccb06b04562a35cbea59a41e4bcbbf,3812,64,2,1.0,1.0,0.4863,7764.8,7.59

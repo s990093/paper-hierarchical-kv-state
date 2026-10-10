@@ -1,0 +1,24 @@
+# D5_DistServe DistServe: Disaggregating Prefill and Decoding for Goodput-optimized LLM Serving
+
+- **出處**：Yinmin Zhong, Shengyu Liu, Junda Chen, Jianbo Hu, Yibo Zhu, Xuanzhe Liu, Xin Jin, Hao Zhang。arXiv 2401.09670（v3），arXiv 的 comment 欄寫「OSDI 2024」（用 arXiv API 查的；沒有另外開 USENIX 頁面）。https://arxiv.org/abs/2401.09670 。讀了 PDF 實體頁 p.6–9、p.11、p.13。
+- **寫入時（prefill 端）做了什麼決定**：
+  - 全部都傳，格式不變（FP16），不挑層也不挑 chunk。〔判讀〕
+  - 頻寬不夠時，決定放在**部署時**，不是傳輸時：跨節點頻寬有限時，把 prefill 和 decode 的「同一個 pipeline stage」擺在同一台機器，KV 只走節點內 NVLink〔原文 p.8〕。
+  - 用「pull」：prefill 算完後把 KV 留在自己的 GPU 記憶體當排隊緩衝，decode 需要時再來拉〔原文 p.8〕。
+- **有沒有「decode 端重算一部分、只傳另一部分」**：沒有。
+- **KV 傳輸怎麼和 prefill 重疊**：
+  - 論文沒有寫逐層或逐 chunk 串流。它寫的是 prefill 算完、KV 留在 prefill GPU、decode 再拉〔原文 p.8〕。〔判讀〕所以應該是**整批、在 prefill 之後**才傳，不跟 prefill 計算重疊。
+  - 它把傳輸成本壓低的方式是「讓 KV 走 NVLink」，不是「讓傳輸被計算蓋住」。
+- **報告的網路頻寬、硬體、模型**：
+  - 估算：OPT-66B 一個 512-token 請求的 KV 約 1.13 GB；每秒 10 個請求要 11.3 GB/s，約 90 Gbps 才能「看不到」傳輸開銷。很多叢集有 InfiniBand（例如 800 Gbps）；跨節點頻寬有限時就靠節點內 NVLink（A100 之間峰值 600 GB/s）〔原文 p.6〕。
+  - 測試平台：4 個節點、32 張 A100-80GB（SXM），節點內 NVLink，**跨節點只有 25 Gbps**，所以多數實驗用「低節點親和」擺放〔原文 p.9〕。
+  - 模型：OPT-13B／66B／175B，FP16。特意選 MHA 的 OPT「給傳輸足夠壓力」；GQA／MQA 模型 KV 較小，傳輸更輕〔原文 p.9〕。
+  - 結果：OPT-175B 在 ShareGPT 上，KV 傳輸佔總延遲 **<0.1%**；95% 的請求傳輸延遲 <30 ms。原因是走節點內 NVLink〔原文 p.11〕。
+  - 有在高頻寬跨節點（InfiniBand）的情況下說傳輸「可忽略」，可以任意擺放〔原文 p.7〕——這是假設，不是那個設定下的量測。
+- **有沒有報告「傳輸沒被藏住／是瓶頸」**：
+  - 只有 p.6 的估算：要約 90 Gbps 才能讓 OPT-66B 在 10 rps 下的開銷看不見〔原文 p.6〕。25 Gbps 跨節點的情況下，它**避開**了跨節點傳輸，沒有量「硬走 25 Gbps」的結果。〔判讀〕
+  - 長上下文：KV 隨長度線性長，prefill 計算是平方成長，所以「傳輸相對於 prefill 的時間比例會下降」〔原文 p.13〕——這是論證，沒有量測。
+- **和 D5(d) 的關係**：
+  - DistServe 不是 D5(d) 的「(2) 逐 chunk 管線」對照組，比較接近「(1) 算完才傳」再加上「靠 NVLink 讓傳輸不重要」。
+  - 它 p.13 的論證（長上下文下傳輸佔比下降）**對 H11 不利**：上下文越長，前段的重算越貴，傳輸相對越便宜。〔判讀〕
+- **證據等級**：數字與機制都是〔原文〕；「整批、在 prefill 之後傳」是〔判讀〕（論文沒有明說「不重疊」，只描述了 pull 與「保留在 GPU」）。

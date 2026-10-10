@@ -1,0 +1,4 @@
+run_id,ts,n,pred_T_load,pred_T_cake,pred_speedup,pred_class,meas_R0_ttft,meas_best_cake_ttft,meas_speedup_ttft,meas_class,src_runs
+20261010-054955-d3-r1-b100,2026-10-10T05:49:56+00:00,16,0.028236,0.028236,1,not_useful,1.0711,1.0835,0.98856,not_useful,20261008-142647-m7-b-nfs-gap0
+20261010-054955-d3-r1-b100,2026-10-10T05:49:56+00:00,32,0.056472,0.054707,1.0323,not_useful,1.0711,1.0835,0.98856,not_useful,20261008-142647-m7-b-nfs-gap0
+20261010-054955-d3-r1-b100,2026-10-10T05:49:56+00:00,48,0.084708,0.081178,1.0435,not_useful,1.0711,1.0835,0.98856,not_useful,20261008-142647-m7-b-nfs-gap0

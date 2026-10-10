@@ -1,0 +1,25 @@
+# D5_KVPR KVPR: Efficient LLM Inference with I/O-Aware KV Cache Partial Recomputation
+
+- **出處**：Chaoyi Jiang, Lei Gao, Hossein Entezari Zarch, Murali Annavaram（USC）。**Findings of ACL 2025**（ACL Anthology ID 2025.findings-acl.997，用 WebFetch 開 aclanthology.org 作者頁核對）。arXiv 2411.17089v2；本機 PDF `/mlsteam/data/tiara/papers/kvpr2025_arXiv2411.17089.pdf`。讀了 PDF 實體頁 p.1–6、p.9。
+- **場景**：單機，**CPU→GPU（PCIe）**，在**decode 階段**。KV 卸載在 CPU DRAM，每一步 decode 都要搬回 GPU。不是網路、也不是 P/D〔原文 p.1–3〕。
+- **寫入時做了什麼決定**：
+  - 不是寫入時決定。切點 l 在**執行時**用線性規劃求，而且隨目前序列長度 s′ 調整，因為 s′ 在生成過程中會變〔原文 p.5〕。
+  - 〔判讀〕但它有一個隱藏的寫入時代價：要重算的那段，CPU 上必須存著**那一層的輸入 activation X^i[0:l]**；column-by-column 排程下，這些 activation 要一直存到該 batch 生成完〔原文 p.5〕。也就是寫入時要多存 activation，不只存 KV。
+- **有沒有「接收端重算一部分、只傳另一部分」**：**有，而且是同時進行**——但重算的東西不同於 Cake。
+  - 每一層：先傳前段 token 的 activation X^i[0:l]，GPU 用 K = X·W_K、V = X·W_V 重算 K^i[0:l]、V^i[0:l]；同時從 CPU 傳後段的 K^i[l:s′]、V^i[l:s′]；最後合併做 attention〔原文 p.4–5〕。
+  - 每層時間 t^i = M_X/v_com + max(t_recomp, M_KV/v_com)；activation 大小 b·l·h·p，KV 大小 2·b·(s′−l)·h·p〔原文 p.5，式 (6)(10)〕。
+  - 〔判讀〕**和 Cake 的關鍵差別**：KVPR 重算的只是**單層的 K/V 投影**（從存好的 activation 出發，每 token 每層成本固定，和位置無關），不是 Cake 那種從 token 跑完整 prefill（成本隨位置增加）。所以 KVPR 本質上是「**傳 X（½ 大小）＋小矩陣乘法**」換「傳 KV」，比較像 HCache 的切分版；切點不受 attention 平方成本影響。它是「前段重算、後段載入」的形狀，但成本結構和 Cake 不同。
+- **KV 傳輸怎麼和計算重疊**：逐層。六條通訊流（載權重、載 KV、載 activation、載重算用 activation、存 KV、存 activation），加上雙緩衝和預取〔原文 p.5〕；細粒度 pipeline 先載 W_K、W_V，讓重算可以提早開始〔原文 p.6〕。
+- **報告的頻寬、硬體、模型**：
+  - A100-40GB，PCIe 4.0 x16（32 GB/s），64 核 AMD EPYC〔原文 p.6〕。
+  - OPT-6.7B／13B／30B，prompt 256／512／1024，生成 32 或 128〔原文 p.6〕。
+  - 動機表：batch 32、序列 1024、FP16 下，PCIe 搬 KV 的時間比在 GPU 上重算 KV 慢一個數量級以上（例：OPT-6.7B 15.6 ms vs 0.35 ms）〔原文 p.2，Table 1〕。
+  - 結果：延遲最多低 35.8%、吞吐最多高 46.2%〔原文 p.1〕。
+- **有沒有評估網路或 P/D 設定**：**沒有**。
+  - Limitations：「我們處理的是 CPU–GPU 的 PCIe 頻寬瓶頸，**沒有考慮 KV 從磁碟或網路儲存載入的情況**」；並說 KVPR「可能可以改來加速那種設定下的 prefill」〔原文 p.9〕。
+  - Conclusion：未來工作可擴充到「從遠端網路儲存載入 KV」或大型多 GPU 架構〔原文 p.9〕。
+  - 只支援單 GPU 與 data-parallel 多 GPU，不支援 model／tensor parallel〔原文 p.9〕。
+- **和 D5(d) 的關係**：
+  - KVPR 證明「部分重算＋部分傳輸、同時進行」這個**機制**已經發表過（PCIe、decode 端）。D5(d) 若要主張新穎，只能是「**在 P/D 之間、跨網路**」這個設定，而 KVPR 自己把網路列為未來工作〔原文 p.9〕。
+  - 另一個選項：D5(d) 的「decode 端重算」也可以是 KVPR／HCache 式的「prefill 端傳 activation（GQA 下比 KV 大，見下）、decode 端只做投影」。〔判讀〕對 Llama-3.1-8B（GQA，8 個 KV head、hidden 4096），單層 hidden state 是 4096 維，K+V 是 2×1024 = 2048 維，**傳 activation 反而比傳 KV 大**；所以 KVPR 的省頻寬論點在 GQA 模型上不成立（KVPR 只測 MHA 的 OPT）。這和專案 `research_20260927/verified_findings.md` 對 HCache 的判讀一致。
+- **證據等級**：〔原文〕；GQA 的位元組比較是用模型設定算的〔判讀〕，沒有量測。

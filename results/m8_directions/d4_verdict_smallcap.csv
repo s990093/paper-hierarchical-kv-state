@@ -1,0 +1,16 @@
+run_id,ts,trace,klass,n_cells,median_gap_T,median_gap_W,min_gap_T,max_gap_T,min_gap_W,max_gap_W,src_sim_run,rule
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,conversation,kev_a,4,-0.013591,0.937009,-0.072173,0.014002,0.874018,1.0,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,conversation,kev_b,4,-0.009066,0.006493,-0.055807,0.011451,0.00238,0.010605,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,conversation,opt,4,0.007001,0.842051,0.0,0.015219,0.748982,1.0,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,conversation,wtp_a,4,0.004716,0.814534,0.0,0.014002,0.748982,1.0,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,conversation,wtp_b,4,-0.007191,0.001814,-0.043579,0.008099,6e-06,0.003622,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,synthetic,kev_a,4,0.000507,0.592057,-0.008316,0.006976,0.587444,0.596669,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,synthetic,kev_b,4,0.000779,-2.5e-05,-0.008884,0.007351,-0.001008,0.000957,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,synthetic,opt,4,0.01253,0.599715,0.0,0.032777,0.581917,0.640148,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,synthetic,wtp_a,4,0.001956,0.585781,0.0,0.006976,0.581917,0.596669,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,synthetic,wtp_b,4,-1.3e-05,-0.002256,-0.007495,0.004567,-0.004352,-0.00016,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,toolagent,kev_a,4,-0.05529,0.957613,-0.147698,0.011769,0.913942,1.0,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,toolagent,kev_b,4,-0.014005,0.013093,-0.05481,0.007292,0.002758,0.049051,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,toolagent,opt,4,0.005884,0.869499,0.0,0.014598,0.78461,1.0,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,toolagent,wtp_a,4,0.005194,0.849276,0.0,0.011769,0.78461,1.0,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+20261010-060105-d4-gap3b,2026-10-10T06:01:06+00:00,toolagent,wtp_b,4,-0.007118,0.007706,-0.041681,0.007638,-0.000327,0.041631,20261010-055444-d4-sim3,posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive

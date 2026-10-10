@@ -1,0 +1,22 @@
+# D5_CacheGen CacheGen: KV Cache Compression and Streaming for Fast Large Language Model Serving
+
+- **出處**：Yuhan Liu, Hanchen Li, Yihua Cheng, Siddhant Ray, Yuyang Huang, Qizheng Zhang, Kuntai Du, Jiayi Yao, Shan Lu, Ganesh Ananthanarayanan, Michael Maire, Henry Hoffmann, Ari Holtzman, Junchen Jiang（UChicago、Microsoft）。**ACM SIGCOMM 2024**（arXiv comment 欄寫「SIGCOMM'24」，PDF 頁首也印「ACM SIGCOMM '24, August 4–8, 2024, Sydney」）。arXiv 2310.07240v6。讀了 PDF 實體頁 p.2、p.4、p.6–10、p.19。
+- **場景**：不是 P/D 分離。是**從另一台機器（KV store）抓已經存好的 context KV**，走一般雲端網路〔原文 p.4〕。
+- **寫入時做了什麼決定**：
+  - 請求來之前（離線）先 prefill 整段 context，沿 token 維度切成 chunk，每個 chunk **各自編碼成好幾個壓縮等級**的位元串，都存起來〔原文 p.7〕。
+  - 也就是寫入時「全部存、每份存多種版本」；**選哪個版本是讀取（傳送）時才決定**。
+- **有沒有「接收端重算一部分、只傳另一部分」**：**有，而且是逐 chunk 決定**。
+  - 每個 chunk 可以用某個編碼等級傳，或**改傳文字、讓 LLM 重算這個 chunk 的 K、V**〔原文 p.6〕；頻寬太低時就改傳文字〔原文 p.2〕。
+  - 文字 chunk 的 K、V「用前面已收到並解碼的 chunk 的 KV 來算」〔原文 p.7〕。
+  - 怎麼選（Algorithm 1）：每個 chunk 用前一個 chunk 量到的吞吐量估剩餘時間；若「重算時間 ≤ 剩餘時間」就送文字，否則選一個在 SLO 內的編碼等級；送出後再處理下一個 chunk〔原文 p.19〕。預設 chunk 長 1.5K token〔原文 p.7〕。
+  - 〔判讀〕和 Cake 的差別：(i) CacheGen 是**依序**一個 chunk 一個 chunk 決定，以「品質損失最小、又不超過 SLO」為目標；不是 Cake 那種「GPU 從前面算、I/O 從後面載，在中間會合」的雙向並行。(ii) 論文沒有說文字 chunk 的重算會和後面 chunk 的傳輸並行；Algorithm 1 是一個迴圈依序送。(iii) 文字 chunk 要用前面 chunk 的 KV，所以重算的 chunk 不一定在最前面，和 Cake「只重算前段」的結構不同。
+- **KV 傳輸怎麼和計算重疊**：
+  - 第 i 個 chunk 的傳輸和第 i−1 個 chunk 的**解碼（解壓）**並行〔原文 p.8〕。這裡沒有 prefill 可以重疊（KV 是事先存好的）。
+- **報告的網路頻寬、硬體、模型**：
+  - 動機：別人的設定假設 NVLink 這類高速連結（可到數百 Gbps），網路延遲可以忽略；但一般雲端伺服器之間常只有個位數 Gbps，抓 KV 的時間可能和不用 KV 直接 prefill 一樣久，甚至更久〔原文 p.4〕。
+  - 敏感度：頻寬掃 0.4–15 Gbps 和 15–400 Gbps，context 固定 16K；超過約 20 Gbps 時，相對量化基線的絕對 TTFT 改善變小〔原文 p.10〕。
+  - 模型：Mistral-7B、Llama-34B、Llama-70B 的長上下文微調版（最多 32K）〔原文 p.8〕。硬體：一台 4 張 A40 的伺服器〔原文 p.9〕。
+- **和 D5(d) 的關係**：
+  - 這是「**透過網路從遠端 store 抓 prefix KV 時，部分 chunk 傳 KV、部分 chunk 傳文字讓接收端重算**」的**直接前作**（SIGCOMM'24）。所以 D5(d)「可能」分支裡的「只在 prefix 快取命中、KV 從遠端 store 拉」那一種，**新穎性已經被 CacheGen（逐 chunk、依序）和 Cake（雙向並行，Cake 也測了 7–100 Gbps 的模擬網路頻寬）佔掉**。〔判讀〕
+  - CacheGen **不是** P/D 分離：它沒有 prefill 節點邊算邊傳的情況。
+- **證據等級**：〔原文〕；和 Cake 的比較〔判讀〕。

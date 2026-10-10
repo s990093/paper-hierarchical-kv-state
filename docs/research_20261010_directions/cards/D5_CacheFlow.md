@@ -1,0 +1,23 @@
+# D5_CacheFlow CacheFlow: Efficient LLM Serving via Automated 3D-Parallel KV Cache Restoration
+
+- **出處**：Sean Nian, Hanzhang Shen, Zhiyu Wu, Jiahao Fang, Qilong Feng, Fan Lai（UIUC、CMU）。arXiv 2604.25080v2（2026-09-26），PDF 頁首寫「Preprint」，**沒有會議資訊**。讀了 PDF 實體頁 p.1–3、p.7、p.9。
+- **場景**：不是 P/D 分離。是**還原（restore）已存好的 prefix KV**（多輪對話、agent），KV 存在 CPU 記憶體、SSD 或遠端機器〔原文 p.1〕。實作在 vLLM＋LMCache 上〔原文 p.7〕。
+- **寫入時做了什麼決定**：沒有。決定都在讀取（還原）時：一個「看整批請求」的動態規劃排程器，決定每個請求、每個層區塊「重算哪些、載入哪些」〔原文 p.1〕。
+- **有沒有「接收端重算一部分、只傳另一部分」**：**有，而且是 Cake 的推廣**。
+  - token 維度：重算前段、載入後段，避開越後面越貴的 attention（和 Cake 一樣）；layer 維度：低層重算、高層載入，攤提權重搬移等開銷〔原文 p.2〕。
+  - 兩者合起來是 token×layer 平面上的「階梯形切分」：不同層區塊重算不同長度的前段，其餘載入〔原文 p.2〕。
+  - 多 GPU：在 model shard 邊界存少量 boundary activation，讓每張 GPU 可以各自還原自己的層〔原文 p.2〕。
+  - 它把 Cake、KVPR、HCache、CacheBlend 都歸類成「重算與傳輸重疊的混合做法」，但說它們「以請求為單位」〔原文 p.2–3〕。
+- **KV 傳輸怎麼和計算重疊**：在還原期間，重算和 I/O 並行（同 Cake）；沒有 prefill 節點邊算邊傳這回事。
+- **報告的網路頻寬、硬體、模型**：
+  - 頻寬 **80／40／10 Gbps**，分別對應 InfiniBand／RoCE、Lambda Lab SSD 讀取、Amazon 跨節點頻寬；**預設 10 Gbps**〔原文 p.7〕。（論文寫的是「每個 worker 的 I/O 頻寬」〔原文 p.8〕。）
+  - A100 與 H100，單 GPU 和多 GPU〔原文 p.7〕。
+  - 模型：Llama-3.1-8B（全 attention）、Qwen3.5-9B（混合）、Qwen3.5-35B-A3B（MoE 混合）、Qwen3.5-122B-A10B〔原文 p.7〕。
+  - 負載：LMSYS-Chat、SWE-Bench、OSWorld 2.0；線上實驗用 Mooncake 的到達時間〔原文 p.7〕。
+  - 基線：vLLM v0.29.0（只重算）、LMCache v0.5.5rc5（只載入）、Cake〔原文 p.7〕。
+  - 結果：還原延遲平均快 2.24–3.00 倍、端到端快 1.64 倍〔原文 p.1〕；在 40／80 Gbps 下，平均 TTFT 比 Cake 快 2.63／2.40 倍〔原文 p.9〕。
+- **和 D5(d) 的關係**：
+  - 「**透過網路從遠端拿 prefix KV 時，接收端重算一部分、同時載入其餘**」這個情境，Cake（模擬 7–100 Gbps）之後又被 CacheFlow（10–80 Gbps、token×layer、多請求）往前推了一步。D5(d)「可能」分支裡「只在 prefix 快取命中、KV 從遠端 store 拉」的那一種，**已經很擠**。〔判讀〕
+  - 它有用 Llama-3.1-8B，和本專案的模型相同；它的 10 Gbps 預設設定是本專案 κ 對照的現成外部參考點（數字要自己核對，這裡只記設定）。〔判讀〕
+  - 它沒有處理 P/D：沒有「prefill 節點正在算、decode 節點同時收和算」的雙端情境。H11 若成立，空白只剩**P/D 的雙端協調**（prefill 端決定傳哪段、decode 端同時重算另一段）。〔判讀〕
+- **證據等級**：〔原文〕；預印本，沒經同儕審查。

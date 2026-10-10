@@ -1,0 +1,43 @@
+run_id,ts,key,value
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.dirty_ratio,20
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.dirty_background_ratio,10
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.dirty_bytes,0
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.dirty_background_bytes,0
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.dirty_expire_centisecs,3000
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.dirty_writeback_centisecs,500
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.vfs_cache_pressure,100
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.swappiness,60
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.min_free_kbytes,195036
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vm.watermark_scale_factor,10
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.max,466877906944
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.high,max
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.current,435251277824
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.events,low 0 high 0 max 20 oom 0 oom_kill 0 oom_group_kill 0
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.stat.file,419678470144
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.stat.file_dirty,8192
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.stat.file_writeback,0
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.stat.anon,3313152000
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.stat.pgscan_direct,77597697
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.stat.pgsteal_direct,77582734
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,cgroup.memory.stat.workingset_refault_file,19033063
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vmstat.nr_dirty_threshold,112022081
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,vmstat.nr_dirty_background_threshold,55942651
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,meminfo.MemTotal_mib,2321963
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,meminfo.MemAvailable_mib,2204178
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,meminfo.Cached_mib,628376
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,meminfo.Dirty_mib,0
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,meminfo.Writeback_mib,0
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,sda.model,GBT3916-MR-32PD
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,sda.vendor,BROADCOM
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,sda.rev,5.23
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,sda.rotational,0
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,sda.write_cache,write through
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,sda.read_ahead_kb,512
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,dm-1.name,ubuntu--vg-data--lv
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,nfs_bdi.read_ahead_kb,128
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,kernel,6.8.0-138-generic
+20261010-054238-d7-env,2026-10-10T05:42:39+00:00,nfs.mount,"192.168.11.202:/proj-p06dcd23/ds_19e44990 /mlsteam/data/tiara nfs4 rw,relatime,vers=4.1,rsize=65536,wsize=65536,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,clientaddr=192.168.11.104,local_lock=none,addr=192.168.11.202 0 0"
+20261010-054238-d7-env,2026-10-10T05:42:40+00:00,probe.local.after_write_fsync,cachestat_cached_pages=0 dirty=0 wb=0 mincore_pages=16384 file_pages=16384
+20261010-054238-d7-env,2026-10-10T05:42:40+00:00,probe.local.after_dontneed,cachestat_cached_pages=0 dirty=0 wb=0 mincore_pages=0
+20261010-054238-d7-env,2026-10-10T05:42:40+00:00,probe.nfs.after_write_fsync,cachestat_cached_pages=16384 dirty=0 wb=0 mincore_pages=16384 file_pages=16384
+20261010-054238-d7-env,2026-10-10T05:42:40+00:00,probe.nfs.after_dontneed,cachestat_cached_pages=0 dirty=0 wb=0 mincore_pages=0

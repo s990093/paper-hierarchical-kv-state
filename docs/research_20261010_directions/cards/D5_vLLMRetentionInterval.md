@@ -1,0 +1,25 @@
+# D5_vLLMRetentionInterval vLLM 的 `prefix_cache_retention_interval`（SWA／Mamba 稀疏保留）與 OffloadingConnector 的 store mask
+
+- **出處**：vLLM 開源程式碼（系統）。`vllm-project/vllm@46fb84c2d4ef1f89cf472c62b8c964819a9e512a`（main，2026-10-10 05:34 UTC）。讀了 `vllm/config/cache.py`、`vllm/v1/core/single_type_kv_cache_manager.py`、`vllm/distributed/kv_transfer/kv_connector/v1/{offloading_connector.py, offloading/scheduler.py, lmcache_mp_connector.py, base.py, factory.py}`。PR 描述：#43447、#44774、#45845、#51886、#52216（皆已合併）。**本卡只看 upstream main，不碰 D5 自己分析的本機 vLLM。**
+- **寫入時做了什麼決定**：**SWA 層的視窗尾段、Mamba 層的狀態快照，要保留（在 GPU 快取住、以及卸載到 CPU／外部 store）哪些位置**。
+  - 設定：`prefix_cache_retention_interval`，**預設 0**：「0 只保留語意上的檢查點，包括最新的 replay 邊界和共享前綴的分歧點；正值另外每隔那麼多 token 保留一個；None 是全部保留。只用在 SWA 與 Mamba 群組」〔程式碼 vllm@46fb84c config/cache.py:159–165〕。預設由 None 改為 0 是 #52216（2026-08-17 合併），理由是「避免快取沒用的 block；Marconi 式的保留保證系統提示仍會留著」〔PR #52216 描述〕。
+  - Mamba：`MambaManager.reachable_block_mask` 只保留「每段一個」的狀態，加上 replay 邊界和共享前綴分歧點（原文註解寫「Marconi-style APC」）〔程式碼 v1/core/single_type_kv_cache_manager.py:1573–1621〕。注意：同一個 docstring 還寫著「None → dense（預設）」，和 config 預設 0 不一致——docstring 沒跟著 #52216 更新〔程式碼 :1585–1595 vs config/cache.py:159〕。
+  - SWA：`SlidingWindowManager.reachable_block_mask` 只保留「命中時需要的那幾個 block」（視窗尾段）；若對齊單位不是 SWA block 大小的倍數（註解舉例：hybrid offloading 時的 Gemma），就退回全部保留〔程式碼 single_type_kv_cache_manager.py:1079–1157，退回條件在 :1094–1103〕。
+  - 分歧點的另一個開關：`enable_mamba_shared_prefix_checkpoint`（預設 False），在 EAGLE/MTP 兄弟請求被觀察到的分歧點也存 Mamba 檢查點〔程式碼 config/cache.py:197–202〕。
+  - **卸載端用同一個遮罩**：`OffloadingConnector` 的 store 路徑呼叫 `manager_cls.reachable_block_mask(..., retention_interval=...)`，註解寫「用 reachable_block_mask 過濾不可達的 chunk（SWA/Mamba 稀疏性＋retention interval）」〔程式碼 offloading/scheduler.py:1517–1554、1676–1685〕；SWA 群組的視窗換算成 chunk 數，Mamba 群組視窗＝1〔程式碼 offloading/scheduler.py:129–152〕。OffloadingConnector 加 retention interval 是 #51886（2026-09-04 合併），它說 Mooncake store connector 已先有同樣的 block mask〔PR #51886 描述；Mooncake 端是 #44774，2026-06-11 合併〕。
+- **用什麼資訊做決定？寫完後還在不在？（N1）**
+  - 決定依據：請求的 prompt 長度（replay 邊界）、跨請求共享前綴的分歧點、固定間隔。分歧點是「已經被觀察到」的重用點〔程式碼 :1593–1595 註解〕。
+  - 被存的東西：Mamba 中間狀態是 N1（只在 prefill 經過時存在）；SWA 視窗尾段在 GPU 上被釋放前還在，**不完全是 N1**〔判讀〕。
+- **有沒有和延後版、寫穿版、背景版比較？**
+  - #45845（Mamba，2026-06-23 合併）的動機：block_size 128 時 Mamba 快照佔 KV pool 約 80% 的 block，逼 allocator 淘汰活著的注意力前綴，長多輪後命中率崩掉；稀疏保留後命中點最多粗 `retention_interval` 個 token〔PR #45845 描述，作者自報；描述中說是允許較小 block size 的測試設定〕。
+  - #43447（SWA，DeepSeek-V4，2026-06-04 合併）：除了稀疏保留，還把「未快取的 block 放到 free queue 前面、快取的放後面」，避免 SWA 暫時配置把舊前綴沖掉〔PR #43447 描述〕。
+  - #51886：gpt-oss-20b、CPUOffloadingSpec 4 GiB、GSM8K 200 題，開／不開 retention interval 的準確度表〔PR #51886 描述；數字未抄錄〕。
+  - **都是「全部保留 vs 稀疏保留」的比較，沒有「先全寫、之後再疏化」的延後版，也沒有 GPU 與 CPU 用不同間隔**〔判讀〕。
+- **硬體、各層頻寬、模型**：PR 中：DeepSeek-V4（8×B300，#43447）、gpt-oss-20b（#51886）。頻寬：未查證。
+- **HMA 支援（Q5 附帶）**：upstream main 的 `OffloadingConnector(KVConnectorBase_V1, SupportsHMA)`〔程式碼 offloading_connector.py:53〕；`SimpleCPUOffloadConnector`、`NixlBaseConnector`、`MooncakeStoreConnector` 等也是〔程式碼 v1/simple_cpu_offload_connector.py:66、nixl/connector.py:78、mooncake/store/connector.py:127〕。vLLM 內建的 `LMCacheMPConnectorUpstream` **沒有** SupportsHMA〔程式碼 lmcache_mp_connector.py:461〕，但 factory 預設會改用 LMCache 套件裡的 `LMCacheMPConnector`〔程式碼 lmcache_mp_connector.py:1191–1214〕，那個有 SupportsHMA〔程式碼 LMCache@7d7ca47 lmcache/integration/vllm/lmcache_mp_connector.py:525〕。舊的 `LMCacheConnectorV1` 沒有〔程式碼 lmcache_connector.py:68〕。
+- **和 D5(b)/(c) 的關係**
+  - **(b)：「寫入時選哪些 SSM 檢查點要存、要卸載」在 vLLM main 已經是預設行為**（預設 0＝只留 replay 邊界＋分歧點），而且同一個遮罩同時套在 GPU 快取和 CPU 卸載上。這把 Marconi 的准入想法變成了寫入時的位置選擇〔判讀〕。
+  - **還沒有的**：(1) 依重疊分布最佳化位置（Sparse Prefix Caching 的 DP）；(2) **不同層用不同遮罩**（例如 GPU 只留 replay 邊界、CPU／SSD 多留週期檢查點）——目前是單一個 `retention_interval` 全部共用〔判讀，依 offloading/scheduler.py:1546 直接傳 `self.config.retention_interval`〕。這是 H7 剩下的空間。
+  - **(c)：「不卸載視窗外的 SWA KV」在 vLLM main 的 OffloadingConnector 已經做了**（store mask），但 Gemma 類對齊不整除時退回全存〔程式碼 :1094–1103〕。依 D5 判準 (c)，分層感知卸載本身在 vLLM 是「已經有人做」〔判讀〕。
+  - 對照：llm-d 2026-06-13 的部落格說他們的寫入路徑「仍然選擇卸載全部 KV」，讀取時只讀視窗內的 block，gpt-oss 讀取快 1.8–1.9 倍〔網頁 llm-d.ai/blog/serving-hybrid-models-at-scale-in-llm-d，WebFetch 摘錄，未逐字核對〕——那是 retention interval 進 OffloadingConnector（2026-09-04）之前的寫法。
+- **證據等級**：程式碼〔程式碼 repo@commit file:line〕；PR 描述是作者自報；llm-d 部落格是 WebFetch 摘錄；影響判斷是〔判讀〕。

@@ -1,0 +1,4 @@
+run_id,ts,trace,ttft_total_nocache_s,ttft_reuse_nocache_s,ttft_compulsory_s,f_source
+20261010-060157-d4-nocache,2026-10-10T06:01:58+00:00,conversation,16325.69853,5576.730514,10748.968016,calib_c1 20261008-130316-m7-c1; i>=80 linear extrap
+20261010-060157-d4-nocache,2026-10-10T06:01:58+00:00,synthetic,7371.473707,4919.054678,2452.419029,calib_c1 20261008-130316-m7-c1; i>=80 linear extrap
+20261010-060157-d4-nocache,2026-10-10T06:01:59+00:00,toolagent,19583.118654,9373.942249,10209.176405,calib_c1 20261008-130316-m7-c1; i>=80 linear extrap

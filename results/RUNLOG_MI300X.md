@@ -118,3 +118,40 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 8. `r1_sim_longalpaca7b.csv` 1.0 MB，超過 1 MB 原則：進 git 的是 `.gz`。
 9. LongAlpaca 的 vLLM 量測只量到 62 個 chunk（31,744 token），因為它的 rope 線性 ×8 上限是 32,768。我一開始設 64 個，加上 1,024 會超過上限，在啟動前改掉了（重啟等待中的執行鏈；舊的那個在 sleep 中被 kill，變成 zombie，沒有跑任何東西）。
 10. **模擬存活者在 GPU 上消失**（不是程式錯誤，是方法上的發現）：模擬器對 S5L 的相對偏差（約 5–6 個百分點）和模擬裡的優勢（7.6%）差不多大。模擬用 5% 門檻挑存活者不可靠；之後模擬門檻要 ≥10%，或每個存活者都上 GPU。
+
+## Milestone 7d — 8 個方向同時探索（D1–D8）
+
+**設計**：`docs/research_20261010_directions/README.md`（2026-10-10T05:29:54Z，開 agent 之前）；各方向的判準寫在各自文件的 §2
+**報告**：`docs/research_20261010_directions/SUMMARY.md`（主 session 的 self-review，不是 zero-context 審查）
+**狀態**：DONE（判定：寫入時決定從 8 個角度都沒有不可取代的地方；還活著的線索見 SUMMARY §3）
+**執行時間**：2026-10-10 05:30 → 07:20 UTC
+**subagent**：8 個 general-purpose agent，每個方向一個。只有 D2 用 GPU（約 80 分鐘）
+**程式**：`code/m8_conc_sim.py`（D1，含修好 keep-head bug 的 `restore_v2`）、`m8_vllm_drop.py`（D2）、`m8_kappa_map.py`（D3）、`m8_trace_oracle.py`（D4）、`m8_arch_arith.py`（D5）、`m8_precision_arith.py`、`m8_d6_quality_inventory.py`（D6）、`m8_os_bench.py`（D7）。沒有改任何既有檔案
+**產出檔**：`results/m8_directions/d{1..7}_*.csv`，每列都有 run_id、ts；文獻卡在 `docs/research_20261010_directions/cards/`（86 張）
+**run_id**：完整清單在各方向文件的 §3。主要的有：
+- D1：`20261010-054631-d1-sweep`、`-054724-d1-analyze`、`-055311-d1-analyze-admitfirst`
+- D2：`20261010-054520-m8-d2-off-doc` 到 `-065733-m8-d2-cpu50bs512-doc`（9 個），彙整 `-070054-m8-d2-collect`
+- D3：`20261010-054706-d3-kappa-map`
+- D4：`20261010-054225-d4-char`、`-054330-d4-sim`、`-055356-d4-gap`、`-060621-d4-gap-prereg`
+- D5：`20261010-055012-d5-arith`
+- D6：`20261010-055349-d6-arith`
+- D7：`20261010-054238-d7-env` 到 `-060721-d7-analyze`（11 個）
+
+**關鍵數字**：
+- D2：0／133,504 個 block 被跳過〔實測〕。開 CPU 卸載的 TTFT：chat C＝1 回來請求 0.88→1.63 s；doc C＝16 43.7→67.0 s〔實測，單一 seed〕。
+- D1：模擬持續排隊 ρ 最大 0.99〔模擬〕。
+- D4：75–78% 的 block 寫了就沒人再讀〔trace〕。
+
+### 失敗與異常
+1. **D1 的判定在事後改了**：事先判準的結果是「有看頭」，5／192 格通過。agent 修了對手的兩個程式錯誤後是 0／192，之後又加了兩個新對手。兩個結果都列在 D1 §0。
+2. **D4 的判定取決於對手集合**：文字列 7 個，程式放 25 個。「7 個」那次是看過「25 個」的結果之後才算的。
+3. **D2 的 gpu_guard**：9 個 run 裡 7 個被標 CONTAMINATED，都是已知的假警報型態（自己的 process 結束後出現 pid −1）。接受規則是看到標記之後才寫的，見 `d2_guard.csv`。時間數字只有一個 seed，要重跑才能當定論；被跳過 block 數這類計數不受影響。
+4. **D7 的寫入量超過預算**：約 161 GiB，上限 150。資料檔都已刪除。
+5. **D5 的子 agent 把原始碼 clone 到 repo 根目錄**，約 15 秒後移走，根目錄已確認乾淨。
+6. **`runsh` 的參數不能含空白、括號或引號**：它用 `"$*"` 寫 cmd.sh，D4（gap2／gap3）、D6（054930）、D8 都踩到。完整錯誤記在各文件 §7。要修 `/mlsteam/workspace/bin/runsh`。
+7. **資料完整性問題**（SUMMARY §4）：
+   - `main.tex` 的 3090 κ＝8.9，來源資料標 `host_contention=HEAVY`。
+   - MI300X 的品質 CSV 在 git 和本機都不見。
+   - Llama 129K 時 FP8 和 BF16 的輸出逐字相同，FP8 疑似沒生效。
+   - 都沒改 main.tex。
+

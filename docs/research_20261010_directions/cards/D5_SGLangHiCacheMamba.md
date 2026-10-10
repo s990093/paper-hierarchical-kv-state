@@ -1,0 +1,26 @@
+# D5_SGLangHiCacheMamba SGLang HiCache 的 Mamba／線性注意力狀態卸載（L1 GPU → L2 CPU → L3 storage）
+
+- **出處**：SGLang 開源程式碼（系統，不是論文）。讀的是 `sgl-project/sglang@3831e7e0918052be50ef38b3ff62154573e213d7`（main，2026-10-10 05:04 UTC）的 `python/sglang/srt/mem_cache/` 與 `arg_groups/fields/exec_.py`。另外讀了 GitHub PR 描述：#20457、#31181、#31230（已合併）、#39853、#39856、#39845、#37613（未合併）。PR 描述是作者自報，不是同儕審查。
+- **結論先講**：SGLang main **已經會把 Mamba／GDN／KDA 的狀態檢查點寫到 host（L2）和 storage（L3）**。SuffixReplay 說 SGLang 的線性狀態「留在固定的 HBM slot pool」，那是他們的設定，不是程式碼做不到（見下面「和 SuffixReplay 的出入」）。
+- **寫入時做了什麼決定**
+  - **哪些位置有狀態**：對齊網格 `mamba_checkpoint_grid = lcm(mamba_cache_chunk_size, page)`〔程式碼 sglang@3831e7e runtime_context.py:1928–1933〕；decode 時每 `mamba_track_interval`（預設 256）追一次〔程式碼 exec_.py:429–432、runtime_context.py:1936–1941〕。分叉點：Full KV 命中比 Mamba 命中深時，在 Full KV 命中長度向下對齊的位置補一個「分叉狀態」〔程式碼 unified_cache/components/mamba.py:170–189〕。
+  - **何時寫到 host**：節點的 `hit_count ≥ write_through_threshold` 才備份；`write_through` 時門檻 1、`write_through_selective` 時門檻 2〔程式碼 unified_radix_cache.py:528–530；unified_cache/unified_tree_core.py:1081–1085〕。備份動作把節點上 Full KV 和 Mamba 狀態一起帶走（`BACKUP_HOST` 回傳 Mamba pool 的 device index）〔程式碼 components/mamba.py:760–769〕。
+  - **何時寫到 L3**：從 host 複本寫，key 用節點最後一個 KV page 的 hash，命中規則 `TRAILING_PAGES`〔程式碼 components/mamba.py:801–812〕。
+  - **狀態只放在葉節點**：節點分裂時父節點拿不到狀態，host 複本也留在子節點〔程式碼 components/mamba.py:307–316；components/README.md:320〕。
+  - **GPU 上的「事後疏化」**：`--mamba-max-states-per-path`（預設 -1＝不限）在每次 insert 之後刪掉同一路徑上最淺的內部狀態，保留尾端、分叉點、上鎖的節點；Full KV 和**已經存在的 host 複本都保留**；而且刻意排在 insert 的 BackupKV **之後**才跑〔程式碼 exec_.py:396–401；components/mamba.py:255–305〕。
+  - 另有 int8 檢查點池：快取住的狀態存成 int8，「約 2 倍容量」，也讓 host 卸載量減半〔程式碼 mamba_checkpoint_pool.py:15–40 docstring〕。
+- **用什麼資訊做決定？寫完後還在不在？（N1）**
+  - 用的是：命中次數（write-through 門檻）、radix tree 結構（分叉點、葉節點）、固定網格。都是寫完之後還在的資訊。
+  - 被存的東西本身是 N1：中間位置的遞迴狀態只在 prefill 經過時存在。#31181 的描述直接說：新的分叉狀態「目前只插在 L1，前提是 Full KV 已經備份到 L2–L3」，從 L1 搬到 L2 留待後續 PR〔PR #31181 描述，2026-07-25 合併〕；程式碼註解也說分叉狀態的增量保存「目前只有 write-through；write-back 的淘汰可能把只在 device 上的狀態丟掉」〔程式碼 components/mamba.py:172–174〕。
+- **有沒有和延後版、寫穿版、背景版比較？**（社群 PR 的自報數字，不是論文）
+  - **寫穿 + 事後丟 host 複本**（#39853，**已關閉、未合併**）：作者說 write_through 下每個節點都在 insert 時備份到 host，所以 per-path cap 完全省不到 host 記憶體（Qwen3.5-4B 每個狀態約 51 MB、40k-token 多輪序列約 1.2 GB）。H20、Qwen3.5-4B、128 個並行 deep-research agent、host 142 GB：只留 1 個狀態／路徑並把 host 複本也丟掉，完成數 48→61（+27%）、prefix hit 0.255→0.552、每輪 LLM 時間 −22%〔PR #39853 描述〕。
+  - **L3 的「急寫」**（#39856，**未合併**）：在「L2→L3 只在 host 淘汰時才寫」的模式（#39845，未合併）下，KV 會等到淘汰才寫 L3，但 Mamba 狀態的 host pool 小、通常先被淘汰，結果 L3 上的 KV 沒有配對狀態、不能用；改成 host 備份完成時就把**只有 Mamba 狀態**先寫 L3。GB300、Qwen3.5-397B-A17B-NVFP4、PD 分離、AgentX trace、C1000：+15–25K total TPS/GPU；host Mamba pool 比例 1.0→1.25 讓 host hit 89.5%→91.9%〔PR #39856 描述〕。
+  - **配對失敗**（#37613，**未合併**）：host Mamba pool 滿了，KV page 寫到 L3 時沒有配對狀態；Qwen3.6-40B 生產環境只有約 1.8% 的配對率（76,618 個 KV page 對 1,352 個 Mamba 狀態）〔PR #37613 描述〕。
+  - 以上都是「規則或時機」的工程比較，沒有一個是依重疊分布在寫入時選位置、並分層放置的〔判讀〕。
+- **硬體、各層頻寬、模型**：程式碼支援 CUDA／HIP／NPU 的 host 傳輸 kernel〔程式碼 pool_host/mamba.py:30–58〕；host pool 只支援 `page_first`／`page_first_direct` layout〔程式碼 pool_host/mamba.py:93–96〕。PR 中的模型：Qwen3.5-9B（#20457）、Qwen3-Next-80B（#31181、#31230）、Qwen3.5-4B（#39853）、Qwen3.5-397B（#39856）。頻寬數字：未查證。
+- **和 SuffixReplay 的出入**：SuffixReplay 用 SGLang v0.5.18，說「SGLang 的線性狀態檢查點留在固定的 HBM slot pool」〔SuffixReplay 原文 p.8–9〕。但 GitHub compare API 顯示 v0.5.18 比 #20457 的合併 commit `0986bed8`（2026-03-24，「Support mamba state offloading & HybridCacheController」）多 5,911 個 commit、少 0 個，也就是 v0.5.18 已經包含 Mamba 狀態卸載〔GitHub API compare 0986bed8...v0.5.18〕。所以 SuffixReplay 的說法只對「他們的啟動參數」成立；程式碼是做得到的〔判讀；他們用的參數未查證〕。
+- **和 D5(b) 的關係**
+  - **H7 判準的「死路」條件 1 沒有被觸發，但很接近**：SGLang 已經有三層（GPU／CPU／storage）的 Mamba 狀態放置，而且有寫入時的規則（網格、分叉點、命中門檻）。缺的是：(1) 依重疊分布選位置（Sparse Prefix Caching 那種 DP）；(2) 不同層放不同位置（例如 GPU 只留尾端、CPU 留分叉點、SSD 留稀疏網格）——目前 per-path cap 只在 GPU 上疏化，host 上全留〔判讀〕。
+  - **延後版在這裡真的會失敗**：#31181 與程式碼註解都說 write-back 可能丟掉只在 device 上的分叉狀態；#39856 說延後到 host 淘汰才寫 L3 時狀態已經不在。這兩個是 N1／N3 的實例（真實系統、非論文）〔判讀〕。
+  - **反方向的證據**：#39853 顯示多輪 agent（只續寫、不分叉）下，內部狀態全部丟掉反而更好——中間狀態只有在分叉負載下才值錢，和 Sparse Prefix Caching 的原文 p.2、p.11 一致〔判讀〕。
+- **證據等級**：程式碼〔程式碼 repo@commit file:line〕；PR 描述是作者自報（未重現）；與 SuffixReplay 的出入是〔判讀〕＋GitHub API。

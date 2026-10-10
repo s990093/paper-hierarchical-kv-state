@@ -1,0 +1,24 @@
+# D5_Splitwise Splitwise: Efficient Generative LLM Inference Using Phase Splitting
+
+- **出處**：Pratyush Patel, Esha Choukse, Chaojie Zhang, Aashaka Shah, Íñigo Goiri, Saeed Maleki, Ricardo Bianchini（UW、Microsoft）。arXiv 2311.18677v2。**ISCA 2024**：依 Microsoft Research 出版頁與作者網頁上的 PDF 檔名 `splitwise-isca24.pdf`（WebSearch 結果）；arXiv comment 欄只寫「12 pages, 19 figures」；**沒有開 IEEE Xplore 核對**。讀了 PDF 實體頁 p.1、p.3、p.6–9、p.12。
+- **寫入時（prefill 端）做了什麼決定**：
+  - 全部傳、格式不變（「lossless KV-cache transfer」）。
+  - 唯一的決定是**怎麼傳**：短 prompt 用「整批傳」（serialized），長 prompt 用「逐層傳」。因為一個 batch 的 token 數在開算前就知道，所以開算前就能選〔原文 p.7〕。H100 上 <512 token 用整批傳〔原文 p.9〕。
+  - 排程時同時指定 prompt 機和 token 機，這樣才能讓 KV 傳輸和 prompt 計算重疊〔原文 p.6〕。
+- **有沒有「decode 端重算一部分、只傳另一部分」**：沒有。Discussion 提到「傳之前可以先壓縮 KV」是未來方向〔原文 p.12〕，沒有提重算。
+- **KV 傳輸怎麼和 prefill 重疊**：
+  - **逐層**：每層算完就非同步送出那層的 KV，同時繼續算下一層〔原文 p.7〕。
+  - 實作用 MSCCL++ 的零拷貝單邊 put，KV「一準備好就」經 InfiniBand 送出，token 機不用發接收指令；全部層 put 完後用 semaphore 通知；在 vLLM 裡按 block 傳〔原文 p.8〕。
+  - 代價：每層要細粒度同步，可能干擾計算、拉高 TTFT，小 prompt 尤其明顯；所以小 prompt 不用逐層傳〔原文 p.7〕。
+- **報告的網路頻寬、硬體、模型**：
+  - 雲端 InfiniBand「每對 GPU 25–50 GBps」（大寫 B）〔原文 p.3〕。
+  - 實驗：Azure 上兩台 DGX-A100、兩台 DGX-H100 VM，InfiniBand；文字說 A100 是 200 Gbps、H100 是 400 Gbps〔原文 p.8、p.9〕。Table I 寫成「200GBps / 400GBps」，**單位和內文不一致**〔原文 p.1〕。〔判讀〕看不出是每 GPU 還是每機器。
+  - 特性分析用的模型是 BLOOM-176B、Llama2-70B〔原文 p.3〕；p.9 傳輸延遲圖（Fig. 14）用哪個模型，在我讀到的段落沒寫〔未查證〕。
+- **傳輸有沒有被藏住（數字）**：
+  - 相對 prompt 計算時間，開銷「很小（<7%）」。整批傳的時間隨 prompt 長度線性增加；逐層傳時，「沒被蓋住」的時間大致固定：**A100 約 8 ms、H100 約 5 ms**；圖上的 prompt 長度只到 2048 token〔原文 p.9〕。
+  - 端到端（coding trace、不 batch）：整批傳最多增加約 3% 的 E2E，Splitwise 只多 0.8%。**第二個 token** 的延遲多 16.5%（整批傳是多 64%）〔原文 p.9〕。
+  - 討論段：作者推論頻寬少 10 倍的互連「可能仍然划算」——是推論，沒有量〔原文 p.12〕。
+- **和 D5(d) 的關係**：
+  - 這正是 D5(d) 的「(2) 邊算邊傳」。在 200–400 Gbps、≤2K token 下，沒被藏住的只剩約 5–8 ms〔原文 p.9〕。若 D5(d) 的死路條件是「≥25 Gbps 時沒被藏住的傳輸 ≤ 端到端 5%」，Splitwise 的設定**遠高於** 25 Gbps，也沒測長上下文，所以**不能直接拿來判死**。〔判讀〕
+  - 值得注意：它報告的「第二個 token +16.5%」說明，殘餘的傳輸會落在 TBT／第二個 token 上，而不是 TTFT。D5(d) 的指標應該包含「decode 端開始時間／第二個 token」，不只 prefill 端的 TTFT。〔判讀〕
+- **證據等級**：機制與數字〔原文〕；ISCA'24 出處是 WebSearch 的二手資訊，標〔未查證：未開 IEEE〕。

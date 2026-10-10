@@ -1,0 +1,21 @@
+# D5_ShallowStream ShallowStream: Index Shallow then Answer Deep for Streaming Video Understanding
+
+- 出處：Jitai Hao, Ke Yang, Di Yan, Fan Liu, Qiang Huang, Jun Yu（哈工大深圳、東南大學）。arXiv 2609.02780v2（2026-09-30）。venue：未查證（arXiv 無 comment，PDF 沒寫會議）。<https://arxiv.org/abs/2609.02780>。讀了 p.1–8、p.17（PDF 實體頁）。
+- 寫入時做了什麼決定：**存什麼格式、算到第幾層**。
+  - 影片每個單位進來時，只跑 LLM 的**淺層**（例如 Qwen3-VL-8B 28 層裡的前幾層；〔D5 註〕原文 p.2 寫「of 28 in Qwen3-VL-8B」，但 HF config 的 `num_hidden_layers` 是 36（run 20261010-053802-d5-qwen3vl-cfg），原文如此），不算深層 KV〔原文 p.2、p.4〕。
+  - 每個單位存三樣：**視覺編碼 H⁰（vision encoder 輸出，即 embedding）**、淺層 KV、時間戳〔原文 p.4〕。
+  - 這些存在 **host memory**〔原文 p.17 附錄 D〕。
+  - 可選的長歷史壓縮：舊的單位合併成 cluster，每個 cluster 只留一份代表 embedding〔原文 p.6〕。
+- 用什麼資訊做決定？寫完之後還在不在？（N1）：用的是「淺層就夠做檢索」這個模型性質（觀察：Qwen3-VL-8B 第 4 層、LLaVA-OV-7B 第 3 層就有好的檢索能力）〔原文 p.2〕。不是 N1，事後仍在〔判讀〕。
+- 有沒有和延後版、寫穿版、背景版比較？
+  - 沒有和「全部算完、之後才丟深層 KV」的延後版比。
+  - 但它的理由本身就是**延後版做不到的**：深層 KV 一旦算了，計算就花掉了，之後丟掉也省不回來〔原文 p.2「Subsequent cache reduction lowers memory consumption but cannot recover the computation already spent」〕。省的是**串流時的計算**，不是容量。
+  - 問題來時：只把選中的單位的 embedding 從 host 搬上 GPU，**從第 0 層重算全部深度**〔原文 p.7 式 14〕。搬移與組裝時間算在延遲裡〔原文 p.7、p.17〕。
+  - 圖 1 和 HERMES、ReKV（全部 KV 卸載到 host／disk，見〔原文 p.3〕）、OASIS 比每格 prefill 與「每 20 秒一問」的端到端延遲：每格 prefill「最多」快 52.1×，端到端「最多」快 15.3×〔原文 p.1、p.8〕；「最多」是對哪一個基準，原文沒有逐一寫〔判讀〕。
+  - 沒有「並行算＋讀」的還原；是先搬 embedding、再整段重算〔判讀〕。
+- 硬體、各層頻寬、模型、模態：效率量測在單張 NVIDIA RTX 5090、Qwen3-VL-8B、1 FPS、OVO-Bench Backward 五支長影片〔原文 p.7–8〕。另一個模型 LLaVA-OneVision-7B〔原文 p.2〕。host↔GPU 頻寬沒寫〔未查證〕。模態：串流影片。
+- 和 D5(a) 的關係：
+  - **直接相關、部分威脅**：這是「存 embedding（＋少量淺層 KV）而不存完整 KV、讀取時從 embedding 重算」的現成例子，而且放在 host memory〔原文 p.4、p.17〕。
+  - **它的理由不是容量或頻寬，是計算**：影片是「一次很大的寫入、之後很少的提問」，大部分影格的深層 KV 從來沒被用到，所以寫入時就不算〔原文 p.2〕。這點和 D5(a)「一大寫、多短問」的設定一致，而且是延後版結構上做不到的（N2：串流時的 GPU 計算是稀缺資源）〔判讀〕。
+  - **沒做的**：沒有多層放置（只有 host）、沒有依頻寬選格式、沒有 Cake 式並行還原、沒有和「存完整 KV 到 SSD」比 κ。
+- 證據等級：〔原文 p.X〕；N2 推論為〔判讀〕。

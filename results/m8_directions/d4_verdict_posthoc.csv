@@ -1,0 +1,16 @@
+run_id,ts,trace,klass,n_cells,median_gap_T,median_gap_W,min_gap_T,max_gap_T,min_gap_W,max_gap_W,src_sim_run,rule
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,conversation,kev_a,6,-0.035937,1.0,-0.072173,0.00741,0.0,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,conversation,kev_b,6,-0.030604,0.0,-0.067142,0.006424,-2.120016,0.014887,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,conversation,opt,6,0.00015,0.0,0.0,0.00741,0.0,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,conversation,wtp_a,6,0.00015,0.0,0.0,0.00741,0.0,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,conversation,wtp_b,6,-0.029356,0.0,-0.059329,0.005261,-2.127628,0.01382,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,synthetic,kev_a,6,-0.009144,0.929618,-0.197585,0.023015,0.618699,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,synthetic,kev_b,6,-0.01866,0.057417,-0.166376,0.01289,-0.042394,0.383116,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,synthetic,opt,6,0.002718,0.655962,0.0,0.033746,0.555785,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,synthetic,wtp_a,6,0.002718,0.601593,0.0,0.023015,0.555785,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,synthetic,wtp_b,6,-0.022278,0.050775,-0.139328,0.008254,-0.257713,0.255692,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,toolagent,kev_a,6,-0.073828,1.0,-0.147698,0.005387,0.0,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,toolagent,kev_b,6,-0.040867,-0.663306,-0.136602,0.004438,-3.650065,0.099465,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,toolagent,opt,6,2.1e-05,0.0,0.0,0.005387,0.0,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,toolagent,wtp_a,6,2.1e-05,0.0,0.0,0.005387,0.0,1.0,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261010-060103-d4-gap2b,2026-10-10T06:01:05+00:00,toolagent,wtp_b,6,-0.026999,-1.233783,-0.053138,0.003934,-3.666939,0.096197,20261010-055332-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive

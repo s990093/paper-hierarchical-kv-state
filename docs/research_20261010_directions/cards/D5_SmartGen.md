@@ -1,0 +1,24 @@
+# D5_SmartGen SmartGen: Seamless Disaggregated LLM Inference with Selective KV Cache Transfer
+
+- **出處**：Xuchuan Luo, Jiacheng Shen, Xin Wang, Yangfan Zhou（復旦、Duke Kunshan）。arXiv 2607.28150v1（2026-07-30），**只有預印本**，PDF 上沒有會議資訊。讀了 PDF 實體頁 p.1–4、p.7–8、p.10–12。
+  - 專案 `docs/research_20260924/novelty_sota.md` 第 563 行曾把它列為「與 (a)–(g) 無直接關係」；**對 H11 而言它是直接相關的**。
+- **寫入時（prefill 端）做了什麼決定**：**有，而且就在 prefill 時**。
+  - 把 token 分三類：(1) 不論 prompt 都重要的位置——用離線 profiling 決定，**prefill 期間主動推給 decode 節點**；(2) 只對某些 query 重要的 token——decode 時按需抓，網路往返和本機 KV 載入重疊；(3) 不重要的——網路空閒時「投機地」補送〔原文 p.2〕。
+  - key 相關的 metadata 在 prefill 階段傳；跟權重有關的 metadata 在 decode 節點**重算或預載**，以省頻寬〔原文 p.7〕。
+- **有沒有「decode 端重算一部分 KV、只傳另一部分」**：**沒有**。沒傳的 KV 是之後再從 prefill 節點**抓**（按需或投機補送），不是重算；decode 端只重算稀疏注意力用的 metadata〔原文 p.2、p.7〕。注意力是稀疏的（top-k），準確度是「和完整 KV 相當」，**不是無損**〔原文 p.1、p.11〕。
+- **KV 傳輸怎麼和 prefill 計算重疊**：
+  - 作者說現有系統（Splitwise、DéjàVu、Mooncake 等）都是逐層傳、和 prefill 重疊〔原文 p.1、p.3〕。
+  - 主張：**這種重疊藏不住傳輸**，原因是多個 prefill 節點同時塞給一個 decode 節點、decode 的網卡頻寬被吃滿〔原文 p.3〕。
+- **報告的網路頻寬、硬體、模型（藏不住的證據）**：
+  - 阿里雲 L20 GPU 執行個體、**25 Gbps RDMA**：48K token 的長 prompt，傳輸時間是 prefill 計算的 **6.5 倍**（Llama 與 Qwen）〔原文 p.1〕。
+  - 3 台 prefill（各 2×L20，網路 32 Gbps）＋ 1 台 decode（1×L20，25 Gbps），eRDMA；KV 先卸載到 host 記憶體再傳；假設 75% prefix 快取命中〔原文 p.3、p.8〕。
+  - Fig. 2b（Qwen3-14B、DP=6）：batch 的 token 越多，傳輸／prefill 的差距最高 **4.7 倍**；decode 端限到 **15 Gbps** 時最高 **7.1 倍**〔原文 p.3〕。
+  - prefill 用 A100 時比 L20 快最多 1.9 倍（60K token），更難蓋住傳輸〔原文 p.3–4〕。
+  - 雲端常見只有 10–35 Gbps（引 AWS L4／L40S、GCP A100）〔原文 p.1〕。
+  - 結果：TTST（第二個 token 的時間）比完整傳輸最多快 **4.3 倍**；頻寬從 32 降到 15 Gbps，TTST 的改善從 2.5 倍變 3.3 倍〔原文 p.1、p.10〕。
+  - 模型：Qwen3、Llama-3.1、Gemma-3、Phi-4；LongBench 四個子集，平均 prompt 3K–10K，最多一次 batch 60K token〔原文 p.8〕。
+- **和 D5(d) 的關係**：
+  - **好消息（對 H11）**：這是一篇明確量到「**25 Gbps 以下逐層管線藏不住傳輸**」的論文，數字是 4.7–7.1 倍〔原文 p.3〕。所以 D5(d) 死路條件第一項（≥25 Gbps 時沒藏住的傳輸 ≤5%）**至少在多 prefill 對一 decode、25 Gbps 的雲端設定下不成立**。〔判讀〕但它的「6.5 倍」是批次加總、decode 網卡被多台 prefill 共用的情況；單請求、獨佔頻寬時的比值，論文沒有給〔判讀〕。**而且 §3 的所有實驗都假設 75% prefix 快取命中**〔原文 p.3〕——〔判讀〕prefill 只需算約 25% 的新 token，但要傳的 KV 是否只有新產生的部分，我讀到的段落沒寫清楚；若是傳整段 KV，「傳輸／prefill」比值會因為 prefill 被快取縮短而被放大。D5(d) 的量測若要引用這組數字，必須先確認這一點〔未查證〕。
+  - **壞消息（對 H11）**：SmartGen 已經佔掉「**prefill 端在寫入／傳送時決定傳哪些 token**」這個點子（依重要性，而且有損）。H11 要和它區分，只能靠「**無損**：沒傳的部分在 decode 端**重算**，不是事後再抓、也不是稀疏近似」。〔判讀〕
+  - 它的 related work 沒有提到 Cake、KVPR、CacheGen 的 text fallback 這類「傳一部分、重算一部分」的做法（全文只有 CacheGen 出現在參考文獻）。〔判讀：用 grep 查的〕
+- **證據等級**：〔原文〕；預印本，沒經同儕審查。

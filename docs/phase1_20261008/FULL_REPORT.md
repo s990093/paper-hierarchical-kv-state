@@ -4,6 +4,7 @@
 **平台**：AMD MI300X（單卡）、CPU 層用真實的 pinned memory、SSD 層用限速器模擬（NFS 與本地 SSD 的實測參數）
 **模型**：Llama-3.1-8B（GQA，主角）；第 1 輪加了 LongAlpaca-7B（MHA，Cake 原文的模型）和 Qwen3-30B-A3B（MoE）
 **細節報告**：[07](07_report.md)（第一階段）、[09](09_ablation_report.md)（消融）、[12](12_round1_report.md)（破解第 1 輪）
+**後續（10/10）**：8 個方向同時探索，總結在 [../research_20261010_directions/SUMMARY.md](../research_20261010_directions/SUMMARY.md)。一句話：寫入時決定從 8 個角度看都沒有不可取代的地方；還活著的線索都不是「寫入時」。
 **誠實性**：
 - 每個數字都來自 `results/` 的 CSV，每列都有 run_id，可以追到 `/mlsteam/data/tiara/runs/<run_id>/`；沒量到的寫 NOT_MEASURED。
 - 所有判準都在開跑前寫死。
