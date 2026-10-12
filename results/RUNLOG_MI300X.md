@@ -186,3 +186,18 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 5. **main.tex 稽核**（F4）：241 個數字中 59 個不一致、17 個找不到來源、70 個有疑慮。沒改 main.tex。
 6. **我寫的 SUMMARY 第一版漏了 chat C＝4**（卸載有幫助的格）。F5 指出後改正。
 
+## Milestone 7f — F7：重算快 2 倍時結論還成立嗎〔模擬〕
+
+**判準**：`docs/research_20261010_followup/README.md`「追加 F7」（2026-10-12T08:48:50Z，跑之前寫的）
+**狀態**：DONE（判定：free 下 f×0.5、×0.6 都是 0 個存活 → 結論在模擬層級成立）
+**run_id**：`20261012-084917-f7-fscale-sim`、`20261012-084936-f7-judge`
+**指令**：`m7run f7-fscale-sim python code/m9_f7_fscale_sim.py run --scales 1.0 0.5 0.6`；`m7run f7-judge python code/m9_f7_fscale_sim.py judge`（`HIP_VISIBLE_DEVICES=""`，沒用 GPU）
+**產出檔**：`results/m9_followup/f7_sim_f{1.0,0.5,0.6}.csv`、`f7_verdict.csv`、`f7_configs.csv`；`docs/research_20261010_followup/F7_fscale.md`
+**驗證**：f×1.0 的 4,800 列和第 1 輪的 `r1_sim_llama31_8b.csv` 逐列相同（最大差 0.0）
+**關鍵數字**：
+- free：f×0.5、×0.6 都是 0／32 個設定存活（≥5% 和 ≥10% 都是），最大領先 4.9%／3.2%。
+- hold：≥10% 存活 1 個（f×0.6，CPU 11.6、doc、NFS、50%），3 個 seed 贏 22–30%，2 個 seed 輸寫穿 20–27%。
+
+**失敗與異常**：無
+**限制**：只有模擬；f 是整體縮放（真實的比值 8K 時 2.0 倍、32K 時 1.7 倍）
+
