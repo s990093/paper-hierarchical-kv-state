@@ -74,7 +74,7 @@ def fig1():
         ax.set_ylabel("回來請求的 TTFT（秒）")
         ax.grid(axis="x", visible=False)
     axs[0].legend(frameon=False, fontsize=9, loc="upper left")
-    fig.suptitle("圖 1　省下的寫入沒有縮短等待；GPU 忙時，沒存的前段只能重算", x=0.01, ha="left", fontsize=12, color=INK)
+    fig.suptitle("省下的寫入沒有縮短等待；GPU 忙時，沒存的前段只能重算", x=0.01, ha="left", fontsize=12, color=INK)
     fig.text(0.01, 0.005, "Llama-3.1-8B、32K、使用者等寫完才回來、每格 6 次的中位數；「算 n 段」＝64 段裡 GPU 重算了幾段（Cake 的會合點）。"
              "run 20261008-134526-m7-a1", fontsize=7.5, color=INK2)
     fig.tight_layout(rect=(0, 0.04, 1, 0.95))
@@ -133,7 +133,7 @@ def fig2():
     ax.set_xlabel("比「最好的簡單策略」快多少（%）")
     ax.set_ylabel("比「延後版」快多少（%）\n（同一條規則，CPU 滿了才做）")
     ax.legend(frameon=False, fontsize=9, loc="upper left")
-    ax.set_title("圖 2　GPU 上所有比較：「寫入時決定」從來沒有同時贏過兩邊", loc="left", fontsize=12, color=INK)
+    ax.set_title("GPU 上所有比較：「寫入時決定」從來沒有同時贏過兩邊", loc="left", fontsize=12, color=INK)
     fig.text(0.01, 0.005, "每個點＝一組 GPU 實測比較（回來請求 TTFT 中位數）。延後版：第一階段為 S4+，08 與第 1 輪為 S4B。"
              "來源：summary_b.csv、b2_verdict.csv、r1_gpu_verdict.csv", fontsize=7.5, color=INK2)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
@@ -175,7 +175,7 @@ def fig3():
     ax.set_ylim(0.8, 2.35)
     ax.set_xlabel("儲存層頻寬（GiB/s，對數座標）")
     ax.set_ylabel("Cake 比「只算」和「只搬」中較快的再快幾倍")
-    ax.set_title("圖 3　讀取端（Cake）在中低頻寬最有用（32K）", loc="left", fontsize=12, color=INK)
+    ax.set_title("讀取端（Cake）在中低頻寬最有用（32K）", loc="left", fontsize=12, color=INK)
     fig.text(0.01, 0.005, f"A0：每點 6 次的中位數；只算（不搬）＝{comp:.2f} s。註：harness 的重算比預設 vLLM 慢約 1.7–2 倍，"
              "頻寬帶的絕對位置待重量。", fontsize=7.5, color=INK2)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
