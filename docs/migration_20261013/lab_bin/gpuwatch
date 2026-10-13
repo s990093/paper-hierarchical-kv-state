@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# gpuwatch — 每 1 秒刷新一次 MI300X 的關鍵欄位（純文字，SSH 友善）
+export PATH=/opt/rocm/bin:$PATH
+watch -n1 'rocm-smi --showuse --showmemuse --showtemp --showpower --showclocks 2>/dev/null | sed -n "1,40p"'

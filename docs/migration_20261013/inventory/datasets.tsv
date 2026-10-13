@@ -1,0 +1,10 @@
+path_on_mi300x	size	how_to_get_on_3090
+/mlsteam/data/tiara/datasets/traces	8.3M	already on 3090: /ssd7/hungwei/paper-hkv/datasets/traces (Mooncake conversation/toolagent/synthetic)
+/mlsteam/data/tiara/datasets/gsm8k	4.8M	already on 3090: /ssd7/hungwei/paper-hkv/datasets/gsm8k
+/mlsteam/data/tiara/datasets/ruler_ref	516K	already on 3090: /ssd7/hungwei/paper-hkv/datasets/ruler_ref
+/mlsteam/data/tiara/datasets/longbench	461M	already on 3090: /ssd7/hungwei/paper-hkv/datasets/longbench
+/mlsteam/data/tiara/datasets/scbench	903M	re-download from HF: microsoft/SCBench
+/mlsteam/data/tiara/datasets/yakv_ref	182M	upstream reference clone; re-clone only if needed
+/mlsteam/data/tiara/papers{,_d6,_ssd}	276M	file names in papers_list.txt (arXiv ids in names); PDFs are copyrighted, never commit
+/mlsteam/data/tiara/fonts	40M	Noto Sans/Serif CJK TC; already installed system-wide on 3090
+/mlsteam/data/tiara/models/*-noDCA	148K	symlink dirs into hf-cache; 3090 has its own: /ssd7/hungwei/paper-hkv/models/Qwen2.5-7B-Instruct-1M-noDCA

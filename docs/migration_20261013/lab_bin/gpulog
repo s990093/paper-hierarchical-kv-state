@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# gpulog <輸出csv> [間隔秒] — 把 GPU 使用率/VRAM/溫度/功耗逐秒寫成 CSV
+# 量測時開著它，事後才有東西可以對照「這段時間卡上還有誰」。
+export PATH=/opt/rocm/bin:$PATH
+OUT="${1:?用法: gpulog <out.csv> [interval]}"
+INT="${2:-1}"
+echo "ts,gpu_util_pct,vram_used_b,vram_total_b,temp_c,power_w" > "$OUT"
+while true; do
+    TS=$(date -Is)
+    U=$(rocm-smi --showuse   --csv 2>/dev/null | awk -F, 'NR==2{print $2}')
+    M=$(rocm-smi --showmeminfo vram --csv 2>/dev/null | awk -F, 'NR==2{print $2","$3}')
+    T=$(rocm-smi --showtemp  --csv 2>/dev/null | awk -F, 'NR==2{print $2}')
+    P=$(rocm-smi --showpower --csv 2>/dev/null | awk -F, 'NR==2{print $2}')
+    echo "$TS,$U,$M,$T,$P" >> "$OUT"
+    sleep "$INT"
+done

@@ -1,0 +1,11 @@
+hf_repo	snapshot_revision	size_on_mi300x	needed_on_3090
+unsloth/Llama-3.1-8B-Instruct	4699cc75b550f9c6f3173fb80f4703b62d946aa5	16G	yes (phase 2 main model)
+Qwen/Qwen2.5-7B-Instruct-1M	e28526f7bb80e2a9c8af03b831a9af3812f18fba	15G	yes (phase 2 quality: precision-sensitive model)
+Yukang/LongAlpaca-7B	14c462dc860ba1818194ef0b5a31387ba57f0e4d	13G	optional (MHA; only <=16K fits on 24 GB)
+Qwen/Qwen2.5-14B-Instruct-1M	620fad32de7bdd2293b3d99b39eba2fe63e97438	28G	no (does not fit 24 GB in BF16)
+nvidia/Llama-3.1-Nemotron-8B-UltraLong-1M-Instruct	fa3a10b9c6ad02f42c81e1d68dcf6967afb230ef	31G	no
+Qwen/Qwen3-30B-A3B-Instruct-2507	0d7cf23991f47feeb3a57ecb4c9cee8ea4a17bfe	58G	no (weights alone ~61 GB)
+mistralai/Mistral-Nemo-Instruct-2407	04d8a90549d23fc6bd7f642064003592df51e9b3	46G	no
+ByteDance-Seed/Seed-OSS-36B-Instruct	497f1dca95ebdec98e41d517b9f060ee753c902f	68G	no
+Qwen/Qwen3-VL-8B-Instruct	(not downloaded)	8K	no
+Wolowolo/fsfm-3c	(not downloaded, other project)	8K	no

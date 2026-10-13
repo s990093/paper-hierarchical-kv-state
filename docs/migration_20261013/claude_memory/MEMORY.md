@@ -1,0 +1,5 @@
+- [User profile](user-profile.md) — Traditional Chinese, plain bullet explanations, lead with "what's the problem / what to prove"
+- [Research state](tiara-research-state.md) — write-time placement nearly dead (F6 0/216); open item: harness f(i) ~2× too slow vs vLLM ROCM_ATTN, re-measure
+- [Deferral test rule](deferral-test-rule.md) — write-time ideas must beat all lazy/background/pre-clean/write-through twins, pre-registered
+- [MI300X environment](mi300x-env.md) — env script, runs dir, model paths, ROCm/vLLM gotchas
+- [Explore many directions](explore-many-directions.md) — when stuck, explain with an analogy and probe many directions in parallel, not one jargon-heavy pick

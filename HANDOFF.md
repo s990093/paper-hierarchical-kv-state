@@ -1,5 +1,7 @@
 # 交接：2026-08-31 22:00，移到另一台機器（獨立 SSD）
 
+> **2026-10-13 更新**：這份是 8/31 的舊交接。最新的換機器（MI300X → 3090）復現計劃看 [`docs/migration_20261013/README.md`](docs/migration_20261013/README.md)。
+
 > 這一份是給**接手的人或 agent** 看的。
 > 讀完這份 + `CLAUDE.md` 就能繼續，不需要讀完整的 `results/RUNLOG.md`。
 
