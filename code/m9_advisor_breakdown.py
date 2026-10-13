@@ -34,7 +34,8 @@ plt.rcParams.update({"font.family": [font_manager.FontProperties(fname=FP).get_n
 C_GPU, C_SSD, C_CPU, C_NEW = "#2a78d6", "#eb6834", "#1baf7a", "#b9b8b2"   # 參考調色盤前三格＋中性灰
 INK, INK2 = "#0b0b0b", "#52514e"
 
-STRATS = [("S0", "全部都存"), ("S2a", "先寫再丟（前段）"), ("S3", "一開始不寫（前段）"), ("S5", "依位置放（我的方法）")]
+STRATS = [("S0", "全部都存（SSD）"), ("S2a", "先寫再丟（SSD）"), ("S3", "一開始不寫（SSD）"), ("S5", "依位置放（我的方法）"),
+          ("CPUall", "全放 CPU（＝延後寫入）")]
 GPUS = [("idle", "GPU 閒"), ("busy2", "GPU 忙 2.1 倍")]
 
 
@@ -47,7 +48,7 @@ def main():
         meet=("meet", "median"), n_cpu=("n_load_cpu", "median"), n_ssd=("n_load_ssd", "median"),
         n=("ttft", "size"), src_run_id=("run_id", "first")).reset_index()
 
-    fig, ax = plt.subplots(figsize=(10.5, 6.0))
+    fig, ax = plt.subplots(figsize=(10.5, 7.4))
     y, ticks, labels, rows = 0.0, [], [], []
     h = 0.30
     for gs, gname in GPUS:
@@ -77,14 +78,21 @@ def main():
     # 重點標註：GPU 忙時，一開始不寫只能把前段全部重算
     r3 = g[(g.gpu_state == "busy2") & (g.strategy == "S3")].iloc[0]
     r0 = g[(g.gpu_state == "busy2") & (g.strategy == "S0")].iloc[0]
-    ax.text(1.27, ticks[3] + 0.05,
+    pick = lambda gs, st: g[(g.gpu_state == gs) & (g.strategy == st)].ttft.iloc[0]  # noqa: E731
+    ax.text(1.20, ticks[0] + 0.45,
             "怎麼看：每列上面是 GPU 重算、下面是 I/O 載入，同時開始。\n"
             "等待時間（黑線）＝比較長的那條＋算新 token。\n\n"
-            "GPU 忙時：\n"
-            f"・「全部都存」可以少算幾段（{int(g[(g.gpu_state == 'idle') & (g.strategy == 'S0')].meet.iloc[0])}→{int(r0.meet)} 段），改從 SSD 搬。\n"
-            f"・「先寫再丟」「一開始不寫」沒有前段可搬，\n　只能把 {int(r3.meet)} 段算完；I/O 早就搬完，在旁邊等。\n"
-            f"　→ 比「全部都存」慢 {100 * (r3.ttft / r0.ttft - 1):.0f}%",
-            va="center", ha="left", fontsize=8.8, color=INK, linespacing=1.45,
+            "前三列（資料都在 SSD）：\n"
+            "・GPU 閒時三種一樣快：省下的寫入沒有縮短等待。\n"
+            f"・GPU 忙時，「全部都存」可以少算幾段（{int(g[(g.gpu_state == 'idle') & (g.strategy == 'S0')].meet.iloc[0])}→{int(r0.meet)} 段），\n"
+            f"　改從 SSD 搬；另外兩種沒有前段可搬，只能把 {int(r3.meet)} 段算完\n"
+            f"　→ 比「全部都存」慢 {100 * (r3.ttft / r0.ttft - 1):.0f}%。\n\n"
+            "後兩列（資料在 CPU）：\n"
+            f"・「依位置放」和「全放 CPU」一樣快（閒 {pick('idle', 'S5'):.2f} vs {pick('idle', 'CPUall'):.2f} 秒，\n"
+            f"　忙 {pick('busy2', 'S5'):.2f} vs {pick('busy2', 'CPUall'):.2f} 秒）：快是因為放在 CPU，\n"
+            "　不是因為寫入時決定。這組只有一個 session、CPU 不會滿，\n"
+            "　所以延後寫入＝全放 CPU。",
+            va="top", ha="left", fontsize=8.8, color=INK, linespacing=1.45,
             bbox=dict(boxstyle="round,pad=0.5", fc="#f3f2ee", ec="#d6d5cf", lw=0.8))
     ax.set_yticks(ticks, labels)
     ax.tick_params(axis="y", length=0)
@@ -94,7 +102,7 @@ def main():
     ax.legend(handles=[Patch(color=C_GPU, label="GPU 重算（從前面往後）"), Patch(color=C_CPU, label="從 CPU 載入"),
                        Patch(color=C_SSD, label="從 SSD 載入（從後面往前）"), Patch(color=C_NEW, label="算新的 token"),
                        plt.Line2D([], [], color=INK, lw=1.6, label="等待時間 TTFT")],
-              loc="upper right", frameon=False, fontsize=8.5, ncol=1)
+              loc="lower right", frameon=False, fontsize=8.5, ncol=1)
     ax.set_title("時間花在哪裡：Cake 還原時，GPU 重算和 I/O 載入兩條線同時跑，等待時間由比較長的那條決定", loc="left",
                  fontsize=11, color=INK, pad=12)
     fig.text(0.01, 0.01, "Llama-3.1-8B、32K（64 段）、SSD 層＝本地 SSD 實測參數、使用者等寫完才回來；每格 6 次的中位數。"
