@@ -22,6 +22,7 @@
 | [04_related_work_baselines.md](04_related_work_baselines.md) | 要和哪些論文比、怎麼比才公平、參考它們實驗的地方 | 被問「為什麼選這些對手」時 |
 | [05_experiments.md](05_experiments.md) | 平台、I/O 模擬、實驗 C／A0／A1／A2／B、量測、統計、判準、要給老師的圖 | 執行實驗時 |
 | [07_report.md](07_report.md) | **第一階段實驗報告**：總表、結論、校準、A0–A2、B、敏感度、限制 | 先讀這份 |
+| [13_advisor_update_20261012.md](13_advisor_update_20261012.md) | **給老師的進度報告（10/12）**：三個問題的答案、結果、新方向提案、要老師決定的事 | 先讀這份 |
 | [QUESTIONS.md](QUESTIONS.md) | **目前的問題與狀態**（已回答／進行中／要找老師的） | 想知道現在卡在哪 |
 | [08_ablation_plan.md](08_ablation_plan.md) | 消融實驗設計：「寫入時決定」在什麼條件下不會被 Cake 抵消（判準開跑前寫死） | 第二輪實驗 |
 | [09_ablation_report.md](09_ablation_report.md) | **消融報告**：模擬掃描＋GPU 確認；結論是寫入時決定被 Cake 抵消（GQA），唯一沒排除的例外是重算便宜（MHA） | 讀完 07 之後 |
