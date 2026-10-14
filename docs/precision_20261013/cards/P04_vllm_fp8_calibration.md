@@ -172,7 +172,7 @@
 - 8/31 的 1/20 是 AWQ 權重；這次換 BF16 權重，結果可能不同，所以要重量。
 
 **Step B：端點 E1 用自己的 codec，不用 vLLM 原生 FP8。**
-- 03 計劃寫的「每 (block, 層, K/V, KV head) 的 amax ÷ 448」〔見 03_plan_3090.md §1〕，在溢位和次正規兩端都比 vLLM 的 per-tensor 靜態 scale 好。用它當「正確校準」，對停損是保守方向。
+- 03 計劃寫的「每 (block, 層, K/V, KV head) 的 amax ÷ 448」〔見 03_plan_h200.md §1〕，在溢位和次正規兩端都比 vLLM 的 per-tensor 靜態 scale 好。用它當「正確校準」，對停損是保守方向。
 - 在報告裡分開寫兩件事：(1) scale 怎麼來（每 block 動態，不需要校準資料）；(2) 尾數只有 3 位這件事，**任何 scale 都改不了**。
 
 **Step C：E1 若沒過 ε，在同一個 harness 加兩個診斷（都是換 codec，不是換位置）。**

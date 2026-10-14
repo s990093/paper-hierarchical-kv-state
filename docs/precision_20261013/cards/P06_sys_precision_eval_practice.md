@@ -260,7 +260,7 @@
 
 ---
 
-## 5. 對照我們的計劃（[03_plan_3090.md](../03_plan_3090.md) §1–§5）
+## 5. 對照我們的計劃（[03_plan_h200.md](../03_plan_h200.md) §1–§5）
 
 全部判定都是〔判讀〕。
 
@@ -303,7 +303,7 @@
 - 「原文沒寫」最多的格：題數（KVServe、PatchKV、AdaptCache）、重複次數（幾乎全部）、metadata 是否算進大小（SparKV、EvicPress、AdaptCache、KVServe 自家）、頻寬是真實還是模擬（CacheGen、AdaptCache、LMCache）。
 - 既有卡要修的地方（D6_KVServe、D6_PatchKV、D6_HARAG、D6_SparKV、D6_EvicPress、D6_AdaptCache、D6_QServe、E08、EVAL_FOUNDATIONS §8 第 9 列）已寫在第 2 節各篇的最後一點與抽取回報裡；**本次沒有改那些檔案**。
 - FlexGen、QServe 的格子來自抽取工作（交件前收到），我只 grep 核對了 8 句關鍵原文，其餘數字沒有逐一覆核。
-- 計劃檔 03_plan_3090.md 在我讀完之後被改過。第 5 節的對照依據的是改之前的版本，要再對一次。
+- 計劃檔 03_plan_h200.md 在我讀完之後被改過。第 5 節的對照依據的是改之前的版本，要再對一次。
 - CacheGen：頻寬怎麼施加（原文沒寫）；每個 context 的題數（原文沒寫）；機率表是否算進大小（原文沒寫）。
 - Cake：每格重複次數（原文沒寫）；量化實驗的 8-bit 實作（原文沒寫）。
 - LMCache：重複次數（只讀 §8，原文沒寫）。
