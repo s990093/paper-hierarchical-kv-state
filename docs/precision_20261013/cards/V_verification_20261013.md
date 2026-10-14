@@ -4,7 +4,7 @@
 - **誰做的**：zero-context verifier（沒有寫過這批文件；只回原文、原始碼、官方頁面核對；**不參考** P01–P05 卡片的結論，卡片只用來找「它引用的是哪個 repo／哪一版」）
 - **範圍**：
   - 主要：`02_papers.md` §1.1 表、§1.2、§2.1 表、§2.2、§3.1、§3.2 表、§4.1 表、§5.1 表、§5.2。另順手查了 §3.3 S3、§4.2 兩句和 SemKV／SparKV 有關的判讀（任務點名要查）。
-  - 次要：`01_advisor_feedback.md` §3、`03_plan_3090.md` §1 的算術、`04_story.md` §5 的投稿日期。
+  - 次要：`01_advisor_feedback.md` §3、`03_plan_h200.md` §1 的算術、`04_story.md` §5 的投稿日期。
 - **打開過的來源**（下載到 `/private/tmp/claude-501/verif_20261013_dl/`，只讀不執行）：
   - Cake：PMLR v267 jin25d 正式版 PDF（13 頁，`raw.githubusercontent.com/mlresearch/v267/main/assets/jin25d/jin25d.pdf`）、arXiv 2410.03065 v1（16 頁）、v2（12 頁，和本機 `papers/cake2025.pdf` 逐位元相同）。GitHub API：`jsw-zorro/vllm`、`xenshinu/LMCache`（dev、patch-1 兩個分支）。
   - CacheGen：arXiv 2310.07240v6（19 頁）；`UChi-JCL/CacheGen@6bed34c` 的 `src/utils.py`、`run_adaptation.py`、`LMCache/.../cachegen_encoder.py`；`LMCache/LMCache@240506e`（2026-10-13 的 commit）的 `cachegen_basics.py`（舊版與 v1）、`docs/source/mp/cachegen.rst`、`docs/design/v1/distributed/l2_adapters/serde_wrapper.md`。
