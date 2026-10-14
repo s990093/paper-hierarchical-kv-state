@@ -9,7 +9,7 @@
 <polyline points="200,135 200,158" fill="none" stroke="#5F5E5A" stroke-width="1.6" marker-end="url(#a)"/>
 <rect x="40" y="158" width="320" height="64" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
 <text x="200.0" y="180" font-size="14" font-weight="600" fill="#2C2C2A" text-anchor="middle">Step 1　第 1 階 FP8 的端點（D2）</text>
-<text x="200.0" y="200" font-size="12" fill="#5F5E5A" text-anchor="middle">Llama、Qwen 各跑 E0、E1、E1s</text>
+<text x="200.0" y="200" font-size="12" fill="#5F5E5A" text-anchor="middle">Llama、Qwen 各跑 E0、E1、E1s、E1sr</text>
 <polyline points="200,222 200,245" fill="none" stroke="#5F5E5A" stroke-width="1.6" marker-end="url(#a)"/>
 <polygon points="200,245.0 350.0,302 200,359.0 50.0,302" fill="#FFF6E5" stroke="#BA7517" stroke-width="1.5"/>
 <text x="200" y="290" font-size="12.5" fill="#2C2C2A" text-anchor="middle">均勻 FP8 就夠？</text>
@@ -38,7 +38,7 @@
 <rect x="40" y="495" width="320" height="80" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1.5"/>
 <text x="200.0" y="517" font-size="14" font-weight="600" fill="#2C2C2A" text-anchor="middle">Step 2　在「均勻不夠」的那一階（D3–D5）</text>
 <text x="200.0" y="537" font-size="12" fill="#5F5E5A" text-anchor="middle">主模型照 §1.1 的表選</text>
-<text x="200.0" y="554" font-size="12" fill="#5F5E5A" text-anchor="middle">F25／B25／R25；讀法 A＋B；第 2 輪</text>
+<text x="200.0" y="554" font-size="12" fill="#5F5E5A" text-anchor="middle">F25／M25／B25／R25；讀法 A＋B；第 2 輪</text>
 <polyline points="200,575 200,600" fill="none" stroke="#5F5E5A" stroke-width="1.6" marker-end="url(#a)"/>
 <polygon points="200,603.0 350.0,648 200,693.0 50.0,648" fill="#FFF6E5" stroke="#BA7517" stroke-width="1.5"/>
 <text x="200" y="644" font-size="12.5" fill="#2C2C2A" text-anchor="middle">位置 vs 隨機：</text>
