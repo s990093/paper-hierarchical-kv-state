@@ -6,6 +6,7 @@
   python code/m10_report_tables.py e0       --json <quality_*.json>                        # E0 各格答對率
   python code/m10_report_tables.py lb       --table <quality_*_table.csv>                  # LongBench（只報告）
   python code/m10_report_tables.py decide   --json <decide_*.json>
+  python code/m10_report_tables.py k3       --json <k3_<m>.json>                             # Step 2b（換格式）
   python code/m10_report_tables.py sources  --restores <restores.csv[.gz]> --run <grid run_id> [--length 32768]  # 實際讀到幾個低精度 block
 """
 from __future__ import annotations
@@ -136,6 +137,17 @@ def sources(a):
             print(f"| {bw} | {ST[st]} | " + " | ".join(cell) + " |")
 
 
+def k3(a):
+    d = json.load(open(a.json))
+    yn = lambda v: "—" if v is None else ("過" if v else "不過")  # noqa: E731
+    print(f"模型 {d['model']}\n")
+    print("| 配置 | 四種情境都 ε 過 | 速度不輸（跨 run） | 這個配置過 |")
+    print("|:--|:--|:--|:--|")
+    for x, v in d["per_config"].items():
+        print(f"| {x} | {yn(v['eps_all_conds'])} | {yn(v['speed_not_worse'])} | **{yn(v['pass'])}** |")
+    print(f"\n**K3**＝{d['K3']}（成立＝同樣 8 bit 換 codec 就夠，問題不在位置）")
+
+
 def decide(a):
     d = json.load(open(a.json))
     for m in ("llama", "qwen"):
@@ -151,7 +163,7 @@ def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     for n, args in (("k0", ["--json"]), ("quality", ["--json"]), ("e0", ["--json"]), ("lb", ["--table"]),
-                    ("decide", ["--json"]), ("speed", ["--summary"]), ("sources", ["--restores", "--run"])):
+                    ("decide", ["--json"]), ("speed", ["--summary"]), ("sources", ["--restores", "--run"]), ("k3", ["--json"])):
         p = sub.add_parser(n)
         for x in args:
             p.add_argument(x, required=True)
@@ -160,7 +172,7 @@ def main():
         if n in ("speed", "sources"):
             p.add_argument("--length", type=int, default=32768)
     a = ap.parse_args()
-    {"k0": k0, "speed": speed, "quality": quality, "e0": e0, "lb": lb, "decide": decide, "sources": sources}[a.cmd](a)
+    {"k0": k0, "speed": speed, "quality": quality, "e0": e0, "lb": lb, "decide": decide, "sources": sources, "k3": k3}[a.cmd](a)
 
 
 if __name__ == "__main__":
