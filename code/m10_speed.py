@@ -13,6 +13,7 @@
   grid      §4.2：8 個配置（E0、E1、E1s、E1sr、F25、M25、B25、R25）× 頻寬 × GPU 狀態；每格另加 compute_only、
             load_only（E0、E1 的存法）兩條參考線；同一次重複裡配置順序隨機打散；
             --lengths 8192 16384：只有 E0、E1、B25、R25、GPU 閒（合成 token，時間和內容無關，Cake p.5）。
+  k0-verdict  不重跑：從 restores.csv 裡 --from-run 那次（grid）的 E0、E1 配對列算 K0（10/15 晚改動）
   summary   從 restores.csv 算每格的中位數、會合點分布、對只算／只載的比值 → summary.csv（不用 GPU）
 
 grid、k0 跑完另外寫（合併進）meets.json，給 m10_quality.py「讀法 B 重放」用（格式寫死）：
@@ -470,6 +471,20 @@ def cmd_k0(a):
     run_launches(a, ["E0", "E1"], [], [a.main_length])
     rows = [r for r in _rows(os.path.join(a.out_dir, "restores.csv")) if r["run_id"] == run_id()]
     write_meets(a, rows)
+    k0_verdict(a, rows, run_id())
+
+
+def cmd_k0_verdict(a):
+    """不重跑：從已經寫好的 restores.csv（例如 grid 那次）取 --from-run 的 E0、E1 列，照同一個判準算 K0。
+    grid 裡同一次重複（launch, rep, 頻寬, GPU 狀態）的 E0、E1 就是配對（順序隨機打散）。10/15 晚改動，03 開頭。"""
+    rows = [r for r in _rows(os.path.join(a.out_dir, "restores.csv"))
+            if r["run_id"] == a.from_run and r["config"] in ("E0", "E1") and int(r["length"]) == a.main_length]
+    if not rows:
+        raise SystemExit(f"restores.csv 裡沒有 run_id={a.from_run} 的 E0／E1 列")
+    k0_verdict(a, rows, a.from_run)
+
+
+def k0_verdict(a, rows, rid):
     if a.delta_json:
         dj = json.load(open(a.delta_json))
         dstar, dsrc = dj["delta_star"], a.delta_json
@@ -502,7 +517,7 @@ def cmd_k0(a):
     else:
         verdict = "K0 成立：E1 在每一格都沒有贏 E0 → 精度對還原時間沒有賺頭" if not any_win else \
             "K0 不成立：至少一格 E1 贏 E0（有賺頭）"
-    out = {"run_id": run_id(), "model": a.model, "fmt": a.fmt, "delta_star": dstar, "delta_source": dsrc,
+    out = {"run_id": rid, "model": a.model, "fmt": sorted({r["fmt"] for r in rows}), "delta_star": dstar, "delta_source": dsrc,
            "delta_detail": dj, "rule": "E1 贏＝中位數的差 > δ*，且配對差 bootstrap 95% CI 不含 0（03 §2.4、§5.3）",
            "cells": verdict_rows, "verdict": verdict}
     json.dump(out, open(os.path.join(a.out_dir, "k0_verdict.json"), "w"), indent=1, ensure_ascii=False)
@@ -658,6 +673,12 @@ def main():
             p.add_argument("--configs", nargs="+", default=CONFIGS)
             p.add_argument("--refs", nargs="*", default=["E0", "E1"], help="load_only 參考線用哪些存法")
             p.add_argument("--lengths", nargs="*", type=int, default=[8192, 16384])
+    v = sub.add_parser("k0-verdict", help="不重跑，從 restores.csv 裡某一次（例 grid）的 E0、E1 列算 K0")
+    v.add_argument("--model", choices=["llama", "qwen"], required=True)
+    v.add_argument("--out-dir", required=True)
+    v.add_argument("--from-run", required=True, help="restores.csv 的 run_id")
+    v.add_argument("--delta-json", help="noise 的 noise.json")
+    v.add_argument("--main-length", type=int, default=32768)
     a = ap.parse_args()
     if a.cmd == "_worker":
         worker(json.loads(a.spec))
@@ -666,7 +687,7 @@ def main():
         cmd_summary(a)
         return
     os.makedirs(a.out_dir, exist_ok=True)
-    {"calib-f": cmd_calib_f, "noise": cmd_noise, "k0": cmd_k0, "grid": cmd_grid}[a.cmd](a)
+    {"calib-f": cmd_calib_f, "noise": cmd_noise, "k0": cmd_k0, "grid": cmd_grid, "k0-verdict": cmd_k0_verdict}[a.cmd](a)
 
 
 if __name__ == "__main__":

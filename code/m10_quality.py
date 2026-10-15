@@ -453,6 +453,9 @@ def run(a):
     rid = os.environ.get("RUN_ID", "adhoc")
     cfgs = [parse_config(c, a.fmt) for c in a.configs]
     meets = json.load(open(a.meets))["meets"] if a.meets else None
+    if meets is not None and a.bws:          # 讀法 B 只用指定的頻寬（10/15 晚：只用中間頻寬 b32，03 §7 D4）
+        meets = {c: {bw: d for bw, d in x.items() if bw in a.bws} for c, x in meets.items()}
+    si, sk = (int(x) for x in a.shard.split("/"))
     done = set()
     if os.path.exists(a.out):                # 48 小時上限：重跑時跳過已完成的題（每題寫完才 flush，03 §9）
         done = {r["item_id"] for r in csv.DictReader(open(a.out))}
@@ -464,6 +467,8 @@ def run(a):
     t0 = time.time()
     n_new = 0
     for k, mk in enumerate(make_items(a, ans.tok)):
+        if k % sk != si:                     # --shard i/k：第 k 題只給 k mod 份數＝i 的 process（題目本身不變）
+            continue
         it = mk()
         if it["item_id"] in done:
             continue
@@ -582,6 +587,8 @@ if __name__ == "__main__":
             p.add_argument("--configs", nargs="+", default=CONFIGS)
             p.add_argument("--modes", nargs="+", default=["A"], choices=["A", "B"])
             p.add_argument("--meets", help="m10_speed 的 meets.json（讀法 B 必填）")
+            p.add_argument("--bws", nargs="*", help="讀法 B 只用這些頻寬（meets.json 的名字，例 b32）；不給＝全部")
+            p.add_argument("--shard", default="0/1", help="i/k：只跑第 i 份（題目依順序輪流分成 k 份），平行用")
             p.add_argument("--tasks", nargs="+", default=["T1", "T2", "T3", "T4", "T5"],
                            help="T1–T5；LongBench 寫 LB-<dataset>（例 LB-qasper）")
             p.add_argument("--n", type=int, default=60, help="T1–T5 每個任務幾題")
