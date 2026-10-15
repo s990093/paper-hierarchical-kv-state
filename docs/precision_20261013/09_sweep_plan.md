@@ -216,6 +216,7 @@
 | 融合反量化 | `code/m10_dequant_fast.py`（自測 `--self-test [--bench]`） |
 | 掃描主程式 | `code/m10_sweep.py`（`parts`、`screen`、`policies`） |
 | 速度推算 | `code/m10_sweep_sim.py`（`calib`） |
+| 海選彙整、挑選手、圖表 | `code/m10_sweep_analyze.py`（照 §4.2；用假資料測過：刻意放進的效果 17 格抓到 13 格，假勝出約 2.6%，符合 95% CI 的預期） |
 | 逐列原始資料（很大，不進 git） | `/mlsteam/data/tiara/runs/<run_id>/` |
 | 彙整、圖、表 | `results/m10_sweep_mi300x/` |
 | 執行紀錄 | `results/RUNLOG_MI300X.md` Milestone 11 |

@@ -44,5 +44,10 @@ open(f"{J}/queue/41_sweep_screen.sh", "w").write(f"""# 大掃描海選（09 §4.
 source {J}/lib.sh
 set -uo pipefail
 pool {J}/jobs_41.json 4 || exit 1
+# 彙整、挑選手（09 §4.2）、圖表：CPU；出錯不擋後面的 GPU 工作（寫 NEEDS_HUMAN）
+for m in llama qwen; do
+  python {REPO}/code/m10_sweep_analyze.py --model $m --csv {RAW}/screen_${{m}}_s*.csv.gz --out-dir {REPO}/results/m10_sweep_mi300x/analysis \
+    > {J}/queue/41_analyze_$m.out 2>&1 || echo "sweep analyze $m 失敗（queue/41_analyze_$m.out）" >> {J}/NEEDS_HUMAN
+done
 """)
 print("[sweep_plan_n] 寫了 queue/41_sweep_screen.sh", flush=True)
