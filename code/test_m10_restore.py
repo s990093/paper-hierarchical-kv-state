@@ -35,11 +35,12 @@ from m10_codec import Enc, decode, encode  # noqa: E402
 from m7_model import CHUNK, KVModel  # noqa: E402
 from m7_restore_harness import GiB, Restorer, Tier  # noqa: E402
 
-CONFIGS = {   # block → 格式；照 03 §2.1（E1s、M25、R25 的機制和這幾個相同，這裡不重複）
-    "E0": lambda i: "bf16",
-    "E1": lambda i: "LP",
-    "F25": lambda i: "LP" if 1 <= i <= 16 else "bf16",
-    "B25": lambda i: "LP" if 48 <= i <= 63 else "bf16",
+CONFIGS = {   # (block, n) → 格式；照 03 §2.1（E1s、M25、R25 的機制和這幾個相同，這裡不重複）
+    # F25／B25：前、後各 k＝n//4 個 block（不含 block 0）；n＝64 時 k＝16 → block 1–16、48–63，和 03 §2.1 相同
+    "E0": lambda i, n: "bf16",
+    "E1": lambda i, n: "LP",
+    "F25": lambda i, n: "LP" if 1 <= i <= n // 4 else "bf16",
+    "B25": lambda i, n: "LP" if n - n // 4 <= i <= n - 1 else "bf16",
 }
 
 
@@ -54,7 +55,8 @@ def setup(n, seed):
 
 
 def mixed(a):
-    n = 64
+    n = a.n                                                     # 預設 64（32K）；24 GB 的卡用 --n 32 或 16（m10_verify.sh）
+    assert n >= 8, n
     km, ids, ref = setup(n, a.seed)
     rs = Restorer(km)
     bf16_host = [km.host_chunk().copy_(r) for r in ref]
@@ -67,7 +69,7 @@ def mixed(a):
            "hip": torch.version.hip, "cuda": torch.version.cuda, "runs": []}
     ok = True
     for cfg, f in CONFIGS.items():
-        host = [lp_host[i] if f(i) == "LP" else bf16_host[i] for i in range(n)]
+        host = [lp_host[i] if f(i, n) == "LP" else bf16_host[i] for i in range(n)]
         for mode in ("compute_only", "load_only", "cake"):
             tier = Tier("ssd_test", read_Bps=bw, write_Bps=bw)
             km.kv[:, :, :, :n * CHUNK].zero_()
@@ -177,6 +179,7 @@ if __name__ == "__main__":
     ap.add_argument("--out", required=True)
     ap.add_argument("--fmt", default="fp8_head")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--n", type=int, default=64, help="mixed：block 數（預設 64＝32K；小卡用 32 或 16）")
     ap.add_argument("--reps", type=int, default=10)
     ap.add_argument("--old", help="舊版 m7_restore_harness.py 的路徑（regress 用）")
     ap.add_argument("--impls", default="new,old", help="regress：建立順序（new,old,new2,old2）；比值＝前兩個（有 new、old 時固定 new/old）")

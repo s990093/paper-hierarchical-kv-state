@@ -201,6 +201,20 @@ def rel_err(x: torch.Tensor, y: torch.Tensor) -> dict:
     return out
 
 
+def rel_err_centered(x: torch.Tensor, y: torch.Tensor) -> dict:
+    """扣掉每（層, head, channel）在這個 block 內的平均之後的相對誤差：‖x−y‖ ÷ ‖x−平均‖。
+
+    為什麼（2026-10-15，m10_kv_stats）：K 的固定偏移對每個 token 的 attention 分數加同一個數，softmax 不受影響；
+    真正的訊號是偏移周圍的變化。相對 L2 的分母被偏移撐大，看不出「量化誤差把變化淹掉」
+    （Qwen：一個 channel 平均 415、標準差 1.7，FP8 在 415 附近的刻度是 32）。"""
+    out = {}
+    for j, n in ((0, "K"), (1, "V")):
+        a, b = x[:, j].float(), y[:, j].float()
+        c = a - a.mean(dim=2, keepdim=True)
+        out[n] = float((a - b).norm() / c.norm().clamp_min(1e-30))
+    return out
+
+
 # ---------------------------------------------------------------- 自測
 def _synthetic(L=4, H=4, T=512, D=128, seed=0):
     """合成 KV：V 高斯；K 高斯＋少數 channel 的大固定偏移（模仿 Qwen 的 k_proj bias，P04 §4）。

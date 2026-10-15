@@ -85,7 +85,8 @@ DEFAULT_PARAMS = {
     "T1": {"haystack": "needle", "n_distractors": 0},
     "T2": {"n_values": 4, "n_distractors": 0},                       # 干擾＝其他鍵的單值針，放在任何位置
     "T3": {"n_hops": 4, "n_distractor_chains": 0, "icl": True},      # 干擾鏈放在任何位置
-    "T4": {"n_hard_distractors": 0},                                  # 每題自己的干擾段落（HotpotQA distractor）放幾段
+    "T4": {"n_hard_distractors": 0,                                   # 每題自己的干擾段落（HotpotQA distractor）放幾段
+           "max_answer_words": 0},                                    # >0：只出答案 ≤ 這麼多個字的題（10/15 加；0＝不限，行為不變）
     "T5": {"freq_cw": 30, "freq_ucw": 3, "num_cw": 10},
 }
 TOKENS_TO_GENERATE = {"T1": 128, "T2": 128, "T3": 30, "T4": 32, "T5": 120}   # 上游值；03 §1 是每題最多 64
@@ -141,11 +142,38 @@ def string_match_part(pred: str, refs: list[str]) -> float:
     return max((1.0 if r.lower() in pred.lower() else 0.0) for r in refs) if refs else 0.0
 
 
+def _norm_answer(s: str) -> str:
+    """LongBench metrics.py 的 normalize_answer（＝HotpotQA 官方 eval）：小寫、去標點、去冠詞、壓空白。"""
+    import re
+    import string as _s
+    s = "".join(ch for ch in s.lower() if ch not in set(_s.punctuation))
+    s = re.sub(r"\b(a|an|the)\b", " ", s)
+    return " ".join(s.split())
+
+
+def qa_f1(pred: str, gold: list[str]) -> float:
+    """LongBench 的 qa_f1_score（hotpotqa 用的計分），多個 gold 取最大。10/15 加：T4 的 string_match_part 太嚴
+    （"Steve Coogan" 對 "Stephen John Coogan" 算錯），先兩種都記，之後決定主判準用哪個。"""
+    from collections import Counter
+    best = 0.0
+    p = _norm_answer(pred).split()
+    for g in gold:
+        gt = _norm_answer(g).split()
+        common = Counter(p) & Counter(gt)
+        ns = sum(common.values())
+        if ns:
+            pr, rc = ns / len(p), ns / len(gt)
+            best = max(best, 2 * pr * rc / (pr + rc))
+    return best
+
+
 def score(metric: str, pred: str, gold: list[str]) -> float:
     if metric == "string_match_all":
         return string_match_all(pred, gold)
     if metric == "string_match_part":
         return string_match_part(pred, gold)
+    if metric == "qa_f1":
+        return qa_f1(pred, gold)
     raise ValueError(metric)
 
 
@@ -530,6 +558,10 @@ def _qa(task, turn_bands, seed, p, enc, n_blocks, block, attempt):
     qs = []
     while len(qs) < len(turn_bands):
         x = hq["qas"][crng.choice(hq["elig"])]
+        # 10/15：E0 調難度時發現答案 ≥3 個字的題目多半是被 string_match_part 判錯（"Steve Coogan" 對 "Stephen John Coogan"），
+        # 不是模型不會；限制答案長度讓計分可靠（m10_pilot_mi300x/e0_tune，見 RUNLOG Milestone 10-pilot）
+        if p["max_answer_words"] and len(x["a"].split()) > p["max_answer_words"]:
+            continue
         ok = True
         for y in qs:
             gx = "\n".join(x["ctx"][t] for t in x["gold_titles"]).lower()
