@@ -45,6 +45,12 @@
 
 - 全部「反量化成 BF16 後走和 E0 相同的 attention」（同 07 §2）。所以這裡比的是**格式本身的誤差**，不是各家的 attention kernel。
 - 新格式的程式：`code/m10_codec_x.py`。主線用的 `m10_codec.py` 一個字都沒改；舊格式經 m10_codec_x 轉手，結果逐位元相同。自測 61 項全過，包含新格式在 CPU 和 GPU 上逐位元相同（`--self-test --gpu`）。
+- **和官方參考實作比對過**（10/15 23:2x UTC，`results/m10_sweep_mi300x/xcheck_fp4_torchao.json`）：MXFP4、NVFP4 對 PyTorch 官方 torchao 0.18 的參考實作，4 種合成資料逐值比對。
+  - MXFP4：逐值完全相同。
+  - NVFP4：第一版有 0.02–0.07% 的值差一格。原因是官方「乘倒數」、我們「直接除」，加上官方把 block scale 截在 2^-6 以上。已改成和官方相同的算法，現在逐值完全相同。
+  - 唯一例外是整半全 0 的張量：官方算出 NaN，我們量成 0。
+  - INT2 KIVI 和主線的 INT4 KIVI 是同一套程式，只差位元數；旋轉的兩種是我們的簡化版，沒有官方實作可比。
+  - 反量化 kernel 另有三種寫法互相比對（原寫法、手寫融合、torch.compile），逐位元相同；stage 40 的 parts 會在真實 KV 上逐 block 再比一次，不同就停下來。
 - 沒做的：TurboQuant／CommVQ 這種向量量化（要碼本或特殊 kernel；只讀到新聞轉述）、LogQuant（選法摘要沒寫清楚），見 §8。
 
 ### 2.2 佔比

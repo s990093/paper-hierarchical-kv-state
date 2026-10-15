@@ -262,7 +262,7 @@ def cmd_parts(a):
         e1.synchronize()
         return r, e0.elapsed_time(e1)
 
-    summary = {}
+    summary, n_bad_fused, n_chk_fused = {}, {}, {}
     for state in a.states:
         busy = Busy(0.7, watch) if state == "busy" else None
         if busy:
@@ -285,7 +285,12 @@ def cmd_parts(a):
                             st = e.empty_like(km.device)
                             _, t_h2d = timed(lambda: st.copy_from(hp, non_blocking=True))
                             _, t_dq = timed(lambda: X.decode(st, out=scratch))
+                            ref = scratch.clone() if DF.supported(fmt) and rep == 0 else None
                             t_dqf = timed(lambda: DF.decode_fast(st, out=scratch))[1] if DF.supported(fmt) else ""
+                            if ref is not None:          # 真實 KV 上逐位元比對：融合 kernel 對原寫法（每個 block 第一次）
+                                same = bool(torch.equal(scratch, ref))
+                                n_bad_fused[fmt] = n_bad_fused.get(fmt, 0) + int(not same)
+                                n_chk_fused[fmt] = n_chk_fused.get(fmt, 0) + 1
                             nb = e.nbytes
                         rows.append(dict(run_id=rid, ts=ts(), model=a.model, fmt=fmt, gpu_state=state, block=i, bytes=nb,
                                          bits_per_value=round(nb * 8 / x.numel(), 4), t_encode_ms=round(t_enc, 4),
@@ -311,8 +316,14 @@ def cmd_parts(a):
     old = json.load(open(js)) if os.path.exists(js) else {}
     old.update({"run_id": rid, "model": a.model, "chunk_bytes_bf16": km.chunk_bytes,
                 "contaminated": None if watch is None else bool(watch.intruders) or watch.started_clean is False,
+                "fused_vs_torch_real_kv": {f: {"blocks_checked": n_chk_fused[f], "blocks_not_bitwise": n_bad_fused.get(f, 0)}
+                                           for f in n_chk_fused},
                 "median_per_block": {**old.get("median_per_block", {}), **summary}})
     json.dump(old, open(js, "w"), indent=1, ensure_ascii=False)
+    bad = {f: n for f, n in n_bad_fused.items() if n}
+    if bad:                                              # 不一樣就是 bug：照規則 2 停下來
+        raise SystemExit(f"融合反量化在真實 KV 上和原寫法不一樣（block 數）：{bad}")
+    print("fused_vs_torch_real_kv:", {f: n_chk_fused[f] for f in n_chk_fused}, "blocks 全部逐位元相同", flush=True)
 
 
 # ============================================================================ screen：海選

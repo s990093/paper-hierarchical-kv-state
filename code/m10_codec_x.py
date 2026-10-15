@@ -6,7 +6,8 @@
 新格式（x 的一半＝[L, H, T, D]，D＝128；分組都沿 D，除非另寫）：
   fp8e5_head／fp8e5_token  e5m2（最大 57344），scale 每（層, head）／每（層, head, token）＝amax÷57344
   mxfp4         OCP MX：E2M1 值、每 32 個值一個 E8M0 scale（2 的次方）＝2^(floor(log2 amax)−2)
-  nvfp4         NVIDIA NVFP4：E2M1 值、每 16 個值一個 E4M3 scale＝amax÷6÷g，g＝每（層, K/V）的 FP32 全域 scale＝amax÷(448×6)
+  nvfp4         NVIDIA NVFP4：E2M1 值、每 16 個值一個 E4M3 scale＝amax÷6÷g（截在 [2^-6, 448]），g＝每（層, K/V）的 FP32 全域 scale＝amax÷(448×6)；
+                量化乘倒數 x·((1/g)/s)，和 torchao 參考實作逐值相同（10/15 比對）
   int2_kivi     KIVI 2-bit：K 每 channel（沿 token 每 32 個一組）、V 每 token（沿 channel 每 32 個一組），scale／zero 存 FP16
   int4h_token   先沿 D 做正規化 Hadamard 旋轉（QuaRot 式），再對稱 INT4 每（層, head, token）；解碼後轉回來
   int2h_g32     先 Hadamard 旋轉，再非對稱 2-bit、每（token, 32 個 channel）一組，scale／zero 存 FP16
@@ -16,7 +17,8 @@
 寫死的細節（和 m10_codec 同一套規則）：
 - 除以常數一律 _div_c（GPU／CPU 逐位元相同）；floor(log2) 用 frexp（精確，不靠 log2 的捨入）。
 - E2M1 捨入：最近值、平手取偶數碼（OCP MX 規格）；超過 ±6 截在 ±6。碼＝符號位（bit 3）＋大小索引（0..7）。
-- amax＝0 的組：MX 的指數設 −127（值全為 0）；NV 的有效 scale 為 0 時設 1（值會量成 0）。
+- amax＝0 的組：MX 的指數設 −127（值全為 0）；NV 的 block scale 截在 2^-6 以上（同 torchao），整半全 0 時全域 scale 設 1
+  （torchao 0.18 在這種情況會算出 NaN，我們量成 0）。
 - 位元組＝Enc.nbytes（實際 tensor 大小），含 scale／zero／全域 scale。
 
 自測：python code/m10_codec_x.py --self-test [--out x.json] [--gpu]
@@ -38,6 +40,7 @@ E5 = torch.float8_e5m2
 E5_MAX = 57344.0
 G_MX, G_NV, G_KIVI = 32, 16, C.KIVI_GROUP
 _E2M1 = [0.0, 0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 6.0]
+_E4M3_TINY = torch.finfo(torch.float8_e4m3fn).tiny          # 2^-6：NVFP4 block scale 的下限（同 torchao）
 _E2M1_MID = [0.25, 0.75, 1.25, 1.75, 2.5, 3.5, 5.0]
 _ALIAS = {"int4_kivi": "kivi4", "int2_kivi": "kivi2"}
 HALF = ["bf16", "int8_token", "int4_token", "fp8_head", "fp8_token", "fp8e5_head", "fp8e5_token",
@@ -165,10 +168,12 @@ def enc_half(t: torch.Tensor, f: str, role: str) -> dict:
         gs = torch.where(gmax > 0, _div_c(gmax, C.FP8_MAX * 6.0), torch.ones_like(gmax))
         g = _grp(xf, G_NV)
         amax = g.abs().amax(dim=-1, keepdim=True)
-        s8 = (_div_c(amax, 6.0) / gs.unsqueeze(-1)).clamp_(max=C.FP8_MAX).to(C.FP8)
-        eff = s8.float() * gs.unsqueeze(-1)
-        eff = torch.where(eff > 0, eff, torch.ones_like(eff))
-        code = _e2m1_enc(g / eff)
+        gu = gs.unsqueeze(-1)
+        # 和 NVIDIA 的算法（torchao nvfp4_quantize＝MSLK triton kernel 的數值）相同：block scale 截在 [E4M3 最小正規數, 448]，
+        # 量化用「乘倒數」x·((1/g)/s)；10/15 對 torchao 0.18 逐值比對過（09 §2.1）
+        s8 = (_div_c(amax, 6.0) / gu).clamp_(min=_E4M3_TINY, max=C.FP8_MAX).to(C.FP8)
+        recip = (torch.ones_like(gu) / gu) / s8.float()
+        code = _e2m1_enc(g * recip)
         return {"q": _pack4(code.view(L, H, T, D)), "s8": s8.view(torch.uint8), "g": gs}
     if f in ("kivi4", "kivi2", "int2h_g32"):
         bits = 4 if f == "kivi4" else 2

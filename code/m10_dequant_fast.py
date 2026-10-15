@@ -8,6 +8,10 @@
 結果必須和 m10_codec.decode **逐位元相同**（同樣是 FP32 相乘再四捨五入到 BF16），self-test 驗。
 主線不用這支（07 凍結：判定用的速度是原本的寫法）；大掃描的「反量化加速」實驗（09 §6）才用，結果另外報。
 
+出處（照實寫）：不是照某篇論文的程式碼。是兩個常見技巧——kernel 融合（多步合成一個 kernel、只讀寫一次）＋查表解碼
+（FP8 只有 256 種碼）。相關前作見 docs/precision_20261013/cards/P07 §4（FLUTE 的查表反量化、vLLM FP8 Marlin 的位元技巧、
+QServe／BitDecoding 把反量化塞進 attention）。bench 另放 torch.compile（PyTorch 官方編譯器自動融合同一段寫法）當對照組。
+
 支援：fp8_head／fp8_channel／fp8_token（e4m3fn，scale 依粒度廣播）、int8_token。其他格式退回 m10_codec_x.decode。
 """
 from __future__ import annotations
@@ -88,6 +92,28 @@ def decode_fast(e, out: torch.Tensor | None = None, rows: int = 16) -> torch.Ten
     return out
 
 
+# ---- 對照組：PyTorch 官方編譯器（torch.compile／Inductor）自動融合同一段 PyTorch 寫法（不是手寫 kernel）
+def _torch_ref(q, s, out):
+    out.copy_((q.view(C.FP8).float() * s).to(torch.bfloat16))
+
+
+def _torch_ref_int8(q, s, out):
+    out.copy_((q.float() * s).to(torch.bfloat16))
+
+
+_COMPILED = {}
+
+
+def decode_compiled(e, out):
+    """torch.compile 版本：和 m10_codec.decode 一樣的運算，交給 Inductor 自動融合。只在 bench 用。"""
+    fp8 = e.fmt.startswith("fp8")
+    key = "fp8" if fp8 else "int8"
+    if key not in _COMPILED:
+        _COMPILED[key] = torch.compile(_torch_ref if fp8 else _torch_ref_int8, dynamic=False)
+    _COMPILED[key](e.parts["q"], e.parts["scale"], out)
+    return out
+
+
 def install():
     """讓 m7_restore_harness 的載入線改用融合 kernel（不支援的格式自動退回原本的 decode）。大掃描的速度實驗才呼叫。"""
     import m7_restore_harness as RH
@@ -119,6 +145,14 @@ def self_test(out_path=None, bench=False) -> bool:
         decode_fast(e, out=view)
         check(f"into_view[{fmt}]", torch.equal(view, want) and not bool(buf[:, :, :, :T].any())
               and not bool(buf[:, :, :, 2 * T:].any()))
+        try:                                             # 官方編譯器的版本：記錄是否逐位元相同（不當成失敗條件）
+            buf.zero_()
+            decode_compiled(e, view)
+            res["checks"][f"compiled_bitwise[{fmt}]"] = {"bitwise": bool(torch.equal(view, want))}
+            print(f"INFO compiled_bitwise[{fmt}]", bool(torch.equal(view, want)), flush=True)
+        except Exception as ex:                          # noqa: BLE001
+            res["checks"][f"compiled_bitwise[{fmt}]"] = {"error": repr(ex)[:300]}
+            print(f"INFO compiled[{fmt}] 失敗：{ex!r}"[:300], flush=True)
     if bench:                                            # 只在 GPU 沒有別人時跑才有意義
         res["bench"] = {}
         for name, shape in (("llama_block", (32, 2, 8, 512, 128)), ("qwen_block", (28, 2, 4, 512, 128))):
@@ -126,9 +160,15 @@ def self_test(out_path=None, bench=False) -> bool:
             vb = torch.empty_like(xb)
             for fmt in ("fp8_head", "fp8_token", "int8_token"):
                 e = C.encode(xb, fmt)
-                for impl, fn in (("torch", lambda: C.decode(e, out=vb)), ("fused", lambda: decode_fast(e, out=vb))):
-                    for _ in range(5):
-                        fn()
+                for impl, fn in (("torch", lambda: C.decode(e, out=vb)), ("fused", lambda: decode_fast(e, out=vb)),
+                                 ("torch_compile", lambda: decode_compiled(e, vb))):
+                    try:
+                        for _ in range(5):
+                            fn()
+                    except Exception as ex:              # noqa: BLE001  官方編譯器在 ROCm 上不一定能用：照實記
+                        res["bench"][f"{name}|{fmt}|{impl}"] = {"error": repr(ex)[:300]}
+                        print(f"{name} {fmt} {impl}: NOT_MEASURED（{ex!r}）"[:300], flush=True)
+                        continue
                     torch.cuda.synchronize()
                     ev0, ev1 = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
                     ts = []
