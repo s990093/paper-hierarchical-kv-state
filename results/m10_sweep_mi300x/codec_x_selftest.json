@@ -1,0 +1,372 @@
+{
+ "checks": {
+  "old_passthrough[bf16]": {
+   "pass": true
+  },
+  "old_passthrough[fp8_head]": {
+   "pass": true
+  },
+  "old_passthrough[fp8_channel]": {
+   "pass": true
+  },
+  "old_passthrough[fp8_token]": {
+   "pass": true
+  },
+  "old_passthrough[fp8k0_head]": {
+   "pass": true
+  },
+  "old_passthrough[fp8k0_channel]": {
+   "pass": true
+  },
+  "old_passthrough[fp8k0_token]": {
+   "pass": true
+  },
+  "old_passthrough[int8_token]": {
+   "pass": true
+  },
+  "old_passthrough[int4_token]": {
+   "pass": true
+  },
+  "old_passthrough[int4_kivi]": {
+   "pass": true
+  },
+  "pack2_roundtrip": {
+   "pass": true
+  },
+  "hadamard_orthonormal": {
+   "pass": true
+  },
+  "fwht_eq_matmul": {
+   "pass": true
+  },
+  "e2m1_round_ties_even": {
+   "pass": true,
+   "got": [
+    0.0,
+    0.0,
+    1.0,
+    1.0,
+    2.0,
+    2.0,
+    4.0,
+    4.0,
+    6.0,
+    0.0,
+    -3.0,
+    -6.0,
+    0.5
+   ],
+   "want": [
+    0.0,
+    0.0,
+    1.0,
+    1.0,
+    2.0,
+    2.0,
+    4.0,
+    4.0,
+    6.0,
+    0.0,
+    -3.0,
+    -6.0,
+    0.5
+   ]
+  },
+  "roundtrip_finite[fp8e5_head]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.017695926129817963,
+    "V": 0.005209220107644796
+   }
+  },
+  "nbytes[fp8e5_head]": {
+   "pass": true,
+   "nbytes": 2097280,
+   "expect": 2097280,
+   "bits_per_value": 8.0005
+  },
+  "deterministic[fp8e5_head]": {
+   "pass": true
+  },
+  "decode_into_view[fp8e5_head]": {
+   "pass": true
+  },
+  "zero_head[fp8e5_head]": {
+   "pass": true
+  },
+  "roundtrip_finite[fp8e5_token]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.007454719394445419,
+    "V": 0.005067765712738037
+   }
+  },
+  "nbytes[fp8e5_token]": {
+   "pass": true,
+   "nbytes": 2162688,
+   "expect": 2162688,
+   "bits_per_value": 8.25
+  },
+  "deterministic[fp8e5_token]": {
+   "pass": true
+  },
+  "decode_into_view[fp8e5_token]": {
+   "pass": true
+  },
+  "zero_head[fp8e5_token]": {
+   "pass": true
+  },
+  "roundtrip_finite[mxfp4]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.042500901967287064,
+    "V": 0.17900581657886505
+   }
+  },
+  "nbytes[mxfp4]": {
+   "pass": true,
+   "nbytes": 1114112,
+   "expect": 1114112,
+   "bits_per_value": 4.25
+  },
+  "deterministic[mxfp4]": {
+   "pass": true
+  },
+  "decode_into_view[mxfp4]": {
+   "pass": true
+  },
+  "zero_head[mxfp4]": {
+   "pass": true
+  },
+  "roundtrip_finite[nvfp4]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.021505698561668396,
+    "V": 0.009420930407941341
+   }
+  },
+  "nbytes[nvfp4]": {
+   "pass": true,
+   "nbytes": 1179680,
+   "expect": 1179680,
+   "bits_per_value": 4.5001
+  },
+  "deterministic[nvfp4]": {
+   "pass": true
+  },
+  "decode_into_view[nvfp4]": {
+   "pass": true
+  },
+  "zero_head[nvfp4]": {
+   "pass": true
+  },
+  "roundtrip_finite[int2_kivi]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.011251109652221203,
+    "V": 0.03897896781563759
+   }
+  },
+  "nbytes[int2_kivi]": {
+   "pass": true,
+   "nbytes": 786432,
+   "expect": 786432,
+   "bits_per_value": 3.0
+  },
+  "deterministic[int2_kivi]": {
+   "pass": true
+  },
+  "decode_into_view[int2_kivi]": {
+   "pass": true
+  },
+  "zero_head[int2_kivi]": {
+   "pass": true
+  },
+  "roundtrip_finite[int4h_token]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.041135095059871674,
+    "V": 0.011658396571874619
+   }
+  },
+  "nbytes[int4h_token]": {
+   "pass": true,
+   "nbytes": 1114112,
+   "expect": 1114112,
+   "bits_per_value": 4.25
+  },
+  "deterministic[int4h_token]": {
+   "pass": true
+  },
+  "decode_into_view[int4h_token]": {
+   "pass": true
+  },
+  "zero_head[int4h_token]": {
+   "pass": true
+  },
+  "roundtrip_finite[int2h_g32]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.06006297841668129,
+    "V": 0.038915637880563736
+   }
+  },
+  "nbytes[int2h_g32]": {
+   "pass": true,
+   "nbytes": 786432,
+   "expect": 786432,
+   "bits_per_value": 3.0
+  },
+  "deterministic[int2h_g32]": {
+   "pass": true
+  },
+  "decode_into_view[int2h_g32]": {
+   "pass": true
+  },
+  "zero_head[int2h_g32]": {
+   "pass": true
+  },
+  "roundtrip_finite[kv-int8_token-int4_kivi]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.013054572977125645,
+    "V": 0.007816105149686337
+   }
+  },
+  "nbytes[kv-int8_token-int4_kivi]": {
+   "pass": true,
+   "nbytes": 1736704,
+   "expect": 1736704,
+   "bits_per_value": 6.625
+  },
+  "deterministic[kv-int8_token-int4_kivi]": {
+   "pass": true
+  },
+  "decode_into_view[kv-int8_token-int4_kivi]": {
+   "pass": true
+  },
+  "zero_head[kv-int8_token-int4_kivi]": {
+   "pass": true
+  },
+  "roundtrip_finite[kv-int4_kivi-int2_kivi]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.002177482470870018,
+    "V": 0.03897896781563759
+   }
+  },
+  "nbytes[kv-int4_kivi-int2_kivi]": {
+   "pass": true,
+   "nbytes": 1048576,
+   "expect": 1048576,
+   "bits_per_value": 4.0
+  },
+  "deterministic[kv-int4_kivi-int2_kivi]": {
+   "pass": true
+  },
+  "decode_into_view[kv-int4_kivi-int2_kivi]": {
+   "pass": true
+  },
+  "zero_head[kv-int4_kivi-int2_kivi]": {
+   "pass": true
+  },
+  "err_order_bits_V": {
+   "pass": true
+  },
+  "nvfp4_le_mxfp4": {
+   "pass": true,
+   "nv": {
+    "K": 0.021505698561668396,
+    "V": 0.009420930407941341
+   },
+   "mx": {
+    "K": 0.042500901967287064,
+    "V": 0.17900581657886505
+   }
+  },
+  "hadamard_helps_sparse_outliers": {
+   "pass": true,
+   "rotated": {
+    "K": 0.06373997777700424,
+    "V": 0.06378921866416931
+   },
+   "plain": {
+    "K": 0.21992041170597076,
+    "V": 0.21954557299613953
+   }
+  },
+  "gpu_eq_cpu[fp8e5_head]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[fp8e5_token]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[mxfp4]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[nvfp4]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[int2_kivi]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[int4h_token]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[int2h_g32]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[kv-int8_token-int4_kivi]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[kv-int4_kivi-int2_kivi]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  }
+ },
+ "note_rotation_constant_offset": {
+  "rotated_cenK": 1.4550222158432007,
+  "plain_cenK": 1.0174477100372314,
+  "note": "固定偏移的 K：旋轉後 per-token INT4 變差（記錄，不判）"
+ },
+ "bits_per_value": {
+  "bf16": 16.0,
+  "fp8_head": 8.0005,
+  "fp8_channel": 8.0625,
+  "fp8_token": 8.25,
+  "fp8k0_head": 8.0161,
+  "fp8k0_channel": 8.0781,
+  "fp8k0_token": 8.2656,
+  "int8_token": 8.25,
+  "int4_token": 4.25,
+  "int4_kivi": 5.0,
+  "fp8e5_head": 8.0005,
+  "fp8e5_token": 8.25,
+  "mxfp4": 4.25,
+  "nvfp4": 4.5001,
+  "int2_kivi": 3.0,
+  "int4h_token": 4.25,
+  "int2h_g32": 3.0,
+  "kv-int8_token-int4_kivi": 6.625,
+  "kv-int4_kivi-int2_kivi": 4.0
+ },
+ "all_pass": true,
+ "synthetic_note": "合成資料（高斯＋4 個 channel 偏移 200），誤差只驗機制，不代表真實 KV"
+}

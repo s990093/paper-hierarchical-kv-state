@@ -88,7 +88,8 @@ def main():
         mv("80_grid_int4", "33a_grid_int4")
         mv("85_quality_int4_endpoints", "33b_quality_int4_endpoints")
         mv("86_quality_int4_mixed", "33c_quality_int4_mixed")
-        log("兩個模型都過 → INT4 的格子、端點、混合配置排到 35 前面")
+        mv("35_quality_fp8_mixed", "45_quality_fp8_mixed")
+        log("兩個模型都過 → INT4 的格子、端點、混合配置排到 35 前面；FP8 混合配置變成只報告 → 排到大掃描（40–42）後面")
         return
     m = "qwen" if (L and not Qp) else "llama"      # 照 m10_analyze.cmd_decide 的分支（兩個都沒過 → Llama）
     log(f"Step 2b（K3）在 {m} 上判")
@@ -101,7 +102,8 @@ def main():
     if k3 is None:
         human(f"K3({m}) 判不出來（None）")
     if k3:
-        log("K3 成立 → 流程在 FP8 階停；後面全是只報告的工作，順序不動")
+        mv("35_quality_fp8_mixed", "45_quality_fp8_mixed")
+        log("K3 成立 → 流程在 FP8 階停；FP8 混合配置變成只報告 → 排到大掃描（40–42）後面（使用者 10/15：主線關鍵段先、掃描在只報告的工作前）")
         return
     open(os.path.join(J, "f8m_first.txt"), "w").write(m + "\n")
     log(f"K3 不成立 → Step 2 在 {m} 上做：stage 35 先跑 {m}（f8m_first.txt）")

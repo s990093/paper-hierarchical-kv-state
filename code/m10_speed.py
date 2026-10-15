@@ -288,6 +288,13 @@ def _watcher(out_path):
 def worker(spec: dict):
     """一個子 process＝一次「重開」。spec 由外層 JSON 傳進來。"""
     import torch
+    # 大掃描（09）才用的開關，預設都關（主線的行為不變）：新格式（m10_codec_x）、融合的反量化 kernel（m10_dequant_fast）
+    if os.environ.get("M10_CODEC_X") == "1":
+        import m10_codec_x
+        m10_codec_x.install()
+    if os.environ.get("M10_DEQUANT_FAST") == "1":
+        import m10_dequant_fast
+        m10_dequant_fast.install()
     rng = random.Random(f"m10-speed|{spec['launch']}|{spec.get('seed', 0)}")
     lengths = spec["lengths"]
     n_max = max(lengths) // 512

@@ -469,3 +469,41 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
      - 資料不全、分析出錯 → 寫 `NEEDS_HUMAN`、留完整錯誤，**不讓佇列停**（後面的 GPU 工作不依賴分析），35 照預設（Qwen 先）跑。
 - **測試**：用假資料（真檔的列結構、分數全部換成亂數，沒有印出任何真值）把 analyze_step1 → report_bits step1 → analyze_2b → report_bits k3 → analyze_step2 整條跑過；route 的 6 種分支（擋→加題、加題後仍擋、都過、Llama 過 Qwen 沒過、都沒過、資料不全）在佇列的複本上逐一跑過；加題 stage 和 35 的順序乾跑過。
 - **另外**：圖 A 的資料註腳改成帶資料夾（`speed_qwen_regrid/summary_fp8.csv`），分得出是哪一次速度量測。
+
+## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
+
+**狀態**：程式寫好、CPU／GPU 自測通過；GPU 工作已排進佇列（31z 冒煙測試 → 主線關鍵段 → 40 試跑 → 41 海選 → 42）。**還沒有任何大掃描的數字。**
+**事先登記**：`docs/precision_20261013/09_sweep_plan.md`（2026-10-15 22:50 UTC 寫，此時沒有任何大掃描結果、主線 Step 1 的低精度答對率也沒人看過）。
+**文獻**：`docs/precision_20261013/cards/P07_sweep_formats_sys_dequant.md`（多為摘要級，未逐頁核對；**self-review**）。
+
+### 11.1 程式（CPU 為主，22:00–22:50 UTC）
+
+- `code/m10_codec_x.py`：新格式 fp8e5_head／fp8e5_token、mxfp4、nvfp4、int2_kivi、int4h_token、int2h_g32、`kv-<K>-<V>`（K8V4、K4V2）。舊格式原封不動轉給 `m10_codec`（逐位元相同）。
+  - 自測（`--self-test --gpu`）61 項全過，輸出 `results/m10_sweep_mi300x/codec_x_selftest.json`（合成資料，只驗機制）。
+  - 抓到並修掉一個問題：Hadamard 旋轉原本用矩陣乘法，CPU／GPU 的加總順序不同，最後一位不一樣 → 改成固定順序的加減蝴蝶（FWHT），現在逐位元相同。
+  - 記錄：合成資料的 K 是固定大偏移（模仿 Qwen），旋轉後 per-token INT4 的 K 中心化誤差反而變大（自測的 `note_rotation_constant_offset`）。這是對 Qwen 的預測，不是結果。
+- `code/m10_dequant_fast.py`：融合的反量化 kernel（Triton 3.6，查表轉 FP8 → 乘 scale → BF16 直接寫進 KV 視圖），fp8_head／channel／token、int8_token **和原寫法逐位元相同**（GPU 自測）。速度在 stage 40 量。
+- `code/m10_sweep.py`：`parts`（每種格式每個 block 的位元組、編碼、D2H、H2D、反量化原寫法／融合，GPU 閒／忙，gpu_guard）、`screen`（teacher forcing 海選）、`policies`（放法自測：通過）。
+- `code/m10_sweep_sim.py`：Cake 雙線推算。用主線 FP8 格子的參考線驗證（`results/m10_sweep_mi300x/sim_calib/`）：
+  - 會合點在實測 ±1 內：Qwen 64／64、Llama 64／64。
+  - 還原時間誤差中位數：Qwen 1.4%、Llama 1.0%。
+  - **真實 CPU 層一律偏快**：Qwen 5–16%、Llama 3–19%（推算沒算到反量化和重算搶 GPU）→ 09 §5 寫死：CPU 層時間一律用實測。
+- `code/m10_speed.py`：worker 開頭加兩個預設關閉的開關 `M10_CODEC_X`、`M10_DEQUANT_FAST`（主線行為不變）。
+
+### 11.2 已經量到的反量化開銷（主線 run 的既有資料，09 §6.1）
+
+- 真實 CPU 層、64 個 block，FP8 反量化（只載／Cake 同時跑），ms：
+  - Llama：閒 14.9／24.0，忙 56.8／64.0。
+  - Qwen：閒 6.8／10.7，忙 26.0／26.1。
+- 省下的 H2D：Llama 閒 39.6、忙 75.9；Qwen 閒 18.0、忙 33.0。
+- 有效頻寬約 0.4 TB/s〔算術〕，HBM 的一成不到。
+- run：`20261015-161226-m10-grid-fp8-llama`、`20261015-194150-m10-regrid-fp8-qwen`。
+
+### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
+
+- 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。
+- 主線關鍵段：stage 31 判出的那段。
+- 40 試跑：parts、反量化微測、每個模型 2 個 process × 每任務 2 題 → `sweep_plan_n.py` 照 09 §4.1 決定題數，寫 41。
+- 41 海選。
+- 42 加速反量化後的 CPU 層速度格子。
+- 然後才是只報告的 55／60／70／75／INT4 封存。FP8 混合配置（35）不是關鍵段時，由 stage 31 改名成 45，排在大掃描後面。
