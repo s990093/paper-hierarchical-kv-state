@@ -1,0 +1,122 @@
+{
+ "cells": {
+  "32768|b16|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.49467,
+    0.48209,
+    0.48224
+   ],
+   "overall_median": 0.48337,
+   "delta": 0.02603884362832909,
+   "b_values": [
+    13,
+    14,
+    15,
+    16
+   ]
+  },
+  "32768|b32|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    1.17999,
+    1.16483,
+    1.17409
+   ],
+   "overall_median": 1.1735,
+   "delta": 0.012922869260443642,
+   "b_values": [
+    30,
+    31,
+    32
+   ]
+  },
+  "32768|b48|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    2.0639,
+    2.04333,
+    2.05657
+   ],
+   "overall_median": 2.05579,
+   "delta": 0.010007590757711234,
+   "b_values": [
+    47,
+    48
+   ]
+  },
+  "32768|cpu|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.05239,
+    0.05191,
+    0.05184
+   ],
+   "overall_median": 0.05193,
+   "delta": 0.010696165362138858,
+   "b_values": [
+    1,
+    2
+   ]
+  },
+  "32768|b16|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.60925,
+    0.55379,
+    0.61128
+   ],
+   "overall_median": 0.60951,
+   "delta": 0.09431979544274374,
+   "b_values": [
+    8,
+    9
+   ]
+  },
+  "32768|b32|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    1.62373,
+    1.62307,
+    1.62125
+   ],
+   "overall_median": 1.62291,
+   "delta": 0.0015293515968230495,
+   "b_values": [
+    20,
+    21
+   ]
+  },
+  "32768|b48|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    3.34963,
+    3.34173,
+    3.34249
+   ],
+   "overall_median": 3.34587,
+   "delta": 0.002358278040099318,
+   "b_values": [
+    38
+   ]
+  },
+  "32768|cpu|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.06528,
+    0.06522,
+    0.06534
+   ],
+   "overall_median": 0.06522,
+   "delta": 0.0018551595667205241,
+   "b_values": [
+    1
+   ]
+  }
+ },
+ "delta": 0.09431979544274374,
+ "delta_star": 0.09431979544274374,
+ "rule": "δ＝各格（E0、cake）各 process 中位數 (max−min)÷整體中位數 的最大值；δ*＝max(5%, δ)（03 §5.3）",
+ "run_id": "20261015-155626-m10-noise-qwen",
+ "model": "qwen"
+}

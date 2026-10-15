@@ -492,6 +492,64 @@ def run(a):
         watch.__exit__(None, None, None)
 
 
+def sensmap(a):
+    """03 §3.3b 逐 block 敏感度地圖（只報告，不進判準）：每題 prefill 一次，第 1 輪問題；一次只把**一個** block 換成
+    低精度（--fmt），其他全 BF16，量標準答案的分布對 E0 的 KL 與 gold log-prob（teacher forcing，不生成）。"""
+    ans = Answerer(a.model)
+    rid = os.environ.get("RUN_ID", "adhoc")
+    P = json.load(open(a.params_file))["params"][a.model] if a.params_file else {}
+    enc = T._enc(ans.tok)
+    fields = ["run_id", "ts", "model", "item_id", "task", "band", "turn", "fmt", "block", "kl_vs_e0", "gold_logprob",
+              "gold_logprob_e0", "relK", "cenK", "needle_blocks", "own_gpu_intruders"]
+    done = set()
+    if os.path.exists(a.out):
+        done = {r["item_id"] for r in csv.DictReader(open(a.out))}
+    f = open(a.out, "a", newline="")
+    w = csv.DictWriter(f, fieldnames=fields)
+    if not done:
+        w.writeheader()
+    watch = _watch(a.out)
+    si, sk = (int(x) for x in a.shard.split("/"))
+    t0, n_new = time.time(), 0
+    for k, (task, b1, b2, seed) in enumerate(plan_items(a.tasks, a.n, a.seed0)):
+        if k % sk != si:
+            continue
+        it = T.make_item(task, b1, b2, seed, ans.tok, P.get(task))
+        if it["item_id"] in done:
+            continue
+        st = ItemState(ans, it)
+        tr = it["turns"][0]
+        seq = tr.get("history_ids", []) + tr["query_ids"]
+        gold_ids = enc(tr["gold_text"])
+
+        def tf_for(eff):
+            st.place(a.fmt, eff)
+            lg = ans.feed(seq, st.ctx_len)
+            return teacher_force(ans, lg, gold_ids, st.ctx_len + len(seq))
+
+        g = torch.tensor(gold_ids, device=ans.km.device)
+        ar = torch.arange(len(g), device=ans.km.device)
+        p0 = tf_for(frozenset())
+        lp0 = float(p0[ar, g].sum())
+        st.lp_blocks(a.fmt)
+        errs = st.err[a.fmt]
+        intr = "NOT_CHECKED" if watch is None else len(watch.intruders)
+        for i in range(st.n):
+            p = tf_for(frozenset([i]))
+            w.writerow(dict(run_id=rid, ts=ts(), model=a.model, item_id=it["item_id"], task=it["task"], band=tr["band"],
+                            turn=tr["turn"], fmt=a.fmt, block=i,
+                            kl_vs_e0=float((p0.exp() * (p0 - p)).sum(-1).mean()), gold_logprob=float(p[ar, g].sum()),
+                            gold_logprob_e0=lp0, relK=round(errs[i][0], 6), cenK=round(errs[i][2], 6),
+                            needle_blocks=json.dumps(tr["needle_blocks"]), own_gpu_intruders=intr))
+        f.flush()
+        del st
+        n_new += 1
+        print(f"[{k + 1}] {it['item_id']} {(time.time() - t0) / n_new:.1f}s/題", flush=True)
+    f.close()
+    if watch is not None:
+        watch.__exit__(None, None, None)
+
+
 def selfcheck(a):
     """結構檢查，**不計分**：只比位元與形狀（03 §2.2「真的 Cake vs 重放」、§9 的風險列）。輸出 JSON；任何一項不過 → exit 1。"""
     from m10_codec import encode
@@ -598,5 +656,14 @@ if __name__ == "__main__":
         else:
             p.add_argument("--n", type=int, default=5, help="檢查幾題（T1–T5 各一題）")
             p.add_argument("--load-ms", type=float, default=50.0, help="限速：BF16 一個 block 載入幾毫秒（讓會合點落在中間）")
+    p = sub.add_parser("sensmap", help="03 §3.3b 逐 block 敏感度地圖（只報告）")
+    p.add_argument("--model", choices=list(T.MODELS), required=True)
+    p.add_argument("--fmt", required=True)
+    p.add_argument("--params-file")
+    p.add_argument("--tasks", nargs="+", default=["T1", "T2", "T3", "T4", "T5"])
+    p.add_argument("--n", type=int, default=10, help="每個任務幾題（第 1 輪）")
+    p.add_argument("--seed0", type=int, default=10000)
+    p.add_argument("--shard", default="0/1")
+    p.add_argument("--out", required=True)
     a = ap.parse_args()
-    {"tune": tune, "summary": resummarize, "run": run, "selfcheck": selfcheck}[a.cmd](a)
+    {"tune": tune, "summary": resummarize, "run": run, "selfcheck": selfcheck, "sensmap": sensmap}[a.cmd](a)

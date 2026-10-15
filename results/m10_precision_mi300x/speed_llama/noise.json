@@ -1,0 +1,120 @@
+{
+ "cells": {
+  "32768|b16|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.57448,
+    0.58423,
+    0.57722
+   ],
+   "overall_median": 0.57655,
+   "delta": 0.016909083971319266,
+   "b_values": [
+    14,
+    15,
+    16
+   ]
+  },
+  "32768|b32|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    1.36922,
+    1.38837,
+    1.387
+   ],
+   "overall_median": 1.38497,
+   "delta": 0.013831752487697203,
+   "b_values": [
+    31,
+    32
+   ]
+  },
+  "32768|b48|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    2.41041,
+    2.48216,
+    2.44421
+   ],
+   "overall_median": 2.41536,
+   "delta": 0.029706483285134973,
+   "b_values": [
+    47,
+    48
+   ]
+  },
+  "32768|cpu|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.09574,
+    0.09554,
+    0.09542
+   ],
+   "overall_median": 0.09556,
+   "delta": 0.0033435366140805315,
+   "b_values": [
+    2,
+    3
+   ]
+  },
+  "32768|b16|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.66474,
+    0.66544,
+    0.66508
+   ],
+   "overall_median": 0.66511,
+   "delta": 0.0010509484471447432,
+   "b_values": [
+    8,
+    9
+   ]
+  },
+  "32768|b32|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    1.92967,
+    1.93254,
+    1.93489
+   ],
+   "overall_median": 1.93268,
+   "delta": 0.00270142594517577,
+   "b_values": [
+    20,
+    21
+   ]
+  },
+  "32768|b48|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    3.96096,
+    3.94602,
+    3.93813
+   ],
+   "overall_median": 3.9481,
+   "delta": 0.005782407519979322,
+   "b_values": [
+    38
+   ]
+  },
+  "32768|cpu|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.16435,
+    0.16183,
+    0.16127
+   ],
+   "overall_median": 0.16183,
+   "delta": 0.019060242601758755,
+   "b_values": [
+    2
+   ]
+  }
+ },
+ "delta": 0.029706483285134973,
+ "delta_star": 0.05,
+ "rule": "δ＝各格（E0、cake）各 process 中位數 (max−min)÷整體中位數 的最大值；δ*＝max(5%, δ)（03 §5.3）",
+ "run_id": "20261015-154722-m10-noise-llama",
+ "model": "llama"
+}

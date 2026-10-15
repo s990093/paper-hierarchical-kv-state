@@ -1,0 +1,73 @@
+{
+ "rule": "每個模型、每一階，E1（讀法 A）對 E0 的平均 KL 最小的格式（03 開頭 10/15 晚改動）；不看答對率",
+ "run_ids": [
+  "20261015-160426-m10-fmtsel-llama-s0",
+  "20261015-160541-m10-fmtsel-llama-s1",
+  "20261015-160656-m10-fmtsel-qwen-s0",
+  "20261015-160811-m10-fmtsel-qwen-s1"
+ ],
+ "csv": [
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/fmt_select/mini_llama_s0.csv",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/fmt_select/mini_llama_s1.csv",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/fmt_select/mini_qwen_s0.csv",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/fmt_select/mini_qwen_s1.csv"
+ ],
+ "mean_kl": {
+  "llama": {
+   "fp8_head": 0.004342,
+   "fp8_channel": 0.004123,
+   "fp8_token": 0.002358,
+   "int4_token": 0.028283,
+   "int4_kivi": 0.005213
+  },
+  "qwen": {
+   "fp8_head": 3.401199,
+   "fp8_channel": 8.816493,
+   "fp8_token": 11.779817,
+   "int4_token": 10.474564,
+   "int4_kivi": 0.012531
+  }
+ },
+ "n_rows": {
+  "llama": {
+   "fp8_head": 35,
+   "fp8_channel": 35,
+   "fp8_token": 35,
+   "int4_token": 35,
+   "int4_kivi": 35
+  },
+  "qwen": {
+   "fp8_head": 35,
+   "fp8_channel": 35,
+   "fp8_token": 35,
+   "int4_token": 35,
+   "int4_kivi": 35
+  }
+ },
+ "n_items": {
+  "llama": {
+   "fp8_head": 20,
+   "fp8_channel": 20,
+   "fp8_token": 20,
+   "int4_token": 20,
+   "int4_kivi": 20
+  },
+  "qwen": {
+   "fp8_head": 20,
+   "fp8_channel": 20,
+   "fp8_token": 20,
+   "int4_token": 20,
+   "int4_kivi": 20
+  }
+ },
+ "choice": {
+  "llama": {
+   "fp8": "fp8_token",
+   "int4": "int4_kivi"
+  },
+  "qwen": {
+   "fp8": "fp8_head",
+   "int4": "int4_kivi"
+  }
+ }
+}
