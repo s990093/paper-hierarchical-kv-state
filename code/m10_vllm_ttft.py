@@ -44,9 +44,12 @@ def main():
     if a.chunking == "512":
         kw["max_num_batched_tokens"] = 512
     llm = LLM(**kw)
-    sched = llm.llm_engine.vllm_config.scheduler_config
-    mnbt = getattr(sched, "max_num_batched_tokens", None)
-    vocab = llm.llm_engine.model_config.get_vocab_size()
+    try:                                                   # 版本間屬性位置不同：查不到就照實記 NOT_FOUND（不猜）
+        mnbt = llm.llm_engine.vllm_config.scheduler_config.max_num_batched_tokens
+    except Exception as ex:                                # noqa: BLE001
+        mnbt = f"NOT_FOUND ({type(ex).__name__})"
+    from transformers import AutoConfig
+    vocab = AutoConfig.from_pretrained(path).vocab_size
     sp = SamplingParams(max_tokens=1, temperature=0.0)
     rng = random.Random(f"{a.model}|{a.chunking}")
     rid = os.environ.get("RUN_ID", "adhoc")
