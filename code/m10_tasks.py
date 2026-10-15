@@ -8,7 +8,7 @@
 
 | 代號 | 上游名稱 | 需要的資訊 | 計分 |
 |:--|:--|:--|:--|
-| T1 | niah_multikey_3 | 一根 UUID 鍵值針（整片海都是同格式的干擾針） | string_match_all |
+| T1 | niah_multikey_3 | 一根 UUID 鍵值針（整片海都是同格式的干擾針）；可加難：n_queries、n_similar（見下） | string_match_all |
 | T2 | niah_multivalue | 一個鍵的 4 根針（4 個值） | string_match_all |
 | T3 | vt | 一條 4 跳的變數指派鏈（5 行） | string_match_all |
 | T4 | qa（HotpotQA） | 兩段 gold 段落 | string_match_part |
@@ -55,6 +55,10 @@ context＋turns[0].query_ids＋turns[1].history_ids＋turns[1].query_ids，其�
   filler 段落若含任一題的答案字串就不用；答案是 yes/no、出現在問題裡、或是 1–3 位數字（會撞到 `Document N:`）的題目不用。
 - T5：1-shot 範例照 ruler_tasks.py 的寫法（不把 chat template 包進範例，上游那樣會重複 chat template）；
   詞表排除「小寫後是模板文字子字串」的詞（例如 list、words），避免答案前綴本身就讓計分命中。
+- T1 的加難參數（10/15 加，預設＝不變）：`n_queries`＝一次問幾個鍵（照上游 `niah_multiquery`：每個鍵一個值、
+  問句用 "k1, k2, and k3"、答案要全部答出、用複數模板），所有被問的鍵都放在同一個帶內；
+  `n_similar`／`similar_prefix`＝每個被問的鍵配幾根「相似鍵」干擾針，鍵和被問的鍵前 similar_prefix 個字元相同、
+  其餘是新的隨機 UUID 字元、值不同，插在任何位置（可能在答案帶內）。**相似鍵是我們加的，和上游不同**（RULER 沒有）。
 - 答案前綴照上游保留開頭的空白（接在 assistant 開頭之後）。
 - Llama-3.1 的 chat template 固定 `date_string="26 Jul 2024"`（模板的預設值），可重現。
 """
@@ -82,7 +86,10 @@ _ALIAS = {v: k for k, v in TASKS.items()}
 
 DEFAULT_PARAMS = {
     # haystack="needle"：整片海都是同格式的干擾針（上游 multikey_3）；"noise" 時改放 n_distractors 根干擾針
-    "T1": {"haystack": "needle", "n_distractors": 0},
+    "T1": {"haystack": "needle", "n_distractors": 0,
+           # 10/15 加（使用者選「T1 另做更難的版本」；預設＝不變）：n_queries＝一次問幾個鍵（RULER niah_multiquery 的做法）；
+           # n_similar＝每個被問的鍵各配幾根「相似鍵」干擾針（鍵的前 similar_prefix 個字元相同、值不同）——相似鍵是我們加的，上游沒有
+           "n_queries": 1, "n_similar": 0, "similar_prefix": 0},
     "T2": {"n_values": 4, "n_distractors": 0},                       # 干擾＝其他鍵的單值針，放在任何位置
     "T3": {"n_hops": 4, "n_distractor_chains": 0, "icl": True},      # 干擾鏈放在任何位置
     "T4": {"n_hard_distractors": 0,                                   # 每題自己的干擾段落（HotpotQA distractor）放幾段
@@ -413,12 +420,17 @@ def _niah(task, turn_bands, seed, p, enc, n_blocks, block, attempt):
                 used.add(x)
                 return x
 
-    keys = [fresh(mk_k, crng) for _ in turn_bands]
-    vals = [[fresh(mk_v, crng) for _ in range(n_v)] for _ in turn_bands]
+    nq = int(p.get("n_queries", 1)) if task == "T1" else 1
+    if nq < 1:
+        raise ValueError("n_queries 至少 1")
+    # 抽取順序和加參數之前相同（nq＝1 時：每輪先一個鍵，再那一輪的值），預設輸出逐一不變
+    keys = [[fresh(mk_k, crng) for _ in range(nq)] for _ in turn_bands]
+    vals = [[fresh(mk_v, crng) for _ in range(nq * n_v)] for _ in turn_bands]
     needles = {}
-    for t, (k, vs) in enumerate(zip(keys, vals)):
+    for t, (ks, vs) in enumerate(zip(keys, vals)):
+        pairs = list(zip(ks, vs)) if nq > 1 else [(ks[0], v) for v in vs]   # 多鍵：每個鍵一個值；單鍵：一個鍵 n_v 個值
         us = [_Unit(NEEDLE_FMT.format(type_needle_v=v_type, key=k, value=v) + "\n", "needle", (t, j))
-              for j, v in enumerate(vs)]
+              for j, (k, v) in enumerate(pairs)]
         random.Random(f"m10|{task}|order|{seed}|{t}").shuffle(us)   # 上游：needle 順序打散
         needles[t] = us
 
@@ -434,19 +446,40 @@ def _niah(task, turn_bands, seed, p, enc, n_blocks, block, attempt):
     fillers = _draw_fillers(enc, make, _ident, total)
     extras = [[_Unit(NEEDLE_FMT.format(type_needle_v=v_type, key=fresh(mk_k, crng), value=fresh(mk_v, crng)) + "\n",
                      "distractor", ("d", i))] for i in range(int(p.get("n_distractors", 0)))]
+    # 相似鍵干擾針（10/15 加，上游沒有）：每個被問的鍵配 n_similar 根，鍵＝被問的鍵的前 similar_prefix 個字元＋
+    # 一個新 UUID 的其餘字元（UUID 格式不變），值是新的 UUID；和一般干擾一樣插在 filler 序列的隨機位置（可能在答案帶內）
+    n_sim, pref = int(p.get("n_similar", 0)), int(p.get("similar_prefix", 0))
+    similar = [[] for _ in turn_bands]
+    if task == "T1" and n_sim:
+        if not 0 < pref < 36:
+            raise ValueError("similar_prefix 要在 1–35（UUID 36 個字元）")
+        srng = random.Random(f"m10|{task}|similar|{seed}")
+        for t, ks in enumerate(keys):
+            for qi, k in enumerate(ks):
+                for i in range(n_sim):
+                    sk = fresh(lambda r: k[:pref] + _uuid(r)[pref:], srng)
+                    similar[t].append(sk)
+                    extras.append([_Unit(NEEDLE_FMT.format(type_needle_v=v_type, key=sk, value=fresh(mk_v, srng)) + "\n",
+                                         "distractor", ("sim", t, qi, i))])
 
-    single = n_v == 1
+    single = n_v * nq == 1                        # 上游：num_needle_q × num_needle_v == 1 才用單數模板
     tv = v_type[:-1] if single else v_type
     S = _singular if single else (lambda s: s)
     instr = S(NIAH_INSTR).format(type_needle_v=tv)
     ctx, spans = _assemble(enc, instr, fillers, needles, dict(enumerate(turn_bands)), extras, _ident,
                            total, block, prng)
     turns = []
-    for t, (k, vs) in enumerate(zip(keys, vals)):
+    for t, (ks, vs) in enumerate(zip(keys, vals)):
+        k = ks[0] if nq == 1 else ", ".join(ks[:-1]) + ", and " + ks[-1]   # 上游 multiquery 的問法
         q = S(NIAH_Q).format(type_needle_v=tv, query=k)
         gold_text = " " + (vs[0] if single else ", ".join(vs[:-1]) + ", and " + vs[-1]) + "."
-        turns.append(dict(question=q, prefix=S(NIAH_PREFIX).format(type_needle_v=tv, query=k), gold=list(vs),
-                          gold_text=gold_text, metric="string_match_all", key=k))
+        d = dict(question=q, prefix=S(NIAH_PREFIX).format(type_needle_v=tv, query=k), gold=list(vs),
+                 gold_text=gold_text, metric="string_match_all", key=k)
+        if nq > 1:
+            d["keys"] = list(ks)
+        if similar[t]:
+            d["similar_keys"] = list(similar[t])
+        turns.append(d)
     return ctx, spans, turns, "\n", instr
 
 
@@ -727,7 +760,8 @@ def make_item(task: str, band1: str | None, band2: str | None, seed: int, tok, p
                  metric=tr["metric"], needle_blocks=nb, question=tr["question"])
         if t > 0:
             d["history_ids"] = enc(turns[t - 1]["gold_text"]) + enc.a2u
-        for k in ("key", "value", "hotpot_id", "hotpot_type", "hotpot_level", "gold_docs", "n_distinct_words"):
+        for k in ("key", "keys", "similar_keys", "value", "hotpot_id", "hotpot_type", "hotpot_level", "gold_docs",
+                  "n_distinct_words"):
             if k in tr:
                 d[k] = tr[k]
         out_turns.append(d)
@@ -845,11 +879,23 @@ def _check_item(it: dict, tok, again: dict | None) -> list[str]:
                     if not _blocks(t0, t1, B) <= allowed:
                         errs.append(f"turn{tr['turn']} gold 段落在 block {sorted(_blocks(t0, t1, B))}，不在 {band}")
         if task in ("T1", "T2"):
-            if not loc.find(tr["key"]):
-                errs.append(f"turn{tr['turn']} 鍵 {tr['key']!r} 不在 context 裡")
-            for t0, t1 in loc.find(tr["key"]):
-                if not _blocks(t0, t1, B) <= allowed:
-                    errs.append(f"turn{tr['turn']} 鍵出現在帶外 block {sorted(_blocks(t0, t1, B))}")
+            for key in tr.get("keys") or [tr["key"]]:
+                if not loc.find(key):
+                    errs.append(f"turn{tr['turn']} 鍵 {key!r} 不在 context 裡")
+                for t0, t1 in loc.find(key):
+                    if not _blocks(t0, t1, B) <= allowed:
+                        errs.append(f"turn{tr['turn']} 鍵出現在帶外 block {sorted(_blocks(t0, t1, B))}")
+        if task == "T1":
+            for g in tr["gold"]:                  # 每個答案（值）在 context 裡只出現一次
+                if len(loc.find(g)) != 1:
+                    errs.append(f"turn{tr['turn']} 答案 {g!r} 出現 {len(loc.find(g))} 次（應為 1）")
+            pref = it["params"].get("similar_prefix", 0)
+            qkeys = tr.get("keys") or [tr["key"]]
+            for sk in tr.get("similar_keys", []):  # 相似鍵：和某個被問的鍵共用前綴、但不相同、確實在 context 裡
+                if sk in qkeys or not any(sk[:pref] == k[:pref] for k in qkeys):
+                    errs.append(f"turn{tr['turn']} 相似鍵 {sk!r} 沒有共用前綴或等於被問的鍵")
+                if len(loc.find(sk)) != 1:
+                    errs.append(f"turn{tr['turn']} 相似鍵 {sk!r} 出現 {len(loc.find(sk))} 次（應為 1）")
     if task == "T5":
         tr = it["turns"][0]
         i0 = loc.text.rfind(CWE_INSTR)
@@ -875,7 +921,9 @@ def _check_item(it: dict, tok, again: dict | None) -> list[str]:
                 if g not in txt:
                     errs.append(f"turn{tr['turn']} needle span 解碼後找不到 {g!r}")
     nd = sum(1 for x in it["spans"] if x[0] == "distractor")
-    want = {"T1": it["params"].get("n_distractors", 0) if it["params"].get("haystack") == "noise" else 0,
+    n_sim_total = (it["params"].get("n_similar", 0) * it["params"].get("n_queries", 1) * len(it["turns"])
+                   if task == "T1" else 0)
+    want = {"T1": (it["params"].get("n_distractors", 0) if it["params"].get("haystack") == "noise" else 0) + n_sim_total,
             "T2": it["params"].get("n_distractors", 0),
             "T3": it["params"].get("n_distractor_chains", 0) * (it["params"].get("n_hops", 0) + 1),
             "T4": None, "T5": 0}[task]
@@ -962,7 +1010,10 @@ def _self_test(seeds: int, models: list[str], show: bool) -> int:
                         shown = True
             print(f"  {task} ({TASKS[task]}): {len(cs) * seeds} 題  {time.time() - t0:.1f}s", flush=True)
         # 難度參數的非預設值也要能產生、也要過檢查
-        for task, prm in [("T1", {"haystack": "noise", "n_distractors": 20}), ("T2", {"n_values": 1, "n_distractors": 8}),
+        for task, prm in [("T1", {"haystack": "noise", "n_distractors": 20}), ("T1", {"n_queries": 4}),
+                          ("T1", {"n_similar": 20, "similar_prefix": 24}),
+                          ("T1", {"n_queries": 2, "n_similar": 10, "similar_prefix": 30}),
+                          ("T2", {"n_values": 1, "n_distractors": 8}),
                           ("T2", {"n_values": 6}), ("T3", {"n_hops": 6, "n_distractor_chains": 2}),
                           ("T3", {"icl": False}), ("T4", {"n_hard_distractors": 8}), ("T5", {"freq_cw": 20})]:
             b1, b2 = (None, None) if task == "T5" else ("mid", "front")

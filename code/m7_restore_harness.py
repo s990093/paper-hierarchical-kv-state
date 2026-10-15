@@ -111,6 +111,8 @@ class Restorer:
         self.cstream = torch.cuda.Stream(device=km.device)
         self.iostream = torch.cuda.Stream(device=km.device)
         self._staging: dict[str, Enc] = {}     # 每種低精度格式一塊 GPU 暫存區（載入線一次只載一個 block）
+        self.time_h2d = False                  # True：用 CUDA event 量每次 H2D（m10_speed 用；False 時路徑和原本完全相同）
+        self.last_h2d_s = 0.0
         self.last_copy_bound = False
         self.last_dequant_s = 0.0
         self.last_nbytes = 0
@@ -122,13 +124,22 @@ class Restorer:
         if isinstance(host, Enc):
             host = host.parts["x"]
         done = tier.reserve_read(self.km.chunk_bytes)
-        with torch.cuda.stream(self.iostream):
-            self.km.chunk_view(i).copy_(host, non_blocking=True)
-            ev = torch.cuda.Event()
-            ev.record(self.iostream)
+        if self.time_h2d:
+            h0 = torch.cuda.Event(enable_timing=True)
+            with torch.cuda.stream(self.iostream):
+                h0.record(self.iostream)
+                self.km.chunk_view(i).copy_(host, non_blocking=True)
+                ev = torch.cuda.Event(enable_timing=True)
+                ev.record(self.iostream)
+        else:
+            with torch.cuda.stream(self.iostream):
+                self.km.chunk_view(i).copy_(host, non_blocking=True)
+                ev = torch.cuda.Event()
+                ev.record(self.iostream)
         sleep_until(done)
         self.last_copy_bound = not ev.query()
         ev.synchronize()
+        self.last_h2d_s = h0.elapsed_time(ev) / 1e3 if self.time_h2d else 0.0
         self.last_dequant_s = 0.0
         self.last_nbytes = self.km.chunk_bytes
         return done
@@ -139,8 +150,11 @@ class Restorer:
         if st is None:
             st = self._staging[host.fmt] = host.empty_like(self.km.device)
         with torch.cuda.stream(self.iostream):
+            if self.time_h2d:
+                h0 = torch.cuda.Event(enable_timing=True)
+                h0.record(self.iostream)
             st.copy_from(host, non_blocking=True)
-            ev = torch.cuda.Event()
+            ev = torch.cuda.Event(enable_timing=self.time_h2d)
             ev.record(self.iostream)
         sleep_until(done)
         self.last_copy_bound = not ev.query()
@@ -152,6 +166,7 @@ class Restorer:
             e1.record(self.iostream)
         e1.synchronize()
         self.last_dequant_s = e0.elapsed_time(e1) / 1e3
+        self.last_h2d_s = h0.elapsed_time(ev) / 1e3 if self.time_h2d else 0.0
         self.last_nbytes = host.nbytes
         return done
 
@@ -164,6 +179,7 @@ class Restorer:
         rec[f"n_{src}"] = rec.get(f"n_{src}", 0) + 1
         rec["bytes_read"] += self.last_nbytes
         rec["t_dequant"] += self.last_dequant_s
+        rec["t_h2d"] += self.last_h2d_s
         rec["n_copy_bound"] += int(self.last_copy_bound)
         rec["blocks"].append((i, src, ts, te))
 
@@ -178,7 +194,7 @@ class Restorer:
         rec = {"mode": mode, "n_chunks": n, "n_recompute": 0, "n_load_cpu": 0, "n_load_ssd": 0,
                "t_recompute": 0.0, "t_load": 0.0, "t_load_cpu": 0.0, "t_load_ssd": 0.0,
                "n_load_bf16": 0, "n_load_fp8": 0, "n_load_int8": 0, "n_load_int4": 0,
-               "bytes_read": 0, "t_dequant": 0.0, "n_copy_bound": 0, "blocks": []}
+               "bytes_read": 0, "t_dequant": 0.0, "t_h2d": 0.0, "n_copy_bound": 0, "blocks": []}
         if mode == "compute_only":
             for i in range(n):
                 ts = time.perf_counter() - t0

@@ -66,7 +66,8 @@ export PYTHONUNBUFFERED=1
 export CUDA_DEVICE_ORDER=PCI_BUS_ID      # 多卡時 torch 和 nvidia-smi 的編號順序一致（gpu_guard.smi_index）
 
 R="$M7_RES"                              # m7_run_phase1*.sh 用 $R 當結果目錄
-mkdir -p "$TIARA_RUNS" "$M7_RES" 2>/dev/null
+# 不在這裡 mkdir（10/15 改：每次 source 都建空目錄，dry-run 會留下 results/m7_write_policy_h200）。
+# 目錄由真的要寫的人建：tiara.sbatch 建 run 目錄，r_h200.sh 建 $M7_RES。
 
 # 記錄殼：和平台 B 的 m7run 同介面。在 job 裡逐步呼叫，每一步一個 run 目錄（tiara.sbatch 當一般 bash 腳本跑）
 m7run() { local short=$1; shift; local id="$(date +%Y%m%d-%H%M%S)-$short"; RUN_ID=$id TIARA_SHORT=$short bash "$REPO/code/tiara.sbatch" env RUN_ID=$id "$@"; }

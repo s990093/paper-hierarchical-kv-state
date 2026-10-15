@@ -21,13 +21,18 @@ from torch.nn.attention.bias import causal_lower_right
 
 CHUNK = 512
 # 預設 Llama-3.1-8B；第 1 輪破解計劃（11）用 M7_MODEL_GLOB 換模型（LongAlpaca-7B、Qwen3-30B-A3B），不設時行為不變
-MODEL_GLOB = os.environ.get("M7_MODEL_GLOB", "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*")
+DEFAULT_GLOB = "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*"
+MODEL_GLOB = os.environ.get("M7_MODEL_GLOB", DEFAULT_GLOB)     # 只留著相容；model_path() 不再用它
 
 
 def model_path() -> str:
-    ps = sorted(glob.glob(MODEL_GLOB))
+    """要載入時才讀 M7_MODEL_GLOB（2026-10-15 改）。原本在 import 時就讀成模組常數：若 m7_model 在呼叫端設好
+    M7_MODEL_GLOB 之前就被 import（例如先 import m7_restore_harness），會靜默載入預設的 Llama，配上別的模型的
+    tokenizer（m10_quality selfcheck：Qwen 的 token id 超出 Llama 的詞表 → GPU 上 gather 越界）。"""
+    g = os.environ.get("M7_MODEL_GLOB", DEFAULT_GLOB)
+    ps = sorted(glob.glob(g))
     if not ps:
-        raise FileNotFoundError(MODEL_GLOB)
+        raise FileNotFoundError(g)
     return ps[-1]
 
 
@@ -66,10 +71,11 @@ class KVModel:
 
     # ---- 前向 ---------------------------------------------------------------
     @torch.inference_mode()
-    def forward_span(self, ids: torch.Tensor, start: int, want_logits: bool = False):
+    def forward_span(self, ids: torch.Tensor, start: int, want_logits: bool = False, n_logits: int = 1):
         """計算 ids（位置 start..start+n-1）的 KV 寫進緩衝；需要 [0,start) 的 KV 已在緩衝。
 
-        回傳最後一個位置的 logits（want_logits=True 時）。
+        回傳最後一個位置的 logits（want_logits=True 時）。n_logits>1：回傳最後 n_logits 個位置的 logits
+        [n_logits, vocab]（m10 的 teacher forcing 用；n_logits=1 的路徑和原本完全相同）。
         """
         n = ids.shape[-1]
         end = start + n
@@ -102,6 +108,8 @@ class KVModel:
             x = x + a.o_proj(o)
             x = x + layer.mlp(layer.post_attention_layernorm(x))
         if want_logits:
+            if n_logits > 1:
+                return self.hf.lm_head(m.norm(x[:, -n_logits:]))[0]
             x = m.norm(x[:, -1:])
             return self.hf.lm_head(x)[0, -1]
         return None
