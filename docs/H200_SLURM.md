@@ -59,17 +59,17 @@ sbatch code/r_h200.sh            # 被砍時：sbatch code/r_h200.sh --from <步
 |:--|:--|:--|
 | GPU | NVIDIA H200 | 〔wiki〕範例輸出 `使用裝置：NVIDIA H200` |
 | GPU 記憶體、架構 | NVIDIA 規格是 141 GB HBM3e、Hopper（sm_90）；**本機 NOT_MEASURED** | 規格，登入後用 `nvidia-smi` 確認 |
-| 每節點幾張卡、CPU 型號、host↔GPU 的 PCIe 世代 | NOT_MEASURED | §3 |
+| 每節點幾張卡、CPU 型號、host↔GPU 的 PCIe 世代 | `hgx-cn01`：8 張 H200（`Gres=gpu:h200:8`，兩個 socket）、128 CPU、RealMemory 1,393,029 MB；CPU 型號、PCIe 世代 NOT_MEASURED（要進 job 跑 `h200_probe.sh`） | 2026-10-15 head node 上 `scontrol show node hgx-cn01` |
 | Driver／CUDA 版本 | NOT_MEASURED | §3；決定 vLLM wheel 能不能直接裝 |
 | 佇列 | `h200q`；單一 job 最多 48 小時 | 〔wiki〕 |
 | 每張卡附帶 | 16 CPU＋170 GB RAM，**固定配給** | 〔wiki〕srun 輸出：`GPUs: 1 \| Fixed: 16 CPUs, 174080MB \| Assigned QOS: h200q_1g` |
 | 上限 | 單一 job ≤ 4 GPU；**整個 lab 合計** ≤ 4 GPU、64 CPU、680 GB RAM | 〔wiki〕 |
 | account（`-A`） | `ChihChungHsu`（許志仲老師的 lab） | 〔wiki〕account 清單 |
-| 硬碟 | 一個 lab 1.5 T，lab 資料夾下有 `shared/` 共用；`quota -gs` 查剩多少 | 〔wiki〕 |
-| 個人目錄 | 大概是 `/work/ChihChungHsu/<username>` | 〔推論〕wiki 的 conda 範例路徑是 `/work/TTTTT/test4/.conda/envs/...`；登入後 `echo $HOME` 確認 |
-| head node／compute node | `bcm11-headnode01`（`192.168.20.241`，要先連 VPN）／範例裡是 `hgx-cn01` | 〔wiki〕 |
+| 硬碟 | 一個 lab 1.5 T，lab 資料夾下有 `shared/` 共用；`quota -gs` 查剩多少。**2026-10-15 實測：group `ChihChungHsu` 已用 1524G／上限 1536G，只剩約 12G**（個人 `quota -us` 只有 52K；用量在別的成員目錄，私有、看不到）。模型 31G＋環境放不下，見 §7 | 〔wiki〕＋2026-10-15 `quota -gs`、`quota -us` |
+| 個人目錄 | `$HOME`＝`/work/ChihChungHsu/<username>`；`/work` 是 `hgx-cn01:/work` 的 NFS（28T，叢集共用）。head node 的 `/tmp` 是本機 20G、`/dev/shm` 32G | 2026-10-15 `echo $HOME`、`df -hT` |
+| head node／compute node | `bcm11-headnode01`（`192.168.20.241`，要先連 VPN）／`h200q` 只有 `hgx-cn01` 一個節點（另有 `dgx-cn01/02` 在別的 partition） | 〔wiki〕＋2026-10-15 `sinfo -N -l` |
 | 預設 module | `slurm/24.11`、`gcc/14.2.0` 等；`ml miniconda3` 載入 conda（`/cm/shared/apps/miniconda3`） | 〔wiki〕 |
-| 對外網路（head node、compute node） | NOT_MEASURED | §3；決定模型怎麼下載 |
+| 對外網路（head node、compute node） | head node：huggingface.co、github.com、pypi.org 都通（HTTP 200）；compute node NOT_MEASURED | 2026-10-15 `curl -sI`；模型可以在 head node 直接下載 |
 | ⚠️ 資料保存 | **「資料不保證永遠存在，請記得備份」** | 〔wiki〕→ §5.4 |
 
 ---
@@ -113,7 +113,8 @@ Mac 上的做法〔推論，未試〕：
       User <username>
   ```
 
-  叢集允不允許 ssh key 登入：NOT_MEASURED（試 `ssh-copy-id h200`）。
+  **ssh key 登入可以**（2026-10-15 `ssh-copy-id` 後 `ssh -o BatchMode=yes h200` 成功）。注意：VPN 帳密和 ssh 帳密是兩套——ssh 帳號＝表單的 Username、預設密碼＝帳號本身，**不是**信裡的 VPN 密碼。
+- Mac 上實際的做法：`brew install openvpn`（2.7）。伺服器協商的是舊的 AES-128-CBC，設定檔要加 `data-ciphers AES-256-GCM:AES-128-GCM:AES-128-CBC`，否則 2.6 以後的版本會拒絕。VPN 是 split tunnel（只推 192.168.20.0/24 等內網路由），一般上網不受影響。開 VPN 要 root（建 tun）。
 
 **3090 伺服器不能當 VPN 用戶端**〔推論〕：OpenVPN 要建 tun 介面，通常要 root，而 3090 上沒有 sudo（`CLAUDE.md` §3）。所以 3090 ↔ H200 之間沒有直接的路；模型照 §4.2 在 H200 那邊直接下載，結果備份經過 Mac。
 
