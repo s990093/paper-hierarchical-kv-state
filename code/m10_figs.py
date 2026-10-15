@@ -242,8 +242,10 @@ def fig_C(a):
     from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
     cmap = LinearSegmentedColormap.from_list("div", [DIV_NEG, DIV_MID, DIV_POS])
     lim = a.vlim
-    fig, axes = plt.subplots(1, len(conds), figsize=(1.0 * len(cfgs) * len(conds) + 1.5, 2.6), squeeze=False)
-    for ax, cond in zip(axes[0], conds):
+    # 上下疊（10/15 晚：左右排時太扁、格內字太小，總標題壓到中間的小標題）
+    fig, axes = plt.subplots(len(conds), 1, figsize=(0.95 * len(cfgs) + 2.6, 2.25 * len(conds) + 0.9), squeeze=False,
+                             layout="constrained")
+    for ax, cond in zip(axes[:, 0], conds):
         M = np.full((3, len(cfgs)), np.nan)
         txt = [[""] * len(cfgs) for _ in range(3)]
         for j, c in enumerate(cfgs):
@@ -256,14 +258,14 @@ def fig_C(a):
         im = ax.imshow(M, cmap=cmap, norm=TwoSlopeNorm(0, -lim, lim), aspect="auto")
         for i in range(3):
             for j in range(len(cfgs)):
-                ax.text(j, i, txt[i][j], ha="center", va="center", fontsize=6.5, color=INK)
+                ax.text(j, i, txt[i][j], ha="center", va="center", fontsize=8, color=INK)
         ax.set_xticks(range(len(cfgs)))
         ax.set_xticklabels([base_name(c) for c in cfgs])
         ax.set_yticks(range(3))
         ax.set_yticklabels(["答案在前", "答案在中", "答案在後"])
         ax.set_title({"A": "讀法 A（全載入）", "B-idle": "讀法 B・b32・閒", "B-busy": "讀法 B・b32・忙"}[cond])
         ax.grid(False)
-    fig.colorbar(im, ax=axes[0].tolist(), shrink=0.8, label="對 E0 的差（百分點）")
+    fig.colorbar(im, ax=axes[:, 0].tolist(), shrink=0.6, label="對 E0 的差（百分點）")
     fig.suptitle(f"圖 C　{a.model}{a.title_suffix}：答案位置 × 低精度位置（T1–T4，兩輪合併；格內＝點估計／CI 半寬）",
                  color=INK, fontsize=10)
     source_note(fig, " ".join(os.path.basename(p) for p in a.csv)[:160])
@@ -288,19 +290,23 @@ def fig_D(a):
             k = int(min(15, max(0, m - 1)) // 4) if m < 17 else (4 + int((m - 24) // 4) if m < 40 else 8 + int((m - 48) // 4))
             bins[k].append(float(r["score"]))
         col = COLOR.get(base_name(c), INK2)
+        dx = 0.35 * (cfgs.index(c) - (len(cfgs) - 1) / 2)          # 同一組的配置左右錯開，CI 才不會疊在一起
         for seg in ((0, 1, 2, 3), (4, 5, 6, 7), (8, 9, 10, 11)):
             xs = [k for k in seg if bins.get(k)]
             if not xs:
                 continue
-            centers = [(1 + 4 * k + 2) if k < 4 else ((24 + 4 * (k - 4) + 2) if k < 8 else (48 + 4 * (k - 8) + 2)) for k in xs]
+            centers = [dx + ((1 + 4 * k + 2) if k < 4 else ((24 + 4 * (k - 4) + 2) if k < 8 else (48 + 4 * (k - 8) + 2)))
+                       for k in xs]
             ys = [100 * statistics.mean(bins[k]) for k in xs]
+            hw = [100 * 1.96 * (statistics.pstdev(bins[k]) / len(bins[k]) ** 0.5) for k in xs]   # 常態近似，只看形狀
+            ax.vlines(centers, [y - h for y, h in zip(ys, hw)], [y + h for y, h in zip(ys, hw)], color=col, lw=1, alpha=0.45)
             ax.plot(centers, ys, "-o", color=col, lw=2, ms=5, mec=SURF, mew=1.2,
                     label=base_name(c) if seg[0] == 0 else None)
     for x0, x1 in ((17, 24), (40, 48)):
         ax.axvspan(x0, x1, color=GRID, alpha=0.5, lw=0)
     ax.set_xlim(0, 64)
     ax.set_xlabel("答案所在的 block（needle_blocks 的中位數；灰帶＝沒有題目）")
-    ax.set_ylabel("正確率（%）")
+    ax.set_ylabel("正確率（%；細線＝95% CI，常態近似）")
     ax.legend(ncol=len(cfgs), loc="lower center", bbox_to_anchor=(0.5, 1.02))
     fig.suptitle(f"圖 D　{a.model}{a.title_suffix}：答案位置 → 正確率（讀法 A，T1–T4，兩輪合併）", color=INK, fontsize=10, y=1.08)
     source_note(fig, " ".join(os.path.basename(p) for p in a.csv)[:160])
