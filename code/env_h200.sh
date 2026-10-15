@@ -45,6 +45,7 @@ export TIARA_FONTS="${TIARA_FONTS:-$TIARA_HOME/fonts}"        # Noto Sans CJK TC
 export PAPER_HKV_PYLIBS="${PAPER_HKV_PYLIBS:-$TIARA_HOME/pylibs}"   # ruler_tasks 的 wonderwords 等側裝套件
 # m10_tasks 的 T4：HotpotQA dev distractor（HF hotpotqa/hotpot_qa，sha256 c20b638c…，見 MI300X 的 datasets/hotpotqa/README.txt）
 export M10_HOTPOT="${M10_HOTPOT:-$TIARA_DATASETS/hotpotqa/hotpot_qa_distractor_validation.parquet}"
+export M10_LONGBENCH="${M10_LONGBENCH:-$TIARA_DATASETS/longbench}"   # m10_longbench：data/*.jsonl＋config/（code/h200_setup_data.sh 準備）
 
 # 模型：固定 revision（migration_20261013 README §1.1，和 MI300X 同一版）。直接指到 snapshot，不用 *，換版會找不到而報錯
 export M7_LLAMA_GLOB="${M7_LLAMA_GLOB:-$HF_HOME/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5}"
@@ -77,7 +78,7 @@ if [ "${1:-}" = "--print" ]; then
   echo "[env_h200] platform=$TIARA_PLATFORM host=$(hostname) slurm_job=${SLURM_JOB_ID:-NONE} cuda_visible=${CUDA_VISIBLE_DEVICES:-UNSET}"
   echo "[env_h200] conda_env=${CONDA_DEFAULT_ENV:-NONE} python=$(command -v python || echo NONE)"
   _p REPO "$REPO"; _p TIARA_HOME "$TIARA_HOME"; _p HF_HOME "$HF_HOME"; _p TIARA_RUNS "$TIARA_RUNS"
-  _p TIARA_DATASETS "$TIARA_DATASETS"; _p TIARA_FONTS "$TIARA_FONTS"; _p PAPER_HKV_PYLIBS "$PAPER_HKV_PYLIBS"; _p M10_HOTPOT "$M10_HOTPOT"
+  _p TIARA_DATASETS "$TIARA_DATASETS"; _p TIARA_FONTS "$TIARA_FONTS"; _p PAPER_HKV_PYLIBS "$PAPER_HKV_PYLIBS"; _p M10_HOTPOT "$M10_HOTPOT"; _p M10_LONGBENCH "$M10_LONGBENCH"
   _p M7_LLAMA_GLOB "$M7_LLAMA_GLOB"; _p M7_QWEN_GLOB "$M7_QWEN_GLOB"; _p M7_MODEL_GLOB "$M7_MODEL_GLOB"
   _p M7_RES "$M7_RES"; _p M7_TIER_PARAMS "$M7_TIER_PARAMS"; _p M7_VLLM_VENV "${M7_VLLM_VENV:-<empty>}"
   printf '  %-16s %-90s %s\n' M7_DISK "$M7_DISK" "$(awk -v d="$M7_DISK" '$3==d{f=1} END{print (f?"ok":"MISSING in /proc/diskstats")}' /proc/diskstats)"

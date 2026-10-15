@@ -33,6 +33,26 @@ squeue -u $USER ; scancel <job_id> ; sacct -j <job_id>
 
 ---
 
+## H200 第一天照抄（10/15）
+
+```bash
+# 0. VPN＋ssh 登入（§2）；第一次先 passwd
+# 1. 環境（head node，§4.1）
+ml miniconda3 && conda create -n tiara python=3.12 -y && conda activate tiara && pip install vllm==0.28.0
+git clone https://github.com/s990093/paper-hierarchical-kv-state.git ~/paper-hierarchical-kv-state
+cd ~/paper-hierarchical-kv-state
+# 2. 模型與資料，會檢查 sha256（§4.4；約 31 GB＋0.5 GB）
+bash code/h200_setup_data.sh
+# 3. R0 硬體報告：拿一張卡跑（03 §R0）；最後會印出建議的 M7_DISK
+srun -p h200q -A ChihChungHsu --gres=gpu:1 -c 16 --mem=170G --time=02:00:00 --pty bash
+source code/env_h200.sh && bash code/h200_probe.sh
+# 4. 把 M7_DISK 填進 code/env_h200.sh（或在 sbatch 前 export），離開 srun，送 R1–R3（一鍵驗證、正確性、第一階段復現、和 MI300X 比方向）
+sbatch code/r_h200.sh            # 被砍時：sbatch code/r_h200.sh --from <步驟名>；先看步驟：bash code/r_h200.sh --list
+```
+
+- 第 4 步過了（`repro_verdict.json` 判「重現」），才進 03 的 D0／D1：E0 確認難度（`CANDIDATE_PARAMS.json`）、δ*、挑 scale 粒度 → **凍結事先登記** → 才跑非遮蔽的 `m10_quality.py run`。
+- 結果每天 push、原始 run 目錄每天備份（§5.4）。
+
 ## 0. 這台機器的關鍵數字
 
 | 項目 | 值 | 來源 |
@@ -183,7 +203,22 @@ source code/env_h200.sh --print      # 印出所有路徑，標出哪些還 MISS
 - 第一階段程式的平台參數：`M7_RES`（結果目錄 `results/m7_write_policy_h200`）、`M7_TIER_PARAMS`（限速層參數沿用 MI300X 的 `tier_params.json`，03 §R2）、`M7_DISK`（`Guard` 記磁碟 I/O 的裝置名，**預設 `R0_UNSET`，R0 的 `h200_probe.sh` 會給建議值，填好之前 Guard 會丟錯**，規則 7）、`M7_VLLM_VENV`（＝目前的 conda 環境）。
 - `CUDA_DEVICE_ORDER=PCI_BUS_ID`（多卡時 torch 和 nvidia-smi 的編號順序一致，§5.3）。**不設 `CUDA_VISIBLE_DEVICES`**：交給 Slurm 依 `--gres` 設。
 - 定義 `m7run <短名> <指令...>`：和平台 B 同介面，每一步用 `code/tiara.sbatch` 包成一個 run 目錄。
-- 注意：每次 source 都會 `mkdir -p "$TIARA_RUNS" "$M7_RES"`。
+- 10/15 改：source 時**不再** mkdir（原本每次都建空目錄）。run 目錄由 `tiara.sbatch` 建，`$M7_RES` 由 `r_h200.sh` 建。
+
+### 4.4 資料（不在 git 裡的；一鍵）
+
+`bash code/h200_setup_data.sh`（head node；`--no-models` 只下資料、先試網路）會下載並逐一檢查 sha256：
+
+| 東西 | 放哪 | 誰用 | 檢查 |
+|:--|:--|:--|:--|
+| Llama-3.1-8B-Instruct、Qwen2.5-7B-Instruct-1M（固定 revision，約 31 GB） | `$HF_HOME` | 全部 | revision 寫死 |
+| HotpotQA dev distractor（HF `hotpotqa/hotpot_qa` rev 1908d6a，27 MB） | `$M10_HOTPOT` | `m10_tasks` T4 | sha256 `c20b638c…`（和 MI300X 相同） |
+| LongBench v1 `data.zip`（HF `THUDM/LongBench`，108 MB）＋ repo 裡的 `code/longbench_config/` | `$M10_LONGBENCH` | `m10_longbench` | sha256 `cb45b11a…`（和 MI300X 9/15 下載的相同） |
+| wonderwords 3.0.1 的詞表 | `$PAPER_HKV_PYLIBS` | `m10_tasks` T1、T2、T5 | 版本寫死 |
+
+- 2026-10-15 在 MI300X 上用假的 `$TIARA_HOME` 試過（`--no-models`）：三個 checksum 都過；用下載的資料跑 `m10_tasks --self-test`（94／0）、`m10_longbench --self-test`（9,006／0）。
+- head node 沒有對外網路時：在 Mac 照腳本裡的 URL 下載、rsync 到同樣路徑，再跑 `bash code/h200_setup_data.sh --no-download`（只檢查）。
+- sha256 對不上就停下來回報，不准改 checksum 硬過。
 
 `code/m7_env.sh` 在沒有 `/mlsteam/workspace/venv/tiara` 的機器上會自動改 source `env_h200.sh`，所以第一階段的 `m7_run_phase1*.sh` 不用改。
 
