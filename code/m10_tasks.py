@@ -101,9 +101,12 @@ TOKENS_TO_GENERATE = {"T1": 128, "T2": 128, "T3": 30, "T4": 32, "T5": 120}   # �
 PYLIBS = os.environ.get("PAPER_HKV_PYLIBS", "/mlsteam/data/tiara/pylibs")
 HOTPOT = os.environ.get("M10_HOTPOT",
                         "/mlsteam/data/tiara/datasets/hotpotqa/hotpot_qa_distractor_validation.parquet")
+# 平台的模型路徑：先看 M7_LLAMA_GLOB／M7_QWEN_GLOB（env_h200.sh 設；10/15 H200 上自測找不到模型才補），沒設才用 MI300X 的
 MODELS = {
-    "llama": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*",
-    "qwen": "/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/*",
+    "llama": os.environ.get("M7_LLAMA_GLOB")
+             or "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*",
+    "qwen": os.environ.get("M7_QWEN_GLOB")
+            or "/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/*",
 }
 LLAMA_DATE = "26 Jul 2024"
 
