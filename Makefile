@@ -43,7 +43,7 @@ RESTNAME = r-h200-rest
 LAF2NAME = r-h200-la-f2
 QWNAME = r-h200-qwen3
 
-.PHONY: help queue queue-watch status log runs submit submit-rest submit-r1x test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
+.PHONY: help queue queue-watch status log runs gpu nvtop submit submit-rest submit-r1x test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
 
 help:
 	@echo "H200（在 repo 根目錄、head node 上用）"
@@ -52,6 +52,8 @@ help:
 	@echo "  make status        自己的 job（squeue）＋今天跑過的（sacct）"
 	@echo "  make log           最新的 slurm-*.out 與最新 run 目錄的 stdout／stderr 末段"
 	@echo "  make runs          最近 15 個 run 目錄與 exit code（\$$(RUNS)=$(RUNS)）"
+	@echo "  make gpu [JOB=<id>]    進正在跑的 job 看一次 GPU（nvidia-smi：使用率、記憶體、功率、process）"
+	@echo "  make nvtop [JOB=<id>]  進正在跑的 job 開 nvtop（q 離開；nvtop 裝在 ~/.conda/envs/tools，不在 tiara 環境）"
 	@echo "  make test-submit   只問 Slurm 預估什麼時候開始，不送"
 	@echo "  make submit        送 R0＋R1–R3（code/r_h200_all.sh）；已有同名 job 或有未 commit 的改動就不送"
 	@echo "  make submit-rest   送第一階段其餘的實驗（code/r_h200_rest.sh）：接在 $(JOBNAME) 後面（afterok），它失敗就自動撤回"
@@ -88,6 +90,19 @@ log:
 runs:
 	@for d in $$(ls -td $(RUNS)/*/ 2>/dev/null | head -15); do \
 	  printf '%-58s exit=%s\n' "$$(basename $$d)" "$$(cat $$d/exit_code 2>/dev/null || echo 還在跑或沒寫)"; done
+
+# 進 job 的配置裡看 GPU（srun --overlap：和 job 共用它的卡與 16 核；nvidia-smi／nvtop 只讀 NVML，不在 GPU 上開 process）
+# JOB 沒給時用自己第一個 RUNNING 的 job；同時有兩個在跑（例如 r-h200-rest 和 r-h200-la-f2）時用 JOB=<id> 指定
+RUNJOB = $(or $(JOB),$(shell $(SLURM_BIN)/squeue -h -u $(USER) -t R -o '%i' 2>/dev/null | head -1))
+NVTOP ?= $(HOME)/.conda/envs/tools/bin/nvtop
+gpu:
+	@[ -n "$(RUNJOB)" ] || { echo "沒有正在跑的 job（make status 看）"; exit 1; }
+	@echo "== job $(RUNJOB)"
+	@srun --jobid=$(RUNJOB) --overlap -n1 bash -c 'nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu,clocks.sm --format=csv; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv'
+
+nvtop:
+	@[ -n "$(RUNJOB)" ] || { echo "沒有正在跑的 job（make status 看）"; exit 1; }
+	srun --jobid=$(RUNJOB) --overlap -n1 --pty $(NVTOP)
 
 test-submit:
 	@sbatch --test-only code/r_h200_all.sh 2>&1 | tail -1
