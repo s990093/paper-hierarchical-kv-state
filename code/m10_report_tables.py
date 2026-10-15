@@ -6,12 +6,15 @@
   python code/m10_report_tables.py e0       --json <quality_*.json>                        # E0 各格答對率
   python code/m10_report_tables.py lb       --table <quality_*_table.csv>                  # LongBench（只報告）
   python code/m10_report_tables.py decide   --json <decide_*.json>
+  python code/m10_report_tables.py sources  --restores <restores.csv[.gz]> --run <grid run_id> [--length 32768]  # 實際讀到幾個低精度 block
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import json
+import statistics
 from collections import defaultdict
 
 ORDER = ["E0", "E1", "E1s", "E1sr", "F25", "M25", "B25", "R25"]
@@ -105,6 +108,34 @@ def lb(a):
             for c in cfgs) + " |")
 
 
+def sources(a):
+    op = gzip.open if a.restores.endswith(".gz") else open
+    rows = [r for r in csv.DictReader(op(a.restores, "rt")) if r["run_id"] == a.run and r["mode"] == "cake"
+            and int(r["length"]) == a.length and r["contaminated_gpu"] != "True"]
+    g = defaultdict(list)
+    for r in rows:
+        g[(r["bw_name"], r["gpu_state"], r["config"])].append(r)
+    cfgs = [c for c in ORDER if any(k[2] == c for k in g)] + sorted({k[2] for k in g} - set(ORDER))
+    print(f"run {a.run}（{a.length // 1024}K、cake、每格 {len(rows) // max(1, len(g))} 次左右；中位數）\n")
+    print("每格寫「讀到的低精度 block／存了的低精度 block（會合點 b）」\n")
+    print("| 頻寬 | GPU | " + " | ".join(cfgs) + " |")
+    print("|:--|:--|" + ":--|" * len(cfgs))
+    for bw in ("b16", "b32", "b48", "cpu"):
+        for st in ("idle", "busy"):
+            if not any((bw, st, c) in g for c in cfgs):
+                continue
+            cell = []
+            for c in cfgs:
+                v = g.get((bw, st, c))
+                if not v:
+                    cell.append("—")
+                    continue
+                med = lambda k: statistics.median(float(x[k]) for x in v)  # noqa: E731
+                fmt = lambda x: f"{x:g}"  # noqa: E731
+                cell.append(f"{fmt(med('fp8_read'))}／{fmt(med('fp8_stored'))}（{fmt(med('b'))}）")
+            print(f"| {bw} | {ST[st]} | " + " | ".join(cell) + " |")
+
+
 def decide(a):
     d = json.load(open(a.json))
     for m in ("llama", "qwen"):
@@ -117,16 +148,16 @@ def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
     for n, args in (("k0", ["--json"]), ("quality", ["--json"]), ("e0", ["--json"]), ("lb", ["--table"]),
-                    ("decide", ["--json"]), ("speed", ["--summary"])):
+                    ("decide", ["--json"]), ("speed", ["--summary"]), ("sources", ["--restores", "--run"])):
         p = sub.add_parser(n)
         for x in args:
             p.add_argument(x, required=True)
         if n == "quality":
             p.add_argument("--configs", nargs="*")
-        if n == "speed":
+        if n in ("speed", "sources"):
             p.add_argument("--length", type=int, default=32768)
     a = ap.parse_args()
-    {"k0": k0, "speed": speed, "quality": quality, "e0": e0, "lb": lb, "decide": decide}[a.cmd](a)
+    {"k0": k0, "speed": speed, "quality": quality, "e0": e0, "lb": lb, "decide": decide, "sources": sources}[a.cmd](a)
 
 
 if __name__ == "__main__":
