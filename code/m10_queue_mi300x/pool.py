@@ -22,6 +22,14 @@ while pending or running:
         pending = []
     if pending and len(running) < P and time.time() - last_launch > 75:
         j = pending[0]
+        try:                              # pool_skip.txt：一行一個名稱前綴；判定流程走不到的封存工作，開跑前可略過（照實記 skipped）
+            skip = [x.strip() for x in open("pool_skip.txt") if x.strip() and not x.startswith("#")]
+        except FileNotFoundError:
+            skip = []
+        if any(j["name"].startswith(x) for x in skip):
+            pending.pop(0)
+            print(f"[pool] skipped {j['name']} (pool_skip.txt) {time.strftime('%H:%M:%S')}", flush=True)
+            continue
         fg = free_gb()
         if fg >= j["need_gb"] + MARGIN:
             pending.pop(0)

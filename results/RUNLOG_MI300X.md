@@ -351,7 +351,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 | `20261015-160426`、`-160541`、`-160656`、`-160811`（`m10-fmtsel-{llama,qwen}-s{0,1}`） | `m10_quality.py run --seed0 4000 --n 5 --tasks T2 T3 T4 T5 --modes A --configs E0 E1@<5 種格式> --shard s/2`；`m10_fmt_select.py` | Llama fp8_token、int4_kivi；Qwen fp8_head、int4_kivi（KL 見 07 §3） |
 | `20261015-160602-m10-smoke-bpath`、`-160602-m10-smoke-sensmap` | 讀法 B 路徑、敏感度地圖的結構試跑（`--blind`，輸出在 scratch） | 結構正確；沒有看任何低精度答對率 |
 
-### 10.2 FP8 速度格子（K0）——Llama 完成
+### 10.2 FP8 速度格子（K0）——Llama
 
 - **run_id**：`20261015-161226-m10-grid-fp8-llama`（16:12 → 17:50 UTC）、`20261015-175049-m10-k0v-fp8-llama`
 - **指令**：`python code/m10_speed.py grid --model llama --fmt fp8_token --base-fmt fp8_token --out-dir results/m10_precision_mi300x/speed_llama --bw-json …/bw.json --blocks-out $TIARA_RUNS/$RUN_ID/blocks.csv`；`m10_speed.py k0-verdict --model llama --from-run <grid run_id> --delta-json …/noise.json`；`m10_analyze.py speed --model llama --summary …/summary_fp8.csv --noise …/noise.json --out-dir analysis/fp8`
@@ -376,3 +376,47 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 只有 cpu・忙 那一格 E1 比 E0 慢 3.5%：不限速時搬運不是瓶頸，反量化（在 I/O stream 上、和忙碌負載搶 GPU）多出來的時間沒被省下的位元組補回來。和彩排（Qwen、CPU 層 E1 慢 6–10%）方向相同。
 - **讀到多少低精度（圖 B，b32）**：F25 的 16 個低精度 block 在閒、忙都 **一個都沒讀到**（全部落在重算段）；B25 16 個全讀到；M25 閒時讀到 10 個、忙時 16 個；R25 閒 9 個、忙 11.5 個（中位數）。這是「前段量化沒掉品質可能只是沒被讀到」的直接證據（03 §3.3）。
 
+### 10.3 FP8 速度格子（K0）——Qwen（L0 監控報污染 → 整批重量中）
+
+- **run_id**：`20261015-175050-m10-grid-fp8-qwen`（17:50 → 19:13 UTC）、`20261015-191337-m10-k0v-fp8-qwen`
+- **指令**：同 10.2，`--model qwen --fmt fp8_head --base-fmt fp8_head --out-dir results/m10_precision_mi300x/speed_qwen`
+- **GPU 監控**：L1、L2 CLEAN；**L0 `CONTAMINATED_DURING_RUN`**。
+  - 內容：`intruders=[{pid: -1, first_seen: 2026-10-15T18:16:32.578Z, peak_mib: 21198, n: 1}]`，`n_dirty_samples=1`，`paused_intervals=[]`。
+  - pid −1＝AMD 的數量判斷：amd-smi 佔 VRAM 的行程數 − 容器內開 kfd 的行程數 > 0。peak_mib 是卡上全部行程的總和，不是外來行程自己的。
+- **判讀（很可能是誤報；但照規則重量）**：
+  - 時間點：L0 最後一列「32K・忙」是 18:16:31，第一列「8K・閒」是 18:16:33。中間就是 `Busy.__exit__` 關掉 `m7_busy` 子行程的那一秒。
+  - 機制：和 2026-09-15 vLLM 關閉時同一個（`gpu_guard.GpuWatcher.pause` 的說明）——kfd 已關、amd-smi 還列著它的 VRAM 數秒。`m10_speed` 的 Busy 收尾當時沒用 pause。輪詢間隔是 3 s，所以只抓到 1 筆。
+  - 逐列旗標：32K 的 1,200 列全部是 `contaminated_gpu=False`；之後 320 列 8K／16K 是 True，`summary` 已排除。
+  - L0 的 32K 中位數和 L1、L2 一致：E0、E1 × 16 格，L0 對三個 launch 中位數的差在 −1.8%～+0.6%。
+  - 把上一次乾淨取樣之後的 4 列（18:16:29 以後，全是 cpu・忙）拿掉，所有格子的中位數最多變 0.10%。
+  - **處理**：CLAUDE.md §3「contaminated 的 run 必須重量」→ 排 stage 22 `m10-regrid-fp8-qwen` 整批重量（輸出 `speed_qwen_regrid/`），Qwen 的 K0／速度不輸以重量那次為準。讀法 B 的會合點仍用這次沒被標污染的列（07 第 54 列）。
+- **K0（這次、沒被標污染的列；δ\*＝9.43%）**：限速層 6 格 E1 全贏（快 22.5–39.2%）；**cpu 兩格 E1 都輸**（閒 0.052 → 0.055，−5.5%，CI [−0.004, −0.003]；忙 0.066 → 0.074，−13.2%，CI [−0.009, −0.006]）→ K0 不成立。
+- **速度不輸**（`analysis/fp8/speed_qwen.json`）：E1、E1s、E1sr 在 cpu・忙沒過（÷ 最快混合配置＝1.135、1.140、1.103；門檻 1.0943），其他 7 格都過。
+  - 照凍結的 `model_verdict`（ε 過而且速度不輸），Qwen 的 K1／K1s 不管品質都不會成立。
+  - 和彩排一致：Qwen 的 CPU 層 E1 慢 6–10%。
+- **cpu 層分項**（中位數 ms，`restores.csv` 的 t_h2d／t_dequant）：
+  - Qwen 閒：E0 H2D 36.6；E1 H2D 17.7＋反量化 10.6 → 還原 52.0 → 54.9。
+  - Qwen 忙：H2D 50.5 → 19.7，反量化 26.6 → 還原 65.8 → 74.5。
+  - Qwen 每 block 的位元組是 Llama 的 0.4375 倍（只載 E0：1,879,048,192 vs 4,294,967,296 bytes）。
+- **讀到多少低精度（b32）**：和 Llama 相同。
+  - F25 閒、忙都 0／16，B25 16／16，M25 10／16（閒）、16／16（忙），R25 9 個（閒）、11.5 個（忙）。
+  - cpu 層 F25 15–16／16。
+- **讀法 B 會合點**（`speed_qwen/meets.json`，b32 閒／忙）：E0 32／21、E1／E1s／E1sr 23／14、F25 32／21、M25 30／18、B25 28／18、R25 30／19。
+- **產出**：`speed_qwen/summary_fp8.csv`、`restores.csv.gz`、`meets.json`、`k0_verdict_fp8.json`、`spec_grid_fp8.json`、`analysis/fp8/speed_qwen.json`、`analysis/fp8/tables_speed_qwen.md`、`figs/speed_qwen_fp8.png`、`figs/sources_qwen_fp8_{b16,b32,b48,cpu}.png`。
+
+### 10.4 執行中的修正（19:2x UTC；不動判準）
+
+- **`code/m10_speed.py`**：
+  - `Busy(duty, watch)` 收尾時，在 `M10_BUSY_TEARDOWN_PAUSE=1` 下：
+    1. 暫停 gpu_guard 取樣；
+    2. terminate／wait 背景負載；
+    3. 等 amd-smi 連 2 次不再多出 pid −1 條目（最多 30 s）再恢復。
+  - 暫停區間寫進 gpu_guard JSON。真的外來行程如果那時還在，恢復後下一筆照樣抓到。
+  - 預設關閉，所以正在跑的 stage 21 行為不變。stage 22 起由 `jobs/lib.sh` 打開。
+  - 用假的 watcher 和假的 `foreign_on` 測過：開啟時輪詢到連 2 次乾淨才結束，關閉時不輪詢。
+- **佇列腳本**：
+  - 30／35／55／60／85／86／88 開頭的 `git log … | grep -q .` 在 `pipefail` 下回 141（SIGPIPE），會被當成「07 沒凍結」而整段失敗。改成 `[ -n "$(git log -1 …)" ]`，每段的出題腳本都乾跑過。
+  - `pool.py` 加 `pool_skip.txt`（名稱前綴；判定流程走不到的封存工作開跑前略過，log 記 skipped）。
+- **佇列順序**：21 → 22（Qwen 重量）→ 30 → 35（新：FP8 混合配置 F25／M25／B25／R25，兩個模型，Qwen 先，封存）→ 55（只留 FP8 的 T1／LB，加 FP8 混合的 T1）→ 60 → 70 → 75 → 80（INT4 格子，原 40）→ 85／86（原 50／51）→ 88（從 55 拆出的 INT4 T1／LB，要用 80 的會合點）。
+  - 理由：Qwen 的 K1／K1s 被速度不輸擋住 → 「兩個模型都過 → INT4」幾乎走不到，Step 2 的機率變高。
+- **spec 檔**：`spec_grid.json` 每次 grid 都會覆寫。FP8 那次另存 `spec_grid_fp8.json`（Llama 從 git 取回）；之後的段落自動另存。

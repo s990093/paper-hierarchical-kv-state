@@ -1,7 +1,7 @@
 # 第 2 階（INT4）混合配置 F25、M25、B25、R25（Step 2）；讀法 A＋B（b32）；T2–T5（T1 在 55）。先跑、封存；主模型確定後可只留一個模型（MODELS_51）
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail
-git -C $REPO log --oneline -- docs/precision_20261013/07_freeze_mi300x.md | grep -q . || { echo "事先登記還沒凍結"; exit 1; }
+[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "事先登記還沒凍結"; exit 1; }
 mkdir -p $OUT/quality_sealed
 MODELS=${MODELS_51:-"llama qwen"}
 python3 - <<PY

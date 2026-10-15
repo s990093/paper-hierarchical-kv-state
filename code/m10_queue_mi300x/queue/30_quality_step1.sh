@@ -2,7 +2,7 @@
 # 主判準的任務 T2–T4 各 180、T5 60。T1（只報告）與 LongBench（只報告）移到 55（同樣的題目，只是順序往後）
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail
-git -C $REPO log --oneline -- docs/precision_20261013/07_freeze_mi300x.md | grep -q . || { echo "事先登記還沒凍結（07_freeze_mi300x.md 沒 commit）"; exit 1; }
+[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "事先登記還沒凍結（07_freeze_mi300x.md 沒 commit）"; exit 1; }
 mkdir -p $OUT/quality
 python3 - <<PY
 import json

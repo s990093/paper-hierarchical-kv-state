@@ -129,8 +129,8 @@ def layout(config: str, n: int, seed: int) -> list[bool]:
 class Busy:
     """背景 matmul（m7_busy.py）；duty＝0 時什麼都不做。"""
 
-    def __init__(self, duty: float):
-        self.duty, self.p = duty, None
+    def __init__(self, duty: float, watch=None):
+        self.duty, self.p, self.watch = duty, None, watch
 
     def __enter__(self):
         if self.duty > 0:
@@ -143,9 +143,23 @@ class Busy:
         return self
 
     def __exit__(self, *a):
-        if self.p:
+        if not self.p:
+            return False
+        if self.watch is None or os.environ.get("M10_BUSY_TEARDOWN_PAUSE") != "1":
             self.p.terminate()
             self.p.wait(30)
+            return False
+        # 2026-10-15 Qwen FP8 grid L0：m7_busy 結束、容器內 kfd 已關之後，amd-smi 仍列著它的 VRAM（同 09-15 vLLM 關閉那次）
+        # → 數量判斷誤報 1 筆「容器外行程」。收尾期間暫停取樣（區間寫進 gpu_guard JSON），等 amd-smi 連 2 次不再多出條目
+        # （最多 30 s）才恢復；真的外來行程那時還在的話，恢復後下一筆照樣抓到。
+        from gpu_guard import foreign_on
+        with self.watch.pause("m7_busy teardown"):
+            self.p.terminate()
+            self.p.wait(30)
+            t0, ok = time.time(), 0
+            while time.time() - t0 < 30 and ok < 2:
+                ok = 0 if any(x["pid"] == -1 for x in foreign_on(self.watch.gpu, self.watch.own_root)) else ok + 1
+                time.sleep(0.5)
         return False
 
 
@@ -311,7 +325,7 @@ def worker(spec: dict):
             bench.restore(layout("E1", n, 0), tiers[0], mode, n)
         verified = set()
         for st in st_here:
-            with Busy(st["duty"]) as busy:
+            with Busy(st["duty"], watch) as busy:
                 if busy.p:
                     busy_pid.add(busy.p.pid)
                 for rep in range(spec["reps"]):
