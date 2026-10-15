@@ -37,18 +37,25 @@ squeue -u $USER ; scancel <job_id> ; sacct -j <job_id>
 
 ```bash
 # 0. VPN＋ssh 登入（§2）；第一次先 passwd
-# 1. 環境（head node，§4.1）
-ml miniconda3 && conda create -n tiara python=3.12 -y && conda activate tiara && pip install vllm==0.28.0
+# 1. 環境（head node，§4.1）——10/15 實際做法：
+#    用 conda-forge（不碰 Anaconda 預設 channel 的 ToS）；conda-forge 的 python 不帶 pip，要另外裝，
+#    而且一律 `python -m pip`：直接打 pip 會落到系統的 /usr/bin/pip，被 PEP 668 擋下（第一次就是這樣失敗）
+source /cm/shared/apps/miniconda3/etc/profile.d/conda.sh
+conda create -n tiara -c conda-forge --override-channels python=3.12 pip -y && conda activate tiara
+python -m pip install --no-cache-dir vllm==0.28.0          # → torch 2.13.0+cu130、transformers 5.19.0（10/15）
+python -m pip install --no-cache-dir pandas==3.0.5 pyarrow==25.0.1 scipy==1.18.1 matplotlib==3.11.2   # 分析用，版本同 MI300X
 git clone https://github.com/s990093/paper-hierarchical-kv-state.git ~/paper-hierarchical-kv-state
 cd ~/paper-hierarchical-kv-state
 # 2. 模型與資料，會檢查 sha256（§4.4；約 31 GB＋0.5 GB）
 bash code/h200_setup_data.sh
-# 3. R0 硬體報告：拿一張卡跑（03 §R0）；最後會印出建議的 M7_DISK
-srun -p h200q -A ChihChungHsu --gres=gpu:1 -c 16 --mem=170G --time=02:00:00 --pty bash
-source code/env_h200.sh && bash code/h200_probe.sh
-# 4. 把 M7_DISK 填進 code/env_h200.sh（或在 sbatch 前 export），離開 srun，送 R1–R3（一鍵驗證、正確性、第一階段復現、和 MI300X 比方向）
-sbatch code/r_h200.sh            # 被砍時：sbatch code/r_h200.sh --from <步驟名>；先看步驟：bash code/r_h200.sh --list
+# 3. R0＋R1–R3 一個 job（10/15：佇列滿時排一次要一兩天，分兩個 job 要排兩次）
+sbatch code/r_h200_all.sh        # R0 沒過就停；M7_DISK 用 R0 的建議（要在 /proc/diskstats 裡），否則停
+# 被砍時（R0 已過）：M7_DISK=<值> sbatch code/r_h200.sh --from <步驟名>；先看步驟：bash code/r_h200.sh --list
+# 只想先看硬體：sbatch --job-name=r0-h200-probe --time=01:00:00 code/tiara.sbatch bash code/h200_probe.sh
 ```
+
+- ⚠️ **在這台用 Claude Code 時**：repo 的 `.claude/settings.json` 是 3090 的，會把 `HF_HOME`、`VLLM_CACHE_ROOT`、`TORCH_HOME`… 設到 `/ssd7/...`，而 sbatch 預設把送出時的環境帶進 job。`env_h200.sh` 已會偵測（沒有 `/ssd7` 就清掉並印出清了哪些），也會把 `/cm/local/apps/slurm/current/bin` 補進 PATH（同一個原因，`module load slurm` 在 Claude Code 的 shell 裡不生效）。
+- 送之前可以 `sbatch --test-only code/r_h200_all.sh` 看預估開始時間（10/15 試的是 10/27，但那是悲觀估計；5 月以來每月排隊中位數 0 小時、九成 ≤5 小時，sacct）。
 
 - 第 4 步過了（`repro_verdict.json` 判「重現」），才進 03 的 D0／D1：E0 確認難度（`CANDIDATE_PARAMS.json`）、δ*、挑 scale 粒度 → **凍結事先登記** → 才跑非遮蔽的 `m10_quality.py run`。
 - 結果每天 push、原始 run 目錄每天備份（§5.4）。

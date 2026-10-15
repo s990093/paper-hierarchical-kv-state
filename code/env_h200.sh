@@ -10,6 +10,29 @@
 
 export TIARA_PLATFORM=C_H200
 
+# ---- 3090 帶過來的路徑（10/15 在 H200 上踩到）--------------------------------------
+# repo 的 .claude/settings.json 是 3090 用的：Claude Code 的 session 會把 HF_HOME、VLLM_CACHE_ROOT、TMPDIR…
+# 設到 /ssd7/hungwei/paper-hkv，而 sbatch 預設把送出時的環境帶進 job。這台沒有 /ssd7 → 模型找不到、vLLM 建不了快取。
+# 偵測到就清掉、印出清了哪些（不靜默）。真的要指到別處，source 前 export 成不在 /ssd7 的路徑即可。
+if [ ! -d /ssd7 ]; then
+  _cleared=""
+  for _v in HF_HOME VLLM_CACHE_ROOT TORCH_HOME TRITON_CACHE_DIR XDG_CACHE_HOME TMPDIR UV_CACHE_DIR UV_PYTHON_INSTALL_DIR PAPER_HKV_BIG; do
+    case "${!_v-}" in /ssd7/*) _cleared="$_cleared $_v=${!_v}"; unset "$_v" ;; esac
+  done
+  # 3090 的 settings 同時開了 hf_transfer；這台的環境沒有裝那個套件（huggingface_hub 會因此報錯）
+  if [ -n "$_cleared" ] && [ -n "${HF_HUB_ENABLE_HF_TRANSFER:-}" ]; then
+    _cleared="$_cleared HF_HUB_ENABLE_HF_TRANSFER=$HF_HUB_ENABLE_HF_TRANSFER"; unset HF_HUB_ENABLE_HF_TRANSFER
+  fi
+  [ -n "$_cleared" ] && echo "[env_h200] 清掉 3090 的設定（這台沒有 /ssd7）:$_cleared" >&2
+  unset _v _cleared
+fi
+# Slurm 指令（squeue、scontrol）：tiara.sbatch 記鄰居、gpu_guard 查節點卡數要用。
+# Claude Code 的 session 帶著「已 module load slurm」的 LOADEDMODULES，但 PATH 被 settings.json 換掉 → module load 不會補
+if ! command -v squeue >/dev/null 2>&1 && [ -x /cm/local/apps/slurm/current/bin/squeue ]; then
+  export PATH="/cm/local/apps/slurm/current/bin:$PATH"
+  export SLURM_CONF="${SLURM_CONF:-/cm/shared/apps/slurm/etc/slurm/slurm.conf}"
+fi
+
 # ---- repo（這支檔案的上一層）------------------------------------------------
 export REPO="${REPO:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
