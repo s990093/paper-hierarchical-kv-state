@@ -4,6 +4,10 @@
       由 probe 的 P_b、P_wait 與既有 C1 的 f(i)，照預先登記 §2.4 算每層的 Cake-E 切點 m_E
   python code/m9_f2_analyze.py final  --probe-run <run_id> --sweep-runs <run_id> [<run_id> ...]
       帳 A/B/C/D 的能量最佳 vs 時間最佳、節省、判定、κ_E、成本算術；寫 results/m9_followup/f2_*.csv
+  python code/m9_f2_analyze.py gate   --probe-run <run_id> [--c1 ...]
+      （2026-10-16，平台 C）sweep 之前檢查計數器能不能用（F2 §2.3 事先寫的兩條）：更新週期 ≤ 最短還原的 5%、
+      ≥10 s 的區段 ΔE/Δt 和功率讀值差 ≤5%；另外核對 NVML 和 torch 是同一張卡。沒過 exit 1（停下來回報）
+  其他平台：--res（輸出目錄）、--c1（f(i) 的 C1 CSV）、--chunk-mib（每 chunk MiB；LongAlpaca 256），預設＝MI300X 的值
 
 所有輸出列都有 run_id（本次分析的 run）、src_run（原始量測的 run）與 ts。
 """
@@ -92,8 +96,12 @@ def probe_summary(run):
     val = []
     for r in rows(os.path.join(RUNS, run, "f2_probe.csv")):
         P[r["phase"]].append(float(r["P_W"]))
+        # 功率讀值：瞬時（MI300X current_socket_power；NVML POWER_INSTANT）。沒有瞬時讀值時才退回 1 s 平均（NVML
+        # nvmlDeviceGetPowerUsage），並在輸出標明是哪一種（2026-10-16）
         if r["cur_W_mean"] not in ("", "None"):
-            val.append((r["phase"], float(r["P_W"]), float(r["cur_W_mean"])))
+            val.append((r["phase"], float(r["P_W"]), float(r["cur_W_mean"]), "cur_W", float(r["secs"])))
+        elif r.get("avg_W_mean") not in (None, "", "None"):
+            val.append((r["phase"], float(r["P_W"]), float(r["avg_W_mean"]), "avg_W", float(r["secs"])))
         if r["phase"] == "e_rec":
             note = dict(x.split("=") for x in r["note"].split(";"))
             erec[int(note["chunk"])].append(float(note["J_per_chunk"]))
@@ -125,6 +133,58 @@ def cakee(a):
     print(json.dumps(dict(P_b=Pb, P_wait=Pw, P_idle=Pidle, ratio_b_wait=Pb / Pw, ratio_b_idle=Pb / Pidle, thr=thr)))
 
 
+# ------------------------------------------------------------------ gate（2026-10-16，平台 C：NVML 的計數器要先重新驗證）
+def _bdf(x):
+    """'00000000:E5:00.0' 或 '00000000:e5:00' → (domain, bus, device)；讀不懂回 None。"""
+    try:
+        d, b, rest = str(x).split(":")[:3]
+        return int(d, 16), int(b, 16), int(rest.split(".")[0], 16)
+    except Exception:
+        return None
+
+
+def gate(a):
+    """F2 §2.3 事先寫的兩條，在 sweep 之前判（只用 probe 與 C1 的 f(i)，不看任何還原結果）：
+      1. 計數器更新週期（中位數）≤ 最短一次還原的 5%。最短還原＝各層用 f(i) 與頻寬算的 Cake 時間 max(R(m), (n−m)ℓ)
+         的最小值（MI300X 報告寫「最短的一次還原約 110 ms」，同一個算法給 cpu35 約 107 ms）。超過時預先登記要改成
+         「K 次一起量」，這支 sweep 沒有實作 → 停下來回報，不自己加。
+      2. 同一段 ≥10 s 的區段，ΔE/Δt 和功率讀值的平均差 ≤5%（MI300X：10–30 s 區段差 0.23–0.69%）。
+    另外：NVML 的 bdf 和 torch 的 PCI id 要是同一張卡（規則 7）。"""
+    P, erec, tch, val = probe_summary(a.probe_run)
+    meta = json.load(open(os.path.join(RUNS, a.probe_run, "f2_probe_meta.json")))
+    c = meta["counter"]
+    f = load_f()
+    tpred = {}
+    for t, gib in TIERS.items():
+        ell = CHUNK_MIB * MiB / (gib * GiB)
+        m = write_boundary(N, f, ell)
+        tpred[t] = max(sum(f[:m]), (N - m) * ell)
+    t_min = min(tpred.values())
+    upd = c.get("update_period_ms_median")
+    checks = {}
+    checks["counter_changes"] = (c.get("n_changes") or 0) >= 2
+    checks["update_period_le_5pct"] = upd is not None and upd <= 0.05 * t_min * 1e3
+    long_ = [(ph, pc, pp, src, secs) for ph, pc, pp, src, secs in val if secs >= 10.0]
+    diffs = [(ph, (pc - pp) / pp * 100, src, secs) for ph, pc, pp, src, secs in long_]
+    checks["validation_rows_ge10s"] = len(diffs) > 0
+    checks["validation_le_5pct"] = bool(diffs) and all(abs(d) <= 5.0 for _, d, _, _ in diffs)
+    nb, tb = _bdf(meta.get("bdf")), _bdf(meta.get("torch_pci"))
+    checks["same_gpu_nvml_torch"] = bool(nb and tb and nb == tb)   # 讀不懂任一邊＝無法確認＝不過（規則 7）
+    ok = all(checks.values())
+    out = writer("f2_gate.csv", ["src_run", "check", "ok", "value", "threshold", "note"])
+    out(src_run=a.probe_run, check="update_period_le_5pct", ok=checks["update_period_le_5pct"], value=upd,
+        threshold=0.05 * t_min * 1e3, note=f"ms；最短還原（預測）{t_min * 1e3:.1f} ms @ {min(tpred, key=tpred.get)}；p90 {c.get('update_period_ms_p90')}")
+    out(src_run=a.probe_run, check="counter_changes", ok=checks["counter_changes"], value=c.get("n_changes"), threshold=2, note=f"res_uJ={c.get('res_uJ')}")
+    for ph, d, src, secs in diffs:
+        out(src_run=a.probe_run, check=f"validation_{ph}", ok=abs(d) <= 5.0, value=d, threshold=5.0, note=f"%；{src}；{secs:.1f} s")
+    out(src_run=a.probe_run, check="same_gpu_nvml_torch", ok=checks["same_gpu_nvml_torch"], value=f"{meta.get('bdf')} | {meta.get('torch_pci')}", threshold="", note="")
+    summ = dict(ok=ok, checks=checks, t_pred_ms={k: v * 1e3 for k, v in tpred.items()}, update_period_ms_median=upd,
+                validation=[dict(phase=ph, diff_pct=d, src=src, secs=secs) for ph, d, src, secs in diffs])
+    json.dump(summ, open(os.path.join(RUNS, RID, "f2_gate.json"), "w"), indent=1, ensure_ascii=False)
+    print("F2_GATE", json.dumps(summ, ensure_ascii=False), flush=True)
+    sys.exit(0 if ok else 1)
+
+
 # ------------------------------------------------------------------ final
 def key_of(r):
     mode = r["mode"]
@@ -142,9 +202,9 @@ def final(a):
     Pdma = med(P["dma_h2d"])
 
     # ---- 計數器驗證
-    vo = writer("f2_counter_validation.csv", ["src_run", "phase", "P_counter_W", "P_poll_W", "diff_pct"])
-    for ph, pc, pp in val:
-        vo(src_run=a.probe_run, phase=ph, P_counter_W=pc, P_poll_W=pp, diff_pct=(pc - pp) / pp * 100)
+    vo = writer("f2_counter_validation.csv", ["src_run", "phase", "P_counter_W", "P_poll_W", "diff_pct", "poll_src", "secs"])
+    for ph, pc, pp, src, secs in val:
+        vo(src_run=a.probe_run, phase=ph, P_counter_W=pc, P_poll_W=pp, diff_pct=(pc - pp) / pp * 100, poll_src=src, secs=secs)
 
     # ---- probe 摘要
     po = writer("f2_probe_summary.csv", ["src_run", "item", "median", "min", "max", "n", "unit"])
@@ -305,17 +365,20 @@ def final(a):
 
 
 def main():
+    global TAG, RES, C1, CHUNK_MIB
     p = argparse.ArgumentParser()
-    p.add_argument("cmd", choices=["cakee", "final"])
+    p.add_argument("cmd", choices=["cakee", "final", "gate"])
     p.add_argument("--probe-run", required=True)
     p.add_argument("--sweep-runs", nargs="*", default=[])
     p.add_argument("--cakee-zero-is-l", type=int, default=1)
     p.add_argument("--tag", default="")
+    p.add_argument("--res", default=RES, help="輸出目錄（預設 results/m9_followup＝MI300X）")
+    p.add_argument("--c1", default=C1, help="f(i) 的 C1 CSV（預設 MI300X 第一階段的 calib_c1.csv）")
+    p.add_argument("--chunk-mib", type=int, default=CHUNK_MIB, help="每 chunk MiB（Llama 64；LongAlpaca 256）")
     a = p.parse_args()
-    global TAG
-    TAG = a.tag
+    TAG, RES, C1, CHUNK_MIB = a.tag, a.res, a.c1, a.chunk_mib
     os.makedirs(os.path.join(RUNS, RID), exist_ok=True)
-    {"cakee": cakee, "final": final}[a.cmd](a)
+    {"cakee": cakee, "final": final, "gate": gate}[a.cmd](a)
 
 
 if __name__ == "__main__":

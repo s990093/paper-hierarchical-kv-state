@@ -40,8 +40,10 @@ endif
 RUNS ?= $(HOME)/tiara-runs
 JOBNAME = r-h200-all
 RESTNAME = r-h200-rest
+LAF2NAME = r-h200-la-f2
+QWNAME = r-h200-qwen3
 
-.PHONY: help queue queue-watch status log runs submit submit-rest test-submit cancel probe dry-run dry-run-rest env-check setup setup-check usage
+.PHONY: help queue queue-watch status log runs submit submit-rest submit-r1x test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
 
 help:
 	@echo "H200（在 repo 根目錄、head node 上用）"
@@ -53,10 +55,13 @@ help:
 	@echo "  make test-submit   只問 Slurm 預估什麼時候開始，不送"
 	@echo "  make submit        送 R0＋R1–R3（code/r_h200_all.sh）；已有同名 job 或有未 commit 的改動就不送"
 	@echo "  make submit-rest   送第一階段其餘的實驗（code/r_h200_rest.sh）：接在 $(JOBNAME) 後面（afterok），它失敗就自動撤回"
+	@echo "  make submit-r1x    送第 1 輪的 LongAlpaca＋F2 能耗（$(LAF2NAME)，接在 $(JOBNAME) 後面、和 $(RESTNAME) 平行）"
+	@echo "                     與 Qwen3-30B-A3B（$(QWNAME)，等 $(RESTNAME) 跑完：D2 tier50 會暫寫約 35 GB 到 /work）"
 	@echo "  make cancel JOB=<id>  撤回"
 	@echo "  make probe         只送 R0 硬體報告（1 小時）"
 	@echo "  make dry-run       印出 R1–R3 每一步的指令（不用 GPU）"
 	@echo "  make dry-run-rest  印出 r_h200_rest.sh 每一步的指令"
+	@echo "  make dry-run-r1x   印出 r_h200_r1x.sh（--part la、--part qwen3）每一步的指令"
 	@echo "  make env-check     印出 env_h200.sh 的所有路徑、標出 MISSING"
 	@echo "  make setup / setup-check   下載模型與資料並檢查 sha256／只檢查"
 	@echo "  make usage         lab 內每個人的用量與 fairshare（協調用）"
@@ -106,6 +111,20 @@ submit-rest:
 	else echo "沒有排隊中的 $(JOBNAME)：直接送（r_h200_rest.sh 開跑時會檢查 R3 的 repro_verdict.json）"; \
 	  sbatch code/r_h200_rest.sh; fi
 
+submit-r1x:
+	@for n in $(LAF2NAME) $(QWNAME); do j=$$(squeue -h -u $(USER) -n $$n -o '%i %T'); \
+	  if [ -n "$$j" ]; then echo "已經有 $$n：$$j。要重送先 make cancel JOB=<id>"; exit 1; fi; done
+	@git diff --quiet && git diff --cached --quiet || \
+	  { echo "有未 commit 的改動：job 開跑時才讀 repo，會跑到沒 commit 的版本。先 commit 再送"; git status --short; exit 1; }
+	@all=$$(squeue -h -u $(USER) -n $(JOBNAME) -o '%i' | head -1); rest=$$(squeue -h -u $(USER) -n $(RESTNAME) -o '%i' | head -1); \
+	d1=""; [ -n "$$all" ] && d1="--dependency=afterok:$$all --kill-on-invalid-dep=yes"; \
+	d2=""; [ -n "$$all" ] && d2="afterok:$$all"; [ -n "$$rest" ] && d2="$${d2:+$$d2,}afterany:$$rest"; \
+	[ -n "$$d2" ] && d2="--dependency=$$d2 --kill-on-invalid-dep=yes"; \
+	echo "$(LAF2NAME)：$${d1:-（沒有排隊中的 $(JOBNAME)：直接送，開跑時檢查 repro_verdict.json）}"; \
+	sbatch --job-name=$(LAF2NAME) --time=04:00:00 $$d1 code/r_h200_r1x.sh --part la; \
+	echo "$(QWNAME)：$${d2:-（沒有排隊中的 $(JOBNAME)／$(RESTNAME)：直接送，下載前檢查配額）}"; \
+	sbatch --job-name=$(QWNAME) --time=05:00:00 $$d2 code/r_h200_r1x.sh --part qwen3
+
 cancel:
 	@[ -n "$(JOB)" ] || { echo "用法：make cancel JOB=<job id>（make status 看 id）"; exit 1; }
 	scancel $(JOB)
@@ -119,6 +138,9 @@ dry-run:
 
 dry-run-rest:
 	@bash code/r_h200_rest.sh --dry-run
+
+dry-run-r1x:
+	@bash code/r_h200_r1x.sh --part la --dry-run; bash code/r_h200_r1x.sh --part qwen3 --dry-run
 
 env-check:
 	@bash -c 'source code/env_h200.sh --print'

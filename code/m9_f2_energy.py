@@ -7,6 +7,7 @@
 
 只 import harness（m7_model、m7_restore_harness），不改它。固定切點 S(m) 用 Restorer._load/_recompute 組出來。
 輸出：$TIARA_RUNS/$RUN_ID/ 下的 CSV（每列 run_id、ts）。repo 的摘要 CSV 由 m9_f2_analyze.py 產生。
+計數器：MI300X 用 amdsmi（Smi）；NVIDIA（平台 C，H200）用 NVML（NvSmi，2026-10-16 加），由 gpu_guard.vendor() 選。
 """
 from __future__ import annotations
 
@@ -84,6 +85,92 @@ class Smi:
         return self.a.amdsmi_get_gpu_metrics_info(self.h)
 
 
+class NvSmi:
+    """平台 C（NVIDIA H200，2026-10-16）：NVML。介面和 Smi（amdsmi）相同；power()／activity() 回傳同樣的鍵，
+    sampler、PowerPoll、probe 不用分岔。對應：
+      能量累加值  nvmlDeviceGetTotalEnergyConsumption（mJ，driver 載入後累加）→ 解析度 1000 µJ；沒有計數器自己的時間戳（stamp＝None）
+      current_socket_power  NVML_FI_DEV_POWER_INSTANT（瞬時）；不支援時是 None，不拿別的值頂替（規則 7）
+      average_socket_power  nvmlDeviceGetPowerUsage（Ampere 之後是過去 1 s 的平均〔NVML 文件〕）
+      gfx_activity／umc_activity  nvmlDeviceGetUtilizationRates 的 gpu／memory；mm_activity 沒有對應 → None
+    卡數：Slurm 的 cgroup 只讓 job 看到自己的卡（R0：job 裡 nvidia-smi 看得到 1 張），所以和 Smi 一樣要求剛好 1 張，
+    另外在 probe 的 meta 記 NVML 與 torch 的 PCI bus id，事後可以核對是不是同一張。"""
+
+    def __init__(self):
+        import pynvml
+        self.nv = pynvml
+        pynvml.nvmlInit()
+        n = pynvml.nvmlDeviceGetCount()
+        if n != 1:
+            raise RuntimeError(f"expected exactly 1 GPU handle, got {n}")
+        self.h = pynvml.nvmlDeviceGetHandleByIndex(0)
+        bid = pynvml.nvmlDeviceGetPciInfo(self.h).busId
+        self.bdf = bid.decode() if isinstance(bid, bytes) else str(bid)
+
+    def energy(self):
+        t = time.monotonic()
+        mj = self.nv.nvmlDeviceGetTotalEnergyConsumption(self.h)
+        return t, mj / 1e3, mj, 1000.0, None
+
+    def _fields(self, ids):
+        """[(值 or None, 錯誤碼)]；值依 valueType 取，功率欄位單位是 mW。"""
+        nv = self.nv
+        out = []
+        for v in nv.nvmlDeviceGetFieldValues(self.h, ids):
+            if v.nvmlReturn != nv.NVML_SUCCESS:
+                out.append((None, int(v.nvmlReturn)))
+                continue
+            vt = v.valueType
+            x = {nv.NVML_VALUE_TYPE_DOUBLE: lambda: v.value.dVal,
+                 nv.NVML_VALUE_TYPE_UNSIGNED_INT: lambda: v.value.uiVal,
+                 nv.NVML_VALUE_TYPE_UNSIGNED_LONG: lambda: v.value.ulVal,
+                 nv.NVML_VALUE_TYPE_UNSIGNED_LONG_LONG: lambda: v.value.ullVal,
+                 nv.NVML_VALUE_TYPE_SIGNED_LONG_LONG: lambda: v.value.sllVal,
+                 nv.NVML_VALUE_TYPE_SIGNED_INT: lambda: v.value.siVal}.get(vt)
+            out.append((float(x()) if x else None, 0 if x else f"valueType={vt}"))
+        return out
+
+    def power(self):
+        nv = self.nv
+        (inst, inst_rc), (avgf, avgf_rc) = self._fields([nv.NVML_FI_DEV_POWER_INSTANT, nv.NVML_FI_DEV_POWER_AVERAGE])
+        return {"current_socket_power": inst / 1e3 if inst is not None else None,
+                "average_socket_power": nv.nvmlDeviceGetPowerUsage(self.h) / 1e3,
+                "fi_power_average_W": avgf / 1e3 if avgf is not None else None,
+                "fi_power_instant_rc": inst_rc, "fi_power_average_rc": avgf_rc}
+
+    def activity(self):
+        u = self.nv.nvmlDeviceGetUtilizationRates(self.h)
+        return {"gfx_activity": u.gpu, "umc_activity": u.memory, "mm_activity": None}
+
+    def metrics(self):
+        nv = self.nv
+        m = {}
+        for k, f in [("name", lambda: nv.nvmlDeviceGetName(self.h)),
+                     ("driver", nv.nvmlSystemGetDriverVersion),
+                     ("nvml_version", nv.nvmlSystemGetNVMLVersion),
+                     ("clock_sm_MHz", lambda: nv.nvmlDeviceGetClockInfo(self.h, nv.NVML_CLOCK_SM)),
+                     ("clock_mem_MHz", lambda: nv.nvmlDeviceGetClockInfo(self.h, nv.NVML_CLOCK_MEM)),
+                     ("max_clock_sm_MHz", lambda: nv.nvmlDeviceGetMaxClockInfo(self.h, nv.NVML_CLOCK_SM)),
+                     ("clocks_event_reasons", lambda: hex(nv.nvmlDeviceGetCurrentClocksEventReasons(self.h))),
+                     ("temp_C", lambda: nv.nvmlDeviceGetTemperature(self.h, nv.NVML_TEMPERATURE_GPU)),
+                     ("enforced_power_limit_W", lambda: nv.nvmlDeviceGetEnforcedPowerLimit(self.h) / 1e3),
+                     ("pstate", lambda: nv.nvmlDeviceGetPerformanceState(self.h))]:
+            try:
+                x = f()
+                m[k] = x.decode() if isinstance(x, bytes) else x
+            except Exception as e:   # 規則 7：查不到就記錯誤，不省略
+                m[k] = f"ERR {e!r}"
+        return m
+
+
+def make_smi():
+    """MI300X（amd）用 amdsmi 的 Smi，原本的行為不變；NVIDIA 用 NvSmi。F2_SMI＝amd／nvidia 可以強制指定。"""
+    v = os.environ.get("F2_SMI")
+    if not v:
+        from gpu_guard import vendor
+        v = vendor()
+    return NvSmi() if v == "nvidia" else Smi()
+
+
 def _num(x):
     try:
         return float(x)
@@ -93,7 +180,7 @@ def _num(x):
 
 # ------------------------------------------------------------------ sampler（另一個 process）
 def sampler(a):
-    smi = Smi()
+    smi = make_smi()
     f = open(a.out, "w", newline="")
     w = csv.writer(f)
     w.writerow(["run_id", "ts", "t_mono", "E_J", "acc_raw", "cur_W", "avg_W", "gfx_act", "umc_act", "mm_act"])
@@ -209,7 +296,7 @@ class PowerPoll:
 
 # ------------------------------------------------------------------ probe
 def probe(a):
-    smi = Smi()
+    smi = make_smi()
     o = Out(os.path.join(RD, "f2_probe.csv"),
             ["phase", "rep", "secs", "E_J", "P_W", "n_samples", "cur_W_mean", "avg_W_mean", "gfx_act_mean",
              "gfx_act_max", "work", "note"])
@@ -239,7 +326,8 @@ def probe(a):
             w.writerow([RID, ts(), f"{r[0]:.6f}", f"{r[1]:.6f}", r[2], r[3], r[4]])
     dts = [raw[i + 1][0] - raw[i][0] for i in range(len(raw) - 1)]
     dacc = [raw[i + 1][2] - raw[i][2] for i in range(len(raw) - 1)]
-    dstamp = [raw[i + 1][4] - raw[i][4] for i in range(len(raw) - 1)]
+    # NVML 的能量計數器沒有自己的時間戳（NvSmi.energy 的 stamp＝None）→ 這兩項記 None
+    dstamp = [raw[i + 1][4] - raw[i][4] for i in range(len(raw) - 1)] if raw and raw[0][4] is not None else []
     meta["counter"] = dict(
         n_changes=len(raw), tight_s=a.tight_s, n_reads=len(lat),
         read_latency_ms_median=statistics.median(lat) * 1e3, read_latency_ms_max=max(lat) * 1e3,
@@ -340,6 +428,17 @@ def probe(a):
         with Win(smi) as w:
             time.sleep(a.idle_s)
         o.row(phase="idle_model_end", rep=0, secs=w.secs, E_J=w.E, P_W=w.P, **pp.summary(w.t0, w.t1))
+        # 2026-10-16（平台 C）：記 torch 的 PCI bus id（和 NVML 的 bdf 核對是不是同一張卡）與結尾的時脈／降頻原因
+        try:
+            pr = torch.cuda.get_device_properties(0)
+            meta["torch_pci"] = f"{pr.pci_domain_id:08x}:{pr.pci_bus_id:02x}:{pr.pci_device_id:02x}"
+        except Exception as e:
+            meta["torch_pci"] = f"ERR {e!r}"
+        try:
+            meta["metrics_end"] = {k: str(v) for k, v in smi.metrics().items()}
+        except Exception as e:
+            meta["metrics_end_err"] = repr(e)
+        json.dump(meta, open(os.path.join(RD, "f2_probe_meta.json"), "w"), indent=1)
     # 存原始功率樣本
     with open(os.path.join(RD, "f2_probe_power_samples.csv"), "w", newline="") as f:
         wr = csv.writer(f)
@@ -354,7 +453,7 @@ def sweep(a):
     from m7_model import CHUNK, KVModel
     from m7_restore_harness import Restorer, Tier
 
-    smi = Smi()
+    smi = make_smi()
     n = 64
     km = KVModel(max_len=n * CHUNK + 512)
     g = torch.Generator().manual_seed(a.seed)
@@ -370,6 +469,11 @@ def sweep(a):
         name, gib = spec.split("=")
         tiers.append((name, float(gib)))
     cake_e = dict((x.split("=")[0], int(x.split("=")[1])) for x in a.cake_e)
+    if a.cake_e_from:   # 2026-10-16：從 m9_f2_analyze.py cakee 的輸出讀 m_E（MI300X 是手抄成 --cake-e nfs=33）；m_E=0 的層不跑（＝只載入）
+        for r in csv.DictReader(open(a.cake_e_from)):
+            if int(r["m_E"]) > 0:
+                cake_e[r["tier"]] = int(r["m_E"])
+        print("CAKE_E_FROM", a.cake_e_from, json.dumps(cake_e), flush=True)
 
     o = Out(os.path.join(RD, "f2_sweep.csv"),
             ["rep", "tier", "read_GiBps", "mode", "m", "secs", "E_J", "P_W", "t_restore", "t_rline", "t_lline",
@@ -490,6 +594,7 @@ def main():
                                                     "local=6.98115234375", "nfs=0.331083984375"])
     p.add_argument("--m-grid", type=int, nargs="*", default=[4, 8, 16, 24, 32, 40, 48, 56])
     p.add_argument("--cake-e", nargs="*", default=[])
+    p.add_argument("--cake-e-from", default="", help="m9_f2_analyze.py cakee 寫的 f2_*cakee.csv；和 --cake-e 合併")
     p.add_argument("--verify", type=int, default=1)
     p.add_argument("--r-per-rep", type=int, default=2)
     a = p.parse_args()
