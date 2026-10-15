@@ -182,6 +182,11 @@ def table(ref, x, group_keys=("task", "turn", "band")):
 
 
 # ============================================================================ quality
+def power_blocks(e1a: dict) -> bool:
+    """檢定力不夠、而且會擋判定（07 §9）：半寬 > 1.5 個百分點，且 CI 上界 ≥ EPS_CI。"""
+    return bool(e1a["ci_halfwidth"] > POWER_HALFWIDTH and e1a["ci95"][1] >= EPS_CI)
+
+
 def cmd_quality(a):
     rows = load_rows(a.csv)
     rows = [r for r in rows if r["model"] == a.model]
@@ -231,6 +236,9 @@ def cmd_quality(a):
     # 檢定力（E1 對 E0，情境 A）
     e1a = res["configs"].get("E1", {}).get("A")
     res["power_ok"] = None if e1a is None else bool(e1a["ci_halfwidth"] <= POWER_HALFWIDTH)
+    # 07 §9（2026-10-15 晚，Step 1 任何品質列產生之前）：檢定力只在「結論可能因 CI 太寬而改變」時擋判定——
+    # E1 讀法 A 的 CI 半寬 > 1.5 而且 CI 上界 ≥ −2（跨過或高於界線）。整個 CI 都在 −2 以下＝確定比界線差，不是題目不夠。
+    res["power_blocks"] = None if e1a is None else power_blocks(e1a)
     tag = f"{a.model}_{a.tag}"
     json.dump(res, open(os.path.join(a.out_dir, f"quality_{tag}.json"), "w"), indent=1, ensure_ascii=False)
     keys = []
@@ -244,7 +252,7 @@ def cmd_quality(a):
         for cond, e in v.items():
             print(f"{a.model} {c:12s} {cond:7s} n={e['n_rows']:5d} diff={e['diff']:+.4f} CI=[{e['ci95'][0]:+.4f},"
                   f"{e['ci95'][1]:+.4f}] eps={'PASS' if e['eps_pass'] else 'fail'} lp_read={e['mean_lp_read']}", flush=True)
-    print("power_ok:", res["power_ok"])
+    print("power_ok:", res["power_ok"], "power_blocks:", res["power_blocks"])
 
 
 # ============================================================================ speed
@@ -301,8 +309,17 @@ def cmd_decide(a):
                   "model_pass": (bool(k1) or bool(k1s)) if k1 is not None else None}
         passed[m] = res[m]["model_pass"]
     L, Q = passed["llama"], passed["qwen"]
-    if res["llama"]["power_ok"] is False or res["qwen"]["power_ok"] is False:
-        nxt = "題數不夠（E1 對 E0 的 CI 半寬 > 1.5 個百分點）：先加題再判，不能說「沒過」（03 §2.4）"
+    # 凍結時的程式只看 power_ok；07 §9 的釐清改看 power_blocks（舊 JSON 沒有這個欄位 → 退回 power_ok）。兩種都寫進輸出。
+    blk = {}
+    for m, qp in (("llama", a.llama), ("qwen", a.qwen)):
+        q = json.load(open(qp))
+        blk[m] = q["power_blocks"] if "power_blocks" in q else (q["power_ok"] is False)
+        res[m]["power_blocks"] = blk[m]
+    res["next_frozen_code"] = ("題數不夠（E1 對 E0 的 CI 半寬 > 1.5 個百分點）：先加題再判（凍結時的程式）"
+                               if res["llama"]["power_ok"] is False or res["qwen"]["power_ok"] is False else "（同 next）")
+    if blk["llama"] or blk["qwen"]:
+        nxt = ("題數不夠（E1 對 E0 的 CI 半寬 > 1.5 個百分點，而且 CI 跨過 −2）：先加題再判，不能說「沒過」（03 §2.4、07 §9）："
+               + "、".join(m for m in ("llama", "qwen") if blk[m]))
     elif L is None or Q is None:
         nxt = "資料不全，不能判"
     elif L and Q:
@@ -384,6 +401,11 @@ def selftest(_a=None):
     """假資料：只檢查程式邏輯，不讀任何實驗資料。"""
     rng = np.random.default_rng(1)
     ok = True
+    # 0. 檢定力（07 §9）：寬 CI 跨過 −2 → 擋；寬 CI 整個在 −2 以下 → 不擋；窄 CI → 不擋
+    ok &= power_blocks({"ci_halfwidth": 0.02, "ci95": [-0.03, 0.01]})
+    ok &= not power_blocks({"ci_halfwidth": 0.03, "ci95": [-0.36, -0.30]})
+    ok &= not power_blocks({"ci_halfwidth": 0.01, "ci95": [-0.015, 0.005]})
+    ok &= power_blocks({"ci_halfwidth": 0.02, "ci95": [-0.04, 0.00]})
     # 1. 差為 0 的配對 → 點估計 0、CI 含 0
     d = {f"i{k}": [0.0, 0.0] for k in range(100)}
     p, lo, hi = cluster_boot(d)

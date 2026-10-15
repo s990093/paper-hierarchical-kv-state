@@ -140,8 +140,11 @@ def decide(a):
     d = json.load(open(a.json))
     for m in ("llama", "qwen"):
         v = d[m]
-        print(f"- **{m}**：K1＝{v['K1']}、K1s＝{v['K1s']}、模型過＝{v['model_pass']}（逐配置：{v['per_config']}；檢定力 {v['power_ok']}）")
+        print(f"- **{m}**：K1＝{v['K1']}、K1s＝{v['K1s']}、模型過＝{v['model_pass']}（逐配置：{v['per_config']}；"
+              f"檢定力半寬過＝{v['power_ok']}、擋判定＝{v.get('power_blocks', '—')}）")
     print(f"- **下一步**：{d['next']}")
+    if d.get("next_frozen_code") and d["next_frozen_code"] != "（同 next）":
+        print(f"- 凍結時的程式會說（07 §9 釐清前）：{d['next_frozen_code']}")
 
 
 def main():
