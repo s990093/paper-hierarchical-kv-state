@@ -332,3 +332,47 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 03 的事先登記凍結（D1，H200 上 E0 確認難度＋δ*＋scale 粒度之後）；凍結前 `m10_quality.py run` 只准 `--blind`。
 - busy_levels：`m7_repro_compare.py busy-levels` 從 H200 的 C5 結果產生（`r_h200.sh` 的 R2-busy-levels 步驟）。
 - T5 CWE 的 ❌：H200 上用 vLLM 跑上游 jsonl。
+
+## Milestone 10 — 第二階段（精度）主實驗，MI300X（進行中）
+
+**狀態**：進行中（GPU 佇列照順序跑；這一節每完成一段就補）
+**為什麼在 MI300X**：使用者 10/15 晚改動——主實驗在 MI300X 跑完，H200 只做復現（03 開頭「10/15 晚改動」）。
+**事先登記**：[07_freeze_mi300x](../docs/precision_20261013/07_freeze_mi300x.md)，凍結 2026-10-15T16:13:06Z（commit 2f4fcfa）；判定程式 `code/m10_analyze.py`（commit 0e79da7 起，selftest 過；d974dfc 補 K3、圖表）。
+**產出檔**：`results/m10_precision_mi300x/`（`speed_<m>/`、`fmt_select/`、`analysis/<fp8|int4>/`、`figs/`；之後 `quality/`、`quality_sealed/`）
+**佇列**：`jobs/runner.sh` 依名稱順序跑 `jobs/queue/NN_*.sh`，每段拿 `gpu.lock`；品質 run 用 `jobs/pool.py` 同時開多個 process（看 amd-smi 的剩餘 VRAM 才開下一個）。腳本副本：`code/m10_queue_mi300x/`。
+**環境**：venv `tiara`（torch 2.10.0+rocm7.0、HIP 7.0.51831、transformers 5.17.0）；每個 run 走 `m7run`（`$TIARA_RUNS/<run_id>/` 有 cmd.sh、context、stdout／stderr、exit_code）。
+
+### 10.1 凍結前（速度校正、雜訊、格式小測）
+
+| run_id | 指令 | 結果 |
+|:--|:--|:--|
+| `20261015-154558-m10-calibf-llama`、`-154647-m10-calibf-qwen` | `m10_speed.py calib-f --model <m> --out-dir speed_<m>` | f(i) 總和 3.631／3.077 s；pinned H2D 49.9／48.6 GiB/s；限速 b16／b32／b48＝5.2746／1.4668／0.4196（Llama）、2.7712／0.7635／0.2175 GiB/s（Qwen） |
+| `20261015-154722-m10-noise-llama`、`-155626-m10-noise-qwen` | `m10_speed.py noise …`（E0，4 頻寬 × 閒／忙，3 process × 10 次） | δ＝2.97% → δ\*＝5%（Llama）；δ＝9.43% → δ\*＝9.43%（Qwen） |
+| `20261015-160426`、`-160541`、`-160656`、`-160811`（`m10-fmtsel-{llama,qwen}-s{0,1}`） | `m10_quality.py run --seed0 4000 --n 5 --tasks T2 T3 T4 T5 --modes A --configs E0 E1@<5 種格式> --shard s/2`；`m10_fmt_select.py` | Llama fp8_token、int4_kivi；Qwen fp8_head、int4_kivi（KL 見 07 §3） |
+| `20261015-160602-m10-smoke-bpath`、`-160602-m10-smoke-sensmap` | 讀法 B 路徑、敏感度地圖的結構試跑（`--blind`，輸出在 scratch） | 結構正確；沒有看任何低精度答對率 |
+
+### 10.2 FP8 速度格子（K0）——Llama 完成
+
+- **run_id**：`20261015-161226-m10-grid-fp8-llama`（16:12 → 17:50 UTC）、`20261015-175049-m10-k0v-fp8-llama`
+- **指令**：`python code/m10_speed.py grid --model llama --fmt fp8_token --base-fmt fp8_token --out-dir results/m10_precision_mi300x/speed_llama --bw-json …/bw.json --blocks-out $TIARA_RUNS/$RUN_ID/blocks.csv`；`m10_speed.py k0-verdict --model llama --from-run <grid run_id> --delta-json …/noise.json`；`m10_analyze.py speed --model llama --summary …/summary_fp8.csv --noise …/noise.json --out-dir analysis/fp8`
+- **GPU 監控**：3 個 process 都 CLEAN（`gpu_guard_…_L{0,1,2}.json`：開跑前乾淨、沒有外來 PID、沒有暫停）。
+- **產出**：`speed_llama/summary_fp8.csv`、`restores.csv.gz`（逐次還原，2,640 列；未壓縮版 1.1 MB 不進 git）、`meets.json`、`k0_verdict_fp8.json`、`analysis/fp8/speed_llama.json`；圖 `figs/speed_llama_fp8.png`、`figs/sources_llama_fp8_b32.png`。
+
+**K0（32K，還原時間中位數，秒；δ\*＝5%）**
+
+| 頻寬 | GPU | E0 | E1（fp8_token） | E1 快多少 | 配對差 95% CI (s) | E1 贏？ | 會合點 E0／E1 |
+|:--|:--|--:|--:|--:|:--|:--|:--|
+| b16 | 閒 | 0.578 | 0.378 | 34.6% | [0.196, 0.208] | 是 | 14–16／9–11 |
+| b16 | 忙 | 0.666 | 0.501 | 24.7% | [0.163, 0.174] | 是 | 8–9／6 |
+| b32 | 閒 | 1.380 | 0.950 | 31.1% | [0.416, 0.442] | 是 | 31–32／22–24 |
+| b32 | 忙 | 1.933 | 1.214 | 37.2% | [0.707, 0.722] | 是 | 20–21／14 |
+| b48 | 閒 | 2.421 | 1.873 | 22.7% | [0.523, 0.572] | 是 | 47–48／39–40 |
+| b48 | 忙 | 3.951 | 2.833 | 28.3% | [1.103, 1.123] | 是 | 38／28–29 |
+| cpu | 閒 | 0.095 | 0.072 | 24.8% | [0.019, 0.024] | 是 | 2–3／2 |
+| cpu | 忙 | 0.165 | 0.171 | −3.5% | [−0.007, −0.005] | 否 | 2／2 |
+
+- **判定**：K0 不成立（7／8 格 E1 贏）——Llama 上低精度對還原時間有賺頭，往下判品質。
+- **速度不輸**（每格 ≤ 最快的混合配置 ×1.05）：E1、E1s、E1sr 全部 8 格都過（`analysis/fp8/speed_llama.json`）。
+- 只有 cpu・忙 那一格 E1 比 E0 慢 3.5%：不限速時搬運不是瓶頸，反量化（在 I/O stream 上、和忙碌負載搶 GPU）多出來的時間沒被省下的位元組補回來。和彩排（Qwen、CPU 層 E1 慢 6–10%）方向相同。
+- **讀到多少低精度（圖 B，b32）**：F25 的 16 個低精度 block 在閒、忙都 **一個都沒讀到**（全部落在重算段）；B25 16 個全讀到；M25 閒時讀到 10 個、忙時 16 個；R25 閒 9 個、忙 11.5 個（中位數）。這是「前段量化沒掉品質可能只是沒被讀到」的直接證據（03 §3.3）。
+

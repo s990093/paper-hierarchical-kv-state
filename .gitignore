@@ -68,3 +68,6 @@ results/m7_write_policy_mi300x/b_share.csv
 results/m7_explore_mi300x/r1_sim_longalpaca7b.csv
 # GPU 崩潰時的 core dump（幾十 GB）
 gpucore.*
+
+# ── m10：逐次還原的 restores.csv 超過 1 MB，進 git 的是 .gz ─────────────────
+results/m10_precision_mi300x/speed_*/restores*.csv
