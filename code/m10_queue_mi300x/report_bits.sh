@@ -5,28 +5,31 @@ REPO=/mlsteam/workspace/paper-hierarchical-kv-state; OUT=$REPO/results/m10_preci
 source $REPO/code/m7_env.sh >/dev/null
 T="python $REPO/code/m10_report_tables.py"; F="python $REPO/code/m10_figs.py"
 mkdir -p $FIG
-lastgrid() { python3 - "$1" "$2" <<'PY'
+lastgrid() { python3 - "$1" "$2" "$3" <<'PY'
 import json,sys
-m,tier=sys.argv[1],sys.argv[2]
-d=json.load(open(f"/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_{m}/k0_verdict_{tier}.json"))
+m,tier,suf=sys.argv[1],sys.argv[2],sys.argv[3]
+d=json.load(open(f"/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_{m}{suf}/k0_verdict_{tier}.json"))
 print(d["run_id"])
 PY
 }
 case $1 in
 speed)
-  m=$2; tier=$3; A=$OUT/analysis/$tier; RID=$(lastgrid $m $tier); RS=$OUT/speed_$m/restores.csv
+  # speed <m> <tier> [後綴，例 _regrid：讀 speed_<m>_regrid/、寫 analysis/<tier>_regrid/、圖檔名加後綴]
+  m=$2; tier=$3; SUF=${4:-}; S=$OUT/speed_$m$SUF; A=$OUT/analysis/$tier$SUF; mkdir -p $A
+  RID=$(lastgrid $m $tier "$SUF"); RS=$S/restores.csv
   [ -f $RS ] || RS=$RS.gz
-  { echo "## $m $tier 速度（run $RID）"; echo; $T k0 --json $OUT/speed_$m/k0_verdict_$tier.json; echo; $T speed --summary $OUT/speed_$m/summary_$tier.csv; echo;
+  { echo "## $m $tier 速度（run $RID）"; echo; $T k0 --json $S/k0_verdict_$tier.json; echo; $T speed --summary $S/summary_$tier.csv; echo;
     $T sources --restores $RS --run $RID; } > $A/tables_speed_$m.md
-  $F speed --model $m --restores $RS --run $RID --out $FIG/speed_${m}_$tier.png
-  for bw in b16 b32 b48 cpu; do $F sources --model $m --restores $RS --run $RID --bw $bw --out $FIG/sources_${m}_${tier}_$bw.png; done
+  $F speed --model $m --restores $RS --run $RID --out $FIG/speed_${m}_$tier$SUF.png
+  for bw in b16 b32 b48 cpu; do $F sources --model $m --restores $RS --run $RID --bw $bw --out $FIG/sources_${m}_${tier}${SUF}_$bw.png; done
   echo "wrote $A/tables_speed_$m.md" ;;
 step1)
   A=$OUT/analysis/fp8
   for m in llama qwen; do
     d=$(python3 -c "import json;print(json.load(open('$OUT/speed_$m/noise.json'))['delta_star'])")
     { echo "## $m Step 1（FP8 端點）"; echo; $T quality --json $A/quality_${m}_step1.json; echo; echo "### E0 各格"; echo; $T e0 --json $A/quality_${m}_step1.json; } > $A/tables_step1_$m.md
-    $F A --quality $A/quality_${m}_step1.json --summary $OUT/speed_$m/summary_fp8.csv --delta-star $d --out $FIG/A_${m}_fp8_step1.png
+    SB=$OUT/speed_$m/summary_fp8.csv; [ $m = qwen ] && SB=$OUT/speed_qwen_regrid/summary_fp8.csv   # Qwen 的速度用重量那次（stage 22）
+    $F A --quality $A/quality_${m}_step1.json --summary $SB --delta-star $d --out $FIG/A_${m}_fp8_step1.png
     $F C --model $m --csv $OUT/quality/step1_${m}_*.csv --configs E1 E1s E1sr --out $FIG/C_${m}_fp8_step1.png
     $F D --model $m --csv $OUT/quality/step1_${m}_*.csv --configs E0 E1 E1s E1sr --out $FIG/D_${m}_fp8_step1.png
   done

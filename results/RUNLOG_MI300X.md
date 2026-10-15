@@ -376,7 +376,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 只有 cpu・忙 那一格 E1 比 E0 慢 3.5%：不限速時搬運不是瓶頸，反量化（在 I/O stream 上、和忙碌負載搶 GPU）多出來的時間沒被省下的位元組補回來。和彩排（Qwen、CPU 層 E1 慢 6–10%）方向相同。
 - **讀到多少低精度（圖 B，b32）**：F25 的 16 個低精度 block 在閒、忙都 **一個都沒讀到**（全部落在重算段）；B25 16 個全讀到；M25 閒時讀到 10 個、忙時 16 個；R25 閒 9 個、忙 11.5 個（中位數）。這是「前段量化沒掉品質可能只是沒被讀到」的直接證據（03 §3.3）。
 
-### 10.3 FP8 速度格子（K0）——Qwen（L0 監控報污染 → 整批重量中）
+### 10.3 FP8 速度格子（K0）——Qwen（L0 監控報污染 → 已整批重量，判定用 10.6）
 
 - **run_id**：`20261015-175050-m10-grid-fp8-qwen`（17:50 → 19:13 UTC）、`20261015-191337-m10-k0v-fp8-qwen`
 - **指令**：同 10.2，`--model qwen --fmt fp8_head --base-fmt fp8_head --out-dir results/m10_precision_mi300x/speed_qwen`
@@ -392,7 +392,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - **處理**：CLAUDE.md §3「contaminated 的 run 必須重量」→ 排 stage 22 `m10-regrid-fp8-qwen` 整批重量（輸出 `speed_qwen_regrid/`），Qwen 的 K0／速度不輸以重量那次為準。讀法 B 的會合點仍用這次沒被標污染的列（07 第 54 列）。
 - **K0（這次、沒被標污染的列；δ\*＝9.43%）**：限速層 6 格 E1 全贏（快 22.5–39.2%）；**cpu 兩格 E1 都輸**（閒 0.052 → 0.055，−5.5%，CI [−0.004, −0.003]；忙 0.066 → 0.074，−13.2%，CI [−0.009, −0.006]）→ K0 不成立。
 - **速度不輸**（`analysis/fp8/speed_qwen.json`）：E1、E1s、E1sr 在 cpu・忙沒過（÷ 最快混合配置＝1.135、1.140、1.103；門檻 1.0943），其他 7 格都過。
-  - 照凍結的 `model_verdict`（ε 過而且速度不輸），Qwen 的 K1／K1s 不管品質都不會成立。
+  - 照凍結的 `model_verdict`（ε 過而且速度不輸），Qwen 的 K1／K1s 不管品質都不會成立。**（重量後 E1s 過了，這句作廢，見 10.6。）**
   - 和彩排一致：Qwen 的 CPU 層 E1 慢 6–10%。
 - **cpu 層分項**（中位數 ms，`restores.csv` 的 t_h2d／t_dequant）：
   - Qwen 閒：E0 H2D 36.6；E1 H2D 17.7＋反量化 10.6 → 還原 52.0 → 54.9。
@@ -418,7 +418,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 30／35／55／60／85／86／88 開頭的 `git log … | grep -q .` 在 `pipefail` 下回 141（SIGPIPE），會被當成「07 沒凍結」而整段失敗。改成 `[ -n "$(git log -1 …)" ]`，每段的出題腳本都乾跑過。
   - `pool.py` 加 `pool_skip.txt`（名稱前綴；判定流程走不到的封存工作開跑前略過，log 記 skipped）。
 - **佇列順序**：21 → 22（Qwen 重量）→ 23（Qwen E1-INT8 速度重量，10.5）→ 30 → 35（新：FP8 混合配置 F25／M25／B25／R25，兩個模型，Qwen 先，封存）→ 55（只留 FP8 的 T1／LB，加 FP8 混合的 T1）→ 60 → 70 → 75 → 80（INT4 格子，原 40）→ 85／86（原 50／51）→ 88（從 55 拆出的 INT4 T1／LB，要用 80 的會合點）。
-  - 理由：Qwen 的 K1／K1s 被速度不輸擋住 → 「兩個模型都過 → INT4」幾乎走不到，Step 2 的機率變高。
+  - 理由：Qwen 的 K1／K1s 被速度不輸擋住 → 「兩個模型都過 → INT4」幾乎走不到，Step 2 的機率變高。（重量後這個理由不成立，見 10.6；順序暫不動，判定出來再調。）
 - **spec 檔**：`spec_grid.json` 每次 grid 都會覆寫。FP8 那次另存 `spec_grid_fp8.json`（Llama 從 git 取回）；之後的段落自動另存。
 
 ### 10.5 Step 2b 的速度（stage 21，19:13 → 19:41 UTC）
@@ -434,3 +434,25 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **速度不輸預覽**（`m10_analyze.py speed --x-summary`，輸出在 scratch；對 FP8 格子的混合配置）：
   - E1-INT8 兩個模型 8 格全過。CPU・忙：Llama 1.019、Qwen 1.070。
   - E1-K0 兩個模型都在 CPU・忙沒過（Llama 1.094 > 1.05；Qwen 1.178 > 1.094），其他 7 格全過。
+
+### 10.6 Qwen 速度重量（stage 22、23，19:41 → 21:11 UTC）——判定用這次
+
+- **run_id**：`20261015-194150-m10-regrid-fp8-qwen`（19:41:50 → 21:04:55）、`20261015-210455-m10-k0v-regrid-fp8-qwen`、`20261015-210456-m10-regrid-2b-int8_token-qwen`（21:04:56 → 21:11:44）。三個 exit_code 都是 0。
+- **指令**：同 10.3／10.5，`--out-dir results/m10_precision_mi300x/speed_qwen_regrid`，`M10_BUSY_TEARDOWN_PAUSE=1`。
+- **GPU 監控**：6 個 process（L0–L2 × 2 個 run）**全部 CLEAN**，`n_dirty_samples=0`。
+  - 每個 JSON 都有一段 `paused_intervals`，原因「m7_busy teardown」，長 4.8–7.7 s（例：L0 20:07:32.23 → 20:07:37.18）。
+  - `-194150` 的 L2 那段暫停裡丟掉 1 筆取樣（`discarded_samples_overlapping_pause=1`）＝收尾殘影；其他 5 個是 0。
+  - 結論：10.3 的污染就是收尾殘影，amd-smi 在背景程式結束後還列出它的 VRAM 約 5 s。
+  - 逐列：3,600＋240 列的 `contaminated_gpu` 全是 False；`host_level` 全是 `UNOBSERVABLE_HOST`（AMD 的已知限制）。
+- **K0**（`speed_qwen_regrid/k0_verdict_fp8.json`）：限速層 6 格 E1 全贏（快 22.0–39.2%）；cpu 閒 0.052 → 0.055（−5.1%，CI [−0.003, −0.001]）、忙 0.066 → 0.074（−12.6%，CI [−0.009, −0.007]）→ **K0 不成立**，同第一次。
+- **和第一次比**（32K、cake、各配置 × 各格的中位數）：差在 −3.8%～+3.4%；唯一例外 E1sr「b16・忙」0.340 → 0.398（+17%）。這一格 E1sr 的 b 只會是 5 或 6（0.34 s／0.40 s 兩群），b＝6 的次數從 12／30 變 17／30，中位數跳群。
+- **cpu 層分項**（中位數 ms）：Qwen 閒 E0 H2D 36.5；E1 H2D 17.7＋反量化 10.7 → 還原 52.2 → 54.9。忙：H2D 50.7 → 19.8，反量化 26.1 → 還原 65.8 → 74.1。和第一次差 ≤ 0.5 ms。
+- **速度不輸**（`analysis/fp8_regrid/speed_qwen.json`）：cpu・忙 ÷ 最快混合配置＝E1 1.116 ✗、**E1s 1.090 ✓**、E1sr 1.100 ✗（門檻 1.0943）；其他 7 格全過。
+  - **和第一次唯一不同的判定**：E1s 從 1.140（✗）變 1.090（✓）。最快混合配置 0.0656 → 0.0664 s，E1s 0.0748 → 0.0724 s。
+  - E1s 和 E1 做的事幾乎相同（63 vs 64 個 FP8 block），兩次之間誰快也互換 → 這一格的差異就是雜訊。照規則以重量為準，不改判。
+  - 影響：Qwen 的 K1s 可以靠 E1s 成立 → 「兩個模型都過 → INT4」又走得到。是否把速度判準限制在限速層，留給老師。
+- **讀法 B 會合點**（`speed_qwen_regrid/meets.json`，b32 閒／忙）：和 10.3 只差 E1sr 閒 23 → 24；E1s@int8_token 23／14 相同。stage 30 照 07 第 54 列仍用 `speed_qwen/meets.json`。
+- **讀到多少低精度**：每格和第一次差 0–1 個 block。
+- **Step 2b 速度（Qwen，對重量的混合配置）**：E1-INT8（重量）cpu・忙 1.073 ✓、其他 7 格全過；E1-K0（`-192845`，監控 CLEAN，沿用）cpu・忙 1.164 ✗。結論同 10.5。
+- **產出**：`speed_qwen_regrid/summary_fp8.csv`、`summary_2b_int8_token.csv`、`restores.csv.gz`、`meets.json`、`k0_verdict_fp8.json`、`spec_grid_fp8.json`、`spec_grid_2b_int8_token.json`、6 個 gpu_guard JSON；`analysis/fp8_regrid/speed_qwen.json`、`tables_speed_qwen.md`；`figs/speed_qwen_fp8_regrid.png`、`figs/sources_qwen_fp8_regrid_{b16,b32,b48,cpu}.png`。
+- **失敗與異常**：無。
