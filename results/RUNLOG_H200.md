@@ -106,7 +106,8 @@
 
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
-**狀態**: 待送出（`make submit-r1x`）
+**狀態**: PENDING（2026-10-16 06:3x `make submit-r1x` 送出，git `53f22a0`）：**job 20544** `r-h200-la-f2`（afterok:20417）、**job 20545** `r-h200-qwen3`（afterok:20417,afterany:20454）
+**注意**: 這兩個 commit（`b1c74cb`、`53f22a0`）是在 20417 執行中做的；20417 之後的 run 的 context.txt 會記成新的 HEAD，但它用到的檔案和 `bad42c7` 相同（這兩個 commit 只改 m9_f2_*、Makefile、新檔、RUNLOG、R0 的產出）
 **決定**: 2026-10-16 06:1x 使用者對兩項都說「好」：下載 LongAlpaca-7B 和 Qwen3-30B-A3B（約 71 GiB）、F2 改成 NVML 再跑
 **指令**: `make submit-r1x`，送出兩個 job：
 - `r-h200-la-f2`＝`sbatch --job-name=r-h200-la-f2 --time=04:00:00 --dependency=afterok:<r-h200-all> --kill-on-invalid-dep=yes code/r_h200_r1x.sh --part la`（和 r-h200-rest 平行，另一張卡）
