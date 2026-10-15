@@ -1,0 +1,126 @@
+{
+  "ts": "2026-10-16T06:10:34+08:00",
+  "platform": "C_H200_Slurm",
+  "hostname": "hgx-cn01",
+  "run_dir": "/work/ChihChungHsu/hungweilai/tiara-runs/20261016-061012-h200-probe",
+  "probe_dir": "/work/ChihChungHsu/hungweilai/tiara-runs/20261016-061012-h200-probe/probe",
+  "_note": "h200_probe.sh 產生；NOT_MEASURED＝沒量到，不是 0。GPU smoke 不可寫進論文。",
+  "gpu": {
+    "name": "NVIDIA H200",
+    "memory_total": "143771 MiB",
+    "driver_version": "610.43.02",
+    "compute_cap": "9.0",
+    "pci_bus_id": "00000000:E5:00.0",
+    "uuid": "GPU-f7a2875d-7c3f-fb2c-fc93-779412a6c48e",
+    "vbios_version": "96.00.CF.00.02",
+    "pcie_link_gen_max": "5",
+    "pcie_link_width_max": "16",
+    "pcie_link_gen_current": "5",
+    "pcie_link_width_current": "16",
+    "power_limit": "700.00 W",
+    "cuda_driver_version": "NOT_MEASURED",
+    "nvidia_smi_L_count": 1,
+    "numa_affinity": "NOT_MEASURED",
+    "cpu_affinity": "NOT_MEASURED",
+    "nvlink_status": "GPU 0: NVIDIA H200 (UUID: GPU-f7a2875d-7c3f-fb2c-fc93-779412a6c48e) | Link 0: 26.562 GB/s | Link 1: 26.562 GB/s | Link 2: 26.562 GB/s"
+  },
+  "cpu": {
+    "model": "AMD EPYC 9554 64-Core Processor",
+    "sockets": "2",
+    "numa_nodes": "2",
+    "host_nproc": "128",
+    "numactl_nodes": "node 0 cpus: 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 | node 1 cpus: 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 12"
+  },
+  "quota": {
+    "cpu_affinity_count": 16,
+    "cgroup_memory_max_gib": "NOT_MEASURED",
+    "cgroup_memory_source": "None",
+    "cgroup_cpuset": "112-127",
+    "shm_size_gib": 755.8,
+    "host_memtotal_gib": 1511.5
+  },
+  "slurm_visibility": {
+    "slurm_job_id": "20417",
+    "node": "hgx-cn01",
+    "cuda_visible_devices": "0",
+    "nvidia_smi_L_count": 1,
+    "node_gpus_from_scontrol": 8,
+    "gpu_guard_host_level": "UNOBSERVABLE_HOST",
+    "gpu_guard_error": "NOT_MEASURED",
+    "squeue_sees_other_users": true,
+    "cotenant_jobs_on_node": 8
+  },
+  "software": {
+    "os": "Ubuntu 24.04.3 LTS",
+    "kernel": "Linux hgx-cn01 6.8.0-90-generic #91-Ubuntu SMP PREEMPT_DYNAMIC Tue Nov 18 14:14:30 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux",
+    "python": "3.12.15 /work/ChihChungHsu/hungweilai/.conda/envs/tiara/bin/python",
+    "torch": "2.13.0+cu130 cuda 13.0 cudnn 92000",
+    "vllm": "0.28.0",
+    "transformers": "5.19.0",
+    "flash_attn": "NOT_INSTALLED ModuleNotFoundError",
+    "triton": "3.7.1",
+    "repo_head": "bad42c7dce91e90758a0e4ce0f3effb0d832cbbb",
+    "pip_freeze_lines": 208,
+    "network": {
+      "https://huggingface.co": "HTTP/2 200 ",
+      "https://pypi.org": "HTTP/2 200 ",
+      "https://github.com": "HTTP/2 200 "
+    }
+  },
+  "storage": {
+    "fio": "NOT_MEASURED",
+    "fio_note": "fio 不在（沒有 sudo，不自己裝）→ 儲存 NOT_MEASURED",
+    "tiara_runs_source": "/dev/md1",
+    "tiara_runs_fstype": "ext4",
+    "suggested_M7_DISK": "md1",
+    "M7_DISK_in_diskstats": "yes",
+    "M7_DISK_note": "TIARA_RUNS 所在的區塊裝置"
+  },
+  "gpu_smoke": {
+    "ts": "2026-10-16T06:10:32+08:00",
+    "torch": "2.13.0+cu130",
+    "cuda": "13.0",
+    "hip": null,
+    "cuda_visible_devices": "0",
+    "_note": "smoke test，不可寫進論文（03 §R0）",
+    "device_count": 1,
+    "name": "NVIDIA H200",
+    "total_memory_gib": 139.8,
+    "arch": "sm_90",
+    "multi_processor_count": 132,
+    "cpu_affinity_count": 16,
+    "matmul_bf16_tflops": {
+      "median": 788.124,
+      "min": 754.661,
+      "max": 790.458,
+      "n": 10,
+      "N": 8192
+    },
+    "correctness_max_abs_err": 0.0,
+    "correctness_ok": true,
+    "hbm_d2d_GBps": {
+      "median": 4173.948,
+      "min": 4154.927,
+      "max": 4180.372,
+      "n": 10
+    },
+    "h2d_pinned_GiBps": {
+      "median": 53.551,
+      "min": 53.519,
+      "max": 53.559,
+      "n": 10
+    },
+    "d2h_pinned_GiBps": {
+      "median": 50.041,
+      "min": 50.02,
+      "max": 50.048,
+      "n": 10
+    }
+  },
+  "r0_checks": {
+    "gpu_is_h200": true,
+    "matmul_correct": true,
+    "visibility_decided": true
+  },
+  "r0_pass": true
+}
