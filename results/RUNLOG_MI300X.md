@@ -456,3 +456,16 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **Step 2b 速度（Qwen，對重量的混合配置）**：E1-INT8（重量）cpu・忙 1.073 ✓、其他 7 格全過；E1-K0（`-192845`，監控 CLEAN，沿用）cpu・忙 1.164 ✗。結論同 10.5。
 - **產出**：`speed_qwen_regrid/summary_fp8.csv`、`summary_2b_int8_token.csv`、`restores.csv.gz`、`meets.json`、`k0_verdict_fp8.json`、`spec_grid_fp8.json`、`spec_grid_2b_int8_token.json`、6 個 gpu_guard JSON；`analysis/fp8_regrid/speed_qwen.json`、`tables_speed_qwen.md`；`figs/speed_qwen_fp8_regrid.png`、`figs/sources_qwen_fp8_regrid_{b16,b32,b48,cpu}.png`。
 - **失敗與異常**：無。
+
+### 10.7 Step 1 判完之後自動分流（21:5x UTC；只動 GPU 工作的順序，不動判準）
+
+- **為什麼**：stage 30 一結束，runner 會馬上開 35（FP8 混合配置，好幾個小時）。如果判定是「往 INT4」或「題數不夠要加題」，GPU 會先花幾小時在不急的工作上。
+- **新 stage 31**（`queue/31_decide_step1.sh`，CPU）：
+  1. 跑 `analyze_step1.sh`（凍結的 `m10_analyze.py`）。
+  2. `route_after_step1.py` 讀 `decide_fp8.json`，只調後面的順序：
+     - 檢定力擋判定 → 排 07 §9 寫死的加題（`32_quality_step1_addon`：同題數、`--seed0 20000`、只對被擋的模型；輸出 `quality/step1_<m>_addon_*.csv`，analyze 的萬用字元會自動合併）和再判一次（`32z`）。加完還擋 → `NEEDS_HUMAN`。
+     - 兩個模型都過 → `80／85／86` 改名成 `33a／33b／33c`，排到 35 前面。
+     - 有模型沒過 → 在 decide 指定的模型上跑 `analyze_2b.sh`（K3；資料已在 Step 1 那批）。K3 不成立 → 寫 `f8m_first.txt`，stage 35 先跑那個模型。K3 成立 → 不動。
+     - 資料不全、分析出錯 → 寫 `NEEDS_HUMAN`、留完整錯誤，**不讓佇列停**（後面的 GPU 工作不依賴分析），35 照預設（Qwen 先）跑。
+- **測試**：用假資料（真檔的列結構、分數全部換成亂數，沒有印出任何真值）把 analyze_step1 → report_bits step1 → analyze_2b → report_bits k3 → analyze_step2 整條跑過；route 的 6 種分支（擋→加題、加題後仍擋、都過、Llama 過 Qwen 沒過、都沒過、資料不全）在佇列的複本上逐一跑過；加題 stage 和 35 的順序乾跑過。
+- **另外**：圖 A 的資料註腳改成帶資料夾（`speed_qwen_regrid/summary_fp8.csv`），分得出是哪一次速度量測。

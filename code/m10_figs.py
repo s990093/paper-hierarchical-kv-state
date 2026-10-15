@@ -209,7 +209,7 @@ def fig_A(a):
                 ax.set_ylabel("對 E0 的正確率差（百分點）")
     fig.suptitle(f"圖 A　{q['model']}：品質對延遲（空心＝讀法 A、實心＝讀法 B〔只在 b32〕；虛線＝ε −2；淺藍帶＝E1 ±δ*）",
                  color=INK, fontsize=10)
-    source_note(fig, f"{os.path.basename(a.quality)}；{os.path.basename(a.summary)}")
+    source_note(fig, f"{os.path.basename(a.quality)}；{os.path.join(*a.summary.split(os.sep)[-2:])}")   # 速度表帶資料夾（speed_qwen／speed_qwen_regrid 同名）
     fig.tight_layout()
     save(fig, a.out)
 
