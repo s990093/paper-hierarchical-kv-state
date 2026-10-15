@@ -1,0 +1,15 @@
+run_ids: ['20261015-024116-m10-regx-new1', '20261015-024245-m10-regx-old1', '20261015-024415-m10-regx-new2', '20261015-024546-m10-regx-old2', '20261015-024718-m10-regx-new3', '20261015-024849-m10-regx-old3']
+KV 全部逐位元相同: True
+local cake         new 0.2247 old 0.2246 ratio 1.0002 meets new [7] old [7] PASS
+      per-proc new {'new1': 0.2247, 'new2': 0.2247, 'new3': 0.2246} old {'old1': 0.2246, 'old2': 0.2247, 'old3': 0.2245}
+local compute_only new 1.3682 old 1.3717 ratio 0.9975 meets new [32] old [32] PASS
+      per-proc new {'new1': 1.3648, 'new2': 1.3676, 'new3': 1.3798} old {'old1': 1.3771, 'old2': 1.3673, 'old3': 1.3743}
+local load_only    new 0.2869 old 0.2868 ratio 1.0001 meets new [32] old [32] PASS
+      per-proc new {'new1': 0.2869, 'new2': 0.2869, 'new3': 0.2869} old {'old1': 0.2868, 'old2': 0.2869, 'old3': 0.2868}
+nfs   cake         new 1.1337 old 1.1337 ratio 1.0000 meets new [26] old [26] PASS
+      per-proc new {'new1': 1.1337, 'new2': 1.1337, 'new3': 1.1338} old {'old1': 1.1336, 'old2': 1.1337, 'old3': 1.1337}
+nfs   compute_only new 1.3664 old 1.3673 ratio 0.9993 meets new [32] old [32] PASS
+      per-proc new {'new1': 1.3642, 'new2': 1.3808, 'new3': 1.3664} old {'old1': 1.3642, 'old2': 1.3672, 'old3': 1.3745}
+nfs   load_only    new 6.0413 old 6.0413 ratio 1.0000 meets new [32] old [32] PASS
+      per-proc new {'new1': 6.0413, 'new2': 6.0413, 'new3': 6.0413} old {'old1': 6.0413, 'old2': 6.0414, 'old3': 6.0412}
+ALL PASS

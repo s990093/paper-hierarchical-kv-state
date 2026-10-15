@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 第三段：等第二段 DONE；C7 自檢重做（限速器修正後）、B 第三個工作負載種子
 set -u
-cd /mlsteam/workspace/paper-hierarchical-kv-state
+cd "$(dirname "$0")/.."   # repo 根目錄（原本寫死 /mlsteam/workspace/paper-hierarchical-kv-state）
 source code/m7_env.sh
 P=code/m7_write_policy.py
 until grep -q "=== .* DONE" "$1"; do sleep 30; done

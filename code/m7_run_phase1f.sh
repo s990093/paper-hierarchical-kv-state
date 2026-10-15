@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # 重排（2026-10-08 15:25）：等 B 主設定（run 20261008-142647）結束；依優先順序跑敏感度
 set -u
-cd /mlsteam/workspace/paper-hierarchical-kv-state
+cd "$(dirname "$0")/.."   # repo 根目錄（原本寫死 /mlsteam/workspace/paper-hierarchical-kv-state）
 source code/m7_env.sh
 P=code/m7_write_policy.py
-until [ -f /mlsteam/data/tiara/runs/20261008-142647-m7-b-nfs-gap0/exit_code ]; do sleep 20; done
+until [ -f "$TIARA_RUNS/20261008-142647-m7-b-nfs-gap0/exit_code" ]; do sleep 20; done
 step() { echo "=== $(date -Is) $*"; }
 K="--strategies S1 S2b S4 S4+ S4+P S5 S5s"
 S6="--strategies S1 S4 S4+ S4+P S5 S5s"

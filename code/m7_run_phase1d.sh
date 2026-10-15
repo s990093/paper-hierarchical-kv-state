@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 重排的第二段（2026-10-08 14:15）：主 B 因策略清單錯誤崩潰後重跑；等 C6（vLLM）結束再開始
 set -u
-cd /mlsteam/workspace/paper-hierarchical-kv-state
+cd "$(dirname "$0")/.."   # repo 根目錄（原本寫死 /mlsteam/workspace/paper-hierarchical-kv-state）
 source code/m7_env.sh
 P=code/m7_write_policy.py
 while pgrep -f "code/m7_c6_vllm.py" >/dev/null; do sleep 15; done

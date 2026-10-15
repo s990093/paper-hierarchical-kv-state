@@ -1,0 +1,239 @@
+{
+ "model": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+ "fmt": "fp8_head",
+ "n": 64,
+ "chunk_bytes": 67108864,
+ "lp_block_bytes": 33556480,
+ "tier_read_GiBps": 1.25,
+ "torch": "2.10.0+rocm7.0",
+ "hip": "7.0.51831",
+ "cuda": null,
+ "runs": [
+  {
+   "config": "E0",
+   "mode": "compute_only",
+   "meet": 64,
+   "sources": {
+    "recompute": 64
+   },
+   "bytes_read": 0,
+   "t_restore": 3.694,
+   "t_dequant": 0.0,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "E0",
+   "mode": "load_only",
+   "meet": 64,
+   "sources": {
+    "load_bf16": 64
+   },
+   "bytes_read": 4294967296,
+   "t_restore": 3.2005,
+   "t_dequant": 0.0,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "E0",
+   "mode": "cake",
+   "meet": 34,
+   "sources": {
+    "recompute": 34,
+    "load_bf16": 30
+   },
+   "bytes_read": 2013265920,
+   "t_restore": 1.5014,
+   "t_dequant": 0.0,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "E1",
+   "mode": "compute_only",
+   "meet": 64,
+   "sources": {
+    "recompute": 64
+   },
+   "bytes_read": 0,
+   "t_restore": 3.6454,
+   "t_dequant": 0.0,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "E1",
+   "mode": "load_only",
+   "meet": 64,
+   "sources": {
+    "load_fp8": 64
+   },
+   "bytes_read": 2147614720,
+   "t_restore": 1.6463,
+   "t_dequant": 0.02444,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "E1",
+   "mode": "cake",
+   "meet": 25,
+   "sources": {
+    "load_fp8": 39,
+    "recompute": 25
+   },
+   "bytes_read": 1308702720,
+   "t_restore": 1.0247,
+   "t_dequant": 0.02092,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "F25",
+   "mode": "compute_only",
+   "meet": 64,
+   "sources": {
+    "recompute": 64
+   },
+   "bytes_read": 0,
+   "t_restore": 3.6805,
+   "t_dequant": 0.0,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "F25",
+   "mode": "load_only",
+   "meet": 64,
+   "sources": {
+    "load_bf16": 48,
+    "load_fp8": 16
+   },
+   "bytes_read": 3758129152,
+   "t_restore": 2.8114,
+   "t_dequant": 0.00592,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "F25",
+   "mode": "cake",
+   "meet": 34,
+   "sources": {
+    "recompute": 34,
+    "load_bf16": 30
+   },
+   "bytes_read": 2013265920,
+   "t_restore": 1.5045,
+   "t_dequant": 0.0,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "B25",
+   "mode": "compute_only",
+   "meet": 64,
+   "sources": {
+    "recompute": 64
+   },
+   "bytes_read": 0,
+   "t_restore": 3.6496,
+   "t_dequant": 0.0,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "B25",
+   "mode": "load_only",
+   "meet": 64,
+   "sources": {
+    "load_bf16": 48,
+    "load_fp8": 16
+   },
+   "bytes_read": 3758129152,
+   "t_restore": 2.8121,
+   "t_dequant": 0.00595,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  },
+  {
+   "config": "B25",
+   "mode": "cake",
+   "meet": 30,
+   "sources": {
+    "load_fp8": 16,
+    "recompute": 30,
+    "load_bf16": 18
+   },
+   "bytes_read": 1744863232,
+   "t_restore": 1.315,
+   "t_dequant": 0.00808,
+   "n_copy_bound": 0,
+   "bad_blocks": [],
+   "kv_bitwise_ok": true,
+   "every_block_once": true,
+   "bytes_read_ok": true,
+   "dequant_timed": true,
+   "counts_ok": true
+  }
+ ],
+ "all_pass": true,
+ "run_id": "20261015-022452-m10-mixed-llama-fp8_head",
+ "wall_s": 59.5
+}

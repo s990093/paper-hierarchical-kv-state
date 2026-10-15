@@ -33,8 +33,12 @@ from m7_restore_harness import GiB, Restorer, Tier, sleep_until, write_boundary 
 MiB = 1 << 20
 # 每個 chunk 的位元組數；預設 Llama-3.1-8B 的 64 MiB。換模型時用 M7_CHUNK_BYTES 設（第 1 輪破解計劃）
 CHUNK_BYTES = int(os.environ.get("M7_CHUNK_BYTES", 64 * MiB))
+RUNS_ROOT = os.environ.get("TIARA_RUNS", "/mlsteam/data/tiara/runs")
 HERE = os.path.dirname(os.path.abspath(__file__))
-RES = os.path.join(HERE, "..", "results", "m7_write_policy_mi300x")
+# 結果目錄：預設＝平台 B（MI300X）的；平台 C（H200）由 env_h200.sh 設 M7_RES（03_plan_h200 §R）
+RES = os.environ.get("M7_RES") or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x")
+# 限速層參數：預設跟著 RES；H200 的 §R2 沿用 MI300X 的 tier_params.json，由 M7_TIER_PARAMS 指過去
+TIER_PARAMS = os.environ.get("M7_TIER_PARAMS") or os.path.join(RES, "tier_params.json")
 
 
 def run_id():
@@ -64,7 +68,7 @@ class Out:
 
 
 def load_params():
-    return json.load(open(os.path.join(RES, "tier_params.json")))
+    return json.load(open(TIER_PARAMS))
 
 
 def load_f():
@@ -90,12 +94,16 @@ def mk_tier(name, p):
 
 
 # ------------------------------------------------------------------ 爭用檢查
+# Guard 記錄的磁碟：平台 B 是 sda；平台 C 由 R0 找出 $TIARA_RUNS 所在的裝置，env_h200.sh 設 M7_DISK
+DISK = os.environ.get("M7_DISK", "sda")
+
+
 def _sda():
     for line in open("/proc/diskstats"):
         p = line.split()
-        if p[2] == "sda":
+        if p[2] == DISK:
             return int(p[5]) * 512, int(p[9]) * 512
-    raise RuntimeError("sda not found in /proc/diskstats")  # 規則 7：查不到不等於沒有
+    raise RuntimeError(f"{DISK} not found in /proc/diskstats (M7_DISK)")  # 規則 7：查不到不等於沒有
 
 
 _WATCH = None   # 整個 run 一個 GpuWatcher（amd-smi 輪詢太慢，不能每個 rep 開一個）
@@ -104,8 +112,8 @@ _ALLOW = set()  # 自己的背景負載（C5）pid
 
 def start_watch(out_path):
     global _WATCH
-    from gpu_guard import GpuWatcher
-    _WATCH = GpuWatcher(gpu=0, own_root=os.getpid(), out_path=out_path)
+    from gpu_guard import GpuWatcher, smi_index
+    _WATCH = GpuWatcher(gpu=smi_index(0), own_root=os.getpid(), out_path=out_path)   # cuda:0 在 smi 裡的編號（Slurm）
     _WATCH.__enter__()
 
 
@@ -116,7 +124,7 @@ def stop_watch():
 
 class Guard:
     """GPU：讀全域 GpuWatcher 到目前為止有沒有外來 pid（自己的 busy 背景負載列白名單）。
-    磁碟：sda 前後差（container 看到的是整台主機的 sda，含鄰居）。"""
+    磁碟：DISK（預設 sda）前後差（container 看到的是整台主機的 sda，含鄰居）。"""
 
     def __init__(self, allow_pids=()):
         self.allow = set(allow_pids) | _ALLOW
@@ -443,7 +451,7 @@ def anchor(a):
     s = Session(km, maxn, 41)
     km.prefill_chunked(s.ids[:maxn * CHUNK])
     host_all = capture(km, range(maxn), pool)
-    roots = {"local": "/var/tmp/m7anchor", "nfs": "/mlsteam/data/tiara/runs/_m7anchor"}
+    roots = {"local": "/var/tmp/m7anchor", "nfs": os.path.join(RUNS_ROOT, "_m7anchor")}
     for dev in ("cpu", "local", "nfs"):
         sim = mk_tier(f"{'cpu' if dev == 'cpu' else 'ssd_' + dev}", P[dev])
         if dev == "cpu":
@@ -494,7 +502,7 @@ def a2(a):
     km.prefill_chunked(s.ids[:nX * CHUNK])
     hostX = capture(km, range(nX), pool)
     wbuf = pool.get()   # 背景寫入的內容（大小正確即可）
-    roots = {"local": "/var/tmp/m7a2", "nfs": "/mlsteam/data/tiara/runs/_m7a2"}
+    roots = {"local": "/var/tmp/m7a2", "nfs": os.path.join(RUNS_ROOT, "_m7a2")}
     for dev in a.devs:
         real = FileTier(f"ssd_{dev}_real", roots[dev])
         for i in range(nX):
@@ -879,7 +887,7 @@ def main():
         a.strategies = STRATS_B if a.cmd == "b" else ["S0", "S2a", "S3", "S5", "CPUall"]
     if a.cmd == "a2":
         a.L = a.L[0] if isinstance(a.L, list) else a.L
-    rd = os.path.join(os.environ.get("TIARA_RUNS", "/mlsteam/data/tiara/runs"), run_id())
+    rd = os.path.join(RUNS_ROOT, run_id())
     os.makedirs(rd, exist_ok=True)
     start_watch(os.path.join(rd, "gpu_guard.json"))
     try:

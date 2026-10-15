@@ -55,8 +55,14 @@ class Out:
 # ---------------------------------------------------------------- C0
 def c0(a):
     o = Out(a.out, ["item", "kind", "size_mib", "rep", "value", "unit", "note"])
-    # PCIe 與分割資訊
-    for cmd in (["amd-smi", "static", "--bus"], ["rocm-smi", "--showbus", "--showpcie" ]):
+    # PCIe 與分割資訊（平台 B：amd-smi／rocm-smi；平台 C：nvidia-smi，03_plan_h200 §R 表）
+    if torch.version.hip:
+        cmds = (["amd-smi", "static", "--bus"], ["rocm-smi", "--showbus", "--showpcie" ])
+    else:
+        cmds = (["nvidia-smi", "--query-gpu=index,name,uuid,pci.bus_id,driver_version,pcie.link.gen.current,"
+                 "pcie.link.gen.max,pcie.link.width.current,pcie.link.width.max", "--format=csv"],
+                ["nvidia-smi", "topo", "-m"])
+    for cmd in cmds:
         try:
             s = subprocess.run(cmd, capture_output=True, text=True, timeout=30).stdout
         except Exception as e:  # noqa

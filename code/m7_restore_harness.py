@@ -10,6 +10,13 @@
   cake        演算法 2：重算線（GPU，從前往後）與載入線（I/O，從後往前）同時跑
   load_only   演算法 3：從頭載入連續前綴，第一個缺的之後全部重算
   compute_only 全部重算
+
+精度這條線（m10，2026-10-15 加；03_plan_h200.md §1、§6）：
+  host[i] 可以是 BF16 的 pinned tensor（原本的路徑，行為不變），或 m10_codec.Enc（低精度，已 pin）。
+  Enc 的載入：限速器照「實際位元組」計時（Enc.nbytes）；先 H2D 到暫存區，等限速器的 done（資料到齊）
+  之後才在 I/O stream 上反量化進 KV 緩衝（和重算搶 GPU）。反量化時間記在 t_dequant。
+  每次還原另記：逐 block 來源（recompute／load_bf16／load_fp8／load_int8／load_int4）與起訖時間（rec["blocks"]）、
+  各來源 block 數、bytes_read、copy_bound（限速器的 done 到了，真實複製還沒完成的次數）。
 """
 from __future__ import annotations
 
@@ -19,6 +26,7 @@ from dataclasses import dataclass, field
 
 import torch
 
+from m10_codec import Enc, decode
 from m7_model import CHUNK, KVModel
 
 GiB = 1 << 30
@@ -102,17 +110,62 @@ class Restorer:
         self.km = km
         self.cstream = torch.cuda.Stream(device=km.device)
         self.iostream = torch.cuda.Stream(device=km.device)
+        self._staging: dict[str, Enc] = {}     # 每種低精度格式一塊 GPU 暫存區（載入線一次只載一個 block）
+        self.last_copy_bound = False
+        self.last_dequant_s = 0.0
+        self.last_nbytes = 0
 
     # ---- 載入一個 chunk（限速＋真實 H2D）----
-    def _load(self, i: int, host: torch.Tensor, tier: Tier) -> float:
+    def _load(self, i: int, host, tier: Tier) -> float:
+        if isinstance(host, Enc) and host.fmt != "bf16":
+            return self._load_enc(i, host, tier)
+        if isinstance(host, Enc):
+            host = host.parts["x"]
         done = tier.reserve_read(self.km.chunk_bytes)
         with torch.cuda.stream(self.iostream):
             self.km.chunk_view(i).copy_(host, non_blocking=True)
             ev = torch.cuda.Event()
             ev.record(self.iostream)
         sleep_until(done)
+        self.last_copy_bound = not ev.query()
         ev.synchronize()
+        self.last_dequant_s = 0.0
+        self.last_nbytes = self.km.chunk_bytes
         return done
+
+    def _load_enc(self, i: int, host: Enc, tier: Tier) -> float:
+        done = tier.reserve_read(host.nbytes)
+        st = self._staging.get(host.fmt)
+        if st is None:
+            st = self._staging[host.fmt] = host.empty_like(self.km.device)
+        with torch.cuda.stream(self.iostream):
+            st.copy_from(host, non_blocking=True)
+            ev = torch.cuda.Event()
+            ev.record(self.iostream)
+        sleep_until(done)
+        self.last_copy_bound = not ev.query()
+        with torch.cuda.stream(self.iostream):      # 資料到齊之後才反量化（排在 H2D 之後，同一個 stream）
+            e0 = torch.cuda.Event(enable_timing=True)
+            e1 = torch.cuda.Event(enable_timing=True)
+            e0.record(self.iostream)
+            decode(st, out=self.km.chunk_view(i))
+            e1.record(self.iostream)
+        e1.synchronize()
+        self.last_dequant_s = e0.elapsed_time(e1) / 1e3
+        self.last_nbytes = host.nbytes
+        return done
+
+    @staticmethod
+    def _src(host) -> str:
+        return "load_" + (host.kind if isinstance(host, Enc) else "bf16")
+
+    def _note_load(self, rec, i, host, ts, te):
+        src = self._src(host)
+        rec[f"n_{src}"] = rec.get(f"n_{src}", 0) + 1
+        rec["bytes_read"] += self.last_nbytes
+        rec["t_dequant"] += self.last_dequant_s
+        rec["n_copy_bound"] += int(self.last_copy_bound)
+        rec["blocks"].append((i, src, ts, te))
 
     def _recompute(self, ids, i: int):
         with torch.cuda.stream(self.cstream):
@@ -123,10 +176,14 @@ class Restorer:
         """還原前 n 個 chunk 的 KV 到 GPU。回傳時間拆解（秒）。"""
         t0 = time.perf_counter()
         rec = {"mode": mode, "n_chunks": n, "n_recompute": 0, "n_load_cpu": 0, "n_load_ssd": 0,
-               "t_recompute": 0.0, "t_load": 0.0, "t_load_cpu": 0.0, "t_load_ssd": 0.0}
+               "t_recompute": 0.0, "t_load": 0.0, "t_load_cpu": 0.0, "t_load_ssd": 0.0,
+               "n_load_bf16": 0, "n_load_fp8": 0, "n_load_int8": 0, "n_load_int4": 0,
+               "bytes_read": 0, "t_dequant": 0.0, "n_copy_bound": 0, "blocks": []}
         if mode == "compute_only":
             for i in range(n):
+                ts = time.perf_counter() - t0
                 self._recompute(ids, i)
+                rec["blocks"].append((i, "recompute", ts, time.perf_counter() - t0))
             rec["n_recompute"] = n
             rec["t_recompute"] = time.perf_counter() - t0
             rec["meet"] = n
@@ -139,11 +196,14 @@ class Restorer:
                 key = "cpu" if loc[i].name.startswith("cpu") else "ssd"
                 rec[f"n_load_{key}"] += 1
                 rec[f"t_load_{key}"] += dt
+                self._note_load(rec, i, host[i], ts - t0, ts + dt - t0)
                 i += 1
             rec["t_load"] = time.perf_counter() - t0
             t1 = time.perf_counter()
             for j in range(i, n):
+                ts = time.perf_counter() - t0
                 self._recompute(ids, j)
+                rec["blocks"].append((j, "recompute", ts, time.perf_counter() - t0))
             rec["n_recompute"] = n - i
             rec["t_recompute"] = time.perf_counter() - t1
             rec["meet"] = i
@@ -160,7 +220,9 @@ class Restorer:
                             break
                         i = st["p"]
                         st["p"] += 1
+                    ts1 = time.perf_counter() - t0
                     self._recompute(ids, i)
+                    rec["blocks"].append((i, "recompute", ts1, time.perf_counter() - t0))
                     rec["n_recompute"] += 1
                 times["r_end"] = time.perf_counter()
                 rec["t_recompute"] = times["r_end"] - ts
@@ -177,9 +239,11 @@ class Restorer:
                         st["q"] -= 1
                     ts1 = time.perf_counter()
                     self._load(q, host[q], loc[q])
+                    te1 = time.perf_counter()
                     key = "cpu" if loc[q].name.startswith("cpu") else "ssd"
                     rec[f"n_load_{key}"] += 1
-                    rec[f"t_load_{key}"] += time.perf_counter() - ts1
+                    rec[f"t_load_{key}"] += te1 - ts1
+                    self._note_load(rec, q, host[q], ts1 - t0, te1 - t0)
                 times["l_end"] = time.perf_counter()
                 rec["t_load"] = times["l_end"] - ts
 

@@ -48,7 +48,8 @@ class KVModel:
         self.L = cfg.num_hidden_layers
         self.H = cfg.num_key_value_heads
         self.Hq = cfg.num_attention_heads
-        self.D = cfg.head_dim
+        # Qwen2 的 config 沒有 head_dim（2026-10-15 run 20261015-022121-m10-corr-qwen-8k 失敗）；照 HF Qwen2Attention 的預設
+        self.D = getattr(cfg, "head_dim", None) or cfg.hidden_size // cfg.num_attention_heads
         self.max_len = max_len
         self.kv = torch.empty((self.L, 2, self.H, max_len, self.D), dtype=torch.bfloat16, device=self.device)
         self.chunk_bytes = self.L * 2 * self.H * CHUNK * self.D * 2

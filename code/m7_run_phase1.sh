@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 第一階段主鏈（依序；同一張卡上不並行，避免互相干擾）
 set -u
-cd /mlsteam/workspace/paper-hierarchical-kv-state
+cd "$(dirname "$0")/.."   # repo 根目錄（原本寫死 /mlsteam/workspace/paper-hierarchical-kv-state）
 source code/m7_env.sh
 P=code/m7_write_policy.py
 step() { echo "=== $(date -Is) $*"; }

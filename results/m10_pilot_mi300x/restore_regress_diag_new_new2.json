@@ -1,0 +1,514 @@
+{
+ "model": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+ "n": 32,
+ "reps": 10,
+ "old_harness": "/tmp/claude-0/-mlsteam-workspace/7d048a64-49f3-4943-a0ed-7952c6ad260b/scratchpad/m7_restore_harness_f6595f0.py",
+ "kv_bitwise_all": true,
+ "criterion": "KV 全部逐位元相同；t_restore 中位數比值 新/舊 ∈ [0.95, 1.05]（跑之前寫死）",
+ "summary": [
+  {
+   "tier": "local",
+   "mode": "cake",
+   "pair": "new/new2",
+   "median_s": {
+    "new": 0.2247,
+    "new2": 0.2603
+   },
+   "ratio": 0.8635,
+   "meets": {
+    "new": [
+     7
+    ],
+    "new2": [
+     8
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 8.9398099668324,
+     "ms_per_recompute": 31.68280193183039
+    },
+    "new2": {
+     "ms_per_load": 9.461557308289533,
+     "ms_per_recompute": 32.42924410733394
+    }
+   },
+   "pass": false
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "pair": "new/new2",
+   "median_s": {
+    "new": 1.1339,
+    "new2": 1.1338
+   },
+   "ratio": 1.0001,
+   "meets": {
+    "new": [
+     26
+    ],
+    "new2": [
+     26
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 188.77473201913136,
+     "ms_per_recompute": 40.15246051578568
+    },
+    "new2": {
+     "ms_per_load": 188.7757466950764,
+     "ms_per_recompute": 40.42589190738419
+    }
+   },
+   "pass": true
+  }
+ ],
+ "rows": [
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 0,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22469936357811093,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.940581399947405,
+   "ms_per_recompute": 31.649280871663773
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 0,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.26043909788131714,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.588128615481159,
+   "ms_per_recompute": 32.428325968794525
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 1,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.2247143927961588,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.937873765826225,
+   "ms_per_recompute": 31.662723448659694
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 1,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.26018180744722486,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.436147830759486,
+   "ms_per_recompute": 32.43016224587336
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 2,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.2597120371647179,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.448872549304118,
+   "ms_per_recompute": 32.333753537386656
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 2,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22473873244598508,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.939977642148733,
+   "ms_per_recompute": 31.702880415001086
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 3,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22487194975838065,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.937609251588583,
+   "ms_per_recompute": 31.784020231238433
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 3,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.25993316574022174,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.322392075167349,
+   "ms_per_recompute": 32.355453236959875
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 4,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22475257003679872,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.940327614545822,
+   "ms_per_recompute": 31.630977522581816
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 4,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.2605130742304027,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.474242067274949,
+   "ms_per_recompute": 32.430755672976375
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 5,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22466286923736334,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.940587155520916,
+   "ms_per_recompute": 31.765248559947526
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 5,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.25990518322214484,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.416984006141623,
+   "ms_per_recompute": 32.39728801418096
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 6,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.2246791790239513,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.938748762011528,
+   "ms_per_recompute": 31.63500442834837
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 6,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.26031934237107635,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.588201413862407,
+   "ms_per_recompute": 32.44567662477493
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 7,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22467146627604961,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.939642291516066,
+   "ms_per_recompute": 31.63640127916421
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 7,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.2598467906937003,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.41957407242929,
+   "ms_per_recompute": 32.35224902164191
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 8,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22476049698889256,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.939982540905476,
+   "ms_per_recompute": 31.7555997254593
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 8,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.2606071699410677,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.581106792514523,
+   "ms_per_recompute": 32.48152002925053
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 9,
+   "impl": "new2",
+   "meet": 8,
+   "t_restore": 0.2605170989409089,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 9.550191753078252,
+   "ms_per_recompute": 32.45642484398559
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 9,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22472278494387865,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.939425107091665,
+   "ms_per_recompute": 31.76193531336529
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 0,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.133763112127781,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77694034017622,
+   "ms_per_recompute": 40.11537919107538
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 0,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1337001910433173,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77563687662283,
+   "ms_per_recompute": 39.94826161159346
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 1,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.133820490911603,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77447062792876,
+   "ms_per_recompute": 40.15152879918997
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 1,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.1336788912303746,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7782569974661,
+   "ms_per_recompute": 40.43711053852279
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 2,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.133642639964819,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7744568133106,
+   "ms_per_recompute": 40.55295238056435
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 2,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1339305499568582,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77264841770133,
+   "ms_per_recompute": 40.27702073709896
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 3,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.1337884101085365,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77612194046378,
+   "ms_per_recompute": 40.50490476835806
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 3,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1337732197716832,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77657665871084,
+   "ms_per_recompute": 40.29866770053139
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 4,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1882669958285987,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 197.8530359144012,
+   "ms_per_recompute": 42.270215693861246
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 4,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.1337939598597586,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7776132983466,
+   "ms_per_recompute": 40.47489714307281
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 5,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.1337896892800927,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77537144968906,
+   "ms_per_recompute": 40.53236253989431
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 5,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1339230579324067,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77566349692643,
+   "ms_per_recompute": 40.00454953011985
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 6,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1340053393505514,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77025313364962,
+   "ms_per_recompute": 40.10904680650968
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 6,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.134020010009408,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77612675229707,
+   "ms_per_recompute": 40.40371888102247
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 7,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.1338923191651702,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7746451733013,
+   "ms_per_recompute": 40.39354242670994
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 7,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1337366900406778,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7664400661985,
+   "ms_per_recompute": 40.15339223238138
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 8,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.1339323101565242,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.76778986304998,
+   "ms_per_recompute": 40.373271313281016
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 8,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1339366692118347,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.774993410334,
+   "ms_per_recompute": 40.13933461660949
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 9,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.13393498910591,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77355032600462,
+   "ms_per_recompute": 40.19435652746604
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 9,
+   "impl": "new2",
+   "meet": 26,
+   "t_restore": 1.1339794402010739,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77394512916604,
+   "ms_per_recompute": 40.414673276245594
+  }
+ ],
+ "all_pass": false,
+ "torch": "2.10.0+rocm7.0",
+ "run_id": "20261015-023657-m10-regdiag-new_new2",
+ "wall_s": 58.2
+}

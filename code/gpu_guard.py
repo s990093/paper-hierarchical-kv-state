@@ -118,6 +118,54 @@ def uuid_to_index() -> dict[str, int]:
     return {r[1]: int(r[0]) for r in _smi("gpu=index,uuid") if len(r) >= 2}
 
 
+def smi_index(logical: int = 0) -> int:
+    """torch 的 cuda:<logical> 在 nvidia-smi / amd-smi 裡是第幾張卡（GpuWatcher 要的是後者）。
+
+    為什麼需要（2026-10-15，H200 Slurm 準備）：Slurm 用 CUDA_VISIBLE_DEVICES 指定 job 的卡。
+    若節點沒有用 cgroup 限制裝置，nvidia-smi 會列出整台的卡，job 的 cuda:0 可能是 nvidia-smi 的 3 號；
+    這時 GpuWatcher(gpu=0) 會去看別人的卡、對自己那張視而不見 → 污染被標成乾淨（規則 7）。
+    對不上就丟 SmiUnavailable，不猜。AMD（MI300X 單卡容器）與沒設 CUDA_VISIBLE_DEVICES 時行為不變。
+    """
+    if vendor() == "amd":
+        return logical
+    cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if cvd is None:
+        return logical
+    ents = [e.strip() for e in cvd.split(",") if e.strip()]
+    if logical >= len(ents):
+        raise SmiUnavailable(f"CUDA_VISIBLE_DEVICES={cvd!r} 沒有第 {logical} 張卡")
+    rows = [r for r in _smi("gpu=index,uuid") if len(r) >= 2]
+    e = ents[logical]
+    if e.startswith(("GPU-", "MIG-")):
+        hit = [int(r[0]) for r in rows if r[1].startswith(e)]
+        if len(hit) == 1:
+            return hit[0]
+    elif e.isdigit():
+        if any(int(r[0]) == int(e) for r in rows):
+            return int(e)
+        if len(rows) == len(ents):
+            # cgroup 只露出 job 自己的卡，而兩邊的編號不同（一邊是節點上的編號、一邊是 job 內的）：
+            # nvidia-smi 的第 logical 列就是它（多卡時兩邊都依 PCI 匯流排排序，env_h200.sh 設 CUDA_DEVICE_ORDER=PCI_BUS_ID）
+            return int(rows[logical][0])
+    raise SmiUnavailable(f"CUDA_VISIBLE_DEVICES={cvd!r} 的第 {logical} 張卡對不到 nvidia-smi 的卡：{rows}")
+
+
+def _slurm_node_gpu_count() -> int | None:
+    """這個 job 所在節點上總共幾張 GPU（scontrol 的 Gres）。查不到回 None（呼叫端必須當成「看不到」）。"""
+    import re
+    node = os.environ.get("SLURMD_NODENAME") or os.environ.get("SLURM_JOB_NODELIST") or os.uname().nodename
+    try:
+        out = _run(["scontrol", "show", "node", node])
+    except SmiUnavailable:
+        return None
+    m = re.search(r"\bGres=(\S+)", out)
+    if not m:
+        return None
+    # 例：Gres=gpu:h200:8(S:0-1)、Gres=gpu:8、Gres=gpu:a:2,gpu:b:2
+    counts = [int(x) for x in re.findall(r"gpu(?::[^:,(]+)?:(\d+)", m.group(1))]
+    return sum(counts) if counts else None
+
+
 def compute_apps() -> list[dict]:
     """目前所有 GPU 上的 compute process。查不到就丟 SmiUnavailable。"""
     if vendor() == "amd":
@@ -396,6 +444,17 @@ def host_contention(exclude_gpu: int | None = None,
                 "foreign_total_mib": 0, "foreign_max_util": 0,
                 "mean_util_excl_self": None, "visible_gpus": sorted(util),
                 "level": "UNOBSERVABLE_HOST"}
+    if os.environ.get("SLURM_JOB_ID"):
+        # Slurm job（平台 C，H200）：裝置被 cgroup 限制時，nvidia-smi 只列得出 job 自己的卡，
+        # 同節點別人的 job 完全看不到 → 和 AMD 容器同一個處理，不能回 QUIET（規則 7，H200_SLURM §5.3）。
+        # 節點卡數查不到（scontrol 失敗、沒有 Gres）也當成看不到。
+        visible = len(_smi("gpu=index"))
+        node_gpus = _slurm_node_gpu_count()
+        if node_gpus is None or visible < node_gpus:
+            return {"foreign_procs": 0, "foreign_gpus": [], "foreign_gpu_count": 0,
+                    "foreign_total_mib": 0, "foreign_max_util": 0,
+                    "mean_util_excl_self": None, "visible_gpus": visible, "node_gpus": node_gpus,
+                    "level": "UNOBSERVABLE_HOST"}
     apps = [a for a in compute_apps()
             if a["pid"] not in own and a["gpu"] != exclude_gpu]
     util = gpu_util()
@@ -491,6 +550,7 @@ def main() -> int:
     ap.add_argument("--check", type=int, help="檢查這張卡是否乾淨；乾淨回 0")
     ap.add_argument("--idle-gpus", action="store_true", help="印出乾淨的 GPU index")
     ap.add_argument("--watch", type=int, help="前景監看這張卡直到 Ctrl-C")
+    ap.add_argument("--host", action="store_true", help="印出整機的 host_contention（JSON）")
     ap.add_argument("--out")
     ap.add_argument("--interval", type=float, default=POLL_S)
     a = ap.parse_args()
@@ -500,6 +560,10 @@ def main() -> int:
         print(" ".join(map(str, g)))
         return 0 if g else 1
 
+    if a.host:
+        print(json.dumps(host_contention(), indent=2))
+        return 0
+
     if a.check is not None:
         f = foreign_on(a.check)
         if f:
@@ -508,6 +572,8 @@ def main() -> int:
                 print(f"  pid={x['pid']} using {x['used_mib']} MiB")
             return 1
         print(f"GPU {a.check}: CLEAN")
+        if os.environ.get("SLURM_JOB_ID"):   # Slurm 裡「這張卡乾淨」不代表整機乾淨（H200_SLURM §5.3）
+            print(f"host: {host_contention(exclude_gpu=a.check)['level']}")
         return 0
 
     if a.watch is not None:

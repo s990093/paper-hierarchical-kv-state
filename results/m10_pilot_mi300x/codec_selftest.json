@@ -1,0 +1,293 @@
+{
+ "torch": "2.10.0+rocm7.0",
+ "hip": "7.0.51831",
+ "cuda": null,
+ "device": "AMD Radeon Graphics",
+ "checks": {
+  "roundtrip_finite[bf16]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.0,
+    "V": 0.0
+   }
+  },
+  "nbytes[bf16]": {
+   "pass": true,
+   "nbytes": 4194304,
+   "expect": 4194304,
+   "ratio_vs_bf16": 1.0
+  },
+  "deterministic[bf16]": {
+   "pass": true
+  },
+  "roundtrip_finite[fp8_head]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.01764918863773346,
+    "V": 0.0026312258560210466
+   }
+  },
+  "nbytes[fp8_head]": {
+   "pass": true,
+   "nbytes": 2097280,
+   "expect": 2097280,
+   "ratio_vs_bf16": 0.50003
+  },
+  "deterministic[fp8_head]": {
+   "pass": true
+  },
+  "roundtrip_finite[fp8_channel]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.016221391037106514,
+    "V": 0.0026100222021341324
+   }
+  },
+  "nbytes[fp8_channel]": {
+   "pass": true,
+   "nbytes": 2113536,
+   "expect": 2113536,
+   "ratio_vs_bf16": 0.50391
+  },
+  "deterministic[fp8_channel]": {
+   "pass": true
+  },
+  "roundtrip_finite[fp8_token]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.007346511352807283,
+    "V": 0.0025477756280452013
+   }
+  },
+  "nbytes[fp8_token]": {
+   "pass": true,
+   "nbytes": 2162688,
+   "expect": 2162688,
+   "ratio_vs_bf16": 0.51562
+  },
+  "deterministic[fp8_token]": {
+   "pass": true
+  },
+  "roundtrip_finite[fp8k0_head]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.0007355898269452155,
+    "V": 0.0026312258560210466
+   }
+  },
+  "nbytes[fp8k0_head]": {
+   "pass": true,
+   "nbytes": 2101376,
+   "expect": 2101376,
+   "ratio_vs_bf16": 0.50101
+  },
+  "deterministic[fp8k0_head]": {
+   "pass": true
+  },
+  "roundtrip_finite[fp8k0_channel]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.0007318626740016043,
+    "V": 0.0026100222021341324
+   }
+  },
+  "nbytes[fp8k0_channel]": {
+   "pass": true,
+   "nbytes": 2117632,
+   "expect": 2117632,
+   "ratio_vs_bf16": 0.50488
+  },
+  "deterministic[fp8k0_channel]": {
+   "pass": true
+  },
+  "roundtrip_finite[fp8k0_token]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.0007153694168664515,
+    "V": 0.0025477756280452013
+   }
+  },
+  "nbytes[fp8k0_token]": {
+   "pass": true,
+   "nbytes": 2166784,
+   "expect": 2166784,
+   "ratio_vs_bf16": 0.5166
+  },
+  "deterministic[fp8k0_token]": {
+   "pass": true
+  },
+  "roundtrip_finite[int8_token]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.013054572977125645,
+    "V": 0.001322601456195116
+   }
+  },
+  "nbytes[int8_token]": {
+   "pass": true,
+   "nbytes": 2162688,
+   "expect": 2162688,
+   "ratio_vs_bf16": 0.51562
+  },
+  "deterministic[int8_token]": {
+   "pass": true
+  },
+  "roundtrip_finite[int4_token]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.028764374554157257,
+    "V": 0.011699183844029903
+   }
+  },
+  "nbytes[int4_token]": {
+   "pass": true,
+   "nbytes": 1114112,
+   "expect": 1114112,
+   "ratio_vs_bf16": 0.26562
+  },
+  "deterministic[int4_token]": {
+   "pass": true
+  },
+  "roundtrip_finite[int4_kivi]": {
+   "pass": true,
+   "rel_err": {
+    "K": 0.002177482470870018,
+    "V": 0.007816105149686337
+   }
+  },
+  "nbytes[int4_kivi]": {
+   "pass": true,
+   "nbytes": 1310720,
+   "expect": 1310720,
+   "ratio_vs_bf16": 0.3125
+  },
+  "deterministic[int4_kivi]": {
+   "pass": true
+  },
+  "bf16_exact": {
+   "pass": true
+  },
+  "fp8_head_no_overflow": {
+   "pass": true,
+   "n_clamped": 0,
+   "frac_q_at_448": 0.014659404754638672
+  },
+  "fp8_head_zero_head": {
+   "pass": true
+  },
+  "fp8_channel_no_overflow": {
+   "pass": true,
+   "n_clamped": 0,
+   "frac_q_at_448": 0.017134666442871094
+  },
+  "fp8_channel_zero_head": {
+   "pass": true
+  },
+  "fp8_token_no_overflow": {
+   "pass": true,
+   "n_clamped": 0,
+   "frac_q_at_448": 0.0193634033203125
+  },
+  "fp8_token_zero_head": {
+   "pass": true
+  },
+  "fp8_head_amax_exact": {
+   "pass": true,
+   "got": 9984.0,
+   "want": 9984.0
+  },
+  "fp8k0_reduces_K_err": {
+   "pass": true,
+   "fp8_head_K": 0.01764918863773346,
+   "fp8k0_head_K": 0.0007355898269452155
+  },
+  "int4_pack_roundtrip": {
+   "pass": true
+  },
+  "decode_into_view[bf16]": {
+   "pass": true
+  },
+  "decode_into_view[fp8_head]": {
+   "pass": true
+  },
+  "decode_into_view[fp8_channel]": {
+   "pass": true
+  },
+  "decode_into_view[fp8_token]": {
+   "pass": true
+  },
+  "decode_into_view[fp8k0_head]": {
+   "pass": true
+  },
+  "decode_into_view[fp8k0_channel]": {
+   "pass": true
+  },
+  "decode_into_view[fp8k0_token]": {
+   "pass": true
+  },
+  "decode_into_view[int8_token]": {
+   "pass": true
+  },
+  "decode_into_view[int4_token]": {
+   "pass": true
+  },
+  "decode_into_view[int4_kivi]": {
+   "pass": true
+  },
+  "gpu_eq_cpu[bf16]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[fp8_head]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[fp8_channel]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[fp8_token]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[fp8k0_head]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[fp8k0_channel]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[fp8k0_token]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[int8_token]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[int4_token]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "gpu_eq_cpu[int4_kivi]": {
+   "pass": true,
+   "enc_bitwise": true,
+   "dec_bitwise": true
+  },
+  "pinned_staging_decode": {
+   "pass": true
+  }
+ },
+ "all_pass": true,
+ "synthetic_note": "合成資料（高斯＋4 個 channel 偏移 200），誤差只驗機制，不代表真實 KV"
+}

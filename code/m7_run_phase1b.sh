@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # 第一階段第二段：等主鏈 DONE 之後才開始（同一張卡不並行）
 set -u
-cd /mlsteam/workspace/paper-hierarchical-kv-state
+cd "$(dirname "$0")/.."   # repo 根目錄（原本寫死 /mlsteam/workspace/paper-hierarchical-kv-state）
 source code/m7_env.sh
 P=code/m7_write_policy.py
 MAIN=$1

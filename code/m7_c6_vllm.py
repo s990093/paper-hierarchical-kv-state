@@ -20,7 +20,10 @@ import time
 import urllib.request
 from datetime import datetime
 
-VENV = "/mlsteam/workspace/venv/tiara-v028"
+# vLLM 0.28 所在的環境：平台 B 是另一個 venv；平台 C（H200）和 harness 同一個 conda 環境，env_h200.sh 設 M7_VLLM_VENV
+VENV = os.environ.get("M7_VLLM_VENV", "/mlsteam/workspace/venv/tiara-v028")
+# 額外放進 PATH 的工具目錄：平台 B 要 /opt/rocm/bin；平台 C 設成空字串
+EXTRA_PATH = os.environ.get("M7_EXTRA_PATH", "/opt/rocm/bin")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from m7_model import model_path  # noqa: E402
 
@@ -61,7 +64,8 @@ def main():
     cmd = [f"{VENV}/bin/vllm", "serve", model_path(), "--port", str(port), "--max-model-len", "40960",
            "--gpu-memory-utilization", "0.5", "--kv-transfer-config", json.dumps(cfg), "--served-model-name", "m"]
     open(os.path.join(rd, "vllm_cmd.txt"), "w").write(" ".join(shlex.quote(c) for c in cmd))
-    env = dict(os.environ, VLLM_SERVER_DEV_MODE="1", PATH=f"{VENV}/bin:/opt/rocm/bin:" + os.environ["PATH"])
+    env = dict(os.environ, VLLM_SERVER_DEV_MODE="1",
+               PATH=f"{VENV}/bin:" + (f"{EXTRA_PATH}:" if EXTRA_PATH else "") + os.environ["PATH"])
     log = open(os.path.join(rd, "vllm_server.log"), "w")
     p = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, env=env, start_new_session=True)
     try:

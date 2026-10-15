@@ -8,11 +8,11 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from gpu_guard import GpuWatcher  # noqa: E402
+from gpu_guard import GpuWatcher, smi_index  # noqa: E402
 
 rd = os.path.join(os.environ.get("TIARA_RUNS", "/mlsteam/data/tiara/runs"), os.environ.get("RUN_ID", "no-run-id"))
 os.makedirs(rd, exist_ok=True)
-with GpuWatcher(gpu=0, own_root=os.getpid(), out_path=os.path.join(rd, "gpu_guard.json")) as w:
+with GpuWatcher(gpu=smi_index(0), own_root=os.getpid(), out_path=os.path.join(rd, "gpu_guard.json")) as w:   # cuda:0 在 smi 裡的編號（Slurm）
     rc = subprocess.run(sys.argv[1:]).returncode
 if w.contaminated:
     print("CONTAMINATED", flush=True)

@@ -202,3 +202,53 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 **限制**：只有模擬；f 是整體縮放（真實的比值 8K 時 2.0 倍、32K 時 1.7 倍）
 
 **更正（2026-10-12）**：07 §5 寫「寫入一提交就回來：48 格裡 6 格 S3 顯著較快（CI 不重疊且 >δ）」有兩處錯。分母應是 24；6 格只滿足「CI 不重疊」，其中只有 3 格 >δ（6.2%）。重算自 `results/m7_write_policy_mi300x/summary_a1_pairs.csv`，已改 07 與給老師的報告。結論（「大致沒有」）不變。
+
+## Milestone 10-pilot — 精度這條線的彩排（MI300X；不進任何圖或判定）
+
+**狀態**：PASS（03_plan_h200 §7「等帳號」那一列的程式＋在真 GPU 上抓 bug）
+**執行時間**：2026-10-15 02:19 → 02:50 UTC（GPU run）；程式 02:05 起
+**為什麼在 MI300X**：H200 約一週後才有。這裡的數字只用來確認程式對不對，**不和 H200 的數字放在同一張圖或判定**（03 §1）。**沒有跑任何題目、沒看任何低精度的答對率**（FP8 只測「有沒有壞」：位元比對、NaN），事先登記還沒凍結，沒有被看過的結果影響。
+**產出檔**：`results/m10_pilot_mi300x/`（JSON；`regress_xproc/` 另有判準檔 `CRITERION.md` 與 `summary.txt`）
+
+**程式**
+- 新：`code/m10_codec.py`（FP8 三種 scale 粒度、K 去偏移 FP8、INT8、INT4 兩種分組）、`code/test_m10_restore.py`、`code/m10_tasks.py`（T1–T5、三個位置帶、兩輪、HotpotQA）、`code/env_h200.sh`、`code/tiara.sbatch`、`code/h200_probe.sh`、`code/gpu_smoke.py`、`code/test_gpu_guard_slurm.py`
+- 改：`code/m7_restore_harness.py`（host 可以是低精度的 Enc：限速器照實際位元組計時、資料到齊後才反量化、逐 block 來源與時間、bytes_read、t_dequant、copy_bound；BF16 路徑不變）；`code/m7_model.py`（Qwen2 的 head_dim）；`code/gpu_guard.py`（Slurm 下看不到整個節點 → `UNOBSERVABLE_HOST`；`smi_index`）；`m7_write_policy.py`、`m7_calib.py`、`m7_c6_vllm.py`、`m7_guard_run.py`、`m7_env.sh`、`m7_run_phase1*.sh`（路徑改讀環境變數，**不設時和原本相同**）
+
+**run_id 與指令**（全部 `flock gpu.lock` ＋ `runsh`；venv `tiara`，torch 2.10.0+rocm7.0）
+| run_id | 指令 | 結果 |
+|:--|:--|:--|
+| `20261015-021958-m10-codec-selftest` | `python code/m10_codec.py --self-test --out …/codec_selftest.json` | 全過 |
+| `20261015-022041-m10-corr-llama-8k` | `python code/test_m7_correctness.py …/correctness_llama_8k.json` | 全過 |
+| `20261015-022121-m10-corr-qwen-8k`、`-022228-…-qwen-32k` | 同上，`M7_MODEL_GLOB=<Qwen>`（32K 加 `M7_TEST_L=32768`） | **失敗**：`AttributeError: 'Qwen2Config' object has no attribute 'head_dim'` |
+| `20261015-022155`、`-022255`、`-022325`（`m10-mixed-qwen-{fp8_head,fp8k0_head,int8_token}`） | `python code/test_m10_restore.py mixed --fmt <f> …` | **失敗**：同上 |
+| `20261015-022346-m10-corr-qwen-8k`、`-022529-…-qwen-32k` | 修好後重跑 | 全過 |
+| `20261015-022340`（int4_kivi，修好之後才開始）、`-022452`（Llama fp8_head）、`-022722`、`-022857`、`-023435`、`-023550`（Qwen 4 種格式） | `test_m10_restore.py mixed --fmt <f>` | 全過 |
+| `20261015-022635-m10-regress-llama` | `test_m10_restore.py regress --old <HEAD f6595f0 的 m7_restore_harness.py>` | **失敗**：測試腳本自己的 importlib 錯（沒先放進 sys.modules） |
+| `20261015-022822-m10-regress-llama` | 同上，修好腳本後 | **1／6 格沒過**（見異常 4） |
+| `20261015-023459`、`-023657`、`-023922`（`m10-regdiag-{old_new,new_new2,old_old2}`） | `regress --impls <順序> --cells local:cake,nfs:cake` | 診斷（事後加的） |
+| `20261015-024116` → `-024849`（`m10-regx-{new,old}{1,2,3}`） | `regress --impls new` 或 `old`，每個 process 一個，交替，`--reps 5` | 6／6 格過（判準 02:41:16Z 先寫） |
+
+**關鍵數字**（只寫實測；MI300X、合成 token）
+- codec：10 種格式在 GPU 與 CPU 上編出來的位元組、解碼結果全部逐位元相同；沒有 NaN／Inf，沒有值被截在 ±448。Qwen 一個 fp8_head block＝14,680,960 B＝14 MiB＋896 B（和 03 §1 的算術相同）。
+- 正確性：Llama 8K 每一項都和 10/8 的 `correctness.json` 相同。Qwen 8K／32K：HF 跑兩次逐位元相同、重算兩次 KV 逐位元相同、主機往返逐位元相同；對 HF 的 logit 最大差 0.109／0.102，argmax 相同，top-5 重疊 5／4；K 對 HF 的最大差（第 0、中間、最後一層）8K：0.5、0.25、2.0；32K：0.5、0.656、4.0（Qwen 的 K 值大，這是 bf16 的 1–2 個最小刻度；相對誤差要等 D0 的 K 分布）。
+- 低精度載入：Llama fp8_head、Qwen 4 種格式 × E0／E1／F25／B25 × 只算／只載／Cake，每個 block 都逐位元等於預期（重算＝原本 KV、載 BF16＝原本 KV、載低精度＝decode(encode(原本 KV))），bytes_read、來源計數都對。反量化（未融合的 torch 運算）每 block：Qwen fp8 約 0.27 ms、Llama fp8 約 0.38 ms（E1 只載 64 個 block 的 t_dequant ÷ 64）。
+- 全 BF16 回歸（每個 process 一個還原器）：6 格新／舊時間中位數比 0.9975–1.0002，會合點集合相同，KV 全部逐位元相同。
+
+**觀察（彩排、合成 token、一個限速值，不進判定，只證明量測做得出來）**：Qwen、限速約 0.55 GiB/s、Cake：E0 會合在 36；F25 一個 FP8 block 都沒被讀到（來源和 E0 完全相同）；B25 讀到 16 個 FP8；E1 會合點前移到 27。Llama 同樣形狀（E0 34、F25 讀到 0 個、B25 讀到 16 個、E1 25）。
+
+**失敗與異常**
+1. **Qwen2 的 config 沒有 `head_dim`**，`KVModel` 一載入就失敗。改成照 HF Qwen2Attention 的預設（hidden_size ÷ head 數）。正是要在 H200 之前抓的那一類錯。
+2. **GPU 上「除以 Python 純量」會改成乘倒數**，和 CPU 的真除法差最後一位 → scale 不同 → FP8 位元組不同（第一次自測 8 種格式 GPU≠CPU）。codec 改成除以同裝置的 0 維 tensor（`_div_c`），之後全部相同。H200 上第一天要重跑 `--self-test` 確認。
+3. **這兩版 torch（2.10、2.12，ROCm）的 e4m3fn 轉型，超出範圍會變 NaN、不會截在 448**（P04 §3 的記錄是 torch 2.9 NaN、2.13 飽和）。codec 一律自己先截，不依賴 torch。
+4. **同一個 process 比新舊還原器，local:cake 那格沒過（新/舊 0.8625，會合 7 對 8）**。診斷：差距跟著「哪個 Restorer 先建立」走，同一份程式互比也重現（先建立的 0.2247 s、會合 7；後建立的約 0.260 s、會合 8），和程式改動無關。後建立的每次載入多約 0.5 ms（9.46 對 8.94 ms），推測是 stream 對到的硬體佇列不同〔推論，沒查 HIP〕。**規則：正式腳本一個 process 只建一個 Restorer**。第一階段的腳本本來就是一個 process 一個，結果不受影響。乾淨比法（每 process 一個）是看到失敗之後才加的，判準在跑之前寫進 `regress_xproc/CRITERION.md`。
+5. HotpotQA 官方網址（curtis.ml.cmu.edu）連不上（4 次各約 134 s 逾時），改用 HF `hotpotqa/hotpot_qa` distractor validation（同一份 7,405 題；sha256 `c20b638c…`，記在 `/mlsteam/data/tiara/datasets/hotpotqa/README.txt`）。可用 6,155 題。
+
+**還沒決定、要人決定的**
+- T5（cwe）的第 2 輪：目前只有單輪。
+- 生成長度：03 §1 寫每題最多 64 token，但上游是 niah 128、vt 30、qa 32、cwe 120；`m10_quality.py` 寫之前要定。
+- T5 的 1-shot 範例約 1,000 token，超出 block 0（清單從 block 1／2 開始）；T4 預設不放本題自己的干擾段落（`n_hard_distractors` 可在 D1 調難度時加）。
+- §R2／§R3 在 H200 上依序跑的 job 腳本還沒寫（`m7_run_phase1.sh` 含 H200 不做的 C7-anchor，不能直接用）；`busy_levels.json` 要在 H200 上由 C5 重產生。
+- `m7_calib.py c2` 的磁碟統計仍寫死 `sda`、查不到記 0（違反規則 7）；C2 在 H200 不跑，沒修，要跑之前必須先修。
+- H200_SLURM §4.3 的 env 範例、§5.2 的範本路徑已過時（`env_h200.sh`、`tiara.sbatch` 為準）。
+
+**與計劃的差異**：低精度 block 的反量化排在限速器的 done（資料到齊）之後，在 I/O stream 上執行、和重算搶 GPU（03 §5.4 的表）；BF16 的載入行為不變。
