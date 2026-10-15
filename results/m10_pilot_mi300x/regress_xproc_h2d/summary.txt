@@ -1,0 +1,9 @@
+run_ids: ['20261015-073718-m10-regx2-new1', '20261015-073851-m10-regx2-old1', '20261015-074010-m10-regx2-new2', '20261015-074144-m10-regx2-old2']
+KV 全部逐位元相同: True
+local cake         new 0.2247 old 0.2247 ratio 1.0001 meets [7]/[7] PASS
+local compute_only new 1.3660 old 1.3729 ratio 0.9950 meets [32]/[32] PASS
+local load_only    new 0.2869 old 0.2868 ratio 1.0000 meets [32]/[32] PASS
+nfs   cake         new 1.1337 old 1.1337 ratio 1.0000 meets [26]/[26] PASS
+nfs   compute_only new 1.3661 old 1.3652 ratio 1.0007 meets [32]/[32] PASS
+nfs   load_only    new 6.0413 old 6.0413 ratio 1.0000 meets [32]/[32] PASS
+ALL PASS

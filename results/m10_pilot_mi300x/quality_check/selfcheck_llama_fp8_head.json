@@ -1,0 +1,362 @@
+{
+ "model": "llama",
+ "fmt": "fp8_head",
+ "run_id": "20261015-060045-m10-qcheck-llama-fp8",
+ "all_pass": true,
+ "torch": "2.10.0+rocm7.0",
+ "hip": "7.0.51831",
+ "cuda": null,
+ "note": "結構檢查，不計分、沒有任何答對率",
+ "checks": [
+  {
+   "check": "e0_two_paths[T1_front-back_s3000]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T1_front-back_s3000/E1]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T1_front-back_s3000/E1]",
+   "pass": true,
+   "b": 15,
+   "lp_read": 49,
+   "sources": {
+    "load_fp8": 49,
+    "recompute": 15
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T1_front-back_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T1_front-back_s3000/F25]",
+   "pass": true,
+   "b": 23,
+   "lp_read": 0,
+   "sources": {
+    "load_bf16": 41,
+    "recompute": 23
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "no_lp_read_equals_e0[T1_front-back_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T1_front-back_s3000/B25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T1_front-back_s3000/B25]",
+   "pass": true,
+   "b": 21,
+   "lp_read": 16,
+   "sources": {
+    "load_fp8": 16,
+    "recompute": 21,
+    "load_bf16": 27
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T1_front-back_s3000/R25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T1_front-back_s3000/R25]",
+   "pass": true,
+   "b": 22,
+   "lp_read": 9,
+   "sources": {
+    "load_bf16": 33,
+    "recompute": 22,
+    "load_fp8": 9
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "e0_two_paths[T2_mid-front_s3000]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T2_mid-front_s3000/E1]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T2_mid-front_s3000/E1]",
+   "pass": true,
+   "b": 15,
+   "lp_read": 49,
+   "sources": {
+    "load_fp8": 49,
+    "recompute": 15
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T2_mid-front_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T2_mid-front_s3000/F25]",
+   "pass": true,
+   "b": 23,
+   "lp_read": 0,
+   "sources": {
+    "load_bf16": 41,
+    "recompute": 23
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "no_lp_read_equals_e0[T2_mid-front_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T2_mid-front_s3000/B25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T2_mid-front_s3000/B25]",
+   "pass": true,
+   "b": 21,
+   "lp_read": 16,
+   "sources": {
+    "load_fp8": 16,
+    "recompute": 21,
+    "load_bf16": 27
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T2_mid-front_s3000/R25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T2_mid-front_s3000/R25]",
+   "pass": true,
+   "b": 22,
+   "lp_read": 9,
+   "sources": {
+    "load_bf16": 33,
+    "recompute": 22,
+    "load_fp8": 9
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "e0_two_paths[T3_back-mid_s3000]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T3_back-mid_s3000/E1]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T3_back-mid_s3000/E1]",
+   "pass": true,
+   "b": 15,
+   "lp_read": 49,
+   "sources": {
+    "load_fp8": 49,
+    "recompute": 15
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T3_back-mid_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T3_back-mid_s3000/F25]",
+   "pass": true,
+   "b": 23,
+   "lp_read": 0,
+   "sources": {
+    "load_bf16": 41,
+    "recompute": 23
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "no_lp_read_equals_e0[T3_back-mid_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T3_back-mid_s3000/B25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T3_back-mid_s3000/B25]",
+   "pass": true,
+   "b": 21,
+   "lp_read": 16,
+   "sources": {
+    "load_fp8": 16,
+    "recompute": 21,
+    "load_bf16": 27
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T3_back-mid_s3000/R25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T3_back-mid_s3000/R25]",
+   "pass": true,
+   "b": 22,
+   "lp_read": 9,
+   "sources": {
+    "load_bf16": 33,
+    "recompute": 22,
+    "load_fp8": 9
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "e0_two_paths[T4_front-mid_s3000]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T4_front-mid_s3000/E1]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T4_front-mid_s3000/E1]",
+   "pass": true,
+   "b": 15,
+   "lp_read": 49,
+   "sources": {
+    "load_fp8": 49,
+    "recompute": 15
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T4_front-mid_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T4_front-mid_s3000/F25]",
+   "pass": true,
+   "b": 30,
+   "lp_read": 0,
+   "sources": {
+    "load_bf16": 34,
+    "recompute": 30
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "no_lp_read_equals_e0[T4_front-mid_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T4_front-mid_s3000/B25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T4_front-mid_s3000/B25]",
+   "pass": true,
+   "b": 30,
+   "lp_read": 16,
+   "sources": {
+    "load_fp8": 16,
+    "recompute": 30,
+    "load_bf16": 18
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T4_front-mid_s3000/R25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T4_front-mid_s3000/R25]",
+   "pass": true,
+   "b": 31,
+   "lp_read": 8,
+   "sources": {
+    "recompute": 31,
+    "load_bf16": 25,
+    "load_fp8": 8
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "e0_two_paths[T5_global_s3000]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T5_global_s3000/E1]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T5_global_s3000/E1]",
+   "pass": true,
+   "b": 24,
+   "lp_read": 40,
+   "sources": {
+    "load_fp8": 40,
+    "recompute": 24
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T5_global_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T5_global_s3000/F25]",
+   "pass": true,
+   "b": 33,
+   "lp_read": 0,
+   "sources": {
+    "recompute": 33,
+    "load_bf16": 31
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "no_lp_read_equals_e0[T5_global_s3000/F25]",
+   "pass": true
+  },
+  {
+   "check": "readA_finite_and_placed[T5_global_s3000/B25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T5_global_s3000/B25]",
+   "pass": true,
+   "b": 30,
+   "lp_read": 16,
+   "sources": {
+    "load_fp8": 16,
+    "recompute": 30,
+    "load_bf16": 18
+   },
+   "max_logit_diff": 0.0
+  },
+  {
+   "check": "readA_finite_and_placed[T5_global_s3000/R25]",
+   "pass": true
+  },
+  {
+   "check": "cake_vs_replay[T5_global_s3000/R25]",
+   "pass": true,
+   "b": 31,
+   "lp_read": 8,
+   "sources": {
+    "recompute": 31,
+    "load_bf16": 25,
+    "load_fp8": 8
+   },
+   "max_logit_diff": 0.0
+  }
+ ]
+}

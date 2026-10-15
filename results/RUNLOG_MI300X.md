@@ -292,3 +292,43 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - T1：兩個模型都碰天花板。照 03 §3.2 不進主判準？還是另做更難的變體？
 - T4 的主計分：照計劃用 string_match_part（篩選答案 ≤2 字之後），還是改用 LongBench 的 qa_f1？
 - 03 §1 D1「用重建誤差挑 scale 粒度」：改成扣平均後的誤差。
+
+### Milestone 10-pilot（續 2）— 「都做掉」：低精度作答、速度實驗、H200 復現 job、LongBench、T1 加難、數字對照論文
+
+**狀態**：PASS（程式全部寫好、在 MI300X 上結構檢查全過）。**還是沒有任何低精度的答對率**：`m10_quality.py run` 試跑用 `--blind`，低精度列的回答、分數、log-prob、KL 都寫成 BLIND；selfcheck 只比位元。
+**執行時間**：2026-10-15 05:20 → 07:54 UTC
+**使用者 10/15 的決定**（寫進 03 開頭「10/15 改動」）：T1 另做更難的版本；T4 維持 RULER 比對＋答案 ≤2 字；生成長度 T5 120、其他 64；T5 單輪。
+
+**程式**
+- 新：`code/m10_speed.py`（calib-f／noise／k0／grid／summary＋`meets.json`）、`code/r_h200.sh`＋`code/m7_repro_compare.py`（H200 上 §R1–R3 一個 sbatch job：dry-run 34 步；MI300X 對 MI300X 自我比較判「重現」）、`code/m10_longbench.py`（6 任務 × 50 題、官方截斷、自測 9,006 項過）、`code/m10_ruler_cwe_check.py`
+- 改：`code/m10_quality.py`（`run`：8 個配置＋@格式、讀法 A／B 重放、兩輪〔第 2 輪 (a)(b)〕、gold log-prob、對 E0 的 KL、逐題可續跑、`--blind`；`selfcheck`）、`code/m7_model.py`（`n_logits`；**model_path 改成載入時才讀 M7_MODEL_GLOB**，見異常 1）、`code/m7_restore_harness.py`（`time_h2d`，預設關＝路徑不變）、`code/m10_tasks.py`（T1：`n_queries`、`n_similar`／`similar_prefix`，預設不變）、`code/env_h200.sh`（不再 mkdir）、`docs/H200_SLURM.md`
+- 文件：`docs/precision_20261013/cards/V2_numbers_vs_papers_20261015.md`（我們的數字 vs 論文，26 列）
+
+**run_id**
+- 速度彩排（Qwen，縮小規模）：`20261015-053634-m10-spd-calibf-qwen`、`-053705-m10-spd-noise-qwen`、`-053838-m10-spd-k0-qwen`、`-061051-m10-spd-grid-qwen`；H2D 欄位：`-074427-m10-spd-h2d-qwen`（輸出在 scratch）
+- T1 加難：`20261015-053838` → `-053852`（第 1 輪）、`-061237` → `-061251`（第 2 輪），`e0_tune/t1_*`
+- 上游 RULER CWE：`20261015-054607`（失敗：RULER clone 沒拉 Git LFS，`english_words.json` 是指標檔）、`-061335-m10-ruler-cwe-llama`、`-065849-m10-ruler-cwe-hfgen`
+- LongBench E0 小測：`20261015-053944-m10-lb-e0-smoke-llama`（scratch）；接進 m10_quality：`-074530-m10-lb-blind-llama`（scratch）
+- 結構檢查：Llama `20261015-060045-m10-qcheck-llama-fp8`；Qwen `-074622-m10-qcheck-qwen-fp8`、`-075010-m10-qcheck-qwen-int4`（修好之後）；失敗的見異常 1
+- 遮蔽試跑：`20261015-063545`、`-073041-m10-qblind-qwen`（scratch）
+- 還原器加 H2D 計時後的 BF16 回歸：`20261015-073718` → `-074144`（`m10-regx2-*`，判準 07:22:31Z 先寫）；低精度載入 `-074316-m10-mixed2-qwen-fp8`
+
+**關鍵數字**
+- 結構檢查：Llama fp8 50／50、Qwen fp8 50／50、Qwen int4_kivi 20／20 過。「真的跑 Cake」和「重放同一個會合點」：KV 與第 1 輪問題的 logits 逐位元相同（最大差 0.0），會合點 b＝15–36；沒讀到低精度時和 E0 逐位元相同。
+- BF16 回歸（加 `time_h2d` 之後，每 process 一個）：6／6 格過，新／舊 0.9950–1.0007，會合點相同，KV 全部逐位元相同。
+- 速度彩排（Qwen、MI300X、縮小規模，不進判定）：f(i) 23.6 → 72.5 ms；三個限速 b16＝2.77、b32＝0.76、b48＝0.22 GiB/s，E0 會合在 13／31／47（閒）、8／21／38（忙）；k0：b32 時 E1 比 E0 快 32%（閒）／38%（忙），CPU 層（不限速）E1 反而慢 6–10%；E1 的 bytes_read＝E0 的 0.50003 倍；kv_bad 70 格全 0。
+- T1 加難：相似鍵（連只差最後 1 個字元）兩個模型仍 0.70–1.00；一次問多個鍵會掉分，但主要是生成長度不夠（Qwen 逐鍵重寫）。64 token 下調不到 60–95% → T1 參數維持預設、不進主判準（CANDIDATE_PARAMS 的 not_in_range.T1）。
+- 數字對照論文（V2）：26 列，✅ 16、⚠️ 4、❓ 5、❌ 1。一致的例子：Qwen max|K| 422 對第三方量測 423（同一批 channel）；Llama INT8 每 token 的 K／V 誤差 1.18%／0.79% 對 KVTuner Table 9 的 1.23%／0.79%；FP8 2.5% 對 e4m3 理論值 2.65%；T1–T4 的 BF16 正確率和 RULER、Double-P 一致。
+- ❌ 那一列（T5 CWE）：上游 RULER 原版題目在我們的環境，Llama 只有 1.0%（加 BOS）／6.0%（不加），低於 RULER 論文推得出的下限（CWE ≥ 8.2）；我們自己的 T5 題目 47.7%。HF 原生 generate 和我們的還原器 10／10 逐字相同，所以不是還原器的問題；差在 prompt 包裝（推論，沒做消融），也可能是 RULER 版本或框架。H200 上用 vLLM 跑同一份 jsonl 分清楚。不擋精度實驗（T5 是和 E0 配對比較）。
+
+**失敗與異常**
+1. **靜默載錯模型（已修）**：`m10_quality.py selfcheck` 先 `import m7_restore_harness`（它會 import m7_model），之後 Answerer 才設 `M7_MODEL_GLOB`；m7_model 在 import 時就把 glob 讀成常數 → **Qwen 的 tokenizer 配上 Llama 的權重**，Qwen 的 token id（最大 151,645）超出 Llama 的詞表（128,256）→ GPU 上 `vectorized_gather_kernel` 越界 → `HSA_STATUS_ERROR_EXCEPTION`，abort。失敗的 run：`20261015-060043`、`-060047`、`-062655`、`-063120`、`-072215`、`-072625`（`m10-qcheck-qwen-*`），以及我的定位腳本。`HIP_LAUNCH_BLOCKING=1` 時沒當掉（越界讀到剛好有配置的記憶體）——也就是說同樣的錯誤可能靜默發生。修法：`model_path()` 在載入時才讀環境變數；Answerer 載入後檢查模型和 tokenizer 是同一個 snapshot、tokenizer 不大於詞表，不一致就丟錯。**檢查過其他程式**：m10_speed、m10_kv_stats、m10_quality 的 tune／run 都是先設 glob 才 import；測試腳本由命令列帶入；Llama 的 run 用的就是預設——今天提交的結果都不受影響（kv_stats 的 summary 也記了實際載入的模型路徑）。
+2. 每次 abort 在 cwd 留下約 21 GB 的 `gpucore.*`（兩個落在 repo 根目錄，已刪；之後的 job 改在 scratch 執行）。
+3. `m10_quality.py run --blind` 第一次：遮蔽迴圈的變數 `k` 蓋掉外層的題號 → 印進度時 `TypeError`（`-060049`）；已改名。
+4. 第一次 4 個 process 同時跑時兩個 Qwen 檢查先當掉，我一開始以為是同時用 GPU 造成的，單獨重跑仍當掉才確定是異常 1。
+5. T1 第 2 輪第一次：新腳本少了執行權限，什麼都沒跑就失敗，補上重跑。
+
+**還沒做（要 H200 或要人決定）**
+- 03 的事先登記凍結（D1，H200 上 E0 確認難度＋δ*＋scale 粒度之後）；凍結前 `m10_quality.py run` 只准 `--blind`。
+- busy_levels：`m7_repro_compare.py busy-levels` 從 H200 的 C5 結果產生（`r_h200.sh` 的 R2-busy-levels 步驟）。
+- T5 CWE 的 ❌：H200 上用 vLLM 跑上游 jsonl。

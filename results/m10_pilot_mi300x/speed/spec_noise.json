@@ -1,0 +1,51 @@
+{
+ "model": "qwen",
+ "fmt": "fp8_head",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "b32",
+   "kind": "throttle",
+   "GiBps": 0.7639
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  }
+ ],
+ "reps": 3,
+ "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_pilot_mi300x/speed",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261015-053705-m10-spd-noise-qwen/blocks.csv",
+ "verify": true,
+ "argv": [
+  "code/m10_speed.py",
+  "noise",
+  "--model",
+  "qwen",
+  "--out-dir",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_pilot_mi300x/speed",
+  "--bw-json",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_pilot_mi300x/speed/bw.json",
+  "--bw-names",
+  "b32",
+  "--gpu-states",
+  "idle",
+  "--launches",
+  "2",
+  "--reps",
+  "3",
+  "--blocks-out",
+  "/mlsteam/data/tiara/runs/20261015-053705-m10-spd-noise-qwen/blocks.csv"
+ ],
+ "run_id": "20261015-053705-m10-spd-noise-qwen"
+}

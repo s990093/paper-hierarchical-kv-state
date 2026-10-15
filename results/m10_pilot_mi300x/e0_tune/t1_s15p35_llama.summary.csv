@@ -1,0 +1,7 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-061243-m10-e0t1-l-s15p35,llama,"{""T1"": {""n_similar"": 15, ""similar_prefix"": 35}}",T1,1,back,10,1.0,0.0,False,1.0,0.0,False,0.0
+20261015-061243-m10-e0t1-l-s15p35,llama,"{""T1"": {""n_similar"": 15, ""similar_prefix"": 35}}",T1,1,front,10,0.8,0.2613,True,0.8,0.2613,True,0.0
+20261015-061243-m10-e0t1-l-s15p35,llama,"{""T1"": {""n_similar"": 15, ""similar_prefix"": 35}}",T1,1,mid,10,0.9,0.196,True,0.9,0.196,True,0.0
+20261015-061243-m10-e0t1-l-s15p35,llama,"{""T1"": {""n_similar"": 15, ""similar_prefix"": 35}}",T1,2,back,10,1.0,0.0,False,1.0,0.0,False,0.0
+20261015-061243-m10-e0t1-l-s15p35,llama,"{""T1"": {""n_similar"": 15, ""similar_prefix"": 35}}",T1,2,front,10,1.0,0.0,False,1.0,0.0,False,0.0
+20261015-061243-m10-e0t1-l-s15p35,llama,"{""T1"": {""n_similar"": 15, ""similar_prefix"": 35}}",T1,2,mid,10,1.0,0.0,False,1.0,0.0,False,0.0

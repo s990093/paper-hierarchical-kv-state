@@ -1,0 +1,472 @@
+{
+ "model": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+ "n": 32,
+ "reps": 5,
+ "old_harness": "/tmp/claude-0/-mlsteam-workspace/7d048a64-49f3-4943-a0ed-7952c6ad260b/scratchpad/m7_restore_harness_f6595f0.py",
+ "kv_bitwise_all": true,
+ "criterion": "KV 全部逐位元相同；t_restore 中位數比值 新/舊 ∈ [0.95, 1.05]（跑之前寫死）",
+ "summary": [
+  {
+   "tier": "local",
+   "mode": "cake",
+   "pair": "new/new",
+   "median_s": {
+    "new": 0.2247
+   },
+   "ratio": 1.0,
+   "meets": {
+    "new": [
+     7
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 8.938488494604826,
+     "ms_per_recompute": 31.7751008884183
+    }
+   },
+   "pass": true
+  },
+  {
+   "tier": "local",
+   "mode": "load_only",
+   "pair": "new/new",
+   "median_s": {
+    "new": 0.2869
+   },
+   "ratio": 1.0,
+   "meets": {
+    "new": [
+     32
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 8.941310763475485,
+     "ms_per_recompute": 0
+    }
+   },
+   "pass": true
+  },
+  {
+   "tier": "local",
+   "mode": "compute_only",
+   "pair": "new/new",
+   "median_s": {
+    "new": 1.3785
+   },
+   "ratio": 1.0,
+   "meets": {
+    "new": [
+     32
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 0,
+     "ms_per_recompute": 43.06857686606236
+    }
+   },
+   "pass": true
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "pair": "new/new",
+   "median_s": {
+    "new": 1.1337
+   },
+   "ratio": 1.0,
+   "meets": {
+    "new": [
+     26
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 188.77920896435776,
+     "ms_per_recompute": 40.07738411354904
+    }
+   },
+   "pass": true
+  },
+  {
+   "tier": "nfs",
+   "mode": "load_only",
+   "pair": "new/new",
+   "median_s": {
+    "new": 6.0413
+   },
+   "ratio": 1.0,
+   "meets": {
+    "new": [
+     32
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 188.75238652981352,
+     "ms_per_recompute": 0
+    }
+   },
+   "pass": true
+  },
+  {
+   "tier": "nfs",
+   "mode": "compute_only",
+   "pair": "new/new",
+   "median_s": {
+    "new": 1.3655
+   },
+   "ratio": 1.0,
+   "meets": {
+    "new": [
+     32
+    ]
+   },
+   "per_op_ms": {
+    "new": {
+     "ms_per_load": 0,
+     "ms_per_recompute": 42.66489222936798
+    }
+   },
+   "pass": true
+  }
+ ],
+ "rows": [
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 0,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22473992500454187,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.93766088411212,
+   "ms_per_recompute": 31.724583889756882
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 1,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22464079596102238,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.936685808002949,
+   "ms_per_recompute": 31.789150554686785
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 2,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22470682486891747,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.938488494604826,
+   "ms_per_recompute": 31.721839548221656
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 3,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.2244942649267614,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.940871022641659,
+   "ms_per_recompute": 31.80393357095974
+  },
+  {
+   "tier": "local",
+   "mode": "cake",
+   "rep": 4,
+   "impl": "new",
+   "meet": 7,
+   "t_restore": 0.22465179301798344,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.93849665299058,
+   "ms_per_recompute": 31.7751008884183
+  },
+  {
+   "tier": "local",
+   "mode": "load_only",
+   "rep": 0,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 0.28686213633045554,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.944201937993057,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "local",
+   "mode": "load_only",
+   "rep": 1,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 0.2868670136667788,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.941893931478262,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "local",
+   "mode": "load_only",
+   "rep": 2,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 0.28685592394322157,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.941182473790832,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "local",
+   "mode": "load_only",
+   "rep": 3,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 0.28685709182173014,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.941204563598149,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "local",
+   "mode": "load_only",
+   "rep": 4,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 0.28686758084222674,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 8.941310763475485,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "local",
+   "mode": "compute_only",
+   "rep": 0,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3924167891964316,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 43.506872782018036
+  },
+  {
+   "tier": "local",
+   "mode": "compute_only",
+   "rep": 1,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3784805536270142,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 43.06857686606236
+  },
+  {
+   "tier": "local",
+   "mode": "compute_only",
+   "rep": 2,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3790259738452733,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 43.08724756992888
+  },
+  {
+   "tier": "local",
+   "mode": "compute_only",
+   "rep": 3,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3640174227766693,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 42.61871727067046
+  },
+  {
+   "tier": "local",
+   "mode": "compute_only",
+   "rep": 4,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3654867731966078,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 42.664961685659364
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 0,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1337691857479513,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77813212263086,
+   "ms_per_recompute": 40.056648950737255
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 1,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1335018509998918,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7816620680193,
+   "ms_per_recompute": 40.055167538901934
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 2,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1337452088482678,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77471269418797,
+   "ms_per_recompute": 40.13436525845184
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 3,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1337237753905356,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.77920896435776,
+   "ms_per_recompute": 40.08317149530809
+  },
+  {
+   "tier": "nfs",
+   "mode": "cake",
+   "rep": 4,
+   "impl": "new",
+   "meet": 26,
+   "t_restore": 1.1337839448824525,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.78035076583424,
+   "ms_per_recompute": 40.07738411354904
+  },
+  {
+   "tier": "nfs",
+   "mode": "load_only",
+   "rep": 0,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 6.041338050737977,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7490524095483,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "nfs",
+   "mode": "load_only",
+   "rep": 1,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 6.04127944400534,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.7498756259447,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "nfs",
+   "mode": "load_only",
+   "rep": 2,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 6.041234060190618,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.75238652981352,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "nfs",
+   "mode": "load_only",
+   "rep": 3,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 6.041271704714745,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.75390748144127,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "nfs",
+   "mode": "load_only",
+   "rep": 4,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 6.041542205028236,
+   "kv_bitwise_ok": true,
+   "ms_per_load": 188.75909740745556,
+   "ms_per_recompute": null
+  },
+  {
+   "tier": "nfs",
+   "mode": "compute_only",
+   "rep": 0,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3739408683031797,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 42.92910841468256
+  },
+  {
+   "tier": "nfs",
+   "mode": "compute_only",
+   "rep": 1,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3627643468789756,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 42.57951678300742
+  },
+  {
+   "tier": "nfs",
+   "mode": "compute_only",
+   "rep": 2,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3649014332331717,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 42.64417562808376
+  },
+  {
+   "tier": "nfs",
+   "mode": "compute_only",
+   "rep": 3,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3654870302416384,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 42.66489222936798
+  },
+  {
+   "tier": "nfs",
+   "mode": "compute_only",
+   "rep": 4,
+   "impl": "new",
+   "meet": 32,
+   "t_restore": 1.3660289831459522,
+   "kv_bitwise_ok": true,
+   "ms_per_load": null,
+   "ms_per_recompute": 42.68165949906688
+  }
+ ],
+ "all_pass": true,
+ "torch": "2.10.0+rocm7.0",
+ "run_id": "20261015-073718-m10-regx2-new1",
+ "wall_s": 88.7
+}

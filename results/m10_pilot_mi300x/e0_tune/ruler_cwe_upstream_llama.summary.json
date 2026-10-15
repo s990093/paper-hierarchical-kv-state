@@ -1,0 +1,60 @@
+{
+ "run_id": "20261015-061335-m10-ruler-cwe-llama",
+ "ruler_commit": "c3f5e3b4f87f97e048793bb510a3a6b19a46bf3a",
+ "model": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+ "upstream_template": "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\nBelow is a numbered list of words. In these words, some appear more often than others. Memorize the ones that appear most often.\n{context}\nQuestion: What are the 10 most common words in the above list?<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n Answer: The top 10 words that appear most often in the list are:",
+ "n": 30,
+ "max_seq_length": 32768,
+ "tokens_to_generate": 120,
+ "by_source": {
+  "up_raw": {
+   "acc": 0.01,
+   "n_zero": 29,
+   "n_full": 0,
+   "n_generic_answer": 29,
+   "median_prompt_tokens": 32555,
+   "median_list_items": 5997,
+   "median_distinct": 1909,
+   "gold_count_min_median": 30,
+   "bos_prefix": [
+    2
+   ],
+   "bos_total": [
+    3
+   ]
+  },
+  "up_nobos": {
+   "acc": 0.06,
+   "n_zero": 27,
+   "n_full": 0,
+   "n_generic_answer": 27,
+   "median_prompt_tokens": 32554,
+   "median_list_items": 5997,
+   "median_distinct": 1909,
+   "gold_count_min_median": 30,
+   "bos_prefix": [
+    1
+   ],
+   "bos_total": [
+    2
+   ]
+  },
+  "m10": {
+   "acc": 0.4767,
+   "n_zero": 12,
+   "n_full": 5,
+   "n_generic_answer": 11,
+   "median_prompt_tokens": 32805,
+   "median_list_items": 6035,
+   "median_distinct": 1927,
+   "gold_count_min_median": 30,
+   "bos_prefix": [
+    1
+   ],
+   "bos_total": [
+    1
+   ]
+  }
+ },
+ "m10_matches_p1_default_llama": "30/30 題的輸出逐字相同"
+}

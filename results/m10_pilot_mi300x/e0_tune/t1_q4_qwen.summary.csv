@@ -1,0 +1,7 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-053846-m10-e0t1-q-q4,qwen,"{""T1"": {""n_queries"": 4}}",T1,1,back,10,0.0,0.0,False,0.25,0.0,False,1.0
+20261015-053846-m10-e0t1-q-q4,qwen,"{""T1"": {""n_queries"": 4}}",T1,1,front,10,0.0,0.0,False,0.225,0.049,False,1.0
+20261015-053846-m10-e0t1-q-q4,qwen,"{""T1"": {""n_queries"": 4}}",T1,1,mid,10,0.025,0.049,False,0.25,0.0,False,1.0
+20261015-053846-m10-e0t1-q-q4,qwen,"{""T1"": {""n_queries"": 4}}",T1,2,back,10,0.2,0.1222,False,0.525,0.1541,False,1.0
+20261015-053846-m10-e0t1-q-q4,qwen,"{""T1"": {""n_queries"": 4}}",T1,2,front,10,0.15,0.1083,False,0.4,0.1497,False,1.0
+20261015-053846-m10-e0t1-q-q4,qwen,"{""T1"": {""n_queries"": 4}}",T1,2,mid,10,0.15,0.1307,False,0.425,0.147,False,1.0

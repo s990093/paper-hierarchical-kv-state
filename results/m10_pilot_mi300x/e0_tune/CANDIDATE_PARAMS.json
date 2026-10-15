@@ -3,13 +3,39 @@
  "decided_utc": "2026-10-15",
  "source": "results/m10_pilot_mi300x/e0_tune/p3_*（seed 2000–2059，和調參數用的 1000–1059 分開）",
  "params": {
-  "llama": {"T1": {}, "T2": {"n_distractors": 100}, "T3": {"n_hops": 6, "n_distractor_chains": 2},
-            "T4": {"max_answer_words": 2}, "T5": {"freq_cw": 40}},
-  "qwen":  {"T1": {}, "T2": {"n_distractors": 150}, "T3": {"n_hops": 4, "n_distractor_chains": 2},
-            "T4": {"max_answer_words": 2}, "T5": {}}
+  "llama": {
+   "T1": {},
+   "T2": {
+    "n_distractors": 100
+   },
+   "T3": {
+    "n_hops": 6,
+    "n_distractor_chains": 2
+   },
+   "T4": {
+    "max_answer_words": 2
+   },
+   "T5": {
+    "freq_cw": 40
+   }
+  },
+  "qwen": {
+   "T1": {},
+   "T2": {
+    "n_distractors": 150
+   },
+   "T3": {
+    "n_hops": 4,
+    "n_distractor_chains": 2
+   },
+   "T4": {
+    "max_answer_words": 2
+   },
+   "T5": {}
+  }
  },
  "not_in_range": {
-  "T1": "兩個模型都碰天花板（Llama 6/6 格 100%，Qwen 4/6 格 100%）；沒有可以調難的參數。照 03 §3.2：照實記錄，不進該模型的主判準；連續指標（gold log-prob、KL）照記",
+  "T1": "10/15 使用者選「另做更難的版本」。m10_tasks 的 T1 加了兩組參數（預設＝不變）：n_queries（一次問幾個鍵，上游 niah_multiquery 的做法）、n_similar／similar_prefix（每個被問的鍵配幾根前綴相同的「相似鍵」干擾針，我們加的、上游沒有）。只跑 E0、seed 1000 起、每組 30 題（每格 10 題）：\n(1) 相似鍵：20 根前綴 24／30／33／34、50 根前綴 34、15 根前綴 35（只差最後 1 個字元），兩個模型每格仍 0.70–1.00，多數 1.00——調不動。\n(2) n_queries＝4：第 1 輪 Llama 0.47–0.53、Qwen 0.23–0.25，但寫到 128 token 上限的比例 0.9–1.0；n_queries＝2＋相似鍵 10 根前綴 30：Llama 第 1 輪 0.65–0.90（上限比例 0–0.3）、Qwen 0.35–0.50（上限比例 1.0）。掉分主要是生成長度不夠（Qwen 第 1 輪逐鍵重寫「For <鍵>: <值>」），不是檢索變難；截在 64 token 時 Llama 第 1 輪只剩 0.30–0.40、Qwen 0.00–0.05。\n結論：在使用者定的 T1 生成上限 64 token 下，T1 調不到 60–95%，參數維持預設（{}），照 03 §3.2 不進主判準、連續指標照記。若要放寬 T1 的生成長度到 128，只有 Llama 的 n_queries＝2＋相似鍵在範圍內，Qwen 仍不行（長度問題），需要使用者決定。\nrun_id：20261015-053838 → -053852（m10-e0t1-{l,q}-{q4,s20p24,s20p30,q2s10p30}）、20261015-061237 → -061251（m10-e0t1-{l,q}-{s20p33,s20p34,s50p34,s15p35}）；檔案 e0_tune/t1_*_{llama,qwen}.csv（.summary.csv）。沒有範圍內的候選，所以沒做新 seed（2000 起）的確認輪。",
   "T3_borderline": "Llama 第 2 輪 mid 0.59、Qwen 第 2 輪 front 0.58（每格 20 題，CI ±0.12）"
  },
  "seeds": "正式題目請用 10000 起，避開調難度用過的 1000–1059、2000–2059",

@@ -5,7 +5,7 @@
 > **標記**：〔wiki〕＝wiki 原文；〔推論〕＝我們推的、沒在叢集上試過；沒量的寫 NOT_MEASURED。登入後量到的值要填回 §3 的表，並記進 `results/RUNLOG_H200.md`（新開，比照 `RUNLOG_MI300X.md`）。
 > 平台 A（3090）看 `CLAUDE.md`；平台 B（MI300X）看 [`MI300X_MLSTEAM.md`](MI300X_MLSTEAM.md)。
 >
-> 最後更新：2026-10-14
+> 最後更新：2026-10-15（§4.3、§5.2、§5.3 改成以已寫好的 `env_h200.sh`、`tiara.sbatch`、`gpu_guard.py` 為準；加 `r_h200.sh`）
 
 **一句話**：用學校帳號填表申請（Lab 選 `ChihChungHsu`）→ 收到 OpenVPN 帳密 → VPN＋ssh 登入 head node → 用 Slurm 在 `h200q` 排一張卡跑。精度這週（[`precision_20261013/03_plan_h200.md`](precision_20261013/03_plan_h200.md)）所有會產生數字的 GPU 量測都改在 H200 上跑，**不和 3090、MI300X 的數字混用**。
 
@@ -171,25 +171,21 @@ huggingface-cli download Qwen/Qwen2.5-7B-Instruct-1M  --revision e28526f7bb80e2a
 
 ```bash
 git clone https://github.com/s990093/paper-hierarchical-kv-state.git ~/paper-hierarchical-kv-state
+cd ~/paper-hierarchical-kv-state
+source code/env_h200.sh --print      # 印出所有路徑，標出哪些還 MISSING（R0 時用）
 ```
 
-要新寫 `code/env_h200.sh`（比照 `code/m7_env.sh`），內容〔推論，未在叢集上試過〕：
+**以 `code/env_h200.sh` 為準**（2026-10-15 已寫好；這一節原本的範例已過時）。它做的事：
 
-```bash
-# source 這支：平台 C（H200，Slurm）
-module load miniconda3
-eval "$(conda shell.bash hook)"          # batch job 裡 conda activate 需要這行
-conda activate tiara
-export REPO=$HOME/paper-hierarchical-kv-state
-export HF_HOME=$HOME/hf-cache
-export TIARA_RUNS=$HOME/tiara-runs
-export M7_MODEL_GLOB="$HF_HOME/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*"
-export PYTHONUNBUFFERED=1
-# 不要設 CUDA_VISIBLE_DEVICES：Slurm 會依 --gres 自己設
-```
+- 啟用 conda 環境 `tiara`：先試 `module load miniconda3`，不行再找 `/cm/shared/apps/miniconda3`；batch job 裡也能用（`eval "$(conda shell.bash hook)"`）。
+- 路徑全部是 `${VAR:-預設}`，source 之前先 `export` 就能蓋掉：`REPO`、`TIARA_HOME`（預設 `$HOME`，R0 確認）、`HF_HOME`、`TIARA_RUNS`、`TIARA_DATASETS`、`TIARA_FONTS`、`PAPER_HKV_PYLIBS`、`M10_HOTPOT`。
+- 模型指到**固定 revision 的 snapshot**（§4.2）：`M7_LLAMA_GLOB`、`M7_QWEN_GLOB`；`M7_MODEL_GLOB` 預設 Llama。
+- 第一階段程式的平台參數：`M7_RES`（結果目錄 `results/m7_write_policy_h200`）、`M7_TIER_PARAMS`（限速層參數沿用 MI300X 的 `tier_params.json`，03 §R2）、`M7_DISK`（`Guard` 記磁碟 I/O 的裝置名，**預設 `R0_UNSET`，R0 的 `h200_probe.sh` 會給建議值，填好之前 Guard 會丟錯**，規則 7）、`M7_VLLM_VENV`（＝目前的 conda 環境）。
+- `CUDA_DEVICE_ORDER=PCI_BUS_ID`（多卡時 torch 和 nvidia-smi 的編號順序一致，§5.3）。**不設 `CUDA_VISIBLE_DEVICES`**：交給 Slurm 依 `--gres` 設。
+- 定義 `m7run <短名> <指令...>`：和平台 B 同介面，每一步用 `code/tiara.sbatch` 包成一個 run 目錄。
+- 注意：每次 source 都會 `mkdir -p "$TIARA_RUNS" "$M7_RES"`。
 
-- `code/m7_model.py` 的模型路徑預設是 `/mlsteam/...`，靠 `M7_MODEL_GLOB` 換。
-- migration README §2.3：還有約 40 個檔寫死 `/mlsteam/...`。這週用得到的腳本才改，一律改成讀環境變數。
+`code/m7_env.sh` 在沒有 `/mlsteam/workspace/venv/tiara` 的機器上會自動改 source `env_h200.sh`，所以第一階段的 `m7_run_phase1*.sh` 不用改。
 
 ---
 
@@ -204,44 +200,31 @@ export PYTHONUNBUFFERED=1
 
 ### 5.2 記錄殼（`CLAUDE.md` §4.1 的 Slurm 版）
 
-要新寫 `code/tiara.sbatch`〔推論，未在叢集上試過〕：
+**以 `code/tiara.sbatch` 為準**（2026-10-15 已寫好；原本這裡的範本已過時，差別如下）：
 
 ```bash
-#!/bin/bash
-#SBATCH --partition=h200q
-#SBATCH --account=ChihChungHsu
-#SBATCH --gres=gpu:1
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=170G
-#SBATCH --time=12:00:00
-#SBATCH -o slurm-%x-%j.out
-#SBATCH -e slurm-%x-%j.err
-# 用法：sbatch --job-name=<短名> code/tiara.sbatch <指令...>
-source "$HOME/paper-hierarchical-kv-state/code/env_h200.sh"
-RUN_ID=$(date +%Y%m%d-%H%M%S)-$SLURM_JOB_NAME
-RUN=$TIARA_RUNS/$RUN_ID; mkdir -p "$RUN"
-printf '%q ' "$@" > "$RUN/cmd.sh"; echo >> "$RUN/cmd.sh"          # 1. 指令
-{ date -Is                                                        # 2. 環境
-  echo "slurm_job_id=$SLURM_JOB_ID node=$SLURMD_NODENAME cuda_visible=$CUDA_VISIBLE_DEVICES"
-  nvidia-smi --query-gpu=index,name,memory.used,driver_version --format=csv
-  git -C "$REPO" rev-parse HEAD
-  scontrol show job "$SLURM_JOB_ID"
-  squeue -w "$SLURMD_NODENAME" -h -o '%i %u %b %T'                # 同節點有誰（§5.3）
-} > "$RUN/context.txt" 2>&1
-cd "$REPO"
-RUN_ID=$RUN_ID bash "$RUN/cmd.sh" > "$RUN/stdout.log" 2> "$RUN/stderr.log"   # 3. 跑
-echo $? > "$RUN/exit_code"
-squeue -w "$SLURMD_NODENAME" -h -o '%i %u %b %T' > "$RUN/cotenants_end.txt" 2>&1
+sbatch --job-name=<短名> code/tiara.sbatch <指令...>      # 在 repo 根目錄送出
+# 一個 job 裡依序跑多步：在 job 裡 source code/env_h200.sh，再用 m7run <短名> <指令...>（每步一個 run 目錄）
 ```
 
+- **找 repo 的順序**：`$REPO` → `$SLURM_SUBMIT_DIR` → 這支檔案的上一層 → `$HOME/paper-hierarchical-kv-state`。sbatch 會把腳本複製到 spool，所以不能只靠 `$0`；原範本寫死 `$HOME/paper-...` 的 source 路徑已拿掉。
+- **只用 `-o slurm-%x-%j.out`**（`*.out` 已 gitignore）。原範本另有 `-e slurm-%x-%j.err`，`.err` 沒有被 gitignore，拿掉了；stderr 一律進 run 目錄的 `stderr.log`。
+- 產出：`$TIARA_RUNS/<RUN_ID>/{cmd.sh,context.txt,stdout.log,stderr.log,exit_code,cotenants_end.txt}`。
+  - `cmd.sh` 用 `printf '%q '` 寫（含空白、引號的參數不會被拆壞；runsh 2026-10-10 的修正）。
+  - `context.txt`：時間、`SLURM_JOB_ID`、節點、`CUDA_VISIBLE_DEVICES`、nvidia-smi（GPU 與 compute apps）、git HEAD 與未提交的檔數、torch 版本、`TIARA_／M7_／HF_HOME／CUDA_` 環境變數、`scontrol show job`、同節點的 job（`squeue -w`）。
+  - `cotenants_end.txt`：結束時同節點的 job。
+- 不在 Slurm job 裡（沒有 `SLURM_JOB_ID`）就拒跑（head node 不跑會產生數字的指令，§5.1）。
 - 48 小時是硬上限。精度計劃估的品質實驗約 8–9 小時、速度約 1–2 小時〔`03_plan_h200.md` §3、§4.2，推論〕，單一 job 放得下；但腳本還是要能從中斷處接著跑（已完成的 `item_id` 跳過），被砍掉不用整批重來。
+
+**§R（第一階段復現）一個 job 跑完**：`sbatch code/r_h200.sh`（R1 正確性 → R2 校準 → R3 復現 → 兩台並排比較）。`bash code/r_h200.sh --dry-run` 在任何機器上印出每一步的指令；被砍時 `sbatch code/r_h200.sh --from <步驟名>` 接著跑（`--list` 看步驟名；接著跑之前先處理被中斷那一步已附加寫入的 CSV 列）。判定由 `code/m7_repro_compare.py compare` 產生 `results/m7_write_policy_h200/repro_verdict.json`、`repro_vs_mi300x.csv`（只比方向，03 §R3）。
 
 ### 5.3 ⚠️ `gpu_guard` 在 Slurm 裡可能誤報「乾淨」（`CLAUDE.md` 規則 7）
 
 - `host_contention()` 在 NVIDIA 上，是看 `nvidia-smi` 列出的**其他卡**上有沒有外來 process（`code/gpu_guard.py` 的 `host_contention`）。
 - 如果 Slurm 限制了 job 看得到的裝置，job 裡的 `nvidia-smi` 只會列出自己那張卡〔推論；§3 要量〕。這時同節點其他卡上別人的 job 完全看不到，函式會回 `QUIET`。
 - 這正是規則 7 說的「查不到被當成沒有」。PCIe 和 host 記憶體頻寬是整台共用的，別人的 job 會拖慢「把 KV 從 CPU 搬回 GPU」的量測（3090 上量過：灌水 26–52%，`gpu_guard.py` docstring 引 RUNLOG 發現 5）。
-- **要改的程式**：在 Slurm job 裡，如果看得到的卡比節點上的卡少，`level` 要回 `UNOBSERVABLE_HOST`（和 AMD 容器同一個處理）。另外把 `squeue -w <node>` 的快照記進每一列（上面的殼已經記在 run 目錄）。
+- **已改的程式**（2026-10-15）：在 Slurm job 裡，看得到的卡比節點上的卡少（或節點卡數從 `scontrol show node` 查不到），`host_contention()` 回 `UNOBSERVABLE_HOST`（和 AMD 容器同一個處理）；`python code/gpu_guard.py --host` 印出整機的判定，`--check <卡>` 在 Slurm 裡會多印一行 `host: <level>`。`squeue -w <node>` 的快照記在每個 run 目錄（§5.2）。
+- **另一個風險：看錯卡**。如果節點沒有用 cgroup 限制裝置，job 裡的 `nvidia-smi` 會列出整台的卡，job 的 `cuda:0` 可能是 nvidia-smi 的 3 號；這時 `GpuWatcher(gpu=0)` 會去看別人的卡、對自己那張視而不見，污染被標成乾淨。所以 `m7_write_policy.py`、`m7_guard_run.py` 的 GpuWatcher 改用 `gpu_guard.smi_index(0)`：把 `CUDA_VISIBLE_DEVICES`（編號或 UUID）換成 nvidia-smi 的編號，**對不上就丟 `SmiUnavailable`，不猜**。`env_h200.sh` 設 `CUDA_DEVICE_ORDER=PCI_BUS_ID`，讓兩邊的順序一致。R0 的報告（`h200_probe.sh`）記下 `CUDA_VISIBLE_DEVICES` 和 nvidia-smi 的編號／UUID，用來確認兩邊對得上；`r_h200.sh` 開跑前也會先呼叫一次 `smi_index(0)`，對不上就不跑。
 - **時間數字怎麼辦**：獨占整個節點（`--exclusive`）會超過 lab 4 張卡的上限，不可行〔推論〕。能做的是精度計劃 §4.2 本來就有的設計：**同一次重複裡 6 個配置的順序隨機打散**，配對比較，抵消幾秒內不變的鄰居負載；再加上每個 run 的鄰居快照。報告要寫明「H200 上的時間數字，鄰居負載只能部分觀測」。
 - 品質（分數）不受影響，照 `CLAUDE.md` §3：保留分數，記錄爭用。
 
@@ -270,6 +253,6 @@ squeue -w "$SLURMD_NODENAME" -h -o '%i %u %b %T' > "$RUN/cotenants_end.txt" 2>&1
 2. 收到 VPN 帳密 → Mac 連線 → 改密碼（§2）。
 3. 跑 §3 的探測，填表，記進 `results/RUNLOG_H200.md`。
 4. 建環境、下載模型、記版本（§4）。
-5. 寫 `code/env_h200.sh`、`code/tiara.sbatch`，改 `gpu_guard.py` 的 Slurm 判斷（§4.3、§5.2、§5.3）。
-6. 照 [`03_plan_h200.md`](precision_20261013/03_plan_h200.md) §R 做硬體報告與第一階段復現 → 過了才開始 D0（計劃本身 10/14 已改成 H200）。
+5. ~~寫 `code/env_h200.sh`、`code/tiara.sbatch`，改 `gpu_guard.py` 的 Slurm 判斷（§4.3、§5.2、§5.3）~~（10/15 在 MI300X 上寫好、做過語法與 mock 測試；NVIDIA 上還沒跑過）。
+6. 照 [`03_plan_h200.md`](precision_20261013/03_plan_h200.md) §R 做硬體報告（`bash code/h200_probe.sh`，把建議的 `M7_DISK` 填進 `env_h200.sh`）與第一階段復現（`sbatch code/r_h200.sh`）→ 過了才開始 D0（計劃本身 10/14 已改成 H200）。
 7. `CLAUDE.md` 加一節「平台 C」（機器表、Slurm 用法、備份規則），指回這一頁。
