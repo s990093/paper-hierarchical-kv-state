@@ -33,7 +33,7 @@ os.makedirs(RD, exist_ok=True)
 os.chdir(RD)  # ROCm 當掉時 gpucore.* 會掉在 cwd：放在 run 目錄
 os.environ.setdefault("VLLM_ENABLE_V1_MULTIPROCESSING", "0")  # 引擎在同一行程，patch 才有效
 
-MODEL_GLOB = "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*"
+MODEL_GLOB = os.environ.get("M7_LLAMA_GLOB") or "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*"   # H200：env_h200.sh
 GIB = 2 ** 30
 KV_BYTES_PER_TOKEN = 32 * 8 * 128 * 2 * 2  # Llama-3.1-8B bf16：128 KiB
 

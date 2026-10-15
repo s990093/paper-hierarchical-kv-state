@@ -39,8 +39,9 @@ export SLURM_CONF ?= /cm/shared/apps/slurm/etc/slurm/slurm.conf
 endif
 RUNS ?= $(HOME)/tiara-runs
 JOBNAME = r-h200-all
+RESTNAME = r-h200-rest
 
-.PHONY: help queue queue-watch status log runs submit test-submit cancel probe dry-run env-check setup setup-check usage
+.PHONY: help queue queue-watch status log runs submit submit-rest test-submit cancel probe dry-run dry-run-rest env-check setup setup-check usage
 
 help:
 	@echo "H200（在 repo 根目錄、head node 上用）"
@@ -51,9 +52,11 @@ help:
 	@echo "  make runs          最近 15 個 run 目錄與 exit code（\$$(RUNS)=$(RUNS)）"
 	@echo "  make test-submit   只問 Slurm 預估什麼時候開始，不送"
 	@echo "  make submit        送 R0＋R1–R3（code/r_h200_all.sh）；已有同名 job 或有未 commit 的改動就不送"
+	@echo "  make submit-rest   送第一階段其餘的實驗（code/r_h200_rest.sh）：接在 $(JOBNAME) 後面（afterok），它失敗就自動撤回"
 	@echo "  make cancel JOB=<id>  撤回"
 	@echo "  make probe         只送 R0 硬體報告（1 小時）"
 	@echo "  make dry-run       印出 R1–R3 每一步的指令（不用 GPU）"
+	@echo "  make dry-run-rest  印出 r_h200_rest.sh 每一步的指令"
 	@echo "  make env-check     印出 env_h200.sh 的所有路徑、標出 MISSING"
 	@echo "  make setup / setup-check   下載模型與資料並檢查 sha256／只檢查"
 	@echo "  make usage         lab 內每個人的用量與 fairshare（協調用）"
@@ -92,6 +95,17 @@ submit:
 	@sbatch --test-only code/r_h200_all.sh 2>&1 | tail -1
 	sbatch code/r_h200_all.sh
 
+submit-rest:
+	@j=$$(squeue -h -u $(USER) -n $(RESTNAME) -o '%i %T'); \
+	if [ -n "$$j" ]; then echo "已經有 $(RESTNAME)：$$j。要重送先 make cancel JOB=<id>"; exit 1; fi
+	@git diff --quiet && git diff --cached --quiet || \
+	  { echo "有未 commit 的改動：job 開跑時才讀 repo，會跑到沒 commit 的版本。先 commit 再送"; git status --short; exit 1; }
+	@dep=$$(squeue -h -u $(USER) -n $(JOBNAME) -o '%i' | head -1); \
+	if [ -n "$$dep" ]; then echo "接在 $(JOBNAME) $$dep 後面（afterok；它沒過就自動撤回）"; \
+	  sbatch --dependency=afterok:$$dep --kill-on-invalid-dep=yes code/r_h200_rest.sh; \
+	else echo "沒有排隊中的 $(JOBNAME)：直接送（r_h200_rest.sh 開跑時會檢查 R3 的 repro_verdict.json）"; \
+	  sbatch code/r_h200_rest.sh; fi
+
 cancel:
 	@[ -n "$(JOB)" ] || { echo "用法：make cancel JOB=<job id>（make status 看 id）"; exit 1; }
 	scancel $(JOB)
@@ -102,6 +116,9 @@ probe:
 
 dry-run:
 	@bash code/r_h200.sh --dry-run
+
+dry-run-rest:
+	@bash code/r_h200_rest.sh --dry-run
 
 env-check:
 	@bash -c 'source code/env_h200.sh --print'
