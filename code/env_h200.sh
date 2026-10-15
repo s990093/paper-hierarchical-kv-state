@@ -80,14 +80,23 @@ export M7_MODEL_GLOB="${M7_MODEL_GLOB:-$M7_LLAMA_GLOB}"
 export M7_RES="${M7_RES:-$REPO/results/m7_write_policy_h200}"
 # 03 §R2：限速層參數沿用 MI300X 的 tier_params.json（R3 只換 GPU、不換「裝置」）
 export M7_TIER_PARAMS="${M7_TIER_PARAMS:-$REPO/results/m7_write_policy_mi300x/tier_params.json}"
-# Guard 記錄磁碟 I/O 用的 /proc/diskstats 裝置名。R0 確認（h200_probe.sh 會印建議值）。
-# 沒設時故意給一個不存在的名字：Guard 會丟錯，不會靜默記成 0（CLAUDE.md 規則 7）
-export M7_DISK="${M7_DISK:-R0_UNSET}"
+# Guard 記錄磁碟 I/O 用的 /proc/diskstats 裝置名。
+# 10/16 R0 確認（run 20261016-061012-h200-probe 的 probe/m7_disk.tsv）：hgx-cn01 上 TIARA_RUNS 在 /dev/md1（ext4）→ md1。
+# 換節點時要重做 R0；r_h200.sh 開跑前會檢查它在 /proc/diskstats 裡，不在就停（CLAUDE.md 規則 7）
+export M7_DISK="${M7_DISK:-md1}"
 export M7_VLLM_VENV="${M7_VLLM_VENV:-${CONDA_PREFIX:-}}"       # vLLM 和 harness 同一個 conda 環境
 export M7_EXTRA_PATH="${M7_EXTRA_PATH-}"                       # 平台 B 是 /opt/rocm/bin；這裡不需要（空字串）
 
 export PYTHONUNBUFFERED=1
 export CUDA_DEVICE_ORDER=PCI_BUS_ID      # 多卡時 torch 和 nvidia-smi 的編號順序一致（gpu_guard.smi_index）
+
+# vLLM 0.28 的 top-k／top-p 取樣器預設用 FlashInfer，第一次用時要 JIT 編譯（要 nvcc）。
+# 10/16 job 20417 的 R2-C6 在這裡失敗：「Could not find nvcc and default cuda_home='/usr/local/cuda' doesn't exist」
+# （run 20261016-074652-m7h-c6-vllm）。環境裡有 pip 的 nvcc 13.4（nvidia-cuda-nvcc），但 CUDA_HOME 指過去也編不過：
+# 執行期標頭是 13.0（nvidia-cuda-runtime 13.0.96、torch cu130），cccl 報「CUDA compiler and CUDA toolkit headers are incompatible」。
+# 所以改用 vLLM 的 PyTorch 取樣器。量測的請求都是 temperature=0（貪婪，不經過 top-k／top-p），
+# 只有暖機請求會用到；MI300X（ROCm）本來就不走 FlashInfer。不設 CUDA_HOME：deep_gemm 等其他 JIT 路徑維持原狀。
+export VLLM_USE_FLASHINFER_SAMPLER="${VLLM_USE_FLASHINFER_SAMPLER:-0}"
 
 R="$M7_RES"                              # m7_run_phase1*.sh 用 $R 當結果目錄
 # 不在這裡 mkdir（10/15 改：每次 source 都建空目錄，dry-run 會留下 results/m7_write_policy_h200）。

@@ -43,7 +43,7 @@ RESTNAME = r-h200-rest
 LAF2NAME = r-h200-la-f2
 QWNAME = r-h200-qwen3
 
-.PHONY: help queue queue-watch status log runs gpu nvtop submit submit-rest submit-r1x test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
+.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
 
 help:
 	@echo "H200（在 repo 根目錄、head node 上用）"
@@ -56,6 +56,7 @@ help:
 	@echo "  make nvtop [JOB=<id>]  進正在跑的 job 開 nvtop（q 離開；nvtop 裝在 ~/.conda/envs/tools，不在 tiara 環境）"
 	@echo "  make test-submit   只問 Slurm 預估什麼時候開始，不送"
 	@echo "  make submit        送 R0＋R1–R3（code/r_h200_all.sh）；已有同名 job 或有未 commit 的改動就不送"
+	@echo "  make resume FROM=<步驟>  R1–R3 中途停了（R0 已過）：從那一步接著跑（code/r_h200.sh --from；步驟名 bash code/r_h200.sh --list）"
 	@echo "  make submit-rest   送第一階段其餘的實驗（code/r_h200_rest.sh）：接在 $(JOBNAME) 後面（afterok），它失敗就自動撤回"
 	@echo "  make submit-r1x    送第 1 輪的 LongAlpaca＋F2 能耗（$(LAF2NAME)，接在 $(JOBNAME) 後面、和 $(RESTNAME) 平行）"
 	@echo "                     與 Qwen3-30B-A3B（$(QWNAME)，等 $(RESTNAME) 跑完：D2 tier50 會暫寫約 35 GB 到 /work）"
@@ -114,6 +115,19 @@ submit:
 	  { echo "有未 commit 的改動：job 開跑時才讀 repo，會跑到沒 commit 的版本。先 commit 再送"; git status --short; exit 1; }
 	@sbatch --test-only code/r_h200_all.sh 2>&1 | tail -1
 	sbatch code/r_h200_all.sh
+
+# R1–R3 中途停下時（例如 10/16 job 20417 停在 R2-C6）：從那一步接著跑。R0 已過，M7_DISK 讀 env_h200.sh。
+# job 名沿用 $(JOBNAME)：submit-rest／submit-r1x 用這個名字找要接在誰後面。TIME 預設 1 小時（MI300X 上 C6 約 4 分）
+RESUME_TIME ?= 01:00:00
+resume:
+	@[ -n "$(FROM)" ] || { echo "用法：make resume FROM=<步驟名> [RESUME_TIME=01:00:00]（步驟名：bash code/r_h200.sh --list）"; exit 1; }
+	@bash code/r_h200.sh --list | grep -qx -- '$(FROM)' || { echo "沒有叫做 $(FROM) 的步驟（bash code/r_h200.sh --list）"; exit 1; }
+	@j=$$(squeue -h -u $(USER) -n $(JOBNAME) -o '%i %T'); \
+	if [ -n "$$j" ]; then echo "已經有 $(JOBNAME)：$$j。要重送先 make cancel JOB=<id>"; exit 1; fi
+	@git diff --quiet && git diff --cached --quiet || \
+	  { echo "有未 commit 的改動：job 開跑時才讀 repo，會跑到沒 commit 的版本。先 commit 再送"; git status --short; exit 1; }
+	@sbatch --test-only --job-name=$(JOBNAME) --time=$(RESUME_TIME) code/r_h200.sh --from $(FROM) 2>&1 | tail -1
+	sbatch --job-name=$(JOBNAME) --time=$(RESUME_TIME) code/r_h200.sh --from $(FROM)
 
 submit-rest:
 	@j=$$(squeue -h -u $(USER) -n $(RESTNAME) -o '%i %T'); \

@@ -108,11 +108,17 @@ def main():
                 print(L, rep, round(t_cold, 4), round(t_warm, 4), json.dumps(dm)[:300], flush=True)
                 post(base + "/reset_prefix_cache", {})
     finally:
-        os.killpg(p.pid, signal.SIGTERM)
+        # vLLM 已經自己結束時 killpg 會丟 ProcessLookupError，蓋掉真正的錯誤（10/16 job 20417 的 C6）
         try:
+            os.killpg(p.pid, signal.SIGTERM)
             p.wait(60)
+        except ProcessLookupError:
+            pass
         except Exception:
-            os.killpg(p.pid, signal.SIGKILL)
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
         # /dev/shm 的殘留（RUNLOG_MI300X 發現 7、16）
         subprocess.run("ls /dev/shm | head", shell=True)
 
