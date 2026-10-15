@@ -46,7 +46,7 @@
 
 ## Milestone R0–R3 — 硬體報告＋第一階段復現（job 20417）
 
-**狀態**: RUNNING（2026-10-15 21:25:56 送出；**2026-10-16 06:10:10 開始**，hgx-cn01，git `bad42c7`）。R0 PASS、R1 PASS（下面）；R2 的各步 exit 0，06:17:49 進 R3-A0。R2、R3 的數字等 job 結束再寫
+**狀態**: **STOPPED（R2-C6 失敗）**。2026-10-15 21:25:56 送出；2026-10-16 06:10:10 開始（hgx-cn01，git `bad42c7`）；**07:48:33 停在 R2-C6**（sacct：FAILED、exit 1:0、跑了 01:38:23）。R0 PASS、R1 PASS；R2 的 C0–C7-self、R3 的 A0／A1／B 主設定都 exit 0；C6、C6-backend、C4-t2、R-compare 沒跑 → **R3 還沒有判定**。細節見下面「R2-C6 失敗」
 **指令**: `sbatch code/r_h200_all.sh`（在 repo 根目錄；R0 沒過就停，M7_DISK 用 R0 的建議）
 **判準**: `03_plan_h200.md` §R0–§R3（事先寫死）
 
@@ -76,11 +76,59 @@
 **產出檔**: `results/m7_write_policy_h200/correctness_{llama_8k,qwen_8k,qwen_32k}.json`
 **關鍵數字**: 三個檔的 HF 跑兩次位元相同、重算 KV 逐位元相同、GPU↔pinned 往返相同、argmax 相同 → 03 §R1 的逐位元項目全過。對 HF 的 logit 最大差：Llama 8K 0.125、Qwen 8K 0.078125、Qwen 32K 0.125（MI300X Llama 是 0.09375；03 §R1：照實報告，不要求相等）
 
+### R2、R3 已完成的步驟（job 20417，全部 exit 0；數字等 R-compare 跑完一起寫）
+| 步驟 | run_id | 產出檔（`results/m7_write_policy_h200/`） |
+|:--|:--|:--|
+| R2-C0、C0-duplex、C1 | `20261016-061254-m7h-c0`、`…-061303-m7h-duplex`、`…-061311-m7h-c1` | `calib_c0.csv`、`calib_c0_duplex.csv`、`calib_c1.csv` |
+| R2-C5、busy-levels | `…-061331-m7h-c5`、`…-061427-m7h-busy-levels` | `calib_c5.csv`、`busy_levels.json` |
+| R2-C4 t1（same ×1、restart ×10） | `…-061430-m7h-c4-same-t1`、`…-061447`～`…-061655-m7h-c4-restart-t1` | `c4_noise.csv` |
+| R2-C7-self | `…-061709-m7h-c7self` | `calib_c7_self.csv` |
+| R3-A0、A1、B 主設定 | `…-061749-m7h-a0`、`…-062450-m7h-a1`、`…-063929-m7h-b-nfs-gap0` | `a0.csv`、`a1_share.csv`、`b_share.csv`、`b_workload_seed0.json` |
+
+沒有任何 run 目錄有 `CONTAMINATED`。
+
+### R2-C6 失敗 — job 20417 停下（2026-10-16 07:48）
+**run_id**: `20261016-074652-m7h-c6-vllm`（exit 1）
+**指令**: `python code/m7_c6_vllm.py --out results/m7_write_policy_h200/c6_vllm.csv --reps 6`（vLLM 0.28.0 serve Llama-3.1-8B＋OffloadingConnector；`vllm_cmd.txt`）
+**錯誤**（`vllm_server.log`；vLLM 在 warmup 的取樣步驟 JIT 編譯 FlashInfer 的 top-k／top-p 取樣器）:
+```
+(EngineCore) [topk_topp_sampler.py:62] Using FlashInfer for top-p & top-k sampling.
+(EngineCore) ... warmup_kernels → sample_tokens → flashinfer_sample(processed_logits, top_k, top_p)
+(EngineCore)   File ".../flashinfer/jit/cpp_ext.py", line 61, in get_cuda_path
+(EngineCore) RuntimeError: Could not find nvcc and default cuda_home='/usr/local/cuda' doesn't exist
+(APIServer) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
+```
+`m7_c6_vllm.py` 的 stderr 最後是 `ProcessLookupError: [Errno 3] No such process`（收尾時 `os.killpg` 一個已經結束的 vLLM，蓋掉了上面的 `RuntimeError: vllm exited`）。
+同一個 log 另有 `vllm.third_party.deep_gemm ... failed to import`（也是找不到 CUDA home；只是警告，BF16 不用 deep_gemm）。
+c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
+
+**連帶**: 20454 `r-h200-rest`、20544 `r-h200-la-f2`、20545 `r-h200-qwen3` 的 afterok 條件不成立 → 07:48:33 被 Slurm 撤回（CANCELLED，沒有開始）。
+
+**原因調查**（head node，不用 GPU；暫存目錄，結果不進 results/）:
+- conda 環境裡有 pip 裝的 nvcc（`nvidia-cuda-nvcc` 13.4.92，`site-packages/nvidia/cu13/bin/nvcc`），但不在 PATH、CUDA_HOME 也沒設，所以 FlashInfer 找不到。
+- 試過把 `CUDA_HOME` 指過去、只編譯取樣器（`FLASHINFER_CUDA_ARCH_LIST=9.0a`，`gen_sampling_module().build()`）：**編不過**，
+  `flashinfer/data/cccl/libcudacxx/include/cuda/std/__cccl/cuda_toolkit.h:41: #error "CUDA compiler and CUDA toolkit headers are incompatible"`。
+  環境裡的 CUDA 套件版本不一致：nvcc 13.4、執行期 `nvidia-cuda-runtime` 13.0.96（torch 2.13.0+cu130）、`nvidia-cuda-cccl` 13.3。要讓 JIT 能用得改套件版本，風險比下面的做法大。
+- R0（`h200_probe.sh`）和送出前的檢查都沒有在 compute node 上真的啟動過 vLLM，所以沒抓到。
+
+**修正（2026-10-16，還沒送出；等使用者同意）**:
+1. `code/env_h200.sh`：`VLLM_USE_FLASHINFER_SAMPLER=0`（vLLM 0.28 的開關；改用 PyTorch 的 top-k／top-p 取樣器）。理由：
+   量測用的請求都是 `temperature=0`（`m7_c6_vllm.py`、`m7_vllm_f.py`、`m8_vllm_drop.py`），貪婪取樣不經過 top-k／top-p，只有暖機請求會用到；
+   MI300X（ROCm）本來就不走 FlashInfer 取樣器。不設 CUDA_HOME，deep_gemm 等其他路徑維持原狀。
+   head node 上確認 vLLM 讀到的值：`vllm.envs.VLLM_USE_FLASHINFER_SAMPLER` = False。
+2. `code/m7_c6_vllm.py`：收尾的 `os.killpg` 遇到 `ProcessLookupError` 不再丟錯（只改收尾，量測不變）。
+3. `code/r_h200.sh` 的 R2-C6-backend：grep 多抓 `sampl`，把實際用的取樣器記進 `c6_vllm_backend.txt`。
+4. `code/env_h200.sh`：回填 `M7_DISK=md1`（R0 的建議，`probe/m7_disk.tsv`）。接著跑的 `r_h200.sh --from` 需要它。
+5. Makefile：`make resume FROM=<步驟>`（＝`sbatch --job-name=r-h200-all --time=01:00:00 code/r_h200.sh --from <步驟>`；用同一個 job 名，submit-rest／submit-r1x 才接得上）。
+- 其他會起 vLLM 的步驟（r-h200-rest 的 P3 vllmf2、P4 D2；r1x 的 LA／QM vllmf2）都 source `env_h200.sh`，一起套用。
+  Qwen3-30B-A3B（MoE）：vLLM 0.28 在 SM90 上未量化的 MoE 優先用 Triton（`fused_moe/oracle/unquantized.py`：FlashInfer 的 MoE 在 Hopper 排到後面），不會走 FlashInfer JIT。
+- **還沒在 GPU 上驗證**：接著跑的第一步就是 R2-C6，沒起來就會再停。
+
 ---
 
 ## Milestone R-rest — 第一階段其餘的 GPU 實驗（`code/r_h200_rest.sh`）
 
-**狀態**: PENDING（job 20454，2026-10-15 23:51 `make submit-rest` 送出，`--dependency=afterok:20417 --kill-on-invalid-dep=yes`、`--time=30:00:00`；R3 不重現就自動撤回）
+**狀態**: **CANCELLED，要重送**。job 20454（2026-10-15 23:51 `make submit-rest` 送出，`--dependency=afterok:20417 --kill-on-invalid-dep=yes`、`--time=30:00:00`）在 2026-10-16 07:48:33 因 20417 失敗被 Slurm 撤回，沒有開始
 **決定**: 2026-10-15 使用者：「先把所有東西都復現，第二階段不動」。MI300X 到 10/23 到期。
 **指令**: `make submit-rest`（＝`sbatch --dependency=afterok:<r-h200-all> --kill-on-invalid-dep=yes code/r_h200_rest.sh`）；每一步的指令：`make dry-run-rest`（28 步）
 **範圍**（MI300X 上付費跑過、只用 Llama-3.1-8B、R3 沒涵蓋的；指令照 `docs/migration_20261013/inventory/run_commands.tsv`，只換路徑）:
@@ -106,7 +154,7 @@
 
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
-**狀態**: PENDING（2026-10-16 06:3x `make submit-r1x` 送出，git `53f22a0`）：**job 20544** `r-h200-la-f2`（afterok:20417）、**job 20545** `r-h200-qwen3`（afterok:20417,afterany:20454）
+**狀態**: **CANCELLED，要重送**。2026-10-16 06:3x `make submit-r1x` 送出（git `53f22a0`）的 job 20544 `r-h200-la-f2`（afterok:20417）、job 20545 `r-h200-qwen3`（afterok:20417,afterany:20454），07:48:33 因 20417 失敗被撤回，都沒有開始
 **注意**: 這兩個 commit（`b1c74cb`、`53f22a0`）是在 20417 執行中做的；20417 之後的 run 的 context.txt 會記成新的 HEAD，但它用到的檔案和 `bad42c7` 相同（這兩個 commit 只改 m9_f2_*、Makefile、新檔、RUNLOG、R0 的產出）
 **決定**: 2026-10-16 06:1x 使用者對兩項都說「好」：下載 LongAlpaca-7B 和 Qwen3-30B-A3B（約 71 GiB）、F2 改成 NVML 再跑
 **指令**: `make submit-r1x`，送出兩個 job：
