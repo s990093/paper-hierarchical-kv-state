@@ -185,7 +185,8 @@ def table(ref, x, group_keys=("task", "turn", "band")):
 def cmd_quality(a):
     rows = load_rows(a.csv)
     rows = [r for r in rows if r["model"] == a.model]
-    if a.strip_fmt:                          # 例：INT4 階的 "E1@int4_kivi" → "E1"；只改這個格式的列
+    if a.strip_fmt:                          # 例：INT4 階的 "E1@int4_kivi" → "E1"；只留 E0 和這個格式的列（同名的 FP8 列丟掉）
+        rows = [r for r in rows if r["config"] == "E0" or r["config"].endswith("@" + a.strip_fmt)]
         for r in rows:
             name, _, f = r["config"].partition("@")
             if f == a.strip_fmt:
