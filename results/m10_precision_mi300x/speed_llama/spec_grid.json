@@ -1,27 +1,15 @@
 {
  "model": "llama",
- "fmt": "fp8_token",
+ "fmt": "int8_token",
  "new_tokens": 256,
  "lengths": [
-  32768,
-  8192,
-  16384
+  32768
  ],
  "main_length": 32768,
  "configs": [
-  "E0",
-  "E1",
-  "E1s",
-  "E1sr",
-  "F25",
-  "M25",
-  "B25",
-  "R25"
+  "E1s"
  ],
- "refs": [
-  "E0",
-  "E1"
- ],
+ "refs": [],
  "tiers": [
   {
    "name": "b16",
@@ -55,7 +43,7 @@
  ],
  "reps": 10,
  "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_llama",
- "blocks_out": "/mlsteam/data/tiara/runs/20261015-161226-m10-grid-fp8-llama/blocks.csv",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261015-192112-m10-grid-2b-int8_token-llama/blocks.csv",
  "verify": true,
  "argv": [
   "/mlsteam/workspace/paper-hierarchical-kv-state/code/m10_speed.py",
@@ -63,15 +51,19 @@
   "--model",
   "llama",
   "--fmt",
-  "fp8_token",
+  "int8_token",
   "--base-fmt",
   "fp8_token",
+  "--configs",
+  "E1s",
+  "--refs",
+  "--lengths",
   "--out-dir",
   "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_llama",
   "--bw-json",
   "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_llama/bw.json",
   "--blocks-out",
-  "/mlsteam/data/tiara/runs/20261015-161226-m10-grid-fp8-llama/blocks.csv"
+  "/mlsteam/data/tiara/runs/20261015-192112-m10-grid-2b-int8_token-llama/blocks.csv"
  ],
- "run_id": "20261015-161226-m10-grid-fp8-llama"
+ "run_id": "20261015-192112-m10-grid-2b-int8_token-llama"
 }

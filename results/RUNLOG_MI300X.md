@@ -417,6 +417,20 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **佇列腳本**：
   - 30／35／55／60／85／86／88 開頭的 `git log … | grep -q .` 在 `pipefail` 下回 141（SIGPIPE），會被當成「07 沒凍結」而整段失敗。改成 `[ -n "$(git log -1 …)" ]`，每段的出題腳本都乾跑過。
   - `pool.py` 加 `pool_skip.txt`（名稱前綴；判定流程走不到的封存工作開跑前略過，log 記 skipped）。
-- **佇列順序**：21 → 22（Qwen 重量）→ 30 → 35（新：FP8 混合配置 F25／M25／B25／R25，兩個模型，Qwen 先，封存）→ 55（只留 FP8 的 T1／LB，加 FP8 混合的 T1）→ 60 → 70 → 75 → 80（INT4 格子，原 40）→ 85／86（原 50／51）→ 88（從 55 拆出的 INT4 T1／LB，要用 80 的會合點）。
+- **佇列順序**：21 → 22（Qwen 重量）→ 23（Qwen E1-INT8 速度重量，10.5）→ 30 → 35（新：FP8 混合配置 F25／M25／B25／R25，兩個模型，Qwen 先，封存）→ 55（只留 FP8 的 T1／LB，加 FP8 混合的 T1）→ 60 → 70 → 75 → 80（INT4 格子，原 40）→ 85／86（原 50／51）→ 88（從 55 拆出的 INT4 T1／LB，要用 80 的會合點）。
   - 理由：Qwen 的 K1／K1s 被速度不輸擋住 → 「兩個模型都過 → INT4」幾乎走不到，Step 2 的機率變高。
 - **spec 檔**：`spec_grid.json` 每次 grid 都會覆寫。FP8 那次另存 `spec_grid_fp8.json`（Llama 從 git 取回）；之後的段落自動另存。
+
+### 10.5 Step 2b 的速度（stage 21，19:13 → 19:41 UTC）
+
+- **run_id**：`20261015-191338-m10-grid-2b-fp8k0_token-llama`、`-192112-m10-grid-2b-int8_token-llama`、`-192845-m10-grid-2b-fp8k0_head-qwen`、`-193516-m10-grid-2b-int8_token-qwen`
+- **指令**：`m10_speed.py grid --model <m> --fmt <F> --base-fmt <G> --configs E1s --refs --lengths --out-dir speed_<m> …`（32K、只有 E1s、4 頻寬 × 閒／忙、3 process × 10 次）；`summary.csv` → `summary_2b_<F>.csv`
+- **GPU 監控**：11／12 個 process CLEAN。**`-193516-…-int8_token-qwen` 的 L1 `CONTAMINATED_DURING_RUN`**：
+  - 內容：1 筆 pid −1，19:39:35.79。
+  - 時間點：L1 最後一列（忙）19:39:35 之後、L2 第一列 19:40:26 之前，也就是 `m7_busy` 收尾那一刻。和 10.3 同一個機制；stage 21 刻意沒開修正。
+  - 240 列的 `contaminated_gpu` 全是 False。
+  - 處理：照 CLAUDE.md §3 排 stage 23 重量（輸出 `speed_qwen_regrid/summary_2b_int8_token.csv`），`analyze_2b.sh` 改吃重量那次。
+- **meets.json**：合併進 `E1s@fp8k0_token`／`E1s@int8_token`（Llama，b32 閒／忙＝24／14）、`E1s@fp8k0_head`／`E1s@int8_token`（Qwen，23／14）。給 stage 30 讀法 B 用。
+- **速度不輸預覽**（`m10_analyze.py speed --x-summary`，輸出在 scratch；對 FP8 格子的混合配置）：
+  - E1-INT8 兩個模型 8 格全過。CPU・忙：Llama 1.019、Qwen 1.070。
+  - E1-K0 兩個模型都在 CPU・忙沒過（Llama 1.094 > 1.05；Qwen 1.178 > 1.094），其他 7 格全過。

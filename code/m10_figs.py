@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import json
 import os
 import statistics
@@ -77,7 +78,8 @@ def save(fig, out):
 def read_csvs(paths):
     rows = []
     for p in paths:
-        rows += [r for r in csv.DictReader(open(p)) if r.get("run_id") != "run_id"]
+        f = gzip.open(p, "rt", newline="") if p.endswith(".gz") else open(p, newline="")   # restores.csv 進 git 的是 .gz
+        rows += [r for r in csv.DictReader(f) if r.get("run_id") != "run_id"]
     return rows
 
 
@@ -113,6 +115,14 @@ def fig_speed(a):
             ax.set_title(f"{bw}・GPU {'閒' if st == 'idle' else '忙'}")
             ax.set_xlabel("還原時間（s）")
             ax.set_xlim(left=0)
+            # 只算那條比其他慢很多時（例：CPU 層 0.05 s 對 3 s）截掉、標數字，不然其他配置的差別全擠在 0 附近
+            q3s = [np.percentile(cells[(bw, st, k)], 75) for k in keys if k != "compute_only" and cells.get((bw, st, k))]
+            co = cells.get((bw, st, "compute_only"))
+            if co and q3s and np.median(co) > 3 * max(q3s):
+                xmax = 1.25 * max(q3s)
+                ax.set_xlim(0, xmax)
+                ax.annotate(f"只算 {np.median(co):.2f} s →", xy=(xmax, keys.index("compute_only")), xytext=(-2, 0),
+                            textcoords="offset points", ha="right", va="center", fontsize=7, color=INK2)
     fig.suptitle(f"{a.model}：每個配置的還原時間（32K；點＝中位數、線＝四分位距；3 process × 10 次）", color=INK, fontsize=10)
     source_note(fig, f"{os.path.basename(a.restores)} run_id={a.run} n={len(rows)}")
     fig.tight_layout()
