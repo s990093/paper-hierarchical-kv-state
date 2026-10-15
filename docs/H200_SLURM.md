@@ -146,15 +146,15 @@ curl -sI https://huggingface.co | head -1          # compute node 有沒有對�
 
 | 要確認的事 | 結果 | 影響 |
 |:--|:--|:--|
-| GPU 記憶體、driver、CUDA | NOT_MEASURED | vLLM 0.28.0 的 wheel 能不能直接用（§4.1） |
-| 每節點幾張卡、PCIe 世代與寬度、NVLink | NOT_MEASURED | 速度實驗「CPU 層不限速」那個錨點的意義。NVLink 只連 GPU 和 GPU，我們的 KV 走 CPU→PCIe→GPU，用不到 |
-| 這張卡靠近哪個 NUMA 節點 | NOT_MEASURED | pinned 記憶體要配在同一邊，不然 H2D 會變慢 |
-| job 的 cgroup 真的給多少 CPU／RAM | NOT_MEASURED | wiki 說 16 CPU、170 GB；以 cgroup 為準 |
-| job 裡 `nvidia-smi` 看得到幾張卡 | NOT_MEASURED | **決定 `gpu_guard` 能不能用（§5.3）** |
-| 看不看得到同節點別人的 job（`squeue -w`） | NOT_MEASURED | §5.3 的替代記錄 |
-| head／compute node 有沒有對外網路 | NOT_MEASURED | 模型、pip 套件在哪裡下載 |
-| `$HOME` 實際路徑、lab 剩餘空間 | NOT_MEASURED | `HF_HOME`、`TIARA_RUNS` 放哪裡 |
-| `/dev/shm` 大小 | NOT_MEASURED | CPU 層用 pinned memory，上限是 170 GB 的 job 配額 |
+| GPU 記憶體、driver、CUDA | H200 143,771 MiB、driver 610.43.02、700 W、SM 最高 1980 MHz；module 有 cuda12.8、cuda13.3 toolkit（2026-10-15 srun job 20293） | vLLM 0.28.0 的 wheel 能不能直接用（§4.1） |
+| 每節點幾張卡、PCIe 世代與寬度、NVLink | 8 張 H200；PCIe 最高 Gen5 x16；job 裡 `topo -m` 只看得到自己這張，NVLink 看不到。CPU：2× AMD EPYC 9554（各 64 核、無 SMT），1.5 TB RAM（2026-10-15 srun job 20293） | 速度實驗「CPU 層不限速」那個錨點的意義。NVLink 只連 GPU 和 GPU，我們的 KV 走 CPU→PCIe→GPU，用不到 |
+| 這張卡靠近哪個 NUMA 節點 | 這次拿到的卡在 NUMA 1，job 的 cpuset 是 80–95（同一邊）。**每個 job 拿到的卡可能不同**，要每次記錄（2026-10-15 srun job 20293） | pinned 記憶體要配在同一邊，不然 H2D 會變慢 |
+| job 的 cgroup 真的給多少 CPU／RAM | `nproc`=16、cpuset 80–95；step 層的 `memory.max`=max（job 層的上限 NOT_MEASURED，srun 宣告 174,080 MB）；`free` 看到的是整台 1.5 TB，不能用（2026-10-15 srun job 20293） | wiki 說 16 CPU、170 GB；以 cgroup 為準 |
+| job 裡 `nvidia-smi` 看得到幾張卡 | **只有 1 張**（`CUDA_VISIBLE_DEVICES=0`）→ 同節點別人的卡看不到，`gpu_guard` 必須回 `UNOBSERVABLE_HOST`（§5.3 的推論成立）（2026-10-15 srun job 20293） | **決定 `gpu_guard` 能不能用（§5.3）** |
+| 看不看得到同節點別人的 job（`squeue -w`） | 看得到（head node 上 `squeue -w hgx-cn01` 列出別人的 job 與 gres）（2026-10-15） | §5.3 的替代記錄 |
+| head／compute node 有沒有對外網路 | 都有（huggingface.co HTTP 200）（2026-10-15 srun job 20293） | 模型、pip 套件在哪裡下載 |
+| `$HOME` 實際路徑、lab 剩餘空間 | `/work/ChihChungHsu/<username>`（NFS）；lab 剩約 12G（§0）。compute node 的 `/tmp` 在本機 `/dev/md0`（1.8T，剩 1.7T），不受 lab 配額限制但不保證保留〔推論〕 | `HF_HOME`、`TIARA_RUNS` 放哪裡 |
+| `/dev/shm` 大小 | compute node 756G（整台共用）；實際能用多少受 job 記憶體上限約束（2026-10-15 srun job 20293） | CPU 層用 pinned memory，上限是 170 GB 的 job 配額 |
 
 ---
 
