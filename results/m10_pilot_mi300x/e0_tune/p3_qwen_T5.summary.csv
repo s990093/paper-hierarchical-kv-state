@@ -1,0 +1,2 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-040201-m10-e0p3-Q-c,qwen,{},T5,1,global,60,0.6717,0.0537,True,0.6883,0.0561,True,0.2

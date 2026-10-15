@@ -1,0 +1,7 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-034415-m10-e0p2-Q-T2,qwen,"{""T2"": {""n_distractors"": 150}}",T2,1,back,10,0.925,0.0748,True,0.925,0.0748,True,0.0
+20261015-034415-m10-e0p2-Q-T2,qwen,"{""T2"": {""n_distractors"": 150}}",T2,1,front,10,0.8,0.1222,True,0.8,0.1222,True,0.0
+20261015-034415-m10-e0p2-Q-T2,qwen,"{""T2"": {""n_distractors"": 150}}",T2,1,mid,10,0.9,0.08,True,0.9,0.08,True,0.0
+20261015-034415-m10-e0p2-Q-T2,qwen,"{""T2"": {""n_distractors"": 150}}",T2,2,back,10,0.9,0.08,True,0.9,0.08,True,0.0
+20261015-034415-m10-e0p2-Q-T2,qwen,"{""T2"": {""n_distractors"": 150}}",T2,2,front,10,0.95,0.0653,True,0.95,0.0653,True,0.0
+20261015-034415-m10-e0p2-Q-T2,qwen,"{""T2"": {""n_distractors"": 150}}",T2,2,mid,10,0.825,0.0748,True,0.825,0.0748,True,0.0

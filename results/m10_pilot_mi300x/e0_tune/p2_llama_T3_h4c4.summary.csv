@@ -1,0 +1,7 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-034405-m10-e0p2-L-T3b,llama,"{""T3"": {""n_distractor_chains"": 4, ""n_hops"": 4}}",T3,1,back,10,0.58,0.1364,False,0.58,0.1364,False,0.0
+20261015-034405-m10-e0p2-L-T3b,llama,"{""T3"": {""n_distractor_chains"": 4, ""n_hops"": 4}}",T3,1,front,10,0.88,0.1045,True,0.88,0.1045,True,0.0
+20261015-034405-m10-e0p2-L-T3b,llama,"{""T3"": {""n_distractor_chains"": 4, ""n_hops"": 4}}",T3,1,mid,10,0.6,0.1169,True,0.6,0.1169,True,0.0
+20261015-034405-m10-e0p2-L-T3b,llama,"{""T3"": {""n_distractor_chains"": 4, ""n_hops"": 4}}",T3,2,back,10,0.62,0.1484,True,0.62,0.1484,True,0.0
+20261015-034405-m10-e0p2-L-T3b,llama,"{""T3"": {""n_distractor_chains"": 4, ""n_hops"": 4}}",T3,2,front,10,0.7,0.1573,True,0.7,0.1573,True,0.0
+20261015-034405-m10-e0p2-L-T3b,llama,"{""T3"": {""n_distractor_chains"": 4, ""n_hops"": 4}}",T3,2,mid,10,0.62,0.1364,True,0.62,0.1364,True,0.0

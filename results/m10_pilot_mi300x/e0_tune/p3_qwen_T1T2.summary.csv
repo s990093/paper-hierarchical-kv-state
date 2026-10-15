@@ -1,0 +1,13 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T1,1,back,20,1.0,0.0,False,1.0,0.0,False,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T1,1,front,20,0.95,0.098,True,0.95,0.098,True,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T1,1,mid,20,0.9,0.1349,True,0.9,0.1349,True,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T1,2,back,20,1.0,0.0,False,1.0,0.0,False,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T1,2,front,20,1.0,0.0,False,1.0,0.0,False,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T1,2,mid,20,1.0,0.0,False,1.0,0.0,False,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T2,1,back,20,0.95,0.045,True,0.95,0.045,True,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T2,1,front,20,0.85,0.0826,True,0.85,0.0826,True,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T2,1,mid,20,0.8125,0.0785,True,0.8125,0.0785,True,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T2,2,back,20,0.8875,0.0559,True,0.8875,0.0559,True,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T2,2,front,20,0.85,0.0551,True,0.85,0.0551,True,0.0
+20261015-040157-m10-e0p3-Q-a,qwen,"{""T2"": {""n_distractors"": 150}, ""T3"": {""n_distractor_chains"": 2, ""n_hops"": 4}, ""T4"": {""max_answer_words"": 2}}",T2,2,mid,20,0.7875,0.0401,True,0.7875,0.0401,True,0.0

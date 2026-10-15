@@ -1,0 +1,101 @@
+{
+ "run_id": "20261015-030742-m10-kvstats2-llama",
+ "model": "llama",
+ "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+ "L": 32,
+ "H": 8,
+ "D": 128,
+ "prompts": [
+  "T4_front-back_s0",
+  "T4_mid-front_s1",
+  "T1_back-mid_s0",
+  "T3_mid-back_s0",
+  "T5_None-None_s0"
+ ],
+ "tokens_per_prompt": 32768,
+ "maxabs_K_overall": 34.5,
+ "maxabs_V_overall": 7.625,
+ "maxabs_K_over_448": 0.07700892857142858,
+ "n_chan_total": 32768,
+ "n_chan_offset_gt3": 1059,
+ "n_chan_offset_gt10": 167,
+ "max_absmean_K": 24.865812301635742,
+ "codec_relerr_mean_over_prompts": {
+  "fp8_head": {
+   "K": 0.026338838040828705,
+   "V": 0.026560349389910698,
+   "K_worst_block": 0.026608102023601532,
+   "K_centered": 0.041774099390022454,
+   "K_centered_worst_block": 0.04545630142092705,
+   "V_centered": 0.030181134381564334
+  },
+  "fp8_channel": {
+   "K": 0.026238572597503663,
+   "V": 0.026289307698607444,
+   "K_worst_block": 0.02670070342719555,
+   "K_centered": 0.0415948597015813,
+   "K_centered_worst_block": 0.04444284364581108,
+   "V_centered": 0.029866496019531043
+  },
+  "fp8_token": {
+   "K": 0.02356090061366558,
+   "V": 0.0253438264131546,
+   "K_worst_block": 0.023938680067658424,
+   "K_centered": 0.03736924057593569,
+   "K_centered_worst_block": 0.040804680436849594,
+   "V_centered": 0.028799028106732294
+  },
+  "fp8k0_head": {
+   "K": 0.01681247930973768,
+   "V": 0.026560349389910698,
+   "K_worst_block": 0.01863914728164673,
+   "K_centered": 0.02658866971032694,
+   "K_centered_worst_block": 0.026641400530934334,
+   "V_centered": 0.030181134381564334
+  },
+  "fp8k0_channel": {
+   "K": 0.016831977665424346,
+   "V": 0.026289307698607444,
+   "K_worst_block": 0.018635043874382973,
+   "K_centered": 0.026617547712521627,
+   "K_centered_worst_block": 0.02671661227941513,
+   "V_centered": 0.029866496019531043
+  },
+  "fp8k0_token": {
+   "K": 0.016019441559910773,
+   "V": 0.0253438264131546,
+   "K_worst_block": 0.017796214669942856,
+   "K_centered": 0.025333365559345112,
+   "K_centered_worst_block": 0.025436194613575935,
+   "V_centered": 0.028799028106732294
+  },
+  "int8_token": {
+   "K": 0.011757956631481648,
+   "V": 0.007924473192542792,
+   "K_worst_block": 0.012666504830121994,
+   "K_centered": 0.01868448958848603,
+   "K_centered_worst_block": 0.021972501650452614,
+   "V_centered": 0.009004963625920936
+  },
+  "int4_token": {
+   "K": 0.21080713868141174,
+   "V": 0.14045467972755432,
+   "K_worst_block": 0.22719167172908783,
+   "K_centered": 0.33500643726438284,
+   "K_centered_worst_block": 0.39446747303009033,
+   "V_centered": 0.15960642430000008
+  },
+  "int4_kivi": {
+   "K": 0.03668388649821282,
+   "V": 0.08251217007637024,
+   "K_worst_block": 0.04294663295149803,
+   "K_centered": 0.05795462311943993,
+   "K_centered_worst_block": 0.061956942081451416,
+   "V_centered": 0.0937730258796364
+  }
+ },
+ "torch": "2.10.0+rocm7.0",
+ "hip": "7.0.51831",
+ "cuda": null,
+ "note": "BF16 KV 與 codec 重建誤差；沒有任何答對率。MI300X 彩排，不進判定。"
+}

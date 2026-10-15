@@ -1,0 +1,7 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-034403-m10-e0p2-L-T3a,llama,"{""T3"": {""n_distractor_chains"": 2, ""n_hops"": 6}}",T3,1,back,10,0.7,0.1213,True,0.7,0.1213,True,0.0
+20261015-034403-m10-e0p2-L-T3a,llama,"{""T3"": {""n_distractor_chains"": 2, ""n_hops"": 6}}",T3,1,front,10,0.8571,0.1252,True,0.8571,0.1252,True,0.0
+20261015-034403-m10-e0p2-L-T3a,llama,"{""T3"": {""n_distractor_chains"": 2, ""n_hops"": 6}}",T3,1,mid,10,0.6,0.1606,True,0.6,0.1606,True,0.0
+20261015-034403-m10-e0p2-L-T3a,llama,"{""T3"": {""n_distractor_chains"": 2, ""n_hops"": 6}}",T3,2,back,10,0.7571,0.1508,True,0.7571,0.1508,True,0.0
+20261015-034403-m10-e0p2-L-T3a,llama,"{""T3"": {""n_distractor_chains"": 2, ""n_hops"": 6}}",T3,2,front,10,0.7,0.1933,True,0.7,0.1933,True,0.0
+20261015-034403-m10-e0p2-L-T3a,llama,"{""T3"": {""n_distractor_chains"": 2, ""n_hops"": 6}}",T3,2,mid,10,0.6571,0.1516,True,0.6571,0.1516,True,0.0

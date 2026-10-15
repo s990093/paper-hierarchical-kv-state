@@ -252,3 +252,43 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - H200_SLURM §4.3 的 env 範例、§5.2 的範本路徑已過時（`env_h200.sh`、`tiara.sbatch` 為準）。
 
 **與計劃的差異**：低精度 block 的反量化排在限速器的 done（資料到齊）之後，在 I/O stream 上執行、和重算搶 GPU（03 §5.4 的表）；BF16 的載入行為不變。
+
+### Milestone 10-pilot（續）— 第 3 步 K／V 分布、第 4 步只用 BF16 調難度、一鍵驗證腳本
+
+**狀態**：PASS（第 3、4 步）；難度參數是**候選**，H200 上用 E0 再確認一次才凍結
+**執行時間**：2026-10-15 03:01 → 04:38 UTC
+**還是只有 E0（全 BF16）的答對率**；低精度只算重建誤差，沒有任何低精度的答對率。
+
+**程式**：新 `code/m10_kv_stats.py`、`code/m10_quality.py`（目前只有 `tune`＝E0、`summary`）、`code/m10_e0_t4_breakdown.py`、`code/m10_verify.sh`＋`m10_verify_summary.py`（一鍵驗證，給 H200 第一天或 3090）；改 `m10_codec.py`（`rel_err_centered`）、`m10_tasks.py`（`qa_f1`；T4 參數 `max_answer_words`，預設 0＝不變）、`test_m10_restore.py`（`mixed --n`，預設 64＝不變）、`env_h200.sh`（`M10_HOTPOT`）
+
+**run_id**
+- K／V 分布：`20261015-030147-m10-kvstats-qwen`、`-030248-…-llama`（第一版）；`20261015-030452-m10-kvstats2-qwen`、`-030742-m10-kvstats2-llama`（加「扣平均後」誤差，`results/m10_pilot_mi300x/kv_stats/` 是這兩個的輸出）
+- E0 小測：`20261015-030416-m10-e0-smoke-qwen`（15 題，輸出在 scratch，沒進 results）
+- 調難度第 1 輪：`20261015-030854`／`-030856`／`-030858`／`-030900`（`m10-e0p1-{def,hard}-{qwen,llama}`）
+- 第 2 輪：`20261015-034403` → `-034417`（`m10-e0p2-*`，8 個）
+- 第 3 輪（新 seed 2000 起）：`20261015-040149` → `-040201`（`m10-e0p3-*`，7 個）
+- T4 拆解：`20261015-043805-m10-e0-t4-breakdown` → `e0_tune/t4_breakdown.csv`
+- 指令：`python code/m10_kv_stats.py --model <m> --out results/m10_pilot_mi300x/kv_stats --raw $TIARA_RUNS/$RUN_ID/raw`；`python code/m10_quality.py tune --model <m> --tasks … --n … [--seed0 2000] --params '<JSON>' --out results/m10_pilot_mi300x/e0_tune/<檔>.csv`（同一個 job 裡多個 process 同時跑；品質 run，時間欄不用）
+
+**關鍵數字（第 3 步，K／V 分布；5 個 32K prompt；模型本身的性質＋codec 重建誤差）**
+- Qwen：max|K|＝422（＜448，不會溢位；外部量測約 423）、max|V|＝82；14,336 個 channel 裡 645 個「|平均|／標準差 > 3」、219 個 > 10；最大的一個在第 27 層 head 1，平均 415、標準差 1.7。Llama：max|K|＝34.5、max|V|＝7.6；最大 |平均| 24.9。
+- K 的重建誤差（相對 L2 ／ 扣掉平均後）：Qwen fp8_head 2.5%／**18.0%**、fp8_channel 1.7%／12.4%、fp8k0_head 0.4%／**2.7%**、int8_token 1.2%／8.5%、int4_token 11%／84%、int4_kivi 0.8%／6.0%。Llama fp8_head 2.6%／4.2%、fp8k0_head 1.7%／2.7%、int8_token 1.2%／1.9%、int4_token 21%／34%、int4_kivi 3.7%／5.8%。V 兩個模型的 FP8 都約 2.5–3%。
+- 讀法：相對 L2 看不出 Qwen 的問題（2.5% 對 Llama 2.6%）；扣掉平均後 Qwen 的 FP8 是 Llama 的 4.3 倍，減掉偏移（K0）後一樣。和 9 月的舊實測方向一致（Qwen FP8 撈針壞、INT8 大致沒壞、INT4 全壞）。**這是重建誤差，不是答對率**；03 §1 的 D1 用重建誤差挑 scale 粒度時，應該用扣平均後的版本〔判讀，計劃文字待改〕。
+
+**關鍵數字（第 4 步，E0 調難度）**：候選參數與理由在 `e0_tune/CANDIDATE_PARAMS.json`。第 3 輪（新 seed、每格 20 題）：
+- Llama：T1 6／6 格 100%；T2（100 個干擾）0.70–0.84；T3（6 跳＋2 條干擾鏈）0.59–0.78；T4（答案 ≤2 字）0.70–0.85；T5（freq_cw 40）0.82、（45）0.90。
+- Qwen：T1 0.90–1.00（4／6 格 100%）；T2（150 個干擾）0.79–0.95；T3（4 跳＋2 條干擾鏈）0.58–0.90；T4（答案 ≤2 字）0.60–0.75；T5（預設）0.69。
+- T4 拆解：沒有篩選時，答案 1–2 個字的題目 Llama 0.73／Qwen 0.64–0.70，3 個字以上的 0.15–0.37（string_match_part）；用 LongBench 的 qa_f1 時 3 字以上升到 0.44–0.60。長答案多半是比對太嚴（"Steve Coogan" 對 "Stephen John Coogan"），也有真的答錯（McLaren 對 Team Penske）。
+- 生成長度：第 3 輪只有 Qwen T5 的兩種截法不同（截 64：0.67；截 120：0.69），其餘相同。第 1 輪 Qwen T5 有 13–37% 的題目寫到 120 個 token 的上限。
+
+**一鍵驗證**：`M10_GPU_LOCK=/mlsteam/data/tiara/gpu.lock bash code/m10_verify.sh --quick` 在 MI300X 上 10 項過、0 項失敗（輸出在 scratch）。完整模式沒有整支跑過（第 7 項的各個元件分開驗過）。NVIDIA 路徑全部還沒在 NVIDIA 卡上跑過。
+
+**失敗與異常**
+1. `m10-e0-smoke-qwen` 第一次：我的 job 腳本少定義一個變數（`S: unbound variable`），還沒進 Python 就失敗；修好重跑。
+2. `20261015-040151-m10-e0p3-L-b`、`-040159-…-Q-b` exit 1：120 題都跑完、逐題 CSV 完整，最後寫摘要時當掉（T3 和 T4 在同一個 run，摘要欄位只取第一列 → `ValueError: dict contains fields not in fieldnames: 'f1_up'…`）。修好 `write_summary`（欄位取聯集），用 `m10_quality.py summary <csv>` 從逐題 CSV 重算摘要，沒有重跑。
+3. T4 的改動（`max_answer_words`＝2）是看了 E0 的結果才決定的。只用 BF16，不偏向任何低精度配置（03 §3.2 允許），但要在凍結的事先登記裡寫明。
+
+**還沒決定、要人決定的（新增）**
+- T1：兩個模型都碰天花板。照 03 §3.2 不進主判準？還是另做更難的變體？
+- T4 的主計分：照計劃用 string_match_part（篩選答案 ≤2 字之後），還是改用 LongBench 的 qa_f1？
+- 03 §1 D1「用重建誤差挑 scale 粒度」：改成扣平均後的誤差。

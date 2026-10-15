@@ -1,0 +1,2 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit
+20261015-040153-m10-e0p3-L-c,llama,"{""T5"": {""freq_cw"": 40}}",T5,1,global,30,0.8167,0.1013,True,0.8167,0.1013,True,0.0

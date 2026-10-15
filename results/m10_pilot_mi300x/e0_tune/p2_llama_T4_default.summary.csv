@@ -1,0 +1,7 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,f1_up,f1_up_ci95,f1_up_in_60_95,frac_hit_len_limit
+20261015-034409-m10-e0p2-L-T4,llama,{},T4,1,back,20,0.55,0.2237,False,0.55,0.2237,False,0.6784,0.1604,True,0.0
+20261015-034409-m10-e0p2-L-T4,llama,{},T4,1,front,20,0.5,0.2248,False,0.5,0.2248,False,0.7561,0.1438,True,0.0
+20261015-034409-m10-e0p2-L-T4,llama,{},T4,1,mid,20,0.5,0.2248,False,0.5,0.2248,False,0.6067,0.1926,True,0.0
+20261015-034409-m10-e0p2-L-T4,llama,{},T4,2,back,20,0.5,0.2248,False,0.5,0.2248,False,0.5685,0.1993,False,0.0
+20261015-034409-m10-e0p2-L-T4,llama,{},T4,2,front,20,0.65,0.2145,True,0.65,0.2145,True,0.7233,0.1913,True,0.0
+20261015-034409-m10-e0p2-L-T4,llama,{},T4,2,mid,20,0.45,0.2237,False,0.45,0.2237,False,0.5724,0.2062,False,0.0

@@ -1,0 +1,13 @@
+run_id,model,params,task,turn,band,n,score_64,score_64_ci95,score_64_in_60_95,score_up,score_up_ci95,score_up_in_60_95,frac_hit_len_limit,f1_up,f1_up_ci95,f1_up_in_60_95
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T3,1,back,20,0.9,0.0922,True,0.9,0.0922,True,0.0,,,
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T3,1,front,20,0.65,0.1236,True,0.65,0.1236,True,0.0,,,
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T3,1,mid,20,0.71,0.092,True,0.71,0.092,True,0.0,,,
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T3,2,back,20,0.8,0.0697,True,0.8,0.0697,True,0.0,,,
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T3,2,front,20,0.58,0.1236,False,0.58,0.1236,False,0.0,,,
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T3,2,mid,20,0.6,0.1101,True,0.6,0.1101,True,0.0,,,
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T4,1,back,20,0.75,0.1947,True,0.75,0.1947,True,0.0,0.7055,0.1854,True
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T4,1,front,20,0.6,0.2203,True,0.6,0.2203,True,0.0,0.6567,0.1855,True
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T4,1,mid,20,0.65,0.2145,True,0.65,0.2145,True,0.0,0.5349,0.2135,False
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T4,2,back,20,0.65,0.2145,True,0.65,0.2145,True,0.0,0.7333,0.1931,True
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T4,2,front,20,0.75,0.1947,True,0.75,0.1947,True,0.0,0.8083,0.1408,True
+20261015-040159-m10-e0p3-Q-b,qwen,"{""per_task_params"": ""see csv""}",T4,2,mid,20,0.65,0.2145,True,0.65,0.2145,True,0.0,0.5962,0.1855,False

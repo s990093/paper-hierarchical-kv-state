@@ -1,0 +1,778 @@
+run_id,ts,model,item_id,task,seed,band,turn,params,metric,gold,needle_blocks,n_gen,stop,max_new,upstream_len,score_64,score_up,pred,t_prefill,t_turn,own_gpu_intruders
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:09:51+00:00,qwen,T2_front-back_s1000,T2,1000,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""6224174"", ""7144099"", ""9838848"", ""7147319""]","[4, 8, 10, 14]",33,eos,128,128,0.75,0.75,":
+
+1. 7144099
+2. 9838848
+3. 6224174",14.449,5.82,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:09:51+00:00,qwen,T2_front-back_s1000,T2,1000,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""5442043"", ""2507082"", ""4734317"", ""1928115""]","[53, 55, 56, 58, 62]",37,eos,128,128,1.0,1.0," 1928115, 2507082, 4734317, and 5442043.",,4.477,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:07+00:00,qwen,T2_mid-front_s1001,T2,1001,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""8555888"", ""9421369"", ""3256000"", ""3293902""]","[25, 32, 38, 39]",32,eos,128,128,0.5,0.5,":
+
+1. 3256000
+2. 3293902
+
+These numbers are mentioned twice in the text.",7.3,3.772,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:07+00:00,qwen,T2_mid-front_s1001,T2,1001,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""6483933"", ""6481941"", ""2552907"", ""7341760""]","[1, 5, 6, 8]",37,eos,128,128,1.0,1.0," 6483933, 2552907, 7341760, and 6481941.",,4.298,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:22+00:00,qwen,T2_back-mid_s1002,T2,1002,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2867748"", ""3264911"", ""7641884"", ""7658681""]","[50, 53, 57]",44,eos,128,128,1.0,1.0,":
+
+1. 7641884
+2. 2867748
+3. 7658681
+4. 3264911",7.348,4.968,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:22+00:00,qwen,T2_back-mid_s1002,T2,1002,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9636543"", ""2083172"", ""1380113"", ""1290038""]","[26, 30, 38]",28,eos,128,128,0.75,0.75," 1290038, 1380113, and 9636543.",,3.017,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:38+00:00,qwen,T2_front-back_s1003,T2,1003,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""3504993"", ""8522694"", ""3315333"", ""6285159""]","[4, 5, 8, 11]",33,eos,128,128,0.75,0.75,":
+
+1. 6285159
+2. 8522694
+3. 3504993",8.097,3.586,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:38+00:00,qwen,T2_front-back_s1003,T2,1003,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""1784594"", ""4599394"", ""7249855"", ""5418651""]","[48, 49, 56, 57]",37,eos,128,128,1.0,1.0," 7249855, 1784594, 5418651, and 4599394.",,4.388,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:55+00:00,qwen,T2_mid-front_s1004,T2,1004,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""6022515"", ""4969882"", ""3065629"", ""6138500""]","[28, 29, 37, 38]",51,eos,128,128,0.5,0.5,":
+
+1. 3065629
+2. 4969882
+3. 3065629 (repeated)
+4. 4969882 (repeated)",7.896,5.504,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:10:55+00:00,qwen,T2_mid-front_s1004,T2,1004,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""3230531"", ""9899015"", ""9210034"", ""3267206""]","[5, 12, 13, 15]",28,eos,128,128,0.75,0.75," 3230531, 9899015, and 3267206.",,3.7,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:11:15+00:00,qwen,T2_back-mid_s1005,T2,1005,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9359246"", ""4633929"", ""5913397"", ""8503635""]","[54, 56, 62]",33,eos,128,128,0.75,0.75,":
+
+1. 4633929
+2. 9359246
+3. 8503635",7.09,3.896,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:11:15+00:00,qwen,T2_back-mid_s1005,T2,1005,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""4887347"", ""7587732"", ""9472198"", ""8317188""]","[24, 25, 26, 32, 36]",69,eos,128,128,1.0,1.0,":
+
+1. 7587732
+2. 9472198
+3. 4887347
+4. 8317188
+
+These numbers are repeated multiple times throughout the text, but these are the distinct ones associated with ""fast-circulation.""",,8.124,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:11:29+00:00,qwen,T2_front-back_s1006,T2,1006,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9428533"", ""2640561"", ""4417656"", ""2336324""]","[4, 6, 8, 15, 16]",33,eos,128,128,0.75,0.75,":
+
+1. 4417656
+2. 2640561
+3. 9428533",7.002,4.181,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:11:29+00:00,qwen,T2_front-back_s1006,T2,1006,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""1810004"", ""1245454"", ""9318874"", ""3788336""]","[49, 54, 58, 60]",28,eos,128,128,0.75,0.75," 1245454, 9318874, and 3788336.",,3.068,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:11:44+00:00,qwen,T2_mid-front_s1007,T2,1007,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""1604677"", ""5013653"", ""5760823"", ""7338022""]","[29, 34, 37, 39]",33,eos,128,128,0.75,0.75,":
+
+1. 5760823
+2. 1604677
+3. 7338022",6.978,4.015,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:11:44+00:00,qwen,T2_mid-front_s1007,T2,1007,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9796780"", ""6388102"", ""7289640"", ""4649453""]","[10, 12, 13]",37,eos,128,128,1.0,1.0," 4649453, 7289640, 9796780, and 6388102.",,4.314,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:01+00:00,qwen,T2_back-mid_s1008,T2,1008,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""5325983"", ""1412438"", ""9353435"", ""8974218""]","[53, 55, 57, 59]",44,eos,128,128,1.0,1.0,":
+
+1. 9353435
+2. 1412438
+3. 5325983
+4. 8974218",6.985,5.293,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:01+00:00,qwen,T2_back-mid_s1008,T2,1008,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""6129160"", ""1589289"", ""6041216"", ""9407561""]","[24, 27, 28, 30]",37,eos,128,128,1.0,1.0," 1589289, 6041216, 6129160, and 9407561.",,4.354,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:18+00:00,qwen,T2_front-back_s1009,T2,1009,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9663528"", ""5988677"", ""5169717"", ""7286932""]","[2, 9, 12, 14]",48,eos,128,128,0.75,0.75,":
+
+1. 5169717
+2. 5988677
+3. 7286932
+4. 5988677 (repeated)",6.806,6.2,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:18+00:00,qwen,T2_front-back_s1009,T2,1009,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""1879294"", ""6276897"", ""7372933"", ""4584693""]","[49, 51, 53]",37,eos,128,128,1.0,1.0," 4584693, 6276897, 7372933, and 1879294.",,3.895,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:31+00:00,qwen,T2_mid-front_s1010,T2,1010,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""3061389"", ""8448928"", ""2251895"", ""6049833""]","[24, 30, 31]",22,eos,128,128,0.5,0.5,":
+
+1. 8448928
+2. 3061389",7.432,3.111,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:31+00:00,qwen,T2_mid-front_s1010,T2,1010,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""3003931"", ""7520644"", ""1767355"", ""8275577""]","[1, 2, 4, 15]",28,eos,128,128,0.75,0.75," 7520644, 8275577, and 3003931.",,3.109,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:47+00:00,qwen,T2_back-mid_s1011,T2,1011,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""7277956"", ""3972585"", ""9758882"", ""3447095""]","[52, 57, 60, 61]",44,eos,128,128,1.0,1.0,":
+
+1. 3972585
+2. 9758882
+3. 3447095
+4. 7277956",6.885,5.834,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:12:47+00:00,qwen,T2_back-mid_s1011,T2,1011,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2050926"", ""9702548"", ""1666664"", ""2906052""]","[30, 31, 33]",28,eos,128,128,0.75,0.75," 1666664, 9702548, and 2906052.",,2.877,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:02+00:00,qwen,T2_front-back_s1012,T2,1012,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""1145136"", ""4370232"", ""5527436"", ""1606174""]","[3, 4, 6, 16]",33,eos,128,128,0.75,0.75,":
+
+1. 1145136
+2. 5527436
+3. 1606174",7.078,4.287,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:02+00:00,qwen,T2_front-back_s1012,T2,1012,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""4993830"", ""2582041"", ""6936732"", ""9733280""]","[51, 52, 56, 58]",37,eos,128,128,1.0,1.0," 4993830, 6936732, 2582041, and 9733280.",,4.054,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:21+00:00,qwen,T2_mid-front_s1013,T2,1013,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9961500"", ""9577862"", ""9518703"", ""9522093""]","[28, 34, 35]",44,eos,128,128,1.0,1.0,":
+
+1. 9518703
+2. 9522093
+3. 9577862
+4. 9961500",7.231,5.282,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:21+00:00,qwen,T2_mid-front_s1013,T2,1013,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2340636"", ""5193765"", ""1914089"", ""5234560""]","[7, 13, 14, 16]",56,eos,128,128,1.0,1.0,":  
+1. 2340636  
+2. 5193765  
+3. 1914089  
+4. 5234560  
+
+These numbers are mentioned multiple times throughout the text.",,6.185,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:37+00:00,qwen,T2_back-mid_s1014,T2,1014,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""6365994"", ""5667895"", ""9766080"", ""8703420""]","[51, 53, 58, 62]",44,eos,128,128,1.0,1.0,":
+
+1. 6365994
+2. 5667895
+3. 9766080
+4. 8703420",7.416,5.166,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:37+00:00,qwen,T2_back-mid_s1014,T2,1014,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""7149409"", ""1086573"", ""1593736"", ""7163479""]","[24, 28, 34, 35, 36]",28,eos,128,128,0.75,0.75," 1593736, 7163479, and 1086573.",,3.078,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:53+00:00,qwen,T2_front-back_s1015,T2,1015,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9940882"", ""1462075"", ""3853445"", ""9741466""]","[6, 8, 12, 14]",44,eos,128,128,1.0,1.0,":
+
+1. 9940882
+2. 3853445
+3. 1462075
+4. 9741466",7.762,5.092,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:13:53+00:00,qwen,T2_front-back_s1015,T2,1015,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9244064"", ""4493904"", ""7689243"", ""8572921""]","[48, 49, 53, 59, 60]",28,eos,128,128,0.75,0.75," 9244064, 4493904, and 7689243.",,3.022,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:14:10+00:00,qwen,T2_mid-front_s1016,T2,1016,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""4554591"", ""6418533"", ""2708302"", ""5524674""]","[35, 36, 37]",44,eos,128,128,1.0,1.0,":
+
+1. 5524674
+2. 6418533
+3. 2708302
+4. 4554591",8.297,4.697,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:14:10+00:00,qwen,T2_mid-front_s1016,T2,1016,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""6670842"", ""9225889"", ""1404234"", ""1259572""]","[4, 5, 10, 12, 15]",34,eos,128,128,0.75,0.75,":  
+1. 6670842  
+2. 1404234  
+3. 9225889",,4.073,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:14:26+00:00,qwen,T2_back-mid_s1017,T2,1017,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""8528740"", ""7256842"", ""2821302"", ""5031105""]","[49, 51, 56, 59]",33,eos,128,128,0.75,0.75,":
+
+1. 7256842
+2. 8528740
+3. 2821302",8.068,3.493,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:14:26+00:00,qwen,T2_back-mid_s1017,T2,1017,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""7890882"", ""7066292"", ""1066715"", ""1951784""]","[24, 28, 36, 39]",40,eos,128,128,1.0,1.0,":
+
+- 1066715
+- 1951784
+- 7066292
+- 7890882",,4.946,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:14:43+00:00,qwen,T2_front-back_s1018,T2,1018,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""7121346"", ""5295349"", ""4754182"", ""9694123""]","[6, 12, 13, 14, 15]",44,eos,128,128,1.0,1.0,":
+
+1. 9694123
+2. 7121346
+3. 4754182
+4. 5295349",7.208,5.219,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:14:43+00:00,qwen,T2_front-back_s1018,T2,1018,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""6979795"", ""2162000"", ""1225543"", ""5008680""]","[48, 50, 59, 63]",37,eos,128,128,1.0,1.0," 5008680, 6979795, 2162000, and 1225543.",,4.236,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:10+00:00,qwen,T2_mid-front_s1019,T2,1019,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2713805"", ""5548895"", ""2177345"", ""4141686""]","[26, 28, 29, 38, 39]",44,eos,128,128,1.0,1.0,":
+
+1. 2713805
+2. 2177345
+3. 5548895
+4. 4141686",6.943,5.312,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:10+00:00,qwen,T2_mid-front_s1019,T2,1019,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2288390"", ""1140991"", ""6450544"", ""3348935""]","[2, 6, 7]",127,eos,128,128,1.0,1.0,":  
+- 3348935  
+- 1140991  
+- 6450544  
+- 2288390  
+
+It appears there are some duplicates (e.g., 1140991 and 2288390 are listed more than once). If you need unique numbers only, the distinct ones are:  
+- 3348935  
+- 1140991  
+- 6450544  
+- 2288390",,14.414,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:25+00:00,qwen,T2_back-mid_s1020,T2,1020,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2883365"", ""2193136"", ""7981654"", ""5820287""]","[50, 53, 62, 63]",44,eos,128,128,1.0,1.0,":
+
+1. 5820287
+2. 2193136
+3. 7981654
+4. 2883365",6.929,5.353,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:25+00:00,qwen,T2_back-mid_s1020,T2,1020,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2438540"", ""1149802"", ""7254157"", ""8832301""]","[26, 27, 28, 32, 34]",33,eos,128,128,0.75,0.75,":
+
+1. 8832301
+2. 1149802
+3. 7254157",,3.616,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:41+00:00,qwen,T2_front-back_s1021,T2,1021,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""7556618"", ""4497657"", ""9629779"", ""2011559""]","[6, 9, 12, 16]",33,eos,128,128,0.75,0.75,":
+
+1. 9629779
+2. 2011559
+3. 7556618",7.189,3.913,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:41+00:00,qwen,T2_front-back_s1021,T2,1021,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2668298"", ""4747789"", ""5119946"", ""3127692""]","[51, 54, 56, 62]",37,eos,128,128,1.0,1.0," 4747789, 2668298, 5119946, and 3127692.",,4.445,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:57+00:00,qwen,T2_mid-front_s1022,T2,1022,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9648003"", ""4565715"", ""6833160"", ""4102766""]","[24, 31, 32, 37]",33,eos,128,128,0.75,0.75,":
+
+1. 4565715
+2. 6833160
+3. 9648003",7.029,4.108,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:15:57+00:00,qwen,T2_mid-front_s1022,T2,1022,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""8282587"", ""9999928"", ""2914205"", ""5676169""]","[5, 9, 12, 14]",37,eos,128,128,1.0,1.0," 8282587, 2914205, 5676169, and 9999928.",,4.586,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:16:15+00:00,qwen,T2_back-mid_s1023,T2,1023,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""5263427"", ""5437433"", ""9696342"", ""7138496""]","[50, 51, 53, 56, 58]",44,eos,128,128,1.0,1.0,":
+
+1. 5263427
+2. 7138496
+3. 5437433
+4. 9696342",6.455,5.919,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:16:15+00:00,qwen,T2_back-mid_s1023,T2,1023,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""8727576"", ""1139092"", ""4066443"", ""7306235""]","[27, 30, 34, 37]",59,eos,128,128,0.75,0.75,":  
+
+1. 1139092  
+2. 4066443  
+3. 7306235  
+
+These numbers are listed multiple times throughout the text, but they are the distinct values associated with ""literate-meaning.""",,6.364,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:16:30+00:00,qwen,T2_front-back_s1024,T2,1024,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""2565243"", ""1806567"", ""2186952"", ""6350896""]","[2, 6, 12, 13, 14]",22,eos,128,128,0.5,0.5,":
+
+1. 2186952
+2. 1806567",7.582,2.887,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:16:30+00:00,qwen,T2_front-back_s1024,T2,1024,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""4997301"", ""4169152"", ""9470974"", ""9980122""]","[54, 55, 56, 61]",37,eos,128,128,1.0,1.0," 9980122, 4997301, 4169152, and 9470974.",,3.934,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:16:46+00:00,qwen,T2_mid-front_s1025,T2,1025,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""5922124"", ""5823405"", ""4884321"", ""4871558""]","[25, 27, 29, 31]",44,eos,128,128,1.0,1.0,":
+
+1. 5922124
+2. 4871558
+3. 5823405
+4. 4884321",6.852,5.544,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:16:46+00:00,qwen,T2_mid-front_s1025,T2,1025,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""3760003"", ""8129665"", ""6454390"", ""4445873""]","[4, 9, 11, 13]",37,eos,128,128,1.0,1.0," 3760003, 8129665, 6454390, and 4445873.",,3.861,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:03+00:00,qwen,T2_back-mid_s1026,T2,1026,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""5233317"", ""6792404"", ""2009226"", ""4631672""]","[48, 55, 56]",44,eos,128,128,1.0,1.0,":
+
+1. 6792404
+2. 4631672
+3. 5233317
+4. 2009226",7.273,5.223,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:03+00:00,qwen,T2_back-mid_s1026,T2,1026,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""8658324"", ""3789238"", ""3038247"", ""9510549""]","[28, 30, 31, 39]",37,eos,128,128,0.75,0.75," 3038247, 3789238, 6136652, and 9510549.",,3.93,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:18+00:00,qwen,T2_front-back_s1027,T2,1027,front,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""9302161"", ""9560458"", ""5567244"", ""6264539""]","[6, 10, 13, 14]",33,eos,128,128,0.75,0.75,":
+
+1. 9302161
+2. 5567244
+3. 9560458",8.046,3.632,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:18+00:00,qwen,T2_front-back_s1027,T2,1027,back,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""1756337"", ""2729625"", ""4713019"", ""1726581""]","[51, 61, 62, 63]",37,eos,128,128,1.0,1.0," 4713019, 1726581, 2729625, and 1756337.",,4.204,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:44+00:00,qwen,T2_mid-front_s1028,T2,1028,mid,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""8553844"", ""5921648"", ""6148824"", ""4498306""]","[25, 33, 36, 38]",128,len,128,128,0.75,0.75,":
+
+1. 4498306
+2. 4741824
+3. 5921648
+4. 6148824
+5. 6148824 (repeated)
+6. 6148824 (repeated again)
+7. 6148824 (repeated once more)
+8. 6148824 (repeated yet again)
+9. 6148824 (repeated for the final time)
+10. ",7.586,14.146,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:44+00:00,qwen,T2_mid-front_s1028,T2,1028,front,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""5710923"", ""2094027"", ""2156043"", ""5209724""]","[6, 7, 9, 10]",28,eos,128,128,0.75,0.75," 2094027, 5209724, and 5710923.",,3.316,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:59+00:00,qwen,T2_back-mid_s1029,T2,1029,back,1,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""1529629"", ""2813768"", ""6288313"", ""5247633""]","[52, 60, 61, 63]",44,eos,128,128,1.0,1.0,":
+
+1. 6288313
+2. 5247633
+3. 1529629
+4. 2813768",7.611,4.762,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:17:59+00:00,qwen,T2_back-mid_s1029,T2,1029,mid,2,"{""n_distractors"": 100, ""n_values"": 4}",string_match_all,"[""7392536"", ""6140825"", ""7569313"", ""8649234""]","[25, 32, 33]",28,eos,128,128,0.75,0.75," 7392536, 8649234, and 6140825.",,3.527,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:09+00:00,qwen,T3_front-back_s1000,T3,1000,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""VWGLU"", ""ZMOMJ"", ""IIWAQ"", ""GACYJ"", ""BZCZD"", ""PQKAG"", ""NNEUW"", ""ENXBW"", ""GBUMD""]","[1, 4, 6, 9, 11, 12, 14, 15, 16]",3,eos,64,30,0.1111111111111111,0.1111111111111111, VWGLU,7.592,0.418,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:09+00:00,qwen,T3_front-back_s1000,T3,1000,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""SABNE"", ""LKQPR"", ""HEBBF"", ""EYZZY"", ""BKUJU"", ""VYJFP"", ""RLZZO"", ""NHVTQ"", ""JCVIZ""]","[49, 50, 52, 54, 55, 58, 59, 62]",13,eos,64,30,0.3333333333333333,0.3333333333333333, SABNE LKQPR HEBBF CEGSA,,1.437,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:19+00:00,qwen,T3_mid-front_s1001,T3,1001,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""GNUTG"", ""BWQKF"", ""ZSERB"", ""VTJIH"", ""IOHNI"", ""VZWDI"", ""AQIPM"", ""BBRJA"", ""XWFIK""]","[24, 25, 28, 29, 33, 37, 39]",9,eos,64,30,0.3333333333333333,0.3333333333333333, GNUTG BWQKF ZSERB,7.623,1.175,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:19+00:00,qwen,T3_mid-front_s1001,T3,1001,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""UYXKA"", ""BCOXL"", ""NYPOY"", ""BMGON"", ""MVENL"", ""OATFC"", ""JOTPT"", ""IOPBC"", ""HQOTR""]","[2, 3, 5, 8, 9, 10, 13, 15]",7,eos,64,30,0.1111111111111111,0.1111111111111111, UYXKA BEQGE,,0.858,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:30+00:00,qwen,T3_back-mid_s1002,T3,1002,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""VTWLM"", ""HOTRE"", ""WCMYI"", ""BRBID"", ""NYJEL"", ""WVTOO"", ""PZUGW"", ""ICTMY"", ""FYMBX""]","[48, 51, 53, 55, 57, 60, 61]",22,eos,64,30,0.6666666666666666,0.6666666666666666, VTWLM HOTRE WCMYI NSWQD BRBID FYMBX MAGNW ICTMY,6.893,2.731,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:30+00:00,qwen,T3_back-mid_s1002,T3,1002,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""LSEYH"", ""MNKNM"", ""OXRXO"", ""PRGED"", ""NSYGA"", ""YROPL"", ""BWYQR"", ""EJIKF"", ""GVSOJ""]","[24, 26, 29, 30, 32, 35, 37, 38]",12,eos,64,30,0.2222222222222222,0.2222222222222222, LRPYC MNKNM BWYQR HWIJV,,1.565,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:43+00:00,qwen,T3_front-back_s1003,T3,1003,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""UTVDH"", ""JYPTD"", ""IUBQH"", ""AIRGX"", ""ACAOH"", ""OJIWB"", ""ZFNMU"", ""GDUUN"", ""CZJBO""]","[1, 3, 4, 7, 8, 14, 15]",26,eos,64,30,0.6666666666666666,0.6666666666666666, UTVDH JYPTD AIRGX ACAOH DWJBT OJIWB ZFNMU LCNSF TLGOP,7.043,2.991,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:43+00:00,qwen,T3_front-back_s1003,T3,1003,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""OBNFI"", ""YJGSO"", ""DLJEX"", ""BLLVF"", ""KKUIA"", ""OWHJH"", ""KMWUB"", ""ECHEW"", ""DTVUV""]","[48, 49, 50, 51, 57, 58, 60, 62]",29,eos,64,30,0.6666666666666666,0.6666666666666666, OBNFI YJGSO DLJEX BLLVF KKUIA NXFOY AXIHT KMWUB VQKJX,,3.543,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:55+00:00,qwen,T3_mid-front_s1004,T3,1004,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""OQZWU"", ""FRFUY"", ""WBIEV"", ""BNLWK"", ""XZBJR"", ""FZFZG"", ""YKMZL"", ""SHZDY"", ""EOGCT""]","[24, 25, 28, 31, 32, 34, 35, 39]",11,eos,64,30,0.2222222222222222,0.2222222222222222, OQZWU FRFUY XZEDY,7.129,1.453,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:18:55+00:00,qwen,T3_mid-front_s1004,T3,1004,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""JEYHI"", ""RKXIC"", ""UYVLR"", ""PRHBF"", ""LLSNA"", ""IQUMN"", ""MJOFF"", ""ZFRGG"", ""ZTICV""]","[3, 6, 9, 12, 13, 14, 15]",29,eos,64,30,0.8888888888888888,0.8888888888888888, JEYHI RKXIC UYVLR PRHBF IQUMN MJOFF ZFRGG ZTICV LFCOP,,3.301,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:07+00:00,qwen,T3_back-mid_s1005,T3,1005,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""DDIZG"", ""SZMAR"", ""YEZLN"", ""NXUYA"", ""TVTZU"", ""NXYPK"", ""TTAOI"", ""IIOZL"", ""IPSEB""]","[50, 52, 53, 56, 57, 60, 61, 62]",5,eos,64,30,0.2222222222222222,0.2222222222222222, DDIZG SZMAR,7.197,0.651,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:07+00:00,qwen,T3_back-mid_s1005,T3,1005,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""IPKTD"", ""EFLVX"", ""FSBCK"", ""TNUGT"", ""ACWOM"", ""LECDX"", ""DXUSN"", ""PORQF"", ""NQLRC""]","[24, 26, 30, 32, 36, 37]",28,eos,64,30,0.3333333333333333,0.3333333333333333, IPKTD EFLVX FSBCK AZVEU KLUYL ILEHG IOICC IIOZL IPSEB,,3.397,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:15+00:00,qwen,T3_front-back_s1006,T3,1006,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""PUPTE"", ""ITFMK"", ""JONWC"", ""XPMRA"", ""XXWYZ"", ""ULKJB"", ""UBGGB"", ""JFGLA"", ""VCQPR""]","[4, 5, 6, 7, 8, 9, 10, 12, 16]",3,eos,64,30,0.1111111111111111,0.1111111111111111, PUPTE,7.167,0.419,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:15+00:00,qwen,T3_front-back_s1006,T3,1006,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""GCXTT"", ""TBVVZ"", ""FAROV"", ""QICAU"", ""WPNFV"", ""OTOIC"", ""HRCXN"", ""BSKPO"", ""CVCAR""]","[48, 49, 51, 52, 56, 57, 63]",6,eos,64,30,0.2222222222222222,0.2222222222222222, GCXTT TBVVZ,,0.73,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:25+00:00,qwen,T3_mid-front_s1007,T3,1007,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""MKVLY"", ""WFUIY"", ""HJDMW"", ""LOHDE"", ""FFLFR"", ""WLGJO"", ""TXFFW"", ""XHTIH"", ""WAFLZ""]","[24, 25, 26, 27, 31, 32, 35, 38]",6,eos,64,30,0.1111111111111111,0.1111111111111111, MKVLY RPAUF,7.28,0.837,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:25+00:00,qwen,T3_mid-front_s1007,T3,1007,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""HUHFH"", ""NPZHK"", ""LUJAR"", ""OTRQK"", ""CWDJE"", ""VRLSW"", ""NVHOI"", ""BVKUH"", ""XVALM""]","[1, 6, 7, 9, 10, 11, 13, 15]",20,eos,64,30,0.5555555555555556,0.5555555555555556, HUHFH NPZHK LUJAR OTRQK CWDJE YAMBU,,2.497,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:37+00:00,qwen,T3_back-mid_s1008,T3,1008,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""QLGJU"", ""JOVUR"", ""PBFKG"", ""WJCXA"", ""OYTZB"", ""RTFXW"", ""BWSXP"", ""CNMKS"", ""OAARL""]","[52, 54, 56, 57, 59, 61, 62]",30,eos,64,30,0.6666666666666666,0.6666666666666666, QLGJU JOVUR PBFKG OYTZB RTFXW XSOZI LHOFW MZEWF OAARL,6.529,3.74,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:37+00:00,qwen,T3_back-mid_s1008,T3,1008,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""OCDSP"", ""EXCCG"", ""OQHLL"", ""XMPVR"", ""SSSOV"", ""NABSJ"", ""YVXBT"", ""BUGQZ"", ""MCAJU""]","[24, 28, 32, 33, 35, 36, 38, 39]",10,eos,64,30,0.1111111111111111,0.1111111111111111, OCDSP JXANV XSOZI,,1.332,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:48+00:00,qwen,T3_front-back_s1009,T3,1009,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""VPLGI"", ""WKVTE"", ""AWGWE"", ""WOLCL"", ""CCYOB"", ""SXNYZ"", ""RYHEJ"", ""CNDYS"", ""ESVGA""]","[1, 5, 8, 9, 10, 11, 12, 14]",6,eos,64,30,0.1111111111111111,0.1111111111111111, VPLGI MCJQQ,7.329,0.738,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:48+00:00,qwen,T3_front-back_s1009,T3,1009,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""WPJST"", ""ARBMF"", ""TKOPC"", ""IFZRG"", ""CGWJI"", ""JIOVL"", ""GCFLO"", ""TUTYT"", ""TODBF""]","[48, 49, 54, 55, 57, 60, 61]",26,eos,64,30,0.8888888888888888,0.8888888888888888, WPJST ARBMF TKOPC VAMRR IFZRG CGWJI JIOVL TUTYT TODBF,,2.941,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:59+00:00,qwen,T3_mid-front_s1010,T3,1010,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""SVLJY"", ""MKZHM"", ""GXXCU"", ""VWOFF"", ""FILKW"", ""ZNAQP"", ""WHOJH"", ""OHVQH"", ""WTHTK""]","[25, 29, 30, 34, 35, 37]",11,eos,64,30,0.1111111111111111,0.1111111111111111, SVLJY IANTK USOJL,8.102,1.257,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:19:59+00:00,qwen,T3_mid-front_s1010,T3,1010,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""VCASO"", ""JNIEQ"", ""JMGMA"", ""PNDLG"", ""EGHAI"", ""FOEDT"", ""FJTHQ"", ""WIOZC"", ""VFULG""]","[2, 4, 8, 10, 11, 14, 15]",10,eos,64,30,0.3333333333333333,0.3333333333333333, VCASO JNIEQ JMGMA,,1.089,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:12+00:00,qwen,T3_back-mid_s1011,T3,1011,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""JLXVM"", ""KFRAU"", ""JZSWB"", ""SNUCH"", ""OUEUW"", ""WAACX"", ""OMUFQ"", ""FHAHX"", ""PPRFG""]","[48, 50, 53, 55, 56, 60, 61]",27,eos,64,30,0.8888888888888888,0.8888888888888888, JLXVM KFRAU JZSWB SNUCH WAACX OMUFQ FHAHX PPRFG ACPIZ,7.014,3.563,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:12+00:00,qwen,T3_back-mid_s1011,T3,1011,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""QQGAA"", ""GYQSH"", ""ZUNNM"", ""JOFCW"", ""EHBMR"", ""JUNUX"", ""ODPSP"", ""BLAQP"", ""TSKFY""]","[29, 31, 33, 34, 37, 39]",28,eos,64,30,0.6666666666666666,0.6666666666666666, QQGAA GYQSH JOFCW EHBMR NWAGJ SVOQM BLAQP ABWPT TSKFY,,3.079,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:24+00:00,qwen,T3_front-back_s1012,T3,1012,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""QCYDP"", ""KNGJC"", ""EHHFA"", ""IGNUF"", ""JMASD"", ""INKHX"", ""NXOMB"", ""WTTIH"", ""MZHRY""]","[1, 4, 5, 7, 10, 12, 13, 14]",27,eos,64,30,0.6666666666666666,0.6666666666666666, QCYDP IKPOL KNGJC IIXZN OVJCC EHHFA IGNUF JMASD INKHX.,7.219,3.251,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:24+00:00,qwen,T3_front-back_s1012,T3,1012,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""QQKSH"", ""XKXEL"", ""NZTYA"", ""QGMLZ"", ""UBZVI"", ""FFCJQ"", ""FUNTW"", ""PCPWI"", ""KQQDK""]","[48, 50, 55, 60, 61, 63]",9,eos,64,30,0.2222222222222222,0.2222222222222222, QQKSH XKXEL HWIJH,,1.094,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:37+00:00,qwen,T3_mid-front_s1013,T3,1013,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""SFJTY"", ""PODAP"", ""JZBAO"", ""EXQKG"", ""VMLVP"", ""SWLTY"", ""BURUJ"", ""IKAAJ"", ""OXZQQ""]","[26, 27, 28, 30, 31, 36, 37]",28,eos,64,30,0.6666666666666666,0.6666666666666666, SFJTY PODAP JZBAO INENL YJOSX EXQKG VMLVP IKAAJ FCGWM,7.077,3.378,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:37+00:00,qwen,T3_mid-front_s1013,T3,1013,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""ALEHE"", ""KPLGC"", ""MGDOY"", ""BACXI"", ""ZWYSF"", ""AIKUA"", ""BIQRN"", ""NECEX"", ""VVZYS""]","[3, 7, 8, 10, 12, 13, 14, 15]",25,eos,64,30,0.6666666666666666,0.6666666666666666, ALEHE KPLGC MGDOY AVWLT BIQRN ZWYSF AIKUA BIQRN,,2.939,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:46+00:00,qwen,T3_back-mid_s1014,T3,1014,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""WSRQQ"", ""DRDTP"", ""ZRKDB"", ""NWYBI"", ""NRABL"", ""DOACH"", ""QWVBX"", ""MGRQO"", ""BHVML""]","[48, 49, 50, 51, 56, 60, 63]",12,eos,64,30,0.4444444444444444,0.4444444444444444, WSRQQ DRDTP ZRKDB NWYBI,6.951,1.548,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:46+00:00,qwen,T3_back-mid_s1014,T3,1014,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""HGZDW"", ""HSNEI"", ""GLEIV"", ""ZRBUA"", ""EYIMD"", ""WYCGG"", ""HLPZF"", ""LJPCK"", ""CZWSQ""]","[27, 28, 29, 31, 35, 37, 39]",6,eos,64,30,0.2222222222222222,0.2222222222222222, HGZDW HSNEI,,0.748,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:58+00:00,qwen,T3_front-back_s1015,T3,1015,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""YBYHE"", ""GMXZQ"", ""FEVMR"", ""YFPVT"", ""HWHXD"", ""YSMKJ"", ""MYZRU"", ""CCXDI"", ""GTZNC""]","[1, 3, 6, 7, 9, 13, 16]",10,eos,64,30,0.3333333333333333,0.3333333333333333, YBYHE GMXZQ FEVMR,7.056,1.267,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:20:58+00:00,qwen,T3_front-back_s1015,T3,1015,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""YLDON"", ""PZKSI"", ""XVKCQ"", ""JULOF"", ""KYTOZ"", ""GFOAM"", ""OOBSB"", ""HPAUF"", ""OOTRW""]","[51, 53, 54, 56, 58, 59, 61, 63]",24,eos,64,30,0.7777777777777778,0.7777777777777778, YLDON PZKSI XVKCQ JULOF TCZNO OOBSB HPAUF OOTRW,,2.819,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:09+00:00,qwen,T3_mid-front_s1016,T3,1016,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""EPQVJ"", ""BHTVC"", ""ZCHMN"", ""XDLRX"", ""VDJOA"", ""EMJHA"", ""JAOZP"", ""ZLFYQ"", ""IGRLF""]","[26, 31, 34, 35, 39]",8,eos,64,30,0.1111111111111111,0.1111111111111111, BHTVC HQDKO TWUCE,7.672,0.943,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:09+00:00,qwen,T3_mid-front_s1016,T3,1016,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""TWBLM"", ""VEXCV"", ""FVUOW"", ""XBWXN"", ""MJZRW"", ""CDTOO"", ""CSTGK"", ""FHZNV"", ""SPSGG""]","[1, 3, 8, 10, 11, 12, 14, 15, 16]",28,eos,64,30,0.5555555555555556,0.5555555555555556, TWBLM XBWXN FVUOW MJZRW CDTOO AIRJH BTRKI RLKSN HQDKO,,2.979,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:22+00:00,qwen,T3_back-mid_s1017,T3,1017,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""SKAAY"", ""EGIHB"", ""BFWLL"", ""NXVEK"", ""PSXEG"", ""CHJPZ"", ""LZCHY"", ""JWJZB"", ""HOFAL""]","[48, 50, 53, 55, 56, 59, 62]",21,eos,64,30,0.4444444444444444,0.4444444444444444, SKAAY NXVEK PSXEG CHJPZ WCVWF MHJMU GGDQS,7.64,2.439,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:22+00:00,qwen,T3_back-mid_s1017,T3,1017,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""OWXHN"", ""JJNOA"", ""FBULA"", ""PBNHE"", ""BNHYO"", ""LEXNW"", ""MUUFI"", ""QMBAD"", ""NEIEF""]","[25, 27, 28, 29, 32, 33, 37]",27,eos,64,30,0.3333333333333333,0.3333333333333333, OWXHN LAWGJ QTYUB FBULA BNHYO VUGRA YLYHE RTOUQ TPQIQ,,2.895,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:33+00:00,qwen,T3_front-back_s1018,T3,1018,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""WQXKI"", ""GVGVE"", ""ADYMV"", ""TJISY"", ""GFCWI"", ""GKYCY"", ""HGEUI"", ""ODRLU"", ""HXHFE""]","[3, 8, 9, 10, 11, 15, 16]",16,eos,64,30,0.4444444444444444,0.4444444444444444, WQXKI TJISY ADYMV GVGVE SYVPX,7.398,2.049,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:33+00:00,qwen,T3_front-back_s1018,T3,1018,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""SRTMI"", ""QLGBI"", ""IKMWD"", ""ARFUS"", ""DGNRY"", ""BMOKY"", ""TTIFF"", ""TKUCD"", ""KNMHZ""]","[48, 49, 52, 54, 55, 59, 63]",10,eos,64,30,0.2222222222222222,0.2222222222222222, SRTMI QLGBI YVRBT,,1.393,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:41+00:00,qwen,T3_mid-front_s1019,T3,1019,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""ERTLV"", ""VJORD"", ""TOUFA"", ""KLPJD"", ""KBPHY"", ""YBYVZ"", ""KJJMC"", ""PLNOW"", ""XOUDE""]","[26, 27, 28, 32, 34, 37, 38]",6,eos,64,30,0.1111111111111111,0.1111111111111111, ERTLV NTPTB,6.52,0.825,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:41+00:00,qwen,T3_mid-front_s1019,T3,1019,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""YCWFR"", ""KVSVI"", ""YQBZT"", ""FJDUF"", ""OQGOQ"", ""HJOXK"", ""ZFDQI"", ""WFRMS"", ""FJGXL""]","[2, 3, 7, 8, 9, 10, 15]",7,eos,64,30,0.2222222222222222,0.2222222222222222, YCWFR YQBZT,,0.962,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:53+00:00,qwen,T3_back-mid_s1020,T3,1020,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""VNQLU"", ""GCGLC"", ""SFWFM"", ""JIXWA"", ""VCQJA"", ""YUNGG"", ""GBFJT"", ""FDCAX"", ""CZRZD""]","[48, 49, 51, 53, 55, 58, 61, 62, 63]",9,eos,64,30,0.2222222222222222,0.2222222222222222, VNQLU GCGLC SQGDT,7.832,1.069,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:21:53+00:00,qwen,T3_back-mid_s1020,T3,1020,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""TPKKS"", ""FHOFF"", ""UQCOC"", ""AOKTF"", ""LPPWL"", ""TTDRU"", ""CUWWS"", ""ATPYH"", ""LQGBJ""]","[24, 25, 27, 28, 36, 37]",29,eos,64,30,0.5555555555555556,0.5555555555555556, TPKKS FHOFF UQCOC ATPYH LQGBJ VNQLU SQGDT ZVYLN YUNGG,,3.01,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:03+00:00,qwen,T3_front-back_s1021,T3,1021,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""BFWQT"", ""UMNRO"", ""ZHPFB"", ""XHLML"", ""IVRKN"", ""NYTYY"", ""TJEOG"", ""YZAZH"", ""RYYAT""]","[1, 2, 4, 6, 12, 13, 16]",9,eos,64,30,0.3333333333333333,0.3333333333333333, BFWQT UMNRO ZHPFB,7.699,1.207,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:03+00:00,qwen,T3_front-back_s1021,T3,1021,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""HGWAX"", ""IDDTX"", ""RNKPA"", ""KUOKU"", ""OSBAF"", ""JREFT"", ""XVZEU"", ""QRRHT"", ""POLJX""]","[48, 49, 51, 52, 54, 56, 57, 60]",6,eos,64,30,0.2222222222222222,0.2222222222222222, HGWAX IDDTX,,0.834,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:14+00:00,qwen,T3_mid-front_s1022,T3,1022,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""UCFFJ"", ""HDSAK"", ""TMKCG"", ""XWPVQ"", ""LSOCT"", ""MTJZR"", ""RVZMB"", ""LUCRA"", ""THNVT""]","[25, 26, 28, 30, 34, 35]",28,eos,64,30,0.5555555555555556,0.5555555555555556, UCFFJ HDSAK TMKCG XWPVQ LSOCT NSYHC ZTZFP AQTBR ZVCMT,6.6,3.393,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:14+00:00,qwen,T3_mid-front_s1022,T3,1022,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""USMDD"", ""SRSIY"", ""EBXSY"", ""QROFO"", ""HATXD"", ""RHKEO"", ""ZOYOX"", ""LHRIQ"", ""XVRGQ""]","[2, 9, 12, 13, 14, 15, 16]",7,eos,64,30,0.2222222222222222,0.2222222222222222, USMDD SRSIY,,0.947,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:25+00:00,qwen,T3_back-mid_s1023,T3,1023,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""MDGKV"", ""YUSXC"", ""NIIKY"", ""WFSIA"", ""JAWCS"", ""LWWRL"", ""CBPEP"", ""FOEFK"", ""JHUZY""]","[51, 52, 53, 54, 59, 60, 61, 62]",27,eos,64,30,0.7777777777777778,0.7777777777777778, MDGKV YUSXC NIIKY WFSIA JAWCS RFGMY WVGYR LWWRL CBPEP,7.633,2.95,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:25+00:00,qwen,T3_back-mid_s1023,T3,1023,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""UJKFW"", ""CDSXR"", ""NDUMJ"", ""DGSIR"", ""QAVME"", ""GHTPW"", ""VUORR"", ""GRDED"", ""DKEOI""]","[25, 26, 29, 31, 32, 34, 38, 39]",6,eos,64,30,0.2222222222222222,0.2222222222222222, UJKFW CDSXR,,0.763,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:35+00:00,qwen,T3_front-back_s1024,T3,1024,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""CNUVV"", ""OODAD"", ""PFXEB"", ""DDSEV"", ""AJYOA"", ""DBUXE"", ""HUHSG"", ""HFTHO"", ""XYCBV""]","[1, 4, 8, 11, 12, 14, 16]",6,eos,64,30,0.2222222222222222,0.2222222222222222, CNUVV OODAD,7.543,0.833,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:35+00:00,qwen,T3_front-back_s1024,T3,1024,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""VLKYY"", ""AHAPY"", ""KCPHD"", ""AHANN"", ""PPVFI"", ""NBYXM"", ""TLNJD"", ""JZYDW"", ""YIXRB""]","[48, 51, 56, 57, 58, 59, 60]",10,eos,64,30,0.1111111111111111,0.1111111111111111, VLKYY UMCMP RNYXN,,1.214,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:49+00:00,qwen,T3_mid-front_s1025,T3,1025,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""ZOHAG"", ""XTHAP"", ""SQKSY"", ""EQBQB"", ""GHPCO"", ""CCCGJ"", ""VUJRF"", ""CLEWW"", ""QMVSD""]","[27, 30, 34, 35, 36, 37, 38]",28,eos,64,30,0.8888888888888888,0.8888888888888888, ZOHAG XTHAP SQKSY EQBQB GHPCO CCCGJ VUJRF BIHRK CLEWW,6.988,3.343,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:22:49+00:00,qwen,T3_mid-front_s1025,T3,1025,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""IAUCZ"", ""GXURE"", ""XYXQF"", ""KAFGZ"", ""BRBYP"", ""HKJRO"", ""GBJIU"", ""OXXLG"", ""CVRSQ""]","[1, 3, 4, 9, 10, 11, 14]",28,eos,64,30,0.8888888888888888,0.8888888888888888, IAUCZ GXURE XYXQF KAFGZ CTKOT BRBYP HKJRO GBJIU OXXLG,,3.27,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:01+00:00,qwen,T3_back-mid_s1026,T3,1026,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""OKGQV"", ""HHDLS"", ""TYEJP"", ""IRVPT"", ""FGQOV"", ""KRIUB"", ""FFIET"", ""TNJCK"", ""VKVQU""]","[49, 50, 51, 52, 54, 55, 56]",22,eos,64,30,0.5555555555555556,0.5555555555555556, OKGQV HHDLS TYEJP IRVPT FGQOV GOMVK AKCIL,7.153,2.456,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:01+00:00,qwen,T3_back-mid_s1026,T3,1026,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""OARKA"", ""GDCSM"", ""UEUEM"", ""EKBAA"", ""CJRHJ"", ""DIVFC"", ""PZWLH"", ""JKJXP"", ""YPCDL""]","[24, 25, 26, 29, 32, 33, 34, 35, 37]",22,eos,64,30,0.4444444444444444,0.4444444444444444, OARKA GDCSM UEUEM PZWLH KEXNQ SIPWI AKCIL,,2.713,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:12+00:00,qwen,T3_front-back_s1027,T3,1027,front,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""RJALH"", ""LOCXQ"", ""QZEAM"", ""QVOPP"", ""FGGFO"", ""KXWEK"", ""EPJVK"", ""YTIAE"", ""FJNNL""]","[1, 2, 5, 8, 11, 14, 15]",6,eos,64,30,0.2222222222222222,0.2222222222222222, RJALH LOCXQ,7.197,0.842,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:12+00:00,qwen,T3_front-back_s1027,T3,1027,back,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""ZVKBL"", ""LUHZZ"", ""MHZBI"", ""EIUKT"", ""MAQMF"", ""BYCEA"", ""NOJDX"", ""UUZDR"", ""ABLHY""]","[49, 50, 51, 56, 58, 60, 62]",28,eos,64,30,0.8888888888888888,0.8888888888888888, ZVKBL LUHZZ MHZBI EIUKT NMGCS BYCEA NOJDX UUZDR ABLHY,,3.387,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:26+00:00,qwen,T3_mid-front_s1028,T3,1028,mid,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""OMPBF"", ""DEAVC"", ""TMVOT"", ""DZNFR"", ""MPGOP"", ""EZBHS"", ""XBVKK"", ""GMUFC"", ""BUAFV""]","[24, 27, 28, 32, 34, 35, 36]",27,eos,64,30,0.2222222222222222,0.2222222222222222, OMPBF BFSMR BUAFV DLSRW IOZGS WZLTO NYWSR WTYWW RGOTL,6.666,3.208,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:26+00:00,qwen,T3_mid-front_s1028,T3,1028,front,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""DKBBG"", ""PGZGU"", ""KYFQD"", ""PBJDE"", ""FMDDW"", ""SUUKW"", ""XUMFN"", ""USIZW"", ""JQMCB""]","[3, 8, 10, 11, 12, 14, 15]",29,eos,64,30,0.7777777777777778,0.7777777777777778, DKBBG PGZGU KYFQD PBJDE FMDDW SUUKW XUMFN WROQY BMSAX,,3.62,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:35+00:00,qwen,T3_back-mid_s1029,T3,1029,back,1,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""YIWQZ"", ""SNBUB"", ""ATOOI"", ""VYQGY"", ""YIWDU"", ""VLDFQ"", ""OGMDV"", ""TBLFV"", ""FJJEF""]","[48, 51, 52, 54, 57, 60, 62]",10,eos,64,30,0.3333333333333333,0.3333333333333333, YIWQZ SNBUB ATOOI,7.178,1.141,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:35+00:00,qwen,T3_back-mid_s1029,T3,1029,mid,2,"{""icl"": true, ""n_distractor_chains"": 4, ""n_hops"": 8}",string_match_all,"[""ZNPCW"", ""TFKEH"", ""WSTUD"", ""SDCVR"", ""UUINP"", ""LBWLE"", ""IFLRB"", ""XGUOO"", ""YEIEE""]","[29, 30, 31, 36, 37, 39]",9,eos,64,30,0.1111111111111111,0.1111111111111111, ZNPCW NENKG AMYAN,,1.104,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:46+00:00,qwen,T4_front-back_s1000,T4,1000,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Brittany, Cornwall, Ireland, Isle of Man, Scotland and Wales.""]","[3, 10]",13,eos,64,32,0.0,0.0," Brittany, Cornwall, Ireland, Isle of Man, Scotland, Wales",7.225,1.563,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:46+00:00,qwen,T4_front-back_s1000,T4,1000,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Artie turns out to be a terrible date""]","[48, 49, 52]",2,eos,64,32,0.0,0.0, No.,,0.362,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:54+00:00,qwen,T4_mid-front_s1001,T4,1001,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Halliwell Jones Stadium""]","[29, 35]",3,eos,64,32,0.0,0.0, Warrington,7.607,0.437,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:23:54+00:00,qwen,T4_mid-front_s1001,T4,1001,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Autopia""]","[5, 12]",2,eos,64,32,1.0,1.0, Autopia,,0.324,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:02+00:00,qwen,T4_back-mid_s1002,T4,1002,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Newcastle upon Tyne, England""]","[58, 59, 62]",4,eos,64,32,0.0,0.0, Newcastle upon Tyne,6.913,0.533,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:02+00:00,qwen,T4_back-mid_s1002,T4,1002,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""2009""]","[28, 29, 34]",5,eos,64,32,1.0,1.0, 2009,,0.641,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:11+00:00,qwen,T4_front-back_s1003,T4,1003,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""genus of plants""]","[4, 10]",1,eos,64,32,0.0,0.0, plants,7.692,0.243,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:11+00:00,qwen,T4_front-back_s1003,T4,1003,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Isla de Xativa""]","[49, 59]",9,eos,64,32,0.0,0.0, Isla Grande de Tierra del Fuego,,1.14,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:20+00:00,qwen,T4_mid-front_s1004,T4,1004,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Windermere, Cumbria""]","[26, 36, 37]",8,eos,64,32,0.0,0.0, Bowness-on-Windermere,6.853,1.12,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:20+00:00,qwen,T4_mid-front_s1004,T4,1004,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Dumb and Dumber""]","[2, 8]",5,eos,64,32,1.0,1.0, Dumb and Dumber,,0.799,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:31+00:00,qwen,T4_back-mid_s1005,T4,1005,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Stephen John Coogan""]","[52, 58, 59]",27,eos,64,32,0.0,0.0," The information provided does not include any voice artist from ""Splitting Image"" providing testimony in ""Evidently... John Cooper Clarke"".",7.509,3.309,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:31+00:00,qwen,T4_back-mid_s1005,T4,1005,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""teaches and conducts""]","[24, 35]",2,eos,64,32,0.0,0.0, Band director,,0.368,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:41+00:00,qwen,T4_front-back_s1006,T4,1006,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Thomas Penson De Quincey""]","[8, 14, 15]",5,eos,64,32,0.0,0.0, Thomas De Quincey,7.78,0.735,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:41+00:00,qwen,T4_front-back_s1006,T4,1006,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""KWCH-DT""]","[54, 58]",4,eos,64,32,1.0,1.0, KWCH-DT,,0.665,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:50+00:00,qwen,T4_mid-front_s1007,T4,1007,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Philadelphia Eagles""]","[27, 34, 35]",2,eos,64,32,1.0,1.0, Philadelphia Eagles,8.347,0.326,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:50+00:00,qwen,T4_mid-front_s1007,T4,1007,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Walker Smith Jr.""]","[7, 8, 15]",4,eos,64,32,1.0,1.0, Walker Smith Jr.,,0.544,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:58+00:00,qwen,T4_back-mid_s1008,T4,1008,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Scottish Premiership club Hearts""]","[51, 53]",1,eos,64,32,0.0,0.0, Hearts,7.253,0.219,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:24:58+00:00,qwen,T4_back-mid_s1008,T4,1008,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Team Penske""]","[25, 27, 28]",1,eos,64,32,0.0,0.0, McLaren,,0.217,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:06+00:00,qwen,T4_front-back_s1009,T4,1009,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Dutch""]","[1, 2, 15]",1,eos,64,32,1.0,1.0, Dutch,7.752,0.252,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:06+00:00,qwen,T4_front-back_s1009,T4,1009,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""close range combat""]","[50, 54]",3,eos,64,32,1.0,1.0, close range combat,,0.491,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:15+00:00,qwen,T4_mid-front_s1010,T4,1010,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""by Larry Eustachy""]","[32, 35]",5,eos,64,32,0.0,0.0, Larry Eustachy,7.642,0.723,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:15+00:00,qwen,T4_mid-front_s1010,T4,1010,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Kentucky""]","[2, 3, 7]",1,eos,64,32,0.0,0.0, Virginia,,0.254,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:25+00:00,qwen,T4_back-mid_s1011,T4,1011,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Al-Masjid an-Nabawī""]","[54, 55, 61]",8,eos,64,32,0.0,0.0, Al-Masjid an-Nabawi,7.494,1.196,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:25+00:00,qwen,T4_back-mid_s1011,T4,1011,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""2013""]","[31, 35]",5,eos,64,32,1.0,1.0, 2013,,0.821,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:33+00:00,qwen,T4_front-back_s1012,T4,1012,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Prince George of Cambridge""]","[1, 4, 5]",4,eos,64,32,0.0,0.0, Hugh Grosvenor,7.681,0.54,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:33+00:00,qwen,T4_front-back_s1012,T4,1012,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Carrefour""]","[58, 59, 61]",3,eos,64,32,1.0,1.0, Carrefour,,0.448,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:43+00:00,qwen,T4_mid-front_s1013,T4,1013,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Barbados""]","[26, 38, 39]",2,eos,64,32,1.0,1.0, Barbados,8.438,0.422,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:43+00:00,qwen,T4_mid-front_s1013,T4,1013,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""42.5""]","[5, 13]",5,eos,64,32,1.0,1.0, 42.5,,0.734,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:52+00:00,qwen,T4_back-mid_s1014,T4,1014,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Point Place""]","[58, 59, 61]",2,eos,64,32,1.0,1.0, Point Place,7.588,0.398,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:25:52+00:00,qwen,T4_back-mid_s1014,T4,1014,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""St. Louis, Missouri""]","[32, 37]",5,eos,64,32,1.0,1.0," St. Louis, Missouri",,0.807,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:01+00:00,qwen,T4_front-back_s1015,T4,1015,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Luger P08""]","[2, 15]",5,eos,64,32,0.0,0.0, Walther P38,8.333,0.727,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:01+00:00,qwen,T4_front-back_s1015,T4,1015,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Jane""]","[49, 62]",0,eos,64,32,0.0,0.0,,,0.141,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:11+00:00,qwen,T4_mid-front_s1016,T4,1016,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Germanic""]","[32, 33, 36]",1,eos,64,32,0.0,0.0, German,9.038,0.226,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:11+00:00,qwen,T4_mid-front_s1016,T4,1016,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""1932""]","[4, 5, 6]",5,eos,64,32,1.0,1.0, 1932,,0.655,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:21+00:00,qwen,T4_back-mid_s1017,T4,1017,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""from 1847 until 1980""]","[54, 60]",8,eos,64,32,0.0,0.0, 1914–74,7.777,1.132,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:21+00:00,qwen,T4_back-mid_s1017,T4,1017,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Polish""]","[25, 37]",1,eos,64,32,0.0,0.0, Italian,,0.265,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:30+00:00,qwen,T4_front-back_s1018,T4,1018,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Esther \""Essie\"" Davis""]","[3, 14]",3,eos,64,32,0.0,0.0, Essie Davis,7.769,0.425,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:30+00:00,qwen,T4_front-back_s1018,T4,1018,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Aksel Sandemose""]","[54, 55, 58, 59]",6,eos,64,32,1.0,1.0, Aksel Sandemose,,0.824,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:39+00:00,qwen,T4_mid-front_s1019,T4,1019,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Fennec fox""]","[26, 36]",4,eos,64,32,1.0,1.0, Fennec fox,8.505,0.585,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:39+00:00,qwen,T4_mid-front_s1019,T4,1019,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Herman's Hermits""]","[5, 12]",4,eos,64,32,1.0,1.0, Herman's Hermits,,0.541,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:48+00:00,qwen,T4_back-mid_s1020,T4,1020,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Gary Morris""]","[49, 50, 59]",3,eos,64,32,0.0,0.0, Crystal Gayle,8.099,0.503,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:48+00:00,qwen,T4_back-mid_s1020,T4,1020,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Audi""]","[25, 37]",1,eos,64,32,1.0,1.0, Audi,,0.247,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:57+00:00,qwen,T4_front-back_s1021,T4,1021,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""American""]","[4, 6, 7]",1,eos,64,32,1.0,1.0, American,7.763,0.247,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:26:57+00:00,qwen,T4_front-back_s1021,T4,1021,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Alejandro Jodorowsky Prullansky""]","[55, 60]",5,eos,64,32,0.0,0.0, Alejandro Jodorowsky,,0.792,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:06+00:00,qwen,T4_mid-front_s1022,T4,1022,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""the east of Ireland""]","[28, 29, 30]",3,eos,64,32,0.0,0.0, Leinster,8.129,0.485,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:06+00:00,qwen,T4_mid-front_s1022,T4,1022,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Ernestine""]","[5, 6, 11]",3,eos,64,32,0.0,0.0, Schleswig,,0.476,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:15+00:00,qwen,T4_back-mid_s1023,T4,1023,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Northern Irish""]","[48, 57]",2,eos,64,32,0.0,0.0, Northern Ireland,7.885,0.391,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:15+00:00,qwen,T4_back-mid_s1023,T4,1023,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Ghana""]","[28, 35]",2,eos,64,32,1.0,1.0, Ghanaian,,0.42,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:25+00:00,qwen,T4_front-back_s1024,T4,1024,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""2010""]","[2, 3, 4]",5,eos,64,32,1.0,1.0, 2010,8.398,0.73,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:25+00:00,qwen,T4_front-back_s1024,T4,1024,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Anthony Davis""]","[55, 59]",2,eos,64,32,1.0,1.0, Anthony Davis,,0.374,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:35+00:00,qwen,T4_mid-front_s1025,T4,1025,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Univision""]","[27, 29]",2,eos,64,32,1.0,1.0, Univision,8.339,0.361,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:35+00:00,qwen,T4_mid-front_s1025,T4,1025,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Port Moresby, Papua New Guinea""]","[4, 9, 10]",8,eos,64,32,1.0,1.0," Port Moresby, Papua New Guinea",,1.071,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:46+00:00,qwen,T4_back-mid_s1026,T4,1026,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""the deadpan sketch group""]","[52, 60, 61]",25,eos,64,32,1.0,1.0," Dianne Morgan and Joe Wilkinson are part of the deadpan sketch group ""Two Episodes of Mash"" in the BBC comedy.",7.741,3.382,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:46+00:00,qwen,T4_back-mid_s1026,T4,1026,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Valhalla Highlands Historic District""]","[25, 26, 35, 36]",4,eos,64,32,0.0,0.0, Cold Spring Historic District,,0.605,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:58+00:00,qwen,T4_front-back_s1027,T4,1027,front,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Lego""]","[2, 8]",25,eos,64,32,0.0,0.0," GeekDad does not cover a line of plastic construction toys manufactured by a privately held company based in Billund, Denmark.",7.627,3.435,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:27:58+00:00,qwen,T4_front-back_s1027,T4,1027,back,2,"{""n_hard_distractors"": 8}",string_match_part,"[""The Thomas Crown Affair""]","[49, 51]",5,eos,64,32,1.0,1.0, The Thomas Crown Affair,,0.844,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:28:07+00:00,qwen,T4_mid-front_s1028,T4,1028,mid,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Kiernan Brennan Shipka""]","[28, 29, 35]",5,eos,64,32,0.0,0.0, Kiernan Shipka,7.415,0.776,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:28:07+00:00,qwen,T4_mid-front_s1028,T4,1028,front,2,"{""n_hard_distractors"": 8}",string_match_part,"[""Shirley Ann Manson""]","[5, 8, 9]",2,eos,64,32,0.0,0.0, Jim Kerr,,0.402,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:28:17+00:00,qwen,T4_back-mid_s1029,T4,1029,back,1,"{""n_hard_distractors"": 8}",string_match_part,"[""Donald Trump Jr.""]","[49, 51]",5,eos,64,32,0.0,0.0, Donald John Trump Jr.,8.263,0.706,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:28:17+00:00,qwen,T4_back-mid_s1029,T4,1029,mid,2,"{""n_hard_distractors"": 8}",string_match_part,"[""2014""]","[26, 35]",5,eos,64,32,1.0,1.0, 2014,,0.713,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:28:37+00:00,qwen,T5_global_s1000,T5,1000,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""opossum"", ""context"", ""dissemination"", ""font"", ""south"", ""early"", ""religion"", ""province"", ""heirloom"", ""networking""]","[2, 3, 4, 5, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",81,eos,120,120,0.6,0.6," 
+
+1. province  
+2. opossum  
+3. networking  
+4. early  
+5. context  
+6. font  
+7. province  
+8. opossum  
+9. networking  
+10. early  
+
+It appears that ""province"" and ""opossum"" are tied for the first position, and ""networking"" and ""early"" are tied for the third position.",8.27,9.82,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:29:00+00:00,qwen,T5_global_s1001,T5,1001,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""scientist"", ""commerce"", ""chalice"", ""steward"", ""demon"", ""endure"", ""ceremony"", ""dividend"", ""sketch"", ""solid""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.3,0.3," 
+
+1. **commerce**  
+2. **science**  
+3. **solid**  
+4. **endure**  
+5. **child**  
+6. **science**  
+7. **child**  
+8. **science**  
+9. **child**  
+10. **science**
+
+It appears there is a repetition or typo in the word ""science"" throughout the list, making it the most frequent word. If we exclude duplicates, the most common unique words are:
+
+1. **commerce**  
+2. **endure**  
+3. **child**  
+4.",7.529,14.408,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:29:25+00:00,qwen,T5_global_s1002,T5,1002,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""tweezers"", ""talent"", ""beanie"", ""countryside"", ""gaffer"", ""pop"", ""news"", ""beyond"", ""bathroom"", ""periodical""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.5,0.5," 
+
+1. **pop**  
+2. **periodical**  
+3. **bathroom**  
+4. **tweezers**  
+5. **countryside**  
+6. **tweezers** (appears multiple times, but is the same word)  
+7. **tweezers** (appears multiple times, but is the same word)  
+8. **tweezers** (appears multiple times, but is the same word)  
+9. **tweezers** (appears multiple times, but is the same word",7.96,14.957,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:29:48+00:00,qwen,T5_global_s1003,T5,1003,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""unpack"", ""barge"", ""zither"", ""paranoia"", ""dreamer"", ""postage"", ""receive"", ""youth"", ""valentine"", ""steadfast""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.1,0.1," 
+
+1. **unpacked** (appears 107 times)
+2. **the** (appears 103 times)
+3. **to** (appears 98 times)
+4. **of** (appears 95 times)
+5. **and** (appears 93 times)
+6. **a** (appears 89 times)
+7. **in** (appears 87 times)
+8. **for** (appears 85 times)
+9. **that** (appears 84 times",7.15,14.046,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:30:10+00:00,qwen,T5_global_s1004,T5,1004,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""sell"", ""incompetent"", ""railway"", ""representation"", ""poised"", ""outlook"", ""gaze"", ""haversack"", ""worm"", ""muscatel""]","[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",117,eos,120,120,0.5,0.5," 
+
+1. **outlook**  
+2. **railway**  
+3. **muscatel**  
+4. **poised**  
+5. **gaze**  
+6. **muscatel**  
+7. **muscatel**  
+8. **muscatel**  
+9. **muscatel**  
+10. **muscatel**
+
+It appears that ""muscatel"" is the most common word, appearing multiple times in the list. The next most common words are ""outlook"" and ""railway,"" each appearing twice.",7.021,13.652,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:30:29+00:00,qwen,T5_global_s1005,T5,1005,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""beating"", ""cocktail"", ""outlay"", ""softening"", ""commander"", ""width"", ""shadowbox"", ""direction"", ""loss"", ""craw""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",79,eos,120,120,0.8,0.9," 
+
+1. **outlay**  
+2. **direction**  
+3. **loss**  
+4. **cocktail**  
+5. **commander**  
+6. **softening**  
+7. **shadowbox**  
+8. **craw**  
+9. **table**  
+10. **width**  
+
+These words appear frequently across the provided list of terms.",7.739,9.118,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:30:51+00:00,qwen,T5_global_s1006,T5,1006,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""voracious"", ""biology"", ""bombing"", ""erosion"", ""resemblance"", ""providence"", ""embarrassment"", ""nudge"", ""actor"", ""decorous""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 63]",106,eos,120,120,0.4,0.4,"  
+1. **bombing**  
+2. **embarrassment**  
+3. **actor**  
+4. **biology**  
+5. **bombing**  
+6. **embarrassment**  
+7. **actor**  
+8. **biology**  
+9. **bombing**  
+10. **embarrassment**
+
+It appears that ""bombing"" and ""embarrassment"" are the most frequent words, each appearing multiple times, while ""actor"" and ""biology"" also appear frequently.",7.312,12.835,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:31:13+00:00,qwen,T5_global_s1007,T5,1007,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""bloomer"", ""inquiry"", ""hunt"", ""phrasing"", ""mute"", ""boyfriend"", ""tractor"", ""pickup"", ""late"", ""mentor""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63]",106,eos,120,120,0.4,0.4,"  
+1. **pickup**  
+2. **hunt**  
+3. **mentor**  
+4. **inquiry**  
+5. **the**  
+6. **the**  
+7. **the**  
+8. **the**  
+9. **the**  
+10. **the**  
+
+It appears that the word ""the"" is the most common, appearing multiple times in the list. The next most common words are ""pickup"" and ""hunt,"" followed by ""mentor"" and ""inquiry.""",8.022,12.597,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:31:36+00:00,qwen,T5_global_s1008,T5,1008,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""blizzard"", ""stitch"", ""reproduce"", ""handwrite"", ""brook"", ""opportunist"", ""corporation"", ""espalier"", ""seller"", ""servitude""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 61, 62, 63]",112,eos,120,120,0.6,0.6," 
+
+1. **handwrite**  
+2. **brook**  
+3. **reproduce**  
+4. **opportunist**  
+5. **seller**  
+6. **corporation**  
+7. **solicitation**  
+8. **solicitation**  
+9. **solicitation**  
+10. **solicitation**
+
+It appears that the word ""solicitation"" is repeated multiple times in the top 10, which is likely due to the large dataset and the frequency of this specific word.",7.1,13.634,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:31:56+00:00,qwen,T5_global_s1009,T5,1009,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""destroyer"", ""geyser"", ""window"", ""monster"", ""wrapping"", ""nut"", ""tangerine"", ""smock"", ""conversion"", ""pleasant""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",84,eos,120,120,0.2,0.2,"  
+1. wrapping  
+2. tangerine  
+3. tangerine  
+4. tangerine  
+5. tangerine  
+6. tangerine  
+7. tangerine  
+8. tangerine  
+9. tangerine  
+10. tangerine  
+
+It appears that ""tangerine"" is the overwhelmingly most common word in this list, appearing 10 times.",8.003,10.366,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:32:18+00:00,qwen,T5_global_s1010,T5,1010,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""scrip"", ""troop"", ""grouse"", ""puzzled"", ""fire"", ""crystal"", ""practice"", ""thunderbolt"", ""busy"", ""rabid""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",98,eos,120,120,0.5,0.5," 
+
+1. practice  
+2. fire  
+3. troop  
+4. puzzle  
+5. crystal  
+6. busy  
+7. puzzle  
+8. troop  
+9. puzzle  
+10. troop  
+
+It appears that ""practice,"" ""fire,"" ""troop,"" and ""puzzle"" are the most common words, with ""practice"" and ""troop"" appearing multiple times. The word ""puzzle"" appears four times, and ""troop"" appears five times.",8.587,11.612,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:32:43+00:00,qwen,T5_global_s1011,T5,1011,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""croissant"", ""somersault"", ""duffel"", ""electronics"", ""thank"", ""destroy"", ""dish"", ""reciprocity"", ""offer"", ""pitching""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 48, 49, 50, 51, 53, 55, 56, 57, 58, 59, 60, 61, 62, 63]",119,eos,120,120,0.4,0.4," 
+
+1. **reciprocity**  
+2. **somersault**  
+3. **offer**  
+4. **pitching**  
+5. **electronic**  
+6. **somersault**  
+7. **reciprocity**  
+8. **reciprocity**  
+9. **reciprocity**  
+10. **reciprocity**
+
+It appears that ""reciprocity"" is the most common word, appearing multiple times in the list. The word ""somersault"" also appears frequently, but not as consistently as ""reciprocity.""",8.319,14.768,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:33:07+00:00,qwen,T5_global_s1012,T5,1012,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""scrape"", ""interpret"", ""wrap"", ""atrium"", ""leptocephalus"", ""pyridine"", ""timpani"", ""crepe"", ""dairy"", ""hull""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.5,0.5," 
+
+1. **scrape**  
+2. **timpani**  
+3. **wrap**  
+4. **dairy**  
+5. **scrap**  
+6. **dune**  
+7. **pyridine**  
+8. **pyridine**  
+9. **pyridine**  
+10. **pyridine**
+
+It appears that ""pyridine"" is the most common word, appearing multiple times in the list. The next most common words are ""scrape,"" ""timpani,"" ""wrap,"" ""dairy,"" and """,8.188,14.354,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:33:31+00:00,qwen,T5_global_s1013,T5,1013,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""sample"", ""tremble"", ""aboriginal"", ""super"", ""vernacular"", ""standard"", ""sustainment"", ""transom"", ""fledgling"", ""enlist""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 56, 57, 58, 59, 60, 61, 62, 63]",103,eos,120,120,0.3,0.3," 
+
+1. tremble  
+2. sample  
+3. sustainment  
+4. ensemble  
+5. tremble  
+6. tremble  
+7. tremble  
+8. tremble  
+9. tremble  
+10. tremble  
+
+It appears that ""tremble"" is the most common word in the list, appearing multiple times. The second most common word is ""sample,"" and the subsequent words are also ""tremble,"" indicating a high frequency of this particular word throughout the list.",8.34,12.686,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:33:51+00:00,qwen,T5_global_s1014,T5,1014,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""tummy"", ""setting"", ""tract"", ""manipulation"", ""swift"", ""lysine"", ""agreement"", ""craven"", ""eurocentrism"", ""apron""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63]",91,eos,120,120,0.6,0.6," 
+
+1. craven  
+2. setting  
+3. agreement  
+4. swift  
+5. apron  
+6. tummy  
+7. craven  
+8. craven  
+9. craven  
+10. craven  
+
+It appears that ""craven"" is the word that appears most frequently in this list, appearing 10 times. The next most common words are ""setting"" and ""agreement,"" each appearing twice.",7.987,11.057,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:34:13+00:00,qwen,T5_global_s1015,T5,1015,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""yellowjacket"", ""cornflakes"", ""civilisation"", ""airship"", ""gaffe"", ""confusion"", ""framework"", ""deposit"", ""frosting"", ""walkway""]","[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",97,eos,120,120,0.6,0.6," 
+
+1. cornflakes  
+2. framework  
+3. walkway  
+4. yellowjacket  
+5. deposit  
+6. airship  
+7. festival  
+8. cornflakes  
+9. cornflakes  
+10. cornflakes  
+
+It appears that ""cornflakes"" is the most common word, appearing multiple times in the list. The next most common words are ""framework,"" ""walkway,"" ""yellowjacket,"" and ""deposit.""",8.743,11.183,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:34:37+00:00,qwen,T5_global_s1016,T5,1016,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""oriented"", ""scarecrow"", ""witty"", ""dromedary"", ""self"", ""sunlight"", ""conifer"", ""oak"", ""hourglass"", ""nest""]","[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.5,0.5," 
+
+1. **sunlight**  
+2. **oriented**  
+3. **conifer**  
+4. **self**  
+5. **hourglass**  
+6. **tunnel**  
+7. **twin**  
+8. **sunset**  
+9. **tension**  
+10. **tread**
+
+However, it appears there might be an error in the provided list as the words ""sunset"" and ""tension"" are not present. Given the context and the frequency of words, the most common words should be re-evaluated from the provided",7.974,14.447,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:35:02+00:00,qwen,T5_global_s1017,T5,1017,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""clip"", ""interchange"", ""excerpt"", ""fame"", ""gigantism"", ""psychoanalyst"", ""equipment"", ""bakeware"", ""riddle"", ""helicopter""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.7,0.7," 
+
+1. **equipment**  
+2. **fame**  
+3. **helicopter**  
+4. **bakeware**  
+5. **psychoanalyst**  
+6. **interchange**  
+7. **clip**  
+8. **fear**  
+9. **fear**  
+10. **fear**  
+
+It appears that ""fear"" is repeated multiple times, but it is not present in the original list. The correct top 10 based on the provided list are:
+
+1. **equipment**  
+2. **fame**  
+",8.116,14.167,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:35:25+00:00,qwen,T5_global_s1018,T5,1018,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""inn"", ""combative"", ""crystallography"", ""babushka"", ""achiever"", ""hypothesis"", ""classic"", ""hand"", ""bunghole"", ""dress""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.4,0.4," 
+
+1. **classical** (appears 10 times)
+2. **bunghole** (appears 10 times)
+3. **inn** (appears 10 times)
+4. **hypothesis** (appears 10 times)
+5. **bunghole** (appears 10 times)
+6. **inn** (appears 10 times)
+7. **bunghole** (appears 10 times)
+8. **inn** (appears 10 times)
+9. **",7.816,13.944,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:35:44+00:00,qwen,T5_global_s1019,T5,1019,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""bookend"", ""laptop"", ""hissing"", ""ugly"", ""pup"", ""smolt"", ""hypnotic"", ""prose"", ""marten"", ""igloo""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 56, 57, 58, 59, 60, 61, 62, 63]",94,eos,120,120,0.5,0.5," 
+
+1. **hissing**  
+2. **puppet**  
+3. **pup**  
+4. **laptop**  
+5. **prose**  
+6. **igloo**  
+7. **prose**  
+8. **prose**  
+9. **hissing**  
+10. **hissing**
+
+It appears that ""hissing"" and ""prose"" are the most frequent words, each appearing multiple times.",6.542,10.528,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:36:06+00:00,qwen,T5_global_s1020,T5,1020,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""whale"", ""hushed"", ""span"", ""caftan"", ""tomography"", ""sleep"", ""affect"", ""sting"", ""mailbox"", ""bunch""]","[2, 3, 4, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.7,0.7," 
+
+1. **sleep**  
+2. **mail** (or **mailbox**)  
+3. **span**  
+4. **affect**  
+5. **tomography**  
+6. **bunch**  
+7. **hushed**  
+8. **whisper**  
+9. **span** (repeated)  
+10. **span** (repeated)
+
+It appears that ""span"" is the most common word, appearing multiple times in the list. The next most common words are ""sleep,"" ""mail,"" ""affect,"" ""tomography,"" ""b",6.462,13.241,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:36:25+00:00,qwen,T5_global_s1021,T5,1021,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""pollution"", ""mangle"", ""controller"", ""proposition"", ""ascend"", ""philanthropy"", ""victorious"", ""blind"", ""complain"", ""wash""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",105,eos,120,120,0.2,0.2," 
+
+1. controller  
+2. philanthropy  
+3. philanthropy  
+4. philanthropy  
+5. philanthropy  
+6. philanthropy  
+7. philanthropy  
+8. philanthropy  
+9. philanthropy  
+10. philanthropy  
+
+It appears that ""philanthropy"" is the overwhelmingly most common word in this list, appearing 10 times. The next most common words are not clearly distinguishable without further analysis, as the list seems to be dominated by repeated instances of ""philanthropy.""",5.84,11.991,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:36:46+00:00,qwen,T5_global_s1022,T5,1022,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""footstool"", ""exhaust"", ""assistant"", ""macrame"", ""cleaner"", ""status"", ""uninterested"", ""testing"", ""pan"", ""rage""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 49, 50, 51, 52, 53, 54, 55, 57, 58, 59, 60, 61, 62, 63]",118,eos,120,120,0.8,0.9,"  
+1. **testing**  
+2. **footstool**  
+3. **status**  
+4. **exhaust**  
+5. **macrame**  
+6. **rage**  
+7. **cleaner**  
+8. **pan**  
+9. **solar**  
+10. **assistant**
+
+Note: The word ""solar"" appears in the list, but it is not a common English word. It might be a typo or a non-standard term. If you meant to include a more common word, please check the list for any errors.",6.933,12.215,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:37:06+00:00,qwen,T5_global_s1023,T5,1023,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""economy"", ""solvency"", ""ranch"", ""precede"", ""boot"", ""chill"", ""technologist"", ""princess"", ""asphalt"", ""poisoning""]","[2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.7,0.7,"  
+1. **boot**  
+2. **chill**  
+3. **economy**  
+4. **solvency**  
+5. **asphalt**  
+6. **precede**  
+7. **ranch**  
+8. **student** (This word does not appear in the provided list. It seems there was a mistake in the question. The correct word based on the list is ""ranch."")  
+9. **chime**  
+10. **sugar** (This word does not appear in the provided list. It seems there was a mistake",7.251,11.203,3
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:37:17+00:00,qwen,T5_global_s1024,T5,1024,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""consult"", ""succinct"", ""reverse"", ""dhow"", ""mangrove"", ""evanescent"", ""dose"", ""roomy"", ""subject"", ""muskrat""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 63]",86,eos,120,120,0.2,0.2," 
+
+1. dose  
+2. subject  
+3. dose  
+4. dose  
+5. dose  
+6. dose  
+7. dose  
+8. dose  
+9. dose  
+10. dose  
+
+It appears that ""dose"" is overwhelmingly the most frequent word in the provided list, appearing 10 times. If you intended to provide a different list or there is an error, please double-check the data.",4.146,5.069,4
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:37:30+00:00,qwen,T5_global_s1025,T5,1025,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""eraser"", ""utilization"", ""tog"", ""coordinator"", ""lounge"", ""final"", ""wish"", ""statute"", ""tile"", ""turnip""]","[2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",106,eos,120,120,0.5,0.5," 
+
+1. **turnip**  
+2. **tile**  
+3. **statute**  
+4. **coordinator**  
+5. **eraser**  
+6. **turnip**  
+7. **tile**  
+8. **coordinator**  
+9. **statute**  
+10. **turnip**
+
+It appears that ""turnip"" is the most common word, appearing four times, followed closely by ""tile,"" ""statute,"" and ""coordinator,"" each appearing three times.",4.729,6.531,4
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:37:41+00:00,qwen,T5_global_s1026,T5,1026,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""armpit"", ""fish"", ""matrix"", ""boost"", ""flanker"", ""hemp"", ""rosemary"", ""adapter"", ""seaside"", ""ambition""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",64,eos,120,120,0.9,0.9," 
+
+1. boost  
+2. armpit  
+3. matrix  
+4. fish  
+5. adapter  
+6. seaside  
+7. rosemary  
+8. flanker  
+9. hemp  
+10. bobcat  
+
+These words appear frequently enough to stand out as the most common in the provided list.",4.698,4.089,4
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:37:55+00:00,qwen,T5_global_s1027,T5,1027,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""armament"", ""legislator"", ""victorious"", ""demand"", ""strengthen"", ""worm"", ""guava"", ""outset"", ""backburn"", ""cucumber""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.6,0.6,"  
+1. **armament**  
+2. **guava**  
+3. **outset**  
+4. **demand**  
+5. **backburn**  
+6. **cucumber**  
+7. **sugar** (Note: ""sugar"" is not in the list, so this is a placeholder. The actual 7th most common word is likely another frequent word like ""armament"" or ""outset."")  
+8. **armament** (repeated)  
+9. **outset** (repeated)  
+10. **armament**",4.117,7.778,4
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:38:09+00:00,qwen,T5_global_s1028,T5,1028,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""macrame"", ""outlaw"", ""buzz"", ""hatchet"", ""extract"", ""graceful"", ""frosting"", ""blowgun"", ""pyridine"", ""slash""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.5,0.5," 
+
+1. **pyridine**  
+2. **buzz**  
+3. **outlaw**  
+4. **macrame**  
+5. **extract**  
+6. **blade**  
+7. **blade**  
+8. **blade**  
+9. **blade**  
+10. **blade**
+
+It appears that ""blade"" is repeated multiple times, likely due to data entry errors or similar words being misinterpreted. If you need the most distinct words, the top 10 would be:
+
+1. **pyridine**  
+2. **buzz**  
+3",4.214,7.782,4
+20261015-030856-m10-e0p1-hard-qwen,2026-10-15T03:38:22+00:00,qwen,T5_global_s1029,T5,1029,global,1,"{""freq_cw"": 20, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""pamphlet"", ""schooner"", ""gullible"", ""ratio"", ""plane"", ""measly"", ""tailbud"", ""overclocking"", ""homonym"", ""muskrat""]","[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 26, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",108,eos,120,120,0.3,0.3," 
+
+1. gullible  
+2. muskrat  
+3. ratio  
+4. overexertion  
+5. muskrat  
+6. muskrat  
+7. muskrat  
+8. muskrat  
+9. muskrat  
+10. muskrat  
+
+It appears that ""muskrat"" is the word that appears most frequently in this list, appearing 10 times. The next most common words are ""gullible"" and ""overexertion,"" each appearing twice.",4.353,7.095,4

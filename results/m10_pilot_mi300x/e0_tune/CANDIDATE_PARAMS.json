@@ -1,0 +1,17 @@
+{
+ "status": "候選（MI300X 彩排）。H200 上只跑 E0 確認仍在 60–95%，不在就只用 E0 再調；確認後才和 03 §1–§2 一起凍結（03 §3.2、§7 D1）",
+ "decided_utc": "2026-10-15",
+ "source": "results/m10_pilot_mi300x/e0_tune/p3_*（seed 2000–2059，和調參數用的 1000–1059 分開）",
+ "params": {
+  "llama": {"T1": {}, "T2": {"n_distractors": 100}, "T3": {"n_hops": 6, "n_distractor_chains": 2},
+            "T4": {"max_answer_words": 2}, "T5": {"freq_cw": 40}},
+  "qwen":  {"T1": {}, "T2": {"n_distractors": 150}, "T3": {"n_hops": 4, "n_distractor_chains": 2},
+            "T4": {"max_answer_words": 2}, "T5": {}}
+ },
+ "not_in_range": {
+  "T1": "兩個模型都碰天花板（Llama 6/6 格 100%，Qwen 4/6 格 100%）；沒有可以調難的參數。照 03 §3.2：照實記錄，不進該模型的主判準；連續指標（gold log-prob、KL）照記",
+  "T3_borderline": "Llama 第 2 輪 mid 0.59、Qwen 第 2 輪 front 0.58（每格 20 題，CI ±0.12）"
+ },
+ "seeds": "正式題目請用 10000 起，避開調難度用過的 1000–1059、2000–2059",
+ "gen_length_note": "生成到 max(64, 上游)；pass 3 只有 Qwen T5 的兩種截法不同（score_64 0.67、score_up 0.69），其餘相同"
+}
