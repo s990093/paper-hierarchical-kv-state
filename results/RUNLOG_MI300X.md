@@ -517,6 +517,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   1. 12 份 gpu_guard 都是 CONTAMINATED（自己同時開 6–7 個 process，互相看到）。分數保留、`latency_ms` 作廢（CLAUDE.md §3）。
   2. 我的等待腳本 exit 1：只是最後 `cat NEEDS_HUMAN` 時檔案不存在（沒有 NEEDS_HUMAN），stage 本身都 rc＝0。
   3. 後半批（s3、s4、T5）每題比前半批慢（Qwen 約 110 vs 65 秒），原因沒查；整段 3 小時 49 分。
+- **另外加的 stage**（10:5xZ，只用 CPU）：`33cz_decide_step2_int4.sh` → `analyze_step2_int4.sh llama`。它用凍結的 `m10_analyze.py quality --strip-fmt` 和 `step2` 判穩定差距第 1、2 條與 K2。`step2` 沒有 `--strip-fmt`，所以先照 `cmd_quality` 同樣的規則把 `@int4_kivi` 拿掉、寫成暫存檔，判準一行都沒改。K2 成立 → 主線停；第 1、2 條成立 → NEEDS_HUMAN（第 3 條要新 seed 重跑）。用改名的端點列當假資料，在沙盒測過兩個分支。
 - **解讀**（寫進 08 §2.5.3、§0、H7、§6 第 1 點）：INT4 不挑位置、品質沒掉；判「不夠」只因為真實 CPU 層、原寫法反量化的速度（11 問題一）。〔照規則推〕速度判準只看限速層的話，兩個模型都會「過」→ 判定流程整個停。
 
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
