@@ -1,465 +1,582 @@
-% =====================================================================
-% refs.bib — Adaptive Hierarchical KV State Management
-% 所有條目均於 2026-08-28 經直接抓取驗證（arXiv abs 頁 / 官方 proceedings /
-% 出版社 DOI 頁）。標記 [PREPRINT] 者為未經同儕審查之 arXiv 預印本。
-% =====================================================================
+% refs.bib -- rebuilt 2026-10-17 for the English rewrite of main.tex.
+% Every entry was checked by an independent verifier agent against a publisher page,
+% Crossref, OpenReview, ACL Anthology, USENIX, or arXiv (DBLP was unreachable).
+% The comment above each entry names the metadata source and whether the venue is VERIFIED.
+% Claim-level checks (what each cited paper actually says, with page numbers) are in
+% docs/paper_20261016/CITATION_CHECK.md.
 
-% ---------- 可恢復驅逐 / Recoverable eviction ----------
-@inproceedings{arkvale2024,
-  title     = {{ArkVale}: Efficient Generative {LLM} Inference with Recallable Key-Value Eviction},
-  author    = {Chen, Renze and Wang, Zhuofeng and Cao, Beiquan and Wu, Tong and
-               Zheng, Size and Li, Xiuhong and Wei, Xuechao and Yan, Shengen and
-               Li, Meng and Liang, Yun},
-  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
-  year      = {2024},
-  note      = {Peking University; Infinigence-AI},
-  url       = {https://papers.nips.cc/paper_files/paper/2024/hash/cd4b49379efac6e84186a3ffce108c37-Abstract-Conference.html}
-}
+% refs_A.bib -- generated 2026-10-17 by a zero-context citation verifier.
+% Metadata sources: publisher pages (PMLR, ACM via Crossref, USENIX, NeurIPS, ACL Anthology) and arXiv API.
+% DBLP could not be used: dblp.org and its mirrors returned a bot-challenge page to every scripted request.
+% Keys are exactly as requested. arXiv-only papers use the misc type with howpublished = arXiv ID.
 
-@article{qevict2026,
-  title        = {{QEvict}: Recoverable Quantized {KV} Eviction for Attention-Drift-Robust Long-Context Decoding},
-  author       = {Garg, Ayushman and Gupta, Akshita and Bhattacharya, Shaswata and
-                  Gupta, Abhishek and Kumar, Sandeep and Kumar, Manoj},
-  journal      = {arXiv preprint arXiv:2608.05326},
-  year         = {2026},
-  note         = {[PREPRINT] submitted 2026-08-05},
-  url          = {https://arxiv.org/abs/2608.05326}
-}
-
-% ---------- 學習式未來效用預測 / Learned future-utility prediction ----------
-@inproceedings{kvp2026,
-  title     = {Learning to Evict from Key-Value Cache},
-  author    = {Moschella, Luca and Manduchi, Laura and Sener, Ozan},
-  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
-  year      = {2026},
-  note      = {Apple; arXiv:2602.10238},
-  url       = {https://arxiv.org/abs/2602.10238}
-}
-
-@inproceedings{foresightkv2026,
-  title     = {{ForesightKV}: Optimizing {KV} Cache Eviction for Reasoning Models by Learning Long-Term Contribution},
-  author    = {Dong, Zican and Liu, Peiyu and Li, Junyi and Chen, Zhipeng and
-               Peng, Han and Wang, Shuo and Zhao, Wayne Xin},
-  booktitle = {Proceedings of the 43rd International Conference on Machine Learning (ICML)},
-  year      = {2026},
-  note      = {arXiv:2602.03203},
-  url       = {https://arxiv.org/abs/2602.03203}
-}
-
-@inproceedings{lookaheadkv2026,
-  title     = {{LookaheadKV}: Fast and Accurate {KV} Cache Eviction by Glimpsing into the Future without Generation},
-  author    = {Ahn, Jinwoo and Seong, Ingyu and Kedia, Akhil and Kim, Junhan and
-               Jang, Hyemi and Lee, Kangwook and Jeon, Yongkweon},
-  booktitle = {International Conference on Learning Representations (ICLR)},
-  year      = {2026},
-  note      = {Samsung; arXiv:2603.10899},
-  url       = {https://arxiv.org/abs/2603.10899}
-}
-
-@inproceedings{marconi2025,
-  title     = {{Marconi}: Prefix Caching for the Era of Hybrid {LLMs}},
-  author    = {Pan, Rui and Wang, Zhuang and Jia, Zhen and Karakus, Can and
-               Zancato, Luca and Dao, Tri and Wang, Yida and Netravali, Ravi},
-  booktitle = {Proceedings of Machine Learning and Systems (MLSys)},
-  year      = {2025},
-  note      = {Outstanding Paper Honorable Mention; arXiv:2411.19379},
-  url       = {https://arxiv.org/abs/2411.19379}
-}
-
-% ---------- 分層儲存 / Tiered KV storage ----------
-@inproceedings{infinigen2024,
-  title     = {{InfiniGen}: Efficient Generative Inference of Large Language Models
-               with Dynamic {KV} Cache Management},
-  author    = {Lee, Wonbeom and Lee, Jungi and Seo, Junghwan and Sim, Jaewoong},
-  booktitle = {18th USENIX Symposium on Operating Systems Design and Implementation (OSDI)},
-  year      = {2024},
-  note      = {Seoul National University; arXiv:2406.19707},
-  url       = {https://www.usenix.org/conference/osdi24/presentation/lee}
-}
-
-@inproceedings{flexgen2023,
-  title     = {{FlexGen}: High-Throughput Generative Inference of Large Language Models with a Single {GPU}},
-  author    = {Sheng, Ying and Zheng, Lianmin and Yuan, Binhang and Li, Zhuohan and
-               Ryabinin, Max and Fu, Daniel Y. and Xie, Zhiqiang and Chen, Beidi and
-               Barrett, Clark and Gonzalez, Joseph E. and Liang, Percy and
-               R{\'e}, Christopher and Stoica, Ion and Zhang, Ce},
-  booktitle = {Proceedings of the 40th International Conference on Machine Learning (ICML)},
-  year      = {2023},
-  note      = {arXiv:2303.06865},
-  url       = {https://arxiv.org/abs/2303.06865}
-}
-
-@article{kvdrive2026,
-  title   = {{KVDrive}: A Holistic Multi-Tier {KV} Cache Management System for Long-Context {LLM} Inference},
-  author  = {Lin, Jian and Mi, Jiazhi and Hong, Zicong and Wang, Haodong and
-             Liu, Qianli and Zhang, Haodyue and Li, Peng and Guo, Song},
-  journal = {arXiv preprint arXiv:2605.18071},
-  year    = {2026},
-  note    = {[PREPRINT] submitted 2026-05-18; venue attribution unconfirmed},
-  url     = {https://arxiv.org/abs/2605.18071}
-}
-
-@article{tutti2026,
-  title   = {{Tutti}: Making {SSD}-Backed {KV} Cache Practical for Long-Context {LLM} Serving},
-  author  = {Qiu, Shi and Hu, Yifan and Wang, Xintao and Zhu, Wenhao and
-             Yan, Jianqin and Chen, Hao and Xu, Kaiqiang and Chen, Kai and Zhang, Yiming},
-  journal = {arXiv preprint arXiv:2605.03375},
-  year    = {2026},
-  note    = {[PREPRINT] submitted 2026-05-05},
-  url     = {https://arxiv.org/abs/2605.03375}
-}
-
-@article{mtds2026,
-  title   = {Multi-tier dynamic storage of {KV} cache for {LLM} inference under resource-constrained conditions},
-  author  = {Wang, Junliang and Hu, Jiaqi and Cao, Qingping and Zhu, Yuanrui and Lin, Xiancheng},
-  journal = {Complex \& Intelligent Systems},
-  volume  = {12},
-  number  = {3},
-  pages   = {104},
-  year    = {2026},
-  doi     = {10.1007/s40747-025-02200-4},
-  note    = {Peer-reviewed journal, published online 2026-01-27}
-}
-
-@inproceedings{cachedattention2024,
-  title     = {Cost-Efficient Large Language Model Serving for Multi-turn Conversations with {CachedAttention}},
-  author    = {Gao, Bin and He, Zhuomin and Sharma, Puru and Kang, Qingxuan and
-               Jevdjic, Djordje and Deng, Junbo and Yang, Xingkun and Yu, Zhou and Zuo, Pengfei},
-  booktitle = {USENIX Annual Technical Conference (ATC)},
-  year      = {2024},
-  note      = {arXiv:2403.19708},
-  url       = {https://arxiv.org/abs/2403.19708}
-}
-
-% ---------- 重算 vs 傳輸 / Recompute vs transfer ----------
+% source: https://proceedings.mlr.press/v267/jin25d.html (PMLR meta tags); venue: VERIFIED
+% note: PMLR spells the last author "Zhuoqing Mao"; the arXiv version uses "Z. Morley Mao".
 @inproceedings{cake2025,
-  title     = {Compute Or Load {KV} Cache? Why Not Both?},
-  author    = {Jin, Shuowei and Liu, Xueshen and Zhang, Qingzhao and Mao, Z. Morley},
+  author    = {Jin, Shuowei and Liu, Xueshen and Zhang, Qingzhao and Mao, Zhuoqing},
+  title     = {Compute or Load {KV} Cache? Why Not Both?},
   booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {267},
+  pages     = {28031--28043},
+  publisher = {PMLR},
   year      = {2025},
-  note      = {PMLR v267; arXiv:2410.03065},
-  url       = {https://arxiv.org/abs/2410.03065}
+  url       = {https://proceedings.mlr.press/v267/jin25d.html}
 }
 
-@inproceedings{kvpr2025,
-  title     = {{KVPR}: Efficient {LLM} Inference with {I/O}-Aware {KV} Cache Partial Recomputation},
-  author    = {Jiang, Chaoyi and Gao, Lei and Zarch, Hossein Entezari and Annavaram, Murali},
-  booktitle = {Findings of the Association for Computational Linguistics (ACL Findings)},
-  year      = {2025},
-  note      = {arXiv:2411.17089},
-  url       = {https://arxiv.org/abs/2411.17089}
-}
-
-@inproceedings{hcache2025,
-  title     = {Fast State Restoration in {LLM} Serving with {HCache}},
-  author    = {Gao, Shiwei and Chen, Youmin and Shu, Jiwu},
-  booktitle = {Proceedings of the Twentieth European Conference on Computer Systems (EuroSys)},
-  year      = {2025},
-  doi       = {10.1145/3689031.3696072},
-  note      = {arXiv:2410.05004}
-}
-
-@inproceedings{cacheblend2025,
-  title     = {{CacheBlend}: Fast Large Language Model Serving for {RAG} with Cached Knowledge Fusion},
-  author    = {Yao, Jiayi and Li, Hanchen and Liu, Yuhan and Ray, Siddhant and
-               Cheng, Yihua and Zhang, Qizheng and Du, Kuntai and Lu, Shan and Jiang, Junchen},
-  booktitle = {Proceedings of the Twentieth European Conference on Computer Systems (EuroSys)},
-  year      = {2025},
-  doi       = {10.1145/3689031.3696098},
-  note      = {Best Paper Award; arXiv:2405.16444}
-}
-
-% ---------- 品質作為約束 / Quality as a constraint ----------
-@inproceedings{kvserve2026,
-  title     = {{KVServe}: Service-Aware {KV} Cache Compression for Communication-Efficient Disaggregated {LLM} Serving},
-  author    = {Liu, Zedong and Ma, Xinyang and Luo, Dejun and Zhao, Hairui and
-               Lu, Bing and Huang, Wenjing and Gu, Yida and Liu, Xingchen and
-               Wei, Zheng and Liu, Jinyang and Tao, Dingwen and Tan, Guangming},
-  booktitle = {Proceedings of the ACM SIGCOMM Conference},
-  year      = {2026},
-  note      = {arXiv:2605.13734},
-  url       = {https://arxiv.org/abs/2605.13734}
-}
-
-@article{evicpress2025,
-  title   = {{EvicPress}: Joint {KV}-Cache Compression and Eviction for Efficient {LLM} Serving},
-  author  = {Feng, Shaoting and Liu, Yuhan and Li, Hanchen and Chen, Xiaokun and
-             Shen, Samuel and Du, Kuntai and Gu, Zhuohan and Zhang, Rui and
-             Huang, Yuyang and Cheng, Yihua and Yao, Jiayi and Zhang, Qizheng and
-             Ananthanarayanan, Ganesh and Jiang, Junchen},
-  journal = {arXiv preprint arXiv:2512.14946},
-  year    = {2025},
-  note    = {[PREPRINT] submitted 2025-12-16},
-  url     = {https://arxiv.org/abs/2512.14946}
-}
-
-@inproceedings{adaptcache2025,
-  title     = {{AdaptCache}: {KV} Cache Native Storage Hierarchy for Low-Delay and High-Quality Language Model Serving},
-  author    = {Feng, Shaoting and others},
-  booktitle = {Proceedings of the SOSP Workshop on Big Memory (BigMem)},
-  year      = {2025},
-  note      = {Workshop paper; arXiv:2509.00105},
-  url       = {https://arxiv.org/abs/2509.00105}
-}
-
-@article{leoam2025,
-  key     = {LeoAM},
-  author  = {{LeoAM authors}},
-  title   = {Breaking the Boundaries of Long-Context {LLM} Inference: Adaptive {KV} Management on a Single Commodity {GPU}},
-  journal = {arXiv preprint arXiv:2506.20187},
-  year    = {2025},
-  note    = {[PREPRINT] under review},
-  url     = {https://arxiv.org/abs/2506.20187}
-}
-
-% ---------- 受限最佳化放置 / Constrained placement optimization ----------
-@article{orbitflow2026,
-  title   = {{OrbitFlow}: {SLO}-Aware Long-Context {LLM} Serving with Fine-Grained {KV} Cache Reconfiguration},
-  author  = {Ma, Xinyue and Hong, Heelim and Um, Taegeon and Lee, Jongseop and
-             Choy, Seoyeong and Lee, Woo-Yeon and Jeon, Myeongjae},
-  journal = {Proceedings of the VLDB Endowment (PVLDB)},
-  volume  = {19},
-  pages   = {1046},
-  year    = {2026},
-  note    = {arXiv:2601.10729},
-  url     = {https://arxiv.org/abs/2601.10729}
-}
-
-@article{hetmem2025,
-  title   = {Accelerating {LLM} Inference via Dynamic {KV} Cache Placement in Heterogeneous Memory System},
-  author  = {Fang, Yunhua and Xie, Rui and Haq, Asad Ul and Ma, Linsen and
-             El Maghraoui, Kaoutar and Wang, Naigang and Wang, Meng and
-             Liu, Liu and Zhang, Tong},
-  journal = {IEEE Computer Architecture Letters},
-  year    = {2025},
-  note    = {arXiv:2508.13231},
-  url     = {https://arxiv.org/abs/2508.13231}
-}
-
-% ---------- 量測 / 評估 ----------
-@article{bottlenecks2026,
-  title   = {Understanding Bottlenecks for Efficiently Serving {LLM} Inference With {KV} Offloading},
-  author  = {Meng, William and Lee, Benjamin and Wang, Hong},
-  journal = {arXiv preprint arXiv:2601.19910},
-  year    = {2026},
-  note    = {MLSys 2026 per arXiv comments},
-  url     = {https://arxiv.org/abs/2601.19910}
-}
-
-@article{yakv2026,
-  title   = {{KV} Cache Offloading for Context-Intensive Tasks},
-  author  = {{Yandex Research}},
-  journal = {arXiv preprint arXiv:2604.08426},
-  year    = {2026},
-  note    = {[PREPRINT]; code at github.com/yandex-research/context-intensive-kv-offloading},
-  url     = {https://arxiv.org/abs/2604.08426}
-}
-
-@article{saecache2026,
-  title   = {Not All Tokens Are Worth Caching: Learning Semantic-Aware Eviction for {LLM} Prefix Caches},
-  author  = {Fang, Shaoke and Li, Ziang and Wu, Wenfei and Ji, Jiatong and
-             Liu, Qingsong and Pu, Ruizhi},
-  journal = {arXiv preprint arXiv:2605.18825},
-  year    = {2026},
-  note    = {[PREPRINT]},
-  url     = {https://arxiv.org/abs/2605.18825}
-}
-
-% ---------- Survey ----------
-@inproceedings{kvsurvey2026,
-  title     = {Towards Efficient Large Language Model Serving: A Survey on System-Aware {KV} Cache Optimization},
-  author    = {Jiang, Jiantong and Yang, Peiyu and Zhang, Rui and Liu, Feng},
-  booktitle = {Findings of the Association for Computational Linguistics (ACL Findings)},
-  year      = {2026},
-  note      = {arXiv:2607.08057},
-  url       = {https://arxiv.org/abs/2607.08057}
-}
-
-% ---------- 稀疏檢索 / Sparse KV retrieval ----------
-@inproceedings{quest2024,
-  title     = {{Quest}: Query-Aware Sparsity for Efficient Long-Context {LLM} Inference},
-  author    = {Tang, Jiaming and Zhao, Yilong and Zhu, Kan and Xiao, Guangxuan and
-               Kasikci, Baris and Han, Song},
-  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+% source: https://api.crossref.org/works/10.1145/3651890.3672274 ; venue: VERIFIED
+@inproceedings{cachegen2024,
+  author    = {Liu, Yuhan and Li, Hanchen and Cheng, Yihua and Ray, Siddhant and Huang, Yuyang and Zhang, Qizheng and Du, Kuntai and Yao, Jiayi and Lu, Shan and Ananthanarayanan, Ganesh and Maire, Michael and Hoffmann, Henry and Holtzman, Ari and Jiang, Junchen},
+  title     = {{CacheGen}: {KV} Cache Compression and Streaming for Fast Large Language Model Serving},
+  booktitle = {Proceedings of the ACM SIGCOMM 2024 Conference},
+  pages     = {38--56},
+  publisher = {ACM},
+  address   = {Sydney, NSW, Australia},
   year      = {2024},
-  note      = {arXiv:2406.10774}
+  doi       = {10.1145/3651890.3672274}
 }
 
-@inproceedings{shadowkv2025,
-  title     = {{ShadowKV}: {KV} Cache in Shadows for High-Throughput Long-Context {LLM} Inference},
-  author    = {Sun, Hanshi and Chang, Li-Wen and Bao, Wenlei and Zheng, Size and
-               Zheng, Ningxin and Liu, Xin and Dong, Harry and Chi, Yuejie and Chen, Beidi},
-  booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+% source: https://api.crossref.org/works/10.1145/3689031.3696086 ; venue: VERIFIED
+@inproceedings{pensieve2025,
+  author    = {Yu, Lingfan and Lin, Jinkun and Li, Jinyang},
+  title     = {Stateful Large Language Model Serving with {Pensieve}},
+  booktitle = {Proceedings of the Twentieth European Conference on Computer Systems (EuroSys '25)},
+  pages     = {144--158},
+  publisher = {ACM},
+  address   = {Rotterdam, Netherlands},
   year      = {2025},
-  note      = {arXiv:2410.21465}
+  doi       = {10.1145/3689031.3696086}
 }
 
-@inproceedings{kivi2024,
-  title     = {{KIVI}: A Tuning-Free Asymmetric {2bit} Quantization for {KV} Cache},
-  author    = {Liu, Zirui and Yuan, Jiayi and Jin, Hongye and Zhong, Shaochen and
-               Xu, Zhaozhuo and Braverman, Vladimir and Chen, Beidi and Hu, Xia},
-  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+% source: https://www.usenix.org/conference/atc24/presentation/gao-bin-cost (USENIX BibTeX); venue: VERIFIED
+@inproceedings{cachedattention2024,
+  author    = {Gao, Bin and He, Zhuomin and Sharma, Puru and Kang, Qingxuan and Jevdjic, Djordje and Deng, Junbo and Yang, Xingkun and Yu, Zhou and Zuo, Pengfei},
+  title     = {{Cost-Efficient} Large Language Model Serving for Multi-turn Conversations with {CachedAttention}},
+  booktitle = {2024 USENIX Annual Technical Conference (USENIX ATC 24)},
+  pages     = {111--126},
+  publisher = {USENIX Association},
+  address   = {Santa Clara, CA},
   year      = {2024},
-  note      = {arXiv:2402.02750}
+  isbn      = {978-1-939133-41-0},
+  url       = {https://www.usenix.org/conference/atc24/presentation/gao-bin-cost}
 }
 
-@inproceedings{kvtuner2025,
-  title     = {{KVTuner}: Sensitivity-Aware Layer-Wise Mixed-Precision {KV} Cache
-               Quantization for Efficient and Nearly Lossless {LLM} Inference},
-  author    = {Li, Xing and Xing, Zeyu and Li, Yiming and Qu, Linping and
-               Zhen, Hui-Ling and Liu, Wulong and Yao, Yiwu and
-               Pan, Sinno Jialin and Yuan, Mingxuan},
-  booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+% source: https://www.usenix.org/conference/fast25/presentation/qin ; venue: VERIFIED
+% WARNING: the FAST'25 title differs from the arXiv title ("Mooncake: A KVCache-centric Disaggregated
+%   Architecture for LLM Serving", arXiv:2407.00079, 7 authors). This entry is the FAST'25 paper (9 authors).
+% Trace release (cite separately in a footnote if needed): https://github.com/kvcache-ai/Mooncake/tree/main/FAST25-release
+@inproceedings{mooncake2025,
+  author    = {Qin, Ruoyu and Li, Zheming and He, Weiran and Cui, Jialei and Ren, Feng and Zhang, Mingxing and Wu, Yongwei and Zheng, Weimin and Xu, Xinran},
+  title     = {Mooncake: Trading More Storage for Less Computation --- A {KVCache}-centric Architecture for Serving {LLM} Chatbot},
+  booktitle = {23rd USENIX Conference on File and Storage Technologies (FAST 25)},
+  pages     = {155--170},
+  publisher = {USENIX Association},
+  address   = {Santa Clara, CA},
   year      = {2025},
-  note      = {arXiv:2502.04420}
+  isbn      = {978-1-939133-45-8},
+  url       = {https://www.usenix.org/conference/fast25/presentation/qin}
 }
 
-@article{kvadaquant2025,
-  title     = {Quantize What Counts: More for Keys, Less for Values},
-  author    = {Hariri, Mohsen and Luo, Alan and Chen, Weicong and Zhong, Shaochen and
-               Zhang, Tianyi and Wang, Qifan and Hu, Xia and Han, Xiaotian and
-               Chaudhary, Vipin},
-  journal   = {arXiv preprint arXiv:2502.15075},
-  year      = {2025},
-  note      = {[PREPRINT] 2025-02-20}
+% source: https://arxiv.org/abs/2510.09665 (arXiv API metadata, v2); venue: UNVERIFIED
+% note: no peer-reviewed venue found. MLSys 2026 lists it only as an invited talk (https://mlsys.org/virtual/2026/oral/3646).
+% note: author order in the v2 PDF (Liu, Yao, Cheng, ...) differs from the arXiv metadata order used here (Liu, Cheng, Yao, ...).
+@misc{lmcache2025,
+  author       = {Liu, Yuhan and Cheng, Yihua and Yao, Jiayi and An, Yuwei and Chen, Xiaokun and Feng, Shaoting and Huang, Yuyang and Shen, Samuel and Zhang, Rui and Du, Kuntai and Jiang, Junchen},
+  title        = {{LMCache}: An Efficient {KV} Cache Layer for Enterprise-Scale {LLM} Inference},
+  year         = {2025},
+  howpublished = {arXiv:2510.09665}
 }
 
-@techreport{ga102,
-  title       = {{NVIDIA} Ampere {GA102} {GPU} Architecture},
-  institution = {NVIDIA Corporation},
-  year        = {2021},
-  type        = {Whitepaper},
-  note        = {v2.1; Appendix A. GeForce RTX 3090: 328 3rd-gen Tensor Cores,
-                 1{,}695\,MHz boost, 71\,TFLOPS FP16/BF16 with FP32 accumulate (dense)}
-}
-
-% ---------- 服務系統 / Serving systems ----------
+% source: https://api.crossref.org/works/10.1145/3600006.3613165 ; venue: VERIFIED
 @inproceedings{vllm2023,
+  author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and Zhang, Hao and Stoica, Ion},
   title     = {Efficient Memory Management for Large Language Model Serving with {PagedAttention}},
-  author    = {Kwon, Woosuk and Li, Zhuohan and Zhuang, Siyuan and Sheng, Ying and
-               Zheng, Lianmin and Yu, Cody Hao and Gonzalez, Joseph E. and
-               Zhang, Hao and Stoica, Ion},
-  booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP)},
+  booktitle = {Proceedings of the 29th Symposium on Operating Systems Principles (SOSP '23)},
+  pages     = {611--626},
+  publisher = {ACM},
+  address   = {Koblenz, Germany},
   year      = {2023},
   doi       = {10.1145/3600006.3613165}
 }
 
-@inproceedings{mooncake2025,
-  title     = {Mooncake: Trading More Storage for Less Computation --- A {KVCache}-centric Architecture for Serving {LLM} Chatbot},
-  author    = {Qin, Ruoyu and Li, Zheming and He, Weiran and Zhang, Mingxing and
-               Wu, Yongwei and Zheng, Weimin and Xu, Xinran},
-  booktitle = {23rd USENIX Conference on File and Storage Technologies (FAST)},
+% source: https://proceedings.neurips.cc/paper_files/paper/2024/hash/724be4472168f31ba1c9ac630f15dec8-Abstract-Conference.html (official BibTeX); venue: VERIFIED
+@inproceedings{sglang2024,
+  author    = {Zheng, Lianmin and Yin, Liangsheng and Xie, Zhiqiang and Sun, Chuyue and Huang, Jeff and Yu, Cody Hao and Cao, Shiyi and Kozyrakis, Christos and Stoica, Ion and Gonzalez, Joseph E. and Barrett, Clark and Sheng, Ying},
+  title     = {{SGLang}: Efficient Execution of Structured Language Model Programs},
+  booktitle = {Advances in Neural Information Processing Systems},
+  editor    = {Globerson, A. and Mackey, L. and Belgrave, D. and Fan, A. and Paquet, U. and Tomczak, J. and Zhang, C.},
+  volume    = {37},
+  pages     = {62557--62583},
+  publisher = {Curran Associates, Inc.},
+  year      = {2024},
+  doi       = {10.52202/079017-2000}
+}
+
+% source: https://api.crossref.org/works/10.1145/3689031.3696072 ; venue: VERIFIED
+@inproceedings{hcache2025,
+  author    = {Gao, Shiwei and Chen, Youmin and Shu, Jiwu},
+  title     = {Fast State Restoration in {LLM} Serving with {HCache}},
+  booktitle = {Proceedings of the Twentieth European Conference on Computer Systems (EuroSys '25)},
+  pages     = {128--143},
+  publisher = {ACM},
+  address   = {Rotterdam, Netherlands},
   year      = {2025},
-  note      = {Best Paper Award; arXiv:2407.00079}
+  doi       = {10.1145/3689031.3696072}
 }
 
-@article{lmcache2025,
-  title   = {{LMCache}: An Efficient {KV} Cache Layer for Enterprise-Scale {LLM} Inference},
-  journal = {arXiv preprint arXiv:2510.09665},
-  year    = {2025},
-  note    = {[PREPRINT]; https://github.com/LMCache/LMCache},
-  url     = {https://arxiv.org/abs/2510.09665}
+% source: https://aclanthology.org/2025.findings-acl.997.bib ; venue: VERIFIED (Findings of ACL 2025)
+@inproceedings{kvpr2025,
+  author    = {Jiang, Chaoyi and Gao, Lei and Zarch, Hossein Entezari and Annavaram, Murali},
+  title     = {{KVPR}: Efficient {LLM} Inference with {I}/{O}-Aware {KV} Cache Partial Recomputation},
+  booktitle = {Findings of the Association for Computational Linguistics: ACL 2025},
+  editor    = {Che, Wanxiang and Nabende, Joyce and Shutova, Ekaterina and Pilehvar, Mohammad Taher},
+  pages     = {19474--19488},
+  publisher = {Association for Computational Linguistics},
+  address   = {Vienna, Austria},
+  year      = {2025},
+  doi       = {10.18653/v1/2025.findings-acl.997},
+  url       = {https://aclanthology.org/2025.findings-acl.997/}
 }
 
-% ---------- 經典學習式快取 / Classical learned caching ----------
-@inproceedings{sibyl2022,
-  title     = {{Sibyl}: Adaptive and Extensible Data Placement in Hybrid Storage Systems Using Online Reinforcement Learning},
-  author    = {Singh, Gagandeep and Nadig, Rakesh and Park, Jisung and Bera, Rahul and
-               Hajinazar, Nastaran and Novo, David and G{\'o}mez-Luna, Juan and
-               Stuijk, Sander and Corporaal, Henk and Mutlu, Onur},
-  booktitle = {Proceedings of the 49th Annual International Symposium on Computer Architecture (ISCA)},
-  year      = {2022},
-  note      = {arXiv:2205.07394}
+% source: https://arxiv.org/abs/2604.25080 (v2, 26 Sep 2026); venue: UNVERIFIED (PDF header says "Preprint")
+@misc{cacheflow2026,
+  author       = {Nian, Sean and Shen, Hanzhang and Wu, Zhiyu and Fang, Jiahao and Feng, Qilong and Lai, Fan},
+  title        = {{CacheFlow}: Efficient {LLM} Serving via Automated {3D}-Parallel {KV} Cache Restoration},
+  year         = {2026},
+  howpublished = {arXiv:2604.25080}
 }
 
-@inproceedings{pythia2021,
-  title     = {{Pythia}: A Customizable Hardware Prefetching Framework Using Online Reinforcement Learning},
-  author    = {Bera, Rahul and Kanellopoulos, Konstantinos and Nori, Anant V. and
-               Shahroodi, Taha and Subramoney, Sreenivas and Mutlu, Onur},
-  booktitle = {Proceedings of the 54th Annual IEEE/ACM International Symposium on Microarchitecture (MICRO)},
-  year      = {2021},
-  note      = {arXiv:2109.12021}
+% source: https://arxiv.org/abs/2507.08045 (v2); venue: UNVERIFIED
+% note: the PDF uses an unfilled PVLDB template ("PVLDB, 14(1): XXX-XXX, 2020"); this is NOT evidence of VLDB publication.
+@misc{krul2025,
+  author       = {Wen, Junyi and Liang, Junyuan and Hong, Zicong and Chen, Wuhui and Cai, Ting and Zheng, Zibin},
+  title        = {Krul: Efficient State Restoration for Multi-turn Conversations with Dynamic Cross-layer {KV} Sharing},
+  year         = {2025},
+  howpublished = {arXiv:2507.08045}
 }
 
-@article{belady1966,
-  title   = {A Study of Replacement Algorithms for a Virtual-Storage Computer},
-  author  = {Belady, L. A.},
-  journal = {IBM Systems Journal},
-  volume  = {5},
-  number  = {2},
-  pages   = {78--101},
-  year    = {1966},
-  doi     = {10.1147/sj.52.0078}
+% source: https://arxiv.org/abs/2609.21172 (v2, 29 Sep 2026); venue: UNVERIFIED
+% note: the v2 PDF carries a camera-ready ACM block "EuroSys '27, Rabat, Morocco", DOI 10.1145/3842654.3848586,
+%   but (checked 2026-10-17) that DOI does not resolve (doi.org 404, Crossref 404) and 2027.eurosys.org has no
+%   accepted-paper list yet. If the acceptance is later confirmed, switch to:
+%   inproceedings type with booktitle = Proceedings of the 22nd European Conference on Computer Systems (EuroSys '27),
+%                  year = 2027, doi = 10.1145/3842654.3848586
+@misc{tierkv2026,
+  author       = {Shu, Zhihao and Sanim, Md Musfiqur Rahman and Hu, Jie and Yuan, Kun and Qin, Minghai and Agrawal, Gagan and Niu, Wei},
+  title        = {{TierKV}: Long-Context On-Device {LLMs} via Predictive Multi-Tier {KV} Caching},
+  year         = {2026},
+  howpublished = {arXiv:2609.21172}
 }
 
-@inproceedings{parrot2020,
-  title     = {An Imitation Learning Approach for Cache Replacement},
-  author    = {Liu, Evan Z. and Hashemi, Milad and Swersky, Kevin and
-               Ranganathan, Parthasarathy and Ahn, Junwhan},
-  booktitle = {Proceedings of the 37th International Conference on Machine Learning (ICML)},
-  year      = {2020},
-  note      = {PMLR v119}
+% source: https://arxiv.org/abs/2610.08378 (v1); venue: UNVERIFIED
+@misc{lachesis2026,
+  author       = {Yang, Jaehoon and Lee, Jeongmin and Park, Haneul and Lee, Seung Yul and Kim, Nam Sung and Lee, Jae W.},
+  title        = {Lachesis: Lifetime-Aware {KV} Cache Placement for Agent Serving across {HBM} and High-Bandwidth Flash},
+  year         = {2026},
+  howpublished = {arXiv:2610.08378}
 }
 
-@inproceedings{lrb2020,
-  title     = {Learning Relaxed {Belady} for Content Distribution Network Caching},
-  author    = {Song, Zhenyu and Berger, Daniel S. and Li, Kai and Lloyd, Wyatt},
-  booktitle = {17th USENIX Symposium on Networked Systems Design and Implementation (NSDI)},
-  pages     = {529--544},
-  year      = {2020}
+% source: https://arxiv.org/abs/2609.33762 (v1); venue: UNVERIFIED (PDF header says "Preprint")
+@misc{efficientagent2026,
+  author       = {Shao, Kunming and Chen, Jierun and Yu, Jiangnan and Li, Xiao-Hui and Tao, Chaofan and Wang, Yanli and Lin, Huanxin and Cheng, Kwang-Ting and Tsui, Chi Ying and Bai, Haoli},
+  title        = {{EfficientAgent}: What Makes {KV} Cache Offloading Work for Concurrent Agents?},
+  year         = {2026},
+  howpublished = {arXiv:2609.33762}
 }
 
-% ---------- 硬體 ----------
-@techreport{cdna3,
-  key         = {AMD},
-  author      = {{Advanced Micro Devices, Inc.}},
-  title       = {{AMD CDNA 3} Architecture White Paper},
-  institution = {Advanced Micro Devices, Inc.},
-  year        = {2023},
-  url         = {https://www.amd.com/content/dam/amd/en/documents/instinct-tech-docs/white-papers/amd-cdna-3-white-paper.pdf}
+% source: https://arxiv.org/abs/2607.18141 (v3); venue: UNVERIFIED
+% note: the system is named "HyMCache" in the paper; the title does not contain that name.
+@misc{hymcache2026,
+  author       = {Jang, Hakbeom and Song, Inho and Kim, Hoshik and Noh, Sam H. and Kim, Jongryool},
+  title        = {A {CXL} Memory Rack for Multi-Turn {LLM} Serving},
+  year         = {2026},
+  howpublished = {arXiv:2607.18141}
 }
 
-@article{upm2025,
-  key     = {UPM},
-  author  = {{Anonymous (see arXiv:2508.12743)}},
-  title   = {Dissecting {CPU}-{GPU} Unified Physical Memory on {AMD} {MI300A} {APUs}},
-  journal = {arXiv preprint arXiv:2508.12743},
-  year    = {2025},
-  note    = {[PREPRINT] measurement study},
-  url     = {https://arxiv.org/abs/2508.12743}
+% source: https://arxiv.org/abs/2609.16215 (v1); venue: UNVERIFIED
+% note: surname/given-name split of the authors is not stated anywhere; names are given in the order printed on arXiv.
+@misc{wherekvlive2026,
+  author       = {{Srikanta Datta Tumkur} and Iyer, Jay and Simhadri, Mehar and {Sai Pavan Kumar} and {Sai Kapil Kumar} and Nampelly, Ramesh},
+  title        = {Where Should the {KV} Cache Live? {Placement} Policies Across {GPU}, {CPU}, and {SSD} for Long-Lived Sessions},
+  year         = {2026},
+  howpublished = {arXiv:2609.16215}
 }
 
-@article{mi300xperf2025,
-  key     = {MI300X},
-  author  = {{Celestial AI}},
-  title   = {{AMD} {MI300X} {GPU} Performance Analysis},
-  journal = {arXiv preprint arXiv:2510.27583},
-  year    = {2025},
-  note    = {[PREPRINT] Celestial AI},
-  url     = {https://arxiv.org/abs/2510.27583}
+% source: https://arxiv.org/abs/2605.18071 (v1); venue: UNVERIFIED (PDF uses an unfilled ACM journal template, DOI "nnnnnnn")
+% note: arXiv metadata spells the 6th author "Haodyue Zhang"; the PDF prints "Haoyue Zhang" (used here).
+@misc{kvdrive2026,
+  author       = {Lin, Jian and Mi, Jiazhi and Hong, Zicong and Wang, Haodong and Liu, Qianli and Zhang, Haoyue and Li, Peng and Guo, Song},
+  title        = {{KVDrive}: A Holistic Multi-Tier {KV} Cache Management System for Long-Context {LLM} Inference},
+  year         = {2026},
+  howpublished = {arXiv:2605.18071}
 }
 
-@inproceedings{mockingjay2022,
-  title     = {Effective Mimicry of {Belady}'s {MIN} Policy},
-  author    = {Shah, Ishan and Jain, Akanksha and Lin, Calvin},
-  booktitle = {IEEE International Symposium on High-Performance Computer Architecture (HPCA)},
-  year      = {2022},
-  url       = {https://www.cs.utexas.edu/~lin/papers/hpca22.pdf}
+% source: https://arxiv.org/abs/2509.00105 (v2) + https://www.microsoft.com/en-us/research/event/sosp-2025/publications/ ; venue: VERIFIED (workshop)
+% note: workshop paper, 1st Workshop on Big Memory (BigMem '25) co-located with SOSP 2025. Both venue sources are
+%   author-side (arXiv comment, Microsoft Research page); no proceedings DOI was found.
+@misc{adaptcache2025,
+  author       = {Feng, Shaoting and Li, Hanchen and Du, Kuntai and Gu, Zhuohan and Liu, Yuhan and Yao, Jiayi and Ray, Siddhant and Shen, Samuel and Cheng, Yihua and Ananthanarayanan, Ganesh and Jiang, Junchen},
+  title        = {{AdaptCache}: {KV} Cache Native Storage Hierarchy for Low-Delay and High-Quality Language Model Serving},
+  year         = {2025},
+  howpublished = {arXiv:2509.00105},
+  note         = {1st Workshop on Big Memory (BigMem '25), co-located with SOSP 2025}
 }
 
-@article{trimkv2025,
-  title   = {Cache What Lasts: Token Retention for Memory-Bounded {KV} Cache in {LLMs}},
-  author  = {Bui, N. and Sharma, S. and Lamba, S. and Mishra, S. and others},
-  journal = {arXiv preprint arXiv:2512.03324},
-  year    = {2025},
-  note    = {[PREPRINT] JPMorganChase AI Research + Yale; venue UNVERIFIED},
-  url     = {https://arxiv.org/abs/2512.03324}
+% source: https://arxiv.org/abs/2512.14946 (v1); venue: UNVERIFIED (Microsoft Research page lists venue as "arXiv")
+@misc{evicpress2025,
+  author       = {Feng, Shaoting and Liu, Yuhan and Li, Hanchen and Chen, Xiaokun and Shen, Samuel and Du, Kuntai and Gu, Zhuohan and Zhang, Rui and Huang, Yuyang and Cheng, Yihua and Yao, Jiayi and Zhang, Qizheng and Ananthanarayanan, Ganesh and Jiang, Junchen},
+  title        = {{EVICPRESS}: Joint {KV}-Cache Compression and Eviction for Efficient {LLM} Serving},
+  year         = {2025},
+  howpublished = {arXiv:2512.14946}
 }
 
-@inproceedings{elkan2001,
-  title     = {The Foundations of Cost-Sensitive Learning},
-  author    = {Elkan, Charles},
-  booktitle = {Proceedings of the 17th International Joint Conference on Artificial Intelligence (IJCAI)},
-  pages     = {973--978},
-  year      = {2001}
+% source: https://arxiv.org/abs/2601.19910 (v1); venue: UNVERIFIED -- NOT accepted at MLSys 2026 as far as can be checked
+% note: arXiv comment says "Submitted to MLSys 2026"; the title is absent from the 171 papers listed at
+%   https://mlsys.org/virtual/2026/papers.html (checked 2026-10-17). The PDF header is the MLSys 2025 submission template.
+% note: v1 is stamped 16 Dec 2025 despite the 2601 identifier, so year = 2025 (the citation key says 2026).
+@misc{bottlenecks2026,
+  author       = {Meng, William and Lee, Benjamin and Wang, Hong},
+  title        = {Understanding Bottlenecks for Efficiently Serving {LLM} Inference With {KV} Offloading},
+  year         = {2025},
+  howpublished = {arXiv:2601.19910}
+}
+
+% source: https://www.usenix.org/conference/osdi26/presentation/xie-zhiqiang (USENIX BibTeX, verbatim pages); venue: VERIFIED
+% note: USENIX's own BibTeX gives pages 1--16 (kept verbatim; may change when the full proceedings are paginated).
+@inproceedings{strata2026,
+  author    = {Xie, Zhiqiang and Xu, Ziyi and Zhao, Mark and An, Yuwei and Mailthody, Vikram Sharma and Mahlke, Scott and Garland, Michael and Kozyrakis, Christos},
+  title     = {Strata: Hierarchical Context Caching for Long Context Language Model Serving},
+  booktitle = {20th USENIX Symposium on Operating Systems Design and Implementation (OSDI 26)},
+  pages     = {1--16},
+  publisher = {USENIX Association},
+  address   = {Seattle, WA},
+  year      = {2026},
+  isbn      = {978-1-939133-55-7},
+  url       = {https://www.usenix.org/conference/osdi26/presentation/xie-zhiqiang}
+}
+
+% source: https://arxiv.org/abs/2605.03375 (v1); venue: UNVERIFIED
+@misc{tutti2026,
+  author       = {Qiu, Shi and Hu, Yifan and Wang, Xintao and Zhu, Wenhao and Yan, Jianqin and Chen, Hao and Xu, Kaiqiang and Chen, Kai and Zhang, Yiming},
+  title        = {Tutti: Making {SSD}-Backed {KV} Cache Practical for Long-Context {LLM} Serving},
+  year         = {2026},
+  howpublished = {arXiv:2605.03375}
+}
+
+% refs_B.bib -- generated 2026-10-17 by citation verifier B.
+% Metadata taken from publisher pages (PMLR, NeurIPS proceedings, OpenReview API,
+% ACL Anthology, Crossref/doi.org) or arXiv abs pages. DBLP was not reachable
+% (bot challenge), so no entry below comes from DBLP.
+
+% source: https://proceedings.mlr.press/v235/liu24bz.html; venue: VERIFIED
+@inproceedings{kivi2024,
+  title     = {{KIVI}: A Tuning-Free Asymmetric 2bit Quantization for {KV} Cache},
+  author    = {Liu, Zirui and Yuan, Jiayi and Jin, Hongye and Zhong, Shaochen and Xu, Zhaozhuo and Braverman, Vladimir and Chen, Beidi and Hu, Xia},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  pages     = {32332--32344},
+  publisher = {PMLR},
+  year      = {2024},
+  url       = {https://proceedings.mlr.press/v235/liu24bz.html}
+}
+
+% source: https://papers.nips.cc/paper_files/paper/2024/hash/028fcbcf85435d39a40c4d61b42c99a4-Abstract-Conference.html; venue: VERIFIED
+@inproceedings{kvquant2024,
+  title     = {{KVQuant}: Towards 10 Million Context Length {LLM} Inference with {KV} Cache Quantization},
+  author    = {Hooper, Coleman and Kim, Sehoon and Mohammadzadeh, Hiva and Mahoney, Michael W. and Shao, Yakun Sophia and Keutzer, Kurt and Gholami, Amir},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS)},
+  pages     = {1270--1303},
+  publisher = {Curran Associates, Inc.},
+  year      = {2024},
+  doi       = {10.52202/079017-0040}
+}
+
+% source: https://openreview.net/forum?id=nI6JyFSnyV (OpenReview API record, venueid colmweb.org/COLM/2024/Conference); venue: VERIFIED
+@inproceedings{skvq2024,
+  title     = {{SKVQ}: Sliding-window Key and Value Cache Quantization for Large Language Models},
+  author    = {Duanmu, Haojie and Yuan, Zhihang and Li, Xiuhong and Duan, Jiangfei and Zhang, Xingcheng and Lin, Dahua},
+  booktitle = {First Conference on Language Modeling (COLM)},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=nI6JyFSnyV}
+}
+
+% source: https://openreview.net/forum?id=NG7sS51zVF (OpenReview API record, venue "ICLR 2024 poster"); venue: VERIFIED
+@inproceedings{streamingllm2024,
+  title     = {Efficient Streaming Language Models with Attention Sinks},
+  author    = {Xiao, Guangxuan and Tian, Yuandong and Chen, Beidi and Han, Song and Lewis, Mike},
+  booktitle = {The Twelfth International Conference on Learning Representations (ICLR)},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=NG7sS51zVF}
+}
+
+% source: https://papers.nips.cc/paper_files/paper/2024/hash/7e57131fdeb815764434b65162c88895-Abstract-Conference.html; venue: VERIFIED
+@inproceedings{zipcache2024,
+  title     = {{ZipCache}: Accurate and Efficient {KV} Cache Quantization with Salient Token Identification},
+  author    = {He, Yefei and Zhang, Luoming and Wu, Weijia and Liu, Jing and Zhou, Hong and Zhuang, Bohan},
+  booktitle = {Advances in Neural Information Processing Systems 37 (NeurIPS)},
+  pages     = {68287--68307},
+  publisher = {Curran Associates, Inc.},
+  year      = {2024},
+  doi       = {10.52202/079017-2181}
+}
+
+% source: https://proceedings.mlr.press/v267/li25dd.html; venue: VERIFIED
+@inproceedings{kvtuner2025,
+  title     = {{KVTuner}: Sensitivity-Aware Layer-Wise Mixed-Precision {KV} Cache Quantization for Efficient and Nearly Lossless {LLM} Inference},
+  author    = {Li, Xing and Xing, Zeyu and Li, Yiming and Qu, Linping and Zhen, Hui-Ling and Yao, Yiwu and Liu, Wulong and Pan, Sinno Jialin and Yuan, Mingxuan},
+  booktitle = {Proceedings of the 42nd International Conference on Machine Learning (ICML)},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {267},
+  pages     = {36451--36485},
+  publisher = {PMLR},
+  year      = {2025},
+  url       = {https://proceedings.mlr.press/v267/li25dd.html}
+}
+
+% source: https://doi.org/10.1145/3731569.3764810 (Crossref record + doi.org BibTeX); venue: VERIFIED
+@inproceedings{diffkv2025,
+  title     = {{DiffKV}: Differentiated Memory Management for Large Language Models with Parallel {KV} Compaction},
+  author    = {Zhang, Yanqi and Hu, Yuwei and Zhao, Runyuan and Lui, John C. S. and Chen, Haibo},
+  booktitle = {Proceedings of the ACM SIGOPS 31st Symposium on Operating Systems Principles (SOSP '25)},
+  pages     = {431--445},
+  publisher = {ACM},
+  year      = {2025},
+  doi       = {10.1145/3731569.3764810}
+}
+
+% source: https://doi.org/10.23919/DATE64628.2025.10992912 (Crossref record + doi.org BibTeX); arXiv:2503.23294 says "Accepted by DATE 2025"; venue: VERIFIED
+@inproceedings{cocktail2025,
+  title     = {Cocktail: Chunk-Adaptive Mixed-Precision Quantization for Long-Context {LLM} Inference},
+  author    = {Tao, Wei and Zhang, Bin and Qu, Xiaoyang and Wan, Jiguang and Wang, Jianzong},
+  booktitle = {2025 Design, Automation \& Test in Europe Conference (DATE)},
+  pages     = {1--7},
+  publisher = {IEEE},
+  year      = {2025},
+  doi       = {10.23919/DATE64628.2025.10992912}
+}
+
+% source: https://arxiv.org/abs/2609.26219 (v1, 18 Aug 2026; no venue stated); venue: UNVERIFIED
+@misc{patchkv2026,
+  title        = {{PatchKV}: Efficient {KV} Cache Recovery for Dynamically Edited {LLM} Contexts},
+  author       = {Yang, Guotao and Guo, Rui and He, Siwei and Chen, Sheng and Hu, Yitao and Li, Keqiu},
+  year         = {2026},
+  howpublished = {arXiv:2609.26219}
+}
+
+% source: https://doi.org/10.1109/JIOT.2026.3695763 (Crossref record + doi.org BibTeX); arXiv:2604.21231v3 carries the IEEE IoT-J header; venue: VERIFIED
+@article{sparkv2026,
+  title     = {{SparKV}: Overhead-Aware {KV} Cache Loading for Efficient On-Device {LLM} Inference},
+  author    = {Liu, Hongyao and Zhai, Liuqun and Wang, Junyi and Fang, Zhengru and Chen, Jingshu and Huang, Jun},
+  journal   = {IEEE Internet of Things Journal},
+  volume    = {13},
+  number    = {14},
+  pages     = {30016--30027},
+  year      = {2026},
+  doi       = {10.1109/JIOT.2026.3695763}
+}
+
+% source: https://arxiv.org/abs/2608.28911 (v1, 28 Aug 2026; PDF footer "Preprint. Under review."); venue: UNVERIFIED
+@misc{semkv2026,
+  title        = {{SemKV}: Semantic Mixed-Precision {KV} Cache Quantization Guided by the Quality Cliff for Long-Context {LLM} Inference},
+  author       = {Lee, Daeha and Kim, Do-Hyung and Kim, Jae-Hong},
+  year         = {2026},
+  howpublished = {arXiv:2608.28911}
+}
+
+% source: https://arxiv.org/abs/2608.05326 (v1, 5 Aug 2026; no venue stated); venue: UNVERIFIED
+@misc{qevict2026,
+  title        = {{QEvict}: Recoverable Quantized {KV} Eviction for Attention-Drift-Robust Long-Context Decoding},
+  author       = {Garg, Ayushman and Gupta, Akshita and Bhattacharya, Shaswata and Gupta, Abhishek and Kumar, Sandeep and Kumar, Manoj},
+  year         = {2026},
+  howpublished = {arXiv:2608.05326}
+}
+
+% source: https://openreview.net/forum?id=Vem6FQvRvq (OpenReview API record, venue "ICLR 2026 Poster"); arXiv:2505.18610v2 header "Published as a conference paper at ICLR 2026"; venue: VERIFIED
+% NOTE: the key says 2025 but the venue year is 2026 (key kept as requested).
+@inproceedings{pmkvq2025,
+  title     = {{PM-KVQ}: Progressive Mixed-precision {KV} Cache Quantization for Long-{CoT} {LLMs}},
+  author    = {Liu, Tengxuan and Li, Shiyao and Yang, Jiayi and Zhao, Tianchen and Zhou, Feng and Song, Xiaohui and Dai, Guohao and Yan, Shengen and Yang, Huazhong and Wang, Yu},
+  booktitle = {The Fourteenth International Conference on Learning Representations (ICLR)},
+  year      = {2026},
+  url       = {https://openreview.net/forum?id=Vem6FQvRvq}
+}
+
+% source: https://aclanthology.org/2024.tacl-1.9/ (ACL Anthology BibTeX; DOI resolves via Crossref); venue: VERIFIED
+@article{lostmiddle2024,
+  title     = {Lost in the Middle: How Language Models Use Long Contexts},
+  author    = {Liu, Nelson F. and Lin, Kevin and Hewitt, John and Paranjape, Ashwin and Bevilacqua, Michele and Petroni, Fabio and Liang, Percy},
+  journal   = {Transactions of the Association for Computational Linguistics},
+  volume    = {12},
+  pages     = {157--173},
+  publisher = {MIT Press},
+  year      = {2024},
+  doi       = {10.1162/tacl_a_00638}
+}
+
+% source: https://openreview.net/forum?id=kIoBbc76Sy (OpenReview API record, venueid colmweb.org/COLM/2024/Conference); venue: VERIFIED
+% WARNING: author lists disagree. OpenReview record = 7 authors (below). arXiv:2404.06654v3, whose PDF
+% carries the "Published as a conference paper at COLM 2024" header, lists 8 authors: it adds
+% "Yang Zhang" between Fei Jia and Boris Ginsburg. Could not open the OpenReview camera-ready PDF
+% (403 challenge). We follow the arXiv v3 PDF with the COLM header (8 authors).
+@inproceedings{ruler2024,
+  title     = {{RULER}: What's the Real Context Size of Your Long-Context Language Models?},
+  author    = {Hsieh, Cheng-Ping and Sun, Simeng and Kriman, Samuel and Acharya, Shantanu and Rekesh, Dima and Jia, Fei and Zhang, Yang and Ginsburg, Boris},
+  booktitle = {First Conference on Language Modeling (COLM)},
+  year      = {2024},
+  url       = {https://openreview.net/forum?id=kIoBbc76Sy}
+}
+
+% source: https://aclanthology.org/D18-1259/ (ACL Anthology BibTeX; DOI resolves via Crossref); venue: VERIFIED
+@inproceedings{hotpotqa2018,
+  title     = {{HotpotQA}: A Dataset for Diverse, Explainable Multi-hop Question Answering},
+  author    = {Yang, Zhilin and Qi, Peng and Zhang, Saizheng and Bengio, Yoshua and Cohen, William and Salakhutdinov, Ruslan and Manning, Christopher D.},
+  booktitle = {Proceedings of the 2018 Conference on Empirical Methods in Natural Language Processing (EMNLP)},
+  pages     = {2369--2380},
+  address   = {Brussels, Belgium},
+  publisher = {Association for Computational Linguistics},
+  year      = {2018},
+  doi       = {10.18653/v1/D18-1259}
+}
+
+% source: https://arxiv.org/abs/2407.21783 (v3; technical report, no venue); venue: UNVERIFIED (arXiv-only)
+% NOTE: the current arXiv listing puts Aaron Grattafiori first and Abhimanyu Dubey second; many
+% older citations write "Dubey et al." The abs page lists several hundred authors; truncated with "others".
+@misc{llama3_2024,
+  title        = {The {Llama} 3 Herd of Models},
+  author       = {Grattafiori, Aaron and Dubey, Abhimanyu and Jauhri, Abhinav and Pandey, Abhinav and Kadian, Abhishek and others},
+  year         = {2024},
+  howpublished = {arXiv:2407.21783}
+}
+
+% source: https://arxiv.org/abs/2501.15383 (v1; technical report, no venue); venue: UNVERIFIED (arXiv-only)
+@misc{qwen25_1m_2025,
+  title        = {{Qwen2.5-1M} Technical Report},
+  author       = {Yang, An and Yu, Bowen and Li, Chengyuan and Liu, Dayiheng and Huang, Fei and Huang, Haoyan and Jiang, Jiandong and Tu, Jianhong and Zhang, Jianwei and Zhou, Jingren and Lin, Junyang and Dang, Kai and Yang, Kexin and Yu, Le and Li, Mei and Sun, Minmin and Zhu, Qin and Men, Rui and He, Tao and Xu, Weijia and Yin, Wenbiao and Yu, Wenyuan and Qiu, Xiafei and Ren, Xingzhang and Yang, Xinlong and Li, Yong and Xu, Zhiying and Zhang, Zipeng},
+  year         = {2025},
+  howpublished = {arXiv:2501.15383}
+}
+
+% source: https://arxiv.org/abs/2209.05433 (v2; no venue); venue: UNVERIFIED (arXiv-only)
+% NOTE: author ORDER differs between the arXiv metadata (used below) and the PDF title block
+% (PDF: 8 NVIDIA authors, then Arm: Burgess, Ha, Grisenthwaite, then Intel: Mellempudi, Cornea,
+% Heinecke, Dubey). Same 15 people either way.
+@misc{fp8formats2022,
+  title        = {{FP8} Formats for Deep Learning},
+  author       = {Micikevicius, Paulius and Stosic, Dusan and Burgess, Neil and Cornea, Marius and Dubey, Pradeep and Grisenthwaite, Richard and Ha, Sangwon and Heinecke, Alexander and Judd, Patrick and Kamalu, John and Mellempudi, Naveen and Oberman, Stuart and Shoeybi, Mohammad and Siu, Michael and Wu, Hao},
+  year         = {2022},
+  howpublished = {arXiv:2209.05433}
+}
+
+% source: https://openreview.net/forum?id=gIqb6zWZoO (OpenReview API record, venue "COLM 2025"); arXiv:2508.04257v1 header "Published as a conference paper at COLM 2025"; venue: VERIFIED
+@inproceedings{kvsink2025,
+  title     = {{KVSink}: Understanding and Enhancing the Preservation of Attention Sinks in {KV} Cache Quantization for {LLMs}},
+  author    = {Su, Zunhai and Yuan, Kehong},
+  booktitle = {Second Conference on Language Modeling (COLM)},
+  year      = {2025},
+  url       = {https://openreview.net/forum?id=gIqb6zWZoO}
+}
+
+% refs_C.bib -- verified 2026-10-16/17 by zero-context citation verifier (batch C)
+% Each entry's metadata was checked against the source named in the comment above it.
+
+% source: https://www.usenix.org/legacy/event/fast08/tech/gill.html ("Pp. 49-65 of the Proceedings"); PDF https://www.usenix.org/legacy/event/fast08/tech/full_papers/gill/gill.pdf (printed footers 49..65); dates/location https://www.usenix.org/legacy/event/fast08/; venue: VERIFIED
+@inproceedings{gill2008,
+  author    = {Binny S. Gill},
+  title     = {On Multi-level Exclusive Caching: Offline Optimality and Why Promotions Are Better Than Demotions},
+  booktitle = {Proceedings of the 6th {USENIX} Conference on File and Storage Technologies ({FAST} '08)},
+  pages     = {49--65},
+  publisher = {USENIX Association},
+  address   = {San Jose, CA, USA},
+  month     = feb,
+  year      = {2008},
+  url       = {https://www.usenix.org/legacy/event/fast08/tech/full_papers/gill/gill.pdf}
+}
+
+% source: https://www.usenix.org/legacy/publications/library/proceedings/usenix02/full_papers/wong/wong.pdf (cover: "Proceedings of the 2002 USENIX Annual Technical Conference, Monterey, California, USA, June 10-15, 2002"); pages 161-175 from DBLP mirror https://vldb.org/dblp/db/indices/a-tree/w/Wilkes:John.html ("USENIX Annual Technical Conference, General Track 2002: 161-175") and Gill FAST'08 ref [33]; the PDF itself carries no printed page numbers; venue: VERIFIED
+@inproceedings{wong2002,
+  author    = {Theodore M. Wong and John Wilkes},
+  title     = {My Cache or Yours? Making Storage More Exclusive},
+  booktitle = {Proceedings of the 2002 {USENIX} Annual Technical Conference, General Track ({USENIX} {ATC} '02)},
+  pages     = {161--175},
+  publisher = {USENIX Association},
+  address   = {Monterey, CA, USA},
+  month     = jun,
+  year      = {2002},
+  url       = {https://www.usenix.org/legacy/publications/library/proceedings/usenix02/full_papers/wong/wong.pdf}
+}
+
+% source: https://doi.org/10.1145/2670979.2670985 (Crossref: Proc. ACM Symposium on Cloud Computing, pages 1-15, SOCC '14, Seattle WA USA, 2014-11-03); article number 6 from MIT DSpace https://dspace.mit.edu/handle/1721.1/101090 ("Article 6, 15 pages"); full text read: https://www.cs.berkeley.edu/~haoyuan/papers/2014_SOCC_tachyon.pdf; venue: VERIFIED
+@inproceedings{tachyon2014,
+  author    = {Haoyuan Li and Ali Ghodsi and Matei Zaharia and Scott Shenker and Ion Stoica},
+  title     = {Tachyon: Reliable, Memory Speed Storage for Cluster Computing Frameworks},
+  booktitle = {Proceedings of the {ACM} Symposium on Cloud Computing ({SoCC} '14)},
+  articleno = {6},
+  pages     = {1--15},
+  numpages  = {15},
+  publisher = {ACM},
+  address   = {Seattle, WA, USA},
+  month     = nov,
+  year      = {2014},
+  doi       = {10.1145/2670979.2670985}
+}
+
+% source: https://doi.org/10.1145/3582016.3582063 (Crossref: pages 742-755, ASPLOS '23 Vol. 3, Vancouver BC Canada, 2023-03-25); ACM PDF https://dl.acm.org/doi/pdf/10.1145/3582016.3582063 (printed pages 742..755); venue: VERIFIED
+@inproceedings{tpp2023,
+  author    = {Hasan Al Maruf and Hao Wang and Abhishek Dhanotia and Johannes Weiner and Niket Agarwal and Pallab Bhattacharya and Chris Petersen and Mosharaf Chowdhury and Shobhit Kanaujia and Prakash Chauhan},
+  title     = {{TPP}: Transparent Page Placement for {CXL}-Enabled Tiered-Memory},
+  booktitle = {Proceedings of the 28th {ACM} International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 3 ({ASPLOS} '23)},
+  pages     = {742--755},
+  publisher = {ACM},
+  address   = {Vancouver, BC, Canada},
+  month     = mar,
+  year      = {2023},
+  doi       = {10.1145/3582016.3582063}
+}
+
+% source: https://proceedings.mlsys.org/paper_files/paper/2025/hash/7c180af017258d239bac6248d1eb26ac-Abstract-Conference.html (official BibTeX: Proceedings of Machine Learning and Systems, vol. 7, pages = {} i.e. no page numbers); camera-ready footnote "Proceedings of the 8th MLSys Conference, Santa Clara, CA, USA, 2025"; venue: VERIFIED
+@inproceedings{marconi2025,
+  author    = {Rui Pan and Zhuang Wang and Zhen Jia and Can Karakus and Luca Zancato and Tri Dao and Yida Wang and Ravi Netravali},
+  title     = {Marconi: Prefix Caching for the Era of Hybrid {LLMs}},
+  booktitle = {Proceedings of Machine Learning and Systems ({MLSys} 2025)},
+  editor    = {M. Zaharia and G. Joshi and Y. Lin},
+  volume    = {7},
+  publisher = {MLSys},
+  address   = {Santa Clara, CA, USA},
+  year      = {2025},
+  url       = {https://proceedings.mlsys.org/paper_files/paper/2025/file/7c180af017258d239bac6248d1eb26ac-Paper-Conference.pdf}
+}
+
+% source: https://github.com/vllm-project/vllm/issues/60316 (GitHub REST API: created_at 2026-10-06T23:10:58Z, state open as of 2026-10-16, author login chunfangamd); venue: VERIFIED (GitHub issue)
+@misc{vllm_issue60316,
+  author       = {{chunfangamd}},
+  title        = {{[Performance][ROCm]} {KV} connectors rule out {ROCM\_ATTN}, so {PD} workers decode on {ROCM\_AITER\_UNIFIED\_ATTN} (1.9--3.2x the per-token time for {Qwen3} models on {MI355X})},
+  howpublished = {vllm-project/vllm, issue \#60316},
+  month        = oct,
+  year         = {2026},
+  note         = {{GitHub} issue, opened 2026-10-06 (UTC); still open on 2026-10-16},
+  url          = {https://github.com/vllm-project/vllm/issues/60316}
+}
+
+% source: https://github.com/vllm-project/vllm/pull/43660 (GitHub REST API: merged true, merged_at 2026-05-28T17:28:50Z, merge commit 5b115bb8a33d72820075450ecefcd292607bfe57, author login NickLucche); venue: VERIFIED (GitHub pull request)
+@misc{vllm_pr43660,
+  author       = {{NickLucche}},
+  title        = {{[Attention][AMD]} Standardize kv layout to blocks first for {AMD}},
+  howpublished = {vllm-project/vllm, pull request \#43660},
+  month        = may,
+  year         = {2026},
+  note         = {{GitHub} pull request, merged 2026-05-28 (UTC), merge commit 5b115bb8a3},
+  url          = {https://github.com/vllm-project/vllm/pull/43660}
+}
+
+% source: https://hotcarbon.org/2026 (program, Day 1 Thu July 16 2026, Session 1 "LLM Serving"; page states "The HotCarbon'26 papers are published in the ACM Digital Library as a special issue of the SIGEnergy Energy Informatics Review. To be published"); CFP https://hotcarbon.org/cfp ("HotCarbon'26, July 16-17th, 2026, Seattle, WA"); PDF https://hotcarbon.org/assets/2026/paper-20.pdf (footer "ACM SIGENERGY Energy Informatics Review, Volume X Issue Y, July 2026" = placeholder); venue: VERIFIED as HotCarbon '26 workshop paper; EIR volume/issue/DOI: UNVERIFIED (not yet assigned)
+@inproceedings{hotcarbon2026,
+  author    = {Gilbert L. Mao and Ruiyang Zhou},
+  title     = {Energy Characterization of {KV} Cache Offloading Under Agentic Workloads},
+  booktitle = {HotCarbon Workshop on Sustainable Computer Systems ({HotCarbon} '26)},
+  address   = {Seattle, WA, USA},
+  month     = jul,
+  year      = {2026},
+  note      = {To appear in ACM SIGENERGY Energy Informatics Review (HotCarbon '26 special issue); volume, issue and DOI not yet assigned as of 2026-10-16},
+  url       = {https://hotcarbon.org/assets/2026/paper-20.pdf}
 }
