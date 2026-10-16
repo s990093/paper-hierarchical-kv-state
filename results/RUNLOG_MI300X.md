@@ -514,7 +514,10 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - Llama E1 A 的 CI 不含 0：24 格裡 1 格，5% 機率下預期約 1.2 格 → 不解讀（翻轉 12／23，和 E0 逐字相同 74.7%）。
 - **判定**（`decide_int4.json`）：兩個模型 E1／E1s／E1sr 的 ε 全過、速度不輸全沒過（只輸真實 CPU 層，10.9）→ K1、K1s 都 False → next＝「INT4 階：Llama 均勻不夠 → Step 2 在 Llama 上做」，`next_frozen_code` 相同。`route_after_int4.py`：33c 改成只跑 llama（10:29:20Z 開始），寫出 `46_quality_int4_mixed_qwen.sh`（只報告）。
 - **失敗與異常**：
-  1. 12 份 gpu_guard 都是 CONTAMINATED（自己同時開 6–7 個 process，互相看到）。分數保留、`latency_ms` 作廢（CLAUDE.md §3）。
+  1. 12 份 gpu_guard 都是 CONTAMINATED。分數保留、`latency_ms` 作廢（CLAUDE.md §3）。
+     - 外來 pid 全是我們自己的（10/16 12:0xZ 對過時間）：同批 6–7 個品質 process；加上品質段裡我跑的 GPU 小測（融合 kernel 自測 06:44、int64 重驗 07:19–07:20、`tests/restore_variants_fake_gpu.py` 07:33–07:37（約 70 個 0 MiB 的編譯子行程）、`tests/dqsweep_bench_fake_gpu.py` 07:41–07:54，pid 3606734）。
+     - 重現檢查（使用者 10/16 問「有被污染嗎」）：33c 裡一個 INT4 block 都沒讀到的列（＝全 BF16）對 Step 1 的 E0（`20261015-211144-m10-s1-llama-T24-s0` 那批）：Llama 1,055 個（題，輪）、2,620 列，生成文字和 gold_logprob 全部逐位元相同 → 同時跑的 process 不會改分數。Qwen 等 stage 46。
+     - INT4 計時格子（10.9，`20261016-034902-m10-grid-int4-llama`、`-052143-m10-grid-int4-qwen`）6 份 gpu_guard 全部 CLEAN。
   2. 我的等待腳本 exit 1：只是最後 `cat NEEDS_HUMAN` 時檔案不存在（沒有 NEEDS_HUMAN），stage 本身都 rc＝0。
   3. 後半批（s3、s4、T5）每題比前半批慢（Qwen 約 110 vs 65 秒），原因沒查；整段 3 小時 49 分。
 - **另外加的 stage**（10:5xZ，只用 CPU）：`33cz_decide_step2_int4.sh` → `analyze_step2_int4.sh llama`。它用凍結的 `m10_analyze.py quality --strip-fmt` 和 `step2` 判穩定差距第 1、2 條與 K2。`step2` 沒有 `--strip-fmt`，所以先照 `cmd_quality` 同樣的規則把 `@int4_kivi` 拿掉、寫成暫存檔，判準一行都沒改。K2 成立 → 主線停；第 1、2 條成立 → NEEDS_HUMAN（第 3 條要新 seed 重跑）。用改名的端點列當假資料，在沙盒測過兩個分支。

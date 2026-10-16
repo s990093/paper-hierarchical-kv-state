@@ -152,7 +152,7 @@
 ### 2.3 全部用低精度夠不夠（Step 1：K1、K1s）
 
 - **跑法**：stage 30，2026-10-15 21:11Z → 10-16 03:45Z，14 個 process 全部 rc＝0（run_id 見附錄 A）。每個模型 600 題（T2 多值撈針、T3 變數追蹤、T4 HotpotQA 各 180，T5 常見詞抽取 60），T2–T4 有兩輪，共 1,140 列。
-- **GPU 監控**：14 份都標「污染」，原因是我們自己同時開 5–7 個品質 process（每份記到 5–48 個外來 pid）。照 CLAUDE.md §3，品質分數保留、`latency_ms` 作廢；這一段沒有用任何時間數字。
+- **GPU 監控**：14 份都標「污染」，原因是我們自己同時開 5–7 個品質 process（每份記到 5–48 個外來 pid）。照 CLAUDE.md §3，品質分數保留、`latency_ms` 作廢；這一段沒有用任何時間數字。（10/16 補：這批 E0 和隔天另一批同時跑的 process 算出的全 BF16 逐位元相同，見 §2.5.3。）
 - **判定**：凍結的 `m10_analyze.py`（`analysis/fp8/decide_fp8.json`）。表：`analysis/fp8/tables_step1_<m>.md`；圖：`figs/A_<m>_fp8_step1.png`（品質 × 速度）、`C_…`、`D_…`。
 
 **Llama（fp8_token）**：檢定力夠（E1 讀法 A 的 CI 半寬 0.66 個百分點）。
@@ -298,7 +298,10 @@ run：Llama `20261016-064017-m10-i4e-llama-T24-s0`、`-064247-…-s1`、`-064518
 - E1s 的讀法 B 和 E1 完全相同：讀法 B 裡重算線從 block 0 開始，開頭那塊一定是重算的，「保護開頭」沒有作用。
 - **Qwen 和 FP8 的對照**：FP8 的 E1 讀法 A −32.8（T4 HotpotQA −71.7，§2.3）；INT4 KIVI 的 E1 +0.1（T4 第 1／2 輪 −0.6／+0.6）。〔推論〕KIVI 的 K 是逐 channel 量化（每個 channel 自己的 scale 和零點），等於自動扣掉 Qwen K 那個很大的固定值（§2.4），和 FP8 階 K3「K 先扣平均就好」是同一個原因。
 - **Llama E1 讀法 A 的 +1.1，CI 不含 0**：24 格裡有 1 格的 95% CI 不含 0，在 5% 的機率下本來就預期約 1.2 格，所以**不解讀成「INT4 比 BF16 好」**（翻轉：E0 對→錯 12 題、錯→對 23 題；和 E0 輸出逐字相同 74.7%）。
-- 12 份品質 run 的 gpu_guard 都是 CONTAMINATED（自己同時開 6–7 個 process，互相看到；同 §2.3 那批）。依 CLAUDE.md §3，**分數保留、`latency_ms` 作廢**。
+- 12 份品質 run 的 gpu_guard 都是 CONTAMINATED。依 CLAUDE.md §3，**分數保留、`latency_ms` 作廢**。
+  - **外來 pid 全是我們自己的**（10/16 12:0xZ 逐一對過時間）：(1) 同批 6–7 個品質 process 互相看到（同 §2.3 那批）；(2) 品質段裡我跑的 GPU 小測：融合 kernel 自測 06:44（`20261016-064403-m10-dqfast-selftest-gpu-int4`、`-064414-m10-dqfast-shapes-gpu`）、int64 修正重驗 07:19–07:20（`-071948-…-i64`、`-072000-…-i64`）、假模型測試 07:33–07:37（`tests/restore_variants_fake_gpu.py`，那串約 70 個 0 MiB 的 pid 是它的編譯子行程）和 07:41–07:54（`tests/dqsweep_bench_fake_gpu.py`，pid 3606734）。沒有別人的工作。
+  - **分數不受影響的實測證據**：品質的計算是固定的（貪婪解碼，同一份輸入就是同一份輸出），和 GPU 上同時跑什麼無關。33c（10/16 10:29Z 起，另一批同時跑的 process）裡「一個 INT4 block 都沒讀到」的列，算的就是全 BF16，和 Step 1（10/15 21:11Z 起）的 E0 比：Llama 1,055 個（題，輪）、2,620 列，**生成文字和標準答案的 log 機率全部逐位元相同**。Qwen 要等 stage 46 才有同樣的列可以比。
+  - 速度判定用的 INT4 計時格子（§2.5.1，6 份）gpu_guard 全部 CLEAN；讀法 B 的會合點也來自那批。
 
 **判定**（33bz：凍結的 `analyze_int4.sh` → `analysis/int4/decide_int4.json`；`route_after_int4.py`）
 
