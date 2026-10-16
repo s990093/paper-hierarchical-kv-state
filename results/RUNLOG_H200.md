@@ -860,3 +860,11 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 | 20709 | `m10h-q5` | 43 的品質 | afterok:20708 |
 - 同時最多 3 張卡（20705＋20702＋20703，之後 20705＋20706＋20707）。
 - 20708、20709 開跑時才讀 repo 裡的 `r_h200_x.sh`。**開跑前還要補**：`m10_dqsweep`、`m10_tier2`、`m10_confirm` 的 GPU 忙與路徑（MI300X 寫死）、43 的冒煙／速度／品質步驟（現在是會直接失敗的佔位）。
+
+### 融合反量化（Triton）在 NVIDIA 上編不編得過（2026-10-17 07:5x，head node，CPU；使用者問「反量化 Triton 不用改？」）
+- **為什麼要先驗**：`m10_dequant_fast`（融合反量化）在 MI300X 上寫的、還沒在 NVIDIA 上跑過；20704 的第一步 `m10_sweep parts` 就會呼叫它（`DF.decode_fast`），編不過的話 128K 那條線停在那裡。
+- **做法**：Triton 3.7.1 的 AOT 編譯（`triton.compile(ASTSource, GPUTarget("cuda", 90, 32))`），不用 GPU、不碰正在量時間的 20701。指標型別照 `m10_codec.encode` 的實際 dtype（FP8 碼 uint8、INT8 int8、INT4 uint8、scale fp32、KIVI scale／zero fp16）。
+- **結果**：`code/tests_h200/aot_triton_sm90.py` **11／11 PASS**（`_dq_kernel` FP8／INT8、`_dq4_kernel` int4_token／KIVI-K／KIVI-V、`_dqm_kernel` FP8 查表／FP8 位元運算（K4）／INT8、`_dq4m_kernel` 三種；INT4 的關 FMA 選項也接受）。
+- **反向對照**：`code/tests_h200/aot_triton_sm90_negative.py` 拿第一階段 `m9_f3_dequant` 的 `_dq_rowscale`、`_dq_tensorscale`（H200 job 20614 實測失敗、10/16 決定凍結不改）用同一個方法編 → **兩個都 FAIL**，錯誤和實測相同：`cannot cast int32[...] to <[...], fp8e4nv>`。所以這個方法抓得到那一類錯誤。
+- **差別在哪**：`m9_f3` 從 fp8 指標 `tl.load(..., other=0)`（0 要轉成 fp8e4nv，NVIDIA 後端不允許）；`m10_dequant_fast` 讀 uint8 碼再查表或位元運算，沒有這個轉型。
+- **沒驗到的**：數值。`m10_sweep parts` 會在真實 KV 上逐 block 比融合版和 PyTorch 版，不逐位元相同就停（`m10_sweep.py:337`）；t2 的 GPU 自測再驗一次。`m9_f3_dequant` 照 10/16 的決定不動。
