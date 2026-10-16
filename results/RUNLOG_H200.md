@@ -269,3 +269,24 @@ LA 的數字和 MI300X 的比較留到全部跑完、在 head node 一起做。
 `m9_f2_energy.py sweep` 沒有實作 K 次一起量 → 照 R-r1x 開頭寫好的：停下來回報，不自己加。**等使用者決定**（實作 K、或 H200 的 F2 記 NOT_MEASURED）。
 沒跑的步驟：F2-cakee、F2-sweep、F2-final、F2-cakee-la7b、F2-sweep-la7b、F2-final-la7b、F2-la7b-clean。20556（qwen3）只等 20553（afterok，已滿足）和 20554（afterany），不受影響。
 
+### F2 的決定與修改（2026-10-16 09:1x）
+**使用者的決定**: 「K=21，只做 Llama」（LongAlpaca 的補充 sweep 不做）；「重跑 probe，k_rec=119」。
+**K 怎麼來的**（只看 probe 的計數器更新週期，不看任何還原結果；F2 §2 第 42 行）:
+- sweep：K ＝ ceil(更新週期 ÷ (5% × 最短還原))，最短還原＝cpu35 的 Cake 預測 104.1 ms。中位數 99.87 ms → 20；**最大值 105.14 ms → 21**（採用）。門檻變成 5% × 21 × 104.1 ＝ 109.3 ms。
+- probe 的 e_rec（每個位置背靠背重算 k_rec 個 chunk 一起量；κ_E 用）：同一條規則用在最短的窗（chunk 0，H200 C1 f(0)＝17.818 ms）：
+  窗要 ≥ 105.14 ÷ 5% ＝ 2.103 s → **k_rec ＝ ceil(2.103 ÷ 0.017818) ＝ 119**（MI300X 20）。第一次 probe 的 e_rec 窗只有 0.36–0.95 s（4–10 個更新週期）。
+  預先登記的 5% 規則字面上只講「還原」；e_rec 這條是比照，使用者同意。
+- 新 probe 會重量更新週期；gate 用 K=21 再判一次，沒過一樣停。
+**程式的修改**:
+- `m9_f2_energy.py sweep --k-batch K`：每個量測在同一個量測窗裡連續跑 K 次還原，寫出的 `secs`、`E_J`、`t_*` 是每次的平均，`secs_batch`、`E_J_batch` 是整段，另記 `k_batch`、`meet_min`、`meet_max`。
+  K 次之間不清零：每次還原都會重寫全部 64 個 chunk，做的事一樣；如果把清零（4 GiB memset）放進窗，會多算到它的能量。
+  第 0 輪的逐 chunk 驗證在第 K 次之後做（第一次是從全零開始，固定會漏寫的錯一樣抓得到）。動態 Cake 每次的會合點取中位數。暖機維持 K=1。K=1 時寫法和 MI300X 相同。
+- `m9_f2_analyze.py gate --k-batch K`：門檻＝5% × K × 最短還原；另記照中位數、最大值各自需要的 K。`final` 的摘要 JSON 多記 `k_batch`。
+- `r_h200_r1x.sh`：`F2_K=21`、`F2_KREC=119`，加 `--until <步驟>`。Makefile：`make submit-f2`（＝`sbatch --job-name=r-h200-f2 --time=10:00:00 code/r_h200_r1x.sh --part la --from F2-probe --until F2-final`）。
+**測試**（head node，不用 GPU；暫存目錄）:
+- 用 git 裡 MI300X 的 `f2_probe_raw.csv`、`f2_sweep_raw.csv`、`f2_la7b_sweep_raw.csv` 重跑 cakee、final（含 la7b）：cakee、verdict、sweep_summary、pareto、cost、kappa_e、probe_summary、la7b 的 verdict／sweep_summary／pareto／cost 除了 run_id、ts 都和 git 相同；
+  counter_validation 只差 10/16 加的 `poll_src`、`secs` 兩欄。
+- gate 用第一次 H200 probe：K=1 不過（和 job 一樣）、K=20 過（門檻 104.12 ms）、K=21 過（109.33 ms）；需要的 K：中位數 20、最大值 21。
+- `mean_info`（K 次合成一列）的單元測試通過。sweep 的 K 迴圈要 GPU，沒辦法在 head node 試。第一次真的跑就是這個 job。
+**時間**: 用 H200 的 C1 f(i) 和各層頻寬算，每輪約 110 s 的還原 × 21＋62 個量測各等 0.5 s → 5 輪約 3.2 小時（算術估計，不是量的；MI300X 實際比這種算法多花一些時間）。`--time=10:00:00`。
+
