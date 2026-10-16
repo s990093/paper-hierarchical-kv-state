@@ -93,3 +93,10 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
   - Qwen2.5-7B-Instruct-1M 的 `dual_chunk_attention_config.original_max_position_embeddings` 是 262,144：這個長度以內是一般的 attention（我們的 HF 路徑不做 DCA），可以做。用 508 個 block（260,096 token，和 128K 一樣留 2,048 給問題與答案）。
   - 題目：508 個 block 的 T2、T3、T4 產得出來、`_check_item` 通過；**T5（cwe）產不出來**（`RuntimeError: cwe 詞表不夠長，補不滿`）。
   - 要做的話是 H200 才有的新實驗（MI300X 沒做），要另外登記；等 128K 的結果出來再問使用者。
+
+## 9. 10/17 改動二（使用者「都照你建議的」；寫的時候 H200 第二階段只有 20701 在跑、還沒有任何品質或速度結果出來）
+
+- **41 海選的題數固定 n＝24**（MI300X 的 `sweep_plan_n.py` 選的值、全部 12 種放法 × 17 種佔比），不在 H200 重算：兩台的題目才完全相同。09 §4.1 的「≤ 12 小時」在 H200 只當預算參考；兩個模型分在兩張卡。
+- **43 複賽的選手用 H200 自己海選的結果**，照 09 §4.2 同一條規則選（`m10_sweep_analyze.py`）；最後並列兩台的選手與重疊。
+- **75 的上游 RULER jsonl 在 H200 重新產生**：RULER `c3f5e3b4…`（和 MI300X 同一個 commit）、LFS 詞表 sha256 `affcd6d4…2eca`（和指標檔記的相同）、shim 只有 wonderwords＋tenacity 9.2.1；`$TIARA_DATASETS/ruler_ref/README.txt`。產生器的 seed 42 和 MI300X 相同；兩台的題目是否相同，用逐題的 gold 和 MI300X 的 `ruler_cwe_upstream_llama.csv` 比對（只比題目，不比分數）。
+- 腳本：`code/r_h200_x.sh`（`--part q3 --model <m>`、`t2`、`q5`；開跑時才讀 repo 裡的版本，所以 t2、q5 送出後補的程式在開跑時生效）。
