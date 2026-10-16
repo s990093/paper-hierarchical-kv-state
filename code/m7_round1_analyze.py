@@ -14,8 +14,9 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-RES = os.path.join(HERE, "..", "results", "m7_write_policy_mi300x")
-OUT = os.path.join(HERE, "..", "results", "m7_explore_mi300x")
+# 預設＝MI300X 的目錄；平台 C（H200）由 M7_RES（env_h200.sh）、M7_EXPLORE 設（2026-10-16）
+RES = os.environ.get("M7_RES") or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x")
+OUT = os.environ.get("M7_EXPLORE") or os.path.join(HERE, "..", "results", "m7_explore_mi300x")
 TS = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 WT = ["S5", "S5s", "S5L", "S5P", "S5c"]
 NWT = ["S0", "S1", "S2b", "S3", "S4", "S4+", "S4+P", "S4L", "S4B"]   # 不看位置＋延後版（S4B）

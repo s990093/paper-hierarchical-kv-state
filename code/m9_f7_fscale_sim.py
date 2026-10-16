@@ -20,7 +20,8 @@ import m7_sim  # noqa: E402
 from m7_round1_sim import GRID, STRATS  # noqa: E402
 from m7_write_policy import CHUNK_BYTES, load_params  # noqa: E402
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "m9_followup")
+# 輸出目錄：預設＝MI300X 的；平台 C（H200）由 M9_OUT 設（2026-10-16）
+OUT = os.environ.get("M9_OUT") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "m9_followup")
 NWT = ["S0", "S1", "S2b", "S4", "S4+", "S4+P", "S4L"]          # 不看位置（同 m7_round1_analyze 的 NWT0）
 WT = ["S5", "S5s", "S5L", "S5P", "S5c"]                        # 寫入時決定
 CFG = ["cpu_gibps", "release", "workload", "ssd_dev", "cpu_frac"]

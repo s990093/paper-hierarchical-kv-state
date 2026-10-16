@@ -37,7 +37,9 @@ from m7_restore_harness import GiB, write_boundary  # noqa: E402
 from m7_sim import CB, D2H_BPS, _Pool, mk_tier, sim_restore  # noqa: E402
 from m7_write_policy import SCHED, BState, load_f, load_params, make_workload  # noqa: E402
 
-OUT = os.path.join(HERE, "..", "results", "m8_directions")
+# 輸出目錄：預設＝MI300X 的；平台 C（H200）由 M8_OUT 設，validate 的參考（r1_sim）由 M7_EXPLORE 設（2026-10-16）
+OUT = os.environ.get("M8_OUT") or os.path.join(HERE, "..", "results", "m8_directions")
+EXPLORE = os.environ.get("M7_EXPLORE") or os.path.join(HERE, "..", "results", "m7_explore_mi300x")
 RID = os.environ.get("RUN_ID", "adhoc")
 
 
@@ -545,7 +547,7 @@ VAL_CELLS = [  # D1 §2.6（開跑前寫死）
 def validate(a):
     import pandas as pd
     P, f = load_params(), load_f()
-    ref = pd.read_csv(os.path.join(HERE, "..", "results", "m7_explore_mi300x", "r1_sim_llama31_8b.csv"))
+    ref = pd.read_csv(os.path.join(EXPLORE, "r1_sim_llama31_8b.csv"))
     out = []
     for cg, rel, wl, dev, cf, seed, strat in VAL_CELLS:
         m = ref[(ref.cpu_gibps.round(4) == round(cg, 4)) & (ref.release == rel) & (ref.workload == wl) &

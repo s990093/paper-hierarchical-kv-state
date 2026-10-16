@@ -32,7 +32,8 @@ import m8_conc_sim as m8  # noqa: E402
 RID = os.environ.get("RUN_ID", "adhoc")
 RUNS = os.environ.get("TIARA_RUNS", "/mlsteam/data/tiara/runs")
 RD = os.path.join(RUNS, RID)
-OUT_REPO = os.path.join(HERE, "..", "results", "m9_followup")
+# 輸出目錄：預設＝MI300X 的；平台 C（H200）由 M9_OUT 設（2026-10-16）
+OUT_REPO = os.environ.get("M9_OUT") or os.path.join(HERE, "..", "results", "m9_followup")
 KEY = m8.CFG_KEYS
 
 TW16 = ["S1", "S2b", "S4", "S4+", "S4B", "S4W", "S4C", "S4PD", "S4BT", "S4WT", "S4BD", "S4WD", "S4WD50", "S4WT50",
@@ -311,7 +312,8 @@ def main():
     ap.add_argument("--old", nargs="*")
     ap.add_argument("--ssd-dev", nargs="*")
     ap.add_argument("--d1-overload-ref",
-                    default=os.path.join(HERE, "..", "results", "m8_directions", "d1_afq16_S1D_cfg.csv"))
+                    default=os.path.join(os.environ.get("M8_OUT") or os.path.join(HERE, "..", "results", "m8_directions"),
+                                         "d1_afq16_S1D_cfg.csv"))
     a = ap.parse_args()
     if a.twins is None and a.cmd in ("verdict", "check"):
         a.twins = TWINS[a.cand]
