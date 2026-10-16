@@ -1,0 +1,19 @@
+{
+ "L": 8192,
+ "hf_twice_bitwise_equal": true,
+ "hf_twice_maxabs": 0.0,
+ "own_vs_hf_maxabs_logit": 0.3125,
+ "own_vs_hf_argmax_equal": true,
+ "own_vs_hf_top5_overlap": 5,
+ "own_vs_hf_K_maxabs_layers_0_mid_last": [
+  0.0,
+  3.3203125,
+  1.4375
+ ],
+ "recompute_same_chunking_bitwise_equal": true,
+ "recompute_same_chunking_maxabs": 0.0,
+ "host_roundtrip_bitwise_equal": true,
+ "chunk_bytes": 50331648,
+ "torch": "2.13.0+cu130",
+ "hip": null
+}

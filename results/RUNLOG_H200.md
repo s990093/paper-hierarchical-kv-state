@@ -186,7 +186,7 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
 
 ## Milestone R-rest — 第一階段其餘的 GPU 實驗（`code/r_h200_rest.sh`）
 
-**狀態**: **RUNNING** — job 20554（2026-10-16 08:5x `make submit-rest` 送出，afterok:20553；**09:00:20 開始**）。第一次送的 job 20454 在 07:48:33 因 20417 失敗被 Slurm 撤回，沒有開始
+**狀態**: **COMPLETED** — job 20554（2026-10-16 08:5x `make submit-rest` 送出，afterok:20553；**09:00:20 → 17:09:51**，28 步全部 exit 0）。第一次送的 job 20454 在 07:48:33 因 20417 失敗被 Slurm 撤回，沒有開始
 **決定**: 2026-10-15 使用者：「先把所有東西都復現，第二階段不動」。MI300X 到 10/23 到期。
 **指令**: `make submit-rest`（＝`sbatch --dependency=afterok:<r-h200-all> --kill-on-invalid-dep=yes code/r_h200_rest.sh`）；每一步的指令：`make dry-run-rest`（28 步）
 **範圍**（MI300X 上付費跑過、只用 Llama-3.1-8B、R3 沒涵蓋的；指令照 `docs/migration_20261013/inventory/run_commands.tsv`，只換路徑）:
@@ -231,7 +231,7 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
 
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
-**狀態**: la：LA 三步 PASS、F2 由 job 20570 完成（有看頭，同 MI300X）；qwen3：PENDING。2026-10-16 08:5x `make submit-r1x` 重送：job 20555 `r-h200-la-f2`（afterok:20553；**09:00:20 開始**）、job 20556 `r-h200-qwen3`（afterok:20553,afterany:20554；等 20554）。第一次送的 20544、20545（06:3x，git `53f22a0`）在 07:48:33 因 20417 失敗被撤回，沒有開始
+**狀態**: la：LA 三步 PASS、F2 由 job 20570 完成（有看頭，同 MI300X）；qwen3：job 20556 **COMPLETED**（17:09:51 → 17:24:43，5 步 exit 0；見「R-cpu part b」一節）。2026-10-16 08:5x `make submit-r1x` 重送：job 20555 `r-h200-la-f2`（afterok:20553；**09:00:20 開始**）、job 20556 `r-h200-qwen3`（afterok:20553,afterany:20554；等 20554）。第一次送的 20544、20545（06:3x，git `53f22a0`）在 07:48:33 因 20417 失敗被撤回，沒有開始
 **注意**: 這兩個 commit（`b1c74cb`、`53f22a0`）是在 20417 執行中做的；20417 之後的 run 的 context.txt 會記成新的 HEAD，但它用到的檔案和 `bad42c7` 相同（這兩個 commit 只改 m9_f2_*、Makefile、新檔、RUNLOG、R0 的產出）
 **決定**: 2026-10-16 06:1x 使用者對兩項都說「好」：下載 LongAlpaca-7B 和 Qwen3-30B-A3B（約 71 GiB）、F2 改成 NVML 再跑
 **指令**: `make submit-r1x`，送出兩個 job：
@@ -453,7 +453,7 @@ sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現�
   - (e) MLA：3.69 GiB/s 的 b/n：DeepSeek-V3 0.078（0.047）、Kimi-K2 0.094（0.062）、Falcon-7B 0.047（0.031）、DeepSeek-V2-Lite 0.328（0.234）
 **產出**: `results/m8_directions_h200/d4_*.csv`（15 個）、`d5_*.csv`（6 個）
 
-**還沒做**（`--part b`，之後）: m7_sim validate（要 P1）、08 消融的分析（要 P2）、D3（要 P1、P2、A0；C7-anchor 在 H200 沒做 → 那部分 NOT_MEASURED）、第 1 輪的分析（要 P3、Qwen3）。
+**`--part b`**: 已做（m7_sim validate、08 消融的分析、第 1 輪的分析），見「R-cpu part b」一節。D3 還沒做（要 job 20643 的 c7_anchor sim、job 20631 的重跑）。
 D4、D5、D6 已做（上面）。
 
 ### 決定（2026-10-16 14:0x）：D3 只有 H200 平台；A2、C7 錨點照 MI300X 跑限速層那一半
@@ -476,3 +476,68 @@ D4、D5、D6 已做（上面）。
 **job 20643** `r-h200-simanchor`（`code/r_h200_simanchor.sh`，`--dependency=afterany:20631`，上限 1 小時）:
 A2-sim（fifo，reps 6）→ A2-share-sim（share，reps 3）→ C7-anchor-sim（L 8K／16K／32K，reps 3），全部 `--io sim`。
 MI300X 上這 3 個 run 的量測時間 2.6、0.9、4.7 分（CSV 的 ts，不含載入模型）。開跑前會檢查節點上沒有我們自己的 job，`$M7_RES` 裡也還沒有這 3 個 CSV。
+
+---
+
+## Milestone R-cpu part b — 08 消融、B 的模擬驗證、第 1 輪的分析（`code/r_h200_cpu.sh --part b`）
+
+**狀態**: **7/7 步 PASS**（head node，`nice -n 19`，2026-10-16 17:34:28 → 17:35:02）。D3 還沒做：要等 job 20643 的 c7_anchor sim 和 job 20631 的重跑。
+**run_id**: `results/m8_directions_h200/r_h200_cpu_run_ids.tsv` 的 ABL-gain、SIM-validate、B2-analyze、R1-h1、R1-kappa、R1-sim、R1-gpu（`20261016-173428-m7h-abl-gain` … `20261016-173500-m7h-r1-gpu-an`）
+**指令**: `bash code/r_h200_cpu.sh --part b`：`m7_ablate_analyze.py`、`m7_sim.py validate`、`m7_b2_analyze.py`、`m7_round1_analyze.py h1|kappa|sim|gpu`。
+MI300X 只有 m7_sim validate 走過 §4.1 的殼（`20261009-064908-m7-sim-validate`）；其他分析照各程式檔頭的用法（RUNLOG_MI300X M7b、M7c）。
+**輸入**: job 20554 的 P1–P3 原始資料（**含**和 F2 重疊的 P1 八個與 P2-G1-seed0；重跑版之後另做、並排報告）、job 20556 的 Qwen3 C1、`--part a` 的 sim_sweep 與 r1_sim。常數同 part a（限速層＝MI300X 的 tier_params.json、D2H 49.5 GiB/s）。
+**程式的修改**: `m7_b2_analyze.py`、`m7_ablate_analyze.py` 的結果目錄改讀 `M7_RES`（不設＝MI300X）。
+回歸 run `20261016-171318-h200-partb-mi300x-regress`（MI300X 的 git 資料複製到 run 目錄，不設 M7_TIER_PARAMS／M7_D2H_GIBPS／M7_F_CSV）：
+`b2_summary`、`b2_verdict`、`sim_sweep_gain`、`sim_validate.csv` 和 git **逐格相同**（ts 與模擬輸出的 run_id 除外），`sim_validate.json` 相同。
+
+**GPU 端的輸入**（全部 exit 0；`contaminated_gpu` 0 列、`kv_bad` 0 列、D2 的 guard 9/9 clean）:
+| 步驟 | run_id | 產出 |
+|:--|:--|:--|
+| P2 08 消融 GPU | `20261016-120250-m7h-b2-g1-doc-hold-cpu3.69-s0`、`…-132601-m7h-b2-g1-doc-hold-cpu3.69-s1`、`…-142019-m7h-b2-g2-chat-hold-s0` | `results/m7_write_policy_h200/b2_share.csv`（3,648 列） |
+| P3 第 1 輪 Llama | `20261016-145852-m7h-r1-c1-llama31-8b`、`…-145911-m7h-r1-vllmf2-llama31-8b`、`…-150011` … `…-162902-m7h-r1-gpu-llama-doc-free-local-s{0..4}` | `results/m7_explore_h200/calib_c1_llama31_8b.csv`（228 列）、`vllmf2_llama31_8b.csv`（1,296 列）、`r1_gpu_llama_doc_free_local.csv`（3,420 列）、`b_workload_seed{0..4}.json` |
+| P4 D2 | `20261016-164310-m7h-d2-off-doc` … `…-170837-m7h-d2-cpu50bs512-doc`、`…-170948-m7h-d2-collect` | `results/m8_directions_h200/d2_*.csv`、`d2_run_ids.txt` |
+| Qwen3 下載 | `20261016-170953-m7h-dl-qwen3-30b-a3b` | revision `0d7cf239…`；配額 1433.3 → 1490.2／1536 GiB（下載後剩 45.8 GiB） |
+| Qwen3 正確性 | `20261016-171742-m7h-r1-ok-qwen3-30b-a3b` | `correct_qwen3_30b_a3b.json`：HF 兩次、重算、主機往返都逐位元相同；argmax 相同、top-5 5/5；對 HF logit 最大差 0.3125（MI300X 0.15625） |
+| Qwen3 C1 | `…-171816-…-grouped`、`…-171902-…-eager` | `calib_c1_qwen3_30b_a3b_{grouped,eager}.csv`（各 228 列） |
+| Qwen3 vLLM f(i) | `20261016-172259-m7h-r1-vllmf2-qwen3-30b-a3b` | `vllmf2_qwen3_30b_a3b.csv`（1,296 列；探索性，同 MI300X） |
+
+**比方向**（MI300X 的數字來自 git 的 `results/m7_write_policy_mi300x/`、`m7_explore_mi300x/`、`m8_directions/` 同名檔）:
+| 項目 | 判準（事先寫的） | MI300X | H200 | 方向 |
+|:--|:--|:--|:--|:--|
+| 模擬器驗證（08 §5 第 2 點） | ≥90% 的格誤差 ±10% 內，且實測 S5 對最好簡單策略 >5% 的格方向一致 | 114 格 100%；8/8 → 通過 | 114 格 **93.0%**（106/114，中位 0.47%，最大 19.8%）；9/9 → 通過 | 同 |
+| 08 消融 GPU（§6＋§8） | 寫入時決定同時贏最好的不看位置與 S4B 各 ≥5% | **0/16** | **1/16**（G1、seed 0、cpu 0.25、S5c：+6.0%／+28.2%） | **待重跑**（見下） |
+| 08 消融，同一批格的模擬 | 同上 | 1/16 | 0/16 | — |
+| 08 模擬誤差（`b2_summary`） | — | 43/44 ≤10% | 40/44 ≤10%（中位 1.3%，最大 16.8%） | — |
+| 模擬掃描（`sim_sweep_gain`，390 格，只列數） | — | gain_nwt ≥5%：21、≥15%：6；和 S4B 都 ≥5%：8；gain_brule ≥5%：29 | 23、8；14；30 | — |
+| H1 寫入量 | ≥20% 的設定才存活 | 2/23（8.7%）→ 殺掉 | 2/23（8.7%）→ 殺掉（兩台都在 b2，但不是同兩個設定：MI300X chat s0 0.5、doc s1 0.25；H200 doc s0 0.25〔和 F2 重疊的 run〕、doc s1 0.5） | 同 |
+| H2 κ 篩選 | 3.69 或 35.4 GiB/s 時 b/n ≥30% | Llama 0.312 過；LongAlpaca 0.594 過；Qwen3 grouped 0.047、eager 0 不過 | 0.406 過；0.719 過；0.219、0 不過 | 同 |
+| 第 1 輪模擬存活者 | ≥3/5 seed 贏所有對照組 ≥5% | Llama 1 個；LongAlpaca 4 個 | Llama 3 個；LongAlpaca 3 個；**和 MI300X 的沒有一個相同** | **不同**（見下） |
+| 第 1 輪 GPU 確認（MI300X 的存活設定：11.6、free、doc、local、50%、S5L） | ≥3/5 seed 同時贏四個對照 ≥5% | 0/5 | **0/5**（模擬誤差 46/50 ≤10%，中位 2.7%） | 同 |
+| D2 主判定 | cpu50、C＝4/16 的跳過率 <1% → 死路 | 0.0% → 死路 | 0.0% → 死路 | 同 |
+
+**細節**:
+- **08 消融那一格通過，落在和 F2 重疊的 run**：`20261016-120250-…-s0` 12:02:50 開始，我們自己的 20570（F2）到 12:38:20 才結束。
+  cpu 0.25 的 8 個策略的 rep 0 全部在 12:03–12:27（重疊期間），每個約 2.8–3.0 分鐘；rep 1–2 在 12:46 之後，約 1.2–1.5 分鐘（`b2_share.csv` 的 ts）。
+  同一格的模擬是 +0.6%（不過）、MI300X 的 GPU 是 −0.1%。**08 的判定等 job 20631 的 P2-G1-seed0-rr 跑完，新舊並排再寫**，現在不改。
+- **模擬器驗證超過 10% 的 8 格**都是 share、nfs：S5s 三格（主設定 cpu 0.25、ssd50 cpu 0.5、seed2 cpu 0.5：−19.7%～−19.8%）、主設定 cpu 0.25 的 S1／S2b／S4+／S5（−11.1%～−14.4%）、seed2 cpu 0.25 的 S4+P（−13.9%）。
+  主設定拆成兩個 run 看〔事後診斷，不是判定〕：R3-B-main（rep 0–2，沒有和我們自己的 job 重疊）S1 −0.1%、S5s −0.7%，但 S4+、S5 在 cpu 0.25 也是 −11.1%、−11.2%；r36（rep 3–5，重疊）cpu 0.25 的 7 格 −11.2%～−21.4%。重跑版的 validate 之後另做。
+- **κ 篩選的 f(i)**（64 個 chunk 的總和）：Llama 2.09 s（MI300X 3.64）、LongAlpaca 2.06 s（3.71）、Qwen3 grouped 3.88 s（15.34）、eager 57.3 s（86.7）。H200 重算快，所以 b/n 變大；分類（過／不過）兩台相同。
+- **第 1 輪模擬存活者**（`r1_sim_configs.csv`，CPU GiB/s、release、workload、SSD、cpu_frac）：
+  - MI300X：Llama 11.6／free／doc／local／0.5；LongAlpaca 11.6／free／doc／local／0.25、35.42／free／doc／local／0.25 與 0.5、35.42／hold／doc／nfs／0.25
+  - H200：Llama 11.6／hold／doc／nfs／0.5（g_nwt 中位 26.8%、g_S4B 61.1%）、35.42／free／doc／local／0.5（7.4%）、35.42／hold／doc／nfs／0.25（7.0%）；
+    LongAlpaca 1.0／free／doc／nfs／0.25 與 0.5、35.42／hold／doc／local／0.5
+  - MI300X 的 Llama 存活設定在 H200 的模擬是 0/5。P3 照 MI300X 的指令只確認了這一格（0/5）；H200 自己的 3 個 Llama 存活設定**沒有上 GPU** → 問使用者。
+    LongAlpaca 照 11 追加 4 不上 GPU（doc 的回來請求超過 32,768 token 上限）。
+- **D2 的副產品**（不在主判定內）:
+  - 首輪 TTFT 中位數 cpu50／off：MI300X 1.28×（chat C＝1）～1.96×（doc C＝1）；**H200 的 cpu25／cpu50／cpu4g／bs512 每一格 0.99–1.04×**（tier50 doc C＝4 是 0.62×）。MI300X 報告的「卸載讓新請求變慢」在 H200 沒有出現。
+    〔判讀，未查證〕和 D2 §4.3 猜的「GPU→CPU DMA 和 prefill 在 MI300X 上搶資源」一致，但這裡沒有量機制。
+  - 回來請求的 KV 來源（GPU／CPU／重算的比例）兩台幾乎相同（vLLM 的排程是確定的）。
+  - E1 cpu4g 跳過率 MI300X 3.6%、H200 0.35%；E2 tier50 跳過 0.21% → 0%，最長 scheduler 延後 83.1 s → 1.5 s。
+    E2 的 fs 層：MI300X 在 NFS，H200 在 run 目錄（hgx-cn01 本地的 md1）→ 裝置不同，不能比。
+**產出檔**: `results/m7_write_policy_h200/`：`sim_sweep_gain.csv`、`sim_validate.csv`、`sim_validate.json`、`b2_summary.csv`、`b2_verdict.csv`；
+`results/m7_explore_h200/`：`h1_write_volume.csv`、`h1_verdict.csv`、`kappa_screen.csv`、`r1_sim_verdict.csv`、`r1_sim_configs.csv`、`r1_gpu_summary.csv`、`r1_gpu_verdict.csv`。
+**失敗與異常**:
+1. head node 的 `/tmp`（/dev/sda4，20G）約 17:25 起 100% 滿（我們自己只佔 137M，其餘是別的使用者）。Claude Code 的工具輸出寫不進去，所有指令都回 `ENOSPC: no space left on device`，監看 job 的背景程式也中斷。
+   GPU 的 job 不受影響（hgx-cn01 的 /tmp 是另一顆）。處置（使用者 17:3x）：Claude Code 改用 `CLAUDE_CODE_TMPDIR`／`TMPDIR`＝`/work/ChihChungHsu/hungweilai/tmp` 重開（在 tmux 裡）。
+   〔注意〕這個 session 的 shell 有 `TMPDIR=/work/...`，之後從這裡 sbatch 會帶進 job（Slurm 預設 `--export=ALL`），所以送 job 時要用 `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch …`，job 的環境才和之前一樣。
+2. 其他：無。
