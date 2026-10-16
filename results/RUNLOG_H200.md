@@ -556,6 +556,6 @@ LongAlpaca 照追加 4 不上 GPU（doc 的回來請求超過 32,768 token 上�
 **判準**（同追加 4）: 寫入時決定策略的回來請求 TTFT 中位數，同時贏「最好的不看位置」、S4B、S4W、S4C 各 ≥5%，**≥3/5 個 seed** 才算存活（≥15% 算強，照 08 §6）。平均列出、不進判定。
 **分析**: `python code/m7_round1_analyze.py gpu --csv <檔> --cpu <GiB/s> --release <…> --ssd <…> --frac <…> --wt <策略> --tag <A|B|C>`（不給參數＝原本那一格；回歸 run `20261016-174418-h200-r1gpu-args-regress`：MI300X 與 H200 的 `r1_gpu_summary`、`r1_gpu_verdict` 和 git 逐格相同）。
 **已知限制**（寫在看到結果之前）: MI300X 第 1 輪的教訓 10——模擬器對存活策略的偏差約 5–6 個百分點，B、C 的模擬優勢（7.4%、7.0%）在這個範圍內；A 的 26.8% 遠大於它。
-**job**: `code/r_h200_r1h.sh`（15 步：A、B、C 各 seed 0–4），`--dependency=afterany:20643`，`--time=14:00:00`；送出時拿掉 TMPDIR（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch …`）。
+**job 20660** `r-h200-r1h`（17:5x 送出，git `e0d1b8b`）: `code/r_h200_r1h.sh`（15 步：A、B、C 各 seed 0–4），`--dependency=afterany:20643`，`--time=14:00:00`；送出時拿掉 TMPDIR（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch …`）。
 開跑前檢查：節點上沒有我們自己的 job；三個輸出 CSV 還不存在。輸出：`results/m7_explore_h200/r1h_gpu_llama_*.csv`。
 H200 上 P3（free、local、一格 5 個 seed）量測時間 1 小時 43 分；hold／nfs 的格 NOT_MEASURED，總時間〔推算〕6–9 小時。
