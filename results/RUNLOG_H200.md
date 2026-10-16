@@ -228,6 +228,7 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
   - `code/r_h200_brerun.sh`（commit `f1567d3`）：指令和 r_h200_rest.sh 的 P1、P2-G1-seed0 逐字相同（dry-run 比對 9/9；run 短名加 `-rr`）；
     輸出 `results/m7_write_policy_h200_rerun/`（`M7_RES`），f(i) 用同一份 H200 C1（`M7_F_CSV`）；開跑前檢查節點上沒有我們自己的別的 job，有就停
   - **job 20631**：`sbatch --dependency=afterany:20554,afterany:20556 code/r_h200_brerun.sh`（`--time=08:00:00`）
+  - **結果（10/16 22:0x）**：合併組（R3-B-main＋重跑）的主設定 cpu 0.5 是 −0.12%（在 ±δ* 內）；但沒有重疊的重跑裡也出現 ±6–8% 的格（ssd50、vllm 3.69）→ 見「Milestone R-brr」。
 
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
@@ -519,6 +520,7 @@ MI300X 只有 m7_sim validate 走過 §4.1 的殼（`20261009-064908-m7-sim-vali
 - **08 消融那一格通過，落在和 F2 重疊的 run**：`20261016-120250-…-s0` 12:02:50 開始，我們自己的 20570（F2）到 12:38:20 才結束。
   cpu 0.25 的 8 個策略的 rep 0 全部在 12:03–12:27（重疊期間），每個約 2.8–3.0 分鐘；rep 1–2 在 12:46 之後，約 1.2–1.5 分鐘（`b2_share.csv` 的 ts）。
   同一格的模擬是 +0.6%（不過）、MI300X 的 GPU 是 −0.1%。**08 的判定等 job 20631 的 P2-G1-seed0-rr 跑完，新舊並排再寫**，現在不改。
+  → 重跑後（合併組）這一格 +3.0%／+26.0%，08 消融 GPU **0/16**（同 MI300X），見「Milestone R-brr」。
 - **模擬器驗證超過 10% 的 8 格**都是 share、nfs：S5s 三格（主設定 cpu 0.25、ssd50 cpu 0.5、seed2 cpu 0.5：−19.7%～−19.8%）、主設定 cpu 0.25 的 S1／S2b／S4+／S5（−11.1%～−14.4%）、seed2 cpu 0.25 的 S4+P（−13.9%）。
   主設定拆成兩個 run 看〔事後診斷，不是判定〕：R3-B-main（rep 0–2，沒有和我們自己的 job 重疊）S1 −0.1%、S5s −0.7%，但 S4+、S5 在 cpu 0.25 也是 −11.1%、−11.2%；r36（rep 3–5，重疊）cpu 0.25 的 7 格 −11.2%～−21.4%。重跑版的 validate 之後另做。
 - **κ 篩選的 f(i)**（64 個 chunk 的總和）：Llama 2.09 s（MI300X 3.64）、LongAlpaca 2.06 s（3.71）、Qwen3 grouped 3.88 s（15.34）、eager 57.3 s（86.7）。H200 重算快，所以 b/n 變大；分類（過／不過）兩台相同。
@@ -559,3 +561,132 @@ LongAlpaca 照追加 4 不上 GPU（doc 的回來請求超過 32,768 token 上�
 **job 20660** `r-h200-r1h`（17:5x 送出，git `e0d1b8b`）: `code/r_h200_r1h.sh`（15 步：A、B、C 各 seed 0–4），`--dependency=afterany:20643`，`--time=14:00:00`；送出時拿掉 TMPDIR（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch …`）。
 開跑前檢查：節點上沒有我們自己的 job；三個輸出 CSV 還不存在。輸出：`results/m7_explore_h200/r1h_gpu_llama_*.csv`。
 H200 上 P3（free、local、一格 5 個 seed）量測時間 1 小時 43 分；hold／nfs 的格 NOT_MEASURED，總時間〔推算〕6–9 小時。
+- **開跑**：job 20660 2026-10-16 21:53:57 開始（20643 結束的同一秒）。開跑前的檢查通過（節點上沒有我們別的 job；`slurm-r-h200-r1h-20660.out` 第 3–9 行）。
+
+---
+
+## Milestone R-brr — B 重跑（job 20631）、A2／C7 錨點只跑限速層（job 20643）、D3 κ 地圖
+
+**狀態**: 20631 **COMPLETED**、20643 **COMPLETED**；分析 `r_h200_cpu.sh --part brr`、`--part a2c7`、`--part d3` 全部 exit 0。
+**有兩件事要使用者決定**（見最後的「要問的」）：模擬器驗證的方向條件在合併組只有 9/10；D3 照 §2.4 字面在 H200 不是「死路」。
+**執行時間**:
+- job 20631 `r-h200-brerun`：2026-10-16 17:24:43 → 21:49:50（COMPLETED，exit 0:0，9 步）。開跑時同節點有別的使用者的 4 個 job（共 5 張卡；每個 run 結束時的同節點 job 記在 run 目錄的 `cotenants_end.txt`）；**沒有我們自己的 job**（腳本開跑前檢查）
+- job 20643 `r-h200-simanchor`：21:49:50 → 21:53:57（COMPLETED，3 步；MI300X 上同樣 3 個 run 的量測時間約 8.2 分）
+- head node 分析：21:58:46 → 22:06:33（`nice -n 19`）
+
+### job 20631：B 重跑（和 F2 重疊的那些 run，照重疊選）
+**run_id**（全部 exit 0，`gpu_guard.json` 的 `contaminated` 全是 False、沒有 intruders；`contaminated_gpu` 0 列）:
+`20261016-172445-m7h-b-nfs-gap0-r36-rr`、`…-174512-m7h-b-nfs-seed1-rr`、`…-175330-m7h-b-nfs-cpuvllm-rr`、`…-181237-m7h-b-local-gap0-rr`、`…-182644-m7h-b-nfs-fifo-rr`、
+`…-185947-m7h-b-nfs-seed2-rr`、`…-191226-m7h-b-nfs-gap2-rr`、`…-200806-m7h-b-nfs-ssd50-rr`、`…-202603-m7h-b2-g1-doc-hold-cpu3.69-s0-rr`
+**產出檔**: `results/m7_write_policy_h200_rerun/`：`b_share.csv.gz`（6,420 列；原檔 >1 MB 不進 git）、`b_fifo.csv`、`b_share_cpu3.69.csv`（各 1,152）、`b2_share.csv`（1,536；kv_bad 0）、`b_workload_seed{0,1,2}.json`（和舊目錄的逐位元相同）
+
+### 合併組（「沒有和我們自己的 job 重疊」的 B）＝ `results/m7_write_policy_h200_merged/`
+**組成**（`MANIFEST.csv`，run `20261016-220045-m7h-brr-merge`；每一列原封不動，run_id 指回原 run）:
+- `b_share.csv.gz`＝舊的 R3-B-main（`20261016-063929-m7h-b-nfs-gap0`，2,880 列）＋重跑的 6 個 run（6,420）＝9,300 列（和舊檔列數相同）
+- `b_fifo.csv`、`b_share_cpu3.69.csv`＝重跑的；`b2_share.csv`＝舊的 G1-s1、G2-s0（12:38 F2 結束後才開始；2,112 列）＋G1-s0-rr（1,536）＝3,648 列
+- 斷言：欄位相同、（設定, rep, ev）不重複、`contaminated_gpu` 全 False
+**分析**（`bash code/r_h200_cpu.sh --part brr`；和 `--part b` 同一套指令，只把 `M7_RES` 指到合併目錄，f(i)＝同一份 H200 C1）:
+`20261016-220047-m7h-brr-sim-validate`、`…-220056-m7h-brr-b2-analyze`、`…-220106-m7h-brr-r1-h1`、`…-220108-m7h-brr-b-all`、`…-220129-m7h-brr-side`
+→ 合併目錄的 `sim_validate.*`、`b2_summary.csv`、`b2_verdict.csv`、`h1_*.csv`、`summary_b_verdict_all.csv`、`b_vs_mi300x_all.csv`、新舊並排 `old_vs_new_*.csv`
+**新程式**: `code/h200_brr.py`（merge／stage／ball／side）。`ball` 的回歸 run `20261016-215954-h200-brr-ball-regress2`：在舊 B 資料的複本上重算，
+`summary_b_verdict_all.csv`、`b_vs_mi300x_all.csv` 和 12:41 的 run `20261016-124102-h200-b-all-settings` **逐格相同**（run_id、ts 除外）。
+
+**結果：新舊並排**（MI300X 欄來自 git 的 `results/m7_write_policy_mi300x/summary_b_verdict.csv` 等）
+| 項目 | MI300X | H200 舊（20554 原始） | H200 合併組 |
+|:--|:--|:--|:--|
+| B 主設定 cpu_frac 0.5，rep 0–5 合併，S5 對 S4+（R3 判準 (2)，δ*＝5%） | +0.26% | **+8.30%**（超出 δ*） | **−0.12%**（在 ±δ* 內） |
+| B 17 格，S5 對 S4+ | −3.0%～+0.3% | 16 格 −1.1%～+0.6%；主設定 0.5 +8.30% | 15 格 −0.61%～+0.54%；**ssd50 cpu 0.5 +8.31%**、**vllm 3.69 cpu 0.5 −5.96%** |
+| B 17 格，S5 對最好的簡單策略 | 都 ≤ +0.07% | 都 < 0 | 都 < 0（−0.03%～−189%） |
+| 模擬器驗證：誤差 ±10% 內 | 100% | 93.0%（106/114） | **95.6%**（109/114；中位 0.45%，最大 19.8%） |
+| 模擬器驗證：實測差 >5% 的格方向一致 | 8/8 | 9/9 | **9/10**（見下） |
+| 08 消融 GPU（寫入時決定贏最好的不看位置與 S4B 各 ≥5%） | 0/16 | 1/16（G1 s0 cpu 0.25 S5c +6.0%／+28.2%） | **0/16**（同一格 +3.0%／+26.0%） |
+| 08 模擬誤差 ≤10% | 43/44 | 40/44 | 39/44（中位 1.4%，最大 16.8%） |
+| H1 寫入量（≥20% 才存活） | 2/23 | 2/23 | 2/23（同兩個設定：b2 doc s0 0.25、doc s1 0.5） |
+
+**主設定 cpu 0.5 逐 rep**（回來請求 TTFT 中位數 S4+／S5，s；`b_share.csv`）:
+| run | rep | S4+ | S5 | S5 對 S4+ |
+|:--|--:|--:|--:|--:|
+| R3-B-main（06:39，沒有重疊） | 0／1／2 | 0.797／0.793／0.806 | 0.798／0.795／0.804 | −0.16／−0.20／+0.29% |
+| 舊 r36（09:00，和 F2 重疊） | 3／4／5 | 0.947／0.947／0.937 | 0.957／0.866／0.867 | −0.99／+8.61／+7.55% |
+| r36-rr（17:24，沒有重疊） | 3／4／5 | 0.863／0.862／0.863 | 0.863／0.795／0.862 | +0.07／+7.80／+0.15% |
+
+**為什麼會跳 8%**〔事後診斷，不是判定〕:
+- 每格每個 rep 有 24 個回來的請求，中位數＝第 12、13 個的平均。這一格的 TTFT 分成兩群（約 0.78–0.82 s 和 0.93 s 以上），第 12、13 個是下面那群的最後兩個。
+  例：S4+ rep 0 排序後第 9–16 個＝0.783、0.795、0.796、0.797、0.797、**0.934**、0.948、0.952。只要一個請求從下面那群跑到上面，第 13 個就變成約 0.93，中位數從約 0.80 跳到約 0.86（+8%）。
+- 跑過去的是 Cake 的會合點差一個 chunk：例如 ev 27（session 4 第 2 輪，歷史 16 個 chunk）rep 0–2 從 SSD 載 1 個（meet 15，TTFT 0.78 s），r36 與 r36-rr 的 S4+ 都載 2 個（meet 14，`t_load_ssd` 0.632 s，TTFT 1.09 s）。
+  ssd50-rr 的 S4+ rep 1 第 12、13 個是 0.812／0.945，同一種情況；S4+ 有 7 個事件的 meet 在 3 個 rep 之間差 1。
+- 所以 **「8% 的差」在沒有和自己 job 重疊的 run 裡也會出現**（r36-rr rep 4、ssd50-rr）。P1 一節寫的〔判讀〕「主機層爭用很可能讓 rep 3–5 變慢」**只說對一部分**：
+  舊 r36 被標成 GPU 變慢（`t_new` 超過同歷史長度最小值 1.15 倍，m7_analyze b() 的 gpu_slow）的請求 **159/1,344**，r36-rr 只有 **6/1,344**；舊 r36 的 S4+ 整體也較慢（0.94–0.95 對 0.86）。
+  但造成 S5 對 S4+ 差 8% 的那一跳，兩次都有。
+- vllm 3.69 cpu 0.5 的 −5.96% 不是同一個原因：重跑的 rep 2（18:09–18:12）S4+P、S5 還原期間的重算每 chunk 0.0307／0.0255 s（其他 rep 約 0.022），`t_new` 正常（0.579 s），很多事件的 meet 一起變小。
+  rep 0–1 是 −1.2%／−0.1%。原因看不到（UNOBSERVABLE_HOST：同節點別人的 job 用不同的卡，但主機是共用的）。
+- 〔判讀〕這個指標（24 個請求的中位數）在這個設定下的離散跳動約 8%，比 δ*＝5% 大。R3 判準 (2) 用 rep 0–2 判 REPRODUCED（−0.24%），合併組 rep 0–5 −0.12% 也在 ±δ* 內；舊的 +8.30% 有一部分是這個跳動，不能全算在 F2 頭上。
+
+**模擬器驗證 9/10 的那一格**: share、CPU 3.69 GiB/s、nfs、cpu 0.5：實測 S5 對最好的簡單策略 **−5.6%**（S5 較慢），模擬 **0.0%**。
+程式的規則（`m7_sim.py validate`）：|實測| >5% 時要「實測×模擬 > 0」；模擬 0.0 → 不一致。這格的 −5.6% 來自上面那個 rep 2（rep 0–1：S5 對 S1 −0.8%、+1.1%）。
+08 §5 第 2 點的文字是「實測差距 >5% 的格，模擬器要給出同樣的方向」。**照字面，合併組的第二部分沒過（9/10）**；舊的那組是 9/9。第一部分（≥90% 在 ±10%）兩組都過。
+
+### job 20643：A2、C7 錨點，只跑限速層（使用者：「都用模擬限速」）
+**run_id**: `20261016-214952-m7h-a2-sim`（fifo，reps 6）、`…-215122-m7h-a2share-sim`（share，reps 3）、`…-215148-m7h-c7anchor-sim`（L 8K／16K／32K，reps 3）；全部 exit 0，`contaminated_gpu`、`contaminated_disk` 全 False，c7 的 kv_bad 合計 0
+**產出檔**: `results/m7_write_policy_h200/a2_fifo.csv`、`a2_share.csv`、`c7_anchor.csv`；分析 `summary_a2.csv`、`summary_c7_anchor.csv`、`a2c7_verdict.json`、`a2_vs_mi300x.csv`、`c7_anchor_vs_mi300x.csv`
+**分析**（`bash code/r_h200_cpu.sh --part a2c7`；`code/h200_a2c7.py`，m7_analyze 的 calib()、a2() 同一套）: `20261016-215924-m7h-a2c7-an`
+**程式的修改**: `m7_analyze.py` 的 C7 錨點與 A2，沒有 real 列時：比值記 NaN、`page_cache_ok`＝NOT_MEASURED、A2 改報各限速器模型（有 real 時照舊）。
+回歸 `20261016-215846-m7h-a2c7-mi300x-regress`：MI300X 的 `summary_a2.csv`、`summary_c7_anchor.csv` 和 git **逐格相同**，verdict 的 A2、C7_anchor **相同**。
+**A2（寫入會不會拖慢正在還原的人；L＝16K，TTFT 中位數）**:
+| 裝置 | 模型 | 背景寫後段 vs 不寫：MI300X／H200 | 背景全寫 vs 不寫 | 寫後段 vs 全寫 |
+|:--|:--|:--|:--|:--|
+| local | 真實 | +113.5%／NOT_MEASURED | +120.2%／NOT_MEASURED | −3.0%／NOT_MEASURED |
+| local | share（A2 校準的限速器） | +108.9%／+95.1% | +108.7%／+94.9% | +0.07%／+0.10% |
+| local | fifo | +526%／+587% | +681%／+850% | −19.8%／−27.8% |
+| nfs | 真實 | +10.5%／NOT_MEASURED | +10.7%／NOT_MEASURED | −0.19%／NOT_MEASURED |
+| nfs | share | +11.0%／+24.8% | +11.0%／+24.8% | −0.02%／+0.02% |
+| nfs | fifo | +34.3%／+47.4% | +483%／+785% | −76.9%／−83.3% |
+- 方向：同一個限速器模型，「寫入 vs 不寫」兩台都是寫入較慢；「寫後段 vs 全寫」fifo 兩台都是寫後段較快，share 兩台都在 ±0.1% 內（nfs 的正負號不同：−0.02%／+0.02%）。
+  H200 的「不寫」比較快（local share 0.223 對 0.276 s），同樣的寫入干擾佔的比例較大。真實裝置那一半沒有量。
+**C7 錨點（只有限速層）**: H200 的 sim TTFT ÷ MI300X 的 sim TTFT：cpu 0.64–0.72、local 0.65–0.91、nfs cake 0.63–0.66、nfs load_only 0.99（頻寬限制，兩台用同一個限速器）。真實裝置 NOT_MEASURED。
+
+### D3 κ 地圖（`bash code/r_h200_cpu.sh --part d3`；`--no-3090`）
+**run_id**: 舊 B：`20261016-220616-m7h-d3-kappa-map`、`…-220621-m7h-d3-r1-b100`、`…-220622-m7h-d3-gputest-prereg`；
+合併組：`…-220624-m7h-d3m-stage`（輸入目錄＝這個 run 目錄的 `res/`：舊目錄＋合併組的 B 檔，`STAGE.csv`）、`…-220626-m7h-d3m-kappa-map`、`…-220630-m7h-d3m-r1-b100`、`…-220632-m7h-d3m-gputest-prereg`
+**指令**: `m8_kappa_map.py --out results/m8_directions_h200 --no-3090`，再 `--b100`，再 `--prereg-test --dstar <主程式的 D*>`；合併組 `M7_RES=<stage>/res --out results/m8_directions_h200/d3_merged`
+**產出檔**: `results/m8_directions_h200/d3_*.csv`、`d3_merged/d3_*.csv`。讀取端、b100、prereg 新舊**逐格相同**（不讀重跑的 B）；寫入端（`d3_write_cells`、`d3_rule_scores`、`d3_posthoc`）不同
+**D*（R4b，只用第一階段 GPU 擬合）**: H200 **0.6437**（新舊相同），MI300X 0.6026；c_sync（R1b）H200 9.0 ms、MI300X 15.0 ms
+**規則分數**（命中／格數；括號＝笨規則）:
+| 規則 | 資料 | MI300X | H200 舊 | H200 合併組 | GO 門檻（§2.3） |
+|:--|:--|:--|:--|:--|:--|
+| R1 | A0 28 格 | 27/28（27/28），誤差中位 4.1% | **26/28（25/28）**，誤差中位 **1.9%** | 同左 | ≥90%、誤差 ≤10%、> 笨規則 |
+| R1 | c7 限速器 9 格 | 8/9（5/9） | 5/9（5/9） | 同左 | — |
+| R1 | c7 真實 | 6/9（5/9） | NOT_MEASURED | NOT_MEASURED | — |
+| R1b 測試 | A0 4K、16K | 10/14（14/14）→ KILL | 12/14（12/14） | 同左 | ≥90%；<75% KILL |
+| R1b 測試 | c7 限速器 | 8/9（5/9） | 9/9（5/9） | 同左 | — |
+| R1（附加 b100） | B 容量 100%：只載 vs Cake | 命中 | **沒中**（預測 Cake 快 1.07–1.09×，實測 1.003×） | 同左 | — |
+| R2 安全性 | GPU／SIM08／SIMR1 Llama／LongAlpaca | 24/24、98.0%、96.3%、91.0% | 24/24、95.7%、93.3%、91.0% | 同左 | 各 ≥95% |
+| R2' | GPU 全部 | 28/38 | 27/38 | 27/38 | GPU ≥90%、模擬 ≥85% |
+| R3 | GPU 全部 | 23/28（22/28）＝82% | 22/28（21/28）＝79% | 23/28（22/28）＝82% | GPU、模擬各 ≥85% 且 > 笨規則 |
+| R3 | SIM08 | 62.1%（53.1%） | 47.2%（69.2%） | 同左 | 同上 |
+| R4b 測試 | GPU A08／R1 | 5/6（6/6）、0/5（5/5） | 同 MI300X | 同左 | ≥85% 且 > 笨規則 |
+| R4b 測試 | 模擬三組 | 40.5%／55.0%／55.0%（87.7／71.9／69.4） | 35.9%／54.7%／38.1%（91.3／72.2／79.4） | 同左 | 同上 |
+| R4a 反例（D<0.05 但重要） | GPU | 1 | 1 | 1 | 不能有 |
+- **照 §2.4 字面**：
+  - MI300X：讀取端沒有 GO（R1 打平笨規則、R1b KILL）→ **死路**（D3 §4.5）。
+  - H200：**R1 GO**（26/28 ≥90%、誤差 1.9%、贏笨規則 25/28 一格）。寫入端 R3、R4b、R2' 都沒 GO，R2 只有 GPU 與 SIM08 過 95%。
+    「死路」的兩個條件（讀取端沒 GO／寫入端全都打不贏笨規則）都不成立：R3 在 GPU 贏笨規則一格（新舊都是）。「有看頭」要 R1、R3、R4b 都 GO → 不成立。
+    剩下「可能」（讀取端 GO，寫入端只有一部分 GO），但寫入端其實沒有一條 GO。另有新穎性條款「讀取端已有前作（D3 §5）→ 降一級」，條文只寫了「有看頭 → 可能」。
+  - 〔判讀〕R1 的差別來自 A0 的類別分布：H200 的 A0 有 3 格 Cake「沒用」（4K×7 Gbps、4K×nfs、8K×nfs），MI300X 只有 1 格，所以笨規則在 H200 比較弱。R1 在這 3 格只中 1 格。
+- prereg（LongAlpaca 候選格，D*＝0.6437）：R4b 預測「重要」0/24 格（MI300X 3/24）。
+
+**失敗與異常**:
+1. `h200_brr.py merge` 第一次（run `20261016-220028-m7h-brr-merge`，放了 `SUPERSEDED`）：我寫的斷言錯了，以為重跑的 run_id＝舊 id＋`-rr`，其實時間戳不同 → AssertionError。改成比對 run 短名後重跑。資料沒有問題。
+2. `ball` 的第一次回歸（run `20261016-215542-h200-brr-ball-regress`，`SUPERSEDED`）：暫存目錄放進了 job 20643 剛寫出的 `c7_anchor.csv`（只有 sim），m7_analyze calib() `KeyError('real')` → C4 的 δ 變 NaN → `delta_pct` 欄不同（其他欄的差都是 0）。
+   修正：`ball` 不放 a2_／c7_anchor（12:41 那次的輸入也沒有），m7_analyze 改成沒有 real 列也能算（上面的回歸）。
+3. `h200_a2c7.py run` 第一次：我寫錯一行（itertuples 用欄名取值）→ TypeError，A2C7-regress 已經成功、只有 run 這一步沒產出。修正後 `--from A2C7-run` 重跑。
+4. 圖的字型：head node 的 matplotlib 找不到 Noto Sans CJK TC（同 R3）；圖在 run 目錄，不進 git。
+
+**要問的**（不自己決定）:
+1. 模擬器驗證：合併組照 08 §5 第 2 點字面是 9/10（那一格是單一 rep 的重算變慢）。要算「沒過」、還是兩組並排、以舊的 9/9 為準？這會影響「能不能用 H200 的模擬器挑設定」（第 1 輪 H200 存活設定就是用它挑的；job 20660 正在 GPU 上確認，GPU 結果才算數）。
+2. D3：H200 照 §2.4 落在「可能」與「死路」之間（R1 GO、寫入端沒有一條 GO）。要照哪個讀法寫？
+
+**和 MI300X 的差異（只比方向）**:
+- B：合併組的主設定 S5 對 S4+ −0.12%（MI300X +0.26%）→ 同方向；S5 從沒贏過最好的簡單策略 → 同。08 消融 GPU 0/16 → 同。H1 2/23 → 同。
+- A2：兩台的限速器模型方向相同；真實裝置 H200 NOT_MEASURED。
+- D3：寫入端兩台都沒有一條 GO（同）；讀取端 R1 在 H200 GO、MI300X 沒有（不同，見上）。

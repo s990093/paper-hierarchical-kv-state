@@ -1,0 +1,160 @@
+{
+ "run_id": "20261016-215924-m7h-a2c7-an",
+ "ts": "2026-10-16T21:59:26+08:00",
+ "A2": {
+  "real": "NOT_MEASURED",
+  "sim_fifo": {
+   "local_S3_partial_vs_none_pct": 586.5616384050456,
+   "local_S0_full_vs_none_pct": 850.3224086919324,
+   "nfs_S3_partial_vs_none_pct": 47.42941186706893,
+   "nfs_S0_full_vs_none_pct": 784.7091109591505,
+   "S3_partial_vs_S0_full_pct": {
+    "local": -27.754872228040927,
+    "nfs": -83.33583207849702
+   }
+  },
+  "sim_share": {
+   "local_S3_partial_vs_none_pct": 95.07547559039583,
+   "local_S0_full_vs_none_pct": 94.87949916138234,
+   "nfs_S3_partial_vs_none_pct": 24.824355368086692,
+   "nfs_S0_full_vs_none_pct": 24.80192442059832,
+   "S3_partial_vs_S0_full_pct": {
+    "local": 0.1005628759601862,
+    "nfs": 0.017973238467683395
+   }
+  }
+ },
+ "C7_anchor": {
+  "table": [
+   {
+    "device": "cpu",
+    "mode": "cake",
+    "L": 8192,
+    "sim": 0.054684,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "cpu",
+    "mode": "cake",
+    "L": 16384,
+    "sim": 0.078731,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "cpu",
+    "mode": "cake",
+    "L": 32768,
+    "sim": 0.148086,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "cpu",
+    "mode": "load_only",
+    "L": 8192,
+    "sim": 0.045086,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "cpu",
+    "mode": "load_only",
+    "L": 16384,
+    "sim": 0.076385,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "cpu",
+    "mode": "load_only",
+    "L": 32768,
+    "sim": 0.13964,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "local",
+    "mode": "cake",
+    "L": 8192,
+    "sim": 0.11522,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "local",
+    "mode": "cake",
+    "L": 16384,
+    "sim": 0.223267,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "local",
+    "mode": "cake",
+    "L": 32768,
+    "sim": 0.452315,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "local",
+    "mode": "load_only",
+    "L": 8192,
+    "sim": 0.160015,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "local",
+    "mode": "load_only",
+    "L": 16384,
+    "sim": 0.306519,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "local",
+    "mode": "load_only",
+    "L": 32768,
+    "sim": 0.599501,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "nfs",
+    "mode": "cake",
+    "L": 8192,
+    "sim": 0.394951,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "nfs",
+    "mode": "cake",
+    "L": 16384,
+    "sim": 0.775755,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "nfs",
+    "mode": "cake",
+    "L": 32768,
+    "sim": 1.725818,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "nfs",
+    "mode": "load_only",
+    "L": 8192,
+    "sim": 3.037308,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "nfs",
+    "mode": "load_only",
+    "L": 16384,
+    "sim": 6.061041,
+    "sim_over_real": NaN
+   },
+   {
+    "device": "nfs",
+    "mode": "load_only",
+    "L": 32768,
+    "sim": 12.108359,
+    "sim_over_real": NaN
+   }
+  ],
+  "page_cache_ok": "NOT_MEASURED",
+  "kv_bad_total": 0
+ },
+ "C4_delta_pct": 1.7621027222743737
+}
