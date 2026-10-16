@@ -28,10 +28,14 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-RES7 = os.path.join(REPO, "results", "m7_write_policy_mi300x")
-OUTDIR = os.path.join(REPO, "results", "m8_directions")
-TRACE_DIR = "/mlsteam/data/tiara/datasets/traces"
-SCB_DIR = "/mlsteam/data/tiara/datasets/scbench/data"
+# 預設＝MI300X（平台 B）的路徑。平台 C（H200）用環境變數換（2026-10-16）：
+#   M7_RES（calib_c1.csv）、M7_TIER_PARAMS、M8_OUT、TIARA_DATASETS（traces／scbench）、M7_LLAMA_GLOB（tokenizer）
+RES7 = os.environ.get("M7_RES") or os.path.join(REPO, "results", "m7_write_policy_mi300x")
+TIER_PARAMS = os.environ.get("M7_TIER_PARAMS") or os.path.join(REPO, "results", "m7_write_policy_mi300x", "tier_params.json")
+OUTDIR = os.environ.get("M8_OUT") or os.path.join(REPO, "results", "m8_directions")
+_DS = os.environ.get("TIARA_DATASETS") or "/mlsteam/data/tiara/datasets"
+TRACE_DIR = os.path.join(_DS, "traces")
+SCB_DIR = os.path.join(_DS, "scbench", "data")
 BLOCK_TOK = 512
 MiB = 1 << 20
 GiB = 1 << 30
@@ -810,7 +814,7 @@ def cake_eval(A, cost_blk_access, fpos):
 def cmd_sim(args):
     rd = run_dir()
     fmeas, slope, icpt, frun = load_f()
-    params = json.load(open(os.path.join(RES7, "tier_params.json")))
+    params = json.load(open(TIER_PARAMS))
     ssd_ms = {k: CHUNK_BYTES / (params[k]["read_GiBps"] * GiB) * 1e3 for k in ("local", "nfs")}
     fields = ["trace", "cpu_frac", "cpu_cap_blocks", "cpu_gibps", "ssd", "policy", "cpu_policy", "ssd_rule",
               "klass", "ttft_total_s", "ttft_reuse_s", "ttft_cake_s", "ssd_write_blocks", "ssd_write_GiB",
@@ -967,7 +971,7 @@ def cmd_gap(args):
 def cmd_scbench(args):
     from transformers import AutoTokenizer
     import glob
-    tokp = glob.glob("/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*/")
+    tokp = glob.glob(os.environ.get("M7_LLAMA_GLOB", "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*/").rstrip("/") + "/")
     assert tokp, "找不到 Llama-3.1-8B tokenizer"
     tok = AutoTokenizer.from_pretrained(tokp[0])
     o = Out(os.path.join(OUTDIR, "d4_scbench.csv"),

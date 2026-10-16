@@ -3,6 +3,7 @@
 # r_h200_cpu.sh — 第一階段的 CPU 模擬，用 H200 的常數重跑（2026-10-16，使用者：「gogo」）
 #
 #   bash code/r_h200_cpu.sh --part a            # 只需要 R2 常數的那一批（現在就能跑）
+#   bash code/r_h200_cpu.sh --part d4d5         # D4（Mooncake trace、SCBench）、D5（模型 config）：資料由 code/h200_dl_cpu_data.sh 下載
 #   bash code/r_h200_cpu.sh --part d6           # D6：反量化成本用 H200 的 F3 工作 A（results/m9_followup_h200/f3_dequant.csv）
 #   bash code/r_h200_cpu.sh --part a --dry-run | --list ；--from <步驟> [--until <步驟>]（接著跑）
 #
@@ -35,7 +36,7 @@ while [ $# -gt 0 ]; do
     *) echo "不認得的參數：$1（--help 看用法）" >&2; exit 2 ;;
   esac
 done
-case "$PART" in a|d6) ;; *) echo "[r_h200_cpu] 要指定 --part a 或 d6" >&2; exit 2 ;; esac
+case "$PART" in a|d6|d4d5) ;; *) echo "[r_h200_cpu] 要指定 --part a、d4d5 或 d6" >&2; exit 2 ;; esac
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export REPO
@@ -209,6 +210,30 @@ step F6-summary      m7h-f6-summary      $P $F6 summary --d1-overload-expect 3 \
 # ===== F7：f 縮放（MI300X 20261012-084917／084936）=====
 step F7-run    m7h-f7-fscale-sim  $P $F7 run --scales 1.0 0.5 0.6
 step F7-judge  m7h-f7-judge       $P $F7 judge
+fi
+
+if [ "$PART" = d4d5 ]; then
+# ===== D4：真實 trace 的重用（MI300X 20261010-0542xx–0606xx）、D5：架構與模態（055012）=====
+# 資料：code/h200_dl_cpu_data.sh 的 run（traces、scbench 放 $TIARA_DATASETS；D5 的 config 在下載 run 目錄的 cfg/，和 MI300X 一樣）。
+# tokenizer（SCBench 的 token 數）：M7_LLAMA_GLOB（和 MI300X 同一個 revision）
+dlrun() {   # dlrun <短名>：最後一次成功的下載 run 目錄
+  if [ "$DRY" = 1 ]; then echo "\$TIARA_RUNS/<$1>"; return 0; fi
+  local d; for d in $(ls -td "$TIARA_RUNS"/*-"$1" 2>/dev/null); do [ "$(cat "$d/exit_code" 2>/dev/null)" = 0 ] && { echo "$d"; return 0; }; done
+  echo "[r_h200_cpu] 找不到成功的下載 run *-$1（先跑 code/h200_dl_cpu_data.sh）" >&2; echo "MISSING-$1"; return 1
+}
+TO="$P -I code/m8_trace_oracle.py"
+step D4-char        m7h-d4-char       $TO char
+step D4-char2       m7h-d4-char2      $TO char2
+step D4-sim         m7h-d4-sim        $TO sim --cake
+step D4-scbench     m7h-d4-scbench    $TO scbench --max-tok 1000
+step D5-arith       m7h-d5-arith      $P code/m8_arch_arith.py --cfg-vl "$(dlrun h200-dl-d5-qwen3vl-cfg)/cfg/config.json" --cfg "$(dlrun h200-dl-d5-cfgs)/cfg"
+step D4-sim2        m7h-d4-sim2       $TO sim --cake --posthoc --gpu-blocks 0 2400 --out d4_sim2.csv
+step D4-gap         m7h-d4-gap        $TO gap --sim d4_sim.csv --src-run "$(basename "$(rid D4-sim)")"
+step D4-sim3        m7h-d4-sim3       $TO sim --cake --posthoc --cpu-frac 0.02 0.05 --gpu-blocks 0 --out d4_sim3.csv
+step D4-gap2b       m7h-d4-gap2b      $TO gap --sim d4_sim2.csv --src-run "$(basename "$(rid D4-sim2)")" --out d4_gap_posthoc.csv --verdict-out d4_verdict_posthoc.csv --rule-label posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+step D4-gap3b       m7h-d4-gap3b      $TO gap --sim d4_sim3.csv --src-run "$(basename "$(rid D4-sim3)")" --out d4_gap_smallcap.csv --verdict-out d4_verdict_smallcap.csv --rule-label posthoc_sim3_cpu2and5pct_local_G0_total_median4_not_decisive
+step D4-nocache     m7h-d4-nocache    $TO nocache
+step D4-gap-prereg  m7h-d4-gap-prereg $TO gap --sim d4_sim.csv --src-run "$(basename "$(rid D4-sim)")" --deferred-set prereg --out d4_gap_prereg7.csv --verdict-out d4_verdict_prereg7.csv --rule-label D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
 fi
 
 if [ "$PART" = d6 ]; then

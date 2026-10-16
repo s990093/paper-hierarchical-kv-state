@@ -1,0 +1,2 @@
+run_id,ts,src_run_id,n_measured,a_ms,b_ms_per_chunk,r2,max_abs_resid_ms,sum_f_32K_ms,sum_f_128K_ms,note
+20261016-110202-m7h-d6-arith,2026-10-16T03:02:02+00:00,20261016-061311-m7h-c1,80,17.780534,0.473011,0.999939,0.186628,2091.426,19990.911296,chunk>=80 為線性外插〔算術：外插〕；32K 全部實測

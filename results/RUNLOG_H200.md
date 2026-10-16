@@ -349,5 +349,23 @@ sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現�
   - **(c) 判定（H200 自己的 3 格）：0/3 → 「corner is NOISE」**；對照（MI300X 的 5 格）：0/5。**MI300X 是 1/5 → 「只在持續過載時贏」**：這一項兩台方向不同
 - 產出：`results/m9_followup_h200/f6_summary.csv`、`f6_c_overload.csv`、`f6_c_overload_mi300x_cells.csv`
 
+### D6（精度的算術）＋ F3 工作 A（H200 的反量化成本）— 使用者 10/16：「D6 不要 3090，都 H200，但要跑實驗」
+- **F3 工作 A**（GPU，job 20614，run `20261016-105426-m7h-f3-dequant`，exit 0，14 s）：`sbatch --job-name=m7h-f3-dequant --time=00:30:00 code/tiara.sbatch python code/m7_guard_run.py python code/m9_f3_dequant.py --out results/m9_followup_h200/f3_dequant.csv`
+  - 程式不改：FP8 dtype 依 `gcnArchName` 自動選（MI300X `float8_e4m3fnuz`、H200 `float8_e4m3fn`）；cold＝8 組 buffer 輪流（H200 L2 50 MB）。
+  - 反量化一個 64 MiB chunk，cold、輸出正確的實作裡最快的中位數：**INT8（每 token 每 head 一個 scale）0.0296 ms**（torch.compile；Triton 0.0297）、
+    **FP8（整個 tensor 一個 scale）0.0293 ms**（torch.compile）、**INT4 0.0266 ms**（Triton）。MI300X：0.031、0.026、0.027 ms。
+  - **失敗 2 個寫法**（照原設計記下、其他照量）：`fp8_tensor/triton`、`fp8_ptk/triton`：
+    `triton.compiler.errors.CompilationError: ... q = tl.load(q_ptr + off, mask=m, other=0).to(tl.float32) ... cannot cast int32[constexpr[64], constexpr[128]] to <['64', '128'], fp8e4nv>`
+    （NVIDIA 的 FP8 不能用整數 0 當 `other`；MI300X 的 fnuz 可以）。完整錯誤在 run 目錄的 `f3_dequant_raw.json`。沒有改程式重跑。
+  - 工作 B（vLLM 原生 FP8 撈針，看得到答對率）**不跑**（第二階段的事先登記凍結前不看低精度的答對率）。
+- **D6**（head node，`bash code/r_h200_cpu.sh --part d6`）：`--dmeas` 由 runner 從 `f3_dequant.csv` 照 F3 的判準自動取（不手抄）：`fp8=0.02933,int8=0.02958,int4=0.02661`，
+  `--dmeas-src 20261016-105426-m7h-f3-dequant_f3A_cold_fastest_correct_median_ms_per_chunk`。MI300X 的 D6 用的是 3090 的 warm TTFT 差（fp8 0.087、int4 0.814，沒有 int8；F3 §4 查過不是反量化 kernel 的時間）。
+  - run `20261016-110202-m7h-d6-arith`、`20261016-110913-m7h-d6-thresh`（都 exit 0）→ `results/m8_directions_h200/d6_*`。f(i) 擬合：17.781 + 0.4730·i ms，R²＝0.99994（H200 C1）
+  - 回歸：`m8_precision_arith.py` 改成可換 f(i)／限速層／輸出目錄（預設＝MI300X），MI300X 的輸入重跑 → 7 個檔和 git 完全相同。
+  - 門檻細掃（`d6_threshold.csv`，Q1＝BF16／INT8 混用、Q2＝四種精度）：反量化 ≤1 ms／chunk 時最大增益 H200 Q1 0.02%、Q2 0.00%（MI300X 0.00%、0.00%）；3 ms 時 Q1 3.91%、Q2 22.41%（兩台相同）。
+  - **判定（照 F3 的 D6 判準原文：INT8 中位數 ≤1 ms → D6 死路）：0.0296 ms → 死路**（MI300X 0.031 ms → 死路）。
+  - 異常：D6 跑的時候我改了同一支 `r_h200_cpu.sh`（加 d4d5），bash 邊跑邊讀，兩步都完成後讀到錯位的行：
+    `code/r_h200_cpu.sh: line 242: gap_posthoc.csv: command not found`、`line 243: TO: unbound variable` → runner exit 1。兩個 D6 run 都在這之前 exit 0、run_id 已記，沒有多出別的 run。之後不在 runner 執行中改它。
+
 **還沒做**（`--part b`，之後）: m7_sim validate（要 P1）、08 消融的分析（要 P2）、D3（要 P1、P2、A0；C7-anchor 在 H200 沒做 → 那部分 NOT_MEASURED）、第 1 輪的分析（要 P3、Qwen3）。
 D4（要 Mooncake trace、SCBench）、D5（要模型 config）要先下載並核對和 MI300X 同一份。D6 用到 3090 量的反量化成本（H200 沒量，F3 屬第二階段）→ 先不做，等使用者決定。
