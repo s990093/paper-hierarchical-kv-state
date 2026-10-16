@@ -17,6 +17,22 @@ done
 # 10/16 04:0xZ 加：融合反量化（含新加的 INT4）在 GPU 上的逐位元自測，和 42 會用的「M10_DEQUANT_FAST=1 的速度格子」路徑（CPU 層、1 launch × 1 rep）
 m7run m10-sweep-smoke2-dqfast python $REPO/code/m10_dequant_fast.py --self-test --out $S/dqfast_selftest.json > $S/dqfast.log 2>&1   || { echo "smoke2 dqfast 自測失敗（$S/dqfast.log）" | tee -a $JOBS/NEEDS_HUMAN; tail -20 $S/dqfast.log; fail=1; }
 M10_DEQUANT_FAST=1 m7run m10-sweep-smoke2-dqgrid-qwen python $REPO/code/m10_speed.py grid --model qwen --fmt int4_kivi --base-fmt fp8_head   --out-dir $S/dqgrid_qwen --bw-json $OUT/speed_qwen/bw.json --bw-names cpu --gpu-states idle --launches 1 --reps 1 --configs E0 E1 --refs E0 E1 --lengths   > $S/dqgrid_qwen.log 2>&1 || { echo "smoke2 dqgrid 失敗（$S/dqgrid_qwen.log）" | tee -a $JOBS/NEEDS_HUMAN; tail -20 $S/dqgrid_qwen.log; fail=1; }
+# 10/16 07:4xZ 加（09 §6.4）：Llama 大小的整個 KV 緩衝上的融合 kernel（int32 溢位修過）＋方法掃描的新還原路徑（真模型，KV 逐位元）
+fail42=0; fail42b=0
+m7run m10-sweep-smoke2-dqoffset python $REPO/code/m10_queue_mi300x/tests/dq_fast_offset_gpu.py > $S/dqoffset.log 2>&1 \
+  || { echo "smoke2 dqoffset 失敗（$S/dqoffset.log）" | tee -a $JOBS/NEEDS_HUMAN; tail -20 $S/dqoffset.log; fail42=1; }
+for m in qwen llama; do
+  F=$(fmt_of $m fp8)
+  m7run m10-sweep-smoke2-dqsweep-$m python $REPO/code/m10_dqsweep.py smoke --model $m --fmts int4_kivi $F > $S/dqsweep_$m.log 2>&1 \
+    || { echo "smoke2 dqsweep $m 失敗（$S/dqsweep_$m.log）" | tee -a $JOBS/NEEDS_HUMAN; grep -v '^PASS' $S/dqsweep_$m.log | tail -20; fail42b=1; }
+done
+if [ $fail42 != 0 ]; then
+  for s in 42_dqfast_cpu_grid 42b_dqsweep_screen; do [ -f $JOBS/queue/$s.sh ] && mv $JOBS/queue/$s.sh $JOBS/hold/$s.sh && echo "hold $s"; done
+  echo "smoke2 dqoffset 失敗 → 42／42b 搬到 hold/" >> $JOBS/NEEDS_HUMAN
+elif [ $fail42b != 0 ]; then
+  [ -f $JOBS/queue/42b_dqsweep_screen.sh ] && mv $JOBS/queue/42b_dqsweep_screen.sh $JOBS/hold/ && echo "hold 42b"
+  echo "smoke2 dqsweep 失敗 → 42b 搬到 hold/（42 照跑）" >> $JOBS/NEEDS_HUMAN
+fi
 if [ $fail = 0 ]; then
   python3 - <<PY || fail=1
 import csv, gzip
@@ -29,7 +45,7 @@ PY
 fi
 echo "smoke2 fail=$fail"
 if [ $fail != 0 ]; then
-  for s in 40_sweep_pilot 41_sweep_screen 42_dqfast_cpu_grid; do [ -f $JOBS/queue/$s.sh ] && mv $JOBS/queue/$s.sh $JOBS/hold/$s.sh && echo "hold $s"; done
-  echo "smoke2 失敗 → 40／41／42 搬到 hold/（修好再搬回）" >> $JOBS/NEEDS_HUMAN
+  for s in 40_sweep_pilot 41_sweep_screen 42_dqfast_cpu_grid 42b_dqsweep_screen; do [ -f $JOBS/queue/$s.sh ] && mv $JOBS/queue/$s.sh $JOBS/hold/$s.sh && echo "hold $s"; done
+  echo "smoke2 失敗 → 40／41／42／42b 搬到 hold/（修好再搬回）" >> $JOBS/NEEDS_HUMAN
 fi
 exit 0

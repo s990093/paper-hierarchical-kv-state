@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 
@@ -108,10 +109,12 @@ def supported(fmt: str) -> bool:
     return fmt in ("fp8_head", "fp8_channel", "fp8_token", "int8_token", "int4_token", "int4_kivi")
 
 
-def _decode_int4(e, out, rows):
+def _decode_int4(e, out, rows, num_warps=None):
     L, two, H, T, D = e.shape
     p = e.parts
     kw = dict(D=D, ROWS=rows, enable_fp_fusion=False)
+    if num_warps:                                      # 09 §6.4 K3 調參才給；預設不傳（和原本相同）
+        kw["num_warps"] = num_warps
     if e.fmt == "int4_token":
         q, s = p["q"], p["scale"]                      # q [L,2,H,T,D/2]、scale [L,2,H,T,1]
         assert q.is_contiguous() and q.stride(-1) == 1
@@ -139,7 +142,7 @@ def _decode_int4(e, out, rows):
     return out
 
 
-def decode_fast(e, out: torch.Tensor | None = None, rows: int = 16) -> torch.Tensor:
+def decode_fast(e, out: torch.Tensor | None = None, rows: int = 16, num_warps: int | None = None) -> torch.Tensor:
     if not supported(e.fmt):
         import m10_codec_x as X
         return X.decode(e, out)
@@ -148,7 +151,7 @@ def decode_fast(e, out: torch.Tensor | None = None, rows: int = 16) -> torch.Ten
         out = torch.empty(e.shape, dtype=torch.bfloat16, device=next(iter(e.parts.values())).device)
     assert out.stride(-1) == 1 and out.dtype == torch.bfloat16
     if e.fmt.startswith("int4"):
-        return _decode_int4(e, out, rows)
+        return _decode_int4(e, out, rows, num_warps)
     q, s = e.parts["q"], e.parts["scale"]
     assert q.is_contiguous() and q.shape == e.shape and q.stride(-1) == 1
     sb = s.expand(L, two, H, T, D)                      # 廣播 → stride 0
@@ -159,7 +162,7 @@ def decode_fast(e, out: torch.Tensor | None = None, rows: int = 16) -> torch.Ten
                      q.stride(0), q.stride(1), q.stride(2), q.stride(3),
                      sb.stride(0), sb.stride(1), sb.stride(2), sb.stride(3), sb.stride(4),
                      out.stride(0), out.stride(1), out.stride(2), out.stride(3),
-                     D=D, IS_FP8=fp8, ROWS=rows)
+                     D=D, IS_FP8=fp8, ROWS=rows, **({"num_warps": num_warps} if num_warps else {}))
     return out
 
 
@@ -201,12 +204,207 @@ def decode_compiled(e, out):
     return out
 
 
-def install():
-    """讓 m7_restore_harness 的載入線改用融合 kernel（不支援的格式自動退回原本的 decode）。大掃描的速度實驗才呼叫。"""
+# ====================================================================== 09 §6.4 方法掃描用（預設路徑不變）
+@triton.jit
+def _dqm_kernel(q_ptr, s_ptr, lut_ptr, o_ptr, bid_ptr, R, T, H, L,
+                sq_b, sq_l, sq_kv, sq_h, sq_t,
+                ss_b, ss_l, ss_kv, ss_h, ss_t, ss_d,
+                so_l, so_kv, so_h, so_t,
+                D: tl.constexpr, IS_FP8: tl.constexpr, BITS: tl.constexpr, ROWS: tl.constexpr):
+    """_dq_kernel 的多 block 版：輸入第 0 維是 block（每個 block 連續），第 b 個寫到輸出的第 bid[b] 段（每段 T 個 token）。
+    BITS（K4）：FP8 不查表，用位元運算拼出 FP32（e4m3fn：偏差 7 → FP32 偏差 127；次正規數＝尾數 × 2^-9），值和查表完全相同。"""
+    pid = tl.program_id(0)
+    r = (pid * ROWS + tl.arange(0, ROWS)).to(tl.int64)
+    d = tl.arange(0, D)
+    mask = r < R
+    t = r % T
+    h = (r // T) % H
+    kv = (r // (T * H)) % 2
+    l = (r // (T * H * 2)) % L
+    b = r // (T * H * 2 * L)
+    ob = tl.load(bid_ptr + b, mask=mask, other=0)
+    qo = b * sq_b + l * sq_l + kv * sq_kv + h * sq_h + t * sq_t
+    so = b * ss_b + l * ss_l + kv * ss_kv + h * ss_h + t * ss_t
+    oo = l * so_l + kv * so_kv + h * so_h + (ob * T + t) * so_t
+    m2 = mask[:, None]
+    if IS_FP8:
+        code = tl.load(q_ptr + qo[:, None] + d[None, :], mask=m2, other=0).to(tl.int32)
+        if BITS:
+            sgn = (code >> 7) & 1
+            ex = (code >> 3) & 0xF
+            mt = code & 0x7
+            nrm = ((sgn << 31) | ((ex + 120) << 23) | (mt << 20)).to(tl.float32, bitcast=True)
+            sub = mt.to(tl.float32) * 0.001953125
+            sub = tl.where(sgn == 1, -sub, sub)
+            v = tl.where(ex > 0, nrm, sub)
+        else:
+            v = tl.load(lut_ptr + code)
+    else:
+        v = tl.load(q_ptr + qo[:, None] + d[None, :], mask=m2, other=0).to(tl.float32)
+    s = tl.load(s_ptr + so[:, None] + d[None, :] * ss_d, mask=m2, other=1.0)
+    tl.store(o_ptr + oo[:, None] + d[None, :], (v * s).to(tl.bfloat16), mask=m2)
+
+
+@triton.jit
+def _dq4m_kernel(q_ptr, s_ptr, z_ptr, o_ptr, bid_ptr, R, T, H, C, L,
+                 sq_b, sq_l, sq_c, sq_h, sq_t,
+                 ss_b, ss_l, ss_c, ss_h, ss_t, ss_d,
+                 so_l, so_c, so_h, so_t,
+                 D: tl.constexpr, TDIV: tl.constexpr, DDIV: tl.constexpr,
+                 HAS_ZERO: tl.constexpr, OFFSET8: tl.constexpr, ROWS: tl.constexpr):
+    """_dq4_kernel 的多 block 版（同上）。"""
+    pid = tl.program_id(0)
+    r = (pid * ROWS + tl.arange(0, ROWS)).to(tl.int64)
+    d = tl.arange(0, D)
+    mask = r < R
+    t = r % T
+    h = (r // T) % H
+    c = (r // (T * H)) % C
+    l = (r // (T * H * C)) % L
+    b = r // (T * H * C * L)
+    ob = tl.load(bid_ptr + b, mask=mask, other=0)
+    m2 = mask[:, None]
+    qo = b * sq_b + l * sq_l + c * sq_c + h * sq_h + t * sq_t
+    byte = tl.load(q_ptr + qo[:, None] + (d // 2)[None, :], mask=m2, other=0).to(tl.int32)
+    nib = tl.where((d % 2 == 0)[None, :], byte & 0xF, byte >> 4)
+    v = nib.to(tl.float32)
+    if OFFSET8:
+        v = v - 8.0
+    so = b * ss_b + l * ss_l + c * ss_c + h * ss_h + (t // TDIV) * ss_t
+    sp = so[:, None] + (d // DDIV)[None, :] * ss_d
+    y = v * tl.load(s_ptr + sp, mask=m2, other=1.0).to(tl.float32)
+    if HAS_ZERO:
+        y = y + tl.load(z_ptr + sp, mask=m2, other=0.0).to(tl.float32)
+    oo = l * so_l + c * so_c + h * so_h + (ob * T + t) * so_t
+    tl.store(o_ptr + oo[:, None] + d[None, :], y.to(tl.bfloat16), mask=m2)
+
+
+def group_parts(e, nb: int, device) -> dict:
+    """「一次拆 nb 個 block」的暫存區：每個 part 多一個 block 維度（第 0 維），每個 block 連續。"""
+    return {k: torch.empty((nb,) + tuple(t.shape), dtype=t.dtype, device=device) for k, t in e.parts.items()}
+
+
+def sub_enc(e, gparts: dict, j: int):
+    """暫存區裡第 j 個 block 的 Enc（視圖，給 copy_from 用）。"""
+    return C.Enc(e.fmt, e.shape, {k: t[j] for k, t in gparts.items()})
+
+
+def decode_multi(fmt: str, shape: tuple, gparts: dict, nb: int, out: torch.Tensor, bids: torch.Tensor,
+                 rows: int = 16, num_warps: int | None = None, bits: bool = False) -> torch.Tensor:
+    """一次 kernel 解 nb 個 block：gparts[k] 形狀 [nb, *part]；out 是 [L,2,H,T_out,D] 的 BF16（可以是整個 KV 緩衝）；
+    第 b 個 block 寫到 out 的 token [bids[b]*T, (bids[b]+1)*T)，T＝shape[3]。和逐個 decode_fast 逐位元相同（自測驗）。"""
+    assert supported(fmt) and out.stride(-1) == 1 and out.dtype == torch.bfloat16
+    L, two, H, T, D = shape
+    kw = dict(ROWS=rows, **({"num_warps": num_warps} if num_warps else {}))
+    if fmt.startswith("fp8") or fmt == "int8_token":
+        q, s = gparts["q"], gparts["scale"]
+        assert q.is_contiguous()
+        sb = s.expand(nb, L, two, H, T, D)
+        R = nb * L * two * H * T
+        _dqm_kernel[(triton.cdiv(R, rows),)](q, sb, _fp8_lut(q.device), out, bids, R, T, H, L,
+                                             q.stride(0), q.stride(1), q.stride(2), q.stride(3), q.stride(4),
+                                             sb.stride(0), sb.stride(1), sb.stride(2), sb.stride(3), sb.stride(4), sb.stride(5),
+                                             out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+                                             D=D, IS_FP8=fmt.startswith("fp8"), BITS=bool(bits), **kw)
+        return out
+    kw["enable_fp_fusion"] = False
+    if fmt == "int4_token":
+        q, s = gparts["q"], gparts["scale"]                  # [nb,L,2,H,T,D/2]、[nb,L,2,H,T,1]
+        R = nb * L * two * H * T
+        _dq4m_kernel[(triton.cdiv(R, rows),)](q, s, s, out, bids, R, T, H, two, L,
+                                              q.stride(0), q.stride(1), q.stride(2), q.stride(3), q.stride(4),
+                                              s.stride(0), s.stride(1), s.stride(2), s.stride(3), s.stride(4), 0,
+                                              out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+                                              D=D, TDIV=1, DDIV=1, HAS_ZERO=False, OFFSET8=True, **kw)
+        return out
+    G = C.KIVI_GROUP
+    R = nb * L * H * T
+    for j, n in ((0, "k"), (1, "v")):                      # q [nb,L,H,T,D/2]；K scale [nb,L,H,T/G,1,D]、V scale [nb,L,H,T,D/G,1]
+        q, s, z, o = gparts[f"{n}_q"], gparts[f"{n}_scale"], gparts[f"{n}_zero"], out[:, j]
+        assert q.is_contiguous() and s.stride() == z.stride()
+        if n == "k":
+            st, sd, tdiv, ddiv = s.stride(3), s.stride(5), G, 1
+        else:
+            st, sd, tdiv, ddiv = s.stride(3), s.stride(4), 1, G
+        _dq4m_kernel[(triton.cdiv(R, rows),)](q, s, z, o, bids, R, T, H, 1, L,
+                                              q.stride(0), q.stride(1), 0, q.stride(2), q.stride(3),
+                                              s.stride(0), s.stride(1), 0, s.stride(2), st, sd,
+                                              o.stride(0), 0, o.stride(1), o.stride(2),
+                                              D=D, TDIV=tdiv, DDIV=ddiv, HAS_ZERO=True, OFFSET8=False, **kw)
+    return out
+
+
+def split_enc(e, U: int) -> list:
+    """09 §6.4 G 組：把一個 block 的 Enc 沿 token 切成 T/U 段（每段連續、新配記憶體）。scale／zero 跟著切或整份複製，
+    反量化是逐元素的，所以「切開來各自解」＝「整塊解」的對應段（自測驗）。只支援 fp8_*、int8_token、int4_token、int4_kivi、bf16。"""
+    L, two, H, T, D = e.shape
+    assert T % U == 0 and U % C.KIVI_GROUP == 0
+    out = []
+    for j in range(T // U):
+        parts = {}
+        for name, t in e.parts.items():
+            ax = 2 if e.fmt == "int4_kivi" else 3          # KIVI 的 part 是 [L,H,T,...]；其他是 [L,2,H,T,...]
+            n_ax = t.shape[ax]
+            if n_ax == T:
+                x = t.narrow(ax, j * U, U)
+            elif e.fmt == "int4_kivi" and n_ax == T // C.KIVI_GROUP:
+                g = C.KIVI_GROUP
+                x = t.narrow(ax, j * U // g, U // g)
+            elif n_ax == 1 and not e.fmt.startswith("fp8k0") and e.fmt != "int4_kivi":
+                x = t
+            else:
+                raise ValueError(f"split_enc 不支援 {e.fmt} 的 {name} {tuple(t.shape)}")
+            parts[name] = x.contiguous().clone()
+        out.append(C.Enc(e.fmt, (L, two, H, U, D), parts))
+    return out
+
+
+_ZERO_BID = {}
+
+
+def decode_variant(e, out=None, kernel: str = "k1"):
+    """K 組的單 block 版本（還原器每個 block 呼叫一次）。k1＝decode_fast（預設）；k2＝torch.compile；
+    k3:<rows>:<warps>＝調參；k4＝FP8 不查表（其他格式同 k1）。"""
+    if out is None:
+        out = torch.empty(e.shape, dtype=torch.bfloat16, device=next(iter(e.parts.values())).device)
+    if kernel == "k1":
+        return decode_fast(e, out)
+    if kernel == "k2":
+        return decode_compiled(e, out)
+    if kernel.startswith("k3:"):
+        _, r_, w_ = kernel.split(":")
+        return decode_fast(e, out, rows=int(r_), num_warps=int(w_))
+    if kernel == "k4":
+        if not e.fmt.startswith("fp8"):
+            return decode_fast(e, out)
+        dev = out.device
+        if str(dev) not in _ZERO_BID:
+            _ZERO_BID[str(dev)] = torch.zeros(1, dtype=torch.int64, device=dev)
+        return decode_multi(e.fmt, e.shape, {k: t.unsqueeze(0) for k, t in e.parts.items()}, 1, out,
+                            _ZERO_BID[str(dev)], bits=True)
+    raise ValueError(kernel)
+
+
+def kernel_cfg(kernel: str) -> dict:
+    """K 組設定 → decode_multi 的參數（S2／S4／S5 一次拆多個 block 時用同一套）。"""
+    if kernel.startswith("k3:"):
+        _, r_, w_ = kernel.split(":")
+        return dict(rows=int(r_), num_warps=int(w_), bits=False)
+    return dict(rows=16, num_warps=None, bits=(kernel == "k4"))
+
+
+def install(kernel: str | None = None):
+    """讓 m7_restore_harness 的載入線改用融合 kernel（不支援的格式自動退回原本的 decode）。大掃描的速度實驗才呼叫。
+    kernel（09 §6.4 K 組）：None → 環境變數 M10_DQ_KERNEL，預設 k1（和原本完全相同）。"""
     import m7_restore_harness as RH
     import m10_codec_x as X
     X.install()
-    RH.decode = lambda e, out=None: decode_fast(e, out) if supported(e.fmt) else X.decode(e, out)
+    kernel = kernel or os.environ.get("M10_DQ_KERNEL", "k1")
+    if kernel == "k1":
+        RH.decode = lambda e, out=None: decode_fast(e, out) if supported(e.fmt) else X.decode(e, out)
+    else:
+        RH.decode = lambda e, out=None: decode_variant(e, out, kernel) if supported(e.fmt) else X.decode(e, out)
+    RH.DQ_KERNEL = kernel
 
 
 def self_test(out_path=None, bench=False) -> bool:

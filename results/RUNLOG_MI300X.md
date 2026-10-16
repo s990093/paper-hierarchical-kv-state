@@ -552,6 +552,25 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **GPU 上驗過了**（10/16 06:44Z，33b 品質段跑的時候插的小工作，不在任何計時段）：`m10_dequant_fast.py --self-test` 6 種格式（含 int4_token、int4_kivi）逐位元相同、寫進視圖不碰旁邊，torch.compile 版也相同（run `20261016-064403-m10-dqfast-selftest-gpu-int4`，`results/m10_sweep_mi300x/dqfast_selftest_gpu.json`）；Llama／Qwen 每個 block 的真實形狀 × 兩種幅度（含一個離群通道）× 5 種格式 28／28 逐位元相同（run `20261016-064414-m10-dqfast-shapes-gpu`，`code/m10_queue_mi300x/tests/dq_fast_gpu_shapes.py`，`results/m10_sweep_mi300x/dqfast_shapes_gpu.json`；奇數長度 37 的 int4_kivi 是 encode 本身不支援，跳過）。stage 39 照樣重驗。
 - stage 42 加 INT4（`speed_dqfast_int4_<m>/`）；stage 39 加 GPU 自測和「`M10_DEQUANT_FAST=1` 的 CPU 層速度格子」冒煙（Qwen、int4_kivi、1×1）。09 §6.2、§6.3-2b 有登記。
 
+### 11.2d 反量化的方法掃描（09 §6.4）＋ 融合 kernel 的 int32 溢位（10/16 07:0x–08:0xZ；CPU＋GPU 小測，品質段 33b 跑的時候）
+
+- **起因**：使用者看到 INT4 在真實 CPU 層變慢（10.9），要求「記成問題一」（`docs/precision_20261013/11_issues.md`）、「多個 block 為一組轉換」「找很多方法掃描、看其他 paper 設計、可以做多組」「hidden latency 可以測試」「好加入」。
+- **拆 33a 的逐次資料**（CPU）：Qwen INT4・忙・CPU 層 30 次裡，重算 1 塊的 1 次 85 ms、重算 2 塊的 29 次 146 ms，載入線都在約 84 ms 做完 → 慢掉的約 80 ms 裡約 60 ms 是「整數跳動」（重算線多開一個 512 token 的 block）。Llama・忙兩邊都重算 2 塊，是重算線被反量化拖慢（163 → 188 ms）。
+- **抓到並修掉一個 bug**：`m10_dequant_fast` 的 kernel 用 32 位元算位址；寫進整個 KV 緩衝的視圖時，Llama 32K 最遠的偏移約 2.18e9 > 2^31−1 → 繞回、寫到緩衝前面。CPU 直譯模式重現（`code/m10_queue_mi300x/tests/dq_fast_offset_cpu_interp.py`：值錯、護欄被寫）。影響 Llama 的 fp8／int8／int4_token（KIVI 剛好在上限內）；**還沒有任何計時用到**（42 還沒跑）。改成 64 位元後：CPU 5 種格式全對、護欄乾淨；GPU `20261016-071948-m10-dqfast-selftest-gpu-i64`、`-072000-m10-dqfast-shapes-gpu-i64` 全過。stage 39 另加 GPU 上 Llama 大小緩衝的測試（`tests/dq_fast_offset_gpu.py`）。
+- **事先登記**：09 §6.4（commit 42ba604，07:3xZ；寫的時候沒有任何方法的結果），07:5xZ 補實作細節（同一節 §6.4.4）。
+- **程式**（預設全部＝原本的路徑）：
+  - `m10_dequant_fast.py`：`decode_multi`（一次拆多個 block、寫到各自位置）、`decode_variant`（K2 torch.compile、K3 調參、K4 FP8 不查表）、`split_enc`（G 組把 block 切成 256／128 段）、`install(kernel)`。
+  - `m7_restore_harness.py`：`Restorer.set_options(unit, sched, group, compute_prio, meet)`；`_cake_v2`（S1 邊搬邊拆、S2 分組、S4／S5 延後拆、G4 預估會合）；還原單位可以不是 512。
+  - `m10_speed.py`：環境變數 `M10_DQ_KERNEL／M10_DQ_SCHED／M10_DQ_GROUP／M10_DQ_PRIO／M10_UNIT／M10_MEET`（預設全關）、`--launch0`；`Bench` 支援還原單位 U（寫入時也用 U prefill）。
+  - `m10_dqsweep.py`：list／env／kernels（A 段）／smoke（stage 39）／plan（B → 寫 42c）。
+- **正確性**（逐位元，對原寫法 `m10_codec.decode`／參考 prefill）：
+  - CPU 直譯：`tests/dq_multi_cpu_interp.py` 全過（2 種形狀 × 6 種格式 × 3 種分組 × 查表／不查表）；`split_enc` 7 種格式 × 256／128 全過。
+  - GPU 假模型（幾十 MB）：`tests/dqsweep_bench_fake_gpu.py`（`m10_speed.Bench` 的還原單位、切段的主機副本、`kv_bad`＋`m10_dqsweep smoke` 的流程；3 種格式 × 16 個方法／組合）216 項全過；`tests/restore_variants_fake_gpu.py` 1,984 項全過（14 種方法組合 × 6 種格式 × 5 種 kernel × E0／E1／R25 × CPU／限速 × cake／只載／只算）；`torch.compile`（K2）也逐位元相同。
+  - 真模型的冒煙排在 stage 39（每個方法＋4 個組合 × E0／E1／R25，兩個模型 × int4_kivi＋主線 FP8）。失敗 → 42b 擱置；Llama 緩衝測試失敗 → 42、42b 擱置。
+- **佇列**：42 → **42b**（A：kernel 微測挑 K\*；B：12 個方法海選，int4_kivi、CPU 層、閒／忙、E0 E1 R25、1 × 10）→ `plan` 寫 **42c**（5 個選手 × 2 格式 × 2 模型 CPU 層，冠軍與 S0 加 b32）→ 45…。估計 A＋B 約 1.5 小時、C 約 2.5 小時〔估計〕。
+- **文獻**（這次查的，摘要級）：CacheGen（傳 chunk i 時解 i−1）、LMCache（arXiv 2510.09665：運算與搬資料分 stream、逐層）、BanaServe（2510.13223：三段管線）、ShadowServe（2509.16857：同一張 GPU 上解壓和計算互相拖慢）、Marlin／TileLang（位元技巧轉 4-bit）。
+- **此次 audit 為 self-review，非 cross-model。**
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。

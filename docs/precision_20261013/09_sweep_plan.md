@@ -249,6 +249,12 @@
 #### 6.4.4 時間與佇列
 
 - 估計：A 約 20 分鐘；B 約 1.5–2 小時；C 約 3 小時（〔估計〕，B 跑完照實際時間更新）。上限 6.5 小時；C 預估超過 3.5 小時 → 先把 C 的 launch 從 3 減到 2，再拿掉 b32。
+- **補充（10/16 07:5xZ，寫程式時定的細節；仍然沒有任何結果）**：
+  - B 的 launch 編號從 100 起（和 42、C 都不同）；不跑「只算／只載」參考線（`--refs` 空）。
+  - C 也不跑「只算／只載」參考線（這一節的比較都用不到，省掉每個 run 最貴的只算那條）。b32 只跑冠軍和 S0、配置 E0／E1／R25（看冠軍會不會傷到限速層，S0 是配對的對照）。所以 C 一共 5 個方法 × 2 格式 × 2 模型＝20 個 CPU 層 run＋8 個 b32 run。
+  - K\* 的計時用合成資料（和 §6.3 微測一樣），每個模型的整個 KV 緩衝；GPU 監控報污染 → K\* 作廢、B／C 退回 K1。
+  - 程式：`code/m10_dqsweep.py`（list／env／kernels／smoke／plan）、`code/m7_restore_harness.py`（`Restorer.set_options`，預設＝原本的路徑）、`code/m10_dequant_fast.py`（`decode_multi`、`decode_variant`、`split_enc`）、`code/m10_speed.py`（環境變數 `M10_DQ_KERNEL`／`M10_DQ_SCHED`／`M10_DQ_GROUP`／`M10_DQ_PRIO`／`M10_UNIT`／`M10_MEET`，預設全關；`--launch0`）。
+  - 已做的正確性檢查：CPU 直譯模式 `tests/dq_multi_cpu_interp.py`（一次拆多個 block、K4 不查表：全過）；`split_enc` 7 種格式切 256／128 再拆＝整塊拆；GPU 假模型 `tests/restore_variants_fake_gpu.py`（14 種方法組合 × 6 種格式 × 5 種 kernel × E0／E1／R25 × CPU／限速 × cake／只載／只算：1,984 項逐位元全過）。
 - 佇列：42（K1、S0、G0）之後，**42b**（A＋B）→ **42c**（C，由 42b 結尾的 `dqsweep_plan.py` 照上面規則寫出）→ 45（只報告的工作照原順序往後）。使用者 10/16：「好加入」。
 - 新程式先在 stage 39 的冒煙裡跑一次（每個方法 E0／E1 各一次 KV 逐位元檢查）；冒煙失敗只把 42b／42c 擱置（`hold/`），寫 NEEDS_HUMAN，不擋其他工作。
 
