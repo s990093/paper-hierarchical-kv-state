@@ -223,6 +223,11 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
     主機層看不到（UNOBSERVABLE_HOST），GpuWatcher 只看自己那張卡 → **無法證明**
   - P1 其他 7 個 run（09:22–12:02）都和 20570 的 F2 sweep 同時跑；它們的 S5 對 S4+ 在 ±1.1% 內
 - R3 的判定（job 20553，主設定只有 rep 0–2，cpu_frac 0.5 −0.24%）在 r36 之前就算完了，**沒有改**。照 03 §R3 的規則，合併 6 次的這一格是「S5 快超過 δ*＝5%」→ 和第一階段相反 → 停下回報，等使用者決定
+- **決定（使用者 2026-10-16 12:5x）：「照重疊重跑」**：和我們自己的 20555／20570 時間重疊的 B run 全部重跑（P1 八個＋P2-G1-seed0），照重疊選、不照結果（只重跑 r36 會變成挑結果）。
+  R3-B-main（只和 20417 自己）不重跑。舊資料保留，新舊並排報告。
+  - `code/r_h200_brerun.sh`（commit `f1567d3`）：指令和 r_h200_rest.sh 的 P1、P2-G1-seed0 逐字相同（dry-run 比對 9/9；run 短名加 `-rr`）；
+    輸出 `results/m7_write_policy_h200_rerun/`（`M7_RES`），f(i) 用同一份 H200 C1（`M7_F_CSV`）；開跑前檢查節點上沒有我們自己的別的 job，有就停
+  - **job 20631**：`sbatch --dependency=afterany:20554,afterany:20556 code/r_h200_brerun.sh`（`--time=08:00:00`）
 
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
