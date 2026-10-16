@@ -549,10 +549,10 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 ## Milestone 12 — 第二階段長 context（32K／64K／128K；探索），MI300X（準備中）
 
 **狀態**：程式改好、CPU 檢查通過；GPU 工作已排進佇列（39a 冒煙在大掃描前；90／91／92 在所有 32K 工作之後）。**還沒有任何 64K／128K 的數字。**
-**事先登記**：`docs/precision_20261013/10_longctx_plan.md`（2026-10-16 UTC 04:4x 寫）。
+**事先登記**：`docs/precision_20261013/10_longctx_plan.md`（2026-10-16 UTC 04:2x 寫）。
 **為什麼**：使用者 10/16 問「會不會是 context 太短，100K 難度就很高」；決定 32K／64K／128K、格式全部（BF16＋13 種）、排在之前所有 32K 實驗之後。
 
-### 12.1 程式（CPU，04:2x–04:5x UTC）
+### 12.1 程式（CPU，04:0x–04:2x UTC）
 
 - `code/m10_tasks.py`：`bands(n_blocks)`——位置帶照比例縮放（每帶 1/4 的 block）；64 個 block 時回傳原本的 `BANDS`。
   - **32K 題目不變**：改前後 32 題（兩個模型 × T2–T5，seed 10000 與 40000 起）的完整題目 JSON 雜湊逐一相同（`code/m10_queue_mi300x/tests/longctx_hash_items.py`）。

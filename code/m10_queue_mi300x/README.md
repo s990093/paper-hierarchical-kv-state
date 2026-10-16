@@ -20,4 +20,4 @@
 - 39：修好 `m10_codec_x.install()` 的遞迴後重跑冒煙；失敗 → 40–42 搬到 `hold/`。
 - 45、55 改讀 `speed_<m>/meets_fp8tier.json`（33a 寫入前的會合點快照）。
 - `queue/31z_sweep_smoke.sh`、`33a_grid_int4.sh` 是跑時的版本（`.done`／`.running` 複製出來）。
-- 04:2x–04:5xZ 長 context（10_longctx_plan）：39a 冒煙（大掃描前）；90 速度、91 試跑 → `longctx_plan_n.py` 寫 92（所有 32K 工作之後）。
+- 04:0x–04:2xZ 長 context（10_longctx_plan）：39a 冒煙（大掃描前）；90 速度、91 試跑 → `longctx_plan_n.py` 寫 92（所有 32K 工作之後）。
