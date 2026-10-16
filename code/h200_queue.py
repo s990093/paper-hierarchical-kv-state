@@ -4,9 +4,9 @@
     python3 code/h200_queue.py                 # 自己（$USER）的 job
     python3 code/h200_queue.py --job 20417     # 指定 job
     python3 code/h200_queue.py --no-history    # 不查 sacct（快一點；少了「照過去執行時間」那個模擬）
-    watch -n 300 python3 code/h200_queue.py    # 每 5 分鐘更新
+    python3 code/h200_queue.py --watch 300     # 每 5 分鐘重畫
 
-只讀 Slurm（squeue、sprio、scontrol、sacctmgr、sacct），不送、不改任何 job。用系統的 python3 就能跑（只用標準庫）。
+只讀 Slurm（squeue、sprio、scontrol、sacctmgr、sacct），不送、不改任何 job。用系統的 python3 就能跑（標準庫＋rich；系統的 python3 已經有 rich）。
 
 三個「什麼時候開始」：
   1. Slurm 的預估（squeue --start）：排程器自己算的，常常很悲觀，也常常是 N/A。
@@ -25,7 +25,15 @@ import shutil
 import statistics
 import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
+
+from rich import box
+from rich.console import Console
+from rich.panel import Panel
+from rich.rule import Rule
+from rich.table import Table
+from rich.text import Text
 
 PART = "h200q"
 SLURM_BIN = "/cm/local/apps/slurm/current/bin"
@@ -33,6 +41,8 @@ SLURM_BIN = "/cm/local/apps/slurm/current/bin"
 NOT_COMPETING = ("Dependency", "DependencyNeverSatisfied", "JobHeldUser", "JobHeldAdmin", "BeginTime",
                  "PartitionDown", "PartitionInactive", "InvalidAccount", "InvalidQOS")
 FAR = timedelta(days=365)
+STATE_STYLE = {"RUNNING": "green", "PENDING": "yellow", "COMPLETING": "cyan", "SUSPENDED": "red"}
+con = Console(highlight=False)
 
 
 def sh(*cmd: str) -> str:
@@ -176,16 +186,7 @@ def simulate(now, running, pending, total, limits, dur_of, end_of):
     return res
 
 
-def main():
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--job", help="job id（預設：自己所有在 h200q 的 job）")
-    ap.add_argument("--user", default=os.environ.get("USER", ""))
-    ap.add_argument("--no-history", action="store_true", help="不查 sacct")
-    a = ap.parse_args()
-    if not shutil.which("squeue") and os.path.isdir(SLURM_BIN):
-        os.environ["PATH"] = SLURM_BIN + ":" + os.environ.get("PATH", "")
-        os.environ.setdefault("SLURM_CONF", "/cm/shared/apps/slurm/etc/slurm/slurm.conf")
-
+def render(a):
     now = datetime.now().replace(microsecond=0)
     jobs = load_jobs()
     total = total_gpus()
@@ -207,9 +208,12 @@ def main():
     max_age = re.search(r"PriorityMaxAge\s*=\s*(\d+)-", cfg)
     age_per_day = int(w_age.group(1)) / int(max_age.group(1)) if w_age and max_age and int(max_age.group(1)) else None
 
-    print(f"=== {PART} 佇列 @ {now:%Y-%m-%d %H:%M} ===")
-    print(f"GPU：共 {total} 張，使用中 {used}，空 {total - used}｜正在跑 {len(running)} 個 job｜"
-          f"排隊 {len(pend_all)} 個（現在在搶卡 {len(competing)}、hold 或等前置 job {len(waiting_dep)}）")
+    con.print(Rule(Text(f"{PART} 佇列  {now:%Y-%m-%d %H:%M}", "bold"), style="cyan"))
+    bar = Text("█" * used, "bold yellow") + Text("░" * (total - used), "green")
+    con.print(Text.assemble("  GPU ", bar, f"  使用中 ", (str(used), "bold yellow"), f"／{total}，空 ",
+                            (str(total - used), "bold green"), "｜正在跑 ", (str(len(running)), "bold"),
+                            "｜排隊 ", (str(len(pend_all)), "bold"),
+                            (f"（在搶卡 {len(competing)}、hold 或等前置 {len(waiting_dep)}）", "dim")))
 
     # 模擬
     def lim_end(r):
@@ -229,69 +233,125 @@ def main():
     sim_lim = simulate(now, running, competing, total, limits, lambda j: j["limit"], lim_end)
     sim_hist = simulate(now, running, competing, total, limits, hist_dur, hist_end) if hist else {}
 
+    def when(t):
+        return Text.assemble((fmt_dt(t), "bold"), (f"（{fmt_td(t - now)} 後）", "dim")) if t else Text("N/A", "dim")
+
     if not mine:
-        print(f"\n（{a.job or a.user} 在 {PART} 沒有 job）")
+        con.print(Text(f"\n（{a.job or a.user} 在 {PART} 沒有 job）", "dim"))
     for j in mine:
         who = "你的 job" if j["user"] == a.user else f"{j['user']} 的 job"
-        print(f"\n▶ {who} {j['id']}（{j['name']}）：{j['state']}　原因 {j['reason']}　GPU {j['gpus']}　上限 {fmt_td(j['limit'])}")
+        g = Table.grid(padding=(0, 2))
+        g.add_column(style="dim", no_wrap=True)
+        g.add_column()
+        style = STATE_STYLE.get(j["state"], "white")
+        title = Text.assemble((f" {who} {j['id']} ", "bold"), (j["name"], "bold cyan"), "  ",
+                              (j["state"], style), " ")
         if j["state"] != "PENDING":
-            print(f"  開始 {fmt_dt(j['start'])}，已跑 {fmt_td(now - j['start']) if j['start'] else 'N/A'}，最晚 {fmt_dt(j['end'])} 結束")
+            g.add_row("開始", Text.assemble((fmt_dt(j["start"]), "bold"),
+                                          f"，已跑 {fmt_td(now - j['start']) if j['start'] else 'N/A'}"))
+            g.add_row("最晚結束", Text(fmt_dt(j["end"]), "bold"))
+            g.add_row("GPU／上限", f"{j['gpus']} 張／{fmt_td(j['limit'])}")
+            con.print(Panel(g, title=title, title_align="left", border_style=style, padding=(0, 1)))
             continue
-        print(f"  送出 {fmt_dt(j['submit'])}，已等 {fmt_td(now - j['submit']) if j['submit'] else 'N/A'}")
+        g.add_row("原因", Text(j["reason"], "yellow"))
+        g.add_row("GPU／上限", f"{j['gpus']} 張／{fmt_td(j['limit'])}")
+        g.add_row("送出", f"{fmt_dt(j['submit'])}，已等 {fmt_td(now - j['submit']) if j['submit'] else 'N/A'}")
         pr = sh("sprio", "-h", "-j", j["id"].split("_")[0], "-o", "%Y|%A|%F|%J|%Q|%N").strip().split("|")
         if len(pr) >= 6:
             grow = f"；Age 每天約 +{age_per_day:.1f}（最多 +{w_age.group(1)}）" if age_per_day else ""
-            print(f"  優先序 {pr[0]}＝FairShare {pr[2]}＋QOS {pr[4]}＋Age {pr[1]}＋JobSize {pr[3]}"
-                  f"{'＋Nice ' + pr[5] if pr[5] not in ('0', '') else ''}{grow}")
+            g.add_row("優先序", Text.assemble((pr[0], "bold"),
+                      (f" ＝ FairShare {pr[2]} ＋ QOS {pr[4]} ＋ Age {pr[1]} ＋ JobSize {pr[3]}"
+                       f"{' ＋ Nice ' + pr[5] if pr[5] not in ('0', '') else ''}{grow}", "dim")))
         if j["reason"] in NOT_COMPETING:
-            print(f"  這個 job 現在不在搶卡（{j['reason']}），放行或前置 job 完成後才會排")
-            continue
-        rank = next(i for i, c in enumerate(competing, 1) if c["id"] == j["id"])
-        ahead = competing[:rank - 1]
-        print(f"  ★ 排第 {rank} 位：前面 {len(ahead)} 個 job、共要 {sum(c['gpus'] for c in ahead)} 張卡")
-        lim_ac = limits.get(j["acct"])
-        run_ac = sum(r["gpus"] for r in running if r["acct"] == j["acct"])
-        print(f"  你的 account（{j['acct']}）正在用 {run_ac} 張，上限 {lim_ac if lim_ac is not None else '查不到'}")
-        print(f"  什麼時候開始：")
-        print(f"    Slurm 預估　　　　　 {fmt_dt(j['start'])}{'（' + fmt_td(j['start'] - now) + ' 後）' if j['start'] else ''}")
-        t = sim_lim.get(j["id"])
-        print(f"    模擬・大家跑滿上限　 {fmt_dt(t)}{'（' + fmt_td(t - now) + ' 後）' if t else '（放不進去）'}")
-        if sim_hist:
-            t = sim_hist.get(j["id"])
-            print(f"    模擬・照過去 30 天　 {fmt_dt(t)}{'（' + fmt_td(t - now) + ' 後）' if t else ''}　← 參考值")
+            g.add_row("", Text(f"現在不在搶卡（{j['reason']}），放行或前置 job 完成後才會排", "italic"))
+        else:
+            rank = next(i for i, c in enumerate(competing, 1) if c["id"] == j["id"])
+            ahead = competing[:rank - 1]
+            g.add_row("排名", Text.assemble(("★ 第 " + str(rank) + " 位", "bold magenta"),
+                                          f"：前面 {len(ahead)} 個 job、共要 {sum(c['gpus'] for c in ahead)} 張卡"))
+            lim_ac = limits.get(j["acct"])
+            run_ac = sum(r["gpus"] for r in running if r["acct"] == j["acct"])
+            g.add_row("account", f"{j['acct']} 正在用 {run_ac} 張，上限 {lim_ac if lim_ac is not None else '查不到'}")
+            g.add_row("Slurm 預估", when(j["start"]))
+            t = sim_lim.get(j["id"])
+            g.add_row("模擬・跑滿上限", when(t) if t else Text("放不進去", "red"))
+            if sim_hist:
+                g.add_row("模擬・照過去 30 天", when(sim_hist.get(j["id"])) + Text("  ← 參考值", "dim"))
+        con.print(Panel(g, title=title, title_align="left", border_style=style, padding=(0, 1)))
 
     def hist_s(j, ran=timedelta(0)):
         m = typical(hist, j["user"], j["limit"], ran)
         return fmt_td(m) if m else "用上限"
 
     my_ids = {j["id"] for j in mine}
-    print(f"\n── 在搶卡的 pending（依優先序；★＝你）──")
-    print(f"{'':2}{'#':>3} {'job':<14}{'user':<12}{'account':<15}{'prio':>5} {'GPU':>3} {'上限':>10} {'已等':>10} {'過去同上限':>10}  {'模擬開始(上限/過去)':<20} 原因")
+    me_style = "bold magenta"
+    t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="在搶卡的 pending（依優先序；★＝你）",
+              title_justify="left", title_style="bold")
+    for col, jj in (("", "left"), ("#", "right"), ("job", "left"), ("user", "left"), ("account", "left"),
+                    ("prio", "right"), ("GPU", "right"), ("上限", "right"), ("已等", "right"),
+                    ("過去同上限", "right"), ("模擬開始：上限", "left"), ("過去", "left"), ("原因", "left")):
+        t.add_column(col, justify=jj, no_wrap=True)
     for i, c in enumerate(competing, 1):
-        mark = "★" if c["id"] in my_ids else ""
-        wait = fmt_td(now - c["submit"]) if c["submit"] else "N/A"
-        s1 = fmt_dt(sim_lim.get(c["id"]))
-        s2 = fmt_dt(sim_hist.get(c["id"])) if sim_hist else "—"
-        print(f"{mark:2}{i:>3} {c['id']:<14}{c['user']:<12}{c['acct']:<15}{c['prio']:>5} {c['gpus']:>3} "
-              f"{fmt_td(c['limit']):>10} {wait:>10} {hist_s(c):>10}  {s1}／{s2:<12} {c['reason']}")
+        me = c["id"] in my_ids
+        t.add_row("★" if me else "", str(i), c["id"], c["user"], c["acct"], str(c["prio"]), str(c["gpus"]),
+                  fmt_td(c["limit"]), fmt_td(now - c["submit"]) if c["submit"] else "N/A", hist_s(c),
+                  fmt_dt(sim_lim.get(c["id"])), fmt_dt(sim_hist.get(c["id"])) if sim_hist else "—",
+                  Text(c["reason"], "yellow"), style=me_style if me else None)
+    con.print(t if competing else Text("在搶卡的 pending：沒有", "dim"))
 
-    print(f"\n── 正在跑（依結束時間）──")
-    print(f"  {'job':<14}{'user':<12}{'account':<15}{'GPU':>3} {'開始':>12} {'已跑':>10} {'最晚結束':>12} {'照過去結束':>12}")
+    t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="正在跑（依結束時間）",
+              title_justify="left", title_style="bold")
+    for col, jj in (("job", "left"), ("user", "left"), ("account", "left"), ("GPU", "right"), ("開始", "right"),
+                    ("已跑", "right"), ("最晚結束", "right"), ("照過去結束", "right")):
+        t.add_column(col, justify=jj, no_wrap=True)
     for r in sorted(running, key=lim_end):
-        ran = fmt_td(now - r["start"]) if r["start"] else "N/A"
-        print(f"  {r['id']:<14}{r['user']:<12}{r['acct']:<15}{r['gpus']:>3} {fmt_dt(r['start']):>12} {ran:>10} "
-              f"{fmt_dt(lim_end(r)):>12} {fmt_dt(hist_end(r)) if hist else '—':>12}")
+        t.add_row(r["id"], r["user"], r["acct"], str(r["gpus"]), fmt_dt(r["start"]),
+                  fmt_td(now - r["start"]) if r["start"] else "N/A", fmt_dt(lim_end(r)),
+                  fmt_dt(hist_end(r)) if hist else "—", style=me_style if r["user"] == a.user else None)
+    con.print(t)
 
     if waiting_dep:
         by = {}
         for w in waiting_dep:
             k = (w["user"], w["acct"], w["reason"])
             by[k] = by.get(k, 0) + 1
-        print(f"\n── 現在不搶卡（hold／等前置 job；放行後會依優先序加入）──")
+        t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="現在不搶卡（hold／等前置 job；放行後依優先序加入）",
+                  title_justify="left", title_style="bold")
+        for col, jj in (("user", "left"), ("account", "left"), ("個數", "right"), ("原因", "left")):
+            t.add_column(col, justify=jj, no_wrap=True)
         for (u, ac, rs), n in sorted(by.items(), key=lambda x: -x[1]):
-            print(f"  {u:<12}{ac:<15}{n:>3} 個  {rs}")
-    print("\n⚠️ 模擬是推算：之後有優先序更高的 job 送進來就會排到前面；跑滿上限那個通常偏晚、照過去那個可能偏早。")
+            t.add_row(u, ac, str(n), Text(rs, "dim"), style=me_style if u == a.user else None)
+        con.print(t)
+    con.print(Text("⚠ 模擬是推算：之後有優先序更高的 job 送進來就會排到前面；跑滿上限那個通常偏晚、照過去那個可能偏早。",
+                   "dim italic"))
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--job", help="job id（預設：自己所有在 h200q 的 job）")
+    ap.add_argument("--user", default=os.environ.get("USER", ""))
+    ap.add_argument("--no-history", action="store_true", help="不查 sacct")
+    ap.add_argument("--watch", type=int, metavar="秒", help="每隔幾秒重畫一次（Ctrl-C 離開）")
+    a = ap.parse_args()
+    if not shutil.which("squeue") and os.path.isdir(SLURM_BIN):
+        os.environ["PATH"] = SLURM_BIN + ":" + os.environ.get("PATH", "")
+        os.environ.setdefault("SLURM_CONF", "/cm/shared/apps/slurm/etc/slurm/slurm.conf")
+    if not a.watch:
+        render(a)
+        return
+    try:
+        while True:
+            with con.capture() as cap:   # 先畫好再一次換掉，畫面不會閃
+                render(a)
+            con.clear()
+            con.print(cap.get(), end="")
+            con.print(Text(f"每 {a.watch} 秒更新；Ctrl-C 離開", "dim"))
+            time.sleep(a.watch)
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":
+    import signal
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)   # `| head` 時安靜結束
     main()
