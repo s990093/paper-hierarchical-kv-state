@@ -3,6 +3,7 @@
 子命令：
   probe    (a) 計數器解析度／更新週期＋用功率讀值驗證；(b) P_idle、P_dma、P_wait；(c) P_b 與每 chunk 重算能量
   sweep    (d) 32K（64 chunk）還原的 GPU 能量：只重算 R、只載入 L、動態 Cake C、固定切點 S(m)、Cake-E
+           --k-batch K：每個量測連續跑 K 次還原、一起量、再除以 K（F2 §2 預先登記的備案；計數器太慢時用。K=1＝原樣）
   sampler  背景取樣（另一個 process）：能量累加值、功率、GPU 使用率，寫 CSV，直到被 SIGTERM
 
 只 import harness（m7_model、m7_restore_harness），不改它。固定切點 S(m) 用 Restorer._load/_recompute 組出來。
@@ -160,6 +161,18 @@ class NvSmi:
             except Exception as e:   # 規則 7：查不到就記錯誤，不省略
                 m[k] = f"ERR {e!r}"
         return m
+
+
+def mean_info(infos):
+    """--k-batch：K 次還原的 info 合成一列。時間取平均；n_recompute、meet 取中位數（動態 Cake 每次可能不同），
+    n_load＝總 chunk 數 − n_recompute。只有一次時原樣回傳（K=1＝MI300X 的寫法）。"""
+    if len(infos) == 1:
+        return dict(infos[0])
+    n_tot = infos[0]["n_recompute"] + infos[0]["n_load"]
+    nr = int(round(statistics.median([x["n_recompute"] for x in infos])))
+    out = {k: statistics.fmean([x[k] for x in infos]) for k in ("t_restore", "t_rline", "t_lline")}
+    out.update(n_recompute=nr, n_load=n_tot - nr, meet=int(round(statistics.median([x["meet"] for x in infos]))))
+    return out
 
 
 def make_smi():
@@ -477,7 +490,8 @@ def sweep(a):
 
     o = Out(os.path.join(RD, "f2_sweep.csv"),
             ["rep", "tier", "read_GiBps", "mode", "m", "secs", "E_J", "P_W", "t_restore", "t_rline", "t_lline",
-             "n_recompute", "n_load", "meet", "kv_bad", "gap_s", "order_idx"])
+             "n_recompute", "n_load", "meet", "kv_bad", "gap_s", "order_idx",
+             "k_batch", "secs_batch", "E_J_batch", "meet_min", "meet_max"])   # 後五欄 2026-10-16 加（--k-batch）
 
     def verify():
         bad = 0
@@ -512,37 +526,48 @@ def sweep(a):
         return dict(t_restore=time.perf_counter() - t0, t_rline=tt.get("r", 0.0), t_lline=tt.get("l", 0.0),
                     n_recompute=m, n_load=n - m, meet=m)
 
-    def one(rep, tname, gib, mode, m, order_idx):
+    def restore_once(mode, tier, m):
+        if mode == "R":
+            rec = rs.restore(ids, n, host, [None] * n, "compute_only")
+            return dict(t_restore=rec["t_restore"], t_rline=rec["t_recompute"], t_lline=0.0,
+                        n_recompute=n, n_load=0, meet=n)
+        if mode == "L":
+            rec = rs.restore(ids, n, host, [tier] * n, "load_only")
+            return dict(t_restore=rec["t_restore"], t_rline=rec["t_recompute"], t_lline=rec["t_load"],
+                        n_recompute=rec["n_recompute"], n_load=rec["n_load_cpu"] + rec["n_load_ssd"],
+                        meet=rec["meet"])
+        if mode == "C":
+            rec = rs.restore(ids, n, host, [tier] * n, "cake")
+            return dict(t_restore=rec["t_restore"], t_rline=rec["t_recompute"], t_lline=rec["t_load"],
+                        n_recompute=rec["n_recompute"], n_load=rec["n_load_cpu"] + rec["n_load_ssd"],
+                        meet=rec["meet"])
+        return split_restore(tier, m)   # S / CE / SMEET：固定切點
+
+    def one(rep, tname, gib, mode, m, order_idx, k=None):
+        # --k-batch（2026-10-16，平台 C：NVML 的能量計數器約 100 ms 才更新）：K 次還原連續跑、一起量、再除以 K（F2 §2 第 42 行）。
+        # K 次之間不清零：每次還原都把 64 個 chunk 全部重寫（載入寫主機的位元組、重算寫同樣的 KV），做的事一樣；
+        # 清零（4 GiB memset）放進量測窗會多算能量。第 0 輪的逐 chunk 驗證在第 K 次之後做。
+        # 寫出的 secs、E_J、t_*＝每次還原的平均；secs_batch、E_J_batch＝整段。K=1 時和 MI300X 的寫法完全相同。
+        k = a.k_batch if k is None else k
         km.kv[:, :, :, :n * CHUNK].zero_()
         torch.cuda.synchronize()
         time.sleep(a.gap)
         tier = Tier(tname, read_Bps=gib * GiB, write_Bps=gib * GiB, c_s=0.0) if gib else None
+        infos = []
         with Win(smi) as w:
-            if mode == "R":
-                rec = rs.restore(ids, n, host, [None] * n, "compute_only")
-                info = dict(t_restore=rec["t_restore"], t_rline=rec["t_recompute"], t_lline=0.0,
-                            n_recompute=n, n_load=0, meet=n)
-            elif mode == "L":
-                rec = rs.restore(ids, n, host, [tier] * n, "load_only")
-                info = dict(t_restore=rec["t_restore"], t_rline=rec["t_recompute"], t_lline=rec["t_load"],
-                            n_recompute=rec["n_recompute"], n_load=rec["n_load_cpu"] + rec["n_load_ssd"],
-                            meet=rec["meet"])
-            elif mode == "C":
-                rec = rs.restore(ids, n, host, [tier] * n, "cake")
-                info = dict(t_restore=rec["t_restore"], t_rline=rec["t_recompute"], t_lline=rec["t_load"],
-                            n_recompute=rec["n_recompute"], n_load=rec["n_load_cpu"] + rec["n_load_ssd"],
-                            meet=rec["meet"])
-            else:   # S / CE / SMEET：固定切點
-                info = split_restore(tier, m)
+            for _ in range(k):
+                infos.append(restore_once(mode, tier, m))
+        info = mean_info(infos)
         bad = verify() if (rep == 0 and a.verify) else ""
-        o.row(rep=rep, tier=tname, read_GiBps=gib or 0, mode=mode, m=info["meet"], secs=w.secs, E_J=w.E, P_W=w.P,
-              kv_bad=bad, gap_s=a.gap, order_idx=order_idx, **info)
+        o.row(rep=rep, tier=tname, read_GiBps=gib or 0, mode=mode, m=info["meet"], secs=w.secs / k, E_J=w.E / k, P_W=w.P,
+              kv_bad=bad, gap_s=a.gap, order_idx=order_idx, k_batch=k, secs_batch=w.secs, E_J_batch=w.E,
+              meet_min=min(x["meet"] for x in infos), meet_max=max(x["meet"] for x in infos), **info)
         return info
 
     # 暖機（不記）：每層各一次 Cake，加一次只重算
     for tname, gib in tiers:
-        one(-1, tname, gib, "C", None, -1)
-    one(-1, "-", 0, "R", None, -1)
+        one(-1, tname, gib, "C", None, -1, k=1)
+    one(-1, "-", 0, "R", None, -1, k=1)
 
     with SamplerProc(os.path.join(RD, "f2_sweep_power_trace.csv"), a.hz):
         for rep in range(a.reps):
@@ -597,6 +622,8 @@ def main():
     p.add_argument("--cake-e-from", default="", help="m9_f2_analyze.py cakee 寫的 f2_*cakee.csv；和 --cake-e 合併")
     p.add_argument("--verify", type=int, default=1)
     p.add_argument("--r-per-rep", type=int, default=2)
+    p.add_argument("--k-batch", type=int, default=1,
+                   help="sweep：每個量測連續跑 K 次還原、一起量、除以 K（F2 §2 第 42 行；K 只依 probe 的更新週期決定）")
     a = p.parse_args()
     {"probe": probe, "sweep": sweep, "sampler": sampler}[a.cmd](a)
 

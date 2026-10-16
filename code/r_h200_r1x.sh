@@ -14,6 +14,7 @@
 #   sbatch --job-name=r-h200-qwen3 --dependency=afterok:<r-h200-all>,afterany:<r-h200-rest> code/r_h200_r1x.sh --part qwen3
 #   make submit-r1x                      # 上面兩個一起送，自動接好 dependency
 #   bash code/r_h200_r1x.sh --part la --dry-run | --list ；sbatch ... --part la --from F2-sweep（接著跑）
+#   sbatch ... --part la --from F2-gate --until F2-final   （只跑其中一段：跑完 --until 那一步就停）
 #
 #   --part la     第 1 輪的 LongAlpaca-7B（正確性、C1 f(i)、vLLM f(i)）＋F2 能耗 κ（NVML 版：probe→gate→cakee→sweep→final，
 #                 再用 LongAlpaca 補一次 sweep）。和 r-h200-rest 平行跑（另一張卡）。
@@ -27,6 +28,8 @@
 #   - vLLM：MI300X 的 m7_vllm_f.py 用的是 tiara venv 的 vLLM 0.19.1；這裡只有 0.28.0。
 #   - F2：amdsmi → NVML（code/m9_f2_energy.py 的 NvSmi）。F2 §2.3 事先寫的計數器檢查（更新週期 ≤ 最短還原的 5%、≥10 s 區段
 #     ΔE/Δt 和功率讀值差 ≤5%）在 MI300X 上是看完 probe 手動判的；這裡寫成 m9_f2_analyze.py gate，沒過就停（規則 2）。
+#     10/16 job 20555 的 F2-gate 沒過：NVML 能量計數器約 100 ms 才更新（最短還原 104 ms）。使用者決定照預先登記的備案
+#     「K 次還原一起量」（F2 §2 第 42 行），K=21（照 probe 的更新週期最大值算），**只做 Llama**（LongAlpaca 補充 sweep 不做）。
 #     Cake-E 的切點由 cakee 依 H200 的 probe 與 H200 的 C1 重算（MI300X 是 nfs=33；LongAlpaca nfs=60），用 --cake-e-from 帶進 sweep。
 #   - F2 的 f(i)：Llama 用 R2 的 $M7_RES/calib_c1.csv（MI300X 用第一階段的 C1）；LongAlpaca 用這支剛量的 C1，chunk 256 MiB。
 #   - 沒有 MI300X 第一版 vllmf（相減法）：程式沒有留下。CPU 的模擬（r1-sim、m7_round1_analyze）之後在 head node 做。
@@ -35,14 +38,15 @@
 # =============================================================================
 set -uo pipefail
 
-DRY=0; LIST=0; FROM=""; PART=""
+DRY=0; LIST=0; FROM=""; UNTIL=""; DONE=0; PART=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --part) PART="$2"; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     --list) LIST=1; DRY=1; shift ;;
     --from) FROM="$2"; shift 2 ;;
-    -h|--help) sed -n '2,32p' "$0"; exit 0 ;;
+    --until) UNTIL="$2"; shift 2 ;;
+    -h|--help) sed -n '2,36p' "$0"; exit 0 ;;
     *) echo "不認得的參數：$1（--help 看用法）" >&2; exit 2 ;;
   esac
 done
@@ -74,6 +78,13 @@ LA=$HF_HOME/hub/models--Yukang--LongAlpaca-7B/snapshots/$LA_REV
 QM=$HF_HOME/hub/models--Qwen--Qwen3-30B-A3B-Instruct-2507/snapshots/$QM_REV
 QM_NEED_GIB=58          # MI300X 上 du 的大小（models.tsv）；code/h200_dl_model.py 下載前檢查配額
 QUOTA_MARGIN_GIB=15     # 下載完 lab 至少還要剩這麼多
+# F2 的 K（K 次還原連續跑、一起量、再除以 K；F2 §2 第 42 行）。只依 probe 的計數器更新週期決定，不看任何還原結果：
+# 10/16 probe 20261016-090154-m7h-f2-probe 的更新週期最大 105.14 ms、最短還原（預測）104.1 ms → ceil(105.14 ÷ (5% × 104.1)) = 21。
+# 使用者 10/16 選「K=21，只做 Llama」。MI300X 是 K=1（2 ms 的計數器）。gate 用同一個 K 判門檻（5% × K × 最短還原）
+F2_K=21
+# probe 的 e_rec（每個位置的 chunk 背靠背重算 k_rec 次一起量；κ_E 用）同一條 5% 規則：最短的窗（chunk 0，H200 C1 f(0)＝17.8 ms）
+# 要 ≥ 105.14 ms ÷ 5% ＝ 2.103 s → k_rec ＝ ceil(2.103 ÷ 0.0178) ＝ 119（MI300X 是 20）。使用者 10/16 選「重跑 probe，k_rec=119」
+F2_KREC=119
 
 # ---- 前置檢查（真的要跑時才擋）----------------------------------------------------------
 if [ "$DRY" = 0 ]; then
@@ -104,6 +115,7 @@ SEEN=""
 _gate() {
   local name=$1
   SEEN="$SEEN $name"
+  if [ "$DONE" = 1 ]; then [ "$LIST" = 0 ] && echo "[skip] $name（--until $UNTIL 之後）"; return 1; fi
   if [ "$STARTED" = 0 ]; then
     if [ "$name" = "$FROM" ]; then STARTED=1; else [ "$LIST" = 0 ] && echo "[skip] $name"; return 1; fi
   fi
@@ -112,6 +124,7 @@ _gate() {
 step() {    # step <名稱> <指令...>：失敗就停（規則 2）
   local name=$1; shift
   _gate "$name" || return 0
+  [ -n "$UNTIL" ] && [ "$name" = "$UNTIL" ] && DONE=1    # 這一步跑完（或印完）之後的都跳過
   if [ "$LIST" = 1 ]; then echo "$name"; return 0; fi
   if [ "$DRY" = 1 ]; then printf '[%s] ' "$name"; printf '%q ' "$@"; echo; return 0; fi
   echo "=== $(date -Is) $name"
@@ -143,10 +156,10 @@ step LA-c1      m7run m7h-r1-c1-longalpaca7b env M7_MODEL_GLOB="$LA" python code
 step LA-vllmf2  m7run m7h-r1-vllmf2-longalpaca7b python code/m7_guard_run.py python code/m7_vllm_f.py "$LA" "$X/vllmf2_longalpaca7b.csv" --max-chunks 62
 
 # ===== F2 能耗 κ（MI300X：run_commands.tsv 10/10 的 f2-probe、f2-cakee、f2-sweep、f2-final、f2-sweep-la7b、f2-final-la7b）=====
-step F2-probe   idrun f2-probe m7h-f2-probe python code/m7_guard_run.py python code/m9_f2_energy.py probe --reps 3
-step F2-gate    idrun f2-gate  m7h-f2-gate  python code/m9_f2_analyze.py gate  --probe-run "$(rid f2-probe)" --c1 "$R/calib_c1.csv" --res "$F2R"
+step F2-probe   idrun f2-probe m7h-f2-probe python code/m7_guard_run.py python code/m9_f2_energy.py probe --reps 3 --k-rec "$F2_KREC"
+step F2-gate    idrun f2-gate  m7h-f2-gate  python code/m9_f2_analyze.py gate  --probe-run "$(rid f2-probe)" --c1 "$R/calib_c1.csv" --res "$F2R" --k-batch "$F2_K"
 step F2-cakee   idrun f2-cakee m7h-f2-cakee python code/m9_f2_analyze.py cakee --probe-run "$(rid f2-probe)" --c1 "$R/calib_c1.csv" --res "$F2R"
-step F2-sweep   idrun f2-sweep m7h-f2-sweep python code/m7_guard_run.py python code/m9_f2_energy.py sweep --reps 5 --seed 21 --cake-e-from "$F2R/f2_cakee.csv"
+step F2-sweep   idrun f2-sweep m7h-f2-sweep python code/m7_guard_run.py python code/m9_f2_energy.py sweep --reps 5 --seed 21 --cake-e-from "$F2R/f2_cakee.csv" --k-batch "$F2_K"
 step F2-final   idrun f2-final m7h-f2-final python code/m9_f2_analyze.py final --probe-run "$(rid f2-probe)" --sweep-runs "$(rid f2-sweep)" --c1 "$R/calib_c1.csv" --res "$F2R"
 # LongAlpaca 補充（不影響判定，F2 §2.2）：Cake-E 切點用 Llama 的 P_b／P_wait＋LongAlpaca 的 f(i)（MI300X 同樣做法，§4.8）
 step F2-cakee-la7b idrun f2-cakee-la7b m7h-f2-cakee-la7b python code/m9_f2_analyze.py cakee --tag la7b --probe-run "$(rid f2-probe)" --c1 "$X/calib_c1_longalpaca7b.csv" --chunk-mib 256 --res "$F2R"
@@ -165,6 +178,9 @@ step QM-c1-eager   m7run m7h-r1-c1-qwen3-30b-a3b-eager   env M7_MODEL_GLOB="$QM"
 step QM-vllmf2     m7run m7h-r1-vllmf2-qwen3-30b-a3b python code/m7_guard_run.py python code/m7_vllm_f.py "$QM" "$X/vllmf2_qwen3_30b_a3b.csv"
 fi
 
+if [ -n "$UNTIL" ] && [ "$DONE" = 0 ] && [ "$STARTED" = 1 ]; then
+  echo "[r_h200_r1x] 沒有叫做 '$UNTIL' 的步驟（--until；--part $PART）。可用的：$SEEN" >&2; exit 2
+fi
 if [ "$STARTED" = 0 ]; then
   echo "[r_h200_r1x] 沒有叫做 '$FROM' 的步驟（--part $PART）。可用的：$SEEN" >&2; exit 2
 fi

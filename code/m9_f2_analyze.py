@@ -7,6 +7,7 @@
   python code/m9_f2_analyze.py gate   --probe-run <run_id> [--c1 ...]
       （2026-10-16，平台 C）sweep 之前檢查計數器能不能用（F2 §2.3 事先寫的兩條）：更新週期 ≤ 最短還原的 5%、
       ≥10 s 的區段 ΔE/Δt 和功率讀值差 ≤5%；另外核對 NVML 和 torch 是同一張卡。沒過 exit 1（停下來回報）
+      --k-batch K：sweep 要用的 K（K 次還原一起量）。門檻變成 5% × K × 最短還原（F2 §2 第 42 行的備案）
   其他平台：--res（輸出目錄）、--c1（f(i) 的 C1 CSV）、--chunk-mib（每 chunk MiB；LongAlpaca 256），預設＝MI300X 的值
 
 所有輸出列都有 run_id（本次分析的 run）、src_run（原始量測的 run）與 ts。
@@ -16,6 +17,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import math
 import os
 import statistics
 import sys
@@ -147,7 +149,8 @@ def gate(a):
     """F2 §2.3 事先寫的兩條，在 sweep 之前判（只用 probe 與 C1 的 f(i)，不看任何還原結果）：
       1. 計數器更新週期（中位數）≤ 最短一次還原的 5%。最短還原＝各層用 f(i) 與頻寬算的 Cake 時間 max(R(m), (n−m)ℓ)
          的最小值（MI300X 報告寫「最短的一次還原約 110 ms」，同一個算法給 cpu35 約 107 ms）。超過時預先登記要改成
-         「K 次一起量」，這支 sweep 沒有實作 → 停下來回報，不自己加。
+         「K 次一起量」（2026-10-16 sweep 加了 --k-batch；K 由使用者依 probe 的更新週期決定，gate 用 --k-batch 帶進來，
+         門檻＝5% × K × 最短還原；另外記下照中位數、最大值各自需要的 K）。
       2. 同一段 ≥10 s 的區段，ΔE/Δt 和功率讀值的平均差 ≤5%（MI300X：10–30 s 區段差 0.23–0.69%）。
     另外：NVML 的 bdf 和 torch 的 PCI id 要是同一張卡（規則 7）。"""
     P, erec, tch, val = probe_summary(a.probe_run)
@@ -161,9 +164,13 @@ def gate(a):
         tpred[t] = max(sum(f[:m]), (N - m) * ell)
     t_min = min(tpred.values())
     upd = c.get("update_period_ms_median")
+    K = a.k_batch
+    thr_ms = 0.05 * K * t_min * 1e3
+    k_need = {s_: (math.ceil(c[f"update_period_ms_{s_}"] / (0.05 * t_min * 1e3)) if c.get(f"update_period_ms_{s_}") else None)
+              for s_ in ("median", "max")}
     checks = {}
     checks["counter_changes"] = (c.get("n_changes") or 0) >= 2
-    checks["update_period_le_5pct"] = upd is not None and upd <= 0.05 * t_min * 1e3
+    checks["update_period_le_5pct"] = upd is not None and upd <= thr_ms
     long_ = [(ph, pc, pp, src, secs) for ph, pc, pp, src, secs in val if secs >= 10.0]
     diffs = [(ph, (pc - pp) / pp * 100, src, secs) for ph, pc, pp, src, secs in long_]
     checks["validation_rows_ge10s"] = len(diffs) > 0
@@ -173,12 +180,15 @@ def gate(a):
     ok = all(checks.values())
     out = writer("f2_gate.csv", ["src_run", "check", "ok", "value", "threshold", "note"])
     out(src_run=a.probe_run, check="update_period_le_5pct", ok=checks["update_period_le_5pct"], value=upd,
-        threshold=0.05 * t_min * 1e3, note=f"ms；最短還原（預測）{t_min * 1e3:.1f} ms @ {min(tpred, key=tpred.get)}；p90 {c.get('update_period_ms_p90')}")
+        threshold=thr_ms, note=f"ms；K={K}；最短還原（預測）{t_min * 1e3:.1f} ms @ {min(tpred, key=tpred.get)}；"
+                               f"p90 {c.get('update_period_ms_p90')}、max {c.get('update_period_ms_max')}；"
+                               f"需要的 K：中位數 {k_need['median']}、最大值 {k_need['max']}")
     out(src_run=a.probe_run, check="counter_changes", ok=checks["counter_changes"], value=c.get("n_changes"), threshold=2, note=f"res_uJ={c.get('res_uJ')}")
     for ph, d, src, secs in diffs:
         out(src_run=a.probe_run, check=f"validation_{ph}", ok=abs(d) <= 5.0, value=d, threshold=5.0, note=f"%；{src}；{secs:.1f} s")
     out(src_run=a.probe_run, check="same_gpu_nvml_torch", ok=checks["same_gpu_nvml_torch"], value=f"{meta.get('bdf')} | {meta.get('torch_pci')}", threshold="", note="")
-    summ = dict(ok=ok, checks=checks, t_pred_ms={k: v * 1e3 for k, v in tpred.items()}, update_period_ms_median=upd,
+    summ = dict(ok=ok, checks=checks, k_batch=K, k_needed=k_need, threshold_ms=thr_ms,
+                t_pred_ms={k: v * 1e3 for k, v in tpred.items()}, update_period_ms_median=upd,
                 validation=[dict(phase=ph, diff_pct=d, src=src, secs=secs) for ph, d, src, secs in diffs])
     json.dump(summ, open(os.path.join(RUNS, RID, "f2_gate.json"), "w"), indent=1, ensure_ascii=False)
     print("F2_GATE", json.dumps(summ, ensure_ascii=False), flush=True)
@@ -359,6 +369,7 @@ def final(a):
 
     summ = dict(P_b=Pb, P_wait=Pw, P_idle_model=Pidle, P_idle_bare=Pbare, P_dma=Pdma, ratio_b_wait=Pb / Pw,
                 ratio_b_idle=Pb / Pidle, cv_R=cv_R, n_R=len(R_E), kv_bad_rows=len(bad), n_rows=len(S),
+                k_batch=sorted({r.get("k_batch") or "1" for r in S}),   # --k-batch（MI300X 的 sweep 沒有這欄＝1）
                 verdicts=overall)
     json.dump(summ, open(os.path.join(RUNS, RID, "f2_final_summary.json"), "w"), indent=1, ensure_ascii=False)
     print(json.dumps(summ, ensure_ascii=False, indent=1))
@@ -375,6 +386,7 @@ def main():
     p.add_argument("--res", default=RES, help="輸出目錄（預設 results/m9_followup＝MI300X）")
     p.add_argument("--c1", default=C1, help="f(i) 的 C1 CSV（預設 MI300X 第一階段的 calib_c1.csv）")
     p.add_argument("--chunk-mib", type=int, default=CHUNK_MIB, help="每 chunk MiB（Llama 64；LongAlpaca 256）")
+    p.add_argument("--k-batch", type=int, default=1, help="gate：sweep 用的 K（門檻＝5%% × K × 最短還原）")
     a = p.parse_args()
     TAG, RES, C1, CHUNK_MIB = a.tag, a.res, a.c1, a.chunk_mib
     os.makedirs(os.path.join(RUNS, RID), exist_ok=True)

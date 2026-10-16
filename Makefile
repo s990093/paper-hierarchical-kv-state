@@ -42,8 +42,9 @@ JOBNAME = r-h200-all
 RESTNAME = r-h200-rest
 LAF2NAME = r-h200-la-f2
 QWNAME = r-h200-qwen3
+F2NAME = r-h200-f2
 
-.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
+.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x submit-f2 test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
 
 help:
 	@echo "H200（在 repo 根目錄、head node 上用）"
@@ -60,6 +61,7 @@ help:
 	@echo "  make submit-rest   送第一階段其餘的實驗（code/r_h200_rest.sh）：接在 $(JOBNAME) 後面（afterok），它失敗就自動撤回"
 	@echo "  make submit-r1x    送第 1 輪的 LongAlpaca＋F2 能耗（$(LAF2NAME)，接在 $(JOBNAME) 後面、和 $(RESTNAME) 平行）"
 	@echo "                     與 Qwen3-30B-A3B（$(QWNAME)，等 $(RESTNAME) 跑完：D2 tier50 會暫寫約 35 GB 到 /work）"
+	@echo "  make submit-f2     F2 能耗（K=21 次還原一起量，只做 Llama）：probe（k_rec 119）→ gate → cakee → sweep → final（$(F2NAME)，10 小時）"
 	@echo "  make cancel JOB=<id>  撤回"
 	@echo "  make probe         只送 R0 硬體報告（1 小時）"
 	@echo "  make dry-run       印出 R1–R3 每一步的指令（不用 GPU）"
@@ -153,6 +155,17 @@ submit-r1x:
 	sbatch --job-name=$(LAF2NAME) --time=04:00:00 $$d1 code/r_h200_r1x.sh --part la; \
 	echo "$(QWNAME)：$${d2:-（沒有排隊中的 $(JOBNAME)／$(RESTNAME)：直接送，下載前檢查配額）}"; \
 	sbatch --job-name=$(QWNAME) --time=05:00:00 $$d2 code/r_h200_r1x.sh --part qwen3
+
+# 10/16：F2-gate 沒過（NVML 計數器約 100 ms 才更新）→ 使用者選「K=21，只做 Llama」、「重跑 probe，k_rec=119」。
+# LongAlpaca 的 ok／C1／vllmf2 在 job 20555 已經跑完，這裡從 F2-probe 跑到 F2-final 就停（--until）
+F2_TIME ?= 10:00:00
+submit-f2:
+	@j=$$(squeue -h -u $(USER) -n $(F2NAME) -o '%i %T'); \
+	if [ -n "$$j" ]; then echo "已經有 $(F2NAME)：$$j。要重送先 make cancel JOB=<id>"; exit 1; fi
+	@git diff --quiet && git diff --cached --quiet || \
+	  { echo "有未 commit 的改動：job 開跑時才讀 repo，會跑到沒 commit 的版本。先 commit 再送"; git status --short; exit 1; }
+	@sbatch --test-only --job-name=$(F2NAME) --time=$(F2_TIME) code/r_h200_r1x.sh --part la --from F2-probe --until F2-final 2>&1 | tail -1
+	sbatch --job-name=$(F2NAME) --time=$(F2_TIME) code/r_h200_r1x.sh --part la --from F2-probe --until F2-final
 
 cancel:
 	@[ -n "$(JOB)" ] || { echo "用法：make cancel JOB=<job id>（make status 看 id）"; exit 1; }
