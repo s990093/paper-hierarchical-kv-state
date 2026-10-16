@@ -33,6 +33,7 @@
   - Qwen GPU 忙：重算線只算 1–2 個 block，E0 時 64.5 ms，INT4 時變 144.7 ms——被反量化拖慢約 80 ms。
   - 還原中每個 block 的反量化（Llama INT4 忙約 1.8 ms、Qwen 約 1.0 ms）比單獨量（冒煙，零點幾 ms）大很多。
 - GPU 忙時更嚴重：反量化和背景負載也在搶（FP8 反量化閒 → 忙變 2–3 倍）。前作 ShadowServe 講的是同一件事（P07 §4）。
+- **「整數跳動」**（10/16 07:1xZ 拆 33a 的逐次資料）：Qwen INT4、GPU 忙、真實 CPU 層 30 次還原裡，重算 1 塊的 1 次是 85 ms，重算 2 塊的 29 次是 146 ms；兩種情況載入線都在約 84 ms 做完。也就是反量化讓載入線慢一點，重算線就多開一個 512 token 的 block（GPU 忙時要約 60 ms），大家等它。Qwen・忙慢掉的約 80 ms 裡，約 60 ms 是這個。Llama・忙則兩邊都重算 2 塊，是重算線本身被拖慢（163 → 188 ms）。
 
 ### 3. 已經做了什麼
 
@@ -41,6 +42,8 @@
   - 冒煙（每格 1 次，scratch，不是結果）：FP8 每個 block，Llama 閒 0.24 → 0.09 ms、忙 0.58 → 0.10 ms；Qwen 閒 0.11 → 0.08 ms、忙 0.16 → 0.14 ms（run `20261016-034530-m10-sweep-smoke-parts-qwen`、`-034701-…-llama`）。
 - 寫進 08 §6 第 1 點，要老師決定「速度不輸」要不要管真實 CPU 層（到目前為止，所有「速度不輸」沒過的格子都在這一層）。
 - 前作整理：P07 §4（QServe、BitDecoding、FLUTE、vLLM FP8 Marlin、Petit、ShadowServe、PackKV）。
+- **修掉一個 bug**（10/16 07:1xZ）：融合 kernel 寫進「整個 KV 緩衝的視圖」時，位址用 32 位元整數算；Llama 32K 的緩衝最遠的偏移約 2.18e9，超過 2^31−1 → 繞回，數值寫錯而且寫到緩衝前面（CPU 直譯模式重現：`code/m10_queue_mi300x/tests/dq_fast_offset_cpu_interp.py`）。只影響 Llama 的 fp8／int8／int4_token（KIVI 剛好在上限內）；還沒有任何計時用到它（42 還沒跑）。已改成 64 位元：CPU 上 5 種格式在 Llama 大小的緩衝裡全對、護欄乾淨；GPU 重驗逐位元相同（run `20261016-071948-m10-dqfast-selftest-gpu-i64`、`-072000-m10-dqfast-shapes-gpu-i64`）。
+- **登記了方法掃描**（09 §6.4，使用者 10/16「好加入」「找很多方法掃描」「hidden latency 可以測試」）：K 組（怎麼轉）、S 組（何時轉，藏延遲：邊搬邊拆、多個 block 一組、重算優先、最後一次拆）、G 組（切多細：256／128 token、預估會合）。海選 → 複賽，只報告。
 
 ### 4. 還不知道的
 

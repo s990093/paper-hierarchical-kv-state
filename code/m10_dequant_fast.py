@@ -49,7 +49,9 @@ def _dq_kernel(q_ptr, s_ptr, lut_ptr, o_ptr, R, T, H,
                D: tl.constexpr, IS_FP8: tl.constexpr, ROWS: tl.constexpr):
     """每個 program 處理 ROWS 列（一列＝一個 (層, K/V, head, token) 的 D 個值）。q 的最後一維連續；scale 用 stride（0＝廣播）。"""
     pid = tl.program_id(0)
-    r = pid * ROWS + tl.arange(0, ROWS)                  # 列號（攤平的 L×2×H×T）
+    # 列號（攤平的 L×2×H×T）。用 int64：寫進整個 KV 緩衝的視圖時，Llama 32K 的最遠偏移約 2.18e9 > 2^31−1（10/16 修，
+    # CPU 直譯模式重現過：int32 會繞回、寫到緩衝前面；tests/dq_fast_offset_cpu_interp.py）
+    r = (pid * ROWS + tl.arange(0, ROWS)).to(tl.int64)
     d = tl.arange(0, D)
     mask = r < R
     t = r % T
@@ -79,7 +81,7 @@ def _dq4_kernel(q_ptr, s_ptr, z_ptr, o_ptr, R, T, H, C,
     """INT4（兩個值一個 byte）→ BF16。列＝(層, 半邊 c, head, token)，C＝這次處理幾個半邊（int4_token 2 個、KIVI 一次 1 個）。
     scale／zero 的位置：(t // TDIV, d // DDIV)——KIVI 的 K 沿 token 每 32 個一組（TDIV＝32），V 沿 channel 每 32 個一組（DDIV＝32）。"""
     pid = tl.program_id(0)
-    r = pid * ROWS + tl.arange(0, ROWS)
+    r = (pid * ROWS + tl.arange(0, ROWS)).to(tl.int64)   # int64：同 _dq_kernel 的說明
     d = tl.arange(0, D)
     mask = r < R
     t = r % T
