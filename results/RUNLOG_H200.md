@@ -804,3 +804,9 @@ MI300X 的做法是判準照字面讀，判準本身有問題就照字面判、�
   `step2_llama_int4` 和 MI300X commit 的檔**逐一相同**（只差寫在 JSON 裡的輸入檔路徑）；路徑：2b 在 Qwen → K3 → INT4 → Step 2 在 Llama → K2，和 08 相同。
 - `r_h200_m10.sh --dry-run`（兩個 part）與 jobs.json 產生器：指令除了路徑以外和 MI300X 的 queue/10、20、21、30、33a、33b、33c 相同。
   和 MI300X 的差：GPU 忙用 `results/m7_write_policy_h200/busy_levels.json`（busy2＝duty 1.0）；Step 1 讀 `meets_fp8tier.json`（INT4 格子前的快照，MI300X 的 30 在 33a 之前跑、讀到的就是這個狀態）。
+
+### 送出（2026-10-17 07:0x +08:00）
+- `m10h-speed` **job 20701**（`--part speed`，24 h；`sbatch --test-only` 預估 10/17 16:02 開始）
+- `m10h-q-llama` **job 20702**、`m10h-q-qwen` **job 20703**（`--part quality`，各 40 h；`--dependency=afterok:20701 --kill-on-invalid-dep=yes`）
+- 送出時我們自己沒有其他 job（速度 job 不和自己的 job 同時跑）；lab 配額 1492G／1536G。
+- 指令：`make submit-m10` 的同一串（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch ...`）手動執行：工作目錄裡另一個工作階段正在改 `code/h200_queue.py`（排隊顯示用，job 不讀），make 的「有未 commit 的改動就不送」會擋下；其餘檢查（`h200_m10_gates.py code`／`params`）照跑、PASS。job 用的程式都在 commit `01296ac`。
