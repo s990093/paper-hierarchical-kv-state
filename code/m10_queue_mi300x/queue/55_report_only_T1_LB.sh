@@ -11,7 +11,7 @@ LB="LB-narrativeqa LB-qasper LB-multifieldqa_en LB-hotpotqa LB-2wikimqa LB-musiq
 jobs=[]
 for m,need in (("llama",42),("qwen",28)):
     G=fmt(m,"fp8"); g=G[4:]
-    q=f"python $REPO/code/m10_quality.py run --model {m} --params-file $P --fmt {G} --bws b32 --meets $OUT/speed_{m}/meets.json"
+    q=f"python $REPO/code/m10_quality.py run --model {m} --params-file $P --fmt {G} --bws b32 --meets $OUT/speed_{m}/meets_fp8tier.json"
     s1=f"--configs E0 E1 E1s E1sr E1s@fp8k0_{g} E1s@int8_token"
     for s in range(2):
         jobs.append(dict(name=f"s1-{m}-T1-s{s}", need_gb=need, cmd=f"m7run m10-s1-{m}-T1-s{s} {q} {s1} --modes A B --tasks T1 --n 180 --shard {s}/2 --out $OUT/quality/step1_{m}_T1_s{s}.csv"))

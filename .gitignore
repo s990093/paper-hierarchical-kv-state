@@ -71,3 +71,7 @@ gpucore.*
 
 # ── m10：逐次還原的 restores.csv 超過 1 MB，進 git 的是 .gz ─────────────────
 results/m10_precision_mi300x/speed_*/restores*.csv
+
+# ── m10 品質逐列 CSV（每個約 2 MB）：只進壓縮檔 .csv.gz；原檔留在磁碟給 analyze 的萬用字元用 ──
+results/m10_precision_mi300x/quality/*.csv
+results/m10_precision_mi300x/quality_sealed/*.csv

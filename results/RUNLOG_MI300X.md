@@ -470,6 +470,23 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **測試**：用假資料（真檔的列結構、分數全部換成亂數，沒有印出任何真值）把 analyze_step1 → report_bits step1 → analyze_2b → report_bits k3 → analyze_step2 整條跑過；route 的 6 種分支（擋→加題、加題後仍擋、都過、Llama 過 Qwen 沒過、都沒過、資料不全）在佇列的複本上逐一跑過；加題 stage 和 35 的順序乾跑過。
 - **另外**：圖 A 的資料註腳改成帶資料夾（`speed_qwen_regrid/summary_fp8.csv`），分得出是哪一次速度量測。
 
+### 10.8 Step 1（FP8 端點）＋ Step 2b（Qwen）判定（stage 30／31，2026-10-15 21:11Z → 10-16 03:45Z）
+
+- **run_id**：Llama `20261015-211144-m10-s1-llama-T24-s0`、`-211414-…-s1`、`-211645-…-s2`、`-232844-…-s3`、`-234327-…-s4`、`20261016-013939-…-s5`、`-015830-m10-s1-llama-T5`；Qwen `20261015-211259-m10-s1-qwen-T24-s0`、`-211529-…-s1`、`-232729-…-s2`、`-234212-…-s3`、`-234641-…-s4`、`20261016-014054-…-s5`、`-015945-m10-s1-qwen-T5`。14 個 process 全部 rc＝0。
+- **指令**：`jobs/queue/30_quality_step1.sh`（`m10_quality.py run … --configs E0 E1 E1s E1sr E1s@fp8k0_<g> E1s@int8_token --modes A B --bws b32 --meets speed_<m>/meets.json`，T2–T4 n＝180 分 6 片、T5 n＝60）；判定 `jobs/analyze_step1.sh`、`jobs/analyze_2b.sh qwen`（凍結的 `m10_analyze.py`）。
+- **產出檔**：`results/m10_precision_mi300x/quality/step1_<m>_*.csv`（＋gpu_guard）、`analysis/fp8/{quality_<m>_step1.json,_table.csv, decide_fp8.json, quality_qwen_step2b.json, k3_qwen.json, tables_step1_<m>.md, tables_decide_fp8.md, tables_k3_qwen.md}`、`figs/{A,C,D}_<m>_fp8_step1.png`。
+- **關鍵數字**（對 E0 的配對答對率差，百分點，95% CI）：
+  - Llama E1：A −0.5 [−1.1, +0.2]、B・閒 −0.2、B・忙 −0.5、B・閒→忙 −0.1；E1s、E1sr 相近 → **K1 成立**。
+  - Qwen E1：A −32.8 [−35.8, −30.0]、B・閒 −25.4、B・忙 −27.7、B・閒→忙 −26.4；E1s A −32.5、E1sr A −32.3 → 不過。T4 HotpotQA −71.7／−67.2、T5 −51.5。平均 KL 3.84（Llama 0.0035）。
+  - Qwen Step 2b：E1-K0 A +0.4 [−0.3, +1.1]（品質四種都過，但 CPU・忙速度 1.164 > 1.094 → 不過）；E1-INT8 A +0.2 [−0.5, +0.9]（品質、速度都過）→ **K3 成立**。
+  - 檢定力：Qwen E1 CI 半寬 2.9 > 1.5，`next_frozen_code`＝「先加題」；07 §9 的釐清（CI 上界 −30.0 < −2）→ 不擋，判「沒過」。
+- **判定流程**：FP8 階兩個模型都「不需要位置策略」（Llama K1、Qwen K3）→ 03 §2.5 第 2 步：INT4 端點。
+- **失敗與異常**：
+  1. 14 份品質 run 的 gpu_guard 都是 CONTAMINATED（自己同時開 5–7 個 process，互相看到）。品質分數保留、`latency_ms` 作廢（CLAUDE.md §3）。
+  2. **分流程式的 K3 分支寫錯**：`route_after_step1.py` 在 K3 成立時只把 35 → 45，沒有往 INT4。03:47:47Z 手動把 80／85／86 → 33a／33b／33c（`jobs/route_fix.log`），33a 在 03:49:02Z 開跑，GPU 沒有跑錯順序。程式已改。
+  3. 31z 冒煙測試：`m10_sweep.py screen` 兩個模型都失敗（`RecursionError`：`m10_codec_x.install()` 把 `m10_codec.encode` 換成分派版後，舊格式又呼叫 `C.encode` → 無限遞迴）。已修（存原本的函式），自測加「install 之後舊格式＝原本結果」→ 73／73 過（CPU）。stage 39 重跑冒煙；失敗會把 40–42 搬到 `hold/`，佇列照跑只報告的工作。
+- **另外加的 stage**：33bz（INT4 端點判完只調順序，見 08 §4）；`speed_<m>/meets_fp8tier.json`（33a 寫入前的會合點快照，45、55 改讀它）。
+
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
 
 **狀態**：程式寫好、CPU／GPU 自測通過；GPU 工作已排進佇列（31z 冒煙測試 → 主線關鍵段 → 40 試跑 → 41 海選 → 42）。**還沒有任何大掃描的數字。**
@@ -505,6 +522,13 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 有效頻寬約 0.4 TB/s〔算術〕，HBM 的一成不到。
 - run：`20261015-161226-m10-grid-fp8-llama`、`20261015-194150-m10-regrid-fp8-qwen`。
 
+### 11.2b 冒煙測試（stage 31z，10/16 03:45–03:49Z；scratch，數字不進 results）
+
+- parts 兩個模型都跑完（`20261016-034530-m10-sweep-smoke-parts-qwen`、`-034701-…-llama`，監控 CLEAN）。**融合反量化 vs 原寫法，真實 KV 逐 block 比對：Qwen 128／128、Llama 128／128 逐位元相同。**
+- screen 在第一個格式的編碼處失敗（10.8 第 3 點）；在那之前的載入模型、前填、attention 量、E0 打分都跑過。
+- dequant 自測（`-034851-m10-dqfast-smoke`）rc＝0。
+- CPU 上補測（GPU 在量時間，不能插工作）：放法 12 種 × 佔比 17 種 × 4 種格式 × 閒／忙的讀法 B 推算全部跑通（每個模型 1,632 格）；推算的全 FP8 會合點 Qwen 23／13、Llama 23／14（閒／忙），主線實測 23／14、24／14。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。
@@ -513,3 +537,4 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 41 海選。
 - 42 加速反量化後的 CPU 層速度格子。
 - 然後才是只報告的 55／60／70／75／INT4 封存。FP8 混合配置（35）不是關鍵段時，由 stage 31 改名成 45，排在大掃描後面。
+- **10/16 03:5xZ 實際順序**：33a INT4 速度格子（跑中）→ 33b INT4 端點 → 33bz 判定 → 33c INT4 混合配置（33bz 可能改成只跑一個模型或搬到 46）→ 39 重跑冒煙 → 40 試跑 → 41 海選 → 42 → 45 FP8 混合（只報告）→ 55 → 60 → 70 → 75 → 88。

@@ -1,0 +1,4 @@
+- **llama**：K1＝True、K1s＝False、模型過＝True（逐配置：{'E1': True, 'E1s': True, 'E1sr': True}；檢定力半寬過＝True、擋判定＝False）
+- **qwen**：K1＝False、K1s＝False、模型過＝False（逐配置：{'E1': False, 'E1s': False, 'E1sr': False}；檢定力半寬過＝False、擋判定＝False）
+- **下一步**：只在 Qwen 上做 Step 2b（E1-K0、E1-INT8）；過 → K3 停；不過 → Step 2 在 Qwen 上做（03 §1.1）
+- 凍結時的程式會說（07 §9 釐清前）：題數不夠（E1 對 E0 的 CI 半寬 > 1.5 個百分點）：先加題再判（凍結時的程式）

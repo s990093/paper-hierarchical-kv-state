@@ -11,3 +11,12 @@
 - 原 40／50／51 改名 80／85／86，排到最後。
 - `pool.py` 讀 `pool_skip.txt`（名稱前綴）略過判定流程走不到的封存工作。
 - `lib.sh` 打開 `M10_BUSY_TEARDOWN_PAUSE=1`。
+
+**10/15 21:5xZ 起**：31（Step 1 判完 → `route_after_step1.py` 只調順序）、31z（大掃描冒煙）、40／42（大掃描，09）。
+
+**10/16 03:4x–03:5xZ**（RUNLOG §10.8）：
+- Step 1 判完：Llama K1、Qwen K3 → 往 INT4。80／85／86 → 33a／33b／33c，35 → 45（`route_after_step1.py` 原本 K3 分支寫成「整個停」，已改）。
+- 33bz：INT4 端點判完 → `route_after_int4.py` 只調順序。
+- 39：修好 `m10_codec_x.install()` 的遞迴後重跑冒煙；失敗 → 40–42 搬到 `hold/`。
+- 45、55 改讀 `speed_<m>/meets_fp8tier.json`（33a 寫入前的會合點快照）。
+- `queue/31z_sweep_smoke.sh`、`33a_grid_int4.sh` 是跑時的版本（`.done`／`.running` 複製出來）。

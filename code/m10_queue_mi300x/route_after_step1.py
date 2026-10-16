@@ -3,7 +3,8 @@
 判定一律由凍結的 m10_analyze.py 算（analyze_step1.sh、analyze_2b.sh）；這支只讀 decide_fp8.json／k3_<m>.json：
   - 檢定力擋判定（power_blocks）→ 排 07 §9 寫死的加題（同題數、seed 20000 起、只加一次），加完再判一次（32z）。
   - 兩個模型都過 → 往 INT4：80／85／86 搬到 35 前面（33a／33b／33c）。
-  - 有模型沒過 → 在 decide 指定的模型上判 K3（Step 2b，資料已在 Step 1 那批）；K3 不成立 → stage 35 先跑那個模型（f8m_first.txt）。
+  - 有模型沒過 → 在 decide 指定的模型上判 K3（Step 2b，資料已在 Step 1 那批）；K3 成立 → 和「兩個都過」一樣往 INT4；
+    K3 不成立 → stage 35 先跑那個模型（f8m_first.txt）。
   - 其他（資料不全、程式出錯、加題後仍擋）→ 寫 NEEDS_HUMAN，不動佇列（35 照預設順序跑，GPU 不空著）。
 用法：route_after_step1.py [--after-addon]
 """
@@ -102,8 +103,14 @@ def main():
     if k3 is None:
         human(f"K3({m}) 判不出來（None）")
     if k3:
+        # 10/16 03:47Z 修：原本寫成「K3 → 整個停」，和 03 §2.4（K1／K1s／K3 任何一條成立 → 這一階結束，照 §2.5 往下一階）、
+        # §2.5 第 2 步（第 1 階不需要位置策略 → 第 2 階重跑端點，兩個模型）不一致。stage 31 那次是手動補搬的（RUNLOG 10.8）。
+        mv("80_grid_int4", "33a_grid_int4")
+        mv("85_quality_int4_endpoints", "33b_quality_int4_endpoints")
+        mv("86_quality_int4_mixed", "33c_quality_int4_mixed")
         mv("35_quality_fp8_mixed", "45_quality_fp8_mixed")
-        log("K3 成立 → 流程在 FP8 階停；FP8 混合配置變成只報告 → 排到大掃描（40–42）後面（使用者 10/15：主線關鍵段先、掃描在只報告的工作前）")
+        log("K3 成立 → FP8 這一階不需要位置策略 → 往 INT4（03 §2.5 第 2 步）：INT4 的格子、端點、混合配置排到最前面；"
+            "FP8 混合配置變成只報告 → 排到大掃描（40–42）後面")
         return
     open(os.path.join(J, "f8m_first.txt"), "w").write(m + "\n")
     log(f"K3 不成立 → Step 2 在 {m} 上做：stage 35 先跑 {m}（f8m_first.txt）")

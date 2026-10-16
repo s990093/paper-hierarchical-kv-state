@@ -47,6 +47,9 @@ HALF = ["bf16", "int8_token", "int4_token", "fp8_head", "fp8_token", "fp8e5_head
         "mxfp4", "nvfp4", "kivi4", "kivi2", "int4h_token", "int2h_g32"]
 NEW_FULL = ["fp8e5_head", "fp8e5_token", "mxfp4", "nvfp4", "int2_kivi", "int4h_token", "int2h_g32"]
 MIXED_EXAMPLES = ["kv-int8_token-int4_kivi", "kv-int4_kivi-int2_kivi"]
+# m10_codec 原本的函式：install() 會把 C.encode／C.decode 換成這裡的分派版，舊格式必須呼叫原本的，不能呼叫 C.encode（會無限遞迴；
+# 10/16 stage 31z 冒煙測試抓到）
+_C_ENCODE, _C_DECODE = C.encode, C.decode
 
 
 def is_new(fmt: str) -> bool:
@@ -229,7 +232,7 @@ def dec_half(p: dict, f: str, role: str, shape: tuple) -> torch.Tensor:
 # ---------------------------------------------------------------- 整個 block
 def encode(x: torch.Tensor, fmt: str) -> Enc:
     if not is_new(fmt):
-        return C.encode(x, fmt)
+        return _C_ENCODE(x, fmt)
     assert x.dim() == 5 and x.shape[1] == 2 and x.dtype == torch.bfloat16, (x.shape, x.dtype)
     kf, vf = halves(fmt)
     parts = {}
@@ -241,7 +244,7 @@ def encode(x: torch.Tensor, fmt: str) -> Enc:
 
 def decode(e: Enc, out: torch.Tensor | None = None) -> torch.Tensor:
     if not is_new(e.fmt):
-        return C.decode(e, out)
+        return _C_DECODE(e, out)
     L, _, H, T, D = e.shape
     kf, vf = halves(e.fmt)
     ys = []
@@ -287,6 +290,19 @@ def self_test(out_path=None, gpu=False) -> bool:
         a, b = C.encode(x, fmt), encode(x, fmt)
         check(f"old_passthrough[{fmt}]", all(torch.equal(a.parts[k], b.parts[k]) for k in a.parts)
               and torch.equal(C.decode(a), decode(b)))
+    # 1b. install() 之後舊格式仍然＝原本的結果（不遞迴）；測完還原
+    import m7_restore_harness as RH
+    saved = (C.encode, C.decode, RH.decode)
+    try:
+        install()
+        for fmt in C.FORMATS:
+            a, b = _C_ENCODE(x, fmt), C.encode(x, fmt)
+            check(f"installed_old[{fmt}]", all(torch.equal(a.parts[k], b.parts[k]) for k in a.parts)
+                  and torch.equal(_C_DECODE(a), C.decode(b)) and torch.equal(_C_DECODE(a), RH.decode(b)))
+        e = C.encode(x, "mxfp4")
+        check("installed_new[mxfp4]", e.fmt == "mxfp4" and torch.equal(RH.decode(e), decode(encode(x, "mxfp4"))))
+    finally:
+        C.encode, C.decode, RH.decode = saved
     # 2. 小工具
     u = torch.randint(0, 4, (3, 5, 128), dtype=torch.uint8)
     check("pack2_roundtrip", torch.equal(_unpack2(_pack2(u)), u))

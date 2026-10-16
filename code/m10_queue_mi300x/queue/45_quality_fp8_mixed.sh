@@ -16,7 +16,7 @@ order=sorted((("qwen",24),("llama",32)), key=lambda x: x[0]!=first)
 print("[35] 先跑", order[0][0], flush=True)
 for m,need in order:
     G=fmt(m,"fp8")
-    base=f"python $REPO/code/m10_quality.py run --model {m} --params-file $P --fmt {G} --configs F25 M25 B25 R25 --modes A B --bws b32 --meets $OUT/speed_{m}/meets.json"
+    base=f"python $REPO/code/m10_quality.py run --model {m} --params-file $P --fmt {G} --configs F25 M25 B25 R25 --modes A B --bws b32 --meets $OUT/speed_{m}/meets_fp8tier.json"
     jobs+=[dict(name=f"f8m-{m}-T24-s{s}", need_gb=need, cmd=f"m7run m10-f8m-{m}-T24-s{s} {base} --tasks T2 T3 T4 --n 180 --shard {s}/6 --out $OUT/quality_sealed/fp8mix_{m}_T24_s{s}.csv") for s in range(6)]
     jobs.append(dict(name=f"f8m-{m}-T5", need_gb=need, cmd=f"m7run m10-f8m-{m}-T5 {base} --tasks T5 --n 60 --out $OUT/quality_sealed/fp8mix_{m}_T5.csv"))
 json.dump(jobs,open("jobs_35.json","w"),indent=1)
