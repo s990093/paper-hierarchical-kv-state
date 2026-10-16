@@ -708,7 +708,7 @@ MI300X 的做法是判準照字面讀，判準本身有問題就照字面判、�
 | M7b 08 消融（模擬＋GPU） | 完成 |
 | M7c 第 1 輪（Llama、LongAlpaca、Qwen3；MI300X 存活設定上 GPU） | 完成；**H200 自己的 3 個存活設定在 job 20660 上 GPU（執行中）** |
 | M7d D1、D2、D3、D4、D5、D6 | 完成（D6 用 H200 的 F3 工作 A） |
-| M7d **D7**（OS：page cache、dirty writeback、反向讀、SSD 掉崖；不用 GPU） | **沒跑**。量的是真實儲存與 OS 本身，沒有限速層的版本；MI300X 寫了約 161 GiB，lab 配額現在剩 45 GiB（1491G／1536G）；要在 hgx-cn01 上量就得用 GPU job（h200q 不收純 CPU job） → 要問使用者 |
+| M7d **D7**（OS：page cache、dirty writeback、反向讀、SSD 掉崖；不用 GPU） | **NOT_MEASURED，不跑**（使用者 2026-10-16 22:3x：「D7 記 NOT_MEASURED 不跑」）。量的是真實儲存與 OS 本身，沒有限速層的版本；MI300X 寫了約 161 GiB，lab 配額剩 45 GiB（1491G／1536G）；要在 hgx-cn01 上量就得用 GPU job（h200q 不收純 CPU job） |
 | M7d D8 | 文獻與想法，沒有 run（run_commands.tsv 沒有 d8） |
 | M7e F1（開卸載變慢的原因） | 不適用：原因是 ROCm 的 attention 退回 TRITON_ATTN；H200 的 D2 沒有變慢（0.99–1.04×），H200 的 vLLM 用 FlashAttention 3 |
 | M7e F2 | 完成（K=21，只做 Llama） |
