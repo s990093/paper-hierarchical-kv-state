@@ -1,3 +1,4 @@
+# 10/16 13:5xZ 使用者：長 context 移到只報告的工作前面（原名 90_longctx_speed.sh；10 §6 補充）
 # 10_longctx_plan §3.4：64K、128K 的速度格子（主線 8 個配置；FP8 主線粒度＋INT4 KIVI；主線的 bw.json；2 launch × 5 rep；參考線 E0、E1）。
 # FP8 先跑（91／92 的讀法 B 要用它的參考線）。gpu_guard 不是 CLEAN 的格子不能用、要重量（CLAUDE.md §3）。
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh

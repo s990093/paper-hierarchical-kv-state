@@ -1,6 +1,6 @@
 """10_longctx_plan §3.3：長 context 的試跑工作與題數規則（事先寫死）。
   jobs-pilot：寫 jobs_91.json（每個模型 × 長度 1 個 process，每任務 1 題，正式的設定）。
-  plan      ：讀試跑每題的時間，照規則決定 n 與設定，寫 jobs_92.json、queue/92_longctx_screen.sh、results/m10_longctx_mi300x/screen_plan.json。
+  plan      ：讀試跑每題的時間，照規則決定 n 與設定，寫 jobs_92.json、queue/44c_longctx_screen.sh、results/m10_longctx_mi300x/screen_plan.json。
 規則：n ∈ {12, 9, 6, 3}（每任務每長度），估計牆鐘＝Σ_{模型,長度} 4 個任務 × n × 試跑單題時間 × 縮放 ÷ 3（同時 3 個 process）≤ 14 小時，
 取最大的 n。都超過 → 依序：拿掉讀法 B → 佔比只留 25%、50%、90% → 拿掉 ERR、AXE。縮放＝（放法數 × 佔比數 × 讀法數）÷（9 × 5 × 3），
 和 09 §4.1 一樣是「前向次數大約和組合數成正比」的近似（prefill、生成是固定成本，所以這個近似偏保守）。
@@ -116,19 +116,19 @@ def plan():
                            f"{RAW}/screen_{m}_{nb}_s{s}.csv.gz", f"m10-lc-screen-{m}-{nb}-s{s}")
                 jobs.append(dict(name=f"lcs-{m}-{nb}-s{s}", need_gb=NEED[(m, nb)], cmd=c))
     json.dump(jobs, open(f"{J}/jobs_92.json", "w"), indent=1)
-    open(f"{J}/queue/92_longctx_screen.sh", "w").write(f"""# 10_longctx_plan §3.3 正式海選；題數與設定由 longctx_plan_n.py 照試跑決定：{choice['label']}，n＝{choice['n']}，估計 {choice['est_h']} 小時
+    open(f"{J}/queue/44c_longctx_screen.sh", "w").write(f"""# 10_longctx_plan §3.3 正式海選；題數與設定由 longctx_plan_n.py 照試跑決定：{choice['label']}，n＝{choice['n']}，估計 {choice['est_h']} 小時
 source {J}/lib.sh
 set -uo pipefail
 pool {J}/jobs_92.json 4 || exit 1
 # 彙整（CPU）；出錯不擋（寫 NEEDS_HUMAN）
 if [ -f {REPO}/code/m10_longctx_analyze.py ]; then
-  python {REPO}/code/m10_longctx_analyze.py --raw {RAW} --out-dir {LC}/analysis > {J}/queue/92_analyze.out 2>&1 \\
-    || echo "longctx analyze 失敗（queue/92_analyze.out）" >> {J}/NEEDS_HUMAN
+  python {REPO}/code/m10_longctx_analyze.py --raw {RAW} --out-dir {LC}/analysis > {J}/queue/44c_analyze.out 2>&1 \\
+    || echo "longctx analyze 失敗（queue/44c_analyze.out）" >> {J}/NEEDS_HUMAN
 else
   echo "m10_longctx_analyze.py 還沒寫" >> {J}/NEEDS_HUMAN
 fi
 """)
-    print("[longctx plan] 寫了 queue/92_longctx_screen.sh", flush=True)
+    print("[longctx plan] 寫了 queue/44c_longctx_screen.sh", flush=True)
 
 
 if __name__ == "__main__":
