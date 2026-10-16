@@ -1,0 +1,46 @@
+{
+  "gpu": 0,
+  "started_clean": false,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_AT_START",
+  "intruders": [
+    {
+      "pid": 3552614,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T02:11:32.265103+00:00",
+      "peak_mib": -1,
+      "n": 129
+    },
+    {
+      "pid": 3553362,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T02:18:09.525812+00:00",
+      "peak_mib": -1,
+      "n": 203
+    },
+    {
+      "pid": 3564362,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T03:44:09.351212+00:00",
+      "peak_mib": -1,
+      "n": 1173
+    },
+    {
+      "pid": 3564681,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T03:44:09.351212+00:00",
+      "peak_mib": -1,
+      "n": 1173
+    },
+    {
+      "pid": 3566684,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T03:30:10.052781+00:00",
+      "peak_mib": -1,
+      "n": 1015
+    }
+  ],
+  "n_dirty_samples": 1172,
+  "paused_intervals": [],
+  "discarded_samples_overlapping_pause": 0
+}

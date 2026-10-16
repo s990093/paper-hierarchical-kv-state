@@ -1,0 +1,73 @@
+{
+ "what": "m10_codec_x 的 mxfp4／nvfp4 對 torchao 0.18.0 參考實作（torchao.prototype.mx_formats：to_mx FLOOR、nvfp4_quantize 兩層 scale）逐值比對；CPU；合成資料",
+ "date_utc": "2026-10-15T23:2x",
+ "torchao": "0.18.0（隔離安裝，未進 venv；cpp 擴充因 torch 版本不符未載入，只用 Python 參考實作）",
+ "script": "scratch xcheck_fp4.py（內容同 09 §2.1 描述）",
+ "results": {
+  "gauss|mxfp4": {
+   "n": 131072,
+   "n_diff": 0,
+   "frac_diff": 0.0,
+   "max_abs_diff": 0.0,
+   "rel_err_ours": 0.11444977670907974,
+   "rel_err_torchao": 0.11444977670907974
+  },
+  "gauss|nvfp4": {
+   "n": 131072,
+   "n_diff": 0,
+   "frac_diff": 0.0,
+   "max_abs_diff": 0.0,
+   "rel_err_ours": 0.09569798409938812,
+   "rel_err_torchao": 0.09569798409938812
+  },
+  "gauss_outliers|mxfp4": {
+   "n": 131072,
+   "n_diff": 0,
+   "frac_diff": 0.0,
+   "max_abs_diff": 0.0,
+   "rel_err_ours": 0.16463524103164673,
+   "rel_err_torchao": 0.16463524103164673
+  },
+  "gauss_outliers|nvfp4": {
+   "n": 131072,
+   "n_diff": 0,
+   "frac_diff": 0.0,
+   "max_abs_diff": 0.0,
+   "rel_err_ours": 0.08304952830076218,
+   "rel_err_torchao": 0.08304952830076218
+  },
+  "offset_channels|mxfp4": {
+   "n": 131072,
+   "n_diff": 0,
+   "frac_diff": 0.0,
+   "max_abs_diff": 0.0,
+   "rel_err_ours": 0.14789164066314697,
+   "rel_err_torchao": 0.14789164066314697
+  },
+  "offset_channels|nvfp4": {
+   "n": 131072,
+   "n_diff": 0,
+   "frac_diff": 0.0,
+   "max_abs_diff": 0.0,
+   "rel_err_ours": 0.01924804225564003,
+   "rel_err_torchao": 0.01924804225564003
+  },
+  "tiny_and_zero|mxfp4": {
+   "n": 131072,
+   "n_diff": 0,
+   "frac_diff": 0.0,
+   "max_abs_diff": 0.0,
+   "rel_err_ours": 0.113878533244133,
+   "rel_err_torchao": 0.113878533244133
+  },
+  "tiny_and_zero|nvfp4": {
+   "n": 131072,
+   "n_diff": 65536,
+   "frac_diff": 0.5,
+   "max_abs_diff": NaN,
+   "rel_err_ours": 0.09519810229539871,
+   "rel_err_torchao": NaN
+  }
+ },
+ "note": "tiny_and_zero|nvfp4 的 65,536 個不同＝整半全 0 的那一半：torchao 算出 NaN（全域 scale 0 → 1/0），我們量成 0；另一半（極小值）逐值相同"
+}

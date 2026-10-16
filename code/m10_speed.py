@@ -13,6 +13,7 @@
   grid      §4.2：8 個配置（E0、E1、E1s、E1sr、F25、M25、B25、R25）× 頻寬 × GPU 狀態；每格另加 compute_only、
             load_only（E0、E1 的存法）兩條參考線；同一次重複裡配置順序隨機打散；
             --lengths 8192 16384：只有 E0、E1、B25、R25、GPU 閒（合成 token，時間和內容無關，Cake p.5）。
+  k0-verdict  不重跑：從 restores.csv 裡 --from-run 那次（grid）的 E0、E1 配對列算 K0（10/15 晚改動）
   summary   從 restores.csv 算每格的中位數、會合點分布、對只算／只載的比值 → summary.csv（不用 GPU）
 
 grid、k0 跑完另外寫（合併進）meets.json，給 m10_quality.py「讀法 B 重放」用（格式寫死）：
@@ -124,12 +125,21 @@ def layout(config: str, n: int, seed: int) -> list[bool]:
     return lp
 
 
+def restore_variant(default: bool = False) -> dict:
+    """09 §6.4 還原方法的變體（環境變數；預設全部＝原本）。M10_DQ_KERNEL 由 m10_dequant_fast.install 讀。"""
+    if default:
+        return dict(kernel="k1", sched="serial", group=1, prio=False, unit=512, meet="claim")
+    return dict(kernel=os.environ.get("M10_DQ_KERNEL", "k1"), sched=os.environ.get("M10_DQ_SCHED", "serial"),
+                group=int(os.environ.get("M10_DQ_GROUP", "1")), prio=os.environ.get("M10_DQ_PRIO") == "1",
+                unit=int(os.environ.get("M10_UNIT", "512")), meet=os.environ.get("M10_MEET", "claim"))
+
+
 # ====================================================================== GPU 端（子 process）
 class Busy:
     """背景 matmul（m7_busy.py）；duty＝0 時什麼都不做。"""
 
-    def __init__(self, duty: float):
-        self.duty, self.p = duty, None
+    def __init__(self, duty: float, watch=None):
+        self.duty, self.p, self.watch = duty, None, watch
 
     def __enter__(self):
         if self.duty > 0:
@@ -142,16 +152,30 @@ class Busy:
         return self
 
     def __exit__(self, *a):
-        if self.p:
+        if not self.p:
+            return False
+        if self.watch is None or os.environ.get("M10_BUSY_TEARDOWN_PAUSE") != "1":
             self.p.terminate()
             self.p.wait(30)
+            return False
+        # 2026-10-15 Qwen FP8 grid L0：m7_busy 結束、容器內 kfd 已關之後，amd-smi 仍列著它的 VRAM（同 09-15 vLLM 關閉那次）
+        # → 數量判斷誤報 1 筆「容器外行程」。收尾期間暫停取樣（區間寫進 gpu_guard JSON），等 amd-smi 連 2 次不再多出條目
+        # （最多 30 s）才恢復；真的外來行程那時還在的話，恢復後下一筆照樣抓到。
+        from gpu_guard import foreign_on
+        with self.watch.pause("m7_busy teardown"):
+            self.p.terminate()
+            self.p.wait(30)
+            t0, ok = time.time(), 0
+            while time.time() - t0 < 30 and ok < 2:
+                ok = 0 if any(x["pid"] == -1 for x in foreign_on(self.watch.gpu, self.watch.own_root)) else ok + 1
+                time.sleep(0.5)
         return False
 
 
 class Bench:
     """一個 process 一份：模型、合成 token、prefill 後的參考 KV、寫入時量好的 BF16／低精度主機副本。"""
 
-    def __init__(self, model: str, n_max: int, fmt: str, new_tokens: int, seed: int = 0):
+    def __init__(self, model: str, n_max: int, fmt: str, new_tokens: int, seed: int = 0, unit: int = 512):
         import torch
         os.environ["M7_MODEL_GLOB"] = model_glob(model)
         from m7_model import CHUNK, KVModel
@@ -166,12 +190,18 @@ class Bench:
                                  generator=g).to(self.km.device)
         self.n_max = n_max
         self.captured_n = None
+        self.unit = unit                               # 09 §6.4 G 組：還原單位（token）；512＝原本
+        self.k = 512 // unit
 
     # ---- 寫入（capture）：每個 block 存 BF16 與低精度兩份，量編碼與 D2H ----
     def capture(self, n: int):
         torch, km = self.torch, self.km
         from m10_codec import encode
-        km.prefill_chunked(self.ids[:n * self.CHUNK])
+        if self.unit == self.CHUNK:
+            km.prefill_chunked(self.ids[:n * self.CHUNK])
+        else:                                          # G 組：寫入時的 prefill 也用同樣的單位，重算＝參考才會逐位元相同
+            for s0 in range(0, n * self.CHUNK, self.unit):
+                km.forward_span(self.ids[s0:s0 + self.unit], s0)
         torch.cuda.synchronize()
         self.bf, self.lp, self.t_enc, self.t_d2h_bf, self.t_d2h_lp = [], [], [], [], []
         for i in range(n):
@@ -201,12 +231,21 @@ class Bench:
                 self.t_d2h_lp.append(e0.elapsed_time(e1) / 1e3)
         self.ref = km.kv[:, :, :, :n * self.CHUNK].clone()       # 驗證用（GPU）
         self.captured_n = n
+        if self.unit != self.CHUNK:                    # 每個 block 切成 k 段，各自連續、pinned（編碼仍是每 512 一個 block）
+            from m10_dequant_fast import split_enc
+            U = self.unit
+            self.bf_u = [h[:, :, :, j * U:(j + 1) * U].contiguous().pin_memory() for h in self.bf for j in range(self.k)]
+            self.lp_u = [x.pin() for e in self.lp for x in split_enc(e, U)] if self.fmt != "bf16" else []
 
     def expected_lp(self, i: int):
         from m10_codec import decode
+        if self.unit != self.CHUNK:
+            return decode(self.lp_u[i].to(self.km.device))
         return decode(self.lp[i].to(self.km.device))
 
     def host_for(self, lp_mask):
+        if self.unit != self.CHUNK:                    # 還原單位的清單（lp_mask 仍是每個 block 一格）
+            return [self.lp_u[u] if lp_mask[u // self.k] else self.bf_u[u] for u in range(len(lp_mask) * self.k)]
         return [self.lp[i] if m else self.bf[i] for i, m in enumerate(lp_mask)]
 
     def write_cost(self, lp_mask, tier_spec):
@@ -238,7 +277,7 @@ class Bench:
         km.kv[:, :, :, :n * self.CHUNK].zero_()
         torch.cuda.synchronize()
         t0 = time.perf_counter()
-        rec = rs.restore(self.ids, n, self.host_for(lp_mask), [tier] * n, mode)
+        rec = rs.restore(self.ids, n * self.k, self.host_for(lp_mask), [tier] * (n * self.k), mode)
         t_new, _ = rs.new_turn(self.ids[n * self.CHUNK:n * self.CHUNK + self.new_tokens], n * self.CHUNK)
         rec["ttft"] = time.perf_counter() - t0
         rec["t_new_turn"] = t_new
@@ -246,9 +285,10 @@ class Bench:
 
     def kv_bad(self, rec, n) -> int:
         bad = 0
+        U = self.unit
         for i, src, _, _ in rec["blocks"]:
-            v = self.km.chunk_view(i)
-            want = self.ref[:, :, :, i * self.CHUNK:(i + 1) * self.CHUNK] \
+            v = self.km.kv[:, :, :, i * U:(i + 1) * U]
+            want = self.ref[:, :, :, i * U:(i + 1) * U] \
                 if src in ("recompute", "load_bf16") else self.expected_lp(i)
             bad += int(not self.torch.equal(v, want))
         return bad
@@ -273,10 +313,22 @@ def _watcher(out_path):
 def worker(spec: dict):
     """一個子 process＝一次「重開」。spec 由外層 JSON 傳進來。"""
     import torch
+    # 大掃描（09）才用的開關，預設都關（主線的行為不變）：新格式（m10_codec_x）、融合的反量化 kernel（m10_dequant_fast）
+    if os.environ.get("M10_CODEC_X") == "1":
+        import m10_codec_x
+        m10_codec_x.install()
+    if os.environ.get("M10_DEQUANT_FAST") == "1":
+        import m10_dequant_fast
+        m10_dequant_fast.install()
     rng = random.Random(f"m10-speed|{spec['launch']}|{spec.get('seed', 0)}")
     lengths = spec["lengths"]
     n_max = max(lengths) // 512
-    bench = Bench(spec["model"], n_max, spec["fmt"], spec["new_tokens"])
+    rv = restore_variant()
+    bench = Bench(spec["model"], n_max, spec["fmt"], spec["new_tokens"], unit=rv["unit"])
+    if rv != restore_variant(default=True):            # 09 §6.4：還原方法的變體（預設全關＝原本）
+        bench.rs.set_options(unit=rv["unit"], sched=rv["sched"], group=rv["group"], compute_prio=rv["prio"],
+                             meet=rv["meet"])
+        print("[restore_variant]", rv, flush=True)
     rid = run_id()
     os.makedirs(spec["out_dir"], exist_ok=True)
     rf = open(os.path.join(spec["out_dir"], "restores.csv"), "a", newline="")
@@ -310,7 +362,7 @@ def worker(spec: dict):
             bench.restore(layout("E1", n, 0), tiers[0], mode, n)
         verified = set()
         for st in st_here:
-            with Busy(st["duty"]) as busy:
+            with Busy(st["duty"], watch) as busy:
                 if busy.p:
                     busy_pid.add(busy.p.pid)
                 for rep in range(spec["reps"]):
@@ -353,7 +405,7 @@ def worker(spec: dict):
                             for i, s, t_s, t_e in rec["blocks"]:
                                 bw_.writerow(dict(run_id=rid, launch=spec["launch"], rep=rep, length=length,
                                                   bw_name=tier["name"], gpu_state=st["name"], config=cfg, mode=mode,
-                                                  block=i, stored_dtype=spec["fmt"] if mask[i] else "bf16", source=s,
+                                                  block=i, stored_dtype=spec["fmt"] if mask[i // bench.k] else "bf16", source=s,
                                                   t_start=round(t_s, 6), t_end=round(t_e, 6)))
                         rf.flush()
                         bf.flush()
@@ -390,10 +442,10 @@ def run_launches(a, configs, refs, lengths):
     spec = dict(model=a.model, fmt=a.fmt, new_tokens=a.new_tokens, lengths=lengths, main_length=a.main_length,
                 configs=configs, refs=refs, tiers=load_tiers(a), gpu_states=load_states(a), reps=a.reps,
                 out_dir=a.out_dir, blocks_out=a.blocks_out, verify=not a.no_verify)
-    json.dump({**spec, "argv": sys.argv, "run_id": run_id()}, open(os.path.join(a.out_dir, f"spec_{a.cmd}.json"), "w"),
-              indent=1, ensure_ascii=False)
+    json.dump({**spec, "argv": sys.argv, "run_id": run_id(), "restore_variant": restore_variant()},
+              open(os.path.join(a.out_dir, f"spec_{a.cmd}.json"), "w"), indent=1, ensure_ascii=False)
     for launch in range(a.launches):
-        s = dict(spec, launch=launch)
+        s = dict(spec, launch=launch + getattr(a, "launch0", 0))
         r = subprocess.run([sys.executable, os.path.abspath(__file__), "_worker", json.dumps(s)])
         if r.returncode != 0:
             raise SystemExit(f"launch {launch} 失敗（exit {r.returncode}）；照規則 2 停下來")
@@ -470,6 +522,20 @@ def cmd_k0(a):
     run_launches(a, ["E0", "E1"], [], [a.main_length])
     rows = [r for r in _rows(os.path.join(a.out_dir, "restores.csv")) if r["run_id"] == run_id()]
     write_meets(a, rows)
+    k0_verdict(a, rows, run_id())
+
+
+def cmd_k0_verdict(a):
+    """不重跑：從已經寫好的 restores.csv（例如 grid 那次）取 --from-run 的 E0、E1 列，照同一個判準算 K0。
+    grid 裡同一次重複（launch, rep, 頻寬, GPU 狀態）的 E0、E1 就是配對（順序隨機打散）。10/15 晚改動，03 開頭。"""
+    rows = [r for r in _rows(os.path.join(a.out_dir, "restores.csv"))
+            if r["run_id"] == a.from_run and r["config"] in ("E0", "E1") and int(r["length"]) == a.main_length]
+    if not rows:
+        raise SystemExit(f"restores.csv 裡沒有 run_id={a.from_run} 的 E0／E1 列")
+    k0_verdict(a, rows, a.from_run)
+
+
+def k0_verdict(a, rows, rid):
     if a.delta_json:
         dj = json.load(open(a.delta_json))
         dstar, dsrc = dj["delta_star"], a.delta_json
@@ -502,7 +568,7 @@ def cmd_k0(a):
     else:
         verdict = "K0 成立：E1 在每一格都沒有贏 E0 → 精度對還原時間沒有賺頭" if not any_win else \
             "K0 不成立：至少一格 E1 贏 E0（有賺頭）"
-    out = {"run_id": run_id(), "model": a.model, "fmt": a.fmt, "delta_star": dstar, "delta_source": dsrc,
+    out = {"run_id": rid, "model": a.model, "fmt": sorted({r["fmt"] for r in rows}), "delta_star": dstar, "delta_source": dsrc,
            "delta_detail": dj, "rule": "E1 贏＝中位數的差 > δ*，且配對差 bootstrap 95% CI 不含 0（03 §2.4、§5.3）",
            "cells": verdict_rows, "verdict": verdict}
     json.dump(out, open(os.path.join(a.out_dir, "k0_verdict.json"), "w"), indent=1, ensure_ascii=False)
@@ -658,6 +724,13 @@ def main():
             p.add_argument("--configs", nargs="+", default=CONFIGS)
             p.add_argument("--refs", nargs="*", default=["E0", "E1"], help="load_only 參考線用哪些存法")
             p.add_argument("--lengths", nargs="*", type=int, default=[8192, 16384])
+            p.add_argument("--launch0", type=int, default=0, help="launch 編號從幾開始（09 §6.4 複賽用 200，避免和海選同 seed）")
+    v = sub.add_parser("k0-verdict", help="不重跑，從 restores.csv 裡某一次（例 grid）的 E0、E1 列算 K0")
+    v.add_argument("--model", choices=["llama", "qwen"], required=True)
+    v.add_argument("--out-dir", required=True)
+    v.add_argument("--from-run", required=True, help="restores.csv 的 run_id")
+    v.add_argument("--delta-json", help="noise 的 noise.json")
+    v.add_argument("--main-length", type=int, default=32768)
     a = ap.parse_args()
     if a.cmd == "_worker":
         worker(json.loads(a.spec))
@@ -666,7 +739,7 @@ def main():
         cmd_summary(a)
         return
     os.makedirs(a.out_dir, exist_ok=True)
-    {"calib-f": cmd_calib_f, "noise": cmd_noise, "k0": cmd_k0, "grid": cmd_grid}[a.cmd](a)
+    {"calib-f": cmd_calib_f, "noise": cmd_noise, "k0": cmd_k0, "grid": cmd_grid, "k0-verdict": cmd_k0_verdict}[a.cmd](a)
 
 
 if __name__ == "__main__":

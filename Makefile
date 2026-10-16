@@ -1,5 +1,5 @@
-# Adaptive Hierarchical KV State Management — build
-# 必須用 XeLaTeX（內文含中文，使用 xeCJK）
+# Paper build. English since the 2026-10-16 rewrite, so pdflatex (IEEEtran) is enough.
+# figures/*.pdf come from `python3 code/paper_figs.py` (reads results/ only).
 
 MAIN = main
 # 排版過的輸出都經過 `| python3 code/h200_show.py ...`（rich）：pipefail 讓前面的指令失敗時 make 也失敗
@@ -7,38 +7,27 @@ SHELL := /bin/bash
 .SHELLFLAGS := -o pipefail -c
 SHOW = python3 code/h200_show.py
 
-.PHONY: all clean distclean watch check
+.PHONY: all clean distclean figs check
 
 all: $(MAIN).pdf
 
-# 預設安靜：每一趟只印一行，完整輸出在 build.log；V=1 看原始輸出。
-# 失敗時印出 .log 裡的錯誤行（-file-line-error 的 `檔名:行號:` 與 `!` 開頭）
-V ?= 0
-LATEX = xelatex -interaction=nonstopmode -file-line-error -halt-on-error $(MAIN).tex
-ifeq ($(V),1)
-Q =
-pass = $(2)
-else
-Q = @
-pass = printf '  ▸ %s\n' '$(1)'; $(2) >>build.log 2>&1 || { \
-	  printf '\033[31m  ✗ %s 失敗\033[0m（完整輸出：build.log）\n' '$(1)'; \
-	  grep -A3 -E '^(\./)?[^ :]+\.(tex|sty|cls|bbl):[0-9]+:|^!' $(MAIN).log 2>/dev/null | head -20 | grep . \
-	    || tail -n 15 build.log; exit 1; }
-endif
+$(MAIN).pdf: $(MAIN).tex refs.bib $(wildcard figures/*.pdf)
+	pdflatex -interaction=nonstopmode $(MAIN).tex
+	bibtex  $(MAIN)
+	pdflatex -interaction=nonstopmode $(MAIN).tex
+	pdflatex -interaction=nonstopmode $(MAIN).tex
+	@echo "--- build summary ---"
+	@echo "overfull boxes: $$(grep -c 'Overfull'     $(MAIN).log || true)"
+	@echo "undefined     : $$(grep -cE 'Citation .* undefined|Reference .* undefined' $(MAIN).log || true)"
+	@echo "pending marks : $$(grep -c 'pending{' $(MAIN).tex || true)"
+	@grep -oE 'Output written on $(MAIN).pdf \(.*\)' $(MAIN).log || true
 
-$(MAIN).pdf: $(MAIN).tex refs.bib
-	$(Q)rm -f build.log
-	$(Q)$(call pass,xelatex,$(LATEX))
-	$(Q)$(call pass,bibtex,bibtex $(MAIN))
-	$(Q)$(call pass,xelatex,$(LATEX))
-	$(Q)$(call pass,xelatex,$(LATEX))
-	@# rich 版摘要；沒有 rich 的機器（例如 3090 的系統 python）退回 bash 版
-	@if python3 -c 'import rich' 2>/dev/null; then $(SHOW) latex $(MAIN); \
-	else bash code/latex_summary.sh $(MAIN); fi
+figs:
+	python3 code/paper_figs.py
 
-# 只檢查不重建
+# list pending markers and TODOs without rebuilding
 check:
-	@grep -nE 'TODO|placeholder' $(MAIN).tex | head -30
+	@grep -nE '\\pending\{|TODO' $(MAIN).tex | head -30
 
 clean:
 	# *.out 不能全刪：H200 上 Slurm 的輸出 slurm-*.out 也在根目錄

@@ -31,6 +31,7 @@ from m7_model import CHUNK, KVModel
 
 GiB = 1 << 30
 READ_SLACK_S = 0.0005
+DQ_KERNEL = "k1"          # 09 §6.4 K 組：m10_dequant_fast.install() 設定；只有 S2／S4／S5（一次拆多個 block）會讀
 
 
 @dataclass
@@ -116,6 +117,38 @@ class Restorer:
         self.last_copy_bound = False
         self.last_dequant_s = 0.0
         self.last_nbytes = 0
+        # 09 §6.4 方法掃描的選項（預設＝原本的行為，逐位元、逐步驟相同）：
+        #   unit：還原單位（token；G 組），sched：serial／pipe／group／defer／defer_meet（S 組），
+        #   dq_group：group 的 k，meet_rule：claim（原本）／estimate（G4 預估會合）；重算優先（S3）用 set_options。
+        self.unit = CHUNK
+        self.dq_sched = "serial"
+        self.dq_group = 1
+        self.meet_rule = "claim"
+        self.compute_prio = False
+        self._h2d_s = None
+        self._stages: dict = {}
+        self._arange = None
+
+    def set_options(self, unit: int = CHUNK, sched: str = "serial", group: int = 1, compute_prio: bool = False,
+                    meet: str = "claim"):
+        assert CHUNK % unit == 0 and unit % 32 == 0, unit
+        assert sched in ("serial", "pipe", "group", "defer", "defer_meet"), sched
+        assert meet in ("claim", "estimate"), meet
+        assert group >= 1 and (group == 1 or sched == "group")
+        self.unit, self.dq_sched, self.dq_group, self.meet_rule = unit, sched, group, meet
+        if compute_prio and not self.compute_prio:
+            lo, hi = torch.cuda.Stream.priority_range()          # 數字越小優先權越高
+            self.cstream = torch.cuda.Stream(device=self.km.device, priority=hi)
+        self.compute_prio = compute_prio
+
+    def _view(self, i: int) -> torch.Tensor:
+        if self.unit == CHUNK:
+            return self.km.chunk_view(i)
+        u = self.unit
+        return self.km.kv[:, :, :, i * u:(i + 1) * u, :]
+
+    def _ubytes(self) -> int:
+        return self.km.chunk_bytes if self.unit == CHUNK else self.km.chunk_bytes * self.unit // CHUNK
 
     # ---- 載入一個 chunk（限速＋真實 H2D）----
     def _load(self, i: int, host, tier: Tier) -> float:
@@ -123,17 +156,17 @@ class Restorer:
             return self._load_enc(i, host, tier)
         if isinstance(host, Enc):
             host = host.parts["x"]
-        done = tier.reserve_read(self.km.chunk_bytes)
+        done = tier.reserve_read(self._ubytes())
         if self.time_h2d:
             h0 = torch.cuda.Event(enable_timing=True)
             with torch.cuda.stream(self.iostream):
                 h0.record(self.iostream)
-                self.km.chunk_view(i).copy_(host, non_blocking=True)
+                self._view(i).copy_(host, non_blocking=True)
                 ev = torch.cuda.Event(enable_timing=True)
                 ev.record(self.iostream)
         else:
             with torch.cuda.stream(self.iostream):
-                self.km.chunk_view(i).copy_(host, non_blocking=True)
+                self._view(i).copy_(host, non_blocking=True)
                 ev = torch.cuda.Event()
                 ev.record(self.iostream)
         sleep_until(done)
@@ -141,7 +174,7 @@ class Restorer:
         ev.synchronize()
         self.last_h2d_s = h0.elapsed_time(ev) / 1e3 if self.time_h2d else 0.0
         self.last_dequant_s = 0.0
-        self.last_nbytes = self.km.chunk_bytes
+        self.last_nbytes = self._ubytes()
         return done
 
     def _load_enc(self, i: int, host: Enc, tier: Tier) -> float:
@@ -162,7 +195,7 @@ class Restorer:
             e0 = torch.cuda.Event(enable_timing=True)
             e1 = torch.cuda.Event(enable_timing=True)
             e0.record(self.iostream)
-            decode(st, out=self.km.chunk_view(i))
+            decode(st, out=self._view(i))
             e1.record(self.iostream)
         e1.synchronize()
         self.last_dequant_s = e0.elapsed_time(e1) / 1e3
@@ -184,9 +217,212 @@ class Restorer:
         rec["blocks"].append((i, src, ts, te))
 
     def _recompute(self, ids, i: int):
+        u = self.unit
         with torch.cuda.stream(self.cstream):
-            self.km.forward_span(ids[i * CHUNK:(i + 1) * CHUNK], i * CHUNK)
+            self.km.forward_span(ids[i * u:(i + 1) * u], i * u)
         self.cstream.synchronize()
+
+    # ---- 09 §6.4 方法掃描：S 組（何時反量化）與 G4（預估會合）。只在 set_options 改了預設時才走這裡 ----
+    def _stage(self, key, make):
+        st = self._stages.get(key)
+        if st is None:
+            st = self._stages[key] = make()
+        return st
+
+    def _h2dstream(self):
+        if self._h2d_s is None:
+            self._h2d_s = torch.cuda.Stream(device=self.km.device)
+        return self._h2d_s
+
+    def _ev(self):
+        return torch.cuda.Event(enable_timing=True)
+
+    def _load_pipe(self, q: int, e: Enc, tier: Tier, pend: list) -> bool:
+        """S1 邊搬邊拆：H2D 在自己的 stream、反量化在 I/O stream；兩塊暫存區輪流用，不每塊等反量化做完。"""
+        done = tier.reserve_read(e.nbytes)
+        ring = self._stage(("pipe", e.fmt, e.shape), lambda: {"slots": [e.empty_like(self.km.device) for _ in range(2)],
+                                                              "free": [None, None], "i": 0})
+        k = ring["i"] % 2
+        ring["i"] += 1
+        slot, hs = ring["slots"][k], self._h2dstream()
+        with torch.cuda.stream(hs):
+            if ring["free"][k] is not None:
+                hs.wait_event(ring["free"][k])             # 這塊暫存區上一次的反量化做完才能覆寫（GPU 端等，主機不等）
+            h0, h1 = self._ev(), self._ev()
+            h0.record(hs)
+            slot.copy_from(e, non_blocking=True)
+            h1.record(hs)
+        sleep_until(done)
+        cb = not h1.query()
+        with torch.cuda.stream(self.iostream):
+            self.iostream.wait_event(h1)
+            e0, e1 = self._ev(), self._ev()
+            e0.record(self.iostream)
+            decode(slot, out=self._view(q))
+            e1.record(self.iostream)
+        ring["free"][k] = e1
+        pend.append((h0, h1, e0, e1))
+        return cb
+
+    def _load_group(self, blks: list, host: list, tier: Tier, pend: list) -> bool:
+        """S2 多個 block 一組：連續的 nb 個同格式 block 一起搬，搬完一次 kernel 拆完（寫到各自位置），等它做完再領下一組。"""
+        import m10_dequant_fast as DF
+        blks = sorted(blks)
+        nb, e = len(blks), host[blks[0]]
+        done = 0.0
+        for j in blks:
+            done = tier.reserve_read(host[j].nbytes)
+        g = self._stage(("group", e.fmt, e.shape, self.dq_group), lambda: DF.group_parts(e, self.dq_group, self.km.device))
+        if self._arange is None:
+            self._arange = torch.arange(self.km.max_len // self.unit + 1, dtype=torch.int64, device=self.km.device)
+        with torch.cuda.stream(self.iostream):
+            h0, h1 = self._ev(), self._ev()
+            h0.record(self.iostream)
+            for s_, j in enumerate(blks):
+                DF.sub_enc(host[j], g, s_).copy_from(host[j], non_blocking=True)
+            h1.record(self.iostream)
+        sleep_until(done)
+        cb = not h1.query()
+        with torch.cuda.stream(self.iostream):
+            e0, e1 = self._ev(), self._ev()
+            e0.record(self.iostream)
+            DF.decode_multi(e.fmt, e.shape, {k: t[:nb] for k, t in g.items()}, nb, self.km.kv,
+                            self._arange[blks[0]:blks[0] + nb], **DF.kernel_cfg(DQ_KERNEL))
+            e1.record(self.iostream)
+        e1.synchronize()
+        pend.append((h0, h1, e0, e1))
+        return cb
+
+    def _load_defer(self, q: int, e: Enc, tier: Tier, defer: dict, n: int, pend: list) -> bool:
+        """S4／S5：只搬、不拆；低精度 block 依搬的順序放進暫存區，最後一次 kernel 拆完（_flush_defer）。"""
+        import m10_dequant_fast as DF
+        done = tier.reserve_read(e.nbytes)
+        g = self._stage(("defer", e.fmt, e.shape, n), lambda: DF.group_parts(e, n, self.km.device))
+        lst = defer.setdefault((e.fmt, e.shape), [])
+        with torch.cuda.stream(self.iostream):
+            h0, h1 = self._ev(), self._ev()
+            h0.record(self.iostream)
+            DF.sub_enc(e, g, len(lst)).copy_from(e, non_blocking=True)
+            h1.record(self.iostream)
+        lst.append(q)
+        sleep_until(done)
+        pend.append((h0, h1, None, None))
+        return not h1.query()
+
+    def _flush_defer(self, defer: dict, n: int, pend: list, keep: list):
+        import m10_dequant_fast as DF
+        for (fmt, shape), lst in defer.items():
+            if not lst:
+                continue
+            g = self._stages[("defer", fmt, shape, n)]
+            bids = torch.tensor(lst, dtype=torch.int64).pin_memory()
+            keep.append(bids)                                  # 非同步 H2D 完成前不能被回收
+            with torch.cuda.stream(self.iostream):
+                bd = bids.to(self.km.device, non_blocking=True)
+                e0, e1 = self._ev(), self._ev()
+                e0.record(self.iostream)
+                DF.decode_multi(fmt, shape, {k: t[:len(lst)] for k, t in g.items()}, len(lst), self.km.kv, bd,
+                                **DF.kernel_cfg(DQ_KERNEL))
+                e1.record(self.iostream)
+            keep.append(bd)
+            pend.append((None, None, e0, e1))
+
+    def _cake_v2(self, ids, n: int, host: list, loc: list, rec: dict, t0: float):
+        st = {"p": 0, "q": n - 1}
+        lk = threading.Lock()
+        times = {}
+        est = {"r": [], "l": []}                               # 這次還原裡每塊重算、每塊載入的牆鐘（G4 用）
+        sched = self.dq_sched
+        K = self.dq_group if sched == "group" else 1
+        pend, defer, keep = [], {}, []
+
+        def is_lp(h):
+            return isinstance(h, Enc) and h.fmt != "bf16"
+
+        def rline():
+            ts = time.perf_counter()
+            while True:
+                with lk:
+                    if st["p"] > st["q"]:
+                        break
+                    if self.meet_rule == "estimate" and est["r"] and est["l"] \
+                            and all(loc[j] is not None for j in range(st["p"], st["q"] + 1)):
+                        rem = st["q"] - st["p"] + 1
+                        if rem * (sum(est["l"]) / len(est["l"])) <= sum(est["r"]) / len(est["r"]):
+                            break                              # 載入線把剩下的做完比較快 → 重算線不再開新的一塊
+                    i = st["p"]
+                    st["p"] += 1
+                ts1 = time.perf_counter() - t0
+                self._recompute(ids, i)
+                te1 = time.perf_counter() - t0
+                est["r"].append(te1 - ts1)
+                rec["blocks"].append((i, "recompute", ts1, te1))
+                rec["n_recompute"] += 1
+            times["r_end"] = time.perf_counter()
+            rec["t_recompute"] = times["r_end"] - ts
+
+        def lline():
+            ts = time.perf_counter()
+            while True:
+                with lk:
+                    if st["q"] < st["p"]:
+                        break
+                    q = st["q"]
+                    if loc[q] is None:
+                        break
+                    grp = [q]
+                    if K > 1 and is_lp(host[q]):
+                        while len(grp) < K:
+                            j = grp[-1] - 1
+                            if j < st["p"] or loc[j] is not loc[q] or not is_lp(host[j]) or host[j].fmt != host[q].fmt:
+                                break
+                            grp.append(j)
+                    st["q"] -= len(grp)
+                ts1 = time.perf_counter()
+                if not is_lp(host[q]) or sched == "serial":
+                    self._load(q, host[q], loc[q])
+                    self._note_load(rec, q, host[q], ts1 - t0, time.perf_counter() - t0)
+                    cb = None
+                elif sched == "pipe":
+                    cb = self._load_pipe(q, host[q], loc[q], pend)
+                elif sched == "group":
+                    cb = self._load_group(grp, host, loc[q], pend)
+                else:
+                    cb = self._load_defer(q, host[q], loc[q], defer, n, pend)
+                te1 = time.perf_counter()
+                if cb is not None:                             # 低精度 block 的記帳（時間由 event 事後算）
+                    for j in grp:
+                        src = self._src(host[j])
+                        rec[f"n_{src}"] = rec.get(f"n_{src}", 0) + 1
+                        rec["bytes_read"] += host[j].nbytes
+                        rec["blocks"].append((j, src, ts1 - t0, te1 - t0))
+                    rec["n_copy_bound"] += int(cb)
+                key = "cpu" if loc[q].name.startswith("cpu") else "ssd"
+                rec[f"n_load_{key}"] += len(grp)
+                rec[f"t_load_{key}"] += te1 - ts1
+                est["l"].extend([(te1 - ts1) / len(grp)] * len(grp))
+            if sched == "defer":
+                self._flush_defer(defer, n, pend, keep)
+            self.iostream.synchronize()
+            times["l_end"] = time.perf_counter()
+            rec["t_load"] = times["l_end"] - ts
+
+        th = threading.Thread(target=lline)
+        th.start()
+        rline()
+        th.join()
+        if sched == "defer_meet":                              # S5：等重算線結束才拆
+            self._flush_defer(defer, n, pend, keep)
+            self.iostream.synchronize()
+            times["l_end"] = time.perf_counter()
+        for h0, h1, e0, e1 in pend:
+            if e0 is not None:
+                rec["t_dequant"] += e0.elapsed_time(e1) / 1e3
+            if h0 is not None and self.time_h2d:
+                rec["t_h2d"] += h0.elapsed_time(h1) / 1e3
+        rec["meet"] = rec["n_recompute"]
+        rec["t_wait"] = abs(times["r_end"] - times["l_end"])
+        rec["waiting_line"] = "recompute" if times["r_end"] < times["l_end"] else "load"
 
     def restore(self, ids: torch.Tensor, n: int, host: list, loc: list, mode: str = "cake") -> dict:
         """還原前 n 個 chunk 的 KV 到 GPU。回傳時間拆解（秒）。"""
@@ -223,6 +459,8 @@ class Restorer:
             rec["n_recompute"] = n - i
             rec["t_recompute"] = time.perf_counter() - t1
             rec["meet"] = i
+        elif mode == "cake" and (self.dq_sched != "serial" or self.meet_rule != "claim"):
+            self._cake_v2(ids, n, host, loc, rec, t0)
         elif mode == "cake":
             st = {"p": 0, "q": n - 1}
             lk = threading.Lock()

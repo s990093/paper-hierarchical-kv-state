@@ -1,0 +1,88 @@
+{
+  "gpu": 0,
+  "started_clean": false,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_AT_START",
+  "intruders": [
+    {
+      "pid": 3592798,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T08:39:14.575778+00:00",
+      "peak_mib": -1,
+      "n": 44
+    },
+    {
+      "pid": 3593992,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T08:40:33.023071+00:00",
+      "peak_mib": -1,
+      "n": 59
+    },
+    {
+      "pid": 3594815,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T08:42:44.663722+00:00",
+      "peak_mib": -1,
+      "n": 84
+    },
+    {
+      "pid": 3595895,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T08:41:40.561292+00:00",
+      "peak_mib": -1,
+      "n": 72
+    },
+    {
+      "pid": 3596223,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T08:47:26.007604+00:00",
+      "peak_mib": -1,
+      "n": 137
+    },
+    {
+      "pid": 3612463,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-16T10:19:02.356851+00:00",
+      "peak_mib": -1,
+      "n": 1178
+    },
+    {
+      "pid": -1,
+      "first_seen": "2026-10-16T08:40:38.146615+00:00",
+      "peak_mib": 180494,
+      "n": 3,
+      "last_seen": "2026-10-16T08:47:31.235477+00:00"
+    },
+    {
+      "pid": 3613562,
+      "first_seen": "2026-10-16T08:41:04.205585+00:00",
+      "peak_mib": 0,
+      "n": 1114,
+      "last_seen": "2026-10-16T10:19:02.356851+00:00"
+    },
+    {
+      "pid": 3613848,
+      "first_seen": "2026-10-16T08:42:17.902773+00:00",
+      "peak_mib": 0,
+      "n": 1100,
+      "last_seen": "2026-10-16T10:19:02.356851+00:00"
+    },
+    {
+      "pid": 3614164,
+      "first_seen": "2026-10-16T08:43:37.348665+00:00",
+      "peak_mib": 0,
+      "n": 763,
+      "last_seen": "2026-10-16T09:50:41.580703+00:00"
+    },
+    {
+      "pid": 3614450,
+      "first_seen": "2026-10-16T08:44:52.108031+00:00",
+      "peak_mib": 0,
+      "n": 1071,
+      "last_seen": "2026-10-16T10:19:02.356851+00:00"
+    }
+  ],
+  "n_dirty_samples": 1177,
+  "paused_intervals": [],
+  "discarded_samples_overlapping_pause": 0
+}

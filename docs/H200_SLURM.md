@@ -66,17 +66,17 @@ sbatch code/r_h200_all.sh        # R0 沒過就停；M7_DISK 用 R0 的建議（
 |:--|:--|:--|
 | GPU | NVIDIA H200 | 〔wiki〕範例輸出 `使用裝置：NVIDIA H200` |
 | GPU 記憶體、架構 | NVIDIA 規格是 141 GB HBM3e、Hopper（sm_90）；**本機 NOT_MEASURED** | 規格，登入後用 `nvidia-smi` 確認 |
-| 每節點幾張卡、CPU 型號、host↔GPU 的 PCIe 世代 | NOT_MEASURED | §3 |
+| 每節點幾張卡、CPU 型號、host↔GPU 的 PCIe 世代 | `hgx-cn01`：8 張 H200（`Gres=gpu:h200:8`，兩個 socket）、128 CPU、RealMemory 1,393,029 MB；CPU 型號、PCIe 世代 NOT_MEASURED（要進 job 跑 `h200_probe.sh`） | 2026-10-15 head node 上 `scontrol show node hgx-cn01` |
 | Driver／CUDA 版本 | NOT_MEASURED | §3；決定 vLLM wheel 能不能直接裝 |
 | 佇列 | `h200q`；單一 job 最多 48 小時 | 〔wiki〕 |
 | 每張卡附帶 | 16 CPU＋170 GB RAM，**固定配給** | 〔wiki〕srun 輸出：`GPUs: 1 \| Fixed: 16 CPUs, 174080MB \| Assigned QOS: h200q_1g` |
 | 上限 | 單一 job ≤ 4 GPU；**整個 lab 合計** ≤ 4 GPU、64 CPU、680 GB RAM | 〔wiki〕 |
 | account（`-A`） | `ChihChungHsu`（許志仲老師的 lab） | 〔wiki〕account 清單 |
-| 硬碟 | 一個 lab 1.5 T，lab 資料夾下有 `shared/` 共用；`quota -gs` 查剩多少 | 〔wiki〕 |
-| 個人目錄 | 大概是 `/work/ChihChungHsu/<username>` | 〔推論〕wiki 的 conda 範例路徑是 `/work/TTTTT/test4/.conda/envs/...`；登入後 `echo $HOME` 確認 |
-| head node／compute node | `bcm11-headnode01`（`192.168.20.241`，要先連 VPN）／範例裡是 `hgx-cn01` | 〔wiki〕 |
+| 硬碟 | 一個 lab 1.5 T，lab 資料夾下有 `shared/` 共用；`quota -gs` 查剩多少。**2026-10-15 實測：group `ChihChungHsu` 已用 1524G／上限 1536G，只剩約 12G**（個人 `quota -us` 只有 52K；用量在別的成員目錄，私有、看不到）。模型 31G＋環境放不下，見 §7 | 〔wiki〕＋2026-10-15 `quota -gs`、`quota -us` |
+| 個人目錄 | `$HOME`＝`/work/ChihChungHsu/<username>`；`/work` 是 `hgx-cn01:/work` 的 NFS（28T，叢集共用）。head node 的 `/tmp` 是本機 20G、`/dev/shm` 32G | 2026-10-15 `echo $HOME`、`df -hT` |
+| head node／compute node | `bcm11-headnode01`（`192.168.20.241`，要先連 VPN）／`h200q` 只有 `hgx-cn01` 一個節點（另有 `dgx-cn01/02` 在別的 partition） | 〔wiki〕＋2026-10-15 `sinfo -N -l` |
 | 預設 module | `slurm/24.11`、`gcc/14.2.0` 等；`ml miniconda3` 載入 conda（`/cm/shared/apps/miniconda3`） | 〔wiki〕 |
-| 對外網路（head node、compute node） | NOT_MEASURED | §3；決定模型怎麼下載 |
+| 對外網路（head node、compute node） | head node：huggingface.co、github.com、pypi.org 都通（HTTP 200）；compute node NOT_MEASURED | 2026-10-15 `curl -sI`；模型可以在 head node 直接下載 |
 | ⚠️ 資料保存 | **「資料不保證永遠存在，請記得備份」** | 〔wiki〕→ §5.4 |
 
 ---
@@ -120,7 +120,8 @@ Mac 上的做法〔推論，未試〕：
       User <username>
   ```
 
-  叢集允不允許 ssh key 登入：NOT_MEASURED（試 `ssh-copy-id h200`）。
+  **ssh key 登入可以**（2026-10-15 `ssh-copy-id` 後 `ssh -o BatchMode=yes h200` 成功）。注意：VPN 帳密和 ssh 帳密是兩套——ssh 帳號＝表單的 Username、預設密碼＝帳號本身，**不是**信裡的 VPN 密碼。
+- Mac 上實際的做法：`brew install openvpn`（2.7）。伺服器協商的是舊的 AES-128-CBC，設定檔要加 `data-ciphers AES-256-GCM:AES-128-GCM:AES-128-CBC`，否則 2.6 以後的版本會拒絕。VPN 是 split tunnel（只推 192.168.20.0/24 等內網路由），一般上網不受影響。開 VPN 要 root（建 tun）。
 
 **3090 伺服器不能當 VPN 用戶端**〔推論〕：OpenVPN 要建 tun 介面，通常要 root，而 3090 上沒有 sudo（`CLAUDE.md` §3）。所以 3090 ↔ H200 之間沒有直接的路；模型照 §4.2 在 H200 那邊直接下載，結果備份經過 Mac。
 
@@ -152,15 +153,15 @@ curl -sI https://huggingface.co | head -1          # compute node 有沒有對�
 
 | 要確認的事 | 結果 | 影響 |
 |:--|:--|:--|
-| GPU 記憶體、driver、CUDA | NOT_MEASURED | vLLM 0.28.0 的 wheel 能不能直接用（§4.1） |
-| 每節點幾張卡、PCIe 世代與寬度、NVLink | NOT_MEASURED | 速度實驗「CPU 層不限速」那個錨點的意義。NVLink 只連 GPU 和 GPU，我們的 KV 走 CPU→PCIe→GPU，用不到 |
-| 這張卡靠近哪個 NUMA 節點 | NOT_MEASURED | pinned 記憶體要配在同一邊，不然 H2D 會變慢 |
-| job 的 cgroup 真的給多少 CPU／RAM | NOT_MEASURED | wiki 說 16 CPU、170 GB；以 cgroup 為準 |
-| job 裡 `nvidia-smi` 看得到幾張卡 | NOT_MEASURED | **決定 `gpu_guard` 能不能用（§5.3）** |
-| 看不看得到同節點別人的 job（`squeue -w`） | NOT_MEASURED | §5.3 的替代記錄 |
-| head／compute node 有沒有對外網路 | NOT_MEASURED | 模型、pip 套件在哪裡下載 |
-| `$HOME` 實際路徑、lab 剩餘空間 | NOT_MEASURED | `HF_HOME`、`TIARA_RUNS` 放哪裡 |
-| `/dev/shm` 大小 | NOT_MEASURED | CPU 層用 pinned memory，上限是 170 GB 的 job 配額 |
+| GPU 記憶體、driver、CUDA | H200 143,771 MiB、driver 610.43.02、700 W、SM 最高 1980 MHz；module 有 cuda12.8、cuda13.3 toolkit（2026-10-15 srun job 20293） | vLLM 0.28.0 的 wheel 能不能直接用（§4.1） |
+| 每節點幾張卡、PCIe 世代與寬度、NVLink | 8 張 H200；PCIe 最高 Gen5 x16；job 裡 `topo -m` 只看得到自己這張，NVLink 看不到。CPU：2× AMD EPYC 9554（各 64 核、無 SMT），1.5 TB RAM（2026-10-15 srun job 20293） | 速度實驗「CPU 層不限速」那個錨點的意義。NVLink 只連 GPU 和 GPU，我們的 KV 走 CPU→PCIe→GPU，用不到 |
+| 這張卡靠近哪個 NUMA 節點 | 這次拿到的卡在 NUMA 1，job 的 cpuset 是 80–95（同一邊）。**每個 job 拿到的卡可能不同**，要每次記錄（2026-10-15 srun job 20293） | pinned 記憶體要配在同一邊，不然 H2D 會變慢 |
+| job 的 cgroup 真的給多少 CPU／RAM | `nproc`=16、cpuset 80–95；step 層的 `memory.max`=max（job 層的上限 NOT_MEASURED，srun 宣告 174,080 MB）；`free` 看到的是整台 1.5 TB，不能用（2026-10-15 srun job 20293） | wiki 說 16 CPU、170 GB；以 cgroup 為準 |
+| job 裡 `nvidia-smi` 看得到幾張卡 | **只有 1 張**（`CUDA_VISIBLE_DEVICES=0`）→ 同節點別人的卡看不到，`gpu_guard` 必須回 `UNOBSERVABLE_HOST`（§5.3 的推論成立）（2026-10-15 srun job 20293） | **決定 `gpu_guard` 能不能用（§5.3）** |
+| 看不看得到同節點別人的 job（`squeue -w`） | 看得到（head node 上 `squeue -w hgx-cn01` 列出別人的 job 與 gres）（2026-10-15） | §5.3 的替代記錄 |
+| head／compute node 有沒有對外網路 | 都有（huggingface.co HTTP 200）（2026-10-15 srun job 20293） | 模型、pip 套件在哪裡下載 |
+| `$HOME` 實際路徑、lab 剩餘空間 | `/work/ChihChungHsu/<username>`（NFS）；lab 剩約 12G（§0）。compute node 的 `/tmp` 在本機 `/dev/md0`（1.8T，剩 1.7T），不受 lab 配額限制但不保證保留〔推論〕 | `HF_HOME`、`TIARA_RUNS` 放哪裡 |
+| `/dev/shm` 大小 | compute node 756G（整台共用）；實際能用多少受 job 記憶體上限約束（2026-10-15 srun job 20293） | CPU 層用 pinned memory，上限是 170 GB 的 job 配額 |
 
 ---
 

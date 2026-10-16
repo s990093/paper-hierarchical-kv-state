@@ -267,6 +267,36 @@ def placement(name: str, n: int, seed: int) -> set:
     raise ValueError(name)
 
 
+def sweep_placement(st, name: str, fmt: str) -> set:
+    """09 §4.3 複賽（10/16 加；主線的配置不會走到這裡）：'SW-<放法>-<佔比%>'（例 SW-ERR-35）→ 低精度集合。
+    和海選（m10_sweep.lp_set）同一個定義：seed＝題目 seed、needle＝第 1 輪答案所在的 block、
+    err＝這個格式每個 block 的 K 中心化誤差、att＝prefill 結束時最後一個 block 對每個 block 的 attention 量。"""
+    import m10_sweep as SW
+    _, policy, pct = name.split("-")
+    assert st.n == SW.N_BLOCKS and policy in SW.POLICIES, (st.n, policy)
+    st.lp_blocks(fmt)
+    att = None
+    if policy in ("ATT", "AXE"):
+        if getattr(st, "_att", None) is None:
+            st._att = _attention_mass(st)
+        att = st._att
+    ctx = {"seed": st.it["seed"], "needle": st.it["turns"][0]["needle_blocks"],
+           "err": [e[2] for e in st.err[fmt]], "att": att}
+    return set(SW.lp_set(policy, SW.k_of(int(pct) / 100), ctx))
+
+
+def _attention_mass(st) -> list:
+    """借用海選的 m10_sweep.ItemState.attention_mass（同一段程式）。先把緩衝放回全 BF16（定義是看 BF16 的 attention）；
+    它會重算最後一個 block 再放回 BF16，所以之後 place() 一律重放。"""
+    import types
+    import m10_sweep as SW
+    st.place("bf16", frozenset())
+    shim = types.SimpleNamespace(ans=st.ans, ids=st.ids, bf16=st.bf16, src=["bf16"] * st.n)
+    per = SW.ItemState.attention_mass(shim)
+    st.cur = None
+    return per
+
+
 def parse_config(spec: str, default_fmt: str) -> tuple[str, str, str]:
     """'F25' → ('F25','F25',fmt)；'E1s@fp8k0_head' → (名稱, 放法, 格式)；E1-K0、E1-INT8 是別名。"""
     full = ALIASES.get(spec, spec)
@@ -378,7 +408,7 @@ def item_rows(st: ItemState, cfgs: list[tuple], modes: list[str], meets: dict | 
 
     e0 = get("bf16", [frozenset()] * len(it["turns"]))
     for spec, name, fmt in cfgs:
-        lp_set = placement(name, n, it["seed"])
+        lp_set = sweep_placement(st, name, fmt) if name.startswith("SW-") else placement(name, n, it["seed"])
         cells = []                                   # (mode, bw, state, b1, b2_turn2b)
         if "A" in modes:
             cells.append(("A", "", "", 0, None))
@@ -449,10 +479,16 @@ def _watch(out_path):
 
 
 def run(a):
+    if os.environ.get("M10_CODEC_X") == "1":     # 09 §4.3 複賽的新格式（預設關＝主線的行為不變）
+        import m10_codec_x
+        m10_codec_x.install()
     ans = Answerer(a.model)
     rid = os.environ.get("RUN_ID", "adhoc")
     cfgs = [parse_config(c, a.fmt) for c in a.configs]
     meets = json.load(open(a.meets))["meets"] if a.meets else None
+    if meets is not None and a.bws:          # 讀法 B 只用指定的頻寬（10/15 晚：只用中間頻寬 b32，03 §7 D4）
+        meets = {c: {bw: d for bw, d in x.items() if bw in a.bws} for c, x in meets.items()}
+    si, sk = (int(x) for x in a.shard.split("/"))
     done = set()
     if os.path.exists(a.out):                # 48 小時上限：重跑時跳過已完成的題（每題寫完才 flush，03 §9）
         done = {r["item_id"] for r in csv.DictReader(open(a.out))}
@@ -464,6 +500,8 @@ def run(a):
     t0 = time.time()
     n_new = 0
     for k, mk in enumerate(make_items(a, ans.tok)):
+        if k % sk != si:                     # --shard i/k：第 k 題只給 k mod 份數＝i 的 process（題目本身不變）
+            continue
         it = mk()
         if it["item_id"] in done:
             continue
@@ -482,6 +520,64 @@ def run(a):
         del st
         n_new += 1
         print(f"[{k + 1}] {it['item_id']} rows={len(rows)} {(time.time() - t0) / n_new:.1f}s/題", flush=True)
+    f.close()
+    if watch is not None:
+        watch.__exit__(None, None, None)
+
+
+def sensmap(a):
+    """03 §3.3b 逐 block 敏感度地圖（只報告，不進判準）：每題 prefill 一次，第 1 輪問題；一次只把**一個** block 換成
+    低精度（--fmt），其他全 BF16，量標準答案的分布對 E0 的 KL 與 gold log-prob（teacher forcing，不生成）。"""
+    ans = Answerer(a.model)
+    rid = os.environ.get("RUN_ID", "adhoc")
+    P = json.load(open(a.params_file))["params"][a.model] if a.params_file else {}
+    enc = T._enc(ans.tok)
+    fields = ["run_id", "ts", "model", "item_id", "task", "band", "turn", "fmt", "block", "kl_vs_e0", "gold_logprob",
+              "gold_logprob_e0", "relK", "cenK", "needle_blocks", "own_gpu_intruders"]
+    done = set()
+    if os.path.exists(a.out):
+        done = {r["item_id"] for r in csv.DictReader(open(a.out))}
+    f = open(a.out, "a", newline="")
+    w = csv.DictWriter(f, fieldnames=fields)
+    if not done:
+        w.writeheader()
+    watch = _watch(a.out)
+    si, sk = (int(x) for x in a.shard.split("/"))
+    t0, n_new = time.time(), 0
+    for k, (task, b1, b2, seed) in enumerate(plan_items(a.tasks, a.n, a.seed0)):
+        if k % sk != si:
+            continue
+        it = T.make_item(task, b1, b2, seed, ans.tok, P.get(task))
+        if it["item_id"] in done:
+            continue
+        st = ItemState(ans, it)
+        tr = it["turns"][0]
+        seq = tr.get("history_ids", []) + tr["query_ids"]
+        gold_ids = enc(tr["gold_text"])
+
+        def tf_for(eff):
+            st.place(a.fmt, eff)
+            lg = ans.feed(seq, st.ctx_len)
+            return teacher_force(ans, lg, gold_ids, st.ctx_len + len(seq))
+
+        g = torch.tensor(gold_ids, device=ans.km.device)
+        ar = torch.arange(len(g), device=ans.km.device)
+        p0 = tf_for(frozenset())
+        lp0 = float(p0[ar, g].sum())
+        st.lp_blocks(a.fmt)
+        errs = st.err[a.fmt]
+        intr = "NOT_CHECKED" if watch is None else len(watch.intruders)
+        for i in range(st.n):
+            p = tf_for(frozenset([i]))
+            w.writerow(dict(run_id=rid, ts=ts(), model=a.model, item_id=it["item_id"], task=it["task"], band=tr["band"],
+                            turn=tr["turn"], fmt=a.fmt, block=i,
+                            kl_vs_e0=float((p0.exp() * (p0 - p)).sum(-1).mean()), gold_logprob=float(p[ar, g].sum()),
+                            gold_logprob_e0=lp0, relK=round(errs[i][0], 6), cenK=round(errs[i][2], 6),
+                            needle_blocks=json.dumps(tr["needle_blocks"]), own_gpu_intruders=intr))
+        f.flush()
+        del st
+        n_new += 1
+        print(f"[{k + 1}] {it['item_id']} {(time.time() - t0) / n_new:.1f}s/題", flush=True)
     f.close()
     if watch is not None:
         watch.__exit__(None, None, None)
@@ -582,6 +678,8 @@ if __name__ == "__main__":
             p.add_argument("--configs", nargs="+", default=CONFIGS)
             p.add_argument("--modes", nargs="+", default=["A"], choices=["A", "B"])
             p.add_argument("--meets", help="m10_speed 的 meets.json（讀法 B 必填）")
+            p.add_argument("--bws", nargs="*", help="讀法 B 只用這些頻寬（meets.json 的名字，例 b32）；不給＝全部")
+            p.add_argument("--shard", default="0/1", help="i/k：只跑第 i 份（題目依順序輪流分成 k 份），平行用")
             p.add_argument("--tasks", nargs="+", default=["T1", "T2", "T3", "T4", "T5"],
                            help="T1–T5；LongBench 寫 LB-<dataset>（例 LB-qasper）")
             p.add_argument("--n", type=int, default=60, help="T1–T5 每個任務幾題")
@@ -591,5 +689,14 @@ if __name__ == "__main__":
         else:
             p.add_argument("--n", type=int, default=5, help="檢查幾題（T1–T5 各一題）")
             p.add_argument("--load-ms", type=float, default=50.0, help="限速：BF16 一個 block 載入幾毫秒（讓會合點落在中間）")
+    p = sub.add_parser("sensmap", help="03 §3.3b 逐 block 敏感度地圖（只報告）")
+    p.add_argument("--model", choices=list(T.MODELS), required=True)
+    p.add_argument("--fmt", required=True)
+    p.add_argument("--params-file")
+    p.add_argument("--tasks", nargs="+", default=["T1", "T2", "T3", "T4", "T5"])
+    p.add_argument("--n", type=int, default=10, help="每個任務幾題（第 1 輪）")
+    p.add_argument("--seed0", type=int, default=10000)
+    p.add_argument("--shard", default="0/1")
+    p.add_argument("--out", required=True)
     a = ap.parse_args()
-    {"tune": tune, "summary": resummarize, "run": run, "selfcheck": selfcheck}[a.cmd](a)
+    {"tune": tune, "summary": resummarize, "run": run, "selfcheck": selfcheck, "sensmap": sensmap}[a.cmd](a)

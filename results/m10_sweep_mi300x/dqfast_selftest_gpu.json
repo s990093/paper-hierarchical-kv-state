@@ -1,0 +1,59 @@
+{
+ "checks": {
+  "bitwise[fp8_head]": {
+   "pass": true
+  },
+  "into_view[fp8_head]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_head]": {
+   "bitwise": true
+  },
+  "bitwise[fp8_channel]": {
+   "pass": true
+  },
+  "into_view[fp8_channel]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_channel]": {
+   "bitwise": true
+  },
+  "bitwise[fp8_token]": {
+   "pass": true
+  },
+  "into_view[fp8_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_token]": {
+   "bitwise": true
+  },
+  "bitwise[int8_token]": {
+   "pass": true
+  },
+  "into_view[int8_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[int8_token]": {
+   "bitwise": true
+  },
+  "bitwise[int4_token]": {
+   "pass": true
+  },
+  "into_view[int4_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[int4_token]": {
+   "bitwise": true
+  },
+  "bitwise[int4_kivi]": {
+   "pass": true
+  },
+  "into_view[int4_kivi]": {
+   "pass": true
+  },
+  "compiled_bitwise[int4_kivi]": {
+   "bitwise": true
+  }
+ },
+ "all_pass": true
+}
