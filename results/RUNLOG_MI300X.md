@@ -678,6 +678,12 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - `91_longctx_pilot.sh` → `longctx_plan_n.py`：試跑後照 10 §3.3 的規則決定題數，寫 `92_longctx_screen.sh`。規則程式在 sandbox 用假的試跑紀錄跑過（不碰真的佇列）。
 - 還沒寫：`code/m10_longctx_analyze.py`（92 跑完才用；10/18 前寫好）。
 
+### 12.1b 分析程式（10/16 14:12Z，CPU；沒有任何 64K／128K 的正式結果）
+
+- `code/m10_longctx_analyze.py`：照 10 §5 的五件事寫。44c 結尾會自動跑；之前的佇列寫的是「還沒寫就記 NEEDS_HUMAN」。
+  - 五件事：主圖（長度 × 答對率）、傷害隨長度（128K−32K、64K−32K 的配對 CI，變差才標 ↑）、位置（F／M／B 對 R0）、讀法 B、速度（含 gpu_guard 檢查）。
+- 沙盒測試：拿 39a 冒煙的列造合成資料，故意加「越長越傷」，程式有抓到並標 ↑；表、JSON、兩張圖都產生。合成數字只在 scratchpad，不進 results。
+
 ### 12.2 冒煙 39a（10/16 12:56 → 13:03Z；scratch，數字不進 results）
 
 - run：`20261016-125625-m10-lc-smoke-screen-qwen`、`-125821-m10-lc-smoke-screen-llama`、`-130008-m10-lc-smoke-grid-qwen`，全部 rc＝0；`longctx smoke fail=0`。
