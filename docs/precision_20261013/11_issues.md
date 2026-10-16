@@ -128,8 +128,9 @@
 
 ### 4. 還不知道的
 
-- 64K／128K：NOT_MEASURED（stage 90–92；格式含主線 FP8、INT4 KIVI；「傷害隨長度變大」用 128K−32K 的配對 CI，10 §5）。
-- 更低 bit（INT2、MXFP4 等）：NOT_MEASURED（大掃描 40–43）。
+- 64K／128K：NOT_MEASURED（stage 44a–44c，原 90–92；格式含主線 FP8、INT4 KIVI；「傷害隨長度變大」用 128K−32K 的配對 CI，10 §5）。
+- 更低 bit（INT2、MXFP4 等）：海選（41，teacher forcing 的 first_ok，96 題）有了，見 08 §2.9。Llama 連 INT2 KIVI 全壓也只掉 1 個百分點，Qwen 掉 6.2；Qwen 的逐 token／逐 head 4-bit 格式全壞（KL 10–14）。生成的答對率要等複賽 43。
+  - → 在 32K，連 3 bit 的好格式都還翻不過答案。這更支持「問題在長度和題目，不在 bit 數」，要看 44c。
 - 長生成的推理題：沒測（我們的答案都短）。
 
 ### 5. 之後要注意

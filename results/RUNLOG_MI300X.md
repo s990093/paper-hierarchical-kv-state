@@ -549,7 +549,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
 
-**狀態**：程式寫好、CPU／GPU 自測通過；GPU 工作已排進佇列（31z 冒煙測試 → 主線關鍵段 → 40 試跑 → 41 海選 → 42）。**還沒有任何大掃描的數字。**
+**狀態**：41 海選 10/16 23:28Z 跑完（11.2h、08 §2.9）；42 起跑中。複賽 43 還沒跑，**大掃描還沒有可以當結論的數字**。
 **事先登記**：`docs/precision_20261013/09_sweep_plan.md`（2026-10-15 22:50 UTC 寫，此時沒有任何大掃描結果、主線 Step 1 的低精度答對率也沒人看過）。
 **文獻**：`docs/precision_20261013/cards/P07_sweep_formats_sys_dequant.md`（多為摘要級，未逐頁核對；**self-review**）。
 
@@ -644,6 +644,18 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 佇列：`42a_plan_confirm.sh`（CPU）在 42 之後照 `finalists_<m>.json` 寫出 `43_sweep_confirm.sh`。
 - 09 §4.3 補了實作細節（同一時間寫）。
 - 14:10Z：`code/m10_confirm_analyze.py`（三條判準；讀法 A 為主判準的釐清寫進 09 §4.3）。CPU 沙盒用合成資料測過：贏隨機的選手 +8.3 [+5.8, +11.1] → Holm 成立；故意讓它在 b48 慢 20% → 速度不輸判不過；和隨機一樣的選手判不贏。
+
+### 11.2h 大掃描海選（stage 41，10/16 13:55:44 → 23:28:55Z）
+
+- run：`20261016-135544-m10-sweep-screen-llama-s0`、`-135700-…-llama-s1`、`-135815-…-qwen-s0`、`-135930-…-qwen-s1`（4 個 process 全部 rc＝0，stderr 沒有 traceback）。逐列 CSV：`/mlsteam/data/tiara/sweep_m10/screen_<m>_s<k>.csv.gz`（不進 git）。
+- 指令：`m10_sweep.py screen --model <m> --n 24 --shard k/2 --policies F M B R0 R1 R2 R3 R4 ERR ATT AXE ORC --fracs 0.1 … 0.9 --parts …/parts_<m>.json --grid-blocks <主線 FP8 grid 的 blocks.csv>`；彙整 `m10_sweep_analyze.py`（41 腳本最後自動跑）。
+- 每題約 12.7 分鐘（Llama）、11.5 分鐘（Qwen），4 個 process 同時；牆鐘 9.55 h（試跑估 9.87 h）。
+- 產出：`results/m10_sweep_mi300x/analysis/`。結果寫在 08 §2.9。重點：
+  - 照 09 §4.2 三條件贏隨機的格子：Llama 170／1,326、Qwen 384／1,326（假勝出期望約 34）。
+  - 選手的 first_ok 對隨機只差 0–0.5 個百分點；Llama 連全 INT2 KIVI 也只掉 1 個百分點。
+  - 選手：Llama 5 個 ERR＋1 個 ATT（int2_kivi、kv-int4-int2、int4_kivi、mxfp4）；Qwen ATT／AXE 各 3 個（kv-int4-int2、int4_kivi、kv-int8-int4）。
+- 圖的修正（23:3xZ，只動畫圖，選手 JSON 的 md5 前後相同）：`sweep_bytes` 的來源註記壓到 x 軸標題、`sweep_kl` 只有一欄有 x 軸刻度 → 改 `m10_sweep_analyze.py` 的版面後只重畫圖。`agg_<m>.csv` 未壓縮 1.4 MB 超過 git 的 1 MB → 改寫成 `.csv.gz`。
+- 42a 的沙盒預演（23:3xZ，CPU；`m10_confirm.py plan --sw-dir <沙盒>`）：Llama 40 個配置＋E0、Qwen 24 個＋E0，12 個品質 process，7 個速度格子，bash 語法正確。43 估計約 20–24 小時〔推論：照 33c 的品質吞吐、33a 的速度格子耗時，依配置數等比例放大〕。
 
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
