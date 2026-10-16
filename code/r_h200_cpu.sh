@@ -5,6 +5,7 @@
 #   bash code/r_h200_cpu.sh --part a            # 只需要 R2 常數的那一批（現在就能跑）
 #   bash code/r_h200_cpu.sh --part d4d5         # D4（Mooncake trace、SCBench）、D5（模型 config）：資料由 code/h200_dl_cpu_data.sh 下載
 #   bash code/r_h200_cpu.sh --part d6           # D6：反量化成本用 H200 的 F3 工作 A（results/m9_followup_h200/f3_dequant.csv）
+#   bash code/r_h200_cpu.sh --part b            # 08 消融、B 的模擬驗證、第 1 輪的分析：要 r-h200-rest（P1–P3）與 r-h200-qwen3 跑完
 #   bash code/r_h200_cpu.sh --part a --dry-run | --list ；--from <步驟> [--until <步驟>]（接著跑）
 #
 # 在 head node 跑（h200q 不收純 CPU 的 job：--gres=gpu:0 → 「Invalid qos specification」，10/16 試過）。
@@ -36,7 +37,7 @@ while [ $# -gt 0 ]; do
     *) echo "不認得的參數：$1（--help 看用法）" >&2; exit 2 ;;
   esac
 done
-case "$PART" in a|d6|d4d5) ;; *) echo "[r_h200_cpu] 要指定 --part a、d4d5 或 d6" >&2; exit 2 ;; esac
+case "$PART" in a|d6|d4d5|b) ;; *) echo "[r_h200_cpu] 要指定 --part a、d4d5、d6 或 b" >&2; exit 2 ;; esac
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export REPO
@@ -264,6 +265,21 @@ else
 fi
 step D6-arith   m7h-d6-arith  $P code/m8_precision_arith.py --dmeas "$DMEAS" --dmeas-src "$DSRC"
 step D6-thresh  m7h-d6-thresh $P code/m8_precision_arith.py --threshold
+fi
+
+if [ "$PART" = b ]; then
+# ===== 08 消融、第一階段 B 的模擬驗證、第 1 輪的分析（MI300X RUNLOG M7b、M7c）=====
+# 輸入：r-h200-rest（job 20554）的 P1、P2、P3，r-h200-qwen3（job 20556）的 C1，--part a 的 sim_sweep、r1_sim_*。
+# 這一批用 20554 的原始資料：P1 八個和 P2-G1-seed0 和我們自己的 F2 job 同時跑過（記憶 h200-no-self-cotenancy-for-timing）。
+# 重跑（job 20631）的版本之後另外做，兩組都報。
+# MI300X 只有 m7_sim validate 走過 §4.1 的殼（20261009-064908-m7-sim-validate），其他分析照各程式檔頭的用法。
+step ABL-gain     m7h-abl-gain      $P code/m7_ablate_analyze.py          # sim_sweep.csv → sim_sweep_gain.csv
+step SIM-validate m7h-sim-validate  $P $SIM validate                      # b_share／b_fifo／b_share_cpu3.69 → sim_validate.csv、.json
+step B2-analyze   m7h-b2-analyze    $P code/m7_b2_analyze.py              # b2_share.csv → b2_summary.csv、b2_verdict.csv
+step R1-h1        m7h-r1-h1         $P code/m7_round1_analyze.py h1       # → $M7_EXPLORE/h1_write_volume.csv、h1_verdict.csv
+step R1-kappa     m7h-r1-kappa      $P code/m7_round1_analyze.py kappa    # 四個 f(i)（含 Qwen3 grouped／eager）→ kappa_screen.csv
+step R1-sim       m7h-r1-sim-an     $P code/m7_round1_analyze.py sim      # r1_sim_*.csv → r1_sim_verdict.csv、r1_sim_configs.csv
+step R1-gpu       m7h-r1-gpu-an     $P code/m7_round1_analyze.py gpu      # P3 的 r1_gpu_llama_doc_free_local.csv → r1_gpu_summary.csv、r1_gpu_verdict.csv
 fi
 
 if [ -n "$UNTIL" ] && [ "$DONE" = 0 ] && [ "$STARTED" = 1 ]; then
