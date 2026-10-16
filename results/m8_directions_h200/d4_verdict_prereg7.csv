@@ -1,0 +1,10 @@
+run_id,ts,trace,klass,n_cells,median_gap_T,median_gap_W,min_gap_T,max_gap_T,min_gap_W,max_gap_W,src_sim_run,rule
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,conversation,opt,6,0.000251,0.879249,0.0,0.012366,0.752402,1.0,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,conversation,wtp_a,6,0.000251,0.879249,0.0,0.012366,0.752402,1.0,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,conversation,wtp_b,6,-0.048205,0.043031,-0.097382,0.00878,-2.127628,0.250194,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,synthetic,opt,6,0.00424,0.655962,0.0,0.051565,0.579712,1.0,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,synthetic,wtp_a,6,0.00424,0.601593,0.0,0.035485,0.579712,1.0,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,synthetic,wtp_b,6,-0.033728,0.050775,-0.207682,0.012842,-0.257713,0.255692,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,toolagent,opt,6,3.4e-05,0.892305,0.0,0.008631,0.0,1.0,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,toolagent,wtp_a,6,3.4e-05,0.892305,0.0,0.008631,0.0,1.0,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2
+20261016-122801-m7h-d4-gap-prereg,2026-10-16T12:28:04+08:00,toolagent,wtp_b,6,-0.041772,-2.486918,-0.082134,0.006304,-3.19612,0.096197,20261016-114706-m7h-d4-sim,D4_sec2.3_but_deferred_set_restricted_to_7_policies_listed_in_sec2.2

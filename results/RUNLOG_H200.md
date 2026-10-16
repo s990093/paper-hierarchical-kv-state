@@ -381,5 +381,37 @@ sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現�
   - 異常：D6 跑的時候我改了同一支 `r_h200_cpu.sh`（加 d4d5），bash 邊跑邊讀，兩步都完成後讀到錯位的行：
     `code/r_h200_cpu.sh: line 242: gap_posthoc.csv: command not found`、`line 243: TO: unbound variable` → runner exit 1。兩個 D6 run 都在這之前 exit 0、run_id 已記，沒有多出別的 run。之後不在 runner 執行中改它。
 
+### D4（真實 trace 的重用）、D5（架構與模態）— 使用者 10/16：「下載並核對後再跑」
+**資料下載**（head node，`bash code/h200_dl_cpu_data.sh`；每個 run 有 sha256.txt）:
+- `20261016-110413-h200-dl-mooncake-traces`：kvcache-ai/Mooncake `245e7106` 的 FAST25-release/traces（conversation 12,031 列、synthetic 3,993、toolagent 23,608〔和 D4 §4 記的列數相同〕；8.2M）→ `$TIARA_DATASETS/traces`
+- `20261016-110416-h200-dl-scbench`：HF dataset microsoft/SCBench 的 `data/*.jsonl`（12 個檔、647M；MI300X 的 inventory 記 903 MB，大小不同）→ `$TIARA_DATASETS/scbench/data`
+- `20261016-110440-h200-dl-d5-qwen3vl-cfg`：Qwen/Qwen3-VL-8B-Instruct `0c351dd0` 的 4 個 config；`20261016-110443-h200-dl-d5-cfgs`：m8_arch_arith 讀的 6 個 config.json（revision 在 run 目錄的 revisions.json）
+**核對**（MI300X 的常數＋這些資料、暫存目錄；`--src-run` 與 config 目錄名照 MI300X 的 run id）: D4 15 個、D5 6 個輸出檔**全部和 git 完全相同**
+（`d4_scbench.csv` 只比 MI300X 重跑成功的 `20261010-054738-d4-scbench2`）→ 資料和 MI300X 用的是同一份（SCBench 大小不同，但 D4 用到的部分相同）。
+**程式的修改**（預設＝MI300X）: `m8_trace_oracle.py`（M7_RES、M7_TIER_PARAMS、M8_OUT、TIARA_DATASETS、M7_LLAMA_GLOB）、`m8_arch_arith.py`（M7_RES、M7_TIER_PARAMS、M8_OUT、**M7_CALIB_RUN**）。
+**H200 的 run**（`bash code/r_h200_cpu.sh --part d4d5`；12 個 run，`r_h200_cpu_run_ids.tsv`）: 11:46:58 → 12:28:04
+- 異常：第一次停在 D5-arith（run `20261016-120525-m7h-d5-arith`，exit 1）：
+  `File ".../code/m8_arch_arith.py", line 80, in calib: assert set(c.run_id) == {CALIB_RUN}, set(c.run_id)` → `AssertionError: {'20261016-061311-m7h-c1'}`
+  （寫死 MI300X 的 C1 run `20261008-130316-m7-c1`）。改成 `M7_CALIB_RUN`（預設不變；MI300X 回歸 6 個 d5 檔相同），runner 對 D5 指定 H200 R2 的 C1 `20261016-061311-m7h-c1`，`--from D5-arith` 接著跑（commit `929326d`）
+**和 MI300X 比**:
+- 不依 GPU 常數的 `d4_trace_char`、`d4_reuse_dist`、`d4_scbench`：和 MI300X **完全相同**
+- **D4 判定**（§2.3：真實 trace conversation、toolagent 的 6 格中位數；死路＝兩個都 gap_T<5% 且 gap_W<20%；有看頭＝任一 gap_T 或 gap_W ≥15%）:
+
+| 延後版集合 | MI300X | H200 |
+|:--|:--|:--|
+| A：§2.2 逐字的 7 個（`d4_verdict_prereg7`） | **有看頭**（gap_W 86.8%／89.2%；gap_T 0.015%／0.002%） | **有看頭**（gap_W 87.9%／89.2%；gap_T 0.025%／0.003%） |
+| B：實作時的 25 個組合（`d4_verdict`，主判定 run） | **死路**（gap_W 0.0%／0.0%） | **有看頭**（conversation gap_W **75.5%**、toolagent 0.0%；gap_T 0.025%／0.003%） |
+
+  B 翻過來的原因（`d4_gap.csv`）：W_延後＝「TTFT 在延後最好的 1.05 倍內」的延後版裡寫最少的。H200 重算比較快，總 TTFT 變小（conversation 主格約 11,700 → 7,100 s），
+  同樣的絕對差距佔比變大，MI300X 上在 1.05 倍內、幾乎不寫 SSD 的 LRU+H2／LRU+NONE，在 H200 上超出 → 只剩 LRU+WT（182,790 個 block）可比，gap_W 變 75.5%。〔判讀〕這是 5% 容忍度和 TTFT 尺度的交互作用，不是工作負載資訊變得更有用。
+  TTFT 那一半兩台都是死路（gap_T 中位數 ≤0.03%）。歸因規則：WTP-a 的 gap 和 OPT 相同（兩台都是）。synthetic 只報告：gap_T 最大 MI300X 3.4%、H200 5.1%
+- **D5**（各子方向的判定理由在 D5 §0）：方向都不變
+  - (a) VLM：存 embedding 讓 Cake 快 6.5–14.1%（3.69 GiB/s；MI300X 7.0–10.3%）；r_v 0.15–0.24（一般圖／影格；MI300X 0.14–0.23）。判死路的理由（只多 22% 位元組、已有人做）不依 GPU
+  - (b) 混合 SSM：每 512 token 存一份檢查點，全部寫出要的頻寬是本地 SSD 寫入的 **0.27–1.82 倍**（MI300X 0.16–1.09）→ H200 prefill 較快，寫入頻寬更不夠
+  - (c) 滑動視窗：只看 config，不變
+  - (d) P/D：25 Gbps、32K，逐 chunk 管線露出 1.02%（MI300X 0.59%），不重疊露出 39.7%（27.5%），Cake 分割 0%（同）
+  - (e) MLA：3.69 GiB/s 的 b/n：DeepSeek-V3 0.078（0.047）、Kimi-K2 0.094（0.062）、Falcon-7B 0.047（0.031）、DeepSeek-V2-Lite 0.328（0.234）
+**產出**: `results/m8_directions_h200/d4_*.csv`（15 個）、`d5_*.csv`（6 個）
+
 **還沒做**（`--part b`，之後）: m7_sim validate（要 P1）、08 消融的分析（要 P2）、D3（要 P1、P2、A0；C7-anchor 在 H200 沒做 → 那部分 NOT_MEASURED）、第 1 輪的分析（要 P3、Qwen3）。
-D4（要 Mooncake trace、SCBench）、D5（要模型 config）要先下載並核對和 MI300X 同一份。D6 用到 3090 量的反量化成本（H200 沒量，F3 屬第二階段）→ 先不做，等使用者決定。
+D4、D5、D6 已做（上面）。
