@@ -25,4 +25,4 @@
 
 **10/16 10:29Z**（RUNLOG §10.10）：33bz 判「INT4 階：Llama 均勻不夠 → Step 2 在 Llama 上做」→ `route_after_int4.py` 把 33c 改成只跑 llama（`queue/33c_quality_int4_mixed.sh` 是改過、跑時的版本），寫出 `46_quality_int4_mixed_qwen.sh`（只報告）。
 - 10:5xZ 加 `33cz_decide_step2_int4.sh`＋`analyze_step2_int4.sh`：33c 跑完，用凍結的判定程式判穩定差距第 1、2 條與 K2（只用 CPU）。
-- 14:4xZ：加 `42a_plan_confirm.sh`（CPU）：42 之後照 41 的 `finalists_<m>.json` 用 `m10_confirm.py plan` 寫出 `43_sweep_confirm.sh`（09 §4.3）。
+- 14:0xZ：加 `42a_plan_confirm.sh`（CPU）：42 之後照 41 的 `finalists_<m>.json` 用 `m10_confirm.py plan` 寫出 `43_sweep_confirm.sh`（09 §4.3）。
