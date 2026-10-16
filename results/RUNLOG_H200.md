@@ -169,6 +169,14 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
    `20261016-090446-…`（快照漏了 `c6_vllm_backend.txt` → C6 的 backend 欄 NOT_MEASURED）。
 3. 圖的字型：head node 和 compute node 的 matplotlib 都找不到 Noto Sans CJK TC（`findfont` 警告）；圖在 run 目錄、不進 git，不影響數字。
 
+**程式版本和 MI300X 的差**（2026-10-16 查，`git diff 0b9df73 HEAD`；0b9df73＝MI300X 第一階段最後一次改 harness）：
+- `m7_restore_harness.py`：10/15（`7eb0709`、`3915ed9`）為第二階段加了低精度載入路徑（`m10_codec.Enc`，只有 host 是 Enc 時才走）。
+  BF16 路徑的 H2D 複製、限速器、同步不變，只多了每個 chunk 的記帳（`ev.query()`、`rec["blocks"]` 追加、`n_load_bf16` 等計數，`time_h2d` 預設 False 不量 H2D）。
+  每個 chunk 多幾個 Python 操作；chunk 載入是毫秒級（64 MiB ÷ 35 GiB/s ≈ 1.8 ms），影響沒有量（NOT_MEASURED）。
+- `m7_model.py`：M7_MODEL_GLOB 改成載入時才讀（修「靜默載錯模型」）、Qwen2 沒有 head_dim 時的預設、`forward_span(n_logits=1)` 的預設路徑不變。
+- `m7_write_policy.py`：只有路徑（M7_RES、M7_TIER_PARAMS、M7_DISK）和 GpuWatcher 的卡號（smi_index）。
+- 所以 H200 的 R1–R3 不是「逐位元同一份程式」：BF16 的計算與還原邏輯相同，記帳多了一點。R1 的正確性（逐位元）是在這份程式上驗的。
+
 **與 MI300X 的差異**: 方向（判準 (1)(2)）重現。值得注意的差：
 - vLLM 從 CPU 載入：H200 42–50 GiB/s，接近 C0 的 pinned H2D（53.5）；MI300X 只有約 4.1 GiB/s。
   r-h200-rest 的 P1-cpuvllm 照原決定沿用 MI300X 的 `M7_CPU_GIBPS=3.69`（＝MI300X C6 × 0.9），所以它重現的是「MI300X 的頻寬＋H200 的 GPU」，不是 H200 上 vLLM 的實際頻寬。
@@ -364,6 +372,10 @@ sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現�
   - 回歸：`m8_precision_arith.py` 改成可換 f(i)／限速層／輸出目錄（預設＝MI300X），MI300X 的輸入重跑 → 7 個檔和 git 完全相同。
   - 門檻細掃（`d6_threshold.csv`，Q1＝BF16／INT8 混用、Q2＝四種精度）：反量化 ≤1 ms／chunk 時最大增益 H200 Q1 0.02%、Q2 0.00%（MI300X 0.00%、0.00%）；3 ms 時 Q1 3.91%、Q2 22.41%（兩台相同）。
   - **判定（照 F3 的 D6 判準原文：INT8 中位數 ≤1 ms → D6 死路）：0.0296 ms → 死路**（MI300X 0.031 ms → 死路）。
+  - 和 MI300X 的 D6 不是逐字同一個實驗：程式相同（`m9_f3_dequant.py` 10/10 後沒改；`m8_precision_arith.py` 只加路徑參數、回歸相同），
+    但 (1) FP8 格式不同（MI300X e4m3fnuz、最大 240；H200 e4m3fn、最大 448；資料都 clamp 在 ±240）；(2) H200 上 FP8 的 Triton 寫法編不過；
+    (3) D6 的反量化成本來源不同：MI300X 的 D6 用 3090 的 warm TTFT 差（沒有 INT8），之後才由 F3 量 kernel 時間收尾；H200 直接用 H200 的 F3 kernel 時間（含 INT8）。
+    判定的規則（INT8 ≤1 ms → 死路）兩台相同。
   - 異常：D6 跑的時候我改了同一支 `r_h200_cpu.sh`（加 d4d5），bash 邊跑邊讀，兩步都完成後讀到錯位的行：
     `code/r_h200_cpu.sh: line 242: gap_posthoc.csv: command not found`、`line 243: TO: unbound variable` → runner exit 1。兩個 D6 run 都在這之前 exit 0、run_id 已記，沒有多出別的 run。之後不在 runner 執行中改它。
 
