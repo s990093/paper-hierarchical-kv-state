@@ -240,3 +240,32 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
 
 **不做的**: MI300X 第一版 vllmf（相減法；程式沒有留下）。CPU 的模擬（r1-sim、`m7_round1_analyze`）之後在 head node 做。
 
+### job 20555 `r-h200-la-f2` — 停在 F2-gate（2026-10-16 09:06:34，FAILED exit 1:0，跑了 6 分 14 秒）
+**開跑時的配額**（`quota -gw`，hgx-cn01）：`/dev/md1` 1,500,651,816 KiB／上限 1,610,612,736 KiB（1431.1／1536 GiB）→ **compute node 上讀得到 lab 配額**，20556 可以自己在下載前檢查。
+**完成的步驟**（都 exit 0）:
+| 步驟 | run_id | 產出檔 |
+|:--|:--|:--|
+| LA-ok | `20261016-090022-m7h-r1-ok-longalpaca7b` | `results/m7_explore_h200/correct_longalpaca7b.json`：HF 兩次、重算、主機往返都逐位元相同；argmax 相同；對 HF logit 最大差 0.09375 |
+| LA-c1 | `20261016-090036-m7h-r1-c1-longalpaca7b` | `results/m7_explore_h200/calib_c1_longalpaca7b.csv`（228 列） |
+| LA-vllmf2 | `20261016-090056-m7h-r1-vllmf2-longalpaca7b` | `results/m7_explore_h200/vllmf2_longalpaca7b.csv`（1116 列） |
+| F2-probe | `20261016-090154-m7h-f2-probe` | run 目錄的 `f2_probe.csv`、`f2_counter_raw.csv`、`f2_probe_power_samples.csv`、`f2_probe_meta.json` |
+LA 的數字和 MI300X 的比較留到全部跑完、在 head node 一起做。
+
+**F2-probe 的關鍵數字**（NVML，H200 PCI `00000000:51:00.0`＝torch 的卡；driver 610.43.02、power limit 700 W）:
+- 能量計數器（`nvmlDeviceGetTotalEnergyConsumption`）：解析度 1 mJ；**更新週期中位數 99.87 ms**（p10 95.77、p90 104.25、最大 105.14 ms；5 s 內讀 660 次、變了 51 次）；
+  **讀一次 6.67 ms**（中位數；最大 19.67 ms）。MI300X（amdsmi）：更新週期 1.98 ms、讀一次 0.27 ms。
+- 功率（ΔE/Δt）：閒置（沒載模型）79.7–80.7 W；閒置（載了模型）123.2–123.3 W（結尾 125.7 W）；不限速 pinned H2D 153.3–154.2 W；
+  NFS 速度只載入（P_wait）123.5–123.8 W；只重算 64 chunk（P_b，約 2.1 s）636.3–649.1 W。
+- ≥10 s 區段，ΔE/Δt 和瞬時功率（`NVML_FI_DEV_POWER_INSTANT`，有支援）平均的差：−0.12%～+0.84%（13 段）。
+
+**F2-gate**（run `20261016-090631-m7h-f2-gate`；`results/m9_followup_h200/f2_gate.csv`）:
+- 沒過的一條：**更新週期 ≤ 最短還原的 5%**：99.87 ms vs 門檻 5.21 ms（最短還原＝cpu35 的 Cake，用 H200 的 C1 f(i) 和頻寬算出 104.1 ms）。
+- 過的：計數器有變（51 次）、≥10 s 區段的差 ≤5%（13/13）、NVML 和 torch 是同一張卡。
+- 其他層的預測還原時間：cpu11 274.8 ms、cpu369 643.6 ms、local 411.8 ms、nfs 1699.0 ms（都比 2 s 短，所以每一層都過不了 5%）。
+- probe 裡的 e_rec(i)（每次 20 個 chunk 背靠背，0.36–0.95 s）也只有 4–10 個計數器更新週期，同樣受影響。
+
+**停下的原因與要決定的事**: 預先登記（`docs/research_20261010_followup/F2_energy_kappa.md` §2 第 42 行）：
+「更新週期 > 最短一次還原時間的 5% → 改成 K 次還原連續跑、一起量、再除以 K；K 在看任何還原結果之前，只依步驟 (a) 的更新週期決定」。
+`m9_f2_energy.py sweep` 沒有實作 K 次一起量 → 照 R-r1x 開頭寫好的：停下來回報，不自己加。**等使用者決定**（實作 K、或 H200 的 F2 記 NOT_MEASURED）。
+沒跑的步驟：F2-cakee、F2-sweep、F2-final、F2-cakee-la7b、F2-sweep-la7b、F2-final-la7b、F2-la7b-clean。20556（qwen3）只等 20553（afterok，已滿足）和 20554（afterany），不受影響。
+
