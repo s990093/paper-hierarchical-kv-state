@@ -210,6 +210,20 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
 
 ---
 
+### P1（B 的 8 個敏感度設定）— 完成；**主設定 cpu_frac 0.5 合併 6 次後 S5 快 8.3%（超過 δ*）→ 停下回報**
+**執行時間**: job 20554，09:00:22（P1-B-rep36）→ 12:02:50（P2 開始）。8 個 run 都 exit 0，`contaminated_gpu` 全部 False
+**產出檔**: `results/m7_write_policy_h200/b_share.csv.gz`（main＋r36＋seed1＋local＋seed2＋gap2＋ssd50；>1 MB 進 git 的是 .gz，原檔在原處、加進 .gitignore）、`b_fifo.csv`、`b_share_cpu3.69.csv`、`b_workload_seed{1,2}.json`
+**B 全部設定**（run `20261016-124102-h200-b-all-settings`，head node；m7_analyze b() 同一套 → `summary_b_verdict_all.csv`、`b_vs_mi300x_all.csv`；不覆寫 R3 的 summary_*）:
+- 17 格中 16 格 S5 對 S4+ 在 −1.1%～+0.6%（MI300X 17 格 −3.0%～+0.3%）；S5 對「最好的簡單策略」都是負的（S5 沒有比較好），和 MI300X 同方向
+- **例外：主設定（share、harness、nfs、gap 0、ssd_frac 1、seed 0）cpu_frac 0.5，合併 rep 0–5（main＋r36，和 MI300X 的主設定一樣合併）：S5 對 S4+ ＝ +8.30%**（MI300X +0.26%）
+  - 逐 rep（回來請求的 TTFT 中位數；S5 對 S4+）：rep 0–2（R3-B-main，06:39–07:46）−0.16／−0.20／+0.28%；rep 3–5（P1-B-rep36，09:00–09:22）−0.99／**+8.61／+7.55%**
+  - rep 3–5 整體比 rep 0–2 慢：S4+ 0.79–0.81 s → 0.94–0.95 s（約 +18%）；cpu_frac 0.25 的 rep 3 也有 −4.66%
+  - 同節點的 job：R3-B-main 時是 siru×2、peiyu、chihchung、hao×2＋20417；r36 時是 siru×2、peiyu、chihchung＋**我們自己的 20555（LA＋F2 probe）、20570（F2 probe＋sweep）**。
+    F2 probe 有「不限速 pinned H2D 3×10 s（約 53 GiB/s）」，B 的 CPU 層載入也走 pinned H2D。〔判讀〕主機層的記憶體／PCIe 爭用很可能讓 rep 3–5 變慢、而且在 rep 內隨時間變動；
+    主機層看不到（UNOBSERVABLE_HOST），GpuWatcher 只看自己那張卡 → **無法證明**
+  - P1 其他 7 個 run（09:22–12:02）都和 20570 的 F2 sweep 同時跑；它們的 S5 對 S4+ 在 ±1.1% 內
+- R3 的判定（job 20553，主設定只有 rep 0–2，cpu_frac 0.5 −0.24%）在 r36 之前就算完了，**沒有改**。照 03 §R3 的規則，合併 6 次的這一格是「S5 快超過 δ*＝5%」→ 和第一階段相反 → 停下回報，等使用者決定
+
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
 **狀態**: la：LA 三步 PASS、F2 由 job 20570 完成（有看頭，同 MI300X）；qwen3：PENDING。2026-10-16 08:5x `make submit-r1x` 重送：job 20555 `r-h200-la-f2`（afterok:20553；**09:00:20 開始**）、job 20556 `r-h200-qwen3`（afterok:20553,afterany:20554；等 20554）。第一次送的 20544、20545（06:3x，git `53f22a0`）在 07:48:33 因 20417 失敗被撤回，沒有開始
