@@ -46,7 +46,7 @@
 
 ## Milestone R0–R3 — 硬體報告＋第一階段復現（job 20417）
 
-**狀態**: **STOPPED（R2-C6 失敗）**。2026-10-15 21:25:56 送出；2026-10-16 06:10:10 開始（hgx-cn01，git `bad42c7`）；**07:48:33 停在 R2-C6**（sacct：FAILED、exit 1:0、跑了 01:38:23）。R0 PASS、R1 PASS；R2 的 C0–C7-self、R3 的 A0／A1／B 主設定都 exit 0；C6、C6-backend、C4-t2、R-compare 沒跑 → **R3 還沒有判定**。細節見下面「R2-C6 失敗」
+**狀態**: **PASS — R3 判定 REPRODUCED**（(0)(1)(2) 都過；(3) 9/11 同方向，只記錄）。第一次 job 20417（2026-10-16 06:10:10 開始，hgx-cn01，git `bad42c7`）在 07:48:33 停在 R2-C6（見下面「R2-C6 失敗」）；修正後 job 20553 從 R2-C6 接著跑（08:56:30→09:00:20，COMPLETED，git `c4daf94`）
 **指令**: `sbatch code/r_h200_all.sh`（在 repo 根目錄；R0 沒過就停，M7_DISK 用 R0 的建議）
 **判準**: `03_plan_h200.md` §R0–§R3（事先寫死）
 
@@ -111,7 +111,7 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
   環境裡的 CUDA 套件版本不一致：nvcc 13.4、執行期 `nvidia-cuda-runtime` 13.0.96（torch 2.13.0+cu130）、`nvidia-cuda-cccl` 13.3。要讓 JIT 能用得改套件版本，風險比下面的做法大。
 - R0（`h200_probe.sh`）和送出前的檢查都沒有在 compute node 上真的啟動過 vLLM，所以沒抓到。
 
-**修正（2026-10-16，還沒送出；等使用者同意）**:
+**修正（2026-10-16，使用者 08:5x 同意「四個一起送」）**:
 1. `code/env_h200.sh`：`VLLM_USE_FLASHINFER_SAMPLER=0`（vLLM 0.28 的開關；改用 PyTorch 的 top-k／top-p 取樣器）。理由：
    量測用的請求都是 `temperature=0`（`m7_c6_vllm.py`、`m7_vllm_f.py`、`m8_vllm_drop.py`），貪婪取樣不經過 top-k／top-p，只有暖機請求會用到；
    MI300X（ROCm）本來就不走 FlashInfer 取樣器。不設 CUDA_HOME，deep_gemm 等其他路徑維持原狀。
@@ -122,13 +122,63 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
 5. Makefile：`make resume FROM=<步驟>`（＝`sbatch --job-name=r-h200-all --time=01:00:00 code/r_h200.sh --from <步驟>`；用同一個 job 名，submit-rest／submit-r1x 才接得上）。
 - 其他會起 vLLM 的步驟（r-h200-rest 的 P3 vllmf2、P4 D2；r1x 的 LA／QM vllmf2）都 source `env_h200.sh`，一起套用。
   Qwen3-30B-A3B（MoE）：vLLM 0.28 在 SM90 上未量化的 MoE 優先用 Triton（`fused_moe/oracle/unquantized.py`：FlashInfer 的 MoE 在 Hopper 排到後面），不會走 FlashInfer JIT。
-- **還沒在 GPU 上驗證**：接著跑的第一步就是 R2-C6，沒起來就會再停。
+- GPU 上驗證：job 20553 的 R2-C6（run `20261016-085632-m7h-c6-vllm`）exit 0。`vllm_server.log`：`FlashInfer top-p/top-k sampling disabled via VLLM_USE_FLASHINFER_SAMPLER=0.`、`Using FLASH_ATTN attention backend`、`Using FlashAttention version 3`（`c6_vllm_backend.txt`）。
+  同一個 log 也記到 `Default vLLM sampling parameters have been overridden by the model's generation_config.json: {'temperature': 0.6, 'top_p': 0.9}`：暖機請求沒給 temperature，所以用這組；量測請求都明確給 `temperature: 0`。
+
+### R2-C6 起接著跑 — job 20553（`make resume FROM=R2-C6`）
+**執行時間**: 2026-10-16 08:56:30 → 09:00:20（COMPLETED，exit 0；送出時 Slurm 預估 17:56 才開始，實際上 lab 空出一張卡就開始了）
+**run_id**: `20261016-085632-m7h-c6-vllm`、`…-085838-m7h-c6-backend`、`…-085841-m7h-c4-same-t2`、`…-085857`～`…-085955-m7h-c4-restart-t2`（5 個）、`…-090009-m7h-repro-compare`
+**產出檔**: `results/m7_write_policy_h200/` 的 `c6_vllm.csv`、`c6_vllm_backend.txt`、`c4_noise.csv`（加上 t2）、`repro_verdict.json`、`repro_vs_mi300x.csv`、`summary_*.csv`、`verdict.json`
+
+### R3 判定 — REPRODUCED
+**run_id**: `20261016-090009-m7h-repro-compare`（job 20553 的 R-compare；`repro_verdict.json`、`repro_vs_mi300x.csv`）
+**判準**: `m7_repro_compare.py` 檔頭＝03 §R3（開跑前寫死）。δ* ＝ max(5%, H200 的 C4 δ)
+**關鍵數字**（兩台都用 `m7_analyze.py` 同一套算法；**只比方向**，不進精度這條線的任何圖或判定）:
+- C4 雜訊 δ：H200 **1.76%**（t1＋t2）、MI300X 6.17% → δ* = **5.0%**
+- (0) kv_bad：A0＋A1＋B 合計 **0** → PASS
+- (1) 讀取時 Cake 有用（A0）：28 格裡 **25 格**比「只算」「只載」較快者再快超過 δ*，最大 **93.3%**；最長 L 時有效的頻寬組和 MI300X 相同（100/56/32/25/7 Gbps、local、nfs）→ REPRODUCED
+- (2) 寫入時依位置決定沒有淨價值（B 主設定，S5 對 S4+，正＝S5 較快）：cpu_frac 0.25／0.5／1.0 = **−0.07%／−0.24%／+0.03%**（各 3 rep），都在 ±5% 內 → REPRODUCED。
+  MI300X 同一格（rep 0–5 合併）：+0.07%／+0.26%／−0.30%（來自下面的 gzfix 重跑）
+- (3) GPU 忙時沒有備份的代價（A1 Q2，S3 對 S0，gap＝inf；MI300X 上顯著的 11 格）：**9/11 同方向**（S3 較慢）→ PARTIAL（只記錄，不擋 D0）。
+  方向相反的兩格：local／busy2／4096（MI300X +45.6%、H200 −2.5%）、nfs／busy1／16384（MI300X +13.2%、H200 −3.9%）
+- (4) C6（vLLM 0.28＋OffloadingConnector，只報告）：
+
+| L | vLLM 冷（重算） | vLLM 熱（CPU 載入） | vLLM CPU→GPU | harness 只算 | harness ÷ vLLM 冷 |
+|--:|--:|--:|--:|--:|--:|
+| 8K | 0.209 s（MI300X 0.443） | 0.046 s（0.292） | 42.0 GiB/s（4.02） | 0.360 s（0.645） | 1.72×（1.46×） |
+| 16K | 0.482 s（1.304） | 0.073 s（0.553） | 48.0 GiB/s（4.09） | 0.831 s（1.439） | 1.72×（1.10×） |
+| 32K | 1.224 s（4.584） | 0.128 s（1.080） | 49.9 GiB/s（4.11） | 2.131 s（3.759） | 1.74×（0.82×） |
+
+**R2 校準**（H200 vs MI300X；`repro_vs_mi300x_gzfix.csv`）:
+- C0 pinned 1 GiB（中位數，rep>0）：H2D 53.54 vs 53.59 GiB/s、D2H 50.04 vs 45.25；duplex：單向 H2D 53.53 vs 53.53、同時做 D2H 時 H2D 53.40 vs 46.12
+- C1 f(i)（Llama-3.1-8B，chunk 0／79）：17.8／55.2 ms vs 28.9／98.8 ms；斜率 0.473 vs 0.888 ms/chunk
+- C5 GPU 忙的程度（busy-levels 依規則選）：busy1 = duty 0.6 → 1.51×（MI300X 0.4 → 1.48×）；busy2 = duty **1.0** → **1.945×**（MI300X 0.7 → 2.07×）。
+  H200 上 duty 掃到 1.0 才接近 2×，離目標 0.055×（< 0.10 的警告線）
+- C7-self 限速器誤差：−0.41%～0.0%（MI300X −0.3%～0.0%）
+
+**失敗與異常**:
+1. R2-C6 第一次失敗（上面）。
+2. **比較程式沒讀到 MI300X 的 `b_share.csv.gz`**：`m7_repro_compare.py` 的 `analyze()` 只複製 `.csv`／`.json`，MI300X 的 B 主設定在 git 裡是 `.csv.gz` →
+   job 20553 的 `repro_vs_mi300x.csv` 裡 B 主設定三格的 MI300X 欄是 `NOT_MEASURED`，自我檢查寫 `summary_b_verdict.csv: rows 17 vs 4`。
+   判定 (2) 只看 H200 的值和 δ*，不受影響。修正：`analyze()` 也解壓 `.csv.gz`。
+   head node 重跑（run **`20261016-090548-h200-repro-compare-gzfix`**，§4.1 手動記錄殼，只用 CPU；不給 `--write-summaries`）→ `repro_vs_mi300x_gzfix.csv`、`repro_verdict_gzfix.json`。
+   H200 那邊用快照＝job 20553 判定時的輸入（`b_share.csv` 只留 `20261016-063929-m7h-b-nfs-gap0`：20554 的 P1-B-rep36 09:00 起在往同一個檔追加）。
+   結果：`criteria` 和 job 的 `repro_verdict.json` **逐字相同**；並排表 103 列只有 B 主設定三格的 MI300X 欄從 NOT_MEASURED 補上值；
+   MI300X 重算 vs 已提交 summary 四個檔的最大差都是 **0.0**（`summary_b_verdict.csv` 17 列全對上）。job 的原檔不覆寫。
+   作廢的兩次（run 目錄留著，放了 `SUPERSEDED`）：`20261016-090254-…`（直接讀 `$M7_RES`，讀到 rep36 寫到一半的 210 列；判定碰巧相同）、
+   `20261016-090446-…`（快照漏了 `c6_vllm_backend.txt` → C6 的 backend 欄 NOT_MEASURED）。
+3. 圖的字型：head node 和 compute node 的 matplotlib 都找不到 Noto Sans CJK TC（`findfont` 警告）；圖在 run 目錄、不進 git，不影響數字。
+
+**與 MI300X 的差異**: 方向（判準 (1)(2)）重現。值得注意的差：
+- vLLM 從 CPU 載入：H200 42–50 GiB/s，接近 C0 的 pinned H2D（53.5）；MI300X 只有約 4.1 GiB/s。
+  r-h200-rest 的 P1-cpuvllm 照原決定沿用 MI300X 的 `M7_CPU_GIBPS=3.69`（＝MI300X C6 × 0.9），所以它重現的是「MI300X 的頻寬＋H200 的 GPU」，不是 H200 上 vLLM 的實際頻寬。
+- harness 只算比 vLLM 冷啟動慢 1.7×（MI300X 32K 時 harness 反而快：0.82×；MI300X 的 vLLM 開 connector 後退回 TRITON_ATTN，F1）。H200 的 vLLM 用 FlashAttention 3。
 
 ---
 
 ## Milestone R-rest — 第一階段其餘的 GPU 實驗（`code/r_h200_rest.sh`）
 
-**狀態**: **CANCELLED，要重送**。job 20454（2026-10-15 23:51 `make submit-rest` 送出，`--dependency=afterok:20417 --kill-on-invalid-dep=yes`、`--time=30:00:00`）在 2026-10-16 07:48:33 因 20417 失敗被 Slurm 撤回，沒有開始
+**狀態**: **RUNNING** — job 20554（2026-10-16 08:5x `make submit-rest` 送出，afterok:20553；**09:00:20 開始**）。第一次送的 job 20454 在 07:48:33 因 20417 失敗被 Slurm 撤回，沒有開始
 **決定**: 2026-10-15 使用者：「先把所有東西都復現，第二階段不動」。MI300X 到 10/23 到期。
 **指令**: `make submit-rest`（＝`sbatch --dependency=afterok:<r-h200-all> --kill-on-invalid-dep=yes code/r_h200_rest.sh`）；每一步的指令：`make dry-run-rest`（28 步）
 **範圍**（MI300X 上付費跑過、只用 Llama-3.1-8B、R3 沒涵蓋的；指令照 `docs/migration_20261013/inventory/run_commands.tsv`，只換路徑）:
@@ -154,7 +204,7 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
 
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
-**狀態**: **CANCELLED，要重送**。2026-10-16 06:3x `make submit-r1x` 送出（git `53f22a0`）的 job 20544 `r-h200-la-f2`（afterok:20417）、job 20545 `r-h200-qwen3`（afterok:20417,afterany:20454），07:48:33 因 20417 失敗被撤回，都沒有開始
+**狀態**: **RUNNING／PENDING** — 2026-10-16 08:5x `make submit-r1x` 重送：job 20555 `r-h200-la-f2`（afterok:20553；**09:00:20 開始**）、job 20556 `r-h200-qwen3`（afterok:20553,afterany:20554；等 20554）。第一次送的 20544、20545（06:3x，git `53f22a0`）在 07:48:33 因 20417 失敗被撤回，沒有開始
 **注意**: 這兩個 commit（`b1c74cb`、`53f22a0`）是在 20417 執行中做的；20417 之後的 run 的 context.txt 會記成新的 HEAD，但它用到的檔案和 `bad42c7` 相同（這兩個 commit 只改 m9_f2_*、Makefile、新檔、RUNLOG、R0 的產出）
 **決定**: 2026-10-16 06:1x 使用者對兩項都說「好」：下載 LongAlpaca-7B 和 Qwen3-30B-A3B（約 71 GiB）、F2 改成 NVML 再跑
 **指令**: `make submit-r1x`，送出兩個 job：
