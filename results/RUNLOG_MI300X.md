@@ -523,13 +523,29 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **另外加的 stage**（10:5xZ，只用 CPU）：`33cz_decide_step2_int4.sh` → `analyze_step2_int4.sh llama`。它用凍結的 `m10_analyze.py quality --strip-fmt` 和 `step2` 判穩定差距第 1、2 條與 K2。`step2` 沒有 `--strip-fmt`，所以先照 `cmd_quality` 同樣的規則把 `@int4_kivi` 拿掉、寫成暫存檔，判準一行都沒改。K2 成立 → 主線停；第 1、2 條成立 → NEEDS_HUMAN（第 3 條要新 seed 重跑）。用改名的端點列當假資料，在沙盒測過兩個分支。
 - **解讀**（寫進 08 §2.5.3、§0、H7、§6 第 1 點）：INT4 不挑位置、品質沒掉；判「不夠」只因為真實 CPU 層、原寫法反量化的速度（11 問題一）。〔照規則推〕速度判準只看限速層的話，兩個模型都會「過」→ 判定流程整個停。
 
-### 10.11 INT4 的敏感度檢查（10/16 12:xZ，CPU；探索，只報告）
+### 10.11 INT4 的敏感度檢查（10/16 12:xZ，CPU＋一次 GPU 小測；探索，只報告）
 
 - **起因**：使用者問「INT4 兩個模型都過，會是題目簡單、上下文太短、code 有錯嗎？其他人怎麼寫？」
-- **指令**：`python code/m10_int4_sensitivity.py`（讀 `quality/step1_<m>_*.csv`、`quality_sealed/int4end_<m>_*.csv`，run 見 10.8、10.10）→ `analysis/int4/sensitivity.{json,md}`；CPU 假資料檢查 KIVI 的分組與 16 階（指令在 11 問題二 §2）；`python code/m10_codec.py --self-test`（CPU，ALL PASS）。
+- **指令**：`python code/m10_int4_sensitivity.py`（讀 `quality/step1_<m>_*.csv`、`quality_sealed/int4end_<m>_*.csv`，run 見 10.8、10.10）→ `analysis/int4/sensitivity.{json,md}`；CPU 假資料檢查 KIVI 的分組與 16 階（指令在 11 問題二 §2）；`python code/m10_codec.py --self-test`（ALL PASS）。
+  - **更正**：我以為這一步只用 CPU（先 export `HIP_VISIBLE_DEVICES=""`），但之後 `source code/m7_env.sh` 又把它設回 0，所以自測第 6 項（GPU 與 CPU 逐位元相同）其實用到了 GPU：12:10:13–38Z，33c 品質段，`int4mix_llama_T5.gpu_guard.json` 記到 pid 3637838（0 MiB、2 筆）。品質段允許小測、分數不受影響（10.10 的重現檢查）。以後要遮 GPU，要在 source 之後才 export。
 - **關鍵數字**：見 11 問題二 §2（E0 64–87%；INT4 和 E0 逐字相同 74.6%／73.9%；每 token Δlog p：Llama T3 −0.0077 ± 0.0037、T5 −0.0067 ± 0.0031，Qwen T5 −0.0275 ± 0.0051）。
 - **失敗與異常**：第一版腳本格式字串錯（`ValueError: unsupported format character '|'`），改掉重跑；不影響數字。
 - **文獻**：11 問題二 §3（搜尋摘要級，未逐頁核對；self-review）。
+
+### 10.12 INT4 階 Step 2（Llama）＋ K2 判定（stage 33c／33cz，2026-10-16 10:29 → 12:32Z）——主線判定流程走完
+
+- **run_id**：`20261016-102921-m10-i4m-llama-T24-s0`、`-103036-…-s1`、`-103151-…-s2`、`-103306-…-s3`、`-103421-…-s4`、`-103536-…-s5`、`-115740-m10-i4m-llama-T5`。7 個 process 全部 rc＝0。
+- **指令**：`jobs/queue/33c_quality_int4_mixed.sh`（MODELS＝llama；`--configs F25@int4_kivi M25@int4_kivi B25@int4_kivi R25@int4_kivi --modes A B --bws b32`）；判定 `jobs/queue/33cz_decide_step2_int4.sh` → `jobs/analyze_step2_int4.sh llama`（凍結的 `m10_analyze.py quality --strip-fmt`、`step2`）；排版 `jobs/report_bits.sh step2int4 llama`（10/16 13:0xZ 新加的模式，只排版）。
+- **產出檔**：`quality_sealed/int4mix_llama_*.csv.gz`（＋gpu_guard）；`analysis/int4/{quality_llama_step2.json, quality_llama_step2_table.csv, step2_llama_int4.json, tables_step2_llama_int4.md}`；`figs/{A,C}_llama_int4_step2.png`。
+- **關鍵數字**：
+  - 對 E0：16 格 ε 全過；讀法 A F25 +0.5、M25 +0.6、B25 +0.2、R25 +0.2 個百分點；讀法 B 的 F25 讀到 0 個 INT4 block（和 E0 相同）。
+  - 穩定差距（b32，對 R25）：F25 閒 +0.12 [−0.37, +0.63]、M25 閒 −0.06、B25 閒 +0.30、F25 忙 −0.33 [−0.77, +0.12]、M25 忙 +0.27、B25 忙 −0.15；門檻 ≥ 2 個百分點 → 第 1、2 條都不成立。
+  - **33cz：`stable_gap_1_2=False K2=True` → 主線停**（03 §2.5；不到 Step 3，也不需要新 seed 重跑）。
+  - 速度：B25 比 R25 快（b32 閒 1.141 vs 1.255 s、忙 1.611 vs 1.705 s），但全 INT4 更快（閒 0.681 s）、品質一樣。
+- **失敗與異常**：
+  1. 7 份 gpu_guard 都是 CONTAMINATED：外來 pid 是同批 7 個 process；3 筆 pid −1（11:58:14、12:00:18，單筆，process 開始／結束那一刻，同 10.4 的收尾殘影）；pid 3637838（12:10，我的 codec 自測，見 10.11 的更正）。分數保留、`latency_ms` 作廢。
+  2. `report_bits.sh step2int4` 第一次畫圖 C 失敗（`KeyError: ('T2_front-back_s10000', '1')`：圖 C 要 E0 的列配對，int4mix 的 CSV 沒有 E0），改成連 Step 1 的 CSV 一起讀，重跑成功。
+- **解讀**（寫進 08 §0、§2.6、H2、§6 第 1 點）：兩階都得到同一個答案——**依位置決定精度沒有幫助**。§6 第 1 點選 (a) 或 (b) 都是「主線停、不需要位置策略」，只差寫法。
 
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
 
@@ -600,6 +616,15 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **文獻**（這次查的，摘要級）：CacheGen（傳 chunk i 時解 i−1）、LMCache（arXiv 2510.09665：運算與搬資料分 stream、逐層）、BanaServe（2510.13223：三段管線）、ShadowServe（2509.16857：同一張 GPU 上解壓和計算互相拖慢）、Marlin／TileLang（位元技巧轉 4-bit）。
 - **此次 audit 為 self-review，非 cross-model。**
 
+### 11.2e 冒煙 39（10/16 12:32 → 12:56Z；scratch，數字不進 results）
+
+- run：`20261016-123224-m10-sweep-smoke2-parts-qwen`、`-123319-…-screen-qwen`、`-123419-…-parts-llama`、`-123519-…-screen-llama`、`-123635-…-dqfast`、`-123647-…-dqgrid-qwen`、`-123742-…-dqoffset`、`-123748-…-dqsweep-qwen`、`-124652-…-dqsweep-llama`，全部 rc＝0。
+- 大掃描冒煙：兩個模型各 392 列，5 種格式 × 3 種讀法都有（`smoke2 fail=0`）。
+- 融合 kernel GPU 自測：6 種格式逐位元相同（ALL PASS）。
+- Llama 大小的整個 KV 緩衝上的融合 kernel（int32 溢位修過）：51 項 ALL PASS。
+- 方法掃描的新還原路徑（真模型，KV 逐位元）：Qwen 144 項（540 s）、Llama 144 項（569 s）ALL PASS。
+- → 40、41、42、42b 照排；沒有 NEEDS_HUMAN、沒有東西搬到 hold/。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。
@@ -610,6 +635,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 然後才是只報告的 55／60／70／75／INT4 封存。FP8 混合配置（35）不是關鍵段時，由 stage 31 改名成 45，排在大掃描後面。
 - **10/16 03:5xZ 實際順序**：33a INT4 速度格子（跑中）→ 33b INT4 端點 → 33bz 判定 → 33c INT4 混合配置（33bz 可能改成只跑一個模型或搬到 46）→ 39 重跑冒煙 → 40 試跑 → 41 海選 → 42 → 45 FP8 混合（只報告）→ 55 → 60 → 70 → 75 → 88。
 - **10/16 10:4xZ 實際順序**（33bz 判完）：33c Llama INT4 混合配置（10:29Z 跑中）→ 39 冒煙（大掃描、反量化方法、Llama 大小緩衝的 kernel）→ 39a 長 context 冒煙 → 40 試跑 → 41 海選 → 42 → 42b → 42c → 43 大掃描複賽（41 跑完才寫）→ 45 FP8 混合 → 46 Qwen INT4 混合（只報告）→ 55 → 60 → 70 → 75 → 88 → 90 → 91 → 92（長 context，32K 全部之後）。估計還要約 71–92 小時（10/16 08:5xZ 估；33b 比估計早約 1 小時跑完）。
+- **10/16 13:0xZ**：33c 12:32Z 跑完（估計 13:30–15:00，提早）→ 33cz 判 K2（主線停）→ 39 冒煙全過（12:56Z）→ 39a 長 context 冒煙跑中 → 接著 40 試跑。順序不變。
 
 ## Milestone 12 — 第二階段長 context（32K／64K／128K；探索），MI300X（準備中）
 

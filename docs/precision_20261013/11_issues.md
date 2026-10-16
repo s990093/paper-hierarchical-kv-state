@@ -98,7 +98,7 @@
   - 8 bit 大多在 0 附近（例外：Qwen INT8 T2 −0.0176 ± 0.0027）。
   - → **INT4 有傷，但在 32K 還不夠大，答案翻不過去**。最敏感的是 T5（整段統計常見詞，要用到整段 context）。
 - **程式**：
-  - CPU 假資料（K 的某個 channel 加 400，模擬 Qwen）：KIVI 每一組（K：32 token × 1 channel；V：1 token × 32 channel）最多 16 個不同值；連 scale／zero 每個值 5 bit（0.625 byte）；`m10_codec.py --self-test` ALL PASS。
+  - CPU 假資料（K 的某個 channel 加 400，模擬 Qwen）：KIVI 每一組（K：32 token × 1 channel；V：1 token × 32 channel）最多 16 個不同值；連 scale／zero 每個值 5 bit（0.625 byte）；`m10_codec.py --self-test` ALL PASS（它的第 6 項其實用到了 GPU，見 RUNLOG 10.11 的更正）。
   - 同一份假資料，int4_token（每 token 一個 scale）其他 channel 的 K 相對誤差＝1.0（全被壓成 0），KIVI 是 0.078 → 和「Qwen 的 FP8 壞、KIVI 不壞」同一個機制。
   - 讀法 A 每題讀到 64／64 個 INT4 block（CSV 的 `lp_read`）。
   - 和原版 KIVI 的差別：原版把最近 128 個 token 留全精度；我們 context 全部量化（只有問題本身的 KV 是 BF16）→ 比原版嚴格。

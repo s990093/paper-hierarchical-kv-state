@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 報告用的表與圖（只排版、不重算判準；CPU）。用法：report_bits.sh speed <model> <fp8|int4> | step1 | k3 <model> | int4
+# 報告用的表與圖（只排版、不重算判準；CPU）。用法：report_bits.sh speed <model> <fp8|int4> | step1 | k3 <model> | int4 | step2int4 <model>
 set -euo pipefail
 REPO=/mlsteam/workspace/paper-hierarchical-kv-state; OUT=$REPO/results/m10_precision_mi300x; FIG=$OUT/figs
 source $REPO/code/m7_env.sh >/dev/null
@@ -44,5 +44,26 @@ int4)
     { echo "## $m INT4 端點"; echo; $T quality --json $A/quality_${m}_int4.json; } > $A/tables_int4_$m.md
   done
   $T decide --json $A/decide_int4.json > $A/tables_decide_int4.md; cat $A/tables_decide_int4.md ;;
+step2int4)
+  # step2int4 <model>：INT4 階 Step 2（33c／33cz）的表與圖；判準來自 analyze_step2_int4.sh 的 JSON，這裡只排版
+  m=$2; A=$OUT/analysis/int4; I=int4_kivi
+  d=$(python3 -c "import json;print(json.load(open('$A/speed_$m.json'))['delta_star'])" 2>/dev/null || python3 -c "import json;print(json.load(open('$OUT/speed_$m/noise.json'))['delta_star'])")
+  { echo "## $m INT4 階 Step 2（混合配置，各 25% INT4）"; echo; $T quality --json $A/quality_${m}_step2.json; echo;
+    echo "### 穩定差距（對 R25；b32）"; echo; python3 - $A/step2_${m}_int4.json <<'PY2'
+import json, sys
+d = json.load(open(sys.argv[1]))
+print("| 配置 | GPU | 對 R25 的差（百分點） | 95% CI | 還原時間 X／R25（s） | 第 1 條 |")
+print("|:--|:--|--:|:--|:--|:--|")
+for c in d["cond1"]:
+    print(f"| {c['config']} | {'閒' if c['gpu_state'] == 'idle' else '忙'} | {100 * c['diff_vs_R25']:+.2f} | "
+          f"[{100 * c['ci95'][0]:+.2f}, {100 * c['ci95'][1]:+.2f}] | {c['t_x']:.3f}／{c['t_R25']:.3f} | {'成立' if c['cond1_pass'] else '不成立'} |")
+print()
+print(f"- 穩定差距第 1、2 條＝{d['stable_gap_1_2']}；**K2＝{d['K2']}**（δ*＝{d['delta_star']}）")
+print(f"- {d['note']}")
+PY2
+  } > $A/tables_step2_${m}_int4.md
+  $F A --quality $A/quality_${m}_step2.json --summary $OUT/speed_$m/summary_int4.csv --delta-star $d --out $FIG/A_${m}_int4_step2.png
+  $F C --model $m --csv $OUT/quality/step1_${m}_*.csv $OUT/quality_sealed/int4mix_${m}_*.csv --configs F25@$I M25@$I B25@$I R25@$I --out $FIG/C_${m}_int4_step2.png
+  cat $A/tables_step2_${m}_int4.md ;;
 *) echo "用法見檔頭"; exit 2 ;;
 esac
