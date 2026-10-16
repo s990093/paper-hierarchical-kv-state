@@ -3,7 +3,7 @@ source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scr
 set -uo pipefail
 [ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "事先登記還沒凍結"; exit 1; }
 mkdir -p $OUT/quality_sealed
-MODELS=${MODELS_51:-"llama qwen"}
+MODELS="llama"   # stage 33bz：Step 2 在 llama 上做
 python3 - <<PY
 import json
 def fmt(m,t): return json.load(open("$OUT/fmt_select/fmt_choice.json"))["choice"][m][t]

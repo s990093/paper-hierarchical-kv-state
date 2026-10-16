@@ -502,6 +502,23 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **失敗與異常**：無。`speed_<m>/{summary,k0_verdict,spec_grid}.*` 是「最近一次」的副本，現在等於 `*_int4.*`；FP8 的版本在 `*_fp8.*`。
 - 寫進 08 §2.5、§0、§6 第 1 點（速度判準要不要管 CPU 層，要老師決定）。
 
+### 10.10 INT4 端點品質＋判定（stage 33b／33bz，2026-10-16 06:40 → 10:29Z）
+
+- **run_id**：Llama `20261016-064017-m10-i4e-llama-T24-s0`、`-064247-…-s1`、`-064518-…-s2`、`-083342-…-s3`、`-084041-…-s4`、`-084311-m10-i4e-llama-T5`；Qwen `20261016-064132-m10-i4e-qwen-T24-s0`、`-064403-…-s1`、`-064633-…-s2`、`-083457-…-s3`、`-084156-…-s4`、`-084426-m10-i4e-qwen-T5`。12 個 process 全部 rc＝0。
+- **指令**：`jobs/queue/33b_quality_int4_endpoints.sh`（`m10_quality.py run … --configs E1@int4_kivi E1s@int4_kivi E1sr@int4_kivi --modes A B --bws b32 --meets speed_<m>/meets.json`，T2–T4 n＝180 分 5 片、T5 n＝60；E0 用 Step 1 那批）；判定 `jobs/analyze_int4.sh`（凍結的 `m10_analyze.py quality --strip-fmt int4_kivi --tag int4`、`speed`、`decide --tier int4`）→ `route_after_int4.py`；排版 `jobs/report_bits.sh int4`；圖 `m10_figs.py A／C／D`。
+- **產出檔**：`results/m10_precision_mi300x/quality_sealed/int4end_<m>_*.csv.gz`（＋gpu_guard；原檔 1.4 MB 留在磁碟）、`analysis/int4/{quality_<m>_int4.json, quality_<m>_int4_table.csv, decide_int4.json, tables_int4_<m>.md, tables_decide_int4.md}`（`speed_<m>.json` 重算，只有 summary 路徑從相對變絕對）、`figs/{A,C,D}_<m>_int4.png`。
+- **關鍵數字**（對 E0 的配對答對率差，百分點，95% CI）：
+  - Llama E1：A +1.1 [+0.3, +1.9]、B・閒 +0.3、B・忙 +0.3、B・閒→忙 +0.1；E1s A +0.2、E1sr A +0.3。
+  - Qwen E1：A +0.1 [−0.8, +0.9]、B・閒 +0.7、B・忙 +0.4、B・閒→忙 +0.7；E1s A +0.4、E1sr A +0.0。T4 第 1／2 輪 −0.6／+0.6（FP8 是 −71.7／−67.2）。
+  - **ε 24 格全過**：CI 下界最低 −0.82（Qwen E1sr A）；輔助最低 −2.83（Qwen E1sr A、T5）；CI 半寬 0.64–0.84 → 檢定力不擋。
+  - Llama E1 A 的 CI 不含 0：24 格裡 1 格，5% 機率下預期約 1.2 格 → 不解讀（翻轉 12／23，和 E0 逐字相同 74.7%）。
+- **判定**（`decide_int4.json`）：兩個模型 E1／E1s／E1sr 的 ε 全過、速度不輸全沒過（只輸真實 CPU 層，10.9）→ K1、K1s 都 False → next＝「INT4 階：Llama 均勻不夠 → Step 2 在 Llama 上做」，`next_frozen_code` 相同。`route_after_int4.py`：33c 改成只跑 llama（10:29:20Z 開始），寫出 `46_quality_int4_mixed_qwen.sh`（只報告）。
+- **失敗與異常**：
+  1. 12 份 gpu_guard 都是 CONTAMINATED（自己同時開 6–7 個 process，互相看到）。分數保留、`latency_ms` 作廢（CLAUDE.md §3）。
+  2. 我的等待腳本 exit 1：只是最後 `cat NEEDS_HUMAN` 時檔案不存在（沒有 NEEDS_HUMAN），stage 本身都 rc＝0。
+  3. 後半批（s3、s4、T5）每題比前半批慢（Qwen 約 110 vs 65 秒），原因沒查；整段 3 小時 49 分。
+- **解讀**（寫進 08 §2.5.3、§0、H7、§6 第 1 點）：INT4 不挑位置、品質沒掉；判「不夠」只因為真實 CPU 層、原寫法反量化的速度（11 問題一）。〔照規則推〕速度判準只看限速層的話，兩個模型都會「過」→ 判定流程整個停。
+
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
 
 **狀態**：程式寫好、CPU／GPU 自測通過；GPU 工作已排進佇列（31z 冒煙測試 → 主線關鍵段 → 40 試跑 → 41 海選 → 42）。**還沒有任何大掃描的數字。**
@@ -580,6 +597,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 42 加速反量化後的 CPU 層速度格子。
 - 然後才是只報告的 55／60／70／75／INT4 封存。FP8 混合配置（35）不是關鍵段時，由 stage 31 改名成 45，排在大掃描後面。
 - **10/16 03:5xZ 實際順序**：33a INT4 速度格子（跑中）→ 33b INT4 端點 → 33bz 判定 → 33c INT4 混合配置（33bz 可能改成只跑一個模型或搬到 46）→ 39 重跑冒煙 → 40 試跑 → 41 海選 → 42 → 45 FP8 混合（只報告）→ 55 → 60 → 70 → 75 → 88。
+- **10/16 10:4xZ 實際順序**（33bz 判完）：33c Llama INT4 混合配置（10:29Z 跑中）→ 39 冒煙（大掃描、反量化方法、Llama 大小緩衝的 kernel）→ 39a 長 context 冒煙 → 40 試跑 → 41 海選 → 42 → 42b → 42c → 43 大掃描複賽（41 跑完才寫）→ 45 FP8 混合 → 46 Qwen INT4 混合（只報告）→ 55 → 60 → 70 → 75 → 88 → 90 → 91 → 92（長 context，32K 全部之後）。估計還要約 71–92 小時（10/16 08:5xZ 估；33b 比估計早約 1 小時跑完）。
 
 ## Milestone 12 — 第二階段長 context（32K／64K／128K；探索），MI300X（準備中）
 

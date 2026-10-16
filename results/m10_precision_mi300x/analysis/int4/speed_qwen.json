@@ -1,6 +1,6 @@
 {
  "model": "qwen",
- "summary": "results/m10_precision_mi300x/speed_qwen/summary_int4.csv",
+ "summary": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_qwen/summary_int4.csv",
  "x_summary": null,
  "delta_star": 0.09431979544274374,
  "rule": "X 不輸＝每格 median(X) ≤ min(F25,M25,B25,R25 的 median)×(1+δ*)（03 §2.4）",

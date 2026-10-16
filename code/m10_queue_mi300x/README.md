@@ -21,3 +21,5 @@
 - 45、55 改讀 `speed_<m>/meets_fp8tier.json`（33a 寫入前的會合點快照）。
 - `queue/31z_sweep_smoke.sh`、`33a_grid_int4.sh` 是跑時的版本（`.done`／`.running` 複製出來）。
 - 04:0x–04:2xZ 長 context（10_longctx_plan）：39a 冒煙（大掃描前）；90 速度、91 試跑 → `longctx_plan_n.py` 寫 92（所有 32K 工作之後）。
+
+**10/16 10:29Z**（RUNLOG §10.10）：33bz 判「INT4 階：Llama 均勻不夠 → Step 2 在 Llama 上做」→ `route_after_int4.py` 把 33c 改成只跑 llama（`queue/33c_quality_int4_mixed.sh` 是改過、跑時的版本），寫出 `46_quality_int4_mixed_qwen.sh`（只報告）。

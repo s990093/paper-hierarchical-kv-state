@@ -1,0 +1,3 @@
+- **llama**：K1＝False、K1s＝False、模型過＝False（逐配置：{'E1': False, 'E1s': False, 'E1sr': False}；檢定力半寬過＝True、擋判定＝False）
+- **qwen**：K1＝False、K1s＝False、模型過＝False（逐配置：{'E1': False, 'E1s': False, 'E1sr': False}；檢定力半寬過＝True、擋判定＝False）
+- **下一步**：INT4 階：Llama 均勻不夠 → Step 2 在 Llama 上做（03 §2.5 第 4 步、§1.1）
