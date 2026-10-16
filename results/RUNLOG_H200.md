@@ -810,3 +810,43 @@ MI300X 的做法是判準照字面讀，判準本身有問題就照字面判、�
 - `m10h-q-llama` **job 20702**、`m10h-q-qwen` **job 20703**（`--part quality`，各 40 h；`--dependency=afterok:20701 --kill-on-invalid-dep=yes`）
 - 送出時我們自己沒有其他 job（速度 job 不和自己的 job 同時跑）；lab 配額 1492G／1536G。
 - 指令：`make submit-m10` 的同一串（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch ...`）手動執行：工作目錄裡另一個工作階段正在改 `code/h200_queue.py`（排隊顯示用，job 不讀），make 的「有未 commit 的改動就不送」會擋下；其餘檢查（`h200_m10_gates.py code`／`params`）照跑、PASS。job 用的程式都在 commit `01296ac`。
+
+### job 20701 開跑（2026-10-17 07:02:04 +08:00，比 `--test-only` 預估的 16:02 早；hgx-cn01、PCI 03:00.0）
+- V0 `20261017-070207-m10h-verify`（`m10_verify.sh` 完整模式）：exit 0，07:02 → 07:08。細項等整個 job 跑完一起記。
+- 07:08 起 E0 難度確認（工作池，同一張卡同時 3 個 process）。
+
+### 10/17 改動：全部復現、128K 先跑（13 §8；送出時 20701 已在跑）
+- `m10h-lc-speed` **job 20704**（afterok:20701，16 h）：`m10_sweep parts`（--busy-duty 1.0）→ 128K FP8、INT4 → 64K FP8、INT4 的速度格子。
+- `m10h-lc-screen` **job 20705**（afterok:20704，48 h）：試跑三個長度 → 題數規則 → 正式（252 → 128 → 64 個 block）。
+- 主線品質 20702、20703：`scontrol update Dependency=afterok:20704,after:20705`（不和量時間的 20704 同時跑；20705 開始後才開始）。
+- 送出用 `make submit-lc` 的同一串指令手動執行（同 20701：工作目錄裡另一個工作階段的 `code/h200_queue.py` 沒 commit）；job 用的程式在 commit `2e27c28`。
+
+### 全部復現的清單（MI300X 第二階段做過或排了的，對照 `code/m10_queue_mi300x/`；10/17 寫）
+MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、40 跑完，41 在跑，42 以後還沒跑（預計 10/20 前跑完）。H200 照同一批腳本做。
+
+| 類 | MI300X stage | 內容 | 量什麼 | H200 |
+|:--|:--|:--|:--|:--|
+| 主線 | 10-pilot 驗證、K／V 分布 | codec、正確性、BF16 回歸、kv_stats | 驗證 | 20701（V0 過） |
+| 主線 | 10、p1 | 格式小測、E0 難度、calib-f、noise | 分數＋時間 | 20701 |
+| 主線 | 20、21、33a | FP8／2b／INT4 速度格子＋K0 | 時間 | 20701 |
+| 主線 | 30、33b、33c、46 | Step 1、INT4 端點、INT4 混合（兩個模型） | 分數 | 20702、20703 |
+| 主線 | 31、33bz、33cz | 判定 | CPU | `make analyze-m10` |
+| 長 context | 40 的零件、44a | 掃描零件；64K／128K 速度格子 | 時間 | 20704 |
+| 長 context | 44b、44c | 試跑 → 正式（32K／64K／128K × 13 格式） | 分數 | 20705 |
+| 長 context | 12.1b | `m10_longctx_analyze` | CPU | 待移植（R 寫死 MI300X 的目錄） |
+| 掃描 | 39 | GPU 冒煙：融合反量化、大緩衝 offset、dqsweep | 驗證 | 待排（Triton 在 NVIDIA 第一次跑） |
+| 掃描 | 40 | 反量化微測（bench）；試跑 → 題數 | 時間；分數 | 待排；`sweep_plan_n.py` 待移植 |
+| 掃描 | 41 | 海選：13 格式 × 17 佔比 × 12 放法（MI300X n＝24、約 10 h） | 分數 | 待排 |
+| 掃描 | 42、42b、42c | 融合反量化的 CPU 層格子；反量化方法掃描 A／B／複賽 | 時間 | 待排；`m10_dqsweep` 的 GPU 忙寫死 MI300X |
+| 掃描 | 42a、43 | 複賽（finalists → 速度＋12 個品質 process） | 時間＋分數 | 待排；`m10_confirm.py` 預設路徑待移植 |
+| 分層 | 13.1 A | IO 牆／容量（`m10_iowall`） | CPU | 待移植（RUNS、R 寫死） |
+| 分層 | 44 | 兩層混合還原（tier2） | 時間 | 待排；GPU 忙要指 H200 |
+| 只報告 | 45 | FP8 混合配置 | 分數 | 待排 |
+| 只報告 | 55、88 | T1＋LongBench（FP8／INT4） | 分數 | 待排 |
+| 只報告 | 60 | 逐 block 敏感度地圖 | 分數 | 待排 |
+| 只報告 | 70 | vLLM TTFT（預設 vs 512 切法） | 時間 | 待排；venv、模型路徑寫死 |
+| 只報告 | 75 | RULER CWE 用 vLLM（E0）＋上游 RULER 出題 | 分數 | 待排；H200 沒有上游 RULER 與 LFS 詞表 |
+| 只報告 | 10.11 | INT4 敏感度檢查 | CPU＋小 GPU | 待移植 |
+| 不做 | 22、23 | Qwen 重量（MI300X 被標污染才重量） | — | H200 被標污染時才做 |
+| 不做 | 10-pilot 調難度、31z、39a | 彩排／冒煙 | — | 參數已凍結；試跑涵蓋 |
+| 新 | — | 256K（只有 Qwen、T2–T4） | 分數＋時間 | 等 128K 結果再問（13 §8） |
