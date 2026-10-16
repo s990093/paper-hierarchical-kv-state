@@ -267,6 +267,36 @@ def placement(name: str, n: int, seed: int) -> set:
     raise ValueError(name)
 
 
+def sweep_placement(st, name: str, fmt: str) -> set:
+    """09 §4.3 複賽（10/16 加；主線的配置不會走到這裡）：'SW-<放法>-<佔比%>'（例 SW-ERR-35）→ 低精度集合。
+    和海選（m10_sweep.lp_set）同一個定義：seed＝題目 seed、needle＝第 1 輪答案所在的 block、
+    err＝這個格式每個 block 的 K 中心化誤差、att＝prefill 結束時最後一個 block 對每個 block 的 attention 量。"""
+    import m10_sweep as SW
+    _, policy, pct = name.split("-")
+    assert st.n == SW.N_BLOCKS and policy in SW.POLICIES, (st.n, policy)
+    st.lp_blocks(fmt)
+    att = None
+    if policy in ("ATT", "AXE"):
+        if getattr(st, "_att", None) is None:
+            st._att = _attention_mass(st)
+        att = st._att
+    ctx = {"seed": st.it["seed"], "needle": st.it["turns"][0]["needle_blocks"],
+           "err": [e[2] for e in st.err[fmt]], "att": att}
+    return set(SW.lp_set(policy, SW.k_of(int(pct) / 100), ctx))
+
+
+def _attention_mass(st) -> list:
+    """借用海選的 m10_sweep.ItemState.attention_mass（同一段程式）。先把緩衝放回全 BF16（定義是看 BF16 的 attention）；
+    它會重算最後一個 block 再放回 BF16，所以之後 place() 一律重放。"""
+    import types
+    import m10_sweep as SW
+    st.place("bf16", frozenset())
+    shim = types.SimpleNamespace(ans=st.ans, ids=st.ids, bf16=st.bf16, src=["bf16"] * st.n)
+    per = SW.ItemState.attention_mass(shim)
+    st.cur = None
+    return per
+
+
 def parse_config(spec: str, default_fmt: str) -> tuple[str, str, str]:
     """'F25' → ('F25','F25',fmt)；'E1s@fp8k0_head' → (名稱, 放法, 格式)；E1-K0、E1-INT8 是別名。"""
     full = ALIASES.get(spec, spec)
@@ -378,7 +408,7 @@ def item_rows(st: ItemState, cfgs: list[tuple], modes: list[str], meets: dict | 
 
     e0 = get("bf16", [frozenset()] * len(it["turns"]))
     for spec, name, fmt in cfgs:
-        lp_set = placement(name, n, it["seed"])
+        lp_set = sweep_placement(st, name, fmt) if name.startswith("SW-") else placement(name, n, it["seed"])
         cells = []                                   # (mode, bw, state, b1, b2_turn2b)
         if "A" in modes:
             cells.append(("A", "", "", 0, None))
@@ -449,6 +479,9 @@ def _watch(out_path):
 
 
 def run(a):
+    if os.environ.get("M10_CODEC_X") == "1":     # 09 §4.3 複賽的新格式（預設關＝主線的行為不變）
+        import m10_codec_x
+        m10_codec_x.install()
     ans = Answerer(a.model)
     rid = os.environ.get("RUN_ID", "adhoc")
     cfgs = [parse_config(c, a.fmt) for c in a.configs]
