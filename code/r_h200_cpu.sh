@@ -3,6 +3,7 @@
 # r_h200_cpu.sh — 第一階段的 CPU 模擬，用 H200 的常數重跑（2026-10-16，使用者：「gogo」）
 #
 #   bash code/r_h200_cpu.sh --part a            # 只需要 R2 常數的那一批（現在就能跑）
+#   bash code/r_h200_cpu.sh --part d6           # D6：反量化成本用 H200 的 F3 工作 A（results/m9_followup_h200/f3_dequant.csv）
 #   bash code/r_h200_cpu.sh --part a --dry-run | --list ；--from <步驟> [--until <步驟>]（接著跑）
 #
 # 在 head node 跑（h200q 不收純 CPU 的 job：--gres=gpu:0 → 「Invalid qos specification」，10/16 試過）。
@@ -34,7 +35,7 @@ while [ $# -gt 0 ]; do
     *) echo "不認得的參數：$1（--help 看用法）" >&2; exit 2 ;;
   esac
 done
-case "$PART" in a) ;; *) echo "[r_h200_cpu] 要指定 --part a" >&2; exit 2 ;; esac
+case "$PART" in a|d6) ;; *) echo "[r_h200_cpu] 要指定 --part a 或 d6" >&2; exit 2 ;; esac
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export REPO
@@ -208,6 +209,35 @@ step F6-summary      m7h-f6-summary      $P $F6 summary --d1-overload-expect 3 \
 # ===== F7：f 縮放（MI300X 20261012-084917／084936）=====
 step F7-run    m7h-f7-fscale-sim  $P $F7 run --scales 1.0 0.5 0.6
 step F7-judge  m7h-f7-judge       $P $F7 judge
+fi
+
+if [ "$PART" = d6 ]; then
+# ===== D6：精度的算術（MI300X 20261010-055349-d6-arith、055854-d6-thresh）=====
+# 使用者 10/16：「D6 不要 3090，都 H200，但要跑實驗」→ MI300X 的 --dmeas fp8=0.087,int4=0.814 是 3090 的 warm TTFT 差（F3 §4 查過），
+# 這裡換成 H200 的 F3 工作 A（job 20614，反量化一個 64 MiB chunk 的 GPU 時間）。照 F3 的判準取值：cold、輸出正確的實作裡最快的那個的中位數。
+# 精度對應 D6 的位元組模型（m8_precision_arith BYTES）：fp8＝fp8_tensor（32 MiB，整個 tensor 一個 scale）、
+# int8＝int8_ptk（33 MiB）、int4＝int4_sym（17 MiB，每 (token, head) 一個 scale）。int8 3090 沒量過、MI300X 的 D6 沒給；H200 量到了就給。
+F3CSV=$M9_OUT/f3_dequant.csv
+if [ "$DRY" = 0 ]; then
+  read -r DMEAS DSRC < <(python - "$F3CSV" <<'PY'
+import csv, sys
+rows = [r for r in csv.DictReader(open(sys.argv[1])) if r["cache_state"] == "cold" and r["correct"] == "True"]
+pick = {"fp8": "fp8_tensor", "int8": "int8_ptk", "int4": "int4_sym"}
+out = []
+for k, prec in pick.items():
+    c = [r for r in rows if r["precision"] == prec]
+    assert c, f"{prec} 沒有輸出正確的 cold 列"
+    b = min(c, key=lambda r: float(r["median_ms"]))
+    out.append(f"{k}={float(b['median_ms']):g}")
+    print(f"[d6] {k} ← {prec}/{b['impl']} cold median {b['median_ms']} ms", file=sys.stderr)
+print(",".join(out), rows[0]["run_id"] + "_f3A_cold_fastest_correct_median_ms_per_chunk")
+PY
+) || { echo "[r_h200_cpu] 讀不到 $F3CSV 的反量化成本 → 停" >&2; exit 2; }
+else
+  DMEAS="<f3_dequant.csv>"; DSRC="<run>"
+fi
+step D6-arith   m7h-d6-arith  $P code/m8_precision_arith.py --dmeas "$DMEAS" --dmeas-src "$DSRC"
+step D6-thresh  m7h-d6-thresh $P code/m8_precision_arith.py --threshold
 fi
 
 if [ -n "$UNTIL" ] && [ "$DONE" = 0 ] && [ "$STARTED" = 1 ]; then

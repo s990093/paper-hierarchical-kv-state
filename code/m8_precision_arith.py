@@ -47,9 +47,11 @@ import numpy as np  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, ".."))
-C1 = os.path.join(REPO, "results", "m7_write_policy_mi300x", "calib_c1.csv")
-TP = os.path.join(REPO, "results", "m7_write_policy_mi300x", "tier_params.json")
-OUT = os.path.join(REPO, "results", "m8_directions")
+# 預設＝MI300X 的 f(i)、限速層與輸出目錄。平台 C（H200）：M7_F_CSV 或 M7_RES 的 calib_c1.csv、M7_TIER_PARAMS、M8_OUT（2026-10-16）
+_RES = os.environ.get("M7_RES") or os.path.join(REPO, "results", "m7_write_policy_mi300x")
+C1 = os.environ.get("M7_F_CSV") or os.path.join(_RES, "calib_c1.csv")
+TP = os.environ.get("M7_TIER_PARAMS") or os.path.join(REPO, "results", "m7_write_policy_mi300x", "tier_params.json")
+OUT = os.environ.get("M8_OUT") or os.path.join(REPO, "results", "m8_directions")
 
 MiB = 1 << 20
 GiB = 1 << 30
