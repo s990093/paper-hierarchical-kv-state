@@ -1,0 +1,77 @@
+# 13　第二階段主線在 H200 上的復現（事先登記）
+
+> 回到 [README](README.md)。MI300X 的凍結版：[07](07_freeze_mi300x.md)；MI300X 的結果：[08](08_report_mi300x.md)；原始規劃：[03](03_plan_h200.md)。
+> **寫入時間**：2026-10-16T22:53Z（`date -u`），h200 分支 commit `944497e` 之後。**到這時 H200 上沒有任何第二階段的結果**（`results/m10_precision_h200/` 不存在；H200 只跑過第一階段、R1 的正確性與 CPU 自測）。MI300X 的第二階段結果已經公開在 08，所以這一頁是「看過 MI300X 的答案、沒看過 H200 的答案」時寫的。
+> 這一頁寫死之後要改任何一項：另起一節寫「改了什麼、為什麼、在看到什麼結果之前或之後」，不覆蓋原文。
+
+---
+
+## 0. 要回答什麼
+
+**MI300X 主線的每一個判定，換到 H200 上還一樣嗎？** 主線＝08 §0 的判定流程：
+K0（FP8）→ Step 1（FP8 端點，兩個模型）→ Step 2b（換 codec）→ K3 → INT4 端點（K0、品質、速度不輸）→ INT4 Step 2（混合配置）→ K2。
+
+H200 在論文裡的角色是「第二台硬體的佐證」。它不分擔 MI300X 的佇列，也不和 MI300X 的數字放進同一個判定。
+
+## 1. 和 MI300X 完全相同的（不重選、不重調）
+
+| 項目 | 值 | 怎麼確認相同 |
+|:--|:--|:--|
+| 判準 | 07 的全部：ε（配對差 CI 下界 > −2 個百分點；每族、每輪點估計 ≥ −5）、bootstrap（以題重抽、10,000 次、seed 0）、檢定力規則與 07 §9 的釐清、速度不輸（≤ 最快的混合配置 ×(1＋δ\*)）、K0／K1／K1s／K3／K2、穩定差距 | 同一支 `code/m10_analyze.py`（最後修改 commit `c34c250`，H200 沒改） |
+| 程式 | 第二階段主線的 `code/m10_*.py`、`m7_restore_harness.py`、`m7_model.py`、`m7_busy.py`、`gpu_guard.py` | 和 `origin/main`（`bcfe5b1`）逐字相同，只差 `m10_tasks.py` 的模型路徑可以用 `M7_LLAMA_GLOB`／`M7_QWEN_GLOB` 指定（沒設時和 MI300X 一樣）。每個 job 開頭再比一次，不同就停 |
+| 題目與難度 | `CANDIDATE_PARAMS.json`（07 §2 的 sha256）、正式題目 seed 10000 起、T2–T4 各 180、T5 60、主判準 T2–T5 | job 開頭驗 sha256 |
+| codec | `m10_codec`：FP8 一律 e4m3fn（最大 448），兩台都不用 MI300X 原生的 e4m3fnuz；INT4、INT8 都是一般的 PyTorch 運算 | 程式相同；H200 的 GPU 自測（§3 V0）要過 |
+| 配置與讀法 | E0、E1、E1s、E1sr、E1s@fp8k0_<粒度>、E1s@int8_token、F25／M25／B25／R25；讀法 A＋B（b32，B-閒／B-忙／B-閒→忙） | 指令照 `code/m10_queue_mi300x/queue/` 的 30、33b、33c，只換路徑 |
+
+**§5.2 的 attention 修正：H200 復現也不做。** 03 開頭（10/15 晚）寫的是「H200 復現時再做」；這裡改成不做，理由是修了就改到 `m7_model.py`，H200 和 MI300X 跑的就不是同一份程式，判定不同時分不出是硬體還是程式造成的。修 attention 是另一個實驗。
+
+## 2. H200 自己量的（照 MI300X 同樣的程序）
+
+| 項目 | 程序 | 為什麼要重量 |
+|:--|:--|:--|
+| E0 難度確認 | seed 2000 起（MI300X 第 3 輪同一段 seed），兩個模型 × T1–T5 各 60 題，只跑 E0 | 03 §3.2、§7 D1：「H200 上只用 E0 確認仍在 60–95%」 |
+| K／V 分布 | `m10_kv_stats.py`（只報告） | 03 開頭 10/15：「H200 上重量一次，報告只用 H200 的數字」 |
+| 格式小測 | 07 §3 的程序：seed 4000 起、T2–T5 各 5 題，E0＋5 種 E1，只看平均 KL | 使用者 10/17：在 H200 照同一條規則重選 |
+| 頻寬 | `m10_speed.py calib-f`：讓 E0 的會合點落在 block 16／32／48 | 重算速度 f(i) 是硬體決定的 |
+| δ\* | `m10_speed.py noise`（E0，4 頻寬 × 閒／忙，3 process × 10 次） | 07 §4 的定義，每台各一個 |
+| GPU 忙 | `results/m7_write_policy_h200/busy_levels.json` 的 busy2（duty 1.0，重算慢 1.945 倍；第一階段 R2-C5 在 H200 量的） | MI300X 是 duty 0.7（慢 2.07 倍）；同一個目標「約慢 2 倍」 |
+| 會合點 | 速度格子（FP8、Step 2b、INT4），讀法 B 用 H200 的 `meets.json` | 讀法 B 的「哪些 block 來得及」取決於 H200 的速度 |
+
+## 3. 停下來的條件（寫死；停了就回報，不換方法硬跑——規則 2）
+
+1. **V0**：`m10_verify.sh`（完整模式）任何一項 FAIL。
+2. **程式不同**：job 開頭比對 §1 的檔案和 `origin/main` 的 `bcfe5b1`，多出 `m10_tasks.py` 那段以外的差異。
+3. **E0 難度**：任一個主判準任務族（T2、T3、T4、T5）在任一個模型上，E0 的合併答對率（兩輪合併；T1–T4 用 `score_64`，T5 用 `score_up`＝120 token）不在 60–95%。T1 只報告。
+4. **格式**：H200 選到的 FP8 粒度或 INT4 分組，任一個和 MI300X 不同（MI300X：Llama fp8_token、Qwen fp8_head、INT4 兩個都 int4_kivi）→ 停，問使用者（10/17 決定）。
+5. **速度格子**：`gpu_guard` 的 JSON 不是 CLEAN（自己這張卡上出現外來 process）→ 照 CLAUDE.md §3 整批重量；不改用沒標污染的那一半。
+6. 任何指令 exit ≠ 0。
+
+## 4. 先跑、封存
+
+和 07 §6 同一條規則：判定流程還沒走到的配置可以先跑，結果放 `quality_sealed/`，走到才分析；走不到就寫「跑了、沒分析」。
+
+- INT4 端點（E1／E1s／E1sr @INT4）：兩個模型都跑（MI300X 也是）。
+- **INT4 混合配置（F25／M25／B25／R25 @INT4）：兩個模型都跑。** MI300X 的主線只在 Llama 上跑（33bz 判 Step 2 在 Llama），Qwen 是只報告的 46。H200 兩個都先跑，是因為兩個模型分在兩個 job、同時跑，Llama 的 job 不能等 Qwen 的結果才決定；判定照 H200 自己的 `decide_int4.json` 指定的模型，另一個只報告。
+
+## 5. 和 MI300X 怎麼比
+
+- **只比判定節點**：K0 每一格（贏／輸）、Step 1 每個模型（過／不過、哪一條）、K3、INT4 的 K0、INT4 端點每個模型（品質過／不過、速度不輸過／不過）、Step 2 的模型、K2。
+- 每個節點寫「相同」或「不同」。**全部相同＝主線判定在 H200 重現**；有不同就逐一列出，不改判、不重跑到相同為止。
+- 數字（答對率差、還原時間、會合點）並排列出，但不放進同一個判定或同一張圖的同一軸（03 §1：兩台的數字不混用）。原因：BF16 的運算 kernel 兩台不同，E0 本身就會有少數題答案不同（文獻：只換 GPU 型號，BF16 greedy 的答對率就會變，Yuan et al., NeurIPS 2025）。
+
+## 6. 時間數字的限制
+
+Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` 一律回 `UNOBSERVABLE_HOST`。和第一階段在 H200 上一樣：
+- 時間仍然用在 **H200 自己的**判定（K0、δ\*、速度不輸），每個 run 記鄰居快照（`tiara.sbatch` 的 `cotenants_*`），報告寫明「同節點的主機記憶體與 PCIe 爭用只能部分觀測」。
+- **我們自己的 GPU job 不和量時間的 job 同時跑**（第一階段 F2 疊到 B 的教訓）：量時間的 job 單獨一張卡，品質 job 用 `--dependency=afterok` 接在後面。品質 job 在同一張卡上同時開多個 process，`gpu_guard` 會把自己的其他 process 記成 intruder → 該 run 的 `latency_ms` 作廢、分數保留（CLAUDE.md §3）。
+
+## 7. 執行
+
+| job | 內容 | 卡 | `--time` |
+|:--|:--|:--|:--|
+| `m10h-speed` | V0 驗證 → E0 難度 → K／V 分布 → 格式小測（停在 §3-4）→ calib-f → noise → FP8 格子＋K0 → Step 2b 格子 → INT4 格子＋K0 | 1 | 24 h |
+| `m10h-q-llama`、`m10h-q-qwen` | Step 1（FP8 端點＋2b，讀法 A＋B）→ INT4 端點 → INT4 混合配置；每張卡同時開多個 process | 各 1，接在 `m10h-speed` 後面 | 40 h |
+
+- 腳本：`code/r_h200_m10.sh`（`--part speed|quality`、`--from`、`--dry-run`、`--list`），工作池 `code/h200_pool.py`（看 `nvidia-smi` 的剩餘記憶體才開下一個），判定 `code/h200_m10_analyze.sh`（CPU，head node；包同一支 `m10_analyze.py`）。
+- 結果：`results/m10_precision_h200/`；記錄：`results/RUNLOG_H200.md` 的 Milestone 10-H200；原始 run：`$TIARA_RUNS`。
+- 不在這一批：41／43 大掃描、42–42c 反量化速度、44／44a 兩層與長 context 速度、70 vLLM TTFT（都在量時間，而且是 MI300X 的探索線）；44b／44c、45／46／55／60 的讀法 A 只報告、75 RULER CWE（只跑 E0）→ 主線結果出來後再決定。
