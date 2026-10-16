@@ -182,11 +182,17 @@
   - 原寫法是 PyTorch 拼的，同一份資料來回 4–5 趟。融合後讀一次、寫一次。
 - **和原寫法逐位元相同**（fp8_head／fp8_channel／fp8_token／int8_token，GPU 上自測過）。所以品質完全不變，只有時間會變。
 - 支援 FP8 三種粒度和 INT8。其他格式先用原寫法；試跑後看哪些格式的反量化最貴，再補。
+- **10/16 04:1xZ 補（還沒有任何大掃描結果、INT4 主線的品質也還沒產生）**：冒煙（stage 31z，scratch，每格只量 1 次）看到 4-bit 格式的原寫法反量化每個 block 0.43–4.4 ms，FP8 融合後 0.08–0.14 ms。INT4 又是主線第 2 階的格式，所以先補 **int4_token、int4_kivi** 兩種融合 kernel：
+  - 一個 byte 兩個值，kernel 讀值所在的 byte、取對應的半個 byte，乘 scale（KIVI 再加 zero），轉 BF16 直接寫進 KV 視圖。
+  - KIVI 的「乘再加」要和 PyTorch 一樣分兩次捨入，launch 時關掉 FMA 合併（`enable_fp_fusion=False`）。
+  - 驗證：CPU 上用 Triton 直譯模式驗索引（12／12 和 FP32 參考值逐位元相同；直譯器轉 BF16 用截斷，所以比的是截斷後的參考值）。**GPU 上的逐位元**由 stage 39 的自測和 `parts` 的真實 KV 逐 block 比對驗；不同就停（規則 2），大掃描擱置。
+  - MXFP4、NVFP4、INT2 等其他格式仍用原寫法。
 
 ### 6.3 實驗（事先寫死）
 
 1. **微測**：`m10_dequant_fast.py --self-test --bench`、`m10_sweep.py parts`，兩種寫法、GPU 閒／忙、每個 block 的時間和有效頻寬。
 2. **加速後的速度格子**：主線的 8 個 FP8 配置，只跑真實 CPU 層、32K、閒／忙，3 launch × 10 rep，`M10_DEQUANT_FAST=1`。兩個模型都跑。
+2b. **（10/16 04:1xZ 加）INT4 也做一次**：主線第 2 階的 int4_kivi，同樣 8 個配置、只跑真實 CPU 層、32K、閒／忙、`M10_DEQUANT_FAST=1`，對照 stage 33a（原寫法）的 CPU 層。輸出 `results/m10_sweep_mi300x/speed_dqfast_int4_<m>/`。
 3. **報告**：
    - 加速前後：E1 對 E0 的還原時間、CPU・忙那格的速度不輸比值。
    - **只報告，不改主線判定**。主線的速度判定照 07，用的是原寫法。

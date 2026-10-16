@@ -12,7 +12,10 @@
 （FP8 只有 256 種碼）。相關前作見 docs/precision_20261013/cards/P07 §4（FLUTE 的查表反量化、vLLM FP8 Marlin 的位元技巧、
 QServe／BitDecoding 把反量化塞進 attention）。bench 另放 torch.compile（PyTorch 官方編譯器自動融合同一段寫法）當對照組。
 
-支援：fp8_head／fp8_channel／fp8_token（e4m3fn，scale 依粒度廣播）、int8_token。其他格式退回 m10_codec_x.decode。
+支援：fp8_head／fp8_channel／fp8_token（e4m3fn，scale 依粒度廣播）、int8_token、
+      int4_token、int4_kivi（10/16 加：冒煙數據顯示 4-bit 的原寫法反量化比 FP8 慢 4–20 倍）。其他格式退回 m10_codec_x.decode。
+INT4：一個 byte 放兩個值（偶數 index 在低 4 位，同 m10_codec._pack4），kernel 每個值讀它所在的 byte、取對應的半個 byte。
+KIVI 的「乘 scale 再加 zero」要和 PyTorch 一樣分兩次捨入，所以 launch 時關掉 FMA 合併（enable_fp_fusion=False）。
 """
 from __future__ import annotations
 
@@ -66,8 +69,72 @@ def _dq_kernel(q_ptr, s_ptr, lut_ptr, o_ptr, R, T, H,
     tl.store(o_ptr + oo[:, None] + d[None, :], (v * s).to(tl.bfloat16), mask=m2)
 
 
+@triton.jit
+def _dq4_kernel(q_ptr, s_ptr, z_ptr, o_ptr, R, T, H, C,
+                sq_l, sq_c, sq_h, sq_t,
+                ss_l, ss_c, ss_h, ss_t, ss_d,
+                so_l, so_c, so_h, so_t,
+                D: tl.constexpr, TDIV: tl.constexpr, DDIV: tl.constexpr,
+                HAS_ZERO: tl.constexpr, OFFSET8: tl.constexpr, ROWS: tl.constexpr):
+    """INT4（兩個值一個 byte）→ BF16。列＝(層, 半邊 c, head, token)，C＝這次處理幾個半邊（int4_token 2 個、KIVI 一次 1 個）。
+    scale／zero 的位置：(t // TDIV, d // DDIV)——KIVI 的 K 沿 token 每 32 個一組（TDIV＝32），V 沿 channel 每 32 個一組（DDIV＝32）。"""
+    pid = tl.program_id(0)
+    r = pid * ROWS + tl.arange(0, ROWS)
+    d = tl.arange(0, D)
+    mask = r < R
+    t = r % T
+    h = (r // T) % H
+    c = (r // (T * H)) % C
+    l = r // (T * H * C)
+    m2 = mask[:, None]
+    qo = l * sq_l + c * sq_c + h * sq_h + t * sq_t
+    byte = tl.load(q_ptr + qo[:, None] + (d // 2)[None, :], mask=m2, other=0).to(tl.int32)
+    nib = tl.where((d % 2 == 0)[None, :], byte & 0xF, byte >> 4)
+    v = nib.to(tl.float32)
+    if OFFSET8:
+        v = v - 8.0
+    so = l * ss_l + c * ss_c + h * ss_h + (t // TDIV) * ss_t
+    sp = so[:, None] + (d // DDIV)[None, :] * ss_d
+    y = v * tl.load(s_ptr + sp, mask=m2, other=1.0).to(tl.float32)
+    if HAS_ZERO:
+        y = y + tl.load(z_ptr + sp, mask=m2, other=0.0).to(tl.float32)
+    oo = l * so_l + c * so_c + h * so_h + t * so_t
+    tl.store(o_ptr + oo[:, None] + d[None, :], y.to(tl.bfloat16), mask=m2)
+
+
 def supported(fmt: str) -> bool:
-    return fmt in ("fp8_head", "fp8_channel", "fp8_token", "int8_token")
+    return fmt in ("fp8_head", "fp8_channel", "fp8_token", "int8_token", "int4_token", "int4_kivi")
+
+
+def _decode_int4(e, out, rows):
+    L, two, H, T, D = e.shape
+    p = e.parts
+    kw = dict(D=D, ROWS=rows, enable_fp_fusion=False)
+    if e.fmt == "int4_token":
+        q, s = p["q"], p["scale"]                      # q [L,2,H,T,D/2]、scale [L,2,H,T,1]
+        assert q.is_contiguous() and q.stride(-1) == 1
+        R = L * two * H * T
+        _dq4_kernel[(triton.cdiv(R, rows),)](q, s, s, out, R, T, H, two,
+                                             q.stride(0), q.stride(1), q.stride(2), q.stride(3),
+                                             s.stride(0), s.stride(1), s.stride(2), s.stride(3), 0,
+                                             out.stride(0), out.stride(1), out.stride(2), out.stride(3),
+                                             TDIV=1, DDIV=1, HAS_ZERO=False, OFFSET8=True, **kw)
+        return out
+    G = C.KIVI_GROUP
+    R = L * H * T
+    for j, n in ((0, "k"), (1, "v")):                  # k_q／v_q [L,H,T,D/2]；K scale [L,H,T/G,1,D]、V scale [L,H,T,D/G,1]
+        q, s, z, o = p[f"{n}_q"], p[f"{n}_scale"], p[f"{n}_zero"], out[:, j]
+        assert q.is_contiguous() and s.stride() == z.stride()
+        if n == "k":
+            st, sd, tdiv, ddiv = s.stride(2), s.stride(4), G, 1
+        else:
+            st, sd, tdiv, ddiv = s.stride(2), s.stride(3), 1, G
+        _dq4_kernel[(triton.cdiv(R, rows),)](q, s, z, o, R, T, H, 1,
+                                             q.stride(0), 0, q.stride(1), q.stride(2),
+                                             s.stride(0), 0, s.stride(1), st, sd,
+                                             o.stride(0), 0, o.stride(1), o.stride(2),
+                                             TDIV=tdiv, DDIV=ddiv, HAS_ZERO=True, OFFSET8=False, **kw)
+    return out
 
 
 def decode_fast(e, out: torch.Tensor | None = None, rows: int = 16) -> torch.Tensor:
@@ -75,11 +142,13 @@ def decode_fast(e, out: torch.Tensor | None = None, rows: int = 16) -> torch.Ten
         import m10_codec_x as X
         return X.decode(e, out)
     L, two, H, T, D = e.shape
+    if out is None:
+        out = torch.empty(e.shape, dtype=torch.bfloat16, device=next(iter(e.parts.values())).device)
+    assert out.stride(-1) == 1 and out.dtype == torch.bfloat16
+    if e.fmt.startswith("int4"):
+        return _decode_int4(e, out, rows)
     q, s = e.parts["q"], e.parts["scale"]
     assert q.is_contiguous() and q.shape == e.shape and q.stride(-1) == 1
-    if out is None:
-        out = torch.empty(e.shape, dtype=torch.bfloat16, device=q.device)
-    assert out.stride(-1) == 1 and out.dtype == torch.bfloat16
     sb = s.expand(L, two, H, T, D)                      # 廣播 → stride 0
     R = L * two * H * T
     fp8 = e.fmt.startswith("fp8")
@@ -101,16 +170,32 @@ def _torch_ref_int8(q, s, out):
     out.copy_((q.float() * s).to(torch.bfloat16))
 
 
+def _torch_ref_int4_token(q, s, out):
+    out.copy_(((C._unpack4(q).float() - 8) * s).to(torch.bfloat16))
+
+
+def _torch_ref_kivi(kq, ks, kz, vq, vs, vz, out):
+    L, _, H, T, D = out.shape
+    G = C.KIVI_GROUP
+    k = C._unpack4(kq).float().view(L, H, T // G, G, D) * ks.float() + kz.float()
+    v = C._unpack4(vq).float().view(L, H, T, D // G, G) * vs.float() + vz.float()
+    out.copy_(torch.stack((k.reshape(L, H, T, D), v.reshape(L, H, T, D)), dim=1).to(torch.bfloat16))
+
+
 _COMPILED = {}
 
 
 def decode_compiled(e, out):
     """torch.compile 版本：和 m10_codec.decode 一樣的運算，交給 Inductor 自動融合。只在 bench 用。"""
-    fp8 = e.fmt.startswith("fp8")
-    key = "fp8" if fp8 else "int8"
+    key = "fp8" if e.fmt.startswith("fp8") else e.fmt
+    fn = {"fp8": _torch_ref, "int8_token": _torch_ref_int8, "int4_token": _torch_ref_int4_token, "int4_kivi": _torch_ref_kivi}[key]
     if key not in _COMPILED:
-        _COMPILED[key] = torch.compile(_torch_ref if fp8 else _torch_ref_int8, dynamic=False)
-    _COMPILED[key](e.parts["q"], e.parts["scale"], out)
+        _COMPILED[key] = torch.compile(fn, dynamic=False)
+    p = e.parts
+    if key == "int4_kivi":
+        _COMPILED[key](p["k_q"], p["k_scale"], p["k_zero"], p["v_q"], p["v_scale"], p["v_zero"], out)
+    else:
+        _COMPILED[key](p["q"], p["scale"], out)
     return out
 
 
@@ -136,7 +221,7 @@ def self_test(out_path=None, bench=False) -> bool:
     L, _, H, T, D = x.shape
     buf = torch.zeros((L, 2, H, 3 * T, D), dtype=torch.bfloat16, device="cuda")
     view = buf[:, :, :, T:2 * T, :]
-    for fmt in ("fp8_head", "fp8_channel", "fp8_token", "int8_token"):
+    for fmt in ("fp8_head", "fp8_channel", "fp8_token", "int8_token", "int4_token", "int4_kivi"):
         e = C.encode(x, fmt)
         want = C.decode(e)
         got = decode_fast(e)
@@ -158,7 +243,7 @@ def self_test(out_path=None, bench=False) -> bool:
         for name, shape in (("llama_block", (32, 2, 8, 512, 128)), ("qwen_block", (28, 2, 4, 512, 128))):
             xb = torch.randn(shape, device="cuda").to(torch.bfloat16)
             vb = torch.empty_like(xb)
-            for fmt in ("fp8_head", "fp8_token", "int8_token"):
+            for fmt in ("fp8_head", "fp8_token", "int8_token", "int4_token", "int4_kivi"):
                 e = C.encode(xb, fmt)
                 for impl, fn in (("torch", lambda: C.decode(e, out=vb)), ("fused", lambda: decode_fast(e, out=vb)),
                                  ("torch_compile", lambda: decode_compiled(e, vb))):

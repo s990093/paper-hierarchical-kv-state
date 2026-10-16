@@ -529,6 +529,13 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - dequant 自測（`-034851-m10-dqfast-smoke`）rc＝0。
 - CPU 上補測（GPU 在量時間，不能插工作）：放法 12 種 × 佔比 17 種 × 4 種格式 × 閒／忙的讀法 B 推算全部跑通（每個模型 1,632 格）；推算的全 FP8 會合點 Qwen 23／13、Llama 23／14（閒／忙），主線實測 23／14、24／14。
 
+### 11.2c INT4 的融合反量化（10/16 04:0x–04:1xZ，CPU）
+
+- **為什麼**：冒煙的 parts（scratch，每格 1 次）：原寫法反量化每個 block，mxfp4 0.43–0.73 ms、int2h_g32 1.0–4.4 ms、K8V4 0.21–0.67 ms；FP8 融合後 0.08–0.14 ms。使用者 10/15 要求「反量化開銷大就找加速」，而 INT4 是主線第 2 階的格式。
+- `code/m10_dequant_fast.py` 加 `int4_token`、`int4_kivi`（`_dq4_kernel`；KIVI 關掉 FMA 合併，保持和 PyTorch 一樣兩次捨入）；torch.compile 對照組也加上兩種 INT4。
+- **CPU 驗證**（Triton 直譯模式，`code/m10_queue_mi300x/tests/dq_fast_cpu_interp.py`）：兩種形狀 × 6 種格式，融合結果和「FP32 參考值截斷成 BF16」逐位元相同（12／12），寫進視圖不碰旁邊。直譯器轉 BF16 是截斷、GPU 是四捨五入到偶數（連 GPU 上已驗過的 FP8 kernel 在直譯器裡也和 PyTorch 差一位），所以 **GPU 上的逐位元還沒驗**：stage 39 自測＋`parts` 真實 KV 逐 block 比對（不同 → 停）。
+- stage 42 加 INT4（`speed_dqfast_int4_<m>/`）；stage 39 加 GPU 自測和「`M10_DEQUANT_FAST=1` 的 CPU 層速度格子」冒煙（Qwen、int4_kivi、1×1）。09 §6.2、§6.3-2b 有登記。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。

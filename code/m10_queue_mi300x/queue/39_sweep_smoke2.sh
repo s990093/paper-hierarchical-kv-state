@@ -14,6 +14,9 @@ for m in qwen llama; do
     --formats $F int4_kivi mxfp4 int2h_g32 kv-int8_token-int4_kivi --policies F R0 ERR ATT AXE ORC --fracs 0.25 0.5 --parts $S/parts_$m.json --grid-blocks ${!GB} \
     --out $S/screen_$m.csv.gz > $S/screen_$m.log 2>&1 || { echo "smoke2 screen $m 失敗（$S/screen_$m.log）" | tee -a $JOBS/NEEDS_HUMAN; tail -20 $S/screen_$m.log; fail=1; }
 done
+# 10/16 04:1xZ 加：融合反量化（含新加的 INT4）在 GPU 上的逐位元自測，和 42 會用的「M10_DEQUANT_FAST=1 的速度格子」路徑（CPU 層、1 launch × 1 rep）
+m7run m10-sweep-smoke2-dqfast python $REPO/code/m10_dequant_fast.py --self-test --out $S/dqfast_selftest.json > $S/dqfast.log 2>&1   || { echo "smoke2 dqfast 自測失敗（$S/dqfast.log）" | tee -a $JOBS/NEEDS_HUMAN; tail -20 $S/dqfast.log; fail=1; }
+M10_DEQUANT_FAST=1 m7run m10-sweep-smoke2-dqgrid-qwen python $REPO/code/m10_speed.py grid --model qwen --fmt int4_kivi --base-fmt fp8_head   --out-dir $S/dqgrid_qwen --bw-json $OUT/speed_qwen/bw.json --bw-names cpu --gpu-states idle --launches 1 --reps 1 --configs E0 E1 --refs E0 E1 --lengths   > $S/dqgrid_qwen.log 2>&1 || { echo "smoke2 dqgrid 失敗（$S/dqgrid_qwen.log）" | tee -a $JOBS/NEEDS_HUMAN; tail -20 $S/dqgrid_qwen.log; fail=1; }
 if [ $fail = 0 ]; then
   python3 - <<PY || fail=1
 import csv, gzip
