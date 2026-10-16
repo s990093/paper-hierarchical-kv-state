@@ -302,6 +302,7 @@ run：Llama `20261016-064017-m10-i4e-llama-T24-s0`、`-064247-…-s1`、`-064518
   - **外來 pid 全是我們自己的**（10/16 12:0xZ 逐一對過時間）：(1) 同批 6–7 個品質 process 互相看到（同 §2.3 那批）；(2) 品質段裡我跑的 GPU 小測：融合 kernel 自測 06:44（`20261016-064403-m10-dqfast-selftest-gpu-int4`、`-064414-m10-dqfast-shapes-gpu`）、int64 修正重驗 07:19–07:20（`-071948-…-i64`、`-072000-…-i64`）、假模型測試 07:33–07:37（`tests/restore_variants_fake_gpu.py`，那串約 70 個 0 MiB 的 pid 是它的編譯子行程）和 07:41–07:54（`tests/dqsweep_bench_fake_gpu.py`，pid 3606734）。沒有別人的工作。
   - **分數不受影響的實測證據**：品質的計算是固定的（貪婪解碼，同一份輸入就是同一份輸出），和 GPU 上同時跑什麼無關。33c（10/16 10:29Z 起，另一批同時跑的 process）裡「一個 INT4 block 都沒讀到」的列，算的就是全 BF16，和 Step 1（10/15 21:11Z 起）的 E0 比：Llama 1,055 個（題，輪）、2,620 列，**生成文字和標準答案的 log 機率全部逐位元相同**。Qwen 要等 stage 46 才有同樣的列可以比。
   - 速度判定用的 INT4 計時格子（§2.5.1，6 份）gpu_guard 全部 CLEAN；讀法 B 的會合點也來自那批。
+- **敏感度檢查**（10/16，探索；[11 問題二](11_issues.md#問題二int4-品質全過是題目太簡單context-太短還是程式有錯)，`analysis/int4/sensitivity.md`）：E0 答對率 64–87%（沒有天花板）；INT4 和 E0 輸出逐字相同 74.6%（Llama）／73.9%（Qwen），比 8 bit 的 82–91% 低（劑量反應）；標準答案每 token 的 log 機率 INT4 有小但顯著的下降（Llama T3、T5；Qwen T5 −0.0275 ± 0.0051）。→ INT4 有傷，在 32K 還翻不過答案；更長 context 由 10 號計畫量。
 
 **判定**（33bz：凍結的 `analyze_int4.sh` → `analysis/int4/decide_int4.json`；`route_after_int4.py`）
 

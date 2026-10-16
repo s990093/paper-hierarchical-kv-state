@@ -67,6 +67,60 @@
    - 把所有 block 的反量化合成一次啟動、或放到低優先權的 stream，減少和重算搶 GPU（便宜，先試）。
    - 把反量化塞進 attention（QServe／BitDecoding／PackKV 的做法）：最徹底，但換了 attention 路徑，違反 07「低精度和 BF16 走同一條 attention」，只能當系統面的延伸。
 
+7. **使用者 10/16 的方向**：「CPU 層省不到時間」主要是反量化寫法造成，跟位置無關；真正要看的是**慢層**（SSD／NFS 級的頻寬）和**長 context**（KV 變大、CPU 放不下就要去 SSD），低精度的價值是把 IO 牆等效往後推（同樣的頻寬搬 2–3.2 倍的 token、同樣的記憶體放 2–3.2 倍的對話）。報告要**分層寫**，CPU 層單獨列。
+   - 〔算術，用上面的實測〕兩條線都和 block 數成正比：Llama・閒每個 block 的 H2D，E0 約 1.25 ms、INT4 約 0.43 ms（省約 0.82 ms），原寫法的反量化約 0.69 ms → 只差一點；所以光是 context 變長，CPU 層的結論〔推論〕不會自己翻過來，要靠反量化變快（stage 42、42b／42c）。64K／128K 的 CPU 層實測：NOT_MEASURED（stage 92 的速度格子有含）。
+   - 「慢層」在這裡是限速模擬（老師：保留這個範圍，01 第 12 列）。對照第一階段 MI300X 量的真實裝置（03 §R2 的 `tier_params.json`：本地 SSD 讀 6.98 GiB/s、NFS 0.331 GiB/s）：Llama b16＝5.3 GiB/s 和本地 SSD 同一級，b48＝0.42 GiB/s 和 NFS 同一級。
+
 ### 6. 相關文件
 
 08 §2.1（FP8 的 CPU 層拆解）、§2.5（INT4）、§6 第 1 點；09 §6（反量化開銷與加速）；cards/P07 §4（前作）；RUNLOG_MI300X 10.9、11.2、11.2b、11.2c；`code/m10_dequant_fast.py`。
+
+---
+
+## 問題二：INT4 品質全過——是題目太簡單、context 太短，還是程式有錯？
+
+**狀態**：32K 的部分查完（10/16 12:xZ，使用者問）；長 context 由 10 號計畫（stage 90–92）回答。
+
+### 1. 看到什麼
+
+- INT4 KIVI 兩個模型 24 格全過（08 §2.5.3）。同一批題 Qwen 的 FP8 掉 32.8 個百分點。
+
+### 2. 查了什麼（CPU；`code/m10_int4_sensitivity.py` → `results/m10_precision_mi300x/analysis/int4/sensitivity.{json,md}`；run 見該檔，Step 1 與 33b 那兩批）
+
+- **題目不是太簡單**：E0 答對率 64–87%（Llama 67.2–80.6、Qwen 64.0–87.2），沒有碰到天花板或地板。
+- **測得出傷害**（正對照）：同一批題、同一支程式，Qwen FP8 掉 32.8 個百分點、HotpotQA 掉約 72。
+- **劑量反應**（讀法 A，和 E0 輸出逐字相同的比例；KL 中位數）：
+  - Llama：INT8 91.4%（0.0003）> FP8-K0 84.6%（0.0011）> FP8 81.7%（0.0016）> **INT4 74.6%（0.0033）**。
+  - Qwen：INT8 83.2%（0.0014）、FP8-K0 83.5%（0.0015）、**INT4 73.9%（0.0053）**；FP8 10.3%（格式問題，§2.4）。
+  - → INT4 確實改到了模型的計算，而且改得比 8 bit 多。
+- **比答對率敏感的指標**（標準答案每個 token 的 log 機率，對 E0 配對，95% CI）：INT4 有小、但看得到的下降：
+  - Llama T3 −0.0077 ± 0.0037、T5 −0.0067 ± 0.0031；Qwen T5 −0.0275 ± 0.0051（每個 token 的機率約低 0.7%／2.7%）。
+  - 8 bit 大多在 0 附近（例外：Qwen INT8 T2 −0.0176 ± 0.0027）。
+  - → **INT4 有傷，但在 32K 還不夠大，答案翻不過去**。最敏感的是 T5（整段統計常見詞，要用到整段 context）。
+- **程式**：
+  - CPU 假資料（K 的某個 channel 加 400，模擬 Qwen）：KIVI 每一組（K：32 token × 1 channel；V：1 token × 32 channel）最多 16 個不同值；連 scale／zero 每個值 5 bit（0.625 byte）；`m10_codec.py --self-test` ALL PASS。
+  - 同一份假資料，int4_token（每 token 一個 scale）其他 channel 的 K 相對誤差＝1.0（全被壓成 0），KIVI 是 0.078 → 和「Qwen 的 FP8 壞、KIVI 不壞」同一個機制。
+  - 讀法 A 每題讀到 64／64 個 INT4 block（CSV 的 `lp_read`）。
+  - 和原版 KIVI 的差別：原版把最近 128 個 token 留全精度；我們 context 全部量化（只有問題本身的 KV 是 BF16）→ 比原版嚴格。
+
+### 3. 文獻怎麼報（摘要級，未逐頁核對；self-review）
+
+- KIVI（ICML 2024，arXiv 2402.02750）：2 bit 在 Llama／Mistral 最多掉約 2%；只有 MQA 的 Falcon-7B 要用 4 bit。
+- 長 context 壓縮 benchmark（arXiv 2407.01527）：KIVI-4bit 的 LongBench 平均和不壓縮相同（43.8，單一模型）；2 bit 42.6。
+- 2026 的比較（arXiv 2607.05399，Llama-3.1-8B、Mistral-7B）：KIVI4 品質最穩定。
+- 推理模型（arXiv 2504.04823）：4 bit KV 幾乎不掉（≤1%），但難題（AIME）掉得比簡單題（GSM8K）多到 4 倍。
+- 長度（NeurIPS 2026「Length, Not Bit Width」，70B 級、單針、4K–128K、int8／int4）：量化讓「找不到」的長度提前（Qwen 約 96K → 約 32K）。
+- SCBench（ICLR 2025，多輪共用 context，和我們最像）：KIVI 2 bit（1/8 記憶體）在 Qwen2.5-72B 明顯掉；我們是 4 bit。
+- → **32K、4 bit 全過和文獻一致**；風險在更長的 context、更難或要用到整段的題、更低的 bit。
+
+### 4. 還不知道的
+
+- 64K／128K：NOT_MEASURED（stage 90–92；格式含主線 FP8、INT4 KIVI；「傷害隨長度變大」用 128K−32K 的配對 CI，10 §5）。
+- 更低 bit（INT2、MXFP4 等）：NOT_MEASURED（大掃描 40–43）。
+- 長生成的推理題：沒測（我們的答案都短）。
+
+### 5. 之後要注意
+
+1. 寫「INT4 不掉」一定要加「32K、這四種題」。
+2. 報告並列 Δlog p，不只放答對率（答對率看不到的小傷害，它看得到）。
+3. 長 context 的 E0 可能很低（地板效應），要並列 E0。

@@ -523,6 +523,14 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **另外加的 stage**（10:5xZ，只用 CPU）：`33cz_decide_step2_int4.sh` → `analyze_step2_int4.sh llama`。它用凍結的 `m10_analyze.py quality --strip-fmt` 和 `step2` 判穩定差距第 1、2 條與 K2。`step2` 沒有 `--strip-fmt`，所以先照 `cmd_quality` 同樣的規則把 `@int4_kivi` 拿掉、寫成暫存檔，判準一行都沒改。K2 成立 → 主線停；第 1、2 條成立 → NEEDS_HUMAN（第 3 條要新 seed 重跑）。用改名的端點列當假資料，在沙盒測過兩個分支。
 - **解讀**（寫進 08 §2.5.3、§0、H7、§6 第 1 點）：INT4 不挑位置、品質沒掉；判「不夠」只因為真實 CPU 層、原寫法反量化的速度（11 問題一）。〔照規則推〕速度判準只看限速層的話，兩個模型都會「過」→ 判定流程整個停。
 
+### 10.11 INT4 的敏感度檢查（10/16 12:xZ，CPU；探索，只報告）
+
+- **起因**：使用者問「INT4 兩個模型都過，會是題目簡單、上下文太短、code 有錯嗎？其他人怎麼寫？」
+- **指令**：`python code/m10_int4_sensitivity.py`（讀 `quality/step1_<m>_*.csv`、`quality_sealed/int4end_<m>_*.csv`，run 見 10.8、10.10）→ `analysis/int4/sensitivity.{json,md}`；CPU 假資料檢查 KIVI 的分組與 16 階（指令在 11 問題二 §2）；`python code/m10_codec.py --self-test`（CPU，ALL PASS）。
+- **關鍵數字**：見 11 問題二 §2（E0 64–87%；INT4 和 E0 逐字相同 74.6%／73.9%；每 token Δlog p：Llama T3 −0.0077 ± 0.0037、T5 −0.0067 ± 0.0031，Qwen T5 −0.0275 ± 0.0051）。
+- **失敗與異常**：第一版腳本格式字串錯（`ValueError: unsupported format character '|'`），改掉重跑；不影響數字。
+- **文獻**：11 問題二 §3（搜尋摘要級，未逐頁核對；self-review）。
+
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
 
 **狀態**：程式寫好、CPU／GPU 自測通過；GPU 工作已排進佇列（31z 冒煙測試 → 主線關鍵段 → 40 試跑 → 41 海選 → 42）。**還沒有任何大掃描的數字。**
