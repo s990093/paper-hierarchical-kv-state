@@ -30,8 +30,8 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 REPO = os.path.dirname(HERE)
-R = os.path.join(REPO, "results", "m10_precision_mi300x")
-RUNS = "/mlsteam/data/tiara/runs"
+R = os.environ.get("M10_PRECISION_DIR") or os.path.join(REPO, "results", "m10_precision_mi300x")   # H200：M10_PRECISION_DIR（沒設時不變；2026-10-17）
+RUNS = os.environ.get("M10_RUNS_DIR") or "/mlsteam/data/tiara/runs"   # H200：$TIARA_RUNS（同上）
 GiB = 1 << 30
 GRIDS = {   # 主線速度格子（08 附錄 A）；Qwen FP8 用重量那次（判定用的）
     ("llama", "fp8"): ("20261015-161226-m10-grid-fp8-llama", "speed_llama/summary_fp8.csv", "speed_llama/restores.csv"),
