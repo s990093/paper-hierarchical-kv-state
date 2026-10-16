@@ -9,6 +9,7 @@
 #   bash code/r_h200_cpu.sh --part brr          # B 重跑（job 20631）的合併組：模擬驗證、08 消融、H1、B 全部設定，和舊的並排（code/h200_brr.py）
 #   bash code/r_h200_cpu.sh --part a2c7         # A2、C7 錨點（job 20643，只有限速層）的分析，和 MI300X 並排（code/h200_a2c7.py）
 #   bash code/r_h200_cpu.sh --part d3           # D3 κ 地圖（--no-3090）：舊 B 一次、B 重跑的合併組一次（要先跑 --part brr、a2c7 之後的 c7_anchor）
+#   bash code/r_h200_cpu.sh --part r1h          # 第 1 輪 H200 自己的 3 個存活設定（job 20660）的 GPU 確認：A、B、C 各一次 m7_round1_analyze gpu
 #   bash code/r_h200_cpu.sh --part a --dry-run | --list ；--from <步驟> [--until <步驟>]（接著跑）
 #
 # 在 head node 跑（h200q 不收純 CPU 的 job：--gres=gpu:0 → 「Invalid qos specification」，10/16 試過）。
@@ -40,7 +41,7 @@ while [ $# -gt 0 ]; do
     *) echo "不認得的參數：$1（--help 看用法）" >&2; exit 2 ;;
   esac
 done
-case "$PART" in a|d6|d4d5|b|brr|a2c7|d3) ;; *) echo "[r_h200_cpu] 要指定 --part a、d4d5、d6、b、brr、a2c7 或 d3" >&2; exit 2 ;; esac
+case "$PART" in a|d6|d4d5|b|brr|a2c7|d3|r1h) ;; *) echo "[r_h200_cpu] 要指定 --part a、d4d5、d6、b、brr、a2c7、d3 或 r1h" >&2; exit 2 ;; esac
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export REPO
@@ -327,6 +328,16 @@ D3M_RES="$(rid D3M-stage)/res"
 step D3M-main    m7h-d3m-kappa-map      env M7_RES="$D3M_RES" $P $KM --out "$M8_OUT/d3_merged" --no-3090
 step D3M-b100    m7h-d3m-r1-b100        env M7_RES="$D3M_RES" $P $KM --out "$M8_OUT/d3_merged" --no-3090 --b100
 step D3M-prereg  m7h-d3m-gputest-prereg env M7_RES="$D3M_RES" $P $KM --out "$M8_OUT/d3_merged" --no-3090 --prereg-test --dstar "$(dstar D3M-main)"
+fi
+
+if [ "$PART" = r1h ]; then
+# ===== 第 1 輪：H200 自己的 3 個模擬存活設定上 GPU（job 20660，code/r_h200_r1h.sh）=====
+# 格與事先選定的策略、判準：RUNLOG_H200「第 1 輪：H200 自己的模擬存活設定上 GPU」（job 送出之前寫死）。
+# --cpu 是模擬那一格的 cpu_gibps（取一位小數比對）：B、C 的 35.42＝tier_params 的 CPU 層（模擬 35.4159）。
+G1=code/m7_round1_analyze.py
+step R1H-A  m7h-r1h-gpu-an-A  $P $G1 gpu --csv r1h_gpu_llama_doc_hold_nfs_c11.6_f0.5.csv    --cpu 11.6  --release hold --ssd nfs   --frac 0.5  --wt S5L --tag A
+step R1H-B  m7h-r1h-gpu-an-B  $P $G1 gpu --csv r1h_gpu_llama_doc_free_local_c35.42_f0.5.csv --cpu 35.42 --release free --ssd local --frac 0.5  --wt S5L --tag B
+step R1H-C  m7h-r1h-gpu-an-C  $P $G1 gpu --csv r1h_gpu_llama_doc_hold_nfs_c35.42_f0.25.csv --cpu 35.42 --release hold --ssd nfs   --frac 0.25 --wt S5c --tag C
 fi
 
 if [ -n "$UNTIL" ] && [ "$DONE" = 0 ] && [ "$STARTED" = 1 ]; then
