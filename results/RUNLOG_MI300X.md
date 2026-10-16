@@ -545,3 +545,22 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 42 加速反量化後的 CPU 層速度格子。
 - 然後才是只報告的 55／60／70／75／INT4 封存。FP8 混合配置（35）不是關鍵段時，由 stage 31 改名成 45，排在大掃描後面。
 - **10/16 03:5xZ 實際順序**：33a INT4 速度格子（跑中）→ 33b INT4 端點 → 33bz 判定 → 33c INT4 混合配置（33bz 可能改成只跑一個模型或搬到 46）→ 39 重跑冒煙 → 40 試跑 → 41 海選 → 42 → 45 FP8 混合（只報告）→ 55 → 60 → 70 → 75 → 88。
+
+## Milestone 12 — 第二階段長 context（32K／64K／128K；探索），MI300X（準備中）
+
+**狀態**：程式改好、CPU 檢查通過；GPU 工作已排進佇列（39a 冒煙在大掃描前；90／91／92 在所有 32K 工作之後）。**還沒有任何 64K／128K 的數字。**
+**事先登記**：`docs/precision_20261013/10_longctx_plan.md`（2026-10-16 UTC 04:4x 寫）。
+**為什麼**：使用者 10/16 問「會不會是 context 太短，100K 難度就很高」；決定 32K／64K／128K、格式全部（BF16＋13 種）、排在之前所有 32K 實驗之後。
+
+### 12.1 程式（CPU，04:2x–04:5x UTC）
+
+- `code/m10_tasks.py`：`bands(n_blocks)`——位置帶照比例縮放（每帶 1/4 的 block）；64 個 block 時回傳原本的 `BANDS`。
+  - **32K 題目不變**：改前後 32 題（兩個模型 × T2–T5，seed 10000 與 40000 起）的完整題目 JSON 雜湊逐一相同（`code/m10_queue_mi300x/tests/longctx_hash_items.py`）。
+  - 64K（128 個 block）、128K（252 個 block）× 兩個模型 × 四個任務 × 3 題：`_check_item` 全過；128K 最長 129,115 token（Llama 上限 131,072）。
+- `code/m10_sweep.py screen`：`--n-blocks`（預設 64，32K 行為不變）、`--gen-all`（E0 和每個格式的 ALL 真的生成、用主線的計分）、`--gen-pos`（指定格式的 F／M／B／R0 在 25% 也生成）；CSV 加 `n_blocks`、`gen_score`、`gen_stop` 三欄（32K 海選的 gen 欄留空）；每題印 GPU 記憶體峰值。讀法 B 的推算改吃同長度的參考線（`load_parts(length=…)`）。
+  - CPU 檢查：`policies` 自測照樣過；252 個 block 時每個放法每個佔比剛好 k 個、不含 block 0（25%：F＝1–63、M＝95–157、B＝189–251）。
+- 佇列（`jobs/`，副本 `code/m10_queue_mi300x/`）：
+  - `39a_longctx_smoke.sh`：128K 冒煙（兩個模型各 1 題、2 個格式、生成）＋ Qwen 128K 小速度格子（1×1）＋推算能不能吃 252 個 block 的參考線。失敗 → 90–92 搬到 `hold/`，不擋其他工作。
+  - `90_longctx_speed.sh`：64K、128K × 兩個模型 × FP8／INT4-KIVI 的速度格子（2 launch × 5 rep）。
+  - `91_longctx_pilot.sh` → `longctx_plan_n.py`：試跑後照 10 §3.3 的規則決定題數，寫 `92_longctx_screen.sh`。規則程式在 sandbox 用假的試跑紀錄跑過（不碰真的佇列）。
+- 還沒寫：`code/m10_longctx_analyze.py`（92 跑完才用；10/18 前寫好）。

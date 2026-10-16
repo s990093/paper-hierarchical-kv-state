@@ -37,6 +37,7 @@ sys.path.insert(0, HERE)
 
 N_BLOCKS = 64
 FRACS = [round(0.10 + 0.05 * i, 2) for i in range(17)]                 # 10%–90% 每 5%（使用者 10/15 決定）
+GEN_POS_POLICIES, GEN_POS_FRAC = ("F", "M", "B", "R0"), 0.25           # --gen-pos：這些格式另外生成 F／M／B／R0 在 25%（10_longctx_plan）
 POLICIES = ["F", "M", "B", "R0", "R1", "R2", "R3", "R4", "ERR", "ATT", "AXE", "ORC"]
 FORMATS = {
     "llama": ["fp8_token", "fp8e5_head", "fp8k0_token", "int8_token", "int4_token", "int4_kivi", "int4h_token",
@@ -162,6 +163,18 @@ class Item:
                 lg = km.forward_span(ids[cut:], self.ctx_len + cut, want_logits=True, n_logits=m)
         lg = lg if lg.dim() == 2 else lg.unsqueeze(0)
         return lg.float().log_softmax(-1)
+
+    def gen(self):
+        """照主線的生成長度（T5 120、其他 64）、greedy，生成第 1 輪的答案並計分（m10_tasks.score，和主線同一個計分）。
+        KV 就是現在緩衝裡放的；生成寫到 ctx_len 之後的位置，下一次 score／gen 從 ctx_len 重新覆寫（causal，不會讀到舊的）。"""
+        import m10_tasks as T
+        from m10_quality import gen_len
+        ans = self.ans
+        tr = self.it["turns"][0]
+        with self.torch.inference_mode():
+            logits = ans.feed(tr["query_ids"], self.ctx_len)
+            out, stop = ans.generate(logits, self.ctx_len + len(tr["query_ids"]), gen_len(self.it))
+        return T.score(tr["metric"], ans.decode(out), tr["gold"]), stop
 
     @staticmethod
     def metrics(lp, lp0, gold):
@@ -329,7 +342,8 @@ def cmd_parts(a):
 # ============================================================================ screen：海選
 SCREEN_FIELDS = ["run_id", "ts", "model", "item_id", "task", "band", "seed", "needle_blocks", "fmt", "bits_per_value",
                  "policy", "frac", "k", "readout", "b", "lp_stored", "lp_read", "bytes_stored", "bytes_read", "kl",
-                 "gold_lp", "gold_lp_e0", "top1", "first_ok", "first_ok_e0", "cenK_read", "own_gpu_intruders"]
+                 "gold_lp", "gold_lp_e0", "top1", "first_ok", "first_ok_e0", "cenK_read", "own_gpu_intruders",
+                 "n_blocks", "gen_score", "gen_stop"]     # 後三欄 10/16 加（長 context，10_longctx_plan.md）；32K 海選 gen 欄留空
 
 
 class BModel:
@@ -338,7 +352,7 @@ class BModel:
 
     def __init__(self, model: str, grid_blocks: str, parts_json: str, bw: str = "b32"):
         import m10_sweep_sim as S
-        p = S.load_parts(grid_blocks)
+        p = S.load_parts(grid_blocks, length=N_BLOCKS * 512)
         self.S, self.f, self.bw = S, p["f"], bw
         self.lb = {s: p["l"][(bw, s, "bf16")] for s in ("idle", "busy")}
         pj = json.load(open(parts_json))
@@ -355,16 +369,30 @@ class BModel:
 
 
 def cmd_screen(a):
+    global N_BLOCKS
     import torch
     import m10_codec_x as X
-    from m10_quality import Answerer, make_items
+    import m10_tasks as T
+    from m10_quality import Answerer, make_items, plan_items
+    N_BLOCKS = a.n_blocks                          # 10/16：長 context（64K＝128、128K＝252 個 block）；預設 64＝32K
     X.install()
-    ans = Answerer(a.model)
+    ans = Answerer(a.model, extra=(N_BLOCKS - 64) * 512 + 4096)
+    if N_BLOCKS == 64:
+        items = make_items(a, ans.tok)
+    else:                                          # 同樣的題目 seed 與內容，只把 haystack 拉長（位置帶照比例，m10_tasks.bands）
+        P = json.load(open(a.params_file))["params"][a.model]
+        items = (lambda task=task, b1=b1, b2=b2, seed=seed: T.make_item(task, b1, b2, seed, ans.tok, P.get(task),
+                                                                          n_blocks=N_BLOCKS)
+                 for task, b1, b2, seed in plan_items(a.tasks, a.n, a.seed0))
+    gen_cells = ([("ALL", 1.0)] if a.gen_all else [])
+    gen_pos = set(a.gen_pos or [])
     rid = os.environ.get("RUN_ID", "adhoc")
     bm = BModel(a.model, a.grid_blocks, a.parts) if a.parts else None
     fmts = a.formats or FORMATS[a.model]
     policies = a.policies or POLICIES
     fracs = a.fracs or FRACS
+    if gen_pos:                                    # 要生成的格子必須在海選的格子裡（不然會靜默少做）
+        assert all(p in policies for p in GEN_POS_POLICIES) and GEN_POS_FRAC in fracs, (policies, fracs)
     si, sk = (int(x) for x in a.shard.split("/"))
     done = set()
     if os.path.exists(a.out):
@@ -378,7 +406,7 @@ def cmd_screen(a):
     watch = _watch(a.out)
     a.lb_n = 0                                     # 海選不含 LongBench
     t_all, n_items = time.time(), 0
-    for kk, mk in enumerate(make_items(a, ans.tok)):
+    for kk, mk in enumerate(items):
         if kk % sk != si:
             continue
         it = mk()
@@ -393,10 +421,12 @@ def cmd_screen(a):
         st.place(frozenset())
         lp0 = st.score()
         m0 = Item.metrics(lp0, lp0, st.gold_ids)
+        g0 = st.gen() if (gen_cells or gen_pos) else ("", "")
         rows = [dict(base, fmt="", bits_per_value=16.0, policy="E0", frac=0.0, k=0, readout="A", b="", lp_stored=0,
                      lp_read=0, bytes_stored=N_BLOCKS * ans.km.chunk_bytes, bytes_read=N_BLOCKS * ans.km.chunk_bytes,
-                     gold_lp_e0=m0["gold_lp"], first_ok_e0=m0["first_ok"], cenK_read="", **m0)]
-        n_fwd = 1
+                     gold_lp_e0=m0["gold_lp"], first_ok_e0=m0["first_ok"], cenK_read="", gen_score=g0[0], gen_stop=g0[1],
+                     **m0)]
+        n_fwd, n_gen = 1, int(bool(gen_cells or gen_pos))
         for fmt in fmts:
             st.load_fmt(fmt)
             bpv = st.lp_nbytes * 16 / ans.km.chunk_bytes          # 位元／值＝位元組×8 ÷（BF16 位元組÷2）
@@ -418,7 +448,12 @@ def cmd_screen(a):
                         cache[eff] = Item.metrics(st.score(), lp0, st.gold_ids)
                         n_fwd += 1
                     mm = cache[eff]
-                    rows.append(dict(base, fmt=fmt, bits_per_value=round(bpv, 4), policy=p, frac=fr, k=len(lp),
+                    gs = ("", "")
+                    if ro == "A" and ((p, fr) in gen_cells or (fmt in gen_pos and p in GEN_POS_POLICIES and fr == GEN_POS_FRAC)):
+                        st.place(eff)
+                        gs = st.gen()
+                        n_gen += 1
+                    rows.append(dict(base, gen_score=gs[0], gen_stop=gs[1], fmt=fmt, bits_per_value=round(bpv, 4), policy=p, frac=fr, k=len(lp),
                                      readout=ro, b=b, lp_stored=len(lp), lp_read=len(eff),
                                      bytes_stored=(N_BLOCKS - len(lp)) * ans.km.chunk_bytes + len(lp) * st.lp_nbytes,
                                      bytes_read=sum(st.lp_nbytes if i in eff else ans.km.chunk_bytes
@@ -427,13 +462,14 @@ def cmd_screen(a):
                                      cenK_read=round(sum(st.err[i] for i in eff) / len(eff), 6) if eff else "", **mm))
         intr = "NOT_CHECKED" if watch is None else len(watch.intruders)
         for r in rows:
-            r.update(run_id=rid, ts=ts(), own_gpu_intruders=intr)
+            r.update(run_id=rid, ts=ts(), own_gpu_intruders=intr, n_blocks=N_BLOCKS)
             w.writerow(r)
         fo.flush()
         n_items += 1
         dt = time.time() - t0
-        print(f"[{kk + 1}] {it['item_id']} rows={len(rows)} forwards={n_fwd} {dt:.1f}s "
-              f"({dt / n_fwd * 1e3:.1f} ms/forward) avg {(time.time() - t_all) / n_items:.1f}s/題", flush=True)
+        print(f"[{kk + 1}] {it['item_id']} n_blocks={N_BLOCKS} rows={len(rows)} forwards={n_fwd} gens={n_gen} {dt:.1f}s "
+              f"({dt / n_fwd * 1e3:.1f} ms/forward) avg {(time.time() - t_all) / n_items:.1f}s/題 "
+              f"peak {torch.cuda.max_memory_allocated() / 2**30:.1f} GiB", flush=True)
         del st
         torch.cuda.empty_cache()
     fo.close()
@@ -463,6 +499,9 @@ def main():
     s.add_argument("--grid-blocks", help="主線 FP8 grid run 的 blocks.csv（重算線、BF16 載入線）")
     s.add_argument("--shard", default="0/1")
     s.add_argument("--out", required=True, help="逐列 CSV（可 .gz；很大，放 runs 目錄，不進 git）")
+    s.add_argument("--n-blocks", type=int, default=64, help="context 的 block 數（64＝32K、128＝64K、252＝128K；10_longctx_plan）")
+    s.add_argument("--gen-all", action="store_true", help="E0 和每個格式的 ALL（讀法 A）另外真的生成答案、計分")
+    s.add_argument("--gen-pos", nargs="*", help="這些格式另外生成 F／M／B／R0 在 25%%（讀法 A）")
     c = sp.add_parser("policies")
     a = ap.parse_args()
     if a.cmd == "policies":

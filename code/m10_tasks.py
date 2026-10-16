@@ -81,6 +81,18 @@ BLOCK = 512
 N_BLOCKS = 64
 BANDS = {"front": (1, 16), "mid": (24, 39), "back": (48, 63)}   # 含頭尾的 block 範圍
 
+
+def bands(n_blocks: int = N_BLOCKS) -> dict:
+    """位置帶跟著 block 數等比例縮放（10/16 長 context 實驗加，docs/precision_20261013/10_longctx_plan.md）：
+    前＝1..n/4、中＝3n/8..5n/8−1、後＝3n/4..n−1（都取整數部分）。n＝64 時和 BANDS 完全相同（主線題目不變）。"""
+    if n_blocks == N_BLOCKS:
+        return BANDS
+    q = n_blocks / 8
+    return {"front": (1, int(2 * q)), "mid": (int(3 * q), int(5 * q) - 1), "back": (int(6 * q), n_blocks - 1)}
+
+
+assert bands(64) == BANDS
+
 TASKS = {"T1": "niah_multikey_3", "T2": "niah_multivalue", "T3": "vt", "T4": "hotpotqa", "T5": "cwe"}
 _ALIAS = {v: k for k, v in TASKS.items()}
 
@@ -328,7 +340,7 @@ def _assemble(enc: _Enc, pre_text: str, fillers: list[_Unit], needles: dict[int,
 
     targets = []
     for t, us in needles.items():
-        lo_b, hi_b = BANDS[turn_band[t]]
+        lo_b, hi_b = bands(total // block)[turn_band[t]]
         s, e = max(lo_b * block, pos0), (hi_b + 1) * block
         need = sum(L + gap for L in nl[t])
         avail = e - s - need
@@ -740,7 +752,7 @@ def make_item(task: str, band1: str | None, band2: str | None, seed: int, tok, p
             try:
                 ctx, spans, turns, sep, pre = fn(task, tb, seed, p, enc, n_blocks, block, attempt)
                 for kind, (t, *_), s, e in [x for x in spans if x[0] == "needle"]:
-                    lo, hi = BANDS[tb[t]]
+                    lo, hi = bands(n_blocks)[tb[t]]
                     if not _blocks(s, e, block) <= set(range(lo, hi + 1)):
                         raise RuntimeError(f"needle {t} 落在 block {sorted(_blocks(s, e, block))}，不在 {tb[t]}")
                 break
@@ -848,7 +860,8 @@ def _check_item(it: dict, tok, again: dict | None) -> list[str]:
     task = it["task"]
     for tr in it["turns"]:
         band = tr["band"]
-        allowed = set(range(1, it["n_blocks"])) if band == "global" else set(range(BANDS[band][0], BANDS[band][1] + 1))
+        bb = bands(it["n_blocks"])
+        allowed = set(range(1, it["n_blocks"])) if band == "global" else set(range(bb[band][0], bb[band][1] + 1))
         if not tr["needle_blocks"] or not set(tr["needle_blocks"]) <= allowed:
             errs.append(f"turn{tr['turn']} needle_blocks {tr['needle_blocks']} 不在 {band}")
         if 0 in tr["needle_blocks"]:
