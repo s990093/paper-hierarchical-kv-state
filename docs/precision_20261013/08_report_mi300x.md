@@ -349,7 +349,7 @@ run：Llama `20261016-064017-m10-i4e-llama-T24-s0`、`-064247-…-s1`、`-064518
 
 ### 2.8 IO 牆、容量與兩層混合還原（探索，[12 號](12_tier_plan.md)另外登記；只報告）
 
-**A：IO 牆／容量**（10/16 13:5xZ 第一版；`code/m10_iowall.py` → `results/m10_tier_mi300x/{iowall.json, tables_iowall.md}`、`figs/A2_<m>_wall.png`、`A3_<m>_spill.png`；用主線四個速度格子，run 見附錄 A）。**慢層的時間目前是推算，stage 44 跑完換成實測。**
+**A：IO 牆／容量**（10/16 13:34Z 第一版；`code/m10_iowall.py` → `results/m10_tier_mi300x/{iowall.json, tables_iowall.md}`、`figs/A2_<m>_wall.png`、`A3_<m>_spill.png`；用主線四個速度格子，run 見附錄 A）。**慢層的時間目前是推算，stage 44 跑完換成實測。**
 
 - **A1 容量**〔算術〕：每個 block，Llama BF16 64 MiB、FP8 32、INT4 KIVI 20；Qwen 28、14、8.75 MiB。
   - 一段 32K 對話：Llama 4 GiB（INT4 1.25 GiB）、Qwen 1.75 GiB（INT4 0.55 GiB）。128K 是 Llama 15.75 GiB、Qwen 6.89 GiB。

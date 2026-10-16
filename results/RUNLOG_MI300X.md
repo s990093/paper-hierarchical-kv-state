@@ -666,10 +666,10 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 
 ## Milestone 13 — IO 牆、容量與兩層混合還原（探索；MI300X）（準備中）
 
-**狀態**：事先登記寫好（`docs/precision_20261013/12_tier_plan.md`，2026-10-16 13:3xZ，commit 1fc80e5）。A 的第一版跑完（慢層用推算）；B 的程式寫好，stage 44 排進佇列。
+**狀態**：事先登記寫好（`docs/precision_20261013/12_tier_plan.md`，2026-10-16 13:27Z，commit 1fc80e5）。A 的第一版跑完（慢層用推算）；B 的程式寫好，stage 44 排進佇列。
 **為什麼**：使用者 10/16：「重點是把 IO wall 等效往後拉長，所以重點在 SSD？」「IO 牆／容量分析、兩層混合還原全部都要」。
 
-### 13.1 A：IO 牆／容量第一版（10/16 13:4x–13:5xZ，CPU）
+### 13.1 A：IO 牆／容量第一版（10/16 13:28–13:34Z，CPU）
 
 - **指令**：`python code/m10_iowall.py`（CPU，不碰 GPU；輸入是主線速度格子 `20261015-161226-m10-grid-fp8-llama`、`20261016-034902-m10-grid-int4-llama`、`20261015-194150-m10-regrid-fp8-qwen`、`20261016-052143-m10-grid-int4-qwen` 的 summary、restores、blocks.csv，和第一階段的 `results/m7_write_policy_mi300x/tier_params.json`）。
 - **產出檔**：`results/m10_tier_mi300x/iowall.json`、`tables_iowall.md`、`figs/A2_<m>_wall.png`、`figs/A3_<m>_spill.png`。
@@ -677,7 +677,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **失敗與異常**：第一版的圖 A2 垂直線標籤撞到標題、A3 第二列標題壓到第一列座標軸，改排版重畫；數字沒變。
 - 慢層的時間是推算（標〔推算〕）；stage 44 跑完用 `--tier2-dir` 換成實測、重算。
 
-### 13.2 B：兩層混合還原的程式與佇列（10/16 13:3x–13:5xZ）
+### 13.2 B：兩層混合還原的程式與佇列（10/16 13:1x–13:3xZ）
 
 - `code/m10_tier2.py`（grid／smoke／summary）：import 主線 `m10_speed` 的 Bench、Busy、_watcher；主線程式一行沒改。每個 block 有自己的層（還原器原本就支援 `loc[i]`）。
 - CPU 檢查：配置的 block 分配（舊／新／隨機、25／50／75%、同一次重複的 BF16／INT4 用同一組 block）、每個 GPU 狀態 50 格。
