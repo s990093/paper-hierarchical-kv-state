@@ -52,7 +52,7 @@ LAF2NAME = r-h200-la-f2
 QWNAME = r-h200-qwen3
 F2NAME = r-h200-f2
 
-.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x submit-f2 submit-m10 resume-m10 dry-run-m10 analyze-m10 test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
+.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x submit-f2 submit-m10 resume-m10 dry-run-m10 analyze-m10 submit-lc test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
 
 help:
 	@JOBNAME=$(JOBNAME) RESTNAME=$(RESTNAME) LAF2NAME=$(LAF2NAME) QWNAME=$(QWNAME) F2NAME=$(F2NAME) \
@@ -182,6 +182,19 @@ resume-m10:
 dry-run-m10:
 	@bash code/r_h200_m10.sh --part speed --dry-run 2>&1 | $(SHOW) dryrun --title 'r_h200_m10.sh --part speed'
 	@bash code/r_h200_m10.sh --part quality --model llama --dry-run 2>&1 | $(SHOW) dryrun --title 'r_h200_m10.sh --part quality --model llama'
+
+# 長 context（10_longctx_plan；13 §8「先跑 128」）：lc-speed（量時間）接在 m10h-speed 後面，lc-screen（量分數）接在 lc-speed 後面。
+# 主線品質（m10h-q-*）若還在排隊：改成接在 lc-speed 後面（不和量時間的 job 同時跑），並等 lc-screen 開始後才開始。
+submit-lc:
+	@for n in m10h-lc-speed m10h-lc-screen; do j=$$(squeue -h -u $(USER) -n $$n -o '%i %T'); \
+	  if [ -n "$$j" ]; then echo "已經有 $$n：$$j"; exit 1; fi; done
+	@git diff --quiet -- code results docs && git diff --cached --quiet || { echo "有未 commit 的改動：先 commit 再送"; git status --short; exit 1; }
+	@s=$$(squeue -h -u $(USER) -n $(M10S) -o '%i' | head -1); d=""; [ -n "$$s" ] && d="--dependency=afterok:$$s --kill-on-invalid-dep=yes"; \
+	a=$$($(SBATCH_CLEAN) --parsable --job-name=m10h-lc-speed --time=16:00:00 $$d code/r_h200_lc.sh --part speed) || exit 1; echo "m10h-lc-speed = $$a $$d"; \
+	b=$$($(SBATCH_CLEAN) --parsable --job-name=m10h-lc-screen --time=48:00:00 --dependency=afterok:$$a --kill-on-invalid-dep=yes code/r_h200_lc.sh --part screen) || exit 1; \
+	echo "m10h-lc-screen = $$b（afterok:$$a）"; \
+	for q in $$(squeue -h -u $(USER) -t PD -o '%i %j' | awk '$$2 ~ /^m10h-q-/ {print $$1}'); do \
+	  scontrol update JobId=$$q Dependency=afterok:$$a,after:$$b && echo "$$q → afterok:$$a,after:$$b"; done
 
 # 判定（CPU，head node）：照凍結的 m10_analyze.py 走判定流程
 analyze-m10:

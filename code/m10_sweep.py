@@ -277,7 +277,7 @@ def cmd_parts(a):
 
     summary, n_bad_fused, n_chk_fused = {}, {}, {}
     for state in a.states:
-        busy = Busy(0.7, watch) if state == "busy" else None
+        busy = Busy(a.busy_duty, watch) if state == "busy" else None
         if busy:
             busy.__enter__()
         try:
@@ -486,6 +486,8 @@ def main():
     p.add_argument("--states", nargs="+", default=["idle", "busy"])
     p.add_argument("--reps", type=int, default=3)
     p.add_argument("--out-dir", required=True)
+    p.add_argument("--busy-duty", type=float, default=0.7,
+                   help="GPU 忙的 m7_busy duty；預設 0.7＝MI300X 的 busy2（行為不變）。H200 用自己的 busy2（1.0，2026-10-17 加）")
     s = sp.add_parser("screen")
     s.add_argument("--model", choices=list(FORMATS), required=True)
     s.add_argument("--params-file", required=True)

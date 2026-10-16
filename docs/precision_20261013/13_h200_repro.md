@@ -75,3 +75,21 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
 - 腳本：`code/r_h200_m10.sh`（`--part speed|quality`、`--from`、`--dry-run`、`--list`），工作池 `code/h200_pool.py`（看 `nvidia-smi` 的剩餘記憶體才開下一個），判定 `code/h200_m10_analyze.sh`（CPU，head node；包同一支 `m10_analyze.py`）。
 - 結果：`results/m10_precision_h200/`；記錄：`results/RUNLOG_H200.md` 的 Milestone 10-H200；原始 run：`$TIARA_RUNS`。
 - 不在這一批：41／43 大掃描、42–42c 反量化速度、44／44a 兩層與長 context 速度、70 vLLM TTFT（都在量時間，而且是 MI300X 的探索線）；44b／44c、45／46／55／60 的讀法 A 只報告、75 RULER CWE（只跑 E0）→ 主線結果出來後再決定。
+
+---
+
+## 8. 10/17 改動（使用者；寫的時候 H200 第二階段還沒有任何結果，job 20701–20703 還在排隊）
+
+- **範圍擴大成「MI300X 量過的全部」**：使用者 10/17：「目前目標是把 mix 那邊量測的都跑過一遍，復現」，包括大掃描。§7 最後一段「不在這一批」的工作全部改成要做，清單與分批見 RUNLOG_H200 Milestone 10-H200 的「全部復現的清單」。
+- **接受程式和 MI300X 不同**：使用者 10/17：「可以接受不同程式碼」。§3-2 的程式比對只留給已經送出的主線 job（20701–20703；它們的程式本來就和 MI300X 相同）。之後的 job 只**記錄**和 `bcfe5b1` 的差異（slurm 輸出），不擋。每個改動仍然是「加參數、預設不變」，並寫進 RUNLOG。
+  - 第一個改動：`m10_sweep.py parts` 的 GPU 忙原本寫死 duty 0.7（MI300X 的 busy2），加 `--busy-duty`（預設 0.7）；H200 用自己的 busy2＝1.0。
+- **128K 先跑**：使用者 10/17：「改先跑 128」。長 context（10_longctx_plan）排在主線品質之前：
+  - `m10h-lc-speed`（量時間，1 張卡，接在 m10h-speed 後面）：大掃描的零件（`m10_sweep parts`，讀法 B 推算要用）→ 128K 的 FP8／INT4 速度格子 → 64K 的。
+  - `m10h-lc-screen`（量分數，1 張卡，接在 lc-speed 後面）：試跑（三個長度）→ 照 10 §3.3 的規則決定題數（H200 的試跑時間）→ 正式，252 → 128 → 64 個 block。
+  - 主線品質 job（20702、20703）改成接在 lc-speed 後面（量時間的 job 不和自己的 job 同時跑），而且等 lc-screen 開始之後才開始（讓 128K 先拿到卡）。
+  - 程式：`code/r_h200_lc.sh`、`code/h200_longctx_plan.py`（MI300X 的 `longctx_plan_n.py`，規則一字不改，只換路徑與 run 名稱；試跑缺讀法 B 的輸入時停下，MI300X 版只印）。
+- **256K（使用者問 32／64／128／256）**：還沒排。H200 上在 CPU 查過（寫這節之前）：
+  - Llama-3.1-8B 的 `max_position_embeddings` 是 131,072：256K 要開 RoPE 外插，CLAUDE.md §8 禁止 → Llama 不做 256K。
+  - Qwen2.5-7B-Instruct-1M 的 `dual_chunk_attention_config.original_max_position_embeddings` 是 262,144：這個長度以內是一般的 attention（我們的 HF 路徑不做 DCA），可以做。用 508 個 block（260,096 token，和 128K 一樣留 2,048 給問題與答案）。
+  - 題目：508 個 block 的 T2、T3、T4 產得出來、`_check_item` 通過；**T5（cwe）產不出來**（`RuntimeError: cwe 詞表不夠長，補不滿`）。
+  - 要做的話是 H200 才有的新實驗（MI300X 沒做），要另外登記；等 128K 的結果出來再問使用者。
