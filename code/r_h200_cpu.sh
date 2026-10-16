@@ -226,7 +226,8 @@ step D4-char        m7h-d4-char       $TO char
 step D4-char2       m7h-d4-char2      $TO char2
 step D4-sim         m7h-d4-sim        $TO sim --cake
 step D4-scbench     m7h-d4-scbench    $TO scbench --max-tok 1000
-step D5-arith       m7h-d5-arith      $P code/m8_arch_arith.py --cfg-vl "$(dlrun h200-dl-d5-qwen3vl-cfg)/cfg/config.json" --cfg "$(dlrun h200-dl-d5-cfgs)/cfg"
+# m8_arch_arith 檢查 calib_c1.csv 的 run_id：H200 的是 R2 的 C1（run 20261016-061311-m7h-c1，job 20417）
+step D5-arith       m7h-d5-arith      env M7_CALIB_RUN=20261016-061311-m7h-c1 $P code/m8_arch_arith.py --cfg-vl "$(dlrun h200-dl-d5-qwen3vl-cfg)/cfg/config.json" --cfg "$(dlrun h200-dl-d5-cfgs)/cfg"
 step D4-sim2        m7h-d4-sim2       $TO sim --cake --posthoc --gpu-blocks 0 2400 --out d4_sim2.csv
 step D4-gap         m7h-d4-gap        $TO gap --sim d4_sim.csv --src-run "$(basename "$(rid D4-sim)")"
 step D4-sim3        m7h-d4-sim3       $TO sim --cake --posthoc --cpu-frac 0.02 0.05 --gpu-blocks 0 --out d4_sim3.csv

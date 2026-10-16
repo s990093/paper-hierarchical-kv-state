@@ -41,7 +41,8 @@ KiB = 1 << 10
 CHUNK = 512
 TS = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 RUN_ID = os.environ.get("RUN_ID")
-CALIB_RUN = "20261008-130316-m7-c1"
+# calib_c1.csv 必須來自這個 run（MI300X 第一階段的 C1）。平台 C（H200）由 M7_CALIB_RUN 指定 R2 的 C1 run（2026-10-16）
+CALIB_RUN = os.environ.get("M7_CALIB_RUN", "20261008-130316-m7-c1")
 
 
 # ----------------------------------------------------------------------------- 共用
