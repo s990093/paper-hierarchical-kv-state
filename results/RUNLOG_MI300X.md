@@ -487,6 +487,21 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   3. 31z 冒煙測試：`m10_sweep.py screen` 兩個模型都失敗（`RecursionError`：`m10_codec_x.install()` 把 `m10_codec.encode` 換成分派版後，舊格式又呼叫 `C.encode` → 無限遞迴）。已修（存原本的函式），自測加「install 之後舊格式＝原本結果」→ 73／73 過（CPU）。stage 39 重跑冒煙；失敗會把 40–42 搬到 `hold/`，佇列照跑只報告的工作。
 - **另外加的 stage**：33bz（INT4 端點判完只調順序，見 08 §4）；`speed_<m>/meets_fp8tier.json`（33a 寫入前的會合點快照，45、55 改讀它）。
 
+### 10.9 INT4 速度格子（K0；stage 33a，2026-10-16 03:49 → 06:40Z）
+
+- **run_id**：Llama `20261016-034902-m10-grid-int4-llama`（K0：`20261016-052142-m10-k0v-int4-llama`）；Qwen `20261016-052143-m10-grid-int4-qwen`（K0：`20261016-064016-m10-k0v-int4-qwen`）。4 個 rc＝0。**6 份 gpu_guard 全部 CLEAN**。
+- **指令**：`jobs/queue/33a_grid_int4.sh`（原 80；`m10_speed.py grid`，int4_kivi，主線 8 個配置、b16／b32／b48／CPU 層、閒／忙、3 launch × 10 rep）；排版 `jobs/report_bits.sh speed <m> int4`；速度不輸 `m10_analyze.py speed --summary speed_<m>/summary_int4.csv`（凍結的程式，33bz 會用同樣輸入再跑一次）。
+- **產出檔**：`results/m10_precision_mi300x/speed_<m>/{summary_int4.csv, k0_verdict_int4.json, spec_grid_int4.json, gpu_guard_*-m10-grid-int4-*_L{0,1,2}.json}`、`restores.csv.gz`（加上 INT4 那次的 3,600 列）、`meets.json`（加上 `*@int4_kivi`；E0 換成這次的）、`analysis/int4/{tables_speed_<m>.md, speed_<m>.json}`、`figs/speed_<m>_int4.png`、`figs/sources_<m>_int4_<bw>.png`。
+- **關鍵數字**（還原時間中位數，E0 → E1，32K）：
+  - 限速層：Llama 快 36.1–55.2%、Qwen 快 38.1–56.9%（FP8 是 22–39%）→ **K0（INT4）兩個模型都不成立**。
+  - 真實 CPU 層：Llama 閒 0.095 → 0.078（CI 含 0）、忙 0.164 → 0.189；Qwen 閒 0.052 → 0.061、忙 0.066 → 0.146。
+  - CPU 層的 INT4 反量化（原寫法）每次還原：Llama 閒 44.2、忙 112.6 ms；Qwen 閒 25.5、忙 64.3 ms（FP8：24.0／64.0、10.7／26.1）。H2D 比 FP8 只再省 3–14 ms。
+  - **速度不輸**：兩個模型 E1／E1s／E1sr 限速層全過（比值 0.52–0.79）；真實 CPU 層 Llama 忙 1.13–1.15（門檻 1.05）、Qwen 忙 2.10、閒 1.14（門檻 1.094）→ **全部沒過**。
+- **對判定的影響**（照凍結的程式推）：兩個模型在 INT4 都判「均勻不夠」（不管品質）→ 33bz 會走「Step 2 在 Llama 上做」，33c 只跑 Llama、Qwen 拆成 46。例外：品質的檢定力擋判定 → NEEDS_HUMAN。`route_after_int4.py` 用這次真實的 gpu_guard／K0 JSON 和假的 decide 在沙盒測過兩種情況（都沒過 → 拆 33c；Qwen 檢定力擋 → NEEDS_HUMAN、33c 不動）。
+- **E0 重量的一致性**：和 FP8 那次比，Llama −0.6% 到 +0.5%；Qwen −0.8% 到 +4.7%（b16・忙，在 δ\* 內）。
+- **失敗與異常**：無。`speed_<m>/{summary,k0_verdict,spec_grid}.*` 是「最近一次」的副本，現在等於 `*_int4.*`；FP8 的版本在 `*_fp8.*`。
+- 寫進 08 §2.5、§0、§6 第 1 點（速度判準要不要管 CPU 層，要老師決定）。
+
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
 
 **狀態**：程式寫好、CPU／GPU 自測通過；GPU 工作已排進佇列（31z 冒煙測試 → 主線關鍵段 → 40 試跑 → 41 海選 → 42）。**還沒有任何大掃描的數字。**
@@ -534,6 +549,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **為什麼**：冒煙的 parts（scratch，每格 1 次）：原寫法反量化每個 block，mxfp4 0.43–0.73 ms、int2h_g32 1.0–4.4 ms、K8V4 0.21–0.67 ms；FP8 融合後 0.08–0.14 ms。使用者 10/15 要求「反量化開銷大就找加速」，而 INT4 是主線第 2 階的格式。
 - `code/m10_dequant_fast.py` 加 `int4_token`、`int4_kivi`（`_dq4_kernel`；KIVI 關掉 FMA 合併，保持和 PyTorch 一樣兩次捨入）；torch.compile 對照組也加上兩種 INT4。
 - **CPU 驗證**（Triton 直譯模式，`code/m10_queue_mi300x/tests/dq_fast_cpu_interp.py`）：兩種形狀 × 6 種格式，融合結果和「FP32 參考值截斷成 BF16」逐位元相同（12／12），寫進視圖不碰旁邊。直譯器轉 BF16 是截斷、GPU 是四捨五入到偶數（連 GPU 上已驗過的 FP8 kernel 在直譯器裡也和 PyTorch 差一位），所以 **GPU 上的逐位元還沒驗**：stage 39 自測＋`parts` 真實 KV 逐 block 比對（不同 → 停）。
+- **GPU 上驗過了**（10/16 06:44Z，33b 品質段跑的時候插的小工作，不在任何計時段）：`m10_dequant_fast.py --self-test` 6 種格式（含 int4_token、int4_kivi）逐位元相同、寫進視圖不碰旁邊，torch.compile 版也相同（run `20261016-064403-m10-dqfast-selftest-gpu-int4`，`results/m10_sweep_mi300x/dqfast_selftest_gpu.json`）；Llama／Qwen 每個 block 的真實形狀 × 兩種幅度（含一個離群通道）× 5 種格式 28／28 逐位元相同（run `20261016-064414-m10-dqfast-shapes-gpu`，`code/m10_queue_mi300x/tests/dq_fast_gpu_shapes.py`，`results/m10_sweep_mi300x/dqfast_shapes_gpu.json`；奇數長度 37 的 int4_kivi 是 encode 本身不支援，跳過）。stage 39 照樣重驗。
 - stage 42 加 INT4（`speed_dqfast_int4_<m>/`）；stage 39 加 GPU 自測和「`M10_DEQUANT_FAST=1` 的 CPU 層速度格子」冒煙（Qwen、int4_kivi、1×1）。09 §6.2、§6.3-2b 有登記。
 
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
