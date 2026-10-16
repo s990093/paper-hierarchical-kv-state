@@ -625,6 +625,13 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 方法掃描的新還原路徑（真模型，KV 逐位元）：Qwen 144 項（540 s）、Llama 144 項（569 s）ALL PASS。
 - → 40、41、42、42b 照排；沒有 NEEDS_HUMAN、沒有東西搬到 hold/。
 
+### 11.2f 大掃描試跑（stage 40，10/16 13:03 → 13:55Z）
+
+- run：零件 `20261016-130329-m10-sweep-parts-llama`、`-130451-m10-sweep-parts-qwen`（gpu_guard 都 CLEAN）；融合反量化自測＋微測 `-130602-m10-dqfast-bench`；試跑 `-130624-m10-sweep-pilot-llama-s0`、`-130739-…-llama-s1`、`-130854-…-qwen-s0`、`-131009-…-qwen-s1`（4 個 process 全部 rc＝0）。
+- 產出：`results/m10_sweep_mi300x/parts/{parts_<m>.csv, parts_<m>.json, dequant_fast_bench.json, gpu_guard_*}`、`screen_plan.json`；試跑的逐列 CSV 在 `/mlsteam/data/tiara/sweep_m10/pilot_*.csv.gz`（不進 git）。
+- `sweep_plan_n.py`（09 §4.1）：試跑牆鐘 0.823 h、每題 0.0514 h → n＝24（30 估計 12.3 h 超過 12 h 上限），12 種放法、17 種佔比全部保留，估計 9.87 h；寫出 `41_sweep_screen.sh`，13:55:44Z 開跑。
+- 融合反量化微測：見 11 問題一 §4（INT4 KIVI 每個 block：Llama 0.449 → 0.101 ms、Qwen 0.254 → 0.076 ms；torch.compile 0.087／0.054 ms）。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。
@@ -682,5 +689,8 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 
 - `code/m10_tier2.py`（grid／smoke／summary）：import 主線 `m10_speed` 的 Bench、Busy、_watcher；主線程式一行沒改。每個 block 有自己的層（還原器原本就支援 `loc[i]`）。
 - CPU 檢查：配置的 block 分配（舊／新／隨機、25／50／75%、同一次重複的 BF16／INT4 用同一組 block）、每個 GPU 狀態 50 格。
-- `code/m10_queue_mi300x/tests/tier2_fake_gpu.py`：假模型 GPU 測試（KV 逐位元、兩層的載入數、舊／新的 block 範圍、慢層越慢越久、summary 跑得完），**還沒跑**：40 的試跑時間會拿來決定 41 的題數，所以等 41 開跑（品質型的 stage）再跑。
+- `code/m10_queue_mi300x/tests/tier2_fake_gpu.py`：假模型 GPU 測試（KV 逐位元、兩層的載入數、舊／新的 block 範圍、慢層越慢越久、summary 跑得完）。等 41 開跑（品質型的 stage）才跑，因為 40 的試跑時間會拿來決定 41 的題數。
+  - 10/16 13:57Z 第一次：worker 的 332 項全過（100 次還原、KV 全部逐位元正確），但 summary 出錯 `IndexError: list index out of range`。原因：41 同時在跑，100 列全部被 gpu_guard 標污染，summary 照規則只用乾淨的列，結果一列都沒有。
+  - 修正：沒有乾淨的列時明確報錯（「照 CLAUDE.md §3 要重量」）；加只給測試用的 `--include-contaminated`（表格開頭會標「數字不能用」）。44 正式跑是計時段、沒有別的工作，不會用到這個開關。
+  - 10/16 14:0xZ 重跑：334 項 ALL PASS。
 - `jobs/queue/44_tier2_speed.sh`（副本在 `code/m10_queue_mi300x/queue/`）：先真模型冒煙，再正式 2 launch × 5 rep × 閒／忙 × 50 格；失敗寫 NEEDS_HUMAN、不擋後面。估計約 1 小時〔估計，用主線格子的還原時間算〕，比 12 號登記時寫的 1.5–2.5 小時短。

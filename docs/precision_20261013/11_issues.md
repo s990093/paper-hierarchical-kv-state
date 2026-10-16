@@ -48,7 +48,19 @@
 
 ### 4. 還不知道的
 
-- **INT4 融合 kernel 的速度：NOT_MEASURED**（寫好時 GPU 一直在跑計時或品質，不能插）。
+- **INT4 融合 kernel 的速度**（10/16 13:06Z，stage 40 開頭的微測，run `20261016-130602-m10-dqfast-bench`，`results/m10_sweep_mi300x/parts/dequant_fast_bench.json`；單獨量、每個 block、中位數；這支自測沒有開 gpu_guard，同一時段我們沒有其他 GPU 工作）：
+
+  | 模型 | 格式 | 原寫法 | 融合 kernel | torch.compile |
+  |:--|:--|--:|--:|--:|
+  | Llama | INT4 KIVI | 0.449 ms | 0.101 ms（4.4 倍） | 0.087 ms |
+  | Llama | INT4 每 token | 0.318 | 0.080（4.0 倍） | 0.084 |
+  | Llama | FP8（token） | 0.227 | 0.081（2.8 倍） | 0.059 |
+  | Qwen | INT4 KIVI | 0.254 | 0.076（3.3 倍） | 0.054 |
+  | Qwen | FP8（head） | 0.099 | 0.053（1.9 倍） | 0.039 |
+
+  - 6 種格式的融合版、torch.compile 版都和原寫法逐位元相同（同一個 JSON 的 checks）。
+  - torch.compile（PyTorch 自動融合）在多數格式比我們手寫的 Triton kernel 還快一點；方法掃描的 K 組有放它（09 §6.4，k2）。
+  - **還原中的實際成本仍未知**：還原中原寫法每個 block 要 0.69 ms（Llama・閒）到 1.76 ms（Llama・忙），比單獨量的 0.449 ms 大，多出來的是和重算搶 GPU。這部分由 stage 42 量。
 - **融合之後，真實 CPU 層的還原時間：NOT_MEASURED**。單獨量的 kernel 時間推不出來，因為主要成本是干擾。由 stage 42 量（FP8、INT4，`M10_DEQUANT_FAST=1`，09 §6.3-2／2b；只報告，不改主線判定）。
 - 要省多少才夠（〔算術〕，用上面的實測）：
   - Llama・忙：INT4 189 ms → 「速度不輸」門檻 174 ms、贏 E0 要 < 164 ms → 要省 16–25 ms（反量化現在 113 ms）。〔推論〕很可能夠。

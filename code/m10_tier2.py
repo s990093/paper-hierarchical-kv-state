@@ -288,7 +288,9 @@ def cmd_summary(a):
     dstar = json.load(open(a.noise))["delta_star"]
     bad_cont = [r for r in rows if r["contaminated_gpu"] not in ("False",)]
     kvbad = [r for r in rows if r["kv_bad"] not in ("", "0")]
-    clean = [r for r in rows if r["contaminated_gpu"] == "False"]
+    clean = [r for r in rows if r["contaminated_gpu"] == "False" or a.include_contaminated]
+    if not clean:
+        raise SystemExit(f"沒有乾淨的列（{len(rows)} 列全部被 gpu_guard 標污染或沒檢查）：照 CLAUDE.md §3 時間不能用，要重量")
     cells = {}
     for r in clean:
         cells.setdefault((r["bw_name"], r["gpu_state"]), []).append(r)
@@ -334,7 +336,10 @@ def cmd_summary(a):
                    run_ids=sorted({r["run_id"] for r in rows}), n_rows=len(rows), n_contaminated=len(bad_cont),
                    n_kv_bad=len(kvbad), rule="快＝(med_Y−med_X)/med_Y > δ*、配對差 bootstrap 95% CI 不含 0（同主線 k0_verdict）",
                    comparisons=comps), open(os.path.join(a.out_dir, f"compare{tag}.json"), "w"), indent=1, ensure_ascii=False)
-    md = [f"## {model}：兩層混合還原（12 §3；32K；δ*＝{dstar:.4f}）", "",
+    md = [f"## {model}：兩層混合還原（12 §3；32K；δ*＝{dstar:.4f}）", ""]
+    if a.include_contaminated:
+        md += ["**測試用：包含被標污染的列（--include-contaminated），數字不能用**", ""]
+    md += [
           f"run：{'、'.join(sorted({r['run_id'] for r in rows}))}；{len(rows)} 次還原，污染 {len(bad_cont)}、KV 不對 {len(kvbad)}", ""]
     for t in ("ssd", "nfs"):
         for st in ("idle", "busy"):
@@ -420,6 +425,7 @@ def main():
     s.add_argument("--out-dir", required=True)
     s.add_argument("--only-run", nargs="*")
     s.add_argument("--fig", action="store_true")
+    s.add_argument("--include-contaminated", action="store_true", help="只給測試用（假模型和其他工作同時跑）；正式報告不能用")
     a = ap.parse_args()
     if a.cmd == "_worker":
         worker(json.loads(a.spec))

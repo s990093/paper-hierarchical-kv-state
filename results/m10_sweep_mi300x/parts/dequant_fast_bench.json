@@ -1,0 +1,181 @@
+{
+ "checks": {
+  "bitwise[fp8_head]": {
+   "pass": true
+  },
+  "into_view[fp8_head]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_head]": {
+   "bitwise": true
+  },
+  "bitwise[fp8_channel]": {
+   "pass": true
+  },
+  "into_view[fp8_channel]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_channel]": {
+   "bitwise": true
+  },
+  "bitwise[fp8_token]": {
+   "pass": true
+  },
+  "into_view[fp8_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_token]": {
+   "bitwise": true
+  },
+  "bitwise[int8_token]": {
+   "pass": true
+  },
+  "into_view[int8_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[int8_token]": {
+   "bitwise": true
+  },
+  "bitwise[int4_token]": {
+   "pass": true
+  },
+  "into_view[int4_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[int4_token]": {
+   "bitwise": true
+  },
+  "bitwise[int4_kivi]": {
+   "pass": true
+  },
+  "into_view[int4_kivi]": {
+   "pass": true
+  },
+  "compiled_bitwise[int4_kivi]": {
+   "bitwise": true
+  }
+ },
+ "bench": {
+  "llama_block|fp8_head|torch": {
+   "median_ms": 0.2242,
+   "eff_GBps": 448.9
+  },
+  "llama_block|fp8_head|fused": {
+   "median_ms": 0.0789,
+   "eff_GBps": 1276.2
+  },
+  "llama_block|fp8_head|torch_compile": {
+   "median_ms": 0.0562,
+   "eff_GBps": 1792.5
+  },
+  "llama_block|fp8_token|torch": {
+   "median_ms": 0.2272,
+   "eff_GBps": 447.7
+  },
+  "llama_block|fp8_token|fused": {
+   "median_ms": 0.0809,
+   "eff_GBps": 1257.0
+  },
+  "llama_block|fp8_token|torch_compile": {
+   "median_ms": 0.0588,
+   "eff_GBps": 1729.8
+  },
+  "llama_block|int8_token|torch": {
+   "median_ms": 0.2202,
+   "eff_GBps": 462.0
+  },
+  "llama_block|int8_token|fused": {
+   "median_ms": 0.0736,
+   "eff_GBps": 1381.2
+  },
+  "llama_block|int8_token|torch_compile": {
+   "median_ms": 0.0449,
+   "eff_GBps": 2264.3
+  },
+  "llama_block|int4_token|torch": {
+   "median_ms": 0.3178,
+   "eff_GBps": 267.3
+  },
+  "llama_block|int4_token|fused": {
+   "median_ms": 0.0798,
+   "eff_GBps": 1064.3
+  },
+  "llama_block|int4_token|torch_compile": {
+   "median_ms": 0.0842,
+   "eff_GBps": 1008.3
+  },
+  "llama_block|int4_kivi|torch": {
+   "median_ms": 0.4488,
+   "eff_GBps": 196.3
+  },
+  "llama_block|int4_kivi|fused": {
+   "median_ms": 0.1014,
+   "eff_GBps": 869.0
+  },
+  "llama_block|int4_kivi|torch_compile": {
+   "median_ms": 0.0866,
+   "eff_GBps": 1016.6
+  },
+  "qwen_block|fp8_head|torch": {
+   "median_ms": 0.099,
+   "eff_GBps": 445.0
+  },
+  "qwen_block|fp8_head|fused": {
+   "median_ms": 0.0531,
+   "eff_GBps": 829.7
+  },
+  "qwen_block|fp8_head|torch_compile": {
+   "median_ms": 0.0392,
+   "eff_GBps": 1122.4
+  },
+  "qwen_block|fp8_token|torch": {
+   "median_ms": 0.1008,
+   "eff_GBps": 441.6
+  },
+  "qwen_block|fp8_token|fused": {
+   "median_ms": 0.0529,
+   "eff_GBps": 840.9
+  },
+  "qwen_block|fp8_token|torch_compile": {
+   "median_ms": 0.0402,
+   "eff_GBps": 1107.0
+  },
+  "qwen_block|int8_token|torch": {
+   "median_ms": 0.097,
+   "eff_GBps": 458.6
+  },
+  "qwen_block|int8_token|fused": {
+   "median_ms": 0.0499,
+   "eff_GBps": 891.4
+  },
+  "qwen_block|int8_token|torch_compile": {
+   "median_ms": 0.0347,
+   "eff_GBps": 1281.7
+  },
+  "qwen_block|int4_token|torch": {
+   "median_ms": 0.1698,
+   "eff_GBps": 218.9
+  },
+  "qwen_block|int4_token|fused": {
+   "median_ms": 0.0509,
+   "eff_GBps": 729.8
+  },
+  "qwen_block|int4_token|torch_compile": {
+   "median_ms": 0.0525,
+   "eff_GBps": 708.1
+  },
+  "qwen_block|int4_kivi|torch": {
+   "median_ms": 0.2544,
+   "eff_GBps": 151.5
+  },
+  "qwen_block|int4_kivi|fused": {
+   "median_ms": 0.0761,
+   "eff_GBps": 506.2
+  },
+  "qwen_block|int4_kivi|torch_compile": {
+   "median_ms": 0.0541,
+   "eff_GBps": 712.6
+  }
+ },
+ "all_pass": true
+}

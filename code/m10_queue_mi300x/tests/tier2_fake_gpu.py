@@ -106,8 +106,9 @@ chk(med("nfs", "S-bf16") > med("ssd", "S-bf16") > med("cpu", "E0"),
 
 noise = os.path.join(out, "noise.json")
 open(noise, "w").write('{"delta_star": 0.05}')
+# 假模型和其他 GPU 工作（例如 41）同時跑時，每列都會被 gpu_guard 標污染；summary 照規則不用這種列，所以這裡開測試用的開關
 T.cmd_summary(argparse.Namespace(restores=os.path.join(out, "restores.csv"), noise=noise, out_dir=out, only_run=None,
-                                 fig=True))
+                                 fig=True, include_contaminated=True))
 chk(os.path.exists(os.path.join(out, "compare_qwen.json")), "summary 寫出 compare_qwen.json")
 chk(os.path.exists(os.path.join(out, "figs", "B_qwen_tier2.png")), "summary 畫出圖 B")
 print(f"輸出在 {out}")
