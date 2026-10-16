@@ -68,3 +68,7 @@ results/m7_write_policy_mi300x/b_share.csv
 results/m7_explore_mi300x/r1_sim_longalpaca7b.csv
 # GPU 崩潰時的 core dump（幾十 GB）
 gpucore.*
+
+# 2026-10-16：>1 MB 的 H200 模擬輸出，進 git 的是 .gz（原檔留著給之後的分析讀）
+results/m7_explore_h200/r1_sim_longalpaca7b.csv
+results/m7_write_policy_h200/sim_sweep.csv

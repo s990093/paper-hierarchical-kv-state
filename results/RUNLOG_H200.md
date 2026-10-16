@@ -290,3 +290,56 @@ LA 的數字和 MI300X 的比較留到全部跑完、在 head node 一起做。
 - `mean_info`（K 次合成一列）的單元測試通過。sweep 的 K 迴圈要 GPU，沒辦法在 head node 試。第一次真的跑就是這個 job。
 **時間**: 用 H200 的 C1 f(i) 和各層頻寬算，每輪約 110 s 的還原 × 21＋62 個量測各等 0.5 s → 5 輪約 3.2 小時（算術估計，不是量的；MI300X 實際比這種算法多花一些時間）。`--time=10:00:00`。
 
+
+---
+
+## Milestone R-cpu — 第一階段的 CPU 模擬，用 H200 的常數重跑（`code/r_h200_cpu.sh --part a`）
+
+**狀態**: **66/67 步 PASS，F6-summary 的 (c) 停下（等使用者決定）**
+**決定**: 2026-10-16 使用者「gogo」（在 head node 先跑只需要 R2 常數的那批）
+**執行時間**: 2026-10-16 09:53:21 → 10:44:50（F6-summary 失敗停下）；F7 用 `--from F7-run` 補跑 10:45:33 → 10:46:11
+**在哪裡跑**: head node `bcm11-headnode01`（32 核、62 GB、58 個使用者）。h200q 不收純 CPU 的 job：`sbatch --test-only -p h200q --gres=gpu:0` →
+`Assigned QOS: h200q_0g ... allocation failure: Invalid qos specification`。每一步 `nice -n 19`、`--procs 8`（MI300X 24；各設定用自己的 seed，process 數不影響數字）。
+`H200_SLURM.md` §5 寫「head node 不跑重的 CPU 工作」〔推論〕：使用者同意這批在 head node 跑。
+**run_id**: 66 個，`results/m8_directions_h200/r_h200_cpu_run_ids.tsv`（標籤 → run_id）；每個 run 目錄有 cmd.sh、context.txt（含 M7_*／M8_OUT／M9_OUT）、stdout、stderr、exit_code
+**指令**: `bash code/r_h200_cpu.sh --part a`（`--dry-run` 看全部 67 條）。照 MI300X 留下結果的 run 的指令（run_commands.tsv），
+逐條自動比對：正規化路徑與 `--procs` 後 66 條和 MI300X 相同；D1-analyze 的 `--inp` 寫完整路徑（MI300X 是 `d1_sweep.csv`），讀的是同一個主掃描。
+冒煙測試（d1-smoke、f6-smoke）、中途改過的版本（sim-sweep 第一次、r1-sim 第一次）不跑。
+
+**常數**（03 §R2：只換 GPU、不換「裝置」）:
+- f(i)：H200 的 C1（`results/m7_write_policy_h200/calib_c1.csv`，run `20261016-061311-m7h-c1`）；LongAlpaca：`results/m7_explore_h200/calib_c1_longalpaca7b.csv`（run `20261016-090036-…`），`M7_CHUNK_BYTES`＝256 MiB（MI300X 的 r1-sim 輸出也記 `chunk_MiB`＝256，當時是 shell 設的、cmd.sh 沒記到）
+- 限速層：MI300X 的 `tier_params.json`（`M7_TIER_PARAMS`，和 GPU 端一樣）
+- capture 的 D2H：H200 C0 的 `D2H_pinned` 64 MiB 中位數取一位小數 → **49.5 GiB/s**（同一個算法在 MI300X 給 44.756 → 程式寫的 44.8）
+- 第 1 輪 GRID 的 vLLM CPU 頻寬 3.69 GiB/s：沿用 MI300X（和 r-h200-rest 的 P1-cpuvllm 同一個決定；H200 的 C6 是 42–50 GiB/s）
+
+**程式的修改**（預設＝MI300X 不變）: `m7_sim`（`M7_D2H_GIBPS`）、`m7_round1_sim`／`m7_round1_analyze`（`M7_EXPLORE`、`M7_RES`）、`m8_conc_sim`（`M8_OUT`、`M7_EXPLORE`）、`m9_f6_analyze`／`m9_f7_fscale_sim`（`M9_OUT`）。commit `e62f044`。
+**回歸**（head node，MI300X 的輸入、不設任何新變數；暫存目錄）: r1_sim 兩個模型、d1_validate、f7 五個檔和 git **完全相同**；d1_verdict_cfg、f6_main_S5T_cfg 只差 `src` 欄（來源 run 名）；
+sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現在的程式多 S4C、S4W 兩個策略（MI300X 10/09 跑 sweep2 之後才加，`REDTEAM_round1.md`）→ H200 的 sim_sweep／sim_probe 有 15 個策略，比方向只看共同的。
+
+**產出檔**: `results/m7_write_policy_h200/sim_sweep.csv.gz`、`sim_probe.csv`；`results/m7_explore_h200/r1_sim_llama31_8b.csv`、`r1_sim_longalpaca7b.csv.gz`；
+`results/m8_directions_h200/d1_*.csv`（18 個每格表＋seed 表、validate、overflow）；`results/m9_followup_h200/f6_*_cfg.csv`（6 個）、`f7_*.csv`（5 個）。
+>1 MB 的兩個檔進 git 的是 `.gz`（原檔留在原處給之後的分析讀，加進 `.gitignore`）。
+
+**關鍵數字**（只比方向；兩台都是模擬）:
+- D1-validate：6 格的模擬中位數和 H200 的 r1-sim（`20261016-095639-m7h-r1-sim-llama31-8b`）相同（誤差 ≤1e-13%）
+- D1 每格表（pass10＝≥6/10 seed 贏所有對手 ≥10%）MI300X → H200：主判定 `d1_verdict_cfg` **5 → 10**、`d1_verdict_mean` 5 → 9、`d1_afq16_S1D` 5 → 3、`d1_local8_S1D` 6 → 6、`d1_qmax16` 10 → 10、`d1_posthoc` 3 → 2、`d1_x3_S1D` 3 → 2；
+  加進所有延後版對手後（x4 的 6 個表）兩台都是 **0**；S5T 的各表兩台都是 0
+- F6 (a)+(b)（ρ_KV<1 的格、中位數、k=6/10）：S5T、S1D 都是 **0 格通過** → CONFIRMED（MI300X 也是 0）。主網格 ρ<1 的格數 MI300X 192、H200 178
+- F6 l8q16 S1D（中位數）pass10：MI300X 2、H200 **0**
+- F7（判準在 `research_20261010_followup/README.md`「追加 F7」）：free 在 f×0.5、f×0.6 都是 **0 個 ≥10% 的存活者** → 「重算變快後結論仍成立」（MI300X 同）。
+  hold：f×0.6 1 個、f×1.0 1 個 ≥10% 存活者（11.6 GiB/s、hold、doc、nfs、cpu_frac 0.5，g_min 中位數 0.205）。只列出，不改 free 的判定（同 MI300X 的寫法）
+
+**失敗與異常**:
+1. **F6-summary（run `20261016-104426-m7h-f6-summary`）exit 1**：
+   ```
+   File ".../code/m9_f6_analyze.py", line 265, in summary
+       raise RuntimeError(f"D1 過載格應為 5 格，讀到 {len(five)}")
+   RuntimeError: D1 過載格應為 5 格，讀到 3
+   ```
+   (c) 的檢查把 MI300X 的「D1 有 5 個過載格」寫死。H200 的 `d1_afq16_S1D_cfg.csv` 只有 3 格 pass10（2 格和 MI300X 同座標：local8／doc／λ0.4／poisson／cpu 3.69 與 11.6；1 格是 H200 才有的：λ0.4／bursty／11.6）。
+   (a)+(b) 在例外之前已算完並寫出 `f6_summary.csv`，但這個 run 是失敗的 → **這次不 commit f6_summary.csv**，等 (c) 決定後重跑。
+   不管用哪一組格子，H200 的 F6 l8q16 S1D 表在那些格子的 n10 都 ≤3/10（沒有一格 ≥6/10）；MI300X 的 (c) 是 1/5 重現（λ0.2／bursty／3.69：7/10）。
+2. 圖的字型、其他：無。
+
+**還沒做**（`--part b`，之後）: m7_sim validate（要 P1）、08 消融的分析（要 P2）、D3（要 P1、P2、A0；C7-anchor 在 H200 沒做 → 那部分 NOT_MEASURED）、第 1 輪的分析（要 P3、Qwen3）。
+D4（要 Mooncake trace、SCBench）、D5（要模型 config）要先下載並核對和 MI300X 同一份。D6 用到 3090 量的反量化成本（H200 沒量，F3 屬第二階段）→ 先不做，等使用者決定。
