@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import json
 import os
 import re
@@ -117,8 +118,16 @@ def analyze(src, tier_params, figdir, tag):
     import m7_analyze as A
     tmp = tempfile.mkdtemp(prefix=f"m7repro_{tag}_")
     for f in os.listdir(src):
-        if f.endswith((".csv", ".json")) and os.path.isfile(os.path.join(src, f)):
-            shutil.copy2(os.path.join(src, f), tmp)
+        p = os.path.join(src, f)
+        if not os.path.isfile(p):
+            continue
+        if f.endswith((".csv", ".json")):
+            shutil.copy2(p, tmp)
+        elif f.endswith(".csv.gz") and not os.path.exists(p[:-3]):
+            # MI300X 的 b_share.csv 在 git 裡是 .gz。10/16 job 20553 的 R-compare 沒讀到它：
+            # B 主設定的 MI300X 欄變成 NOT_MEASURED（判定 (2) 只看 H200，不受影響）
+            with gzip.open(p, "rb") as fi, open(os.path.join(tmp, f[:-3]), "wb") as fo:
+                shutil.copyfileobj(fi, fo)
     note = None
     if not os.path.exists(os.path.join(tmp, "tier_params.json")):
         # H200 的限速層參數沿用 MI300X 的（03 §R2）；a0() 會讀這個檔
