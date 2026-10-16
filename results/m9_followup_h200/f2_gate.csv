@@ -1,17 +1,17 @@
 run_id,ts,src_run,check,ok,value,threshold,note
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,update_period_le_5pct,False,99.866608,5.205995,ms；最短還原（預測）104.1 ms @ cpu35；p90 104.25388440489769
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,counter_changes,True,51,2,res_uJ=1000.0
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_idle_bare,True,-0.096757,5.0,%；cur_W；10.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_idle_bare,True,-0.120845,5.0,%；cur_W；10.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_idle_bare,True,0.844957,5.0,%；cur_W；10.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_idle_model,True,-0.093335,5.0,%；cur_W；30.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_idle_model,True,-0.096861,5.0,%；cur_W；30.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_idle_model,True,-0.06186,5.0,%；cur_W；30.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_dma_h2d,True,0.176318,5.0,%；cur_W；10.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_dma_h2d,True,0.134852,5.0,%；cur_W；10.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_dma_h2d,True,-0.179547,5.0,%；cur_W；10.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_wait_nfs_load_only,True,0.040116,5.0,%；cur_W；12.1 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_wait_nfs_load_only,True,0.053283,5.0,%；cur_W；12.1 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_wait_nfs_load_only,True,0.100904,5.0,%；cur_W；12.1 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,validation_idle_model_end,True,-0.065873,5.0,%；cur_W；30.0 s
-20261016-090631-m7h-f2-gate,2026-10-16T09:06:34+08:00,20261016-090154-m7h-f2-probe,same_gpu_nvml_torch,True,00000000:51:00.0 | 00000000:51:00,,
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,update_period_le_5pct,True,99.92964,109.325896,ms；K=21；最短還原（預測）104.1 ms @ cpu35；p90 104.59236241877079、max 105.49227334558964；需要的 K：中位數 20、最大值 21
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,counter_changes,True,51,2,res_uJ=1000.0
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_idle_bare,True,-0.187915,5.0,%；cur_W；10.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_idle_bare,True,-0.145055,5.0,%；cur_W；10.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_idle_bare,True,-0.137853,5.0,%；cur_W；10.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_idle_model,True,-0.087952,5.0,%；cur_W；30.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_idle_model,True,-0.059585,5.0,%；cur_W；30.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_idle_model,True,-0.076126,5.0,%；cur_W；30.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_dma_h2d,True,-0.272461,5.0,%；cur_W；10.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_dma_h2d,True,0.168157,5.0,%；cur_W；10.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_dma_h2d,True,-0.064121,5.0,%；cur_W；10.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_wait_nfs_load_only,True,-0.778245,5.0,%；cur_W；12.1 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_wait_nfs_load_only,True,0.032342,5.0,%；cur_W；12.1 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_wait_nfs_load_only,True,0.081339,5.0,%；cur_W；12.1 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,validation_idle_model_end,True,-0.071957,5.0,%；cur_W；30.0 s
+20261016-092135-m7h-f2-gate,2026-10-16T09:21:38+08:00,20261016-091609-m7h-f2-probe,same_gpu_nvml_torch,True,00000000:51:00.0 | 00000000:51:00,,

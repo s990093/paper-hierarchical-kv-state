@@ -212,7 +212,7 @@ c6_vllm.csv 沒有寫出任何列（vLLM 沒起來就停了）。
 
 ## Milestone R-r1x — 第 1 輪的 LongAlpaca／Qwen3-MoE＋F2 能耗 κ（`code/r_h200_r1x.sh`）
 
-**狀態**: **RUNNING／PENDING** — 2026-10-16 08:5x `make submit-r1x` 重送：job 20555 `r-h200-la-f2`（afterok:20553；**09:00:20 開始**）、job 20556 `r-h200-qwen3`（afterok:20553,afterany:20554；等 20554）。第一次送的 20544、20545（06:3x，git `53f22a0`）在 07:48:33 因 20417 失敗被撤回，沒有開始
+**狀態**: la：LA 三步 PASS、F2 由 job 20570 完成（有看頭，同 MI300X）；qwen3：PENDING。2026-10-16 08:5x `make submit-r1x` 重送：job 20555 `r-h200-la-f2`（afterok:20553；**09:00:20 開始**）、job 20556 `r-h200-qwen3`（afterok:20553,afterany:20554；等 20554）。第一次送的 20544、20545（06:3x，git `53f22a0`）在 07:48:33 因 20417 失敗被撤回，沒有開始
 **注意**: 這兩個 commit（`b1c74cb`、`53f22a0`）是在 20417 執行中做的；20417 之後的 run 的 context.txt 會記成新的 HEAD，但它用到的檔案和 `bad42c7` 相同（這兩個 commit 只改 m9_f2_*、Makefile、新檔、RUNLOG、R0 的產出）
 **決定**: 2026-10-16 06:1x 使用者對兩項都說「好」：下載 LongAlpaca-7B 和 Qwen3-30B-A3B（約 71 GiB）、F2 改成 NVML 再跑
 **指令**: `make submit-r1x`，送出兩個 job：
@@ -298,6 +298,27 @@ LA 的數字和 MI300X 的比較留到全部跑完、在 head node 一起做。
 - `mean_info`（K 次合成一列）的單元測試通過。sweep 的 K 迴圈要 GPU，沒辦法在 head node 試。第一次真的跑就是這個 job。
 **時間**: 用 H200 的 C1 f(i) 和各層頻寬算，每輪約 110 s 的還原 × 21＋62 個量測各等 0.5 s → 5 輪約 3.2 小時（算術估計，不是量的；MI300X 實際比這種算法多花一些時間）。`--time=10:00:00`。
 
+
+
+### job 20570 `r-h200-f2`（K=21，只做 Llama）— COMPLETED
+**執行時間**: 2026-10-16 09:16:07 → 12:38:20（03:22:13，exit 0:0）。`sbatch --job-name=r-h200-f2 --time=10:00:00 code/r_h200_r1x.sh --part la --from F2-probe --until F2-final`（git `122eab8`）
+（`make submit-f2` 被「有未 commit 的改動」擋下：那是 20554 正在追加的 b_share.csv；直接下同一條 sbatch。）
+**run_id**: `20261016-091609-m7h-f2-probe`（k_rec 119）、`…-092135-m7h-f2-gate`、`…-092138-m7h-f2-cakee`、`…-092140-m7h-f2-sweep`（09:21:40 → 12:38:17）、`…-123817-m7h-f2-final`
+**產出檔**: `results/m9_followup_h200/f2_*.csv`（另把 probe／sweep 的原始列存成 `f2_probe_raw.csv`、`f2_sweep_raw.csv`，和 MI300X 一樣）
+**關鍵數字**:
+- 新 probe：計數器更新週期中位數 99.93 ms（最大 105.49 ms）→ 需要的 K 仍是 21；gate（K=21，門檻 109.33 ms）全部通過；≥10 s 區段 ΔE/Δt 和瞬時功率差 ≤0.19%
+- e_rec 的窗 2.10–5.65 s（k_rec 119）；每 chunk 重算能量 11.7 J（chunk 0）→ 31.0 J（chunk 63）
+- 功率：P_b（只重算）634.0 W、P_wait（NFS 速度只載入）123.5 W、P_idle（載了模型）123.0 W、沒載模型 79.4 W、DMA 153.3 W → **P_b／P_wait＝5.13**（MI300X 4.30）
+- Cake-E 切點（cakee）：nfs m_E＝55，其他層 0（＝只載入）（MI300X Llama nfs＝33）
+- sweep：290 列（5 輪 × 58），K=21；只重算 10 次的變異係數 **0.61%**（D8 殺掉條件 a：>10% 才 NOT_MEASURABLE）；kv_bad 0
+- 帳 A（判定用）每層：時間最佳 vs 能量最佳、省多少、慢多少：
+  cpu35 S(4) vs 只載入：省 68.9%、慢 5.9%；cpu11 SMEET(13) vs 只載入：省 73.6%、慢 24.4%；cpu369 SMEET(26) vs 只載入：省 65.4%、慢 68.3%；
+  local Cake(19) vs 只載入：省 71.8%、慢 35.1%；nfs：時間最佳 SMEET(55)、能量最佳 Cake(55)，差 1.6%（不同層＝否）
+  （MI300X：cpu35／cpu11／cpu369／local 省 62.0／69.9／64.2／64.4%、慢 4.1／15.0／43.1／25.3%；nfs 相同）
+- κ_E／κ_T 中位數：cpu35 4.16、cpu11 4.60、cpu369 4.88、local 4.78、nfs 5.23（MI300X 2.86／3.73／3.93／3.46／4.12）
+**判定（F2 §2.5）**: 帳 A **有看頭**（4 層「不同、省 ≥10%、各次範圍不重疊」）；帳 B、C50、C150、D0.5、D1、D2 也都是有看頭 → **和 MI300X 相同**
+**和 MI300X 的差**: 量法是 K=21 次一起量、k_rec 119（MI300X K=1、k_rec 20）；NVML 計數器（MI300X amdsmi）。LongAlpaca 的補充 sweep 沒做（使用者決定）。
+**異常**: log 末尾 `f2_run_ids.tsv 裡沒有 f2-sweep-la7b 的 run_id`：`--until F2-final` 之後的 F2-final-la7b 那行在判斷要不要跳過之前就先展開了參數（rid），只印訊息、沒有執行
 
 ---
 
