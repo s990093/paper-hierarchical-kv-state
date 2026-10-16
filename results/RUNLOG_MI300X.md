@@ -655,3 +655,11 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - `90_longctx_speed.sh`：64K、128K × 兩個模型 × FP8／INT4-KIVI 的速度格子（2 launch × 5 rep）。
   - `91_longctx_pilot.sh` → `longctx_plan_n.py`：試跑後照 10 §3.3 的規則決定題數，寫 `92_longctx_screen.sh`。規則程式在 sandbox 用假的試跑紀錄跑過（不碰真的佇列）。
 - 還沒寫：`code/m10_longctx_analyze.py`（92 跑完才用；10/18 前寫好）。
+
+### 12.2 冒煙 39a（10/16 12:56 → 13:03Z；scratch，數字不進 results）
+
+- run：`20261016-125625-m10-lc-smoke-screen-qwen`、`-125821-m10-lc-smoke-screen-llama`、`-130008-m10-lc-smoke-grid-qwen`，全部 rc＝0；`longctx smoke fail=0`。
+- 128K（252 個 block）screen：兩個模型各 23 列、7 列有生成（E0、兩個格式的 ALL、主線 FP8 的 F／M／B／R0）；每題 Qwen 81.6 s、Llama 69.6 s；**GPU 記憶體峰值 Qwen 35.4 GiB、Llama 63.1 GiB**（32K 是 20.1／28.4，stage 39）。
+  - → `longctx_plan_n.py` 的 `NEED` 照實測改：252 個 block Llama 95 → 78、Qwen 60 → 45；128 個 block（直線推）Llama 60 → 50、Qwen 40 → 32；64 個 block 不變。
+- Qwen 128K 小速度格子（FP8、1 launch × 1 rep，只看跑不跑得動）：只算 30.25 s；b32 閒 E0 5.70 s（b＝93）、E1 3.49 s（b＝68）；真實 CPU 層 E0 0.166 s（b＝6）、E1 0.150 s（b＝5），CPU 層的列標 copy_bound。只有 1 次，不能當結論；但 CPU 層的方向和 32K 相反（32K：E1 慢約 5%），記在 11 問題一 §5 第 7 點，以 stage 90 為準。
+- 推算（`m10_sweep_sim`）在 252 個 block 跑得動：E0 b32 閒推出 b＝94（實測 93）。

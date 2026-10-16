@@ -68,7 +68,8 @@
    - 把反量化塞進 attention（QServe／BitDecoding／PackKV 的做法）：最徹底，但換了 attention 路徑，違反 07「低精度和 BF16 走同一條 attention」，只能當系統面的延伸。
 
 7. **使用者 10/16 的方向**：「CPU 層省不到時間」主要是反量化寫法造成，跟位置無關；真正要看的是**慢層**（SSD／NFS 級的頻寬）和**長 context**（KV 變大、CPU 放不下就要去 SSD），低精度的價值是把 IO 牆等效往後推（同樣的頻寬搬 2–3.2 倍的 token、同樣的記憶體放 2–3.2 倍的對話）。報告要**分層寫**，CPU 層單獨列。
-   - 〔算術，用上面的實測〕兩條線都和 block 數成正比：Llama・閒每個 block 的 H2D，E0 約 1.25 ms、INT4 約 0.43 ms（省約 0.82 ms），原寫法的反量化約 0.69 ms → 只差一點；所以光是 context 變長，CPU 層的結論〔推論〕不會自己翻過來，要靠反量化變快（stage 42、42b／42c）。64K／128K 的 CPU 層實測：NOT_MEASURED（stage 92 的速度格子有含）。
+   - 〔算術，用上面的實測〕兩條線都和 block 數成正比：Llama・閒每個 block 的 H2D，E0 約 1.25 ms、INT4 約 0.43 ms（省約 0.82 ms），原寫法的反量化約 0.69 ms → 只差一點；所以光是 context 變長，CPU 層的結論〔推論〕不會自己翻過來，要靠反量化變快（stage 42、42b／42c）。64K／128K 的 CPU 層實測：NOT_MEASURED（stage 90 的速度格子有含）。
+   - **和這個推論相反的跡象**（39a 冒煙，Qwen、FP8、128K、GPU 閒、只跑 1 次，scratch，不能當結論；run `20261016-130008-m10-lc-smoke-grid-qwen`）：真實 CPU 層 E0 0.166 s、E1 0.150 s（E1 快約 10%）；32K 主線是 E0 0.052、E1 0.055 s（E1 慢約 5%）。128K 的會合點 E0 b＝6、E1 b＝5（32K 是 1–2），而且這兩列被標 copy_bound。所以 context 變長，CPU 層的結論**可能會變**，以 stage 90 的實測為準。
    - 「慢層」在這裡是限速模擬（老師：保留這個範圍，01 第 12 列）。對照第一階段 MI300X 量的真實裝置（03 §R2 的 `tier_params.json`：本地 SSD 讀 6.98 GiB/s、NFS 0.331 GiB/s）：Llama b16＝5.3 GiB/s 和本地 SSD 同一級，b48＝0.42 GiB/s 和 NFS 同一級。
 
 ### 6. 相關文件

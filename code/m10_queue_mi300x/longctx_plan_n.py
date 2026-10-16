@@ -24,7 +24,11 @@ NBS = (64, 128, 252)
 TASKS = ["T2", "T3", "T4", "T5"]
 POL = ["F", "M", "B", "R0", "R1", "ERR", "ATT", "AXE", "ORC"]
 FR = [0.1, 0.25, 0.5, 0.75, 0.9]
-NEED = {("llama", 64): 40, ("llama", 128): 60, ("llama", 252): 95, ("qwen", 64): 30, ("qwen", 128): 40, ("qwen", 252): 60}
+# 10/16 13:1xZ 照實測峰值改（單一 process 的 GPU 記憶體峰值，m10_sweep screen 印的 "peak"）：
+#   64 個 block：Qwen 20.1、Llama 28.4 GiB（stage 39，run 20261016-123319-…-screen-qwen、-123519-…-screen-llama）
+#   252 個 block：Qwen 35.4、Llama 63.1 GiB（stage 39a，run 20261016-125625-m10-lc-smoke-screen-qwen、-125821-…-llama）
+#   128 個 block 沒量，用 64 與 252 之間的直線推（Qwen 25.3、Llama 40.2）。need＝峰值 × 1.2 ＋ 2，64 個 block 保留原值（已經比這個大）。
+NEED = {("llama", 64): 40, ("llama", 128): 50, ("llama", 252): 78, ("qwen", 64): 30, ("qwen", 128): 32, ("qwen", 252): 45}
 SHARDS = {64: 1, 128: 2, 252: 3}
 G32 = {"llama": "/mlsteam/data/tiara/runs/20261015-161226-m10-grid-fp8-llama/blocks.csv",
        "qwen": "/mlsteam/data/tiara/runs/20261015-194150-m10-regrid-fp8-qwen/blocks.csv"}
