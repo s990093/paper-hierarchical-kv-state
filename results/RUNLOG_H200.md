@@ -541,3 +541,21 @@ MI300X 只有 m7_sim validate 走過 §4.1 的殼（`20261009-064908-m7-sim-vali
    GPU 的 job 不受影響（hgx-cn01 的 /tmp 是另一顆）。處置（使用者 17:3x）：Claude Code 改用 `CLAUDE_CODE_TMPDIR`／`TMPDIR`＝`/work/ChihChungHsu/hungweilai/tmp` 重開（在 tmux 裡）。
    〔注意〕這個 session 的 shell 有 `TMPDIR=/work/...`，之後從這裡 sbatch 會帶進 job（Slurm 預設 `--export=ALL`），所以送 job 時要用 `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch …`，job 的環境才和之前一樣。
 2. 其他：無。
+
+### 第 1 輪：H200 自己的模擬存活設定上 GPU（事先寫死；寫在 job 送出之前）
+**決定**（使用者 2026-10-16 17:4x，選「3 個都上 GPU（建議）」）：H200 的模擬存活設定和 MI300X 的不同，照 MI300X 的方法（存活的設定上 GPU，`11_round1_plan.md` 追加 4）確認 H200 自己的 3 個 Llama 存活設定。
+LongAlpaca 照追加 4 不上 GPU（doc 的回來請求超過 32,768 token 上限，H200 一樣）。
+**來源**: `results/m7_explore_h200/r1_sim_configs.csv`（run `20261016-173455-m7h-r1-sim-an`；模擬 run `20261016-095639-m7h-r1-sim-llama31-8b`）
+**設定與事先選定的寫入時決定策略**（規則：模擬 5 個 seed 裡當「最好的寫入時決定策略」次數最多的；`r1_sim_verdict.csv` 的 best_wt）:
+| 格 | CPU GiB/s | release | SSD | cpu_frac | 策略 | 模擬：best_wt 次數 | 模擬 g_nwt 中位 | 模擬通過的 seed |
+|:--|--:|:--|:--|--:|:--|:--|--:|:--|
+| A | 11.6 | hold | nfs | 0.5 | **S5L** | 5/5 | 26.8% | 0、2、3 |
+| B | 35.42（tier_params 的 CPU 層，不設 M7_CPU_GIBPS） | free | local | 0.5 | **S5L** | 5/5 | 7.4% | 2、3、4 |
+| C | 35.42 | hold | nfs | 0.25 | **S5c** | 4/5（seed 4 是 S5s） | 7.0% | 0–3 |
+**對照組**: S1、S2b、S4、S4+、S4+P、S4L（取最好的＝「最好的不看位置」）、S4B、S4W、S4C。workload doc、seed 0–4、每個 3 次、`--verify`、`M7_IO_MODEL=share`、f(i)＝H200 R2 的 C1（和模擬相同）。
+**判準**（同追加 4）: 寫入時決定策略的回來請求 TTFT 中位數，同時贏「最好的不看位置」、S4B、S4W、S4C 各 ≥5%，**≥3/5 個 seed** 才算存活（≥15% 算強，照 08 §6）。平均列出、不進判定。
+**分析**: `python code/m7_round1_analyze.py gpu --csv <檔> --cpu <GiB/s> --release <…> --ssd <…> --frac <…> --wt <策略> --tag <A|B|C>`（不給參數＝原本那一格；回歸 run `20261016-174418-h200-r1gpu-args-regress`：MI300X 與 H200 的 `r1_gpu_summary`、`r1_gpu_verdict` 和 git 逐格相同）。
+**已知限制**（寫在看到結果之前）: MI300X 第 1 輪的教訓 10——模擬器對存活策略的偏差約 5–6 個百分點，B、C 的模擬優勢（7.4%、7.0%）在這個範圍內；A 的 26.8% 遠大於它。
+**job**: `code/r_h200_r1h.sh`（15 步：A、B、C 各 seed 0–4），`--dependency=afterany:20643`，`--time=14:00:00`；送出時拿掉 TMPDIR（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch …`）。
+開跑前檢查：節點上沒有我們自己的 job；三個輸出 CSV 還不存在。輸出：`results/m7_explore_h200/r1h_gpu_llama_*.csv`。
+H200 上 P3（free、local、一格 5 個 seed）量測時間 1 小時 43 分；hold／nfs 的格 NOT_MEASURED，總時間〔推算〕6–9 小時。

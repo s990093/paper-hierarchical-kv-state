@@ -193,14 +193,31 @@ def sim():
 
 
 # ------------------------------------------------------------------ gpu（11 追加 4：Llama 存活設定的 GPU 確認）
+def _gpu_args():
+    """不給參數＝MI300X 11 追加 4 的那一格（輸出檔名也不變）。H200 自己的存活設定（2026-10-16）用 --csv/--cpu/... 指定。"""
+    import argparse
+    ap = argparse.ArgumentParser(prog="m7_round1_analyze.py gpu")
+    ap.add_argument("--csv", default="r1_gpu_llama_doc_free_local.csv", help="$M7_EXPLORE 底下的 GPU 原始列")
+    ap.add_argument("--cpu", type=float, default=11.6, help="模擬那一格的 cpu_gibps（取一位小數比對）")
+    ap.add_argument("--release", default="free")
+    ap.add_argument("--ssd", default="local")
+    ap.add_argument("--frac", type=float, default=0.5)
+    ap.add_argument("--wt", default="S5L", help="事先選定的寫入時決定策略")
+    ap.add_argument("--tag", default="", help="非空時輸出 r1_gpu_summary_<tag>.csv、r1_gpu_verdict_<tag>.csv")
+    return ap.parse_args(sys.argv[2:])
+
+
 def gpu():
-    fn = os.path.join(OUT, "r1_gpu_llama_doc_free_local.csv")
+    a = _gpu_args()
+    fn = os.path.join(OUT, a.csv)
     d = pd.read_csv(fn)
     print(f"{fn}: {len(d)} 列；run_id {sorted(d.run_id.unique())}")
     print(f"kv_bad 非 0：{int((d.kv_bad.fillna(0) != 0).sum())}；contaminated_gpu：{int(d.contaminated_gpu.astype(bool).sum())}")
     sim = pd.read_csv(os.path.join(OUT, "r1_sim_llama31_8b.csv"))
-    sim = sim[(sim.cpu_gibps.round(1) == 11.6) & (sim.release == "free") & (sim.workload == "doc") & (sim.ssd_dev == "local")
-              & (sim.cpu_frac == 0.5)]
+    sim = sim[(sim.cpu_gibps.round(1) == round(a.cpu, 1)) & (sim.release == a.release) & (sim.workload == "doc") & (sim.ssd_dev == a.ssd)
+              & (sim.cpu_frac == a.frac)]
+    WTS = a.wt
+    sfx = f"_{a.tag}" if a.tag else ""
     NW = ["S1", "S2b", "S4", "S4+", "S4+P", "S4L"]
     rows, ver = [], []
     for seed, g in d.groupby("wl_seed"):
@@ -215,28 +232,28 @@ def gpu():
                              sim_median=sm["median"].iloc[0] if len(sm) else float("nan")))
     t = pd.DataFrame(rows)
     t["sim_err"] = (t.sim_median - t["median"]) / t["median"]
-    t.to_csv(os.path.join(OUT, "r1_gpu_summary.csv"), index=False)
+    t.to_csv(os.path.join(OUT, f"r1_gpu_summary{sfx}.csv"), index=False)
     for seed, g in t.groupby("wl_seed"):
         m = g.set_index("strategy")
-        if not {"S5L", "S4B", "S4W", "S4C"} <= set(m.index) or (m.reps < 3).any():
+        if not {WTS, "S4B", "S4W", "S4C"} <= set(m.index) or (m.reps < 3).any():
             print(f"seed {seed}：還沒跑完（策略 {len(m)}，rep 不齊）")
             continue
         for col in ("median", "mean"):
             bn = m.loc[m.index.isin(NW), col]
-            x = m.at["S5L", col]
+            x = m.at[WTS, col]
             r = dict(run_id=m.run_id.iloc[0], ts=TS, wl_seed=seed, stat=col, best_nwt=bn.idxmin(), t_nwt=bn.min(),
-                     t_S4B=m.at["S4B", col], t_S4W=m.at["S4W", col], t_S4C=m.at["S4C", col], t_S5L=x,
+                     t_S4B=m.at["S4B", col], t_S4W=m.at["S4W", col], t_S4C=m.at["S4C", col], **{f"t_{WTS}": x},
                      g_nwt=(bn.min() - x) / bn.min(), g_S4B=(m.at["S4B", col] - x) / m.at["S4B", col],
                      g_S4W=(m.at["S4W", col] - x) / m.at["S4W", col], g_S4C=(m.at["S4C", col] - x) / m.at["S4C", col])
             r["pass"] = min(r["g_nwt"], r["g_S4B"], r["g_S4W"], r["g_S4C"]) >= 0.05
             ver.append(r)
     v = pd.DataFrame(ver)
     if len(v):
-        v.to_csv(os.path.join(OUT, "r1_gpu_verdict.csv"), index=False)
+        v.to_csv(os.path.join(OUT, f"r1_gpu_verdict{sfx}.csv"), index=False)
     pd.set_option("display.width", 250)
     print(t[["wl_seed", "strategy", "reps", "n", "median", "mean", "p90", "sim_median", "sim_err"]].round(3).to_string(index=False))
     if len(v):
-        print(v[["wl_seed", "stat", "best_nwt", "t_nwt", "t_S4B", "t_S4W", "t_S4C", "t_S5L", "g_nwt", "g_S4B", "g_S4W", "g_S4C",
+        print(v[["wl_seed", "stat", "best_nwt", "t_nwt", "t_S4B", "t_S4W", "t_S4C", f"t_{WTS}", "g_nwt", "g_S4B", "g_S4W", "g_S4C",
                  "pass"]].round(3).to_string(index=False))
         med = v[v.stat == "median"]
         print(f"\n判定（中位數，11 追加 4）：通過的 seed {int(med['pass'].sum())}／{len(med)}；≥3／5 才算存活")
