@@ -5,6 +5,9 @@
 
 用法（走 m7run，讓每個數字都有 run_id）：
   HIP_VISIBLE_DEVICES= CUDA_VISIBLE_DEVICES= m7run d3-kappa-map python code/m8_kappa_map.py --out results/m8_directions
+H200（2026-10-16）：輸入目錄由 M7_RES／M7_EXPLORE／M7_TIER_PARAMS 指過去（預設＝MI300X，輸出和 git 相同）；
+  --no-3090（使用者：只有 H200 平台，不用 3090 那套）；c7_anchor 只有 sim（「都用模擬限速」），real 那兩列記 NOT_MEASURED；
+  --dstar：--prereg-test 的 D*（預設＝MI300X 的 0.6026；H200 傳自己主程式擬合的 D*）。
 
 規則（細節見文件 §2.3）：
   R1   讀取端 Cake 有沒有用（0 參數；演算法 1）
@@ -29,8 +32,9 @@ import numpy as np
 import pandas as pd
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-R7 = os.path.join(REPO, "results", "m7_write_policy_mi300x")
-RX = os.path.join(REPO, "results", "m7_explore_mi300x")
+R7 = os.environ.get("M7_RES") or os.path.join(REPO, "results", "m7_write_policy_mi300x")
+RX = os.environ.get("M7_EXPLORE") or os.path.join(REPO, "results", "m7_explore_mi300x")
+TIER_PARAMS = os.environ.get("M7_TIER_PARAMS") or os.path.join(R7, "tier_params.json")
 MiB = 1 << 20
 GiB = 1 << 30
 TIE = 0.05            # 判準：差距 ≥5% 才算贏
@@ -46,10 +50,17 @@ SCHED = {"chat": [16, 16, 16, 16], "doc": [64, 1, 1, 1]}
 N_RET = {"chat": 32, "doc": 65}                          # 回來請求的平均歷史 chunk 數（§2.3 R2）
 
 
+def rcsv(path, **kw):
+    """git 裡大檔存成 .csv.gz（CLAUDE.md §2 的 <1 MB）：.csv 不在就讀同名的 .csv.gz（內容相同）。"""
+    if not os.path.exists(path) and os.path.exists(path + ".gz"):
+        path = path + ".gz"
+    return pd.read_csv(path, **kw)
+
+
 # ---------------------------------------------------------------------------
 # 事先就知道的量
 def load_f(path, scale=1.0):
-    d = pd.read_csv(path)
+    d = rcsv(path)
     d = d[(d["item"] == "f_chunk") & (d["gpu_state"] == "idle")]
     med = d.groupby("chunk_idx")["ms"].median().sort_index()
     assert list(med.index) == list(range(len(med))), "f(i) 的 chunk_idx 不連續"
@@ -58,7 +69,7 @@ def load_f(path, scale=1.0):
 
 F_LLAMA = load_f(os.path.join(R7, "calib_c1.csv"))
 F_LONGA = load_f(os.path.join(RX, "calib_c1_longalpaca7b.csv"))
-TP = json.load(open(os.path.join(R7, "tier_params.json")))
+TP = json.load(open(TIER_PARAMS))
 CHUNK = {"llama31_8b": 64 * MiB, "longalpaca7b": 256 * MiB}
 
 
@@ -91,7 +102,7 @@ def winner3(tc, tl, tk):
 # ---------------------------------------------------------------------------
 # 讀取端：A0、c7_anchor
 def read_cells():
-    a0 = pd.read_csv(os.path.join(R7, "a0.csv"))
+    a0 = rcsv(os.path.join(R7, "a0.csv"))
     a0 = a0[a0["contaminated_gpu"].astype(str) != "True"]
     med = a0.groupby(["L", "bw_name", "read_GiBps", "mode"]).agg(t_restore=("t_restore", "median"),
                                                                  ttft=("ttft", "median"), n=("rep", "size"),
@@ -109,9 +120,9 @@ def read_cells():
                          meas_ttft_comp=comp.loc[L, "ttft"], meas_ttft_load=g_.loc["load_only", "ttft"],
                          meas_ttft_cake=g_.loc["cake", "ttft"], meas_meet=g_.loc["cake", "meet"]))
     # c7_anchor：真實裝置（io=real）與限速器（io=sim）
-    c7 = pd.read_csv(os.path.join(R7, "c7_anchor.csv"))
+    c7 = rcsv(os.path.join(R7, "c7_anchor.csv"))
     c7 = c7[c7["contaminated_gpu"].astype(str) != "True"]
-    c0 = pd.read_csv(os.path.join(R7, "calib_c0.csv"))
+    c0 = rcsv(os.path.join(R7, "calib_c0.csv"))
     h2d = c0[(c0["item"] == "H2D_pinned_chunk_into_kv_view") & (c0["rep"] > 0)]["value"].astype(float).median()
     gib_real = {"cpu": h2d, "local": TP["local"]["measured_min_read_MiBps"] * MiB / GiB,
                 "nfs": TP["nfs"]["measured_min_read_MiBps"] * MiB / GiB}
@@ -223,28 +234,28 @@ def gpu_cells():
             cells.append((meta, med))
 
     k1 = ["io_model", "ssd_dev", "gap_s", "ssd_frac", "wl_seed", "cpu_frac"]
-    add(pd.read_csv(os.path.join(R7, "b_share.csv")), dict(set="P1", model="llama31_8b", cpu_gibps=TP["cpu"]["read_GiBps"],
+    add(rcsv(os.path.join(R7, "b_share.csv")), dict(set="P1", model="llama31_8b", cpu_gibps=TP["cpu"]["read_GiBps"],
                                                            release="free", workload="chat", f_scale=1.0), k1)
-    add(pd.read_csv(os.path.join(R7, "b_share_cpu3.69.csv")), dict(set="P1", model="llama31_8b", cpu_gibps=3.69,
+    add(rcsv(os.path.join(R7, "b_share_cpu3.69.csv")), dict(set="P1", model="llama31_8b", cpu_gibps=3.69,
                                                                    release="free", workload="chat", f_scale=1.0), k1)
-    add(pd.read_csv(os.path.join(R7, "b_fifo.csv")), dict(set="P1", model="llama31_8b", cpu_gibps=TP["cpu"]["read_GiBps"],
+    add(rcsv(os.path.join(R7, "b_fifo.csv")), dict(set="P1", model="llama31_8b", cpu_gibps=TP["cpu"]["read_GiBps"],
                                                           release="free", workload="chat", f_scale=1.0), k1)
     k2 = k1 + ["cpu_gibps", "release", "workload"]
-    add(pd.read_csv(os.path.join(R7, "b2_share.csv")), dict(set="A08", model="llama31_8b", f_scale=1.0), k2)
-    add(pd.read_csv(os.path.join(RX, "r1_gpu_llama_doc_free_local.csv")), dict(set="R1", model="llama31_8b", f_scale=1.0), k2)
+    add(rcsv(os.path.join(R7, "b2_share.csv")), dict(set="A08", model="llama31_8b", f_scale=1.0), k2)
+    add(rcsv(os.path.join(RX, "r1_gpu_llama_doc_free_local.csv")), dict(set="R1", model="llama31_8b", f_scale=1.0), k2)
     return cells
 
 
 def sim_cells():
     cells = []
-    s = pd.read_csv(os.path.join(R7, "sim_sweep.csv"))
+    s = rcsv(os.path.join(R7, "sim_sweep.csv"))
     for k, g in s.groupby(["cpu_gibps", "release", "workload", "ssd_dev", "f_scale", "wl_seed", "cpu_frac"]):
         meta = dict(set="SIM08", model="llama31_8b", io_model="share", gap_s=0.0, ssd_frac=1.0,
                     **dict(zip(["cpu_gibps", "release", "workload", "ssd_dev", "f_scale", "wl_seed", "cpu_frac"], k)),
                     run_ids=";".join(sorted(g["run_id"].unique())), n_req=np.nan)
         cells.append((meta, g.set_index("strategy")["median"].to_dict()))
     for model in ["llama31_8b", "longalpaca7b"]:
-        r = pd.read_csv(os.path.join(RX, f"r1_sim_{model}.csv"))
+        r = rcsv(os.path.join(RX, f"r1_sim_{model}.csv"))
         for k, g in r.groupby(["cpu_gibps", "release", "workload", "ssd_dev", "wl_seed", "cpu_frac"]):
             meta = dict(set=f"SIMR1_{model}", model=model, io_model="share", gap_s=0.0, ssd_frac=1.0, f_scale=1.0,
                         **dict(zip(["cpu_gibps", "release", "workload", "ssd_dev", "wl_seed", "cpu_frac"], k)),
@@ -403,7 +414,7 @@ def posthoc(W, rd, out):
 def b100(out):
     """§2.1 附加測試：第一階段 B、容量 100%（歷史全在 CPU 35.4 GiB/s），R1 預測 Cake 對只載（R0）有沒有用。
     實測標籤取 d3_write_cells.csv（同一 run 的前一步）裡 P1、nfs、gap 0、cpu_frac 1.0 那格的 t_R0 與 Cake 策略最好的中位數。"""
-    W = pd.read_csv(os.path.join(out, "d3_write_cells.csv"))
+    W = rcsv(os.path.join(out, "d3_write_cells.csv"))
     c = W[(W["set"] == "P1") & (W["cpu_frac"] == 1.0)].iloc[0]
     cake = min(c[f"t_{s}"] for s in ["S1", "S2b", "S4", "S4+", "S4+P", "S5"] if pd.notna(c[f"t_{s}"]))
     l = ell(64 * MiB, TP["cpu"]["read_GiBps"])
@@ -418,12 +429,12 @@ def b100(out):
     print(d.to_string())
 
 
-def prereg_test(out):
+def prereg_test(out, Dstar=0.6026):
     """§6 提議的樣本外 GPU 測試（LongAlpaca-7B，MHA，B 實驗從沒在 GPU 上跑過）。
     對幾個候選格先寫下地圖（R2'、R3、R4b）的預測；模擬器（r1_sim_longalpaca7b.csv）同格結果只當參考，用來避開「所有策略都一樣」的退化格。"""
     rows = []
-    sim = pd.read_csv(os.path.join(RX, "r1_sim_longalpaca7b.csv"))
-    Dstar = 0.6026     # R4b 的 D*（第一階段擬合，run 20261010-054706-d3-kappa-map）
+    sim = rcsv(os.path.join(RX, "r1_sim_longalpaca7b.csv"))
+    # Dstar：R4b 的 D*（預設＝MI300X 第一階段擬合，run 20261010-054706-d3-kappa-map；H200 用 --dstar 傳自己的）
     for cg, sd in [(3.69, "local"), (3.69, "nfs"), (11.6, "nfs"), (35.4159, "nfs")]:
         for cf in [0.25, 0.5]:
             for seed in [0, 1, 2]:
@@ -458,9 +469,11 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--b100", action="store_true", help="§2.1 的附加測試：第一階段 B 容量 100%（全在 CPU）時 R0（只載）vs Cake")
     ap.add_argument("--prereg-test", action="store_true", help="只算提議的 GPU 測試格的地圖預測（§6），不跑規則評分")
+    ap.add_argument("--dstar", type=float, default=0.6026, help="--prereg-test 的 D*（預設 MI300X 的值）")
+    ap.add_argument("--no-3090", action="store_true", help="不讀 git 歷史的 3090 資料（H200：只有 H200 平台）")
     a = ap.parse_args()
     if a.prereg_test:
-        return prereg_test(a.out)
+        return prereg_test(a.out, a.dstar)
     if a.b100:
         return b100(a.out)
     os.makedirs(a.out, exist_ok=True)
@@ -478,10 +491,11 @@ def main():
                         f"median|speedup err|={A0.R1_err.abs().median():.4f}; winner3 hits={int((A0.R1_winner==A0.meas_winner).sum())}/{len(A0)}"))
     c7r = rd[(rd.src == "c7_anchor") & (rd.io == "real")]
     c7s = rd[(rd.src == "c7_anchor") & (rd.io == "sim")]
-    scores.append(score("R1", "c7_anchor real", c7r.meas_class, c7r.R1_class, f"median|err|={c7r.R1_err.abs().median():.4f}"))
+    nm_real = "c7_anchor real" if len(c7r) else "c7_anchor real NOT_MEASURED"
+    scores.append(score("R1", nm_real, c7r.meas_class, c7r.R1_class, f"median|err|={c7r.R1_err.abs().median():.4f}"))
     scores.append(score("R1", "c7_anchor sim", c7s.meas_class, c7s.R1_class, f"median|err|={c7s.R1_err.abs().median():.4f}"))
     te = rd[rd.R1b_role == "test"]
-    for nm, sub in [("A0 test(4K,16K)", te[te.src == "A0"]), ("c7_anchor real", te[(te.src == "c7_anchor") & (te.io == "real")]),
+    for nm, sub in [("A0 test(4K,16K)", te[te.src == "A0"]), (nm_real, te[(te.src == "c7_anchor") & (te.io == "real")]),
                     ("c7_anchor sim", te[(te.src == "c7_anchor") & (te.io == "sim")]),
                     ("A0 fit(8K,32K)", rd[rd.R1b_role == "fit"])]:
         scores.append(score("R1b", nm, sub.meas_class, sub.R1b_class,
@@ -491,7 +505,7 @@ def main():
     rd.to_csv(os.path.join(a.out, "d3_read_cells.csv"), index=False)
 
     # ---------------- 3090 ----------------
-    t3 = r1t_3090()
+    t3 = pd.DataFrame() if a.no_3090 else r1t_3090()
     if len(t3):
         t3.insert(0, "ts", TS)
         t3.insert(0, "run_id", RUN_ID)
