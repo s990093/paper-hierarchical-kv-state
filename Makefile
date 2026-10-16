@@ -52,7 +52,7 @@ LAF2NAME = r-h200-la-f2
 QWNAME = r-h200-qwen3
 F2NAME = r-h200-f2
 
-.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x submit-f2 test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
+.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x submit-f2 submit-m10 resume-m10 dry-run-m10 analyze-m10 test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
 
 help:
 	@JOBNAME=$(JOBNAME) RESTNAME=$(RESTNAME) LAF2NAME=$(LAF2NAME) QWNAME=$(QWNAME) F2NAME=$(F2NAME) \
@@ -147,6 +147,45 @@ submit-f2:
 	  { echo "有未 commit 的改動：job 開跑時才讀 repo，會跑到沒 commit 的版本。先 commit 再送"; git status --short; exit 1; }
 	@sbatch --test-only --job-name=$(F2NAME) --time=$(F2_TIME) code/r_h200_r1x.sh --part la --from F2-probe --until F2-final 2>&1 | tail -1
 	sbatch --job-name=$(F2NAME) --time=$(F2_TIME) code/r_h200_r1x.sh --part la --from F2-probe --until F2-final
+
+# 第二階段主線在 H200 上復現（docs/precision_20261013/13_h200_repro.md）：
+#   速度 job（1 張卡，量時間）→ 兩個品質 job（Llama、Qwen 各 1 張卡，afterok 接在速度後面；速度 job 失敗就自動撤回）
+# 速度 job 不能和我們自己的其他 GPU job 同時跑（第一階段 F2 疊到 B 的教訓）：有自己的 job 在排隊或在跑就不送。
+# TMPDIR：Claude Code 的 shell 設在 /work，sbatch 會帶進 job；第一階段的 job 沒有這個變數 → 送出時拿掉。
+M10S = m10h-speed
+M10_SPEED_TIME ?= 24:00:00
+M10_Q_TIME ?= 40:00:00
+SBATCH_CLEAN = env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch
+submit-m10:
+	@o=$$(squeue -h -u $(USER) -o '%i %j %T'); \
+	if [ -n "$$o" ]; then echo "我們自己還有 job（速度 job 不能和它們同時跑）："; echo "$$o"; echo "等它們結束，或 make cancel JOB=<id>"; exit 1; fi
+	@git diff --quiet && git diff --cached --quiet || \
+	  { echo "有未 commit 的改動：job 開跑時才讀 repo，會跑到沒 commit 的版本。先 commit 再送"; git status --short; exit 1; }
+	@python3 code/h200_m10_gates.py code && python3 code/h200_m10_gates.py params
+	@$(SBATCH_CLEAN) --test-only --job-name=$(M10S) --time=$(M10_SPEED_TIME) code/r_h200_m10.sh --part speed 2>&1 | tail -1
+	@s=$$($(SBATCH_CLEAN) --parsable --job-name=$(M10S) --time=$(M10_SPEED_TIME) code/r_h200_m10.sh --part speed) || exit 1; \
+	echo "$(M10S) = $$s"; \
+	for m in llama qwen; do \
+	  q=$$($(SBATCH_CLEAN) --parsable --job-name=m10h-q-$$m --time=$(M10_Q_TIME) --dependency=afterok:$$s --kill-on-invalid-dep=yes \
+	       code/r_h200_m10.sh --part quality --model $$m) || exit 1; \
+	  echo "m10h-q-$$m = $$q（afterok:$$s）"; done
+
+# 中途停下時從某一步接著跑：make resume-m10 PART=speed FROM=GRID-FP8-qwen ／ PART=quality MODEL=llama FROM=I4E-llama
+resume-m10:
+	@[ -n "$(PART)" ] && [ -n "$(FROM)" ] || { echo "用法：make resume-m10 PART=speed|quality [MODEL=llama|qwen] FROM=<步驟>（步驟名：bash code/r_h200_m10.sh --part <p> [--model <m>] --list）"; exit 1; }
+	@bash code/r_h200_m10.sh --part $(PART) $(if $(MODEL),--model $(MODEL)) --list 2>/dev/null | grep -qx -- '$(FROM)' || { echo "沒有叫做 $(FROM) 的步驟"; exit 1; }
+	@git diff --quiet && git diff --cached --quiet || \
+	  { echo "有未 commit 的改動：先 commit 再送"; git status --short; exit 1; }
+	$(SBATCH_CLEAN) --job-name=m10h-$(if $(MODEL),q-$(MODEL),speed) --time=$(if $(MODEL),$(M10_Q_TIME),$(M10_SPEED_TIME)) \
+	  code/r_h200_m10.sh --part $(PART) $(if $(MODEL),--model $(MODEL)) --from $(FROM)
+
+dry-run-m10:
+	@bash code/r_h200_m10.sh --part speed --dry-run 2>&1 | $(SHOW) dryrun --title 'r_h200_m10.sh --part speed'
+	@bash code/r_h200_m10.sh --part quality --model llama --dry-run 2>&1 | $(SHOW) dryrun --title 'r_h200_m10.sh --part quality --model llama'
+
+# 判定（CPU，head node）：照凍結的 m10_analyze.py 走判定流程
+analyze-m10:
+	PYTHON=$(HOME)/.conda/envs/tiara/bin/python bash code/h200_m10_analyze.sh all
 
 cancel:
 	@[ -n "$(JOB)" ] || { echo "用法：make cancel JOB=<job id>（make status 看 id）"; exit 1; }

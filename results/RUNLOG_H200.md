@@ -785,3 +785,22 @@ MI300X 的做法是判準照字面讀，判準本身有問題就照字面判、�
 **產出檔**: `docs/h200/REPORT_H200.md`、`results/hw_h200.json`（機器產生；**取代** 10/16 job 20417 的那份 `20261016-061012-h200-probe`，舊版在 git 歷史與它的 run 目錄）
 **和 10/16 那份的差別**（只有「這次拿到哪張卡」）: PCI bus `E5:00.0` → `CB:00.0`、cpuset `112-127` → `96-111`、同節點 job 數 8 → 7。型號、記憶體、driver、PCIe Gen5 x16、`UNOBSERVABLE_HOST` 都相同；整體 PASS。
 **記錄補在 10/17**：當時沒寫進 RUNLOG，這一節是事後照 `sacct -j 20673` 與 run 目錄補的。
+
+---
+
+## Milestone 10-H200 — 第二階段（精度）主線在 H200 上復現
+
+**狀態**: 準備中（還沒有任何 H200 第二階段的結果）
+**事先登記**: `docs/precision_20261013/13_h200_repro.md`（寫於 2026-10-16T22:53Z，h200 分支 `944497e` 之後）
+**程式**: 第二階段主線和 MI300X（`origin/main` `bcfe5b1`）逐字相同，只差 `m10_tasks.py` 的模型路徑（`code/h200_m10_gates.py code` 驗）。
+  H200 才有的：`code/r_h200_m10.sh`（`--part speed|quality`）、`code/h200_pool.py`（工作池，`nvidia-smi` 查剩餘記憶體）、
+  `code/h200_m10_gates.py`（13 §3 的停止條件）、`code/h200_m10_analyze.sh`（判定，包同一支 `m10_analyze.py`）；`make submit-m10`。
+**送出前的檢查**（head node，CPU）:
+- `h200_m10_gates.py code`／`params`：PASS（16 個主線檔逐字相同；`CANDIDATE_PARAMS.json` sha256 `00c1034f…74412e2`）。
+- `h200_m10_gates.py fmt`：拿 MI300X 的 fmt_choice 自己比自己 → PASS；改掉一格 → FAIL、exit 1。
+- `h200_m10_gates.py e0`：拿 MI300X 彩排第 3 輪（`results/m10_pilot_mi300x/e0_tune/p3_*.csv`）測 → 合併答對率和 RUNLOG_MI300X 的第 3 輪一致（例：Llama T3 0.716、Qwen T4 0.675），PASS。
+- `h200_m10_analyze.sh all` 的回歸：把 `results/m10_precision_mi300x/` 複製到 scratch（Qwen 的速度照 MI300X 換成 stage 22／23 重量那次），
+  重算出來的 `decide_fp8`、`k3_qwen`、`quality_*_step1`、`quality_qwen_step2b`、`decide_int4`、`quality_*_int4`、`quality_llama_step2`、
+  `step2_llama_int4` 和 MI300X commit 的檔**逐一相同**（只差寫在 JSON 裡的輸入檔路徑）；路徑：2b 在 Qwen → K3 → INT4 → Step 2 在 Llama → K2，和 08 相同。
+- `r_h200_m10.sh --dry-run`（兩個 part）與 jobs.json 產生器：指令除了路徑以外和 MI300X 的 queue/10、20、21、30、33a、33b、33c 相同。
+  和 MI300X 的差：GPU 忙用 `results/m7_write_policy_h200/busy_levels.json`（busy2＝duty 1.0）；Step 1 讀 `meets_fp8tier.json`（INT4 格子前的快照，MI300X 的 30 在 33a 之前跑、讀到的就是這個狀態）。
