@@ -22,7 +22,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 REPO = os.path.dirname(HERE)
-SW_DIR = os.path.join(REPO, "results", "m10_sweep_mi300x")
+SW_DIR = os.environ.get("M10_SWEEP_DIR") or os.path.join(REPO, "results", "m10_sweep_mi300x")   # （H200：環境變數，沒設時不變；2026-10-17）
 CTX = {}
 NEED_GB = {"llama": (28, 4.5), "qwen": (22, 2.0)}   # 品質 process：基本＋每個格式（每個格式在 ItemState 留 64 個解碼後的 block）
 
@@ -232,7 +232,8 @@ def main():
     s.add_argument("--bw-json", required=True)
     s.add_argument("--bw-names", nargs="+", default=["b16", "b32", "b48", "cpu"])
     s.add_argument("--gpu-states", nargs="+", default=["idle", "busy"])
-    s.add_argument("--busy-levels", default=os.path.join(REPO, "results", "m7_write_policy_mi300x", "busy_levels.json"))
+    s.add_argument("--busy-levels", default=os.environ.get("M10_BUSY_LEVELS")
+                   or os.path.join(REPO, "results", "m7_write_policy_mi300x", "busy_levels.json"))   # （H200：環境變數，沒設時不變；2026-10-17）
     s.add_argument("--busy-key", default="busy2")
     s.add_argument("--main-length", type=int, default=32768)
     s.add_argument("--launches", type=int, default=3)

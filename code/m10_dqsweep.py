@@ -28,7 +28,7 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-SW_DEFAULT = os.path.join(REPO, "results", "m10_sweep_mi300x", "dqsweep")
+SW_DEFAULT = os.path.join(os.environ.get("M10_SWEEP_DIR") or os.path.join(REPO, "results", "m10_sweep_mi300x"), "dqsweep")   # （H200：環境變數，沒設時不變；2026-10-17）
 
 METHODS = {
     "S0": {},
@@ -90,7 +90,8 @@ def cmd_kernels(a):
     x = (torch.randn(SHAPES[a.model], device="cuda") * 2).to(torch.bfloat16)
     x[:, 0, :, :, 5] += 40                                   # K 的離群通道
     variants = ["k0", "k1", "k2", "k4"] + K3_GRID
-    duty = json.load(open(os.path.join(REPO, "results", "m7_write_policy_mi300x", "busy_levels.json")))["busy2"]
+    duty = json.load(open(os.environ.get("M10_BUSY_LEVELS")
+                          or os.path.join(REPO, "results", "m7_write_policy_mi300x", "busy_levels.json")))["busy2"]   # （H200：環境變數，沒設時不變；2026-10-17）
     watch, level = _watcher(os.path.join(a.out_dir, f"gpu_guard_{rid}_kernels_{a.model}.json"))
     busy_pid = set()
     encs, wants, fns, bit = {}, {}, {}, {}

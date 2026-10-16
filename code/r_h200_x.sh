@@ -65,6 +65,7 @@ TO=$REPO/results/m10_tier_h200
 P=$REPO/results/m10_pilot_mi300x/e0_tune/CANDIDATE_PARAMS.json
 BUSY=$REPO/results/m7_write_policy_h200/busy_levels.json
 export M10_BUSY_LEVELS=$BUSY                # m10_dqsweep／m10_tier2／m10_confirm 的 GPU 忙（沒設時是 MI300X 的；13 §8）
+export M10_SWEEP_DIR=$SW M10_PRECISION_DIR=$OUT   # m10_confirm／m10_dqsweep／m10_confirm_analyze 的目錄（同上）
 SWRAW=${SWRAW:-$TIARA_HOME/sweep_m10h}      # 海選逐列 CSV（大，不進 git）
 RULER=$TIARA_DATASETS/ruler_ref             # README.txt：c3f5e3b＋LFS 詞表（sha256 affcd6d4…）＋shim
 WORK=$TIARA_RUNS/_m10h_work/x-$PART${MODEL:+-$MODEL}      # 固定路徑：--from 接著跑時讀得到前一個 job 寫的檔
@@ -205,7 +206,7 @@ h200_lib() {      # m10_dqsweep plan／m10_confirm plan 寫的腳本會 source <
   cat > "$WORK/lib.sh" <<EOF
 source $REPO/code/env_h200.sh
 REPO=$REPO; JOBS=$WORK; OUT=$OUT; P=$P
-export M10_BUSY_LEVELS=$BUSY
+export M10_BUSY_LEVELS=$BUSY M10_SWEEP_DIR=$SW M10_PRECISION_DIR=$OUT
 fmt_of() { python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['choice'][sys.argv[2]][sys.argv[3]])" "$OUT/fmt_select/fmt_choice.json" "\$1" "\$2"; }
 lastrun() { ls -d "\$TIARA_RUNS"/*-"\$1" | sort | tail -1 | xargs basename; }
 pool() { (cd $WORK && python $REPO/code/h200_pool.py "\$@"); }
@@ -226,11 +227,25 @@ tier2() {         # 44：兩層混合還原（12_tier_plan §3）；慢層參數
   python code/m10_tier2.py summary --restores "$d/restores.csv" --noise "$OUT/speed_$m/noise.json" --out-dir "$TO" --fig && gzip -kf "$d/restores.csv"
 }
 vllm_ttft() { mkdir -p "$OUT/vllm_ttft"; m7run m10h-vllm-$1-$2 python code/m10_vllm_ttft.py --model $1 --chunking $2 --out-dir "$OUT/vllm_ttft"; }
-confirm_plan() {  # 42a：照兩個模型的 finalists 寫 43（09 §4.3）；之後 t2 跑冒煙＋速度、q5 跑品質
+confirm_plan() {  # 42a：照兩個模型的 finalists 寫 43（09 §4.3），再切成兩段：43a 冒煙＋速度（t2，量時間）、43b 品質＋判定（q5）
   local m; for m in llama qwen; do [ -f "$SW/analysis/finalists_$m.json" ] || { echo "沒有 $SW/analysis/finalists_$m.json（q3 的海選彙整）"; return 1; }; done
   h200_lib
-  M10_SWEEP_DIR=$SW python3 code/m10_confirm.py plan --jobs "$WORK" --busy-levels "$BUSY" > "$WORK/confirm_plan.out" 2>&1 || { tail -20 "$WORK/confirm_plan.out"; return 1; }
+  python3 code/m10_confirm.py plan --jobs "$WORK" --sw-dir "$SW" > "$WORK/confirm_plan.out" 2>&1 || { tail -20 "$WORK/confirm_plan.out"; return 1; }
   tail -3 "$WORK/confirm_plan.out"
+  local f=$WORK/queue/43_sweep_confirm.sh
+  sed -i "s|m7run m10-|m7run m10h-|g" "$f"
+  awk 'NR<=4{print; next} /^# 2\. /{exit} {print}' "$f" > "$WORK/queue/43a_speed.sh"
+  awk 'NR<=4{print; next} /^# 2\. /{p=1} p{print}' "$f" > "$WORK/queue/43b_quality.sh"
+  grep -q 'm10_confirm.py speed' "$WORK/queue/43a_speed.sh" && grep -q 'jobs_43q.json' "$WORK/queue/43b_quality.sh" \
+    || { echo "43 的腳本切開後內容不對（$WORK/queue/43a_speed.sh、43b_quality.sh）"; return 1; }
+}
+confirm_speed() { # 43a：冒煙＋速度格子。MI300X 版失敗時只寫 NEEDS_HUMAN、exit 0；這裡照規則 2 停下
+  : > "$WORK/NEEDS_HUMAN.43"; cp "$WORK/NEEDS_HUMAN" "$WORK/NEEDS_HUMAN.before" 2>/dev/null || : > "$WORK/NEEDS_HUMAN.before"
+  bash "$WORK/queue/43a_speed.sh" || return 1
+  if [ -f "$WORK/NEEDS_HUMAN" ] && ! diff -q "$WORK/NEEDS_HUMAN" "$WORK/NEEDS_HUMAN.before" >/dev/null; then
+    echo "43a 寫了 NEEDS_HUMAN："; diff "$WORK/NEEDS_HUMAN.before" "$WORK/NEEDS_HUMAN" | sed -n 's/^> //p'; return 1
+  fi
+  guard_files_clean "$SW"/confirm/speed_*/gpu_guard_*.json
 }
 
 if [ "$PART" = q3 ]; then
@@ -251,9 +266,10 @@ elif [ "$PART" = t2 ]; then
   for m in llama qwen; do step TIER2-$m tier2 $m; done
   for m in llama qwen; do for c in default 512; do step TTFT-$m-$c vllm_ttft $m $c; done; done
   step CONFIRM-PLAN confirm_plan
-  step CONFIRM-SPEED bash -c 'echo "43 的冒煙＋速度：還沒接（r_h200_x.sh 待補）"; exit 1'
+  step CONFIRM-SPEED confirm_speed
 else
-  step CONFIRM-QUALITY bash -c 'echo "43 的品質：還沒接（r_h200_x.sh 待補）"; exit 1'
+  T2W=$TIARA_RUNS/_m10h_work/x-t2       # 43b 是 t2 的 confirm_plan 寫的；它 source 那裡的 lib.sh、讀那裡的 jobs_43q.json
+  step CONFIRM-QUALITY bash -c "[ -f $T2W/queue/43b_quality.sh ] || { echo '沒有 43b（t2 的 CONFIRM-PLAN 沒跑完）'; exit 1; }; cp $T2W/NEEDS_HUMAN $T2W/NEEDS_HUMAN.q5before 2>/dev/null || : > $T2W/NEEDS_HUMAN.q5before; bash $T2W/queue/43b_quality.sh || exit 1; [ ! -f $T2W/NEEDS_HUMAN ] || diff -q $T2W/NEEDS_HUMAN $T2W/NEEDS_HUMAN.q5before >/dev/null || { echo '43b 寫了 NEEDS_HUMAN'; diff $T2W/NEEDS_HUMAN.q5before $T2W/NEEDS_HUMAN; exit 1; }"
 fi
 
 if [ "$STARTED" = 0 ]; then

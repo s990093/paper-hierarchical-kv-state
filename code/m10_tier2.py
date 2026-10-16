@@ -413,7 +413,7 @@ def main():
         p.add_argument("--length", type=int, default=32768)
         p.add_argument("--new-tokens", type=int, default=256)
         p.add_argument("--gpu-states", nargs="+", default=["idle", "busy"])
-        p.add_argument("--busy-levels", default=os.path.join(HERE, "..", "results", "m7_write_policy_mi300x",
+        p.add_argument("--busy-levels", default=os.environ.get("M10_BUSY_LEVELS") or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x",   # （H200：環境變數，沒設時不變；2026-10-17）
                                                              "busy_levels.json"))
         p.add_argument("--busy-key", default="busy2")
         p.add_argument("--launches", type=int, default=2)

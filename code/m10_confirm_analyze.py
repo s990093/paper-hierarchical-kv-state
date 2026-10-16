@@ -103,8 +103,9 @@ def speed_check(sdir, spec, same_bytes, dstar):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dir", default=os.path.join(REPO, "results", "m10_sweep_mi300x", "confirm"))
-    ap.add_argument("--plan", default=os.path.join(REPO, "results", "m10_sweep_mi300x", "confirm_plan.json"))
+    swd = os.environ.get("M10_SWEEP_DIR") or os.path.join(REPO, "results", "m10_sweep_mi300x")   # （H200：環境變數，沒設時不變；2026-10-17）
+    ap.add_argument("--dir", default=os.path.join(swd, "confirm"))
+    ap.add_argument("--plan", default=os.path.join(swd, "confirm_plan.json"))
     a = ap.parse_args()
     plan = json.load(open(a.plan))["models"]
     md = ["# 大掃描複賽（09 §4.3；新 seed 50000 起）", ""]
@@ -124,7 +125,7 @@ def main():
         q = json.load(open(os.path.join(out_a, f"quality_{m}_confirm.json")))
         rows = A.load_rows(csvs)
         rows = [r for r in rows if r["model"] == m]
-        dstar = json.load(open(os.environ.get("CONFIRM_NOISE") or os.path.join(REPO, "results", "m10_precision_mi300x", f"speed_{m}", "noise.json")))["delta_star"]
+        dstar = json.load(open(os.environ.get("CONFIRM_NOISE") or (os.path.join(os.environ.get("M10_PRECISION_DIR") or os.path.join(REPO, "results", "m10_precision_mi300x"), f"speed_{m}", "noise.json"))))["delta_star"]
         res = dict(model=m, delta_star=dstar, rule_reading="主判準＝讀法 A；B-idle、B-busy 次要（10/16 釐清）",
                    finalists={}, frontier={}, run_ids=q["run_ids"], n_items=q["n_items"])
         tests = {}
