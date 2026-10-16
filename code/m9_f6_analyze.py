@@ -258,11 +258,22 @@ def summary(a):
         print(f"[F6 (a)+(b)] cand={cand}: cells rho<1 = {int(x.cells_rho_lt1.sum())}, "
               f"pass (>=10% vs every twin in >=6/10 seeds) = {int(x.pass10_rho_lt1.sum())}  "
               f"-> {'CONFIRMED (0 pass)' if int(x.pass10_rho_lt1.sum()) == 0 else 'NOT confirmed: claim 4 must be weakened'}")
-    # (c)：D1 的 5 個過載格
+    # (c)：D1 的過載格（MI300X 是 5 格；--d1-overload-expect 核對格數，預設 5＝MI300X 原樣）
     ref = _norm(pd.read_csv(a.d1_overload_ref))
     five = ref[ref.pass10].copy()
-    if len(five) != 5:
-        raise RuntimeError(f"D1 過載格應為 5 格，讀到 {len(five)}")
+    if len(five) != a.d1_overload_expect:
+        raise RuntimeError(f"D1 過載格應為 {a.d1_overload_expect} 格，讀到 {len(five)}")
+    _overload(a, five, "f6_c_overload.csv")
+    # 2026-10-16（平台 C）：另外拿別的平台的 D1 過載格（MI300X 的 5 格）在這裡的 F6 表上看，只當對照，不進判定
+    if a.extra_overload_ref:
+        ref2 = _norm(pd.read_csv(a.extra_overload_ref))
+        _overload(a, ref2[ref2.pass10].copy(), a.extra_overload_out, label=f"對照：{a.extra_overload_ref}")
+
+
+def _overload(a, five, out_name, label="判定"):
+    import pandas as pd
+    crows = []
+    n_all = len(five)
     five = five[five.ssd_dev == "local8"]
     for cand in ("S1D", "S5T"):
         d = _norm(pd.read_csv(os.path.join(OUT_REPO, f"f6_l8q16_{cand}_cfg.csv")))
@@ -286,12 +297,12 @@ def summary(a):
                                   f6_cand_val_max=r.cand_val_max, f6_tightest=r.tightest, f6_src_run=r.run_id,
                                   f6_seeds=r.seeds))
     c = pd.DataFrame(crows)
-    fn = os.path.join(OUT_REPO, "f6_c_overload.csv")
+    fn = os.path.join(OUT_REPO, out_name)
     c.to_csv(fn, index=False)
     print(c.drop(columns=["ts", "run_id", "think", "n_sess", "d1_run_id", "f6_src_run", "f6_seeds"]).to_string(), flush=True)
     print("[f6] wrote", fn)
     cv = c[c.in_verdict]
-    print(f"[F6 (c)] S1D median: D1 overload cells reproduced at >=6/10 = {int(cv.f6_reproduced.sum())}/5  -> "
+    print(f"[F6 (c)]（{label}）S1D median: D1 overload cells reproduced at >=6/10 = {int(cv.f6_reproduced.sum())}/{n_all}  -> "
           f"{'CONFIRMED (only wins under sustained overload)' if cv.f6_reproduced.any() else 'corner is NOISE (0 reproduce)'}")
 
 
@@ -314,6 +325,9 @@ def main():
     ap.add_argument("--d1-overload-ref",
                     default=os.path.join(os.environ.get("M8_OUT") or os.path.join(HERE, "..", "results", "m8_directions"),
                                          "d1_afq16_S1D_cfg.csv"))
+    ap.add_argument("--d1-overload-expect", type=int, default=5, help="D1 過載格的格數（MI300X 5；2026-10-16 加）")
+    ap.add_argument("--extra-overload-ref", default=None, help="另一個平台的 D1 表：它的過載格在這裡的 F6 表上當對照")
+    ap.add_argument("--extra-overload-out", default="f6_c_overload_extra.csv")
     a = ap.parse_args()
     if a.twins is None and a.cmd in ("verdict", "check"):
         a.twins = TWINS[a.cand]

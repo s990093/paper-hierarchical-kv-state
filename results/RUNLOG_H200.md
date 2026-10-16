@@ -295,7 +295,7 @@ LA 的數字和 MI300X 的比較留到全部跑完、在 head node 一起做。
 
 ## Milestone R-cpu — 第一階段的 CPU 模擬，用 H200 的常數重跑（`code/r_h200_cpu.sh --part a`）
 
-**狀態**: **66/67 步 PASS，F6-summary 的 (c) 停下（等使用者決定）**
+**狀態**: **67/67 步 PASS**（F6-summary 第一次停在 (c)，使用者決定後重跑；見下）
 **決定**: 2026-10-16 使用者「gogo」（在 head node 先跑只需要 R2 常數的那批）
 **執行時間**: 2026-10-16 09:53:21 → 10:44:50（F6-summary 失敗停下）；F7 用 `--from F7-run` 補跑 10:45:33 → 10:46:11
 **在哪裡跑**: head node `bcm11-headnode01`（32 核、62 GB、58 個使用者）。h200q 不收純 CPU 的 job：`sbatch --test-only -p h200q --gres=gpu:0` →
@@ -340,6 +340,14 @@ sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現�
    (a)+(b) 在例外之前已算完並寫出 `f6_summary.csv`，但這個 run 是失敗的 → **這次不 commit f6_summary.csv**，等 (c) 決定後重跑。
    不管用哪一組格子，H200 的 F6 l8q16 S1D 表在那些格子的 n10 都 ≤3/10（沒有一格 ≥6/10）；MI300X 的 (c) 是 1/5 重現（λ0.2／bursty／3.69：7/10）。
 2. 圖的字型、其他：無。
+
+**F6-summary 的 (c)：使用者 10/16 決定「兩組都報」→ 重跑**（run `20261016-105240-m7h-f6-summary`，exit 0）
+- `m9_f6_analyze.py`：寫死的 5 改成 `--d1-overload-expect`（預設 5＝MI300X）；加 `--extra-overload-ref`／`--extra-overload-out`（別的平台的 D1 過載格當對照，不進判定）。
+  回歸：MI300X 的輸入、預設參數 → `f6_summary.csv`、`f6_c_overload.csv` 和 git 完全相同（1/5，CONFIRMED）。
+- H200：`--d1-overload-expect 3 --extra-overload-ref results/m8_directions/d1_afq16_S1D_cfg.csv --extra-overload-out f6_c_overload_mi300x_cells.csv`
+  - (a)+(b)：S5T、S1D 都是 0 格 → CONFIRMED（ρ<1 的格：H200 202、MI300X 216）
+  - **(c) 判定（H200 自己的 3 格）：0/3 → 「corner is NOISE」**；對照（MI300X 的 5 格）：0/5。**MI300X 是 1/5 → 「只在持續過載時贏」**：這一項兩台方向不同
+- 產出：`results/m9_followup_h200/f6_summary.csv`、`f6_c_overload.csv`、`f6_c_overload_mi300x_cells.csv`
 
 **還沒做**（`--part b`，之後）: m7_sim validate（要 P1）、08 消融的分析（要 P2）、D3（要 P1、P2、A0；C7-anchor 在 H200 沒做 → 那部分 NOT_MEASURED）、第 1 輪的分析（要 P3、Qwen3）。
 D4（要 Mooncake trace、SCBench）、D5（要模型 config）要先下載並核對和 MI300X 同一份。D6 用到 3090 量的反量化成本（H200 沒量，F3 屬第二階段）→ 先不做，等使用者決定。

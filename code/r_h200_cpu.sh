@@ -200,7 +200,10 @@ step F6-an-l8-s5t    m7h-f6-an-l8-s5t    $P $F6 verdict --k 6 --tag local8 --can
 step F6-an-l8-s1d    m7h-f6-an-l8-s1d    $P $F6 verdict --k 6 --tag local8 --cand S1D --twins $TW16_S1D --metrics median mean p90 --inp "$(rid F6-sweep-l8)/f6_sweep_local8.csv"
 step F6-an-l8q16-s5t m7h-f6-an-l8q16-s5t $P $F6 verdict --k 6 --tag l8q16  --cand S5T --twins $TW17_S5T --metrics median mean p90 --inp "$(rid F6-sweep-l8q16)/f6_sweep_l8q16.csv"
 step F6-an-l8q16-s1d m7h-f6-an-l8q16-s1d $P $F6 verdict --k 6 --tag l8q16  --cand S1D --twins $TW16_S1D --metrics median mean p90 --inp "$(rid F6-sweep-l8q16)/f6_sweep_l8q16.csv"
-step F6-summary      m7h-f6-summary      $P $F6 summary
+# (c)：主判定用 H200 自己的 D1 過載格（d1_afq16_S1D_cfg.csv 的 pass10：3 格，run D1-an-afq16-s1d）；
+# MI300X 的 5 格另外當對照（使用者 10/16：「兩組都報」）。--d1-overload-expect 3 是 H200 D1 表的格數，只用來核對讀到的檔
+step F6-summary      m7h-f6-summary      $P $F6 summary --d1-overload-expect 3 \
+  --extra-overload-ref "$REPO/results/m8_directions/d1_afq16_S1D_cfg.csv" --extra-overload-out f6_c_overload_mi300x_cells.csv
 
 # ===== F7：f 縮放（MI300X 20261012-084917／084936）=====
 step F7-run    m7h-f7-fscale-sim  $P $F7 run --scales 1.0 0.5 0.6
