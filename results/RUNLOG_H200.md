@@ -376,6 +376,8 @@ sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現�
     但 (1) FP8 格式不同（MI300X e4m3fnuz、最大 240；H200 e4m3fn、最大 448；資料都 clamp 在 ±240）；(2) H200 上 FP8 的 Triton 寫法編不過；
     (3) D6 的反量化成本來源不同：MI300X 的 D6 用 3090 的 warm TTFT 差（沒有 INT8），之後才由 F3 量 kernel 時間收尾；H200 直接用 H200 的 F3 kernel 時間（含 INT8）。
     判定的規則（INT8 ≤1 ms → 死路）兩台相同。
+  - **決定（使用者 2026-10-16）**：FP8 的格式處理（e4m3fnuz／e4m3fn）和 H200 上編不過的 FP8 Triton 寫法「都不要動，等 AMD 的實驗都做好再改」。
+    `m9_f3_dequant.py`、`m10_codec` 與 harness 的 FP8 路徑維持原樣。
   - 異常：D6 跑的時候我改了同一支 `r_h200_cpu.sh`（加 d4d5），bash 邊跑邊讀，兩步都完成後讀到錯位的行：
     `code/r_h200_cpu.sh: line 242: gap_posthoc.csv: command not found`、`line 243: TO: unbound variable` → runner exit 1。兩個 D6 run 都在這之前 exit 0、run_id 已記，沒有多出別的 run。之後不在 runner 執行中改它。
 
