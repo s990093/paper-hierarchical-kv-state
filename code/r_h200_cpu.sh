@@ -6,6 +6,9 @@
 #   bash code/r_h200_cpu.sh --part d4d5         # D4（Mooncake trace、SCBench）、D5（模型 config）：資料由 code/h200_dl_cpu_data.sh 下載
 #   bash code/r_h200_cpu.sh --part d6           # D6：反量化成本用 H200 的 F3 工作 A（results/m9_followup_h200/f3_dequant.csv）
 #   bash code/r_h200_cpu.sh --part b            # 08 消融、B 的模擬驗證、第 1 輪的分析：要 r-h200-rest（P1–P3）與 r-h200-qwen3 跑完
+#   bash code/r_h200_cpu.sh --part brr          # B 重跑（job 20631）的合併組：模擬驗證、08 消融、H1、B 全部設定，和舊的並排（code/h200_brr.py）
+#   bash code/r_h200_cpu.sh --part a2c7         # A2、C7 錨點（job 20643，只有限速層）的分析，和 MI300X 並排（code/h200_a2c7.py）
+#   bash code/r_h200_cpu.sh --part d3           # D3 κ 地圖（--no-3090）：舊 B 一次、B 重跑的合併組一次（要先跑 --part brr、a2c7 之後的 c7_anchor）
 #   bash code/r_h200_cpu.sh --part a --dry-run | --list ；--from <步驟> [--until <步驟>]（接著跑）
 #
 # 在 head node 跑（h200q 不收純 CPU 的 job：--gres=gpu:0 → 「Invalid qos specification」，10/16 試過）。
@@ -37,7 +40,7 @@ while [ $# -gt 0 ]; do
     *) echo "不認得的參數：$1（--help 看用法）" >&2; exit 2 ;;
   esac
 done
-case "$PART" in a|d6|d4d5|b) ;; *) echo "[r_h200_cpu] 要指定 --part a、d4d5、d6 或 b" >&2; exit 2 ;; esac
+case "$PART" in a|d6|d4d5|b|brr|a2c7|d3) ;; *) echo "[r_h200_cpu] 要指定 --part a、d4d5、d6、b、brr、a2c7 或 d3" >&2; exit 2 ;; esac
 
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export REPO
@@ -280,6 +283,50 @@ step R1-h1        m7h-r1-h1         $P code/m7_round1_analyze.py h1       # → 
 step R1-kappa     m7h-r1-kappa      $P code/m7_round1_analyze.py kappa    # 四個 f(i)（含 Qwen3 grouped／eager）→ kappa_screen.csv
 step R1-sim       m7h-r1-sim-an     $P code/m7_round1_analyze.py sim      # r1_sim_*.csv → r1_sim_verdict.csv、r1_sim_configs.csv
 step R1-gpu       m7h-r1-gpu-an     $P code/m7_round1_analyze.py gpu      # P3 的 r1_gpu_llama_doc_free_local.csv → r1_gpu_summary.csv、r1_gpu_verdict.csv
+fi
+
+if [ "$PART" = brr ]; then
+# ===== B 重跑的合併組（使用者 10/16：「照重疊重跑」；新舊兩組都報）=====
+# results/m7_write_policy_h200_merged/＝沒有和我們自己的 F2 job 重疊的 B：舊的 R3-B-main＋job 20631 的 9 個 -rr run＋舊的 b2 G1-s1、G2（code/h200_brr.py 檔頭）。
+# 分析和 --part b 同一套指令，只把 M7_RES 指到合併目錄；f(i) 用同一份 H200 C1（M7_F_CSV）；H1 的輸出也寫合併目錄（M7_EXPLORE），不覆寫 m7_explore_h200 的。
+MG=$REPO/results/m7_write_policy_h200_merged
+FC=$M7_RES/calib_c1.csv
+step BRR-merge        m7h-brr-merge         $P code/h200_brr.py merge
+step BRR-sim-validate m7h-brr-sim-validate  env M7_RES="$MG" M7_F_CSV="$FC" $P $SIM validate
+step BRR-b2           m7h-brr-b2-analyze    env M7_RES="$MG" M7_F_CSV="$FC" $P code/m7_b2_analyze.py
+step BRR-h1           m7h-brr-r1-h1         env M7_RES="$MG" M7_F_CSV="$FC" M7_EXPLORE="$MG" $P code/m7_round1_analyze.py h1
+step BRR-ball         m7h-brr-b-all         $P code/h200_brr.py ball --old "$M7_RES" --new "$MG"
+step BRR-side         m7h-brr-side          $P code/h200_brr.py side --old "$M7_RES" --new "$MG"
+fi
+
+if [ "$PART" = a2c7 ]; then
+# ===== A2、C7 錨點：m7_analyze 的 calib()、a2()（MI300X 10/08 同一套），H200 只有限速層 → 真實裝置 NOT_MEASURED =====
+# 先回歸：m7_analyze 改成「沒有 real 列也能算」之後，MI300X 的 summary_a2、summary_c7_anchor、verdict 要和 git 相同
+step A2C7-regress  m7h-a2c7-mi300x-regress  $P code/h200_a2c7.py regress
+step A2C7-run      m7h-a2c7-an              $P code/h200_a2c7.py run
+fi
+
+if [ "$PART" = d3 ]; then
+# ===== D3 κ 地圖（MI300X 20261010-054706-d3-kappa-map、054955-d3-r1-b100、054753-d3-gputest-prereg）=====
+# 使用者 10/16：只有 H200 平台 → --no-3090；c7_anchor 只有限速層（job 20643）→ real 兩列 NOT_MEASURED（m8_kappa_map 檔頭）。
+# --prereg-test 的 D*＝同一組的主程式擬合的（stdout 最後一行「D*=…」）。
+# 兩組都報（使用者：「照重疊重跑」）：(1) 舊 B＝job 20554 的原始資料（含和 F2 重疊的 run）→ $M8_OUT；
+# (2) 合併組（results/m7_write_policy_h200_merged，--part brr）→ $M8_OUT/d3_merged；輸入目錄＝D3M-stage 的 run 目錄 res/（舊目錄＋合併組的 B 檔）
+KM=code/m8_kappa_map.py
+dstar() {   # dstar <標籤>：那一步主程式印的 D*
+  if [ "$DRY" = 1 ]; then echo "<$1 的 D*>"; return 0; fi
+  local v; v=$(grep -oP 'D\*=\K[0-9.]+' "$(rid "$1")/stdout.log" | tail -1)
+  [ -n "$v" ] || { echo "[r_h200_cpu] $1 的 stdout 沒有 D*" >&2; echo "MISSING-DSTAR"; return 1; }
+  echo "$v"
+}
+step D3-main     m7h-d3-kappa-map       $P $KM --out "$M8_OUT" --no-3090
+step D3-b100     m7h-d3-r1-b100         $P $KM --out "$M8_OUT" --no-3090 --b100
+step D3-prereg   m7h-d3-gputest-prereg  $P $KM --out "$M8_OUT" --no-3090 --prereg-test --dstar "$(dstar D3-main)"
+step D3M-stage   m7h-d3m-stage          $P code/h200_brr.py stage --old "$M7_RES" --new "$REPO/results/m7_write_policy_h200_merged"
+D3M_RES="$(rid D3M-stage)/res"
+step D3M-main    m7h-d3m-kappa-map      env M7_RES="$D3M_RES" $P $KM --out "$M8_OUT/d3_merged" --no-3090
+step D3M-b100    m7h-d3m-r1-b100        env M7_RES="$D3M_RES" $P $KM --out "$M8_OUT/d3_merged" --no-3090 --b100
+step D3M-prereg  m7h-d3m-gputest-prereg env M7_RES="$D3M_RES" $P $KM --out "$M8_OUT/d3_merged" --no-3090 --prereg-test --dstar "$(dstar D3M-main)"
 fi
 
 if [ -n "$UNTIL" ] && [ "$DONE" = 0 ] && [ "$STARTED" = 1 ]; then

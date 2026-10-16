@@ -73,3 +73,6 @@ gpucore.*
 results/m7_explore_h200/r1_sim_longalpaca7b.csv
 results/m7_write_policy_h200/sim_sweep.csv
 results/m7_write_policy_h200/b_share.csv
+# 2026-10-16：B 重跑（job 20631）與合併組的 b_share 原檔 >1 MB，進 git 的是 .gz
+results/m7_write_policy_h200_rerun/b_share.csv
+results/m7_write_policy_h200_merged/b_share.csv

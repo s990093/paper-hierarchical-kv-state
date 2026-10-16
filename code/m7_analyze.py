@@ -116,11 +116,14 @@ def calib():
     an = rd("c7_anchor.csv")
     if an is not None:
         p = an.groupby(["device", "mode", "L", "io"]).ttft.median().unstack("io").reset_index()
-        p["sim_over_real"] = p["sim"] / p["real"]
+        # 平台 C（H200）只跑限速層（使用者 2026-10-16：「都用模擬限速」）→ 真實裝置那一半 NOT_MEASURED，不算比值
+        has_real = "real" in p.columns
+        p["sim_over_real"] = p["sim"] / p["real"] if has_real else np.nan
         p.to_csv(os.path.join(R, "summary_c7_anchor.csv"), index=False)
         rb = an[(an.io == "real") & (an.device != "cpu")]
         out["C7_anchor"] = {"table": p.to_dict("records"),
-                            "page_cache_ok": bool((rb.read_bytes_delta >= (rb.n_load_ssd * 64 * 2**20) * 0.99).all()),
+                            "page_cache_ok": bool((rb.read_bytes_delta >= (rb.n_load_ssd * 64 * 2**20) * 0.99).all())
+                            if has_real else "NOT_MEASURED",
                             "kv_bad_total": int(pd.to_numeric(an.kv_bad, errors="coerce").fillna(0).sum())}
     V["calib"] = out
     return out
@@ -313,11 +316,17 @@ def a2():
                                                        bg_s=("bg_write_s", "median"), n=("ttft", "size"),
                                                        cont_disk=("contaminated_disk", "sum")).reset_index()
     g.to_csv(os.path.join(R, "summary_a2.csv"), index=False)
-    real = g[g.model == "real"].set_index(["device", "bg_write"])
-    V["A2"] = {f"{dev}_{bw}_vs_none_pct": float((real.loc[(dev, bw)].ttft / real.loc[(dev, "none")].ttft - 1) * 100)
-               for dev in g.device.unique() for bw in ("S3_partial", "S0_full")}
-    V["A2"]["S3_partial_vs_S0_full_pct"] = {dev: float((real.loc[(dev, "S3_partial")].ttft / real.loc[(dev, "S0_full")].ttft - 1) * 100)
-                                            for dev in g.device.unique()}
+    def _cmp(m):
+        x = g[g.model == m].set_index(["device", "bg_write"])
+        r = {f"{dev}_{bw}_vs_none_pct": float((x.loc[(dev, bw)].ttft / x.loc[(dev, "none")].ttft - 1) * 100)
+             for dev in g.device.unique() for bw in ("S3_partial", "S0_full")}
+        r["S3_partial_vs_S0_full_pct"] = {dev: float((x.loc[(dev, "S3_partial")].ttft / x.loc[(dev, "S0_full")].ttft - 1) * 100)
+                                          for dev in g.device.unique()}
+        return r
+    if (g.model == "real").any():
+        V["A2"] = _cmp("real")
+    else:   # 平台 C（H200）只跑限速層（使用者 2026-10-16：「都用模擬限速」）：真實裝置 NOT_MEASURED，同一套比較改報各限速器模型
+        V["A2"] = {"real": "NOT_MEASURED", **{m: _cmp(m) for m in ("sim_fifo", "sim_share") if (g.model == m).any()}}
     # 圖 2
     fig, axs = plt.subplots(1, 2, figsize=(9, 3.0))
     for ax, dev in zip(axs, ("local", "nfs")):
