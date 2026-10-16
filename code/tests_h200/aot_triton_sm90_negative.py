@@ -7,7 +7,7 @@ sys.path.insert(0, code)
 import triton
 from triton.compiler import ASTSource
 from triton.backends.compiler import GPUTarget
-sys.path.insert(0, NEG); import f3k as M
+sys.path.insert(0, NEG); import f3k_extract as M
 cases = [("_dq_rowscale", {"q_ptr": "*fp8e4nv", "s_ptr": "*fp32", "o_ptr": "*bf16", "n_rows": "i32", "G": "constexpr", "BR": "constexpr"}, {"G": 128, "BR": 16}),
          ("_dq_tensorscale", {"q_ptr": "*fp8e4nv", "o_ptr": "*bf16", "scale": "fp32", "n": "i32", "BLOCK": "constexpr"}, {"BLOCK": 1024})]
 for name, sig, consts in cases:
