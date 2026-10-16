@@ -455,3 +455,24 @@ sim_sweep 共同的 5070 列（13 個策略）數值和順序完全相同，現�
 
 **還沒做**（`--part b`，之後）: m7_sim validate（要 P1）、08 消融的分析（要 P2）、D3（要 P1、P2、A0；C7-anchor 在 H200 沒做 → 那部分 NOT_MEASURED）、第 1 輪的分析（要 P3、Qwen3）。
 D4、D5、D6 已做（上面）。
+
+### 決定（2026-10-16 14:0x）：D3 只有 H200 平台；A2、C7 錨點照 MI300X 跑限速層那一半
+**使用者的話**（回答「c7_anchor 要不要記 NOT_MEASURED 跳過」「D3 要不要讀 git 的 3090」）:
+「不要在看 main 把那個刪掉 不用這個paper 跟概念了 跟 只有h200 平台 基本上要復現 mix300 都要跟」、「如果需要也需要改code 成nv 用的」、「都用模擬限速」
+**照這樣做**（〔判讀〕「那個」＝D3 從 git `52803bc^` 讀的 3090 資料）:
+- **D3 不放 3090**：`m8_kappa_map.py --no-3090`（不讀 git 歷史，也不產 `d3_3090_tier.csv`、R1t 那一列）。程式碼留著、預設不變，所以 MI300X 的 D3 還能逐格重現；沒有刪檔。
+- **照 MI300X 跟到底、只用限速層**：`03_plan_h200.md` 第 101 行原本不做的 C2、C7-anchor、A2 改成照 MI300X 10/08 的指令跑，只加 `--io sim`
+  （限速層＝MI300X 的 `tier_params.json`，和 H200 其他實驗相同）。真實裝置那一半 → **NOT_MEASURED**。
+  - C2 只量真實裝置的頻寬，沒有限速層的版本 → 不跑，NOT_MEASURED。
+  - 另外查到：hgx-cn01 上我們能寫的只有本地的 md0（`/`、`/var/tmp`）和 md1（`/work`）；NFS 只有 `/home`（`172.16.100.100:/userhome`，沒有我們的目錄）和 `/cm/shared`。所以真實的 nfs 本來也量不到。
+  - D3 的 c7_anchor：sim 兩列用 H200 的；real 兩列（R1、R1b）標成 `c7_anchor real NOT_MEASURED`、n＝0。
+**程式**（commit `f6f7259`；預設＝MI300X）:
+- `m7_write_policy.py`：anchor、a2 加 `--io`（預設 `sim real`）。只跑 sim 時不建真實裝置、不寫檔。b 的路徑沒動。
+  20554 還在跑（之後的步驟會讀到新檔），所以先改副本、編譯過才用 `mv` 一次換掉。
+- `m8_kappa_map.py`：輸入目錄由 `M7_RES`、`M7_EXPLORE`、`M7_TIER_PARAMS` 指定；`.csv` 不在就讀同名的 `.csv.gz`（git 裡的 MI300X 大檔是 gz）；`--no-3090`；`--dstar`（prereg-test 的 D*，預設 MI300X 的 0.6026，H200 會傳自己擬合的值）。
+**核對**（run `20261016-141301-h200-d3-mi300x-regress`，head node）:
+- MI300X 預設：主程式、`--b100`、`--prereg-test` 的 7 個 `d3_*.csv` 和 git 的 `results/m8_directions/` **逐格相同**（`check_exact`，run_id／ts 除外）。
+- H200 的路徑（MI300X 資料拿掉 c7_anchor real 列＋`--no-3090`）：規則分數少了 `c7_anchor real`×2、`R1t 3090`；多了 `c7_anchor real NOT_MEASURED`×2（n＝0）；其他 72 列的 n、hits 都和 MI300X 相同；沒有產 `d3_3090_tier.csv`。
+**job 20643** `r-h200-simanchor`（`code/r_h200_simanchor.sh`，`--dependency=afterany:20631`，上限 1 小時）:
+A2-sim（fifo，reps 6）→ A2-share-sim（share，reps 3）→ C7-anchor-sim（L 8K／16K／32K，reps 3），全部 `--io sim`。
+MI300X 上這 3 個 run 的量測時間 2.6、0.9、4.7 分（CSV 的 ts，不含載入模型）。開跑前會檢查節點上沒有我們自己的 job，`$M7_RES` 裡也還沒有這 3 個 CSV。
