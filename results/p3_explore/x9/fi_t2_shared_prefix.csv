@@ -1,0 +1,2 @@
+run_id,ts,dataset,n_returns,bytew_shared_frac,bytew_shared_frac_crossuser,bytew_shared_frac_nonsubagent,median_share,p90_share,p10_share,frac_share_ge_0p5,session_over_unique_sum16weeks,n_subagent_sessions,n_users_weeksum
+20261017-181049-p3x9-freeinf,2026-10-17T10:16:42+00:00,freeinference,1206329,0.256730539520762,0.01705615408439067,0.2572601367251967,0.1304936599778407,0.9763564098583285,0.016453995970449966,0.2178999261395523,1.1737919235901126,2034,934
