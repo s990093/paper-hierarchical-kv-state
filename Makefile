@@ -52,11 +52,15 @@ LAF2NAME = r-h200-la-f2
 QWNAME = r-h200-qwen3
 F2NAME = r-h200-f2
 
-.PHONY: help queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x submit-f2 submit-m10 resume-m10 dry-run-m10 analyze-m10 submit-lc test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
+.PHONY: help q queue queue-watch status log runs gpu nvtop submit resume submit-rest submit-r1x submit-f2 submit-m10 resume-m10 dry-run-m10 analyze-m10 submit-lc test-submit cancel probe dry-run dry-run-rest dry-run-r1x env-check setup setup-check usage
 
 help:
 	@JOBNAME=$(JOBNAME) RESTNAME=$(RESTNAME) LAF2NAME=$(LAF2NAME) QWNAME=$(QWNAME) F2NAME=$(F2NAME) \
 	  RUNS=$(RUNS) python3 code/h200_show.py help
+
+# 精簡版：lab 要等幾個人、每個 job（含等前置的）預測開始／結束、全部跑完要多久
+q:
+	@python3 code/h200_queue.py --brief
 
 queue:
 	@python3 code/h200_queue.py

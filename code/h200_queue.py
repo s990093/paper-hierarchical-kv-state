@@ -5,6 +5,8 @@
     python3 code/h200_queue.py --job 20417     # 指定 job
     python3 code/h200_queue.py --no-history    # 不查 sacct（快一點；少了「照過去執行時間」那個模擬）
     python3 code/h200_queue.py --watch 300     # 每 5 分鐘重畫
+    python3 code/h200_queue.py --brief         # 精簡版（make q）：lab 要等幾個人、我每個 job 的預測開始／結束（含等前置的）
+    python3 code/h200_queue.py --gpus 2 --time 2-00:00:00   # 沒有 job 時：「假如現在送」用的卡數與時間上限
 
 只讀 Slurm（squeue、sprio、scontrol、sacctmgr、sacct），不送、不改任何 job。用系統的 python3 就能跑（標準庫＋rich；系統的 python3 已經有 rich）。
 
@@ -100,17 +102,30 @@ def gpus_of(tres: str) -> int:
 
 
 def load_jobs():
-    out = sh("squeue", "-p", PART, "-h", "-r", "-o", "%i|%u|%a|%T|%Q|%r|%b|%l|%S|%V|%e|%j|%M")
+    out = sh("squeue", "-p", PART, "-h", "-r", "-o", "%i|%u|%a|%T|%Q|%r|%b|%l|%S|%V|%e|%M|%E|%j")
     jobs = []
     for line in out.splitlines():
-        f = line.split("|")
-        if len(f) < 13:
+        f = line.split("|", 13)
+        if len(f) < 14:
             continue
-        jid, user, acct, state, prio, reason, tres, lim, start, submit, end, name, used = f[:13]
+        jid, user, acct, state, prio, reason, tres, lim, start, submit, end, used, dep, name = f
         jobs.append(dict(id=jid, user=user, acct=acct.lower(), state=state, prio=int(prio) if prio.isdigit() else 0,
                          reason=reason, gpus=gpus_of(tres), limit=plimit(lim), start=ptime(start),
-                         submit=ptime(submit), end=ptime(end), name=name))
+                         submit=ptime(submit), end=ptime(end), name=name, deps=parse_deps(dep)))
     return jobs
+
+
+def parse_deps(s: str) -> list[tuple[str, str, str]]:
+    """squeue %E：'afterok:20704(unfulfilled),after:20705(unfulfilled)' → [(type, job id, 狀態)]。
+    OR（?）當成 AND 處理（偏晚）；after:<id>+<分鐘> 的延遲不算。"""
+    if s in ("", "(null)"):
+        return []
+    out = []
+    for part in re.split(r"[,?]", s):
+        m = re.match(r"(\w+):([\d_*]+)(?:\+\d+)?(?:\(([^)]*)\))?", part)
+        if m:
+            out.append((m.group(1), m.group(2), m.group(3) or ""))
+    return out
 
 
 def total_gpus() -> int:
@@ -131,6 +146,13 @@ def acct_limit(acct: str) -> int | None:
             return gpus_of(g)
     out = sh("sacctmgr", "-n", "-P", "show", "qos", f"{PART}_1g", "format=maxtrespa")
     return gpus_of(out) or None
+
+
+def default_acct(user: str) -> str:
+    out = sh("sacctmgr", "-n", "-P", "show", "user", user, "format=defaultaccount").strip()
+    if not out:
+        sys.exit(f"查不到 {user} 的 default account（sacctmgr show user）")
+    return out.splitlines()[0].lower()
 
 
 MIN_N = 3   # 同一人、同一個時間上限的歷史 job 少於這個數 → 不猜，用上限
@@ -186,6 +208,169 @@ def simulate(now, running, pending, total, limits, dur_of, end_of):
     return res
 
 
+def simulate_dag(now, running, pending, all_ids, total, limits, dur_of, end_of):
+    """事件驅動版：pending 裡可以有等前置的 job（after → 前置開始後、afterok／afterany → 前置結束後；afterok 假設會成功）。
+    每個時間點把「前置已滿足」的 job 依優先序放，總卡數與 account 上限都夠就開始（job 都是 1–2 張卡，近似 backfill）。
+    前置是 hold、永遠不會滿足、或 failed 的 → 放不進去（不在回傳的 start 裡）。回傳 (start, end)，含正在跑的。"""
+    start = {r["id"]: r["start"] or now for r in running}
+    end = {r["id"]: max(end_of(r), now) for r in running}
+    sim_ids = set(start) | {j["id"] for j in pending}
+
+    def targets(d):
+        b = d.removesuffix("_*")
+        return [i for i in all_ids if i == d or (("_" not in d or d.endswith("_*")) and i.split("_")[0] == b)]
+
+    def ready_at(j):   # 前置都已排進模擬 → 最早可開始的時間；還不知道 → None
+        t = now
+        for typ, d, st in j["deps"]:
+            if "failed" in st:
+                return None
+            for i in targets(d):     # 不在佇列 = 已經結束（squeue 只列沒滿足的）
+                if i not in sim_ids:
+                    return None
+                src = start if typ == "after" else end
+                if i not in src:
+                    return None
+                t = max(t, src[i])
+        return t
+
+    act = [(end[r["id"]], r["gpus"], r["acct"]) for r in running]
+    waiting = sorted(pending, key=lambda j: (-j["prio"], j["submit"] or now, j["id"]))
+    t = now
+    while waiting:
+        act = [x for x in act if x[0] > t]
+        progress = True
+        while progress:          # 同一刻開始的 job 會讓 after:<它> 的 job 也能在這一刻開始，所以掃到沒有新的為止
+            progress = False
+            for j in list(waiting):
+                r = ready_at(j)
+                if r is None or r > t:
+                    continue
+                lim = limits.get(j["acct"])
+                if sum(g for _, g, _ in act) + j["gpus"] > total or \
+                        (lim is not None and sum(g for _, g, a in act if a == j["acct"]) + j["gpus"] > lim):
+                    continue
+                start[j["id"]], end[j["id"]] = t, t + dur_of(j)
+                act.append((end[j["id"]], j["gpus"], j["acct"]))
+                waiting.remove(j)
+                progress = True
+                break            # 從優先序最高的重新看
+        nxt = [e for e, _, _ in act if e > t] + [r for j in waiting if (r := ready_at(j)) is not None and r > t]
+        if not nxt:
+            break
+        t = min(nxt)
+    return start, end
+
+
+def render_brief(a):
+    """make q：lab 要等幾個人、我的 job 預測什麼時候開始／結束、全部跑完要多久。"""
+    now = datetime.now().replace(microsecond=0)
+    jobs = load_jobs()
+    total = total_gpus()
+    acct = default_acct(a.user)
+    limits = {ac: acct_limit(ac) for ac in {j["acct"] for j in jobs} | {acct}}
+    hist = {} if a.no_history else history()
+    running = [j for j in jobs if j["state"] in ("RUNNING", "COMPLETING", "SUSPENDED")]
+    pend_all = [j for j in jobs if j["state"] == "PENDING"]
+    # 會被模擬的 pending：在搶卡的＋等前置的（前置是 hold／failed 的，simulate_dag 自己會放不進去）
+    simmable = [j for j in pend_all if j["reason"] not in NOT_COMPETING or j["reason"] == "Dependency"]
+    held = [j for j in pend_all if j["acct"] == acct and j["reason"] in ("JobHeldUser", "JobHeldAdmin")]
+    all_ids = [j["id"] for j in jobs]
+
+    def lim_end(r):
+        return r["end"] or ((r["start"] or now) + r["limit"])
+
+    def hist_end(r):
+        m = typical(hist, r["user"], r["limit"], now - r["start"] if r["start"] else timedelta(0))
+        return (r["start"] or now) + min(m, r["limit"]) if m else lim_end(r)
+
+    def hist_dur(j):
+        m = typical(hist, j["user"], j["limit"])
+        return min(m, j["limit"]) if m else j["limit"]
+
+    s_lim, e_lim = simulate_dag(now, running, simmable, all_ids, total, limits, lambda j: j["limit"], lim_end)
+    s_his, e_his = simulate_dag(now, running, simmable, all_ids, total, limits, hist_dur, hist_end) \
+        if hist else (s_lim, e_lim)
+
+    def count(js):
+        by = {}
+        for j in js:
+            by[j["user"]] = by.get(j["user"], 0) + 1
+        return "、".join(f"{'你' if u == a.user else u} {n}" for u, n in sorted(by.items(), key=lambda x: -x[1]))
+
+    def rel(t):
+        if not t:
+            return Text("—", "dim")
+        d = fmt_td(t - now)
+        return Text.assemble((fmt_dt(t), "bold"), (f" +{d[:d.index('時') + 1] if '天' in d else d}", "dim"))
+
+    lab_run = [r for r in running if r["acct"] == acct]
+    lab_comp = [j for j in pend_all if j["acct"] == acct and j["reason"] not in NOT_COMPETING]
+    used = sum(r["gpus"] for r in running)
+    lab_used = sum(r["gpus"] for r in lab_run)
+    lim = limits.get(acct)
+    con.print(Rule(Text(f"{PART}  {now:%m/%d %H:%M}", "bold"), style="cyan"))
+    con.print(Text.assemble("  全部 GPU ", (f"{used}/{total}", "bold"), "｜lab ", (acct, "cyan"), " ",
+                            (f"{lab_used}/{lim if lim is not None else '?'}", "bold yellow"), " 張"))
+    con.print(Text.assemble("  lab 在跑 ", (str(len(lab_run)), "bold"), f"（{count(lab_run) or '無'}）｜在搶卡 ",
+                            (str(len(lab_comp)), "bold"), f"（{count(lab_comp) or '無'}）｜hold ",
+                            (str(len(held)), "bold"), (f"（{count(held)}；放行後會一起搶 lab 的 {lim} 張）" if held else "", "dim")))
+
+    mine = [j for j in jobs if j["user"] == a.user]
+    if not mine:
+        con.print(Text(f"\n（{a.user} 在 {PART} 沒有 job；make queue 看「假如現在送」）", "dim"))
+        return
+    t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", pad_edge=False, title="你的 job（照過去 30 天推算）",
+              title_justify="left", title_style="bold")
+    t.add_column("job", no_wrap=True)
+    t.add_column("名稱", no_wrap=True, overflow="ellipsis", max_width=15)
+    t.add_column("前面(lab)", justify="right", no_wrap=True)
+    t.add_column("預測開始", no_wrap=True)
+    t.add_column("預測結束", no_wrap=True)
+    lab_ids = [j for j in running + simmable if j["acct"] == acct]
+    for j in sorted(mine, key=lambda j: (s_his.get(j["id"]) or now + FAR, j["id"])):
+        st = s_his.get(j["id"])
+        if j["state"] != "PENDING":
+            ahead = Text("跑中", "green")
+        elif st is None:
+            ahead = Text(f"{j['reason']}，模擬不到", "red")
+        else:
+            # 要等的 lab job：在我之前開始、到現在還沒結束（會佔 lab 的卡）的；同一刻開始的只算優先序比我高的
+            aj = [x for x in lab_ids if x["id"] != j["id"] and s_his.get(x["id"]) is not None
+                  and e_his[x["id"]] > now and (s_his[x["id"]] < st or (s_his[x["id"]] == st and x["prio"] > j["prio"]))]
+            others = {x["user"] for x in aj if x["user"] != a.user}
+            ahead = Text(f"{len(aj)} 個／{len(others)} 人")
+        t.add_row(j["id"], j["name"], ahead,
+                  rel(st) if j["state"] == "PENDING" else Text(fmt_dt(j["start"]), "dim"), fmt_dt(e_his.get(j["id"])))
+    con.print(t)
+
+    pend = [j for j in mine if j["state"] == "PENDING"]
+    sim_pend = [j for j in pend if s_his.get(j["id"])]
+
+    def last(d, js):
+        v = [d[j["id"]] for j in js if d.get(j["id"])]
+        return max(v) if v else None
+
+    rows = []
+    if sim_pend:
+        nxt = min(s_his[j["id"]] for j in sim_pend)
+        rows.append(("下一個開始", rel(nxt), Text(fmt_dt(min(s_lim[j["id"]] for j in sim_pend if s_lim.get(j["id"]))), "dim")))
+        rows.append(("全部開始", rel(last(s_his, sim_pend)), Text(fmt_dt(last(s_lim, sim_pend)), "dim")))
+    rows.append(("全部跑完", rel(last(e_his, mine)), Text(fmt_dt(last(e_lim, mine)), "dim")))
+    g = Table.grid(padding=(0, 2))
+    g.add_column(style="bold")
+    g.add_column()
+    g.add_column()
+    g.add_row(Text("合計", "dim"), Text("照過去 30 天", "dim"), Text("跑滿上限", "dim"))
+    for r in rows:
+        g.add_row(*r)
+    if len(sim_pend) < len(pend):
+        g.add_row("模擬不到", Text(f"{len(pend) - len(sim_pend)} 個（前置是 hold／failed，或放不進去）", "red"), "")
+    con.print(g)
+    con.print(Text("⚠ 推算：前置 job 假設會成功；之後有優先序更高的 job（含 lab 的 hold 放行）就會排到前面。"
+                   "「前面(lab)」＝從現在到它開始，佔過 lab 卡的 job 數（含你自己的）／其他人數。詳細：make queue", "dim italic"))
+
+
 def render(a):
     now = datetime.now().replace(microsecond=0)
     jobs = load_jobs()
@@ -236,8 +421,36 @@ def render(a):
     def when(t):
         return Text.assemble((fmt_dt(t), "bold"), (f"（{fmt_td(t - now)} 後）", "dim")) if t else Text("N/A", "dim")
 
+    def ahead_text(ahead):
+        return (f"前面 {len(ahead)} 個 job（{len({c['user'] for c in ahead})} 個人）、"
+                f"共要 {sum(c['gpus'] for c in ahead)} 張卡")
+
     if not mine:
         con.print(Text(f"\n（{a.job or a.user} 在 {PART} 沒有 job）", "dim"))
+    if not mine and not a.job:
+        # 新 job 的優先序要送出後才知道（FairShare 會變、Age 從 0 起算），所以只給兩端：排最後、排最前
+        acct = default_acct(a.user)
+        if acct not in limits:
+            limits[acct] = acct_limit(acct)
+        hyp = dict(id="(假如現在送)", user=a.user, acct=acct, gpus=a.gpus, limit=plimit(a.time))
+        worst = simulate(now, running, competing + [hyp], total, limits, lambda j: j["limit"], lim_end)[hyp["id"]]
+        best = simulate(now, running, [hyp] + competing, total, limits, lambda j: j["limit"], lim_end)[hyp["id"]]
+        g = Table.grid(padding=(0, 2))
+        g.add_column(style="dim", no_wrap=True)
+        g.add_column()
+        g.add_row("假設", f"{a.gpus} 張卡、上限 {fmt_td(hyp['limit'])}、account {acct}（--gpus／--time 可改）")
+        g.add_row("排在前面", Text.assemble(("最多 " + str(len(competing)), "bold magenta"),
+                                         f" 個：{ahead_text(competing)}" if competing else " 個：現在沒有人在搶卡"))
+        lim_ac = limits.get(acct)
+        run_ac = sum(r["gpus"] for r in running if r["acct"] == acct)
+        g.add_row("account", f"{acct} 正在用 {run_ac} 張，上限 {lim_ac if lim_ac is not None else '查不到'}")
+        if competing:
+            g.add_row("模擬・排最後", when(worst) if worst else Text("放不進去", "red"))
+            g.add_row("模擬・排最前", when(best) if best else Text("放不進去", "red"))
+        else:
+            g.add_row("模擬", when(worst) if worst else Text("放不進去", "red"))
+        con.print(Panel(g, title=Text(" 假如現在送 ", "bold"), title_align="left", border_style="magenta",
+                        padding=(0, 1)))
     for j in mine:
         who = "你的 job" if j["user"] == a.user else f"{j['user']} 的 job"
         g = Table.grid(padding=(0, 2))
@@ -267,8 +480,7 @@ def render(a):
         else:
             rank = next(i for i, c in enumerate(competing, 1) if c["id"] == j["id"])
             ahead = competing[:rank - 1]
-            g.add_row("排名", Text.assemble(("★ 第 " + str(rank) + " 位", "bold magenta"),
-                                          f"：前面 {len(ahead)} 個 job、共要 {sum(c['gpus'] for c in ahead)} 張卡"))
+            g.add_row("排名", Text.assemble(("★ 第 " + str(rank) + " 位", "bold magenta"), f"：{ahead_text(ahead)}"))
             lim_ac = limits.get(j["acct"])
             run_ac = sum(r["gpus"] for r in running if r["acct"] == j["acct"])
             g.add_row("account", f"{j['acct']} 正在用 {run_ac} 張，上限 {lim_ac if lim_ac is not None else '查不到'}")
@@ -311,16 +523,28 @@ def render(a):
     con.print(t)
 
     if waiting_dep:
+        # squeue -r 把 array 展開成一個 task 一列，所以「個數」是 task 數；「送出」是 sbatch 的次數
         by = {}
         for w in waiting_dep:
             k = (w["user"], w["acct"], w["reason"])
-            by[k] = by.get(k, 0) + 1
+            by.setdefault(k, []).append(w)
+        my_acct = default_acct(a.user) if a.user else ""
         t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="現在不搶卡（hold／等前置 job；放行後依優先序加入）",
                   title_justify="left", title_style="bold")
-        for col, jj in (("user", "left"), ("account", "left"), ("個數", "right"), ("原因", "left")):
+        for col, jj in (("user", "left"), ("account", "left"), ("task", "right"), ("送出", "right"),
+                        ("最早送出", "right"), ("原因", "left"), ("", "left")):
             t.add_column(col, justify=jj, no_wrap=True)
-        for (u, ac, rs), n in sorted(by.items(), key=lambda x: -x[1]):
-            t.add_row(u, ac, str(n), Text(rs, "dim"), style=me_style if u == a.user else None)
+        for (u, ac, rs), ws in sorted(by.items(), key=lambda x: -len(x[1])):
+            first = min((w["submit"] for w in ws if w["submit"]), default=None)
+            note = []
+            if rs == "DependencyNeverSatisfied":
+                note.append(("永遠不會跑（前置失敗）", "red"))
+            if ac == my_acct and u != a.user:
+                note.append(("同 account，放行後共用上限", "yellow"))
+            t.add_row(u, ac, str(len(ws)), str(len({w["id"].split("_")[0] for w in ws})),
+                      f"{(now - first).days} 天前" if first else "N/A", Text(rs, "dim"),
+                      Text("；").join(Text(x, st) for x, st in note) if note else "",
+                      style=me_style if u == a.user else None)
         con.print(t)
     con.print(Text("⚠ 模擬是推算：之後有優先序更高的 job 送進來就會排到前面；跑滿上限那個通常偏晚、照過去那個可能偏早。",
                    "dim italic"))
@@ -331,18 +555,22 @@ def main():
     ap.add_argument("--job", help="job id（預設：自己所有在 h200q 的 job）")
     ap.add_argument("--user", default=os.environ.get("USER", ""))
     ap.add_argument("--no-history", action="store_true", help="不查 sacct")
+    ap.add_argument("--gpus", type=int, default=1, help="沒有 job 時，「假如現在送」的卡數（預設 1）")
+    ap.add_argument("--time", default="1-00:00:00", help="沒有 job 時，「假如現在送」的時間上限（預設 1 天）")
     ap.add_argument("--watch", type=int, metavar="秒", help="每隔幾秒重畫一次（Ctrl-C 離開）")
+    ap.add_argument("--brief", action="store_true", help="精簡版（make q）：lab 要等幾個人、預測開始／結束、全部跑完要多久")
     a = ap.parse_args()
+    draw = render_brief if a.brief else render
     if not shutil.which("squeue") and os.path.isdir(SLURM_BIN):
         os.environ["PATH"] = SLURM_BIN + ":" + os.environ.get("PATH", "")
         os.environ.setdefault("SLURM_CONF", "/cm/shared/apps/slurm/etc/slurm/slurm.conf")
     if not a.watch:
-        render(a)
+        draw(a)
         return
     try:
         while True:
             with con.capture() as cap:   # 先畫好再一次換掉，畫面不會閃
-                render(a)
+                draw(a)
             con.clear()
             con.print(cap.get(), end="")
             con.print(Text(f"每 {a.watch} 秒更新；Ctrl-C 離開", "dim"))

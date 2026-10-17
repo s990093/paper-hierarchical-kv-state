@@ -351,6 +351,7 @@ def cmd_help(a):
                      e("QWNAME", "r-h200-qwen3"), e("F2NAME", "r-h200-f2"))
     groups = [
         ("看狀態", "cyan", [
+            ("q", "精簡版：lab 要等幾個人、每個 job 預測開始／結束、全部跑完要多久"),
             ("queue", "排第幾、前面是誰、什麼時候開始（code/h200_queue.py）"),
             ("queue-watch", "同上，每 5 分鐘重畫（Ctrl-C 離開）"),
             ("status", "自己的 job（squeue）＋今天跑過的（sacct）"),
