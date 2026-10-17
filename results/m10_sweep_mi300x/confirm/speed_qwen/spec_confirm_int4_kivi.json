@@ -1,0 +1,80 @@
+{
+ "model": "qwen",
+ "fmt": "int4_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "SW-ATT-25",
+  "SW-AXE-25",
+  "E1s",
+  "SW-R0-25",
+  "SW-R1-25",
+  "SW-R2-25",
+  "SW-R3-25",
+  "SW-R4-25"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "b16",
+   "kind": "throttle",
+   "GiBps": 2.7712
+  },
+  {
+   "name": "b32",
+   "kind": "throttle",
+   "GiBps": 0.7635
+  },
+  {
+   "name": "b48",
+   "kind": "throttle",
+   "GiBps": 0.2175
+  },
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 0.7
+  }
+ ],
+ "reps": 10,
+ "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_sweep_mi300x/confirm/speed_qwen",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261017-090805-m10-confirm-grid-qwen-int4_kivi/blocks.csv",
+ "verify": true,
+ "need_att": true,
+ "argv": [
+  "/mlsteam/workspace/paper-hierarchical-kv-state/code/m10_confirm.py",
+  "speed",
+  "--model",
+  "qwen",
+  "--fmt",
+  "int4_kivi",
+  "--configs",
+  "SW-ATT-25",
+  "SW-AXE-25",
+  "E1s",
+  "SW-R0-25",
+  "SW-R1-25",
+  "SW-R2-25",
+  "SW-R3-25",
+  "SW-R4-25",
+  "--out-dir",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_sweep_mi300x/confirm/speed_qwen",
+  "--bw-json",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_qwen/bw.json",
+  "--blocks-out",
+  "/mlsteam/data/tiara/runs/20261017-090805-m10-confirm-grid-qwen-int4_kivi/blocks.csv"
+ ],
+ "run_id": "20261017-090805-m10-confirm-grid-qwen-int4_kivi"
+}

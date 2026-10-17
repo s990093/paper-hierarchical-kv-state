@@ -130,7 +130,7 @@ def cmd_plan(a):
         plan[m] = dict(finalists_json=p, n_finalists=len(fin["finalists"]), n_frontier=len(fin["frontier"]),
                        configs=cfgs, speed_grids=by_fmt)
         allc = " ".join(["E0"] + cfgs)
-        base = (f"python {REPO}/code/m10_quality.py run --model {m} --params-file $P --configs {allc} --modes A B "
+        base = (f"python {REPO}/code/m10_quality.py run --model {m} --params-file {a.params_file} --configs {allc} --modes A B "
                 f"--bws b32 --meets {SW_DIR}/confirm/speed_{m}/meets.json --seed0 50000")
         b0, per = NEED_GB[m]
         need = int(b0 + per * len(by_fmt))
@@ -224,6 +224,7 @@ def main():
     p.add_argument("--shards", type=int, default=5)
     p.add_argument("--pool", type=int, default=8)
     p.add_argument("--sw-dir", default=SW_DIR, help="測試時改到沙盒（讀 analysis/finalists_<m>.json、寫 confirm_plan.json）")
+    p.add_argument("--params-file", default=os.path.join(REPO, "results", "m10_pilot_mi300x", "e0_tune", "CANDIDATE_PARAMS.json"))  # 10/17：原本寫成字面 $P（沒人設）→ 43aa 品質第一個 job 參數空掉
     s = sub.add_parser("speed")
     s.add_argument("--model", choices=["llama", "qwen"], required=True)
     s.add_argument("--fmt", required=True)

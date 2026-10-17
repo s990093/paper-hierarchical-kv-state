@@ -717,6 +717,14 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 原因（同一批 run 的拆解）：harness 的 Cake 兩條線同時開始，重算線至少拿第 0 塊（b ≥ 1）；CPU 層低精度 64 塊的 H2D 只要 14–44 ms，重算線（1–2 塊）要 32–81 ms（42 的 E1 中位數）。
 - 寫進 [11 問題三](../docs/precision_20261013/11_issues.md)（含「什麼情況用哪種組合」的表與還沒做的解法）。只報告，主線判定不改。
 
+### 11.2o 43aa 速度做完、品質第一個 job 參數空掉 → 佇列停了 3 小時 → 接續成 43ab（10/17 10:31 → 13:35Z）
+
+- 速度格子 7／7 跑完（04:22:29 → 10:31:38Z）：Llama 4 個格式（`20261017-042229-…-int2_kivi`、`-054512-…-kv-int4_kivi-int2_kivi`、`-070052-…-int4_kivi`、`-074133-…-mxfp4`）、Qwen 3 個（`-082406-…-kv-int4_kivi-int2_kivi`、`-090805-…-int4_kivi`、`-094858-…-kv-int8_token-int4_kivi`），全部 exit 0；gpu_guard 21 個（Llama 12、Qwen 9）全 CLEAN，summary 的污染列 0。逐次還原 Llama 9,840 列、Qwen 6,000 列（`results/m10_sweep_mi300x/confirm/speed_*/restores.csv.gz`；原檔超過 1 MB 不進 git）。**速度的判讀等品質做完一起寫（09 §4.3），這裡不下結論。**
+- 品質第一個 job `cf-llama-T24-s0`（10:31:38Z，`20261017-103138-m10-confirm-llama-T24-s0`）exit 2：`argument --params-file: expected one argument`。原因：`m10_confirm.py plan` 把品質指令寫成字面 `--params-file $P`；`lib.sh` 的 `P` 沒有 export，pool 用 `bash -c` 開的子行程看不到 → 空字串。pool 照規則不再開新的 → 43aa 腳本 `exit 1` → runner 照規則停下（10:31:48Z）。**GPU 空了 10:31 → 13:35Z（約 3 小時）**：背景等待的條件是「43aa DONE／runner FAILED」，它有叫醒，但我 13:32Z 才看到。
+- 修（沒有換方法、沒有改任何設定）：`m10_confirm.py plan` 新增 `--params-file`（預設同 `smoke` 用的 `results/m10_pilot_mi300x/e0_tune/CANDIDATE_PARAMS.json`）、指令寫實際路徑；`jobs_43q.json` 的 12 個指令換成實際路徑（舊檔留 `jobs_43q.BAD_literalP.json`），在沙盒重新 plan 一次：和修過的檔逐字相同。檢查其他還沒跑的 stage（44b、45、46、55、60、88）：都是不加引號的 heredoc 或 Python 變數，`$P` 在寫 jobs 時就展開了，沒有同樣的問題。
+- 接續：`queue/43ab_sweep_confirm_quality.sh`（13:35:00Z 開跑；排在 43b 前面）只跑 43aa 的第 2、3 步，不重跑速度；前面加品質冒煙（每個模型第一個正式指令、T2 × 1 題，輸出放 scratch）。這次失敗改成寫 NEEDS_HUMAN、exit 0，不再讓整條佇列停。（腳本開頭的說明寫「16 個 guard」，實際是 21 個；腳本在跑，不改它。）
+- 時程：43 的品質晚了約 3 小時，後面 13 號那一輪順延同樣的時間。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。

@@ -1,0 +1,120 @@
+{
+ "model": "llama",
+ "source_run_ids": [
+  "20261017-042049-m10-confirm-ssmoke-llama"
+ ],
+ "meets": {
+  "SW-R1-15@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R4-15@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R0-20@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R3-20@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-ERR-20@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R4-20@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R3-15@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "E0": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "E1s@int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R1-20@int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R2-15@int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R2-20@int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-ERR-15@int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R0-15@int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  }
+ }
+}

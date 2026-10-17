@@ -1,0 +1,80 @@
+{
+ "model": "qwen",
+ "source_run_ids": [
+  "20261017-042146-m10-confirm-ssmoke-qwen"
+ ],
+ "meets": {
+  "SW-R4-40@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R3-40@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "E0": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-ATT-40@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R2-40@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "E1s@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R1-40@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-AXE-40@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  },
+  "SW-R0-40@kv-int4_kivi-int2_kivi": {
+   "cpu": {
+    "idle": 2,
+    "idle_all": [
+     2
+    ]
+   }
+  }
+ }
+}

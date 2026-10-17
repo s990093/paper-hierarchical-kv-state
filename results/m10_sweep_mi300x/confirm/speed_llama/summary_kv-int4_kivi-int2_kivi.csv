@@ -1,0 +1,105 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,E1s,cake,30,0.34337,0.57678,4 5,60.0,1006632960.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-ERR-20,cake,30,0.66019,0.8925,7 8,13.0,3103784960.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-ERR-25,cake,30,0.58975,0.82344,7 8,16.0,3019898880.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R0-20,cake,30,0.66443,0.89702,7 8,11.5,3204448256.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R0-25,cake,30,0.60219,0.83234,7 8,14.0,3070230528.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R1-20,cake,30,0.67307,0.90756,7 8,12.0,3154116608.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R1-25,cake,30,0.62923,0.86214,7 8,14.0,3070230528.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R2-20,cake,30,0.66594,0.89871,8,12.0,3154116608.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R2-25,cake,30,0.59722,0.82917,7 8,14.0,3070230528.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R3-20,cake,30,0.66944,0.90054,7 8,12.0,3170893824.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R3-25,cake,30,0.59645,0.83042,7 8,15.0,3070230528.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R4-20,cake,30,0.67185,0.90386,7 8,11.5,3204448256.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R4-25,cake,30,0.5977,0.82815,7 8,14.0,3070230528.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,E1s,cake,30,0.28202,0.35769,6 7 8,57.0,956301312.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-ERR-20,cake,30,0.52985,0.60537,12 13 14,13.0,2768240640.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-ERR-25,cake,30,0.51801,0.59361,12 13 14,16.0,2550136832.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R0-20,cake,30,0.53683,0.6125,13 14 15,11.0,2785017856.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R0-25,cake,30,0.51513,0.59063,12 13 14,13.0,2717908992.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R1-20,cake,30,0.53749,0.61315,13 14 15,10.5,2826960896.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R1-25,cake,30,0.53665,0.61206,12 13 14 15,13.0,2743074816.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R2-20,cake,30,0.53546,0.61096,12 13 14 15,11.0,2810183680.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R2-25,cake,30,0.51584,0.5915,12 13 14 15,13.0,2701131776.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R3-20,cake,30,0.54303,0.61874,13 14 15,10.0,2785017856.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R3-25,cake,30,0.53015,0.60586,12 13 14 15,13.0,2717908992.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R4-20,cake,30,0.54329,0.61902,12 13 14 15,10.0,2835349504.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R4-25,cake,30,0.52034,0.59596,12 13 14 15,12.0,2734686208.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,E1s,cake,30,0.77738,1.0044,9,55.0,922746880.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-ERR-20,cake,30,1.61808,1.84841,18,12.0,2483027968.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-ERR-25,cake,30,1.61209,1.84509,18,15.0,2332033024.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R0-20,cake,30,1.71562,1.94013,18 19,9.5,2550136832.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R0-25,cake,30,1.63085,1.86137,18 19,12.0,2483027968.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R1-20,cake,30,1.71969,1.95247,18 19,9.0,2566914048.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R1-25,cake,30,1.63447,1.8654,18 19,11.5,2499805184.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R2-20,cake,30,1.72177,1.95442,18 19,10.0,2550136832.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R2-25,cake,30,1.6209,1.85667,18 19,12.0,2483027968.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R3-20,cake,30,1.70828,1.9405,18 19,9.5,2566914048.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R3-25,cake,30,1.62642,1.85831,18 19,12.0,2483027968.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R4-20,cake,30,1.71871,1.95395,18 19,9.0,2566914048.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R4-25,cake,30,1.64535,1.87537,18 19,11.0,2516582400.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,E1s,cake,30,0.63301,0.70851,14 15 16 17,48.0,805306368.0,,,1,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-ERR-20,cake,30,1.18001,1.2556,27 28,12.0,1811939328.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-ERR-25,cake,30,1.16786,1.24336,27 28,13.0,1761607680.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R0-20,cake,30,1.28023,1.35567,28 29 30 31,8.0,1946157056.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R0-25,cake,30,1.22307,1.29899,27 28 29 30 31,9.0,1895825408.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R1-20,cake,30,1.29911,1.37531,28 29 30 31,7.0,1946157056.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R1-25,cake,30,1.24994,1.32558,27 28 29 30,8.5,1920991232.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R2-20,cake,30,1.27702,1.35299,28 29 30 31,7.0,1979711488.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R2-25,cake,30,1.25335,1.3292,27 28 29 30 31,9.0,1912602624.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R3-20,cake,30,1.27246,1.34803,28 29 30,7.0,1962934272.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R3-25,cake,30,1.26084,1.33632,27 28 29 30,9.0,1912602624.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R4-20,cake,30,1.27472,1.35056,28 29 30 31,7.0,1979711488.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R4-25,cake,30,1.26048,1.33618,27 28 29 30 31,8.5,1929379840.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,E1s,cake,30,1.84525,2.07612,20,44.0,738197504.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-ERR-20,cake,30,3.33662,3.56534,33,12.0,1476395008.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-ERR-25,cake,30,3.33421,3.56764,33,12.0,1476395008.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R0-20,cake,30,3.63662,3.86473,34 35 36 37 38,6.5,1619001344.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R0-25,cake,30,3.56583,3.79736,32 33 34 35 36 37,7.5,1593835520.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R1-20,cake,30,3.67074,3.90405,34 35 36 37,6.0,1644167168.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R1-25,cake,30,3.57463,3.80736,33 34 35 36,7.0,1593835520.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R2-20,cake,30,3.67489,3.90868,34 35 36 37,5.0,1627389952.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R2-25,cake,30,3.56622,3.79748,33 34 35 36 37,7.0,1593835520.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R3-20,cake,30,3.6681,3.89966,34 35 36 37,6.0,1627389952.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R3-25,cake,30,3.56733,3.80114,33 34 35 36 37,8.0,1593835520.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R4-20,cake,30,3.67177,3.90344,34 35 36 37,5.0,1627389952.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R4-25,cake,30,3.58997,3.82287,33 34 35 36 37,7.0,1593835520.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,E1s,cake,30,1.33772,1.41331,30 31,33.0,553648128.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-ERR-20,cake,30,2.21632,2.29197,44,7.0,989855744.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-ERR-25,cake,30,2.21463,2.29048,44,7.0,989855744.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R0-20,cake,30,2.28591,2.36213,44 45 46 47 48,4.0,1023410176.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R0-25,cake,30,2.28142,2.3576,43 44 45 46 47,4.5,1006632960.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R1-20,cake,30,2.35403,2.43016,44 45 46 47,4.0,1056964608.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R1-25,cake,30,2.28712,2.36281,44 45 46 47,4.0,1006632960.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R2-20,cake,30,2.35229,2.42823,43 44 45 46 47,3.0,1056964608.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R2-25,cake,30,2.28399,2.36045,43 44 45 46 47,4.0,1023410176.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R3-20,cake,30,2.28818,2.36486,44 45 46 47,4.0,1023410176.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R3-25,cake,30,2.29221,2.36797,44 45 46 47,5.0,1023410176.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R4-20,cake,30,2.32829,2.4042,44 45 46 47,3.0,1040187392.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R4-25,cake,30,2.28098,2.35699,43 44 45 46 47,5.0,1006632960.0,,,0,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,E1s,cake,30,0.192,0.42739,2,62.0,1040187392.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-ERR-20,cake,30,0.16577,0.39965,2,13.0,3506438144.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-ERR-25,cake,30,0.1685,0.40331,2,16.0,3355443200.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R0-20,cake,30,0.16831,0.40355,2,13.0,3506438144.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R0-25,cake,30,0.16827,0.40254,2,16.0,3355443200.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R1-20,cake,30,0.16786,0.40191,2,13.0,3506438144.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R1-25,cake,30,0.16828,0.40252,2,16.0,3355443200.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R2-20,cake,30,0.16712,0.40139,2,13.0,3506438144.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R2-25,cake,30,0.16837,0.4034,2,16.0,3355443200.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R3-20,cake,30,0.16779,0.40336,2,13.0,3506438144.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R3-25,cake,30,0.16835,0.40328,2,16.0,3355443200.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R4-20,cake,30,0.16781,0.40227,2,13.0,3506438144.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R4-25,cake,30,0.16907,0.40382,2,16.0,3355443200.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,E1s,cake,30,0.09569,0.17143,2 3,62.0,1040187392.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-ERR-20,cake,30,0.10002,0.17556,2 3,13.0,3439329280.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-ERR-25,cake,30,0.10098,0.17672,2 3,16.0,3288334336.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R0-20,cake,30,0.09929,0.17478,2 3,13.0,3489660928.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R0-25,cake,30,0.10028,0.17577,2 3,16.0,3338665984.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R1-20,cake,30,0.0992,0.17467,2 3,13.0,3489660928.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R1-25,cake,30,0.10182,0.17767,2 3,16.0,3338665984.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R2-20,cake,30,0.10133,0.17717,2 3,13.0,3489660928.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R2-25,cake,30,0.10357,0.17934,2 3,16.0,3355443200.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R3-20,cake,30,0.10113,0.17677,2 3,13.0,3489660928.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R3-25,cake,30,0.10318,0.17902,2 3,16.0,3338665984.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R4-20,cake,30,0.09902,0.17453,2 3,13.0,3464495104.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R4-25,cake,30,0.09999,0.17551,2 3,16.0,3288334336.0,,,30,0,20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi
