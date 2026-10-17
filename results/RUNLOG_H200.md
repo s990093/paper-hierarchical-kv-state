@@ -868,3 +868,29 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - **反向對照**：`code/tests_h200/aot_triton_sm90_negative.py` 拿第一階段 `m9_f3_dequant` 的 `_dq_rowscale`、`_dq_tensorscale`（H200 job 20614 實測失敗、10/16 決定凍結不改）用同一個方法編 → **兩個都 FAIL**，錯誤和實測相同：`cannot cast int32[...] to <[...], fp8e4nv>`。所以這個方法抓得到那一類錯誤。
 - **差別在哪**：`m9_f3` 從 fp8 指標 `tl.load(..., other=0)`（0 要轉成 fp8e4nv，NVIDIA 後端不允許）；`m10_dequant_fast` 讀 uint8 碼再查表或位元運算，沒有這個轉型。
 - **沒驗到的**：數值。`m10_sweep parts` 會在真實 KV 上逐 block 比融合版和 PyTorch 版，不逐位元相同就停（`m10_sweep.py:337`）；t2 的 GPU 自測再驗一次。`m9_f3_dequant` 照 10/16 的決定不動。
+
+### job 20701 `m10h-speed` 跑完（2026-10-17 07:02:04 → 11:19:39 +08:00，4 h 17 m，COMPLETED exit 0；commit `01296ac`）
+**狀態**: PASS（13 §3 的五個停止條件都沒觸發）
+- 開跑閘門：`gate code` PASS（16 個主線檔＝`bcfe5b1`，`m10_tasks.py` 只差模型路徑）；`gate params` PASS（`CANDIDATE_PARAMS.json` sha256 `00c1034f…74412e2`）。
+- V0 `20261017-070207-m10h-verify`：exit 0。
+- E0 難度 `20261017-073537-m10h-gate-e0`（`results/m10_precision_h200/e0_check/`）：**PASS**。T1–T4 n＝120、T5 n＝60：
+  Llama T1 1.000、T2 0.773、T3 0.723、T4 0.767、T5 0.773；Qwen T1 0.967、T2 0.854、T3 0.712、T4 0.675、T5 0.675（T2–T5 都在 60–95%）。
+- 格式重選 `20261017-074146-m10h-fmtselect` → `fmt_select/fmt_vs_mi300x.json`：**same＝true**（Llama fp8_token／int4_kivi，Qwen fp8_head／int4_kivi，和 MI300X 相同）。
+- calib-f（`speed_<m>/bw.json`）：Llama b16 8.8331、b32 2.49、b48 0.7222 GiB/s（真 pinned H2D 48.67）；Qwen b16 4.33、b32 1.2297、b48 0.3582 GiB/s（真 H2D 48.424）。都低於真 H2D 的一半，沒有 warning。
+- noise（`speed_<m>/noise.json`）：Qwen δ＝0.0144 → δ*＝0.05；**Llama δ＝0.2842 → δ*＝0.2842**，全部來自 `cpu|busy` 一格（三次 launch 中位數 0.15526、0.12117、0.12081 s；第一次慢 28%），其他 7 格 δ ≤ 0.091。gpu_guard CLEAN。CPU 層是不限速的真 H2D，同節點別人的 job 也用主機記憶體／PCIe（Slurm 下主機層看不到，host_level＝UNOBSERVABLE_HOST），**原因沒有查證**，照 03 §5.3 的規則照用、不改。MI300X Llama δ*＝0.05、Qwen 0.0943。
+- K0（`speed_<m>/k0_verdict_{fp8,int4}.json`）：兩個模型 × 兩階都是「K0 不成立：至少一格 E1 贏 E0」，**和 MI300X 相同**（Llama 在 δ*＝0.284 下仍成立）。
+- 速度格子 FP8、2b（fp8k0_<g>、int8_token）、INT4：每格 3 份 gpu_guard 都 CLEAN；`meets_fp8tier.json` 在 INT4 格子前快照。meets 不用 δ*。
+- 失敗與異常：無（Llama δ* 見上）。
+
+### job 20704 `m10h-lc-speed` 跑完（2026-10-17 11:19:39 → 19:25:15 +08:00，8 h 06 m，COMPLETED exit 0；commit `0febf74`）
+**狀態**: PASS
+- `m10_sweep parts`（`--busy-duty` 1.0）：`20261017-111941-m10h-sweep-parts-llama`、`20261017-112036-m10h-sweep-parts-qwen`，gpu_guard CLEAN、contaminated＝False。
+  **融合反量化在 H200 真實 KV 上和 PyTorch 寫法逐位元相同**（`results/m10_sweep_h200/parts/parts_<m>.json` 的 `fused_vs_torch_real_kv`）：Llama fp8_token、int8_token、int4_token、int4_kivi，Qwen fp8_head、int8_token、int4_token、int4_kivi，各 128 個 block，不同的 0 個。上一節 AOT 沒驗到的數值這裡驗到了。
+- 長 context 速度格子（`results/m10_longctx_h200/speed_<m>_<L>_<fmt>/`），每格 2 份 gpu_guard 都 CLEAN：
+  128K（129024）：Llama FP8 11:21→12:56、Qwen FP8 →14:17、Llama INT4 →15:46、Qwen INT4 →17:04；64K（65536）：Llama FP8 →17:43、Qwen FP8 →18:16、Llama INT4 →18:53、Qwen INT4 →19:25。
+- 失敗與異常：無。
+
+### 10/17 21:32 佇列
+- 20705 `m10h-lc-screen`：PENDING（Resources）——hgx-cn01 8 張全被佔（其他 lab 7 張、本 lab 1 張），lab 配額只用 1/4，卡在節點滿不是配額。`make q` 推估 10/18 02:08 開始（照過去 30 天）。
+- 20702、20703（after:20705）、20706、20707、20708、20709 照原依賴等。
+- 主線判定（`make analyze-m10`）要等 20702、20703 的品質。

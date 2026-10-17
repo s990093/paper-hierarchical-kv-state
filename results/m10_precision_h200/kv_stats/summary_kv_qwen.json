@@ -1,0 +1,101 @@
+{
+ "run_id": "20261017-073617-m10h-kvstats-qwen",
+ "model": "qwen",
+ "model_path": "/work/ChihChungHsu/hungweilai/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/e28526f7bb80e2a9c8af03b831a9af3812f18fba",
+ "L": 28,
+ "H": 4,
+ "D": 128,
+ "prompts": [
+  "T4_front-back_s0",
+  "T4_mid-front_s1",
+  "T1_back-mid_s0",
+  "T3_mid-back_s0",
+  "T5_None-None_s0"
+ ],
+ "tokens_per_prompt": 32768,
+ "maxabs_K_overall": 422.0,
+ "maxabs_V_overall": 82.0,
+ "maxabs_K_over_448": 0.9419642857142857,
+ "n_chan_total": 14336,
+ "n_chan_offset_gt3": 645,
+ "n_chan_offset_gt10": 219,
+ "max_absmean_K": 415.1065368652344,
+ "codec_relerr_mean_over_prompts": {
+  "fp8_head": {
+   "K": 0.024501360580325128,
+   "V": 0.02653379403054714,
+   "K_worst_block": 0.026352157816290855,
+   "K_centered": 0.180303505808115,
+   "K_centered_worst_block": 0.2039916068315506,
+   "V_centered": 0.02859110591816716
+  },
+  "fp8_channel": {
+   "K": 0.01691965591162443,
+   "V": 0.02614496126770973,
+   "K_worst_block": 0.01987273618578911,
+   "K_centered": 0.12415024361107499,
+   "K_centered_worst_block": 0.1482311189174652,
+   "V_centered": 0.028166031104046852
+  },
+  "fp8_token": {
+   "K": 0.02516276724636555,
+   "V": 0.025535262748599054,
+   "K_worst_block": 0.026491371914744377,
+   "K_centered": 0.18524194909259678,
+   "K_centered_worst_block": 0.2081124186515808,
+   "V_centered": 0.02751485095359385
+  },
+  "fp8k0_head": {
+   "K": 0.0036191119346767665,
+   "V": 0.02653379403054714,
+   "K_worst_block": 0.0037991483695805073,
+   "K_centered": 0.026604719541501252,
+   "K_centered_worst_block": 0.02672620490193367,
+   "V_centered": 0.02859110591816716
+  },
+  "fp8k0_channel": {
+   "K": 0.0036043106112629173,
+   "V": 0.02614496126770973,
+   "K_worst_block": 0.0037970123812556267,
+   "K_centered": 0.026492117415182294,
+   "K_centered_worst_block": 0.026586158201098442,
+   "V_centered": 0.028166031104046852
+  },
+  "fp8k0_token": {
+   "K": 0.0034024273976683618,
+   "V": 0.025535262748599054,
+   "K_worst_block": 0.0035705924965441227,
+   "K_centered": 0.025012073398102075,
+   "K_centered_worst_block": 0.02511432021856308,
+   "V_centered": 0.02751485095359385
+  },
+  "int8_token": {
+   "K": 0.011583215929567814,
+   "V": 0.00737013453617692,
+   "K_worst_block": 0.011886274442076683,
+   "K_centered": 0.08525494341738522,
+   "K_centered_worst_block": 0.09197486191987991,
+   "V_centered": 0.007943658594740555
+  },
+  "int4_token": {
+   "K": 0.11418696343898774,
+   "V": 0.12994854152202606,
+   "K_worst_block": 0.11799647659063339,
+   "K_centered": 0.8406976336613298,
+   "K_centered_worst_block": 0.9190887212753296,
+   "V_centered": 0.1400624327827245
+  },
+  "int4_kivi": {
+   "K": 0.00814917152747512,
+   "V": 0.08065031468868256,
+   "K_worst_block": 0.008538219146430492,
+   "K_centered": 0.05989924786845222,
+   "K_centered_worst_block": 0.06179358810186386,
+   "V_centered": 0.08691662701312453
+  }
+ },
+ "torch": "2.13.0+cu130",
+ "hip": null,
+ "cuda": "13.0",
+ "note": "BF16 KV 與 codec 重建誤差；沒有任何答對率。MI300X 彩排，不進判定。"
+}

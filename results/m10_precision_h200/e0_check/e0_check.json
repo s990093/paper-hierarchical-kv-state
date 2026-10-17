@@ -1,0 +1,253 @@
+{
+ "rule": "13 §3-3：主判準任務（T2–T5）E0 合併答對率在 60–95%；T1 只報告；T1–T4 用 score_64、T5 用 score_up",
+ "range": [
+  0.6,
+  0.95
+ ],
+ "tasks": {
+  "llama/T1": {
+   "n_rows": 120,
+   "acc": 1.0
+  },
+  "llama/T2": {
+   "n_rows": 120,
+   "acc": 0.7729
+  },
+  "llama/T3": {
+   "n_rows": 120,
+   "acc": 0.7226
+  },
+  "llama/T4": {
+   "n_rows": 120,
+   "acc": 0.7667
+  },
+  "llama/T5": {
+   "n_rows": 60,
+   "acc": 0.7733
+  },
+  "qwen/T1": {
+   "n_rows": 120,
+   "acc": 0.9667
+  },
+  "qwen/T2": {
+   "n_rows": 120,
+   "acc": 0.8542
+  },
+  "qwen/T3": {
+   "n_rows": 120,
+   "acc": 0.7117
+  },
+  "qwen/T4": {
+   "n_rows": 120,
+   "acc": 0.675
+  },
+  "qwen/T5": {
+   "n_rows": 60,
+   "acc": 0.675
+  }
+ },
+ "cells": {
+  "llama/T1/back/turn1": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "llama/T1/back/turn2": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "llama/T1/front/turn1": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "llama/T1/front/turn2": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "llama/T1/mid/turn1": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "llama/T1/mid/turn2": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "llama/T2/back/turn1": {
+   "n": 20,
+   "acc": 0.7375
+  },
+  "llama/T2/back/turn2": {
+   "n": 20,
+   "acc": 0.7875
+  },
+  "llama/T2/front/turn1": {
+   "n": 20,
+   "acc": 0.7875
+  },
+  "llama/T2/front/turn2": {
+   "n": 20,
+   "acc": 0.8375
+  },
+  "llama/T2/mid/turn1": {
+   "n": 20,
+   "acc": 0.675
+  },
+  "llama/T2/mid/turn2": {
+   "n": 20,
+   "acc": 0.8125
+  },
+  "llama/T3/back/turn1": {
+   "n": 20,
+   "acc": 0.7857
+  },
+  "llama/T3/back/turn2": {
+   "n": 20,
+   "acc": 0.7214
+  },
+  "llama/T3/front/turn1": {
+   "n": 20,
+   "acc": 0.7929
+  },
+  "llama/T3/front/turn2": {
+   "n": 20,
+   "acc": 0.7143
+  },
+  "llama/T3/mid/turn1": {
+   "n": 20,
+   "acc": 0.7143
+  },
+  "llama/T3/mid/turn2": {
+   "n": 20,
+   "acc": 0.6071
+  },
+  "llama/T4/back/turn1": {
+   "n": 20,
+   "acc": 0.8
+  },
+  "llama/T4/back/turn2": {
+   "n": 20,
+   "acc": 0.85
+  },
+  "llama/T4/front/turn1": {
+   "n": 20,
+   "acc": 0.75
+  },
+  "llama/T4/front/turn2": {
+   "n": 20,
+   "acc": 0.8
+  },
+  "llama/T4/mid/turn1": {
+   "n": 20,
+   "acc": 0.7
+  },
+  "llama/T4/mid/turn2": {
+   "n": 20,
+   "acc": 0.7
+  },
+  "llama/T5/global/turn1": {
+   "n": 60,
+   "acc": 0.7733
+  },
+  "qwen/T1/back/turn1": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "qwen/T1/back/turn2": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "qwen/T1/front/turn1": {
+   "n": 20,
+   "acc": 0.95
+  },
+  "qwen/T1/front/turn2": {
+   "n": 20,
+   "acc": 1.0
+  },
+  "qwen/T1/mid/turn1": {
+   "n": 20,
+   "acc": 0.9
+  },
+  "qwen/T1/mid/turn2": {
+   "n": 20,
+   "acc": 0.95
+  },
+  "qwen/T2/back/turn1": {
+   "n": 20,
+   "acc": 0.9375
+  },
+  "qwen/T2/back/turn2": {
+   "n": 20,
+   "acc": 0.9125
+  },
+  "qwen/T2/front/turn1": {
+   "n": 20,
+   "acc": 0.8125
+  },
+  "qwen/T2/front/turn2": {
+   "n": 20,
+   "acc": 0.8625
+  },
+  "qwen/T2/mid/turn1": {
+   "n": 20,
+   "acc": 0.8125
+  },
+  "qwen/T2/mid/turn2": {
+   "n": 20,
+   "acc": 0.7875
+  },
+  "qwen/T3/back/turn1": {
+   "n": 20,
+   "acc": 0.9
+  },
+  "qwen/T3/back/turn2": {
+   "n": 20,
+   "acc": 0.8
+  },
+  "qwen/T3/front/turn1": {
+   "n": 20,
+   "acc": 0.65
+  },
+  "qwen/T3/front/turn2": {
+   "n": 20,
+   "acc": 0.6
+  },
+  "qwen/T3/mid/turn1": {
+   "n": 20,
+   "acc": 0.71
+  },
+  "qwen/T3/mid/turn2": {
+   "n": 20,
+   "acc": 0.61
+  },
+  "qwen/T4/back/turn1": {
+   "n": 20,
+   "acc": 0.7
+  },
+  "qwen/T4/back/turn2": {
+   "n": 20,
+   "acc": 0.65
+  },
+  "qwen/T4/front/turn1": {
+   "n": 20,
+   "acc": 0.6
+  },
+  "qwen/T4/front/turn2": {
+   "n": 20,
+   "acc": 0.75
+  },
+  "qwen/T4/mid/turn1": {
+   "n": 20,
+   "acc": 0.7
+  },
+  "qwen/T4/mid/turn2": {
+   "n": 20,
+   "acc": 0.65
+  },
+  "qwen/T5/global/turn1": {
+   "n": 60,
+   "acc": 0.675
+  }
+ },
+ "fail": [],
+ "pass": true
+}
