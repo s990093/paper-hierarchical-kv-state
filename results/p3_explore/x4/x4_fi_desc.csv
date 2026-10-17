@@ -1,0 +1,2 @@
+run_id,ts,week,hf_rev,n_req,n_sessions,unit_match,frac_ttft_le_dur,med_ms_per_out_tok,chain_bad,frac_same_block0,n_ret,n_ret_user,med_blocks,max_blocks,span_s,user_return_gap_s_p50,frac_block_positions_extrapolated,gpu_new_prefill_s,ws_GiB
+20261017-213341-p3x4-fdesc,2026-10-17T13:34:27+00:00,2026-07-26_2026-08-01,16d3c04dae6ccaa0c48a9064e204e3a8f1eb9ade,84524,1198,1.0,0.9997633808149164,21.323792486583184,0,0.9974197729400187,83326,5352,202.0,2440,604783.0439999104,107.85149999999999,0.7173415485327693,145103.09463466334,35913.0625
