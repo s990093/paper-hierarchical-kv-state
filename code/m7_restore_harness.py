@@ -120,26 +120,38 @@ class Restorer:
         # 09 §6.4 方法掃描的選項（預設＝原本的行為，逐位元、逐步驟相同）：
         #   unit：還原單位（token；G 組），sched：serial／pipe／group／defer／defer_meet（S 組），
         #   dq_group：group 的 k，meet_rule：claim（原本）／estimate（G4 預估會合）；重算優先（S3）用 set_options。
+        # 13 號計畫（10/17）另加：meet_rule none（全部載入、不重算）／g5（開始前估計，載完比重算第 0 塊快就不重算）；
+        #   sched nodq（只搬不拆：拆融合進 attention 的對照組，KV 緩衝不會被填）；io_prio（還原的 H2D、拆用最高優先權的 stream）。
         self.unit = CHUNK
         self.dq_sched = "serial"
         self.dq_group = 1
         self.meet_rule = "claim"
         self.compute_prio = False
+        self.io_prio = False
+        self.g5_key = None                     # G5 的紀錄依（頻寬, GPU 狀態）分開；呼叫端每次還原前設定
+        self.g5_force_claim = False            # G5 的 profiler：照 Cake 跑、只記錄
+        self._g5_hist: dict = {}
         self._h2d_s = None
         self._stages: dict = {}
         self._arange = None
 
     def set_options(self, unit: int = CHUNK, sched: str = "serial", group: int = 1, compute_prio: bool = False,
-                    meet: str = "claim"):
+                    meet: str = "claim", io_prio: bool = False):
         assert CHUNK % unit == 0 and unit % 32 == 0, unit
-        assert sched in ("serial", "pipe", "group", "defer", "defer_meet"), sched
-        assert meet in ("claim", "estimate"), meet
+        assert sched in ("serial", "pipe", "group", "defer", "defer_meet", "nodq"), sched
+        assert meet in ("claim", "estimate", "none", "g5"), meet
         assert group >= 1 and (group == 1 or sched == "group")
+        assert not (meet == "g5" and sched in ("defer", "defer_meet", "nodq")), "G5 的載入時間要含拆（13 §4 只配 S0／S2）"
         self.unit, self.dq_sched, self.dq_group, self.meet_rule = unit, sched, group, meet
         if compute_prio and not self.compute_prio:
             lo, hi = torch.cuda.Stream.priority_range()          # 數字越小優先權越高
             self.cstream = torch.cuda.Stream(device=self.km.device, priority=hi)
         self.compute_prio = compute_prio
+        if io_prio and not self.io_prio:                         # 13 §3 P1：還原的 H2D、拆都在這兩條 stream 上
+            lo, hi = torch.cuda.Stream.priority_range()
+            self.iostream = torch.cuda.Stream(device=self.km.device, priority=hi)
+            self._h2d_s = torch.cuda.Stream(device=self.km.device, priority=hi)
+        self.io_prio = io_prio
 
     def _view(self, i: int) -> torch.Tensor:
         if self.unit == CHUNK:
@@ -335,13 +347,27 @@ class Restorer:
         sched = self.dq_sched
         K = self.dq_group if sched == "group" else 1
         pend, defer, keep = [], {}, []
+        skip_r = False                                         # 13 §2／§4：none、g5 決定不重算
+        if self.meet_rule in ("none", "g5"):
+            stored = all(loc[j] is not None for j in range(n))
+            if not stored:
+                rec["meet_rule_used"] = "claim(unstored)"
+            elif self.meet_rule == "none":
+                skip_r, rec["meet_rule_used"] = True, "none"
+            elif self.g5_force_claim:
+                rec["meet_rule_used"] = "claim(profile)"
+            else:
+                d = self._g5_decide(n, host)
+                skip_r = d is True
+                rec["meet_rule_used"] = {True: "none", False: "claim", None: "claim(no_history)"}[d]
+        lt = rec.setdefault("_lt", [])                         # (來源, 每塊載入時間)：G5 的紀錄用
 
         def is_lp(h):
             return isinstance(h, Enc) and h.fmt != "bf16"
 
         def rline():
             ts = time.perf_counter()
-            while True:
+            while not skip_r:
                 with lk:
                     if st["p"] > st["q"]:
                         break
@@ -401,9 +427,10 @@ class Restorer:
                 rec[f"n_load_{key}"] += len(grp)
                 rec[f"t_load_{key}"] += te1 - ts1
                 est["l"].extend([(te1 - ts1) / len(grp)] * len(grp))
+                lt.extend([(self._src(host[q]), (te1 - ts1) / len(grp))] * len(grp))
             if sched == "defer":
                 self._flush_defer(defer, n, pend, keep)
-            self.iostream.synchronize()
+            self.iostream.synchronize()                        # nodq：只搬不拆，暫存區留著（13 §6 (a)）
             times["l_end"] = time.perf_counter()
             rec["t_load"] = times["l_end"] - ts
 
@@ -423,6 +450,36 @@ class Restorer:
         rec["meet"] = rec["n_recompute"]
         rec["t_wait"] = abs(times["r_end"] - times["l_end"])
         rec["waiting_line"] = "recompute" if times["r_end"] < times["l_end"] else "load"
+        if est["r"]:
+            rec["_r0"] = est["r"][0]                           # 第 0 塊的重算時間（重算線一定先拿第 0 塊）
+        if self.meet_rule == "g5":
+            self._g5_note(rec)
+
+    # ---- 13 §4 G5：開始前估計「全部載完」和「重算第 0 塊」 ----
+    G5_KEEP = 20
+
+    def _g5_decide(self, n: int, host: list):
+        h = self._g5_hist.get(self.g5_key)
+        if not h or not h["r0"]:
+            return None
+        cnt = {}
+        for j in range(n):
+            s_ = self._src(host[j])
+            cnt[s_] = cnt.get(s_, 0) + 1
+        if any(not h["l"].get(s_) for s_ in cnt):
+            return None
+        import statistics
+        load_all = sum(c * statistics.median(h["l"][s_]) for s_, c in cnt.items())
+        return load_all <= statistics.median(h["r0"])
+
+    def _g5_note(self, rec: dict):
+        h = self._g5_hist.setdefault(self.g5_key, {"l": {}, "r0": []})
+        for s_, t in rec.get("_lt", []):
+            h["l"].setdefault(s_, []).append(t)
+            del h["l"][s_][:-self.G5_KEEP * 64]
+        if "_r0" in rec:
+            h["r0"].append(rec["_r0"])
+            del h["r0"][:-self.G5_KEEP]
 
     def restore(self, ids: torch.Tensor, n: int, host: list, loc: list, mode: str = "cake") -> dict:
         """還原前 n 個 chunk 的 KV 到 GPU。回傳時間拆解（秒）。"""
