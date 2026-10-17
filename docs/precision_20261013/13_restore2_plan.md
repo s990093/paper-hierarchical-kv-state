@@ -127,6 +127,14 @@
 - **43a 冒煙**：新格式 kernel 和 attention 對照組在 GPU 上自測（逐位元）；cumask；真模型 Qwen int4_kivi 1 launch × 1 rep：G5＋claim＋loadall（CPU、b32）、nodq、P5＋遮罩（GPU 忙）；Llama int2_kivi 走大掃描速度路徑＋新格式 kernel。每格第一次都檢查 KV。冒煙的時間不是結果。
 - 佇列實際檔名：`43a_rs2_smoke`、`43b_rs2_busy`、`43c_rs2_g5`、`43d_rs2_newfmt`、`43e_rs2_attn`、`44cz_rs2_plan44d`（CPU：pick-c、寫 44d）、`44d_rs_longctx`（由 44cz 寫）。
 
+## 8b. 補充（10/17 03:2xZ；使用者問「有沒有現成程式碼可以直接用」；仍然沒有任何 13 號的結果）
+
+- 查的結果（摘要級，self-review）：AMD MI300X 上能直接用的「拆在 attention 裡」只有 **FP8**（vLLM 的 ROCm 路徑：AITER／Triton，`--kv-cache-dtype fp8`）。INT4 KIVI 的現成實作（KIVI 原作、QServe、BitDecoding、LMDeploy、FlashInfer）都是 CUDA，只能在 NVIDIA 上跑。
+- 所以 Q5 加兩個外部參考（都只報告、只看時間）：
+  - **§6 (d) 改成正式要跑**：`code/m10_vllm_kvdecode.py`，vLLM 0.28 ROCm，`auto`（BF16）vs `fp8`，每個 token 的 decode（(t65 − t1) ÷ 64）、32K 與 128K、每格 5 次。vLLM 的 FP8 是 MI300X 的 fnuz 版、自己的 scale，不是我們的 codec。Qwen 1M 模型在 vLLM 0.28 的 128K 可能起不來（DCA），起不來就照實記。
+  - **vLLM-KIVI 的 Triton kernel**（[github.com/LLAA178/vllm-kivi](https://github.com/LLAA178/vllm-kivi)，commit cd0f8e9，Apache 2.0；原樣抄在 `code/third_party/vllm_kivi_attention.py`）：`m10_attn_q.py bench` 的 decode（1 個 query）另加 `ext_vllm_kivi`。只量時間：它的 4-bit 格式和我們的不同（K 每 16 個 token 一組、V 每 token 一個 scale）、每個 q head 各讀一份 KV（不共用 GQA）、沒有 split-K、為 A100 調；它的 K scale 用 k_cache 的 stride 索引到 d＜128（看起來會碰到下一個 head 的位置），所以配一塊夠大的平面緩衝讓讀取都在範圍內，值是亂數。量一層 × 層數次。
+- 這兩個都不換掉我們自己的 kernel：只有同一份程式碼讀 BF16 和讀壓縮，才能把「拆」的成本單獨量出來。
+
 ## 9. 不做的
 
 | 項目 | 為什麼 |
@@ -144,3 +152,21 @@
 - `code/m10_dequant_fast.py`：int2_kivi、mxfp4 的融合 kernel（K／V 分開的格式組合現成的）。
 - `code/m10_attn_q.py`：Q5 (b) 的 Triton attention 與微測。
 - `code/m10_restore2.py`：產生 43b–43e、44d 的佇列腳本，和這一輪的報告（CPU）。
+
+## 11. H200 上要用的（使用者 10/17：「記下來 h200 上要用這些」）
+
+NVIDIA H200（Hopper）上可以直接跑、MI300X 上不能跑的現成實作。H200 做這一輪時要拿來比（只報告；先照 [H200_SLURM](../H200_SLURM.md) 的規則：gpu_guard 在 Slurm 上是 UNOBSERVABLE_HOST、一個 job 最多 48 小時）：
+
+| 實作 | 用來比什麼 | 為什麼 H200 才行 |
+|:--|:--|:--|
+| KIVI 原作（[github.com/jy-yuan/KIVI](https://github.com/jy-yuan/KIVI)，CUDA 的融合反量化矩陣乘） | 和我們的 int4_kivi／int2_kivi 最接近的「拆在 attention 裡」 | CUDA |
+| BitDecoding（arXiv 2503.18773，Tensor Core 低位元 KV decode） | 低位元 KV decode 的 SOTA 速度 | CUDA、NVIDIA 的 mma 指令 |
+| QServe（arXiv 2405.04532，W4A8KV4） | INT4 KV 的融合 attention | CUDA |
+| FlashInfer（FP8 KV 的 prefill／decode attention） | FP8 讀進 attention | CUDA |
+| vLLM `--kv-cache-dtype fp8`（Hopper：OCP e4m3，硬體轉換） | 和我們的 codec 同一種 FP8 方言；和 MI300X 的 vLLM（fnuz）對照 | 硬體 FP8 是 OCP 版 |
+| LMDeploy TurboMind（int4／int8 KV、融合 attention） | 另一個業界 INT4 KV 實作 | CUDA |
+| vLLM-KIVI（A100 調的 Triton kernel） | 在它原本設計的硬體上的速度 | 為 NVIDIA 調 |
+
+- 我們自己的 Triton kernel（`m10_dequant_fast.py`、`m10_dequant_fast_x.py`、`m10_attn_q.py`）在 H200 上也能跑：**要重驗逐位元、重量時間**（11 問題一 §5 第 4 點：H200 的硬體 FP8 是 OCP e4m3，拆的成本可能和 MI300X 差很多，不能把 MI300X 的數字搬過去）。
+- 這一節只是記下要用什麼；H200 要不要做、做哪些，還等使用者決定（10/17 還沒回覆第二階段要不要在 H200 復現）。
+

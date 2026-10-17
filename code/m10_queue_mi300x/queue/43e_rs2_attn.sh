@@ -1,5 +1,6 @@
 # 13 §6（Q5，拆融合進 attention 的對照組）：(a) 只搬不拆的還原（meet none＋nodq；CPU 層、b32；閒／忙；E0 E1；3 × 10）；
-# (b) attention 微測（m10_attn_q.py bench：32K／64K／128K × 256／1 個 query × 閒／忙；43a 自測沒過就不跑 (b)）。只報告。計時的 stage。exit 0。
+# (b) attention 微測（m10_attn_q.py bench：32K／64K／128K × 256／1 個 query × 閒／忙，decode 另加外部參考 vLLM-KIVI；43a 自測沒過就不跑 (b)）；
+# (d) vLLM FP8 KV 的 decode。只報告。計時的 stage。exit 0。
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail
 R=$REPO/results/m10_restore2_mi300x; Q=$R/q5; mkdir -p $Q
@@ -19,4 +20,9 @@ if [ -f $R/smoke/OK_attn ]; then
 else
   echo "43e：43a 的 attention 自測沒過 → 不跑 (b)" | tee -a $JOBS/NEEDS_HUMAN
 fi
+# (d) 業界現成的參考（13 §8b）：vLLM 0.28 ROCm 的 FP8 KV（attention 裡拆）vs BF16 KV，每個 token 的 decode；32K、128K
+for m in llama qwen; do for kd in auto fp8; do
+  m7run m10-rs2-q5d-$m-$kd env PATH=/opt/rocm/bin:$PATH /mlsteam/workspace/venv/tiara-v028/bin/python $REPO/code/m10_vllm_kvdecode.py --model $m --kv-dtype $kd --out-dir $Q/vllm_kvdecode \
+    || echo "43e：(d) vLLM kv=$kd $m 失敗（見 runs/*-m10-rs2-q5d-$m-$kd）" >> $JOBS/NEEDS_HUMAN
+done; done
 exit 0

@@ -6,6 +6,8 @@
   fp8        讀 e4m3fn 碼，查表 × scale（Llama fp8_token：每 token；Qwen fp8_head：每 512 token 的 block 一個 per-head scale）
   int4_kivi  讀 4-bit：K 每 channel、沿 token 每 32 個一組；V 每 token、沿 channel 每 32 個一組（同 m10_codec）
 另量 PyTorch SDPA 讀 BF16（現在模型用的路徑）當參考。新一輪自己那些 token 的 attention（BF16、因果）每種方式都一樣，不在這裡。
+外部參考（13 §8b，只量時間）：ext_vllm_kivi＝vLLM-KIVI 的 Triton kernel（code/third_party/，原樣），decode（1 個 query）才跑；
+  它的 4-bit 格式和我們的不同、每個 q head 各讀一份 KV（不共用 GQA），值是亂數，只看時間；量一層 × 層數次（同一層重複）。
 
 正確性（寫死）：tile 裡拆出來的 BF16 值和 m10_codec.decode 逐位元相同（同一串 FP32 運算、關掉 FMA 合併）→
 「讀壓縮」的輸出必須和「同一個 kernel 讀 decode 後的 BF16」**逐位元相同**；和 SDPA 只報最大誤差（累加順序不同）。
@@ -223,6 +225,26 @@ def _bm(R):
     return 16 if R <= 16 else 64
 
 
+def build_ext(Hq, N, D, device):
+    """vLLM-KIVI kernel 的輸入（只量時間）：每個 q head 一份 4-bit KV、block_size 16。它的 K scale／min 用 k_cache 的 stride
+    索引到 d＜128（會碰到下一個 head 的位置），所以配一塊夠大的平面緩衝，讓所有讀取都在範圍內。"""
+    g = torch.Generator(device="cpu").manual_seed(1)
+    flat = N * Hq * (D // 2) + D
+    t = dict(q=torch.randn((1, Hq, D), generator=g).half(),
+             kc=torch.randint(0, 256, (N, Hq, D // 2), generator=g, dtype=torch.uint8),
+             vc=torch.randint(0, 256, (N, Hq, D // 2), generator=g, dtype=torch.uint8),
+             ks=(torch.rand(flat, generator=g) * 0.01).half(), km=(torch.rand(flat, generator=g) - 0.5).half(),
+             vs=(torch.rand((N, Hq), generator=g) * 0.01).half(), vm=(torch.rand((N, Hq), generator=g) - 0.5).half(),
+             bt=torch.arange(N // 16, dtype=torch.int32).view(1, -1), cl=torch.tensor([N], dtype=torch.int32))
+    return {k: v.to(device) for k, v in t.items()}
+
+
+def ext_call(e, D):
+    from third_party.vllm_kivi_attention import kivi_paged_attention
+    return kivi_paged_attention(e["q"], e["kc"], e["vc"], e["ks"], e["km"], e["vs"], e["vm"], e["bt"], e["cl"],
+                                1.0 / (D ** 0.5), 16)
+
+
 def _make_x(H, N, D, device, seed=0):
     g = torch.Generator(device="cpu").manual_seed(seed)
     x = (torch.randn((2, H, N, D), generator=g) * 1.5).to(torch.bfloat16)
@@ -304,6 +326,18 @@ def bench(a):
                    "fp8": lambda kvl: [attn(qp, kv, ns, BM) for kv in kvl],
                    "int4_kivi": lambda kvl: [attn(qp, kv, ns, BM) for kv in kvl]}
             src = {"sdpa_bf16": "bf16", "bf16": "bf16", "fp8": "fp8", "int4_kivi": "int4_kivi"}
+            if M == 1 and not a.no_ext:                  # 13 §8b 外部參考：vLLM-KIVI（只量時間）
+                try:
+                    ext = build_ext(Hq, N, D, dev)
+                    ext_call(ext, D)
+                    torch.cuda.synchronize()
+                    fns["ext_vllm_kivi"] = lambda _kvl: [ext_call(ext, D) for _ in range(L)]
+                    src["ext_vllm_kivi"] = "bf16"
+                except Exception as ex:                  # 跑不起來就照實記，不影響其他讀法
+                    print(f"[ext_vllm_kivi] N={N} 跑不起來：{ex!r}", flush=True)
+                    rows.append(dict(run_id=rid, ts=ts(), model=a.model, length=N, queries=M, mode="ext_vllm_kivi",
+                                     fp8_fmt="", gpu_state="", duty="", layers=L, n_split="", n=0, median_s="ERROR",
+                                     p10_s=repr(ex)[:200], contaminated_gpu="", host_level=level))
             for st in a.states:
                 duty = 0.0 if st == "idle" else float(lv[a.busy_key])
                 with Busy(duty, watch) as busy:
@@ -328,7 +362,7 @@ def bench(a):
                     for k in order:
                         rows.append(dict(run_id=rid, ts=ts(), model=a.model, length=N, queries=M, mode=k,
                                          fp8_fmt=fmt8 if k == "fp8" else "", gpu_state=st, duty=duty, layers=L,
-                                         n_split=ns if k != "sdpa_bf16" else "", n=len(times[k]),
+                                         n_split=ns if k not in ("sdpa_bf16", "ext_vllm_kivi") else "", n=len(times[k]),
                                          median_s=round(statistics.median(times[k]), 6),
                                          p10_s=round(sorted(times[k])[len(times[k]) // 10], 6),
                                          contaminated_gpu=cont, host_level=level))
@@ -367,6 +401,7 @@ def main():
     b.add_argument("--warmup", type=int, default=5)
     b.add_argument("--iters", type=int, default=50)
     b.add_argument("--out-dir", required=True)
+    b.add_argument("--no-ext", action="store_true", help="不跑外部參考 ext_vllm_kivi")
     a = ap.parse_args()
     if a.cmd == "selftest":
         sys.exit(0 if selftest(a.device, a.out) else 1)
