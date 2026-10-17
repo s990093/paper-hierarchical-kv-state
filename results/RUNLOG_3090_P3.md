@@ -150,3 +150,7 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
   原因：HF 預設 `use_cache=True`，只取 logits 的呼叫也建了一份 32K 的 KV cache，加上碎片。改成這兩次 `use_cache=False`＋`expandable_segments` 後 r2 通過。
 - 這個 session 的 shell 還帶著舊 settings 的 `HF_HUB_ENABLE_HF_TRANSFER=1`，stderr 有 FutureWarning；不影響結果（新 settings 要重開 session 才生效）。
 **與假設的差異**: P3-0 寫「要在 3090 上跑預設 L 需要改測試」→ 已改；單卡 L=8192 現在放得下，32K 用雙卡對照模式（Llama、Qwen）都過。
+
+### P3-0b 補記：改 `code/run3090.sh` 時打斷了別人正在跑的 run（主 session 的錯）
+- 2026-10-17 18:00 前後，主 session 為了雙卡模式改了 `code/run3090.sh`，那時 X2 的 `20261017-175914-p3x2-ph-mc-strict` 正在用它。bash 是邊跑邊讀腳本，所以那次 run 讀到改到一半的檔，報 `line 111: syntax error near unexpected token 'then'`，沒有寫 exit_code。X2 留了 INTERRUPTED，用同一指令重跑成 `20261017-175941-p3x2-ph-mc-strict2`；其他 agent 的 run 有沒有受影響，NOT_MEASURED（各 agent 回報時要自己查 exit_code）。
+- 之後要做的（還沒做；要等沒有任何 run 在用這支殼才改，免得再打斷一次）：把 `run3090.sh` 的主體包成 `main() { ...; }; main "$@"; exit $?`，讓 bash 先讀完整支再執行；同樣檢查 `env_3090.sh`。在那之前，**有 run 在跑時不改這兩支檔**。
