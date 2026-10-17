@@ -7,6 +7,8 @@ export TIARA_RUNS=/mlsteam/data/tiara/runs
 export PYTHONUNBUFFERED=1
 R=/mlsteam/workspace/paper-hierarchical-kv-state/results/m7_write_policy_mi300x
 m7run() { local short=$1; shift; local id="$(date +%Y%m%d-%H%M%S)-$short"; RUN_ID=$id /mlsteam/workspace/bin/runsh "${short}" env RUN_ID=$id "$@"; }
+elif [ -d /ssd8/hungwei/paper-hkv ]; then       # 平台 A（RTX 3090 / acvlab，2026-10-17）：路徑、R、m7run 全部由 env_3090.sh 給；不設 CUDA_VISIBLE_DEVICES
+source "$(dirname "${BASH_SOURCE[0]}")/env_3090.sh"
 else                                            # 平台 C（H200 / Slurm）：路徑、R、m7run 全部由 env_h200.sh 給（03_plan_h200 §R）
 source "$(dirname "${BASH_SOURCE[0]}")/env_h200.sh"
 fi
