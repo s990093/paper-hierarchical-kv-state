@@ -43,5 +43,20 @@
       "Bash(tlmgr*)",
       "Bash(fc-list*)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/gpu_guard_hook.py\"",
+            "timeout": 60,
+            "statusMessage": "gpu_guard：檢查要用的 GPU 乾不乾淨"
+          }
+        ]
+      }
+    ]
   }
 }
