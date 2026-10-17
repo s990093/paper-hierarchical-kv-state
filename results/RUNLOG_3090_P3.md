@@ -171,3 +171,21 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 - 對拍發現的矛盾（05 文件 §5）：X7 說 MI300X 沒有單獨的反量化 bench，其實 `results/m10_sweep_mi300x/parts/dequant_fast_bench.json` 有；同一支工具比，3090 原寫法慢 3.6–5.1 倍（X7 寫的 2–4 倍是拿不同量法比）。Qwen INT4 單獨量兩份來源差 1.9 倍，原因未查。
 - stage 43 的速度格子不在這個分支，從本地 `origin/main`（1ddba0b）用 `git show` 讀，只取反量化時間。
 **與假設的差異**: 04 草稿 §1 寫 Qwen 的 8-bit 用 INT8：表支持（Qwen INT8 +0.20 過、FP8 不過）。04 §3 的 O 會用 INT2 存「不會再被讀」的 session：INT2 的生成品質目前沒有，所以 INT2 只能給 oracle 確定不會被讀的 session（和 04 寫的一致）。
+
+## Milestone P3-M2 — 3090 量測：/ssd8 頻寬、CPU 忙的變慢倍數、補 X7 沒量到的格子
+**狀態**: PASS（Llama 64K CPU 層 OOM，見下）
+**執行時間**: 2026-10-18 00:19 → 02:44（+08:00；中途被 API 用量上限打斷一次）
+**run_id**: `20261018-001935-p3cal-ssd8bw`、`-002700-p3cal-stress-selftest`、`-002928-p3cal-grid-llama-L0`、`-010316-p3cal-grid-llama-L1`、`-011852-p3cal-grid-qwen-L1b`、`-004505-p3cal-fused-qwen`、`-004724-p3cal-fused-llama`、`-004954-p3cal-cpubusy-qwen`、`-023443-p3cal-stress-numa`；失敗 `-013157-p3cal-grid-llama64k-idle`
+**指令**: 磁碟 `TIARA_NO_GPU=1 bash code/run3090.sh p3cal-ssd8bw bash /ssd8/hungwei/paper-hkv/logs/p3cal/disk.sh`（`code/disk_bw.py`，16 GiB × 3、O_DIRECT）；GPU 全部經 `bash code/gpu_wait_run.sh --gpus "6" ...`（腳本在 `/ssd8/hungwei/paper-hkv/logs/p3cal/`）
+**產出檔**: `results/p3_calib_3090/`（`ssd8_bw*.csv`、`cpubusy_*.csv`、`restore_3090_v2_*.csv`、`lowprec_cpu_v2.csv`、`meet_check_v2.csv`、`constants_3090_v2.json`）；文件 `docs/phase3_20261017/06b_3090_calib.md`
+**關鍵數字**（只寫量到的；GPU 6 個 run 全部 CLEAN，GPU 時間 58 分鐘，磁碟測試與 GPU 量測沒有重疊）:
+- **/ssd8**（/dev/sdg，Samsung 870 QVO 8TB，SATA QLC，78% 滿）：寫入中位 0.151 GiB/s（155.1 MiB/s）、讀取 0.477 GiB/s；比 MI300X 的本地 SSD 讀慢 14.6 倍、寫慢 12.6 倍。測試期間外人寫入約 2.5–3.7 MiB/s。
+- **CPU 忙**（Qwen 32K、真實 CPU 層、GPU 閒；N 個 numpy 複製執行緒）：只載入的還原時間慢 **1.35–1.81 倍**；N ≥32 塞滿推論節點的 CPU 時，GPU 重算也慢 3.1 倍（發 kernel 的 Python 執行緒搶不到 CPU），Cake 的 TTFT 慢 2.3–2.6 倍。壓力程式的記憶體擺在哪個 NUMA 節點沒控制到（沒有 numactl），倍數只能當範圍。
+- **Llama 32K 還原格子**（兩次）：真實 CPU 層會合點閒 4、忙 3（和 X7 的模型預測相同），18／18 格模型誤差在 ±1 block 內，兩次差 ≤1%。
+- **Qwen 第二次**：只載入 0.248 s（X7 L0 是 0.369 s；X7 那次鄰卡有 PCIe 流量，時間偏高）→ CPU 層 Cake 比只載入慢 60%（不是 X7 寫的 10%）。
+- **融合 kernel，CPU 層、只載入、GPU 閒**：Qwen FP8 −48%、INT4 −66%；Llama FP8 −47%、INT4 −67%（對 BF16）。3090 上低精度讓 CPU 層變快，和 MI300X 相反（X7 的發現，這次加上 Llama 與融合版）。
+**失敗與異常**:
+- `20261018-013157-p3cal-grid-llama64k-idle` exit 1（GPU 6 乾淨，只有自己的 process）：`torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 64.00 MiB. GPU 0 has a total capacity of 23.68 GiB of which 58.94 MiB is free. Including non-PyTorch memory, this process has 23.60 GiB memory in use. Of the allocated memory 23.10 GiB is allocated by PyTorch, and 176.49 MiB is reserved by PyTorch but unallocated.`（`m7_restore_harness.py:176 _load`，接著 `KeyError: 'l_end'` at :581）。照規則 2 沒有換設定重試；busy 版沒跑。
+- agent 自己的失誤：`pkill -f "logs/p3cal/chain.sh"` 連帶砍到自己的 shell（exit 144），留下孤兒 `gpu_wait_run.sh`，已用 PID 停掉；沒有影響量測。主 session 事後確認沒有殘留的 p3cal 程序。
+- NOT_MEASURED：Llama 64K CPU 層；第三次 C0 的 duplex（02:33 起所有卡都被別人佔用）；CPU 忙＋GPU 忙同時；Llama／低精度的 CPU 忙倍數；CPU 忙倍數的重複性（只跑一次）。
+**與假設的差異**: 04 草稿 §5 的「3090 的 /ssd8 頻寬」原本 NOT_MEASURED，現在有了：它是 SATA QLC，比地圖主設定用的 MI300X 本地 SSD 慢一個數量級，3090 的真實機器點要用這個值。
