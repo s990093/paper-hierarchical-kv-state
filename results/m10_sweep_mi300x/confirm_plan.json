@@ -1,0 +1,170 @@
+{
+ "rule": "09 §4.3（2026-10-15 22:50 UTC 寫死）",
+ "seed0": 50000,
+ "n": {
+  "T2-T4": 90,
+  "T5": 30
+ },
+ "models": {
+  "llama": {
+   "finalists_json": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_sweep_mi300x/analysis/finalists_llama.json",
+   "n_finalists": 6,
+   "n_frontier": 2,
+   "configs": [
+    "SW-ERR-20@int2_kivi",
+    "SW-ERR-20@kv-int4_kivi-int2_kivi",
+    "SW-ERR-25@kv-int4_kivi-int2_kivi",
+    "SW-ERR-15@int2_kivi",
+    "SW-ERR-30@int4_kivi",
+    "SW-ATT-20@mxfp4",
+    "E1s@int2_kivi",
+    "E1s@kv-int4_kivi-int2_kivi",
+    "SW-R0-15@int2_kivi",
+    "SW-R1-15@int2_kivi",
+    "SW-R2-15@int2_kivi",
+    "SW-R3-15@int2_kivi",
+    "SW-R4-15@int2_kivi",
+    "SW-R0-20@int2_kivi",
+    "SW-R1-20@int2_kivi",
+    "SW-R2-20@int2_kivi",
+    "SW-R3-20@int2_kivi",
+    "SW-R4-20@int2_kivi",
+    "SW-R0-30@int4_kivi",
+    "SW-R1-30@int4_kivi",
+    "SW-R2-30@int4_kivi",
+    "SW-R3-30@int4_kivi",
+    "SW-R4-30@int4_kivi",
+    "E1s@int4_kivi",
+    "SW-R0-20@kv-int4_kivi-int2_kivi",
+    "SW-R1-20@kv-int4_kivi-int2_kivi",
+    "SW-R2-20@kv-int4_kivi-int2_kivi",
+    "SW-R3-20@kv-int4_kivi-int2_kivi",
+    "SW-R4-20@kv-int4_kivi-int2_kivi",
+    "SW-R0-25@kv-int4_kivi-int2_kivi",
+    "SW-R1-25@kv-int4_kivi-int2_kivi",
+    "SW-R2-25@kv-int4_kivi-int2_kivi",
+    "SW-R3-25@kv-int4_kivi-int2_kivi",
+    "SW-R4-25@kv-int4_kivi-int2_kivi",
+    "SW-R0-20@mxfp4",
+    "SW-R1-20@mxfp4",
+    "SW-R2-20@mxfp4",
+    "SW-R3-20@mxfp4",
+    "SW-R4-20@mxfp4",
+    "E1s@mxfp4"
+   ],
+   "speed_grids": {
+    "int2_kivi": [
+     "SW-ERR-20",
+     "SW-ERR-15",
+     "E1s",
+     "SW-R0-15",
+     "SW-R1-15",
+     "SW-R2-15",
+     "SW-R3-15",
+     "SW-R4-15",
+     "SW-R0-20",
+     "SW-R1-20",
+     "SW-R2-20",
+     "SW-R3-20",
+     "SW-R4-20"
+    ],
+    "kv-int4_kivi-int2_kivi": [
+     "SW-ERR-20",
+     "SW-ERR-25",
+     "E1s",
+     "SW-R0-20",
+     "SW-R1-20",
+     "SW-R2-20",
+     "SW-R3-20",
+     "SW-R4-20",
+     "SW-R0-25",
+     "SW-R1-25",
+     "SW-R2-25",
+     "SW-R3-25",
+     "SW-R4-25"
+    ],
+    "int4_kivi": [
+     "SW-ERR-30",
+     "SW-R0-30",
+     "SW-R1-30",
+     "SW-R2-30",
+     "SW-R3-30",
+     "SW-R4-30",
+     "E1s"
+    ],
+    "mxfp4": [
+     "SW-ATT-20",
+     "SW-R0-20",
+     "SW-R1-20",
+     "SW-R2-20",
+     "SW-R3-20",
+     "SW-R4-20",
+     "E1s"
+    ]
+   }
+  },
+  "qwen": {
+   "finalists_json": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_sweep_mi300x/analysis/finalists_qwen.json",
+   "n_finalists": 6,
+   "n_frontier": 2,
+   "configs": [
+    "SW-ATT-40@kv-int4_kivi-int2_kivi",
+    "SW-AXE-40@kv-int4_kivi-int2_kivi",
+    "SW-ATT-25@int4_kivi",
+    "SW-ATT-10@kv-int8_token-int4_kivi",
+    "SW-AXE-10@kv-int8_token-int4_kivi",
+    "SW-AXE-25@int4_kivi",
+    "E1s@kv-int4_kivi-int2_kivi",
+    "E1s@int4_kivi",
+    "SW-R0-25@int4_kivi",
+    "SW-R1-25@int4_kivi",
+    "SW-R2-25@int4_kivi",
+    "SW-R3-25@int4_kivi",
+    "SW-R4-25@int4_kivi",
+    "SW-R0-40@kv-int4_kivi-int2_kivi",
+    "SW-R1-40@kv-int4_kivi-int2_kivi",
+    "SW-R2-40@kv-int4_kivi-int2_kivi",
+    "SW-R3-40@kv-int4_kivi-int2_kivi",
+    "SW-R4-40@kv-int4_kivi-int2_kivi",
+    "SW-R0-10@kv-int8_token-int4_kivi",
+    "SW-R1-10@kv-int8_token-int4_kivi",
+    "SW-R2-10@kv-int8_token-int4_kivi",
+    "SW-R3-10@kv-int8_token-int4_kivi",
+    "SW-R4-10@kv-int8_token-int4_kivi",
+    "E1s@kv-int8_token-int4_kivi"
+   ],
+   "speed_grids": {
+    "kv-int4_kivi-int2_kivi": [
+     "SW-ATT-40",
+     "SW-AXE-40",
+     "E1s",
+     "SW-R0-40",
+     "SW-R1-40",
+     "SW-R2-40",
+     "SW-R3-40",
+     "SW-R4-40"
+    ],
+    "int4_kivi": [
+     "SW-ATT-25",
+     "SW-AXE-25",
+     "E1s",
+     "SW-R0-25",
+     "SW-R1-25",
+     "SW-R2-25",
+     "SW-R3-25",
+     "SW-R4-25"
+    ],
+    "kv-int8_token-int4_kivi": [
+     "SW-ATT-10",
+     "SW-AXE-10",
+     "SW-R0-10",
+     "SW-R1-10",
+     "SW-R2-10",
+     "SW-R3-10",
+     "SW-R4-10",
+     "E1s"
+    ]
+   }
+  }
+ }
+}

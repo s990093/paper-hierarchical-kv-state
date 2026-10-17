@@ -657,6 +657,27 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 圖的修正（23:3xZ，只動畫圖，選手 JSON 的 md5 前後相同）：`sweep_bytes` 的來源註記壓到 x 軸標題、`sweep_kl` 只有一欄有 x 軸刻度 → 改 `m10_sweep_analyze.py` 的版面後只重畫圖。`agg_<m>.csv` 未壓縮 1.4 MB 超過 git 的 1 MB → 改寫成 `.csv.gz`。
 - 42a 的沙盒預演（23:3xZ，CPU；`m10_confirm.py plan --sw-dir <沙盒>`）：Llama 40 個配置＋E0、Qwen 24 個＋E0，12 個品質 process，7 個速度格子，bash 語法正確。43 估計約 20–24 小時〔推論：照 33c 的品質吞吐、33a 的速度格子耗時，依配置數等比例放大〕。
 
+### 11.2i 融合反量化後的真實 CPU 層（stage 42，10/16 23:28:55 → 10/17 00:12:07Z；只報告）
+
+- run：`20261016-232855-m10-dqfast-grid-llama`、`-234030-m10-dqfast-grid-qwen`、`-235027-m10-dqfast-grid-int4-llama`、`20261017-000209-m10-dqfast-grid-int4-qwen`（全部 exit 0；12 個 gpu_guard 全部 CLEAN）。
+- 指令：`M10_DEQUANT_FAST=1 m10_speed.py grid --model <m> --fmt <fp8 或 int4_kivi> --base-fmt <fp8> --bw-names cpu --lengths`（主線 8 個配置，3 launch × 10 rep）。
+- 產出：`results/m10_sweep_mi300x/speed_dqfast{,_int4}_<m>/{summary.csv, restores.csv, meets.json, gpu_guard_*}`。
+- 關鍵數字（11 問題一 §3a 有完整表）：E1 還原時間 原寫法 → 融合（s）：Llama FP8 閒 0.072 → 0.065、忙 0.171 → 0.082；Llama INT4 0.078 → 0.065、0.189 → 0.082；Qwen FP8 0.055 → 0.033、0.074 → 0.065；Qwen INT4 0.061 → 0.044、0.146 → 0.066。E0 兩次幾乎一樣。照凍結的速度規則，E1／E1s／E1sr × 8 格 24 個檢查全過（原寫法 11 個沒過）。
+- 我原本推「Qwen・忙光靠融合不夠」，實測夠了（11 問題一 §4 已標）。
+- 主線判定不改（07 規定原寫法）；寫進 08 §0、§6 第 1 點。
+
+### 11.2j 方法掃描 A 段的 Llama 被標污染 → 加 42bz 重量（10/17 00:12–00:2xZ）
+
+- 42b 開頭的 kernel 微測 `20261017-001207-m10-dqs-A-llama`：逐位元檢查全部相同，但 gpu_guard 判 `CONTAMINATED_DURING_RUN`：24 個 VRAM 0 MiB 的行程（pid 3698686–3698732，間隔 2），只在 00:12:23 那一次取樣出現（開跑後 16 秒，逐位元檢查那段，k2＝torch.compile 第一次編譯）。程式照設計把 Llama 的 K\* 退回 k1，B 段繼續跑；寫了 NEEDS_HUMAN。
+- 同一支程式的 Qwen（`20261017-001322-m10-dqs-A-qwen`）是 CLEAN。
+- 〔推論〕是 Inductor 的編譯 worker（`compile_threads`＝32，用 subprocess 開），是我們自己的子行程，不是外人；只看到一次、0 MiB。沒有證實。
+- 處理（照 CLAUDE.md §3 重量，不採用被標污染的時間）：加 `queue/42bz_dqsweep_A_llama_rerun.sh`（排在 42b 之後、42c 之前）：
+  - 被標污染的 `kernels_llama.csv`、`choice_llama.json` 搬回那次的 run 目錄（`*.CONTAMINATED.*`）；gpu_guard JSON 留在 results 當紀錄。
+  - 用 `TORCHINDUCTOR_COMPILE_THREADS=1`（只改編譯在哪裡做，不改編出來的 kernel）重量 A-llama。乾淨 → 推論成立；int4_kivi 的 K\* 不是 k1 時，B 段 Llama 12 個方法用新的 K\* 重量（同目錄；plan 只讀最新的 run_id），再重寫 42c。
+  - 還是污染 → 推論不成立，寫 NEEDS_HUMAN，維持 k1。
+  - 多約 20 分鐘 GPU。
+- 被標污染那次的數字不採用；只記它當時會選的 K\*（int4_kivi：k3:4:1）供對照。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。
