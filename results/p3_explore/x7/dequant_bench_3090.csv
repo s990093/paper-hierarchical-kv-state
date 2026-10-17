@@ -1,0 +1,33 @@
+run_id,ts,summarize_run_id,shape,fmt,impl,median_ms,eff_GBps,error,guard
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,fp8_head,torch,0.9923,101.5,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,fp8_head,fused,0.1956,514.7,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,fp8_head,torch_compile,NOT_MEASURED,NOT_MEASURED,"InductorError('SubprocException: An exception occurred in a subprocess:\n\nName=triton_poi_fused__to_copy_copy__mul_view_0\nTraceback (most recent call last):\n  File ""/ssd8/hungwei/paper-hkv/venv/tiara/lib/python3.12/site-packages/triton/language/core.py"", line 43, in wrapper\n    return fn(*args, ",CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,fp8_token,torch,0.9759,104.2,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,fp8_token,fused,0.172,591.2,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,fp8_token,torch_compile,NOT_MEASURED,NOT_MEASURED,"InductorError('SubprocException: An exception occurred in a subprocess:\n\nName=triton_poi_fused__to_copy_copy__mul_view_0\nTraceback (most recent call last):\n  File ""/ssd8/hungwei/paper-hkv/venv/tiara/lib/python3.12/site-packages/triton/language/core.py"", line 43, in wrapper\n    return fn(*args, ",CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int8_token,torch,0.9748,104.3,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int8_token,fused,0.1915,531.2,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int8_token,torch_compile,0.215,473.0,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int4_token,torch,1.6251,52.3,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int4_token,fused,0.171,496.7,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int4_token,torch_compile,0.2355,360.6,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int4_kivi,torch,2.0531,42.9,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int4_kivi,fused,0.2468,356.9,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,llama_block,int4_kivi,torch_compile,0.3236,272.2,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,fp8_head,torch,0.4557,96.6,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,fp8_head,fused,0.1229,358.4,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,fp8_head,torch_compile,NOT_MEASURED,NOT_MEASURED,"InductorError('SubprocException: An exception occurred in a subprocess:\n\nName=triton_poi_fused__to_copy_copy__mul_view_0\nTraceback (most recent call last):\n  File ""/ssd8/hungwei/paper-hkv/venv/tiara/lib/python3.12/site-packages/triton/language/core.py"", line 43, in wrapper\n    return fn(*args, ",CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,fp8_token,torch,0.4495,99.0,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,fp8_token,fused,0.1208,368.3,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,fp8_token,torch_compile,NOT_MEASURED,NOT_MEASURED,"InductorError('SubprocException: An exception occurred in a subprocess:\n\nName=triton_poi_fused__to_copy_copy__mul_view_0\nTraceback (most recent call last):\n  File ""/ssd8/hungwei/paper-hkv/venv/tiara/lib/python3.12/site-packages/triton/language/core.py"", line 43, in wrapper\n    return fn(*args, ",CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int8_token,torch,0.4485,99.2,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int8_token,fused,0.1178,377.9,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int8_token,torch_compile,0.1004,443.4,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int4_token,torch,0.7055,52.7,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int4_token,fused,0.087,426.9,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int4_token,torch_compile,0.1106,336.0,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int4_kivi,torch,0.9247,41.7,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int4_kivi,fused,0.1485,259.5,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,qwen_block,int4_kivi,torch_compile,0.1751,220.1,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,selftest,all,m10_codec --self-test,,,,CLEAN
+20261017-180859-p3x7-dqbench,2026-10-17T18:09:52+08:00,20261017-223447-p3x7-summary,selftest,all,m10_dequant_fast --self-test (bitwise),,,,CLEAN
