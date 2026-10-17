@@ -112,6 +112,21 @@
 - 上限：這一輪合計 12 小時。快超過時照這個順序砍：先砍 Q4 的 duty 0.9，再砍 Q2 的 b48，再砍 Q1 的 64K。
 - 冒煙沒過：只把用到那段程式的 stage 移到 `hold/`、寫 NEEDS_HUMAN，其他照跑。
 
+## 8a. 補充（10/17 03:1xZ，寫程式時定的細節；仍然沒有任何 13 號的結果）
+
+- **Q4 的 claim／loadall**：`claim` 列＝Cake，用各方法自己的拆法（P2 是 8 塊一組、P3 是全部搬完一次拆）；`loadall` 列＝全部載入，也用各方法自己的拆法。兩種在同一個 process 裡、同一次重複內交錯（m10_speed `--extra-modes loadall`）。
+- **P4 的遮罩**：43a 冒煙用 `m10_restore2.py cumask` 算：CU 數 n（MI300X 預期 304）→ P4a `HSA_CU_MASK=0:0-(7n/8−1)`、P4b `0:0-(3n/4−1)`。生效＝背景單獨跑的 matmul 時間 ≥ 沒遮罩的 ×1.05（P4a）／×1.10（P4b）；沒生效 → 43b 不跑 P4。
+- **Q2**：G5 在同一個 process 裡，每個配置另外跑 `claim`（Cake），CPU 層再加 `loadall` → 每一列都和同一次重複的 Cake、全載入配對。G5 的 profiler：每個 GPU 狀態開始前，每個頻寬照 Cake 跑 E0、E1 各一次，不記錄。
+- **Q3**：新格式沒有調參，一律 k1；43 速度配置裡的 int4_kivi 也用 k1（同一個 grid 一致）。launch 0–2（和 43 同 seed，R 的位置相同）。
+- **Q5 (a)**：配置 E0、E1；CPU 層、b32。
+- **Q1（44d）的範圍**（照 §8 的上限先縮，避免 b32 的全載入在 128K 一次要約 11 秒）：
+  - P0、G5：CPU 層＋b32。冠軍、Q4 帶過來的方法、nodq：只跑 CPU 層。
+  - `loadall` 只在 CPU 層（b32 在 32K 已經知道全載入慢 1.2–2 倍；128K 的 b32 全載入由 44a 的參考線量，原寫法）。
+  - G5 的 process 另跑 CPU 層的 `claim`、`loadall`。
+  - 〔估計〕約 2.2 小時。
+- **43a 冒煙**：新格式 kernel 和 attention 對照組在 GPU 上自測（逐位元）；cumask；真模型 Qwen int4_kivi 1 launch × 1 rep：G5＋claim＋loadall（CPU、b32）、nodq、P5＋遮罩（GPU 忙）；Llama int2_kivi 走大掃描速度路徑＋新格式 kernel。每格第一次都檢查 KV。冒煙的時間不是結果。
+- 佇列實際檔名：`43a_rs2_smoke`、`43b_rs2_busy`、`43c_rs2_g5`、`43d_rs2_newfmt`、`43e_rs2_attn`、`44cz_rs2_plan44d`（CPU：pick-c、寫 44d）、`44d_rs_longctx`（由 44cz 寫）。
+
 ## 9. 不做的
 
 | 項目 | 為什麼 |

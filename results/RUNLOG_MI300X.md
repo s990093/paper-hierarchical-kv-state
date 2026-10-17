@@ -763,3 +763,17 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 修正：沒有乾淨的列時明確報錯（「照 CLAUDE.md §3 要重量」）；加只給測試用的 `--include-contaminated`（表格開頭會標「數字不能用」）。44 正式跑是計時段、沒有別的工作，不會用到這個開關。
   - 10/16 14:0xZ 重跑：334 項 ALL PASS。
 - `jobs/queue/44_tier2_speed.sh`（副本在 `code/m10_queue_mi300x/queue/`）：先真模型冒煙，再正式 2 launch × 5 rep × 閒／忙 × 50 格；失敗寫 NEEDS_HUMAN、不擋後面。估計約 1 小時〔估計，用主線格子的還原時間算〕，比 12 號登記時寫的 1.5–2.5 小時短。
+
+## Milestone 14 — 還原的第二輪：GPU 忙時的拆、會合規則 G5、新格式 kernel、拆進 attention、長 context（探索；MI300X）（準備中）
+
+**狀態**：事先登記寫好、程式寫好、CPU 測試全過；GPU 工作排在 43 之後（43a 冒煙 → 43b–43e → … → 44cz → 44d）。**還沒有任何結果。**
+**事先登記**：`docs/precision_20261013/13_restore2_plan.md`（2026-10-17 02:45:05Z，commit a8760ca；補充 §8a 03:1xZ）。寫的時候 42c 跑到一半，只看過其中一格（Llama FP8 S2k8）。
+**為什麼**：使用者 10/17「反量化在我們問題上很重要，所有 SOTA 需要的都拿來測試」「什麼時機、哪樣配合比較好」「全部都做掉，GPU 忙時『拆』要和別的工作搶 GPU 比較嚴重」「拆直接融合進 attention 也可以試試看，類似對照組」。起點是 11 問題三（CPU 層 Cake 輸給全部載入）。
+**程式**（CPU 測試；GPU 正在跑 42c，不能測）：
+- `code/m7_restore_harness.py`：meet none／g5、sched nodq、io_prio（預設路徑不變）。`code/m10_speed.py`：`--extra-modes loadall claim`、`meet_rule_used` 欄（只有 13 號的 run）、`M10_RS_PRIO`、`M10_BUSY_CU_MASK`、`busy_<rid>.json`。`code/m7_busy.py`：結束時印 DONE（背景吞吐）。
+  - `tests/restore2_cpu_shim.py`（torch.cuda 換成 CPU 替身、假模型）：ALL PASS。第一次 4 項沒過：8 塊一組的 Triton kernel 在 CPU 直譯器裡轉 BF16 是截斷（已知，09 §6.4 的 CPU 測試也這樣比），原本就有的 S2 路徑一樣；改成和截斷的參考值比之後全過。
+- `code/m10_dequant_fast_x.py`（新格式的融合 kernel；`M10_DEQUANT_FAST_X=1` 才接）：CPU 直譯 10 種格式 × 2 種形狀 ALL PASS。
+- `code/m10_attn_q.py`（拆進 attention 的對照組）：CPU 直譯 ALL PASS（讀壓縮＝同一 kernel 讀拆好的 BF16，逐位元）。過程中修了兩個測試問題：直譯器的 bf16 `tl.dot` 結果不對（加 `F32DOT`，只在直譯模式用）；對 SDPA 的誤差要和「同樣截斷過的值」比。
+- `code/m10_restore2.py`：cumask、env、smoke-check、pick-q4、pick-c、plan-44d（用假的挑選結果測過，產生 40 個 grid、語法正確；測試檔已刪）。
+- 佇列（副本在 `code/m10_queue_mi300x/queue/`）：43a_rs2_smoke、43b_rs2_busy、43c_rs2_g5、43d_rs2_newfmt、43e_rs2_attn、44cz_rs2_plan44d。〔估計〕GPU 合計約 8–9 小時；全部跑完約 10/21。
+**前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。
