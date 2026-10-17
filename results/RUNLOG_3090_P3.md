@@ -154,3 +154,20 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 ### P3-0b 補記：改 `code/run3090.sh` 時打斷了別人正在跑的 run（主 session 的錯）
 - 2026-10-17 18:00 前後，主 session 為了雙卡模式改了 `code/run3090.sh`，那時 X2 的 `20261017-175914-p3x2-ph-mc-strict` 正在用它。bash 是邊跑邊讀腳本，所以那次 run 讀到改到一半的檔，報 `line 111: syntax error near unexpected token 'then'`，沒有寫 exit_code。X2 留了 INTERRUPTED，用同一指令重跑成 `20261017-175941-p3x2-ph-mc-strict2`；之後回報確認還波及 X7 的 `20261017-175844-p3x7-busy-qwen`（冒煙 run，沒有 exit_code，X7 留了 INTERRUPTED、不用；X7 的報告誤寫成「被環境 agent 改了」，實際是主 session）。其他 agent 的回報都說自己的 run 有 exit_code。
 - 之後要做的（還沒做；要等沒有任何 run 在用這支殼才改，免得再打斷一次）：把 `run3090.sh` 的主體包成 `main() { ...; }; main "$@"; exit $?`，讓 bash 先讀完整支再執行；同樣檢查 `env_3090.sh`。在那之前，**有 run 在跑時不改這兩支檔**。
+
+## Milestone P3-M1 — 壓縮格式表（地圖實驗的輸入；只讀第二階段結果）
+**狀態**: PASS（有缺：見下）
+**執行時間**: 2026-10-18 00:25 → 02:34（+08:00；中途被 API 用量上限打斷一次）
+**run_id**: `20261018-002550-p3fmt-qderive`（補算品質）、`20261018-023443-p3fmt-table`（這一版表）；失敗的 `20261018-023324-p3fmt-table`（exit 1，程式錯，見下）
+**指令**: `TIARA_NO_GPU=1 bash code/run3090.sh p3fmt-table python code/p3_formats/build_format_table.py`（品質補算：`code/p3_formats/derive_quality.py`，用凍結的 `m10_analyze.py`）
+**產出檔**: `results/p3_formats/format_table.{csv,json}`（30 列＝2 模型 × 15 格式，每格有 run_id 與來源檔）、`quality_pending.csv`、`derived/`；文件 `docs/phase3_20261017/05_format_table.md`
+**關鍵數字**（只寫量到的）:
+- 位元組比（含 scale／zero，程式算＝存下來的實際大小，逐位元組相同）：FP8 主線 Llama 0.516／Qwen 0.500、INT8 0.516、INT4-KIVI 0.3125、INT2-KIVI 0.1875。
+- 32K 生成品質（主 session 抽查，和 main.tex 表 VII 一致）：Llama FP8 −0.47（全載入）／−0.21（Cake 閒）／−0.48（Cake 忙）過；Qwen FP8 −32.84 不過；Qwen INT4-KIVI +0.06／+0.66／+0.41 過。新補算：Llama FP8-K0 +0.15、INT8 −0.12（都過；第二階段沒報過，補算前先做兩個重現檢查，逐欄相同）。
+- INT2-KIVI 只有 teacher forcing（Llama −1.04、Qwen −6.25，無 CI），**不能當成「過」**；生成品質待 MI300X stage 43（Llama）、44c（Qwen）。
+- 反量化（還原中、真實 CPU 層、32K）：例 Qwen INT4-KIVI MI300X 原寫法 0.411／1.038 ms（閒／忙）、融合 0.082／0.351；3090 原寫法 1.998／3.893。
+**失敗與異常**:
+- `20261018-023324-p3fmt-table` exit 1：`AttributeError: 'tuple' object has no attribute 'astype'`（`build_format_table.py` 第 285 行把 `dq3.shape` 當成欄位）。改 `dq3["shape"]` 後重跑。
+- 對拍發現的矛盾（05 文件 §5）：X7 說 MI300X 沒有單獨的反量化 bench，其實 `results/m10_sweep_mi300x/parts/dequant_fast_bench.json` 有；同一支工具比，3090 原寫法慢 3.6–5.1 倍（X7 寫的 2–4 倍是拿不同量法比）。Qwen INT4 單獨量兩份來源差 1.9 倍，原因未查。
+- stage 43 的速度格子不在這個分支，從本地 `origin/main`（1ddba0b）用 `git show` 讀，只取反量化時間。
+**與假設的差異**: 04 草稿 §1 寫 Qwen 的 8-bit 用 INT8：表支持（Qwen INT8 +0.20 過、FP8 不過）。04 §3 的 O 會用 INT2 存「不會再被讀」的 session：INT2 的生成品質目前沒有，所以 INT2 只能給 oracle 確定不會被讀的 session（和 04 寫的一致）。
