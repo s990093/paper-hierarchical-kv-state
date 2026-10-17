@@ -139,9 +139,9 @@ class Restorer:
                     meet: str = "claim", io_prio: bool = False):
         assert CHUNK % unit == 0 and unit % 32 == 0, unit
         assert sched in ("serial", "pipe", "group", "defer", "defer_meet", "nodq"), sched
-        assert meet in ("claim", "estimate", "none", "g5"), meet
+        assert meet in ("claim", "estimate", "none", "g5", "g5b"), meet
         assert group >= 1 and (group == 1 or sched == "group")
-        assert not (meet == "g5" and sched in ("defer", "defer_meet", "nodq")), "G5 的載入時間要含拆（13 §4 只配 S0／S2）"
+        assert not (meet in ("g5", "g5b") and sched in ("defer", "defer_meet", "nodq")), "G5 的載入時間要含拆（13 §4 只配 S0／S2）"
         self.unit, self.dq_sched, self.dq_group, self.meet_rule = unit, sched, group, meet
         if compute_prio and not self.compute_prio:
             lo, hi = torch.cuda.Stream.priority_range()          # 數字越小優先權越高
@@ -348,7 +348,7 @@ class Restorer:
         K = self.dq_group if sched == "group" else 1
         pend, defer, keep = [], {}, []
         skip_r = False                                         # 13 §2／§4：none、g5 決定不重算
-        if self.meet_rule in ("none", "g5"):
+        if self.meet_rule in ("none", "g5", "g5b"):
             stored = all(loc[j] is not None for j in range(n))
             if not stored:
                 rec["meet_rule_used"] = "claim(unstored)"
@@ -452,7 +452,7 @@ class Restorer:
         rec["waiting_line"] = "recompute" if times["r_end"] < times["l_end"] else "load"
         if est["r"]:
             rec["_r0"] = est["r"][0]                           # 第 0 塊的重算時間（重算線一定先拿第 0 塊）
-        if self.meet_rule == "g5":
+        if self.meet_rule in ("g5", "g5b"):
             self._g5_note(rec)
 
     # ---- 13 §4 G5：開始前估計「全部載完」和「重算第 0 塊」 ----
@@ -469,8 +469,23 @@ class Restorer:
         if any(not h["l"].get(s_) for s_ in cnt):
             return None
         import statistics
-        load_all = sum(c * statistics.median(h["l"][s_]) for s_, c in cnt.items())
-        return load_all <= statistics.median(h["r0"])
+        lmed = {s_: statistics.median(h["l"][s_]) for s_ in cnt}
+        load_all = sum(c * lmed[s_] for s_, c in cnt.items())
+        r = statistics.median(h["r0"])
+        if self.meet_rule == "g5":                             # 13 §4：和「重算第 0 塊」比
+            return load_all <= r
+        # 13 §8c G5b：用同一組估計模擬 Cake 的兩條線（重算線從前面一塊一塊拿、每塊 r；載入線從後面拿、每塊照它的來源），
+        # 和「全部載入」比。Cake 會在載入線還沒做完時多開一塊重算（整數跳動），只比第 0 塊會低估 Cake 的時間。
+        tr = tl = 0.0
+        p_, q_ = 0, n - 1
+        while p_ <= q_:
+            if tr <= tl:
+                tr += r
+                p_ += 1
+            else:
+                tl += lmed[self._src(host[q_])]
+                q_ -= 1
+        return load_all <= max(tr, tl)
 
     def _g5_note(self, rec: dict):
         h = self._g5_hist.setdefault(self.g5_key, {"l": {}, "r0": []})

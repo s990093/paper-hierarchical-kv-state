@@ -235,6 +235,35 @@ def restorer_tests():
         chk(rec["meet_rule_used"] == "claim" and rec["n_recompute"] >= 1 and check_kv(km, rec, ref, lp)[0] == 0,
             f"{fmt}：g5 限速很慢 → 照 Cake（{rec['meet_rule_used']}, b={rec['n_recompute']}）")
         chk(("cpu", "idle") not in rs2._g5_hist, f"{fmt}：g5 的紀錄依 key 分開")
+        # g5b：重算很慢 → 全載入；限速很慢 → Cake；「全部載完」比第 0 塊慢、但比 Cake 實際（多開一塊）快 → 全載入（g5 會選 Cake）
+        for rule in ("g5b",):
+            km.sleep = 2e-4
+            rs6 = RH.Restorer(km)
+            rs6.set_options(meet=rule)
+            rs6.g5_key = ("cpu", "idle")
+            rs6.g5_force_claim = True
+            for host in (bf, lp):
+                km.kv.zero_()
+                rs6.restore(ids, n, host, [cpu] * n, "cake")
+            rs6.g5_force_claim = False
+            km.kv.zero_()
+            rec = rs6.restore(ids, n, lp, [cpu] * n, "cake")
+            chk(rec["meet_rule_used"] == "none" and check_kv(km, rec, ref, lp)[0] == 0, f"{fmt}：{rule} 重算很慢 → 全載入")
+            km.sleep = 2e-5
+            rs7 = RH.Restorer(km)
+            rs7.set_options(meet=rule)
+            rs7.g5_key = ("slow", "idle")
+            rs7._g5_hist[("slow", "idle")] = {"l": {"load_bf16": [0.05]}, "r0": [0.01]}
+            slow.reset_clock()
+            km.kv.zero_()
+            rec = rs7.restore(ids, n, bf, [slow] * n, "cake")
+            chk(rec["meet_rule_used"] == "claim", f"{fmt}：{rule} 限速很慢 → 照 Cake")
+        for rule, want in (("g5", "claim"), ("g5b", "none")):    # 合成紀錄：n＝8 塊，每塊載入 3、重算 14 → 全載入 24 > 14（g5 選 Cake），但模擬的 Cake 會開第 2 塊 → 28（g5b 選全載入）
+            rs8 = RH.Restorer(km)
+            rs8.set_options(meet=rule)
+            rs8.g5_key = ("x", "idle")
+            rs8._g5_hist[("x", "idle")] = {"l": {"load_bf16": [3.0]}, "r0": [14.0]}
+            chk(rs8._g5_decide(n, bf) is (want == "none"), f"{fmt}：{rule} 的估計（載入 3×8、重算 14）→ {want}")
         # nodq
         km.sleep = 2e-6
         rs3 = RH.Restorer(km)

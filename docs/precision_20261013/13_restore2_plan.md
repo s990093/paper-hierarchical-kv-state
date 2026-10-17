@@ -135,6 +135,13 @@
   - **vLLM-KIVI 的 Triton kernel**（[github.com/LLAA178/vllm-kivi](https://github.com/LLAA178/vllm-kivi)，commit cd0f8e9，Apache 2.0；原樣抄在 `code/third_party/vllm_kivi_attention.py`）：`m10_attn_q.py bench` 的 decode（1 個 query）另加 `ext_vllm_kivi`。只量時間：它的 4-bit 格式和我們的不同（K 每 16 個 token 一組、V 每 token 一個 scale）、每個 q head 各讀一份 KV（不共用 GQA）、沒有 split-K、為 A100 調；它的 K scale 用 k_cache 的 stride 索引到 d＜128（看起來會碰到下一個 head 的位置），所以配一塊夠大的平面緩衝讓讀取都在範圍內，值是亂數。量一層 × 層數次。
 - 這兩個都不換掉我們自己的 kernel：只有同一份程式碼讀 BF16 和讀壓縮，才能把「拆」的成本單獨量出來。
 
+## 8c. 補充（10/17 04:1xZ；**加 G5b**；正式的 13 號結果仍然一個都沒有）
+
+- **為什麼加**（照實寫）：43a 冒煙（Qwen int4_kivi、CPU 層、閒、1 launch × 1 rep；冒煙的時間不是結果）看到 G5 的 E0、R25 都選了 Cake，但同一次的全載入比較快（E0：G5 0.045、Cake 0.053、全載入 0.039 s）。原因在規則本身：G5 只拿「全部載完」和「重算第 0 塊」比，可是 Cake 在載入線還沒做完時會多開一塊重算（整數跳動，11 問題一 §2），所以 Cake 的實際時間比「重算 1 塊」長，G5 會低估全載入的好處。
+- **G5b**（`M10_MEET=g5b`）：紀錄、profiler 和 G5 完全一樣；決定改成用同一組估計（每塊載入時間依來源、每塊重算時間＝第 0 塊的中位數）**模擬 Cake 的兩條線**（重算線從前面一塊一塊拿；載入線從後面拿；誰先空下來誰拿下一塊；到兩邊相遇），「全部載完 ≤ 模擬的 Cake」就不重算。CPU 測試：`tests/restore2_cpu_shim.py`（含「載入 3×8、重算 14」這種 G5 選 Cake、G5b 選全載入的例子）ALL PASS。
+- **G5 照原登記照跑**，不拿掉、不改。43c 先用真模型冒煙 G5b（1 × 1，KV 逐位元、每列有決定），過了才跑 G5b 的 8 個 grid（和 G5 同樣的設定，目錄加 `_g5b`）。〔估計〕多約 50 分鐘。
+- **長 context 帶哪一個**（`m10_restore2.py pick-g5`，寫死）：兩者都有可用資料的共同格子裡，各自「中位數 ÷ 最好」的幾何平均（最好＝CPU 層 min(Cake, 全載入)、限速層 Cake）；G5b 小於 G5 的 99% 才換成 G5b，否則用 G5。
+
 ## 9. 不做的
 
 | 項目 | 為什麼 |

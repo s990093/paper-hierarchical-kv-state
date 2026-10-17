@@ -359,7 +359,7 @@ def worker(spec: dict):
     rid = run_id()
     os.makedirs(spec["out_dir"], exist_ok=True)
     extra = spec.get("extra_modes") or []
-    fields = RESTORE_FIELDS + (["meet_rule_used"] if rv["meet"] in ("none", "g5") or extra else [])
+    fields = RESTORE_FIELDS + (["meet_rule_used"] if rv["meet"] in ("none", "g5", "g5b") or extra else [])
     rpath = os.path.join(spec["out_dir"], "restores.csv")
     if os.path.exists(rpath) and os.path.getsize(rpath) > 0:
         with open(rpath) as f0:
@@ -401,7 +401,7 @@ def worker(spec: dict):
             with Busy(st["duty"], watch) as busy:
                 if busy.p:
                     busy_pid.add(busy.p.pid)
-                if rv["meet"] == "g5":                         # 13 §4：G5 的 profiler（每個頻寬先照 Cake 跑 E0、E1 各一次，不記）
+                if rv["meet"] in ("g5", "g5b"):                         # 13 §4：G5 的 profiler（每個頻寬先照 Cake 跑 E0、E1 各一次，不記）
                     bench.rs.g5_force_claim = True
                     for tier in tiers:
                         bench.rs.g5_key = (tier["name"], st["name"])
