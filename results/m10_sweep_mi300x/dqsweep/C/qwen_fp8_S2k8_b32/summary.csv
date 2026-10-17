@@ -1,0 +1,7 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b32,busy,E0,cake,30,1.6214,1.82566,20 21,0.0,1262485504.0,,,0,0,20261017-024036-m10-dqs-C-qwen-fp8-S2k8_b32
+32768,b32,busy,E1,cake,30,0.92425,1.12935,13,51.0,748728960.0,,,0,0,20261017-024036-m10-dqs-C-qwen-fp8-S2k8_b32
+32768,b32,busy,R25,cake,30,1.43857,1.64262,18 19,12.0,1145055744.0,,,0,0,20261017-024036-m10-dqs-C-qwen-fp8-S2k8_b32
+32768,b32,idle,E0,cake,30,1.16669,1.23246,30 31 32,0.0,939524096.0,,,0,0,20261017-024036-m10-dqs-C-qwen-fp8-S2k8_b32
+32768,b32,idle,E1,cake,30,0.75933,0.82496,20 21 22 23,42.0,616600320.0,,,0,0,20261017-024036-m10-dqs-C-qwen-fp8-S2k8_b32
+32768,b32,idle,R25,cake,30,1.09088,1.15637,28 29 30,9.0,880811008.0,,,0,0,20261017-024036-m10-dqs-C-qwen-fp8-S2k8_b32

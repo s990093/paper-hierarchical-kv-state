@@ -187,6 +187,7 @@ def cmd_pick_q4(a):
         best = min(cand, key=lambda k: cand[k]["gm_busy_loadall_E1"])
         pick = "P0" if cand[best]["gm_busy_loadall_E1"] >= cand["P0"]["gm_busy_loadall_E1"] * 0.97 else best
     out = dict(rule="13 §3.2", table=tab, candidates=sorted(cand), pick=pick, notes=notes)
+    os.makedirs(R2, exist_ok=True)
     json.dump(out, open(os.path.join(R2, "q4_pick.json"), "w"), indent=1, ensure_ascii=False)
     print(json.dumps(out, indent=1, ensure_ascii=False))
     if pick is None:
@@ -213,6 +214,7 @@ def cmd_pick_c(a):
     ok = {k: v for k, v in tab.items() if v["gm_cpu_E1"]}
     pick = min(ok, key=lambda k: ok[k]["gm_cpu_E1"]) if ok else None
     out = dict(rule="13 §7", table=tab, pick=pick)
+    os.makedirs(R2, exist_ok=True)
     json.dump(out, open(os.path.join(R2, "c_pick.json"), "w"), indent=1, ensure_ascii=False)
     print(json.dumps(out, indent=1, ensure_ascii=False))
     if pick is None:
