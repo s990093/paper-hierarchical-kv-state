@@ -1,0 +1,2 @@
+run_id,ts,n,corr_log_gap_vs_log_this_turn_output,corr_log_gap_vs_log_prev_turn_output,p1_gap_per_this_output_token_s,p1_gap_per_prev_output_token_s,frac_gap_lt_this_output_x20ms_for_ge300tok,note
+20261017-213321-p3x3-extra,2026-10-17T13:33:29+00:00,64863,0.3541,0.3697,0.0807,0.0601,0.0,若 assistant 時間戳＝回應結束，間隔應含這一輪的生成時間：和這一輪輸出長度較相關、且每 token 的下緣不會趨近 0
