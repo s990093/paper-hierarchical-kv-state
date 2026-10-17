@@ -798,4 +798,8 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - `code/m10_attn_q.py`（拆進 attention 的對照組）：CPU 直譯 ALL PASS（讀壓縮＝同一 kernel 讀拆好的 BF16，逐位元）。過程中修了兩個測試問題：直譯器的 bf16 `tl.dot` 結果不對（加 `F32DOT`，只在直譯模式用）；對 SDPA 的誤差要和「同樣截斷過的值」比。
 - `code/m10_restore2.py`：cumask、env、smoke-check、pick-q4、pick-c、plan-44d（用假的挑選結果測過，產生 40 個 grid、語法正確；測試檔已刪）。
 - 佇列（副本在 `code/m10_queue_mi300x/queue/`）：43a_rs2_smoke、43b_rs2_busy、43c_rs2_g5、43d_rs2_newfmt、43e_rs2_attn、44cz_rs2_plan44d。〔估計〕GPU 合計約 8–9 小時；全部跑完約 10/21。
+**10/17 04:1xZ 補充**：
+- 43a 冒煙看到 G5 低估全載入（1 rep，不是結果）→ 另加 G5b（模擬 Cake 的兩條線），G5 照原登記照跑（13 §8c，commit 8a7cfe3）。
+- 13 號的報告程式 `m10_restore2.py report` 用冒煙的輸出測過結構。
+- 外部參考：vLLM 0.28 ROCm 的 FP8 KV decode（`m10_vllm_kvdecode.py`）、vLLM-KIVI kernel（`code/third_party/`，只量時間）；H200 上要比的 CUDA 實作記在 13 §11（使用者 10/17）。
 **前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。
