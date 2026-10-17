@@ -24,6 +24,9 @@
 # 沒有 run_id 的數字視同不存在。
 # =============================================================================
 set -uo pipefail
+# 整支包在 main() 裡（2026-10-17）：bash 會先讀完整個函式再執行，跑到一半有人改這支檔也不會讀到改了一半的內容
+# （那天主 session 在 run 進行中改了這支，X2、X7 各有一個 run 報 syntax error 中斷，見 RUNLOG_3090_P3 P3-0b 補記）。
+main() {
 [ $# -ge 2 ] || { echo "用法: CUDA_VISIBLE_DEVICES=<i> $0 <短名> <指令...>   （或 TIARA_NO_GPU=1）" >&2; exit 2; }
 SHORT=$1; shift
 
@@ -130,3 +133,6 @@ if [ "$rc" -ne 0 ]; then
   echo "[run3090] 指令失敗。照 CLAUDE.md §1 規則 2：記錄、停下、回報。不要換方法硬幹。" >&2
 fi
 exit "$rc"
+}
+main "$@"
+exit $?
