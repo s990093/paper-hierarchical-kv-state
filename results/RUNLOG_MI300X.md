@@ -700,6 +700,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 修：兩處改成 `SW.Item.attention_mass`（同一段程式碼，沒有改行為）。用靜態檢查對過 m10_quality、m10_confirm、m10_confirm_analyze 用到的 `m10_sweep` 名稱：只有這一個不存在。
 - 失敗的 log 留在 `results/m10_sweep_mi300x/confirm/smoke_llama.FAILED_20261017T0358Z.log`。重排成 `queue/43aa_sweep_confirm_rerun.sh`（內容和 43 相同，只多一行說明），04:02:54Z 開跑（排在 43a 之後、43b 之前，維持「43 先、13 號後」的順序）。
 - 時程：43 晚了約 5 分鐘。
+- 43aa 的冒煙全過：Llama 品質冒煙 41／41 個配置有列、集合大小都對（`20261017-040254-m10-confirm-smoke-llama`）；Qwen 品質冒煙 exit 0（`-041527-…-qwen`）；兩個速度路徑冒煙（含 ATT／AXE）exit 0（`-042049-…-ssmoke-llama`、`-042146-…-ssmoke-qwen`）。速度格子 04:22:29Z 開跑。
 
 ### 11.2n 13 號的 GPU 冒煙（43a，03:58 → 04:02Z）
 
