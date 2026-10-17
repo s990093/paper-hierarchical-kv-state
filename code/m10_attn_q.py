@@ -159,7 +159,8 @@ def attn(q: torch.Tensor, kv: KVSet, n_split: int, BM: int, BN: int = 64) -> tor
                        q.stride(0), q.stride(1), kv.k.stride(0), kv.k.stride(1), kv.v.stride(0), kv.v.stride(1),
                        *kss, *vss, o.stride(0), o.stride(1), o.stride(2), m.stride(0), m.stride(1),
                        D=D, BM=BM, BN=BN, MODE=mode, KT=kt, KD=kd, VT=vt, VD=vd,
-                       F32DOT=os.environ.get("TRITON_INTERPRET") == "1", enable_fp_fusion=False)
+                       F32DOT=os.environ.get("TRITON_INTERPRET") == "1", enable_fp_fusion=False,
+                       num_warps=4, num_stages=1)    # 三種讀法同一組設定；fp8 查表在 2 個 stage 時要 139 KB 共享記憶體（MI300X 上限 64 KB，43a 冒煙抓到；離線編譯量的）
     mx = m.max(dim=1, keepdim=True).values
     w = torch.exp(m - mx)
     out = (o * w.unsqueeze(-1)).sum(1) / (l_ * w).sum(1).unsqueeze(-1)

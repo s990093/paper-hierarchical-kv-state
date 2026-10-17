@@ -694,6 +694,21 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 13 §7 的挑法（`m10_restore2.py pick-c`）：**S2k8+G4**（CPU 層 E1 幾何平均 0.0489 s；S0 0.0574）→ 44d 帶它。第一次跑 pick-c 時輸出目錄不存在（FileNotFoundError），加了 `os.makedirs`（pick-q4 同改）後重跑。
 - 跑的時間 2 小時 43 分（估 2.5 小時，09 §6.4.4 的上限 3.5 小時內）。43 在 03:57:06Z 接著開跑。
 
+### 11.2m 43 複賽第一次：冒煙抓到名稱錯誤 → 改名重排成 43aa（10/17 03:57 → 04:02Z）
+
+- `43_sweep_confirm`（03:57:06Z）第 0 步真模型冒煙（Llama）失敗：`AttributeError: module 'm10_sweep' has no attribute 'ItemState'`（`m10_quality._attention_mass` 和 `m10_confirm._sworker` 都呼叫 `SW.ItemState.attention_mass`；海選那個 class 叫 `Item`）。ATT／AXE 放法才會走到；假模型測試沒有 attention，所以只能靠這個真模型冒煙抓（設計如此，09 §4.3）。照腳本跳過 43 的其餘部分、exit 0，佇列接著跑 43a。**沒有任何複賽的品質或速度跑過。**
+- 修：兩處改成 `SW.Item.attention_mass`（同一段程式碼，沒有改行為）。用靜態檢查對過 m10_quality、m10_confirm、m10_confirm_analyze 用到的 `m10_sweep` 名稱：只有這一個不存在。
+- 失敗的 log 留在 `results/m10_sweep_mi300x/confirm/smoke_llama.FAILED_20261017T0358Z.log`。重排成 `queue/43aa_sweep_confirm_rerun.sh`（內容和 43 相同，只多一行說明），04:02:54Z 開跑（排在 43a 之後、43b 之前，維持「43 先、13 號後」的順序）。
+- 時程：43 晚了約 5 分鐘。
+
+### 11.2n 13 號的 GPU 冒煙（43a，03:58 → 04:02Z）
+
+- 新格式融合 kernel 在 GPU 上和原寫法逐位元相同：24／24（`results/m10_restore2_mi300x/smoke/dqx_selftest_gpu.json`）。
+- CU 遮罩有生效（`cumask.json`）：304 個 CU；背景單獨跑的 matmul 1.647 ms → P4a（0–265）1.810 ms（×1.10）、P4b（0–227）1.993 ms（×1.21）。
+- 真模型（Qwen int4_kivi、1 × 1）：G5＋claim＋loadall、nodq、P5＋遮罩（GPU 忙）、Llama int2_kivi＋新格式 kernel 走大掃描速度路徑：`smoke-check` ALL PASS（KV 逐位元、每列有 G5 的決定、loadall 不重算、背景吞吐有記錄）。
+- **attention 對照組自測沒過**：不是數值錯，是 fp8 讀法的 kernel 要 139,264 bytes 共享記憶體（MI300X 上限 65,536）。用離線編譯（gfx942）量：num_stages 1 時三種讀法 16–32 KB；改成三種讀法都 `num_warps=4, num_stages=1`（同一組設定，公平）。vLLM-KIVI 的 kernel 離線編譯 2 KB，可以跑。
+- 加 `queue/43e0_rs2_attn_resmoke.sh`（43e 之前在 GPU 上重新自測；過才跑 (b)）。
+
 ### 11.2k Cake 對「全部載入」：CPU 層每一格都輸（10/17 02:3xZ；只用 CPU，沒有新的 GPU 工作）
 
 - 使用者 10/17 問「反量化要不要把 SOTA 都拿來測」「什麼時機、哪樣配合比較好」。用已經有的速度格子（主線 `speed_*/summary_{fp8,int4}.csv`、42 的 `speed_dqfast*_<m>/restores.csv`）比 Cake 和同一個 run 的「只載」參考線。

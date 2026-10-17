@@ -1,0 +1,4 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,idle,E0,cake,1,0.09509,0.17014,3,0,4093640704,,,1,0,20261017-040202-m10-rs2-smoke-dqx
+32768,cpu,idle,E1s,cake,1,0.03842,0.11355,1,63,792723456,,,1,0,20261017-040202-m10-rs2-smoke-dqx
+32768,cpu,idle,SW-R0-20,cake,1,0.09546,0.17061,3,13,3384803328,,,1,0,20261017-040202-m10-rs2-smoke-dqx

@@ -1,0 +1,77 @@
+{
+ "model": "qwen",
+ "fmt": "int4_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0",
+  "E1"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "busy",
+   "duty": 0.7
+  }
+ ],
+ "reps": 1,
+ "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_restore2_mi300x/smoke/p5mask",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261017-040114-m10-rs2-smoke-p5mask/blocks.csv",
+ "verify": true,
+ "extra_modes": [
+  "loadall"
+ ],
+ "extra_tiers": [],
+ "argv": [
+  "/mlsteam/workspace/paper-hierarchical-kv-state/code/m10_speed.py",
+  "grid",
+  "--model",
+  "qwen",
+  "--fmt",
+  "int4_kivi",
+  "--base-fmt",
+  "fp8_head",
+  "--bw-json",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_qwen/bw.json",
+  "--refs",
+  "--lengths",
+  "--launches",
+  "1",
+  "--reps",
+  "1",
+  "--launch0",
+  "390",
+  "--out-dir",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_restore2_mi300x/smoke/p5mask",
+  "--bw-names",
+  "cpu",
+  "--gpu-states",
+  "busy",
+  "--configs",
+  "E0",
+  "E1",
+  "--extra-modes",
+  "loadall",
+  "--blocks-out",
+  "/mlsteam/data/tiara/runs/20261017-040114-m10-rs2-smoke-p5mask/blocks.csv"
+ ],
+ "run_id": "20261017-040114-m10-rs2-smoke-p5mask",
+ "restore_variant": {
+  "kernel": "k3:64:1",
+  "sched": "group",
+  "group": 8,
+  "prio": false,
+  "unit": 512,
+  "meet": "claim",
+  "io_prio": true
+ }
+}

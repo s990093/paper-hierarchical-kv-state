@@ -72,7 +72,7 @@ def _sworker(spec: dict):
                 ans = types.SimpleNamespace(km=km, CHUNK=self.CHUNK)
                 bf = [km.chunk_view(i).clone() for i in range(n)]
                 shim = types.SimpleNamespace(ans=ans, ids=self.ids[:n * self.CHUNK], bf16=bf, src=["bf16"] * n)
-                CTX["att"] = SW.ItemState.attention_mass(shim)
+                CTX["att"] = SW.Item.attention_mass(shim)
                 torch.cuda.synchronize()
             else:
                 CTX["att"] = None
