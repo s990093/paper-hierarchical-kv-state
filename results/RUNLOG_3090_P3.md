@@ -122,3 +122,31 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
   這個數字是 smoke 等級（單 stream、1 GiB、10 次、同一 PCIe switch 上其他卡可能在搬資料而 GpuWatcher 看不到），正式的 H2D 要用 `m7_calib.py c0`（P3-2a）。
 - HANDOFF／EXPERIMENT_PLAN §8 只記了「vLLM 的 PyPI wheel 是 CUDA 13」；這次另外踩到兩個同類的坑：PyPI 的 **xgboost**（GPU 靜默退回 CPU）和 **torchcodec**（vLLM import 失敗）。
 - 第三階段計畫說內容型預測器（P3-7）可能要使用者同意 WildChat 的條款：實際上 `allenai/WildChat-1M` 目前 gated=False（ODC-BY），已下載。
+
+## Milestone P3-0b — 24 GB 上的正確性檢查：雙卡對照模式（使用者 10/17「OOM 改雙卡」）
+**狀態**: PASS（Llama 8K 單卡、Llama 8K 雙卡、Qwen 32K 雙卡、Llama 32K 雙卡第 2 次）；Llama 32K 雙卡第 1 次 FAILED（OOM，見下）
+**執行時間**: 2026-10-17 17:59:53 → 18:0x（+08:00）
+**run_id**: `20261017-175953-p3-0-corr-llama-8k-1gpu`（GPU 2）、`20261017-175953-p3-0-corr-llama-8k-2gpu`（GPU 4,5）、`20261017-180212-p3-0-corr-qwen-32k-2gpu`（GPU 2,6）、`20261017-180212-p3-0-corr-llama-32k-2gpu`（GPU 4,5，FAILED）、`20261017-180434-p3-0-corr-llama-32k-2gpu-r2`（GPU 4,5）
+**指令**: `source code/env_3090.sh; M7_MODEL_GLOB=$M7_LLAMA_GLOB CUDA_VISIBLE_DEVICES=4,5 TIARA_TWO_GPUS=1 m7run p3-0-corr-llama-32k-2gpu-r2 bash -c 'PYTORCH_ALLOC_CONF=expandable_segments:True M7_TEST_L=32768 M7_TEST_REF_DEVICE=cuda:1 python code/test_m7_correctness.py "$RUN_DIR/correctness.json"'`（其他 run 換 L、模型、卡；單卡不設 `M7_TEST_REF_DEVICE`、`TIARA_TWO_GPUS`；`PYTORCH_ALLOC_CONF` 只有 r2 設）
+**產出檔**: 各 run 目錄的 `correctness.json`、`gpu_guard.json`（雙卡另有 `gpu_guard_cuda1.json`）
+**程式改動**（不是 tensor parallel：受測的 KVModel 整個在第一張卡，和實驗同一條路徑）:
+- `code/test_m7_correctness.py`：單卡時 HF 的整段輸出用完就釋放、maxabs 逐層算（值和整塊一次算相同）；`M7_TEST_REF_DEVICE=cuda:1` 時 HF 對照模型、重算前的 KV 副本與所有比對放第二張卡，HF 只算最後一個位置的 logits（`logits_to_keep=1`），只取 logits 的兩次呼叫 `use_cache=False`（JSON 記 `hf_logits_to_keep`、`hf_logit_calls_use_cache`）。
+- `code/run3090.sh`：`TIARA_TWO_GPUS=1` 才准 `CUDA_VISIBLE_DEVICES=<i>,<j>`；兩張卡開跑前都 `gpu_guard --check`。單卡行為不變。
+- `code/m7_guard_run.py`：看得到幾張卡就各開一個 GpuWatcher（第二張寫 `gpu_guard_cuda1.json`）；一張卡時和原本相同。
+**關鍵數字**（全部 bitwise 旗標＝true、argmax 相同、top-5 重疊 5；GpuWatcher 每張卡都 CLEAN）:
+
+| run | L | 模式 | own vs HF logit maxabs | K maxabs（第 0／中／最後層） | 重算逐位元 | 主機往返逐位元 |
+|:--|--:|:--|--:|:--|:--|:--|
+| llama-8k-1gpu | 8192 | 單卡 | 0.09375 | 0.125／0.3765／0.25 | true | true |
+| llama-8k-2gpu | 8192 | 雙卡 | 0.09375 | 0.125／0.3765／0.25 | true | true |
+| qwen-32k-2gpu | 32768 | 雙卡 | 0.125 | 0.5／0.3125／4.0 | true | true |
+| llama-32k-2gpu-r2 | 32768 | 雙卡 | 0.09375 | 0.125／0.5／0.25 | true | true |
+
+- 8K 單卡與雙卡的每一個數字都相同 → 雙卡模式（含 `logits_to_keep=1`）沒有改變比對結果。
+- Qwen 最後一層 K maxabs 4.0 是絕對誤差；Qwen 的 K 有很大的逐 channel 偏移（main.tex §5.3），這次沒有算相對誤差（NOT_MEASURED）。
+**失敗與異常**:
+- `20261017-180212-p3-0-corr-llama-32k-2gpu` FAILED（exit 1），對照卡（cuda:1＝GPU 5）在第一次 HF 整段前向（測試第 56 行 → `modeling_llama.py` MLP）：
+  `torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 896.00 MiB. GPU 1 has a total capacity of 23.68 GiB of which 762.94 MiB is free. Including non-PyTorch memory, this process has 22.92 GiB memory in use. Of the allocated memory 20.73 GiB is allocated by PyTorch, and 1.89 GiB is reserved by PyTorch but unallocated.`
+  原因：HF 預設 `use_cache=True`，只取 logits 的呼叫也建了一份 32K 的 KV cache，加上碎片。改成這兩次 `use_cache=False`＋`expandable_segments` 後 r2 通過。
+- 這個 session 的 shell 還帶著舊 settings 的 `HF_HUB_ENABLE_HF_TRANSFER=1`，stderr 有 FutureWarning；不影響結果（新 settings 要重開 session 才生效）。
+**與假設的差異**: P3-0 寫「要在 3090 上跑預設 L 需要改測試」→ 已改；單卡 L=8192 現在放得下，32K 用雙卡對照模式（Llama、Qwen）都過。

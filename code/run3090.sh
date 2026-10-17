@@ -18,6 +18,9 @@
 #     但時間欄作廢，仍會留 CONTAMINATED）。
 #   - 整段指令由 m7_guard_run.py 的 GpuWatcher 包住（TIARA_GUARD=0 可關，例如指令自己已經包了 GpuWatcher）。
 #   - TIARA_NO_GPU=1：把 CUDA_VISIBLE_DEVICES 設成空字串（看不到任何卡），不做 GPU 檢查。
+#   - TIARA_TWO_GPUS=1：准許 CUDA_VISIBLE_DEVICES=<i>,<j>（2026-10-17，使用者要求「OOM 改雙卡」）。只給**不計時**的
+#     檢查用，例如 test_m7_correctness 把 HF 對照模型放第二張卡（M7_TEST_REF_DEVICE=cuda:1）。不是 tensor parallel：
+#     受測模型整個在第一張卡。兩張卡開跑前都要乾淨，跑的時候兩張都監看。
 # 沒有 run_id 的數字視同不存在。
 # =============================================================================
 set -uo pipefail
@@ -37,8 +40,12 @@ else
   if [ -z "${CUDA_VISIBLE_DEVICES:-}" ]; then
     echo "[run3090] 沒設 CUDA_VISIBLE_DEVICES。共用機：先 python code/gpu_guard.py --idle-gpus 挑一張空卡；只用 CPU 就 TIARA_NO_GPU=1" >&2; exit 2
   fi
-  if ! [[ "$CUDA_VISIBLE_DEVICES" =~ ^[0-9]+$ ]]; then
-    echo "[run3090] CUDA_VISIBLE_DEVICES='$CUDA_VISIBLE_DEVICES'：一個 job 綁一張卡（不准 tensor parallel，CLAUDE.md §3），請給單一 index" >&2; exit 2
+  if [ "${TIARA_TWO_GPUS:-0}" = 1 ]; then
+    if ! [[ "$CUDA_VISIBLE_DEVICES" =~ ^[0-9]+,[0-9]+$ ]]; then
+      echo "[run3090] TIARA_TWO_GPUS=1 要給兩個 index（例如 2,4），現在是 '$CUDA_VISIBLE_DEVICES'" >&2; exit 2
+    fi
+  elif ! [[ "$CUDA_VISIBLE_DEVICES" =~ ^[0-9]+$ ]]; then
+    echo "[run3090] CUDA_VISIBLE_DEVICES='$CUDA_VISIBLE_DEVICES'：一個 job 綁一張卡（不准 tensor parallel，CLAUDE.md §3），請給單一 index（不計時的雙卡檢查用 TIARA_TWO_GPUS=1）" >&2; exit 2
   fi
   GPU_IDX=$CUDA_VISIBLE_DEVICES
 fi
@@ -65,7 +72,7 @@ _smi_state() {
   date -Is
   echo "platform: $TIARA_PLATFORM"
   echo "host: $(hostname)"
-  echo "short=$SHORT run_id=$RUN_ID cuda_visible='${CUDA_VISIBLE_DEVICES}' gpu_idx=${GPU_IDX:-NONE} no_gpu=${TIARA_NO_GPU:-0} guard=${TIARA_GUARD:-1}"
+  echo "short=$SHORT run_id=$RUN_ID cuda_visible='${CUDA_VISIBLE_DEVICES}' gpu_idx=${GPU_IDX:-NONE} no_gpu=${TIARA_NO_GPU:-0} two_gpus=${TIARA_TWO_GPUS:-0} guard=${TIARA_GUARD:-1}"
   _smi_state
   echo "--- loadavg / mem ---"
   cat /proc/loadavg; free -g | head -2
@@ -83,8 +90,12 @@ _smi_state() {
 
 # 3. 開跑前的卡
 if [ -n "$GPU_IDX" ]; then
-  python "$REPO/code/gpu_guard.py" --check "$GPU_IDX" > "$RUN/gpu_check_start.txt" 2>&1
-  pre=$?
+  pre=0
+  : > "$RUN/gpu_check_start.txt"
+  for _g in ${GPU_IDX//,/ }; do
+    echo "--- gpu $_g ---" >> "$RUN/gpu_check_start.txt"
+    python "$REPO/code/gpu_guard.py" --check "$_g" >> "$RUN/gpu_check_start.txt" 2>&1 || pre=$?
+  done
   if [ "$pre" -ne 0 ]; then
     if [ "${TIARA_ALLOW_DIRTY_START:-0}" = 1 ]; then
       echo "[run3090] GPU $GPU_IDX 開跑前不乾淨，TIARA_ALLOW_DIRTY_START=1 照跑（時間欄作廢）" >&2
