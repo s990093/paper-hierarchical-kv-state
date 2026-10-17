@@ -907,3 +907,32 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - **修正**（`code/h200_pool.py`）：多一個條件「卡的總記憶體 − 跑中工作的 need 總和 ≥ need＋8 GB」（預約）；放不下時照順序找下一個放得下的。離線測試（假的 nvidia-smi）：試跑 6 個、正式 12 個的預約都不超過 132／140 GB；need＋8 超過整張卡的工作直接報錯；有失敗照舊不開新的。
   正式掃描的 252 個 block：Llama（78）＋ Qwen（45）兩個一起，不會兩個 Llama-252 同時（MI300X 可以）。題數規則（≤ 14 h，÷3 平行）不改；H200 的實際牆鐘照實記。
 - **正在跑的 20706、20707 不受這次修正影響**（工作池已經載入舊程式）。10/18 07:5x 用 `srun --overlap nvidia-smi` 看：20706 四個 process 各 ~29 GB、共 115／140 GB；20707 四個各 ~21 GB、共 84 GB。q3 的工作都是 64 個 block（試跑看到 Llama peak 28.3 GiB），風險比 252 低，但沒有排除；如果 OOM，照規則 2 停下回報。
+
+### 20895：20705 重送（2026-10-18 08:0x 送出，`--part screen --from PILOT`，commit `ca4eb72`）
+- 送出後馬上開跑（hgx-cn01）。試跑 6 個全部重跑（同一組條件；`h200_longctx_plan.py` 讀每個名稱最新的 run）。
+- `scontrol update JobId=20708 Dependency=afterany:20706:20707:20895`：量時間的 t2 等 20895 也結束才開始（不和自己的 job 同時跑）。
+
+### job 20702、20703 主線品質跑完（Llama 02:56:09 → 06:42:15、Qwen 03:56:05 → 07:43:58 +08:00，COMPLETED exit 0）
+- 每個 job 三段工作池：S1（E0 E1 E1s E1sr＋2b 兩個，讀 `meets_fp8tier.json`）7 個 process；I4E（INT4 端點）6 個；I4M（INT4 混合 F25／M25／B25／R25）7 個；全部 rc＝0。
+- 產出：`results/m10_precision_h200/quality/step1_*`、`quality_sealed/int4end_*`、`int4mix_*`（逐列 CSV 進 git 的是 .gz，同 MI300X）。
+
+### 主線判定（head node，2026-10-18 07:56–07:57 +08:00；`PYTHON=~/.conda/envs/tiara/bin/python bash code/h200_m10_analyze.sh all`）
+**狀態**: 停在 K3（13 §5 的判定節點有一個「不同」；需要 H200 沒排進主線的資料 → 問使用者）
+**產出檔**: `results/m10_precision_h200/analysis/fp8/`（decide_fp8.json、k3_qwen.json、quality_*_step1*.json／csv、quality_qwen_step2b*、speed_qwen_2b_*.json）
+
+| 節點（13 §5） | MI300X | H200 | |
+|:--|:--|:--|:--|
+| K0（FP8、INT4 格子） | 兩個模型都「不成立」 | 兩個模型都「不成立」 | 相同 |
+| Step 1 Llama | E1／E1s／E1sr 四情境全過 → K1 成立 | 同 | 相同 |
+| Step 1 Qwen | E1／E1s／E1sr 四情境全不過；power_ok＝False、power_blocks＝False | 同 | 相同 |
+| 下一步 | 只在 Qwen 做 Step 2b | 同 | 相同 |
+| 2b ε（Qwen，E1s@fp8k0_head、E1s@int8_token） | 四情境全過 | 四情境全過 | 相同 |
+| 2b 速度不輸（Qwen） | fp8k0_head 不過；**int8_token 過** | fp8k0_head 不過；**int8_token 不過** | **不同** |
+| **K3（Qwen）** | **成立** → FP8 階停、往 INT4 | **不成立** → Step 2 在 FP8 階的 Qwen 上做 | **不同** |
+
+- 不同的格子（規則：X 不輸＝每格 median(X) ≤ min(F25,M25,B25,R25)×(1+δ*)，03 §2.4）：
+  E1s@int8_token 在 **CPU 層（不限速的真 H2D）、GPU 忙**：H200 0.07989 s vs 最快混合 0.07115 s，比值 **1.1228**，δ*＝0.05 → 不過；
+  MI300X 0.07127 vs 0.06643，比值 **1.0729**，δ*＝0.0943 → 過。CPU 層 GPU 閒：H200 0.7705（過）、MI300X 1.0421（過）。b16／b32／b48 兩台都過（比值 0.69–0.90）。
+- 敏感度（只報告，不改判）：H200 的 1.1228 用 MI300X 的 δ*（0.0943）也不過；MI300X 的 1.0729 用 5% 的 δ* 會不過。也就是 MI300X 那一格是貼著門檻過的。
+- `h200_m10_analyze.sh` 照 13 §4 在這裡停：H200 的路徑要 Step 2（FP8 階、Qwen：F25／M25／B25／R25 @fp8_head），主線 job 沒排這組。
+- **這組資料正在 20707 裡跑**：stage 45（FP8 混合配置，MI300X 只報告）的 `f8m-qwen-*`：F25／M25／B25／R25 @fp8_head、讀法 A／B、b32、`meets_fp8tier.json`、T2–T4 n＝180（6 個 shard）、T5 n＝60，輸出 `quality_sealed/fp8mix_qwen_*`——和 I4M 同一個設計，只差階。用不用它來走 H200 的 Step 2，等使用者決定。
