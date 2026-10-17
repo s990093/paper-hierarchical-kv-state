@@ -1,0 +1,13 @@
+2026-10-17T17:49:33+08:00
+cmd: python3 -I p3scripts/bailian_sessions.py papers/bailian_data/qwen_thinking_blksz_16.jsonl
+rows 10812 unit_ok 10812 1.0
+roots 9612 non-root 1200 parent_missing_in_file 0
+turn==parent+1 1200 1200
+parents with >1 child 0 of 1200
+time span s 0.0 7191.734
+frac requests that get a next turn within trace 0.11098779134295228
+gap(child-parent ts) n 1200 pctl 10/50/90/99 [5.1, 28.6, 255.3, 1533.3] min 1.5669999999999789
+has_child first half 0.16158536585365854 last 600s 0.04310344827586207
+types {'thinking': 10812}
+input pctl 50/90/99/max [3680.0, 13114.6, 24972.7] 51622 >=8K frac 0.19580096189419163 >=32K 0.001757306696263411
+child shares parent prefix (all but last block) 1156 1200

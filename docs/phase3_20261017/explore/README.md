@@ -121,3 +121,12 @@
 - 主 session 收齊 9 份文件後寫 `SUMMARY.md`：一張總表（方向、判定、一個關鍵數字、我的判讀）＋「同時值得又猜得到」的交集。
 - 交集不是空的 → 照那個問題重寫第三階段計畫書 §1、§8，再請 opencode 做一次零前文審查，你同意後凍結。
 - 交集是空的 → 照實寫：「延後設計下沒有值得預測的問題」，接進現有論文當 Step 3 的負面結果，和你、老師討論下一步。
+
+---
+
+## 4. 事後補充（2026-10-17T10:01Z，主 session；這時主 session 還沒看過任何 X1–X9 的結果）
+
+1. **新資料：FreeInference agentic trace**（HF `harvardMadsys/freeinference_agentic_trace` @ `16d3c04d`，CC-BY-4.0，不 gated）。由文獻 agent 找到（[`../research/LIT_AND_TRACES.md`](../research/LIT_AND_TRACES.md)）：12,002 個 session、`session_id`／`user_id`、真實毫秒時間、16-token 鏈式前綴 block（o200k_base）、工具時長；第 1 週 prompt 中位 89K token〔文獻 agent 計算，只算第 1 週〕。主 session 下載 `processed/*.parquet` 到 `/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/`。
+   - **用法**：照 §1 門檻它算真實 trace，但它是**登記之後才加的**。所以有用到它的方向，判定要**列兩個版本**：照原登記（不含 FreeInference）與含 FreeInference；兩者不同時照實寫，總結以原登記版為準，FreeInference 版當「下一輪要確認的線索」。
+2. **Mooncake 的 session 重建有歧義**（文獻 agent，conversation 檔）：寬鬆規則算出 44% 的請求會回來，嚴格規則（共用前綴最多 3 個請求，門檻是隨手定的）只剩 20%；72% 的子請求有不止一個候選父請求。用 Mooncake 重建 session 的方向，要報**至少兩種重建規則**的結果；判定照較保守（headroom 較小）的那個。
+3. **Bailian** 確認有 `chat_id`／`parent_chat_id`／`turn`／`type`，但每條只有 2 小時、右設限明顯（thinking 檔前半段 16.2% 回來、最後 600 秒 4.3%）。**WildChat-1M** 已下載、不 gated。
