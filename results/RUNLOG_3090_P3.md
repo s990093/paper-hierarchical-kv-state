@@ -208,3 +208,25 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 - RSF 太慢（一格 >5 分、10 GB）：在任何 B 結果之前改成最多 6,000 列、葉 ≥30。
 - agent 的 `pkill -f` 誤殺自己的 shell（exit 144），試跑重啟，不影響結果。
 **與假設的差異**: 9 月 B5「設限補值會壞排序」在這裡沒出現：只有兩個動作（品質過關的最小格式／INT2）時只需要「會不會被讀」，同分不傷；若加入「依回來時間選精度」的動作要重驗。
+
+## Milestone P3-M4 — 統一模擬器（工具與驗證；**沒有跑完整地圖**）
+**狀態**: PASS（不變量 (iii) 的第二主指標有 2 格極小違反，照報）
+**執行時間**: 2026-10-18 00:2x → 03:3x（+08:00；中途被 API 用量上限打斷一次）
+**run_id**: `20261018-002806-p3sim-inputs`、`-030356-p3sim-smoke`（冒煙，數字只在 run 目錄）、`-032839-p3sim-timing`、`-032844-p3sim-test`（28 passed）；失敗 `-025459-p3sim-smoke`、`-030356-p3sim-timing`（exit 1）；中止 `-024805-p3sim-smoke`（ABORTED）
+**指令**: `TIARA_NO_GPU=1 bash code/run3090.sh p3sim-test python -m pytest code/p3_sim/test_p3_sim.py`
+**產出檔**: `code/p3_sim/`（session 引擎、block 引擎、外層做法設定 `config/outer_policies.json`、壓縮決定、記帳）；文件 `docs/phase3_20261017/06_simulator.md`
+**關鍵數字**（不變量，run `20261018-032844-p3sim-test`）:
+- (i) 對 X1 的 LRU：144／144 逐位元相同。
+- (ii) 對 X4 的佇列預取：8／8 逐位元相同。
+- (iii) O 的品質帳全為 0；SSD 讀寫總量 O ≤ 每個品質帳為 0 的固定做法：120／120（block 引擎 10／10）；**SSD 尖峰 p99：118／120**，2 格（synth、E2／E5、16 GiB，對 C3）O 高 5e-5 GiB/s（6.691947 對 6.691897）。
+- (iv) O 容量單調：84／84。(v) 同設定同 seed 指紋相同。
+- 冒煙：1,096 格，記帳恆等式 7,746 條全部成立；沒有算、也沒有看任何「省多少」。
+**失敗與異常**:
+- 開發中 (iii) 第一次沒過：`AssertionError: O 的品質帳不是 0：E2 16 1408`（block 引擎 `assert 273 == 0`）。O 只看寫入當下的長度選格式（之後更長的請求會讀到）；block 引擎把只有 promote 的那一輪當成不會再讀。兩處都改了。
+- `20261018-025459-p3sim-smoke`：`TraceAssertion('bailian/traceA: 前綴鏈被違反 38 次（同一個 block key 出現在不同位置）')`。統一表裡 traceA 有 52,168 個 id 出現在不只一個位置（coder、thinking 為 0）；改用整段前綴當 key。**資料層發現**：03b 沒有檢查 Bailian 的跨請求鏈性質，要補。
+- `20261018-030356-p3sim-timing` exit 1：`TraceAssertion: freeinference/week13: 父請求排在子請求之後（472 ≥ 471）`（16 週只有 1 列，step 7 比 step 6 早 14 ms）。處理：子請求的到達時刻夾到父請求並計數，比例 >1e-4 仍丟錯。**主 session 暫定接受**（1 列／122 萬列、差 14 ms，對結果沒有實質影響；使用者可推翻）。
+**與假設的差異**:
+- 模擬器只有開迴路重播；03 §5 的預設是閉迴路（要在登記時決定）。
+- X6 查到 LMCache 預設是寫穿，比較像 E3，不是 04 寫的 E2；E2 改稱「LRU、滿了才寫（通用）」。
+- E6（block 引擎、一張 GPU）在整份 Mooncake 上 GPU 忙碌比例 3.27、Bailian coder 1.19：一張 GPU 撐不住，要決定每張 GPU 分多少 session。
+- 完整地圖〔估計，用 timing run 線性外插〕：session 引擎約 160–210 CPU 小時（8 個 process 約 20–26 小時）；E6 約 160–720 CPU 小時。時間幾乎都花在 FreeInference。
