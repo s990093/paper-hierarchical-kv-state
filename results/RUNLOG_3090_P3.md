@@ -189,3 +189,22 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 - agent 自己的失誤：`pkill -f "logs/p3cal/chain.sh"` 連帶砍到自己的 shell（exit 144），留下孤兒 `gpu_wait_run.sh`，已用 PID 停掉；沒有影響量測。主 session 事後確認沒有殘留的 p3cal 程序。
 - NOT_MEASURED：Llama 64K CPU 層；第三次 C0 的 duplex（02:33 起所有卡都被別人佔用）；CPU 忙＋GPU 忙同時；Llama／低精度的 CPU 忙倍數；CPU 忙倍數的重複性（只跑一次）。
 **與假設的差異**: 04 草稿 §5 的「3090 的 /ssd8 頻寬」原本 NOT_MEASURED，現在有了：它是 SATA QLC，比地圖主設定用的 MI300X 本地 SSD 慢一個數量級，3090 的真實機器點要用這個值。
+
+## Milestone P3-M3 — 預測器與 loss 開發（**合成資料、方法開發，不是結論**）
+**狀態**: PASS（DeepSurv 3 格發散，見下）
+**執行時間**: 2026-10-18 00:2x → 03:1x（+08:00；中途被 API 用量上限打斷一次）
+**run_id**: `20261018-023915-p3ld-A`、`-025026-p3ld-Areal`（真實格式表重跑 A）、`-024809-p3ld-B`（exit 5）、`-030646-p3ld-Brerun`（exit 5，3 筆 DeepSurv NaN 記成錯誤）、C、D、`D_w03`、E、`E_lam16`（完整清單在 07 文件）
+**指令**: `TIARA_NO_GPU=1 bash code/run3090.sh p3ld-<短名> python code/p3_lossdev/run_cell.py ...`；判讀 `code/p3_lossdev/analyze.py`
+**產出檔**: `results/p3_lossdev/`（`A.csv.gz`、`A_realtable.csv.gz` 是壓縮版，原檔 >1 MB，放在各自的 run 目錄）；文件 `docs/phase3_20261017/07_lossdev_synth.md`（開頭是「設計選擇與依據」表）、協定草稿 `08_prereg_predictor_draft.md`（未凍結）
+**關鍵數字**（合成資料：45 份＝ρ 5 種 × 不回來比例 π 3 種 × 3 seed；主設定 λ＝4；主 session 抽查 `A_summary.csv`）:
+- ρ＝1（線索最強）：離散 hazard −8.7% [−14.9, −2.6]、Cox −8.8%、BCE（1 小時）−8.5%（對 LRU 的 regret）；只補回 LRU→oracle 差距的 33–35%；oracle −20 到 −21%。
+- ρ＝0（線索沒用）：事後移門檻的方法都和 LRU 打平（+0.3% 到 +0.7%）；唯一明顯輸的是「成本加權＋固定門檻 0.5」（+10.8% [6.6, 15.0]），和 9 月 B6 同方向。
+- 模型：logistic regression 和小樹（≤200 棵、≤15 葉）最穩；大模型在 D2 過擬合。推論（batch 1024，每列）：LR 0.29 µs、LightGBM 200 棵 6.7 µs。
+- 整體退路（valid 上沒顯著贏 LRU 就改用 LRU）有用：λ＝16、ρ≤0.5 時把 +2% 左右的劣化拉回 0。
+- 特徵消融在合成資料上看不出 F2 的貢獻：這是產生器的設計造成的，不能當成真實資料的結論。
+**失敗與異常**:
+- `20261018-024809-p3ld-B` exit 5：3 格 `ValueError: NaNs detected in inputs, please correct or drop.`（lifelines concordance_index）；原因是 DeepSurv（pycox CoxPH）在 (ρ,π,seed)＝(0.25,0.9,2)、(1.0,0.9,0)、(1.0,0.9,1) 訓練發散、分數全 NaN。加 NaN 檢查重跑（`-030646-p3ld-Brerun`），3 筆記成錯誤；沒有調 DeepSurv 硬跑。用 `B_full.csv`，不要用 `B_summary.*`（缺 3 格）。
+- 產生器開發時兩個斷言失敗（scratch）：`1−ndtr` 尾端精度不夠；session 長度重尾 → w 從 0.5 改 0.2（07 §2.10）。
+- RSF 太慢（一格 >5 分、10 GB）：在任何 B 結果之前改成最多 6,000 列、葉 ≥30。
+- agent 的 `pkill -f` 誤殺自己的 shell（exit 144），試跑重啟，不影響結果。
+**與假設的差異**: 9 月 B5「設限補值會壞排序」在這裡沒出現：只有兩個動作（品質過關的最小格式／INT2）時只需要「會不會被讀」，同分不傷；若加入「依回來時間選精度」的動作要重驗。

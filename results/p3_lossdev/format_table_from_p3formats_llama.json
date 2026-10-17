@@ -1,0 +1,41 @@
+{
+ "label": "由 results/p3_formats/format_table.json（run 20261018-023443-p3fmt-table）轉出；ratio＝bytes_per_block_code÷BF16；品質照 quality_verdict_32k（規則見 adapt_table.py）",
+ "source": "results/p3_formats/format_table.json",
+ "source_run_id": "20261018-023443-p3fmt-table",
+ "source_sha256": "61676e6323c74ab78f71231c62b7bb2be28c89b425bfd1445a7fdb0c31b20e5a",
+ "model": "llama",
+ "formats": {
+  "bf16": {
+   "ratio": 1.0,
+   "pass_max_ctx": null,
+   "src_fmt": "bf16",
+   "quality_verdict_32k": "REFERENCE",
+   "bytes_per_block": 67108864,
+   "bytes_run_id": "20261018-023443-p3fmt-table"
+  },
+  "int8": {
+   "ratio": 0.515625,
+   "pass_max_ctx": null,
+   "src_fmt": "fp8_token",
+   "quality_verdict_32k": "PASS",
+   "bytes_per_block": 34603008,
+   "bytes_run_id": "20261018-023443-p3fmt-table"
+  },
+  "int4": {
+   "ratio": 0.3125,
+   "pass_max_ctx": 32768,
+   "src_fmt": "int4_kivi",
+   "quality_verdict_32k": "PASS",
+   "bytes_per_block": 20971520,
+   "bytes_run_id": "20261018-023443-p3fmt-table"
+  },
+  "int2": {
+   "ratio": 0.1875,
+   "pass_max_ctx": 0,
+   "src_fmt": "int2_kivi",
+   "quality_verdict_32k": "UNVERIFIED_TF_ONLY",
+   "bytes_per_block": 12582912,
+   "bytes_run_id": "20261018-023443-p3fmt-table"
+  }
+ }
+}
