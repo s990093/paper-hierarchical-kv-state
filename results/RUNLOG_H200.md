@@ -894,3 +894,16 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - 20705 `m10h-lc-screen`：PENDING（Resources）——hgx-cn01 8 張全被佔（其他 lab 7 張、本 lab 1 張），lab 配額只用 1/4，卡在節點滿不是配額。`make q` 推估 10/18 02:08 開始（照過去 30 天）。
 - 20702、20703（after:20705）、20706、20707、20708、20709 照原依賴等。
 - 主線判定（`make analyze-m10`）要等 20702、20703 的品質。
+
+### job 20705 `m10h-lc-screen` 失敗：試跑時我們自己的工作池超量開工作 → OOM（2026-10-18 02:43:06 → 02:56:09 +08:00，FAILED exit 1；commit `dc66667`）
+**狀態**: FAIL（程式的排程問題，不是量測結果）
+- 步驟 PILOT：6 個試跑（每個模型 × 64／128／252 個 block，每任務 1 題），工作池同一張卡最多 4 個。
+- `20261018-024610-m10h-lc-pilot-llama-252` exit 1，完整錯誤（stderr 最後）：
+  `torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 64.00 MiB. GPU 0 has a total capacity of 139.79 GiB of which 28.56 MiB is free. Process 3898647 has 40.74 GiB memory in use. Including non-PyTorch memory, this process has 52.12 GiB memory in use. Process 3901687 has 20.92 GiB memory in use. Process 3903658 has 25.96 GiB memory in use.`
+  發生在第 2 題（T3）的 `load_fmt` → `m10_codec.rel_err_centered`；第 1 題（T2）已跑完，peak 63.6 GiB。
+- 原因：`code/h200_pool.py`（照抄 MI300X `pool.py`）只看「當下剩餘記憶體 ≥ need＋8 GB」。Llama-252 在題目之間把記憶體放到 ~52 GB，工作池在 02:47:39、02:49:54 依當下剩餘（41、46 GB）放進 Qwen-64（need 30）、Qwen-128（need 32），四個 need 加起來 50＋78＋30＋32＝190 GB > 140 GB；Llama-252 下一題再漲就 OOM。MI300X 192 GB 沒遇到。
+- 其他 4 個試跑 exit 0（Llama-64、Llama-128、Qwen-64、Qwen-128）；Qwen-252 因為規則 2（有失敗就不開新的）沒開。
+- H200 上量到的 peak（torch，不含 CUDA context）：Llama 64／128 個 block 28.3／40.3 GiB，Qwen 20.1／25.3 GiB；MI300X 的 need 是 40／50、30／32 GB。
+- **修正**（`code/h200_pool.py`）：多一個條件「卡的總記憶體 − 跑中工作的 need 總和 ≥ need＋8 GB」（預約）；放不下時照順序找下一個放得下的。離線測試（假的 nvidia-smi）：試跑 6 個、正式 12 個的預約都不超過 132／140 GB；need＋8 超過整張卡的工作直接報錯；有失敗照舊不開新的。
+  正式掃描的 252 個 block：Llama（78）＋ Qwen（45）兩個一起，不會兩個 Llama-252 同時（MI300X 可以）。題數規則（≤ 14 h，÷3 平行）不改；H200 的實際牆鐘照實記。
+- **正在跑的 20706、20707 不受這次修正影響**（工作池已經載入舊程式）。10/18 07:5x 用 `srun --overlap nvidia-smi` 看：20706 四個 process 各 ~29 GB、共 115／140 GB；20707 四個各 ~21 GB、共 84 GB。q3 的工作都是 64 個 block（試跑看到 Llama peak 28.3 GiB），風險比 252 低，但沒有排除；如果 OOM，照規則 2 停下回報。
