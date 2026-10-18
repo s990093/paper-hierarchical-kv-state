@@ -1,0 +1,298 @@
+{
+ "run_id": "20261017-094511-m10h-grid-int4-llama",
+ "model": "llama",
+ "fmt": [
+  "int4_kivi"
+ ],
+ "delta_star": 0.05,
+ "delta_source": "/work/ChihChungHsu/hungweilai/tmp/claude-1046/-work-ChihChungHsu-hungweilai-paper-hierarchical-kv-state/a7c7b4ae-39a3-413c-a648-55aecdd2b3eb/scratchpad/d005/prec/speed_llama/noise.json",
+ "delta_detail": {
+  "cells": {
+   "32768|b16|idle": {
+    "n_launch": 3,
+    "launch_medians": [
+     0.35133,
+     0.35015,
+     0.35029
+    ],
+    "overall_median": 0.35061,
+    "delta": 0.003371291258743799,
+    "b_values": [
+     15,
+     16
+    ]
+   },
+   "32768|b32|idle": {
+    "n_launch": 3,
+    "launch_medians": [
+     0.81887,
+     0.8182,
+     0.81864
+    ],
+    "overall_median": 0.81857,
+    "delta": 0.0008264442617402959,
+    "b_values": [
+     31,
+     32
+    ]
+   },
+   "32768|b48|idle": {
+    "n_launch": 3,
+    "launch_medians": [
+     1.40193,
+     1.40136,
+     1.40094
+    ],
+    "overall_median": 1.40141,
+    "delta": 0.0007053592676251933,
+    "b_values": [
+     47,
+     48
+    ]
+   },
+   "32768|cpu|idle": {
+    "n_launch": 3,
+    "launch_medians": [
+     0.10215,
+     0.09287,
+     0.10181
+    ],
+    "overall_median": 0.10186,
+    "delta": 0.09102333138618773,
+    "b_values": [
+     4,
+     5
+    ]
+   },
+   "32768|b16|busy": {
+    "n_launch": 3,
+    "launch_medians": [
+     0.40462,
+     0.40592,
+     0.40463
+    ],
+    "overall_median": 0.40537,
+    "delta": 0.0032180516787769825,
+    "b_values": [
+     10
+    ]
+   },
+   "32768|b32|busy": {
+    "n_launch": 3,
+    "launch_medians": [
+     1.0491,
+     1.04804,
+     1.05049
+    ],
+    "overall_median": 1.04994,
+    "delta": 0.002338713978756958,
+    "b_values": [
+     23
+    ]
+   },
+   "32768|b48|busy": {
+    "n_launch": 3,
+    "launch_medians": [
+     2.11169,
+     2.11522,
+     2.1198
+    ],
+    "overall_median": 2.11734,
+    "delta": 0.003830750807794604,
+    "b_values": [
+     40
+    ]
+   },
+   "32768|cpu|busy": {
+    "n_launch": 3,
+    "launch_medians": [
+     0.15526,
+     0.12117,
+     0.12081
+    ],
+    "overall_median": 0.12121,
+    "delta": 0.28424513435692667,
+    "b_values": [
+     3,
+     4
+    ]
+   }
+  },
+  "delta": 0.28424513435692667,
+  "delta_star": 0.05,
+  "rule": "δ＝各格（E0、cake）各 process 中位數 (max−min)÷整體中位數 的最大值；δ*＝max(5%, δ)（03 §5.3）",
+  "run_id": "20261017-074226-m10h-noise-llama",
+  "model": "llama",
+  "sensitivity_note": "13 §11.3：只報告的對照，δ* 改成 0.05（原本 0.28424513435692667）"
+ },
+ "rule": "E1 贏＝中位數的差 > δ*，且配對差 bootstrap 95% CI 不含 0（03 §2.4、§5.3）",
+ "cells": [
+  {
+   "bw_name": "b16",
+   "gpu_state": "busy",
+   "n_pairs": 30,
+   "median_E0_s": 0.40075,
+   "median_E1_s": 0.24142,
+   "gain_E1_over_E0": 0.3976,
+   "paired_diff_ci95_s": [
+    0.15646700000000002,
+    0.16197599999999998
+   ],
+   "E1_wins": true,
+   "b_E0": [
+    10
+   ],
+   "b_E1": [
+    5
+   ],
+   "contaminated_rows": 0
+  },
+  {
+   "bw_name": "b16",
+   "gpu_state": "idle",
+   "n_pairs": 30,
+   "median_E0_s": 0.35055,
+   "median_E1_s": 0.18833,
+   "gain_E1_over_E0": 0.4628,
+   "paired_diff_ci95_s": [
+    0.16150699999999998,
+    0.162512
+   ],
+   "E1_wins": true,
+   "b_E0": [
+    15,
+    16
+   ],
+   "b_E1": [
+    8
+   ],
+   "contaminated_rows": 0
+  },
+  {
+   "bw_name": "b32",
+   "gpu_state": "busy",
+   "n_pairs": 30,
+   "median_E0_s": 1.04357,
+   "median_E1_s": 0.53067,
+   "gain_E1_over_E0": 0.4915,
+   "paired_diff_ci95_s": [
+    0.5091924999999999,
+    0.5131235000000001
+   ],
+   "E1_wins": true,
+   "b_E0": [
+    23
+   ],
+   "b_E1": [
+    12
+   ],
+   "contaminated_rows": 0
+  },
+  {
+   "bw_name": "b32",
+   "gpu_state": "idle",
+   "n_pairs": 30,
+   "median_E0_s": 0.81784,
+   "median_E1_s": 0.42148,
+   "gain_E1_over_E0": 0.4846,
+   "paired_diff_ci95_s": [
+    0.39568349999999997,
+    0.39696300000000007
+   ],
+   "E1_wins": true,
+   "b_E0": [
+    31,
+    32
+   ],
+   "b_E1": [
+    18
+   ],
+   "contaminated_rows": 0
+  },
+  {
+   "bw_name": "b48",
+   "gpu_state": "busy",
+   "n_pairs": 30,
+   "median_E0_s": 2.11095,
+   "median_E1_s": 1.18463,
+   "gain_E1_over_E0": 0.4388,
+   "paired_diff_ci95_s": [
+    0.922169,
+    0.928311
+   ],
+   "E1_wins": true,
+   "b_E0": [
+    40
+   ],
+   "b_E1": [
+    25
+   ],
+   "contaminated_rows": 0
+  },
+  {
+   "bw_name": "b48",
+   "gpu_state": "idle",
+   "n_pairs": 30,
+   "median_E0_s": 1.40074,
+   "median_E1_s": 0.87649,
+   "gain_E1_over_E0": 0.3743,
+   "paired_diff_ci95_s": [
+    0.5225500000000001,
+    0.5255205
+   ],
+   "E1_wins": true,
+   "b_E0": [
+    47,
+    48
+   ],
+   "b_E1": [
+    33
+   ],
+   "contaminated_rows": 0
+  },
+  {
+   "bw_name": "cpu",
+   "gpu_state": "busy",
+   "n_pairs": 30,
+   "median_E0_s": 0.12081,
+   "median_E1_s": 0.16839,
+   "gain_E1_over_E0": -0.3939,
+   "paired_diff_ci95_s": [
+    -0.048473999999999996,
+    -0.01520400000000001
+   ],
+   "E1_wins": false,
+   "b_E0": [
+    3,
+    4
+   ],
+   "b_E1": [
+    3
+   ],
+   "contaminated_rows": 0
+  },
+  {
+   "bw_name": "cpu",
+   "gpu_state": "idle",
+   "n_pairs": 30,
+   "median_E0_s": 0.10182,
+   "median_E1_s": 0.08858,
+   "gain_E1_over_E0": 0.13,
+   "paired_diff_ci95_s": [
+    -0.004319500000000004,
+    0.013371000000000001
+   ],
+   "E1_wins": false,
+   "b_E0": [
+    4,
+    5
+   ],
+   "b_E1": [
+    2,
+    3
+   ],
+   "contaminated_rows": 0
+  }
+ ],
+ "verdict": "K0 不成立：至少一格 E1 贏 E0（有賺頭）"
+}

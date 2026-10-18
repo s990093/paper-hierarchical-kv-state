@@ -1,0 +1,29 @@
+{
+ "tier": "fp8",
+ "llama": {
+  "per_config": {
+   "E1": false,
+   "E1s": false,
+   "E1sr": false
+  },
+  "K1": false,
+  "K1s": false,
+  "power_ok": true,
+  "model_pass": false,
+  "power_blocks": false
+ },
+ "qwen": {
+  "per_config": {
+   "E1": false,
+   "E1s": false,
+   "E1sr": false
+  },
+  "K1": false,
+  "K1s": false,
+  "power_ok": false,
+  "model_pass": false,
+  "power_blocks": false
+ },
+ "next_frozen_code": "題數不夠（E1 對 E0 的 CI 半寬 > 1.5 個百分點）：先加題再判（凍結時的程式）",
+ "next": "在 Llama 上做 Step 2b；過 → K3 停；不過 → Step 2 在 Llama 上做（Qwen 不進混合配置）（03 §1.1）"
+}

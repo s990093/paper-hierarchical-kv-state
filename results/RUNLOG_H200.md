@@ -1064,3 +1064,22 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   `(EngineCore) TypeError: FlashAttentionImpl.__init__() got an unexpected keyword argument 'layer_idx'` → `RuntimeError: Engine core initialization failed.`
 - 原因：Qwen-1M 的 config 有 `dual_chunk_attention_config`，vLLM 走 DCA 的 attention，CUDA 的 FlashAttention 後端不收 `layer_idx`。CLAUDE.md §3 在 3090 上記過同一件事（V1 engine 沒有可用的 DCA 路徑，改用拿掉 DCA 的變體）；這個 repo 裡已經沒有 `make_nodca_model.py`。MI300X 的 70 還沒跑（origin/main 沒有 vllm_ttft 結果），沒有前例。
 - 處理：70 只報告、和後面的 43 無關 → t2 從 CONFIRM-PLAN 重送為 **20917**（q5 **20918**，afterok）（Qwen 的兩格 TTFT 先 NOT_MEASURED，問使用者要不要用拿掉 DCA 的變體補量；補量要和我們自己的 job 錯開）。
+
+### 10/18 使用者「可以」：補 Qwen TTFT（拿掉 DCA）、加 256K、做 δ* 5% 的對照（13 §11；寫的時候三件都沒有資料）
+- 拿掉 DCA 的變體：`~/models/Qwen2.5-7B-Instruct-1M-noDCA`（只有 config.json 是實體檔、少了 `dual_chunk_attention_config`；其他 symlink 到原 blob）。harness 的 transformers 5.19 Qwen2 沒有 DCA（`dual_chunk` 0 次）。
+- 程式：`r_h200_lc.sh --part speed256`（TTFT-qwen-nodca default／512 → 256K 速度格子 FP8、INT4）、`--part screen256`（Qwen × 508 × T2–T4）；`h200_longctx_plan.py` 加 `LONGCTX_VARIANT=256`——沒設時在 scratchpad 重算的 `screen_plan.json`、`jobs_screen.json` 和 20897 用的逐字相同；256K 版沒有速度格子時照預期停（缺讀法 B）。
+- 送出：**20936** `m10h-lc256-speed`（afterany:20917）、**20937** `m10h-lc256-screen`（afterok:20936）；q5 **20918** 改 `afterok:20917,afterany:20936`（量時間的 20936 不和 q5 同時跑；20937 和 q5 都只量分數，可以同時）。
+
+### δ* 用 5% 的對照（head node，2026-10-18 19:5x；只報告，不改判）
+**產出檔**: `results/m10_precision_h200/analysis/sensitivity_delta005/`（README.txt、inputs/、fp8/、compare_mi300x_path/）
+- 只改 `speed_llama/noise.json` 的 δ*（0.284 → 0.05），重算 Llama 的 k0-verdict（FP8、INT4 都還是「K0 不成立」）與速度判定，再走 `h200_m10_analyze.sh all`、`compare`。
+| 節點 | MI300X | H200（δ* 0.284，判定） | H200（δ* 0.05，對照） |
+|:--|:--|:--|:--|
+| Step 1 Llama | 過（K1） | 過（K1） | **不過**（CPU 忙 1.14–1.15 > 1.05） |
+| Step 1 Qwen | 不過 | 不過 | 不過 |
+| 2b 的模型 | Qwen | Qwen | **Llama** |
+| K3 | 成立（Qwen INT8） | 不成立（Qwen） | 不成立（Llama：fp8k0 CPU 忙 1.2011、INT8 1.1431；ε 四情境都過） |
+| Step 2 | INT4 階、Llama | FP8 階、Qwen | **FP8 階、Llama**（F25／M25／B25 對 R25 的差 −0.34～+0.19 pp，CI 都含 0） |
+| K2 | 成立 | 成立 | 成立 |
+| 對照路徑（假設 K3 成立）的 INT4 | 兩個模型都不過 → Step 2 Llama → K2 | Llama E1sr 過 → Step 2 Qwen → K2 | **兩個模型都不過 → Step 2 Llama → K2（和 MI300X 每個節點相同）** |
+- 所有分岔都在同一格：**CPU 層（不限速的真 H2D）、GPU 忙**。終點三種走法都是 K2 成立。
