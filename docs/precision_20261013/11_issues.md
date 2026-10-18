@@ -301,6 +301,12 @@ run：`20261016-232855-m10-dqfast-grid-llama`、`-234030-…-qwen`、`-235027-�
 
 - **G5b（模擬 Cake 的兩條線，再和全部載入比）**：自動選對了。CPU 層每一格都選「不重算」（和全載入一樣快），b32、b48 都留在 Cake；對「每格最好」只差 0.4%（96 格幾何平均；CPU 層 0.7%、慢的層 0.3%）。原登記的 G5 差 4.8%（CPU 層 20%：GPU 閒時還是選 Cake）。唯一的弱點是 b16・GPU 忙：選了不重算，三格裡贏一格（Llama INT4 −12%）、輸兩格（FP8 +8–9%）。RUNLOG 14.2。
 - **GPU 忙時的拆**：S4（全部搬完一次拆）＋全載入，GPU 忙時快 21–56%，背景不受影響（問題一 §3d）。
+- **新格式的融合 kernel**（43d）：INT2、MXFP4、K4V2、K8V4 全部低精度時，CPU 層的還原從比 BF16 慢變成比 BF16 快（例如 Llama INT2 閒 0.122 → 0.035 s、忙 0.193 → 0.081 s）。RUNLOG 14.3。
+- **拆進 attention**（43e，對照組）：
+  - 下限（只搬不拆）：CPU 層 E1 Llama INT4 0.030／0.031 s、Qwen INT4 0.016／0.017 s（閒／忙）。S4＋全載入離它只有 2–5 ms。
+  - 代價在之後的 decode：我們的 Triton kernel 讀壓縮每個 token 多 0.1–6.4 ms（32K），Llama 生成 2–5 個 token 就賠回去。
+  - vLLM 的 FP8 production kernel 反而讓 decode 變快（Llama 32K −10%、128K −29%）；但 AMD 上 INT4 沒有這種現成 kernel。RUNLOG 14.4。
+  - 〔推論〕不改 attention 的話，S4＋全載入已經拿到大部分好處；要再往前，要有好的「讀壓縮的 attention kernel」（FP8 有、INT4 要自己寫好）。
 
 **更新後的「什麼時機用哪種組合」**（32K；CPU 層用 S4 的 grid、慢的層用 G5b 的 grid）：
 

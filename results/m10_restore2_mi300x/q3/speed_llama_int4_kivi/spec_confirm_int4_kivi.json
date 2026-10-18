@@ -1,0 +1,65 @@
+{
+ "model": "llama",
+ "fmt": "int4_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "SW-ERR-30",
+  "SW-R0-30",
+  "SW-R1-30",
+  "SW-R2-30",
+  "SW-R3-30",
+  "SW-R4-30",
+  "E1s"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 0.7
+  }
+ ],
+ "reps": 10,
+ "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_restore2_mi300x/q3/speed_llama_int4_kivi",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261018-141335-m10-rs2-q3-llama-int4_kivi/blocks.csv",
+ "verify": true,
+ "need_att": false,
+ "argv": [
+  "/mlsteam/workspace/paper-hierarchical-kv-state/code/m10_confirm.py",
+  "speed",
+  "--model",
+  "llama",
+  "--fmt",
+  "int4_kivi",
+  "--configs",
+  "SW-ERR-30",
+  "SW-R0-30",
+  "SW-R1-30",
+  "SW-R2-30",
+  "SW-R3-30",
+  "SW-R4-30",
+  "E1s",
+  "--out-dir",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_restore2_mi300x/q3/speed_llama_int4_kivi",
+  "--bw-json",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_llama/bw.json",
+  "--bw-names",
+  "cpu",
+  "--blocks-out",
+  "/mlsteam/data/tiara/runs/20261018-141335-m10-rs2-q3-llama-int4_kivi/blocks.csv"
+ ],
+ "run_id": "20261018-141335-m10-rs2-q3-llama-int4_kivi"
+}

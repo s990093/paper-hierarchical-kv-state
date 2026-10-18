@@ -1,0 +1,17 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E1s,cake,30,0.06623,0.27537,1,63.0,578027520.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,busy,SW-ATT-25,cake,30,0.06569,0.27451,1,16.0,1526726656.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,busy,SW-AXE-25,cake,30,0.06593,0.27503,1,16.0,1526726656.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,busy,SW-R0-25,cake,30,0.06595,0.27464,1,16.0,1526726656.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,busy,SW-R1-25,cake,30,0.06549,0.27517,1,16.0,1526726656.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,busy,SW-R2-25,cake,30,0.06542,0.27472,1,16.0,1526726656.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,busy,SW-R3-25,cake,30,0.06573,0.27458,1,16.0,1526726656.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,busy,SW-R4-25,cake,30,0.06522,0.27506,1,16.0,1526726656.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,E1s,cake,30,0.03685,0.1023,1,63.0,578027520.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,SW-ATT-25,cake,30,0.05196,0.11724,1 2,16.0,1497366528.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,SW-AXE-25,cake,30,0.05206,0.11757,1 2,16.0,1497366528.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,SW-R0-25,cake,30,0.05174,0.11733,1 2,16.0,1497366528.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,SW-R1-25,cake,30,0.05193,0.11749,1 2,16.0,1517551616.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,SW-R2-25,cake,30,0.05166,0.11736,1 2,16.0,1517551616.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,SW-R3-25,cake,30,0.05198,0.1174,1 2,16.0,1507459072.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi
+32768,cpu,idle,SW-R4-25,cake,30,0.052,0.11737,1 2,16.0,1507459072.0,,,30,0,20261018-142837-m10-rs2-q3-qwen-int4_kivi

@@ -3,6 +3,6 @@
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail
 RAW=/mlsteam/data/tiara/longctx_m10; mkdir -p $RAW
-python3 $JOBS/longctx_plan_n.py jobs-pilot > $JOBS/queue/91_jobs.out 2>&1 || { cat $JOBS/queue/91_jobs.out; exit 1; }
-pool $JOBS/jobs_91.json 4 || exit 1
-python3 $JOBS/longctx_plan_n.py plan || exit 1
+python3 $JOBS/longctx_plan_n.py jobs-pilot > $JOBS/queue/91_jobs.out 2>&1 || { cat $JOBS/queue/91_jobs.out; echo "44b：longctx_plan_n.py jobs-pilot 失敗（$JOBS/queue/91_jobs.out）→ 跳過" >> $JOBS/NEEDS_HUMAN; exit 0; }
+pool $JOBS/jobs_91.json 4 || { echo "44b：pool jobs_91.json 有 job 失敗（$JOBS/pool_*.log）→ 跳過這段的其餘部分" >> $JOBS/NEEDS_HUMAN; exit 0; }
+python3 $JOBS/longctx_plan_n.py plan || { echo "44b：longctx_plan_n.py plan 失敗 → 沒有 44c" >> $JOBS/NEEDS_HUMAN; exit 0; }

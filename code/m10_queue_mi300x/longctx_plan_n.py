@@ -119,7 +119,7 @@ def plan():
     open(f"{J}/queue/44c_longctx_screen.sh", "w").write(f"""# 10_longctx_plan §3.3 正式海選；題數與設定由 longctx_plan_n.py 照試跑決定：{choice['label']}，n＝{choice['n']}，估計 {choice['est_h']} 小時
 source {J}/lib.sh
 set -uo pipefail
-pool {J}/jobs_92.json 4 || exit 1
+pool {J}/jobs_92.json 4 || {{ echo "44c：pool jobs_92.json 有 job 失敗（{J}/pool_lcs-*.log）→ 跳過彙整" >> {J}/NEEDS_HUMAN; exit 0; }}
 # 彙整（CPU）；出錯不擋（寫 NEEDS_HUMAN）
 if [ -f {REPO}/code/m10_longctx_analyze.py ]; then
   python {REPO}/code/m10_longctx_analyze.py --raw {RAW} --out-dir {LC}/analysis > {J}/queue/44c_analyze.out 2>&1 \\

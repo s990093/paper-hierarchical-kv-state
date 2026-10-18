@@ -1,0 +1,68 @@
+[
+ {
+  "length": 32768,
+  "queries": 256,
+  "state": "busy",
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.659",
+  "n_matmul": 4392,
+  "seconds": 20.586,
+  "matmul_per_s": 213.349
+ },
+ {
+  "length": 32768,
+  "queries": 1,
+  "state": "busy",
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.647",
+  "n_matmul": 8756,
+  "seconds": 25.313,
+  "matmul_per_s": 345.909
+ },
+ {
+  "length": 65536,
+  "queries": 256,
+  "state": "busy",
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.660",
+  "n_matmul": 5860,
+  "seconds": 34.399,
+  "matmul_per_s": 170.354
+ },
+ {
+  "length": 65536,
+  "queries": 1,
+  "state": "busy",
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.647",
+  "n_matmul": 16407,
+  "seconds": 47.719,
+  "matmul_per_s": 343.825
+ },
+ {
+  "length": 129024,
+  "queries": 256,
+  "state": "busy",
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.656",
+  "n_matmul": 8252,
+  "seconds": 59.187,
+  "matmul_per_s": 139.423
+ },
+ {
+  "length": 129024,
+  "queries": 1,
+  "state": "busy",
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.649",
+  "n_matmul": 31155,
+  "seconds": 91.001,
+  "matmul_per_s": 342.359
+ }
+]

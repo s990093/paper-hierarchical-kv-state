@@ -1,0 +1,107 @@
+{
+ "device": "cuda",
+ "interp": false,
+ "all_pass": true,
+ "checks": [
+  {
+   "model": "llama",
+   "N": 32768,
+   "M": 256,
+   "fmt": "fp8_token",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.007740974426269531,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.007742166519165039,
+   "n_split": 5
+  },
+  {
+   "model": "llama",
+   "N": 32768,
+   "M": 256,
+   "fmt": "int4_kivi",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.007810115814208984,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.007742166519165039,
+   "n_split": 5
+  },
+  {
+   "model": "llama",
+   "N": 32768,
+   "M": 1,
+   "fmt": "fp8_token",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.003685474395751953,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.0031241178512573242,
+   "n_split": 76
+  },
+  {
+   "model": "llama",
+   "N": 32768,
+   "M": 1,
+   "fmt": "int4_kivi",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.00368344783782959,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.0031241178512573242,
+   "n_split": 76
+  },
+  {
+   "model": "qwen",
+   "N": 32768,
+   "M": 256,
+   "fmt": "fp8_head",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.007743358612060547,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.007771968841552734,
+   "n_split": 5
+  },
+  {
+   "model": "qwen",
+   "N": 32768,
+   "M": 256,
+   "fmt": "int4_kivi",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.007804393768310547,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.007771968841552734,
+   "n_split": 5
+  },
+  {
+   "model": "qwen",
+   "N": 32768,
+   "M": 1,
+   "fmt": "fp8_head",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.0019161105155944824,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.0018715858459472656,
+   "n_split": 152
+  },
+  {
+   "model": "qwen",
+   "N": 32768,
+   "M": 1,
+   "fmt": "int4_kivi",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.001946091651916504,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.0018715858459472656,
+   "n_split": 152
+  },
+  {
+   "model": "llama",
+   "N": 8192,
+   "M": 1,
+   "fmt": "fp8_token",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.003690958023071289,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.0034679174423217773,
+   "n_split": 76
+  },
+  {
+   "model": "llama",
+   "N": 8192,
+   "M": 1,
+   "fmt": "int4_kivi",
+   "bitwise_vs_same_kernel_on_decoded": true,
+   "max_abs_err_vs_sdpa_fp32": 0.0030111074447631836,
+   "bf16_kernel_max_abs_err_vs_sdpa_fp32": 0.0034679174423217773,
+   "n_split": 76
+  }
+ ]
+}

@@ -1,7 +1,7 @@
 # 從 55 拆出來（19:2xZ）：INT4 端點與混合配置的 T1／LongBench（只報告、封存）。要用 80 那次 grid 寫進 meets.json 的 @int4 會合點，所以排在 80 之後。
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail
-[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "事先登記還沒凍結"; exit 1; }
+[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "88：事先登記還沒凍結 → 跳過" | tee -a $JOBS/NEEDS_HUMAN; exit 0; }
 MODELS=${MODELS_51:-"llama qwen"}
 mkdir -p $OUT/quality_sealed
 python3 - <<PY
@@ -19,4 +19,4 @@ for m,need in (("llama",42),("qwen",28)):
         jobs.append(dict(name=f"i4m-{m}-T1", need_gb=need, cmd=f"m7run m10-i4m-{m}-T1 {q} --configs F25@{I} M25@{I} B25@{I} R25@{I} --modes A B --tasks T1 --n 180 --out $OUT/quality_sealed/int4mix_{m}_T1.csv"))
 json.dump(jobs,open("jobs_88.json","w"),indent=1)
 PY
-pool jobs_88.json 8 || exit 1
+pool jobs_88.json 8 || { echo "88：pool jobs_88.json 有 job 失敗（$JOBS/pool_*.log）→ 跳過這段的其餘部分" >> $JOBS/NEEDS_HUMAN; exit 0; }

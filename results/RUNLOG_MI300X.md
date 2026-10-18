@@ -843,4 +843,27 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - G5b：CPU 層 1.007（每一格都選「不重算」，E1：Llama FP8 48／62 ms、INT4 36／55、Qwen FP8 24／34、INT4 21／43，閒／忙，和全載入一樣）；b32、b48 都選 Cake（1.00）；**b16・忙選了不重算**：Llama INT4 287 vs Cake 327 ms（贏），Llama FP8 446 vs 411、Qwen FP8 362 vs 333（輸 8–9%），最差一格 1.10（Qwen INT4 b16・忙 E0）。
 - 這批用的是原本的拆法（S0）；S4／G5b 一起用的效果由 44d 量（P0、冠軍、Q4 的 P3、G5b、nodq 分開跑）。
 
+### 14.3 43d Q3：新格式的融合 kernel（10/18 13:59:49 → 14:38:04Z）
+
+- 7 個 grid（43 的配置，CPU 層，`M10_DEQUANT_FAST_X=1`），`20261018-135949-m10-rs2-q3-llama-int2_kivi` … `-143319-…-qwen-kv-int8_token-int4_kivi`；21 個 guard 全 CLEAN。表：`tables_13.md` 的 Q3。
+- 全部低精度（E1s）快很多（E1 中位數 s，閒／忙，原寫法 → 融合）：Llama INT2 KIVI 0.122 → 0.035／0.193 → 0.081、MXFP4 0.112 → 0.065／0.195 → 0.081、K4V2 0.096 → 0.060／0.192 → 0.081；Qwen K4V2 0.069 → 0.036／0.148 → 0.066、K8V4 0.059 → 0.037／0.082 → 0.065。新格式不再比 BF16（0.095／0.165）慢。
+- 混合配置（80% 以上還是 BF16）只快一點（Llama 0.099–0.104 → 0.095），到了 E0 的底。43 速度判準比的是同格式、同佔比之間，結論不受影響（RUNLOG 11.2p）。
+
+### 14.4 43e0／43e Q5：拆融合進 attention 的對照組（10/18 14:38:04 → 15:46:09Z）
+
+- 43e0：attention kernel 在 GPU 上重新自測 ALL PASS（`20261018-143804-m10-rs2-attn-selftest2`；讀壓縮＝同一 kernel 讀拆好的 BF16，逐位元；對 FP32 SDPA 誤差 0.0077–0.0078，和 BF16 版同級）→ `OK_attn`，(b) 有跑。
+- (a) 只搬不拆（nodq，attention 裡拆的還原下限）：`-143821-…-q5a-llama-fp8` … `-150037-…-qwen-int4`。CPU 層 E1（s），閒／忙：Llama FP8 0.042／0.045、INT4 0.030／0.031；Qwen FP8 0.019／0.021、INT4 0.016／0.017。S4＋全載入（14.1）在忙的時候只比它多 2–5 ms（Llama INT4 0.036、Qwen INT4 0.019）。
+- (b) attention 微測（`-150712-…-q5b-llama`、`-152107-…-q5b-qwen`；所有層合計，中位數 ms）：
+  - decode（1 個 query）：我們的 Triton kernel 讀壓縮比讀 BF16 慢——32K・閒 Llama FP8 7.96 vs 5.26、INT4 7.11；128K・閒 23.9／19.5 vs 7.8。Qwen 32K 幾乎一樣（4.9–5.0 vs 4.7），128K 11.5／10.2 vs 5.1。
+  - 256 個 query（像 prefill）：讀壓縮慢 3.6–4.6 倍（Llama 32K 154／131 vs 36）。〔推論〕每個 query 區塊都要把同一塊 K／V 重拆一次。
+  - vLLM-KIVI（A100 調的 Triton kernel，只量時間）：在 MI300X 上 decode 32K 要 235–270 ms，比我們的 kernel 慢約 40–50 倍，不能用。
+- (c)〔算術〕把「還原時省下的拆」攤到之後每個 token 的 decode：用我們的 kernel，Llama 生成 2–5 個 token 就賠回去，Qwen 4–54 個。
+- (d) vLLM 0.28 ROCm 的 FP8 KV（production kernel，attention 裡拆）：Llama decode 每 token 32K 5.27 vs BF16 5.88 ms（−10%）、128K 6.91 vs 9.76（−29%）；prefill＋1 慢 2–6%。`-153119-…-q5d-llama-auto`、`-153807-…-llama-fp8`。**Qwen 兩個都啟動失敗**：`TypeError: RocmAttentionImpl.__init__() got an unexpected keyword argument 'layer_idx'`（Qwen2.5-1M 的 config 有 DCA，vLLM 0.28 ROCm 不支援）。
+  - 修：`m10_vllm_kvdecode.py`、`m10_vllm_ttft.py` 的 Qwen 改用 `/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA`（同一份權重 symlink，只拿掉 DCA；CLAUDE.md §3 第 3 點；我們的 HF harness 本來就沒有 DCA）。重跑排成 `queue/44_v_rs2_q5d_qwen.sh`（44 之後）。stage 70 也用同一個路徑，已經一起改。
+- 讀法（只報告）：拆進 attention 要好的 kernel 才划算。我們自己寫的 Triton kernel 每個 token 多花 0.1–6.4 ms（32K；128K 更多，Llama・閒 16 ms），幾個 token 就把還原省下的賠掉；vLLM 的 FP8 kernel 反而讓 decode 變快（讀的位元組少）。但 AMD 上只有 FP8 有這種現成 kernel，INT4 沒有。在不改 attention 的前提下，S4＋全載入已經拿到大部分好處（離只搬不拆的下限 2–5 ms）。
+
+### 14.5 佇列的失敗處理（10/18 15:5xZ）
+
+- 10/17 那次 `exit 1` 讓整條佇列停了 3 小時（11.2o）。把還沒跑的 stage 全部改成「失敗 → 寫 NEEDS_HUMAN、跳過這段其餘部分、exit 0」：44a、44b、44c 的模板（`longctx_plan_n.py`）、45、46、55、60、70、75、88，還有 `m10_confirm.py plan` 的模板。只改失敗時的動作，指令本身沒動。舊檔在 `scratchpad/jobs/bak_20261018_exit1/`。
+
 **前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。

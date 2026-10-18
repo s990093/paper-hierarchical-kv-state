@@ -8,7 +8,7 @@ for tier in fp8 int4; do
   for L in 129024 65536; do
     for m in llama qwen; do
       G=$(fmt_of $m fp8); F=$(fmt_of $m $tier); D=$LC/speed_${m}_${L}_$F; mkdir -p $D
-      m7run m10-lc-grid-$m-$L-$F bash -c "python $REPO/code/m10_speed.py grid --model $m --fmt $F --base-fmt $G --out-dir $D --bw-json $OUT/speed_$m/bw.json --main-length $L --lengths --launches 2 --reps 5 --blocks-out \$TIARA_RUNS/\$RUN_ID/blocks.csv" || exit 1
+      m7run m10-lc-grid-$m-$L-$F bash -c "python $REPO/code/m10_speed.py grid --model $m --fmt $F --base-fmt $G --out-dir $D --bw-json $OUT/speed_$m/bw.json --main-length $L --lengths --launches 2 --reps 5 --blocks-out \$TIARA_RUNS/\$RUN_ID/blocks.csv" || echo "44a：長 context 速度 $m $L $F 失敗（見 runs/*-m10-lc-grid-$m-$L-$F）" >> $JOBS/NEEDS_HUMAN
     done
   done
 done

@@ -1,0 +1,81 @@
+{
+ "model": "llama",
+ "fmt": "fp8_token",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0",
+  "E1"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  },
+  {
+   "name": "b32",
+   "kind": "throttle",
+   "GiBps": 1.4668
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 0.7
+  }
+ ],
+ "reps": 10,
+ "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_restore2_mi300x/q5/nodq_llama_fp8",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261018-143821-m10-rs2-q5a-llama-fp8/blocks.csv",
+ "verify": true,
+ "extra_modes": [],
+ "extra_tiers": [],
+ "argv": [
+  "/mlsteam/workspace/paper-hierarchical-kv-state/code/m10_speed.py",
+  "grid",
+  "--model",
+  "llama",
+  "--fmt",
+  "fp8_token",
+  "--base-fmt",
+  "fp8_token",
+  "--out-dir",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_restore2_mi300x/q5/nodq_llama_fp8",
+  "--bw-json",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_llama/bw.json",
+  "--bw-names",
+  "cpu",
+  "b32",
+  "--configs",
+  "E0",
+  "E1",
+  "--refs",
+  "--lengths",
+  "--launches",
+  "3",
+  "--reps",
+  "10",
+  "--launch0",
+  "300",
+  "--blocks-out",
+  "/mlsteam/data/tiara/runs/20261018-143821-m10-rs2-q5a-llama-fp8/blocks.csv"
+ ],
+ "run_id": "20261018-143821-m10-rs2-q5a-llama-fp8",
+ "restore_variant": {
+  "kernel": "k3:32:1",
+  "sched": "nodq",
+  "group": 1,
+  "prio": false,
+  "unit": 512,
+  "meet": "none",
+  "io_prio": false
+ }
+}
