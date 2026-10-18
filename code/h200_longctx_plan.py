@@ -29,12 +29,16 @@ SW = os.path.join(REPO, "results", "m10_sweep_h200")
 RAW = os.environ.get("LONGCTX_RAW") or sys.exit("要設 LONGCTX_RAW（逐列 CSV 放哪裡，不進 git）")
 RUNS = os.environ.get("TIARA_RUNS") or sys.exit("要設 TIARA_RUNS")
 P = os.path.join(REPO, "results", "m10_pilot_mi300x", "e0_tune", "CANDIDATE_PARAMS.json")
-NBS = (64, 128, 252)
-TASKS = ["T2", "T3", "T4", "T5"]
+V256 = os.environ.get("LONGCTX_VARIANT") == "256"   # 13 §11.2（10/18）：只有 Qwen × 508 個 block（260,096 token）× T2–T4；沒設時不變
+MODELS = ("qwen",) if V256 else ("llama", "qwen")
+NBS = (508,) if V256 else (64, 128, 252)
+TASKS = ["T2", "T3", "T4"] if V256 else ["T2", "T3", "T4", "T5"]
+PLAN_JSON = "screen_plan_256.json" if V256 else "screen_plan.json"
 POL = ["F", "M", "B", "R0", "R1", "ERR", "ATT", "AXE", "ORC"]
 FR = [0.1, 0.25, 0.5, 0.75, 0.9]
-NEED = {("llama", 64): 40, ("llama", 128): 50, ("llama", 252): 78, ("qwen", 64): 30, ("qwen", 128): 32, ("qwen", 252): 45}
-SHARDS = {64: 1, 128: 2, 252: 3}
+NEED = {("llama", 64): 40, ("llama", 128): 50, ("llama", 252): 78, ("qwen", 64): 30, ("qwen", 128): 32, ("qwen", 252): 45,
+        ("qwen", 508): 70}         # 508：H200 量到 Qwen 252 個 block 的 peak 35.5 GiB，往上抓（13 §11.2）
+SHARDS = {64: 1, 128: 2, 252: 3, 508: 2}
 
 
 def fmt_of(m, tier):
@@ -64,7 +68,7 @@ def cmd(m, nb, n, pols, fracs, use_b, shard, out, run_name):
 
 def jobs_pilot():
     jobs, missing_b = [], []
-    for m in ("llama", "qwen"):
+    for m in MODELS:
         for nb in NBS:
             c, has_b = cmd(m, nb, 1, POL, FR, True, "0/1", f"{RAW}/pilot_{m}_{nb}.csv.gz", f"m10h-lc-pilot-{m}-{nb}")
             if not has_b:
@@ -90,11 +94,11 @@ def per_item_seconds(m, nb):
 
 
 def plan():
-    got = {(m, nb): per_item_seconds(m, nb) for m in ("llama", "qwen") for nb in NBS}
+    got = {(m, nb): per_item_seconds(m, nb) for m in MODELS for nb in NBS}
     if any(v is None for v, _ in got.values()):
         raise SystemExit(f"試跑的單題時間讀不到（每個模型 × 長度要 {len(TASKS)} 題）：{ {k: t for k, (v, t) in got.items()} }")
     dt = {k: v for k, (v, _) in got.items()}
-    base = sum(4 * v for v in dt.values()) / 3 / 3600         # n＝1、完整設定的牆鐘（小時）
+    base = sum(len(TASKS) * v for v in dt.values()) / 3 / 3600   # n＝1、完整設定的牆鐘（小時）；任務數 4（256K 是 3）
     levels = [("完整", POL, FR, True),
               ("拿掉讀法 B", POL, FR, False),
               ("拿掉讀法 B＋佔比 25/50/90%", POL, [0.25, 0.5, 0.9], False),
@@ -118,11 +122,11 @@ def plan():
                   pilot_items={f"{m}|{nb}": {i: [s, r] for i, (s, r) in t.items()} for (m, nb), (_, t) in got.items()},
                   platform="H200", rule="10_longctx_plan §3.3（MI300X 的 longctx_plan_n.py 同一條）")
     os.makedirs(LC, exist_ok=True)
-    json.dump(choice, open(f"{LC}/screen_plan.json", "w"), indent=1, ensure_ascii=False)
+    json.dump(choice, open(f"{LC}/{PLAN_JSON}", "w"), indent=1, ensure_ascii=False)
     print("[longctx plan]", choice, flush=True)
     jobs = []
-    for nb in (252, 128, 64):
-        for m in ("llama", "qwen"):
+    for nb in sorted(NBS, reverse=True):
+        for m in MODELS:
             k = SHARDS[nb]
             for s in range(k):
                 c, _ = cmd(m, nb, choice["n"], choice["policies"], choice["fracs"], choice["readout_b"], f"{s}/{k}",

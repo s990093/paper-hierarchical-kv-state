@@ -112,3 +112,22 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
 - 20707 的 fp8mix 任何一個 process 沒成功或 gpu_guard 報自己的卡上有外來 process：分數照用（品質規則，CLAUDE.md §3），列出來。
 
 **對照（只報告，不是 H200 的判定）**：用封存的 INT4 資料照 MI300X 的路算一遍——INT4 的 decide、K0（INT4）、端點每個模型、route int4 指定的模型做 Step 2 → K2。輸出放 `analysis/compare_mi300x_path/`，和 H200 判定的 `analysis/fp8/` 分開；RUNLOG 和報告一律標「對照：假設 K3 成立」。
+
+## 11. 10/18 加做三件（使用者「可以」；寫的時候這三件都還沒有任何資料）
+
+### 11.1 Qwen 的 vLLM TTFT 用拿掉 DCA 的變體補量（70，只報告）
+- 原因：20912 的 `TTFT-qwen-default` 失敗：vLLM 0.28.0 在 NVIDIA 上沒有可用的 DCA 路徑（`FlashAttentionImpl.__init__() got an unexpected keyword argument 'layer_idx'`），和 CLAUDE.md §3 在 3090 上記的一樣。
+- 變體：`~/models/Qwen2.5-7B-Instruct-1M-noDCA`。權重、tokenizer 等全部 symlink 到原 snapshot `e28526f7…` 的 blob，只有 `config.json` 拿掉 `dual_chunk_attention_config`（chunk_size 262144、local_size 8192、original_max_position_embeddings 262144），其他 key 逐字相同。做法和 3090 時期的 `make_nodca_model.py`（commit `52803bc` 刪掉前）相同。
+- 為什麼等價：TTFT 量 8K／16K／32K，都小於 DCA 的 chunk_size 262144，DCA 在一個 chunk 內就是一般的 attention；harness 的 transformers 5.19 Qwen2 沒有 DCA（`dual_chunk` 出現 0 次），所以 m10 的品質、速度本來就是這個 attention。
+- 跑法：同 MI300X 的 70（default、512 兩種切法，`m10_vllm_ttft.py` 不改），只把 `M7_QWEN_GLOB` 指到變體；`vllm_meta.json` 記實際的 model_path。報告一律註明「Qwen 用拿掉 DCA 的變體」。MI300X 的 70 用什麼，等它跑了再並列。
+- 量時間：和我們自己的其他 job 錯開（排在 t2 之後、q5 之前）。
+
+### 11.2 256K（只有 Qwen，T2–T4；10_longctx_plan 的延伸，探索、不做判定）
+- 長度：508 個 block × 512＝260,096 token（加生成留的空間 ≤ 262,144＝Qwen 拿掉 DCA 後的訓練長度）。Llama 上限 131,072，不做（CLAUDE.md §8 不准外推）。T5（CWE）在這個長度出不了題（10/17 試過）→ 只做 T2–T4。
+- 速度：同 44a（`m10_speed grid --main-length 260096`，FP8 主線粒度 fp8_head、INT4 int4_kivi，主線 8 配置，主線的 bw.json，GPU 忙用 H200 的 busy_levels，2 launch × 5 rep），gpu_guard 要 CLEAN。
+- 品質：同 44b／44c 的程序（試跑每任務 1 題 → 題數規則 → 正式），只有 Qwen × 508 個 block × T2–T4；放法、佔比、讀法、生成同 128K。題數規則同 10 §3.3（n ∈ {12, 9, 6, 3}，估計 ≤ 14 h；公式的任務數用 3）。工作池的 need 先設 70 GB（Qwen 252 個 block 在 H200 量到 peak 35.5 GiB；試跑記實際 peak）。
+- 輸出：`results/m10_longctx_h200/speed_qwen_260096_<fmt>/`、`screen_plan_256.json`；分析併入 `m10_longctx_analyze`（256K 一欄，標「只有 Qwen、T2–T4」，和 32K–128K 的四任務平均不能直接比）。
+
+### 11.3 δ* 用 5% 的對照（CPU，只報告，不改判）
+- 原因：Llama 的 δ*＝0.284 撐住了 Step 1 Llama 的 K1，以及對照路徑的 INT4 Llama E1sr（RUNLOG_H200「H200 的判定走完＋對照」）。
+- 做法：把 `speed_llama/noise.json` 的 δ* 換成 0.05（＝03 §5.3 的下限，也是 MI300X Llama 的值），其他輸入全部不動，用同一支 `h200_m10_analyze.sh`（`all`，加上需要時的 `compare`）在副本上重走。輸出 `analysis/sensitivity_delta005/`，README 標「只報告；H200 的判定照 δ* 0.284」。

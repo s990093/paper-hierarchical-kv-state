@@ -19,6 +19,8 @@
 #   大掃描的零件（m10_sweep parts：記憶體、載入、反量化；GPU 忙用 H200 的 busy2）＋ 長 context 速度格子
 #   （128K 先，再 64K；FP8 主線粒度、INT4 KIVI；主線 8 配置；主線的 bw.json；2 launch × 5 rep；同 MI300X 44a）
 # --part screen（1 張卡，只量分數）：試跑（每個模型 × 長度 1 題）→ 照 10 §3.3 的規則決定題數 → 正式（252 → 128 → 64 個 block）
+# --part speed256（10/18，13 §11.1–11.2；量時間）：Qwen 的 vLLM TTFT 用拿掉 DCA 的變體補量（70）＋ 256K（260,096 token）速度格子 FP8、INT4
+# --part screen256（10/18，13 §11.2；只量分數）：Qwen × 508 個 block × T2–T4 的試跑 → 題數 → 正式
 # 停止：任何一步失敗、速度格子或零件的 gpu_guard 不是 CLEAN（CLAUDE.md §3）、試跑缺讀法 B 的輸入。
 # =============================================================================
 set -uo pipefail
@@ -34,7 +36,7 @@ while [ $# -gt 0 ]; do
     *) echo "不認得的參數：$1（--help 看用法）" >&2; exit 2 ;;
   esac
 done
-case "$PART" in speed|screen) ;; *) echo "要 --part speed|screen" >&2; exit 2 ;; esac
+case "$PART" in speed|screen|speed256|screen256) ;; *) echo "要 --part speed|screen|speed256|screen256" >&2; exit 2 ;; esac
 
 _here="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
 if [ -n "${REPO:-}" ] && [ -f "$REPO/code/env_h200.sh" ]; then :
@@ -58,6 +60,8 @@ export LONGCTX_RAW=${LONGCTX_RAW:-$TIARA_HOME/longctx_m10h}          # 逐列 CS
 export LONGCTX_LC=$LC
 WORK=$TIARA_RUNS/_m10h_work/lc-$PART          # 固定路徑：--from SCREEN 接著跑時要讀前一個 job 寫的 jobs_screen.json
 export LONGCTX_JOBS=$WORK
+[ "$PART" = screen256 ] && export LONGCTX_VARIANT=256      # h200_longctx_plan.py：只有 Qwen × 508 × T2–T4（13 §11.2）
+NODCA=$HOME/models/Qwen2.5-7B-Instruct-1M-noDCA           # 13 §11.1：config 拿掉 dual_chunk_attention_config，權重 symlink
 
 if [ "$DRY" = 0 ]; then
   [ -n "${SLURM_JOB_ID:-}" ] || { echo "[r_h200_lc] 不在 Slurm job 裡。用 sbatch 送" >&2; exit 2; }
@@ -127,7 +131,20 @@ lc_grid() {       # MI300X queue/44a（＋GPU 忙用 H200 的 busy_levels）
   guard_files_clean "$d"/gpu_guard_${rid}_L*.json
 }
 
-if [ "$PART" = speed ]; then
+vllm_ttft_nodca() {   # 13 §11.1：同 r_h200_x.sh 的 70，只把 Qwen 的模型換成拿掉 DCA 的變體
+  [ -f "$NODCA/config.json" ] && ! grep -q dual_chunk_attention_config "$NODCA/config.json" || { echo "找不到 $NODCA 或 config 還有 DCA" >&2; return 1; }
+  mkdir -p "$OUT/vllm_ttft"
+  M7_QWEN_GLOB=$NODCA m7run m10h-vllm-qwen-nodca-$1 python code/m10_vllm_ttft.py --model qwen --chunking $1 --out-dir "$OUT/vllm_ttft"
+}
+
+if [ "$PART" = speed256 ]; then
+  for c in default 512; do step TTFT-qwen-nodca-$c vllm_ttft_nodca $c; done
+  for tier in fp8 int4; do step LCGRID-qwen-260096-$tier lc_grid qwen 260096 $tier; done
+elif [ "$PART" = screen256 ]; then
+  step PILOT256  bash -c 'python code/h200_longctx_plan.py jobs-pilot && cd "$LONGCTX_JOBS" && python "$REPO/code/h200_pool.py" jobs_pilot.json 4'
+  step PLAN256   python code/h200_longctx_plan.py plan
+  step SCREEN256 pool "$WORK/jobs_screen.json" 4
+elif [ "$PART" = speed ]; then
   for m in llama qwen; do step PARTS-$m parts $m; done
   # 使用者 10/17「先跑 128」：128K 的兩階先，再 64K（MI300X 44a 的順序是 fp8 128K、fp8 64K、int4 128K、int4 64K）
   for L in 129024 65536; do
