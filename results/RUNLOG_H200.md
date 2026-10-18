@@ -1029,3 +1029,31 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - **修正**（`code/r_h200_x.sh`，不改測試檔）：dqoffset 用 `PYTHONPATH=$REPO/code`；head node 確認 `import m10_codec, m10_dequant_fast` 可以。
 - **預檢 t2 其他步驟又找到一個**：`m10_dqsweep plan`、`m10_confirm plan` 都寫 `<jobs>/queue/*.sh` 但不建 `queue/`（MI300X 的 jobs 目錄本來就有）→ DQS-C、CONFIRM-PLAN 會失敗。`h200_lib` 先 `mkdir -p $WORK/queue`。在 scratchpad 用 H200 的 finalists 跑 `m10_confirm plan`：rc 0，寫出 43 的腳本（4 段、9 行 speed、沒有 /mlsteam）。
 - 也查了：`m10_vllm_ttft.py` 的模型路徑本來就讀 `M7_<MODEL>_GLOB`（env_h200.sh 有設），不用改；`m10_dqsweep list／env` 在 CPU 上正常；`m10_tier2` 讀 repo 相對路徑的 `tier_params.json`（存在）。GPU 才能跑的步驟（tier2 smoke、dqsweep smoke、TTFT）沒辦法預檢。
+
+### 20912 `m10h-t2`、20913 `m10h-q5` 重送（14:29 送出；20912 14:29:43 開跑，`c739bc1`）
+- 監看改看 20912、20913。
+
+### 合併 origin/main（AMD 到 `1ddba0b`）→ h200 `5116193`（2026-10-18 14:33:03 +08:00 快轉）
+- **為什麼**：讀 main 時發現 AMD 10/17 修了兩個 43 會踩到的 bug，H200 的分支只合到 `bcfe5b1`、沒有這兩個修正：
+  1. `92a31df`：`m10_confirm.py`（43 的冒煙／速度，ATT／AXE 選手）與 `m10_quality.py`（43 的品質）呼叫 `m10_sweep.ItemState`，類別實際叫 `Item` → NameError。H200 兩個模型的決賽都有 ATT／AXE。
+  2. `abd4e6f`：`m10_confirm.py plan` 把 `--params-file` 寫成字面 `$P`。H200 預檢的 `jobs_43q.json` 12 個指令都是 `--params-file $P` → q5 會失敗。
+- 其餘 code 改動是 13 號（還原第二輪）的開關，預設關閉（`M10_RS_PRIO`、`M10_MEET` none／g5、`nodq`、`M10_BUSY_CU_MASK`、`M10_DEQUANT_FAST_X`、`--extra-modes`）；預設路徑不變。`m10_sweep_analyze.py` 只改圖和 agg 的副檔名（選手規則沒動）。
+- 做法：另一個 worktree 合併、解衝突（`.gitignore`、`docs/precision_20261013/README.md`，兩邊都是各加一行，兩行都留），用合併後的程式在 scratchpad 跑 `m10_confirm plan`：12 個 `--params-file` 都是實際路徑；再快轉主工作目錄（不讓跑中的 t2 讀到有衝突標記的檔）。
+- **20912 的步驟用到的程式**：GPU-SELFTEST 的 4 個 run（dqfast-selftest、dqoffset、dqsweep-smoke-qwen、dqsweep-smoke-llama，最後一個 14:32:08 開始）是 `c739bc1`；DQ-BENCH 起是 `5116193`。
+- 預檢的副作用：`m10_confirm plan` 把 `confirm_plan.json` 寫進了 `results/m10_sweep_h200/`（14:32），已刪；CONFIRM-PLAN 會重寫。
+
+### 長 context 分析（head node，2026-10-18 14:3x；`M10_PRECISION_DIR=results/m10_precision_h200 python code/m10_longctx_analyze.py --raw ~/longctx_m10h --out-dir results/m10_longctx_h200/analysis --lc results/m10_longctx_h200`）
+**產出檔**: `results/m10_longctx_h200/analysis/`（`longctx_<m>.json`、`tables_longctx.md`、`figs/`）。探索、不做判定（10 §5）。每個長度 48 題（4 任務 × 12）。
+- 生成答對率（%）：
+  | 模型 | 長度 | E0 | ALL FP8 主線 | ALL int8_token | ALL int4_kivi |
+  |:--|:--|--:|--:|--:|--:|
+  | Llama | 32K | 67.6 | 70.3 | 67.6 | 69.2 |
+  | Llama | 64K | 66.6 | 63.6 | 67.6 | 67.0 |
+  | Llama | 128K | 42.2 | 40.8 | 42.4 | 42.7 |
+  | Qwen | 32K | 75.9 | 39.0 | 75.3 | 75.4 |
+  | Qwen | 64K | 61.0 | 15.5 | 61.5 | 60.9 |
+  | Qwen | 128K | 56.4 | 3.8 | 54.1 | 56.7 |
+- Qwen fp8_head 對 E0：−37.0／−45.5／−52.6 個百分點；「128K−32K」−15.6 [−31.9, +1.4]，CI 含 0，不標「隨長度變大」。
+- Qwen 有 6 個格式三個長度都是 0%（ALL 對 E0 等於 −E0）：fp8e5_head、int2h_g32、int4_token、int4h_token、mxfp4、nvfp4。
+- Llama 標「隨長度變大」（CI 不含 0）的：fp8_token 64K−32K、fp8e5_head 64K−32K 與 128K−32K、int2_kivi 128K−32K、int4_token、int4h_token、nvfp4 的 64K−32K（數字見 tables）。
+- MI300X 的長 context（44b／44c）在 origin/main 上還沒有結果，還不能對照。
