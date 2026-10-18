@@ -1097,3 +1097,17 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   中位數（s）：default 8K 0.1935、16K 0.4343、32K 1.0494；512 切法 0.2250、0.5039、1.2127。
 - **256K 速度格子**（`results/m10_longctx_h200/speed_qwen_260096_{fp8_head,int4_kivi}/`）：FP8 20:19 → 00:02，INT4 00:02 → 03:36；每格 2 份 gpu_guard 都 CLEAN。
 - 03:36 起 20918（q5，43 的品質）和 20937（256K 品質）同時跑（都只量分數）。
+
+### job 20937 `m10h-lc256-screen` 跑完（2026-10-19 03:36:04 → 05:18:29 +08:00，COMPLETED exit 0）
+- PILOT256：1 個 process（Qwen × 508 × T2–T4 各 1 題），單題平均 152.4 s，peak 56.5 GiB（need 設 70）。PLAN256：完整設定、**n＝12**、估計 0.51 h（`results/m10_longctx_h200/screen_plan_256.json`）。SCREEN256：2 個 shard，rc＝0。
+- 分析（head node；`code/h200_longctx256_analyze.py`，新寫，借用 `m10_longctx_analyze.py` 的函式、不改它）：`results/m10_longctx_h200/analysis/longctx256_qwen.json`、`tables_longctx256.md`。每個長度只取 T2–T4（36 題）。
+  | 長度 | E0 | ALL fp8_head | ALL int8_token | ALL int4_kivi |
+  |:--|--:|--:|--:|--:|
+  | 32K | 77.1 | 46.9 | 77.1 | 77.2 |
+  | 64K | 70.6 | 17.6 | 71.1 | 70.4 |
+  | 128K | 67.9 | 3.9 | 65.7 | 69.2 |
+  | 256K | 55.1 | 0.0 | 55.1 | 51.8 |
+  - fp8_head 對 E0「256K−32K」−25.0 [−42.1, −6.1] ↑（CI 不含 0）。int4_kivi 256K −3.3 [−10.0, +1.1]、int8_token 0.0。
+  - 位置（25%）：fp8_head 的 F 對 R0 +48.1 [+36.2, +59.9]、M +31.4 [+20.8, +42.5]、B −4.7 [−11.7, 0.0]；int8／int4_kivi 的差都在 ±3 個百分點內。
+  - 速度（E1 對 E0）：限速層 FP8 快 36.6–43.4%、INT4 快 37.1–59.3%；CPU 層 FP8 快 4.3–5.2%、**INT4 慢 23.9–24.1%**。
+- 注意：256K 的 CSV（`screen_qwen_508_*`）和 32K–128K 放在同一個 `~/longctx_m10h`；`m10_longctx_analyze.py` 的 LEN 沒有 508，之後要重跑 32K–128K 的分析時 `--raw` 指到不含 508 檔的目錄（已寫進新程式的說明）。
