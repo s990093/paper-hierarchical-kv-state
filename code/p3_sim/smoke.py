@@ -5,7 +5,7 @@
 用法：TIARA_NO_GPU=1 bash code/run3090.sh p3sim-smoke python code/p3_sim/smoke.py --procs 6
 2026-10-18（06 §11–§14）：--fmt official|placeholder（預設 official；和 c0c179b 的冒煙逐欄比對要給 placeholder）、
 --pols（預設＝舊的 C0–C4、O）、--o-cpu-only（另跑 c0c179b 的舊 O＝SSD 不再決定，給回歸比對）、--int2 serve|recompute|recompute_unverified、
---sess（每格另寫每個 session 的帳 npz 到 $RUN_DIR/sess/）。
+--sess（每格另寫每個 session 的帳 npz 到 $RUN_DIR/sess/）、--ulen prefix|request（06 §18）。
 """
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ SPECS = [("mi300x", "idle", "idle", 1, "cake", "mi300x_local"), ("mi300x", "busy
          ("mi300x", "idle", "idle", 1, "load", "mi300x_local"), ("3090", "idle", "idle", 1, "cake", "mi300x_local")]
 
 
-OPT = dict(fmt="official", pols=POLS, o_cpu_only=False, int2="serve", sess=False)
+OPT = dict(fmt="official", pols=POLS, o_cpu_only=False, int2="serve", sess=False, ulen="prefix")
 
 
 def _pols():
@@ -79,7 +79,8 @@ def job(args):
                     # E6 只在 serve=fifo1 有佇列；同一個 block 引擎另跑 E2 當基準。一張 GPU 撐不住的就照錄 GPU 忙碌比例。
                     for c2 in ("E2", "E6"):
                         r, q, ids, eng, vs = sim.run_cell_fifo1(P, c2, pol, cap, "llama", SPECS[0], H=H, fmt_path=fmt, pol_kw=kw,
-                                                                int2_on_read=OPT["int2"], sess_out=_sess(name, c2 + "@fifo1", pol, kw))
+                                                                int2_on_read=OPT["int2"], unverified_len=OPT["ulen"],
+                                                                sess_out=_sess(name, c2 + "@fifo1", pol, kw))
                         for x in r:
                             x["outer"] = c2 + "@fifo1"
                         out["cells"] += r
@@ -87,7 +88,7 @@ def job(args):
                         out["ids"] += [dict(data=name, **x) for x in ids]
                 else:
                     r, q, ids, eng, vs = sim.run_cell(P, code, pol, cap, "llama", SPECS, T=T, H=H, check=500, fmt_path=fmt, pol_kw=kw,
-                                                      int2_on_read=OPT["int2"],
+                                                      int2_on_read=OPT["int2"], unverified_len=OPT["ulen"],
                                                       sess_out=_sess(name, code + (f"-T{T}" if T else ""), pol, kw))
                     out["cells"] += r
                     out["quality"] += [dict(data=name, **x) for x in q]
@@ -164,9 +165,10 @@ def main():
     ap.add_argument("--o-cpu-only", action="store_true")
     ap.add_argument("--int2", default="serve", choices=["serve", "recompute", "recompute_unverified"])
     ap.add_argument("--sess", action="store_true")
+    ap.add_argument("--ulen", default="prefix", choices=["prefix", "request"], help="未驗證格式的讀取長度（06 §18）")
     ap.add_argument("--no-extra", action="store_true")
     a = ap.parse_args()
-    opt = dict(fmt=a.fmt, pols=a.pols, o_cpu_only=a.o_cpu_only, int2=a.int2, sess=a.sess)
+    opt = dict(fmt=a.fmt, pols=a.pols, o_cpu_only=a.o_cpu_only, int2=a.int2, sess=a.sess, ulen=a.ulen)
     OPT.update(opt)
     os.makedirs(RUN_DIR, exist_ok=True)
     t0 = time.time()

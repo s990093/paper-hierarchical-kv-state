@@ -381,24 +381,32 @@ def test_official_format_table_adapter():
     rows = {(r["model"], r["fmt"]): r for r in d["rows"]}
     sha = FM.sha256_file(FM.OFFICIAL_FORMAT_TABLE)
     out = []
-    for model in ("llama", "qwen"):
-        for plat, (ci, cb) in FM.OFFICIAL_DQ_COLS.items():
-            mf = load_format_table(model, plat)       # 預設＝正式表
-            assert mf.src["sha256"] == sha and mf.src["kind"] == "official" and not mf.placeholder
-            for fid, fmt in FM.OFFICIAL_CONCRETE[model].items():
-                c = rows[(model, fmt)]["cells"]
-                assert mf.bytes[fid] == c["bytes_per_block_code"]["value"]
-                for col, g in ((ci, "idle"), (cb, "busy")):
-                    v = c[col]["value"]
-                    assert (mf.dq[g][fid] is None) if isinstance(v, str) else abs(mf.dq[g][fid] - v / 1e3) < 1e-15
-                out.append(dict(test="official_fmt", model=model, platform=plat, fid=fid, concrete=fmt,
-                                status_32768=mf.status(fid, 32768), status_32769=mf.status(fid, 32769)))
-            assert mf.bin_of(32768) == 0 and mf.bin_of(32769) == 1 and mf.bin_of(32768 + 512) == 1
-            assert [mf.status(f, 32768) for f in (1, 2, 3, 4)] == ["pass", "pass", "pass", "unverified"]
-            assert [mf.status(f, 1 << 20) for f in (1, 2, 3, 4)] == ["pass", "unverified", "unverified", "unverified"]
-            assert [mf.status(f, 512) for f in (1, 2, 3, 4)] == ["pass", "pass", "pass", "unverified"]
-            assert mf.never_read_only == {4}
-            assert all(q["agrees_with_table_verdict"] for q in mf.src["quality"].values())
+    assert FM.DEFAULT_DQ_SET == "cake_k0" and FM.OFFICIAL_DQ_COLS["mi300x"] == ("dq_mi300x_cake_k0_idle_ms", "dq_mi300x_cake_k0_busy_ms")
+    for model, dqs, plat in [(m, d_, p_) for m in ("llama", "qwen") for d_ in FM.DQ_SETS for p_ in FM.DQ_SETS[d_]]:
+        ci, cb = FM.DQ_SETS[dqs][plat]
+        mf = load_format_table(model, plat, "official" if dqs == FM.DEFAULT_DQ_SET else f"official:{dqs}")   # 預設＝正式表＋cake_k0
+        assert mf.src["dq_set"] == dqs
+        assert mf.src["sha256"] == sha and mf.src["kind"] == "official" and not mf.placeholder
+        for fid, fmt in FM.OFFICIAL_CONCRETE[model].items():
+            c = rows[(model, fmt)]["cells"]
+            assert mf.bytes[fid] == c["bytes_per_block_code"]["value"]
+            for col, g in ((ci, "idle"), (cb, "busy")):
+                v = c[col]["value"]
+                assert (mf.dq[g][fid] is None) if isinstance(v, str) else abs(mf.dq[g][fid] - v / 1e3) < 1e-15
+            out.append(dict(test="official_fmt", model=model, platform=plat, fid=fid, concrete=fmt,
+                            status_32768=mf.status(fid, 32768), status_32769=mf.status(fid, 32769)))
+        assert mf.bin_of(32768) == 0 and mf.bin_of(32769) == 1 and mf.bin_of(32768 + 512) == 1
+        assert [mf.status(f, 32768) for f in (1, 2, 3, 4)] == ["pass", "pass", "pass", "unverified"]
+        assert [mf.status(f, 1 << 20) for f in (1, 2, 3, 4)] == ["pass", "unverified", "unverified", "unverified"]
+        assert [mf.status(f, 512) for f in (1, 2, 3, 4)] == ["pass", "pass", "pass", "unverified"]
+        assert mf.never_read_only == {4}
+        assert all(q["agrees_with_table_verdict"] for q in mf.src["quality"].values())
+    # 04 v4 §9：MI300X 預設＝「還原中・Cake・K0」；舊的「只載入」欄還可以選（值不同）
+    mfd, mfl = load_format_table("llama", "mi300x"), load_format_table("llama", "mi300x", "official:loadonly_k0")
+    assert mfd.dq["idle"][4] == 0.0014996 and mfd.dq["busy"][4] == 0.0021866 and mfl.dq["idle"][4] is None
+    assert mfd.dq["idle"][2] == 0.3867 / 1e3 and mfl.dq["idle"][2] == 0.2331 / 1e3
+    assert mfd.src["sha256"] == mfl.src["sha256"]
+    assert load_format_table("qwen", "mi300x").dq["idle"][4] is None and load_format_table("qwen", "mi300x").dq["idle"][2] == 0.166 / 1e3
     assert load_format_table("qwen", "mi300x").src["concrete"]["8bit"] == "int8_token"      # Qwen 的 FP8 不過 → INT8
     assert load_format_table("llama", "mi300x").src["concrete"]["8bit"] == "fp8_token"
     # FAIL 的格式（Qwen fp8_head）照判準算出 fail（驗算判準本身）
@@ -415,8 +423,12 @@ def test_official_table_sha_in_rows_and_ttft_request_rule():
     r0, _, _, _, v0 = sim.run_cell(P, "E5", "C0", 4, "llama", SPECS[:1], T=300)
     assert r0[0]["format_table_sha256"] == sha and r0[0]["format_table_kind"] == "official"
     assert r0[0]["ttftq_valid"] and r0[0]["ttft_nm_ret_requests"] == 0          # C0 只用 bf16（解壓定義為 0）
-    assert r0[0]["ttft_valid"] is False                                         # 舊規則：表裡有 NOT_MEASURED 的格式就整個 view 不算
-    r1, _, _, e1, v1 = sim.run_cell(P, "E5", "D-idle", 4, "llama", SPECS[:1], T=300, pol_kw={"d_idle_tau_s": 60.0})
+    assert r0[0]["ttft_valid"] is True and r0[0]["format_dq_set"] == "cake_k0"  # Llama／MI300X 的 Cake・K0 欄四個格式都有值（04 v4 §9）
+    rl, _, _, _, _ = sim.run_cell(P, "E5", "C0", 4, "llama", SPECS[:1], T=300, fmt_path="official:loadonly_k0")
+    assert rl[0]["ttft_valid"] is False and rl[0]["format_dq_set"] == "loadonly_k0"    # 舊的只載入欄：Llama int2 沒有值 → 舊規則整個 view 不算
+    # Qwen 的 int2（Cake・K0 欄）是 NOT_MEASURED：真的載入到它的請求 → ttftq_* 才是 NOT_MEASURED，位元組照算
+    r1, _, _, e1, v1 = sim.run_cell(P, "E5", "D-idle", 4, "qwen", SPECS[:1], T=300, pol_kw={"d_idle_tau_s": 60.0})
+    assert r1[0]["ttft_valid"] is False
     n_int2_reads = int(np.sum((v1[0].nS + v1[0].nC > 0) & (v1[0].wq == 4) & (np.asarray(P["kindc"]) == 1)))
     if n_int2_reads:
         assert r1[0]["ttft_nm_ret_requests"] > 0 and r1[0]["ttftq_mean_s"] == "NOT_MEASURED"
@@ -635,3 +647,75 @@ def test_recompute_unverified(ft, engine):
         out.append(dict(test="recompute_unverified", engine=engine, policy=pol, surprise_events=r[0]["surprise_events"]))
     assert any(x["surprise_events"] > 0 for x in out if x["policy"] == "C2"), "C2（全 int4）在 ≥16K 的讀取應該觸發重算"
     _write_rows("test_recompute_unverified.csv", out)
+
+
+# ===================================================================== 2026-10-18（06 §18）嚴格讀取長度：unverified_len="request"
+def _hand_P_strict():
+    """手造：session 0 在 r0 寫 4 個 block；session 1（r1）把它擠出 CPU（降級到 SSD）；session 0 在 r2 回來，
+    r2 的輸入是 40 個 block＝20,480 token（> 測試表的 16,384）、存的前綴只有 4 個 block＝2,048 token。"""
+    full = [[0, 1, 2, 3], [10, 11, 12, 13], [0, 1, 2, 3, 4, 5]]
+    acc = {}
+    for r, ks in enumerate(full):
+        for b in ks:
+            acc.setdefault(b, []).append(r)
+    return dict(full=full, nall=[4, 4, 40], acc=acc, tl=[0.0, 10.0, 20.0], kindc=[0, 0, 1], sessl=[0, 1, 0], parentl=[-1, -1, 0],
+                obs_end=[1e6] * 3, nmax=64, B=14, R=dict(n_sess=2), win=(0.0, 100.0),
+                meta=dict(source="hand", variant="strict", tier="S", n_req=3, n_sess=2))
+
+
+def test_strict_request_length_hand(ft):
+    """嚴格讀取長度（04 v4 §3.3）：同一個放置，prefix 版用載入的前綴長度（2,048 token → int4 過關、照讀），
+    request 版用請求的輸入長度（20,480 token → int4 不過關 → 整段重算）；O、O-len 在 request 版挑 8bit（int4 在那個長度不過關），0 次重算。"""
+    P = _hand_P_strict()
+    cap = 4 * BF
+    out = []
+    res = {}
+    for ul in ("prefix", "request"):
+        for pol in ("C1", "O", "O-len", "O-reuse"):
+            v = View(load_costs("mi300x", "llama"), load_format_table("llama", "mi300x", ft), "idle", "cake", 64, 3)
+            mf = load_format_table("llama", "mi300x", ft)
+            comp = make_policy(pol, mf, o_read_len=ul)
+            e = Engine(P, sim.outer_cfg("E2"), comp, cap, [v], mf, check=1, int2_on_read="recompute_unverified", unverified_len=ul).run()
+            res[(ul, pol)] = e
+            out.append(dict(test="strict_hand", unverified_len=ul, policy=pol, surprise_blocks=int(e.surp_blk.sum()),
+                            L_tok_r2=int(e.Ltok[2]), ssd_fmt_b0=e.sfmt[0], cpu_fmt_b0=e.cfmt[0]))
+    assert res[("prefix", "C1")].surp_blk.sum() == 0 and res[("prefix", "C1")].Ltok[2] == 4 * 512
+    assert res[("request", "C1")].surp_blk[2] == 4 and res[("request", "C1")].Ltok[2] == 0         # int4 來歷 → 整段重算
+    for pol in ("O", "O-len"):
+        e = res[("request", pol)]
+        assert e.surp_blk.sum() == 0, pol
+        assert e.sfmt[0] == 2 or e.cfmt[0] == 2, (pol, e.sfmt[0], e.cfmt[0])                        # 8bit：20,480 token 下過關、最省
+        assert e.Ltok[2] == 4 * 512
+    # prefix 版的 oracle 看載入的前綴長度（3,072 token）→ int4，和 request 版不同
+    assert res[("prefix", "O")].sfmt[0] == 3 or res[("prefix", "O")].cfmt[0] == 3
+    # request 版的品質帳用請求長度分箱：C1 的重算讓 reads_unverified／fail 為 0
+    rr, _, ids, e2, _ = sim.run_cell(P, "E2", "C1", 4 * BF / GiB, "llama", SPECS[:1], fmt_path=ft, check=1,
+                                     int2_on_read="recompute_unverified", unverified_len="request")
+    assert all(i["ok"] for i in ids) and rr[0]["reads_fail"] == 0 and rr[0]["reads_unverified"] == 0 and rr[0]["surprise_blocks"] == 4
+    assert rr[0]["unverified_len"] == "request"
+    # serve 模式（舊行為）＋request 長度：只改品質帳的分箱（r2 的 4 個 int4 block 在 20,480 token 下 fail）
+    rs, _, _, _, _ = sim.run_cell(P, "E2", "C1", 4 * BF / GiB, "llama", SPECS[:1], fmt_path=ft, check=1, unverified_len="request")
+    rp, _, _, _, _ = sim.run_cell(P, "E2", "C1", 4 * BF / GiB, "llama", SPECS[:1], fmt_path=ft, check=1)
+    assert rs[0]["reads_fail"] == 1 and rp[0]["reads_fail"] == 0 and rs[0]["surprise_events"] == 0
+    _write_rows("test_strict_hand.csv", out)
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_strict_oracle_invariants_synth(engine):
+    """合成資料（只查不變量，不比較）：request 版嚴格規則下，O、O-len 沒有意外重算、品質帳為 0；非 oracle 的可以有；預設（serve）不變。"""
+    P = _P(*SYN)
+    kw = dict(int2_on_read="recompute_unverified", unverified_len="request")
+    out = {}
+    for pol in ("C0", "C1", "C2", "O", "O-len", "O-reuse", "O-loose", "D-idle"):
+        if engine == "session":
+            r, _, ids, e, _ = sim.run_cell(P, "E5", pol, 2, "llama", SPECS[:1], T=300, H=1800.0, check=200, **kw)
+        else:
+            r, _, ids, e, _ = sim.run_cell_fifo1(P, "E2", pol, 2, "llama", SPECS[0], H=1800.0, **kw)
+        assert all(i["ok"] for i in ids), (pol, [i for i in ids if not i["ok"]])
+        assert r[0]["reads_fail"] == 0 and r[0]["reads_unverified"] == 0, (pol, r[0]["reads_fail"], r[0]["reads_unverified"])
+        out[pol] = r[0]
+    for pol in ("C0", "O", "O-len"):
+        assert out[pol]["surprise_events"] == 0 and out[pol]["surprise_blocks"] == 0, (pol, out[pol]["surprise_events"])
+    assert out["C2"]["surprise_events"] > 0, "全 int4：> 32K 的請求（63%）應該重算"
+    _write_rows("test_strict_synth.csv", [dict(test="strict_synth", engine=engine, policy=k, surprise_events=v["surprise_events"],
+                                               surprise_blocks=v["surprise_blocks"], reads=v["reads"]) for k, v in out.items()])

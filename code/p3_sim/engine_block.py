@@ -24,7 +24,7 @@ sys.path.insert(0, HERE)
 
 import numpy as np  # noqa: E402
 
-from engine import Chan, INF, ok_token_limits  # noqa: E402
+from engine import Chan, INF, ok_token_limits, pass_masks, request_lengths  # noqa: E402
 from formats import FMT_NAMES  # noqa: E402
 
 GiB = 1 << 30
@@ -52,8 +52,10 @@ def finish_reqs(reqs):
 
 def reqs_from_P(P):
     """trace.prepare 的 P → X4 形式的請求（h＝完整 block；prefill 到 nall）。"""
+    rl = request_lengths(P)
     reqs = [dict(t=P["tl"][r], h=list(P["full"][r]), n_all=P["nall"][r], ret=P["kindc"][r] == 1,
-                 ret_in_unit=P["kindc"][r] == 1, par=P["parentl"][r], out=0, s=P["sessl"][r]) for r in range(len(P["full"]))]
+                 ret_in_unit=P["kindc"][r] == 1, par=P["parentl"][r], out=0, s=P["sessl"][r], len_tok=rl[r])
+            for r in range(len(P["full"]))]
     return finish_reqs(reqs)
 
 
@@ -82,7 +84,7 @@ class BView:
 
 class BlockEngine:
     def __init__(self, reqs, outer, comp, cap_bytes, view, mf, qp=False, promote=True, block_tokens=512, H=0.0, obs_end=None,
-                 x4_prefill=False, int2_on_read="serve"):
+                 x4_prefill=False, int2_on_read="serve", unverified_len="prefix", H_extra=0.0):
         self.R = reqs
         self.outer = outer
         self.E = outer["code"]
@@ -127,6 +129,14 @@ class BlockEngine:
         self.ssd_moment = bool(getattr(comp, "ssd_moment", False))
         assert int2_on_read in ("serve", "recompute", "recompute_unverified"), int2_on_read
         self.int2_on_read = int2_on_read
+        assert unverified_len in ("prefix", "request"), unverified_len
+        self.unverified_len = unverified_len
+        self.req_strict = unverified_len == "request"
+        self.reqlen = [q["len_tok"] if "len_tok" in q else max(q.get("n_all", len(q["h"])), len(q["h"])) * block_tokens for q in reqs]
+        self.Lqual = np.asarray(self.reqlen, np.int64) if self.req_strict else self.Ltok   # 品質帳用的讀取長度（06 §18）
+        self.okmask = pass_masks(mf)
+        self.rbin = [mf.bin_of(x) for x in self.reqlen] if self.req_strict else None
+        self._sufreq = {}
         self.lim = ok_token_limits(mf)
         self.unv_on = int2_on_read == "recompute_unverified"
         if self.unv_on:        # 04 v4 §3.3：前 L 個的來歷在 L×512 都要 pass；任何長度都不 pass 的來歷（INT2）的副本被重算取代
@@ -140,6 +150,9 @@ class BlockEngine:
         self.s_ssd_w = {}                         # session → SSD 寫入位元組（降級算在 block 的 owner 請求的 session）
         self.cutH = (max(obs_end) - H) if (H > 0 and obs_end) else None
         self.s_ssd_w_H = {}                       # 截尾版：淘汰時刻 < 觀察窗終點 − H
+        self.H_extra = float(H_extra)             # 第二個只記帳、不影響放置的截尾（例如 2H；06 §18）
+        self.cutH2 = (max(obs_end) - self.H_extra) if (self.H_extra > 0 and obs_end) else None
+        self.s_ssd_w_H2 = {}
         self.s_last = {}                          # session → 最近一個服務完的請求 index
         self.cur_j = -1
         self._sufmax = {}
@@ -219,6 +232,8 @@ class BlockEngine:
                 self.s_ssd_w[so] = self.s_ssd_w.get(so, 0) + nb
                 if self.cutH is not None and now < self.cutH:
                     self.s_ssd_w_H[so] = self.s_ssd_w_H.get(so, 0) + nb
+                if self.cutH2 is not None and now < self.cutH2:
+                    self.s_ssd_w_H2[so] = self.s_ssd_w_H2.get(so, 0) + nb
                 self.wbytes["demote"] += nb
                 self._wfmt("ssd", sf)
                 self.S["demote"] += 1
@@ -242,6 +257,24 @@ class BlockEngine:
         i = bisect.bisect_right(lst, j)
         return sm[i] if i < len(lst) else 0
 
+    def _max_future_reqlen(self, b, j):
+        """block b 在請求 j 之後被讀到的請求裡最長的「請求輸入長度」（token；嚴格版讀取長度；後綴最大值）。"""
+        lst = self.acc.get(b)
+        if not lst:
+            return 0
+        sm = self._sufreq.get(b)
+        if sm is None:
+            rl = self.reqlen
+            sm = [0] * len(lst)
+            m = 0
+            for i in range(len(lst) - 1, -1, -1):
+                x = rl[lst[i]]
+                m = x if x > m else m
+                sm[i] = m
+            self._sufreq[b] = sm
+        i = bisect.bisect_right(lst, j)
+        return sm[i] if i < len(lst) else 0
+
     def _mctx(self, b, ow, now):
         """降級（寫 SSD）那一刻的 ctx（06 §11.2）。之後＝請求 index > cur_j（FIFO，照到達順序服務）。
         tokens／idle_s 用 owner 請求的 session 最近一個服務完的請求。"""
@@ -258,6 +291,8 @@ class BlockEngine:
             ctx["next_read"] = None if nx >= INF else nx
             ctx["censored"] = (oe - now) < self.H if self.H > 0 else False
             ctx["max_read_tokens"] = self._max_future_len(b, after) * self.btok if nx < INF else 0
+            ctx["max_read_req_tokens"] = self._max_future_reqlen(b, after) if nx < INF else 0
+        ctx["req_tokens"] = self.reqlen[ls]
         return ctx
 
     # ---- Cake（＝x4_sim.cake，多了格式、解壓、品質）
@@ -377,6 +412,8 @@ class BlockEngine:
             ctx["next_read"] = None if nx >= INF else nx
             ctx["censored"] = (oe - q["t"]) < self.H if self.H > 0 else False
             ctx["max_read_tokens"] = (self._max_future_len(first_new, j) if nx < INF else 0) * self.btok
+            ctx["max_read_req_tokens"] = self._max_future_reqlen(first_new, j) if (nx < INF and first_new is not None) else 0
+        ctx["req_tokens"] = self.reqlen[j]
         fid = self.comp.cpu_fid(ctx)
         self.ctxs[j] = ctx
         if first_new is not None:
@@ -488,12 +525,17 @@ class BlockEngine:
             h = q["h"]
             cpu, cq, sq, lim, bt = self.cpu, self.cq, self.sq, self.lim, self.btok
             m_ = INF
+            okm = self.okmask[self.rbin[j]] if self.req_strict else None
             for i in range(L):
                 b = h[i]
-                x = lim[cq[b] if b in cpu else sq[b]]
-                if x < m_:
-                    m_ = x
-                if (i + 1) * bt > m_:
+                if okm is not None:          # unverified_len=request：請求的輸入長度下來歷不 pass → 從這裡起重算
+                    bad_ = not okm[cq[b] if b in cpu else sq[b]]
+                else:
+                    x = lim[cq[b] if b in cpu else sq[b]]
+                    if x < m_:
+                        m_ = x
+                    bad_ = (i + 1) * bt > m_
+                if bad_:
                     self.surp_blk[j] = L - i
                     self._rep = (i, L)
                     L = i

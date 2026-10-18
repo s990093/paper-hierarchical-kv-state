@@ -86,22 +86,40 @@ def sha256_file(path):
     return hashlib.sha256(open(path, "rb").read()).hexdigest()
 
 
-def resolve_format_path(path):
-    """None／'official' → 正式表；'placeholder' → placeholder；其他＝檔案路徑。
-    2026-10-18（06 §11）：預設改成正式表（04 §9：地圖不准用 placeholder）。舊的冒煙／回歸要明確給 'placeholder'。"""
+DEFAULT_DQ_SET = "cake_k0"
+
+
+def split_format_path(path):
+    """'official'／None → (正式表, 預設解壓欄)；'official:<欄組>' → (正式表, 欄組)；其他原樣 (path, None)。
+    欄組見 DQ_SETS（06 §19）。placeholder／自己造的表沒有欄組。"""
     if path is None or path == "official":
-        return OFFICIAL_FORMAT_TABLE
+        return OFFICIAL_FORMAT_TABLE, DEFAULT_DQ_SET
+    if isinstance(path, str) and path.startswith("official:"):
+        return OFFICIAL_FORMAT_TABLE, path.split(":", 1)[1]
     if path == "placeholder":
-        return PLACEHOLDER_FORMAT_TABLE
-    return path
+        return PLACEHOLDER_FORMAT_TABLE, None
+    return path, None
+
+
+def resolve_format_path(path):
+    """None／'official'／'official:<欄組>' → 正式表；'placeholder' → placeholder；其他＝檔案路徑。
+    2026-10-18（06 §11）：預設改成正式表（04 §9：地圖不准用 placeholder）。舊的冒煙／回歸要明確給 'placeholder'。"""
+    return split_format_path(path)[0]
 
 
 # ---- 正式表（results/p3_formats/format_table.json，「每列＝模型×格式」）→ 模擬器的 fid（06 §11）
 OFFICIAL_CONCRETE = {"llama": {1: "bf16", 2: "fp8_token", 3: "int4_kivi", 4: "int2_kivi"},
                      "qwen": {1: "bf16", 2: "int8_token", 3: "int4_kivi", 4: "int2_kivi"}}   # Qwen 的 8-bit＝INT8（FP8 掉 32.8 分）
 # 解壓常數：和 placeholder 同一個欄位語意（build_inputs.py）。MI300X＝X1 的規則（E1、load_only、CPU 層）；3090＝X7 的還原中（cake）
-OFFICIAL_DQ_COLS = {"mi300x": ("dq_mi300x_loadonly_k0_idle_ms", "dq_mi300x_loadonly_k0_busy_ms"),
-                    "3090": ("dq_3090_cake_k0_idle_ms", "dq_3090_cake_k0_busy_ms")}
+# 解壓常數的欄組（06 §19；04 v4 §9）：
+#   cake_k0     ＝「還原中・Cake・K0」（05 §3.2 的建議，含和重算搶 GPU 的成本）；**v4 的預設**。
+#   loadonly_k0 ＝「還原中・只載入・K0」（06 §11.1 的舊選擇：MI300X 一律用只載入欄）；還可以選，結果會不同。
+# 3090 只有 cake_k0（X7 的還原中）；兩組在 3090 上相同。
+DQ_SETS = {"cake_k0": {"mi300x": ("dq_mi300x_cake_k0_idle_ms", "dq_mi300x_cake_k0_busy_ms"),
+                       "3090": ("dq_3090_cake_k0_idle_ms", "dq_3090_cake_k0_busy_ms")},
+           "loadonly_k0": {"mi300x": ("dq_mi300x_loadonly_k0_idle_ms", "dq_mi300x_loadonly_k0_busy_ms"),
+                           "3090": ("dq_3090_cake_k0_idle_ms", "dq_3090_cake_k0_busy_ms")}}
+OFFICIAL_DQ_COLS = DQ_SETS[DEFAULT_DQ_SET]               # 舊名字（預設欄組）
 GEN_SCENARIOS = ("A", "B_idle", "B_busy", "B_i2b")     # 生成品質的情境：全載入＋Cake b32 閒／忙／閒→忙
 QUALITY_MAX_TOKENS = 32768                              # 品質只在 32K 實測；> 32,768 一律 unverified；32,768 本身算在實測的分箱
 ARCH_ONLY = {"llama70b": 327680}                        # 正式表沒有的模型：只有 bf16（架構算的大小），其他 NOT_MEASURED
@@ -133,7 +151,7 @@ def official_quality_32k(row):
     return st, ";".join(f"{s}:lo={lo:+.2f}" for s, lo, _ in rep)
 
 
-def _load_official(d, path, model, platform):
+def _load_official(d, path, model, platform, dq_set=DEFAULT_DQ_SET):
     """正式表 → ModelFormats。位元組＝bytes_per_block_code（同時斷言＝encode 的 nbytes＝實際存的大小、＝架構推的 BF16 大小）。"""
     sha = sha256_file(path)
     if model in ARCH_ONLY:
@@ -142,16 +160,18 @@ def _load_official(d, path, model, platform):
         q = {FID["bf16"]: ["pass", "pass"]}
         return ModelFormats(model, platform, by, {"idle": [None, 0.0, None, None, None], "busy": [None, 0.0, None, None, None]},
                             [0, QUALITY_MAX_TOKENS + 1, 1 << 40], q, [FID["int2"]], False,
-                            dict(path=path, sha256=sha, run_id=d.get("run_id"), kind="official",
+                            dict(path=path, sha256=sha, run_id=d.get("run_id"), kind="official", dq_set=dq_set,
                                  note=f"{model} 不在正式表：bf16＝{bpt}×512（架構），其他 NOT_MEASURED"))
-    if platform not in OFFICIAL_DQ_COLS:
-        raise NotImplementedError(f"正式表沒有平台 {platform} 的解壓欄（{list(OFFICIAL_DQ_COLS)}）")
+    if dq_set not in DQ_SETS:
+        raise ValueError(f"解壓欄組 {dq_set!r} 不存在（{list(DQ_SETS)}）")
+    if platform not in DQ_SETS[dq_set]:
+        raise NotImplementedError(f"正式表沒有平台 {platform} 的解壓欄（{list(DQ_SETS[dq_set])}）")
     sh = d["shape"][model]
     bf_arch = sh["L"] * sh["H_kv"] * sh["D"] * 2 * 2 * sh["T_block"]       # K、V × BF16 2 bytes
     rows = {r["fmt"]: r for r in d["rows"] if r["model"] == model}
     by, dqi, dqb = [None] * len(FMT_NAMES), [None] * len(FMT_NAMES), [None] * len(FMT_NAMES)
     q, notes, conc = {}, {}, {}
-    ci, cb = OFFICIAL_DQ_COLS[platform]
+    ci, cb = DQ_SETS[dq_set][platform]
     for fid, fmt in OFFICIAL_CONCRETE[model].items():
         r = rows[fmt]
         b = _cell(r, "bytes_per_block_code")
@@ -177,18 +197,42 @@ def _load_official(d, path, model, platform):
     q[FID["bf16"]] = ["pass", "pass"]
     nro = [FID["int2"]] if q[FID["int2"]][0] != "pass" else []      # INT2 沒有生成品質過關 → 只准給不會再被讀的
     return ModelFormats(model, platform, by, {"idle": dqi, "busy": dqb}, [0, QUALITY_MAX_TOKENS + 1, 1 << 40], q, nro, False,
-                        dict(path=path, sha256=sha, run_id=d.get("run_id"), kind="official", dq_cols=[ci, cb],
+                        dict(path=path, sha256=sha, run_id=d.get("run_id"), kind="official", dq_set=dq_set, dq_cols=[ci, cb],
                              concrete={FMT_NAMES[k]: v for k, v in conc.items()}, quality=notes))
+
+
+SCALED_70B = "llama70b_scaled"      # 04 v4 §5 的「70B 級，只算位元組」：Llama 的格式表，位元組×(327,680/131,072)；沒有解壓與 TTFT（06 §20）
+
+
+def _scaled_70b(platform, path):
+    """70B 級（約 320 KiB／token）的位元組：Llama 每個格式的位元組 × 2.5（每 token 的 BF16 大小比 327,680 / 131,072；其他格式假設和 BF16 的比例相同）。
+    **這是假設，不是量測**：只給敏感度（只算位元組、不談品質）。解壓常數 NOT_MEASURED（BF16＝0）；品質狀態沿用 Llama 的（只拿來選格式）。"""
+    base = load_format_table("llama", platform, path)
+    per_tok = base.bytes[FID["bf16"]] // 512
+    assert per_tok * 512 == base.bytes[FID["bf16"]]
+    by = []
+    for b in base.bytes:
+        if b is None:
+            by.append(None)
+            continue
+        assert (b * ARCH_ONLY["llama70b"]) % per_tok == 0, b
+        by.append(b * ARCH_ONLY["llama70b"] // per_tok)
+    dq = {g: [None, 0.0, None, None, None] for g in ("idle", "busy")}
+    src = dict(base.src, kind="official+scaled70b", note=f"70B 級＝Llama 的位元組 × {ARCH_ONLY['llama70b']}/{per_tok}（假設）；解壓 NOT_MEASURED",
+               scaled_from="llama")
+    return ModelFormats(SCALED_70B, platform, by, dq, base.len_bins, dict(base.quality), base.never_read_only, False, src)
 
 
 def load_format_table(model, platform, path=None):
     """path：None／'official'＝正式表 results/p3_formats/format_table.json（2026-10-18 起的預設，06 §11）；
     'placeholder'＝config/format_table.PLACEHOLDER.json（舊的冒煙與回歸用）；其他＝檔案路徑（測試自己造的表）。
     正式表的結構是「每列＝模型×格式」，由 _load_official 轉換（不改引擎）。"""
-    path = resolve_format_path(path)
+    if model == SCALED_70B:
+        return _scaled_70b(platform, path)
+    path, dq_set = split_format_path(path)
     d = json.load(open(path, encoding="utf-8"))
     if "rows" in d and "shape" in d and "models" not in d:
-        return _load_official(d, path, model, platform)
+        return _load_official(d, path, model, platform, dq_set or DEFAULT_DQ_SET)
     if "models" not in d or "len_bins_tokens" not in d:
         raise NotImplementedError(f"{path}: 不是 p3_sim 的格式表結構（正式表要先寫轉換，見 06_simulator.md §3）")
     m = d["models"][model]
@@ -238,10 +282,33 @@ class Costs:
         return out
 
 
+SSD8_CONSTANTS = os.path.join(REPO, "results", "p3_calib_3090", "constants_3090_v2.json")
+
+
+def _ssd8_profile():
+    """3090 的 /ssd8（SATA QLC）：讀、寫頻寬＝results/p3_calib_3090 的實測中位數（run 20261018-001935-p3cal-ssd8bw）。
+    讀受寫拖慢的倍數 k_read：/ssd8 **沒量**（disk_bw 只量單向）→ 這裡用 MI300X 本地 SSD 的 k 代替，**是假設**；
+    只有敏感度格子會用（04 v4 §5），src 欄寫明。"""
+    d = json.load(open(SSD8_CONSTANTS, encoding="utf-8"))["new_in_v2"]["ssd8_disk"]
+    k = json.load(open(os.path.join(CFG, "costs_mi300x.json"), encoding="utf-8"))["ssd_profiles"]["mi300x_local"]["k_read"]
+    return dict(read_GiBps=float(d["read_GiBps_median"]), write_GiBps=float(d["write_GiBps_median"]), k_read=float(k),
+                src=f"{SSD8_CONSTANTS}（run {d['run_id']}）讀 {d['read_GiBps_median']}、寫 {d['write_GiBps_median']} GiB/s；"
+                    f"k_read＝NOT_MEASURED on /ssd8，假設＝MI300X local 的 {k}（敏感度格子；06 §19）")
+
+
+def cpu_factor_of(platform, cpu):
+    """CPU 忙閒的 H2D 變慢倍數：'idle'→1；數字→照用（04 v4 §5 的敏感度 1.35、1.81）；'busy'→costs_<平台>.json（NOT_MEASURED 就丟錯）。"""
+    if cpu == "idle":
+        return 1.0
+    if isinstance(cpu, (int, float)):
+        return float(cpu)
+    return cpu_busy_factor(platform)
+
+
 def load_costs(platform, model, ssd_profile="mi300x_local"):
     d = json.load(open(os.path.join(CFG, f"costs_{platform}.json"), encoding="utf-8"))
-    m = d["models"][model]
-    s = d["ssd_profiles"][ssd_profile]
+    m = d["models"]["llama70b" if model == SCALED_70B else model]
+    s = _ssd8_profile() if ssd_profile == "ssd8_3090_meas" else d["ssd_profiles"][ssd_profile]
     cpu = dict(r=m["cpu"]["read_GiBps"], w=m["cpu"]["write_GiBps"], k=m["cpu"]["k_read"])
     ssd = dict(r=s["read_GiBps"], w=s["write_GiBps"], k=s["k_read"])
     for k_, v in ssd.items():

@@ -10,6 +10,8 @@ ctx（dict，引擎填）：
   只有 needs_oracle=True 的策略會另外拿到：next_read（之後第一次讀到這一輪新 block 的請求 index；不會再讀＝None）、
   max_read_tokens（之後讀到這些 block 的請求裡，存的前綴最長的 token 數；讀取長度的上界）、
   censored（決定時刻離觀察窗結尾 < H 秒：「之後有沒有被讀」不算分 → 一律當成會被讀）。
+  另外（06 §18，嚴格讀取長度）：req_tokens（現在的上下文長度＝寫入的請求，或這個 session 最近一個請求的輸入長度；所有策略都有）、
+  max_read_req_tokens（oracle：之後讀到這些 block 的請求裡，輸入長度最長的 token 數）。
 
 學出來的預測器：PredictorPolicy(fn)，fn(state: dict, feats) → 格式名或 fid。state＝ctx 去掉 oracle 欄位與 mf。
 這一步不訓練任何模型（CLAUDE.md §8）；介面只確保預測器拿不到標籤。
@@ -108,9 +110,11 @@ class Oracle(CompressionPolicy):
     ssd_moment = True
     VARIANTS = ("O", "O-len", "O-reuse", "O-loose")
 
-    def __init__(self, mf, allow_unverified=False, variant="O", ssd_oracle=True):
+    def __init__(self, mf, allow_unverified=False, variant="O", ssd_oracle=True, read_len="prefix"):
         super().__init__(mf)
         assert variant in self.VARIANTS, variant
+        assert read_len in ("prefix", "request"), read_len
+        self.read_len = read_len
         self.variant = variant
         self.name = variant if ssd_oracle else variant + "(cpu-only)"
         self.ssd_oracle = ssd_oracle
@@ -135,7 +139,24 @@ class Oracle(CompressionPolicy):
             f = self._cache[b] = mf.cheapest(cand)
         return f
 
+    def _pick_req(self, ctx):
+        """read_len="request"（04 v4 §3.3 嚴格版）：讀取長度＝讀它的請求的輸入長度。有之後的讀取 → 對「之後讀到這個 block 的請求裡
+        輸入最長的」過關（max_read_req_tokens，不再和寫入長度取 max）；沒有（截尾區、不知道之後）→ 至少用現在的長度（max(存的長度, 這個 session 最近請求的輸入長度)）。"""
+        never_read = ctx["next_read"] is None and not ctx["censored"]
+        v = self.variant
+        cur = max(ctx["tokens"], ctx.get("req_tokens", 0))
+        mr = ctx.get("max_read_req_tokens", 0) if ctx["next_read"] is not None else cur
+        if v == "O-len":
+            return self.read_fid(mr)
+        if never_read:
+            return self.never
+        if v == "O-reuse":
+            return self.read_fid(cur)
+        return self.read_fid(mr)
+
     def _pick(self, ctx):
+        if self.read_len == "request":
+            return self._pick_req(ctx)
         never_read = ctx["next_read"] is None and not ctx["censored"]
         v = self.variant
         if v == "O-len":
@@ -163,7 +184,7 @@ class PredictorPolicy(CompressionPolicy):
     ssd_fn(state, feats, cur)：外層要寫 SSD 的那一刻呼叫（06 §11.4）；state＝那一刻的 ctx（s、r、t、b、tokens、idle_s、cpu_state）
     去掉 oracle 欄位。回傳值和 cur 取較省的（只能往下壓）。"""
 
-    ORACLE_KEYS = ("next_read", "censored", "max_read_tokens", "mf", "feats", "cpu_ctx")
+    ORACLE_KEYS = ("next_read", "censored", "max_read_tokens", "max_read_req_tokens", "mf", "feats", "cpu_ctx")
 
     def __init__(self, mf, fn, ssd_fn=None, name="P"):
         super().__init__(mf)
@@ -259,7 +280,8 @@ def make_policy(name, mf, **kw):
     if name == "C4":
         return C4(mf, kw.get("c4_threshold_tokens", 32768))
     if name in Oracle.VARIANTS:
-        return Oracle(mf, kw.get("o_allow_unverified", False), variant=name, ssd_oracle=kw.get("o_ssd_oracle", True))
+        return Oracle(mf, kw.get("o_allow_unverified", False), variant=name, ssd_oracle=kw.get("o_ssd_oracle", True),
+                      read_len=kw.get("o_read_len", "prefix"))
     if name == "C4r":
         return C4r(mf, kw.get("c4_threshold_tokens", 32768))
     if name == "C1-8":

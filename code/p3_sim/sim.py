@@ -14,7 +14,7 @@ sys.path.insert(0, HERE)
 
 from engine import Engine, View  # noqa: E402
 from engine_block import BlockEngine, BView, reqs_from_P  # noqa: E402
-from formats import CFG, cpu_busy_factor, load_costs, load_format_table  # noqa: E402
+from formats import CFG, cpu_busy_factor, cpu_factor_of, load_costs, load_format_table  # noqa: E402
 import ledger  # noqa: E402
 from policies import make_policy  # noqa: E402
 
@@ -39,32 +39,36 @@ def make_views(P, model, specs, mf_by_platform, record=True):
     vs = []
     for (plat, gpu, cpu, share, mode, prof) in specs:
         costs = load_costs(plat, model, prof)
-        cf = 1.0 if cpu == "idle" else cpu_busy_factor(plat)        # NOT_MEASURED → 丟錯，不跑
+        cf = cpu_factor_of(plat, cpu)        # NOT_MEASURED → 丟錯，不跑
         mf = mf_by_platform[plat]
         vs.append(View(costs, mf, gpu, mode, P["nmax"], len(P["full"]), cpu_factor=cf, ssd_share=share,
                        label=f"{plat}|{prof}|gpu={gpu}|cpu={cpu}|ssd/{share}|{mode}", record=record))
     return vs
 
 
-def _sess_meta(P, code, comp, cpu_GiB, model, H, mf, int2_on_read, serve):
+def _sess_meta(P, code, comp, cpu_GiB, model, H, mf, int2_on_read, serve, unverified_len="prefix"):
     return dict(source=P["meta"]["source"], variant=P["meta"]["variant"], outer=code, serve=serve, policy=comp.name, model=model,
                 cpu_GiB=cpu_GiB, H_s=H, format_table=mf.src["path"], format_table_sha256=mf.src["sha256"], int2_on_read=int2_on_read,
-                run_id=os.environ.get("RUN_ID", "adhoc"))
+                unverified_len=unverified_len, dq_set=mf.src.get("dq_set"), run_id=os.environ.get("RUN_ID", "adhoc"))
 
 
 def run_cell(P, code, policy, cpu_GiB, model, specs, T=None, H=0.0, fmt_path=None, check=False, pol_kw=None,
-             policy_obj=None, int2_on_read="serve", sess_out=None):
-    """sess_out：給路徑就把每個 session 的帳寫成 npz（06 §12.1）。int2_on_read 見 engine.Engine。"""
+             policy_obj=None, int2_on_read="serve", sess_out=None, unverified_len="prefix", H_extra=0.0):
+    """sess_out：給路徑就把每個 session 的帳寫成 npz（06 §12.1）。int2_on_read、unverified_len 見 engine.Engine。
+    unverified_len 也決定 oracle 的讀取長度定義（pol_kw 沒給 o_read_len 時跟著它；06 §18）。"""
     t0 = time.time()
+    pol_kw = dict(pol_kw or {})
+    pol_kw.setdefault("o_read_len", unverified_len)
     plats = sorted({s[0] for s in specs})
     mfs = {p: load_format_table(model, p, fmt_path) for p in plats}
     mf0 = mfs[plats[0]]
     for p in plats:
         assert mfs[p].bytes == mf0.bytes, "不同平台的格式大小必須相同（放置軌跡共用）"
-    comp = policy_obj or make_policy(policy, mf0, **(pol_kw or {}))
+    comp = policy_obj or make_policy(policy, mf0, **pol_kw)
     oc = outer_cfg(code, T)
     views = make_views(P, model, specs, mfs)
-    eng = Engine(P, oc, comp, int(cpu_GiB * GiB), views, mf0, H=H, check=check, int2_on_read=int2_on_read).run()
+    eng = Engine(P, oc, comp, int(cpu_GiB * GiB), views, mf0, H=H, check=check, int2_on_read=int2_on_read,
+                 unverified_len=unverified_len, H_extra=H_extra).run()
     er = ledger.engine_row(eng)
     rows, qtabs, ids = [], [], []
     for v in views:
@@ -72,7 +76,7 @@ def run_cell(P, code, policy, cpu_GiB, model, specs, T=None, H=0.0, fmt_path=Non
         rows.append(dict(source=P["meta"]["source"], variant=P["meta"]["variant"], data_tier=P["meta"]["tier"],
                          outer=code + (f"-T{int(T)}" if T else ""), policy=comp.name, model=model, cpu_GiB=cpu_GiB, H_s=H,
                          format_table=mf0.src["path"], format_table_sha256=mf0.src["sha256"], format_placeholder=mf0.placeholder,
-                         format_table_kind=mf0.src.get("kind"),
+                         format_table_kind=mf0.src.get("kind"), format_dq_set=mf0.src.get("dq_set"),
                          n_req=P["meta"]["n_req"], n_sess=P["meta"]["n_sess"], **row, **er, elapsed_s=time.time() - t0))
         for q in qt:
             qtabs.append(dict(outer=rows[-1]["outer"], policy=comp.name, cpu_GiB=cpu_GiB, **q))
@@ -80,28 +84,31 @@ def run_cell(P, code, policy, cpu_GiB, model, specs, T=None, H=0.0, fmt_path=Non
             ids.append(dict(outer=rows[-1]["outer"], policy=comp.name, cpu_GiB=cpu_GiB, view=v.label, identity=n, lhs=a, rhs=b, ok=ok))
     if sess_out:
         ledger.write_per_session(sess_out, P, eng, views, _sess_meta(P, rows[-1]["outer"], comp, cpu_GiB, model, H, mf0,
-                                                                      int2_on_read, "trace"))
+                                                                      int2_on_read, "trace", unverified_len))
     return rows, qtabs, ids, eng, views
 
 
 def run_cell_fifo1(P, code, policy, cpu_GiB, model, spec, H=0.0, fmt_path=None, pol_kw=None, policy_obj=None,
-                   int2_on_read="serve", sess_out=None, reqs=None):
+                   int2_on_read="serve", sess_out=None, reqs=None, unverified_len="prefix", H_extra=0.0):
     """serve=fifo1（一張 GPU、FIFO）：block 引擎，E1／E2／E6，單一時間設定 spec＝(platform, gpu, cpu, ssd_share, 'cake', ssd_profile)。"""
     t0 = time.time()
     plat, gpu, cpu, share, mode, prof = spec
     assert mode == "cake"
     mf = load_format_table(model, plat, fmt_path)
-    comp = policy_obj or make_policy(policy, mf, **(pol_kw or {}))
+    pol_kw = dict(pol_kw or {})
+    pol_kw.setdefault("o_read_len", unverified_len)
+    comp = policy_obj or make_policy(policy, mf, **pol_kw)
     oc = outer_cfg(code)
     costs = load_costs(plat, model, prof)
-    cf = 1.0 if cpu == "idle" else cpu_busy_factor(plat)
+    cf = cpu_factor_of(plat, cpu)
     reqs = reqs_from_P(P) if reqs is None else reqs
     nmax = max(max(len(q["h"]) for q in reqs), max(P["nall"])) + 1
     d2h = costs.cpu["w"] * GiB          # capture＝GPU→CPU：用 CPU 層的寫入速度（X4 用 C0 的 D2H 44.8 GiB/s；06 §8）
     v = BView(costs, mf, gpu, nmax, cpu_factor=cf, ssd_share=share, d2h_Bps=d2h,
               label=f"{plat}|{prof}|gpu={gpu}|cpu={cpu}|ssd/{share}|cake|fifo1")
     eng = BlockEngine(reqs, oc, comp, int(cpu_GiB * GiB), v, mf, qp=bool(oc.get("queue_prefetch")), H=H,
-                      obs_end=P.get("obs_end"), int2_on_read=int2_on_read).run_events()
+                      obs_end=P.get("obs_end"), int2_on_read=int2_on_read,
+                      unverified_len=unverified_len, H_extra=H_extra).run_events()
     er = ledger.engine_row(eng)
     row, qt = ledger.summarize_view(P, eng, v, H)
     import numpy as np
@@ -112,11 +119,12 @@ def run_cell_fifo1(P, code, policy, cpu_GiB, model, spec, H=0.0, fmt_path=None, 
     rows = [dict(source=P["meta"]["source"], variant=P["meta"]["variant"], data_tier=P["meta"]["tier"], outer=code, serve="fifo1",
                  policy=comp.name, model=model, cpu_GiB=cpu_GiB, H_s=H, format_table=mf.src["path"],
                  format_table_sha256=mf.src["sha256"], format_placeholder=mf.placeholder, format_table_kind=mf.src.get("kind"),
+                 format_dq_set=mf.src.get("dq_set"),
                  n_req=P["meta"]["n_req"],
                  n_sess=P["meta"]["n_sess"], **row, **er, elapsed_s=time.time() - t0)]
     qtabs = [dict(outer=code, policy=comp.name, cpu_GiB=cpu_GiB, **q) for q in qt]
     ids = [dict(outer=code, policy=comp.name, cpu_GiB=cpu_GiB, view=v.label, identity=n, lhs=a, rhs=b, ok=ok)
            for (n, a, b, ok) in ledger.accounting_identities(P, eng, v)]
     if sess_out:
-        ledger.write_per_session(sess_out, P, eng, [v], _sess_meta(P, code, comp, cpu_GiB, model, H, mf, int2_on_read, "fifo1"))
+        ledger.write_per_session(sess_out, P, eng, [v], _sess_meta(P, code, comp, cpu_GiB, model, H, mf, int2_on_read, "fifo1", unverified_len))
     return rows, qtabs, ids, eng, [v]

@@ -254,6 +254,12 @@ def summarize_view(P, eng, v, H=0.0):
         row["ssd_H_write_issued_GiB"] = float(sum(swH)) / GiB
         row["ssd_H_loadonly_read_GiB"] = float(lo_b[tl < row["censor_cut_s"]].sum()) / GiB
         row["ret_H_ssd_loadonly_read_GiB"] = float(lo_b[retH].sum()) / GiB
+    if getattr(eng, "cutH2", None) is not None:     # 第二個截尾（2H；放置不受影響，只換記帳的截斷點）
+        swH2 = eng.s_ssd_w_H2.values() if isinstance(eng.s_ssd_w_H2, dict) else eng.s_ssd_w_H2
+        row["censor_cut2_s"] = float(eng.cutH2)
+        row["ssd_H2_write_issued_GiB"] = float(sum(swH2)) / GiB
+        row["ssd_H2_loadonly_read_GiB"] = float(lo_b[tl < eng.cutH2].sum()) / GiB
+        row["ret_H2_ssd_loadonly_read_GiB"] = float(lo_b[ret & (tl < eng.cutH2)].sum()) / GiB
     rec = np.asarray(v.nR, np.int64) - np.asarray(eng.nend, np.int64) + np.asarray(eng.nprev, np.int64)
     row["recompute_prefix_blocks"] = int(rec.sum())
     row["ret_recompute_prefix_blocks"] = int(rec[ret].sum())
@@ -268,7 +274,7 @@ def quality_ledger(eng, v, kd):
     loaded = (v.nC + v.nS) > 0
     tab = {}
     cnt = dict(reads=0, reads_fail=0, reads_unverified=0, reads_pass=0, ret_reads=0, ret_reads_fail=0, ret_reads_unverified=0)
-    Lt = eng.Ltok
+    Lt = eng.Lqual
     for r in np.nonzero(loaded)[0]:
         f = int(v.wq[r])
         b = mf.bin_of(int(Lt[r]))
@@ -293,7 +299,7 @@ def engine_row(eng):
     else:
         row = dict(n_demote=eng.n_demote, n_drop=eng.n_drop, n_ttl_demote=eng.n_ttl, n_lost_blocks=eng.n_lost)
     sb = np.asarray(eng.surp_blk)
-    row.update(int2_on_read=eng.int2_on_read, surprise_events=int((sb > 0).sum()), surprise_blocks=int(sb.sum()),
+    row.update(int2_on_read=eng.int2_on_read, unverified_len=eng.unverified_len, surprise_events=int((sb > 0).sum()), surprise_blocks=int(sb.sum()),
                surprise_tokens=int(sb.sum()) * eng.btok)
     for k, x in eng.wbytes.items():
         row[f"wbytes_{k}_GiB"] = x / GiB
@@ -398,6 +404,17 @@ def per_session(P, eng, views):
         out["loadonly_ssd_read_bytes_H"] = by(sl, np.asarray(eng.lo_bytes, float) * (tl_ < eng.cutH)).astype(np.int64)
         out["ret_loadonly_ssd_read_bytes_H"] = by(sl, np.asarray(eng.lo_bytes, float) * ((tl_ < eng.cutH) & (kd == 1))).astype(np.int64)
         out["cutH_s"] = np.asarray(float(eng.cutH))
+    if getattr(eng, "cutH2", None) is not None:
+        sw2 = np.zeros(S, np.int64)
+        items = eng.s_ssd_w_H2.items() if isinstance(eng.s_ssd_w_H2, dict) else enumerate(eng.s_ssd_w_H2)
+        for s_, nb in items:
+            if 0 <= s_ < S:
+                sw2[s_] += nb
+        tl_ = np.asarray(P["tl"], float)
+        out["ssd_write_bytes_H2"] = sw2
+        out["loadonly_ssd_read_bytes_H2"] = by(sl, np.asarray(eng.lo_bytes, float) * (tl_ < eng.cutH2)).astype(np.int64)
+        out["ret_loadonly_ssd_read_bytes_H2"] = by(sl, np.asarray(eng.lo_bytes, float) * ((tl_ < eng.cutH2) & (kd == 1))).astype(np.int64)
+        out["cutH2_s"] = np.asarray(float(eng.cutH2))
     V = len(views)
     keys = ("ssd_read_bytes", "ssd_prefetch_read_bytes", "recompute_tokens", "reads", "reads_pass", "reads_fail", "reads_unverified",
             "ret_reads", "ret_reads_fail", "ret_reads_unverified")
@@ -415,7 +432,7 @@ def per_session(P, eng, views):
         rec = np.asarray(v.nR, np.int64) - np.asarray(eng.nend, np.int64) + np.asarray(eng.nprev, np.int64)
         out["recompute_tokens"][i] = by(sl, rec * eng.btok)
         loaded = (np.asarray(v.nC) + np.asarray(v.nS)) > 0
-        Lt = np.asarray(eng.Ltok)
+        Lt = np.asarray(eng.Lqual)
         st = np.array([mf.status(int(f), int(t)) if ld else "" for f, t, ld in zip(v.wq, Lt, loaded)], dtype=object)
         ret = kd == 1
         out["reads"][i] = by(sl, loaded)

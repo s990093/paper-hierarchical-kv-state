@@ -152,7 +152,8 @@ def _sub_P(P, idx):
             par.append(-1)
     return dict(full=[P["full"][r] for r in idx], nall=[P["nall"][r] for r in idx], tl=[P["tl"][r] for r in idx],
                 kindc=[P["kindc"][r] for r in idx], parentl=par, sessl=[P["sessl"][r] for r in idx],
-                obs_end=[P["obs_end"][r] for r in idx], win=P["win"], meta=P["meta"], R=P["R"])
+                obs_end=[P["obs_end"][r] for r in idx], win=P["win"], meta=P["meta"], R=P["R"],
+                **({"feats": [P["feats"][r] for r in idx]} if P.get("feats") else {}))
 
 
 def _busy_stats(tgo, tend, lo, hi):
@@ -290,9 +291,39 @@ def cmd_kgpu(a):
         print(r, flush=True)
 
 
+def cmd_kall(a):
+    """04 v4 §9 的 E6 k：每個切片、每個記憶體值、每個視角（GPU 閒／忙）＝最小的 k，讓整段的忙碌比例（k 張 GPU 裡最大的那張）≤ thr；
+    另記那個 k 下「每小時最大」的忙碌比例（>thr＝過載的小時，只報告）。資料＝kgpu_busy*.csv（逐 k、逐 GPU 數的值；results/p3_sim/ 裡的各檔）。"""
+    import glob
+    files = sorted(glob.glob(os.path.join(RESULTS, "kgpu_busy*.csv")))
+    df = pd.concat([pd.read_csv(f).assign(src_file=os.path.basename(f)) for f in files], ignore_index=True)
+    df = df[df.k != "isolated"].copy()
+    df["k"] = df.k.astype(int)
+    rows = []
+    for (s_, cap, gpu), g in df.groupby(["slice", "cap_GiB", "gpu"]):
+        g = g.sort_values("k")
+        ok = g[g.whole_busy_max_over_gpus <= a.thr]
+        base = dict(slice=s_, cap_GiB=float(cap), view=gpu, thr=a.thr)
+        if len(ok):
+            r = ok.iloc[0]
+            rows.append(dict(base, k=int(r.k), whole_busy_at_k=float(r.whole_busy_max_over_gpus),
+                             hourmax_busy_at_k=float(r.hour_busy_max_over_gpus_and_hours), overload_hours=bool(r.hour_busy_max_over_gpus_and_hours > a.thr),
+                             n_full_hours=int(r.n_full_hours), k_tried_max=int(g.k.max()), src_run_id=r.run_id, src_file=r.src_file))
+        else:
+            rows.append(dict(base, k="", whole_busy_at_k="", hourmax_busy_at_k="", overload_hours="", n_full_hours="", k_tried_max=int(g.k.max()),
+                             src_run_id="", src_file=";".join(sorted(set(g.src_file)))))
+    rows.sort(key=lambda x: (x["slice"], x["cap_GiB"], x["view"]))
+    write("kgpu_kmin_all.csv", rows, True)
+    bad = [r for r in rows if r["k"] == ""]
+    print(f"{len(rows)} 列；整段忙碌比例 ≤ {a.thr} 的 k 找不到的：{len(bad)}", flush=True)
+    for r in bad:
+        print("找不到 k：", r["slice"], r["cap_GiB"], r["view"], flush=True)
+    return 1 if bad else 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["gaps", "kgpu"])
+    ap.add_argument("cmd", choices=["gaps", "kgpu", "kall"])
     ap.add_argument("--procs", type=int, default=8)
     ap.add_argument("--cap", type=float, nargs="*", default=[32.0])
     ap.add_argument("--kmax", type=int, default=16)
@@ -303,7 +334,7 @@ def main():
     ap.add_argument("--tag", default="", help="kgpu 輸出檔名的後綴（例如 _mem63_170_435）")
     a = ap.parse_args()
     os.makedirs(RUN_DIR, exist_ok=True)
-    {"gaps": cmd_gaps, "kgpu": cmd_kgpu}[a.cmd](a)
+    sys.exit(({"gaps": cmd_gaps, "kgpu": cmd_kgpu, "kall": cmd_kall}[a.cmd](a)) or 0)
 
 
 if __name__ == "__main__":

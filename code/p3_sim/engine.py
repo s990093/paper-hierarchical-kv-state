@@ -299,6 +299,29 @@ def ok_token_limits(mf):
     return out
 
 
+def request_lengths(P, btok=512):
+    """每個請求的輸入長度（token，整個上下文；04 v4 §3.3 的「讀取長度」）。
+    P["feats"][r]＝(trigger, input_tokens, output_tokens)（trace.prepare）；沒有 feats（x1_sim.prep 等）→ nall×btok。
+    至少是這個請求存的完整 block 數×btok（資料裡 input_tokens 比 block 數小時以 block 為準，不讓長度小於已存的前綴）。"""
+    full, nall = P["full"], P["nall"]
+    ft = P.get("feats")
+    out = []
+    for r in range(len(full)):
+        f = ft[r] if ft else None
+        if f is not None and len(f) > 1 and f[1] is not None:
+            out.append(max(int(f[1]), len(full[r]) * btok))
+        else:
+            out.append(int(nall[r]) * btok)
+    return out
+
+
+def pass_masks(mf):
+    """每個長度分箱 k、每個 fid：這個格式的來歷在這個分箱的讀取長度下是否 pass（status＝pass 且有大小）。"""
+    nb = len(mf.len_bins) - 1
+    return [[(f >= 1 and mf.bytes[f] is not None and mf.status(f, mf.len_bins[k]) == "pass") for f in range(len(FMT_NAMES))]
+            for k in range(nb)]
+
+
 # ================================================================== 引擎
 class Engine:
     """P：trace.prepare 或 x1_sim.prep 的同形 dict（full、nall、acc、tl、kindc、sessl、parentl、nmax、R.n_sess、B）。
@@ -307,9 +330,12 @@ class Engine:
       那個 block 和它之後的都當成沒有存 → 重算（品質安全，算進重算量與 TTFT，那些 block 的 SSD 位元組不讀），
       重算出來的新 KV 照這一輪的決定寫回 CPU、取代 INT2 來歷的副本（SSD 上 INT2 來歷的副本丟掉）。
       "recompute_unverified"（04 v4 §3.3）：只載入「在這次讀取的長度下品質過關」的前綴：載入到第 L 個 block 時，前 L 個 block 的品質來歷
-      在 L×512 token 都要 pass；第一個做不到的地方起都重算。任何長度都不 pass 的來歷（INT2）的副本照上面的規則被取代。"""
+      在 L×512 token 都要 pass；第一個做不到的地方起都重算。任何長度都不 pass 的來歷（INT2）的副本照上面的規則被取代。
+    unverified_len（04 v4 §3.3，06 §18）："prefix"（預設＝舊行為）：讀取長度＝載入的前綴長度；"request"：讀取長度＝讀它的請求的輸入長度（整個上下文），
+      載入的前綴停在第一個「來歷在這個長度不 pass」的 block，之後都重算；品質帳也用請求長度分箱。"""
 
-    def __init__(self, P, outer, comp, cap_bytes, views, mf, H=0.0, block_tokens=512, check=False, int2_on_read="serve"):
+    def __init__(self, P, outer, comp, cap_bytes, views, mf, H=0.0, block_tokens=512, check=False, int2_on_read="serve",
+                 unverified_len="prefix", H_extra=0.0):
         self.P = P
         self.full, self.nall, self.acc, self.t = P["full"], P["nall"], P["acc"], P["tl"]
         self.kind, self.sess, self.parent = P["kindc"], P["sessl"], P["parentl"]
@@ -333,6 +359,9 @@ class Engine:
         self.check = check
         assert int2_on_read in ("serve", "recompute", "recompute_unverified"), int2_on_read
         self.int2_on_read = int2_on_read
+        assert unverified_len in ("prefix", "request"), unverified_len
+        self.unverified_len = unverified_len
+        self.req_strict = unverified_len == "request"
         self.surp_on = int2_on_read == "recompute"
         self.unv_on = int2_on_read == "recompute_unverified"
         self.lim = ok_token_limits(mf)                 # 每個格式「從 0 到幾 token 都 pass」（bf16＝無限；從 0 就不 pass＝−1）
@@ -371,6 +400,11 @@ class Engine:
         self.Ltok = np.zeros(n, np.int64)
         self.Lblk = np.zeros(n, np.int32)
         self._sufmax = {}
+        self._sufreq = {}
+        self.reqlen = request_lengths(P, block_tokens)      # 請求的輸入長度（token）
+        self.Lqual = np.asarray(self.reqlen, np.int64) if self.req_strict else self.Ltok   # 品質帳用的讀取長度
+        self.okmask = pass_masks(mf)
+        self.rbin = [mf.bin_of(x) for x in self.reqlen] if self.req_strict else None
         # ---- 06 §12 的新帳（不參與任何舊的算式）
         self.surp_blk = np.zeros(n, np.int32)      # 因為 INT2 改成重算的 block 數（surprise recompute；int2_on_read=recompute）
         self.nprev = np.zeros(n, np.int32)         # 這個請求的前綴裡「以前算過」的 block 數（重算量＝nprev − 載入的）
@@ -380,6 +414,10 @@ class Engine:
         oe_ = P.get("obs_end")
         self.cutH = (max(oe_) - self.H) if (self.H > 0 and oe_) else None   # 截尾版：決定時刻 < 觀察窗終點 − H 的才算
         self.s_ssd_w_H = [0] * S
+        # 第二個只記帳不影響放置的截尾（例如 2H；06 §18）：非 oracle 的放置和 H 無關，所以一次模擬就有兩個截尾版的位元組
+        self.H_extra = float(H_extra)
+        self.cutH2 = (max(oe_) - self.H_extra) if (self.H_extra > 0 and oe_) else None
+        self.s_ssd_w_H2 = [0] * S
         self.wsp_rec, self.wsp_sid, self.wsp_b = array("q"), array("i"), array("q")   # SSD 寫入紀錄 i → 各 session 的份
         self.n_ssd_wrec = 0
         self._rw = {}                              # 這一輪（合成一筆的）SSD 寫入裡各 session 的份
@@ -398,6 +436,8 @@ class Engine:
             # 之後讀到這些 block 的請求裡最長的那個（存的前綴 token 數的上界）：格式只能往下壓，
             # 所以要對「之後每一次讀」都過關（2026-10-18 測試 (iii) 抓到：只看寫入時的長度，後面更長的讀取會不過關）
             ctx["max_read_tokens"] = self._max_future_tokens(first_new, r) if nx < INF else 0
+            ctx["max_read_req_tokens"] = self._max_future_reqlen(first_new, r) if nx < INF else 0
+        ctx["req_tokens"] = self.reqlen[r]
         return ctx
 
     def _mctx(self, s, b, after, t_dec, tokens=None, idle=None):
@@ -417,6 +457,8 @@ class Engine:
             ctx["next_read"] = None if nx >= INF else nx
             ctx["censored"] = (oe - t_dec) < self.H if self.H > 0 else False
             ctx["max_read_tokens"] = self._max_future_tokens(b, after) if nx < INF else 0
+            ctx["max_read_req_tokens"] = self._max_future_reqlen(b, after) if nx < INF else 0
+        ctx["req_tokens"] = self.reqlen[ls] if ls >= 0 else 0
         return ctx
 
     def _max_future_tokens(self, b, r):
@@ -432,6 +474,23 @@ class Engine:
                 m = x if x > m else m
                 sm[i] = m
             self._sufmax[b] = sm
+        i = bisect.bisect_right(lst, r)
+        return sm[i] if i < len(lst) else 0
+
+    def _max_future_reqlen(self, b, r):
+        """block b 在請求 r 之後被讀到的請求裡，最長的「請求輸入長度」（token；04 v4 §3.3 嚴格版的讀取長度；後綴最大值）。"""
+        import bisect
+        sm = self._sufreq.get(b)
+        lst = self.acc[b]
+        if sm is None:
+            rl = self.reqlen
+            sm = [0] * len(lst)
+            m = 0
+            for i in range(len(lst) - 1, -1, -1):
+                x = rl[lst[i]]
+                m = x if x > m else m
+                sm[i] = m
+            self._sufreq[b] = sm
         i = bisect.bisect_right(lst, r)
         return sm[i] if i < len(lst) else 0
 
@@ -454,6 +513,8 @@ class Engine:
         self._rw[s] = self._rw.get(s, 0) + nb
         if self.cutH is not None and self._dec_t < self.cutH:
             self.s_ssd_w_H[s] += nb
+        if self.cutH2 is not None and self._dec_t < self.cutH2:
+            self.s_ssd_w_H2[s] += nb
 
     def _flush_split(self, w):
         """這一筆 SSD 寫入紀錄（w>0 才有紀錄）裡各 session 的份；加總必須＝w。"""
@@ -599,6 +660,7 @@ class Engine:
                     break
         else:                 # recompute_unverified：前 L 個的來歷在 L×512 都要 pass
             lim, bt, m_ = self.lim, self.btok, INF
+            okm = self.okmask[self.rbin[r]] if self.req_strict else None
             for b in blocks:
                 fm = cfmt[b]
                 if fm:
@@ -607,11 +669,16 @@ class Engine:
                     qb = sq[b]
                 else:
                     break
-                if lim[qb] < m_:
-                    m_ = lim[qb]
-                if (len(lt_) + 1) * bt > m_:
-                    cut = True
-                    break
+                if okm is not None:          # unverified_len=request：這個請求的輸入長度下，來歷不 pass 就從這裡起重算
+                    if not okm[qb]:
+                        cut = True
+                        break
+                else:
+                    if lim[qb] < m_:
+                        m_ = lim[qb]
+                    if (len(lt_) + 1) * bt > m_:
+                        cut = True
+                        break
                 if fm:
                     lt_.append(1)
                     lf_.append(fm)
