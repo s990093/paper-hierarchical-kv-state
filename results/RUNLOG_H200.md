@@ -1007,3 +1007,12 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   所以上游 RULER 這一項是「同樣的產生程序、不同的題目」，結論（≈0 分）相同。
 - `CWE-VLLM` 的 stderr 有 vLLM `deep_gemm` 找不到 CUDA_HOME 的 WARNING（AssertionError 被 vLLM 當成 warning 吞掉），引擎照常起來、30 題都跑完。
 - 45、55、60、88 的分數已寫進 `quality*/`，還沒分析（MI300X 的報告腳本移植後再做；只報告）。
+
+### job 20707 `m10h-q3-qwen` 跑完（2026-10-18 07:43:58 → 13:56:17 +08:00，COMPLETED exit 0）
+- Q3-POOL：21 個 process 全部 rc＝0（舊的工作池，沒有 OOM）。
+- **41 海選分析**（`results/m10_sweep_h200/analysis/finalists_qwen.json`）：96 題（同 MI300X）；勝出的組合 364（MI300X 384）。
+  決賽 6 個——H200：kv-int4_kivi-int2_kivi AXE 0.4、kv-int4_kivi-int2_kivi ATT 0.4、kv-int8_token-int4_kivi ATT 0.1、kv-int8_token-int4_kivi AXE 0.1、int8_token ERR 0.1、int4_kivi ATT 0.35；
+  MI300X：kv-int4_kivi-int2_kivi ATT 0.4、AXE 0.4、int4_kivi ATT 0.25、kv-int8_token-int4_kivi ATT 0.1、AXE 0.1、int4_kivi AXE 0.25。
+  **完全相同 4 個**（kv-int4-int2 ATT／AXE 0.4、kv-int8-int4 ATT／AXE 0.1）。
+- 45、55、60、88 的 Qwen 分數已寫進 `quality*/`，還沒分析（只報告）。
+- 20708（t2，量時間）現在只等 20897。

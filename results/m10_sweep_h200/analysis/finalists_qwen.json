@@ -1,0 +1,186 @@
+{
+ "rule": "09 §4.2（2026-10-15 22:50 UTC 寫死）",
+ "finalists": [
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.4,
+   "policy": "AXE",
+   "delta": 0.014832601098484997,
+   "ci_lo": 0.0035473950802123928,
+   "ci_hi": 0.03585876400757807,
+   "rel_delta": 0.7310327410941554,
+   "kl_x": 0.005457326102702547,
+   "kl_rand": 0.02028992720118755,
+   "first_ok_x": 0.1875,
+   "first_ok_rand": 0.18333333333333335
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.4,
+   "policy": "ATT",
+   "delta": 0.014550905811091216,
+   "ci_lo": 0.003246298038202466,
+   "ci_hi": 0.03552176913989802,
+   "rel_delta": 0.7171492369987196,
+   "kl_x": 0.0057390213900963315,
+   "kl_rand": 0.02028992720118755,
+   "first_ok_x": 0.1875,
+   "first_ok_rand": 0.18333333333333335
+  },
+  {
+   "fmt": "kv-int8_token-int4_kivi",
+   "frac": 0.1,
+   "policy": "ATT",
+   "delta": 0.0012394627903644492,
+   "ci_lo": 0.00032590011301448233,
+   "ci_hi": 0.0025258975596602917,
+   "rel_delta": 0.6827710077628846,
+   "kl_x": 0.0005758790684317797,
+   "kl_rand": 0.0018153418587962286,
+   "first_ok_x": 0.1875,
+   "first_ok_rand": 0.1875
+  },
+  {
+   "fmt": "kv-int8_token-int4_kivi",
+   "frac": 0.1,
+   "policy": "AXE",
+   "delta": 0.0012388472871083817,
+   "ci_lo": 0.0003243907090112107,
+   "ci_hi": 0.0025232974988028136,
+   "rel_delta": 0.6824319513735412,
+   "kl_x": 0.0005764945716878472,
+   "kl_rand": 0.0018153418587962286,
+   "first_ok_x": 0.1875,
+   "first_ok_rand": 0.1875
+  },
+  {
+   "fmt": "int8_token",
+   "frac": 0.1,
+   "policy": "ERR",
+   "delta": 0.0011942336458292096,
+   "ci_lo": 7.991710192355026e-05,
+   "ci_hi": 0.002711082957628753,
+   "rel_delta": 0.6161342264599061,
+   "kl_x": 0.000744034988735798,
+   "kl_rand": 0.001938268634565008,
+   "first_ok_x": 0.1875,
+   "first_ok_rand": 0.1875
+  },
+  {
+   "fmt": "int4_kivi",
+   "frac": 0.35,
+   "policy": "ATT",
+   "delta": 0.0019704538271568123,
+   "ci_lo": 0.0007388400078492065,
+   "ci_hi": 0.0038980552467995267,
+   "rel_delta": 0.6016740809888648,
+   "kl_x": 0.0013044983262055648,
+   "kl_rand": 0.0032749521533623777,
+   "first_ok_x": 0.1875,
+   "first_ok_rand": 0.1875
+  }
+ ],
+ "frontier": [
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "policy": "ALL",
+   "frac": 1.0,
+   "bytes_stored": 491782144.0,
+   "d_first_ok": -0.010416666666666666,
+   "kl": 0.048456732813653695
+  },
+  {
+   "fmt": "int4_kivi",
+   "policy": "ALL",
+   "frac": 1.0,
+   "bytes_stored": 607387648.0,
+   "d_first_ok": 0.0,
+   "kl": 0.007593277526327762
+  }
+ ],
+ "controls": [
+  {
+   "fmt": "int4_kivi",
+   "frac": 0.35,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "int4_kivi",
+   "frac": 1.0,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "int8_token",
+   "frac": 0.1,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.4,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 1.0,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int8_token-int4_kivi",
+   "frac": 0.1,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  }
+ ],
+ "n_winners_total": 364,
+ "model": "qwen",
+ "csv": [
+  "/work/ChihChungHsu/hungweilai/sweep_m10h/screen_qwen_s0.csv.gz",
+  "/work/ChihChungHsu/hungweilai/sweep_m10h/screen_qwen_s1.csv.gz"
+ ],
+ "n_items": 96,
+ "run_ids": [
+  "20261018-074402-m10h-sweep-screen-qwen-s0",
+  "20261018-074517-m10h-sweep-screen-qwen-s1"
+ ]
+}
