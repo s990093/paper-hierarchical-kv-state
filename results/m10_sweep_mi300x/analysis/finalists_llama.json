@@ -1,0 +1,210 @@
+{
+ "rule": "09 §4.2（2026-10-15 22:50 UTC 寫死）",
+ "finalists": [
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.2,
+   "policy": "ERR",
+   "delta": 0.041103016345099753,
+   "ci_lo": 0.027647539711071357,
+   "ci_hi": 0.05504990269189619,
+   "rel_delta": 0.7900487777219374,
+   "kl_x": 0.010922905982908968,
+   "kl_rand": 0.052025922328008734,
+   "first_ok_x": 0.4375,
+   "first_ok_rand": 0.43333333333333335
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.2,
+   "policy": "ERR",
+   "delta": 0.0032929629867112444,
+   "ci_lo": 0.0024221716946489897,
+   "ci_hi": 0.004269336584473438,
+   "rel_delta": 0.7545533475715145,
+   "kl_x": 0.0010711591755049226,
+   "kl_rand": 0.0043641221622161665,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.4270833333333333
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.25,
+   "policy": "ERR",
+   "delta": 0.003989775784524832,
+   "ci_lo": 0.002919452900915767,
+   "ci_hi": 0.0051721449279537495,
+   "rel_delta": 0.7494216592752521,
+   "kl_x": 0.00133403056020138,
+   "kl_rand": 0.005323806344726212,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.425
+  },
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.15,
+   "policy": "ERR",
+   "delta": 0.02163147212850162,
+   "ci_lo": 0.01111349023620012,
+   "ci_hi": 0.0322268802275756,
+   "rel_delta": 0.6698775968147462,
+   "kl_x": 0.010660206577218367,
+   "kl_rand": 0.03229167870571999,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.4270833333333333
+  },
+  {
+   "fmt": "int4_kivi",
+   "frac": 0.3,
+   "policy": "ERR",
+   "delta": 0.0011151040927217047,
+   "ci_lo": 0.0008032059135933634,
+   "ci_hi": 0.0014633660813089416,
+   "rel_delta": 0.6493333925811007,
+   "kl_x": 0.000602201848205136,
+   "kl_rand": 0.0017173059409268405,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.4270833333333333
+  },
+  {
+   "fmt": "mxfp4",
+   "frac": 0.2,
+   "policy": "ATT",
+   "delta": 0.016715840997168625,
+   "ci_lo": 0.007997053354221658,
+   "ci_hi": 0.028594044796910707,
+   "rel_delta": 0.6336200653800493,
+   "kl_x": 0.009665648337678051,
+   "kl_rand": 0.026381489334846676,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.425
+  }
+ ],
+ "frontier": [
+  {
+   "fmt": "int2_kivi",
+   "policy": "ALL",
+   "frac": 1.0,
+   "bytes_stored": 859832320.0,
+   "d_first_ok": -0.010416666666666666,
+   "kl": 0.13695384771199312
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "policy": "ALL",
+   "frac": 1.0,
+   "bytes_stored": 1124073472.0,
+   "d_first_ok": 0.010416666666666666,
+   "kl": 0.01834260032471012
+  }
+ ],
+ "controls": [
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.15,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.2,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "int2_kivi",
+   "frac": 1.0,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "int4_kivi",
+   "frac": 0.3,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.2,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.25,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 1.0,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "mxfp4",
+   "frac": 0.2,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  }
+ ],
+ "n_winners_total": 170,
+ "model": "llama",
+ "csv": [
+  "/mlsteam/data/tiara/sweep_m10/screen_llama_s0.csv.gz",
+  "/mlsteam/data/tiara/sweep_m10/screen_llama_s1.csv.gz"
+ ],
+ "n_items": 96,
+ "run_ids": [
+  "20261016-135544-m10-sweep-screen-llama-s0",
+  "20261016-135700-m10-sweep-screen-llama-s1"
+ ]
+}

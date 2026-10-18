@@ -286,13 +286,13 @@ def sweep_placement(st, name: str, fmt: str) -> set:
 
 
 def _attention_mass(st) -> list:
-    """借用海選的 m10_sweep.ItemState.attention_mass（同一段程式）。先把緩衝放回全 BF16（定義是看 BF16 的 attention）；
+    """借用海選的 m10_sweep.Item.attention_mass（同一段程式）。先把緩衝放回全 BF16（定義是看 BF16 的 attention）；
     它會重算最後一個 block 再放回 BF16，所以之後 place() 一律重放。"""
     import types
     import m10_sweep as SW
     st.place("bf16", frozenset())
     shim = types.SimpleNamespace(ans=st.ans, ids=st.ids, bf16=st.bf16, src=["bf16"] * st.n)
-    per = SW.ItemState.attention_mass(shim)
+    per = SW.Item.attention_mass(shim)
     st.cur = None
     return per
 

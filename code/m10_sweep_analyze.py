@@ -2,7 +2,7 @@
 
 輸入：m10_sweep.py screen 的逐列 CSV（.csv.gz，可多個 shard）。
 輸出（--out-dir）：
-  agg_<m>.csv          每個（格式, 放法, 佔比, 讀法）的平均：kl、first_ok、gold_lp 對 E0 的差、top1、讀到的低精度、位元組
+  agg_<m>.csv.gz       每個（格式, 放法, 佔比, 讀法）的平均：kl、first_ok、gold_lp 對 E0 的差、top1、讀到的低精度、位元組
   tests_<m>.csv        每一格（格式, 佔比）× 放法 X：Δ＝KL(隨機平均)−KL(X) 的配對 bootstrap CI 與三個條件
   finalists_<m>.json   選手（≤6，同格式 ≤2）＋前緣點（2 個）＋對照組；沒有勝出也照實寫
   tables_<m>.md        上面三樣的表（標「探索、未校正多重比較」）
@@ -143,8 +143,11 @@ def figs(agg: pd.DataFrame, model: str, out_dir: str, src: str):
         ax.set_title(fmt)
     for ax in axes.flat[len(fmts):]:
         ax.axis("off")
-    for ax in axes[-1]:
-        ax.set_xlabel("低精度佔比（%）")
+    for c in range(nc):                       # 每一欄最下面那張有圖的格子標 x 軸（最後一列沒排滿時，上一列也要標）
+        r = max(i for i in range(nr) if i * nc + c < len(fmts)) if c < len(fmts) else None
+        if r is not None:
+            axes[r, c].xaxis.set_tick_params(labelbottom=True)
+            axes[r, c].set_xlabel("低精度佔比（%）")
     for ax in axes[:, 0]:
         ax.set_ylabel("KL（對 E0，log）")
     h, l = axes.flat[0].get_legend_handles_labels()
@@ -171,8 +174,9 @@ def figs(agg: pd.DataFrame, model: str, out_dir: str, src: str):
         ax.set_yscale("log")
         ax.set_title(name)
         ax.set_xlabel("64 個 block 實際存的 GiB")
-        ax.legend(fontsize=7)
+        ax.legend(fontsize=7, frameon=True, framealpha=0.9, edgecolor="none")
     axes[0].set_ylabel("KL（隨機放法的平均，log）")
+    fig.tight_layout(rect=(0, 0.05, 1, 1))   # 底下留給來源註記，不壓到 x 軸標題
     fig.suptitle(f"{model}：同樣的記憶體，哪種格式誤差小（海選、探索）", y=1.02)
     MF.source_note(fig, src)
     MF.save(fig, os.path.join(out_dir, f"sweep_bytes_{model}.png"))
@@ -219,7 +223,7 @@ def main():
     df = load(a.csv, a.model)
     src = f"{len(a.csv)} 個 CSV；run_id {', '.join(sorted(df['run_id'].astype(str).unique()))[:120]}；{df['item_id'].nunique()} 題"
     agg = aggregate(df)
-    agg.to_csv(os.path.join(a.out_dir, f"agg_{a.model}.csv"), index=False)
+    agg.to_csv(os.path.join(a.out_dir, f"agg_{a.model}.csv.gz"), index=False)   # 未壓縮 1.4 MB，超過 git 的 1 MB
     t = tests(df)
     t.to_csv(os.path.join(a.out_dir, f"tests_{a.model}.csv"), index=False)
     res = pick(t, agg)

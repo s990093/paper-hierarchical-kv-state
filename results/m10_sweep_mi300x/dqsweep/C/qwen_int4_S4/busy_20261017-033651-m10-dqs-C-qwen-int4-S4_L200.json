@@ -1,0 +1,12 @@
+[
+ {
+  "state": "busy",
+  "length": 32768,
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.663",
+  "n_matmul": 8697,
+  "seconds": 23.641,
+  "matmul_per_s": 367.878
+ }
+]

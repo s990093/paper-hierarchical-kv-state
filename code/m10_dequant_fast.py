@@ -400,10 +400,14 @@ def install(kernel: str | None = None):
     import m10_codec_x as X
     X.install()
     kernel = kernel or os.environ.get("M10_DQ_KERNEL", "k1")
+    other = X.decode
+    if os.environ.get("M10_DEQUANT_FAST_X") == "1":      # 13 §5（Q3）：新格式也用融合 kernel（m10_dequant_fast_x；預設不接）
+        import m10_dequant_fast_x as FX
+        other = lambda e, out=None: FX.decode_x_fast(e, out) if FX.supported_x(e.fmt) else X.decode(e, out)  # noqa: E731
     if kernel == "k1":
-        RH.decode = lambda e, out=None: decode_fast(e, out) if supported(e.fmt) else X.decode(e, out)
+        RH.decode = lambda e, out=None: decode_fast(e, out) if supported(e.fmt) else other(e, out)
     else:
-        RH.decode = lambda e, out=None: decode_variant(e, out, kernel) if supported(e.fmt) else X.decode(e, out)
+        RH.decode = lambda e, out=None: decode_variant(e, out, kernel) if supported(e.fmt) else other(e, out)
     RH.DQ_KERNEL = kernel
 
 

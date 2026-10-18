@@ -128,28 +128,46 @@ def layout(config: str, n: int, seed: int) -> list[bool]:
 def restore_variant(default: bool = False) -> dict:
     """09 §6.4 還原方法的變體（環境變數；預設全部＝原本）。M10_DQ_KERNEL 由 m10_dequant_fast.install 讀。"""
     if default:
-        return dict(kernel="k1", sched="serial", group=1, prio=False, unit=512, meet="claim")
+        return dict(kernel="k1", sched="serial", group=1, prio=False, unit=512, meet="claim", io_prio=False)
     return dict(kernel=os.environ.get("M10_DQ_KERNEL", "k1"), sched=os.environ.get("M10_DQ_SCHED", "serial"),
                 group=int(os.environ.get("M10_DQ_GROUP", "1")), prio=os.environ.get("M10_DQ_PRIO") == "1",
-                unit=int(os.environ.get("M10_UNIT", "512")), meet=os.environ.get("M10_MEET", "claim"))
+                unit=int(os.environ.get("M10_UNIT", "512")), meet=os.environ.get("M10_MEET", "claim"),
+                io_prio=os.environ.get("M10_RS_PRIO") == "1")      # 13 §3 P1
 
 
 # ====================================================================== GPU 端（子 process）
 class Busy:
-    """背景 matmul（m7_busy.py）；duty＝0 時什麼都不做。"""
+    """背景 matmul（m7_busy.py）；duty＝0 時什麼都不做。
+    13 §3：環境變數 M10_BUSY_CU_MASK 有設時，背景 process 帶 HSA_CU_MASK＝它（ROCm 的運算單元遮罩）；
+    結束後 self.stats 記背景做了幾次 matmul、多久（背景吞吐）。"""
 
     def __init__(self, duty: float, watch=None):
-        self.duty, self.p, self.watch = duty, None, watch
+        self.duty, self.p, self.watch, self.stats = duty, None, watch, None
 
     def __enter__(self):
         if self.duty > 0:
+            env = dict(os.environ)
+            mask = os.environ.get("M10_BUSY_CU_MASK")
+            if mask:
+                env["HSA_CU_MASK"] = mask
             self.p = subprocess.Popen([sys.executable, os.path.join(HERE, "m7_busy.py"), "--duty", str(self.duty)],
-                                      stdout=subprocess.PIPE, text=True)
+                                      stdout=subprocess.PIPE, text=True, env=env)
             line = self.p.stdout.readline()
             if not line.startswith("READY"):
                 raise RuntimeError(f"m7_busy 沒有啟動：{line!r}")
+            self.stats = {"duty": self.duty, "cu_mask": mask or "", "ready": line.strip()}
             time.sleep(1.0)
         return self
+
+    def _read_done(self):
+        try:
+            for ln in self.p.stdout.read().splitlines():
+                if ln.startswith("DONE"):
+                    kv = dict(x.split("=") for x in ln.split()[1:])
+                    self.stats.update(n_matmul=int(kv["n"]), seconds=float(kv["s"]),
+                                      matmul_per_s=round(int(kv["n"]) / float(kv["s"]), 3))
+        except Exception as ex:                                    # 讀不到就照實記，不當成 0
+            self.stats["done_error"] = repr(ex)
 
     def __exit__(self, *a):
         if not self.p:
@@ -157,6 +175,7 @@ class Busy:
         if self.watch is None or os.environ.get("M10_BUSY_TEARDOWN_PAUSE") != "1":
             self.p.terminate()
             self.p.wait(30)
+            self._read_done()
             return False
         # 2026-10-15 Qwen FP8 grid L0：m7_busy 結束、容器內 kfd 已關之後，amd-smi 仍列著它的 VRAM（同 09-15 vLLM 關閉那次）
         # → 數量判斷誤報 1 筆「容器外行程」。收尾期間暫停取樣（區間寫進 gpu_guard JSON），等 amd-smi 連 2 次不再多出條目
@@ -165,6 +184,7 @@ class Busy:
         with self.watch.pause("m7_busy teardown"):
             self.p.terminate()
             self.p.wait(30)
+            self._read_done()
             t0, ok = time.time(), 0
             while time.time() - t0 < 30 and ok < 2:
                 ok = 0 if any(x["pid"] == -1 for x in foreign_on(self.watch.gpu, self.watch.own_root)) else ok + 1
@@ -276,8 +296,15 @@ class Bench:
             tier = Tier(f"ssd_{tier_spec['name']}", read_Bps=Bps, write_Bps=Bps)
         km.kv[:, :, :, :n * self.CHUNK].zero_()
         torch.cuda.synchronize()
+        meet0 = rs.meet_rule
+        if mode in ("loadall", "claim"):                       # 13 §2：同一個 process 裡交錯跑「全部載入」「照 Cake」
+            rs.meet_rule = "none" if mode == "loadall" else "claim"
         t0 = time.perf_counter()
-        rec = rs.restore(self.ids, n * self.k, self.host_for(lp_mask), [tier] * (n * self.k), mode)
+        try:
+            rec = rs.restore(self.ids, n * self.k, self.host_for(lp_mask), [tier] * (n * self.k),
+                             "cake" if mode in ("loadall", "claim") else mode)
+        finally:
+            rs.meet_rule = meet0
         t_new, _ = rs.new_turn(self.ids[n * self.CHUNK:n * self.CHUNK + self.new_tokens], n * self.CHUNK)
         rec["ttft"] = time.perf_counter() - t0
         rec["t_new_turn"] = t_new
@@ -327,12 +354,19 @@ def worker(spec: dict):
     bench = Bench(spec["model"], n_max, spec["fmt"], spec["new_tokens"], unit=rv["unit"])
     if rv != restore_variant(default=True):            # 09 §6.4：還原方法的變體（預設全關＝原本）
         bench.rs.set_options(unit=rv["unit"], sched=rv["sched"], group=rv["group"], compute_prio=rv["prio"],
-                             meet=rv["meet"])
+                             meet=rv["meet"], io_prio=rv["io_prio"])
         print("[restore_variant]", rv, flush=True)
     rid = run_id()
     os.makedirs(spec["out_dir"], exist_ok=True)
-    rf = open(os.path.join(spec["out_dir"], "restores.csv"), "a", newline="")
-    rw = csv.DictWriter(rf, fieldnames=RESTORE_FIELDS, extrasaction="ignore")
+    extra = spec.get("extra_modes") or []
+    fields = RESTORE_FIELDS + (["meet_rule_used"] if rv["meet"] in ("none", "g5", "g5b") or extra else [])
+    rpath = os.path.join(spec["out_dir"], "restores.csv")
+    if os.path.exists(rpath) and os.path.getsize(rpath) > 0:
+        with open(rpath) as f0:
+            if next(csv.reader(f0)) != fields:
+                raise SystemExit(f"{rpath} 的欄位和這次不同（13 號的 meet_rule_used）；換一個 --out-dir")
+    rf = open(rpath, "a", newline="")
+    rw = csv.DictWriter(rf, fieldnames=fields, extrasaction="ignore")
     if rf.tell() == 0:
         rw.writeheader()
     bpath = spec.get("blocks_out") or os.path.join(spec["out_dir"], "blocks.csv")
@@ -343,8 +377,10 @@ def worker(spec: dict):
         bw_.writeheader()
     watch, level = _watcher(os.path.join(spec["out_dir"], f"gpu_guard_{rid}_L{spec['launch']}.json"))
     busy_pid = set()
+    busy_stats = []
     tiers = spec["tiers"]
     states = spec["gpu_states"]
+    xtiers = spec.get("extra_tiers") or [t["name"] for t in tiers]
 
     def contaminated():
         if watch is None:
@@ -365,20 +401,31 @@ def worker(spec: dict):
             with Busy(st["duty"], watch) as busy:
                 if busy.p:
                     busy_pid.add(busy.p.pid)
+                if rv["meet"] in ("g5", "g5b"):                         # 13 §4：G5 的 profiler（每個頻寬先照 Cake 跑 E0、E1 各一次，不記）
+                    bench.rs.g5_force_claim = True
+                    for tier in tiers:
+                        bench.rs.g5_key = (tier["name"], st["name"])
+                        for cfg in ("E0", "E1"):
+                            bench.restore(layout(cfg, n, 0), tier, "cake", n)
+                    bench.rs.g5_force_claim = False
                 for rep in range(spec["reps"]):
                     for tier in tiers:
                         seed = spec["launch"] * 1000 + rep
                         jobs = [(c, "cake") for c in cfgs]
+                        if extra and tier["name"] in xtiers:
+                            jobs += [(c, m) for c in cfgs for m in extra]
                         if spec.get("refs") and length == spec["main_length"]:
                             jobs += [("-", "compute_only")] + [(c, "load_only") for c in spec["refs"]]
                         rng.shuffle(jobs)                    # 同一次重複裡隨機打散（§4.2）
                         for k, (cfg, mode) in enumerate(jobs):
                             mask = layout("E0" if cfg == "-" else cfg, n, seed)
+                            bench.rs.g5_key = (tier["name"], st["name"])
                             rec = bench.restore(mask, tier, mode, n)
                             key = (length, cfg, mode, tier["name"], st["name"])
                             kvb = ""
                             if spec.get("verify") and key not in verified:
-                                kvb = bench.kv_bad(rec, n)
+                                # nodq（只搬不拆）不會填 KV 緩衝，照 13 §2 不檢查
+                                kvb = "SKIP_nodq" if bench.rs.dq_sched == "nodq" else bench.kv_bad(rec, n)
                                 verified.add(key)
                             t_enc, t_d2h, stored, t_write = bench.write_cost(mask, tier)
                             srcs = [s for _, s, _, _ in rec["blocks"]]
@@ -400,7 +447,7 @@ def worker(spec: dict):
                                 waiting_line=rec.get("waiting_line", ""), t_restore=round(rec["t_restore"], 6),
                                 t_new_turn=round(rec["t_new_turn"], 6), ttft=round(rec["ttft"], 6),
                                 copy_bound=rec["n_copy_bound"], kv_bad=kvb, contaminated_gpu=contaminated(),
-                                host_level=level)
+                                host_level=level, meet_rule_used=rec.get("meet_rule_used", "claim" if mode == "cake" else mode))
                             rw.writerow(row)
                             for i, s, t_s, t_e in rec["blocks"]:
                                 bw_.writerow(dict(run_id=rid, launch=spec["launch"], rep=rep, length=length,
@@ -412,6 +459,9 @@ def worker(spec: dict):
                     print(f"[L{spec['launch']} {length} {st['name']} rep {rep}] ok", flush=True)
             if busy.p:
                 busy_pid.discard(busy.p.pid)
+                busy_stats.append(dict(state=st["name"], length=length, **(busy.stats or {})))
+    if busy_stats:
+        json.dump(busy_stats, open(os.path.join(spec["out_dir"], f"busy_{rid}_L{spec['launch']}.json"), "w"), indent=1)
     rf.close()
     bf.close()
     if watch is not None:
@@ -441,7 +491,8 @@ def load_states(a) -> list[dict]:
 def run_launches(a, configs, refs, lengths):
     spec = dict(model=a.model, fmt=a.fmt, new_tokens=a.new_tokens, lengths=lengths, main_length=a.main_length,
                 configs=configs, refs=refs, tiers=load_tiers(a), gpu_states=load_states(a), reps=a.reps,
-                out_dir=a.out_dir, blocks_out=a.blocks_out, verify=not a.no_verify)
+                out_dir=a.out_dir, blocks_out=a.blocks_out, verify=not a.no_verify,
+                extra_modes=getattr(a, "extra_modes", []), extra_tiers=getattr(a, "extra_tiers", []))
     json.dump({**spec, "argv": sys.argv, "run_id": run_id(), "restore_variant": restore_variant()},
               open(os.path.join(a.out_dir, f"spec_{a.cmd}.json"), "w"), indent=1, ensure_ascii=False)
     for launch in range(a.launches):
@@ -725,6 +776,9 @@ def main():
             p.add_argument("--refs", nargs="*", default=["E0", "E1"], help="load_only 參考線用哪些存法")
             p.add_argument("--lengths", nargs="*", type=int, default=[8192, 16384])
             p.add_argument("--launch0", type=int, default=0, help="launch 編號從幾開始（09 §6.4 複賽用 200，避免和海選同 seed）")
+            p.add_argument("--extra-modes", nargs="*", default=[], choices=["loadall", "claim"],
+                           help="13 §2：每個配置另外跑「全部載入」（loadall）／「照 Cake」（claim），和 cake 交錯")
+            p.add_argument("--extra-tiers", nargs="*", default=[], help="extra-modes 只在這些頻寬跑（空＝全部）")
     v = sub.add_parser("k0-verdict", help="不重跑，從 restores.csv 裡某一次（例 grid）的 E0、E1 列算 K0")
     v.add_argument("--model", choices=["llama", "qwen"], required=True)
     v.add_argument("--out-dir", required=True)

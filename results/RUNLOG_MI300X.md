@@ -549,7 +549,7 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 
 ## Milestone 11 — 第二階段大掃描（探索；格式 × 低精度佔比 × 放法），MI300X（準備中）
 
-**狀態**：程式寫好、CPU／GPU 自測通過；GPU 工作已排進佇列（31z 冒煙測試 → 主線關鍵段 → 40 試跑 → 41 海選 → 42）。**還沒有任何大掃描的數字。**
+**狀態**：41 海選 10/16 23:28Z 跑完（11.2h、08 §2.9）；42 融合 kernel 的 CPU 層跑完（11.2i）；42b／42bz 方法掃描的 A、B 段跑完（11.2j）；42c 跑完（11.2l）；43 複賽 10/17 03:57Z 開跑。**大掃描還沒有可以當結論的數字**（43 還沒跑）。
 **事先登記**：`docs/precision_20261013/09_sweep_plan.md`（2026-10-15 22:50 UTC 寫，此時沒有任何大掃描結果、主線 Step 1 的低精度答對率也沒人看過）。
 **文獻**：`docs/precision_20261013/cards/P07_sweep_formats_sys_dequant.md`（多為摘要級，未逐頁核對；**self-review**）。
 
@@ -645,6 +645,88 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 09 §4.3 補了實作細節（同一時間寫）。
 - 14:10Z：`code/m10_confirm_analyze.py`（三條判準；讀法 A 為主判準的釐清寫進 09 §4.3）。CPU 沙盒用合成資料測過：贏隨機的選手 +8.3 [+5.8, +11.1] → Holm 成立；故意讓它在 b48 慢 20% → 速度不輸判不過；和隨機一樣的選手判不贏。
 
+### 11.2h 大掃描海選（stage 41，10/16 13:55:44 → 23:28:55Z）
+
+- run：`20261016-135544-m10-sweep-screen-llama-s0`、`-135700-…-llama-s1`、`-135815-…-qwen-s0`、`-135930-…-qwen-s1`（4 個 process 全部 rc＝0，stderr 沒有 traceback）。逐列 CSV：`/mlsteam/data/tiara/sweep_m10/screen_<m>_s<k>.csv.gz`（不進 git）。
+- 指令：`m10_sweep.py screen --model <m> --n 24 --shard k/2 --policies F M B R0 R1 R2 R3 R4 ERR ATT AXE ORC --fracs 0.1 … 0.9 --parts …/parts_<m>.json --grid-blocks <主線 FP8 grid 的 blocks.csv>`；彙整 `m10_sweep_analyze.py`（41 腳本最後自動跑）。
+- 每題約 12.7 分鐘（Llama）、11.5 分鐘（Qwen），4 個 process 同時；牆鐘 9.55 h（試跑估 9.87 h）。
+- 產出：`results/m10_sweep_mi300x/analysis/`。結果寫在 08 §2.9。重點：
+  - 照 09 §4.2 三條件贏隨機的格子：Llama 170／1,326、Qwen 384／1,326（假勝出期望約 34）。
+  - 選手的 first_ok 對隨機只差 0–0.5 個百分點；Llama 連全 INT2 KIVI 也只掉 1 個百分點。
+  - 選手：Llama 5 個 ERR＋1 個 ATT（int2_kivi、kv-int4-int2、int4_kivi、mxfp4）；Qwen ATT／AXE 各 3 個（kv-int4-int2、int4_kivi、kv-int8-int4）。
+- 圖的修正（23:3xZ，只動畫圖，選手 JSON 的 md5 前後相同）：`sweep_bytes` 的來源註記壓到 x 軸標題、`sweep_kl` 只有一欄有 x 軸刻度 → 改 `m10_sweep_analyze.py` 的版面後只重畫圖。`agg_<m>.csv` 未壓縮 1.4 MB 超過 git 的 1 MB → 改寫成 `.csv.gz`。
+- 42a 的沙盒預演（23:3xZ，CPU；`m10_confirm.py plan --sw-dir <沙盒>`）：Llama 40 個配置＋E0、Qwen 24 個＋E0，12 個品質 process，7 個速度格子，bash 語法正確。43 估計約 20–24 小時〔推論：照 33c 的品質吞吐、33a 的速度格子耗時，依配置數等比例放大〕。
+
+### 11.2i 融合反量化後的真實 CPU 層（stage 42，10/16 23:28:55 → 10/17 00:12:07Z；只報告）
+
+- run：`20261016-232855-m10-dqfast-grid-llama`、`-234030-m10-dqfast-grid-qwen`、`-235027-m10-dqfast-grid-int4-llama`、`20261017-000209-m10-dqfast-grid-int4-qwen`（全部 exit 0；12 個 gpu_guard 全部 CLEAN）。
+- 指令：`M10_DEQUANT_FAST=1 m10_speed.py grid --model <m> --fmt <fp8 或 int4_kivi> --base-fmt <fp8> --bw-names cpu --lengths`（主線 8 個配置，3 launch × 10 rep）。
+- 產出：`results/m10_sweep_mi300x/speed_dqfast{,_int4}_<m>/{summary.csv, restores.csv, meets.json, gpu_guard_*}`。
+- 關鍵數字（11 問題一 §3a 有完整表）：E1 還原時間 原寫法 → 融合（s）：Llama FP8 閒 0.072 → 0.065、忙 0.171 → 0.082；Llama INT4 0.078 → 0.065、0.189 → 0.082；Qwen FP8 0.055 → 0.033、0.074 → 0.065；Qwen INT4 0.061 → 0.044、0.146 → 0.066。E0 兩次幾乎一樣。照凍結的速度規則，E1／E1s／E1sr × 8 格 24 個檢查全過（原寫法 11 個沒過）。
+- 我原本推「Qwen・忙光靠融合不夠」，實測夠了（11 問題一 §4 已標）。
+- 主線判定不改（07 規定原寫法）；寫進 08 §0、§6 第 1 點。
+
+### 11.2j 方法掃描 A 段的 Llama 被標污染 → 加 42bz 重量（10/17 00:12–00:2xZ）
+
+- 42b 開頭的 kernel 微測 `20261017-001207-m10-dqs-A-llama`：逐位元檢查全部相同，但 gpu_guard 判 `CONTAMINATED_DURING_RUN`：24 個 VRAM 0 MiB 的行程（pid 3698686–3698732，間隔 2），只在 00:12:23 那一次取樣出現（開跑後 16 秒，逐位元檢查那段，k2＝torch.compile 第一次編譯）。程式照設計把 Llama 的 K\* 退回 k1，B 段繼續跑；寫了 NEEDS_HUMAN。
+- 同一支程式的 Qwen（`20261017-001322-m10-dqs-A-qwen`）是 CLEAN。
+- 〔推論〕是 Inductor 的編譯 worker（`compile_threads`＝32，用 subprocess 開），是我們自己的子行程，不是外人；只看到一次、0 MiB。沒有證實。
+- 處理（照 CLAUDE.md §3 重量，不採用被標污染的時間）：加 `queue/42bz_dqsweep_A_llama_rerun.sh`（排在 42b 之後、42c 之前）：
+  - 被標污染的 `kernels_llama.csv`、`choice_llama.json` 搬回那次的 run 目錄（`*.CONTAMINATED.*`）；gpu_guard JSON 留在 results 當紀錄。
+  - 用 `TORCHINDUCTOR_COMPILE_THREADS=1`（只改編譯在哪裡做，不改編出來的 kernel）重量 A-llama。乾淨 → 推論成立；int4_kivi 的 K\* 不是 k1 時，B 段 Llama 12 個方法用新的 K\* 重量（同目錄；plan 只讀最新的 run_id），再重寫 42c。
+  - 還是污染 → 推論不成立，寫 NEEDS_HUMAN，維持 k1。
+  - 多約 20 分鐘 GPU。
+- 被標污染那次的數字不採用；只記它當時會選的 K\*（int4_kivi：k3:4:1）供對照。
+- **結果（10/17 01:13Z）**：
+  - 重量 `20261017-005338-m10-dqs-A-llama-rerun` **CLEAN**，推論得到支持（只關編譯子行程就乾淨；沒有記行程名，不算證明）。
+  - K\* 和被標那次的 `choice_if_clean` 5 種格式完全一樣；int4_kivi＝k3:4:1。
+  - 照設計，B 段 Llama 12 個方法用新 K\* 重量（`20261017-005403` … `-011229-m10-dqs-B-llama-*-rerun`），12 個 guard 全 CLEAN。
+  - plan 重寫 42c：選手 S2k8、S2k16、S4、S2k8+G4、S0，冠軍 S2k8，problems 空。原本 42b 用 k1 寫的 42c 被蓋掉（沒跑過）。
+  - Llama 的 B 目錄裡留著 k1 那次的列（CLEAN，有效但不是 K\*）；plan 和報告只用最新的 run_id。
+  - NEEDS_HUMAN 裡 42b 那條（「K\* 退回 k1」）已由 42bz 處理完。
+  - 42bz 用了 20 分鐘（00:53:38 → 01:13:46Z）。
+- A、B 段的結果表：[11 問題一 §3b](../docs/precision_20261013/11_issues.md)。42c 01:13:46Z 開跑：28 個 grid，第一個每 launch 約 1.5 分鐘 → 〔估計〕約 2.5 小時，在 09 §6.4.4 的 3.5 小時內，不縮。
+
+### 11.2l 方法掃描複賽 42c（10/17 01:13:46 → 03:57:06Z；只報告）
+
+- 28 個 grid（`queue/42c_dqsweep_confirm.sh`，由 42bz 的 plan 寫）；84 個 gpu_guard 全部 CLEAN；KV 逐位元全過；`m10_dqsweep.py report` 的問題列 0。產出 `results/m10_sweep_mi300x/dqsweep/C/`（`report_C.json`、`tables_C.md`）。
+- 結果（[11 問題一 §3c](../docs/precision_20261013/11_issues.md)）：GPU 閒時每格最好的方法比 S0 再快 13–44%，已經到「重算 1 塊」的底；GPU 忙時所有方法一樣（拆少 2–4 倍，但藏在重算後面）；b32 冠軍不拖慢（快 1–9%）。
+- 13 §7 的挑法（`m10_restore2.py pick-c`）：**S2k8+G4**（CPU 層 E1 幾何平均 0.0489 s；S0 0.0574）→ 44d 帶它。第一次跑 pick-c 時輸出目錄不存在（FileNotFoundError），加了 `os.makedirs`（pick-q4 同改）後重跑。
+- 跑的時間 2 小時 43 分（估 2.5 小時，09 §6.4.4 的上限 3.5 小時內）。43 在 03:57:06Z 接著開跑。
+
+### 11.2m 43 複賽第一次：冒煙抓到名稱錯誤 → 改名重排成 43aa（10/17 03:57 → 04:02Z）
+
+- `43_sweep_confirm`（03:57:06Z）第 0 步真模型冒煙（Llama）失敗：`AttributeError: module 'm10_sweep' has no attribute 'ItemState'`（`m10_quality._attention_mass` 和 `m10_confirm._sworker` 都呼叫 `SW.ItemState.attention_mass`；海選那個 class 叫 `Item`）。ATT／AXE 放法才會走到；假模型測試沒有 attention，所以只能靠這個真模型冒煙抓（設計如此，09 §4.3）。照腳本跳過 43 的其餘部分、exit 0，佇列接著跑 43a。**沒有任何複賽的品質或速度跑過。**
+- 修：兩處改成 `SW.Item.attention_mass`（同一段程式碼，沒有改行為）。用靜態檢查對過 m10_quality、m10_confirm、m10_confirm_analyze 用到的 `m10_sweep` 名稱：只有這一個不存在。
+- 失敗的 log 留在 `results/m10_sweep_mi300x/confirm/smoke_llama.FAILED_20261017T0358Z.log`。重排成 `queue/43aa_sweep_confirm_rerun.sh`（內容和 43 相同，只多一行說明），04:02:54Z 開跑（排在 43a 之後、43b 之前，維持「43 先、13 號後」的順序）。
+- 時程：43 晚了約 5 分鐘。
+- 43aa 的冒煙全過：Llama 品質冒煙 41／41 個配置有列、集合大小都對（`20261017-040254-m10-confirm-smoke-llama`）；Qwen 品質冒煙 exit 0（`-041527-…-qwen`）；兩個速度路徑冒煙（含 ATT／AXE）exit 0（`-042049-…-ssmoke-llama`、`-042146-…-ssmoke-qwen`）。速度格子 04:22:29Z 開跑。
+
+### 11.2n 13 號的 GPU 冒煙（43a，03:58 → 04:02Z）
+
+- 新格式融合 kernel 在 GPU 上和原寫法逐位元相同：24／24（`results/m10_restore2_mi300x/smoke/dqx_selftest_gpu.json`）。
+- CU 遮罩有生效（`cumask.json`）：304 個 CU；背景單獨跑的 matmul 1.647 ms → P4a（0–265）1.810 ms（×1.10）、P4b（0–227）1.993 ms（×1.21）。
+- 真模型（Qwen int4_kivi、1 × 1）：G5＋claim＋loadall、nodq、P5＋遮罩（GPU 忙）、Llama int2_kivi＋新格式 kernel 走大掃描速度路徑：`smoke-check` ALL PASS（KV 逐位元、每列有 G5 的決定、loadall 不重算、背景吞吐有記錄）。
+- **attention 對照組自測沒過**：不是數值錯，是 fp8 讀法的 kernel 要 139,264 bytes 共享記憶體（MI300X 上限 65,536）。用離線編譯（gfx942）量：num_stages 1 時三種讀法 16–32 KB；改成三種讀法都 `num_warps=4, num_stages=1`（同一組設定，公平）。vLLM-KIVI 的 kernel 離線編譯 2 KB，可以跑。
+- 加 `queue/43e0_rs2_attn_resmoke.sh`（43e 之前在 GPU 上重新自測；過才跑 (b)）。
+
+### 11.2k Cake 對「全部載入」：CPU 層每一格都輸（10/17 02:3xZ；只用 CPU，沒有新的 GPU 工作）
+
+- 使用者 10/17 問「反量化要不要把 SOTA 都拿來測」「什麼時機、哪樣配合比較好」。用已經有的速度格子（主線 `speed_*/summary_{fp8,int4}.csv`、42 的 `speed_dqfast*_<m>/restores.csv`）比 Cake 和同一個 run 的「只載」參考線。
+- 結果：真實 CPU 層，全載入比 Cake 快——42（融合）12 格快 14–55%，主線原寫法 16 格比值 0.50–0.86。慢的層 Cake 贏（b32 1.20–1.98、b48 1.52–3.95）；b16 差不多。
+- 原因（同一批 run 的拆解）：harness 的 Cake 兩條線同時開始，重算線至少拿第 0 塊（b ≥ 1）；CPU 層低精度 64 塊的 H2D 只要 14–44 ms，重算線（1–2 塊）要 32–81 ms（42 的 E1 中位數）。
+- 寫進 [11 問題三](../docs/precision_20261013/11_issues.md)（含「什麼情況用哪種組合」的表與還沒做的解法）。只報告，主線判定不改。
+
+### 11.2o 43aa 速度做完、品質第一個 job 參數空掉 → 佇列停了 3 小時 → 接續成 43ab（10/17 10:31 → 13:35Z）
+
+- 速度格子 7／7 跑完（04:22:29 → 10:31:38Z）：Llama 4 個格式（`20261017-042229-…-int2_kivi`、`-054512-…-kv-int4_kivi-int2_kivi`、`-070052-…-int4_kivi`、`-074133-…-mxfp4`）、Qwen 3 個（`-082406-…-kv-int4_kivi-int2_kivi`、`-090805-…-int4_kivi`、`-094858-…-kv-int8_token-int4_kivi`），全部 exit 0；gpu_guard 21 個（Llama 12、Qwen 9）全 CLEAN，summary 的污染列 0。逐次還原 Llama 9,840 列、Qwen 6,000 列（`results/m10_sweep_mi300x/confirm/speed_*/restores.csv.gz`；原檔超過 1 MB 不進 git）。**速度的判讀等品質做完一起寫（09 §4.3），這裡不下結論。**
+- 品質第一個 job `cf-llama-T24-s0`（10:31:38Z，`20261017-103138-m10-confirm-llama-T24-s0`）exit 2：`argument --params-file: expected one argument`。原因：`m10_confirm.py plan` 把品質指令寫成字面 `--params-file $P`；`lib.sh` 的 `P` 沒有 export，pool 用 `bash -c` 開的子行程看不到 → 空字串。pool 照規則不再開新的 → 43aa 腳本 `exit 1` → runner 照規則停下（10:31:48Z）。**GPU 空了 10:31 → 13:35Z（約 3 小時）**：背景等待的條件是「43aa DONE／runner FAILED」，它有叫醒，但我 13:32Z 才看到。
+- 修（沒有換方法、沒有改任何設定）：`m10_confirm.py plan` 新增 `--params-file`（預設同 `smoke` 用的 `results/m10_pilot_mi300x/e0_tune/CANDIDATE_PARAMS.json`）、指令寫實際路徑；`jobs_43q.json` 的 12 個指令換成實際路徑（舊檔留 `jobs_43q.BAD_literalP.json`），在沙盒重新 plan 一次：和修過的檔逐字相同。檢查其他還沒跑的 stage（44b、45、46、55、60、88）：都是不加引號的 heredoc 或 Python 變數，`$P` 在寫 jobs 時就展開了，沒有同樣的問題。
+- 接續：`queue/43ab_sweep_confirm_quality.sh`（13:35:00Z 開跑；排在 43b 前面）只跑 43aa 的第 2、3 步，不重跑速度；前面加品質冒煙（每個模型第一個正式指令、T2 × 1 題，輸出放 scratch）。這次失敗改成寫 NEEDS_HUMAN、exit 0，不再讓整條佇列停。（腳本開頭的說明寫「16 個 guard」，實際是 21 個；腳本在跑，不改它。）
+- 時程：43 的品質晚了約 3 小時，後面 13 號那一輪順延同樣的時間。
+- 43ab 品質冒煙過（13:35 → 13:44:21Z）：Llama 41／41 個配置有列（287 列）、Qwen 25／25（175 列），都 exit 0（輸出在 scratch，不進 results；兩個冒煙同時跑，所以 guard 互相標污染，品質分數不受影響）。正式品質 13:44:26Z 開跑（12 個 process，最多 8 個同時）。
+- 10/17 13:37Z 使用者：「h200 都不用管」→ H200 的第二階段復現不做、不再問；13 §11 只留作參考。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。
@@ -714,3 +796,21 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 修正：沒有乾淨的列時明確報錯（「照 CLAUDE.md §3 要重量」）；加只給測試用的 `--include-contaminated`（表格開頭會標「數字不能用」）。44 正式跑是計時段、沒有別的工作，不會用到這個開關。
   - 10/16 14:0xZ 重跑：334 項 ALL PASS。
 - `jobs/queue/44_tier2_speed.sh`（副本在 `code/m10_queue_mi300x/queue/`）：先真模型冒煙，再正式 2 launch × 5 rep × 閒／忙 × 50 格；失敗寫 NEEDS_HUMAN、不擋後面。估計約 1 小時〔估計，用主線格子的還原時間算〕，比 12 號登記時寫的 1.5–2.5 小時短。
+
+## Milestone 14 — 還原的第二輪：GPU 忙時的拆、會合規則 G5、新格式 kernel、拆進 attention、長 context（探索；MI300X）（準備中）
+
+**狀態**：事先登記寫好、程式寫好、CPU 測試全過；GPU 工作排在 43 之後（43a 冒煙 → 43b–43e → … → 44cz → 44d）。**還沒有任何結果。**
+**事先登記**：`docs/precision_20261013/13_restore2_plan.md`（2026-10-17 02:45:05Z，commit a8760ca；補充 §8a 03:1xZ）。寫的時候 42c 跑到一半，只看過其中一格（Llama FP8 S2k8）。
+**為什麼**：使用者 10/17「反量化在我們問題上很重要，所有 SOTA 需要的都拿來測試」「什麼時機、哪樣配合比較好」「全部都做掉，GPU 忙時『拆』要和別的工作搶 GPU 比較嚴重」「拆直接融合進 attention 也可以試試看，類似對照組」。起點是 11 問題三（CPU 層 Cake 輸給全部載入）。
+**程式**（CPU 測試；GPU 正在跑 42c，不能測）：
+- `code/m7_restore_harness.py`：meet none／g5、sched nodq、io_prio（預設路徑不變）。`code/m10_speed.py`：`--extra-modes loadall claim`、`meet_rule_used` 欄（只有 13 號的 run）、`M10_RS_PRIO`、`M10_BUSY_CU_MASK`、`busy_<rid>.json`。`code/m7_busy.py`：結束時印 DONE（背景吞吐）。
+  - `tests/restore2_cpu_shim.py`（torch.cuda 換成 CPU 替身、假模型）：ALL PASS。第一次 4 項沒過：8 塊一組的 Triton kernel 在 CPU 直譯器裡轉 BF16 是截斷（已知，09 §6.4 的 CPU 測試也這樣比），原本就有的 S2 路徑一樣；改成和截斷的參考值比之後全過。
+- `code/m10_dequant_fast_x.py`（新格式的融合 kernel；`M10_DEQUANT_FAST_X=1` 才接）：CPU 直譯 10 種格式 × 2 種形狀 ALL PASS。
+- `code/m10_attn_q.py`（拆進 attention 的對照組）：CPU 直譯 ALL PASS（讀壓縮＝同一 kernel 讀拆好的 BF16，逐位元）。過程中修了兩個測試問題：直譯器的 bf16 `tl.dot` 結果不對（加 `F32DOT`，只在直譯模式用）；對 SDPA 的誤差要和「同樣截斷過的值」比。
+- `code/m10_restore2.py`：cumask、env、smoke-check、pick-q4、pick-c、plan-44d（用假的挑選結果測過，產生 40 個 grid、語法正確；測試檔已刪）。
+- 佇列（副本在 `code/m10_queue_mi300x/queue/`）：43a_rs2_smoke、43b_rs2_busy、43c_rs2_g5、43d_rs2_newfmt、43e_rs2_attn、44cz_rs2_plan44d。〔估計〕GPU 合計約 8–9 小時；全部跑完約 10/21。
+**10/17 04:1xZ 補充**：
+- 43a 冒煙看到 G5 低估全載入（1 rep，不是結果）→ 另加 G5b（模擬 Cake 的兩條線），G5 照原登記照跑（13 §8c，commit 8a7cfe3）。
+- 13 號的報告程式 `m10_restore2.py report` 用冒煙的輸出測過結構。
+- 外部參考：vLLM 0.28 ROCm 的 FP8 KV decode（`m10_vllm_kvdecode.py`）、vLLM-KIVI kernel（`code/third_party/`，只量時間）；H200 上要比的 CUDA 實作記在 13 §11（使用者 10/17）。
+**前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。

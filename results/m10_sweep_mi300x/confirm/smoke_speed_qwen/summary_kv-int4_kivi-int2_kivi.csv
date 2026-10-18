@@ -1,0 +1,10 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,idle,E0,cake,1,0.06651,0.13228,2,0,1820327936,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,E1s,cake,1,0.10602,0.17161,2,62,455081984,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,SW-ATT-40,cake,1,0.08199,0.1479,2,24,1291845632,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,SW-AXE-40,cake,1,0.05634,0.12213,2,24,1291845632,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,SW-R0-40,cake,1,0.08082,0.14671,2,25,1269825536,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,SW-R1-40,cake,1,0.06018,0.12548,2,25,1269825536,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,SW-R2-40,cake,1,0.08347,0.14937,2,25,1269825536,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,SW-R3-40,cake,1,0.08235,0.14826,2,24,1291845632,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen
+32768,cpu,idle,SW-R4-40,cake,1,0.08377,0.14984,2,25,1269825536,,,1,0,20261017-042146-m10-confirm-ssmoke-qwen

@@ -10,6 +10,7 @@
                     冒煙（stage 39）：真模型，每個方法（含 S×G 組合的樣本）E0／E1／R25 各還原一次，KV 逐位元檢查
   plan --sw D --jobs J
                     B 段跑完：照 09 §6.4.3 的分數挑複賽選手，寫 J/queue/42c_dqsweep_confirm.sh 與 D/plan_C.json
+  report --sw D     C 段跑完（CPU）：寫 D/C/report_C.json、D/C/tables_C.md（09 §6.4.3-3 的報告項目；只報告）
 
 方法的定義（09 §6.4.1）：S0 逐塊照順序（現在）；S1 邊搬邊拆；S2k<k> 多個 block 一組；S3 重算優先；S4 最後一次拆；
 S5 會合後才拆；G1 256 token；G2 128 token；G4 預估會合。組合用「+」：例 S1+G4。
@@ -306,6 +307,117 @@ def cmd_plan(a):
     print("寫了", os.path.join(jobs, "queue", "42c_dqsweep_confirm.sh"), flush=True)
 
 
+# 並排用（09 §6.4.3-3）：主線（K0、S0、G0；33a／20／22）與 42（K1、S0、G0）的速度格子
+REF_SUMMARY = {
+    ("llama", "fp8"): ("m10_precision_mi300x/speed_llama/summary_fp8.csv", "m10_sweep_mi300x/speed_dqfast_llama/summary.csv"),
+    ("llama", "int4"): ("m10_precision_mi300x/speed_llama/summary_int4.csv", "m10_sweep_mi300x/speed_dqfast_int4_llama/summary.csv"),
+    ("qwen", "fp8"): ("m10_precision_mi300x/speed_qwen_regrid/summary_fp8.csv", "m10_sweep_mi300x/speed_dqfast_qwen/summary.csv"),
+    ("qwen", "int4"): ("m10_precision_mi300x/speed_qwen/summary_int4.csv", "m10_sweep_mi300x/speed_dqfast_int4_qwen/summary.csv"),
+}
+MIXED = ["F25", "M25", "B25", "R25"]
+
+
+def _ref_med(path, bw, st, cfg="E1", length="32768"):
+    p = os.path.join(REPO, "results", path)
+    if not os.path.exists(p):
+        return None
+    for r in csv.DictReader(open(p)):
+        if (r["length"], r["bw_name"], r["gpu_state"], r["config"], r["mode"]) == (length, bw, st, cfg, "cake"):
+            return float(r["median_t_restore"])
+    return None
+
+
+def cmd_report(a):
+    """C 段跑完：每個方法 E1 對 E0 的配對差與 CI、「速度不輸」比值、反量化／重算／等待時間、重算幾塊；和主線、42 並排。只報告。"""
+    from collections import Counter
+    from m10_speed import bootstrap_ci
+    sw = a.sw
+    plan = json.load(open(os.path.join(sw, "plan_C.json")))
+    fins, champ = plan["finalists"], plan["champion"]
+    out = dict(rule="09 §6.4.3-3（只報告）：配對＝同一個（launch, rep, 頻寬, GPU 狀態）的 E0、E1；差＝E0−E1（正＝E1 快），"
+                    "bootstrap 95% CI（m10_speed.bootstrap_ci）；速度不輸比值＝E1 中位數 ÷ min(F25,M25,B25,R25 中位數)，"
+                    "≤ 1＋δ* 算不輸（03 §2.4；δ* 是主線凍結的 noise.json）；gpu_guard 不是 CLEAN 或有污染列 → 那個 run 的時間不能用",
+               finalists=fins, champion=champ, cells=[], problems=[])
+    for m in ("llama", "qwen"):
+        dstar = json.load(open(os.path.join(REPO, "results", "m10_precision_mi300x", f"speed_{m}", "noise.json")))["delta_star"]
+        for tag in ("fp8", "int4"):
+            for meth in fins:
+                for suf in ("", "_b32"):
+                    if suf and meth not in (champ, "S0"):
+                        continue
+                    name = f"{m}_{tag}_{meth.replace('+', '_')}{suf}"
+                    d = os.path.join(sw, "C", name)
+                    rows = [r for r in _latest_rows(d) if r["mode"] == "cake" and r["length"] == "32768"]
+                    if not rows:
+                        out["problems"].append(f"{name}：NOT_MEASURED（沒有資料）")
+                        continue
+                    rid = rows[0]["run_id"]
+                    guards = [json.load(open(g)) for g in glob.glob(os.path.join(d, f"gpu_guard_{rid}_*.json"))]
+                    dirty = [g.get("verdict") for g in guards if g.get("verdict") != "CLEAN"]
+                    n_cont = sum(r["contaminated_gpu"] != "False" for r in rows)
+                    n_bad = sum(r["kv_bad"] not in ("", "0") for r in rows)
+                    usable = bool(guards) and not dirty and n_cont == 0
+                    if not usable:
+                        out["problems"].append(f"{name}：時間不能用（guard {dirty or '缺'}、污染列 {n_cont}）→ 要重量")
+                    if n_bad:
+                        out["problems"].append(f"{name}：KV 逐位元檢查有 {n_bad} 列沒過 → 方法淘汰")
+                    for bw, st in sorted({(r["bw_name"], r["gpu_state"]) for r in rows}):
+                        v = [r for r in rows if (r["bw_name"], r["gpu_state"]) == (bw, st)]
+                        med = {c: statistics.median(float(r["t_restore"]) for r in v if r["config"] == c)
+                               for c in sorted({r["config"] for r in v})}
+                        e0 = {(r["launch"], r["rep"]): float(r["t_restore"]) for r in v if r["config"] == "E0"}
+                        e1 = {(r["launch"], r["rep"]): float(r["t_restore"]) for r in v if r["config"] == "E1"}
+                        keys = sorted(set(e0) & set(e1))
+                        diffs = [e0[k] - e1[k] for k in keys]
+                        lo, hi = bootstrap_ci(diffs) if len(diffs) >= 2 else (None, None)
+                        x1 = [r for r in v if r["config"] == "E1"]
+                        mixed = [med[c] for c in MIXED if c in med]
+                        ratio = med["E1"] / min(mixed) if mixed and "E1" in med else None
+                        ref33, ref42 = (_ref_med(p, bw, st) for p in REF_SUMMARY[(m, tag)])
+                        out["cells"].append(dict(
+                            model=m, fmt=tag, fmt_name=rows[0]["fmt"], method=meth, bw=bw, gpu_state=st, run_id=rid,
+                            usable=usable, kv_bad_rows=n_bad, delta_star=dstar, n_pairs=len(keys),
+                            median={c: round(x, 5) for c, x in med.items()},
+                            gain_E1_over_E0=round((med["E0"] - med["E1"]) / med["E0"], 4),
+                            paired_diff_ci95_s=[lo, hi],
+                            not_worse_ratio=round(ratio, 4) if ratio else None,
+                            not_worse=(ratio <= 1 + dstar) if ratio else None,
+                            E1_t_dequant=round(statistics.median(float(r["t_dequant"]) for r in x1), 5),
+                            E1_t_recompute=round(statistics.median(float(r["t_recompute"]) for r in x1), 5),
+                            E1_t_wait=round(statistics.median(float(r["t_wait"]) for r in x1), 5),
+                            b_E0=dict(Counter(int(float(r["b"])) for r in v if r["config"] == "E0")),
+                            b_E1=dict(Counter(int(float(r["b"])) for r in x1)),
+                            waiting_line_E1=dict(Counter(r["waiting_line"] for r in x1)),
+                            ref_E1_mainline=ref33, ref_E1_stage42=ref42))
+    json.dump(out, open(os.path.join(sw, "C", "report_C.json"), "w"), indent=1, ensure_ascii=False)
+    ST = {"idle": "閒", "busy": "忙"}
+    md = ["# 反量化方法掃描：複賽（09 §6.4.3-3；只報告）", "",
+          f"選手 {'、'.join(fins)}；冠軍 {champ}。還原時間中位數（s），32K；配對差＝E0−E1（正＝E1 快）。"
+          "「不輸比」＝E1 ÷ 混合配置最快的，≤ 1＋δ* 算不輸。主線＝原寫法（K0、S0、G0），42＝融合 kernel（K1、S0、G0）。", ""]
+    for m in ("llama", "qwen"):
+        for tag in ("fp8", "int4"):
+            cs = [c for c in out["cells"] if c["model"] == m and c["fmt"] == tag]
+            if not cs:
+                continue
+            md += [f"## {m}・{cs[0]['fmt_name']}（δ*＝{100 * cs[0]['delta_star']:.2f}%）", "",
+                   "| 頻寬 | GPU | 方法 | E0 | E1 | E1 快多少 | 配對差 95% CI | 不輸比 | 反量化／重算／等待（E1） | 重算塊數 E0→E1 | E1：主線／42 | 可用 |",
+                   "|:--|:--|:--|--:|--:|--:|:--|:--|:--|:--|:--|:--|"]
+            for c in sorted(cs, key=lambda c: (c["bw"] != "cpu", c["bw"], c["gpu_state"] != "idle", fins.index(c["method"]))):
+                lo, hi = c["paired_diff_ci95_s"]
+                ci = f"[{lo:+.4f}, {hi:+.4f}]" if lo is not None else "—"
+                nw = "—" if c["not_worse_ratio"] is None else f"{c['not_worse_ratio']:.3f}（{'過' if c['not_worse'] else '沒過'}）"
+                bb = lambda d: "/".join(f"{k}×{n}" for k, n in sorted(d.items()))
+                ref = "／".join("—" if x is None else f"{x:.3f}" for x in (c["ref_E1_mainline"], c["ref_E1_stage42"]))
+                md.append(f"| {c['bw']} | {ST[c['gpu_state']]} | {c['method']} | {c['median']['E0']:.3f} | {c['median']['E1']:.3f} | "
+                          f"{100 * c['gain_E1_over_E0']:+.1f}% | {ci} | {nw} | {1e3 * c['E1_t_dequant']:.1f}／"
+                          f"{1e3 * c['E1_t_recompute']:.1f}／{1e3 * c['E1_t_wait']:.1f} ms | {bb(c['b_E0'])} → {bb(c['b_E1'])} | "
+                          f"{ref} | {'是' if c['usable'] else '**否**'} |")
+            md.append("")
+    md += ["## 問題", ""] + ([f"- {p}" for p in out["problems"]] or ["無"])
+    open(os.path.join(sw, "C", "tables_C.md"), "w").write("\n".join(md) + "\n")
+    print("\n".join(md))
+
+
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -326,6 +438,8 @@ def main():
     s = sub.add_parser("plan")
     s.add_argument("--sw", default=SW_DEFAULT)
     s.add_argument("--jobs", required=True)
+    s = sub.add_parser("report")
+    s.add_argument("--sw", default=SW_DEFAULT)
     a = ap.parse_args()
     if a.cmd == "list":
         print(" ".join(B_METHODS))
@@ -333,7 +447,7 @@ def main():
         print(" ".join(f"{k}={v}" for k, v in method_env(a.method, a.model, a.fmt, a.sw).items()))
     else:
         sys.path.insert(0, HERE)
-        {"kernels": cmd_kernels, "smoke": cmd_smoke, "plan": cmd_plan}[a.cmd](a)
+        {"kernels": cmd_kernels, "smoke": cmd_smoke, "plan": cmd_plan, "report": cmd_report}[a.cmd](a)
 
 
 if __name__ == "__main__":
