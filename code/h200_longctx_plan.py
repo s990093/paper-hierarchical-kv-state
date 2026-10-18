@@ -77,15 +77,23 @@ def jobs_pilot():
 
 
 def per_item_seconds(m, nb):
-    d = lastrun(f"m10h-lc-pilot-{m}-{nb}")
-    xs = [float(x) for x in re.findall(r"n_blocks=\d+ .*? (\d+\.\d)s \(", open(os.path.join(d, "stdout.log")).read())] if d else []
-    return statistics.mean(xs) if xs else None
+    """每一題用它實際跑的那一次的時間。m10_sweep screen 會續跑（輸出檔裡已有的題跳過），所以試跑被打斷再重送時，
+    題目分散在好幾個 run 裡（10/18：20705 OOM 停在 Llama-252 第 2 題，20895 重送時 64／128 的 4 題全部跳過）。
+    MI300X 版只讀最新的 run，沒遇過續跑。同一題出現在兩個 run 時用後面那次。"""
+    t = {}
+    for d in sorted(glob.glob(f"{RUNS}/*-m10h-lc-pilot-{m}-{nb}")):
+        for item, s in re.findall(r"^\[\d+\] (\S+) n_blocks=\d+ .*? (\d+\.\d)s \(", open(os.path.join(d, "stdout.log")).read(), re.M):
+            t[item] = (float(s), os.path.basename(d))
+    if len(t) != len(TASKS):
+        return None, t
+    return statistics.mean(v for v, _ in t.values()), t
 
 
 def plan():
-    dt = {(m, nb): per_item_seconds(m, nb) for m in ("llama", "qwen") for nb in NBS}
-    if any(v is None for v in dt.values()):
-        raise SystemExit(f"試跑的單題時間讀不到：{dt}")
+    got = {(m, nb): per_item_seconds(m, nb) for m in ("llama", "qwen") for nb in NBS}
+    if any(v is None for v, _ in got.values()):
+        raise SystemExit(f"試跑的單題時間讀不到（每個模型 × 長度要 {len(TASKS)} 題）：{ {k: t for k, (v, t) in got.items()} }")
+    dt = {k: v for k, (v, _) in got.items()}
     base = sum(4 * v for v in dt.values()) / 3 / 3600         # n＝1、完整設定的牆鐘（小時）
     levels = [("完整", POL, FR, True),
               ("拿掉讀法 B", POL, FR, False),
@@ -107,6 +115,7 @@ def plan():
         choice = dict(label=label + "（仍超過 14 小時，照實記）", n=3, policies=pols, fracs=fracs, readout_b=False,
                       est_h=round(base * 3 * scale, 2))
     choice.update(pilot_seconds_per_item={f"{m}|{nb}": round(v, 1) for (m, nb), v in dt.items()},
+                  pilot_items={f"{m}|{nb}": {i: [s, r] for i, (s, r) in t.items()} for (m, nb), (_, t) in got.items()},
                   platform="H200", rule="10_longctx_plan §3.3（MI300X 的 longctx_plan_n.py 同一條）")
     os.makedirs(LC, exist_ok=True)
     json.dump(choice, open(f"{LC}/screen_plan.json", "w"), indent=1, ensure_ascii=False)
