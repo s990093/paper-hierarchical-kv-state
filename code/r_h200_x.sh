@@ -178,7 +178,8 @@ cwe_vllm() { mkdir -p "$OUT/ruler_cwe_vllm"; m7run m10h-cwe-vllm python code/m10
 gpu_selftests() { # 39 的 GPU 部分：融合反量化逐位元自測、Llama 大小緩衝的 offset、dqsweep 的還原路徑（NVIDIA 第一次跑 Triton）
   mkdir -p "$SW/dqsweep"
   m7run m10h-dqfast-selftest python code/m10_dequant_fast.py --self-test --out "$SW/dqfast_selftest_gpu.json" || return 1
-  m7run m10h-dqoffset python code/m10_queue_mi300x/tests/dq_fast_offset_gpu.py || return 1
+  # 測試檔的 sys.path 寫死 MI300X 的 /mlsteam/...（不改測試檔）→ 用 PYTHONPATH 指到 H200 的 code/（20708 在這裡失敗：No module named m10_codec）
+  PYTHONPATH="$REPO/code${PYTHONPATH:+:$PYTHONPATH}" m7run m10h-dqoffset python code/m10_queue_mi300x/tests/dq_fast_offset_gpu.py || return 1
   local m; for m in qwen llama; do
     m7run m10h-dqsweep-smoke-$m python code/m10_dqsweep.py smoke --model $m --fmts int4_kivi "$(fmt_of $m fp8)" --sw "$SW/dqsweep" || return 1
   done
@@ -203,6 +204,7 @@ dqsweep_B() {     # 42b B 段：每個方法一次 grid（int4_kivi、CPU 層、
   return 0
 }
 h200_lib() {      # m10_dqsweep plan／m10_confirm plan 寫的腳本會 source <jobs>/lib.sh：給它 H200 的版本
+  mkdir -p "$WORK/queue"   # 兩個 plan 都寫 <jobs>/queue/*.sh 但不建目錄（MI300X 的 jobs 目錄本來就有 queue/）
   cat > "$WORK/lib.sh" <<EOF
 source $REPO/code/env_h200.sh
 REPO=$REPO; JOBS=$WORK; OUT=$OUT; P=$P

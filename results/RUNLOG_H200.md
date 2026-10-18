@@ -1016,3 +1016,16 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   **完全相同 4 個**（kv-int4-int2 ATT／AXE 0.4、kv-int8-int4 ATT／AXE 0.1）。
 - 45、55、60、88 的 Qwen 分數已寫進 `quality*/`，還沒分析（只報告）。
 - 20708（t2，量時間）現在只等 20897。
+
+### job 20897 `m10h-lc-screen` 跑完（2026-10-18 09:53 → 14:27:02 +08:00，COMPLETED exit 0）
+- SCREEN：12 個 process（252×3＋128×2＋64×1 shard，兩個模型）全部 rc＝0；新的工作池預約，最多 3 個同時、沒有 OOM。分析（`m10_longctx_analyze`）接著在 head node 做。
+
+### job 20708 `m10h-t2` 失敗、20709 `m10h-q5` 跟著取消（2026-10-18 14:27:02 → 14:27:19，FAILED exit 1；git `cae5c17`）
+**狀態**: FAIL（H200 移植漏改的路徑；沒有量到任何東西）
+- 步驟 GPU-SELFTEST：`m10h-dqfast-selftest`（`m10_dequant_fast.py --self-test`，GPU）exit 0；`m10h-dqoffset` exit 1：
+  `File ".../code/m10_queue_mi300x/tests/dq_fast_offset_gpu.py", line 7 ... ModuleNotFoundError: No module named 'm10_codec'`
+- 原因：測試檔的 `sys.path.insert(0, "/mlsteam/workspace/paper-hierarchical-kv-state/code")` 寫死 MI300X 路徑。
+- 20709 是 `afterok:20708`＋`--kill-on-invalid-dep=yes` → CANCELLED。
+- **修正**（`code/r_h200_x.sh`，不改測試檔）：dqoffset 用 `PYTHONPATH=$REPO/code`；head node 確認 `import m10_codec, m10_dequant_fast` 可以。
+- **預檢 t2 其他步驟又找到一個**：`m10_dqsweep plan`、`m10_confirm plan` 都寫 `<jobs>/queue/*.sh` 但不建 `queue/`（MI300X 的 jobs 目錄本來就有）→ DQS-C、CONFIRM-PLAN 會失敗。`h200_lib` 先 `mkdir -p $WORK/queue`。在 scratchpad 用 H200 的 finalists 跑 `m10_confirm plan`：rc 0，寫出 43 的腳本（4 段、9 行 speed、沒有 /mlsteam）。
+- 也查了：`m10_vllm_ttft.py` 的模型路徑本來就讀 `M7_<MODEL>_GLOB`（env_h200.sh 有設），不用改；`m10_dqsweep list／env` 在 CPU 上正常；`m10_tier2` 讀 repo 相對路徑的 `tier_params.json`（存在）。GPU 才能跑的步驟（tier2 smoke、dqsweep smoke、TTFT）沒辦法預檢。
