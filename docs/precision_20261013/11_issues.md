@@ -307,6 +307,10 @@ run：`20261016-232855-m10-dqfast-grid-llama`、`-234030-…-qwen`、`-235027-�
   - 代價在之後的 decode：我們的 Triton kernel 讀壓縮每個 token 多 0.1–6.4 ms（32K），Llama 生成 2–5 個 token 就賠回去。
   - vLLM 的 FP8 production kernel 反而讓 decode 變快（Llama 32K −10%、128K −29%）；但 AMD 上 INT4 沒有這種現成 kernel。RUNLOG 14.4。
   - 〔推論〕不改 attention 的話，S4＋全載入已經拿到大部分好處；要再往前，要有好的「讀壓縮的 attention kernel」（FP8 有、INT4 要自己寫好）。
+  - **使用者 10/18 的想法「只在 prefill 用拆進 attention、decode 維持 BF16」**（〔算術〕，只用量好的零件，`code/m10_fused_prefill_arith.py` → `results/m10_restore2_mi300x/q5/fused_prefill_arith.md`）：32K、CPU 層，比現在的「S4＋全載入＋BF16 prefill」**慢 58–149 ms**。還原只省 1–4 ms（42.0 vs 45.6 之類），但 256 個新 query 的 prefill 讀壓縮慢 3.6–4.6 倍（Llama INT4・閒 131.5 vs 36.1 ms）。
+    - 原因〔推論〕：融合 kernel 在「query 多」時最貴（每個 query 區塊都要把同一塊 K／V 重拆一次），在 decode（1 個 query）時最便宜。所以如果要分，應該反過來：prefill 讀 BF16、decode 才讀壓縮——但讀 BF16 就得先拆，等於現在的做法。
+    - 就算 kernel 寫到最好（每塊 K／V 只拆一次），prefill 最多也只是「BF16 attention＋拆一次」，和現在一樣；這條路的上限就是還原那 1–4 ms。
+    - 真的有好處的組合在 decode：用 vLLM 那種好的 FP8 kernel，KV 一路用 FP8，decode 快 10–29%、GPU 記憶體省一半（43e (d)）。這是 decode 的速度和容量，不是 TTFT。
 
 **更新後的「什麼時機用哪種組合」**（32K；CPU 層用 S4 的 grid、慢的層用 G5b 的 grid）：
 

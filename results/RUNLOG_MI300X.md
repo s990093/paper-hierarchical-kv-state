@@ -862,6 +862,8 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 修：`m10_vllm_kvdecode.py`、`m10_vllm_ttft.py` 的 Qwen 改用 `/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA`（同一份權重 symlink，只拿掉 DCA；CLAUDE.md §3 第 3 點；我們的 HF harness 本來就沒有 DCA）。重跑排成 `queue/44_v_rs2_q5d_qwen.sh`（44 之後）。stage 70 也用同一個路徑，已經一起改。
 - 讀法（只報告）：拆進 attention 要好的 kernel 才划算。我們自己寫的 Triton kernel 每個 token 多花 0.1–6.4 ms（32K；128K 更多，Llama・閒 16 ms），幾個 token 就把還原省下的賠掉；vLLM 的 FP8 kernel 反而讓 decode 變快（讀的位元組少）。但 AMD 上只有 FP8 有這種現成 kernel，INT4 沒有。在不改 attention 的前提下，S4＋全載入已經拿到大部分好處（離只搬不拆的下限 2–5 ms）。
 
+- **10/18 16:0xZ 補（使用者的想法，〔算術〕，沒有新的 GPU 工作）**：「只在 prefill 用拆進 attention、decode 維持 BF16」用量好的零件算：比 S4＋全載入＋BF16 prefill 慢 58–149 ms（32K、CPU 層；`code/m10_fused_prefill_arith.py` → `q5/fused_prefill_arith.md`）。寫進 11 問題三 §3b。
+
 ### 14.5 佇列的失敗處理（10/18 15:5xZ）
 
 - 10/17 那次 `exit 1` 讓整條佇列停了 3 小時（11.2o）。把還沒跑的 stage 全部改成「失敗 → 寫 NEEDS_HUMAN、跳過這段其餘部分、exit 0」：44a、44b、44c 的模板（`longctx_plan_n.py`）、45、46、55、60、70、75、88，還有 `m10_confirm.py plan` 的模板。只改失敗時的動作，指令本身沒動。舊檔在 `scratchpad/jobs/bak_20261018_exit1/`。
