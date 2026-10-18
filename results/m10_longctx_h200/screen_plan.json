@@ -1,0 +1,144 @@
+{
+ "label": "完整",
+ "n": 12,
+ "policies": [
+  "F",
+  "M",
+  "B",
+  "R0",
+  "R1",
+  "ERR",
+  "ATT",
+  "AXE",
+  "ORC"
+ ],
+ "fracs": [
+  0.1,
+  0.25,
+  0.5,
+  0.75,
+  0.9
+ ],
+ "readout_b": true,
+ "est_h": 2.74,
+ "pilot_seconds_per_item": {
+  "llama|64": 62.5,
+  "llama|128": 141.2,
+  "llama|252": 137.4,
+  "qwen|64": 98.5,
+  "qwen|128": 88.0,
+  "qwen|252": 89.0
+ },
+ "pilot_items": {
+  "llama|64": {
+   "T2_front-back_s40000": [
+    36.1,
+    "20261018-024310-m10h-lc-pilot-llama-64"
+   ],
+   "T3_front-back_s40000": [
+    40.5,
+    "20261018-024310-m10h-lc-pilot-llama-64"
+   ],
+   "T4_front-back_s40000": [
+    58.1,
+    "20261018-024310-m10h-lc-pilot-llama-64"
+   ],
+   "T5_global_s40000": [
+    115.4,
+    "20261018-024310-m10h-lc-pilot-llama-64"
+   ]
+  },
+  "llama|128": {
+   "T2_front-back_s40000": [
+    89.6,
+    "20261018-024425-m10h-lc-pilot-llama-128"
+   ],
+   "T3_front-back_s40000": [
+    158.2,
+    "20261018-024425-m10h-lc-pilot-llama-128"
+   ],
+   "T4_front-back_s40000": [
+    144.2,
+    "20261018-024425-m10h-lc-pilot-llama-128"
+   ],
+   "T5_global_s40000": [
+    173.0,
+    "20261018-024425-m10h-lc-pilot-llama-128"
+   ]
+  },
+  "llama|252": {
+   "T2_front-back_s40000": [
+    209.8,
+    "20261018-024610-m10h-lc-pilot-llama-252"
+   ],
+   "T3_front-back_s40000": [
+    102.8,
+    "20261018-075912-m10h-lc-pilot-llama-252"
+   ],
+   "T4_front-back_s40000": [
+    69.8,
+    "20261018-075912-m10h-lc-pilot-llama-252"
+   ],
+   "T5_global_s40000": [
+    167.1,
+    "20261018-075912-m10h-lc-pilot-llama-252"
+   ]
+  },
+  "qwen|64": {
+   "T2_front-back_s40000": [
+    102.8,
+    "20261018-024740-m10h-lc-pilot-qwen-64"
+   ],
+   "T3_front-back_s40000": [
+    112.0,
+    "20261018-024740-m10h-lc-pilot-qwen-64"
+   ],
+   "T4_front-back_s40000": [
+    78.5,
+    "20261018-024740-m10h-lc-pilot-qwen-64"
+   ],
+   "T5_global_s40000": [
+    100.8,
+    "20261018-024740-m10h-lc-pilot-qwen-64"
+   ]
+  },
+  "qwen|128": {
+   "T2_front-back_s40000": [
+    154.0,
+    "20261018-024956-m10h-lc-pilot-qwen-128"
+   ],
+   "T3_front-back_s40000": [
+    111.2,
+    "20261018-024956-m10h-lc-pilot-qwen-128"
+   ],
+   "T4_front-back_s40000": [
+    32.2,
+    "20261018-024956-m10h-lc-pilot-qwen-128"
+   ],
+   "T5_global_s40000": [
+    54.4,
+    "20261018-024956-m10h-lc-pilot-qwen-128"
+   ]
+  },
+  "qwen|252": {
+   "T2_front-back_s40000": [
+    138.5,
+    "20261018-080257-m10h-lc-pilot-qwen-252"
+   ],
+   "T3_front-back_s40000": [
+    74.2,
+    "20261018-080257-m10h-lc-pilot-qwen-252"
+   ],
+   "T4_front-back_s40000": [
+    57.9,
+    "20261018-080257-m10h-lc-pilot-qwen-252"
+   ],
+   "T5_global_s40000": [
+    85.6,
+    "20261018-080257-m10h-lc-pilot-qwen-252"
+   ]
+  }
+ },
+ "platform": "H200",
+ "rule": "10_longctx_plan §3.3（MI300X 的 longctx_plan_n.py 同一條）"
+}

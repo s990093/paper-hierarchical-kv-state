@@ -1,0 +1,198 @@
+{
+ "rule": "09 §4.2（2026-10-15 22:50 UTC 寫死）",
+ "finalists": [
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.25,
+   "policy": "ERR",
+   "delta": 0.05113143083456937,
+   "ci_lo": 0.03510337695703281,
+   "ci_hi": 0.0687987801261723,
+   "rel_delta": 0.7876550582142675,
+   "kl_x": 0.013784588305194675,
+   "kl_rand": 0.06491601913976407,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.42083333333333334
+  },
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.2,
+   "policy": "ERR",
+   "delta": 0.03821658059305264,
+   "ci_lo": 0.026642039148609156,
+   "ci_hi": 0.050659497695556485,
+   "rel_delta": 0.7636883995236361,
+   "kl_x": 0.011825531630847716,
+   "kl_rand": 0.05004211222390035,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.4270833333333333
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.15,
+   "policy": "ERR",
+   "delta": 0.0021087678105222584,
+   "ci_lo": 0.0013755400229412138,
+   "ci_hi": 0.003021998771086488,
+   "rel_delta": 0.7105856121640676,
+   "kl_x": 0.0008588799639662626,
+   "kl_rand": 0.002967647774488521,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.4270833333333333
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.25,
+   "policy": "ERR",
+   "delta": 0.0038297754240299263,
+   "ci_lo": 0.0025294371965471434,
+   "ci_hi": 0.005289298797374612,
+   "rel_delta": 0.7064258148081834,
+   "kl_x": 0.001591565845994058,
+   "kl_rand": 0.0054213412700239855,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.4270833333333333
+  },
+  {
+   "fmt": "nvfp4",
+   "frac": 0.1,
+   "policy": "ATT",
+   "delta": 0.0023052590482848198,
+   "ci_lo": 0.0007832092034749352,
+   "ci_hi": 0.004535493861342265,
+   "rel_delta": 0.6280450124935325,
+   "kl_x": 0.0013652725257694502,
+   "kl_rand": 0.00367053157405427,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.425
+  },
+  {
+   "fmt": "nvfp4",
+   "frac": 0.1,
+   "policy": "AXE",
+   "delta": 0.002195588991488269,
+   "ci_lo": 0.0006020750656453313,
+   "ci_hi": 0.004445172889120005,
+   "rel_delta": 0.5981664909268553,
+   "kl_x": 0.0014749425825660012,
+   "kl_rand": 0.00367053157405427,
+   "first_ok_x": 0.4270833333333333,
+   "first_ok_rand": 0.425
+  }
+ ],
+ "frontier": [
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "policy": "ALL",
+   "frac": 1.0,
+   "bytes_stored": 1124073472.0,
+   "d_first_ok": 0.0,
+   "kl": 0.019450558950969286
+  },
+  {
+   "fmt": "int2_kivi",
+   "policy": "M",
+   "frac": 0.9,
+   "bytes_stored": 1186988032.0,
+   "d_first_ok": -0.010416666666666666,
+   "kl": 0.12469048005217091
+  }
+ ],
+ "controls": [
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.2,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.25,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "int2_kivi",
+   "frac": 0.9,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.15,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 0.25,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "frac": 1.0,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  },
+  {
+   "fmt": "nvfp4",
+   "frac": 0.1,
+   "policies": [
+    "R0",
+    "R1",
+    "R2",
+    "R3",
+    "R4"
+   ],
+   "endpoint": "ALL"
+  }
+ ],
+ "n_winners_total": 173,
+ "model": "llama",
+ "csv": [
+  "/work/ChihChungHsu/hungweilai/sweep_m10h/screen_llama_s0.csv.gz",
+  "/work/ChihChungHsu/hungweilai/sweep_m10h/screen_llama_s1.csv.gz"
+ ],
+ "n_items": 96,
+ "run_ids": [
+  "20261018-064714-m10h-sweep-screen-llama-s0",
+  "20261018-064829-m10h-sweep-screen-llama-s1"
+ ]
+}

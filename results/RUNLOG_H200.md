@@ -984,3 +984,26 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - **修正**：`per_item_seconds` 改成每一題用它實際跑的那一次（同一題在兩個 run 都有時用後面那次），每個模型 × 長度要湊滿 4 題；`screen_plan.json` 多記 `pilot_items`（每題的秒數與 run_id）。
 - head node 試算（輸出到 scratchpad，不寫 results/）：**完整設定、n＝12、估計 2.74 h**（上限 14 h）。題數規則只會選 12、9、6、3 中 ≤ 14 h 的最大值，2.74 h 離上限很遠，混用兩次 run 的計時不會改變 n。
 - Llama-252 第 1 題（209.8 s）是 20705 那次（同卡 4 個 process）；其他 3 題是 20895（同卡 2 個）。照實記。
+
+### 20897 `m10h-lc-screen`（20895 從 PLAN 重送）：09:53 開跑，PLAN＝完整設定、n＝12、估計 2.74 h（`results/m10_longctx_h200/screen_plan.json`），09:54 起 SCREEN（12 個 process）。
+
+### job 20706 `m10h-q3-llama` 跑完（2026-10-18 06:47:11 → 13:10:58 +08:00，COMPLETED exit 0；commit `dc66667` 開跑時的 repo）
+- Q3-POOL：21 個 process 全部 rc＝0（41 海選 2 個 shard；45 FP8 混合；55 T1＋LongBench；60 敏感度地圖；88 INT4）。舊的工作池（沒有預約），沒有 OOM。
+- **41 海選分析**（`results/m10_sweep_h200/analysis/`，`20261018-130247-m10h-sweep-analyze-llama`；09 §4.2 同一條規則）：96 題（同 MI300X）；勝出的組合 173（MI300X 170）。
+  決賽 6 個——H200：int2_kivi ERR 0.25、int2_kivi ERR 0.2、kv-int4_kivi-int2_kivi ERR 0.15、kv-int4_kivi-int2_kivi ERR 0.25、nvfp4 ATT 0.1、nvfp4 AXE 0.1；
+  MI300X：int2_kivi ERR 0.2、kv-int4_kivi-int2_kivi ERR 0.2、kv-int4_kivi-int2_kivi ERR 0.25、int2_kivi ERR 0.15、int4_kivi ERR 0.3、mxfp4 ATT 0.2。
+  **完全相同 2 個**（int2_kivi ERR 0.2、kv-int4_kivi-int2_kivi ERR 0.25）；兩台的 6 個裡 ERR 都佔 4 個、格式都以 int2_kivi／kv-int4-int2 為主。43 複賽用 H200 自己的（13 §9）。
+- **75 RULER CWE（Llama，32K，30 題）**：`results/m10_precision_h200/ruler_cwe/`
+  | 來源 | MI300X | H200 |
+  |:--|--:|--:|
+  | m10（自己的產生器） | 0.4767 | 0.5067 |
+  | 上游 RULER（up_raw，模板含 BOS） | 0.0100 | 0.0067 |
+  | 上游 RULER（up_nobos） | 0.0600 | 0.0800 |
+  | hfgen（up_raw 前 10 題，HF generate） | — | 0.000 |
+  vLLM（`20261018-130851-m10h-cwe-vllm`）：up_raw 0.0067、up_nobos 0.08。結論和 MI300X 相同：上游 RULER CWE 在 32K 上 Llama 幾乎 0 分。
+- **題目是否相同（13 §9：比逐題 gold）**：m10 的 30 題 gold 與 prompt token 數**全部相同**；上游 RULER 的 up_raw、up_nobos 各 30 題**一題都不同**。
+  已核對：RULER commit `c3f5e3b4…` 相同、seed 42 相同、wonderwords 3.0.1 的詞彙 8,166 個（和 `m10_ruler_cwe_check.py` 記的 MI300X 數目相同；32K 只用到 wonderwords，不用 LFS 詞表）。
+  看得到的差別：第 0 題的詞數 H200 1902、MI300X 1909（由 `n_list_items` 回推），prompt 32,470 對 32,610 token——產生器逐步加詞、用 tokenizer 數長度，兩台停在不同的詞數，之後的亂數序列就全部錯開。**原因（tokenizer／transformers 版本數 token 的差別）沒有驗證。**
+  所以上游 RULER 這一項是「同樣的產生程序、不同的題目」，結論（≈0 分）相同。
+- `CWE-VLLM` 的 stderr 有 vLLM `deep_gemm` 找不到 CUDA_HOME 的 WARNING（AssertionError 被 vLLM 當成 warning 吞掉），引擎照常起來、30 題都跑完。
+- 45、55、60、88 的分數已寫進 `quality*/`，還沒分析（MI300X 的報告腳本移植後再做；只報告）。
