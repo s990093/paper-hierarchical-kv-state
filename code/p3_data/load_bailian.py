@@ -23,6 +23,10 @@ variant＝trace 檔：traceA（To-C）、thinking、coder；traceB（To-B）沒�
   len(hash_ids)==ceil(input_length/16) ≥ 0.95；timestamp 非遞減；chat_id 唯一；父請求都找得到；
   子 turn==父 turn+1 ≥ 0.99；子 hash 前綴==父 hash[:-1] ≥ 0.95；子 timestamp ≥ 父 timestamp；
   median(間隔秒／父 output token) ∈ 0.01..10（timestamp 是秒）；frac(間隔 < 1 ms × 父 output) < 0.05；有子請求（session 結構）
+
+只報告（不擋；2026-10-18，06_simulator.md §10-2）：跨請求的原始 id 鏈性質（raw_id_chain_report）。上面的「子 hash 前綴＝父 hash[:-1]」
+只看父子之間；跨請求「同一個 16-token id 永遠在同一個位置、前一個 id 也相同」沒有保證：traceA 不成立（52,168 個 id 出現在
+不只一個位置），coder／thinking 成立。用 hash 的最後一個 id 代表整段前綴的程式（x1_fi 的寫法）在 traceA 會出錯。
 """
 from __future__ import annotations
 
@@ -42,6 +46,27 @@ SOURCE = "bailian"
 DIR = os.path.join(S.DATASETS, "qwen-bailian-usagetraces-anon")
 VARIANTS = ["traceA", "thinking", "coder", "traceB"]
 OBS_END_S = 7200.0
+
+
+def raw_id_chain_report(id_lists):
+    """跨請求的原始 id 鏈檢查（只報告）。依給的順序掃：每個 id 第一次出現的位置與前一個 id 當基準，
+    之後每次出現位置不同 → 位置違反＋1；前一個 id 不同 → 前一個 id 違反＋1。
+    回傳 dict(n_ids, n_ids_multi_position, position_violations, prev_id_violations)。和 p3_sim/trace.py 的算法相同。"""
+    pos, prv, multi = {}, {}, set()
+    pv = qv = 0
+    for ids in id_lists:
+        p_ = None
+        for j, b in enumerate(ids):
+            b = int(b)
+            if b in pos:
+                if pos[b] != j:
+                    pv += 1
+                    multi.add(b)
+                qv += prv[b] != p_
+            else:
+                pos[b], prv[b] = j, p_
+            p_ = b
+    return dict(n_ids=len(pos), n_ids_multi_position=len(multi), position_violations=pv, prev_id_violations=qv)
 
 
 def service_est(out_tok, in_tok, const):
@@ -91,6 +116,11 @@ def load(variant, const):
         ck.report("child input - parent input - parent output < 0 (frac)", float(np.mean(nu_raw < 0)), "thinking 會去掉推理內容")
     roots = par < 0
     ck.report("root turn==1 frac", float(np.mean(turn[roots] == 1)))
+    rc = raw_id_chain_report(r["hash_ids"] for r in rows)
+    ck.report("raw id cross-request chain: ids at >1 position (report)", rc["n_ids_multi_position"],
+              "06_simulator §10-2：traceA 不是鏈式；不要用最後一個 hash 代表整段前綴")
+    ck.report("raw id cross-request chain: position violations (report)", rc["position_violations"])
+    ck.report("raw id cross-request chain: prev-id violations (report)", rc["prev_id_violations"])
     ck.enforce()  # 結構斷言不過就停在這裡（traceB）
     # 根
     root = np.arange(n)

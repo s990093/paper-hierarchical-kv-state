@@ -8,6 +8,8 @@
     CPU 滿而且 LRU 頭是排隊中請求要的 block → 停（X4 的 qp_stop_guard）。
 多出來的：每個 block 的 CPU／SSD 副本格式與品質來歷、壓縮決定（每個請求寫新 block 時一次）、逐筆 I/O 紀錄。
 E1（block 模式）：CPU 淘汰＝丟；還原只用最長的有存前綴（真實系統只認最長前綴，X6）。
+2026-10-18（06 §11–§13）：ssd_moment 的策略在淘汰（降級寫 SSD）那一刻拿到 oracle／當下資訊；O 的「之後最長讀取」改用後綴最大值
+（和 session 引擎同一個做法，結果不變、不再每次掃）；int2_on_read＝recompute；逐請求／逐 session 的新帳。舊的算式一行沒動。
 """
 from __future__ import annotations
 
@@ -22,7 +24,7 @@ sys.path.insert(0, HERE)
 
 import numpy as np  # noqa: E402
 
-from engine import Chan, INF  # noqa: E402
+from engine import Chan, INF, ok_token_limits  # noqa: E402
 from formats import FMT_NAMES  # noqa: E402
 
 GiB = 1 << 30
@@ -69,16 +71,18 @@ class BView:
         self.dq_ok = dql is not None and all(dql[x] is not None for x in range(1, len(FMT_NAMES)) if self.fb[x] is not None)
         self.dq = [0.0 if (dql is None or x is None) else x for x in (dql or [None] * len(FMT_NAMES))]
         c, s = costs.cpu, costs.ssd
-        self.cpu = Chan("cpu", c["r"] / cpu_factor if cpu_factor != 1.0 else c["r"], c["w"], c["k"])
+        self.cpu = Chan("cpu", c["r"] / cpu_factor if cpu_factor != 1.0 else c["r"], c["w"], c["k"], ext=False)
         self.slow = Chan("ssd", s["r"] / ssd_share if ssd_share != 1 else s["r"],
                          s["w"] / ssd_share if ssd_share != 1 else s["w"], s["k"])
         self.d2h = d2h_Bps
         self.ttft = self.rest = self.nC = self.nS = self.nR = self.wq = None
+        nm = [x >= 1 and self.fb[x] is not None and (dql is None or dql[x] is None) for x in range(len(FMT_NAMES))]
+        self.nmf = nm if any(nm) else None      # 逐請求的 NOT_MEASURED（06 §12.4）
 
 
 class BlockEngine:
     def __init__(self, reqs, outer, comp, cap_bytes, view, mf, qp=False, promote=True, block_tokens=512, H=0.0, obs_end=None,
-                 x4_prefill=False):
+                 x4_prefill=False, int2_on_read="serve"):
         self.R = reqs
         self.outer = outer
         self.E = outer["code"]
@@ -119,6 +123,27 @@ class BlockEngine:
         self.t_last = reqs[-1]["t"] if reqs else 0.0
         n = len(reqs)
         self.Ltok = np.zeros(n, np.int64)
+        # ---- 06 §11–§13 的新東西（不參與舊的算式）
+        self.ssd_moment = bool(getattr(comp, "ssd_moment", False))
+        assert int2_on_read in ("serve", "recompute", "recompute_unverified"), int2_on_read
+        self.int2_on_read = int2_on_read
+        self.lim = ok_token_limits(mf)
+        self.unv_on = int2_on_read == "recompute_unverified"
+        if self.unv_on:        # 04 v4 §3.3：前 L 個的來歷在 L×512 都要 pass；任何長度都不 pass 的來歷（INT2）的副本被重算取代
+            self.nro = frozenset(f for f in range(1, len(FMT_NAMES)) if self.lim[f] < 0)
+        else:
+            self.nro = frozenset(mf.never_read_only) if int2_on_read == "recompute" else None
+        self.surp_blk = np.zeros(n, np.int32)     # 因為 INT2 改成重算的 block 數
+        self.nprev = np.zeros(n, np.int32)        # ＝n_old（以前算過的前綴）
+        self.nend = np.zeros(n, np.int32)         # prefill 到哪
+        self.lo_bytes = np.zeros(n, np.int64)     # 服務開始時，有存前綴裡在 SSD（不在 CPU）的 block 的位元組（load-only 會讀的）
+        self.s_ssd_w = {}                         # session → SSD 寫入位元組（降級算在 block 的 owner 請求的 session）
+        self.cutH = (max(obs_end) - H) if (H > 0 and obs_end) else None
+        self.s_ssd_w_H = {}                       # 截尾版：淘汰時刻 < 觀察窗終點 − H
+        self.s_last = {}                          # session → 最近一個服務完的請求 index
+        self.cur_j = -1
+        self._sufmax = {}
+        self._rep = (0, 0)                        # 這一輪的 INT2 取代區間 [L, L0)
 
     # ---- 小工具
     def _wfmt(self, tier, fid):
@@ -179,26 +204,84 @@ class BlockEngine:
                     self.cnt_pf[k] -= 1      # 沒有副本可以預取
             else:
                 ow = self.owner.get(b)
-                sf = self.comp.ssd_fid(self.ctxs[ow], fm) if ow is not None else fm
+                if not self.ssd_moment:
+                    sf = self.comp.ssd_fid(self.ctxs[ow], fm) if ow is not None else fm
+                else:
+                    sf = self.comp.ssd_fid(self._mctx(b, ow, now), fm) if ow is not None else fm
+                    if sf < fm:
+                        raise AssertionError(f"{self.comp.name}: ssd_fid 回傳 {sf} < 目前的 {fm}（格式只能往下壓）")
                 self.sfmt[b] = sf
                 q0 = self.cq.get(b, fm)
                 self.sq[b] = sf if sf > q0 else q0
                 nb = self.fb[sf]
-                self.v.slow.write(nb, now)
+                self.v.slow.write(nb, now, 0, ow if ow is not None else -1)
+                so = self.R[ow].get("s", ow) if ow is not None else -1
+                self.s_ssd_w[so] = self.s_ssd_w.get(so, 0) + nb
+                if self.cutH is not None and now < self.cutH:
+                    self.s_ssd_w_H[so] = self.s_ssd_w_H.get(so, 0) + nb
                 self.wbytes["demote"] += nb
                 self._wfmt("ssd", sf)
                 self.S["demote"] += 1
         return b
+
+    def _max_future_len(self, b, j):
+        """block b 在請求 j 之後被讀到的請求裡最長的 len(h)（後綴最大值，06 §13；＝原本每次掃 lst[j 之後] 的結果）。"""
+        lst = self.acc.get(b)
+        if not lst:
+            return 0
+        sm = self._sufmax.get(b)
+        if sm is None:
+            R = self.R
+            sm = [0] * len(lst)
+            m = 0
+            for i in range(len(lst) - 1, -1, -1):
+                x = len(R[lst[i]]["h"])
+                m = x if x > m else m
+                sm[i] = m
+            self._sufmax[b] = sm
+        i = bisect.bisect_right(lst, j)
+        return sm[i] if i < len(lst) else 0
+
+    def _mctx(self, b, ow, now):
+        """降級（寫 SSD）那一刻的 ctx（06 §11.2）。之後＝請求 index > cur_j（FIFO，照到達順序服務）。
+        tokens／idle_s 用 owner 請求的 session 最近一個服務完的請求。"""
+        s = self.R[ow].get("s", ow)
+        ls = self.s_last.get(s, ow)
+        after = self.cur_j
+        ctx = dict(s=s, r=after, t=now, b=b, tokens=len(self.R[ls]["h"]) * self.btok, idle_s=now - self.R[ls]["t"],
+                   cpu_ctx=self.ctxs.get(ow), mf=self.mf)
+        if self.comp.needs_oracle:
+            lst = self.acc.get(b, [])
+            i = bisect.bisect_right(lst, after)
+            nx = lst[i] if i < len(lst) else INF
+            oe = self.obs_end[ls] if self.obs_end is not None else self.t_last
+            ctx["next_read"] = None if nx >= INF else nx
+            ctx["censored"] = (oe - now) < self.H if self.H > 0 else False
+            ctx["max_read_tokens"] = self._max_future_len(b, after) * self.btok if nx < INF else 0
+        return ctx
 
     # ---- Cake（＝x4_sim.cake，多了格式、解壓、品質）
     def restore(self, q, n, t0):
         v = self.v
         f, fb, dq = v.f, self.fb, v.dq
         h = q["h"]
+        nmf = v.nmf
+        self._r_bS, self._r_nm = 0, False
         if n == 0:
             return t0, 0, 0, 0, 0
+        bS = 0
+        bad = False
         nc = ns = 0
         wq = 0
+        # 06 §13 加速：Chan.read 內聯（同樣的浮點運算與順序；還原時沒有寫入，t_free_w 不變），結束時寫回
+        cpu, slw = v.cpu, v.slow
+        c_tf, c_tfw, c_r, c_k, c_busy, c_bytes = cpu.t_free, cpu.t_free_w, cpu.r, cpu.k, cpu.busy_r, cpu.bytes_r
+        s_tf, s_tfw, s_r, s_k, s_busy, s_bytes = slw.t_free, slw.t_free_w, slw.r, slw.k, slw.busy_r, slw.bytes_r
+        c_rec, s_rec, c_ext, s_ext = cpu.rec, slw.rec, cpu.ext, slw.ext
+        crs, cre, crb, crk, crr, crd = cpu.rs.append, cpu.re.append, cpu.rb.append, cpu.rk.append, cpu.rr.append, cpu.rd.append
+        srs, sre, srb, srk, srr, srd = slw.rs.append, slw.re.append, slw.rb.append, slw.rk.append, slw.rr.append, slw.rd.append
+        c_cur, s_cur = cpu.cur_r, slw.cur_r
+        incpu, cfmt, sfmt, cq, sq, avail = self.cpu, self.cfmt, self.sfmt, self.cq, self.sq, self.avail
         p, qq, rt, lt = 0, n - 1, t0, t0
         while p <= qq:
             if rt <= lt:
@@ -206,26 +289,65 @@ class BlockEngine:
                 p += 1
             else:
                 b = h[qq]
-                if b in self.cpu:
-                    fid = self.cfmt[b]
-                    av = self.avail.get(b, 0.0)
-                    lt = v.cpu.read(fb[fid], lt if av <= lt else av)
+                if b in incpu:
+                    fid = cfmt[b]
+                    av = avail.get(b, 0.0)
+                    now = lt if av <= lt else av
+                    nb = fb[fid]
+                    st = now if now > c_tf else c_tf
+                    dur = nb / c_r
+                    if c_tfw > st:
+                        dur *= c_k
+                    c_tf = st + dur
+                    c_busy += dur
+                    c_bytes += nb
+                    if c_rec:
+                        crs(st)
+                        cre(c_tf)
+                        crb(nb)
+                        crk(0)
+                        if c_ext:
+                            crr(c_cur)
+                            crd(st - now)
+                    lt = c_tf
                     d = dq[fid]
                     if d:
                         lt = lt + d
                     nc += 1
-                    qb = self.cq[b]
+                    qb = cq[b]
                 else:
-                    fid = self.sfmt[b]
-                    lt = v.slow.read(fb[fid], lt)
+                    fid = sfmt[b]
+                    nb = fb[fid]
+                    st = lt if lt > s_tf else s_tf
+                    dur = nb / s_r
+                    if s_tfw > st:
+                        dur *= s_k
+                    s_tf = st + dur
+                    s_busy += dur
+                    s_bytes += nb
+                    if s_rec:
+                        srs(st)
+                        sre(s_tf)
+                        srb(nb)
+                        srk(0)
+                        if s_ext:
+                            srr(s_cur)
+                            srd(st - lt)
+                    lt = s_tf
                     d = dq[fid]
                     if d:
                         lt = lt + d
                     ns += 1
-                    qb = self.sq[b]
+                    bS += nb
+                    qb = sq[b]
+                if nmf and nmf[fid]:
+                    bad = True
                 if qb > wq:
                     wq = qb
                 qq -= 1
+        cpu.t_free, cpu.busy_r, cpu.bytes_r = c_tf, c_busy, c_bytes
+        slw.t_free, slw.busy_r, slw.bytes_r = s_tf, s_busy, s_bytes
+        self._r_bS, self._r_nm = bS, bad
         return (rt if rt > lt else lt), p, nc, ns, wq
 
     # ---- 請求結束
@@ -235,8 +357,12 @@ class BlockEngine:
         # 這一輪要寫進 CPU 的第一個 block（新的、promote 回來的、或洞之後重算的）；oracle 看它之後有沒有被讀
         # （2026-10-18 測試 (iii)-fifo1 抓到：原本只看「沒見過的」block，沒有新 block 但有 promote 時被當成不會再讀 → int2）
         first_new = None
+        rlo, rhi = self._rep
         for i, b in enumerate(h):
             if not (i < n_old and b in self.cpu) and (i >= n_old or i >= L or self.promote):
+                first_new = b
+                break
+            if rlo <= i < rhi and b in self.cpu and self.cq[b] in self.nro:    # INT2 來歷、要被重算取代的
                 first_new = b
                 break
         ctx = dict(r=j, s=q.get("s", j), t=q["t"], n_blocks=len(h), tokens=tok, n_new=len(h) - n_old, nreq=None,
@@ -250,13 +376,7 @@ class BlockEngine:
             oe = self.obs_end[j] if self.obs_end is not None else self.t_last
             ctx["next_read"] = None if nx >= INF else nx
             ctx["censored"] = (oe - q["t"]) < self.H if self.H > 0 else False
-            mx = 0
-            if nx < INF:
-                lst = self.acc[first_new]
-                for jj in lst[bisect.bisect_right(lst, j):]:
-                    x = len(self.R[jj]["h"])
-                    mx = x if x > mx else mx
-            ctx["max_read_tokens"] = mx * self.btok
+            ctx["max_read_tokens"] = (self._max_future_len(first_new, j) if nx < INF else 0) * self.btok
         fid = self.comp.cpu_fid(ctx)
         self.ctxs[j] = ctx
         if first_new is not None:
@@ -270,12 +390,28 @@ class BlockEngine:
         cpu = self.cpu
         fid = self._decide(j, q, L)
         nbf = self.fb[fid]
+        rlo, rhi = self._rep
+        nro = self.nro
         for i in range(len(h)):
             b = h[i]
             if b in self.prefetched:
                 self.prefetched.discard(b)
                 self.S["pf_used"] += 1
-            if i < n_old and b in cpu:
+            if rlo <= i < rhi and self.sfmt.get(b, 0) and self.sq[b] in nro and not (b in cpu and self.cq[b] not in nro):
+                self.sfmt[b] = 0           # int2_on_read=recompute：SSD 上 INT2 來歷的副本丟掉（重算的新 KV 取代）
+                self.sq.pop(b, None)
+            if i < n_old and b in cpu and rlo <= i < rhi and self.cq[b] in nro:
+                # 重算出來的新 KV 取代 CPU 裡 INT2 來歷的副本（照這一輪的決定寫）
+                cpu.move_to_end(b)
+                self.avail.pop(b, None)
+                self.cpu_used += nbf - self.fb[self.cfmt[b]]
+                self.cfmt[b] = fid
+                self.cq[b] = fid
+                self.owner[b] = j
+                self.v.cpu.write(nbf, now)
+                self.wbytes["store"] += nbf
+                self._wfmt("cpu", fid)
+            elif i < n_old and b in cpu:
                 cpu.move_to_end(b)
                 self.avail.pop(b, None)
             elif i < n_old and i < L and self.promote:
@@ -324,6 +460,7 @@ class BlockEngine:
                 st = max(self.v.slow.t_free, q["t"], t_go)
                 if st >= t_end:
                     return
+                t_rdy = q["t"] if q["t"] > t_go else t_go      # 準備好可以讀的時刻（read 裡 max(t_rdy, t_free)＝st，逐位元相同）
                 nb = self.fb[sf]
                 while not self._cpu_room(nb):
                     v = next(iter(self.cpu))
@@ -331,7 +468,7 @@ class BlockEngine:
                         self.S["qp_stop_guard"] += 1
                         return
                     self._evict_one(st)
-                done = self.v.slow.read(nb, st, 1)
+                done = self.v.slow.read(nb, t_rdy, 1, k)
                 self.wbytes["prefetch_read"] += nb
                 self._pf_dec(b)
                 self.cpu[b] = None
@@ -346,10 +483,46 @@ class BlockEngine:
         q = self.R[j]
         n_old = q["n_old"]
         L = self._stored_prefix(q) if (self.drop_on_evict or not self.ssd_on) else n_old
+        self._rep = (0, 0)
+        if self.unv_on:              # recompute_unverified：載入到第 i+1 個時，前 i+1 個的來歷在 (i+1)×512 都要 pass
+            h = q["h"]
+            cpu, cq, sq, lim, bt = self.cpu, self.cq, self.sq, self.lim, self.btok
+            m_ = INF
+            for i in range(L):
+                b = h[i]
+                x = lim[cq[b] if b in cpu else sq[b]]
+                if x < m_:
+                    m_ = x
+                if (i + 1) * bt > m_:
+                    self.surp_blk[j] = L - i
+                    self._rep = (i, L)
+                    L = i
+                    break
+        elif self.nro:               # int2_on_read=recompute：從第一個 INT2 來歷的 block 起都重算
+            h = q["h"]
+            cpu, cq, sq, nro = self.cpu, self.cq, self.sq, self.nro
+            for i in range(L):
+                b = h[i]
+                if (cq[b] if b in cpu else sq[b]) in nro:
+                    self.surp_blk[j] = L - i
+                    self._rep = (i, L)
+                    L = i
+                    break
         n_end = len(q["h"]) if self.x4_prefill else max(q.get("n_all", len(q["h"])), len(q["h"]))
-        miss_cpu = sum(1 for b in q["h"][:L] if b not in self.cpu)
-        inflight = sum(1 for b in q["h"][:L] if self.avail.get(b, 0.0) > t_go)
+        self.nprev[j] = n_old
+        self.nend[j] = n_end
+        # 一次掃完（06 §13：原本三個 generator；avail 只會有在 CPU 裡的 block，所以結果相同）
+        cpu, sfmt, fb, avail = self.cpu, self.sfmt, self.fb, self.avail
+        miss_cpu = inflight = lob = 0
+        for b in q["h"][:L]:
+            if b not in cpu:
+                miss_cpu += 1
+                lob += fb[sfmt[b]]
+            elif avail and avail.get(b, 0.0) > t_go:
+                inflight += 1
+        self.lo_bytes[j] = lob
         self.S["wait_inflight"] += inflight
+        self.v.cpu.cur_r = self.v.slow.cur_r = j
         t_rend, meet, nc, ns, wq = self.restore(q, L, t_go)
         t_new = sum(self.v.f[L:n_end])
         ttft = t_rend + t_new - t_arr
@@ -358,7 +531,7 @@ class BlockEngine:
         T = t_arr + ttft + n_cap * self.fb[1] / self.v.d2h
         self.Ltok[j] = L * self.btok
         return dict(T=T, ttft=ttft, qwait=t_go - t_arr, restore=t_rend - t_go, L=L, nc=nc, ns=ns, meet=meet, wq=wq,
-                    nR=meet + (n_end - L))
+                    nR=meet + (n_end - L), bS=self._r_bS, nm=self._r_nm)
 
     def run_events(self):
         R = self.R
@@ -366,20 +539,28 @@ class BlockEngine:
         v = self.v
         v.ttft, v.rest, v.qwait = np.zeros(n), np.zeros(n), np.zeros(n)
         v.nC, v.nS, v.nR, v.wq = np.zeros(n, np.int32), np.zeros(n, np.int32), np.zeros(n, np.int32), np.zeros(n, np.int8)
+        v.bS, v.nmreq, v.tgo, v.tend = np.zeros(n, np.int64), np.zeros(n, bool), np.zeros(n), np.zeros(n)
+        v.cpu_r0 = np.zeros(n + 1, np.int64)      # 請求 j 的 CPU 讀取紀錄＝第 cpu_r0[j] 到 cpu_r0[j+1]−1 筆（只在還原裡讀 CPU）
         gpu_free = R[0]["t"] if R else 0.0
         busy = 0.0
         for j in range(n):
             ta = R[j]["t"]
             t_go = ta if ta >= gpu_free else gpu_free
+            self.cur_j = j
+            v.cpu_r0[j] = len(v.cpu.rs)
             r = self.serve(j, ta, t_go)
             if self.qp:
                 self.queue_prefetch(j, t_go, r["T"])
+            self.v.cpu.cur_r = self.v.slow.cur_r = j
             self.after_round(j, R[j], r["T"], r["L"])
+            self.s_last[R[j].get("s", j)] = j
             if self.qp:
                 self._dequeue(j)
             busy += r["T"] - t_go
             gpu_free = r["T"]
             v.ttft[j], v.rest[j], v.qwait[j] = r["ttft"], r["restore"], r["qwait"]
             v.nC[j], v.nS[j], v.nR[j], v.wq[j] = r["nc"], r["ns"], r["nR"], r["wq"]
+            v.bS[j], v.nmreq[j], v.tgo[j], v.tend[j] = r["bS"], r["nm"], t_go, r["T"]
+        v.cpu_r0[n] = len(v.cpu.rs)
         self.busy = busy
         return self

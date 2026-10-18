@@ -3,6 +3,9 @@
 **不是地圖**：一個 CPU 容量、小窗、placeholder 格式表（品質帳沒有意義）。輸出只寫 $RUN_DIR（不進 results/）。
 不算、不印任何「省多少」。
 用法：TIARA_NO_GPU=1 bash code/run3090.sh p3sim-smoke python code/p3_sim/smoke.py --procs 6
+2026-10-18（06 §11–§14）：--fmt official|placeholder（預設 official；和 c0c179b 的冒煙逐欄比對要給 placeholder）、
+--pols（預設＝舊的 C0–C4、O）、--o-cpu-only（另跑 c0c179b 的舊 O＝SSD 不再決定，給回歸比對）、--int2 serve|recompute|recompute_unverified、
+--sess（每格另寫每個 session 的帳 npz 到 $RUN_DIR/sess/）。
 """
 from __future__ import annotations
 
@@ -37,8 +40,28 @@ SPECS = [("mi300x", "idle", "idle", 1, "cake", "mi300x_local"), ("mi300x", "busy
          ("mi300x", "idle", "idle", 1, "load", "mi300x_local"), ("3090", "idle", "idle", 1, "cake", "mi300x_local")]
 
 
+OPT = dict(fmt="official", pols=POLS, o_cpu_only=False, int2="serve", sess=False)
+
+
+def _pols():
+    out = [(p, None) for p in OPT["pols"]]
+    if OPT["o_cpu_only"]:
+        out.append(("O", {"o_ssd_oracle": False}))
+    return out
+
+
+def _sess(name, code, pol, kw):
+    if not OPT["sess"]:
+        return None
+    d = os.path.join(RUN_DIR, "sess")
+    os.makedirs(d, exist_ok=True)
+    tag = pol + ("-cpuonly" if kw else "")
+    return os.path.join(d, f"{name}__{code}__{tag}.npz")
+
+
 def job(args):
-    name, cap, H = args
+    name, cap, H, opt = args
+    OPT.update(opt)
     src, var, a, d = DATA[name]
     out = dict(cells=[], quality=[], ids=[], errors=[])
     t0 = time.time()
@@ -48,20 +71,24 @@ def job(args):
         out["errors"].append(dict(data=name, stage="prepare", error=repr(e), tb=traceback.format_exc()))
         return out
     meta = P["meta"]
+    fmt = OPT["fmt"]
     for code, T in OUTERS:
-        for pol in POLS:
+        for pol, kw in _pols():
             try:
                 if code == "E6":
                     # E6 只在 serve=fifo1 有佇列；同一個 block 引擎另跑 E2 當基準。一張 GPU 撐不住的就照錄 GPU 忙碌比例。
                     for c2 in ("E2", "E6"):
-                        r, q, ids, eng, vs = sim.run_cell_fifo1(P, c2, pol, cap, "llama", SPECS[0], H=H)
+                        r, q, ids, eng, vs = sim.run_cell_fifo1(P, c2, pol, cap, "llama", SPECS[0], H=H, fmt_path=fmt, pol_kw=kw,
+                                                                int2_on_read=OPT["int2"], sess_out=_sess(name, c2 + "@fifo1", pol, kw))
                         for x in r:
                             x["outer"] = c2 + "@fifo1"
                         out["cells"] += r
                         out["quality"] += [dict(data=name, **x) for x in q]
                         out["ids"] += [dict(data=name, **x) for x in ids]
                 else:
-                    r, q, ids, eng, vs = sim.run_cell(P, code, pol, cap, "llama", SPECS, T=T, H=H, check=500)
+                    r, q, ids, eng, vs = sim.run_cell(P, code, pol, cap, "llama", SPECS, T=T, H=H, check=500, fmt_path=fmt, pol_kw=kw,
+                                                      int2_on_read=OPT["int2"],
+                                                      sess_out=_sess(name, code + (f"-T{T}" if T else ""), pol, kw))
                     out["cells"] += r
                     out["quality"] += [dict(data=name, **x) for x in q]
                     out["ids"] += [dict(data=name, **x) for x in ids]
@@ -79,12 +106,13 @@ def job(args):
 def extra_axes(H):
     """模型軸（Qwen、70B）、疊加 ×2、session 抽樣：各一格，只確認跑得動。"""
     out = dict(cells=[], quality=[], ids=[], errors=[])
+    fmt = OPT["fmt"]
     P = TR.prepare("bailian", "coder", 0, 1800)
     for model, specs in (("qwen", [("mi300x", "idle", "idle", 1, "cake", "mi300x_local"), ("3090", "busy", "idle", 1, "cake", "mi300x_local")]),
                          ("llama70b", [("mi300x", "idle", "idle", 1, "load", "mi300x_local")])):
         for pol in ("C0", "C1", "C2", "O"):
             try:
-                r, q, ids, eng, vs = sim.run_cell(P, "E2", pol, 64, model, specs, H=H)
+                r, q, ids, eng, vs = sim.run_cell(P, "E2", pol, 64, model, specs, H=H, fmt_path=fmt)
                 for x in r:
                     x["data"] = "bailian_coder"
                 out["cells"] += r
@@ -94,14 +122,14 @@ def extra_axes(H):
     for k in (2, 4):
         Pk = TR.prepare("bailian", "coder", 0, 1800, overlay=k, seed=k)
         for pol in ("C1", "O"):
-            r, q, ids, eng, vs = sim.run_cell(Pk, "E2", pol, 64, "llama", SPECS[:1], H=H)
+            r, q, ids, eng, vs = sim.run_cell(Pk, "E2", pol, 64, "llama", SPECS[:1], H=H, fmt_path=fmt)
             for x in r:
                 x["data"] = f"bailian_coder_x{k}(semi-synthetic)"
             out["cells"] += r
             out["ids"] += [dict(data=f"bailian_coder_x{k}", **x) for x in ids]
     Ps = TR.prepare("mooncake", "conv-rule-strict", 0, 1800, session_frac=0.25, session_seed=0)
     for c2 in ("E2", "E6"):
-        r, q, ids, eng, vs = sim.run_cell_fifo1(Ps, c2, "C1", 64, "llama", SPECS[0], H=H)
+        r, q, ids, eng, vs = sim.run_cell_fifo1(Ps, c2, "C1", 64, "llama", SPECS[0], H=H, fmt_path=fmt)
         for x in r:
             x["data"] = "mooncake_strict_p0.25"
             x["outer"] = c2 + "@fifo1"
@@ -131,12 +159,20 @@ def main():
     ap.add_argument("--cap", type=float, default=64)
     ap.add_argument("--H", type=float, default=1800)
     ap.add_argument("--data", nargs="*", default=list(DATA))
+    ap.add_argument("--fmt", default="official", help="official｜placeholder｜檔案路徑")
+    ap.add_argument("--pols", nargs="*", default=POLS)
+    ap.add_argument("--o-cpu-only", action="store_true")
+    ap.add_argument("--int2", default="serve", choices=["serve", "recompute", "recompute_unverified"])
+    ap.add_argument("--sess", action="store_true")
+    ap.add_argument("--no-extra", action="store_true")
     a = ap.parse_args()
+    opt = dict(fmt=a.fmt, pols=a.pols, o_cpu_only=a.o_cpu_only, int2=a.int2, sess=a.sess)
+    OPT.update(opt)
     os.makedirs(RUN_DIR, exist_ok=True)
     t0 = time.time()
     allc, allq, alli, alle, metas = [], [], [], [], []
     with Pool(min(a.procs, 8)) as pool:
-        for o in pool.imap_unordered(job, [(n, a.cap, a.H) for n in a.data]):
+        for o in pool.imap_unordered(job, [(n, a.cap, a.H, opt) for n in a.data]):
             allc += o["cells"]
             allq += o["quality"]
             alli += o["ids"]
@@ -145,10 +181,11 @@ def main():
                 metas.append(o["meta"])
                 print(f"[{time.time()-t0:.0f}s] {o['meta']['data']}: n_req={o['meta']['n_req']} n_sess={o['meta']['n_sess']} "
                       f"cells={len(o['cells'])} errors={len(o['errors'])} job={o['meta']['job_s']:.0f}s", flush=True)
-    o = extra_axes(a.H)
-    allc += o["cells"]
-    alli += o["ids"]
-    alle += o["errors"]
+    if not a.no_extra:
+        o = extra_axes(a.H)
+        allc += o["cells"]
+        alli += o["ids"]
+        alle += o["errors"]
     write("smoke_cells.csv", allc)
     write("smoke_quality.csv", allq)
     write("smoke_identities.csv", alli)

@@ -44,10 +44,14 @@ def next_access(acc, b, after_req):
 
 # ================================================================== I/O 線（＝x1_sim.Chan，多了逐筆紀錄）
 class Chan:
+    """逐筆紀錄（06 §12）：開始 rs／ws、結束 re／we、位元組 rb／wb、種類 rk／wk（1＝預取或閒置降級），
+    另外 rr／wr＝這筆算在哪個請求（→ session，見 06 §12.1）、rd／wd＝排隊延遲（實際開始 − 準備好可以開始的時刻 now，float32）。
+    rq＝None 時用 cur_r（引擎在每個請求開始前設定）。時間的算式和 x1_sim.Chan 完全相同（多記的欄位不參與計算）。
+    ext＝False（CPU 層）：讀取不逐筆記 rr／rd（沒有任何帳用到；逐筆的歸屬改用每個請求的起始筆數 View.cpu_r0，06 §13），寫入照記。"""
     __slots__ = ("name", "r", "w", "k", "t_free", "t_free_w", "busy_r", "busy_w", "bytes_r", "bytes_w",
-                 "rec", "rs", "re", "rb", "rk", "ws", "we", "wb", "wk")
+                 "rec", "rs", "re", "rb", "rk", "ws", "we", "wb", "wk", "rr", "rd", "wr", "wd", "cur_r", "ext")
 
-    def __init__(self, name, r_GiBps, w_GiBps, k, record=True):
+    def __init__(self, name, r_GiBps, w_GiBps, k, record=True, ext=True):
         self.name = name
         self.r = r_GiBps * GiB
         self.w = w_GiBps * GiB
@@ -59,8 +63,11 @@ class Chan:
         self.rec = record
         self.rs, self.re, self.rb, self.rk = array("d"), array("d"), array("q"), array("b")
         self.ws, self.we, self.wb, self.wk = array("d"), array("d"), array("q"), array("b")
+        self.rr, self.rd, self.wr, self.wd = array("i"), array("f"), array("i"), array("f")
+        self.cur_r = -1
+        self.ext = ext
 
-    def read(self, nbytes, now, kind=0):
+    def read(self, nbytes, now, kind=0, rq=None):
         st = now if now > self.t_free else self.t_free
         dur = nbytes / self.r
         if self.t_free_w > st:
@@ -73,9 +80,12 @@ class Chan:
             self.re.append(self.t_free)
             self.rb.append(nbytes)
             self.rk.append(kind)
+            if self.ext:
+                self.rr.append(self.cur_r if rq is None else rq)
+                self.rd.append(st - now)
         return self.t_free
 
-    def write(self, nbytes, now, kind=0):
+    def write(self, nbytes, now, kind=0, rq=None):
         if nbytes <= 0:
             return self.t_free_w
         st = now if now > self.t_free_w else self.t_free_w
@@ -88,6 +98,8 @@ class Chan:
             self.we.append(self.t_free_w)
             self.wb.append(nbytes)
             self.wk.append(kind)
+            self.wr.append(self.cur_r if rq is None else rq)
+            self.wd.append(st - now)
         return self.t_free_w
 
 
@@ -113,9 +125,17 @@ class View:
         dql = dq if dq is not None else mf.dq_list(gpu)
         self.dq_ok = dql is not None and all(dql[f] is not None for f in range(1, len(FMT_NAMES)) if self.fb[f] is not None)
         self.dq = [0.0 if (dql is None or x is None) else x for x in (dql or [None] * len(FMT_NAMES))]
+        # 逐請求的 NOT_MEASURED（06 §12.4）：這個請求真的載入了「解壓常數 NOT_MEASURED」的格式 → 它的 TTFT 不能用
+        nm = [f >= 1 and self.fb[f] is not None and (dql is None or dql[f] is None) for f in range(len(FMT_NAMES))]
+        self.nmf = nm if any(nm) else None
+        self.nmreq = np.zeros(nreq, bool)
+        self.bS = np.zeros(nreq, np.int64)      # 這個請求的還原從 SSD 讀了幾個位元組（和時間設定有關：Cake 的會合點）
+        self.last_nm = False
+        self.last_bS = 0
         c, s = costs.cpu, costs.ssd
         # CPU 忙：H2D（CPU→GPU 的讀）變慢 cpu_factor 倍；SSD 共用：讀寫頻寬 ÷ 張數
-        self.cpu = Chan("cpu", c["r"] / cpu_factor if cpu_factor != 1.0 else c["r"], c["w"], c["k"], record)
+        self.cpu = Chan("cpu", c["r"] / cpu_factor if cpu_factor != 1.0 else c["r"], c["w"], c["k"], record, ext=False)
+        self.cpu_r0 = np.zeros(nreq + 1, np.int64)   # 請求 r 的 CPU 讀取紀錄＝第 cpu_r0[r] 到 cpu_r0[r+1]−1 筆（還原只在 step(r) 裡發生）
         self.slow = Chan("ssd", s["r"] / ssd_share if ssd_share != 1 else s["r"],
                          s["w"] / ssd_share if ssd_share != 1 else s["w"], s["k"], record)
         self.ttft = np.zeros(nreq)
@@ -128,10 +148,22 @@ class View:
 
     def restore(self, lt_, lf_, lq_, L, n_all, t0, old_n):
         """lt_[i]∈{1: CPU, 3: SSD}、lf_[i]＝那份副本的格式、lq_[i]＝副本的品質來歷，i<L。
-        算式＝x1_sim.View.restore（code 1＝CPU BF16、code 3＝慢層 INT4＋d）推廣到任意格式。"""
+        算式＝x1_sim.View.restore（code 1＝CPU BF16、code 3＝慢層 INT4＋d）推廣到任意格式。
+        06 §13 加速：Chan.read 的算式內聯在這裡（同樣的浮點運算、同樣的順序；還原的時候沒有寫入，所以 t_free_w 不變），
+        結束時把 t_free、busy_r、bytes_r 寫回 Chan。逐筆紀錄和 Chan.read 記的完全相同。"""
         f, cpu, slow, fb, dq = self.f, self.cpu, self.slow, self.fb, self.dq
+        nmf = self.nmf
+        bad = False
+        bS = 0
         nC = nS = 0
         wq = 0
+        c_tf, c_tfw, c_r, c_k, c_busy, c_bytes = cpu.t_free, cpu.t_free_w, cpu.r, cpu.k, cpu.busy_r, cpu.bytes_r
+        s_tf, s_tfw, s_r, s_k, s_busy, s_bytes = slow.t_free, slow.t_free_w, slow.r, slow.k, slow.busy_r, slow.bytes_r
+        c_rec, s_rec = cpu.rec, slow.rec
+        c_ext, s_ext = cpu.ext, slow.ext
+        crs, cre, crb, crk, crr, crd = cpu.rs.append, cpu.re.append, cpu.rb.append, cpu.rk.append, cpu.rr.append, cpu.rd.append
+        srs, sre, srb, srk, srr, srd = slow.rs.append, slow.re.append, slow.rb.append, slow.rk.append, slow.rr.append, slow.rd.append
+        c_cur, s_cur = cpu.cur_r, slow.cur_r
         if self.mode == "cake":
             p, q, rt, lt = 0, L - 1, t0, t0
             while p <= q:
@@ -140,15 +172,49 @@ class View:
                     p += 1
                 else:
                     fid = lf_[q]
+                    nb = fb[fid]
                     if lt_[q] == 1:
-                        lt = cpu.read(fb[fid], lt)
+                        st = lt if lt > c_tf else c_tf          # ＝Chan.read
+                        dur = nb / c_r
+                        if c_tfw > st:
+                            dur *= c_k
+                        c_tf = st + dur
+                        c_busy += dur
+                        c_bytes += nb
+                        if c_rec:
+                            crs(st)
+                            cre(c_tf)
+                            crb(nb)
+                            crk(0)
+                            if c_ext:
+                                crr(c_cur)
+                                crd(st - lt)
+                        lt = c_tf
                         d = dq[fid]
                         if d:
                             lt = lt + d
                         nC += 1
                     else:
-                        lt = slow.read(fb[fid], lt) + dq[fid]
+                        st = lt if lt > s_tf else s_tf
+                        dur = nb / s_r
+                        if s_tfw > st:
+                            dur *= s_k
+                        s_tf = st + dur
+                        s_busy += dur
+                        s_bytes += nb
+                        if s_rec:
+                            srs(st)
+                            sre(s_tf)
+                            srb(nb)
+                            srk(0)
+                            if s_ext:
+                                srr(s_cur)
+                                srd(st - lt)
+                        lt = s_tf + dq[fid]
                         nS += 1
+                        bS += nb
+                    if nmf and nmf[fid]:
+                        bad = True
                     if lq_[q] > wq:
                         wq = lq_[q]
                     q -= 1
@@ -158,20 +224,58 @@ class View:
             lt = t0
             for i in range(L):
                 fid = lf_[i]
+                nb = fb[fid]
                 if lt_[i] == 1:
-                    lt = cpu.read(fb[fid], lt)
+                    st = lt if lt > c_tf else c_tf
+                    dur = nb / c_r
+                    if c_tfw > st:
+                        dur *= c_k
+                    c_tf = st + dur
+                    c_busy += dur
+                    c_bytes += nb
+                    if c_rec:
+                        crs(st)
+                        cre(c_tf)
+                        crb(nb)
+                        crk(0)
+                        if c_ext:
+                            crr(c_cur)
+                            crd(st - lt)
+                    lt = c_tf
                     d = dq[fid]
                     if d:
                         lt = lt + d
                     nC += 1
                 else:
-                    lt = slow.read(fb[fid], lt) + dq[fid]
+                    st = lt if lt > s_tf else s_tf
+                    dur = nb / s_r
+                    if s_tfw > st:
+                        dur *= s_k
+                    s_tf = st + dur
+                    s_busy += dur
+                    s_bytes += nb
+                    if s_rec:
+                        srs(st)
+                        sre(s_tf)
+                        srb(nb)
+                        srk(0)
+                        if s_ext:
+                            srr(s_cur)
+                            srd(st - lt)
+                    lt = s_tf + dq[fid]
                     nS += 1
+                    bS += nb
+                if nmf and nmf[fid]:
+                    bad = True
                 if lq_[i] > wq:
                     wq = lq_[i]
             end = lt
             meet = 0
+        cpu.t_free, cpu.busy_r, cpu.bytes_r = c_tf, c_busy, c_bytes
+        slow.t_free, slow.busy_r, slow.bytes_r = s_tf, s_busy, s_bytes
         self.last_end = end
+        self.last_nm = bad
+        self.last_bS = bS
         Fc = self.Fc
         base = end - t0
         ttft = base + Fc[n_all] - Fc[L]
@@ -179,12 +283,33 @@ class View:
         return ttft, rest, nC, nS, meet + (n_all - L), wq
 
 
+def ok_token_limits(mf):
+    """每個 fid：品質從 0 token 起連續 pass 到幾 token（含）。bf16（status 永遠 pass）＝INF；從 0 就不 pass＝−1；沒有大小的＝−1。"""
+    out = [-1] * len(FMT_NAMES)
+    for f in range(1, len(FMT_NAMES)):
+        if mf.bytes[f] is None:
+            continue
+        lim = INF
+        bins = mf.len_bins
+        for k in range(len(bins) - 1):
+            if mf.status(f, bins[k]) != "pass":
+                lim = bins[k] - 1
+                break
+        out[f] = lim
+    return out
+
+
 # ================================================================== 引擎
 class Engine:
     """P：trace.prepare 或 x1_sim.prep 的同形 dict（full、nall、acc、tl、kindc、sessl、parentl、nmax、R.n_sess、B）。
-    outer：outer_policies.json 的 used（加 E5 的 T）；comp：policies.CompressionPolicy；cap_bytes：CPU 容量。"""
+    outer：outer_policies.json 的 used（加 E5 的 T）；comp：policies.CompressionPolicy；cap_bytes：CPU 容量。
+    int2_on_read（06 §12.3）："serve"（預設＝舊行為）照讀；"recompute"：讀取遇到品質來歷是 never_read_only（INT2）的 block，
+      那個 block 和它之後的都當成沒有存 → 重算（品質安全，算進重算量與 TTFT，那些 block 的 SSD 位元組不讀），
+      重算出來的新 KV 照這一輪的決定寫回 CPU、取代 INT2 來歷的副本（SSD 上 INT2 來歷的副本丟掉）。
+      "recompute_unverified"（04 v4 §3.3）：只載入「在這次讀取的長度下品質過關」的前綴：載入到第 L 個 block 時，前 L 個 block 的品質來歷
+      在 L×512 token 都要 pass；第一個做不到的地方起都重算。任何長度都不 pass 的來歷（INT2）的副本照上面的規則被取代。"""
 
-    def __init__(self, P, outer, comp, cap_bytes, views, mf, H=0.0, block_tokens=512, check=False):
+    def __init__(self, P, outer, comp, cap_bytes, views, mf, H=0.0, block_tokens=512, check=False, int2_on_read="serve"):
         self.P = P
         self.full, self.nall, self.acc, self.t = P["full"], P["nall"], P["acc"], P["tl"]
         self.kind, self.sess, self.parent = P["kindc"], P["sessl"], P["parentl"]
@@ -198,6 +323,7 @@ class Engine:
         self.sel = outer.get("ssd_write_min_uses")
         self.ttl = outer.get("idle_T")
         self.comp = comp
+        self.ssd_moment = bool(getattr(comp, "ssd_moment", False))
         self.C = cap_bytes
         self.views = views
         self.mf = mf
@@ -205,7 +331,17 @@ class Engine:
         self.H = float(H)
         self.btok = block_tokens
         self.check = check
+        assert int2_on_read in ("serve", "recompute", "recompute_unverified"), int2_on_read
+        self.int2_on_read = int2_on_read
+        self.surp_on = int2_on_read == "recompute"
+        self.unv_on = int2_on_read == "recompute_unverified"
+        self.lim = ok_token_limits(mf)                 # 每個格式「從 0 到幾 token 都 pass」（bf16＝無限；從 0 就不 pass＝−1）
+        if self.unv_on:      # 任何長度都不 pass 的來歷＝要被重算取代的（正式表＝{int2}）
+            self.nro = frozenset(f for f in range(1, len(FMT_NAMES)) if self.lim[f] < 0)
+        else:
+            self.nro = frozenset(mf.never_read_only)
         B, S = P["B"], P["R"]["n_sess"]
+        n = len(self.full)
         self.ref_cpu = [0] * B
         self.ref_live = [0] * B
         self.cfmt = [0] * B
@@ -232,9 +368,22 @@ class Engine:
         self.wbytes = {W_STORE: 0, W_DEMOTE: 0, W_WT: 0, W_SEL: 0, W_TTL: 0}
         self.wblocks_fmt = {}         # (層, 格式) → 寫入的 block 數
         self.dec_fmt = {}             # (格式, 長度分箱, 之後被讀?, 截尾?) → 決定次數
-        self.Ltok = np.zeros(len(self.full), np.int64)
-        self.Lblk = np.zeros(len(self.full), np.int32)
+        self.Ltok = np.zeros(n, np.int64)
+        self.Lblk = np.zeros(n, np.int32)
         self._sufmax = {}
+        # ---- 06 §12 的新帳（不參與任何舊的算式）
+        self.surp_blk = np.zeros(n, np.int32)      # 因為 INT2 改成重算的 block 數（surprise recompute；int2_on_read=recompute）
+        self.nprev = np.zeros(n, np.int32)         # 這個請求的前綴裡「以前算過」的 block 數（重算量＝nprev − 載入的）
+        self.nend = np.asarray(self.nall, np.int32)  # prefill 到哪（block 數）
+        self.lo_bytes = np.zeros(n, np.int64)      # load-only 還原會從 SSD 讀的位元組（只看放置，和時間設定無關）
+        self.s_ssd_w = [0] * S                     # 每個 session 的 SSD 寫入位元組（歸屬規則見 06 §12.1）
+        oe_ = P.get("obs_end")
+        self.cutH = (max(oe_) - self.H) if (self.H > 0 and oe_) else None   # 截尾版：決定時刻 < 觀察窗終點 − H 的才算
+        self.s_ssd_w_H = [0] * S
+        self.wsp_rec, self.wsp_sid, self.wsp_b = array("q"), array("i"), array("q")   # SSD 寫入紀錄 i → 各 session 的份
+        self.n_ssd_wrec = 0
+        self._rw = {}                              # 這一輪（合成一筆的）SSD 寫入裡各 session 的份
+        self._dec_t, self._dec_after = 0.0, -1     # SSD 寫入的決定時刻、「之後」從哪個請求 index 之後算
 
     # ---------------------------------------------------------- 小工具
     def _ctx(self, r, s, blocks, n_new, first_new):
@@ -249,6 +398,25 @@ class Engine:
             # 之後讀到這些 block 的請求裡最長的那個（存的前綴 token 數的上界）：格式只能往下壓，
             # 所以要對「之後每一次讀」都過關（2026-10-18 測試 (iii) 抓到：只看寫入時的長度，後面更長的讀取會不過關）
             ctx["max_read_tokens"] = self._max_future_tokens(first_new, r) if nx < INF else 0
+        return ctx
+
+    def _mctx(self, s, b, after, t_dec, tokens=None, idle=None):
+        """SSD 寫入當下的 ctx（ssd_moment 的策略用；06 §11.2）：只放那一刻拿得到的資訊。
+        tokens＝這個 session 現在存的長度；idle_s＝離它上一個請求的到達多久；cpu_ctx＝寫進 CPU 時的 ctx。
+        needs_oracle 的策略另外拿到這個 block 在 after 之後的 next_read、max_read_tokens，和 censored（決定時刻離觀察窗結尾 < H）。"""
+        ls = self.last[s]
+        if tokens is None:
+            tokens = len(self.sb[s]) * self.btok if self.sb[s] else 0
+        if idle is None:
+            idle = t_dec - self.t[ls] if ls >= 0 else 0.0
+        ctx = dict(s=s, r=after, t=t_dec, b=b, tokens=tokens, idle_s=idle, cpu_ctx=self.sctx[s], mf=self.mf)
+        if self.comp.needs_oracle:
+            nx = next_access(self.acc, b, after)
+            ref = ls if ls >= 0 else max(after, 0)
+            oe = self.obs_end[ref] if self.obs_end is not None else self.t_last
+            ctx["next_read"] = None if nx >= INF else nx
+            ctx["censored"] = (oe - t_dec) < self.H if self.H > 0 else False
+            ctx["max_read_tokens"] = self._max_future_tokens(b, after) if nx < INF else 0
         return ctx
 
     def _max_future_tokens(self, b, r):
@@ -267,15 +435,42 @@ class Engine:
         i = bisect.bisect_right(lst, r)
         return sm[i] if i < len(lst) else 0
 
-    def _ssd_fid(self, s, cur):
-        return self.comp.ssd_fid(self.sctx[s], cur) if self.sctx[s] is not None else cur
+    def _ssd_dec(self, s, cur, b, tokens=None, idle=None):
+        """要寫 SSD 的格式。舊的策略（ssd_moment=False）＝ssd_fid(寫進 CPU 時的 ctx, cur)，和 c0c179b 逐位元相同；
+        ssd_moment=True 的策略（oracle、D-*、預測器的 ssd_fn）拿到寫入當下的 ctx（_mctx）。"""
+        if not self.ssd_moment:
+            return self.comp.ssd_fid(self.sctx[s], cur) if self.sctx[s] is not None else cur
+        sf = self.comp.ssd_fid(self._mctx(s, b, self._dec_after, self._dec_t, tokens, idle), cur)
+        if sf < cur:
+            raise AssertionError(f"{self.comp.name}: ssd_fid 回傳 {sf} < 目前的 {cur}（格式只能往下壓）")
+        return sf
 
     def _wfmt(self, tier, fid, n=1):
         k = (tier, fid)
         self.wblocks_fmt[k] = self.wblocks_fmt.get(k, 0) + n
 
+    def _attr(self, s, nb):
+        self.s_ssd_w[s] += nb
+        self._rw[s] = self._rw.get(s, 0) + nb
+        if self.cutH is not None and self._dec_t < self.cutH:
+            self.s_ssd_w_H[s] += nb
+
+    def _flush_split(self, w):
+        """這一筆 SSD 寫入紀錄（w>0 才有紀錄）裡各 session 的份；加總必須＝w。"""
+        rw, self._rw = self._rw, {}
+        if w <= 0:
+            assert not rw or sum(rw.values()) == 0, rw
+            return
+        assert sum(rw.values()) == w, (sum(rw.values()), w)
+        k = self.n_ssd_wrec
+        for s_, nb in rw.items():
+            self.wsp_rec.append(k)
+            self.wsp_sid.append(s_)
+            self.wsp_b.append(nb)
+        self.n_ssd_wrec += 1
+
     def _fix(self, b, s):
-        """＝x1_sim.Engine._fix（沒有預取）：回傳要寫 SSD 的位元組。"""
+        """＝x1_sim.Engine._fix（沒有預取）：回傳要寫 SSD 的位元組。降級的位元組算在 s（讓這個 block 離開 CPU 的 session）。"""
         if self.ref_live[b] == 0:
             fm = self.cfmt[b]
             if fm:
@@ -289,12 +484,14 @@ class Engine:
             self.cfmt[b] = 0
             if not self.sfmt[b]:
                 if self.evict_act == "demote":
-                    sf = self._ssd_fid(s, fm)
+                    sf = self._ssd_dec(s, fm, b)
                     self.sfmt[b] = sf
                     q = self.cq[b]
                     self.sq[b] = sf if sf > q else q
                     self._wfmt("ssd", sf)
-                    return self.fb[sf]
+                    nb = self.fb[sf]
+                    self._attr(s, nb)
+                    return nb
                 self.n_lost += 1      # E1／E4：沒有 SSD 副本就沒了
         return 0
 
@@ -346,18 +543,22 @@ class Engine:
         return w
 
     def ttl_expire(self, t_now):
-        """E5：閒置超過 T 的 session 搬去 SSD；寫入發在到期那一刻。"""
+        """E5：閒置超過 T 的 session 搬去 SSD；寫入發在到期那一刻（決定時刻＝到期時刻，「之後」＝目前這個請求以後）。"""
         h = self.ttl_heap
         while h and h[0][0] <= t_now:
             te, v, s = heapq.heappop(h)
             if v != self.ttl_ver[s] or self.st[s] != S_CPU:
                 continue
+            self._dec_t, self._dec_after = te, self.cur
+            self._rw = {}
             w = self.demote(s)
             self.n_ttl += 1
             if w:
                 self.wbytes[W_TTL] += w
+                ls = self.last[s]
                 for vw in self.views:
-                    vw.slow.write(w, te, 1)
+                    vw.slow.write(w, te, 1, ls)
+            self._flush_split(w)
 
     # ---------------------------------------------------------- 一個請求
     def step(self, r):
@@ -365,33 +566,89 @@ class Engine:
         if self.ttl is not None:
             self.ttl_expire(t)
         self.cur = r
+        self._dec_t, self._dec_after = t, r
+        self._rw = {}
         blocks = self.full[r]
         cfmt, sfmt, cq, sq = self.cfmt, self.sfmt, self.cq, self.sq
+        fbl = self.fb
+        nro = self.nro if self.surp_on else None
+        cut = False
+        lob = 0
         lt_, lf_, lq_ = [], [], []
-        for b in blocks:
-            fm = cfmt[b]
-            if fm:
-                lt_.append(1)
-                lf_.append(fm)
-                lq_.append(cq[b])
-            elif sfmt[b]:
-                lt_.append(3)
-                lf_.append(sfmt[b])
-                lq_.append(sq[b])
-            else:
-                break
+        if not self.unv_on:
+            for b in blocks:
+                fm = cfmt[b]
+                if fm:
+                    qb = cq[b]
+                    if nro and qb in nro:
+                        cut = True
+                        break
+                    lt_.append(1)
+                    lf_.append(fm)
+                    lq_.append(qb)
+                elif sfmt[b]:
+                    qb = sq[b]
+                    if nro and qb in nro:
+                        cut = True
+                        break
+                    lt_.append(3)
+                    lf_.append(sfmt[b])
+                    lq_.append(qb)
+                    lob += fbl[sfmt[b]]
+                else:
+                    break
+        else:                 # recompute_unverified：前 L 個的來歷在 L×512 都要 pass
+            lim, bt, m_ = self.lim, self.btok, INF
+            for b in blocks:
+                fm = cfmt[b]
+                if fm:
+                    qb = cq[b]
+                elif sfmt[b]:
+                    qb = sq[b]
+                else:
+                    break
+                if lim[qb] < m_:
+                    m_ = lim[qb]
+                if (len(lt_) + 1) * bt > m_:
+                    cut = True
+                    break
+                if fm:
+                    lt_.append(1)
+                    lf_.append(fm)
+                else:
+                    lt_.append(3)
+                    lf_.append(sfmt[b])
+                    lob += fbl[sfmt[b]]
+                lq_.append(qb)
+            nro = self.nro
         L = len(lt_)
+        L0 = L                        # 沒有 INT2 截斷時的有存前綴
+        if cut:                       # int2_on_read=recompute：從第一個 INT2 來歷的 block 起都重算（surprise recompute）
+            nb_ = len(blocks)
+            while L0 < nb_ and (cfmt[blocks[L0]] or sfmt[blocks[L0]]):
+                L0 += 1
+            self.surp_blk[r] = L0 - L
         self.Lblk[r] = L
         self.Ltok[r] = L * self.btok
+        self.lo_bytes[r] = lob
+        uses = self.uses
+        npv, nb_ = L0, len(blocks)
+        while npv < nb_ and uses[blocks[npv]] > 0:
+            npv += 1
+        self.nprev[r] = npv
         if self.check:
-            for b in blocks[L:]:
+            for b in blocks[L0:]:
                 assert cfmt[b] == 0 and (sfmt[b] == 0 or self.evict_act != "demote"), "有存的 block 不是前綴"
         kd = self.kind[r]
         old_n = len(self.full[self.parent[r]]) if kd == 1 else 0
         tend = []
         for v in self.views:
+            v.cpu.cur_r = v.slow.cur_r = r
+            v.cpu_r0[r] = len(v.cpu.rs)
             tt, rs, nC, nS, nR, wq = v.restore(lt_, lf_, lq_, L, self.nall[r], t, old_n)
             v.ttft[r], v.rest[r], v.nC[r], v.nS[r], v.nR[r], v.wq[r] = tt, rs, nC, nS, nR, wq
+            v.nmreq[r] = v.last_nm
+            v.bS[r] = v.last_bS
             tend.append(t + tt)
         # ---- 回合結束：新 block 照這個 session 的決定寫進 CPU
         s = self.sess[r]
@@ -399,11 +656,18 @@ class Engine:
         old_state = self.st[s]
         first_new = None
         n_new = 0
-        for b in blocks:
-            if cfmt[b] == 0:
-                n_new += 1
-                if first_new is None:
-                    first_new = b
+        if not cut:
+            for b in blocks:
+                if cfmt[b] == 0:
+                    n_new += 1
+                    if first_new is None:
+                        first_new = b
+        else:
+            for i, b in enumerate(blocks):
+                if cfmt[b] == 0 or (L <= i < L0 and cq[b] in nro):
+                    n_new += 1
+                    if first_new is None:
+                        first_new = b
         ctx = self._ctx(r, s, blocks, n_new, first_new)
         fid = self.comp.cpu_fid(ctx)
         if n_new:
@@ -412,42 +676,62 @@ class Engine:
             self.dec_fmt[k] = self.dec_fmt.get(k, 0) + 1
         self.sctx[s] = ctx
         fbf = self.fb[fid]
+        tok = len(blocks) * self.btok
         cw = 0
         wt = 0
         rc, rl = self.ref_cpu, self.ref_live
+        # 06 §13 加速：舊 block 和新 block 的共同前綴 [0, cpre) 上，「新的 +1、舊的 −1」互相抵消，而且那時 _fix 一定什麼都不做
+        # （ref_live、ref_cpu 都 ≥1），所以兩邊都跳過。S_SLOW 時舊的不減 ref_cpu，所以共同前綴上 ref_cpu 仍要 +1。
+        cpre = 0
+        if old_state in (S_CPU, S_SLOW) and old:
+            m_ = min(len(old), len(blocks))
+            while cpre < m_ and old[cpre] == blocks[cpre]:
+                cpre += 1
+        slow_old = old_state == S_SLOW
         for i, b in enumerate(blocks):
-            rl[b] += 1
-            rc[b] += 1
-            self.uses[b] += 1
-            if cfmt[b] == 0:
+            if i >= cpre:
+                rl[b] += 1
+                rc[b] += 1
+            elif slow_old:
+                rc[b] += 1
+            uses[b] += 1
+            c0 = cfmt[b]
+            if c0 == 0 or (cut and L <= i < L0 and cq[b] in nro):
+                if c0:            # 重算出來的新 KV 取代 CPU 裡 INT2 來歷的副本
+                    self.cpu_used -= fbl[c0]
+                if cut and L <= i < L0 and sfmt[b] and sq[b] in nro:   # SSD 上 INT2 來歷的副本丟掉（不用寫）
+                    sfmt[b] = 0
+                    sq[b] = 0
                 gq = sq[b] if (i < L and sfmt[b]) else 1     # 從 SSD 讀回來的帶著 SSD 副本的來歷；重算＝bf16
                 cfmt[b] = fid
                 cq[b] = fid if fid > gq else gq
                 self.cpu_used += fbf
                 cw += fbf
                 if self.wt and not sfmt[b]:
-                    sf = self.comp.ssd_fid(ctx, fid)
+                    sf = self._ssd_dec(s, fid, b, tok, 0.0)
                     sfmt[b] = sf
                     sq[b] = sf if sf > cq[b] else cq[b]
-                    wt += self.fb[sf]
+                    wt += fbl[sf]
+                    self._attr(s, fbl[sf])
                     self._wfmt("ssd", sf)
         if cw:
             self._wfmt("cpu", fid, cw // fbf if fbf else 0)
         if self.sel is not None:
             for b in blocks:
-                if self.uses[b] >= self.sel and not sfmt[b] and cfmt[b]:
-                    sf = self.comp.ssd_fid(ctx, cfmt[b])
+                if uses[b] >= self.sel and not sfmt[b] and cfmt[b]:
+                    sf = self._ssd_dec(s, cfmt[b], b, tok, 0.0)
                     sfmt[b] = sf
                     sq[b] = sf if sf > cq[b] else cq[b]
-                    wt += self.fb[sf]
+                    wt += fbl[sf]
+                    self._attr(s, fbl[sf])
                     self._wfmt("ssd", sf)
-                    self.wbytes[W_SEL] += self.fb[sf]
+                    self.wbytes[W_SEL] += fbl[sf]
         if self.wt:
             self.wbytes[W_WT] += wt
         self.wbytes[W_STORE] += cw
         w = 0
         if old_state in (S_CPU, S_SLOW):
-            for b in old:
+            for b in (old[cpre:] if cpre else old):
                 rl[b] -= 1
                 if old_state == S_CPU:
                     rc[b] -= 1
@@ -475,6 +759,7 @@ class Engine:
             v.cpu.write(cw, te)
             if self.ssd_on:
                 v.slow.write(w, te)
+        self._flush_split(w if self.ssd_on else 0)
         if self.check and (r % self.check == 0 or r == len(self.full) - 1):
             self.audit()
 
@@ -494,8 +779,12 @@ class Engine:
                 assert self.cq[b] >= fm
         assert used == self.cpu_used, (used, self.cpu_used)
         assert self.cpu_used <= self.C or not self.cpu_set, (self.cpu_used, self.C)
+        w = self.wbytes
+        assert sum(self.s_ssd_w) == w[W_DEMOTE] + w[W_WT] + w[W_SEL] + w[W_TTL], "每個 session 的 SSD 寫入加總≠各原因加總"
 
     def run(self):
         for r in range(len(self.full)):
             self.step(r)
+        for v in self.views:
+            v.cpu_r0[len(self.full)] = len(v.cpu.rs)
         return self

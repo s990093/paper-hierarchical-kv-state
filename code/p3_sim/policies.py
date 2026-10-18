@@ -13,6 +13,11 @@ ctx（dict，引擎填）：
 
 學出來的預測器：PredictorPolicy(fn)，fn(state: dict, feats) → 格式名或 fid。state＝ctx 去掉 oracle 欄位與 mf。
 這一步不訓練任何模型（CLAUDE.md §8）；介面只確保預測器拿不到標籤。
+
+ssd_moment=True 的策略（2026-10-18，06 §11.2）：ssd_fid(ctx, cur) 的 ctx 是「外層要寫 SSD 的那一刻」的資訊（每個 block 一次）：
+  s、r（決定時刻的請求 index：之後＝index > r）、t（決定時刻）、b（block）、tokens（這個 session 那一刻存的長度）、
+  idle_s（離它上一個請求的到達多久）、cpu_ctx（寫進 CPU 時的 ctx）；needs_oracle 的另外有這個 block 在 r 之後的
+  next_read、max_read_tokens、censored。ssd_moment=False 的策略拿到的是寫進 CPU 時的 ctx（c0c179b 的行為，C0–C4 不變）。
 """
 from __future__ import annotations
 
@@ -22,6 +27,7 @@ from formats import FID, FMT_NAMES, NotMeasured
 class CompressionPolicy:
     name = "base"
     needs_oracle = False
+    ssd_moment = False      # True：ssd_fid 拿到「寫 SSD 那一刻」的 ctx（引擎的 _mctx）；False：寫進 CPU 時的 ctx（舊行為）
 
     def __init__(self, mf):
         self.mf = mf
@@ -83,43 +89,93 @@ class Oracle(CompressionPolicy):
     """O：完美預測。之後會被讀（或落在截尾區、不知道）→ 品質過關、又最省（位元組最少）的格式；
     不會再被讀 → 最省的格式（含 never_read_only 的 INT2；沒有大小的格式跳過）。
     allow_unverified=False（預設）：『未驗證』不算過關。主指標是位元組，所以「最省」＝位元組最少；
-    讀取時的層與 GPU 忙閒只影響 TTFT（報告指標），這版 O 不拿來決定。"""
+    讀取時的層與 GPU 忙閒只影響 TTFT（報告指標），這版 O 不拿來決定。
+
+    2026-10-18 的修改（06 §11.2）：ssd_oracle=True（預設）時，外層把 block 搬去 SSD（降級、寫穿、第 2 次才寫、閒置降級）的那一刻
+    也用 oracle 再決定一次（每個 block）：那一刻之後不會再被讀（而且不在截尾區）→ 最省的格式（INT2）；
+    否則＝「那一刻之後最長的讀取長度」下品質過關、最省的格式；一律不比 cur 好（只能往下壓）。
+    ssd_oracle=False＝c0c179b 的舊 O（SSD 維持 CPU 的格式），只給回歸比對用。
+
+    variant（06 §11.3）：
+      O        ＝上面（判定用，O-嚴格）
+      O-len    ＝只知道「之後最長讀到多長」，不知道會不會再被讀（每個 block 都當成會被讀；不用 INT2）
+      O-reuse  ＝只知道「之後有沒有被讀」：不會再被讀 → INT2；會 → 用寫入當下的長度選過關、最省的（和非 oracle 的規則一樣）。
+                 session 之後變長時會讀到不過關的格式：照實記在品質帳
+      O-loose  ＝同 O，但 32K 生成品質過關的格式在任何長度都當成過關（只報告）；INT2 仍只給不會再被讀的（除非它有生成品質過關）。
+                 和 allow_unverified=True 不同：後者把所有「未驗證」都當過關"""
     name = "O"
     needs_oracle = True
+    ssd_moment = True
+    VARIANTS = ("O", "O-len", "O-reuse", "O-loose")
 
-    def __init__(self, mf, allow_unverified=False):
+    def __init__(self, mf, allow_unverified=False, variant="O", ssd_oracle=True):
         super().__init__(mf)
+        assert variant in self.VARIANTS, variant
+        self.variant = variant
+        self.name = variant if ssd_oracle else variant + "(cpu-only)"
+        self.ssd_oracle = ssd_oracle
+        self.ssd_moment = bool(ssd_oracle)
         self.allow_unverified = allow_unverified
         self.ok = ("pass", "unverified") if allow_unverified else ("pass",)
         self.never = mf.cheapest(mf.available)
         self._cache = {}
 
     def read_fid(self, tokens):
-        b = self.mf.bin_of(tokens)
+        mf = self.mf
+        if self.variant == "O-loose":       # 32K 過關＝任何長度都過關
+            f = self._cache.get("loose")
+            if f is None:
+                cand = [x for x in mf.available if x not in mf.never_read_only and mf.status_32k(x) == "pass"]
+                f = self._cache["loose"] = mf.cheapest(cand)
+            return f
+        b = mf.bin_of(tokens)
         f = self._cache.get(b)
         if f is None:
-            cand = [x for x in self.mf.available if x not in self.mf.never_read_only and self.mf.status(x, tokens) in self.ok]
-            f = self._cache[b] = self.mf.cheapest(cand)
+            cand = [x for x in mf.available if x not in mf.never_read_only and mf.status(x, tokens) in self.ok]
+            f = self._cache[b] = mf.cheapest(cand)
         return f
 
-    def cpu_fid(self, ctx):
-        if ctx["next_read"] is None and not ctx["censored"]:
+    def _pick(self, ctx):
+        never_read = ctx["next_read"] is None and not ctx["censored"]
+        v = self.variant
+        if v == "O-len":
+            return self.read_fid(max(ctx["tokens"], ctx.get("max_read_tokens", 0)))
+        if never_read:
             return self.never
+        if v == "O-reuse":
+            return self.read_fid(ctx["tokens"])
         # 格式只能往下壓 → 要對之後每一次讀都過關：用之後讀到這些 block 的最長請求的長度（截尾區不知道 → 至少用寫入時的長度）
         return self.read_fid(max(ctx["tokens"], ctx.get("max_read_tokens", 0)))
+
+    def cpu_fid(self, ctx):
+        return self._pick(ctx)
+
+    def ssd_fid(self, ctx, cur):
+        if not self.ssd_oracle:
+            return cur
+        f = self._pick(ctx)          # ctx＝寫 SSD 那一刻、這個 block 的 oracle 資訊（引擎的 _mctx）
+        return f if f > cur else cur
 
 
 class PredictorPolicy(CompressionPolicy):
     """學出來的預測器的掛鉤：fn(state, feats) → 格式名或 fid；ssd_fn 可省（省略＝維持 CPU 的格式）。
-    回傳的格式必須有大小；若選了 never_read_only 的格式（INT2）而 session 之後被讀，品質帳會記下來（不擋）。"""
+    回傳的格式必須有大小；若選了 never_read_only 的格式（INT2）而 session 之後被讀，品質帳會記下來（不擋）。
+    ssd_fn(state, feats, cur)：外層要寫 SSD 的那一刻呼叫（06 §11.4）；state＝那一刻的 ctx（s、r、t、b、tokens、idle_s、cpu_state）
+    去掉 oracle 欄位。回傳值和 cur 取較省的（只能往下壓）。"""
+
+    ORACLE_KEYS = ("next_read", "censored", "max_read_tokens", "mf", "feats", "cpu_ctx")
 
     def __init__(self, mf, fn, ssd_fn=None, name="P"):
         super().__init__(mf)
         self.fn, self.ssd_fn, self.name = fn, ssd_fn, name
+        self.ssd_moment = ssd_fn is not None
 
-    @staticmethod
-    def _state(ctx):
-        return {k: v for k, v in ctx.items() if k not in ("next_read", "censored", "max_read_tokens", "mf", "feats")}
+    @classmethod
+    def _state(cls, ctx):
+        st = {k: v for k, v in ctx.items() if k not in cls.ORACLE_KEYS}
+        if ctx.get("cpu_ctx") is not None:
+            st["cpu_state"] = {k: v for k, v in ctx["cpu_ctx"].items() if k not in cls.ORACLE_KEYS}
+        return st
 
     def _fid(self, x):
         f = FID[x] if isinstance(x, str) else int(x)
@@ -133,7 +189,62 @@ class PredictorPolicy(CompressionPolicy):
     def ssd_fid(self, ctx, cur):
         if self.ssd_fn is None:
             return cur
-        return max(cur, self._fid(self.ssd_fn(self._state(ctx), ctx.get("feats"), cur)))
+        feats = ctx.get("feats")
+        if feats is None and ctx.get("cpu_ctx") is not None:
+            feats = ctx["cpu_ctx"].get("feats")
+        return max(cur, self._fid(self.ssd_fn(self._state(ctx), feats, cur)))
+
+
+# ---------------------------------------------------------------- 06 §11.4：更多非 oracle 的對照（參數是建構子的引數，值由 v4 凍結）
+class TwoFormat(CompressionPolicy):
+    """CPU 一個格式、搬去 SSD 時壓成另一個（不會比 CPU 好）。C1＝(bf16, int4)；C1-8＝(bf16, 8bit)；C6＝(8bit, int4)。"""
+
+    def __init__(self, mf, cpu_fmt, ssd_fmt, name):
+        super().__init__(mf)
+        self.name = name
+        self.fc, self.fs = self._need(cpu_fmt), self._need(ssd_fmt)
+
+    def cpu_fid(self, ctx):
+        return self.fc
+
+    def ssd_fid(self, ctx, cur):
+        return max(cur, self.fs)
+
+
+class C4r(CompressionPolicy):
+    """C4 反過來：寫入時的長度 ≤ 門檻 → INT4，否則 BF16（預設門檻 32,768 token）。SSD 維持 CPU 的格式。"""
+    name = "C4r"
+
+    def __init__(self, mf, thr_tokens=32768):
+        super().__init__(mf)
+        self.thr = thr_tokens
+        self.fb, self.f4 = self._need("bf16"), self._need("int4")
+
+    def cpu_fid(self, ctx):
+        return self.f4 if ctx["tokens"] <= self.thr else self.fb
+
+
+class Deferred(CompressionPolicy):
+    """延到搬去 SSD 那一刻才決定（只用那一刻拿得到的資訊；CPU 一律 BF16）。
+      D-len ：那一刻這個 session 存的長度 ≤ thr → INT4，否則維持（預設 thr＝32,768 token）
+      D-idle：那一刻離這個 session 上一個請求的到達 > tau 秒 → INT2，否則同 D-len（預設 tau＝1,800 s＝H、E5 的 30 分）。
+              INT2 只有 teacher forcing：之後被讀就記在品質帳（或 int2_on_read=recompute 時改成重算）"""
+    ssd_moment = True
+
+    def __init__(self, mf, name, thr_tokens=32768, tau_s=None):
+        super().__init__(mf)
+        self.name = name
+        self.thr, self.tau = thr_tokens, tau_s
+        self.fb, self.f4 = self._need("bf16"), self._need("int4")
+        self.f2 = self._need("int2") if tau_s is not None else None
+
+    def cpu_fid(self, ctx):
+        return self.fb
+
+    def ssd_fid(self, ctx, cur):
+        if self.tau is not None and ctx["idle_s"] > self.tau:
+            return max(cur, self.f2)
+        return max(cur, self.f4) if ctx["tokens"] <= self.thr else cur
 
 
 def make_policy(name, mf, **kw):
@@ -147,9 +258,21 @@ def make_policy(name, mf, **kw):
         return Fixed(mf, "8bit", "C3")
     if name == "C4":
         return C4(mf, kw.get("c4_threshold_tokens", 32768))
-    if name == "O":
-        return Oracle(mf, kw.get("o_allow_unverified", False))
+    if name in Oracle.VARIANTS:
+        return Oracle(mf, kw.get("o_allow_unverified", False), variant=name, ssd_oracle=kw.get("o_ssd_oracle", True))
+    if name == "C4r":
+        return C4r(mf, kw.get("c4_threshold_tokens", 32768))
+    if name == "C1-8":
+        return TwoFormat(mf, "bf16", "8bit", "C1-8")
+    if name == "C6":
+        return TwoFormat(mf, "8bit", "int4", "C6")
+    if name == "D-len":
+        return Deferred(mf, "D-len", kw.get("d_threshold_tokens", 32768))
+    if name == "D-idle":
+        return Deferred(mf, "D-idle", kw.get("d_threshold_tokens", 32768), kw.get("d_idle_tau_s", 1800.0))
     raise ValueError(name)
 
 
 POLICY_NAMES = ["C0", "C1", "C2", "C3", "C4", "O"]
+# 06 §11：新加的（名字和預設參數見各 class；值由 v4 凍結）
+POLICY_NAMES_V4 = POLICY_NAMES + ["O-len", "O-reuse", "O-loose", "C4r", "C1-8", "C6", "D-len", "D-idle"]

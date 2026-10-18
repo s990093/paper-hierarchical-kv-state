@@ -368,3 +368,270 @@ def test_block_keys_last_id_equals_full_prefix(src, var, a, d):
     assert P1["meta"]["checks"]["block_key_mode"] == "last_id(chained)"
     assert P2["meta"]["checks"]["block_key_mode"] == "full_prefix"
     assert P1["full"] == P2["full"] and P1["nall"] == P2["nall"] and P1["tl"] == P2["tl"]
+
+
+# ===================================================================== 2026-10-18（06 §11–§13）新加的
+SYN = ("synth", "small-seed1", 0, 4 * 3600)
+
+
+def test_official_format_table_adapter():
+    """正式表 → fid：位元組＝表的 bytes_per_block_code；解壓＝placeholder 同語意的欄；品質＝32K 的生成判準，32,768 本身在實測的分箱。"""
+    import formats as FM
+    d = json.load(open(FM.OFFICIAL_FORMAT_TABLE))
+    rows = {(r["model"], r["fmt"]): r for r in d["rows"]}
+    sha = FM.sha256_file(FM.OFFICIAL_FORMAT_TABLE)
+    out = []
+    for model in ("llama", "qwen"):
+        for plat, (ci, cb) in FM.OFFICIAL_DQ_COLS.items():
+            mf = load_format_table(model, plat)       # 預設＝正式表
+            assert mf.src["sha256"] == sha and mf.src["kind"] == "official" and not mf.placeholder
+            for fid, fmt in FM.OFFICIAL_CONCRETE[model].items():
+                c = rows[(model, fmt)]["cells"]
+                assert mf.bytes[fid] == c["bytes_per_block_code"]["value"]
+                for col, g in ((ci, "idle"), (cb, "busy")):
+                    v = c[col]["value"]
+                    assert (mf.dq[g][fid] is None) if isinstance(v, str) else abs(mf.dq[g][fid] - v / 1e3) < 1e-15
+                out.append(dict(test="official_fmt", model=model, platform=plat, fid=fid, concrete=fmt,
+                                status_32768=mf.status(fid, 32768), status_32769=mf.status(fid, 32769)))
+            assert mf.bin_of(32768) == 0 and mf.bin_of(32769) == 1 and mf.bin_of(32768 + 512) == 1
+            assert [mf.status(f, 32768) for f in (1, 2, 3, 4)] == ["pass", "pass", "pass", "unverified"]
+            assert [mf.status(f, 1 << 20) for f in (1, 2, 3, 4)] == ["pass", "unverified", "unverified", "unverified"]
+            assert [mf.status(f, 512) for f in (1, 2, 3, 4)] == ["pass", "pass", "pass", "unverified"]
+            assert mf.never_read_only == {4}
+            assert all(q["agrees_with_table_verdict"] for q in mf.src["quality"].values())
+    assert load_format_table("qwen", "mi300x").src["concrete"]["8bit"] == "int8_token"      # Qwen 的 FP8 不過 → INT8
+    assert load_format_table("llama", "mi300x").src["concrete"]["8bit"] == "fp8_token"
+    # FAIL 的格式（Qwen fp8_head）照判準算出 fail（驗算判準本身）
+    assert FM.official_quality_32k(rows[("qwen", "fp8_head")])[0] == "fail"
+    assert load_format_table("llama", "mi300x", "placeholder").placeholder
+    _write_rows("test_official_fmt.csv", out)
+
+
+def test_official_table_sha_in_rows_and_ttft_request_rule():
+    """每列都記正式表的 sha256；解壓 NOT_MEASURED 的格式只在真的被載入時才讓 TTFT（ttftq_*）變 NOT_MEASURED，位元組照算。"""
+    import formats as FM
+    P = _P(*SYN)
+    sha = FM.sha256_file(FM.OFFICIAL_FORMAT_TABLE)
+    r0, _, _, _, v0 = sim.run_cell(P, "E5", "C0", 4, "llama", SPECS[:1], T=300)
+    assert r0[0]["format_table_sha256"] == sha and r0[0]["format_table_kind"] == "official"
+    assert r0[0]["ttftq_valid"] and r0[0]["ttft_nm_ret_requests"] == 0          # C0 只用 bf16（解壓定義為 0）
+    assert r0[0]["ttft_valid"] is False                                         # 舊規則：表裡有 NOT_MEASURED 的格式就整個 view 不算
+    r1, _, _, e1, v1 = sim.run_cell(P, "E5", "D-idle", 4, "llama", SPECS[:1], T=300, pol_kw={"d_idle_tau_s": 60.0})
+    n_int2_reads = int(np.sum((v1[0].nS + v1[0].nC > 0) & (v1[0].wq == 4) & (np.asarray(P["kindc"]) == 1)))
+    if n_int2_reads:
+        assert r1[0]["ttft_nm_ret_requests"] > 0 and r1[0]["ttftq_mean_s"] == "NOT_MEASURED"
+    assert r1[0]["ssd_write_GiB"] > 0
+    _write_rows("test_ttft_rule.csv", [dict(test="ttft_rule", didle_int2_ret_reads=n_int2_reads,
+                                            nm_ret=r1[0]["ttft_nm_ret_requests"])])
+
+
+def _ssd_fmt_counts(eng):
+    return {f: n for (t, f), n in eng.wblocks_fmt.items() if t == "ssd"}
+
+
+@pytest.mark.parametrize("code,T", [("E2", None), ("E3", None), ("E4", None), ("E5", 300)])
+def test_oracle_ssd_decision(ft, code, T):
+    """O 在寫 SSD 那一刻再決定（06 §11.2）：品質帳 0；SSD 格式不比 CPU 好；cpu-only 版不會把 CPU 的 bf16／8bit 壓成 int2。"""
+    P = _P(*SYN)
+    r, _, ids, e, _ = sim.run_cell(P, code, "O", 4, "llama", SPECS[:1], T=T, H=600, fmt_path=ft, check=200)
+    assert all(i["ok"] for i in ids)
+    assert r[0]["reads_fail"] == 0
+    for b, f in enumerate(e.sfmt):
+        if f and e.cfmt[b]:
+            assert f >= e.cfmt[b] or code in ("E3", "E4")     # 寫穿／第 2 次才寫：SSD 副本可以比 CPU 的更省；CPU 之後重寫則不比較
+        if f:
+            assert e.sq[b] >= f
+    rc, _, idc, ec, _ = sim.run_cell(P, code, "O", 4, "llama", SPECS[:1], T=T, H=600, fmt_path=ft, pol_kw={"o_ssd_oracle": False})
+    assert all(i["ok"] for i in idc) and rc[0]["policy"] == "O(cpu-only)" and rc[0]["reads_fail"] == 0
+    _write_rows("test_oracle_ssd.csv", [dict(test="oracle_ssd", outer=code, O_ssd_int2_blocks=_ssd_fmt_counts(e).get(4, 0),
+                                             O_cpuonly_ssd_int2_blocks=_ssd_fmt_counts(ec).get(4, 0))])
+
+
+def test_oracle_ssd_reaches_int2_after_last_read(ft):
+    """修正前做不到的事：block 在 CPU 時之後還會被讀（所以不是 int2），之後被降級時已經不會再被讀 → O 在降級時壓成 int2。
+    用一個手造的小 P：session 0 讀兩次、session 1 把它擠出 CPU；cpu-only 的舊 O 不會寫 int2。"""
+    full = [[0, 1], [0, 1], [2, 3, 4]]
+    P = dict(full=full, nall=[2, 2, 3], acc={0: [0, 1], 1: [0, 1], 2: [2], 3: [2], 4: [2]}, tl=[0.0, 10.0, 20.0], kindc=[0, 1, 0],
+             sessl=[0, 0, 1], parentl=[-1, 0, -1], obs_end=[1e6] * 3, nmax=8, B=5, R=dict(n_sess=2),
+             meta=dict(source="hand", variant="x", tier="S", n_req=3, n_sess=2))
+    mf = load_format_table("llama", "mi300x", ft)
+    cap = 3 * (20 << 20)       # 放得下 3 個 int4 block：第 3 個請求寫 3 個 → 擠出 session 0
+    out = {}
+    for kw in ({}, {"o_ssd_oracle": False}):
+        comp = make_policy("O", mf, **kw)
+        v = View(load_costs("mi300x", "llama"), mf, "idle", "cake", 8, 3)
+        e = Engine(P, sim.outer_cfg("E2"), comp, cap, [v], mf, check=1).run()
+        out[comp.name] = (e.cfmt[:], e.sfmt[:])
+    assert out["O"][1][0] == 4 and out["O"][1][1] == 4, out          # 降級時之後不會再被讀 → int2
+    assert out["O(cpu-only)"][1][0] != 4, out                        # 舊 O：SSD 維持 CPU 寫入時的格式
+
+
+def test_oracle_variants(ft):
+    P = _P(*SYN)
+    mf = load_format_table("llama", "mi300x", ft)
+    res = {}
+    for name in ("O", "O-len", "O-reuse", "O-loose"):
+        r, _, ids, e, _ = sim.run_cell(P, "E2", name, 4, "llama", SPECS[:1], H=0.0, fmt_path=ft, check=200)
+        assert all(i["ok"] for i in ids)
+        res[name] = (r[0], e)
+    assert not any(k[0] == "int2" for k in res["O-len"][1].dec_fmt), "O-len 不知道『不會再被讀』，不准用 int2"
+    assert 4 not in _ssd_fmt_counts(res["O-len"][1])
+    assert any(k[0] == "int2" for k in res["O-reuse"][1].dec_fmt)
+    ol = make_policy("O-loose", mf)
+    assert len({ol.read_fid(t) for t in (512, 16384, 32768, 1 << 20)}) == 1, "O-loose 的格式和長度無關"
+    assert res["O"][0]["reads_fail"] == 0 and res["O-len"][0]["reads_fail"] == 0
+    _write_rows("test_oracle_variants.csv", [dict(test="variants", policy=k, reads_fail=v[0]["reads_fail"],
+                                                  reads_unverified=v[0]["reads_unverified"]) for k, v in res.items()])
+
+
+def test_new_baselines(ft):
+    P = _P(*SYN)
+    for name, cpu_set, ssd_set in (("C4r", {1, 3}, None), ("C1-8", {1}, {2}), ("C6", {2}, {3}), ("D-len", {1}, {1, 3}),
+                                   ("D-idle", {1}, {1, 3, 4})):
+        r, _, ids, e, _ = sim.run_cell(P, "E5", name, 4, "llama", SPECS[:1], T=300, fmt_path=ft, check=200,
+                                       pol_kw={"d_idle_tau_s": 600.0})
+        assert all(i["ok"] for i in ids), name
+        cf = {f for (t, f), n in e.wblocks_fmt.items() if t == "cpu"}
+        sf = set(_ssd_fmt_counts(e))
+        assert cf <= cpu_set, (name, cf)
+        if ssd_set is not None:
+            assert sf <= ssd_set, (name, sf)
+    _, _, _, e, _ = sim.run_cell(P, "E5", "D-idle", 4, "llama", SPECS[:1], T=300, fmt_path=ft, pol_kw={"d_idle_tau_s": 200.0})
+    assert _ssd_fmt_counts(e).get(4, 0) > 0, "E5（閒置 300 s 才降級）＋D-idle（>200 s）應該寫 int2"
+
+
+def test_predictor_ssd_hook_no_labels(ft):
+    P = _P(*SYN)
+    mf = load_format_table("llama", "mi300x", ft)
+    seen = []
+
+    def ssd_fn(state, feats, cur):
+        seen.append(set(state))
+        assert not {"next_read", "censored", "max_read_tokens", "cpu_ctx"} & set(state)
+        assert "next_read" not in state.get("cpu_state", {})
+        return "int4" if state["tokens"] <= 32768 else cur
+    pp = PredictorPolicy(mf, lambda s, f: "bf16", ssd_fn=ssd_fn, name="P-dlen")
+    r1, _, _, e1, v1 = sim.run_cell(P, "E5", None, 4, "llama", SPECS[:1], T=300, fmt_path=ft, policy_obj=pp)
+    r2, _, _, e2, v2 = sim.run_cell(P, "E5", "D-len", 4, "llama", SPECS[:1], T=300, fmt_path=ft)
+    assert seen and e1.wblocks_fmt == e2.wblocks_fmt and np.array_equal(v1[0].ttft, v2[0].ttft), "同規則的預測器＝D-len"
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_int2_on_read_recompute(ft, engine):
+    """int2_on_read=recompute：讀到的 block 不會有 INT2 來歷；surprise 有計數；預設（serve）和不給參數逐位元相同。"""
+    P = _P(*SYN)
+    kw = dict(fmt_path=ft, pol_kw={"d_idle_tau_s": 200.0})
+    if engine == "session":
+        run = lambda **k: sim.run_cell(P, "E5", "D-idle", 2, "llama", SPECS[:1], T=300, check=200, **kw, **k)   # noqa: E731
+    else:
+        run = lambda **k: sim.run_cell_fifo1(P, "E2", "D-idle", 2, "llama", SPECS[0], **kw, **k)                # noqa: E731
+    r0, _, i0, e0, v0 = run()
+    rs, _, is_, es, vs = run(int2_on_read="serve")
+    rr, _, ir, er, vr = run(int2_on_read="recompute")
+    assert all(i["ok"] for i in i0 + is_ + ir)
+    assert np.array_equal(v0[0].ttft, vs[0].ttft) and v0[0].slow.bytes_r == vs[0].slow.bytes_r
+    n_int2 = int(np.sum((v0[0].nS + v0[0].nC > 0) & (v0[0].wq == 4)))
+    assert not np.any((vr[0].nS + vr[0].nC > 0) & (vr[0].wq == 4)), "recompute 時不准讀到 INT2 來歷的 block"
+    if n_int2:
+        assert rr[0]["surprise_events"] > 0 and rr[0]["surprise_tokens"] == rr[0]["surprise_blocks"] * 512
+    assert r0[0]["surprise_events"] == 0
+    _write_rows("test_int2_recompute.csv", [dict(test="int2_recompute", engine=engine, serve_int2_reads=n_int2,
+                                                 surprise_events=rr[0]["surprise_events"], surprise_blocks=rr[0]["surprise_blocks"])])
+
+
+def test_per_session_and_common_window(ft, tmp_path):
+    """每個 session 的帳加起來＝總量；同一格的每個策略用同一個窗口範圍；served／offered 的窗口內＋spill＝總位元組。"""
+    P = _P(*SYN)
+    wins = set()
+    for pol in ("C0", "C1", "O", "D-idle"):
+        p = str(tmp_path / f"{pol}.npz")
+        rows, _, ids, e, vs = sim.run_cell(P, "E5", pol, 4, "llama", SPECS, T=300, H=600, fmt_path=ft, sess_out=p)
+        assert all(i["ok"] for i in ids)
+        z = np.load(p)
+        assert z["ssd_write_bytes"].sum() == vs[0].slow.bytes_w
+        for i, v in enumerate(vs):
+            assert z["ssd_read_bytes"][i].sum() == v.slow.bytes_r
+            assert z["reads"][i].sum() == rows[i]["reads"] and z["reads_fail"][i].sum() == rows[i]["reads_fail"]
+        assert z["n_req"].sum() == len(P["full"]) and len(z["sess_key"]) == P["R"]["n_sess"]
+        for row, v in zip(rows, vs):
+            wins.add((row["win_lo_s"], row["win_hi_s"], row["cw_n_windows"]))
+            import ledger
+            lo, hi = ledger.win_range(P)
+            nwin = row["cw_n_windows"]
+            r, sp = ledger.spread_in_range(v.slow.rs, v.slow.re, v.slow.rb, lo, nwin)
+            assert abs(r.sum() + sp - v.slow.bytes_r) <= 1e-6 * max(1, v.slow.bytes_r)
+        for (rid, s_, nb) in zip(e.wsp_rec, e.wsp_sid, e.wsp_b):
+            assert nb > 0 and 0 <= s_ < P["R"]["n_sess"]
+    assert len(wins) == 1, wins
+    # block 引擎
+    p = str(tmp_path / "fifo1.npz")
+    rows, _, ids, e, vs = sim.run_cell_fifo1(P, "E6", "C1", 2, "llama", SPECS[0], fmt_path=ft, sess_out=p)
+    z = np.load(p)
+    assert all(i["ok"] for i in ids) and z["ssd_read_bytes"][0].sum() == vs[0].slow.bytes_r
+    assert z["ssd_write_bytes"].sum() == vs[0].slow.bytes_w
+
+
+def test_loadonly_bytes_view_independent(ft):
+    """load-only SSD 位元組只看放置：session 引擎的每個時間設定都一樣，而且等於 load-only 時間設定的 SSD 讀取。"""
+    P = _P(*SYN)
+    rows, _, _, e, vs = sim.run_cell(P, "E2", "C1", 4, "llama", SPECS, fmt_path=ft)
+    assert len({r["ssd_loadonly_read_GiB"] for r in rows}) == 1
+    lo = [v for v in vs if v.mode == "load"][0]
+    assert lo.slow.bytes_r == int(e.lo_bytes.sum())
+
+
+def test_block_oracle_sufmax_equals_scan(ft):
+    """block 引擎的 O：後綴最大值＝原本每次掃之後的讀取（06 §8-15）。"""
+    import bisect
+    P = _P("bailian", "coder", 0, 600, session_frac=0.3, session_seed=1)
+    _, _, _, e, _ = sim.run_cell_fifo1(P, "E2", "O", 8, "llama", SPECS[0], fmt_path=ft)
+    rng = np.random.default_rng(0)
+    bs = list(e.acc)
+    for b in rng.choice(len(bs), size=min(300, len(bs)), replace=False):
+        b = bs[int(b)]
+        lst = e.acc[b]
+        for j in set([-1, lst[0], lst[-1], lst[len(lst) // 2]]):
+            mx = 0
+            for jj in lst[bisect.bisect_right(lst, j):]:
+                mx = max(mx, len(e.R[jj]["h"]))
+            assert e._max_future_len(b, j) == mx
+
+
+def test_prepare_cache(tmp_path):
+    """P 的快取：第二次命中、內容相同；檔案被改過就丟錯（不靜默重算）。"""
+    d = str(tmp_path / "cache")
+    P1 = TR.prepare_cached(*SYN, cache_dir=d)
+    P2 = TR.prepare_cached(*SYN, cache_dir=d)
+    assert P1["meta"]["cache"]["hit"] is False and P2["meta"]["cache"]["hit"] is True
+    P0 = TR.prepare(*SYN)
+    for k in ("full", "nall", "tl", "kindc", "sessl", "parentl", "obs_end", "win", "sess_key", "acc"):
+        assert P2[k] == P0[k], k
+    pk = [f for f in os.listdir(d) if f.endswith(".pkl")][0]
+    with open(os.path.join(d, pk), "r+b") as fh:
+        fh.seek(100)
+        fh.write(b"\x00\x01\x02")
+    with pytest.raises(RuntimeError):
+        TR.prepare_cached(*SYN, cache_dir=d)
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_recompute_unverified(ft, engine):
+    """04 v4 §3.3：int2_on_read=recompute_unverified → 每次讀取只載入在那個長度品質過關的前綴；品質帳（fail＋unverified）一律 0。"""
+    from engine import INF, ok_token_limits
+    assert ok_token_limits(load_format_table("llama", "mi300x")) == [-1, INF, 32768, 32768, -1]
+    assert ok_token_limits(load_format_table("llama", "mi300x", ft)) == [-1, INF, INF, 16383, -1]
+    P = _P(*SYN)
+    out = []
+    for pol in ("C2", "D-idle", "O-reuse", "C0"):
+        kw = dict(fmt_path=ft, pol_kw={"d_idle_tau_s": 200.0}, int2_on_read="recompute_unverified")
+        if engine == "session":
+            r, _, ids, e, v = sim.run_cell(P, "E5", pol, 2, "llama", SPECS[:1], T=300, check=200, **kw)
+        else:
+            r, _, ids, e, v = sim.run_cell_fifo1(P, "E2", pol, 2, "llama", SPECS[0], **kw)
+        assert all(i["ok"] for i in ids), (pol, [i for i in ids if not i["ok"]])
+        assert r[0]["reads_fail"] == 0 and r[0]["reads_unverified"] == 0, (pol, r[0]["reads_fail"], r[0]["reads_unverified"])
+        if pol == "C0":
+            assert r[0]["surprise_events"] == 0
+        out.append(dict(test="recompute_unverified", engine=engine, policy=pol, surprise_events=r[0]["surprise_events"]))
+    assert any(x["surprise_events"] > 0 for x in out if x["policy"] == "C2"), "C2（全 int4）在 ≥16K 的讀取應該觸發重算"
+    _write_rows("test_recompute_unverified.csv", out)

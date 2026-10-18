@@ -87,7 +87,40 @@ COLS = ["session_id", "turn_idx", "parent_turn_idx", "n_children", "trigger", "n
         "think_ms", "gap_ms", "censored"]
 
 
+CHAIN_OUT = os.path.join(S.REPO, "results", "p3_data", "raw_id_chain.csv")
+# 06_simulator.md §10-2 記的值（p3_sim 冒煙 run 20261018-025459-p3sim-smoke 之後查的；當成「另一條路徑」對拍）
+CHAIN_06 = {"traceA": dict(n_ids_multi_position=52168, position_violations=220196, prev_id_violations=81514),
+            "coder": dict(n_ids_multi_position=0, position_violations=0), "thinking": dict(n_ids_multi_position=0, position_violations=0)}
+
+
+def raw_id_chain_rows():
+    """Bailian 跨請求的原始 16-token id 鏈檢查（只報告，06 §10-2）：統一表的 block_ids 依表的順序掃。"""
+    import load_bailian as LB
+    out = []
+    for v in ("traceA", "coder", "thinking"):
+        df = S.read_unified("bailian", v, ["block_ids"])
+        rc = LB.raw_id_chain_report(df["block_ids"])
+        for met in ("n_ids", "n_ids_multi_position", "position_violations", "prev_id_violations"):
+            xv = CHAIN_06.get(v, {}).get(met)
+            put("bailian", v, f"raw_id_chain:{met}", rc[met], xv, "06_simulator.md §10-2" if xv is not None else None,
+                "docs/phase3_20261017/06_simulator.md", "只報告；跨請求的原始 id 鏈性質（traceA 不成立）")
+            out.append(rows[-1])
+    return out
+
+
 def main():
+    if "--chain-only" in sys.argv:
+        out = raw_id_chain_rows()
+        os.makedirs(os.path.dirname(CHAIN_OUT), exist_ok=True)
+        with open(CHAIN_OUT, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(out[0].keys()))
+            w.writeheader()
+            w.writerows(out)
+        for r in out:
+            S.log(f"  {r['match']} {r['variant']} {r['metric']}: unified={r['unified']} 06={r['x_value']}")
+        return 0
+    # ------------------------------------------------------------ Bailian：跨請求的原始 id 鏈（只報告）
+    raw_id_chain_rows()
     # ------------------------------------------------------------ Bailian：X2 x2_summary、X3 x3_checks_bailian
     for v, x2n, x3n in (("traceA", "bailian_traceA", "traceA"), ("thinking", "bailian_thinking", "thinking"),
                         ("coder", "bailian_coder", "coder")):

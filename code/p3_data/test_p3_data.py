@@ -248,3 +248,26 @@ def test_crosscheck_mooncake_return_frac_vs_lit(variant, frac):
         pytest.skip()
     d = pd.read_parquet(p, columns=["n_children"])
     assert abs((d["n_children"] > 0).mean() - frac) < 1e-12
+
+
+# ----------------------------------------------------------------------------- 5. 跨請求的原始 id 鏈（只報告；06_simulator §10-2）
+def test_raw_id_chain_report_unit():
+    import load_bailian as LB
+    chained = [[1, 2, 3], [1, 2, 4], [1, 5]]
+    assert LB.raw_id_chain_report(chained) == dict(n_ids=5, n_ids_multi_position=0, position_violations=0, prev_id_violations=0)
+    broken = [[1, 2, 3], [2, 3], [9, 1]]      # 2、3、1 都換了位置；前一個 id 換了的：2（None）、1（9）
+    r = LB.raw_id_chain_report(broken)
+    assert r["n_ids_multi_position"] == 3 and r["position_violations"] == 3 and r["prev_id_violations"] == 2
+
+
+@need
+@pytest.mark.parametrize("variant,multi,posv", [("traceA", 52168, 220196), ("coder", 0, 0), ("thinking", 0, 0)])
+def test_bailian_raw_id_chain(variant, multi, posv):
+    """06 §10-2 記的值：traceA 52,168 個 id 出現在不只一個位置、位置違反 220,196 次；coder、thinking 都是 0。"""
+    import load_bailian as LB
+    p = os.path.join(S.UNIFIED, "bailian", variant, "turns.parquet")
+    if not os.path.exists(p):
+        pytest.skip()
+    d = pd.read_parquet(p, columns=["block_ids"])
+    r = LB.raw_id_chain_report(d["block_ids"])
+    assert r["n_ids_multi_position"] == multi and r["position_violations"] == posv, r
