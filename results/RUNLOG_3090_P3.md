@@ -249,6 +249,6 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 - 審查的輸出被截斷（上面）。之後 `oc_task.sh` 設 `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX=64000`。
 - opencode 在兩個開發用指令裡設了 `CUDA_VISIBLE_DEVICES=""`（沒有 run_id、沒有產生報告用的數字），第三次被權限擋下。
 - opencode 中止了 5 個 run（各有 `ABORTED`；理由見 REPORT §8）。
-- 第二件工作第一次啟動失敗：`20261018-115547-oc-maprunner` exit 1，API 回 400 `"thinking.type.enabled" is not supported for this model. Use "thinking.type.adaptive" and "output_config.effort" to control thinking behavior.`（opencode 1.17.8 內建的 Sonnet 5.5 variant 是舊格式）。在 `work.jsonc` 改成 adaptive 後重送（`oc-maprunner2`）。
+- 第二件工作第一次啟動失敗：`20261018-115552-oc-maprunner` exit 1，API 回 400 `"thinking.type.enabled" is not supported for this model. Use "thinking.type.adaptive" and "output_config.effort" to control thinking behavior.`（opencode 1.17.8 內建的 Sonnet 5.5 variant 是舊格式）。在 `work.jsonc` 改成 adaptive 後重送（`oc-maprunner2`）。
 - 新程式沒有比舊程式快（FreeInference week13 session 引擎 +18%；負載不同）；輸入快取讓準備從 561.7 s 降到 8.3 s。
 **與假設的差異**: v3 的判定照審查幾乎必然 GO（對手只剩 C0、INT2 不對稱）；v4 改成「讀到沒驗證的格式就重算」＋等待時間護欄 5%＋15 個主格（使用者 10/18 同意）。opencode 花費：審查約 US$2.6、模擬器準備約 US$28.6。
