@@ -2,6 +2,10 @@
  "model": "llama",
  "tag": "step1",
  "csv": [
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_llama_LB_s0.csv",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_llama_LB_s1.csv",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_llama_T1_s0.csv",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_llama_T1_s1.csv",
   "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_llama_T24_s0.csv",
   "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_llama_T24_s1.csv",
   "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_llama_T24_s2.csv",
@@ -17,9 +21,13 @@
   "20261018-033736-m10h-s1-llama-T24-s3",
   "20261018-033916-m10h-s1-llama-T24-s4",
   "20261018-034046-m10h-s1-llama-T24-s5",
-  "20261018-042043-m10h-s1-llama-T5"
+  "20261018-042043-m10h-s1-llama-T5",
+  "20261018-082925-m10h-s1-llama-T1-s0",
+  "20261018-085601-m10h-s1-llama-LB-s0",
+  "20261018-091236-m10h-s1-llama-T1-s1",
+  "20261018-094628-m10h-s1-llama-LB-s1"
  ],
- "n_items": 600,
+ "n_items": 735,
  "rule": {
   "main_tasks": [
    "T2",
@@ -35,6 +43,102 @@
   "bootstrap_unit": "item"
  },
  "e0_accuracy": [
+  {
+   "task": "LB-2wikimqa",
+   "turn": 1,
+   "band": "global",
+   "n": 25,
+   "acc": 0.4387,
+   "in_60_95": false
+  },
+  {
+   "task": "LB-hotpotqa",
+   "turn": 1,
+   "band": "global",
+   "n": 25,
+   "acc": 0.6392,
+   "in_60_95": true
+  },
+  {
+   "task": "LB-multifieldqa_en",
+   "turn": 1,
+   "band": "global",
+   "n": 25,
+   "acc": 0.5223,
+   "in_60_95": false
+  },
+  {
+   "task": "LB-musique",
+   "turn": 1,
+   "band": "global",
+   "n": 25,
+   "acc": 0.2476,
+   "in_60_95": false
+  },
+  {
+   "task": "LB-narrativeqa",
+   "turn": 1,
+   "band": "global",
+   "n": 40,
+   "acc": 0.2313,
+   "in_60_95": false
+  },
+  {
+   "task": "LB-qasper",
+   "turn": 1,
+   "band": "global",
+   "n": 25,
+   "acc": 0.3701,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 1,
+   "band": "back",
+   "n": 45,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 1,
+   "band": "front",
+   "n": 45,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 1,
+   "band": "mid",
+   "n": 45,
+   "acc": 0.9778,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 2,
+   "band": "back",
+   "n": 45,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 2,
+   "band": "front",
+   "n": 45,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 2,
+   "band": "mid",
+   "n": 45,
+   "acc": 1.0,
+   "in_60_95": false
+  },
   {
    "task": "T2",
    "turn": 1,
@@ -481,7 +585,7 @@
     },
     "same_as_e0": 0.836,
     "mean_kl_vs_e0": 0.002254,
-    "mean_lp_read": 43.842,
+    "mean_lp_read": 43.872,
     "b_values": [
      17,
      23
@@ -780,7 +884,7 @@
     },
     "same_as_e0": 0.836,
     "mean_kl_vs_e0": 0.002254,
-    "mean_lp_read": 43.842,
+    "mean_lp_read": 43.872,
     "b_values": [
      17,
      23
@@ -1079,7 +1183,7 @@
     },
     "same_as_e0": 0.8447,
     "mean_kl_vs_e0": 0.00226,
-    "mean_lp_read": 42.316,
+    "mean_lp_read": 42.351,
     "b_values": [
      17,
      24

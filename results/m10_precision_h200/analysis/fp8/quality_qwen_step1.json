@@ -2,6 +2,8 @@
  "model": "qwen",
  "tag": "step1",
  "csv": [
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_qwen_LB_s0.csv",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_qwen_T1_s0.csv",
   "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_qwen_T24_s0.csv",
   "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_qwen_T24_s1.csv",
   "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/quality/step1_qwen_T24_s2.csv",
@@ -17,9 +19,11 @@
   "20261018-035954-m10h-s1-qwen-T24-s3",
   "20261018-040109-m10h-s1-qwen-T24-s4",
   "20261018-050044-m10h-s1-qwen-T24-s5",
-  "20261018-050359-m10h-s1-qwen-T5"
+  "20261018-050359-m10h-s1-qwen-T5",
+  "20261018-092647-m10h-s1-qwen-T1-s0",
+  "20261018-094702-m10h-s1-qwen-LB-s0"
  ],
- "n_items": 600,
+ "n_items": 627,
  "rule": {
   "main_tasks": [
    "T2",
@@ -35,6 +39,62 @@
   "bootstrap_unit": "item"
  },
  "e0_accuracy": [
+  {
+   "task": "LB-narrativeqa",
+   "turn": 1,
+   "band": "global",
+   "n": 17,
+   "acc": 0.2525,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 1,
+   "band": "back",
+   "n": 9,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 1,
+   "band": "front",
+   "n": 9,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 1,
+   "band": "mid",
+   "n": 9,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 2,
+   "band": "back",
+   "n": 9,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 2,
+   "band": "front",
+   "n": 9,
+   "acc": 1.0,
+   "in_60_95": false
+  },
+  {
+   "task": "T1",
+   "turn": 2,
+   "band": "mid",
+   "n": 9,
+   "acc": 1.0,
+   "in_60_95": false
+  },
   {
    "task": "T2",
    "turn": 1,
@@ -481,7 +541,7 @@
     },
     "same_as_e0": 0.186,
     "mean_kl_vs_e0": 2.912974,
-    "mean_lp_read": 44.789,
+    "mean_lp_read": 44.799,
     "b_values": [
      15,
      23
@@ -780,7 +840,7 @@
     },
     "same_as_e0": 0.186,
     "mean_kl_vs_e0": 2.912974,
-    "mean_lp_read": 44.789,
+    "mean_lp_read": 44.799,
     "b_values": [
      15,
      23
@@ -1079,7 +1139,7 @@
     },
     "same_as_e0": 0.1974,
     "mean_kl_vs_e0": 2.707803,
-    "mean_lp_read": 43.789,
+    "mean_lp_read": 43.799,
     "b_values": [
      15,
      23
