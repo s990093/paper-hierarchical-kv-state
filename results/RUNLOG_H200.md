@@ -1057,3 +1057,10 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - Qwen 有 6 個格式三個長度都是 0%（ALL 對 E0 等於 −E0）：fp8e5_head、int2h_g32、int4_token、int4h_token、mxfp4、nvfp4。
 - Llama 標「隨長度變大」（CI 不含 0）的：fp8_token 64K−32K、fp8e5_head 64K−32K 與 128K−32K、int2_kivi 128K−32K、int4_token、int4h_token、nvfp4 的 64K−32K（數字見 tables）。
 - MI300X 的長 context（44b／44c）在 origin/main 上還沒有結果，還不能對照。
+
+### job 20912 `m10h-t2` 停在 TTFT-qwen-default、20913 `m10h-q5` 跟著取消（2026-10-18 14:29:43 → 16:43:25 +08:00，FAILED exit 1）
+- 跑完的步驟（gpu_guard 都 CLEAN；NEEDS_HUMAN 沒有內容）：GPU-SELFTEST（融合反量化自測、Llama 大小緩衝 offset、dqsweep 冒煙兩個模型）、DQ-BENCH、DQGRID ×4（42）、DQS-A ×2、DQS-B ×2、DQS-C（42c，15:10 → 16:16）、TIER2 ×2（44）、TTFT-llama-default、TTFT-llama-512（70）。結果的整理之後做。
+- **失敗**：`20261018-164301-m10h-vllm-qwen-default`（vLLM 0.28.0，Qwen2.5-7B-Instruct-1M 原版 snapshot）
+  `(EngineCore) TypeError: FlashAttentionImpl.__init__() got an unexpected keyword argument 'layer_idx'` → `RuntimeError: Engine core initialization failed.`
+- 原因：Qwen-1M 的 config 有 `dual_chunk_attention_config`，vLLM 走 DCA 的 attention，CUDA 的 FlashAttention 後端不收 `layer_idx`。CLAUDE.md §3 在 3090 上記過同一件事（V1 engine 沒有可用的 DCA 路徑，改用拿掉 DCA 的變體）；這個 repo 裡已經沒有 `make_nodca_model.py`。MI300X 的 70 還沒跑（origin/main 沒有 vllm_ttft 結果），沒有前例。
+- 處理：70 只報告、和後面的 43 無關 → t2 從 CONFIRM-PLAN 重送為 **20917**（q5 **20918**，afterok）（Qwen 的兩格 TTFT 先 NOT_MEASURED，問使用者要不要用拿掉 DCA 的變體補量；補量要和我們自己的 job 錯開）。
