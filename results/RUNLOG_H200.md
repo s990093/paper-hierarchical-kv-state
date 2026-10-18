@@ -1091,3 +1091,9 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - 70 Llama 的 vLLM TTFT 中位數（s）：default 8K 0.2134、16K 0.4989、32K 1.2265；512 切法 0.2441、0.5519、1.3513（`vllm_meta.json`）。
 - 和 MI300X 的逐項對照（42 反量化、42b／42c 方法、43 複賽、44 兩層）等 q5（43 的品質）跑完一起做。
 - 20936（Qwen noDCA TTFT＋256K 速度）20:17 開跑。
+
+### job 20936 `m10h-lc256-speed` 跑完（2026-10-18 20:17:21 → 2026-10-19 03:36:01 +08:00，COMPLETED exit 0）
+- **70 Qwen 的 vLLM TTFT（拿掉 DCA 的變體，13 §11.1）**：`vllm_meta.json` 的 model_path＝`~/models/Qwen2.5-7B-Instruct-1M-noDCA`；attention backend FLASH_ATTN。
+  中位數（s）：default 8K 0.1935、16K 0.4343、32K 1.0494；512 切法 0.2250、0.5039、1.2127。
+- **256K 速度格子**（`results/m10_longctx_h200/speed_qwen_260096_{fp8_head,int4_kivi}/`）：FP8 20:19 → 00:02，INT4 00:02 → 03:36；每格 2 份 gpu_guard 都 CLEAN。
+- 03:36 起 20918（q5，43 的品質）和 20937（256K 品質）同時跑（都只量分數）。
