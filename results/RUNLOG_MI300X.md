@@ -807,6 +807,13 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 10/16 14:0xZ 重跑：334 項 ALL PASS。
 - `jobs/queue/44_tier2_speed.sh`（副本在 `code/m10_queue_mi300x/queue/`）：先真模型冒煙，再正式 2 launch × 5 rep × 閒／忙 × 50 格；失敗寫 NEEDS_HUMAN、不擋後面。估計約 1 小時〔估計，用主線格子的還原時間算〕，比 12 號登記時寫的 1.5–2.5 小時短。
 
+### 13.3 B：兩層混合還原的結果（stage 44，10/18 15:46:09 → 16:23:51Z）＋ A 用實測更新
+
+- 冒煙兩個模型都過；正式 `20261018-154708-m10-tier2-llama`、`20261018-160950-m10-tier2-qwen`，各 1,000 次還原，污染 0、KV 不對 0；gpu_guard 4 個全 CLEAN。比原本估計（1.5–2.5 小時）快：38 分鐘。
+- 結果寫進 08 §2.8 B：B1 慢層 INT4 比 BF16 快（NFS 36／36、SSD 31／36）；B2 在 NFS「舊先降」最快、「新先降」最慢（Llama 降最新 25% 到 NFS＝全部放 NFS，2.64 s），SSD 差不多；B3 預期錯了（Cake 只重算 3–5 塊，舊 25% 的 16 塊大多還是要從慢層讀）。
+- A：`python code/m10_iowall.py --tier2-dir results/m10_tier_mi300x --out-dir results/m10_tier_mi300x`（16:4xZ，CPU）。SSD 級全 INT4 實測比推算慢 37–39% → 全 INT4／分層從「沒有牆」變成有牆（Llama 閒 2,126、忙 9,588 段；Qwen 閒 4,271 段）；損益兩平點 Llama・忙 18.1、Qwen・閒 29.9、Qwen・忙 17.6 GiB/s。寫進 08 §2.8 A。
+- 12 號的 A、B 都做完了（原寫法的拆；融合 kernel／S4 在慢層的效果由 44d 的 b32 量）。
+
 ## Milestone 14 — 還原的第二輪：GPU 忙時的拆、會合規則 G5、新格式 kernel、拆進 attention、長 context（探索；MI300X）（準備中）
 
 **狀態**：事先登記寫好、程式寫好、CPU 測試全過；GPU 工作排在 43 之後（43a 冒煙 → 43b–43e → … → 44cz → 44d）。**還沒有任何結果。**
