@@ -230,3 +230,25 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 - X6 查到 LMCache 預設是寫穿，比較像 E3，不是 04 寫的 E2；E2 改稱「LRU、滿了才寫（通用）」。
 - E6（block 引擎、一張 GPU）在整份 Mooncake 上 GPU 忙碌比例 3.27、Bailian coder 1.19：一張 GPU 撐不住，要決定每張 GPU 分多少 session。
 - 完整地圖〔估計，用 timing run 線性外插〕：session 引擎約 160–210 CPU 小時（8 個 process 約 20–26 小時）；E6 約 160–720 CPU 小時。時間幾乎都花在 FreeInference。
+
+## Milestone P3-M5 — 地圖登記 v4 草稿＋模擬器準備（opencode 做；**沒有跑任何地圖的格子**）
+**狀態**: PASS（工具與資料統計）；登記 v4 **未凍結**
+**執行時間**: 2026-10-18 08:11 → 11:44（+08:00）
+**run_id**:
+- 審查 v3：`20261018-081143-p3-ocreview-map-v3`（exit 0，但 opencode 的最後答案沒寫出來：`finish=length`，32K 輸出用完；意見從匯出的思考文字整理，`docs/phase3_20261017/review_opencode_20261018_map_v3.md`）。**zero-context same-family review（NOT cross-model）**。
+- 模擬器準備（opencode，`anthropic/claude-opus-5-5` variant high）：`20261018-082935-oc-simprep`（exit 0；子 run 見 `/ssd8/hungwei/paper-hkv/opencode/tasks/20261018-082929_simprep/REPORT.md` §2）。
+- 主 session 重跑驗證：`20261018-114600-p3sim-verify-test`（46 passed）、`p3data-verify-test`（52 passed）。
+**指令**: `TIARA_NO_GPU=1 bash code/run3090.sh oc-simprep bash code/oc_task.sh <任務目錄> --variant high`
+**產出檔**: `docs/phase3_20261017/04_prereg_map.md`（v4 草稿，commit `0671f0e`、`e13b0b2`）；`code/p3_sim/`、`code/p3_data/`、`docs/phase3_20261017/06_simulator.md` §11–§17（commit `d0c4658`）；`results/p3_sim/{return_gaps,session_counts,kgpu_*}.csv`、`results/p3_data/raw_id_chain.csv`；`code/oc_task.sh`
+**關鍵數字**（不變量與資料統計；沒有任何「省多少」）:
+- 預設行為不變：X1 144／144、X4 8／8 逐位元；冒煙裡 C0–C4 的舊 103 欄在 911 格全部相同；O（照規格改成搬去 SSD 時也決定）185 格裡 72 格變了。
+- 回來間隔 p99：Bailian coder 3,488.7 s、traceA 2,207.3 s、WildChat 27,511.2 s、Mooncake 1,548.6 s、FreeInference 每週 298.9–2,174.0 s（run `20261018-102541-p3sim-gaps2`）。
+- 有效 session（1／Σp²）：FreeInference 第 1 週只有 14.8，4 週合起來 479.3（同一個 run）。
+- E6 的 GPU 數：草稿的「每小時最大 ≤0.8」在 FreeInference 第 10–12、14–16 週做不到（單一 session 單獨一張 GPU 就忙到 0.85–1.0，run `20261018-102627-p3sim-kgpu4`）；v4 改成整段平均。
+**失敗與異常**:
+- 審查的輸出被截斷（上面）。之後 `oc_task.sh` 設 `OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX=64000`。
+- opencode 在兩個開發用指令裡設了 `CUDA_VISIBLE_DEVICES=""`（沒有 run_id、沒有產生報告用的數字），第三次被權限擋下。
+- opencode 中止了 5 個 run（各有 `ABORTED`；理由見 REPORT §8）。
+- 第二件工作第一次啟動失敗：`20261018-115547-oc-maprunner` exit 1，API 回 400 `"thinking.type.enabled" is not supported for this model. Use "thinking.type.adaptive" and "output_config.effort" to control thinking behavior.`（opencode 1.17.8 內建的 Sonnet 5.5 variant 是舊格式）。在 `work.jsonc` 改成 adaptive 後重送（`oc-maprunner2`）。
+- 新程式沒有比舊程式快（FreeInference week13 session 引擎 +18%；負載不同）；輸入快取讓準備從 561.7 s 降到 8.3 s。
+**與假設的差異**: v3 的判定照審查幾乎必然 GO（對手只剩 C0、INT2 不對稱）；v4 改成「讀到沒驗證的格式就重算」＋等待時間護欄 5%＋15 個主格（使用者 10/18 同意）。opencode 花費：審查約 US$2.6、模擬器準備約 US$28.6。
