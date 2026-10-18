@@ -16,6 +16,7 @@ from __future__ import annotations
 import copy
 import csv
 import json
+import math
 import os
 import sys
 
@@ -33,7 +34,7 @@ import sim  # noqa: E402
 import trace as TR  # noqa: E402
 from engine import W_STORE, Engine, View  # noqa: E402
 from engine_block import BlockEngine, BView  # noqa: E402
-from formats import Costs, ModelFormats, load_costs, load_format_table  # noqa: E402
+from formats import FID, Costs, ModelFormats, load_costs, load_format_table  # noqa: E402
 from policies import PredictorPolicy, make_policy  # noqa: E402
 
 GiB = 1 << 30
@@ -837,3 +838,116 @@ def test_ssd8_k_read_taint(ft):
         assert not v1.nmk[0] and not v1.nmk[1] and not v0.nmreq.any()
         # 傳遞：碰到 k_read 的請求，它的 TTFT 決定了結尾的寫入時刻 → CPU 寫入佇列的結束時刻也算由 k_read 推出
         assert v1.cw_ta is hit, (tl, v1.cw_ta)
+
+
+# ===================================================================== 2026-10-18 第二輪審查之後（04 v4 §3.1：C1-2、R2、長度規則 max）
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_r2_single_request_int2_then_recompute_restore_bf16(ft, engine):
+    """(i) R2：session 只來過一次 → INT2；它回來時讀到沒驗證的 INT2 → 重算（4 個 block），重算出來的 KV 照當時的決定（這時已 2 個請求 → BF16）重存；
+    第 3 個請求不再重算。s1 只來過一次，一直是 INT2。"""
+    r, e, cf, sf, wst = _restore_run(engine, ft, "R2", 1024, pol_kw=dict(len_rule="max"))
+    I2, BFb = 12 << 20, 64 << 20
+    assert [int(x) for x in e.surp_blk] == [0, 0, 4, 0], list(e.surp_blk)
+    assert wst == 8 * I2 + 7 * BFb, wst              # r0、r1 各 4 個 INT2；r2 存 6 個 BF16（重算 4＋新 2）、r3 存 1 個 BF16
+    assert all(cf(b) == FID["bf16"] for b in range(7)), [cf(b) for b in range(7)]
+    assert all(cf(b) == FID["int2"] for b in (10, 11, 12, 13))
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_c1_2_ssd_int2_recompute_and_restore(ft, engine):
+    """(ii) C1-2（CPU BF16、SSD INT2）：s0 被擠到 SSD 後是 INT2；s0 回來時 SSD 上的 INT2 不能用 → 重算（4 個 block）並以 BF16 重存到 CPU
+    （SSD 的舊 INT2 副本作廢）；品質帳 0、恆等式成立。"""
+    r, e, cf, sf, wst = _restore_run(engine, ft, "C1-2", 450)
+    assert int(e.surp_blk[2]) == 4 and int(e.surp_blk.sum()) >= 4, list(e.surp_blk)
+    assert all(cf(b) == FID["bf16"] for b in range(6)), [cf(b) for b in range(6)]
+    assert all(sf(b) in (0, FID["int2"]) for b in range(7)), [sf(b) for b in range(7)]
+    assert r["reads_fail"] == 0 and r["reads_unverified"] == 0
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_len_rule_max_uses_request_length(ft, engine):
+    """(iii) len_rule="max"：長度門檻看 max(存的長度, 請求輸入長度)。只有 r0（一個 session、請求輸入長度 4,096 token＝nall 8、存 4 個 block＝2,048 token）；
+    CPU 只放得下 1 個 block → 其餘被搬去 SSD。D-len(thr 2,048)：stored 規則 2,048 ≤ thr → 搬去 SSD 時壓成 INT4；max 規則＝max(2,048, 4,096) > thr → 維持 BF16。"""
+    P = dict(full=[[0, 1, 2, 3]], nall=[8], acc={b: [0] for b in range(4)}, tl=[0.0], kindc=[0], sessl=[0], parentl=[-1], obs_end=[1e6], nmax=64,
+             B=4, R=dict(n_sess=1), win=(0.0, 100.0), meta=dict(source="hand", variant="len", tier="S", n_req=1, n_sess=1))
+    out = {}
+    for rule in ("stored", "max"):
+        kw = dict(int2_on_read="recompute_unverified", unverified_len="request")
+        pk = dict(d_threshold_tokens=2048, len_rule=rule)
+        if engine == "session":
+            r, _, ids, e, _ = sim.run_cell(P, "E2", "D-len", 70 / 1024.0, "llama", SPECS[:1], fmt_path=ft, check=1, pol_kw=pk, **kw)
+        else:
+            r, _, ids, e, _ = sim.run_cell_fifo1(P, "E2", "D-len", 70 / 1024.0, "llama", SPECS[0], fmt_path=ft, pol_kw=pk, **kw)
+        assert all(i["ok"] for i in ids)
+        out[rule] = {k: v for k, v in r[0].items() if k.startswith("wblocks_ssd_")}
+    assert out["stored"].get("wblocks_ssd_int4", 0) > 0 and out["stored"].get("wblocks_ssd_bf16", 0) == 0, out
+    assert out["max"].get("wblocks_ssd_bf16", 0) > 0 and out["max"].get("wblocks_ssd_int4", 0) == 0, out
+
+
+# ===================================================================== 第二輪審查：寬鬆規則、E6 的實際讀取（還原＋預取）、截尾版護欄欄
+def test_loosened_quality_rule_official():
+    """寬鬆版雙胞胎的品質規則：32K 過關的格式任何長度都過關，其他不變；大小、解壓時間、never_read_only 不變。"""
+    mf = load_format_table("llama", "mi300x")
+    lo = mf.loosened()
+    assert lo.bytes == mf.bytes and lo.never_read_only == mf.never_read_only and lo.src.get("quality_rule") == "loose" and "quality_rule" not in mf.src
+    for f in mf.available:
+        for tok in (1000, 32768, 70000, 500000):
+            want = mf.status(f, 32768) if f != FID["bf16"] else "pass"
+            assert lo.status(f, tok) == want, (f, tok)
+    assert mf.status(FID["int4"], 100000) != "pass" and lo.status(FID["int4"], 100000) == mf.status(FID["int4"], 32768)
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_loose_rule_removes_unverified_recompute(engine):
+    """C2（全 INT4）：請求長度 51,200 token（>32K）。strict：INT4 來歷在這個長度沒驗證 → 重算（意外重算 >0）；loose：INT4 在 32K 過關 → 不重算。品質帳都是 0。"""
+    P = _hand_P_restore()
+    P = dict(P, nall=[4, 4, 100, 101], nmax=128)
+    res = {}
+    for rule in ("strict", "loose"):
+        kw = dict(int2_on_read="recompute_unverified", unverified_len="request", fmt_path="official", quality_rule=rule)
+        if engine == "session":
+            r, _, ids, e, _ = sim.run_cell(P, "E2", "C2", 150 / 1024.0, "llama", SPECS[:1], check=1, **kw)
+        else:
+            r, _, ids, e, _ = sim.run_cell_fifo1(P, "E2", "C2", 150 / 1024.0, "llama", SPECS[0], **kw)
+        assert all(i["ok"] for i in ids)
+        assert r[0]["reads_fail"] == 0 and r[0]["reads_unverified"] == 0
+        res[rule] = r[0]["surprise_events"]
+    # official 格式表的 Llama 沒有 INT4 的 32K 以上資料 → strict 在 51,200 token 重算；loose 用 32K 的結果 → 不重算
+    assert res["strict"] > 0 and res["loose"] == 0, res
+
+
+def test_block_actual_read_columns_and_attribution(ft):
+    """block 引擎（E6）：ssd_H_actual_read_GiB＝實際 SSD 讀取（還原＋預取，含浪費的）中到達 < 終點 − H 的請求；per-session 的 ssd_read_bytes_H 加總相符；
+    預取讀取歸屬於觸發預取的請求的 session；全部實際讀取（不截尾）＝SSD 通道讀取的位元組；session 引擎沒有預取 → 實際讀取＝還原讀取。
+    另外 ttftq_H_*／ttftq_H2_*（截尾版護欄）只算到達 < 終點 − H（－2H）的回來請求。"""
+    import ledger as LG
+    P = _hand_P_restore()
+    P = dict(P, tl=[0.0, 0.5, 1.0, 1.5], obs_end=[100.0] * 4, win=(0.0, 100.0))
+    for H in (75.0, 1e-3 + 0.0):
+        r, _, ids, e, vs = sim.run_cell_fifo1(P, "E6", "C2", 150 / 1024.0, "llama", SPECS[0], fmt_path=ft, H=H, H_extra=2 * H,
+                                              int2_on_read="recompute_unverified", unverified_len="request")
+        assert all(i["ok"] for i in ids)
+        v = vs[0]
+        act = LG.actual_read_by_req(v, 4)
+        row = r[0]
+        assert abs(row["ssd_actual_read_GiB"] * GiB - act.sum()) < 1 and abs(act.sum() - v.slow.bytes_r) < 1
+        cut = 100.0 - H
+        want = act[np.asarray(P["tl"]) < cut].sum()
+        assert abs(row["ssd_H_actual_read_GiB"] * GiB - want) < 1, (row["ssd_H_actual_read_GiB"], want)
+        want2 = act[np.asarray(P["tl"]) < 100.0 - 2 * H].sum()
+        assert abs(row["ssd_H2_actual_read_GiB"] * GiB - want2) < 1
+        ps = LG.per_session(P, e, vs)
+        assert ps["ssd_read_bytes_H"].shape == (1, 2) and int(ps["ssd_read_bytes_H"][0].sum()) == int(round(want))
+        assert int(ps["ssd_read_bytes_H2"][0].sum()) == int(round(want2))
+        sl = np.asarray(P["sessl"])
+        assert [int(x) for x in ps["ssd_read_bytes"][0]] == [int(round(act[sl == s_].sum())) for s_ in (0, 1)]   # 全部：依觸發的請求歸屬
+        # 截尾版護欄欄存在、且只看截尾內的回來請求
+        ret = np.asarray(P["kindc"]) == 1
+        m = ret & (np.asarray(P["tl"]) < cut)
+        assert abs(row["ttftq_H_mean_s"] - float(np.asarray(v.ttft)[m].mean())) < 1e-12 if m.any() else math.isnan(row["ttftq_H_mean_s"])
+        m2 = ret & (np.asarray(P["tl"]) < 100.0 - 2 * H)
+        assert abs(row["ttftq_H2_mean_s"] - float(np.asarray(v.ttft)[m2].mean())) < 1e-12 if m2.any() else math.isnan(row["ttftq_H2_mean_s"])
+    # session 引擎：沒有預取 → 實際讀取＝還原讀取（bS）
+    r, _, ids, e, vs = sim.run_cell(P, "E2", "C2", 150 / 1024.0, "llama", SPECS[:1], fmt_path=ft, H=75.0, int2_on_read="recompute_unverified",
+                                    unverified_len="request")
+    assert abs(r[0]["ssd_actual_read_GiB"] * GiB - float(np.asarray(vs[0].bS).sum())) < 1

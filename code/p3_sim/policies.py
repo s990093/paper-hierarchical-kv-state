@@ -26,6 +26,15 @@ from __future__ import annotations
 from formats import FID, FMT_NAMES, NotMeasured
 
 
+def read_len(ctx, rule):
+    """長度門檻用的長度（04 v4 §3.1，第二輪審查 #8）。rule＝"stored"（c0c179b 的舊行為＝存的長度）｜"max"＝max(存的長度, 這個請求的輸入長度)
+    （兩個都是決定當下就知道的；地圖用）。"""
+    if rule == "max":
+        return max(ctx["tokens"], ctx.get("req_tokens", 0) or 0)
+    assert rule == "stored", rule
+    return ctx["tokens"]
+
+
 class CompressionPolicy:
     name = "base"
     needs_oracle = False
@@ -78,13 +87,13 @@ class C4(CompressionPolicy):
     """依長度：寫入時就知道的長度 ≤ 門檻 → BF16，否則 INT4。門檻是參數（預設 32,768 token＝品質實測的長度；要在登記時凍結）。"""
     name = "C4"
 
-    def __init__(self, mf, thr_tokens=32768):
+    def __init__(self, mf, thr_tokens=32768, len_rule="stored"):
         super().__init__(mf)
-        self.thr = thr_tokens
+        self.thr, self.len_rule = thr_tokens, len_rule
         self.fb, self.f4 = self._need("bf16"), self._need("int4")
 
     def cpu_fid(self, ctx):
-        return self.fb if ctx["tokens"] <= self.thr else self.f4
+        return self.fb if read_len(ctx, self.len_rule) <= self.thr else self.f4
 
 
 class Oracle(CompressionPolicy):
@@ -236,13 +245,13 @@ class C4r(CompressionPolicy):
     """C4 反過來：寫入時的長度 ≤ 門檻 → INT4，否則 BF16（預設門檻 32,768 token）。SSD 維持 CPU 的格式。"""
     name = "C4r"
 
-    def __init__(self, mf, thr_tokens=32768):
+    def __init__(self, mf, thr_tokens=32768, len_rule="stored"):
         super().__init__(mf)
-        self.thr = thr_tokens
+        self.thr, self.len_rule = thr_tokens, len_rule
         self.fb, self.f4 = self._need("bf16"), self._need("int4")
 
     def cpu_fid(self, ctx):
-        return self.f4 if ctx["tokens"] <= self.thr else self.fb
+        return self.f4 if read_len(ctx, self.len_rule) <= self.thr else self.fb
 
 
 class Deferred(CompressionPolicy):
@@ -252,10 +261,10 @@ class Deferred(CompressionPolicy):
               INT2 只有 teacher forcing：之後被讀就記在品質帳（或 int2_on_read=recompute 時改成重算）"""
     ssd_moment = True
 
-    def __init__(self, mf, name, thr_tokens=32768, tau_s=None):
+    def __init__(self, mf, name, thr_tokens=32768, tau_s=None, len_rule="stored"):
         super().__init__(mf)
         self.name = name
-        self.thr, self.tau = thr_tokens, tau_s
+        self.thr, self.tau, self.len_rule = thr_tokens, tau_s, len_rule
         self.fb, self.f4 = self._need("bf16"), self._need("int4")
         self.f2 = self._need("int2") if tau_s is not None else None
 
@@ -265,7 +274,29 @@ class Deferred(CompressionPolicy):
     def ssd_fid(self, ctx, cur):
         if self.tau is not None and ctx["idle_s"] > self.tau:
             return max(cur, self.f2)
-        return max(cur, self.f4) if ctx["tokens"] <= self.thr else cur
+        return max(cur, self.f4) if read_len(ctx, self.len_rule) <= self.thr else cur
+
+
+class R2(CompressionPolicy):
+    """R2（04 v4 §3.1，第二輪審查 #1）：「先當成不會回來」。這個 session 到現在只有 1 個請求 → INT2（寫進 CPU 與搬去 SSD 都是）；
+    來過 ≥2 個請求 → 照 D-len（CPU BF16；搬去 SSD 時長度 ≤ thr → INT4，否則維持；thr 預設 32,768）。
+    INT2 沒有任何長度的生成品質驗證，所以單輪 session 回來時會重算（嚴格讀取規則）、重算出來的 KV 照當時的決定（這時 nreq≥2 → BF16）重存。
+    nreq＝ctx["nreq"]：這個 session 到那一刻為止的請求數（引擎填；CPU 寫入＝含目前這個請求；SSD 寫入＝決定當下已經服務的請求數，寫穿時含目前這個）。"""
+    name = "R2"
+    ssd_moment = True
+
+    def __init__(self, mf, thr_tokens=32768, len_rule="stored"):
+        super().__init__(mf)
+        self.thr, self.len_rule = thr_tokens, len_rule
+        self.fb, self.f4, self.f2 = self._need("bf16"), self._need("int4"), self._need("int2")
+
+    def cpu_fid(self, ctx):
+        return self.f2 if ctx["nreq"] == 1 else self.fb
+
+    def ssd_fid(self, ctx, cur):
+        if ctx["nreq"] == 1:
+            return max(cur, self.f2)
+        return max(cur, self.f4) if read_len(ctx, self.len_rule) <= self.thr else cur
 
 
 def make_policy(name, mf, **kw):
@@ -277,24 +308,31 @@ def make_policy(name, mf, **kw):
         return Fixed(mf, "int4", "C2")
     if name == "C3":
         return Fixed(mf, "8bit", "C3")
+    lr = kw.get("len_rule", "stored")
     if name == "C4":
-        return C4(mf, kw.get("c4_threshold_tokens", 32768))
+        return C4(mf, kw.get("c4_threshold_tokens", 32768), lr)
     if name in Oracle.VARIANTS:
         return Oracle(mf, kw.get("o_allow_unverified", False), variant=name, ssd_oracle=kw.get("o_ssd_oracle", True),
                       read_len=kw.get("o_read_len", "prefix"))
     if name == "C4r":
-        return C4r(mf, kw.get("c4_threshold_tokens", 32768))
+        return C4r(mf, kw.get("c4_threshold_tokens", 32768), lr)
     if name == "C1-8":
         return TwoFormat(mf, "bf16", "8bit", "C1-8")
     if name == "C6":
         return TwoFormat(mf, "8bit", "int4", "C6")
+    if name == "C1-2":
+        return TwoFormat(mf, "bf16", "int2", "C1-2")
+    if name == "R2":
+        return R2(mf, kw.get("d_threshold_tokens", 32768), lr)
     if name == "D-len":
-        return Deferred(mf, "D-len", kw.get("d_threshold_tokens", 32768))
+        return Deferred(mf, "D-len", kw.get("d_threshold_tokens", 32768), None, lr)
     if name == "D-idle":
-        return Deferred(mf, "D-idle", kw.get("d_threshold_tokens", 32768), kw.get("d_idle_tau_s", 1800.0))
+        return Deferred(mf, "D-idle", kw.get("d_threshold_tokens", 32768), kw.get("d_idle_tau_s", 1800.0), lr)
     raise ValueError(name)
 
 
 POLICY_NAMES = ["C0", "C1", "C2", "C3", "C4", "O"]
 # 06 §11：新加的（名字和預設參數見各 class；值由 v4 凍結）
 POLICY_NAMES_V4 = POLICY_NAMES + ["O-len", "O-reuse", "O-loose", "C4r", "C1-8", "C6", "D-len", "D-idle"]
+# 04 v4 第二輪審查之後：C1-2（CPU BF16、SSD INT2）、R2；長度規則 len_rule="max"（地圖用）
+POLICY_NAMES_V4B = POLICY_NAMES_V4 + ["C1-2", "R2"]

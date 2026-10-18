@@ -367,7 +367,7 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 | fid 3 int4 | `int4_kivi` | |
 | fid 4 int2 | `int2_kivi` | |
 | `bytes[fid]` | `bytes_per_block_code.value` | 斷言（規則 6）：＝`bytes_per_block_encode_cpu`；`bytes_measured_agree_with_code`＝True；÷512÷1024＝`kib_per_token`（±0.001）；BF16＝`shape` 的 L×H_kv×D×2×2×512 |
-| `dq[idle／busy][fid]`（MI300X） | `dq_mi300x_loadonly_k0_{idle,busy}_ms` ÷ 1000 | 和 placeholder 同一個欄位語意（X1 的規則：E1、load_only、CPU 層、K0） |
+| `dq[idle／busy][fid]`（MI300X） | `dq_mi300x_loadonly_k0_{idle,busy}_ms` ÷ 1000 | 和 placeholder 同一個欄位語意（X1 的規則：E1、load_only、CPU 層、K0）  **〔已換（第二輪審查 #12）：地圖預設的欄組是 `cake_k0`（還原中・Cake・K0，含和重算搶 GPU 的成本）＝§19、04 §9「解壓常數」；這一列的「只載入」欄只在 `--fmt official:loadonly_k0` 才用〕** |
 | `dq[idle／busy][fid]`（3090） | `dq_3090_cake_k0_{idle,busy}_ms` ÷ 1000 | 和 placeholder 同一個欄位語意（X7 的還原中、cake） |
 | 值是 NOT_MEASURED／PENDING | None | 位元組照算；時間用到它時 TTFT 寫 NOT_MEASURED（§12.4） |
 | `quality[fid]` | 由 `q_gen_{A,B_idle,B_busy,B_i2b}_ci_lo_pts` 算（下面） | 用 `q_gen_*_pass2` 驗算；和 `quality_verdict_32k` 對拍 |
@@ -523,8 +523,9 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
   正式表＝bf16 無限、8bit／int4 32,768、int2 −1）。第一個做不到的地方起都重算（surprise 照樣記）。
   例：80 個 block 全是 int4 → 只載入前 64 個（32,768 token，int4 在 32K 過關），後 16 個重算；不是整段重算。
   讀取長度＝載入的前綴 token 數（和品質帳的分箱同一個定義）。所以品質帳（fail＋unverified）一律 0（測試 `test_recompute_unverified`）。
+  **〔已換（第二輪審查 #12）：地圖的「讀取長度」＝讀它的請求的輸入長度（整個上下文），不是載入的前綴長度＝§18、04 §3.3；`unverified_len="prefix"` 只剩回歸比對（c0c179b）與舊測試用。〕**
   任何長度都不 pass 的來歷（正式表＝int2）的副本照上面的規則被重算的新 KV 取代；在某個長度以上才不 pass 的（int4 在 >32K）副本保留（之後較短的讀取還能用）。
-  **請 v4 確認「讀取長度」的定義**：這裡用載入的前綴長度；另一種是請求的整段 context 長度（會更常重算）。
+  **請 v4 確認「讀取長度」的定義**：這裡用載入的前綴長度；另一種是請求的整段 context 長度（會更常重算）。 **〔已回答：v4 定為請求的整段 context 長度（§18）。〕**
 
 ### 12.4 逐請求的 NOT_MEASURED（`ttftq_*`）
 
@@ -1194,3 +1195,96 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 3. `/ssd8` 視角：碰到 k_read 的請求 → ttftq NOT_MEASURED，整個視角的 ttftq 列因此也是 NOT_MEASURED（沿用 §12.4 的整列規則）；「沒碰到的請求」另報。k 沒量，所以傳遞規則是資料流依賴，不是對所有 k 的保證（§24.3）。
 4. FreeInference 的 npz 變大（§24.4 的算術上界約 32 GB；實際 NOT_MEASURED）。舊版 run_map 產生的 FreeInference npz 不能用（沒有 `ttft_vals`，analyze 會拒絕）；04 還沒凍結、沒有真實資料的 run，所以沒有舊 npz 要處理。
 5. 〔估計〕時間沒有重新計時（重存改變了每請求的工作量；合成端到端 1,205 s 對 1,129 s，+7%，只是合成）。
+
+
+## 25. 第五個工作階段（2026-10-18，opencode）：第二輪審查 #1–#13 的程式修改
+
+> 對應 `review_opencode_20261018_map_v4.md` 每一列標「採納」的項目。沒有跑任何真實資料的格子；唯一有「省多少」的是**合成**切片的端到端（§25.7，標合成）。
+
+### 25.1 對手與長度規則（#1、#8；`policies.py`）
+- **長度規則 `len_rule`**：`"stored"`（預設＝c0c179b 的舊行為，回歸比對用）｜`"max"`＝max(存的長度, 這個請求的輸入長度)。C4、C4r、D-len、D-idle、R2 都有；`run_map.policy_table` 一律傳 `"max"`。
+  兩個引擎的 ctx 都有 `req_tokens`；寫穿、第 2 次才寫（發生在請求 r 自己的回合，這時 `self.last[s]` 還是上一個請求）由呼叫端傳現在這個請求的長度與請求數（`Engine._ssd_dec(rq, nq)`），降級（之後）用 session 最近一個服務完的請求。
+- **`C1-2`**：CPU BF16、搬去 SSD 時 INT2（`TwoFormat`）。
+- **`R2`**：session 到那一刻只有 1 個請求 → INT2（寫進 CPU、搬去 SSD 都是）；≥2 個 → CPU BF16、搬去 SSD 時照 D-len（長度 ≤32,768 → INT4，否則維持）。請求數在 ctx 的 `nreq`：session 引擎 CPU 寫入＝含目前這個請求，SSD 寫入（`_mctx`）＝決定當下已服務的請求數（寫穿時含目前這個）；block 引擎新增 `ord1`（請求是它的 session 的第幾個）。
+- 單輪 session 回來時（INT2 沒有任何長度的生成品質驗證）照 `recompute_unverified` 重算一次，重算的 KV 照當時的決定重存（手造測試：R2 重算後存 BF16、第 3 個請求不再重算；C1-2 重算並以 BF16 重存、SSD 的舊 INT2 副本作廢；兩個引擎）。
+- 地圖的非 oracle 做法從 19 個變 21 個（`NON_ORACLE`），工作數見 §25.8。
+
+### 25.2 凍結閘門（#5；`lockfile.py`、`run_map.py`）
+04 §9 在凍結的 commit 裡要有下面三樣東西（正規表示式解析，缺一就拒絕跑真實資料）：
+```
+<!-- LOCK:BEGIN -->
+| 路徑 | sha256 |
+|:--|:--|
+| `results/p3_formats/format_table.json` | `<64 位小寫十六進位>` |
+…（REQUIRED_INPUTS 的 8 個檔都要有：format_table.json、costs_mi300x.json、costs_3090.json、kgpu_kmin_all.csv、return_gaps.csv、session_counts.csv、cpubusy_slowdown.csv、constants_3090_v2.json）
+<!-- LOCK:END -->
+程式 commit（凍結）：`<40 位十六進位>`
+護欄的參考：C0            （或 `護欄的參考：min(C0, O)`）
+```
+`lockfile.verify_freeze(frozen, repo)`（`run_map.py` 對有真實資料的工作一律先過；`--collect-only` 不需要）：
+1. 凍結 commit 裡的 04 不含「未凍結」；
+2. 鎖定表含 8 個必要檔，工作目錄裡每個列出的檔 sha256 全部相符；
+3. **程式 commit 的決定**：HEAD＝它，**或 HEAD 是它的後代而且 `code/p3_sim/` 從它到 HEAD 沒有任何檔案不同**（只有文件／results 的 commit 不影響）；凍結的 commit 必須是 HEAD 的祖先；
+4. **工作目錄乾淨**：已追蹤檔案沒有未提交的修改（整個 repo），而且 `code/p3_sim/` 底下沒有未追蹤的檔案；
+5. 另外：真實資料必須有明確的 `RUN_ID`（不是空的或 `adhoc`；用 `run3090.sh` 跑就有）、`--fmt` 必須是 `official`。
+任何一項不成立 → `SystemExit`，訊息逐項列出。`invocation_*.json` 記下鎖定表與 HEAD。合成資料不需要。測試：`test_freeze_gate_lockfile`（暫時的 git repo：通過、只有文件的後代通過、缺必要檔、sha 不符、髒的、未追蹤、凍結後程式被改、未凍結、沒有表）、`test_real_data_requires_explicit_run_id`。
+
+### 25.3 E6（block 引擎）的主指標（#2；`ledger.py`、`run_map.prim_cols`、`analyze_map.sess_bytes`）
+- block 引擎（E6 與它的 E2 對照）：**主指標＝SSD 寫入（決定時刻 < 終點 − H）＋實際 SSD 讀取（還原＋預取，含浪費的預取；到達 < 終點 − H 的請求）**。欄 `ssd_H_actual_read_GiB`（2H：`ssd_H2_actual_read_GiB`）；npz：`ssd_read_bytes_H[0]`、`ssd_read_bytes_H2[0]`。預取讀取的歸屬＝觸發預取的請求（佇列裡的那個）所屬的 session。`ledger.actual_read_by_req(v, n)`＝`bS`＋預取紀錄（rk==1）依 `rr` 加總。
+- session 引擎（E2–E5）維持**只載入的讀取**（`ssd_H_loadonly_read_GiB`；只和放置有關）。`prim_read_col` 欄記每一列用了哪一欄。
+- 恆等式測試：不截尾的實際讀取＝SSD 通道讀取的位元組；per-session 加總＝列；session 引擎沒有預取。
+
+### 25.4 護欄、O 的資格、NaN、SSD 使用率、取捨表（#6、#7、#10、使用者的選擇；`analyze_map.py`）
+- **截尾版護欄**：`ttftq_H_*`（非 oracle 的 2H 版用新的 `ttftq_H2_*`；oracle 的 2H 是自己的工作、自己的 H）。FreeInference 幾週合併用 npz 的逐請求 `tH_vals`／`tH2_vals`（`np.percentile` 精確）。**限制**：npz 只存工作第 0 個視角的逐請求值，所以幾週合併時，其他視角（session 引擎的另外 7 個時間設定與敏感度視角）無法精確合併 → `NoPooledTtft`，這些視角的 FreeInference 列不報告（舊版會悄悄用錯的視角；單一切片的資料不受影響；E6 的 GPU 忙是獨立的工作、有自己的 npz，可以）。
+- **`guard_ref`**：`"C0"`｜`"min_C0_O"`。一個做法「合格」＝截尾 TTFT 平均與 p99 都 ≤ 1.05×ref；ref＝C0 的值，或 C0 與 O 逐項取小（任一個 NOT_MEASURED → 當成通過並標出）。判定用 04 §9 的 `護欄的參考：…`（`--guard-ref auto`，`--frozen <commit>` 讀那個 commit 的版本；沒有那一行 → 預設 C0 並寫明「未凍結」；目前工作目錄的 04 草稿寫了 `min(C0, O)`，輸出裡會註明「草稿寫的」）。兩種都報告（`kind=report_guard_ref`、markdown「護欄的參考」節）。bootstrap CI 只對判定用的那種做。
+- **O 也要過護欄**：O 的 TTFT ≤ 1.05×C0（兩種 ref 下這個條件相同）；沒過 → `o_guard_ok=False`、`go_ok=False`。
+- **最好的對手＝0 且 O>0** → 省多少＝NaN、旗標 `best_zero_o_pos`、沒有 CI、不能支持 GO、擋 NO-GO（→ ASK）；0÷0 仍＝0（旗標 `best_zero`）。沒有任何合格的對手 → NaN、旗標 `no_eligible_rival`。
+- **SSD 使用率**＝Σ(寫入量÷寫入頻寬＋讀取量÷讀取頻寬) ÷ Σ(T×k)；寫入／讀取量＝主指標的兩個分量（`prim_w_*`、`prim_r_*`），頻寬＝`costs_mi300x.json` 的 `mi300x_local`（`ssd_bw_*` 欄；讀 6.98、寫 1.91 GiB/s），T＝切片窗口截到終點 − H（`T_H_s`、`T_2H_s`），k＝block 引擎的 GPU 數（每張一顆專用 SSD）。**GO 的格子要求最好的對手 ≥5%**（兩份資料都要）。每格報告最好的對手與 O 的 GiB／小時與使用率。
+- **每個 GO 格子標最好的對手是不是 C0**（`go_cells[].strong_best_is_C0`、`weak_best_is_C0`，理由字串也寫）；主格報告最好的對手與 O 的重算 token（`recompute_prefix_blocks`×512；未截尾）。
+- **取捨表** `<prefix>_tradeoff.csv`：每份資料 × 主格 × 每個做法（21 個對手＋O）：主指標位元組、GiB／小時、使用率、`ttftq_H_mean_s`、`ttftq_H_p99_s`、重算 token、兩種 `guard_ref` 下合格與否。
+
+### 25.5 寬鬆版雙胞胎、>128K 比例（#3；`formats.loosened`、`run_map`、`stats_v4.py long128k`）
+- `ModelFormats.loosened()`：32K 過關的格式任何長度都過關（其他不變）；`run_cell`／`run_cell_fifo1` 的 `quality_rule="loose"`。整套（21 個對手與 O）都用它重跑。
+- 工作群組（放 **A1**，B-A1 跟著）：`a1_loose`（session 引擎，E2–E5 × 3 記憶體，**只跑主視角**，O 只跑 H）、`a1_loose_blk`（E6，主視角，O 只跑 H）。工作 id 多 `__loose`、列多 `quality_rule=loose`。可用 `--skip a1_loose a1_loose_blk` 略過；§25.8 有成本。報告：`kind=report_loose_twin`（點估計、不做 bootstrap、不進判定）。放 A1 而不放 A2：A2 已經 ~1,054 CPU 小時，而且判定附帶的報告越早看到越好；若嫌貴，先 `--skip a1_loose_blk`（E6 占 24 CPU 小時）。
+- 單元測試：loose 規則下 C2 在 >32K 請求不再重算（兩個引擎）；strict 下會重算。
+- **>128K 的請求比例**（資料統計，run `20261018-145230-p3sim-long128k`，`results/p3_sim/long_request_fraction.csv`，長度＝`request_lengths`；驗算：不小於完整 block 數×512；FreeInference 16 週請求數合計 1,222,199＝§15 的值）：Bailian coder 0、traceA 0、WildChat 0、Mooncake 0；FreeInference 第 1／5／9／13 週 14.6%／13.3%／37.3%／53.3%，A1 的 4 週合起來 42.7%（16 週 45.1%）；>32,768 的比例 88.5%（A1 4 週）。FreeInference 的「BF16 過關」意思是「和不卸載的同一個模型一樣」，不是 8B 模型在那麼長的上下文答得好（04 §3.3）。
+
+### 25.6 切片齊全、索引含視角、CPU 忙係數（#4、#11、#13）
+- **切片齊全**：`analyze_map.EXPECTED`（寫死）：`early`＝A1 的 8 個切片（Bailian coder、traceA、WildChat、Mooncake conv strict、FreeInference 第 1／5／9／13 週）；`full`＝再加 FreeInference 其餘 12 週；`synthetic`（`--synthetic`）＝`synth/small-seed1`。另檢查每個切片的 15 個主格 × 21 個對手＋O × (H, 2H)（主視角、strict）。少一個、多一個、缺格 → `IncompleteMap`（CLI exit 2、stderr 列出缺什麼），**不給判定**。測試用的 `expected="present"` 只在測試裡。
+- **索引含視角**：鍵 ＝ (資料, 切片, 引擎, 外層, 記憶體, 模型, 疊加, view_group, `view_name`, `quality_rule`, 做法, tag)。非主視角的列不再被丟掉：`kind=view`（markdown「其他視角」節；例如 E6 的 GPU 忙）。`view_name` 欄由 `run_map._view_name(spec)` 寫。
+- **CPU 忙係數**：`run_map.load_cpu_busy()` 從 `results/p3_calib_3090/cpubusy_slowdown.csv`（kind=time、metric=load_only:t_restore；N=8 same → 1.3502、N=48 other → 1.8149）讀，四捨五入到 2 位必須等於 1.35／1.81 才放行；`SENS_SPECS`、`SENS_GROUPS` 用它；每列有 `cpu_busy_run_id`（`20261018-004954-p3cal-cpubusy-qwen`）、`cpu_busy_lo`、`cpu_busy_hi`。程式裡沒有 1.35／1.81 的副本（只有檢查用的斷言）。
+
+### 25.7 驗證
+（數字見最後一節「結果」；合成端到端 `20261018-145209-p3sim-mapsyn3`＝852 個工作、失敗 0、1,719 s；分析 `20261018-222840-p3sim-anasyn4`，`results/p3_map/synthetic_e2e_A1_v5_*`。**合成資料，不是判定。**）
+合成上看到的（只說明機制，不是結論）：護欄兩種參考給出同樣的最好的對手（合成上 O 的 TTFT 和 C0 差不到 5%）；435 GiB 的 E2／E3／E4，最好的對手是 C1-2（INT2 放 SSD，位元組最少、TTFT 在 5% 內）→ O 比它多（省多少 −113%～−398%）；170／435 GiB 多數格子最好的對手的 SSD 使用率 <5% → 不能支持 GO；寬鬆版雙胞胎裡最好的對手是 C2。
+
+### 25.8 工作數與〔估計〕時間（dry-run `20261018-144912-p3sim-mapdry4`；沿用 `timing3` 的每請求秒數，沒重新計時；寬鬆版雙胞胎的工作只跑主視角，估計卻按完整工作算＝上界）
+| 階段 | 工作數 | 格子（列） | 〔估計〕CPU 小時 | ≈12 process 小時 |
+|:--|--:|--:|--:|--:|
+| A1 | 6,816 | 37,440 | 234.5 | 19.5 |
+| A2 | 23,896 | 89,088 | 1,053.9 | 87.8 |
+| B-A1 | 10,224 | 56,160 | 675.7 | 56.3 |
+| B-A2 | 35,844 | 133,632 | 2,899.7 | 241.6 |
+A1 的組成：`a1_sess` 71.5＋`a1_blk` 82.1＋`a1_loose` 56.6＋`a1_loose_blk` 24.3。沒有寬鬆版雙胞胎的 A1＝153.6 CPU 小時（12.8 小時）；只留 session 的寬鬆版（`--skip a1_loose_blk`）＝210.2（17.5 小時）。（上一版 A1＝144.2 CPU 小時；多了 R2、C1-2 兩個做法 ×29／27。）
+
+### 25.9 偏離與請主 session 決定的事
+1. 寬鬆版雙胞胎放 A1（任務允許 A1 或 A2）；成本在 §25.8，可 `--skip`。
+2. 04 §9 的鎖定表骨架曾由我寫進 04（主 session 之後說 04 不准我碰）；格式以本節 §25.2 為準，04 的區塊由主 session 決定留不留。
+3. 幾週合併的護欄只能用工作第 0 個視角（§25.4 限制）：FreeInference 在非主視角（session 引擎的另 7 個時間設定、四個敏感度視角）沒有「最好的對手」的報告。
+4. SSD 使用率的 T 用「窗口 lo（P["win"][0]）到 max(obs_end) − H」，block 引擎分母乘 k。
+5. 重算 token 是未截尾的 `recompute_prefix_blocks`×512（逐請求截尾需要另存逐請求陣列）。
+
+### 25.10 結果（run_id 與 exit code；`/ssd8/hungwei/paper-hkv/runs/`）
+| run_id | 目的 | exit |
+|:--|--:|--:|
+| `20261018-222840-p3sim-testfinal3` | 全部測試（`test_p3_sim.py`＋`test_map.py`） | 1：**101 passed、1 failed**（`test_end_to_end_synth_subset`：`--only` 的子字串也比對到新的 `__loose` 工作，測試寫法的問題，不是程式；已修） |
+| `20261018-223734-p3sim-maptest3` | 修好的那一個測試重跑 | 0（1 passed） |
+| `20261018-145443-p3sim-regsmoke6` → `…150159-p3sim-regcmp6`、`…150208-p3sim-regcmpO6` | 回歸冒煙（placeholder、C0–C4、O、`O(cpu-only)`）對 c0c179b 基準 `20261018-083539-p3sim-base-smoke` | 0、0、0：1,276 格、恆等式 15,240 條全成立、錯誤 2（70B 的 C1、C2 NOT_MEASURED，同上一版）；C0 183／183、C1 186／186、C2 182／182、C3 180／180、C4 180／180 的 103 個舊欄全部相同；`O(cpu-only)` 對舊 O 180／180 相同（5 格缺＝和上一版相同）；新的 O 113 相同／72 不同（預期，和上一版相同） |
+| `20261018-150238-p3sim-smokestrict3` | 嚴格規則冒煙（official、16 個做法含 C1-2、R2，6 份小窗） | 0：2,880 格、恆等式 34,400 條全成立、錯誤 0；所有格品質帳（fail＋unverified）＝0；O、O-len 意外重算 0 |
+| `20261018-145209-p3sim-mapsyn3` | **合成**端到端 A1（852 個工作，含寬鬆版雙胞胎） | 0（失敗 0、1,719 s） |
+| `20261018-222840-p3sim-anasyn4` | 合成端到端的分析（`--synthetic`；護欄的參考＝草稿的 `min(C0, O)`） | 0（ASK：合成不進判定） |
+| `20261018-144912-p3sim-mapdry4` | dry-run 四個階段 | 0（§25.8） |
+| `20261018-145230-p3sim-long128k` | >128K 比例 | 0 |
+| 開發中的定向測試：`…143431-p3sim-t1`（引擎 59 passed，改引擎後）、`…-t2`、`…-t3`（新的引擎測試 6＋4 passed）、`…-maptest1`（22 passed）、`…-maptest2`（新的分析測試） | | 都 0（開發中有幾次因我寫的測試期望值錯而 exit 1，已修，非程式問題） |
+
+X1 144／144、X4 8／8 逐位元一致（`…222840-p3sim-testfinal3` 的 `test_i_x1.csv`、`test_ii_x4.csv` 的 `bitwise` 全 True）。測試數：引擎 59→69（新增 R2、C1-2、len_rule、loosened、loose 不重算 ×2 引擎、block 實際讀取），地圖 23→33（新增 10 個）；合計 102（101 passed＋1 個修好後單獨重跑 passed）。

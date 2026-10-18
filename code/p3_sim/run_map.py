@@ -11,7 +11,9 @@ CSV：collect 把所有 json 合成 map_cells.csv（一列＝一個格子＝一�
   python code/p3_sim/run_map.py --stage A1 --dry-run                      # 只數格子與估計時間（真實資料也可以）
   TIARA_NO_GPU=1 bash code/run3090.sh p3sim-mapsyn python code/p3_sim/run_map.py --stage A1 --slices synth/small-seed1 --out <dir>
   ...                                  python code/p3_sim/run_map.py --stage A1 --frozen <commit> --out <dir>   # 真實資料：必須給凍結 commit
-凍結：`git show <commit>:docs/phase3_20261017/04_prereg_map.md` 不得含「未凍結」；沒給 --frozen 就拒絕跑任何真實資料的工作（合成資料可以）。
+凍結（第二輪審查 #5；lockfile.py）：真實資料的工作一律要 --frozen <commit>，而且：04 在那個 commit 不含「未凍結」、§9 的鎖定表列的輸入檔
+sha256 全部相符、程式 commit 等於 HEAD 或 code/p3_sim/ 無變動的後代、已追蹤檔案無未提交修改、RUN_ID 明確（不是 adhoc）、格式表＝official。
+合成資料不需要。
 不設 CUDA_VISIBLE_DEVICES（run3090 的 TIARA_NO_GPU=1 已處理）。
 """
 from __future__ import annotations
@@ -37,9 +39,10 @@ sys.path.insert(0, HERE)
 import numpy as np  # noqa: E402
 
 import ledger  # noqa: E402
+import lockfile  # noqa: E402
 import sim  # noqa: E402
 import trace as TR  # noqa: E402
-from formats import NotMeasured  # noqa: E402
+from formats import NotMeasured, load_costs  # noqa: E402
 
 GiB = 1 << 30
 PREREG = "docs/phase3_20261017/04_prereg_map.md"
@@ -56,9 +59,30 @@ INT2_ON_READ = "recompute_unverified"       # 04 §3.3：讀到沒驗證的就�
 UNVERIFIED_LEN = "request"                  # 04 §3.3：讀取長度＝請求的輸入長度（整個上下文）
 MAIN_SPECS = [("mi300x", g, "idle", sh, "cake", "mi300x_local") for g in ("idle", "busy") for sh in (1, 2, 4, 8)]
 PRIMARY_SPEC = MAIN_SPECS[0]                # 主視角：Llama、MI300X、GPU 閒、CPU 閒、SSD 1 張 GPU 專用
-SENS_SPECS = [("mi300x", "idle", 1.35, 1, "cake", "mi300x_local"), ("mi300x", "idle", 1.81, 1, "cake", "mi300x_local"),
+CPUBUSY_CSV = os.path.join(REPO, "results", "p3_calib_3090", "cpubusy_slowdown.csv")
+
+
+def load_cpu_busy(path=CPUBUSY_CSV):
+    """CPU 忙的係數（04 §9；第二輪審查 #13）：從 3090 實測的 cpubusy_slowdown.csv 讀，不抄進程式。
+    列＝kind=time、metric=load_only:t_restore；N=8＋place=same（低）、N=48＋place=other（高）的 slowdown_x。
+    登記的值是 1.35 與 1.81，四捨五入到小數 2 位必須等於它們（不等＝資料變了，停下來）。回傳 (低, 高, run_id)。"""
+    with open(path, newline="", encoding="utf-8") as fh:
+        rows = [r for r in csv.DictReader(fh) if r["kind"] == "time" and r["metric"] == "load_only:t_restore"]
+
+    def pick(n, place):
+        m = [r for r in rows if int(r["N"]) == n and r["place"] == place]
+        assert len(m) == 1, f"{path}: load_only:t_restore 的 N={n}、place={place} 應該剛好 1 列，實際 {len(m)}"
+        return float(m[0]["slowdown_x"]), m[0]["run_id"]
+    (lo, rid_lo), (hi, rid_hi) = pick(8, "same"), pick(48, "other")
+    assert rid_lo == rid_hi, (rid_lo, rid_hi)
+    assert round(lo, 2) == 1.35 and round(hi, 2) == 1.81, f"CPU 忙的係數 {lo}／{hi} 四捨五入後不是登記的 1.35／1.81"
+    return round(lo, 2), round(hi, 2), rid_lo
+
+
+CPU_BUSY_LO, CPU_BUSY_HI, CPU_BUSY_RUN = load_cpu_busy()
+SENS_SPECS = [("mi300x", "idle", CPU_BUSY_LO, 1, "cake", "mi300x_local"), ("mi300x", "idle", CPU_BUSY_HI, 1, "cake", "mi300x_local"),
               ("3090", "idle", "idle", 1, "cake", "mi300x_local"), ("3090", "idle", "idle", 1, "cake", "ssd8_3090_meas")]
-SENS_GROUPS = ["sens_cpu1.35", "sens_cpu1.81", "sens_3090", "sens_3090_ssd8"]
+SENS_GROUPS = [f"sens_cpu{CPU_BUSY_LO:.2f}", f"sens_cpu{CPU_BUSY_HI:.2f}", "sens_3090", "sens_3090_ssd8"]
 SENS_LITE_SPECS = [MAIN_SPECS[0], MAIN_SPECS[4]]        # 敏感度的放置（Qwen、70B、疊加）：主視角＋GPU 忙
 BLOCK_VIEWS = {"idle": ("mi300x", "idle", "idle", 1, "cake", "mi300x_local"), "busy": ("mi300x", "busy", "idle", 1, "cake", "mi300x_local")}
 OUTERS_MAIN = [("E2", None), ("E3", None), ("E4", None), ("E5", 1800)]          # 主格的 session 引擎外層做法（E5＝30 分）
@@ -80,7 +104,8 @@ SLICES["synth/small-seed1"] = ("synth", "small-seed1", "synth", "synth", "S")   
 STAGE_SLICES = {"A": [s for s, v in SLICES.items() if v[4] == "A"], "B": [s for s, v in SLICES.items() if v[4] == "B"],
                 "S": ["synth/small-seed1"]}
 STAGES = {"A1": ("A", "A1"), "A2": ("A", "A2"), "B-A1": ("B", "A1"), "B-A2": ("B", "A2")}
-COMPONENTS = {"A1": ["a1_sess", "a1_blk"], "A2": ["a2_mem", "a2_blk", "sens_qwen", "sens_70b", "sens_ov2", "sens_ov4"]}
+# a1_loose／a1_loose_blk＝寬鬆版雙胞胎（04 §4，只報告）：O 與所有對手都用寬鬆品質規則；只跑主視角、O 只跑 H；放在 A1（B-A1 跟著）
+COMPONENTS = {"A1": ["a1_sess", "a1_blk", "a1_loose", "a1_loose_blk"], "A2": ["a2_mem", "a2_blk", "sens_qwen", "sens_70b", "sens_ov2", "sens_ov4"]}
 
 
 def is_synth(slice_name):
@@ -89,17 +114,20 @@ def is_synth(slice_name):
 
 # ------------------------------------------------------------------ 壓縮做法（04 §3）：標籤、名字、參數、是不是 oracle
 def policy_table():
+    """04 §3.1。長度門檻一律用 max(存的長度, 請求輸入長度)（len_rule="max"；第二輪審查 #8）。"""
     pols = []
-    for n in ("C0", "C1", "C1-8", "C2", "C3", "C6"):
+    for n in ("C0", "C1", "C1-8", "C2", "C3", "C6", "C1-2"):
         pols.append(dict(label=n, name=n, kw={}, oracle=False))
     for t in (8192, 16384, 32768):
-        pols.append(dict(label=f"C4-{t}", name="C4", kw={"c4_threshold_tokens": t}, oracle=False))
+        pols.append(dict(label=f"C4-{t}", name="C4", kw={"c4_threshold_tokens": t, "len_rule": "max"}, oracle=False))
     for t in (8192, 16384, 32768):
-        pols.append(dict(label=f"C4r-{t}", name="C4r", kw={"c4_threshold_tokens": t}, oracle=False))
+        pols.append(dict(label=f"C4r-{t}", name="C4r", kw={"c4_threshold_tokens": t, "len_rule": "max"}, oracle=False))
     for t in (8192, 16384, 32768):
-        pols.append(dict(label=f"D-len-{t}", name="D-len", kw={"d_threshold_tokens": t}, oracle=False))
+        pols.append(dict(label=f"D-len-{t}", name="D-len", kw={"d_threshold_tokens": t, "len_rule": "max"}, oracle=False))
     for tau in (300, 1800, 3600, 14400):
-        pols.append(dict(label=f"D-idle-{tau}", name="D-idle", kw={"d_threshold_tokens": 32768, "d_idle_tau_s": float(tau)}, oracle=False))
+        pols.append(dict(label=f"D-idle-{tau}", name="D-idle", kw={"d_threshold_tokens": 32768, "d_idle_tau_s": float(tau), "len_rule": "max"},
+                         oracle=False))
+    pols.append(dict(label="R2", name="R2", kw={"d_threshold_tokens": 32768, "len_rule": "max"}, oracle=False))
     for n in ("O", "O-len", "O-reuse", "O-loose"):
         pols.append(dict(label=n, name=n, kw={}, oracle=True))
     return pols
@@ -108,7 +136,8 @@ def policy_table():
 POLICIES = policy_table()
 NON_ORACLE = [p["label"] for p in POLICIES if not p["oracle"]]
 ORACLE = [p["label"] for p in POLICIES if p["oracle"]]
-assert len(NON_ORACLE) == 19 and len(ORACLE) == 4
+assert len(NON_ORACLE) == 21 and len(ORACLE) == 4
+LOOSE_POLS = [p for p in POLICIES if (not p["oracle"]) or p["label"] == "O"]       # 寬鬆版雙胞胎：21 個對手＋O
 
 
 # ------------------------------------------------------------------ H、k、凍結檢查
@@ -179,13 +208,13 @@ def _view_name(spec):
     return f"{spec[0]}|{spec[4]}|gpu={spec[1]}|cpu={spec[2]}|ssd/{spec[3]}|{spec[5]}"
 
 
-def mk_job(stage, comp, slc, engine, outer, T, mem, pol, tag, model="llama", overlay=1, view=None, k=None):
+def mk_job(stage, comp, slc, engine, outer, T, mem, pol, tag, model="llama", overlay=1, view=None, k=None, rule="strict"):
     """tag：'H'｜'2H'（oracle 各一個工作）或 'both'（非 oracle：H 當放置與主截尾、2H 當第二截尾，一次模擬兩個版本）。"""
     oc = outer + (f"-T{int(T)}" if T else "")
     jid = f"{engine}__{oc}__m{int(mem)}__{model}{'_ov%d' % overlay if overlay > 1 else ''}__{pol['label']}" + \
-          (f"__v{view}" if view else "") + f"__{tag}"
+          (f"__v{view}" if view else "") + f"__{tag}" + ("__loose" if rule == "loose" else "")
     return dict(stage=stage, comp=comp, slice=slc, engine=engine, outer=outer, T=T, mem=mem, pol=pol, tag=tag, model=model,
-                overlay=overlay, view=view, k=k, id=jid)
+                overlay=overlay, view=view, k=k, id=jid, rule=rule)
 
 
 def enumerate_jobs(stage, slices=None, fill=False, skip=(), kall=None):
@@ -206,6 +235,10 @@ def enumerate_jobs(stage, slices=None, fill=False, skip=(), kall=None):
                     jobs += _sess_jobs(stage, "a2_fill", s, OUTERS_FILL, A1_MEM)
             elif comp == "a1_blk":
                 jobs += _blk_jobs(stage, comp, s, A1_MEM, ("idle",), kall)
+            elif comp == "a1_loose":
+                jobs += _sess_jobs(stage, comp, s, OUTERS_MAIN, A1_MEM, rule="loose")
+            elif comp == "a1_loose_blk":
+                jobs += _blk_jobs(stage, comp, s, A1_MEM, ("idle",), kall, rule="loose", outers=("E6",))
             elif comp == "a2_blk":
                 jobs += _blk_jobs(stage, comp, s, A2_MEM, ("idle", "busy"), kall)
             elif comp == "sens_qwen":
@@ -217,23 +250,25 @@ def enumerate_jobs(stage, slices=None, fill=False, skip=(), kall=None):
     return jobs
 
 
-def _pol_tags(p):
+def _pol_tags(p, rule="strict"):
+    if rule == "loose":          # 寬鬆版雙胞胎只報告 H
+        return ("H",) if p["oracle"] else ("both",)
     return ("H", "2H") if p["oracle"] else ("both",)
 
 
-def _sess_jobs(stage, comp, s, outers, mems, model="llama", overlay=1):
+def _sess_jobs(stage, comp, s, outers, mems, model="llama", overlay=1, rule="strict"):
     out = []
     for (oc, T) in outers:
         for m in mems:
-            for p in POLICIES:
-                for tag in _pol_tags(p):
-                    out.append(mk_job(stage, comp, s, "session", oc, T, m, p, tag, model, overlay))
+            for p in (LOOSE_POLS if rule == "loose" else POLICIES):
+                for tag in _pol_tags(p, rule):
+                    out.append(mk_job(stage, comp, s, "session", oc, T, m, p, tag, model, overlay, rule=rule))
     return out
 
 
-def _blk_jobs(stage, comp, s, mems, views, kall):
+def _blk_jobs(stage, comp, s, mems, views, kall, rule="strict", outers=("E6", "E2")):
     out = []
-    for oc in ("E6", "E2"):
+    for oc in outers:
         for m in mems:
             for v in views:
                 k = None
@@ -242,9 +277,9 @@ def _blk_jobs(stage, comp, s, mems, views, kall):
                     if key not in kall:
                         raise SystemExit(f"{KALL} 沒有 {key} 的 k")
                     k = kall[key]["k"]
-                for p in POLICIES:
-                    for tag in _pol_tags(p):
-                        out.append(mk_job(stage, comp, s, "block", oc, None, m, p, tag, "llama", 1, v, k))
+                for p in (LOOSE_POLS if rule == "loose" else POLICIES):
+                    for tag in _pol_tags(p, rule):
+                        out.append(mk_job(stage, comp, s, "block", oc, None, m, p, tag, "llama", 1, v, k, rule))
     return out
 
 
@@ -253,6 +288,8 @@ def n_rows_of(j):
         return 1
     if j["comp"] == "a1_sess":
         return len(MAIN_SPECS) + len(SENS_SPECS)
+    if j["comp"] == "a1_loose":
+        return 1
     if j["model"] == "llama70b_scaled":
         return 1
     if j["comp"].startswith("sens_"):
@@ -375,11 +412,26 @@ def keeps_ttft_vals(slice_name):
     return sum(1 for v in SLICES.values() if v[2] == g) > 1
 
 
+def cut_ttft(P, view, cut):
+    """回來的請求裡到達 < cut 的：(ttft 陣列, NOT_MEASURED 的個數)。cut＝終點 − H（截尾；04 §4 的護欄用截尾版 ttftq_H_*）。"""
+    tl = np.asarray(P["tl"], float)
+    m = (np.asarray(P["kindc"]) == 1) & (tl < cut)
+    return np.asarray(view.ttft)[m], int(np.asarray(view.nmreq, bool)[m].sum())
+
+
 def _slim_arrays(P, eng, view, orig_sess, keep_vals=False):
     arr = ledger.per_session(P, eng, [view])
     arr["sess_orig"] = np.asarray(orig_sess, np.int64)
     ret = np.asarray(P["kindc"]) == 1
     arr.update(ttft_arrays(np.asarray(view.ttft)[ret], int(np.asarray(view.nmreq, bool)[ret].sum()), keep_vals))
+    # 截尾版護欄：tH＝H 的截尾（oracle 的 H／2H 工作＝它自己的 H），tH2＝第二個截尾（非 oracle 的 2H）。逐請求的值只在需要合併幾個切片時存
+    for pfx, cut in (("tH", getattr(eng, "cutH", None)), ("tH2", getattr(eng, "cutH2", None))):
+        if cut is None:
+            continue
+        x, nm = cut_ttft(P, view, cut)
+        arr[f"{pfx}_n"], arr[f"{pfx}_sum"], arr[f"{pfx}_nm"] = np.asarray(len(x), np.int64), np.asarray(float(x.sum())), np.asarray(nm, np.int64)
+        if keep_vals:
+            arr[f"{pfx}_vals"] = x.astype(np.float64)
     return arr
 
 
@@ -394,8 +446,9 @@ def _concat_arrays(parts):
             out[key] = np.concatenate([np.asarray(x) for x in xs])
         else:
             out[key] = np.concatenate([np.asarray(x) for x in xs], axis=1)
-    for key in ("ttft_hist", "ttft_n", "ttft_sum", "ttft_nm"):       # 直方圖與加總是加起來，不是接起來
-        out[key] = sum(np.asarray(p[key]) for p in parts)
+    for key in ("ttft_hist", "ttft_n", "ttft_sum", "ttft_nm", "tH_n", "tH_sum", "tH_nm", "tH2_n", "tH2_sum", "tH2_nm"):   # 直方圖與加總是加起來，不是接起來
+        if key in parts[0]:
+            out[key] = sum(np.asarray(p[key]) for p in parts)
     return out
 
 
@@ -414,21 +467,41 @@ def common_cols(jd, ctx):
                 engine=jd["engine"], outer_code=jd["outer"], T_s=jd["T"] or "", mem_GiB=jd["mem"], model=jd["model"],
                 policy_label=pol["label"], policy_family=pol["name"], policy_kw=json.dumps(pol["kw"], sort_keys=True),
                 oracle=pol["oracle"], h_tag=jd["tag"], H_base_s=H, int2_on_read=INT2_ON_READ, unverified_len_mode=UNVERIFIED_LEN,
-                frozen_commit=ctx.get("frozen_commit", ""), code_commit=ctx.get("code_commit", ""))
+                frozen_commit=ctx.get("frozen_commit", ""), code_commit=ctx.get("code_commit", ""),
+                quality_rule=jd.get("rule", "strict"), cpu_busy_run_id=CPU_BUSY_RUN, cpu_busy_lo=CPU_BUSY_LO, cpu_busy_hi=CPU_BUSY_HI)
 
 
-def prim_cols(jd, row, H):
-    """主指標＝ssd_H_write_issued_GiB ＋ ssd_H_loadonly_read_GiB（04 §4）。非 oracle：H 與 2H 兩個版本都在這一列；oracle：只有自己的 H 那一個。"""
-    w, r = row.get("ssd_H_write_issued_GiB"), row.get("ssd_H_loadonly_read_GiB")
-    w2, r2 = row.get("ssd_H2_write_issued_GiB"), row.get("ssd_H2_loadonly_read_GiB")
-    out = dict(prim_H_GiB=float("nan"), prim_2H_GiB=float("nan"), npz_sfx_H="", npz_sfx_2H="")
-    if jd["tag"] == "both":
-        out.update(prim_H_GiB=w + r, prim_2H_GiB=w2 + r2, npz_sfx_H="_H", npz_sfx_2H="_H2",
-                   ssd_H_write_issued_GiB_2H=w2, ssd_H_loadonly_read_GiB_2H=r2)
-    elif jd["tag"] == "H":
-        out.update(prim_H_GiB=w + r, npz_sfx_H="_H")
+def prim_cols(jd, row, H, P=None, costs=None):
+    """主指標（04 §4）＝SSD 寫入（決定時刻 < 終點 − H）＋ SSD 讀取（到達 < 終點 − H 的請求）。
+    讀取＝session 引擎：只載入的讀取（ssd_H_loadonly_read_GiB；只和放置有關）；block 引擎（E6 與它的 E2 對照）：實際 SSD 讀取＝還原＋預取，
+    含浪費掉的預取（ssd_H_actual_read_GiB；預取讀取歸屬於「觸發預取的請求」的 session；第二輪審查 #2）。`prim_read_col` 記用了哪一欄。
+    非 oracle：H 與 2H 兩個版本都在這一列；oracle：只有自己的 H 那一個。
+    另記每個版本的寫入／讀取分量（prim_w_*／prim_r_*）、截尾後的窗口長度（T_*_s）與 SSD 頻寬（主視角 SSD 1 張專用的 mi300x_local 常數），
+    給 SSD 使用率＝寫入量÷(寫入頻寬×T)＋讀取量÷(讀取頻寬×T) 用（§7；block 引擎 k 張 GPU 各有一顆專用 SSD → 分母再乘 k）。"""
+    rc = "actual" if jd["engine"] == "block" else "loadonly"
+    w, r = row.get("ssd_H_write_issued_GiB"), row.get(f"ssd_H_{rc}_read_GiB")
+    w2, r2 = row.get("ssd_H2_write_issued_GiB"), row.get(f"ssd_H2_{rc}_read_GiB")
+    nan = float("nan")
+    out = dict(prim_H_GiB=nan, prim_2H_GiB=nan, npz_sfx_H="", npz_sfx_2H="", prim_read_col=f"ssd_H_{rc}_read_GiB",
+               prim_w_H_GiB=nan, prim_r_H_GiB=nan, prim_w_2H_GiB=nan, prim_r_2H_GiB=nan, T_H_s=nan, T_2H_s=nan,
+               ssd_bw_r_GiBps=costs.ssd["r"] if costs else nan, ssd_bw_w_GiBps=costs.ssd["w"] if costs else nan)
+    if P is not None:
+        lo, _ = ledger.win_range(P)
+        oe = float(max(P["obs_end"])) if P.get("obs_end") else float(P["tl"][-1])
     else:
-        out.update(prim_2H_GiB=w + r, npz_sfx_2H="_H")
+        lo, oe = 0.0, nan
+
+    def T(h):
+        return max(oe - h - lo, 0.0)
+    if jd["tag"] == "both":
+        H0 = H             # 'both'：H＝這份資料的 H，H_extra＝2H
+        out.update(prim_H_GiB=w + r, prim_2H_GiB=w2 + r2, npz_sfx_H="_H", npz_sfx_2H="_H2",
+                   ssd_H_write_issued_GiB_2H=w2, ssd_H_loadonly_read_GiB_2H=row.get("ssd_H2_loadonly_read_GiB"),
+                   prim_w_H_GiB=w, prim_r_H_GiB=r, prim_w_2H_GiB=w2, prim_r_2H_GiB=r2, T_H_s=T(H0), T_2H_s=T(2 * H0))
+    elif jd["tag"] == "H":
+        out.update(prim_H_GiB=w + r, npz_sfx_H="_H", prim_w_H_GiB=w, prim_r_H_GiB=r, T_H_s=T(H))
+    else:
+        out.update(prim_2H_GiB=w + r, npz_sfx_2H="_H", prim_w_2H_GiB=w, prim_r_2H_GiB=r, T_2H_s=T(H))
     return out
 
 
@@ -440,11 +513,14 @@ def run_placements(jd, P, ctx):
         H, Hx = H0, 2 * H0
     else:
         H, Hx = (H0 if jd["tag"] == "H" else 2 * H0), 0.0
-    kw = dict(pol_kw=dict(pol["kw"]), int2_on_read=INT2_ON_READ, unverified_len=UNVERIFIED_LEN, H=H, H_extra=Hx, fmt_path=ctx["fmt"])
+    kw = dict(pol_kw=dict(pol["kw"]), int2_on_read=INT2_ON_READ, unverified_len=UNVERIFIED_LEN, H=H, H_extra=Hx, fmt_path=ctx["fmt"],
+              quality_rule=jd.get("rule", "strict"))
     base = common_cols(jd, ctx)
-    inv = []
+    costs_p = load_costs("mi300x", jd["model"], "mi300x_local")        # 主視角的 SSD 頻寬（使用率用）
     if jd["engine"] == "session":
-        if jd["comp"] == "a1_sess":
+        if jd["comp"] == "a1_loose":                # 寬鬆版雙胞胎：只要主視角
+            specs, groups = [PRIMARY_SPEC], ["main"]
+        elif jd["comp"] == "a1_sess":
             specs = MAIN_SPECS + (SENS_SPECS if ctx.get("sens_views", True) else [])
             groups = ["main"] * len(MAIN_SPECS) + (SENS_GROUPS if ctx.get("sens_views", True) else [])
         elif jd["model"] == "llama70b_scaled":       # 沒有 f(i)：只能 load-only、不算 TTFT（06 §1.1）
@@ -458,8 +534,8 @@ def run_placements(jd, P, ctx):
         arr = _slim_arrays(P, eng, views[0], np.arange(P["R"]["n_sess"]), keeps_ttft_vals(jd["slice"]))
         out_rows = []
         for i, (r, g) in enumerate(zip(rows, groups)):
-            c = dict(base, view_group=g, view_idx=i, is_primary=(g == "main" and i == 0), k_gpus=1, **r)
-            c.update(prim_cols(jd, r, H))
+            c = dict(base, view_group=g, view_idx=i, is_primary=(g == "main" and i == 0), k_gpus=1, view_name=_view_name(specs[i]), **r)
+            c.update(prim_cols(jd, r, H, P, costs_p))
             out_rows.append(c)
         meta = dict(k=1, n_groups_nonempty=1)
         return out_rows, arr, meta
@@ -469,6 +545,7 @@ def run_placements(jd, P, ctx):
     gid = sess_group(P["sess_key"], k)
     sl = np.asarray(P["sessl"])
     parts, grows, xs, nmc, nretc, hasf, per_n = [], [], [], 0, 0, True, []
+    cutx = {"H": ([], [0]), "H2": ([], [0])}          # 截尾版護欄（ttftq_H_*、ttftq_H2_*）：k 張 GPU 的逐請求值接起來
     for g in range(k):
         idx = np.nonzero(gid[sl] == g)[0]
         per_n.append(int(len(idx)))
@@ -485,6 +562,11 @@ def run_placements(jd, P, ctx):
         nmc += int(np.asarray(v.nmreq, bool)[ret].sum())
         nretc += int(ret.sum())
         hasf = hasf and bool(v.has_f)
+        for nm_, cut_ in (("H", getattr(eng, "cutH", None)), ("H2", getattr(eng, "cutH2", None))):
+            if cut_ is not None:
+                x_, n_ = cut_ttft(Pg, v, cut_)
+                cutx[nm_][0].append(x_)
+                cutx[nm_][1][0] += n_
         grows.append(rows[0])
         parts.append(_slim_arrays(Pg, eng, v, Pg["orig_sess"], keeps_ttft_vals(jd["slice"])))
         del eng, vs
@@ -496,8 +578,15 @@ def run_placements(jd, P, ctx):
                ttftq_p99_s=float(np.percentile(x, 99)) if (ok and len(x)) else (NOT if not ok else float("nan")),
                ttftq_p50_s=float(np.percentile(x, 50)) if (ok and len(x)) else (NOT if not ok else float("nan")),
                gpu_busy_frac_max=max(r["gpu_busy_frac"] for r in grows))
-    c = dict(base, view_group="main", view_idx=0, is_primary=(jd["view"] == "idle"), k_gpus=k, k_group_n_req=json.dumps(per_n), **row)
-    c.update(prim_cols(jd, row, H))
+    for nm_ in ("H", "H2"):
+        if cutx[nm_][0]:
+            xc = np.concatenate(cutx[nm_][0])
+            okc = hasf and cutx[nm_][1][0] == 0
+            row[f"ttftq_{nm_}_mean_s"] = (float(xc.mean()) if len(xc) else float("nan")) if okc else NOT
+            row[f"ttftq_{nm_}_p99_s"] = (float(np.percentile(xc, 99)) if len(xc) else float("nan")) if okc else NOT
+    c = dict(base, view_group="main", view_idx=0, is_primary=(jd["view"] == "idle"), k_gpus=k, k_group_n_req=json.dumps(per_n),
+             view_name=_view_name(spec), **row)
+    c.update(prim_cols(jd, row, H, P, costs_p))
     return [c], _concat_arrays(parts), dict(k=k, n_groups_nonempty=len(parts))
 
 
@@ -747,13 +836,21 @@ def main(argv=None):
         jobs = [j for j in jobs if any(o in j["id"] or o in j["slice"] for o in a.only)]
     if a.limit:
         jobs = jobs[:a.limit]
+    lock = None
+    if real and not a.collect_only:
+        # 凍結閘門（第二輪審查 #5）：輸入檔的 sha256、程式 commit、乾淨的工作目錄、明確的 run_id；任何一項不成立就拒絕
+        lock = lockfile.verify_freeze(a.frozen, REPO)
+        if os.environ.get("RUN_ID", "adhoc") in ("", "adhoc"):
+            raise SystemExit("拒絕：真實資料必須有明確的 run_id（用 `bash code/run3090.sh <短名> …` 跑，它會設 RUN_ID；不准用預設的 \"adhoc\"）")
+        if a.fmt != "official":
+            raise SystemExit(f"拒絕：真實資料只准用正式格式表（--fmt official），不是 {a.fmt!r}")
     out = a.out or os.path.join(DEFAULT_OUT, (frozen_full[:8] if frozen_full else "synthetic"))
     os.makedirs(out, exist_ok=True)
     code_commit = subprocess.run(["git", "-C", REPO, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-    dirty = subprocess.run(["git", "-C", REPO, "status", "--porcelain", "code/p3_sim"], capture_output=True, text=True).stdout.strip()
+    dirty = subprocess.run(["git", "-C", REPO, "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True).stdout.strip()
     ctx = dict(H=Hs, fmt=a.fmt, frozen_commit=frozen_full or "", code_commit=code_commit + ("+dirty" if dirty else ""),
                sens_views=not a.no_sens_views)
-    json.dump(dict(stages=a.stage, slices=a.slices, frozen=frozen_full, prereg_sha256=frozen_sha, fmt=a.fmt, procs=a.procs,
+    json.dump(dict(stages=a.stage, slices=a.slices, frozen=frozen_full, prereg_sha256=frozen_sha, fmt=a.fmt, procs=a.procs, lock=lock,
                    code_commit=ctx["code_commit"], run_id=os.environ.get("RUN_ID", "adhoc"), ts=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                    args=vars(a), n_jobs=len(jobs)), open(os.path.join(out, f"invocation_{time.strftime('%Y%m%d-%H%M%S')}.json"), "w"),
               default=str, indent=1)

@@ -134,6 +134,11 @@ class BlockEngine:
         assert unverified_len in ("prefix", "request"), unverified_len
         self.unverified_len = unverified_len
         self.req_strict = unverified_len == "request"
+        cnt_, self.ord1 = {}, []          # ord1[j]＝請求 j 是它的 session 的第幾個請求（1 起算；R2 用）
+        for j_, q_ in enumerate(reqs):
+            k_ = q_.get("s", j_)
+            cnt_[k_] = cnt_.get(k_, 0) + 1
+            self.ord1.append(cnt_[k_])
         self.reqlen = [q["len_tok"] if "len_tok" in q else max(q.get("n_all", len(q["h"])), len(q["h"])) * block_tokens for q in reqs]
         self.Lqual = np.asarray(self.reqlen, np.int64) if self.req_strict else self.Ltok   # 品質帳用的讀取長度（06 §18）
         self.okmask = pass_masks(mf)
@@ -295,6 +300,7 @@ class BlockEngine:
             ctx["max_read_tokens"] = self._max_future_len(b, after) * self.btok if nx < INF else 0
             ctx["max_read_req_tokens"] = self._max_future_reqlen(b, after) if nx < INF else 0
         ctx["req_tokens"] = self.reqlen[ls]
+        ctx["nreq"] = self.ord1[ls]        # 這個 session 到 ls（最近一個服務完的請求）為止的請求數
         return ctx
 
     # ---- Cake（＝x4_sim.cake，多了格式、解壓、品質）
@@ -404,6 +410,7 @@ class BlockEngine:
                 break
         ctx = dict(r=j, s=q.get("s", j), t=q["t"], n_blocks=len(h), tokens=tok, n_new=len(h) - n_old, nreq=None,
                    kind=1 if q["ret"] else 0, feats=None, mf=self.mf)
+        ctx["nreq"] = self.ord1[j]
         if self.comp.needs_oracle:
             nx = INF
             if first_new is not None:

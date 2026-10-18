@@ -175,6 +175,20 @@ def ssd_v4_stats(P, eng, v, H=0.0):
     return out
 
 
+def actual_read_by_req(v, n):
+    """每個「觸發的請求」實際從 SSD 讀的位元組（長度 n 的 float 陣列）：還原的讀（v.bS[r]）＋替它預取的讀（含浪費掉的預取；
+    block 引擎的預取紀錄 rk==1，rr＝佇列裡替它預取的那個請求；session 引擎沒有預取）。04 v4 §4：E6（block 引擎）的主指標用這個，
+    不用「只載入的讀取」（第二輪審查 #2）。歸屬＝觸發的請求所屬的 session。"""
+    a = np.asarray(v.bS, float).copy()
+    ch = v.slow
+    rk = np.frombuffer(ch.rk, dtype=np.int8) if len(ch.rk) else np.zeros(0, np.int8)
+    if len(rk) and (rk == 1).any():
+        rr = np.frombuffer(ch.rr, dtype=np.int32)[rk == 1]
+        rb = np.frombuffer(ch.rb, dtype=np.int64)[rk == 1]
+        a += np.bincount(rr, weights=rb.astype(float), minlength=n)[:n]
+    return a
+
+
 def _pct(x, q):
     return float(np.percentile(x, q)) if len(x) else float("nan")
 
@@ -252,6 +266,12 @@ def summarize_view(P, eng, v, H=0.0):
         xh = v.ttft[retH]
         row["ttftq_H_mean_s"] = (float(xh.mean()) if len(xh) else float("nan")) if okh else "NOT_MEASURED"
         row["ttftq_H_p99_s"] = _pct(xh, 99) if okh else "NOT_MEASURED"
+    if getattr(eng, "cutH2", None) is not None:
+        retH2 = ret & (tl < eng.cutH2)
+        okh2 = bool(v.has_f) and int(nmr[retH2].sum()) == 0
+        xh2 = v.ttft[retH2]
+        row["ttftq_H2_mean_s"] = (float(xh2.mean()) if len(xh2) else float("nan")) if okh2 else "NOT_MEASURED"
+        row["ttftq_H2_p99_s"] = _pct(xh2, 99) if okh2 else "NOT_MEASURED"
     # ---- 06 §12：SSD 的共同窗口、offered、飽和、排隊延遲；load-only 位元組；重算（前綴裡以前算過、這次重算的）
     row.update(ssd_v4_stats(P, eng, v, H))
     lo_b = np.asarray(eng.lo_bytes)
@@ -268,6 +288,12 @@ def summarize_view(P, eng, v, H=0.0):
         row["ssd_H2_write_issued_GiB"] = float(sum(swH2)) / GiB
         row["ssd_H2_loadonly_read_GiB"] = float(lo_b[tl < eng.cutH2].sum()) / GiB
         row["ret_H2_ssd_loadonly_read_GiB"] = float(lo_b[ret & (tl < eng.cutH2)].sum()) / GiB
+    act = actual_read_by_req(v, len(tl))
+    row["ssd_actual_read_GiB"] = float(act.sum()) / GiB
+    if H > 0:
+        row["ssd_H_actual_read_GiB"] = float(act[tl < row["censor_cut_s"]].sum()) / GiB
+    if getattr(eng, "cutH2", None) is not None:
+        row["ssd_H2_actual_read_GiB"] = float(act[tl < eng.cutH2].sum()) / GiB
     rec = np.asarray(v.nR, np.int64) - np.asarray(eng.nend, np.int64) + np.asarray(eng.nprev, np.int64)
     row["recompute_prefix_blocks"] = int(rec.sum())
     row["ret_recompute_prefix_blocks"] = int(rec[ret].sum())
@@ -428,8 +454,17 @@ def per_session(P, eng, views):
             "ret_reads", "ret_reads_fail", "ret_reads_unverified")
     for k in keys:
         out[k] = np.zeros((V, S), np.int64)
+    if getattr(eng, "cutH", None) is not None:
+        out["ssd_read_bytes_H"] = np.zeros((V, S), np.int64)
+    if getattr(eng, "cutH2", None) is not None:
+        out["ssd_read_bytes_H2"] = np.zeros((V, S), np.int64)
     for i, v in enumerate(views):
         out["ssd_read_bytes"][i] = by(sl, np.asarray(v.bS, float))
+        act_ = actual_read_by_req(v, len(sl))        # 實際讀取（還原＋預取）依觸發的請求歸屬；截尾版＝請求到達 < 終點 − H
+        if getattr(eng, "cutH", None) is not None:
+            out["ssd_read_bytes_H"][i] = by(sl, act_ * (np.asarray(P["tl"], float) < eng.cutH))
+        if getattr(eng, "cutH2", None) is not None:
+            out["ssd_read_bytes_H2"][i] = by(sl, act_ * (np.asarray(P["tl"], float) < eng.cutH2))
         rk = np.frombuffer(v.slow.rk, dtype=np.int8) if len(v.slow.rk) else np.zeros(0, np.int8)
         if len(rk) and (rk == 1).any():
             rr = np.frombuffer(v.slow.rr, dtype=np.int32)[rk == 1]

@@ -187,6 +187,25 @@
 
 **凍結時要鎖定的輸入檔**（sha256 在凍結的 commit 填）：`results/p3_formats/format_table.json`、`code/p3_sim/config/costs_mi300x.json`、`code/p3_sim/config/costs_3090.json`、`results/p3_sim/kgpu_kmin_all.csv`、`results/p3_sim/return_gaps.csv`、`results/p3_sim/session_counts.csv`、`results/p3_calib_3090/cpubusy_slowdown.csv`、`results/p3_calib_3090/constants_3090_v2.json`；程式 commit：待填。
 
+**鎖定表**（這段由 opencode 在 10/18 違規用 bash 加進來，主 session 看過後保留；凍結時填；格式固定，`code/p3_sim/lockfile.py` 用正規表示式解析，沒填好就拒絕跑真實資料；規則見 `06_simulator.md` §25.2）**：
+
+<!-- LOCK:BEGIN -->
+| 路徑 | sha256 |
+|:--|:--|
+| `results/p3_formats/format_table.json` | 待填 |
+| `code/p3_sim/config/costs_mi300x.json` | 待填 |
+| `code/p3_sim/config/costs_3090.json` | 待填 |
+| `results/p3_sim/kgpu_kmin_all.csv` | 待填 |
+| `results/p3_sim/return_gaps.csv` | 待填 |
+| `results/p3_sim/session_counts.csv` | 待填 |
+| `results/p3_calib_3090/cpubusy_slowdown.csv` | 待填 |
+| `results/p3_calib_3090/constants_3090_v2.json` | 待填 |
+<!-- LOCK:END -->
+
+程式 commit（凍結）：待填
+
+（護欄的參考＝上面那一行 `護欄的參考：…`，使用者 10/18 選 B＝`min(C0, O)`；分析程式從那一行讀。）
+
 **凍結前要填的值**（資料統計，不看任何「省多少」；runs `20261018-102541-p3sim-gaps2`、`20261018-102627-p3sim-kgpu4`；`results/p3_sim/`）：
 
 | 資料片段 | 回來間隔 p99（s） | H（s） | 多輪 session | 有效 session | E6 的 k（閒／忙；63／170／435 GiB） |

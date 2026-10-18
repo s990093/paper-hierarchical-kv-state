@@ -67,6 +67,14 @@ class ModelFormats:
         """32,768 token 那一點的狀態（O-寬鬆用：32K 過關＝任何長度都當過關）。"""
         return self.status(fid, QUALITY_MAX_TOKENS)
 
+    def loosened(self):
+        """寬鬆版雙胞胎（04 v4 §3.3、§4，第二輪審查 #3a）的品質規則：32,768 token 那一點過關的格式，在任何長度都當成過關（沒過關的照舊）。
+        回傳新的 ModelFormats（大小、解壓時間、never_read_only 不變；只有 quality 換掉）；src 多一個 quality_rule="loose"。"""
+        nb = len(self.len_bins) - 1
+        q = {f: [self.status_32k(f)] * nb for f in self.quality}
+        return ModelFormats(self.model, self.platform, self.bytes, self.dq, self.len_bins, q, self.never_read_only, self.placeholder,
+                            dict(self.src, quality_rule="loose"))
+
     def nbytes(self, fid):
         b = self.bytes[fid]
         if b is None:

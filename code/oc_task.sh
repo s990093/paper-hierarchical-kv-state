@@ -9,6 +9,8 @@
 #     --agent A      預設 build（會改檔）；審查用 plan（唯讀）
 #     --dir D        opencode 的工作目錄。預設 repo
 #     --timeout S    最多跑 S 秒。預設 28800（8 小時）
+#     --stall S      events.jsonl 連續 S 秒沒變大就當成卡住、砍掉（exit 125）。預設 3600
+#     --session ID   接續一個 opencode session（例如卡住的那個）
 #
 #   權限：OPENCODE_CONFIG＝/ssd8/hungwei/paper-hkv/opencode/work.jsonc（擋 git commit/push/reset/checkout、rm -r、sudo、
 #   CUDA_VISIBLE_DEVICES=、curl/wget、pip install、改 main.tex／CLAUDE.md／04_prereg_map.md／.claude/）。
@@ -20,9 +22,11 @@ set -uo pipefail
 
 main() {
   local task="${1:?用法: oc_task.sh <任務目錄> [選項]}"; shift
-  local model=anthropic/claude-opus-5-5 variant=high agent=build dir="" timeout_s=28800
+  local model=anthropic/claude-opus-5-5 variant=high agent=build dir="" timeout_s=28800 session="" stall_s=3600
   while [ $# -gt 0 ]; do
     case "$1" in
+      --session) session=$2; shift 2 ;;
+      --stall) stall_s=$2; shift 2 ;;
       --model) model=$2; shift 2 ;;
       --variant) variant=$2; shift 2 ;;
       --agent) agent=$2; shift 2 ;;
@@ -37,10 +41,27 @@ main() {
   local oc="$HOME/.opencode/bin/opencode"
   export OPENCODE_CONFIG=/ssd8/hungwei/paper-hkv/opencode/work.jsonc
   export OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX=64000
-  echo "[oc_task] $(date -Is) model=$model variant=$variant agent=$agent dir=$dir timeout=${timeout_s}s" >&2
-  timeout "$timeout_s" "$oc" run -m "$model" --variant "$variant" --agent "$agent" --dir "$dir" --format json \
-    "$(cat "$task/prompt.md")" > "$task/events.jsonl"
-  local rc=$?
+  local sess_args=()
+  [ -n "$session" ] && sess_args=(--session "$session")
+  echo "[oc_task] $(date -Is) model=$model variant=$variant agent=$agent dir=$dir timeout=${timeout_s}s session=${session:-new}" >&2
+  timeout "$timeout_s" "$oc" run -m "$model" --variant "$variant" --agent "$agent" --dir "$dir" --format json "${sess_args[@]}" \
+    "$(cat "$task/prompt.md")" > "$task/events.jsonl" &
+  local pid=$! last_size=-1 last_change rc
+  last_change=$(date +%s)
+  # 卡住偵測：events.jsonl 超過 stall 秒沒有變大就砍掉（2026-10-18 有一次 API 串流卡了 7 小時，直到 8 小時上限）
+  while kill -0 "$pid" 2>/dev/null; do
+    sleep 60
+    local sz; sz=$(stat -c %s "$task/events.jsonl" 2>/dev/null || echo 0)
+    if [ "$sz" != "$last_size" ]; then last_size=$sz; last_change=$(date +%s)
+    elif [ $(( $(date +%s) - last_change )) -ge "$stall_s" ]; then
+      echo "[oc_task] $(date -Is) events.jsonl ${stall_s}s 沒有變大，當成卡住，砍掉 opencode（pid $pid）" >&2
+      pkill -TERM -P "$pid" 2>/dev/null; kill -TERM "$pid" 2>/dev/null; sleep 5; kill -KILL "$pid" 2>/dev/null
+      echo stalled > "$task/STALLED"
+      break
+    fi
+  done
+  wait "$pid"; rc=$?
+  [ -f "$task/STALLED" ] && rc=125
   echo "[oc_task] $(date -Is) opencode exit=$rc" >&2
   local sid
   sid=$(grep -o '"sessionID":"ses_[A-Za-z0-9]*"' "$task/events.jsonl" | head -1 | cut -d'"' -f4)

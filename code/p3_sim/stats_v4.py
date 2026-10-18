@@ -2,6 +2,8 @@
 
   gaps      回來的間隔：每個有父請求的請求，子的到達 − 父的到達（秒）；n、p50／p90／p95／p99、max、>1,800 s、>3,600 s 的比例、切片長度。
   sessions  每個切片的 session 數、≥2 個請求的 session 數（以 session 為單位 bootstrap 夠不夠）。
+  long128k  每個切片的請求輸入長度 > 131,072 token（Llama-3.1-8B 的上限）的比例（第二輪審查 #3c；資料統計，不比較任何做法）。
+            長度＝engine.request_lengths(P)（和地圖的「讀取長度」同一個量：max(資料給的 input_tokens, 這個請求的完整 block 數×512)）；另報 >32,768 的比例。
   kgpu      E6 的 GPU 數 k：session 依 sha1(session_id) mod k 分到 k 張 GPU，每張各跑一次 block 引擎（C0＋E2＋MI300X 常數），
             GPU 閒、GPU 忙兩種，記每張 GPU 的 fifo1 忙碌比例：(i) 整個切片、(ii) 每 1 小時窗口的最大值。列出四種定義下 ≤0.8 的最小 k（不選）。
 
@@ -321,9 +323,45 @@ def cmd_kall(a):
     return 1 if bad else 0
 
 
+def _long_job(a):
+    src, var = a
+    import trace as TR
+    from engine import request_lengths
+    t0 = time.time()
+    P = TR.prepare_cached(src, var, overlay=1, seed=0)
+    rl = np.asarray(request_lengths(P), np.int64)
+    ret = np.asarray(P["kindc"]) == 1
+    n = len(rl)
+    # 驗算（規則 6）：長度不小於這個請求存的完整 block 數×512；而且 feats 的 input_tokens 缺值時退回 nall×512
+    blk = np.asarray([len(x) for x in P["full"]], np.int64) * 512
+    assert (rl >= blk).all(), f"{src}/{var}: request_lengths 比完整 block 數×512 小"
+    d = dict(slice=f"{src}/{var}", n_req=n, n_ret=int(ret.sum()), n_gt128k=int((rl > 131072).sum()), frac_gt128k=float((rl > 131072).mean()),
+             n_ret_gt128k=int((rl[ret] > 131072).sum()), frac_ret_gt128k=float((rl[ret] > 131072).mean()) if ret.any() else float("nan"),
+             n_gt32k=int((rl > 32768).sum()), frac_gt32k=float((rl > 32768).mean()), median_tokens=float(np.median(rl)), p99_tokens=float(np.percentile(rl, 99)),
+             max_tokens=int(rl.max()), prep_s=round(time.time() - t0, 1))
+    return d
+
+
+def cmd_long128k(a):
+    jobs = [(src, var) for src, var in SLICES if src != "synth" and (not a.only or f"{src}/{var}" in a.only or var in a.only)]
+    with Pool(min(a.procs, len(jobs))) as p:
+        rows = p.map(_long_job, jobs)
+    for src_grp, weeks in (("freeinference/weeks01+05+09+13", FI_STAGE_A), ("freeinference/all16", FI_ALL)):
+        sel = [r for r in rows if r["slice"].split("/")[0] == "freeinference" and r["slice"].split("/")[1] in weeks]
+        if len(sel) == len(weeks):
+            n = sum(r["n_req"] for r in sel)
+            rows.append(dict(slice=src_grp, n_req=n, n_ret=sum(r["n_ret"] for r in sel), n_gt128k=sum(r["n_gt128k"] for r in sel),
+                             frac_gt128k=sum(r["n_gt128k"] for r in sel) / n, n_ret_gt128k=sum(r["n_ret_gt128k"] for r in sel),
+                             frac_ret_gt128k=sum(r["n_ret_gt128k"] for r in sel) / max(1, sum(r["n_ret"] for r in sel)),
+                             n_gt32k=sum(r["n_gt32k"] for r in sel), frac_gt32k=sum(r["n_gt32k"] for r in sel) / n))
+    write("long_request_fraction.csv", rows, a.results)
+    for r in rows:
+        print(r, flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["gaps", "kgpu", "kall"])
+    ap.add_argument("cmd", choices=["gaps", "kgpu", "kall", "long128k"])
     ap.add_argument("--procs", type=int, default=8)
     ap.add_argument("--cap", type=float, nargs="*", default=[32.0])
     ap.add_argument("--kmax", type=int, default=16)
@@ -334,7 +372,7 @@ def main():
     ap.add_argument("--tag", default="", help="kgpu 輸出檔名的後綴（例如 _mem63_170_435）")
     a = ap.parse_args()
     os.makedirs(RUN_DIR, exist_ok=True)
-    sys.exit(({"gaps": cmd_gaps, "kgpu": cmd_kgpu, "kall": cmd_kall}[a.cmd](a)) or 0)
+    sys.exit(({"gaps": cmd_gaps, "kgpu": cmd_kgpu, "kall": cmd_kall, "long128k": cmd_long128k}[a.cmd](a)) or 0)
 
 
 if __name__ == "__main__":

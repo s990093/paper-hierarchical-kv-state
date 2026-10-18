@@ -53,7 +53,7 @@ def _sess_meta(P, code, comp, cpu_GiB, model, H, mf, int2_on_read, serve, unveri
 
 
 def run_cell(P, code, policy, cpu_GiB, model, specs, T=None, H=0.0, fmt_path=None, check=False, pol_kw=None,
-             policy_obj=None, int2_on_read="serve", sess_out=None, unverified_len="prefix", H_extra=0.0):
+             policy_obj=None, int2_on_read="serve", sess_out=None, unverified_len="prefix", H_extra=0.0, quality_rule="strict"):
     """sess_out：給路徑就把每個 session 的帳寫成 npz（06 §12.1）。int2_on_read、unverified_len 見 engine.Engine。
     unverified_len 也決定 oracle 的讀取長度定義（pol_kw 沒給 o_read_len 時跟著它；06 §18）。"""
     t0 = time.time()
@@ -61,6 +61,9 @@ def run_cell(P, code, policy, cpu_GiB, model, specs, T=None, H=0.0, fmt_path=Non
     pol_kw.setdefault("o_read_len", unverified_len)
     plats = sorted({s[0] for s in specs})
     mfs = {p: load_format_table(model, p, fmt_path) for p in plats}
+    assert quality_rule in ("strict", "loose"), quality_rule
+    if quality_rule == "loose":      # 04 v4 §3.3 寬鬆版雙胞胎（只報告）：整套（O 與所有對手）用同一個寬鬆品質規則
+        mfs = {p: m.loosened() for p, m in mfs.items()}
     mf0 = mfs[plats[0]]
     for p in plats:
         assert mfs[p].bytes == mf0.bytes, "不同平台的格式大小必須相同（放置軌跡共用）"
@@ -89,12 +92,15 @@ def run_cell(P, code, policy, cpu_GiB, model, specs, T=None, H=0.0, fmt_path=Non
 
 
 def run_cell_fifo1(P, code, policy, cpu_GiB, model, spec, H=0.0, fmt_path=None, pol_kw=None, policy_obj=None,
-                   int2_on_read="serve", sess_out=None, reqs=None, unverified_len="prefix", H_extra=0.0):
+                   int2_on_read="serve", sess_out=None, reqs=None, unverified_len="prefix", H_extra=0.0, quality_rule="strict"):
     """serve=fifo1（一張 GPU、FIFO）：block 引擎，E1／E2／E6，單一時間設定 spec＝(platform, gpu, cpu, ssd_share, 'cake', ssd_profile)。"""
     t0 = time.time()
     plat, gpu, cpu, share, mode, prof = spec
     assert mode == "cake"
     mf = load_format_table(model, plat, fmt_path)
+    assert quality_rule in ("strict", "loose"), quality_rule
+    if quality_rule == "loose":
+        mf = mf.loosened()
     pol_kw = dict(pol_kw or {})
     pol_kw.setdefault("o_read_len", unverified_len)
     comp = policy_obj or make_policy(policy, mf, **pol_kw)

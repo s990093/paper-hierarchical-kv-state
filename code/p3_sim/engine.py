@@ -492,7 +492,7 @@ class Engine:
         ctx["req_tokens"] = self.reqlen[r]
         return ctx
 
-    def _mctx(self, s, b, after, t_dec, tokens=None, idle=None):
+    def _mctx(self, s, b, after, t_dec, tokens=None, idle=None, rq=None, nq=None):
         """SSD 寫入當下的 ctx（ssd_moment 的策略用；06 §11.2）：只放那一刻拿得到的資訊。
         tokens＝這個 session 現在存的長度；idle_s＝離它上一個請求的到達多久；cpu_ctx＝寫進 CPU 時的 ctx。
         needs_oracle 的策略另外拿到這個 block 在 after 之後的 next_read、max_read_tokens，和 censored（決定時刻離觀察窗結尾 < H）。"""
@@ -510,7 +510,10 @@ class Engine:
             ctx["censored"] = (oe - t_dec) < self.H if self.H > 0 else False
             ctx["max_read_tokens"] = self._max_future_tokens(b, after) if nx < INF else 0
             ctx["max_read_req_tokens"] = self._max_future_reqlen(b, after) if nx < INF else 0
-        ctx["req_tokens"] = self.reqlen[ls] if ls >= 0 else 0
+        # req_tokens／nreq：決定當下已經服務的最近一個請求的輸入長度與這個 session 的請求數；寫穿／第 2 次才寫發生在請求 r 自己的回合裡
+        # （self.last[s] 還是上一個請求），所以由呼叫端用 rq／nq 給現在這個請求（04 v4 §3.1：長度＝max(存的長度, 請求長度)）
+        ctx["req_tokens"] = rq if rq is not None else (self.reqlen[ls] if ls >= 0 else 0)
+        ctx["nreq"] = nq if nq is not None else self.nreq[s]
         return ctx
 
     def _max_future_tokens(self, b, r):
@@ -546,12 +549,12 @@ class Engine:
         i = bisect.bisect_right(lst, r)
         return sm[i] if i < len(lst) else 0
 
-    def _ssd_dec(self, s, cur, b, tokens=None, idle=None):
+    def _ssd_dec(self, s, cur, b, tokens=None, idle=None, rq=None, nq=None):
         """要寫 SSD 的格式。舊的策略（ssd_moment=False）＝ssd_fid(寫進 CPU 時的 ctx, cur)，和 c0c179b 逐位元相同；
         ssd_moment=True 的策略（oracle、D-*、預測器的 ssd_fn）拿到寫入當下的 ctx（_mctx）。"""
         if not self.ssd_moment:
             return self.comp.ssd_fid(self.sctx[s], cur) if self.sctx[s] is not None else cur
-        sf = self.comp.ssd_fid(self._mctx(s, b, self._dec_after, self._dec_t, tokens, idle), cur)
+        sf = self.comp.ssd_fid(self._mctx(s, b, self._dec_after, self._dec_t, tokens, idle, rq, nq), cur)
         if sf < cur:
             raise AssertionError(f"{self.comp.name}: ssd_fid 回傳 {sf} < 目前的 {cur}（格式只能往下壓）")
         return sf
@@ -831,7 +834,7 @@ class Engine:
                 self.cpu_used += fbf
                 cw += fbf
                 if self.wt and not sfmt[b]:
-                    sf = self._ssd_dec(s, fid, b, tok, 0.0)
+                    sf = self._ssd_dec(s, fid, b, tok, 0.0, self.reqlen[r], self.nreq[s] + 1)
                     sfmt[b] = sf
                     sq[b] = sf if sf > cq[b] else cq[b]
                     wt += fbl[sf]
@@ -842,7 +845,7 @@ class Engine:
         if self.sel is not None:
             for b in blocks:
                 if uses[b] >= self.sel and not sfmt[b] and cfmt[b]:
-                    sf = self._ssd_dec(s, cfmt[b], b, tok, 0.0)
+                    sf = self._ssd_dec(s, cfmt[b], b, tok, 0.0, self.reqlen[r], self.nreq[s] + 1)
                     sfmt[b] = sf
                     sq[b] = sf if sf > cq[b] else cq[b]
                     wt += fbl[sf]

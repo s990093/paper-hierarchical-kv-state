@@ -32,15 +32,73 @@ os.makedirs(OUT, exist_ok=True)
 # ===================================================================== fixture
 class Fx:
     """spec：{trace: dict(slices=[名字...], S=每個切片的 session 數, n_req=每個 session 的請求數（None＝各 1）, source=來源群組)}。
-    bytes_fn(trace, slice, olabel, mem, label, tag) → 每個 session 的位元組（GiB 單位的 float 陣列或常數）；ttft_fn(...) → (mean, p99) 或 None＝NOT_MEASURED。"""
+    bytes_fn(trace, slice, olabel, mem, label, tag) → 每個 session 的位元組（GiB 單位的 float 陣列或常數）；ttft_fn(...) → (mean, p99) 或 None＝NOT_MEASURED。
+    T_s＝每個切片截尾後的窗口長度（秒；SSD 使用率用；頻寬 1 GiB/s 讀寫）；loose_fn(…)＝給了就另外造寬鬆版雙胞胎的列（rule=loose；主格、O 只有 H）。
+    views＝另外造的非主視角的列（{view_name: bytes 倍率}）。"""
 
-    def __init__(self, tmp, spec, bytes_fn, ttft_fn=None, mems=AM.MEMS):
+    def __init__(self, tmp, spec, bytes_fn, ttft_fn=None, mems=AM.MEMS, T_s=36000.0, loose_fn=None, views=None, rec_fn=None, ttft_o_fn=None):
         self.tmp, self.spec, self.rows = str(tmp), spec, []
         self.bytes_fn, self.ttft_fn = bytes_fn, ttft_fn or (lambda *a: (1.0, 2.0))
+        self.T_s, self.loose_fn, self.views, self.rec_fn = T_s, loose_fn, views or {}, rec_fn or (lambda *a: 7)
+        self.n = 0
         self.build(mems)
 
+    def _one(self, trace, sp, s, S, nreq, ol, mem, eng, label, tag, bfn, rule, view, vg="main", vidx=0, scale=1.0):
+        oracle = label in AM.ORACLE_LABELS
+        xh = np.broadcast_to(np.asarray(bfn(trace, s, ol, mem, label, "H"), float), (S,)) * GiB * scale
+        x2 = np.broadcast_to(np.asarray(bfn(trace, s, ol, mem, label, "2H"), float), (S,)) * GiB * scale
+        path = os.path.join(self.tmp, f"{self.n}.npz")
+        self.n += 1
+        ttft = self.ttft_fn(trace, s, ol, mem, label)
+        d = dict(n_req=nreq, sess_orig=np.arange(S), ttft_n=np.asarray(100), ttft_sum=np.asarray(0.0), ttft_nm=np.asarray(0 if ttft is not None else 1),
+                 ttft_hist=np.zeros(len(RM.TTFT_EDGES) - 1, np.int64), ttft_vals=np.zeros(100))
+        m, p = ttft if ttft is not None else (0.0, 0.0)
+        for pfx in ("tH", "tH2"):                       # 截尾版護欄的逐請求值（100 個都＝p；平均＝m）
+            d.update({f"{pfx}_n": np.asarray(100), f"{pfx}_sum": np.asarray(m * 100.0), f"{pfx}_nm": np.asarray(0 if ttft is not None else 1),
+                      f"{pfx}_vals": np.full(100, float(p))})
+        if ttft is not None:
+            d["ttft_sum"] = np.asarray(m * 100.0)
+            d["ttft_vals"] = np.full(100, float(p))
+
+        def put(sfx, x, wf):
+            d["ssd_write_bytes" + sfx] = (x * wf).astype(np.int64)
+            rd = (x * (1 - wf)).astype(np.int64)
+            if eng == "block":
+                d["ssd_read_bytes" + sfx] = rd[None, :]
+                d["loadonly_ssd_read_bytes" + sfx] = (rd * 0).astype(np.int64)
+            else:
+                d["loadonly_ssd_read_bytes" + sfx] = rd
+            return float(d["ssd_write_bytes" + sfx].sum()) / GiB, float(rd.sum()) / GiB
+        nan = float("nan")
+        pw = dict(prim_w_H_GiB=nan, prim_r_H_GiB=nan, prim_w_2H_GiB=nan, prim_r_2H_GiB=nan, T_H_s=nan, T_2H_s=nan)
+        if tag == "both":
+            w1, r1 = put("_H", xh, 0.5)
+            w2, r2 = put("_H2", x2, 0.25)
+            sfx, ph, p2 = ("_H", "_H2"), w1 + r1, w2 + r2
+            pw.update(prim_w_H_GiB=w1, prim_r_H_GiB=r1, prim_w_2H_GiB=w2, prim_r_2H_GiB=r2, T_H_s=self.T_s, T_2H_s=self.T_s)
+        else:
+            x = xh if tag == "H" else x2
+            w1, r1 = put("_H", x, 0.5)
+            pv = w1 + r1
+            if tag == "H":
+                sfx, ph, p2 = ("_H", ""), pv, nan
+                pw.update(prim_w_H_GiB=w1, prim_r_H_GiB=r1, T_H_s=self.T_s)
+            else:
+                sfx, ph, p2 = ("", "_H"), nan, pv
+                pw.update(prim_w_2H_GiB=w1, prim_r_2H_GiB=r1, T_2H_s=self.T_s)
+        np.savez(path, **d)
+        tm, tp = (ttft if ttft else (AM.NOT, AM.NOT))
+        self.rows.append(dict(run_id="fx", stage="A1", comp="a1_blk" if eng == "block" else "a1_sess", slice=s, trace_group=trace,
+                              source_group=sp["source"], synthetic=sp.get("synthetic", False), semi_synthetic=False, overlay=1,
+                              engine=eng, outer_code=ol.split("-")[0], T_s=1800 if ol.startswith("E5") else "", mem_GiB=mem,
+                              model="llama", policy_label=label, policy_family=label, oracle=oracle, h_tag=tag, view_group=vg,
+                              view_idx=vidx, is_primary=(view == AM.PRIMARY_VIEW), k_gpus=1, job_id=f"{s}|{ol}|{mem}|{label}|{tag}|{rule}|{view}", npz_path=path,
+                              view_name=view, quality_rule=rule, npz_sfx_H=sfx[0], npz_sfx_2H=sfx[1], prim_H_GiB=ph, prim_2H_GiB=p2,
+                              ttftq_mean_s=tm, ttftq_p99_s=tp, ttftq_H_mean_s=tm, ttftq_H_p99_s=tp, ttftq_H2_mean_s=tm, ttftq_H2_p99_s=tp,
+                              n_ret=100, ssd_bw_r_GiBps=1.0, ssd_bw_w_GiBps=1.0, prim_read_col="x",
+                              recompute_prefix_blocks=self.rec_fn(trace, s, ol, mem, label), ret_recompute_prefix_blocks=7, surprise_blocks=0, **pw))
+
     def build(self, mems):
-        n = 0
         for trace, sp in self.spec.items():
             for s in sp["slices"]:
                 S = sp["S"]
@@ -49,52 +107,25 @@ class Fx:
                     eng = AM.ENGINE_OF[ol]
                     for label in AM.LABELS:
                         oracle = label in AM.ORACLE_LABELS
-                        tags = ("H", "2H") if oracle else ("both",)
-                        for tag in tags:
-                            xh = np.broadcast_to(np.asarray(self.bytes_fn(trace, s, ol, mem, label, "H"), float), (S,)) * GiB
-                            x2 = np.broadcast_to(np.asarray(self.bytes_fn(trace, s, ol, mem, label, "2H"), float), (S,)) * GiB
-                            path = os.path.join(self.tmp, f"{n}.npz")
-                            n += 1
-                            ttft = self.ttft_fn(trace, s, ol, mem, label)
-                            d = dict(n_req=nreq, sess_orig=np.arange(S), ttft_n=np.asarray(int(nreq.sum()) if False else 100), ttft_sum=np.asarray(0.0),
-                                     ttft_nm=np.asarray(0 if ttft is not None else 1), ttft_hist=np.zeros(len(RM.TTFT_EDGES) - 1, np.int64),
-                                     ttft_vals=np.zeros(100))
-                            if ttft is not None:
-                                m, p = ttft
-                                d["ttft_sum"] = np.asarray(m * 100.0)
-                                d["ttft_hist"][int(np.searchsorted(RM.TTFT_EDGES, max(p, 1e-4)) - 1)] = 100       # 全部 100 個請求都落在 p 的那一格
-                                d["ttft_vals"] = np.full(100, float(p))          # 逐請求的 ttft（精確的合併 p99 用）：100 個都＝p
-                            if tag == "both":
-                                d.update(ssd_write_bytes_H=(xh * 0.5).astype(np.int64), loadonly_ssd_read_bytes_H=(xh * 0.5).astype(np.int64),
-                                         ssd_write_bytes_H2=(x2 * 0.25).astype(np.int64), loadonly_ssd_read_bytes_H2=(x2 * 0.75).astype(np.int64))
-                                sfx = ("_H", "_H2")
-                                ph, p2 = float(d["ssd_write_bytes_H"].sum() + d["loadonly_ssd_read_bytes_H"].sum()) / GiB, \
-                                    float(d["ssd_write_bytes_H2"].sum() + d["loadonly_ssd_read_bytes_H2"].sum()) / GiB
-                            else:
-                                x = xh if tag == "H" else x2
-                                d.update(ssd_write_bytes_H=(x * 0.5).astype(np.int64), loadonly_ssd_read_bytes_H=(x * 0.5).astype(np.int64))
-                                sfx = ("_H", "") if tag == "H" else ("", "_H")
-                                pv = float(d["ssd_write_bytes_H"].sum() + d["loadonly_ssd_read_bytes_H"].sum()) / GiB
-                                ph, p2 = (pv, float("nan")) if tag == "H" else (float("nan"), pv)
-                            np.savez(path, **d)
-                            self.rows.append(dict(run_id="fx", stage="A1", comp="a1_blk" if eng == "block" else "a1_sess", slice=s, trace_group=trace,
-                                                  source_group=sp["source"], synthetic=sp.get("synthetic", False), semi_synthetic=False, overlay=1,
-                                                  engine=eng, outer_code=ol.split("-")[0], T_s=1800 if ol.startswith("E5") else "", mem_GiB=mem,
-                                                  model="llama", policy_label=label, policy_family=label, oracle=oracle, h_tag=tag, view_group="main",
-                                                  view_idx=0, is_primary=True, k_gpus=1, job_id=f"{s}|{ol}|{mem}|{label}|{tag}", npz_path=path,
-                                                  npz_sfx_H=sfx[0], npz_sfx_2H=sfx[1], prim_H_GiB=ph, prim_2H_GiB=p2,
-                                                  ttftq_mean_s=(ttft[0] if ttft else AM.NOT), ttftq_p99_s=(ttft[1] if ttft else AM.NOT), n_ret=100,
-                                                  ret_recompute_prefix_blocks=7, surprise_blocks=0))
+                        for tag in (("H", "2H") if oracle else ("both",)):
+                            self._one(trace, sp, s, S, nreq, ol, mem, eng, label, tag, self.bytes_fn, "strict", AM.PRIMARY_VIEW)
+                            if self.loose_fn and label in AM.NEEDED and not (oracle and tag != "H"):
+                                self._one(trace, sp, s, S, nreq, ol, mem, eng, label, "H" if oracle else "both", self.loose_fn, "loose", AM.PRIMARY_VIEW)
+                    for vn, sc in self.views.items():        # 非主視角（例如 E6 的 GPU 忙）：只有點要報告 → C0 與 O 與幾個對手就夠，這裡全做
+                        for label in AM.LABELS:
+                            oracle = label in AM.ORACLE_LABELS
+                            for tag in (("H", "2H") if oracle else ("both",)):
+                                self._one(trace, sp, s, S, nreq, ol, mem, eng, label, tag, self.bytes_fn, "strict", vn, vidx=1 if eng == "session" else 0, scale=sc)
         self.csv = os.path.join(self.tmp, "map_cells.csv")
         pd.DataFrame(self.rows).to_csv(self.csv, index=False)
 
-    def analyze(self, mode="full", boot=50):
-        return AM.analyze(AM.load_cells(self.csv), mode, boot, verbose=False)
+    def analyze(self, mode="full", boot=50, guard_ref="C0", expected="present"):
+        return AM.analyze(AM.load_cells(self.csv), mode, boot, verbose=False, guard_ref=guard_ref, expected=expected)
 
 
 BASE = {"C0": 100.0, "C1": 90.0, "C1-8": 95.0, "C2": 85.0, "C3": 92.0, "C6": 91.0, "C4-8192": 96.0, "C4-16384": 97.0, "C4-32768": 98.0,
         "C4r-8192": 93.0, "C4r-16384": 94.0, "C4r-32768": 99.0, "D-len-8192": 89.0, "D-len-16384": 88.0, "D-len-32768": 87.0, "D-idle-300": 86.0,
-        "D-idle-1800": 84.0, "D-idle-3600": 83.0, "D-idle-14400": 82.0}        # 非 oracle：最好的是 D-idle-14400（82）
+        "D-idle-1800": 84.0, "D-idle-3600": 83.0, "D-idle-14400": 82.0, "C1-2": 150.0, "R2": 140.0}        # 非 oracle：最好的是 D-idle-14400（82）
 
 
 def mk_bytes(o_frac, cell=None, traces=None):
@@ -161,13 +192,13 @@ def test_nogo_and_ask_cases(tmp_path):
     assert all(x["ci_hi"] < 0.05 for x in r["rows"] if x["h"] == "H")
     r = Fx(_sub(tmp_path, "a"), S5(), mk_bytes(0.10)).analyze()
     assert r["verdict"]["verdict"] == "ASK", r["verdict"]
-    # 一份不完整的資料（缺一個主格）→ 不能 NO-GO（ASK）
+    # 一份不完整的資料（缺一個主格）→ 不給判定（IncompleteMap；第二輪審查 #4）
     fx = Fx(_sub(tmp_path, "i"), S5(), mk_bytes(0.02))
     df = pd.read_csv(fx.csv, low_memory=False)
     df = df[~((df.trace_group == "Mooncake") & (df.outer_code == "E4") & (df.mem_GiB == 435.0))]
     df.to_csv(fx.csv, index=False)
-    r = fx.analyze()
-    assert r["verdict"]["verdict"] in ("ASK", "GO") and r["verdict"]["verdict"] != "NO-GO" and not r["traces"]["Mooncake"]["complete"]
+    with pytest.raises(AM.IncompleteMap, match="缺"):
+        fx.analyze()
 
 
 def test_early_go_rule(tmp_path):
@@ -254,8 +285,10 @@ def test_zero_over_zero_cell(tmp_path):
     assert z and all(x["best_zero"] and x["savings"] == 0.0 and x["ci_lo"] == 0.0 and x["ci_hi"] == 0.0 and not math.isnan(x["q"]) for x in z)
     assert r["verdict"]["verdict"] == "NO-GO"           # 0/0 的格子上界 0 <5%，不阻擋 NO-GO
     # best＝0 但 O>0（不合理的資料）也定為 0，不產生 inf
-    p, bz = AM.savings_point(0.0, 3.0)
-    assert p == 0.0 and bz
+    # best＝0 而 O>0：NaN＋旗標，不是 0%（第二輪審查 #10）；0/0 → 0
+    p, bz, nf = AM.savings_point(0.0, 3.0)
+    assert math.isnan(p) and bz and nf == "best_zero_o_pos"
+    assert AM.savings_point(0.0, 0.0) == (0.0, True, "")
     assert math.isnan(AM.savings_point(float("nan"), 1.0)[0])
 
 
@@ -370,10 +403,13 @@ def test_pooled_p99_exact_vs_numpy(tmp_path):
     rng = np.random.default_rng(7)
     weeks = [rng.lognormal(0.5, 1.8, size=n) for n in (1000, 777, 20001)]
     rows = []
+
+    def tnpz(x, nm_=0):
+        return {"tH_vals": x.astype(np.float64), "tH_n": np.asarray(len(x)), "tH_sum": np.asarray(float(x.sum())), "tH_nm": np.asarray(nm_)}
     for i, x in enumerate(weeks):
         pth = str(tmp_path / f"w{i}.npz")
-        np.savez(pth, **RM.ttft_arrays(x, 0, keep_vals=True))
-        rows.append(dict(npz_path=pth, ttftq_mean_s=float(x.mean()), ttftq_p99_s=float(np.percentile(x, 99))))
+        np.savez(pth, **RM.ttft_arrays(x, 0, keep_vals=True), **tnpz(x))
+        rows.append(dict(npz_path=pth, oracle=False, view_idx=0, job_id=f"w{i}", ttftq_H_mean_s=float(x.mean()), ttftq_H_p99_s=float(np.percentile(x, 99))))
     m, p, nm = AM.trace_ttft(rows)
     allx = np.concatenate(weeks)
     assert p == float(np.percentile(allx, 99)) and not nm
@@ -384,11 +420,14 @@ def test_pooled_p99_exact_vs_numpy(tmp_path):
     d = RM.ttft_arrays(weeks[0], 0)
     assert "ttft_vals" not in d
     np.savez(old, **d)
-    with pytest.raises(SystemExit):                          # 沒有 ttft_vals → 拒絕（不悄悄退回直方圖）
-        AM.trace_ttft([rows[0], dict(npz_path=old, ttftq_mean_s=1.0, ttftq_p99_s=1.0)])
+    with pytest.raises(SystemExit):                          # 沒有逐請求的值 → 拒絕（不悄悄退回直方圖）
+        AM.trace_ttft([rows[0], dict(rows[0], npz_path=old, job_id="old")])
     nmp = str(tmp_path / "nm.npz")
-    np.savez(nmp, **RM.ttft_arrays(weeks[0], 3, keep_vals=True))
-    assert AM.trace_ttft([rows[0], dict(npz_path=nmp, ttftq_mean_s=1.0, ttftq_p99_s=1.0)])[2] is True
+    np.savez(nmp, **tnpz(weeks[0], 3))
+    assert AM.trace_ttft([rows[0], dict(rows[0], npz_path=nmp, job_id="nm")])[2] is True
+    # 非工作的第 0 個視角的列不能幾週合併（npz 只存第 0 個視角的 ttft）→ NoPooledTtft，不悄悄用錯的視角
+    with pytest.raises(AM.NoPooledTtft):
+        AM.trace_ttft([rows[0], dict(rows[1], view_idx=3)])
     # 執行器只替有好幾個切片的群組（FreeInference 的週）存逐請求 ttft
     assert RM.keeps_ttft_vals("freeinference/week03") and not RM.keeps_ttft_vals("bailian/coder") and not RM.keeps_ttft_vals("synth/small-seed1")
 
@@ -419,7 +458,7 @@ def test_guard_sensitivity_report(tmp_path):
 
 # ===================================================================== 執行器
 def test_runner_enumeration_and_counts():
-    """階段、元件、個數（04 §5、§10）；非 oracle 19 個、oracle 4 個 × (H, 2H)。"""
+    """階段、元件、個數（04 §5、§10）；非 oracle 21 個、oracle 4 個 × (H, 2H)；寬鬆版雙胞胎＝21 個對手＋O（只有 H）。"""
     kall = {(s, m, v): dict(k=1, hourmax=0.1, overload=False) for s in RM.SLICES for m in RM.A1_MEM + RM.A2_MEM for v in ("idle", "busy")}
     ids = set()
     for st, n_slices in (("A1", 8), ("A2", 8), ("B-A1", 12), ("B-A2", 12)):
@@ -429,14 +468,18 @@ def test_runner_enumeration_and_counts():
             assert (st, j["id"], j["slice"]) not in ids
             ids.add((st, j["id"], j["slice"]))
     a1 = RM.enumerate_jobs("A1", ["bailian/coder"], False, (), kall)
-    assert sum(1 for j in a1 if j["comp"] == "a1_sess") == 4 * 3 * (19 + 4 * 2)           # 4 外層 × 3 記憶體 × (19＋4×2)
-    assert sum(1 for j in a1 if j["comp"] == "a1_blk") == 2 * 3 * (19 + 4 * 2)            # E6、E2 × 3 記憶體 × 27，主視角
+    assert sum(1 for j in a1 if j["comp"] == "a1_sess") == 4 * 3 * (21 + 4 * 2)           # 4 外層 × 3 記憶體 × (21＋4×2)
+    assert sum(1 for j in a1 if j["comp"] == "a1_blk") == 2 * 3 * (21 + 4 * 2)            # E6、E2 × 3 記憶體 × 29，主視角
+    assert sum(1 for j in a1 if j["comp"] == "a1_loose") == 4 * 3 * (21 + 1)              # 寬鬆版雙胞胎：4 外層 × 3 記憶體 × (21 對手＋O 的 H)
+    assert sum(1 for j in a1 if j["comp"] == "a1_loose_blk") == 1 * 3 * (21 + 1)          # E6 only
+    assert all(j["rule"] == "loose" and j["id"].endswith("__loose") for j in a1 if j["comp"].startswith("a1_loose"))
+    assert len({j["id"] for j in a1}) == len(a1)
     a2 = RM.enumerate_jobs("A2", ["bailian/coder"], False, (), kall)
-    assert sum(1 for j in a2 if j["comp"] == "a2_mem") == 7 * 5 * 27
-    assert sum(1 for j in a2 if j["comp"] == "a2_blk") == 2 * 5 * 2 * 27                   # E6、E2 × 5 記憶體 × (閒、忙) × 27
-    assert sum(1 for j in a2 if j["comp"] == "sens_qwen") == 4 * 3 * 27
+    assert sum(1 for j in a2 if j["comp"] == "a2_mem") == 7 * 5 * 29
+    assert sum(1 for j in a2 if j["comp"] == "a2_blk") == 2 * 5 * 2 * 29                   # E6、E2 × 5 記憶體 × (閒、忙) × 29
+    assert sum(1 for j in a2 if j["comp"] == "sens_qwen") == 4 * 3 * 29
     assert {j["overlay"] for j in a2 if j["comp"].startswith("sens_ov")} == {2, 4}
-    assert len(RM.enumerate_jobs("A2", ["bailian/coder"], True, (), kall)) == len(a2) + 3 * 3 * 27
+    assert len(RM.enumerate_jobs("A2", ["bailian/coder"], True, (), kall)) == len(a2) + 3 * 3 * 29
     assert {j["slice"] for j in RM.enumerate_jobs("A1", None, False, (), kall)} >= {f"freeinference/week{w:02d}" for w in (1, 5, 9, 13)}
     assert not any(j["slice"] == "freeinference/week02" for j in RM.enumerate_jobs("A1", None, False, (), kall))
     assert any(j["slice"] == "freeinference/week02" for j in RM.enumerate_jobs("B-A1", None, False, (), kall))
@@ -543,7 +586,7 @@ def test_end_to_end_synth_subset(tmp_path):
     out = str(tmp_path / "map")
     sel = ["session__E2__m63__llama__C0__both", "session__E2__m63__llama__C1__both", "session__E2__m63__llama__O__H",
            "block__E6__m63__llama__C0__vidle__both", "block__E6__m63__llama__O__vidle__2H"]
-    rc = RM.main(["--stage", "A1", "--slices", "synth/small-seed1", "--only", *sel, "--procs", "5", "--out", out, "--no-sens-views"])
+    rc = RM.main(["--stage", "A1", "--slices", "synth/small-seed1", "--only", *sel, "--procs", "5", "--out", out, "--no-sens-views", "--skip", "a1_loose", "a1_loose_blk"])
     assert rc == 0
     d = pd.read_csv(os.path.join(out, "map_cells.csv"), low_memory=False)
     assert set(d.job_id) == set(sel) and d.synthetic.all() and (d.unverified_len_mode == "request").all() and (d.int2_on_read == "recompute_unverified").all()
@@ -553,15 +596,295 @@ def test_end_to_end_synth_subset(tmp_path):
         h = "H" if r.h_tag in ("H", "both") else "2H"
         z = np.load(r.npz_path)
         sfx = r.npz_sfx_H if h == "H" else r.npz_sfx_2H
-        tot = (z["ssd_write_bytes" + sfx].sum() + z["loadonly_ssd_read_bytes" + sfx].sum()) / GiB
+        blk = r.engine == "block"       # E6／block：主指標的讀取＝實際讀取（還原＋預取）；session：只載入的讀取（04 §4、06 §25.3）
+        rd = z["ssd_read_bytes" + sfx][0].sum() if blk else z["loadonly_ssd_read_bytes" + sfx].sum()
+        tot = (z["ssd_write_bytes" + sfx].sum() + rd) / GiB
         assert abs(tot - (r.prim_H_GiB if h == "H" else r.prim_2H_GiB)) < 1e-6 * max(1, tot), r.job_id
-        assert abs(r.ssd_H_write_issued_GiB + r.ssd_H_loadonly_read_GiB - (r.prim_H_GiB if h == "H" else r.prim_2H_GiB)) < 1e-6 * max(1, tot)
+        rcol = r.ssd_H_actual_read_GiB if blk else r.ssd_H_loadonly_read_GiB
+        assert r.prim_read_col == ("ssd_H_actual_read_GiB" if blk else "ssd_H_loadonly_read_GiB")
+        assert abs(r.ssd_H_write_issued_GiB + rcol - (r.prim_H_GiB if h == "H" else r.prim_2H_GiB)) < 1e-6 * max(1, tot)
+        assert r.view_name == AM.PRIMARY_VIEW and r.quality_rule == "strict" and r.cpu_busy_run_id == RM.CPU_BUSY_RUN
         assert z["ttft_n"] == z["ttft_hist"].sum() and z["n_req"].sum() == r.n_req
     # 非 oracle 的 2H 版：和同一個放置的 H2 欄位一致（一次模擬兩個截尾）
     c1 = d[(d.job_id == "session__E2__m63__llama__C1__both") & d.is_primary].iloc[0]
     assert c1.prim_2H_GiB <= c1.prim_H_GiB + 1e-9 and c1.prim_2H_GiB > 0
     # 續跑：再跑一次什麼都不跑
-    rc = RM.main(["--stage", "A1", "--slices", "synth/small-seed1", "--only", *sel, "--procs", "5", "--out", out, "--no-sens-views"])
+    rc = RM.main(["--stage", "A1", "--slices", "synth/small-seed1", "--only", *sel, "--procs", "5", "--out", out, "--no-sens-views",
+                  "--skip", "a1_loose", "a1_loose_blk"])
     assert rc == 0
+    # 寬鬆版雙胞胎的工作：另一個 id、rule=loose；C0 的位元組和 strict 一樣（BF16 任何規則都過關）
+    out2 = str(tmp_path / "map2")
+    loose = ["session__E2__m63__llama__C0__both__loose", "session__E2__m63__llama__O__H__loose"]
+    assert RM.main(["--stage", "A1", "--slices", "synth/small-seed1", "--only", *loose, "--procs", "2", "--out", out2, "--skip", "a1_sess", "a1_blk",
+                    "a1_loose_blk"]) == 0
+    dl = pd.read_csv(os.path.join(out2, "map_cells.csv"), low_memory=False)
+    assert set(dl.job_id) == set(loose) and (dl.quality_rule == "loose").all() and len(dl) == 2 and dl.view_idx.eq(0).all()
+    assert abs(dl[dl.policy_label == "C0"].prim_H_GiB.iloc[0] - d[(d.policy_label == "C0") & (d.engine == "session")].prim_H_GiB.iloc[0]) < 1e-9
     with open(os.path.join(OUT, "test_e2e_subset.txt"), "a") as fh:
         fh.write(f"{os.environ.get('RUN_ID', 'adhoc')} rows={len(d)}\n")
+
+
+# ===================================================================== 第二輪審查之後（06 §25）
+def _row(r, trace, ol, mem, h="H"):
+    return next(x for x in r["rows"] if x["trace"] == trace and x["outer"] == ol and x["mem_GiB"] == mem and x["h"] == h)
+
+
+def test_guard_ref_two_choices(tmp_path):
+    """護欄的參考（使用者決定中；兩種都實作）：O 的等待時間比 C0 快 20%。ref＝C0 時 D-idle-14400（0.9×C0 慢…＝0.9 ≤ 1.05）合格、最好的對手 82；
+    ref＝min(C0,O)（O 的 0.8）時門檻變 0.84：D-idle-14400（0.9）出局，D-idle-3600（0.83）留下 → 83。兩種都在報告裡；取捨表有兩欄合格與否。"""
+    def tt(trace, s, ol, mem, label):
+        return {"O": (0.8, 1.6), "D-idle-14400": (0.9, 1.8), "D-idle-3600": (0.83, 1.65)}.get(label, (1.0, 2.0))
+    fx = Fx(_sub(tmp_path, "gr"), S5(), mk_bytes(0.30), tt)
+    r0 = fx.analyze(guard_ref="C0")
+    r1 = fx.analyze(guard_ref="min_C0_O")
+    a, b = _row(r0, "Mooncake", "E2", 63.0), _row(r1, "Mooncake", "E2", 63.0)
+    assert a["best_label"] == "D-idle-14400" and a["guard_ref"] == "C0" and abs(a["best_GiB"] - 82.0 * 120) < 1e-6
+    assert b["best_label"] == "D-idle-3600" and b["guard_ref"] == "min_C0_O" and abs(b["best_GiB"] - 83.0 * 120) < 1e-6
+    assert "D-idle-14400" in b["guard_excluded"].split(";") and "C0" in b["guard_excluded"].split(";")
+    for r in (r0, r1):       # 兩種參考都在報告（和判定用哪一種無關）
+        gr = [x for x in r["reports"] if x["kind"] == "report_guard_ref" and x["trace"] == "Mooncake" and x["outer"] == "E2@session" and x["mem_GiB"] == 63.0]
+        assert {x["guard_ref"] for x in gr} == {"C0", "min_C0_O"}
+        assert next(x for x in gr if x["guard_ref"] == "C0")["best_label"] == "D-idle-14400"
+        assert next(x for x in gr if x["guard_ref"] == "min_C0_O")["best_label"] == "D-idle-3600"
+    t = [x for x in r0["tradeoff"] if x["trace"] == "Mooncake" and x["outer"] == "E2" and x["mem_GiB"] == 63.0]
+    assert {x["policy"] for x in t} == set(AM.NEEDED)
+    d14 = next(x for x in t if x["policy"] == "D-idle-14400")
+    assert d14["eligible_ref_C0"] == "通過" and d14["eligible_ref_min_C0_O"] == "不合格" and abs(d14["primary_GiB"] - 82.0 * 120) < 1e-6
+    assert d14["recompute_tokens"] == 7 * 512 and d14["ttftq_H_mean_s"] == 0.9 and d14["ttftq_H_p99_s"] == 1.8
+    assert next(x for x in t if x["policy"] == "O")["eligible_ref_min_C0_O"] == "通過"
+    assert next(x for x in t if x["policy"] == "C0")["eligible_ref_min_C0_O"] == "不合格"      # C0 自己也慢過 1.05×0.8
+
+
+def test_o_must_pass_guard_and_util_gate_and_best_is_c0_flag(tmp_path):
+    """(a) O 的等待時間 1.2×C0 → 這個格子不能支持 GO（flag o_guard_ok=False），即使省 30%；(b) 最好的對手的 SSD 使用率 <5%（T 很長）→ 不能支持 GO；
+    (c) 最好的對手是 C0 時，GO 的格子標 best_is_C0。"""
+    def f(trace, s, ol, mem, label, tag):
+        if label in AM.ORACLE_LABELS and (ol, mem) == ("E2", 63.0):
+            fr = {"Bailian coder": 0.30, "WildChat": 0.10}.get(trace, 0.0)
+            return 82.0 * (1 - fr) + {"O": 0, "O-len": 5, "O-reuse": 8, "O-loose": -3}[label]
+        return mk_bytes(0.0)(trace, s, ol, mem, label, tag)
+    ok = Fx(_sub(tmp_path, "ok"), S5(), f).analyze()
+    assert ok["verdict"]["verdict"] == "GO"
+    r = _row(ok, "Bailian coder", "E2", 63.0)
+    assert r["o_guard_ok"] and r["go_ok"] and not r["best_is_C0"] and abs(r["best_util"] - (82.0 * 120) / 36000.0) < 1e-9
+    assert abs(r["best_GiB_per_h"] - 82.0 * 120 / 10.0) < 1e-9 and abs(r["O_GiB_per_h"] - 82.0 * 0.7 * 120 / 10.0) < 1e-6
+    assert r["best_recompute_tokens"] == 7 * 512 and r["O_recompute_tokens"] == 7 * 512
+    assert "最好=C0" not in "".join(AM._flags_of_row(r))
+    # (a) O 慢
+    bad = Fx(_sub(tmp_path, "ob"), S5(), f, lambda t, s, ol, mem, lab: (1.2, 2.4) if lab == "O" else (1.0, 2.0)).analyze()
+    r = _row(bad, "Bailian coder", "E2", 63.0)
+    assert not r["o_guard_ok"] and not r["go_ok"] and "O 沒過護欄" in AM._flags_of_row(r)
+    assert bad["verdict"]["verdict"] != "GO", bad["verdict"]
+    # (b) T 很長 → 使用率 <5%
+    low = Fx(_sub(tmp_path, "ul"), S5(), f, T_s=36000.0 * 50).analyze()
+    r = _row(low, "Bailian coder", "E2", 63.0)
+    assert r["best_util"] < 0.05 and not r["go_ok"] and any("使用率" in x for x in AM._flags_of_row(r))
+    assert low["verdict"]["verdict"] != "GO"
+
+    # (c) 最好的對手是 C0（所有非 oracle 一樣大，C0 排第一）
+    def g(trace, s, ol, mem, label, tag):
+        if label in AM.ORACLE_LABELS:
+            fr = {"Bailian coder": 0.30, "WildChat": 0.10}.get(trace, 0.0) if (ol, mem) == ("E2", 63.0) else 0.0
+            return 100.0 * (1 - fr)
+        return 100.0
+    c0 = Fx(_sub(tmp_path, "c0"), S5(), g).analyze()
+    assert c0["verdict"]["verdict"] == "GO" and c0["verdict"]["go_cells"][0]["strong_best_is_C0"] and c0["verdict"]["go_cells"][0]["weak_best_is_C0"]
+    assert "最好的對手是 C0？ Bailian coder：是" in c0["verdict"]["reason"]
+
+
+def test_best_zero_o_positive_is_nan_and_blocks_go(tmp_path):
+    """最好的對手＝0、O>0：省多少＝NaN＋旗標（不是 0%）；這個格子沒有 CI、不能支持 GO、也不阻擋別的格子。"""
+    def f(trace, s, ol, mem, label, tag):
+        if (ol, mem) == ("E4", 435.0):
+            return 3.0 if label in AM.ORACLE_LABELS else 0.0
+        return mk_bytes(0.02)(trace, s, ol, mem, label, tag)
+    r = Fx(_sub(tmp_path, "bz"), S5(), f).analyze()
+    z = _row(r, "Mooncake", "E4", 435.0)
+    assert math.isnan(z["savings"]) and z["nan_flag"] == "best_zero_o_pos" and math.isnan(z["ci_lo"]) and not z["go_ok"]
+    assert r["verdict"]["verdict"] == "ASK", r["verdict"]           # 一個 NaN 的格子 → 不能 NO-GO（也不是 GO）
+
+
+def test_block_primary_uses_actual_reads(tmp_path):
+    """block 引擎（E6）的主指標＝寫入＋實際讀取（npz 的 ssd_read_bytes_H[0]，含預取）；session 引擎＝寫入＋只載入的讀取。"""
+    fx = Fx(_sub(tmp_path, "bk"), S5(), mk_bytes(0.1))
+    ix = AM.Index(AM.load_cells(fx.csv))
+    rb = ix.row("Mooncake", "m/c", "block", "E6", 63.0, "C0", "both")
+    rs = ix.row("Mooncake", "m/c", "session", "E2", 63.0, "C0", "both")
+    z = np.load(rb["npz_path"])
+    assert z["ssd_read_bytes_H"].shape == (1, 120) and int(z["loadonly_ssd_read_bytes_H"].sum()) == 0      # 對照：只載入的讀取在 fixture 裡是 0
+    _, xb = AM.sess_bytes(rb, "H")
+    assert abs(xb.sum() / GiB - 100.0 * 120) < 1e-6          # 寫 50% ＋ 實際讀 50%
+    _, xs = AM.sess_bytes(rs, "H")
+    assert abs(xs.sum() / GiB - 100.0 * 120) < 1e-6
+    # 用錯欄（把實際讀取清掉）→ 驗算和 CSV 對不上
+    np.savez(rb["npz_path"], **{k: (np.zeros_like(z[k]) if k == "ssd_read_bytes_H" else z[k]) for k in z.files})
+    with pytest.raises(AssertionError, match="不符"):
+        AM.sess_bytes(rb, "H")
+
+
+def test_loose_twin_and_views_reported_only(tmp_path):
+    """寬鬆版雙胞胎：O 與所有對手用寬鬆規則的位元組（loose_fn）；只報告，不改判定。非主視角（E6 的 GPU 忙）的列出現在報告（kind＝view）。"""
+    def lf(trace, s, ol, mem, label, tag):       # 寬鬆規則下 O 省 50%（對手 82）
+        return 41.0 if label == "O" else BASE[label]
+    busy = "mi300x|cake|gpu=busy|cpu=idle|ssd/1|mi300x_local"
+    r = Fx(_sub(tmp_path, "lv"), S5(), mk_bytes(0.0), loose_fn=lf, views={busy: 1.0}).analyze()
+    lt = [x for x in r["reports"] if x["kind"] == "report_loose_twin"]
+    assert len(lt) == 4 * 15 and all(abs(x["savings"] - 0.5) < 1e-9 and x["best_label"] == "D-idle-14400" for x in lt)
+    assert r["verdict"]["verdict"] != "GO"
+    vw = [x for x in r["reports"] if x["kind"] == "view" and x["h"] == "H"]
+    assert any(x["outer"] == "E6@block" and x["view"] == busy for x in vw), {(x["outer"], x["view"]) for x in vw}
+    pref = str(tmp_path / "lv" / "out")
+    AM.write_outputs(r, pref, "full", "x.csv")
+    md = open(pref + "_map.md", encoding="utf-8").read()
+    assert "寬鬆版雙胞胎" in md and "其他視角" in md and "護欄的參考" in md
+    assert os.path.exists(pref + "_tradeoff.csv")
+    td = pd.read_csv(pref + "_tradeoff.csv")
+    assert {"run_id", "ts", "primary_GiB", "ttftq_H_mean_s", "ttftq_H_p99_s", "recompute_tokens", "eligible_ref_C0", "eligible_ref_min_C0_O"} <= set(td.columns)
+    js = json.load(open(pref + "_verdict.json", encoding="utf-8"))
+    assert js["guard_ref"] == "C0" and len(js["loose_twin"]) == 60 and len(js["guard_ref_report"]) > 0
+
+
+def test_completeness_hardcoded_slices(tmp_path):
+    """每種模式寫死應有的切片：fixture 的切片名（a/coder…）不是真的 → 丟 IncompleteMap；缺 FreeInference 的週、只有 A1 就跑 full → 丟；合成模式要 synth/small-seed1。"""
+    fx = Fx(_sub(tmp_path, "cs"), S5(fi=True), mk_bytes(0.1))
+    for mode in ("early", "full"):
+        with pytest.raises(AM.IncompleteMap, match="缺"):
+            fx.analyze(mode, expected=None)
+    assert AM.EXPECTED["early"]["FreeInference"] == [f"freeinference/week{w:02d}" for w in (1, 5, 9, 13)]
+    assert len(AM.EXPECTED["full"]["FreeInference"]) == 16 and set(AM.EXPECTED["full"]) == set(AM.TRACES)
+    assert AM.EXPECTED["early"]["Mooncake"] == ["mooncake/conv-rule-strict"] and AM.EXPECTED["early"]["Bailian coder"] == ["bailian/coder"]
+    # 只有 A1 的 8 個切片＝early OK、full 缺 12 週
+    spec = {"Bailian coder": dict(slices=["bailian/coder"], S=120, source="alibaba"), "Bailian traceA": dict(slices=["bailian/traceA"], S=120, source="alibaba"),
+            "WildChat": dict(slices=["wildchat/1m"], S=120, source="wildchat"), "Mooncake": dict(slices=["mooncake/conv-rule-strict"], S=120, source="mooncake"),
+            "FreeInference": dict(slices=AM.FI_A, S=120, source="freeinference")}
+    a1 = Fx(_sub(tmp_path, "a1"), spec, mk_bytes(0.1))
+    assert a1.analyze("early", expected=None)["verdict"]["verdict"]
+    with pytest.raises(AM.IncompleteMap, match="缺切片"):
+        a1.analyze("full", expected=None)
+    # 多一個切片（B 的週混進 early）→ 也丟
+    spec2 = dict(spec, FreeInference=dict(slices=AM.FI_A + ["freeinference/week02"], S=120, source="freeinference"))
+    with pytest.raises(AM.IncompleteMap, match="多出"):
+        Fx(_sub(tmp_path, "a2"), spec2, mk_bytes(0.1)).analyze("early", expected=None)
+    # 合成模式
+    syn = {"synth": dict(slices=["synth/small-seed1"], S=120, source="synthetic", synthetic=True)}
+    sx = Fx(_sub(tmp_path, "sy"), syn, mk_bytes(0.1))
+    assert sx.analyze("full", expected=AM.EXPECTED["synthetic"])["traces"]["synth"]["synthetic"]
+    with pytest.raises(AM.IncompleteMap):
+        sx.analyze("full", expected=None)
+    # 缺一個做法的格子（刪掉一列）→ 丟
+    df = pd.read_csv(sx.csv, low_memory=False)
+    df[~((df.policy_label == "R2") & (df.outer_code == "E3") & (df.mem_GiB == 170.0))].to_csv(sx.csv, index=False)
+    with pytest.raises(AM.IncompleteMap, match="缺 .* 個格子"):
+        sx.analyze("full", expected=AM.EXPECTED["synthetic"])
+
+
+def test_resolve_guard_ref():
+    """護欄的參考＝04 §9 的 `護欄的參考：…`；沒有那一行 → 預設 C0 並寫明（未凍結）；命令列可以指定（來源寫明不是 04）。"""
+    assert AM.resolve_guard_ref("auto", prereg_text="x\n護欄的參考：C0\n")[0] == "C0"
+    assert AM.resolve_guard_ref("auto", prereg_text="x\n護欄的參考：min(C0, O)\n")[0] == "min_C0_O"
+    ref, why = AM.resolve_guard_ref("auto", prereg_text="沒有")
+    assert ref == "C0" and "未凍結" in why
+    ref, why = AM.resolve_guard_ref("min_C0_O")
+    assert ref == "min_C0_O" and "命令列" in why
+    assert AM.resolve_guard_ref("auto")[0] in AM.GUARD_REFS          # 目前工作目錄的 04（凍結前沒有那一行 → C0）
+
+
+def test_cpu_busy_factors_from_csv(tmp_path):
+    """CPU 忙的係數從 cpubusy_slowdown.csv 讀（N=8 same → 1.35、N=48 other → 1.81），帶 run_id；四捨五入不等於登記值就停。不是抄進程式。"""
+    lo, hi, rid = RM.load_cpu_busy()
+    assert (lo, hi) == (1.35, 1.81) and rid.endswith("p3cal-cpubusy-qwen")
+    assert RM.SENS_SPECS[0][2] == lo and RM.SENS_SPECS[1][2] == hi and RM.SENS_GROUPS[:2] == ["sens_cpu1.35", "sens_cpu1.81"]
+    bad = str(tmp_path / "c.csv")
+    txt = open(RM.CPUBUSY_CSV, encoding="utf-8").read().replace("1.3502", "1.2502")
+    open(bad, "w", encoding="utf-8").write(txt)
+    with pytest.raises(AssertionError, match="1.35"):
+        RM.load_cpu_busy(bad)
+
+
+def _mk_repo(tmp, inputs, frozen_guard="C0"):
+    """暫時的 git repo：code/p3_sim/x.py、輸入檔、04（含鎖定表）。回傳 (repo, 凍結 commit)。"""
+    import lockfile as LK
+    repo = str(tmp / "repo")
+    os.makedirs(os.path.join(repo, "code", "p3_sim"))
+    os.makedirs(os.path.join(repo, os.path.dirname(LK.PREREG)))
+    run = lambda *a: subprocess.run(["git", "-C", repo, *a], check=True, capture_output=True, text=True).stdout.strip()   # noqa: E731
+    run("init", "-q")
+    run("config", "user.email", "t@t")
+    run("config", "user.name", "t")
+    open(os.path.join(repo, "code", "p3_sim", "x.py"), "w").write("x = 1\n")
+    for p, c in inputs.items():
+        os.makedirs(os.path.dirname(os.path.join(repo, p)), exist_ok=True)
+        open(os.path.join(repo, p), "w").write(c)
+    run("add", "-A")
+    run("commit", "-qm", "code")
+    code = run("rev-parse", "HEAD")
+    lock = "\n".join(f"| `{p}` | `{LK.sha256_file(os.path.join(repo, p))}` |" for p in inputs)
+    doc = f"# 04\n\n<!-- LOCK:BEGIN -->\n| 路徑 | sha256 |\n|:--|:--|\n{lock}\n<!-- LOCK:END -->\n程式 commit（凍結）：`{code}`\n護欄的參考：{frozen_guard}\n"
+    open(os.path.join(repo, LK.PREREG), "w", encoding="utf-8").write(doc)
+    run("add", "-A")
+    run("commit", "-qm", "freeze")
+    return repo, run("rev-parse", "HEAD"), run
+
+
+def test_freeze_gate_lockfile(tmp_path):
+    """凍結閘門（第二輪審查 #5）：sha256 全對＋程式 commit＝凍結的／只有文件的後代＋乾淨 → 通過；輸入檔改了、程式在凍結後改了、工作目錄髒、缺必要輸入、「未凍結」→ 拒絕。"""
+    import lockfile as LK
+    req = ["a/in1.json", "b/in2.csv"]
+    inputs = {"a/in1.json": "{}\n", "b/in2.csv": "x,y\n1,2\n"}
+    repo, fz, run = _mk_repo(tmp_path, inputs, "min(C0, O)")
+    info = LK.verify_freeze(fz, repo, required=req)
+    assert info["guard_ref"] == "min_C0_O" and info["frozen"] == fz and info["files"].keys() == set(req) and len(info["prereg_sha256"]) == 64
+    assert LK.parse_guard_ref("護欄的參考：C0\n") == "C0" and LK.parse_guard_ref("沒有") is None
+    # 只有文件的後代 commit → 通過
+    open(os.path.join(repo, "notes.md"), "w").write("hi\n")
+    run("add", "-A")
+    run("commit", "-qm", "docs only")
+    assert LK.verify_freeze(fz, repo, required=req)["head"] != fz
+    # 缺必要輸入
+    with pytest.raises(SystemExit, match="缺這些必要的輸入檔"):
+        LK.verify_freeze(fz, repo, required=req + ["c/missing.json"])
+    # 輸入檔被改 → sha256 不符（也是髒的）
+    open(os.path.join(repo, "b/in2.csv"), "w").write("x,y\n1,3\n")
+    with pytest.raises(SystemExit, match="sha256 不符") as e:
+        LK.verify_freeze(fz, repo, required=req)
+    assert "不乾淨" in str(e.value)
+    run("checkout", "--", "b/in2.csv")
+    # 髒的工作目錄（已追蹤檔案）
+    open(os.path.join(repo, "notes.md"), "a").write("more\n")
+    with pytest.raises(SystemExit, match="不乾淨"):
+        LK.verify_freeze(fz, repo, required=req)
+    run("checkout", "--", "notes.md")
+    # code/p3_sim 底下未追蹤的檔
+    open(os.path.join(repo, "code", "p3_sim", "new.py"), "w").write("y = 2\n")
+    with pytest.raises(SystemExit, match="未追蹤"):
+        LK.verify_freeze(fz, repo, required=req)
+    os.remove(os.path.join(repo, "code", "p3_sim", "new.py"))
+    assert LK.verify_freeze(fz, repo, required=req)
+    # 凍結之後程式被改（已 commit）→ 拒絕
+    open(os.path.join(repo, "code", "p3_sim", "x.py"), "w").write("x = 2\n")
+    run("add", "-A")
+    run("commit", "-qm", "code changed after freeze")
+    with pytest.raises(SystemExit, match="有修改"):
+        LK.verify_freeze(fz, repo, required=req)
+    # 04 還含「未凍結」→ 拒絕
+    with pytest.raises(SystemExit, match="未凍結"):
+        LK.verify_freeze(fz, repo, required=req, text="草稿，未凍結\n")
+    # 沒有鎖定表
+    with pytest.raises(SystemExit, match="沒有 `<!-- LOCK:BEGIN"):
+        LK.verify_freeze(fz, repo, required=req, text="已凍結但沒有表\n")
+
+
+def test_real_data_requires_explicit_run_id(tmp_path, monkeypatch):
+    """真實資料：run_id 不給（或 adhoc）就拒絕；合成資料不需要。（凍結閘門本身用假的 verify_freeze 略過，另有 test_freeze_gate_lockfile。）"""
+    import lockfile as LK
+    monkeypatch.setattr(LK, "verify_freeze", lambda *a, **k: dict(frozen="x" * 40))
+    monkeypatch.setattr(RM, "check_frozen", lambda c: ("f" * 40, "s" * 64))
+    monkeypatch.delenv("RUN_ID", raising=False)
+    with pytest.raises(SystemExit, match="run_id"):
+        RM.main(["--stage", "A1", "--slices", "bailian/coder", "--frozen", "HEAD", "--out", str(tmp_path / "o1"), "--limit", "1"])
+    monkeypatch.setenv("RUN_ID", "adhoc")
+    with pytest.raises(SystemExit, match="run_id"):
+        RM.main(["--stage", "A1", "--slices", "bailian/coder", "--frozen", "HEAD", "--out", str(tmp_path / "o2"), "--limit", "1"])
+    monkeypatch.setenv("RUN_ID", "20261018-000000-test")
+    with pytest.raises(SystemExit, match="official"):
+        RM.main(["--stage", "A1", "--slices", "bailian/coder", "--frozen", "HEAD", "--out", str(tmp_path / "o3"), "--fmt", "placeholder", "--limit", "1"])

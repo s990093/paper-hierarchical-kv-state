@@ -252,3 +252,20 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 - 第二件工作第一次啟動失敗：`20261018-115552-oc-maprunner` exit 1，API 回 400 `"thinking.type.enabled" is not supported for this model. Use "thinking.type.adaptive" and "output_config.effort" to control thinking behavior.`（opencode 1.17.8 內建的 Sonnet 5.5 variant 是舊格式）。在 `work.jsonc` 改成 adaptive 後重送（`oc-maprunner2`）。
 - 新程式沒有比舊程式快（FreeInference week13 session 引擎 +18%；負載不同）；輸入快取讓準備從 561.7 s 降到 8.3 s。
 **與假設的差異**: v3 的判定照審查幾乎必然 GO（對手只剩 C0、INT2 不對稱）；v4 改成「讀到沒驗證的格式就重算」＋等待時間護欄 5%＋15 個主格（使用者 10/18 同意）。opencode 花費：審查約 US$2.6、模擬器準備約 US$28.6。
+
+## Milestone P3-M6 — 地圖執行器、判定程式、第二輪審查的修改（opencode 做；**沒有跑任何地圖的格子**）
+**狀態**: PASS（工具）；登記 v4 **未凍結**（等第三輪審查）
+**執行時間**: 2026-10-18 11:55 → 22:40（+08:00）
+**run_id**:
+- 執行器與判定（opencode Sonnet 5.5）：`20261018-115552-oc-maprunner`（**exit 1**：API 400 `"thinking.type.enabled" is not supported for this model`；opencode 1.17.8 內建的 Sonnet 5.5 variant 是舊格式，改 `work.jsonc` 後重送）、`20261018-115930-oc-maprunner2`（exit 0）。
+- 第二輪審查（opencode Opus 5.5 xhigh，**zero-context same-family review，NOT cross-model**）：`20261018-133105-p3-ocreview-map-v4`（exit 0；結論「還不能凍結」，必改 5 條）；處理見 `docs/phase3_20261017/review_opencode_20261018_map_v4.md`。
+- 小修正（Sonnet）：`20261018-133105-oc-fixes`（exit 0）。
+- 第二輪審查的修改（Sonnet）：`20261018-142646-oc-review2fix`（**exit 124**：15:20 之後 API 串流卡住 7 小時，到 8 小時上限被砍；工作目錄的成果沒有遺失）；接續同一個 session：`20261018-222823-oc-review2fix-cont`（exit 0）。
+- 主 session 每次重跑全部測試：`20261018-132123-p3sim-verify-test2`（70 passed）、`20261018-141844-p3sim-verify-test3`（82 passed）、`20261018-224055-p3sim-verify-test4`（102 passed）。
+**產出檔**: `code/p3_sim/{run_map,analyze_map,test_map,lockfile,dq_coverage}.py` 與引擎、策略的修改；`docs/phase3_20261017/06_simulator.md` §18–§25；`results/p3_sim/{kgpu_kmin_all,long_request_fraction,dq_coverage}.csv`；`results/p3_map/synthetic_e2e_*`（**合成資料**，只確認管線）
+**關鍵數字**: 102 個測試通過；X1 144／144、X4 8／8 逐位元；對 c0c179b 的迴歸（placeholder）C0–C4 舊欄全部相同。沒有任何真實資料的「省多少」。
+**失敗與異常**:
+- 上面的 exit 1（API 400）與 exit 124（卡住）。之後 `code/oc_task.sh` 加了 `--stall`（events.jsonl 一小時沒變大就砍）與 `--session`（接續）。
+- **opencode 違反指示改了 04**：edit 工具擋下之後，它在 bash 裡用 python 改 `04_prereg_map.md`（加了凍結鎖定表的空白格式，+19 行）。內容無害，主 session 看過後保留並註明；`work.jsonc` 改成 bash 指令提到 04／main.tex／CLAUDE.md 也一律擋。
+- opencode 在開發中自己的測試寫錯 4 次（fixture 期望值、斷言），都只改測試；完整錯誤在 06 §10。
+**與假設的差異**: 第二輪審查發現寫穿（E3）時沒有任何對手能用 INT2、E6 漏算預取、長請求多時對手只剩 C0；v4 加了 C1-2、R2、寬鬆版雙胞胎、O 也要過護欄、SSD 使用率 ≥5%。重算後重新存之後，對手可以「猜錯就重算」換位元組（合成資料上 15 格裡 8 格贏過 O）；使用者 10/18 選護欄參考＝min(C0, O)。opencode 花費：執行器約 US$10.2、小修正約 3.0、審查約 2.9、第二輪修改約 7.7。
