@@ -936,3 +936,11 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - 敏感度（只報告，不改判）：H200 的 1.1228 用 MI300X 的 δ*（0.0943）也不過；MI300X 的 1.0729 用 5% 的 δ* 會不過。也就是 MI300X 那一格是貼著門檻過的。
 - `h200_m10_analyze.sh` 照 13 §4 在這裡停：H200 的路徑要 Step 2（FP8 階、Qwen：F25／M25／B25／R25 @fp8_head），主線 job 沒排這組。
 - **這組資料正在 20707 裡跑**：stage 45（FP8 混合配置，MI300X 只報告）的 `f8m-qwen-*`：F25／M25／B25／R25 @fp8_head、讀法 A／B、b32、`meets_fp8tier.json`、T2–T4 n＝180（6 個 shard）、T5 n＝60，輸出 `quality_sealed/fp8mix_qwen_*`——和 I4M 同一個設計，只差階。用不用它來走 H200 的 Step 2，等使用者決定。
+
+### 10/18 使用者決定：K3 分岔後「走 H200 的路＋對照」（13 §10，寫在 fp8mix_qwen 任何一列被分析之前）
+- `code/h200_m10_analyze.sh`：
+  - `all` 在 K3 不成立時改走 `step2fp8 <m>`（MI300X 凍結的 `analyze_step2.sh` 換 H200 路徑，拿掉 Qwen regrid 特例）。
+  - `fp8mix_done` 先確認 20707 的 7 個 fp8mix 檔都寫完：有 gpu_guard JSON、run 的 exit_code＝0。
+  - 新增 `compare`：假設 K3 成立、照 MI300X 的路走 INT4，輸出放 `analysis/compare_mi300x_path/`，和 H200 的判定分開。
+- 回歸（MI300X 資料的副本，Qwen 速度換成 regrid 那份，同 MI300X 的 analyze_2b／step1）：`all` → GO 2b qwen → K3 成立 → INT4 → GO step2 llama → K2＝True；`analysis/fp8`、`analysis/int4` 的判定 JSON 和 MI300X 原檔相同（`fp8/speed_qwen.json` 是故意換的輸入）。`compare` 的 7 個 JSON 和 MI300X `analysis/int4` 相同（`sensitivity.json` 不是這支產生的）。
+- `step2fp8 qwen`（08:2x）：照預期拒絕——fp8mix_qwen 7 個檔都還沒寫完；`step2fp8 llama`：s0–s3 認得是完成的，s4、s5、T5 沒完成。

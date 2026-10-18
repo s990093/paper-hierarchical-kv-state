@@ -100,3 +100,15 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
 - **43 複賽的選手用 H200 自己海選的結果**，照 09 §4.2 同一條規則選（`m10_sweep_analyze.py`）；最後並列兩台的選手與重疊。
 - **75 的上游 RULER jsonl 在 H200 重新產生**：RULER `c3f5e3b4…`（和 MI300X 同一個 commit）、LFS 詞表 sha256 `affcd6d4…2eca`（和指標檔記的相同）、shim 只有 wonderwords＋tenacity 9.2.1；`$TIARA_DATASETS/ruler_ref/README.txt`。產生器的 seed 42 和 MI300X 相同；兩台的題目是否相同，用逐題的 gold 和 MI300X 的 `ruler_cwe_upstream_llama.csv` 比對（只比題目，不比分數）。
 - 腳本：`code/r_h200_x.sh`（`--part q3 --model <m>`、`t2`、`q5`；開跑時才讀 repo 裡的版本，所以 t2、q5 送出後補的程式在開跑時生效）。
+
+## 10. 10/18 K3 分岔之後怎麼走（使用者選「走 H200 的路＋對照」；寫的時候 Qwen 的 FP8 混合配置 `fp8mix_qwen_*` 還在 20707 裡跑，沒有任何一列被分析過）
+
+**發生了什麼**（RUNLOG_H200「主線判定」）：K0、Step 1、2b 的 ε 和 MI300X 相同；Qwen 的 K3 不同——E1s@int8_token 在 CPU 層、GPU 忙那一格，H200 比最快的混合配置慢 12.3%（δ* 5%）→ 速度不輸不過；MI300X 慢 7.3%（δ* 9.4%）→ 過。照 §5「不改判、不重跑到相同為止」。
+
+**H200 的路（判定）**：照 03 §2.5 第 4 步——FP8 階 Qwen「均勻不夠」→ 不往 INT4，在 FP8 階的 Qwen 上做 Step 2（§1.1）。
+- 資料：stage 45 的 FP8 混合配置（`quality_sealed/fp8mix_qwen_*`：F25／M25／B25／R25 @fp8_head、讀法 A／B、b32、`meets_fp8tier.json`、T2–T4 n＝180、T5 n＝60；和 Step 1 同一批題、同 seed）。§4「先跑、封存」：判定走到了才分析，現在走到了。
+- 分析：MI300X 寫好、凍結的 `code/m10_queue_mi300x/analyze_step2.sh` 換 H200 路徑（品質對 E0；穩定差距第 1、2 條；`--tag seedA`）。速度用 `analysis/fp8/speed_qwen.json`（δ* 0.05）與 `speed_qwen/summary_fp8.csv`（H200 沒有重量的那份）。
+- 之後：K2 成立 → 位置策略停。穩定差距第 1、2 條成立 → 第 3 條要換新 seed 重跑一批（另一個 GPU job，到時再問）。
+- 20707 的 fp8mix 任何一個 process 沒成功或 gpu_guard 報自己的卡上有外來 process：分數照用（品質規則，CLAUDE.md §3），列出來。
+
+**對照（只報告，不是 H200 的判定）**：用封存的 INT4 資料照 MI300X 的路算一遍——INT4 的 decide、K0（INT4）、端點每個模型、route int4 指定的模型做 Step 2 → K2。輸出放 `analysis/compare_mi300x_path/`，和 H200 判定的 `analysis/fp8/` 分開；RUNLOG 和報告一律標「對照：假設 K3 成立」。
