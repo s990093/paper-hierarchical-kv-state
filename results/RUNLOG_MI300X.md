@@ -827,12 +827,20 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 
 - 28 個 grid（7 種方法 × 2 模型 × FP8／INT4；真實 CPU 層；E0、E1；Cake＋全部載入；3 launch × 10 rep）＋背景強度掃描 4 個（P0、P3 × 2 模型；INT4；duty 0.4／0.7／0.9；2 × 5），全部 exit 0。run：`20261018-093743-m10-rs2-q4-llama-fp8-P0` … `-112037-…-qwen-int4-P5`、`-112419-m10-rs2-q4duty-llama-P0` … `-113436-…-qwen-P3`。
 - **一格被污染**：P2（S2k8）× Llama × FP8 的 L302 gpu_guard `CONTAMINATED_DURING_RUN`（1 個樣本、pid 3965560、peak 0 MiB、09:49:27Z；那個 pid 已經不在，查不到是誰）。其他 91 個 guard（q4 83 個、duty 8 個）全部 CLEAN。照 CLAUDE.md §3 那格要重量 → `queue/43ca_rs2_q4_remeasure.sh`（排在 43c 後、43d 前）：同一個指令重量那一格 → 重新 pick-q4 → 新 pick 不是 P0／P3 就補它的背景強度掃描。
-- pick-q4（13 §3.2）在缺 P2 的情況下挑了 **P3（S4：全部搬完一次拆）**；**還不是定案**，等 43ca。
+- pick-q4（13 §3.2）在缺 P2 的情況下挑了 **P3（S4：全部搬完一次拆）**。**43ca 重量後定案（13:55:48 → 13:59:49Z，`20261018-135548-m10-rs2-q4-llama-fp8-P2-remeasure`，3 個 guard CLEAN）：P2 補成 4／4 格（GPU 忙、全載入 E1 幾何平均 0.0332 s），P3 0.0293 s 還是最小 → 仍是 P3**（舊檔 `q4_pick_43b.json`）。P3 沒變，所以不用補背景強度掃描。
 - 數字（E1 中位數，ms；`results/m10_restore2_mi300x/q4/*/restores.csv`）：
   - GPU 忙、全部載入：P0 62.3／54.7／33.2／42.9（Llama FP8／INT4、Qwen FP8／INT4）→ P3 49.3／35.8／22.2／18.9（快 21–56%）；P2 —／39.8／25.3／23.4；P5 50.9／39.9／25.3／22.9；P1（io_prio）和 P0 一樣；P4a／P4b（留 CU）6–41%。
   - GPU 忙、Cake：只有留 CU 有用（P4b 60.5–62.2／48.9–50.0，比 P0 快 23–26%）；S4／S2k8 沒變快（Qwen 的 S4 反而慢 8–9%）。
   - 背景吞吐（每秒 matmul，INT4）：P0 368／371、P3 367／372（Llama／Qwen；不掉）；P4a 323／328（−12%）、P4b 296／298（−20%）。
   - 背景強度掃描（INT4、E1、ms）：P0 全部載入 Llama 44.3 → 55.2 → 60.0、Qwen 28.6 → 42.8 → 52.9（duty 0.4 → 0.7 → 0.9）；**P3 全部載入 Llama 35.2 → 36.1 → 36.7、Qwen 19.3 → 19.7 → 20.8（幾乎不受背景影響）**；Cake 不管哪種拆法都隨背景暴增（Llama 57 → 79 → 134、Qwen 45 → 66 → 108）。
 - 讀法（只報告；挑法定案後寫進 11 問題一、問題三和 08）：GPU 忙時，「一次拆完」只開一個 kernel，不用和背景工作搶 64 次排程；全部載入又不用重算，所以整個還原幾乎不受背景影響。Cake 的重算線本身就要搶 GPU，換拆法救不了。
+
+### 14.2 43c Q2：會合規則 G5／G5b（10/18 11:37:56 → 13:55:48Z）
+
+- G5b 冒煙（`20261018-113756-m10-rs2-smoke-g5b`）過。16 個 grid（G5、G5b × 2 模型 × FP8／INT4 × CPU 層 3×10、慢的層 b16／b32／b48 2×5；Cake 照規則＋claim（Cake）＋CPU 層的全載入），全部 exit 0；40 個 gpu_guard 全 CLEAN。run：`20261018-113902-m10-rs2-q2-llama-fp8-cpu` … `-134456-…-qwen-int4-slow_g5b`。表：`results/m10_restore2_mi300x/tables_13.md`（`m10_restore2.py report`）。
+- pick-g5（13 §8c；每格「規則的中位數 ÷ 最好」，CPU 層最好＝min(Cake, 全載入)、慢的層＝Cake；96 個共同格子的幾何平均）：**G5 1.048、G5b 1.004 → 帶 G5b 到 44d**（`g5_pick.json`）。
+  - G5：CPU 層 1.201（17 格差超過 5%，最差 Llama INT4・閒 E1 1.77：GPU 閒時還是選 Cake，65 ms vs 全載入 36 ms）；慢的層 1.002。
+  - G5b：CPU 層 1.007（每一格都選「不重算」，E1：Llama FP8 48／62 ms、INT4 36／55、Qwen FP8 24／34、INT4 21／43，閒／忙，和全載入一樣）；b32、b48 都選 Cake（1.00）；**b16・忙選了不重算**：Llama INT4 287 vs Cake 327 ms（贏），Llama FP8 446 vs 411、Qwen FP8 362 vs 333（輸 8–9%），最差一格 1.10（Qwen INT4 b16・忙 E0）。
+- 這批用的是原本的拆法（S0）；S4／G5b 一起用的效果由 44d 量（P0、冠軍、Q4 的 P3、G5b、nodq 分開跑）。
 
 **前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。

@@ -1,18 +1,19 @@
 {
  "model": "llama",
  "source_run_ids": [
-  "20261018-094550-m10-rs2-q4-llama-fp8-P2"
+  "20261018-094550-m10-rs2-q4-llama-fp8-P2",
+  "20261018-135548-m10-rs2-q4-llama-fp8-P2-remeasure"
  ],
  "meets": {
   "E1": {
    "cpu": {
     "idle": 2,
     "idle_all": [
-     2,
-     2,
-     2,
-     2,
-     2,
+     1,
+     1,
+     1,
+     1,
+     1,
      2,
      2,
      2,
@@ -78,9 +79,9 @@
    "cpu": {
     "idle": 3,
     "idle_all": [
-     3,
-     3,
-     3,
+     2,
+     2,
+     2,
      3,
      3,
      3,

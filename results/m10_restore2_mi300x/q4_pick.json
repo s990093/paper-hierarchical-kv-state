@@ -12,9 +12,9 @@
    "bg_ratio_vs_P0": 1.00004752785251
   },
   "P2": {
-   "n_cells": 3,
-   "gm_busy_loadall_E1": null,
-   "bg_ratio_vs_P0": 1.0008424102041513
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.03317141458389762,
+   "bg_ratio_vs_P0": 1.0006205518205458
   },
   "P3": {
    "n_cells": 4,
@@ -40,11 +40,10 @@
  "candidates": [
   "P0",
   "P1",
+  "P2",
   "P3",
   "P5"
  ],
  "pick": "P3",
- "notes": [
-  "P2 llama fp8：沒有可用的資料"
- ]
+ "notes": []
 }
