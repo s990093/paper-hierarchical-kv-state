@@ -57,11 +57,13 @@ class Fx:
                             n += 1
                             ttft = self.ttft_fn(trace, s, ol, mem, label)
                             d = dict(n_req=nreq, sess_orig=np.arange(S), ttft_n=np.asarray(int(nreq.sum()) if False else 100), ttft_sum=np.asarray(0.0),
-                                     ttft_nm=np.asarray(0 if ttft is not None else 1), ttft_hist=np.zeros(len(RM.TTFT_EDGES) - 1, np.int64))
+                                     ttft_nm=np.asarray(0 if ttft is not None else 1), ttft_hist=np.zeros(len(RM.TTFT_EDGES) - 1, np.int64),
+                                     ttft_vals=np.zeros(100))
                             if ttft is not None:
                                 m, p = ttft
                                 d["ttft_sum"] = np.asarray(m * 100.0)
                                 d["ttft_hist"][int(np.searchsorted(RM.TTFT_EDGES, max(p, 1e-4)) - 1)] = 100       # 全部 100 個請求都落在 p 的那一格
+                                d["ttft_vals"] = np.full(100, float(p))          # 逐請求的 ttft（精確的合併 p99 用）：100 個都＝p
                             if tag == "both":
                                 d.update(ssd_write_bytes_H=(xh * 0.5).astype(np.int64), loadonly_ssd_read_bytes_H=(xh * 0.5).astype(np.int64),
                                          ssd_write_bytes_H2=(x2 * 0.25).astype(np.int64), loadonly_ssd_read_bytes_H2=(x2 * 0.75).astype(np.int64))
@@ -346,8 +348,8 @@ def test_effective_sessions():
     assert abs(AM.effective_sessions([3, 1]) - 1 / ((3 / 4) ** 2 + (1 / 4) ** 2)) < 1e-12
 
 
-def test_fi_pooled_guard_from_hist(tmp_path):
-    """FreeInference 兩週合起來：護欄用 npz 的加總（平均精確）與直方圖（p99）合併；NOT_MEASURED 的週讓整體 NM。"""
+def test_fi_pooled_guard_from_vals(tmp_path):
+    """FreeInference 兩週合起來：護欄用 npz 的逐請求 ttft 合併（p99、平均都精確）；NOT_MEASURED 的週讓整體 NM。"""
     spec = S5(fi=True)
     for t in spec:
         spec[t]["S"] = 120
@@ -358,9 +360,61 @@ def test_fi_pooled_guard_from_hist(tmp_path):
         return (1.0, 2.0)
     r = Fx(_sub(tmp_path, "fi"), spec, mk_bytes(0.3), tt).analyze()
     row = next(x for x in r["rows"] if x["trace"] == "FreeInference" and x["outer"] == "E2" and x["mem_GiB"] == 63.0 and x["h"] == "H")
-    # 合併的 100 個＠2.5 與 100 個＠1.5：p99 在 2.5 那一格 → 比 C0 的 2.0 高 25% → 排除
+    # 合併的 100 個＠2.5 與 100 個＠1.5：p99＝2.5 → 比 C0 的 2.0 高 25% → 排除
     assert "D-idle-14400" in row["guard_excluded"].split(";") and row["best_label"] == "D-idle-3600"
     assert abs(row["best_GiB"] - 83.0 * 240) < 1e-6          # 兩週各 120 個 session
+
+
+def test_pooled_p99_exact_vs_numpy(tmp_path):
+    """幾週合起來的護欄 p99＝對全部請求直接 np.percentile（精確，不是直方圖）；平均＝總和÷個數；缺 ttft_vals 的 npz 明確拒絕；一週 NOT_MEASURED → 整體 NM。"""
+    rng = np.random.default_rng(7)
+    weeks = [rng.lognormal(0.5, 1.8, size=n) for n in (1000, 777, 20001)]
+    rows = []
+    for i, x in enumerate(weeks):
+        pth = str(tmp_path / f"w{i}.npz")
+        np.savez(pth, **RM.ttft_arrays(x, 0, keep_vals=True))
+        rows.append(dict(npz_path=pth, ttftq_mean_s=float(x.mean()), ttftq_p99_s=float(np.percentile(x, 99))))
+    m, p, nm = AM.trace_ttft(rows)
+    allx = np.concatenate(weeks)
+    assert p == float(np.percentile(allx, 99)) and not nm
+    assert abs(m - allx.mean()) <= 1e-12 * allx.mean()
+    h_est = AM.hist_pct(sum(np.load(r["npz_path"])["ttft_hist"] for r in rows), RM.TTFT_EDGES, 99)
+    assert h_est != p and abs(h_est / p - 1) < 0.012        # 直方圖只是近似；這裡確認護欄不再用它
+    old = str(tmp_path / "old.npz")
+    d = RM.ttft_arrays(weeks[0], 0)
+    assert "ttft_vals" not in d
+    np.savez(old, **d)
+    with pytest.raises(SystemExit):                          # 沒有 ttft_vals → 拒絕（不悄悄退回直方圖）
+        AM.trace_ttft([rows[0], dict(npz_path=old, ttftq_mean_s=1.0, ttftq_p99_s=1.0)])
+    nmp = str(tmp_path / "nm.npz")
+    np.savez(nmp, **RM.ttft_arrays(weeks[0], 3, keep_vals=True))
+    assert AM.trace_ttft([rows[0], dict(npz_path=nmp, ttftq_mean_s=1.0, ttftq_p99_s=1.0)])[2] is True
+    # 執行器只替有好幾個切片的群組（FreeInference 的週）存逐請求 ttft
+    assert RM.keeps_ttft_vals("freeinference/week03") and not RM.keeps_ttft_vals("bailian/coder") and not RM.keeps_ttft_vals("synth/small-seed1")
+
+
+def test_guard_sensitivity_report(tmp_path):
+    """護欄敏感度（04 §4，只報告）：1.05（登記的）、1.10、1.20、不設。D-idle-14400（最省）p99 比 C0 高 15%、D-idle-1800 高 25%、D-idle-3600 高 8%：
+    1.05 排除這三個 → 最好的是 C2（85）；1.10 放回 3600；1.20 放回 14400；不設也一樣。判定只用 1.05。"""
+    def tt(trace, s, ol, mem, label):
+        return {"D-idle-14400": (1.0, 2.3), "D-idle-3600": (1.0, 2.16), "D-idle-1800": (1.0, 2.5)}.get(label, (1.0, 2.0))
+    r = Fx(_sub(tmp_path, "gs"), S5(), mk_bytes(0.3), tt).analyze()
+    got = {x["guard_thr"]: x for x in r["reports"] if x["kind"] == "report_guard_sens" and x["trace"] == "Bailian coder" and x["outer"] == "E2@session"
+           and x["mem_GiB"] == 63.0 and x["h"] == "H"}
+    assert set(got) == {"1.05", "1.10", "1.20", "none"}
+    assert got["1.05"]["best_label"] == "C2" and abs(got["1.05"]["best_GiB"] - 85.0 * 120) < 1e-6
+    assert got["1.10"]["best_label"] == "D-idle-3600" and abs(got["1.10"]["best_GiB"] - 83.0 * 120) < 1e-6
+    assert got["1.20"]["best_label"] == "D-idle-14400" and abs(got["1.20"]["best_GiB"] - 82.0 * 120) < 1e-6
+    assert got["none"]["best_label"] == "D-idle-14400" and got["none"]["guard_excluded"] == ""
+    row = next(x for x in r["rows"] if x["trace"] == "Bailian coder" and x["outer"] == "E2" and x["mem_GiB"] == 63.0 and x["h"] == "H")
+    assert row["best_label"] == got["1.05"]["best_label"] and abs(row["savings"] - got["1.05"]["savings"]) < 1e-12      # 判定那一列＝登記的 1.05
+    assert abs(got["1.20"]["savings"] - (82.0 - 82.0 * 0.7) / 82.0) < 1e-9 and got["1.20"]["savings"] < got["1.05"]["savings"]      # 護欄越鬆，最好的對手越強，省的越少
+    pref = str(tmp_path / "gs" / "out")
+    AM.write_outputs(r, pref, "full", "x.csv")
+    md = open(pref + "_map.md", encoding="utf-8").read()
+    assert "護欄敏感度" in md and "D-idle-3600" in md
+    js = json.load(open(pref + "_verdict.json", encoding="utf-8"))
+    assert {g["guard_thr"] for g in js["guard_sensitivity"]} == {"1.05", "1.10", "1.20", "none"} and js["guard"] == 1.05
 
 
 # ===================================================================== 執行器

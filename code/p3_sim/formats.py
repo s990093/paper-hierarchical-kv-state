@@ -257,7 +257,8 @@ def load_format_table(model, platform, path=None):
 class Costs:
     """平台常數：f(i)（秒）、GPU 忙倍數、CPU 層、SSD 層。"""
 
-    def __init__(self, f_ms, f_slope_ms, f_icpt_ms, busy_factor, cpu, ssd, platform="custom", src=None):
+    def __init__(self, f_ms, f_slope_ms, f_icpt_ms, busy_factor, cpu, ssd, platform="custom", src=None, ssd_k_nm=False):
+        self.ssd_k_nm = bool(ssd_k_nm)     # True：SSD 的 k_read（讀受寫拖慢的倍數）沒量；ssd["k"] 只是占位的 1.0，View 追蹤哪些請求的 TTFT 碰到它（06 §24）
         self.f_ms, self.f_slope, self.f_icpt = f_ms, f_slope_ms, f_icpt_ms
         self.busy_factor = busy_factor
         self.cpu = cpu        # dict(r, w, k)  GiB/s
@@ -287,13 +288,13 @@ SSD8_CONSTANTS = os.path.join(REPO, "results", "p3_calib_3090", "constants_3090_
 
 def _ssd8_profile():
     """3090 的 /ssd8（SATA QLC）：讀、寫頻寬＝results/p3_calib_3090 的實測中位數（run 20261018-001935-p3cal-ssd8bw）。
-    讀受寫拖慢的倍數 k_read：/ssd8 **沒量**（disk_bw 只量單向）→ 這裡用 MI300X 本地 SSD 的 k 代替，**是假設**；
-    只有敏感度格子會用（04 v4 §5），src 欄寫明。"""
+    讀受寫拖慢的倍數 k_read：/ssd8 **沒量**（disk_bw 只量單向）。04 v4 §5「只用量到的常數」→ **不借 MI300X 的 3.306**：
+    k_read 在這裡是占位的 1.0（k_nm＝True），View 追蹤「TTFT 碰到 k_read 的請求」（讀被寫拖慢、排在被拖慢的讀後面、或時間由這種請求的 TTFT 推出）
+    → 那些請求的 ttftq＝NOT_MEASURED；位元組不受影響。只有敏感度格子會用，src 欄寫明。"""
     d = json.load(open(SSD8_CONSTANTS, encoding="utf-8"))["new_in_v2"]["ssd8_disk"]
-    k = json.load(open(os.path.join(CFG, "costs_mi300x.json"), encoding="utf-8"))["ssd_profiles"]["mi300x_local"]["k_read"]
-    return dict(read_GiBps=float(d["read_GiBps_median"]), write_GiBps=float(d["write_GiBps_median"]), k_read=float(k),
+    return dict(read_GiBps=float(d["read_GiBps_median"]), write_GiBps=float(d["write_GiBps_median"]), k_read=1.0, k_nm=True,
                 src=f"{SSD8_CONSTANTS}（run {d['run_id']}）讀 {d['read_GiBps_median']}、寫 {d['write_GiBps_median']} GiB/s；"
-                    f"k_read＝NOT_MEASURED on /ssd8，假設＝MI300X local 的 {k}（敏感度格子；06 §19）")
+                    f"k_read＝NOT_MEASURED on /ssd8（不借別台機器的值；占位 1.0，碰到它的請求 ttftq＝NOT_MEASURED；06 §24）")
 
 
 def cpu_factor_of(platform, cpu):
@@ -315,7 +316,7 @@ def load_costs(platform, model, ssd_profile="mi300x_local"):
         _num(v, f"ssd_profiles.{ssd_profile}.{k_}")
     return Costs(m["f_ms"], m.get("f_slope_ms"), m.get("f_icpt_ms"), m.get("busy_factor"), cpu, ssd, platform,
                  src=dict(costs_run=d["run_id"], f=m.get("f_src"), ssd=s.get("src"), cpu=m["cpu"].get("src"),
-                          cpu_busy_h2d_factor=d.get("cpu_busy_h2d_factor")))
+                          cpu_busy_h2d_factor=d.get("cpu_busy_h2d_factor")), ssd_k_nm=bool(s.get("k_nm")))
 
 
 def cpu_busy_factor(platform):

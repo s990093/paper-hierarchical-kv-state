@@ -31,7 +31,7 @@ import pytest  # noqa: E402
 
 import sim  # noqa: E402
 import trace as TR  # noqa: E402
-from engine import Engine, View  # noqa: E402
+from engine import W_STORE, Engine, View  # noqa: E402
 from engine_block import BlockEngine, BView  # noqa: E402
 from formats import Costs, ModelFormats, load_costs, load_format_table  # noqa: E402
 from policies import PredictorPolicy, make_policy  # noqa: E402
@@ -719,3 +719,121 @@ def test_strict_oracle_invariants_synth(engine):
     assert out["C2"]["surprise_events"] > 0, "全 int4：> 32K 的請求（63%）應該重算"
     _write_rows("test_strict_synth.csv", [dict(test="strict_synth", engine=engine, policy=k, surprise_events=v["surprise_events"],
                                                surprise_blocks=v["surprise_blocks"], reads=v["reads"]) for k, v in out.items()])
+
+
+# ===================================================================== 2026-10-18（04 §3.3「重算之後」）重算的新 KV 照現在的決定重存
+def _hand_P_restore():
+    """手造 4 個請求：s0 在 r0 寫 4 個 block（2,048 token）；s1 在 r1 寫 4 個；s0 在 r2 回來（輸入 40 個 block＝20,480 token，>16,384）、
+    再在 r3 回來（輸入 41 個 block）。測試格式表：int4 在 <16K 過關、≥16K 不過關；bf16 都過關。"""
+    full = [[0, 1, 2, 3], [10, 11, 12, 13], [0, 1, 2, 3, 4, 5], [0, 1, 2, 3, 4, 5, 6]]
+    acc = {}
+    for r, ks in enumerate(full):
+        for b in ks:
+            acc.setdefault(b, []).append(r)
+    return dict(full=full, nall=[4, 4, 40, 41], acc=acc, tl=[0.0, 10.0, 20.0, 30.0], kindc=[0, 0, 1, 1], sessl=[0, 1, 0, 0],
+                parentl=[-1, -1, 0, 2], obs_end=[1e6] * 4, nmax=64, B=14, R=dict(n_sess=2), win=(0.0, 100.0),
+                meta=dict(source="hand", variant="restore", tier="S", n_req=4, n_sess=2))
+
+
+def _restore_run(engine, ft, pol, cap_MB, pol_kw=None, **kw):
+    P = _hand_P_restore()
+    cap = cap_MB / 1024.0
+    kw = dict(dict(int2_on_read="recompute_unverified", unverified_len="request"), **kw)
+    if engine == "session":
+        r, _, ids, e, _ = sim.run_cell(P, "E2", pol, cap, "llama", SPECS[:1], fmt_path=ft, check=1, pol_kw=pol_kw, **kw)
+        wst = e.wbytes[W_STORE]
+        cf = lambda b: e.cfmt[b]   # noqa: E731
+        sf = lambda b: e.sfmt[b]   # noqa: E731
+    else:
+        r, _, ids, e, _ = sim.run_cell_fifo1(P, "E2", pol, cap, "llama", SPECS[0], fmt_path=ft, pol_kw=pol_kw, **kw)
+        wst = e.wbytes["store"]
+        cf = lambda b: e.cfmt.get(b, 0) if b in e.cpu else 0   # noqa: E731
+        sf = lambda b: e.sfmt.get(b, 0)   # noqa: E731
+    assert all(i["ok"] for i in ids), [i for i in ids if not i["ok"]]
+    assert r[0]["reads_fail"] == 0 and r[0]["reads_unverified"] == 0
+    return r[0], e, cf, sf, wst
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_recompute_restore_c2_restores_int4_again(ft, engine):
+    """(i) C2（全 int4）：長請求重算後又存成 int4（SSD 上的舊副本作廢），所以下一個長讀取又重算；位元組與恆等式成立。
+    cap＝150 MB：r1 把 s0（4 個 int4＝80 MB）擠到 SSD；r2 從 SSD 讀到的 4 個 block 不能用 → 重算，舊 SSD 副本作廢。"""
+    r, e, cf, sf, wst = _restore_run(engine, ft, "C2", 150)
+    sb = e.surp_blk
+    assert [int(x) for x in sb] == [0, 0, 4, 6], list(sb)          # r2：4 個（來自 SSD）；r3：6 個又重算
+    assert r["surprise_events"] == 2 and r["surprise_blocks"] == 10 and r["surprise_tokens"] == 10 * 512
+    I4 = 20 << 20
+    assert wst == (4 + 4 + 6 + 7) * I4, wst                        # r2 存 6 個（重算 4＋新 2）、r3 存 7 個（重算 6＋新 1）
+    assert all(cf(b) == 3 for b in range(7)), [cf(b) for b in range(7)]
+    assert all(sf(b) == 0 for b in range(7)), "舊 SSD 副本要作廢"
+    assert all(sf(b) == 3 for b in (10, 11, 12, 13)), "s1 被擠到 SSD 的副本不受影響"
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_recompute_restore_c4r_restores_bf16(ft, engine):
+    """(ii) C4r（thr＝2,048 token＜重存時的長度 3,072）：重算後存成 BF16，下一個長讀取不再重算；對照 C2。"""
+    r, e, cf, sf, wst = _restore_run(engine, ft, "C4r", 1024, pol_kw=dict(c4_threshold_tokens=2048))
+    assert [int(x) for x in e.surp_blk] == [0, 0, 4, 0], list(e.surp_blk)
+    assert r["surprise_events"] == 1 and r["surprise_blocks"] == 4
+    assert all(cf(b) == 1 for b in range(7)), [cf(b) for b in range(7)]          # 0..5 重存成 BF16；6 是 r3 的新 block（3,584 token＞thr）
+    assert all(cf(b) == 3 for b in (10, 11, 12, 13))
+    assert wst == 8 * (20 << 20) + 7 * (64 << 20), wst  # r0、r1 各 4 個 int4（=8）；r2 存 6 個 bf16、r3 存 1 個 bf16（=7）
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_recompute_restore_serve_unchanged(ft, engine):
+    """serve 照舊：不重算、不重存（C2 的 block 一直是 int4，來歷也不變）。品質帳照舊記（請求長度 → fail）。"""
+    P = _hand_P_restore()
+    if engine == "session":
+        r, _, ids, e, _ = sim.run_cell(P, "E2", "C2", 1.0, "llama", SPECS[:1], fmt_path=ft, check=1, unverified_len="request")
+        wst = e.wbytes[W_STORE]
+    else:
+        r, _, ids, e, _ = sim.run_cell_fifo1(P, "E2", "C2", 1.0, "llama", SPECS[0], fmt_path=ft, unverified_len="request")
+        wst = e.wbytes["store"]
+    assert all(i["ok"] for i in ids) and r[0]["surprise_events"] == 0 and int(e.surp_blk.sum()) == 0
+    assert wst == (4 + 4 + 2 + 1) * (20 << 20), wst
+    assert r[0]["reads_fail"] > 0
+
+
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_recompute_restore_oracle_no_surprise(ft, engine):
+    """oracle 在嚴格規則下沒有意外重算，所以重存規則不碰它們。"""
+    for pol in ("O", "O-len"):
+        r, e, _, _, _ = _restore_run(engine, ft, pol, 1024)
+        assert r["surprise_events"] == 0 and int(e.surp_blk.sum()) == 0, pol
+
+
+# ===================================================================== 2026-10-18（04 §5）只用量到的 3090 常數：/ssd8 的 k_read 沒量
+def test_ssd8_k_read_not_borrowed():
+    c = load_costs("3090", "llama", "ssd8_3090_meas")
+    assert c.ssd_k_nm and c.ssd["k"] == 1.0 and c.ssd["k"] != 3.306
+    assert "NOT_MEASURED" in c.src["ssd"] and "3.306" not in c.src["ssd"]
+    assert not load_costs("mi300x", "llama").ssd_k_nm
+    with pytest.raises(NotImplementedError):                      # block 引擎沒有這個追蹤
+        BView(c, load_format_table("llama", "mi300x"), "idle", 8)
+
+
+def _k_view(ft, k_nm, tl):
+    P = _hand_P_strict()
+    P = dict(P, tl=tl)
+    mf = load_format_table("llama", "mi300x", ft)
+    costs = load_costs("mi300x", "llama")
+    costs.ssd = dict(costs.ssd, k=1.0)
+    costs.ssd_k_nm = k_nm
+    v = View(costs, mf, "idle", "cake", 64, 3)
+    e = Engine(P, sim.outer_cfg("E2"), make_policy("C0", mf), 4 * BF, [v], mf, check=1).run()
+    return e, v
+
+
+def test_ssd8_k_read_taint(ft):
+    """手造：r1 把 s0 的 4 個 BF16 block 降級寫 SSD（256 MB，寫 ≈0.13 s）。r2 馬上（10.01 s）回來 → 讀 SSD 時寫入還沒完 → k_read 乘上去 → NOT_MEASURED；
+    r2 晚到（30 s）→ 不碰 k_read → 有數字。k_nm 只加旗標，不改任何時間（和 k_nm＝False、k＝1.0 逐位元相同）。"""
+    for tl, hit in (([0.0, 10.0, 10.01], True), ([0.0, 10.0, 30.0], False)):
+        e0, v0 = _k_view(ft, False, tl)
+        e1, v1 = _k_view(ft, True, tl)
+        assert np.array_equal(v0.ttft, v1.ttft) and v0.slow.bytes_r == v1.slow.bytes_r and np.array_equal(v0.nC, v1.nC)
+        assert v1.nS[2] > 0, "r2 要從 SSD 讀"
+        assert bool(v1.nmk[2]) is hit and bool(v1.nmreq[2]) is hit, (tl, list(v1.nmk))
+        assert not v1.nmk[0] and not v1.nmk[1] and not v0.nmreq.any()
+        # 傳遞：碰到 k_read 的請求，它的 TTFT 決定了結尾的寫入時刻 → CPU 寫入佇列的結束時刻也算由 k_read 推出
+        assert v1.cw_ta is hit, (tl, v1.cw_ta)

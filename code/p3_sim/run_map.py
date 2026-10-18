@@ -358,18 +358,28 @@ def _pool_rows(rows):
 TTFT_EDGES = np.logspace(-4, 7, 2401)      # 回來請求的等待時間直方圖的邊界（每格 ×1.0107；FreeInference 幾週合起來的 p99 用，analyze_map.hist_pct）
 
 
-def ttft_arrays(x, nm):
-    """回來請求的 ttft（秒）→ 直方圖與加總（逐週合併用）。nm＝這些請求裡 NOT_MEASURED 的個數（>0 時整個 ttft 不能用）。"""
+def ttft_arrays(x, nm, keep_vals=False):
+    """回來請求的 ttft（秒）→ 直方圖與加總。nm＝這些請求裡 NOT_MEASURED 的個數（>0 時整個 ttft 不能用）。
+    keep_vals＝True（FreeInference 各週）：另存逐請求的 ttft（float64），幾週合起來的護欄 p99 用它精確算（04 §4；不用直方圖）。"""
     x = np.asarray(x, float)
     h = np.histogram(np.clip(x, TTFT_EDGES[0], TTFT_EDGES[-1]), TTFT_EDGES)[0].astype(np.int64)
-    return dict(ttft_hist=h, ttft_n=np.asarray(len(x), np.int64), ttft_sum=np.asarray(float(x.sum())), ttft_nm=np.asarray(int(nm), np.int64))
+    d = dict(ttft_hist=h, ttft_n=np.asarray(len(x), np.int64), ttft_sum=np.asarray(float(x.sum())), ttft_nm=np.asarray(int(nm), np.int64))
+    if keep_vals:
+        d["ttft_vals"] = x.copy()
+    return d
 
 
-def _slim_arrays(P, eng, view, orig_sess):
+def keeps_ttft_vals(slice_name):
+    """同一個判定群組有好幾個切片（FreeInference 的週）→ 護欄要把它們合起來 → 存逐請求的 ttft。"""
+    g = SLICES[slice_name][2]
+    return sum(1 for v in SLICES.values() if v[2] == g) > 1
+
+
+def _slim_arrays(P, eng, view, orig_sess, keep_vals=False):
     arr = ledger.per_session(P, eng, [view])
     arr["sess_orig"] = np.asarray(orig_sess, np.int64)
     ret = np.asarray(P["kindc"]) == 1
-    arr.update(ttft_arrays(np.asarray(view.ttft)[ret], int(np.asarray(view.nmreq, bool)[ret].sum())))
+    arr.update(ttft_arrays(np.asarray(view.ttft)[ret], int(np.asarray(view.nmreq, bool)[ret].sum()), keep_vals))
     return arr
 
 
@@ -445,7 +455,7 @@ def run_placements(jd, P, ctx):
             specs, groups = MAIN_SPECS, ["main"] * len(MAIN_SPECS)
         rows, _, ids, eng, views = sim.run_cell(P, jd["outer"], pol["name"], jd["mem"], jd["model"], specs, T=jd["T"], **kw)
         assert all(i["ok"] for i in ids), [i for i in ids if not i["ok"]][:3]
-        arr = _slim_arrays(P, eng, views[0], np.arange(P["R"]["n_sess"]))
+        arr = _slim_arrays(P, eng, views[0], np.arange(P["R"]["n_sess"]), keeps_ttft_vals(jd["slice"]))
         out_rows = []
         for i, (r, g) in enumerate(zip(rows, groups)):
             c = dict(base, view_group=g, view_idx=i, is_primary=(g == "main" and i == 0), k_gpus=1, **r)
@@ -476,7 +486,7 @@ def run_placements(jd, P, ctx):
         nretc += int(ret.sum())
         hasf = hasf and bool(v.has_f)
         grows.append(rows[0])
-        parts.append(_slim_arrays(Pg, eng, v, Pg["orig_sess"]))
+        parts.append(_slim_arrays(Pg, eng, v, Pg["orig_sess"], keeps_ttft_vals(jd["slice"])))
         del eng, vs
     row = _pool_rows(grows)
     x = np.concatenate(xs) if xs else np.zeros(0)

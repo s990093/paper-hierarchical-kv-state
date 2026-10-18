@@ -67,6 +67,8 @@ class BView:
         self.label = label or f"{costs.platform}|gpu={gpu}|cpu_x{cpu_factor}|ssd/{ssd_share}|cake|fifo1"
         self.gpu, self.mode, self.cpu_factor, self.ssd_share = gpu, "cake", cpu_factor, ssd_share
         self.has_f = True
+        if costs.ssd_k_nm:
+            raise NotImplementedError("block 引擎的放置依賴時間（佇列預取），沒有「k_read 沒量」的追蹤；/ssd8 視角只在 session 引擎（06 §24）")
         self.f = f if f is not None else costs.f_array(nmax, gpu)
         self.fb = list(fbytes if fbytes is not None else mf.bytes)
         dql = dq if dq is not None else mf.dq_list(gpu)
@@ -397,7 +399,7 @@ class BlockEngine:
             if not (i < n_old and b in self.cpu) and (i >= n_old or i >= L or self.promote):
                 first_new = b
                 break
-            if rlo <= i < rhi and b in self.cpu and self.cq[b] in self.nro:    # INT2 來歷、要被重算取代的
+            if rlo <= i < rhi:    # 有存但沒載入、要被重算的新 KV 取代的（04 §3.3「重算之後」，不論來歷）
                 first_new = b
                 break
         ctx = dict(r=j, s=q.get("s", j), t=q["t"], n_blocks=len(h), tokens=tok, n_new=len(h) - n_old, nreq=None,
@@ -428,17 +430,16 @@ class BlockEngine:
         fid = self._decide(j, q, L)
         nbf = self.fb[fid]
         rlo, rhi = self._rep
-        nro = self.nro
         for i in range(len(h)):
             b = h[i]
             if b in self.prefetched:
                 self.prefetched.discard(b)
                 self.S["pf_used"] += 1
-            if rlo <= i < rhi and self.sfmt.get(b, 0) and self.sq[b] in nro and not (b in cpu and self.cq[b] not in nro):
-                self.sfmt[b] = 0           # int2_on_read=recompute：SSD 上 INT2 來歷的副本丟掉（重算的新 KV 取代）
+            if rlo <= i < rhi and self.sfmt.get(b, 0):
+                self.sfmt[b] = 0           # 重算的新 KV 取代：SSD 上的舊副本作廢（之後新副本若被降級寫 SSD 是一般的寫入）
                 self.sq.pop(b, None)
-            if i < n_old and b in cpu and rlo <= i < rhi and self.cq[b] in nro:
-                # 重算出來的新 KV 取代 CPU 裡 INT2 來歷的副本（照這一輪的決定寫）
+            if i < n_old and b in cpu and rlo <= i < rhi:
+                # 重算出來的新 KV 取代 CPU 裡舊來歷的副本（照這一輪的決定寫）
                 cpu.move_to_end(b)
                 self.avail.pop(b, None)
                 self.cpu_used += nbf - self.fb[self.cfmt[b]]

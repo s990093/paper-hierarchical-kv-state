@@ -239,6 +239,14 @@ def summarize_view(P, eng, v, H=0.0):
     else:
         row.update(ttftq_mean_s="NOT_MEASURED", ttftq_p50_s="NOT_MEASURED", ttftq_p90_s="NOT_MEASURED", ttftq_p99_s="NOT_MEASURED",
                    restoreq_mean_s="NOT_MEASURED")
+    row["ssd_k_read_nm"] = bool(getattr(v, "k_nm", False))
+    if row["ssd_k_read_nm"]:
+        # 這個視角的 SSD k_read 沒量（06 §24）：碰到它的請求 ttftq＝NOT_MEASURED（整列也因此是 NOT_MEASURED）；另報「沒碰到的請求」的數字（占位 k=1.0 不影響它們）。
+        # 其他由時間推出的欄位（SSD 忙碌、飽和、排隊、Cake 的 SSD 位元組）在這個視角用占位 k=1.0 算＝下界，不可當結論；位元組（寫入、只載入的讀取）和 k 無關。
+        free = ret & ~nmr
+        xf = v.ttft[free]
+        row.update(ttft_nm_k_ret_requests=int(np.asarray(v.nmk, bool)[ret].sum()), ttftq_kfree_n=int(free.sum()),
+                   ttftq_kfree_mean_s=float(xf.mean()) if len(xf) else float("nan"), ttftq_kfree_p99_s=_pct(xf, 99))
     if H > 0:
         okh = bool(v.has_f) and int(nmr[retH].sum()) == 0
         xh = v.ttft[retH]

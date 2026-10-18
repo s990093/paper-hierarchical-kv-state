@@ -35,6 +35,7 @@ NOT = "NOT_MEASURED"
 SEED = 20261018
 N_BOOT = 1000
 GUARD = 1.05
+GUARD_SENS = [("1.05", 1.05), ("1.10", 1.10), ("1.20", 1.20), ("none", None)]       # 04 §4：護欄敏感度（只報告）；1.05 是登記的、判定用的那個
 GO_STRONG, GO_WEAK, NOGO = 0.15, 0.05, 0.05
 MIN_EFF_SESSIONS = 100.0
 TRACES = ["Bailian coder", "Bailian traceA", "Mooncake", "WildChat", "FreeInference"]
@@ -138,38 +139,44 @@ def _num(x):
     return x
 
 
-_TTFT_CACHE = {}
+_TTFT_POOL_CACHE = {}
 
 
 def _ttft_npz(path):
-    v = _TTFT_CACHE.get(path)
-    if v is None:
-        z = np.load(path)
-        v = _TTFT_CACHE[path] = (z["ttft_hist"].copy(), int(z["ttft_n"]), float(z["ttft_sum"]), int(z["ttft_nm"]))
-    return v
+    z = np.load(path)
+    if "ttft_vals" not in z.files:
+        raise SystemExit(f"{path}: 沒有逐請求的 ttft_vals，無法精確合併幾週的護欄 p99（04 §4）；請用新版 run_map.py 重跑這個工作")
+    return z["ttft_vals"].astype(np.float64), int(z["ttft_n"]), float(z["ttft_sum"]), int(z["ttft_nm"])
 
 
 def trace_ttft(rows):
     """一份資料（一個格子、一個做法）的回來請求等待時間：(mean, p99, nm)。
-    一個切片＝用列的精確值；FreeInference 幾週＝用 npz 的加總與直方圖合併（平均精確、p99 由直方圖內插，誤差 <1%）。nm＝True：有 NOT_MEASURED。"""
+    一個切片＝用列的精確值；FreeInference 幾週＝用 npz 的逐請求 ttft 串起來，p99＝np.percentile（精確，和直接對全部請求算一樣），
+    平均＝總和÷個數（精確）。nm＝True：有 NOT_MEASURED。（只快取結果，不快取陣列。）"""
     if len(rows) == 1:
         r = rows[0]
         m, p = _num(r["ttftq_mean_s"]), _num(r["ttftq_p99_s"])
         return (None, None, True) if (m is None or p is None) else (m, p, False)
-    from run_map import TTFT_EDGES
-    h = np.zeros(len(TTFT_EDGES) - 1, np.int64)
+    key = tuple(r["npz_path"] for r in rows)
+    if key in _TTFT_POOL_CACHE:
+        return _TTFT_POOL_CACHE[key]
+    xs = []
     n, s, nm = 0, 0.0, 0
     for r in rows:
-        hh_, nn_, ss_, nm_ = _ttft_npz(r["npz_path"])
-        h += hh_
+        v_, nn_, ss_, nm_ = _ttft_npz(r["npz_path"])
+        assert len(v_) == nn_, f"{r['npz_path']}: ttft_vals 個數 {len(v_)} ≠ ttft_n {nn_}"
+        xs.append(v_)
         n += nn_
         s += ss_
         nm += nm_
     if nm:
-        return None, None, True
-    if n == 0:
-        return float("nan"), float("nan"), False
-    return s / n, hist_pct(h, TTFT_EDGES, 99), False
+        out = (None, None, True)
+    elif n == 0:
+        out = (float("nan"), float("nan"), False)
+    else:
+        out = (s / n, float(np.percentile(np.concatenate(xs), 99)), False)
+    _TTFT_POOL_CACHE[key] = out
+    return out
 
 
 def guard_status(pol, c0, thr=GUARD):
@@ -203,7 +210,7 @@ LABELS = ["C0", "C1", "C1-8", "C2", "C3", "C6", "C4-8192", "C4-16384", "C4-32768
 NON_ORACLE = [x for x in LABELS if x not in ORACLE_LABELS]
 
 
-def best_of(res, candidates=None, guard=True):
+def best_of(res, candidates=None, guard=True, thr=GUARD):
     """最好的對手：非 oracle（或給定的 candidates）裡通過護欄、主指標最少的。回傳 dict(label, GiB, excluded, nm, passed)；沒有任何一個 → label None。"""
     cands = [c for c in (candidates or NON_ORACLE) if c in res]
     out = dict(label=None, GiB=float("nan"), excluded=[], nm=[], passed=[], n_candidates=len(cands))
@@ -211,7 +218,7 @@ def best_of(res, candidates=None, guard=True):
         return out
     c0 = res["C0"]["ttft"]
     for c in cands:
-        ok, nmf = guard_status(res[c]["ttft"], c0) if guard else (True, False)
+        ok, nmf = guard_status(res[c]["ttft"], c0, thr) if guard else (True, False)
         if not ok:
             out["excluded"].append(c)
             continue
@@ -454,6 +461,11 @@ def report_only(ix, traces):
             if hh != "H" or vg != "main" or model != "llama" or ov != 1:
                 continue
             # 拆解與 O-loose（只在主視角、Llama、H）
+            for gl, gthr in GUARD_SENS:          # 護欄的敏感度（04 §4，只報告）：同一批做法、換護欄的鬆緊
+                bg = best_of(res, guard=gthr is not None, thr=gthr if gthr is not None else GUARD)
+                sg, bzg = savings_point(bg["GiB"], res["O"]["GiB"])
+                rows.append(dict(base, kind="report_guard_sens", item=f"guard_{gl}", guard_thr=gl, best_label=bg["label"], best_GiB=bg["GiB"],
+                                 guard_excluded=";".join(bg["excluded"]), guard_nm=";".join(bg["nm"]), best_zero=bzg, O_GiB=res["O"]["GiB"], savings=sg))
             for lab in ("O-loose", "O-len", "O-reuse"):
                 if lab in res and not math.isnan(best["GiB"]):
                     s2, _ = savings_point(best["GiB"], res[lab]["GiB"])
@@ -498,6 +510,7 @@ def write_outputs(result, prefix, mode, cells_path):
               not_used=v["not_used"], n_boot=N_BOOT, seed=SEED, guard=GUARD,
               traces={t: dict(slices=i["slices"], eligible=i["eligible"], complete=i["complete"], eff_sessions=i["eff_sessions"], source=i["source"],
                               synthetic=i["synthetic"]) for t, i in result["traces"].items()},
+              guard_sensitivity=[{k: (None if isinstance(x, float) and math.isnan(x) else x) for k, x in r.items()} for r in result["reports"] if r["kind"] == "report_guard_sens"],
               synthetic_pseudo_verdict=result["synthetic_pseudo_verdict"], boot_q={f"{k[0]}|{k[1]}": b for k, b in result["boot"].items()})
     json.dump(js, open(prefix + "_verdict.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1, default=str)
     # markdown：整張地圖（主格有 CI；其他只有點）
@@ -517,6 +530,21 @@ def write_outputs(result, prefix, mode, cells_path):
                 cells.append("—" if r is None else f"{fmt_pct(r['savings'])} [{fmt_pct(r['ci_lo'])}, {fmt_pct(r['ci_hi'])}]" +
                              (f"<br>最好：{r['best_label']}" if hh == "H" else "") + ("<br>best=0" if r["best_zero"] else ""))
             L.append(f"| {ol} | {mem:g} | " + " | ".join(cells) + " |")
+        L.append("")
+    gs = [r for r in result["reports"] if r["kind"] == "report_guard_sens" and (r["outer"].split("@")[0], r["mem_GiB"]) in PRIMARY_CELLS
+          and r["outer"].split("@")[1] == ENGINE_OF.get(r["outer"].split("@")[0])]
+    if gs:
+        trs = [t for t in result["traces"]]
+        L += ["## 護欄敏感度（只報告；點估計；H；主格）：護欄 1.05 是登記的（判定用），其他只用來看判定有多依賴 5%", "",
+              "| 外層做法 | 記憶體 GiB | 護欄 | " + " | ".join(trs) + " |", "|:--|--:|:--|" + "|".join(":--" for _ in trs) + "|"]
+        for (ol, mem) in PRIMARY_CELLS:
+            for gl, _ in GUARD_SENS:
+                cells = []
+                for t in trs:
+                    r = next((x for x in gs if x["trace"] == t and x["outer"].split("@")[0] == ol and x["mem_GiB"] == mem and x["h"] == "H"
+                              and x["guard_thr"] == gl), None)
+                    cells.append("—" if r is None else f"{fmt_pct(r['savings'])}（{r['best_label']}）")
+                L.append(f"| {ol} | {mem:g} | {gl if gl != 'none' else '不設'} | " + " | ".join(cells) + " |")
         L.append("")
     L += ["## 整張地圖（只有點估計，H；只報告）", ""]
     rep = [r for r in result["reports"] if r["kind"] in ("map", "primary_point", "sens_E2_block") and r["h"] == "H" and r["item"] == "O"]

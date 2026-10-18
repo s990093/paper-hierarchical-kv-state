@@ -319,6 +319,25 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 6. 第一次 `stats_v4.py kgpu` 使用的 `_sub_P` 沒帶 `feats`；嚴格讀取長度之後 block 引擎要用，所以加上（C0 不受影響，k 的值不變：和 04 §9 的 12 個 k 逐一相同，§22）。
 7. 有紀錄的 run 裡，exit code 不是 0 的就是上面的 `kall0`、`maptest2`、`maptest5`、`mapdry`、被中止的 `kgpu5`；其他都是 0。最後的全部測試與端到端見 §23。
 
+**第四個工作階段（重存、護欄敏感度、精確 p99、/ssd8；2026-10-18）的失敗與異常**（完整錯誤）：
+
+1. **開發中測試失敗兩次（我自己的測試寫錯，程式沒改）**，都在新加的 `test_guard_sensitivity_report`：
+   - run `20261018-133905-p3sim-maptest8`（exit 1）：
+     ```
+     >       assert got["1.05"]["best_label"] == "D-idle-300" and abs(got["1.05"]["best_GiB"] - 86.0 * 120) < 1e-6
+     E       AssertionError: assert ('C2' == 'D-idle-300'
+     E         - D-idle-300
+     E         + C2)
+     ```
+     fixture 的位元組：C2＝85 比 D-idle-300＝86 少；期望值寫錯。
+   - run `20261018-133935-p3sim-maptest9`（exit 1）：
+     ```
+     >       assert abs(got["1.20"]["savings"] - (82.0 - 82.0 * 0.7) / 82.0) < 1e-9 and got["1.20"]["savings"] > got["1.05"]["savings"]
+     E       assert (1.8172130467064562e-11 < 1e-09 and 0.3000000000181722 > 0.32470588237047193)
+     ```
+     護欄越鬆，最好的對手越強，省多少越少；不等號寫反。兩處都只改測試；重跑＝`20261018-134039-p3sim-maptest10`（exit 0；23 passed）。
+2. 其他 run 的 exit code 都是 0；沒有被權限擋下的指令；沒有手動中止的 run。
+
 ---
 
 # 第二個工作階段（2026-10-18，opencode）：v4 一定會用到的模擬器工作
@@ -893,7 +912,7 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 | 請求輸入長度 | `engine.request_lengths(P)`：`P["feats"][r][1]`（trace 的 input_tokens），至少是這個請求存的完整 block 數×512；沒有 feats（`x1_sim.prep`、手造的 P）→ `nall×512`。32,768 本身在實測的分箱（和 §11.1 的分箱一致） |
 | 載入規則 | `engine.pass_masks(mf)`：每個長度分箱、每個格式是否 pass；請求的分箱用 `mf.bin_of(輸入長度)`。兩個引擎的 `recompute_unverified` 在 `unverified_len="request"` 時，逐 block 查來歷（CPU 的 `cq`、SSD 的 `sq`）是否 pass，第一個不 pass 的 block 起重算 |
 | 品質帳 | `eng.Lqual`：prefix 版＝`eng.Ltok`（同一個物件，舊行為逐位元不變）；request 版＝請求的輸入長度。`ledger.quality_ledger`、`per_session` 改讀 `Lqual` |
-| 被重算掉的 block 要不要換格式 | 沿用 §12.3：只有「任何長度都不 pass」的來歷（正式表＝INT2）的副本被新 KV 取代；在 >32K 才不 pass 的（INT4、8-bit）副本保留，讓之後較短的請求還能用。**後果**：一個 >32K 的請求反覆讀同一段 INT4 的前綴，每次都重算（CPU 裡沒有副本的 block 才會重新寫成新格式）。這是 04 v4 的規則字面的結果，**請主 session 確認要不要改成「重算後一律換成目前的決定」** |
+| 被重算掉的 block 要不要換格式 | **2026-10-18 第四個工作階段改了（04 §3.3「重算之後」；§24.1）**：重算的 block 一律照現在的決定重存、取代舊副本。（原本只取代 INT2 來歷：>32K 的請求反覆讀同一段 INT4 前綴會每次都重算。） |
 | oracle 的讀取長度 | 新欄 `max_read_req_tokens`（兩個引擎、CPU 寫入與 SSD 寫入兩個時刻都有）＝之後讀到這個 block 的請求裡「輸入長度」最長的。`Oracle(read_len="request")`（`make_policy` 的 `o_read_len`；`run_cell`／`run_cell_fifo1` 的 `unverified_len` 會自動帶過去）：O、O-len、O-loose 對這個長度選過關、最省的格式（**不再和寫入長度取 max**）；之後沒有讀取（截尾區、不知道）→ 用「現在的長度」`max(存的長度, req_tokens)`；O-reuse 用「現在的長度」選（之後變長讀到不過關的格式，記成意外重算） |
 | 新的 ctx 欄 | 所有策略都有 `req_tokens`（寫入的請求，或這個 session 最近一個請求的輸入長度；不含未來資訊）；oracle 另有 `max_read_req_tokens`（`PredictorPolicy.ORACLE_KEYS` 已加，預測器拿不到） |
 | 新的列欄 | `unverified_len`（engine_row）；`format_dq_set`（§19） |
@@ -959,7 +978,7 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 - 階段 A＝Bailian coder、traceA、WildChat、Mooncake conv strict、FreeInference 第 1、5、9、13 週；階段 B＝FreeInference 其餘 12 週（`B-A1`、`B-A2` 同一份定義）。
 - CPU 忙 1.35、1.81、3090 常數、3090＋/ssd8 的敏感度在 A1 的 session 工作裡（上面）；E2 的 block 版敏感度＝`a1_blk`／`a2_blk` 的 E2。
 - **兩個敏感度用了假設（標在程式與列裡）**：
-  1. `/ssd8` 的 SSD 讀受寫拖慢的倍數 k_read **沒量**（`disk_bw.py` 只量單向）。`formats._ssd8_profile()` 用讀 0.4765、寫 0.1515 GiB/s（`results/p3_calib_3090/constants_3090_v2.json`，run `20261018-001935-p3cal-ssd8bw`），k_read 用 MI300X 本地 SSD 的 3.306 代替。profile 名 `ssd8_3090_meas`。
+  1. `/ssd8` 的 SSD 讀受寫拖慢的倍數 k_read **沒量**（`disk_bw.py` 只量單向）。`formats._ssd8_profile()` 用讀 0.4765、寫 0.1515 GiB/s（`results/p3_calib_3090/constants_3090_v2.json`，run `20261018-001935-p3cal-ssd8bw`）。~~k_read 用 MI300X 本地 SSD 的 3.306 代替~~ → **第四個工作階段改了：不借值，碰到 k_read 的請求 ttftq＝NOT_MEASURED（§24.3）**。profile 名 `ssd8_3090_meas`。
   2. 70B 級（`llama70b_scaled`）：正式表沒有 70B 的低精度大小。位元組＝Llama 每個格式的位元組 × 327,680／131,072（＝2.5，每 token 的 BF16 大小比）；解壓 NOT_MEASURED；品質狀態沿用 Llama（只拿來選格式）。`format_table_kind`＝`official+scaled70b`。原本的 `llama70b`（只有 bf16）不變。
   3. CPU 忙的係數 1.35、1.81 是 04 §5 寫的（`results/p3_calib_3090/`、06b §3）；`cpu_factor_of(platform, 數字)` 直接用，`costs_*.json` 的 `cpu_busy_h2d_factor` 仍是 NOT_MEASURED。
 
@@ -971,7 +990,7 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 
 - 輸入：`map_cells.csv`＋npz。`--mode early`（§10：只用不含 FreeInference 的資料；GO→定案「GO（早期，定案）」，否則 PENDING_B）｜`--mode full`（§6，全部資料）。
 - **每份資料每個主格**（5 個外層 × 3 個記憶體＝15）：各做法的主指標（切片加總，GiB）→ 護欄 → 最好的對手 → 省多少。
-  - **護欄**：主視角（Llama、MI300X、GPU 閒、CPU 閒、SSD 1 張專用）下，回來請求的 `ttftq` 平均與 p99 都 ≤ 1.05 × C0（同一個切片、外層、記憶體、引擎）。單一切片用列的精確值；FreeInference 幾週合起來用 npz 的加總（平均精確）與 2,400 格對數直方圖（p99 內插，誤差 <1.2%，`test_hist_percentile_vs_exact`）。NOT_MEASURED（做法的，或 C0 的）→ 當成通過、記在 `guard_nm`；沒有回來的請求（NaN）→ 當成通過。被排除的記在 `guard_excluded`。
+  - **護欄**：主視角（Llama、MI300X、GPU 閒、CPU 閒、SSD 1 張專用）下，回來請求的 `ttftq` 平均與 p99 都 ≤ 1.05 × C0（同一個切片、外層、記憶體、引擎）。單一切片用列的精確值；FreeInference 幾週合起來用 npz 的逐請求 ttft（`ttft_vals`）：平均＝總和÷個數、p99＝`np.percentile`（精確，§24.2；原本是直方圖內插）。NOT_MEASURED（做法的，或 C0 的）→ 當成通過、記在 `guard_nm`；沒有回來的請求（NaN）→ 當成通過。被排除的記在 `guard_excluded`。
   - **最好的對手**：所有非 oracle 的做法與參數（19 個）中通過護欄、位元組最少的；完整樣本上選，bootstrap 固定。
   - **省多少**＝(最好 − O) ÷ 最好。**0/0**：最好＝0 → 定為 0（`best_zero`；bootstrap 裡 best*＝0 也當 0）；SE＝0 的格子不進 max-T（CI 退化成點）。最好＝0 而 O>0（不合理）也定為 0，不產生 inf。
 - **bootstrap**：1,000 次、種子 `[20261018, 資料編號]`、配對（同一次重抽用在所有格子與做法）；session 以 `sess_orig`（原始 session 編號）對齊（E6 的 k 張 GPU 合併後順序不同，用它排回來；best 與 O 的 `sess_orig` 不一致就丟錯）；FreeInference 各週當一層、層內重抽（層的 session 數不變）再加總。
@@ -1081,10 +1100,97 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 
 1. **敏感度的時間設定放在 A1 的 session 工作裡**（不另外重跑放置）：列的 `view_group`、`is_primary` 標出；A2 只剩要換放置的敏感度（Qwen、70B、疊加）。
 2. **E1 與 E5 的另兩個 T 在三個記憶體點**：04 §10 的 A2 只列「其餘記憶體」，字面上 63／170／435 沒有 E1、E5(5 分)、E5(1 小時)。預設不跑，`--fill` 補（243 個工作／切片）。
-3. **70B 級的位元組**＝Llama × 2.5（假設；§20.2）、**/ssd8 的 k_read**＝MI300X 的 3.306（假設；§20.2）。CPU 忙係數用 04 寫的 1.35、1.81。
+3. **70B 級的位元組**＝Llama × 2.5（假設；§20.2）；~~/ssd8 的 k_read＝MI300X 的 3.306~~（第四個工作階段取消：不借別台機器的值，§24.3）。CPU 忙係數用 04 寫的 1.35、1.81。
 4. **請求輸入長度**用 trace 的 input_tokens（至少是存的完整 block 數×512）；04 說「請求的輸入長度」，沒有說 token 數怎麼取。
-5. **>32K 的請求反覆讀同一段 INT4 前綴，每次都重算**（§18；沿用 §12.3 的「只有任何長度都不 pass 的來歷才被取代」）：這會讓非 oracle 的做法在長請求下比較吃虧，改成「重算後一律換成目前的決定」會讓它們好一些。這會改變位元組與護欄的結果，所以交給主 session 決定（目前是 04 的字面）。
-6. FreeInference 幾週合起來的護欄 p99 用直方圖內插（誤差 <1.2%）；單一切片用精確值。
+5. ~~>32K 的請求反覆讀同一段 INT4 前綴，每次都重算~~：主 session 在 04 §3.3 決定「重算後一律照現在的決定重存」，第四個工作階段已實作（§24.1）。
+6. ~~FreeInference 幾週合起來的護欄 p99 用直方圖內插~~：第四個工作階段改成精確（§24.2）。
 7. 估計的時間沒有在真實資料上驗證（§23.3）。
 8. `kgpu5` 沒跑完（§22）；`synth/default-seed0` 在 64／128／256 沒有 k（地圖不用）。
 
+## 24. 第四個工作階段（2026-10-18，opencode）：重算後重存、護欄敏感度、精確的合併 p99、只用量到的 3090 常數
+
+> 起點 HEAD `f45c7a7`（04 §3.3、§4、§5、§10 由主 session 更新）。**沒有跑任何真實資料的格子，沒有算任何真實資料的「省多少」**；唯一有「省多少」的是合成切片 `synth/small-seed1` 的端到端（§24.5，標合成）。沒有 commit。
+> 工作階段的報告：`/ssd8/hungwei/paper-hkv/opencode/tasks/LATEST_REPORT.md`。
+
+### 24.1 重算之後，新 KV 照現在的決定重存（04 §3.3「重算之後」）
+
+**規則**（兩個引擎、`int2_on_read="recompute_unverified"`（`unverified_len` 兩種）與 `"recompute"`；`"serve"` 逐位元不變）：
+一個請求讀的時候，有存（CPU 或 SSD）但**沒有載入**的 block（來歷在請求長度下不 pass 的第一個 block 起，到有存的最後一個；INT2 一樣）是被重算的。
+回合結束時這些 block **一律**照「這個做法現在的決定」（`cpu_fid(ctx)`；ctx 是這一輪的：現在的長度、新 block 數、oracle 的 next_read 等）寫進 CPU，格式＝新格式、來歷＝新格式（bf16 來歷），**取代**舊的 CPU 副本；**SSD 上的舊副本作廢**（`sfmt=0`，不寫、不算 SSD 位元組）。之後新副本若被降級寫 SSD，是一般的 SSD 寫入，照帳記（demote／write-through／selective／TTL）。CPU 位元組照一般的 CPU 寫入記（`wbytes[store]`、`cpu_write_*`）。
+原本（§12.3）只取代 INT2 來歷的副本；INT4／8-bit 在 >32K 才不 pass 的副本保留，所以 C2 這種做法每次讀長請求都重算。
+
+| 引擎 | 改的地方 |
+|:--|:--|
+| session（`engine.py`） | `step()`：回合結束時 `[L, L0)`（有存但沒載入的）全部算新 block（`n_new`、`first_new`、決定都包含它們）；取代 CPU 副本（`cpu_used` 換成新格式的大小）；SSD 副本作廢。舊的 `cq[b] in nro` 條件拿掉 |
+| block（`engine_block.py`） | `_decide()` 的 `first_new` 與 `after_round()`：`_rep=(rlo, rhi)` 範圍內的 block 一律換成新 KV（CPU 副本換、SSD 副本作廢；只有 SSD 副本的 block 走一般的「新 block 進 CPU」） |
+
+**共用前綴的 block（被別的 session 也參照）**：block 的 key 是整段前綴，全域只有一份副本，所以重存**取代那一份**；之後任何 session 讀到這個 key 都是新副本（一個 session 的重算讓所有之後讀它的 session 受益；別的 session 在 SSD 上的舊副本也一起作廢，之後若需要，CPU 裡的新副本被擠出時會照一般規則寫一份新的 SSD 副本）。
+選這個是**對 GO 保守**的：重存讓非 oracle 的對手少重算、少讀 SSD，對手變強，O 的省幅度只會變小；O 沒有意外重算，不受影響。
+
+**測試**（`test_p3_sim.py`，兩個引擎都跑；手造 4 個請求：s0 寫 4 個 block、s1 寫 4 個、s0 以 20,480 token 回來、再回來；測試格式表 int4 在 ≥16K 不過關）：
+- `test_recompute_restore_c2_restores_int4_again`：C2 重算後又存 int4（SSD 舊副本作廢；s1 被擠到 SSD 的副本不受影響），下一個長讀取又重算：`surp_blk`＝[0, 0, 4, 6]；CPU 寫入位元組＝(4+4+6+7)×20 MiB（原本只會是 (4+4+2+1) 個）。
+- `test_recompute_restore_c4r_restores_bf16`：C4r（thr 2,048 token＜重存時的長度 3,072）重算後存 BF16，下一個長讀取不重算：`surp_blk`＝[0, 0, 4, 0]；CPU 寫入位元組＝8×20 MiB（int4）＋7×64 MiB（bf16）。
+- `test_recompute_restore_serve_unchanged`：serve 不重算、不重存，位元組＝(4+4+2+1)×20 MiB，品質帳照舊記 fail。
+- `test_recompute_restore_oracle_no_surprise`：O、O-len 在嚴格規則下 0 重算。
+- 記帳恆等式（`check=1` 的 audit 與 `ledger.accounting_identities`）全部成立。
+
+**一個你一定要知道的現象（合成上看到的；機制適用於任何資料）**：重存之後，**意外重算會讓主指標變小**：沒載入的 block 不算「只載入的讀取」，而且新副本留在 CPU（較少降級）。所以「猜錯、重算」的非 oracle 做法在 SSD 位元組上比「從不猜錯、全部載入」的 O 還少，代價只由等待時間護欄（5%）限制。合成 63 GiB／E2：C4r-32768 的意外重算 34,034 個 block，只載入的讀取 88,654 GiB，O（0 重算）95,670 GiB。O 因此在好幾格比最好的對手差（省多少＜0，見 §24.5）。這是主指標的定義與 O 的定義（O 不用 DROP＋重算這個動作）互動的結果，不是程式的 bug（恆等式、品質帳都過）；**需要主 session 決定**：O 是否也該能選擇「不載入、重算」（04 動作空間含 DROP），或主指標是否要把重算的代價（例如換算成等價位元組）算進去。
+
+### 24.2 護欄的敏感度（04 §4；只報告）
+
+`analyze_map.py`：每個（資料、外層、記憶體、H 版）另外用護欄 1.05（登記的，判定用）、1.10、1.20、不設護欄各選一次「最好的對手」，算省多少（點估計，不做 bootstrap）。列：`kind=report_guard_sens`、`item=guard_<倍數>`、`guard_thr`、`best_label`、`best_GiB`、`guard_excluded`、`O_GiB`、`savings`（summary CSV 全部格子都有；markdown 的「護欄敏感度」一節列 15 個主格；JSON 的 `guard_sensitivity`）。1.05 那一列＝判定那一列的最好的對手與點估計（有測試）。判定只用 1.05。
+測試：`test_guard_sensitivity_report`（fixture：最省的三個做法的 p99 分別比 C0 高 15%／25%／8% → 1.05 選 C2、1.10 選 D-idle-3600、1.20 與不設選 D-idle-14400；省多少隨護欄放寬而單調變小）。
+
+### 24.3 只用量到的 3090 常數（04 §5「成本常數」）
+
+`/ssd8` 的 k_read（讀受寫拖慢的倍數）沒量。**不再借 MI300X 的 3.306**：`formats._ssd8_profile()` 的 `k_read` 是占位的 1.0、`k_nm=True`（`Costs.ssd_k_nm`），`src` 欄寫「k_read＝NOT_MEASURED on /ssd8」。`View`（session 引擎）追蹤「TTFT 碰到 k_read」的請求，沿著 `max` 選到的那一邊傳遞：
+
+| 傳遞 | 規則 |
+|:--|:--|
+| SSD 讀 | 寫入佇列還沒結束（k_read 乘上去）→ 碰到；開始時刻選到「SSD 讀取佇列的結束時刻」（排在別人後面）而它是由 k_read 推出的 → 碰到；這個請求前面已經碰到 → 後面都算（黏著） |
+| CPU 讀 | CPU 讀取佇列的結束時刻是由 k_read 推出的、而且開始時刻選到它 → 碰到；CPU 寫入佇列的結束時刻是由「碰到 k_read 的請求」推出的、而且寫入還沒結束（CPU 的 k 乘上去）→ 碰到 |
+| 寫入佇列 | 請求結尾的寫入開始時刻 `t+TTFT`：這個請求碰到了 → 那一個寫入佇列的結束時刻（CPU、SSD）算由 k_read 推出（選到 `now` 的話）；`ttl_expire` 的寫入時刻是 trace 時間，不受影響 |
+
+碰到的請求 → `nmreq`＝True（和解壓 NOT_MEASURED 同一個機制）→ 該視角的 `ttftq_*`＝NOT_MEASURED（06 §12.4 的整列規則）；位元組（寫入、只載入的讀取）和 k_read 無關，不變。
+另報（只在這個視角）：`ssd_k_read_nm`＝True、`ttft_nm_k_ret_requests`（碰到的回來請求數）、`ttftq_kfree_n／mean／p99`（沒碰到的請求；占位 k 不影響它們）。其他由時間推出的欄位（SSD 忙碌、飽和、排隊、Cake 的 SSD 位元組）在這個視角用占位 1.0 算＝下界，**不可當結論**。
+限制（誠實寫）：傳遞只沿著 `max` 選到的那一邊，不追「兩邊差很小、k 變了會翻過來」的情形；k 沒量，所以這是「依資料流看得到的依賴」，不是對所有可能的 k 都成立的保證。block 引擎（E6、block 版 E2）的放置依賴時間（佇列預取），沒有這個追蹤，`BView` 遇到 k_nm 的常數會丟 `NotImplementedError`（04 §10 的 /ssd8 視角只在 session 引擎）。
+測試：`test_ssd8_k_read_not_borrowed`（占位 1.0 ≠ 3.306、src 寫明、BView 拒絕）、`test_ssd8_k_read_taint`（手造：降級寫 SSD 還沒完時回來的請求碰到、晚到的請求不碰到；`k_nm` 只加旗標，時間與 `k_nm=False`、k=1.0 逐位元相同；碰到的請求讓 CPU 寫入佇列也算被推出）。
+
+### 24.4 精確的合併 p99（FreeInference 幾週；04 §4）
+
+`run_map.ttft_arrays(x, nm, keep_vals)`、`_slim_arrays`：同一個判定群組有好幾個切片（`keeps_ttft_vals`；現在只有 FreeInference 的 16 週）的工作，npz 另存 `ttft_vals`（主視角、回來請求的逐請求 TTFT，float64）。`analyze_map.trace_ttft`：幾週合起來 → 把每週的 `ttft_vals` 串起來，p99＝`np.percentile`（精確；和直接對全部請求算一樣，`test_pooled_p99_exact_vs_numpy` 逐位元相等），平均＝總和÷個數；只快取結果不快取陣列。npz 沒有 `ttft_vals`（舊版 run_map 跑的）→ `SystemExit`，不悄悄退回直方圖。直方圖（`ttft_hist`）還留在 npz 裡但護欄不用它。
+磁碟〔算術上界，不是量測〕：FreeInference 16 週共 1,222,199 個請求 × 8 B ＝ 9.8 MB／（一個格子×一個做法，16 週合起來）；FreeInference 每個切片有 486（A1）＋2,781（A2）＝3,267 個工作 → 上界 ≈ 32 GB（未壓縮，而且只有回來的請求）。`/ssd8` 有 1.3 TB 空間。實際大小 NOT_MEASURED（沒跑 FreeInference 的工作）。
+
+### 24.5 驗證
+
+**測試與逐位元**（run 在 `/ssd8/hungwei/paper-hkv/runs/`）：
+
+| 項目 | run_id | 結果 |
+|:--|:--|:--|
+| 全部測試（`test_p3_sim.py`＋`test_map.py`） | `20261018-135305-p3sim-testfinal2` | exit 0；**82 passed**（原 70＋重存 8＋/ssd8 2＋護欄與 p99 2） |
+| X1 144／144、X4 8／8 逐位元 | 同上（`test_i_x1.csv`、`test_ii_x4.csv`） | 144 列 `bitwise` 全 True；8 列全 True |
+| 迴歸冒煙（`--fmt placeholder --o-cpu-only`） | `20261018-134146-p3sim-regsmoke5` | exit 0；1,276 格、恆等式 15,240 條全成立、錯誤 2（70B 的 C1、C2 NOT_MEASURED，和上一版相同） |
+| 對 c0c179b 基準（`20261018-083539-p3sim-base-smoke`）逐欄比對 | `20261018-135136-p3sim-regcmp5`（`--map O(cpu-only)=O`）、`…135142-p3sim-regcmpO5` | exit 0、0；C0 183／183、C1 186／186、C2 182／182、C3 180／180、C4 180／180 的 103 個舊欄全部相同；`O(cpu-only)` 對舊 O 180／180 相同（5 個缺的＝70B 的 NOT_MEASURED，和上一版相同）；新的 O 對舊 O 113 相同／72 不同（預期，和上一版相同） |
+| 嚴格規則冒煙（official、14 個策略、6 份小窗，`--int2 recompute_unverified --ulen request`） | `20261018-134146-p3sim-smokestrict2` | exit 0；2,520 格、恆等式 30,100 條全成立、錯誤 0；O、O-len 意外重算 0、所有格品質帳 0 |
+| 合成端到端 A1（`synth/small-seed1`） | `20261018-135305-p3sim-mapsyn2`（執行）、`20261018-141440-p3sim-anasyn3`（分析） | exit 0、0；486 個工作、4,050 列、失敗 0、1,205 s；品質帳 0、O／O-len 意外重算 0；判定 ASK（合成不進判定） |
+| dry-run 四個階段 | `20261018-140057-p3sim-mapdry3` | exit 0；工作數與格子數和 §23.3 相同（3,888／22,248／5,832／33,372；〔估計〕144.2／983.3／422.8／2,706.7 CPU 小時，沿用 `timing3` 的每請求秒數，沒有重新計時） |
+
+**合成端到端（合成資料；不是判定；只看重存規則改了什麼）**：輸出在 `results/p3_map/synthetic_e2e_A1_restore_{summary.csv,verdict.json,map.md}`（舊的 `synthetic_e2e_A1_*` 留著對照）。省多少＝點估計［同時 CI］，括號＝最好的對手：
+
+| 外層做法 | 63 GiB（重存前→後） | 170 GiB | 435 GiB |
+|:--|:--|:--|:--|
+| E2 | 3.6% → −6.9% [−9.5, −4.4]（C0→C4r-32768） | 18.9% → 13.4% [9.2, 17.7]（C0→D-idle-1800） | 61.9% → −5.9% [−32.1, 20.2]（D-len-8192→D-idle-3600） |
+| E3 | 3.3% → −6.8% | 6.0% → 4.8%（C4r-16384） | 6.6% → −20.5%（D-len-32768） |
+| E4 | 3.3% → −6.6% | 5.9% → 4.8%（C4r-16384） | 6.5% → −19.5%（D-len-32768） |
+| E5（30 分） | 3.6% → −6.9% | 18.7% → 14.1%（D-idle-1800） | 39.0% → 33.3%（D-idle-1800） |
+| E6 | 3.5% → −8.4% | 20.9% → 13.8%（D-idle-1800） | 60.6% → 56.4%（D-len-32768） |
+
+重存之後，其他做法（C4r、D-idle、D-len）也通過護欄，最好的對手不再幾乎都是 C0（重存讓它們的重算只發生一次）。**省多少變成負的**（O 比最好的對手差）的格子是 §24.1 說的現象：意外重算讓主指標變小。護欄敏感度（合成、E2、H）：63 GiB 的 1.05／1.10／1.20 都選 C4r-32768（−6.9%），**不設護欄選 C2（−4,382%：全 int4，幾乎每次讀長請求都重算，SSD 位元組極少，等待時間是 C0 的 14 倍）**；170 GiB：D-idle-1800（13.4%）→ C4r-32768（7.4%）→ 不設 C2（−598%）；435 GiB：D-idle-3600（−5.9%）→ D-idle-300（−113%）。
+
+### 24.6 偏離與請主 session 決定的事
+
+1. **請決定：O 該不該也能選「不載入、重算」，或主指標要不要把重算的代價算進去**（§24.1 的現象；合成上 O 在 15 格裡有 8 格比最好的對手差）。這不是程式問題；依 04 目前的字面，主指標只算 SSD 位元組、護欄只限 5% 的等待時間，「猜錯重算」的做法佔便宜。
+2. 重存規則的「共用前綴」選擇＝全域一份、取代它（§24.1；對 GO 保守）。
+3. `/ssd8` 視角：碰到 k_read 的請求 → ttftq NOT_MEASURED，整個視角的 ttftq 列因此也是 NOT_MEASURED（沿用 §12.4 的整列規則）；「沒碰到的請求」另報。k 沒量，所以傳遞規則是資料流依賴，不是對所有 k 的保證（§24.3）。
+4. FreeInference 的 npz 變大（§24.4 的算術上界約 32 GB；實際 NOT_MEASURED）。舊版 run_map 產生的 FreeInference npz 不能用（沒有 `ttft_vals`，analyze 會拒絕）；04 還沒凍結、沒有真實資料的 run，所以沒有舊 npz 要處理。
+5. 〔估計〕時間沒有重新計時（重存改變了每請求的工作量；合成端到端 1,205 s 對 1,129 s，+7%，只是合成）。

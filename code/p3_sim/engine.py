@@ -129,6 +129,12 @@ class View:
         nm = [f >= 1 and self.fb[f] is not None and (dql is None or dql[f] is None) for f in range(len(FMT_NAMES))]
         self.nmf = nm if any(nm) else None
         self.nmreq = np.zeros(nreq, bool)
+        # SSD 的 k_read 沒量（/ssd8；06 §24）：追蹤「TTFT 碰到 k_read」的請求。沿著「max 選到的那一邊」傳遞：
+        #   c_ta／s_ta＝CPU／SSD 讀取佇列的結束時刻（t_free）是否由 k_read 推出；cw_ta／sw_ta＝CPU／SSD 寫入佇列的結束時刻是否由「碰到 k_read 的請求」的 TTFT 推出。
+        self.k_nm = bool(getattr(costs, "ssd_k_nm", False))
+        self.c_ta = self.s_ta = self.cw_ta = self.sw_ta = False
+        self.nmk = np.zeros(nreq, bool)         # 這個請求的 TTFT 碰到 k_read（已經算進 nmreq）
+        self.last_k = False
         self.bS = np.zeros(nreq, np.int64)      # 這個請求的還原從 SSD 讀了幾個位元組（和時間設定有關：Cake 的會合點）
         self.last_nm = False
         self.last_bS = 0
@@ -145,6 +151,16 @@ class View:
         self.nR = np.zeros(nreq, np.int32)
         self.wq = np.zeros(nreq, np.int8)      # 這次讀取載入的 block 裡最差的品質來歷（0＝沒有載入）
         self.last_end = 0.0
+
+    def taint_write(self, which, nbytes, now, tainted_now):
+        """寫入佇列的結束時刻 t_free_w 是否由 k_read 推出（只有 k_nm 的視角用；要在 Chan.write 之前呼叫）：
+        開始時刻＝max(now, t_free_w) 選到 now → 看 now 是不是由「碰到 k_read 的請求」的 TTFT 推出；選到 t_free_w → 沿用它原本的。"""
+        if nbytes <= 0:
+            return
+        if which == "cpu":
+            self.cw_ta = tainted_now if now > self.cpu.t_free_w else self.cw_ta
+        else:
+            self.sw_ta = tainted_now if now > self.slow.t_free_w else self.sw_ta
 
     def restore(self, lt_, lf_, lq_, L, n_all, t0, old_n):
         """lt_[i]∈{1: CPU, 3: SSD}、lf_[i]＝那份副本的格式、lq_[i]＝副本的品質來歷，i<L。
@@ -164,6 +180,10 @@ class View:
         crs, cre, crb, crk, crr, crd = cpu.rs.append, cpu.re.append, cpu.rb.append, cpu.rk.append, cpu.rr.append, cpu.rd.append
         srs, sre, srb, srk, srr, srd = slow.rs.append, slow.re.append, slow.rb.append, slow.rk.append, slow.rr.append, slow.rd.append
         c_cur, s_cur = cpu.cur_r, slow.cur_r
+        k_nm = self.k_nm
+        if k_nm:
+            c_ta, s_ta, cw_ta, sw_ta = self.c_ta, self.s_ta, self.cw_ta, self.sw_ta
+            bk = False                  # 這個請求的 TTFT 已經碰到 k_read（黏著：之後的 lt 都算碰到）
         if self.mode == "cake":
             p, q, rt, lt = 0, L - 1, t0, t0
             while p <= q:
@@ -175,6 +195,13 @@ class View:
                     nb = fb[fid]
                     if lt_[q] == 1:
                         st = lt if lt > c_tf else c_tf          # ＝Chan.read
+                        if k_nm:
+                            tq = bk if lt > c_tf else c_ta
+                            if c_tfw > st and cw_ta:
+                                tq = True
+                            c_ta = tq
+                            if tq:
+                                bk = True
                         dur = nb / c_r
                         if c_tfw > st:
                             dur *= c_k
@@ -196,6 +223,13 @@ class View:
                         nC += 1
                     else:
                         st = lt if lt > s_tf else s_tf
+                        if k_nm:
+                            tq = bk if lt > s_tf else s_ta
+                            if s_tfw > st:              # k_read 真的乘上去了（或和被它推遲的寫入佇列比大小）
+                                tq = True
+                            s_ta = tq
+                            if tq:
+                                bk = True
                         dur = nb / s_r
                         if s_tfw > st:
                             dur *= s_k
@@ -227,6 +261,13 @@ class View:
                 nb = fb[fid]
                 if lt_[i] == 1:
                     st = lt if lt > c_tf else c_tf
+                    if k_nm:
+                        tq = bk if lt > c_tf else c_ta
+                        if c_tfw > st and cw_ta:
+                            tq = True
+                        c_ta = tq
+                        if tq:
+                            bk = True
                     dur = nb / c_r
                     if c_tfw > st:
                         dur *= c_k
@@ -248,6 +289,13 @@ class View:
                     nC += 1
                 else:
                     st = lt if lt > s_tf else s_tf
+                    if k_nm:
+                        tq = bk if lt > s_tf else s_ta
+                        if s_tfw > st:              # k_read 真的乘上去了（或和被它推遲的寫入佇列比大小）
+                            tq = True
+                        s_ta = tq
+                        if tq:
+                            bk = True
                     dur = nb / s_r
                     if s_tfw > st:
                         dur *= s_k
@@ -274,6 +322,10 @@ class View:
         cpu.t_free, cpu.busy_r, cpu.bytes_r = c_tf, c_busy, c_bytes
         slow.t_free, slow.busy_r, slow.bytes_r = s_tf, s_busy, s_bytes
         self.last_end = end
+        if k_nm:
+            self.c_ta, self.s_ta = c_ta, s_ta
+            self.last_k = bk
+            bad = bad or bk
         self.last_nm = bad
         self.last_bS = bS
         Fc = self.Fc
@@ -328,9 +380,9 @@ class Engine:
     outer：outer_policies.json 的 used（加 E5 的 T）；comp：policies.CompressionPolicy；cap_bytes：CPU 容量。
     int2_on_read（06 §12.3）："serve"（預設＝舊行為）照讀；"recompute"：讀取遇到品質來歷是 never_read_only（INT2）的 block，
       那個 block 和它之後的都當成沒有存 → 重算（品質安全，算進重算量與 TTFT，那些 block 的 SSD 位元組不讀），
-      重算出來的新 KV 照這一輪的決定寫回 CPU、取代 INT2 來歷的副本（SSD 上 INT2 來歷的副本丟掉）。
+      重算出來的新 KV 照這一輪的決定寫回 CPU、取代舊副本（SSD 上的舊副本作廢；04 v4 §3.3「重算之後」，不只 INT2 來歷）。
       "recompute_unverified"（04 v4 §3.3）：只載入「在這次讀取的長度下品質過關」的前綴：載入到第 L 個 block 時，前 L 個 block 的品質來歷
-      在 L×512 token 都要 pass；第一個做不到的地方起都重算。任何長度都不 pass 的來歷（INT2）的副本照上面的規則被取代。
+      在 L×512 token 都要 pass；第一個做不到的地方起都重算；重算的 block（有存但沒載入的部分，不論來歷）照上面的規則被新 KV 取代。
     unverified_len（04 v4 §3.3，06 §18）："prefix"（預設＝舊行為）：讀取長度＝載入的前綴長度；"request"：讀取長度＝讀它的請求的輸入長度（整個上下文），
       載入的前綴停在第一個「來歷在這個長度不 pass」的 block，之後都重算；品質帳也用請求長度分箱。"""
 
@@ -618,6 +670,8 @@ class Engine:
                 self.wbytes[W_TTL] += w
                 ls = self.last[s]
                 for vw in self.views:
+                    if vw.k_nm:
+                        vw.taint_write("ssd", w, te, False)       # 到期那一刻是 trace 時間，不受 k_read 影響
                     vw.slow.write(w, te, 1, ls)
             self._flush_split(w)
 
@@ -715,6 +769,8 @@ class Engine:
             tt, rs, nC, nS, nR, wq = v.restore(lt_, lf_, lq_, L, self.nall[r], t, old_n)
             v.ttft[r], v.rest[r], v.nC[r], v.nS[r], v.nR[r], v.wq[r] = tt, rs, nC, nS, nR, wq
             v.nmreq[r] = v.last_nm
+            if v.k_nm:
+                v.nmk[r] = v.last_k
             v.bS[r] = v.last_bS
             tend.append(t + tt)
         # ---- 回合結束：新 block 照這個 session 的決定寫進 CPU
@@ -731,7 +787,7 @@ class Engine:
                         first_new = b
         else:
             for i, b in enumerate(blocks):
-                if cfmt[b] == 0 or (L <= i < L0 and cq[b] in nro):
+                if cfmt[b] == 0 or L <= i < L0:
                     n_new += 1
                     if first_new is None:
                         first_new = b
@@ -763,10 +819,10 @@ class Engine:
                 rc[b] += 1
             uses[b] += 1
             c0 = cfmt[b]
-            if c0 == 0 or (cut and L <= i < L0 and cq[b] in nro):
-                if c0:            # 重算出來的新 KV 取代 CPU 裡 INT2 來歷的副本
+            if c0 == 0 or (cut and L <= i < L0):
+                if c0:            # 重算出來的新 KV 取代 CPU 裡舊來歷的副本（04 §3.3「重算之後」：一律照現在的決定重存）
                     self.cpu_used -= fbl[c0]
-                if cut and L <= i < L0 and sfmt[b] and sq[b] in nro:   # SSD 上 INT2 來歷的副本丟掉（不用寫）
+                if cut and L <= i < L0 and sfmt[b]:   # SSD 上的舊副本作廢（不用寫）；之後新副本若被寫到 SSD 是一般的 SSD 寫入
                     sfmt[b] = 0
                     sq[b] = 0
                 gq = sq[b] if (i < L and sfmt[b]) else 1     # 從 SSD 讀回來的帶著 SSD 副本的來歷；重算＝bf16
@@ -823,6 +879,10 @@ class Engine:
         w += wt
         self.w_slow_blocks += w
         for v, te in zip(self.views, tend):
+            if v.k_nm:
+                v.taint_write("cpu", cw, te, v.last_k)
+                if self.ssd_on:
+                    v.taint_write("ssd", w, te, v.last_k)
             v.cpu.write(cw, te)
             if self.ssd_on:
                 v.slow.write(w, te)
