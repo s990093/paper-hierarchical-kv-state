@@ -823,4 +823,16 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 43a 冒煙看到 G5 低估全載入（1 rep，不是結果）→ 另加 G5b（模擬 Cake 的兩條線），G5 照原登記照跑（13 §8c，commit 8a7cfe3）。
 - 13 號的報告程式 `m10_restore2.py report` 用冒煙的輸出測過結構。
 - 外部參考：vLLM 0.28 ROCm 的 FP8 KV decode（`m10_vllm_kvdecode.py`）、vLLM-KIVI kernel（`code/third_party/`，只量時間）；H200 上要比的 CUDA 實作記在 13 §11（使用者 10/17）。
+### 14.1 43b Q4：GPU 忙時的拆（10/18 09:37:43 → 11:37:56Z）
+
+- 28 個 grid（7 種方法 × 2 模型 × FP8／INT4；真實 CPU 層；E0、E1；Cake＋全部載入；3 launch × 10 rep）＋背景強度掃描 4 個（P0、P3 × 2 模型；INT4；duty 0.4／0.7／0.9；2 × 5），全部 exit 0。run：`20261018-093743-m10-rs2-q4-llama-fp8-P0` … `-112037-…-qwen-int4-P5`、`-112419-m10-rs2-q4duty-llama-P0` … `-113436-…-qwen-P3`。
+- **一格被污染**：P2（S2k8）× Llama × FP8 的 L302 gpu_guard `CONTAMINATED_DURING_RUN`（1 個樣本、pid 3965560、peak 0 MiB、09:49:27Z；那個 pid 已經不在，查不到是誰）。其他 91 個 guard（q4 83 個、duty 8 個）全部 CLEAN。照 CLAUDE.md §3 那格要重量 → `queue/43ca_rs2_q4_remeasure.sh`（排在 43c 後、43d 前）：同一個指令重量那一格 → 重新 pick-q4 → 新 pick 不是 P0／P3 就補它的背景強度掃描。
+- pick-q4（13 §3.2）在缺 P2 的情況下挑了 **P3（S4：全部搬完一次拆）**；**還不是定案**，等 43ca。
+- 數字（E1 中位數，ms；`results/m10_restore2_mi300x/q4/*/restores.csv`）：
+  - GPU 忙、全部載入：P0 62.3／54.7／33.2／42.9（Llama FP8／INT4、Qwen FP8／INT4）→ P3 49.3／35.8／22.2／18.9（快 21–56%）；P2 —／39.8／25.3／23.4；P5 50.9／39.9／25.3／22.9；P1（io_prio）和 P0 一樣；P4a／P4b（留 CU）6–41%。
+  - GPU 忙、Cake：只有留 CU 有用（P4b 60.5–62.2／48.9–50.0，比 P0 快 23–26%）；S4／S2k8 沒變快（Qwen 的 S4 反而慢 8–9%）。
+  - 背景吞吐（每秒 matmul，INT4）：P0 368／371、P3 367／372（Llama／Qwen；不掉）；P4a 323／328（−12%）、P4b 296／298（−20%）。
+  - 背景強度掃描（INT4、E1、ms）：P0 全部載入 Llama 44.3 → 55.2 → 60.0、Qwen 28.6 → 42.8 → 52.9（duty 0.4 → 0.7 → 0.9）；**P3 全部載入 Llama 35.2 → 36.1 → 36.7、Qwen 19.3 → 19.7 → 20.8（幾乎不受背景影響）**；Cake 不管哪種拆法都隨背景暴增（Llama 57 → 79 → 134、Qwen 45 → 66 → 108）。
+- 讀法（只報告；挑法定案後寫進 11 問題一、問題三和 08）：GPU 忙時，「一次拆完」只開一個 kernel，不用和背景工作搶 64 次排程；全部載入又不用重算，所以整個還原幾乎不受背景影響。Cake 的重算線本身就要搶 GPU，換拆法救不了。
+
 **前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。

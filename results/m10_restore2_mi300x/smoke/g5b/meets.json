@@ -1,0 +1,50 @@
+{
+ "model": "qwen",
+ "source_run_ids": [
+  "20261018-113756-m10-rs2-smoke-g5b"
+ ],
+ "meets": {
+  "E1@int4_kivi": {
+   "cpu": {
+    "idle": 0,
+    "idle_all": [
+     0
+    ]
+   },
+   "b32": {
+    "idle": 15,
+    "idle_all": [
+     15
+    ]
+   }
+  },
+  "R25@int4_kivi": {
+   "cpu": {
+    "idle": 0,
+    "idle_all": [
+     0
+    ]
+   },
+   "b32": {
+    "idle": 27,
+    "idle_all": [
+     27
+    ]
+   }
+  },
+  "E0": {
+   "cpu": {
+    "idle": 0,
+    "idle_all": [
+     0
+    ]
+   },
+   "b32": {
+    "idle": 32,
+    "idle_all": [
+     32
+    ]
+   }
+  }
+ }
+}

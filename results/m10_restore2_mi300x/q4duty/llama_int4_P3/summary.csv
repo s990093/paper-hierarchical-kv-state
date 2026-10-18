@@ -1,0 +1,13 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy1,E0,cake,10,0.14741,0.2727,2 3,0.0,4093640704.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy1,E0,loadall,10,0.10192,0.22583,0,0.0,4294967296.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy1,E1,cake,10,0.05878,0.18283,1,63.0,1321205760.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy1,E1,loadall,10,0.03523,0.16027,0,64.0,1342177280.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy2,E0,cake,10,0.16149,0.39503,2,0.0,4160749568.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy2,E0,loadall,10,0.12315,0.35433,0,0.0,4294967296.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy2,E1,cake,10,0.08245,0.31671,1,63.0,1321205760.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy2,E1,loadall,10,0.03608,0.2601,0,64.0,1342177280.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy3,E0,cake,10,0.25323,0.91463,1 2,0.0,4160749568.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy3,E0,loadall,10,0.13949,0.80742,0,0.0,4294967296.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy3,E1,cake,10,0.13911,0.8055,1,63.0,1321205760.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
+32768,cpu,busy3,E1,loadall,10,0.0367,0.70488,0,64.0,1342177280.0,,,10,0,20261018-113107-m10-rs2-q4duty-llama-P3
