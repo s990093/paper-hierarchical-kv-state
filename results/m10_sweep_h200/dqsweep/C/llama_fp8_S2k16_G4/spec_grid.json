@@ -1,0 +1,89 @@
+{
+ "model": "llama",
+ "fmt": "fp8_token",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0",
+  "E1",
+  "E1s",
+  "E1sr",
+  "F25",
+  "M25",
+  "B25",
+  "R25"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 1.0
+  }
+ ],
+ "reps": 10,
+ "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_sweep_h200/dqsweep/C/llama_fp8_S2k16_G4",
+ "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261018-152043-m10h-dqs-C-llama-fp8-S2k16_G4/blocks.csv",
+ "verify": true,
+ "extra_modes": [],
+ "extra_tiers": [],
+ "argv": [
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/code/m10_speed.py",
+  "grid",
+  "--busy-levels",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m7_write_policy_h200/busy_levels.json",
+  "--model",
+  "llama",
+  "--fmt",
+  "fp8_token",
+  "--base-fmt",
+  "fp8_token",
+  "--out-dir",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_sweep_h200/dqsweep/C/llama_fp8_S2k16_G4",
+  "--bw-json",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_llama/bw.json",
+  "--bw-names",
+  "cpu",
+  "--configs",
+  "E0",
+  "E1",
+  "E1s",
+  "E1sr",
+  "F25",
+  "M25",
+  "B25",
+  "R25",
+  "--refs",
+  "--lengths",
+  "--launches",
+  "3",
+  "--reps",
+  "10",
+  "--launch0",
+  "200",
+  "--blocks-out",
+  "/work/ChihChungHsu/hungweilai/tiara-runs/20261018-152043-m10h-dqs-C-llama-fp8-S2k16_G4/blocks.csv"
+ ],
+ "run_id": "20261018-152043-m10h-dqs-C-llama-fp8-S2k16_G4",
+ "restore_variant": {
+  "kernel": "k3:8:1",
+  "sched": "group",
+  "group": 16,
+  "prio": false,
+  "unit": 512,
+  "meet": "estimate",
+  "io_prio": false
+ }
+}

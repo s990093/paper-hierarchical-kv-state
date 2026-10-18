@@ -1083,3 +1083,11 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 | K2 | 成立 | 成立 | 成立 |
 | 對照路徑（假設 K3 成立）的 INT4 | 兩個模型都不過 → Step 2 Llama → K2 | Llama E1sr 過 → Step 2 Qwen → K2 | **兩個模型都不過 → Step 2 Llama → K2（和 MI300X 每個節點相同）** |
 - 所有分岔都在同一格：**CPU 層（不限速的真 H2D）、GPU 忙**。終點三種走法都是 K2 成立。
+
+### job 20917 `m10h-t2`（從 CONFIRM-PLAN）跑完（2026-10-18 16:45:10 → 20:17:19 +08:00，COMPLETED exit 0；程式 `5116193` 之後）
+- CONFIRM-PLAN：照 H200 自己的 finalists 寫 43（`results/m10_sweep_h200/confirm_plan.json`、`_m10h_work/x-t2/queue/43a_speed.sh`、`43b_quality.sh`；`--params-file` 是實際路徑）。
+- CONFIRM-SPEED（43a）：冒煙兩個模型都過、沒有寫 NEEDS_HUMAN；7 個格式的速度格子（Llama int2_kivi、kv-int4_kivi-int2_kivi、nvfp4；Qwen kv-int4_kivi-int2_kivi、kv-int8_token-int4_kivi、int8_token、int4_kivi），**21 份 gpu_guard 都 CLEAN**。
+- 20912＋20917 合起來，t2 的步驟除了 Qwen 的兩格 TTFT（13 §11.1 在 20936 補量）全部跑完。產出：`results/m10_sweep_h200/{dqfast_selftest_gpu.json, parts/dequant_fast_bench.json, speed_dqfast*_<m>/, dqsweep/, confirm/}`、`results/m10_tier_h200/`、`results/m10_precision_h200/vllm_ttft/`（confirm 的 restores.csv 超過 1 MB，進 git 的是 .gz）。
+- 70 Llama 的 vLLM TTFT 中位數（s）：default 8K 0.2134、16K 0.4989、32K 1.2265；512 切法 0.2441、0.5519、1.3513（`vllm_meta.json`）。
+- 和 MI300X 的逐項對照（42 反量化、42b／42c 方法、43 複賽、44 兩層）等 q5（43 的品質）跑完一起做。
+- 20936（Qwen noDCA TTFT＋256K 速度）20:17 開跑。

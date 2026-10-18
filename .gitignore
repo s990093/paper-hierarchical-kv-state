@@ -91,3 +91,4 @@ results/m10_precision_h200/quality_sealed/*.csv
 # paper-writing skill: strategic framing notes (not shared)
 project_context.md
 results/m10_sweep_h200/analysis/agg_*.csv
+results/m10_sweep_h200/confirm/speed_*/restores.csv

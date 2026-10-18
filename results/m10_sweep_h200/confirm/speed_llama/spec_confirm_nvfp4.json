@@ -1,0 +1,80 @@
+{
+ "model": "llama",
+ "fmt": "nvfp4",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "SW-ATT-10",
+  "SW-AXE-10",
+  "SW-R0-10",
+  "SW-R1-10",
+  "SW-R2-10",
+  "SW-R3-10",
+  "SW-R4-10",
+  "E1s"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "b16",
+   "kind": "throttle",
+   "GiBps": 8.8331
+  },
+  {
+   "name": "b32",
+   "kind": "throttle",
+   "GiBps": 2.49
+  },
+  {
+   "name": "b48",
+   "kind": "throttle",
+   "GiBps": 0.7222
+  },
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 1.0
+  }
+ ],
+ "reps": 10,
+ "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_sweep_h200/confirm/speed_llama",
+ "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261018-182504-m10h-confirm-grid-llama-nvfp4/blocks.csv",
+ "verify": true,
+ "need_att": true,
+ "argv": [
+  "/raid/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/code/m10_confirm.py",
+  "speed",
+  "--model",
+  "llama",
+  "--fmt",
+  "nvfp4",
+  "--configs",
+  "SW-ATT-10",
+  "SW-AXE-10",
+  "SW-R0-10",
+  "SW-R1-10",
+  "SW-R2-10",
+  "SW-R3-10",
+  "SW-R4-10",
+  "E1s",
+  "--out-dir",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_sweep_h200/confirm/speed_llama",
+  "--bw-json",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_llama/bw.json",
+  "--blocks-out",
+  "/work/ChihChungHsu/hungweilai/tiara-runs/20261018-182504-m10h-confirm-grid-llama-nvfp4/blocks.csv"
+ ],
+ "run_id": "20261018-182504-m10h-confirm-grid-llama-nvfp4"
+}

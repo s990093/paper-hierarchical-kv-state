@@ -1,0 +1,73 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,E0,cake,30,0.34938,0.39107,10,0.0,1585446912.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,E1s,cake,30,0.22198,0.26441,6,58.0,425721856.0,,,28,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-ATT-40,cake,30,0.31913,0.36033,9,19.0,1196425216.0,,,8,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-AXE-40,cake,30,0.31959,0.36139,9,19.0,1196425216.0,,,15,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R0-40,cake,30,0.2867,0.32955,8 9,22.0,1137704960.0,,,19,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R1-40,cake,30,0.28613,0.32815,8 9,22.0,1159725056.0,,,17,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R2-40,cake,30,0.28748,0.32984,8 9,22.5,1137704960.0,,,20,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R3-40,cake,30,0.28836,0.331,8 9,22.0,1152385024.0,,,16,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,SW-R4-40,cake,30,0.28929,0.33077,8 9,22.0,1152385024.0,,,20,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,E0,cake,30,0.30686,0.32866,15 16,0.0,1409286144.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,E1s,cake,30,0.15293,0.17458,6 7 8,56.0,411041792.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-ATT-40,cake,30,0.26674,0.2887,13 14,17.0,1093664768.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-AXE-40,cake,30,0.26665,0.28834,12 13 14,17.0,1093664768.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R0-40,cake,30,0.24706,0.26912,13 14,20.0,1056964608.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R1-40,cake,30,0.24707,0.26867,12 13 14,20.0,1056964608.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R2-40,cake,30,0.24662,0.26842,12 13 14,21.0,1034944512.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R3-40,cake,30,0.24713,0.2691,12 13 14,20.0,1056964608.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,SW-R4-40,cake,30,0.24696,0.26891,13 14,20.0,1056964608.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,E0,cake,30,0.91347,0.95559,23,0.0,1203765248.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,E1s,cake,30,0.40796,0.44989,11,53.0,389021696.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-ATT-40,cake,30,0.81733,0.85827,20 21,12.0,998244352.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-AXE-40,cake,30,0.81519,0.85654,20 21,12.0,998244352.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R0-40,cake,30,0.73912,0.78053,18 19 20,18.0,924844032.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R1-40,cake,30,0.74608,0.78836,19 20,17.0,939524096.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R2-40,cake,30,0.73625,0.77756,19 20,18.5,913833984.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R3-40,cake,30,0.74021,0.785,18 19 20,17.5,932184064.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,SW-R4-40,cake,30,0.74023,0.78265,18 19 20,18.0,924844032.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,E0,cake,30,0.71735,0.73901,31 32,0.0,939524096.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,E1s,cake,30,0.31574,0.33797,15 16,48.0,352321536.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-ATT-40,cake,30,0.66176,0.68344,30,6.0,866123776.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-AXE-40,cake,30,0.6617,0.68339,30 31,6.0,866123776.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R0-40,cake,30,0.58815,0.60992,26 27 28 29,15.0,756023296.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R1-40,cake,30,0.60633,0.62799,27 28 29,14.0,756023296.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R2-40,cake,30,0.58575,0.60746,26 27 28 29,15.0,748683264.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R3-40,cake,30,0.58813,0.60977,26 27 28 29,15.0,756023296.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,SW-R4-40,cake,30,0.60477,0.6267,26 27 28 29,14.0,756023296.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,E0,cake,30,1.83269,1.87454,40,0.0,704643072.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,E1s,cake,30,0.87999,0.92093,22,42.0,308281344.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-ATT-40,cake,30,1.77179,1.81248,39,3.0,667942912.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-AXE-40,cake,30,1.77407,1.81472,39,3.0,667942912.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R0-40,cake,30,1.59157,1.63252,34 35 36 37 38,11.0,601882624.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R1-40,cake,30,1.59163,1.63239,34 35 36 37,11.0,601882624.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R2-40,cake,30,1.54921,1.59291,33 34 35 36 37 39,12.0,587202560.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R3-40,cake,30,1.59039,1.63117,33 34 35 36 37 38,11.0,601882624.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,SW-R4-40,cake,30,1.5695,1.62108,33 34 35 36 37,12.0,594542592.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,E0,cake,30,1.22767,1.24923,48,0.0,469762048.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,E1s,cake,30,0.67966,0.70141,30,34.0,249561088.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-ATT-40,cake,30,1.22775,1.24932,48,0.0,469762048.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-AXE-40,cake,30,1.22774,1.24927,48,0.0,469762048.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R0-40,cake,30,1.09692,1.11873,41 43 44 45 46,8.0,418381824.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R1-40,cake,30,1.09724,1.11912,41 42 43 44 45 46,8.0,418381824.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R2-40,cake,30,1.09707,1.11891,41 42 43 44 45 46 47,8.0,418381824.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R3-40,cake,30,1.0973,1.11914,41 42 43 44 45 47,8.0,418381824.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,SW-R4-40,cake,30,1.09302,1.11453,42 43 44 45 46,8.0,411041792.0,,,0,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,E0,cake,30,0.06697,0.10857,2,0.0,1820327936.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,E1s,cake,30,0.1206,0.16213,3,61.0,447741952.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-ATT-40,cake,30,0.10739,0.14896,2 3,23.0,1284505600.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-AXE-40,cake,30,0.10833,0.15012,2 3,23.0,1284505600.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R0-40,cake,30,0.10794,0.14981,2 3,25.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R1-40,cake,30,0.10815,0.15036,2 3,24.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R2-40,cake,30,0.10789,0.14975,2 3,24.5,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R3-40,cake,30,0.10869,0.15052,2 3,24.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R4-40,cake,30,0.10841,0.15145,2 3,24.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,E0,cake,30,0.05305,0.07469,3,0.0,1790967808.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,E1s,cake,30,0.06904,0.09054,3,61.0,447741952.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-ATT-40,cake,30,0.0581,0.07967,3,23.0,1284505600.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-AXE-40,cake,30,0.05819,0.07969,3,23.0,1284505600.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R0-40,cake,30,0.0581,0.07976,3,24.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R1-40,cake,30,0.058,0.07957,3,24.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R2-40,cake,30,0.05812,0.0797,3,24.5,1251475456.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R3-40,cake,30,0.05828,0.07987,3,24.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R4-40,cake,30,0.05818,0.07974,3,24.0,1262485504.0,,,30,0,20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi
