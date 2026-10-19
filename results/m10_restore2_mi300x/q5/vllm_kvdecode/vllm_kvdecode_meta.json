@@ -1,0 +1,74 @@
+{
+ "llama|auto": {
+  "run_id": "20261018-153119-m10-rs2-q5d-llama-auto",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "result": {
+   "32768": {
+    "median_t1_s": 2.19226,
+    "median_t65_s": 2.56874,
+    "decode_per_token_s": 0.005883
+   },
+   "129024": {
+    "median_t1_s": 23.70149,
+    "median_t65_s": 24.32608,
+    "decode_per_token_s": 0.009759
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ },
+ "llama|fp8": {
+  "run_id": "20261018-153807-m10-rs2-q5d-llama-fp8",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "result": {
+   "32768": {
+    "median_t1_s": 2.24413,
+    "median_t65_s": 2.58136,
+    "decode_per_token_s": 0.005269
+   },
+   "129024": {
+    "median_t1_s": 25.08303,
+    "median_t65_s": 25.5252,
+    "decode_per_token_s": 0.006909
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ },
+ "qwen|auto": {
+  "run_id": "20261018-162351-m10-rs2-q5d-qwen-auto-nodca",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA",
+  "result": {
+   "32768": {
+    "median_t1_s": 1.81622,
+    "median_t65_s": 2.10598,
+    "decode_per_token_s": 0.004527
+   },
+   "129024": {
+    "median_t1_s": 18.27127,
+    "median_t65_s": 18.63948,
+    "decode_per_token_s": 0.005753
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ },
+ "qwen|fp8": {
+  "run_id": "20261018-162925-m10-rs2-q5d-qwen-fp8-nodca",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA",
+  "result": {
+   "32768": {
+    "median_t1_s": 1.86862,
+    "median_t65_s": 2.14664,
+    "decode_per_token_s": 0.004344
+   },
+   "129024": {
+    "median_t1_s": 19.87917,
+    "median_t65_s": 20.19728,
+    "decode_per_token_s": 0.00497
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ }
+}

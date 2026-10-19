@@ -1,0 +1,27 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E1s,cake,30,0.08071,0.31678,1,63.0,1056964608.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-ERR-20,cake,30,0.16495,0.39627,2,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-ERR-25,cake,30,0.1627,0.39542,2,16.0,3355443200.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R0-20,cake,30,0.16499,0.39785,2,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R0-25,cake,30,0.16194,0.39673,2,16.0,3355443200.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R1-20,cake,30,0.16505,0.39743,2,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R1-25,cake,30,0.16446,0.39772,2,16.0,3355443200.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R2-20,cake,30,0.16483,0.39802,2,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R2-25,cake,30,0.16339,0.39848,2,16.0,3355443200.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R3-20,cake,30,0.16361,0.3964,2,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R3-25,cake,30,0.16563,0.39926,2,16.0,3355443200.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R4-20,cake,30,0.16398,0.3973,2,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,busy,SW-R4-25,cake,30,0.16324,0.39759,2,16.0,3355443200.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,E1s,cake,30,0.05987,0.13552,1 2,63.0,1056964608.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-ERR-20,cake,30,0.09506,0.17043,2 3,13.0,3439329280.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-ERR-25,cake,30,0.09537,0.17094,2 3,16.0,3288334336.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R0-20,cake,30,0.09512,0.17045,2 3,13.0,3489660928.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R0-25,cake,30,0.09521,0.17061,2 3,16.0,3338665984.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R1-20,cake,30,0.09518,0.17088,2 3,13.0,3489660928.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R1-25,cake,30,0.09534,0.17065,2 3,16.0,3338665984.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R2-20,cake,30,0.09517,0.17047,2 3,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R2-25,cake,30,0.09528,0.17062,2 3,16.0,3347054592.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R3-20,cake,30,0.09502,0.17026,2 3,13.0,3506438144.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R3-25,cake,30,0.09544,0.17076,2 3,16.0,3338665984.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R4-20,cake,30,0.09521,0.17068,2 3,13.0,3489660928.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi
+32768,cpu,idle,SW-R4-25,cake,30,0.09526,0.17068,2 3,16.0,3338665984.0,,,30,0,20261018-140650-m10-rs2-q3-llama-kv-int4_kivi-int2_kivi

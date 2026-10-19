@@ -2,7 +2,8 @@
 if [ -d /mlsteam/workspace/venv/tiara ]; then   # 平台 B（MI300X / MLSteam）：原本的設定，不變
 source /mlsteam/workspace/venv/tiara/bin/activate
 export HF_HOME=/mlsteam/data/tiara/hf-cache
-export HIP_VISIBLE_DEVICES=0 CUDA_VISIBLE_DEVICES=0
+# 10/19 起兩張卡：TIARA_GPU 選實體卡（amd-smi／HIP 編號；1＝a6:00.0＝10/18 以前所有計時用的那張）。沒設＝0（原本的行為）
+export HIP_VISIBLE_DEVICES=${TIARA_GPU:-0} CUDA_VISIBLE_DEVICES=${TIARA_GPU:-0}
 export TIARA_RUNS=/mlsteam/data/tiara/runs
 export PYTHONUNBUFFERED=1
 R=/mlsteam/workspace/paper-hierarchical-kv-state/results/m7_write_policy_mi300x

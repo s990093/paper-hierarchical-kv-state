@@ -1,0 +1,24 @@
+{
+  "gpu": 0,
+  "started_clean": true,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_DURING_RUN",
+  "intruders": [
+    {
+      "pid": 3965560,
+      "first_seen": "2026-10-18T09:49:27.463474+00:00",
+      "peak_mib": 0,
+      "n": 1,
+      "last_seen": "2026-10-18T09:49:27.463474+00:00"
+    }
+  ],
+  "n_dirty_samples": 1,
+  "paused_intervals": [
+    {
+      "from": "2026-10-18T09:49:42.928339+00:00",
+      "to": "2026-10-18T09:49:47.864280+00:00",
+      "reason": "m7_busy teardown"
+    }
+  ],
+  "discarded_samples_overlapping_pause": 0
+}

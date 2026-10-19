@@ -1,0 +1,49 @@
+{
+ "rule": "13 §3.2",
+ "table": {
+  "P0": {
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.046951678967449915,
+   "bg_ratio_vs_P0": 1.0
+  },
+  "P1": {
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.046387097184319055,
+   "bg_ratio_vs_P0": 1.00004752785251
+  },
+  "P2": {
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.03317141458389762,
+   "bg_ratio_vs_P0": 1.0006205518205458
+  },
+  "P3": {
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.029332429036072992,
+   "bg_ratio_vs_P0": 1.0018463016022308
+  },
+  "P4a": {
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.03810784426985297,
+   "bg_ratio_vs_P0": 0.8807615627145887
+  },
+  "P4b": {
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.03579536268730916,
+   "bg_ratio_vs_P0": 0.8038262670619695
+  },
+  "P5": {
+   "n_cells": 4,
+   "gm_busy_loadall_E1": 0.03291565214793794,
+   "bg_ratio_vs_P0": 1.000476457761545
+  }
+ },
+ "candidates": [
+  "P0",
+  "P1",
+  "P2",
+  "P3",
+  "P5"
+ ],
+ "pick": "P3",
+ "notes": []
+}

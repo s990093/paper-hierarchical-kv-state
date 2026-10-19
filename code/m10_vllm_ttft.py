@@ -23,7 +23,10 @@ from datetime import datetime
 
 MODELS = {
     "llama": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*",
-    "qwen": "/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/*",
+    # 10/18：vLLM 0.28 的 ROCm attention 不支援 DCA（RocmAttentionImpl 收不到 layer_idx → 43e 的 (d) Qwen 啟動失敗）。
+    # 改用同一份權重（symlink 到 HF cache）、只拿掉 dual_chunk_attention_config 的 noDCA 目錄（CLAUDE.md §3 第 3 點；
+    # 我們的 HF harness 本來就沒有 DCA，所以兩邊是同一個模型）。
+    "qwen": "/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA",
 }
 
 

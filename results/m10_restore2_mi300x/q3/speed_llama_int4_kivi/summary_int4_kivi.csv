@@ -1,0 +1,15 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E1s,cake,30,0.08042,0.31304,1,63.0,1321205760.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,busy,SW-ERR-30,cake,30,0.16414,0.39695,2,19.0,3284140032.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,busy,SW-R0-30,cake,30,0.16576,0.39881,2,19.0,3284140032.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,busy,SW-R1-30,cake,30,0.16376,0.39719,2,19.0,3284140032.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,busy,SW-R2-30,cake,30,0.16241,0.39512,2,19.0,3284140032.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,busy,SW-R3-30,cake,30,0.16329,0.39662,2,19.0,3284140032.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,busy,SW-R4-30,cake,30,0.16525,0.39685,2,19.0,3284140032.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,idle,E1s,cake,30,0.06471,0.13997,1 2,63.0,1321205760.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,idle,SW-ERR-30,cake,30,0.09507,0.17016,2 3,19.0,3217031168.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,idle,SW-R0-30,cake,30,0.09531,0.17044,2 3,19.0,3263168512.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,idle,SW-R1-30,cake,30,0.09554,0.17074,2 3,19.0,3263168512.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,idle,SW-R2-30,cake,30,0.09528,0.17043,2 3,19.0,3263168512.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,idle,SW-R3-30,cake,30,0.09514,0.17029,2 3,19.0,3263168512.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi
+32768,cpu,idle,SW-R4-30,cake,30,0.09539,0.1706,2 3,19.0,3263168512.0,,,30,0,20261018-141335-m10-rs2-q3-llama-int4_kivi

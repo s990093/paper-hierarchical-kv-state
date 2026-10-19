@@ -1,0 +1,13 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy1,E0,cake,10,0.08154,0.18898,2,0.0,1820327936.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy1,E0,loadall,10,0.04737,0.15821,0,0.0,1879048192.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy1,E1,cake,10,0.04481,0.15185,1,63.0,578027520.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy1,E1,loadall,10,0.02863,0.13794,0,64.0,587202560.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy2,E0,cake,10,0.06488,0.27341,1,0.0,1849688064.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy2,E0,loadall,10,0.05453,0.25565,0,0.0,1879048192.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy2,E1,cake,10,0.06615,0.27458,1,63.0,578027520.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy2,E1,loadall,10,0.0428,0.2505,0,64.0,587202560.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy3,E0,cake,10,0.10835,0.688,1,0.0,1849688064.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy3,E0,loadall,10,0.05963,0.64241,0,0.0,1879048192.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy3,E1,cake,10,0.10802,0.68802,1,63.0,578027520.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0
+32768,cpu,busy3,E1,loadall,10,0.05285,0.64426,0,64.0,587202560.0,,,10,0,20261018-112748-m10-rs2-q4duty-qwen-P0

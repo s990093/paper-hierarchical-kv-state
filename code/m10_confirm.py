@@ -168,7 +168,7 @@ def cmd_plan(a):
                      f"--model {m} --fmt {fmt} --configs {cl} --out-dir $C/speed_{m} --bw-json $OUT/speed_{m}/bw.json "
                      f"--blocks-out \\$TIARA_RUNS/\\$RUN_ID/blocks.csv\" || {{ echo \"43 confirm grid {m} {fmt} 失敗\" | tee -a $JOBS/NEEDS_HUMAN; exit 0; }}")
     L += ["# 2. 品質（新 seed 50000 起；T2–T4 各 90、T5 30；讀法 A＋B（b32 閒／忙，實測會合點））",
-          f"pool {J}/jobs_43q.json {a.pool} || exit 1",
+          f"pool {J}/jobs_43q.json {a.pool} || {{ echo \"43 品質 pool 有 job 失敗\" >> $JOBS/NEEDS_HUMAN; exit 0; }}",
           "# 3. 判定（CPU；m10_confirm_analyze.py 在 43 跑完前寫好；沒有就寫 NEEDS_HUMAN）",
           f"if [ -f {REPO}/code/m10_confirm_analyze.py ]; then",
           f"  python {REPO}/code/m10_confirm_analyze.py --dir $C > $C/analyze.out 2>&1 || echo \"43 confirm analyze 失敗\" >> $JOBS/NEEDS_HUMAN",

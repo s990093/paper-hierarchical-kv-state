@@ -36,6 +36,30 @@ clean:
 distclean: clean
 	rm -f $(MAIN).pdf
 
+# 10/19 合併：MI300X（有 /mlsteam/workspace）用 AMD 的佇列目標，其他機器（H200）用 Slurm 的；兩邊都有 status／q／gpu
+ifneq ($(wildcard /mlsteam/workspace),)
+# ── MI300X GPU 佇列（10/19；像 H200 那邊一樣用 make 看 queue）──────────────────
+#   make status  全部（runner、卡、顯存帳、跑中的 job、排隊、最近完成、NEEDS_HUMAN）
+#   make q／gpu／jobs／nh／done／tail（N=50 看更多行）／watch（每 30 秒刷新）
+QSTAT := code/m10_queue_mi300x/qstat.sh
+QRICH := /mlsteam/workspace/venv/tiara/bin/python code/m10_queue_mi300x/qstat_rich.py
+.PHONY: status status-plain q queue gpu jobs nh done tail watch help-q
+# 全部用 rich（qstat_rich.py）；rich 跑不起來時退回純文字的 qstat.sh
+status:
+	@$(QRICH) status || bash $(QSTAT) status
+q queue:
+	@$(QRICH) q || bash $(QSTAT) q
+gpu jobs nh done:
+	@$(QRICH) $@ || bash $(QSTAT) $@
+tail:                        # make tail N=40 ／ make tail JOB=ds1-llama-s0（看某個 job 的 pool log、stdout、stderr）
+	@$(QRICH) tail $(or $(N),30) $(JOB)
+watch:                       # 全螢幕、每 SEC 秒刷新（預設 30），Ctrl-C 離開
+	@$(QRICH) watch $(or $(SEC),30)
+status-plain:
+	@bash $(QSTAT) status
+help-q:                      # 注意：distclean 是論文的清理，會刪 main.pdf
+	@echo "make status｜watch [SEC=10]｜q（queue）｜gpu｜jobs｜nh｜done｜tail [N=40] [JOB=…]｜status-plain"
+else
 # =============================================================================
 # 平台 C（H200，學校 Slurm）——`make help` 看全部。docs/H200_SLURM.md
 # =============================================================================
@@ -233,3 +257,4 @@ setup-check:
 
 usage:
 	@$(SHOW) usage --account chihchunghsu
+endif

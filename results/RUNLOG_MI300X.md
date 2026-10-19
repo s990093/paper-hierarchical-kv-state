@@ -727,6 +727,16 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 43ab 品質冒煙過（13:35 → 13:44:21Z）：Llama 41／41 個配置有列（287 列）、Qwen 25／25（175 列），都 exit 0（輸出在 scratch，不進 results；兩個冒煙同時跑，所以 guard 互相標污染，品質分數不受影響）。正式品質 13:44:26Z 開跑（12 個 process，最多 8 個同時）。
 - 10/17 13:37Z 使用者：「h200 都不用管」→ H200 的第二階段復現不做、不再問；13 §11 只留作參考。
 
+### 11.2p 大掃描複賽 43 判定：12 個選手 0 個成立（10/18 09:37Z）
+
+- 品質 12／12 個 process exit 0（10/17 13:44:26 → 10/18 09:37:21Z）：Llama `20261017-134426-…-T24-s0`、`-134541-…-s1`、`-134656-…-s2`、`-134811-…-s3`、`-223132-…-s4`、`-223247-…-T5`；Qwen `20261017-225319-…-s0`、`-225536-…-s1`、`-225651-…-s2`、`20261018-035637-…-s3`、`-035752-…-s4`、`-045826-…-T5`。每個配置 570 列（300 題；T2–T4 兩輪、T5 一輪）。8 個同時跑，品質 guard 互相標污染是預期的（分數保留；CLAUDE.md §3）。
+- 判定（43ab 第 3 步自動跑 `m10_confirm_analyze.py`）：`results/m10_sweep_mi300x/confirm/{tables_confirm.md, confirm_llama.json, confirm_qwen.json}`。**0／12 成立。**
+  - 唯一贏隨機（讀法 A，Holm）：Llama `SW-ERR-20@int2_kivi`，對隨機 +2.0 [+0.8, +3.1]；但對 E0 −1.2 [−2.6, +0.1]、T4 第 1 輪 −6.7 → ε 沒過。
+  - 其他 11 個對隨機 −0.4 到 +0.5，沒有一個顯著。速度沒過 3 個（Llama mxfp4 ATT-20、Qwen ATT-40／AXE-40）：同位元組裡最快的都是隨機 seed。
+- 補充表（只報告）：`code/m10_confirm_detail.py` → `confirm/detail_A.md`（讀法 A 答對率、ε 細節、隨機 5 seed 平均、存的 KV GiB）。全 INT4 KIVI（Llama 1.29 GiB）+0.0 [−1.1, +1.1]，壓過唯一贏隨機的 INT2 20%（3.34 GiB、−1.2）。
+- 寫進 08 §2.9「複賽」和 §0 探索那段。
+- 佇列：43b（13 號 Q4，GPU 忙時的拆）09:37:43Z 開跑。
+
 ### 11.3 佇列（使用者 10/15：主線關鍵段先，掃描在只報告的工作前）
 
 - 31z 冒煙測試（失敗不擋主線，寫 NEEDS_HUMAN）。
@@ -797,6 +807,13 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 10/16 14:0xZ 重跑：334 項 ALL PASS。
 - `jobs/queue/44_tier2_speed.sh`（副本在 `code/m10_queue_mi300x/queue/`）：先真模型冒煙，再正式 2 launch × 5 rep × 閒／忙 × 50 格；失敗寫 NEEDS_HUMAN、不擋後面。估計約 1 小時〔估計，用主線格子的還原時間算〕，比 12 號登記時寫的 1.5–2.5 小時短。
 
+### 13.3 B：兩層混合還原的結果（stage 44，10/18 15:46:09 → 16:23:51Z）＋ A 用實測更新
+
+- 冒煙兩個模型都過；正式 `20261018-154708-m10-tier2-llama`、`20261018-160950-m10-tier2-qwen`，各 1,000 次還原，污染 0、KV 不對 0；gpu_guard 4 個全 CLEAN。比原本估計（1.5–2.5 小時）快：38 分鐘。
+- 結果寫進 08 §2.8 B：B1 慢層 INT4 比 BF16 快（NFS 36／36、SSD 31／36）；B2 在 NFS「舊先降」最快、「新先降」最慢（Llama 降最新 25% 到 NFS＝全部放 NFS，2.64 s），SSD 差不多；B3 預期錯了（Cake 只重算 3–5 塊，舊 25% 的 16 塊大多還是要從慢層讀）。
+- A：`python code/m10_iowall.py --tier2-dir results/m10_tier_mi300x --out-dir results/m10_tier_mi300x`（16:4xZ，CPU）。SSD 級全 INT4 實測比推算慢 37–39% → 全 INT4／分層從「沒有牆」變成有牆（Llama 閒 2,126、忙 9,588 段；Qwen 閒 4,271 段）；損益兩平點 Llama・忙 18.1、Qwen・閒 29.9、Qwen・忙 17.6 GiB/s。寫進 08 §2.8 A。
+- 12 號的 A、B 都做完了（原寫法的拆；融合 kernel／S4 在慢層的效果由 44d 的 b32 量）。
+
 ## Milestone 14 — 還原的第二輪：GPU 忙時的拆、會合規則 G5、新格式 kernel、拆進 attention、長 context（探索；MI300X）（準備中）
 
 **狀態**：事先登記寫好、程式寫好、CPU 測試全過；GPU 工作排在 43 之後（43a 冒煙 → 43b–43e → … → 44cz → 44d）。**還沒有任何結果。**
@@ -813,4 +830,165 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 43a 冒煙看到 G5 低估全載入（1 rep，不是結果）→ 另加 G5b（模擬 Cake 的兩條線），G5 照原登記照跑（13 §8c，commit 8a7cfe3）。
 - 13 號的報告程式 `m10_restore2.py report` 用冒煙的輸出測過結構。
 - 外部參考：vLLM 0.28 ROCm 的 FP8 KV decode（`m10_vllm_kvdecode.py`）、vLLM-KIVI kernel（`code/third_party/`，只量時間）；H200 上要比的 CUDA 實作記在 13 §11（使用者 10/17）。
+### 14.1 43b Q4：GPU 忙時的拆（10/18 09:37:43 → 11:37:56Z）
+
+- 28 個 grid（7 種方法 × 2 模型 × FP8／INT4；真實 CPU 層；E0、E1；Cake＋全部載入；3 launch × 10 rep）＋背景強度掃描 4 個（P0、P3 × 2 模型；INT4；duty 0.4／0.7／0.9；2 × 5），全部 exit 0。run：`20261018-093743-m10-rs2-q4-llama-fp8-P0` … `-112037-…-qwen-int4-P5`、`-112419-m10-rs2-q4duty-llama-P0` … `-113436-…-qwen-P3`。
+- **一格被污染**：P2（S2k8）× Llama × FP8 的 L302 gpu_guard `CONTAMINATED_DURING_RUN`（1 個樣本、pid 3965560、peak 0 MiB、09:49:27Z；那個 pid 已經不在，查不到是誰）。其他 91 個 guard（q4 83 個、duty 8 個）全部 CLEAN。照 CLAUDE.md §3 那格要重量 → `queue/43ca_rs2_q4_remeasure.sh`（排在 43c 後、43d 前）：同一個指令重量那一格 → 重新 pick-q4 → 新 pick 不是 P0／P3 就補它的背景強度掃描。
+- pick-q4（13 §3.2）在缺 P2 的情況下挑了 **P3（S4：全部搬完一次拆）**。**43ca 重量後定案（13:55:48 → 13:59:49Z，`20261018-135548-m10-rs2-q4-llama-fp8-P2-remeasure`，3 個 guard CLEAN）：P2 補成 4／4 格（GPU 忙、全載入 E1 幾何平均 0.0332 s），P3 0.0293 s 還是最小 → 仍是 P3**（舊檔 `q4_pick_43b.json`）。P3 沒變，所以不用補背景強度掃描。
+- 數字（E1 中位數，ms；`results/m10_restore2_mi300x/q4/*/restores.csv`）：
+  - GPU 忙、全部載入：P0 62.3／54.7／33.2／42.9（Llama FP8／INT4、Qwen FP8／INT4）→ P3 49.3／35.8／22.2／18.9（快 21–56%）；P2 —／39.8／25.3／23.4；P5 50.9／39.9／25.3／22.9；P1（io_prio）和 P0 一樣；P4a／P4b（留 CU）6–41%。
+  - GPU 忙、Cake：只有留 CU 有用（P4b 60.5–62.2／48.9–50.0，比 P0 快 23–26%）；S4／S2k8 沒變快（Qwen 的 S4 反而慢 8–9%）。
+  - 背景吞吐（每秒 matmul，INT4）：P0 368／371、P3 367／372（Llama／Qwen；不掉）；P4a 323／328（−12%）、P4b 296／298（−20%）。
+  - 背景強度掃描（INT4、E1、ms）：P0 全部載入 Llama 44.3 → 55.2 → 60.0、Qwen 28.6 → 42.8 → 52.9（duty 0.4 → 0.7 → 0.9）；**P3 全部載入 Llama 35.2 → 36.1 → 36.7、Qwen 19.3 → 19.7 → 20.8（幾乎不受背景影響）**；Cake 不管哪種拆法都隨背景暴增（Llama 57 → 79 → 134、Qwen 45 → 66 → 108）。
+- 讀法（只報告；挑法定案後寫進 11 問題一、問題三和 08）：GPU 忙時，「一次拆完」只開一個 kernel，不用和背景工作搶 64 次排程；全部載入又不用重算，所以整個還原幾乎不受背景影響。Cake 的重算線本身就要搶 GPU，換拆法救不了。
+
+### 14.2 43c Q2：會合規則 G5／G5b（10/18 11:37:56 → 13:55:48Z）
+
+- G5b 冒煙（`20261018-113756-m10-rs2-smoke-g5b`）過。16 個 grid（G5、G5b × 2 模型 × FP8／INT4 × CPU 層 3×10、慢的層 b16／b32／b48 2×5；Cake 照規則＋claim（Cake）＋CPU 層的全載入），全部 exit 0；40 個 gpu_guard 全 CLEAN。run：`20261018-113902-m10-rs2-q2-llama-fp8-cpu` … `-134456-…-qwen-int4-slow_g5b`。表：`results/m10_restore2_mi300x/tables_13.md`（`m10_restore2.py report`）。
+- pick-g5（13 §8c；每格「規則的中位數 ÷ 最好」，CPU 層最好＝min(Cake, 全載入)、慢的層＝Cake；96 個共同格子的幾何平均）：**G5 1.048、G5b 1.004 → 帶 G5b 到 44d**（`g5_pick.json`）。
+  - G5：CPU 層 1.201（17 格差超過 5%，最差 Llama INT4・閒 E1 1.77：GPU 閒時還是選 Cake，65 ms vs 全載入 36 ms）；慢的層 1.002。
+  - G5b：CPU 層 1.007（每一格都選「不重算」，E1：Llama FP8 48／62 ms、INT4 36／55、Qwen FP8 24／34、INT4 21／43，閒／忙，和全載入一樣）；b32、b48 都選 Cake（1.00）；**b16・忙選了不重算**：Llama INT4 287 vs Cake 327 ms（贏），Llama FP8 446 vs 411、Qwen FP8 362 vs 333（輸 8–9%），最差一格 1.10（Qwen INT4 b16・忙 E0）。
+- 這批用的是原本的拆法（S0）；S4／G5b 一起用的效果由 44d 量（P0、冠軍、Q4 的 P3、G5b、nodq 分開跑）。
+
+### 14.3 43d Q3：新格式的融合 kernel（10/18 13:59:49 → 14:38:04Z）
+
+- 7 個 grid（43 的配置，CPU 層，`M10_DEQUANT_FAST_X=1`），`20261018-135949-m10-rs2-q3-llama-int2_kivi` … `-143319-…-qwen-kv-int8_token-int4_kivi`；21 個 guard 全 CLEAN。表：`tables_13.md` 的 Q3。
+- 全部低精度（E1s）快很多（E1 中位數 s，閒／忙，原寫法 → 融合）：Llama INT2 KIVI 0.122 → 0.035／0.193 → 0.081、MXFP4 0.112 → 0.065／0.195 → 0.081、K4V2 0.096 → 0.060／0.192 → 0.081；Qwen K4V2 0.069 → 0.036／0.148 → 0.066、K8V4 0.059 → 0.037／0.082 → 0.065。新格式不再比 BF16（0.095／0.165）慢。
+- 混合配置（80% 以上還是 BF16）只快一點（Llama 0.099–0.104 → 0.095），到了 E0 的底。43 速度判準比的是同格式、同佔比之間，結論不受影響（RUNLOG 11.2p）。
+
+### 14.4 43e0／43e Q5：拆融合進 attention 的對照組（10/18 14:38:04 → 15:46:09Z）
+
+- 43e0：attention kernel 在 GPU 上重新自測 ALL PASS（`20261018-143804-m10-rs2-attn-selftest2`；讀壓縮＝同一 kernel 讀拆好的 BF16，逐位元；對 FP32 SDPA 誤差 0.0077–0.0078，和 BF16 版同級）→ `OK_attn`，(b) 有跑。
+- (a) 只搬不拆（nodq，attention 裡拆的還原下限）：`-143821-…-q5a-llama-fp8` … `-150037-…-qwen-int4`。CPU 層 E1（s），閒／忙：Llama FP8 0.042／0.045、INT4 0.030／0.031；Qwen FP8 0.019／0.021、INT4 0.016／0.017。S4＋全載入（14.1）在忙的時候只比它多 2–5 ms（Llama INT4 0.036、Qwen INT4 0.019）。
+- (b) attention 微測（`-150712-…-q5b-llama`、`-152107-…-q5b-qwen`；所有層合計，中位數 ms）：
+  - decode（1 個 query）：我們的 Triton kernel 讀壓縮比讀 BF16 慢——32K・閒 Llama FP8 7.96 vs 5.26、INT4 7.11；128K・閒 23.9／19.5 vs 7.8。Qwen 32K 幾乎一樣（4.9–5.0 vs 4.7），128K 11.5／10.2 vs 5.1。
+  - 256 個 query（像 prefill）：讀壓縮慢 3.6–4.6 倍（Llama 32K 154／131 vs 36）。〔推論〕每個 query 區塊都要把同一塊 K／V 重拆一次。
+  - vLLM-KIVI（A100 調的 Triton kernel，只量時間）：在 MI300X 上 decode 32K 要 235–270 ms，比我們的 kernel 慢約 40–50 倍，不能用。
+- (c)〔算術〕把「還原時省下的拆」攤到之後每個 token 的 decode：用我們的 kernel，Llama 生成 2–5 個 token 就賠回去，Qwen 4–54 個。
+- (d) vLLM 0.28 ROCm 的 FP8 KV（production kernel，attention 裡拆）：Llama decode 每 token 32K 5.27 vs BF16 5.88 ms（−10%）、128K 6.91 vs 9.76（−29%）；prefill＋1 慢 2–6%。`-153119-…-q5d-llama-auto`、`-153807-…-llama-fp8`。**Qwen 兩個都啟動失敗**：`TypeError: RocmAttentionImpl.__init__() got an unexpected keyword argument 'layer_idx'`（Qwen2.5-1M 的 config 有 DCA，vLLM 0.28 ROCm 不支援）。
+  - 修：`m10_vllm_kvdecode.py`、`m10_vllm_ttft.py` 的 Qwen 改用 `/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA`（同一份權重 symlink，只拿掉 DCA；CLAUDE.md §3 第 3 點；我們的 HF harness 本來就沒有 DCA）。重跑排成 `queue/44_v_rs2_q5d_qwen.sh`（44 之後）。**44_v（16:23:51 → 16:35:18Z，`20261018-162351-…-q5d-qwen-auto-nodca`、`-162925-…-qwen-fp8-nodca`）兩個都過**：Qwen decode 每 token 32K 4.34 vs BF16 4.53 ms（−4%）、128K 4.97 vs 5.75（−14%）；prefill＋1 慢 3–9%。stage 70 也用同一個路徑，已經一起改。
+- 讀法（只報告）：拆進 attention 要好的 kernel 才划算。我們自己寫的 Triton kernel 每個 token 多花 0.1–6.4 ms（32K；128K 更多，Llama・閒 16 ms），幾個 token 就把還原省下的賠掉；vLLM 的 FP8 kernel 反而讓 decode 變快（讀的位元組少）。但 AMD 上只有 FP8 有這種現成 kernel，INT4 沒有。在不改 attention 的前提下，S4＋全載入已經拿到大部分好處（離只搬不拆的下限 2–5 ms）。
+
+- **10/18 16:0xZ 補（使用者的想法，〔算術〕，沒有新的 GPU 工作）**：「只在 prefill 用拆進 attention、decode 維持 BF16」用量好的零件算：比 S4＋全載入＋BF16 prefill 慢 58–149 ms（32K、CPU 層；`code/m10_fused_prefill_arith.py` → `q5/fused_prefill_arith.md`）。寫進 11 問題三 §3b。
+
+- **10/19 補（使用者看 Cake 論文問「存和算差太多就沒意義？」；CPU，只讀主線格子）**：`code/m10_cake_ratio.py` → `results/m10_precision_mi300x/analysis/cake_ratio.{md,png}`。CPU 層「只載 ÷ 只算」0.007–0.022 → Cake 0.50–0.86 倍；b48 0.40–2.60 → 1.51–2.04 倍。寫進 11 問題三 §3c。
+
+### 14.5 佇列的失敗處理（10/18 15:5xZ）
+
+- 10/17 那次 `exit 1` 讓整條佇列停了 3 小時（11.2o）。把還沒跑的 stage 全部改成「失敗 → 寫 NEEDS_HUMAN、跳過這段其餘部分、exit 0」：44a、44b、44c 的模板（`longctx_plan_n.py`）、45、46、55、60、70、75、88，還有 `m10_confirm.py plan` 的模板。只改失敗時的動作，指令本身沒動。舊檔在 `scratchpad/jobs/bak_20261018_exit1/`。
+
 **前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。
+
+## Milestone 15 — 第二張 MI300X、雙卡佇列（10/19）
+
+**為什麼**：使用者 10/19：平台配額是 2 張卡（之前容器只掛 1 張）→ 重啟加第二張；「先讓兩張卡都跑通、雙卡加速；量時間的 stage 獨佔兩張卡、只量品質的在另一張平行」。
+
+### 15.1 重啟與還原（10/19 02:15 → 02:39Z）
+
+- 重啟前（02:14–02:19Z）：
+  - 佇列狀態（原本在 /tmp 的 scratchpad/jobs）備份到 `/mlsteam/data/tiara/jobs_backup/`；scratchpad 其他東西到 `/mlsteam/data/tiara/scratch_backup/`；/root 的設定到 `/mlsteam/workspace/.restore_root`（700，有 git token，不進 git）。
+  - 還原說明 `/mlsteam/workspace/RESUME_20261019_2GPU.md`；`code/m10_queue_mi300x/restart_restore.sh`。
+- **44a 第 5 格（Llama 128K INT4，`20261018-234358-m10-lc-grid-llama-129024-int4_kivi`）在重啟時被中斷，沒跑完**（L1 第 3 個 busy rep 時）。重排的 44ca 會重跑這一格；前 4 格（FP8，128K／64K × 兩個模型）CLEAN、跳過。
+- 重啟後（使用者在 Mac 端：Lab 改 Gpu_full_2_gpus、`lab_up.sh` selftest 49 項全過、SSH port 46639、終端機改 zsh＋tmux）：
+  - `amd-smi list`：GPU 0＝**0000:86:00.0**（新的）、GPU 1＝**0000:a6:00.0**（10/18 以前所有計時用的那張）。`torch.cuda.device_count()`＝2；`HIP_VISIBLE_DEVICES=0` → pci_bus 0x86、`=1` → 0xa6：HIP 編號和 amd-smi 編號一一對應。
+  - `/mlsteam/data/tiara` 有掛上；git 登入從 `.restore_root` 放回，`git fetch` 成功。
+  - `restart_restore.sh`：jobs 放回原路徑；`44a_longctx_speed.running` 換成會跳過已完成格子的版本。
+
+### 15.2 「第 0 張卡」寫死的地方（修）
+
+- `code/m7_env.sh`：`HIP_VISIBLE_DEVICES=0 CUDA_VISIBLE_DEVICES=0` → `${TIARA_GPU:-0}`（沒設＝原本的行為）。
+- `code/gpu_guard.py` `smi_index`：AMD 原本一律回傳 0 → 照 `HIP_VISIBLE_DEVICES` 對到 amd-smi 的實體編號（不是數字就丟 SmiUnavailable，不猜）。測：`HIP_VISIBLE_DEVICES=1` → 1；沒設 → 0。
+- `pool.py` 的 `free_gb`：原本看 amd-smi 的第一張 → 看 `TIARA_GPU` 那張。
+- **已知限制**：AMD 的 gpu_guard 判「同一個容器裡的別的行程」是看誰開了 `/dev/kfd`，不分卡。兩條 runner 同時跑品質 stage 時，兩邊的 guard 會互相記成污染。品質分數照規則保留（CLAUDE.md §3），所以不影響；量時間的 stage 一律兩張卡獨佔（下面），不會碰到。
+
+### 15.3 雙卡佇列（10/19 02:37Z 開跑）
+
+- `runner.sh` 重寫（副本 `code/m10_queue_mi300x/runner.sh`）：
+  - **main**：`queue/`，`TIARA_GPU=1`（a6:00.0，和以前的計時同一張卡）。stage 開頭寫 `# GPU-NEED: one` → 只拿 gpu1 的鎖；沒寫（＝both，量時間）→ 先立 `WANT_BOTH` 旗子，再依序拿 gpu0、gpu1 的鎖（固定順序，不會互卡）。
+  - **helper**：`queue_g0/`，`TIARA_GPU=0`（86:00.0），只跑只量品質的 stage。`WANT_BOTH` 在的時候不開新的；它的 pool 看到 `WANT_BOTH` 就停掉自己的 job、exit 75，runner 把 stage 放回佇列，之後重跑時品質 job 照題號續跑（已寫的題不重做；最多損失正在做的那一題）。CPU 上用假 job 測過：exit 75、子行程全部清掉。
+  - 名稱照位元組排序（`LC_ALL=C`；重啟後 locale 換了）。
+- 佇列重排（只換順序，指令不變）：
+  - main：44b（試跑，one）→ 44c（44b 寫出，one；模板加了 `GPU-NEED: one`）→ **44ca**（原 44a 剩下的 INT4 格子，both）→ 44cz（CPU，one）→ 44d（both）→ 14 號的 44e*（之後寫）→ 70（vLLM TTFT，both）→ 75（vLLM RULER CWE，one）。
+    - 44a 的 INT4 格子排到 44b／44c 後面：44b／44c 的讀法 B 只用 FP8 的參考線（已完成），這樣 44b／44c 可以和第二張卡平行。
+  - helper：45 → 46 → 55 → 60 → 88（主線之外、只報告的品質工作；彼此、和 main 都沒有相依）。
+- 02:37:52Z main 開 44b（`20261019-023753-m10-lc-pilot-llama-64`，HIP_VISIBLE_DEVICES=1）；02:37:55Z helper 開 45（`20261019-023758-m10-f8m-qwen-T24-s0`，HIP_VISIBLE_DEVICES=0）。從每個 job 的環境變數確認卡號正確。
+- 換卡的影響：量時間的 stage 都留在 a6:00.0（和 10/18 以前同一張）；品質不看卡。如果之後有量時間的 run 落在 86:00.0，RUNLOG 會標。
+
+### 15.4 14 號的佇列（10/19 02:4xZ；排在 44d 後面、70 前面）
+
+- CPU 測試在新容器重跑（綁 4 個核心，不拖慢 44b 的試跑計時）：`tests/match_drop_cpu.py` 126 項 ALL PASS；`tests/restore2_cpu_shim.py` ALL PASS（含 drop）。
+- main 的佇列加：
+  - `44e0_md_smoke`（both）：DS1／DS2 冒煙＋檢查（列數、MASK0 的 KL、90% 的 KL、留下比例）；D3／M1／M2 速度冒煙（KV 檢查、載入位元組）。沒過就立旗子，後面那段跳過。另外寫 M2／D3 用的頻寬表 `results/m10_match_mi300x/bw_<m>.json`（每個模型的 b16／b32／b48＋nfs 0.331 GiB/s）。
+  - `44e1_ds1_screen`（one；6 個 process；逐列放 `/mlsteam/data/tiara/drop_m10`）→ `44e1z_ds_pick`（CPU，照 14 §8.5 寫 DS2 的 jobs）→ `44e2_ds2_confirm`（one）。
+  - `44e3_d3_speed`、`44e4_m2_fmt`、`44e5_m1_unit`（都是 both，在 a6:00.0）→ `44ez_md_report`（CPU）。
+- 已知的小差異：m10_speed 的 `bytes_stored` 欄對 drop 配置沒有扣掉被丟的 block（`bytes_read` 是實際讀的）；D3 只看還原時間和 `bytes_read`。
+
+### 15.5 main 的品質工作也用第二張卡（10/19 02:5xZ，使用者同意）
+
+- `pool.py`：ROLE=main 時，每個 job 開跑前先看自己那張（a6），放不下（每張卡最多 P 個、顯存要夠 need_gb＋8 GB）再看 86；job 的 `TIARA_GPU` 跟著換。helper 照樣只用 86。量時間的 stage 不用 pool，照樣兩張卡獨佔。
+- 86 上 helper 自己的品質工作照跑，main 的 job 只用剩下的顯存（pool 開每個 job 前都查 free VRAM）。品質不看卡。
+- CPU 測（假 job、P＝1）：第 1 個到 a6、第 2 個到 86、第 3 個等 a6 空出來；環境變數 HIP_VISIBLE_DEVICES 跟著對。
+- 生效範圍：從 44c 開始（正在跑的 44b、45 的 pool 已經載入舊版）。DS1 改成每個模型 6 個 shard、DS2 的 `--shards 6`（切細一點，兩張卡比較平均）；題目、配置不變。
+- **44b 試跑做完**（10/19 02:37:52 → 03:30:04Z，6 個 job 全 exit 0）。`longctx_plan_n.py` 照試跑選「完整」：n＝12，放法 F M B R0 R1 ERR ATT AXE ORC，佔比 10–90%，有讀法 B，估計單卡 9.68 小時 → 寫出 `44c_longctx_screen.sh`（12 個 job），03:30:04Z 開跑。這是第一個用新 pool 的 stage（a6 放不下就放 86）。
+
+### 15.6 44c 的一個 job OOM → 全部 pool 共用一本顯存帳；接續成 44c_x（10/19 03:39 → 04:35Z）
+
+- `lcs-llama-252-s2`（Llama 128K，need 78 GB）03:37:48Z 開，03:39:32Z `torch.OutOfMemoryError`（`20261019-033748-m10-lc-screen-llama-252-s2`；在 `load_fmt` 的 `rel_err_centered`）。開的時候 a6 還空 93 GB，但前兩個 Llama 128K（s0、s1）還沒長到峰值。
+  - 這個問題單卡時就有：pool 只看「現在空多少」，沒算跑中的 job 還會再長。
+- 照規則 pool 不再開新的 → 44c 只會做完 s0、s1，其他 9 個不會跑。
+- 修（不改任何實驗設定）：`pool.py` 加一本所有 pool（main、helper）共用的顯存帳 `vram_reserved.json`（fcntl 鎖）。每個 job 開的時候登記 need_gb（峰值估計），同一張卡「已登記＋這個＋8 GB」要 ≤ 總量，而且現在空的也要 ≥ need＋8 GB（帳外的行程照樣算進去）。job 結束或行程不在了就從帳上拿掉。CPU 測過（3 個 78 GB 在 192 GB 的卡上只放得下 2 個；釋放、行程死掉後都會空出來）。
+- 處理：
+  - 把 s0、s1 手動登記到帳上（行程還在跑，不動它們）。
+  - 停掉 44c 的 pool（04:35Z）。照模板，44c 寫 NEEDS_HUMAN、跳過彙整、結束。
+  - 新 stage `44c_x_screen_rest`（one）用新 pool 跑剩下的 10 個 job：指令、題數、設定和 44c 完全相同，screen 照題號續跑，s2 從頭開始。最後等 s0、s1 也結束才彙整，44ca 量時間時兩張卡都會是空的。
+- 現在：a6 帳上 156 GB（s0、s1），剩下的 job 要等 s0、s1 做完；86 被 helper 的 45 佔滿。兩張卡都還在 100% 使用。
+
+### 15.7 make 看佇列（10/19 04:4xZ，使用者要求「像 H200 一樣用 make 看 queue、status」）
+
+- `code/m10_queue_mi300x/qstat.sh`＋repo 根目錄 `Makefile` 的目標：`make status`（全部）、`make q`（排隊）、`make gpu`（兩張卡的顯存、使用率、顯存帳）、`make jobs`（跑中的 job 和每個 job 的進度：第幾題、秒／題）、`make nh`（NEEDS_HUMAN）、`make done`（最近完成，台灣時間）、`make tail`（跑中 stage 的 log，`N=50` 看更多）、`make watch`（每 30 秒刷新）。時間同時給 UTC 和台灣時間。
+- NEEDS_HUMAN 舊的 6 行都已處理，移到 `NEEDS_HUMAN.handled`（附處理紀錄），`make nh` 只顯示新的。
+- **10/19 04:5xZ 補（使用者：「ssh 連進去就自己打開 repo、要美觀 rich」）**：
+  - `code/m10_queue_mi300x/qstat_rich.py`（rich 狀態板）：Runner、GPU（顯存條、使用率、顯存帳）、跑中的 job（每個 job 的「已做/總題數」進度條、秒／題、還要多久）、排隊、最近完成、NEEDS_HUMAN。`make status` 改用它（rich 不能用時退回 `make status-plain`），`make watch` 每 30 秒刷新。
+  - SSH 登入：`/mlsteam/workspace/shell/zshrc.tiara`（zshrc 最後 source；repo 副本在 `docs/migration_20261013/lab_bin/shell/`）。互動式、ssh 進來、不在 tmux／Claude 裡時，cd 到 repo 並印精簡版狀態板。`touch /mlsteam/workspace/shell/no-tiara-status` 可關掉。測過：模擬 ssh 登入 → 進 repo、印出狀態板；tmux 裡不印。
+  - 10/19 05:0xZ（使用者：「所有都要美觀 rich、優化」）：`qstat_rich.py` 重寫成全部子命令都用 rich：
+    - status、compact（登入）、q、gpu、jobs、nh、done、tail（N 行、JOB＝看某個 job 的 pool log＋stdout＋stderr，錯誤標紅）、watch（rich Live 全螢幕，SEC 秒刷新）。
+    - 最上面一列狀態摘要（runner 數、兩張卡的使用率與顯存、問題數、下一個量時間的 stage）。
+    - 每個跑中的 stage 有整體進度（含還沒開的 job、總題數）；每個 job 有進度條、秒／題、還要多久。
+    - 從 stage 腳本讀它要跑的 job 清單，所以還沒開 job 時也看得到「排著幾個、在等顯存」。
+    - amd-smi 兩個查詢平行跑，一次 0.28 秒。
+    - make 的每個目標都改用它，跑不起來時退回純文字的 qstat.sh。
+
+### 15.8 卡 1 閒了幾分鐘：顯存帳把殭屍行程當成還在跑（10/19 05:45 → 05:51Z）
+
+- 44c 的 s0、s1（`20261019-033004-…-llama-252-s0`、`-033121-…-s1`）05:44:56、05:49:58Z 正常結束（exit 0）。但它們的 pool 在 15.6 被停掉了，行程變成孤兒；容器的 PID 1 不收殭屍，所以 `/proc/<pid>` 還在。顯存帳用「/proc 在不在」判斷 → 帳上一直佔 156 GB → 44c_x 的 10 個 job 一直等，卡 1 是空的。
+- 使用者 05:5xZ 看狀態板發現卡 1 是 0%。處理：在帳的鎖底下把殭屍的兩筆拿掉 → 05:51:18Z 44c_x 開始開 job（lcs-llama-252-s2、lcs-qwen-252-s0 …）。卡 1 實際空著的時間：一個 job 的位置約 6 分鐘，整張卡約 1.5 分鐘。
+- 修：`pool.py`、`qstat_rich.py` 判斷「行程還在」改看 `/proc/<pid>/stat` 的狀態，Z／X 算不在。CPU 測：沒 wait 的子行程（殭屍）→ 不在；自己 → 在；不存在的 pid → 不在。已裝進佇列（新開的 pool 用新版；正在跑的 44c_x pool 的帳裡已經沒有殭屍）。
+
+### 15.9 44c_x 做完；長 context 彙整一開始失敗（重複表頭）→ 修好重跑（10/19 10:47 → 10:51Z）
+
+- 44c_x 10:47:21Z 結束：44c 全部 12 個 job 都 exit 0（s2 第一次是 OOM 的 exit 1，重跑那次 exit 0）。
+- 彙整（`m10_longctx_analyze.py`）`ValueError: could not convert string to float: 'kl'`：`screen_llama_252_s2.csv.gz` 裡有兩行表頭（第一次 OOM 只寫了表頭，續跑時沒看到任何題、又寫一次）。其他 11 個檔各只有一行。
+- 修：讀檔時跳過重複的表頭列（和 m10_analyze 的做法相同）。10:50Z 重跑（CPU，`nice 19`、綁 2 個核心，44ca 正在量時間）→ rc 0，`results/m10_longctx_mi300x/analysis/{tables_longctx.md, longctx_<m>.json, figs/}`。
+- 44ca（量時間）10:47:21Z 開始；helper 的 55 在 10:47:22Z 照設計讓出卡 0（第一次真的用到搶先，PREEMPTED → 放回佇列，之後續跑）。
+- 先看到的（Llama，生成答對率，探索、不做判定）：E0 在 128K 掉到 40%；但好的格式（FP8、INT8、INT4 KIVI）到 128K 都和 E0 差不多（差在 ±2 個百分點內）。25% 的前／中／後放法對隨機也都在 ±2 內。位置在 64K／128K 一樣沒有東西可救。太狠的格式（INT2、MXFP4、int2h_g32）有幾格隨長度變差。完整解讀等 44ca 的速度一起寫進 08 和 10 號。
+
+### 15.10 量時間時另一張卡能不能照跑：先量再決定（10/19 11:xxZ；使用者：「真的不能兩張卡嗎」）
+
+- **為什麼原本要獨佔**：
+  - 怕另一張卡的工作搶主機的 CPU、記憶體頻寬，量出來的還原時間不準。
+  - 另外 AMD 的 gpu_guard 用「容器裡誰開了 /dev/kfd」判斷入侵者，不分卡：另一張卡上我們自己的品質工作會把量時間的 run 標成污染，照規則就要重量。
+  - 實測：量時間的行程（HIP_VISIBLE_DEVICES=1）兩張卡的 render 節點都會開，所以不能用裝置檔分卡。
+- **gpu_guard 分卡**（`code/gpu_guard.py`）：
+  - 容器行程用哪張卡，看它的環境變數 `ROCR_VISIBLE_DEVICES`／`HIP_VISIBLE_DEVICES`（實體編號，和 amd-smi 一致）。
+  - 指到別張卡的行程，不算這張卡的入侵者，也不拿來抵這張卡上的外部行程。沒設環境變數的照舊算在這張（保守）。
+  - 假資料測：卡 0 有我們的品質工作、卡 1 量時間 → 卡 1 乾淨；卡 0 看得到；沒設環境變數的 → 算入侵；卡 1 上真的外部行程 → 抓到。`test_gpu_guard_slurm.py` 9 項照過。
+- **runner v2**（`code/m10_queue_mi300x/runner.sh`）：
+  - `XGPU_OK` 旗子在 → 量時間的 stage 只拿卡 1 的鎖、不立 WANT_BOTH，helper 照跑。沒有旗子 → 照舊兩張卡獨佔。
+  - `RELOAD_<role>` 可以在下一個 stage 前換新版。
+  - 啟動時接手還在跑的 stage。
+  - 11:34Z 兩條 runner 都換成 v2：main 接手跑到一半的 44ca，沒有中斷；helper 本來就在讓卡，直接換。
+- **pool**：main 的佇列全部做完（沒有 .sh、.running）時，helper 的 job 也可以放到卡 1（收尾）。
+- **干擾實驗 `queue/44cb_xgpu_check.sh`**（排在 44ca 後面；本身兩張卡獨佔）。判準在寫的時候就定好，沒有任何這個實驗的數字：
+  1. 卡 0 放一個假的 GPU 行程，卡 1 的 guard 看不到、卡 0 的看得到。
+  2. 卡 1 量還原（S0、INT4 KIVI、E0／E1s、cpu＋b32、閒／忙、Cake＋cpu 全部載入，1×10），卡 0「空著」(A) 和「跑 4 個真的品質 process」(B) 交替 A B A B，兩個模型。每格 B 中位數 ÷ A 中位數：幾何平均 ≤ 1.02、沒有一格 > 1.08、A／B 的 guard 全 CLEAN。
+  - 全過才立 `XGPU_OK`。沒過 → 照舊獨佔，寫 NEEDS_HUMAN。A2／A1（同條件兩次）的比值也記下來，當雜訊的參考。

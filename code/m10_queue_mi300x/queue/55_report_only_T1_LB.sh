@@ -2,7 +2,7 @@
 # 19:2xZ 拆開：INT4 的 T1／LB 要用 80 那次 grid 的會合點（E1@int4 等鍵），移到 88；這裡只留 FP8 的，加上 FP8 混合配置的 T1（封存）。
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail
-[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "事先登記還沒凍結"; exit 1; }
+[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "55：事先登記還沒凍結 → 跳過" | tee -a $JOBS/NEEDS_HUMAN; exit 0; }
 mkdir -p $OUT/quality_sealed
 python3 - <<PY
 import json
@@ -19,4 +19,4 @@ for m,need in (("llama",42),("qwen",28)):
     jobs.append(dict(name=f"f8m-{m}-T1", need_gb=need, cmd=f"m7run m10-f8m-{m}-T1 {q} --configs F25 M25 B25 R25 --modes A B --tasks T1 --n 180 --out $OUT/quality_sealed/fp8mix_{m}_T1.csv"))
 json.dump(jobs,open("jobs_55.json","w"),indent=1)
 PY
-pool jobs_55.json 8 || exit 1
+pool jobs_55.json 8 || { echo "55：pool jobs_55.json 有 job 失敗（$JOBS/pool_*.log）→ 跳過這段的其餘部分" >> $JOBS/NEEDS_HUMAN; exit 0; }

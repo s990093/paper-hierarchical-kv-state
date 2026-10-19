@@ -134,6 +134,9 @@ class Restorer:
         self._h2d_s = None
         self._stages: dict = {}
         self._arange = None
+        # 14 號 D3（10/19）：被丟掉的 block（還原單位的編號）。載入線跳過它們；重算線照 Cake 從前面做（前面被丟的還是會被算回來，
+        # 那段需要完整的前綴）。空集合＝原本的路徑。
+        self.drop: frozenset = frozenset()
 
     def set_options(self, unit: int = CHUNK, sched: str = "serial", group: int = 1, compute_prio: bool = False,
                     meet: str = "claim", io_prio: bool = False):
@@ -394,13 +397,18 @@ class Restorer:
                     if st["q"] < st["p"]:
                         break
                     q = st["q"]
+                    if q in self.drop:                         # 14 號 D3：被丟掉的不載
+                        st["q"] -= 1
+                        rec["n_drop"] = rec.get("n_drop", 0) + 1
+                        continue
                     if loc[q] is None:
                         break
                     grp = [q]
                     if K > 1 and is_lp(host[q]):
                         while len(grp) < K:
                             j = grp[-1] - 1
-                            if j < st["p"] or loc[j] is not loc[q] or not is_lp(host[j]) or host[j].fmt != host[q].fmt:
+                            if j < st["p"] or j in self.drop or loc[j] is not loc[q] or not is_lp(host[j]) \
+                                    or host[j].fmt != host[q].fmt:
                                 break
                             grp.append(j)
                     st["q"] -= len(grp)
@@ -560,6 +568,10 @@ class Restorer:
                         if st["q"] < st["p"]:
                             break
                         q = st["q"]
+                        if q in self.drop:                     # 14 號 D3：被丟掉的不載（空集合時就是原本的路徑）
+                            st["q"] -= 1
+                            rec["n_drop"] = rec.get("n_drop", 0) + 1
+                            continue
                         if loc[q] is None:
                             break   # 沒存的只能留給重算線
                         st["q"] -= 1

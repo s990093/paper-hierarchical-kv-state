@@ -1,0 +1,17 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E1s,cake,30,0.06504,0.2747,1,63.0,765886464.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,busy,SW-ATT-10,cake,30,0.06495,0.27384,1,6.0,1746468864.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,busy,SW-AXE-10,cake,30,0.06532,0.27364,1,6.0,1746468864.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,busy,SW-R0-10,cake,30,0.06502,0.27415,1,6.0,1746468864.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,busy,SW-R1-10,cake,30,0.06481,0.27331,1,6.0,1746468864.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,busy,SW-R2-10,cake,30,0.06493,0.27439,1,6.0,1746468864.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,busy,SW-R3-10,cake,30,0.0656,0.27437,1,6.0,1746468864.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,busy,SW-R4-10,cake,30,0.06531,0.27398,1,6.0,1746468864.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,E1s,cake,30,0.03661,0.10217,1,63.0,765886464.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,SW-ATT-10,cake,30,0.05186,0.11749,1 2,6.0,1717108736.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,SW-AXE-10,cake,30,0.05213,0.11787,1 2,6.0,1717108736.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,SW-R0-10,cake,30,0.0522,0.11804,1 2,6.0,1717108736.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,SW-R1-10,cake,30,0.05223,0.11785,1 2,6.0,1717108736.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,SW-R2-10,cake,30,0.05212,0.11777,1 2,6.0,1717108736.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,SW-R3-10,cake,30,0.05214,0.11779,1 2,6.0,1717108736.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi
+32768,cpu,idle,SW-R4-10,cake,30,0.05206,0.11782,1 2,6.0,1717108736.0,,,30,0,20261018-143319-m10-rs2-q3-qwen-kv-int8_token-int4_kivi

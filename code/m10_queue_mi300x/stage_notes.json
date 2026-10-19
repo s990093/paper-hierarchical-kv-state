@@ -1,0 +1,6 @@
+{
+ "43aa_sweep_confirm_rerun": "已處理：品質的 --params-file 寫成字面 $P → 接續成 43ab（10/18 09:37Z 完成）；RUNLOG 11.2o",
+ "43_sweep_confirm": "冒煙抓到 ItemState 名稱錯誤 → 改名後重排成 43aa；RUNLOG 11.2m",
+ "44c_longctx_screen": "只跑了 2/12：一個 job OOM 後 pool 停掉 → 剩下的在 44c_x；RUNLOG 15.6",
+ "44c_x_screen_rest": "44c 的接續；12 個 job 全 exit 0；彙整第一次因重複表頭失敗，修好重跑（RUNLOG 15.9）"
+}

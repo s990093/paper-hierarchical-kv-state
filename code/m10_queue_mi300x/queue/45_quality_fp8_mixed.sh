@@ -4,7 +4,7 @@
 # Step 2 要在某個模型上做 → f8m_first.txt 寫那個模型，這段先跑它（預設 Qwen 先）。
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail
-[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "事先登記還沒凍結"; exit 1; }
+[ -n "$(git -C $REPO log --oneline -1 -- docs/precision_20261013/07_freeze_mi300x.md)" ] || { echo "45：事先登記還沒凍結 → 跳過" | tee -a $JOBS/NEEDS_HUMAN; exit 0; }
 mkdir -p $OUT/quality_sealed
 python3 - <<PY
 import json
@@ -21,4 +21,4 @@ for m,need in order:
     jobs.append(dict(name=f"f8m-{m}-T5", need_gb=need, cmd=f"m7run m10-f8m-{m}-T5 {base} --tasks T5 --n 60 --out $OUT/quality_sealed/fp8mix_{m}_T5.csv"))
 json.dump(jobs,open("jobs_35.json","w"),indent=1)
 PY
-pool jobs_35.json 8 || exit 1
+pool jobs_35.json 8 || { echo "45：pool jobs_35.json 有 job 失敗（$JOBS/pool_*.log）→ 跳過這段的其餘部分" >> $JOBS/NEEDS_HUMAN; exit 0; }

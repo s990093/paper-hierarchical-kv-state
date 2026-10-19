@@ -60,6 +60,10 @@ class KVModel:
         self.chunk_bytes = self.L * 2 * self.H * CHUNK * self.D * 2
         # 依 q 長度與 kv 長度快取遮罩物件
         self._masks: dict[tuple[int, int], object] = {}
+        # 14 號 D／DS（10/19）：丟掉 token。None＝原本的路徑（逐字相同）。
+        #   [max_len] bool：所有層、head 共用（page／block 粒度）；[L, H, max_len] bool：每個（層, KV head）各自（per-head token）。
+        #   False 的位置 attention 看不到＝把那些 K／V 從 cache 拿掉（softmax 只在留下的位置上做；RoPE 位置不變）。
+        self.key_keep = None
 
     # ---- KV 緩衝的 chunk 視圖 ------------------------------------------------
     def chunk_view(self, i: int) -> torch.Tensor:
@@ -103,7 +107,10 @@ class KVModel:
             self.kv[li, 1, :, start:end].copy_(v[0])
             K = self.kv[li, 0, :, :end].unsqueeze(0)
             V = self.kv[li, 1, :, :end].unsqueeze(0)
-            o = F.scaled_dot_product_attention(q, K, V, attn_mask=mask, enable_gqa=True)
+            if self.key_keep is None:
+                o = F.scaled_dot_product_attention(q, K, V, attn_mask=mask, enable_gqa=True)
+            else:
+                o = self._attn_keep(q, K, V, li, start, n, end)
             o = o.transpose(1, 2).reshape(1, n, self.Hq * self.D)
             x = x + a.o_proj(o)
             x = x + layer.mlp(layer.post_attention_layernorm(x))
@@ -113,6 +120,25 @@ class KVModel:
             x = m.norm(x[:, -1:])
             return self.hf.lm_head(x)[0, -1]
         return None
+
+    def _attn_keep(self, q, K, V, li: int, start: int, n: int, end: int, sub: int = 64):
+        """14 號：有 key_keep 時的 attention。遮罩＝causal（第 t 個 query 看到 ≤ start+t 的 key）且 key_keep。
+        per-head 的遮罩是 [Hq, n, end]，太大，所以 query 每 sub 個一段算（每段的結果和整段一起算相同，attention 對 query 獨立）。"""
+        kk = self.key_keep
+        rep = self.Hq // self.H
+        pos_k = torch.arange(end, device=self.device)
+        outs = []
+        step = n if kk.dim() == 1 else sub
+        for s0 in range(0, n, step):
+            s1 = min(n, s0 + step)
+            causal = pos_k.view(1, end) <= (start + torch.arange(s0, s1, device=self.device)).view(-1, 1)   # [m, end]
+            if kk.dim() == 1:
+                m = (causal & kk[:end].view(1, end)).view(1, 1, s1 - s0, end)
+            else:
+                hk = kk[li, :, :end].repeat_interleave(rep, dim=0)                                        # [Hq, end]
+                m = (causal.unsqueeze(0) & hk.unsqueeze(1)).unsqueeze(0)                                    # [1, Hq, m, end]
+            outs.append(F.scaled_dot_product_attention(q[:, :, s0:s1], K, V, attn_mask=m, enable_gqa=True))
+        return outs[0] if len(outs) == 1 else torch.cat(outs, dim=2)
 
     @torch.inference_mode()
     def prefill_chunked(self, ids: torch.Tensor, start: int = 0):

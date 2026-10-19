@@ -287,6 +287,21 @@ def restorer_tests():
             chk(False, "g5＋defer 應該被擋")
         except AssertionError:
             chk(True, "g5＋defer 被擋（載入時間不含拆）")
+        # 14 號 D3（10/19）：Restorer.drop——載入線跳過被丟的 block
+        km.sleep = 0.0
+        for meet, dset in (("none", frozenset({3, 6, 7})), ("claim", frozenset({6, 7})), ("none", frozenset())):
+            for sched, group in (("serial", 1), ("group", 4)):
+                rs9 = RH.Restorer(km)
+                rs9.set_options(sched=sched, group=group, meet=meet)
+                rs9.drop = dset
+                km.kv.zero_()
+                rec = rs9.restore(ids, n, lp, [cpu] * n, "cake")
+                loaded = {i for i, src, _, _ in rec["blocks"] if src != "recompute"}
+                comp = {i for i, src, _, _ in rec["blocks"] if src == "recompute"}
+                bad, once = check_kv(km, rec, ref, lp, interp=sched == "group")
+                ok = not (loaded & dset) and (loaded | comp | dset) == set(range(n)) and bad == 0 and once \
+                    and rec.get("n_drop", 0) == len(dset - comp) and (meet != "none" or not comp)
+                chk(ok, f"{fmt} drop {sorted(dset)} {meet} {sched}{group}：不載被丟的、其他都到齊、KV 對（loaded={sorted(loaded)} comp={sorted(comp)} n_drop={rec.get('n_drop', 0)} bad={bad}）")
 
 
 def worker_tests():
@@ -370,7 +385,19 @@ def busy_tests():
     S.subprocess.Popen = real
 
 
+def drop_set_tests():
+    import m10_speed as SP
+    n = 64
+    for pct, k in ((25, 16), (50, 32)):
+        f, bb, r = SP.drop_set(f"E1s-DF{pct}", n, 7), SP.drop_set(f"E0-DB{pct}", n, 7), SP.drop_set(f"E1s-DR{pct}", n, 7)
+        chk(f == frozenset(range(1, 1 + k)) and bb == frozenset(range(n - k, n)) and len(r) == k and 0 not in r
+            and r == SP.drop_set(f"E1s-DR{pct}", n, 7) and SP.layout(f"E1s-DB{pct}", n, 7) == SP.layout("E1s", n, 7),
+            f"drop_set {pct}%：F 最舊 {k} 個、B 最新 {k} 個、R 隨機 {k} 個（同 seed 相同）、底的精度不變")
+    chk(SP.drop_set("E1s", n, 7) == frozenset() and SP.drop_set("R25", n, 7) == frozenset(), "drop_set：一般配置是空集合")
+
+
 restorer_tests()
+drop_set_tests()
 worker_tests()
 busy_tests()
 print("ALL PASS" if not fails else f"{len(fails)} FAIL")
