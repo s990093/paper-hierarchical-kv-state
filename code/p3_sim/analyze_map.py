@@ -64,6 +64,8 @@ PRIMARY_OUTERS = [("E2", "session"), ("E3", "session"), ("E4", "session"), ("E5-
 PRIMARY_CELLS = [(o, m) for o, _ in PRIMARY_OUTERS for m in MEMS]            # 15 個主格
 ENGINE_OF = dict(PRIMARY_OUTERS)
 PRIMARY_VIEW = "mi300x|cake|gpu=idle|cpu=idle|ssd/1|mi300x_local"            # 主視角（run_map._view_name(PRIMARY_SPEC)）
+if os.environ.get("P3_MAP_PLATFORM", "mi300x") != "mi300x":                    # 2026-10-19：H200 的地圖，主視角換成那個平台（run_map 的 MAP_PLAT）
+    PRIMARY_VIEW = PRIMARY_VIEW.replace("mi300x|", os.environ["P3_MAP_PLATFORM"] + "|", 1)
 # 每種模式應有的切片（04 §10；第二輪審查 #4）：寫死在這裡，不從資料推；少一個、多一個都丟錯
 FI_A = [f"freeinference/week{w:02d}" for w in (1, 5, 9, 13)]
 FI_ALL = [f"freeinference/week{w:02d}" for w in range(1, 17)]

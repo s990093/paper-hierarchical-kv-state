@@ -57,10 +57,17 @@ A1_MEM = (63.0, 170.0, 435.0)
 A2_MEM = (32.0, 64.0, 128.0, 256.0, 512.0)
 INT2_ON_READ = "recompute_unverified"       # 04 §3.3：讀到沒驗證的就重算
 UNVERIFIED_LEN = "request"                  # 04 §3.3：讀取長度＝請求的輸入長度（整個上下文）
-MAIN_SPECS = [("mi300x", g, "idle", sh, "cake", "mi300x_local") for g in ("idle", "busy") for sh in (1, 2, 4, 8)]
+# P3_MAP_PLATFORM（2026-10-19，H200 移植）：沒設＝mi300x（原本）。h200＝主視角換 costs_h200.json 與 H200 的正式格式表（official_h200）；
+# 慢層 profile 照舊（mi300x_local＝限速參數，H200 沿用）；敏感度沒有 3090 列（H200 是唯一平台），CPU 忙等 H200 自己的校準
+MAP_PLAT = os.environ.get("P3_MAP_PLATFORM", "mi300x")
+if MAP_PLAT not in ("mi300x", "h200"):
+    raise SystemExit(f"P3_MAP_PLATFORM={MAP_PLAT!r}：只接受 mi300x、h200")
+MAP_FMT = "official" if MAP_PLAT == "mi300x" else f"official_{MAP_PLAT}"     # 真實資料只准用這個格式表
+MAIN_SPECS = [(MAP_PLAT, g, "idle", sh, "cake", "mi300x_local") for g in ("idle", "busy") for sh in (1, 2, 4, 8)]
 PRIMARY_SPEC = MAIN_SPECS[0]                # 主視角：Llama、MI300X、GPU 閒、CPU 閒、SSD 1 張 GPU 專用
 RECOMPUTE_CHARGES = ("none", "pass_size")   # 重算計價（第三輪審查 #1 選項 a）；真實資料的值只從凍結的 04 §9 讀（`重算計價：…`）
 CPUBUSY_CSV = os.path.join(REPO, "results", "p3_calib_3090", "cpubusy_slowdown.csv")
+CPUBUSY_CSV_H200 = os.path.join(REPO, "results", "p3_calib_h200", "cpubusy_slowdown.csv")   # code/r_h200_p3.sh --part cal
 
 
 def load_cpu_busy(path=CPUBUSY_CSV):
@@ -80,12 +87,32 @@ def load_cpu_busy(path=CPUBUSY_CSV):
     return round(lo, 2), round(hi, 2), rid_lo
 
 
-CPU_BUSY_LO, CPU_BUSY_HI, CPU_BUSY_RUN = load_cpu_busy()
-SENS_SPECS = [("mi300x", "idle", CPU_BUSY_LO, 1, "cake", "mi300x_local"), ("mi300x", "idle", CPU_BUSY_HI, 1, "cake", "mi300x_local"),
-              ("3090", "idle", "idle", 1, "cake", "mi300x_local"), ("3090", "idle", "idle", 1, "cake", "ssd8_3090_meas")]
-SENS_GROUPS = [f"sens_cpu{CPU_BUSY_LO:.2f}", f"sens_cpu{CPU_BUSY_HI:.2f}", "sens_3090", "sens_3090_ssd8"]
+def load_cpu_busy_h200(path=CPUBUSY_CSV_H200):
+    """H200 的 CPU 忙係數：同一個定義（load_only:t_restore；N=8 同 NUMA＝低、N=48 另一個 NUMA＝高）、同一支 summarize_cpubusy 的輸出。
+    04 登記的 1.35／1.81 是 3090 的值，不套用到 H200（不斷言）。還沒量（檔不在）→ (None, None, None)：敏感度沒有 CPU 忙的列（照實 NOT_MEASURED）。"""
+    if not os.path.exists(path):
+        return None, None, None
+    with open(path, newline="", encoding="utf-8") as fh:
+        rows = [r for r in csv.DictReader(fh) if r["kind"] == "time" and r["metric"] == "load_only:t_restore"]
+    pick = {(int(r["N"]), r["place"]): r for r in rows}
+    lo, hi = pick[(8, "same")], pick[(48, "other")]
+    assert lo["run_id"] == hi["run_id"], (lo["run_id"], hi["run_id"])
+    return round(float(lo["slowdown_x"]), 2), round(float(hi["slowdown_x"]), 2), lo["run_id"]
+
+
+if MAP_PLAT == "mi300x":
+    CPU_BUSY_LO, CPU_BUSY_HI, CPU_BUSY_RUN = load_cpu_busy()
+    SENS_SPECS = [("mi300x", "idle", CPU_BUSY_LO, 1, "cake", "mi300x_local"), ("mi300x", "idle", CPU_BUSY_HI, 1, "cake", "mi300x_local"),
+                  ("3090", "idle", "idle", 1, "cake", "mi300x_local"), ("3090", "idle", "idle", 1, "cake", "ssd8_3090_meas")]
+    SENS_GROUPS = [f"sens_cpu{CPU_BUSY_LO:.2f}", f"sens_cpu{CPU_BUSY_HI:.2f}", "sens_3090", "sens_3090_ssd8"]
+else:
+    CPU_BUSY_LO, CPU_BUSY_HI, CPU_BUSY_RUN = load_cpu_busy_h200()
+    SENS_SPECS, SENS_GROUPS = [], []
+    if CPU_BUSY_LO is not None:
+        SENS_SPECS = [(MAP_PLAT, "idle", CPU_BUSY_LO, 1, "cake", "mi300x_local"), (MAP_PLAT, "idle", CPU_BUSY_HI, 1, "cake", "mi300x_local")]
+        SENS_GROUPS = [f"sens_cpu{CPU_BUSY_LO:.2f}", f"sens_cpu{CPU_BUSY_HI:.2f}"]
 SENS_LITE_SPECS = [MAIN_SPECS[0], MAIN_SPECS[4]]        # 敏感度的放置（Qwen、70B、疊加）：主視角＋GPU 忙
-BLOCK_VIEWS = {"idle": ("mi300x", "idle", "idle", 1, "cake", "mi300x_local"), "busy": ("mi300x", "busy", "idle", 1, "cake", "mi300x_local")}
+BLOCK_VIEWS = {"idle": (MAP_PLAT, "idle", "idle", 1, "cake", "mi300x_local"), "busy": (MAP_PLAT, "busy", "idle", 1, "cake", "mi300x_local")}
 OUTERS_MAIN = [("E2", None), ("E3", None), ("E4", None), ("E5", 1800)]          # 主格的 session 引擎外層做法（E5＝30 分）
 OUTERS_ALL = [("E1", None), ("E2", None), ("E3", None), ("E4", None), ("E5", 300), ("E5", 1800), ("E5", 3600)]
 OUTERS_FILL = [("E1", None), ("E5", 300), ("E5", 3600)]                          # --fill：三個記憶體點上補 E1、E5 的另兩個 T
@@ -300,8 +327,14 @@ def n_rows_of(j):
 
 
 # ------------------------------------------------------------------ 時間估計〔估計〕（沿用 estimate_runtime.py 的做法與數字）
-def load_timing(path=TIMING_STDOUT):
+def load_timing(path=None):
+    """3090 的計時 run（06 §16.1）。只用來排工作的先後與估時間，不影響任何數字。
+    檔不在（例如 H200 上沒有 /ssd8）→ None：est_cost_s 改用請求數排序（2026-10-19）。"""
     import ast
+    path = path or os.environ.get("P3_TIMING_STDOUT", TIMING_STDOUT)
+    if not os.path.exists(path):
+        print(f"[run_map] 沒有計時檔 {path}：工作順序改用請求數估（只影響先後，不影響結果）", flush=True)
+        return None
     rows = [ast.literal_eval(l.strip()) for l in open(path) if l.strip().startswith("{")]
     cost = {}
     for r in rows:
@@ -313,6 +346,8 @@ def est_cost_s(j, timing, n_req):
     """〔估計〕一個工作的 CPU 秒。每請求秒數用計時 run（06 §16.1）：FreeInference 各週與 synth 用 week13 的；
     非 oracle 用 C1 的、oracle 用 O 的；E6 分 k 張 GPU 時總工作量不變；疊加×k 的請求數×k。沒有量過每個視角數的差別，一律用量到的（8 個時間設定）。"""
     s = j["slice"]
+    if timing is None:                 # 沒有計時檔：只按工作量的比例排（請求數 × 疊加 × O-tier 兩趟）
+        return (2.0 if j["pol"]["label"] == "O-tier" else 1.0) * n_req[s] * j["overlay"]
     ref = s if (s, "C1") in timing else "freeinference/week13"      # FreeInference 各週、synth（每請求約 90 個 block，和 week13 同量級）都用 week13 的每請求秒數
     sc, bc = timing[(ref, "O" if j["pol"]["oracle"] else "C1")]
     mult = 2.0 if j["pol"]["label"] == "O-tier" else 1.0         # O-tier＝兩趟（第 1 趟＝一般的 O、不需要時間設定）：上界按 2 倍算
@@ -536,7 +571,7 @@ def run_placements(jd, P, ctx):
     kw = dict(pol_kw=dict(pol["kw"]), int2_on_read=INT2_ON_READ, unverified_len=UNVERIFIED_LEN, H=H, H_extra=Hx, fmt_path=ctx["fmt"],
               quality_rule=jd.get("rule", "strict"), recompute_charge=ctx.get("recompute_charge", "none"))
     base = common_cols(jd, ctx)
-    costs_p = load_costs("mi300x", jd["model"], "mi300x_local")        # 主視角的 SSD 頻寬（使用率用）
+    costs_p = load_costs(MAP_PLAT, jd["model"], "mi300x_local")        # 主視角的 SSD 頻寬（使用率用）
     if jd["engine"] == "session":
         if jd["comp"] in ("a1_loose", "c0util"):    # 寬鬆版雙胞胎、C0 使用率：只要主視角
             specs, groups = [PRIMARY_SPEC], ["main"]
@@ -544,7 +579,7 @@ def run_placements(jd, P, ctx):
             specs = MAIN_SPECS + (SENS_SPECS if ctx.get("sens_views", True) else [])
             groups = ["main"] * len(MAIN_SPECS) + (SENS_GROUPS if ctx.get("sens_views", True) else [])
         elif jd["model"] == "llama70b_scaled":       # 沒有 f(i)：只能 load-only、不算 TTFT（06 §1.1）
-            specs, groups = [("mi300x", "idle", "idle", 1, "load", "mi300x_local")], ["main"]
+            specs, groups = [(MAP_PLAT, "idle", "idle", 1, "load", "mi300x_local")], ["main"]
         elif jd["comp"].startswith("sens_"):
             specs, groups = SENS_LITE_SPECS, ["main"] * len(SENS_LITE_SPECS)
         else:
@@ -924,7 +959,7 @@ def main(argv=None):
     ap.add_argument("--max-failures", type=int, default=3)
     ap.add_argument("--no-retry-failed", action="store_true")
     ap.add_argument("--collect-only", action="store_true")
-    ap.add_argument("--fmt", default="official", help="格式表：official｜official:loadonly_k0｜檔案路徑（地圖用預設）")
+    ap.add_argument("--fmt", default=MAP_FMT, help="格式表：official｜official:loadonly_k0｜official_h200｜檔案路徑（地圖用預設；預設跟著 P3_MAP_PLATFORM）")
     a = ap.parse_args(argv)
 
     if not a.stage and not a.c0_util:
@@ -972,8 +1007,8 @@ def main(argv=None):
         lock = lockfile.verify_freeze(a.frozen, REPO)
         if os.environ.get("RUN_ID", "adhoc") in ("", "adhoc"):
             raise SystemExit("拒絕：真實資料必須有明確的 run_id（用 `bash code/run3090.sh <短名> …` 跑，它會設 RUN_ID；不准用預設的 \"adhoc\"）")
-        if a.fmt != "official":
-            raise SystemExit(f"拒絕：真實資料只准用正式格式表（--fmt official），不是 {a.fmt!r}")
+        if a.fmt != MAP_FMT:
+            raise SystemExit(f"拒絕：真實資料只准用正式格式表（--fmt {MAP_FMT}），不是 {a.fmt!r}")
         rc_param = lock["recompute_charge"]            # verify_freeze 保證三個判定參數都在凍結的 04 裡
     out = a.out or os.path.join(DEFAULT_OUT, (frozen_full[:8] if frozen_full else "synthetic"))
     os.makedirs(out, exist_ok=True)

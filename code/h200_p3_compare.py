@@ -99,12 +99,17 @@ def main():
     ap.add_argument("--new", required=True)
     ap.add_argument("--files", nargs="+", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--rename", nargs="*", default=[], help="ref 檔名=new 檔名（H200 的檔名多了平台標記時）")
+    ap.add_argument("--ignore", nargs="*", default=[], help="另外不比的鍵／欄（例如記輸入路徑的 cells_csv）")
     a = ap.parse_args()
+    ren = dict(x.split("=", 1) for x in a.rename)
+    VOLATILE.update(a.ignore)
     rep = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
-               ref=a.ref, new=a.new, ignored_fields=sorted(VOLATILE), files={})
+               ref=a.ref, new=a.new, renamed=a.rename, ignored_fields=None, files={})
+    rep["ignored_fields"] = sorted(VOLATILE)
     worst = "IDENTICAL"
     for f in a.files:
-        pr, pn = os.path.join(a.ref, f), os.path.join(a.new, f)
+        pr, pn = os.path.join(a.ref, f), os.path.join(a.new, ren.get(f, f))
         if not (os.path.exists(pr) and os.path.exists(pn)):
             rep["files"][f] = dict(verdict="MISSING", ref_exists=os.path.exists(pr), new_exists=os.path.exists(pn))
             worst = "MISSING"

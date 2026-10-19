@@ -52,7 +52,12 @@ while [ $# -gt 0 ]; do
     *) echo "不認得的參數：$1" >&2; exit 2 ;;
   esac
 done
-case "$PART" in data|simtest) ;; *) echo "要 --part data|simtest" >&2; exit 2 ;; esac
+# --part 可以給好幾個、逗號分開，依序跑（同一個 job、同一張卡；排隊只排一次）。cal 是量時間的，只能單獨跑
+for _p in ${PART//,/ }; do
+  case "$_p" in data|simtest|explore|map|cal) ;; *) echo "要 --part data|simtest|explore|map|cal（可逗號分開），不是 '$_p'" >&2; exit 2 ;; esac
+done
+[ -n "$PART" ] || { echo "要 --part" >&2; exit 2; }
+case ",$PART," in *,cal,*) [ "$PART" = cal ] || { echo "cal 量時間，要單獨一個 job（--part cal）" >&2; exit 2; } ;; esac
 
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # shellcheck disable=SC1091
@@ -169,7 +174,123 @@ need_data() {     # simtest 之後的 part 都要資料層：缺了就停（不�
   done
 }
 
-case "$PART" in
+# ===== explore：X1／X3／X4／X5／X8 換 H200 常數（P3_CONST=h200），照 3090 各方向「登記的主結果」那幾步（docs/phase3_20261017/explore/X*_*.md §3）
+# 事後補的變體（FreeInference 版、截尾、嚴格規則…）這次不跑。輸出 results/p3_explore_h200/x*，大的原始檔放本地 /tmp（$RAW）
+RAW="$P3_LOCAL/raw"
+const_h200() { export P3_CONST=h200 M7_RES="$REPO/results/m7_write_policy_h200" P3_MAP_PLATFORM=h200; }
+const_mi300x() { export P3_CONST=mi300x M7_RES="$REPO/results/m7_write_policy_mi300x" P3_MAP_PLATFORM=mi300x; }
+lastrun() { ls -d "$TIARA_RUNS"/*-"$1" 2>/dev/null | sort | tail -1; }
+fresh_dir() {     # 輸出目錄裡已經有上一次的（--from 接著跑或重跑）→ 改名留著，不刪、不附加（x1_sim sweep 是附加寫入）
+  local d=$1; [ -e "$d" ] && { echo "[r_h200_p3] $d 已存在 → 改名 $d.stale-$(date +%Y%m%d-%H%M%S)"; mv "$d" "$d.stale-$(date +%Y%m%d-%H%M%S)" || return 1; }
+  mkdir -p "$d"
+}
+X=$REPO/results/p3_explore_h200
+x1_sweep() { fresh_dir "$RAW/x1-sweep" && { [ ! -e "$X/x1/x1_sweep.csv" ] || mv "$X/x1/x1_sweep.csv" "$X/x1/x1_sweep.csv.stale-$(date +%Y%m%d-%H%M%S)"; } && mkdir -p "$X/x1" \
+  && m7run p3h-x1-sweep env RUN_DIR="$RAW/x1-sweep" "$P3PY" code/p3x/x1_sim.py sweep --workers 14; }
+x4_analyze() { local d; d=$(lastrun p3h-x4-sweep); [ -f "$d/x4_sweep.csv" ] || { echo "沒有 $d/x4_sweep.csv"; return 1; }
+  m7run p3h-x4-analyze "$P3PY" code/p3x/x4_sim.py analyze --inp "$d/x4_sweep.csv"; }
+x8_traces() { fresh_dir "$RAW/x8-traces" && mkdir -p "$X/x8" && m7run p3h-x8-traces "$P3PY" -I code/p3x/x8_traces.py --out "$RAW/x8-traces" --csv "$X/x8/x8_traces.csv" \
+  && m7run p3h-x8-fi "$P3PY" -I code/p3x/x8_fi.py --out "$RAW/x8-traces" --csv "$X/x8/x8_traces.csv"; }
+x3_leads() {
+  fresh_dir "$RAW/x3-events" || return 1
+  local c; for c in consts bailian "mooncake --rule loose" "mooncake --rule strict" "wildchat --files 2" cachewise freeinference; do
+    # shellcheck disable=SC2086
+    m7run "p3h-x3-leads-$(echo $c | tr -cs 'a-z0-9' '-' | sed 's/-$//')" bash -c "\"$P3PY\" code/p3x/x3_leads.py $c --run-id \"\$RUN_ID\" --run-dir \"$RAW/x3-events\"" || return 1
+  done
+}
+x3_hide() { local ev; ev=$(ls "$RAW"/x3-events/events_*.csv.gz | wc -l); echo "[x3] 事件檔 $ev 個（3090 是 12 個）"
+  m7run p3h-x3-hide bash -c "\"$P3PY\" code/p3x/x3_hide.py --run-id \"\$RUN_ID\" --tables \"$RAW/x3-tables/tables\" --events $RAW/x3-events/events_*.csv.gz"; }
+
+# ===== map：地圖的工具（不是地圖本身；完整地圖等 04 v4 凍結，使用者 10/19）
+# 先用 MI300X 常數重現 3090 的合成端到端與 C0 使用率（逐值比），再換 H200 常數（P3_MAP_PLATFORM=h200）
+MAPRES=$REPO/results/p3_map_h200
+SIMRES=$REPO/results/p3_sim_h200
+map_syn() {       # $1＝mi300x|h200：合成端到端 A1（3090：20261019-004253-p3sim-mapsyn4）＋五組分析（anasyn5）
+  local plat=$1 out="$P3_MAP_OUT/synthetic_e2e_A1_v6_$1" g o r
+  fresh_dir "$out" || return 1
+  m7run "p3h-mapsyn-$plat" "$P3PY" code/p3_sim/run_map.py --stage A1 --slices synth/small-seed1 --procs 14 --out "$out" || return 1
+  mkdir -p "$MAPRES"
+  for g in "C0 greedy none" "C0 greedy pass_size" "C0 tier none" "C0 tier pass_size" "min_C0_O greedy none"; do
+    set -- $g
+    m7run "p3h-anasyn-$plat-$1-$2-$3" "$P3PY" code/p3_sim/analyze_map.py --cells "$out/map_cells.csv" --synthetic --mode full \
+      --guard-ref "$1" --oracle-variant "$2" --recompute-charge "$3" --out-prefix "$MAPRES/synthetic_e2e_A1_v6_${plat}_$1_$2_$3" || return 1
+  done
+}
+map_c0util() {    # $1＝mi300x|h200（3090：20261019-003643-p3sim-c0util，--procs 16；這裡 12：job 只有 170 GB，一個 worker 約 10 GB）
+  local plat=$1; fresh_dir "$P3_MAP_OUT/c0util_$plat" || return 1; mkdir -p "$SIMRES"
+  m7run "p3h-c0util-$plat" "$P3PY" code/p3_sim/run_map.py --c0-util --out "$P3_MAP_OUT/c0util_$plat" --c0-util-csv "$SIMRES/c0_ssd_util_$plat.csv" --procs 12 --warm-procs 2
+}
+map_cmp_mi300x() {  # MI300X 常數的重跑 vs 3090 的檔（不依硬體：應該逐值相同）
+  local c
+  m7run p3h-map-cmp "$P3PY" code/h200_p3_compare.py --ref results/p3_sim --new "$SIMRES" --files c0_ssd_util.csv --out "$SIMRES/compare_3090_c0util.json" \
+    --rename "c0_ssd_util.csv=c0_ssd_util_mi300x.csv" || return 1
+  for c in C0_greedy_none C0_greedy_pass_size C0_tier_none C0_tier_pass_size min_C0_O_greedy_none; do
+    m7run "p3h-map-cmp-$c" "$P3PY" code/h200_p3_compare.py --ref results/p3_map --new "$MAPRES" \
+      --files "synthetic_e2e_A1_v6_${c}_summary.csv" "synthetic_e2e_A1_v6_${c}_tradeoff.csv" "synthetic_e2e_A1_v6_${c}_verdict.json" \
+      --rename "synthetic_e2e_A1_v6_${c}_summary.csv=synthetic_e2e_A1_v6_mi300x_${c}_summary.csv" \
+               "synthetic_e2e_A1_v6_${c}_tradeoff.csv=synthetic_e2e_A1_v6_mi300x_${c}_tradeoff.csv" \
+               "synthetic_e2e_A1_v6_${c}_verdict.json=synthetic_e2e_A1_v6_mi300x_${c}_verdict.json" \
+      --ignore cells_csv --out "$MAPRES/compare_3090_$c.json" || return 1
+  done
+}
+
+# ===== cal：H200 的 CPU 忙校準（量時間；**還沒送**：要使用者決定，見 RUNLOG_H200_P3 P3H-0「待決定」）
+# 3090 的排程（N 到 48、same／other／all）在 1-GPU job 做不到：cgroup 只有 16 個 CPU（同一個 NUMA 節點），而且壓力會吃整顆 socket 的記憶體頻寬
+# （同節點別的 lab 的 job 也在用）。這裡只在自己的 cpuset 內做 N＝0／4／8／12（留 4 個給量測 process），不跨 NUMA。
+cal_cpubusy() {
+  local cpus; cpus=$(taskset -cp $$ | awk -F': ' '{print $2}')
+  echo "[cal] 這個 job 的 cpuset：$cpus（只在這裡面加壓）"
+  mkdir -p "$REPO/results/p3_calib_h200"
+  m7run p3h-cal-cpubusy-qwen bash -c "\"$P3PY\" code/p3cal/cpu_busy_restore.py --model qwen --length 32768 --out-dir \"\$RUN_DIR\" \
+    --schedule '0:same 4:same 8:same 12:same 12:same 8:same 4:same 0:same'" || return 1
+  m7run p3h-cal-cpubusy-sum "$P3PY" code/p3cal/summarize_cpubusy.py --run "$(lastrun p3h-cal-cpubusy-qwen)" --out "$REPO/results/p3_calib_h200"
+}
+
+run_part() {
+case "$1" in
+  explore)
+    const_h200
+    step EX-NEED need_data
+    step EX-VERIFY data_verify
+    step X1-SELFTEST m7run p3h-x1-selftest "$P3PY" code/p3x/x1_sim.py selftest
+    step X1-SWEEP x1_sweep
+    step X1-ANALYZE m7run p3h-x1-analyze "$P3PY" code/p3x/x1_sim.py analyze --sweep x1_sweep.csv --traces conversation toolagent
+    step X1-REPORT m7run p3h-x1-report "$P3PY" code/p3x/x1_report.py --sweep x1_sweep.csv
+    step X1-BOOT m7run p3h-x1-boot "$P3PY" code/p3x/x1_boot.py --run-dirs "$RAW/x1-sweep" --B 2000
+    step X3-VALIDATE m7run p3h-x3-validate bash -c "\"$P3PY\" code/p3x/x3_restore.py validate --run-id \"\$RUN_ID\""
+    step X3-TABLES fresh_dir "$RAW/x3-tables"
+    step X3-TABLES-RUN m7run p3h-x3-tables bash -c "\"$P3PY\" code/p3x/x3_restore.py tables --procs 14 --run-id \"\$RUN_ID\" --run-dir \"$RAW/x3-tables\""
+    step X3-LEADS x3_leads
+    step X3-HIDE x3_hide
+    step X4-TRACE m7run p3h-x4-trace "$P3PY" code/p3x/x4_sim.py trace --rules loose strict
+    step X4-VALIDATE m7run p3h-x4-validate "$P3PY" code/p3x/x4_sim.py validate
+    step X4-SWEEP m7run p3h-x4-sweep "$P3PY" code/p3x/x4_sim.py sweep --procs 14 --rules loose strict --out x4_sweep.csv
+    step X4-ANALYZE x4_analyze
+    step X5-GRID fresh_dir "$RAW/x5-grid"
+    step X5-GRID-RUN m7run p3h-x5-grid "$P3PY" code/p3x/x5_run.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid" --procs 14
+    step X5-ANALYZE m7run p3h-x5-analyze "$P3PY" code/p3x/x5_analyze.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid"
+    step X8-TRACES x8_traces
+    step X8-CAPACITY m7run p3h-x8-capacity "$P3PY" -I code/p3x/x8_capacity.py "$RAW/x8-traces"
+    step X8-GRID m7run p3h-x8-grid3 "$P3PY" -I code/p3x/x8_sim.py --traces "$RAW/x8-traces" --outdir "$X/x8" --rawdir "$RAW/x8-grid3" --procs 14 \
+      --wl mc_conv mc_tool mc_conv_s mc_tool_s bl_coder cw_orig cw_stack
+    step X8-GRID-FI m7run p3h-x8-grid3-fi env X8_NMAX=2560 "$P3PY" -I code/p3x/x8_sim.py --traces "$RAW/x8-traces" --outdir "$X/x8" --rawdir "$RAW/x8-grid3-fi" \
+      --procs 14 --wl fi fi_clip --lens orig --tag _fi
+    step X8-VERDICT m7run p3h-x8-verdict "$P3PY" -I code/p3x/x8_verdict.py
+    ;;
+  map)
+    step MAP-NEED need_data
+    step MAP-VERIFY data_verify
+    const_mi300x
+    step MAP-SYN-MI300X map_syn mi300x
+    step MAP-C0-MI300X map_c0util mi300x
+    step MAP-CMP-3090 map_cmp_mi300x
+    const_h200
+    step MAP-SYN-H200 map_syn h200
+    step MAP-C0-H200 map_c0util h200
+    ;;
+  cal)
+    step CAL-CPUBUSY cal_cpubusy
+    ;;
   data)
     step DATA-DL data_dl
     step DATA-VERIFY data_verify
@@ -192,11 +313,14 @@ case "$PART" in
     step DATA-CMP data_cmp
     ;;
   simtest)
+    const_mi300x                # 測試照 3090：MI300X 常數（x1_sim.constants）；M7_RES 要明設（env_h200.sh 預設是 H200 的）
     step SIM-NEED need_data
     step SIM-VERIFY data_verify
     step SIM-TEST m7run p3h-sim-test "$P3PY" -m pytest code/p3_sim/ -q
     ;;
 esac
+}
+for _p in ${PART//,/ }; do run_part "$_p"; done
 if [ "$LIST" = 0 ] && [ "$DRY" = 0 ]; then
   echo "[r_h200_p3] $(date -Is) part=$PART 全部完成"
   du -sh "$P3_LOCAL"/* 2>/dev/null | sed 's/^/[r_h200_p3] /'
