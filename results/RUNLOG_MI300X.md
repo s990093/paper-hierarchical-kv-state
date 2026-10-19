@@ -922,3 +922,10 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - `44e1_ds1_screen`（one；6 個 process；逐列放 `/mlsteam/data/tiara/drop_m10`）→ `44e1z_ds_pick`（CPU，照 14 §8.5 寫 DS2 的 jobs）→ `44e2_ds2_confirm`（one）。
   - `44e3_d3_speed`、`44e4_m2_fmt`、`44e5_m1_unit`（都是 both，在 a6:00.0）→ `44ez_md_report`（CPU）。
 - 已知的小差異：m10_speed 的 `bytes_stored` 欄對 drop 配置沒有扣掉被丟的 block（`bytes_read` 是實際讀的）；D3 只看還原時間和 `bytes_read`。
+
+### 15.5 main 的品質工作也用第二張卡（10/19 02:5xZ，使用者同意）
+
+- `pool.py`：ROLE=main 時，每個 job 開跑前先看自己那張（a6），放不下（每張卡最多 P 個、顯存要夠 need_gb＋8 GB）再看 86；job 的 `TIARA_GPU` 跟著換。helper 照樣只用 86。量時間的 stage 不用 pool，照樣兩張卡獨佔。
+- 86 上 helper 自己的品質工作照跑，main 的 job 只用剩下的顯存（pool 開每個 job 前都查 free VRAM）。品質不看卡。
+- CPU 測（假 job、P＝1）：第 1 個到 a6、第 2 個到 86、第 3 個等 a6 空出來；環境變數 HIP_VISIBLE_DEVICES 跟著對。
+- 生效範圍：從 44c 開始（正在跑的 44b、45 的 pool 已經載入舊版）。DS1 改成每個模型 6 個 shard、DS2 的 `--shards 6`（切細一點，兩張卡比較平均）；題目、配置不變。
