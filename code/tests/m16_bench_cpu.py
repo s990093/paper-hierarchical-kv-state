@@ -428,8 +428,19 @@ def t_serve(E: Env):
         check(sc["env"]["HF_HOME"] == "/mlsteam/data/tiara/hf-cache", f"serve {name}: HF_HOME＝平台 B 的值（不沿用 shell 的 /ssd7）")
         if name == "llama-apc-off":
             check("--no-enable-prefix-caching" in cmd and "--kv-transfer-config" not in cmd
-                  and cmd[0].endswith("/bin/vllm") and sc["env"]["HIP_VISIBLE_DEVICES"] == "1",
-                  "serve llama-apc-off：--no-enable-prefix-caching、沒有 connector、HIP_VISIBLE_DEVICES=1")
+                  and cmd[0].endswith("/bin/vllm"),
+                  "serve llama-apc-off：--no-enable-prefix-caching、沒有 connector")
+            # 卡號設定跟 code/m7_env.sh 一致：有 USE_ROCR 旗子 → 只設 ROCR 並 unset HIP／CUDA；沒有 → HIP／CUDA（RUNLOG_MI300X 15.16）
+            if os.path.exists(os.environ.get("M16_USE_ROCR_FLAG", "/mlsteam/data/tiara/USE_ROCR")):
+                check(sc["use_rocr"] and sc["env"].get("ROCR_VISIBLE_DEVICES") == "1"
+                      and "HIP_VISIBLE_DEVICES" not in sc["env"] and "CUDA_VISIBLE_DEVICES" not in sc["env"]
+                      and "unset HIP_VISIBLE_DEVICES CUDA_VISIBLE_DEVICES" in sh.splitlines(),
+                      "serve llama-apc-off（USE_ROCR）：ROCR_VISIBLE_DEVICES=1、unset HIP／CUDA")
+            else:
+                check(not sc["use_rocr"] and sc["env"].get("HIP_VISIBLE_DEVICES") == "1"
+                      and sc["env"].get("CUDA_VISIBLE_DEVICES") == "1" and "ROCR_VISIBLE_DEVICES" not in sc["env"]
+                      and "unset ROCR_VISIBLE_DEVICES" in sh.splitlines(),
+                      "serve llama-apc-off：HIP／CUDA_VISIBLE_DEVICES=1、unset ROCR")
         if name == "llama-cpu":
             ktc = json.loads(cmd[cmd.index("--kv-transfer-config") + 1])
             ex = ktc["kv_connector_extra_config"]

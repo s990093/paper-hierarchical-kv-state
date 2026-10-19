@@ -1,8 +1,8 @@
-# 第三階段 job 的共用設定（由每個 job source）。runner 已設 TIARA_GPU／HIP_VISIBLE_DEVICES（GPU job）。
+# 第三階段 job 的共用設定（由每個 job source）。runner 已設 TIARA_GPU 與卡號變數（GPU job；有 USE_ROCR 旗子時是 ROCR_VISIBLE_DEVICES，否則 HIP／CUDA_VISIBLE_DEVICES）。
 set -uo pipefail
 REPO=/mlsteam/workspace/paper-hierarchical-kv-state
 cd $REPO
-source code/m7_env.sh                      # venv tiara、HF_HOME、HIP_VISIBLE_DEVICES=${TIARA_GPU:-0}、m7run
+source code/m7_env.sh                      # venv tiara、HF_HOME、卡號（USE_ROCR → ROCR_VISIBLE_DEVICES，否則 HIP_VISIBLE_DEVICES）=${TIARA_GPU:-0}、m7run
 S3=${S3_JOBS:-/mlsteam/data/tiara/stage3/jobs}
 RES=$REPO/results/m16_stage3_mi300x
 SMOKE=/mlsteam/data/tiara/stage3/smoke     # 冒煙的輸出不進 results

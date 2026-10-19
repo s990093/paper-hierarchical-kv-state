@@ -7,7 +7,7 @@
 
 ```bash
 cd /mlsteam/workspace/paper-hierarchical-kv-state
-source code/m7_env.sh            # venv tiara（torch 2.10+rocm7.0）、HF_HOME、TIARA_RUNS、m7run；HIP_VISIBLE_DEVICES=${TIARA_GPU:-0}
+source code/m7_env.sh            # venv tiara（torch 2.10+rocm7.0）、HF_HOME、TIARA_RUNS、m7run；卡號＝${TIARA_GPU:-0}（有 /mlsteam/data/tiara/USE_ROCR 時設 ROCR_VISIBLE_DEVICES 並 unset HIP／CUDA，否則設 HIP／CUDA_VISIBLE_DEVICES；行程內一律 cuda:0）
 # vLLM 實驗用另一個 venv：/mlsteam/workspace/venv/tiara-v028（vLLM 0.28.0+rocm722）
 ```
 
@@ -36,6 +36,7 @@ S3_ROLE=quality setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara
 ```
 
 - 和第二階段的協調（RUNLOG_MI300X 15.13；`code/m16_queue/runner.sh` 檔頭）：量時間的 job 在第二階段兩個佇列都空時獨佔兩張卡；有 `XGPU_OK`、第二階段 main 空時改用 XGPU 條件（`WANT_CARD1` → 等卡 1 清空 → `gpu1.lock`，結果標「卡 0 同時有品質工作」，環境變數 `S3_XGPU_COND=1`）。品質 job 在第二階段 main 空時用卡 1。拿 `/mlsteam/data/tiara/gpu{0,1}.lock`；登記共用顯存帳 `vram_reserved.json`；`MAX-H` 超過 10/23 02:00Z 的不開。測試：`S2_JOBS=<假目錄> S3_JOBS=<假目錄> S3_LOCKDIR=<假目錄> bash code/m16_queue/runner.sh`（見 `experiment_log.md`）。
+- 卡號變數（RUNLOG_MI300X 15.16）：第二階段的 `44d_xgpu_check2` 通過後會放 `/mlsteam/data/tiara/USE_ROCR`。之後 runner 與 `m16_vllm_bench.py serve` 都改設 `ROCR_VISIBLE_DEVICES`＝實體卡號、unset HIP／CUDA（只用 HIP 時行程會開兩張卡的 render 節點，amd-smi 兩張卡都列，對方的 guard 會當成入侵者）。測試：`M16_USE_ROCR_FLAG=<假檔> …/tiara-v028/bin/python code/tests/m16_bench_cpu.py`（有／沒有旗子都 ALL PASS）。
 - job 檔頭：`# GPU-NEED: none|one|both`、`# GPU: 0|1`、`# NEED-GB: N`、`# MAX-H: h`。
 
 ### 2.2 job 清單（`code/m16_queue/jobs/`）

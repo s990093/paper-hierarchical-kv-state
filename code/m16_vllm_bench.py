@@ -103,6 +103,7 @@ import m16_workload as W  # noqa: E402  （純 Python；M16_FORBID_GPU_IMPORTS=1
 
 VENV = os.environ.get("M7_VLLM_VENV", "/mlsteam/workspace/venv/tiara-v028")
 EXTRA_PATH = os.environ.get("M7_EXTRA_PATH", "/opt/rocm/bin")
+USE_ROCR_FLAG = os.environ.get("M16_USE_ROCR_FLAG", "/mlsteam/data/tiara/USE_ROCR")   # 第二階段 44d_xgpu_check2 過了才會出現
 MODELS = {   # 同 code/m10_vllm_ttft.py
     "llama": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*",
     "qwen": "/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA",   # vLLM 0.28 ROCm 不支援 DCA（RUNLOG_MI300X 868-869）
@@ -238,8 +239,12 @@ def build_serve(a, rd: str, rid: str) -> dict:
         cmd = [f"{VENV}/bin/python", os.path.join(HERE, "m16_serve_patched.py"), "serve"] + args
     else:
         cmd = [f"{VENV}/bin/vllm", "serve"] + args
+    # 同 code/m7_env.sh：有 USE_ROCR 旗子時只設 ROCR（實體卡號）並 unset HIP／CUDA，否則 HIP／CUDA（RUNLOG_MI300X 15.16）
+    use_rocr = os.path.exists(USE_ROCR_FLAG)
+    dev_env = ({"ROCR_VISIBLE_DEVICES": str(gpu)} if use_rocr
+               else {"HIP_VISIBLE_DEVICES": str(gpu), "CUDA_VISIBLE_DEVICES": str(gpu)})
     env = {"VLLM_SERVER_DEV_MODE": "1",            # /reset_prefix_cache 在 dev 路由（entrypoints/serve/dev/cache/api_router.py）
-           "HIP_VISIBLE_DEVICES": str(gpu), "CUDA_VISIBLE_DEVICES": str(gpu),   # 同 code/m7_env.sh
+           **dev_env,
            # 平台 B 的值（code/m7_env.sh）。不沿用目前 shell 的 HF_HOME：這個 repo 的 .claude/settings.json 帶的是 3090 的 /ssd7 路徑
            "HF_HOME": os.environ.get("M16_HF_HOME", "/mlsteam/data/tiara/hf-cache"),
            "PYTHONUNBUFFERED": "1"}
@@ -255,7 +260,7 @@ def build_serve(a, rd: str, rid: str) -> dict:
                max_model_len=a.max_model_len, rocm_attn_patch=bool(a.rocm_attn_patch), attention_backend=attn,
                connector_debug=bool(a.connector_debug), logging_config=log_cfg_path, extra_args=a.extra_args,
                port=a.port, url=f"http://127.0.0.1:{a.port}", engine_id=engine_id, server_log=log_path,
-               venv=VENV, cmd=cmd, env=env, label=a.label)
+               venv=VENV, cmd=cmd, env=env, use_rocr=use_rocr, label=a.label)
     with open(os.path.join(rd, "serve_config.json"), "w") as f:
         json.dump(cfg, f, indent=1, ensure_ascii=False)
     lines = ["#!/usr/bin/env bash",
@@ -263,6 +268,7 @@ def build_serve(a, rd: str, rid: str) -> dict:
              "#   setsid bash serve_cmd.sh &   （exec 之後這個 PID 就是 server；kill -TERM -- -$PID 收掉整組）",
              "set -u",
              f"cd {shlex.quote(rd)}   # ROCm 當掉時 gpucore.* 掉在 cwd（m8_vllm_drop.py 的作法）"]
+    lines.append("unset HIP_VISIBLE_DEVICES CUDA_VISIBLE_DEVICES" if use_rocr else "unset ROCR_VISIBLE_DEVICES")
     for k, v in env.items():
         lines.append(f"export {k}={shlex.quote(v)}")
     lines.append(f"export PATH={shlex.quote(VENV + '/bin')}:{shlex.quote(EXTRA_PATH) + ':' if EXTRA_PATH else ''}\"$PATH\"")

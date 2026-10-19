@@ -11,7 +11,7 @@
 #     quality：只量品質的 job（GPU-NEED: one），在卡 1；第二階段 main 佇列空、沒有 WANT_BOTH、沒有 WANT_CARD1 才開；拿 gpu1.lock；
 #       helper 還有 stage 時，登記需求 ≤ 96 GB（第二階段的上限：卡 1 上我們最多 2 個 job、合計 ≤ 96 GB；這條 runner 一次只跑 1 個）。
 #       GPU: 0 的 job 只在第二階段兩個佇列都空時才開。
-#   - 每個 GPU job：拿到鎖之後再查一次條件；登記共用顯存帳 vram_reserved.json；設 HIP_VISIBLE_DEVICES／CUDA_VISIBLE_DEVICES／TIARA_GPU。
+#   - 每個 GPU job：拿到鎖之後再查一次條件；登記共用顯存帳 vram_reserved.json；設 TIARA_GPU，以及 HIP／CUDA_VISIBLE_DEVICES（有 /mlsteam/data/tiara/USE_ROCR 時改設 ROCR_VISIBLE_DEVICES、unset HIP／CUDA）。
 #   - CPU job（GPU-NEED: none）不能開 /dev/kfd（不准 import torch）；綁 0–3 號核心、nice 19；任何角色的 runner 都可以跑。
 #   - 10/23 02:00Z（台灣 10:00）之後不開預計跑不完的 job（檔頭 MAX-H）。
 #   - 失敗 → .failed＋NEEDS_HUMAN，這條 runner 停（CLAUDE.md 規則 2）。STOP 檔在 → 下一個 job 前停。
@@ -47,7 +47,12 @@ run_locked() {     # $1 鎖指令 $2 檢查（shell 運算式）$3 gpu $4 need_g
     S2='"$S2"'
     '"$chk"' || exit 99
     S2_JOBS='"$S2"' python3 '"$HERE"'/ledger.py reserve s3-'"$name"' '"$g"' '"$gb"' '"$$"' || exit 98
-    export TIARA_GPU='"$g"' HIP_VISIBLE_DEVICES='"$g"' CUDA_VISIBLE_DEVICES='"$g"' S3_XGPU_COND='"$xg"'
+    export TIARA_GPU='"$g"' S3_XGPU_COND='"$xg"'
+    if [ -e /mlsteam/data/tiara/USE_ROCR ]; then   # 同 code/m7_env.sh（RUNLOG_MI300X 15.16）：ROCr 層只開這張卡，amd-smi 只列在這張；行程內用 cuda:0
+      export ROCR_VISIBLE_DEVICES='"$g"'; unset HIP_VISIBLE_DEVICES CUDA_VISIBLE_DEVICES
+    else
+      unset ROCR_VISIBLE_DEVICES; export HIP_VISIBLE_DEVICES='"$g"' CUDA_VISIBLE_DEVICES='"$g"'
+    fi
     bash '"$Q/$name.running"'; rc=$?
     S2_JOBS='"$S2"' python3 '"$HERE"'/ledger.py release s3-'"$name"'
     exit $rc' >> $Q/$name.log 2>&1
