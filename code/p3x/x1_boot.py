@@ -18,7 +18,9 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
-OUT = os.path.join(HERE, "..", "..", "results", "p3_explore", "x1")
+sys.path.insert(0, os.path.dirname(HERE))
+import p3_platform as PF  # noqa: E402
+OUT = PF.explore_out("x1")
 
 
 def find_npz(run_dirs, trace, rule, cpu, policy, slow, gpu, mode):

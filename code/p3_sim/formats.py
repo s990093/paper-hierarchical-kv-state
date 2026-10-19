@@ -18,6 +18,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CFG = os.path.join(HERE, "config")
 REPO = os.path.dirname(os.path.dirname(HERE))
 OFFICIAL_FORMAT_TABLE = os.path.join(REPO, "results", "p3_formats", "format_table.json")
+# 平台 C（2026-10-19）：H200 的正式表（code/p3_formats/build_format_table.py，P3_CONST=h200）。路徑名 "official_h200"（可加 ":<欄組>"）
+OFFICIAL_FORMAT_TABLE_H200 = os.path.join(REPO, "results", "p3_formats_h200", "format_table.json")
 PLACEHOLDER_FORMAT_TABLE = os.path.join(CFG, "format_table.PLACEHOLDER.json")
 FMT_NAMES = ["none", "bf16", "8bit", "int4", "int2"]
 FID = {n: i for i, n in enumerate(FMT_NAMES)}
@@ -104,6 +106,10 @@ def split_format_path(path):
         return OFFICIAL_FORMAT_TABLE, DEFAULT_DQ_SET
     if isinstance(path, str) and path.startswith("official:"):
         return OFFICIAL_FORMAT_TABLE, path.split(":", 1)[1]
+    if path == "official_h200":
+        return OFFICIAL_FORMAT_TABLE_H200, DEFAULT_DQ_SET
+    if isinstance(path, str) and path.startswith("official_h200:"):
+        return OFFICIAL_FORMAT_TABLE_H200, path.split(":", 1)[1]
     if path == "placeholder":
         return PLACEHOLDER_FORMAT_TABLE, None
     return path, None
@@ -124,9 +130,14 @@ OFFICIAL_CONCRETE = {"llama": {1: "bf16", 2: "fp8_token", 3: "int4_kivi", 4: "in
 #   loadonly_k0 ＝「還原中・只載入・K0」（06 §11.1 的舊選擇：MI300X 一律用只載入欄）；還可以選，結果會不同。
 # 3090 只有 cake_k0（X7 的還原中）；兩組在 3090 上相同。
 DQ_SETS = {"cake_k0": {"mi300x": ("dq_mi300x_cake_k0_idle_ms", "dq_mi300x_cake_k0_busy_ms"),
-                       "3090": ("dq_3090_cake_k0_idle_ms", "dq_3090_cake_k0_busy_ms")},
+                       "3090": ("dq_3090_cake_k0_idle_ms", "dq_3090_cake_k0_busy_ms"),
+                       "h200": ("dq_h200_cake_k0_idle_ms", "dq_h200_cake_k0_busy_ms")},
            "loadonly_k0": {"mi300x": ("dq_mi300x_loadonly_k0_idle_ms", "dq_mi300x_loadonly_k0_busy_ms"),
-                           "3090": ("dq_3090_cake_k0_idle_ms", "dq_3090_cake_k0_busy_ms")}}
+                           "3090": ("dq_3090_cake_k0_idle_ms", "dq_3090_cake_k0_busy_ms"),
+                           "h200": ("dq_h200_loadonly_k0_idle_ms", "dq_h200_loadonly_k0_busy_ms")}}
+# 表的平台（build_format_table 寫的 "platform" 鍵；MI300X 版沒有這個鍵，裡面是 mi300x＋3090 的欄）。平台和表對不上就丟錯，
+# 不准讓 h200 的模擬讀到 MI300X 的品質與解壓（或反過來）
+TABLE_PLATFORMS = {None: ("mi300x", "3090"), "h200": ("h200",)}
 OFFICIAL_DQ_COLS = DQ_SETS[DEFAULT_DQ_SET]               # 舊名字（預設欄組）
 GEN_SCENARIOS = ("A", "B_idle", "B_busy", "B_i2b")     # 生成品質的情境：全載入＋Cake b32 閒／忙／閒→忙
 QUALITY_MAX_TOKENS = 32768                              # 品質只在 32K 實測；> 32,768 一律 unverified；32,768 本身算在實測的分箱
@@ -172,6 +183,8 @@ def _load_official(d, path, model, platform, dq_set=DEFAULT_DQ_SET):
                                  note=f"{model} 不在正式表：bf16＝{bpt}×512（架構），其他 NOT_MEASURED"))
     if dq_set not in DQ_SETS:
         raise ValueError(f"解壓欄組 {dq_set!r} 不存在（{list(DQ_SETS)}）")
+    if platform not in TABLE_PLATFORMS.get(d.get("platform"), ()):
+        raise ValueError(f"{path} 是平台 {d.get('platform') or 'mi300x＋3090'} 的表，不能給 platform={platform} 用")
     if platform not in DQ_SETS[dq_set]:
         raise NotImplementedError(f"正式表沒有平台 {platform} 的解壓欄（{list(DQ_SETS[dq_set])}）")
     sh = d["shape"][model]

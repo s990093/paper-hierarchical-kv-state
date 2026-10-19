@@ -31,6 +31,13 @@ A8 = os.path.join(REPO, "results", "m10_precision_mi300x", "analysis", "fp8")
 OUT = os.path.join(REPO, "results", "p3_formats", "derived")
 RUN_ID = os.environ.get("RUN_ID", "adhoc")
 RUN_DIR = os.environ.get("RUN_DIR") or os.path.join("/ssd8/hungwei/paper-hkv/runs", RUN_ID)
+# P3_CONST=h200（2026-10-19）：同一支、同樣的重現檢查，讀 H200 的品質列與分析，寫 results/p3_formats_h200/derived。沒設＝原本
+sys.path.insert(0, os.path.join(REPO, "code"))
+import p3_platform as PF  # noqa: E402
+if PF.PLAT != "mi300x":
+    Q = PF.rdir("m10_precision_mi300x", "quality")
+    A8 = PF.rdir("m10_precision_mi300x", "analysis", "fp8")
+    OUT = os.path.join(REPO, "results", f"p3_formats_{PF.PLAT}", "derived")
 ANALYZE = os.path.join(REPO, "code", "m10_analyze.py")
 KEYS = ("n_rows", "n_items", "diff", "ci95", "ci_halfwidth", "main_pass", "aux_pass", "eps_pass", "aux", "flips",
         "same_as_e0", "mean_kl_vs_e0", "mean_lp_read", "b_values")

@@ -16,7 +16,9 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-OUT = os.path.join(HERE, "..", "..", "results", "p3_explore", "x1")
+sys.path.insert(0, os.path.dirname(HERE))
+import p3_platform as PF  # noqa: E402
+OUT = PF.explore_out("x1")
 CELL = ["trace", "cpu_GiB", "slow", "gpu", "restore"]
 
 

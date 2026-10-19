@@ -34,11 +34,15 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-RES7 = os.path.join(REPO, "results", "m7_write_policy_mi300x")
+sys.path.insert(0, os.path.dirname(HERE))
+import p3_platform as PF  # noqa: E402  （P3_CONST：沒設＝MI300X；h200＝results/m7_write_policy_h200 的 C1 與 busy）
+RES7 = PF.rdir("m7_write_policy_mi300x")
 BLK = 512
 GIB_PER_BLK = 64 / 1024        # 64 MiB
 NMAX = int(os.environ.get("X8_NMAX", 1024))   # FreeInference 最長 2,460 個 block → 跑它時設 2560（只影響表的長度，不影響其他格子的數字）
 BUSY = 2.07                    # main.tex §3.4：背景 matmul 0.7 duty → 重算慢 2.07×
+if PF.PLAT != "mi300x":         # 其他平台：同一個定義（busy_levels.json 的 busy2）讀那一台的實測，不沿用 2.07
+    BUSY = float(json.load(open(os.path.join(RES7, "busy_levels.json")))["_measured_slowdown"]["busy2"])
 INF = float("inf")
 
 G_LIST = [0, 16, 64]           # GiB
@@ -71,7 +75,7 @@ def load_costs():
     x, y = m.index.values.astype(float), m.values.astype(float) / 1e3
     slope, icpt = np.polyfit(x, y, 1)
     f = np.array([y[i] if i < len(y) else icpt + slope * i for i in range(NMAX)])
-    tp = json.load(open(os.path.join(RES7, "tier_params.json")))
+    tp = json.load(open(PF.TIER_PARAMS))        # 限速層兩台都用 MI300X 的
     ell = {k: tp[k]["ell_chunk_ms"] / 1e3 for k in ("cpu", "local", "nfs")}
     meta = dict(f_run=sorted(d.run_id.unique()), f_measured_blocks=len(y), f_slope_ms=slope * 1e3, f_icpt_ms=icpt * 1e3,
                 tier_runs=tp["source_runs"], ell_ms={k: v * 1e3 for k, v in ell.items()})

@@ -27,20 +27,21 @@ REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 sys.path.insert(0, os.path.join(REPO, "code"))
 import m10_sweep_sim as SIM  # noqa: E402  （import，不改）
 
-R10 = os.path.join(REPO, "results", "m10_precision_mi300x")
-R10S = os.path.join(REPO, "results", "m10_sweep_mi300x")
+import p3_platform as PF  # noqa: E402  （P3_CONST：沒設＝MI300X；h200＝results/*_h200 與對應的 run）
+R10 = PF.rdir("m10_precision_mi300x")
+R10S = PF.rdir("m10_sweep_mi300x")
 MiB = 1 << 20
 GiB = 1 << 30
 
 SOURCES = {
     "llama": dict(
         bw=os.path.join(R10, "speed_llama", "bw.json"),
-        k0=(os.path.join(R10, "speed_llama", "restores.csv.gz"), "20261016-034902-m10-grid-int4-llama"),
-        fused=(os.path.join(R10S, "speed_dqfast_int4_llama", "restores.csv"), "20261016-235027-m10-dqfast-grid-int4-llama")),
+        k0=(os.path.join(R10, "speed_llama", "restores.csv.gz"), PF.run("20261016-034902-m10-grid-int4-llama")),
+        fused=(os.path.join(R10S, "speed_dqfast_int4_llama", "restores.csv"), PF.run("20261016-235027-m10-dqfast-grid-int4-llama"))),
     "qwen": dict(
         bw=os.path.join(R10, "speed_qwen", "bw.json"),
-        k0=(os.path.join(R10, "speed_qwen", "restores.csv.gz"), "20261016-052143-m10-grid-int4-qwen"),
-        fused=(os.path.join(R10S, "speed_dqfast_int4_qwen", "restores.csv"), "20261017-000209-m10-dqfast-grid-int4-qwen")),
+        k0=(os.path.join(R10, "speed_qwen", "restores.csv.gz"), PF.run("20261016-052143-m10-grid-int4-qwen")),
+        fused=(os.path.join(R10S, "speed_dqfast_int4_qwen", "restores.csv"), PF.run("20261017-000209-m10-dqfast-grid-int4-qwen"))),
 }
 SLOW = ("b16", "b32", "b48")
 GPUS = ("idle", "busy")

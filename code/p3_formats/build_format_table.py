@@ -45,6 +45,38 @@ R10 = "results/m10_precision_mi300x"
 R10S = "results/m10_sweep_mi300x"
 X7 = "results/p3_explore/x7"
 X5 = "results/p3_explore/x5"
+# 平台（2026-10-19，H200 移植）：P3_CONST 沒設＝MI300X，和原本逐位元相同。P3_CONST=h200：同一套規則讀 H200 的同一批實測
+# （code/p3_platform.py 的目錄與 run 對應），欄名的 mi300x 換成 h200、沒有 3090 欄（H200 是唯一平台），輸出 results/p3_formats_h200/。
+import p3_platform as PF  # noqa: E402
+PL = PF.PLAT
+if PL != "mi300x":
+    OUT = os.path.join(REPO, "results", f"p3_formats_{PL}")
+    R10 = os.path.relpath(PF.rdir("m10_precision_mi300x"), REPO)
+    R10S = os.path.relpath(PF.rdir("m10_sweep_mi300x"), REPO)
+    X5 = os.path.relpath(PF.explore_out("x5"), REPO)
+    RUN_DIR = os.environ.get("RUN_DIR") or os.path.join(os.environ.get("TIARA_RUNS", "."), RUN_ID)
+QRG = "speed_qwen_regrid" if PL == "mi300x" else "speed_qwen"     # H200 沒有 Qwen 的重量（regrid），只量一次
+SCREEN_RUNS = {"mi300x": {"llama": ["20261016-135544-m10-sweep-screen-llama-s0", "20261016-135700-m10-sweep-screen-llama-s1"],
+                          "qwen": ["20261016-135815-m10-sweep-screen-qwen-s0", "20261016-135930-m10-sweep-screen-qwen-s1"]},
+               "h200": {"llama": ["20261018-064714-m10h-sweep-screen-llama-s0", "20261018-064829-m10h-sweep-screen-llama-s1"],
+                        "qwen": ["20261018-074402-m10h-sweep-screen-qwen-s0", "20261018-074517-m10h-sweep-screen-qwen-s1"]}}[PL]
+G43 = {"mi300x": {"llama": {"int2_kivi": "20261017-042229-m10-confirm-grid-llama-int2_kivi",
+                            "kv-int4_kivi-int2_kivi": "20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi",
+                            "int4_kivi": "20261017-070052-m10-confirm-grid-llama-int4_kivi",
+                            "mxfp4": "20261017-074133-m10-confirm-grid-llama-mxfp4"},
+                  "qwen": {"kv-int4_kivi-int2_kivi": "20261017-082406-m10-confirm-grid-qwen-kv-int4_kivi-int2_kivi",
+                           "int4_kivi": "20261017-090805-m10-confirm-grid-qwen-int4_kivi",
+                           "kv-int8_token-int4_kivi": "20261017-094858-m10-confirm-grid-qwen-kv-int8_token-int4_kivi"}},
+       # H200 的 43 是 H200 自己的決賽（13_h200_repro；和 MI300X 的選手不完全相同：Llama 有 nvfp4、沒有 mxfp4）
+       "h200": {"llama": {"int2_kivi": "20261018-164945-m10h-confirm-grid-llama-int2_kivi",
+                          "kv-int4_kivi-int2_kivi": "20261018-174423-m10h-confirm-grid-llama-kv-int4_kivi-int2_kivi",
+                          "nvfp4": "20261018-182504-m10h-confirm-grid-llama-nvfp4"},
+                "qwen": {"kv-int4_kivi-int2_kivi": "20261018-185126-m10h-confirm-grid-qwen-kv-int4_kivi-int2_kivi",
+                         "kv-int8_token-int4_kivi": "20261018-191507-m10h-confirm-grid-qwen-kv-int8_token-int4_kivi",
+                         "int8_token": "20261018-193816-m10h-confirm-grid-qwen-int8_token",
+                         "int4_kivi": "20261018-195840-m10h-confirm-grid-qwen-int4_kivi"}}}[PL]
+BENCH_RID = {"mi300x": "20261016-130602-m10-dqfast-bench",   # RUNLOG_MI300X 11.2f、11_issues 問題一 §4（檔內沒寫 run_id）
+             "h200": "20261018-143442-m10h-dqfast-bench"}[PL]  # RUNLOG_H200（job 20912 的 DQ-BENCH；檔內沒寫 run_id）
 ORIGIN_MAIN = "origin/main"          # stage 43 速度格子只在 origin/main（本地 ref，最後一次 fetch：commit 1ddba0b，10/17 13:44Z）
 
 T, D = 512, 128
@@ -217,33 +249,27 @@ def main():
         pmed = parts["median_per_block"]
         # 海選彙整（ALL＝block 0 BF16＋block 1–63 低精度）
         agg = pd.read_csv(rp(f"{R10S}/analysis/agg_{m}.csv.gz"))
-        screen_runs = {"llama": ["20261016-135544-m10-sweep-screen-llama-s0", "20261016-135700-m10-sweep-screen-llama-s1"],
-                       "qwen": ["20261016-135815-m10-sweep-screen-qwen-s0", "20261016-135930-m10-sweep-screen-qwen-s1"]}[m]
+        screen_runs = SCREEN_RUNS[m]
         agg_src = f"{R10S}/analysis/agg_{m}.csv.gz"
         e0agg = agg[(agg.policy == "E0") & (agg.readout == "A")].iloc[0]
 
         # ---------------- 主線還原格子（K0）＋2b＋42（融合）＋43（origin/main，K0）
+        # run_id：MI300X 的原值經 PF.run（P3_CONST=h200 時換成 H200 的同一格）
         if m == "llama":
-            g_fp8 = (f"{R10}/speed_llama/restores.csv.gz", "20261015-161226-m10-grid-fp8-llama")
-            g_int4 = (f"{R10}/speed_llama/restores.csv.gz", "20261016-034902-m10-grid-int4-llama")
-            g_2b = {"fp8k0_token": (f"{R10}/speed_llama/restores.csv.gz", "20261015-191338-m10-grid-2b-fp8k0_token-llama"),
-                    "int8_token": (f"{R10}/speed_llama/restores.csv.gz", "20261015-192112-m10-grid-2b-int8_token-llama")}
-            f42 = {"fp8_token": (f"{R10S}/speed_dqfast_llama/restores.csv", "20261016-232855-m10-dqfast-grid-llama"),
-                   "int4_kivi": (f"{R10S}/speed_dqfast_int4_llama/restores.csv", "20261016-235027-m10-dqfast-grid-int4-llama")}
-            g43 = {"int2_kivi": "20261017-042229-m10-confirm-grid-llama-int2_kivi",
-                   "kv-int4_kivi-int2_kivi": "20261017-054512-m10-confirm-grid-llama-kv-int4_kivi-int2_kivi",
-                   "int4_kivi": "20261017-070052-m10-confirm-grid-llama-int4_kivi",
-                   "mxfp4": "20261017-074133-m10-confirm-grid-llama-mxfp4"}
+            g_fp8 = (f"{R10}/speed_llama/restores.csv.gz", PF.run("20261015-161226-m10-grid-fp8-llama"))
+            g_int4 = (f"{R10}/speed_llama/restores.csv.gz", PF.run("20261016-034902-m10-grid-int4-llama"))
+            g_2b = {"fp8k0_token": (f"{R10}/speed_llama/restores.csv.gz", PF.run("20261015-191338-m10-grid-2b-fp8k0_token-llama")),
+                    "int8_token": (f"{R10}/speed_llama/restores.csv.gz", PF.run("20261015-192112-m10-grid-2b-int8_token-llama"))}
+            f42 = {"fp8_token": (f"{R10S}/speed_dqfast_llama/restores.csv", PF.run("20261016-232855-m10-dqfast-grid-llama")),
+                   "int4_kivi": (f"{R10S}/speed_dqfast_int4_llama/restores.csv", PF.run("20261016-235027-m10-dqfast-grid-int4-llama"))}
         else:
-            g_fp8 = (f"{R10}/speed_qwen_regrid/restores.csv.gz", "20261015-194150-m10-regrid-fp8-qwen")
-            g_int4 = (f"{R10}/speed_qwen/restores.csv.gz", "20261016-052143-m10-grid-int4-qwen")
-            g_2b = {"fp8k0_head": (f"{R10}/speed_qwen/restores.csv.gz", "20261015-192845-m10-grid-2b-fp8k0_head-qwen"),
-                    "int8_token": (f"{R10}/speed_qwen_regrid/restores.csv.gz", "20261015-210456-m10-regrid-2b-int8_token-qwen")}
-            f42 = {"fp8_head": (f"{R10S}/speed_dqfast_qwen/restores.csv", "20261016-234030-m10-dqfast-grid-qwen"),
-                   "int4_kivi": (f"{R10S}/speed_dqfast_int4_qwen/restores.csv", "20261017-000209-m10-dqfast-grid-int4-qwen")}
-            g43 = {"kv-int4_kivi-int2_kivi": "20261017-082406-m10-confirm-grid-qwen-kv-int4_kivi-int2_kivi",
-                   "int4_kivi": "20261017-090805-m10-confirm-grid-qwen-int4_kivi",
-                   "kv-int8_token-int4_kivi": "20261017-094858-m10-confirm-grid-qwen-kv-int8_token-int4_kivi"}
+            g_fp8 = (f"{R10}/{QRG}/restores.csv.gz", PF.run("20261015-194150-m10-regrid-fp8-qwen"))
+            g_int4 = (f"{R10}/speed_qwen/restores.csv.gz", PF.run("20261016-052143-m10-grid-int4-qwen"))
+            g_2b = {"fp8k0_head": (f"{R10}/speed_qwen/restores.csv.gz", PF.run("20261015-192845-m10-grid-2b-fp8k0_head-qwen")),
+                    "int8_token": (f"{R10}/{QRG}/restores.csv.gz", PF.run("20261015-210456-m10-regrid-2b-int8_token-qwen"))}
+            f42 = {"fp8_head": (f"{R10S}/speed_dqfast_qwen/restores.csv", PF.run("20261016-234030-m10-dqfast-grid-qwen")),
+                   "int4_kivi": (f"{R10S}/speed_dqfast_int4_qwen/restores.csv", PF.run("20261017-000209-m10-dqfast-grid-int4-qwen"))}
+        g43 = G43[m]
         cache = {}
 
         def load(path):
@@ -251,21 +277,27 @@ def main():
                 cache[path] = pd.read_csv(rp(path))
             return cache[path]
         p43 = f"{R10S}/confirm/speed_{m}/restores.csv.gz"
-        try:
-            d43 = git_show_csv(ORIGIN_MAIN, p43)
-            g43_src = f"git show {ORIGIN_MAIN}:{p43}"
-        except subprocess.CalledProcessError as ex:
-            d43 = None
-            problems.append(f"{m}: 讀不到 {ORIGIN_MAIN}:{p43}（{ex}）→ stage 43 的還原中反量化寫 NOT_MEASURED")
+        if PL != "mi300x":         # H200 的 43 在這個分支裡（job 20917），直接讀檔
+            d43 = pd.read_csv(rp(p43)) if os.path.exists(rp(p43)) else None
+            g43_src = p43
+            if d43 is None:
+                problems.append(f"{m}: 讀不到 {p43} → stage 43 的還原中反量化寫 NOT_MEASURED")
+        else:
+            try:
+                d43 = git_show_csv(ORIGIN_MAIN, p43)
+                g43_src = f"git show {ORIGIN_MAIN}:{p43}"
+            except subprocess.CalledProcessError as ex:
+                d43 = None
+                problems.append(f"{m}: 讀不到 {ORIGIN_MAIN}:{p43}（{ex}）→ stage 43 的還原中反量化寫 NOT_MEASURED")
 
-        # 43 的 gpu_guard（origin/main）
+        # 43 的 gpu_guard（origin/main；H200 讀本地檔）
         g43_guard = {}
         if d43 is not None:
             for f, rid in g43.items():
                 vs = []
                 for li in range(3):
                     gp = f"{R10S}/confirm/speed_{m}/gpu_guard_{rid}_L{li}.json"
-                    vs.append(git_show_json(ORIGIN_MAIN, gp).get("verdict"))
+                    vs.append((jload(gp) if PL != "mi300x" else git_show_json(ORIGIN_MAIN, gp)).get("verdict"))
                 g43_guard[f] = vs
                 if any(v != "CLEAN" for v in vs):
                     problems.append(f"{m} 43 {f}: gpu_guard {vs}")
@@ -279,18 +311,19 @@ def main():
         amed = {(r.fmt, r.kernel, r.gpu_state): float(r.median_ms) for r in A.itertuples()}
         # ---------------- stage 40 bench（和 3090 同一支 m10_dequant_fast --self-test --bench；閒；檔內沒有 run_id）
         bench = jload(f"{R10S}/parts/dequant_fast_bench.json")["bench"]
-        bench_rid = "20261016-130602-m10-dqfast-bench"   # RUNLOG_MI300X 11.2f、11_issues 問題一 §4（檔內沒寫 run_id）
-        # ---------------- 3090
-        dq3 = pd.read_csv(rp(f"{X7}/dequant_bench_3090.csv"))
-        dq3 = dq3[dq3["shape"].astype(str) == f"{m}_block"]
-        dq3_rid = "20261017-180859-p3x7-dqbench"
-        assert set(dq3.run_id) == {dq3_rid} and set(dq3.guard) == {"CLEAN"}
-        c3090 = jload(f"{X7}/constants_3090.json")
-        raw3090 = "/ssd8/hungwei/paper-hkv/runs/20261017-181306-p3x7-grid-qwen-L0/restores.csv"
-        r3 = pd.read_csv(raw3090) if (m == "qwen" and os.path.exists(raw3090)) else None
-        if r3 is not None:
-            g3 = json.load(open(os.path.join(os.path.dirname(raw3090), "gpu_guard.json")))
-            assert g3["verdict"] == "CLEAN"
+        bench_rid = BENCH_RID
+        # ---------------- 3090（H200 的表沒有 3090 欄：memory h200-phase1-reproduction「只有 H200 平台」）
+        if PL == "mi300x":
+            dq3 = pd.read_csv(rp(f"{X7}/dequant_bench_3090.csv"))
+            dq3 = dq3[dq3["shape"].astype(str) == f"{m}_block"]
+            dq3_rid = "20261017-180859-p3x7-dqbench"
+            assert set(dq3.run_id) == {dq3_rid} and set(dq3.guard) == {"CLEAN"}
+            c3090 = jload(f"{X7}/constants_3090.json")
+            raw3090 = "/ssd8/hungwei/paper-hkv/runs/20261017-181306-p3x7-grid-qwen-L0/restores.csv"
+            r3 = pd.read_csv(raw3090) if (m == "qwen" and os.path.exists(raw3090)) else None
+            if r3 is not None:
+                g3 = json.load(open(os.path.join(os.path.dirname(raw3090), "gpu_guard.json")))
+                assert g3["verdict"] == "CLEAN"
         # ---------------- 品質
         qgen = {}
         if m == "llama":
@@ -305,10 +338,24 @@ def main():
             qgen[FP8K0[m]] = (f"{R10}/analysis/fp8/quality_qwen_step2b.json", "E1s@fp8k0_head", "主線 Step 2b（08 §2.4）")
             qgen["int8_token"] = (f"{R10}/analysis/fp8/quality_qwen_step2b.json", "E1s@int8_token", "主線 Step 2b（08 §2.4）")
             qgen["int4_kivi"] = (f"{R10}/analysis/int4/quality_qwen_int4.json", "E1", "主線 INT4 端點（08 §2.5.3）")
+        if PL != "mi300x":
+            # H200 的主線走到 FP8 階（RUNLOG_H200 10.12：K3 不成立），INT4 端點的品質在「照 MI300X 路徑」的對照分析裡
+            # （同一支 m10_analyze、同一批 INT4 列；只是判定樹的標籤不同）。Llama 的 FP8-K0／INT8 由 derive_quality.py 在 H200 的列上補算
+            qgen["int4_kivi"] = (f"{R10}/analysis/compare_mi300x_path/int4/quality_{m}_int4.json", "E1",
+                                 "INT4 端點（H200：analysis/compare_mi300x_path，08 §2.5.3 的同一個分析）")
+            if m == "llama":
+                for f_, cfg_ in ((FP8K0[m], "E1s@fp8k0_token"), ("int8_token", "E1s@int8_token")):
+                    qgen[f_] = (f"{os.path.relpath(OUT, REPO)}/derived/quality_llama_step2b.json", cfg_,
+                                "H200 補算（code/p3_formats/derive_quality.py，P3_CONST=h200；凍結的 m10_analyze）")
         fmtsel = jload(f"{R10}/fmt_select/fmt_choice.json")
         # 43 複賽（生成品質）會量的 E1s@格式（confirm_plan.json）
         plan43 = jload(f"{R10S}/confirm_plan.json")["models"][m]["configs"]
         fmts43 = sorted({c.split("@", 1)[1] for c in plan43 if c.startswith("E1s@")})
+        qgen_missing = {}
+        if PL != "mi300x":   # H200：補算的檔不在（derive_quality 的重現檢查沒過就不寫）→ 這格寫 NOT_MEASURED 附原因，不猜
+            for f_ in [f_ for f_, v_ in qgen.items() if not os.path.exists(rp(v_[0]))]:
+                qgen_missing[f_] = f"{qgen.pop(f_)[0]} 不存在：H200 的 derive_quality 沒有產出（重現檢查沒過，見 RUNLOG_H200_P3）"
+                problems.append(f"{m} {f_}: {qgen_missing[f_]}")
 
         rows = []
         for fmt, label, fam, in09, role in specs:
@@ -324,11 +371,11 @@ def main():
             meas = {}
             pk = pmed.get(f"{fmt}|idle")
             if pk is not None:
-                c["bytes_per_block_mi300x_parts"] = cell(int(pk["bytes"]), "B", run_id=parts["run_id"], src=parts_src,
+                c[f"bytes_per_block_{PL}_parts"] = cell(int(pk["bytes"]), "B", run_id=parts["run_id"], src=parts_src,
                                                          method="MI300X 真實 KV，Enc.nbytes 的中位數（64 block × 3 次）")
                 meas["parts"] = int(pk["bytes"])
             else:
-                c["bytes_per_block_mi300x_parts"] = nm("parts 沒有這個格式")
+                c[f"bytes_per_block_{PL}_parts"] = nm("parts 沒有這個格式")
             # 主線還原格子的 bytes_stored
             rs = None
             if fmt == "bf16":
@@ -345,33 +392,35 @@ def main():
                 rs = ((x["bytes_stored_median"] - bf16_block) / (x["n_blocks"] - 1), g_2b[fmt],
                       "E1s cake (bytes_stored − 1 個 BF16 block) ÷ 63")
             if rs is not None:
-                c["bytes_per_block_mi300x_restores"] = cell(r4(rs[0], 2), "B", run_id=rs[1][1], src=rs[1][0], method=rs[2])
+                c[f"bytes_per_block_{PL}_restores"] = cell(r4(rs[0], 2), "B", run_id=rs[1][1], src=rs[1][0], method=rs[2])
                 meas["restores"] = rs[0]
             elif d43 is not None and fmt in g43:
                 x = inrestore(d43, g43[fmt], "E1s", "cake", "idle", fmt=fmt)
                 v = (x["bytes_stored_median"] - bf16_block) / (x["n_blocks"] - 1)
-                c["bytes_per_block_mi300x_restores"] = cell(r4(v, 2), "B", run_id=g43[fmt], src=g43_src,
+                c[f"bytes_per_block_{PL}_restores"] = cell(r4(v, 2), "B", run_id=g43[fmt], src=g43_src,
                                                             method="stage 43 E1s cake (bytes_stored − 1 個 BF16 block) ÷ 63")
                 meas["restores"] = v
             else:
-                c["bytes_per_block_mi300x_restores"] = nm("沒有這個格式的還原格子")
+                c[f"bytes_per_block_{PL}_restores"] = nm("沒有這個格式的還原格子")
             # 海選
             if fmt == "bf16":
                 v = float(e0agg.bytes_stored) / 64
-                c["bytes_per_block_mi300x_screen"] = cell(r4(v, 2), "B", run_id=";".join(screen_runs), src=agg_src,
+                c[f"bytes_per_block_{PL}_screen"] = cell(r4(v, 2), "B", run_id=";".join(screen_runs), src=agg_src,
                                                           method="E0 bytes_stored ÷ 64（agg 檔沒有 run_id 欄，run_id 取自 tables_<m>.md）")
                 meas["screen"] = v
             else:
                 a = agg[(agg.fmt == fmt) & (agg.policy == "ALL") & (agg.readout == "A")]
                 if len(a):
                     v = (float(a.iloc[0].bytes_stored) - bf16_block) / 63
-                    c["bytes_per_block_mi300x_screen"] = cell(r4(v, 2), "B", run_id=";".join(screen_runs), src=agg_src,
+                    c[f"bytes_per_block_{PL}_screen"] = cell(r4(v, 2), "B", run_id=";".join(screen_runs), src=agg_src,
                                                               method="ALL (bytes_stored − 1 個 BF16 block) ÷ 63（agg 檔沒有 run_id 欄）")
                     meas["screen"] = v
                 else:
-                    c["bytes_per_block_mi300x_screen"] = nm("海選沒有這個格式")
-            # 3090
-            if fmt == "bf16":
+                    c[f"bytes_per_block_{PL}_screen"] = nm("海選沒有這個格式")
+            # 3090（H200 的表沒有）
+            if PL != "mi300x":
+                pass
+            elif fmt == "bf16":
                 v = c3090["models"][m]["chunk_bytes"]
                 c["bytes_per_block_3090"] = cell(v, "B", run_id=c3090["models"][m]["f_src_run"], src=f"{X7}/constants_3090.json",
                                                  method="models.<m>.chunk_bytes（calib-f）")
@@ -400,20 +449,20 @@ def main():
             # ---------------- MI300X parts（單獨、真實 KV、每 block）
             for st in ("idle", "busy"):
                 pk = pmed.get(f"{fmt}|{st}")
-                for key, col, what in (("dq_mi300x_k0", "t_dequant_torch_ms", "原寫法 K0（PyTorch 一步一步）"),
-                                       ("dq_mi300x_fused", "t_dequant_fused_ms", "融合 K1（m10_dequant_fast，Triton）"),
-                                       ("enc_mi300x", "t_encode_ms", "編碼（寫入時）"),
-                                       ("h2d_mi300x", "t_h2d_ms", "pinned → GPU（單一 block，不是還原中）")):
+                for key, col, what in ((f"dq_{PL}_k0", "t_dequant_torch_ms", "原寫法 K0（PyTorch 一步一步）"),
+                                       (f"dq_{PL}_fused", "t_dequant_fused_ms", "融合 K1（m10_dequant_fast，Triton）"),
+                                       (f"enc_{PL}", "t_encode_ms", "編碼（寫入時）"),
+                                       (f"h2d_{PL}", "t_h2d_ms", "pinned → GPU（單一 block，不是還原中）")):
                     k = f"{key}_{st}_ms"
-                    if fmt == "bf16" and key in ("dq_mi300x_k0", "dq_mi300x_fused", "enc_mi300x"):
+                    if fmt == "bf16" and key in (f"dq_{PL}_k0", f"dq_{PL}_fused", f"enc_{PL}"):
                         c[k] = cell(0.0, "ms", run_id=parts["run_id"], src=parts_src, method="BF16 不用編碼／反量化",
                                     note="定義為 0")
                         continue
                     v = None if pk is None else pk.get(col)
                     if v is None:
                         note = ("融合 kernel 只支援 fp8_head／channel／token、int8_token、int4_token、int4_kivi（11 問題一 §3）；"
-                                "新格式的融合 kernel 計時是 43d（13 號 Q3）→ PENDING") if key == "dq_mi300x_fused" else "parts 沒有這格"
-                        if key == "dq_mi300x_fused" and fmt in g43 and fmt != "int4_kivi":
+                                "新格式的融合 kernel 計時是 43d（13 號 Q3）→ PENDING") if key == f"dq_{PL}_fused" else "parts 沒有這格"
+                        if key == f"dq_{PL}_fused" and fmt in g43 and fmt != "int4_kivi":
                             note += "；這個格式的融合 kernel 只在 stage 43d 的還原中量（見 dq_mi300x_cake_fused_*），沒有單獨量"
                         c[k] = nm(note, "ms")
                     else:
@@ -424,19 +473,19 @@ def main():
             for kname, kk in (("k0", "k0"), ("k1", "k1"), ("k2", "k2")):
                 for st in ("idle", "busy"):
                     v = amed.get((fmt, kk, st))
-                    key = f"dqA_mi300x_{kname}_{st}_ms"
+                    key = f"dqA_{PL}_{kname}_{st}_ms"
                     c[key] = (cell(r4(v, 5), "ms", run_id=A_rid, src=A_csv,
                                    method=f"42b A 段微測：合成資料寫進整個 KV 視圖，暖機 5、量 50 取中位數，GPU {st}")
                               if v is not None else nm("A 段只量 fp8_token／fp8_head／int8_token／int4_token／int4_kivi", "ms"))
             ks = A_choice["choice"].get(fmt)
-            c["dqA_mi300x_kstar"] = cell(ks, "", run_id=A_rid, src=f"{R10S}/dqsweep/A/choice_{m}.json") if ks else nm("A 段沒有這個格式")
+            c[f"dqA_{PL}_kstar"] = cell(ks, "", run_id=A_rid, src=f"{R10S}/dqsweep/A/choice_{m}.json") if ks else nm("A 段沒有這個格式")
             for st in ("idle", "busy"):
                 v = amed.get((fmt, ks, st)) if ks else None
-                c[f"dqA_mi300x_kstar_{st}_ms"] = (cell(r4(v, 5), "ms", run_id=A_rid, src=A_csv, method=f"K*＝{ks}（09 §6.4.3-1 的挑法）")
+                c[f"dqA_{PL}_kstar_{st}_ms"] = (cell(r4(v, 5), "ms", run_id=A_rid, src=A_csv, method=f"K*＝{ks}（09 §6.4.3-1 的挑法）")
                                                  if v is not None else nm("A 段沒有這個格式", "ms"))
             # ---------------- stage 40 bench（閒）
-            for impl, key in (("torch", "dqbench_mi300x_k0_idle_ms"), ("fused", "dqbench_mi300x_fused_idle_ms"),
-                              ("torch_compile", "dqbench_mi300x_compile_idle_ms")):
+            for impl, key in (("torch", f"dqbench_{PL}_k0_idle_ms"), ("fused", f"dqbench_{PL}_fused_idle_ms"),
+                              ("torch_compile", f"dqbench_{PL}_compile_idle_ms")):
                 b = bench.get(f"{m}_block|{fmt}|{impl}")
                 c[key] = (cell(r4(b["median_ms"]), "ms", run_id=bench_rid, src=f"{R10S}/parts/dequant_fast_bench.json",
                                method="m10_dequant_fast.py --self-test --bench（和 3090 同一支），GPU 閒；檔內沒有 run_id、"
@@ -452,10 +501,10 @@ def main():
                 src_k0 = (g_2b[fmt], "E1s")
             for mode, mk in (("cake", "cake"), ("load_only", "loadonly")):
                 for st in ("idle", "busy"):
-                    key = f"dq_mi300x_{mk}_k0_{st}_ms"
+                    key = f"dq_{PL}_{mk}_k0_{st}_ms"
                     if fmt == "bf16":
                         c[key] = cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0")
-                        c[f"dq_mi300x_{mk}_fused_{st}_ms"] = cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0")
+                        c[f"dq_{PL}_{mk}_fused_{st}_ms"] = cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0")
                         continue
                     x = None
                     if src_k0 is not None:
@@ -471,7 +520,8 @@ def main():
                             c[key] = cell(x["ms"], "ms", run_id=g43[fmt], src=g43_src,
                                           method=f"stage 43 速度格子 E1s cake，CPU 層 32K，median(t_dequant ÷ 讀到的低精度 block 數)，"
                                                  f"n={x['n']}；原寫法 K0（43 不用融合 kernel）",
-                                          note="只在 origin/main（本地 ref 1ddba0b）；43 的速度判讀等品質一起寫（09 §4.3），這裡只取反量化時間")
+                                          note=("只在 origin/main（本地 ref 1ddba0b）；" if PL == "mi300x" else "")
+                                               + "43 的速度判讀等品質一起寫（09 §4.3），這裡只取反量化時間")
                     if x is None:
                         if mode == "load_only" and fmt in g_2b:
                             c[key] = nm("2b 的速度格子沒跑只載參考線（--refs 空）", "ms")
@@ -480,7 +530,7 @@ def main():
                         else:
                             c[key] = nm("沒有這個格式的還原格子", "ms")
                     # 融合（stage 42）
-                    key = f"dq_mi300x_{mk}_fused_{st}_ms"
+                    key = f"dq_{PL}_{mk}_fused_{st}_ms"
                     if fmt in f42:
                         path, rid = f42[fmt]
                         x = inrestore(load(path), rid, "E1", mode, st)
@@ -492,49 +542,50 @@ def main():
                         c[key] = pend("stage 43d（13 號 Q3）", "新格式融合 kernel 的 CPU 層還原，跑 43 的速度配置（含 E1s）", "ms")
                     else:
                         c[key] = nm("stage 42 只跑主線 FP8 與 INT4 KIVI", "ms")
-            # ---------------- 3090
-            for impl, key in (("torch", "dq_3090_k0_idle_ms"), ("fused", "dq_3090_fused_idle_ms"),
-                              ("torch_compile", "dq_3090_compile_idle_ms")):
-                q = dq3[(dq3.fmt == fmt) & (dq3.impl == impl)]
-                if fmt == "bf16" and impl != "torch_compile":
-                    c[key] = cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0")
-                elif len(q) and str(q.iloc[0].median_ms) != NM:
-                    c[key] = cell(r4(float(q.iloc[0].median_ms)), "ms", run_id=dq3_rid, src=f"{X7}/dequant_bench_3090.csv",
-                                  method="m10_dequant_fast.py --self-test --bench（GPU 閒，單獨量）；guard CLEAN")
-                elif len(q):
-                    c[key] = nm("torch.compile 在 sm_86 編不起 e4m3fn（X7 §4.3，完整錯誤在 CSV 的 error 欄）", "ms")
-                else:
-                    c[key] = nm("X7 bench 只量 fp8_head／fp8_token／int8_token／int4_token／int4_kivi", "ms")
-            for key in ("dq_3090_k0_busy_ms", "dq_3090_fused_busy_ms"):
-                c[key] = (cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0") if fmt == "bf16"
-                          else nm("X7 的 bench 只在 GPU 閒時量（沒有忙的單獨量測）", "ms"))
-            for mode, mk in (("cake", "cake"), ("load_only", "loadonly")):
-                for st in ("idle", "busy"):
-                    key = f"dq_3090_{mk}_k0_{st}_ms"
-                    if fmt == "bf16":
+            # ---------------- 3090（H200 的表沒有）
+            if PL == "mi300x":
+                for impl, key in (("torch", "dq_3090_k0_idle_ms"), ("fused", "dq_3090_fused_idle_ms"),
+                                  ("torch_compile", "dq_3090_compile_idle_ms")):
+                    q = dq3[(dq3.fmt == fmt) & (dq3.impl == impl)]
+                    if fmt == "bf16" and impl != "torch_compile":
                         c[key] = cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0")
-                        continue
-                    if r3 is not None and fmt in ("fp8_head", "int4_kivi"):
-                        lowc = "n_load_fp8" if fmt.startswith("fp8") else "n_load_int4"
-                        q = r3[(r3.config == "E1") & (r3.fmt == fmt) & (r3["mode"] == mode) & (r3.tier == "cpu")
-                               & (r3.gpu_state == st)]
-                        assert len(q) and not q.contaminated_gpu.astype(str).str.lower().eq("true").any()
-                        nlow = q[lowc].astype(float).where(q[lowc] > 0)
-                        v = (q.t_dequant / nlow).median() * 1000
-                        x7v = c3090["models"]["qwen"]["dequant_ms_per_block_in_restore_cpu"].get(f"{fmt}|{mode}|{st}")
-                        c[key] = cell(r4(v), "ms", run_id="20261017-181306-p3x7-grid-qwen-L0", src=raw3090,
-                                      method=f"E1 {mode}，CPU 層（3090 真的 H2D）32K，median(t_dequant ÷ 讀到的低精度 block 數)，n={len(q)}（1 launch × 5）；原寫法",
-                                      note=f"X7 constants 用中位數之比＝{x7v}；host_level＝HEAVY、同 switch 鄰卡有 PCIe 流量（X7 §4.4）")
-                        crosschecks.append({"what": f"3090 {m} {fmt} {mode} {st} 還原中每 block 反量化", "ours_median_of_ratio_ms": r4(v),
-                                            "x7_ratio_of_medians_ms": x7v, "src_x7": f"{X7}/constants_3090.json"})
-                    elif m == "llama" and fmt in ("fp8_token", "int4_kivi"):
-                        c[key] = nm("X7 的 Llama 還原格子兩次被別人的行程污染（runs.json rejected）", "ms")
+                    elif len(q) and str(q.iloc[0].median_ms) != NM:
+                        c[key] = cell(r4(float(q.iloc[0].median_ms)), "ms", run_id=dq3_rid, src=f"{X7}/dequant_bench_3090.csv",
+                                      method="m10_dequant_fast.py --self-test --bench（GPU 閒，單獨量）；guard CLEAN")
+                    elif len(q):
+                        c[key] = nm("torch.compile 在 sm_86 編不起 e4m3fn（X7 §4.3，完整錯誤在 CSV 的 error 欄）", "ms")
                     else:
-                        c[key] = nm("X7 的還原格子只跑 Qwen 的 fp8_head、int4_kivi", "ms")
-            for mode, mk in (("cake", "cake"), ("load_only", "loadonly")):
-                for st in ("idle", "busy"):
-                    c[f"dq_3090_{mk}_fused_{st}_ms"] = (cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0") if fmt == "bf16"
-                                                        else nm("X7 沒有跑融合 kernel 的還原格子（runs.json grid_fused＝[]）", "ms"))
+                        c[key] = nm("X7 bench 只量 fp8_head／fp8_token／int8_token／int4_token／int4_kivi", "ms")
+                for key in ("dq_3090_k0_busy_ms", "dq_3090_fused_busy_ms"):
+                    c[key] = (cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0") if fmt == "bf16"
+                              else nm("X7 的 bench 只在 GPU 閒時量（沒有忙的單獨量測）", "ms"))
+                for mode, mk in (("cake", "cake"), ("load_only", "loadonly")):
+                    for st in ("idle", "busy"):
+                        key = f"dq_3090_{mk}_k0_{st}_ms"
+                        if fmt == "bf16":
+                            c[key] = cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0")
+                            continue
+                        if r3 is not None and fmt in ("fp8_head", "int4_kivi"):
+                            lowc = "n_load_fp8" if fmt.startswith("fp8") else "n_load_int4"
+                            q = r3[(r3.config == "E1") & (r3.fmt == fmt) & (r3["mode"] == mode) & (r3.tier == "cpu")
+                                   & (r3.gpu_state == st)]
+                            assert len(q) and not q.contaminated_gpu.astype(str).str.lower().eq("true").any()
+                            nlow = q[lowc].astype(float).where(q[lowc] > 0)
+                            v = (q.t_dequant / nlow).median() * 1000
+                            x7v = c3090["models"]["qwen"]["dequant_ms_per_block_in_restore_cpu"].get(f"{fmt}|{mode}|{st}")
+                            c[key] = cell(r4(v), "ms", run_id="20261017-181306-p3x7-grid-qwen-L0", src=raw3090,
+                                          method=f"E1 {mode}，CPU 層（3090 真的 H2D）32K，median(t_dequant ÷ 讀到的低精度 block 數)，n={len(q)}（1 launch × 5）；原寫法",
+                                          note=f"X7 constants 用中位數之比＝{x7v}；host_level＝HEAVY、同 switch 鄰卡有 PCIe 流量（X7 §4.4）")
+                            crosschecks.append({"what": f"3090 {m} {fmt} {mode} {st} 還原中每 block 反量化", "ours_median_of_ratio_ms": r4(v),
+                                                "x7_ratio_of_medians_ms": x7v, "src_x7": f"{X7}/constants_3090.json"})
+                        elif m == "llama" and fmt in ("fp8_token", "int4_kivi"):
+                            c[key] = nm("X7 的 Llama 還原格子兩次被別人的行程污染（runs.json rejected）", "ms")
+                        else:
+                            c[key] = nm("X7 的還原格子只跑 Qwen 的 fp8_head、int4_kivi", "ms")
+                for mode, mk in (("cake", "cake"), ("load_only", "loadonly")):
+                    for st in ("idle", "busy"):
+                        c[f"dq_3090_{mk}_fused_{st}_ms"] = (cell(0.0, "ms", src="—", method="BF16 不反量化", note="定義為 0") if fmt == "bf16"
+                                                            else nm("X7 沒有跑融合 kernel 的還原格子（runs.json grid_fused＝[]）", "ms"))
 
             # ---------------- 品質：生成（主線）
             if fmt == "bf16":
@@ -548,6 +599,13 @@ def main():
                 c["q_gen_same_as_e0_A"] = cell(1.0, "", src="—")
                 c["q_gen_config"] = cell("E0", "", src="—")
                 c["q_gen_n_rows"] = cell(1140, "rows", src="—")
+            elif fmt in qgen_missing:
+                for k in ("q_gen_metric", "q_gen_config", "q_gen_eps_pass_all4", "q_gen_mean_kl_A", "q_gen_same_as_e0_A", "q_gen_n_rows"):
+                    c[k] = nm(qgen_missing[fmt])
+                for cond in ("A", "B_idle", "B_busy", "B_i2b"):
+                    for s_ in ("diff_pts", "ci_lo_pts", "ci_hi_pts"):
+                        c[f"q_gen_{cond}_{s_}"] = nm(qgen_missing[fmt], "pt")
+                    c[f"q_gen_{cond}_pass2"] = nm(qgen_missing[fmt])
             elif fmt in qgen:
                 path, cfg, why = qgen[fmt]
                 d = jload(path)
@@ -644,7 +702,7 @@ def main():
                 verdict, how = NM, "沒有任何品質數字"
             c["quality_verdict_32k"] = cell(verdict, "", run_id=RUN_ID, src="本表",
                                             method="PASS／FAIL＝第二階段判準（四種情境 eps_pass）；UNVERIFIED_TF_ONLY＝只有海選", note=how)
-            dq_ok = c["dq_mi300x_k0_idle_ms"]["status"] == "measured" and c["dq_mi300x_k0_busy_ms"]["status"] == "measured"
+            dq_ok = c[f"dq_{PL}_k0_idle_ms"]["status"] == "measured" and c[f"dq_{PL}_k0_busy_ms"]["status"] == "measured"
             if fmt == "bf16" or (dq_ok and verdict in ("PASS", "FAIL")):
                 status = "measured"
             elif verdict == "UNVERIFIED_TF_ONLY":
@@ -661,12 +719,16 @@ def main():
         tables[m] = rows
 
         # ---------------- 和 X5 對拍（INT4 KIVI，還原中每 block）
+        if PL != "mi300x" and not os.path.exists(rp(f"{X5}/x5_cost_constants.json")):
+            problems.append(f"{m}: 還沒有 {X5}/x5_cost_constants.json（X5 的 H200 重跑還沒做）→ 不對拍")
+            tables[m] = rows
+            continue
         x5 = jload(f"{X5}/x5_cost_constants.json")[m]
         r_int4 = next(r for r in rows if r["fmt"] == "int4_kivi")["cells"]
-        for k5, kk in (("k0_idle", "dq_mi300x_cake_k0_idle_ms"), ("k0_busy", "dq_mi300x_cake_k0_busy_ms"),
-                       ("fused_idle", "dq_mi300x_cake_fused_idle_ms"), ("fused_busy", "dq_mi300x_cake_fused_busy_ms")):
+        for k5, kk in (("k0_idle", f"dq_{PL}_cake_k0_idle_ms"), ("k0_busy", f"dq_{PL}_cake_k0_busy_ms"),
+                       ("fused_idle", f"dq_{PL}_cake_fused_idle_ms"), ("fused_busy", f"dq_{PL}_cake_fused_busy_ms")):
             ours, theirs = r_int4[kk]["value"], x5["dequant_ms"][k5]
-            crosschecks.append({"what": f"MI300X {m} int4_kivi Cake CPU 層每 block 反量化 {k5}", "ours_ms": ours,
+            crosschecks.append({"what": f"{PL} {m} int4_kivi Cake CPU 層每 block 反量化 {k5}", "ours_ms": ours,
                                 "x5_ms": r4(theirs), "same": abs(ours - theirs) < 5e-4, "src_x5": f"{X5}/x5_cost_constants.json",
                                 "x5_run_id": jload(f"{X5}/x5_cost_constants.json")["run_id"]})
         for k5, fmtk in (("BF16", "bf16"), ("INT4", "int4_kivi")):
@@ -682,7 +744,7 @@ def main():
                                     "stage43_ms": a43["ms"], "main_grid_ms": amain["ms"], "run_43": g43["int4_kivi"], "run_main": g_int4[1],
                                     "rel_diff": r4(a43["ms"] / amain["ms"] - 1, 3)})
         # Qwen FP8：判定用的重量 vs 第一次量（X7 用第一次量）
-        if m == "qwen":
+        if m == "qwen" and PL == "mi300x":
             d1 = load(f"{R10}/speed_qwen/restores.csv.gz")
             for mode in ("cake", "load_only"):
                 for st in ("idle", "busy"):
@@ -696,13 +758,30 @@ def main():
 
     # ============================================================================ 輸出
     pending = quality_pending()
+    notes = ["每格 {value, unit, status, run_id, src, method, note}；status＝measured／pending／NOT_MEASURED。",
+             "stage 43 的還原格子讀自 git ref origin/main（本地，最後 fetch 在 commit 1ddba0b），沒有切分支。",
+             "derived：Llama 的 FP8-K0／INT8 生成品質是本表用凍結的 m10_analyze 補算（20261018-002550-p3fmt-qderive），重現檢查兩項逐欄相同。"]
+    if PL != "mi300x":
+        # 規則和 MI300X 版逐條相同；cells 的 method／note 文字裡寫的「MI300X」指的是本表的平台 → 換掉，免得讀的人誤會資料來源（src 欄是實際路徑）
+        for m_ in tables:
+            for r in tables[m_]:
+                for v in r["cells"].values():
+                    for k_ in ("method", "note"):
+                        if isinstance(v.get(k_), str):
+                            v[k_] = v[k_].replace("MI300X", PL.upper())
+        notes = [notes[0],
+                 f"平台 {PL.upper()}（P3_CONST={PL}，code/p3_platform.py）：規則和 results/p3_formats/format_table.json（MI300X 版）逐條相同，"
+                 "只換成 H200 的同一批實測；沒有 3090 欄（H200 是唯一平台）。限速層與每 block 位元組是格式定義、和 GPU 無關。",
+                 f"stage 43 的還原格子讀自 {R10S}/confirm/（H200 自己的決賽，選手和 MI300X 不完全相同）；Qwen 的 FP8／INT8 用 speed_qwen（H200 沒有重量）。",
+                 "INT4 端點品質取自 analysis/compare_mi300x_path（H200 的主線走 FP8 階）；Llama 的 FP8-K0／INT8 是 H200 補算（derived/）。"]
     js = {"run_id": RUN_ID, "ts": TS, "tool": "code/p3_formats/build_format_table.py",
           "shape": {m: {"L": SHAPE[m][0], "H_kv": SHAPE[m][1], "T_block": T, "D": D} for m in SHAPE},
           "rows": [r for m in tables for r in tables[m]], "crosschecks": crosschecks, "problems": problems,
           "quality_pending": pending,
-          "notes": ["每格 {value, unit, status, run_id, src, method, note}；status＝measured／pending／NOT_MEASURED。",
-                    "stage 43 的還原格子讀自 git ref origin/main（本地，最後 fetch 在 commit 1ddba0b），沒有切分支。",
-                    "derived：Llama 的 FP8-K0／INT8 生成品質是本表用凍結的 m10_analyze 補算（20261018-002550-p3fmt-qderive），重現檢查兩項逐欄相同。"]}
+          "notes": notes}
+    if PL != "mi300x":
+        js["platform"] = PL            # MI300X 版沒有這個鍵（輸出和原本逐位元相同）
+    os.makedirs(OUT, exist_ok=True)
     json.dump(js, open(os.path.join(OUT, "format_table.json"), "w"), indent=1, ensure_ascii=False)
     # 寬表 CSV：每格三欄（值、run_id、來源）
     keys = []
@@ -736,6 +815,12 @@ def quality_pending():
     out = []
     for m in ("llama", "qwen"):
         e1s = sorted({c.split("@", 1)[1] for c in plan["models"][m]["configs"] if c.startswith("E1s@")})
+        if PL != "mi300x":     # H200 的 43 已經跑完（job 20918）；本表照 MI300X 版的規則不收 43 的品質（之後要收，兩個平台一起改）
+            out.append({"stage": "43 (43ab)", "model": m, "what": "32K 生成答對率（複賽：新題 seed 50000 起，T2–T4 各 90、T5 30、兩輪；讀法 A＋B b32）",
+                        "formats_uniform": ";".join(e1s), "status": "available_not_used",
+                        "src": f"{R10S}/confirm_plan.json；{R10S}/confirm/confirm_{m}.json（H200 job 20918，RUNLOG_H200 10-H200）",
+                        "note": "H200 有結果，但本表照 MI300X 版的規則（10/18 建表時 43 還在跑）不收；均勻（E1s）只有這些格式"})
+            continue
         out.append({"stage": "43 (43ab)", "model": m, "what": "32K 生成答對率（複賽：新題 seed 50000 起，T2–T4 各 90、T5 30、兩輪；讀法 A＋B b32）",
                     "formats_uniform": ";".join(e1s), "status": "pending",
                     "src": "results/m10_sweep_mi300x/confirm_plan.json；origin/main RUNLOG 11.2o（品質 10/17 13:44Z 開跑）",

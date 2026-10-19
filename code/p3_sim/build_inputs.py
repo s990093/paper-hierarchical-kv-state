@@ -107,6 +107,58 @@ def costs_mi300x():
     )
 
 
+def costs_h200():
+    """平台 C（2026-10-19）：規則和 costs_mi300x 逐條相同，只把實測檔換成 H200 的同一批（code/p3_platform.py，P3_CONST=h200）。
+    限速層（cpu／local／nfs）照 03 §R2 用 MI300X 的 tier_params.json（H200 只換 GPU、不換「裝置」；memory h200-phase1-reproduction）。
+    真實裝置（H200 的本地碟、NFS）沒量：只用限速層（使用者 10/16「都用模擬限速」）→ 不列 H200 的真實 SSD profile。
+    CPU 忙的 H2D 倍數：H200 由 code/r_h200_p3.sh --part cal 量；量到之前 NOT_MEASURED（模擬器拒跑 cpu=busy）。"""
+    import p3_platform as PF
+    assert PF.PLAT == "h200", f"costs_h200 要 P3_CONST=h200（現在 {PF.PLAT}）"
+    import x1_sim
+    K = x1_sim.constants()                       # P3_CONST=h200：H200 的 C1、busy、b32、INT4 反量化（x1_sim 會檢查 M7_RES 是 H200）
+    r7, r10 = PF.rdir("m7_write_policy_mi300x"), PF.rdir("m10_precision_mi300x")
+    rel = lambda p: os.path.relpath(p, REPO)    # noqa: E731
+    tp = json.load(open(PF.TIER_PARAMS))
+    busy = json.load(open(os.path.join(r7, "busy_levels.json")))
+    bwq = json.load(open(os.path.join(r10, "speed_qwen", "bw.json")))
+    bwl = json.load(open(os.path.join(r10, "speed_llama", "bw.json")))
+    fq = [float(x) for x in bwq["f_ms_median_by_chunk"]]
+    sq, iq = extrap(fq)
+    d = pd.read_csv(os.path.join(r10, "speed_qwen", "restores.csv.gz"))
+    g = d[(d.run_id == PF.run(GRID[("qwen", "int4")])) & (d.length == 32768) & (d["mode"] == "compute_only") & (d.bw_name == "cpu")]
+    co = g.groupby("gpu_state").t_restore.median()
+    cpu = dict(read_GiBps=K["cpu"]["r"], write_GiBps=K["cpu"]["w"], k_read=K["cpu"]["k"],
+               src=f"{rel(PF.TIER_PARAMS)} cpu（MI300X 的限速層，H200 沿用；runs " + ",".join(tp["source_runs"]) + "）")
+    return dict(
+        platform="h200", run_id=rid(), ts=now(),
+        note="〔H200 常數〕GPU 量的（f(i)、GPU 忙、b* 頻寬）是 repo 裡 H200 第一、二階段的實測檔；限速層是 MI300X 的 tier_params（03 §R2）。見各欄 src。",
+        models=dict(
+            llama=dict(f_ms=K["f_ms"], f_slope_ms=K["f_slope"], f_icpt_ms=K["f_icpt"],
+                       f_src=f"{rel(r7)}/calib_c1.csv（m8_trace_oracle.load_f；runs " + ",".join(K["f_runs"]) + "），i≥80 線性外插",
+                       busy_factor=K["busy_factor"], busy_src=f"{rel(r7)}/busy_levels.json _measured_slowdown.busy2（runs " + ",".join(busy["_source_runs"]) + "）",
+                       cpu=cpu),
+            qwen=dict(f_ms=fq, f_slope_ms=sq, f_icpt_ms=iq,
+                      f_src=f"{rel(r10)}/speed_qwen/bw.json f_ms_median_by_chunk（run {bwq['run_id']}），i≥{len(fq)} 線性外插",
+                      busy_factor=float(busy["_measured_slowdown"]["busy2"]),
+                      busy_src="busy_levels.json busy2（Llama 量的；Qwen 自己的 x5 規則值見 busy_factor_x5_rule，只報告）",
+                      busy_factor_x5_rule=float(co["busy"] / co["idle"]),
+                      cpu=cpu),
+            llama70b=dict(f_ms=NOT, busy_factor=NOT, cpu=cpu,
+                          f_src="NOT_MEASURED：70B 級沒有 f(i)。只算頻寬（04 §5），還原一律 load-only、TTFT 不算"),
+        ),
+        ssd_profiles=dict(
+            mi300x_local=dict(read_GiBps=tp["local"]["read_GiBps"], write_GiBps=tp["local"]["write_GiBps"], k_read=tp["local"]["k_read"],
+                              src="tier_params.json local（MI300X 的限速參數，H200 沿用；04 §5 主地圖：讀 6.98、寫 1.91 GiB/s）"),
+            nfs=dict(read_GiBps=tp["nfs"]["read_GiBps"], write_GiBps=tp["nfs"]["write_GiBps"], k_read=tp["nfs"]["k_read"],
+                     src="tier_params.json nfs（MI300X 的限速參數，H200 沿用）"),
+            b32=dict(read_GiBps=float(bwl["targets"]["b32"]["GiBps"]), write_GiBps=float(bwl["targets"]["b32"]["GiBps"]), k_read=1.0,
+                     src=f"{rel(r10)}/speed_llama/bw.json b32（run {bwl['run_id']}；b* 由 H200 自己的 f 定義）；寫＝讀、k=1 是 X1 的假設"),
+        ),
+        cpu_busy_h2d_factor=NOT,
+        cpu_busy_note="CPU 忙時 H2D 變慢的倍數：H200 由 code/r_h200_p3.sh --part cal 量（p3cal/cpu_busy_restore.py）；量到之前 NOT_MEASURED，模擬器拒跑 cpu=busy",
+    )
+
+
 def costs_3090():
     c = json.load(open(os.path.join(REPO, "results", "p3_explore", "x7", "constants_3090.json")))
     tp = json.load(open(os.path.join(RES7, "tier_params.json")))
@@ -196,8 +248,15 @@ def placeholder_formats():
 
 def main():
     os.makedirs(CFG, exist_ok=True)
-    for name, obj in (("costs_mi300x.json", costs_mi300x()), ("costs_3090.json", costs_3090()),
-                      ("format_table.PLACEHOLDER.json", placeholder_formats())):
+    # --platform h200（2026-10-19）：只寫 costs_h200.json（要 P3_CONST=h200、M7_RES＝H200）；不碰其他三個檔。沒給＝原本
+    if sys.argv[1:] == ["--platform", "h200"]:
+        todo = (("costs_h200.json", costs_h200()),)
+    elif sys.argv[1:]:
+        raise SystemExit(f"不認得的參數 {sys.argv[1:]}（只接受 --platform h200）")
+    else:
+        todo = (("costs_mi300x.json", costs_mi300x()), ("costs_3090.json", costs_3090()),
+                ("format_table.PLACEHOLDER.json", placeholder_formats()))
+    for name, obj in todo:
         p = os.path.join(CFG, name)
         with open(p, "w", encoding="utf-8") as fh:
             json.dump(obj, fh, ensure_ascii=False, indent=1)

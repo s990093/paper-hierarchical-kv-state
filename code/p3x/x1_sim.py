@@ -43,8 +43,10 @@ import numpy as np  # noqa: E402
 
 import x1_trace as XT  # noqa: E402
 
-RES7 = os.path.join(REPO, "results", "m7_write_policy_mi300x")
-OUTDIR = os.path.join(REPO, "results", "p3_explore", "x1")
+# P3_CONST（code/p3_platform.py）：沒設＝MI300X（原本）；h200＝讀 results/*_h200 的同一批實測、寫 results/p3_explore_h200/x1
+import p3_platform as PF  # noqa: E402
+RES7 = PF.rdir("m7_write_policy_mi300x")
+OUTDIR = PF.explore_out("x1")
 MiB, GiB = 1 << 20, 1 << 30
 BF = 64 * MiB                    # Llama-3.1-8B BF16 block
 INF = XT.INF
@@ -113,18 +115,19 @@ def code_sha():
 # ================================================================== 常數〔MI300X〕
 def constants():
     sys.path.insert(0, CODE)
+    PF.check_m7_res()                            # load_f 讀 $M7_RES/calib_c1.csv：要和其他常數同一台
     from m8_trace_oracle import load_f
     fmeas, slope, icpt, frun = load_f()          # ms，C1 中位數，i ≥ 80 線性外插
     busy = json.load(open(os.path.join(RES7, "busy_levels.json")))
     bfac = float(busy["_measured_slowdown"]["busy2"])
-    tp = json.load(open(os.path.join(RES7, "tier_params.json")))
-    bw = json.load(open(os.path.join(REPO, "results", "m10_precision_mi300x", "speed_llama", "bw.json")))
-    iow = json.load(open(os.path.join(REPO, "results", "m10_tier_mi300x", "iowall.json")))
+    tp = json.load(open(PF.TIER_PARAMS))         # 限速層：兩台都用 MI300X 的（03 §R2）；mi300x 時就是 RES7 那份
+    bw = json.load(open(PF.rdir("m10_precision_mi300x", "speed_llama", "bw.json")))
+    iow = json.load(open(PF.IOWALL))             # 每 block 位元組＝格式定義，和 GPU 無關（下一行斷言 BF16）
     i4 = int(iow["llama"]["bytes_per_block"]["int4"])
     assert abs(iow["llama"]["bytes_per_block"]["bf16"] - BF) < 1
     import pandas as pd
-    d = pd.read_csv(os.path.join(REPO, "results", "m10_precision_mi300x", "speed_llama", "restores.csv.gz"))
-    rid4 = "20261016-034902-m10-grid-int4-llama"
+    d = pd.read_csv(PF.rdir("m10_precision_mi300x", "speed_llama", "restores.csv.gz"))
+    rid4 = PF.run("20261016-034902-m10-grid-int4-llama")
     g = d[(d.run_id == rid4) & (d.config == "E1") & (d["mode"] == "load_only") & (d.bw_name == "cpu") & (d.fp8_read > 0)]
     dq = (g.t_dequant / g.fp8_read).groupby(g.gpu_state).median()
     b32 = float(bw["targets"]["b32"]["GiBps"])

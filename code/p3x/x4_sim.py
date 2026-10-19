@@ -32,11 +32,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CODE = os.path.dirname(HERE)
 REPO = os.path.dirname(CODE)
 # 只用 CPU；成本常數固定用 MI300X（env_3090.sh 會把 M7_RES 指到 3090 的目錄，這裡蓋掉）
+# 2026-10-19：P3_CONST=h200 時改用 H200 的 C1 與 busy（code/p3_platform.py）；限速層兩台都用 MI300X 的 tier_params。沒設＝原本
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 os.environ["HIP_VISIBLE_DEVICES"] = ""
-MI300X_RES = os.path.join(REPO, "results", "m7_write_policy_mi300x")
+sys.path.insert(0, CODE)
+import p3_platform as PF  # noqa: E402
+MI300X_RES = PF.rdir("m7_write_policy_mi300x")       # 名字沿用；h200 時是 results/m7_write_policy_h200
 os.environ["M7_RES"] = MI300X_RES
-os.environ["M7_TIER_PARAMS"] = os.path.join(MI300X_RES, "tier_params.json")
+os.environ["M7_TIER_PARAMS"] = PF.TIER_PARAMS
 os.environ["M7_F_CSV"] = os.path.join(MI300X_RES, "calib_c1.csv")
 os.environ.pop("M7_CHUNK_BYTES", None)
 os.environ.pop("M7_CPU_GIBPS", None)
@@ -51,12 +54,13 @@ MiB = 1 << 20
 assert CB == 64 * MiB, CB
 BLOCK_TOK = 512
 TRACE_DIR = os.environ.get("X4_TRACE_DIR", os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "mooncake/traces"))
-OUT = os.path.join(REPO, "results", "p3_explore", "x4")
+OUT = PF.explore_out("x4")
 RID = os.environ.get("RUN_ID", "adhoc")
 RUNS = os.environ.get("TIARA_RUNS", "/ssd8/hungwei/paper-hkv/runs")
 INF = float("inf")
-B32 = dict(read_GiBps=1.4668, write_GiBps=1.4668, c_ms=0.0, k_read=1.0,
-           note="b*=32 Llama：results/m10_precision_mi300x/speed_llama/bw.json（run 20261015-154558-m10-calibf-llama）；"
+_B32 = json.load(open(PF.rdir("m10_precision_mi300x", "speed_llama", "bw.json")))     # mi300x：1.4668（原本寫死的值，run 20261015-154558）
+B32 = dict(read_GiBps=float(_B32["targets"]["b32"]["GiBps"]), write_GiBps=float(_B32["targets"]["b32"]["GiBps"]), c_ms=0.0, k_read=1.0,
+           note=f"b*=32 Llama：{os.path.relpath(PF.rdir('m10_precision_mi300x', 'speed_llama', 'bw.json'), REPO)}（run {_B32['run_id']}）；"
                 "寫＝讀、k_read=1 是假設（限速層沒有寫入干擾校準）")
 
 
@@ -645,7 +649,7 @@ def cmd_validate(a):
     f, _, _, _ = f_ext()
     ok_all = True
     # ---- V1：r1_sim 的全部 S4L、free 格 ----
-    ref = pd.read_csv(os.path.join(REPO, "results", "m7_explore_mi300x", "r1_sim_llama31_8b.csv"))
+    ref = pd.read_csv(PF.rdir("m7_explore_mi300x", "r1_sim_llama31_8b.csv"))
     ref = ref[(ref.strategy == "S4L") & (ref.release == "free")]
     v1 = []
     f80 = f[:80]
@@ -732,7 +736,7 @@ def cmd_validate(a):
                     max_abs_diff_s=worst4b, ok=worst4b == 0.0))
     # ---- V2：x4 載入 → m8_trace_oracle.run_lru 的命中數＝D4 的 cpu_hits ----
     import m8_trace_oracle as D4
-    d4 = pd.concat([pd.read_csv(os.path.join(REPO, "results", "m8_directions", x))
+    d4 = pd.concat([pd.read_csv(PF.rdir("m8_directions", x))
                     for x in ("d4_sim.csv", "d4_sim2.csv", "d4_sim3.csv")], ignore_index=True)
     if "gpu_blocks" in d4:
         d4["gpu_blocks"] = d4["gpu_blocks"].fillna(0)

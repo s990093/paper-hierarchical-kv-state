@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from datetime import datetime
 
 import numpy as np
@@ -22,7 +23,9 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-OUT = os.path.join(REPO, "results", "p3_explore", "x8")
+sys.path.insert(0, os.path.dirname(HERE))
+import p3_platform as PF  # noqa: E402  （P3_CONST：沒設＝MI300X；h200＝results/*_h200）
+OUT = PF.explore_out("x8")
 KEYS = ["length", "G_GiB", "C_GiB", "slow", "gpu", "H_s"]
 
 

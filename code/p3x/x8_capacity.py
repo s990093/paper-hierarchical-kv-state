@@ -23,7 +23,7 @@ sys.path.insert(0, HERE)
 import x8_sim as X  # noqa: E402
 
 REPO = X.REPO
-OUT = os.path.join(REPO, "results", "p3_explore", "x8")
+OUT = X.PF.explore_out("x8")
 LLAMA = glob.glob(os.path.join(os.environ.get("TIARA_HF_HUB", "/ssd8/hungwei/paper-hkv/hf-cache/hub"), "models--unsloth--Llama-3.1-8B-Instruct/snapshots/*/"))[0]
 GiB = 1 << 30
 

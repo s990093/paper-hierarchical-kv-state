@@ -37,11 +37,12 @@ from m7_restore_harness import GiB, Tier  # noqa: E402
 from m7_sim import CB, sim_restore  # noqa: E402
 
 MiB = 1 << 20
-TIER_PARAMS = os.path.join(REPO, "results", "m7_write_policy_mi300x", "tier_params.json")
-BUSY_LEVELS = os.path.join(REPO, "results", "m7_write_policy_mi300x", "busy_levels.json")
-SPEED = os.path.join(REPO, "results", "m10_precision_mi300x", "speed_{m}")
-PARTS = os.path.join(REPO, "results", "m10_sweep_mi300x", "parts", "parts_{m}.json")
-OUT = os.path.join(REPO, "results", "p3_explore", "x3")
+import p3_platform as PF  # noqa: E402  （P3_CONST：沒設＝MI300X；h200＝results/*_h200，限速層兩台都用 MI300X 的）
+TIER_PARAMS = PF.TIER_PARAMS
+BUSY_LEVELS = PF.rdir("m7_write_policy_mi300x", "busy_levels.json")
+SPEED = PF.rdir("m10_precision_mi300x", "speed_{m}")
+PARTS = PF.rdir("m10_sweep_mi300x", "parts", "parts_{m}.json")
+OUT = PF.explore_out("x3")
 MODELS = ("llama", "qwen")
 PRECS = ("bf16", "int4")
 GPUS = ("idle", "busy")

@@ -31,7 +31,9 @@ import pandas as pd  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-OUT = os.path.join(REPO, "results", "p3_explore", "x3")
+sys.path.insert(0, os.path.dirname(HERE))
+import p3_platform as PF  # noqa: E402  （P3_CONST：沒設＝MI300X；h200＝results/*_h200）
+OUT = PF.explore_out("x3")
 GiB = 1 << 30
 NMAX = 256
 # 文獻常數（出處見 X3 文件 §5）

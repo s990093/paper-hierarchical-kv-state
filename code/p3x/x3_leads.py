@@ -32,7 +32,9 @@ import numpy as np  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-OUT = os.path.join(REPO, "results", "p3_explore", "x3")
+sys.path.insert(0, os.path.dirname(HERE))
+import p3_platform as PF  # noqa: E402  （P3_CONST：沒設＝MI300X；h200＝results/*_h200）
+OUT = PF.explore_out("x3")
 DS = os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets")
 HUB = os.environ.get("TIARA_HF_HUB", "/ssd8/hungwei/paper-hkv/hf-cache/hub")
 TOK = {"qwen": f"{HUB}/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/e28526f7bb80e2a9c8af03b831a9af3812f18fba",
