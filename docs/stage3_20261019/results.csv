@@ -259,6 +259,7 @@ I1-pred,mix_len|N=8|busy2|load+50%,ttft_p95 gain per-request best vs rr×cake,0.
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_p95 gain joint vs per-request best,-0.2435,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_mean gain per-request best vs rr×cake,0.2317,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_mean gain joint vs per-request best,-0.3288,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
+I3s,main scan (96 cells),pre-registered kappa vs best existing rule (P95 TTFT),0/96 cells >=5%,,simulated,ok,20261019-141254-m16-pausesim,results/m16_stage3_mi300x/i3_pause_sim/summary.json
 S1,,,,,,NOT_MEASURED,,
 I4,,,,,,NOT_MEASURED,,
 I1-interf,,,,,,NOT_MEASURED,,
@@ -268,6 +269,5 @@ S2,,,,,,NOT_MEASURED,,
 V0,,,,,,NOT_MEASURED,,
 F2,,,,,,NOT_MEASURED,,
 F1,,,,,,NOT_MEASURED,,
-I3s,,,,,,NOT_MEASURED,,
 I3g,,,,,,NOT_MEASURED,,
 C1b,,,,,,NOT_MEASURED,,

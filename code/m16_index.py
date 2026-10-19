@@ -100,11 +100,22 @@ def i4():
     return rows
 
 
+def i3s():
+    rows = []
+    p = os.path.join(RES, "i3_pause_sim/summary.json")
+    if not os.path.exists(p):
+        return rows
+    d = json.load(open(p))
+    rows.append(dict(exp="I3s", cell="main scan (96 cells)", metric="pre-registered kappa vs best existing rule (P95 TTFT)",
+                     value="0/96 cells >=5%", unit="", kind="simulated", status="ok", run_id=d["run_id"], source=rel(p)))
+    return rows
+
+
 PLANNED = ["S1", "I4", "I1-interf", "I1-grid", "C1a", "S2", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:

@@ -1,0 +1,980 @@
+run_id,ts,what,policy,kind,model,C,cap,gap,ctx_band,gap_band,a,b,n_a,n_b
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,8,tight,mooncake,32–64K,≥5m,partial,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,8,mid,mooncake,32–64K,≥5m,partial,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa,return,llama,32,tight,ln5,32–64K,10–60s,cpu,none,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,32,tight,ln5,32–64K,10–60s,cpu,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,oracle,return,llama,32,tight,ln5,<8K,10–60s,cpu,prefetching,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,32,tight,ln30,<8K,10–60s,cpu,gpu,1214,1214
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,32,tight,ln30,≥64K,10–60s,ssd,cpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,oracle,return,llama,32,tight,ln30,8–32K,1–5m,prefetching,cpu,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,oracle,return,llama,32,mid,ln30,32–64K,1–5m,gpu,cpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,32,mid,ln120,8–32K,1–5m,cpu,gpu,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,32,mid,ln120,32–64K,≥5m,partial,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,oracle,return,llama,32,mid,ln120,8–32K,≥5m,prefetching,gpu,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa,return,llama,32,loose,ln120,<8K,≥5m,cpu,gpu,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,model llama↔qwen,kappa_tier,return,llama,32,loose,ln120,<8K,≥5m,cpu,gpu,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,8,tight,mooncake,32–64K,≥5m,ssd,partial,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,mooncake,32–64K,≥5m,none,partial,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,8–32K,1–10s,CPU,SSD,10,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,8–32K,1–5m,CPU,SSD,62,81
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,8–32K,≥5m,CPU,SSD,29,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,8–32K,10–60s,DROP,SSD,32,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,32–64K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,32–64K,end,DROP,SSD,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,8–32K,1–10s,CPU,SSD,10,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,8–32K,1–5m,CPU,SSD,62,77
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,8–32K,≥5m,CPU,SSD,29,28
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,8–32K,10–60s,DROP,SSD,32,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,32–64K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,32–64K,end,DROP,SSD,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,mooncake,<8K,≥5m,none,ssd,70,70
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,mooncake,8–32K,1–5m,DROP,SSD,31,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,mooncake,8–32K,10–60s,DROP,SSD,16,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,mooncake,8–32K,≥5m,DROP,SSD,17,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,mooncake,32–64K,1–5m,DROP,SSD,9,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,mooncake,32–64K,≥5m,DROP,SSD,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,mooncake,8–32K,≥5m,none,gpu,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,llama,8,tight,ln5,<8K,1–5m,cpu,none,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln5,<8K,1–5m,none,cpu,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln5,8–32K,<1s,CPU,SSD,14,18
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln5,8–32K,end,DROP,SSD,139,140
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln5,8–32K,1–10s,CPU,SSD,59,55
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln5,8–32K,10–60s,CPU,SSD,23,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln5,32–64K,1–10s,DROP,SSD,10,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln5,8–32K,<1s,CPU,SSD,14,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln5,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln5,8–32K,1–10s,CPU,SSD,59,59
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln5,8–32K,10–60s,CPU,SSD,23,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln5,32–64K,1–10s,DROP,SSD,10,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln5,8–32K,10–60s,DROP,SSD,15,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln5,8–32K,1–10s,DROP,SSD,29,22
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln5,8–32K,<1s,DROP,SSD,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln5,32–64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,ln5,<8K,1–5m,none,gpu,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,8,tight,ln30,<8K,≥5m,gpu,prefetching,21,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln30,8–32K,end,DROP,SSD,140,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln30,8–32K,10–60s,CPU,SSD,42,48
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln30,8–32K,1–10s,CPU,SSD,16,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln30,32–64K,10–60s,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln30,8–32K,end,DROP,SSD,140,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln30,8–32K,10–60s,CPU,SSD,42,48
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln30,8–32K,1–10s,CPU,SSD,16,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln30,32–64K,10–60s,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln30,8–32K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln30,32–64K,10–60s,DROP,SSD,7,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln30,8–32K,10–60s,DROP,SSD,15,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,ln30,<8K,≥5m,none,gpu,21,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln120,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln120,8–32K,1–5m,CPU,SSD,37,44
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln120,8–32K,10–60s,CPU,SSD,25,25
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln120,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,tight,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,tight,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln120,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln120,8–32K,1–5m,CPU,SSD,37,44
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln120,8–32K,10–60s,CPU,SSD,25,25
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln120,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,tight,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,tight,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln120,8–32K,≥5m,DROP,SSD,8,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln120,8–32K,10–60s,DROP,SSD,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,tight,ln120,8–32K,1–5m,DROP,SSD,16,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,tight,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,8,mid,mooncake,32–64K,≥5m,ssd,partial,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,mooncake,32–64K,≥5m,none,partial,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,8–32K,1–10s,CPU,SSD,10,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,8–32K,1–5m,CPU,SSD,62,81
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,8–32K,≥5m,CPU,SSD,29,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,8–32K,10–60s,DROP,SSD,32,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,32–64K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,32–64K,end,DROP,SSD,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,8–32K,1–10s,CPU,SSD,10,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,8–32K,1–5m,CPU,SSD,62,77
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,8–32K,≥5m,CPU,SSD,29,28
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,8–32K,10–60s,DROP,SSD,32,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,32–64K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,32–64K,end,DROP,SSD,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,mooncake,<8K,≥5m,none,ssd,70,70
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,mooncake,8–32K,1–5m,DROP,SSD,31,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,mooncake,8–32K,10–60s,DROP,SSD,16,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,mooncake,8–32K,≥5m,DROP,SSD,17,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,mooncake,32–64K,1–5m,DROP,SSD,9,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,mooncake,32–64K,≥5m,DROP,SSD,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,mooncake,8–32K,≥5m,none,gpu,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,llama,8,mid,ln5,<8K,1–5m,cpu,none,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln5,<8K,1–5m,none,cpu,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln5,8–32K,<1s,CPU,SSD,14,18
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln5,8–32K,end,DROP,SSD,139,140
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln5,8–32K,1–10s,CPU,SSD,59,55
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln5,8–32K,10–60s,CPU,SSD,23,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln5,32–64K,1–10s,DROP,SSD,10,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln5,8–32K,<1s,CPU,SSD,14,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln5,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln5,8–32K,1–10s,CPU,SSD,59,59
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln5,8–32K,10–60s,CPU,SSD,23,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln5,32–64K,1–10s,DROP,SSD,10,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln5,8–32K,10–60s,DROP,SSD,15,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln5,8–32K,1–10s,DROP,SSD,29,22
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln5,8–32K,<1s,DROP,SSD,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln5,32–64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,ln5,<8K,1–5m,none,gpu,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,8,mid,ln30,<8K,≥5m,gpu,prefetching,21,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln30,8–32K,end,DROP,SSD,140,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln30,8–32K,10–60s,CPU,SSD,42,48
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln30,8–32K,1–10s,CPU,SSD,16,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln30,32–64K,10–60s,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln30,8–32K,end,DROP,SSD,140,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln30,8–32K,10–60s,CPU,SSD,42,48
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln30,8–32K,1–10s,CPU,SSD,16,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln30,32–64K,10–60s,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln30,8–32K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln30,32–64K,10–60s,DROP,SSD,7,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln30,8–32K,10–60s,DROP,SSD,15,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,ln30,<8K,≥5m,none,gpu,21,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln120,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln120,8–32K,1–5m,CPU,SSD,37,44
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln120,8–32K,10–60s,CPU,SSD,25,25
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln120,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,8,mid,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,8,mid,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln120,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln120,8–32K,1–5m,CPU,SSD,37,44
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln120,8–32K,10–60s,CPU,SSD,25,25
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln120,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,8,mid,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,8,mid,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln120,8–32K,≥5m,DROP,SSD,8,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln120,8–32K,10–60s,DROP,SSD,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,8,mid,ln120,8–32K,1–5m,DROP,SSD,16,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,8,mid,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,tight,mooncake,<8K,1–5m,gpu,ssd,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,<8K,1–5m,none,ssd,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,≥64K,1–5m,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,mooncake,32–64K,1–5m,DROP,SSD,10,18
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,mooncake,32–64K,end,DROP,SSD,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,mooncake,32–64K,10–60s,DROP,SSD,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,mooncake,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,mooncake,≥64K,1–5m,DROP,SSD,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,mooncake,32–64K,≥5m,DROP,SSD,8,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,mooncake,<8K,10–60s,none,gpu,147,147
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,mooncake,≥64K,1–5m,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,mooncake,32–64K,10–60s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,mooncake,32–64K,1–5m,DROP,SSD,10,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,mooncake,32–64K,end,DROP,SSD,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,mooncake,32–64K,10–60s,DROP,SSD,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,mooncake,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,mooncake,≥64K,1–5m,DROP,SSD,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,mooncake,32–64K,≥5m,DROP,SSD,8,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,<8K,10–60s,none,gpu,147,147
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,8–32K,10–60s,none,ssd,76,76
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,<8K,1–5m,none,ssd,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,≥64K,1–5m,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,mooncake,32–64K,10–60s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,mooncake,8–32K,10–60s,CPU,SSD,44,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,mooncake,32–64K,1–5m,DROP,SSD,12,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,mooncake,≥64K,1–5m,DROP,SSD,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,mooncake,32–64K,≥5m,DROP,SSD,11,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,mooncake,<8K,1–5m,none,gpu,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,mooncake,≥64K,1–5m,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,llama,32,tight,ln5,<8K,10–60s,cpu,none,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,llama,32,tight,ln5,8–32K,10–60s,cpu,none,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,tight,ln5,<8K,10–60s,cpu,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,tight,ln5,8–32K,10–60s,cpu,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,tight,ln5,<8K,1–10s,cpu,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,tight,ln5,<8K,1–5m,cpu,none,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,<8K,10–60s,none,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,8–32K,10–60s,none,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln5,32–64K,1–10s,DROP,SSD,35,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln5,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln5,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln5,8–32K,<1s,none,cpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln5,32–64K,1–10s,DROP,SSD,35,35
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln5,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln5,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,<8K,1–10s,none,ssd,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,8–32K,1–10s,none,ssd,262,262
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,8–32K,<1s,none,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,<8K,10–60s,none,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,8–32K,10–60s,none,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln5,32–64K,1–10s,DROP,SSD,35,35
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln5,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln5,8–32K,<1s,none,cpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,tight,ln30,8–32K,1–5m,cpu,prefetching,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,<8K,1–5m,none,ssd,463,463
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,8–32K,1–5m,none,ssd,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,8–32K,≥5m,none,ssd,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,≥64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln30,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln30,32–64K,1–10s,DROP,SSD,7,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln30,32–64K,10–60s,DROP,SSD,14,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln30,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln30,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln30,≥64K,10–60s,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln30,32–64K,10–60s,none,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln30,32–64K,1–10s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln30,≥64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln30,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln30,32–64K,1–10s,DROP,SSD,7,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln30,32–64K,10–60s,DROP,SSD,14,25
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln30,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln30,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln30,≥64K,10–60s,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,8–32K,10–60s,none,ssd,229,229
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,<8K,10–60s,none,ssd,1214,1214
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,8–32K,1–10s,none,ssd,53,53
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,<8K,1–5m,none,ssd,463,463
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,8–32K,1–5m,none,ssd,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,32–64K,10–60s,none,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,8–32K,≥5m,none,ssd,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,32–64K,1–10s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln30,≥64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln30,8–32K,10–60s,CPU,SSD,115,115
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln30,8–32K,1–10s,DROP,SSD,21,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln30,32–64K,10–60s,DROP,SSD,11,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln30,<8K,<1s,CPU,DROP,8,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln30,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln30,≥64K,10–60s,DROP,SSD,8,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln30,32–64K,10–60s,gpu,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln30,≥64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,<8K,≥5m,none,ssd,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,8–32K,≥5m,none,ssd,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,≥64K,1–5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln120,32–64K,end,DROP,SSD,27,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln120,32–64K,1–5m,DROP,SSD,9,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln120,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln120,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,tight,ln120,≥64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln120,32–64K,10–60s,gpu,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,tight,ln120,≥64K,1–5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln120,32–64K,end,DROP,SSD,27,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln120,32–64K,1–5m,DROP,SSD,9,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln120,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln120,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,tight,ln120,≥64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,8–32K,10–60s,none,ssd,92,92
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,<8K,1–5m,none,ssd,1104,1104
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,<8K,≥5m,none,ssd,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,8–32K,≥5m,none,ssd,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,32–64K,10–60s,gpu,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,tight,ln120,≥64K,1–5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln120,8–32K,10–60s,DROP,SSD,28,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln120,32–64K,1–5m,DROP,SSD,10,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln120,32–64K,≥5m,DROP,SSD,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,tight,ln120,≥64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,tight,ln120,≥64K,1–5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,mooncake,≥64K,1–5m,cpu,gpu,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,mooncake,32–64K,≥5m,prefetching,cpu,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,mooncake,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,mooncake,32–64K,10–60s,DROP,CPU,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,mooncake,<8K,1–5m,none,gpu,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,mooncake,32–64K,1–5m,gpu,none,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,mooncake,≥64K,1–5m,gpu,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,mooncake,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,mooncake,32–64K,10–60s,DROP,SSD,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,8–32K,10–60s,none,ssd,76,76
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,<8K,1–5m,none,gpu,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,32–64K,1–5m,gpu,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,≥64K,1–5m,gpu,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,mooncake,32–64K,10–60s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,mid,mooncake,32–64K,≥5m,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,mid,mooncake,32–64K,≥5m,none,prefetching,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,llama,32,mid,ln5,<8K,1–10s,cpu,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,llama,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,mid,ln5,<8K,1–10s,cpu,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln5,8–32K,1–10s,cpu,gpu,262,262
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln5,<8K,10–60s,cpu,gpu,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln5,8–32K,10–60s,cpu,prefetching,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln5,<8K,1–5m,cpu,prefetching,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln5,32–64K,1–10s,cpu,gpu,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln5,32–64K,1–10s,DROP,SSD,35,33
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln5,≥64K,1–10s,DROP,SSD,10,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln5,32–64K,10–60s,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln5,<8K,1–10s,none,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln5,32–64K,1–10s,DROP,SSD,35,33
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln5,32–64K,10–60s,DROP,SSD,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,<8K,1–10s,none,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,8–32K,1–10s,none,ssd,262,262
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,<8K,10–60s,none,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,8–32K,10–60s,none,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,mid,ln5,32–64K,1–10s,DROP,SSD,29,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,mid,ln5,≥64K,1–10s,DROP,SSD,10,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,llama,32,mid,ln5,32–64K,10–60s,DROP,SSD,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,mid,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,mid,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,mid,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,llama,32,mid,ln30,32–64K,1–10s,cpu,gpu,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,mid,ln30,32–64K,1–10s,cpu,gpu,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln30,32–64K,1–5m,cpu,gpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,llama,32,mid,ln30,≥64K,10–60s,cpu,gpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,8–32K,≥5m,none,partial,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln30,32–64K,end,DROP,SSD,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln30,32–64K,10–60s,CPU,SSD,15,22
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln30,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln30,32–64K,10–60s,gpu,none,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln30,32–64K,1–10s,gpu,none,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln30,≥64K,10–60s,gpu,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln30,32–64K,end,DROP,CPU,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln30,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln30,32–64K,1–10s,CPU,SSD,6,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,8–32K,10–60s,none,ssd,229,229
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,<8K,1–5m,none,ssd,463,463
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,8–32K,1–5m,none,ssd,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,32–64K,10–60s,gpu,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,8–32K,≥5m,none,ssd,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln30,≥64K,10–60s,gpu,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,mid,ln30,8–32K,1–5m,gpu,none,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,mid,ln30,32–64K,1–5m,gpu,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,mid,ln120,8–32K,1–5m,gpu,cpu,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,llama,32,mid,ln120,32–64K,≥5m,ssd,partial,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,8–32K,1–5m,gpu,cpu,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,32–64K,≥5m,none,partial,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln120,32–64K,10–60s,CPU,SSD,11,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,llama,32,mid,ln120,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,llama,32,mid,ln120,≥64K,1–5m,gpu,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln120,32–64K,1–5m,CPU,SSD,10,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,llama,32,mid,ln120,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,<8K,≥5m,none,ssd,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,8–32K,≥5m,none,ssd,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,32–64K,10–60s,none,gpu,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,llama,32,mid,ln120,≥64K,1–5m,gpu,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,llama,32,mid,ln120,<8K,≥5m,none,gpu,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,8–32K,1–10s,CPU,SSD,8,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,8–32K,1–5m,CPU,SSD,61,83
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,8–32K,≥5m,CPU,SSD,29,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,8–32K,10–60s,DROP,SSD,33,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,32–64K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,mooncake,8–32K,10–60s,none,gpu,35,35
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,mooncake,8–32K,1–5m,CPU,SSD,61,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,mooncake,8–32K,≥5m,CPU,SSD,29,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,mooncake,8–32K,10–60s,DROP,SSD,33,33
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,mooncake,32–64K,1–5m,DROP,SSD,9,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,mooncake,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,8–32K,10–60s,none,gpu,35,35
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,<8K,≥5m,none,ssd,70,70
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,mooncake,8–32K,1–5m,DROP,SSD,31,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,mooncake,8–32K,10–60s,DROP,SSD,14,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,mooncake,8–32K,≥5m,DROP,SSD,18,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,mooncake,32–64K,1–5m,DROP,SSD,9,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,mooncake,32–64K,≥5m,DROP,SSD,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,tight,mooncake,8–32K,≥5m,none,gpu,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,tight,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,tight,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,8,tight,ln5,<8K,1–5m,cpu,none,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln5,<8K,1–5m,none,cpu,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln5,8–32K,<1s,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln5,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln5,8–32K,1–10s,CPU,SSD,58,59
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln5,8–32K,10–60s,DROP,SSD,23,31
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln5,32–64K,1–10s,DROP,SSD,10,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln5,8–32K,<1s,DROP,SSD,9,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln5,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln5,8–32K,1–10s,CPU,SSD,58,60
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln5,8–32K,10–60s,DROP,SSD,23,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln5,32–64K,1–10s,DROP,SSD,10,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln5,8–32K,10–60s,DROP,SSD,18,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln5,8–32K,1–10s,DROP,SSD,20,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln5,32–64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,tight,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln30,8–32K,end,DROP,SSD,140,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln30,8–32K,1–10s,CPU,SSD,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln30,8–32K,1–5m,CPU,SSD,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln30,8–32K,10–60s,CPU,SSD,45,49
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln30,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln30,8–32K,end,DROP,SSD,140,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln30,8–32K,1–10s,CPU,SSD,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln30,8–32K,1–5m,CPU,SSD,20,19
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln30,8–32K,10–60s,CPU,SSD,45,49
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln30,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln30,8–32K,1–5m,DROP,SSD,10,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln30,32–64K,10–60s,DROP,SSD,7,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln30,8–32K,10–60s,DROP,SSD,14,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,tight,ln30,<8K,≥5m,none,gpu,21,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,tight,ln30,32–64K,10–60s,gpu,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln120,8–32K,end,DROP,SSD,139,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln120,8–32K,1–5m,CPU,SSD,41,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln120,8–32K,10–60s,CPU,SSD,25,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,tight,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,tight,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln120,8–32K,end,DROP,SSD,139,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln120,8–32K,1–5m,CPU,SSD,41,43
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln120,8–32K,10–60s,CPU,SSD,25,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,tight,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,tight,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln120,8–32K,≥5m,DROP,SSD,8,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln120,8–32K,10–60s,DROP,SSD,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,tight,ln120,8–32K,1–5m,DROP,SSD,15,18
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,tight,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,8–32K,1–10s,CPU,SSD,8,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,8–32K,1–5m,CPU,SSD,61,83
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,8–32K,≥5m,CPU,SSD,29,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,8–32K,10–60s,DROP,SSD,33,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,32–64K,1–5m,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,mooncake,8–32K,10–60s,none,gpu,35,35
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,mooncake,8–32K,1–5m,CPU,SSD,61,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,mooncake,8–32K,end,DROP,SSD,139,139
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,mooncake,8–32K,≥5m,CPU,SSD,29,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,mooncake,8–32K,10–60s,DROP,SSD,33,33
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,mooncake,32–64K,1–5m,DROP,SSD,9,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,mooncake,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,mooncake,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,8–32K,1–5m,none,ssd,130,130
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,<8K,1–5m,none,gpu,221,221
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,8–32K,10–60s,none,gpu,35,35
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,8–32K,≥5m,none,ssd,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,<8K,≥5m,none,ssd,70,70
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,mooncake,8–32K,1–5m,DROP,SSD,31,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,mooncake,8–32K,10–60s,DROP,SSD,14,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,mooncake,8–32K,≥5m,DROP,SSD,18,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,mooncake,32–64K,1–5m,DROP,SSD,9,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,mooncake,32–64K,≥5m,DROP,SSD,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,mid,mooncake,8–32K,≥5m,none,gpu,42,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,mid,mooncake,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,mid,mooncake,32–64K,≥5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,8,mid,ln5,<8K,1–5m,cpu,none,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln5,<8K,1–5m,none,cpu,16,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln5,8–32K,<1s,DROP,SSD,9,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln5,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln5,8–32K,1–10s,CPU,SSD,58,59
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln5,8–32K,10–60s,DROP,SSD,23,31
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln5,32–64K,1–10s,DROP,SSD,10,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln5,8–32K,<1s,DROP,SSD,9,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln5,8–32K,end,DROP,SSD,139,141
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln5,8–32K,1–10s,CPU,SSD,58,60
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln5,8–32K,10–60s,DROP,SSD,23,30
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln5,32–64K,1–10s,DROP,SSD,10,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln5,32–64K,end,DROP,SSD,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln5,<8K,10–60s,none,gpu,243,243
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln5,8–32K,10–60s,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln5,8–32K,10–60s,DROP,SSD,18,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln5,8–32K,1–10s,DROP,SSD,20,16
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln5,32–64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,mid,ln5,32–64K,1–10s,none,ssd,17,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln30,8–32K,end,DROP,SSD,140,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln30,8–32K,1–10s,CPU,SSD,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln30,8–32K,1–5m,CPU,SSD,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln30,8–32K,10–60s,CPU,SSD,45,49
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln30,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln30,8–32K,end,DROP,SSD,140,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln30,8–32K,1–10s,CPU,SSD,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln30,8–32K,1–5m,CPU,SSD,20,19
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln30,8–32K,10–60s,CPU,SSD,45,49
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln30,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln30,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln30,<8K,1–5m,none,gpu,238,238
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln30,8–32K,1–5m,none,ssd,56,56
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln30,32–64K,10–60s,none,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln30,8–32K,1–5m,DROP,SSD,10,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln30,32–64K,10–60s,DROP,SSD,7,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln30,8–32K,10–60s,DROP,SSD,14,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,mid,ln30,<8K,≥5m,none,gpu,21,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,mid,ln30,32–64K,10–60s,gpu,ssd,15,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln120,8–32K,end,DROP,SSD,139,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln120,8–32K,1–5m,CPU,SSD,41,42
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln120,8–32K,10–60s,CPU,SSD,25,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,8,mid,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,8,mid,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln120,8–32K,end,DROP,SSD,139,142
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln120,8–32K,1–5m,CPU,SSD,41,43
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln120,8–32K,10–60s,CPU,SSD,25,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,8,mid,ln120,32–64K,end,DROP,SSD,13,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln120,<8K,≥5m,none,gpu,192,192
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln120,8–32K,≥5m,none,ssd,38,38
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,8,mid,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln120,8–32K,≥5m,DROP,SSD,8,11
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln120,8–32K,10–60s,DROP,SSD,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln120,32–64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,8,mid,ln120,8–32K,1–5m,DROP,SSD,15,18
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,8,mid,ln120,32–64K,1–5m,none,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,tight,mooncake,<8K,1–5m,gpu,ssd,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,<8K,1–5m,none,ssd,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,mooncake,32–64K,1–5m,DROP,SSD,9,18
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,mooncake,32–64K,end,DROP,SSD,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,mooncake,32–64K,10–60s,DROP,SSD,7,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,mooncake,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,mooncake,≥64K,1–5m,DROP,SSD,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,mooncake,32–64K,≥5m,DROP,SSD,8,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,mooncake,<8K,10–60s,none,gpu,147,147
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,mooncake,<8K,1–5m,none,gpu,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,mooncake,≥64K,1–5m,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,mooncake,32–64K,10–60s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,mooncake,32–64K,1–5m,DROP,SSD,9,17
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,mooncake,32–64K,end,DROP,SSD,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,mooncake,32–64K,10–60s,DROP,SSD,7,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,mooncake,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,mooncake,≥64K,1–5m,DROP,SSD,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,mooncake,32–64K,≥5m,DROP,SSD,8,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,<8K,10–60s,none,gpu,147,147
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,8–32K,10–60s,none,ssd,76,76
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,<8K,1–5m,none,ssd,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,≥64K,1–5m,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,mooncake,32–64K,10–60s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,mooncake,8–32K,10–60s,CPU,SSD,52,31
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,mooncake,32–64K,1–5m,DROP,SSD,12,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,mooncake,≥64K,1–5m,DROP,SSD,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,mooncake,32–64K,≥5m,DROP,SSD,12,12
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,mooncake,<8K,1–5m,none,gpu,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,mooncake,32–64K,1–5m,none,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,mooncake,≥64K,1–5m,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,tight,ln5,<8K,10–60s,cpu,none,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,tight,ln5,8–32K,10–60s,cpu,none,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,tight,ln5,32–64K,10–60s,cpu,none,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,tight,ln5,<8K,10–60s,cpu,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,tight,ln5,8–32K,10–60s,cpu,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,tight,ln5,32–64K,10–60s,cpu,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,tight,ln5,<8K,1–10s,cpu,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,tight,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,tight,ln5,<8K,1–5m,cpu,none,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,<8K,10–60s,none,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,8–32K,10–60s,none,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln5,32–64K,1–10s,DROP,SSD,35,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln5,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln5,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln5,32–64K,1–10s,DROP,SSD,35,34
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln5,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln5,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,8–32K,1–10s,none,ssd,262,262
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,<8K,1–10s,none,ssd,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,8–32K,<1s,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,<8K,10–60s,none,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,8–32K,10–60s,none,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln5,32–64K,1–10s,DROP,SSD,35,36
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln5,32–64K,10–60s,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,tight,ln30,<8K,10–60s,cpu,gpu,1214,1214
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,tight,ln30,≥64K,10–60s,ssd,cpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,<8K,10–60s,cpu,gpu,1214,1214
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,<8K,1–5m,none,ssd,463,463
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,8–32K,1–5m,none,ssd,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,8–32K,≥5m,none,ssd,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,≥64K,10–60s,ssd,cpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln30,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln30,32–64K,1–10s,DROP,SSD,5,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln30,32–64K,10–60s,DROP,SSD,14,28
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln30,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln30,32–64K,1–5m,DROP,SSD,6,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln30,≥64K,10–60s,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln30,<8K,10–60s,none,gpu,1214,1214
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln30,32–64K,10–60s,none,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln30,8–32K,≥5m,none,ssd,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln30,32–64K,1–10s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln30,≥64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln30,32–64K,end,DROP,SSD,26,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln30,32–64K,1–10s,DROP,SSD,5,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln30,32–64K,10–60s,DROP,SSD,14,23
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln30,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln30,32–64K,1–5m,DROP,SSD,6,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln30,≥64K,10–60s,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,8–32K,10–60s,none,ssd,229,229
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,<8K,10–60s,none,gpu,1214,1214
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,8–32K,1–10s,none,ssd,53,53
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,<8K,1–5m,none,ssd,463,463
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,8–32K,1–5m,none,ssd,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,32–64K,10–60s,none,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,8–32K,≥5m,none,ssd,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,32–64K,1–10s,gpu,ssd,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln30,≥64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln30,8–32K,1–10s,DROP,SSD,24,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln30,32–64K,10–60s,DROP,SSD,16,18
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln30,32–64K,1–5m,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln30,≥64K,10–60s,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln30,32–64K,10–60s,none,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln30,≥64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,tight,ln120,32–64K,10–60s,cpu,gpu,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,<8K,≥5m,none,ssd,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,8–32K,≥5m,none,ssd,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln120,32–64K,end,DROP,SSD,25,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln120,32–64K,1–5m,DROP,SSD,10,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln120,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln120,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln120,≥64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,tight,ln120,8–32K,1–10s,DROP,CPU,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln120,<8K,1–5m,none,gpu,1104,1104
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln120,32–64K,10–60s,gpu,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,tight,ln120,≥64K,1–5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln120,32–64K,end,DROP,SSD,25,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln120,32–64K,1–5m,DROP,SSD,10,19
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln120,32–64K,≥5m,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln120,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln120,≥64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,tight,ln120,8–32K,1–10s,DROP,CPU,6,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,8–32K,10–60s,none,ssd,92,92
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,<8K,1–5m,none,ssd,1104,1104
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,<8K,≥5m,none,ssd,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,8–32K,≥5m,none,ssd,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,32–64K,10–60s,gpu,ssd,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,tight,ln120,≥64K,1–5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln120,8–32K,10–60s,DROP,SSD,30,25
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln120,<8K,1–10s,CPU,SSD,18,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln120,32–64K,≥5m,DROP,SSD,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln120,≥64K,1–5m,DROP,SSD,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,tight,ln120,32–64K,1–5m,DROP,SSD,7,15
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,tight,ln120,≥64K,1–5m,none,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,mooncake,32–64K,≥5m,prefetching,cpu,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,mooncake,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,mooncake,32–64K,10–60s,CPU,SSD,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,mooncake,<8K,1–5m,none,gpu,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,mooncake,32–64K,1–5m,gpu,none,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,mooncake,≥64K,1–5m,gpu,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,mooncake,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,mooncake,32–64K,10–60s,CPU,SSD,6,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,8–32K,10–60s,none,ssd,76,76
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,<8K,1–5m,none,gpu,376,376
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,8–32K,≥5m,none,ssd,80,80
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,32–64K,1–5m,gpu,ssd,24,24
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,<8K,≥5m,none,ssd,125,125
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,≥64K,1–5m,gpu,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,mooncake,32–64K,≥5m,none,ssd,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,mid,mooncake,32–64K,≥5m,CPU,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,mid,mooncake,32–64K,≥5m,none,gpu,13,13
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,mid,ln5,<8K,1–10s,cpu,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,mid,ln5,<8K,<1s,cpu,gpu,107,107
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,mid,ln5,<8K,1–10s,cpu,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln5,<8K,1–10s,cpu,gpu,1356,1356
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln5,8–32K,1–10s,cpu,gpu,262,262
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln5,<8K,10–60s,cpu,gpu,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln5,8–32K,10–60s,cpu,prefetching,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln5,32–64K,1–10s,cpu,gpu,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,ln5,32–64K,1–10s,DROP,SSD,33,33
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,ln5,≥64K,1–10s,DROP,SSD,10,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,ln5,32–64K,10–60s,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,ln5,32–64K,1–10s,DROP,SSD,33,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,ln5,≥64K,1–10s,DROP,SSD,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,ln5,≥64K,end,DROP,SSD,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,ln5,32–64K,10–60s,DROP,SSD,6,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,8–32K,1–10s,none,ssd,262,262
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,8–32K,<1s,cpu,gpu,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,<8K,10–60s,none,ssd,475,475
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,8–32K,10–60s,none,ssd,90,90
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,<8K,1–5m,none,ssd,20,20
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,mid,ln5,32–64K,1–10s,DROP,SSD,29,27
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,mid,ln5,≥64K,1–10s,DROP,SSD,10,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,evict,qwen,32,mid,ln5,32–64K,10–60s,DROP,SSD,5,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,mid,ln5,32–64K,1–10s,none,ssd,37,37
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,mid,ln5,≥64K,1–10s,none,ssd,10,10
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,mid,ln5,32–64K,10–60s,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,mid,ln30,8–32K,10–60s,cpu,gpu,229,229
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,mid,ln30,32–64K,1–10s,cpu,gpu,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,mid,ln30,8–32K,10–60s,cpu,gpu,229,229
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,mid,ln30,8–32K,≥5m,ssd,partial,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,mid,ln30,32–64K,1–10s,cpu,gpu,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln30,32–64K,1–5m,cpu,gpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln30,≥64K,10–60s,cpu,gpu,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,8–32K,≥5m,none,partial,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,ln30,32–64K,10–60s,CPU,SSD,13,21
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,ln30,≥64K,end,DROP,SSD,6,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln30,32–64K,10–60s,gpu,none,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln30,32–64K,1–10s,none,gpu,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln30,≥64K,10–60s,gpu,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,ln30,≥64K,end,DROP,SSD,6,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,8–32K,10–60s,none,ssd,229,229
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,<8K,1–5m,none,ssd,463,463
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,8–32K,1–5m,none,ssd,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,32–64K,10–60s,gpu,ssd,29,29
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,<8K,≥5m,none,ssd,32,32
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,8–32K,≥5m,none,ssd,5,5
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,32–64K,1–5m,none,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,32–64K,1–10s,none,gpu,9,9
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln30,≥64K,10–60s,gpu,ssd,8,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,mid,ln30,8–32K,1–5m,gpu,none,89,89
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa,return,qwen,32,mid,ln120,8–32K,1–5m,cpu,gpu,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,kappa_tier,return,qwen,32,mid,ln120,8–32K,1–5m,cpu,gpu,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,GPU 忙 exo↔off,oracle,return,qwen,32,mid,ln120,8–32K,≥5m,prefetching,gpu,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,evict,qwen,32,mid,ln120,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa,return,qwen,32,mid,ln120,≥64K,1–5m,gpu,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,evict,qwen,32,mid,ln120,≥64K,end,DROP,SSD,7,8
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,8–32K,1–5m,none,ssd,220,220
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,<8K,≥5m,none,ssd,373,373
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,8–32K,≥5m,none,ssd,63,63
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,32–64K,1–5m,gpu,ssd,26,26
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,32–64K,10–60s,none,gpu,14,14
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,32–64K,≥5m,none,ssd,6,6
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,kappa_tier,return,qwen,32,mid,ln120,≥64K,1–5m,gpu,ssd,7,7
+20261019-141254-m16-pausesim,2026-10-19T14:14:48+00:00,CPU 小＋下層 NFS↔本地 SSD,oracle,return,qwen,32,mid,ln120,<8K,≥5m,none,gpu,373,373

@@ -108,6 +108,39 @@ td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-s
 .tlaxis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
 .ask { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 10px; padding: 16px 18px; display: grid; gap: 8px; }
 .src { font-size: 12px; color: var(--muted); }
+.dir { display: grid; gap: 12px; }
+.dir .head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
+.dir .head h3 { font-family: var(--f-display); font-size: 18px; }
+.dir figure { margin: 0; display: grid; gap: 6px; }
+.dir figcaption { font-size: 12.5px; color: var(--muted); }
+.dir .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px 18px; font-size: 13.5px; }
+.dir .cols > div { min-width: 0; }
+.dir .cols b { display: block; font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: .04em; }
+.dg { width: 100%; max-width: 100%; height: auto; color: var(--ink); }
+.dg text { fill: currentColor; font-family: var(--f-body); font-size: 12px; }
+.dg .t-mut { fill: var(--muted); }
+.dg .t-acc { fill: var(--accent); font-weight: 700; }
+.dg .t-on { fill: var(--bg); font-weight: 700; }
+.dg .box { fill: none; stroke: currentColor; stroke-width: 1.2; }
+.dg .cell { fill: var(--teal-soft); stroke: var(--teal); stroke-width: 1; }
+.dg .acc { fill: var(--accent); stroke: var(--accent); }
+.dg .accs { fill: none; stroke: var(--accent); stroke-width: 1.6; }
+.dg .bad { fill: var(--bad-soft); stroke: var(--bad); }
+.dg .dash { fill: none; stroke: var(--muted); stroke-dasharray: 4 3; }
+.dg .ln { fill: none; stroke: currentColor; stroke-width: 1.3; }
+.dg .ln-acc { fill: none; stroke: var(--accent); stroke-width: 1.8; }
+.dg .mk { fill: currentColor; }
+.dg .mk-acc { fill: var(--accent); }
+.tech { display: grid; gap: 8px; border-top: 1px solid var(--rule); padding-top: 10px; }
+.tech .tt { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.tg { display: grid; grid-template-columns: minmax(120px, 170px) 1fr; gap: 6px 10px; align-items: start; font-size: 13px; }
+.tg > span:first-child { padding-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.chip { font-size: 12px; padding: 1px 9px; border-radius: 999px; border: 1px solid var(--rule); white-space: nowrap; }
+.chip.have { border-color: var(--teal); background: var(--teal-soft); }
+.chip.now { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.chip.lit { color: var(--muted); }
+@media (max-width: 560px) { .tg { grid-template-columns: 1fr; } }
 .story { display: grid; gap: 6px; }
 .story .st { display: grid; gap: 8px; }
 .story .arrow { text-align: center; color: var(--accent); font-size: 20px; line-height: 1; }
@@ -151,13 +184,169 @@ td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-s
         <tr><td><b>信息稀疏</b><br><span class="tag">KV Cascade</span></td><td>新問題真的只需要少數幾段 KV 嗎？重要性分數猜得中是哪幾段嗎？</td><td class="num">①</td><td class="small">猜得中</td><td class="small">「只搬需要的部分」可以當題目；猜不中就收掉</td><td class="id">C1a→C1b</td></tr>
         <tr><td><b>擴展受限</b><br><span class="tag">KV Infinity</span></td><td>很多請求同時來、GPU 又在忙時，搬資料和重算會互相拖慢多少？會不會讓「該重算還是該搬」的答案改變？</td><td class="num">—</td><td class="small">拖慢很多，而且決定會翻轉</td><td class="small">前人假設掉的地方，最可能是新題目</td><td class="id">I4、I1、I2</td></tr>
         <tr><td><b>復用困難</b><br><span class="tag">KV Fuse</span></td><td>共用相同的前綴，什麼情況下反而變慢？</td><td class="num">—</td><td class="small">找得到明確的「不划算區域」</td><td class="small">可以當題目；全部都划算就不是問題</td><td class="id">V0、F2、F1</td></tr>
-        <tr><td><b>（情境）agent</b></td><td>agent 暫停去查資料時，它的 KV 該留著、搬走還是丟掉？這題還有沒有空間？</td><td class="num">②</td><td class="small">模擬顯示比現成作法好不到 5%</td><td class="small">agent 這次不做（「太急」是對的）</td><td class="id">I3</td></tr>
+        <tr><td><b>（情境）agent</b></td><td>agent 暫停去查資料時，它的 KV 該留著、搬走還是丟掉？這題還有沒有空間？</td><td class="num">②</td><td class="small">模擬顯示比現成作法好不到 5%</td><td class="small">agent 這次不做（「太急」是對的）<br><b style="color:var(--accent)">已有結果：0／96 格好 ≥5% → 停</b></td><td class="id">I3</td></tr>
       </tbody>
     </table>
   </div>
   <div class="panel small" style="display:grid;gap:6px">
     <b>這階段結束時你會拿到</b>
     <p class="muted">3–5 個候選題目的排名。每個候選附：問題是否真的存在（實驗數據）、前人做到哪裡（文獻）、我們的實驗有沒有訊號、下一步最該做的一個實驗。你從中挑一個當第三階段的題目。</p>
+  </div>
+</section>
+
+<section>
+  <h2>圖解：Intel 的四個方向到底在做什麼</h2>
+  <p>四個方向都在處理同一件事：KV（模型的筆記）太大，GPU 放不下，要在 GPU、CPU 記憶體、SSD 之間搬來搬去。差別在於各自試著減少哪一種浪費。圖中<span style="color:var(--accent);font-weight:700">琥珀色</span>是這個方向改變的地方。</p>
+  <div class="legend"><span><span class="chip have">我們已有</span>　repo 裡已有程式（量化、Cake、G5b、vLLM 卸載已在 MI300X 跑過；丟 token 的挑法只在 CPU 測過，第二階段 44e 會第一次在 GPU 上跑）</span><span><span class="chip now">這次要量</span>　第三階段的實驗</span><span><span class="chip lit">只看文獻</span>　前人的作法；多數只有 NVIDIA（CUDA）版本</span></div>
+
+  <div class="panel dir">
+    <div class="head"><h3>KV Shrink：壓縮</h3><span class="tag">影片的難題：存儲不足</span><span class="tag new">對應 S1、S2</span></div>
+    <figure>
+      <svg class="dg" viewBox="0 0 640 190" role="img" aria-label="同樣的 KV 壓縮後，從 GPU 搬到 CPU 的體積從 8 塊變 3 塊，CPU 空出的地方可以放別人的請求">
+        <defs><marker id="m1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,0 L8,4 L0,8 z"/></marker><marker id="m1a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mk-acc" d="M0,0 L8,4 L0,8 z"/></marker></defs>
+        <text x="145" y="20" text-anchor="middle">GPU 記憶體（快、小）</text>
+        <text x="485" y="20" text-anchor="middle">CPU 記憶體（大、慢一點）</text>
+        <text x="8" y="60" class="t-mut">原本</text>
+        <rect class="box" x="70" y="32" width="150" height="46" rx="4"/>
+        <rect class="cell" x="78" y="38" width="14" height="34"/><rect class="cell" x="95" y="38" width="14" height="34"/><rect class="cell" x="112" y="38" width="14" height="34"/><rect class="cell" x="129" y="38" width="14" height="34"/><rect class="cell" x="146" y="38" width="14" height="34"/><rect class="cell" x="163" y="38" width="14" height="34"/><rect class="cell" x="180" y="38" width="14" height="34"/><rect class="cell" x="197" y="38" width="14" height="34"/>
+        <line class="ln" x1="228" y1="55" x2="400" y2="55" marker-end="url(#m1)"/>
+        <text x="314" y="47" text-anchor="middle">搬 8 塊</text>
+        <rect class="box" x="410" y="32" width="150" height="46" rx="4"/>
+        <rect class="cell" x="418" y="38" width="14" height="34"/><rect class="cell" x="435" y="38" width="14" height="34"/><rect class="cell" x="452" y="38" width="14" height="34"/><rect class="cell" x="469" y="38" width="14" height="34"/><rect class="cell" x="486" y="38" width="14" height="34"/><rect class="cell" x="503" y="38" width="14" height="34"/><rect class="cell" x="520" y="38" width="14" height="34"/><rect class="cell" x="537" y="38" width="14" height="34"/>
+        <text x="8" y="150" class="t-acc">Shrink</text>
+        <rect class="box" x="70" y="122" width="150" height="46" rx="4"/>
+        <rect class="cell" x="78" y="128" width="14" height="34"/><rect class="cell" x="95" y="128" width="14" height="34"/><rect class="cell" x="112" y="128" width="14" height="34"/><rect class="cell" x="129" y="128" width="14" height="34"/><rect class="cell" x="146" y="128" width="14" height="34"/><rect class="cell" x="163" y="128" width="14" height="34"/><rect class="cell" x="180" y="128" width="14" height="34"/><rect class="cell" x="197" y="128" width="14" height="34"/>
+        <line class="ln" x1="222" y1="145" x2="238" y2="145" marker-end="url(#m1)"/>
+        <rect class="accs" x="242" y="128" width="56" height="34" rx="4"/>
+        <text x="270" y="149" text-anchor="middle" class="t-acc">壓縮</text>
+        <line class="ln-acc" x1="302" y1="145" x2="400" y2="145" marker-end="url(#m1a)"/>
+        <text x="351" y="137" text-anchor="middle" class="t-acc">搬 3 塊</text>
+        <rect class="box" x="410" y="122" width="150" height="46" rx="4"/>
+        <rect class="acc" x="418" y="128" width="14" height="34"/><rect class="acc" x="435" y="128" width="14" height="34"/><rect class="acc" x="452" y="128" width="14" height="34"/>
+        <rect class="dash" x="470" y="128" width="82" height="34" rx="3"/>
+        <text x="511" y="149" text-anchor="middle" class="t-mut">空出來</text>
+        <text x="632" y="149" text-anchor="end" class="t-mut">可放別人</text>
+      </svg>
+      <figcaption>同樣的內容變小之後：搬的量少（比較快），放的地方也空出來（同時服務更多請求）。代價是壓縮、解壓要時間，有損的作法還可能影響答對率。</figcaption>
+    </figure>
+    <div class="tech">
+      <div class="tt">技術地圖</div>
+      <div class="tg"><span>量化（有損）</span><span class="chips"><span class="chip have">FP8</span><span class="chip have">INT8</span><span class="chip have">INT4 KIVI</span><span class="chip have">INT2 KIVI</span><span class="chip have">MXFP4</span><span class="chip lit">KVQuant</span><span class="chip lit">NVFP4（只有新 NVIDIA）</span></span></div>
+      <div class="tg"><span>依重要性丟 token（有損）</span><span class="chips"><span class="chip have">H2O</span><span class="chip have">SnapKV</span><span class="chip have">PyramidKV</span><span class="chip have">TOVA</span><span class="chip have">StreamingLLM</span><span class="chip have">Ada-KV</span><span class="chip have">Expected Attention</span><span class="chip have">KeyDiff</span><span class="chip lit">KVzip</span><span class="chip lit">DuoAttention</span><span class="chip now">S2：同位元組 丟 vs 量化</span></span></div>
+      <div class="tg"><span>無損壓縮</span><span class="chips"><span class="chip lit">Intel KV Shrink（QAT）</span><span class="chip lit">SplitZip（GPU，1.31–1.33 倍）</span><span class="chip lit">ZipNN</span><span class="chip lit">KVServe（盈虧公式）</span><span class="chip now">S1：CPU zstd／zlib＋只壓指數</span></span></div>
+    </div>
+    <div class="cols">
+      <div><b>作法有三種</b>量化（變低位元，有損）、依 token 重要性丟掉一部分（有損）、無損壓縮。第二階段已知：整份量化成 INT4，答對率不掉。</div>
+      <div><b>Intel 的版本（查證過）</b>唯一有程式的一個：用 Xeon 的 QAT 硬體做無損壓縮，只壓 BF16 的指數那一半。沒有公布效能數字，也不支援 AMD。</div>
+      <div><b>我們要問</b>同樣省一半空間，丟 token 和量化誰保住答對率（<span class="mono">S2</span>，你問的①）；無損壓縮在 MI300X 上、多慢的連線才划算（<span class="mono">S1</span>）。</div>
+    </div>
+  </div>
+
+  <div class="panel dir">
+    <div class="head"><h3>KV Cascade：聚焦</h3><span class="tag">影片的難題：信息稀疏</span><span class="tag new">對應 C1a、C1b</span></div>
+    <figure>
+      <svg class="dg" viewBox="0 0 640 196" role="img" aria-label="新問題只用到其中兩塊 KV，所以只把那兩塊從 CPU 搬回 GPU，其餘六塊留在 CPU">
+        <defs><marker id="m2a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mk-acc" d="M0,0 L8,4 L0,8 z"/></marker></defs>
+        <rect class="accs" x="8" y="8" width="300" height="30" rx="6"/>
+        <text x="20" y="28" class="t-acc">新問題只問到其中兩段</text>
+        <text x="8" y="62">CPU：整份 KV（8 塊）都在這</text>
+        <rect class="box" x="8" y="70" width="290" height="56" rx="4"/>
+        <rect class="cell" x="20" y="80" width="28" height="36"/><rect class="cell" x="54" y="80" width="28" height="36"/><rect class="acc" x="88" y="80" width="28" height="36"/><rect class="cell" x="122" y="80" width="28" height="36"/><rect class="cell" x="156" y="80" width="28" height="36"/><rect class="acc" x="190" y="80" width="28" height="36"/><rect class="cell" x="224" y="80" width="28" height="36"/><rect class="cell" x="258" y="80" width="28" height="36"/>
+        <text x="400" y="62">GPU：只搬相關的 2 塊</text>
+        <rect class="box" x="400" y="70" width="232" height="56" rx="4"/>
+        <rect class="acc" x="412" y="80" width="28" height="36"/><rect class="acc" x="446" y="80" width="28" height="36"/>
+        <rect class="dash" x="482" y="80" width="140" height="36" rx="3"/>
+        <text x="552" y="102" text-anchor="middle" class="t-mut">其他 6 塊先不搬</text>
+        <polyline class="ln-acc" points="102,118 102,146 426,146 426,124" marker-end="url(#m2a)"/>
+        <polyline class="ln-acc" points="204,118 204,162 460,162 460,124" marker-end="url(#m2a)"/>
+        <text x="318" y="184" text-anchor="middle" class="t-acc">只搬這 2 塊</text>
+        <text x="632" y="148" text-anchor="end" class="t-mut">需要時再拿</text>
+      </svg>
+      <figcaption>和「丟掉」不同：沒選到的還留在 CPU，後來發現需要可以再拿。關鍵在於事先猜不猜得中「哪幾塊相關」。</figcaption>
+    </figure>
+    <div class="tech">
+      <div class="tt">技術地圖</div>
+      <div class="tg"><span>生成時挑要讀的部分</span><span class="chips"><span class="chip lit">Quest（每頁 min／max 摘要）</span><span class="chip lit">InfLLM</span><span class="chip lit">ShadowKV</span><span class="chip lit">MagicPIG</span><span class="chip lit">RetrievalAttention</span><span class="chip lit">ArkVale（CPU 備份可召回）</span></span></div>
+      <div class="tg"><span>還原時只載一部分</span><span class="chips"><span class="chip lit">IMPRESS</span><span class="chip lit">ContiguousKV</span><span class="chip lit">CacheTune</span><span class="chip lit">CacheSmith（挑要重算的 token）</span><span class="chip have">QRY、ORC 挑法</span><span class="chip now">C1a：猜不猜得中下一輪</span></span></div>
+      <div class="tg"><span>「丟掉」在多輪會壞的證據</span><span class="chips"><span class="chip lit">SCBench</span><span class="chip lit">KVzip</span><span class="chip lit">EpiCache</span><span class="chip lit">RocketKV</span></span></div>
+    </div>
+    <div class="cols">
+      <div><b>作法</b>用重要性分數或每塊的摘要，挑出和新問題相關的 KV；猜錯就臨時補搬。</div>
+      <div><b>Intel 的版本（查證過）</b>只有媒體報導一句話，找不到程式或論文。</div>
+      <div><b>我們要問</b>先問「猜不猜得中」（<span class="mono">C1a</span>，你問的①：token 重要性能不能用）；猜得中才量「省多少時間」（<span class="mono">C1b</span>）。</div>
+    </div>
+  </div>
+
+  <div class="panel dir">
+    <div class="head"><h3>KV Fuse：復用</h3><span class="tag">影片的難題：復用困難</span><span class="tag new">對應 V0、F2、F1</span></div>
+    <figure>
+      <svg class="dg" viewBox="0 0 640 200" role="img" aria-label="三個請求開頭都是同一份文件：沒有復用時算三次存三份，Fuse 只算一次存一份，三個請求共用">
+        <text x="8" y="18">沒有復用</text>
+        <text x="8" y="50" class="t-mut">A</text><rect class="cell" x="26" y="32" width="180" height="28"/><text x="116" y="51" text-anchor="middle">共同前綴</text><rect class="box" x="210" y="32" width="60" height="28"/><text x="240" y="51" text-anchor="middle">問題 A</text>
+        <text x="8" y="90" class="t-mut">B</text><rect class="cell" x="26" y="72" width="180" height="28"/><text x="116" y="91" text-anchor="middle">共同前綴</text><rect class="box" x="210" y="72" width="60" height="28"/><text x="240" y="91" text-anchor="middle">問題 B</text>
+        <text x="8" y="130" class="t-mut">C</text><rect class="cell" x="26" y="112" width="180" height="28"/><text x="116" y="131" text-anchor="middle">共同前綴</text><rect class="box" x="210" y="112" width="60" height="28"/><text x="240" y="131" text-anchor="middle">問題 C</text>
+        <text x="26" y="166">前綴算 3 次、存 3 份</text>
+        <line class="ln" x1="310" y1="20" x2="310" y2="180" style="stroke-dasharray:3 4;opacity:.5"/>
+        <text x="340" y="18" class="t-acc">Fuse：共用前綴</text>
+        <rect class="acc" x="340" y="72" width="180" height="28"/><text x="430" y="91" text-anchor="middle" class="t-on">共同前綴（1 份）</text>
+        <line class="ln-acc" x1="520" y1="86" x2="560" y2="46"/><line class="ln-acc" x1="520" y1="86" x2="560" y2="86"/><line class="ln-acc" x1="520" y1="86" x2="560" y2="126"/>
+        <rect class="box" x="560" y="32" width="70" height="28"/><text x="595" y="51" text-anchor="middle">問題 A</text>
+        <rect class="box" x="560" y="72" width="70" height="28"/><text x="595" y="91" text-anchor="middle">問題 B</text>
+        <rect class="box" x="560" y="112" width="70" height="28"/><text x="595" y="131" text-anchor="middle">問題 C</text>
+        <text x="340" y="166" class="t-acc">前綴算 1 次、存 1 份</text>
+        <text x="340" y="188" class="t-mut">但很多請求同時搶同一份時，可能排隊變慢</text>
+      </svg>
+      <figcaption>很多請求開頭一樣（同一份系統提示、同一份文件、agent 的同一段歷史），就共用同一份 KV，不用重算。</figcaption>
+    </figure>
+    <div class="tech">
+      <div class="tt">技術地圖</div>
+      <div class="tg"><span>前綴快取</span><span class="chips"><span class="chip have">vLLM APC</span><span class="chip lit">SGLang RadixAttention</span><span class="chip lit">Marconi</span></span></div>
+      <div class="tg"><span>非前綴的復用</span><span class="chips"><span class="chip lit">CacheBlend</span><span class="chip lit">EPIC</span><span class="chip lit">KVLink</span><span class="chip lit">APE</span><span class="chip lit">Block-Attention</span></span></div>
+      <div class="tg"><span>跨請求／跨機器共享</span><span class="chips"><span class="chip have">vLLM 卸載到 CPU</span><span class="chip lit">LMCache</span><span class="chip lit">Mooncake</span><span class="chip lit">SGLang HiCache</span><span class="chip lit">Dynamo KVBM</span><span class="chip lit">py-kvcache（單請求打平點）</span><span class="chip now">F2：同時搶同一份前綴</span><span class="chip now">F1：不划算的邊界</span></span></div>
+    </div>
+    <div class="cols">
+      <div><b>作法</b>vLLM 的前綴快取（APC）；放不下時搬到 CPU 的共享快取。</div>
+      <div><b>Intel 的版本（查證過）</b>只有媒體報導一句話，找不到程式。</div>
+      <div><b>我們要問</b>什麼時候共用反而變慢：vLLM 已知的 bug（<span class="mono">F2</span>），和重疊程度 × 容量 × 同時請求數的邊界（<span class="mono">F1</span>）。</div>
+    </div>
+  </div>
+
+  <div class="panel dir">
+    <div class="head"><h3>KV Infinity：按需載入＋預測預取</h3><span class="tag">影片的難題：擴展受限</span><span class="tag new">對應 I4、I1、I2、I3</span></div>
+    <figure>
+      <svg class="dg" viewBox="0 0 640 200" role="img" aria-label="agent 暫停時 KV 被搬到 CPU；沒有預取時回來要等搬回，預測預取在暫停快結束時先搬回，回來馬上可以回答">
+        <defs><marker id="m4" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path class="mk" d="M0,0 L8,4 L0,8 z"/></marker><marker id="m4a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-acc" d="M0,0 L8,4 L0,8 z"/></marker></defs>
+        <text x="380" y="18" text-anchor="middle" class="t-mut">使用者回來</text>
+        <line class="ln" x1="380" y1="24" x2="380" y2="150" style="stroke-dasharray:3 4;opacity:.6"/>
+        <text x="8" y="57" class="t-mut">沒有預取</text>
+        <rect class="cell" x="90" y="40" width="90" height="28"/><text x="135" y="59" text-anchor="middle">回答</text>
+        <rect class="dash" x="180" y="40" width="200" height="28"/><text x="280" y="59" text-anchor="middle" class="t-mut">暫停：KV 搬到 CPU</text>
+        <rect class="bad" x="380" y="40" width="100" height="28"/><text x="430" y="59" text-anchor="middle">等 KV 搬回</text>
+        <rect class="cell" x="480" y="40" width="90" height="28"/><text x="525" y="59" text-anchor="middle">回答</text>
+        <text x="8" y="127" class="t-acc">預測預取</text>
+        <rect class="cell" x="90" y="110" width="90" height="28"/><text x="135" y="129" text-anchor="middle">回答</text>
+        <rect class="dash" x="180" y="110" width="200" height="28"/><text x="238" y="129" text-anchor="middle" class="t-mut">暫停</text>
+        <rect class="acc" x="296" y="113" width="82" height="22" rx="3"/><text x="337" y="128" text-anchor="middle" class="t-on">先搬回</text>
+        <rect class="cell" x="380" y="110" width="90" height="28"/><text x="425" y="129" text-anchor="middle">回答</text>
+        <line class="ln-acc" x1="474" y1="156" x2="566" y2="156" marker-start="url(#m4a)" marker-end="url(#m4a)"/>
+        <text x="520" y="174" text-anchor="middle" class="t-acc">省下的等待</text>
+        <line class="ln" x1="90" y1="190" x2="630" y2="190" marker-end="url(#m4)"/>
+        <text x="628" y="184" text-anchor="end" class="t-mut">時間</text>
+      </svg>
+      <figcaption>KV 放在比 GPU 大的地方（CPU、SSD），需要時才搬回（按需載入），所以上下文可以比 GPU 記憶體長；如果猜得到什麼時候需要，就提前搬（預測預取），使用者不用等。</figcaption>
+    </figure>
+    <div class="tech">
+      <div class="tt">技術地圖</div>
+      <div class="tg"><span>分層放置（卸載）</span><span class="chips"><span class="chip have">vLLM OffloadingConnector</span><span class="chip lit">LMCache</span><span class="chip lit">Mooncake</span><span class="chip lit">FlexGen</span><span class="chip lit">Strata</span></span></div>
+      <div class="tg"><span>還原時一邊算一邊搬</span><span class="chips"><span class="chip have">Cake</span><span class="chip have">G5b（第二階段）</span><span class="chip lit">HCache</span><span class="chip lit">KVPR</span><span class="chip lit">CacheFlow（整批請求）</span><span class="chip now">I1：算和搬互相拖慢多少</span></span></div>
+      <div class="tg"><span>預測預取</span><span class="chips"><span class="chip lit">InfiniGen</span><span class="chip lit">KVFlow（agent 步驟）</span><span class="chip lit">Tokencake（工具時間）</span><span class="chip lit">Continuum（留多久）</span><span class="chip lit">Cascade（延遲預算）</span><span class="chip now">I3：先模擬</span></span></div>
+      <div class="tg"><span>搬運硬體</span><span class="chips"><span class="chip lit">Intel DSA／QAT（Xeon）</span><span class="chip lit">hipFile（要 ROCm 7.14＋NVMe，這台不能用）</span><span class="chip now">I4：SDMA 引擎 vs kernel 搬</span><span class="chip now">I2：搬運拖不拖慢 decode</span></span></div>
+    </div>
+    <div class="cols">
+      <div><b>作法</b>按需載入＋預測預取。Intel 說用 Xeon 的 DSA 加速搬運；AMD 沒有 DSA，對應的是 GPU 自己的搬運引擎（SDMA）。</div>
+      <div><b>Intel 的版本（查證過）</b>只有媒體報導一句話。「agent 六成時間在搬資料」找不到出處。</div>
+      <div><b>我們要問</b>搬資料用什麼方式最快（<span class="mono">I4</span>）；搬的時候會不會拖慢正在算的 GPU（<span class="mono">I1、I2</span>）；agent 暫停時預取值不值得（<span class="mono">I3</span>，你問的②）。</div>
+    </div>
   </div>
 </section>
 
@@ -306,7 +495,7 @@ td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-s
         <tr><td class="num">4</td><td class="id">S2</td><td>同樣位元組，只在載入區：刪除 block vs 降精度</td><td class="small">沒人比</td><td class="num">1 h</td><td class="small">量化全面不輸 → 刪除不是一層</td><td><span class="tag down">縮小範圍</span></td></tr>
         <tr><td class="num">5</td><td class="id">V0 → F2 → F1</td><td>vLLM 復用：F2 重現已知 bug（共用前綴時開卸載反而慢）；F1 畫重疊 × 容量 × 併發的邊界，看平均和 P95 會不會選出不同設定</td><td class="small">只有零散單點</td><td class="num">0.7＋1＋5 h</td><td class="small">所有格子差 &lt;5%，且兩個目標選的設定相同</td><td><span class="tag new">F2 新增</span></td></tr>
         <tr><td class="num">6</td><td class="id">S1</td><td>無損壓縮在 AMD／CPU 端的壓縮比與盈虧點（含 Intel KV Shrink 的作法）</td><td class="small">H200 上已有人做 GPU 端</td><td class="num">0.2 h＋CPU 1.5 h</td><td class="small">壓縮比 &lt; 1.15–1.2 倍</td><td><span class="tag down">★★★ → ★★</span></td></tr>
-        <tr><td class="num">7</td><td class="id">I3</td><td>agent 工具暫停時 KV 留／卸載／丟：先看 CPU 模擬（跑中）</td><td class="small">Cascade 四個動作都有</td><td class="num">0（模擬）</td><td class="small">比現成規則好不到 5%</td><td><span class="tag risk">新意風險高</span></td></tr>
+        <tr><td class="num">7</td><td class="id">I3</td><td>agent 工具暫停時 KV 留／卸載／丟。<b>模擬已完成</b>：事前寫死的「依 κ 選」在 96 格裡 0 格比最好的現成規則好 5% 以上（中位 −2.8%）。順帶發現：下層從本地 SSD 換成 NFS，「哪個現成規則最好」32 組裡有 31 組換人</td><td class="small">Cascade 四個動作都有</td><td class="num">0（模擬）</td><td class="small">比現成規則好不到 5%</td><td><span class="tag risk">已停</span></td></tr>
       </tbody>
     </table>
   </div>
