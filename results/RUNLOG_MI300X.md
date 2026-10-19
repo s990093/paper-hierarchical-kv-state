@@ -913,3 +913,12 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - helper：45 → 46 → 55 → 60 → 88（主線之外、只報告的品質工作；彼此、和 main 都沒有相依）。
 - 02:37:52Z main 開 44b（`20261019-023753-m10-lc-pilot-llama-64`，HIP_VISIBLE_DEVICES=1）；02:37:55Z helper 開 45（`20261019-023758-m10-f8m-qwen-T24-s0`，HIP_VISIBLE_DEVICES=0）。從每個 job 的環境變數確認卡號正確。
 - 換卡的影響：量時間的 stage 都留在 a6:00.0（和 10/18 以前同一張）；品質不看卡。如果之後有量時間的 run 落在 86:00.0，RUNLOG 會標。
+
+### 15.4 14 號的佇列（10/19 02:4xZ；排在 44d 後面、70 前面）
+
+- CPU 測試在新容器重跑（綁 4 個核心，不拖慢 44b 的試跑計時）：`tests/match_drop_cpu.py` 126 項 ALL PASS；`tests/restore2_cpu_shim.py` ALL PASS（含 drop）。
+- main 的佇列加：
+  - `44e0_md_smoke`（both）：DS1／DS2 冒煙＋檢查（列數、MASK0 的 KL、90% 的 KL、留下比例）；D3／M1／M2 速度冒煙（KV 檢查、載入位元組）。沒過就立旗子，後面那段跳過。另外寫 M2／D3 用的頻寬表 `results/m10_match_mi300x/bw_<m>.json`（每個模型的 b16／b32／b48＋nfs 0.331 GiB/s）。
+  - `44e1_ds1_screen`（one；6 個 process；逐列放 `/mlsteam/data/tiara/drop_m10`）→ `44e1z_ds_pick`（CPU，照 14 §8.5 寫 DS2 的 jobs）→ `44e2_ds2_confirm`（one）。
+  - `44e3_d3_speed`、`44e4_m2_fmt`、`44e5_m1_unit`（都是 both，在 a6:00.0）→ `44ez_md_report`（CPU）。
+- 已知的小差異：m10_speed 的 `bytes_stored` 欄對 drop 配置沒有扣掉被丟的 block（`bytes_read` 是實際讀的）；D3 只看還原時間和 `bytes_read`。
