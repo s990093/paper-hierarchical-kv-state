@@ -1004,3 +1004,19 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 好的格式（INT8、INT4 KIVI）在 Qwen 128K 也和 E0 差不多（54.1、56.5 vs 56.6）。
   - 讀法〔推論〕：和 09 大掃描同一件事——**格式本身會傷品質時，位置才有差；好的格式沒有東西可救**。寫 08／10 號時要分開講「好的格式」和「壞掉的格式」。
 - 協調（10/19 13:2xZ，第三階段 session 回覆）：它的 CPU 工作一律 `nice -n 19 taskset -c 0-3`；不開任何 GPU 行程（CPU 程式在 import 前關掉 torch.cuda，執行中看到 /dev/kfd 就自己停）；之後它的 runner 開 job 前會確認 WANT_BOTH 不在、兩個佇列都沒有 *.running／*.sh，設 HIP_VISIBLE_DEVICES、TIARA_GPU，登記 vram_reserved.json；開第一個 GPU job 前會先通知這邊。
+
+### 15.12 我的 git 推送方式讓 44ca 的一格少了 176 列 → 整格重量（10/19 13:2xZ）
+
+- **原因**：
+  - 我今天推 git 都用 `git stash -u && git rebase && git push && git stash pop`。
+  - m10_speed 的 worker 每個 launch 開著 `restores.csv` 一直寫（`open(..., "a")`）。`results/m10_longctx_mi300x/speed_llama_129024_int4_kivi/restores.csv` 在 1d378fc 被 git 追蹤（重啟前的部分資料）。
+  - stash 會換掉這個檔案；之後寫的列進了 NFS 的孤兒檔（`.nfs…`），關檔時消失。
+- **影響**：
+  - `20261019-104723-m10-lc-grid-llama-129024-int4_kivi`：L0 的 GPU 忙少 154 列（11:35 的 stash 之後到 L0 結束）、L1 的 GPU 忙少 22 列（13:19 的 stash 之後）。閒的 440 列完整。這一格的 summary.csv 是用不完整的列算的。
+  - 其他格子沒有被追蹤、也沒有正在寫，不受影響。10:51 那次 stash 沒出事，因為那次剛好先把這個檔加進了提交。
+  - helper 的品質 CSV 被 .gitignore 忽略，stash 不會碰。
+  - 另一個 session 的 `docs/stage3_20261019/` 2 個未追蹤檔被搬走又放回，內容逐位元相同。
+  - stash 裡 26 個檔案，除了已消失的 `.nfs`，都確認放回、內容相同，stash 已刪。
+- **處理**：
+  - 新增 `queue/44cab_rerun_llama128k_int4.sh`：指令和 44ca 完全相同，整格重量（2 launch × 5 rep，約 2.6 小時），排在 44ca 後、44cb 前。latest_rows 只讀最新的 run。
+  - 推 git 改用 `code/m10_queue_mi300x/gitpush.sh`（fetch → merge → push，不用 stash）。stage 還在寫的結果目錄不先加進 git。
