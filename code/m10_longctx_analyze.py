@@ -46,6 +46,8 @@ def load(raw, m):
     rows = []
     for p in sorted(glob.glob(os.path.join(raw, f"screen_{m}_*_s*.csv.gz"))):
         for r in csv.DictReader(gzip.open(p, "rt")):
+            if r.get("run_id") == "run_id":           # 10/19：續跑時多寫了一次表頭（s2 第一次 OOM 只留下表頭）→ 跳過
+                continue
             for k in ("kl", "first_ok", "first_ok_e0", "lp_read", "frac"):
                 r[k] = float(r[k]) if r[k] not in ("", None) else None
             r["gen"] = float(r["gen_score"]) if r.get("gen_score") not in ("", None) else None
