@@ -95,14 +95,39 @@ OWN = int(os.environ.get("TIARA_GPU", "0"))
 QMAIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "queue")
 
 
+# 10/19 13:4xZ：第三階段 session 要在卡 1 量時間時，會立 WANT_CARD1。helper 不再把 job 放到卡 1，
+# 已經在卡 1 的 job 停掉、放回待跑（品質 job 照題號續跑）。
+WANT1 = os.path.join(os.path.dirname(os.path.abspath(__file__)), "WANT_CARD1")
+
+
 def gpus_now():
-    """main：自己那張＋另一張。helper：自己那張；main 的佇列全部做完（沒有 .sh、.running）時也用另一張（收尾，10/19）。"""
+    """main：自己那張＋另一張。helper：自己那張；main 的佇列全部做完（沒有 .sh、.running）而且沒有 WANT_CARD1 時也用另一張（收尾）。"""
     if os.environ.get("ROLE") == "main":
         return [OWN] + [g for g in (0, 1) if g != OWN]
     if os.environ.get("ROLE") == "helper":
         main_idle = not any(f.endswith((".sh", ".running")) for f in os.listdir(QMAIN)) if os.path.isdir(QMAIN) else False
-        return [OWN] + ([g for g in (0, 1) if g != OWN] if main_idle else [])
+        return [OWN] + ([g for g in (0, 1) if g != OWN] if main_idle and not os.path.exists(WANT1) else [])
     return [OWN]
+
+
+def yield_card1(running, pending):
+    """helper 在卡 1 上的 job 停掉、放回待跑（只動卡 1；卡 0 照跑）。"""
+    for n in [n for n, (_p, _l, g) in running.items() if g == 1]:
+        p, log, _g = running.pop(n)
+        try:
+            os.killpg(p.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            p.wait(timeout=90)
+        except subprocess.TimeoutExpired:
+            os.killpg(p.pid, signal.SIGKILL)
+            p.wait()
+        log.write(f"\n[pool] YIELD 卡 1（WANT_CARD1）{time.strftime('%H:%M:%S')}\n")
+        log.close()
+        release(n)
+        pending.insert(0, next(j for j in jobs if j["name"] == n))
+        print(f"[pool] yield {n} 讓出卡 1（WANT_CARD1）{time.strftime('%H:%M:%S')}", flush=True)
 
 
 GPUS = gpus_now()
@@ -112,6 +137,8 @@ last_launch = {g: 0 for g in (0, 1)}
 while pending or running:
     if HELPER and os.path.exists(WANT):
         preempt(running)
+    if HELPER and os.path.exists(WANT1):
+        yield_card1(running, pending)
     for n, (p, log, _g) in list(running.items()):
         rc = p.poll()
         if rc is not None:

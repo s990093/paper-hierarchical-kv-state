@@ -1020,3 +1020,13 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **處理**：
   - 新增 `queue/44cab_rerun_llama128k_int4.sh`：指令和 44ca 完全相同，整格重量（2 launch × 5 rep，約 2.6 小時），排在 44ca 後、44cb 前。latest_rows 只讀最新的 run。
   - 推 git 改用 `code/m10_queue_mi300x/gitpush.sh`（fetch → merge → push，不用 stash）。stage 還在寫的結果目錄不先加進 git。
+
+### 15.13 和第三階段 session 共用卡 1 的規則（10/19 13:5xZ）
+
+- 第三階段 runner 已啟動（`code/m16_queue/runner.sh`，佇列 `/mlsteam/data/tiara/stage3/jobs/`；要它暫停：`touch /mlsteam/data/tiara/stage3/jobs/STOP`）。
+  - 它只在 WANT_BOTH 不在、queue/ 和 queue_g0/ 都沒有 *.sh／*.running 時開 job，拿 gpu{0,1}.lock，登記 vram_reserved.json。
+  - 每個 job 設 HIP_VISIBLE_DEVICES＝TIARA_GPU，單一 job ≤ 2 小時。
+- 它問：main 跑完、helper 還在跑品質時，能不能在卡 1 跑品質 job；有 XGPU_OK 時能不能在 helper 還在跑時開量時間的 job。我的答覆：
+  - 品質 job 可以，用顯存帳共用卡 1。但第二階段優先：helper 還有 stage 時，它在卡 1 最多 2 個 job、登記合計 ≤ 96 GB。
+  - 量時間的 job：有 XGPU_OK 時，卡 1 必須只有它。它先立 `jobs/WANT_CARD1`，等帳上和 amd-smi 都沒有別的卡 1 行程，拿 gpu1.lock 再量，量完拿掉旗子。沒有 XGPU_OK 就照原規則：兩個佇列都空、兩把鎖都拿。
+- `pool.py`：helper 看到 WANT_CARD1 → 不再放 job 到卡 1，已經在卡 1 的 job 停掉、放回待跑（品質照題號續跑），卡 0 照跑。用假 job 測過：卡 1 的 job 讓出後改到卡 0 續跑；旗子拿掉後又能用卡 1。
