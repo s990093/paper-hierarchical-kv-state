@@ -28,12 +28,55 @@ def preempt(running):
     print(f"[pool] PREEMPTED：停掉 {list(running)}（main 要兩張卡）{time.strftime('%H:%M:%S')}", flush=True)
     sys.exit(75)
 ENV = "source /mlsteam/workspace/paper-hierarchical-kv-state/code/m7_env.sh; "
-def free_gb(g: int) -> float:
+def _mem(g: int):
     out = subprocess.run(["amd-smi", "metric", "--mem-usage", "--json"], capture_output=True, text=True).stdout
     d = json.loads(out)
     d = d["gpu_data"] if isinstance(d, dict) else d
     d = next(x for x in d if int(x.get("gpu", -1)) == g)
-    return d["mem_usage"]["free_vram"]["value"] / 1024
+    return d["mem_usage"]["free_vram"]["value"] / 1024, d["mem_usage"]["total_vram"]["value"] / 1024
+
+
+def free_gb(g: int) -> float:
+    return _mem(g)[0]
+
+
+# 10/19 03:39Z：44c 的第 3 個 Llama 128K job（need 78 GB）開的時候卡上還空 93 GB，但前兩個還沒長到峰值 → OOM。
+# 只看「現在空多少」不夠：每個 job 開的時候登記 need_gb（峰值估計），所有 pool（main、helper）共用一本帳，
+# 同一張卡「已登記＋這個」要 ≤ 總量 − MARGIN，而且現在空的也要 ≥ need＋MARGIN（帳外的行程也算進去）。
+LEDGER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vram_reserved.json")
+
+
+def _ledger(fn):
+    import fcntl
+    with open(LEDGER + ".lock", "a") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        try:
+            d = json.load(open(LEDGER))
+        except (FileNotFoundError, ValueError):
+            d = {}
+        d = {k: v for k, v in d.items() if os.path.exists(f"/proc/{v['pid']}")}     # 行程不在了就不算
+        out = fn(d)
+        json.dump(d, open(LEDGER + ".tmp", "w"))
+        os.replace(LEDGER + ".tmp", LEDGER)
+        return out
+
+
+def reserve(name: str, g: int, need: float, total: float) -> bool:
+    def f(d):
+        used = sum(v["need"] for v in d.values() if v["gpu"] == g)
+        if used + need + MARGIN > total:
+            return False
+        d[name] = {"gpu": g, "need": need, "pid": os.getpid(), "ts": time.time()}
+        return True
+    return _ledger(f)
+
+
+def release(name: str):
+    _ledger(lambda d: d.pop(name, None))
+
+
+def reserved_by(name: str, pid: int):
+    _ledger(lambda d: d[name].update(pid=pid) if name in d else None)
 
 
 # 10/19（使用者同意）：main 的品質 pool 也用第二張卡空出來的顯存——先放自己那張（TIARA_GPU），塞不下再放另一張。
@@ -50,6 +93,7 @@ while pending or running:
         rc = p.poll()
         if rc is not None:
             log.close(); del running[n]
+            release(n)
             (done if rc == 0 else failed).append((n, rc))
             print(f"[pool] {'done' if rc == 0 else 'FAILED'} {n} rc={rc} {time.strftime('%H:%M:%S')}", flush=True)
     if failed:
@@ -67,8 +111,8 @@ while pending or running:
         for g in GPUS:                    # 每次換卡前等 75 秒（上一個 job 的顯存要先長出來，free 才準）
             if sum(1 for _p, _l, gg in running.values() if gg == g) >= P or time.time() - last_launch[g] <= 75:
                 continue
-            fg = free_gb(g)
-            if fg < j["need_gb"] + MARGIN:
+            fg, tot = _mem(g)
+            if fg < j["need_gb"] + MARGIN or not reserve(j["name"], g, j["need_gb"], tot):
                 continue
             pending.pop(0)
             log = open(f"pool_{j['name']}.log", "a")
@@ -76,6 +120,7 @@ while pending or running:
             log.flush()
             running[j["name"]] = (subprocess.Popen(["bash", "-c", f"export TIARA_GPU={g}; " + ENV + j["cmd"]], stdout=log,
                                                    stderr=subprocess.STDOUT, start_new_session=True), log, g)
+            reserved_by(j["name"], running[j["name"]][0].pid)        # 帳上記 job 的行程（pool 死了 job 還在時照樣算）
             last_launch[g] = time.time()
             print(f"[pool] start {j['name']} gpu{g} free={fg:.0f}GB running={len(running)} {time.strftime('%H:%M:%S')}", flush=True)
             break

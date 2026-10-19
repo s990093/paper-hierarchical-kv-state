@@ -930,3 +930,20 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - CPU 測（假 job、P＝1）：第 1 個到 a6、第 2 個到 86、第 3 個等 a6 空出來；環境變數 HIP_VISIBLE_DEVICES 跟著對。
 - 生效範圍：從 44c 開始（正在跑的 44b、45 的 pool 已經載入舊版）。DS1 改成每個模型 6 個 shard、DS2 的 `--shards 6`（切細一點，兩張卡比較平均）；題目、配置不變。
 - **44b 試跑做完**（10/19 02:37:52 → 03:30:04Z，6 個 job 全 exit 0）。`longctx_plan_n.py` 照試跑選「完整」：n＝12，放法 F M B R0 R1 ERR ATT AXE ORC，佔比 10–90%，有讀法 B，估計單卡 9.68 小時 → 寫出 `44c_longctx_screen.sh`（12 個 job），03:30:04Z 開跑。這是第一個用新 pool 的 stage（a6 放不下就放 86）。
+
+### 15.6 44c 的一個 job OOM → 全部 pool 共用一本顯存帳；接續成 44c_x（10/19 03:39 → 04:35Z）
+
+- `lcs-llama-252-s2`（Llama 128K，need 78 GB）03:37:48Z 開，03:39:32Z `torch.OutOfMemoryError`（`20261019-033748-m10-lc-screen-llama-252-s2`；在 `load_fmt` 的 `rel_err_centered`）。開的時候 a6 還空 93 GB，但前兩個 Llama 128K（s0、s1）還沒長到峰值。
+  - 這個問題單卡時就有：pool 只看「現在空多少」，沒算跑中的 job 還會再長。
+- 照規則 pool 不再開新的 → 44c 只會做完 s0、s1，其他 9 個不會跑。
+- 修（不改任何實驗設定）：`pool.py` 加一本所有 pool（main、helper）共用的顯存帳 `vram_reserved.json`（fcntl 鎖）。每個 job 開的時候登記 need_gb（峰值估計），同一張卡「已登記＋這個＋8 GB」要 ≤ 總量，而且現在空的也要 ≥ need＋8 GB（帳外的行程照樣算進去）。job 結束或行程不在了就從帳上拿掉。CPU 測過（3 個 78 GB 在 192 GB 的卡上只放得下 2 個；釋放、行程死掉後都會空出來）。
+- 處理：
+  - 把 s0、s1 手動登記到帳上（行程還在跑，不動它們）。
+  - 停掉 44c 的 pool（04:35Z）。照模板，44c 寫 NEEDS_HUMAN、跳過彙整、結束。
+  - 新 stage `44c_x_screen_rest`（one）用新 pool 跑剩下的 10 個 job：指令、題數、設定和 44c 完全相同，screen 照題號續跑，s2 從頭開始。最後等 s0、s1 也結束才彙整，44ca 量時間時兩張卡都會是空的。
+- 現在：a6 帳上 156 GB（s0、s1），剩下的 job 要等 s0、s1 做完；86 被 helper 的 45 佔滿。兩張卡都還在 100% 使用。
+
+### 15.7 make 看佇列（10/19 04:4xZ，使用者要求「像 H200 一樣用 make 看 queue、status」）
+
+- `code/m10_queue_mi300x/qstat.sh`＋repo 根目錄 `Makefile` 的目標：`make status`（全部）、`make q`（排隊）、`make gpu`（兩張卡的顯存、使用率、顯存帳）、`make jobs`（跑中的 job 和每個 job 的進度：第幾題、秒／題）、`make nh`（NEEDS_HUMAN）、`make done`（最近完成，台灣時間）、`make tail`（跑中 stage 的 log，`N=50` 看更多）、`make watch`（每 30 秒刷新）。時間同時給 UTC 和台灣時間。
+- NEEDS_HUMAN 舊的 6 行都已處理，移到 `NEEDS_HUMAN.handled`（附處理紀錄），`make nh` 只顯示新的。
