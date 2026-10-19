@@ -150,3 +150,81 @@
 - `code/m7_restore_harness.py`：`Restorer.drop`（預設空集合＝原本的路徑）。
 - `code/m10_speed.py`：`<底>-D<放法><佔比>` 配置。
 - CPU 測試：`code/m10_queue_mi300x/tests/match_drop_cpu.py`。
+
+## 8. 補充（10/19 01:5xZ）：D 改成大規模丟 token 掃描（DS）
+
+**這時候還沒有任何 M1、M2、D 的結果，GPU 上也還沒跑任何這一號的東西。**
+
+> **使用者 10/19**：「改狀態（精度）感覺差距不大，短 context BF16、FP8 都差不多 → 可以從直接刪掉 token 做大規模掃描，跟看各種 paper。」
+> **為什麼合理**：32K 時好的低精度格式本身就不傷答對率（主線 K1／K3、INT4 全過、43 複賽 0／12），所以「放哪裡」沒有東西可救。丟掉 token 會真的傷品質，挑法之間才會拉開。
+
+### 8.1 改了什麼
+
+- §4.3 的 D1、§4.4 的 D2 換成下面的 DS1、DS2。§4.1 的定義（遮罩＝拿掉，MASK0 對照）、§4.5 的 D3 速度、M1、M2 都不變。
+- 挑法改成照文獻。分數的定義照 NVIDIA kvpress 0.5.5（Apache-2.0）的寫法**重寫**（不是直接用它的程式：它掛在 HF 的 cache 上，我們的 KV 緩衝是自己管的）。原始碼只用來讀，放在 scratch，沒有執行。
+- 文獻與每個挑法怎麼對應：`docs/precision_20261013/cards/P08_token_drop_literature.md`。
+
+### 8.2 挑法（分數高的留下；丟掉分數最低的）
+
+| 代號 | 文獻 | 什麼時候算 | 分數 |
+|:--|:--|:--|:--|
+| STREAM | StreamingLLM（ICLR'24） | 寫入時 | 留前 4 個 token（sink）和最近的；丟最舊的 |
+| NEW | 對照 | 寫入時 | 丟最新的（和 STREAM 相反） |
+| RND0–RND2 | 對照 | 寫入時 | 隨機（3 個 seed） |
+| SNAP | SnapKV（NeurIPS'24） | 寫入時 | context 最後 64 個 token 當觀察窗，對前面每個 token 的 attention 平均，avg-pool 5，GQA 組內平均；觀察窗自己保留 |
+| TOVA | TOVA（2024） | 寫入時 | context 最後一個 token 的 attention，所有 head 平均 |
+| H2O | H2O（NeurIPS'23）／ObservedAttention | 寫入時 | 累積 attention ÷ 看得到這個 token 的 query 數。**近似**：只用均勻分布的 8 個 64-token 觀察窗（block 7、15、…、63 的最後 64 個），不是全部 32K 個 query（全部算一題要幾分鐘） |
+| PYR | PyramidKV（2024） | 寫入時 | SNAP 的分數，每層的預算照 pyramid（window 64、beta 20），只做 per-head |
+| ADA | AdaKV（2024） | 寫入時 | SNAP 的分數，同一層的 head 之間一起挑，每個 head 至少留預算的 20%，只做 per-head |
+| EXPATT | Expected Attention（kvpress，2025） | 寫入時 | 用 context 全部 query（去掉前 4 個）的平均、共變異數，加上接下來 512 個位置的平均 RoPE，算預期 attention × ‖V‖ |
+| KNORM | L2-norm（Devoto et al. 2024） | 寫入時 | −‖K‖（norm 小的留下） |
+| KEYDIFF | KeyDiff（2025） | 寫入時 | −cos(K, 平均 K)（越不像平均的留下） |
+| QRY | SnapKV 用真的問題當觀察窗（＝單輪 SnapKV、FINCH 式） | **還原時**（知道第 1 輪問題） | 第 1 輪問題每個 token 對 context 每個 token 的 attention 平均，avg-pool 5，GQA 組內平均 |
+| ORC | 作弊上限 | — | 第 1 輪答案所在的 block 全部保留，其餘照 RND0 |
+
+- 不做的（照實寫）：
+  - KVzip（要把整段 context 重建一次並記下 attention，一題幾分鐘）。
+  - DuoAttention、Q-Filters、KVP、ForesightKV、LookaheadKV（要訓練或要每個模型的權重；CLAUDE.md §8）。
+  - Quest（逐步選，不是丟；QRY 是「知道問題」的上限）。
+  - 需要 eager attention 的完整 H2O。
+
+### 8.3 粒度
+
+- **T（per-head token）**：每個（層, KV head）各自留 n_kept＝max(1, int(長度×(1−佔比))) 個 token（kvpress 的 ScorerPress）。PYR、ADA 照各自的預算。這是文獻原本的做法。
+- **P（page，16 token）**：所有層、head 一起丟同一組 page。page 分數＝每個（層, head）上「page 內 token 分數平均」的百分位排名，再對所有（層, head）平均。第一個 page 一律保留。
+- **B（block，512 token）**：同 P 的算法，但以 block 為單位，block 0 一律保留。**只有這個粒度能直接換成還原的速度（D3）**。
+- 位置類（STREAM、NEW、RND）在 P、B 照位置直接挑；ORC 只做 B、P。
+- 被丟的比例 10、25、50、75、90%。
+
+### 8.4 DS1 海選（teacher forcing，第 1 輪）
+
+- 程式：`code/m10_drop.py screen`。和 09 海選同一套 Item（prefill 一次、問題＋標準答案一次餵進去），量對 E0 的 KL、標準答案 log 機率（gold_lp）、first_ok、top1，另外記「答案所在 token 留下的比例」。
+- 題目：每個模型 T2–T5 各 24 題，seed 從 60000 起；32K。
+- 對照：E0、MASK0（全域遮罩全留）、MASK0H（per-head 遮罩全留）。
+- 報：
+  - 每個（粒度, 挑法, 佔比）的平均差和題目為單位的 bootstrap 95% CI。
+  - 對 RND 平均的配對差。
+  - 每個佔比的排名。
+  - 沒有多重比較校正，只用來挑 DS2。
+
+### 8.5 DS2 複賽（生成，兩輪；挑法寫死）
+
+- 程式：`m10_quality.py run`，配置 `DS-<粒度>-<挑法>-<佔比>`；讀法 A；新 seed 70000 起，T2–T4 各 45、T5 15。
+- **選手規則（寫死）**：每個模型、每個粒度（T、B），在 25% 和 50% 兩個佔比上，以 DS1 的 gold_lp 對 E0 的平均差（兩個佔比平均）排名。
+  - 取「寫入時」挑法（不含 RND、ORC、QRY、STREAM、NEW）的前 2 名。
+  - 再加 STREAM、RND0、QRY、ORC（ORC 只有 B）。
+  - 兩個佔比都跑。加 E0、MASK0、MASK0H。
+  - 每個模型：T 粒度 5 個挑法 × 2 個佔比＝10，B 粒度 6 個 × 2＝12，加 3 個對照，共 25 個配置。
+- 判準（只報告）：
+  1. 對 E0 的 ε（07 的 `eps_check`）。
+  2. 前 2 名、QRY、STREAM 對 RND0 的差，同一個（粒度, 佔比）裡 4 個比較用 Holm。
+  3. **多輪**：第 2 輪對 E0 的差減第 1 輪對 E0 的差，看 QRY（照第 1 輪問題挑）在第 2 輪是不是掉更多（SCBench 說的問題）。
+  4. MASK0／MASK0H 對 E0（換路徑的雜訊）。
+- 原本 §4.4 寫死的 D2 配置（B 粒度 R0–R2、F、B、ATT、QRY、ORC × 25／50%）被這一條取代：B 粒度的 STREAM＝F、NEW＝B、RND＝R，SNAP 取代 ATT。
+
+### 8.6 時間與上限
+
+- 〔估計〕DS1：每題約 240 個 teacher forcing＋分數約 15 秒，約 2 分鐘／題 × 192 題，4 個 process 一起跑約 2–3 小時。DS2：約 1.5–2 小時。
+- 這一號合計約 8–9 小時，上限改成 11 小時。
+- 砍的順序：先砍 M1 的 b16，再砍 M2 的 mxfp4，再砍 DS1 的 90%，再砍 DS2 的 P 粒度（DS2 本來就只有 T、B）。
+- 佇列：`44e0_md_smoke` → `44e1_ds1_screen` → `44e1z_ds_pick`（CPU，照 §8.5 寫出 DS2 的 jobs）→ `44e2_ds2_confirm` → `44e3_d3_speed` → `44e4_m2_fmt` → `44e5_m1_unit` → `44ez_md_report`。
