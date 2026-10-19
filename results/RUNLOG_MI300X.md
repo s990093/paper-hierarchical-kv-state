@@ -1033,3 +1033,9 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 第三階段 session 照上面的條件實作好了（它的 commit b18ff2e，`code/m16_queue/runner.sh`；兩條 runner 的 PID 158919、158920，都在等我的佇列）：
   - 量時間：兩個佇列都空 → 兩把鎖都拿。有 XGPU_OK 且 main 空 → 立 WANT_CARD1，等帳上沒有卡 1 的登記、amd-smi 卡 1 用量 < 1.5 GB（最多等 30 分鐘，等不到就拿掉旗子、延後）→ 拿 gpu1.lock 量 → 拿掉旗子。這種 run 帶 `S3_XGPU_COND=1`，結果裡會註明。
   - 品質：main 空、而且 WANT_BOTH／WANT_CARD1 都不在才開；用卡 1、拿 gpu1.lock；一次只跑 1 個，helper 還有 stage 時登記 ≤ 96 GB；每個 job 前都重新檢查 queue/。
+
+### 15.14 44ca 做完（10/19 17:31:11Z；runner v2 接手後標成完成）
+
+- 4 格都 exit 0：`20261019-104723-…-llama-129024-int4_kivi`（不完整，見 15.12，44cab 重量中）、`-132102-…-qwen-129024-int4_kivi`、`-153135-…-llama-65536-int4_kivi`、`-163608-…-qwen-65536-int4_kivi`。後 3 格 2 launch × 2 GPU 狀態 × 220 列都齊，gpu_guard 全 CLEAN。
+- 44cab（Llama 128K INT4 整格重量）17:31:11Z 開始，量時間兩張卡獨佔；接著 44cb（干擾實驗）。
+- 這 3 格的結果先提交。Llama 128K INT4 的目錄等 44cab 寫完才加進 git（15.12 的教訓）。
