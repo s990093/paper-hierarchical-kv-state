@@ -46,6 +46,16 @@ def free_gb(g: int) -> float:
 LEDGER = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vram_reserved.json")
 
 
+def alive(pid: int) -> bool:
+    """10/19 05:5xZ：容器的 PID 1 不收殭屍。pool 被停掉後留下的 job 跑完會變成殭屍，/proc/<pid> 還在。
+    44c 的 s0、s1 就這樣在帳上多佔了 156 GB，卡 1 閒了幾分鐘才被發現。所以狀態是 Z／X 也算「不在」。"""
+    try:
+        st = open(f"/proc/{pid}/stat").read().rsplit(")", 1)[1].split()[0]
+    except (OSError, IndexError):
+        return False
+    return st not in ("Z", "X")
+
+
 def _ledger(fn):
     import fcntl
     with open(LEDGER + ".lock", "a") as lk:
@@ -54,7 +64,7 @@ def _ledger(fn):
             d = json.load(open(LEDGER))
         except (FileNotFoundError, ValueError):
             d = {}
-        d = {k: v for k, v in d.items() if os.path.exists(f"/proc/{v['pid']}")}     # 行程不在了就不算
+        d = {k: v for k, v in d.items() if alive(v["pid"])}     # 行程不在了（或是殭屍）就不算
         out = fn(d)
         json.dump(d, open(LEDGER + ".tmp", "w"))
         os.replace(LEDGER + ".tmp", LEDGER)

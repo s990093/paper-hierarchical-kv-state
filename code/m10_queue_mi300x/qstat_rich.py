@@ -237,7 +237,12 @@ class Snap:
             d = json.load(open(os.path.join(J, "vram_reserved.json")))
         except Exception:
             return {}
-        return {k: v for k, v in d.items() if os.path.exists(f"/proc/{v['pid']}")}
+        def alive(pid):                                  # 殭屍（Z）不算：容器的 PID 1 不收殭屍
+            try:
+                return open(f"/proc/{pid}/stat").read().rsplit(")", 1)[1].split()[0] not in ("Z", "X")
+            except (OSError, IndexError):
+                return False
+        return {k: v for k, v in d.items() if alive(v["pid"])}
 
     def _gpus(self, lst, met):
         bdf = {}
