@@ -929,3 +929,4 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 86 上 helper 自己的品質工作照跑，main 的 job 只用剩下的顯存（pool 開每個 job 前都查 free VRAM）。品質不看卡。
 - CPU 測（假 job、P＝1）：第 1 個到 a6、第 2 個到 86、第 3 個等 a6 空出來；環境變數 HIP_VISIBLE_DEVICES 跟著對。
 - 生效範圍：從 44c 開始（正在跑的 44b、45 的 pool 已經載入舊版）。DS1 改成每個模型 6 個 shard、DS2 的 `--shards 6`（切細一點，兩張卡比較平均）；題目、配置不變。
+- **44b 試跑做完**（10/19 02:37:52 → 03:30:04Z，6 個 job 全 exit 0）。`longctx_plan_n.py` 照試跑選「完整」：n＝12，放法 F M B R0 R1 ERR ATT AXE ORC，佔比 10–90%，有讀法 B，估計單卡 9.68 小時 → 寫出 `44c_longctx_screen.sh`（12 個 job），03:30:04Z 開跑。這是第一個用新 pool 的 stage（a6 放不下就放 86）。
