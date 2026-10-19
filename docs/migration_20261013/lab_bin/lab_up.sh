@@ -25,6 +25,7 @@ bash "$HERE/10_python_stack.sh"       # venv + PyTorch(ROCm)（venv 在 workspac
 bash "$HERE/30_project.sh"            # repo + 目錄骨架 + 環境指紋
 bash "$HERE/05_hwinfo.sh"             # 硬體盤點（含 cgroup 真實配額）
 bash "$HERE/40_claude_code.sh"        # node 24 + Claude Code（都在 workspace，不用重登入）
+bash "$HERE/50_shell.sh"            # zsh + Starship + tmux（本體在 /mlsteam/workspace/shell）
 
 echo
 echo "######################  自我驗證  ######################"

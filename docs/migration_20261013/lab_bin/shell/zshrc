@@ -1,0 +1,74 @@
+# ─────────────────────────────────────────────────────────────
+#  ~/.zshrc (MI300X Lab) — oh-my-zsh + Starship + modern CLI tools
+#  Ported from the Mac ~/.zshrc (2026-10-19); the Mac file is the source of truth.
+#  Everything lives in /mlsteam/workspace/shell (NFS, survives Lab restarts);
+#  /mlsteam/workspace/bin/50_shell.sh re-links it into /root after each restart.
+# ─────────────────────────────────────────────────────────────
+SHELLDIR=/mlsteam/workspace/shell
+
+# ── Project env: the same exports 00_bootstrap.sh writes into ~/.bashrc ──
+# (PATH to venv/node/claude, HF_*, TIARA_*, CLAUDE_CONFIG_DIR …), so zsh and bash agree.
+[[ -f ~/.bashrc ]] && source <(grep '^export ' ~/.bashrc)
+export PATH="$SHELLDIR/bin:$SHELLDIR/zsh/bin:$PATH"       # starship/eza/fzf/… + zsh
+
+# ── Completions (must be on fpath before oh-my-zsh runs compinit) ──
+fpath=($SHELLDIR/oh-my-zsh/custom/plugins/zsh-completions/src $fpath)
+
+# ── oh-my-zsh ────────────────────────────────────────────────
+export ZSH="$SHELLDIR/oh-my-zsh"
+export ZSH_COMPDUMP="$SHELLDIR/cache/zcompdump-$HOST"
+ZSH_DISABLE_COMPFIX=true          # NFS files are owned by nobody; skip the insecure-dir prompt
+DISABLE_AUTO_UPDATE=true
+ZSH_THEME=""                      # prompt is drawn by Starship (see ~/.config/starship.toml)
+plugins=(git sudo extract colored-man-pages copypath copyfile)
+source $ZSH/oh-my-zsh.sh
+
+# ── History (kept on NFS so it survives restarts) ────────────
+HISTFILE=$SHELLDIR/zsh_history
+HISTSIZE=100000
+SAVEHIST=100000
+setopt HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE HIST_REDUCE_BLANKS SHARE_HISTORY
+
+# ── Modern CLI tools ─────────────────────────────────────────
+alias ls='eza --icons=auto --group-directories-first'
+alias ll='eza -l  --icons=auto --group-directories-first --git --time-style=relative'
+alias la='eza -la --icons=auto --group-directories-first --git --time-style=relative'
+alias lt='eza --tree --level=2 --icons=auto --git-ignore'
+
+export BAT_THEME="Catppuccin Mocha"
+alias bcat='bat --paging=never'
+export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_ALT_C_COMMAND='fd --type d --hidden --follow --exclude .git'
+export FZF_DEFAULT_OPTS="--height 50% --layout=reverse --border --info=inline \
+  --color=bg+:#313244,spinner:#f5e0dc,hl:#f38ba8,fg:#cdd6f4,header:#f38ba8 \
+  --color=info:#cba6f7,pointer:#f5e0dc,marker:#b4befe,fg+:#cdd6f4,prompt:#cba6f7,hl+:#f38ba8"
+export FZF_CTRL_T_OPTS="--preview 'bat --color=always --style=numbers --line-range=:300 {}'"
+export FZF_ALT_C_OPTS="--preview 'eza --tree --level=2 --icons --color=always {}'"
+source <(fzf --zsh)
+
+export _ZO_DATA_DIR=$SHELLDIR/cache                       # zoxide db on NFS
+eval "$(zoxide init zsh)"
+
+alias lg='lazygit'
+
+# ── Lab shortcuts ────────────────────────────────────────────
+alias repo='cd /mlsteam/workspace/paper-hierarchical-kv-state'
+alias cc='tmux new -A -s claude -c /mlsteam/workspace'   # attach/create the Claude tmux session
+
+# ── Secrets (API keys) live in a private file, not here ─────
+[[ -f $SHELLDIR/zshrc.local ]] && source $SHELLDIR/zshrc.local
+
+# ── Prompt ───────────────────────────────────────────────────
+eval "$(starship init zsh)"
+
+# ── Plugins that must load last ──────────────────────────────
+source $ZSH/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+bindkey '^ ' autosuggest-accept            # Ctrl-Space accepts the grey suggestion
+source $ZSH/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# ── Greeting ─────────────────────────────────────────────────
+[[ -o interactive && -z "$CLAUDECODE" && -z "$TMUX" ]] && fastfetch
