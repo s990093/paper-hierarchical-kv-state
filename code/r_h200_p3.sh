@@ -127,8 +127,19 @@ data_dl() {
       mv "$TIARA_DATASETS/$d" "$TIARA_DATASETS/$d.incomplete-$(date +%Y%m%d-%H%M%S)" || return 1
     fi
   done
+  # hf download 的 Xet chunk 快取預設放 $HF_HOME/xet（＝~/hf-cache，在 /work 的 lab 配額裡；FreeInference 7.8 GB）→
+  # 這一步的 HF_HOME 指到本地 /tmp、chunk 快取關掉。檔案本身由 --local-dir 直接寫進 $TIARA_DATASETS（也在本地 /tmp）
+  lab_quota_ok 5 || return 1
   # shellcheck disable=SC2086
-  m7run p3h-data-dl bash code/setup_3090_data.sh $P3_SOURCES
+  HF_HOME="$P3_LOCAL/hf-home-dl" HF_XET_CHUNK_CACHE_SIZE_BYTES=0 m7run p3h-data-dl bash code/setup_3090_data.sh $P3_SOURCES
+}
+lab_quota_ok() {  # lab 的 /work 配額剩不到 $1 GiB 就停：寫滿時第二階段 session 的 job 也會失敗（它 10/19 提醒的）
+  local free
+  # quota -gw：第 3 行起「檔案系統 已用KiB 配額KiB …」（head node 是 hgx-cn01:/work，compute node 是 /dev/md1；超額時已用的數字後面有 *）
+  free=$(quota -gw 2>/dev/null | awk 'NR>2 && NF>=4 {u=$2; q=$3; gsub(/\*/,"",u); print int((q-u)/1048576); exit}')
+  [ -n "$free" ] || { echo "[r_h200_p3] 查不到 lab 配額（quota -gw）→ 停（規則 7）" >&2; return 1; }
+  echo "[r_h200_p3] lab /work 配額剩 ${free} GiB（門檻 $1 GiB）"
+  [ "$free" -ge "$1" ] || { echo "[r_h200_p3] lab 配額剩不到 $1 GiB → 停" >&2; return 1; }
 }
 data_verify() {   # 每個檔的 sha256 和下載時寫的 README.txt 相同（/tmp 不保證保留：每次用之前都驗）
   # shellcheck disable=SC2086
