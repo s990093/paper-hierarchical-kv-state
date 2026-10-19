@@ -784,8 +784,8 @@ def main():
         p.add_argument("--bw-json", required=True, help="calib-f 的 bw.json")
         p.add_argument("--bw-names", nargs="+", default=["b16", "b32", "b48", "cpu"])
         p.add_argument("--gpu-states", nargs="+", default=["idle", "busy"])
-        p.add_argument("--busy-levels", default=os.path.join(HERE, "..", "results", "m7_write_policy_mi300x",
-                                                             "busy_levels.json"))
+        p.add_argument("--busy-levels", default=os.environ.get("M10_BUSY_LEVELS")      # H200：環境變數（10/19；沒設時不變）
+                       or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x", "busy_levels.json"))
         p.add_argument("--busy-key", default="busy2", help="gpu_state=busy 用 busy_levels 裡哪個 duty（約 2 倍慢）")
         p.add_argument("--fmt", default="fp8_head")
         p.add_argument("--base-fmt", default="fp8_head", help="meets.json 裡不加 @fmt 的格式（第 1 階選定的 FP8 粒度）")

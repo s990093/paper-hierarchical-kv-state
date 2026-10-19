@@ -397,7 +397,8 @@ def main():
     b.add_argument("--lengths", nargs="+", type=int, default=[32768, 65536, 129024])
     b.add_argument("--queries", nargs="+", type=int, default=[256, 1])
     b.add_argument("--states", nargs="+", default=["idle", "busy"])
-    b.add_argument("--busy-levels", default=os.path.join(HERE, "..", "results", "m7_write_policy_mi300x", "busy_levels.json"))
+    b.add_argument("--busy-levels", default=os.environ.get("M10_BUSY_LEVELS")       # H200：環境變數（10/19；沒設時不變）
+                   or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x", "busy_levels.json"))
     b.add_argument("--busy-key", default="busy2")
     b.add_argument("--warmup", type=int, default=5)
     b.add_argument("--iters", type=int, default=50)

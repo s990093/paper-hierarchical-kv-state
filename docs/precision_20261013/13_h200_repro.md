@@ -131,3 +131,42 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
 ### 11.3 δ* 用 5% 的對照（CPU，只報告，不改判）
 - 原因：Llama 的 δ*＝0.284 撐住了 Step 1 Llama 的 K1，以及對照路徑的 INT4 Llama E1sr（RUNLOG_H200「H200 的判定走完＋對照」）。
 - 做法：把 `speed_llama/noise.json` 的 δ* 換成 0.05（＝03 §5.3 的下限，也是 MI300X Llama 的值），其他輸入全部不動，用同一支 `h200_m10_analyze.sh`（`all`，加上需要時的 `compare`）在副本上重走。輸出 `analysis/sensitivity_delta005/`，README 標「只報告；H200 的判定照 δ* 0.284」。
+
+## 12. 10/19 復現 MI300X 的 13 號（還原第二輪）與 14 號（載入／計算配對、丟 block）（使用者：「繼續復現所有實驗，能提交都提交，讓 H200 最大化」；寫的時候 H200 上這兩號都沒有任何結果）
+
+**MI300X 的狀況（origin/main `c27ec61`，10/19）**：13 號的 43a–43e、44_v 有結果（RUNLOG_MI300X Milestone 14）；44cz／44d、14 號（44e0–44ez）排在 44ca／44cb 後面，還沒跑。
+
+**範圍**：`43a_rs2_smoke 43b_rs2_busy 43c_rs2_g5 43d_rs2_newfmt 43e0_rs2_attn_resmoke 43e_rs2_attn 44cz_rs2_plan44d 44d_rs_longctx`（13 號）＋`44e0_md_smoke 44e1_ds1_screen 44e1z_ds_pick 44e2_ds2_confirm 44e3_d3_speed 44e4_m2_fmt 44e5_m1_unit 44ez_md_report`（14 號）。
+
+**怎麼跑**：每個 stage 用 MI300X 的佇列腳本，經 `code/h200_port_stage.py` 轉成 H200 版，由 `code/r_h200_rs2.sh` 依序執行。轉換只換以下幾類，指令、題數、設定、判讀程式都不動：
+- 路徑；
+- run 名稱（m10h-）；
+- vLLM 用的 python；
+- 43d 讀的 43 腳本，換成 H200 自己的選手（同 §9）。
+
+轉完檢查沒有殘留的 MI300X 路徑。失敗處理照 MI300X 腳本自己的設計：寫 NEEDS_HUMAN、跳過那一段、exit 0（RUNLOG_MI300X 14.5）。腳本本身 exit ≠ 0 才停（規則 2）。
+
+**平台造成、事先寫死的差別**：
+1. **P4a／P4b（ROCm `HSA_CU_MASK` 留運算單元）在 NVIDIA 上沒有這個開關。** 43a 的 `cumask` 照樣量，預期判成「沒生效」，43b 就照 13 §3.1 拿掉 P4，H200 寫 NOT_MEASURED（平台）。冒煙檢查原本要求背景「有傳遮罩」，改成只有遮罩生效（`OK_cumask`）時才要求（`m10_restore2.py smoke-check`；MI300X 有 OK_cumask，行為不變）。CUDA MPS 的 thread percentage 是不同機制，這一輪不做。
+2. **背景強度掃描（13 §3.3）**：busy1、busy2「同主線」＝H200 主線的 duty 0.6／1.0（`results/m7_write_policy_h200/busy_levels.json`）。MI300X 的 busy3（duty 0.9，「更忙的方向」）在 H200 不跑：H200 的 busy2 已經是 duty 1.0。
+3. **其他所有 GPU 忙的格子**用 H200 的 busy_levels（busy2＝duty 1.0，慢 1.945 倍）：`m10_speed.py`、`m10_attn_q.py` 的 `--busy-levels` 預設改成可讀 `M10_BUSY_LEVELS`（沒設時不變）。
+4. **K\* 與 42c 冠軍用 H200 自己的**：`results/m10_sweep_h200/dqsweep/A/choice_<m>.json`；`pick-c` 讀 H200 的 42c 報告，預期是 S2k16（RUNLOG_H200）。Q4 的 P2 照 13 §3.1 的定義仍是 S2k8（方法本身，不換成 H200 的冠軍）。
+5. **43e (d) vLLM 的 FP8 KV decode**：Hopper 的 FP8 是 OCP e4m3、硬體轉換（MI300X 是 fnuz），兩台的 vLLM FP8 不是同一種實作，只並列不比判定。Qwen 一開始就用拿掉 DCA 的變體（§11.1）；MI300X 是失敗後用 44_v 重跑，所以 H200 不另跑 44_v。
+6. **δ\***：各報告用 H200 主線凍結的 noise.json（Llama 0.284、Qwen 0.05），照 13 §2「用主線凍結的」。
+7. **43ca**（MI300X 一格被標污染後的重量）不跑；H200 自己的格子如果 gpu_guard 不是 CLEAN，照 CLAUDE.md §3 另外重量，到時記。
+8. **44cb**（MI300X 同一個容器裡兩張卡的干擾檢查）不在這次範圍：H200 的 Slurm job 本來就各自一張卡、和別的 lab 共用節點。要不要做 H200 版（決定量時間時能不能同時跑我們自己的品質 job），另外問使用者。
+
+**排程（量時間不和我們自己的其他 GPU job 同時跑）**：
+- `rs2`（量時間，13 號）→ `md`（14 號的冒煙＋DS1／DS2，只量分數）→ `mdt`（量時間，14 號的 D3／M2／M1＋報告）；用 afterany 串起來。
+- 三個 part 共用工作目錄 `$TIARA_RUNS/_m10h_work/rs2`，裡面放旗子、hold/、NEEDS_HUMAN。
+
+**輸出**：
+- `results/m10_restore2_h200/`、`results/m10_drop_h200/`、`results/m10_match_h200/`；
+- DS 的逐列 CSV 放 `$TIARA_HOME/drop_m10h`（大，不進 git）。
+
+**和 MI300X 怎麼比**：13、14 號都只報告，沒有判定節點。並列以下三類，數字不混用（§5）：
+- 各段的挑選結果（`q4_pick`、`g5_pick`、`c_pick`、DS2 的選手）；
+- 描述性結論的方向（例如「GPU 忙時 S4＋全載入幾乎不受背景影響」）；
+- 各格的中位數。
+
+**CPU 測試（head node，10/19）**：MI300X 的 `tests/restore2_cpu_shim.py`、`tests/match_drop_cpu.py` 在 H200 的環境 ALL PASS；全部 stage 轉換後 `bash -n` 過、沒有殘留路徑；`plan-44d` 用假的挑選結果寫出 40 個 grid，轉換後語法正確、K\* 是 H200 的。
