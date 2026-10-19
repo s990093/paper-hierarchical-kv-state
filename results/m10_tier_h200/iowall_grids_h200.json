@@ -1,0 +1,4 @@
+{"llama|fp8": ["20261017-075056-m10h-grid-fp8-llama", "speed_llama/summary_fp8.csv", "speed_llama/restores.csv"],
+ "llama|int4": ["20261017-094511-m10h-grid-int4-llama", "speed_llama/summary_int4.csv", "speed_llama/restores.csv"],
+ "qwen|fp8": ["20261017-084454-m10h-grid-fp8-qwen", "speed_qwen/summary_fp8.csv", "speed_qwen/restores.csv"],
+ "qwen|int4": ["20261017-103540-m10h-grid-int4-qwen", "speed_qwen/summary_int4.csv", "speed_qwen/restores.csv"]}

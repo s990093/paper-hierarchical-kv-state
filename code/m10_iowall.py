@@ -40,6 +40,8 @@ GRIDS = {   # 主線速度格子（08 附錄 A）；Qwen FP8 用重量那次（�
                       "speed_qwen_regrid/restores.csv.gz"),
     ("qwen", "int4"): ("20261016-052143-m10-grid-int4-qwen", "speed_qwen/summary_int4.csv", "speed_qwen/restores.csv"),
 }
+if os.environ.get("M10_IOWALL_GRIDS"):   # H200（10/19；沒設時不變）：{"llama|fp8": [run_id, summary, restores], ...}，H200 沒有 Qwen 重量那次
+    GRIDS = {tuple(k.split("|")): tuple(v) for k, v in json.load(open(os.environ["M10_IOWALL_GRIDS"])).items()}
 LENGTHS = {"32K": 64, "64K": 128, "128K": 252}          # 10 號計畫的 block 數
 MEMS = [256, 512, 1024, 2048]                           # GiB
 SLOW = {"ssd": None, "nfs": None}                        # 從 tier_params.json 讀（m10_tier2.slow_tiers）

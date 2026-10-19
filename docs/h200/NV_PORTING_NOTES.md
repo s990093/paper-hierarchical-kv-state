@@ -60,6 +60,8 @@
 | · | `code/h200_longctx_plan.py` | 試跑時間改成每題取實際跑的那次（screen 會續跑）；`LONGCTX_VARIANT=256` | 題數規則不變；32K–128K 選出 n＝12（同 MI300X） |
 | · | `code/h200_longctx256_analyze.py` | 256K 的彙整另寫（借用 `m10_longctx_analyze` 的函式） | 不會；256K 只有 T2–T4，和 32K–128K 的四任務平均不能直接比（表裡都只取 T2–T4） |
 | · | `code/h200_port_stage.py`、`code/r_h200_*.sh` | MI300X 的佇列腳本換路徑、run 名稱（m10h-） | 不會 |
+| · | `m10_cake_ratio.py`、`m10_int4_sensitivity.py` | `M10_PRECISION_DIR`（沒有 Qwen regrid 就用 speed_qwen）、`M10_SENS_OUT` | 不會（MI300X 資料回歸逐字相同） |
+| ⚠ | `m10_iowall.py` | `M10_IOWALL_GRIDS`：run 編號表換成 H200 的主線格子（`results/m10_tier_h200/iowall_grids_h200.json`） | 會，照設計（用 H200 自己量的格子）；Qwen FP8 用原格子（H200 沒有重量那次） |
 | ⚠ | `code/tests_h200/` | Triton 在 sm_90 的 AOT 編譯測試、反向對照 | 證據，不是數字 |
 
 ## 5. 只在一台有的結果

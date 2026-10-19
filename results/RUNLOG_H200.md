@@ -1145,3 +1145,20 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 ### 還沒對照的（MI300X 在 origin/main 上還沒有結果，10/19 12:5x）
 - 44 兩層混合還原（H200：`results/m10_tier_h200/`）、70 vLLM TTFT、44b／44c 長 context（MI300X 10/19 剛開始 44c）。
 - 只報告、H200 資料已齊但還沒分析：45、55、60、88；13.1 A（`m10_iowall` 的 run 表待移植）、10.11（INT4 敏感度，待移植）。
+
+### 10/19 晚：合併 main、13／14 號送出、三支 CPU 分析移植（head node）
+- 合併 origin/main（AMD 到 `c27ec61`）→ h200 `4e5aa7d`。Makefile 衝突：用「有沒有 /mlsteam/workspace」分平台，H200 的 make 目標不變。gpu_guard 的 Slurm 測試 9 項過。
+- 13 號（還原第二輪）、14 號（配對／丟 block）照 MI300X 跑：事先登記 13_h200_repro §12；`code/h200_port_stage.py`＋`code/r_h200_rs2.sh`。
+  - 送出 **21109** `m10h-rs2`（量時間）→ **21110** `m10h-md`（afterany）→ **21111** `m10h-mdt`（afterany）。
+  - MI300X 的 CPU 測試（`restore2_cpu_shim.py`、`match_drop_cpu.py`）在 H200 環境 ALL PASS。
+- 使用者 10/19：「code 需要改成配 NV 可以，paper 數字要注意這些」→ 總表 `docs/h200/NV_PORTING_NOTES.md`。
+- 另一個工作階段（P3 移植，worktree `paper-hkv-p3`，分支 `h200-p3`）：協調好它的 GPU／吃 CPU 的 job 都 `afterany:21111`；它不碰共用工作目錄。
+- **head node `/tmp`（20 G，共用）又滿**：這次 Claude Code 的暫存在 `/tmp`。我在 scratchpad 解壓 MI300X 的品質 CSV 做回歸，把剩下的空間用完，所有工具 ENOSPC。P3 工作階段幫忙刪了 `sens_mi`（9.8 MB），我再刪自己 10/15–16 的舊暫存（134 MB，第一階段回歸的輸出、gh 的下載檔；git 用的 gh 在 `~/.local/bin`，不受影響）。之後的回歸暫存一律放 `/work/ChihChungHsu/hungweilai/tmp`。
+- 三支 CPU 分析移植（沒設環境變數時不變）：
+  - `m10_cake_ratio.py`：`M10_PRECISION_DIR`；沒有 regrid 目錄就用 `speed_qwen`。回歸：MI300X 的 `cake_ratio.md` 逐字相同。
+  - `m10_int4_sensitivity.py`：`M10_PRECISION_DIR`、`M10_SENS_OUT`。回歸（MI300X 的品質 CSV 解壓到 /work）：`sensitivity.json`、`.md` 都逐字相同。
+  - `m10_iowall.py`：`M10_IOWALL_GRIDS`（run 編號表；H200：`results/m10_tier_h200/iowall_grids_h200.json`，主線 FP8／INT4 格子，沒有 Qwen 重量那次）。沒有 MI300X 的 runs 目錄，回歸只能確認沒設變數時表不變（程式只多一個 if）。
+- H200 的結果（只報告）：
+  - `results/m10_precision_h200/analysis/cake_ratio.{md,png}`：Cake 增益 CPU 層 0.53–3.49×（比 0.016–0.070）、b16 0.93–1.30×、b32 1.12–1.98×、b48 1.50–2.04×（每層 12 格）。CPU 層上限 3.49× 是 GPU 忙的格子。
+  - `results/m10_precision_h200/analysis/sensitivity_int4/`：和 E0 逐字相同的比例 Llama INT8 93.6%、FP8 K 先減平均 89.3%、FP8 86.3%、INT4 KIVI 82.6%；Qwen INT8 85.7%、FP8 K 先減平均 85.6%、**FP8 10.4%**（KL 中位數 0.537）、INT4 KIVI 78.1%。
+  - `results/m10_tier_h200/{iowall.json, tables_iowall.md, figs/A2_*_wall.png, figs/A3_*_spill.png}`（A 用 stage 44 的實測更新）。
