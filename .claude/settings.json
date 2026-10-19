@@ -1,21 +1,17 @@
 {
-  "$comment": "Tiara / paper-hierarchical-kv-state — 專案層設定。所有快取與大檔案導向 /ssd8/hungwei/paper-hkv（2026-10-17 從 /ssd7 搬來，見 docs/ENV_3090.md）。HF_HUB_CACHE 等要明設：~/.bashrc 把它們設成 /ssd2/hungwei/hf_cache，會蓋過 HF_HOME。",
+  "$comment": "Tiara / paper-hierarchical-kv-state — 專案層設定。所有快取與大檔案導向 /ssd7/hungwei/paper-hkv（見 CLAUDE.md §2）。",
   "env": {
-    "PAPER_HKV_BIG": "/ssd8/hungwei/paper-hkv",
-    "TIARA_HOME": "/ssd8/hungwei/paper-hkv",
-    "HF_HOME": "/ssd8/hungwei/paper-hkv/hf-cache",
-    "HF_HUB_CACHE": "/ssd8/hungwei/paper-hkv/hf-cache/hub",
-    "HUGGINGFACE_HUB_CACHE": "/ssd8/hungwei/paper-hkv/hf-cache/hub",
-    "TRANSFORMERS_CACHE": "/ssd8/hungwei/paper-hkv/hf-cache/hub",
-    "HF_DATASETS_CACHE": "/ssd8/hungwei/paper-hkv/hf-cache/datasets",
-    "UV_CACHE_DIR": "/ssd8/hungwei/paper-hkv/uv-cache",
-    "UV_PYTHON_INSTALL_DIR": "/ssd8/hungwei/paper-hkv/uv-python",
-    "TORCH_HOME": "/ssd8/hungwei/paper-hkv/torch-home",
-    "TRITON_CACHE_DIR": "/ssd8/hungwei/paper-hkv/triton-cache",
-    "VLLM_CACHE_ROOT": "/ssd8/hungwei/paper-hkv/vllm-cache",
-    "XDG_CACHE_HOME": "/ssd8/hungwei/paper-hkv/xdg-cache",
-    "TMPDIR": "/ssd8/hungwei/paper-hkv/tmp",
-    "PATH": "/ssd8/hungwei/paper-hkv/texlive/.TinyTeX/bin/x86_64-linux:/home/hungwei/.local/bin:/usr/local/bin:/usr/bin:/bin"
+    "PAPER_HKV_BIG": "/ssd7/hungwei/paper-hkv",
+    "HF_HOME": "/ssd7/hungwei/paper-hkv/hf-cache/huggingface",
+    "HF_HUB_ENABLE_HF_TRANSFER": "1",
+    "UV_CACHE_DIR": "/ssd7/hungwei/paper-hkv/uv-cache",
+    "UV_PYTHON_INSTALL_DIR": "/ssd7/hungwei/paper-hkv/uv-python",
+    "TORCH_HOME": "/ssd7/hungwei/paper-hkv/torch-home",
+    "TRITON_CACHE_DIR": "/ssd7/hungwei/paper-hkv/triton-cache",
+    "VLLM_CACHE_ROOT": "/ssd7/hungwei/paper-hkv/vllm-cache",
+    "XDG_CACHE_HOME": "/ssd7/hungwei/paper-hkv/xdg-cache",
+    "TMPDIR": "/ssd7/hungwei/paper-hkv/tmp",
+    "PATH": "/ssd7/hungwei/paper-hkv/texlive/.TinyTeX/bin/x86_64-linux:/ssd7/hungwei/dynamic_k/tools:/home/hungwei/.local/bin:/usr/local/bin:/usr/bin:/bin"
   },
   "permissions": {
     "allow": [
@@ -42,21 +38,6 @@
       "Bash(bibtex*)",
       "Bash(tlmgr*)",
       "Bash(fc-list*)"
-    ]
-  },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/gpu_guard_hook.py\"",
-            "timeout": 60,
-            "statusMessage": "gpu_guard：檢查要用的 GPU 乾不乾淨"
-          }
-        ]
-      }
     ]
   }
 }
