@@ -290,6 +290,21 @@ def _descendants(root: int) -> set[int]:
     return seen
 
 
+def _holder_gpu(pid: int) -> int | None:
+    """容器行程用哪張實體卡：ROCR_VISIBLE_DEVICES、HIP_VISIBLE_DEVICES 的第一個（實體編號，和 amd-smi 一致，RUNLOG 15.1）。
+    讀不到或沒設 → None。HIP 編號在只有 ROCR 時是邏輯編號，所以 ROCR 優先。"""
+    try:
+        env = open(f"/proc/{pid}/environ", "rb").read().split(b"\0")
+    except OSError:
+        return None
+    for key in (b"ROCR_VISIBLE_DEVICES=", b"HIP_VISIBLE_DEVICES="):
+        for e in env:
+            if e.startswith(key):
+                v = e[len(key):].decode(errors="replace").split(",")[0].strip()
+                return int(v) if v.isdigit() else None
+    return None
+
+
 def foreign_on(gpu: int, own_root: int | None = None) -> list[dict]:
     """gpu 上不屬於我們的 compute process。own_root 預設為本行程。"""
     own = _descendants(own_root if own_root is not None else os.getpid())
@@ -303,6 +318,9 @@ def foreign_on(gpu: int, own_root: int | None = None) -> list[dict]:
     #    兩者相抵會漏報。開跑前（本 run 尚無 GPU 行程）的檢查不受此影響，是精確的。
     apps = [a for a in compute_apps() if a["gpu"] == gpu]
     holders = _container_kfd_holders()
+    # 10/19 兩張卡：容器裡在「別張卡」的行程（環境變數 ROCR／HIP_VISIBLE_DEVICES 指到別張）不是這張卡的入侵者，
+    # 也不能拿來抵這張卡上的外部行程。看不出用哪張卡的（沒設環境變數）照舊算在這張（保守）。
+    holders = {pid: cmd for pid, cmd in holders.items() if _holder_gpu(pid) in (None, gpu)}
     out = []
     n_external = sum(1 for a in apps if a["used_mib"] > 0) - len(holders)
     if n_external > 0:

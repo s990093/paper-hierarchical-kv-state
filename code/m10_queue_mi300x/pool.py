@@ -92,10 +92,23 @@ def reserved_by(name: str, pid: int):
 # 10/19（使用者同意）：main 的品質 pool 也用第二張卡空出來的顯存——先放自己那張（TIARA_GPU），塞不下再放另一張。
 # 每張卡最多 P 個；helper 只用自己那張。量時間的 stage 不用 pool，不受影響。
 OWN = int(os.environ.get("TIARA_GPU", "0"))
-GPUS = [OWN] + ([g for g in (0, 1) if g != OWN] if os.environ.get("ROLE") == "main" else [])
+QMAIN = os.path.join(os.path.dirname(os.path.abspath(__file__)), "queue")
+
+
+def gpus_now():
+    """main：自己那張＋另一張。helper：自己那張；main 的佇列全部做完（沒有 .sh、.running）時也用另一張（收尾，10/19）。"""
+    if os.environ.get("ROLE") == "main":
+        return [OWN] + [g for g in (0, 1) if g != OWN]
+    if os.environ.get("ROLE") == "helper":
+        main_idle = not any(f.endswith((".sh", ".running")) for f in os.listdir(QMAIN)) if os.path.isdir(QMAIN) else False
+        return [OWN] + ([g for g in (0, 1) if g != OWN] if main_idle else [])
+    return [OWN]
+
+
+GPUS = gpus_now()
 running, failed, done = {}, [], []
 pending = list(jobs)
-last_launch = {g: 0 for g in GPUS}
+last_launch = {g: 0 for g in (0, 1)}
 while pending or running:
     if HELPER and os.path.exists(WANT):
         preempt(running)
@@ -109,6 +122,7 @@ while pending or running:
     if failed:
         pending = []
     if pending:
+        GPUS = gpus_now()
         j = pending[0]
         try:                              # pool_skip.txt：一行一個名稱前綴；判定流程走不到的封存工作，開跑前可略過（照實記 skipped）
             skip = [x.strip() for x in open("pool_skip.txt") if x.strip() and not x.startswith("#")]

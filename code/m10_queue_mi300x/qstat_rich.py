@@ -138,6 +138,8 @@ class Snap:
         name = os.path.basename(fs[0])[:-8]
         st = [e for e in self.ev if e[0] == role and e[1] == "START" and e[2] == name]
         need = re.search(r"need=(\w+)", st[-1][3]).group(1) if st and "need=" in st[-1][3] else ("one" if role == "helper" else "both")
+        if st and "(xgpu)" in st[-1][3]:
+            need = "both"
         return dict(name=name, need=need, since=st[-1][4] if st else None)
 
     def _cmds(self):
@@ -293,7 +295,9 @@ def header(s: Snap):
                                    (f" {g['util']}% {g['used']:.0f}G ", f"black on {col}")))
     chips.append(Text(f" 問題 {len(s.nh)} ", style=f"bold black on {'red' if s.nh else 'green'}"))
     if s.want_both:
-        chips.append(Text(" ⏸ 量時間中 ", style=f"bold black on {C_TIME}"))
+        chips.append(Text(" ⏸ 量時間中（兩張獨佔） ", style=f"bold black on {C_TIME}"))
+    xg = os.path.exists(os.path.join(J, "XGPU_OK"))
+    chips.append(Text(" 量時間＋helper 平行 " if xg else " 量時間獨佔兩張 ", style="black on green" if xg else "black on grey70"))
     nxt = next((n for n, need in s.queues["main"] if need == "both"), None)
     if nxt:
         chips.append(Text.assemble(("下一個量時間 ", "dim"), (nxt, C_TIME)))
