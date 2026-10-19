@@ -408,6 +408,9 @@ def item_rows(st: ItemState, cfgs: list[tuple], modes: list[str], meets: dict | 
 
     e0 = get("bf16", [frozenset()] * len(it["turns"]))
     for spec, name, fmt in cfgs:
+        if name.startswith("DS-"):                   # 14 號 §8.5（10/19 加；其他配置不會走到）
+            rows += _ds_rows(st, spec, name, modes, cache, e0)
+            continue
         lp_set = sweep_placement(st, name, fmt) if name.startswith("SW-") else placement(name, n, it["seed"])
         cells = []                                   # (mode, bw, state, b1, b2_turn2b)
         if "A" in modes:
@@ -445,6 +448,46 @@ def item_rows(st: ItemState, cfgs: list[tuple], modes: list[str], meets: dict | 
                                params=json.dumps(it["params"], sort_keys=True),
                                **_metrics(res[t], e0[t]))
                     rows.append(row)
+    return rows
+
+
+def _ds_rows(st: ItemState, spec: str, name: str, modes: list, cache: dict, e0: list) -> list:
+    """14 號 §8.5：'DS-<粒度>-<挑法>-<佔比>'＝直接丟掉 token（m10_drop；KVModel.key_keep 遮住）。只有讀法 A。
+    兩輪都用同一個遮罩（KV 丟了就是丟了）；QRY 照第 1 輪的問題挑、ORC 照第 1 輪的答案 block。"""
+    import m10_drop as DR
+    if "A" not in modes:
+        return []
+    it, km = st.it, st.ans.km
+    g, meth, frac = DR.parse_ds(name)
+    key = ("drop", spec)
+    if key not in cache:
+        st.place("bf16", frozenset())
+        km.key_keep = None
+        if getattr(st, "_ds_ctx", None) is None:
+            tr = it["turns"][0]
+            st._ds_ctx = DR.Ctx(km, st.ids, st.ctx_len, st.bf16, st.ans.CHUNK, it["seed"], tr["needle_blocks"], tr["query_ids"])
+        kk, kept, ndk = DR.keep_mask(st._ds_ctx, g, meth, frac)
+        st.cur = None                                # 算分數的觀察窗會動到緩衝（已放回），保險起見下一次一律重放
+        st.place("bf16", frozenset())
+        km.key_keep = kk
+        try:
+            res = run_turns(st, "bf16", [frozenset()] * len(it["turns"]))
+        finally:
+            km.key_keep = None
+        cache[key] = (res, kept, ndk)
+    res, kept, ndk = cache[key]
+    rows = []
+    n_drop = int(round((1 - kept) * st.ctx_len))
+    for t, tr in enumerate(it["turns"]):
+        pred = st.ans.decode(res[t]["gen"])
+        rows.append(dict(model=st.ans.model, item_id=it["item_id"], task=it["task"], seed=it["seed"], band=tr["band"],
+                         turn=tr["turn"], turn2_variant="", config=spec, fmt="drop", mode="A", bw="", gpu_state="", b=0,
+                         n_blocks=st.n, lp_stored=n_drop, lp_read=n_drop, lp_read_blocks=json.dumps([round(kept, 5), ndk]),
+                         relK_read="", cenK_read="", metric=tr["metric"], gold=json.dumps(tr["gold"], ensure_ascii=False),
+                         needle_blocks=json.dumps(tr["needle_blocks"]), n_gen=len(res[t]["gen"]), stop=res[t]["stop"],
+                         pred=pred, score=T.score(tr["metric"], pred, tr["gold"]),
+                         f1=T.qa_f1(pred, tr["gold"]) if it["task"] == "T4" else "",
+                         params=json.dumps(it["params"], sort_keys=True), **_metrics(res[t], e0[t])))
     return rows
 
 

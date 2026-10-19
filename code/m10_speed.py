@@ -95,8 +95,29 @@ def model_glob(model: str) -> str:
     return m10_tasks.MODELS[model]
 
 
+def drop_set(config: str, n: int, seed: int) -> frozenset:
+    """14 號 D3（10/19）：'<底>-D<F|B|R><佔比>'（例 E1s-DB25）→ 被丟掉的 block（從 1..n−1 挑 round(佔比×(n−1)) 個；
+    F＝最舊、B＝最新、R＝隨機，seed 和 R25 相同）。其他配置回傳空集合。"""
+    if "-D" not in config:
+        return frozenset()
+    spec = config.split("-D", 1)[1]
+    pol, k = spec[0], int(round(int(spec[1:]) / 100 * (n - 1)))
+    cand = list(range(1, n))
+    if pol == "F":
+        out = cand[:k]
+    elif pol == "B":
+        out = cand[len(cand) - k:]
+    elif pol == "R":
+        out = random.Random(seed).sample(cand, k)
+    else:
+        raise ValueError(config)
+    return frozenset(out)
+
+
 def layout(config: str, n: int, seed: int) -> list[bool]:
     """每個 block 存低精度（True）或 BF16（False）。§2.1；n 不是 64 時照比例。"""
+    if "-D" in config:                                  # 14 號 D3：丟掉的 block 另外由 drop_set 決定；存的精度照底
+        return layout(config.split("-D", 1)[0], n, seed)
     q = n // 4
     lp = [False] * n
     if config == "E0":
@@ -420,7 +441,12 @@ def worker(spec: dict):
                         for k, (cfg, mode) in enumerate(jobs):
                             mask = layout("E0" if cfg == "-" else cfg, n, seed)
                             bench.rs.g5_key = (tier["name"], st["name"])
-                            rec = bench.restore(mask, tier, mode, n)
+                            dset = drop_set(cfg, n, seed) if cfg != "-" else frozenset()
+                            bench.rs.drop = frozenset(u for i in dset for u in range(i * bench.k, (i + 1) * bench.k))
+                            try:
+                                rec = bench.restore(mask, tier, mode, n)
+                            finally:
+                                bench.rs.drop = frozenset()
                             key = (length, cfg, mode, tier["name"], st["name"])
                             kvb = ""
                             if spec.get("verify") and key not in verified:
@@ -432,7 +458,7 @@ def worker(spec: dict):
                             n_lp_read = sum(s not in ("recompute", "load_bf16") for s in srcs)
                             row = dict(
                                 run_id=rid, ts=ts(), model=spec["model"], length=length, n_blocks=n, fmt=spec["fmt"],
-                                config=cfg, mode=mode, placement_seed=seed if cfg == "R25" else "",
+                                config=cfg, mode=mode, placement_seed=seed if (cfg == "R25" or "-DR" in cfg) else "",
                                 bw_name=tier["name"], bw_GiBps=tier.get("GiBps", "real"), gpu_state=st["name"],
                                 duty=st["duty"], launch=spec["launch"], rep=rep, order_idx=k, b=rec["meet"],
                                 n_recompute=rec["n_recompute"], n_load_bf16=rec["n_load_bf16"],
