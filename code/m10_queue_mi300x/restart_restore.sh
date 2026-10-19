@@ -9,7 +9,9 @@ B=/mlsteam/data/tiara/jobs_backup/latest
 if [ -d "$J/queue" ]; then echo "已經有 $J（沒有重啟？）不動"; exit 1; fi
 mkdir -p "$(dirname $J)"
 cp -a "$(readlink -f $B)" "$J"
-cd "$J/queue"
+for QD in "$J/queue" "$J/queue_g0"; do
+[ -d "$QD" ] || continue
+cd "$QD"
 for f in *.running; do
   [ -e "$f" ] || continue
   n=${f%.running}
@@ -18,8 +20,16 @@ for f in *.running; do
   else
     mv "$f" "$n.sh"
   fi
-  echo "接回：$n（重啟時正在跑）"
+  echo "接回：$n（重啟時正在跑；$(basename $QD)）"
 done
+done
+rm -f "$J/WANT_BOTH"
 echo "[runner] RESTART-RESTORE $(date -u +%FT%TZ)（容器重啟；從 $(readlink -f $B) 放回）" >> "$J/runner.log"
-ls "$J/queue" | grep -v '\.log$\|\.out$\|\.done$'
+ls "$J/queue" "$J/queue_g0" 2>/dev/null | grep -v '\.log$\|\.out$\|\.done$'
+cat <<EOF
+10/19 起雙卡（RUNLOG 15.3）：先確認卡號（amd-smi list），再開兩條 runner：
+  cd $J && ROLE=main TIARA_GPU=1 setsid nohup ./runner.sh >> runner.log 2>&1 < /dev/null &
+  cd $J && ROLE=helper TIARA_GPU=0 setsid nohup ./runner.sh >> runner_g0.log 2>&1 < /dev/null &
+（TIARA_GPU=1 要是 a6:00.0；不是的話照 amd-smi 的編號換）
+EOF
 amd-smi list 2>/dev/null | grep -E "GPU:|BDF" || true
