@@ -427,8 +427,17 @@ def queue_panel(s: Snap):
                  subtitle=Text("量時間＝兩張卡獨佔（helper 會讓出）；品質＝一張卡", style="dim"), subtitle_align="right")
 
 
+def notes():
+    """jobs/stage_notes.json：stage → 說明（失敗或被中斷的 stage 已經怎麼處理）。狀態板在旁邊註明，免得看到 ✗ 要猜。"""
+    try:
+        return json.load(open(os.path.join(J, "stage_notes.json")))
+    except Exception:
+        return {}
+
+
 def done_panel(s: Snap, k=10):
     st, out = {}, []
+    nt = notes()
     for role, kind, n, _r, t in s.ev:
         if kind == "START":
             st[(role, n)] = t
@@ -436,11 +445,15 @@ def done_panel(s: Snap, k=10):
             out.append((t, role, kind, n, (t - st[(role, n)]).total_seconds()))
     out.sort()
     tb = Table(box=box.SIMPLE_HEAD, show_edge=False, pad_edge=False, expand=True, header_style="dim")
-    for c, kw in (("台灣時間", {}), ("", {}), ("runner", {}), ("stage", {"ratio": 1}), ("花了", {"justify": "right"})):
+    for c, kw in (("台灣時間", {}), ("", {}), ("runner", {}), ("stage", {"ratio": 2}), ("花了", {"justify": "right"}),
+                  ("說明", {"ratio": 3})):
         tb.add_column(c, **kw)
     for t, role, kind, n, sec in out[-k:]:
         sty = {"DONE": ("✓", "green"), "FAILED": ("✗", "bold red"), "PREEMPTED": ("⏸", C_TIME)}[kind]
-        tb.add_row(tw(t), Text(sty[0], style=sty[1]), Text(role, style=role_style(role)), n, dur(sec))
+        note = nt.get(n, "")
+        if note and kind == "FAILED" and note.startswith("已處理"):
+            sty = ("✗→✓", "yellow")
+        tb.add_row(tw(t), Text(sty[0], style=sty[1]), Text(role, style=role_style(role)), n, dur(sec), Text(note, style="dim"))
     return Panel(tb, title="[bold]最近完成", title_align="left", border_style="blue")
 
 
