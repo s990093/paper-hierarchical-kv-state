@@ -33,8 +33,8 @@ import numpy as np  # noqa: E402
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(REPO, "results", "p3_explore", "x3")
-DS = "/ssd8/hungwei/paper-hkv/datasets"
-HUB = "/ssd8/hungwei/paper-hkv/hf-cache/hub"
+DS = os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets")
+HUB = os.environ.get("TIARA_HF_HUB", "/ssd8/hungwei/paper-hkv/hf-cache/hub")
 TOK = {"qwen": f"{HUB}/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/e28526f7bb80e2a9c8af03b831a9af3812f18fba",
        "llama": f"{HUB}/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5"}
 EV_FIELDS = ["trace", "session", "event", "turn", "type", "n_old_tokens", "new_tokens_raw", "typed_tokens", "typed_chars",

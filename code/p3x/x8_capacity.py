@@ -24,7 +24,7 @@ import x8_sim as X  # noqa: E402
 
 REPO = X.REPO
 OUT = os.path.join(REPO, "results", "p3_explore", "x8")
-LLAMA = glob.glob("/ssd8/hungwei/paper-hkv/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*/")[0]
+LLAMA = glob.glob(os.path.join(os.environ.get("TIARA_HF_HUB", "/ssd8/hungwei/paper-hkv/hf-cache/hub"), "models--unsloth--Llama-3.1-8B-Instruct/snapshots/*/"))[0]
 GiB = 1 << 30
 
 
@@ -101,8 +101,8 @@ def main():
         print(r)
 
 
-X_TR_MOON = "/ssd8/hungwei/paper-hkv/datasets/mooncake/traces"
-X_TR_BAIL = "/ssd8/hungwei/paper-hkv/datasets/qwen-bailian-usagetraces-anon"
+X_TR_MOON = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "mooncake/traces")
+X_TR_BAIL = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "qwen-bailian-usagetraces-anon")
 TRACES = sys.argv[1] if len(sys.argv) > 1 else ""
 
 if __name__ == "__main__":

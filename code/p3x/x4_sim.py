@@ -50,7 +50,7 @@ GiB = 1 << 30
 MiB = 1 << 20
 assert CB == 64 * MiB, CB
 BLOCK_TOK = 512
-TRACE_DIR = os.environ.get("X4_TRACE_DIR", "/ssd8/hungwei/paper-hkv/datasets/mooncake/traces")
+TRACE_DIR = os.environ.get("X4_TRACE_DIR", os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "mooncake/traces"))
 OUT = os.path.join(REPO, "results", "p3_explore", "x4")
 RID = os.environ.get("RUN_ID", "adhoc")
 RUNS = os.environ.get("TIARA_RUNS", "/ssd8/hungwei/paper-hkv/runs")

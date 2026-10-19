@@ -19,7 +19,7 @@ import sys
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 
-DS = "/ssd8/hungwei/paper-hkv/datasets"
+DS = os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets")
 BAILIAN = {
     "bailian_traceA": f"{DS}/qwen-bailian-usagetraces-anon/qwen_traceA_blksz_16.jsonl",
     "bailian_traceB": f"{DS}/qwen-bailian-usagetraces-anon/qwen_traceB_blksz_16.jsonl",

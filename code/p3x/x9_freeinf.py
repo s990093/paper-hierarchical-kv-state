@@ -18,7 +18,7 @@ import numpy as np
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-ROOT = "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release"
+ROOT = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "freeinference_agentic_trace/release")
 RUN_ID = os.environ.get("RUN_ID", "")
 WINDOWS_S = {"1h": 3600.0, "2h": 7200.0}
 

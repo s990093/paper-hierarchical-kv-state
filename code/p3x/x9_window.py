@@ -19,7 +19,7 @@ import numpy as np
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-DATA = "/ssd8/hungwei/paper-hkv/datasets/wildchat-1m/data/train-*.parquet"
+DATA = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "wildchat-1m/data/train-*.parquet")
 RUN_ID = os.environ.get("RUN_ID", "")
 WINDOWS_S = {"1h": 3600.0, "2h": 7200.0}
 US = 1e6

@@ -20,7 +20,7 @@ import numpy as np
 import pyarrow.compute as pc
 import pyarrow.parquet as pq
 
-DATA = "/ssd8/hungwei/paper-hkv/datasets/wildchat-1m/data/train-*.parquet"
+DATA = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "wildchat-1m/data/train-*.parquet")
 RUN_ID = os.environ.get("RUN_ID", "")
 # §2.5 T4 寫死的關鍵字清單
 KW = ["thank", "thx", "bye", "that's all", "that is all", "no more question",

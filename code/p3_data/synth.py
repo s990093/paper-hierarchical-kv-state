@@ -36,8 +36,8 @@ from scipy.special import ndtri  # noqa: E402
 import schema as S  # noqa: E402
 
 SOURCE = "synth"
-FIT_PATH = os.path.join(S.REPO, "results", "p3_data", "synth_fit_fi_week01.json")
-CONST_PATH = os.path.join(S.REPO, "results", "p3_data", "service_constants.json")
+FIT_PATH = os.path.join(os.environ.get("P3_DATA_RESULTS", os.path.join(S.REPO, "results", "p3_data")), "synth_fit_fi_week01.json")   # P3_DATA_RESULTS：見 build.py
+CONST_PATH = os.path.join(os.environ.get("P3_DATA_RESULTS", os.path.join(S.REPO, "results", "p3_data")), "service_constants.json")
 KV_BYTES = {"llama": 32 * 8 * 128 * 2 * 2, "qwen": 28 * 4 * 128 * 2 * 2}
 Z90 = 1.2815515655446004  # Φ⁻¹(0.9)
 DEFAULTS = dict(n_sessions=10_000, seed=0, horizon_s=7 * 86400, signal_strength=[0.0, 0.25, 0.5, 0.75, 1.0],

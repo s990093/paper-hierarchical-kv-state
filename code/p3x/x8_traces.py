@@ -31,7 +31,7 @@ import sys
 
 import numpy as np
 
-DS = "/ssd8/hungwei/paper-hkv/datasets"
+DS = os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets")
 MOON = os.path.join(DS, "mooncake", "traces")
 BAIL = os.path.join(DS, "qwen-bailian-usagetraces-anon")
 CW = os.path.join(DS, "cachewise-coding-traces", "repo", "parsed_traces")

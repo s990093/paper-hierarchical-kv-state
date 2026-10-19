@@ -17,7 +17,7 @@ import json
 import os
 from datetime import datetime, timezone
 
-DS = "/ssd8/hungwei/paper-hkv/datasets/qwen-bailian-usagetraces-anon"
+DS = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "qwen-bailian-usagetraces-anon")
 TR = {"bailian_traceA": "qwen_traceA_blksz_16.jsonl", "bailian_thinking": "qwen_thinking_blksz_16.jsonl",
       "bailian_coder": "qwen_coder_blksz_16.jsonl", "bailian_traceB": "qwen_traceB_blksz_16.jsonl"}
 RUN_ID = os.environ.get("RUN_ID", "")

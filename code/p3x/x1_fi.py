@@ -22,7 +22,7 @@ from collections import defaultdict
 
 import numpy as np
 
-FI_DIR = os.environ.get("X1_FI_DIR", "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release")
+FI_DIR = os.environ.get("X1_FI_DIR", os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "freeinference_agentic_trace/release"))
 SUB = 32       # 32 × 16 token = 512 token
 
 

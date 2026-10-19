@@ -5,6 +5,8 @@
 #   用法：  bash code/setup_3090_data.sh                 # 全部
 #           bash code/setup_3090_data.sh mooncake scbench  # 只做這幾項
 #   項目：hotpotqa longbench mooncake cachewise bailian burstgpt azure2023 azure2024 scbench wildchat lmsys
+#         freeinference（2026-10-19 加；不在預設的「全部」裡，要明講）
+#   平台 C（H200）：由 code/r_h200_p3.sh 的 P3H-DATA 步驟呼叫（資料放 compute node 的本地 /tmp）
 #
 # 規則：
 #   - 每份資料放在 $TIARA_DATASETS 底下自己的新目錄；目錄已存在且非空 → 跳過（不覆寫、不刪）。
@@ -15,11 +17,14 @@
 # =============================================================================
 set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# 平台 C（H200，2026-10-19）：code/r_h200_p3.sh 先 source env_h200.sh、把 TIARA_DATASETS 指到 compute node 的本地 /tmp，
+# 並設 TIARA_PY／TIARA_HF_CLI；這時不再 source env_3090.sh。沒設時和原本相同（3090）。
 # shellcheck disable=SC1091
-source "$HERE/env_3090.sh"
+[ "${TIARA_PLATFORM:-}" = C_H200 ] || source "$HERE/env_3090.sh"
 D="$TIARA_DATASETS"
-mkdir -p "$D"
-PY="$TIARA_VENV/bin/python"
+mkdir -p "$D" "$TIARA_HOME/logs"
+PY="${TIARA_PY:-$TIARA_VENV/bin/python}"
+HF_CLI="${TIARA_HF_CLI:-$TIARA_VENV/bin/hf}"
 step() { echo "=== $(date -Is) $*"; }
 fresh() { if [ -d "$1" ] && [ -n "$(ls -A "$1" 2>/dev/null)" ]; then echo "[skip] $1 已存在且非空"; return 1; fi; mkdir -p "$1"; }
 get() { curl -fL --retry 3 --retry-delay 5 -sS -o "$2" "$1"; }                       # $1=url $2=out
@@ -277,14 +282,19 @@ EOF
 }
 
 _hf_dataset() {   # $1=repo $2=revision $3=目錄：hf download 到 local-dir，再逐檔比對 HF API 的 lfs sha256／git blob sha1
-  local repo=$1 rev=$2 d=$3
-  "$TIARA_VENV/bin/hf" download "$repo" --repo-type dataset --revision "$rev" --local-dir "$d" 2>&1 | grep -vE 'FutureWarning|warnings.warn|Hint:' | tail -3
+  # $4…＝只下載這些 pattern（hf download --include；2026-10-19 加給 FreeInference）。沒給＝全部（原本的行為）
+  local repo=$1 rev=$2 d=$3; shift 3
+  # 每個 pattern 一個 --include：寫成 --include a b 時，hf CLI 把 b 當成檔名、並忽略 --include（ENV_3090 §3 的 --exclude 同一個坑）
+  local -a inc=(); local p; for p in "$@"; do inc+=(--include "$p"); done
+  "$HF_CLI" download "$repo" --repo-type dataset --revision "$rev" --local-dir "$d" "${inc[@]}" 2>&1 | grep -vE 'FutureWarning|warnings.warn|Hint:' | tail -3
   [ "${PIPESTATUS[0]}" = 0 ] || return 1
   curl -fsS "https://huggingface.co/api/datasets/$repo/revision/$rev?blobs=true" > "$TIARA_HOME/logs/hfds_$(echo "$repo" | tr / _).json" || return 1
-  "$PY" -I - "$TIARA_HOME/logs/hfds_$(echo "$repo" | tr / _).json" "$d" <<'PY'
-import hashlib, json, os, sys
-d = json.load(open(sys.argv[1])); root = sys.argv[2]; bad = 0
-for s in d["siblings"]:
+  "$PY" -I - "$TIARA_HOME/logs/hfds_$(echo "$repo" | tr / _).json" "$d" "$@" <<'PY'
+import fnmatch, hashlib, json, os, sys
+d = json.load(open(sys.argv[1])); root = sys.argv[2]; pats = sys.argv[3:]; bad = 0
+sib = [s for s in d["siblings"] if not pats or any(fnmatch.fnmatch(s["rfilename"], p) for p in pats)]
+d["siblings"] = sib
+for s in sib:
     p = os.path.join(root, s["rfilename"])
     if not os.path.exists(p):
         print("MISSING", s["rfilename"]); bad += 1; continue
@@ -332,6 +342,27 @@ source: https://huggingface.co/datasets/allenai/WildChat-1M
 revision: $rev（main，2026-10-17 查；gated=$g）
 integrity: $(echo "$v" | tail -1)（每檔 sha256 和 HF API 的 lfs.sha256 相同）
 license: ODC-BY（HF dataset card；LICENSE.md 已一併下載。內容含真實使用者對話，使用時照 LICENSE.md 的條款）
+EOF
+}
+
+do_freeinference() {   # 2026-10-19 加（3090 上是主 session 手動下載 processed/*.parquet，探索 README §「新資料」）
+  local d="$D/freeinference_agentic_trace" rev=16d3c04dae6ccaa0c48a9064e204e3a8f1eb9ade
+  local g; g=$(curl -fsS "https://huggingface.co/api/datasets/harvardMadsys/freeinference_agentic_trace" | "$PY" -I -c "import json,sys; print(json.load(sys.stdin).get('gated'))") || return 1
+  if [ "$g" != "False" ]; then echo "[freeinference] gated=$g → NEEDS_USER（不繞過）"; return 3; fi
+  fresh "$d" || return 0
+  # 只拿 p3_data/load_freeinference.py 讀的：每週的 processed/*（含 tables.json）與 manifest.json；原始 traces/*.jsonl.zst、viewer/ 不下載
+  local v; v=$(_hf_dataset harvardMadsys/freeinference_agentic_trace "$rev" "$d" \
+                 "README.md" "release/*/manifest.json" "release/*/processed/*") || { echo "$v"; return 1; }
+  echo "$v"
+  local nw; nw=$(ls -d "$d"/release/*/processed 2>/dev/null | wc -l)
+  [ "$nw" = 16 ] || { echo "[freeinference] 週數 $nw ≠ 16"; return 1; }
+  readme "$d" <<EOF
+dataset: FreeInference agentic trace（12,002 sessions；16 週；o200k_base 16-token 前綴 block）
+source: https://huggingface.co/datasets/harvardMadsys/freeinference_agentic_trace
+revision: $rev（3090 用的 16d3c04d；gated=$g）
+included: README.md、release/<week>/manifest.json、release/<week>/processed/*（requests／sessions／tool_calls.parquet、tables.json）；沒下載 traces/*.jsonl.zst、viewer/
+integrity: $(echo "$v" | tail -1)（下載的每檔 sha256 和 HF API 的 lfs.sha256 相同；processed/*.parquet 另由 load_freeinference 對 tables.json）
+license: CC-BY-4.0（HF dataset card）
 EOF
 }
 

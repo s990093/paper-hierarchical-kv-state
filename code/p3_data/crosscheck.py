@@ -22,7 +22,7 @@ import pandas as pd  # noqa: E402
 import schema as S  # noqa: E402
 
 X = os.path.join(S.REPO, "results", "p3_explore")
-OUT = os.path.join(S.REPO, "results", "p3_data", "crosscheck.csv")
+OUT = os.path.join(os.environ.get("P3_DATA_RESULTS", os.path.join(S.REPO, "results", "p3_data")), "crosscheck.csv")   # P3_DATA_RESULTS：見 build.py
 rows = []
 
 
@@ -87,7 +87,7 @@ COLS = ["session_id", "turn_idx", "parent_turn_idx", "n_children", "trigger", "n
         "think_ms", "gap_ms", "censored"]
 
 
-CHAIN_OUT = os.path.join(S.REPO, "results", "p3_data", "raw_id_chain.csv")
+CHAIN_OUT = os.path.join(os.environ.get("P3_DATA_RESULTS", os.path.join(S.REPO, "results", "p3_data")), "raw_id_chain.csv")
 # 06_simulator.md §10-2 記的值（p3_sim 冒煙 run 20261018-025459-p3sim-smoke 之後查的；當成「另一條路徑」對拍）
 CHAIN_06 = {"traceA": dict(n_ids_multi_position=52168, position_violations=220196, prev_id_violations=81514),
             "coder": dict(n_ids_multi_position=0, position_violations=0), "thinking": dict(n_ids_multi_position=0, position_violations=0)}

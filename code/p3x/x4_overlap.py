@@ -5,7 +5,7 @@ import sys
 from collections import Counter
 from datetime import datetime, timezone
 
-D = "/ssd8/hungwei/paper-hkv/datasets/mooncake/traces"
+D = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "mooncake/traces")
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "results", "p3_explore", "x4", "x4_overlap.csv")
 key = lambda r: (r["timestamp"], r["input_length"], r["output_length"])  # noqa: E731
 conv = [json.loads(x) for x in open(f"{D}/conversation_trace.jsonl")]

@@ -20,7 +20,7 @@ from collections import defaultdict
 
 import numpy as np
 
-TRACE_DIR = os.environ.get("X5_TRACE_DIR", "/ssd8/hungwei/paper-hkv/datasets/mooncake/traces")
+TRACE_DIR = os.environ.get("X5_TRACE_DIR", os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "mooncake/traces"))
 BLOCK_TOK = 512
 SHARED_OUTDEG = 64
 GAP_LO = 16

@@ -27,7 +27,8 @@ import pandas as pd  # noqa: E402
 
 import schema as S  # noqa: E402
 
-RESULTS = os.path.join(S.REPO, "results", "p3_data")
+# P3_DATA_RESULTS：平台 C（H200）寫到 results/p3_data_h200，和 3090 的逐位元對拍（code/r_h200_p3.sh）；沒設＝原本
+RESULTS = os.environ.get("P3_DATA_RESULTS", os.path.join(S.REPO, "results", "p3_data"))
 CONST_PATH = os.path.join(RESULTS, "service_constants.json")
 
 

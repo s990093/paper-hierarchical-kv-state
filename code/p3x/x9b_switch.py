@@ -22,7 +22,7 @@ import pyarrow.parquet as pq
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from x9_freeinf import lcp_chain, lcp_np  # noqa: E402
 
-ROOT = "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release"
+ROOT = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "freeinference_agentic_trace/release")
 RUN_ID = os.environ.get("RUN_ID", "")
 MAIN_CAUSES = {"system_prompt", "tool_definitions"}
 

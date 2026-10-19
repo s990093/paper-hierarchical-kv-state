@@ -45,7 +45,8 @@ VARIANTS = ["1m"]
 TOK_PATH = os.path.join(os.environ.get("M7_LLAMA_GLOB", os.path.join(
     os.environ.get("TIARA_HOME", "/ssd8/hungwei/paper-hkv"),
     "hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5")), "tokenizer.json")
-CACHE = os.path.join(os.environ.get("TIARA_HOME", "/ssd8/hungwei/paper-hkv"), "tmp", "p3_data_cache")
+# P3_DATA_CACHE：H200 上 TIARA_HOME 是 /work（lab 配額），快取改放 compute node 的本地 /tmp（code/r_h200_p3.sh 設）；沒設時同 3090
+CACHE = os.environ.get("P3_DATA_CACHE") or os.path.join(os.environ.get("TIARA_HOME", "/ssd8/hungwei/paper-hkv"), "tmp", "p3_data_cache")
 
 
 def _tok_counts(texts, sha, fn):

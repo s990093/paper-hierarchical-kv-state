@@ -16,7 +16,7 @@ import os
 import numpy as np
 import pyarrow.parquet as pq
 
-FI_DIR = "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release"
+FI_DIR = os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "freeinference_agentic_trace/release")
 WEEK = "2026-07-26_2026-08-01"
 B16 = 16
 PER512 = 32

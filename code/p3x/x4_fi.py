@@ -30,7 +30,7 @@ import numpy as np  # noqa: E402
 
 import x4_sim as X  # noqa: E402
 
-FI_DIR = os.environ.get("X4_FI_DIR", "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release")
+FI_DIR = os.environ.get("X4_FI_DIR", os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "freeinference_agentic_trace/release"))
 FI_REV = "16d3c04dae6ccaa0c48a9064e204e3a8f1eb9ade"
 
 

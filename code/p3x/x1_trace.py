@@ -34,7 +34,7 @@ from collections import defaultdict
 
 import numpy as np
 
-TRACE_DIR = os.environ.get("X1_TRACE_DIR", "/ssd8/hungwei/paper-hkv/datasets/mooncake/traces")
+TRACE_DIR = os.environ.get("X1_TRACE_DIR", os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "mooncake/traces"))
 BLOCK_TOK = 512
 INF = 1 << 62
 
@@ -233,8 +233,8 @@ if __name__ == "__main__":
     ap.add_argument("--traces", nargs="+", default=["conversation", "toolagent"])
     ap.add_argument("--rules", nargs="+", default=["R1", "R2"])
     ap.add_argument("--bailian", nargs="*", default=[
-        "/ssd8/hungwei/paper-hkv/datasets/qwen-bailian-usagetraces-anon/qwen_traceA_blksz_16.jsonl",
-        "/ssd8/hungwei/paper-hkv/datasets/qwen-bailian-usagetraces-anon/qwen_coder_blksz_16.jsonl"])
+        os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "qwen-bailian-usagetraces-anon/qwen_traceA_blksz_16.jsonl"),
+        os.path.join(os.environ.get("TIARA_DATASETS", "/ssd8/hungwei/paper-hkv/datasets"), "qwen-bailian-usagetraces-anon/qwen_coder_blksz_16.jsonl")])
     ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..",
                                                   "results", "p3_explore", "x1", "x1_trace_char.csv"))
     a = ap.parse_args()

@@ -49,7 +49,7 @@ PREREG = "docs/phase3_20261017/04_prereg_map.md"
 RETURN_GAPS = os.path.join(REPO, "results", "p3_sim", "return_gaps.csv")
 KALL = os.path.join(REPO, "results", "p3_sim", "kgpu_kmin_all.csv")
 TIMING_STDOUT = "/ssd8/hungwei/paper-hkv/runs/20261018-102610-p3sim-timing3/stdout.log"
-DEFAULT_OUT = "/ssd8/hungwei/paper-hkv/p3_map"
+DEFAULT_OUT = os.environ.get("P3_MAP_OUT", "/ssd8/hungwei/paper-hkv/p3_map")   # H200：code/r_h200_p3.sh 指到 compute node 的本地 /tmp
 NOT = "NOT_MEASURED"
 
 # ------------------------------------------------------------------ 寫死的參數（04 v4 §5、§9、§10）
