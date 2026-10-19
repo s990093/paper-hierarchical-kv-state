@@ -56,7 +56,7 @@ alias lg='lazygit'
 
 # ── Lab shortcuts ────────────────────────────────────────────
 alias repo='cd /mlsteam/workspace/paper-hierarchical-kv-state'
-alias cc='tmux new -A -s claude -c /mlsteam/workspace'   # attach/create the Claude tmux session
+alias ccc='tmux new -A -s claude -c /mlsteam/workspace'   # attach/create the Claude tmux session
 
 # ── Secrets (API keys) live in a private file, not here ─────
 [[ -f $SHELLDIR/zshrc.local ]] && source $SHELLDIR/zshrc.local
