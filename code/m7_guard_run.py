@@ -3,6 +3,7 @@
 用法：python code/m7_guard_run.py <指令...>
 輸出：$TIARA_RUNS/$RUN_ID/gpu_guard.json；子指令的 exit code 原樣傳回；污染時另外印 CONTAMINATED 並以 3 結束。
 """
+import contextlib
 import os
 import subprocess
 import sys
@@ -12,9 +13,14 @@ from gpu_guard import GpuWatcher, smi_index  # noqa: E402
 
 rd = os.path.join(os.environ.get("TIARA_RUNS", "/mlsteam/data/tiara/runs"), os.environ.get("RUN_ID", "no-run-id"))
 os.makedirs(rd, exist_ok=True)
-with GpuWatcher(gpu=smi_index(0), own_root=os.getpid(), out_path=os.path.join(rd, "gpu_guard.json")) as w:   # cuda:0 在 smi 裡的編號（Slurm）
+# 看得到幾張卡就監看幾張（2026-10-17：run3090.sh 的 TIARA_TWO_GPUS=1 會給兩張）。一張卡時和原本完全相同。
+n_vis = len([x for x in os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(",") if x.strip()]) or 1
+with contextlib.ExitStack() as stack:
+    ws = [stack.enter_context(GpuWatcher(gpu=smi_index(i), own_root=os.getpid(),   # cuda:i 在 smi 裡的編號（Slurm）
+                                         out_path=os.path.join(rd, "gpu_guard.json" if i == 0 else f"gpu_guard_cuda{i}.json")))
+          for i in range(n_vis)]
     rc = subprocess.run(sys.argv[1:]).returncode
-if w.contaminated:
+if any(w.contaminated for w in ws):
     print("CONTAMINATED", flush=True)
     open(os.path.join(rd, "CONTAMINATED"), "w").close()
     sys.exit(3)

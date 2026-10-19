@@ -1,0 +1,4 @@
+run_id,ts,workload,distinct_blocks_512,session_level_blocks,inflation
+20261017-175508-p3x8-capacity,2026-10-17T17:55:13+08:00,mooncake_conversation,182790,201151,1.100449
+20261017-175508-p3x8-capacity,2026-10-17T17:55:13+08:00,mooncake_toolagent,183300,260870,1.423186
+20261017-175508-p3x8-capacity,2026-10-17T17:55:13+08:00,bailian_coder,162578.65625,374218.591797,2.301769

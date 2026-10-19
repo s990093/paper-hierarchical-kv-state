@@ -1,0 +1,40 @@
+run_id,ts,trace,step,src_run_id,exit_code,status,note
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,all,selftest,20261017-175022-p3x2-selftest,0,valid,x2_stats.py：Harrell C＝暴力 300 次、＝lifelines 50 次
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,wildchat_1m,chars_per_token,20261017-175040-p3x2-wccpt,0,valid,3.8040 字元/token（2002 個對話）
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,mooncake_conversation,main,20261017-175040-p3x2-mc-conversation,0,valid,
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,mooncake_toolagent,main,20261017-175041-p3x2-mc-toolagent,5,BLOCKED,session 重建驗算不過（0.7949 < 0.90）；只有 x2_validation.csv 的列
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_traceA,main,20261017-175042-p3x2-bl-traceA,0,valid,
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_traceB,main,20261017-175043-p3x2-bl-traceB,0,not_applicable,全部 parent_chat_id=-1：只有描述統計
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_thinking,main,20261017-175045-p3x2-bl-thinking,0,valid,
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_coder,main,20261017-175046-p3x2-bl-coder,0,valid,
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,cachewise,main,20261017-175047-p3x2-cachewise,0,superseded,request_id=None 的 208 筆 llm_call 被併成一筆；改用 20261017-175316-p3x2-cachewise2
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,cachewise,main,20261017-175316-p3x2-cachewise2,0,valid,只報告
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,wildchat_1m,main,20261017-175255-p3x2-wc,0,valid,
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,mooncake_conversation,posthoc_S2lex,20261017-175443-p3x2-ph-mc-conversation,0,posthoc,只報告
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_traceA,posthoc_S2lex,20261017-175444-p3x2-ph-bl-traceA,0,posthoc,只報告
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_thinking,posthoc_S2lex,20261017-175445-p3x2-ph-bl-thinking,0,posthoc,只報告
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_coder,posthoc_S2lex,20261017-175446-p3x2-ph-bl-coder,0,posthoc,只報告
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,wildchat_1m,posthoc_S2lex,20261017-175447-p3x2-ph-wc,0,posthoc,只報告
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,mooncake_conversation,posthoc_setspan,20261017-175643-p3x2-span-mc-conversation,0,posthoc,只報告（集合涵蓋的閒置時間）
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_traceA,posthoc_setspan,20261017-175644-p3x2-span-bl-traceA,0,posthoc,只報告（集合涵蓋的閒置時間）
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_thinking,posthoc_setspan,20261017-175645-p3x2-span-bl-thinking,0,posthoc,只報告（集合涵蓋的閒置時間）
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,bailian_coder,posthoc_setspan,20261017-175646-p3x2-span-bl-coder,0,posthoc,只報告（集合涵蓋的閒置時間）
+20261017-175837-p3x2-index,2026-10-17T17:58:37+08:00,wildchat_1m,posthoc_setspan,20261017-175647-p3x2-span-wc,0,posthoc,只報告（集合涵蓋的閒置時間）
+20261017-175837-p3x2-index,2026-10-17T18:00:09+08:00,mooncake_conversation_strict,posthoc_strict_links,20261017-175914-p3x2-ph-mc-strict,NA,superseded,指令跑完（stdout 有 posthoc done），但執行中 code/run3090.sh 被別的 agent 改寫，殼在第 111 行 syntax error、沒寫 exit_code；同指令重跑 20261017-175941-p3x2-ph-mc-strict2，這次的列不要用
+20261017-175837-p3x2-index,2026-10-17T18:00:09+08:00,mooncake_conversation_strict,posthoc_strict_links,20261017-175941-p3x2-ph-mc-strict2,0,posthoc,只報告：切掉驗算 (a) 不過的連結、扇出 >1 只留最早的子（切掉 7.0% 連結）
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,mooncake_conversation_lit,main,20261017-180543-p3x2-mc-lit,0,posthoc,主 session 10:01Z 要求的第二種重建規則（文獻 agent 的嚴格規則）；判定取三種規則最小的 ΔC
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,mooncake_conversation_lit,posthoc_S2lex,20261017-180559-p3x2-ph-mc-lit,0,posthoc,只報告
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,mooncake_conversation,posthoc_victims,20261017-181151-p3x2-vic-mc,0,posthoc,只報告：LRU 集合裡挑預測最晚回來的前 10%
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,mooncake_conversation_strict,posthoc_victims,20261017-181152-p3x2-vic-mc-strict,0,posthoc,只報告：LRU 集合裡挑預測最晚回來的前 10%
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,mooncake_conversation_lit,posthoc_victims,20261017-181153-p3x2-vic-mc-lit,0,posthoc,只報告：LRU 集合裡挑預測最晚回來的前 10%
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,bailian_traceA,posthoc_victims,20261017-181154-p3x2-vic-bl-traceA,0,posthoc,只報告：LRU 集合裡挑預測最晚回來的前 10%
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,bailian_thinking,posthoc_victims,20261017-181155-p3x2-vic-bl-thinking,0,posthoc,只報告：LRU 集合裡挑預測最晚回來的前 10%
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,bailian_coder,posthoc_victims,20261017-181156-p3x2-vic-bl-coder,0,posthoc,只報告：LRU 集合裡挑預測最晚回來的前 10%
+20261017-175837-p3x2-index,2026-10-17T18:12:50+08:00,wildchat_1m,posthoc_victims,20261017-181157-p3x2-vic-wc,0,posthoc,只報告：LRU 集合裡挑預測最晚回來的前 10%
+20261017-175837-p3x2-index,2026-10-17T18:18:45+08:00,freeinference,main,20261017-181030-p3x2-fi,143,failed,我手動停掉（讀 block_ids 8 GB 太久，且同一份程式在 fi-extra 已經確定會在 _finish 的斷言失敗）；沒有任何輸出列
+20261017-175837-p3x2-index,2026-10-17T18:18:45+08:00,freeinference,posthoc_extra,20261017-181359-p3x2-fi-extra,1,failed,AssertionError: session 內時間倒退（17 個請求在上一個請求結束前就開始；閒置開始改用累積最晚結束後重跑）
+20261017-175837-p3x2-index,2026-10-17T18:18:45+08:00,freeinference,main,20261017-181644-p3x2-fi2,1,failed,AssertionError: 剩餘時間 < 0：設限時刻早於快照（各週時間在邊界重疊，快照沒限定同一週；修正後重跑）；描述統計的列已寫入，不要用
+20261017-175837-p3x2-index,2026-10-17T18:18:45+08:00,freeinference,posthoc_extra,20261017-181645-p3x2-fi-extra2,1,failed,同上 AssertionError（快照沒限定同一週）
+20261017-175837-p3x2-index,2026-10-17T21:34:20+08:00,freeinference,block_check,20261017-181642-p3x2-fi-blocks,0,valid,len(block_ids)==floor(Σrole_tokens/16)：1.000（16 週、1,222,199 個請求）
+20261017-175837-p3x2-index,2026-10-17T21:34:20+08:00,freeinference,main,20261017-181823-p3x2-fi3,0,valid,登記後加入；含 FreeInference 版的判定用這個 run 的 lru256GiB|wait_user 列
+20261017-175837-p3x2-index,2026-10-17T21:34:20+08:00,freeinference,posthoc_extra,20261017-181825-p3x2-fi-extra3,0,posthoc,S2lex＋集合涵蓋時間＋降級挑選；只報告

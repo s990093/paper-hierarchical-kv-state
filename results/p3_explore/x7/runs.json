@@ -1,0 +1,32 @@
+{
+ "c0": [
+  "20261017-174843-p3x7-c0a",
+  "20261017-174933-p3x7-c0-nopin",
+  "20261017-175001-p3x7-c0-g6"
+ ],
+ "calibf_qwen": "20261017-175055-p3x7-calibf-qwen",
+ "calibf_llama": "20261017-175208-p3x7-calibf-llama",
+ "ladder_llama": "20261017-175327-p3x7-llama-ladder",
+ "busy_qwen": "20261017-180058-p3x7-busy-qwen",
+ "busy_llama": "20261017-180431-p3x7-busy-llama",
+ "dqbench": "20261017-180859-p3x7-dqbench",
+ "grid_qwen": [
+  "20261017-181306-p3x7-grid-qwen-L0"
+ ],
+ "grid_llama": [],
+ "grid_llama64k": [],
+ "grid_fused": [],
+ "rejected": {
+  "20261017-175844-p3x7-busy-qwen": "smoke, --out /dev/null; no exit_code (code/run3090.sh edited by env agent mid-run: syntax error line 111). INTERRUPTED file left.",
+  "20261017-181017-p3x7-restore-smoke": "exit 2: argparse rejected '-:compute_only' (x7_restore job syntax bug, fixed to R:compute_only); nothing measured",
+  "20261017-181047-p3x7-restore-smoke2": "smoke (Qwen 8K, 1 rep) for x7_restore; not used",
+  "20261017-213420-p3x7-grid-qwen-L1": "CONTAMINATED: foreign pid 870864 (ron, reserve_gpus.py) took 254 MiB on GPU 1 from 21:35:56 to end; numbers void",
+  "20261017-215041-p3x7-grid-llama-L0": "CONTAMINATED: foreign pid 1050579 (tsaiyuntze) took 15.7 GiB on GPU 3 at 21:51:05; our process OOM while loading weights; nothing measured",
+  "20261017-221130-p3x7-grid-llama-L0": "CONTAMINATED: gpu_guard --check clean at 22:11:30, foreign pid 1225514 (1648 MiB) on GPU 6 from 22:11:36 to end (311 samples); GPU 6 at 99% util with 22.6 GiB used during our run → all timing void, not used"
+ },
+ "info_only": {
+  "20261017-173936-p3x7-sha": "model weights sha256 8/8 OK",
+  "20261017-174813-p3x7-probe": "SDPA backend probe + PCIe gen under load",
+  "20261017-181500-p3x7-mi300xref": "MI300X reference extraction (CPU)"
+ }
+}

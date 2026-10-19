@@ -1,0 +1,13 @@
+run_id,ts,trace,check,value,expect,ok,note
+20261017-180405-p3x3-fi,2026-10-17T10:12:22+00:00,freeinference,weeks,16,,,
+20261017-180405-p3x3-fi,2026-10-17T10:12:22+00:00,freeinference,unit_len_block_ids_eq_floor_tiktoken_over_16_weeks1-2,1.0,>=0.95,OK,README：o200k、16 token、丟掉最後不滿的 block
+20261017-180405-p3x3-fi,2026-10-17T10:12:22+00:00,freeinference,negative_gap_excluded,17,,,start_ms 早於上一個請求的 end_ms（重疊）
+20261017-180405-p3x3-fi,2026-10-17T10:12:22+00:00,freeinference,cp16_over_prev_in_plus_out_append_pctl,p1=0.9579 p5=0.9832 p10=0.9902 p25=0.9958 p50=0.9984 p75=0.9993 p90=0.9996 p95=0.9998 p99=1,,,前兩週、transition=append：block 共同前綴 ×16 ÷（上一個輸入＋輸出）；≈1 表示 n_old 的定義對
+20261017-180405-p3x3-fi,2026-10-17T10:12:22+00:00,freeinference,tool_return_events,1134688,,,
+20261017-180405-p3x3-fi,2026-10-17T10:12:22+00:00,freeinference,tool_sessions,13953,>=1000,OK,
+20261017-180405-p3x3-fi,2026-10-17T10:12:23+00:00,freeinference,tool_lead_s_pctl,p1=0.178 p5=0.317 p10=0.414 p25=0.696 p50=1.694 p75=4.812 p90=16.94 p95=42.54 p99=220.5,,,
+20261017-180405-p3x3-fi,2026-10-17T10:12:23+00:00,freeinference,user_return_events,73458,,,
+20261017-180405-p3x3-fi,2026-10-17T10:12:23+00:00,freeinference,user_sessions,11116,>=1000,OK,
+20261017-180405-p3x3-fi,2026-10-17T10:12:23+00:00,freeinference,user_think_s_pctl,p1=0.484 p5=1.454 p10=3.088 p25=30.77 p50=96.27 p75=290.4 p90=1041 p95=2718 p99=2.942e+04,,,
+20261017-180405-p3x3-fi,2026-10-17T10:12:23+00:00,freeinference,user_role_token_increment_pctl,p1=-703.6 p5=3 p10=5 p25=11 p50=30 p75=200 p90=1291 p95=2248 p99=5737,,,role_tokens.user 的增量（o200k）；負的＝壓縮／改寫
+20261017-180405-p3x3-fi,2026-10-17T10:12:24+00:00,freeinference,ctx_tokens_pctl_tool,p1=7088 p5=2.086e+04 p10=3.317e+04 p25=6.411e+04 p50=1.187e+05 p75=2.166e+05 p90=3.788e+05 p95=4.932e+05 p99=7.219e+05,,,

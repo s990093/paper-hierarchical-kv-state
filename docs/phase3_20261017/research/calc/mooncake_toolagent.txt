@@ -1,0 +1,11 @@
+2026-10-17T17:49:36+08:00
+cmd: python3 -I p3scripts/mooncake_chain.py + mooncake_chain2.py papers/mooncake_data/toolagent_trace.jsonl
+rows 23608 unit_ok(512) 1.0
+frac requests with a later extending request 0.4407827854964419
+gap s pctl 10/50/90/99 [0.0, 0.0, 234.0, 615.0]
+children with >1 candidate parent (same longest prefix) 20123 of 23581
+T s 3536.999 has-child first half 0.4495026436060579 last 600s 0.41050175029171526
+timestamp mod 1000 == 0 frac 0.70302439850898
+strict child links (private prefix, unique parent, gap>0) 2515 ambiguous 20109
+frac requests with strict child 0.10623517451711284
+strict gap s pctl 10/50/90/99 [45.0, 123.0, 459.0, 925.7]
