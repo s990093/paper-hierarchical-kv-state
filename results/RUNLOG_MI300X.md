@@ -950,3 +950,10 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **10/19 04:5xZ 補（使用者：「ssh 連進去就自己打開 repo、要美觀 rich」）**：
   - `code/m10_queue_mi300x/qstat_rich.py`（rich 狀態板）：Runner、GPU（顯存條、使用率、顯存帳）、跑中的 job（每個 job 的「已做/總題數」進度條、秒／題、還要多久）、排隊、最近完成、NEEDS_HUMAN。`make status` 改用它（rich 不能用時退回 `make status-plain`），`make watch` 每 30 秒刷新。
   - SSH 登入：`/mlsteam/workspace/shell/zshrc.tiara`（zshrc 最後 source；repo 副本在 `docs/migration_20261013/lab_bin/shell/`）。互動式、ssh 進來、不在 tmux／Claude 裡時，cd 到 repo 並印精簡版狀態板。`touch /mlsteam/workspace/shell/no-tiara-status` 可關掉。測過：模擬 ssh 登入 → 進 repo、印出狀態板；tmux 裡不印。
+  - 10/19 05:0xZ（使用者：「所有都要美觀 rich、優化」）：`qstat_rich.py` 重寫成全部子命令都用 rich：
+    - status、compact（登入）、q、gpu、jobs、nh、done、tail（N 行、JOB＝看某個 job 的 pool log＋stdout＋stderr，錯誤標紅）、watch（rich Live 全螢幕，SEC 秒刷新）。
+    - 最上面一列狀態摘要（runner 數、兩張卡的使用率與顯存、問題數、下一個量時間的 stage）。
+    - 每個跑中的 stage 有整體進度（含還沒開的 job、總題數）；每個 job 有進度條、秒／題、還要多久。
+    - 從 stage 腳本讀它要跑的 job 清單，所以還沒開 job 時也看得到「排著幾個、在等顯存」。
+    - amd-smi 兩個查詢平行跑，一次 0.28 秒。
+    - make 的每個目標都改用它，跑不起來時退回純文字的 qstat.sh。

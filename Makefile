@@ -37,15 +37,18 @@ distclean: clean
 QSTAT := code/m10_queue_mi300x/qstat.sh
 QRICH := /mlsteam/workspace/venv/tiara/bin/python code/m10_queue_mi300x/qstat_rich.py
 .PHONY: status status-plain q queue gpu jobs nh done tail watch help-q
-status:                      # rich 狀態板；rich 不能用時退回純文字版
-	@$(QRICH) || bash $(QSTAT) status
+# 全部用 rich（qstat_rich.py）；rich 跑不起來時退回純文字的 qstat.sh
+status:
+	@$(QRICH) status || bash $(QSTAT) status
+q queue:
+	@$(QRICH) q || bash $(QSTAT) q
+gpu jobs nh done:
+	@$(QRICH) $@ || bash $(QSTAT) $@
+tail:                        # make tail N=40 ／ make tail JOB=ds1-llama-s0（看某個 job 的 pool log、stdout、stderr）
+	@$(QRICH) tail $(or $(N),30) $(JOB)
+watch:                       # 全螢幕、每 SEC 秒刷新（預設 30），Ctrl-C 離開
+	@$(QRICH) watch $(or $(SEC),30)
 status-plain:
 	@bash $(QSTAT) status
-q gpu jobs nh done tail:
-	@bash $(QSTAT) $@
-queue:
-	@bash $(QSTAT) q
-help-q:                      # 列出看佇列的指令（注意：distclean 是論文的清理，會刪 main.pdf）
-	@echo "make status｜status-plain｜q（或 queue）｜gpu｜jobs｜nh｜done｜tail [N=50]｜watch"
-watch:
-	@watch -n 30 -t -c "FORCE_COLOR=1 COLUMNS=$$(tput cols) $(QRICH)"
+help-q:                      # 注意：distclean 是論文的清理，會刪 main.pdf
+	@echo "make status｜watch [SEC=10]｜q（queue）｜gpu｜jobs｜nh｜done｜tail [N=40] [JOB=…]｜status-plain"
