@@ -301,8 +301,7 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 
 ## 2026-10-19 平台分工（使用者決定，沒有量測）
 - **P3 地圖留在 3090 這台跑**（純 CPU：48 實體核／96 HT、440 GB RAM、統一表在 `/ssd8`）。理由：地圖完全不用 GPU，H200 的 `h200q` 要掛 `--gres=gpu`，整個 lab 只有 4 張卡，拿 GPU 配額跑純 CPU 模擬划不來。
-- **精度那條線改上 H200**（`docs/precision_20261013/03_plan_h200.md` 的 §R：R0 硬體報告 → R1 正確性 → R2 校準 → R3 第一階段復現，過了才進 D0）。注意 03 的 10/15 晚改動已經把**主實驗放在 MI300X**，H200 這邊是**復現與對照**，兩台的數字不放進同一個判定。
-- **還沒上機**：3090 這台連不到 head node（`192.168.20.241` TCP 22 不通，需要 OpenVPN；本機沒有 `.ovpn`、沒有 sudo 建 tun），所以 H200 的每一步都要從使用者的 Mac 發動。
-- **上機前的已知擋路點**：lab 磁碟配額 2026-10-15 實測只剩約 12 GB（`quota -gs`：1524G／1536G），模型 31 GB＋conda 環境放不下（`docs/H200_SLURM.md` §0、§7 沒有解法）。要先解決才動 `code/h200_setup_data.sh`。
-- **程式面已就緒**（10/15 寫好、本次複查）：`code/{env_h200.sh,tiara.sbatch,h200_probe.sh,h200_setup_data.sh,r_h200.sh}` 語法檢查全過；03 §R「R 之前要先改的程式」那張表的五處都已改成讀環境變數（`m7_env.sh` 偵測 MLSteam／否則 source `env_h200.sh`、`m7_model.py` 延後讀 `M7_MODEL_GLOB`、`m7_write_policy.py` 的 `M7_DISK`（查不到照樣丟錯）、`m7_calib.py` 的 `nvidia-smi` 分支、`m7_c6_vllm.py` 的 `M7_VLLM_VENV`／`M7_EXTRA_PATH`）。**NVIDIA 上一次都還沒跑過。**
-- **複查時發現的小問題（還沒改）**：`code/r_h200.sh --list` 裡 `R2-C4-t1-restart` 重複 10 次、`R2-C4-t2-restart` 重複 5 次（迴圈用同一個步驟名）。`--from R2-C4-t1-restart` 會從第 1 次重跑整個迴圈，而 `m7_write_policy` 的 CSV 是附加寫入 → 48 小時被砍後接著跑要先手動處理已寫的列。建議改成 `R2-C4-t1-restart-<i>`，但要等使用者同意再動（這支腳本是 §R 的入口）。
+- **精度／第二階段那條線在 H200 上繼續**。這條線**不在這個分支**：在 `origin/h200`（2026-10-19 12:28 的 `975e740` 為止比 `origin/main` 多 75 個 commit），記錄在那個分支的 `results/RUNLOG_H200.md`（1,147 行，Milestone R-env → 10-H200）。最新狀態：job 20918 在 2026-10-19 12:24 跑完＝**H200 第二階段的 GPU 工作全部結束**。
+- ⚠️ **本節的前一版（commit `0250823`）寫錯了**：寫成「H200 還沒上機、lab 配額只剩 12 GB 擋路、NVIDIA 上一次都還沒跑過」。那是只讀了 `docs/H200_SLURM.md`（10/15 的快照）、沒有看 `origin/h200` 分支就下的結論。事實：10/15 20:51 就建好環境、10/16 job 20417 跑完 R0–R3 並判 **REPRODUCED**，之後一路做到第二階段。配額那條兩份記錄不一致——`docs/H200_SLURM.md` §0 記 10/15 `quota -gs` 是 1524G／1536G（剩 12G），`RUNLOG_H200.md` R-env 記同一天建環境時是 1377G／1536G、裝完 1415G；**兩次讀數之間發生了什麼沒有查**，但環境確實裝得下。以本段為準。
+- **3090 這台連不到 H200**：`192.168.20.241` TCP 22 不通（要 OpenVPN；本機沒有 `.ovpn`、沒有 sudo 建 tun）。H200 的 Slurm 指令要在 head node 的 checkout（`/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state`）上發動；這台只能做不碰叢集的事（讀 `origin/h200` 的結果做分析、寫程式、對照 MI300X）。
+- **三條線、三個分支**：P3 地圖＝`p3-predictor`（這台 3090）；MI300X 第二階段＝`origin/main`；H200＝`origin/h200`。**不要混用三台的數字。**
