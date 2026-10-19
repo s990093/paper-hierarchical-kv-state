@@ -73,8 +73,31 @@
 
 ---
 
+## Milestone P3H-0b — Llama FP8-K0／INT8 的 H200 品質補算（查清楚重現檢查為什麼沒過）＋使用者授權的決定
+**狀態**: PASS
+**執行時間**: 2026-10-19T21:05+08:00 → 21:15+08:00（head node）
+**使用者 10/19**：「自行規劃看哪樣比較好」——P3H-0 列的待決定由我決定（下面「決定」）。
+**run_id**: `20261019-211426-p3h-fmt-qderive2`（exit 0）、`20261019-211449-p3h-fmt-table2`（exit 0；取代 P3H-0 的 `…-210127-p3h-fmt-table` 那一版）
+**指令**: `env P3_CONST=h200 M7_RES=$PWD/results/m7_write_policy_h200 RUN_ID=<id> RUN_DIR=$TIARA_RUNS/<id> ~/venvs/tiara-p3/bin/python code/p3_formats/derive_quality.py`；格式表同 P3H-0
+**原因調查**（scratchpad，不進 results）：
+- `m10_analyze quality` 的 `mean_lp_read` 是對**除了 LB 以外的所有列**取平均（含 T1，code/m10_analyze.py 第 224 行）；判準欄（差、CI、eps、KL、flips、same_as_e0，n＝1,140）只用主任務 T2–T5。
+- 用 repo 裡 H200 已提交的 `quality_qwen_step2b.json` 列的同一批 9 個檔（不含後來的 T1-s1、LB-s1）重跑：**主任務欄位逐位元相同**，不同的只有 4 處——`e0_accuracy` 裡 T1／LB 的格（已提交的版本 T1 每格 n＝9、LB 只有 narrativeqa n＝18；現在的檔 T1 n＝30、LB 六個子集各 25）、`n_items`（627 vs 690）、兩個 `mean_lp_read`。
+- → H200 的 step1／step2b 分析是在 q3 工作池的 T1／LB shard（55 號，只報告）**還沒寫完時**算的（Llama 的 T1-s1 已經在 run_ids 裡、但只寫了一部分）。判準欄不受影響。
+**改動**：`derive_quality.py` 在 `P3_CONST=h200` 時，重現檢查對主任務欄位一樣要求逐位元相同；`mean_lp_read` 與 `run_ids` 的差照記在 `derive_quality.json` 的 `noted_not_blocking`、不擋（MI300X 模式不變，全部要相同）。
+**關鍵數字**（H200，Llama，對 E0 的配對答對率差，T2–T5、1,140 列）：E1s@fp8k0_token A −0.20 [−0.78, +0.37] pt、B-idle −0.40 [−0.96, +0.13]、B-busy −0.36 [−0.93, +0.17]、B-i2b −0.39 [−0.97, +0.14]；E1s@int8_token A −0.11 [−0.55, +0.31]、B-idle −0.08、B-busy −0.20、B-i2b −0.03（四種情境都 eps_pass）。
+格式表重建後：**30／30 列的 32K 品質判定和 MI300X 版相同**；剩下的 problems 只有「X5 的 H200 重跑還沒做 → 不對拍」（job 21116 的 FMT-TABLE 步驟補）。
+
+**決定**（使用者授權，理由寫在旁邊）:
+1. Llama FP8-K0／INT8：照上面查清楚之後補算（主任務欄位嚴格、只報告的欄照記）。
+2. **H200 的 CPU 忙校準：不做**。3090 的定義是「整台主機忙」（N 到 48、兩個 NUMA）；Slurm 的 1-GPU job 只有 16 CPU 的 cpuset（`cpu_busy_restore.py` 的 same 會綁到 GPU 那個節點的 64 個 CPU，和 cpuset 交集可能是空的），做不出同一個條件；整台加壓會影響同節點別的 lab 的 job；而這個數字只進地圖的敏感度（只報告）。H200 的 CPU 忙寫 NOT_MEASURED，不借 3090 的 1.35／1.81。`r_h200_p3.sh` 的 cal 部分刪掉。
+3. `.claude/settings.json` 與 GPU hook：合回 `h200` 時**保留 `h200` 原本的 `.claude/`**（hook 是 3090 共用機用的，在 head node 會把寫了 `CUDA_VISIBLE_DEVICES=<數字>` 的指令擋掉；P3 的 env 指到不存在的 `/ssd8`）。改 `.claude/` 我沒有權限（hook 那次被擋），要使用者執行：`git -C /work/ChihChungHsu/hungweilai/paper-hkv-p3 checkout cabeae3 -- .claude && git -C /work/ChihChungHsu/hungweilai/paper-hkv-p3 commit -m "infra(p3h): 合回 h200 前，.claude/ 保留 h200 的版本"`。
+4. 合回 `h200`、push `origin/h200`：等第二階段 session 的 21109–21111 跑完（它會通知）、上面第 3 點做完之後；`h200-p3` 不單獨 push（memory：只 push origin/h200）。
+5. 完整地圖：等 04 v4 凍結（3090 那邊在定）；凍結後再寫 H200 的鎖定清單（`costs_h200.json`、`results/p3_formats_h200/format_table.json`，沒有 3090 的校準檔）。
+
+---
+
 ## Milestone P3H-1 — 資料層重建、測試、探索（H200 常數）、地圖工具（job 21116，排隊中）
-**狀態**: PENDING（`p3h-all`，`--part data,simtest,explore,map`，`--dependency=afterany:21111`：接在第二階段的 21109→21110→21111 之後，約 20 小時以上）
+**狀態**: PENDING（`p3h-all`，`--part data,simtest,explore,map`；10/19 21:2x 之後的程式改動（X5 後重建格式表、刪 cal）在開跑時才讀到，runner 會改執行 repo 裡的版本，`--dependency=afterany:21111`：接在第二階段的 21109→21110→21111 之後，約 20 小時以上）
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --dependency=afterany:21111 --time=48:00:00 code/r_h200_p3.sh --part data,simtest,explore,map`（在 worktree 送出）
 **步驟**（`bash code/r_h200_p3.sh --part data,simtest,explore,map --list`）：DATA-DL → DATA-VERIFY → 統一表（照 3090 最終 run 的分批）→ 對拍、測試 → DATA-CMP（和 3090 的 `results/p3_data` 逐值比）；SIM-TEST（3090 最後一次 121 passed）；X1／X3／X4／X5／X8 的登記主結果（H200 常數）；地圖：MI300X 常數的合成端到端＋C0 使用率（和 3090 逐值比）→ H200 常數的同一批。
 （先前送的 21113 `p3h-data`、21114 `p3h-simtest` 已取消、合成這一個，少排一次隊。）
@@ -82,8 +105,4 @@
 ---
 
 ## 待使用者決定
-1. **Llama FP8-K0／INT8 的 H200 品質補算**（P3H-0 失敗 1）：(a) 重現檢查只比品質欄（差、CI、eps），`mean_lp_read` 與 run_ids 照列不擋；(b) 先查清楚 `mean_lp_read` 的 0.008 從哪來；(c) 維持 NOT_MEASURED。
-2. **H200 的 CPU 忙校準**（`--part cal`，已寫、**沒送**）：3090 的排程（N 到 48、同／另一個 NUMA）在 1-GPU job 做不到（cgroup 16 CPU、同一個 NUMA）；而且壓力會吃整顆 socket 的記憶體頻寬，同節點別的 lab 的 job 會受影響。可選：只在自己的 16 CPU 內 N＝0／4／8／12（已寫好）、要 4 張卡（64 CPU）照 3090 排程、或不量（地圖的 CPU 忙敏感度在 H200 寫 NOT_MEASURED）。
-3. **`.claude/settings.json` 與 GPU hook**（P3H-0 失敗 2）：合回 `h200` 時，要用 P3 的版本（env 指 `/ssd8`、加 hook；`env_h200.sh` 已會清 `/ssd8` 的值）還是保留 `h200` 原本的？hook 要不要在 Slurm 叢集上停用（要你自己改或授權）？
-4. **合回 `h200`、push `origin/h200` 的時間**：第二階段 session 的 job 都還在排隊，合併會改到它的 working tree；它說 21111 結束會通知我。
-5. **完整地圖**（約 5,600 CPU 小時）：要等 04 v4 凍結；H200 版還要一份 H200 的鎖定清單（`lockfile.py` 現在鎖的是 3090 的校準檔與 MI300X 的格式表）。
+已由我決定（使用者 10/19「自行規劃看哪樣比較好」），見 P3H-0b「決定」。唯一要使用者動手的是第 3 點（`.claude/` 的一行指令）。

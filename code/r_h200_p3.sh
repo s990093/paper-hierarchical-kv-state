@@ -54,10 +54,9 @@ while [ $# -gt 0 ]; do
 done
 # --part 可以給好幾個、逗號分開，依序跑（同一個 job、同一張卡；排隊只排一次）。cal 是量時間的，只能單獨跑
 for _p in ${PART//,/ }; do
-  case "$_p" in data|simtest|explore|map|cal) ;; *) echo "要 --part data|simtest|explore|map|cal（可逗號分開），不是 '$_p'" >&2; exit 2 ;; esac
+  case "$_p" in data|simtest|explore|map) ;; *) echo "要 --part data|simtest|explore|map（可逗號分開），不是 '$_p'" >&2; exit 2 ;; esac
 done
 [ -n "$PART" ] || { echo "要 --part" >&2; exit 2; }
-case ",$PART," in *,cal,*) [ "$PART" = cal ] || { echo "cal 量時間，要單獨一個 job（--part cal）" >&2; exit 2; } ;; esac
 
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # shellcheck disable=SC1091
@@ -234,17 +233,9 @@ map_cmp_mi300x() {  # MI300X 常數的重跑 vs 3090 的檔（不依硬體：應
   done
 }
 
-# ===== cal：H200 的 CPU 忙校準（量時間；**還沒送**：要使用者決定，見 RUNLOG_H200_P3 P3H-0「待決定」）
-# 3090 的排程（N 到 48、same／other／all）在 1-GPU job 做不到：cgroup 只有 16 個 CPU（同一個 NUMA 節點），而且壓力會吃整顆 socket 的記憶體頻寬
-# （同節點別的 lab 的 job 也在用）。這裡只在自己的 cpuset 內做 N＝0／4／8／12（留 4 個給量測 process），不跨 NUMA。
-cal_cpubusy() {
-  local cpus; cpus=$(taskset -cp $$ | awk -F': ' '{print $2}')
-  echo "[cal] 這個 job 的 cpuset：$cpus（只在這裡面加壓）"
-  mkdir -p "$REPO/results/p3_calib_h200"
-  m7run p3h-cal-cpubusy-qwen bash -c "\"$P3PY\" code/p3cal/cpu_busy_restore.py --model qwen --length 32768 --out-dir \"\$RUN_DIR\" \
-    --schedule '0:same 4:same 8:same 12:same 12:same 8:same 4:same 0:same'" || return 1
-  m7run p3h-cal-cpubusy-sum "$P3PY" code/p3cal/summarize_cpubusy.py --run "$(lastrun p3h-cal-cpubusy-qwen)" --out "$REPO/results/p3_calib_h200"
-}
+# ===== cal：不做（2026-10-19 決定，RUNLOG_H200_P3 P3H-0b）。3090 的 CPU 忙校準是「整台主機忙」（N 到 48、兩個 NUMA 節點）；
+# Slurm 的 1-GPU job 只有 16 個 CPU 的 cpuset，做不出同一個條件，整台加壓又會影響同節點別的 lab 的 job。
+# 這個數字只進地圖的敏感度（只報告），所以 H200 的 CPU 忙寫 NOT_MEASURED，不量、也不借 3090 的值。
 
 run_part() {
 case "$1" in
@@ -269,6 +260,8 @@ case "$1" in
     step X5-GRID fresh_dir "$RAW/x5-grid"
     step X5-GRID-RUN m7run p3h-x5-grid "$P3PY" code/p3x/x5_run.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid" --procs 14
     step X5-ANALYZE m7run p3h-x5-analyze "$P3PY" code/p3x/x5_analyze.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid"
+    # X5 的成本常數出來之後重建 H200 格式表：補上和 X5 的對拍（head node 的版本 20261019-211449-p3h-fmt-table2 沒有這兩項）
+    step FMT-TABLE m7run p3h-fmt-table3 "$P3PY" code/p3_formats/build_format_table.py
     step X8-TRACES x8_traces
     step X8-CAPACITY m7run p3h-x8-capacity "$P3PY" -I code/p3x/x8_capacity.py "$RAW/x8-traces"
     step X8-GRID m7run p3h-x8-grid3 "$P3PY" -I code/p3x/x8_sim.py --traces "$RAW/x8-traces" --outdir "$X/x8" --rawdir "$RAW/x8-grid3" --procs 14 \
@@ -287,9 +280,6 @@ case "$1" in
     const_h200
     step MAP-SYN-H200 map_syn h200
     step MAP-C0-H200 map_c0util h200
-    ;;
-  cal)
-    step CAL-CPUBUSY cal_cpubusy
     ;;
   data)
     step DATA-DL data_dl

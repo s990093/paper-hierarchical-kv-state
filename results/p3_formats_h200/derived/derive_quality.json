@@ -1,0 +1,58 @@
+{
+ "run_id": "20261019-211426-p3h-fmt-qderive2",
+ "ts": "2026-10-19T13:14:27+00:00",
+ "tool": "code/m10_analyze.py quality（凍結版，未修改；subprocess）",
+ "checks": {
+  "repro_qwen_step2b": {
+   "ref": "results/m10_precision_h200/analysis/fp8/quality_qwen_step2b.json",
+   "configs": [
+    "E1s@fp8k0_head",
+    "E1s@int8_token"
+   ],
+   "identical": true,
+   "diffs": []
+  },
+  "repro_llama_step1_E1": {
+   "ref": "results/m10_precision_h200/analysis/fp8/quality_llama_step1.json",
+   "configs": [
+    "E1"
+   ],
+   "identical": true,
+   "diffs": []
+  }
+ },
+ "noted_not_blocking": {
+  "keys": [
+   "mean_lp_read",
+   "run_ids"
+  ],
+  "diffs": [
+   "E1s@fp8k0_head/B-i2b/mean_lp_read: 44.84 != 44.799",
+   "E1s@int8_token/B-i2b/mean_lp_read: 44.84 != 44.799",
+   "run_ids 不同：['20261018-035609-m10h-s1-qwen-T24-s0', '20261018-035724-m10h-s1-qwen-T24-s1', '20261018-035839-m10h-s1-qwen-T24-s2', '20261018-035954-m10h-s1-qwen-T24-s3', '20261018-040109-m10h-s1-qwen-T24-s4', '20261018-050044-m10h-s1-qwen-T24-s5', '20261018-050359-m10h-s1-qwen-T5', '20261018-092647-m10h-s1-qwen-T1-s0', '20261018-094702-m10h-s1-qwen-LB-s0', '20261018-100042-m10h-s1-qwen-T1-s1', '20261018-104132-m10h-s1-qwen-LB-s1'] vs ['20261018-035609-m10h-s1-qwen-T24-s0', '20261018-035724-m10h-s1-qwen-T24-s1', '20261018-035839-m10h-s1-qwen-T24-s2', '20261018-035954-m10h-s1-qwen-T24-s3', '20261018-040109-m10h-s1-qwen-T24-s4', '20261018-050044-m10h-s1-qwen-T24-s5', '20261018-050359-m10h-s1-qwen-T5', '20261018-092647-m10h-s1-qwen-T1-s0', '20261018-094702-m10h-s1-qwen-LB-s0']",
+   "E1/B-i2b/mean_lp_read: 43.88 != 43.872"
+  ],
+  "why": "H200 的已提交分析在 T1／LB shard 寫完之前算的；主任務欄位要求相同（RUNLOG_H200_P3 P3H-0b）"
+ },
+ "derived": {
+  "file": "results/p3_formats_h200/derived/quality_llama_step2b.json",
+  "configs": [
+   "E1s@fp8k0_token",
+   "E1s@int8_token"
+  ],
+  "source_run_ids": [
+   "20261018-025613-m10h-s1-llama-T24-s0",
+   "20261018-025728-m10h-s1-llama-T24-s1",
+   "20261018-025843-m10h-s1-llama-T24-s2",
+   "20261018-033736-m10h-s1-llama-T24-s3",
+   "20261018-033916-m10h-s1-llama-T24-s4",
+   "20261018-034046-m10h-s1-llama-T24-s5",
+   "20261018-042043-m10h-s1-llama-T5",
+   "20261018-082925-m10h-s1-llama-T1-s0",
+   "20261018-085601-m10h-s1-llama-LB-s0",
+   "20261018-091236-m10h-s1-llama-T1-s1",
+   "20261018-094628-m10h-s1-llama-LB-s1"
+  ],
+  "note": "第二階段沒有報過這兩格（Step 2b 只判 Qwen）。同一支凍結程式、同一批列；JSON 裡的 csv 路徑指向本 run 解壓的暫存檔（內容＝repo 的 .csv.gz）。"
+ }
+}

@@ -68,6 +68,13 @@ def analyze(model: str, csvs: list[str], configs: list[str], tag: str, out_dir: 
     return json.load(open(os.path.join(out_dir, f"quality_{model}_{tag}.json")))
 
 
+# H200（2026-10-19）：repo 裡 H200 的 step1／step2b 分析是在 T1／LB 兩個「只報告」的 shard 還沒寫完時算的（Qwen 用同樣 9 個檔重跑：
+# 主任務 T2–T5 的欄位逐位元相同，只有含 T1／LB 列的 e0_accuracy、n_items、mean_lp_read 不同；T1 每格 n=9 vs 現在 30，RUNLOG_H200_P3 P3H-0b）。
+# 所以 H200 只對主任務算的欄位要求相同；mean_lp_read（含 T1 列的平均）與 run_ids（多了後來寫完的 shard）照記、不擋。MI300X 照原本全部要相同。
+REPORT_ONLY = {"mean_lp_read"} if PF.PLAT != "mi300x" else set()
+NOTED = []                         # 照記、不擋的差異（寫進 derive_quality.json）
+
+
 def same(new: dict, old: dict, configs: list[str]) -> list[str]:
     bad = []
     for c in configs:
@@ -78,9 +85,9 @@ def same(new: dict, old: dict, configs: list[str]) -> list[str]:
                 continue
             for k in KEYS:
                 if k in e_old and e_new.get(k) != e_old.get(k):
-                    bad.append(f"{c}/{cond}/{k}: {e_new.get(k)!r} != {e_old.get(k)!r}")
+                    (NOTED if k in REPORT_ONLY else bad).append(f"{c}/{cond}/{k}: {e_new.get(k)!r} != {e_old.get(k)!r}")
     if sorted(new["run_ids"]) != sorted(old["run_ids"]):
-        bad.append(f"run_ids 不同：{new['run_ids']} vs {old['run_ids']}")
+        (NOTED if PF.PLAT != "mi300x" else bad).append(f"run_ids 不同：{new['run_ids']} vs {old['run_ids']}")
     return bad
 
 
@@ -92,14 +99,17 @@ def main():
     c1 = ["E1s@fp8k0_head", "E1s@int8_token"]
     new = analyze("qwen", csv_q, c1, "step2b", os.path.join(RUN_DIR, "repro_qwen"))
     bad = same(new, json.load(open(os.path.join(A8, "quality_qwen_step2b.json"))), c1)
-    rep["checks"]["repro_qwen_step2b"] = {"ref": "results/m10_precision_mi300x/analysis/fp8/quality_qwen_step2b.json",
+    rep["checks"]["repro_qwen_step2b"] = {"ref": os.path.relpath(os.path.join(A8, "quality_qwen_step2b.json"), REPO),
                                           "configs": c1, "identical": not bad, "diffs": bad}
     # 重現 2：Llama E1（step1）
     c2 = ["E1"]
     new = analyze("llama", csv_l, c2, "step1", os.path.join(RUN_DIR, "repro_llama"))
     bad2 = same(new, json.load(open(os.path.join(A8, "quality_llama_step1.json"))), c2)
-    rep["checks"]["repro_llama_step1_E1"] = {"ref": "results/m10_precision_mi300x/analysis/fp8/quality_llama_step1.json",
+    rep["checks"]["repro_llama_step1_E1"] = {"ref": os.path.relpath(os.path.join(A8, "quality_llama_step1.json"), REPO),
                                              "configs": c2, "identical": not bad2, "diffs": bad2}
+    if PF.PLAT != "mi300x":         # MI300X 的輸出不加這個鍵（和原本相同）
+        rep["noted_not_blocking"] = {"keys": sorted(REPORT_ONLY) + ["run_ids"], "diffs": NOTED,
+                                     "why": "H200 的已提交分析在 T1／LB shard 寫完之前算的；主任務欄位要求相同（RUNLOG_H200_P3 P3H-0b）"}
     os.makedirs(OUT, exist_ok=True)
     if bad or bad2:
         json.dump(rep, open(os.path.join(RUN_DIR, "derive_quality.FAILED.json"), "w"), indent=1, ensure_ascii=False)
@@ -110,7 +120,7 @@ def main():
     res = analyze("llama", csv_l, c3, "step2b", tmp)
     for fn in ("quality_llama_step2b.json", "quality_llama_step2b_table.csv"):
         shutil.copy(os.path.join(tmp, fn), os.path.join(OUT, fn))
-    rep["derived"] = {"file": "results/p3_formats/derived/quality_llama_step2b.json", "configs": c3,
+    rep["derived"] = {"file": os.path.relpath(os.path.join(OUT, "quality_llama_step2b.json"), REPO), "configs": c3,
                       "source_run_ids": res["run_ids"],
                       "note": "第二階段沒有報過這兩格（Step 2b 只判 Qwen）。同一支凍結程式、同一批列；"
                               "JSON 裡的 csv 路徑指向本 run 解壓的暫存檔（內容＝repo 的 .csv.gz）。"}
