@@ -92,3 +92,4 @@ results/m10_precision_h200/quality_sealed/*.csv
 project_context.md
 results/m10_sweep_h200/analysis/agg_*.csv
 results/m10_sweep_h200/confirm/speed_*/restores.csv
+results/m10_sweep_h200/confirm/quality_*.csv

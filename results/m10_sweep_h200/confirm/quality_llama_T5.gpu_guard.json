@@ -1,0 +1,25 @@
+{
+  "gpu": 0,
+  "started_clean": false,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_AT_START",
+  "intruders": [
+    {
+      "pid": 1787239,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T07:42:18.440684+08:00",
+      "peak_mib": 40816,
+      "n": 1689
+    },
+    {
+      "pid": 1791919,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T07:42:18.440684+08:00",
+      "peak_mib": 40868,
+      "n": 1689
+    }
+  ],
+  "n_dirty_samples": 1688,
+  "paused_intervals": [],
+  "discarded_samples_overlapping_pause": 0
+}

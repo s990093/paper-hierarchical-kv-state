@@ -1111,3 +1111,37 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   - 位置（25%）：fp8_head 的 F 對 R0 +48.1 [+36.2, +59.9]、M +31.4 [+20.8, +42.5]、B −4.7 [−11.7, 0.0]；int8／int4_kivi 的差都在 ±3 個百分點內。
   - 速度（E1 對 E0）：限速層 FP8 快 36.6–43.4%、INT4 快 37.1–59.3%；CPU 層 FP8 快 4.3–5.2%、**INT4 慢 23.9–24.1%**。
 - 注意：256K 的 CSV（`screen_qwen_508_*`）和 32K–128K 放在同一個 `~/longctx_m10h`；`m10_longctx_analyze.py` 的 LEN 沒有 508，之後要重跑 32K–128K 的分析時 `--raw` 指到不含 508 檔的目錄（已寫進新程式的說明）。
+
+### job 20918 `m10h-q5` 跑完（2026-10-19 03:36:04 → 12:24:58 +08:00，COMPLETED exit 0）＝ H200 第二階段的 GPU 工作全部結束
+- CONFIRM-QUALITY（43b）：12 個品質 process 全部 rc＝0；NEEDS_HUMAN 沒有內容；判定（`m10_confirm_analyze.py`）在同一段自動跑完：`results/m10_sweep_h200/confirm/{confirm_llama.json, confirm_qwen.json, tables_confirm.md, analysis/}`。
+- 小事：43 品質的 run 名稱是 `m10-confirm-*`（`jobs_43q.json` 的指令沒有被改成 m10h；只有 43 的 .sh 被 sed 過）。不影響內容，run_id 照實記。
+
+### 43 複賽（大掃描）：H200 vs MI300X（`tables_confirm.md` 並排；新 seed 50000 起，每個模型 300 題）
+- **兩台都是「6 個選手沒有一個複賽成立」**（判定節點相同）。
+- 兩台都有的選手：
+  | 模型 | 配置 | MI300X：ε／贏隨機 A（Holm）／差 A（pp）／速度不輸 | H200：同 |
+  |:--|:--|:--|:--|
+  | Llama | SW-ERR-20@int2_kivi | 沒過／**是**／+2.0 [+0.8, +3.1]／True | 沒過／否／+0.9 [−0.3, +2.0]／True |
+  | Llama | SW-ERR-25@kv-int4_kivi-int2_kivi | 過／否／−0.4 [−1.2, +0.4]／True | 過／否／+0.0 [−0.8, +0.8]／True |
+  | Qwen | SW-ATT-40@kv-int4_kivi-int2_kivi | 過／否／+0.5 [−0.4, +1.4]／False | 過／否／+1.1 [+0.1, +2.1]／False |
+  | Qwen | SW-AXE-40@kv-int4_kivi-int2_kivi | 過／否／+0.5 [−0.3, +1.5]／False | 過／否／+1.2 [+0.2, +2.1]／False |
+  | Qwen | SW-ATT-10@kv-int8_token-int4_kivi | 過／否／−0.3 [−0.8, +0.2]／True | 過／否／−0.2 [−0.7, +0.3]／True |
+  | Qwen | SW-AXE-10@kv-int8_token-int4_kivi | 過／否／−0.2 [−0.8, +0.2]／True | 過／否／−0.3 [−0.7, +0.2]／True |
+- H200 Llama 的「速度不輸」用 δ*＝0.2842（主線凍結的 noise.json）。
+
+### 42／42b／42c 反量化：H200 vs MI300X（`results/m10_sweep_h200/dqsweep/C/{report_C.json, tables_C.md}`，head node 10/19 跑 `m10_dqsweep.py report`）
+- **移植修正**（`code/m10_dqsweep.py`，沒設環境變數時不變）：report 的 δ* 寫死讀 `m10_precision_mi300x`，「主線／42」參考欄寫死讀 MI300X 的 summary（`REF_SUMMARY`）→ 第一次跑出的 H200 表那一欄是 MI300X 的數字（例：Llama FP8 CPU 忙 0.171／0.082，和 MI300X 表逐字相同），發現後改成 `M10_PRECISION_DIR`／`M10_SWEEP_DIR` 有設時讀 H200 自己的格子；重跑後的表才是記錄的這份。E0、E1、不輸比等其他欄本來就是 H200 的資料。
+- B 段（42b）：兩台都是「一組拆（S2k）」贏。冠軍 MI300X S2k8、H200 S2k16；進 C 段的 5 個有 3 個相同（S2k16、S4、S0）；problems 都是空的。
+- 42（融合 kernel）與 C 段，CPU 層 E1 的還原時間中位數（s；主線 → 42 → C 段冠軍）：
+  | | GPU | MI300X | H200 |
+  |:--|:--|:--|:--|
+  | Llama FP8 | 忙 | 0.171 → 0.082 → 0.085（S2k8） | 0.144 → 0.083 → 0.048（S2k16） |
+  | Llama INT4 | 忙 | 0.189 → 0.082 → 0.083 | 0.168 → 0.077 → 0.042 |
+  | Qwen FP8 | 忙 | 0.074 → 0.065 → 0.065 | 0.082 → 0.068 → 0.034 |
+  | Qwen INT4 | 忙 | 0.146 → 0.066 → 0.065 | 0.122 → 0.067 → 0.034 |
+  兩台都是：融合 kernel 把 CPU 層的變慢拿掉；H200 上「一組拆」再快一截（E1 比 E0 快 50–65%），MI300X 上一組拆和 S0 差不多（MI300X 記的「grouping hits the one-block-recompute floor」）。
+- **和主線分岔的關係**：主線判定那幾格（CPU 層、GPU 忙，低精度慢 12–20%）用的是原寫法（K0、S0）；換成融合 kernel＋一組拆之後，同一格 H200 的 E1 比 E0 快。主線判定照凍結的寫法，不改。
+
+### 還沒對照的（MI300X 在 origin/main 上還沒有結果，10/19 12:5x）
+- 44 兩層混合還原（H200：`results/m10_tier_h200/`）、70 vLLM TTFT、44b／44c 長 context（MI300X 10/19 剛開始 44c）。
+- 只報告、H200 資料已齊但還沒分析：45、55、60、88；13.1 A（`m10_iowall` 的 run 表待移植）、10.11（INT4 敏感度，待移植）。
