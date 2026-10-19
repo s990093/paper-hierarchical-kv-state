@@ -1,4 +1,4 @@
-# 第三階段前置探索：實驗矩陣（v0.2，2026-10-19；13:4xZ 補 L0，14:0xZ 依 L1–L3 改）
+# 第三階段前置探索：實驗矩陣（v0.3，2026-10-19；13:4xZ 補 L0，14:0xZ 依 L1–L3 改，14:1xZ 依 L4＋I1 預測改優先序）
 
 > **狀態**：v0.2。使用者 10/19 同意方案、先做 CPU 部分。文獻地圖 L0–L3 已回（`lit/`，彙整在 `research_map.md`）；L4（Cascade、CacheSmith、CacheFlow 全文查新）跑中。第二階段十條觀察的核實：`stage2_factcheck_and_toolbox.md`。
 > **規則**：本頁所有「預期」都是〔預測〕，不是結果；沒量到的一律 NOT_MEASURED。引用的舊數字都附出處。
@@ -51,15 +51,15 @@
 
 | ID | 方向 | 一句話 | 前人 | 需要 | 〔估〕GPU | 優先 |
 |:--|:--|:--|:--|:--|--:|:--|
-| **S1** | Shrink | 無損壓縮 KV 的盈虧點；含 Intel KV Shrink 的作法（DEFLATE、只壓高位元組） | △ SplitZip（H200，1.31–1.33×）、KVServe 公式；**AMD／CPU 端解壓沒人量** | 程式已寫好（自測過）；KV 匯出 10 分鐘 GPU | 0.2 | ★★★ |
-| **I4** | Infinity（DSA） | 零碎 copy 批次化＋**SDMA／blit × GPU 忙**（L2 X3 併入）：vLLM CPU 層 4.1 GiB/s vs pinned 50；GPU 忙時 H2D 慢 46–50% 的原因 | ✗（ROCm PR #11614 未合併；ConCCL 是訓練通訊） | 1 卡、量時間 | 2 | ★★★ |
-| **F2** | Fuse | **重現 vLLM #44294**：命中但正在載入 → 延後；共用前綴的併發突發，卸載反而更慢 | △ 單點 issue（L40S）；MI300X 沒人量 | V0 之後；1 卡、量時間 | 1 | ★★★ |
-| **C1a** | Cascade（閘門） | **分數有沒有預測力**：寫入時分數、Quest 式 block 摘要、第 1 輪 QRY，能不能找到第 2 輪答案所在的 block（recall@k、Spearman） | ✗ 「下一輪實際用到哪些 block」的實測（L1 G2／G4） | 1 卡、只 forward | 1.5 | ★★★ |
-| **S2** | Shrink＋drop | **等位元組：載入區的有損刪除 vs 降精度**（1/2、1/4、1/8 預算；L1 X1） | ✗ 同位元組、Cake 還原下的比較（QEvict、ArkVale 最近） | 1 卡、品質；可併進 44e 的 DS 程式 | 1 | ★★★ |
-| **I1** | 系統狀態 | 多 session 同時還原：各自 Cake vs 聯合決定 vs 順序；**實測計算與搬運互相干擾**（CacheFlow 假設不干擾） | △ CacheFlow、Strata、CacheSmith（L4 查全文中） | 1 卡、量時間 | 3 | ★★ |
+| **S1** | Shrink | 無損壓縮 KV 的盈虧點；含 Intel KV Shrink 的作法（DEFLATE、只壓高位元組） | △ SplitZip（H200，1.31–1.33×）、KVServe 公式；**AMD／CPU 端解壓沒人量** | 程式已寫好（自測過）；KV 匯出 10 分鐘 GPU | 0.2 | ★★ |
+| **I4** | Infinity（DSA） | 零碎 copy 批次化＋**SDMA／blit × GPU 忙**（L2 X3 併入）：vLLM CPU 層 4.1 GiB/s vs pinned 50；GPU 忙時 H2D 慢 46–50% 的原因 | ✗（ROCm PR #11614 未合併；ConCCL 是訓練通訊）；F1 舊分析自判「工程問題」，**新的是搬法 × GPU 忙的交互** | 程式已寫好（`code/m16_i4_copybench.py`，未在 GPU 跑過） | 2 | ★★★（缺口 #1） |
+| **F2** | Fuse | **重現 vLLM #44294**：命中但正在載入 → 延後；共用前綴的併發突發，卸載反而更慢 | △ 單點 issue（L40S）；MI300X 沒人量 | V0 之後；1 卡、量時間 | 1 | ★★ |
+| **C1a** | Cascade（閘門） | **分數有沒有預測力**：寫入時分數、Quest 式 block 摘要、第 1 輪 QRY，能不能找到第 2 輪答案所在的 block（recall@k、Spearman） | ✗ 「下一輪實際用到哪些 block」的實測（L1 G2／G4）；L4：六篇都沒做選擇性還原 | 1 卡、只 forward | 1.5 | ★★★（缺口 #2） |
+| **S2** | Shrink＋drop | **等位元組：載入區的有損刪除 vs 降精度**（1/2、1/4、1/8 預算；L1 X1） | ✗ 同位元組、Cake 還原下的比較（QEvict、ArkVale 最近） | 1 卡、品質；新檔 `m16_s2_equalbytes.py`（agent 寫中） | 1 | ★★ |
+| **I1** | 系統狀態 | 多 session 同時還原：各自 Cake vs 聯合決定 vs 順序；**實測計算與搬運互相干擾**（CacheFlow 假設不干擾） | △ CacheFlow DP＋Cascade（L4）；**事先預測〔模擬〕：互不干擾時聯合決定沒有好處**（experiment_log I1）→ GPU 只做 1 小時的干擾驗證（實測 vs 預測） | 1 卡、量時間 | 1 | ★★（缺口 #1 的一半） |
 | **V0** | 閘門 | vLLM 0.28 ROCm：APC、CPU offload、tiering 能跑、命中前後輸出相同 | — | 1 卡 | 1 | ★★（F1／F2／I3 前提） |
 | **F1** | Fuse | 復用邊界：重疊 × 容量 × 併發 × {不復用／APC／APC＋卸載}；同時看平均與 goodput 的最佳設定會不會翻轉 | △ py-kvcache 只有單請求前沿；**併發的邊界沒人量** | 1 卡、量時間 | 3（子集） | ★★ |
-| **I3s** | Infinity／agent | **工具暫停四選一（GPU／CPU／SSD／丟）的模擬**，用 repo 實測成本；比 Continuum、Tokencake、InferCept；看決策會不會隨硬體翻轉 | △ 都只做二／三選一、κ 不實測；**Cascade 待查全文** | **CPU（現在做，agent 跑中）** | 0 | ★★ |
+| **I3s** | Infinity／agent | **工具暫停四選一（GPU／CPU／SSD／丟）的模擬**，用 repo 實測成本；比 Continuum、Tokencake、InferCept；看決策會不會隨硬體翻轉 | △ Cascade 四個動作都有（SLO 預算觸發）；κ 跨硬體已有 FSL-26-02 | **CPU（現在做，agent 跑中）** | 0 | ★（缺口 #6，新意風險高） |
 | **I3g** | Infinity／agent | I3s 的 GPU 驗證點＋warm-up 預取（vLLM multi_turn 重播） | 同上 | 1 卡、量時間 | 2 | ★（I3s 有訊號才做） |
 | **C1b** | Cascade | 選擇性還原的速度（只載前 k%＋需要時補載 vs 丟 vs 完整 Cake） | △ IMPRESS、ContiguousKV、CacheTune（都沒和 Cake 結合） | 1 卡、品質＋時間 | 3 | ★（C1a 過了才做） |
 | **I2** | Infinity | 背景搬運拖不拖慢正在 decode 的請求 | △ HCache 只報 TBT +4% | 1 卡、量時間 | 1 | ★ |
