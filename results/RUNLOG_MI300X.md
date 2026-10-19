@@ -947,3 +947,6 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 
 - `code/m10_queue_mi300x/qstat.sh`＋repo 根目錄 `Makefile` 的目標：`make status`（全部）、`make q`（排隊）、`make gpu`（兩張卡的顯存、使用率、顯存帳）、`make jobs`（跑中的 job 和每個 job 的進度：第幾題、秒／題）、`make nh`（NEEDS_HUMAN）、`make done`（最近完成，台灣時間）、`make tail`（跑中 stage 的 log，`N=50` 看更多）、`make watch`（每 30 秒刷新）。時間同時給 UTC 和台灣時間。
 - NEEDS_HUMAN 舊的 6 行都已處理，移到 `NEEDS_HUMAN.handled`（附處理紀錄），`make nh` 只顯示新的。
+- **10/19 04:5xZ 補（使用者：「ssh 連進去就自己打開 repo、要美觀 rich」）**：
+  - `code/m10_queue_mi300x/qstat_rich.py`（rich 狀態板）：Runner、GPU（顯存條、使用率、顯存帳）、跑中的 job（每個 job 的「已做/總題數」進度條、秒／題、還要多久）、排隊、最近完成、NEEDS_HUMAN。`make status` 改用它（rich 不能用時退回 `make status-plain`），`make watch` 每 30 秒刷新。
+  - SSH 登入：`/mlsteam/workspace/shell/zshrc.tiara`（zshrc 最後 source；repo 副本在 `docs/migration_20261013/lab_bin/shell/`）。互動式、ssh 進來、不在 tmux／Claude 裡時，cd 到 repo 並印精簡版狀態板。`touch /mlsteam/workspace/shell/no-tiara-status` 可關掉。測過：模擬 ssh 登入 → 進 repo、印出狀態板；tmux 裡不印。

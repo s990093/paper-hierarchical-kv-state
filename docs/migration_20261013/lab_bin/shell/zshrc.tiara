@@ -1,0 +1,12 @@
+# ─────────────────────────────────────────────────────────────
+#  Tiara（10/19）：ssh 登入時直接進 repo，顯示 GPU 佇列狀態板（rich，code/m10_queue_mi300x/qstat_rich.py）。
+#  由 zshrc 最後 source。只在「互動式＋ssh 進來＋不在 tmux／Claude 裡」時跑，所以 tmux 開新窗格不會每次都印。
+#  不想看狀態板：touch /mlsteam/workspace/shell/no-tiara-status（照樣會 cd 進 repo）
+# ─────────────────────────────────────────────────────────────
+if [[ -o interactive && -n $SSH_CONNECTION && -z $TMUX && -z $CLAUDECODE ]]; then
+  cd /mlsteam/workspace/paper-hierarchical-kv-state 2>/dev/null
+  if [[ ! -e /mlsteam/workspace/shell/no-tiara-status ]]; then
+    /mlsteam/workspace/venv/tiara/bin/python code/m10_queue_mi300x/qstat_rich.py --compact 2>/dev/null \
+      || echo "（狀態板跑不起來；make status-plain 看純文字版）"
+  fi
+fi

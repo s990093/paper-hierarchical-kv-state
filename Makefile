@@ -35,8 +35,13 @@ distclean: clean
 #   make status  全部（runner、卡、顯存帳、跑中的 job、排隊、最近完成、NEEDS_HUMAN）
 #   make q／gpu／jobs／nh／done／tail（N=50 看更多行）／watch（每 30 秒刷新）
 QSTAT := code/m10_queue_mi300x/qstat.sh
-.PHONY: status q gpu jobs nh done tail watch
-status q gpu jobs nh done tail:
+QRICH := /mlsteam/workspace/venv/tiara/bin/python code/m10_queue_mi300x/qstat_rich.py
+.PHONY: status status-plain q gpu jobs nh done tail watch
+status:                      # rich 狀態板；rich 不能用時退回純文字版
+	@$(QRICH) || bash $(QSTAT) status
+status-plain:
+	@bash $(QSTAT) status
+q gpu jobs nh done tail:
 	@bash $(QSTAT) $@
 watch:
-	@watch -n 30 -t bash $(QSTAT) status
+	@watch -n 30 -t -c "FORCE_COLOR=1 COLUMNS=$$(tput cols) $(QRICH)"

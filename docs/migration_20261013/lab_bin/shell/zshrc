@@ -72,3 +72,6 @@ source $ZSH/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 # ── Greeting ─────────────────────────────────────────────────
 [[ -o interactive && -z "$CLAUDECODE" && -z "$TMUX" ]] && fastfetch
+
+# ── Tiara：ssh 登入時進 repo＋GPU 佇列狀態板（/mlsteam/workspace/shell/zshrc.tiara）──
+[[ -f /mlsteam/workspace/shell/zshrc.tiara ]] && source /mlsteam/workspace/shell/zshrc.tiara
