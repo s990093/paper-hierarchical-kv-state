@@ -129,7 +129,7 @@ def smi_index(logical: int = 0) -> int:
     if vendor() == "amd":
         # 10/19 起容器有兩張 MI300X：HIP_VISIBLE_DEVICES 指定實體卡，amd-smi 照實體編號列全部的卡。
         # 實測 HIP 編號和 amd-smi 編號都依 PCI bus 排序、一一對應（0＝86:00.0、1＝a6:00.0；RUNLOG 15.1）。
-        hv = os.environ.get("HIP_VISIBLE_DEVICES") or os.environ.get("ROCR_VISIBLE_DEVICES")
+        hv = os.environ.get("ROCR_VISIBLE_DEVICES") or os.environ.get("HIP_VISIBLE_DEVICES")   # ROCR 是實體編號，優先（15.16）
         if not hv:
             return logical
         ents = [e.strip() for e in hv.split(",") if e.strip()]

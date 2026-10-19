@@ -3,7 +3,11 @@ if [ -d /mlsteam/workspace/venv/tiara ]; then   # 平台 B（MI300X / MLSteam）
 source /mlsteam/workspace/venv/tiara/bin/activate
 export HF_HOME=/mlsteam/data/tiara/hf-cache
 # 10/19 起兩張卡：TIARA_GPU 選實體卡（amd-smi／HIP 編號；1＝a6:00.0＝10/18 以前所有計時用的那張）。沒設＝0（原本的行為）
-export HIP_VISIBLE_DEVICES=${TIARA_GPU:-0} CUDA_VISIBLE_DEVICES=${TIARA_GPU:-0}
+if [ -e /mlsteam/data/tiara/USE_ROCR ]; then   # 15.16：ROCr 層只看得到一張卡（只開那張的 render 節點，amd-smi 只列在那張）；44d_xgpu_check2 驗過才會有這個旗子
+  export ROCR_VISIBLE_DEVICES=${TIARA_GPU:-0}; unset HIP_VISIBLE_DEVICES CUDA_VISIBLE_DEVICES
+else
+  export HIP_VISIBLE_DEVICES=${TIARA_GPU:-0} CUDA_VISIBLE_DEVICES=${TIARA_GPU:-0}
+fi
 export TIARA_RUNS=/mlsteam/data/tiara/runs
 export PYTHONUNBUFFERED=1
 R=/mlsteam/workspace/paper-hierarchical-kv-state/results/m7_write_policy_mi300x

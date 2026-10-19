@@ -1048,3 +1048,12 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 原因：HIP 的行程會打開兩張卡的 render 節點，amd-smi 把它的 VRAM 在兩張卡底下都列一次。
   - 所以只看環境變數還不夠：卡 1 的 guard 會把它算成外部行程（`external_namespace`）。
 - 下一步：改用 `ROCR_VISIBLE_DEVICES`（ROCr 層就只看得到一張卡，應該只開那張的 render 節點）再驗一次，見 15.16。
+
+### 15.16 改用 ROCR_VISIBLE_DEVICES 再驗一次分卡＋干擾（10/19 20:1xZ 寫好；排在 44d 後、44e0 前）
+
+- `code/gpu_guard.py`：`smi_index` 改成 ROCR 優先（ROCR 是實體編號）。`_holder_gpu` 原本就是 ROCR 優先。`test_gpu_guard_slurm.py` 9 項照過；ROCR=1、HIP=0 → 1；只有 HIP=1 → 1。
+- `code/m7_env.sh`：有 `/mlsteam/data/tiara/USE_ROCR` 時改成 `ROCR_VISIBLE_DEVICES=${TIARA_GPU}`、不設 HIP／CUDA_VISIBLE_DEVICES；沒有這個檔就照舊（現在沒有）。
+- `queue/44d_xgpu_check2.sh`（本身兩張卡獨佔）：
+  1. 卡 0 假行程用 ROCR=0：記錄它開了哪些 render 節點、amd-smi 的原始行程清單，以及兩張卡的 guard 看法。
+  2. 第 1 步過了才做 A／B：卡 1 量還原（ROCR=1），卡 0 的 4 個品質 process 用 ROCR=0。判準和 44cb 相同。
+  3. 全過 → 立 `USE_ROCR`（之後所有 job 用 ROCR）＋`XGPU_OK`。沒過 → 照舊兩張卡獨佔、寫 NEEDS_HUMAN。
