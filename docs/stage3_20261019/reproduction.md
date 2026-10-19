@@ -27,15 +27,15 @@ m7run m16-i1pred nice -n 19 taskset -c 0-3 python -I code/m16_i1_predict.py --mo
 ### 2.1 runner
 
 ```bash
-# 量時間的佇列（兩張卡的鎖都拿、job 用卡 1）
-S3_QNAME=queue    nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/stage3/jobs/runner_queue.out 2>&1 &
-# 品質的佇列（卡 0）
-S3_QNAME=queue_g0 nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/stage3/jobs/runner_queue_g0.out 2>&1 &
+# 量時間的佇列 queue/（GPU-NEED: both；在卡 1；第二階段全空時獨佔兩張卡，或 XGPU 條件下用 WANT_CARD1 清空卡 1）
+S3_ROLE=timing  setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/stage3/jobs/runner_timing.out 2>&1 &
+# 品質的佇列 queue_q/（GPU-NEED: one；第二階段 main 空、沒有 WANT_CARD1 時在卡 1；helper 還在跑時 ≤ 96 GB）
+S3_ROLE=quality setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/stage3/jobs/runner_quality.out 2>&1 &
 # 放 job：把 code/m16_queue/jobs/<NN_name>.sh 複製到 /mlsteam/data/tiara/stage3/jobs/<queue>/（名稱照位元組排序執行）
 # 停：touch /mlsteam/data/tiara/stage3/jobs/STOP
 ```
 
-- runner 只在**第二階段**（`/tmp/claude-0/-mlsteam-workspace/31610192-*/scratchpad/jobs`）的 `WANT_BOTH` 不在、`queue/`、`queue_g0/` 都沒有 `*.sh`／`*.running` 時才開 GPU job；拿 `/mlsteam/data/tiara/gpu{0,1}.lock`；登記共用顯存帳 `vram_reserved.json`；`MAX-H` 超過 10/23 02:00Z 的不開。測試：`S2_JOBS=<假目錄> S3_JOBS=<假目錄> S3_LOCKDIR=<假目錄> bash code/m16_queue/runner.sh`（見 `experiment_log.md`）。
+- 和第二階段的協調（RUNLOG_MI300X 15.13；`code/m16_queue/runner.sh` 檔頭）：量時間的 job 在第二階段兩個佇列都空時獨佔兩張卡；有 `XGPU_OK`、第二階段 main 空時改用 XGPU 條件（`WANT_CARD1` → 等卡 1 清空 → `gpu1.lock`，結果標「卡 0 同時有品質工作」，環境變數 `S3_XGPU_COND=1`）。品質 job 在第二階段 main 空時用卡 1。拿 `/mlsteam/data/tiara/gpu{0,1}.lock`；登記共用顯存帳 `vram_reserved.json`；`MAX-H` 超過 10/23 02:00Z 的不開。測試：`S2_JOBS=<假目錄> S3_JOBS=<假目錄> S3_LOCKDIR=<假目錄> bash code/m16_queue/runner.sh`（見 `experiment_log.md`）。
 - job 檔頭：`# GPU-NEED: none|one|both`、`# GPU: 0|1`、`# NEED-GB: N`、`# MAX-H: h`。
 
 ### 2.2 job 清單（`code/m16_queue/jobs/`）
@@ -43,8 +43,8 @@ S3_QNAME=queue_g0 nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/stag
 | job | 做什麼 | 輸出 |
 |:--|:--|:--|
 | `00_smoke.sh` | 每支 GPU 程式最小設定跑一次 | `/mlsteam/data/tiara/stage3/smoke/`（不進 results） |
-| `10_s1_kvdump.sh` | S1：存真的 KV＋各格式位元組（Llama／Qwen × T4／T2 × 32K；128K 選 5 層） | `/var/tmp/tiara_s3/kv_dumps/`（本地盤，可重生） |
-| `11_s1_analyze.sh` | S1：壓縮比、熵、速度（1／4／8／16 thread）、盈虧點 | `results/m16_stage3_mi300x/s1_lossless/` |
+| `10_s1_kvdump.sh`（quality） | S1：存真的 KV＋各格式位元組（Llama／Qwen × T4／T2 × 32K；128K 選 5 層） | `/var/tmp/tiara_s3/kv_dumps/`（本地盤，可重生） |
+| `11_s1_analyze.sh`（quality，拿卡 1 的鎖確保沒有量時間的 job 同時跑） | S1：壓縮比、熵、速度（1／4／8／16 thread）、盈虧點 | `results/m16_stage3_mi300x/s1_lossless/` |
 | `20_i4_sdma0.sh`、`21_i4_sdma1.sh` | I4：搬法 × GPU 閒／busy2，SDMA 關／開 | `results/m16_stage3_mi300x/i4_copy_batching/` |
 | `30_i1_interf.sh` | I1(a)＋I2：計算／搬運／decode 互相拖慢多少 | `results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.*` |
 | `31_i1_grid.sh` | I1(b)：N 個 session 同時還原，實測 vs 預測 | `results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.*` |

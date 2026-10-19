@@ -4,6 +4,7 @@
 
   python ledger.py reserve <name> <gpu> <need_gb> <pid>   → exit 0 登記成功；exit 3 放不下
   python ledger.py release <name>
+  python ledger.py card_clear <gpu>                       → exit 0：帳上沒有這張卡的登記、而且 amd-smi 這張卡已用 < 1.5 GB（XGPU 條件的 (b)）
   python ledger.py show
 不 import torch（不開 /dev/kfd）；總量與空餘用 amd-smi 查，查不到就丟例外（CLAUDE.md 規則 7：查不到不等於沒有）。
 """
@@ -68,6 +69,18 @@ def main():
         ok = _ledger(f)
         print(json.dumps(dict(ok=ok, gpu=g, need=need, free=round(free, 1), total=round(total, 1))))
         sys.exit(0 if ok else 3)
+    elif cmd == "card_clear":
+        g = int(sys.argv[2])
+        fake = os.environ.get("S3_FAKE_USED_GB")              # 只給 CPU 測試用
+        if fake is not None:
+            used = float(fake)
+        else:
+            free, total = mem(g)
+            used = total - free
+        regs = _ledger(lambda d: [k for k, v in d.items() if v["gpu"] == g])
+        ok = (not regs) and used < 1.5
+        print(json.dumps(dict(ok=ok, gpu=g, used_gb=round(used, 2), registered=regs)))
+        sys.exit(0 if ok else 4)
     elif cmd == "release":
         _ledger(lambda d: d.pop(sys.argv[2], None))
     elif cmd == "show":
