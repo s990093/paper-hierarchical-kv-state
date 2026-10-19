@@ -1,3 +1,4 @@
+# GPU-NEED: one　（10/19 雙卡：只用 CPU 寫 44d）
 # 13 §7（CPU）：42c 的冠軍（pick-c）＋ Q4 帶過來的方法（43b 的 q4_pick.json）→ 寫 queue/44d_rs_longctx.sh。
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail

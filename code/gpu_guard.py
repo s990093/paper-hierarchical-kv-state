@@ -127,7 +127,15 @@ def smi_index(logical: int = 0) -> int:
     對不上就丟 SmiUnavailable，不猜。AMD（MI300X 單卡容器）與沒設 CUDA_VISIBLE_DEVICES 時行為不變。
     """
     if vendor() == "amd":
-        return logical
+        # 10/19 起容器有兩張 MI300X：HIP_VISIBLE_DEVICES 指定實體卡，amd-smi 照實體編號列全部的卡。
+        # 實測 HIP 編號和 amd-smi 編號都依 PCI bus 排序、一一對應（0＝86:00.0、1＝a6:00.0；RUNLOG 15.1）。
+        hv = os.environ.get("HIP_VISIBLE_DEVICES") or os.environ.get("ROCR_VISIBLE_DEVICES")
+        if not hv:
+            return logical
+        ents = [e.strip() for e in hv.split(",") if e.strip()]
+        if logical >= len(ents) or not ents[logical].isdigit():
+            raise SmiUnavailable(f"HIP_VISIBLE_DEVICES={hv!r} 的第 {logical} 張卡對不到 amd-smi 的編號")
+        return int(ents[logical])
     cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
     if cvd is None:
         return logical

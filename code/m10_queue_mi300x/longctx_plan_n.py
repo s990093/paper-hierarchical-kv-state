@@ -116,7 +116,8 @@ def plan():
                            f"{RAW}/screen_{m}_{nb}_s{s}.csv.gz", f"m10-lc-screen-{m}-{nb}-s{s}")
                 jobs.append(dict(name=f"lcs-{m}-{nb}-s{s}", need_gb=NEED[(m, nb)], cmd=c))
     json.dump(jobs, open(f"{J}/jobs_92.json", "w"), indent=1)
-    open(f"{J}/queue/44c_longctx_screen.sh", "w").write(f"""# 10_longctx_plan §3.3 正式海選；題數與設定由 longctx_plan_n.py 照試跑決定：{choice['label']}，n＝{choice['n']}，估計 {choice['est_h']} 小時
+    open(f"{J}/queue/44c_longctx_screen.sh", "w").write(f"""# GPU-NEED: one　（10/19 雙卡：只量品質的 pool，只用 main 那張卡）
+# 10_longctx_plan §3.3 正式海選；題數與設定由 longctx_plan_n.py 照試跑決定：{choice['label']}，n＝{choice['n']}，估計 {choice['est_h']} 小時
 source {J}/lib.sh
 set -uo pipefail
 pool {J}/jobs_92.json 4 || {{ echo "44c：pool jobs_92.json 有 job 失敗（{J}/pool_lcs-*.log）→ 跳過彙整" >> {J}/NEEDS_HUMAN; exit 0; }}

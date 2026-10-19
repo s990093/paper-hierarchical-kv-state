@@ -1,3 +1,4 @@
+# GPU-NEED: one　（10/19 雙卡：只量品質（vLLM 生成計分））
 # cards/V2 的 ❌（T5 cwe）：同一份上游 RULER jsonl 改用 vLLM 0.28 跑（只有 E0，只報告）
 source /tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs/lib.sh
 set -uo pipefail

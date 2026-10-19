@@ -878,3 +878,38 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 10/17 那次 `exit 1` 讓整條佇列停了 3 小時（11.2o）。把還沒跑的 stage 全部改成「失敗 → 寫 NEEDS_HUMAN、跳過這段其餘部分、exit 0」：44a、44b、44c 的模板（`longctx_plan_n.py`）、45、46、55、60、70、75、88，還有 `m10_confirm.py plan` 的模板。只改失敗時的動作，指令本身沒動。舊檔在 `scratchpad/jobs/bak_20261018_exit1/`。
 
 **前作**（拆進 attention；摘要級，self-review）：KIVI（arXiv 2402.02750，原作就把拆融合進矩陣乘）、HACK（2502.03589，不拆、直接算）、HyQuant（2608.27875）、VecInfer（2510.06175）、SGLang 量化 KV 文件（不融合會很慢）。
+
+## Milestone 15 — 第二張 MI300X、雙卡佇列（10/19）
+
+**為什麼**：使用者 10/19：平台配額是 2 張卡（之前容器只掛 1 張）→ 重啟加第二張；「先讓兩張卡都跑通、雙卡加速；量時間的 stage 獨佔兩張卡、只量品質的在另一張平行」。
+
+### 15.1 重啟與還原（10/19 02:15 → 02:39Z）
+
+- 重啟前（02:14–02:19Z）：
+  - 佇列狀態（原本在 /tmp 的 scratchpad/jobs）備份到 `/mlsteam/data/tiara/jobs_backup/`；scratchpad 其他東西到 `/mlsteam/data/tiara/scratch_backup/`；/root 的設定到 `/mlsteam/workspace/.restore_root`（700，有 git token，不進 git）。
+  - 還原說明 `/mlsteam/workspace/RESUME_20261019_2GPU.md`；`code/m10_queue_mi300x/restart_restore.sh`。
+- **44a 第 5 格（Llama 128K INT4，`20261018-234358-m10-lc-grid-llama-129024-int4_kivi`）在重啟時被中斷，沒跑完**（L1 第 3 個 busy rep 時）。重排的 44ca 會重跑這一格；前 4 格（FP8，128K／64K × 兩個模型）CLEAN、跳過。
+- 重啟後（使用者在 Mac 端：Lab 改 Gpu_full_2_gpus、`lab_up.sh` selftest 49 項全過、SSH port 46639、終端機改 zsh＋tmux）：
+  - `amd-smi list`：GPU 0＝**0000:86:00.0**（新的）、GPU 1＝**0000:a6:00.0**（10/18 以前所有計時用的那張）。`torch.cuda.device_count()`＝2；`HIP_VISIBLE_DEVICES=0` → pci_bus 0x86、`=1` → 0xa6：HIP 編號和 amd-smi 編號一一對應。
+  - `/mlsteam/data/tiara` 有掛上；git 登入從 `.restore_root` 放回，`git fetch` 成功。
+  - `restart_restore.sh`：jobs 放回原路徑；`44a_longctx_speed.running` 換成會跳過已完成格子的版本。
+
+### 15.2 「第 0 張卡」寫死的地方（修）
+
+- `code/m7_env.sh`：`HIP_VISIBLE_DEVICES=0 CUDA_VISIBLE_DEVICES=0` → `${TIARA_GPU:-0}`（沒設＝原本的行為）。
+- `code/gpu_guard.py` `smi_index`：AMD 原本一律回傳 0 → 照 `HIP_VISIBLE_DEVICES` 對到 amd-smi 的實體編號（不是數字就丟 SmiUnavailable，不猜）。測：`HIP_VISIBLE_DEVICES=1` → 1；沒設 → 0。
+- `pool.py` 的 `free_gb`：原本看 amd-smi 的第一張 → 看 `TIARA_GPU` 那張。
+- **已知限制**：AMD 的 gpu_guard 判「同一個容器裡的別的行程」是看誰開了 `/dev/kfd`，不分卡。兩條 runner 同時跑品質 stage 時，兩邊的 guard 會互相記成污染。品質分數照規則保留（CLAUDE.md §3），所以不影響；量時間的 stage 一律兩張卡獨佔（下面），不會碰到。
+
+### 15.3 雙卡佇列（10/19 02:37Z 開跑）
+
+- `runner.sh` 重寫（副本 `code/m10_queue_mi300x/runner.sh`）：
+  - **main**：`queue/`，`TIARA_GPU=1`（a6:00.0，和以前的計時同一張卡）。stage 開頭寫 `# GPU-NEED: one` → 只拿 gpu1 的鎖；沒寫（＝both，量時間）→ 先立 `WANT_BOTH` 旗子，再依序拿 gpu0、gpu1 的鎖（固定順序，不會互卡）。
+  - **helper**：`queue_g0/`，`TIARA_GPU=0`（86:00.0），只跑只量品質的 stage。`WANT_BOTH` 在的時候不開新的；它的 pool 看到 `WANT_BOTH` 就停掉自己的 job、exit 75，runner 把 stage 放回佇列，之後重跑時品質 job 照題號續跑（已寫的題不重做；最多損失正在做的那一題）。CPU 上用假 job 測過：exit 75、子行程全部清掉。
+  - 名稱照位元組排序（`LC_ALL=C`；重啟後 locale 換了）。
+- 佇列重排（只換順序，指令不變）：
+  - main：44b（試跑，one）→ 44c（44b 寫出，one；模板加了 `GPU-NEED: one`）→ **44ca**（原 44a 剩下的 INT4 格子，both）→ 44cz（CPU，one）→ 44d（both）→ 14 號的 44e*（之後寫）→ 70（vLLM TTFT，both）→ 75（vLLM RULER CWE，one）。
+    - 44a 的 INT4 格子排到 44b／44c 後面：44b／44c 的讀法 B 只用 FP8 的參考線（已完成），這樣 44b／44c 可以和第二張卡平行。
+  - helper：45 → 46 → 55 → 60 → 88（主線之外、只報告的品質工作；彼此、和 main 都沒有相依）。
+- 02:37:52Z main 開 44b（`20261019-023753-m10-lc-pilot-llama-64`，HIP_VISIBLE_DEVICES=1）；02:37:55Z helper 開 45（`20261019-023758-m10-f8m-qwen-T24-s0`，HIP_VISIBLE_DEVICES=0）。從每個 job 的環境變數確認卡號正確。
+- 換卡的影響：量時間的 stage 都留在 a6:00.0（和 10/18 以前同一張）；品質不看卡。如果之後有量時間的 run 落在 86:00.0，RUNLOG 會標。

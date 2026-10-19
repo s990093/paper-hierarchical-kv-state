@@ -1,17 +1,46 @@
 """品質 run 的工作池：最多 P 個同時跑，VRAM 夠才開下一個；任何一個失敗 → 不再開新的、等跑中的結束、exit 1（規則 2）。
 jobs.json：[{"name":..., "cmd":..., "need_gb":...}]；cmd 在 bash 裡跑（已 source m7_env.sh，可用 m7run）。"""
-import json, subprocess, sys, time
+import json, os, signal, subprocess, sys, time
 jobs = json.load(open(sys.argv[1])); P = int(sys.argv[2]); MARGIN = 8
+# 10/19 雙卡：helper（第二條 runner）上的 pool 看到 WANT_BOTH（main 要開量時間的 stage）→ 停掉自己的 job、exit 75，
+# runner 把 stage 放回佇列；之後重跑時品質 job 照題號續跑（m10_quality／m10_drop／m10_sweep 都跳過已寫的題）。
+WANT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "WANT_BOTH")
+HELPER = os.environ.get("ROLE") == "helper"
+
+
+def preempt(running):
+    for n, (p, log) in running.items():
+        try:
+            os.killpg(p.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    t0 = time.time()
+    while any(p.poll() is None for p, _ in running.values()) and time.time() - t0 < 90:
+        time.sleep(2)
+    for n, (p, log) in running.items():
+        if p.poll() is None:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        log.write(f"\n[pool] PREEMPTED（WANT_BOTH）{time.strftime('%H:%M:%S')}\n")
+        log.close()
+    print(f"[pool] PREEMPTED：停掉 {list(running)}（main 要兩張卡）{time.strftime('%H:%M:%S')}", flush=True)
+    sys.exit(75)
 ENV = "source /mlsteam/workspace/paper-hierarchical-kv-state/code/m7_env.sh; "
 def free_gb():
     out = subprocess.run(["amd-smi", "metric", "--mem-usage", "--json"], capture_output=True, text=True).stdout
     d = json.loads(out)
-    d = d["gpu_data"][0] if isinstance(d, dict) else d[0]
+    d = d["gpu_data"] if isinstance(d, dict) else d
+    g = int(os.environ.get("TIARA_GPU", "0"))          # 10/19 兩張卡：看這條佇列用的那張
+    d = next(x for x in d if int(x.get("gpu", -1)) == g)
     return d["mem_usage"]["free_vram"]["value"] / 1024
 running, failed, done = {}, [], []
 pending = list(jobs)
 last_launch = 0
 while pending or running:
+    if HELPER and os.path.exists(WANT):
+        preempt(running)
     for n, (p, log) in list(running.items()):
         rc = p.poll()
         if rc is not None:
@@ -33,8 +62,11 @@ while pending or running:
         fg = free_gb()
         if fg >= j["need_gb"] + MARGIN:
             pending.pop(0)
-            log = open(f"pool_{j['name']}.log", "w")
-            running[j["name"]] = (subprocess.Popen(["bash", "-c", ENV + j["cmd"]], stdout=log, stderr=subprocess.STDOUT), log)
+            log = open(f"pool_{j['name']}.log", "a")
+            log.write(f"[pool] launch {time.strftime('%Y-%m-%dT%H:%M:%S')} TIARA_GPU={os.environ.get('TIARA_GPU', '0')} ROLE={os.environ.get('ROLE', '')}\n")
+            log.flush()
+            running[j["name"]] = (subprocess.Popen(["bash", "-c", ENV + j["cmd"]], stdout=log, stderr=subprocess.STDOUT,
+                                                   start_new_session=True), log)
             last_launch = time.time()
             print(f"[pool] start {j['name']} free={fg:.0f}GB running={len(running)} {time.strftime('%H:%M:%S')}", flush=True)
     time.sleep(5)
