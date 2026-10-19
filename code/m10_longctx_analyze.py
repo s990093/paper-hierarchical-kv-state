@@ -176,14 +176,17 @@ def speed(lc, m):
     for tier in ("fp8", "int4"):
         f = fmt_of(m, tier)
         base = os.path.join(R, "speed_qwen_regrid" if (m == "qwen" and tier == "fp8") else f"speed_{m}", f"summary_{tier}.csv")
-        srcs = [("32K", base, None)] + [(LEN[nb], os.path.join(lc, f"speed_{m}_{TOKENS[nb]}_{f}", "summary.csv"),
-                                         os.path.join(lc, f"speed_{m}_{TOKENS[nb]}_{f}")) for nb in (128, 252)]
-        for L, p, d in srcs:
+        srcs = [("32K", base, None, 32768)] + [(LEN[nb], os.path.join(lc, f"speed_{m}_{TOKENS[nb]}_{f}", "summary.csv"),
+                                                os.path.join(lc, f"speed_{m}_{TOKENS[nb]}_{f}"), TOKENS[nb]) for nb in (128, 252)]
+        for L, p, d, want_len in srcs:
             if not os.path.exists(p):
                 out[f"{L}|{tier}"] = "NOT_MEASURED"
                 continue
             med = defaultdict(dict)
             for r in csv.DictReader(open(p)):
+                # 10/19（另一個 session 回報）：32K 的 summary 也有 8K／16K 的參考列（只有閒），沒篩長度時最後的 8K 會蓋掉 32K
+                if int(r["length"]) != int(want_len):
+                    continue
                 if r["mode"] == "cake" and r["config"] in ("E0", "E1"):
                     med[(r["bw_name"], r["gpu_state"])][r["config"]] = float(r["median_t_restore"])
             dirty = []
