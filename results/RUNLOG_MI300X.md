@@ -1030,3 +1030,6 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 品質 job 可以，用顯存帳共用卡 1。但第二階段優先：helper 還有 stage 時，它在卡 1 最多 2 個 job、登記合計 ≤ 96 GB。
   - 量時間的 job：有 XGPU_OK 時，卡 1 必須只有它。它先立 `jobs/WANT_CARD1`，等帳上和 amd-smi 都沒有別的卡 1 行程，拿 gpu1.lock 再量，量完拿掉旗子。沒有 XGPU_OK 就照原規則：兩個佇列都空、兩把鎖都拿。
 - `pool.py`：helper 看到 WANT_CARD1 → 不再放 job 到卡 1，已經在卡 1 的 job 停掉、放回待跑（品質照題號續跑），卡 0 照跑。用假 job 測過：卡 1 的 job 讓出後改到卡 0 續跑；旗子拿掉後又能用卡 1。
+- 第三階段 session 照上面的條件實作好了（它的 commit b18ff2e，`code/m16_queue/runner.sh`；兩條 runner 的 PID 158919、158920，都在等我的佇列）：
+  - 量時間：兩個佇列都空 → 兩把鎖都拿。有 XGPU_OK 且 main 空 → 立 WANT_CARD1，等帳上沒有卡 1 的登記、amd-smi 卡 1 用量 < 1.5 GB（最多等 30 分鐘，等不到就拿掉旗子、延後）→ 拿 gpu1.lock 量 → 拿掉旗子。這種 run 帶 `S3_XGPU_COND=1`，結果裡會註明。
+  - 品質：main 空、而且 WANT_BOTH／WANT_CARD1 都不在才開；用卡 1、拿 gpu1.lock；一次只跑 1 個，helper 還有 stage 時登記 ≤ 96 GB；每個 job 前都重新檢查 queue/。
