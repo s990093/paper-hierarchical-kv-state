@@ -871,6 +871,8 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 
 - **10/18 16:0xZ 補（使用者的想法，〔算術〕，沒有新的 GPU 工作）**：「只在 prefill 用拆進 attention、decode 維持 BF16」用量好的零件算：比 S4＋全載入＋BF16 prefill 慢 58–149 ms（32K、CPU 層；`code/m10_fused_prefill_arith.py` → `q5/fused_prefill_arith.md`）。寫進 11 問題三 §3b。
 
+- **10/19 補（使用者看 Cake 論文問「存和算差太多就沒意義？」；CPU，只讀主線格子）**：`code/m10_cake_ratio.py` → `results/m10_precision_mi300x/analysis/cake_ratio.{md,png}`。CPU 層「只載 ÷ 只算」0.007–0.022 → Cake 0.50–0.86 倍；b48 0.40–2.60 → 1.51–2.04 倍。寫進 11 問題三 §3c。
+
 ### 14.5 佇列的失敗處理（10/18 15:5xZ）
 
 - 10/17 那次 `exit 1` 讓整條佇列停了 3 小時（11.2o）。把還沒跑的 stage 全部改成「失敗 → 寫 NEEDS_HUMAN、跳過這段其餘部分、exit 0」：44a、44b、44c 的模板（`longctx_plan_n.py`）、45、46、55、60、70、75、88，還有 `m10_confirm.py plan` 的模板。只改失敗時的動作，指令本身沒動。舊檔在 `scratchpad/jobs/bak_20261018_exit1/`。
