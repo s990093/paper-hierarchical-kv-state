@@ -16,14 +16,14 @@
 export LC_ALL=C
 S2=${S2_JOBS:-/tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs}
 S3=${S3_JOBS:-/mlsteam/data/tiara/stage3/jobs}
-Q=$S3/queue
+Q=$S3/${S3_QNAME:-queue}                         # 兩條 runner：queue（量時間）、queue_g0（品質）
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 LD=${S3_LOCKDIR:-/mlsteam/data/tiara}          # 測試時指到別處，不碰真的鎖
 L0=$LD/gpu0.lock; L1=$LD/gpu1.lock
 CUTOFF=${S3_CUTOFF:-$(date -u -d "2026-10-23T02:00:00Z" +%s)}
 mkdir -p $Q
-tag="runner:s3"
-log() { echo "[$tag] $* $(date -u +%FT%TZ)" | tee -a $S3/runner.log; }
+tag="runner:s3:${S3_QNAME:-queue}"
+log() { echo "[$tag] $* $(date -u +%FT%TZ)" | tee -a $S3/runner_${S3_QNAME:-queue}.log; }
 
 stage2_idle() {
   [ -d "$S2/queue" ] || return 1                     # 目錄不在（重啟沒還原）→ 當成不空，不開 GPU job
