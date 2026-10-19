@@ -86,7 +86,7 @@ class BView:
 
 class BlockEngine:
     def __init__(self, reqs, outer, comp, cap_bytes, view, mf, qp=False, promote=True, block_tokens=512, H=0.0, obs_end=None,
-                 x4_prefill=False, int2_on_read="serve", unverified_len="prefix", H_extra=0.0):
+                 x4_prefill=False, int2_on_read="serve", unverified_len="prefix", H_extra=0.0, tier_rec=None, ev_log=False):
         self.R = reqs
         self.outer = outer
         self.E = outer["code"]
@@ -164,6 +164,22 @@ class BlockEngine:
         self.cur_j = -1
         self._sufmax = {}
         self._rep = (0, 0)                        # 這一輪的 INT2 取代區間 [L, L0)
+        # ---- 重算計價（review #1 選項 a；同 engine.Engine）：被意外重算取代、而且只在 SSD（不在 CPU）的 block，照這個請求的輸入長度下過關的最省格式計價
+        self.rc_blocks = np.zeros(n, np.int32)
+        self.rc_bytes = np.zeros(n, np.int64)
+        self._pass_b = [min(self.fb[f] for f in range(1, len(FMT_NAMES)) if m[f] and self.fb[f] is not None) for m in self.okmask]
+        # ---- O-tier 的兩趟（同 engine.Engine；這個引擎和時間有關，第 2 趟的 CPU 側事件只能近似相同 → 數不一樣的請求數）
+        self.rec = tier_rec if (tier_rec is not None and tier_rec.recording) else None
+        self.ev_log = bool(ev_log)
+        self._track = self.rec is not None or self.ev_log
+        self._nw = {}
+        self._evw, self._pfw = [], []
+        self._miss = 0
+        self._last_fid = 0
+        self.ev_digest = np.zeros(n, np.uint64) if ev_log else None
+        # 預取跳過「在觸發的請求的輸入長度下品質不過關」的副本（嚴格讀取規則；06 §26）：那些 block 服務時會被重算，讀了是白讀
+        self.pf_skip = self.unv_on and self.req_strict
+        self.S["pf_skipped"] = 0
 
     # ---- 小工具
     def _wfmt(self, tier, fid):
@@ -209,6 +225,8 @@ class BlockEngine:
 
     def _evict_one(self, now):
         b, _ = self.cpu.popitem(last=False)
+        if self._track:
+            self._evw.append(b)
         fm = self.cfmt.pop(b)
         self.cpu_used -= self.fb[fm]
         self.avail.pop(b, None)
@@ -224,12 +242,23 @@ class BlockEngine:
                     self.cnt_pf[k] -= 1      # 沒有副本可以預取
             else:
                 ow = self.owner.get(b)
+                key = None
+                if self._track or getattr(self.comp, "tier", False):
+                    key = (b, self._nw.get(b, 0))
+                    self._nw[b] = key[1] + 1
                 if not self.ssd_moment:
                     sf = self.comp.ssd_fid(self.ctxs[ow], fm) if ow is not None else fm
                 else:
-                    sf = self.comp.ssd_fid(self._mctx(b, ow, now), fm) if ow is not None else fm
+                    if ow is not None:
+                        mc = self._mctx(b, ow, now)
+                        mc["ssd_key"] = key
+                        sf = self.comp.ssd_fid(mc, fm)
+                    else:
+                        sf = fm
                     if sf < fm:
                         raise AssertionError(f"{self.comp.name}: ssd_fid 回傳 {sf} < 目前的 {fm}（格式只能往下壓）")
+                if self.rec is not None:
+                    self.rec.on_write(key)
                 self.sfmt[b] = sf
                 q0 = self.cq.get(b, fm)
                 self.sq[b] = sf if sf > q0 else q0
@@ -435,6 +464,7 @@ class BlockEngine:
         h, n_old = q["h"], q["n_old"]
         cpu = self.cpu
         fid = self._decide(j, q, L)
+        self._last_fid = fid
         nbf = self.fb[fid]
         rlo, rhi = self._rep
         for i in range(len(h)):
@@ -445,6 +475,8 @@ class BlockEngine:
             if rlo <= i < rhi and self.sfmt.get(b, 0):
                 self.sfmt[b] = 0           # 重算的新 KV 取代：SSD 上的舊副本作廢（之後新副本若被降級寫 SSD 是一般的寫入）
                 self.sq.pop(b, None)
+                if self.rec is not None:
+                    self.rec.on_super(b)
             if i < n_old and b in cpu and rlo <= i < rhi:
                 # 重算出來的新 KV 取代 CPU 裡舊來歷的副本（照這一輪的決定寫）
                 cpu.move_to_end(b)
@@ -497,7 +529,24 @@ class BlockEngine:
             if self.cnt_pf[k] == 0:
                 continue
             q = R[k]
-            for i in range(q["n_old"] - 1, -1, -1):
+            top = q["n_old"]
+            if self.pf_skip:
+                # 嚴格讀取規則：k 服務時，前綴裡第一個「來歷在 k 的輸入長度下不過關」的 block 起都會被重算 → 只預取它之前的（之後的白讀）
+                okm_ = self.okmask[self.rbin[k]]
+                cpu_, cq_, sq_, hk_ = self.cpu, self.cq, self.sq, q["h"]
+                for i in range(top):
+                    b = hk_[i]
+                    if b in cpu_:
+                        qb = cq_[b]
+                    elif self.sfmt.get(b, 0):
+                        qb = sq_[b]
+                    else:
+                        break
+                    if not okm_[qb]:
+                        self.S["pf_skipped"] += 1        # 次數：（排隊中的請求 k，這次預取）跳過了它的一段尾巴（同一個 k 會被多次檢查）
+                        top = i
+                        break
+            for i in range(top - 1, -1, -1):
                 b = q["h"][i]
                 sf = self.sfmt.get(b, 0)
                 if b in self.cpu or not sf:
@@ -514,6 +563,10 @@ class BlockEngine:
                         return
                     self._evict_one(st)
                 done = self.v.slow.read(nb, t_rdy, 1, k)
+                if self.rec is not None:
+                    self.rec.on_read(b, 3, self.reqlen[k], len(R[k]["h"]) * self.btok)
+                if self._track:
+                    self._pfw.append(b)
                 self.wbytes["prefetch_read"] += nb
                 self._pf_dec(b)
                 self.cpu[b] = None
@@ -558,6 +611,13 @@ class BlockEngine:
                     self._rep = (i, L)
                     L = i
                     break
+        rlo_, rhi_ = self._rep
+        if rhi_ > rlo_:              # 重算計價：有存、沒載入、存放副本只在 SSD（CPU 沒有）的 block
+            hh_, cpu_ = q["h"], self.cpu
+            nrc = sum(1 for i_ in range(rlo_, rhi_) if hh_[i_] not in cpu_ and self.sfmt.get(hh_[i_], 0))
+            if nrc:
+                self.rc_blocks[j] = nrc
+                self.rc_bytes[j] = nrc * self._pass_b[self.mf.bin_of(self.reqlen[j])]
         n_end = len(q["h"]) if self.x4_prefill else max(q.get("n_all", len(q["h"])), len(q["h"]))
         self.nprev[j] = n_old
         self.nend[j] = n_end
@@ -571,6 +631,11 @@ class BlockEngine:
             elif avail and avail.get(b, 0.0) > t_go:
                 inflight += 1
         self.lo_bytes[j] = lob
+        self._miss = miss_cpu
+        if self.rec is not None:     # O-tier 第 1 趟：被載入的 block 讀的是 CPU 還是 SSD 副本
+            rl_, st_ = self.reqlen[j], len(q["h"]) * self.btok
+            for b in q["h"][:L]:
+                self.rec.on_read(b, 1 if b in cpu else 3, rl_, st_)
         self.S["wait_inflight"] += inflight
         self.v.cpu.cur_r = self.v.slow.cur_r = j
         t_rend, meet, nc, ns, wq = self.restore(q, L, t_go)
@@ -603,6 +668,13 @@ class BlockEngine:
                 self.queue_prefetch(j, t_go, r["T"])
             self.v.cpu.cur_r = self.v.slow.cur_r = j
             self.after_round(j, R[j], r["T"], r["L"])
+            if self.ev_log:
+                import hashlib
+                hd = hashlib.blake2b(np.array([j, r["L"], self._miss, self._last_fid, len(self._evw), len(self._pfw)], np.int64).tobytes()
+                                     + np.array(self._evw, np.int64).tobytes() + np.array(self._pfw, np.int64).tobytes(), digest_size=8).digest()
+                self.ev_digest[j] = int.from_bytes(hd, "little")
+            if self._track:
+                self._evw, self._pfw = [], []
             self.s_last[R[j].get("s", j)] = j
             if self.qp:
                 self._dequeue(j)

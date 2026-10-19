@@ -246,6 +246,18 @@ def prepare(source, variant, t_from_s=0.0, dur_s=None, overlay=1, seed=0, max_re
 CACHE_DIR = os.environ.get("P3SIM_CACHE", "/ssd8/hungwei/paper-hkv/cache/p3_sim")
 
 
+def unified_file_sha256(source, variant):
+    """統一表（turns.parquet）檔案本身的 sha256（每次都重算，不信 manifest 上記的；第三輪審查 #3）。回傳 (路徑, sha256)。"""
+    import hashlib
+    import schema
+    pth = os.path.join(schema.variant_dir(source, variant), "turns.parquet")
+    h = hashlib.sha256()
+    with open(pth, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 24), b""):
+            h.update(chunk)
+    return pth, h.hexdigest()
+
+
 def _code_hash():
     """產生 P 的程式碼：這個檔＋p3_data/schema.py（讀統一表）。任何一行改了，鍵就變。"""
     import hashlib
@@ -265,10 +277,11 @@ def prepare_cached(source, variant, t_from_s=0.0, dur_s=None, overlay=1, seed=0,
     import schema
     cache_dir = cache_dir or CACHE_DIR
     man = schema.read_manifest(source, variant)
+    ufile, usha = unified_file_sha256(source, variant)
     params = dict(source=source, variant=variant, t_from_s=float(t_from_s), dur_s=None if dur_s is None else float(dur_s),
                   overlay=int(overlay), seed=int(seed), max_req=max_req, session_frac=float(session_frac),
                   session_seed=int(session_seed), key_mode=key_mode, code_sha256=_code_hash(),
-                  unified_output_sha256=man.get("output_sha256"))
+                  unified_output_sha256=man.get("output_sha256"), unified_file=ufile, unified_file_sha256=usha)
     key = hashlib.sha256(json.dumps(params, sort_keys=True).encode()).hexdigest()[:32]
     pk, mj = os.path.join(cache_dir, key + ".pkl"), os.path.join(cache_dir, key + ".json")
     if not refresh and os.path.exists(pk) and os.path.exists(mj):

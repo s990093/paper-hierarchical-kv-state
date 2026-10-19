@@ -59,6 +59,7 @@ INT2_ON_READ = "recompute_unverified"       # 04 §3.3：讀到沒驗證的就�
 UNVERIFIED_LEN = "request"                  # 04 §3.3：讀取長度＝請求的輸入長度（整個上下文）
 MAIN_SPECS = [("mi300x", g, "idle", sh, "cake", "mi300x_local") for g in ("idle", "busy") for sh in (1, 2, 4, 8)]
 PRIMARY_SPEC = MAIN_SPECS[0]                # 主視角：Llama、MI300X、GPU 閒、CPU 閒、SSD 1 張 GPU 專用
+RECOMPUTE_CHARGES = ("none", "pass_size")   # 重算計價（第三輪審查 #1 選項 a）；真實資料的值只從凍結的 04 §9 讀（`重算計價：…`）
 CPUBUSY_CSV = os.path.join(REPO, "results", "p3_calib_3090", "cpubusy_slowdown.csv")
 
 
@@ -105,6 +106,7 @@ STAGE_SLICES = {"A": [s for s, v in SLICES.items() if v[4] == "A"], "B": [s for 
                 "S": ["synth/small-seed1"]}
 STAGES = {"A1": ("A", "A1"), "A2": ("A", "A2"), "B-A1": ("B", "A1"), "B-A2": ("B", "A2")}
 # a1_loose／a1_loose_blk＝寬鬆版雙胞胎（04 §4，只報告）：O 與所有對手都用寬鬆品質規則；只跑主視角、O 只跑 H；放在 A1（B-A1 跟著）
+C0UTIL_OUTERS = [("E2", None), ("E3", None), ("E4", None), ("E5", 1800)]       # 第三輪審查 #5 的例外：凍結前只跑 C0，算每格的 SSD 使用率
 COMPONENTS = {"A1": ["a1_sess", "a1_blk", "a1_loose", "a1_loose_blk"], "A2": ["a2_mem", "a2_blk", "sens_qwen", "sens_70b", "sens_ov2", "sens_ov4"]}
 
 
@@ -128,7 +130,7 @@ def policy_table():
         pols.append(dict(label=f"D-idle-{tau}", name="D-idle", kw={"d_threshold_tokens": 32768, "d_idle_tau_s": float(tau), "len_rule": "max"},
                          oracle=False))
     pols.append(dict(label="R2", name="R2", kw={"d_threshold_tokens": 32768, "len_rule": "max"}, oracle=False))
-    for n in ("O", "O-len", "O-reuse", "O-loose"):
+    for n in ("O", "O-tier", "O-len", "O-reuse", "O-loose"):        # O-tier（第三輪審查 #1 選項 b）：兩趟；O／O-tier 哪個當判定用的「O」由 04 §9 的 `完美預測：` 決定
         pols.append(dict(label=n, name=n, kw={}, oracle=True))
     return pols
 
@@ -136,8 +138,8 @@ def policy_table():
 POLICIES = policy_table()
 NON_ORACLE = [p["label"] for p in POLICIES if not p["oracle"]]
 ORACLE = [p["label"] for p in POLICIES if p["oracle"]]
-assert len(NON_ORACLE) == 21 and len(ORACLE) == 4
-LOOSE_POLS = [p for p in POLICIES if (not p["oracle"]) or p["label"] == "O"]       # 寬鬆版雙胞胎：21 個對手＋O
+assert len(NON_ORACLE) == 21 and len(ORACLE) == 5
+LOOSE_POLS = [p for p in POLICIES if (not p["oracle"]) or p["label"] in ("O", "O-tier")]       # 寬鬆版雙胞胎：21 個對手＋O＋O-tier（哪個當 O 由 04 決定，雙胞胎兩個都跑）
 
 
 # ------------------------------------------------------------------ H、k、凍結檢查
@@ -288,7 +290,7 @@ def n_rows_of(j):
         return 1
     if j["comp"] == "a1_sess":
         return len(MAIN_SPECS) + len(SENS_SPECS)
-    if j["comp"] == "a1_loose":
+    if j["comp"] in ("a1_loose", "c0util"):
         return 1
     if j["model"] == "llama70b_scaled":
         return 1
@@ -313,7 +315,8 @@ def est_cost_s(j, timing, n_req):
     s = j["slice"]
     ref = s if (s, "C1") in timing else "freeinference/week13"      # FreeInference 各週、synth（每請求約 90 個 block，和 week13 同量級）都用 week13 的每請求秒數
     sc, bc = timing[(ref, "O" if j["pol"]["oracle"] else "C1")]
-    return n_req[s] * j["overlay"] * (sc if j["engine"] == "session" else bc)
+    mult = 2.0 if j["pol"]["label"] == "O-tier" else 1.0         # O-tier＝兩趟（第 1 趟＝一般的 O、不需要時間設定）：上界按 2 倍算
+    return mult * n_req[s] * j["overlay"] * (sc if j["engine"] == "session" else bc)
 
 
 # ------------------------------------------------------------------ 子集（E6：session 分到 k 張 GPU）
@@ -360,7 +363,7 @@ def get_P(slc, overlay):
 
 # 位元組、次數類的欄：k 張 GPU 加總；p99／最大／比例：取各 GPU 的最大；其他（時間類）→ NaN（沒有定義「合併」）
 def _pool_kind(col):
-    if col.endswith("_GiB") or col.startswith(("n_", "ret_", "reads", "surprise_", "wblocks_", "recompute_prefix", "ttft_nm", "blk_",
+    if col.endswith("_GiB") or col.startswith(("n_", "ret_", "reads", "surprise_", "wblocks_", "recompute_prefix", "ttft_nm", "blk_", "recompute_charge_blocks", "otier_pass", "otier_ssd", "otier_cpu_event", "otier_tier",
                                                "n_ret")) or col in ("n_demote", "n_drop", "n_lost_blocks"):
         return "sum"
     if "_p99" in col or "_max" in col or col.endswith("_frac") or col in ("gpu_busy_frac",):
@@ -458,6 +461,15 @@ def _atomic_savez(path, **arrs):
     os.replace(tmp, path)
 
 
+def k_util_of(ctx, slc, mem):
+    """SSD 使用率的 k（第三輪審查 #5）：這份資料片段、這個記憶體的 E6 的 k（kgpu_kmin_all.csv，idle 視角）；所有引擎都用同一個 k。查不到就丟錯（規則 7）。"""
+    kall = ctx.get("kall")
+    key = (slc, float(mem), "idle")
+    if kall is None or key not in kall:
+        raise KeyError(f"{KALL} 沒有 {key} 的 k（SSD 使用率要用）")
+    return int(kall[key]["k"])
+
+
 def common_cols(jd, ctx):
     pol = jd["pol"]
     H = ctx["H"][jd["slice"]]
@@ -468,21 +480,25 @@ def common_cols(jd, ctx):
                 policy_label=pol["label"], policy_family=pol["name"], policy_kw=json.dumps(pol["kw"], sort_keys=True),
                 oracle=pol["oracle"], h_tag=jd["tag"], H_base_s=H, int2_on_read=INT2_ON_READ, unverified_len_mode=UNVERIFIED_LEN,
                 frozen_commit=ctx.get("frozen_commit", ""), code_commit=ctx.get("code_commit", ""),
-                quality_rule=jd.get("rule", "strict"), cpu_busy_run_id=CPU_BUSY_RUN, cpu_busy_lo=CPU_BUSY_LO, cpu_busy_hi=CPU_BUSY_HI)
+                quality_rule=jd.get("rule", "strict"), cpu_busy_run_id=CPU_BUSY_RUN, cpu_busy_lo=CPU_BUSY_LO, cpu_busy_hi=CPU_BUSY_HI,
+                recompute_charge=ctx.get("recompute_charge", "none"), k_util=k_util_of(ctx, jd["slice"], jd["mem"]))
 
 
 def prim_cols(jd, row, H, P=None, costs=None):
     """主指標（04 §4）＝SSD 寫入（決定時刻 < 終點 − H）＋ SSD 讀取（到達 < 終點 − H 的請求）。
-    讀取＝session 引擎：只載入的讀取（ssd_H_loadonly_read_GiB；只和放置有關）；block 引擎（E6 與它的 E2 對照）：實際 SSD 讀取＝還原＋預取，
-    含浪費掉的預取（ssd_H_actual_read_GiB；預取讀取歸屬於「觸發預取的請求」的 session；第二輪審查 #2）。`prim_read_col` 記用了哪一欄。
+    讀取（第三輪審查 #4；06 §26，兩個引擎同一個定義）＝只載入的還原讀取（lo_bytes；和 Cake 的會合點無關）＋全部預取讀取（含浪費；session 引擎沒有預取）
+    ＝ssd_H_primread_GiB；recompute_charge＝pass_size 時再加重算計價 ssd_H_charged_recompute_GiB（第三輪審查 #1 選項 a）。
+    prim_rbase_*／prim_rc_*＝兩個分量（分析程式依凍結的 04 自己決定要不要加 rc，不依賴這裡的開關）。`prim_read_col` 記用了哪些欄。
     非 oracle：H 與 2H 兩個版本都在這一列；oracle：只有自己的 H 那一個。
     另記每個版本的寫入／讀取分量（prim_w_*／prim_r_*）、截尾後的窗口長度（T_*_s）與 SSD 頻寬（主視角 SSD 1 張專用的 mi300x_local 常數），
     給 SSD 使用率＝寫入量÷(寫入頻寬×T)＋讀取量÷(讀取頻寬×T) 用（§7；block 引擎 k 張 GPU 各有一顆專用 SSD → 分母再乘 k）。"""
-    rc = "actual" if jd["engine"] == "block" else "loadonly"
-    w, r = row.get("ssd_H_write_issued_GiB"), row.get(f"ssd_H_{rc}_read_GiB")
-    w2, r2 = row.get("ssd_H2_write_issued_GiB"), row.get(f"ssd_H2_{rc}_read_GiB")
+    w, r = row.get("ssd_H_write_issued_GiB"), row.get("ssd_H_primary_read_GiB")
+    w2, r2 = row.get("ssd_H2_write_issued_GiB"), row.get("ssd_H2_primary_read_GiB")
     nan = float("nan")
-    out = dict(prim_H_GiB=nan, prim_2H_GiB=nan, npz_sfx_H="", npz_sfx_2H="", prim_read_col=f"ssd_H_{rc}_read_GiB",
+    chg = row.get("recompute_charge", "none")
+    out = dict(prim_H_GiB=nan, prim_2H_GiB=nan, npz_sfx_H="", npz_sfx_2H="",
+               prim_read_col="ssd_H_primread_GiB" + ("+ssd_H_charged_recompute_GiB" if chg == "pass_size" else ""),
+               prim_rbase_H_GiB=nan, prim_rc_H_GiB=nan, prim_rbase_2H_GiB=nan, prim_rc_2H_GiB=nan,
                prim_w_H_GiB=nan, prim_r_H_GiB=nan, prim_w_2H_GiB=nan, prim_r_2H_GiB=nan, T_H_s=nan, T_2H_s=nan,
                ssd_bw_r_GiBps=costs.ssd["r"] if costs else nan, ssd_bw_w_GiBps=costs.ssd["w"] if costs else nan)
     if P is not None:
@@ -497,11 +513,15 @@ def prim_cols(jd, row, H, P=None, costs=None):
         H0 = H             # 'both'：H＝這份資料的 H，H_extra＝2H
         out.update(prim_H_GiB=w + r, prim_2H_GiB=w2 + r2, npz_sfx_H="_H", npz_sfx_2H="_H2",
                    ssd_H_write_issued_GiB_2H=w2, ssd_H_loadonly_read_GiB_2H=row.get("ssd_H2_loadonly_read_GiB"),
-                   prim_w_H_GiB=w, prim_r_H_GiB=r, prim_w_2H_GiB=w2, prim_r_2H_GiB=r2, T_H_s=T(H0), T_2H_s=T(2 * H0))
+                   prim_w_H_GiB=w, prim_r_H_GiB=r, prim_w_2H_GiB=w2, prim_r_2H_GiB=r2, T_H_s=T(H0), T_2H_s=T(2 * H0),
+                   prim_rbase_H_GiB=row["ssd_H_primread_GiB"], prim_rc_H_GiB=row["ssd_H_charged_recompute_GiB"],
+                   prim_rbase_2H_GiB=row["ssd_H2_primread_GiB"], prim_rc_2H_GiB=row["ssd_H2_charged_recompute_GiB"])
     elif jd["tag"] == "H":
-        out.update(prim_H_GiB=w + r, npz_sfx_H="_H", prim_w_H_GiB=w, prim_r_H_GiB=r, T_H_s=T(H))
+        out.update(prim_H_GiB=w + r, npz_sfx_H="_H", prim_w_H_GiB=w, prim_r_H_GiB=r, T_H_s=T(H),
+                   prim_rbase_H_GiB=row["ssd_H_primread_GiB"], prim_rc_H_GiB=row["ssd_H_charged_recompute_GiB"])
     else:
-        out.update(prim_2H_GiB=w + r, npz_sfx_2H="_H", prim_w_2H_GiB=w, prim_r_2H_GiB=r, T_2H_s=T(H))
+        out.update(prim_2H_GiB=w + r, npz_sfx_2H="_H", prim_w_2H_GiB=w, prim_r_2H_GiB=r, T_2H_s=T(H),
+                   prim_rbase_2H_GiB=row["ssd_H_primread_GiB"], prim_rc_2H_GiB=row["ssd_H_charged_recompute_GiB"])
     return out
 
 
@@ -514,11 +534,11 @@ def run_placements(jd, P, ctx):
     else:
         H, Hx = (H0 if jd["tag"] == "H" else 2 * H0), 0.0
     kw = dict(pol_kw=dict(pol["kw"]), int2_on_read=INT2_ON_READ, unverified_len=UNVERIFIED_LEN, H=H, H_extra=Hx, fmt_path=ctx["fmt"],
-              quality_rule=jd.get("rule", "strict"))
+              quality_rule=jd.get("rule", "strict"), recompute_charge=ctx.get("recompute_charge", "none"))
     base = common_cols(jd, ctx)
     costs_p = load_costs("mi300x", jd["model"], "mi300x_local")        # 主視角的 SSD 頻寬（使用率用）
     if jd["engine"] == "session":
-        if jd["comp"] == "a1_loose":                # 寬鬆版雙胞胎：只要主視角
+        if jd["comp"] in ("a1_loose", "c0util"):    # 寬鬆版雙胞胎、C0 使用率：只要主視角
             specs, groups = [PRIMARY_SPEC], ["main"]
         elif jd["comp"] == "a1_sess":
             specs = MAIN_SPECS + (SENS_SPECS if ctx.get("sens_views", True) else [])
@@ -590,20 +610,78 @@ def run_placements(jd, P, ctx):
     return [c], _concat_arrays(parts), dict(k=k, n_groups_nonempty=len(parts))
 
 
+def c0util_jobs(slices=None, kall=None):
+    """凍結前的例外（第三輪審查 #5、06 §26）：只跑 C0、階段 A 的切片、主視角、H：session 引擎 E2／E3／E4／E5(T=1800)，block 引擎 E6（那個切片的 k）；
+    三個記憶體點。用來決定哪些格子 SSD 夠忙（C0 的使用率 ≥5%）才能進判定；不產生任何其他做法或等待時間的輸出。"""
+    pol = next(p for p in POLICIES if p["label"] == "C0")
+    sl = list(slices) if slices else list(STAGE_SLICES["A"])
+    jobs = []
+    for s in sl:
+        for (oc, T) in C0UTIL_OUTERS:
+            for m in A1_MEM:
+                jobs.append(mk_job("C0UTIL", "c0util", s, "session", oc, T, m, pol, "H"))
+        for m in A1_MEM:
+            if kall is None or (s, float(m), "idle") not in kall:
+                raise SystemExit(f"{KALL} 沒有 {(s, float(m), 'idle')} 的 k")
+            jobs.append(mk_job("C0UTIL", "c0util", s, "block", "E6", None, m, pol, "H", "llama", 1, "idle", kall[(s, float(m), "idle")]["k"]))
+    return jobs
+
+
+def c0util_row(r):
+    """C0 的使用率列（只留這些欄；沒有等待時間、沒有別的做法）。使用率＝寫入量÷(寫入頻寬×T×k)＋讀取量÷(讀取頻寬×T×k)，T＝切片窗口截到終點−H，
+    k＝這個切片這個記憶體的 E6 的 k（kgpu_kmin_all.csv；所有引擎同一個）。GiB／小時＝(寫入＋讀取)÷T×3600（全部 GPU 合計）。"""
+    w, rd, T, k = float(r["prim_w_H_GiB"]), float(r["prim_r_H_GiB"]), float(r["T_H_s"]), int(r["k_util"])
+    ol = r["outer_code"] + (f"-T{int(float(r['T_s']))}" if r["T_s"] not in ("", None) else "")
+    util = (w / float(r["ssd_bw_w_GiBps"]) + rd / float(r["ssd_bw_r_GiBps"])) / (T * k) if T > 0 else float("nan")
+    return dict(slice=r["slice"], outer=ol, engine=r["engine"], mem_GiB=r["mem_GiB"], k=k, c0_write_GiB=w, c0_read_GiB=rd, gib_per_hour=(w + rd) / (T / 3600.0) if T > 0 else float("nan"),
+                utilization=util, H_s=r["H_base_s"], T_H_s=T, ssd_bw_w_GiBps=r["ssd_bw_w_GiBps"], ssd_bw_r_GiBps=r["ssd_bw_r_GiBps"], read_def=r["prim_read_col"],
+                job_id=r["job_id"], run_id=r["run_id"], ts=r["ts"], code_commit=r["code_commit"], frozen_commit=r["frozen_commit"] or "NOT_FROZEN")
+
+
+def collect_c0util(out, csv_path):
+    """jobs/*/*.json（comp=c0util）→ csv_path（results/p3_sim/c0_ssd_util.csv）。回傳列數。"""
+    rows = []
+    for root, _, files in os.walk(os.path.join(out, "jobs")):
+        for fn in sorted(files):
+            if fn.endswith(".json"):
+                d = json.load(open(os.path.join(root, fn), encoding="utf-8"))
+                if d["comp"] != "c0util":
+                    continue
+                if d["status"] != "ok":
+                    raise SystemExit(f"{fn}: status={d['status']}：{(d.get('error') or '')[-400:]}")
+                rows += d["rows"]
+    order = {"E2": 0, "E3": 1, "E4": 2, "E5-T1800": 3, "E6": 4}
+    rows.sort(key=lambda r: (r["slice"], order[r["outer"]], r["mem_GiB"]))
+    if rows:
+        with open(csv_path, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+            w.writeheader()
+            w.writerows(rows)
+    return len(rows)
+
+
 def run_job(jd, ctx):
     """worker：跑一個工作，寫 npz 再寫 json（json 在＝一切都在）。例外都記在 json（FAILED／NOT_MEASURED），不讓 worker 掛掉。"""
     t0 = time.time()
     jpath, npath = jd["json_path"], jd["npz_path"]
     res = dict(job_id=jd["id"], stage=jd["stage"], comp=jd["comp"], slice=jd["slice"], run_id=os.environ.get("RUN_ID", "adhoc"),
-               ts=time.strftime("%Y-%m-%dT%H:%M:%S%z"))
+               ts=time.strftime("%Y-%m-%dT%H:%M:%S%z"), frozen_commit=ctx.get("frozen_commit", ""), code_commit=ctx.get("code_commit", ""))
     try:
         P = get_P(jd["slice"], jd["overlay"])
         rows, arr, meta = run_placements(jd, P, ctx)
         pol = jd["pol"]
+        if jd["comp"] == "c0util":     # 凍結前的例外（第三輪審查 #5）：只留 C0 的使用率欄位，不留任何等待時間或其他做法
+            rows = [c0util_row(r) for r in rows]
+            res.update(status="ok", rows=rows, meta=meta, elapsed_s=time.time() - t0)
+            tmp = jpath + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(res, fh, ensure_ascii=False, default=str)
+            os.replace(tmp, jpath)
+            return dict(job_id=jd["id"], slice=jd["slice"], status="ok", elapsed_s=res["elapsed_s"], error="")
         # ---- 不變量（04 §3.3、06 §18）：嚴格讀取規則下，所有做法的品質帳（fail＋unverified）都是 0；O、O-len 沒有意外重算
         for r in rows:
             assert r["reads_fail"] == 0 and r["reads_unverified"] == 0, f"品質帳不是 0：{r['reads_fail']} {r['reads_unverified']}"
-            if pol["label"] in ("O", "O-len"):
+            if pol["label"] in ("O", "O-len", "O-tier"):
                 assert r["surprise_events"] == 0, f"{pol['label']} 有意外重算 {r['surprise_events']}"
         arr["meta_json"] = np.asarray(json.dumps(dict(job_id=jd["id"], slice=jd["slice"], outer=jd["outer"], T=jd["T"], mem_GiB=jd["mem"],
                                                       policy=pol["label"], tag=jd["tag"], k=meta["k"], run_id=res["run_id"]), default=str))
@@ -639,8 +717,10 @@ def job_paths(out, j):
     return os.path.join(d, j["id"] + ".json"), os.path.join(n, j["id"] + ".npz")
 
 
-def classify(out, jobs, retry_failed=True):
-    """已完成的跳過；只有一半的（沒有 json 的 npz、.tmp）刪掉重跑；FAILED 重跑（retry_failed）。"""
+def classify(out, jobs, retry_failed=True, ctx=None):
+    """已完成的跳過；只有一半的（沒有 json 的 npz、.tmp）刪掉重跑；FAILED 重跑（retry_failed）。
+    ctx（第三輪審查 #2）：給了就比對舊 json 的 frozen_commit／code_commit：真實資料（ctx['frozen_commit'] 非空）不一致就丟錯（不默默沿用、也不默默覆蓋）；
+    合成資料不一致就當作沒做過、重跑。"""
     todo, done, cleaned = [], [], []
     for j in jobs:
         jp, npz = job_paths(out, j)
@@ -656,7 +736,13 @@ def classify(out, jobs, retry_failed=True):
             try:
                 d = json.load(open(jp, encoding="utf-8"))
                 ok = d.get("status") in ("ok", NOT) or (d.get("status") == "FAILED" and not retry_failed)
-                if d.get("status") == "ok" and not os.path.exists(npz):
+                if ok and ctx is not None and d.get("status") in ("ok", NOT):
+                    if (d.get("frozen_commit"), d.get("code_commit")) != (ctx.get("frozen_commit", ""), ctx.get("code_commit", "")):
+                        if ctx.get("frozen_commit"):
+                            raise SystemExit(f"續跑檢查失敗：{jp} 是在 frozen={d.get('frozen_commit')!r}、code={d.get('code_commit')!r} 跑的，"
+                                             f"現在是 frozen={ctx.get('frozen_commit')!r}、code={ctx.get('code_commit')!r}；不同 commit 的結果不能混在同一個輸出夾，換一個 --out")
+                        ok = False
+                if ok and d.get("status") == "ok" and not os.path.exists(npz) and j["comp"] != "c0util":
                     ok = False
                     cleaned.append(jp)
             except (json.JSONDecodeError, OSError):
@@ -669,6 +755,32 @@ def classify(out, jobs, retry_failed=True):
                     cleaned.append(p)
         (done if ok else todo).append(j)
     return todo, done, cleaned
+
+
+def _warm_one(key):
+    """worker：只為了讓 P 快取存在（命中就載入後丟掉；沒有就建）。回傳 (slice, overlay, 命中?, 秒數, 本 process 的最大 RSS GB)。"""
+    import resource
+    t0 = time.time()
+    slc, ov = key
+    P = TR.prepare_cached(SLICES[slc][0], SLICES[slc][1], overlay=ov, seed=0)
+    return slc, ov, bool(P["meta"]["cache"]["hit"]), time.time() - t0, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1048576.0
+
+
+def warm_caches(todo, warm_procs, out):
+    """第一次建 P 快取的峰值記憶體很大（FreeInference week13 實測 33.4 GB／次、574 s，run 20261019-001812-p3sim-c0util-prepprobe2）；
+    工作一次開 24 個 worker、前 24 個又都是同一兩個切片時，每個 worker 都在建同一份快取，總記憶體超過 440 GB 被系統殺掉
+    （run 20261018-234402-p3sim-c0util 的 BrokenProcessPool）。所以先用 --warm-procs 個 process 把需要的 (切片, 疊加) 快取一個一個建好，
+    再開 worker（它們只會命中快取）。"""
+    keys = sorted({(j["slice"], j["overlay"]) for j in todo})
+    if not keys:
+        return
+    log = open(os.path.join(out, "runner.log"), "a", encoding="utf-8")
+    with ProcessPoolExecutor(max_workers=max(1, warm_procs), mp_context=mp.get_context("fork")) as ex:
+        for slc, ov, hit, sec, rss in ex.map(_warm_one, keys):
+            msg = f"[{time.strftime('%H:%M:%S')}] P 快取 {slc} overlay={ov}：{'命中' if hit else '新建'}，{sec:.0f}s，最大 RSS {rss:.1f} GB"
+            print(msg, flush=True)
+            log.write(msg + "\n")
+            log.flush()
 
 
 def dispatch(todo, ctx, procs, out, mem_min_gb, max_fail):
@@ -792,11 +904,16 @@ def dry_run(stages, slices, fill, skip, procs, Hs, n_req, kall):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--stage", nargs="+", choices=list(STAGES), required=True)
+    ap.add_argument("--stage", nargs="+", choices=list(STAGES), default=None)
+    ap.add_argument("--c0-util", action="store_true", help="凍結前的例外（第三輪審查 #5）：只跑 C0（階段 A 的切片、主視角、H），輸出 SSD 使用率 CSV；不需要 --frozen，也不產生任何其他輸出")
+    ap.add_argument("--c0-util-csv", default=os.path.join(REPO, "results", "p3_sim", "c0_ssd_util.csv"))
+    ap.add_argument("--recompute-charge", choices=list(RECOMPUTE_CHARGES), default=None,
+                    help="合成資料／測試用；真實資料一律只從凍結的 04 §9 讀（`重算計價：…`），給了就拒絕")
     ap.add_argument("--slices", nargs="*", default=None, help="限制切片（例如 synth/small-seed1；真實切片需要 --frozen）")
     ap.add_argument("--out", default=None, help=f"輸出資料夾（預設 {DEFAULT_OUT}/<frozen 前 8 碼｜synthetic>）")
     ap.add_argument("--frozen", default=None, help="04 凍結的 commit；沒給就拒跑真實資料")
     ap.add_argument("--procs", type=int, default=12)
+    ap.add_argument("--warm-procs", type=int, default=2, help="開 worker 之前，同時建 P 快取的 process 數（每個建置峰值最高約 34 GB，FreeInference week13 實測）")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--only", nargs="*", default=None, help="工作 id 含任一個子字串才跑（測試用）")
     ap.add_argument("--limit", type=int, default=None, help="只跑前 N 個工作（列舉順序；測試用）")
@@ -810,6 +927,8 @@ def main(argv=None):
     ap.add_argument("--fmt", default="official", help="格式表：official｜official:loadonly_k0｜檔案路徑（地圖用預設）")
     a = ap.parse_args(argv)
 
+    if not a.stage and not a.c0_util:
+        ap.error("要給 --stage 或 --c0-util")
     Hs, n_req = load_H()
     # 凍結前的 H 檢查：讀目前的 04（或凍結的版本）
     frozen_full, frozen_sha = (None, None)
@@ -823,34 +942,47 @@ def main(argv=None):
     if kall is None and not a.dry_run:
         raise SystemExit(f"{KALL} 不存在（先用 stats_v4.py kall 產生）")
     if a.dry_run:
-        dry_run(a.stage, a.slices, a.fill, a.skip, a.procs, Hs, n_req, None)       # 個數與估計不需要 k
+        dry_run(a.stage or [], a.slices, a.fill, a.skip, a.procs, Hs, n_req, None)       # 個數與估計不需要 k
         return 0
 
     jobs = []
-    for st in a.stage:
+    if a.c0_util:
+        if a.stage:
+            ap.error("--c0-util 不能和 --stage 一起用")
+        jobs = c0util_jobs(a.slices, kall)
+    for st in (a.stage or []):
         jobs += enumerate_jobs(st, a.slices, a.fill, a.skip, kall)
     real = sorted({j["slice"] for j in jobs if not is_synth(j["slice"])})
-    if real and not a.frozen:
+    if real and not a.frozen and not a.c0_util:
         raise SystemExit(f"拒絕：這些真實資料的切片需要 --frozen <04 凍結的 commit>：{real[:6]}…（合成資料不需要）")
     if a.only:
         jobs = [j for j in jobs if any(o in j["id"] or o in j["slice"] for o in a.only)]
     if a.limit:
         jobs = jobs[:a.limit]
     lock = None
-    if real and not a.collect_only:
+    rc_param = a.recompute_charge or "none"
+    if a.c0_util and (not a.out or os.environ.get("RUN_ID", "adhoc") in ("", "adhoc")):
+        raise SystemExit("--c0-util 要明確的 --out 與 run_id（用 `bash code/run3090.sh <短名> …` 跑）")
+    if real and a.frozen and not a.c0_util:
+        # 真實資料的判定參數只從凍結的 04 讀（第三輪審查 #2）；命令列不准覆蓋
+        if a.recompute_charge is not None:
+            raise SystemExit("拒絕：真實資料的重算計價只從凍結的 04 §9 讀（`重算計價：…`），不准用 --recompute-charge 覆蓋")
+    if real and not a.collect_only and not a.c0_util:
         # 凍結閘門（第二輪審查 #5）：輸入檔的 sha256、程式 commit、乾淨的工作目錄、明確的 run_id；任何一項不成立就拒絕
         lock = lockfile.verify_freeze(a.frozen, REPO)
         if os.environ.get("RUN_ID", "adhoc") in ("", "adhoc"):
             raise SystemExit("拒絕：真實資料必須有明確的 run_id（用 `bash code/run3090.sh <短名> …` 跑，它會設 RUN_ID；不准用預設的 \"adhoc\"）")
         if a.fmt != "official":
             raise SystemExit(f"拒絕：真實資料只准用正式格式表（--fmt official），不是 {a.fmt!r}")
+        rc_param = lock["recompute_charge"]            # verify_freeze 保證三個判定參數都在凍結的 04 裡
     out = a.out or os.path.join(DEFAULT_OUT, (frozen_full[:8] if frozen_full else "synthetic"))
     os.makedirs(out, exist_ok=True)
     code_commit = subprocess.run(["git", "-C", REPO, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     dirty = subprocess.run(["git", "-C", REPO, "status", "--porcelain", "--untracked-files=no"], capture_output=True, text=True).stdout.strip()
     ctx = dict(H=Hs, fmt=a.fmt, frozen_commit=frozen_full or "", code_commit=code_commit + ("+dirty" if dirty else ""),
-               sens_views=not a.no_sens_views)
+               sens_views=not a.no_sens_views, kall=kall, recompute_charge=rc_param)
     json.dump(dict(stages=a.stage, slices=a.slices, frozen=frozen_full, prereg_sha256=frozen_sha, fmt=a.fmt, procs=a.procs, lock=lock,
+                   recompute_charge=rc_param, c0_util=a.c0_util,
                    code_commit=ctx["code_commit"], run_id=os.environ.get("RUN_ID", "adhoc"), ts=time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                    args=vars(a), n_jobs=len(jobs)), open(os.path.join(out, f"invocation_{time.strftime('%Y%m%d-%H%M%S')}.json"), "w"),
               default=str, indent=1)
@@ -858,13 +990,20 @@ def main(argv=None):
         print("collect:", collect(out))
         return 0
     timing = load_timing()
-    todo, done, cleaned = classify(out, jobs, not a.no_retry_failed)
+    todo, done, cleaned = classify(out, jobs, not a.no_retry_failed, ctx)
     print(f"工作 {len(jobs)}：已完成 {len(done)}、要跑 {len(todo)}、清掉的殘檔 {len(cleaned)}；輸出 {out}", flush=True)
     slc_cost = {}
     for j in todo:
         slc_cost[j["slice"]] = slc_cost.get(j["slice"], 0.0) + est_cost_s(j, timing, n_req)
     todo.sort(key=lambda j: (-slc_cost[j["slice"]], j["slice"], j["overlay"], -est_cost_s(j, timing, n_req)))   # 同切片（同疊加）排在一起（worker 的 P 快取），大的先
+    warm_caches(todo, a.warm_procs, out)
     nfail = dispatch(todo, ctx, a.procs, out, a.min_free_gb, a.max_failures)
+    if a.c0_util:
+        if nfail:
+            return 1
+        n = collect_c0util(out, a.c0_util_csv)
+        print(f"c0-util：{n} 列 → {a.c0_util_csv}", flush=True)
+        return 0
     nrow, nj = collect(out)
     print(f"collect：{nrow} 列、{nj} 個工作 → {out}/map_cells.csv", flush=True)
     return 1 if nfail else 0

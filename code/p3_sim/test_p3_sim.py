@@ -951,3 +951,178 @@ def test_block_actual_read_columns_and_attribution(ft):
     r, _, ids, e, vs = sim.run_cell(P, "E2", "C2", 150 / 1024.0, "llama", SPECS[:1], fmt_path=ft, H=75.0, int2_on_read="recompute_unverified",
                                     unverified_len="request")
     assert abs(r[0]["ssd_actual_read_GiB"] * GiB - float(np.asarray(vs[0].bS).sum())) < 1
+
+
+# ===================================================================== 第三輪審查之後（06 §26）：重算計價、O-tier、E6 主指標、P 快取鍵
+@pytest.mark.parametrize("engine", ["session", "fifo1"])
+def test_recompute_charge_hand(ft, engine):
+    """重算計價（選項 a；手算）：C1-2（CPU BF16、SSD INT2）＋手造 4 個請求（_hand_P_restore；測試表：8bit 33 MiB、bf16 64 MiB、int4 在 ≥16K 不過關）。
+    s0 被擠到 SSD 變成 INT2，在 r2（輸入 20,480 token）回來：INT2 不能用 → 意外重算。計價的單位＝這個長度下過關的最省格式（8bit，33 MiB）。
+    session 引擎：s0 整個 session 都降到 SSD → 4 個 block 都只在 SSD → 4×33 MiB。block 引擎（block 層級 LRU，CPU 450 MB 放得下 7 個 BF16）：
+    只有被擠掉的 block 0 在 SSD、block 1–3 還在 CPU（CPU 副本不算 SSD 讀取）→ 1×33 MiB。其他請求（沒有意外重算）0。
+    recompute_charge＝none：主指標讀取不含；pass_size：含（欄位 ssd_H_primary_read_GiB）；兩種的分量欄位（charged／primread）一樣；per-session 的 npz 歸屬於讀它的 session。"""
+    import ledger as LG
+    P = _hand_P_restore()
+    MiB = 1 << 20
+    want_blocks, want_bytes = (4, 4 * 33 * MiB) if engine == "session" else (1, 33 * MiB)
+    outs = {}
+    for chg in ("none", "pass_size"):
+        kw = dict(fmt_path=ft, int2_on_read="recompute_unverified", unverified_len="request", H=1.0, recompute_charge=chg)
+        if engine == "session":
+            r, _, ids, e, vs = sim.run_cell(P, "E2", "C1-2", 450 / 1024.0, "llama", SPECS[:1], check=1, **kw)
+        else:
+            r, _, ids, e, vs = sim.run_cell_fifo1(P, "E2", "C1-2", 450 / 1024.0, "llama", SPECS[0], **kw)
+        assert all(i["ok"] for i in ids)
+        outs[chg] = (r[0], e, vs)
+        assert [int(x) for x in e.rc_blocks] == [0, 0, want_blocks, 0], list(e.rc_blocks)
+        assert [int(x) for x in e.rc_bytes] == [0, 0, want_bytes, 0], list(e.rc_bytes)
+        row = r[0]
+        assert row["recompute_charge"] == chg and abs(row["ssd_H_charged_recompute_GiB"] * GiB - want_bytes) < 1 and row["recompute_charge_blocks"] == want_blocks
+        assert row["reads_fail"] == 0 and row["reads_unverified"] == 0
+    a, b = outs["none"][0], outs["pass_size"][0]
+    assert a["ssd_H_primread_GiB"] == b["ssd_H_primread_GiB"]                                 # 分量一樣
+    assert a["ssd_H_primary_read_GiB"] == a["ssd_H_primread_GiB"]                             # none：不含
+    assert abs((b["ssd_H_primary_read_GiB"] - b["ssd_H_primread_GiB"]) * GiB - want_bytes) < 1  # pass_size：含
+    ps = LG.per_session(P, outs["pass_size"][1], outs["pass_size"][2])
+    assert [int(x) for x in ps["recompute_charge_bytes_H"]] == [want_bytes, 0] and [int(x) for x in ps["recompute_charge_bytes"]] == [want_bytes, 0]   # 歸屬於讀它的 session s0
+    # 沒有意外重算的做法（C0）：計價 0
+    kw0 = dict(fmt_path=ft, int2_on_read="recompute_unverified", unverified_len="request", H=1.0, recompute_charge="pass_size")
+    if engine == "session":
+        r0, _, _, e0, _ = sim.run_cell(P, "E2", "C0", 450 / 1024.0, "llama", SPECS[:1], **kw0)
+    else:
+        r0, _, _, e0, _ = sim.run_cell_fifo1(P, "E2", "C0", 450 / 1024.0, "llama", SPECS[0], **kw0)
+    assert int(np.asarray(e0.rc_bytes).sum()) == 0 and r0[0]["ssd_H_charged_recompute_GiB"] == 0.0
+
+
+def _hand_P_wt():
+    """手造：s0 在 r0 寫 4 個 block，在 r1 回來（輸入 40 個 block＝20,480 token）：E3（寫穿）的 SSD 副本寫了以後從來沒有從 SSD 讀過（一直在 CPU）。"""
+    full = [[0, 1, 2, 3], [0, 1, 2, 3, 4, 5]]
+    acc = {}
+    for r, ks in enumerate(full):
+        for b in ks:
+            acc.setdefault(b, []).append(r)
+    return dict(full=full, nall=[4, 40], acc=acc, tl=[0.0, 10.0], kindc=[0, 1], sessl=[0, 0], parentl=[-1, 0],
+                obs_end=[1e6] * 2, nmax=64, B=6, R=dict(n_sess=1), win=(0.0, 100.0),
+                meta=dict(source="hand", variant="wt", tier="S", n_req=2, n_sess=1))
+
+
+def test_otier_hand_never_read_from_ssd_becomes_int2(ft):
+    """O-tier（選項 b；手算）：E3 寫穿，s0 的 4 個 block 寫了 SSD 副本以後只在 CPU 被讀（r1 輸入 20,480 token）。
+    一般的 O：之後 r1 會讀 → SSD 副本用 20,480 token 下過關的最省格式＝8bit（33 MiB）；O-tier：這些 SSD 副本從沒被從 SSD 讀 → INT2（12 MiB）。
+    block 4、5（r1 新寫的，之後沒人讀）兩個都是 INT2。SSD 寫入：O＝4×33＋2×12 MiB、O-tier＝6×12 MiB；CPU 側事件相同（引擎比對）；品質帳 0、沒有意外重算。"""
+    P = _hand_P_wt()
+    MiB = 1 << 20
+    res = {}
+    for pol in ("O", "O-tier"):
+        r, _, ids, e, _ = sim.run_cell(P, "E3", pol, 1024 / 1024.0, "llama", SPECS[:1], fmt_path=ft, check=1, H=1.0,
+                                       int2_on_read="recompute_unverified", unverified_len="request")
+        assert all(i["ok"] for i in ids)
+        res[pol] = (r[0], e)
+        assert r[0]["reads_fail"] == 0 and r[0]["reads_unverified"] == 0 and r[0]["surprise_events"] == 0
+    assert res["O"][1].wbytes["write_through"] == 4 * 33 * MiB + 2 * 12 * MiB, res["O"][1].wbytes
+    assert res["O-tier"][1].wbytes["write_through"] == 6 * 12 * MiB, res["O-tier"][1].wbytes
+    t = res["O-tier"][0]
+    assert t["otier_cpu_event_mismatch_requests"] == 0 and t["otier_approx"] is False and t["otier_pass1_ssd_writes"] == t["otier_pass2_ssd_writes"] == 6
+    assert t["otier_ssd_copies_never_read"] == 6               # 6 份 SSD 副本都沒被從 SSD 讀過
+    assert t["policy"] == "O-tier" and res["O"][0]["policy"] == "O"
+    # CPU 這一階的格式和一般的 O 完全相同
+    assert [res["O"][1].cfmt[b] for b in range(6)] == [res["O-tier"][1].cfmt[b] for b in range(6)]
+
+
+def test_otier_ssd_read_keeps_pass_format_and_assert_trips(ft, monkeypatch):
+    """(i) 有被從 SSD 讀的副本：O-tier 的格式要在「第一次從 SSD 讀之後的所有讀取」的最長長度下過關（_hand_P_restore：s0 在 r2、r3 回來，輸入 20,480／20,992 token → 8bit），
+    所以位元組和一般的 O 一樣、品質帳 0、沒有意外重算。(ii) 第 2 趟的 CPU 側事件和第 1 趟不同就丟錯：把「有沒有被從 SSD 讀」硬改成永遠沒有 → INT2 被讀到 → 意外重算 → 事件不同 → AssertionError。"""
+    import policies
+    P = _hand_P_restore()
+    kw = dict(fmt_path=ft, check=1, H=1.0, int2_on_read="recompute_unverified", unverified_len="request")
+    ro, _, _, eo, _ = sim.run_cell(P, "E2", "O", 150 / 1024.0, "llama", SPECS[:1], **kw)      # 150 MB：s0 的 8bit block 被 s1 擠到 SSD，之後從 SSD 讀回
+    rt, _, ids, et, _ = sim.run_cell(P, "E2", "O-tier", 150 / 1024.0, "llama", SPECS[:1], **kw)
+    assert all(i["ok"] for i in ids) and rt[0]["otier_cpu_event_mismatch_requests"] == 0
+    assert ro[0]["ssd_H_write_issued_GiB"] > 0 and rt[0]["otier_pass1_ssd_writes"] > 0 and rt[0]["ssd_H_primread_GiB"] > 0      # 真的有 SSD 寫入與 SSD 讀取
+    assert rt[0]["ssd_H_write_issued_GiB"] == ro[0]["ssd_H_write_issued_GiB"] and rt[0]["reads_fail"] == 0 and rt[0]["surprise_events"] == 0
+    monkeypatch.setattr(policies.TierRec, "info", lambda self, key: (False, 0, 0) if key in self.keys else None)
+    with pytest.raises(AssertionError, match="CPU 側事件"):
+        sim.run_cell(P, "E2", "O-tier", 150 / 1024.0, "llama", SPECS[:1], **kw)
+
+
+def test_otier_block_engine_reports_mismatch_and_approx(ft):
+    """block 引擎（和時間有關）：兩趟的 CPU 側事件只能近似相同 → 不丟錯，數出不同的請求數（這個小例子 0），標 otier_approx。"""
+    P = dict(_hand_P_restore(), tl=[0.0, 0.5, 1.0, 1.5])
+    r, _, ids, e, _ = sim.run_cell_fifo1(P, "E6", "O-tier", 150 / 1024.0, "llama", SPECS[0], fmt_path=ft, H=1.0,
+                                         int2_on_read="recompute_unverified", unverified_len="request")
+    assert all(i["ok"] for i in ids)
+    row = r[0]
+    assert row["otier_approx"] is True and row["otier_cpu_event_mismatch_requests"] == 0 and row["otier_tier_missing_keys"] == 0
+    assert row["reads_fail"] == 0 and row["reads_unverified"] == 0 and row["surprise_events"] == 0
+
+
+def test_loose_variant_tier_policy_exists(ft):
+    """O-loose-tier（便宜的版本）：做得出來、第 1 趟用 O-loose；O-len 沒有 tier 版（只知道最長讀取，加了 tier 資訊就不是它）。"""
+    P = _hand_P_wt()
+    r, _, ids, e, _ = sim.run_cell(P, "E3", "O-loose-tier", 1.0, "llama", SPECS[:1], fmt_path=ft, check=1, H=1.0,
+                                   int2_on_read="recompute_unverified", unverified_len="request", quality_rule="loose")
+    assert all(i["ok"] for i in ids) and r[0]["policy"] == "O-loose-tier" and r[0]["otier_cpu_event_mismatch_requests"] == 0
+    with pytest.raises(ValueError):
+        make_policy("O-len-tier", load_format_table("llama", "mi300x", ft))
+
+
+def test_e6_prefetch_skips_blocks_that_fail_at_trigger_length(ft):
+    """E6 預取（嚴格讀取規則；直接在引擎狀態上呼叫 queue_prefetch）：排隊中的請求 r2（輸入 20,480 token）要的 block 0–3 在 SSD 上是 int4（在那個長度不過關），
+    服務時會整段重算 → 預取它們是白讀 → 跳過（pf_skipped、預取讀取 0）；關掉跳過時同一個狀態預取 4 個 block。SSD 上是 8bit（過關）→ 照預取 4 個。
+    主指標的讀取（ledger.primread_by_req）＝只載入的還原＋全部預取。"""
+    from engine_block import BlockEngine, BView, reqs_from_P
+    import ledger as LG
+    mf = load_format_table("llama", "mi300x", ft)
+    costs = load_costs("mi300x", "llama", "mi300x_local")
+    P = dict(_hand_P_restore(), tl=[0.0, 0.5, 1.0, 1.5])
+    res = {}
+    for sfmt_name, skip in (("int4", True), ("int4", False), ("8bit", True)):
+        reqs = reqs_from_P(P)
+        v = BView(costs, mf, "idle", 64, d2h_Bps=costs.cpu["w"] * GiB)
+        eng = BlockEngine(reqs, sim.outer_cfg("E6"), make_policy("C2", mf), 10 * BF, v, mf, qp=True, int2_on_read="recompute_unverified",
+                          unverified_len="request", H=1.0, obs_end=P["obs_end"])
+        eng.pf_skip = skip
+        for b in range(4):
+            eng.sfmt[b] = FID[sfmt_name]
+            eng.sq[b] = FID[sfmt_name]
+        eng.queue_prefetch(1, 0.0, 100.0)
+        res[(sfmt_name, skip)] = (eng.S["qp_reads"], eng.S["pf_skipped"], eng.wbytes["prefetch_read"])
+    assert res[("int4", True)] == (0, 2, 0), res          # 排隊中的 r2 與 r3（輸入都 ≥20K）各跳過一次
+    assert res[("int4", False)][0] == 4 and res[("int4", False)][1] == 0 and res[("int4", False)][2] == 4 * (20 << 20), res
+    assert res[("8bit", True)][0] == 4 and res[("8bit", True)][1] == 0, res
+    # 整個 run 上：主指標的讀取＝lo_bytes＋預取（含浪費）
+    r, _, ids, e, vs = sim.run_cell_fifo1(P, "E6", "C2", 150 / 1024.0, "llama", SPECS[0], fmt_path=ft, H=1.0, int2_on_read="recompute_unverified",
+                                          unverified_len="request")
+    assert all(i["ok"] for i in ids)
+    pr = LG.primread_by_req(e, vs[0], 4)
+    assert abs(pr.sum() - (float(np.asarray(e.lo_bytes).sum()) + e.wbytes["prefetch_read"])) < 1
+    assert abs(r[0]["ssd_primread_GiB"] * GiB - pr.sum()) < 1
+
+
+def test_prepare_cache_key_includes_unified_file_hash_and_trace_py(tmp_path, monkeypatch):
+    """P 快取的鍵含 (i) trace.py（和 schema.py）的 hash、(ii) 統一表 turns.parquet 檔案本身的 sha256（每次重算；不信 manifest 記的）。
+    假的統一表換內容（manifest 不動）→ 鍵變；換 trace 程式的 hash → 鍵變。"""
+    import hashlib
+    import json as js
+    import pickle  # noqa: F401
+    import schema
+    src, var = "synth", "small-seed1"
+    real_file, real_sha = TR.unified_file_sha256(src, var)
+    h = hashlib.sha256(open(real_file, "rb").read()).hexdigest()
+    assert real_sha == h
+    keys = []
+    for patch in ("none", "file", "code"):
+        if patch == "file":
+            monkeypatch.setattr(TR, "unified_file_sha256", lambda s, v: ("/fake/turns.parquet", "0" * 64))
+        elif patch == "code":
+            monkeypatch.setattr(TR, "unified_file_sha256", lambda s, v: (real_file, real_sha))
+            monkeypatch.setattr(TR, "_code_hash", lambda: "1" * 64)
+        cd = str(tmp_path / patch)
+        monkeypatch.setattr(TR, "prepare", lambda *a, **k: dict(meta={}, dummy=1))
+        TR.prepare_cached(src, var, cache_dir=cd, max_req=5)
+        js_files = [f for f in os.listdir(cd) if f.endswith(".json")]
+        assert len(js_files) == 1
+        m = js.load(open(os.path.join(cd, js_files[0])))
+        keys.append(js_files[0])
+        assert m["params"]["unified_file_sha256"] in (real_sha, "0" * 64) and "code_sha256" in m["params"]
+    assert len(set(keys)) == 3, keys

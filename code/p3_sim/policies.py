@@ -96,6 +96,53 @@ class C4(CompressionPolicy):
         return self.fb if read_len(ctx, self.len_rule) <= self.thr else self.f4
 
 
+class TierRec:
+    """O-tier（04 v4 第三輪審查 #1 選項 b；06 §26）的兩趟之間的記錄。
+    第 1 趟（recording=True；一般的 O）：引擎在每次寫 SSD 時呼叫 on_write(key)（key＝(block, 這個 block 第幾次寫 SSD)）、在副本作廢時呼叫 on_super(block)、
+    在每個被載入的 block 上呼叫 on_read(block, 1＝CPU｜3＝SSD, 請求輸入長度, 存的前綴 token 數)。
+    一個 SSD 副本的「SSD 讀取」＝它第一次被從 SSD 讀之後，到它被取代之前，所有讀這個 block 的請求（CPU 副本也算：從 SSD 讀回來的內容被寫回 CPU 以後，
+    品質來歷仍然是 SSD 副本的格式，之後在 CPU 被讀到也得過關）。maxlen＝這些讀取的最長長度。沒有被從 SSD 讀過 → ssd_read＝False。
+    第 2 趟（recording=False）：策略用 info(key) 查表。"""
+
+    def __init__(self, recording=True):
+        self.recording = recording
+        self.cur = {}               # block → 目前這份 SSD 副本的 key
+        self.seen = set()           # 已經被從 SSD 讀過的副本
+        self.n_write = 0
+        self.ssd_read = set()
+        self.maxlen_req = {}
+        self.maxlen_tok = {}
+        self.keys = set()
+
+    def on_write(self, key):
+        assert self.recording
+        self.cur[key[0]] = key
+        self.keys.add(key)
+        self.n_write += 1
+
+    def on_super(self, b):
+        self.cur.pop(b, None)
+
+    def on_read(self, b, tier, req_tokens, stored_tokens):
+        key = self.cur.get(b)
+        if key is None:
+            return
+        if tier == 3:
+            self.seen.add(key)
+            self.ssd_read.add(key)
+        if key in self.seen:
+            if req_tokens > self.maxlen_req.get(key, 0):
+                self.maxlen_req[key] = req_tokens
+            if stored_tokens > self.maxlen_tok.get(key, 0):
+                self.maxlen_tok[key] = stored_tokens
+
+    def info(self, key):
+        """(被從 SSD 讀過?, 讀取的最長請求輸入長度, 讀取的最長存的前綴長度)；key 不在記錄裡 → None（第 2 趟的寫入和第 1 趟對不上）。"""
+        if key not in self.keys:
+            return None
+        return key in self.ssd_read, self.maxlen_req.get(key, 0), self.maxlen_tok.get(key, 0)
+
+
 class Oracle(CompressionPolicy):
     """O：完美預測。之後會被讀（或落在截尾區、不知道）→ 品質過關、又最省（位元組最少）的格式；
     不會再被讀 → 最省的格式（含 never_read_only 的 INT2；沒有大小的格式跳過）。
@@ -118,14 +165,22 @@ class Oracle(CompressionPolicy):
     needs_oracle = True
     ssd_moment = True
     VARIANTS = ("O", "O-len", "O-reuse", "O-loose")
+    TIER_VARIANTS = ("O", "O-loose")      # O-len 只知道「最長讀到多長」、不知道會不會再被讀；加上 tier 的資訊就不是它了 → 沒有 tier 版（06 §26）
 
-    def __init__(self, mf, allow_unverified=False, variant="O", ssd_oracle=True, read_len="prefix"):
+    def __init__(self, mf, allow_unverified=False, variant="O", ssd_oracle=True, read_len="prefix", tier_rec=None):
         super().__init__(mf)
         assert variant in self.VARIANTS, variant
         assert read_len in ("prefix", "request"), read_len
         self.read_len = read_len
         self.variant = variant
-        self.name = variant if ssd_oracle else variant + "(cpu-only)"
+        # tier（O-tier／O-loose-tier；06 §26）：SSD 這一階的格式用「第 1 趟（一般的 O）記下的、這份 SSD 副本之後會不會真的被從 SSD 讀、讀多長」決定；
+        # CPU 這一階的決定和一般的 O 完全相同（引擎會比對兩趟的 CPU 側事件）。tier_rec＝TierRec（recording=False）
+        self.tier = tier_rec is not None
+        self.tier_rec = tier_rec
+        self.n_tier_missing = 0           # 第 2 趟的寫入在第 1 趟的記錄裡找不到的次數（session 引擎＝丟錯；block 引擎＝退回 greedy 並計數）
+        if self.tier:
+            assert ssd_oracle and variant in self.TIER_VARIANTS, (ssd_oracle, variant)
+        self.name = (variant + "-tier" if self.tier else variant) if ssd_oracle else variant + "(cpu-only)"
         self.ssd_oracle = ssd_oracle
         self.ssd_moment = bool(ssd_oracle)
         self.allow_unverified = allow_unverified
@@ -180,10 +235,26 @@ class Oracle(CompressionPolicy):
     def cpu_fid(self, ctx):
         return self._pick(ctx)
 
+    def _pick_tier(self, ctx, strict_missing):
+        """tier 版的 SSD 決定（non-censored）：這份副本之後沒有被從 SSD 讀 → 最省的格式（INT2）；有 → 對「第一次從 SSD 讀之後的所有讀取」的最長長度過關、最省的格式。
+        截尾區（決定時刻離窗尾 < H，不知道之後）→ 退回一般 O 的決定（當成會被讀）。"""
+        if ctx["censored"]:
+            return self._pick(ctx)
+        inf = self.tier_rec.info(ctx.get("ssd_key"))
+        if inf is None:
+            if strict_missing:
+                raise AssertionError(f"{self.name}: 第 2 趟寫 SSD 的 {ctx.get('ssd_key')} 不在第 1 趟的記錄裡（CPU 側事件對不上）")
+            self.n_tier_missing += 1
+            return self._pick(ctx)
+        rd, ml_req, ml_tok = inf
+        if not rd:
+            return self.never
+        return self.read_fid(ml_req if self.read_len == "request" else ml_tok)
+
     def ssd_fid(self, ctx, cur):
         if not self.ssd_oracle:
             return cur
-        f = self._pick(ctx)          # ctx＝寫 SSD 那一刻、這個 block 的 oracle 資訊（引擎的 _mctx）
+        f = self._pick_tier(ctx, getattr(self, "strict_missing", True)) if self.tier else self._pick(ctx)   # ctx＝寫 SSD 那一刻、這個 block 的 oracle 資訊（引擎的 _mctx）
         return f if f > cur else cur
 
 
@@ -299,6 +370,9 @@ class R2(CompressionPolicy):
         return max(cur, self.f4) if read_len(ctx, self.len_rule) <= self.thr else cur
 
 
+TIER_NAMES = {"O-tier": "O", "O-loose-tier": "O-loose"}      # tier 版 → 第 1 趟用的一般 O
+
+
 def make_policy(name, mf, **kw):
     if name == "C0":
         return Fixed(mf, "bf16", "C0")
@@ -314,6 +388,11 @@ def make_policy(name, mf, **kw):
     if name in Oracle.VARIANTS:
         return Oracle(mf, kw.get("o_allow_unverified", False), variant=name, ssd_oracle=kw.get("o_ssd_oracle", True),
                       read_len=kw.get("o_read_len", "prefix"))
+    if name in TIER_NAMES:        # O-tier、O-loose-tier：需要第 1 趟的記錄（sim.run_cell 負責兩趟）
+        o = Oracle(mf, kw.get("o_allow_unverified", False), variant=TIER_NAMES[name], ssd_oracle=True, read_len=kw.get("o_read_len", "prefix"),
+                   tier_rec=kw["tier_rec"])
+        o.strict_missing = kw.get("tier_strict", True)
+        return o
     if name == "C4r":
         return C4r(mf, kw.get("c4_threshold_tokens", 32768), lr)
     if name == "C1-8":

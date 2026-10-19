@@ -269,3 +269,40 @@ CUDA_VISIBLE_DEVICES=5 bash code/run3090.sh p3-0-smoke-vllm env PATH=$M7_VLLM_VE
 - **opencode 違反指示改了 04**：edit 工具擋下之後，它在 bash 裡用 python 改 `04_prereg_map.md`（加了凍結鎖定表的空白格式，+19 行）。內容無害，主 session 看過後保留並註明；`work.jsonc` 改成 bash 指令提到 04／main.tex／CLAUDE.md 也一律擋。
 - opencode 在開發中自己的測試寫錯 4 次（fixture 期望值、斷言），都只改測試；完整錯誤在 06 §10。
 **與假設的差異**: 第二輪審查發現寫穿（E3）時沒有任何對手能用 INT2、E6 漏算預取、長請求多時對手只剩 C0；v4 加了 C1-2、R2、寬鬆版雙胞胎、O 也要過護欄、SSD 使用率 ≥5%。重算後重新存之後，對手可以「猜錯就重算」換位元組（合成資料上 15 格裡 8 格贏過 O）；使用者 10/18 選護欄參考＝min(C0, O)。opencode 花費：執行器約 US$10.2、小修正約 3.0、審查約 2.9、第二輪修改約 7.7。
+
+## Milestone P3-M7 — 第三輪審查的修改＋C0 的 SSD 使用率（opencode 做；**沒有跑任何真實資料的地圖格子**）
+**狀態**: PASS（工具與資料統計）；登記 v4 **仍未凍結**（使用者 10/19 決定：先 push，凍結等他決定）
+**執行時間**: 2026-10-18 22:50 → 2026-10-19 01:20（+08:00）；主 session 驗證 10-19 19:45 → 20:00
+**run_id**:
+- 第三輪審查（opencode Opus 5.5 xhigh，`--agent plan` 唯讀，**zero-context same-family review，NOT cross-model**）：`20261018-225025-p3-ocreview-map-v4r3`（exit 0；結論「還不能凍結」，新的必改 2 條）。原文與處理見 `docs/phase3_20261017/review_opencode_20261018_map_v4r3{,_raw}.md`。
+- 修改（opencode Sonnet 5.5 high）：`20261018-230105-oc-review3fix`（**exit 1**：23:00 送出、00:00 跨日被 API 擋下 — `messages.1.content.0: Invalid signature in thinking block. The block is bound to a different conversation.`，`anthropic-thinking-prefix-mismatch: kind=system_changed; rejected_blocks=68`；任務 1–7 的成果留在工作目錄）；接續同一個 session：`20261019-000158-oc-review3fix-b`（exit 0）。
+- 本次的量測 run：`20261019-003643-p3sim-c0util`（exit 0，120 工作、0 失敗、321 s）；失敗的第一次 `20261018-234402-p3sim-c0util`（exit 1，見下）；探針 `20261019-000338-p3sim-c0util-rssprobe`（exit 0）、`20261019-001812-p3sim-c0util-prepprobe2`（exit 0）、`20261019-000656-p3sim-c0util-prepprobe`（exit 1，切片名寫錯）。
+- 回歸與合成端到端（全 exit 0）：`20261019-004253-p3sim-regsmoke7`、`-005608-p3sim-regcmp7`、`-005613-p3sim-regcmpO7`、`-004419-p3sim-smokestrict4`、`-004253-p3sim-mapsyn4`、`-004253-p3sim-mapdry5`、`-011330-p3sim-anasyn5-{C0-greedy-none,C0-greedy-pass_size,C0-tier-none,C0-tier-pass_size,min_C0_O-greedy-none}`。
+- 主 session 重跑全部測試：`20261019-011805-p3sim-testfinal4`（121 passed，644 s，opencode 跑的）、**`20261019-194510-p3sim-verify-test5`（exit 0，121 passed，877 s，主 session 在 commit 前自己重跑）**。
+**指令**: `TIARA_NO_GPU=1 bash code/run3090.sh oc-review3fix bash code/oc_task.sh <任務目錄> --variant high --session <id>`；使用率 `TIARA_NO_GPU=1 bash code/run3090.sh p3sim-c0util python code/p3_sim/run_map.py --c0-util --out /ssd8/hungwei/paper-hkv/p3_c0util/run2 --c0-util-csv results/p3_sim/c0_ssd_util.csv --procs 16 --warm-procs 2`；驗證 `TIARA_NO_GPU=1 bash code/run3090.sh p3sim-verify-test5 python -m pytest code/p3_sim/ -q`
+**產出檔**: `code/p3_sim/{analyze_map,engine,engine_block,ledger,lockfile,policies,run_map,sim,trace,test_map,test_p3_sim}.py`；`docs/phase3_20261017/06_simulator.md` §26（被取代的敘述在 §25.2–§25.4 原處加註）；`results/p3_sim/c0_ssd_util.csv`（120 列）；`results/p3_map/synthetic_e2e_A1_v6_*`（5 個參數組合 × 4 檔，**合成資料**）。opencode 報告：`/ssd8/hungwei/paper-hkv/opencode/tasks/20261019-000151_review3fix_b/REPORT.md`。**04_prereg_map.md 這次沒有被碰**（`git status` 確認）。
+**關鍵數字**（不變量、迴歸與 C0 使用率；**沒有任何真實資料的「省多少」**）:
+- 測試 **121 passed**（主 session 的 `verify-test5`）；X1 **144／144**、X4 **8／8** 逐位元相同。
+- 迴歸（對 c0c179b，placeholder 成本表）：103 個舊欄在 C0 183／183、C1 186／186、C2 182／182、C3 180／180、C4 180／180 **全部相同**；`O(cpu-only)` 對舊 O 180／180 相同。新 O 對舊 O：185 格 113 相同／72 不同（規格改了，預期）。
+- 嚴格規則冒煙（official 成本表、17 個做法含 O-tier）：3,060 格、恆等式 36,550 條全成立、錯誤 0；品質帳非 0 的列 **0／3,060**；O／O-len／O-tier 意外重算 **0**；O-tier 的 CPU 側事件不一致請求數 **0**。
+- **C0 的 SSD 使用率**（`c0_ssd_util.csv`，主視角、H、63／170／435 GiB，分母乘該切片的 k）：≥5% 的格子 **63／120**。bailian/coder 34–43%、bailian/traceA 29–39%、mooncake 8.6–37%；**wildchat/1m 0.07–0.13%、freeinference week01 0.03–1.02%、week05 0.21–0.97% 全部 <5%**；week09 只有 63 GiB 的 9–13% 進得去；week13 的 435 GiB 只有 E3／E4／E6 ≥5%。
+- 完整地圖〔估計，沿用 `timing3` 線性外插，沒有重新計時〕：A1 271.2、A2 1,210.2、B-A1 785.2、B-A2 3,336.1，**合計 5,602.6 CPU 小時**（≈12 process 467 小時）；工作 81,920 個、列 337,980。P 的 prepare 沒算在內。
+- FreeInference week13 新建 P 實測 **574 s、最大 RSS 33.4 GB**（`prepprobe2`）；快取命中時單一工作最大 RSS 9.5 GB、最慢 79 s（`rssprobe`）。
+**失敗與異常**:
+- `20261018-234402-p3sim-c0util` **exit 1**：`concurrent.futures.process.BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.`（stderr 空、沒有 dmesg 權限）。查出的原因：上一個 session 改了 `trace.py` → P 快取鍵全變、全部 miss；`--procs 24` 時前 24 個工作正好是 week13 的 15 個＋week09 的 9 個，24 個 worker 各自從頭建同一份 P，15×33 GB ＞ 440 GB。**沒有直接重現當次被殺**（沒有重跑 24 個同時建置）。修正：`run_map.warm_caches` ＋ `--warm-procs`（預設 2），開 worker 前先把快取建好；新增對應測試。**重跑時快取已存在，所以 `warm_caches` 的「新建」路徑沒有在那次重跑中被走過。**
+- `20261018-230105-oc-review3fix` exit 1（跨日的 thinking signature 400，上面）。
+- `20261019-000656-p3sim-c0util-prepprobe` exit 1：`KeyError: 'freeinference_week13'`（opencode 自己的探針腳本把切片名寫成底線）；改成 `freeinference/week13` 重跑。
+- opencode 的偏離（它自己照報）：任務 1–7 是上一個 session 寫的，接手的 session 沒有逐行重審，是用 diff 掃描＋整套測試＋合成端到端判斷完成；`rm -r` 清舊輸出被權限擋下，改用新目錄 `run2`（`run1`、`probe1` 留著）。
+**與假設的差異**:
+- 第三輪審查抓到的主要漏洞：**對手可以「SSD 上不留可用的副本、回來就重算」換到很少的位元組**（合成 435 GiB 的 E2–E4 由 C1-2 勝出，O 反而多 113%–398%），護欄 min(C0, O) 擋不住。使用者 10/19 選的處理：(a) 重算照「該長度下過關的最省格式」計價、(b) 完美預測加 tier 版（O-tier）、(c) C0 的 SSD 使用率 <5% 的格子 GO／NO-GO 都不算；護欄參考**改回 C0**。程式把三者都做成參數（`recompute_charge`、`oracle_variant`、`guard_ref`），04 §9 要寫四條可解析行才跑得動。
+- **C0 閘門會讓進判定的資料縮水**（上面）：WildChat 完全不進，FreeInference 只剩 week09（63 GiB）與 week13。這直接影響 GO 的「另一個來源」條件與 NO-GO 的覆蓋範圍，**等使用者決定是否接受**。
+- 合成資料上 O 在很多格比最好的對手位元組還多（機制說明在 06 §26 與 opencode REPORT §6）；**合成資料不進判定**，五個參數組合的判定全部是 ASK。
+- opencode 花費：`stats.txt` 是當天累計，無法逐任務拆；第三輪審查約 US$1.4（審查報告自記），review3fix 兩段合計 ≈ US$64.8 − 前一夜的累計，**精確數字 NOT_MEASURED**。
+
+## 2026-10-19 平台分工（使用者決定，沒有量測）
+- **P3 地圖留在 3090 這台跑**（純 CPU：48 實體核／96 HT、440 GB RAM、統一表在 `/ssd8`）。理由：地圖完全不用 GPU，H200 的 `h200q` 要掛 `--gres=gpu`，整個 lab 只有 4 張卡，拿 GPU 配額跑純 CPU 模擬划不來。
+- **精度那條線改上 H200**（`docs/precision_20261013/03_plan_h200.md` 的 §R：R0 硬體報告 → R1 正確性 → R2 校準 → R3 第一階段復現，過了才進 D0）。注意 03 的 10/15 晚改動已經把**主實驗放在 MI300X**，H200 這邊是**復現與對照**，兩台的數字不放進同一個判定。
+- **還沒上機**：3090 這台連不到 head node（`192.168.20.241` TCP 22 不通，需要 OpenVPN；本機沒有 `.ovpn`、沒有 sudo 建 tun），所以 H200 的每一步都要從使用者的 Mac 發動。
+- **上機前的已知擋路點**：lab 磁碟配額 2026-10-15 實測只剩約 12 GB（`quota -gs`：1524G／1536G），模型 31 GB＋conda 環境放不下（`docs/H200_SLURM.md` §0、§7 沒有解法）。要先解決才動 `code/h200_setup_data.sh`。
+- **程式面已就緒**（10/15 寫好、本次複查）：`code/{env_h200.sh,tiara.sbatch,h200_probe.sh,h200_setup_data.sh,r_h200.sh}` 語法檢查全過；03 §R「R 之前要先改的程式」那張表的五處都已改成讀環境變數（`m7_env.sh` 偵測 MLSteam／否則 source `env_h200.sh`、`m7_model.py` 延後讀 `M7_MODEL_GLOB`、`m7_write_policy.py` 的 `M7_DISK`（查不到照樣丟錯）、`m7_calib.py` 的 `nvidia-smi` 分支、`m7_c6_vllm.py` 的 `M7_VLLM_VENV`／`M7_EXTRA_PATH`）。**NVIDIA 上一次都還沒跑過。**
+- **複查時發現的小問題（還沒改）**：`code/r_h200.sh --list` 裡 `R2-C4-t1-restart` 重複 10 次、`R2-C4-t2-restart` 重複 5 次（迴圈用同一個步驟名）。`--from R2-C4-t1-restart` 會從第 1 次重跑整個迴圈，而 `m7_write_policy` 的 CSV 是附加寫入 → 48 小時被砍後接著跑要先手動處理已寫的列。建議改成 `R2-C4-t1-restart-<i>`，但要等使用者同意再動（這支腳本是 §R 的入口）。

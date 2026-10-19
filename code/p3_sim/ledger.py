@@ -175,6 +175,24 @@ def ssd_v4_stats(P, eng, v, H=0.0):
     return out
 
 
+def prefetch_by_req(v, n):
+    """替每個「觸發的請求」預取的 SSD 讀取位元組（含浪費掉的；block 引擎的預取紀錄 rk==1，rr＝替它預取的那個排隊中請求；session 引擎＝0）。"""
+    a = np.zeros(n)
+    ch = v.slow
+    rk = np.frombuffer(ch.rk, dtype=np.int8) if len(ch.rk) else np.zeros(0, np.int8)
+    if len(rk) and (rk == 1).any():
+        rr = np.frombuffer(ch.rr, dtype=np.int32)[rk == 1]
+        rb = np.frombuffer(ch.rb, dtype=np.int64)[rk == 1]
+        a += np.bincount(rr, weights=rb.astype(float), minlength=n)[:n]
+    return a
+
+
+def primread_by_req(eng, v, n):
+    """主指標的讀取（第三輪審查 #4；06 §26）＝只載入的還原讀取（lo_bytes：服務開始時有存前綴裡在 SSD、不在 CPU 的 block；和 Cake 的會合點無關）
+    ＋全部預取讀取（含浪費的；session 引擎沒有預取）。兩個引擎同一個定義。歸屬＝觸發的請求。"""
+    return np.asarray(eng.lo_bytes, float) + prefetch_by_req(v, n)
+
+
 def actual_read_by_req(v, n):
     """每個「觸發的請求」實際從 SSD 讀的位元組（長度 n 的 float 陣列）：還原的讀（v.bS[r]）＋替它預取的讀（含浪費掉的預取；
     block 引擎的預取紀錄 rk==1，rr＝佇列裡替它預取的那個請求；session 引擎沒有預取）。04 v4 §4：E6（block 引擎）的主指標用這個，
@@ -193,7 +211,8 @@ def _pct(x, q):
     return float(np.percentile(x, q)) if len(x) else float("nan")
 
 
-def summarize_view(P, eng, v, H=0.0):
+def summarize_view(P, eng, v, H=0.0, recompute_charge="none"):
+    assert recompute_charge in ("none", "pass_size"), recompute_charge
     kd = np.asarray(P["kindc"])
     tl = np.asarray(P["tl"])
     t0 = float(tl[0]) if len(tl) else 0.0
@@ -294,6 +313,24 @@ def summarize_view(P, eng, v, H=0.0):
         row["ssd_H_actual_read_GiB"] = float(act[tl < row["censor_cut_s"]].sum()) / GiB
     if getattr(eng, "cutH2", None) is not None:
         row["ssd_H2_actual_read_GiB"] = float(act[tl < eng.cutH2].sum()) / GiB
+    # 主指標的讀取＝只載入的還原＋全部預取（兩個引擎同一個定義；06 §26）＋（recompute_charge＝pass_size 時）重算計價
+    pr = primread_by_req(eng, v, len(tl))
+    rcb = np.asarray(eng.rc_bytes, float)
+    on = recompute_charge == "pass_size"
+    row["recompute_charge"] = recompute_charge
+    row["ssd_primread_GiB"] = float(pr.sum()) / GiB
+    row["ssd_charged_recompute_GiB"] = float(rcb.sum()) / GiB
+    row["recompute_charge_blocks"] = int(np.asarray(eng.rc_blocks).sum())
+    if H > 0:
+        m_ = tl < row["censor_cut_s"]
+        row["ssd_H_primread_GiB"] = float(pr[m_].sum()) / GiB
+        row["ssd_H_charged_recompute_GiB"] = float(rcb[m_].sum()) / GiB
+        row["ssd_H_primary_read_GiB"] = row["ssd_H_primread_GiB"] + (row["ssd_H_charged_recompute_GiB"] if on else 0.0)
+    if getattr(eng, "cutH2", None) is not None:
+        m2_ = tl < eng.cutH2
+        row["ssd_H2_primread_GiB"] = float(pr[m2_].sum()) / GiB
+        row["ssd_H2_charged_recompute_GiB"] = float(rcb[m2_].sum()) / GiB
+        row["ssd_H2_primary_read_GiB"] = row["ssd_H2_primread_GiB"] + (row["ssd_H2_charged_recompute_GiB"] if on else 0.0)
     rec = np.asarray(v.nR, np.int64) - np.asarray(eng.nend, np.int64) + np.asarray(eng.nprev, np.int64)
     row["recompute_prefix_blocks"] = int(rec.sum())
     row["ret_recompute_prefix_blocks"] = int(rec[ret].sum())
@@ -426,6 +463,9 @@ def per_session(P, eng, views):
     out["surprise_tokens"] = out["surprise_blocks"] * eng.btok
     out["loadonly_ssd_read_bytes"] = by(sl, np.asarray(eng.lo_bytes, float)).astype(np.int64)
     out["ret_loadonly_ssd_read_bytes"] = by(sl, np.asarray(eng.lo_bytes, float) * (kd == 1)).astype(np.int64)
+    rcb_ = np.asarray(eng.rc_bytes, float)
+    out["recompute_charge_bytes"] = by(sl, rcb_).astype(np.int64)
+    out["recompute_charge_blocks"] = by(sl, np.asarray(eng.rc_blocks, float)).astype(np.int64)
     # 截尾版（H>0；04 v4 §4 的主指標用的）：寫入＝決定時刻 < 終點 − H；load-only＝到達 < 終點 − H
     if getattr(eng, "cutH", None) is not None:
         swH = np.zeros(S, np.int64)
@@ -437,6 +477,7 @@ def per_session(P, eng, views):
         out["ssd_write_bytes_H"] = swH
         out["loadonly_ssd_read_bytes_H"] = by(sl, np.asarray(eng.lo_bytes, float) * (tl_ < eng.cutH)).astype(np.int64)
         out["ret_loadonly_ssd_read_bytes_H"] = by(sl, np.asarray(eng.lo_bytes, float) * ((tl_ < eng.cutH) & (kd == 1))).astype(np.int64)
+        out["recompute_charge_bytes_H"] = by(sl, rcb_ * (tl_ < eng.cutH)).astype(np.int64)
         out["cutH_s"] = np.asarray(float(eng.cutH))
     if getattr(eng, "cutH2", None) is not None:
         sw2 = np.zeros(S, np.int64)
@@ -448,12 +489,16 @@ def per_session(P, eng, views):
         out["ssd_write_bytes_H2"] = sw2
         out["loadonly_ssd_read_bytes_H2"] = by(sl, np.asarray(eng.lo_bytes, float) * (tl_ < eng.cutH2)).astype(np.int64)
         out["ret_loadonly_ssd_read_bytes_H2"] = by(sl, np.asarray(eng.lo_bytes, float) * ((tl_ < eng.cutH2) & (kd == 1))).astype(np.int64)
+        out["recompute_charge_bytes_H2"] = by(sl, rcb_ * (tl_ < eng.cutH2)).astype(np.int64)
         out["cutH2_s"] = np.asarray(float(eng.cutH2))
     V = len(views)
     keys = ("ssd_read_bytes", "ssd_prefetch_read_bytes", "recompute_tokens", "reads", "reads_pass", "reads_fail", "reads_unverified",
             "ret_reads", "ret_reads_fail", "ret_reads_unverified")
     for k in keys:
         out[k] = np.zeros((V, S), np.int64)
+    for sfx_, cut_ in (("", True), ("_H", getattr(eng, "cutH", None) is not None), ("_H2", getattr(eng, "cutH2", None) is not None)):
+        if cut_:
+            out["primread_bytes" + sfx_] = np.zeros((V, S), np.int64)      # 主指標的讀取（只載入的還原＋全部預取；不含重算計價）
     if getattr(eng, "cutH", None) is not None:
         out["ssd_read_bytes_H"] = np.zeros((V, S), np.int64)
     if getattr(eng, "cutH2", None) is not None:
@@ -461,6 +506,12 @@ def per_session(P, eng, views):
     for i, v in enumerate(views):
         out["ssd_read_bytes"][i] = by(sl, np.asarray(v.bS, float))
         act_ = actual_read_by_req(v, len(sl))        # 實際讀取（還原＋預取）依觸發的請求歸屬；截尾版＝請求到達 < 終點 − H
+        pr_ = primread_by_req(eng, v, len(sl))
+        out["primread_bytes"][i] = by(sl, pr_)
+        if getattr(eng, "cutH", None) is not None:
+            out["primread_bytes_H"][i] = by(sl, pr_ * (np.asarray(P["tl"], float) < eng.cutH))
+        if getattr(eng, "cutH2", None) is not None:
+            out["primread_bytes_H2"][i] = by(sl, pr_ * (np.asarray(P["tl"], float) < eng.cutH2))
         if getattr(eng, "cutH", None) is not None:
             out["ssd_read_bytes_H"][i] = by(sl, act_ * (np.asarray(P["tl"], float) < eng.cutH))
         if getattr(eng, "cutH2", None) is not None:

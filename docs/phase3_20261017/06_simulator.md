@@ -1227,19 +1227,19 @@ E2 代表誰（04 寫 LMCache，但 LMCache 的預設是寫穿 → E3）；sessi
 3. **程式 commit 的決定**：HEAD＝它，**或 HEAD 是它的後代而且 `code/p3_sim/` 從它到 HEAD 沒有任何檔案不同**（只有文件／results 的 commit 不影響）；凍結的 commit 必須是 HEAD 的祖先；
 4. **工作目錄乾淨**：已追蹤檔案沒有未提交的修改（整個 repo），而且 `code/p3_sim/` 底下沒有未追蹤的檔案；
 5. 另外：真實資料必須有明確的 `RUN_ID`（不是空的或 `adhoc`；用 `run3090.sh` 跑就有）、`--fmt` 必須是 `official`。
-任何一項不成立 → `SystemExit`，訊息逐項列出。`invocation_*.json` 記下鎖定表與 HEAD。合成資料不需要。測試：`test_freeze_gate_lockfile`（暫時的 git repo：通過、只有文件的後代通過、缺必要檔、sha 不符、髒的、未追蹤、凍結後程式被改、未凍結、沒有表）、`test_real_data_requires_explicit_run_id`。
+任何一項不成立 → `SystemExit`，訊息逐項列出。**〔第三輪審查 #2、#3 擴充：鎖定表還要含每個切片讀的統一表、程式目錄加上 `code/p3_data/`、04 要有三行判定參數；見 §26.4、§26.5〕** `invocation_*.json` 記下鎖定表與 HEAD。合成資料不需要。測試：`test_freeze_gate_lockfile`（暫時的 git repo：通過、只有文件的後代通過、缺必要檔、sha 不符、髒的、未追蹤、凍結後程式被改、未凍結、沒有表）、`test_real_data_requires_explicit_run_id`。
 
 ### 25.3 E6（block 引擎）的主指標（#2；`ledger.py`、`run_map.prim_cols`、`analyze_map.sess_bytes`）
 - block 引擎（E6 與它的 E2 對照）：**主指標＝SSD 寫入（決定時刻 < 終點 − H）＋實際 SSD 讀取（還原＋預取，含浪費的預取；到達 < 終點 − H 的請求）**。欄 `ssd_H_actual_read_GiB`（2H：`ssd_H2_actual_read_GiB`）；npz：`ssd_read_bytes_H[0]`、`ssd_read_bytes_H2[0]`。預取讀取的歸屬＝觸發預取的請求（佇列裡的那個）所屬的 session。`ledger.actual_read_by_req(v, n)`＝`bS`＋預取紀錄（rk==1）依 `rr` 加總。
-- session 引擎（E2–E5）維持**只載入的讀取**（`ssd_H_loadonly_read_GiB`；只和放置有關）。`prim_read_col` 欄記每一列用了哪一欄。
+- session 引擎（E2–E5）維持**只載入的讀取**（`ssd_H_loadonly_read_GiB`；只和放置有關）。`prim_read_col` 欄記每一列用了哪一欄。**〔第三輪審查 #4 取代：兩個引擎的主指標讀取改成同一個定義＝只載入的還原讀取＋全部預取讀取（`ssd_H_primread_GiB`；session 引擎沒有預取，所以兩者相同），見 §26.6〕**
 - 恆等式測試：不截尾的實際讀取＝SSD 通道讀取的位元組；per-session 加總＝列；session 引擎沒有預取。
 
 ### 25.4 護欄、O 的資格、NaN、SSD 使用率、取捨表（#6、#7、#10、使用者的選擇；`analyze_map.py`）
 - **截尾版護欄**：`ttftq_H_*`（非 oracle 的 2H 版用新的 `ttftq_H2_*`；oracle 的 2H 是自己的工作、自己的 H）。FreeInference 幾週合併用 npz 的逐請求 `tH_vals`／`tH2_vals`（`np.percentile` 精確）。**限制**：npz 只存工作第 0 個視角的逐請求值，所以幾週合併時，其他視角（session 引擎的另外 7 個時間設定與敏感度視角）無法精確合併 → `NoPooledTtft`，這些視角的 FreeInference 列不報告（舊版會悄悄用錯的視角；單一切片的資料不受影響；E6 的 GPU 忙是獨立的工作、有自己的 npz，可以）。
-- **`guard_ref`**：`"C0"`｜`"min_C0_O"`。一個做法「合格」＝截尾 TTFT 平均與 p99 都 ≤ 1.05×ref；ref＝C0 的值，或 C0 與 O 逐項取小（任一個 NOT_MEASURED → 當成通過並標出）。判定用 04 §9 的 `護欄的參考：…`（`--guard-ref auto`，`--frozen <commit>` 讀那個 commit 的版本；沒有那一行 → 預設 C0 並寫明「未凍結」；目前工作目錄的 04 草稿寫了 `min(C0, O)`，輸出裡會註明「草稿寫的」）。兩種都報告（`kind=report_guard_ref`、markdown「護欄的參考」節）。bootstrap CI 只對判定用的那種做。
+- **`guard_ref`**：`"C0"`｜`"min_C0_O"`。一個做法「合格」＝截尾 TTFT 平均與 p99 都 ≤ 1.05×ref；ref＝C0 的值，或 C0 與 O 逐項取小（任一個 NOT_MEASURED → 當成通過並標出）。判定用 04 §9 的 `護欄的參考：…`（`--guard-ref auto`，`--frozen <commit>` 讀那個 commit 的版本；沒有那一行 → 預設 C0 並寫明「未凍結」；目前工作目錄的 04 草稿寫了 `min(C0, O)`，輸出裡會註明「草稿寫的」）。**〔第三輪審查 #2 取代：真實資料一律只從凍結的 04 讀，缺行就拒絕；見 §26.4〕**兩種都報告（`kind=report_guard_ref`、markdown「護欄的參考」節）。bootstrap CI 只對判定用的那種做。
 - **O 也要過護欄**：O 的 TTFT ≤ 1.05×C0（兩種 ref 下這個條件相同）；沒過 → `o_guard_ok=False`、`go_ok=False`。
 - **最好的對手＝0 且 O>0** → 省多少＝NaN、旗標 `best_zero_o_pos`、沒有 CI、不能支持 GO、擋 NO-GO（→ ASK）；0÷0 仍＝0（旗標 `best_zero`）。沒有任何合格的對手 → NaN、旗標 `no_eligible_rival`。
-- **SSD 使用率**＝Σ(寫入量÷寫入頻寬＋讀取量÷讀取頻寬) ÷ Σ(T×k)；寫入／讀取量＝主指標的兩個分量（`prim_w_*`、`prim_r_*`），頻寬＝`costs_mi300x.json` 的 `mi300x_local`（`ssd_bw_*` 欄；讀 6.98、寫 1.91 GiB/s），T＝切片窗口截到終點 − H（`T_H_s`、`T_2H_s`），k＝block 引擎的 GPU 數（每張一顆專用 SSD）。**GO 的格子要求最好的對手 ≥5%**（兩份資料都要）。每格報告最好的對手與 O 的 GiB／小時與使用率。
+- **SSD 使用率**＝Σ(寫入量÷寫入頻寬＋讀取量÷讀取頻寬) ÷ Σ(T×k)；寫入／讀取量＝主指標的兩個分量（`prim_w_*`、`prim_r_*`），頻寬＝`costs_mi300x.json` 的 `mi300x_local`（`ssd_bw_*` 欄；讀 6.98、寫 1.91 GiB/s），T＝切片窗口截到終點 − H（`T_H_s`、`T_2H_s`），k＝block 引擎的 GPU 數（每張一顆專用 SSD）。**GO 的格子要求最好的對手 ≥5%**（兩份資料都要）。**〔第三輪審查 #5 取代：閘門改看 C0 的使用率，T 與 k 的定義見 §26.3；這裡的「最好的對手使用率」只留作報告〕**每格報告最好的對手與 O 的 GiB／小時與使用率。
 - **每個 GO 格子標最好的對手是不是 C0**（`go_cells[].strong_best_is_C0`、`weak_best_is_C0`，理由字串也寫）；主格報告最好的對手與 O 的重算 token（`recompute_prefix_blocks`×512；未截尾）。
 - **取捨表** `<prefix>_tradeoff.csv`：每份資料 × 主格 × 每個做法（21 個對手＋O）：主指標位元組、GiB／小時、使用率、`ttftq_H_mean_s`、`ttftq_H_p99_s`、重算 token、兩種 `guard_ref` 下合格與否。
 
@@ -1288,3 +1288,50 @@ A1 的組成：`a1_sess` 71.5＋`a1_blk` 82.1＋`a1_loose` 56.6＋`a1_loose_blk`
 | 開發中的定向測試：`…143431-p3sim-t1`（引擎 59 passed，改引擎後）、`…-t2`、`…-t3`（新的引擎測試 6＋4 passed）、`…-maptest1`（22 passed）、`…-maptest2`（新的分析測試） | | 都 0（開發中有幾次因我寫的測試期望值錯而 exit 1，已修，非程式問題） |
 
 X1 144／144、X4 8／8 逐位元一致（`…222840-p3sim-testfinal3` 的 `test_i_x1.csv`、`test_ii_x4.csv` 的 `bitwise` 全 True）。測試數：引擎 59→69（新增 R2、C1-2、len_rule、loosened、loose 不重算 ×2 引擎、block 實際讀取），地圖 23→33（新增 10 個）；合計 102（101 passed＋1 個修好後單獨重跑 passed）。
+
+## 26. 第六個工作階段（2026-10-18／19，opencode）：第三輪審查（`review_opencode_20261018_map_v4r3.md`）的程式修改
+
+**地圖仍然沒有凍結；沒有任何真實資料的節省或做法比較。** 唯一的例外是 §26.8 的 C0 SSD 使用率（審查 #5 允許）。上一個 session 在寫完程式、跑 C0 使用率時被 API 400 中斷（系統提示的日期在午夜換了，思考區塊的簽章對不上）；這個 session 接著做。
+
+### 26.1 重算計價（#1 選項 a；參數 `recompute_charge` ∈ `none`｜`pass_size`）
+- `pass_size`：每個「被意外重算取代、而且可用的存放副本只在 SSD（不在 CPU）」的 block，在主指標的讀取量上加「這個請求的輸入長度下過關的最省格式的位元組」（>32K＝BF16）。兩個引擎都做；歸屬於讀它的 session；欄 `ssd_H_charged_recompute_GiB`（2H：`ssd_H2_…`；npz：`recompute_charge_bytes_H`）永遠記，**只有參數開啟時**才併進主指標（`ssd_H_primary_read_GiB`、`prim_read_col` 記用了哪些欄）。
+- 預設 `none`；`none` 時和以前逐位元一致（§26.9）。測試：`test_recompute_charge_hand[session｜block]`（手算）、`test_recompute_charge_in_primary_metric`。
+
+### 26.2 O-tier（#1 選項 b；參數 `oracle_variant` ∈ `greedy`｜`tier`）
+- 兩趟。第 1 趟＝一般的 O，記下每一份寫到 SSD 的副本之後「有沒有真的被從 SSD 讀」與那些 SSD 讀的最大輸入長度（`policies.TierRec`）。第 2 趟的 CPU 決定和第 1 趟完全相同；SSD 的格式＝從沒被從 SSD 讀（而且沒被截尾）→ INT2，否則 = 在那個最大長度下過關的最省格式（不會比 CPU 那一階的 `cur` 大）。
+- session 引擎：兩趟的 CPU 側事件摘要（逐請求的雜湊）必須完全相同，否則丟 `AssertionError`（所以列上 `otier_cpu_event_mismatch_requests` 永遠是 0）；block 引擎（E6，和時間有關）照樣跑兩趟，報告不一樣的請求數、標 `otier_approx`。O-tier 保持意外重算 0、品質帳 0（`run_job` 的不變量也查）。
+- 判定用哪個當「O」由 04 §9 的 `完美預測：greedy｜tier` 決定；另一個以 `report_oracle_alt` 報告。
+- O-loose 有 tier 版（`O-loose-tier`，政策表可用，地圖的寬鬆版雙胞胎跑 O 與 O-tier 兩個）；**O-len 沒有 tier 版**：它只知道「最長讀到多長」、不知道會不會再被讀，加上 tier 的資訊就不是 O-len 了。
+- 測試：`test_otier_hand_never_read_from_ssd_becomes_int2`、`test_otier_ssd_read_keeps_pass_format_and_assert_trips`、`test_otier_block_engine_reports_mismatch_and_approx`、`test_loose_variant_tier_policy_exists`、`test_oracle_variant_selects_role_and_reports_other`。
+
+### 26.3 SSD 使用率閘門改看 C0（#5 選項 c）
+- 使用率＝寫入量÷(寫入頻寬×T×k)＋讀取量÷(讀取頻寬×T×k)；T＝切片窗口截到終點 − H；k＝這個切片這個記憶體的 E6 的 k（`kgpu_kmin_all.csv`；所有引擎同一個）。
+- 主視角的閘門看 **C0 的使用率**：C0 <5% 的格子是「SSD 不忙」，GO、NO-GO 都不算（報告）。舊的「最好的對手的使用率」欄保留（只報告）。
+- 測試：`test_c0_util_gate_with_k_and_nm_gate`。
+
+### 26.4 分析的凍結閘門（#2）
+- 真實資料：分析一律要 `--frozen <commit>` 並通過 `lockfile.verify_freeze`；護欄的參考、完美預測、重算計價**只從凍結的 04 讀**（命令列不能覆蓋；缺任何一行就拒絕）。可解析的行（各自獨立一整行、冒號是全形）：`護欄的參考：C0`｜`護欄的參考：min(C0, O)`、`完美預測：greedy`｜`完美預測：tier`、`重算計價：none`｜`重算計價：pass_size`。`n_boot` 固定 1000。
+- 每一列的 `frozen_commit`、`code_commit` 唯一、等於鎖定值（`code_commit` 可以是它的後代，只要 `code/p3_sim/`、`code/p3_data/` 沒變）、不帶 `+dirty`；`run_id` 不能是 `adhoc`；重複的格子（同鍵）→ `DuplicateCell`。執行器續跑時對既有 job json 做同樣的 commit 檢查（`classify`）。真實資料的執行器不接受 `--recompute-charge`，也不接受 `--c0-util`。
+- 測試：`test_analysis_freeze_gate_main`、`test_check_row_commits`、`test_duplicate_cells_raise`、`test_runner_resume_commit_check`、`test_real_run_refuses_cli_charge_override_and_c0_util_mode`。
+
+### 26.5 資料鎖（#3）
+- 鎖定表還要含每個真實切片讀的統一表（`lockfile.unified_inputs()`：`/ssd8/hungwei/paper-hkv/datasets/p3_unified/<source>/<variant>/turns.parquet`，20 個檔：bailian 2、wildchat 1、mooncake 1、FreeInference 16 週）；程式目錄的鎖加上 `code/p3_data/`（`schema.py` 會影響 P）。
+- P 快取的鍵（`trace.prepare_cached`）＝參數＋`trace.py` 等程式碼的雜湊（`code_sha256`）＋統一表的 `output_sha256`＋統一表檔案本身的 sha256（`unified_file_sha256`）。測試：`test_prepare_cache_key_includes_unified_file_hash_and_trace_py`。
+
+### 26.6 E6 的主指標（#4）
+- E6 的主指標讀取＝只載入的還原讀取＋**全部預取讀取（含浪費的）**＋寫入，截尾方式不變；兩個引擎同一個欄 `ssd_H_primread_GiB`（`ledger.primread_by_req`）。
+- 預取現在會跳過「在觸發它的請求的輸入長度下品質不過關」的副本（嚴格讀取規則）：排隊中的請求 k 服務時，前綴裡第一個來歷在 k 的輸入長度下不過關的 block 起都會被重算，所以只預取它之前的；之後的是白讀。被跳過的次數記在 `pf_skipped`（次數的意義：每次檢查到某個排隊請求有一段尾巴被跳過就加一，同一個請求可能被檢查多次）。測試：`test_e6_prefetch_skips_blocks_that_fail_at_trigger_length`、`test_primary_read_is_primread_for_both_engines`。
+- **這會改變 E6 的預取行為**（和 §25.3 的版本比，預取量變少）；只影響 E6，session 引擎不變。
+
+### 26.7 寬鬆版雙胞胎、NOT_MEASURED（#6、#7）
+- 寬鬆版雙胞胎列入完整性檢查（缺格 → `IncompleteMap`）；GO 的理由字串列出雙胞胎在那一格的省多少。
+- 護欄輸入（C0、O、所有對手的等待時間）任何一個是 NOT_MEASURED 的主格，GO、NO-GO 都不算（`guard_nm_inputs`、`evaluable=False`）。測試：`test_go_reason_includes_loose_twin_and_twin_is_part_of_completeness`、`test_c0_util_gate_with_k_and_nm_gate`。
+
+### 26.8 凍結前的 C0 SSD 使用率（#5 允許的例外）；崩潰的原因與修正
+- `run_map.py --c0-util`：只跑 C0、階段 A 的 8 個切片、主視角、H；session 引擎的 E2、E3、E4、E5(T=1800)，block 引擎的 E6（那個切片的 k）；63／170／435 GiB；共 120 個工作。只留使用率欄位（不留等待時間、不留別的做法）。輸出 `results/p3_sim/c0_ssd_util.csv`（120 列，每列有 `run_id`、`ts`）；不需要 `--frozen`，但需要明確的 `--out` 與 `run_id`。
+- **第一次的失敗（run `20261018-234402-p3sim-c0util`，exit 1，89 s，0 個工作完成）的原因**：log 只有 `BrokenProcessPool`（worker 被殺掉），stderr 空；沒有直接的 OOM 訊息（沒有 dmesg 權限）。證據鏈：(1) 這次改了 `trace.py`，所有 P 快取的鍵都變了＝全部 miss；(2) 前 24 個工作（`--procs 24`）是 `freeinference/week13` 的 15 個、`week09` 的 9 個，24 個 worker 同時各自從頭建同一份 P；(3) 單獨量：week13 建 P 要 574 s、**最大 RSS 33.4 GB**（run `20261019-001812-p3sim-c0util-prepprobe2`），15×33 GB ＞ 440 GB；(4) 同一個工作在快取命中時單獨跑，最大 RSS 9.5 GB、79 s（`20261019-000338-p3sim-c0util-rssprobe`）。所以結論是記憶體，但**沒有直接重現那次的殺掉**（沒有重跑 24 個同時建置）。
+- 修正：`run_map.warm_caches`（`--warm-procs`，預設 2）：開 worker 之前，用最多 `--warm-procs` 個 process 把工作需要的 (切片, 疊加) 的 P 快取先建好（命中就只載入）；worker 只會命中。這比單純降 `--procs` 好，因為崩潰的原因是同一份快取被重複建，不是 worker 的穩態。重跑用 `--procs 16 --warm-procs 2`（16×約 10 GB），成功（§26.9）。
+- **這一版的快取已經存在**（上一個 session 在崩潰後把八個切片都建好了），所以重跑的 `warm_caches` 全部命中；「新建」路徑沒有在這一次重跑裡被執行過（`prepprobe2` 單獨走過同一個 `prepare_cached` 的新建路徑，但不是經由 `warm_caches`）。
+
+### 26.9 驗證與結果
+見 `/ssd8/hungwei/paper-hkv/opencode/tasks/LATEST_REPORT.md` 的 run_id、exit code 與數字；摘要：測試全過、X1 144／144、X4 8／8 逐位元一致、`--fmt placeholder` 的回歸對 c0c179b 與 §23.2 一樣（C0–C4 的 103 個舊欄全部相同）、嚴格規則冒煙的不變量成立（含 O-tier）、合成端到端各參數組合、dry-run。合成資料不是任何判定。

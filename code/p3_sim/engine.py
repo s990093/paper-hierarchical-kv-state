@@ -387,7 +387,7 @@ class Engine:
       載入的前綴停在第一個「來歷在這個長度不 pass」的 block，之後都重算；品質帳也用請求長度分箱。"""
 
     def __init__(self, P, outer, comp, cap_bytes, views, mf, H=0.0, block_tokens=512, check=False, int2_on_read="serve",
-                 unverified_len="prefix", H_extra=0.0):
+                 unverified_len="prefix", H_extra=0.0, tier_rec=None, ev_log=False):
         self.P = P
         self.full, self.nall, self.acc, self.t = P["full"], P["nall"], P["acc"], P["tl"]
         self.kind, self.sess, self.parent = P["kindc"], P["sessl"], P["parentl"]
@@ -474,6 +474,20 @@ class Engine:
         self.n_ssd_wrec = 0
         self._rw = {}                              # 這一輪（合成一筆的）SSD 寫入裡各 session 的份
         self._dec_t, self._dec_after = 0.0, -1     # SSD 寫入的決定時刻、「之後」從哪個請求 index 之後算
+        # ---- 重算計價（review #1 選項 a；06 §26）：被「意外重算」取代、而且可用的存放副本只在 SSD（不在 CPU）的 block，
+        #      照「這個請求的輸入長度下過關的最省格式」的大小算成一次讀取。一律記帳（獨立的欄位／npz 陣列）；
+        #      是否算進主指標由 recompute_charge 參數決定（ledger.summarize_view／run_map.prim_cols／analyze_map）。
+        self.rc_blocks = np.zeros(n, np.int32)     # 這個請求被計價的 block 數
+        self.rc_bytes = np.zeros(n, np.int64)      # 這個請求被計價的位元組（歸屬於讀它的請求的 session）
+        self._pass_b = [min(self.fb[f] for f in range(1, len(FMT_NAMES)) if m[f]) for m in self.okmask]   # 每個長度分箱：過關格式裡最小的大小
+        # ---- O-tier 的兩趟（review #1 選項 b）：tier_rec＝policies.TierRec（第 1 趟記錄；第 2 趟的策略自己持有、這裡不用）；
+        #      ev_log＝逐請求記下「CPU 側事件」的摘要（兩趟必須完全相同）
+        self.rec = tier_rec if (tier_rec is not None and tier_rec.recording) else None
+        self.ev_log = bool(ev_log)
+        self._track = self.rec is not None or self.ev_log
+        self._nw = {}                              # block → 已經寫過 SSD 幾次（鍵 (block, 第幾次)）
+        self._evw = []                             # 這一輪裡寫 SSD 的 block（順序）
+        self.ev_digest = array("Q")                # 每個請求一個 8 位元組摘要（不串接；不同的請求數可以直接數）
 
     # ---------------------------------------------------------- 小工具
     def _ctx(self, r, s, blocks, n_new, first_new):
@@ -552,11 +566,21 @@ class Engine:
     def _ssd_dec(self, s, cur, b, tokens=None, idle=None, rq=None, nq=None):
         """要寫 SSD 的格式。舊的策略（ssd_moment=False）＝ssd_fid(寫進 CPU 時的 ctx, cur)，和 c0c179b 逐位元相同；
         ssd_moment=True 的策略（oracle、D-*、預測器的 ssd_fn）拿到寫入當下的 ctx（_mctx）。"""
+        key = None
+        if self._track or getattr(self.comp, "tier", False):
+            key = (b, self._nw.get(b, 0))
+            self._nw[b] = key[1] + 1
+            self._evw.append(b)
         if not self.ssd_moment:
-            return self.comp.ssd_fid(self.sctx[s], cur) if self.sctx[s] is not None else cur
-        sf = self.comp.ssd_fid(self._mctx(s, b, self._dec_after, self._dec_t, tokens, idle, rq, nq), cur)
-        if sf < cur:
-            raise AssertionError(f"{self.comp.name}: ssd_fid 回傳 {sf} < 目前的 {cur}（格式只能往下壓）")
+            sf = self.comp.ssd_fid(self.sctx[s], cur) if self.sctx[s] is not None else cur
+        else:
+            mc = self._mctx(s, b, self._dec_after, self._dec_t, tokens, idle, rq, nq)
+            mc["ssd_key"] = key
+            sf = self.comp.ssd_fid(mc, cur)
+            if sf < cur:
+                raise AssertionError(f"{self.comp.name}: ssd_fid 回傳 {sf} < 目前的 {cur}（格式只能往下壓）")
+        if self.rec is not None:
+            self.rec.on_write(key)
         return sf
 
     def _wfmt(self, tier, fid, n=1):
@@ -593,6 +617,8 @@ class Engine:
                 self.cpu_used -= self.fb[fm]
                 self.cfmt[b] = 0
             self.sfmt[b] = 0
+            if self.rec is not None:
+                self.rec.on_super(b)
             return 0
         if self.ref_cpu[b] == 0 and self.cfmt[b]:
             fm = self.cfmt[b]
@@ -747,11 +773,23 @@ class Engine:
             nro = self.nro
         L = len(lt_)
         L0 = L                        # 沒有 INT2 截斷時的有存前綴
+        if self.rec is not None:      # O-tier 第 1 趟：每個被載入的 block 讀的是 CPU 還是 SSD 副本（讀取長度＝這個請求的輸入長度／存的前綴長度）
+            rl_, st_ = self.reqlen[r], len(blocks) * self.btok
+            for i_ in range(L):
+                self.rec.on_read(blocks[i_], lt_[i_], rl_, st_)
         if cut:                       # int2_on_read=recompute：從第一個 INT2 來歷的 block 起都重算（surprise recompute）
             nb_ = len(blocks)
             while L0 < nb_ and (cfmt[blocks[L0]] or sfmt[blocks[L0]]):
                 L0 += 1
             self.surp_blk[r] = L0 - L
+            nrc = 0                   # 重算計價：有存、沒載入，而且存放副本只在 SSD（CPU 沒有）的 block
+            for i_ in range(L, L0):
+                b_ = blocks[i_]
+                if cfmt[b_] == 0 and sfmt[b_]:
+                    nrc += 1
+            if nrc:
+                self.rc_blocks[r] = nrc
+                self.rc_bytes[r] = nrc * self._pass_b[self.mf.bin_of(self.reqlen[r])]
         self.Lblk[r] = L
         self.Ltok[r] = L * self.btok
         self.lo_bytes[r] = lob
@@ -828,6 +866,8 @@ class Engine:
                 if cut and L <= i < L0 and sfmt[b]:   # SSD 上的舊副本作廢（不用寫）；之後新副本若被寫到 SSD 是一般的 SSD 寫入
                     sfmt[b] = 0
                     sq[b] = 0
+                    if self.rec is not None:
+                        self.rec.on_super(b)
                 gq = sq[b] if (i < L and sfmt[b]) else 1     # 從 SSD 讀回來的帶著 SSD 副本的來歷；重算＝bf16
                 cfmt[b] = fid
                 cq[b] = fid if fid > gq else gq
@@ -890,6 +930,14 @@ class Engine:
             if self.ssd_on:
                 v.slow.write(w, te)
         self._flush_split(w if self.ssd_on else 0)
+        if self.ev_log:
+            import hashlib
+            hd = hashlib.blake2b(array("q", [r, fid, L, n_new, len(self._evw), self.cpu_used, self.n_demote, self.n_drop, self.n_lost]).tobytes()
+                                 + bytes(lt_) + array("q", self._evw).tobytes(), digest_size=8).digest()
+            self.ev_digest.append(int.from_bytes(hd, "little"))
+            self._evw = []
+        elif self._track:
+            self._evw = []
         if self.check and (r % self.check == 0 or r == len(self.full) - 1):
             self.audit()
 

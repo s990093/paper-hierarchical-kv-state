@@ -1,16 +1,20 @@
 """analyze_map.py — 地圖的判定與報告（04_prereg_map.md v4 §4、§6、§10；06_simulator.md §21）。
 
 輸入：run_map.py 的 map_cells.csv（一列＝一個格子）與每個工作的 per-session npz。
-主指標（每個格子、每個做法）＝SSD 寫入（決定時刻 < 終點 − H）＋ SSD 讀取（到達 < 終點 − H 的請求）：session 引擎（E2–E5）＝只載入的讀取
-（ssd_H_loadonly_read_GiB；npz：loadonly_ssd_read_bytes_H）；block 引擎（E6 與它的 E2 對照）＝實際讀取（還原＋預取，含浪費的預取；
-ssd_H_actual_read_GiB；npz：ssd_read_bytes_H[0]）。2H 版另報。
+主指標（每個格子、每個做法）＝SSD 寫入（決定時刻 < 終點 − H）＋ SSD 讀取（到達 < 終點 − H 的請求）。讀取（第三輪審查 #4，兩個引擎同一個定義）＝只載入的還原讀取
+（lo_bytes）＋全部預取讀取（含浪費；session 引擎沒有預取）＝ssd_H_primread_GiB（npz：primread_bytes_H[0]）；`重算計價：pass_size`（04 §9）時再加
+重算計價 ssd_H_charged_recompute_GiB（npz：recompute_charge_bytes_H；歸屬於讀它的 session）。2H 版另報。
+判定用的 O＝04 §9 的 `完美預測：greedy|tier`（一般的 O｜O-tier）；另一個以 report_oracle_alt 報告。
+真實資料的凍結閘門（第三輪審查 #2）：一律要 --frozen、過 lockfile.verify_freeze；護欄的參考、完美預測、重算計價只從凍結的 04 讀（缺任何一行就拒絕）；
+n_boot 固定 1000；每一列的 frozen_commit／code_commit 唯一、等於鎖定值（或其無程式變動的後代）、不帶 +dirty；run_id 不能是 adhoc；重複的格子丟 DuplicateCell。
 等待時間護欄（第二輪審查 #6、#10、#12）：用截尾版 ttftq_H_*（2H 版：非 oracle 用 ttftq_H2_*）；一個做法「合格」＝它的回來請求平均與 p99 都 ≤ 1.05 × ref；
   ref＝C0（guard_ref="C0"）或 C0 與 O 逐項取小（guard_ref="min_C0_O"）。判定用 04 §9 凍結的那個（未凍結＝C0，輸出裡寫明）；兩種都報告。NOT_MEASURED → 當成通過、標出。
   O 自己也要過護欄（≤ 1.05 × C0）；沒過的格子不能支持 GO。
 最好的對手＝所有非 oracle 的做法（含參數）裡合格、主指標位元組最少的那個（完整樣本上選、bootstrap 固定）。
 省多少＝(最好的對手 − O) ÷ 最好的對手；最好的對手＝0 而 O > 0 → NaN（旗標 best_zero_o_pos），不是 0%；0÷0 → 0（旗標 best_zero）。
-SSD 使用率（#7）＝寫入量÷(寫入頻寬×T)＋讀取量÷(讀取頻寬×T)（主視角、SSD 1 張專用、T＝切片窗口截到終點 − H；block 引擎 k 張 GPU 各有一顆 → 分母×k）；
-  GO 的格子要求最好的對手 ≥5%。每格報告 GiB／小時與使用率（最好的對手與 O）、兩者的重算 token、最好的對手是不是 C0。session 配對 bootstrap 1,000 次（固定 seed；FreeInference 各週當一份資料、週內分層重抽）；
+SSD 使用率＝寫入量÷(寫入頻寬×T×k)＋讀取量÷(讀取頻寬×T×k)（主視角、SSD 1 張專用、T＝切片窗口截到終點 − H、k＝這個切片這個記憶體的 E6 的 k，所有引擎同一個；
+  第三輪審查 #5）。**閘門看 C0 的使用率**：C0 <5% 的格子是「SSD 不忙」，GO、NO-GO 都不算；護欄輸入（C0、O、所有對手的等待時間）有 NOT_MEASURED 的格子也一樣不算（#7）。
+  每格仍報告最好的對手與 O 的 GiB／小時與使用率、兩者的重算 token、最好的對手是不是 C0。session 配對 bootstrap 1,000 次（固定 seed；FreeInference 各週當一份資料、週內分層重抽）；
 15 個主格（E2、E3、E4、E5(30 分)、E6 × 63／170／435 GiB）做 studentized max-T 同時 CI：
   每格：點估計 θ̂、bootstrap 值 θ*、SE＝sd(θ*)；T_b＝max_c |θ*_cb − θ̂_c| / SE_c；q＝T_b 的 95 百分位；CI＝θ̂ ± q·SE。
 0/0：最好的對手＝0 且 O＝0 → 省多少定為 0（旗標 best_zero；bootstrap 裡 best*＝0 也當 0）；SE＝0 的格子不進 max-T（CI 退化成點）。
@@ -50,7 +54,7 @@ GUARD = 1.05
 GUARD_SENS = [("1.05", 1.05), ("1.10", 1.10), ("1.20", 1.20), ("none", None)]       # 04 §4：護欄敏感度（只報告）；1.05 是登記的、判定用的那個
 GUARD_REFS = ("C0", "min_C0_O")
 GO_STRONG, GO_WEAK, NOGO = 0.15, 0.05, 0.05
-UTIL_MIN = 0.05                                                                      # GO 的格子：最好的對手的 SSD 使用率 ≥5%（第二輪審查 #7）
+UTIL_MIN = 0.05                                                                      # SSD 忙的門檻：C0 的使用率 <5% 的格子，GO、NO-GO 都不算（第三輪審查 #5）
 BLOCK_TOKENS = 512
 MIN_EFF_SESSIONS = 100.0
 TRACES = ["Bailian coder", "Bailian traceA", "Mooncake", "WildChat", "FreeInference"]
@@ -70,11 +74,13 @@ USECOLS = ["run_id", "stage", "comp", "slice", "trace_group", "source_group", "s
            "T_s", "mem_GiB", "model", "policy_label", "policy_family", "oracle", "h_tag", "view_group", "view_idx", "is_primary", "k_gpus", "job_id",
            "view_name", "quality_rule", "npz_path", "npz_sfx_H", "npz_sfx_2H", "prim_H_GiB", "prim_2H_GiB", "prim_w_H_GiB", "prim_r_H_GiB",
            "prim_w_2H_GiB", "prim_r_2H_GiB", "T_H_s", "T_2H_s", "ssd_bw_r_GiBps", "ssd_bw_w_GiBps", "prim_read_col",
+           "k_util", "prim_rbase_H_GiB", "prim_rc_H_GiB", "prim_rbase_2H_GiB", "prim_rc_2H_GiB", "recompute_charge", "frozen_commit", "code_commit",
+           "otier_cpu_event_mismatch_requests", "otier_approx",
            "ttftq_mean_s", "ttftq_p99_s", "ttftq_H_mean_s", "ttftq_H_p99_s", "ttftq_H2_mean_s", "ttftq_H2_p99_s", "n_ret", "surprise_events",
            "surprise_blocks", "reads_fail", "reads_unverified", "ret_recompute_prefix_blocks", "recompute_prefix_blocks", "ssd_write_GiB",
            "ssd_loadonly_read_GiB", "n_req", "n_sess"]
 REQUIRED_COLS = ["view_name", "quality_rule", "ttftq_H_mean_s", "ttftq_H_p99_s", "prim_w_H_GiB", "prim_r_H_GiB", "T_H_s", "ssd_bw_r_GiBps",
-                 "ssd_bw_w_GiBps", "recompute_prefix_blocks", "k_gpus"]
+                 "ssd_bw_w_GiBps", "recompute_prefix_blocks", "k_gpus", "k_util", "prim_rbase_H_GiB", "prim_rc_H_GiB"]
 
 
 class IncompleteMap(Exception):
@@ -103,8 +109,15 @@ def load_cells(path):
     return df
 
 
-ORACLE_LABELS = ("O", "O-len", "O-reuse", "O-loose")
+ORACLE_LABELS = ("O", "O-tier", "O-len", "O-reuse", "O-loose")
+ORACLE_VARIANT_LABEL = {"greedy": "O", "tier": "O-tier"}       # 04 §9 的 `完美預測：` → 判定用的「O」是哪個做法；另一個（O_alt）只報告
+RECOMPUTE_CHARGES = ("none", "pass_size")
+ORACLE_VARIANTS = ("greedy", "tier")
 AM_NM = NOT
+
+
+class DuplicateCell(Exception):
+    """同一個格子（切片×外層×記憶體×做法×視角×H）在 map_cells.csv 出現兩列：不准默默取第一列（第三輪審查 #2）。"""
 
 
 class Index:
@@ -117,7 +130,9 @@ class Index:
         for r in df.to_dict("records"):
             key = (r["trace_group"], r["slice"], r["engine"], r["olabel"], float(r["mem_GiB"]), r["model"], int(r["overlay"]), r["view_group"],
                    r["view_name"], r["quality_rule"], r["policy_label"], r["h_tag"])
-            self.rows.setdefault(key, r)
+            if key in self.rows:
+                raise DuplicateCell(f"重複的格子（不准默默取第一列）：{key}；兩列的 job_id：{self.rows[key]['job_id']}、{r['job_id']}")
+            self.rows[key] = r
             if r["quality_rule"] == "strict":
                 self.slices.setdefault(r["trace_group"], set()).add(r["slice"])
         self.views = sorted({(k[0], k[2], k[3], k[4], k[5], k[6], k[7], k[8]) for k in self.rows if k[9] == "strict"})
@@ -139,24 +154,30 @@ def hcols(r, h):
     return ("2H", "ttftq_H", "tH") if bool(r["oracle"]) else ("2H", "ttftq_H2", "tH2")
 
 
-def hbytes(r, h):
-    """這一列在 H（'H'）或 2H 版本的主指標（GiB）。"""
-    x = r["prim_H_GiB"] if h == "H" else r["prim_2H_GiB"]
-    return float(x)
+def hbytes(r, h, charge="none"):
+    """這一列在 H（'H'）或 2H 版本的主指標（GiB）＝寫入＋只載入的還原讀取＋全部預取讀取（＋重算計價，charge＝pass_size 時）。
+    從分量算（prim_w／prim_rbase／prim_rc），不依賴執行器當時的開關；並驗算「列上的 prim_*_GiB」在執行器的開關下是同一個數。"""
+    w, rb, rc = (float(r[f"prim_w_{h}_GiB"]), float(r[f"prim_rbase_{h}_GiB"]), float(r[f"prim_rc_{h}_GiB"]))
+    run_on = str(r.get("recompute_charge", "none")) == "pass_size"
+    got = float(r["prim_H_GiB"] if h == "H" else r["prim_2H_GiB"])
+    assert abs(got - (w + rb + (rc if run_on else 0.0))) <= 1e-6 * max(1.0, abs(got)), f"{r['job_id']}: prim_{h}_GiB 不等於分量加總"
+    return w + rb + (rc if charge == "pass_size" else 0.0)
 
 
-def sess_bytes(r, h):
+def sess_bytes(r, h, charge="none"):
     """per-session 的主指標位元組（依原始 session 編號排序）；並用 CSV 的列驗算總和。回傳 (sess_orig, x float 位元組)。
-    讀取分量：session 引擎＝loadonly_ssd_read_bytes；block 引擎＝ssd_read_bytes[0]（實際讀取：還原＋預取；第二輪審查 #2）。"""
+    讀取分量（兩個引擎同一個定義，第三輪審查 #4）：primread_bytes＝只載入的還原讀取＋全部預取讀取；charge＝pass_size 時加 recompute_charge_bytes（歸屬於讀它的 session）。"""
     z = np.load(r["npz_path"])
     sfx = r["npz_sfx_H"] if h == "H" else r["npz_sfx_2H"]
     assert isinstance(sfx, str) and sfx, f"{r['job_id']}: 沒有 {h} 版的 npz 欄位"
-    rd = z["ssd_read_bytes" + sfx][0] if r["engine"] == "block" else z["loadonly_ssd_read_bytes" + sfx]
-    x = (z["ssd_write_bytes" + sfx].astype(np.int64) + rd.astype(np.int64))
+    rd = z["primread_bytes" + sfx][0].astype(np.int64)
+    if charge == "pass_size":
+        rd = rd + z["recompute_charge_bytes" + sfx].astype(np.int64)
+    x = (z["ssd_write_bytes" + sfx].astype(np.int64) + rd)
     so = z["sess_orig"]
     order = np.argsort(so, kind="stable")
     tot = float(x.sum()) / GiB
-    want = hbytes(r, h)
+    want = hbytes(r, h, charge)
     assert abs(tot - want) <= 1e-6 * max(1.0, abs(want)), f"{r['job_id']}: npz 總和 {tot} GiB 和 CSV 的 {want} 不符"
     return so[order], x[order].astype(np.float64)
 
@@ -264,15 +285,19 @@ def guard_ref_value(res, ref):
 
 # ====================================================================== 一個格子（一份資料）
 LABELS = ["C0", "C1", "C1-8", "C2", "C3", "C6", "C1-2", "C4-8192", "C4-16384", "C4-32768", "C4r-8192", "C4r-16384", "C4r-32768", "D-len-8192",
-          "D-len-16384", "D-len-32768", "D-idle-300", "D-idle-1800", "D-idle-3600", "D-idle-14400", "R2", "O", "O-len", "O-reuse", "O-loose"]
+          "D-len-16384", "D-len-32768", "D-idle-300", "D-idle-1800", "D-idle-3600", "D-idle-14400", "R2", "O", "O-tier", "O-len", "O-reuse", "O-loose"]
 NON_ORACLE = [x for x in LABELS if x not in ORACLE_LABELS]
-NEEDED = NON_ORACLE + ["O"]
+NEEDED = NON_ORACLE + ["O", "O-tier"]            # 資料裡必須有的做法（兩個 O 都要：判定用哪個由 04 決定，另一個報告）
+NEEDED_ROLE = NON_ORACLE + ["O", "O_alt"]       # trace_cell 回傳的 res 的鍵：O＝判定用的、O_alt＝另一個（只報告）
 
 
-def trace_cell(ix, trace, slices, engine, ol, mem, h, model="llama", overlay=1, vg="main", labels=None, view=PRIMARY_VIEW, rule="strict"):
+def trace_cell(ix, trace, slices, engine, ol, mem, h, model="llama", overlay=1, vg="main", labels=None, view=PRIMARY_VIEW, rule="strict",
+               ovar="greedy", charge="none"):
     """一份資料（可能是好幾個切片）在一個格子裡，每個做法的主指標總和（GiB）、等待時間、SSD 使用率、重算 token。
     缺任何一個切片的某個做法 → 該做法不在 res 裡。
-    SSD 使用率＝Σ_切片(寫入量÷寫入頻寬＋讀取量÷讀取頻寬) ÷ Σ_切片(T×k)（T＝窗口截到終點 − H；k＝block 引擎的 GPU 數，各有一顆專用 SSD）；GiB／小時＝位元組÷ΣT×3600。"""
+    SSD 使用率＝Σ_切片(寫入量÷寫入頻寬＋讀取量÷讀取頻寬) ÷ Σ_切片(T×k)（T＝窗口截到終點 − H；k＝這個切片這個記憶體的 E6 的 k，kgpu_kmin_all.csv；
+    所有引擎同一個 k，第三輪審查 #5）；GiB／小時＝位元組÷ΣT×3600。主指標含重算計價與否由 charge 決定（04 §9 的 `重算計價：`）。
+    ovar（04 §9 的 `完美預測：`）：res["O"]＝判定用的 O（greedy→一般的 O；tier→O-tier），res["O_alt"]＝另一個（只報告）；各帶 label。判定用的那個缺 → res 沒有 "O"。"""
     labels = labels or [p for p in LABELS]
     res = {}
     for lab in labels:
@@ -286,14 +311,24 @@ def trace_cell(ix, trace, slices, engine, ol, mem, h, model="llama", overlay=1, 
         sfx = hcols(rows[0], h)[0]
         num = den = Tsum = 0.0
         for r in rows:
-            w, rd, T = float(r[f"prim_w_{sfx}_GiB"]), float(r[f"prim_r_{sfx}_GiB"]), float(r[f"T_{sfx}_s"])
+            w, T = float(r[f"prim_w_{sfx}_GiB"]), float(r[f"T_{sfx}_s"])
+            rd = float(r[f"prim_rbase_{sfx}_GiB"]) + (float(r[f"prim_rc_{sfx}_GiB"]) if charge == "pass_size" else 0.0)
+            k = float(r["k_util"])
+            assert k >= 1 and k == int(k), f"{r['job_id']}: k_util={k}"
             num += w / float(r["ssd_bw_w_GiBps"]) + rd / float(r["ssd_bw_r_GiBps"])
-            den += T * int(r["k_gpus"])
+            den += T * int(k)
             Tsum += T
-        gib = sum(hbytes(r, h) for r in rows)
+        gib = sum(hbytes(r, h, charge) for r in rows)
         res[lab] = dict(rows=rows, GiB=gib, ttft=tt, util=(num / den if den > 0 else float("nan")), gph=(gib / (Tsum / 3600.0) if Tsum > 0 else float("nan")),
-                        rec_tokens=int(sum(int(r["recompute_prefix_blocks"]) for r in rows)) * BLOCK_TOKENS)
-    return res
+                        rec_tokens=int(sum(int(r["recompute_prefix_blocks"]) for r in rows)) * BLOCK_TOKENS, label=lab,
+                        charged_GiB=sum(float(r[f"prim_rc_{sfx}_GiB"]) for r in rows))
+    chosen, other = ORACLE_VARIANT_LABEL[ovar], ORACLE_VARIANT_LABEL["tier" if ovar == "greedy" else "greedy"]
+    out = {k: v for k, v in res.items() if k not in ("O", "O-tier")}
+    if chosen in res:
+        out["O"] = res[chosen]
+    if other in res:
+        out["O_alt"] = res[other]
+    return out
 
 
 def best_of(res, candidates=None, guard=True, thr=GUARD, ref="C0"):
@@ -328,21 +363,32 @@ def savings_point(best, o):
     return (best - o) / best, False, ""
 
 
+def guard_nm_inputs(res):
+    """這個格子的護欄輸入裡有 NOT_MEASURED 的做法（C0、判定用的 O、所有對手的等待時間）；沒有 → []（第三輪審查 #7）。"""
+    return sorted(c for c in ["C0", "O"] + [x for x in NON_ORACLE if x != "C0"] if c in res and res[c]["ttft"][2])
+
+
 def eval_cell(res, ref="C0", thr=GUARD, guard=True):
-    """一個格子在護欄參考 ref 下的結果：最好的對手、省多少（點）、O 過不過護欄、GO 的資格（O 過護欄、最好的對手 SSD 使用率 ≥5%、點估計有定義）。"""
+    """一個格子在護欄參考 ref 下的結果：最好的對手、省多少（點）、O 過不過護欄、GO 的資格。
+    進判定（evaluable）要求：C0 的 SSD 使用率 ≥5%（否則「SSD 不忙」，GO、NO-GO 都不算；第三輪審查 #5）、護欄的輸入沒有任何 NOT_MEASURED（#7）。
+    GO 的資格 go_ok＝evaluable、有最好的對手、點估計有定義、O 過護欄。最好的對手的使用率照舊報告（util_best），不再當門檻。"""
     best = best_of(res, ref=ref, thr=thr, guard=guard)
     o = res["O"]
     og, onm = guard_status(o["ttft"], res["C0"]["ttft"], thr) if guard else (True, False)
+    c0u = res["C0"]["util"]
+    nm_in = guard_nm_inputs(res)
+    busy = bool(not math.isnan(c0u) and c0u >= UTIL_MIN)
     d = dict(res=res, best=best, o_guard_ok=og, o_guard_nm=onm, nan_flag="", best_zero=False, point=float("nan"), util_best=float("nan"),
-             util_O=o["util"], best_is_C0=False, best_rec=None, O_rec=o["rec_tokens"], best_gph=float("nan"), O_gph=o["gph"])
+             util_O=o["util"], best_is_C0=False, best_rec=None, O_rec=o["rec_tokens"], best_gph=float("nan"), O_gph=o["gph"],
+             util_C0=c0u, ssd_busy=busy, guard_nm_inputs=nm_in, evaluable=bool(busy and not nm_in),
+             why_not=("SSD 不忙（C0 使用率 <5%）" if not busy else "") + (("；" if not busy else "") + f"護欄輸入有 NOT_MEASURED：{','.join(nm_in)}" if nm_in else ""))
     if best["label"] is None:
         d["nan_flag"] = "no_eligible_rival"
     else:
         pt, bz, nf = savings_point(best["GiB"], o["GiB"])
         b = res[best["label"]]
         d.update(point=pt, best_zero=bz, nan_flag=nf, util_best=b["util"], best_is_C0=best["label"] == "C0", best_rec=b["rec_tokens"], best_gph=b["gph"])
-    ub = d["util_best"]
-    d["go_ok"] = bool(best["label"] is not None and d["nan_flag"] == "" and og and not math.isnan(ub) and ub >= UTIL_MIN)
+    d["go_ok"] = bool(best["label"] is not None and d["nan_flag"] == "" and og and d["evaluable"])
     return d
 
 
@@ -355,12 +401,12 @@ def cell_flags(d):
         f.append("best=0")
     if not d["o_guard_ok"]:
         f.append("O 沒過護欄")
-    if d["best"]["label"] is not None:
-        if d["best_is_C0"]:
-            f.append("最好=C0")
-        ub = d["util_best"]
-        if math.isnan(ub) or ub < UTIL_MIN:
-            f.append(f"SSD 使用率 {fmt_pct(ub)}<5%")
+    if d["best"]["label"] is not None and d["best_is_C0"]:
+        f.append("最好=C0")
+    if not d["ssd_busy"]:
+        f.append(f"SSD 不忙（C0 使用率 {fmt_pct(d['util_C0'])}<5%；GO、NO-GO 都不算）")
+    if d["guard_nm_inputs"]:
+        f.append("護欄輸入有 NOT_MEASURED（GO、NO-GO 都不算）")
     return f
 
 
@@ -434,14 +480,16 @@ def decide(traces, mode="full"):
                 c2 = v2["cells"].get(c)
                 if c2 is not None and c2.get("go_ok", True) and c2["lo"] >= GO_WEAK:
                     go_cells.append(dict(cell=c, strong=t1, weak=t2, strong_lo=c1["lo"], weak_lo=c2["lo"],
-                                         strong_best_is_C0=bool(c1.get("best_is_C0", False)), weak_best_is_C0=bool(c2.get("best_is_C0", False))))
+                                         strong_best_is_C0=bool(c1.get("best_is_C0", False)), weak_best_is_C0=bool(c2.get("best_is_C0", False)),
+                                         strong_twin=c1.get("twin", float("nan")), weak_twin=c2.get("twin", float("nan"))))
     res = dict(used=sorted(use), not_used=why_not, go_cells=go_cells, mode=mode)
     if go_cells:
         g = go_cells[0]
         res.update(verdict="GO" if mode == "full" else "GO（早期，定案）",
                    reason=f"{g['cell'][0]}@{g['cell'][1]:g} GiB：{g['strong']} 的 CI 下界 {g['strong_lo']:.1%} ≥15%，不同來源的 {g['weak']} 的 CI 下界 {g['weak_lo']:.1%} ≥5%"
                           f"（共 {len(go_cells)} 組；最好的對手是 C0？ {g['strong']}：{'是' if g['strong_best_is_C0'] else '否'}、{g['weak']}：{'是' if g['weak_best_is_C0'] else '否'}；"
-                          f"O 都過護欄、最好的對手的 SSD 使用率都 ≥5%）")
+                          f"O 都過護欄、C0 的 SSD 使用率都 ≥5%、護欄輸入都沒有 NOT_MEASURED；"
+                          f"這一格寬鬆版雙胞胎的省多少（只報告）：{g['strong']} {fmt_pct(g['strong_twin'])}、{g['weak']} {fmt_pct(g['weak_twin'])}）")
         return res
     if mode == "early":
         res.update(verdict="PENDING_B", reason="不含 FreeInference 的資料沒有滿足 GO；判定等 B 的 A1 範圍跑完（04 §10）")
@@ -450,14 +498,20 @@ def decide(traces, mode="full"):
         res.update(verdict="ASK", reason="沒有任何進判定的真實資料（有效 session <100、不完整或只有合成資料）")
         return res
     incomplete = [t for t, v in traces.items() if v["eligible"] and not v["complete"] and not v.get("synthetic")]
-    all_low = all(c["hi"] < NOGO for v in use.values() for c in v["cells"].values()) and \
-        all(len(v["cells"]) == len(PRIMARY_CELLS) for v in use.values())
+    # NO-GO 只看「能判定的格子」（C0 使用率 ≥5% 而且護欄輸入沒有 NOT_MEASURED）；不能判定的格子 GO、NO-GO 都不算（第三輪審查 #5、#7）
+    evc = {t: {c: x for c, x in v["cells"].items() if x.get("evaluable", True)} for t, v in use.items()}
+    n_ev = {t: len(x) for t, x in evc.items()}
+    res["evaluable_cells"] = n_ev
+    res["not_evaluable"] = {t: {f"{c[0]}@{c[1]:g}": x.get("why_not", "") for c, x in v["cells"].items() if not x.get("evaluable", True)} for t, v in use.items()}
+    all_low = all(n > 0 for n in n_ev.values()) and all(c["hi"] < NOGO for cs in evc.values() for c in cs.values())
     if all_low and not incomplete:
-        res.update(verdict="NO-GO", reason=f"所有進判定的資料（{', '.join(sorted(use))}）、所有 15 個主格，同時 CI 上界都 <5%")
+        res.update(verdict="NO-GO", reason=f"所有進判定的資料（{', '.join(sorted(use))}）、所有能判定的主格（{n_ev}；其餘格子 SSD 不忙或護欄輸入有 NOT_MEASURED，不算），同時 CI 上界都 <5%")
     else:
-        top = max((c["lo"] for v in use.values() for c in v["cells"].values()), default=float("nan"))
+        top = max((c["lo"] for cs in evc.values() for c in cs.values()), default=float("nan"))
+        none_ev = [t for t, n in n_ev.items() if n == 0]
         res.update(verdict="ASK", reason="沒有滿足 GO，也不是全部上界 <5%" + (f"；不完整的資料：{incomplete}" if incomplete else "")
-                   + f"（最高的 CI 下界 {top:.1%}）")
+                   + (f"；這些資料沒有任何能判定的格子（SSD 不忙或護欄輸入有 NOT_MEASURED）：{none_ev}" if none_ev else "")
+                   + f"（能判定的格子數 {n_ev}；最高的 CI 下界 {top:.1%}）")
     return res
 
 
@@ -497,13 +551,27 @@ def check_complete(ix, expected):
                             miss_c.append((t, s, ol, mem, lab, h))
     if miss_c:
         errs.append(f"缺 {len(miss_c)} 個格子（切片 × 主格 × 做法 × H／2H），前 8 個：{miss_c[:8]}")
+    # 寬鬆版雙胞胎也要齊（第三輪審查 #6）：每個切片 × 主格 × 做法（H；非 oracle 是 both）；用 --skip 拿掉就不給判定
+    miss_l = []
+    for t in sorted(set(expected) & set(have)):
+        for s in sorted(set(expected[t]) & have[t]):
+            for (ol, mem) in PRIMARY_CELLS:
+                for lab in NEEDED:
+                    if ix.row(t, s, ENGINE_OF[ol], ol, mem, lab, "H", rule="loose") is None:
+                        miss_l.append((t, s, ol, mem, lab))
+    if miss_l:
+        errs.append(f"寬鬆版雙胞胎缺 {len(miss_l)} 個格子（rule=loose；切片 × 主格 × 做法），前 8 個：{miss_l[:8]}")
     if errs:
         raise IncompleteMap("地圖不齊，不給判定：\n  - " + "\n  - ".join(errs))
 
 
 # ====================================================================== 主分析
-def analyze(df, mode="full", n_boot=N_BOOT, h_main="H", verbose=True, guard_ref="C0", expected=None, guard_ref_source=""):
+def analyze(df, mode="full", n_boot=N_BOOT, h_main="H", verbose=True, guard_ref="C0", expected=None, guard_ref_source="",
+            oracle_variant="greedy", recompute_charge="none"):
     assert guard_ref in GUARD_REFS, guard_ref
+    assert oracle_variant in ORACLE_VARIANTS, oracle_variant
+    assert recompute_charge in RECOMPUTE_CHARGES, recompute_charge
+    OCH = ORACLE_VARIANT_LABEL[oracle_variant]          # 判定用的「O」在資料裡的做法名
     ix = Index(df)
     exp = resolve_expected(ix, mode, expected)
     check_complete(ix, exp)
@@ -522,11 +590,11 @@ def analyze(df, mode="full", n_boot=N_BOOT, h_main="H", verbose=True, guard_ref=
         for hh in ("H", "2H"):
             tab = {}
             for (ol, mem) in PRIMARY_CELLS:
-                res = trace_cell(ix, trace, slices, ENGINE_OF[ol], ol, mem, hh, labels=NEEDED)
-                assert all(l in res for l in NEEDED), (trace, ol, mem, hh, [l for l in NEEDED if l not in res])      # check_complete 之後不該發生
+                res = trace_cell(ix, trace, slices, ENGINE_OF[ol], ol, mem, hh, labels=NEEDED, ovar=oracle_variant, charge=recompute_charge)
+                assert all(l in res for l in NEEDED_ROLE), (trace, ol, mem, hh, [l for l in NEEDED_ROLE if l not in res])      # check_complete 之後不該發生
                 tab[(ol, mem)] = eval_cell(res, guard_ref)
                 if hh == "H":
-                    for lab in NEEDED:
+                    for lab in NEEDED_ROLE:
                         tradeoff.append(_tradeoff_row(trace, ol, mem, res, lab))
             # bootstrap：只做有最好的對手、點估計有定義的格子（需要每個切片的 per-session 位元組：best 與 O 兩個做法）
             cells = [c for c in PRIMARY_CELLS if tab[c]["best"]["label"] is not None and tab[c]["nan_flag"] == ""]
@@ -538,9 +606,9 @@ def analyze(df, mode="full", n_boot=N_BOOT, h_main="H", verbose=True, guard_ref=
                     for c in cells:
                         eng = ENGINE_OF[c[0]]
                         rb = ix.row(trace, s, eng, c[0], c[1], tab[c]["best"]["label"], hh)
-                        ro = ix.row(trace, s, eng, c[0], c[1], "O", hh)
-                        sb, xb = sess_bytes(rb, hh)
-                        so, xo = sess_bytes(ro, hh)
+                        ro = ix.row(trace, s, eng, c[0], c[1], OCH, hh)
+                        sb, xb = sess_bytes(rb, hh, recompute_charge)
+                        so, xo = sess_bytes(ro, hh, recompute_charge)
                         assert np.array_equal(sb, so), f"{trace}/{s}/{c}: best 與 O 的 session 對不上"
                         if ref is None:
                             ref = sb
@@ -566,15 +634,27 @@ def analyze(df, mode="full", n_boot=N_BOOT, h_main="H", verbose=True, guard_ref=
                            ci_lo=float(bs["lo"][j]) if j is not None else nan, ci_hi=float(bs["hi"][j]) if j is not None else nan,
                            best_zero=t["best_zero"], nan_flag=t["nan_flag"], best_is_C0=t["best_is_C0"], o_guard_ok=t["o_guard_ok"], o_guard_nm=t["o_guard_nm"],
                            go_ok=t["go_ok"], best_util=t["util_best"], O_util=t["util_O"], best_GiB_per_h=t["best_gph"], O_GiB_per_h=t["O_gph"],
+                           oracle_label=OCH, oracle_variant=oracle_variant, recompute_charge=recompute_charge, c0_util=t["util_C0"], ssd_busy=t["ssd_busy"],
+                           evaluable=t["evaluable"], why_not=t["why_not"], O_alt_label=t["res"]["O_alt"]["label"], O_alt_GiB=t["res"]["O_alt"]["GiB"],
+                           savings_O_alt=savings_point(t["best"]["GiB"], t["res"]["O_alt"]["GiB"])[0],
+                           best_charged_GiB=(t["res"][t["best"]["label"]]["charged_GiB"] if t["best"]["label"] else float("nan")),
+                           O_charged_GiB=t["res"]["O"]["charged_GiB"],
                            best_recompute_tokens=t["best_rec"] if t["best_rec"] is not None else nan, O_recompute_tokens=t["O_rec"],
                            guard_excluded=";".join(t["best"]["excluded"]), guard_nm=";".join(t["best"]["nm"]), n_boot=n_boot,
                            eligible=info["eligible"], eff_sessions=info["eff_sessions"])
                 out_rows.append(row)
                 if hh == h_main:
-                    info["cells"][c] = dict(lo=row["ci_lo"], hi=row["ci_hi"], point=row["savings"], go_ok=t["go_ok"], best_is_C0=t["best_is_C0"])
+                    info["cells"][c] = dict(lo=row["ci_lo"], hi=row["ci_hi"], point=row["savings"], go_ok=t["go_ok"], best_is_C0=t["best_is_C0"],
+                                            evaluable=t["evaluable"], why_not=t["why_not"])
         traces[trace] = info
         if verbose:
             print(f"[{trace}] 切片 {len(slices)}；有效 session {info['eff_sessions']:.1f}；進判定 {info['eligible']}；完整 {info['complete']}", flush=True)
+    # 寬鬆版雙胞胎（只報告）先算好：GO 的理由要附上那一格雙胞胎的省多少（第三輪審查 #6）
+    twin_rows = loose_twin(ix, traces, guard_ref, oracle_variant, recompute_charge)
+    twin = {(r["trace"], r["outer"].split("@")[0], r["mem_GiB"]): r["savings"] for r in twin_rows}
+    for t_, info_ in traces.items():
+        for c_, x_ in info_["cells"].items():
+            x_["twin"] = twin.get((t_, c_[0], c_[1]), float("nan"))
     verdict = decide(traces, mode)
     # 合成資料「如果它是真實的」會是什麼（只標示，不是判定）
     syn = {t: v for t, v in traces.items() if v.get("synthetic")}
@@ -582,9 +662,10 @@ def analyze(df, mode="full", n_boot=N_BOOT, h_main="H", verbose=True, guard_ref=
     if syn:
         fake = {t: dict(v, synthetic=False, source="synthetic") for t, v in syn.items()}
         pseudo = decide(fake, "full")
-    reports = report_only(ix, traces, guard_ref)
+    reports = report_only(ix, traces, guard_ref, oracle_variant, recompute_charge, twin_rows)
     return dict(rows=out_rows, traces=traces, verdict=verdict, synthetic_pseudo_verdict=pseudo, reports=reports, boot=boot_info, tradeoff=tradeoff,
-                guard_ref=guard_ref, guard_ref_source=guard_ref_source, expected={t: list(s) for t, s in exp.items()})
+                guard_ref=guard_ref, guard_ref_source=guard_ref_source, expected={t: list(s) for t, s in exp.items()},
+                oracle_variant=oracle_variant, recompute_charge=recompute_charge, n_boot=n_boot)
 
 
 def _tradeoff_row(trace, ol, mem, res, lab):
@@ -596,13 +677,13 @@ def _tradeoff_row(trace, ol, mem, res, lab):
         rv = guard_ref_value(res, ref)
         ok, nmf = guard_status(tt, rv)
         el[ref] = ("通過（NOT_MEASURED）" if nmf else "通過") if ok else "不合格"
-    return dict(trace=trace, outer=ol, mem_GiB=mem, policy=lab, is_O=(lab == "O"), primary_GiB=r["GiB"], GiB_per_h=r["gph"], ssd_util=r["util"],
+    return dict(trace=trace, outer=ol, mem_GiB=mem, policy=r.get("label", lab), is_O=(lab == "O"), is_O_alt=(lab == "O_alt"), primary_GiB=r["GiB"], GiB_per_h=r["gph"], ssd_util=r["util"],
                 ttftq_H_mean_s=(NOT if tt[2] else tt[0]), ttftq_H_p99_s=(NOT if tt[2] else tt[1]), recompute_tokens=r["rec_tokens"],
                 eligible_ref_C0=el["C0"], eligible_ref_min_C0_O=el["min_C0_O"])
 
 
 # ====================================================================== 只報告的項目
-def report_only(ix, traces, guard_ref="C0"):
+def report_only(ix, traces, guard_ref="C0", ovar="greedy", charge="none", twin_rows=None):
     """只算點估計（不做 bootstrap、不進判定）：每份資料 × 每個外層做法 × 每個記憶體 × 每個視角（A2 的整張地圖，含 E1、E5 的另兩個 T、E6 與 E2 的 block 版、
     非主視角），加上 O-loose、拆解、敏感度（Qwen、70B、疊加、CPU 忙、3090）、兩種護欄參考、寬鬆版雙胞胎。"""
     rows = []
@@ -629,7 +710,7 @@ def report_only(ix, traces, guard_ref="C0"):
                                      surprise_blocks=int(sum(r["surprise_blocks"] for r in rs))))
             continue
         for hh in ("H", "2H"):
-            res = trace_cell(ix, trace, slices, eng, ol, mem, hh, model, ov, vg, view=view)
+            res = trace_cell(ix, trace, slices, eng, ol, mem, hh, model, ov, vg, view=view, ovar=ovar, charge=charge)
             if "O" not in res or "C0" not in res:
                 continue
             d = eval_cell(res, guard_ref)
@@ -648,8 +729,12 @@ def report_only(ix, traces, guard_ref="C0"):
                         h=hh, model=model, overlay=ov, view_group=vg, view=view, guard_ref=guard_ref, best_label=best["label"], best_GiB=best["GiB"],
                         guard_excluded=";".join(best["excluded"]), guard_nm=";".join(best["nm"]), best_zero=d["best_zero"], nan_flag=d["nan_flag"],
                         best_is_C0=d["best_is_C0"], o_guard_ok=d["o_guard_ok"], best_util=d["util_best"], O_util=d["util_O"],
-                        best_GiB_per_h=d["best_gph"], O_GiB_per_h=d["O_gph"])
+                        best_GiB_per_h=d["best_gph"], O_GiB_per_h=d["O_gph"], c0_util=d["util_C0"], ssd_busy=d["ssd_busy"], evaluable=d["evaluable"],
+                        oracle_label=res["O"]["label"])
             rows.append(dict(base, kind=kind, item="O", O_GiB=res["O"]["GiB"], savings=d["point"]))
+            if "O_alt" in res and not math.isnan(best["GiB"]) and hh == "H" and primary_view and vg == "main" and model == "llama" and ov == 1:
+                s_alt, _, _ = savings_point(best["GiB"], res["O_alt"]["GiB"])         # 另一個 O（判定沒用它）：只報告
+                rows.append(dict(base, kind="report_oracle_alt", item=res["O_alt"]["label"], O_GiB=res["O_alt"]["GiB"], savings=s_alt))
             if hh != "H" or vg != "main" or model != "llama" or ov != 1 or not primary_view:
                 continue
             # 兩種護欄參考（使用者決定中；兩種都報告）：主格與整張地圖都有
@@ -680,11 +765,11 @@ def report_only(ix, traces, guard_ref="C0"):
                     s2, _, _ = savings_point(b2["GiB"], res[lab]["GiB"])
                     rows.append(dict(base, kind="report_decomp", item=f"{lab}_vs_best_{fam}", best_label=b2["label"], best_GiB=b2["GiB"],
                                      guard_excluded=";".join(b2["excluded"]), O_GiB=res[lab]["GiB"], savings=s2))
-    rows += loose_twin(ix, traces, guard_ref)
+    rows += twin_rows if twin_rows is not None else loose_twin(ix, traces, guard_ref, ovar, charge)
     return rows
 
 
-def loose_twin(ix, traces, guard_ref):
+def loose_twin(ix, traces, guard_ref, ovar="greedy", charge="none"):
     """寬鬆版雙胞胎（04 §4，第二輪審查 #3a；只報告）：O 與所有對手都用寬鬆品質規則（rule=loose 的工作；32K 過關的格式在任何長度都過關）。
     每份資料 × 主格、H；點估計（不做 bootstrap）。缺工作的格子不報（報告用，不擋判定）。"""
     rows = []
@@ -692,8 +777,8 @@ def loose_twin(ix, traces, guard_ref):
         slices = sorted(ix.slices[trace])
         for (ol, mem) in PRIMARY_CELLS:
             eng = ENGINE_OF[ol]
-            res = trace_cell(ix, trace, slices, eng, ol, mem, "H", labels=NEEDED, rule="loose")
-            if any(l not in res for l in NEEDED):
+            res = trace_cell(ix, trace, slices, eng, ol, mem, "H", labels=NEEDED, rule="loose", ovar=ovar, charge=charge)
+            if any(l not in res for l in NEEDED_ROLE):
                 continue
             d = eval_cell(res, guard_ref)
             rows.append(dict(kind="report_loose_twin", trace=trace, source_group=SOURCE.get(trace, "synthetic"), synthetic=(trace == "synth"),
@@ -701,6 +786,7 @@ def loose_twin(ix, traces, guard_ref):
                              guard_ref=guard_ref, best_label=d["best"]["label"], best_GiB=d["best"]["GiB"], O_GiB=res["O"]["GiB"], savings=d["point"],
                              best_zero=d["best_zero"], nan_flag=d["nan_flag"], best_is_C0=d["best_is_C0"], o_guard_ok=d["o_guard_ok"],
                              best_util=d["util_best"], O_util=d["util_O"], best_GiB_per_h=d["best_gph"], O_GiB_per_h=d["O_gph"], go_ok=d["go_ok"],
+                             c0_util=d["util_C0"], ssd_busy=d["ssd_busy"], evaluable=d["evaluable"], oracle_label=res["O"]["label"],
                              guard_excluded=";".join(d["best"]["excluded"]), guard_nm=";".join(d["best"]["nm"]),
                              best_recompute_tokens=d["best_rec"] if d["best_rec"] is not None else float("nan"), O_recompute_tokens=d["O_rec"]))
     return rows
@@ -722,9 +808,10 @@ def _flags_of_row(r):
     if r.get("best_label") is not None and not (isinstance(r.get("best_label"), float)):
         if r.get("best_is_C0"):
             f.append("最好=C0")
-        ub = r.get("best_util", float("nan"))
-        if ub is None or (isinstance(ub, float) and (math.isnan(ub) or ub < UTIL_MIN)):
-            f.append(f"SSD 使用率 {fmt_pct(ub)}<5%")
+    if r.get("ssd_busy") is False:
+        f.append(f"SSD 不忙（C0 使用率 {fmt_pct(r.get('c0_util'))}<5%；GO、NO-GO 都不算）")
+    if "NOT_MEASURED" in str(r.get("why_not", "")):
+        f.append("護欄輸入有 NOT_MEASURED（GO、NO-GO 都不算）")
     return f
 
 
@@ -754,7 +841,9 @@ def write_outputs(result, prefix, mode, cells_path):
                 w.writerow(dict(run_id=rid, ts=ts, **r))
     v = result["verdict"]
     js = dict(run_id=rid, ts=ts, mode=mode, cells_csv=cells_path, verdict=v["verdict"], reason=v["reason"], go_cells=v["go_cells"], used=v["used"],
-              not_used=v["not_used"], n_boot=N_BOOT, seed=SEED, guard=GUARD, guard_ref=result["guard_ref"], guard_ref_source=result["guard_ref_source"],
+              not_used=v["not_used"], n_boot=result.get("n_boot", N_BOOT), seed=SEED, guard=GUARD, guard_ref=result["guard_ref"], guard_ref_source=result["guard_ref_source"],
+              oracle_variant=result["oracle_variant"], recompute_charge=result["recompute_charge"], evaluable_cells=v.get("evaluable_cells"),
+              not_evaluable=v.get("not_evaluable"), freeze=result.get("freeze"),
               expected_slices=result["expected"],
               traces={t: dict(slices=i["slices"], eligible=i["eligible"], complete=i["complete"], eff_sessions=i["eff_sessions"], source=i["source"],
                               synthetic=i["synthetic"]) for t, i in result["traces"].items()},
@@ -766,7 +855,9 @@ def write_outputs(result, prefix, mode, cells_path):
     # markdown：整張地圖（主格有 CI；其他只有點）
     L = [f"# 地圖判定（{mode}）", "", f"- 判定：**{v['verdict']}**", f"- 理由：{v['reason']}", f"- 進判定的資料：{', '.join(v['used']) or '（無）'}；沒進的：{json.dumps(v['not_used'], ensure_ascii=False)}",
          f"- 護欄的參考（判定用）：**{result['guard_ref']}**（{result['guard_ref_source'] or '04 §9'}）；兩種參考都在下面「護欄的參考」節",
-         f"- bootstrap {N_BOOT} 次、seed {SEED}、max-T 同時 95% CI；等待時間護欄 {GUARD}×參考（截尾版 ttftq_H_*）；GO 另要求 O 過護欄、最好的對手 SSD 使用率 ≥{UTIL_MIN:.0%}；run `{rid}`", ""]
+         f"- 完美預測（判定用的 O）：**{result['oracle_variant']}**（{ORACLE_VARIANT_LABEL[result['oracle_variant']]}；另一個在 report_oracle_alt）；重算計價：**{result['recompute_charge']}**",
+         f"- 能判定的格子（C0 的 SSD 使用率 ≥{UTIL_MIN:.0%}、護欄輸入沒有 NOT_MEASURED；其餘格子 GO、NO-GO 都不算）：{v.get('evaluable_cells')}",
+         f"- bootstrap {N_BOOT} 次、seed {SEED}、max-T 同時 95% CI；等待時間護欄 {GUARD}×參考（截尾版 ttftq_H_*）；GO 另要求 O 過護欄；run `{rid}`", ""]
     if result["synthetic_pseudo_verdict"]:
         L += [f"- **合成資料**（不是判定）：如果當成真實資料，規則會給 {result['synthetic_pseudo_verdict']['verdict']}（{result['synthetic_pseudo_verdict']['reason']}）", ""]
     for hh, title in (("H", "截尾 H（判定用）"), ("2H", "截尾 2H（只報告）")):
@@ -880,22 +971,59 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--cells", required=True)
     ap.add_argument("--mode", choices=["early", "full"], default="full")
-    ap.add_argument("--synthetic", action="store_true", help="資料是合成切片（synth/small-seed1）：應有的切片清單換成合成的")
+    ap.add_argument("--synthetic", action="store_true", help="資料是合成切片（synth/small-seed1）：應有的切片清單換成合成的；判定參數可以用命令列選（測試用）")
     ap.add_argument("--out-prefix", required=True)
-    ap.add_argument("--boot", type=int, default=N_BOOT)
-    ap.add_argument("--guard-ref", default="auto", choices=["auto", "C0", "min_C0_O"])
-    ap.add_argument("--frozen", default=None, help="auto 時從這個 commit 的 04 §9 讀護欄的參考")
+    ap.add_argument("--boot", type=int, default=None, help="bootstrap 次數：真實資料固定 1000（給了別的值就拒絕）；合成資料預設 1000")
+    ap.add_argument("--guard-ref", default=None, choices=["auto", "C0", "min_C0_O"], help="合成資料用；真實資料只從凍結的 04 §9 讀（給了就拒絕）")
+    ap.add_argument("--oracle-variant", default=None, choices=["greedy", "tier"], help="合成資料用（預設 greedy）；真實資料只從凍結的 04 §9 讀")
+    ap.add_argument("--recompute-charge", default=None, choices=["none", "pass_size"], help="合成資料用（預設 none）；真實資料只從凍結的 04 §9 讀")
+    ap.add_argument("--frozen", default=None, help="真實資料：必須給（04 凍結的 commit；過 lockfile.verify_freeze，列的 commit 要和它對得上）")
     a = ap.parse_args(argv)
-    ref, src = resolve_guard_ref(a.guard_ref, a.frozen)
-    print(f"護欄的參考：{ref}（{src}）", flush=True)
+    freeze = None
+    if a.synthetic:
+        n_boot = a.boot or N_BOOT
+        ref, src = resolve_guard_ref(a.guard_ref or "auto", a.frozen)
+        ovar, chg = a.oracle_variant or "greedy", a.recompute_charge or "none"
+        src += "（合成資料：判定參數可以用命令列選）"
+    else:
+        # ---- 真實資料的凍結閘門（第三輪審查 #2）：一律要 --frozen、過 verify_freeze；判定參數只從凍結的 04 讀；n_boot 固定 1000
+        if not a.frozen:
+            print("拒絕：真實資料的分析一律要 --frozen <04 凍結的 commit>", file=sys.stderr)
+            return 2
+        over = [n for n, v in (("--guard-ref", a.guard_ref), ("--oracle-variant", a.oracle_variant), ("--recompute-charge", a.recompute_charge)) if v is not None]
+        if over or (a.boot is not None and a.boot != N_BOOT):
+            print(f"拒絕：真實資料的護欄參考、完美預測、重算計價只從凍結的 04 §9 讀，n_boot 固定 {N_BOOT}；不准用命令列覆蓋：{over or ['--boot']}", file=sys.stderr)
+            return 2
+        try:
+            freeze = lockfile.verify_freeze(a.frozen, REPO)
+        except SystemExit as e:
+            print(str(e), file=sys.stderr)
+            return 2
+        ref, ovar, chg, n_boot = freeze["guard_ref"], freeze["oracle_variant"], freeze["recompute_charge"], N_BOOT
+        src = f"04 §9（commit {freeze['frozen'][:8]}）：護欄的參考 {ref}、完美預測 {ovar}、重算計價 {chg}"
+    print(f"護欄的參考：{ref}（{src}）；完美預測：{ovar}；重算計價：{chg}；n_boot {n_boot}", flush=True)
     df = load_cells(a.cells)
+    if freeze is not None:
+        miss = [c for c in ("frozen_commit", "code_commit", "run_id") if c not in df.columns]
+        if miss:
+            print(f"拒絕：{a.cells} 缺欄 {miss}（用新版 run_map.py 重跑）", file=sys.stderr)
+            return 2
+        errs = lockfile.check_row_commits(df["frozen_commit"].fillna("").astype(str), df["code_commit"].fillna("").astype(str), freeze, REPO,
+                                          df["run_id"].fillna("").astype(str))
+        if errs:
+            print("拒絕：列的 commit 檢查失敗：\n  - " + "\n  - ".join(errs), file=sys.stderr)
+            return 2
     try:
-        res = analyze(df, a.mode, a.boot, guard_ref=ref, guard_ref_source=src, expected=EXPECTED["synthetic"] if a.synthetic else None)
-    except IncompleteMap as e:
+        res = analyze(df, a.mode, n_boot, guard_ref=ref, guard_ref_source=src, expected=EXPECTED["synthetic"] if a.synthetic else None,
+                      oracle_variant=ovar, recompute_charge=chg)
+    except (IncompleteMap, DuplicateCell) as e:
         print(str(e), file=sys.stderr)
         return 2
+    if freeze is not None:
+        res["freeze"] = dict(frozen=freeze["frozen"], code_commit=freeze["code_commit"], head=freeze["head"], prereg_sha256=freeze["prereg_sha256"],
+                             n_locked_files=len(freeze["files"]))
     write_outputs(res, a.out_prefix, a.mode, a.cells)
-    print(json.dumps(dict(verdict=res["verdict"]["verdict"], reason=res["verdict"]["reason"], guard_ref=ref), ensure_ascii=False))
+    print(json.dumps(dict(verdict=res["verdict"]["verdict"], reason=res["verdict"]["reason"], guard_ref=ref, oracle_variant=ovar, recompute_charge=chg), ensure_ascii=False))
     return 0
 
 
