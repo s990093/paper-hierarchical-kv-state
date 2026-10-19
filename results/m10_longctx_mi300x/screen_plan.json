@@ -1,0 +1,32 @@
+{
+ "label": "完整",
+ "n": 12,
+ "policies": [
+  "F",
+  "M",
+  "B",
+  "R0",
+  "R1",
+  "ERR",
+  "ATT",
+  "AXE",
+  "ORC"
+ ],
+ "fracs": [
+  0.1,
+  0.25,
+  0.5,
+  0.75,
+  0.9
+ ],
+ "readout_b": true,
+ "est_h": 9.68,
+ "pilot_seconds_per_item": {
+  "llama|64": 234.9,
+  "llama|128": 369.6,
+  "llama|252": 595.7,
+  "qwen|64": 217.4,
+  "qwen|128": 276.6,
+  "qwen|252": 483.5
+ }
+}
