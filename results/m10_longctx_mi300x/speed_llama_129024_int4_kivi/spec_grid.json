@@ -53,7 +53,7 @@
  ],
  "reps": 5,
  "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_longctx_mi300x/speed_llama_129024_int4_kivi",
- "blocks_out": "/mlsteam/data/tiara/runs/20261019-104723-m10-lc-grid-llama-129024-int4_kivi/blocks.csv",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261019-173111-m10-lc-grid-llama-129024-int4_kivi-rerun/blocks.csv",
  "verify": true,
  "extra_modes": [],
  "extra_tiers": [],
@@ -78,9 +78,9 @@
   "--reps",
   "5",
   "--blocks-out",
-  "/mlsteam/data/tiara/runs/20261019-104723-m10-lc-grid-llama-129024-int4_kivi/blocks.csv"
+  "/mlsteam/data/tiara/runs/20261019-173111-m10-lc-grid-llama-129024-int4_kivi-rerun/blocks.csv"
  ],
- "run_id": "20261019-104723-m10-lc-grid-llama-129024-int4_kivi",
+ "run_id": "20261019-173111-m10-lc-grid-llama-129024-int4_kivi-rerun",
  "restore_variant": {
   "kernel": "k1",
   "sched": "serial",

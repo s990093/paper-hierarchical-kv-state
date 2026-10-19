@@ -1039,3 +1039,12 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - 4 格都 exit 0：`20261019-104723-…-llama-129024-int4_kivi`（不完整，見 15.12，44cab 重量中）、`-132102-…-qwen-129024-int4_kivi`、`-153135-…-llama-65536-int4_kivi`、`-163608-…-qwen-65536-int4_kivi`。後 3 格 2 launch × 2 GPU 狀態 × 220 列都齊，gpu_guard 全 CLEAN。
 - 44cab（Llama 128K INT4 整格重量）17:31:11Z 開始，量時間兩張卡獨佔；接著 44cb（干擾實驗）。
 - 這 3 格的結果先提交。Llama 128K INT4 的目錄等 44cab 寫完才加進 git（15.12 的教訓）。
+
+### 15.15 44cab 重量完成；44cb 的分卡檢查沒過 → 量時間照舊兩張卡獨佔（10/19 17:31 → 20:05Z）
+
+- 44cab（`20261019-173111-m10-lc-grid-llama-129024-int4_kivi-rerun`）20:04:44Z 完成：2 launch × 閒／忙 × 220 列都齊，gpu_guard 全 CLEAN。Llama 128K INT4 改用這次（latest_rows 只讀最新的 run）。
+- 44cb 第 1 步（分卡）沒過（`results/m10_xgpu_mi300x/attribution.json`），沒有做 A／B，沒有立 XGPU_OK。44d（20:05:26Z 開始）照舊兩張卡獨佔。
+  - 卡 0 的假行程（`HIP_VISIBLE_DEVICES=0`，配 2 GiB）在 amd-smi 的卡 1 行程清單裡也出現，而且 VRAM 也是 2048 MiB。
+  - 原因：HIP 的行程會打開兩張卡的 render 節點，amd-smi 把它的 VRAM 在兩張卡底下都列一次。
+  - 所以只看環境變數還不夠：卡 1 的 guard 會把它算成外部行程（`external_namespace`）。
+- 下一步：改用 `ROCR_VISIBLE_DEVICES`（ROCr 層就只看得到一張卡，應該只開那張的 render 節點）再驗一次，見 15.16。
