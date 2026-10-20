@@ -162,6 +162,7 @@ AssertionError: 這支只准用 CPU（TIARA_NO_GPU=1）
 ## Milestone P3H-1e — 地圖差異的診斷（只診斷）
 **目的**: 確認合成端到端和 3090 的差只來自 FI 迴歸常數：用 3090 的 `service_constants.json`＋`synth_fit_fi_week01.json` 把 synth/small-seed1 重建到 `/tmp/hungweilai-p3/diag-const3090-map`（其他來源用連結、快取另開），MI300X 常數重跑 A1＋五組分析，和 3090 的 `results/p3_map` 逐值比 → `results/p3_map_h200/diag_const3090_compare_*.json`。預期 IDENTICAL；不是的話照列、再查。另外重跑 C0 的比對（`--ignore code_commit`）。
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-mapdiag --time=4:00:00 code/r_h200_p3.sh --part mapdiag`
+**狀態**: RUNNING（job **21408**，git 15f692b）
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from X1-SELFTEST`（第二階段 session 沒有排隊中的 GPU job，不加依賴）
 **修正**（都在 worktree，h200-p3）：
 1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
