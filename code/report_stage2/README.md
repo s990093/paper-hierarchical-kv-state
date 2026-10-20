@@ -1,0 +1,1 @@
+Rerun all stage-2 report figures (CPU only, reads only results/): `nice -n 19 /mlsteam/workspace/venv/tiara/bin/python code/report_stage2/make_figs.py` (one group: `--only f2`); recompute what-if: `.../python code/report_stage2/whatif_recompute.py`. Outputs go to `docs/precision_20261013/report_stage2/{figs,derived}/`; per-figure input files are listed in `figs/SOURCES.md`.

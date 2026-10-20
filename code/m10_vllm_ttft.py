@@ -37,6 +37,9 @@ def main():
     ap.add_argument("--lengths", nargs="+", type=int, default=[8192, 16384, 32768])
     ap.add_argument("--reps", type=int, default=6)
     ap.add_argument("--out-dir", required=True)
+    # 10/20：從外面包 guard（m10_guarded_run.py，90）會把 engine 關閉那幾秒也算進去 → 09-15 那種收尾假污染
+    # （VRAM 還在、kfd 已關）。改在程式裡開：從開 engine 前到最後一次量完；關 engine 不在範圍內。
+    ap.add_argument("--guard-gpus", nargs="*", type=int, default=None)
     a = ap.parse_args()
     import vllm
     from vllm import LLM, SamplingParams
@@ -46,6 +49,16 @@ def main():
               gpu_memory_utilization=0.80, seed=0)
     if a.chunking == "512":
         kw["max_num_batched_tokens"] = 512
+    rid = os.environ.get("RUN_ID", "adhoc")
+    os.makedirs(a.out_dir, exist_ok=True)
+    guards = []
+    if a.guard_gpus:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from gpu_guard import GpuWatcher
+        guards = [GpuWatcher(gpu=g, own_root=os.getpid(), out_path=os.path.join(a.out_dir, f"gpu_guard_{rid}_gpu{g}.json"))
+                  for g in a.guard_gpus]
+        for g in guards:
+            g.__enter__()
     llm = LLM(**kw)
     try:                                                   # 版本間屬性位置不同：查不到就照實記 NOT_FOUND（不猜）
         mnbt = llm.llm_engine.vllm_config.scheduler_config.max_num_batched_tokens
@@ -55,8 +68,6 @@ def main():
     vocab = AutoConfig.from_pretrained(path).vocab_size
     sp = SamplingParams(max_tokens=1, temperature=0.0)
     rng = random.Random(f"{a.model}|{a.chunking}")
-    rid = os.environ.get("RUN_ID", "adhoc")
-    os.makedirs(a.out_dir, exist_ok=True)
     p = os.path.join(a.out_dir, "vllm_ttft.csv")
     new = not os.path.exists(p)
     f = open(p, "a", newline="")
@@ -80,12 +91,21 @@ def main():
         res[L] = statistics.median(ts_)
         print(f"{a.model} {a.chunking} L={L} median TTFT {res[L]:.4f}s", flush=True)
     f.close()
+    for g in guards:                                       # 量完就收 guard（engine 還沒關）
+        g.__exit__(None, None, None)
+    verdicts = {str(g.gpu): g.verdict() for g in guards} or "NO_GUARD"
+    print(f"[guard] {json.dumps(verdicts)}", flush=True)
     meta_p = os.path.join(a.out_dir, "vllm_meta.json")
     meta = json.load(open(meta_p)) if os.path.exists(meta_p) else {}
     meta[f"{a.model}|{a.chunking}"] = {"run_id": rid, "vllm": vllm.__version__, "model_path": path,
-                                       "max_num_batched_tokens": mnbt, "median_ttft_s": res,
+                                       "max_num_batched_tokens": mnbt, "median_ttft_s": res, "guard": verdicts,
                                        "backend": "see stderr.log of run (grep 'backend')"}
     json.dump(meta, open(meta_p, "w"), indent=1, ensure_ascii=False)
+    if any(g.contaminated for g in guards):                # 時間不可用（CLAUDE.md §3）：留 CONTAMINATED、結束碼 3
+        runs = os.environ.get("TIARA_RUNS")
+        if runs and rid != "adhoc":
+            open(os.path.join(runs, rid, "CONTAMINATED"), "w").write(json.dumps(verdicts) + "\n")
+        sys.exit(3)
 
 
 if __name__ == "__main__":

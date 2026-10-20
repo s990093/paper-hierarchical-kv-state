@@ -6,5 +6,8 @@
  "44ca_longctx_speed_rest": "其中 Llama 128K INT4 那格被我的 git stash 弄掉 176 列 → 整格在 44cab 重量（RUNLOG 15.12）",
  "44cab_rerun_llama128k_int4": "重量 44ca 的 Llama 128K INT4（RUNLOG 15.12）",
  "44e2z_xgpu_check3": "分卡（KFD）過了；干擾最大一格 1.089 > 1.08（幾何平均 1.0027）→ 沒立 XGPU_OK，量時間照舊兩張卡獨佔（RUNLOG 15.19）",
- "44e2_ds2_confirm": "14 個 job 全 exit 0；表在 results/m10_drop_mi300x/ds2/tables_ds2.md（RUNLOG 15.20）"
+ "44e2_ds2_confirm": "14 個 job 全 exit 0；表在 results/m10_drop_mi300x/ds2/tables_ds2.md（RUNLOG 15.20）",
+ "44e3_d3_speed": "4 grid 全 CLEAN；慢的層丟前面不省、丟後面省最多（RUNLOG 15.21）",
+ "44e4_m2_fmt": "10 grid 全 CLEAN（RUNLOG 15.21）",
+ "44e5_m1_unit": "6 grid 全 CLEAN；512 仍最好（RUNLOG 15.21）"
 }

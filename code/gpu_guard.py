@@ -373,9 +373,15 @@ def _holder_gpu(pid: int) -> int | None:
 
 def foreign_on(gpu: int, own_root: int | None = None) -> list[dict]:
     """gpu 上不屬於我們的 compute process。own_root 預設為本行程。"""
-    own = _descendants(own_root if own_root is not None else os.getpid())
+    # 10/20：「自己人」要在列完行程**之後**才算。原本先算，列行程（amd-smi／KFD，要幾百 ms）期間剛 spawn 的
+    # 自家子行程（vLLM 的 EngineCore）會出現在清單、卻不在自己人裡 → 假污染（91 的 llama-512，13:53:03 載入中）。
+    # 後算不會把外人算成自己人（子孫關係不會事後成立）。
+    def _own():
+        return _descendants(own_root if own_root is not None else os.getpid())
     if vendor() != "amd":
-        return [a for a in compute_apps() if a["gpu"] == gpu and a["pid"] not in own and not _in_own_job(a["pid"])]
+        apps = compute_apps()
+        own = _own()
+        return [a for a in apps if a["gpu"] == gpu and a["pid"] not in own and not _in_own_job(a["pid"])]
     # AMD：amd-smi 給 host pid，對不上容器 pid → 改用「數量」判斷。
     #   有配置 VRAM 的 amd-smi 行程數  −  本容器內開 /dev/kfd 的行程數  =  容器外的行程數（下界）
     # VRAM=0 的條目（真機上的 host pid 8110，早於本容器任何 GPU 程式就存在、gfx 用量 0）
@@ -387,6 +393,7 @@ def foreign_on(gpu: int, own_root: int | None = None) -> list[dict]:
     # 10/19 兩張卡：容器裡在「別張卡」的行程（環境變數 ROCR／HIP_VISIBLE_DEVICES 指到別張）不是這張卡的入侵者，
     # 也不能拿來抵這張卡上的外部行程。看不出用哪張卡的（沒設環境變數）照舊算在這張（保守）。
     holders = {pid: cmd for pid, cmd in holders.items() if _holder_gpu(pid) in (None, gpu)}
+    own = _own()
     out = []
     n_external = sum(1 for a in apps if a["used_mib"] > 0) - len(holders)
     if n_external > 0:

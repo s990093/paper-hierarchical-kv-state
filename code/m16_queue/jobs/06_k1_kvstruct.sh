@@ -5,7 +5,7 @@
 source /mlsteam/workspace/paper-hierarchical-kv-state/code/m16_queue/jobs/lib.sh
 OUT=$RES/k1_kvstruct; mkdir -p $OUT /mlsteam/data/tiara/stage3/k1
 export OMP_NUM_THREADS=4
-m7run m16-k1-ropecheck python -I code/m16_kvstruct.py ropecheck --dump $SMOKE/kv_llama_t4_4 \
+m7run m16-k1-ropecheck python -I code/m16_kvstruct.py ropecheck --dump $SMOKE/kv_llama_t4_16 \
   || { nh "06_k1_kvstruct：RoPE 核對沒過（$(lastrun m16-k1-ropecheck)）"; exit 1; }
 m7run m16-k1-kvstruct python -I code/m16_kvstruct.py analyze \
   --dump $KVD/llama_T4_64 $KVD/llama_T2_64 $KVD/qwen_T4_64 $KVD/qwen_T2_64 $KVD/llama_T4_252 $KVD/qwen_T4_252 \

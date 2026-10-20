@@ -1,13 +1,14 @@
 # GPU-NEED: both
+# 10/20 14:0xZ：原本 --n-blocks 4（2K token）在 T4 放不下 812 token 的段落（mid 帶只有 1 個 block）→ 冒煙失敗（run 20261020-135924-m16-smoke-kvdump）；改成 16 個 block（mid 帶 4 個 block）。
 # GPU: 1
 # NEED-GB: 80
 # MAX-H: 1
 # 第三階段 GPU 程式的冒煙（每支都用最小的設定跑一次；輸出到 $SMOKE，不進 results）。任何一支失敗 → NEEDS_HUMAN、exit 1（後面的 job 都靠這幾支程式）。
 source /mlsteam/workspace/paper-hierarchical-kv-state/code/m16_queue/jobs/lib.sh
 mkdir -p $SMOKE
-m7run m16-smoke-kvdump python code/m16_s1_kvdump.py --model llama --task T4 --n-blocks 4 --out $SMOKE/kv_llama_t4_4 \
+m7run m16-smoke-kvdump python code/m16_s1_kvdump.py --model llama --task T4 --n-blocks 16 --out $SMOKE/kv_llama_t4_16 \
   || { nh "00_smoke: m16_s1_kvdump 失敗（$(lastrun m16-smoke-kvdump)）"; exit 1; }
-m7run m16-smoke-lossless taskset -c 0-3 python code/m16_s1_lossless.py analyze --dump $SMOKE/kv_llama_t4_4 --out $SMOKE/s1 \
+m7run m16-smoke-lossless taskset -c 0-3 python code/m16_s1_lossless.py analyze --dump $SMOKE/kv_llama_t4_16 --out $SMOKE/s1 \
   --max-blocks 2 --speed-blocks 1 --reps 1 --threads 1 --speed-codecs zstd:1 \
   || { nh "00_smoke: m16_s1_lossless 失敗（$(lastrun m16-smoke-lossless)）"; exit 1; }
 m7run m16-smoke-i4 python code/m16_i4_copybench.py --blocks 64 --reps 1 --gpu-states idle --py-loop-max 64 --out $SMOKE/i4 \

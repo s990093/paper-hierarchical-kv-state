@@ -1,0 +1,52 @@
+{
+ "llama|default": {
+  "run_id": "20261020-134437-m10-vllmg-llama-default",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "max_num_batched_tokens": 16384,
+  "median_ttft_s": {
+   "8192": 0.3223304529674351,
+   "16384": 0.7903653550893068,
+   "32768": 2.185211325995624
+  },
+  "backend": "see stderr.log of run (grep 'backend')"
+ },
+ "llama|512": {
+  "run_id": "20261020-134609-m10-vllmg-llama-512",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "max_num_batched_tokens": 512,
+  "median_ttft_s": {
+   "8192": 0.515567833557725,
+   "16384": 1.4111066618934274,
+   "32768": 4.186265591997653
+  },
+  "backend": "see stderr.log of run (grep 'backend')"
+ },
+ "qwen|default": {
+  "run_id": "20261020-134757-m10-vllmg-qwen-default",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA",
+  "max_num_batched_tokens": 16384,
+  "median_ttft_s": {
+   "8192": 0.2874565036036074,
+   "16384": 0.6864244849421084,
+   "32768": 1.8045455729588866
+  },
+  "guard": "NO_GUARD",
+  "backend": "see stderr.log of run (grep 'backend')"
+ },
+ "qwen|512": {
+  "run_id": "20261020-134919-m10-vllmg-qwen-512",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/models/Qwen2.5-7B-Instruct-1M-noDCA",
+  "max_num_batched_tokens": 512,
+  "median_ttft_s": {
+   "8192": 0.4709639591164887,
+   "16384": 1.2485863659530878,
+   "32768": 3.721282612066716
+  },
+  "guard": "NO_GUARD",
+  "backend": "see stderr.log of run (grep 'backend')"
+ }
+}

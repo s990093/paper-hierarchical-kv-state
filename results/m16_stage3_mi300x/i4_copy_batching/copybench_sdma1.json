@@ -1,0 +1,13 @@
+{
+ "run_id": "20261020-143218-m16-i4-sdma1",
+ "sdma": "1",
+ "frag_bytes": 32768,
+ "L": 32,
+ "H": 8,
+ "D": 128,
+ "BS": 16,
+ "R": 2048,
+ "contaminated": false,
+ "zerocopy_error": null,
+ "torch": "2.10.0+rocm7.0"
+}

@@ -125,11 +125,69 @@ def i3r():
     return rows
 
 
-PLANNED = ["S1", "I4", "I1-interf", "I1-grid", "C1a", "S2", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
+def k1():
+    """K1：每個 dump 的中位數（層×head，不含整層串接列）。只讀 CSV。"""
+    rows = []
+    d = os.path.join(RES, "k1_kvstruct")
+    big = "/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full"   # >1 MB 的檔（BIG_FILES.md）
+    if not os.path.exists(os.path.join(big, "lowrank.csv")):
+        return rows
+    med = lambda v: round(statistics.median(v), 4)
+    g = {}
+    for r in csv.DictReader(open(os.path.join(big, "lowrank.csv"))):
+        if r["head"] != "all" and r["rank"] == "32":
+            g.setdefault((r["dump"], r["kind"]), []).append(float(r["rel_err"]))
+            rid = r["run_id"]
+    for (dn, kind), v in sorted(g.items()):
+        rows.append(dict(exp="K1", cell=f"{dn}|{kind}|r=32", metric="low-rank rel. reconstruction error (median layer×head)",
+                         value=med(v), unit="fraction", kind="measured", status="ok", run_id=rid,
+                         source=os.path.join(big, "lowrank.csv")))
+    g = {}
+    for r in csv.DictReader(open(os.path.join(d, "xlayer.csv"))):
+        if r["head"] != "all":
+            g.setdefault((r["dump"], r["kind"]), []).append(float(r["p50"]))
+    for (dn, kind), v in sorted(g.items()):
+        rows.append(dict(exp="K1", cell=f"{dn}|{kind}|l vs l+1", metric="cross-layer cosine p50 (median over layer×head)",
+                         value=med(v), unit="cosine", kind="measured", status="ok", run_id=rid,
+                         source=rel(os.path.join(d, "xlayer.csv"))))
+    g = {}
+    for r in csv.DictReader(open(os.path.join(big, "adjtok.csv"))):
+        if r["head"] != "all":
+            g.setdefault((r["dump"], r["kind"]), []).append(float(r["frac_ge_0.9"]))
+    for (dn, kind), v in sorted(g.items()):
+        rows.append(dict(exp="K1", cell=f"{dn}|{kind}|t vs t+1", metric="adjacent-token cosine >=0.9 fraction (median)",
+                         value=med(v), unit="fraction", kind="measured", status="ok", run_id=rid,
+                         source=os.path.join(big, "adjtok.csv")))
+    return rows
+
+
+def c1a():
+    """C1a：tables_c1a.md 的 T2–T4 列（recall@16 − 隨機 k/63，95% CI）。"""
+    import re
+    rows = []
+    p = os.path.join(RES, "c1a_predictive/tables_c1a.md")
+    if not os.path.exists(p):
+        return rows
+    t = open(p).read()
+    rid = re.search(r"run：([^、；\n]+)", t).group(1)
+    for sec in re.split(r"\n## ", t)[1:]:
+        title = sec.split("\n")[0].strip()
+        if "T2-T4" not in title:
+            continue
+        for line in sec.split("\n"):
+            c = [x.strip() for x in line.split("|")[1:-1]]
+            if len(c) >= 3 and c[0] in ("SNAP", "EXPATT", "KNORM", "KEYDIFF", "H2O", "RND0", "QRY1", "QUEST_MEAN", "QUEST_MAX",
+                                        "FULLK_MEAN"):
+                rows.append(dict(exp="C1a", cell=f"{title}|{c[0]}", metric="recall@16 minus random (pct pts) [95% CI]",
+                                 value=c[1], unit="pct-pt", kind="measured", status="ok", run_id=rid, source=rel(p)))
+    return rows
+
+
+PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:

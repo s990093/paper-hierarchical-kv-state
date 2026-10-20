@@ -1,0 +1,88 @@
+{
+  "gpu": 0,
+  "started_clean": false,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_AT_START",
+  "intruders": [
+    {
+      "pid": 62266,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T08:48:11.249021+00:00",
+      "peak_mib": -1,
+      "n": 215
+    },
+    {
+      "pid": 64467,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T08:40:35.105272+00:00",
+      "peak_mib": -1,
+      "n": 73
+    },
+    {
+      "pid": 86083,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:10:12.897299+00:00",
+      "peak_mib": -1,
+      "n": 1749
+    },
+    {
+      "pid": 91753,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:10:12.897299+00:00",
+      "peak_mib": -1,
+      "n": 1749
+    },
+    {
+      "pid": 92121,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:10:12.897299+00:00",
+      "peak_mib": -1,
+      "n": 1749
+    },
+    {
+      "pid": 93340,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:07:10.194563+00:00",
+      "peak_mib": -1,
+      "n": 1692
+    },
+    {
+      "pid": 93733,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T09:55:21.736421+00:00",
+      "peak_mib": -1,
+      "n": 1471
+    },
+    {
+      "pid": 94129,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:10:12.897299+00:00",
+      "peak_mib": -1,
+      "n": 1749
+    },
+    {
+      "pid": 95775,
+      "first_seen": "2026-10-19T08:37:51.307356+00:00",
+      "peak_mib": 0,
+      "n": 1728,
+      "last_seen": "2026-10-19T10:10:12.897299+00:00"
+    },
+    {
+      "pid": 96607,
+      "first_seen": "2026-10-19T08:41:00.772496+00:00",
+      "peak_mib": 0,
+      "n": 1669,
+      "last_seen": "2026-10-19T10:10:12.897299+00:00"
+    },
+    {
+      "pid": 97043,
+      "first_seen": "2026-10-19T08:42:14.803822+00:00",
+      "peak_mib": 0,
+      "n": 1646,
+      "last_seen": "2026-10-19T10:10:12.897299+00:00"
+    }
+  ],
+  "n_dirty_samples": 1748,
+  "paused_intervals": [],
+  "discarded_samples_overlapping_pause": 0
+}

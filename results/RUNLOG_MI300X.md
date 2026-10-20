@@ -1134,3 +1134,119 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
     - 寫入時挑、和問題無關的 KEYDIFF 第 2 輪沒有更差：第 2 − 第 1，Llama T-25 是 +1.9，Qwen T-25／T-50 是 +4.5／+9.4。
 - 完整判讀（和文獻的對照、對 Tiara 動作空間「DROP」的意義）之後寫進 14 號的結果節和 08；D3 會量丟 block 之後的還原速度，現在在跑。
 - 這一節是 self-review，不是 cross-model review。
+
+### 15.21 14 號 D3、M2、M1 速度做完（10/20 05:30:32 → 09:34:38Z；只報告）
+
+- 階段：
+  - `44e3_d3_speed` 05:30:32 → 06:25:39Z，4 個 grid。
+  - `44e4_m2_fmt` 06:25:39 → 08:55:40Z，10 個 grid。
+  - `44e5_m1_unit` 08:55:40 → 09:34:38Z，6 個 grid。
+  - `44ez_md_report`：`m10_drop.py speed-report` 寫了 20 個目錄的表。
+- 全部兩張卡獨佔，20 個 run 全部 exit 0，沒有 CONTAMINATED。表在 `results/m10_match_mi300x/tables_speed_14.md`（只用 guard 全 CLEAN 的 run），數字在 `speed_14.json`。
+- 以下全部是 32K，數字是中位數（s），n＝10。
+- **D3：丟掉 block 之後的還原速度。丟哪裡比丟多少更重要。** 比值＝丟了以後／不丟。
+  - **慢的層＋Cake**（b32、b48、nfs，GPU 閒）：
+    - 丟前面（F）：
+      - 只要丟掉的範圍沒超過 Cake 的會合點，就省 0%。E0 在 b32、b48、nfs，以及 E1s 在 b48，F50 都是 1.00。
+      - 超過會合點才開始省。E1s b32 的會合點在第 18 塊，丟前 32 塊超過了，F50 是 0.68。
+    - 丟後面（B）：省得比丟掉的比例還多。B50 是 0.43–0.50。
+    - 隨機丟（R）：介於中間，R50 是 0.57–0.79。
+    - 原因：Cake 從前面算、從後面搬，慢的層卡在「搬」那一邊。前面的 block 本來就是 GPU 順手算掉的，丟了也不會比較快；丟後面才是直接少搬。
+    - 對 DS2 的意義：B 粒度的分數挑法丟的位置散在各處，實際省多少要看丟掉的 block 落在哪一側。
+  - **CPU 層＋全部載入**：丟多少就省多少，和位置無關。25% 約 0.75，50% 約 0.51–0.54。
+  - **CPU 層＋Cake、GPU 忙、E1s**：丟了幾乎不省（0.93–1.00），全部載入照樣省一半。
+  - 數字（Llama E1s b32 閒）：不丟 0.663，F50 0.449，B50 0.332，R50 0.379。
+- **M2：用格式去配慢的層**（E1s＋Cake，GPU 閒，s；融合 X kernel）：
+  - Llama：
+
+    | 格式 | b32 | b48 | nfs |
+    |:--|--:|--:|--:|
+    | FP8（主線） | 0.944 | 1.869 | 2.067 |
+    | int4_kivi | 0.666 | 1.474 | 1.671 |
+    | mxfp4 | 0.582 | 1.338 | 1.536 |
+    | K4V2 | 0.574 | 1.306 | 1.489 |
+    | int2_kivi | 0.450 | 1.103 | 1.259 |
+
+  - Qwen（fp8_head／int4／mxfp4／K4V2／int2）：
+    - b32：0.762／0.555／0.517／0.480／0.378。
+    - nfs：1.264／0.972／0.880／0.839／0.711。
+  - 位元越少越快，每一層都一樣。mxfp4 和 int4_kivi 一樣是 4 位元，但在 b32 以上 mxfp4 快 7–13%。
+  - 這節只有速度。各格式的品質在 08、11，ε 要用那邊的結果。
+- **M1：還原單位 512／256／128**（E1s＋Cake）：
+  - 單位切小，幾乎每一格都更慢。E0 最明顯：Llama b48 閒 2.39 → 3.22 → 4.42。
+  - 例外：Llama b16 忙 u128 0.264 比 u512 0.317 快；Llama CPU 閒 u256 0.057 比 u512 0.064 快。
+  - 結論：512 仍是最好的單位。切細讓會合點更準，但多出的每塊固定成本更大。
+- 判讀（和 DS2 品質放一起、和 Cake 論文的對照）之後寫進 14 號結果節和 08。這節是 self-review。
+
+### 15.22 70（vLLM TTFT）、75（vLLM RULER CWE）做完；60、88 改到 main 同時跑；70 補一次有 guard 的重量（90）（10/20 09:34 → 09:5xZ）
+
+- **70** `70_vllm_ttft` 09:34:38 → 09:43:44Z（兩張卡獨佔；helper 05:01:23 讓出、09:43:46 才接回）。
+  - run：`20261020-093438-m10-vllm-llama-default`、`-093751-…-llama-512`、`-094008-…-qwen-default`、`-094137-…-qwen-512`，全部 exit 0。
+  - 產出：`results/m10_precision_mi300x/vllm_ttft/{vllm_ttft.csv,vllm_meta.json}`。
+  - 只算的 TTFT 中位數（s），8K／16K／32K：
+
+    | 模型 | 預設切法（16384） | 512 切法 |
+    |:--|:--|:--|
+    | Llama | 0.322／0.790／2.185 | 0.514／1.408／4.196 |
+    | Qwen（noDCA） | 0.286／0.684／1.803 | 0.472／1.250／3.727 |
+
+  - 對照 harness 的只算（15.21 M2 的參考線，32K、GPU 閒）：Llama 3.64、Qwen 3.10。
+    - 比預設 vLLM 慢 1.66 倍（Llama）、1.72 倍（Qwen），落在 03 §5.2 原本寫的「1.7–2 倍」。
+    - 比 vLLM 的 512 切法快（0.87 倍、0.83 倍）。
+  - ⚠️ **這次沒有 gpu_guard 紀錄**：`m10_vllm_ttft.py` 本身沒開 guard。
+    - 獨佔是由佇列保證的：WANT_BOTH＋兩把鎖、helper 已讓出、第三階段在等。但乾淨與否沒有量測紀錄。
+    - 所以這張表**先當未驗證**，用 90 的重量取代。
+- **75** `75_ruler_cwe_vllm` 09:43:44 → 09:49:19Z。
+  - run `20261020-094344-m10-cwe-vllm`，exit 0。產出 `results/m10_precision_mi300x/ruler_cwe_vllm/`。
+  - 結果：vLLM 0.28 跑同一份上游 RULER CWE jsonl（Llama、32K、30 題），up_raw（加 BOS）**1.0%**、up_nobos **6.0%**，和 10/15 在 HF transformers 量到的 1.0%／6.0% 相同。
+  - 所以 cards/V2 ❌ 那列的矛盾（低於 RULER 論文換算的下限 8.2%）**不是推論框架造成的**（HF 和 vLLM 一樣）。剩下的可能是 RULER 程式版本或硬體／ROCm，或論文本身。V2 那列之後照這個補。
+- **60、88 改到 main 同時跑**（`queue/60_88_quality_both.sh`，09:52:19Z 開始）：
+  - 原因：main 的佇列做完了，helper 還卡在 55 的最後一個長 job（f8m-qwen-T1）。照原本的順序 60、88 要等它，兩張卡大多空著（規則：GPU 不要空著）。
+  - 做法：兩段的內容沒改，原檔移到 `jobs/parts/`。由 main 開兩個 pool 同時跑，共用顯存帳；main 的佇列有東西時，helper 的 pool 不會再把新 job 放到卡 1。
+  - 兩段都只量分數，時間欄不用。repo 副本在 `code/m10_queue_mi300x/queue/`。
+- **90 `90_vllm_ttft_guarded.sh`**（排在 60_88 之後，兩張卡獨佔）：
+  - 指令和 70 相同，外面多包一層新的 `code/m10_guarded_run.py`：被包的指令是 guard 的子行程，算自己人；兩張卡各寫一份 guard 報告；被污染 → 結束碼 3、run 目錄留 CONTAMINATED。輸出到 `vllm_ttft_guarded/`。
+  - 冒煙：兩張卡都有別的品質 job 時，包住 `sleep 3`，兩張卡都判 CONTAMINATED_AT_START、結束碼 3，偵測正常。
+
+### 15.23 卡 0 空著 → i4e-qwen-T1 搬到卡 0 續跑（10/20 13:01 → 13:04Z）
+
+- 13:01Z 時卡 0 是 0%，剩下的 4 個 job 都在卡 1：60_88 的 i4e-qwen-T1、i4m-qwen-T1、i4e-llama-T1，加上 55 的 f8m-qwen-T1。
+  - 原因：pool 只在開跑時挑卡（看當時的空間），之後不會搬。卡 0 上的 job 先做完了。
+- 處置：
+  1. 先把 `90_vllm_ttft_guarded.sh` 移到 `jobs/parts/`，避免它在續跑的 job 還在卡 0 時開始量時間。
+  2. 13:03:02Z 停掉卡 1 上的 i4e-qwen-T1（pool 記 `FAILED i4e-qwen-T1 rc=143`，是我停的）。
+     - 停之前 `int4end_qwen_T1.csv` 有 130 題 × 21 列＝2730 列，每題都完整，最後一行是整行。
+     - 所以照 m10_quality 的續跑（跳過已完成的題）不會漏、不會重複。
+  3. 13:03:36Z 用 `pool.py jobs_88r.json`（ROLE=main、TIARA_GPU=0）在卡 0 續跑：同一個指令、同一個輸出檔，run `20261020-130336-m10-i4e-qwen-T1r`，有登記顯存帳。
+  4. `jobs/parts/restore90.sh` 等它結束：成功 → 把 90 放回 queue/；失敗 → 寫 NEEDS_HUMAN。
+- 88 的 pool 等其他 job 做完時會因為那筆 rc=143 回報失敗，寫一行 NEEDS_HUMAN。那行是預期中的，處理時移到 .handled。
+- 只量分數，時間欄不用。
+
+### 15.24 vLLM TTFT 有 guard 的重量：90 → 91 → 92，四組都有 CLEAN 的量測；第二階段佇列清空（10/20 13:44:37 → 13:59:17Z）
+
+- **90**（外包 guard，`m10_guarded_run.py`）：四組都判 CONTAMINATED_DURING_RUN，不採用。
+  - 每組都只有卡 1 的最後 1–2 次取樣被標，都在最後一筆量測之後、vLLM 關 engine 的時候。
+    - 例：llama-default 最後一列 13:46:04，同一秒開始關 engine；被標的取樣在 13:46:07–09，VRAM 157 GB＝vLLM 自己的配置。
+  - 是 09-15 那種收尾假污染：VRAM 還在、kfd 已關。卡 0 全 CLEAN。照規則判污染、不改判。
+- **91**（`m10_vllm_ttft.py --guard-gpus 0 1`：guard 在程式裡，從開 engine 前到最後一次量完）：
+  - llama-default、qwen-default、qwen-512 兩張卡都 CLEAN。
+  - llama-512 卡 1 判污染：被標的是自己的 EngineCore（pid 472683），13:53:03 還在載入權重，第一筆量測是 13:53:30。
+    - 原因：`gpu_guard.foreign_on` 先算「自己人」（子孫行程）、後列行程。列行程要幾百 ms，中間剛 spawn 的子行程在清單裡、卻不在自己人裡。
+    - 已修成列完行程才算自己人（`0d3be58`；`test_gpu_guard_slurm.py` 9 項照過）。後算不會把外人算成自己人。
+    - 這個 bug 只會多報，所以之前判 CLEAN 的量測不受影響。
+  - 另外看到：vLLM 改行程名（`VLLM::EngineCore`）時蓋掉了 /proc/<pid>/environ，`_holder_gpu` 讀不到用哪張卡 → 從別的行程看，會兩張卡都算它（偏向報污染，規則 7）。程式內 guard 會把它當自己人，所以不影響。
+- **92**：只重量 91 沒全 CLEAN 的 llama-512 → 兩張卡都 CLEAN。
+- **採用的表**（全部兩張卡 CLEAN；中位數，s，6 次，另 2 次暖機）：
+
+  | 模型 | 切法 | 8K | 16K | 32K | run |
+  |:--|:--|--:|--:|--:|:--|
+  | Llama | 預設（16384） | 0.321 | 0.791 | 2.182 | `20261020-135103-m10-vllmg2-llama-default` |
+  | Llama | 512 | 0.516 | 1.387 | 4.182 | `20261020-135728-m10-vllmg3-llama-512` |
+  | Qwen（noDCA） | 預設（16384） | 0.287 | 0.684 | 1.802 | `20261020-135421-m10-vllmg2-qwen-default` |
+  | Qwen（noDCA） | 512 | 0.474 | 1.248 | 3.720 | `20261020-135545-m10-vllmg2-qwen-512` |
+
+  - 產出：`results/m10_precision_mi300x/vllm_ttft_guarded2/`（3 組）＋`vllm_ttft_guarded3/`（llama-512）。
+  - 70（沒 guard）和 90（判污染）的數字和這張表差不到 1%，但都不採用。
+  - harness 只算（15.21，32K，GPU 閒）Llama 3.64、Qwen 3.10 → 比預設 vLLM 慢 1.67 倍、1.72 倍；比 512 切法快（0.87 倍、0.83 倍）。和 15.22 的判讀相同，現在有 guard 紀錄。
+- 第二階段的兩個佇列（queue/、queue_g0/）在 13:59:17Z 全部清空，沒有 WANT_BOTH。已通知第三階段 session。
+- NEEDS_HUMAN 的 90、91 共 5 行，已移到 .handled，處置就是上面這些。

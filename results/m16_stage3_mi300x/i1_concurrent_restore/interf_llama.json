@@ -1,0 +1,74 @@
+{
+ "run_id": "20261020-143616-m16-i1-interf",
+ "contaminated": false,
+ "host_level": "UNOBSERVABLE_HOST",
+ "seconds": 6.0,
+ "summary": {
+  "idle|rec|both": {
+   "k_median": 1.0627,
+   "k_q1q3": [
+    1.0565,
+    1.0695
+   ],
+   "solo_drift_median": 0.998,
+   "n_pos": 64
+  },
+  "idle|h2d|both": {
+   "k_median": 1.0211,
+   "k_q1q3": [
+    1.019,
+    1.0234
+   ],
+   "solo_drift_median": 1.0001,
+   "n_pos": 64
+  },
+  "idle|dec|both_d": {
+   "k_median": 1.0551,
+   "k_q1q3": null,
+   "solo_drift_median": 1.0008,
+   "n_pos": 1
+  },
+  "idle|h2d|both_d": {
+   "k_median": 1.003,
+   "k_q1q3": [
+    1.0017,
+    1.0039
+   ],
+   "solo_drift_median": 1.0001,
+   "n_pos": 64
+  },
+  "busy2|rec|both": {
+   "k_median": 1.047,
+   "k_q1q3": [
+    1.0123,
+    1.1196
+   ],
+   "solo_drift_median": 1.0025,
+   "n_pos": 50
+  },
+  "busy2|h2d|both": {
+   "k_median": 0.9439,
+   "k_q1q3": [
+    0.8892,
+    1.0075
+   ],
+   "solo_drift_median": 1.0021,
+   "n_pos": 64
+  },
+  "busy2|dec|both_d": {
+   "k_median": 1.0396,
+   "k_q1q3": null,
+   "solo_drift_median": 1.0148,
+   "n_pos": 1
+  },
+  "busy2|h2d|both_d": {
+   "k_median": 0.8444,
+   "k_q1q3": [
+    0.8292,
+    0.8797
+   ],
+   "solo_drift_median": 1.0021,
+   "n_pos": 64
+  }
+ }
+}

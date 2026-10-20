@@ -259,6 +259,684 @@ I1-pred,mix_len|N=8|busy2|load+50%,ttft_p95 gain per-request best vs rr×cake,0.
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_p95 gain joint vs per-request best,-0.2435,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_mean gain per-request best vs rr×cake,0.2317,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_mean gain joint vs per-request best,-0.3288,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
+I1-interf,idle|rec|both,concurrent/solo (median),1.0627,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-interf,idle|h2d|both,concurrent/solo (median),1.0211,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-interf,idle|dec|both_d,concurrent/solo (median),1.0551,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-interf,idle|h2d|both_d,concurrent/solo (median),1.003,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-interf,busy2|rec|both,concurrent/solo (median),1.047,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-interf,busy2|h2d|both,concurrent/solo (median),0.9439,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-interf,busy2|dec|both_d,concurrent/solo (median),1.0396,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-interf,busy2|h2d|both_d,concurrent/solo (median),0.8444,ratio,measured,ok,20261020-143616-m16-i1-interf,results/m16_stage3_mi300x/i1_concurrent_restore/interf_llama.json
+I1-grid,idle|homog_cpu|1|cake|rr,measured/predicted mean TTFT (median of reps),1.0448,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|1|cake|rr,mean TTFT (median of reps),0.17119,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|cake|rr,measured/predicted mean TTFT (median of reps),1.0502,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|cake|rr,mean TTFT (median of reps),0.53739,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|cake|fcfs,measured/predicted mean TTFT (median of reps),0.9803,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|cake|fcfs,mean TTFT (median of reps),0.29249,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|cake|srpt,measured/predicted mean TTFT (median of reps),0.9811,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|cake|srpt,mean TTFT (median of reps),0.29274,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|g5b|rr,measured/predicted mean TTFT (median of reps),0.9758,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|g5b|rr,mean TTFT (median of reps),0.51446,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|g5b|fcfs,measured/predicted mean TTFT (median of reps),0.9881,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|g5b|fcfs,mean TTFT (median of reps),0.28616,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|g5b|srpt,measured/predicted mean TTFT (median of reps),0.9868,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|g5b|srpt,mean TTFT (median of reps),0.28576,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|joint|rr,measured/predicted mean TTFT (median of reps),0.9776,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|joint|rr,mean TTFT (median of reps),0.51542,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|joint|fcfs,measured/predicted mean TTFT (median of reps),0.9886,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|joint|fcfs,mean TTFT (median of reps),0.28628,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|joint|srpt,measured/predicted mean TTFT (median of reps),0.989,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|4|joint|srpt,mean TTFT (median of reps),0.28641,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|cake|rr,measured/predicted mean TTFT (median of reps),1.0223,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|cake|rr,mean TTFT (median of reps),1.00771,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|cake|fcfs,measured/predicted mean TTFT (median of reps),0.9909,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|cake|fcfs,mean TTFT (median of reps),0.46633,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|cake|srpt,measured/predicted mean TTFT (median of reps),0.9908,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|cake|srpt,mean TTFT (median of reps),0.46628,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|g5b|rr,measured/predicted mean TTFT (median of reps),0.9737,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|g5b|rr,mean TTFT (median of reps),0.98875,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|g5b|fcfs,measured/predicted mean TTFT (median of reps),0.9799,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|g5b|fcfs,mean TTFT (median of reps),0.45166,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|g5b|srpt,measured/predicted mean TTFT (median of reps),0.9789,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|g5b|srpt,mean TTFT (median of reps),0.45118,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|joint|rr,measured/predicted mean TTFT (median of reps),0.9734,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|joint|rr,mean TTFT (median of reps),0.98841,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|joint|fcfs,measured/predicted mean TTFT (median of reps),0.9799,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|joint|fcfs,mean TTFT (median of reps),0.45165,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|joint|srpt,measured/predicted mean TTFT (median of reps),0.9802,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_cpu|8|joint|srpt,mean TTFT (median of reps),0.4518,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|1|cake|rr,measured/predicted mean TTFT (median of reps),1.0046,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|1|cake|rr,mean TTFT (median of reps),1.44724,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|cake|rr,measured/predicted mean TTFT (median of reps),1.0146,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|cake|rr,mean TTFT (median of reps),5.61677,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|cake|fcfs,measured/predicted mean TTFT (median of reps),1.0027,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|cake|fcfs,mean TTFT (median of reps),3.56196,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|cake|srpt,measured/predicted mean TTFT (median of reps),1.0041,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|cake|srpt,mean TTFT (median of reps),3.56697,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|g5b|rr,measured/predicted mean TTFT (median of reps),1.0052,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|g5b|rr,mean TTFT (median of reps),5.56483,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|g5b|fcfs,measured/predicted mean TTFT (median of reps),1.0031,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|g5b|fcfs,mean TTFT (median of reps),3.56358,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|g5b|srpt,measured/predicted mean TTFT (median of reps),1.0023,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|g5b|srpt,mean TTFT (median of reps),3.56073,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|joint|rr,measured/predicted mean TTFT (median of reps),1.0026,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|joint|rr,mean TTFT (median of reps),6.57751,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|joint|fcfs,measured/predicted mean TTFT (median of reps),1.0005,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|joint|fcfs,mean TTFT (median of reps),4.95973,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|joint|srpt,measured/predicted mean TTFT (median of reps),1.0036,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|4|joint|srpt,mean TTFT (median of reps),4.9751,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|cake|rr,measured/predicted mean TTFT (median of reps),1.0086,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|cake|rr,mean TTFT (median of reps),11.10845,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|cake|fcfs,measured/predicted mean TTFT (median of reps),1.0069,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|cake|fcfs,mean TTFT (median of reps),6.3928,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|cake|srpt,measured/predicted mean TTFT (median of reps),1.0091,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|cake|srpt,mean TTFT (median of reps),6.40636,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|g5b|rr,measured/predicted mean TTFT (median of reps),1.0076,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|g5b|rr,mean TTFT (median of reps),11.09732,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|g5b|fcfs,measured/predicted mean TTFT (median of reps),1.0041,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|g5b|fcfs,mean TTFT (median of reps),6.37498,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|g5b|srpt,measured/predicted mean TTFT (median of reps),1.0047,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|g5b|srpt,mean TTFT (median of reps),6.37898,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|joint|rr,measured/predicted mean TTFT (median of reps),1.0041,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|joint|rr,mean TTFT (median of reps),12.75079,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|joint|fcfs,measured/predicted mean TTFT (median of reps),1.0025,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|joint|fcfs,mean TTFT (median of reps),8.06039,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|joint|srpt,measured/predicted mean TTFT (median of reps),1.0052,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|homog_b32|8|joint|srpt,mean TTFT (median of reps),8.082,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|1|cake|rr,measured/predicted mean TTFT (median of reps),1.0464,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|1|cake|rr,mean TTFT (median of reps),0.17146,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|cake|rr,measured/predicted mean TTFT (median of reps),1.0301,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|cake|rr,mean TTFT (median of reps),1.64722,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|cake|fcfs,measured/predicted mean TTFT (median of reps),1.0073,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|cake|fcfs,mean TTFT (median of reps),1.24696,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|cake|srpt,measured/predicted mean TTFT (median of reps),0.9981,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|cake|srpt,mean TTFT (median of reps),1.24364,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|g5b|rr,measured/predicted mean TTFT (median of reps),1.0021,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|g5b|rr,mean TTFT (median of reps),1.61735,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|g5b|fcfs,measured/predicted mean TTFT (median of reps),1.0041,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|g5b|fcfs,mean TTFT (median of reps),1.22709,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|g5b|srpt,measured/predicted mean TTFT (median of reps),1.0026,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|g5b|srpt,mean TTFT (median of reps),1.22535,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|joint|rr,measured/predicted mean TTFT (median of reps),1.0103,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|joint|rr,mean TTFT (median of reps),1.87051,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|joint|fcfs,measured/predicted mean TTFT (median of reps),1.0064,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|joint|fcfs,mean TTFT (median of reps),1.82242,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|joint|srpt,measured/predicted mean TTFT (median of reps),1.0054,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|4|joint|srpt,mean TTFT (median of reps),1.82069,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|cake|rr,measured/predicted mean TTFT (median of reps),1.0123,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|cake|rr,mean TTFT (median of reps),3.19232,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|cake|fcfs,measured/predicted mean TTFT (median of reps),1.0118,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|cake|fcfs,mean TTFT (median of reps),2.03385,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|cake|srpt,measured/predicted mean TTFT (median of reps),1.0134,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|cake|srpt,mean TTFT (median of reps),2.0418,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|g5b|rr,measured/predicted mean TTFT (median of reps),1.0053,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|g5b|rr,mean TTFT (median of reps),3.15027,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|g5b|fcfs,measured/predicted mean TTFT (median of reps),1.0105,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|g5b|fcfs,mean TTFT (median of reps),2.01492,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|g5b|srpt,measured/predicted mean TTFT (median of reps),1.0142,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|g5b|srpt,mean TTFT (median of reps),2.02237,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|joint|rr,measured/predicted mean TTFT (median of reps),1.0066,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|joint|rr,mean TTFT (median of reps),3.66016,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|joint|fcfs,measured/predicted mean TTFT (median of reps),1.0092,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|joint|fcfs,mean TTFT (median of reps),2.7299,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|joint|srpt,measured/predicted mean TTFT (median of reps),1.0123,ratio,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+I1-grid,idle|mix_cpu_b32|8|joint|srpt,mean TTFT (median of reps),2.7384,s,measured,ok,20261020-143840-m16-i1-grid,results/m16_stage3_mi300x/i1_concurrent_restore/grid_llama.csv
+S1,llama_T4_64|all|bytes2|zlib:1,lossless ratio vs BF16,1.3945,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2|zlib:6,lossless ratio vs BF16,1.4332,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2|zstd:-3,lossless ratio vs BF16,1.1568,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2|zstd:1,lossless ratio vs BF16,1.4706,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2|zstd:3,lossless ratio vs BF16,1.4122,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2hi|zlib:1,lossless ratio vs BF16,1.3856,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2hi|zlib:6,lossless ratio vs BF16,1.4233,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2hi|zstd:-3,lossless ratio vs BF16,1.1512,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2hi|zstd:1,lossless ratio vs BF16,1.4612,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|bytes2hi|zstd:3,lossless ratio vs BF16,1.4038,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes|zlib:1,lossless ratio vs BF16,1.4018,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes|zlib:6,lossless ratio vs BF16,1.4447,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes|zstd:-3,lossless ratio vs BF16,1.1857,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes|zstd:1,lossless ratio vs BF16,1.474,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes|zstd:3,lossless ratio vs BF16,1.4207,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes_e|zlib:1,lossless ratio vs BF16,1.3928,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes_e|zlib:6,lossless ratio vs BF16,1.4347,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes_e|zstd:-3,lossless ratio vs BF16,1.1798,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes_e|zstd:1,lossless ratio vs BF16,1.4646,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|planes_e|zstd:3,lossless ratio vs BF16,1.4121,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|raw|zlib:1,lossless ratio vs BF16,1.2521,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|raw|zlib:6,lossless ratio vs BF16,1.265,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|raw|zstd:-3,lossless ratio vs BF16,1.0089,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|raw|zstd:1,lossless ratio vs BF16,1.2871,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|all|raw|zstd:3,lossless ratio vs BF16,1.2872,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|entropy,ideal order-0 ratio (planes),1.4339,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:-3|t1,decompress throughput,1390.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:-3|t4,decompress throughput,1725.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:-3|t8,decompress throughput,1807.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:-3|t16,decompress throughput,1798.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:1|t1,decompress throughput,610.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:1|t4,decompress throughput,1056.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:1|t8,decompress throughput,1091.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zstd:1|t16,decompress throughput,1519.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zlib:1|t1,decompress throughput,179.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zlib:1|t4,decompress throughput,473.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zlib:1|t8,decompress throughput,646.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|raw|zlib:1|t16,decompress throughput,1164.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:-3|t1,decompress throughput,756.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:-3|t4,decompress throughput,1223.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:-3|t8,decompress throughput,1308.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:-3|t16,decompress throughput,1314.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:1|t1,decompress throughput,689.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:1|t4,decompress throughput,1259.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:1|t8,decompress throughput,1287.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zstd:1|t16,decompress throughput,973.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zlib:1|t1,decompress throughput,275.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zlib:1|t4,decompress throughput,580.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zlib:1|t8,decompress throughput,714.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2|zlib:1|t16,decompress throughput,1109.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:-3|t1,decompress throughput,945.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:-3|t4,decompress throughput,1290.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:-3|t8,decompress throughput,1382.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:-3|t16,decompress throughput,1383.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:1|t1,decompress throughput,725.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:1|t4,decompress throughput,1307.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:1|t8,decompress throughput,1993.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zstd:1|t16,decompress throughput,2004.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zlib:1|t1,decompress throughput,401.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zlib:1|t4,decompress throughput,815.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zlib:1|t8,decompress throughput,1065.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|bytes2hi|zlib:1|t16,decompress throughput,1061.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:-3|t1,decompress throughput,576.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:-3|t4,decompress throughput,813.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:-3|t8,decompress throughput,833.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:-3|t16,decompress throughput,695.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:1|t1,decompress throughput,540.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:1|t4,decompress throughput,822.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:1|t8,decompress throughput,812.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zstd:1|t16,decompress throughput,819.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zlib:1|t1,decompress throughput,255.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zlib:1|t4,decompress throughput,421.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zlib:1|t8,decompress throughput,490.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes|zlib:1|t16,decompress throughput,639.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:-3|t1,decompress throughput,592.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:-3|t4,decompress throughput,839.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:-3|t8,decompress throughput,1110.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:-3|t16,decompress throughput,1112.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:1|t1,decompress throughput,683.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:1|t4,decompress throughput,1079.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:1|t8,decompress throughput,1091.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zstd:1|t16,decompress throughput,1090.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zlib:1|t1,decompress throughput,372.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zlib:1|t4,decompress throughput,678.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zlib:1|t8,decompress throughput,985.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_64|planes_e|zlib:1|t16,decompress throughput,987.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2|zlib:1,lossless ratio vs BF16,1.4619,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2|zlib:6,lossless ratio vs BF16,1.6253,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2|zstd:-3,lossless ratio vs BF16,1.4342,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2|zstd:1,lossless ratio vs BF16,1.6702,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2|zstd:3,lossless ratio vs BF16,1.6188,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2hi|zlib:1,lossless ratio vs BF16,1.4371,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2hi|zlib:6,lossless ratio vs BF16,1.594,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2hi|zstd:-3,lossless ratio vs BF16,1.4132,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2hi|zstd:1,lossless ratio vs BF16,1.6409,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|bytes2hi|zstd:3,lossless ratio vs BF16,1.5907,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes|zlib:1,lossless ratio vs BF16,1.4622,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes|zlib:6,lossless ratio vs BF16,1.5814,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes|zstd:-3,lossless ratio vs BF16,1.3788,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes|zstd:1,lossless ratio vs BF16,1.6167,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes|zstd:3,lossless ratio vs BF16,1.5666,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes_e|zlib:1,lossless ratio vs BF16,1.4374,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes_e|zlib:6,lossless ratio vs BF16,1.5518,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes_e|zstd:-3,lossless ratio vs BF16,1.3595,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes_e|zstd:1,lossless ratio vs BF16,1.5893,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|planes_e|zstd:3,lossless ratio vs BF16,1.5403,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|raw|zlib:1,lossless ratio vs BF16,1.2789,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|raw|zlib:6,lossless ratio vs BF16,1.2943,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|raw|zstd:-3,lossless ratio vs BF16,1.0272,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|raw|zstd:1,lossless ratio vs BF16,1.3143,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|all|raw|zstd:3,lossless ratio vs BF16,1.3188,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|entropy,ideal order-0 ratio (planes),1.4261,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:-3|t1,decompress throughput,1628.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:-3|t4,decompress throughput,1746.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:-3|t8,decompress throughput,1726.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:-3|t16,decompress throughput,1789.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:1|t1,decompress throughput,586.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:1|t4,decompress throughput,1021.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:1|t8,decompress throughput,1003.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zstd:1|t16,decompress throughput,1507.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zlib:1|t1,decompress throughput,179.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zlib:1|t4,decompress throughput,466.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zlib:1|t8,decompress throughput,637.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|raw|zlib:1|t16,decompress throughput,1151.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:-3|t1,decompress throughput,745.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:-3|t4,decompress throughput,1196.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:-3|t8,decompress throughput,1290.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:-3|t16,decompress throughput,1300.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:1|t1,decompress throughput,709.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:1|t4,decompress throughput,1261.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:1|t8,decompress throughput,1257.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zstd:1|t16,decompress throughput,1267.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zlib:1|t1,decompress throughput,281.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zlib:1|t4,decompress throughput,589.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zlib:1|t8,decompress throughput,730.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2|zlib:1|t16,decompress throughput,1118.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:-3|t1,decompress throughput,936.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:-3|t4,decompress throughput,1481.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:-3|t8,decompress throughput,2048.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:-3|t16,decompress throughput,2044.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:1|t1,decompress throughput,894.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:1|t4,decompress throughput,1562.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:1|t8,decompress throughput,1963.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zstd:1|t16,decompress throughput,1943.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zlib:1|t1,decompress throughput,428.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zlib:1|t4,decompress throughput,838.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zlib:1|t8,decompress throughput,1092.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|bytes2hi|zlib:1|t16,decompress throughput,1100.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:-3|t1,decompress throughput,565.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:-3|t4,decompress throughput,744.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:-3|t8,decompress throughput,810.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:-3|t16,decompress throughput,823.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:1|t1,decompress throughput,544.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:1|t4,decompress throughput,749.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:1|t8,decompress throughput,799.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zstd:1|t16,decompress throughput,811.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zlib:1|t1,decompress throughput,258.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zlib:1|t4,decompress throughput,480.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zlib:1|t8,decompress throughput,564.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes|zlib:1|t16,decompress throughput,751.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:-3|t1,decompress throughput,716.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:-3|t4,decompress throughput,1020.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:-3|t8,decompress throughput,1086.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:-3|t16,decompress throughput,1089.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:1|t1,decompress throughput,677.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:1|t4,decompress throughput,986.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:1|t8,decompress throughput,1066.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zstd:1|t16,decompress throughput,1056.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zlib:1|t1,decompress throughput,383.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zlib:1|t4,decompress throughput,687.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zlib:1|t8,decompress throughput,902.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T2_64|planes_e|zlib:1|t16,decompress throughput,909.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2|zlib:1,lossless ratio vs BF16,1.3966,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2|zlib:6,lossless ratio vs BF16,1.4372,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2|zstd:-3,lossless ratio vs BF16,1.1573,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2|zstd:1,lossless ratio vs BF16,1.474,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2|zstd:3,lossless ratio vs BF16,1.4163,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2hi|zlib:1,lossless ratio vs BF16,1.3857,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2hi|zlib:6,lossless ratio vs BF16,1.4251,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2hi|zstd:-3,lossless ratio vs BF16,1.1504,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2hi|zstd:1,lossless ratio vs BF16,1.4624,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|bytes2hi|zstd:3,lossless ratio vs BF16,1.4057,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes|zlib:1,lossless ratio vs BF16,1.4032,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes|zlib:6,lossless ratio vs BF16,1.4465,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes|zstd:-3,lossless ratio vs BF16,1.1814,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes|zstd:1,lossless ratio vs BF16,1.4764,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes|zstd:3,lossless ratio vs BF16,1.4227,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes_e|zlib:1,lossless ratio vs BF16,1.3921,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes_e|zlib:6,lossless ratio vs BF16,1.4342,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes_e|zstd:-3,lossless ratio vs BF16,1.1743,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes_e|zstd:1,lossless ratio vs BF16,1.4648,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|planes_e|zstd:3,lossless ratio vs BF16,1.412,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|raw|zlib:1,lossless ratio vs BF16,1.2528,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|raw|zlib:6,lossless ratio vs BF16,1.2663,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|raw|zstd:-3,lossless ratio vs BF16,1.0115,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|raw|zstd:1,lossless ratio vs BF16,1.2874,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|all|raw|zstd:3,lossless ratio vs BF16,1.2881,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|entropy,ideal order-0 ratio (planes),1.4593,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:-3|t1,decompress throughput,7266.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:-3|t4,decompress throughput,8693.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:-3|t8,decompress throughput,8740.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:-3|t16,decompress throughput,8182.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:1|t1,decompress throughput,1213.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:1|t4,decompress throughput,2686.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:1|t8,decompress throughput,5598.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zstd:1|t16,decompress throughput,5554.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zlib:1|t1,decompress throughput,213.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zlib:1|t4,decompress throughput,704.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zlib:1|t8,decompress throughput,1316.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|raw|zlib:1|t16,decompress throughput,1316.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:-3|t1,decompress throughput,909.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:-3|t4,decompress throughput,1664.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:-3|t8,decompress throughput,1222.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:-3|t16,decompress throughput,1225.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:1|t1,decompress throughput,812.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:1|t4,decompress throughput,2098.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:1|t8,decompress throughput,1044.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zstd:1|t16,decompress throughput,944.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zlib:1|t1,decompress throughput,295.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zlib:1|t4,decompress throughput,664.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zlib:1|t8,decompress throughput,797.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2|zlib:1|t16,decompress throughput,797.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:-3|t1,decompress throughput,974.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:-3|t4,decompress throughput,1819.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:-3|t8,decompress throughput,1809.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:-3|t16,decompress throughput,1826.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:1|t1,decompress throughput,902.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:1|t4,decompress throughput,1264.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:1|t8,decompress throughput,1925.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zstd:1|t16,decompress throughput,1680.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zlib:1|t1,decompress throughput,413.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zlib:1|t4,decompress throughput,822.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zlib:1|t8,decompress throughput,822.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|bytes2hi|zlib:1|t16,decompress throughput,822.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:-3|t1,decompress throughput,979.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:-3|t4,decompress throughput,1403.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:-3|t8,decompress throughput,1389.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:-3|t16,decompress throughput,1319.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:1|t1,decompress throughput,904.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:1|t4,decompress throughput,1410.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:1|t8,decompress throughput,1148.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zstd:1|t16,decompress throughput,1168.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zlib:1|t1,decompress throughput,315.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zlib:1|t4,decompress throughput,729.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zlib:1|t8,decompress throughput,882.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes|zlib:1|t16,decompress throughput,884.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:-3|t1,decompress throughput,1066.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:-3|t4,decompress throughput,1530.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:-3|t8,decompress throughput,1528.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:-3|t16,decompress throughput,1522.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:1|t1,decompress throughput,980.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:1|t4,decompress throughput,1480.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:1|t8,decompress throughput,1409.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zstd:1|t16,decompress throughput,1491.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zlib:1|t1,decompress throughput,447.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zlib:1|t4,decompress throughput,921.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zlib:1|t8,decompress throughput,921.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_64|planes_e|zlib:1|t16,decompress throughput,922.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2|zlib:1,lossless ratio vs BF16,1.4867,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2|zlib:6,lossless ratio vs BF16,1.6727,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2|zstd:-3,lossless ratio vs BF16,1.4923,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2|zstd:1,lossless ratio vs BF16,1.7169,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2|zstd:3,lossless ratio vs BF16,1.6662,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2hi|zlib:1,lossless ratio vs BF16,1.4549,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2hi|zlib:6,lossless ratio vs BF16,1.6316,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2hi|zstd:-3,lossless ratio vs BF16,1.4642,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2hi|zstd:1,lossless ratio vs BF16,1.6781,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|bytes2hi|zstd:3,lossless ratio vs BF16,1.6283,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes|zlib:1,lossless ratio vs BF16,1.4836,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes|zlib:6,lossless ratio vs BF16,1.6221,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes|zstd:-3,lossless ratio vs BF16,1.4267,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes|zstd:1,lossless ratio vs BF16,1.66,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes|zstd:3,lossless ratio vs BF16,1.6099,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes_e|zlib:1,lossless ratio vs BF16,1.4518,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes_e|zlib:6,lossless ratio vs BF16,1.5834,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes_e|zstd:-3,lossless ratio vs BF16,1.4009,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes_e|zstd:1,lossless ratio vs BF16,1.6236,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|planes_e|zstd:3,lossless ratio vs BF16,1.5745,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|raw|zlib:1,lossless ratio vs BF16,1.2874,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|raw|zlib:6,lossless ratio vs BF16,1.3045,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|raw|zstd:-3,lossless ratio vs BF16,1.0356,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|raw|zstd:1,lossless ratio vs BF16,1.3248,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|all|raw|zstd:3,lossless ratio vs BF16,1.3311,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|entropy,ideal order-0 ratio (planes),1.4563,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:-3|t1,decompress throughput,6273.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:-3|t4,decompress throughput,7220.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:-3|t8,decompress throughput,7217.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:-3|t16,decompress throughput,7023.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:1|t1,decompress throughput,1199.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:1|t4,decompress throughput,2897.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:1|t8,decompress throughput,5545.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zstd:1|t16,decompress throughput,5519.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zlib:1|t1,decompress throughput,212.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zlib:1|t4,decompress throughput,697.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zlib:1|t8,decompress throughput,1305.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|raw|zlib:1|t16,decompress throughput,1306.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:-3|t1,decompress throughput,905.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:-3|t4,decompress throughput,1129.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:-3|t8,decompress throughput,1032.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:-3|t16,decompress throughput,1218.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:1|t1,decompress throughput,868.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:1|t4,decompress throughput,1081.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:1|t8,decompress throughput,881.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zstd:1|t16,decompress throughput,951.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zlib:1|t1,decompress throughput,307.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zlib:1|t4,decompress throughput,686.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zlib:1|t8,decompress throughput,818.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2|zlib:1|t16,decompress throughput,808.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:-3|t1,decompress throughput,977.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:-3|t4,decompress throughput,1234.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:-3|t8,decompress throughput,1203.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:-3|t16,decompress throughput,1210.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:1|t1,decompress throughput,938.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:1|t4,decompress throughput,986.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:1|t8,decompress throughput,1189.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zstd:1|t16,decompress throughput,1189.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zlib:1|t1,decompress throughput,443.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zlib:1|t4,decompress throughput,844.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zlib:1|t8,decompress throughput,844.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|bytes2hi|zlib:1|t16,decompress throughput,843.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:-3|t1,decompress throughput,946.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:-3|t4,decompress throughput,1335.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:-3|t8,decompress throughput,1198.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:-3|t16,decompress throughput,1190.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:1|t1,decompress throughput,894.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:1|t4,decompress throughput,1216.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:1|t8,decompress throughput,1024.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zstd:1|t16,decompress throughput,1016.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zlib:1|t1,decompress throughput,322.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zlib:1|t4,decompress throughput,748.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zlib:1|t8,decompress throughput,892.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes|zlib:1|t16,decompress throughput,897.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:-3|t1,decompress throughput,1026.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:-3|t4,decompress throughput,1290.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:-3|t8,decompress throughput,1290.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:-3|t16,decompress throughput,1464.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:1|t1,decompress throughput,961.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:1|t4,decompress throughput,1045.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:1|t8,decompress throughput,1063.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zstd:1|t16,decompress throughput,1099.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zlib:1|t1,decompress throughput,478.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zlib:1|t4,decompress throughput,934.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zlib:1|t8,decompress throughput,933.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T2_64|planes_e|zlib:1|t16,decompress throughput,934.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2|zlib:1,lossless ratio vs BF16,1.4283,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2|zlib:6,lossless ratio vs BF16,1.4725,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2|zstd:-3,lossless ratio vs BF16,1.1894,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2|zstd:1,lossless ratio vs BF16,1.5108,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2|zstd:3,lossless ratio vs BF16,1.4521,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2hi|zlib:1,lossless ratio vs BF16,1.3936,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2hi|zlib:6,lossless ratio vs BF16,1.4349,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2hi|zstd:-3,lossless ratio vs BF16,1.166,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2hi|zstd:1,lossless ratio vs BF16,1.472,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|bytes2hi|zstd:3,lossless ratio vs BF16,1.4163,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes|zlib:1,lossless ratio vs BF16,1.4366,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes|zlib:6,lossless ratio vs BF16,1.4831,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes|zstd:-3,lossless ratio vs BF16,1.2162,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes|zstd:1,lossless ratio vs BF16,1.5136,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes|zstd:3,lossless ratio vs BF16,1.4598,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes_e|zlib:1,lossless ratio vs BF16,1.4015,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes_e|zlib:6,lossless ratio vs BF16,1.445,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes_e|zstd:-3,lossless ratio vs BF16,1.1918,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes_e|zstd:1,lossless ratio vs BF16,1.4746,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|planes_e|zstd:3,lossless ratio vs BF16,1.4237,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|raw|zlib:1,lossless ratio vs BF16,1.2813,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|raw|zlib:6,lossless ratio vs BF16,1.2966,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|raw|zstd:-3,lossless ratio vs BF16,1.0365,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|raw|zstd:1,lossless ratio vs BF16,1.3237,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|all|raw|zstd:3,lossless ratio vs BF16,1.3242,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|entropy,ideal order-0 ratio (planes),1.4245,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:-3|t1,decompress throughput,6579.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:-3|t4,decompress throughput,10153.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:-3|t8,decompress throughput,9690.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:-3|t16,decompress throughput,9481.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:1|t1,decompress throughput,1157.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:1|t4,decompress throughput,3951.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:1|t8,decompress throughput,3874.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zstd:1|t16,decompress throughput,2261.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zlib:1|t1,decompress throughput,217.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zlib:1|t4,decompress throughput,801.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zlib:1|t8,decompress throughput,803.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|raw|zlib:1|t16,decompress throughput,803.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:-3|t1,decompress throughput,911.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:-3|t4,decompress throughput,861.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:-3|t8,decompress throughput,877.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:-3|t16,decompress throughput,879.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:1|t1,decompress throughput,848.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:1|t4,decompress throughput,719.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:1|t8,decompress throughput,720.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zstd:1|t16,decompress throughput,726.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zlib:1|t1,decompress throughput,295.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zlib:1|t4,decompress throughput,617.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zlib:1|t8,decompress throughput,617.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2|zlib:1|t16,decompress throughput,617.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:-3|t1,decompress throughput,973.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:-3|t4,decompress throughput,919.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:-3|t8,decompress throughput,910.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:-3|t16,decompress throughput,917.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:1|t1,decompress throughput,905.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:1|t4,decompress throughput,1101.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:1|t8,decompress throughput,1286.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zstd:1|t16,decompress throughput,1293.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zlib:1|t1,decompress throughput,415.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zlib:1|t4,decompress throughput,632.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zlib:1|t8,decompress throughput,632.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|bytes2hi|zlib:1|t16,decompress throughput,631.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:-3|t1,decompress throughput,862.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:-3|t4,decompress throughput,871.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:-3|t8,decompress throughput,854.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:-3|t16,decompress throughput,854.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:1|t1,decompress throughput,875.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:1|t4,decompress throughput,792.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:1|t8,decompress throughput,790.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zstd:1|t16,decompress throughput,793.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zlib:1|t1,decompress throughput,315.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zlib:1|t4,decompress throughput,683.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zlib:1|t8,decompress throughput,686.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes|zlib:1|t16,decompress throughput,684.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:-3|t1,decompress throughput,991.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:-3|t4,decompress throughput,1016.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:-3|t8,decompress throughput,1229.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:-3|t16,decompress throughput,1356.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:1|t1,decompress throughput,975.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:1|t4,decompress throughput,1190.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:1|t8,decompress throughput,1194.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zstd:1|t16,decompress throughput,1172.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zlib:1|t1,decompress throughput,455.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zlib:1|t4,decompress throughput,704.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zlib:1|t8,decompress throughput,706.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,llama_T4_252|planes_e|zlib:1|t16,decompress throughput,705.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2|zlib:1,lossless ratio vs BF16,1.4354,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2|zlib:6,lossless ratio vs BF16,1.4818,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2|zstd:-3,lossless ratio vs BF16,1.1937,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2|zstd:1,lossless ratio vs BF16,1.5201,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2|zstd:3,lossless ratio vs BF16,1.4627,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2hi|zlib:1,lossless ratio vs BF16,1.3953,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2hi|zlib:6,lossless ratio vs BF16,1.438,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2hi|zstd:-3,lossless ratio vs BF16,1.1666,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2hi|zstd:1,lossless ratio vs BF16,1.4751,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|bytes2hi|zstd:3,lossless ratio vs BF16,1.4209,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes|zlib:1,lossless ratio vs BF16,1.4431,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes|zlib:6,lossless ratio vs BF16,1.4904,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes|zstd:-3,lossless ratio vs BF16,1.2157,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes|zstd:1,lossless ratio vs BF16,1.5222,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes|zstd:3,lossless ratio vs BF16,1.4684,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes_e|zlib:1,lossless ratio vs BF16,1.4026,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes_e|zlib:6,lossless ratio vs BF16,1.446,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes_e|zstd:-3,lossless ratio vs BF16,1.1877,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes_e|zstd:1,lossless ratio vs BF16,1.477,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|planes_e|zstd:3,lossless ratio vs BF16,1.4263,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|raw|zlib:1,lossless ratio vs BF16,1.2859,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|raw|zlib:6,lossless ratio vs BF16,1.3027,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|raw|zstd:-3,lossless ratio vs BF16,1.0435,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|raw|zstd:1,lossless ratio vs BF16,1.328,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|all|raw|zstd:3,lossless ratio vs BF16,1.33,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|entropy,ideal order-0 ratio (planes),1.4521,x,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:-3|t1,decompress throughput,9712.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:-3|t4,decompress throughput,10643.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:-3|t8,decompress throughput,9794.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:-3|t16,decompress throughput,10312.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:1|t1,decompress throughput,1191.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:1|t4,decompress throughput,2231.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:1|t8,decompress throughput,2233.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zstd:1|t16,decompress throughput,2229.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zlib:1|t1,decompress throughput,216.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zlib:1|t4,decompress throughput,408.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zlib:1|t8,decompress throughput,407.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|raw|zlib:1|t16,decompress throughput,407.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:-3|t1,decompress throughput,909.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:-3|t4,decompress throughput,694.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:-3|t8,decompress throughput,696.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:-3|t16,decompress throughput,692.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:1|t1,decompress throughput,835.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:1|t4,decompress throughput,610.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:1|t8,decompress throughput,610.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zstd:1|t16,decompress throughput,610.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zlib:1|t1,decompress throughput,302.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zlib:1|t4,decompress throughput,421.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zlib:1|t8,decompress throughput,421.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2|zlib:1|t16,decompress throughput,421.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:-3|t1,decompress throughput,954.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:-3|t4,decompress throughput,963.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:-3|t8,decompress throughput,956.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:-3|t16,decompress throughput,944.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:1|t1,decompress throughput,925.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:1|t4,decompress throughput,893.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:1|t8,decompress throughput,883.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zstd:1|t16,decompress throughput,876.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zlib:1|t1,decompress throughput,422.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zlib:1|t4,decompress throughput,421.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zlib:1|t8,decompress throughput,423.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|bytes2hi|zlib:1|t16,decompress throughput,421.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:-3|t1,decompress throughput,861.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:-3|t4,decompress throughput,740.6,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:-3|t8,decompress throughput,742.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:-3|t16,decompress throughput,743.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:1|t1,decompress throughput,814.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:1|t4,decompress throughput,668.7,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:1|t8,decompress throughput,668.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zstd:1|t16,decompress throughput,669.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zlib:1|t1,decompress throughput,322.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zlib:1|t4,decompress throughput,467.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zlib:1|t8,decompress throughput,467.1,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes|zlib:1|t16,decompress throughput,467.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:-3|t1,decompress throughput,1154.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:-3|t4,decompress throughput,1151.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:-3|t8,decompress throughput,1146.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:-3|t16,decompress throughput,1148.9,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:1|t1,decompress throughput,1072.0,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:1|t4,decompress throughput,1070.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:1|t8,decompress throughput,1070.4,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zstd:1|t16,decompress throughput,1065.8,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zlib:1|t1,decompress throughput,464.5,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zlib:1|t4,decompress throughput,464.3,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zlib:1|t8,decompress throughput,463.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+S1,qwen_T4_252|planes_e|zlib:1|t16,decompress throughput,469.2,MB/s,measured,ok,20261020-150947-m16-s1-analyze,results/m16_stage3_mi300x/s1_lossless/summary.json
+I4,sdma=0|idle|contig|py_loop,effective H2D,1.401,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|contig|foreach,effective H2D,1.228,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|contig|coalesce,effective H2D,52.188,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|contig|stage,effective H2D,20.317,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|contig|zerocopy,effective H2D,53.098,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|scatter|py_loop,effective H2D,1.379,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|scatter|foreach,effective H2D,1.227,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|scatter|coalesce,effective H2D,1.388,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|scatter|stage,effective H2D,20.17,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|idle|scatter|zerocopy,effective H2D,53.102,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|contig|py_loop,effective H2D,1.317,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|contig|foreach,effective H2D,1.154,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|contig|coalesce,effective H2D,52.39,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|contig|stage,effective H2D,20.191,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|contig|zerocopy,effective H2D,53.132,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|scatter|py_loop,effective H2D,1.306,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|scatter|foreach,effective H2D,1.135,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|scatter|coalesce,effective H2D,1.266,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|scatter|stage,effective H2D,20.146,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=0|busy2|scatter|zerocopy,effective H2D,53.141,GiB/s,measured,ok,20261020-142741-m16-i4-sdma0,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma0.csv
+I4,sdma=1|idle|contig|py_loop,effective H2D,3.017,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|contig|foreach,effective H2D,2.193,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|contig|coalesce,effective H2D,52.762,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|contig|stage,effective H2D,19.649,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|contig|zerocopy,effective H2D,53.1,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|scatter|py_loop,effective H2D,3.001,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|scatter|foreach,effective H2D,2.192,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|scatter|coalesce,effective H2D,3.005,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|scatter|stage,effective H2D,20.313,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|idle|scatter|zerocopy,effective H2D,53.082,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|contig|py_loop,effective H2D,2.878,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|contig|foreach,effective H2D,2.208,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|contig|coalesce,effective H2D,49.271,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|contig|stage,effective H2D,20.286,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|contig|zerocopy,effective H2D,53.154,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|scatter|py_loop,effective H2D,2.869,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|scatter|foreach,effective H2D,2.2,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|scatter|coalesce,effective H2D,2.864,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|scatter|stage,effective H2D,17.74,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
+I4,sdma=1|busy2|scatter|zerocopy,effective H2D,53.153,GiB/s,measured,ok,20261020-143218-m16-i4-sdma1,results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma1.csv
 I3s,main scan (96 cells),pre-registered kappa vs best existing rule (P95 TTFT),0/96 cells >=5%,,simulated,ok,20261019-141254-m16-pausesim,results/m16_stage3_mi300x/i3_pause_sim/summary.json
 I3r,busy_exo|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.4891,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
 I3r,busy_exo|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),-0.4891,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
@@ -284,12 +962,101 @@ I3r,sigma2|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median ov
 I3r,ssd_nfs|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.0526,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
 I3r,ssd_nfs|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),0.2726,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
 I3r,ssd_nfs|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.6974,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
-S1,,,,,,NOT_MEASURED,,
-I4,,,,,,NOT_MEASURED,,
-I1-interf,,,,,,NOT_MEASURED,,
-I1-grid,,,,,,NOT_MEASURED,,
-C1a,,,,,,NOT_MEASURED,,
-S2,,,,,,NOT_MEASURED,,
+K1,llama_T2_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.3575,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T2_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.0535,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T2_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.1533,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_252|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4766,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_252|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2402,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_252|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6767,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4613,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2531,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6645,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T2_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.3253,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T2_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.0428,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T2_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.1099,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_252|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4542,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_252|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2366,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_252|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6494,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.423,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2413,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6486,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T2_64|K|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0008,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T2_64|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0011,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T2_64|V|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0058,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T2_64|V_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0012,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_252|K|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0032,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_252|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0018,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_252|V|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0004,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_252|V_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0011,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_64|K|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0037,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_64|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0002,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_64|V|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0006,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T4_64|V_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0005,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T2_64|K|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0005,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T2_64|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0022,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T2_64|V|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0063,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T2_64|V_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0069,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_252|K|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0253,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_252|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0054,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_252|V|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0004,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_252|V_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0007,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_64|K|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0062,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_64|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0037,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_64|V|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0011,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,qwen_T4_64|V_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0007,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
+K1,llama_T2_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6136,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6731,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0003,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.335,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.4173,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0044,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.002,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0015,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.2604,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3448,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0027,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0012,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.001,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.5395,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6155,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0007,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3368,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3774,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0083,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.002,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0017,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.2964,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3492,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0068,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0019,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0012,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+C1a,llama・T2-T4（135 題）|SNAP,recall@16 minus random (pct pts) [95% CI],"+10.8 [+3.7, +18.2]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|EXPATT,recall@16 minus random (pct pts) [95% CI],"+12.9 [+5.8, +20.4]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|KNORM,recall@16 minus random (pct pts) [95% CI],"+23.6 [+18.3, +29.1]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|KEYDIFF,recall@16 minus random (pct pts) [95% CI],"+14.7 [+8.5, +20.8]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|H2O,recall@16 minus random (pct pts) [95% CI],"+6.6 [+1.6, +11.7]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|RND0,recall@16 minus random (pct pts) [95% CI],"-0.1 [-4.0, +3.8]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|QRY1,recall@16 minus random (pct pts) [95% CI],"+14.6 [+8.1, +21.4]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|QUEST_MEAN,recall@16 minus random (pct pts) [95% CI],"+34.7 [+28.8, +40.6]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|QUEST_MAX,recall@16 minus random (pct pts) [95% CI],"+35.0 [+29.7, +40.4]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,llama・T2-T4（135 題）|FULLK_MEAN,recall@16 minus random (pct pts) [95% CI],"+61.1 [+57.4, +64.6]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|SNAP,recall@16 minus random (pct pts) [95% CI],"+13.1 [+6.5, +20.2]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|EXPATT,recall@16 minus random (pct pts) [95% CI],"+15.9 [+9.3, +22.4]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|KNORM,recall@16 minus random (pct pts) [95% CI],"+13.3 [+6.8, +19.8]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|KEYDIFF,recall@16 minus random (pct pts) [95% CI],"+19.2 [+12.7, +25.6]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|H2O,recall@16 minus random (pct pts) [95% CI],"+6.3 [+1.7, +11.0]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|RND0,recall@16 minus random (pct pts) [95% CI],"-2.0 [-5.6, +1.8]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|QRY1,recall@16 minus random (pct pts) [95% CI],"+21.3 [+15.8, +27.0]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|QUEST_MEAN,recall@16 minus random (pct pts) [95% CI],"+44.5 [+38.9, +49.9]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|QUEST_MAX,recall@16 minus random (pct pts) [95% CI],"+36.6 [+31.0, +42.2]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+C1a,qwen・T2-T4（135 題）|FULLK_MEAN,recall@16 minus random (pct pts) [95% CI],"+67.6 [+64.9, +69.9]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
+X1,,,,,,NOT_MEASURED,,
+X2,,,,,,NOT_MEASURED,,
+X3,,,,,,NOT_MEASURED,,
 V0,,,,,,NOT_MEASURED,,
 F2,,,,,,NOT_MEASURED,,
 F1,,,,,,NOT_MEASURED,,

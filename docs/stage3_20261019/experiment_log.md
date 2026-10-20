@@ -81,3 +81,51 @@
   - 「κ 能避免選錯」只在 SSD→NFS 一個方向成立，不能一般化。
   - 對「不卸載」的預設，任何卸載規則都大贏，這個基準太弱，不能拿來支持 κ。
 - **限制**：同 I3s（模擬；成本常數是第二階段 harness 路徑，vLLM 實際 CPU 層約 4.1 GiB/s 沒代入）。
+
+## 第三階段 GPU 窗口開始（10/20 13:59Z）
+
+- 第二階段兩個佇列 13:59:17Z 清空（session a 通知）；runner 13:59:24Z 開 `00_smoke`。
+- **失敗 1**：`00_smoke` 第一步 `m16_s1_kvdump`（run `20261020-135924-m16-smoke-kvdump`，exit 1）：
+  `RuntimeError: T4 ['mid'] seed=70000：10 次都放不好：band mid 放不下：需要 812 token、只有 512`。
+  原因：冒煙用 `--n-blocks 4`（2K token），`m10_tasks.bands(4)` 的 mid 帶只有 1 個 block，放不下 T4 的段落。是冒煙參數的 bug，不是實驗結果。
+  修法：冒煙改 `--n-blocks 16`（mid 帶 4 個 block），輸出 `smoke/kv_llama_t4_16`；`06_k1_kvstruct.sh` 的 RoPE 核對路徑同步。失敗的 job 檔與 log 另存 `retired_20261020/`，NEEDS_HUMAN 改名 `.handled_20261020T1406Z`。14:00:51Z 重開 `00_smoke`。
+- `00_smoke` 14:05:19Z 全過（kvdump 16 block、S1 分析、I4、I1 interf／grid 的最小設定）。
+- **失敗 2**：`02_smoke_x` 的 Qwen `gpu-selftest`（run `20261020-140604-m16-x-gpuselftest-qwen`）48／49 過，`proxy_masked_eq_subset` rel＝7.1e-5 > 門檻 1e-5；同一項 Llama 7.8e-8（49／49 過）。
+  判讀：兩條路都是 FP32，只差 GEMM 形狀（加總順序）；Qwen 第 0 層 K 有大值，softmax 放大捨入差。遮罩寫錯（少 10 個 block）會是大得多的差。
+  修法：門檻改 1e-3，另記「完全不遮」的差當反向對照（`code/m16_xstack.py`，理由寫在註解）。Llama 那半照跑完：calib、screen --smoke（每題 65.8 s、peak 41.7 GiB）、gen 32K、gen 128K 都 exit 0。14:13:40Z 重開 `02_smoke_x`。
+- 冒煙全過：`02_smoke_x`（重開後 Qwen 49／49；proxy 遮罩 vs 子集 7.1e-5、完全不遮 3.9e-2）、`03_smoke_xtime`、`04_smoke_c1a`（own_gpu_intruders 0）。`05_s1_kvdump` 14:24:56–14:27:41Z（兩卡並行，約 52 GB 在 /var/tmp/tiara_s3/kv_dumps）。
+
+## I4　KV 從 CPU 搬回 GPU 的搬法（10/20 14:27–14:36Z，CLEAN）〔實測，初步〕
+
+- run：`20261020-142741-m16-i4-sdma0`、`20261020-143218-m16-i4-sdma1`。產出 `results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma{0,1}.{csv,json}`，20 格 × 2，全部 ok、未污染。原估 2 h，實際 8 分鐘。
+- 有效 H2D（GiB/s，每格一個彙總值）：散在小塊（scatter）時，逐塊 copy（py_loop／foreach）1.1–1.4（SDMA 關）、2.2–3.0（SDMA 開）；合併（coalesce）在 scatter 也只有 1.3–3.0；CPU 端先收集再一次 copy（stage）17.7–20.3；GPU kernel 直接讀 pinned host（zerocopy）53.1，SDMA 開關與 GPU 閒／busy2 都一樣。連續（contig）時 coalesce 49–53。
+- 初步判讀（待 results_analysis 細看）：逐塊 copy 的量級與 vLLM ROCm CPU 層約 4.1 GiB/s 一致；zerocopy 比逐塊快 18–45 倍。busy2 對各搬法幾乎沒影響，和第二階段「GPU 忙時 H2D +46–50%」不同（設定不同：這裡是單純搬運的 microbench），要對照 I1 再說，不下結論。
+
+## K1　KV 結構（10/20 14:28–14:39Z，CPU）〔實測：KV 幾何量，不是品質〕
+
+- run：`20261020-142819-m16-k1-kvstruct`；RoPE 核對 6 份 dump 全部 PASS_PROBE。產出 `results/m16_stage3_mi300x/k1_kvstruct/`（lowrank、lowrank_eff、xlayer、adjtok 的 CSV／JSON、summary.md）。
+- **低秩**（rank 32＝維度 1/4 的相對重建誤差，層×head 中位數；T4 32K）：K 在 RoPE 前 Llama 0.253／Qwen 0.241，RoPE 後 0.461／0.423；V 0.665／0.649。95% 能量需要的 rank：K_pre 40／36、K_post 84／82、V 110／108.5（滿 128）。用前 4096 token 的基底套到後面：K_pre 0.268／0.253（幾乎不變差），K_post 0.616／0.580（明顯變差）。128K 與 32K 相近（K_pre r32：0.240／0.237）。
+- **跨層**（同一 token、相鄰層的 cosine，深半段中位數）：K、V、中心化前後、32K 與 128K、兩個模型全部在 −0.016～+0.022；整層 head 串接也是 ≈0（最大 0.066）。→ 照 L5b 寫死的條件（深半段中心化 cosine 中位數 <0.5），MiniCache／KVSharer 式「逐 token 直接共用」在這兩個模型上沒有依據，停。xKV 式（共用子空間）不受這條影響，交給 X1 量品質。
+- **相鄰 token**：K 的 cosine 中位數看起來高（RoPE 後 0.87），但主要來自共同的平均方向：減掉平均後中位數 0.52／0.55，≥0.9 的相鄰對只有 0.3%／0.7%；V 中位數 0.42、≥0.9 約 0.1–0.2%。T2（重複句子）去平均後更低（0.20）。→ 合併相似 token 能利用的天然冗餘很少。
+- 這些是 KV 本身的幾何量；能不能換成答對率，要看 X1／X2。
+
+## I1　計算／搬運／decode 互相拖慢＋多 session 實測 vs 模擬（10/20 14:36–14:53Z，CLEAN）〔實測〕
+
+- run：`20261020-143616-m16-i1-interf`、`20261020-143840-m16-i1-grid`（171 列，全部未污染）。產出 `results/m16_stage3_mi300x/i1_concurrent_restore/`。
+- interf（同時跑／單獨跑的時間比，中位數）：GPU 閒：重算 ×1.063、H2D ×1.021、decode ×1.055（和 H2D 同時）、H2D ×1.003（和 decode 同時）；busy2：重算 ×1.047、decode ×1.040，H2D ×0.944／×0.844（同時跑反而比單獨快，原因未查，先不解讀）。→ 在這組設定下，還原的計算與搬運互相拖慢 ≤6%。
+- grid（實測平均 TTFT ÷ 同行程模擬，每格 3 次的中位數；GPU 閒；N＝1、4、8；cpu／b32／混合；cake／g5b／joint × rr／fcfs／srpt）：全部在 0.973–1.050。
+- **判定（照事先寫的條件：實測／模擬 ≤ 1.10 → 模擬可信、I1 收掉）**：成立。I1 的事先預測（「聯合決定」每一格都比各請求各自最佳差 14–60%）因此可信；好處只來自第二階段的 G5b 規則與排隊順序。I1 方向收掉（負面結果）。
+
+## C1a　寫入時的分數能不能猜中第 2 輪要的 block（10/20 14:53–15:10Z；report 15:5xZ）〔實測〕
+
+- run：`20261020-145315-m16-c1a-{llama,qwen}-s{0,1,2}`、`20261020-150131-m16-c1a-{llama,qwen}-s{3,4,5}`；每個模型 T2–T4 135 題＋T5 15 題，齊全、逐題檢查沒有 false。產出 `results/m16_stage3_mi300x/c1a_predictive/`（tables_c1a.md、c1a_summary.json）。
+- recall@16 比隨機（25.4%）高幾個百分點（T2–T4，95% CI）：寫入時分數 Llama KNORM +23.6、KEYDIFF +14.7、SNAP +10.8；Qwen KEYDIFF +19.2、KNORM +13.3、SNAP +13.1。第 1 輪問題（QRY1）+14.6／+21.3。還原時用新問題打 block 摘要（QUEST_MEAN）+34.7／+44.5；完整 K（FULLK_MEAN，上界）+61.1／+67.6。隨機對照（RND0）−0.1／−2.0。
+- **判定（G2、G4 照原文）**：兩個模型都不觸發（寫入時分數與 Quest 摘要都明顯高於隨機）→ C1b（選擇性還原，量省多少時間與答對率）照計畫可以做。
+- 判讀：寫入時就決定「哪些重要」只抓得到一部分；等下一輪問題來了再用便宜的 block 摘要挑，召回率高出一大截。T5（全域任務）沒有目標 block，表上是「—」。
+
+## S1　無損壓縮比與 CPU 解壓速度（10/20 15:09–15:54Z，GPU 閒置、CPU_QUIET）〔實測〕
+
+- run：`20261020-150947-m16-s1-analyze`（＋breakeven）。產出 `results/m16_stage3_mi300x/s1_lossless/`。
+- BF16 KV 的無損壓縮比（最好的 zstd:1 變體）：自然文字 32K 1.47（兩個模型）、128K 1.51–1.52；重複句子（T2）1.67–1.72。Intel KV Shrink 的「只壓高位元組」（bytes2hi）1.46，和全部壓幾乎一樣。照 L5c STOP-1（<1.15 停）：不觸發，無損這一軸保留。
+- CPU 解壓速度（壓縮比約 1.46 的格式）：0.5–2.1 GB/s（1–16 thread）。
+- 盈虧（pipelined，相對不壓縮的時間）：NFS 級（0.33–0.37 GiB/s）省 32%；限速 b32（1.47 GiB/s）省 21–25%；本地 SSD（7.8 GiB/s）沒好處（Qwen 最好 +1.2%，Llama 全負）；CPU 層（49.9 GiB/s）大幅變慢。→ 無損壓縮在 CPU 上解，只對慢的下層（NFS、限速）划算。
