@@ -183,11 +183,29 @@ def c1a():
     return rows
 
 
+def x1():
+    """X1：x1_report.json 的判定（每個模型、每個預算：最好的單一 vs 最好的組合，Δgold_lp 損失；TF 版 r）。〔teacher forcing 篩選〕"""
+    rows = []
+    p = os.path.join(RES, "x_stack/x1_report.json")
+    if not os.path.exists(p):
+        return rows
+    d = json.load(open(p))
+    for m, j in d["judge"]["models"].items():
+        for b, v in j["budgets"].items():
+            for side in ("single", "combo"):
+                rows.append(dict(exp="X1", cell=f"{m}|budget {b}|best {side}: {v['best_' + side]} (ratio {v['best_' + side + '_ratio']})",
+                                 metric="loss = -mean Δgold_lp vs E0 (teacher forcing)", value=round(v["loss_" + side], 4),
+                                 unit="nats", kind="measured", status="ok", run_id=d["run_id"], source=rel(p)))
+        rows.append(dict(exp="X1", cell=f"{m}|tf_M1", metric="r = B*(best combo)/B*(best single) within eps (TF screen)",
+                         value=round(j["tf_M1"]["r"], 4), unit="ratio", kind="measured", status="ok", run_id=d["run_id"], source=rel(p)))
+    return rows
+
+
 PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a() + x1()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:

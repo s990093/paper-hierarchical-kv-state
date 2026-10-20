@@ -1054,7 +1054,24 @@ C1a,qwen・T2-T4（135 題）|QRY1,recall@16 minus random (pct pts) [95% CI],"+2
 C1a,qwen・T2-T4（135 題）|QUEST_MEAN,recall@16 minus random (pct pts) [95% CI],"+44.5 [+38.9, +49.9]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
 C1a,qwen・T2-T4（135 題）|QUEST_MAX,recall@16 minus random (pct pts) [95% CI],"+36.6 [+31.0, +42.2]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
 C1a,qwen・T2-T4（135 題）|FULLK_MEAN,recall@16 minus random (pct pts) [95% CI],"+67.6 [+64.9, +69.9]",pct-pt,measured,ok,20261020-145315-m16-c1a-llama-s0,results/m16_stage3_mi300x/c1a_predictive/tables_c1a.md
-X1,,,,,,NOT_MEASURED,,
+X1,llama|budget 0.3125|best single: xl:k16:v16 (ratio 0.140873),loss = -mean Δgold_lp vs E0 (teacher forcing),-0.2296,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|budget 0.3125|best combo: xl:k22:v34+q:int8_token (ratio 0.137641),loss = -mean Δgold_lp vs E0 (teacher forcing),-0.1845,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|budget 0.25|best single: xl:k16:v16 (ratio 0.140873),loss = -mean Δgold_lp vs E0 (teacher forcing),-0.2296,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|budget 0.25|best combo: xl:k22:v34+q:int8_token (ratio 0.137641),loss = -mean Δgold_lp vs E0 (teacher forcing),-0.1845,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|budget 0.125|best single: xl:k11:v17 (ratio 0.123264),loss = -mean Δgold_lp vs E0 (teacher forcing),-0.0735,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|budget 0.125|best combo: xl:k22:v34+q:int4_kivi (ratio 0.096137),loss = -mean Δgold_lp vs E0 (teacher forcing),-0.0718,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|budget 0.0625|best single: xl:k5:v9 (ratio 0.061632),loss = -mean Δgold_lp vs E0 (teacher forcing),23.447,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|budget 0.0625|best combo: xl:k11:v17+q:int4_kivi (ratio 0.048069),loss = -mean Δgold_lp vs E0 (teacher forcing),-0.0278,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,llama|tf_M1,r = B*(best combo)/B*(best single) within eps (TF screen),0.3219,ratio,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.3125|best single: q:int4_kivi (ratio 0.3125),loss = -mean Δgold_lp vs E0 (teacher forcing),0.0921,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.3125|best combo: xl:k28:v42+q:int4_kivi (ratio 0.10281),loss = -mean Δgold_lp vs E0 (teacher forcing),0.5308,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.25|best single: q:kv-int4_kivi-int2_kivi (ratio 0.25),loss = -mean Δgold_lp vs E0 (teacher forcing),0.5418,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.25|best combo: xl:k28:v42+q:int4_kivi (ratio 0.10281),loss = -mean Δgold_lp vs E0 (teacher forcing),0.5308,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.125|best single: xl:k11:v17 (ratio 0.116319),loss = -mean Δgold_lp vs E0 (teacher forcing),2.8028,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.125|best combo: xl:k28:v42+q:int4_kivi (ratio 0.10281),loss = -mean Δgold_lp vs E0 (teacher forcing),0.5308,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.0625|best single: xl:k5:v9 (ratio 0.05816),loss = -mean Δgold_lp vs E0 (teacher forcing),25.514,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|budget 0.0625|best combo: xl:k11:v17+q:int4_kivi (ratio 0.041124),loss = -mean Δgold_lp vs E0 (teacher forcing),2.5794,nats,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
+X1,qwen|tf_M1,r = B*(best combo)/B*(best single) within eps (TF screen),0.3535,ratio,measured,ok,20261020-212246-m16-x1-report,results/m16_stage3_mi300x/x_stack/x1_report.json
 X2,,,,,,NOT_MEASURED,,
 X3,,,,,,NOT_MEASURED,,
 V0,,,,,,NOT_MEASURED,,

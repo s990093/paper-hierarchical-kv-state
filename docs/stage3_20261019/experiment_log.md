@@ -129,3 +129,13 @@
 - BF16 KV 的無損壓縮比（最好的 zstd:1 變體）：自然文字 32K 1.47（兩個模型）、128K 1.51–1.52；重複句子（T2）1.67–1.72。Intel KV Shrink 的「只壓高位元組」（bytes2hi）1.46，和全部壓幾乎一樣。照 L5c STOP-1（<1.15 停）：不觸發，無損這一軸保留。
 - CPU 解壓速度（壓縮比約 1.46 的格式）：0.5–2.1 GB/s（1–16 thread）。
 - 盈虧（pipelined，相對不壓縮的時間）：NFS 級（0.33–0.37 GiB/s）省 32%；限速 b32（1.47 GiB/s）省 21–25%；本地 SSD（7.8 GiB/s）沒好處（Qwen 最好 +1.2%，Llama 全負）；CPU 層（49.9 GiB/s）大幅變慢。→ 無損壓縮在 CPU 上解，只對慢的下層（NFS、限速）划算。
+
+## X1　壓縮疊加的 teacher-forcing 篩選（10/20 15:54–21:22Z；report 21:23Z）〔實測：TF 篩選，不是生成答對率〕
+
+- run：`20261020-155515/-155519/-173921/-193056-m16-x1-{llama,qwen}-s*`（21 個），report `results/m16_stage3_mi300x/x_stack/x1_report.json`（tables_x1.md、pareto_{llama,qwen}.png、x2_selection.json、s2_subset/）。Llama 61 題、Qwen 96 題，各 161 個配置，範圍＝block 1–63（全段）。
+- **判定（S1-b，事先寫死）**：0.125、0.0625 兩個預算、兩個模型，「最好組合」都明顯好過「最好單一方法」→ S1-b 不成立 → **X2 GO**。TF 版 r（ε 內最小位元組比，組合 ÷ 單一）：Llama 0.32（0.040 vs 0.123）、Qwen 0.35（0.082 vs 0.233）。
+- 每個家族（同預算約 0.25）：量化 Llama q:kv-int4_kivi-int2_kivi Δgold_lp +0.05、Qwen −0.54；**丟 block（KNORM／KEYDIFF 0.75）−19.0／−26.4**；每層低秩 −0.11／−1.39；**跨層聯合低秩（xKV 式，每題 SVD）**最好；**合併 merge:4 −72.8／−70.9**（first_ok −29.5／−12.5 個百分點）。
+- 最好的組合幾乎都是「xKV 式跨層低秩＋係數再量化」：Llama `xl:k11:v17+q:int4_kivi` 位元組比 0.048（約 21 倍）Δgold_lp +0.03、first_ok 不變；Qwen `xl:k22:v34+q:int4_kivi` 0.082（約 12 倍）−0.77、`xl:k28:v42+q:int4_kivi` 0.103 −0.53。Qwen 對壓縮比 Llama 敏感。
+- S2 的問題（同位元組下丟 vs 量化）：丟 block 在每個預算都輸量化一大截 → 照 L1 G1：「在本設定下，有損刪除被量化支配」。
+- 代理指標（以配置為單位的 Spearman，對 KL）：relerr_k +0.50、relerr_v +0.59；崩潰 AUROC 0.54–0.60 → 代理弱，只能當粗篩（和 L5d 的預測一致）。
+- 限制：teacher forcing、第 1 輪；xKV 的基底是每題用整段 KV 算的（壓縮在 prefill 之後做），壓縮本身的成本（每 4 層一次 SVD）沒有算進位元組或時間；答對率以 X2 的生成為準。
