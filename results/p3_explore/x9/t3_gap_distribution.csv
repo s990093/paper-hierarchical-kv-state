@@ -1,0 +1,2 @@
+run_id,ts,dataset,n_finite_gaps,gap_q10_s,gap_q25_s,gap_q50_s,gap_q75_s,gap_q90_s,gap_q99_s,frac_gt_1h,frac_gt_2h,frac_gt_24h,frac_gt_5min,frac_gt_10min,return_time_from,turn_eq_user_count_rate,ts_nondecreasing_rate,top_ts_eq_last_msg_rate,user_ts_nonnull,user_msgs,asst_ts_nonnull,asst_msgs
+20261017-174829-p3x9-window,2026-10-17T09:48:43+00:00,wildchat-1m,1122085,28.0,55.0,128.0,368.0,1253.0,27511.319999999832,0.04470784298872189,0.026518490132209235,0.0030692861948961084,0.2887526346043303,0.17591269823587338,assistant,1.0,1.0,1.0,0,1960074,1960074,1960074

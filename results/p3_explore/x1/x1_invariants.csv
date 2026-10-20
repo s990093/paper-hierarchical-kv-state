@@ -1,0 +1,45 @@
+run_id,ts,invariant,passed,detail
+20261017-180344-p3x1-selftest,2026-10-17T18:03:54+08:00,chan_eq_Tier,True,200 個隨機讀寫序列，完成時間逐位元相同
+20261017-180344-p3x1-selftest,2026-10-17T18:03:54+08:00,restore_eq_m7_sim,True,300 個隨機 layout（BF16、d=0、cake／load_only），不一致 0
+20261017-180344-p3x1-selftest,2026-10-17T18:03:58+08:00,"pred_recency_eq_LRU[conversation,128GiB]",True,12 種時間設定的逐請求 TTFT／還原時間逐位元相同
+20261017-180344-p3x1-selftest,2026-10-17T18:03:58+08:00,"multiview_eq_single[conversation,128GiB]",True,"LRU ('nfs', 'busy', 'cake') 單獨跑 vs 12 種一次跑"
+20261017-180344-p3x1-selftest,2026-10-17T18:04:00+08:00,"pred_recency_eq_LRU[conversation,1024GiB]",True,12 種時間設定的逐請求 TTFT／還原時間逐位元相同
+20261017-180344-p3x1-selftest,2026-10-17T18:04:00+08:00,"multiview_eq_single[conversation,1024GiB]",True,"LRU ('nfs', 'busy', 'cake') 單獨跑 vs 12 種一次跑"
+20261017-180344-p3x1-selftest,2026-10-17T18:04:01+08:00,"refcount_audit[conversation,LRU]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:02+08:00,"refcount_audit[conversation,PRED]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:03+08:00,"refcount_audit[conversation,LRU2]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:04+08:00,"refcount_audit[conversation,ARC]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:05+08:00,"refcount_audit[conversation,S3FIFO]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:06+08:00,"refcount_audit[conversation,GDSF]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:07+08:00,"refcount_audit[conversation,PENS]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:08+08:00,"refcount_audit[conversation,LRU+NONE]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:08+08:00,"refcount_audit[conversation,LRU+2HW]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:09+08:00,"refcount_audit[conversation,LRU+2HA]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:10+08:00,"refcount_audit[conversation,LRU+RPF]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:11+08:00,"refcount_audit[conversation,O-BEL]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:12+08:00,"refcount_audit[conversation,O-BELS]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:13+08:00,"refcount_audit[conversation,O-DROP]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:14+08:00,"refcount_audit[conversation,O-NOW]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:15+08:00,"refcount_audit[conversation,O-PF]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:15+08:00,"refcount_audit[conversation,O-ALL]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:20+08:00,"pred_recency_eq_LRU[toolagent,128GiB]",True,12 種時間設定的逐請求 TTFT／還原時間逐位元相同
+20261017-180344-p3x1-selftest,2026-10-17T18:04:20+08:00,"multiview_eq_single[toolagent,128GiB]",True,"LRU ('nfs', 'busy', 'cake') 單獨跑 vs 12 種一次跑"
+20261017-180344-p3x1-selftest,2026-10-17T18:04:26+08:00,"pred_recency_eq_LRU[toolagent,1024GiB]",True,12 種時間設定的逐請求 TTFT／還原時間逐位元相同
+20261017-180344-p3x1-selftest,2026-10-17T18:04:26+08:00,"multiview_eq_single[toolagent,1024GiB]",True,"LRU ('nfs', 'busy', 'cake') 單獨跑 vs 12 種一次跑"
+20261017-180344-p3x1-selftest,2026-10-17T18:04:28+08:00,"refcount_audit[toolagent,LRU]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:29+08:00,"refcount_audit[toolagent,PRED]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:30+08:00,"refcount_audit[toolagent,LRU2]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:31+08:00,"refcount_audit[toolagent,ARC]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:32+08:00,"refcount_audit[toolagent,S3FIFO]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:34+08:00,"refcount_audit[toolagent,GDSF]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:35+08:00,"refcount_audit[toolagent,PENS]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:36+08:00,"refcount_audit[toolagent,LRU+NONE]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:38+08:00,"refcount_audit[toolagent,LRU+2HW]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:39+08:00,"refcount_audit[toolagent,LRU+2HA]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:40+08:00,"refcount_audit[toolagent,LRU+RPF]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:41+08:00,"refcount_audit[toolagent,O-BEL]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:42+08:00,"refcount_audit[toolagent,O-BELS]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:43+08:00,"refcount_audit[toolagent,O-DROP]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:43+08:00,"refcount_audit[toolagent,O-NOW]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:44+08:00,"refcount_audit[toolagent,O-PF]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組
+20261017-180344-p3x1-selftest,2026-10-17T18:04:46+08:00,"refcount_audit[toolagent,O-ALL]",True,前 1500 個請求、CPU 64 GiB、每步重算已用位元組

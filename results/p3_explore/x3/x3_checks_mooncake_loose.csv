@@ -1,0 +1,19 @@
+run_id,ts,trace,check,value,expect,ok,note
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,unit_len_hash_eq_ceil_input_over_512,1.0,>=0.99,OK,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,return_events,3975,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,sessions_with_return,2012,>=1000,OK,前綴鏈重建，規則=loose（loose＝D4 規則；strict＝前綴 ≤3 個請求共用、父唯一、間隔>0）
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,parents_with_multiple_children,28,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,new_tokens_raw_pctl,p1=-315.9 p5=-18 p10=-2 p25=9 p50=26 p75=384 p90=4363 p95=7238 p99=1.681e+04,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,new_tokens_raw_neg_frac,0.107421,,,負的＝子請求比「父輸入＋父輸出」短：截斷、或分叉被誤當同一 session
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,gap_s_per_parent_output_token_median,0.3439,0.01–10,OK,timestamp 單位＝毫秒 的驗算（D4 §4.1）
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,gap_s_pctl,p1=12 p5=30 p10=42 p25=66 p50=126 p75=273 p90=480 p95=612 p99=1471,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,conversation,ts_resolution_frac_multiple_of_1000ms,0.7058,,,D4：解析度約 1 秒
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,unit_len_hash_eq_ceil_input_over_512,1.0,>=0.99,OK,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,return_events,16400,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,sessions_with_return,1854,>=1000,OK,前綴鏈重建，規則=loose（loose＝D4 規則；strict＝前綴 ≤3 個請求共用、父唯一、間隔>0）
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,parents_with_multiple_children,2567,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,new_tokens_raw_pctl,p1=-453 p5=-274 p10=-77 p25=7 p50=138 p75=584 p90=1144 p95=2060 p99=8064,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,new_tokens_raw_neg_frac,0.217195,,,負的＝子請求比「父輸入＋父輸出」短：截斷、或分叉被誤當同一 session
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,gap_s_per_parent_output_token_median,0.3387,0.01–10,OK,timestamp 單位＝毫秒 的驗算（D4 §4.1）
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,gap_s_pctl,p1=0 p5=0 p10=0 p25=0 p50=3 p75=27 p90=153 p95=288 p99=573,,,
+20261017-180334-p3x3-mooncake-loose,2026-10-17T10:03:35+00:00,toolagent,ts_resolution_frac_multiple_of_1000ms,0.703,,,D4：解析度約 1 秒

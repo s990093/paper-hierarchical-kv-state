@@ -1,0 +1,2363 @@
+{
+ "generated": "2026-10-18T02:43:24+08:00",
+ "summarize_run_id": "20261018-024322-p3cal-constants",
+ "platform": "A_3090 (RTX 3090 24 GiB, sm_86, PCIe Gen3 x16 behind PLX PEX8796, Xeon Gold 6248R)",
+ "note": "〔3090 常數 v2〕＝X7 的 constants_3090.json（inherited_from_x7，沒有重量）＋p3cal 的新量測（new_in_v2）。X7 的檔沒有改。每個值附 run_id；沒量到的寫 NOT_MEASURED。",
+ "x7_source": {
+  "path": "results/p3_explore/x7/constants_3090.json",
+  "x7_summarize_run_id": "20261017-223447-p3x7-summary"
+ },
+ "inherited_from_x7": {
+  "how_to_use_x7": "X1／X4／X5 加跑：f(i)＝models.<m>.f_ms_idle_32k（GPU 忙乘 busy_0.7_slowdown.by_chunk 內插）；CPU 層 ℓ＝models.<m>.ell_cpu_ms（真實 H2D，不是限速器）；慢層用 MI300X 的 tier_params 或 3090 的 bstar_GiBps；反量化＝dequant_bench_ms_per_block（單獨）或 models.<m>.dequant_ms_per_block_in_restore_cpu（還原時、主線寫法）。結果標〔3090 常數〕，和 MI300X 常數分開列。",
+  "models": {
+   "qwen": {
+    "chunk_bytes": 29360128,
+    "n_blocks_32k": 64,
+    "f_ms_idle_32k": [
+     126.089,
+     128.524,
+     129.738,
+     131.527,
+     132.927,
+     134.452,
+     136.243,
+     137.69,
+     139.917,
+     141.389,
+     143.126,
+     145.052,
+     145.801,
+     148.177,
+     149.828,
+     151.536,
+     153.412,
+     155.2,
+     156.031,
+     158.832,
+     160.697,
+     161.236,
+     163.248,
+     165.056,
+     166.526,
+     168.414,
+     170.051,
+     172.064,
+     173.058,
+     175.339,
+     176.774,
+     178.541,
+     180.218,
+     181.261,
+     183.561,
+     185.289,
+     186.704,
+     188.66,
+     189.767,
+     191.791,
+     193.502,
+     195.092,
+     197.256,
+     198.626,
+     200.488,
+     202.126,
+     203.79,
+     204.976,
+     207.453,
+     208.917,
+     210.761,
+     211.876,
+     213.597,
+     216.764,
+     217.224,
+     218.655,
+     220.676,
+     222.291,
+     225.375,
+     225.713,
+     226.999,
+     228.612,
+     231.706,
+     233.781
+    ],
+    "f_sum_s_32k": 11.48,
+    "f_src_run": "20261017-175055-p3x7-calibf-qwen",
+    "cpu_tier_h2d_GiBps_chunk_view": 6.912,
+    "cpu_tier_h2d_src_run": "20261017-175055-p3x7-calibf-qwen",
+    "ell_cpu_ms": 3.956,
+    "bstar_GiBps": {
+     "b16": 0.5907,
+     "b32": 0.1794,
+     "b48": 0.055
+    },
+    "bstar_src_run": "20261017-175055-p3x7-calibf-qwen",
+    "busy_0.7_slowdown": {
+     "median_all_chunks": 1.9127,
+     "by_chunk": {
+      "0": 1.9182,
+      "32": 1.921,
+      "63": 1.9018
+     },
+     "bg_alone_util_pct": 70.06,
+     "cfg": "m7_busy --duty 0.7 --period-ms 20 --n 8192（MI300X 同一設定）",
+     "src_run": "20261017-180058-p3x7-busy-qwen"
+    }
+   },
+   "llama": {
+    "chunk_bytes": 67108864,
+    "n_blocks_32k": 64,
+    "f_ms_idle_32k": [
+     130.35,
+     132.274,
+     134.959,
+     138.432,
+     141.515,
+     143.113,
+     145.339,
+     147.736,
+     150.408,
+     152.286,
+     155.568,
+     158.104,
+     160.208,
+     163.089,
+     165.598,
+     167.52,
+     170.539,
+     173.148,
+     175.618,
+     178.18,
+     181.172,
+     182.453,
+     185.584,
+     188.561,
+     189.856,
+     193.339,
+     195.189,
+     198.506,
+     201.276,
+     202.74,
+     206.193,
+     207.766,
+     211.148,
+     213.795,
+     215.1,
+     218.51,
+     221.151,
+     222.793,
+     226.356,
+     228.797,
+     230.852,
+     233.937,
+     236.501,
+     237.977,
+     240.612,
+     244.152,
+     246.535,
+     247.404,
+     251.008,
+     254.279,
+     256.425,
+     257.501,
+     261.465,
+     264.257,
+     266.726,
+     269.245,
+     270.387,
+     274.622,
+     276.896,
+     279.193,
+     281.233,
+     284.606,
+     287.117,
+     288.223
+    ],
+    "f_sum_s_32k": 13.4154,
+    "f_src_run": "20261017-175208-p3x7-calibf-llama",
+    "cpu_tier_h2d_GiBps_chunk_view": 6.988,
+    "cpu_tier_h2d_src_run": "20261017-175208-p3x7-calibf-llama",
+    "ell_cpu_ms": 8.9439,
+    "bstar_GiBps": {
+     "b16": 1.2571,
+     "b32": 0.3692,
+     "b48": 0.11
+    },
+    "bstar_src_run": "20261017-175208-p3x7-calibf-llama",
+    "longest_fit": {
+     "ladder": [
+      {
+       "max_chunks": 80,
+       "tokens": 40960,
+       "rc": "0"
+      },
+      {
+       "max_chunks": 96,
+       "tokens": 49152,
+       "rc": "0"
+      },
+      {
+       "max_chunks": 112,
+       "tokens": 57344,
+       "rc": "0"
+      },
+      {
+       "max_chunks": 120,
+       "tokens": 61440,
+       "rc": "0"
+      },
+      {
+       "max_chunks": 128,
+       "tokens": 65536,
+       "rc": "0"
+      },
+      {
+       "max_chunks": 136,
+       "tokens": 69632,
+       "rc": "1"
+      }
+     ],
+     "longest_ok_tokens": 65536,
+     "oom_error": [
+      "torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 8.56 GiB. GPU 0 has a total capacity of 23.68 GiB of which 8.34 GiB is free. Including non-PyTorch memory, this process has 15.33 GiB memory in use. Of the allocated memory 14.96 GiB is allocated by PyTorch, and 129.49 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)"
+     ],
+     "f_ms_64k_reps1": [
+      129.759,
+      132.05,
+      134.572,
+      138.181,
+      141.734,
+      143.054,
+      144.659,
+      147.284,
+      149.651,
+      152.491,
+      155.917,
+      158.796,
+      160.46,
+      162.667,
+      164.792,
+      169.401,
+      171.223,
+      174.25,
+      176.244,
+      177.623,
+      180.265,
+      184.093,
+      186.335,
+      189.057,
+      190.423,
+      193.226,
+      195.08,
+      198.788,
+      201.811,
+      203.785,
+      205.374,
+      207.83,
+      212.149,
+      216.116,
+      217.175,
+      220.345,
+      221.246,
+      224.106,
+      226.942,
+      229.365,
+      230.899,
+      234.718,
+      237.321,
+      240.536,
+      241.605,
+      245.12,
+      247.429,
+      249.415,
+      252.075,
+      255.59,
+      257.007,
+      259.248,
+      263.417,
+      264.907,
+      267.269,
+      271.2,
+      272.764,
+      275.539,
+      277.534,
+      279.935,
+      282.743,
+      285.125,
+      288.024,
+      290.096,
+      292.397,
+      296.552,
+      297.512,
+      300.271,
+      303.481,
+      306.433,
+      307.547,
+      310.063,
+      315.156,
+      315.149,
+      317.566,
+      323.144,
+      322.916,
+      325.102,
+      331.284,
+      331.169,
+      332.759,
+      338.681,
+      340.357,
+      340.365,
+      344.942,
+      348.516,
+      348.25,
+      352.863,
+      355.277,
+      356.895,
+      360.259,
+      362.442,
+      364.803,
+      368.889,
+      369.464,
+      372.919,
+      375.685,
+      377.654,
+      379.948,
+      382.505,
+      386.305,
+      387.991,
+      390.03,
+      393.294,
+      395.433,
+      399.147,
+      400.443,
+      403.847,
+      405.564,
+      408.181,
+      411.987,
+      413.037,
+      417.266,
+      417.623,
+      422.167,
+      423.285,
+      426.549,
+      429.24,
+      431.652,
+      434.992,
+      435.741,
+      439.99,
+      441.391,
+      443.954,
+      446.946,
+      449.51,
+      451.449,
+      454.995
+     ],
+     "src_run": "20261017-175327-p3x7-llama-ladder",
+     "t_new256_ms": [
+      {
+       "chunk_idx": 8,
+       "ms": 97.167
+      },
+      {
+       "chunk_idx": 16,
+       "ms": 92.105
+      },
+      {
+       "chunk_idx": 32,
+       "ms": 108.726
+      },
+      {
+       "chunk_idx": 64,
+       "ms": 142.645
+      }
+     ]
+    },
+    "busy_0.7_slowdown": {
+     "median_all_chunks": 1.9063,
+     "by_chunk": {
+      "0": 1.9063,
+      "32": 1.9063,
+      "63": 1.8959
+     },
+     "bg_alone_util_pct": 69.71,
+     "cfg": "m7_busy --duty 0.7 --period-ms 20 --n 8192（MI300X 同一設定）",
+     "src_run": "20261017-180431-p3x7-busy-llama"
+    }
+   }
+  },
+  "cpu_tier_h2d_llama_chunk_GiBps_c0": {
+   "median_of_run_medians": 6.436,
+   "per_run": {
+    "20261017-174843-p3x7-c0a": 6.991,
+    "20261017-175001-p3x7-c0-g6": 5.882
+   },
+   "gpu": [
+    "1",
+    "6"
+   ]
+  },
+  "cpu_tier_d2h_llama_chunk_GiBps_c0": {
+   "median_of_run_medians": 6.32,
+   "per_run": {
+    "20261017-174843-p3x7-c0a": 7.059,
+    "20261017-175001-p3x7-c0-g6": 5.581
+   }
+  },
+  "cpu_tier_k_read_duplex": {
+   "per_run": {
+    "20261017-174843-p3x7-c0a": 1.199
+   },
+   "definition": "H2D 單獨 ÷ H2D 同時有 D2H（中位數；MI300X tier_params 的 cpu k_read＝1.161 同定義）"
+  },
+  "dequant_bench_ms_per_block": {
+   "llama_block|fp8_head|torch": 0.9923,
+   "llama_block|fp8_head|fused": 0.1956,
+   "llama_block|fp8_head|torch_compile": "NOT_MEASURED: InductorError('SubprocException: An exception occurred in a subprocess:\\n\\nName=triton_poi_fused__to_copy_copy__mul_view_0\\nTraceback (most recent call last):\\n  File \"/ssd8/hungwei/paper-hkv/venv/tia",
+   "llama_block|fp8_token|torch": 0.9759,
+   "llama_block|fp8_token|fused": 0.172,
+   "llama_block|fp8_token|torch_compile": "NOT_MEASURED: InductorError('SubprocException: An exception occurred in a subprocess:\\n\\nName=triton_poi_fused__to_copy_copy__mul_view_0\\nTraceback (most recent call last):\\n  File \"/ssd8/hungwei/paper-hkv/venv/tia",
+   "llama_block|int8_token|torch": 0.9748,
+   "llama_block|int8_token|fused": 0.1915,
+   "llama_block|int8_token|torch_compile": 0.215,
+   "llama_block|int4_token|torch": 1.6251,
+   "llama_block|int4_token|fused": 0.171,
+   "llama_block|int4_token|torch_compile": 0.2355,
+   "llama_block|int4_kivi|torch": 2.0531,
+   "llama_block|int4_kivi|fused": 0.2468,
+   "llama_block|int4_kivi|torch_compile": 0.3236,
+   "qwen_block|fp8_head|torch": 0.4557,
+   "qwen_block|fp8_head|fused": 0.1229,
+   "qwen_block|fp8_head|torch_compile": "NOT_MEASURED: InductorError('SubprocException: An exception occurred in a subprocess:\\n\\nName=triton_poi_fused__to_copy_copy__mul_view_0\\nTraceback (most recent call last):\\n  File \"/ssd8/hungwei/paper-hkv/venv/tia",
+   "qwen_block|fp8_token|torch": 0.4495,
+   "qwen_block|fp8_token|fused": 0.1208,
+   "qwen_block|fp8_token|torch_compile": "NOT_MEASURED: InductorError('SubprocException: An exception occurred in a subprocess:\\n\\nName=triton_poi_fused__to_copy_copy__mul_view_0\\nTraceback (most recent call last):\\n  File \"/ssd8/hungwei/paper-hkv/venv/tia",
+   "qwen_block|int8_token|torch": 0.4485,
+   "qwen_block|int8_token|fused": 0.1178,
+   "qwen_block|int8_token|torch_compile": 0.1004,
+   "qwen_block|int4_token|torch": 0.7055,
+   "qwen_block|int4_token|fused": 0.087,
+   "qwen_block|int4_token|torch_compile": 0.1106,
+   "qwen_block|int4_kivi|torch": 0.9247,
+   "qwen_block|int4_kivi|fused": 0.1485,
+   "qwen_block|int4_kivi|torch_compile": 0.1751
+  },
+  "dequant_bench_src_run": "20261017-180859-p3x7-dqbench",
+  "qwen_restore_cpu_tier_x7_L0": {
+   "cpu_tier_meet_E0_32k": {
+    "busy": 2.0,
+    "idle": 3.0
+   },
+   "t_new_turn_256_s_32k": {
+    "busy": 0.25126,
+    "idle": 0.13183
+   },
+   "dequant_ms_per_block_in_restore_cpu": {
+    "fp8_head|cake|busy": 1.7865,
+    "fp8_head|cake|idle": 0.854,
+    "fp8_head|load_only|busy": 0.6741,
+    "fp8_head|load_only|idle": 0.4322,
+    "int4_kivi|cake|busy": 3.8925,
+    "int4_kivi|cake|idle": 1.9979,
+    "int4_kivi|load_only|busy": 1.3732,
+    "int4_kivi|load_only|idle": 0.8736
+   },
+   "restore_grid_runs": [
+    "20261017-181306-p3x7-grid-qwen-L0"
+   ]
+  }
+ },
+ "new_in_v2": {
+  "ssd8_disk": {
+   "device": "/dev/sdg（Samsung SSD 870 QVO 8TB，SATA，ext4，/ssd8；共用碟，78% 滿）",
+   "method": "code/disk_bw.py --size-mib 16384 --repeats 3（O_DIRECT 循序寫＋fsync、再循序讀，4 MiB 一次）；逐秒 /proc/diskstats",
+   "write_MiBps_median": 155.1,
+   "read_MiBps_median": 487.9,
+   "write_GiBps_median": 0.1515,
+   "read_GiBps_median": 0.4765,
+   "write_MiBps_each": [
+    154.6,
+    155.1,
+    155.4
+   ],
+   "read_MiBps_each": [
+    489.3,
+    487.9,
+    482.1
+   ],
+   "foreign_write_MiB_during_our_write": [
+    393.4,
+    297.1,
+    267.3
+   ],
+   "slc_cache_phase_seen": false,
+   "slc_note": "逐秒寫入速度從第 1 秒起就是 135–188 MiB/s（ssd8_bw_persec.csv），16 GiB × 3 都沒有看到比較快的開頭；這次量到的是 SLC 之外的持續寫入。SLC 快取當時的大小：NOT_MEASURED（看不到韌體狀態）。",
+   "run_id": "20261018-001935-p3cal-ssd8bw"
+  },
+  "cpu_busy": {
+   "definition": "N 個執行緒的 numpy 大塊複製（code/p3cal/cpu_stress.py，每執行緒 src、dst 各 256 MiB）。place＝same：壓力綁 GPU 所在 NUMA 節點的 CPU（量測 process 也綁在那裡）；other：綁另一個節點；all：不綁。頻寬的 slowdown_x＝N＝0 中位數÷該格中位數；時間的 slowdown_x＝該格中位數÷N＝0 中位數。N＝0 的基準是開頭、結尾兩段合併；same 的每個 N 是往上、往下兩段合併（median_by_phase 有各段）。",
+   "model": "qwen 32K（64 block），BF16、真實 CPU 層（不限速）、GPU 閒",
+   "gpu": 6,
+   "gpu_numa_node": 1,
+   "slowdown": {
+    "D2H_pageable_1024MiB": {
+     "N=0:same": {
+      "median": 4.8905,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:4.885 9:4.902"
+     },
+     "N=8:same": {
+      "median": 2.042,
+      "unit": "GiB/s",
+      "slowdown_x": 2.395,
+      "n": 10,
+      "median_by_phase": "1:3.397 8:2.019"
+     },
+     "N=16:same": {
+      "median": 1.166,
+      "unit": "GiB/s",
+      "slowdown_x": 4.1943,
+      "n": 10,
+      "median_by_phase": "2:1.94 7:0.713"
+     },
+     "N=32:same": {
+      "median": 0.349,
+      "unit": "GiB/s",
+      "slowdown_x": 14.0129,
+      "n": 10,
+      "median_by_phase": "3:0.447 6:0.347"
+     },
+     "N=48:all": {
+      "median": 0.871,
+      "unit": "GiB/s",
+      "slowdown_x": 5.6148,
+      "n": 5,
+      "median_by_phase": "10:0.871"
+     },
+     "N=48:other": {
+      "median": 1.45,
+      "unit": "GiB/s",
+      "slowdown_x": 3.3728,
+      "n": 5,
+      "median_by_phase": "11:1.45"
+     },
+     "N=48:same": {
+      "median": 0.333,
+      "unit": "GiB/s",
+      "slowdown_x": 14.6862,
+      "n": 10,
+      "median_by_phase": "4:0.435 5:0.281"
+     }
+    },
+    "D2H_pinned_1024MiB": {
+     "N=0:same": {
+      "median": 7.818,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:7.816 9:7.82"
+     },
+     "N=8:same": {
+      "median": 6.333,
+      "unit": "GiB/s",
+      "slowdown_x": 1.2345,
+      "n": 10,
+      "median_by_phase": "1:6.299 8:6.438"
+     },
+     "N=16:same": {
+      "median": 6.1735,
+      "unit": "GiB/s",
+      "slowdown_x": 1.2664,
+      "n": 10,
+      "median_by_phase": "2:6.556 7:5.994"
+     },
+     "N=32:same": {
+      "median": 6.557,
+      "unit": "GiB/s",
+      "slowdown_x": 1.1923,
+      "n": 10,
+      "median_by_phase": "3:6.997 6:6.492"
+     },
+     "N=48:all": {
+      "median": 4.634,
+      "unit": "GiB/s",
+      "slowdown_x": 1.6871,
+      "n": 5,
+      "median_by_phase": "10:4.634"
+     },
+     "N=48:other": {
+      "median": 3.519,
+      "unit": "GiB/s",
+      "slowdown_x": 2.2217,
+      "n": 5,
+      "median_by_phase": "11:3.519"
+     },
+     "N=48:same": {
+      "median": 6.9595,
+      "unit": "GiB/s",
+      "slowdown_x": 1.1234,
+      "n": 10,
+      "median_by_phase": "4:6.936 5:6.983"
+     }
+    },
+    "H2D_pageable_1024MiB": {
+     "N=0:same": {
+      "median": 4.2935,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:4.284 9:4.311"
+     },
+     "N=8:same": {
+      "median": 1.819,
+      "unit": "GiB/s",
+      "slowdown_x": 2.3604,
+      "n": 10,
+      "median_by_phase": "1:2.221 8:1.441"
+     },
+     "N=16:same": {
+      "median": 0.897,
+      "unit": "GiB/s",
+      "slowdown_x": 4.7865,
+      "n": 10,
+      "median_by_phase": "2:1.506 7:0.668"
+     },
+     "N=32:same": {
+      "median": 0.3415,
+      "unit": "GiB/s",
+      "slowdown_x": 12.5725,
+      "n": 10,
+      "median_by_phase": "3:0.433 6:0.338"
+     },
+     "N=48:all": {
+      "median": 0.667,
+      "unit": "GiB/s",
+      "slowdown_x": 6.437,
+      "n": 5,
+      "median_by_phase": "10:0.667"
+     },
+     "N=48:other": {
+      "median": 0.811,
+      "unit": "GiB/s",
+      "slowdown_x": 5.2941,
+      "n": 5,
+      "median_by_phase": "11:0.811"
+     },
+     "N=48:same": {
+      "median": 0.3725,
+      "unit": "GiB/s",
+      "slowdown_x": 11.5262,
+      "n": 10,
+      "median_by_phase": "4:0.424 5:0.276"
+     }
+    },
+    "H2D_pinned_1024MiB": {
+     "N=0:same": {
+      "median": 7.346,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:7.347 9:7.345"
+     },
+     "N=8:same": {
+      "median": 5.434,
+      "unit": "GiB/s",
+      "slowdown_x": 1.3519,
+      "n": 10,
+      "median_by_phase": "1:5.953 8:4.805"
+     },
+     "N=16:same": {
+      "median": 5.1765,
+      "unit": "GiB/s",
+      "slowdown_x": 1.4191,
+      "n": 10,
+      "median_by_phase": "2:5.986 7:4.475"
+     },
+     "N=32:same": {
+      "median": 6.94,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0585,
+      "n": 10,
+      "median_by_phase": "3:7.008 6:6.872"
+     },
+     "N=48:all": {
+      "median": 5.068,
+      "unit": "GiB/s",
+      "slowdown_x": 1.4495,
+      "n": 5,
+      "median_by_phase": "10:5.068"
+     },
+     "N=48:other": {
+      "median": 4.172,
+      "unit": "GiB/s",
+      "slowdown_x": 1.7608,
+      "n": 5,
+      "median_by_phase": "11:4.172"
+     },
+     "N=48:same": {
+      "median": 7.096,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0352,
+      "n": 10,
+      "median_by_phase": "4:6.803 5:7.12"
+     }
+    },
+    "H2D_pinned_chunk_into_kv_view_64MiB": {
+     "N=0:same": {
+      "median": 7.189,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0,
+      "n": 30,
+      "median_by_phase": "0:7.175 9:7.198"
+     },
+     "N=8:same": {
+      "median": 5.246,
+      "unit": "GiB/s",
+      "slowdown_x": 1.3704,
+      "n": 30,
+      "median_by_phase": "1:5.794 8:4.854"
+     },
+     "N=16:same": {
+      "median": 5.0385,
+      "unit": "GiB/s",
+      "slowdown_x": 1.4268,
+      "n": 30,
+      "median_by_phase": "2:5.916 7:4.285"
+     },
+     "N=32:same": {
+      "median": 6.109,
+      "unit": "GiB/s",
+      "slowdown_x": 1.1768,
+      "n": 30,
+      "median_by_phase": "3:6.179 6:6.109"
+     },
+     "N=48:all": {
+      "median": 5.366,
+      "unit": "GiB/s",
+      "slowdown_x": 1.3397,
+      "n": 15,
+      "median_by_phase": "10:5.366"
+     },
+     "N=48:other": {
+      "median": 3.647,
+      "unit": "GiB/s",
+      "slowdown_x": 1.9712,
+      "n": 15,
+      "median_by_phase": "11:3.647"
+     },
+     "N=48:same": {
+      "median": 6.038,
+      "unit": "GiB/s",
+      "slowdown_x": 1.1906,
+      "n": 30,
+      "median_by_phase": "4:6.173 5:6.012"
+     }
+    },
+    "H2D_pinned_qwen_block_into_kv_view_28.0MiB": {
+     "N=0:same": {
+      "median": 7.124,
+      "unit": "GiB/s",
+      "slowdown_x": 1.0,
+      "n": 40,
+      "median_by_phase": "0:7.1165 9:7.131"
+     },
+     "N=8:same": {
+      "median": 5.075,
+      "unit": "GiB/s",
+      "slowdown_x": 1.4037,
+      "n": 40,
+      "median_by_phase": "1:5.664 8:4.7225"
+     },
+     "N=16:same": {
+      "median": 5.016,
+      "unit": "GiB/s",
+      "slowdown_x": 1.4203,
+      "n": 40,
+      "median_by_phase": "2:5.6985 7:4.1735"
+     },
+     "N=32:same": {
+      "median": 5.388,
+      "unit": "GiB/s",
+      "slowdown_x": 1.3222,
+      "n": 40,
+      "median_by_phase": "3:5.5405 6:5.3465"
+     },
+     "N=48:all": {
+      "median": 4.9745,
+      "unit": "GiB/s",
+      "slowdown_x": 1.4321,
+      "n": 20,
+      "median_by_phase": "10:4.9745"
+     },
+     "N=48:other": {
+      "median": 4.3275,
+      "unit": "GiB/s",
+      "slowdown_x": 1.6462,
+      "n": 20,
+      "median_by_phase": "11:4.3275"
+     },
+     "N=48:same": {
+      "median": 5.456,
+      "unit": "GiB/s",
+      "slowdown_x": 1.3057,
+      "n": 40,
+      "median_by_phase": "4:5.7715 5:5.2955"
+     }
+    },
+    "cake:b": {
+     "N=0:same": {
+      "median": 3.0,
+      "unit": "blocks",
+      "slowdown_x": null,
+      "n": 10,
+      "median_by_phase": "0:3.0 9:3.0"
+     },
+     "N=8:same": {
+      "median": 3.0,
+      "unit": "blocks",
+      "slowdown_x": null,
+      "n": 10,
+      "median_by_phase": "1:3.0 8:3.0"
+     },
+     "N=16:same": {
+      "median": 3.0,
+      "unit": "blocks",
+      "slowdown_x": null,
+      "n": 10,
+      "median_by_phase": "2:3.0 7:4.0"
+     },
+     "N=32:same": {
+      "median": 1.0,
+      "unit": "blocks",
+      "slowdown_x": null,
+      "n": 10,
+      "median_by_phase": "3:1.0 6:1.0"
+     },
+     "N=48:all": {
+      "median": 2.0,
+      "unit": "blocks",
+      "slowdown_x": null,
+      "n": 5,
+      "median_by_phase": "10:2.0"
+     },
+     "N=48:other": {
+      "median": 4.0,
+      "unit": "blocks",
+      "slowdown_x": null,
+      "n": 5,
+      "median_by_phase": "11:4.0"
+     },
+     "N=48:same": {
+      "median": 1.5,
+      "unit": "blocks",
+      "slowdown_x": null,
+      "n": 10,
+      "median_by_phase": "4:2.0 5:1.0"
+     }
+    },
+    "cake:t_restore": {
+     "N=0:same": {
+      "median": 0.393294,
+      "unit": "s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:0.395836 9:0.392718"
+     },
+     "N=8:same": {
+      "median": 0.400641,
+      "unit": "s",
+      "slowdown_x": 1.0187,
+      "n": 10,
+      "median_by_phase": "1:0.393486 8:0.402429"
+     },
+     "N=16:same": {
+      "median": 0.409316,
+      "unit": "s",
+      "slowdown_x": 1.0407,
+      "n": 10,
+      "median_by_phase": "2:0.399457 7:0.540592"
+     },
+     "N=32:same": {
+      "median": 0.618216,
+      "unit": "s",
+      "slowdown_x": 1.5719,
+      "n": 10,
+      "median_by_phase": "3:0.538483 6:0.646983"
+     },
+     "N=48:all": {
+      "median": 0.553897,
+      "unit": "s",
+      "slowdown_x": 1.4084,
+      "n": 5,
+      "median_by_phase": "10:0.553897"
+     },
+     "N=48:other": {
+      "median": 0.543438,
+      "unit": "s",
+      "slowdown_x": 1.3818,
+      "n": 5,
+      "median_by_phase": "11:0.543438"
+     },
+     "N=48:same": {
+      "median": 0.766938,
+      "unit": "s",
+      "slowdown_x": 1.95,
+      "n": 10,
+      "median_by_phase": "4:0.735085 5:0.79879"
+     }
+    },
+    "cake:ttft": {
+     "N=0:same": {
+      "median": 0.522401,
+      "unit": "s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:0.525502 9:0.522101"
+     },
+     "N=8:same": {
+      "median": 0.53086,
+      "unit": "s",
+      "slowdown_x": 1.0162,
+      "n": 10,
+      "median_by_phase": "1:0.522973 8:0.531966"
+     },
+     "N=16:same": {
+      "median": 0.54059,
+      "unit": "s",
+      "slowdown_x": 1.0348,
+      "n": 10,
+      "median_by_phase": "2:0.529408 7:0.669793"
+     },
+     "N=32:same": {
+      "median": 1.180264,
+      "unit": "s",
+      "slowdown_x": 2.2593,
+      "n": 10,
+      "median_by_phase": "3:1.064584 6:1.195853"
+     },
+     "N=48:all": {
+      "median": 0.714721,
+      "unit": "s",
+      "slowdown_x": 1.3681,
+      "n": 5,
+      "median_by_phase": "10:0.714721"
+     },
+     "N=48:other": {
+      "median": 0.674137,
+      "unit": "s",
+      "slowdown_x": 1.2905,
+      "n": 5,
+      "median_by_phase": "11:0.674137"
+     },
+     "N=48:same": {
+      "median": 1.194683,
+      "unit": "s",
+      "slowdown_x": 2.2869,
+      "n": 10,
+      "median_by_phase": "4:1.136674 5:1.496366"
+     }
+    },
+    "compute_only:t_restore": {
+     "N=0:same": {
+      "median": 11.640598,
+      "unit": "s",
+      "slowdown_x": 1.0,
+      "n": 2,
+      "median_by_phase": "0:11.628603 9:11.652594"
+     },
+     "N=8:same": {
+      "median": 11.674455,
+      "unit": "s",
+      "slowdown_x": 1.0029,
+      "n": 2,
+      "median_by_phase": "1:11.675871 8:11.673039"
+     },
+     "N=16:same": {
+      "median": 11.737066,
+      "unit": "s",
+      "slowdown_x": 1.0083,
+      "n": 2,
+      "median_by_phase": "2:11.742477 7:11.731656"
+     },
+     "N=32:same": {
+      "median": 35.895398,
+      "unit": "s",
+      "slowdown_x": 3.0836,
+      "n": 2,
+      "median_by_phase": "3:30.015234 6:41.775562"
+     },
+     "N=48:all": {
+      "median": 12.724604,
+      "unit": "s",
+      "slowdown_x": 1.0931,
+      "n": 1,
+      "median_by_phase": "10:12.724604"
+     },
+     "N=48:other": {
+      "median": 11.715075,
+      "unit": "s",
+      "slowdown_x": 1.0064,
+      "n": 1,
+      "median_by_phase": "11:11.715075"
+     },
+     "N=48:same": {
+      "median": 36.796471,
+      "unit": "s",
+      "slowdown_x": 3.161,
+      "n": 2,
+      "median_by_phase": "4:28.833232 5:44.75971"
+     }
+    },
+    "load_only:t_h2d": {
+     "N=0:same": {
+      "median": 0.2452,
+      "unit": "s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:0.245742 9:0.245057"
+     },
+     "N=8:same": {
+      "median": 0.330431,
+      "unit": "s",
+      "slowdown_x": 1.3476,
+      "n": 10,
+      "median_by_phase": "1:0.29799 8:0.367276"
+     },
+     "N=16:same": {
+      "median": 0.354248,
+      "unit": "s",
+      "slowdown_x": 1.4447,
+      "n": 10,
+      "median_by_phase": "2:0.300254 7:0.409506"
+     },
+     "N=32:same": {
+      "median": 0.310847,
+      "unit": "s",
+      "slowdown_x": 1.2677,
+      "n": 10,
+      "median_by_phase": "3:0.308915 6:0.312999"
+     },
+     "N=48:all": {
+      "median": 0.34182,
+      "unit": "s",
+      "slowdown_x": 1.394,
+      "n": 5,
+      "median_by_phase": "10:0.34182"
+     },
+     "N=48:other": {
+      "median": 0.444574,
+      "unit": "s",
+      "slowdown_x": 1.8131,
+      "n": 5,
+      "median_by_phase": "11:0.444574"
+     },
+     "N=48:same": {
+      "median": 0.304219,
+      "unit": "s",
+      "slowdown_x": 1.2407,
+      "n": 10,
+      "median_by_phase": "4:0.303632 5:0.30604"
+     }
+    },
+    "load_only:t_restore": {
+     "N=0:same": {
+      "median": 0.247557,
+      "unit": "s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:0.248479 9:0.247408"
+     },
+     "N=8:same": {
+      "median": 0.334261,
+      "unit": "s",
+      "slowdown_x": 1.3502,
+      "n": 10,
+      "median_by_phase": "1:0.301324 8:0.371381"
+     },
+     "N=16:same": {
+      "median": 0.359754,
+      "unit": "s",
+      "slowdown_x": 1.4532,
+      "n": 10,
+      "median_by_phase": "2:0.306081 7:0.415851"
+     },
+     "N=32:same": {
+      "median": 0.379074,
+      "unit": "s",
+      "slowdown_x": 1.5313,
+      "n": 10,
+      "median_by_phase": "3:0.370709 6:0.38638"
+     },
+     "N=48:all": {
+      "median": 0.353253,
+      "unit": "s",
+      "slowdown_x": 1.427,
+      "n": 5,
+      "median_by_phase": "10:0.353253"
+     },
+     "N=48:other": {
+      "median": 0.449284,
+      "unit": "s",
+      "slowdown_x": 1.8149,
+      "n": 5,
+      "median_by_phase": "11:0.449284"
+     },
+     "N=48:same": {
+      "median": 0.380046,
+      "unit": "s",
+      "slowdown_x": 1.5352,
+      "n": 10,
+      "median_by_phase": "4:0.361078 5:0.381345"
+     }
+    },
+    "load_only:ttft": {
+     "N=0:same": {
+      "median": 0.374099,
+      "unit": "s",
+      "slowdown_x": 1.0,
+      "n": 10,
+      "median_by_phase": "0:0.374475 9:0.374093"
+     },
+     "N=8:same": {
+      "median": 0.461973,
+      "unit": "s",
+      "slowdown_x": 1.2349,
+      "n": 10,
+      "median_by_phase": "1:0.429059 8:0.500763"
+     },
+     "N=16:same": {
+      "median": 0.488082,
+      "unit": "s",
+      "slowdown_x": 1.3047,
+      "n": 10,
+      "median_by_phase": "2:0.434517 7:0.545245"
+     },
+     "N=32:same": {
+      "median": 0.922792,
+      "unit": "s",
+      "slowdown_x": 2.4667,
+      "n": 10,
+      "median_by_phase": "3:0.900008 6:0.943141"
+     },
+     "N=48:all": {
+      "median": 0.487051,
+      "unit": "s",
+      "slowdown_x": 1.3019,
+      "n": 5,
+      "median_by_phase": "10:0.487051"
+     },
+     "N=48:other": {
+      "median": 0.576238,
+      "unit": "s",
+      "slowdown_x": 1.5403,
+      "n": 5,
+      "median_by_phase": "11:0.576238"
+     },
+     "N=48:same": {
+      "median": 0.986015,
+      "unit": "s",
+      "slowdown_x": 2.6357,
+      "n": 10,
+      "median_by_phase": "4:0.920595 5:0.999742"
+     }
+    }
+   },
+   "phases": [
+    {
+     "phase": "0",
+     "N": "0",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "21.12",
+     "loadavg_start": "6.16",
+     "loadavg_end": "5.95",
+     "cpu_util_node0": "0.0488",
+     "cpu_util_node1": "0.071",
+     "stress_copy_GiBps_median": "",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 3 4 5"
+    },
+    {
+     "phase": "1",
+     "N": "8",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "24.01",
+     "loadavg_start": "7.53",
+     "loadavg_end": "9.50",
+     "cpu_util_node0": "0.0684",
+     "cpu_util_node1": "0.2269",
+     "stress_copy_GiBps_median": "27.978",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 3 4 5"
+    },
+    {
+     "phase": "2",
+     "N": "16",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "26.89",
+     "loadavg_start": "9.92",
+     "loadavg_end": "15.06",
+     "cpu_util_node0": "0.0543",
+     "cpu_util_node1": "0.4151",
+     "stress_copy_GiBps_median": "29.218",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 3 4 5"
+    },
+    {
+     "phase": "3",
+     "N": "32",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "69.06",
+     "loadavg_start": "20.07",
+     "loadavg_end": "33.98",
+     "cpu_util_node0": "0.0607",
+     "cpu_util_node1": "0.7566",
+     "stress_copy_GiBps_median": "28.445",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 3 4 5"
+    },
+    {
+     "phase": "4",
+     "N": "48",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "68.38",
+     "loadavg_start": "38.86",
+     "loadavg_end": "48.87",
+     "cpu_util_node0": "0.0839",
+     "cpu_util_node1": "0.9998",
+     "stress_copy_GiBps_median": "28.386",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 3 4 5"
+    },
+    {
+     "phase": "5",
+     "N": "48",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "98.87",
+     "loadavg_start": "42.54",
+     "loadavg_end": "51.52",
+     "cpu_util_node0": "0.0724",
+     "cpu_util_node1": "0.9998",
+     "stress_copy_GiBps_median": "21.706",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 4 5"
+    },
+    {
+     "phase": "6",
+     "N": "32",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "91.89",
+     "loadavg_start": "47.55",
+     "loadavg_end": "38.98",
+     "cpu_util_node0": "0.0548",
+     "cpu_util_node1": "0.717",
+     "stress_copy_GiBps_median": "22.941",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 4 5"
+    },
+    {
+     "phase": "7",
+     "N": "16",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "36.87",
+     "loadavg_start": "37.62",
+     "loadavg_end": "30.24",
+     "cpu_util_node0": "0.063",
+     "cpu_util_node1": "0.3738",
+     "stress_copy_GiBps_median": "16.22",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 4 5"
+    },
+    {
+     "phase": "8",
+     "N": "8",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "27.53",
+     "loadavg_start": "26.68",
+     "loadavg_end": "21.84",
+     "cpu_util_node0": "0.0596",
+     "cpu_util_node1": "0.1956",
+     "stress_copy_GiBps_median": "15.233",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 4 5"
+    },
+    {
+     "phase": "9",
+     "N": "0",
+     "place": "same",
+     "stress_cpus": "24-47,72-95",
+     "secs": "21.08",
+     "loadavg_start": "20.33",
+     "loadavg_end": "15.70",
+     "cpu_util_node0": "0.0493",
+     "cpu_util_node1": "0.0302",
+     "stress_copy_GiBps_median": "",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 4 5"
+    },
+    {
+     "phase": "10",
+     "N": "48",
+     "place": "all",
+     "stress_cpus": "ALL",
+     "secs": "38.54",
+     "loadavg_start": "27.20",
+     "loadavg_end": "40.29",
+     "cpu_util_node0": "0.5961",
+     "cpu_util_node1": "0.5867",
+     "stress_copy_GiBps_median": "31.146",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 4 5"
+    },
+    {
+     "phase": "11",
+     "N": "48",
+     "place": "other",
+     "stress_cpus": "0-23,48-71",
+     "secs": "32.44",
+     "loadavg_start": "36.10",
+     "loadavg_end": "43.83",
+     "cpu_util_node0": "0.9999",
+     "cpu_util_node1": "0.0913",
+     "stress_copy_GiBps_median": "18.875",
+     "host_level": "HEAVY",
+     "host_foreign_gpus": "0 1 2 4 5"
+    }
+   ],
+   "caveats": [
+    "壓力程式的記憶體沒有綁節點（沒有 numactl，沒用 libnuma）。事後（02:33–02:35）查：GPU 6 的 node1 MemFree 只剩 0.5–1.3 GB（其餘是 page cache），zone_reclaim_mode=0，綁 node1 CPU 的壓力有一大半配到 node0（run 20261018-023443-p3cal-stress-numa，啟動後 5 秒時已配的 anon 頁：N=8 node1 佔 44.5%、N=48 佔 23.2%）。cpubusy run 當時（00:50–01:02）的分佈：NOT_MEASURED。量測 process 的 pinned 緩衝在哪個節點：NOT_MEASURED。",
+    "所以 same 的倍數不隨 N 單調（pinned H2D 1 GiB：N=8 1.35×、16 1.42×、32 1.06×、48 1.04×），而 other（壓力綁 node0）反而最慢（1.76×）。這是這台機器、這個時段的狀態，不是一般規律。",
+    "N＝0 的兩段（開頭、結尾）幾乎一樣（pinned H2D 1 GiB 7.347／7.345 GiB/s），但同一個 N 的往上、往下兩段差到 20–25%（median_by_phase）。",
+    "compute_only 在 same 的 N≥32 慢 3.1×、在 other 只慢 1.006×：這是 GPU 發 kernel 的 Python 執行緒搶不到 CPU（同節點 48 個邏輯 CPU 被壓力佔滿），不是記憶體頻寬。Cake 的重算線也受這個影響。",
+    "每格 n＝10（same，兩段各 5）或 5（all、other）；只有一個 launch。"
+   ],
+   "run_id": "20261018-004954-p3cal-cpubusy-qwen"
+  },
+  "c0_gpu6_from_cpubusy_N0": {
+   "values_GiBps_median": {
+    "D2H_pageable_1024MiB": 4.8905,
+    "D2H_pageable_64MiB": 5.0755,
+    "D2H_pinned_1024MiB": 7.818,
+    "D2H_pinned_64MiB": 7.8245,
+    "D2H_pinned_chunk_from_kv_view_64MiB": 7.63,
+    "H2D_pageable_1024MiB": 4.2935,
+    "H2D_pageable_64MiB": 4.232,
+    "H2D_pinned_1024MiB": 7.346,
+    "H2D_pinned_64MiB": 7.3455,
+    "H2D_pinned_chunk_into_kv_view_64MiB": 7.189,
+    "H2D_pinned_qwen_block_into_kv_view_28.0MiB": 7.124
+   },
+   "n": {
+    "D2H_pageable_1024MiB": 10,
+    "D2H_pageable_64MiB": 10,
+    "D2H_pinned_1024MiB": 10,
+    "D2H_pinned_64MiB": 10,
+    "D2H_pinned_chunk_from_kv_view_64MiB": 30,
+    "H2D_pageable_1024MiB": 10,
+    "H2D_pageable_64MiB": 10,
+    "H2D_pinned_1024MiB": 10,
+    "H2D_pinned_64MiB": 10,
+    "H2D_pinned_chunk_into_kv_view_64MiB": 30,
+    "H2D_pinned_qwen_block_into_kv_view_28.0MiB": 40
+   },
+   "note": "GPU 6（node1，taskset node1）。和 m7_calib c0 同一個迴圈；duplex 沒量。X7 同一張卡（20261017-175001-p3x7-c0-g6，主機 loadavg 約 45）：pinned H2D 1 GiB 6.567、D2H 6.048、pageable H2D 2.738 GiB/s。",
+   "run_id": "20261018-004954-p3cal-cpubusy-qwen"
+  },
+  "models": {
+   "llama": {
+    "cpu_tier_meet_E0_32k_measured": {
+     "busy": 3.0,
+     "idle": 4.0
+    },
+    "cpu_tier_meet_E0_32k_x7_model_prediction": {
+     "busy": 3.0,
+     "idle": 4.0
+    },
+    "meet_model_check_within_1": "18/18",
+    "t_new_turn_256_s_32k": {
+     "idle": 0.14354,
+     "busy": 0.28088
+    },
+    "cpu_tier_restore_32k": {
+     "torch(m10_codec)|bf16|cake|busy": {
+      "t_restore_median_s": 0.82331,
+      "ttft_median_s": 1.10374,
+      "b_median": 3.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|bf16|cake|idle": {
+      "t_restore_median_s": 0.56134,
+      "ttft_median_s": 0.70438,
+      "b_median": 4.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|bf16|load_only|busy": {
+      "t_restore_median_s": 0.73016,
+      "ttft_median_s": 1.01028,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|bf16|load_only|idle": {
+      "t_restore_median_s": 0.56097,
+      "ttft_median_s": 0.70325,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|fp8_token|cake|busy": {
+      "t_restore_median_s": 0.62202,
+      "ttft_median_s": 0.90492,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 3.3405,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|fp8_token|cake|idle": {
+      "t_restore_median_s": 0.45802,
+      "ttft_median_s": 0.60146,
+      "b_median": 3.0,
+      "dequant_ms_per_lp_block": 1.4675,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|fp8_token|load_only|busy": {
+      "t_restore_median_s": 0.46306,
+      "ttft_median_s": 0.74083,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 1.2396,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|fp8_token|load_only|idle": {
+      "t_restore_median_s": 0.348,
+      "ttft_median_s": 0.48992,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.9699,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|int4_kivi|cake|busy": {
+      "t_restore_median_s": 0.68116,
+      "ttft_median_s": 0.95943,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 5.8796,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|int4_kivi|cake|idle": {
+      "t_restore_median_s": 0.34116,
+      "ttft_median_s": 0.4848,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 2.4989,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|int4_kivi|load_only|busy": {
+      "t_restore_median_s": 0.4233,
+      "ttft_median_s": 0.70295,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 2.1397,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "torch(m10_codec)|int4_kivi|load_only|idle": {
+      "t_restore_median_s": 0.30077,
+      "ttft_median_s": 0.44257,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 1.9261,
+      "n": 10,
+      "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1"
+     },
+     "fused_triton|bf16|cake|busy": {
+      "t_restore_median_s": 0.80977,
+      "ttft_median_s": 1.08739,
+      "b_median": 3.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|bf16|cake|idle": {
+      "t_restore_median_s": 0.55425,
+      "ttft_median_s": 0.69578,
+      "b_median": 4.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|bf16|load_only|busy": {
+      "t_restore_median_s": 0.72246,
+      "ttft_median_s": 0.99848,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|bf16|load_only|idle": {
+      "t_restore_median_s": 0.55748,
+      "ttft_median_s": 0.69741,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|fp8_token|cake|busy": {
+      "t_restore_median_s": 0.53881,
+      "ttft_median_s": 0.81461,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 0.6673,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|fp8_token|cake|idle": {
+      "t_restore_median_s": 0.41289,
+      "ttft_median_s": 0.55466,
+      "b_median": 3.0,
+      "dequant_ms_per_lp_block": 0.3393,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|fp8_token|load_only|busy": {
+      "t_restore_median_s": 0.39022,
+      "ttft_median_s": 0.66447,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.3478,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|fp8_token|load_only|idle": {
+      "t_restore_median_s": 0.29443,
+      "ttft_median_s": 0.43415,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.1325,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|int4_kivi|cake|busy": {
+      "t_restore_median_s": 0.27421,
+      "ttft_median_s": 0.55259,
+      "b_median": 1.0,
+      "dequant_ms_per_lp_block": 1.3789,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|int4_kivi|cake|idle": {
+      "t_restore_median_s": 0.27451,
+      "ttft_median_s": 0.41595,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 0.3567,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|int4_kivi|load_only|busy": {
+      "t_restore_median_s": 0.29414,
+      "ttft_median_s": 0.56928,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.4855,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     },
+     "fused_triton|int4_kivi|load_only|idle": {
+      "t_restore_median_s": 0.18441,
+      "ttft_median_s": 0.32451,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.1218,
+      "n": 5,
+      "run_id": "20261018-004724-p3cal-fused-llama"
+     }
+    },
+    "restore_grid_runs": [
+     "20261018-002928-p3cal-grid-llama-L0",
+     "20261018-010316-p3cal-grid-llama-L1"
+    ],
+    "fused_grid_runs": [
+     "20261018-004724-p3cal-fused-llama"
+    ],
+    "cpu_tier_64k": "NOT_MEASURED：run 20261018-013157-p3cal-grid-llama64k-idle 在暖機的第一次 Cake 還原時 OOM（GPU 6 乾淨、只有我們的 process）：torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 64.00 MiB. GPU 0 has a total capacity of 23.68 GiB of which 58.94 MiB is free. … this process has 23.60 GiB memory in use. Of the allocated memory 23.10 GiB is allocated by PyTorch（m7_restore_harness._load 的 copy_）。busy 版沒跑（同一設定再加背景 m7_busy）。"
+   },
+   "qwen": {
+    "cpu_tier_meet_E0_32k_measured": {
+     "busy": 2.0,
+     "idle": 3.0
+    },
+    "cpu_tier_meet_E0_32k_x7_model_prediction": {
+     "busy": 2.0,
+     "idle": 2.0
+    },
+    "meet_model_check_within_1": "18/18",
+    "t_new_turn_256_s_32k": {
+     "idle": 0.13053,
+     "busy": 0.25614
+    },
+    "cpu_tier_restore_32k": {
+     "torch(m10_codec)|bf16|cake|busy": {
+      "t_restore_median_s": 0.51923,
+      "ttft_median_s": 0.77773,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|bf16|cake|idle": {
+      "t_restore_median_s": 0.39695,
+      "ttft_median_s": 0.52774,
+      "b_median": 3.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|bf16|load_only|busy": {
+      "t_restore_median_s": 0.36715,
+      "ttft_median_s": 0.62424,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|bf16|load_only|idle": {
+      "t_restore_median_s": 0.24764,
+      "ttft_median_s": 0.37547,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|fp8_head|cake|busy": {
+      "t_restore_median_s": 0.28826,
+      "ttft_median_s": 0.54462,
+      "b_median": 1.0,
+      "dequant_ms_per_lp_block": 2.1963,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|fp8_head|cake|idle": {
+      "t_restore_median_s": 0.2837,
+      "ttft_median_s": 0.41458,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 0.689,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|fp8_head|load_only|busy": {
+      "t_restore_median_s": 0.26743,
+      "ttft_median_s": 0.52184,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.9303,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|fp8_head|load_only|idle": {
+      "t_restore_median_s": 0.15154,
+      "ttft_median_s": 0.27864,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.4307,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|int4_kivi|cake|busy": {
+      "t_restore_median_s": 0.57305,
+      "ttft_median_s": 0.83044,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 4.0674,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|int4_kivi|cake|idle": {
+      "t_restore_median_s": 0.29348,
+      "ttft_median_s": 0.42408,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 1.5758,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|int4_kivi|load_only|busy": {
+      "t_restore_median_s": 0.26382,
+      "ttft_median_s": 0.52141,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 1.5371,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "torch(m10_codec)|int4_kivi|load_only|idle": {
+      "t_restore_median_s": 0.137,
+      "ttft_median_s": 0.26466,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.8711,
+      "n": 5,
+      "run_id": "20261018-011852-p3cal-grid-qwen-L1b"
+     },
+     "fused_triton|bf16|cake|busy": {
+      "t_restore_median_s": 0.50969,
+      "ttft_median_s": 0.76205,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|bf16|cake|idle": {
+      "t_restore_median_s": 0.39381,
+      "ttft_median_s": 0.52273,
+      "b_median": 3.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|bf16|load_only|busy": {
+      "t_restore_median_s": 0.36332,
+      "ttft_median_s": 0.61252,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|bf16|load_only|idle": {
+      "t_restore_median_s": 0.24636,
+      "ttft_median_s": 0.373,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": null,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|fp8_head|cake|busy": {
+      "t_restore_median_s": 0.2553,
+      "ttft_median_s": 0.50607,
+      "b_median": 1.0,
+      "dequant_ms_per_lp_block": 1.8463,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|fp8_head|cake|idle": {
+      "t_restore_median_s": 0.26074,
+      "ttft_median_s": 0.38966,
+      "b_median": 2.0,
+      "dequant_ms_per_lp_block": 0.3321,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|fp8_head|load_only|busy": {
+      "t_restore_median_s": 0.21436,
+      "ttft_median_s": 0.46459,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.335,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|fp8_head|load_only|idle": {
+      "t_restore_median_s": 0.1274,
+      "ttft_median_s": 0.25399,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.0638,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|int4_kivi|cake|busy": {
+      "t_restore_median_s": 0.25409,
+      "ttft_median_s": 0.50566,
+      "b_median": 1.0,
+      "dequant_ms_per_lp_block": 1.0797,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|int4_kivi|cake|idle": {
+      "t_restore_median_s": 0.13162,
+      "ttft_median_s": 0.26048,
+      "b_median": 1.0,
+      "dequant_ms_per_lp_block": 0.2323,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|int4_kivi|load_only|busy": {
+      "t_restore_median_s": 0.18769,
+      "ttft_median_s": 0.43527,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.7175,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     },
+     "fused_triton|int4_kivi|load_only|idle": {
+      "t_restore_median_s": 0.08438,
+      "ttft_median_s": 0.21091,
+      "b_median": 64.0,
+      "dequant_ms_per_lp_block": 0.0627,
+      "n": 5,
+      "run_id": "20261018-004505-p3cal-fused-qwen"
+     }
+    },
+    "restore_grid_runs": [
+     "20261018-011852-p3cal-grid-qwen-L1b"
+    ],
+    "fused_grid_runs": [
+     "20261018-004505-p3cal-fused-qwen"
+    ]
+   }
+  },
+  "lowprec_cpu_tier": {
+   "rows": [
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:27+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.80977,
+     "t_restore_lowprec_s": 0.53881,
+     "change_pct": -33.5,
+     "dequant_ms_per_lp_block": 0.6673,
+     "t_h2d_lowprec_s": 0.27964,
+     "t_h2d_bf16_s": 0.58299,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:29+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.80977,
+     "t_restore_lowprec_s": 0.27421,
+     "change_pct": -66.1,
+     "dequant_ms_per_lp_block": 1.3789,
+     "t_h2d_lowprec_s": 0.17442,
+     "t_h2d_bf16_s": 0.58299,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:06+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.55425,
+     "t_restore_lowprec_s": 0.41289,
+     "change_pct": -25.5,
+     "dequant_ms_per_lp_block": 0.3393,
+     "t_h2d_lowprec_s": 0.27408,
+     "t_h2d_bf16_s": 0.5383,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:01+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.55425,
+     "t_restore_lowprec_s": 0.27451,
+     "change_pct": -50.5,
+     "dequant_ms_per_lp_block": 0.3567,
+     "t_h2d_lowprec_s": 0.17055,
+     "t_h2d_bf16_s": 0.5383,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:24+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.72246,
+     "t_restore_lowprec_s": 0.39022,
+     "change_pct": -46.0,
+     "dequant_ms_per_lp_block": 0.3478,
+     "t_h2d_lowprec_s": 0.28351,
+     "t_h2d_bf16_s": 0.57579,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:23+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.72246,
+     "t_restore_lowprec_s": 0.29414,
+     "change_pct": -59.3,
+     "dequant_ms_per_lp_block": 0.4855,
+     "t_h2d_lowprec_s": 0.17334,
+     "t_h2d_bf16_s": 0.57579,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:05+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.55748,
+     "t_restore_lowprec_s": 0.29443,
+     "change_pct": -47.2,
+     "dequant_ms_per_lp_block": 0.1325,
+     "t_h2d_lowprec_s": 0.28237,
+     "t_h2d_bf16_s": 0.55467,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004724-p3cal-fused-llama",
+     "ts": "2026-10-18T00:48:04+08:00",
+     "grid": "grid_fused",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.55748,
+     "t_restore_lowprec_s": 0.18441,
+     "change_pct": -66.9,
+     "dequant_ms_per_lp_block": 0.1218,
+     "t_h2d_lowprec_s": 0.17271,
+     "t_h2d_bf16_s": 0.55467,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:46:07+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.50969,
+     "t_restore_lowprec_s": 0.2553,
+     "change_pct": -49.9,
+     "dequant_ms_per_lp_block": 1.8463,
+     "t_h2d_lowprec_s": 0.1207,
+     "t_h2d_bf16_s": 0.27245,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:46:05+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.50969,
+     "t_restore_lowprec_s": 0.25409,
+     "change_pct": -50.1,
+     "dequant_ms_per_lp_block": 1.0797,
+     "t_h2d_lowprec_s": 0.07728,
+     "t_h2d_bf16_s": 0.27245,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:45:50+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.39381,
+     "t_restore_lowprec_s": 0.26074,
+     "change_pct": -33.8,
+     "dequant_ms_per_lp_block": 0.3321,
+     "t_h2d_lowprec_s": 0.1186,
+     "t_h2d_bf16_s": 0.26652,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:45:48+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.39381,
+     "t_restore_lowprec_s": 0.13162,
+     "change_pct": -66.6,
+     "dequant_ms_per_lp_block": 0.2323,
+     "t_h2d_lowprec_s": 0.07746,
+     "t_h2d_bf16_s": 0.26652,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:46:04+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.36332,
+     "t_restore_lowprec_s": 0.21436,
+     "change_pct": -41.0,
+     "dequant_ms_per_lp_block": 0.335,
+     "t_h2d_lowprec_s": 0.1205,
+     "t_h2d_bf16_s": 0.26165,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:46:03+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.36332,
+     "t_restore_lowprec_s": 0.18769,
+     "change_pct": -48.3,
+     "dequant_ms_per_lp_block": 0.7175,
+     "t_h2d_lowprec_s": 0.07713,
+     "t_h2d_bf16_s": 0.26165,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:45:49+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.24636,
+     "t_restore_lowprec_s": 0.1274,
+     "change_pct": -48.3,
+     "dequant_ms_per_lp_block": 0.0638,
+     "t_h2d_lowprec_s": 0.12005,
+     "t_h2d_bf16_s": 0.2439,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-004505-p3cal-fused-qwen",
+     "ts": "2026-10-18T00:45:50+08:00",
+     "grid": "grid_fused",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "fused_triton",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.24636,
+     "t_restore_lowprec_s": 0.08438,
+     "change_pct": -65.7,
+     "dequant_ms_per_lp_block": 0.0627,
+     "t_h2d_lowprec_s": 0.0768,
+     "t_h2d_bf16_s": 0.2439,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:36:11+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.82331,
+     "t_restore_lowprec_s": 0.62202,
+     "change_pct": -24.4,
+     "dequant_ms_per_lp_block": 3.3405,
+     "t_h2d_lowprec_s": 0.28031,
+     "t_h2d_bf16_s": 0.59154,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:37:25+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.82331,
+     "t_restore_lowprec_s": 0.68116,
+     "change_pct": -17.3,
+     "dequant_ms_per_lp_block": 5.8796,
+     "t_h2d_lowprec_s": 0.17165,
+     "t_h2d_bf16_s": 0.59154,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:31:29+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.56134,
+     "t_restore_lowprec_s": 0.45802,
+     "change_pct": -18.4,
+     "dequant_ms_per_lp_block": 1.4675,
+     "t_h2d_lowprec_s": 0.27517,
+     "t_h2d_bf16_s": 0.54362,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:30:37+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.56134,
+     "t_restore_lowprec_s": 0.34116,
+     "change_pct": -39.2,
+     "dequant_ms_per_lp_block": 2.4989,
+     "t_h2d_lowprec_s": 0.17174,
+     "t_h2d_bf16_s": 0.54362,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:35:57+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.73016,
+     "t_restore_lowprec_s": 0.46306,
+     "change_pct": -36.6,
+     "dequant_ms_per_lp_block": 1.2396,
+     "t_h2d_lowprec_s": 0.28386,
+     "t_h2d_bf16_s": 0.58154,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:36:10+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.73016,
+     "t_restore_lowprec_s": 0.4233,
+     "change_pct": -42.0,
+     "dequant_ms_per_lp_block": 2.1397,
+     "t_h2d_lowprec_s": 0.17414,
+     "t_h2d_bf16_s": 0.58154,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:31:05+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_token",
+     "t_restore_bf16_s": 0.56097,
+     "t_restore_lowprec_s": 0.348,
+     "change_pct": -38.0,
+     "dequant_ms_per_lp_block": 0.9699,
+     "t_h2d_lowprec_s": 0.28232,
+     "t_h2d_bf16_s": 0.55804,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-002928-p3cal-grid-llama-L0 20261018-010316-p3cal-grid-llama-L1",
+     "ts": "2026-10-18T00:31:34+08:00",
+     "grid": "grid_llama",
+     "model": "llama",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.56097,
+     "t_restore_lowprec_s": 0.30077,
+     "change_pct": -46.4,
+     "dequant_ms_per_lp_block": 1.9261,
+     "t_h2d_lowprec_s": 0.17311,
+     "t_h2d_bf16_s": 0.55804,
+     "n": 10.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:24:33+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.51923,
+     "t_restore_lowprec_s": 0.28826,
+     "change_pct": -44.5,
+     "dequant_ms_per_lp_block": 2.1963,
+     "t_h2d_lowprec_s": 0.12107,
+     "t_h2d_bf16_s": 0.26842,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:24:25+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.51923,
+     "t_restore_lowprec_s": 0.57305,
+     "change_pct": 10.4,
+     "dequant_ms_per_lp_block": 4.0674,
+     "t_h2d_lowprec_s": 0.07637,
+     "t_h2d_bf16_s": 0.26842,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:19:45+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.39695,
+     "t_restore_lowprec_s": 0.2837,
+     "change_pct": -28.5,
+     "dequant_ms_per_lp_block": 0.689,
+     "t_h2d_lowprec_s": 0.11869,
+     "t_h2d_bf16_s": 0.27801,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:20:19+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "cake",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.39695,
+     "t_restore_lowprec_s": 0.29348,
+     "change_pct": -26.1,
+     "dequant_ms_per_lp_block": 1.5758,
+     "t_h2d_lowprec_s": 0.07617,
+     "t_h2d_bf16_s": 0.27801,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:25:34+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.36715,
+     "t_restore_lowprec_s": 0.26743,
+     "change_pct": -27.2,
+     "dequant_ms_per_lp_block": 0.9303,
+     "t_h2d_lowprec_s": 0.12078,
+     "t_h2d_bf16_s": 0.26307,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:25:06+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "busy",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.36715,
+     "t_restore_lowprec_s": 0.26382,
+     "change_pct": -28.1,
+     "dequant_ms_per_lp_block": 1.5371,
+     "t_h2d_lowprec_s": 0.07734,
+     "t_h2d_bf16_s": 0.26307,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:19:44+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "fp8_head",
+     "t_restore_bf16_s": 0.24764,
+     "t_restore_lowprec_s": 0.15154,
+     "change_pct": -38.8,
+     "dequant_ms_per_lp_block": 0.4307,
+     "t_h2d_lowprec_s": 0.12038,
+     "t_h2d_bf16_s": 0.24517,
+     "n": 5.0
+    },
+    {
+     "run_id": "20261018-011852-p3cal-grid-qwen-L1b",
+     "ts": "2026-10-18T01:19:40+08:00",
+     "grid": "grid_qwen",
+     "model": "qwen",
+     "mode": "load_only",
+     "gpu_state": "idle",
+     "dequant_impl": "torch(m10_codec)",
+     "fmt": "int4_kivi",
+     "t_restore_bf16_s": 0.24764,
+     "t_restore_lowprec_s": 0.137,
+     "change_pct": -44.7,
+     "dequant_ms_per_lp_block": 0.8711,
+     "t_h2d_lowprec_s": 0.07705,
+     "t_h2d_bf16_s": 0.24517,
+     "n": 5.0
+    }
+   ],
+   "src": "lowprec_cpu_v2.csv"
+  },
+  "c0_third_session": "NOT_MEASURED：等不到乾淨的卡（見 06b_3090_calib.md §6）"
+ },
+ "superseded_notes": [
+  "Qwen CPU 層的還原「時間」：X7 的 L0（GPU 1，同 switch 鄰居 GPU 0、2 有別人的 PCIe 流量，最高 1.7 GB/s）BF16 只載入閒 0.369 s；這次的 L1b（GPU 6，鄰居 4、5 的流量 ≤7 MB/s）0.248 s（和 64×ℓ＝0.253 s 一致）。X7 已寫「時間欄可能偏高」；要用時間就用 v2 的值。會合點 b 兩次相同（閒 3、忙 2）。",
+  "Llama CPU 層會合點：X7 只有模型預測（閒 4、忙 3），v2 實測兩個 launch 都是閒 4、忙 3。",
+  "Llama 的新一輪 256 token：X7 只有 ladder 的 1 次（閒 0.143 s、忙 NOT_MEASURED），v2 有 32K 還原格子的中位數（閒、忙）。",
+  "X7 的 Qwen dequant_ms_per_block_in_restore_cpu（['20261017-181306-p3x7-grid-qwen-L0']）：v2 的 L1b 主線值相近（見 lowprec_cpu_tier）。"
+ ]
+}

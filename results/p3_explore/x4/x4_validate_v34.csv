@@ -1,0 +1,4 @@
+run_id,ts,check,n,max_abs_diff_s,ok
+20261017-181558-p3x4-validate3,2026-10-17T10:16:11+00:00,V3_cake_vs_sim_restore,2000,0.0,True
+20261017-181558-p3x4-validate3,2026-10-17T10:16:12+00:00,V4_events_vs_serial_original_ov1e4,36,2.5029294192790985e-09,False
+20261017-181558-p3x4-validate3,2026-10-17T10:16:12+00:00,V4_events_vs_serial_same_abs_times,36,0.0,True

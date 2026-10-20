@@ -1,0 +1,41 @@
+{
+ "run_id": "20261018-002550-p3fmt-qderive",
+ "ts": "2026-10-17T16:25:53+00:00",
+ "tool": "code/m10_analyze.py quality（凍結版，未修改；subprocess）",
+ "checks": {
+  "repro_qwen_step2b": {
+   "ref": "results/m10_precision_mi300x/analysis/fp8/quality_qwen_step2b.json",
+   "configs": [
+    "E1s@fp8k0_head",
+    "E1s@int8_token"
+   ],
+   "identical": true,
+   "diffs": []
+  },
+  "repro_llama_step1_E1": {
+   "ref": "results/m10_precision_mi300x/analysis/fp8/quality_llama_step1.json",
+   "configs": [
+    "E1"
+   ],
+   "identical": true,
+   "diffs": []
+  }
+ },
+ "derived": {
+  "file": "results/p3_formats/derived/quality_llama_step2b.json",
+  "configs": [
+   "E1s@fp8k0_token",
+   "E1s@int8_token"
+  ],
+  "source_run_ids": [
+   "20261015-211144-m10-s1-llama-T24-s0",
+   "20261015-211414-m10-s1-llama-T24-s1",
+   "20261015-211645-m10-s1-llama-T24-s2",
+   "20261015-232844-m10-s1-llama-T24-s3",
+   "20261015-234327-m10-s1-llama-T24-s4",
+   "20261016-013939-m10-s1-llama-T24-s5",
+   "20261016-015830-m10-s1-llama-T5"
+  ],
+  "note": "第二階段沒有報過這兩格（Step 2b 只判 Qwen）。同一支凍結程式、同一批列；JSON 裡的 csv 路徑指向本 run 解壓的暫存檔（內容＝repo 的 .csv.gz）。"
+ }
+}

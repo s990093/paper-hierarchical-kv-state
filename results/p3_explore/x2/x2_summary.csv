@@ -1,0 +1,329 @@
+run_id,ts,trace,metric,value,note
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,n_requests,12031,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,n_sessions,8056,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,frac_sessions_ge2_requests,0.249752,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,n_sessions_ge2_requests,2012,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,requests_per_session_p50,1.0,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,requests_per_session_p99,7.0,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,requests_per_session_max,43,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,frac_episodes_returned,0.330396,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,frac_episodes_censored,0.669604,trace 結束（或 session 結束）時還沒回來
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,trace_span_s,3536.999,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,gap_returned_p10_s,39.001,只算有回來的回合
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,gap_returned_p25_s,66.0,只算有回來的回合
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,gap_returned_p50_s,123.0,只算有回來的回合
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,gap_returned_p75_s,266.999,只算有回來的回合
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,gap_returned_p90_s,474.0006,只算有回來的回合
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,gap_returned_p99_s,1461.12052,只算有回來的回合
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,frac_censored_with_cens_time_lt_gap_p90,0.175521,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,frac_all_episodes_censored_lt_gap_p90,0.11753,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,km_median_gap_s,inf,inf＝S 沒降到 0.5
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,km_S_at_max,0.640837,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,hazard_frac_adjacent_decreasing_all,0.769231,相鄰兩箱都 ≥30 事件的 13 對中，下一箱 hazard 較小的比例
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,hazard_frac_adjacent_decreasing_turn1,0.7,相鄰兩箱都 ≥30 事件的 10 對中，下一箱 hazard 較小的比例
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,hazard_frac_adjacent_decreasing_turn_ge2,0.727273,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,n_requests,43058,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,n_sessions,23101,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,frac_sessions_ge2_requests,0.390113,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,n_sessions_ge2_requests,9012,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,requests_per_session_p50,1.0,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,requests_per_session_p99,8.0,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,requests_per_session_max,37,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,frac_episodes_returned,0.463491,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,frac_episodes_censored,0.536509,trace 結束（或 session 結束）時還沒回來
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,trace_span_s,7199.464,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,gap_returned_p10_s,27.1388,只算有回來的回合
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,gap_returned_p25_s,50.323,只算有回來的回合
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,gap_returned_p50_s,110.645,只算有回來的回合
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,gap_returned_p75_s,291.109,只算有回來的回合
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,gap_returned_p90_s,718.6098,只算有回來的回合
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,gap_returned_p99_s,2207.34428,只算有回來的回合
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,frac_censored_with_cens_time_lt_gap_p90,0.154452,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,frac_all_episodes_censored_lt_gap_p90,0.082865,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,km_median_gap_s,inf,inf＝S 沒降到 0.5
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,km_S_at_max,0.509965,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,hazard_frac_adjacent_decreasing_all,0.705882,相鄰兩箱都 ≥30 事件的 17 對中，下一箱 hazard 較小的比例
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,hazard_frac_adjacent_decreasing_turn1,0.764706,相鄰兩箱都 ≥30 事件的 17 對中，下一箱 hazard 較小的比例
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,hazard_frac_adjacent_decreasing_turn_ge2,0.733333,相鄰兩箱都 ≥30 事件的 15 對中，下一箱 hazard 較小的比例
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,n_requests,10812,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,n_sessions,9612,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,frac_sessions_ge2_requests,0.052955,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,n_sessions_ge2_requests,509,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,requests_per_session_p50,1.0,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,requests_per_session_p99,5.0,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,requests_per_session_max,16,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,frac_episodes_returned,0.110988,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,frac_episodes_censored,0.889012,trace 結束（或 session 結束）時還沒回來
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,trace_span_s,7191.734,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,gap_returned_p10_s,5.0612,只算有回來的回合
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,gap_returned_p25_s,10.75075,只算有回來的回合
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,gap_returned_p50_s,28.572,只算有回來的回合
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,gap_returned_p75_s,90.0035,只算有回來的回合
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,gap_returned_p90_s,255.2583,只算有回來的回合
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,gap_returned_p99_s,1533.34827,只算有回來的回合
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,frac_censored_with_cens_time_lt_gap_p90,0.020703,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,frac_all_episodes_censored_lt_gap_p90,0.018405,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,km_median_gap_s,inf,inf＝S 沒降到 0.5
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,km_S_at_max,0.887085,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,hazard_frac_adjacent_decreasing_all,0.818182,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,hazard_frac_adjacent_decreasing_turn1,0.8,相鄰兩箱都 ≥30 事件的 5 對中，下一箱 hazard 較小的比例
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,hazard_frac_adjacent_decreasing_turn_ge2,0.5,相鄰兩箱都 ≥30 事件的 4 對中，下一箱 hazard 較小的比例
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,n_requests,11400,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,n_sessions,81,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,frac_sessions_ge2_requests,0.987654,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,n_sessions_ge2_requests,80,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,requests_per_session_p50,98.0,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,requests_per_session_p99,744.6,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,requests_per_session_max,1003,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,frac_episodes_returned,0.992895,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,frac_episodes_censored,0.007105,trace 結束（或 session 結束）時還沒回來
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,trace_span_s,nan,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,gap_returned_p10_s,0.0,只算有回來的回合
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,gap_returned_p25_s,4.41,只算有回來的回合
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,gap_returned_p50_s,7.011,只算有回來的回合
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,gap_returned_p75_s,15.372,只算有回來的回合
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,gap_returned_p90_s,48.123,只算有回來的回合
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,gap_returned_p99_s,385.0822,只算有回來的回合
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,frac_censored_with_cens_time_lt_gap_p90,0.888889,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,frac_all_episodes_censored_lt_gap_p90,0.006316,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,km_median_gap_s,7.036,inf＝S 沒降到 0.5
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,km_S_at_max,0.0,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,hazard_frac_adjacent_decreasing_all,0.909091,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,hazard_frac_adjacent_decreasing_turn_ge2,0.909091,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,n_requests,172800,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,n_sessions,172800,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,frac_sessions_ge2_requests,0.0,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,n_sessions_ge2_requests,0,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,requests_per_session_p50,1.0,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,requests_per_session_p99,1.0,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,requests_per_session_max,1,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,frac_episodes_returned,0.0,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,frac_episodes_censored,1.0,trace 結束（或 session 結束）時還沒回來
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,trace_span_s,7199.97,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,n_requests,43011,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,n_sessions,26406,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,frac_sessions_ge2_requests,0.253465,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,n_sessions_ge2_requests,6693,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,requests_per_session_p50,1.0,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,requests_per_session_p99,9.0,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,requests_per_session_max,54,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,frac_episodes_returned,0.386064,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,frac_episodes_censored,0.613936,trace 結束（或 session 結束）時還沒回來
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,trace_span_s,7198.879,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,gap_returned_p10_s,6.1196,只算有回來的回合
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,gap_returned_p25_s,42.892,只算有回來的回合
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,gap_returned_p50_s,117.716,只算有回來的回合
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,gap_returned_p75_s,348.029,只算有回來的回合
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,gap_returned_p90_s,941.8466,只算有回來的回合
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,gap_returned_p99_s,3488.71376,只算有回來的回合
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,frac_censored_with_cens_time_lt_gap_p90,0.168901,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,frac_all_episodes_censored_lt_gap_p90,0.103694,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,km_median_gap_s,inf,inf＝S 沒降到 0.5
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,km_S_at_max,0.580564,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,hazard_frac_adjacent_decreasing_all,0.888889,相鄰兩箱都 ≥30 事件的 18 對中，下一箱 hazard 較小的比例
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,hazard_frac_adjacent_decreasing_turn1,0.888889,相鄰兩箱都 ≥30 事件的 18 對中，下一箱 hazard 較小的比例
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,hazard_frac_adjacent_decreasing_turn_ge2,0.888889,相鄰兩箱都 ≥30 事件的 18 對中，下一箱 hazard 較小的比例
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,n_requests,1960074,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,n_sessions,837989,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,frac_sessions_ge2_requests,0.39557,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,n_sessions_ge2_requests,331483,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,requests_per_session_p50,1.0,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,requests_per_session_p99,14.0,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,requests_per_session_max,249,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,frac_episodes_returned,0.572471,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,frac_episodes_censored,0.427529,trace 結束（或 session 結束）時還沒回來
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,trace_span_s,33436686.0,
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,gap_returned_p10_s,28.0,只算有回來的回合
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,gap_returned_p25_s,55.0,只算有回來的回合
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,gap_returned_p50_s,128.0,只算有回來的回合
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,gap_returned_p75_s,368.0,只算有回來的回合
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,gap_returned_p90_s,1253.0,只算有回來的回合
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,gap_returned_p99_s,27511.32,只算有回來的回合
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,frac_censored_with_cens_time_lt_gap_p90,1.7e-05,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,frac_all_episodes_censored_lt_gap_p90,7e-06,
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,km_median_gap_s,927.0,inf＝S 沒降到 0.5
+20261017-175255-p3x2-wc,2026-10-17T17:53:18+08:00,wildchat_1m,km_S_at_max,0.427507,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175255-p3x2-wc,2026-10-17T17:53:19+08:00,wildchat_1m,hazard_frac_adjacent_decreasing_all,0.846154,相鄰兩箱都 ≥30 事件的 26 對中，下一箱 hazard 較小的比例
+20261017-175255-p3x2-wc,2026-10-17T17:53:19+08:00,wildchat_1m,hazard_frac_adjacent_decreasing_turn1,0.846154,相鄰兩箱都 ≥30 事件的 26 對中，下一箱 hazard 較小的比例
+20261017-175255-p3x2-wc,2026-10-17T17:53:19+08:00,wildchat_1m,hazard_frac_adjacent_decreasing_turn_ge2,0.846154,相鄰兩箱都 ≥30 事件的 26 對中，下一箱 hazard 較小的比例
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,n_requests,11498,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,n_sessions,81,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,frac_sessions_ge2_requests,0.987654,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,n_sessions_ge2_requests,80,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,requests_per_session_p50,99.0,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,requests_per_session_p99,747.8,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,requests_per_session_max,1015,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,frac_episodes_returned,0.992955,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,frac_episodes_censored,0.007045,trace 結束（或 session 結束）時還沒回來
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,trace_span_s,nan,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,gap_returned_p10_s,0.0,只算有回來的回合
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,gap_returned_p25_s,4.375,只算有回來的回合
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,gap_returned_p50_s,6.991,只算有回來的回合
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,gap_returned_p75_s,15.418,只算有回來的回合
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,gap_returned_p90_s,48.322,只算有回來的回合
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,gap_returned_p99_s,398.64864,只算有回來的回合
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,frac_censored_with_cens_time_lt_gap_p90,0.938272,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,frac_all_episodes_censored_lt_gap_p90,0.00661,
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,km_median_gap_s,7.004,inf＝S 沒降到 0.5
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,km_S_at_max,0.0,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,hazard_frac_adjacent_decreasing_all,0.909091,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,hazard_frac_adjacent_decreasing_turn_ge2,0.909091,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,n_requests,12031,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,n_sessions,8335,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,frac_sessions_ge2_requests,0.236353,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,n_sessions_ge2_requests,1970,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,requests_per_session_p50,1.0,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,requests_per_session_p99,6.0,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,requests_per_session_max,43,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,frac_episodes_returned,0.307206,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,frac_episodes_censored,0.692794,trace 結束（或 session 結束）時還沒回來
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,trace_span_s,3536.999,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,gap_returned_p10_s,44.999,只算有回來的回合
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,gap_returned_p25_s,69.0,只算有回來的回合
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,gap_returned_p50_s,126.0,只算有回來的回合
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,gap_returned_p75_s,273.00025,只算有回來的回合
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,gap_returned_p90_s,482.999,只算有回來的回合
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,gap_returned_p99_s,1470.1519,只算有回來的回合
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,frac_censored_with_cens_time_lt_gap_p90,0.177085,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,frac_all_episodes_censored_lt_gap_p90,0.122683,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,km_median_gap_s,inf,inf＝S 沒降到 0.5
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,km_S_at_max,0.665017,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,hazard_frac_adjacent_decreasing_all,0.692308,相鄰兩箱都 ≥30 事件的 13 對中，下一箱 hazard 較小的比例
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,hazard_frac_adjacent_decreasing_turn1,0.8,相鄰兩箱都 ≥30 事件的 10 對中，下一箱 hazard 較小的比例
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,hazard_frac_adjacent_decreasing_turn_ge2,0.636364,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,n_requests,12031,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,n_sessions,8335,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,frac_sessions_ge2_requests,0.236353,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,n_sessions_ge2_requests,1970,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,requests_per_session_p50,1.0,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,requests_per_session_p99,6.0,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,requests_per_session_max,43,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,frac_episodes_returned,0.307206,回合之後同 session 有下一個請求（觀察窗內）
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,frac_episodes_censored,0.692794,trace 結束（或 session 結束）時還沒回來
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,trace_span_s,3536.999,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,gap_returned_p10_s,44.999,只算有回來的回合
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,gap_returned_p25_s,69.0,只算有回來的回合
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,gap_returned_p50_s,126.0,只算有回來的回合
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,gap_returned_p75_s,273.00025,只算有回來的回合
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,gap_returned_p90_s,482.999,只算有回來的回合
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,gap_returned_p99_s,1470.1519,只算有回來的回合
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,frac_censored_with_cens_time_lt_gap_p90,0.177085,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,frac_all_episodes_censored_lt_gap_p90,0.122683,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,km_median_gap_s,inf,inf＝S 沒降到 0.5
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,km_S_at_max,0.665017,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,hazard_frac_adjacent_decreasing_all,0.692308,相鄰兩箱都 ≥30 事件的 13 對中，下一箱 hazard 較小的比例
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,hazard_frac_adjacent_decreasing_turn1,0.8,相鄰兩箱都 ≥30 事件的 10 對中，下一箱 hazard 較小的比例
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,hazard_frac_adjacent_decreasing_turn_ge2,0.636364,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,n_requests,12031,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,n_sessions,9595,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,frac_sessions_ge2_requests,0.204169,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,n_sessions_ge2_requests,1959,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,requests_per_session_p50,1.0,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,requests_per_session_p99,3.0,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,requests_per_session_max,3,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,frac_episodes_returned,0.202477,回合之後同 session 有下一個請求（觀察窗內）
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,frac_episodes_censored,0.797523,trace 結束（或 session 結束）時還沒回來
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,trace_span_s,3536.999,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,gap_returned_p10_s,45.001,只算有回來的回合
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,gap_returned_p25_s,72.0,只算有回來的回合
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,gap_returned_p50_s,132.0,只算有回來的回合
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,gap_returned_p75_s,297.0,只算有回來的回合
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,gap_returned_p90_s,526.4995,只算有回來的回合
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,gap_returned_p99_s,1548.6,只算有回來的回合
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,frac_censored_with_cens_time_lt_gap_p90,0.173215,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,frac_all_episodes_censored_lt_gap_p90,0.138143,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,km_median_gap_s,inf,inf＝S 沒降到 0.5
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,km_S_at_max,0.777837,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,hazard_frac_adjacent_decreasing_all,0.636364,相鄰兩箱都 ≥30 事件的 11 對中，下一箱 hazard 較小的比例
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,hazard_frac_adjacent_decreasing_turn1,0.7,相鄰兩箱都 ≥30 事件的 10 對中，下一箱 hazard 較小的比例
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,hazard_frac_adjacent_decreasing_turn_ge2,0.714286,相鄰兩箱都 ≥30 事件的 7 對中，下一箱 hazard 較小的比例
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,n_requests,1222199,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,n_sessions,14036,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,frac_sessions_ge2_requests,0.994158,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,n_sessions_ge2_requests,13954,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,requests_per_session_p50,34.0,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,requests_per_session_p99,835.6,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,requests_per_session_max,5040,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,frac_episodes_returned,0.988516,回合之後同 session 有下一個請求（觀察窗內）
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,frac_episodes_censored,0.011484,trace 結束（或 session 結束）時還沒回來
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,trace_span_s,9675340.496,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,gap_returned_p10_s,0.425,只算有回來的回合
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,gap_returned_p25_s,0.732,只算有回來的回合
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,gap_returned_p50_s,1.878,只算有回來的回合
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,gap_returned_p75_s,6.243,只算有回來的回合
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,gap_returned_p90_s,33.7258,只算有回來的回合
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,gap_returned_p99_s,723.7796,只算有回來的回合
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,frac_censored_with_cens_time_lt_gap_p90,0.002351,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,frac_all_episodes_censored_lt_gap_p90,2.7e-05,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,km_median_gap_s,1.919,inf＝S 沒降到 0.5
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,km_S_at_max,0.011281,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_frac_next_trigger_same,0.98102,閒置當下的 grp（上一個請求 finish_reason）和下一個請求 step_trigger 一致的比例
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_n_episodes,85011,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_frac_returned,0.878816,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_gap_returned_p10_s,2.842,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_gap_returned_p25_s,28.476,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_gap_returned_p50_s,93.341,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_gap_returned_p75_s,282.701,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_gap_returned_p90_s,1014.8798,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_gap_returned_p99_s,29020.23864,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_user_km_median_gap_s,123.248,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_frac_next_trigger_same,0.99984,閒置當下的 grp（上一個請求 finish_reason）和下一個請求 step_trigger 一致的比例
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_n_episodes,1137188,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_frac_returned,0.996716,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_gap_returned_p10_s,0.414,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_gap_returned_p25_s,0.696,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_gap_returned_p50_s,1.694,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_gap_returned_p75_s,4.811,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_gap_returned_p90_s,16.937,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_gap_returned_p99_s,221.29476,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:58+08:00,freeinference,wait_tool_km_median_gap_s,1.704,
+20261017-181644-p3x2-fi2,2026-10-17T18:17:00+08:00,freeinference,hazard_frac_adjacent_decreasing_all,1.0,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例
+20261017-181644-p3x2-fi2,2026-10-17T18:17:00+08:00,freeinference,hazard_frac_adjacent_decreasing_turn1,1.0,相鄰兩箱都 ≥30 事件的 16 對中，下一箱 hazard 較小的比例
+20261017-181644-p3x2-fi2,2026-10-17T18:17:00+08:00,freeinference,hazard_frac_adjacent_decreasing_turn_ge2,1.0,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例
+20261017-181644-p3x2-fi2,2026-10-17T18:17:00+08:00,freeinference,hazard_frac_adjacent_decreasing_wait_user,0.894737,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例
+20261017-181644-p3x2-fi2,2026-10-17T18:17:00+08:00,freeinference,hazard_frac_adjacent_decreasing_wait_tool,0.947368,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,n_requests,1222199,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,n_sessions,14036,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,frac_sessions_ge2_requests,0.994158,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,n_sessions_ge2_requests,13954,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,requests_per_session_p50,34.0,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,requests_per_session_p99,835.6,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,requests_per_session_max,5040,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,frac_episodes_returned,0.988516,回合之後同 session 有下一個請求（觀察窗內）
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,frac_episodes_censored,0.011484,trace 結束（或 session 結束）時還沒回來
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,trace_span_s,9675340.496,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,gap_returned_p10_s,0.425,只算有回來的回合
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,gap_returned_p25_s,0.732,只算有回來的回合
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,gap_returned_p50_s,1.878,只算有回來的回合
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,gap_returned_p75_s,6.243,只算有回來的回合
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,gap_returned_p90_s,33.7258,只算有回來的回合
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,gap_returned_p99_s,723.7796,只算有回來的回合
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,frac_censored_with_cens_time_lt_gap_p90,0.002351,設限的回合中，設限時間 < 有回來間隔的 p90（尾端看不清楚）
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,frac_all_episodes_censored_lt_gap_p90,2.7e-05,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,km_median_gap_s,1.919,inf＝S 沒降到 0.5
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,km_S_at_max,0.011281,觀察窗內最後的存活（≈ 不回來的比例下界）
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_frac_next_trigger_same,0.98102,閒置當下的 grp（上一個請求 finish_reason）和下一個請求 step_trigger 一致的比例
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_n_episodes,85011,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_frac_returned,0.878816,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_gap_returned_p10_s,2.842,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_gap_returned_p25_s,28.476,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_gap_returned_p50_s,93.341,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_gap_returned_p75_s,282.701,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_gap_returned_p90_s,1014.8798,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_gap_returned_p99_s,29020.23864,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,wait_user_km_median_gap_s,123.248,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_frac_next_trigger_same,0.99984,閒置當下的 grp（上一個請求 finish_reason）和下一個請求 step_trigger 一致的比例
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_n_episodes,1137188,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_frac_returned,0.996716,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_gap_returned_p10_s,0.414,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_gap_returned_p25_s,0.696,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_gap_returned_p50_s,1.694,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_gap_returned_p75_s,4.811,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_gap_returned_p90_s,16.937,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_gap_returned_p99_s,221.29476,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:36+08:00,freeinference,wait_tool_km_median_gap_s,1.704,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:37+08:00,freeinference,hazard_frac_adjacent_decreasing_all,1.0,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例
+20261017-181823-p3x2-fi3,2026-10-17T18:18:37+08:00,freeinference,hazard_frac_adjacent_decreasing_turn1,1.0,相鄰兩箱都 ≥30 事件的 16 對中，下一箱 hazard 較小的比例
+20261017-181823-p3x2-fi3,2026-10-17T18:18:37+08:00,freeinference,hazard_frac_adjacent_decreasing_turn_ge2,1.0,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例
+20261017-181823-p3x2-fi3,2026-10-17T18:18:37+08:00,freeinference,hazard_frac_adjacent_decreasing_wait_user,0.894737,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例
+20261017-181823-p3x2-fi3,2026-10-17T18:18:37+08:00,freeinference,hazard_frac_adjacent_decreasing_wait_tool,0.947368,相鄰兩箱都 ≥30 事件的 19 對中，下一箱 hazard 較小的比例

@@ -1,0 +1,9 @@
+run_id,ts,kind,threads,cpus,mib_per_buffer,seconds,mean_copy_GiBps,median_1s_copy_GiBps,node0_anon_GiB,node1_anon_GiB,node1_share
+20261018-002700-p3cal-stress-selftest,2026-10-18T00:27:04.868+08:00,standalone_copy,1,"24-47,72-95",256,5.063,6.271,6.245,,,
+20261018-002700-p3cal-stress-selftest,2026-10-18T00:27:16.958+08:00,standalone_copy,8,"24-47,72-95",256,5.278,25.864,26.982,,,
+20261018-002700-p3cal-stress-selftest,2026-10-18T00:27:30.156+08:00,standalone_copy,16,"24-47,72-95",256,5.391,21.193,22.228,,,
+20261018-002700-p3cal-stress-selftest,2026-10-18T00:27:44.733+08:00,standalone_copy,32,"24-47,72-95",256,5.6,18.215,20.188,,,
+20261018-002700-p3cal-stress-selftest,2026-10-18T00:28:00.483+08:00,standalone_copy,48,"24-47,72-95",256,5.725,16.595,13.829,,,
+20261018-002700-p3cal-stress-selftest,2026-10-18T00:28:11.009+08:00,standalone_copy,48,ALL,256,5.39,18.784,17.962,,,
+20261018-023443-p3cal-stress-numa,2026-10-18T02:34:50+08:00,numa_placement_5s_after_start,8,"24-47,72-95",256,8.199,19.912,20.246,2.12,1.70,0.445
+20261018-023443-p3cal-stress-numa,2026-10-18T02:35:07+08:00,numa_placement_5s_after_start,48,"24-47,72-95",256,9.182,14.948,16.733,7.72,2.33,0.232
