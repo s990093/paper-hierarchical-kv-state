@@ -1206,3 +1206,15 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   - Qwen DS-B-EXPATT-25 −5.6／−6.0、DS-T-KEYDIFF-50 −3.9／−3.4。
 - ε（不輸）的判定只有一格不同：**Llama DS-T-NONE-0**（只對 token 群組化、不丟）MI300X 沒過（+0.2 [−1.0, +1.3]），H200 過（−0.5 [−1.6, +0.5]）。另外兩台都過的：Llama DS-T-QRY-25、Qwen DS-B-NONE-0、Qwen DS-T-NONE-0。其他都沒過。
 - 21110 結束時有正常印出 gpu_guard 摘要，可見改 runner 時用 mv 換檔的做法沒有影響它。
+
+### job 21377 `m10h-attnb`（43e 的 (b) 補跑，量時間；13_h200_repro §13）跑完（2026-10-20 19:47:23 → 20:00:00 +08:00，COMPLETED exit 0；程式 `7fe3fe9` 之後）
+- 自測（`20261020-194727-m10h-rs2-attn-selftest3-bm64`，`smoke/attn_selftest_gpu_bm64.json`）ALL PASS。decode 的 6 格維持原本的情況：BM＝16 時不逐位元，BM＝64 時**全部逐位元相同**，對 SDPA 的誤差和上次一樣。所以先前查到的原因成立：拆出來的值相同，差別只在 mma.sync 的運算元排法。
+- (b) 微測：`20261020-194739-m10h-rs2-q5b-llama`、`20261020-195436-m10h-rs2-q5b-qwen`，指令和 MI300X 一字不改。gpu_guard 228 份全 CLEAN。表：`tables_13.md` 的 Q5 (b)、(c)。
+- **和 MI300X 的方向相同**：同一個 kernel 裡，讀壓縮比讀 BF16 慢。
+  - M＝256：H200 慢 3.3–4.0 倍（fp8）、2.3–2.8 倍（int4）；MI300X 慢 3.6–4.4 倍、3.2–3.9 倍。
+  - decode：H200 128K fp8 21.14 vs bf16 7.48 ms（閒，Llama）；MI300X 23.87 vs 7.81。
+- (c) 划算的 token 數：
+  - 閒的時候兩台同一級：H200 2–11、MI300X 2–27。
+  - **忙的時候 H200 大很多**：27–100，MI300X 3–54。原因是 H200 背景 duty 1.0，P0 全載入在忙時被拖得多，還原省下的時間是 117–222 ms，MI300X 是 12–26 ms。兩台的「忙」不是同一個強度（NV_PORTING_NOTES §1），這一欄只能各自看。
+- 別的平台差異：PyTorch SDPA 讀 BF16，H200 是 1–93 ms，MI300X 是 43–272 ms（ROCm 的 SDPA 路徑慢）；外部參考 vLLM-KIVI 在兩台都最慢。
+- 小異常：Qwen 32K decode 的 bf16 kernel，忙 2.06 ms 比閒 3.38 ms 快。只有這一格，沒追。
