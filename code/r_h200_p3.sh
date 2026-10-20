@@ -251,6 +251,8 @@ run_part() {
 case "$1" in
   explore)
     const_h200
+    # 3090 的 results/p3_explore/<x> 在 git 裡本來就有；H200 的是新目錄。x1_sim selftest 寫 x1_invariants.csv 前不建目錄（job 21403 在這裡停）
+    mkdir -p "$X"/x1 "$X"/x3 "$X"/x4 "$X"/x5 "$X"/x8
     step EX-NEED need_data
     step EX-VERIFY data_verify
     step X1-SELFTEST m7run p3h-x1-selftest "$P3PY" code/p3x/x1_sim.py selftest
