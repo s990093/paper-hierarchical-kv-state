@@ -97,7 +97,7 @@
 ---
 
 ## Milestone P3H-1 — 資料層重建、測試、探索（H200 常數）、地圖工具（job 21116，排隊中）
-**狀態**: PENDING（`p3h-all`，`--part data,simtest,explore,map`；10/19 21:2x 之後的程式改動（X5 後重建格式表、刪 cal）在開跑時才讀到，runner 會改執行 repo 裡的版本，`--dependency=afterany:21111`：接在第二階段的 21109→21110→21111 之後，約 20 小時以上）
+**狀態**: PENDING（`p3h-all`，`--part data,simtest,explore,map`；10/19 21:2x 之後的程式改動（X5 後重建格式表、刪 cal）在開跑時才讀到，runner 會改執行 repo 裡的版本，`--dependency=afterany:21111`：接在第二階段的 21109→21110→21111 之後，約 20 小時以上；10/20 第二階段在 21110 和 21111 之間插了 1 小時的計時 job 21377（m10h-attnb，21111 改 afterany:21377），21116 的依賴不變、晚約 1 小時開跑）
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --dependency=afterany:21111 --time=48:00:00 code/r_h200_p3.sh --part data,simtest,explore,map`（在 worktree 送出）
 **步驟**（`bash code/r_h200_p3.sh --part data,simtest,explore,map --list`）：DATA-DL → DATA-VERIFY → 統一表（照 3090 最終 run 的分批）→ 對拍、測試 → DATA-CMP（和 3090 的 `results/p3_data` 逐值比）；SIM-TEST（3090 最後一次 121 passed）；X1／X3／X4／X5／X8 的登記主結果（H200 常數）；地圖：MI300X 常數的合成端到端＋C0 使用率（和 3090 逐值比）→ H200 常數的同一批。
 （先前送的 21113 `p3h-data`、21114 `p3h-simtest` 已取消、合成這一個，少排一次隊。）
