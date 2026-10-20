@@ -516,13 +516,17 @@ def f09_int4_sensitivity():
         return (name.replace("（每 token）", " (token)").replace("（主線）", " (main)").replace("K 先減平均", "K0")
                 .replace("FP8 K0", "FP8-K0"))
     ylo, yhi = -0.05, 0.02
+    names = list(s["llama"]["formats"].keys())
     for c, m in enumerate(MODELS):
         f = s[m]["formats"]
-        names = list(f.keys())
-        x = np.arange(len(names)) + (c - 0.5) * 0.38
-        axes[0].bar(x, [100 * f[n]["same_as_e0"] for n in names], width=0.36, color=[col(n) for n in names],
-                    edgecolor=[col(n) for n in names], alpha=1.0 if m == "llama" else 0.45, lw=0.6)
-        for j, n in enumerate(names):
+        # sealing rule: Llama's Step-2b rows (E1-K0, E1-INT8) belong to a node the decision flow never reached
+        # (Llama passed K1) -> ran, not analysed; plotted only for Qwen, where Step 2b was executed.
+        shown = [n for n in names if not (m == "llama" and ("INT8" in n or "K 先減平均" in n))]
+        x = np.array([names.index(n) for n in shown]) + (c - 0.5) * 0.38
+        axes[0].bar(x, [100 * f[n]["same_as_e0"] for n in shown], width=0.36, color=[col(n) for n in shown],
+                    edgecolor=[col(n) for n in shown], alpha=1.0 if m == "llama" else 0.45, lw=0.6)
+        for n in shown:
+            j = names.index(n)
             mu, hw = f[n]["dlogp_task"]["T5"]          # [mean, 95% half-width] (m10_int4_sensitivity.py)
             xx = j + (c - 0.5) * 0.3
             if mu - hw < ylo:
