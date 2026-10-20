@@ -89,3 +89,7 @@
   `RuntimeError: T4 ['mid'] seed=70000：10 次都放不好：band mid 放不下：需要 812 token、只有 512`。
   原因：冒煙用 `--n-blocks 4`（2K token），`m10_tasks.bands(4)` 的 mid 帶只有 1 個 block，放不下 T4 的段落。是冒煙參數的 bug，不是實驗結果。
   修法：冒煙改 `--n-blocks 16`（mid 帶 4 個 block），輸出 `smoke/kv_llama_t4_16`；`06_k1_kvstruct.sh` 的 RoPE 核對路徑同步。失敗的 job 檔與 log 另存 `retired_20261020/`，NEEDS_HUMAN 改名 `.handled_20261020T1406Z`。14:00:51Z 重開 `00_smoke`。
+- `00_smoke` 14:05:19Z 全過（kvdump 16 block、S1 分析、I4、I1 interf／grid 的最小設定）。
+- **失敗 2**：`02_smoke_x` 的 Qwen `gpu-selftest`（run `20261020-140604-m16-x-gpuselftest-qwen`）48／49 過，`proxy_masked_eq_subset` rel＝7.1e-5 > 門檻 1e-5；同一項 Llama 7.8e-8（49／49 過）。
+  判讀：兩條路都是 FP32，只差 GEMM 形狀（加總順序）；Qwen 第 0 層 K 有大值，softmax 放大捨入差。遮罩寫錯（少 10 個 block）會是大得多的差。
+  修法：門檻改 1e-3，另記「完全不遮」的差當反向對照（`code/m16_xstack.py`，理由寫在註解）。Llama 那半照跑完：calib、screen --smoke（每題 65.8 s、peak 41.7 GiB）、gen 32K、gen 128K 都 exit 0。14:13:40Z 重開 `02_smoke_x`。

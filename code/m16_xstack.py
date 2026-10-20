@@ -2629,7 +2629,12 @@ def cmd_gpu_selftest(a):
     Kk, Vk = km.kv[0, 0, :, :n][:, keep].float(), km.kv[0, 1, :, :n][:, keep].float()
     o2 = torch.matmul((torch.matmul(prox.qg[0], Kk.transpose(1, 2)) / math.sqrt(km.D)).softmax(-1), Vk)
     d = float((o - o2).norm() / o2.norm())
-    check("proxy_masked_eq_subset", d <= 1e-5, rel=d)
+    # 10/20 冒煙：Llama 7.8e-8、Qwen 7.1e-5（run 20261020-140604-m16-x-gpuselftest-qwen）。兩邊都是 FP32，差在 GEMM 形狀不同 →
+    # 加總順序不同；Qwen 第 0 層 K 有大值（max|K|≈422），分數大、softmax 放大這種捨入差。遮罩寫錯（等於少掉 10 個 block）會是
+    # 量級大得多的差，所以門檻 1e-3；另記「完全不遮」的差當反向對照（只記錄，不擋）。
+    o_none, _ = prox._out(0, None)
+    d_neg = float((o_none - o2).norm() / o2.norm())
+    check("proxy_masked_eq_subset", d <= 1e-3, rel=d, rel_unmasked_vs_subset=d_neg)
     # 6. TF：pipeline 放 int4_kivi（全段）＝第二階段 load_fmt／place 的同一格（逐值）
     import m16_s2_equalbytes as S2
     X = km.kv[:, :, :, CHUNK:n]
