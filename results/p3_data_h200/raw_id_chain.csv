@@ -1,0 +1,13 @@
+run_id,ts,source,variant,metric,unified,x_value,match,x_run_id,x_file,note
+20261020-234140-p3h-data-chain,2026-10-20T15:41:44+00:00,bailian,traceA,raw_id_chain:n_ids,2530337,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:44+00:00,bailian,traceA,raw_id_chain:n_ids_multi_position,52168,52168,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:44+00:00,bailian,traceA,raw_id_chain:position_violations,220196,220196,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:44+00:00,bailian,traceA,raw_id_chain:prev_id_violations,81514,81514,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:47+00:00,bailian,coder,raw_id_chain:n_ids,5202517,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:47+00:00,bailian,coder,raw_id_chain:n_ids_multi_position,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:47+00:00,bailian,coder,raw_id_chain:position_violations,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:47+00:00,bailian,coder,raw_id_chain:prev_id_violations,0,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:48+00:00,bailian,thinking,raw_id_chain:n_ids,1735015,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:48+00:00,bailian,thinking,raw_id_chain:n_ids_multi_position,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:48+00:00,bailian,thinking,raw_id_chain:position_violations,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-234140-p3h-data-chain,2026-10-20T15:41:48+00:00,bailian,thinking,raw_id_chain:prev_id_violations,0,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）

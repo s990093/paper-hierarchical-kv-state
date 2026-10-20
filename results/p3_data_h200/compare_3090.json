@@ -1,6 +1,6 @@
 {
- "run_id": "20261020-230641-p3h-data-cmp",
- "ts": "2026-10-20T23:06:44+08:00",
+ "run_id": "20261020-234211-p3h-data-cmp",
+ "ts": "2026-10-20T23:42:15+08:00",
  "ref": "results/p3_data",
  "new": "/work/ChihChungHsu/hungweilai/paper-hkv-p3/results/p3_data_h200",
  "renamed": [],
@@ -14,6 +14,7 @@
   "run_id",
   "ts"
  ],
+ "kept_rows": {},
  "files": {
   "summary.csv": {
    "n_ref": 32,
@@ -198,9 +199,16 @@
    "verdict": "DIFF"
   },
   "raw_id_chain.csv": {
-   "verdict": "MISSING",
-   "ref_exists": true,
-   "new_exists": false
+   "n_ref": 12,
+   "n_new": 12,
+   "key": [
+    "source",
+    "variant",
+    "metric"
+   ],
+   "n_diff": 0,
+   "diffs": [],
+   "verdict": "IDENTICAL"
   },
   "service_constants.json": {
    "n_diff": 6,
@@ -270,5 +278,5 @@
    "verdict": "IDENTICAL"
   }
  },
- "verdict": "MISSING"
+ "verdict": "DIFF"
 }

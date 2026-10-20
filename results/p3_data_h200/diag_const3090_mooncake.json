@@ -1,0 +1,35 @@
+{
+ "run_id": "20261020-234215-p3h-data-diag-const3090",
+ "ts": "2026-10-20T23:42:23+08:00",
+ "ref": "results/p3_data",
+ "new": "/tmp/hungweilai-p3/diag-const3090/results",
+ "renamed": [],
+ "ignored_fields": [
+  "cache",
+  "code",
+  "download_date",
+  "downloaded_by",
+  "host",
+  "path",
+  "run_id",
+  "ts"
+ ],
+ "kept_rows": {
+  "source": "mooncake"
+ },
+ "files": {
+  "summary.csv": {
+   "n_ref": 6,
+   "n_new": 6,
+   "key": [
+    "source",
+    "variant",
+    "tier"
+   ],
+   "n_diff": 0,
+   "diffs": [],
+   "verdict": "IDENTICAL"
+  }
+ },
+ "verdict": "IDENTICAL"
+}

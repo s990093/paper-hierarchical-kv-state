@@ -123,7 +123,8 @@ code/p3_sim/formats.py:187: ValueError
 原因＝我的移植：183ad30 在 `formats.DQ_SETS` 加了 h200 欄，這個測試掃 DQ_SETS 的每個平台去讀 MI300X＋3090 的表 → 我同一次加的平台防呆（表和平台對不上就丟錯）照設計擋下。不是數字不同。runner 照規則 2 停在 SIM-TEST。
 
 ## Milestone P3H-1b — 修正後接著跑（從 DATA-CHAIN 起）
-**狀態**: PENDING（job **21403** `p3h-all`，afterany:21402，git 18b9ca8 之後）
+**狀態**: RUNNING（job **21403** `p3h-all`，afterany:21402，git 9a9b9c1；23:41:35 開跑）
+**資料層（23:41–23:42）**: DATA-CHAIN、DATA-TEST exit 0；DATA-CMP（`20261020-234211-p3h-data-cmp`）：`raw_id_chain.csv` **IDENTICAL**、`synth_fit_fi_week01.json` IDENTICAL、`crosscheck.csv` 12 處＝同 P3H-1（3090 檔沒有 raw_id_chain 列；這幾列的值由 raw_id_chain.csv 比到，IDENTICAL）、`service_constants.json` 6 處、`summary.csv` 3 處（同 P3H-1）。**DATA-DIAG-CONST3090：用 3090 的迴歸常數重建 Mooncake → summary 的 mooncake 列和 3090 IDENTICAL**（`results/p3_data_h200/diag_const3090_mooncake.json`）→ 資料層和 3090 的差異只來自 QuantReg 常數（數值庫），沒有別的來源。
 **修正**（都在 worktree，h200-p3）：
 1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
 2. runner 加 `DATA-CHAIN`（`crosscheck.py --chain-only` → `raw_id_chain.csv`，讓 DATA-CMP 比得到）。
