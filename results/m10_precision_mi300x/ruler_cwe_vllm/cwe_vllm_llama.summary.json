@@ -1,0 +1,16 @@
+{
+ "run_id": "20261020-094344-m10-cwe-vllm",
+ "vllm": "0.28.0",
+ "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+ "jsonl": "/mlsteam/data/tiara/runs/20261015-061335-m10-ruler-cwe-llama/ruler_cwe/cwe/validation.jsonl",
+ "summary": {
+  "up_raw": {
+   "n": 30,
+   "mean": 0.01
+  },
+  "up_nobos": {
+   "n": 30,
+   "mean": 0.060000000000000005
+  }
+ }
+}

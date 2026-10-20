@@ -1177,3 +1177,33 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - 例外：Llama b16 忙 u128 0.264 比 u512 0.317 快；Llama CPU 閒 u256 0.057 比 u512 0.064 快。
   - 結論：512 仍是最好的單位。切細讓會合點更準，但多出的每塊固定成本更大。
 - 判讀（和 DS2 品質放一起、和 Cake 論文的對照）之後寫進 14 號結果節和 08。這節是 self-review。
+
+### 15.22 70（vLLM TTFT）、75（vLLM RULER CWE）做完；60、88 改到 main 同時跑；70 補一次有 guard 的重量（90）（10/20 09:34 → 09:5xZ）
+
+- **70** `70_vllm_ttft` 09:34:38 → 09:43:44Z（兩張卡獨佔；helper 05:01:23 讓出、09:43:46 才接回）。
+  - run：`20261020-093438-m10-vllm-llama-default`、`-093751-…-llama-512`、`-094008-…-qwen-default`、`-094137-…-qwen-512`，全部 exit 0。
+  - 產出：`results/m10_precision_mi300x/vllm_ttft/{vllm_ttft.csv,vllm_meta.json}`。
+  - 只算的 TTFT 中位數（s），8K／16K／32K：
+
+    | 模型 | 預設切法（16384） | 512 切法 |
+    |:--|:--|:--|
+    | Llama | 0.322／0.790／2.185 | 0.514／1.408／4.196 |
+    | Qwen（noDCA） | 0.286／0.684／1.803 | 0.472／1.250／3.727 |
+
+  - 對照 harness 的只算（15.21 M2 的參考線，32K、GPU 閒）：Llama 3.64、Qwen 3.10。
+    - 比預設 vLLM 慢 1.66 倍（Llama）、1.72 倍（Qwen），落在 03 §5.2 原本寫的「1.7–2 倍」。
+    - 比 vLLM 的 512 切法快（0.87 倍、0.83 倍）。
+  - ⚠️ **這次沒有 gpu_guard 紀錄**：`m10_vllm_ttft.py` 本身沒開 guard。
+    - 獨佔是由佇列保證的：WANT_BOTH＋兩把鎖、helper 已讓出、第三階段在等。但乾淨與否沒有量測紀錄。
+    - 所以這張表**先當未驗證**，用 90 的重量取代。
+- **75** `75_ruler_cwe_vllm` 09:43:44 → 09:49:19Z。
+  - run `20261020-094344-m10-cwe-vllm`，exit 0。產出 `results/m10_precision_mi300x/ruler_cwe_vllm/`。
+  - 結果：vLLM 0.28 跑同一份上游 RULER CWE jsonl（Llama、32K、30 題），up_raw（加 BOS）**1.0%**、up_nobos **6.0%**，和 10/15 在 HF transformers 量到的 1.0%／6.0% 相同。
+  - 所以 cards/V2 ❌ 那列的矛盾（低於 RULER 論文換算的下限 8.2%）**不是推論框架造成的**（HF 和 vLLM 一樣）。剩下的可能是 RULER 程式版本或硬體／ROCm，或論文本身。V2 那列之後照這個補。
+- **60、88 改到 main 同時跑**（`queue/60_88_quality_both.sh`，09:52:19Z 開始）：
+  - 原因：main 的佇列做完了，helper 還卡在 55 的最後一個長 job（f8m-qwen-T1）。照原本的順序 60、88 要等它，兩張卡大多空著（規則：GPU 不要空著）。
+  - 做法：兩段的內容沒改，原檔移到 `jobs/parts/`。由 main 開兩個 pool 同時跑，共用顯存帳；main 的佇列有東西時，helper 的 pool 不會再把新 job 放到卡 1。
+  - 兩段都只量分數，時間欄不用。repo 副本在 `code/m10_queue_mi300x/queue/`。
+- **90 `90_vllm_ttft_guarded.sh`**（排在 60_88 之後，兩張卡獨佔）：
+  - 指令和 70 相同，外面多包一層新的 `code/m10_guarded_run.py`：被包的指令是 guard 的子行程，算自己人；兩張卡各寫一份 guard 報告；被污染 → 結束碼 3、run 目錄留 CONTAMINATED。輸出到 `vllm_ttft_guarded/`。
+  - 冒煙：兩張卡都有別的品質 job 時，包住 `sleep 3`，兩張卡都判 CONTAMINATED_AT_START、結束碼 3，偵測正常。
