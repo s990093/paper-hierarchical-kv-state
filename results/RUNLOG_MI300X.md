@@ -1057,3 +1057,15 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   1. 卡 0 假行程用 ROCR=0：記錄它開了哪些 render 節點、amd-smi 的原始行程清單，以及兩張卡的 guard 看法。
   2. 第 1 步過了才做 A／B：卡 1 量還原（ROCR=1），卡 0 的 4 個品質 process 用 ROCR=0。判準和 44cb 相同。
   3. 全過 → 立 `USE_ROCR`（之後所有 job 用 ROCR）＋`XGPU_OK`。沒過 → 照舊兩張卡獨佔、寫 NEEDS_HUMAN。
+
+### 15.17 ROCR 也分不出卡 → gpu_guard 改讀 KFD sysfs；第三次驗證排在 DS2 之後（10/20 00:0x → 00:2xZ）
+
+- 44d（長 context 的還原第二輪）00:01:56Z 做完。44d_xgpu_check2 00:02:42Z 結束：分卡沒過（`results/m10_xgpu_mi300x/rocr/attribution.json`）。
+  - `ROCR_VISIBLE_DEVICES=0` 的假行程照樣開了 renderD160、renderD168 兩個節點，amd-smi 在卡 1 底下也列了它的 2048 MiB。
+  - 沒有立 USE_ROCR／XGPU_OK，44e0 照舊兩張卡獨佔。
+- 找到準確的來源：KFD sysfs `/sys/class/kfd/kfd/proc/<host pid>/vram_<gpu_id>` 每張卡分開記。
+  - 實測：卡 1 上量時間的行程 vram_63883（a6）＝12.7 GB、vram_8594（86）＝0。
+  - topology 的 location_id（bus<<8）對 amd-smi 的 BDF：8594 → 卡 0（86:00.0）、63883 → 卡 1（a6:00.0）。
+  - sysfs 也看得到別的容器在別張卡的行程（gpu_id 33267），不在對照表裡，忽略。
+- `code/gpu_guard.py`：`_amd_compute_apps` 改成先用 `_kfd_compute_apps`（每張卡分開），讀不到才退回 amd-smi。amd-smi 會把跨卡行程兩張都列，所以退回時是偏向報污染、不會報成乾淨（規則 7）。對照表對不齊時丟 SmiUnavailable。`test_gpu_guard_slurm.py` 9 項照過。
+- `queue/44e2z_xgpu_check3.sh`（44e2 DS2 之後、44e3 D3 之前；本身兩張卡獨佔）：用預設的 HIP 設定，步驟和判準同 44cb，另外記 KFD 和 amd-smi 兩種讀法。全過才立 XGPU_OK。USE_ROCR 不用了，m7_env.sh 的開關留著、不會觸發。

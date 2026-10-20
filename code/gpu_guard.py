@@ -42,6 +42,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
+import glob
 import json
 import shutil
 import subprocess
@@ -202,7 +204,57 @@ def _amd_val(x) -> float:
     return float(x)
 
 
+def _kfd_gpu_index() -> dict[int, int]:
+    """KFD 的 gpu_id → amd-smi 的卡號：topology 節點的 location_id（bus<<8|dev<<3|fn）對 amd-smi list 的 BDF bus。"""
+    out = subprocess.run(["amd-smi", "list"], capture_output=True, text=True, timeout=30).stdout
+    bus2idx = {}
+    for blk in out.split("GPU:")[1:]:
+        m = re.search(r"BDF:\s*[0-9a-fA-F]+:([0-9a-fA-F]{2}):", blk)
+        if m:
+            bus2idx[int(m.group(1), 16)] = int(blk.split()[0])
+    gid2idx = {}
+    for n in glob.glob("/sys/class/kfd/kfd/topology/nodes/*"):
+        try:
+            gid = int(open(os.path.join(n, "gpu_id")).read().strip() or 0)
+            props = open(os.path.join(n, "properties")).read()
+        except (OSError, ValueError):
+            continue
+        m = re.search(r"location_id\s+(\d+)", props)
+        if gid and m and (int(m.group(1)) >> 8) in bus2idx:
+            gid2idx[gid] = bus2idx[int(m.group(1)) >> 8]
+    if not bus2idx or set(gid2idx.values()) != set(bus2idx.values()):
+        raise SmiUnavailable(f"KFD gpu_id 對不到 amd-smi 的卡：bus={bus2idx} gid={gid2idx}")
+    return gid2idx
+
+
+def _kfd_compute_apps() -> list[dict]:
+    """10/19（RUNLOG 15.17）：每個行程在每張卡的 VRAM 從 KFD sysfs 讀（/sys/class/kfd/kfd/proc/<host pid>/vram_<gpu_id>）。
+    amd-smi process 會把「打開了兩張卡 render 節點」的行程的 VRAM 在兩張卡底下都列（HIP、ROCR_VISIBLE_DEVICES 都一樣），
+    分不出卡；KFD 是每張卡分開記的（實測：卡 1 上量時間的行程 vram_<卡1>＝12.7 GB、vram_<卡0>＝0）。pid 一樣是 host 的。"""
+    gid2idx = _kfd_gpu_index()
+    rows: list[dict] = []
+    for d in glob.glob("/sys/class/kfd/kfd/proc/*"):
+        pid = os.path.basename(d)
+        if not pid.isdigit():
+            continue
+        for gid, idx in gid2idx.items():
+            try:
+                v = int(open(os.path.join(d, f"vram_{gid}")).read().strip() or 0)
+            except (OSError, ValueError):
+                continue
+            rows.append({"gpu": idx, "pid": int(pid), "host_pid": True, "used_mib": int(v // 2**20)})
+    return rows
+
+
 def _amd_compute_apps() -> list[dict]:
+    """AMD：先用 KFD sysfs（每張卡分開，15.17）；讀不到才退回 amd-smi process（會把跨卡行程兩張都列＝偏向報污染，不會報成乾淨）。"""
+    try:
+        return _kfd_compute_apps()
+    except (SmiUnavailable, OSError, subprocess.SubprocessError):
+        return _amd_smi_compute_apps()
+
+
+def _amd_smi_compute_apps() -> list[dict]:
     """AMD 後端（2026-09-15 於 MI300X 真機驗證並改寫）。
 
     真機上發現的三件事（舊版全部答錯）：
