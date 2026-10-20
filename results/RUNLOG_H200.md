@@ -1281,3 +1281,18 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
     - mxfp4 和 int4_kivi：MI300X 每一格 mxfp4 快 7–13%；H200 Llama 也快（b32 −14%），**Qwen b32 反過來**（mxfp4 0.365 vs int4 0.335），b48、nfs 仍是 mxfp4 快。
   - **M1 單位**（u512／u256／u128）：H200 列的每一格都是 512 最快。例：Llama b48 閒 E0 1.619／2.472／3.333；CPU 層、忙、E1s 0.117／0.276／0.393。MI300X 有兩個例外（Llama b16 忙 u128 較快、Llama CPU 閒 u256 較快），H200 沒有。結論「512 仍最好」兩台相同。
 - 比較腳本是臨時的（`/work/.../tmp/cmp14.py`，只讀兩個 tables_speed_14.md），沒有新的數字來源。
+
+### 10/21：55／60／88（只報告）的 H200 分析（head node，CPU；事先登記 13_h200_repro §15）
+- 指令：`python code/h200_report_only.py` → `results/m10_precision_h200/analysis/report_only/{report_only.json, tables_report_only.md}`。
+  - 重用 MI300X 凍結的 `figs_report_only.analyse()` 和 `m10_analyze` 的統計。
+  - 回歸：同一支 `analyse()` 指到 MI300X 的資料，和 MI300X 的 `derived/report_only.json`（T1_LB）**逐值相同**。
+- 封存規則照 REPORT.md 附錄 D，節點換成 H200 的：FP8 階端點、Qwen FP8 混合 T1、Qwen fp8_head 地圖是「主線」；INT4 階端點、Llama INT4 混合 T1、Llama int4 地圖是「對照」；其他「跑了、沒分析」。
+- **端點，兩台幾乎一樣**（對 E0，百分點，讀法 A；MI300X／H200）：
+  - Llama FP8 T1 都是 0.0；LongBench E1 +0.4／−0.2、E1s +0.7／+0.5。ε 兩台都過。
+  - Qwen FP8 T1 E1 −48.6／−48.3、LongBench −36.0／−36.2。ε 兩台都沒過，同是 fp8_head 的崩壞。
+  - Qwen INT4（對照）T1 −1.1／−0.8、LongBench −0.7／+0.2，ε 都過。
+  - E0：T1 Llama 99.7／99.7%、Qwen 97.8／98.1%；LongBench 40.7／40.8、42.8／42.8。
+- **H200 主線才有的**：
+  - Qwen FP8 混合 T1（b32，對 E0，讀法 A）：F25 −11.4、M25 −42.2、B25 −5.0、R25 −21.9。讀法 B 對 R25：F25 +18.3、B25 +13.3、M25 −22.8（都在 CI 外）。也就是說，把 fp8_head 放在中間最傷，放在後段最不傷。
+  - Qwen fp8_head 敏感度地圖（50 題，3200 列）：含答案的 block 平均 KL 0.158 [0.096, 0.267]，其他 block 0.541 [0.219, 0.969]。KL 最大的是 block 63、5、4、8、33。單一 block 存成 fp8_head 就有明顯 KL，而且不是答案所在的 block 最傷。
+- **對照**：Llama INT4 混合 T1 對 R25 全部 0.0（MI300X 也全部 0.0）。Llama int4 地圖含答案／其他 0.00034／0.00027（MI300X 0.00038／0.00031），兩台都只有極小的 KL。

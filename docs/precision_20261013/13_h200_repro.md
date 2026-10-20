@@ -244,3 +244,27 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
 5. `h200_mps.py report` → `results/m10_restore2_h200/q4mps/tables_q4mps.md`。
 
 **寫論文時**：H200 的「P4」是 MPS 的 SM 比例，不是 CU 遮罩，機制不同。MPS 也改變了基準（P0mps ≠ P0）。只能說「在 H200 上，用 MPS 限制背景的 SM 比例，還原時間怎麼變」，不能當成 MI300X P4 的複製。
+
+## 15. 10/21 55／60／88（只報告）的 H200 分析範圍（寫的時候這些封存檔在 H200 上沒有任何一列被分析過）
+
+MI300X 用 `code/report_stage2/figs_report_only.py` 分析 55／60／88，套 REPORT.md 附錄 D 的封存規則：一筆封存結果，只在它所屬的判定節點真的被執行過時才分析。H200 套**同一條規則**，但「執行過的節點」換成 H200 自己的（§10）。
+
+**H200 執行過的節點**：FP8 Step 1（兩個模型）、Step 2b（Qwen）、K3（不成立 → 不往 INT4）、FP8 Step 2（Qwen）、K2。
+**H200 沒執行的節點**：INT4 Step 1′、INT4 Step 2（兩個模型）、FP8 Step 2 的 Llama 支、Step 3。這些只在 §10 的「對照（照 MI300X 的路算）」裡出現過。
+
+| 封存的東西 | H200 的節點 | 處理 |
+|:--|:--|:--|
+| T1、LongBench 的 FP8 階端點（55、88；E1／E1s／E1sr） | FP8 Step 1（執行過） | 只報告 |
+| T1、LongBench 的 INT4 階端點（`int4end_*_{T1,LB}`） | INT4 Step 1′（H200 沒執行） | **對照**（只報告，標「照 MI300X 的路」） |
+| T1 的 Qwen FP8 混合配置（`fp8mix_qwen_T1`） | FP8 Step 2 的 Qwen（執行過） | 只報告 |
+| T1 的 Llama INT4 混合配置（`int4mix_llama_T1`） | INT4 Step 2 的 Llama（H200 沒執行） | **對照**（和 MI300X 的 F30 (c) 並排用） |
+| 逐 block 敏感度地圖 Qwen fp8_head（60） | H200 Step 2 的主模型與格式的診斷 | 只報告 |
+| 逐 block 敏感度地圖 Llama int4_kivi（60） | MI300X 的 Step 2 主模型；H200 沒執行 | **對照**（和 MI300X 的 F31 並排用） |
+| 敏感度地圖 Llama fp8_token、Qwen int4_kivi | 沒有對應的、執行過的 Step 2 主模型（兩台都沒有） | **跑了、沒分析** |
+| FP8 混合配置 Llama（`fp8mix_llama_*`）、INT4 混合配置 Qwen（`int4mix_qwen_*`） | 兩台都沒執行 | **跑了、沒分析** |
+
+**怎麼算**：
+- 統計全部重用凍結的程式：`m10_analyze.py` 的 `cond_rows`、`eps_check`、`paired`、`cluster_boot`，和 `figs_report_only.py` 的 `analyse()`。
+- 新寫的 `code/h200_report_only.py` 只做兩件事：換目錄，加上 Qwen FP8 混合配置與 Qwen fp8_head 地圖這兩項。`fp8mix` 的 config 名稱沒有 `@格式`，所以讀的時候不剝格式。
+- 輸出：`results/m10_precision_h200/analysis/report_only/`（`report_only.json`、`tables_report_only.md`），每一格標「主線」或「對照」。
+- 這些全部只報告，不改任何判定。
