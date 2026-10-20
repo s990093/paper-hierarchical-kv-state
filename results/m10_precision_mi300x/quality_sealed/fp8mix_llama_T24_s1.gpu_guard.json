@@ -1,0 +1,102 @@
+{
+  "gpu": 0,
+  "started_clean": false,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_AT_START",
+  "intruders": [
+    {
+      "pid": 9933,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T04:29:26.067057+00:00",
+      "peak_mib": -1,
+      "n": 316
+    },
+    {
+      "pid": 11036,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T04:26:39.813104+00:00",
+      "peak_mib": -1,
+      "n": 264
+    },
+    {
+      "pid": 12035,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T04:24:25.359669+00:00",
+      "peak_mib": -1,
+      "n": 222
+    },
+    {
+      "pid": 12536,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T04:31:24.628054+00:00",
+      "peak_mib": -1,
+      "n": 353
+    },
+    {
+      "pid": 13178,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T04:26:14.249610+00:00",
+      "peak_mib": -1,
+      "n": 256
+    },
+    {
+      "pid": 25733,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T05:43:31.737311+00:00",
+      "peak_mib": -1,
+      "n": 1706
+    },
+    {
+      "pid": 26422,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T05:43:31.737311+00:00",
+      "peak_mib": -1,
+      "n": 1706
+    },
+    {
+      "pid": 32987,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T05:36:14.422505+00:00",
+      "peak_mib": -1,
+      "n": 1569
+    },
+    {
+      "pid": 38159,
+      "first_seen": "2026-10-19T04:24:50.933966+00:00",
+      "peak_mib": 0,
+      "n": 1477,
+      "last_seen": "2026-10-19T05:43:31.737311+00:00"
+    },
+    {
+      "pid": 38752,
+      "first_seen": "2026-10-19T04:27:02.176177+00:00",
+      "peak_mib": 0,
+      "n": 1436,
+      "last_seen": "2026-10-19T05:43:31.737311+00:00"
+    },
+    {
+      "pid": 39423,
+      "first_seen": "2026-10-19T04:29:51.638336+00:00",
+      "peak_mib": 0,
+      "n": 1383,
+      "last_seen": "2026-10-19T05:43:31.737311+00:00"
+    },
+    {
+      "pid": 39945,
+      "first_seen": "2026-10-19T04:31:53.426023+00:00",
+      "peak_mib": 0,
+      "n": 1345,
+      "last_seen": "2026-10-19T05:43:31.737311+00:00"
+    },
+    {
+      "pid": 57835,
+      "first_seen": "2026-10-19T05:36:40.011635+00:00",
+      "peak_mib": 0,
+      "n": 130,
+      "last_seen": "2026-10-19T05:43:31.737311+00:00"
+    }
+  ],
+  "n_dirty_samples": 1705,
+  "paused_intervals": [],
+  "discarded_samples_overlapping_pause": 0
+}

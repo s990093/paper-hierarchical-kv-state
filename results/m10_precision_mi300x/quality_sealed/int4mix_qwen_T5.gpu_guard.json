@@ -1,0 +1,81 @@
+{
+  "gpu": 0,
+  "started_clean": false,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_AT_START",
+  "intruders": [
+    {
+      "pid": 62266,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T08:48:09.699696+00:00",
+      "peak_mib": -1,
+      "n": 109
+    },
+    {
+      "pid": 86083,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:11:00.220216+00:00",
+      "peak_mib": -1,
+      "n": 1654
+    },
+    {
+      "pid": 91753,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:24:25.249165+00:00",
+      "peak_mib": -1,
+      "n": 1904
+    },
+    {
+      "pid": 92121,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:28:05.720718+00:00",
+      "peak_mib": -1,
+      "n": 1973
+    },
+    {
+      "pid": 93340,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:07:09.710988+00:00",
+      "peak_mib": -1,
+      "n": 1582
+    },
+    {
+      "pid": 93733,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T09:55:19.770314+00:00",
+      "peak_mib": -1,
+      "n": 1361
+    },
+    {
+      "pid": 94129,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:12:45.688122+00:00",
+      "peak_mib": -1,
+      "n": 1687
+    },
+    {
+      "pid": 95375,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:10:12.221164+00:00",
+      "peak_mib": -1,
+      "n": 1639
+    },
+    {
+      "pid": 95775,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:15:49.569549+00:00",
+      "peak_mib": -1,
+      "n": 1744
+    },
+    {
+      "pid": 96607,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:14:43.879212+00:00",
+      "peak_mib": -1,
+      "n": 1724
+    }
+  ],
+  "n_dirty_samples": 1972,
+  "paused_intervals": [],
+  "discarded_samples_overlapping_pause": 0
+}

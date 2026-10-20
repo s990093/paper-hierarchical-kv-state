@@ -1,0 +1,88 @@
+{
+  "gpu": 0,
+  "started_clean": false,
+  "contaminated": true,
+  "verdict": "CONTAMINATED_AT_START",
+  "intruders": [
+    {
+      "pid": 62266,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T08:48:09.145551+00:00",
+      "peak_mib": -1,
+      "n": 191
+    },
+    {
+      "pid": 64467,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T08:40:33.029418+00:00",
+      "peak_mib": -1,
+      "n": 49
+    },
+    {
+      "pid": 86083,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:11:01.058009+00:00",
+      "peak_mib": -1,
+      "n": 1741
+    },
+    {
+      "pid": 91753,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:15:48.517020+00:00",
+      "peak_mib": -1,
+      "n": 1831
+    },
+    {
+      "pid": 92121,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:15:48.517020+00:00",
+      "peak_mib": -1,
+      "n": 1831
+    },
+    {
+      "pid": 93340,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:07:10.249651+00:00",
+      "peak_mib": -1,
+      "n": 1669
+    },
+    {
+      "pid": 93733,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T09:55:21.804387+00:00",
+      "peak_mib": -1,
+      "n": 1448
+    },
+    {
+      "pid": 94129,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:12:43.430034+00:00",
+      "peak_mib": -1,
+      "n": 1773
+    },
+    {
+      "pid": 95375,
+      "first_seen": "BEFORE_START",
+      "last_seen": "2026-10-19T10:10:13.055636+00:00",
+      "peak_mib": -1,
+      "n": 1726
+    },
+    {
+      "pid": 96607,
+      "first_seen": "2026-10-19T08:41:01.897627+00:00",
+      "peak_mib": 0,
+      "n": 1754,
+      "last_seen": "2026-10-19T10:14:44.811451+00:00"
+    },
+    {
+      "pid": 97043,
+      "first_seen": "2026-10-19T08:42:15.715194+00:00",
+      "peak_mib": 0,
+      "n": 1751,
+      "last_seen": "2026-10-19T10:15:48.517020+00:00"
+    }
+  ],
+  "n_dirty_samples": 1830,
+  "paused_intervals": [],
+  "discarded_samples_overlapping_pause": 0
+}
