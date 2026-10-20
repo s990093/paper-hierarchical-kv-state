@@ -1,0 +1,24 @@
+{
+ "model": "qwen",
+ "source_run_ids": [
+  "20261020-122408-m10h-rs2-smoke-p5mask"
+ ],
+ "meets": {
+  "E1@int4_kivi": {
+   "cpu": {
+    "busy": 1,
+    "busy_all": [
+     1
+    ]
+   }
+  },
+  "E0": {
+   "cpu": {
+    "busy": 2,
+    "busy_all": [
+     2
+    ]
+   }
+  }
+ }
+}

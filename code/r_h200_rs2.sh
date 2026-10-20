@@ -14,12 +14,14 @@
 #   sbatch --job-name=m10h-rs2 --time=30:00:00 code/r_h200_rs2.sh --part rs2   # 量時間：43a 43b 43c 43d 43e0 43e 44cz 44d
 #   sbatch --job-name=m10h-md  --time=16:00:00 code/r_h200_rs2.sh --part md    # 冒煙＋只量分數：44e0 44e1 44e1z 44e2
 #   sbatch --job-name=m10h-mdt --time=16:00:00 code/r_h200_rs2.sh --part mdt   # 量時間：44e3 44e4 44e5 44ez
+#   sbatch --job-name=m10h-attnb --time=4:00:00 code/r_h200_rs2.sh --part attnb # 量時間：43e0nv 43eb（H200 才有，13_h200_repro §13）
 #   bash code/r_h200_rs2.sh --part <p> --list | --dry-run ；--from <stage> 接著跑
 #
 # 每個 stage＝MI300X 的佇列腳本（code/m10_queue_mi300x/queue/<stage>.sh）經 code/h200_port_stage.py 轉成 H200 版：
 #   只換路徑、run 名稱（m10h-）、vLLM 的 python（Qwen 用拿掉 DCA 的變體）、43d 讀 H200 自己的 43 腳本、43b 背景強度用 H200 的 duty。
 #   指令、題數、設定不動。MI300X 的腳本自己處理失敗（寫 NEEDS_HUMAN、跳過那段、exit 0；RUNLOG_MI300X 14.5），這裡照用；
 #   腳本本身 exit ≠ 0 才停（規則 2）。43a 冒煙沒過時，它會把用到那段程式的 stage 從 queue/ 移到 hold/，這裡就跳過。
+# H200 才有的 stage（code/h200_queue/<stage>.sh，MI300X 沒有對應）不經轉換，只把 __JOBS__ 換成工作目錄。
 # 共用的工作目錄 $TIARA_RUNS/_m10h_work/rs2（lib.sh、queue/、hold/、NEEDS_HUMAN、smoke_md/ 的旗子）：三個 part 之間靠它傳。
 # 量時間的 part（rs2、mdt）不和我們自己的其他 GPU job 同時跑（送出時用 dependency 排開）。
 # sbatch 送出時會複製一份；開跑時改執行 repo 裡的版本（R_H200_RS2_REEXEC）。
@@ -54,7 +56,8 @@ case "$PART" in
   rs2) STAGES="43a_rs2_smoke 43b_rs2_busy 43c_rs2_g5 43d_rs2_newfmt 43e0_rs2_attn_resmoke 43e_rs2_attn 44cz_rs2_plan44d 44d_rs_longctx" ;;
   md)  STAGES="44e0_md_smoke 44e1_ds1_screen 44e1z_ds_pick 44e2_ds2_confirm" ;;
   mdt) STAGES="44e3_d3_speed 44e4_m2_fmt 44e5_m1_unit 44ez_md_report" ;;
-  *) echo "要 --part rs2|md|mdt" >&2; exit 2 ;;
+  attnb) STAGES="43e0nv_attn_selftest_bm64 43eb_attn_b" ;;
+  *) echo "要 --part rs2|md|mdt|attnb" >&2; exit 2 ;;
 esac
 
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
@@ -83,7 +86,9 @@ lastrun() { ls -d "\$TIARA_RUNS"/*-"\$1" | sort | tail -1 | xargs basename; }
 pool() { (cd $JOBS && python $REPO/code/h200_pool.py "\$@"); }
 EOF
 }
-port() {          # port <來源> <目的>
+H2Q=$REPO/code/h200_queue
+port() {          # port <來源> <目的>；H200 才有的 stage 只換 __JOBS__
+  if [ "$(dirname "$1")" = "$H2Q" ]; then sed "s#__JOBS__#$JOBS#g" "$1" > "$2"; return; fi
   python3 "$REPO/code/h200_port_stage.py" "$1" "$2" --repo "$REPO" --jobs "$JOBS" --raw-root "$TIARA_HOME" --nodca "$NODCA" --confirm43 "$C43"
 }
 
@@ -102,7 +107,8 @@ PY
   for st in $STAGES; do
     [ "$st" = 44d_rs_longctx ] && continue                         # 44cz 才寫 44d
     [ -f "$JOBS/hold/$st.sh" ] && { echo "[r_h200_rs2] $st 在 hold/（之前的冒煙沒過）→ 不放回 queue/"; continue; }
-    port "$SRCQ/$st.sh" "$JOBS/queue/$st.sh" || { echo "[r_h200_rs2] $st 轉換失敗 → 停" >&2; exit 2; }
+    src=$SRCQ/$st.sh; [ -f "$H2Q/$st.sh" ] && src=$H2Q/$st.sh
+    port "$src" "$JOBS/queue/$st.sh" || { echo "[r_h200_rs2] $st 轉換失敗 → 停" >&2; exit 2; }
   done
 fi
 
@@ -114,7 +120,7 @@ for st in $STAGES; do
     if [ "$st" = "$FROM" ]; then STARTED=1; else [ "$LIST" = 0 ] && echo "[skip] $st"; continue; fi
   fi
   if [ "$LIST" = 1 ]; then echo "$st"; continue; fi
-  if [ "$DRY" = 1 ]; then echo "[$st] port $SRCQ/$st.sh → \$JOBS/queue/$st.sh；bash \$JOBS/queue/$st.sh"; continue; fi
+  if [ "$DRY" = 1 ]; then src=$SRCQ/$st.sh; [ -f "$H2Q/$st.sh" ] && src=$H2Q/$st.sh; echo "[$st] port $src → \$JOBS/queue/$st.sh；bash \$JOBS/queue/$st.sh"; continue; fi
   f=$JOBS/queue/$st.sh
   if [ "$st" = 44d_rs_longctx ]; then                                # 44cz（plan-44d）寫的是 MI300X 的範本 → 轉成 H200 版
     [ -f "$f" ] || { echo "=== $st：44cz 沒有寫出 44d（見 NEEDS_HUMAN）→ 跳過"; continue; }

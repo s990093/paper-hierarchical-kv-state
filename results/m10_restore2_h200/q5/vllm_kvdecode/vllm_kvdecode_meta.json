@@ -1,0 +1,74 @@
+{
+ "llama|auto": {
+  "run_id": "20261020-144315-m10h-rs2-q5d-llama-auto",
+  "vllm": "0.28.0",
+  "model_path": "/work/ChihChungHsu/hungweilai/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "result": {
+   "32768": {
+    "median_t1_s": 1.2206,
+    "median_t65_s": 1.57769,
+    "decode_per_token_s": 0.005579
+   },
+   "129024": {
+    "median_t1_s": 10.40697,
+    "median_t65_s": 10.89508,
+    "decode_per_token_s": 0.007627
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ },
+ "llama|fp8": {
+  "run_id": "20261020-144628-m10h-rs2-q5d-llama-fp8",
+  "vllm": "0.28.0",
+  "model_path": "/work/ChihChungHsu/hungweilai/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "result": {
+   "32768": {
+    "median_t1_s": 1.19299,
+    "median_t65_s": 1.54291,
+    "decode_per_token_s": 0.005468
+   },
+   "129024": {
+    "median_t1_s": 9.7124,
+    "median_t65_s": 10.15578,
+    "decode_per_token_s": 0.006928
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ },
+ "qwen|auto": {
+  "run_id": "20261020-144933-m10h-rs2-q5d-qwen-auto",
+  "vllm": "0.28.0",
+  "model_path": "/work/ChihChungHsu/hungweilai/models/Qwen2.5-7B-Instruct-1M-noDCA",
+  "result": {
+   "32768": {
+    "median_t1_s": 1.06411,
+    "median_t65_s": 1.38933,
+    "decode_per_token_s": 0.005082
+   },
+   "129024": {
+    "median_t1_s": 8.50218,
+    "median_t65_s": 8.87033,
+    "decode_per_token_s": 0.005752
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ },
+ "qwen|fp8": {
+  "run_id": "20261020-145219-m10h-rs2-q5d-qwen-fp8",
+  "vllm": "0.28.0",
+  "model_path": "/work/ChihChungHsu/hungweilai/models/Qwen2.5-7B-Instruct-1M-noDCA",
+  "result": {
+   "32768": {
+    "median_t1_s": 1.05127,
+    "median_t65_s": 1.36679,
+    "decode_per_token_s": 0.00493
+   },
+   "129024": {
+    "median_t1_s": 8.17802,
+    "median_t65_s": 8.52788,
+    "decode_per_token_s": 0.005466
+   }
+  },
+  "backend": "見這個 run 的 stderr.log（grep -i backend）"
+ }
+}

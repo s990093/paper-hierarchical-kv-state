@@ -1,0 +1,15 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E1s,cake,30,0.06802,0.11288,2,62.0,938606592.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,busy,SW-ERR-10,cake,30,0.06871,0.11322,2,6.0,1735000064.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,busy,SW-R0-10,cake,30,0.06872,0.11318,2,6.0,1735000064.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,busy,SW-R1-10,cake,30,0.06878,0.11342,2,6.0,1735000064.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,busy,SW-R2-10,cake,30,0.06863,0.11334,2,6.0,1735000064.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,busy,SW-R3-10,cake,30,0.06865,0.11326,2,6.0,1735000064.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,busy,SW-R4-10,cake,30,0.06879,0.11328,2,6.0,1735000064.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,idle,E1s,cake,30,0.04012,0.06191,2,62.0,938606592.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,idle,SW-ERR-10,cake,30,0.05387,0.0758,3,6.0,1705639936.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,idle,SW-R0-10,cake,30,0.05383,0.07587,2 3,6.0,1705639936.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,idle,SW-R1-10,cake,30,0.05396,0.0758,2 3,6.0,1705639936.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,idle,SW-R2-10,cake,30,0.0539,0.07592,2 3,6.0,1705639936.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,idle,SW-R3-10,cake,30,0.05386,0.07586,3,6.0,1705639936.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token
+32768,cpu,idle,SW-R4-10,cake,30,0.05384,0.07578,3,6.0,1705639936.0,,,30,0,20261020-142524-m10h-rs2-q3-qwen-int8_token

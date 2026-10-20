@@ -367,15 +367,18 @@ def report_q4(md, out):
     pk = os.path.join(R2, "q4_pick.json")
     if os.path.exists(pk):
         md += [f"帶到長 context 的方法（13 §3.2）：**{json.load(open(pk))['pick']}**", ""]
+    lvf = os.path.join(R2, "busy_levels_q4.json")          # 欄位照這份（H200 沒有 busy3；13_h200_repro §12）
+    lv = json.load(open(lvf)) if os.path.exists(lvf) else {"busy1": 0.4, "busy2": 0.7, "busy3": 0.9}
+    bks = sorted(k for k in lv if k.startswith("busy"))
     md += ["#### 背景強度掃描（13 §3.3；int4_kivi；CPU 層；E1 中位數 s，cake／loadall）", "",
-           "| 模型 | 方法 | busy1（0.4） | busy2（0.7） | busy3（0.9） |", "|:--|:--|:--|:--|:--|"]
+           "| 模型 | 方法 | " + " | ".join(f"{b}（{lv[b]}）" for b in bks) + " |", "|:--|:--|" + ":--|" * len(bks)]
     for d in sorted(glob.glob(os.path.join(R2, "q4duty", "*"))):
         rows = latest_rows(d)
         if not rows:
             continue
         name = os.path.basename(d)
         cells = [f"{_f(med(rows, mode='cake', gpu_state=b, config='E1'))}／{_f(med(rows, mode='loadall', gpu_state=b, config='E1'))}"
-                 for b in ("busy1", "busy2", "busy3")]
+                 for b in bks]
         md.append(f"| {name.split('_')[0]} | {name.split('_')[-1]} | " + " | ".join(cells) + f" |{'' if usable(d, rows) else ' **不可用**'}")
     md.append("")
 
@@ -417,7 +420,7 @@ def report_q2(md, out):
 
 def report_q3(md, out):
     md += ["## Q3：新格式的融合 kernel（13 §5）", "",
-           "真實 CPU 層，32K；中位數（s）。原寫法＝43 的速度格子（`results/m10_sweep_mi300x/confirm/speed_<m>/summary_<格式>.csv`）。", "",
+           f"真實 CPU 層，32K；中位數（s）。原寫法＝43 的速度格子（`{os.path.relpath(SWROOT, REPO)}/confirm/speed_<m>/summary_<格式>.csv`）。", "",
            "| 模型 | 格式 | 配置 | 閒：原寫法 → 融合 | 忙：原寫法 → 融合 | 可用 |", "|:--|:--|:--|:--|:--|:--|"]
     for d in sorted(glob.glob(os.path.join(R2, "q3", "speed_*"))):
         m, f = os.path.basename(d)[len("speed_"):].split("_", 1)
@@ -492,7 +495,7 @@ def report_q5(md, out):
                     dlt = v[mode] - v["bf16"]
                     be = "一直划算" if dlt <= 0 else f"{save / dlt:.0f}"
                     md.append(f"| {m} | {tag} | {'閒' if st == 'idle' else '忙'} | {1e3 * save:.1f} | {1e3 * dlt:.3f} | {be} |")
-    md += ["", "### (d) vLLM 0.28 ROCm：BF16 KV vs FP8 KV（attention 裡拆）", "",
+    md += ["", f"### (d) vLLM 0.28 {'CUDA' if 'h200' in os.path.basename(R2) else 'ROCm'}：BF16 KV vs FP8 KV（attention 裡拆）", "",
            "| 模型 | KV | context | prefill＋1（s） | 每個 token 的 decode（ms） |", "|:--|:--|:--|--:|--:|"]
     mp = os.path.join(R2, "q5", "vllm_kvdecode", "vllm_kvdecode_meta.json")
     if os.path.exists(mp):

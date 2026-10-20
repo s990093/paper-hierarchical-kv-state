@@ -33,6 +33,7 @@
 | ⚠ | **Qwen2.5-1M 在 vLLM 上** | DCA 起不來 → 拿掉 DCA 的變體 | DCA 起不來（`FlashAttentionImpl ... 'layer_idx'`）→ 拿掉 DCA 的變體 | 兩台都用「config 拿掉 `dual_chunk_attention_config`、權重相同」的變體（H200：`~/models/Qwen2.5-7B-Instruct-1M-noDCA`）。≤ 262,144 token 時 DCA 在一個 chunk 內就是一般 attention；我們的 HF harness（transformers）本來就沒有 DCA。**報告 Qwen 的 vLLM 數字要註明「拿掉 DCA 的變體」**。 |
 | ⚠ | tokenizer／transformers 版本 | — | 5.19 | 上游 RULER 的 CWE 產生器（邊加詞邊數 token）在兩台停在不同詞數 → **30 題一題都不同**（我們自己的產生器 30 題全同）。原因沒驗證。寫成「同樣的產生程序、不同的題目，結論相同（≈0 分）」，不能說同一批題。 |
 | ⚠ | ROCm `HSA_CU_MASK`（留運算單元給還原） | 有 | **沒有** | 13 號 Q4 的 P4a／P4b 在 H200 是 NOT_MEASURED（平台）。NVIDIA 上類似的機制是 CUDA MPS 的 active thread percentage（限制背景 process 能用的 SM 比例）；機制不同（MPS 會讓 client 共用一個 context），要做就另外登記成 **H200 專屬的變體**，不和 MI300X 的 P4 並成同一欄。 |
+| ⚠ | Triton 在 sm_90 的 MMA 選擇（13 號 43e (b) 的 attention 對照組） | MFMA；融合讀法 ≡ 讀 BF16，10／10 格逐位元相同 | BM＝64 走 wgmma，逐位元相同；**BM＝16（decode）走 mma.sync，融合讀法的運算元 kWidth 4、讀 BF16 是 2 → 沿 k 的加總順序不同，最後幾位不同**（誤差和 BF16 kernel 同級） | H200 的 (b)：「融合 ≡ BF16」只說到「拆出來的值逐位元相同」（用 BM＝64 再比一次證明，`M10_ATTN_BM64_CHECK`，13_h200_repro §13）。kernel 的 split 份數照 MI300X 的 304 CU 定（H200 132 SM，沒調）→ 只比同一台各讀法的相對時間。 |
 
 ## 3. 判定與挑選：兩台各自量、各自挑的（數字一定不同）
 
@@ -56,6 +57,9 @@
 | ⚠ | `m10_dqsweep.py report` | δ\* 與「主線／42」參考欄原本寫死讀 MI300X 的檔 | 修之前第一次跑出的 H200 表那一欄是 MI300X 的數字（已發現、修好、重跑；RUNLOG_H200 10/19）。**引用 42c 表時用 10/19 重跑那份** |
 | · | `m10_ruler_cwe_vllm.py`、`m10_vllm_ttft.py`、`m10_vllm_kvdecode.py` | 模型路徑讀 `M7_<MODEL>_GLOB`；Qwen 指到拿掉 DCA 的變體 | 見 §2 |
 | · | `m10_restore2.py smoke-check` | 只有遮罩生效（OK_cumask）時才要求「有傳遮罩」 | 不會（H200 沒有遮罩，否則冒煙會誤判不過） |
+| · | `m10_attn_q.py selftest` | `M10_ATTN_BM64_CHECK=1`：BM＝16 逐位元不同時，同一個 split 改 BM＝64 再比，逐位元相同才算過（13_h200_repro §13）；微測（bench）不動 | 不會（只決定 (b) 跑不跑；沒設時不變，CPU 直譯自測 ALL PASS） |
+| · | `m10_restore2.py report` | 背景強度欄位照 `busy_levels_q4.json`（H200 沒有 busy3）、Q3 的原寫法路徑照 `M10_SWEEP_DIR`、(d) 標 CUDA／ROCm | 不會（只改標籤；MI300X 的表與 JSON 重跑逐字相同） |
+| · | `code/h200_queue/`、`r_h200_rs2.sh --part attnb` | H200 才有的 stage（43e0nv 自測、43eb 補跑 (b)），不經轉換 | 不會 |
 | · | `code/h200_pool.py` | 工作池加記憶體預約（20705 OOM 的修正） | 不會（只影響同時開幾個 process） |
 | · | `code/h200_longctx_plan.py` | 試跑時間改成每題取實際跑的那次（screen 會續跑）；`LONGCTX_VARIANT=256` | 題數規則不變；32K–128K 選出 n＝12（同 MI300X） |
 | · | `code/h200_longctx256_analyze.py` | 256K 的彙整另寫（借用 `m10_longctx_analyze` 的函式） | 不會；256K 只有 T2–T4，和 32K–128K 的四任務平均不能直接比（表裡都只取 T2–T4） |

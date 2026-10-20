@@ -1162,3 +1162,17 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   - `results/m10_precision_h200/analysis/cake_ratio.{md,png}`：Cake 增益 CPU 層 0.53–3.49×（比 0.016–0.070）、b16 0.93–1.30×、b32 1.12–1.98×、b48 1.50–2.04×（每層 12 格）。CPU 層上限 3.49× 是 GPU 忙的格子。
   - `results/m10_precision_h200/analysis/sensitivity_int4/`：和 E0 逐字相同的比例 Llama INT8 93.6%、FP8 K 先減平均 89.3%、FP8 86.3%、INT4 KIVI 82.6%；Qwen INT8 85.7%、FP8 K 先減平均 85.6%、**FP8 10.4%**（KL 中位數 0.537）、INT4 KIVI 78.1%。
   - `results/m10_tier_h200/{iowall.json, tables_iowall.md, figs/A2_*_wall.png, figs/A3_*_spill.png}`（A 用 stage 44 的實測更新）。
+
+### job 21109 `m10h-rs2`（13 號還原第二輪，量時間）跑完（2026-10-20 12:22:33 → 17:15:59 +08:00，COMPLETED exit 0；程式 `d82e670`）
+- stage 43a 43b 43c 43d 43e0 43e 44cz 44d 全部 exit 0；226 份 gpu_guard 全 CLEAN。log：`$TIARA_RUNS/_m10h_work/rs2/log/<stage>.log`；表 `results/m10_restore2_h200/{tables_13.md, report_13.json}`（head node `m10_restore2.py report`，目錄用環境變數指到 H200）。
+- NEEDS_HUMAN 4 條：
+  - CU 遮罩不生效（預期；`smoke/cumask.json`，132 SM，P4a／P4b 的 matmul 時間和沒遮罩一樣）→ P4 不跑，NOT_MEASURED（平台）。
+  - attention 對照組自測沒過 → 43e 的 (b) 沒跑（見下）。
+- 挑選結果 vs MI300X：
+  - q4_pick **P3 = P3**。GPU 忙、全載入 E1 的幾何平均：P0 0.236 → P3 0.043 s（MI300X 0.047 → 0.029）。H200 的背景是 duty 1.0，P0 被拖得多很多；背景吞吐比 P3 0.97（MI300X 1.002）。
+  - g5_pick **G5（MI300X 是 G5b）**：96 格「÷ 最好」幾何平均，G5 1.042、G5b 1.115（MI300X：G5 1.048、G5b 1.004）。所以 44d 用 G5。
+  - c_pick **S2k16+G4（MI300X 是 S2k8+G4）**：結構相同（冠軍＋G4），冠軍是各自的。
+- 43e：(a)、(d) 跑完；(b) 沒跑。原因：Triton 在 sm_90 遇到 BM＝16 時走 mma.sync，融合讀法和讀 BF16 的運算元排法不同（kWidth 4 vs 2），只差最後幾位；M＝256 走 wgmma，逐位元相同。分析與改法事先登記在 13_h200_repro §13，送出 attnb 補跑。
+- (d) vLLM 0.28 CUDA，每個 token 的 decode（ms，BF16 → FP8 KV）：Llama 32K 5.58 → 5.47、128K 7.63 → 6.93；Qwen（拿掉 DCA）32K 5.08 → 4.93、128K 5.75 → 5.47。
+- 報告標籤的移植：背景強度欄照 `busy_levels_q4.json`、Q3 原寫法路徑照 `M10_SWEEP_DIR`、(d) 標 CUDA。MI300X 的 `tables_13.md`、`report_13.json` 重跑逐字相同。
+- 改 `r_h200_rs2.sh` 時，21110 正在執行它（re-exec 的 repo 版本）。我先把原內容原地寫回，再用「寫新檔再 mv」換上新版，21110 手上開著的仍是舊 inode。最壞情況是 21110 結束時少印 gpu_guard 摘要，可以事後補。之後改 runner 一律用 mv 換檔。

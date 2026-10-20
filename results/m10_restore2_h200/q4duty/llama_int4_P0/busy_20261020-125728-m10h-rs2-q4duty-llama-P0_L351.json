@@ -1,0 +1,22 @@
+[
+ {
+  "state": "busy1",
+  "length": 32768,
+  "duty": 0.6,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.399",
+  "n_matmul": 1254,
+  "seconds": 4.195,
+  "matmul_per_s": 298.927
+ },
+ {
+  "state": "busy2",
+  "length": 32768,
+  "duty": 1.0,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.403",
+  "n_matmul": 2738,
+  "seconds": 6.178,
+  "matmul_per_s": 443.185
+ }
+]

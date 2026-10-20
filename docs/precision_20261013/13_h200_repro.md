@@ -170,3 +170,29 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
 - 各格的中位數。
 
 **CPU 測試（head node，10/19）**：MI300X 的 `tests/restore2_cpu_shim.py`、`tests/match_drop_cpu.py` 在 H200 的環境 ALL PASS；全部 stage 轉換後 `bash -n` 過、沒有殘留路徑；`plan-44d` 用假的挑選結果寫出 40 個 grid，轉換後語法正確、K\* 是 H200 的。
+
+## 13. 10/20 43e (b) 的 attention 自測在 H200 沒過 → 加一個 H200 才有的檢查、補跑 (b)（寫的時候 H200 上 (b) 沒有任何時間數字）
+
+**發生什麼**（21109，`20261020-*-m10h-rs2-attn-selftest2`，`results/m10_restore2_h200/smoke/attn_selftest_gpu.json`）：10 格裡 4 格 M＝256 逐位元相同；6 格 M＝1（decode）逐位元**不同**。對 SDPA(FP32) 的最大誤差和 BF16 kernel 本身同一級（例：Llama 32K fp8 0.00368 vs 0.00313；Qwen 32K fp8 0.00192 vs 0.00187），都遠低於門檻 0.05。MI300X 同一支程式 10 格全部逐位元相同。照 43e 的寫法，(b) 沒跑，(a)、(d) 照跑。
+
+**原因**（看 H200 實際編出來的 kernel，`~/.triton/cache/*/_attn_kernel.ttgir`，Triton 3.7.1，sm_90）：
+- M＝256 時 BM＝64，走 wgmma（MMA v3），融合讀法和讀 BF16 的結果逐位元相同。
+- M＝1 時 BM＝16，Triton 退回 mma.sync（MMA v2）。這時讀 BF16 的 kernel，dot 運算元的排法是 `kWidth = 2`；fp8／int4 的融合 kernel，運算元是在暫存器裡由 FP32 轉成 BF16，Triton 選了 `kWidth = 4`。
+- 兩個 kernel 的 tensor core 指令裡，k 方向的元素組合不同，加總順序就不同，所以差在最後幾個位元。拆出來的值本身沒有不同。
+- 這是 Triton 在 NVIDIA 上編譯的產物，MI300X 的 MFMA 路徑沒有這件事。
+
+**改法（H200 才有，MI300X 不變）**：
+- `m10_attn_q.py selftest` 加一個環境變數 `M10_ATTN_BM64_CHECK=1`，只在 BM＝16 而且逐位元不同時才生效。生效時用同一個 split，把兩個 kernel 都改成 BM＝64（wgmma）再比一次。
+- 這一格算過的條件：BM＝64 逐位元相同，而且對 SDPA 的誤差 < 0.05（門檻不變）。
+- 沒設這個變數時，程式行為不變；CPU 直譯模式的自測照舊 ALL PASS。
+- (b) 的微測本身完全照 MI300X：指令一字不改，BM、split 份數、num_warps、num_stages 都一樣。decode 量的仍是 BM＝16 的 mma.sync kernel。
+
+**排程**：
+- `r_h200_rs2.sh --part attnb`：`43e0nv_attn_selftest_bm64`，過了寫 `OK_attn`；接著 `43eb_attn_b`，跑 (b)。腳本在 `code/h200_queue/`。
+- 這是量時間的 job，排在 21110（md）之後、21111（mdt）之前。
+- 新的自測結果寫進 `smoke/attn_selftest_gpu_bm64.json`；21109 那兩次沒過的紀錄保留，不覆蓋。
+
+**寫論文時**：
+- H200 的 (b) 在 decode 時「融合讀法 ≡ 讀 BF16」只到「拆出來的值逐位元相同」（BM＝64 證明）。輸出本身在最後幾位不同，原因是 MMA 運算元排法，不是解碼錯。
+- split 份數照 MI300X 定（`TARGET_PROGRAMS = 608` ≈ 2 × 304 CU）。H200 只有 132 個 SM，所以這個 kernel 在 H200 上不是調過的設定。(b) 只能比同一台上各讀法的相對時間，不能拿兩台的絕對時間比。
+- 如果自測還是沒過：(b) 在 H200 寫 NOT_MEASURED，記 NEEDS_HUMAN，不再換方法。

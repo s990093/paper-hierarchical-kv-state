@@ -1,0 +1,5 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E0,cake,1,0.0726,0.11901,2,0,1820327936,,,1,0,20261020-122408-m10h-rs2-smoke-p5mask
+32768,cpu,busy,E0,loadall,1,0.23831,0.28419,0,0,1879048192,,,1,0,20261020-122408-m10h-rs2-smoke-p5mask
+32768,cpu,busy,E1,cake,1,0.03717,0.07921,1,63,578027520,,,1,0,20261020-122408-m10h-rs2-smoke-p5mask
+32768,cpu,busy,E1,loadall,1,0.02999,0.07519,0,64,587202560,,,1,0,20261020-122408-m10h-rs2-smoke-p5mask

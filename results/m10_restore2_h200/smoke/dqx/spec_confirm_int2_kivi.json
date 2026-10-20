@@ -1,0 +1,59 @@
+{
+ "model": "llama",
+ "fmt": "int2_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0",
+  "E1s",
+  "SW-R0-20"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  }
+ ],
+ "reps": 1,
+ "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_restore2_h200/smoke/dqx",
+ "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261020-122431-m10h-rs2-smoke-dqx/blocks.csv",
+ "verify": true,
+ "need_att": false,
+ "argv": [
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/code/m10_confirm.py",
+  "speed",
+  "--model",
+  "llama",
+  "--fmt",
+  "int2_kivi",
+  "--configs",
+  "E0",
+  "E1s",
+  "SW-R0-20",
+  "--out-dir",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_restore2_h200/smoke/dqx",
+  "--bw-json",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_llama/bw.json",
+  "--bw-names",
+  "cpu",
+  "--gpu-states",
+  "idle",
+  "--launches",
+  "1",
+  "--reps",
+  "1",
+  "--blocks-out",
+  "/work/ChihChungHsu/hungweilai/tiara-runs/20261020-122431-m10h-rs2-smoke-dqx/blocks.csv"
+ ],
+ "run_id": "20261020-122431-m10h-rs2-smoke-dqx"
+}

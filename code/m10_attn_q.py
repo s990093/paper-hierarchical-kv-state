@@ -283,10 +283,20 @@ def selftest(device: str, out_path=None) -> bool:
             same = torch.equal(o_q, o_ref)
             err = float((unpack_o(o_q, Hq, M).float() - _sdpa(q4.float(), base[0].float(), base[1].float())).abs().max())
             good = same and err < 0.05
+            extra = {}
+            if not same and BM == 16 and os.environ.get("M10_ATTN_BM64_CHECK") == "1":
+                # H200（13_h200_repro §13）：BM＝16 時 Triton 走 mma.sync，融合讀法的運算元排法（kWidth 4）和讀 BF16 的（kWidth 2）
+                # 不同 → 同一條 tensor core 指令裡沿 k 的加總順序不同。同一個 split、BM＝64（wgmma）再比一次：逐位元相同＝拆出來的值相同
+                same64 = torch.equal(attn(qp, kv, ns, 64),
+                                     attn(qp, KVSet("bf16", base[0].contiguous(), base[1].contiguous()), ns, 64))
+                extra = dict(bitwise_vs_same_kernel_on_decoded_bm64=same64)
+                good = same64 and err < 0.05
             res.append(dict(model=model, N=N, M=M, fmt=fmt, bitwise_vs_same_kernel_on_decoded=same,
-                            max_abs_err_vs_sdpa_fp32=err, bf16_kernel_max_abs_err_vs_sdpa_fp32=err_bf, n_split=ns))
+                            max_abs_err_vs_sdpa_fp32=err, bf16_kernel_max_abs_err_vs_sdpa_fp32=err_bf, n_split=ns, **extra))
             print(("PASS " if good else "FAIL ") + f"{model} N={N} M={M} {fmt}：和同一 kernel 讀拆好的 BF16 逐位元"
-                  f"{'相同' if same else '不同'}；對 SDPA(FP32) 最大誤差 {err:.4g}（BF16 kernel 本身 {err_bf:.4g}）", flush=True)
+                  f"{'相同' if same else '不同'}"
+                  + (f"（BM＝64 {'相同' if extra['bitwise_vs_same_kernel_on_decoded_bm64'] else '不同'}）" if extra else "")
+                  + f"；對 SDPA(FP32) 最大誤差 {err:.4g}（BF16 kernel 本身 {err_bf:.4g}）", flush=True)
             ok &= good
     if out_path:
         json.dump(dict(device=device, interp=interp, all_pass=ok, checks=res), open(out_path, "w"), indent=1)
