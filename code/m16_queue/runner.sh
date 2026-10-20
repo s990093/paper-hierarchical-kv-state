@@ -17,12 +17,20 @@
 #   - 失敗 → .failed＋NEEDS_HUMAN，這條 runner 停（CLAUDE.md 規則 2）。STOP 檔在 → 下一個 job 前停。
 #   - 10/20 使用者：「基本上是要排在第二階段後」→ S3_AFTER_S2=1（預設）：任何 GPU job 都要第二階段兩個佇列都空、沒有 WANT_BOTH 才開；
 #     上面的 (B) XGPU 條件與「helper 還在跑時用卡 1 跑品質」都關掉。S3_AFTER_S2=0 才回到 10/19 和第二階段協調的寬鬆規則。
-# job 檔頭：# GPU-NEED: none|one|both   # GPU: 0|1（預設 1）   # NEED-GB: N   # MAX-H: h
+#   - 10/20 改成「單一順序佇列」（照 v0.4 時間表的順序跑）：
+#     timing 角色也收 GPU-NEED: one（一樣在兩個佇列都空時拿兩把鎖獨佔，卡號照檔頭 GPU）；品質 job 要兩張卡並行時，
+#       檔頭寫 CARDS: 0,1、job 內部用 lib.sh 的 oncard 切片（兩把鎖都在手上，沒有量時間的 job 同時跑）。
+#     cpu 角色（queue_c/）：只收 GPU-NEED: none 的分析 job，nice 19、綁 0–3 號核心，可以和 GPU job 同時跑；
+#       看到 $S3/CPU_QUIET（量 CPU 速度的 job 立的）就先不開新的。
+#     AFTER: job 名（空白分隔）＝要等這些 job 在任何第三階段佇列有 .done 才開；佇列裡挑「第一個依賴都滿足的」。
+#     quality 角色（queue_q/）保留，但 10/20 起不用。
+# job 檔頭：# GPU-NEED: none|one|both   # GPU: 0|1（預設 1）   # CARDS: 0,1（預設＝GPU）  # NEED-GB: N（每張卡）
+#           # MAX-H: h   # AFTER: name ...
 export LC_ALL=C
 S2=${S2_JOBS:-/tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs}
 S3=${S3_JOBS:-/mlsteam/data/tiara/stage3/jobs}
 ROLE=${S3_ROLE:-timing}
-case $ROLE in timing) Q=$S3/queue ;; quality) Q=$S3/queue_q ;; *) echo "S3_ROLE 只能是 timing／quality"; exit 2 ;; esac
+case $ROLE in timing) Q=$S3/queue ;; quality) Q=$S3/queue_q ;; cpu) Q=$S3/queue_c ;; *) echo "S3_ROLE 只能是 timing／quality／cpu"; exit 2 ;; esac
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 LD=${S3_LOCKDIR:-/mlsteam/data/tiara}          # 測試時指到別處，不碰真的鎖
 L0=$LD/gpu0.lock; L1=$LD/gpu1.lock
@@ -42,33 +50,45 @@ main_idle() { s2_ok && [ ! -e "$S2/WANT_BOTH" ] && ! has_stage queue; }
 all_idle() { main_idle && ! has_stage queue_g0; }
 helper_busy() { has_stage queue_g0; }
 hdr() { grep -m1 -oE "^# $2: *[^ ]+" "$1" | awk '{print $3}'; }
+deps_ok() {        # $1 job 檔：AFTER 列的每個 job 都要在第三階段任一佇列有 .done
+  local d
+  for d in $(grep -m1 -E "^# AFTER:" "$1" | cut -d: -f2-); do
+    [ -n "$(find "$S3" -mindepth 2 -maxdepth 2 -name "$d.done" 2>/dev/null | head -1)" ] || return 1
+  done
+}
 
-run_locked() {     # $1 鎖指令 $2 檢查（shell 運算式）$3 gpu $4 need_gb $5 xgpu(0/1)；回傳 job 的 rc；99＝拿鎖後條件不符、98＝帳放不下
-  local locks=$1 chk=$2 g=$3 gb=$4 xg=$5
+run_locked() {     # $1 鎖指令 $2 檢查（shell 運算式）$3 卡（逗號分隔，第一張＝TIARA_GPU）$4 need_gb（每張卡）$5 xgpu(0/1)
+                   # 回傳 job 的 rc；99＝拿鎖後條件不符、98＝帳放不下
+  local locks=$1 chk=$2 cards=$3 gb=$4 xg=$5 g=${3%%,*}
   $locks bash -c '
     '"$(declare -f has_stage s2_ok main_idle all_idle helper_busy)"'
     S2='"$S2"'
     '"$chk"' || exit 99
-    S2_JOBS='"$S2"' python3 '"$HERE"'/ledger.py reserve s3-'"$name"' '"$g"' '"$gb"' '"$$"' || exit 98
-    export TIARA_GPU='"$g"' S3_XGPU_COND='"$xg"'
+    rel() { for c in '"${cards//,/ }"'; do S2_JOBS='"$S2"' python3 '"$HERE"'/ledger.py release s3-'"$name"'-c$c; done; }
+    for c in '"${cards//,/ }"'; do
+      S2_JOBS='"$S2"' python3 '"$HERE"'/ledger.py reserve s3-'"$name"'-c$c $c '"$gb"' '"$$"' || { rel; exit 98; }
+    done
+    export TIARA_GPU='"$g"' S3_CARDS='"$cards"' S3_XGPU_COND='"$xg"'
     if [ -e /mlsteam/data/tiara/USE_ROCR ]; then   # 同 code/m7_env.sh（RUNLOG_MI300X 15.16）：ROCr 層只開這張卡，amd-smi 只列在這張；行程內用 cuda:0
       export ROCR_VISIBLE_DEVICES='"$g"'; unset HIP_VISIBLE_DEVICES CUDA_VISIBLE_DEVICES
     else
       unset ROCR_VISIBLE_DEVICES; export HIP_VISIBLE_DEVICES='"$g"' CUDA_VISIBLE_DEVICES='"$g"'
     fi
     bash '"$Q/$name.running"'; rc=$?
-    S2_JOBS='"$S2"' python3 '"$HERE"'/ledger.py release s3-'"$name"'
+    rel
     exit $rc' >> $Q/$name.log 2>&1
 }
 
 log "啟動（S2=$S2，S3=$S3，佇列 $Q，AFTER_S2=$AFTER，截止 $(date -u -d @$CUTOFF +%FT%TZ)）"
 while :; do
   [ -e $S3/STOP ] && { log "看到 STOP，結束"; exit 0; }
-  next=$(ls $Q/*.sh 2>/dev/null | sort | head -1)
+  next=""
+  for f in $(ls $Q/*.sh 2>/dev/null | sort); do deps_ok $f && { next=$f; break; }; done
   [ -z "$next" ] && { sleep 30; continue; }
   name=$(basename $next .sh)
   need=$(hdr $next GPU-NEED); need=${need:-both}
   g=$(hdr $next GPU); g=${g:-1}
+  cards=$(hdr $next CARDS); cards=${cards:-$g}
   gb=$(hdr $next NEED-GB); gb=${gb:-0}
   maxh=$(hdr $next MAX-H); maxh=${maxh:-2}
   now=$(date -u +%s)
@@ -76,14 +96,18 @@ while :; do
     mv $next $Q/$name.cutoff; log "SKIP $name（MAX-H=$maxh 會超過截止）"; continue
   fi
   rc=0
-  if [ "$need" = none ]; then
+  if [ "$ROLE" = cpu ] && [ "$need" != none ]; then
+    mv $next $Q/$name.failed; log "FAILED $name：cpu 佇列只收 GPU-NEED: none"; exit 1
+  elif [ "$need" = none ]; then
+    [ "$ROLE" = cpu ] && [ -e $S3/CPU_QUIET ] && { sleep 30; continue; }
     mv $next $Q/$name.running; log "START $name need=none"
     nice -n 19 taskset -c 0-3 bash $Q/$name.running >> $Q/$name.log 2>&1; rc=$?
   elif [ "$ROLE" = timing ]; then
-    [ "$need" = both ] || { mv $next $Q/$name.failed; log "FAILED $name：timing 佇列只收 GPU-NEED: both"; exit 1; }
+    case $need in both|one) ;; *) mv $next $Q/$name.failed; log "FAILED $name：timing 佇列只收 GPU-NEED: both／one"; exit 1 ;; esac
     if all_idle; then
-      mv $next $Q/$name.running; log "START $name 獨佔兩張卡 gpu=1 need_gb=$gb"
-      run_locked "flock $L0 flock $L1" all_idle 1 $gb 0; rc=$?
+      [ "$need" = both ] && [ "$cards" = "$g" ] && cards=1 && g=1       # 量時間的 job 一律在卡 1（和第二階段同一張）
+      mv $next $Q/$name.running; log "START $name 獨佔兩張卡 need=$need cards=$cards need_gb=$gb"
+      run_locked "flock $L0 flock $L1" all_idle $cards $gb 0; rc=$?
     elif [ "$AFTER" != 1 ] && [ -e "$S2/XGPU_OK" ] && main_idle; then
       touch $WC1; log "WANT_CARD1 立起（$name，XGPU 條件：卡 0 有第二階段的品質工作）"
       t0=$(date +%s); clear=0

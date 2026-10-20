@@ -40,6 +40,17 @@ S3_ROLE=quality setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara
 - **10/20 起預設 `S3_AFTER_S2=1`**（使用者：「基本上是要排在第二階段後」）：任何 GPU job 都要第二階段兩個佇列都空、沒有 WANT_BOTH 才開；XGPU 條件與「helper 還在跑時用卡 1 跑品質」關掉。`S3_AFTER_S2=0` 才回到上面的寬鬆規則。假目錄測試 5 種情況都照預期（helper 忙時嚴格模式不開品質、不立 WANT_CARD1；全空時 timing／quality 都開；寬鬆模式 helper 忙時開品質）。
 - job 檔頭：`# GPU-NEED: none|one|both`、`# GPU: 0|1`、`# NEED-GB: N`、`# MAX-H: h`。
 
+### 2.1b 10/20 起：單一順序佇列＋cpu 佇列
+
+```bash
+# GPU 佇列（照 v0.4 時間表的順序；品質 job 用 CARDS: 0,1 在 job 內兩卡並行）
+S3_ROLE=timing setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/stage3/jobs/runner_timing.out 2>&1 &
+# CPU 分析佇列 queue_c/（nice 19、0–3 號核心；看到 CPU_QUIET 就先不開新的）
+S3_ROLE=cpu    setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/stage3/jobs/runner_cpu.out 2>&1 &
+```
+- 檔頭新增 `CARDS: 0,1`（runner 兩張卡各登記 NEED-GB）與 `AFTER: <job 名>`（等那些 job 在任一佇列 .done）。`quality` 角色停用；舊的 `queue_q/` 兩個 job 移到 `retired_20261020/`，改名為 `05_s1_kvdump`（兩卡並行）與 `35_s1_cpubench`（排他、立 CPU_QUIET、綁 8–23 核）。
+- 假目錄測試（10/20）：雙卡切片的登記與釋放、依賴（沒依賴的先跑、cpu job 完成後 GPU job 才開）、cpu 佇列收到 GPU job → failed、CPU_QUIET 擋住新 job，都照預期。
+
 ### 2.2 job 清單（`code/m16_queue/jobs/`）
 
 | job | 做什麼 | 輸出 |
