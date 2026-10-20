@@ -136,6 +136,7 @@ FileNotFoundError: [Errno 2] No such file or directory: '/raid/work/ChihChungHsu
 修正：runner 的 explore part 一開頭 `mkdir -p` x1／x3／x4／x5／x8（不是 step，`--from` 也會跑）。
 
 ## Milestone P3H-1c — 接著跑（從 X1-SELFTEST 起）
+**狀態**: 已送出 job **21405**（git b31c133）
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from X1-SELFTEST`（第二階段 session 沒有排隊中的 GPU job，不加依賴）
 **修正**（都在 worktree，h200-p3）：
 1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
