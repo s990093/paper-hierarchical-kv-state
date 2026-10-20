@@ -273,7 +273,8 @@ case "$1" in
     step X5-GRID-RUN m7run p3h-x5-grid "$P3PY" code/p3x/x5_run.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid" --procs 14
     step X5-ANALYZE m7run p3h-x5-analyze "$P3PY" code/p3x/x5_analyze.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid"
     # X5 的成本常數出來之後重建 H200 格式表：補上和 X5 的對拍（head node 的版本 20261019-211449-p3h-fmt-table2 沒有這兩項）
-    step FMT-TABLE m7run p3h-fmt-table3 "$P3PY" code/p3_formats/build_format_table.py
+    # 這支斷言看不到 GPU（3090 用 TIARA_NO_GPU=1 跑；head node 本來就沒有卡）。job 裡有一張卡 → 明確藏起來（job 21405 在這裡停）
+    step FMT-TABLE m7run p3h-fmt-table3 env CUDA_VISIBLE_DEVICES= HIP_VISIBLE_DEVICES= TIARA_NO_GPU=1 "$P3PY" code/p3_formats/build_format_table.py
     step X8-TRACES x8_traces
     step X8-CAPACITY m7run p3h-x8-capacity "$P3PY" -I code/p3x/x8_capacity.py "$RAW/x8-traces"
     step X8-GRID m7run p3h-x8-grid3 "$P3PY" -I code/p3x/x8_sim.py --traces "$RAW/x8-traces" --outdir "$X/x8" --rawdir "$RAW/x8-grid3" --procs 14 \

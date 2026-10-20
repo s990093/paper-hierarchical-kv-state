@@ -136,7 +136,18 @@ FileNotFoundError: [Errno 2] No such file or directory: '/raid/work/ChihChungHsu
 修正：runner 的 explore part 一開頭 `mkdir -p` x1／x3／x4／x5／x8（不是 step，`--from` 也會跑）。
 
 ## Milestone P3H-1c — 接著跑（從 X1-SELFTEST 起）
-**狀態**: 已送出 job **21405**（git b31c133）
+**狀態**: FAIL（job **21405**，git b31c133；2026-10-21T01:00:51 → 01:26:12，25 分）：X1-SELFTEST … X5-ANALYZE 全部 exit 0（結果在 `results/p3_explore_h200/x1,x3,x4,x5`，之後一起檢查、提交），停在 FMT-TABLE；接著跑＝P3H-1d
+**失敗與異常**（FMT-TABLE，`20261021-012606-p3h-fmt-table3`）：
+```
+  File "/raid/work/ChihChungHsu/hungweilai/paper-hkv-p3/code/p3_formats/build_format_table.py", line 181, in bytes_encode_cpu
+    assert not torch.cuda.is_available(), "這支只准用 CPU（TIARA_NO_GPU=1）"
+AssertionError: 這支只准用 CPU（TIARA_NO_GPU=1）
+```
+原因＝我的 runner：3090 的第三階段 CPU 步驟都用 `TIARA_NO_GPU=1`（藏卡）跑，head node 本來就沒有卡（P3H-0 的格式表在那裡建），1-GPU job 裡看得到配到的那張。查過：已跑的 X1／X3／X4／X5 腳本沒有任何 cuda／device 呼叫（純 numpy），看得到卡不影響它們的數字；只有這支有斷言。
+修正：FMT-TABLE 這步加 `env CUDA_VISIBLE_DEVICES= HIP_VISIBLE_DEVICES= TIARA_NO_GPU=1`。
+
+## Milestone P3H-1d — 接著跑（從 FMT-TABLE 起）
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from FMT-TABLE`
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from X1-SELFTEST`（第二階段 session 沒有排隊中的 GPU job，不加依賴）
 **修正**（都在 worktree，h200-p3）：
 1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
