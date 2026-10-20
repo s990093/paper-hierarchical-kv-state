@@ -91,7 +91,7 @@
 1. Llama FP8-K0／INT8：照上面查清楚之後補算（主任務欄位嚴格、只報告的欄照記）。
 2. **H200 的 CPU 忙校準：不做**。3090 的定義是「整台主機忙」（N 到 48、兩個 NUMA）；Slurm 的 1-GPU job 只有 16 CPU 的 cpuset（`cpu_busy_restore.py` 的 same 會綁到 GPU 那個節點的 64 個 CPU，和 cpuset 交集可能是空的），做不出同一個條件；整台加壓會影響同節點別的 lab 的 job；而這個數字只進地圖的敏感度（只報告）。H200 的 CPU 忙寫 NOT_MEASURED，不借 3090 的 1.35／1.81。`r_h200_p3.sh` 的 cal 部分刪掉。
 3. `.claude/settings.json` 與 GPU hook：合回 `h200` 時保留 `h200` 原本的設定（hook 是 3090 共用機用的；P3 的 env 指到不存在的 `/ssd8`）。使用者 10/19 授權後做了：commit `fd94762`（`git checkout cabeae3 -- .claude`）。`hooks/gpu_guard_hook.py` 檔還在、但 settings 沒有引用它（不會執行）。
-4. 合回 `h200`、push `origin/h200`：等第二階段 session 的 21109–21111 跑完（它會通知）、上面第 3 點做完之後；`h200-p3` 不單獨 push（memory：只 push origin/h200）。
+4. ✅ 合回 `h200`、push `origin/h200`（10/20 晚）：第二階段 session 通知 21111 跑完後，在另開的暫時 worktree（detached 在 origin/h200＝b59a942）`merge --no-ff h200-p3`＝806a803，沒有衝突；NV_PORTING_NOTES.md 加兩行（開頭指到 P3_PORTING_NOTES、§6 清單一項）＝46c49d5，先問過它。fetch → merge → push（不 rebase，它要求），b59a942..46c49d5 是快轉。共用的第二階段程式（m7_env.sh、env_h200.sh、m7_guard_run.py、test_m7_correctness.py）合併前後在這台 source m7_env.sh 的環境逐行相同（env -i 與 session 環境都比過），只有 env_h200 的提示字不同。這個 worktree 在 21116 跑完前不合 origin/h200（job 讀這裡的程式）；21116 的結果之後再合一次。
 5. 完整地圖：等 04 v4 凍結（3090 那邊在定）；凍結後再寫 H200 的鎖定清單（`costs_h200.json`、`results/p3_formats_h200/format_table.json`，沒有 3090 的校準檔）。
 
 ---
