@@ -1,0 +1,5 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+129024,cpu,busy,E0,cake,10,0.56929,1.26181,0,0.0,16911433728.0,,,10,0,20261019-204333-m10-rs2-q1-llama-129024-fp8-nodq
+129024,cpu,busy,E1,cake,10,0.17529,0.87112,0,252.0,8719958016.0,,,10,0,20261019-204333-m10-rs2-q1-llama-129024-fp8-nodq
+129024,cpu,idle,E0,cake,10,0.32726,0.56498,0,0.0,16911433728.0,,,10,0,20261019-204333-m10-rs2-q1-llama-129024-fp8-nodq
+129024,cpu,idle,E1,cake,10,0.16261,0.39994,0,252.0,8719958016.0,,,10,0,20261019-204333-m10-rs2-q1-llama-129024-fp8-nodq

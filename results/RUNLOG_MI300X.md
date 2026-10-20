@@ -1069,3 +1069,12 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - sysfs 也看得到別的容器在別張卡的行程（gpu_id 33267），不在對照表裡，忽略。
 - `code/gpu_guard.py`：`_amd_compute_apps` 改成先用 `_kfd_compute_apps`（每張卡分開），讀不到才退回 amd-smi。amd-smi 會把跨卡行程兩張都列，所以退回時是偏向報污染、不會報成乾淨（規則 7）。對照表對不齊時丟 SmiUnavailable。`test_gpu_guard_slurm.py` 9 項照過。
 - `queue/44e2z_xgpu_check3.sh`（44e2 DS2 之後、44e3 D3 之前；本身兩張卡獨佔）：用預設的 HIP 設定，步驟和判準同 44cb，另外記 KFD 和 amd-smi 兩種讀法。全過才立 XGPU_OK。USE_ROCR 不用了，m7_env.sh 的開關留著、不會觸發。
+
+### 15.18 44d（13 號 Q1：長 context 的還原第二輪）做完（10/19 20:05 → 10/20 00:02Z）
+
+- 40 個 grid（Llama／Qwen × 128K／64K × FP8／INT4 × P0、冠軍 S2k8+G4、Q4 的 P3、G5b、nodq）全部 exit 0；`m10_restore2.py report` 每格都可用（guard 全 CLEAN）。表在 `results/m10_restore2_mi300x/tables_13.md` 的 Q1。
+- 先看到的（Llama 128K、真實 CPU 層、E1，s）：和 32K 同一個方向，只報告，判讀之後寫進 11、08。
+  - S4（P3）＋全部載入：INT4 閒 0.127、忙 0.136；FP8 0.176／0.189。
+  - 原本的 S0＋Cake（P0）：INT4 0.170／0.252；FP8 0.207／0.326。
+  - 只搬不拆（nodq，下限）：INT4 0.114／0.123；FP8 0.163／0.175。
+  - G5b 在 CPU 層選了全部載入（INT4 忙 0.209＝P0 的全部載入）。b32 照 Cake（和 P0 一樣）。
