@@ -1,0 +1,14 @@
+{
+ "run_id": "20261021-011349-p3h-x3-leads-consts",
+ "template_overhead_qwen": 10,
+ "template_overhead_llama": 10,
+ "cpt_qwen_English": 4.1578788646857125,
+ "cpt_qwen_English_median_msg": 4.428571428571429,
+ "cpt_qwen_Chinese": 1.6873364581065018,
+ "cpt_qwen_Chinese_median_msg": 1.710097719869707,
+ "cpt_llama_English": 4.269278358623878,
+ "cpt_llama_English_median_msg": 4.468841588511137,
+ "cpt_llama_Chinese": 1.393967232066627,
+ "cpt_llama_Chinese_median_msg": 1.3,
+ "wildchat_file": "/tmp/hungweilai-p3/datasets/wildchat-1m/data/train-00000-of-00014.parquet"
+}

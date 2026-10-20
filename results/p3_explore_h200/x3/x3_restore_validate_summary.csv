@@ -1,0 +1,5 @@
+run_id,ts,variant,scope,n_cells,median_abs_rel_err,max_abs_rel_err,b_within1_frac
+20261021-011321-p3h-x3-validate,2026-10-20T17:13:27+00:00,m7,slow,48,0.0235,0.3947,1.0
+20261021-011321-p3h-x3-validate,2026-10-20T17:13:27+00:00,m7,cpu,16,0.1114,0.3314,1.0
+20261021-011321-p3h-x3-validate,2026-10-20T17:13:27+00:00,plus_h2d,slow,48,0.0274,0.1892,0.8958
+20261021-011321-p3h-x3-validate,2026-10-20T17:13:27+00:00,plus_h2d,cpu,16,0.1114,0.3314,1.0

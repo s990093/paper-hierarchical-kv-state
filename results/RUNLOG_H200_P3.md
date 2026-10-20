@@ -148,7 +148,20 @@ AssertionError: 這支只准用 CPU（TIARA_NO_GPU=1）
 
 ## Milestone P3H-1d — 接著跑（從 FMT-TABLE 起）
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from FMT-TABLE`
-**狀態**: 已送出 job **21406**（git 6568954；01:3x 開跑）
+**狀態**: PASS（job **21406**，git 6568954；2026-10-21T01:27:48 → 02:32:47，65 分；`part=explore,map 全部完成`）。合起來＝21405（X1–X5）＋21406（FMT-TABLE、X8、地圖）。
+**run_id**: X1 `20261021-010058-p3h-x1-selftest`、`…-010140-p3h-x1-sweep`、`…-011301-p3h-x1-analyze`、`…-011307-p3h-x1-report`、`…-011311-p3h-x1-boot`；X3 `…-011321-p3h-x3-validate`、`…-011327-p3h-x3-tables`、`…-0113xx/0114xx-p3h-x3-leads-*`（7 個）、`…-011752-p3h-x3-hide`；X4 `…-011930-p3h-x4-trace`、`…-011943-p3h-x4-validate`、`…-012002-p3h-x4-sweep`、`…-012134-p3h-x4-analyze`；X5 `…-012146-p3h-x5-grid`、`…-012558-p3h-x5-analyze`；格式表 `20261021-012754-p3h-fmt-table3`；X8 `…-012805-p3h-x8-traces`、`…-012819-p3h-x8-fi`、`…-013057-p3h-x8-capacity`、`…-013105-p3h-x8-grid3`、`…-013214-p3h-x8-grid3-fi`、`…-014246-p3h-x8-verdict`；地圖 `…-014302-p3h-mapsyn-mi300x`＋`…-0200xx-p3h-anasyn-mi300x-*`（5）、`…-020052-p3h-c0util-mi300x`、`…-0214xx-p3h-map-cmp*`（6）、`…-021421-p3h-mapsyn-h200`＋`…-0227xx/0228xx-p3h-anasyn-h200-*`（5）、`…-022818-p3h-c0util-h200`
+**產出檔**: `results/p3_explore_h200/{x1,x3,x4,x5,x8}`、`results/p3_formats_h200/`（重建）、`results/p3_map_h200/`、`results/p3_sim_h200/`。超過 1 MB 的照 3090 的做法 gzip（x1_sweep、x1_value_vs_lru、x3_hide_sens、x3_hide_summary、x5_cells、x8_cells、x8_headroom；x8_verdict 兩種都讀）
+**關鍵數字**（H200 常數；判定字照各自的登記規則）:
+- 自測／驗證：X1 不變量 58／58 passed；X4 V3 2000 列差 0、V4（原始 ov1e4）36 列最大差 2.39e-9 s → ok=False，**和 3090 相同**（3090 2.50e-9 s，也是 False）、V4（同絕對時間）差 0；X3 還原模型 vs H200 第二階段實測：slow 中位相對誤差 0.0235（m7）／0.0274（plus_h2d），cpu 0.1114（3090 對 MI300X：0.0347／0.0479／0.1965）。
+- 判定（3090 → H200）：X1 R1／R2／min × O-ORD／O-DROP／O-NOW／O-PF 全部「有看頭」→ 全部「有看頭」；X3 v1、v2「有看頭」→「有看頭」；X4 p99 全部「死路」→「死路」，**mean／p90 從「可能」變「有看頭」**（ALL：可進判定的格 137 → 262，mean 最大 hr_med 0.106 → 0.220、≥5% 的格 14 → 63）。原因：X4 只讓 GPU 使用率 ≤ 0.80 的格進判定（x4_sim.py:916），H200 的 prefill 比 MI300X 快 → 同樣負載下使用率低 → 更多格能進；這是硬體差，不是移植問題；X5 登記判定「有看頭」→「有看頭」；X8 13 個判定欄（A／B／fi_only／fi_clip_only × H0／H1800／H3600、final_registered_verdict_A_H0）逐項相同（fi_clip_only「可能」，其餘「有看頭」）。3090 另有 `dedup_sensitivity`（另一個 run，不在 runner）→ H200 沒有。
+- 格式表重建（有 X5 的 H200 常數）：`problems`＝[]（X5 的對拍做到了、過了）；30 列 × 每一格的值和 P3H-0 的版本**完全相同**（只變 run_id、ts、來源記錄）。
+- 地圖（合成端到端 A1，MI300X 常數 vs 3090 的 `results/p3_map`）：**DIFF**，相對差約 1e-3（例：C0 greedy none 的 best_GiB 93645.30 → 93737.29、savings −0.066973 → −0.066713、ttftq_H_p99 10.006 → 9.994 s；boot_q 最大 1.4e-2）。判定欄三邊都相同：`verdict`＝ASK（「沒有任何進判定的真實資料」——合成資料本來就不進判定）、合成的偽判定 go_cells＝[]、evaluable 5 格。推測原因同 P3H-1b：合成資料的服務時間＝round(A＋B·out＋C·ctx)（synth.py:122），A／B／C 是 FI 迴歸 → **P3H-1e 診斷**。
+- C0 使用率（MI300X 常數 vs 3090 的 `results/p3_sim/c0_ssd_util.csv`）：120 列除了 `code_commit` 之外**逐值相同**（compare 報 DIFF 120＝全部是 code_commit；runner 之後加 `--ignore code_commit`）。
+**失敗與異常**: 無（21406）。
+
+## Milestone P3H-1e — 地圖差異的診斷（只診斷）
+**目的**: 確認合成端到端和 3090 的差只來自 FI 迴歸常數：用 3090 的 `service_constants.json`＋`synth_fit_fi_week01.json` 把 synth/small-seed1 重建到 `/tmp/hungweilai-p3/diag-const3090-map`（其他來源用連結、快取另開），MI300X 常數重跑 A1＋五組分析，和 3090 的 `results/p3_map` 逐值比 → `results/p3_map_h200/diag_const3090_compare_*.json`。預期 IDENTICAL；不是的話照列、再查。另外重跑 C0 的比對（`--ignore code_commit`）。
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-mapdiag --time=4:00:00 code/r_h200_p3.sh --part mapdiag`
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from X1-SELFTEST`（第二階段 session 沒有排隊中的 GPU job，不加依賴）
 **修正**（都在 worktree，h200-p3）：
 1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。

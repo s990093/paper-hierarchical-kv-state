@@ -54,7 +54,7 @@ while [ $# -gt 0 ]; do
 done
 # --part 可以給好幾個、逗號分開，依序跑（同一個 job、同一張卡；排隊只排一次）。cal 是量時間的，只能單獨跑
 for _p in ${PART//,/ }; do
-  case "$_p" in data|simtest|explore|map) ;; *) echo "要 --part data|simtest|explore|map（可逗號分開），不是 '$_p'" >&2; exit 2 ;; esac
+  case "$_p" in data|simtest|explore|map|mapdiag) ;; *) echo "要 --part data|simtest|explore|map|mapdiag（可逗號分開），不是 '$_p'" >&2; exit 2 ;; esac
 done
 [ -n "$PART" ] || { echo "要 --part" >&2; exit 2; }
 
@@ -232,7 +232,7 @@ map_c0util() {    # $1＝mi300x|h200（3090：20261019-003643-p3sim-c0util，--p
 map_cmp_mi300x() {  # MI300X 常數的重跑 vs 3090 的檔（不依硬體：應該逐值相同）
   local c
   m7run p3h-map-cmp "$P3PY" code/h200_p3_compare.py --ref results/p3_sim --new "$SIMRES" --files c0_ssd_util.csv --out "$SIMRES/compare_3090_c0util.json" \
-    --rename "c0_ssd_util.csv=c0_ssd_util_mi300x.csv" || return 1
+    --rename "c0_ssd_util.csv=c0_ssd_util_mi300x.csv" --ignore code_commit || return 1
   for c in C0_greedy_none C0_greedy_pass_size C0_tier_none C0_tier_pass_size min_C0_O_greedy_none; do
     m7run "p3h-map-cmp-$c" "$P3PY" code/h200_p3_compare.py --ref results/p3_map --new "$MAPRES" \
       --files "synthetic_e2e_A1_v6_${c}_summary.csv" "synthetic_e2e_A1_v6_${c}_tradeoff.csv" "synthetic_e2e_A1_v6_${c}_verdict.json" \
@@ -240,6 +240,30 @@ map_cmp_mi300x() {  # MI300X 常數的重跑 vs 3090 的檔（不依硬體：應
                "synthetic_e2e_A1_v6_${c}_tradeoff.csv=synthetic_e2e_A1_v6_mi300x_${c}_tradeoff.csv" \
                "synthetic_e2e_A1_v6_${c}_verdict.json=synthetic_e2e_A1_v6_mi300x_${c}_verdict.json" \
       --ignore cells_csv --out "$MAPRES/compare_3090_$c.json" || return 1
+  done
+}
+
+map_diag_const3090() {  # 10/21（job 21406 的 MAP-CMP-3090）：合成端到端和 3090 差約 1e-3（相對），C0 使用率逐值相同。合成資料的服務時間
+  # ＝round(A＋B·out＋C·ctx)（synth.py:122），A／B／C＝FI 迴歸，和資料層同一個差異來源（P3H-1b 的 DATA-DIAG-CONST3090）。
+  # 診斷：用 3090 的 service_constants.json＋synth_fit 把 synth/small-seed1 重建到另一個目錄（其他來源用連結），MI300X 常數重跑 A1＋五組分析，
+  # 和 3090 的 results/p3_map 逐值比。只診斷：不動 $TIARA_DATASETS/p3_unified、$P3_DATA_RESULTS、$MAPRES 的主檔（比對報告寫 $MAPRES/diag_const3090_*）
+  local D="$P3_LOCAL/diag-const3090-map" s c g
+  fresh_dir "$D" || return 1
+  mkdir -p "$D/results" "$D/unified" "$D/cache" "$D/ana" || return 1
+  cp results/p3_data/service_constants.json results/p3_data/synth_fit_fi_week01.json "$D/results/" || return 1
+  for s in "$TIARA_DATASETS"/p3_unified/*; do [ "$(basename "$s")" = synth ] || ln -s "$s" "$D/unified/" || return 1; done
+  local E=(env P3_DATA_RESULTS="$D/results" P3_UNIFIED="$D/unified" P3SIM_CACHE="$D/cache")
+  m7run p3h-mapdiag-synth "${E[@]}" "$P3PY" -I code/p3_data/build.py synth --variants small-seed1 || return 1
+  m7run p3h-mapdiag-syn "${E[@]}" "$P3PY" code/p3_sim/run_map.py --stage A1 --slices synth/small-seed1 --procs 14 --out "$D/map" || return 1
+  for g in "C0 greedy none" "C0 greedy pass_size" "C0 tier none" "C0 tier pass_size" "min_C0_O greedy none"; do
+    set -- $g
+    m7run "p3h-mapdiag-ana-$1-$2-$3" "${E[@]}" "$P3PY" code/p3_sim/analyze_map.py --cells "$D/map/map_cells.csv" --synthetic --mode full \
+      --guard-ref "$1" --oracle-variant "$2" --recompute-charge "$3" --out-prefix "$D/ana/synthetic_e2e_A1_v6_$1_$2_$3" || return 1
+  done
+  for c in C0_greedy_none C0_greedy_pass_size C0_tier_none C0_tier_pass_size min_C0_O_greedy_none; do
+    m7run "p3h-mapdiag-cmp-$c" "$P3PY" code/h200_p3_compare.py --ref results/p3_map --new "$D/ana" \
+      --files "synthetic_e2e_A1_v6_${c}_summary.csv" "synthetic_e2e_A1_v6_${c}_tradeoff.csv" "synthetic_e2e_A1_v6_${c}_verdict.json" \
+      --ignore cells_csv --out "$MAPRES/diag_const3090_compare_$c.json" || return 1
   done
 }
 
@@ -282,6 +306,13 @@ case "$1" in
     step X8-GRID-FI m7run p3h-x8-grid3-fi env X8_NMAX=2560 "$P3PY" -I code/p3x/x8_sim.py --traces "$RAW/x8-traces" --outdir "$X/x8" --rawdir "$RAW/x8-grid3-fi" \
       --procs 14 --wl fi fi_clip --lens orig --tag _fi
     step X8-VERDICT m7run p3h-x8-verdict "$P3PY" -I code/p3x/x8_verdict.py
+    ;;
+  mapdiag)          # 只診斷（P3H-1e）：不在預設的 part 裡
+    step MAPDIAG-NEED need_data
+    step MAPDIAG-VERIFY data_verify
+    const_mi300x
+    step MAPDIAG-C0CMP map_cmp_mi300x
+    step MAPDIAG-SYN-CONST3090 map_diag_const3090
     ;;
   map)
     step MAP-NEED need_data
