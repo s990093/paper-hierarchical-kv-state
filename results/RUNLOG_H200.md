@@ -1176,3 +1176,24 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - (d) vLLM 0.28 CUDA，每個 token 的 decode（ms，BF16 → FP8 KV）：Llama 32K 5.58 → 5.47、128K 7.63 → 6.93；Qwen（拿掉 DCA）32K 5.08 → 4.93、128K 5.75 → 5.47。
 - 報告標籤的移植：背景強度欄照 `busy_levels_q4.json`、Q3 原寫法路徑照 `M10_SWEEP_DIR`、(d) 標 CUDA。MI300X 的 `tables_13.md`、`report_13.json` 重跑逐字相同。
 - 改 `r_h200_rs2.sh` 時，21110 正在執行它（re-exec 的 repo 版本）。我先把原內容原地寫回，再用「寫新檔再 mv」換上新版，21110 手上開著的仍是舊 inode。最壞情況是 21110 結束時少印 gpu_guard 摘要，可以事後補。之後改 runner 一律用 mv 換檔。
+
+### 10/20 傍晚：合併 main（AMD 到 `61027ac`）、長 context 表重跑、和 MI300X 的 44d／長 context 對照（head node）
+- 合併在另一個 worktree 做，h200 `6557401`，再 fast-forward 回來。
+  - `m10_longctx_analyze.py` 衝突：保留 H200 的 `rg`（H200 沒有 Qwen 重量那次）＋main 的「32K 參考列篩長度」。
+  - gpu_guard 的新程式（KFD 每卡 VRAM、ROCR 優先）只走 AMD 的路徑。`test_gpu_guard_slurm.py` 9 項 OK；MI300X 的 `restore2_cpu_shim.py`、`match_drop_cpu.py` ALL PASS。
+  - m16（MI300X 第三階段）的程式和結果一起進來。H200 這邊不跑；P3 的移植由另一個工作階段負責。
+- **長 context 表重跑**：main 修了一個 bug，32K 的 summary 裡 8K／16K 的閒置參考列會蓋掉 32K。
+  - 指令：`M10_PRECISION_DIR=results/m10_precision_h200 python code/m10_longctx_analyze.py --raw <~/longctx_m10h 去掉 508 的 symlink 目錄> --out-dir results/m10_longctx_h200/analysis --lc results/m10_longctx_h200`。
+  - 只有 `tables_longctx.md`、`longctx_<m>.json` 的「速度、32K、閒」那 24 格改變（例：Llama 32K fp8 cpu|idle 原本 0.03866→0.02346，現在 0.10201→0.07629）。品質表、圖、256K 都沒變；RUNLOG 沒有引用過這幾格。
+- **長 context 品質 vs MI300X**：同一批題目（我們自己的產生器），兩台幾乎一樣。例：Qwen fp8_head 128K 1.5%（MI300X）vs 3.8%（H200）；E0 56.6 vs 56.4；Llama 128K E0 40.3 vs 42.2。
+- **長 context 速度（E1 對 E0）vs MI300X**：
+  - b32 兩台都是 E1 快 31–42%。
+  - CPU 層、GPU 忙，兩台大多是 E1 較慢（Llama 64K fp8 −9.0% vs −5.5%；Qwen 128K fp8 −8.9% vs −4.2%）。例外是 Llama 128K fp8：MI300X +7.6%、H200 −3.7%。
+  - CPU 層、閒，Qwen 方向不同：MI300X +13.2%（128K）、+2.6%（64K）；H200 −3.8%、−13.3%。
+  - MI300X 的長 context 表還沒放進 44ca／44cab 的 INT4 格子，所以 INT4 只有 H200 的數字，還不能並排。
+- **13 號 Q1（44d）vs MI300X**（CPU 層、GPU 忙、E1 cake 中位數 s，MI300X／H200）：
+  - 方法的排序兩台大致相同：nodq ≤ Q4_P3 ≈ C 段 < P0。
+  - 例外是 **H200 的 Qwen fp8_head**：nodq 128K 0.079／**0.464**、64K 0.040／**0.234**；Q4_P3 0.087／**0.390**；C 段 0.099／**0.200**，都比 P0（0.183）慢。同一格閒的時候是 0.071，Qwen INT4 忙的時候是 0.049，都不慢。
+  - 32K 的 Q5 (a) 也一樣：「只搬不拆」忙 0.118、閒 0.019（Llama fp8 0.041／0.040）。
+  - 只在 Qwen fp8_head、GPU 忙（H200 的 duty 1.0）時出現，原因還沒查。
+  - G5／G5b：兩台各用自己挑的（H200 G5、MI300X G5b），這一列不並排。
