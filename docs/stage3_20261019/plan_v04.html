@@ -187,7 +187,7 @@ td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-s
 <header style="display:grid;gap:12px">
   <div class="eyebrow">Tiara · AMD MI300X × 2 · 第三階段前置探索 · 計畫 v0.4</div>
   <h1>第三階段探索計畫</h1>
-  <p class="muted">2026-10-20 台灣 14:00 整理。v0.4 加入你提的低秩、token 合併、跨層共用、壓縮疊加、卸載時壓縮（B），以及業界主流調查，並修正 I3 的判讀。時間都是台灣時間。</p>
+  <p class="muted">2026-10-20 台灣 13:40 整理（X1–X3 程式寫好、排進佇列後更新時間）。v0.4 加入你提的低秩、token 合併、跨層共用、壓縮疊加、卸載時壓縮（B），以及業界主流調查，並修正 I3 的判讀。時間都是台灣時間。</p>
   <div class="status">
     <span class="pill"><span class="dot" style="color:var(--teal)"></span>排程已就緒：第二階段全部跑完才開始</span>
     <span class="pill"><span class="dot" style="color:var(--muted)"></span>第二階段預估 10/21 02:00–06:00 跑完</span>
@@ -566,15 +566,15 @@ td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-s
         <tr><td class="num">4</td><td class="id">I1＋I2</td><td>搬、算、生成同時跑互相拖慢多少；多 session 實測 vs 模擬</td><td>四</td><td class="num">1.5 h</td><td class="small">實測／模擬 ≤ 1.10 → 模擬可信，聯合決定收掉</td><td><span class="tag">已排</span></td></tr>
         <tr><td class="num">5</td><td class="id">C1a</td><td>寫入時的分數能不能猜中第 2 輪要哪些 block</td><td>二①</td><td class="num">0.6–1.1 h</td><td class="small">預測力≈隨機 → 選擇性還原不做</td><td><span class="tag">已排</span></td></tr>
         <tr><td class="num">6</td><td class="id">S1 速度</td><td>無損壓縮比、CPU 解壓速度（CPU 獨佔，GPU 這段閒著）</td><td>二／B</td><td class="num">≤1 h</td><td class="small">BF16 無損比 &lt;1.15 → 無損這一軸拿掉</td><td><span class="tag">已排</span></td></tr>
-        <tr><td class="num">7</td><td class="id">X1</td><td>上百種壓縮組合，同樣大小下的 teacher-forcing 篩選（含 S2、低秩、合併、跨層）</td><td>二①</td><td class="num">約 1.5 h</td><td class="small">每個大小下最好組合 ≥0.95×最好單一方法 → 不上 X2</td><td><span class="tag new">程式撰寫中</span></td></tr>
-        <tr><td class="num">8</td><td class="id">X2</td><td>前緣組合的生成答對率（32K、128K 切片）</td><td>二①</td><td class="num">約 2 h</td><td class="small">兩個模型 r＞0.95 → 疊加沒有加乘</td><td><span class="tag new">程式撰寫中</span></td></tr>
-        <tr><td class="num">9</td><td class="id">X3</td><td>組合的還原時間 × 連線速度 × GPU 忙 → 決策圖（B）</td><td>四／B</td><td class="num">1–1.5 h</td><td class="small">每格最快組合都沒比 INT4 快 ≥5% → NO-GO</td><td><span class="tag new">程式撰寫中</span></td></tr>
+        <tr><td class="num">7</td><td class="id">X1</td><td>上百種壓縮組合，同樣大小下的 teacher-forcing 篩選（含 S2、低秩、合併、跨層）</td><td>二①</td><td class="num">1.8–4.6 h</td><td class="small">每個大小下最好組合 ≥0.95×最好單一方法 → 不上 X2</td><td><span class="tag">已排</span></td></tr>
+        <tr><td class="num">8</td><td class="id">X2</td><td>前緣組合的生成答對率（32K、128K 切片）</td><td>二①</td><td class="num">6–7 h</td><td class="small">兩個模型 r＞0.95 → 疊加沒有加乘</td><td><span class="tag">已排</span></td></tr>
+        <tr><td class="num">9</td><td class="id">X3</td><td>組合的還原時間 × 連線速度 × GPU 忙 → 決策圖（B）</td><td>四／B</td><td class="num">0.5 h（驗證另 0–1.5 h）</td><td class="small">每格最快組合都沒比 INT4 快 ≥5% → NO-GO</td><td><span class="tag">已排</span></td></tr>
         <tr><td class="num">10</td><td class="id">V0→F2→F1</td><td>vLLM 共用前綴＋卸載，什麼時候反而變慢</td><td>四</td><td class="num">約 6.7 h</td><td class="small">所有格子差 &lt;5%，且平均和 P95 選出同一設定</td><td><span class="tag">已排</span></td></tr>
         <tr><td class="num">—</td><td class="id">I3</td><td>agent 暫停時 KV 留、搬、丟</td><td>三②</td><td class="num">0（模擬）</td><td class="small">這台機器沒有容量壓力 → 這次不做</td><td><span class="tag down">模擬完成</span></td></tr>
       </tbody>
     </table>
   </div>
-  <p class="small muted">GPU 合計約 18–19 小時牆鐘（品質實驗兩卡並行）。X 系列的時間等程式寫好、冒煙量到實際速度後再更新。</p>
+  <p class="small muted">GPU 合計約 24–33 小時牆鐘（品質實驗兩卡並行；F1 若跑到上限會更長）。X 系列的時間等冒煙量到實際速度後再更新。X2 分 32K（4.7–5.1 h）與 128K（1.3–2.0 h），128K 只探索、不進判定。</p>
 </section>
 
 <section>
@@ -587,9 +587,9 @@ td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-s
       <rect class="g-s2" x="130" y="42" width="24" height="20" rx="3"/><rect x="154" y="42" width="48" height="20" rx="3" fill="url(#hatch4)"/>
       <text x="208" y="56" class="t-mut t-sm">02:00–06:00 之間跑完〔估〕</text>
       <text x="8" y="85">第一輪</text>
-      <rect class="g-t" x="202" y="72" width="222" height="20" rx="3"/><text x="313" y="86" text-anchor="middle" class="t-on t-sm">全部實驗各跑一次（約 18.5 h）</text>
+      <rect class="g-t" x="202" y="72" width="290" height="20" rx="3"/><text x="347" y="86" text-anchor="middle" class="t-on t-sm">全部實驗各跑一次（約 24 h）</text>
       <text x="8" y="115">加深與驗證</text>
-      <rect class="g-deep" x="424" y="102" width="402" height="20" rx="3"/><text x="625" y="116" text-anchor="middle" class="t-sm">有訊號的方向加深、128K、端到端驗證、重跑失敗（約 33 h）</text>
+      <rect class="g-deep" x="492" y="102" width="334" height="20" rx="3"/><text x="659" y="116" text-anchor="middle" class="t-sm">有訊號的方向加深、驗證、重跑失敗（約 28 h）</text>
       <text x="8" y="145">收尾</text>
       <rect class="g-end" x="826" y="132" width="84" height="20" rx="3"/><text x="868" y="146" text-anchor="middle" class="t-on t-sm">報告</text>
       <line class="g-mile" x1="526" y1="30" x2="526" y2="156"/><text x="526" y="24" text-anchor="middle" class="t-acc t-sm">10/22 09:00 第一次結果報告</text>
@@ -598,31 +598,30 @@ td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; white-s
     </svg>
   </div>
   <div class="panel tablewrap" style="overflow-x:auto">
-    <svg class="dg" viewBox="0 0 940 178" role="img" aria-label="第一輪細節：量時間與量品質的實驗輪流用兩張卡，CPU 分析同時進行" style="min-width:700px">
+    <svg class="dg" viewBox="0 0 940 178" role="img" aria-label="第一輪細節：量時間與量品質的實驗輪流用兩張卡，約 24 小時，CPU 分析同時進行" style="min-width:700px">
       <text x="8" y="22" class="t-mut t-sm">第一輪細節（10/21 06:00 起；第二階段若提早結束，整段往前移）</text>
-      <line class="g-tick" x1="130" y1="34" x2="130" y2="146"/><line class="g-tick" x1="214" y1="34" x2="214" y2="146"/><line class="g-tick" x1="298" y1="34" x2="298" y2="146"/><line class="g-tick" x1="382" y1="34" x2="382" y2="146"/><line class="g-tick" x1="466" y1="34" x2="466" y2="146"/><line class="g-tick" x1="550" y1="34" x2="550" y2="146"/><line class="g-tick" x1="634" y1="34" x2="634" y2="146"/><line class="g-tick" x1="718" y1="34" x2="718" y2="146"/><line class="g-tick" x1="802" y1="34" x2="802" y2="146"/><line class="g-tick" x1="886" y1="34" x2="886" y2="146"/>
+      <line class="g-tick" x1="130.0" y1="34" x2="130.0" y2="146"/><line class="g-tick" x1="223.6" y1="34" x2="223.6" y2="146"/><line class="g-tick" x1="317.2" y1="34" x2="317.2" y2="146"/><line class="g-tick" x1="410.8" y1="34" x2="410.8" y2="146"/><line class="g-tick" x1="504.4" y1="34" x2="504.4" y2="146"/><line class="g-tick" x1="598.0" y1="34" x2="598.0" y2="146"/><line class="g-tick" x1="691.6" y1="34" x2="691.6" y2="146"/><line class="g-tick" x1="785.2" y1="34" x2="785.2" y2="146"/><line class="g-tick" x1="878.8" y1="34" x2="878.8" y2="146"/>
       <text x="8" y="57">量時間</text><text x="8" y="70" class="t-mut t-sm">兩卡獨佔</text>
-      <rect class="g-t" x="130" y="44" width="31.5" height="24" rx="3"/><text x="145.75" y="60" text-anchor="middle" class="t-on t-sm">冒煙</text>
-      <rect class="g-t" x="182.5" y="44" width="84" height="24" rx="3"/><text x="224.5" y="60" text-anchor="middle" class="t-on t-sm">I4 搬法</text>
-      <rect class="g-t" x="266.5" y="44" width="63" height="24" rx="3"/><text x="298" y="60" text-anchor="middle" class="t-on t-sm">I1＋I2</text>
-      <rect class="g-s2" x="371.5" y="44" width="42" height="24" rx="3"/><text x="392.5" y="60" text-anchor="middle" class="t-on t-sm">S1</text>
-      <rect class="g-t" x="560.5" y="44" width="63" height="24" rx="3"/><text x="592" y="60" text-anchor="middle" class="t-on t-sm">X3 時間</text>
-      <rect class="g-t" x="623.5" y="44" width="283.5" height="24" rx="3"/><text x="765" y="60" text-anchor="middle" class="t-on t-sm">V0 → F2 → F1（vLLM 共用前綴）</text>
+      <rect class="g-t" x="130.0" y="44" width="39.0" height="24" rx="3"/><text x="149.5" y="60" text-anchor="middle" class="t-on t-sm">冒煙</text>
+      <rect class="g-t" x="184.6" y="44" width="62.4" height="24" rx="3"/><text x="215.8" y="60" text-anchor="middle" class="t-on t-sm">I4 搬法</text>
+      <rect class="g-t" x="247.0" y="44" width="46.8" height="24" rx="3"/><text x="270.4" y="60" text-anchor="middle" class="t-on t-sm">I1＋I2</text>
+      <rect class="g-s2" x="325.0" y="44" width="31.2" height="24" rx="3"/><text x="340.6" y="60" text-anchor="middle" class="t-on t-sm">S1</text>
+      <rect class="g-t" x="449.8" y="44" width="15.6" height="24" rx="3"/><text x="457.6" y="60" text-anchor="middle" class="t-on t-sm">X3</text>
+      <rect class="g-t" x="674.4" y="44" width="209.1" height="24" rx="3"/><text x="779.0" y="60" text-anchor="middle" class="t-on t-sm">V0 → F2 → F1（vLLM）</text>
       <text x="8" y="93">量品質</text><text x="8" y="106" class="t-mut t-sm">兩卡並行</text>
-      <rect class="g-q" x="161.5" y="80" width="21" height="24" rx="3"/><text x="172" y="96" text-anchor="middle" class="t-on t-sm">KV</text>
-      <rect class="g-q" x="329.5" y="80" width="42" height="24" rx="3"/><text x="350.5" y="96" text-anchor="middle" class="t-on t-sm">C1a</text>
-      <rect class="g-q" x="413.5" y="80" width="63" height="24" rx="3"/><text x="445" y="96" text-anchor="middle" class="t-on t-sm">X1 篩選</text>
-      <rect class="g-q" x="476.5" y="80" width="84" height="24" rx="3"/><text x="518.5" y="96" text-anchor="middle" class="t-on t-sm">X2 答對率</text>
+      <rect class="g-q" x="169.0" y="80" width="15.6" height="24" rx="3"/><text x="176.8" y="96" text-anchor="middle" class="t-on t-sm">KV</text>
+      <rect class="g-q" x="293.8" y="80" width="31.2" height="24" rx="3"/><text x="309.4" y="96" text-anchor="middle" class="t-on t-sm">C1a</text>
+      <rect class="g-q" x="356.2" y="80" width="93.6" height="24" rx="3"/><text x="403.0" y="96" text-anchor="middle" class="t-on t-sm">X1 篩選</text>
+      <rect class="g-q" x="465.4" y="80" width="209.0" height="24" rx="3"/><text x="569.9" y="96" text-anchor="middle" class="t-on t-sm">X2 答對率（32K＋128K）</text>
       <text x="8" y="129">CPU 分析</text>
-      <rect class="g-c" x="182.5" y="116" width="21" height="24" rx="3"/><text x="193" y="132" text-anchor="middle" class="t-on t-sm">K1</text>
-      <rect class="g-c" x="371.5" y="116" width="6" height="24" rx="2"/><rect class="g-c" x="476.5" y="116" width="6" height="24" rx="2"/>
-      <rect class="g-c" x="623.5" y="116" width="21" height="24" rx="3"/><text x="634" y="132" text-anchor="middle" class="t-on t-sm">圖</text>
-      <rect class="g-deep" x="650" y="116" width="257" height="24" rx="3"/><text x="778.5" y="132" text-anchor="middle" class="t-sm">整理結果、畫圖（給 10/22 的報告）</text>
-      <text x="130" y="164" text-anchor="middle" class="t-mut t-sm">06:00</text><text x="214" y="164" text-anchor="middle" class="t-mut t-sm">08:00</text><text x="298" y="164" text-anchor="middle" class="t-mut t-sm">10:00</text><text x="382" y="164" text-anchor="middle" class="t-mut t-sm">12:00</text><text x="466" y="164" text-anchor="middle" class="t-mut t-sm">14:00</text><text x="550" y="164" text-anchor="middle" class="t-mut t-sm">16:00</text><text x="634" y="164" text-anchor="middle" class="t-mut t-sm">18:00</text><text x="718" y="164" text-anchor="middle" class="t-mut t-sm">20:00</text><text x="802" y="164" text-anchor="middle" class="t-mut t-sm">22:00</text><text x="886" y="164" text-anchor="middle" class="t-mut t-sm">10/22 00:00</text>
-    </svg>
+      <rect class="g-c" x="184.6" y="116" width="15.6" height="24" rx="3"/><text x="192.4" y="132" text-anchor="middle" class="t-on t-sm">K1</text>
+      <rect class="g-c" x="325.0" y="116" width="5" height="24" rx="2"/><rect class="g-c" x="449.8" y="116" width="5" height="24" rx="2"/><rect class="g-c" x="674.4" y="116" width="12" height="24" rx="2"/>
+      <rect class="g-deep" x="691.6" y="116" width="191.9" height="24" rx="3"/><text x="787.5" y="132" text-anchor="middle" class="t-sm">整理結果、畫圖（給 10/22 的報告）</text>
+      <text x="130.0" y="164" text-anchor="middle" class="t-mut t-sm">06:00</text><text x="223.6" y="164" text-anchor="middle" class="t-mut t-sm">09:00</text><text x="317.2" y="164" text-anchor="middle" class="t-mut t-sm">12:00</text><text x="410.8" y="164" text-anchor="middle" class="t-mut t-sm">15:00</text><text x="504.4" y="164" text-anchor="middle" class="t-mut t-sm">18:00</text><text x="598.0" y="164" text-anchor="middle" class="t-mut t-sm">21:00</text><text x="691.6" y="164" text-anchor="middle" class="t-mut t-sm">10/22 00:00</text><text x="785.2" y="164" text-anchor="middle" class="t-mut t-sm">03:00</text><text x="878.8" y="164" text-anchor="middle" class="t-mut t-sm">06:00</text>
+      </svg>
   </div>
   <div class="legend"><span><span class="sw" style="background:var(--teal)"></span>量時間（兩卡獨佔，卡 1 量）</span><span><span class="sw" style="background:var(--sim)"></span>量品質（兩卡各跑一個模型）</span><span><span class="sw" style="background:var(--good)"></span>CPU 分析（和 GPU 同時，0–3 號核心）</span><span><span class="sw" style="background:var(--muted)"></span>S1 量 CPU 解壓速度時 GPU 閒著，免得干擾</span></div>
-  <p class="small muted">所有時間都是〔估〕。佇列照順序跑，前一個結束下一個才開；X2 要等 X1 的報告，中間空檔會先跑 X3。</p>
+  <p class="small muted">所有時間都是〔估〕。佇列照順序跑，前一個結束下一個才開；X2 要等 X1 的報告（CPU 幾分鐘），中間空檔先跑 X3 的量測；X3 的決策圖等 X2 的報告。</p>
 </section>
 
 <section>
