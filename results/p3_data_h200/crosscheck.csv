@@ -1,0 +1,127 @@
+run_id,ts,source,variant,metric,unified,x_value,match,x_run_id,x_file,note
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:13+00:00,bailian,traceA,raw_id_chain:n_ids,2530337,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:13+00:00,bailian,traceA,raw_id_chain:n_ids_multi_position,52168,52168,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:13+00:00,bailian,traceA,raw_id_chain:position_violations,220196,220196,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:13+00:00,bailian,traceA,raw_id_chain:prev_id_violations,81514,81514,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:16+00:00,bailian,coder,raw_id_chain:n_ids,5202517,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:16+00:00,bailian,coder,raw_id_chain:n_ids_multi_position,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:16+00:00,bailian,coder,raw_id_chain:position_violations,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:16+00:00,bailian,coder,raw_id_chain:prev_id_violations,0,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,raw_id_chain:n_ids,1735015,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,raw_id_chain:n_ids_multi_position,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,raw_id_chain:position_violations,0,0,MATCH,06_simulator.md §10-2,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,raw_id_chain:prev_id_violations,0,,NO_X_VALUE,,docs/phase3_20261017/06_simulator.md,只報告；跨請求的原始 id 鏈性質（traceA 不成立）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,n_requests,43058,43058,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,n_sessions,23101,23101,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,n_sessions_ge2_requests,9012,9012,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,frac_episodes_censored,0.5365088949788657,0.536509,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,gap_returned_p10_s,27.1388,27.1388,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,gap_returned_p50_s,110.645,110.645,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,gap_returned_p90_s,718.6098000000003,718.6098,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,gap_returned_p99_s,2207.34428,2207.34428,MATCH,20261017-175042-p3x2-bl-traceA,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,traceA,n_links(return_events),19957,19957,MATCH,20261017-175445-p3x3-bailian,x3/x3_checks_bailian.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,n_requests,10812,10812,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,n_sessions,9612,9612,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,n_sessions_ge2_requests,509,509,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,frac_episodes_censored,0.8890122086570478,0.889012,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,gap_returned_p10_s,5.0612,5.0612,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,gap_returned_p50_s,28.572,28.572,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,gap_returned_p90_s,255.25830000000047,255.2583,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,gap_returned_p99_s,1533.348269999999,1533.34827,MATCH,20261017-175045-p3x2-bl-thinking,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,thinking,n_links(return_events),1200,1200,MATCH,20261017-175445-p3x3-bailian,x3/x3_checks_bailian.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,n_requests,43011,43011,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,n_sessions,26406,26406,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,n_sessions_ge2_requests,6693,6693,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,frac_episodes_censored,0.6139359698681732,0.613936,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,gap_returned_p10_s,6.1196,6.1196,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,gap_returned_p50_s,117.716,117.716,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,gap_returned_p90_s,941.8466000000001,941.8466,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,gap_returned_p99_s,3488.713759999995,3488.71376,MATCH,20261017-175046-p3x2-bl-coder,x2/x2_summary.csv,子 t_start − 父 t_start（沒有分叉，所以＝X2 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,bailian,coder,n_links(return_events),16605,16605,MATCH,20261017-175445-p3x3-bailian,x3/x3_checks_bailian.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,n_sessions,8056,8056,MATCH,20261017-175040-p3x2-mc-conversation,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,"frac_censored (X2 time-chain def, recomputed)",0.6696035242290749,0.669604,MATCH,20261017-175040-p3x2-mc-conversation,x2/x2_summary.csv,X2：session 內依時間的下一個請求
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,frac_censored (unified tree def: no child),0.6731776244701189,0.669604,DIFF,20261017-175040-p3x2-mc-conversation,x2/x2_summary.csv,統一表：沒有子請求才算設限；和 X2 不同是因為分叉
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,"gap_p10_s (X2 time-chain def, recomputed)",39.001,39.001,MATCH,20261017-175040-p3x2-mc-conversation,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,"gap_p50_s (X2 time-chain def, recomputed)",123.0,123.0,MATCH,20261017-175040-p3x2-mc-conversation,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,"gap_p90_s (X2 time-chain def, recomputed)",474.00059999999996,474.0006,MATCH,20261017-175040-p3x2-mc-conversation,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,"gap_p99_s (X2 time-chain def, recomputed)",1461.1205199999972,1461.12052,MATCH,20261017-175040-p3x2-mc-conversation,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,n_links(return_events),3975,3975,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,n_sessions_ge2(sessions_with_return),2012,2012,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,link_gap_p10_s,41.9994,42.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,link_gap_p50_s,125.999,126.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,link_gap_p90_s,480.00059999999996,480.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,link_gap_p99_s,1470.7814799999992,1471.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,n_sessions,8056,8056,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,n_links,3975,3975,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,"frac_returning (X4 = time-chain def, recomputed)",0.3303964757709251,0.3303964757709251,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,n_links vs X9 census n_edges,3975,3974,DIFF,20261017-174829-p3x9-census,x9/t1_census.csv,X9 的父規則和 D4 不完全相同（見 03b §4）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-d4,n_sessions vs X9 census n_roots,8056,8057,DIFF,20261017-174829-p3x9-census,x9/t1_census.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,n_sessions,9595,9595,MATCH,20261017-180543-p3x2-mc-lit,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,"frac_censored (X2 time-chain def, recomputed)",0.7975230654143463,0.797523,MATCH,20261017-180543-p3x2-mc-lit,x2/x2_summary.csv,X2：session 內依時間的下一個請求
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,frac_censored (unified tree def: no child),0.7980217770758873,0.797523,DIFF,20261017-180543-p3x2-mc-lit,x2/x2_summary.csv,統一表：沒有子請求才算設限；和 X2 不同是因為分叉
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,"gap_p10_s (X2 time-chain def, recomputed)",45.001,45.001,MATCH,20261017-180543-p3x2-mc-lit,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,"gap_p50_s (X2 time-chain def, recomputed)",132.0,132.0,MATCH,20261017-180543-p3x2-mc-lit,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,"gap_p90_s (X2 time-chain def, recomputed)",526.4995,526.4995,MATCH,20261017-180543-p3x2-mc-lit,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,"gap_p99_s (X2 time-chain def, recomputed)",1548.6000000000022,1548.6,MATCH,20261017-180543-p3x2-mc-lit,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,n_links(return_events),2436,2436,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,n_sessions_ge2(sessions_with_return),1959,1959,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,link_gap_p10_s,46.5,46.5,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,link_gap_p50_s,132.0,132.0,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,link_gap_p90_s,528.0,528.0,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,link_gap_p99_s,1548.6000000000022,1549.0,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,n_sessions,9595,9595,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-strict,frac_has_child,0.20197822292411272,0.20197822292411272,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,n_links(return_events),16400,16400,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,n_sessions_ge2(sessions_with_return),1854,1854,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,link_gap_p10_s,0.0,0.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,link_gap_p50_s,3.0,3.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,link_gap_p90_s,152.9991,153.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,link_gap_p99_s,573.00001,573.0,MATCH,20261017-180334-p3x3-mooncake-loose,x3/x3_checks_mooncake_loose.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,n_sessions,7208,7208,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,n_links,16400,16400,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,"frac_returning (X4 = time-chain def, recomputed)",0.6946797695696374,0.6946797695696374,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,n_links vs X9 census n_edges,16400,16399,DIFF,20261017-174829-p3x9-census,x9/t1_census.csv,X9 的父規則和 D4 不完全相同（見 03b §4）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-d4,n_sessions vs X9 census n_roots,7208,7209,DIFF,20261017-174829-p3x9-census,x9/t1_census.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,n_links(return_events),2515,2515,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,n_sessions_ge2(sessions_with_return),2061,2061,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,link_gap_p10_s,45.0,45.0,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,link_gap_p50_s,123.0,123.0,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,link_gap_p90_s,459.001,459.0,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,link_gap_p99_s,925.7391400000012,925.7,MATCH,20261017-180336-p3x3-mooncake-strict,x3/x3_checks_mooncake_strict.csv,每條父子連結的間隔（X3 的定義）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,n_sessions,21093,21093,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-strict,frac_has_child,0.10623517451711284,0.10623517451711284,MATCH,20261017-181558-p3x4-trace3,x4/x4_trace_desc.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,conv-rule-loose,frac_has_child (vs research/calc lit loose),0.4393649738176378,0.4393649738176378,MATCH,lit-agent,docs/phase3_20261017/research/calc/mooncake_conversation.txt,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,mooncake,tool-rule-loose,frac_has_child (vs research/calc lit loose),0.4407827854964419,0.4407827854964419,MATCH,lit-agent,docs/phase3_20261017/research/calc/mooncake_toolagent.txt,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,n_requests,1222199,1222199,MATCH,20261017-181049-p3x9-freeinf,x9/fi_t1_census.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,n_sessions,14036,14036,MATCH,20261017-181049-p3x9-freeinf,x9/fi_t1_census.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,n_user_returns (incl. negative),73472,73472,MATCH,20261017-181049-p3x9-freeinf,x9/fi_t3_window_censoring.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,user think median s (X9 clips negatives to 0),96.228,96.228,MATCH,20261017-181049-p3x9-freeinf,x9/fi_t3_window_censoring.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,n_returns all (user+tool),1208163,1208163,MATCH,20261017-181049-p3x9-freeinf,x9/fi_t3_window_censoring.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,n_user_returns (X3 excludes negative),73458,73458,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,n_tool_returns (X3 excludes negative),1134688,1134688,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,n negative gaps,17,17,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,user_think_p10_s,3.0877000000000008,3.088,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,user_think_p50_s,96.2675,96.27,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,user_think_p90_s,1040.6471000000006,1041.0,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,user_think_p99_s,29422.631599999087,29420.0,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,tool_gap_p10_s,0.414,0.414,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,tool_gap_p50_s,1.694,1.694,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,tool_gap_p90_s,16.942300000000046,16.94,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,tool_gap_p99_s,220.52458999999521,220.5,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,sessions with a user return,11117,11116,DIFF,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,X3 用 week/session_id 當鍵；session_id 跨週不重複時兩者相同
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,freeinference,ALL,sessions with a tool return,13953,13953,MATCH,20261017-180405-p3x3-fi,x3/x3_checks_freeinference.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,wildchat,1m,n_requests,1960074,1960074,MATCH,20261017-175255-p3x2-wc,x2/x2_summary.csv,統一表另外丟掉不交替的對話（X2 只丟時間倒退的）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,wildchat,1m,n_sessions,837989,837989,MATCH,20261017-175255-p3x2-wc,x2/x2_summary.csv,統一表另外丟掉不交替的對話（X2 只丟時間倒退的）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:17+00:00,wildchat,1m,frac_episodes_censored,0.4275292667521736,0.427529,MATCH,20261017-175255-p3x2-wc,x2/x2_summary.csv,統一表另外丟掉不交替的對話（X2 只丟時間倒退的）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,wildchat,1m,assistant_to_assistant_gap_p10_s (X2 def),28.0,28.0,MATCH,20261017-175255-p3x2-wc,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,wildchat,1m,assistant_to_assistant_gap_p50_s (X2 def),128.0,128.0,MATCH,20261017-175255-p3x2-wc,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,wildchat,1m,assistant_to_assistant_gap_p90_s (X2 def),1253.0,1253.0,MATCH,20261017-175255-p3x2-wc,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,wildchat,1m,assistant_to_assistant_gap_p99_s (X2 def),27511.319999999832,27511.32,MATCH,20261017-175255-p3x2-wc,x2/x2_summary.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,wildchat,1m,n_returns,1122085,1122085,MATCH,20261017-174829-p3x9-window,x9/t3_window_censoring.csv,
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,cachewise,catraces,n_requests,11135,11498,DIFF,20261017-175316-p3x2-cachewise2,x2/x2_summary.csv,統一表只取主線（isSidechain=False）；X2 用 events.json（含 sidechain）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,cachewise,catraces,n_sessions,81,81,MATCH,20261017-175316-p3x2-cachewise2,x2/x2_summary.csv,統一表只取主線（isSidechain=False）；X2 用 events.json（含 sidechain）
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,cachewise,catraces,n_user_returns,1464,2587,DIFF,20261017-175502-p3x3-cachewise,x3/x3_checks_cachewise.csv,X3：raw 裡每則文字 user 訊息；統一表：每個由文字 user 觸發的請求
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,cachewise,catraces,user_think_p10_s,-0.0006999999999999886,0.0,MATCH,20261017-175502-p3x3-cachewise,x3/x3_checks_cachewise.csv,X3：減「前一則 assistant 紀錄（含 sidechain）」；統一表：減上一個主線請求的最後一則
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,cachewise,catraces,user_think_p50_s,28.506,17.14,DIFF,20261017-175502-p3x3-cachewise,x3/x3_checks_cachewise.csv,X3：減「前一則 assistant 紀錄（含 sidechain）」；統一表：減上一個主線請求的最後一則
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,cachewise,catraces,user_think_p90_s,149.87820000000002,122.4,DIFF,20261017-175502-p3x3-cachewise,x3/x3_checks_cachewise.csv,X3：減「前一則 assistant 紀錄（含 sidechain）」；統一表：減上一個主線請求的最後一則
+20261020-230608-p3h-data-crosscheck,2026-10-20T15:06:18+00:00,cachewise,catraces,user_think_p99_s,2821.5522399998545,2123.0,DIFF,20261017-175502-p3x3-cachewise,x3/x3_checks_cachewise.csv,X3：減「前一則 assistant 紀錄（含 sidechain）」；統一表：減上一個主線請求的最後一則

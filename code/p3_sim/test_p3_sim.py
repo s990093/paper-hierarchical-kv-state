@@ -383,7 +383,9 @@ def test_official_format_table_adapter():
     sha = FM.sha256_file(FM.OFFICIAL_FORMAT_TABLE)
     out = []
     assert FM.DEFAULT_DQ_SET == "cake_k0" and FM.OFFICIAL_DQ_COLS["mi300x"] == ("dq_mi300x_cake_k0_idle_ms", "dq_mi300x_cake_k0_busy_ms")
-    for model, dqs, plat in [(m, d_, p_) for m in ("llama", "qwen") for d_ in FM.DQ_SETS for p_ in FM.DQ_SETS[d_]]:
+    # 只掃這張表能給的平台（2026-10-20：DQ_SETS 多了 h200 欄，H200 的表另外測，見 test_official_format_table_adapter_h200）
+    tp = FM.TABLE_PLATFORMS[d.get("platform")]
+    for model, dqs, plat in [(m, d_, p_) for m in ("llama", "qwen") for d_ in FM.DQ_SETS for p_ in FM.DQ_SETS[d_] if p_ in tp]:
         ci, cb = FM.DQ_SETS[dqs][plat]
         mf = load_format_table(model, plat, "official" if dqs == FM.DEFAULT_DQ_SET else f"official:{dqs}")   # 預設＝正式表＋cake_k0
         assert mf.src["dq_set"] == dqs
@@ -414,6 +416,37 @@ def test_official_format_table_adapter():
     assert FM.official_quality_32k(rows[("qwen", "fp8_head")])[0] == "fail"
     assert load_format_table("llama", "mi300x", "placeholder").placeholder
     _write_rows("test_official_fmt.csv", out)
+
+
+def test_official_format_table_adapter_h200():
+    """H200 的正式表（2026-10-20）：同一套轉換規則；表和平台對不上要丟錯（兩個方向）。"""
+    import formats as FM
+    d = json.load(open(FM.OFFICIAL_FORMAT_TABLE_H200))
+    assert d["platform"] == "h200" and FM.TABLE_PLATFORMS["h200"] == ("h200",)
+    rows = {(r["model"], r["fmt"]): r for r in d["rows"]}
+    sha = FM.sha256_file(FM.OFFICIAL_FORMAT_TABLE_H200)
+    out = []
+    for model, dqs in [(m, d_) for m in ("llama", "qwen") for d_ in FM.DQ_SETS]:
+        ci, cb = FM.DQ_SETS[dqs]["h200"]
+        mf = load_format_table(model, "h200", "official_h200" if dqs == FM.DEFAULT_DQ_SET else f"official_h200:{dqs}")
+        assert mf.src["dq_set"] == dqs and mf.src["dq_cols"] == [ci, cb]
+        assert mf.src["sha256"] == sha and mf.src["kind"] == "official" and not mf.placeholder
+        for fid, fmt in FM.OFFICIAL_CONCRETE[model].items():
+            c = rows[(model, fmt)]["cells"]
+            assert mf.bytes[fid] == c["bytes_per_block_code"]["value"]
+            for col, g in ((ci, "idle"), (cb, "busy")):
+                v = c[col]["value"]
+                assert (mf.dq[g][fid] is None) if isinstance(v, str) else abs(mf.dq[g][fid] - v / 1e3) < 1e-15
+            out.append(dict(test="official_fmt_h200", model=model, platform="h200", fid=fid, concrete=fmt,
+                            status_32768=mf.status(fid, 32768), status_32769=mf.status(fid, 32769)))
+        assert mf.bin_of(32768) == 0 and mf.bin_of(32769) == 1
+        assert all(q["agrees_with_table_verdict"] for q in mf.src["quality"].values())
+    for plat in ("mi300x", "3090"):
+        with pytest.raises(ValueError):
+            load_format_table("llama", plat, "official_h200")
+    with pytest.raises(ValueError):
+        load_format_table("llama", "h200", "official")
+    _write_rows("test_official_fmt_h200.csv", out)
 
 
 def test_official_table_sha_in_rows_and_ttft_request_rule():

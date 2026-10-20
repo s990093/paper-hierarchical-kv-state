@@ -13,5 +13,5 @@
 | 6 | Llama FP8-K0／INT8 品質 | H200 補算：重現檢查對主任務欄位逐位元相同；H200 已提交的分析是在 T1／LB shard 寫完前算的，所以含 T1 列的 `mean_lp_read` 與 run_ids 不同 → 照記不擋（RUNLOG_H200_P3 P3H-0b）。兩格四種情境都過 | · | 30／30 列的判定和 MI300X 版相同；H200 的 Llama 8-bit 判定有自己的 run_id |
 | 7 | 地圖的主視角與敏感度 | `P3_MAP_PLATFORM=h200`：主視角換 H200 常數＋H200 格式表；敏感度沒有 3090 列 | · | 只有 H200 平台（memory h200-phase1-reproduction） |
 | 8 | 真實裝置 | H200 沒有量本地碟／NFS（使用者 10/16「都用模擬限速」）；3090 地圖的 `/ssd8` 真實視角在 H200 不存在 | · | 只報限速層 |
-| 9 | 套件版本 | numpy 2.3.5、torch 2.13.0+cu130、transformers 5.19.0（3090：2.2.6／2.10.0+cu126／5.17.0）；sklearn 等照 3090 同版 | · | 資料層與測試和 3090 逐位元對拍（job 21116 的 DATA-CMP、MAP-CMP-3090）；對不上的照列 |
+| 9 | 套件版本 | numpy 2.3.5、torch 2.13.0+cu130、transformers 5.19.0（3090：2.2.6／2.10.0+cu126／5.17.0）；sklearn、statsmodels 等照 3090 同版。job 21116 的 DATA-CMP：FI 服務時間迴歸（QuantReg）的 A／C 和 3090 差 6.7e-5／7.4e-5（相對），Mooncake 的估計服務時間取整數 ms → think_ms 差 ±1 ms（summary 3 格：tool-rule-d4 p50 1016→1015 等）；其餘資料層逐位元相同（RUNLOG_H200_P3 P3H-1） | ⚠ | H200 用自己的迴歸常數（不借 3090 的）；Mooncake 驅動的 H200 結果和 3090 比時先看這項。DATA-DIAG-CONST3090 確認差異只來自這組常數（P3H-1b） |
 | 10 | 計時檔 | `run_map` 的工作順序用 3090 的計時 run（在 /ssd8）；H200 沒有 → 用請求數排 | · | 只影響先後，不影響數字 |

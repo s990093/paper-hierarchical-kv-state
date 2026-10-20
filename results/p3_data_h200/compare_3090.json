@@ -1,0 +1,274 @@
+{
+ "run_id": "20261020-230641-p3h-data-cmp",
+ "ts": "2026-10-20T23:06:44+08:00",
+ "ref": "results/p3_data",
+ "new": "/work/ChihChungHsu/hungweilai/paper-hkv-p3/results/p3_data_h200",
+ "renamed": [],
+ "ignored_fields": [
+  "cache",
+  "code",
+  "download_date",
+  "downloaded_by",
+  "host",
+  "path",
+  "run_id",
+  "ts"
+ ],
+ "files": {
+  "summary.csv": {
+   "n_ref": 32,
+   "n_new": 32,
+   "key": [
+    "source",
+    "variant",
+    "tier"
+   ],
+   "n_diff": 3,
+   "diffs": [
+    {
+     "kind": "value",
+     "key": [
+      "mooncake",
+      "tool-rule-d4",
+      "R"
+     ],
+     "col": "think_ms_p50",
+     "ref": "1016.0",
+     "new": "1015.0",
+     "rel": 0.000984251968503937
+    },
+    {
+     "kind": "value",
+     "key": [
+      "mooncake",
+      "tool-rule-strict",
+      "R"
+     ],
+     "col": "think_ms_p50",
+     "ref": "114535.0",
+     "new": "114534.5",
+     "rel": 4.365477801545379e-06
+    },
+    {
+     "kind": "value",
+     "key": [
+      "mooncake",
+      "tool-rule-strict",
+      "R"
+     ],
+     "col": "think_ms_p99",
+     "ref": "919872.3899999993",
+     "new": "919872.3199999994",
+     "rel": 7.609751168722143e-08
+    }
+   ],
+   "verdict": "DIFF"
+  },
+  "crosscheck.csv": {
+   "n_ref": 114,
+   "n_new": 126,
+   "key": [
+    "source",
+    "variant",
+    "metric"
+   ],
+   "n_diff": 12,
+   "diffs": [
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "coder",
+      "raw_id_chain:n_ids"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "coder",
+      "raw_id_chain:n_ids_multi_position"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "coder",
+      "raw_id_chain:position_violations"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "coder",
+      "raw_id_chain:prev_id_violations"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "thinking",
+      "raw_id_chain:n_ids"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "thinking",
+      "raw_id_chain:n_ids_multi_position"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "thinking",
+      "raw_id_chain:position_violations"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "thinking",
+      "raw_id_chain:prev_id_violations"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "traceA",
+      "raw_id_chain:n_ids"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "traceA",
+      "raw_id_chain:n_ids_multi_position"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "traceA",
+      "raw_id_chain:position_violations"
+     ],
+     "ref": 0,
+     "new": 1
+    },
+    {
+     "kind": "row_count",
+     "key": [
+      "bailian",
+      "traceA",
+      "raw_id_chain:prev_id_violations"
+     ],
+     "ref": 0,
+     "new": 1
+    }
+   ],
+   "verdict": "DIFF"
+  },
+  "raw_id_chain.csv": {
+   "verdict": "MISSING",
+   "ref_exists": true,
+   "new_exists": false
+  },
+  "service_constants.json": {
+   "n_diff": 6,
+   "diffs": [
+    {
+     "kind": "value",
+     "path": [
+      "A"
+     ],
+     "ref": 1509.1056832666832,
+     "new": 1509.2071378337419,
+     "rel": 6.722375246932988e-05
+    },
+    {
+     "kind": "value",
+     "path": [
+      "B"
+     ],
+     "ref": 14.212994865389332,
+     "new": 14.212997448707114,
+     "rel": 1.81757422474408e-07
+    },
+    {
+     "kind": "value",
+     "path": [
+      "C"
+     ],
+     "ref": 0.014841663618334697,
+     "new": 0.01484057044196145,
+     "rel": 7.365591899669295e-05
+    },
+    {
+     "kind": "value",
+     "path": [
+      "abs_resid_ms_pctl_all",
+      "p50"
+     ],
+     "ref": 2541.8234437460796,
+     "new": 2541.776193574079,
+     "rel": 1.8589084980227805e-05
+    },
+    {
+     "kind": "value",
+     "path": [
+      "abs_resid_ms_pctl_all",
+      "p90"
+     ],
+     "ref": 9386.214194613767,
+     "new": 9386.133348555239,
+     "rel": 8.613276540710452e-06
+    },
+    {
+     "kind": "value",
+     "path": [
+      "frac_pred_le_dur_all"
+     ],
+     "ref": 0.4997784525725787,
+     "new": 0.49977594921181684,
+     "rel": 5.008940959671179e-06
+    }
+   ],
+   "verdict": "DIFF"
+  },
+  "synth_fit_fi_week01.json": {
+   "n_diff": 0,
+   "diffs": [],
+   "verdict": "IDENTICAL"
+  }
+ },
+ "verdict": "MISSING"
+}

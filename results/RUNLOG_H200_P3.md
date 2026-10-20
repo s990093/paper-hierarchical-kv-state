@@ -96,11 +96,39 @@
 
 ---
 
-## Milestone P3H-1 — 資料層重建、測試、探索（H200 常數）、地圖工具（job 21116，排隊中）
-**狀態**: PENDING（`p3h-all`，`--part data,simtest,explore,map`；10/19 21:2x 之後的程式改動（X5 後重建格式表、刪 cal）在開跑時才讀到，runner 會改執行 repo 裡的版本，`--dependency=afterany:21111`：接在第二階段的 21109→21110→21111 之後，約 20 小時以上；10/20 第二階段在 21110 和 21111 之間插了 1 小時的計時 job 21377（m10h-attnb，21111 改 afterany:21377），21116 的依賴不變、晚約 1 小時開跑）
+## Milestone P3H-1 — 資料層重建、測試、探索（H200 常數）、地圖工具（job 21116）
+**狀態**: FAIL（SIM-TEST，見下面「失敗與異常」；接著跑＝P3H-1b）。送出時是 PENDING（`p3h-all`，`--part data,simtest,explore,map`；10/19 21:2x 之後的程式改動（X5 後重建格式表、刪 cal）在開跑時才讀到，runner 會改執行 repo 裡的版本，`--dependency=afterany:21111`：接在第二階段的 21109→21110→21111 之後，約 20 小時以上；10/20 第二階段在 21110 和 21111 之間插了 1 小時的計時 job 21377（m10h-attnb，21111 改 afterany:21377），21116 的依賴不變、晚約 1 小時開跑）
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --dependency=afterany:21111 --time=48:00:00 code/r_h200_p3.sh --part data,simtest,explore,map`（在 worktree 送出）
 **步驟**（`bash code/r_h200_p3.sh --part data,simtest,explore,map --list`）：DATA-DL → DATA-VERIFY → 統一表（照 3090 最終 run 的分批）→ 對拍、測試 → DATA-CMP（和 3090 的 `results/p3_data` 逐值比）；SIM-TEST（3090 最後一次 121 passed）；X1／X3／X4／X5／X8 的登記主結果（H200 常數）；地圖：MI300X 常數的合成端到端＋C0 使用率（和 3090 逐值比）→ H200 常數的同一批。
 （先前送的 21113 `p3h-data`、21114 `p3h-simtest` 已取消、合成這一個，少排一次隊。）
+**執行時間**: 2026-10-20T22:27:59+08:00 → 2026-10-20T23:14:21+08:00（46 分；hgx-cn01；git add63f5）
+**run_id**: 資料 `20261020-222803-p3h-data-dl` … `20261020-230641-p3h-data-cmp`（每步一個，見 `slurm-p3h-all-21116.out`）；失敗的那步 `20261020-230656-p3h-sim-test`（`$TIARA_RUNS`＝`/work/ChihChungHsu/hungweilai/tiara-runs`）
+**產出檔**: `results/p3_data_h200/{summary.csv, crosscheck.csv, service_constants.json, synth_fit_fi_week01.json, compare_3090.json}`；統一表在 hgx-cn01 `/tmp/hungweilai-p3/datasets/p3_unified`
+**關鍵數字**:
+- DATA-DL、DATA-VERIFY 過（sha256 和 README 相同）；統一表、FICONST、MOONCAKE、BURSTGPT、CACHEWISE、WILDCHAT、SYNTHFIT、SYNTH、SUMMARY、XCHECK、DATA-TEST 都 exit 0；DATA-BAILIAN exit 5＝只有 traceB 的 FAILED.json（和 3090 的 20261017-220343-p3data-bailian 相同，預期中）。
+- SIM-TEST：**1 failed, 120 passed**（439 s）。
+- DATA-CMP（和 3090 的 `results/p3_data` 逐值比）：verdict＝**MISSING**（不是預期的 IDENTICAL）：
+  - `synth_fit_fi_week01.json` IDENTICAL。
+  - `raw_id_chain.csv` MISSING：3090 是另外用 `crosscheck.py --chain-only` 寫的（d0c4658），runner 沒有這步。
+  - `crosscheck.csv` DIFF 12 處＝全部是 bailian traceA／coder／thinking 的 `raw_id_chain:*` 4 列：3090 的 crosscheck.csv（11e074c）早於這幾列被加進 crosscheck.py（d0c4658），所以 3090 檔裡沒有；其餘 114 列逐值相同。
+  - `service_constants.json` DIFF 6 處：FI 服務時間的中位數迴歸（statsmodels 0.15.0 QuantReg q=0.5）A 1509.1056832666832 → 1509.2071378337419（相對 6.7e-5）、B 14.212994865389332 → 14.212997448707114（1.8e-7）、C 0.014841663618334697 → 0.01484057044196145（7.4e-5），以及由它算的殘差分位數、frac_pred_le_dur。輸入的 dur／tokens 分位數逐位元相同 → 差在數值計算（numpy 2.3.5 ＋ scipy-openblas 0.3.30 vs 3090 的 numpy 2.2.6；QuantReg 是有容差的迭代法）。
+  - `summary.csv` DIFF 3 處，全部是 Mooncake tool-rule 的 think 分位數：tool-rule-d4 think_ms_p50 1016.0 → 1015.0；tool-rule-strict p50 114535.0 → 114534.5、p99 919872.39 → 919872.32。機制：Mooncake 沒有回應結束時間，`service_est_ms = round(A + B·out + C·in)`（load_mooncake.py:173）→ A 差 0.1 ms 就讓部分列的整數 ms 差 1 → think_ms 差 ±1 ms。bailian、wildchat 的 summary 列逐位元相同（它們也用同一組常數，列層級可能有 ±1 ms 但分位數沒變；列層級沒有 3090 的檔可比）。
+**失敗與異常**:
+```
+FAILED code/p3_sim/test_p3_sim.py::test_official_format_table_adapter
+E   ValueError: /raid/work/ChihChungHsu/hungweilai/paper-hkv-p3/results/p3_formats/format_table.json 是平台 mi300x＋3090 的表，不能給 platform=h200 用
+code/p3_sim/formats.py:187: ValueError
+1 failed, 120 passed, 23 warnings in 439.28s (0:07:19)
+```
+原因＝我的移植：183ad30 在 `formats.DQ_SETS` 加了 h200 欄，這個測試掃 DQ_SETS 的每個平台去讀 MI300X＋3090 的表 → 我同一次加的平台防呆（表和平台對不上就丟錯）照設計擋下。不是數字不同。runner 照規則 2 停在 SIM-TEST。
+
+## Milestone P3H-1b — 修正後接著跑（從 DATA-CHAIN 起）
+**修正**（都在 worktree，h200-p3）：
+1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
+2. runner 加 `DATA-CHAIN`（`crosscheck.py --chain-only` → `raw_id_chain.csv`，讓 DATA-CMP 比得到）。
+3. runner 加 `DATA-DIAG-CONST3090`（只診斷）：用 3090 的 `service_constants.json` 把 Mooncake 重建到 `/tmp/hungweilai-p3/diag-const3090`，summary 的 mooncake 列和 3090 比 → `results/p3_data_h200/diag_const3090_mooncake.json`。預期 IDENTICAL＝差異只來自迴歸常數；不是的話照列。`h200_p3_compare.py` 加 `--keep col=value`（兩邊都只留那些列）。
+**決定**: H200 照用自己算的迴歸常數（同一支程式在這台的結果），不借 3090 的值；差異照列（P3_PORTING_NOTES 第 9 項）。之後 Mooncake 驅動的結果和 3090 比時，±1 ms 的 think 差會傳下去，要先看這一項。
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --dependency=afterany:21402 --time=48:00:00 code/r_h200_p3.sh --part data,simtest,explore,map --from DATA-CHAIN`（接在第二階段的計時 job 21402 m10h-nvx 之後，不和它同時跑）
 
 ---
 
