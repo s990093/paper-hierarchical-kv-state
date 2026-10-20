@@ -1,0 +1,127 @@
+{
+ "rule": "14 §8.5（10/19 01:5xZ 寫死）",
+ "models": {
+  "llama": {
+   "configs": [
+    "E0",
+    "DS-B-NONE-0",
+    "DS-T-NONE-0",
+    "DS-T-KEYDIFF-25",
+    "DS-T-KEYDIFF-50",
+    "DS-T-KNORM-25",
+    "DS-T-KNORM-50",
+    "DS-T-STREAM-25",
+    "DS-T-STREAM-50",
+    "DS-T-RND0-25",
+    "DS-T-RND0-50",
+    "DS-T-QRY-25",
+    "DS-T-QRY-50",
+    "DS-B-KNORM-25",
+    "DS-B-KNORM-50",
+    "DS-B-KEYDIFF-25",
+    "DS-B-KEYDIFF-50",
+    "DS-B-STREAM-25",
+    "DS-B-STREAM-50",
+    "DS-B-RND0-25",
+    "DS-B-RND0-50",
+    "DS-B-QRY-25",
+    "DS-B-QRY-50",
+    "DS-B-ORC-25",
+    "DS-B-ORC-50"
+   ],
+   "rank": {
+    "T": {
+     "scores": {
+      "SNAP": -8.63175978010986,
+      "TOVA": -1.2650833595156048,
+      "H2O": -6.396128476985419,
+      "PYR": -8.295639270644944,
+      "ADA": -2.4187694501597434,
+      "EXPATT": -2.924966437004817,
+      "KNORM": -0.6330078008662289,
+      "KEYDIFF": -0.2811731252198418
+     },
+     "top2": [
+      "KEYDIFF",
+      "KNORM"
+     ]
+    },
+    "B": {
+     "scores": {
+      "SNAP": -12.75151021006362,
+      "TOVA": -12.763878845920164,
+      "H2O": -9.310347635919848,
+      "EXPATT": -13.30246345741519,
+      "KNORM": -4.663086250346775,
+      "KEYDIFF": -7.90811080179022
+     },
+     "top2": [
+      "KNORM",
+      "KEYDIFF"
+     ]
+    }
+   }
+  },
+  "qwen": {
+   "configs": [
+    "E0",
+    "DS-B-NONE-0",
+    "DS-T-NONE-0",
+    "DS-T-KEYDIFF-25",
+    "DS-T-KEYDIFF-50",
+    "DS-T-EXPATT-25",
+    "DS-T-EXPATT-50",
+    "DS-T-STREAM-25",
+    "DS-T-STREAM-50",
+    "DS-T-RND0-25",
+    "DS-T-RND0-50",
+    "DS-T-QRY-25",
+    "DS-T-QRY-50",
+    "DS-B-EXPATT-25",
+    "DS-B-EXPATT-50",
+    "DS-B-KEYDIFF-25",
+    "DS-B-KEYDIFF-50",
+    "DS-B-STREAM-25",
+    "DS-B-STREAM-50",
+    "DS-B-RND0-25",
+    "DS-B-RND0-50",
+    "DS-B-QRY-25",
+    "DS-B-QRY-50",
+    "DS-B-ORC-25",
+    "DS-B-ORC-50"
+   ],
+   "rank": {
+    "T": {
+     "scores": {
+      "SNAP": -17.144104949645225,
+      "TOVA": -9.54026487434146,
+      "H2O": -16.575621553645153,
+      "PYR": -24.693373071519694,
+      "ADA": -13.950805771424106,
+      "EXPATT": -8.77306630814898,
+      "KNORM": -10.030972567413604,
+      "KEYDIFF": -0.991508222497032
+     },
+     "top2": [
+      "KEYDIFF",
+      "EXPATT"
+     ]
+    },
+    "B": {
+     "scores": {
+      "SNAP": -8.976630364593197,
+      "TOVA": -9.676502854548136,
+      "H2O": -8.01182276864347,
+      "EXPATT": -7.488707178922292,
+      "KNORM": -10.618657225151765,
+      "KEYDIFF": -7.896578815252724
+     },
+     "top2": [
+      "EXPATT",
+      "KEYDIFF"
+     ]
+    }
+   }
+  }
+ }
+}

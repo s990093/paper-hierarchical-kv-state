@@ -1197,3 +1197,12 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   - 32K 的 Q5 (a) 也一樣：「只搬不拆」忙 0.118、閒 0.019（Llama fp8 0.041／0.040）。
   - 只在 Qwen fp8_head、GPU 忙（H200 的 duty 1.0）時出現，原因還沒查。
   - G5／G5b：兩台各用自己挑的（H200 G5、MI300X G5b），這一列不並排。
+
+### job 21110 `m10h-md`（14 號：冒煙＋DS1／DS2，只量分數）跑完（2026-10-20 17:15:59 → 19:47:23 +08:00，COMPLETED exit 0；程式 `d82e670`，17:34 之後新起的 process 用合併後的程式，NV 路徑沒有改變）
+- 44e0 冒煙過；44e1 DS1 12 個 process、44e2 DS2 14 個 process，全部 rc＝0。gpu_guard 226 份全 CLEAN，NEEDS_HUMAN 沒有新的。表：`results/m10_drop_h200/ds1/tables_ds1.md`、`ds2/tables_ds2.md`、`ds2/ds2_report.json`；逐列 CSV 進 git 的是 `.csv.gz`（和 MI300X 一樣）。
+- **DS1 挑的選手和 MI300X 完全相同**：Llama T＝KEYDIFF、KNORM，B＝KNORM、KEYDIFF；Qwen T＝KEYDIFF、EXPATT，B＝EXPATT、KEYDIFF。DS2 的 25 個配置兩台一樣。
+- **DS2 結果兩台幾乎一樣**（對 E0 的點數差，MI300X／H200）。例：
+  - Llama DS-T-KEYDIFF-25 −0.5／−1.5、DS-B-KNORM-50 −11.8／−12.4、DS-T-RND0-50 −73.5／−73.3；
+  - Qwen DS-B-EXPATT-25 −5.6／−6.0、DS-T-KEYDIFF-50 −3.9／−3.4。
+- ε（不輸）的判定只有一格不同：**Llama DS-T-NONE-0**（只對 token 群組化、不丟）MI300X 沒過（+0.2 [−1.0, +1.3]），H200 過（−0.5 [−1.6, +0.5]）。另外兩台都過的：Llama DS-T-QRY-25、Qwen DS-B-NONE-0、Qwen DS-T-NONE-0。其他都沒過。
+- 21110 結束時有正常印出 gpu_guard 摘要，可見改 runner 時用 mv 換檔的做法沒有影響它。

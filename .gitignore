@@ -84,6 +84,8 @@ results/m10_sweep_mi300x/confirm/speed_*/restores.csv
 results/m10_sweep_mi300x/confirm/quality_*.csv
 results/m10_drop_mi300x/ds2/quality_*.csv
 results/m10_match_mi300x/*/*/restores.csv
+results/m10_drop_h200/ds2/quality_*.csv
+results/m10_match_h200/*/*/restores.csv
 
 # ── m10 品質逐列 CSV（每個約 2 MB）：只進壓縮檔 .csv.gz；原檔留在磁碟給 analyze 的萬用字元用 ──
 results/m10_precision_mi300x/quality/*.csv
