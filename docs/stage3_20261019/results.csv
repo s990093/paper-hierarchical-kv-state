@@ -260,6 +260,30 @@ I1-pred,mix_len|N=8|busy2|load+50%,ttft_p95 gain joint vs per-request best,-0.24
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_mean gain per-request best vs rr×cake,0.2317,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
 I1-pred,mix_len|N=8|busy2|load+50%,ttft_mean gain joint vs per-request best,-0.3288,fraction,simulated,ok,20261019-134046-m16-i1pred,results/m16_stage3_mi300x/i1_concurrent_restore/prediction/prediction_llama.json
 I3s,main scan (96 cells),pre-registered kappa vs best existing rule (P95 TTFT),0/96 cells >=5%,,simulated,ok,20261019-141254-m16-pausesim,results/m16_stage3_mi300x/i3_pause_sim/summary.json
+I3r,busy_exo|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.4891,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,busy_exo|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),-0.4891,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,busy_exo|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.6773,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,busy_off|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.5763,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,busy_off|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),-0.5763,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,busy_off|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.6984,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cake|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.6546,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cake|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),-0.6546,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cake|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.6875,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cpu_small|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),0.3557,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cpu_small|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),0.3557,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cpu_small|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.5095,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cpu_small_nfs|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),0.0715,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cpu_small_nfs|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),0.3823,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,cpu_small_nfs|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.1414,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,main|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.0279,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,main|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),-0.0168,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,main|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.0977,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,sigma2|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.4077,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,sigma2|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),-0.4077,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,sigma2|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.4968,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,ssd_nfs|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.0526,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,ssd_nfs|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),0.2726,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
+I3r,ssd_nfs|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.6974,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
 S1,,,,,,NOT_MEASURED,,
 I4,,,,,,NOT_MEASURED,,
 I1-interf,,,,,,NOT_MEASURED,,

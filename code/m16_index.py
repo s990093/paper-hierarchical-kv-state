@@ -111,11 +111,25 @@ def i3s():
     return rows
 
 
+def i3r():
+    rows = []
+    p = os.path.join(RES, "i3_pause_sim/reread_baselines.json")
+    if not os.path.exists(p):
+        return rows
+    d = json.load(open(p))
+    for tag, t in d["tags"].items():
+        for k in ("kappa_vs_oracle_per_cell", "kappa_vs_fixed_vllm_tier", "kappa_vs_fixed_default_vllm"):
+            rows.append(dict(exp="I3r", cell=f"{tag}|{k}", metric="P95 TTFT gain 1-kappa/baseline (median over cells)",
+                             value=t["gains"][k]["median"], unit="fraction", kind="simulated", status="ok",
+                             run_id=d["run_id"], source=rel(p)))
+    return rows
+
+
 PLANNED = ["S1", "I4", "I1-interf", "I1-grid", "C1a", "S2", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:
