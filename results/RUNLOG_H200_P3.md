@@ -162,7 +162,14 @@ AssertionError: 這支只准用 CPU（TIARA_NO_GPU=1）
 ## Milestone P3H-1e — 地圖差異的診斷（只診斷）
 **目的**: 確認合成端到端和 3090 的差只來自 FI 迴歸常數：用 3090 的 `service_constants.json`＋`synth_fit_fi_week01.json` 把 synth/small-seed1 重建到 `/tmp/hungweilai-p3/diag-const3090-map`（其他來源用連結、快取另開），MI300X 常數重跑 A1＋五組分析，和 3090 的 `results/p3_map` 逐值比 → `results/p3_map_h200/diag_const3090_compare_*.json`。預期 IDENTICAL；不是的話照列、再查。另外重跑 C0 的比對（`--ignore code_commit`）。
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-mapdiag --time=4:00:00 code/r_h200_p3.sh --part mapdiag`
-**狀態**: RUNNING（job **21408**，git 15f692b）
+**狀態**: PASS（job **21408**，git 15f692b；2026-10-21T02:36:39 → 02:55:34，19 分）
+**run_id**: `…-0236xx-p3h-map-cmp*`（C0 與合成端到端重比）、`…-p3h-mapdiag-synth`、`…-p3h-mapdiag-syn`、`…-p3h-mapdiag-ana-*`（5）、`…-p3h-mapdiag-cmp-*`（5）（見 `slurm-p3h-mapdiag-21408.out`）
+**產出檔**: `results/p3_map_h200/diag_const3090_compare_*.json`（5）；重比的 `results/p3_sim_h200/compare_3090_c0util.json`、`results/p3_map_h200/compare_3090_*.json`
+**關鍵數字**:
+- C0 使用率（`--ignore code_commit`）：**IDENTICAL**（120 列）。
+- 用 3090 迴歸常數重建 synth、MI300X 常數重跑：五組的 `summary.csv` **IDENTICAL**、`verdict.json` **IDENTICAL**；`tradeoff.csv` 各 130 處不同，**全部是 `ttftq_H_mean_s` 一欄、最大相對差 3.45e-16**（例 1.1904085711063084 → 1.1904085711063086，最後一兩個位元）。這個大小是浮點加總順序不同（numpy 2.3.5 vs 2.2.6、CPU 不同）會有的差，不是邏輯差；其他欄逐位元相同。
+- 結論：地圖的模擬器在 H200 上給同樣輸入 → 和 3090 相同（除了上面那一欄的末位）；P3H-1d 的 1e-3 差**只來自 FI 迴歸常數**（和資料層同一個來源，P3H-1b）。H200 的主結果照用 H200 自己的迴歸（P3_PORTING_NOTES 第 9 項）。
+**失敗與異常**: 無。
 **指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from X1-SELFTEST`（第二階段 session 沒有排隊中的 GPU job，不加依賴）
 **修正**（都在 worktree，h200-p3）：
 1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
