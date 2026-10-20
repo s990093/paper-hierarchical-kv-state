@@ -1,0 +1,7 @@
+[
+ {
+  "name": "i4e-qwen-T1-r",
+  "need_gb": 28,
+  "cmd": "m7run m10-i4e-qwen-T1r python /mlsteam/workspace/paper-hierarchical-kv-state/code/m10_quality.py run --model qwen --params-file /mlsteam/workspace/paper-hierarchical-kv-state/results/m10_pilot_mi300x/e0_tune/CANDIDATE_PARAMS.json --fmt fp8_head --bws b32 --meets /mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/speed_qwen/meets.json --configs E1@int4_kivi E1s@int4_kivi E1sr@int4_kivi --modes A B --tasks T1 --n 180 --out /mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x/quality_sealed/int4end_qwen_T1.csv"
+ }
+]

@@ -1207,3 +1207,17 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
 - **90 `90_vllm_ttft_guarded.sh`**（排在 60_88 之後，兩張卡獨佔）：
   - 指令和 70 相同，外面多包一層新的 `code/m10_guarded_run.py`：被包的指令是 guard 的子行程，算自己人；兩張卡各寫一份 guard 報告；被污染 → 結束碼 3、run 目錄留 CONTAMINATED。輸出到 `vllm_ttft_guarded/`。
   - 冒煙：兩張卡都有別的品質 job 時，包住 `sleep 3`，兩張卡都判 CONTAMINATED_AT_START、結束碼 3，偵測正常。
+
+### 15.23 卡 0 空著 → i4e-qwen-T1 搬到卡 0 續跑（10/20 13:01 → 13:04Z）
+
+- 13:01Z 時卡 0 是 0%，剩下的 4 個 job 都在卡 1：60_88 的 i4e-qwen-T1、i4m-qwen-T1、i4e-llama-T1，加上 55 的 f8m-qwen-T1。
+  - 原因：pool 只在開跑時挑卡（看當時的空間），之後不會搬。卡 0 上的 job 先做完了。
+- 處置：
+  1. 先把 `90_vllm_ttft_guarded.sh` 移到 `jobs/parts/`，避免它在續跑的 job 還在卡 0 時開始量時間。
+  2. 13:03:02Z 停掉卡 1 上的 i4e-qwen-T1（pool 記 `FAILED i4e-qwen-T1 rc=143`，是我停的）。
+     - 停之前 `int4end_qwen_T1.csv` 有 130 題 × 21 列＝2730 列，每題都完整，最後一行是整行。
+     - 所以照 m10_quality 的續跑（跳過已完成的題）不會漏、不會重複。
+  3. 13:03:36Z 用 `pool.py jobs_88r.json`（ROLE=main、TIARA_GPU=0）在卡 0 續跑：同一個指令、同一個輸出檔，run `20261020-130336-m10-i4e-qwen-T1r`，有登記顯存帳。
+  4. `jobs/parts/restore90.sh` 等它結束：成功 → 把 90 放回 queue/；失敗 → 寫 NEEDS_HUMAN。
+- 88 的 pool 等其他 job 做完時會因為那筆 rc=143 回報失敗，寫一行 NEEDS_HUMAN。那行是預期中的，處理時移到 .handled。
+- 只量分數，時間欄不用。
