@@ -93,3 +93,18 @@
 - **失敗 2**：`02_smoke_x` 的 Qwen `gpu-selftest`（run `20261020-140604-m16-x-gpuselftest-qwen`）48／49 過，`proxy_masked_eq_subset` rel＝7.1e-5 > 門檻 1e-5；同一項 Llama 7.8e-8（49／49 過）。
   判讀：兩條路都是 FP32，只差 GEMM 形狀（加總順序）；Qwen 第 0 層 K 有大值，softmax 放大捨入差。遮罩寫錯（少 10 個 block）會是大得多的差。
   修法：門檻改 1e-3，另記「完全不遮」的差當反向對照（`code/m16_xstack.py`，理由寫在註解）。Llama 那半照跑完：calib、screen --smoke（每題 65.8 s、peak 41.7 GiB）、gen 32K、gen 128K 都 exit 0。14:13:40Z 重開 `02_smoke_x`。
+- 冒煙全過：`02_smoke_x`（重開後 Qwen 49／49；proxy 遮罩 vs 子集 7.1e-5、完全不遮 3.9e-2）、`03_smoke_xtime`、`04_smoke_c1a`（own_gpu_intruders 0）。`05_s1_kvdump` 14:24:56–14:27:41Z（兩卡並行，約 52 GB 在 /var/tmp/tiara_s3/kv_dumps）。
+
+## I4　KV 從 CPU 搬回 GPU 的搬法（10/20 14:27–14:36Z，CLEAN）〔實測，初步〕
+
+- run：`20261020-142741-m16-i4-sdma0`、`20261020-143218-m16-i4-sdma1`。產出 `results/m16_stage3_mi300x/i4_copy_batching/copybench_sdma{0,1}.{csv,json}`，20 格 × 2，全部 ok、未污染。原估 2 h，實際 8 分鐘。
+- 有效 H2D（GiB/s，每格一個彙總值）：散在小塊（scatter）時，逐塊 copy（py_loop／foreach）1.1–1.4（SDMA 關）、2.2–3.0（SDMA 開）；合併（coalesce）在 scatter 也只有 1.3–3.0；CPU 端先收集再一次 copy（stage）17.7–20.3；GPU kernel 直接讀 pinned host（zerocopy）53.1，SDMA 開關與 GPU 閒／busy2 都一樣。連續（contig）時 coalesce 49–53。
+- 初步判讀（待 results_analysis 細看）：逐塊 copy 的量級與 vLLM ROCm CPU 層約 4.1 GiB/s 一致；zerocopy 比逐塊快 18–45 倍。busy2 對各搬法幾乎沒影響，和第二階段「GPU 忙時 H2D +46–50%」不同（設定不同：這裡是單純搬運的 microbench），要對照 I1 再說，不下結論。
+
+## K1　KV 結構（10/20 14:28–14:39Z，CPU）〔實測：KV 幾何量，不是品質〕
+
+- run：`20261020-142819-m16-k1-kvstruct`；RoPE 核對 6 份 dump 全部 PASS_PROBE。產出 `results/m16_stage3_mi300x/k1_kvstruct/`（lowrank、lowrank_eff、xlayer、adjtok 的 CSV／JSON、summary.md）。
+- **低秩**（rank 32＝維度 1/4 的相對重建誤差，層×head 中位數；T4 32K）：K 在 RoPE 前 Llama 0.253／Qwen 0.241，RoPE 後 0.461／0.423；V 0.665／0.649。95% 能量需要的 rank：K_pre 40／36、K_post 84／82、V 110／108.5（滿 128）。用前 4096 token 的基底套到後面：K_pre 0.268／0.253（幾乎不變差），K_post 0.616／0.580（明顯變差）。128K 與 32K 相近（K_pre r32：0.240／0.237）。
+- **跨層**（同一 token、相鄰層的 cosine，深半段中位數）：K、V、中心化前後、32K 與 128K、兩個模型全部在 −0.016～+0.022；整層 head 串接也是 ≈0（最大 0.066）。→ 照 L5b 寫死的條件（深半段中心化 cosine 中位數 <0.5），MiniCache／KVSharer 式「逐 token 直接共用」在這兩個模型上沒有依據，停。xKV 式（共用子空間）不受這條影響，交給 X1 量品質。
+- **相鄰 token**：K 的 cosine 中位數看起來高（RoPE 後 0.87），但主要來自共同的平均方向：減掉平均後中位數 0.52／0.55，≥0.9 的相鄰對只有 0.3%／0.7%；V 中位數 0.42、≥0.9 約 0.1–0.2%。T2（重複句子）去平均後更低（0.20）。→ 合併相似 token 能利用的天然冗餘很少。
+- 這些是 KV 本身的幾何量；能不能換成答對率，要看 X1／X2。
