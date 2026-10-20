@@ -1,0 +1,104 @@
+{
+ "run_id": "20261020-231425-m10h-diag-tinycopy",
+ "duty": 1.0,
+ "busy": [
+  {
+   "duty": 1.0,
+   "cu_mask": "",
+   "ready": "READY matmul_ms=1.400",
+   "n_matmul": 2047,
+   "seconds": 3.543,
+   "matmul_per_s": 577.759
+  },
+  {
+   "duty": 1.0,
+   "cu_mask": "",
+   "ready": "READY matmul_ms=1.392",
+   "n_matmul": 2047,
+   "seconds": 3.551,
+   "matmul_per_s": 576.457
+  }
+ ],
+ "contaminated": false,
+ "host_level": "UNOBSERVABLE_HOST",
+ "summary": {
+  "single|idle": {
+   "sizes": [
+    14680064
+   ],
+   "median_s": 0.0004205,
+   "n": 140,
+   "per_block_ms": 0.0065703125
+  },
+  "single|busy": {
+   "sizes": [
+    14680064
+   ],
+   "median_s": 0.0018570000000000001,
+   "n": 140,
+   "per_block_ms": 0.029015625000000003
+  },
+  "block:qwen_fp8_head|idle": {
+   "sizes": [
+    14680064,
+    896
+   ],
+   "median_s": 0.0171975,
+   "n": 20,
+   "per_block_ms": 0.2687109375
+  },
+  "block:qwen_fp8_head|busy": {
+   "sizes": [
+    14680064,
+    896
+   ],
+   "median_s": 0.116967,
+   "n": 20,
+   "per_block_ms": 1.827609375
+  },
+  "block:llama_fp8_token|idle": {
+   "sizes": [
+    33554432,
+    1048576
+   ],
+   "median_s": 0.038929,
+   "n": 20,
+   "per_block_ms": 0.6082656249999999
+  },
+  "block:llama_fp8_token|busy": {
+   "sizes": [
+    33554432,
+    1048576
+   ],
+   "median_s": 0.038943000000000005,
+   "n": 20,
+   "per_block_ms": 0.6084843750000001
+  },
+  "block:qwen_int4_kivi|idle": {
+   "sizes": [
+    3670016,
+    458752,
+    458752,
+    3670016,
+    458752,
+    458752
+   ],
+   "median_s": 0.0113225,
+   "n": 20,
+   "per_block_ms": 0.1769140625
+  },
+  "block:qwen_int4_kivi|busy": {
+   "sizes": [
+    3670016,
+    458752,
+    458752,
+    3670016,
+    458752,
+    458752
+   ],
+   "median_s": 0.011414500000000001,
+   "n": 20,
+   "per_block_ms": 0.1783515625
+  }
+ }
+}

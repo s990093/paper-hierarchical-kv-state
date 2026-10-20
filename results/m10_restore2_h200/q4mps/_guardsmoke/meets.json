@@ -1,0 +1,20 @@
+{
+ "model": "qwen",
+ "source_run_ids": [
+  "20261020-231833-m10h-mps-guardsmoke"
+ ],
+ "meets": {
+  "E1@int4_kivi": {
+   "cpu": {
+    "idle": 1,
+    "idle_all": [
+     1
+    ],
+    "busy": 1,
+    "busy_all": [
+     1
+    ]
+   }
+  }
+ }
+}

@@ -1,0 +1,47 @@
+{
+ "n_sm": 132,
+ "pct": {
+  "p4a": 87,
+  "p4b": 75
+ },
+ "duty": 1.0,
+ "matmul_ms": {
+  "none": [
+   1.394,
+   [
+    1.399,
+    1.394,
+    1.393
+   ]
+  ],
+  "p4a": [
+   1.465,
+   [
+    1.489,
+    1.465,
+    1.463
+   ]
+  ],
+  "p4b": [
+   1.65,
+   [
+    1.65,
+    1.663,
+    1.646
+   ]
+  ]
+ },
+ "mps_pipe": "/tmp/mps_pipe_21402",
+ "rule": "\u9650\u5236\u751f\u6548\uff1d\u80cc\u666f\u55ae\u7368\u8dd1\u7684 matmul \u6642\u9593 \u2265 \u4e0d\u9650\u7684 \u00d71.05\uff08p4a\uff09\uff0f\u00d71.10\uff08p4b\uff09\uff08\u540c m10_restore2 cumask\uff09",
+ "mps_server_list": {
+  "before": [],
+  "after": [
+   "3978021"
+  ],
+  "rc": 0
+ },
+ "effective": {
+  "p4a": true,
+  "p4b": true
+ }
+}

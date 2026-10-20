@@ -34,9 +34,9 @@
 | ⚠ | **Qwen2.5-1M 在 vLLM 上** | DCA 起不來 → 拿掉 DCA 的變體 | DCA 起不來（`FlashAttentionImpl ... 'layer_idx'`）→ 拿掉 DCA 的變體 | 兩台都用「config 拿掉 `dual_chunk_attention_config`、權重相同」的變體（H200：`~/models/Qwen2.5-7B-Instruct-1M-noDCA`）。≤ 262,144 token 時 DCA 在一個 chunk 內就是一般 attention；我們的 HF harness（transformers）本來就沒有 DCA。**報告 Qwen 的 vLLM 數字要註明「拿掉 DCA 的變體」**。 |
 | ⚠ | tokenizer／transformers 版本 | — | 5.19 | 上游 RULER 的 CWE 產生器（邊加詞邊數 token）在兩台停在不同詞數 → **30 題一題都不同**（我們自己的產生器 30 題全同）。原因沒驗證。寫成「同樣的產生程序、不同的題目，結論相同（≈0 分）」，不能說同一批題。 |
 | ⚠ | ROCm `HSA_CU_MASK`（留運算單元給還原） | 有 | **沒有** | 13 號 Q4 的 P4a／P4b 在 H200 是 NOT_MEASURED（平台）。NVIDIA 上類似的機制是 CUDA MPS 的 active thread percentage（限制背景 process 能用的 SM 比例）；機制不同（MPS 會讓 client 共用一個 context），要做就另外登記成 **H200 專屬的變體**，不和 MI300X 的 P4 並成同一欄。 |
-| ⚠ | P4 的替代：CUDA MPS（`CUDA_MPS_ACTIVE_THREAD_PERCENTAGE` 87／75） | CU 遮罩 7/8、3/4 | MPS 下背景限 SM 比例；另量 P0mps 當基準（MPS 本身就把時間片輪流改成空間分享） | H200 才有的一欄（13_h200_repro §14 B），只和 P0mps 比，不和 MI300X 的 P4 或 H200 沒開 MPS 的 P0–P5 同欄。 |
+| ⚠ | P4 的替代：CUDA MPS（`CUDA_MPS_ACTIVE_THREAD_PERCENTAGE` 87／75） | CU 遮罩 7/8、3/4 | MPS 下背景限 SM 比例；另量 P0mps 當基準（MPS 本身就把時間片輪流改成空間分享） | H200 才有的一欄（13_h200_repro §14 B），只和 P0mps 比，不和 MI300X 的 P4 或 H200 沒開 MPS 的 P0–P5 同欄。 21402：限制有生效（背景 matmul ×1.05／×1.18），背景吞吐 0.91／0.78（MI300X 遮罩 0.88／0.80）；MPS 不限時 Cake 忙時比時間片輪流慢 3–5 倍、全載入快一倍。 |
 | ⚠ | Triton 在 sm_90 的 MMA 選擇（13 號 43e (b) 的 attention 對照組） | MFMA；融合讀法 ≡ 讀 BF16，10／10 格逐位元相同 | BM＝64 走 wgmma，逐位元相同；**BM＝16（decode）走 mma.sync，融合讀法的運算元 kWidth 4、讀 BF16 是 2 → 沿 k 的加總順序不同，最後幾位不同**（誤差和 BF16 kernel 同級） | H200 的 (b)：「融合 ≡ BF16」只說到「拆出來的值逐位元相同」（用 BM＝64 再比一次證明，`M10_ATTN_BM64_CHECK`，13_h200_repro §13）。kernel 的 split 份數照 MI300X 的 304 CU 定（H200 132 SM，沒調）→ 只比同一台各讀法的相對時間。 |
-| ⚠ | GPU 忙時極小的 H2D 拷貝（< 64 KiB） | 13 號 Q5 (a) Qwen fp8_head 只搬不拆，忙／閒 0.021／0.019 s | 0.118／0.019 s（128K 0.464／0.071）；只有 fp8_head（scale 896 B／block）會這樣，fp8_token、int4 不會 | 假設：極小拷貝要等時間片（背景 duty 1.0）。13_h200_repro §14 A 量證據。H200 的 Qwen FP8 cpu\|busy 格子要加註，不改判定。 |
+| ⚠ | GPU 忙時 Qwen fp8_head 只搬不拆變慢 | 13 號 Q5 (a) 忙／閒 0.021／0.019 s | 0.118／0.019 s（128K 0.464／0.071）；**只有 Qwen × fp8_head**。Llama 換成 fp8_head、Qwen 換成 fp8_token 都不會（21402 A2）。微測裡「14.68 MB＋896 B 交錯拷貝」可以重現（17／117 ms） | 事先寫的「極小拷貝 × 時間片」假設**不成立**（13_h200_repro §14.1 的判準 (1)(2) 都沒過；nsys 沒跑），原因 NOT_DETERMINED。H200 的 Qwen FP8 cpu\|busy 格子要加註「平台現象、原因未明」，不改判定。 |
 
 ## 3. 判定與挑選：兩台各自量、各自挑的（數字一定不同）
 

@@ -68,7 +68,7 @@ def main():
     e8 = C.encode(x, "fp8_head")                         # 驗算：Qwen fp8_head 一個 block 的兩塊大小
     got = sorted(t.numel() * t.element_size() for t in e8.parts.values())
     assert got == sorted(BLOCKS["qwen_fp8_head"]), got
-    pats = [("single", [s]) for s in SIZES] + [("block:" + k, v) for k, v in BLOCKS.items()]
+    pats = [(f"single:{s}", [s]) for s in SIZES] + [("block:" + k, v) for k, v in BLOCKS.items()]
     stream = torch.cuda.Stream()
     rows = []
     watch, level = _watcher(os.path.join(a.out_dir, f"gpu_guard_{rid}.json"))
