@@ -315,3 +315,71 @@ python $REPO/code/m16_s2_equalbytes.py report --raw "$S/s2_*_s*.csv" --out-dir $
 - C1a 只打分，不生成。「分數有沒有預測力」用答案 block 的 recall 和對目標 QRY 的排名來看，不是答對率。
 - S2 只量讀法 A（全部載入、不重算）的品質，和 14 §4.1 相同。是下限。
 - S2 的刪除只在第 1 輪（DS1 的 teacher forcing）；多輪的「第 2 輪才發現被丟」是 C1b 的事。
+
+---
+
+## 10. 10/20 排程（C1a 接進第三階段的單一順序佇列）
+
+> 10/20 寫。**S2 已併入 X1（`36_x1_screen`，另一個 agent 在寫），不再單獨排 S2 job**；本頁 §2、§3.3、§4 的 S2 部分只留作設計紀錄，不照著排。
+> 本節取代 §4 的 C1a job 範本（那份是「一個模型一個 job、一張卡 N＝3」）；改成兩個模型同一個 job、兩張卡並行（`CARDS: 0,1`＋`oncard`），總共 N＝6 個 shard、分兩個 job。
+> `m16_c1a_predict.py` 本身沒改（10/20 重讀沒找到確定的 bug）。job 的 shell 邏輯用假的 `m7run` 替身（不碰 GPU）在 scratchpad 跑過：正常、selfcheck 失敗、STREAM 順序錯、某個 shard 失敗、題數不齊、逐題檢查有 false，都照預期 exit 0／1、寫 NEEDS_HUMAN。真的程式還沒在 GPU 上跑過。
+
+### 10.1 job（`code/m16_queue/jobs/`）
+
+| job | 佇列 | 檔頭 | 做什麼 | 輸出 |
+|:--|:--|:--|:--|:--|
+| `04_smoke_c1a.sh` | GPU（`queue/`） | `GPU-NEED: one`、`CARDS: 0,1`、`NEED-GB: 45`、`MAX-H: 0.5` | 每個模型 selfcheck（§3.1）→ `run --smoke`（§3.2）→ 結構核對（只用標準函式庫）；Llama 在卡 0、Qwen 在卡 1 並行 | `$SMOKE/c1a_<UTC>_<PID>/`（不進 results；每次新目錄，免得 run 跳過舊檔裡已寫完的題） |
+| `33a_c1a.sh` | GPU | `GPU-NEED: one`、`CARDS: 0,1`、`NEED-GB: 120`、`MAX-H: 1`、`AFTER: 04_smoke_c1a` | shard 0–2／6：卡 0 開 3 個 Llama 行程、卡 1 開 3 個 Qwen 行程 | `results/m16_stage3_mi300x/c1a_predictive/c1a_<模型>_s{0,1,2}.csv`（＋`.checks.jsonl`、`.gpu_guard.json`） |
+| `33b_c1a.sh` | GPU | 同 33a | shard 3–5／6 | `…_s{3,4,5}.csv` |
+| `33z_c1a_report.sh` | cpu（`queue_c/`） | `GPU-NEED: none`、`AFTER: 33a_c1a 33b_c1a` | `report`（只用 numpy）→ 核對每個模型 T2–T4 135 題、T5 15 題齊全、`*.checks.jsonl` 沒有 false | `c1a_summary.json`、`tables_c1a.md` |
+| `c1a_common.sh` | —（**不是 job，不要放進佇列**） | — | 33a／33b 的共用本體（同 `f1_common.sh` 的做法） | — |
+
+- 04 的結構核對（和數值無關、寫死的事）：17 列（5 個寫入時分數＋5 個位置＋QRY1、QRY2、QRY2_ALT＋4 個摘要）、`item_id`＝`T2_front-back_s70000`、STREAM 前 5＝`63 62 61 60 59`、NEW 前 5＝`1 2 3 4 5`、每列 `order` 是 1..63 的排列、第 1 輪答案 block 在 1–16、第 2 輪在 48–63。QRY1 的 `recall_t1@16`、QRY2 的 `recall@16`「應該很高」只印出來，不設門檻。
+- 失敗：任何一步不過 → `NEEDS_HUMAN`、exit 1，runner 停（規則 2）。33z 的核對不過時 report 檔已經寫出，給人看。
+
+### 10.2 順序與依賴
+
+1. `04_smoke_c1a`（GPU 佇列；名稱排在 `05_s1_kvdump` 前面）。
+2. 中間照名稱排序跑別的 GPU job（`05`、`20`、`21`、`30`、`31`…）。
+3. `33a_c1a` → `33b_c1a`（檔頭 `AFTER: 04_smoke_c1a`：冒煙沒有 `.done` 就不開）。
+4. `33z_c1a_report`（cpu 佇列；等 33a、33b 都 `.done`）。
+
+- runner 不等人看冒煙。若要先看 04 的 `peak`／每題秒數再決定一張卡開幾個行程（§4 原本的說法），33a、33b 先不要放進佇列。
+- **N＝6 兩個 job 必須相同**：`--shard s/6`＝第 k 題給 k mod 6＝s 的行程。改 N 會讓 shard 對到的題改變，逐檔的續跑判斷會失準。要改成每個 job 2 個行程就 N＝4、SHARDS 改 `0 1`／`2 3`，兩個 job 一起改。
+
+### 10.3 為什麼切成 33a、33b
+
+- §5：每題 20–40 s〔估〕；一個模型 150 題單一行程 50–100 分鐘，一張卡 3 個 shard 約 0.5–1 小時〔估〕。
+- 一個 job 跑完 150 題的最壞情況（3 個行程完全沒有平行效益、每題 40 s）≈ 100 分鐘＋載模型，離 2 小時上限（`experiment_matrix.md` §6）沒有餘裕，而且每題秒數本身沒量過。
+- 切成兩半：每個 job 每張卡 75 題 → 〔估〕15–30 分鐘（§5 的「3 個 shard 0.5–1 小時」減半），最壞 50 分鐘＋載模型 → `MAX-H: 1`。
+- 代價：每個 shard 行程多載一次模型（§5：smoke 含載模型 1–2 分鐘〔估〕）。
+- 題目照 k mod 6 分（k＝出題順序：T2 45、T3 45、T4 45、T5 15）。單一 shard 的位置帶不平均（T2–T4 的帶是 k mod 3 輪流），但 33a（s0–2）本身涵蓋每個任務、每種位置帶組合：T2 24、T3 21、T4 24、T5 6 題，T2–T4 的三種（第 1 輪帶, 第 2 輪帶）各占三分之一；33b 是另一半（T2 21、T3 24、T4 21、T5 9）。33b 還沒跑時，33a 的資料也不偏向某個位置帶。
+
+### 10.4 時間〔估〕與依據
+
+| 項目 | 〔估〕 | 依據 |
+|:--|:--|:--|
+| `04_smoke_c1a` | 牆鐘 2.5–5.5 分鐘（兩張卡並行） | selfcheck 要算 3 次（路徑 A、B、兩輪的 C）：照 §5 每題 20–40 s 是 1–2 分鐘，加載模型（§5 的 smoke「1–2 分鐘含載模型」扣掉 1 題 → 約 0.5–1.5 分鐘）→ 1.5–3.5 分鐘（**§5 原本寫 1–2 分鐘，這裡依「算 3 次」改寫**）；smoke 1–2 分鐘（§5） |
+| `33a_c1a` | 牆鐘 15–30 分鐘（最壞 50 分鐘＋載模型） | 每張卡 75 題、3 個行程；§5 |
+| `33b_c1a` | 同 33a | 同上 |
+| C1a 的 GPU 合計 | 牆鐘 0.55–1.1 小時；兩張卡都鎖住 → 1.1–2.2 卡·時 | 上面三列相加；`experiment_matrix.md` §3 寫 1.5 |
+| `33z_c1a_report` | CPU 約 10 秒 | 用假資料（2 模型 × 150 題，和實際同一個形狀；只驗程式，不是結果）在 0–3 號核心、nice 19 實測 9.2 s |
+
+- 同一張卡上的 3 個 shard 會被彼此的 `GpuWatcher` 記成入侵者：每列 `own_gpu_intruders ≥ 2`、run 目錄留 `CONTAMINATED`。品質規則（CLAUDE.md §3）：分數照用、`t_score_s` 作廢。每題秒數以 04（一張卡一個行程）為準。
+- 檔案大小：假資料每個 shard 的 CSV 約 184 KB（25 題 × 17 列），< 1 MB，可以進 git。
+
+### 10.5 冒煙時要看的地方
+
+- selfcheck JSON 每一項 PASS。`prefill_bitwise` 不過時看 `maxabs`，由人判（§3.1；程式沒錯也可能是 GPU 不決定性）。
+- smoke 的 stdout（run 目錄）：第 1、2 輪答案 block 的兩條路徑都印出、`驗算：OK`；`檢查：` 的 `probe_vs_drop_qry_bitwise`、`quest_finite`、`fullk_finite` 都是 true（不是的話 smoke 本身 exit 1）。
+- job log 的「給人看」那一行：QRY1 的 `recall_t1@16`、QRY2 的 `recall@16`（QRY 實作的健全性檢查，不是結果）；`QRY2_ALT` 的 ρ（第 2 輪問題放法本身影響多大，§8 第 2 條）。
+- `own_gpu_intruders`：04 每張卡只有 1 個行程，另一張卡有另一個模型的行程。應該是 0；不是 0 → guard 把別張卡的行程算進來（RUNLOG_MI300X 15.17 的問題），分數照用，記下來。
+- `peak … GiB` 與每題秒數：3 × peak 要 ≤ `NEED-GB`（120）；超過就調高 `NEED-GB` 或改成每個 job 2 個行程（見 10.2）。每題秒數超過 40 s 時，10.4 的時間要照比例重估。
+
+### 10.6 停止條件（照 §7 原文，沒有改）
+
+- **G2（C1a；L1 §4）什麼時候停止投入**：寫入時的分數（SNAP、EXPATT、KNORM、KEYDIFF、H2O 近似）對第 2 輪答案所在 block 的召回率，和隨機的 CI 重疊；**而且** Quest min/max 摘要在 512-token block 上對 QRY 前 k 名的召回也≈隨機。兩者都成立 → 還原時能用的只剩位置（就是現在的 Cake 規則），G2 停止。
+- **G4（C1a；L1 §4）什麼時候停止投入**：寫入時的分數預測第 2 輪的能力≈隨機（同 G2）；**而且** 第 1 輪問題的 QRY 對第 2 輪也≈隨機。這表示在我們的任務上，跨輪的重要度不可預測，唯一的策略是無損保留＋問題來了再選（RocketKV-MT 式）。
+- **X2（＋X4）（L1 §5）**：停止條件：見 G2、G4。H-X2、H-X4 都成立 → 選擇性還原只能靠位置與下一輪的問題；第三階段不做「寫入時分數」的放置。
+- **C1a（experiment_matrix §3）停止**：寫入時分數≈隨機、且摘要也≈隨機 → 選擇性還原只能靠位置與下一輪的問題，C1b 不做（寫成負面結果）。
+- `report` 只把這些條件拆成成分算出來（`stop_rule_components`），不替人下結論（§7 末段、§8 第 7–9 條）。
