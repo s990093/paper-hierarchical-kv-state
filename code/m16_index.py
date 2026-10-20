@@ -161,11 +161,33 @@ def k1():
     return rows
 
 
+def c1a():
+    """C1a：tables_c1a.md 的 T2–T4 列（recall@16 − 隨機 k/63，95% CI）。"""
+    import re
+    rows = []
+    p = os.path.join(RES, "c1a_predictive/tables_c1a.md")
+    if not os.path.exists(p):
+        return rows
+    t = open(p).read()
+    rid = re.search(r"run：([^、；\n]+)", t).group(1)
+    for sec in re.split(r"\n## ", t)[1:]:
+        title = sec.split("\n")[0].strip()
+        if "T2-T4" not in title:
+            continue
+        for line in sec.split("\n"):
+            c = [x.strip() for x in line.split("|")[1:-1]]
+            if len(c) >= 3 and c[0] in ("SNAP", "EXPATT", "KNORM", "KEYDIFF", "H2O", "RND0", "QRY1", "QUEST_MEAN", "QUEST_MAX",
+                                        "FULLK_MEAN"):
+                rows.append(dict(exp="C1a", cell=f"{title}|{c[0]}", metric="recall@16 minus random (pct pts) [95% CI]",
+                                 value=c[1], unit="pct-pt", kind="measured", status="ok", run_id=rid, source=rel(p)))
+    return rows
+
+
 PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:
