@@ -1,0 +1,8 @@
+run_id,ts,trace,check,value,expect,ok,note
+20261021-011425-p3h-x3-leads-wildchat-files-2,2026-10-20T17:14:43+00:00,wildchat,files_used,2,,,train-00000-of-00014.parquet train-00001-of-00014.parquet
+20261021-011425-p3h-x3-leads-wildchat-files-2,2026-10-20T17:14:43+00:00,wildchat,conversations_read,119714,,,
+20261021-011425-p3h-x3-leads-wildchat-files-2,2026-10-20T17:14:43+00:00,wildchat,english_multiturn_conversations,26167,>=1000,OK,
+20261021-011425-p3h-x3-leads-wildchat-files-2,2026-10-20T17:14:43+00:00,wildchat,return_events,91029,,,
+20261021-011425-p3h-x3-leads-wildchat-files-2,2026-10-20T17:14:43+00:00,wildchat,events_skipped_missing_assistant_ts,0,,,
+20261021-011425-p3h-x3-leads-wildchat-files-2,2026-10-20T17:14:43+00:00,wildchat,gap_end_to_end_per_output_token_s_pctl,p0.1=0.05647 p1=0.07946 p5=0.1136 p50=0.5196,,,下緣（p1）＝能觀察到的最快『思考＋打字＋生成』每 token 時間；p1 若 < 典型解碼時間就表示時間戳不是回應結束
+20261021-011425-p3h-x3-leads-wildchat-files-2,2026-10-20T17:14:43+00:00,wildchat,user_timestamp_present,False,,,"WildChat-1M 的 user 訊息 timestamp 全是 None（已檢查第 0 個檔前 3,000 筆）"

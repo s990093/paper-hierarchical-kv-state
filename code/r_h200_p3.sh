@@ -54,7 +54,7 @@ while [ $# -gt 0 ]; do
 done
 # --part 可以給好幾個、逗號分開，依序跑（同一個 job、同一張卡；排隊只排一次）。cal 是量時間的，只能單獨跑
 for _p in ${PART//,/ }; do
-  case "$_p" in data|simtest|explore|map) ;; *) echo "要 --part data|simtest|explore|map（可逗號分開），不是 '$_p'" >&2; exit 2 ;; esac
+  case "$_p" in data|simtest|explore|map|mapdiag) ;; *) echo "要 --part data|simtest|explore|map|mapdiag（可逗號分開），不是 '$_p'" >&2; exit 2 ;; esac
 done
 [ -n "$PART" ] || { echo "要 --part" >&2; exit 2; }
 
@@ -164,6 +164,16 @@ data_cmp() {
     --files summary.csv crosscheck.csv raw_id_chain.csv service_constants.json synth_fit_fi_week01.json \
     --out "$P3_DATA_RESULTS/compare_3090.json"
 }
+data_diag_const3090() {   # 10/20（job 21116 的 DATA-CMP）：FI 服務時間迴歸（statsmodels QuantReg）的 A／B／C 在 H200 和 3090 差 ≤ 7.4e-5（相對；
+  # 輸入的分位數逐位元相同 → 差在數值庫），Mooncake 的 service_est_ms 四捨五入成整數 ms → think_ms 差 ±1 ms。
+  # 診斷：用 3090 的 service_constants.json 把 Mooncake 重建到另一個目錄，summary 的 mooncake 列應和 3090 逐位元相同。
+  # 只診斷：不寫 $TIARA_DATASETS/p3_unified、不動 $P3_DATA_RESULTS 的主檔；H200 照用自己的迴歸（P3_PORTING_NOTES 第 9 項）
+  local D="$P3_LOCAL/diag-const3090"
+  rm -rf "$D" && mkdir -p "$D/results" && cp results/p3_data/service_constants.json "$D/results/" || return 1
+  m7run p3h-data-diag-const3090 env P3_DATA_RESULTS="$D/results" P3_UNIFIED="$D/unified" bash -c \
+    '"$1" -I code/p3_data/build.py mooncake && "$1" -I code/p3_data/build.py summarize && "$1" code/h200_p3_compare.py --ref results/p3_data --new "$P3_DATA_RESULTS" --files summary.csv --keep source=mooncake --out "$2"' \
+    _ "$P3PY" "$P3_DATA_RESULTS/diag_const3090_mooncake.json"
+}
 
 # ===== simtest =====
 need_data() {     # simtest 之後的 part 都要資料層：缺了就停（不在這裡偷偷重建；重跑 --part data）
@@ -222,7 +232,7 @@ map_c0util() {    # $1＝mi300x|h200（3090：20261019-003643-p3sim-c0util，--p
 map_cmp_mi300x() {  # MI300X 常數的重跑 vs 3090 的檔（不依硬體：應該逐值相同）
   local c
   m7run p3h-map-cmp "$P3PY" code/h200_p3_compare.py --ref results/p3_sim --new "$SIMRES" --files c0_ssd_util.csv --out "$SIMRES/compare_3090_c0util.json" \
-    --rename "c0_ssd_util.csv=c0_ssd_util_mi300x.csv" || return 1
+    --rename "c0_ssd_util.csv=c0_ssd_util_mi300x.csv" --ignore code_commit || return 1
   for c in C0_greedy_none C0_greedy_pass_size C0_tier_none C0_tier_pass_size min_C0_O_greedy_none; do
     m7run "p3h-map-cmp-$c" "$P3PY" code/h200_p3_compare.py --ref results/p3_map --new "$MAPRES" \
       --files "synthetic_e2e_A1_v6_${c}_summary.csv" "synthetic_e2e_A1_v6_${c}_tradeoff.csv" "synthetic_e2e_A1_v6_${c}_verdict.json" \
@@ -230,6 +240,30 @@ map_cmp_mi300x() {  # MI300X 常數的重跑 vs 3090 的檔（不依硬體：應
                "synthetic_e2e_A1_v6_${c}_tradeoff.csv=synthetic_e2e_A1_v6_mi300x_${c}_tradeoff.csv" \
                "synthetic_e2e_A1_v6_${c}_verdict.json=synthetic_e2e_A1_v6_mi300x_${c}_verdict.json" \
       --ignore cells_csv --out "$MAPRES/compare_3090_$c.json" || return 1
+  done
+}
+
+map_diag_const3090() {  # 10/21（job 21406 的 MAP-CMP-3090）：合成端到端和 3090 差約 1e-3（相對），C0 使用率逐值相同。合成資料的服務時間
+  # ＝round(A＋B·out＋C·ctx)（synth.py:122），A／B／C＝FI 迴歸，和資料層同一個差異來源（P3H-1b 的 DATA-DIAG-CONST3090）。
+  # 診斷：用 3090 的 service_constants.json＋synth_fit 把 synth/small-seed1 重建到另一個目錄（其他來源用連結），MI300X 常數重跑 A1＋五組分析，
+  # 和 3090 的 results/p3_map 逐值比。只診斷：不動 $TIARA_DATASETS/p3_unified、$P3_DATA_RESULTS、$MAPRES 的主檔（比對報告寫 $MAPRES/diag_const3090_*）
+  local D="$P3_LOCAL/diag-const3090-map" s c g
+  fresh_dir "$D" || return 1
+  mkdir -p "$D/results" "$D/unified" "$D/cache" "$D/ana" || return 1
+  cp results/p3_data/service_constants.json results/p3_data/synth_fit_fi_week01.json "$D/results/" || return 1
+  for s in "$TIARA_DATASETS"/p3_unified/*; do [ "$(basename "$s")" = synth ] || ln -s "$s" "$D/unified/" || return 1; done
+  local E=(env P3_DATA_RESULTS="$D/results" P3_UNIFIED="$D/unified" P3SIM_CACHE="$D/cache")
+  m7run p3h-mapdiag-synth "${E[@]}" "$P3PY" -I code/p3_data/build.py synth --variants small-seed1 || return 1
+  m7run p3h-mapdiag-syn "${E[@]}" "$P3PY" code/p3_sim/run_map.py --stage A1 --slices synth/small-seed1 --procs 14 --out "$D/map" || return 1
+  for g in "C0 greedy none" "C0 greedy pass_size" "C0 tier none" "C0 tier pass_size" "min_C0_O greedy none"; do
+    set -- $g
+    m7run "p3h-mapdiag-ana-$1-$2-$3" "${E[@]}" "$P3PY" code/p3_sim/analyze_map.py --cells "$D/map/map_cells.csv" --synthetic --mode full \
+      --guard-ref "$1" --oracle-variant "$2" --recompute-charge "$3" --out-prefix "$D/ana/synthetic_e2e_A1_v6_$1_$2_$3" || return 1
+  done
+  for c in C0_greedy_none C0_greedy_pass_size C0_tier_none C0_tier_pass_size min_C0_O_greedy_none; do
+    m7run "p3h-mapdiag-cmp-$c" "$P3PY" code/h200_p3_compare.py --ref results/p3_map --new "$D/ana" \
+      --files "synthetic_e2e_A1_v6_${c}_summary.csv" "synthetic_e2e_A1_v6_${c}_tradeoff.csv" "synthetic_e2e_A1_v6_${c}_verdict.json" \
+      --ignore cells_csv --out "$MAPRES/diag_const3090_compare_$c.json" || return 1
   done
 }
 
@@ -241,6 +275,8 @@ run_part() {
 case "$1" in
   explore)
     const_h200
+    # 3090 的 results/p3_explore/<x> 在 git 裡本來就有；H200 的是新目錄。x1_sim selftest 寫 x1_invariants.csv 前不建目錄（job 21403 在這裡停）
+    mkdir -p "$X"/x1 "$X"/x3 "$X"/x4 "$X"/x5 "$X"/x8
     step EX-NEED need_data
     step EX-VERIFY data_verify
     step X1-SELFTEST m7run p3h-x1-selftest "$P3PY" code/p3x/x1_sim.py selftest
@@ -261,7 +297,8 @@ case "$1" in
     step X5-GRID-RUN m7run p3h-x5-grid "$P3PY" code/p3x/x5_run.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid" --procs 14
     step X5-ANALYZE m7run p3h-x5-analyze "$P3PY" code/p3x/x5_analyze.py --out-dir "$X/x5" --raw-dir "$RAW/x5-grid"
     # X5 的成本常數出來之後重建 H200 格式表：補上和 X5 的對拍（head node 的版本 20261019-211449-p3h-fmt-table2 沒有這兩項）
-    step FMT-TABLE m7run p3h-fmt-table3 "$P3PY" code/p3_formats/build_format_table.py
+    # 這支斷言看不到 GPU（3090 用 TIARA_NO_GPU=1 跑；head node 本來就沒有卡）。job 裡有一張卡 → 明確藏起來（job 21405 在這裡停）
+    step FMT-TABLE m7run p3h-fmt-table3 env CUDA_VISIBLE_DEVICES= HIP_VISIBLE_DEVICES= TIARA_NO_GPU=1 "$P3PY" code/p3_formats/build_format_table.py
     step X8-TRACES x8_traces
     step X8-CAPACITY m7run p3h-x8-capacity "$P3PY" -I code/p3x/x8_capacity.py "$RAW/x8-traces"
     step X8-GRID m7run p3h-x8-grid3 "$P3PY" -I code/p3x/x8_sim.py --traces "$RAW/x8-traces" --outdir "$X/x8" --rawdir "$RAW/x8-grid3" --procs 14 \
@@ -269,6 +306,13 @@ case "$1" in
     step X8-GRID-FI m7run p3h-x8-grid3-fi env X8_NMAX=2560 "$P3PY" -I code/p3x/x8_sim.py --traces "$RAW/x8-traces" --outdir "$X/x8" --rawdir "$RAW/x8-grid3-fi" \
       --procs 14 --wl fi fi_clip --lens orig --tag _fi
     step X8-VERDICT m7run p3h-x8-verdict "$P3PY" -I code/p3x/x8_verdict.py
+    ;;
+  mapdiag)          # 只診斷（P3H-1e）：不在預設的 part 裡
+    step MAPDIAG-NEED need_data
+    step MAPDIAG-VERIFY data_verify
+    const_mi300x
+    step MAPDIAG-C0CMP map_cmp_mi300x
+    step MAPDIAG-SYN-CONST3090 map_diag_const3090
     ;;
   map)
     step MAP-NEED need_data
@@ -299,8 +343,11 @@ case "$1" in
     step DATA-SYNTH m7run p3h-data-synth "$P3PY" -I code/p3_data/build.py synth
     step DATA-SUMMARY m7run p3h-data-summary "$P3PY" -I code/p3_data/build.py summarize
     step DATA-XCHECK m7run p3h-data-crosscheck "$P3PY" -I code/p3_data/crosscheck.py
+    # raw_id_chain.csv：3090 是另外用 --chain-only 寫的（d0c4658）；21116 漏了這步 → DATA-CMP 報 MISSING
+    step DATA-CHAIN m7run p3h-data-chain "$P3PY" -I code/p3_data/crosscheck.py --chain-only
     step DATA-TEST m7run p3h-data-test "$P3PY" -I -m pytest -q code/p3_data/test_p3_data.py
     step DATA-CMP data_cmp
+    step DATA-DIAG-CONST3090 data_diag_const3090
     ;;
   simtest)
     const_mi300x                # 測試照 3090：MI300X 常數（x1_sim.constants）；M7_RES 要明設（env_h200.sh 預設是 H200 的）

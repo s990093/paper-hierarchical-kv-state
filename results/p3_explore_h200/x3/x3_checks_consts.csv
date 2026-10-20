@@ -1,0 +1,7 @@
+run_id,ts,trace,check,value,expect,ok,note
+20261021-011349-p3h-x3-leads-consts,2026-10-20T17:13:57+00:00,qwen,template_overhead_tokens_per_turn_incl_eos,10 10 10,,,len(prompt2)-len(prompt1)-len(assistant)-len(user2)；含 assistant 結尾的 EOS（若 trace 的 output_length 已含 EOS，實際開銷少 1）
+20261021-011349-p3h-x3-leads-consts,2026-10-20T17:13:58+00:00,llama,template_overhead_tokens_per_turn_incl_eos,10 10 10,,,len(prompt2)-len(prompt1)-len(assistant)-len(user2)；含 assistant 結尾的 EOS（若 trace 的 output_length 已含 EOS，實際開銷少 1）
+20261021-011349-p3h-x3-leads-consts,2026-10-20T17:14:01+00:00,wildchat_English,chars_per_token_qwen,4.1579,,,n_msgs=20000 pooled=Σchars/Σtokens；per-message median=4.4286；msg tokens p10=8 p50=51 p90=872
+20261021-011349-p3h-x3-leads-consts,2026-10-20T17:14:02+00:00,wildchat_Chinese,chars_per_token_qwen,1.6873,,,n_msgs=15233 pooled=Σchars/Σtokens；per-message median=1.7101；msg tokens p10=3 p50=10 p90=57
+20261021-011349-p3h-x3-leads-consts,2026-10-20T17:14:03+00:00,wildchat_English,chars_per_token_llama,4.2693,,,n_msgs=20000 pooled=Σchars/Σtokens；per-message median=4.4688；msg tokens p10=8 p50=50 p90=853
+20261021-011349-p3h-x3-leads-consts,2026-10-20T17:14:04+00:00,wildchat_Chinese,chars_per_token_llama,1.394,,,n_msgs=15233 pooled=Σchars/Σtokens；per-message median=1.3000；msg tokens p10=4 p50=12 p90=67

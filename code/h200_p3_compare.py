@@ -5,6 +5,7 @@
 
 只用於「不依硬體」的輸出（資料層、統計）：同一份輸入、同一支程式，數字應該逐位元相同。
 不比的欄位：run_id、ts、x_run_id 以外的執行資訊（run_id、ts、path、code、cache、host）；路徑字串裡的資料根目錄統一換成 <DS>。
+--keep col=value：CSV 兩邊都只留 col＝value 的列（診斷用：例如只比 source=mooncake），報告裡記下。
 有差異就照列（每個差異：檔、列鍵、欄、3090 值、H200 值、相對差），**不改判、不吞**；verdict＝IDENTICAL／DIFF／MISSING。
 只用標準函式庫。
 """
@@ -37,9 +38,12 @@ def rel(a, b):
     return abs(fa - fb) / max(abs(fa), abs(fb), 1e-300)
 
 
+KEEP = {}
+
+
 def cmp_csv(pr, pn):
-    ra = list(csv.DictReader(open(pr, encoding="utf-8")))
-    rb = list(csv.DictReader(open(pn, encoding="utf-8")))
+    ra = [r for r in csv.DictReader(open(pr, encoding="utf-8")) if all(r.get(c) == v for c, v in KEEP.items())]
+    rb = [r for r in csv.DictReader(open(pn, encoding="utf-8")) if all(r.get(c) == v for c, v in KEEP.items())]
     cols = [c for c in (ra[0].keys() if ra else []) if c not in VOLATILE]
     colsb = [c for c in (rb[0].keys() if rb else []) if c not in VOLATILE]
     diffs = []
@@ -101,11 +105,13 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--rename", nargs="*", default=[], help="ref 檔名=new 檔名（H200 的檔名多了平台標記時）")
     ap.add_argument("--ignore", nargs="*", default=[], help="另外不比的鍵／欄（例如記輸入路徑的 cells_csv）")
+    ap.add_argument("--keep", nargs="*", default=[], help="CSV 只留 col=value 的列（兩邊都篩）")
     a = ap.parse_args()
     ren = dict(x.split("=", 1) for x in a.rename)
     VOLATILE.update(a.ignore)
+    KEEP.update(x.split("=", 1) for x in a.keep)
     rep = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
-               ref=a.ref, new=a.new, renamed=a.rename, ignored_fields=None, files={})
+               ref=a.ref, new=a.new, renamed=a.rename, ignored_fields=None, kept_rows=dict(KEEP), files={})
     rep["ignored_fields"] = sorted(VOLATILE)
     worst = "IDENTICAL"
     for f in a.files:
