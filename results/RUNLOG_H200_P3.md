@@ -123,6 +123,12 @@ code/p3_sim/formats.py:187: ValueError
 原因＝我的移植：183ad30 在 `formats.DQ_SETS` 加了 h200 欄，這個測試掃 DQ_SETS 的每個平台去讀 MI300X＋3090 的表 → 我同一次加的平台防呆（表和平台對不上就丟錯）照設計擋下。不是數字不同。runner 照規則 2 停在 SIM-TEST。
 
 ## Milestone P3H-1b — 修正後接著跑（從 DATA-CHAIN 起）
+**修正**（都在 worktree，h200-p3）：
+1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
+2. runner 加 `DATA-CHAIN`（`crosscheck.py --chain-only` → `raw_id_chain.csv`，讓 DATA-CMP 比得到）。
+3. runner 加 `DATA-DIAG-CONST3090`（只診斷）：用 3090 的 `service_constants.json` 把 Mooncake 重建到 `/tmp/hungweilai-p3/diag-const3090`，summary 的 mooncake 列和 3090 比 → `results/p3_data_h200/diag_const3090_mooncake.json`。預期 IDENTICAL＝差異只來自迴歸常數；不是的話照列。`h200_p3_compare.py` 加 `--keep col=value`（兩邊都只留那些列）。
+**決定**: H200 照用自己算的迴歸常數（同一支程式在這台的結果），不借 3090 的值；差異照列（P3_PORTING_NOTES 第 9 項）。之後 Mooncake 驅動的結果和 3090 比時，±1 ms 的 think 差會傳下去，要先看這一項。
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --dependency=afterany:21402 --time=48:00:00 code/r_h200_p3.sh --part data,simtest,explore,map --from DATA-CHAIN`（接在第二階段的計時 job 21402 m10h-nvx 之後，不和它同時跑）
 **狀態**: FAIL（job **21403** `p3h-all`，afterany:21402，git 9a9b9c1；2026-10-20T23:41:35 → 23:50:53，9 分）：資料層與 SIM-TEST 過，停在 X1-SELFTEST（下面）；接著跑＝P3H-1c
 **資料層（23:41–23:42）**: DATA-CHAIN、DATA-TEST exit 0；DATA-CMP（`20261020-234211-p3h-data-cmp`）：`raw_id_chain.csv` **IDENTICAL**、`synth_fit_fi_week01.json` IDENTICAL、`crosscheck.csv` 12 處＝同 P3H-1（3090 檔沒有 raw_id_chain 列；這幾列的值由 raw_id_chain.csv 比到，IDENTICAL）、`service_constants.json` 6 處、`summary.csv` 3 處（同 P3H-1）。**DATA-DIAG-CONST3090：用 3090 的迴歸常數重建 Mooncake → summary 的 mooncake 列和 3090 IDENTICAL**（`results/p3_data_h200/diag_const3090_mooncake.json`）→ 資料層和 3090 的差異只來自 QuantReg 常數（數值庫），沒有別的來源。
 **SIM-TEST**（`20261020-234236-p3h-sim-test`）: **122 passed**（438 s；3090 的 121 個＋新加的 H200 表測試）。
@@ -136,6 +142,7 @@ FileNotFoundError: [Errno 2] No such file or directory: '/raid/work/ChihChungHsu
 修正：runner 的 explore part 一開頭 `mkdir -p` x1／x3／x4／x5／x8（不是 step，`--from` 也會跑）。
 
 ## Milestone P3H-1c — 接著跑（從 X1-SELFTEST 起）
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from X1-SELFTEST`（第二階段 session 沒有排隊中的 GPU job，不加依賴）
 **狀態**: FAIL（job **21405**，git b31c133；2026-10-21T01:00:51 → 01:26:12，25 分）：X1-SELFTEST … X5-ANALYZE 全部 exit 0（結果在 `results/p3_explore_h200/x1,x3,x4,x5`，之後一起檢查、提交），停在 FMT-TABLE；接著跑＝P3H-1d
 **失敗與異常**（FMT-TABLE，`20261021-012606-p3h-fmt-table3`）：
 ```
@@ -170,13 +177,7 @@ AssertionError: 這支只准用 CPU（TIARA_NO_GPU=1）
 - 用 3090 迴歸常數重建 synth、MI300X 常數重跑：五組的 `summary.csv` **IDENTICAL**、`verdict.json` **IDENTICAL**；`tradeoff.csv` 各 130 處不同，**全部是 `ttftq_H_mean_s` 一欄、最大相對差 3.45e-16**（例 1.1904085711063084 → 1.1904085711063086，最後一兩個位元）。這個大小是浮點加總順序不同（numpy 2.3.5 vs 2.2.6、CPU 不同）會有的差，不是邏輯差；其他欄逐位元相同。
 - 結論：地圖的模擬器在 H200 上給同樣輸入 → 和 3090 相同（除了上面那一欄的末位）；P3H-1d 的 1e-3 差**只來自 FI 迴歸常數**（和資料層同一個來源，P3H-1b）。H200 的主結果照用 H200 自己的迴歸（P3_PORTING_NOTES 第 9 項）。
 **失敗與異常**: 無。
-**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --time=48:00:00 code/r_h200_p3.sh --part explore,map --from X1-SELFTEST`（第二階段 session 沒有排隊中的 GPU job，不加依賴）
-**修正**（都在 worktree，h200-p3）：
-1. `test_official_format_table_adapter` 只掃 `TABLE_PLATFORMS[表的平台]`（＝原本 3090 的 mi300x、3090 兩欄，行為和 3090 相同）；另加 `test_official_format_table_adapter_h200`：H200 表的位元組、解壓欄、品質判定和表一致，表／平台對不上兩個方向都丟錯。登入節點只跑這兩個：2 passed（1.1 s；H200 表四個格式在 32,768 的狀態＝pass／pass／pass／unverified，和 MI300X 相同）。
-2. runner 加 `DATA-CHAIN`（`crosscheck.py --chain-only` → `raw_id_chain.csv`，讓 DATA-CMP 比得到）。
-3. runner 加 `DATA-DIAG-CONST3090`（只診斷）：用 3090 的 `service_constants.json` 把 Mooncake 重建到 `/tmp/hungweilai-p3/diag-const3090`，summary 的 mooncake 列和 3090 比 → `results/p3_data_h200/diag_const3090_mooncake.json`。預期 IDENTICAL＝差異只來自迴歸常數；不是的話照列。`h200_p3_compare.py` 加 `--keep col=value`（兩邊都只留那些列）。
-**決定**: H200 照用自己算的迴歸常數（同一支程式在這台的結果），不借 3090 的值；差異照列（P3_PORTING_NOTES 第 9 項）。之後 Mooncake 驅動的結果和 3090 比時，±1 ms 的 think 差會傳下去，要先看這一項。
-**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=p3h-all --dependency=afterany:21402 --time=48:00:00 code/r_h200_p3.sh --part data,simtest,explore,map --from DATA-CHAIN`（接在第二階段的計時 job 21402 m10h-nvx 之後，不和它同時跑）
+**合回 h200**: 2026-10-21 在暫時 worktree（detached 在 origin/h200＝fb84755）`merge --no-ff h200-p3`＝8563d27，沒有衝突、快轉 push（fb84755..8563d27）；先通知第二階段 session。（這一行和下面的整理之後再合。）
 
 ---
 
