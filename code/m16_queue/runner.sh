@@ -15,6 +15,8 @@
 #   - CPU job（GPU-NEED: none）不能開 /dev/kfd（不准 import torch）；綁 0–3 號核心、nice 19；任何角色的 runner 都可以跑。
 #   - 10/23 02:00Z（台灣 10:00）之後不開預計跑不完的 job（檔頭 MAX-H）。
 #   - 失敗 → .failed＋NEEDS_HUMAN，這條 runner 停（CLAUDE.md 規則 2）。STOP 檔在 → 下一個 job 前停。
+#   - 10/20 使用者：「基本上是要排在第二階段後」→ S3_AFTER_S2=1（預設）：任何 GPU job 都要第二階段兩個佇列都空、沒有 WANT_BOTH 才開；
+#     上面的 (B) XGPU 條件與「helper 還在跑時用卡 1 跑品質」都關掉。S3_AFTER_S2=0 才回到 10/19 和第二階段協調的寬鬆規則。
 # job 檔頭：# GPU-NEED: none|one|both   # GPU: 0|1（預設 1）   # NEED-GB: N   # MAX-H: h
 export LC_ALL=C
 S2=${S2_JOBS:-/tmp/claude-0/-mlsteam-workspace/31610192-64b7-4462-bdf0-b22684a43855/scratchpad/jobs}
@@ -27,6 +29,7 @@ L0=$LD/gpu0.lock; L1=$LD/gpu1.lock
 WC1=$S2/WANT_CARD1
 CUTOFF=${S3_CUTOFF:-$(date -u -d "2026-10-23T02:00:00Z" +%s)}
 WAIT_CARD1_S=${S3_WAIT_CARD1_S:-1800}
+AFTER=${S3_AFTER_S2:-1}
 mkdir -p $Q
 tag="runner:s3:$ROLE"
 log() { echo "[$tag] $* $(date -u +%FT%TZ)" | tee -a $S3/runner_$ROLE.log; }
@@ -58,7 +61,7 @@ run_locked() {     # $1 鎖指令 $2 檢查（shell 運算式）$3 gpu $4 need_g
     exit $rc' >> $Q/$name.log 2>&1
 }
 
-log "啟動（S2=$S2，S3=$S3，佇列 $Q，截止 $(date -u -d @$CUTOFF +%FT%TZ)）"
+log "啟動（S2=$S2，S3=$S3，佇列 $Q，AFTER_S2=$AFTER，截止 $(date -u -d @$CUTOFF +%FT%TZ)）"
 while :; do
   [ -e $S3/STOP ] && { log "看到 STOP，結束"; exit 0; }
   next=$(ls $Q/*.sh 2>/dev/null | sort | head -1)
@@ -81,7 +84,7 @@ while :; do
     if all_idle; then
       mv $next $Q/$name.running; log "START $name 獨佔兩張卡 gpu=1 need_gb=$gb"
       run_locked "flock $L0 flock $L1" all_idle 1 $gb 0; rc=$?
-    elif [ -e "$S2/XGPU_OK" ] && main_idle; then
+    elif [ "$AFTER" != 1 ] && [ -e "$S2/XGPU_OK" ] && main_idle; then
       touch $WC1; log "WANT_CARD1 立起（$name，XGPU 條件：卡 0 有第二階段的品質工作）"
       t0=$(date +%s); clear=0
       while [ $(( $(date +%s) - t0 )) -lt $WAIT_CARD1_S ]; do
@@ -101,12 +104,13 @@ while :; do
       mv $next $Q/$name.running; log "START $name quality gpu=0 need_gb=$gb"
       run_locked "flock $L0" all_idle 0 $gb 0; rc=$?
     else
-      { main_idle && [ ! -e $WC1 ]; } || { sleep 60; continue; }
+      if [ "$AFTER" = 1 ]; then qchk="all_idle && [ ! -e $WC1 ]"; else qchk="main_idle && [ ! -e $WC1 ]"; fi
+      eval "$qchk" || { sleep 60; continue; }
       if helper_busy && [ "${gb%.*}" -gt 96 ]; then
         mv $next $Q/$name.failed; log "FAILED $name：helper 還在跑時卡 1 上限 96 GB（NEED-GB=$gb）"; exit 1
       fi
       mv $next $Q/$name.running; log "START $name quality gpu=1 need_gb=$gb"
-      run_locked "flock $L1" "main_idle && [ ! -e $WC1 ]" 1 $gb 0; rc=$?
+      run_locked "flock $L1" "$qchk" 1 $gb 0; rc=$?
     fi
   fi
   if [ $rc -eq 99 ] || [ $rc -eq 98 ]; then
