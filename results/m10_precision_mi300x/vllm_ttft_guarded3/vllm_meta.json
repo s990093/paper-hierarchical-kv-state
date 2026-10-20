@@ -1,0 +1,18 @@
+{
+ "llama|512": {
+  "run_id": "20261020-135728-m10-vllmg3-llama-512",
+  "vllm": "0.28.0",
+  "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "max_num_batched_tokens": 512,
+  "median_ttft_s": {
+   "8192": 0.5162083622999489,
+   "16384": 1.387337788939476,
+   "32768": 4.182123078033328
+  },
+  "guard": {
+   "0": "CLEAN",
+   "1": "CLEAN"
+  },
+  "backend": "see stderr.log of run (grep 'backend')"
+ }
+}

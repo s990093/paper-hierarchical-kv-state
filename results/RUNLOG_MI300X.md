@@ -1221,3 +1221,32 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   4. `jobs/parts/restore90.sh` 等它結束：成功 → 把 90 放回 queue/；失敗 → 寫 NEEDS_HUMAN。
 - 88 的 pool 等其他 job 做完時會因為那筆 rc=143 回報失敗，寫一行 NEEDS_HUMAN。那行是預期中的，處理時移到 .handled。
 - 只量分數，時間欄不用。
+
+### 15.24 vLLM TTFT 有 guard 的重量：90 → 91 → 92，四組都有 CLEAN 的量測；第二階段佇列清空（10/20 13:44:37 → 13:59:17Z）
+
+- **90**（外包 guard，`m10_guarded_run.py`）：四組都判 CONTAMINATED_DURING_RUN，不採用。
+  - 每組都只有卡 1 的最後 1–2 次取樣被標，都在最後一筆量測之後、vLLM 關 engine 的時候。
+    - 例：llama-default 最後一列 13:46:04，同一秒開始關 engine；被標的取樣在 13:46:07–09，VRAM 157 GB＝vLLM 自己的配置。
+  - 是 09-15 那種收尾假污染：VRAM 還在、kfd 已關。卡 0 全 CLEAN。照規則判污染、不改判。
+- **91**（`m10_vllm_ttft.py --guard-gpus 0 1`：guard 在程式裡，從開 engine 前到最後一次量完）：
+  - llama-default、qwen-default、qwen-512 兩張卡都 CLEAN。
+  - llama-512 卡 1 判污染：被標的是自己的 EngineCore（pid 472683），13:53:03 還在載入權重，第一筆量測是 13:53:30。
+    - 原因：`gpu_guard.foreign_on` 先算「自己人」（子孫行程）、後列行程。列行程要幾百 ms，中間剛 spawn 的子行程在清單裡、卻不在自己人裡。
+    - 已修成列完行程才算自己人（`0d3be58`；`test_gpu_guard_slurm.py` 9 項照過）。後算不會把外人算成自己人。
+    - 這個 bug 只會多報，所以之前判 CLEAN 的量測不受影響。
+  - 另外看到：vLLM 改行程名（`VLLM::EngineCore`）時蓋掉了 /proc/<pid>/environ，`_holder_gpu` 讀不到用哪張卡 → 從別的行程看，會兩張卡都算它（偏向報污染，規則 7）。程式內 guard 會把它當自己人，所以不影響。
+- **92**：只重量 91 沒全 CLEAN 的 llama-512 → 兩張卡都 CLEAN。
+- **採用的表**（全部兩張卡 CLEAN；中位數，s，6 次，另 2 次暖機）：
+
+  | 模型 | 切法 | 8K | 16K | 32K | run |
+  |:--|:--|--:|--:|--:|:--|
+  | Llama | 預設（16384） | 0.321 | 0.791 | 2.182 | `20261020-135103-m10-vllmg2-llama-default` |
+  | Llama | 512 | 0.516 | 1.387 | 4.182 | `20261020-135728-m10-vllmg3-llama-512` |
+  | Qwen（noDCA） | 預設（16384） | 0.287 | 0.684 | 1.802 | `20261020-135421-m10-vllmg2-qwen-default` |
+  | Qwen（noDCA） | 512 | 0.474 | 1.248 | 3.720 | `20261020-135545-m10-vllmg2-qwen-512` |
+
+  - 產出：`results/m10_precision_mi300x/vllm_ttft_guarded2/`（3 組）＋`vllm_ttft_guarded3/`（llama-512）。
+  - 70（沒 guard）和 90（判污染）的數字和這張表差不到 1%，但都不採用。
+  - harness 只算（15.21，32K，GPU 閒）Llama 3.64、Qwen 3.10 → 比預設 vLLM 慢 1.67 倍、1.72 倍；比 512 切法快（0.87 倍、0.83 倍）。和 15.22 的判讀相同，現在有 guard 紀錄。
+- 第二階段的兩個佇列（queue/、queue_g0/）在 13:59:17Z 全部清空，沒有 WANT_BOTH。已通知第三階段 session。
+- NEEDS_HUMAN 的 90、91 共 5 行，已移到 .handled，處置就是上面這些。
