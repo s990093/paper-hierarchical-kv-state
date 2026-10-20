@@ -36,7 +36,7 @@ S3_ROLE=quality setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara
 ```
 
 - 和第二階段的協調（RUNLOG_MI300X 15.13；`code/m16_queue/runner.sh` 檔頭）：量時間的 job 在第二階段兩個佇列都空時獨佔兩張卡；有 `XGPU_OK`、第二階段 main 空時改用 XGPU 條件（`WANT_CARD1` → 等卡 1 清空 → `gpu1.lock`，結果標「卡 0 同時有品質工作」，環境變數 `S3_XGPU_COND=1`）。品質 job 在第二階段 main 空時用卡 1。拿 `/mlsteam/data/tiara/gpu{0,1}.lock`；登記共用顯存帳 `vram_reserved.json`；`MAX-H` 超過 10/23 02:00Z 的不開。測試：`S2_JOBS=<假目錄> S3_JOBS=<假目錄> S3_LOCKDIR=<假目錄> bash code/m16_queue/runner.sh`（見 `experiment_log.md`）。
-- 卡號變數（RUNLOG_MI300X 15.16）：第二階段的 `44d_xgpu_check2` 通過後會放 `/mlsteam/data/tiara/USE_ROCR`。之後 runner 與 `m16_vllm_bench.py serve` 都改設 `ROCR_VISIBLE_DEVICES`＝實體卡號、unset HIP／CUDA（只用 HIP 時行程會開兩張卡的 render 節點，amd-smi 兩張卡都列，對方的 guard 會當成入侵者）。測試：`M16_USE_ROCR_FLAG=<假檔> …/tiara-v028/bin/python code/tests/m16_bench_cpu.py`（有／沒有旗子都 ALL PASS）。
+- 卡號變數（RUNLOG_MI300X 15.16）：第二階段的 `44d_xgpu_check2` 通過後會放 `/mlsteam/data/tiara/USE_ROCR`。之後 runner 與 `m16_vllm_bench.py serve` 都改設 `ROCR_VISIBLE_DEVICES`＝實體卡號、unset HIP／CUDA（只用 HIP 時行程會開兩張卡的 render 節點，amd-smi 兩張卡都列，對方的 guard 會當成入侵者）。測試：`M16_USE_ROCR_FLAG=<假檔> …/tiara-v028/bin/python code/tests/m16_bench_cpu.py`（有／沒有旗子都 ALL PASS）。**10/20 更新（RUNLOG_MI300X 15.17）**：ROCR 驗證也沒過（設了 ROCR 的行程一樣開兩張卡的 render 節點），所以 `USE_ROCR` 不會出現，切換程式留著但不會觸發，照 HIP 做法。第二階段改讓 `code/gpu_guard.py` 從 KFD sysfs（`/sys/class/kfd/kfd/proc/<pid>/vram_<gpu_id>`）讀每張卡分開的 VRAM；第三階段的 guard 全走 `gpu_guard`（`GpuWatcher`、`smi_index`、`host_contention`、`foreign_on`，介面沒變），自動用到新版。`ledger.py card_clear` 看的是整張卡的已用量（`amd-smi metric --mem-usage`），不受行程列表的問題影響。
 - job 檔頭：`# GPU-NEED: none|one|both`、`# GPU: 0|1`、`# NEED-GB: N`、`# MAX-H: h`。
 
 ### 2.2 job 清單（`code/m16_queue/jobs/`）
