@@ -196,3 +196,51 @@ Slurm 的 job 裡看不到同節點別人的卡，`gpu_guard.host_contention` �
 - H200 的 (b) 在 decode 時「融合讀法 ≡ 讀 BF16」只到「拆出來的值逐位元相同」（BM＝64 證明）。輸出本身在最後幾位不同，原因是 MMA 運算元排法，不是解碼錯。
 - split 份數照 MI300X 定（`TARGET_PROGRAMS = 608` ≈ 2 × 304 CU）。H200 只有 132 個 SM，所以這個 kernel 在 H200 上不是調過的設定。(b) 只能比同一台上各讀法的相對時間，不能拿兩台的絕對時間比。
 - 如果自測還是沒過：(b) 在 H200 寫 NOT_MEASURED，記 NEEDS_HUMAN，不再換方法。
+
+## 14. 10/20 晚：兩個 H200 才有的加做（使用者選「查 Qwen FP8 忙時變慢」＋「P4 的 CUDA MPS 版本」；寫的時候這兩件都還沒有任何 GPU 資料）
+
+兩件都**只報告**，不改任何判定。結果另開欄位，不和 MI300X 的混在一起，也不和 H200 主線的 P0–P5 混在一起。排程：`r_h200_rs2.sh --part nvx`，一個量時間的 job。
+
+### 14.1 A：H200 上 Qwen fp8_head 在 GPU 忙時「只搬不拆」也慢（h1_qfp8_busy_diag）
+**現象**（13 號已經量到的）：
+- 32K：Q5 (a) 只搬不拆，忙 0.118 s、閒 0.019 s；Llama fp8_token 0.041／0.040；兩個模型的 int4 都不變。
+- 128K、64K：Q1 nodq 忙 0.464／0.234 s。
+- MI300X 同一格 0.021／0.019（duty 0.7）。
+
+**目前的線索**（只看程式和現有檔，沒有新的 GPU 資料）：
+- `blocks.csv` 裡每個 block 送出拷貝都是 0.03 ms，閒、忙一樣，時間全在最後等拷貝完成。
+- 各格式一個 block 最小的那一塊（m10_codec 實際編出來的）：
+  - Qwen fp8_head 的 scale：**896 B**；
+  - Llama fp8_token 的 scale：1 MiB；
+  - int4_kivi 最小一塊：448 KiB。
+
+**假設**：極小（< 64 KiB）的 H2D 拷貝，在背景 duty 1.0 佔滿 GPU、兩個 process 時間片輪流時，要等到輪到我們才會做。每個 block 多等約 1.5 ms。32K 有 64 個 block、128K 有 252 個，乘起來就是多出來的 0.10／0.39 s。
+
+**量法**：
+- A1 `h200_tinycopy.py`：pinned → GPU、一個 stream、64 次後 synchronize。大小 896 B–14 MB，再加模仿一個 block 的兩塊組合；閒／忙交替兩輪。
+- A2 2×2 交叉：模型 × FP8 粒度（Llama fp8_head、Qwen fp8_token 是新格子），只搬不拆，指令同 43e (a)，CPU 層、2 launch × 5 rep。
+- A3 nsys（`-t cuda`）：Qwen fp8_head 只搬不拆，閒、忙各一次；`h200_nsys_memcpy.py` 摘要 H2D 的大小、時間、前一筆到這一筆的間隔。
+
+**怎麼判讀**（寫死）：
+- 假設**成立**要同時滿足：
+  - (1) A1 極小拷貝（896 B、4 KiB）忙時每塊多 ≥ 0.5 ms，大塊（≥ 1 MiB）每塊多 < 0.1 ms；
+  - (2) A2 fp8_head 兩個模型忙時都變慢（忙 ÷ 閒 ≥ 2），fp8_token 兩個模型都不變（≤ 1.2）；
+  - (3) A3 忙時極小 H2D 前的間隔中位數比閒時多 ≥ 0.5 ms。
+- 任何一條不成立 → 寫「假設不成立」和實際數字，不再換假設硬套。
+
+**寫論文時**：這是平台的行為（極小拷貝 × 時間片），不是方法本身。只在 H200 的 GPU 忙那幾格出現，所以 H200 的 Qwen FP8 cpu|busy 那幾格要加註。主線 K3 的分岔也在這幾格：A 只報告原因，不回頭改判定。
+
+### 14.2 B：P4（留運算單元給還原）的 CUDA MPS 版（h2_mps_p4）
+- MI300X 的 P4a／P4b 用 ROCm 的 HSA_CU_MASK 把背景限在 7/8、3/4 的 CU。H200 沒有這個（smoke/cumask.json：沒生效）。
+- 改用 CUDA MPS：背景 process 設 `CUDA_MPS_ACTIVE_THREAD_PERCENTAGE`，比例同 7/8、3/4，取整數百分比（h200_mps.py `pcts`，132 SM → 87、75）；還原的 process 不限。
+- MPS 讓兩個 process 同時用不同的 SM（空間分享），不是時間片輪流。這本身就會改變 GPU 忙時的行為，可能連 A 的極小拷貝也不用等了。所以另量 **P0mps**（MPS、不限）當基準。
+- 三欄 P0mps／P4a_mps／P4b_mps 只和彼此比。H200 沒開 MPS 的 P0、P3 只當參考並列，不比判定；也不和 MI300X 的 P4 放同一欄。
+
+**步驟**：
+1. 開 MPS daemon，用 job 自己的 pipe／log 目錄。
+2. `h200_mps.py check`：背景單獨跑的 matmul 時間，限 87% 的要 ≥ 不限的 ×1.05，限 75% 的要 ≥ ×1.10（同 cumask 的規則）；而且 MPS server 要有起來。沒過 → NEEDS_HUMAN，B 不跑。
+3. gpu_guard 冒煙：MPS server 不是我們 process 的子孫，nvidia-smi 卻把它列在卡上。`GPU_GUARD_JOB_CGROUP_OWN=1` 讓「同一個 Slurm job cgroup 的行程」也算自己的（gpu_guard `_in_own_job`，沒設時不變），冒煙要 CLEAN 才往下。
+4. 12 個 grid（3 方法 × 2 模型 × fp8／int4），指令和 43b 的 P0 一字不改，只多環境變數。
+5. `h200_mps.py report` → `results/m10_restore2_h200/q4mps/tables_q4mps.md`。
+
+**寫論文時**：H200 的「P4」是 MPS 的 SM 比例，不是 CU 遮罩，機制不同。MPS 也改變了基準（P0mps ≠ P0）。只能說「在 H200 上，用 MPS 限制背景的 SM 比例，還原時間怎麼變」，不能當成 MI300X P4 的複製。

@@ -342,6 +342,20 @@ def _descendants(root: int) -> set[int]:
     return seen
 
 
+def _in_own_job(pid: int) -> bool:
+    """GPU_GUARD_JOB_CGROUP_OWN=1 時（H200 的 CUDA MPS，13_h200_repro §14）：和本 Slurm job 同一個 cgroup 的行程也算自己的。
+    MPS 的 server 由 control daemon 生出、不是本行程的子孫，nvidia-smi 卻把它列在這張卡上。沒設這個變數時一律 False（行為不變）。"""
+    jid = os.environ.get("SLURM_JOB_ID")
+    if os.environ.get("GPU_GUARD_JOB_CGROUP_OWN") != "1" or not jid:
+        return False
+    try:
+        with open(f"/proc/{pid}/cgroup") as f:
+            cg = f.read()
+    except OSError:
+        return False
+    return any(ln.rstrip().endswith(f"/job_{jid}") or f"/job_{jid}/" in ln for ln in cg.splitlines())
+
+
 def _holder_gpu(pid: int) -> int | None:
     """容器行程用哪張實體卡：ROCR_VISIBLE_DEVICES、HIP_VISIBLE_DEVICES 的第一個（實體編號，和 amd-smi 一致，RUNLOG 15.1）。
     讀不到或沒設 → None。HIP 編號在只有 ROCR 時是邏輯編號，所以 ROCR 優先。"""
@@ -361,7 +375,7 @@ def foreign_on(gpu: int, own_root: int | None = None) -> list[dict]:
     """gpu 上不屬於我們的 compute process。own_root 預設為本行程。"""
     own = _descendants(own_root if own_root is not None else os.getpid())
     if vendor() != "amd":
-        return [a for a in compute_apps() if a["gpu"] == gpu and a["pid"] not in own]
+        return [a for a in compute_apps() if a["gpu"] == gpu and a["pid"] not in own and not _in_own_job(a["pid"])]
     # AMD：amd-smi 給 host pid，對不上容器 pid → 改用「數量」判斷。
     #   有配置 VRAM 的 amd-smi 行程數  −  本容器內開 /dev/kfd 的行程數  =  容器外的行程數（下界）
     # VRAM=0 的條目（真機上的 host pid 8110，早於本容器任何 GPU 程式就存在、gfx 用量 0）

@@ -15,6 +15,7 @@
 #   sbatch --job-name=m10h-md  --time=16:00:00 code/r_h200_rs2.sh --part md    # 冒煙＋只量分數：44e0 44e1 44e1z 44e2
 #   sbatch --job-name=m10h-mdt --time=16:00:00 code/r_h200_rs2.sh --part mdt   # 量時間：44e3 44e4 44e5 44ez
 #   sbatch --job-name=m10h-attnb --time=4:00:00 code/r_h200_rs2.sh --part attnb # 量時間：43e0nv 43eb（H200 才有，13_h200_repro §13）
+#   sbatch --job-name=m10h-nvx --time=4:00:00 code/r_h200_rs2.sh --part nvx     # 量時間：h1 Qwen FP8 忙時診斷、h2 P4 的 MPS 版（H200 才有，§14）
 #   bash code/r_h200_rs2.sh --part <p> --list | --dry-run ；--from <stage> 接著跑
 #
 # 每個 stage＝MI300X 的佇列腳本（code/m10_queue_mi300x/queue/<stage>.sh）經 code/h200_port_stage.py 轉成 H200 版：
@@ -57,7 +58,8 @@ case "$PART" in
   md)  STAGES="44e0_md_smoke 44e1_ds1_screen 44e1z_ds_pick 44e2_ds2_confirm" ;;
   mdt) STAGES="44e3_d3_speed 44e4_m2_fmt 44e5_m1_unit 44ez_md_report" ;;
   attnb) STAGES="43e0nv_attn_selftest_bm64 43eb_attn_b" ;;
-  *) echo "要 --part rs2|md|mdt|attnb" >&2; exit 2 ;;
+  nvx) STAGES="h1_qfp8_busy_diag h2_mps_p4" ;;
+  *) echo "要 --part rs2|md|mdt|attnb|nvx" >&2; exit 2 ;;
 esac
 
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
