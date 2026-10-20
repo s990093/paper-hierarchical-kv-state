@@ -1,0 +1,3 @@
+      1 /dev/dri/renderD160
+      1 /dev/dri/renderD168
+      1 /dev/kfd
