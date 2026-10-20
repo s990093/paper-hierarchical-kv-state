@@ -268,3 +268,11 @@ MI300X 用 `code/report_stage2/figs_report_only.py` 分析 55／60／88，套 RE
 - 新寫的 `code/h200_report_only.py` 只做兩件事：換目錄，加上 Qwen FP8 混合配置與 Qwen fp8_head 地圖這兩項。`fp8mix` 的 config 名稱沒有 `@格式`，所以讀的時候不剝格式。
 - 輸出：`results/m10_precision_h200/analysis/report_only/`（`report_only.json`、`tables_report_only.md`），每一格標「主線」或「對照」。
 - 這些全部只報告，不改任何判定。
+
+## 16. 10/21 vLLM TTFT 用程式內 guard 重量（MI300X 91／92 的 H200 版；寫的時候還沒跑）
+- **為什麼**：H200 的 70（vLLM TTFT，10/18）是在 `m10_vllm_ttft.py` 加 `--guard-gpus` 之前跑的，沒有 gpu_guard 紀錄。MI300X 也一樣，後來用 91／92 重量了一次有 guard 的版本，採用那一份（RUNLOG_MI300X 15.24）。
+- **做法**：`r_h200_rs2.sh --part ttftg`（`code/h200_queue/h3_vllm_ttft_guarded.sh`）。
+  - 四組（Llama／Qwen noDCA × default／512），`--guard-gpus <這張卡的 nvidia-smi 編號>`；guard 從開 engine 前看到最後一次量完。
+  - 不是全 CLEAN 的組，再量一次（同 92）；兩次都不是就不採用。
+  - 輸出 `results/m10_precision_h200/vllm_ttft_guarded/`；只採用 guard 全 CLEAN 的 run_id。
+- 採用以後，H200 的 TTFT 改引這一份。原本 70 的數字留著，標「沒有 guard 紀錄、不採用」，和 MI300X 的處理一樣。
