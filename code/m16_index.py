@@ -129,18 +129,19 @@ def k1():
     """K1：每個 dump 的中位數（層×head，不含整層串接列）。只讀 CSV。"""
     rows = []
     d = os.path.join(RES, "k1_kvstruct")
-    if not os.path.exists(os.path.join(d, "lowrank.csv")):
+    big = "/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full"   # >1 MB 的檔（BIG_FILES.md）
+    if not os.path.exists(os.path.join(big, "lowrank.csv")):
         return rows
     med = lambda v: round(statistics.median(v), 4)
     g = {}
-    for r in csv.DictReader(open(os.path.join(d, "lowrank.csv"))):
+    for r in csv.DictReader(open(os.path.join(big, "lowrank.csv"))):
         if r["head"] != "all" and r["rank"] == "32":
             g.setdefault((r["dump"], r["kind"]), []).append(float(r["rel_err"]))
             rid = r["run_id"]
     for (dn, kind), v in sorted(g.items()):
         rows.append(dict(exp="K1", cell=f"{dn}|{kind}|r=32", metric="low-rank rel. reconstruction error (median layer×head)",
                          value=med(v), unit="fraction", kind="measured", status="ok", run_id=rid,
-                         source=rel(os.path.join(d, "lowrank.csv"))))
+                         source=os.path.join(big, "lowrank.csv")))
     g = {}
     for r in csv.DictReader(open(os.path.join(d, "xlayer.csv"))):
         if r["head"] != "all":
@@ -150,13 +151,13 @@ def k1():
                          value=med(v), unit="cosine", kind="measured", status="ok", run_id=rid,
                          source=rel(os.path.join(d, "xlayer.csv"))))
     g = {}
-    for r in csv.DictReader(open(os.path.join(d, "adjtok.csv"))):
+    for r in csv.DictReader(open(os.path.join(big, "adjtok.csv"))):
         if r["head"] != "all":
             g.setdefault((r["dump"], r["kind"]), []).append(float(r["frac_ge_0.9"]))
     for (dn, kind), v in sorted(g.items()):
         rows.append(dict(exp="K1", cell=f"{dn}|{kind}|t vs t+1", metric="adjacent-token cosine >=0.9 fraction (median)",
                          value=med(v), unit="fraction", kind="measured", status="ok", run_id=rid,
-                         source=rel(os.path.join(d, "adjtok.csv"))))
+                         source=os.path.join(big, "adjtok.csv")))
     return rows
 
 

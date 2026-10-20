@@ -332,24 +332,24 @@ I3r,sigma2|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median ov
 I3r,ssd_nfs|kappa_vs_oracle_per_cell,P95 TTFT gain 1-kappa/baseline (median over cells),-0.0526,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
 I3r,ssd_nfs|kappa_vs_fixed_vllm_tier,P95 TTFT gain 1-kappa/baseline (median over cells),0.2726,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
 I3r,ssd_nfs|kappa_vs_fixed_default_vllm,P95 TTFT gain 1-kappa/baseline (median over cells),0.6974,fraction,simulated,ok,20261020-040244-m16-i3reread,results/m16_stage3_mi300x/i3_pause_sim/reread_baselines.json
-K1,llama_T2_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.3575,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T2_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.0535,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T2_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.1533,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T4_252|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4766,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T4_252|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2402,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T4_252|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6767,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T4_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4613,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T4_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2531,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,llama_T4_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6645,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T2_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.3253,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T2_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.0428,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T2_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.1099,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T4_252|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4542,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T4_252|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2366,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T4_252|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6494,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T4_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.423,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T4_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2413,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
-K1,qwen_T4_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6486,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/lowrank.csv
+K1,llama_T2_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.3575,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T2_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.0535,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T2_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.1533,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_252|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4766,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_252|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2402,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_252|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6767,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4613,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2531,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,llama_T4_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6645,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T2_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.3253,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T2_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.0428,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T2_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.1099,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_252|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.4542,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_252|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2366,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_252|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6494,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_64|K_post|r=32,low-rank rel. reconstruction error (median layer×head),0.423,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_64|K_pre|r=32,low-rank rel. reconstruction error (median layer×head),0.2413,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
+K1,qwen_T4_64|V|r=32,low-rank rel. reconstruction error (median layer×head),0.6486,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/lowrank.csv
 K1,llama_T2_64|K|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0008,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
 K1,llama_T2_64|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),0.0011,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
 K1,llama_T2_64|V|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0058,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
@@ -374,36 +374,36 @@ K1,qwen_T4_64|K|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.006
 K1,qwen_T4_64|K_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0037,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
 K1,qwen_T4_64|V|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0011,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
 K1,qwen_T4_64|V_centered|l vs l+1,cross-layer cosine p50 (median over layer×head),-0.0007,cosine,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/xlayer.csv
-K1,llama_T2_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6136,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T2_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6731,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T2_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0003,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T2_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T2_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_252|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.335,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_252|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.4173,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_252|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0044,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_252|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.002,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_252|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0015,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.2604,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3448,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0027,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0012,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,llama_T4_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.001,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T2_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.5395,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T2_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6155,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T2_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0007,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T2_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T2_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_252|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3368,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_252|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3774,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_252|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0083,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_252|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.002,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_252|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0017,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.2964,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3492,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0068,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0019,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
-K1,qwen_T4_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0012,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,results/m16_stage3_mi300x/k1_kvstruct/adjtok.csv
+K1,llama_T2_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6136,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6731,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0003,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T2_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.335,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.4173,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0044,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.002,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_252|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0015,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.2604,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3448,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0027,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0012,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,llama_T4_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.001,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.5395,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.6155,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0007,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T2_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3368,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3774,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0083,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.002,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_252|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0017,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|K_post|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.2964,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|K_pre|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.3492,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|K_pre_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0068,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|V|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0019,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
+K1,qwen_T4_64|V_centered|t vs t+1,adjacent-token cosine >=0.9 fraction (median),0.0012,fraction,measured,ok,20261020-142819-m16-k1-kvstruct,/mlsteam/data/tiara/runs/20261020-142819-m16-k1-kvstruct/k1_full/adjtok.csv
 S1,,,,,,NOT_MEASURED,,
 I1-grid,,,,,,NOT_MEASURED,,
 C1a,,,,,,NOT_MEASURED,,
