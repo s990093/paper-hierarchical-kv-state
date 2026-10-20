@@ -1,0 +1,25 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,-,compute_only,10,4.09856,4.14897,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,E1s,cake,10,0.23189,0.28421,5 6,58.0,973078528.0,17.6747,,10,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b16,busy,E1s,load_only,10,0.23972,0.29555,64,63.0,1124073472.0,17.0973,,10,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,-,compute_only,10,2.1224,2.14886,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,E1s,cake,10,0.12009,0.147,5 6,58.0,973078528.0,17.6733,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b16,idle,E1s,load_only,10,0.11885,0.14567,64,63.0,1124073472.0,17.8572,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,-,compute_only,10,4.09586,4.14666,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,E1s,cake,10,0.40526,0.45721,10,54.0,905969664.0,10.1068,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b32,busy,E1s,load_only,10,0.47695,0.53595,64,63.0,1124073472.0,8.5876,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,-,compute_only,10,2.1231,2.14959,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,E1s,cake,10,0.32607,0.35244,14 15,49.0,822083584.0,6.5112,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b32,idle,E1s,load_only,10,0.42072,0.44733,64,63.0,1124073472.0,5.0464,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,-,compute_only,10,4.09757,4.14945,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,E1s,cake,10,0.97748,1.03234,21 22,42.5,713031680.0,4.192,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b48,busy,E1s,load_only,10,1.53142,1.59161,64,63.0,1124073472.0,2.6757,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,-,compute_only,10,2.11988,2.14629,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,E1s,cake,10,0.75733,0.78378,29 30,34.0,570425344.0,2.7991,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,b48,idle,E1s,load_only,10,1.44993,1.47663,64,63.0,1124073472.0,1.4621,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,nfs,busy,-,compute_only,10,4.09693,4.14847,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,nfs,busy,E1s,cake,10,1.59315,1.64482,32,32.0,536870912.0,2.5716,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,nfs,busy,E1s,load_only,10,3.25602,3.31632,64,63.0,1124073472.0,1.2583,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,nfs,idle,-,compute_only,10,2.12098,2.14783,64,0.0,0.0,1.0,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,nfs,idle,E1s,cake,10,1.13573,1.1629,40,24.0,402653184.0,1.8675,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi
+32768,nfs,idle,E1s,load_only,10,3.16325,3.19005,64,63.0,1124073472.0,0.6705,,0,0,20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi

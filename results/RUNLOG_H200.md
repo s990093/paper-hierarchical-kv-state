@@ -1218,3 +1218,12 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
   - **忙的時候 H200 大很多**：27–100，MI300X 3–54。原因是 H200 背景 duty 1.0，P0 全載入在忙時被拖得多，還原省下的時間是 117–222 ms，MI300X 是 12–26 ms。兩台的「忙」不是同一個強度（NV_PORTING_NOTES §1），這一欄只能各自看。
 - 別的平台差異：PyTorch SDPA 讀 BF16，H200 是 1–93 ms，MI300X 是 43–272 ms（ROCm 的 SDPA 路徑慢）；外部參考 vLLM-KIVI 在兩台都最慢。
 - 小異常：Qwen 32K decode 的 bf16 kernel，忙 2.06 ms 比閒 3.38 ms 快。只有這一格，沒追。
+
+### job 21111 `m10h-mdt`（14 號量時間：D3、M2、M1＋報告）跑完（2026-10-20 20:00:08 → 22:20:56 +08:00，COMPLETED exit 0；程式 `95fa1a7`）
+- 44e3 D3（丟 block 之後的還原時間：Llama／Qwen int4，加 NFS 層）、44e4 M2（8 種格式的載入／計算配對：compute_only、load_only、cake）、44e5 M1（單位大小 u128／u256／u512）、44ez 報告，全部 exit 0。268 份 gpu_guard 全 CLEAN，NEEDS_HUMAN 沒有新的。
+- 表：`results/m10_match_h200/{tables_speed_14.md, speed_14.json}`；20 個格子都「可用」。
+- **MI300X 還沒有 14 號的量時間結果**（origin/main 上沒有 `results/m10_match_mi300x/`），所以目前只有 H200 的數字，等 MI300X 跑完再並排。
+- 描述（只報告，Llama int4，32K）：
+  - D3：丟 50% block，各層的 cake 中位數大約減半。例：CPU 層、忙，E1s 0.0764 → DB50 0.0385 s；b48、閒，E1s 0.856 → DB50 0.402 s。
+  - M1：單位縮成 128 token，CPU 層、閒反而變慢（E1s 0.168 s vs E0 0.124 s）。
+- 到這裡，13、14 號在 H200 能跑的部分都跑完了。沒跑的只有平台不支援的 P4a／P4b（CU 遮罩），寫 NOT_MEASURED。

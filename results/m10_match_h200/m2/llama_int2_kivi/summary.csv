@@ -1,0 +1,25 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,-,compute_only,10,4.101,4.15275,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b16,busy,E1s,cake,10,0.15049,0.20301,3 4,60.0,754974720.0,27.2516,,9,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b16,busy,E1s,load_only,10,0.23937,0.29528,64,63.0,859832320.0,17.1325,,10,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b16,idle,-,compute_only,10,2.12241,2.14886,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b16,idle,E1s,cake,10,0.08103,0.10738,3 4 5,60.0,754974720.0,26.1934,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b16,idle,E1s,load_only,10,0.09098,0.11769,64,63.0,859832320.0,23.3272,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b32,busy,-,compute_only,10,4.09913,4.15069,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b32,busy,E1s,cake,10,0.31367,0.36616,8,56.0,704643072.0,13.0681,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b32,busy,E1s,load_only,10,0.37124,0.42888,64,63.0,859832320.0,11.0418,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b32,idle,-,compute_only,10,2.12169,2.14818,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b32,idle,E1s,cake,10,0.2529,0.2792,11 12,52.0,654311424.0,8.3894,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b32,idle,E1s,load_only,10,0.32187,0.34857,64,63.0,859832320.0,6.5918,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b48,busy,-,compute_only,10,4.09654,4.14587,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b48,busy,E1s,cake,10,0.78741,0.83883,18,46.0,578813952.0,5.2026,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b48,busy,E1s,load_only,10,1.16958,1.2293,64,63.0,859832320.0,3.5026,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b48,idle,-,compute_only,10,2.12265,2.14916,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b48,idle,E1s,cake,10,0.63168,0.65807,25 26,38.0,478150656.0,3.3603,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,b48,idle,E1s,load_only,10,1.10914,1.13583,64,63.0,859832320.0,1.9138,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,nfs,busy,-,compute_only,10,4.09259,4.14211,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,nfs,busy,E1s,cake,10,1.34264,1.3948,28,36.0,452984832.0,3.0482,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,nfs,busy,E1s,load_only,10,2.49888,2.56111,64,63.0,859832320.0,1.6378,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,nfs,idle,-,compute_only,10,2.12284,2.14935,64,0.0,0.0,1.0,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,nfs,idle,E1s,cake,10,0.99259,1.01913,36 37,28.0,352321536.0,2.1387,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
+32768,nfs,idle,E1s,load_only,10,2.4197,2.44638,64,63.0,859832320.0,0.8773,,0,0,20261020-210619-m10h-md-m2-llama-int2_kivi
