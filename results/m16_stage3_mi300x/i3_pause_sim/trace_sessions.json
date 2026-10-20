@@ -1,0 +1,88 @@
+{
+ "toolagent": {
+  "n_requests": 23608,
+  "n_parent_child_pairs": 16400,
+  "n_parents_with_multiple_children": 2567,
+  "fanout_hist": {
+   "1": 6600,
+   "2": 1223,
+   "3": 586,
+   "4": 287,
+   "5": 146,
+   "6": 87,
+   "7": 49,
+   "8": 47,
+   "9": 22,
+   "10": 8
+  },
+  "n_sessions": 14441,
+  "n_multi_turn": 4571,
+  "n_chain_pairs": 9167,
+  "frac_in_ge_prev_in_plus_out": 0.7777898985491437,
+  "trace_file": "/mlsteam/data/tiara/datasets/traces/toolagent_trace.jsonl",
+  "pool_sessions": 4571,
+  "pool_excluded_over_max_tok": 0,
+  "pool_pauses": 9167,
+  "pool_turns": 13738,
+  "gap_quantiles_s": {
+   "0.1": 0.0,
+   "0.25": 0.0,
+   "0.5": 2.9990000000000236,
+   "0.75": 98.9989999999998,
+   "0.9": 258.0,
+   "0.95": 396.0007,
+   "0.99": 623.9989999999999
+  },
+  "gap_frac_zero": 0.4815097632813352,
+  "p_end": 0.33272674333964186,
+  "max_ctx_quantiles": {
+   "0.1": 3169.0,
+   "0.5": 7087.0,
+   "0.9": 17528.0,
+   "0.99": 59849.10000000003,
+   "1.0": 123783.0
+  }
+ },
+ "conversation": {
+  "n_requests": 12031,
+  "n_parent_child_pairs": 3975,
+  "n_parents_with_multiple_children": 28,
+  "fanout_hist": {
+   "1": 3904,
+   "2": 21,
+   "3": 4,
+   "4": 1,
+   "5": 1,
+   "8": 1
+  },
+  "n_sessions": 8099,
+  "n_multi_turn": 2027,
+  "n_chain_pairs": 3932,
+  "frac_in_ge_prev_in_plus_out": 0.8926754832146491,
+  "trace_file": "/mlsteam/data/tiara/datasets/traces/conversation_trace.jsonl",
+  "pool_sessions": 2027,
+  "pool_excluded_over_max_tok": 0,
+  "pool_pauses": 3932,
+  "pool_turns": 5959,
+  "gap_quantiles_s": {
+   "0.1": 41.998999999999796,
+   "0.25": 66.0,
+   "0.5": 123.0,
+   "0.75": 266.99925,
+   "0.9": 474.0,
+   "0.95": 602.6995499999988,
+   "0.99": 1456.1400000000003
+  },
+  "gap_frac_zero": 0.0,
+  "p_end": 0.3401577445880181,
+  "max_ctx_quantiles": {
+   "0.1": 2414.0,
+   "0.5": 9870.0,
+   "0.9": 30007.000000000007,
+   "0.99": 82055.72000000003,
+   "1.0": 123783.0
+  }
+ },
+ "run_id": "20261019-141254-m16-pausesim",
+ "ts": "2026-10-19T14:12:58+00:00"
+}

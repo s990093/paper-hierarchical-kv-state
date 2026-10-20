@@ -1,0 +1,9 @@
+run_id,ts,platform,model,ssd_dev,missing,notes,max_tok
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,mi300x,llama,local,,新一輪開銷在 <8192 token 用 8192 的值（常數延伸）,129024
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,mi300x,llama,nfs,,新一輪開銷在 <8192 token 用 8192 的值（常數延伸）,129024
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,mi300x,qwen,local,,新一輪 8192 的列 contaminated_rows=10，不用 | 新一輪 16384 的列 contaminated_rows=10，不用 | 新一輪開銷在 <32768 token 用 32768 的值（常數延伸） | D2H 只量過 Llama 的 64 MiB chunk 形狀；Qwen 沿用同一條鏈路的值（H2D 兩模型差 2.5%）,129024
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,mi300x,qwen,nfs,,新一輪 8192 的列 contaminated_rows=10，不用 | 新一輪 16384 的列 contaminated_rows=10，不用 | 新一輪開銷在 <32768 token 用 32768 的值（常數延伸） | D2H 只量過 Llama 的 64 MiB chunk 形狀；Qwen 沿用同一條鏈路的值（H2D 兩模型差 2.5%）,129024
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,mi300x_vllm,llama,-,d2h_Bps(vllm store);busy_x;position-resolved recompute(此處只用整段平均),vLLM 路徑只有還原端（ctx 固定一點）；store／D2H、GPU 忙放大 NOT_MEASURED → 只進靜態 κ 表，不跑動態模擬,16384
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,mi300x_vllm,qwen,-,d2h_Bps(vllm store);busy_x;position-resolved recompute(此處只用整段平均),vLLM 路徑只有還原端（ctx 固定一點）；store／D2H、GPU 忙放大 NOT_MEASURED → 只進靜態 κ 表，不跑動態模擬,96000
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,3090,llama,-,d2h_Bps;busy_x_h2d;busy_x_compute;raw_h2d(只量過 vLLM connector 路徑),3090：D2H 與 GPU 忙放大 NOT_MEASURED → 動態模擬不能用卸載動作；只進靜態 κ 表。所有列 host_contention=HEAVY（舊 RUNLOG 發現 5：PCIe 路徑被平行 job 灌水 26–52%）,26624
+20261019-141254-m16-pausesim,2026-10-19T14:12:58+00:00,3090,qwen,-,all(只有 AWQ 權重的 qwen-awq 量測，與 MI300X 的 BF16 權重不可通約),,0

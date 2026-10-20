@@ -1,0 +1,35 @@
+{
+ "card1_view": [],
+ "card0_view": [
+  {
+   "pid": 321818,
+   "kind": "same_container",
+   "cmd": "python -c import torch,time; x=torch.empty(2**31,dtype=torch.uint8,device='cuda'); print(hex(torch.cuda.get_device_prope",
+   "used_mib": -1
+  }
+ ],
+ "dummy_fds": "      1 /dev/dri/renderD160\n      1 /dev/dri/renderD168\n      1 /dev/kfd\n",
+ "kfd_vram_rows": [
+  {
+   "gpu": 0,
+   "pid": 1407073,
+   "host_pid": true,
+   "used_mib": 2048
+  }
+ ],
+ "amd_smi_vram_rows": [
+  {
+   "gpu": 0,
+   "pid": 1407073,
+   "host_pid": true,
+   "used_mib": 2048
+  },
+  {
+   "gpu": 1,
+   "pid": 1407073,
+   "host_pid": true,
+   "used_mib": 2048
+  }
+ ],
+ "ok": true
+}

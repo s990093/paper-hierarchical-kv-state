@@ -1,0 +1,164 @@
+{
+ "rule": "15.17：B/A 幾何平均 ≤ 1.02、沒有一格 > 1.08、guard 全 CLEAN（KFD 分卡、HIP）",
+ "n_cells": 24,
+ "geomean_B_over_A": 1.0027129277266935,
+ "max_B_over_A": 1.0890485885320125,
+ "min_B_over_A": 0.9841727740527054,
+ "noise_geomean_A2_over_A1": 1.005274396817001,
+ "guards_ok": true,
+ "pass_": false,
+ "cells": {
+  "qwen_A1_usable": true,
+  "qwen_B1_usable": true,
+  "qwen_A2_usable": true,
+  "qwen_B2_usable": true,
+  "qwen|b32|busy|E0|cake": {
+   "A": 1.617747,
+   "B": 1.6235315,
+   "ratio": 1.0036,
+   "A2_over_A1": 0.9978
+  },
+  "qwen|b32|busy|E1s|cake": {
+   "A": 0.687381,
+   "B": 0.684053,
+   "ratio": 0.9952,
+   "A2_over_A1": 0.9998
+  },
+  "qwen|b32|idle|E0|cake": {
+   "A": 1.158436,
+   "B": 1.1556675,
+   "ratio": 0.9976,
+   "A2_over_A1": 0.9995
+  },
+  "qwen|b32|idle|E1s|cake": {
+   "A": 0.5525875,
+   "B": 0.553444,
+   "ratio": 1.0015,
+   "A2_over_A1": 1.0034
+  },
+  "qwen|cpu|busy|E0|cake": {
+   "A": 0.0651715,
+   "B": 0.06520000000000001,
+   "ratio": 1.0004,
+   "A2_over_A1": 1.0073
+  },
+  "qwen|cpu|busy|E0|loadall": {
+   "A": 0.0557775,
+   "B": 0.055577,
+   "ratio": 0.9964,
+   "A2_over_A1": 1.0163
+  },
+  "qwen|cpu|busy|E1s|cake": {
+   "A": 0.065833,
+   "B": 0.06532950000000001,
+   "ratio": 0.9924,
+   "A2_over_A1": 0.9873
+  },
+  "qwen|cpu|busy|E1s|loadall": {
+   "A": 0.04332,
+   "B": 0.043021500000000004,
+   "ratio": 0.9931,
+   "A2_over_A1": 0.9992
+  },
+  "qwen|cpu|idle|E0|cake": {
+   "A": 0.051890500000000006,
+   "B": 0.051933,
+   "ratio": 1.0008,
+   "A2_over_A1": 1.0027
+  },
+  "qwen|cpu|idle|E0|loadall": {
+   "A": 0.0389465,
+   "B": 0.039121500000000003,
+   "ratio": 1.0045,
+   "A2_over_A1": 1.0064
+  },
+  "qwen|cpu|idle|E1s|cake": {
+   "A": 0.032909,
+   "B": 0.035839499999999996,
+   "ratio": 1.089,
+   "A2_over_A1": 1.0566
+  },
+  "qwen|cpu|idle|E1s|loadall": {
+   "A": 0.021242999999999998,
+   "B": 0.021214,
+   "ratio": 0.9986,
+   "A2_over_A1": 1.0086
+  },
+  "llama_A1_usable": true,
+  "llama_B1_usable": true,
+  "llama_A2_usable": true,
+  "llama_B2_usable": true,
+  "llama|b32|busy|E0|cake": {
+   "A": 1.931186,
+   "B": 1.931019,
+   "ratio": 0.9999,
+   "A2_over_A1": 1.0032
+  },
+  "llama|b32|busy|E1s|cake": {
+   "A": 0.8301565,
+   "B": 0.8312984999999999,
+   "ratio": 1.0014,
+   "A2_over_A1": 1.0018
+  },
+  "llama|b32|idle|E0|cake": {
+   "A": 1.371082,
+   "B": 1.3719925000000002,
+   "ratio": 1.0007,
+   "A2_over_A1": 1.0029
+  },
+  "llama|b32|idle|E1s|cake": {
+   "A": 0.662609,
+   "B": 0.6628855,
+   "ratio": 1.0004,
+   "A2_over_A1": 1.0038
+  },
+  "llama|cpu|busy|E0|cake": {
+   "A": 0.162379,
+   "B": 0.16167199999999998,
+   "ratio": 0.9956,
+   "A2_over_A1": 0.9798
+  },
+  "llama|cpu|busy|E0|loadall": {
+   "A": 0.124282,
+   "B": 0.12399299999999999,
+   "ratio": 0.9977,
+   "A2_over_A1": 0.9995
+  },
+  "llama|cpu|busy|E1s|cake": {
+   "A": 0.083369,
+   "B": 0.0820495,
+   "ratio": 0.9842,
+   "A2_over_A1": 1.0289
+  },
+  "llama|cpu|busy|E1s|loadall": {
+   "A": 0.055576,
+   "B": 0.055828,
+   "ratio": 1.0045,
+   "A2_over_A1": 1.0059
+  },
+  "llama|cpu|idle|E0|cake": {
+   "A": 0.0956735,
+   "B": 0.095652,
+   "ratio": 0.9998,
+   "A2_over_A1": 1.0023
+  },
+  "llama|cpu|idle|E0|loadall": {
+   "A": 0.0835295,
+   "B": 0.083558,
+   "ratio": 1.0003,
+   "A2_over_A1": 1.0014
+  },
+  "llama|cpu|idle|E1s|cake": {
+   "A": 0.063938,
+   "B": 0.06453249999999999,
+   "ratio": 1.0093,
+   "A2_over_A1": 1.0058
+  },
+  "llama|cpu|idle|E1s|loadall": {
+   "A": 0.0363725,
+   "B": 0.036447,
+   "ratio": 1.002,
+   "A2_over_A1": 1.0086
+  }
+ }
+}

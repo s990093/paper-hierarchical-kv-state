@@ -1,0 +1,19 @@
+{
+ "card1_view": [
+  {
+   "pid": -1,
+   "kind": "external_namespace",
+   "count": 1,
+   "used_mib": 2048
+  }
+ ],
+ "card0_view": [
+  {
+   "pid": 188966,
+   "kind": "same_container",
+   "cmd": "python -c import torch,time; x=torch.empty(2**31,dtype=torch.uint8,device='cuda'); time.sleep(120)",
+   "used_mib": -1
+  }
+ ],
+ "ok": false
+}

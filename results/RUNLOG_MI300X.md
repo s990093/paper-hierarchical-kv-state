@@ -992,3 +992,145 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   1. 卡 0 放一個假的 GPU 行程，卡 1 的 guard 看不到、卡 0 的看得到。
   2. 卡 1 量還原（S0、INT4 KIVI、E0／E1s、cpu＋b32、閒／忙、Cake＋cpu 全部載入，1×10），卡 0「空著」(A) 和「跑 4 個真的品質 process」(B) 交替 A B A B，兩個模型。每格 B 中位數 ÷ A 中位數：幾何平均 ≤ 1.02、沒有一格 > 1.08、A／B 的 guard 全 CLEAN。
   - 全過才立 `XGPU_OK`。沒過 → 照舊獨佔，寫 NEEDS_HUMAN。A2／A1（同條件兩次）的比值也記下來，當雜訊的參考。
+
+### 15.11 長 context 彙整的速度表沒篩長度（另一個 session 回報；10/19 11:4xZ 修好重跑）
+
+- 回報者：使用者開的第三階段前置探索 session（`docs/stage3_20261019/`），透過 session 訊息轉告。
+- **Bug**：`m10_longctx_analyze.py` 的 `speed()` 讀 32K 的 `summary_<tier>.csv` 時只用（bw, gpu_state）當鍵，沒篩 length。閒的格子有 8K／16K／32K 三列，最後的 8K 把 32K 蓋掉 → tables_longctx.md §5 的「32K × 閒」其實是 8K 的值（例：Llama FP8 b16・閒 E0 表上 0.15453＝8K，32K 實際 0.57818，和 08 §2.1 一致）。忙只有 32K，所以忙的列是對的。64K／128K 的 grid 只有一個長度，不受影響。
+- **修**：每個來源只讀自己的長度（32K＝32768、64K＝65536、128K＝129024）。11:4xZ 重跑（CPU，nice 19、2 核；44ca 在量時間）→ 32K b16・閒 E0 0.57818、CPU 層・閒 E1 對 E0 快 24.8%（08 §2.1 的「Llama 閒時快 25%」）。15.9 沒有用 §5 下任何結論。
+- **15.9 沒寫到的 Qwen**（核對過 tables_longctx.md）：
+  - Qwen 的主線 FP8（fp8_head）本身是壞掉的格式：全部用它的答對率 32K 39.5%、64K 17.0%、128K 1.5%（E0 77.4／61.9／56.6%）。
+  - 這時放哪裡差很多：128K、25% 放前段對隨機 +19.5 [+8.0, +31.7]、中段 +28.0 [+16.8, +39.5]、後段 −9.5 [−18.2, −1.5] 個百分點；64K 中段 −12.4。
+  - 好的格式（INT8、INT4 KIVI）在 Qwen 128K 也和 E0 差不多（54.1、56.5 vs 56.6）。
+  - 讀法〔推論〕：和 09 大掃描同一件事——**格式本身會傷品質時，位置才有差；好的格式沒有東西可救**。寫 08／10 號時要分開講「好的格式」和「壞掉的格式」。
+- 協調（10/19 13:2xZ，第三階段 session 回覆）：它的 CPU 工作一律 `nice -n 19 taskset -c 0-3`；不開任何 GPU 行程（CPU 程式在 import 前關掉 torch.cuda，執行中看到 /dev/kfd 就自己停）；之後它的 runner 開 job 前會確認 WANT_BOTH 不在、兩個佇列都沒有 *.running／*.sh，設 HIP_VISIBLE_DEVICES、TIARA_GPU，登記 vram_reserved.json；開第一個 GPU job 前會先通知這邊。
+
+### 15.12 我的 git 推送方式讓 44ca 的一格少了 176 列 → 整格重量（10/19 13:2xZ）
+
+- **原因**：
+  - 我今天推 git 都用 `git stash -u && git rebase && git push && git stash pop`。
+  - m10_speed 的 worker 每個 launch 開著 `restores.csv` 一直寫（`open(..., "a")`）。`results/m10_longctx_mi300x/speed_llama_129024_int4_kivi/restores.csv` 在 1d378fc 被 git 追蹤（重啟前的部分資料）。
+  - stash 會換掉這個檔案；之後寫的列進了 NFS 的孤兒檔（`.nfs…`），關檔時消失。
+- **影響**：
+  - `20261019-104723-m10-lc-grid-llama-129024-int4_kivi`：L0 的 GPU 忙少 154 列（11:35 的 stash 之後到 L0 結束）、L1 的 GPU 忙少 22 列（13:19 的 stash 之後）。閒的 440 列完整。這一格的 summary.csv 是用不完整的列算的。
+  - 其他格子沒有被追蹤、也沒有正在寫，不受影響。10:51 那次 stash 沒出事，因為那次剛好先把這個檔加進了提交。
+  - helper 的品質 CSV 被 .gitignore 忽略，stash 不會碰。
+  - 另一個 session 的 `docs/stage3_20261019/` 2 個未追蹤檔被搬走又放回，內容逐位元相同。
+  - stash 裡 26 個檔案，除了已消失的 `.nfs`，都確認放回、內容相同，stash 已刪。
+- **處理**：
+  - 新增 `queue/44cab_rerun_llama128k_int4.sh`：指令和 44ca 完全相同，整格重量（2 launch × 5 rep，約 2.6 小時），排在 44ca 後、44cb 前。latest_rows 只讀最新的 run。
+  - 推 git 改用 `code/m10_queue_mi300x/gitpush.sh`（fetch → merge → push，不用 stash）。stage 還在寫的結果目錄不先加進 git。
+
+### 15.13 和第三階段 session 共用卡 1 的規則（10/19 13:5xZ）
+
+- 第三階段 runner 已啟動（`code/m16_queue/runner.sh`，佇列 `/mlsteam/data/tiara/stage3/jobs/`；要它暫停：`touch /mlsteam/data/tiara/stage3/jobs/STOP`）。
+  - 它只在 WANT_BOTH 不在、queue/ 和 queue_g0/ 都沒有 *.sh／*.running 時開 job，拿 gpu{0,1}.lock，登記 vram_reserved.json。
+  - 每個 job 設 HIP_VISIBLE_DEVICES＝TIARA_GPU，單一 job ≤ 2 小時。
+- 它問：main 跑完、helper 還在跑品質時，能不能在卡 1 跑品質 job；有 XGPU_OK 時能不能在 helper 還在跑時開量時間的 job。我的答覆：
+  - 品質 job 可以，用顯存帳共用卡 1。但第二階段優先：helper 還有 stage 時，它在卡 1 最多 2 個 job、登記合計 ≤ 96 GB。
+  - 量時間的 job：有 XGPU_OK 時，卡 1 必須只有它。它先立 `jobs/WANT_CARD1`，等帳上和 amd-smi 都沒有別的卡 1 行程，拿 gpu1.lock 再量，量完拿掉旗子。沒有 XGPU_OK 就照原規則：兩個佇列都空、兩把鎖都拿。
+- `pool.py`：helper 看到 WANT_CARD1 → 不再放 job 到卡 1，已經在卡 1 的 job 停掉、放回待跑（品質照題號續跑），卡 0 照跑。用假 job 測過：卡 1 的 job 讓出後改到卡 0 續跑；旗子拿掉後又能用卡 1。
+- 第三階段 session 照上面的條件實作好了（它的 commit b18ff2e，`code/m16_queue/runner.sh`；兩條 runner 的 PID 158919、158920，都在等我的佇列）：
+  - 量時間：兩個佇列都空 → 兩把鎖都拿。有 XGPU_OK 且 main 空 → 立 WANT_CARD1，等帳上沒有卡 1 的登記、amd-smi 卡 1 用量 < 1.5 GB（最多等 30 分鐘，等不到就拿掉旗子、延後）→ 拿 gpu1.lock 量 → 拿掉旗子。這種 run 帶 `S3_XGPU_COND=1`，結果裡會註明。
+  - 品質：main 空、而且 WANT_BOTH／WANT_CARD1 都不在才開；用卡 1、拿 gpu1.lock；一次只跑 1 個，helper 還有 stage 時登記 ≤ 96 GB；每個 job 前都重新檢查 queue/。
+
+### 15.14 44ca 做完（10/19 17:31:11Z；runner v2 接手後標成完成）
+
+- 4 格都 exit 0：`20261019-104723-…-llama-129024-int4_kivi`（不完整，見 15.12，44cab 重量中）、`-132102-…-qwen-129024-int4_kivi`、`-153135-…-llama-65536-int4_kivi`、`-163608-…-qwen-65536-int4_kivi`。後 3 格 2 launch × 2 GPU 狀態 × 220 列都齊，gpu_guard 全 CLEAN。
+- 44cab（Llama 128K INT4 整格重量）17:31:11Z 開始，量時間兩張卡獨佔；接著 44cb（干擾實驗）。
+- 這 3 格的結果先提交。Llama 128K INT4 的目錄等 44cab 寫完才加進 git（15.12 的教訓）。
+
+### 15.15 44cab 重量完成；44cb 的分卡檢查沒過 → 量時間照舊兩張卡獨佔（10/19 17:31 → 20:05Z）
+
+- 44cab（`20261019-173111-m10-lc-grid-llama-129024-int4_kivi-rerun`）20:04:44Z 完成：2 launch × 閒／忙 × 220 列都齊，gpu_guard 全 CLEAN。Llama 128K INT4 改用這次（latest_rows 只讀最新的 run）。
+- 44cb 第 1 步（分卡）沒過（`results/m10_xgpu_mi300x/attribution.json`），沒有做 A／B，沒有立 XGPU_OK。44d（20:05:26Z 開始）照舊兩張卡獨佔。
+  - 卡 0 的假行程（`HIP_VISIBLE_DEVICES=0`，配 2 GiB）在 amd-smi 的卡 1 行程清單裡也出現，而且 VRAM 也是 2048 MiB。
+  - 原因：HIP 的行程會打開兩張卡的 render 節點，amd-smi 把它的 VRAM 在兩張卡底下都列一次。
+  - 所以只看環境變數還不夠：卡 1 的 guard 會把它算成外部行程（`external_namespace`）。
+- 下一步：改用 `ROCR_VISIBLE_DEVICES`（ROCr 層就只看得到一張卡，應該只開那張的 render 節點）再驗一次，見 15.16。
+
+### 15.16 改用 ROCR_VISIBLE_DEVICES 再驗一次分卡＋干擾（10/19 20:1xZ 寫好；排在 44d 後、44e0 前）
+
+- `code/gpu_guard.py`：`smi_index` 改成 ROCR 優先（ROCR 是實體編號）。`_holder_gpu` 原本就是 ROCR 優先。`test_gpu_guard_slurm.py` 9 項照過；ROCR=1、HIP=0 → 1；只有 HIP=1 → 1。
+- `code/m7_env.sh`：有 `/mlsteam/data/tiara/USE_ROCR` 時改成 `ROCR_VISIBLE_DEVICES=${TIARA_GPU}`、不設 HIP／CUDA_VISIBLE_DEVICES；沒有這個檔就照舊（現在沒有）。
+- `queue/44d_xgpu_check2.sh`（本身兩張卡獨佔）：
+  1. 卡 0 假行程用 ROCR=0：記錄它開了哪些 render 節點、amd-smi 的原始行程清單，以及兩張卡的 guard 看法。
+  2. 第 1 步過了才做 A／B：卡 1 量還原（ROCR=1），卡 0 的 4 個品質 process 用 ROCR=0。判準和 44cb 相同。
+  3. 全過 → 立 `USE_ROCR`（之後所有 job 用 ROCR）＋`XGPU_OK`。沒過 → 照舊兩張卡獨佔、寫 NEEDS_HUMAN。
+
+### 15.17 ROCR 也分不出卡 → gpu_guard 改讀 KFD sysfs；第三次驗證排在 DS2 之後（10/20 00:0x → 00:2xZ）
+
+- 44d（長 context 的還原第二輪）00:01:56Z 做完。44d_xgpu_check2 00:02:42Z 結束：分卡沒過（`results/m10_xgpu_mi300x/rocr/attribution.json`）。
+  - `ROCR_VISIBLE_DEVICES=0` 的假行程照樣開了 renderD160、renderD168 兩個節點，amd-smi 在卡 1 底下也列了它的 2048 MiB。
+  - 沒有立 USE_ROCR／XGPU_OK，44e0 照舊兩張卡獨佔。
+- 找到準確的來源：KFD sysfs `/sys/class/kfd/kfd/proc/<host pid>/vram_<gpu_id>` 每張卡分開記。
+  - 實測：卡 1 上量時間的行程 vram_63883（a6）＝12.7 GB、vram_8594（86）＝0。
+  - topology 的 location_id（bus<<8）對 amd-smi 的 BDF：8594 → 卡 0（86:00.0）、63883 → 卡 1（a6:00.0）。
+  - sysfs 也看得到別的容器在別張卡的行程（gpu_id 33267），不在對照表裡，忽略。
+- `code/gpu_guard.py`：`_amd_compute_apps` 改成先用 `_kfd_compute_apps`（每張卡分開），讀不到才退回 amd-smi。amd-smi 會把跨卡行程兩張都列，所以退回時是偏向報污染、不會報成乾淨（規則 7）。對照表對不齊時丟 SmiUnavailable。`test_gpu_guard_slurm.py` 9 項照過。
+- `queue/44e2z_xgpu_check3.sh`（44e2 DS2 之後、44e3 D3 之前；本身兩張卡獨佔）：用預設的 HIP 設定，步驟和判準同 44cb，另外記 KFD 和 amd-smi 兩種讀法。全過才立 XGPU_OK。USE_ROCR 不用了，m7_env.sh 的開關留著、不會觸發。
+
+### 15.18 44d（13 號 Q1：長 context 的還原第二輪）做完（10/19 20:05 → 10/20 00:02Z）
+
+- 40 個 grid（Llama／Qwen × 128K／64K × FP8／INT4 × P0、冠軍 S2k8+G4、Q4 的 P3、G5b、nodq）全部 exit 0；`m10_restore2.py report` 每格都可用（guard 全 CLEAN）。表在 `results/m10_restore2_mi300x/tables_13.md` 的 Q1。
+- 先看到的（Llama 128K、真實 CPU 層、E1，s）：和 32K 同一個方向，只報告，判讀之後寫進 11、08。
+  - S4（P3）＋全部載入：INT4 閒 0.127、忙 0.136；FP8 0.176／0.189。
+  - 原本的 S0＋Cake（P0）：INT4 0.170／0.252；FP8 0.207／0.326。
+  - 只搬不拆（nodq，下限）：INT4 0.114／0.123；FP8 0.163／0.175。
+  - G5b 在 CPU 層選了全部載入（INT4 忙 0.209＝P0 的全部載入）。b32 照 Cake（和 P0 一樣）。
+
+### 15.19 第三次分卡驗證（44e2z，KFD 分卡＋HIP）：分卡過了，干擾差一格沒過 → 量時間照舊兩張卡獨佔（10/20 05:01:20 → 05:30:32Z）
+
+- run：`20261020-050229-m10-xgpu3-qwen-A1` … `20261020-052754-m10-xgpu3-llama-B2`（Qwen／Llama × A1 B1 A2 B2，8 個 grid）。產出：`results/m10_xgpu_mi300x/kfd/{attribution.json,verdict.json}`。
+- **分卡（第 1 步）過了**：
+  - 卡 0 的假行程（HIP_VISIBLE_DEVICES=0）照樣開了 renderD160、renderD168。
+  - KFD 只在卡 0 記了它的 2048 MiB；amd-smi 則兩張卡都列。
+  - guard 的看法：卡 1 沒有外來行程，卡 0 是 same_container。
+  - 所以 15.17 的 KFD 讀法分得出卡。
+- **干擾（第 2 步）照 15.17 寫死的判準沒過**：
+  - 24 格的 B/A 幾何平均是 1.0027（≤ 1.02，過）；guard 全 CLEAN（過）。
+  - 但最大一格是 1.089，超過門檻 1.08：Qwen、CPU 層、GPU 閒、E1s、Cake，A＝0.0329 s、B＝0.0358 s。
+  - 同一格 A 自己量兩次就差 5.7%（A2/A1＝1.057），其他格的 A2/A1 都在 0.98–1.03。
+  - 這格可能只是雜訊，但判準是事先寫死的，照判準算沒過，不在看到結果之後改門檻。
+- 處置：
+  - 不立 XGPU_OK；44e3（D3）05:30:32Z 開跑，兩張卡獨佔；helper 的 55 在 05:01:23Z 讓出，之後接著跑。
+  - NEEDS_HUMAN 那行移到 NEEDS_HUMAN.handled，處置就是上面這兩點，不用人介入。
+  - 已通知第三階段 session。它 10/20 已經改成嚴格排在第二階段之後（`fca09a2`），本來就不會用 XGPU_OK。
+
+### 15.20 14 號 DS1 海選、DS2 複賽做完（10/20 00:11:57 → 05:01:20Z；只報告）
+
+- DS1：`44e1_ds1_screen` 00:11:57 → 00:58:05Z。12 個 shard（run `20261020-001157-m10-ds1-llama-s0` … `20261020-003931-m10-ds1-qwen-s5`），192 題，全部 exit 0。表在 `results/m10_drop_mi300x/ds1/tables_ds1.md`。
+- 挑法：`44e1z_ds_pick` 照 §8.5 寫死的規則挑（`results/m10_drop_mi300x/ds2/pick.out`）：
+  - Llama 寫入時的前 2 名：KEYDIFF、KNORM。
+  - Qwen 寫入時的前 2 名：T 粒度 KEYDIFF、EXPATT。
+  - 兩個模型都再加 STREAM、RND0、QRY、ORC（ORC 只有 B）。
+- DS2：`44e2_ds2_confirm` 00:58:05 → 05:01:20Z，14 個 job 全部 exit 0，guard JSON 在同一個目錄。每個模型 285 列 E0。表在 `results/m10_drop_mi300x/ds2/tables_ds2.md`，數字在 `ds2_report.json`。
+- 先看到的（點數＝對 E0 的百分點；ε＝CI 下界 > −2，而且每個任務 × 輪都 ≥ −5）：
+  - **過 ε 的**：
+    - Llama 只有 DS-T-QRY-25：+0.2 [−1.3, +1.8]。
+    - Qwen 只有兩個對照 NONE-0。
+  - **Llama 的 NONE-0（遮罩路徑、什麼都不丟）沒過**：
+    - 主判準過了：T [−1.0, +1.3]、B [−1.1, +1.2]。
+    - 但 T5 第 1 輪只有 15 題，差 −6.7，也就是 1 題翻掉，低於輔助門檻 −5。
+    - 遮罩路徑和 E0 不是逐位元相同：KL 0.0003，和 E0 的答案相同率 0.91。
+    - 所以輔助判準的 T5（n＝15）在這個解析度下，連對照組都會掉。解讀其他配置時要記得這點。
+  - **最接近 ε 的、寫入時就能挑的配置**：
+    - Llama DS-T-KEYDIFF-25：−0.5 [−1.9, +0.6]，主判準過，但 T5 第 1 輪是 −7.3。
+    - Qwen DS-T-KEYDIFF-25：−0.2 [−3.4, +2.8]，CI 寬，T4 是 −15.6／−6.7。
+  - **粒度**：
+    - 每個 head 各自挑 token（T）比整個 block 丟（B）好很多。例如 Llama KEYDIFF-50：T −3.6、B −18.0。
+    - 但 B 粒度才是還原時真的能省搬運的單位；T 粒度省的是 attention 的計算和容量，不是搬的位元組。
+  - **對照**：
+    - 隨機丟：T −38 到 −74、B −15 到 −33。
+    - STREAM：−22 到 −41。
+    - 寫入時的前 2 名和 QRY 對 RND0 的差，大多數過了 Holm。
+  - **多輪**：照第 1 輪資訊挑的，在第 2 輪掉很多（SCBench 說的問題）：
+    - ORC-B 第 1 輪是 −1 到 +4，第 2 輪掉到 −18 到 −38。
+    - QRY（照第 1 輪問題挑）在 B 粒度第 2 輪掉得多：
+      - Llama B-50：第 1 輪 −5.7 → 第 2 輪 −22.1。
+      - Qwen B-50：−2.8 → −15.3。
+      - Qwen T-50：−1.6 → −8.3。
+      - Llama 的 T 粒度幾乎不掉（T-50：−0.9 → −1.1）。
+    - 寫入時挑、和問題無關的 KEYDIFF 第 2 輪沒有更差：第 2 − 第 1，Llama T-25 是 +1.9，Qwen T-25／T-50 是 +4.5／+9.4。
+- 完整判讀（和文獻的對照、對 Tiara 動作空間「DROP」的意義）之後寫進 14 號的結果節和 08；D3 會量丟 block 之後的還原速度，現在在跑。
+- 這一節是 self-review，不是 cross-model review。

@@ -1,0 +1,25 @@
+run_id,ts,platform,path,model,ssd_dev,ctx,cpu_us_tok,ssd_us_tok,drop_us_tok,kappa_cpu,kappa_ssd,order_cheapest_first,note
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,local,8192,2.534,15.521,69.352,27.36,4.468,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,local,16384,2.534,15.521,83.174,32.82,5.359,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,local,32768,2.534,15.521,110.818,43.73,7.14,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,local,65536,2.534,15.521,166.105,65.54,10.702,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,local,129024,2.534,15.521,273.225,107.81,17.604,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,nfs,8192,2.534,319.122,69.352,27.36,0.217,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,nfs,16384,2.534,319.122,83.174,32.82,0.261,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,nfs,32768,2.534,319.122,110.818,43.73,0.347,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,nfs,65536,2.534,319.122,166.105,65.54,0.521,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,llama,nfs,129024,2.534,319.122,273.225,107.81,0.856,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,vllm,llama,local(vLLM fs tier),16384,30.525,64.917,46.742,1.53,0.72,CPU>DROP>SSD,vLLM OffloadingConnector 路徑；整段平均
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,local,8192,1.201,6.79,57.841,48.18,8.518,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,local,16384,1.181,6.79,69.865,59.13,10.289,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,local,32768,1.172,6.79,93.912,80.14,13.83,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,local,65536,1.167,6.79,142.007,121.67,20.913,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,local,129024,1.165,6.79,235.19,201.92,34.636,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,nfs,8192,1.201,139.616,57.841,48.18,0.414,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,nfs,16384,1.181,139.616,69.865,59.13,0.5,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,nfs,32768,1.172,139.616,93.912,80.14,0.673,CPU>DROP>SSD,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,nfs,65536,1.167,139.616,142.007,121.67,1.017,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,harness,qwen,nfs,129024,1.165,139.616,235.19,201.92,1.685,CPU>SSD>DROP,GPU 閒；harness 重算比預設 vLLM 慢 1.7–2 倍（toolbox §4）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,mi300x,vllm,qwen,local(vLLM fs tier),96000,23.478,44.407,104.803,4.46,2.36,CPU>SSD>DROP,vLLM OffloadingConnector 路徑；整段平均
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,3090,vllm,llama,sata,16384,36.772,346.002,325.504,8.85,0.941,CPU>DROP>SSD,vLLM 路徑；host_contention=HEAVY；動態模擬 NOT_MEASURED（D2H、GPU 忙放大）
+20261019-141254-m16-pausesim,2026-10-19T14:12:59+00:00,3090,vllm,llama,nvme,16384,33.943,392.893,323.628,9.53,0.824,CPU>DROP>SSD,vLLM 路徑；host_contention=HEAVY；動態模擬 NOT_MEASURED（D2H、GPU 忙放大）
