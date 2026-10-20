@@ -211,7 +211,7 @@ $CPU code/m16_kvstruct.py --self-test                                   # 要看
 
 # 1. 冒煙：00_smoke.sh 跑完 kvdump（4 個 block）之後
 grep "rope_probe" $TIARA_RUNS/$(/bin/ls -t $TIARA_RUNS | grep -m1 m16-smoke-kvdump)/stdout.log   # 要是 rope_probe: ok | rope: ok
-$CPU code/m16_kvstruct.py ropecheck --dump /mlsteam/data/tiara/stage3/smoke/kv_llama_t4_4         # 要 PASS_PROBE、exit 0
+$CPU code/m16_kvstruct.py ropecheck --dump /mlsteam/data/tiara/stage3/smoke/kv_llama_t4_16        # 要 PASS_PROBE、exit 0
 #    不是 PASS_PROBE → 停，把 ropecheck 印出的 JSON 回報（規則 2）。不要直接加 --no-pre-rope 繞過。
 
 # 2. 正式：05_s1_kvdump.sh 的六份 dump

@@ -81,3 +81,11 @@
   - 「κ 能避免選錯」只在 SSD→NFS 一個方向成立，不能一般化。
   - 對「不卸載」的預設，任何卸載規則都大贏，這個基準太弱，不能拿來支持 κ。
 - **限制**：同 I3s（模擬；成本常數是第二階段 harness 路徑，vLLM 實際 CPU 層約 4.1 GiB/s 沒代入）。
+
+## 第三階段 GPU 窗口開始（10/20 13:59Z）
+
+- 第二階段兩個佇列 13:59:17Z 清空（session a 通知）；runner 13:59:24Z 開 `00_smoke`。
+- **失敗 1**：`00_smoke` 第一步 `m16_s1_kvdump`（run `20261020-135924-m16-smoke-kvdump`，exit 1）：
+  `RuntimeError: T4 ['mid'] seed=70000：10 次都放不好：band mid 放不下：需要 812 token、只有 512`。
+  原因：冒煙用 `--n-blocks 4`（2K token），`m10_tasks.bands(4)` 的 mid 帶只有 1 個 block，放不下 T4 的段落。是冒煙參數的 bug，不是實驗結果。
+  修法：冒煙改 `--n-blocks 16`（mid 帶 4 個 block），輸出 `smoke/kv_llama_t4_16`；`06_k1_kvstruct.sh` 的 RoPE 核對路徑同步。失敗的 job 檔與 log 另存 `retired_20261020/`，NEEDS_HUMAN 改名 `.handled_20261020T1406Z`。14:00:51Z 重開 `00_smoke`。
