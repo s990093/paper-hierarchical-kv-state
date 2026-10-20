@@ -29,6 +29,49 @@ sys.path.insert(0, HERE)
 FMTS_DEFAULT = ["fp8_token", "fp8_head", "int8_token", "int4_kivi"]
 
 
+def rope_meta(m, ids, n_tok: int, chunk: int, torch) -> dict:
+    """10/20 補（給 m16_kvstruct.py 的 K1，算 RoPE 前的 K 要用）：實際用的 RoPE 參數與 inv_freq，以及第 0 層 K 在
+    RoPE 前／後的探針（規則 6：分析端用它核對「dump 是 RoPE 後、位置從 0 起算、逆旋轉正確」）。
+    探針用和 prefill 相同的形狀（整個 512-token chunk）重算第 0 層的 embedding → RMSNorm → k_proj（和上下文無關），
+    取幾個位置存下來。任何一步失敗只記錯誤字串，不讓 dump 失敗（分析端看到 error 會改用資料自身的核對）。"""
+    out: dict = {}
+    try:
+        rot = m.hf.model.rotary_emb
+        rp = getattr(m.cfg, "rope_parameters", None)
+        out["rope"] = dict(rope_type=str(getattr(rot, "rope_type", None)), attention_scaling=float(rot.attention_scaling),
+                           inv_freq=[float(x) for x in rot.inv_freq.detach().float().cpu().tolist()],
+                           inv_freq_dtype=str(rot.inv_freq.dtype), pairing="rotate_half",
+                           rope_parameters=json.loads(json.dumps(dict(rp), default=str)) if rp else None)
+    except Exception as e:                                     # noqa: BLE001
+        out["rope"] = dict(error=f"{type(e).__name__}: {e}")
+    try:
+        hf, l0 = m.hf.model, m.hf.model.layers[0]
+        pos = sorted({p for p in (0, 1, chunk - 1, chunk, n_tok // 2, n_tok - 1) if 0 <= p < n_tok})
+        pre, post, cs, sn = [], [], [], []
+        with torch.inference_mode():
+            for c in sorted({p // chunk for p in pos}):
+                s = c * chunk
+                x = hf.embed_tokens(ids[s:s + chunk].view(1, chunk))
+                k = l0.self_attn.k_proj(l0.input_layernorm(x)).view(1, chunk, m.H, m.D)
+                if hasattr(l0.self_attn, "k_norm"):
+                    k = l0.self_attn.k_norm(k)
+                k = k.transpose(1, 2)                                                    # [1,H,512,D]，同 forward_span
+                cos, sin = hf.rotary_emb(x, torch.arange(s, s + chunk, device=m.device).view(1, chunk))
+                _, kr = m.apply_rope(k, k, cos, sin)
+                for p in pos:
+                    if p // chunk == c:
+                        t = p - s
+                        pre.append(k[0, :, t]); post.append(kr[0, :, t]); cs.append(cos[0, t]); sn.append(sin[0, t])
+
+        def hx(ts):
+            return torch.stack(ts).contiguous().view(torch.int16).cpu().numpy().tobytes().hex()
+        out["rope_probe"] = dict(layer=0, positions=pos, shape_k=[len(pos), m.H, m.D], shape_cs=[len(pos), m.D],
+                                 k_pre_bf16_hex=hx(pre), k_post_bf16_hex=hx(post), cos_bf16_hex=hx(cs), sin_bf16_hex=hx(sn))
+    except Exception as e:                                     # noqa: BLE001
+        out["rope_probe"] = dict(error=f"{type(e).__name__}: {e}")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", choices=["llama", "qwen"], required=True)
@@ -93,9 +136,16 @@ def main():
         L_total=m.L, layers=layers, H=m.H, D=m.D, bf16_block_shape=[len(layers), 2, m.H, CHUNK, m.D],
         bf16_bytes_per_block=len(layers) * 2 * m.H * CHUNK * m.D * 2, fmts=a.fmts, parts=part_meta,
         t_prefill_s=t_prefill, hip_visible_devices=os.environ.get("HIP_VISIBLE_DEVICES"),
-        torch=torch.__version__, numpy=np.__version__)
+        torch=torch.__version__, numpy=np.__version__,
+        # 10/20 補（K1 用）：排列、位置、K 是 RoPE 後（m7_model.forward_span 在 apply_rope 之後才寫進 kv）
+        kv_layout="kv_bf16.u16=[n_blocks][len(layers)][2: 0=K,1=V][H][chunk][D] BF16 bits little-endian; "
+                  "token t of block i is at position pos_start + i*chunk + t",
+        pos_start=0, k_rope="post", v_rope="none",
+        transformers=getattr(sys.modules.get("transformers"), "__version__", None),
+        **rope_meta(m, ids, n_tok, CHUNK, torch))
     json.dump(meta, open(os.path.join(a.out, "meta.json"), "w"), indent=1, ensure_ascii=False)
     print(json.dumps({k: meta[k] for k in ("model", "task", "n_tokens", "layers", "t_prefill_s")}, ensure_ascii=False))
+    print("rope_probe:", meta["rope_probe"].get("error", "ok"), "| rope:", meta["rope"].get("error", "ok"))
 
 
 if __name__ == "__main__":
