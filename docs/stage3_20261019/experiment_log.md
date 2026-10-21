@@ -179,3 +179,16 @@
 - run：`20261021-075914-m16-x3-micro2-llama`、`20261021-080256-m16-x3-micro2-qwen`（新 7 個 xKV 解碼段，reps 5）、寫入成本 `20261021-080628-m16-x3-wcost-llama`、`20261021-082103-m16-x3-wcost-qwen`。產出 `results/m16_stage3_mi300x/x3_time/v2/`、`v2/wcost/`。決策圖 v2（38z）等 X2b 的報告。
 - **寫入（壓縮）成本**：xKV 每題的 `svd_lowrank`（W＝4、niter 4、多取 16），區域 T＝16,384 token、全部窗口（Llama 8、Qwen 7），GPU 閒：Llama `k11v17` K 4.0 s＋V 6.8 s＝10.8 s、`k22v34` 24.6 s、`k28v42` 31.3 s；Qwen `k11v17` 3.9 s、`k22v34` 9.6 s、`k28v42` 12.7 s。GPU 忙（duty 0.9）：Llama `k11v17` 33.1 s（約 3 倍）、Qwen `k11v17` 14.8 s。係數量化本身只要 1–4 ms。
 - 判讀：每題算 SVD 的壓縮成本是**數十秒**，比同長度的 prefill 本身還久很多 → 每題 SVD 的 xKV 在寫入路徑上不實用，除非（a）事先校準的基底可用（38c 在測），或（b）換更快的作法（例如 Gram 矩陣＋eigh；目前 `svd_lowrank` 在 ROCm 上可能被 QR 拖慢，〔推論，未驗〕）。
+
+## X2b　加題數（38b1–38b4，08:29–12:31Z；report 12:31Z）〔實測〕
+
+- run：`20261021-0829…-m16-x2b-*`（工作池）、report `20261021-123141-m16-x2b-report`。產出 `results/m16_stage3_mi300x/x_stack/v2/`（tables_x2b.md、x2b_report.json、x2_feasible.csv、x2_unmapped.csv）。X2b 每個模型 192 題（seed 63000 起），和 X2 的 96 題合併成 288 題（變體 D，主要讀）。
+- **Qwen（D，288 題）**：`xl:k22:v34+q:int4_kivi`（約 12 倍）+0.3 [−1.9, +2.5] **過 ε**；`xl:k28:v42+q:int4_kivi`（約 10 倍）+0.5 [−1.8, +2.7] 過 ε；`xl:k11:v17+q:int4_kivi`（約 24 倍）−4.5 [−7.6, −1.6]（顯著變差）；`q:int4_kivi`（3.2 倍）−0.3 過；`q:int2_kivi` −6.9。M1：r＝0.082÷0.233＝0.35 → GO；M2 在 1/8 預算：組合 − 最好單一 +4.0 [+1.2, +6.9]，Holm 拒絕（顯著）。
+- **Llama（D，288 題）**：`xl:k28:v42+q:int4_kivi`（約 8 倍）−1.2 [−2.8, +0.2]、`xl:k22:v34+q:int4_kivi`（約 10 倍）−1.4 [−3.6, +0.7]、`xl:k11:v17+q:int4_kivi`（約 21 倍）−2.2 [−4.2, −0.3]（顯著但小）；`xl:k11:v17`（8 倍）−0.6 [−2.5, +1.2]、`xl:k22:v34+q:int8_token`（7.3 倍）+0.0 [−2.0, +2.0]；`q:int4_kivi` −0.2 過 ε、K4V2（4 倍）+0.5 過 ε。M1：沒有組合的 CI 下界 ≥ −2 → r＝∞；MLPerf 99%：r＝1.12；MLPerf 99.9%：r＝0.55。
+- 判讀：題數加到 288 後 CI 半寬約 2 個百分點。Qwen 的疊加約 12 倍在 ε 內，確定贏過最好的單一方法；Llama 的疊加在 8–10 倍時約 −1.2～−1.4 個百分點，嚴格的 ε 規則仍判不過（CI 下界剛好掉到 −2.8～−3.6），21 倍時顯著掉 2.2 個百分點。
+
+## X3 決策圖 v2（38z，12:31Z）〔模擬：零件實測〕
+
+- run：`20261021-123143-m16-x3-map2`，輸出 `results/m16_stage3_mi300x/x3_time/v2/`（map_report.md、map_decision.csv、決策圖 SVG）。用了新 xKV 解碼段與 X2b 的可行集。
+- 判定：模式 Q STOP-0 照舊成立；L、Q 的 STOP-2a 照舊（GPU 忙碌軸沒價值）；**模式 X：STOP-2c（A 對最好固定格式 +6.5%，介於 5–15% → 照規則停下來問使用者）**；A 對「只看連線」的 S 只 +0.9%；T-d 成立 → map 判 validate 要跑（8 格）。
+- 還原時間（模擬，64 block，秒）：Qwen 在慢層，`xkv_k22v34_int4` 對單用 INT4：NFS 0.3 vs 0.9（BF16 1.6）、b32 0.2 vs 0.5、本地 SSD（閒）0.04 vs 0.1 → 快 61–69%；CPU pinned 只差 0–12%、vLLM CPU 路徑 0%（被逐片 copy 綁住）；GPU 忙時在 CPU 層 INT4 反而最好（低秩重建忙時慢 2.8 倍）。Llama 的可行集沒有 xKV 組合（沒過 ε），最佳是 K4V2，對 INT4 快 8–20%。不含寫入（SVD）成本。

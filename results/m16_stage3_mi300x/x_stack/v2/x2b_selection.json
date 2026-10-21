@@ -1,0 +1,376 @@
+{
+ "go": true,
+ "which": "x2b",
+ "reason": "X2b 事先寫死的配置（code/m16_xstack_combos_v2.json 的 x2b）",
+ "tasks": [
+  "T2",
+  "T3",
+  "T4",
+  "T5"
+ ],
+ "seed0": 63000,
+ "n": 48,
+ "v1_selection_run_id": "20261020-212246-m16-x1-report",
+ "models": {
+  "llama": {
+   "configs": [
+    {
+     "spec": "none",
+     "roles": [
+      "anchor_mask0",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:int4_kivi",
+     "roles": [
+      "anchor_int4",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:vllm_fp8",
+     "roles": [
+      "deploy",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:kv-int4_kivi-int2_kivi",
+     "roles": [
+      "family_best:quant",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.25
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:int2_kivi",
+     "roles": [
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k11:v17",
+     "roles": [
+      "best_single",
+      "family_best:xlayer",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.125
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k11:v17+q:int4_kivi",
+     "roles": [
+      "primary",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.0625
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k16:v16",
+     "roles": [
+      "best_single",
+      "family_best:xlayer",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.3125,
+      0.25
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "roles": [
+      "front",
+      "primary",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.3125,
+      0.25,
+      0.125
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k22:v34+q:int8_token",
+     "roles": [
+      "front",
+      "primary",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.3125,
+      0.25
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k28:v42+q:int4_kivi",
+     "roles": [
+      "front",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.125
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    }
+   ]
+  },
+  "qwen": {
+   "configs": [
+    {
+     "spec": "none",
+     "roles": [
+      "anchor_mask0",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:int4_kivi",
+     "roles": [
+      "anchor_int4",
+      "best_single",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.3125
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:int8_token",
+     "roles": [
+      "deploy",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:kv-int4_kivi-int2_kivi",
+     "roles": [
+      "best_single",
+      "family_best:quant",
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.25
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "q:int2_kivi",
+     "roles": [
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k11:v17",
+     "roles": [
+      "best_single",
+      "family_best:xlayer",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.125
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k11:v17+q:int4_kivi",
+     "roles": [
+      "primary",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.0625
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k16:v16",
+     "roles": [
+      "x3_segment",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k22:v34",
+     "roles": [
+      "family_best:xlayer",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.25
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "roles": [
+      "front",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.3125,
+      0.25,
+      0.125
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    },
+    {
+     "spec": "xl:k22:v34+q:int8_token",
+     "roles": [
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "v1_listed": false,
+     "why": "第一版 X2 沒量（只在「只用 X2b」報）"
+    },
+    {
+     "spec": "xl:k28:v42+q:int4_kivi",
+     "roles": [
+      "front",
+      "primary",
+      "x2b"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [
+      0.3125,
+      0.25,
+      0.125
+     ],
+     "v1_listed": true,
+     "why": "第一版 X2 也量過（roles 照第一版）"
+    }
+   ]
+  }
+ },
+ "run_id": "20261021-082726-m16-x2b-plan",
+ "ts": "2026-10-21T08:27:26+00:00"
+}

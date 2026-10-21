@@ -1,0 +1,277 @@
+{
+ "run_id": "20261021-123143-m16-x3-map2",
+ "ts": "2026-10-21T12:31:44+00:00",
+ "worth_validate": true,
+ "reason": "模式 ['X'] 判 GO_N5（或 X 的 T-d 成立）；挑了 8 格",
+ "modes": [
+  "X"
+ ],
+ "cells": [
+  {
+   "cell": "qwen|ssd_meas|0.9",
+   "mode": "X",
+   "model": "qwen",
+   "tier": "ssd_meas",
+   "link_GiBps": 7.8650390625,
+   "duty": 0.9,
+   "priority": 0,
+   "A": "xkv_k22v34@oneshot",
+   "S": "xkv_k22v34_int4@oneshot",
+   "F": "xkv_k22v34_int4@oneshot",
+   "gain_vs_S": 0.22623539896934186,
+   "gain_vs_F": 0.22623539896934186,
+   "margin2": 0.19823658396581578,
+   "measure": [
+    {
+     "action": "xkv_k22v34@oneshot",
+     "role": "A",
+     "pred_s": 0.05966445821256201
+    },
+    {
+     "action": "xkv_k22v34_int4@oneshot",
+     "role": "S+F",
+     "pred_s": 0.07710931481368968
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.21448280070511044
+    }
+   ]
+  },
+  {
+   "cell": "qwen|ssd_param|0.9",
+   "mode": "X",
+   "model": "qwen",
+   "tier": "ssd_param",
+   "link_GiBps": 6.98115234375,
+   "duty": 0.9,
+   "priority": 0,
+   "A": "xkv_k22v34@oneshot",
+   "S": "xkv_k22v34_int4@oneshot",
+   "F": "xkv_k22v34_int4@oneshot",
+   "gain_vs_S": 0.14132188492004027,
+   "gain_vs_F": 0.14132188492004027,
+   "margin2": 0.16458074619367746,
+   "measure": [
+    {
+     "action": "xkv_k22v34@oneshot",
+     "role": "A",
+     "pred_s": 0.06621208109932628
+    },
+    {
+     "action": "xkv_k22v34_int4@oneshot",
+     "role": "S+F",
+     "pred_s": 0.07710931481368968
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.25067494789262385
+    }
+   ]
+  },
+  {
+   "cell": "qwen|cpu_pinned|0.0",
+   "mode": "X",
+   "model": "qwen",
+   "tier": "cpu_pinned",
+   "link_GiBps": "",
+   "duty": 0.0,
+   "priority": 0,
+   "A": "xkv_k22v34@oneshot",
+   "S": "int4_kivi@oneshot",
+   "F": "xkv_k22v34_int4@oneshot",
+   "gain_vs_S": 0.11822195768866706,
+   "gain_vs_F": 0.04539148883253907,
+   "margin2": 0.04754984719026489,
+   "measure": [
+    {
+     "action": "xkv_k22v34@oneshot",
+     "role": "A",
+     "pred_s": 0.013625055756341655
+    },
+    {
+     "action": "int4_kivi@oneshot",
+     "role": "S",
+     "pred_s": 0.015451797507485451
+    },
+    {
+     "action": "xkv_k22v34_int4@oneshot",
+     "role": "F",
+     "pred_s": 0.01427292507551454
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.03516884706914425
+    }
+   ]
+  },
+  {
+   "cell": "llama|cpu_pinned|0.0",
+   "mode": "X",
+   "model": "llama",
+   "tier": "cpu_pinned",
+   "link_GiBps": "",
+   "duty": 0.0,
+   "priority": 0,
+   "A": "k4v2@perblock",
+   "S": "int4_kivi@oneshot",
+   "F": "k4v2@perblock",
+   "gain_vs_S": 0.07560594240719243,
+   "gain_vs_F": 0.0,
+   "margin2": 0.0817897321885388,
+   "measure": [
+    {
+     "action": "k4v2@perblock",
+     "role": "A+F",
+     "pred_s": 0.027974834190206126
+    },
+    {
+     "action": "int4_kivi@oneshot",
+     "role": "S",
+     "pred_s": 0.030262888386641863
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.07934226840734482
+    }
+   ]
+  },
+  {
+   "cell": "qwen|cpu_pinned|0.9",
+   "mode": "X",
+   "model": "qwen",
+   "tier": "cpu_pinned",
+   "link_GiBps": "",
+   "duty": 0.9,
+   "priority": 1,
+   "A": "int4_kivi@oneshot",
+   "S": "int4_kivi@oneshot",
+   "F": "xkv_k22v34_int4@oneshot",
+   "gain_vs_S": 0.0,
+   "gain_vs_F": 0.7578994146760176,
+   "margin2": 0.21309087158125983,
+   "measure": [
+    {
+     "action": "int4_kivi@oneshot",
+     "role": "A+S",
+     "pred_s": 0.0186682102503255
+    },
+    {
+     "action": "xkv_k22v34_int4@oneshot",
+     "role": "F",
+     "pred_s": 0.07710931481368968
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.05695769842714071
+    }
+   ]
+  },
+  {
+   "cell": "qwen|cpu_pinned|0.7",
+   "mode": "X",
+   "model": "qwen",
+   "tier": "cpu_pinned",
+   "link_GiBps": "",
+   "duty": 0.7,
+   "priority": 1,
+   "A": "int4_kivi@oneshot",
+   "S": "int4_kivi@oneshot",
+   "F": "xkv_k22v34_int4@oneshot",
+   "gain_vs_S": 0.0,
+   "gain_vs_F": 0.5442282345596703,
+   "margin2": 0.22646857471699366,
+   "measure": [
+    {
+     "action": "int4_kivi@oneshot",
+     "role": "A+S",
+     "pred_s": 0.017849243348608636
+    },
+    {
+     "action": "xkv_k22v34_int4@oneshot",
+     "role": "F",
+     "pred_s": 0.03916267900308424
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.052581670228391886
+    }
+   ]
+  },
+  {
+   "cell": "llama|cpu_pinned|0.9",
+   "mode": "X",
+   "model": "llama",
+   "tier": "cpu_pinned",
+   "link_GiBps": "",
+   "duty": 0.9,
+   "priority": 1,
+   "A": "int4_kivi@oneshot",
+   "S": "int4_kivi@oneshot",
+   "F": "k4v2@perblock",
+   "gain_vs_S": 0.0,
+   "gain_vs_F": 0.35408586603210945,
+   "margin2": 0.36301797666559366,
+   "measure": [
+    {
+     "action": "int4_kivi@oneshot",
+     "role": "A+S",
+     "pred_s": 0.03469344930246819
+    },
+    {
+     "action": "k4v2@perblock",
+     "role": "F",
+     "pred_s": 0.053712169277585216
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.12970077153295279
+    }
+   ]
+  },
+  {
+   "cell": "qwen|cpu_pinned|0.4",
+   "mode": "X",
+   "model": "qwen",
+   "tier": "cpu_pinned",
+   "link_GiBps": "",
+   "duty": 0.4,
+   "priority": 1,
+   "A": "int4_kivi@oneshot",
+   "S": "int4_kivi@oneshot",
+   "F": "xkv_k22v34_int4@oneshot",
+   "gain_vs_S": 0.0,
+   "gain_vs_F": 0.30241878353436324,
+   "margin2": 0.17412720119676917,
+   "measure": [
+    {
+     "action": "int4_kivi@oneshot",
+     "role": "A+S",
+     "pred_s": 0.016477239345745926
+    },
+    {
+     "action": "xkv_k22v34_int4@oneshot",
+     "role": "F",
+     "pred_s": 0.023620531856103386
+    },
+    {
+     "action": "raw",
+     "role": "D",
+     "pred_s": 0.04320518933236599
+    }
+   ]
+  }
+ ],
+ "micro_run_ids": {
+  "llama": "20261020-212244-m16-x3-micro-llama;20261021-075914-m16-x3-micro2-llama;20261021-080628-m16-x3-wcost-llama",
+  "qwen": "20261020-213232-m16-x3-micro-qwen;20261021-080256-m16-x3-micro2-qwen;20261021-082103-m16-x3-wcost-qwen"
+ },
+ "smoke": false
+}
