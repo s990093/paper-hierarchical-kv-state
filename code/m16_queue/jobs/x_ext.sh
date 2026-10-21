@@ -46,7 +46,8 @@ PY
 x2b_plan() { m7run m16-x2b-plan $XPY plan --which x2b --selection $XR/x2_selection.json --out $X2B_PLAN; }
 
 x2b_smoke() {      # x2b_smoke <模型>：gpu-selftest 的新檢查（x2b：出題、X2b 每個配置、--xl-cache 逐位元）＋X2b 的第一題（全部配置）→ $XD/smoke/v2
-  local m=$1 s0 out=$XD/smoke/v2/x2b_smoke_${m}_s0.csv
+  local m=$1 s0 out
+  out=$XD/smoke/v2/x2b_smoke_${m}_s0.csv      # 10/21：同一個 local 裡先設 m 再用 ${m}，bash 會先展開（set -u 報 unbound），所以分開寫
   s0=$(plan_get $X2B_PLAN seed0) || { nh "$JOB：讀不到 $X2B_PLAN"; return 1; }
   m7run m16-x2b-gpuselftest-$m $XPY gpu-selftest --model $m --calib $XD/calib_$m.pt --new-checks x2b \
     --out $XD/smoke/v2/gpu_selftest_x2b_$m.json \
@@ -82,7 +83,8 @@ xlcal_calib() {    # xlcal_calib <模型>：校準基底（已有、設定相同
 }
 
 xlcal_smoke() {    # xlcal_smoke <模型>：gpu-selftest 的新檢查（xlcal）＋TF 1 題（screen --smoke）＋生成 1 題（全部 6 個配置）→ $XD/smoke/v2
-  local m=$1 s0 tf=$XD/smoke/v2/xlcal_tf_smoke_${m}_s0.csv gen=$XD/smoke/v2/xlcal_gen_smoke_${m}_s0.csv
+  local m=$1 s0 tf gen
+  tf=$XD/smoke/v2/xlcal_tf_smoke_${m}_s0.csv gen=$XD/smoke/v2/xlcal_gen_smoke_${m}_s0.csv
   s0=$(plan_get $XLCAL_PLAN seed0) || { nh "$JOB：讀不到 $XLCAL_PLAN"; return 1; }
   m7run m16-xlcal-gpuselftest-$m $XPY gpu-selftest --model $m --calib $XD/calib_$m.pt --new-checks xlcal --calib-xl $XD/calib_xl_$m.pt \
     --out $XD/smoke/v2/gpu_selftest_xlcal_$m.json \
