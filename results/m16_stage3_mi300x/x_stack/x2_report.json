@@ -1,0 +1,2228 @@
+{
+ "run_id": "20261021-025230-m16-x2-report",
+ "ts": "2026-10-21T02:52:30+00:00",
+ "files": [
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_llama_32K_core_s0.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_llama_32K_core_s1.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_llama_32K_core_s2.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_llama_32K_x3_s0.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_llama_32K_x3_s1.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_llama_32K_x3_s2.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_core_s0.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_core_s1.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_core_s2.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_core_s3.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_ext_s0.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_ext_s1.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_ext_s2.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_ext_s3.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_x3_s0.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_x3_s1.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_x3_s2.csv.gz",
+  "/mlsteam/data/tiara/stage3/xstack/x2/x2_qwen_32K_x3_s3.csv.gz"
+ ],
+ "src_run_ids": [
+  "20261020-214139-m16-x2-llama-32K-core-s0",
+  "20261020-214139-m16-x2-llama-32K-core-s1",
+  "20261020-214139-m16-x2-llama-32K-core-s2",
+  "20261020-214139-m16-x2-qwen-32K-core-s0",
+  "20261020-214139-m16-x2-qwen-32K-core-s1",
+  "20261020-214139-m16-x2-qwen-32K-core-s2",
+  "20261020-214139-m16-x2-qwen-32K-core-s3",
+  "20261020-232731-m16-x2-llama-32K-core-s0",
+  "20261020-232731-m16-x2-llama-32K-core-s1",
+  "20261020-232731-m16-x2-llama-32K-core-s2",
+  "20261020-232731-m16-x2-qwen-32K-core-s3",
+  "20261020-233535-m16-x2-qwen-32K-x3-s0",
+  "20261020-233535-m16-x2-qwen-32K-x3-s1",
+  "20261020-233535-m16-x2-qwen-32K-x3-s2",
+  "20261020-233535-m16-x2-qwen-32K-x3-s3",
+  "20261021-004556-m16-x2-qwen-32K-ext-s0",
+  "20261021-004556-m16-x2-qwen-32K-ext-s1",
+  "20261021-004556-m16-x2-qwen-32K-ext-s2",
+  "20261021-004556-m16-x2-qwen-32K-ext-s3",
+  "20261021-011044-m16-x2-llama-32K-core-s0",
+  "20261021-011044-m16-x2-llama-32K-core-s1",
+  "20261021-011137-m16-x2-qwen-32K-ext-s0",
+  "20261021-011137-m16-x2-qwen-32K-ext-s1",
+  "20261021-011137-m16-x2-qwen-32K-ext-s2",
+  "20261021-011137-m16-x2-qwen-32K-ext-s3",
+  "20261021-020023-m16-x2-llama-32K-x3-s0",
+  "20261021-020023-m16-x2-llama-32K-x3-s1",
+  "20261021-020023-m16-x2-llama-32K-x3-s2"
+ ],
+ "incomplete_items": [],
+ "rule_text": {
+  "S1-a": "（L5d §6.2，代理不可靠）所有代理對 KL 與 Δgold_lp 的 Spearman |ρ| 都 < 0.5（兩個模型都是）→ 代理只當崩潰警報。我們的 X1 在 GPU 上直接量 teacher forcing，挑前緣用 TF 指標、不用代理，所以 S1-a 只當研究問題 (b)（代理跨家族能不能預測）的結果，不改流程。",
+  "S1-b": "（L5d §6.2 改成 TF 版）每個預算（0.25、0.125、0.0625）、兩個模型：最好的組合的損失（−平均 Δgold_lp）≥ 0.95×最好的單一方法的損失（沒有組合在預算內也算成立；沒有單一方法在預算內而有組合 → 不成立）。三個預算、兩個模型全部成立 → 停，不跑 X2，寫成「在 TF 層級，疊加沒有加乘」。",
+  "S1-c": "（L5d §6.2）S1 實測的無損增益疊在 INT4 KIVI 上 < 1.05× → 第二、三階段拿掉無損這一軸（我們本來就只在 report 另列）。",
+  "X1-complete": "X1 每個模型至少 48 題做完才挑 X2；不夠 → go＝false、寫 NEEDS_HUMAN。",
+  "M1": "（L5d §6.3）每個家族在 ε 內（生成答對率對 E0 的配對差 95% CI 下界 ≥ −2 個百分點）能到的最小位元組 B*；r＝B*(最好的組合)／B*(最好的單一方法)。兩個模型都 r > 0.95（沒有組合過 ε 也算）→ NO-GO（疊加沒有加乘）；沒有模型 < 0.85、但有 0.85–0.95 → 停下來問人；任一模型 r < 0.85 → GO（進第三階段）。",
+  "M2": "（L5d §6.3）每個預算：主要組合（X1 事先選的前緣第 1 名）− 最好的單一方法（X1 選的），生成答對率配對差。E0 − 最好的單一方法 < 2 個百分點的預算記成「沒有空間」；有空間的預算全部「差 < 2 個百分點或 CI 含 0」→ 支持 NO-GO。Holm 校正（3 預算 × 2 模型，單邊 α＝0.025）。",
+  "completeness": "（L5d §6.3）最好的組合在 M1／M2 贏，但天真疊加（naive）本身已經一樣好（naive − 主要組合的 CI 含 0 或 ≥ −ε）→ 結論改寫成「疊加有用，但不需要聯合分配」。",
+  "MLPerf": "（L6 §5.2，只報、不改判定）MLPerf 式門檻：答對率 ≥ E0 的 99%（以及 99.9%），點估計；另報同樣門檻下的 B*。"
+ },
+ "eps": 0.02,
+ "mlperf": [
+  0.99,
+  0.999
+ ],
+ "by_ctx": {
+  "32K": {
+   "llama": {
+    "acc_e0": 0.7949404761904761,
+    "configs": {
+     "none": {
+      "spec": "none",
+      "n": 96,
+      "ratio": 1.0,
+      "roles": [
+       "anchor_mask0",
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 0,
+      "deployable": 1,
+      "families": "none",
+      "acc": 0.7906994047619048,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.004241071428571428,
+       "lo": -0.012499999999999999,
+       "hi": 0.00230654761904762,
+       "p_le0": 0.8911,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": false,
+      "eps_pass": true
+     },
+     "q:int4_kivi": {
+      "spec": "q:int4_kivi",
+      "n": 96,
+      "ratio": 0.3125,
+      "roles": [
+       "anchor_int4",
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.786532738095238,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.008407738095238093,
+       "lo": -0.03698474702380952,
+       "hi": 0.014360119047619047,
+       "p_le0": 0.7329,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "q:vllm_fp8": {
+      "spec": "q:vllm_fp8",
+      "n": 96,
+      "ratio": 0.5,
+      "roles": [
+       "deploy"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.7878720238095238,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.007068452380952381,
+       "lo": -0.024107142857142855,
+       "hi": 0.007217261904761903,
+       "p_le0": 0.8104,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k16:v16": {
+      "spec": "xl:k16:v16",
+      "n": 96,
+      "ratio": 0.140873,
+      "roles": [
+       "best_single",
+       "family_best:xlayer",
+       "x3_segment"
+      ],
+      "budgets": [
+       0.3125,
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.7729166666666667,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.02202380952380953,
+       "lo": -0.06436383928571429,
+       "hi": 0.017635788690476165,
+       "p_le0": 0.8538,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k22:v34+q:int8_token": {
+      "spec": "xl:k22:v34+q:int8_token",
+      "n": 96,
+      "ratio": 0.137641,
+      "roles": [
+       "front",
+       "primary"
+      ],
+      "budgets": [
+       0.3125,
+       0.25
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "quant+xlayer",
+      "acc": 0.7900297619047619,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.0049107142857142865,
+       "lo": -0.04680245535714286,
+       "hi": 0.03363281249999997,
+       "p_le0": 0.5931,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k22:v34+q:int4_kivi": {
+      "spec": "xl:k22:v34+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.096137,
+      "roles": [
+       "front",
+       "primary"
+      ],
+      "budgets": [
+       0.3125,
+       0.25,
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "quant+xlayer",
+      "acc": 0.7705357142857143,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.024404761904761905,
+       "lo": -0.07180245535714286,
+       "hi": 0.019049479166666643,
+       "p_le0": 0.8581,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KEYDIFF:0.25+q:int4_kivi": {
+      "spec": "drop:KEYDIFF:0.25+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.233135,
+      "roles": [
+       "naive"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "drop+quant",
+      "acc": 0.7391369047619047,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.05580357142857143,
+       "lo": -0.10305245535714284,
+       "hi": -0.016294642857142858,
+       "p_le0": 0.9988,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:RND0:0.75": {
+      "spec": "drop:RND0:0.75",
+      "n": 96,
+      "ratio": 0.253968,
+      "roles": [
+       "random_drop"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.31934523809523807,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.4755952380952381,
+       "lo": -0.5535714285714285,
+       "hi": -0.39635416666666673,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k11:v17": {
+      "spec": "xl:k11:v17",
+      "n": 96,
+      "ratio": 0.123264,
+      "roles": [
+       "best_single",
+       "family_best:xlayer"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.7979910714285714,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": 0.0030505952380952377,
+       "lo": -0.03169828869047619,
+       "hi": 0.03950892857142858,
+       "p_le0": 0.4455,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": false
+     },
+     "xl:k28:v42+q:int4_kivi": {
+      "spec": "xl:k28:v42+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.120171,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "quant+xlayer",
+      "acc": 0.7732886904761904,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.021651785714285717,
+       "lo": -0.05751674107142858,
+       "hi": 0.00662202380952381,
+       "p_le0": 0.9215,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k40:v40+q:int4_kivi": {
+      "spec": "lr:k40:v40+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.097656,
+      "roles": [
+       "naive"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "lowrank+quant",
+      "acc": 0.16882440476190477,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.6261160714285714,
+       "lo": -0.6957607886904762,
+       "hi": -0.5537202380952381,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:RND0:0.875": {
+      "spec": "drop:RND0:0.875",
+      "n": 96,
+      "ratio": 0.126984,
+      "roles": [
+       "random_drop"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.17991071428571428,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.6150297619047619,
+       "lo": -0.6901804315476191,
+       "hi": -0.5373511904761905,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k5:v9": {
+      "spec": "xl:k5:v9",
+      "n": 96,
+      "ratio": 0.061632,
+      "roles": [
+       "best_single",
+       "family_best:xlayer"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.3919642857142857,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.40297619047619043,
+       "lo": -0.48653273809523806,
+       "hi": -0.31830171130952384,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k11:v17+q:int4_kivi": {
+      "spec": "xl:k11:v17+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.048069,
+      "roles": [
+       "primary"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "quant+xlayer",
+      "acc": 0.7683035714285714,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.026636904761904768,
+       "lo": -0.06361607142857144,
+       "hi": 0.007589285714285709,
+       "p_le0": 0.9348,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k22:v34+drop:KEYDIFF:0.5+q:int4_kivi": {
+      "spec": "xl:k22:v34+drop:KEYDIFF:0.5+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.061415,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 3,
+      "deployable": 1,
+      "families": "drop+quant+xlayer",
+      "acc": 0.6107142857142858,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.18422619047619046,
+       "lo": -0.24866071428571432,
+       "hi": -0.12514880952380955,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:RND0:0.9375": {
+      "spec": "drop:RND0:0.9375",
+      "n": 96,
+      "ratio": 0.063492,
+      "roles": [
+       "random_drop"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.10141369047619048,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.6935267857142856,
+       "lo": -0.7591517857142858,
+       "hi": -0.6253683035714287,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KNORM:0.875+lr:k32:v32:joint+q:int2_kivi": {
+      "spec": "drop:KNORM:0.875+lr:k32:v32:joint+q:int2_kivi",
+      "n": 96,
+      "ratio": 0.005952,
+      "roles": [
+       "naive_x1"
+      ],
+      "budgets": [],
+      "n_lossy": 3,
+      "deployable": 1,
+      "families": "drop+lowrank+quant",
+      "acc": 0.23355654761904762,
+      "acc_e0": 0.7949404761904761,
+      "diff": {
+       "mean": -0.5613839285714286,
+       "lo": -0.636532738095238,
+       "hi": -0.4850427827380953,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "q:kv-int4_kivi-int2_kivi": {
+      "spec": "q:kv-int4_kivi-int2_kivi",
+      "n": 61,
+      "ratio": 0.25,
+      "roles": [
+       "family_best:quant",
+       "x3_segment"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.8346604215456674,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": 0.02857142857142857,
+       "lo": -0.006791569086651052,
+       "hi": 0.0743559718969555,
+       "p_le0": 0.0645,
+       "n": 61
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": true
+     },
+     "merge:4": {
+      "spec": "merge:4",
+      "n": 61,
+      "ratio": 0.25,
+      "roles": [
+       "family_best:merge",
+       "x3_segment"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "merge",
+      "acc": 0.06557377049180328,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.7405152224824356,
+       "lo": -0.8242418032786886,
+       "hi": -0.6415661592505856,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k16:v16": {
+      "spec": "lr:k16:v16",
+      "n": 61,
+      "ratio": 0.125,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.03278688524590164,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.7733021077283372,
+       "lo": -0.8522277517564403,
+       "hi": -0.6763466042154567,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k24+q:kv-bf16-int4_kivi": {
+      "spec": "lr:k24+q:kv-bf16-int4_kivi",
+      "n": 61,
+      "ratio": 0.25,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "lowrank+quant",
+      "acc": 0.06557377049180328,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.7405152224824356,
+       "lo": -0.8242418032786886,
+       "hi": -0.6415661592505856,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k24:v24": {
+      "spec": "lr:k24:v24",
+      "n": 61,
+      "ratio": 0.1875,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.06557377049180328,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.7405152224824356,
+       "lo": -0.8242418032786886,
+       "hi": -0.6415661592505856,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k32:v32": {
+      "spec": "lr:k32:v32",
+      "n": 61,
+      "ratio": 0.25,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.06557377049180328,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.7405152224824356,
+       "lo": -0.8242418032786886,
+       "hi": -0.6415661592505856,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k40:v40": {
+      "spec": "lr:k40:v40",
+      "n": 61,
+      "ratio": 0.3125,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.20843091334894615,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.5976580796252927,
+       "lo": -0.688293325526932,
+       "hi": -0.5023389929742389,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k64:v64": {
+      "spec": "lr:k64:v64",
+      "n": 61,
+      "ratio": 0.5,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.669672131147541,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.13641686182669788,
+       "lo": -0.22939402810304452,
+       "hi": -0.05058548009367681,
+       "p_le0": 0.9993,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "merge:2": {
+      "spec": "merge:2",
+      "n": 61,
+      "ratio": 0.5,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "merge",
+      "acc": 0.1104215456674473,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.6956674473067915,
+       "lo": -0.7860655737704918,
+       "hi": -0.5907494145199064,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "merge:2+q:int4_kivi": {
+      "spec": "merge:2+q:int4_kivi",
+      "n": 61,
+      "ratio": 0.15625,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "merge+quant",
+      "acc": 0.1063231850117096,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.6997658079625292,
+       "lo": -0.7886416861826697,
+       "hi": -0.595898711943794,
+       "p_le0": 1.0,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "q:fp8_token": {
+      "spec": "q:fp8_token",
+      "n": 61,
+      "ratio": 0.515625,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.8052693208430913,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.0008196721311475417,
+       "lo": -0.010655737704918034,
+       "hi": 0.006557377049180326,
+       "p_le0": 0.5627,
+       "n": 61
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": false,
+      "eps_pass": true
+     },
+     "q:int2_kivi": {
+      "spec": "q:int2_kivi",
+      "n": 61,
+      "ratio": 0.1875,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.7960187353629976,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.010070257611241216,
+       "lo": -0.06440281030444965,
+       "hi": 0.04730679156908666,
+       "p_le0": 0.6531,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "q:int8_token": {
+      "spec": "q:int8_token",
+      "n": 61,
+      "ratio": 0.515625,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.7946135831381733,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.011475409836065575,
+       "lo": -0.027049180327868853,
+       "hi": 0.0,
+       "p_le0": 0.9763,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k32:v32": {
+      "spec": "xl:k32:v32",
+      "n": 61,
+      "ratio": 0.281746,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.788056206088993,
+      "acc_e0": 0.8060889929742389,
+      "diff": {
+       "mean": -0.018032786885245903,
+       "lo": -0.07868852459016393,
+       "hi": 0.0401639344262295,
+       "p_le0": 0.7297,
+       "n": 61
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     }
+    }
+   },
+   "qwen": {
+    "acc_e0": 0.7567708333333334,
+    "configs": {
+     "none": {
+      "spec": "none",
+      "n": 96,
+      "ratio": 1.0,
+      "roles": [
+       "anchor_mask0",
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 0,
+      "deployable": 1,
+      "families": "none",
+      "acc": 0.7567708333333334,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -1.1564823173178713e-18,
+       "lo": -0.005208333333333333,
+       "hi": 0.005208333333333332,
+       "p_le0": 0.5822,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": true
+     },
+     "q:int4_kivi": {
+      "spec": "q:int4_kivi",
+      "n": 96,
+      "ratio": 0.3125,
+      "roles": [
+       "anchor_int4",
+       "best_single",
+       "x3_segment"
+      ],
+      "budgets": [
+       0.3125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.76875,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": 0.011979166666666667,
+       "lo": -0.004166666666666665,
+       "hi": 0.030729166666666665,
+       "p_le0": 0.0772,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": true
+     },
+     "q:int8_token": {
+      "spec": "q:int8_token",
+      "n": 96,
+      "ratio": 0.515625,
+      "roles": [
+       "deploy",
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.7619791666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": 0.005208333333333333,
+       "lo": -0.010416666666666666,
+       "hi": 0.02291666666666667,
+       "p_le0": 0.2904,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": true
+     },
+     "q:vllm_fp8": {
+      "spec": "q:vllm_fp8",
+      "n": 96,
+      "ratio": 0.5,
+      "roles": [
+       "deploy_broken"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.18541666666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.5713541666666666,
+       "lo": -0.6520833333333333,
+       "hi": -0.4864453125000002,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k28:v42+q:int4_kivi": {
+      "spec": "xl:k28:v42+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.10281,
+      "roles": [
+       "front",
+       "primary"
+      ],
+      "budgets": [
+       0.3125,
+       0.25,
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "quant+xlayer",
+      "acc": 0.7755208333333333,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": 0.01875,
+       "lo": -0.014583333333333339,
+       "hi": 0.05520833333333333,
+       "p_le0": 0.1421,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": true
+     },
+     "xl:k22:v34+q:int4_kivi": {
+      "spec": "xl:k22:v34+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.082248,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.3125,
+       0.25,
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "quant+xlayer",
+      "acc": 0.765625,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": 0.008854166666666661,
+       "lo": -0.030208333333333337,
+       "hi": 0.049479166666666664,
+       "p_le0": 0.3321,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": false
+     },
+     "q:kv-int4_kivi-int2_kivi": {
+      "spec": "q:kv-int4_kivi-int2_kivi",
+      "n": 96,
+      "ratio": 0.25,
+      "roles": [
+       "best_single",
+       "family_best:quant",
+       "x3_segment"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.7348958333333333,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.021875000000000006,
+       "lo": -0.05937500000000001,
+       "hi": 0.011979166666666664,
+       "p_le0": 0.891,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KEYDIFF:0.25+q:int4_kivi": {
+      "spec": "drop:KEYDIFF:0.25+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.233135,
+      "roles": [
+       "front",
+       "naive"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "drop+quant",
+      "acc": 0.675,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.08177083333333333,
+       "lo": -0.1328125,
+       "hi": -0.03541666666666668,
+       "p_le0": 0.9998,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:RND0:0.75": {
+      "spec": "drop:RND0:0.75",
+      "n": 96,
+      "ratio": 0.253968,
+      "roles": [
+       "random_drop"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.33697916666666666,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.4197916666666666,
+       "lo": -0.5036458333333332,
+       "hi": -0.33385416666666673,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k11:v17": {
+      "spec": "xl:k11:v17",
+      "n": 96,
+      "ratio": 0.116319,
+      "roles": [
+       "best_single",
+       "family_best:xlayer"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.7041666666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.05260416666666667,
+       "lo": -0.11666666666666665,
+       "hi": 0.009375000000000001,
+       "p_le0": 0.9525,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k40:v40+q:int4_kivi": {
+      "spec": "lr:k40:v40+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.097656,
+      "roles": [
+       "naive"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "lowrank+quant",
+      "acc": 0.36302083333333335,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.39375000000000004,
+       "lo": -0.46927083333333336,
+       "hi": -0.3140625,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:RND0:0.875": {
+      "spec": "drop:RND0:0.875",
+      "n": 96,
+      "ratio": 0.126984,
+      "roles": [
+       "random_drop"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.1734375,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.5833333333333334,
+       "lo": -0.6598958333333333,
+       "hi": -0.5031249999999999,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k5:v9": {
+      "spec": "xl:k5:v9",
+      "n": 96,
+      "ratio": 0.05816,
+      "roles": [
+       "best_single",
+       "family_best:xlayer"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.325,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.43177083333333327,
+       "lo": -0.5145833333333334,
+       "hi": -0.3479166666666667,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k11:v17+q:int4_kivi": {
+      "spec": "xl:k11:v17+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.041124,
+      "roles": [
+       "primary"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "quant+xlayer",
+      "acc": 0.6890625,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.06770833333333333,
+       "lo": -0.13489583333333333,
+       "hi": -0.002591145833333517,
+       "p_le0": 0.9789,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KEYDIFF:0.5+xl:k22:v34+q:int4_kivi": {
+      "spec": "drop:KEYDIFF:0.5+xl:k22:v34+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.047526,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 3,
+      "deployable": 1,
+      "families": "drop+quant+xlayer",
+      "acc": 0.6130208333333333,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.14375000000000002,
+       "lo": -0.2109375,
+       "hi": -0.07916666666666668,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:RND0:0.9375": {
+      "spec": "drop:RND0:0.9375",
+      "n": 96,
+      "ratio": 0.063492,
+      "roles": [
+       "random_drop"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.08020833333333334,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.6765625000000001,
+       "lo": -0.7447916666666666,
+       "hi": -0.5999869791666669,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KNORM:0.25+q:kv-int8_token-int2_kivi": {
+      "spec": "drop:KNORM:0.25+q:kv-int8_token-int2_kivi",
+      "n": 96,
+      "ratio": 0.262277,
+      "roles": [
+       "naive_x1"
+      ],
+      "budgets": [],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "drop+quant",
+      "acc": 0.6578125,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.09895833333333333,
+       "lo": -0.15364583333333331,
+       "hi": -0.04583333333333334,
+       "p_le0": 0.9999,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k32:v32:joint+q:int4_kivi": {
+      "spec": "lr:k32:v32:joint+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.078125,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.25,
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "lowrank+quant",
+      "acc": 0.6552083333333334,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.1015625,
+       "lo": -0.1572916666666667,
+       "hi": -0.048958333333333326,
+       "p_le0": 0.9999,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KEYDIFF:0.75": {
+      "spec": "drop:KEYDIFF:0.75",
+      "n": 96,
+      "ratio": 0.253968,
+      "roles": [
+       "family_best:drop"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.4015625,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.35520833333333335,
+       "lo": -0.4390625000000001,
+       "hi": -0.27291666666666664,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k32:v32:joint": {
+      "spec": "lr:k32:v32:joint",
+      "n": 96,
+      "ratio": 0.25,
+      "roles": [
+       "family_best:lowrank"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.6109375,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.14583333333333334,
+       "lo": -0.203125,
+       "hi": -0.09166666666666667,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k22:v34": {
+      "spec": "xl:k22:v34",
+      "n": 96,
+      "ratio": 0.232639,
+      "roles": [
+       "family_best:xlayer"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.7557291666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.001041666666666671,
+       "lo": -0.04270833333333334,
+       "hi": 0.04270833333333333,
+       "p_le0": 0.5222,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k64:v64+q:int2_kivi": {
+      "spec": "lr:k64:v64+q:int2_kivi",
+      "n": 96,
+      "ratio": 0.09375,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "lowrank+quant",
+      "acc": 0.48333333333333334,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.2734375,
+       "lo": -0.33749999999999997,
+       "hi": -0.20989583333333336,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KEYDIFF:0.875": {
+      "spec": "drop:KEYDIFF:0.875",
+      "n": 96,
+      "ratio": 0.126984,
+      "roles": [
+       "family_best:drop"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.2140625,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.5427083333333333,
+       "lo": -0.6145833333333334,
+       "hi": -0.4708333333333334,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k16:v16:joint": {
+      "spec": "lr:k16:v16:joint",
+      "n": 96,
+      "ratio": 0.125,
+      "roles": [
+       "family_best:lowrank"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.3453125,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.4114583333333333,
+       "lo": -0.48802083333333335,
+       "hi": -0.3359375,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "merge:8": {
+      "spec": "merge:8",
+      "n": 96,
+      "ratio": 0.125,
+      "roles": [
+       "family_best:merge"
+      ],
+      "budgets": [
+       0.125
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "merge",
+      "acc": 0.03229166666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.7244791666666667,
+       "lo": -0.7859374999999998,
+       "hi": -0.6572916666666667,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k22:v34+drop:KEYDIFF:0.5+q:int4_kivi": {
+      "spec": "xl:k22:v34+drop:KEYDIFF:0.5+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.047526,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 3,
+      "deployable": 1,
+      "families": "drop+quant+xlayer",
+      "acc": 0.603125,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.15364583333333334,
+       "lo": -0.22447916666666665,
+       "hi": -0.08540364583333351,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KEYDIFF:0.5+xl:k11:v17": {
+      "spec": "drop:KEYDIFF:0.5+xl:k11:v17",
+      "n": 96,
+      "ratio": 0.060764,
+      "roles": [
+       "front"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "drop+xlayer",
+      "acc": 0.5609375,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.19583333333333333,
+       "lo": -0.2786458333333333,
+       "hi": -0.11509114583333352,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "drop:KEYDIFF:0.9375": {
+      "spec": "drop:KEYDIFF:0.9375",
+      "n": 96,
+      "ratio": 0.063492,
+      "roles": [
+       "family_best:drop"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "drop",
+      "acc": 0.128125,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.6286458333333333,
+       "lo": -0.6973958333333333,
+       "hi": -0.5562369791666668,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k8:v8:joint": {
+      "spec": "lr:k8:v8:joint",
+      "n": 96,
+      "ratio": 0.0625,
+      "roles": [
+       "family_best:lowrank"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.03125,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.7255208333333333,
+       "lo": -0.7864583333333334,
+       "hi": -0.6588541666666666,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "merge:16": {
+      "spec": "merge:16",
+      "n": 96,
+      "ratio": 0.0625,
+      "roles": [
+       "family_best:merge"
+      ],
+      "budgets": [
+       0.0625
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "merge",
+      "acc": 0.03229166666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.7244791666666667,
+       "lo": -0.7859374999999998,
+       "hi": -0.6572916666666667,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "merge:4": {
+      "spec": "merge:4",
+      "n": 96,
+      "ratio": 0.25,
+      "roles": [
+       "family_best:merge",
+       "x3_segment"
+      ],
+      "budgets": [
+       0.25
+      ],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "merge",
+      "acc": 0.021875,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.7348958333333334,
+       "lo": -0.7953125,
+       "hi": -0.6692708333333334,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k16:v16": {
+      "spec": "lr:k16:v16",
+      "n": 96,
+      "ratio": 0.125,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.03125,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.7255208333333333,
+       "lo": -0.7864583333333334,
+       "hi": -0.6588541666666666,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k24+q:kv-bf16-int4_kivi": {
+      "spec": "lr:k24+q:kv-bf16-int4_kivi",
+      "n": 96,
+      "ratio": 0.25,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "lowrank+quant",
+      "acc": 0.03229166666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.7244791666666667,
+       "lo": -0.7843749999999999,
+       "hi": -0.6583203125000002,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k24:v24": {
+      "spec": "lr:k24:v24",
+      "n": 96,
+      "ratio": 0.1875,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.0234375,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.7333333333333334,
+       "lo": -0.7921875000000002,
+       "hi": -0.6682161458333334,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k32:v32": {
+      "spec": "lr:k32:v32",
+      "n": 96,
+      "ratio": 0.25,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.13541666666666666,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.6213541666666667,
+       "lo": -0.6848958333333334,
+       "hi": -0.5552083333333333,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k40:v40": {
+      "spec": "lr:k40:v40",
+      "n": 96,
+      "ratio": 0.3125,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.3651041666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.39166666666666666,
+       "lo": -0.4697916666666666,
+       "hi": -0.309375,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "lr:k64:v64": {
+      "spec": "lr:k64:v64",
+      "n": 96,
+      "ratio": 0.5,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "lowrank",
+      "acc": 0.6052083333333333,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.1515625,
+       "lo": -0.20833333333333334,
+       "hi": -0.09583333333333333,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "merge:2": {
+      "spec": "merge:2",
+      "n": 96,
+      "ratio": 0.5,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "merge",
+      "acc": 0.07604166666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.6807291666666666,
+       "lo": -0.7442708333333332,
+       "hi": -0.6114583333333333,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "merge:2+q:int4_kivi": {
+      "spec": "merge:2+q:int4_kivi",
+      "n": 96,
+      "ratio": 0.15625,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 2,
+      "deployable": 1,
+      "families": "merge+quant",
+      "acc": 0.07135416666666666,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.6854166666666667,
+       "lo": -0.7473958333333334,
+       "hi": -0.6182161458333335,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "q:fp8_head": {
+      "spec": "q:fp8_head",
+      "n": 96,
+      "ratio": 0.500031,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.3578125,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.3989583333333333,
+       "lo": -0.48125,
+       "hi": -0.3171875,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "q:int2_kivi": {
+      "spec": "q:int2_kivi",
+      "n": 96,
+      "ratio": 0.1875,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "quant",
+      "acc": 0.6854166666666667,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.07135416666666668,
+       "lo": -0.13177083333333334,
+       "hi": -0.010937500000000005,
+       "p_le0": 0.9895,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k16:v16": {
+      "spec": "xl:k16:v16",
+      "n": 96,
+      "ratio": 0.132937,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.734375,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": -0.022395833333333334,
+       "lo": -0.08177083333333333,
+       "hi": 0.03489583333333334,
+       "p_le0": 0.7725,
+       "n": 96
+      },
+      "mlperf0.99": false,
+      "mlperf0.999": false,
+      "eps_pass": false
+     },
+     "xl:k32:v32": {
+      "spec": "xl:k32:v32",
+      "n": 96,
+      "ratio": 0.265873,
+      "roles": [
+       "x3_segment"
+      ],
+      "budgets": [],
+      "n_lossy": 1,
+      "deployable": 1,
+      "families": "xlayer",
+      "acc": 0.7598958333333333,
+      "acc_e0": 0.7567708333333334,
+      "diff": {
+       "mean": 0.003124999999999998,
+       "lo": -0.034375,
+       "hi": 0.041666666666666664,
+       "p_le0": 0.4385,
+       "n": 96
+      },
+      "mlperf0.99": true,
+      "mlperf0.999": true,
+      "eps_pass": false
+     }
+    }
+   }
+  }
+ },
+ "judge": {
+  "models": {
+   "llama": {
+    "M1": {
+     "bstar_single": 0.25,
+     "bstar_combo": null,
+     "r": Infinity
+    },
+    "M1_mlperf0.99": {
+     "bstar_single": 0.123264,
+     "bstar_combo": 0.137641,
+     "r": 1.1166358385254413
+    },
+    "M1_mlperf0.999": {
+     "bstar_single": 0.123264,
+     "bstar_combo": null,
+     "r": null
+    },
+    "M2": {
+     "0.25": {
+      "primary": "xl:k22:v34+q:int8_token",
+      "best_single": "xl:k16:v16",
+      "naive": "drop:KEYDIFF:0.25+q:int4_kivi",
+      "room": true,
+      "diff_primary_minus_single": {
+       "mean": 0.017113095238095236,
+       "lo": -0.0043154761904761925,
+       "hi": 0.04151785714285714,
+       "p_le0": 0.0633,
+       "n": 96
+      },
+      "supports_nogo": true,
+      "naive_minus_primary": {
+       "mean": -0.050892857142857136,
+       "lo": -0.10312499999999998,
+       "hi": -0.001560639880952405,
+       "p_le0": 0.9785,
+       "n": 96
+      },
+      "naive_as_good": false,
+      "holm": {
+       "p": 0.0633,
+       "threshold": 0.0125,
+       "reject": false
+      }
+     },
+     "0.125": {
+      "primary": "xl:k22:v34+q:int4_kivi",
+      "best_single": "xl:k11:v17",
+      "naive": "lr:k40:v40+q:int4_kivi",
+      "room": false,
+      "diff_primary_minus_single": {
+       "mean": -0.027455357142857146,
+       "lo": -0.07455357142857143,
+       "hi": 0.013244047619047619,
+       "p_le0": 0.8977,
+       "n": 96
+      },
+      "supports_nogo": null,
+      "naive_minus_primary": {
+       "mean": -0.6017113095238096,
+       "lo": -0.6722470238095237,
+       "hi": -0.5287909226190478,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "naive_as_good": false,
+      "holm": {
+       "p": 0.8977,
+       "threshold": 0.025,
+       "reject": false
+      }
+     },
+     "0.0625": {
+      "primary": "xl:k11:v17+q:int4_kivi",
+      "best_single": "xl:k5:v9",
+      "naive": null,
+      "room": true,
+      "diff_primary_minus_single": {
+       "mean": 0.3763392857142857,
+       "lo": 0.28816964285714286,
+       "hi": 0.4611607142857143,
+       "p_le0": 0.0,
+       "n": 96
+      },
+      "supports_nogo": false,
+      "holm": {
+       "p": 0.0,
+       "threshold": 0.004166666666666667,
+       "reject": true
+      }
+     }
+    }
+   },
+   "qwen": {
+    "M1": {
+     "bstar_single": 0.3125,
+     "bstar_combo": 0.10281,
+     "r": 0.328992
+    },
+    "M1_mlperf0.99": {
+     "bstar_single": 0.232639,
+     "bstar_combo": 0.082248,
+     "r": 0.3535434729344607
+    },
+    "M1_mlperf0.999": {
+     "bstar_single": 0.265873,
+     "bstar_combo": 0.082248,
+     "r": 0.309350705035863
+    },
+    "M2": {
+     "0.25": {
+      "primary": "xl:k28:v42+q:int4_kivi",
+      "best_single": "q:kv-int4_kivi-int2_kivi",
+      "naive": "drop:KEYDIFF:0.25+q:int4_kivi",
+      "room": true,
+      "diff_primary_minus_single": {
+       "mean": 0.040625,
+       "lo": 0.0015625000000000025,
+       "hi": 0.08438802083333316,
+       "p_le0": 0.0195,
+       "n": 96
+      },
+      "supports_nogo": false,
+      "naive_minus_primary": {
+       "mean": -0.10052083333333334,
+       "lo": -0.16041666666666668,
+       "hi": -0.046875,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "naive_as_good": false,
+      "holm": {
+       "p": 0.0195,
+       "threshold": 0.008333333333333333,
+       "reject": false
+      }
+     },
+     "0.125": {
+      "primary": "xl:k28:v42+q:int4_kivi",
+      "best_single": "xl:k11:v17",
+      "naive": "lr:k40:v40+q:int4_kivi",
+      "room": true,
+      "diff_primary_minus_single": {
+       "mean": 0.07135416666666666,
+       "lo": 0.013020833333333334,
+       "hi": 0.13125,
+       "p_le0": 0.0081,
+       "n": 96
+      },
+      "supports_nogo": false,
+      "naive_minus_primary": {
+       "mean": -0.41250000000000003,
+       "lo": -0.4864583333333334,
+       "hi": -0.3416666666666666,
+       "p_le0": 1.0,
+       "n": 96
+      },
+      "naive_as_good": false,
+      "holm": {
+       "p": 0.0081,
+       "threshold": 0.00625,
+       "reject": false
+      }
+     },
+     "0.0625": {
+      "primary": "xl:k11:v17+q:int4_kivi",
+      "best_single": "xl:k5:v9",
+      "naive": null,
+      "room": true,
+      "diff_primary_minus_single": {
+       "mean": 0.3640625,
+       "lo": 0.27708333333333335,
+       "hi": 0.4515624999999999,
+       "p_le0": 0.0,
+       "n": 96
+      },
+      "supports_nogo": false,
+      "holm": {
+       "p": 0.0,
+       "threshold": 0.005,
+       "reject": true
+      }
+     }
+    }
+   }
+  },
+  "rule_text": {
+   "S1-a": "（L5d §6.2，代理不可靠）所有代理對 KL 與 Δgold_lp 的 Spearman |ρ| 都 < 0.5（兩個模型都是）→ 代理只當崩潰警報。我們的 X1 在 GPU 上直接量 teacher forcing，挑前緣用 TF 指標、不用代理，所以 S1-a 只當研究問題 (b)（代理跨家族能不能預測）的結果，不改流程。",
+   "S1-b": "（L5d §6.2 改成 TF 版）每個預算（0.25、0.125、0.0625）、兩個模型：最好的組合的損失（−平均 Δgold_lp）≥ 0.95×最好的單一方法的損失（沒有組合在預算內也算成立；沒有單一方法在預算內而有組合 → 不成立）。三個預算、兩個模型全部成立 → 停，不跑 X2，寫成「在 TF 層級，疊加沒有加乘」。",
+   "S1-c": "（L5d §6.2）S1 實測的無損增益疊在 INT4 KIVI 上 < 1.05× → 第二、三階段拿掉無損這一軸（我們本來就只在 report 另列）。",
+   "X1-complete": "X1 每個模型至少 48 題做完才挑 X2；不夠 → go＝false、寫 NEEDS_HUMAN。",
+   "M1": "（L5d §6.3）每個家族在 ε 內（生成答對率對 E0 的配對差 95% CI 下界 ≥ −2 個百分點）能到的最小位元組 B*；r＝B*(最好的組合)／B*(最好的單一方法)。兩個模型都 r > 0.95（沒有組合過 ε 也算）→ NO-GO（疊加沒有加乘）；沒有模型 < 0.85、但有 0.85–0.95 → 停下來問人；任一模型 r < 0.85 → GO（進第三階段）。",
+   "M2": "（L5d §6.3）每個預算：主要組合（X1 事先選的前緣第 1 名）− 最好的單一方法（X1 選的），生成答對率配對差。E0 − 最好的單一方法 < 2 個百分點的預算記成「沒有空間」；有空間的預算全部「差 < 2 個百分點或 CI 含 0」→ 支持 NO-GO。Holm 校正（3 預算 × 2 模型，單邊 α＝0.025）。",
+   "completeness": "（L5d §6.3）最好的組合在 M1／M2 贏，但天真疊加（naive）本身已經一樣好（naive − 主要組合的 CI 含 0 或 ≥ −ε）→ 結論改寫成「疊加有用，但不需要聯合分配」。",
+   "MLPerf": "（L6 §5.2，只報、不改判定）MLPerf 式門檻：答對率 ≥ E0 的 99%（以及 99.9%），點估計；另報同樣門檻下的 B*。"
+  },
+  "holm": {
+   "llama|0.0625": {
+    "p": 0.0,
+    "threshold": 0.004166666666666667,
+    "reject": true
+   },
+   "qwen|0.0625": {
+    "p": 0.0,
+    "threshold": 0.005,
+    "reject": true
+   },
+   "qwen|0.125": {
+    "p": 0.0081,
+    "threshold": 0.00625,
+    "reject": false
+   },
+   "qwen|0.25": {
+    "p": 0.0195,
+    "threshold": 0.008333333333333333,
+    "reject": false
+   },
+   "llama|0.25": {
+    "p": 0.0633,
+    "threshold": 0.0125,
+    "reject": false
+   },
+   "llama|0.125": {
+    "p": 0.8977,
+    "threshold": 0.025,
+    "reject": false
+   }
+  },
+  "M1_verdict": "GO",
+  "M2_supports_nogo": false,
+  "M2_no_room_anywhere": false,
+  "completeness_flags": {
+   "llama|0.25": false,
+   "llama|0.125": false,
+   "qwen|0.25": false,
+   "qwen|0.125": false
+  },
+  "n_items_32K": {
+   "llama": 96,
+   "qwen": 96
+  },
+  "complete": true
+ },
+ "x3_files": {
+  "x2_feasible.csv": {
+   "rows": 34,
+   "feasible": 6
+  },
+  "x2_unmapped.csv": {
+   "rows": 40,
+   "feasible": 1
+  }
+ }
+}

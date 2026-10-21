@@ -201,11 +201,43 @@ def x1():
     return rows
 
 
+def x2():
+    """X2：x2_feasible.csv＋x2_unmapped.csv 的每列（生成答對率對 E0 的差）＋M1 的 r。"""
+    rows = []
+    d = os.path.join(RES, "x_stack")
+    p = os.path.join(d, "x2_report.json")
+    if not os.path.exists(p):
+        return rows
+    rep = json.load(open(p))
+    for m, j in rep["judge"]["models"].items():
+        rows.append(dict(exp="X2", cell=f"{m}|M1", metric="r = B*(best combo)/B*(best single) within eps (generation)",
+                         value=j["M1"]["r"], unit="ratio", kind="measured", status="ok", run_id=rep["run_id"], source=rel(p)))
+    for f in ("x2_feasible.csv", "x2_unmapped.csv"):
+        for r in csv.DictReader(open(os.path.join(d, f))):
+            rows.append(dict(exp="X2", cell=f"{r['model']}|{r['combo']}|ratio {r['ratio']}|n {r.get('n_items', '')}",
+                             metric=f"gen. accuracy delta vs E0 [CI {r.get('acc_delta_lo', '')}, {r.get('acc_delta_hi', '')}]; feasible(eps)={r['feasible']}",
+                             value=r["acc_delta"], unit="fraction", kind="measured", status="ok", run_id=r["run_id"],
+                             source=rel(os.path.join(d, f))))
+    return rows
+
+
+def x3():
+    rows = []
+    p = os.path.join(RES, "x3_time/map_summary.json")
+    if not os.path.exists(p):
+        return rows
+    d = json.load(open(p))
+    rows.append(dict(exp="X3", cell="map verdict", metric="see map_report.md (STOP-0 holds; L/Q STOP-2a; X STOP-2b, A vs F +2.2%)",
+                     value="NO-GO (X incomplete: xKV+INT4 unmapped)", unit="", kind="simulated", status="ok",
+                     run_id=d.get("run_id", ""), source=rel(p)))
+    return rows
+
+
 PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a() + x1()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a() + x1() + x2() + x3()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:

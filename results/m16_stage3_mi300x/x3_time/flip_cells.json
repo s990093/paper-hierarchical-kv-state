@@ -1,0 +1,13 @@
+{
+ "run_id": "20261021-025231-m16-x3-map",
+ "ts": "2026-10-21T02:52:31+00:00",
+ "worth_validate": false,
+ "reason": "沒有模式判 GO_N5 → 照 L5c §5.5 不做 N5 驗證（L：STOP-2a；Q：STOP-2a；X：STOP-2b；STOP-0 成立）",
+ "modes": [],
+ "cells": [],
+ "micro_run_ids": {
+  "llama": "20261020-212244-m16-x3-micro-llama",
+  "qwen": "20261020-213232-m16-x3-micro-qwen"
+ },
+ "smoke": false
+}
