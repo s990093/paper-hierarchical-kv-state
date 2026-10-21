@@ -1,0 +1,3368 @@
+{
+ "_doc": [
+  "m16_x4.py 的 X4a 配置（10/21；**在看到任何 X4 數字之前**由 m16_x4.py grid 產生，之後不改；--self-test 核對＝程式重算）。",
+  "設計：docs/stage3_20261019/x4_limit_plan.md §2；位元組比照 m16_xstack.predict_bytes 實算（含每題基底、scale、遮罩），倍數＝1／區內位元組比（32K、block 1–63）。",
+  "每個目標倍數 T∈[8, 12, 16, 20, 24, 32]：照 ALLOCS 的優先順序，每個分法掃 K 秩（V 秩＝比例×K 秩）挑倍數最接近 T 且在 ±10% 內的；最多 10 個。W 只掃 2、4（W 大＝Llama 8、Qwen 7 因時間縮掉，見 x_stack_howto.md §15.6）。輕度丟的完整掃描只在 T∈[16, 24]。",
+  "輕度丟一律 xl+drop（基底在全部 token 上估，才能共用 SVD）。roles：alloc:<分法>／drop_study／fine_grid／control。"
+ ],
+ "version": "2026-10-21 x4 v1",
+ "targets": [
+  8,
+  12,
+  16,
+  20,
+  24,
+  32
+ ],
+ "band_tol": 0.1,
+ "max_per_t": 10,
+ "allocs": [
+  {
+   "name": "int4",
+   "bits": "int4",
+   "w": "w4",
+   "split": "diag",
+   "drop": null,
+   "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）"
+  },
+  {
+   "name": "rank_only",
+   "bits": "bf16",
+   "w": "w4",
+   "split": "diag",
+   "drop": null,
+   "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照"
+  },
+  {
+   "name": "int8",
+   "bits": "int8",
+   "w": "w4",
+   "split": "diag",
+   "drop": null,
+   "why": "係數 INT8（逐 token）：位元多、秩少"
+  },
+  {
+   "name": "k4v2",
+   "bits": "k4v2",
+   "w": "w4",
+   "split": "diag",
+   "drop": null,
+   "why": "K 係數 INT4、V 係數 INT2（K4V2）"
+  },
+  {
+   "name": "k2v4",
+   "bits": "k2v4",
+   "w": "w4",
+   "split": "diag",
+   "drop": null,
+   "why": "K 係數 INT2、V 係數 INT4（K2V4）"
+  },
+  {
+   "name": "int2",
+   "bits": "int2",
+   "w": "w4",
+   "split": "diag",
+   "drop": null,
+   "why": "係數 INT2 KIVI：位元最少、秩最多"
+  },
+  {
+   "name": "int4_w2",
+   "bits": "int4",
+   "w": "w2",
+   "split": "diag",
+   "drop": null,
+   "why": "INT4、窗口 W＝2：基底小、跨層共用少"
+  },
+  {
+   "name": "int4_drop_keydiff12",
+   "bits": "int4",
+   "w": "w4",
+   "split": "diag",
+   "drop": [
+    "KEYDIFF",
+    0.125
+   ],
+   "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上"
+  }
+ ],
+ "kv_split": {
+  "diag": 1.5,
+  "kless": 1.85
+ },
+ "fine_pairs": [
+  [
+   6,
+   9
+  ],
+  [
+   8,
+   12
+  ],
+  [
+   9,
+   14
+  ],
+  [
+   11,
+   17
+  ],
+  [
+   13,
+   20
+  ],
+  [
+   16,
+   24
+  ],
+  [
+   6,
+   12
+  ],
+  [
+   8,
+   14
+  ],
+  [
+   9,
+   17
+  ],
+  [
+   11,
+   20
+  ],
+  [
+   13,
+   24
+  ],
+  [
+   11,
+   14
+  ]
+ ],
+ "controls": [
+  "none",
+  "q:int4_kivi",
+  "xl:k11:v17+q:int4_kivi",
+  "xl:k22:v34+q:int4_kivi"
+ ],
+ "models": {
+  "llama": {
+   "configs": [
+    {
+     "spec": "xl:k6:v9+q:int4_kivi",
+     "ratio": 0.025751,
+     "multiple": 38.833,
+     "bands": [],
+     "targets": [],
+     "W": 4,
+     "rk": 6,
+     "rv": 9,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v12:w2+q:int4_kivi",
+     "ratio": 0.029374,
+     "multiple": 34.044,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 2,
+     "rk": 8,
+     "rv": 12,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v12+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.030428,
+     "multiple": 32.864,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 8,
+     "rv": 12,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15+q:int2_kivi",
+     "ratio": 0.030711,
+     "multiple": 32.562,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 10,
+     "rv": 15,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k6:v12+q:int4_kivi",
+     "ratio": 0.030901,
+     "multiple": 32.361,
+     "bands": [
+      32
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 6,
+     "rv": 12,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k7:v11+q:int4_kivi",
+     "ratio": 0.030901,
+     "multiple": 32.361,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 7,
+     "rv": 11,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v12+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.031235,
+     "multiple": 32.015,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 8,
+     "rv": 12,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k5:v8+q:int8_token",
+     "ratio": 0.032327,
+     "multiple": 30.934,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 5,
+     "rv": 8,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.032649,
+     "multiple": 30.629,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 9,
+     "rv": 14,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v12+q:int4_kivi",
+     "ratio": 0.034335,
+     "multiple": 29.125,
+     "bands": [
+      32
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 8,
+     "rv": 12,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v14+q:int4_kivi",
+     "ratio": 0.037768,
+     "multiple": 26.477,
+     "bands": [],
+     "targets": [],
+     "W": 4,
+     "rk": 8,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14+q:int4_kivi",
+     "ratio": 0.039485,
+     "multiple": 25.326,
+     "bands": [
+      24
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 9,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+q:int2_kivi",
+     "ratio": 0.040539,
+     "multiple": 24.668,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15+drop:KEYDIFF:0.0625+q:int4_kivi",
+     "ratio": 0.040981,
+     "multiple": 24.402,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 10,
+     "rv": 15,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15+drop:KNORM:0.0625+q:int4_kivi",
+     "ratio": 0.040981,
+     "multiple": 24.402,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 10,
+     "rv": 15,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17:w2+q:int4_kivi",
+     "ratio": 0.041124,
+     "multiple": 24.317,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 2,
+     "rk": 11,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+drop:KEYDIFF:0.25+q:int4_kivi",
+     "ratio": 0.042201,
+     "multiple": 23.696,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+drop:KNORM:0.25+q:int4_kivi",
+     "ratio": 0.042201,
+     "multiple": 23.696,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.042697,
+     "multiple": 23.421,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.042713,
+     "multiple": 23.412,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15+q:int4_kivi",
+     "ratio": 0.042918,
+     "multiple": 23.3,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 10,
+     "rv": 15,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v14+q:int4_kivi",
+     "ratio": 0.042918,
+     "multiple": 23.3,
+     "bands": [
+      24
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 11,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.043728,
+     "multiple": 22.869,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12",
+      "drop_study"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上；輕度丟的邊際代價：KEYDIFF 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+drop:KNORM:0.125+q:int4_kivi",
+     "ratio": 0.043728,
+     "multiple": 22.869,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k4:v6",
+     "ratio": 0.044023,
+     "multiple": 22.715,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 4,
+     "rv": 6,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k7:v11+q:int8_token",
+     "ratio": 0.044573,
+     "multiple": 22.435,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 7,
+     "rv": 11,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v17+q:int4_kivi",
+     "ratio": 0.044635,
+     "multiple": 22.404,
+     "bands": [
+      24
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 9,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+q:int4_kivi",
+     "ratio": 0.048069,
+     "multiple": 20.803,
+     "bands": [
+      20
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid",
+      "control"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）；對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k16:v24+q:int2_kivi",
+     "ratio": 0.049138,
+     "multiple": 20.351,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 16,
+     "rv": 24,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v12+q:int8_token",
+     "ratio": 0.049471,
+     "multiple": 20.214,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 8,
+     "rv": 12,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.049832,
+     "multiple": 20.067,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.050305,
+     "multiple": 19.879,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21:w2+q:int4_kivi",
+     "ratio": 0.051405,
+     "multiple": 19.453,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 2,
+     "rk": 14,
+     "rv": 21,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+q:int4_kivi",
+     "ratio": 0.051502,
+     "multiple": 19.417,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.051537,
+     "multiple": 19.404,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v20+q:int4_kivi",
+     "ratio": 0.053219,
+     "multiple": 18.79,
+     "bands": [
+      20
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 11,
+     "rv": 20,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+q:int4_kivi",
+     "ratio": 0.056652,
+     "multiple": 17.652,
+     "bands": [],
+     "targets": [],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+q:int4_kivi",
+     "ratio": 0.060086,
+     "multiple": 16.643,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k16:v24+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.060857,
+     "multiple": 16.432,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 16,
+     "rv": 24,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k17:v26+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.061124,
+     "multiple": 16.36,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 17,
+     "rv": 26,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k20:v30+q:int2_kivi",
+     "ratio": 0.061423,
+     "multiple": 16.281,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 20,
+     "rv": 30,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15+q:int8_token",
+     "ratio": 0.061717,
+     "multiple": 16.203,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 10,
+     "rv": 15,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k15:v23+drop:KEYDIFF:0.0625+q:int4_kivi",
+     "ratio": 0.062291,
+     "multiple": 16.054,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 15,
+     "rv": 23,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k15:v23+drop:KNORM:0.0625+q:int4_kivi",
+     "ratio": 0.062291,
+     "multiple": 16.054,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 15,
+     "rv": 23,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k16:v24+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.062469,
+     "multiple": 16.008,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 16,
+     "rv": 24,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12",
+      "drop_study"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上；輕度丟的邊際代價：KEYDIFF 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k16:v24+drop:KNORM:0.125+q:int4_kivi",
+     "ratio": 0.062469,
+     "multiple": 16.008,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 16,
+     "rv": 24,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k17:v26:w2+q:int4_kivi",
+     "ratio": 0.063155,
+     "multiple": 15.834,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 2,
+     "rk": 17,
+     "rv": 26,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k18:v27+drop:KEYDIFF:0.25+q:int4_kivi",
+     "ratio": 0.063302,
+     "multiple": 15.797,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 18,
+     "rv": 27,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k18:v27+drop:KNORM:0.25+q:int4_kivi",
+     "ratio": 0.063302,
+     "multiple": 15.797,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 18,
+     "rv": 27,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v24+q:int4_kivi",
+     "ratio": 0.063519,
+     "multiple": 15.743,
+     "bands": [
+      16
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 13,
+     "rv": 24,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k6:v9",
+     "ratio": 0.066034,
+     "multiple": 15.144,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 6,
+     "rv": 9,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k16:v24+q:int4_kivi",
+     "ratio": 0.068669,
+     "multiple": 14.563,
+     "bands": [
+      16
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 16,
+     "rv": 24,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k7:v11",
+     "ratio": 0.079241,
+     "multiple": 12.62,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 7,
+     "rv": 11,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+q:int8_token",
+     "ratio": 0.08131,
+     "multiple": 12.299,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k19:v29+q:int4_kivi",
+     "ratio": 0.082403,
+     "multiple": 12.135,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 19,
+     "rv": 29,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k23:v35+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.082481,
+     "multiple": 12.124,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 23,
+     "rv": 35,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k21:v32+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.082771,
+     "multiple": 12.082,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 21,
+     "rv": 32,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k27:v41+q:int2_kivi",
+     "ratio": 0.083535,
+     "multiple": 11.971,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 27,
+     "rv": 41,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k22:v33+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.083678,
+     "multiple": 11.951,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 22,
+     "rv": 33,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k23:v35:w2+q:int4_kivi",
+     "ratio": 0.085186,
+     "multiple": 11.739,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 2,
+     "rk": 23,
+     "rv": 35,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "ratio": 0.096137,
+     "multiple": 10.402,
+     "bands": [],
+     "targets": [],
+     "W": 4,
+     "rk": 22,
+     "rv": 34,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "control"
+     ],
+     "why": "對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k20:v30+q:int8_token",
+     "ratio": 0.122946,
+     "multiple": 8.134,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 20,
+     "rv": 30,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17",
+     "ratio": 0.123264,
+     "multiple": 8.113,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k34:v51:w2+q:int4_kivi",
+     "ratio": 0.124841,
+     "multiple": 8.01,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 2,
+     "rk": 34,
+     "rv": 51,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k32:v48+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.124938,
+     "multiple": 8.004,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 32,
+     "rv": 48,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k35:v53+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.125194,
+     "multiple": 7.988,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 35,
+     "rv": 53,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k29:v44+q:int4_kivi",
+     "ratio": 0.125322,
+     "multiple": 7.979,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 29,
+     "rv": 44,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k33:v50+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.126376,
+     "multiple": 7.913,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 33,
+     "rv": 50,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k41:v62+q:int2_kivi",
+     "ratio": 0.126531,
+     "multiple": 7.903,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 41,
+     "rv": 62,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "q:int4_kivi",
+     "ratio": 0.3125,
+     "multiple": 3.2,
+     "bands": [],
+     "targets": [],
+     "W": 0,
+     "rk": 0,
+     "rv": 0,
+     "bits": "int4_kivi",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 0,
+     "roles": [
+      "control"
+     ],
+     "why": "對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    },
+    {
+     "spec": "none",
+     "ratio": 1.0,
+     "multiple": 1.0,
+     "bands": [],
+     "targets": [],
+     "W": 0,
+     "rk": 0,
+     "rv": 0,
+     "bits": "none",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 0,
+     "roles": [
+      "control"
+     ],
+     "why": "對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    }
+   ],
+   "skipped": [
+    {
+     "T": 20,
+     "alloc": "rank_only",
+     "why": "秩的格點（K 秩 2–48）裡沒有落在 ±10% 內的"
+    },
+    {
+     "T": 32,
+     "alloc": "rank_only",
+     "why": "秩的格點（K 秩 2–48）裡沒有落在 ±10% 內的"
+    }
+   ]
+  },
+  "qwen": {
+   "configs": [
+    {
+     "spec": "xl:k6:v9+q:int4_kivi",
+     "ratio": 0.022031,
+     "multiple": 45.391,
+     "bands": [],
+     "targets": [],
+     "W": 4,
+     "rk": 6,
+     "rv": 9,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k6:v12+q:int4_kivi",
+     "ratio": 0.026437,
+     "multiple": 37.826,
+     "bands": [],
+     "targets": [],
+     "W": 4,
+     "rk": 6,
+     "rv": 12,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v12+q:int4_kivi",
+     "ratio": 0.029374,
+     "multiple": 34.044,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 8,
+     "rv": 12,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4",
+      "fine_grid"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）；計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k5:v8+q:int8_token",
+     "ratio": 0.029591,
+     "multiple": 33.794,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 5,
+     "rv": 8,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.030215,
+     "multiple": 33.096,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 9,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14:w2+q:int4_kivi",
+     "ratio": 0.030928,
+     "multiple": 32.333,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 2,
+     "rk": 9,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.031835,
+     "multiple": 31.412,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 10,
+     "rv": 15,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v14+q:int4_kivi",
+     "ratio": 0.032312,
+     "multiple": 30.948,
+     "bands": [
+      32
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 8,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+q:int2_kivi",
+     "ratio": 0.032354,
+     "multiple": 30.908,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.032823,
+     "multiple": 30.466,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k3:v5",
+     "ratio": 0.033234,
+     "multiple": 30.09,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 3,
+     "rv": 5,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14+q:int4_kivi",
+     "ratio": 0.033781,
+     "multiple": 29.602,
+     "bands": [
+      32
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 9,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v14+q:int4_kivi",
+     "ratio": 0.036718,
+     "multiple": 27.235,
+     "bands": [],
+     "targets": [],
+     "W": 4,
+     "rk": 11,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v17+q:int4_kivi",
+     "ratio": 0.038187,
+     "multiple": 26.187,
+     "bands": [
+      24
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 9,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18:w2+q:int4_kivi",
+     "ratio": 0.040341,
+     "multiple": 24.789,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 2,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+drop:KEYDIFF:0.25+q:int4_kivi",
+     "ratio": 0.040554,
+     "multiple": 24.658,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+drop:KNORM:0.25+q:int4_kivi",
+     "ratio": 0.040554,
+     "multiple": 24.658,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k7:v11+q:int8_token",
+     "ratio": 0.040597,
+     "multiple": 24.632,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 7,
+     "rv": 11,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+q:int4_kivi",
+     "ratio": 0.041124,
+     "multiple": 24.317,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4",
+      "fine_grid",
+      "control"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）；計畫 §2 的秩細格點（INT4、W＝4、不丟）；對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.041151,
+     "multiple": 24.301,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k4:v6",
+     "ratio": 0.041543,
+     "multiple": 24.071,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 4,
+     "rv": 6,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+drop:KEYDIFF:0.0625+q:int4_kivi",
+     "ratio": 0.041736,
+     "multiple": 23.96,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+drop:KNORM:0.0625+q:int4_kivi",
+     "ratio": 0.041736,
+     "multiple": 23.96,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.04212,
+     "multiple": 23.742,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k17:v26+q:int2_kivi",
+     "ratio": 0.042159,
+     "multiple": 23.72,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 17,
+     "rv": 26,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.043352,
+     "multiple": 23.067,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12",
+      "drop_study"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上；輕度丟的邊際代價：KEYDIFF 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+drop:KNORM:0.125+q:int4_kivi",
+     "ratio": 0.043352,
+     "multiple": 23.067,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v20+q:int4_kivi",
+     "ratio": 0.04553,
+     "multiple": 21.964,
+     "bands": [
+      20,
+      24
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 11,
+     "rv": 20,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v20+q:int4_kivi",
+     "ratio": 0.048468,
+     "multiple": 20.632,
+     "bands": [
+      20
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 13,
+     "rv": 20,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k20:v30+q:int2_kivi",
+     "ratio": 0.049022,
+     "multiple": 20.399,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 20,
+     "rv": 30,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k15:v23+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.049921,
+     "multiple": 20.032,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 15,
+     "rv": 23,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k17:v26+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.05046,
+     "multiple": 19.818,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 17,
+     "rv": 26,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k16:v24+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.050936,
+     "multiple": 19.632,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 16,
+     "rv": 24,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k15:v23:w2+q:int4_kivi",
+     "ratio": 0.051099,
+     "multiple": 19.57,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 2,
+     "rk": 15,
+     "rv": 23,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+q:int4_kivi",
+     "ratio": 0.051405,
+     "multiple": 19.453,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14+q:int8_token",
+     "ratio": 0.051603,
+     "multiple": 19.379,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 9,
+     "rv": 14,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k5:v8",
+     "ratio": 0.054005,
+     "multiple": 18.517,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 5,
+     "rv": 8,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k13:v24+q:int4_kivi",
+     "ratio": 0.054343,
+     "multiple": 18.402,
+     "bands": [
+      20
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 13,
+     "rv": 24,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k16:v24+q:int4_kivi",
+     "ratio": 0.058749,
+     "multiple": 17.022,
+     "bands": [
+      16
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 16,
+     "rv": 24,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "fine_grid"
+     ],
+     "why": "計畫 §2 的秩細格點（INT4、W＝4、不丟）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k21:v32+drop:KEYDIFF:0.25+q:int4_kivi",
+     "ratio": 0.061411,
+     "multiple": 16.284,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 21,
+     "rv": 32,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k21:v32+drop:KNORM:0.25+q:int4_kivi",
+     "ratio": 0.061411,
+     "multiple": 16.284,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 21,
+     "rv": 32,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.25,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k25:v38+q:int2_kivi",
+     "ratio": 0.061768,
+     "multiple": 16.19,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 25,
+     "rv": 38,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k21:v32+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.062217,
+     "multiple": 16.073,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 21,
+     "rv": 32,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k6:v9",
+     "ratio": 0.062314,
+     "multiple": 16.048,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 6,
+     "rv": 9,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k18:v27+drop:KEYDIFF:0.0625+q:int4_kivi",
+     "ratio": 0.062605,
+     "multiple": 15.973,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 18,
+     "rv": 27,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KEYDIFF 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k18:v27+drop:KNORM:0.0625+q:int4_kivi",
+     "ratio": 0.062605,
+     "multiple": 15.973,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 18,
+     "rv": 27,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.0625,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 6.25%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+q:int8_token",
+     "ratio": 0.062609,
+     "multiple": 15.972,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k19:v29+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.063058,
+     "multiple": 15.858,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 19,
+     "rv": 29,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12",
+      "drop_study"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上；輕度丟的邊際代價：KEYDIFF 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k19:v29+drop:KNORM:0.125+q:int4_kivi",
+     "ratio": 0.063058,
+     "multiple": 15.858,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 19,
+     "rv": 29,
+     "bits": "int4",
+     "drop_method": "KNORM",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "drop_study"
+     ],
+     "why": "輕度丟的邊際代價：KNORM 12.5%（xl+drop、INT4、W＝4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k17:v26+q:int4_kivi",
+     "ratio": 0.063155,
+     "multiple": 15.834,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 17,
+     "rv": 26,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k20:v30+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.06367,
+     "multiple": 15.706,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 4,
+     "rk": 20,
+     "rv": 30,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k19:v29:w2+q:int4_kivi",
+     "ratio": 0.064546,
+     "multiple": 15.493,
+     "bands": [
+      16
+     ],
+     "targets": [
+      16
+     ],
+     "W": 2,
+     "rk": 19,
+     "rv": 29,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "ratio": 0.082248,
+     "multiple": 12.158,
+     "bands": [
+      12
+     ],
+     "targets": [],
+     "W": 4,
+     "rk": 22,
+     "rv": 34,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "control"
+     ],
+     "why": "對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k28:v42+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.082303,
+     "multiple": 12.15,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 28,
+     "rv": 42,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k25:v38+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.082764,
+     "multiple": 12.083,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 25,
+     "rv": 38,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k26:v39+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.082771,
+     "multiple": 12.082,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 26,
+     "rv": 39,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k8:v12",
+     "ratio": 0.083085,
+     "multiple": 12.036,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 8,
+     "rv": 12,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k34:v51+q:int2_kivi",
+     "ratio": 0.083337,
+     "multiple": 11.999,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 34,
+     "rv": 51,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k15:v23+q:int8_token",
+     "ratio": 0.08462,
+     "multiple": 11.818,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 15,
+     "rv": 23,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k25:v38:w2+q:int4_kivi",
+     "ratio": 0.084717,
+     "multiple": 11.804,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 2,
+     "rk": 25,
+     "rv": 38,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k23:v35+q:int4_kivi",
+     "ratio": 0.085186,
+     "multiple": 11.739,
+     "bands": [
+      12
+     ],
+     "targets": [
+      12
+     ],
+     "W": 4,
+     "rk": 23,
+     "rv": 35,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k48:v72+q:int2_kivi",
+     "ratio": 0.117653,
+     "multiple": 8.5,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 48,
+     "rv": 72,
+     "bits": "int2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int2"
+     ],
+     "why": "係數 INT2 KIVI：位元最少、秩最多",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k22:v33+q:int8_token",
+     "ratio": 0.122039,
+     "multiple": 8.194,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 22,
+     "rv": 33,
+     "bits": "int8",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int8"
+     ],
+     "why": "係數 INT8（逐 token）：位元多、秩少",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k42:v63+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.123454,
+     "multiple": 8.1,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 42,
+     "rv": 63,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k4v2"
+     ],
+     "why": "K 係數 INT4、V 係數 INT2（K4V2）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18",
+     "ratio": 0.124628,
+     "multiple": 8.024,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "bf16",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:rank_only"
+     ],
+     "why": "只降秩（係數 BF16）：「疊加優於單降秩」的對照",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k38:v57+drop:KEYDIFF:0.125+q:int4_kivi",
+     "ratio": 0.124802,
+     "multiple": 8.013,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 38,
+     "rv": 57,
+     "bits": "int4",
+     "drop_method": "KEYDIFF",
+     "drop_frac": 0.125,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_drop_keydiff12"
+     ],
+     "why": "INT4＋輕度丟 KEYDIFF 12.5%（xl+drop）：把位元組省在丟 block 上",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k34:v51+q:int4_kivi",
+     "ratio": 0.124841,
+     "multiple": 8.01,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 34,
+     "rv": 51,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4"
+     ],
+     "why": "底：xKV＋INT4 KIVI 係數（X1／X2 最好的組合）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k39:v59+q:kv-int2_kivi-int4_kivi",
+     "ratio": 0.124891,
+     "multiple": 8.007,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 4,
+     "rk": 39,
+     "rv": 59,
+     "bits": "k2v4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:k2v4"
+     ],
+     "why": "K 係數 INT2、V 係數 INT4（K2V4）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k37:v56:w2+q:int4_kivi",
+     "ratio": 0.125058,
+     "multiple": 7.996,
+     "bands": [
+      8
+     ],
+     "targets": [
+      8
+     ],
+     "W": 2,
+     "rk": 37,
+     "rv": 56,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "alloc:int4_w2"
+     ],
+     "why": "INT4、窗口 W＝2：基底小、跨層共用少",
+     "deployable": 1
+    },
+    {
+     "spec": "q:int4_kivi",
+     "ratio": 0.3125,
+     "multiple": 3.2,
+     "bands": [],
+     "targets": [],
+     "W": 0,
+     "rk": 0,
+     "rv": 0,
+     "bits": "int4_kivi",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 0,
+     "roles": [
+      "control"
+     ],
+     "why": "對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    },
+    {
+     "spec": "none",
+     "ratio": 1.0,
+     "multiple": 1.0,
+     "bands": [],
+     "targets": [],
+     "W": 0,
+     "rk": 0,
+     "rv": 0,
+     "bits": "none",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 0,
+     "roles": [
+      "control"
+     ],
+     "why": "對照（X1／X2 的配置與錨點）",
+     "deployable": 1
+    }
+   ],
+   "skipped": []
+  }
+ }
+}

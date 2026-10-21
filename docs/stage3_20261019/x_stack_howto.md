@@ -447,3 +447,134 @@ cp code/m16_queue/jobs/38bz_x2b_report.sh code/m16_queue/jobs/38cz_xkv_cal_repor
 2. **X2b 多加了 3 個配置**（兩個模型的 `q:int2_kivi`、Qwen 的 `xl:k22:v34`；理由 §14.3，約 +0.3 卡小時〔估〕）。要嚴格照 10 個的話把 `combos_v2.json` 的這 3 個拿掉（要在 38b1 之前；之後改會被 plan 擋下）。
 3. **排序**：照檔名 38b（約 3.3–4.5 小時）整段先跑完才輪到 38c（約 2 小時）。38c 的答案（能不能事先算基底）比較快出來；要先跑就調整排序。
 4. **省 GPU 的選項（沒做）**：38c 的生成裡 3 個每題 SVD 的配置在 X2 已經量過同一批題（約佔 38c 的 2.6 卡小時）；X2 的 E0 跨 run 重量 192 次都逐值相同，跨 run 配對大概可信，但我照指示做同 run 配對。要省的話可以從 `xlcal_pairs` 的生成計畫拿掉每題 SVD、改用 X2 的列（要改 report 與事先寫死的規則，另開版本）。
+
+---
+
+## 15. X4：把「xKV 式跨層低秩＋量化」推到極限（10/21）
+
+> **狀態（2026-10-21 04:3xZ）**：`code/m16_x4.py` 與 job 檔寫好，**還沒有在 GPU 上跑**（寫的時候第三階段的 37d 正在 GPU 上，不能開 GPU 行程、不能 import torch）。
+> 做過的：`py_compile`；`python code/m16_x4.py --self-test`（CPU、不 import torch）**25 項 ALL PASS**；`m16_xstack.py` 沒有改（`git diff` 空），它的 self-test 照樣 147 項 ALL PASS（已排隊的 37e／37f、38b*、38c* 讀它，行為不變）；
+> 用假的 m7run 把 X4 五種工作池（X4a、X4b、X4c、X4d、Qwen 256K）各建一次（52 個單位、`pending` 真的跑），產生的每條指令都用真的 argparse 解析過。
+> 設計與判定照 `docs/stage3_20261019/x4_limit_plan.md`（**判定門檻沒改**；和計畫不同的地方在 §15.10，理由寫明）。時間全部〔估〕，依據在 §15.6。self-review，不是 cross-model review。
+
+### 15.1 檔案
+
+| 檔案 | 內容 |
+|:--|:--|
+| `code/m16_x4.py` | 子命令 `grid`、`tf`（X4a）、`select-b`、`gen`（X4b／X4c／256K／X4d 兩輪）、`select-cd`、`dump`、`lossless`、`report`、`gpu-selftest`；`--self-test`。只 import `m16_xstack` 的函式，**不改它** |
+| `code/m16_xstack_combos_x4.json` | X4a 的配置（`m16_x4.py grid` 產生；每個配置有 roles、why、targets、倍數）；self-test 核對＝程式重算 |
+| `code/m16_queue/jobs/x4_common.sh` | X4 job 的共用函式（工作池單位、冒煙、挑選、報告）。**不要放進佇列目錄** |
+| `38e1–38e3_x4a_tf.sh` | X4a（GPU；38e1 開頭冒煙） |
+| `38f1–38f4_x4b_gen.sh` | X4b（GPU；38f1 開頭挑選＋冒煙＋dump；38f4 是保險） |
+| `38g1–38g2_x4c_128k.sh` | X4c 128K（GPU；38g1 開頭挑選前緣＋冒煙） |
+| `38h1–38h2_x4d_turns.sh` | X4d 兩輪（GPU；38h1 開頭冒煙） |
+| `38i1_x4c_256k_qwen.sh` | Qwen 256K 切片（GPU；排最後、可不排） |
+| `38ez`、`38fy`、`38fz`、`38hz`、`38iz` | cpu 佇列：X4a 報告、無損、X4b 報告、完整報告、加 256K 的報告 |
+
+輸出：摘要 `results/m16_stage3_mi300x/x_stack/x4/`（`x4_report.json`、`tables_x4.md`、`x4_best_allocation.csv`、`x4a_configs_<m>.csv`、`pareto_x4a_<m>.png`、`pareto_x4b_<m>.png`、`lossless_x4.json`、三個計畫檔 `x4b／x4c／x4d_selection.json`）；逐列 `/mlsteam/data/tiara/stage3/xstack/x4/`；dump 在本地盤 `/var/tmp/tiara_s3/kv_dumps/x4`（可重生）。**不寫第一版與 v2 的目錄**（`report` 擋）。
+
+### 15.2 設計
+
+**配比格點（Q-B；`grid`，位元組照 `predict_bytes` 實算：含每題基底、scale、遮罩）**
+- 目標倍數 T∈{8, 12, 16, 20, 24, 32}；「落在 T」＝實際倍數在 T 的 ±10%。
+- 每個 T 照優先順序放這些分法（每一種掃 K 秩 2–48、V 秩＝比例×K 秩，挑倍數最接近 T 且在 ±10% 內的）：
+  1. 底：xKV＋INT4 KIVI（W＝4、K:V＝1:1.5、不丟）；2. 只降秩（BF16 係數）；3. INT8 係數；4. K4V2；5. K2V4；6. INT2；7. INT4、W＝2；8. INT4＋輕度丟 KEYDIFF 12.5%。
+  每個 T 實際 7–8 種（Llama 的「只降秩」在 T＝20、32 找不到 ±10% 內的秩 → 寫在 JSON 的 `skipped`）。
+- 輕度丟的完整掃描（Q-A）：T＝16、24 各 6 個（KEYDIFF／KNORM × 6.25／12.5／25%，INT4、W＝4）。
+- 秩細格點（計畫 §2）：INT4、W＝4、不丟，12 組（1:1.5 的 6 組、K 少 V 多 5 組、(11,14)）——K／V 秩分配的軸在這裡。
+- 對照：`none`、`q:int4_kivi`、`xl:k11:v17+q:int4_kivi`、`xl:k22:v34+q:int4_kivi`。
+- 合計每個模型 71 個配置。共用 SVD 要的最大秩（每 head 每層等效）：Llama W＝4 K41／V62、W＝2 K34／V51；Qwen W＝4 K48／V72、W＝2 K37／V56（都是 T＝8 的低位元分法）。
+
+**共用 SVD（和 X1／X2 不同）**：每題、每（K／V、W）只做一次 `torch.svd_lowrank`，q＝這題的配置裡最大的聯合秩＋16（seed、niter 照 m16_xstack），每個配置取前 r 欄（U·S＝係數、V＝基底）。X1／X2 是每個配置各做一次 q＝r＋16；q 越大，前 r 個奇異向量越接近精確 SVD，所以重建誤差 ≤ X1／X2 的同一個配置。不這樣做的話 X4a 光 SVD 就要約 16 卡小時〔估〕。gpu-selftest 核對：共用 SVD 對 numpy 精確 SVD 的重建誤差比在 [0.999, 1.05]（量化的配置 [0.98, 1.05]），另記對 m16_xstack 每配置 SVD 的誤差比。
+
+**輕度丟一律 xl+drop**（基底在全部 token 上估、再丟 block 的係數；m16_xstack 的合法順序 `("xl","drop")`）：才能共用 SVD。X2 的 Qwen 兩種順序（丟 50%）−14.4 與 −15.4 差不多。
+
+**題目**（self-test 核對不重疊）：X4a seed 64000 起 T2–T5 各 24 題（96 題）；X4b seed 65000 起各 48 題（192 題）；X4c＝44c 的 128K 題組（252 block、seed 40000、各 12 題＝48 題）；Qwen 256K＝504 block（258,048 token）、seed 40000、各 6 題；X4d＝C1a 的兩輪題組（seed 70000、T2–T4 各 32 題＝96 題）。lossless 的 dump＝X4a 的前 4 題（每個任務 1 題）。
+
+### 15.3 X4a → X4b 的挑法（事先寫死；`X4_TEXT['select_b']`）
+
+每個 T：X4a 裡倍數在 T 的 ±10% 內的 xKV 配置，平均 Δgold_lp 最高的（同分取位元組少的）＝帶內最好（最多 6 個）；另外為「疊加優於單降秩」放最多 2 個「只降秩」對照：依序看 T＝8、16、12、20、24、32，帶內最好的不是只降秩、而且有只降秩配置和它的位元組比相差 ±5% 內 → 放那裡面 Δgold_lp 最高的；加 `q:int4_kivi`（錨點）。X4a 每個模型 < 48 題 → 不挑（38f1 寫 NEEDS_HUMAN、exit 1）。計畫檔 `x4b_selection.json` 已存在而內容不同 → 停（不默默改）。
+
+### 15.4 X4b → X4c／X4d 的挑法、無損
+
+- 前緣（`X4_TEXT['select_cd']`）：X4b 每個 T 的生成最佳配比（帶內答對率最高的）；T*＝最佳配比在 ε 內的最大 T（沒有 → 最小的 T）。前緣 3 個＝T* 的、T* 的下一個較大 T 的（T*＝最大 → 下一個較小的）、T＝8 的（重複 → 依序 12、16、… 第一個沒重複的）。X4c＝前緣 3 個＋`q:int4_kivi`；**X4d＝前緣前 2 個**＋`q:int4_kivi`＋`drop:KEYDIFF:0.5+q:int4_kivi`（時間，§15.6）。
+- 無損：38f1 用 `dump` 把 X4b 計畫裡每個 xKV 配置在 X4a 前 4 題上的**實際存下來的每一個 part**（係數的量化 q／scale／zero 或 BF16 係數、BF16 基底、遮罩）寫到本地盤，位元組＝`predict_bytes`（不等就停）。38fy（cpu 佇列）用 `m16_s1_lossless` 的函式量：每個 part zstd（−3／1／3；BF16 的 part 用 S1 的 planes 變體），每次都解回來逐位元比對；解壓速度＝全部 stream 切 4 MiB frame、1／4 個 thread。**判定：zstd:3 ≥ 1.05 倍 → 值得疊**（計畫 §3）。
+
+### 15.5 判定（計畫 §3 原文的落實；`X4_TEXT`）
+
+- **Q-A**：每一軸（輕度丟、量化 vs 只降秩、INT4 vs INT8、低於 4 bit vs INT4、W＝2 vs 4、K 少 V 多 vs 1:1.5）、每個 T：帶內「有這一軸的最好」−「沒有這一軸的最好」的逐題配對差（TF 的 Δgold_lp；X4b 有兩邊時也算生成）。**計畫沒寫統計門檻，這裡寫死成：95% CI 上界 < 0 → 差（不值得疊）；其他 → 沒有比較差（值得疊）**。另報「底」沿倍數的邊際代價（每多壓一倍掉多少 Δgold_lp）。合併 token 不能和低秩疊（validate 擋）、跨層逐 token 共用沒有依據（K1）——照計畫寫明。
+- **Q-B**：每個 T 的 TF 最好（X4a）與生成最佳配比（X4b）並列成「目標倍數 → 最佳配比」表（`x4_best_allocation.csv`、`tables_x4.md`），附「×無損」後的倍數。
+- **極限**：B*_ε＝ε 內（生成答對率對 E0 配對差 95% CI 下界 ≥ −2 個百分點）最小的位元組比；另報 B*_99、B*_99.9；每模型、每長度（32K、128K、256K）；< 48 題 → INCOMPLETE。另報「最佳配比第一個掉出 ε 的 T」。
+- **疊加優於單降秩**：位元組比 ±5% 內最好的「秩＋量化」對「只降秩」的生成配對差 CI 下界 > 0 → 成立。
+- **長上下文**：128K（256K）前緣配置對 E0 在 ε 內 → 撐住；超出 → 寫出從哪個倍數開始掉。
+- **多輪**：第 2 輪對 E0 在 ε 內 → 多輪不壞；超出 → 「壓縮傷多輪」，並和 drop 對照比（配對差）。
+- 所有比較同時報對 E0 與對 `q:int4_kivi`。
+
+### 15.6 時間估計（全部〔估〕）與取捨
+
+**成本模型（用實測擬合）**：每題卡秒 ≈ a·Σq ＋ 每列成本，Σq＝這題所有 SVD 的寬度（每次 SVD 的 q＝聯合秩＋16，K、V 相加）。
+- 實測輸入（`/mlsteam/data/tiara/stage3/xstack/x1、x2` 逐列檔的 `ts` 與 run 目錄名的開始時間，同卡並行的 shard 合計）：
+  X2 Llama core 161.6 卡秒／題（17 個配置、Σq 11,136）、x3 51.8（14、Σq 2,080）；Qwen core 68.1（17、Σq 3,760）、x3 43.9（13、Σq 1,600）、ext 47.8（13、Σq 2,096）；X1 Llama 319.2（162 個配置、Σq 22,976）、Qwen 141.7（162、Σq 11,744）。
+- 擬合（core＋x3 兩點解兩個未知數）：Llama a＝0.0115 卡秒／q、生成每列 1.86 卡秒；Qwen a＝0.0069、生成每列 2.35。驗證：Qwen ext 預測 47.3、實測 47.8；代回 X1 得 TF 每列 0.24（Llama）／0.27（Qwen）卡秒。W＝2 的 SVD 每 q 當 W＝4 的 0.75 倍（矩陣寬一半，QR 不變）〔估〕；128K 的 SVD 當 32K 的 4 倍（token 4 倍）〔算術〕；128K 的 prefill／生成照 02 冒煙的實測（Llama 1 題 3 列 51.9 秒、單行程）。
+- 共用 SVD 後：
+
+| 階段 | 每題卡秒〔估〕 | 題數 | 卡小時〔估〕 | 兩卡牆鐘〔估〕 |
+|:--|:--|--:|--:|--:|
+| X4a | Llama SVD 50（W4 Σq 3,328、W2 1,392）＋TF 72×0.24＝67；Qwen 17.5＋19.4＝37 | 96 | 1.8＋1.0＝2.8 | 1.4 h |
+| X4b | Llama SVD 27–50＋生成 10×1.86＝46–69；Qwen 10–18＋23.5＝34–41 | 192 | 2.5–3.7＋1.8–2.2＝4.3–5.9 | 2.2–3.0 h |
+| X4c 128K | Llama SVD ×4 約 75＋prefill／生成約 50＝125；Qwen 約 68 | 48 | 1.7＋0.9＝2.6 | 1.3 h |
+| X4d 兩輪 | Llama SVD 約 19＋生成 5×2×1.86＝40；Qwen 6＋23.5＝30 | 96 | 1.1＋0.8＝1.9 | 0.95 h |
+| 冒煙、挑選、dump | 38e1 10–20 分鐘、38f1 10–20、38g1 5–15、38h1 5–10 | | | 約 0.65 h |
+| **合計** | | | | **約 6.5–7.3 h** |
+| Qwen 256K（可不排） | 每題約 3–4 分鐘、兩個行程 | 24 | | 約 0.7–0.9 h（含冒煙） |
+
+- **取捨（照協調者「超過就先縮 X4a 的格點或 X4d 的配置數」）**：沒縮之前約 8.2 h。縮了兩件：
+  1. **X4a 拿掉 W 大（Llama 8、Qwen 7）**：它的 SVD 是 8192／3584 維，每題約 24／15 卡秒〔估〕＝X4a 約 1 卡小時（約 0.5 h 牆鐘）；而 W 只是 Q-A 的一個軸（Q-B 的配比不含 W）。W 軸只剩「W＝2 vs 4」。
+  2. **X4d 的前緣從 3 個減到 2 個**（T* 與下一個較大的 T；約 0.2 h）。
+  另外原本每個 T 都放的「K 少 V 多」分法拿掉，由秩細格點的 5 組涵蓋（K／V 分配只在 15–39 倍有資料）。
+- 還要更省的話（沒做）：X4b 的「只降秩」對照 2 → 1（約 0.1 h）；X4a 的輕度丟掃描只留 T＝24（約 0.05 h）；X4d 題數 96 → 72。
+- 最不確定的：X4b 的 SVD（看挑到的秩與 W）、同卡混跑兩個模型 4 個行程的爭用、128K 的 SVD（沒在 128K 跑過 xKV）。38e1 的 gpu-selftest 會印整個 32K 區最大秩的 SVD 時間（`full_region_maxrank[*]` 的 `t_svd`），冒煙的 log 印每題秒數與 peak GiB。
+
+### 15.7 怎麼排
+
+```bash
+cp code/m16_queue/jobs/38e[123]_x4a_tf.sh code/m16_queue/jobs/38f[1234]_x4b_gen.sh code/m16_queue/jobs/38g[12]_x4c_128k.sh \
+   code/m16_queue/jobs/38h[12]_x4d_turns.sh /mlsteam/data/tiara/stage3/jobs/queue/
+cp code/m16_queue/jobs/38ez_x4a_report.sh code/m16_queue/jobs/38fy_x4_lossless.sh code/m16_queue/jobs/38fz_x4b_report.sh \
+   code/m16_queue/jobs/38hz_x4_report.sh /mlsteam/data/tiara/stage3/jobs/queue_c/
+# 時間夠才排：38i1_x4c_256k_qwen.sh（queue/）＋38iz_x4_report.sh（queue_c/）
+# x_common.sh、x_pool.sh、x4_common.sh 不要複製
+```
+- 檔名排序：`38db_c1b` < `38dz` < **`38e*` < `38ez` < `38f*` < `38fy`／`38fz` < `38g*` < `38h*` < `38hz` < `38i1`／`38iz`** < `38z_x3_map2` < `39v_x3_validate` < `40_v0`。
+- GPU job 的 AFTER 只寫 `37z_x2_report`（已 done）；各階段的先後靠檔名排序（runner 一次一個 GPU job、照排序）＋**job 裡的檢查**：38f1 挑 X4b 前要 X4a 每個模型 ≥48 題、38g1／38h1 挑前緣前要 X4b ≥48 題，不夠 → NEEDS_HUMAN、exit 1；後面幾段要第 1 段的冒煙記號（`$XD/x4/SMOKE_OK_<階段>`，記程式的 sha）。不用 GPU 之間的 AFTER 是因為：前一段被 02:00Z 的截止規則跳過（`.cutoff`）時，AFTER 會讓後面永遠不開，runner 就會先去跑 39v／40_v0。
+- cpu job 的 AFTER：38ez `AFTER: 38e1 38e2 38e3`；38fy `AFTER: 38f1`；38fz `AFTER: 38f1–38f4 38fy`；38hz `AFTER: 38fz 38g1 38g2 38h1 38h2`；38iz `AFTER: 38i1 38hz`。**沒排的 job 要從 AFTER 拿掉**。
+- CPU 自測：`source code/m7_env.sh; OMP_NUM_THREADS=4 nice -n 19 taskset -c 0-3 python code/m16_x4.py --self-test`。
+
+### 15.8 冒煙要看什麼（`$XD/x4/smoke/`）
+
+- **38e1** `gpu_selftest_<m>.json`：`shared_svd_vs_exact[W*|*]`（誤差比、`shared_over_per_config`）、`two_turn_eq_m10_quality_run_turns`（兩輪的 token 逐個相同、第 1 輪＝Item.gen）、`full_region_maxrank[W*]`（**SVD 時間與 peak GiB**：Llama 若 > 50 GiB → 調 `X4_GB_LLAMA`）、`dump_bytes_eq_predict`。`tf_smoke_<m>_s0.csv` 6 列。
+- **38f1**：`x4b_selection.json`（每個模型 6–9 個＋錨點；roles 有 `band_best:T`／`rank_only_ref:T`）；`x4b_smoke` 的列數；dump 的 log（每個配置幾 MB）。
+- **38g1**：`x4c_selection.json`／`x4d_selection.json` 的 `detail.<m>.why_frontier`（T* 與為什麼挑這 3 個）；128K 冒煙的 peak（Llama 登記 100 GiB）。
+- **38h1**：兩輪冒煙 1 題的列數＝（配置數＋1）×2。
+- **38i1**：256K 的題第一次出（`make_item(n_blocks=504)`）；冒煙過了才跑。
+
+### 15.9 輸出怎麼讀
+
+- `tables_x4.md`（每個模型）：「目標倍數 → 最佳配比」表（TF 最好、生成最佳配比、對 E0／對 INT4、ε、MLPerf、×無損）；極限表（32K／128K／256K 的 B*_ε、B*_99、B*_99.9、第一個掉出 ε 的 T）；Q-A 表（軸 × T：值得／不值得＋配對差 CI）；無損；底的邊際代價；疊加優於單降秩；128K／256K 表；多輪表（兩輪對 E0、第 2 輪判定、對 drop 對照、對 INT4）。
+- `pareto_x4a_<m>.png`：TF（倍數 vs Δgold_lp；顏色＝係數位元、形狀＝W、空心＝輕度丟；黑線＝前緣）。`pareto_x4b_<m>.png`：生成（倍數 vs 對 E0 的差與 CI；32K／128K／256K；虛線＝−ε）。
+- `x4_report.json`：全部成分（每個配置的統計、Q-A 每個比較的配對差、挑選的理由、污染統計）。
+
+### 15.10 和計畫不同的地方、已知限制
+
+1. 共用 SVD、輕度丟一律 xl+drop（§15.2；理由：時間、共用 SVD）。
+2. W 大縮掉、X4d 前緣 2 個（§15.6；理由：時間）。
+3. Q-A 的「差」寫死成配對差 CI 上界 < 0（計畫沒寫統計門檻；門檻 ε、1.05 倍、±5% 都照計畫）。
+4. X4d 用 C1a 題組的 T2–T4 各 32 題（C1a 有各 45 題；T5 只有一輪）。第 2 輪的歷史照 m10_quality.run_turns 固定成第 1 輪的標準答案（第二階段同一個做法），不是模型自己的第 1 輪答案。
+5. 256K：第二階段沒有 256K 的題組，這裡第一次用 `make_item(n_blocks=504)`；記憶體〔估〕。
+6. 128K 的位元組比用 128K 的區（block 1–251）實算：基底攤在 4 倍的 token 上，同一個配置在 128K 的倍數比 32K 高。
+7. GPU 路徑全部沒跑過；冒煙是第一次。
+
+### 15.11 需要人決定的事
+
+1. 時間：合計約 6.5–7.3 h〔估〕，在 5–7 h 的上緣；已縮 W 大與 X4d 前緣。要再縮見 §15.6 的清單。Qwen 256K 另約 0.7–0.9 h，時間不夠就不排（報告會寫「沒有資料」）。
+2. W 大要不要另開一個小批次補量（X4a 只量 W＝8／7 的幾個配置、48 題：約 0.5 卡小時〔估〕）。
