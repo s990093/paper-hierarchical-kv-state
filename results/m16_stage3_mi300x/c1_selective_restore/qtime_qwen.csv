@@ -1,0 +1,9 @@
+run_id,ts,model,op,n_tokens,bytes,reps,t_med_ms,t_q1_ms,t_q3_ms,t_min_ms,GiBps,note,gpu_verdict,own_gpu_intruders,host_level,torch,hip
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,minmax_64blocks,32768,0,20,2.209,2.2029,2.2334,2.1976,,寫入（卸載）時建摘要：64 個 block 的 K 逐維 min／max（不在還原的關鍵路徑上）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,blind_q_forward,38,0,20,58.0265,57.9733,58.0893,57.8421,,QUEST_BLIND 要的 q：第 2 輪問題只看 block 0＋tail 的 forward（遮罩路徑仍對全部 key 算，會高估）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,quest_select_q2,38,0,20,0.2417,0.2409,0.2542,0.2385,,Quest 選 block：問題所有 token 的 q 打 64 個 block 的摘要 → 彙總 → 排序（含 .tolist() 同步）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,quest_refill_check,4,0,20,0.2453,0.2428,0.2544,0.2403,,(b) 每次補載檢查：4 個 token 的 q（每 4 個生成 token 一次）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,prefill_q2_sdpa,38,0,20,57.1994,57.1427,57.2439,57.0634,,參考：第 2 輪問題的 prefill（完整 KV、sdpa）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,prefill_q2_mask_k25,38,0,20,57.9121,57.8501,57.9686,57.7526,,參考：同上、k＝25% 的遮罩路徑（仍對全部 key 算，不代表真的少算）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,decode_step_sdpa,1,0,20,52.5309,52.5055,52.5633,52.4584,,參考：一個 decode step（完整 KV、sdpa）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831
+20261021-143911-m16-c1b-qtime-qwen,2026-10-21T14:39:47+00:00,qwen,h2d_block_pinned,512,29360128,20,0.5606,0.5597,0.5617,0.5572,48.776,尺準：一個 BF16 block 從 pinned host 到 GPU 的分段視圖（和第二階段 bw.json 的 real_pinned_h2d 同一種 copy）,CLEAN,0,UNOBSERVABLE_HOST,2.10.0+rocm7.0,7.0.51831

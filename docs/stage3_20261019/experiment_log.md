@@ -207,3 +207,11 @@
 - **主要判定改成「只用新的 192 題」**（在看到任何新資料之前改定）：「只比兩對」是看過 38c 結果之後才決定的；光這個限定就會讓 38c 的 96 題下 Llama 從 UNDETERMINED 變成 CAN_PRECOMPUTE（差別全在拿掉的只降秩那對）。所以只有新的 192 題是乾淨的獨立檢驗；合併 288 題只當參考並列。判定門檻照 XLCAL_TEXT 原文，aggregate 從三對改兩對（寫在報告裡）。
 - **失敗 4**（10/21 14:53Z）：`38da_c1b` 工作池領 llama shard 3 時失敗：`m16_c1a_predict.read_rows` 讀到別的 worker 正在寫的 `.csv.gz`（EOFError，只是跳過檢查用）時把警告印到 stdout，job 用 `u=$(pool-claim …)` 把它當成領到的工作名 → 指令錯（`env: '…csv.gz:': No such file`）、`pool-done` 解析失敗，工作池立 STOP。已在跑的 5 個單位（llama s0–s2、qwen s0–s2 中做完的）正常完成、結果有效。修法：`cmd_pool_claim` 領取期間 `redirect_stdout(sys.stderr)`（原子替換檔案；self-test 46/46）。15:10Z 重排 38da（逐題續跑）。
 - 10/21 15:12Z NEEDS_HUMAN（資訊）：38da 重開時 qtime qwen（run `20261021-151145-m16-c1b-qtime-qwen`）CONTAMINATED_DURING_RUN → 照規則沒寫進 results。不需重量：第一次開跑時兩個模型的 qtime 都是 CLEAN（`20261021-143835-…-qtime-llama`、`20261021-143911-…-qtime-qwen`），`results/…/c1_selective_restore/qtime_qwen.csv` 是那次的；llama 重開那次也 CLEAN。
+
+## C1b　選擇性還原（38da 14:35–15:07Z 失敗後重開 15:08–16:33Z；38db 立即結束；report 16:33Z）〔實測〕
+
+- run：24 個工作池單位（`c1b_summary.json`）；題目同 C1a（每個模型 T2–T4 135 題＋T5 15 題），逐題檢查沒有 false；FULL（同一條遮罩路徑）和 E0_SDPA 一致（+0.0）。產出 `results/m16_stage3_mi300x/c1_selective_restore/`；逐列原始檔在 `/mlsteam/data/tiara/stage3/c1b/`。
+- **判定（事先寫死）：兩個模型、設計卡（QUEST_MEAN）與可部署版（QUEST_BLIND）都是 STOP**——k＝50% 時兩種 query-aware 選法補不補載都掉超過 ε。
+- 主要數字（第 2 輪答對率對 FULL 的差，百分點，T2–T4）：Llama QUEST_MEAN@25 −27.7、@50 −7.9；QUEST_BLIND@50 −7.6；Qwen QUEST_MEAN@25 −18.5、@50 −9.6；QUEST_BLIND@50 −12.4。寫入時分數（WRITE）、第 1 輪問題（QRY1）、位置（POS）、隨機（RND）都更差（@50：Llama −14～−36）。補載 (b) 比不補載 (a) 好 +1～+14 個百分點（多數顯著），但補不回 ε。
+- **上界（FULLK_MEAN，用完整 K 打分，不可部署）**：Qwen @25 +0.5 [−2.5, +3.4]、@50 +1.3；Llama @25 −6.9、@50 −1.6 [−4.0, +0.2]。→ 「只搬需要的 block」本身有空間（Qwen 搬 1/4 就不掉），失敗的是 Quest 的 512-token block min/max 摘要不夠準。
+- 判讀：照設計卡寫成負面結果：「在這些任務上，以 Quest 摘要做的 block 級選擇性還原不可靠」。C1a 的 recall@16 高於隨機，但答案 block 只要漏一塊答案就錯，召回 30–70% 不夠。可能的下一步（未測、只是方向）：用更準又便宜的 K 摘要（例如 RoPE 前的低秩 K，K1／X 系列顯示 K 在 RoPE 前很低秩）當選擇索引，逼近 FULLK 上界。
