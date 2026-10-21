@@ -201,7 +201,11 @@ def cmd_pool_claim(a):
             cache[m] = done_union(a.raw_dir, m)
         return not unit_remaining(a.raw_dir, m, i, a.n, plan, cache[m])
 
-    u = pool_claim(a.pool, pool_units(a.models, a.n), a.n, a.worker, skip)
+    # 10/21 14:53Z：done_union 讀到別的 worker 正在寫的 .csv.gz 會印 [read_rows] 警告到 stdout，被 job 當成領到的工作名
+    # （38da 的 llama 3/12 因此失敗）→ 領取期間 stdout 一律導到 stderr，只把結果那一行印到 stdout。
+    import contextlib
+    with contextlib.redirect_stdout(sys.stderr):
+        u = pool_claim(a.pool, pool_units(a.models, a.n), a.n, a.worker, skip)
     if u is not None:
         print(f"{u[0]} {u[1]}")
         print(f"[pool-claim] {a.worker} 領到 {u[0]} shard {u[1]}/{a.n}", file=sys.stderr)
