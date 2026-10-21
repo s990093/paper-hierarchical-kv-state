@@ -66,6 +66,7 @@
 | · | `gpu_guard.py` `_in_own_job`（`GPU_GUARD_JOB_CGROUP_OWN=1`） | 同一個 Slurm job cgroup 的行程也算自己的（MPS server 不是子孫） | 不會（只在 §14 B 設；沒設時不變，Slurm 測試 9 項過） |
 | · | `m10_speed.py` Busy 的 `M10_BUSY_MPS_PCT` | 背景 process 帶 `CUDA_MPS_ACTIVE_THREAD_PERCENTAGE` | 會，照設計（只在 §14 B） |
 | · | `h200_tinycopy.py`、`h200_nsys_memcpy.py`、`h200_mps.py`、`--part nvx` | §14 的微測、nsys 摘要、MPS 檢查與報告 | 不會（新的、只報告） |
+| · | `code/report_stage2/common.py` 的 `REPORT_STAGE2_PLATFORM=h200` | 報告的畫圖／估計程式改讀 `results/*_h200`、寫 `docs/h200/report_stage2_h200/` | 不會（沒設時不變，MI300X 的 whatif 重跑逐位元相同）；逐條對照見 `docs/h200/STAGE2_H200_VS_MI300X.md` |
 | · | `code/h200_pool.py` | 工作池加記憶體預約（20705 OOM 的修正） | 不會（只影響同時開幾個 process） |
 | · | `code/h200_longctx_plan.py` | 試跑時間改成每題取實際跑的那次（screen 會續跑）；`LONGCTX_VARIANT=256` | 題數規則不變；32K–128K 選出 n＝12（同 MI300X） |
 | · | `code/h200_longctx256_analyze.py` | 256K 的彙整另寫（借用 `m10_longctx_analyze` 的函式） | 不會；256K 只有 T2–T4，和 32K–128K 的四任務平均不能直接比（表裡都只取 T2–T4） |
