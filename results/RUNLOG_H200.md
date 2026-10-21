@@ -1316,3 +1316,16 @@ MI300X 到 10/16 晚的最後推送為止：主線（10–33cz）、39、39a、4
 - **harness 只算 vs vLLM**（32K、GPU 閒；harness 用 14 號 M2 的 compute_only）：
   - H200：Llama 2.12 ÷ 1.211 = 1.75 倍，Qwen 1.865 ÷ 1.059 = 1.76 倍。MI300X 是 1.67、1.72 倍，落在 03 §5.2 寫的「1.7–2 倍」。
   - harness 比 vLLM 的 512 切法：H200 慢 1.58、1.52 倍；MI300X 是快（0.87、0.83 倍）。兩台在這一點方向相反。
+
+### 10/21：第二階段 H200 逐條對照 MI300X 的最終報告（head node，CPU；self-review）
+- 使用者：「MI300X 第二階段看起來已經結束了，也把所有東西跑完，看結論跟報告是不是一樣」。H200 的 GPU 實驗已經全部跑完，沒有新的 GPU job。
+- 產出：`docs/h200/STAGE2_H200_VS_MI300X.md`。照報告的章節逐條標記：相同、方向相同但數值不同、不同、H200 沒有，並附 H200 的數字與來源檔。
+- §5.5 的估計在 H200 重算：
+  - `code/report_stage2/common.py` 加 `REPORT_STAGE2_PLATFORM=h200`，讀 `results/*_h200`、寫 `docs/h200/report_stage2_h200/`。沒設時不變：MI300X 的 `whatif_recompute.json` 重跑逐位元相同。
+  - 輸出 `docs/h200/report_stage2_h200/derived/whatif_recompute.json`；H200 的 harness ÷ vLLM＝1.739／1.745。
+- **結論**：最終結論和報告相同（依位置決定精度沒有幫助；格式、比例、還原方式、降級順序才有用）。不同的地方：
+  1. K3 在 H200 沒過，主線改走 FP8 階 Qwen 的 Step 2，終點一樣是 K2。這個 Step 2 裡 F25 對 R25 +17 個百分點，但慢 8–10%；品質好是因為 FP8 沒被讀到。
+  2. GPU 忙時 H200 每塊排隊約 3.7 ms（duty 1.0）。所以 CPU 層忙時 BF16 全載入輸給 Cake、G5b 選錯（11.5%）、D3 CPU 層丟一半省一半、Cake 增益在 CPU 層忙時 > 1。
+  3. 一些邊緣統計兩台不同邊：KEYDIFF-25 主判準、長 context 的「隨長度變大」標記、MI300X 大掃描唯一贏隨機的那一格。
+  4. harness 比 512 切法的 vLLM 快，只在 MI300X 成立。
+- 逐條比較用的是臨時腳本，只讀 `results/`，沒有新的數字來源。

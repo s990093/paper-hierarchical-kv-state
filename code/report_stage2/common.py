@@ -28,6 +28,13 @@ REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 RES = os.path.join(REPO, "results")
 OUT = os.path.join(REPO, "docs", "precision_20261013", "report_stage2", "figs")
 DERIVED = os.path.join(REPO, "docs", "precision_20261013", "report_stage2", "derived")
+# H200（docs/h200/STAGE2_H200_VS_MI300X.md）：REPORT_STAGE2_PLATFORM=h200 時讀 results/*_h200、寫 docs/h200/report_stage2_h200/。沒設時不變。
+PLATFORM = os.environ.get("REPORT_STAGE2_PLATFORM", "mi300x")
+_H200_SUB = {"vllm_ttft_guarded2": "vllm_ttft_guarded", "vllm_ttft_guarded3": "vllm_ttft_guarded",
+             "speed_qwen_regrid": "speed_qwen"}          # H200 沒有 Qwen 重量那次；TTFT 的 guard 重量只有一份
+if PLATFORM == "h200":
+    OUT = os.path.join(REPO, "docs", "h200", "report_stage2_h200", "figs")
+    DERIVED = os.path.join(REPO, "docs", "h200", "report_stage2_h200", "derived")
 sys.path.insert(0, os.path.join(REPO, "code"))
 
 SOURCES: dict[str, set] = {}
@@ -46,6 +53,9 @@ def _note(path):
 
 def rp(*parts) -> str:
     """Path under results/."""
+    if PLATFORM == "h200" and parts:
+        parts = (parts[0].replace("m10_pilot_mi300x", "m10_precision_h200").replace("_mi300x", "_h200"),) + \
+            tuple(_H200_SUB.get(x, x) for x in parts[1:])
     return os.path.join(RES, *parts)
 
 
