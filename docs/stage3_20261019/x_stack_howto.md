@@ -578,3 +578,33 @@ cp code/m16_queue/jobs/38ez_x4a_report.sh code/m16_queue/jobs/38fy_x4_lossless.s
 
 1. 時間：合計約 6.5–7.3 h〔估〕，在 5–7 h 的上緣；已縮 W 大與 X4d 前緣。要再縮見 §15.6 的清單。Qwen 256K 另約 0.7–0.9 h，時間不夠就不排（報告會寫「沒有資料」）。
 2. W 大要不要另開一個小批次補量（X4a 只量 W＝8／7 的幾個配置、48 題：約 0.5 卡小時〔估〕）。
+
+---
+
+## 16. xKV 事先校準的基底 vs 每題 SVD：加題數（10/21 第三輪；38k*）
+
+> **狀態（2026-10-21）**：`code/m16_xlcal3.py` 與 38k 的 job 寫好，**還沒在 GPU 上跑**。`--self-test` **10 項 ALL PASS**；`m16_xstack.py` 沒有改（GPU 這段直接用它的 `gen`）；
+> 用 38c 的真實逐列試跑 report（輸出在 scratchpad）：「只用 38c 的 96 題」那一欄的兩對和 v2 的 `xlcal_report.json` 逐項相同（差與 CI 都一樣）；`check-calib` 在真的校準檔上算出的 sha256＝38c 記的（兩個模型）。
+
+### 16.1 為什麼、做什麼
+- 38c（`v2/tables_xlcal.md`，96 題）兩個模型都 UNDETERMINED。使用者 10/21：加題數判出來，**只比有 INT4 的兩對**（只降秩那對不做）：
+  `xl:k22:v34:cal+q:int4_kivi` vs `xl:k22:v34+q:int4_kivi`、`xl:k28:v42:cal+q:int4_kivi` vs `xl:k28:v42+q:int4_kivi`，加 E0。
+- 新題：**seed 66000 起、T2–T5 各 48 題＝192 題**，32K。和 X1（60000）、校準（61000）、X2＝38c 的生成題（62000）、X2b（63000）、X4a（64000）、X4b（65000）、C1a＝X4d（70000，T2–T4 各 45、T5 15）、44c 128K／Qwen 256K（40000）都不重疊（self-test `seeds_disjoint_xlcal3`）。
+- GPU：`m16_xstack.py gen`（和 38c 同一條路徑；每題 SVD 是每個配置各做一次）＋`--calib-xl`＋`--xl-cache`（這兩對的秩不同，沒有可共用的 SVD，快取等於沒作用；照指示加上）。同一題、同一個行程配對。
+- 校準基底**沿用 38c 的 `calib_xl_<m>.pt`，不重算**：`check-calib` 算檔案的 sha256，要等於 38c 的摘要 `v2/calib_xl_<m>.json` 記的（Llama `9433330226f5…`、Qwen `d291ae6dc16e…`，run `20261021-123131-m16-xlcal-calib-*`），不等或不在 → NEEDS_HUMAN、停；結果寫 `v3/calib_xl_sha.json`，報告引用。
+
+### 16.2 判定（事先寫死；`m16_xlcal3.XLCAL3_TEXT`）
+- 每一對：**照 `XLCAL_TEXT['rule']` 原文**——生成答對率逐題配對差（校準 − 每題 SVD）bootstrap 10,000 次的 95% CI：上界 < −2 個百分點 → MUST_PER_ITEM；下界 ≥ −2 → CAN_PRECOMPUTE；其他 → UNDETERMINED。
+- **改動（寫在報告裡）**：aggregate 從「三對」改成「這兩對」——兩對都 CAN → CAN；任一 MUST → MUST；其他 UNDETERMINED；< 48 題 → INCOMPLETE。整體：兩個模型都 CAN → CAN；任一 MUST → MUST。理由：使用者 10/21 指定只比 INT4 的兩對。門檻不變。
+- 並列三種：**只用 38c 的 96 題**、**只用新的 192 題**、**合併 288 題**；主要讀合併。
+- **要注意（也寫進報告）**：「只比兩對」是看到 38c 之後決定的。38c 的 96 題在兩對的 aggregate 下，Llama 就從 UNDETERMINED 變成 CAN_PRECOMPUTE（k22 +2.6 [−1.6, +7.5]、k28 +3.5 [−0.6, +8.2]；差別全在拿掉的只降秩那對 −3.7 [−7.6, +0.2]）。所以合併 288 題裡有已經看過的 96 題，**「只用新的 192 題」才是沒看過資料的獨立檢驗**；兩者不一致時照實並列，判讀由人。
+
+### 16.3 job 與輸出
+- `38k1_xlcal_more.sh`（GPU）：plan → check-calib → 冒煙（每卡一個模型、新題的第 1 題、5 列；`calib_run_id` 要帶 `xl:`）→ 兩卡共用工作池（Llama 12 份、Qwen 8 份；每卡 ≤4 行程／≤165 GiB；登記 46／30 GiB＝38c 的生成單位）。`38k2_xlcal_more.sh`：續跑（要 38k1 的冒煙記號、再核一次 sha）。`38kz_xlcal_more_report.sh`（cpu 佇列，AFTER 38k1 38k2）。共用函式在 `xlcal3_common.sh`（不要放進佇列目錄）。
+- 檔名：`38j_x3_validate2` < `38k1` < `38k2` < `38kz` < `38z_x3_map2` < `39v_x3_validate` < `40_v0`。
+- 輸出：`results/m16_stage3_mi300x/x_stack/v3/`（`xlcal3_selection.json`、`calib_xl_sha.json`、`xlcal3_report.json`、`tables_xlcal3.md`）；逐列 `/mlsteam/data/tiara/stage3/xstack/xlcal3/`。不寫 v2（report 擋）。
+
+### 16.4 時間估計（〔估〕；依據＝38c 的實測）
+- 38c 的生成（96 題 × 7 列：E0＋3 個校準＋3 個每題 SVD）：把兩張卡的時間依同時在跑的單位平分（`$XD/pool/38c1_xkv_cal/log`、`38c2_xkv_cal/log` 的領到／結束時間），**Llama 2.32 卡小時（87 卡秒／題）、Qwen 0.92 卡小時（34.5 卡秒／題）**；38c1 的工作池 93.9 分鐘、38c2 22.9 分鐘（只剩 Llama）。
+- 換算到這次（每題 5 列；每題 SVD 只剩 k22／k34 與 k28／k42 兩個，SVD 寬度 Σq：Llama 5,024 → 4,096、Qwen 2,560 → 2,080）：用 §15.6 的生成每列成本（Llama 1.86、Qwen 2.35 卡秒）把 38c 的每題時間拆成「SVD × Σq＋生成 × 列數」，**Llama 約 70 卡秒／題 → 192 題 3.7 卡小時；Qwen 約 26 卡秒／題 → 1.4 卡小時；合計約 5.1 卡小時 → 兩卡約 2.6 小時**。
+- 冒煙＋plan＋check-calib 約 5–10 分鐘。38k1＋38k2 的容量約 3.2 小時；不夠的話照抄 38k2 成 38k3 再排一段（38kz 會寫題數不齊，報告照樣出、新題 < 192 題時註明）。
