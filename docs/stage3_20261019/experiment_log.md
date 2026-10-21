@@ -192,3 +192,11 @@
 - run：`20261021-123143-m16-x3-map2`，輸出 `results/m16_stage3_mi300x/x3_time/v2/`（map_report.md、map_decision.csv、決策圖 SVG）。用了新 xKV 解碼段與 X2b 的可行集。
 - 判定：模式 Q STOP-0 照舊成立；L、Q 的 STOP-2a 照舊（GPU 忙碌軸沒價值）；**模式 X：STOP-2c（A 對最好固定格式 +6.5%，介於 5–15% → 照規則停下來問使用者）**；A 對「只看連線」的 S 只 +0.9%；T-d 成立 → map 判 validate 要跑（8 格）。
 - 還原時間（模擬，64 block，秒）：Qwen 在慢層，`xkv_k22v34_int4` 對單用 INT4：NFS 0.3 vs 0.9（BF16 1.6）、b32 0.2 vs 0.5、本地 SSD（閒）0.04 vs 0.1 → 快 61–69%；CPU pinned 只差 0–12%、vLLM CPU 路徑 0%（被逐片 copy 綁住）；GPU 忙時在 CPU 層 INT4 反而最好（低秩重建忙時慢 2.8 倍）。Llama 的可行集沒有 xKV 組合（沒過 ε），最佳是 K4V2，對 INT4 快 8–20%。不含寫入（SVD）成本。
+
+## xKV 事先校準的基底 vs 每題 SVD（38c1–38c2，12:31–14:35Z；report 14:36Z）〔實測〕
+
+- run：calib `20261021-123131-m16-xlcal-calib-{llama,qwen}`（seed 61000 的 8 題、258,048 token）、TF／生成 `20261021-123858…141255-m16-xlcal-*`；產出 `results/m16_stage3_mi300x/x_stack/v2/{tables_xlcal.md,xlcal_report.json,calib_xl_*.json}`。和 X2 逐值重現 384/384、TF 錨點 48/48。
+- **判定（事先寫死）**：兩個模型都 **UNDETERMINED**（96 題分辨不了）。
+- Llama（生成，校準 − 每題 SVD）：`xl:k22:v34+int4` +2.6 [−1.6, +7.5]、`xl:k28:v42+int4` +3.5 [−0.6, +8.2]（這兩對 CAN_PRECOMPUTE）；只降秩 `xl:k11:v17` −3.7 [−7.6, +0.2]。校準版 `xl:k28:v42:cal+q:int4_kivi`（位元組比 0.085，約 11.7 倍；基底另算 147 MB 共用）對 E0 +1.3 [−1.7, +4.7]，過 ε。
+- Qwen：`xl:k22:v34+int4` −2.1 [−6.0, +2.0]、`xl:k28:v42+int4` −2.2 [−5.5, +1.1]、只降秩 −5.2 [−10.3, +0.3]（都 UNDETERMINED）；TF 上 INT4 組合兩者沒差（Δgold_lp 差 +0.37、+0.06，CI 跨 0）。
+- 判讀：加了 INT4 係數量化之後，事先校準的共用基底大致和每題 SVD 一樣好（Llama 點估計還更好、Qwen 約 −2 個百分點不顯著）；只降秩時校準基底較差。事先算好基底就不用每題做數十秒的 SVD（壓縮只剩一次投影），每請求位元組也更小（基底共用）。統計上還不能下結論。
