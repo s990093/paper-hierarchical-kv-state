@@ -1,5 +1,7 @@
 # X3：壓縮組合的還原成本 × 連線速度 × GPU 忙不忙（怎麼跑、怎麼讀；第三階段，10/20 寫）
 
+> **10/21 補缺口**（X2 的 xKV 組合：K、V 秩不同、係數 INT4／INT8；xKV 的寫入成本；map v2 合併多個 micro、`--x2`）見 **§10**。下面的狀態框是 10/20 寫的，第一版的結果已經在 `results/m16_stage3_mi300x/x3_time/`。
+
 > **狀態**：程式寫好了，`--self-test` 69 項 ALL PASS（只用 CPU、合成數字＋真實常數檔的讀取；run `20261020-052345-x3-selftest`）。**GPU 路徑一次都還沒跑過**，只過了 `python3 -m py_compile` 與 symtable 的未定義名稱檢查；真正的驗證在冒煙（`03_smoke_xtime.sh`）。所以**所有結果都是 NOT_MEASURED**，`results/m16_stage3_mi300x/x3_time/` 目前是空的，也不應該有東西。
 > 寫的時候第二階段正在 GPU 上量時間，所以沒有開任何 GPU 行程、沒有 import torch／vllm／transformers；CPU 指令一律 `nice -n 19 taskset -c 0-3`。
 > 本頁所有時間都是〔估〕，依據寫在旁邊。本頁是 self-review，不是 cross-model review（CLAUDE.md §5）。
@@ -227,3 +229,104 @@ python code/m16_xtime.py validate --map-dir results/m16_stage3_mi300x/x3_time --
 8. 低秩的收尾 kernel 是自己寫的 Triton（`m16_xtime_kern.py`）；Triton 失敗時**不會自動退回** PyTorch 寫法（規則 2），由人決定要不要用 `--store-impl torch` 重跑（會讓低秩看起來更貴）。
 9. 冒煙時要特別看的地方，見回報（Triton 收尾 kernel、`scatter_` 對非連續視圖、新格式一次拆的逐位元比對、m7_busy 收尾時的 gpu_guard、validate 子行程的 run_id 對應）。
 10. **和 X2（`code/m16_xstack.py`，另一個 agent 寫的）的對應還沒接上**：10/20 05:2xZ 看到它用組合語法（`drop:<方法>:<比例>`、`merge:<g>`、`lr:k<r>[:v<r>]`、`xl:k<r>…`、`q:<格式>`，用 `+` 串），輸出是 `x2_selection.json`／`x2_report.json`，**沒有** §3.4 的 `x2_feasible.csv`。所以現在 map 會把模式 X 當成「只看時間」。要接上有兩條路（要人決定）：(a) X2 的 gen-report 另寫一份 `x2_feasible.csv`，把它的組合對到 §2.2 的 segment 名；(b) X2 選出組合之後，在 X3 加對應的 segment（例如 `lr:k24:v0+q:int4_kivi`＝`lrk24_v4`；係數再量化的低秩、block 粒度丟＋量化目前 X3 沒有對應的段）。block 粒度的丟沒有解碼成本，只是少搬幾塊——可以由量化段的每 block 成本組出來，目前 map 沒有做。
+
+---
+
+## 10. 10/21 補缺口：X2 的 xKV 組合（K、V 秩不同、係數量化）＋ xKV 的寫入成本
+
+> **狀態（10/21 寫）**：程式改好，`--self-test` **97 項 ALL PASS**（只用 CPU、不 import torch；run `20261021-033808-x3gap-selftest`，`context.txt` 記了 m16_xtime.py、m16_xtime_kern.py、m16_xstack.py 與兩支 job 的 md5）。
+> **GPU 路徑一次都還沒跑過**，只過了 `py_compile` 與 symtable 的未定義名稱檢查；真正的驗證在 `38a_x3_micro2.sh` 開頭的冒煙。
+> 寫的時候第三階段自己的量時間 job 正在 GPU 上跑，所以沒有開任何 GPU 行程、沒有 import torch／vllm／transformers；CPU 指令一律 `nice -n 19 taskset -c 0-3`。
+> 本節所有時間都是〔估〕（依據寫在旁邊）；位元組是〔算術〕（位元組帳，不是量測）。self-review，不是 cross-model review。
+
+### 10.1 為什麼要補
+
+X2（`results/m16_stage3_mi300x/x_stack/tables_x2.md`、`x2_unmapped.csv`，run `20261021-025230-m16-x2-report`）最好的組合是 xKV 式跨層低秩（每題、每 4 個相鄰層聯合 SVD；K 先逆 RoPE；K、V 秩不同，照 xKV 的約 1:1.5）再把係數量化——例如 Qwen 的 `xl:k28:v42+q:int4_kivi` 判在 ε 內（位元組比 0.1028）、Llama 的 `xl:k22:v34+q:int8_token`（0.1376）是 primary。
+第一版 X3 的解碼段只有 K、V 同秩、BF16 係數的 `xkv_g4_f8／f4`，所以這些組合在決策圖裡缺席（`x2_unmapped.csv` 的原因欄：「xKV 的 K、V 秩不同……X3 只有 K、V 同秩、BF16 係數的 xkv_g4_f8／f4」），**模式 X 的 STOP-2b（NO-GO）不完整**。這一節把它們補進來，map 另出一版（`x3_time/v2/`），第一版的檔一個都不動。
+
+### 10.2 新段（名稱固定；寫 X2 的 agent 照這張表做 X2→X3 的對應）
+
+| segment | X2 的組合（m16_xstack canonical） | 係數 | 聯合秩 K／V：Llama；Qwen | 每 block 係數位元組 Llama／Qwen | 基底（每題一份）Llama／Qwen | 64 塊的位元組比 Llama／Qwen |
+|:--|:--|:--|:--|--:|--:|--:|
+| `xkv_k11v17` | `xl:k11:v17` | BF16 | 352／544；176／272 | 7.34／3.21 MB | 58.7／12.8 MB | 0.1230／0.1162 |
+| `xkv_k22v34` | `xl:k22:v34` | BF16 | 704／1088；352／544 | 14.68／6.42 MB | 117.4／25.7 MB | 0.2461／0.2324 |
+| `xkv_k28v42` | `xl:k28:v42` | BF16 | 896／1344；448／672 | 18.35／8.03 MB | 146.8／32.1 MB | 0.3076／0.2905 |
+| `xkv_k11v17_int4` | `xl:k11:v17+q:int4_kivi` | INT4 KIVI | 同上 | 2.29／1.00 MB | 58.7／12.8 MB | 0.0479／0.0410 |
+| `xkv_k22v34_int4` | `xl:k22:v34+q:int4_kivi` | INT4 KIVI | 同上 | 4.59／2.01 MB | 117.4／25.7 MB | 0.0957／0.0820 |
+| `xkv_k28v42_int4` | `xl:k28:v42+q:int4_kivi` | INT4 KIVI | 同上 | 5.73／2.51 MB | 146.8／32.1 MB | 0.1196／0.1025 |
+| `xkv_k22v34_int8` | `xl:k22:v34+q:int8_token` | int8_token | 同上 | 7.37／3.24 MB | 117.4／25.7 MB | 0.1372／0.1240 |
+
+- 家族：BF16 係數＝`xlayer`（單一方法）；係數再量化＝`combo`（T-a 的「組合」；程式的 `COMBO_SEGS`）。
+- ops：`h2d_region`（n 個 block 的係數＋一份基底）、`h2d_req`（只搬基底）、`dq_oneshot`、`dq_perblock`（第一版的 xkv_g4 只有一次拆；這次照任務要求兩種都量）。
+- 位元組比（〔算術〕）＝(每 block 係數＋基底÷64)÷BF16 每 block。X2 的 ratio 是基底攤在 63 個 block 上（例 Llama `xkv_k22v34_int4`：X2 0.0961、X3 0.0957），差的只是攤的塊數。
+
+### 10.3 定義與出處（照 `code/m16_xstack.py` 的 `xl` 階段，不自己發明）
+
+| 項目 | 定義 | 出處 |
+|:--|:--|:--|
+| 秩換算 | 聯合秩＝秩×W×H（W＝4，「每 head 每層等效」秩，兩個模型通用） | `m16_xstack.py` 檔頭、`predict_bytes`；`x_stack_howto.md` §3 |
+| 窗口 | 第 w 個窗口＝第 4w..4w+3 層（相鄰層）；Z＝[T, 4·H·128] | `t_xl_half` |
+| 係數 | A＝U[:, :r]·S[:r]，存成 [L/4, 1, T, r]；K、V 秩各自 | `t_xl_half` |
+| 基底 | B＝V[:, :r]ᵀ，BF16，[r, 4·H·128]，每題一份、**算進這個請求要搬的位元組**（`bytes_req`） | `predict_bytes` 的 `k.basis／v.basis` |
+| 係數量化 | `m10_codec_x.enc_half(A, 格式, "k")`：kivi4＝每個主成分各自 FP16 scale＋zero、沿 token 每 32 個一組；int8_token＝每個 token 一個 FP32 scale | `t_halves_enc`（K、V 的係數都用 "k" 角色） |
+| 位元組 | `m16_xstack.half_bytes`／`predict_bytes` 同一個式子（`m16_xtime.xkv_coef_bytes`／`xkv_bytes`） | 自測逐項核對（兩個模型 × 7 段 × 32 個 block，逐 block ×32＝整段）；再和 X2 實際寫出的 ratio 欄（第一版 `x2_unmapped.csv`，63 個 block，10 列）核對——規則 6 |
+| svd_lowrank 參數 | niter 4、多取 16、`torch.manual_seed(20261020＋w)` | `XL_NITER／XL_OVERSAMPLE／XL_SEED`；自測和 GPU 路徑都和 m16_xstack 核對，不一樣就停 |
+
+**X3 的解碼（量時間用的實作）**：係數反量化（`m16_xtime_kern.coef_dequant`，Triton；`m10_dequant_fast_x._half` 的一列要 2 的次方個值，xKV 的聯合秩不是，所以另寫一個用 mask 的版本）→ BF16 `torch.matmul`（FP32 累加）→ 每層 `m16_xtime_kern.store`（K 套 RoPE、寫進 KV 視圖；和第一版 xkv 同一個收尾）。
+和 m16_xstack 的品質路徑的差別：m16_xstack 用 FP32 係數與 FP32 GEMM 重建；X3 把反量化後的係數捨入成 BF16 再做 BF16 GEMM（部署時的寫法）→ 數值差 BF16 捨入的量級；X3 只量時間，不拿這個值做品質。
+
+**建好先驗（不過就 exit 1，規則 2；門檻照既有段）**：
+- 逐 block 編碼接起來＝整段編碼（kivi4 的 32-token 組不跨 512-token block），逐位元。
+- `coef_dequant` 和 `m10_codec_x.dec_half(...).to(bfloat16)` 逐位元相同（同一串 FP32 運算、關掉 FMA 合併）。
+- 一次拆的 KV 和 FP32 參考（dec_half 的 FP32 係數 × FP32 基底 → `store_torch`）相對誤差 <1e-2（K、V 各取每窗第 0 與最後一層）。
+- 逐 block 拆和一次整段相對誤差 <1e-2。
+- 實際 tensor 位元組（每 block 係數、基底）＝位元組帳，不等就丟例外。
+
+**基底的 H2D 怎麼算進還原（map 的改動，只影響有 `bytes_req` 的段）**：micro 的 `h2d_region` 是「n＝32 個 block 的係數＋1 份基底」；第一版 map 把它 ÷32 再 ×64，**基底等於算了兩份**。新段多量了 `h2d_req`，map 改成每 block＝(h2d_region − h2d_req)÷32 ＋ h2d_req÷64（和位元組的算法一致，每次還原一份基底）。
+第一版的 `xkv_g4_f8／f4` 沒有 h2d_req，照第一版的算法、`map_cells.csv` 的 flags 標「線性外推（高估）」。〔算術〕Llama `xkv_g4_f8`：32 塊 H2D 的位元組＝268 MB 係數＋67 MB 基底，外推到 64 塊等於搬 671 MB、實際應是 604 MB（多 11%）；Llama `xkv_k22v34_int4` 的基底佔 32 塊 H2D 位元組的 44%，不拆開 64 塊的 H2D 會多算約 29%（528 vs 411 MB）。照任務要求**沒有重量舊段**（見 §10.8 第 1 點）。
+
+### 10.4 寫入（壓縮）成本——只出表，不進還原決策圖
+
+- **量什麼**：每題一次的 xKV 編碼＝`m16_xstack.t_xl_half` 的編碼那一半：每窗 K 逆 RoPE（同 `t_rope_inv` 的式子）→ 組 Z（FP32）→ `torch.svd_lowrank` → 取 A、B（B 轉 BF16）；再加係數量化（bf16 轉型／`enc_half` kivi4／int8_token）。
+  op＝`svd_k`、`svd_v`（每個秩組合各一，含所有窗口）、`q_<格式>`（K、V 兩半）。秩組合＝10/21 的段用到的 (11,17)、(22,34)、(28,42)。
+- **形狀**：載入區（最後 32 個 block，T＝16384）、全層；Llama 8 個窗口 × Z [16384, 4096]，Qwen 7 個窗口 × Z [16384, 2048]。來源 KV 是亂數（BF16，K 有離群 channel，同 micro）。
+- **duty**：0 與 0.9（`--wcost-states idle busy3`）；每個 op 3 次重複（第一個 duty 先暖機一次，第二個 duty 不再暖機）。
+- **輸出**：`x3_time/v2/wcost/wcost_<m>.csv`（`run_id`、`ts`、秩、q、niter、linalg 後端、中位數／四分位、污染）；map 另寫 `x3_time/v2/write_cost.csv` 與報告的「寫入路徑成本」表：每（模型, 新段, duty）的 SVD K、SVD V、量化、合計、每 block、位元組比，以及「÷ 重算」＝合計 ÷ 同一段閒時重算總時間（bw.json 的 f(i) 加總，**只是比例尺，不是判定**）。缺任何一項 → NOT_MEASURED（不是 0）。
+- **沒有包含**：壓縮後位元組的 D2H、寫進 SSD／NFS 的時間；寫入時 GPU 被佔用而拖慢前景的程度（背景拖慢只對解碼段量）。
+- **已知限制**：`svd_lowrank` 的 GEMM／QR 成本和資料無關，但最後那個小 SVD（`torch.linalg.svd`）的迭代次數可能和頻譜有關——亂數和真實 KV 的差別〔未驗〕。`torch.backends.cuda.preferred_linalg_library()` 記在 CSV 的 `linalg` 欄與 meta。
+
+### 10.5 job 與 GPU 時間〔估〕
+
+| job | 佇列 | 內容 | GPU〔估〕 | 依據 |
+|:--|:--|:--|:--|:--|
+| `38a_x3_micro2` | GPU（both，MAX-H 1.5） | ① 冒煙 `--smoke --segments <7 個新段> --wcost x2`（輸出 `$SMOKE/x3v2`）；失敗 → NEEDS_HUMAN、exit 1 ② 每個模型 `micro --segments <新段> int4_kivi xkv_g4_f8 --no-recompute --bg <2 個>`（輸出 `x3_time/v2/`）③ 每個模型 `micro --segments bf16 --gpu-states idle --bg --no-recompute --wcost x2`（輸出 `x3_time/v2/wcost/`）；②③ 各自被污染重量一次 | **合計約 0.5–0.8 小時**（最壞約 1.2） | 冒煙 8–12 分鐘（兩個模型、4 個 block、不載模型；寫入成本 T＝2048）。② 每個模型 4–5 分鐘：第一版 Llama 9.8 分鐘＝建段 85 s＋計時 4×約 35 s（53 個 op）＋背景 39 次 m7_busy 約 6 分鐘＋探針；這次約 34 個 op、背景 2 個 op × 3 個 duty、不載模型。③ Llama 10–15 分鐘、Qwen 5–8 分鐘：X1 逐列的 `t_pipe_s`（品質 run，**不是乾淨的計時**；63 個 block、含解碼）中位數 Llama `xl:k11:v17／k22:v34／k28:v42`＝38／62／71 秒、Qwen 16／34／44 秒，32 個 block 照 token 數線性推一半 → 每次重複 Llama 約 85 s、Qwen 約 47 s，× (4＋3) 次 |
+| `38z_x3_map2` | cpu（AFTER 38a_x3_micro2 38bz_x2b_report） | `map --micro-dir x3_time x3_time/v2 x3_time/v2/wcost --x2 x_stack/v2/x2_feasible.csv --out x3_time/v2`；`map_cells.csv` >1 MB 就移到 run 目錄（`x3_full/`＋SHA256SUMS），results 留 `BIG_FILES.md` | 0（CPU 約 1 分鐘） | 第一版 map 幾十秒 |
+
+兩支 job 都還**沒有**放進 `/mlsteam/data/tiara/stage3/jobs/`（由協調者排）。38a 沒有寫 AFTER（排在哪裡由協調者決定）。
+
+### 10.6 map v2：怎麼合併、怎麼讀
+
+- **多個 micro 目錄**（`--micro-dir A B C`）：第一個（第一版）為主；後面的目錄只補「前面沒有的 segment」（時間、背景拖慢、位元組、出處 run_id 跟著那個 segment）；**重疊的 segment 不覆蓋**，只算跨 run 漂移（後÷前，報告的「micro 跨 run 漂移」表，差 >15% 打 ⚠——沿用 `TH["anchor_warn"]`，不是新門檻、不影響判定）。重算慢化探針用第一版的；載入區 block 數不同 → 丟例外。`map_cells.csv` 的 `micro_run_id` 是那個 segment 的 run；來自另一個 run 的段在 flags 標出來。
+- **`--x2 <path>`**：讀指定的 `x2_feasible.csv`（預設照舊，第一版的 `x_stack/x2_feasible.csv`）；**明講的檔不在 → 停**（不當成「沒有 X2」，規則 7）。有 seg_catalog 沒有的段名 → 丟例外（同 §3.4）。**X2 判可行、但 micro 沒有時間的段**（例如 38a 某個模型被污染兩次）→ 報告的判定列「⚠ 模式 X 不完整」、`map_summary.json` 的 `verdicts.X.x2_feasible_unmeasured`，38z 另寫 NEEDS_HUMAN。
+- **保護**：合併多個 micro 目錄時 `--out` 不准是第一版的目錄；只量部分 segment 的 micro 不准寫進第一版的目錄（程式直接停）。
+- **判定門檻照 §4 原文**（`TH` 一個字都沒改）。T-a 的「組合」多了 4 個 xKV＋量化的段。
+- **讀的順序**：`v2/map_report.md` 最上面的判定（看模式 X 的 STOP-2 代號、T-a～T-d 有沒有因為新段改變、有沒有「模式 X 不完整」）→「micro 跨 run 漂移」表（新段是另一次 run 量的，錨點差太多的 duty 要打折看）→ 模式 X 每格的最佳動作（新段有沒有當上 A 或第二名）→「寫入路徑成本」表 → `decision_X_<m>.svg`。
+
+### 10.7 冒煙（38a 開頭）要看什麼
+
+1. `[build]` 兩個模型 × 7 個新段都是 `ok`，每 block 位元組和 §10.2 的表一致。最可能出事的：`coef_dequant`（新寫的 Triton kernel：聯合秩不是 2 的次方、靠 mask；和 `dec_half` 逐位元比對，FMA 或 BF16 捨入不同會在這裡抓到）、`torch.matmul` 對 strided 的逐 block 係數切片、`store` 的逐 block cos／sin 切片。
+2. `wcost <m>：svd 參數 {...status: 'ok（和 m16_xstack 相同）'}`（若是 `NOT_CHECKED` 表示當下 import m16_xstack 失敗，照實記、不停）、`linalg` 後端；每個 `svd_k／svd_v／q_*` 在 T＝2048 的時間——拿來修 §10.5 ③ 的估計（正式是 T＝16384）。
+3. `PASS map（冒煙資料）`：新段的 `h2d_req` 攤法、寫入成本表在冒煙資料上跑得通。
+4. `PASS validate（冒煙）`：新段的載入線（h2d 含基底、一次拆、逐 block 拆；Llama 與 Qwen 各一格）跑得通——這是之後若要驗新段的路徑。
+5. 有 `⚠ 冒煙 micro … 被污染` 只是照實印，不算失敗；但那個模型在冒煙 map 裡會缺。
+
+### 10.8 限制與要人決定的事
+
+1. **第一版 `xkv_g4_f8／f4` 的基底 H2D 高估**（§10.3 最後一段；map 只標 flag）。要拿新舊 xKV 公平比，要不要重量這兩段（＋h2d_req，約 2 分鐘 GPU）由人決定；照任務要求這次沒量。
+2. **漂移錨點是我加的**：38a 的 ② 多量 `int4_kivi`、`xkv_g4_f8`（5 個 op × 4 個 duty，約 30 秒），③ 多量 bf16 一個 op；map 不拿它們取代第一版，只報差多少。不要的話把 38a 的 `ANCHOR` 清空。
+3. **背景拖慢只量 2 個新段的一次拆**（`xkv_k22v34`、`xkv_k22v34_int4`）；其他新段沒有。
+4. **38z 依賴 `38bz_x2b_report`**（另一個 agent 的 job 名，照任務給的）：它要寫 `x_stack/v2/x2_feasible.csv`，`x3_segment` 只能用 seg_catalog 的名字（§10.2 的 7 個＋第一版的），否則 map 丟例外、38z 失敗 → NEEDS_HUMAN。
+5. **沒有 v2 的 validate job**。如果 map v2 判 `worth_validate`，要另排 `validate --map-dir x3_time/v2`；但 38z 會把 >1 MB 的 `map_cells.csv` 移到 run 目錄，validate 的 `_pred_loadall` 讀的是 `map_dir/map_cells.csv`——到時候要先把它拷回來（或改 38z 不要移）。
+6. **寫入成本只量 GPU 上的 SVD＋量化**，不含 D2H 與寫儲存層；而且是每題一次的成本，不能直接和每次還原的時間相加比較（同一份 KV 可能還原很多次）。
+7. **自測會 import `code/m16_xstack.py`**（另一個 agent 在改）來核對位元組與參數；那支檔暫時壞掉時自測會 FAIL——這是照實報，不是本檔的錯。
+8. **基底搬的順序**：micro 的 `h2d_region` 是 block 0 → n−1、在 block 0 搬基底（基底先到）；validate 的載入線照 Restorer 從最後一個 block 往前，基底在最後（j＝0）才搬——總位元組與總時間一樣，但逐 block 拆的前幾塊會用到上一輪留下的基底（只影響數值、不影響時間；載入線本來就不驗 KV 內容）。map 把基底的位元組與 H2D 平均攤到 64 塊，也是近似（真實還原要基底先到才能拆第一塊）。

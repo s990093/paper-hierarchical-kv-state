@@ -12,6 +12,12 @@ PyTorch 的寫法（store_torch）留著當對照與數值參考，不是退路�
 RoPE 照 HF 的 apply_rotary_pos_emb：x·cos＋rotate_half(x)·sin，rotate_half 把第 j 維和第 j＋D/2 維配成一對
 （不是相鄰兩維；k1_kvstruct_howto.md §1）。這裡在 FP32 算、最後四捨五入成 BF16；HF 是每一步都在 BF16 算，
 所以兩者不是逐位元相同（差 BF16 捨入的量級）——X3 只量時間，不拿這個值去做品質。
+
+10/21 補缺口：加 coef_dequant（xKV 量化過的 token 係數 → BF16，再交給 GEMM）。為什麼不直接用 m10_dequant_fast_x._half：
+它的一列是 head_dim 個值、tl.arange(0, D) 要 2 的次方；xKV 的係數一列是聯合秩 r＝r_head×4×H 個值（例 Llama k22＝704、
+Qwen k11＝176），不是 2 的次方。所以另寫一個「列 × 主成分區塊（BR 個，用 mask）」的版本，數值運算和 m10_codec_x.dec_half
+同一串（KIVI 是 FP32 先乘 scale 再加 zero、關掉 FMA 合併；int8_token 是 FP32 相乘），最後四捨五入成 BF16
+→ 和 dec_half(...).to(bfloat16) 逐位元相同（m16_xtime 建 segment 時在 GPU 上驗，不過就停）。
 """
 from __future__ import annotations
 
@@ -78,6 +84,62 @@ def store(x: torch.Tensor, mean: torch.Tensor, cos: torch.Tensor | None, sin: to
                                            x.stride(0), x.stride(1), x.stride(2), mean.stride(0), mean.stride(1),
                                            out.stride(0), out.stride(1), out.stride(2),
                                            D=D, HALF=D // 2, ROPE=bool(rope), ROWS=rows)
+    return out
+
+
+@triton.jit
+def _coef_kernel(q_ptr, s_ptr, z_ptr, o_ptr, NROW, T, R,
+                 sq_a, sq_t, ss_a, ss_t, ss_r, so_a, so_t,
+                 KIND: tl.constexpr, TDIV: tl.constexpr, ROWS: tl.constexpr, BR: tl.constexpr):
+    """xKV 係數 [A, 1, T, R] 的反量化 → BF16 [A, T, R]。列＝(a, t)，每個 program 處理 ROWS 列 × BR 個主成分（R 用 mask，不必是 2 的次方）。
+    KIND 0＝int8_token：y＝q×s（s 每列一個 FP32，[A,1,T,1]）。
+    KIND 1＝kivi4 的 K 角色（m10_codec_x.enc_half(…, "kivi4", "k")：每個主成分各自 scale、沿 token 每 TDIV＝32 個一組）：
+            y＝u×s＋z（s、z 是 FP16，[A,1,T/32,1,R]；u 是 4-bit，偶數 index 在低 4 位＝m10_codec._pack4）。
+    列號用 int64（同 m10_dequant_fast 的修正）。"""
+    pid = tl.program_id(0)
+    pc = tl.program_id(1)
+    r = (pid * ROWS + tl.arange(0, ROWS)).to(tl.int64)
+    c = pc * BR + tl.arange(0, BR)
+    mr = r < NROW
+    m2 = mr[:, None] & (c < R)[None, :]
+    t = r % T
+    a = r // T
+    qo = a * sq_a + t * sq_t
+    if KIND == 0:
+        u = tl.load(q_ptr + qo[:, None] + c[None, :], mask=m2, other=0).to(tl.float32)     # q 是有號的 int8
+        s = tl.load(s_ptr + a * ss_a + t * ss_t, mask=mr, other=1.0).to(tl.float32)
+        y = u * s[:, None]
+    else:
+        byte = tl.load(q_ptr + qo[:, None] + (c // 2)[None, :], mask=m2, other=0).to(tl.int32)
+        u = tl.where((c % 2 == 0)[None, :], byte & 0xF, byte >> 4).to(tl.float32)
+        so = (a * ss_a + (t // TDIV) * ss_t)[:, None] + (c * ss_r)[None, :]
+        y = u * tl.load(s_ptr + so, mask=m2, other=1.0).to(tl.float32)
+        y = y + tl.load(z_ptr + so, mask=m2, other=0.0).to(tl.float32)
+    oo = a * so_a + t * so_t
+    tl.store(o_ptr + oo[:, None] + c[None, :], y.to(tl.bfloat16), mask=m2)
+
+
+def coef_dequant(p: dict, f: str, out: torch.Tensor, rows: int = 16, br: int = 128) -> torch.Tensor:
+    """p＝m10_codec_x.enc_half(coef, f, "k") 的 parts（或它沿 token 軸＝第 2 維的切片），coef＝[A, 1, T, R]；
+    f∈{kivi4, int8_token}；out＝BF16 [A, T, R]（最後一維連續，可以是大緩衝沿 token 的切片）。"""
+    q = p["q"]
+    A, B, T, Rq = q.shape
+    assert B == 1 and q.stride(-1) == 1 and out.stride(-1) == 1 and out.dtype == torch.bfloat16, (q.shape, q.stride())
+    if f == "int8_token":
+        R, s, z, kind, tdiv, ss_r = Rq, p["scale"], p["scale"], 0, 1, 0
+        assert q.dtype == torch.int8 and tuple(s.shape) == (A, 1, T, 1), (q.dtype, tuple(s.shape))
+    elif f == "kivi4":
+        R, s, z, kind, tdiv = 2 * Rq, p["scale"], p["zero"], 1, 32
+        assert T % tdiv == 0 and tuple(s.shape) == (A, 1, T // tdiv, 1, R) and s.stride() == z.stride(), \
+            (tuple(s.shape), s.stride(), z.stride())
+        ss_r = s.stride(4)
+    else:
+        raise ValueError(f"coef_dequant 不支援 {f}")
+    assert out.dim() == 3 and tuple(out.shape) == (A, T, R), (tuple(out.shape), (A, T, R))
+    NROW = A * T
+    _coef_kernel[(triton.cdiv(NROW, rows), triton.cdiv(R, br))](
+        q, s, z, out, NROW, T, R, q.stride(0), q.stride(2), s.stride(0), s.stride(2), ss_r, out.stride(0), out.stride(1),
+        KIND=kind, TDIV=tdiv, ROWS=rows, BR=br, enable_fp_fusion=False)
     return out
 
 
