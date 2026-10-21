@@ -1,0 +1,104 @@
+{
+ "run_id": "20261021-082103-m16-x3-wcost-qwen",
+ "ts": "2026-10-21T08:27:24+00:00",
+ "model": "qwen",
+ "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/e28526f7bb80e2a9c8af03b831a9af3812f18fba",
+ "rope_theta": 10000000.0,
+ "shape": {
+  "L": 28,
+  "H": 4,
+  "D": 128
+ },
+ "n_blocks": 32,
+ "region_tokens": [
+  16384,
+  32768
+ ],
+ "reps": 5,
+ "min_rep_s": 0.1,
+ "bg_seconds": 2.0,
+ "rec_pos": [],
+ "rec_reps": 0,
+ "states": [
+  [
+   "idle",
+   0.0
+  ]
+ ],
+ "busy_levels": "results/m10_restore2_mi300x/busy_levels_q4.json",
+ "hsa_enable_sdma": "unset(預設 1)",
+ "store_impl": "triton",
+ "smoke": false,
+ "t_build_s": 1.8,
+ "torch": "2.10.0+rocm7.0",
+ "hip": "7.0.51831",
+ "device": "AMD Radeon Graphics",
+ "fp8_fmt": "fp8_head",
+ "contaminated": false,
+ "host_level": "UNOBSERVABLE_HOST",
+ "busy_stats": [
+  {
+   "phase": "wcost",
+   "state": "busy3",
+   "duty": 0.9,
+   "cu_mask": "",
+   "ready": "READY matmul_ms=1.643",
+   "n_matmul": 124017,
+   "seconds": 259.404,
+   "matmul_per_s": 478.084
+  }
+ ],
+ "wcost": {
+  "params": {
+   "XL_NITER": 4,
+   "XL_OVERSAMPLE": 16,
+   "XL_SEED": 20261020,
+   "W": 4,
+   "status": "ok（和 m16_xstack 相同）"
+  },
+  "pairs": [
+   [
+    11,
+    17
+   ],
+   [
+    22,
+    34
+   ],
+   [
+    28,
+    42
+   ]
+  ],
+  "states": [
+   "idle",
+   "busy3"
+  ],
+  "reps": 3,
+  "linalg": "_LinalgBackend.Default",
+  "check": "ok"
+ },
+ "note_rope": "RoPE 用 rope_theta 的預設 inv_freq（沒有套 llama3 的 rope_scaling）：只影響數值，不影響時間",
+ "segments": {
+  "bf16": {
+   "family": "raw",
+   "kind": "none",
+   "feed": {},
+   "ops": [
+    "h2d_region"
+   ],
+   "bytes_blk": 29360128,
+   "bytes_req": 0,
+   "bytes_resident": 0,
+   "fmt": "bf16",
+   "impl": {
+    "h2d_region": "逐 block copy_ 進 KV 視圖（Restorer._load）"
+   },
+   "kernel": "",
+   "n_copies": {
+    "h2d_region": 32
+   },
+   "check": "ok"
+  }
+ }
+}

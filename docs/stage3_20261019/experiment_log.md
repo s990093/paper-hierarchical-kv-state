@@ -173,3 +173,9 @@
 - 判讀：「多層低秩＋INT4」在 128K 仍在約 11–13 倍時撐住（MLPerf 99%）；同樣倍數下只靠降秩在 128K 掉得比 32K 多，疊加的好處在長上下文更明顯。128K 的位元組比比 32K 小一點（每題基底攤在更多 token 上）。題數少、CI 寬，只當探索。
 - 最終版 M1（32K）不變：Qwen r＝0.33（GO）、Llama r＝∞（統計力不夠，X2b 在補）。
 - **失敗 3**（10/21 08:27Z）：`38b1_x2b_gen` 開跑 1 秒 rc=1：`x_ext.sh: line 49: m: unbound variable`。原因：`local m=$1 s0 out=…${m}…` 同一個 local 裡先設再用，bash 先展開（set -u）。同樣的寫法在第 85 行（xlcal 冒煙）也有。修法：分成兩行（全部 job 檔用程式掃過，只有這兩處）。plan 那步已 exit 0、沒有其他副作用。08:3xZ 重開 38b1。
+
+## X3 補缺口（38a，07:55–08:27Z，CLEAN）〔實測〕
+
+- run：`20261021-075914-m16-x3-micro2-llama`、`20261021-080256-m16-x3-micro2-qwen`（新 7 個 xKV 解碼段，reps 5）、寫入成本 `20261021-080628-m16-x3-wcost-llama`、`20261021-082103-m16-x3-wcost-qwen`。產出 `results/m16_stage3_mi300x/x3_time/v2/`、`v2/wcost/`。決策圖 v2（38z）等 X2b 的報告。
+- **寫入（壓縮）成本**：xKV 每題的 `svd_lowrank`（W＝4、niter 4、多取 16），區域 T＝16,384 token、全部窗口（Llama 8、Qwen 7），GPU 閒：Llama `k11v17` K 4.0 s＋V 6.8 s＝10.8 s、`k22v34` 24.6 s、`k28v42` 31.3 s；Qwen `k11v17` 3.9 s、`k22v34` 9.6 s、`k28v42` 12.7 s。GPU 忙（duty 0.9）：Llama `k11v17` 33.1 s（約 3 倍）、Qwen `k11v17` 14.8 s。係數量化本身只要 1–4 ms。
+- 判讀：每題算 SVD 的壓縮成本是**數十秒**，比同長度的 prefill 本身還久很多 → 每題 SVD 的 xKV 在寫入路徑上不實用，除非（a）事先校準的基底可用（38c 在測），或（b）換更快的作法（例如 Gram 矩陣＋eigh；目前 `svd_lowrank` 在 ROCm 上可能被 QR 拖慢，〔推論，未驗〕）。
