@@ -44,6 +44,20 @@ MiniCache 式、xKV 每 4 層聯合 SVD、KVSharer 式）、lit/L6_mainstream_pr
   gpu-selftest  冒煙時在 GPU 上跑：torch 實作 vs numpy 參考、量化和 m10_codec_x 逐位元相同、vllm_fp8 對 numpy 的 fnuz 格點、RoPE 核對
   --self-test   只用 CPU、numpy／純 Python（不 import torch）：語法、位元組、merge／lowrank／xlayer／mc 的數學、停止條件與挑選邏輯
 
+## 10/21 延伸（x_stack_howto.md §14；舊子命令的行為不變，只新增）
+  xl:k<r>:v<r>:cal   xKV、事先校準的基底：每 4 層、K（逆 RoPE）／V 的基底用校準題（seed 61000 起 8 題）事先算好、所有題共用
+                     （calib-xl 子命令：不去平均的 ΣZᵀZ 的前 R 個特徵向量）；係數＝Z·U、重建用 BF16 基底。位元組帳不含每題基底（另列 shared）。
+  X3 對應            X3_MAP_1021：xl:k11:v17／k22:v34／k28:v42（BF16、+int4_kivi）、xl:k22:v34+q:int8_token → xkv_k*（X3 同名段）
+  calib-xl      GPU：xKV 校準基底（存到每 head 每層等效秩 64）
+  plan          CPU：X2b／xKV 校準生成的計畫檔（gen 的 --selection；roles／budgets 照第一版 x2_selection.json）
+  pending       CPU：工作池用，印某個 shard 還有幾題沒做
+  gen           新旗子 --calib-xl（:cal 的配置）、--xl-cache（同題同秩的每題 SVD 只算一次；預設關＝照舊）
+  screen        新旗子 --calib-xl
+  gpu-selftest  新旗子 --new-checks x2b|xlcal|both（只跑新檢查）、--calib-xl
+  x2b-report    CPU：X2＋X2b 合併（A 只用 X2／B 只用 X2 限制池子／C 只用 X2b／D 合併）、M1／M2／MLPerf 照第一版規則、v2 的 x2_feasible.csv
+  xlcal-report  CPU：xKV 校準基底 vs 每題 SVD（TF 只報、生成判定事先寫死：XLCAL_TEXT）
+  兩卡共用工作池在 code/m16_queue/jobs/x_pool.sh（bash）；--self-test 用假的 m7run 驗每個單位恰好被領一次。
+
 模組頂層只有標準函式庫與 m16_c1a_predict（同樣沒有副作用）的 import；torch、numpy、m10_* 一律在函式裡才 import。
 """
 from __future__ import annotations
@@ -89,6 +103,13 @@ X1_SEED0, CALIB_SEED0, X2_SEED0 = 60000, 61000, 62000
 LC_SEED0, LC_N, LC_BLOCKS = 40000, 12, 252       # 44c：m10_sweep screen 預設 seed0 40000、--n 12、--n-blocks 252（run 的 cmd.sh）
 XL_NITER, XL_OVERSAMPLE, XL_SEED = 4, 16, 20261020
 N_BOOT = 10000
+# 10/21 延伸（x_stack_howto.md §14）：X2b 加題數、xKV 事先校準的基底。題目的 seed 互不重疊（--self-test 核對）：
+# X1 60000+、校準 61000+（PCA 與 xKV 校準同一套 8 題）、X2 62000+、X2b 63000+；xKV 校準的 TF＝X1 的前 12 題／任務、生成＝X2 的 96 題。
+OUT_DIR_V2 = os.path.join(OUT_DIR, "v2")                 # 10/21 延伸的摘要（不覆蓋第一版的檔）
+COMBOS_V2 = os.path.join(HERE, "m16_xstack_combos_v2.json")
+X2B_SEED0, X2B_N = 63000, 48                             # X2b：T2–T5 各 48 題＝192 題
+XLCAL_TF_N, XLCAL_GEN_N = 12, 24                         # xKV 校準：TF 48 題（X1 的題）、生成 96 題（X2 的題）
+XLCAL_RANK_MAX = 64                                      # 校準基底存到「每 head 每層等效秩」64（Llama 2048／4096 維、Qwen 1024／2048 維）
 
 DROP_METHODS = ("KEYDIFF", "KNORM", "SNAP", "TOVA", "H2O", "EXPATT", "QRY", "STREAM", "NEW", "RND0", "RND1", "RND2", "ORC")
 NOT_DEPLOYABLE = ("QRY", "ORC")                  # 要知道問題／答案位置 → 不是寫入時方法
@@ -119,6 +140,14 @@ X3_FP8 = {"llama": "q:fp8_token", "qwen": "q:fp8_head"}           # results/m10_
 X3_SEGMENTS = ("bf16", "fp8", "int8_token", "int4_kivi", "int2_kivi", "k4v2", "lr_r16", "lr_r24", "lr_r32", "lr_r40", "lr_r64",
                "xkv_g4_f8", "xkv_g4_f4", "merge_g2", "merge_g4", "droptok_k50", "droptok_k25", "lrk24_v4", "droptok_k50_int4",
                "merge_g2_int4")
+# 10/21 延伸：X3 另一個 agent 加的同名 xKV 解碼段（K、V 不同秩＝照 xKV 的 1:1.5、每 4 層聯合、每題基底算進要搬的位元組；
+# _int4＝係數用 KIVI int4（K 角色）、_int8＝係數用 int8_token）。名字由協調者給定；X3 的 seg_catalog 有沒有加好，
+# 由 38bz 的 load_x2 核對（沒有就 NEEDS_HUMAN，規則 7），--self-test 只印 INFO。
+X3_MAP_1021 = {"xl:k11:v17": "xkv_k11v17", "xl:k22:v34": "xkv_k22v34", "xl:k28:v42": "xkv_k28v42",
+               "xl:k11:v17+q:int4_kivi": "xkv_k11v17_int4", "xl:k22:v34+q:int4_kivi": "xkv_k22v34_int4",
+               "xl:k28:v42+q:int4_kivi": "xkv_k28v42_int4", "xl:k22:v34+q:int8_token": "xkv_k22v34_int8"}
+X3_MAP.update(X3_MAP_1021)
+X3_SEGMENTS = X3_SEGMENTS + tuple(X3_MAP_1021.values())
 
 
 def x3_segment(spec: str, model: str):
@@ -129,6 +158,9 @@ def x3_segment(spec: str, model: str):
         return X3_MAP[spec], ""
     st = parse_spec(spec)
     ops = [s["op"] for s in st]
+    if any(s.get("cal") for s in st):
+        return None, ("xKV 校準基底版（:cal）：基底跨請求共用、常駐，不用每題搬；X3 的 xkv_* 段把每題基底算進要搬的位元組 → "
+                      "位元組與搬運都不同，不硬對")
     if "drop" in ops:
         why = ("我們丟的是 512-token block（所有層、head 一起，key_keep 遮掉；沒有逐 token 位置、不需要 scatter），"
                "X3 的 droptok_k* 是每（層, head）各自留 token＋int16 位置；位元組與解碼方式都不同")
@@ -136,7 +168,8 @@ def x3_segment(spec: str, model: str):
             why += "；其餘階段等於『只搬留下的 block』的對應解碼段，X3 若加 block 數縮放才對得上"
         return None, why
     if "xl" in ops:
-        return None, "xKV 的 K、V 秩不同（照 xKV 的 1:1.5）或有量化；X3 只有 K、V 同秩、BF16 係數的 xkv_g4_f8／f4"
+        return None, ("這個 xKV 的秩組合或係數量化 X3 沒有解碼段（X3 有 K、V 同秩 BF16 的 xkv_g4_f8／f4，與 10/21 加的 "
+                      "xkv_k11v17／k22v34／k28v42（BF16、_int4）、xkv_k22v34_int8）")
     if "lr" in ops:
         return None, "低秩的秩組合、聯合 PCA 或係數量化不在 X3 的 lr_r16–64／lrk24_v4 裡"
     if "merge" in ops:
@@ -207,6 +240,8 @@ def parse_spec(spec: str) -> list:
                 for x in p[1:]:
                     if op == "lr" and x == "joint":
                         d["joint"] = True
+                    elif op == "xl" and x == "cal":
+                        d["cal"] = True                          # 10/21：事先校準的基底（只在 True 時加這個鍵，舊組合的 dict 不變）
                     elif x[:1] == "k" and x[1:].isdigit():
                         d["rk"] = int(x[1:])
                     elif x[:1] == "v" and x[1:].isdigit():
@@ -262,7 +297,8 @@ def canonical(stages: list) -> str:
         elif op == "lr":
             parts.append(f"lr:k{s['rk']}" + (f":v{s['rv']}" if s["rv"] else "") + (":joint" if s["joint"] else ""))
         elif op == "xl":
-            parts.append(f"xl:k{s['rk']}" + (f":v{s['rv']}" if s["rv"] else "") + (f":w{s['w']}" if s["w"] != 4 else ""))
+            parts.append(f"xl:k{s['rk']}" + (f":v{s['rv']}" if s["rv"] else "") + (f":w{s['w']}" if s["w"] != 4 else "")
+                         + (":cal" if s.get("cal") else ""))
         elif op == "q":
             parts.append(f"q:{s['fmt']}")
         elif op == "mc":
@@ -319,6 +355,8 @@ def validate(stages: list, info: dict | None = None, nreg: int | None = None) ->
         raise SpecError("merge 後的 key 是不同位置的平均、不在任何單一位置上，pre-RoPE 低秩沒有定義 → merge 不能和 lr／xl 一起用")
     if seq not in ALLOWED_SEQ:
         raise SpecError(f"順序不合法：{'+'.join(ops)}（drop 要在最前面，只有 xl 可以排在它前面當順序對照；merge 在 drop 之後；q 最後）")
+    if any(s.get("cal") for s in stages) and seq[:2] == ("xl", "drop"):
+        raise SpecError("xl:…:cal 的基底和題目無關，xl 排在 drop 前的順序對照沒有意義（結果和 drop+xl:…:cal 相同）→ 只接受 drop 在前")
     D = (info or {}).get("D", 128)
     for s in stages:
         if s["op"] == "drop" and nreg is not None:
@@ -469,7 +507,8 @@ def predict_bytes(stages: list, info: dict, nreg: int, chunk: int = CHUNK) -> di
             rr = r * W * H
             shape = (L // W, 1, Tk, rr)
             by[f"{h}.coef"] = shape[0] * Tk * rr * 2 if f is None else half_bytes(f, shape, "k")
-            by[f"{h}.basis"] = (L // W) * rr * W * H * D * 2
+            # 每題 SVD：基底每題一份、算在這個請求裡；:cal（10/21）：事先校準、跨請求共用 → 另列 shared（同樣大小、BF16）
+            by[f"shared.{h}.basis" if low.get("cal") else f"{h}.basis"] = (L // W) * rr * W * H * D * 2
     return by
 
 
@@ -539,6 +578,103 @@ def s1_multipliers(path: str, model: str, codec: str = "zstd:3") -> dict:
             out[f] = v[codec]["ratio_vs_fmt"]
     out["_run_id"] = S.get("run_id")
     return out
+
+
+# ============================================================================ 10/21 延伸：出題、計畫檔、待做題數（純 Python，不 import torch）
+def rotations_from_source() -> list:
+    """m10_quality.ROTATIONS（m10_quality 在模組頂層 import torch，CPU 這邊不能 import）：用 ast 從原始碼讀那一行的字面值，不抄數字。
+    GPU 這邊 gpu-selftest 的 plan_cpu_eq_m10 再核對一次 plan_interleaved_cpu＝plan_interleaved。"""
+    import ast
+    src = open(os.path.join(HERE, "m10_quality.py"), encoding="utf-8").read()
+    for node in ast.parse(src).body:
+        if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "ROTATIONS" for t in node.targets):
+            return [tuple(x) for x in ast.literal_eval(node.value)]
+    raise RuntimeError("m10_quality.py 裡找不到 ROTATIONS（規則 7：查不到不等於沒有）")
+
+
+def plan_interleaved_cpu(tasks, n, seed0) -> list:
+    """plan_interleaved 的純 Python 版（m10_quality.plan_items 的同一個規則：T5 單輪、其他照 ROTATIONS 輪流；seed＝seed0＋k）。
+    給工作池的 pending 與 self-test 用（不 import torch）。"""
+    rot = rotations_from_source()
+    per = {t: [(t, None, None, seed0 + k) if t == "T5" else (t, *rot[k % len(rot)], seed0 + k) for k in range(n)] for t in tasks}
+    return [per[t][k] for k in range(n) for t in tasks]
+
+
+def shard_pending(tasks, n, seed0, shard: str, out: str) -> list:
+    """這個 shard（k % 份數 == 編號，和 cmd_gen／cmd_screen 同一個切法）還沒做完的題（done_union：同一組 shard 檔任何一個寫完的都算）。"""
+    si, sk = parse_shard(shard)
+    with contextlib.redirect_stdout(sys.stderr):          # read_rows 遇到寫到一半的 .gz 會印到 stdout；stdout 只留題數
+        done = done_union(out)
+    return [item_id_of(*p) for k, p in enumerate(plan_interleaved_cpu(tasks, n, seed0)) if k % sk == si and item_id_of(*p) not in done]
+
+
+def cmd_pending(a):
+    """工作池用：印這個 shard 還有幾題沒做（只印一個整數）。只用 CPU、不 import torch。"""
+    print(len(shard_pending(a.tasks, a.n, a.seed0, a.shard, a.out)))
+
+
+def plan_specs(which: str, model: str, path: str = COMBOS_V2) -> list:
+    """combos_v2.json 裡事先寫死的配置：x2b＝X2b 的配置（Llama 11、Qwen 12；照列的順序；同一個每題 SVD 的配置排在一起，給 --xl-cache）；
+    xlcal＝xKV 校準的生成比較（每一對：校準基底版、每題 SVD 的同名配置）。"""
+    d = json.load(open(path))
+    if which == "x2b":
+        return list(d["x2b"][model])
+    if which == "xlcal":
+        return [s for pr in d["xlcal_pairs"] for s in pr]
+    raise ValueError(which)
+
+
+def xlcal_pairs(path: str = COMBOS_V2) -> list:
+    return [tuple(p) for p in json.load(open(path))["xlcal_pairs"]]
+
+
+def build_plan(which: str, v1sel: dict) -> dict:
+    """X2b／xKV 校準生成的計畫檔（gen 的 --selection 吃的格式）。roles／budgets 照第一版 x2_selection.json（M2 的主要組合、最好的單一方法
+    都是第一版事先選的，不重選）；第一版沒有的配置 roles 只有 x2b。tiers 一律 core（gen --tier core）。"""
+    models = {}
+    for m in MODEL_INFO:
+        v1 = {e["spec"]: e for e in v1sel.get("models", {}).get(m, {}).get("configs", [])}
+        cf = []
+        for s in plan_specs(which, m):
+            c = canonical(validate(parse_spec(s), MODEL_INFO[m], N_BLOCKS - 1))
+            if c != s:
+                raise SpecError(f"combos_v2.json 的 {s} 不是標準寫法（{c}）")
+            if which == "x2b":
+                e = v1.get(c)
+                cf.append(dict(spec=c, roles=(list(e["roles"]) if e else []) + ["x2b"], tiers=["core"],
+                               budgets=list(e["budgets"]) if e else [], v1_listed=bool(e),
+                               why=("第一版 X2 也量過（roles 照第一版）" if e else "第一版 X2 沒量（只在「只用 X2b」報）")))
+            else:
+                cal = any(x.get("cal") for x in parse_spec(c))
+                cf.append(dict(spec=c, roles=["xlcal" if cal else "xlcal_ref"], tiers=["core"], budgets=[],
+                               why="校準基底版" if cal else "每題 SVD 的同名配置（同一題、同一個行程配對）"))
+        models[m] = dict(configs=cf)
+    if which == "x2b":
+        return dict(go=True, which=which, reason="X2b 事先寫死的配置（code/m16_xstack_combos_v2.json 的 x2b）", tasks=["T2", "T3", "T4", "T5"],
+                    seed0=X2B_SEED0, n=X2B_N, v1_selection_run_id=v1sel.get("run_id"), models=models)
+    return dict(go=True, which=which, reason="xKV 校準基底 vs 每題 SVD（code/m16_xstack_combos_v2.json 的 xlcal_pairs）",
+                tasks=["T2", "T3", "T4", "T5"], seed0=X2_SEED0, n=XLCAL_GEN_N, tf_seed0=X1_SEED0, tf_n=XLCAL_TF_N,
+                tf_combos=os.path.relpath(COMBOS_V2, REPO), models=models)
+
+
+PLAN_KEYS = ("go", "which", "tasks", "seed0", "n", "tf_seed0", "tf_n", "models")
+
+
+def cmd_plan(a):
+    v1 = json.load(open(a.selection)) if a.which == "x2b" else {}
+    if a.which == "x2b" and not v1.get("go"):
+        raise SystemExit(f"第一版 {a.selection} 的 go 不是 true → X2b 沒有可以照的 roles（停，規則 2）")
+    p = build_plan(a.which, v1)
+    if os.path.exists(a.out):
+        old = json.load(open(a.out))
+        if {k: old.get(k) for k in PLAN_KEYS} == {k: p.get(k) for k in PLAN_KEYS}:
+            print(f"{a.out} 已有、內容相同（run {old.get('run_id')}）→ 不重寫", flush=True)
+            return
+        raise SystemExit(f"{a.out} 已存在但內容不同 → 不默默改事先寫死的計畫（要改另開版本）")
+    p.update(run_id=os.environ.get("RUN_ID", "adhoc"), ts=ts())
+    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
+    json.dump(p, open(a.out, "w"), indent=1, ensure_ascii=False)
+    print(f"寫好 {a.out}：" + "；".join(f"{m} {len(v['configs'])} 個配置" for m, v in p["models"].items()), flush=True)
 
 
 # ============================================================================ numpy 參考實作（self-test 與 gpu-selftest 用）
@@ -652,8 +788,9 @@ def np_rope_inv(y, c, s):
 class NCtx:
     """numpy 參考的上下文：c、s＝[位置, D/2]（float64，模型的 BF16 cos/sin）、calib（float64）、drop 的區內順序、deep 層、chunk。"""
 
-    def __init__(self, c, s, calib=None, orders=None, deep=None, chunk=CHUNK):
+    def __init__(self, c, s, calib=None, orders=None, deep=None, chunk=CHUNK, xlcal=None):
         self.c, self.s, self.calib, self.orders, self.deep, self.chunk = c, s, calib, orders or {}, deep, chunk
+        self.xlcal = xlcal                       # 10/21：xKV 校準基底 {k_U, v_U: [窗口, W·H·D, R]}（float64）
 
 
 def np_full_q(Sm, fmt: str, Tc: int):
@@ -759,6 +896,49 @@ def np_xl_half(src, srcpos, P, hi, rhe, W, f, cx, keep_idx):
     return np.stack(outs), nb, (L // W) * r * W * H * D * 2, errs
 
 
+def np_xl_half_cal(src, P, hi, rhe, W, f, cx):
+    """xKV、事先校準的基底（10/21；numpy 參考）。src [L,H,T,D]＝留下的 token、P＝它們的位置。每個窗口：Z（K 先逆 RoPE、不去平均＝照 xKV）
+    投到校準基底 U[w][:, :r]（係數＝Z·U，float64），係數照常量化；重建用 BF16 的基底（和每題 SVD 的基底同一個存法）。
+    回傳 (解碼 [L,H,T,D], 係數位元組, 共用基底位元組, 每窗 pre-RoPE 相對誤差（量化前）)。"""
+    np = _np()
+    L, H, T, D = src.shape
+    r = rhe * W * H
+    U = cx.xlcal[f"{'kv'[hi]}_U"]
+    if U.shape[-1] < r:
+        raise ValueError(f"校準基底只存到 {U.shape[-1]} 維，要 {r}")
+    c, s = cx.c[P], cx.s[P]
+    As, Bs, errs = [], [], []
+    for w in range(L // W):
+        Z = np.concatenate([(np_rope_inv(src[l].astype(np.float64), c, s) if hi == 0 else src[l].astype(np.float64))
+                            .transpose(1, 0, 2).reshape(T, H * D) for l in range(w * W, (w + 1) * W)], axis=1)
+        Uw = U[w][:, :r].astype(np.float64)
+        A = Z @ Uw
+        errs.append(float(np.linalg.norm(Z - A @ Uw.T) / np.linalg.norm(Z)))
+        As.append(A.astype(np.float32))
+        Bs.append(np_bf16(Uw.T.astype(np.float32)))
+    A4 = np.stack(As)[:, None]
+    if f in (None, "bf16"):
+        Ad, nb = np_bf16(A4), A4.size * 2
+    else:
+        Ad, nb = np_half_enc(A4, f, "k")
+    outs = []
+    for w in range(L // W):
+        Zh = Ad[w, 0].astype(np.float64) @ Bs[w].astype(np.float64)
+        for j in range(W):
+            x = Zh[:, j * H * D:(j + 1) * H * D].reshape(T, H, D).transpose(1, 0, 2)
+            outs.append(np_bf16(np_rope_fwd(x, c, s) if hi == 0 else x))
+    return np.stack(outs), nb, (L // W) * r * W * H * D * 2, errs
+
+
+def np_xl_calib(Zs, R):
+    """xKV 校準（numpy 參考；GPU 版＝cmd_calib_xl）：一個窗口、一半的 token 矩陣清單 [T_i, W·H·D] → 不去平均的二次動差 G＝Σ Zᵀ Z
+    的前 R 個特徵向量（由大到小）與全部特徵值。G 的特徵向量＝把所有校準 token 疊起來做 SVD 的右奇異向量（xKV 不去平均）。"""
+    np = _np()
+    G = sum(z.astype(np.float64).T @ z.astype(np.float64) for z in Zs)
+    ev, U = np.linalg.eigh(G)
+    return U[:, ::-1][:, :R], ev[::-1]
+
+
 def np_mc(X, deep, t, gamma):
     np = _np()
     L, _, H, T, D = X.shape
@@ -838,6 +1018,8 @@ def np_pipeline(stages, X, pos, cx, info):
             d, by[f"{h}.raw"] = np_raw_half(S[:, hi], f, h, C)
         elif low["op"] == "lr":
             d, by[f"{h}.coef"], by[f"shared.{h}.basis"] = np_lr_half(S[:, hi], P, hi, r, low["joint"], f, cx)
+        elif low.get("cal"):
+            d, by[f"{h}.coef"], by[f"shared.{h}.basis"], extra[f"{h}.cal_err"] = np_xl_half_cal(S[:, hi], P, hi, r, low["w"], f, cx)
         else:
             src, sp = (X[:, hi], pos) if xl_first else (S[:, hi], P)
             d, by[f"{h}.coef"], by[f"{h}.basis"], extra[f"{h}.svd_err"] = np_xl_half(src, sp, P, hi, r, low["w"], f, cx,
@@ -1257,6 +1439,8 @@ class TCtx:
         with torch.inference_mode():
             self.cos, self.sin = m.rotary_emb(x, torch.arange(n_pos, device=km.device).view(1, -1))
         self.apply_rope = km.apply_rope
+        self.xlcal = None          # 10/21：xKV 校準基底（load_calib_xl）；沒有 :cal 的組合用不到
+        self.xl_cache = None       # 10/21：gen --xl-cache 時的同題 SVD 快取（xl_cache_plan）；None＝照舊每個組合各算一次
 
     def cs(self, P):
         return self.cos[:, P], self.sin[:, P]
@@ -1372,6 +1556,94 @@ def t_xl_half(src, srcpos, P, hi, rhe, W, f, cx, keep_idx):
     return torch.stack(outs), nb, (L // W) * r * W * H * D * 2
 
 
+def t_xl_half_cal(src, P, hi, rhe, W, f, cx):
+    """xKV、事先校準的基底（10/21）：和 t_xl_half 同樣的窗口與 Z（K 逆 RoPE、不去平均），但基底＝cx.xlcal 的 U[w][:, :r]（校準題算好、
+    所有題共用），係數＝Z·U（FP32）；重建用 BF16 的基底（和每題 SVD 的基底同一個存法）。基底跨請求共用 → 位元組帳另列 shared。
+    回傳 (解碼 BF16, 係數位元組, 共用基底位元組)。"""
+    import torch
+    L, H, T, D = src.shape
+    r = rhe * W * H
+    U = cx.xlcal[f"{'kv'[hi]}_U"]
+    if U.shape[-1] < r or U.shape[0] != L // W or U.shape[1] != W * H * D:
+        raise RuntimeError(f"校準基底形狀 {tuple(U.shape)} 不夠或對不上（要 [{L // W}, {W * H * D}, ≥{r}]）")
+    cos, sin = cx.cs(P)
+    As, Bs = [], []
+    for w in range(L // W):
+        Z = torch.cat([(t_rope_inv(src[l], cos, sin) if hi == 0 else src[l].float()).permute(1, 0, 2).reshape(T, H * D)
+                       for l in range(w * W, (w + 1) * W)], dim=1)
+        Uw = U[w, :, :r]
+        As.append(Z @ Uw)
+        Bs.append(Uw.T.contiguous().to(torch.bfloat16))
+        del Z
+    A4 = torch.stack(As).unsqueeze(1)
+    Ad, nb = t_halves_enc(A4, f, "k")
+    outs = []
+    for w in range(L // W):
+        Zh = Ad[w, 0] @ Bs[w].float()
+        for j in range(W):
+            x = Zh[:, j * H * D:(j + 1) * H * D].reshape(T, H, D).permute(1, 0, 2)
+            outs.append(t_rope_fwd(x, cos, sin, cx.apply_rope) if hi == 0 else x.to(torch.bfloat16))
+    return torch.stack(outs), nb, (L // W) * r * W * H * D * 2
+
+
+def xl_cache_plan(configs) -> dict:
+    """gen --xl-cache（10/21）：數每個 (K/V, 每 head 等效秩, W) 的每題 SVD 在這題的配置裡會用幾次；只快取用 ≥2 次的、最後一次用完就丟。
+    只算「沒有 drop、不是 :cal」的 xl（src＝整個區內原始 KV，每個配置前都先還原，所以同一個鍵的 SVD 輸入逐位元相同）。"""
+    uses = {}
+    for c in configs:
+        st = {s["op"]: s for s in c["stages"]}
+        low = st.get("xl")
+        if low is None or low.get("cal") or "drop" in st:
+            continue
+        for hi, r in ((0, low["rk"]), (1, low["rv"])):
+            if r:
+                k = (hi, r, low["w"])
+                uses[k] = uses.get(k, 0) + 1
+    return dict(uses=uses, store={}, hits=0, misses=0)
+
+
+def t_xl_half_cached(src, srcpos, P, hi, rhe, W, f, cx):
+    """t_xl_half（沒有 keep_idx 的情形）＋同一題內的 SVD 快取（10/21，gen --xl-cache）。SVD 與之後的量化、重建逐行照 t_xl_half；
+    gpu-selftest 的 xl_cache_eq_uncached 核對和 t_xl_half 逐位元相同。"""
+    import torch
+    L, H, T, D = src.shape
+    r = rhe * W * H
+    C = cx.xl_cache
+    key = (hi, rhe, W)
+    ent = C["store"].get(key)
+    if ent is None:
+        c0, s0 = cx.cs(srcpos)
+        As, Bs = [], []
+        for w in range(L // W):
+            Z = torch.cat([(t_rope_inv(src[l], c0, s0) if hi == 0 else src[l].float()).permute(1, 0, 2).reshape(T, H * D)
+                           for l in range(w * W, (w + 1) * W)], dim=1)
+            torch.manual_seed(XL_SEED + w)
+            U, S, V = torch.svd_lowrank(Z, q=min(r + XL_OVERSAMPLE, min(Z.shape)), niter=XL_NITER)
+            As.append(U[:, :r] * S[:r])
+            Bs.append(V[:, :r].T.contiguous().to(torch.bfloat16))
+            del Z, U, S, V
+        C["misses"] += 1
+        if C["uses"].get(key, 0) > 1:
+            C["store"][key] = (As, Bs)
+    else:
+        As, Bs = ent
+        C["hits"] += 1
+    C["uses"][key] = C["uses"].get(key, 1) - 1
+    if C["uses"][key] <= 0:
+        C["store"].pop(key, None)
+    A4 = torch.stack(As).unsqueeze(1)
+    Ad, nb = t_halves_enc(A4, f, "k")
+    Tk = A4.shape[2]
+    cos, sin = cx.cs(P)
+    outs = []
+    for w in range(L // W):
+        Zh = Ad[w, 0] @ Bs[w].float()
+        for j in range(W):
+            x = Zh[:, j * H * D:(j + 1) * H * D].reshape(Tk, H, D).permute(1, 0, 2)
+            outs.append(t_rope_fwd(x, cos, sin, cx.apply_rope) if hi == 0 else x.to(torch.bfloat16))
+    return torch.stack(outs), nb, (L // W) * r * W * H * D * 2
+
+
 def t_mc(X, deep, t, gamma):
     import torch
     L, _, H, T, D = X.shape
@@ -1452,6 +1724,10 @@ def t_pipeline(stages, X, pos, cx, info):
             d, by[f"{h}.raw"] = t_raw_half(S[:, hi], f, h, C)
         elif low["op"] == "lr":
             d, by[f"{h}.coef"], by[f"shared.{h}.basis"] = t_lr_half(S[:, hi], P, hi, r, low["joint"], f, cx)
+        elif low.get("cal"):                                   # 10/21：事先校準的基底
+            d, by[f"{h}.coef"], by[f"shared.{h}.basis"] = t_xl_half_cal(S[:, hi], P, hi, r, low["w"], f, cx)
+        elif getattr(cx, "xl_cache", None) is not None and "drop" not in st:   # 10/21：gen --xl-cache（預設關）
+            d, by[f"{h}.coef"], by[f"{h}.basis"] = t_xl_half_cached(S[:, hi], P, P, hi, r, low["w"], f, cx)
         else:
             src, sp = (X[:, hi], pos) if xl_first else (S[:, hi], P)
             d, by[f"{h}.coef"], by[f"{h}.basis"] = t_xl_half(src, sp, P, hi, r, low["w"], f, cx, idx if xl_first else None)
@@ -1587,6 +1863,30 @@ def load_calib(path: str, km, model: str, eval_keys: set | None = None):
 
 def calib_for_layers(calib, lo: int, hi: int):
     return {k: (v[lo:hi] if hasattr(v, "shape") else v) for k, v in calib.items()}
+
+
+def load_calib_xl(path: str, km, model: str, eval_keys: set | None = None, need_w: int = 4):
+    """10/21：xKV 校準基底（cmd_calib_xl 寫的）。核對模型、形狀、窗口，以及校準題和評測題不重疊（重疊就停）。"""
+    import torch
+    if not path or not os.path.exists(path):
+        raise SystemExit(f"沒有 xKV 校準檔 {path}（先跑 calib-xl）")
+    d = torch.load(path, map_location=km.device)
+    meta = d["meta"]
+    if meta["model"] != model or (meta["L"], meta["H"], meta["D"]) != (km.L, km.H, km.D) or meta["W"] != need_w:
+        raise SystemExit(f"xKV 校準檔 {path} 是 {meta['model']} L{meta['L']}/H{meta['H']}/D{meta['D']}/W{meta['W']}，和這個模型／窗口對不上")
+    if eval_keys:
+        ov = {tuple(x) for x in meta["item_keys"]} & eval_keys
+        if ov:
+            raise SystemExit(f"xKV 校準題和評測題重疊：{sorted(ov)[:5]}")
+    return d
+
+
+def calib_rids(calib, calib_xl) -> str:
+    """逐列的 calib_run_id：沒有 xKV 校準時照舊（PCA 校準的 run_id）；有的話接上「xl:<run_id>」。"""
+    r = (calib or {}).get("meta", {}).get("run_id", "")
+    if calib_xl is None:
+        return r
+    return ";".join(x for x in (r, "xl:" + calib_xl["meta"]["run_id"]) if x)
 
 
 def plan_interleaved(tasks, n, seed0):
@@ -1748,6 +2048,103 @@ def cmd_calib(a):
     print(f"寫好 {out}（{N} token、{len(ids_done)} 題、{time.time() - t0:.0f}s）", flush=True)
 
 
+# ============================================================================ calib-xl（10/21：xKV 事先校準的基底）
+XL_ENERGY_RANKS = (4, 8, 11, 16, 17, 22, 28, 32, 34, 42, 64)
+
+
+def calib_xl_settings(a) -> dict:
+    return dict(model=a.model, tasks=list(a.tasks), n=a.n, seed0=a.seed0, params_file=os.path.relpath(a.params_file, REPO),
+                skip_block0=True, W=a.w, rank_max_per_head=a.rank_max, centered=False)
+
+
+def cmd_calib_xl(a):
+    """xKV 的基底事先用校準題算好、所有題共用（10/21）。校準題＝和 PCA 的 calib 同一套（seed 61000 起、T2–T5 各 2 題，和所有評測題不重疊）。
+    每個窗口（W 個相鄰層）、K／V 各一個：Z＝[token, W·H·D]（K 先逆 RoPE；不去平均＝照 xKV 與每題 SVD 版），FP64 累加 G＝Σ ZᵀZ，
+    最後 eigh(G) 取前 R＝rank_max×W×H 個特徵向量（由大到小；＝所有校準 token 疊起來的右奇異向量）。第一題做 RoPE 的資料自身核對（規則 6）。"""
+    out = a.out or os.path.join(DATA, f"calib_xl_{a.model}.pt")
+    side = out + ".json"
+    settings = calib_xl_settings(a)
+    if os.path.exists(out) and not a.force:
+        old = json.load(open(side)) if os.path.exists(side) else {}
+        if old.get("settings") == settings and old.get("sha256") == sha256(out):
+            print(f"xKV 校準檔已有、設定相同、sha256 對得上：{out}（run {old.get('run_id')}）→ 跳過", flush=True)
+            return
+        raise SystemExit(f"{out} 已存在但設定或 sha256 不同（{side}）→ 不默默蓋掉；要重算加 --force")
+    import torch
+    import m10_tasks as T
+    from m10_quality import Answerer
+    rid = os.environ.get("RUN_ID", "adhoc")
+    ans = Answerer(a.model)
+    km = ans.km
+    check_info(km, MODEL_INFO[a.model])
+    P = json.load(open(a.params_file))["params"][a.model]
+    L, H, D, W = km.L, km.H, km.D, a.w
+    if L % W:
+        raise SystemExit(f"窗口 {W} 不整除層數 {L}")
+    nW, WHD = L // W, W * H * D
+    R = min(WHD, a.rank_max * W * H)
+    items = plan_interleaved(a.tasks, a.n, a.seed0)
+    G = {h: torch.zeros(nW, WHD, WHD, dtype=torch.float64, device=km.device) for h in "kv"}
+    N, probe, ids_done, t0 = 0, None, [], time.time()
+    for idx, (task, b1, b2, seed) in enumerate(items):
+        it = T.make_item(task, b1, b2, seed, ans.tok, P.get(task))
+        ids = torch.tensor(it["context_ids"], device=km.device)
+        cap, hk = [], None
+        if idx == 0:
+            hk = km.hf.model.layers[0].self_attn.k_proj.register_forward_hook(lambda m, i, o: cap.append(o.detach().clone()))
+        try:
+            km.key_keep = None
+            km.prefill_chunked(ids)
+        finally:
+            if hk is not None:
+                hk.remove()
+        n = len(ids)
+        tctx = TCtx(km, n)
+        if idx == 0:
+            probe = rope_probe(km, cap[1][0], tctx, CHUNK)
+            print("RoPE 核對（第 0 層、位置 512–1023）：", json.dumps(probe), flush=True)
+            if not probe["pass"]:
+                raise SystemExit("RoPE 逆旋轉的資料自身核對沒過（規則 6／2：停）")
+        cos, sin = tctx.cs(torch.arange(CHUNK, n, device=km.device))
+        with torch.inference_mode():
+            for hi, h in enumerate("kv"):
+                for w in range(nW):
+                    Z = torch.cat([(t_rope_inv(km.kv[l, hi, :, CHUNK:n], cos, sin) if hi == 0 else km.kv[l, hi, :, CHUNK:n].float())
+                                   .permute(1, 0, 2).reshape(n - CHUNK, H * D) for l in range(w * W, (w + 1) * W)], dim=1).double()
+                    G[h][w] += Z.T @ Z
+                    del Z
+        N += n - CHUNK
+        ids_done.append(it["item_id"])
+        print(f"[{idx + 1}/{len(items)}] {it['item_id']} {time.time() - t0:.1f}s", flush=True)
+    save = dict(meta=dict(model=a.model, run_id=rid, ts=ts(), L=L, H=H, D=D, W=W, R=R, n_tokens=N, items=ids_done,
+                          item_keys=[[t, s] for t, _, _, s in items], settings=settings, rope_probe=probe, centered=False))
+    energy, t1 = {}, time.time()
+    with torch.inference_mode():
+        for h in "kv":
+            Gs = (G[h] + G[h].transpose(-1, -2)) / 2
+            ev, U = torch.linalg.eigh(Gs)
+            ev, U = ev.flip(-1), U.flip(-1)
+            save[f"{h}_U"] = U[..., :R].float().contiguous()
+            save[f"{h}_ev"] = ev.float()
+            evp = ev.clamp_min(0)
+            tot = evp.sum(-1)
+            energy[h] = {str(r): float((evp[..., :r * W * H].sum(-1) / tot).mean()) for r in XL_ENERGY_RANKS if r * W * H <= WHD}
+            del Gs, U
+    save["meta"]["energy_captured_uncentered"] = energy
+    save["meta"]["t_eigh_s"] = round(time.time() - t1, 1)
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    torch.save(save, out)
+    summ = dict(run_id=rid, ts=ts(), file=out, sha256=sha256(out), settings=settings, n_tokens=N, items=ids_done, R=R,
+                rope_probe=probe, energy_captured_uncentered=energy, t_eigh_s=save["meta"]["t_eigh_s"],
+                note="能量＝校準資料上不去平均的二次動差 ΣZᵀZ 的前 r×W×H 個特徵值佔比（每個窗口平均；r＝每 head 每層等效秩）。"
+                     "這是校準資料上的數字，不是評測題上的重建誤差。")
+    json.dump(summ, open(side, "w"), indent=1, ensure_ascii=False)
+    os.makedirs(a.summary_dir, exist_ok=True)
+    json.dump(summ, open(os.path.join(a.summary_dir, f"calib_xl_{a.model}.json"), "w"), indent=1, ensure_ascii=False)
+    print(json.dumps(energy, ensure_ascii=False), flush=True)
+    print(f"寫好 {out}（{N} token、{len(ids_done)} 題、R＝{R}、eigh {save['meta']['t_eigh_s']}s、共 {time.time() - t0:.0f}s）", flush=True)
+
+
 # ============================================================================ screen（X1）
 def s2_config(a, model: str):
     """S2 的原本各組：照 m16_s2_equalbytes.cmd_run 的寫法組參數（不改 S2 的檔）。"""
@@ -1771,7 +2168,7 @@ def s2_config(a, model: str):
     return dict(a=s2a, drop_methods=wm + extra, roles=roles, fmts=fmts, src=src, mask_check=ds1 is not None, ds1=ds1)
 
 
-def x1_item(ans, it, a, combos, calib, s2cfg, info):
+def x1_item(ans, it, a, combos, calib, s2cfg, info, calib_xl=None):
     """一題：S2 子集（可選）→ E0（抓 q）→ 每個組合：還原區內 → pipeline → 位元組核對 → 重建誤差 → 放回 → 代理 → teacher forcing。"""
     import torch
     import m10_drop as DR
@@ -1817,7 +2214,7 @@ def x1_item(ans, it, a, combos, calib, s2cfg, info):
     nd = torch.tensor([t for b in st.needle for t in range(b * CHUNK, (b + 1) * CHUNK)], dtype=torch.long, device=km.device)
     base = dict(model=a.model, item_id=it["item_id"], task=it["task"], band=tr["band"], seed=it["seed"],
                 needle_blocks=json.dumps(list(st.needle)), gold_lp_e0=m0["gold_lp"], first_ok_e0=m0["first_ok"],
-                proxy_layers=a.proxy_layers, proxy_nq=prox.nq, calib_run_id=(calib or {}).get("meta", {}).get("run_id", ""))
+                proxy_layers=a.proxy_layers, proxy_nq=prox.nq, calib_run_id=calib_rids(calib, calib_xl))
     rows = [dict(base, range="", region="", spec="E0", groups="", roles="ref", family="none", families="none", n_lossy=0,
                  deployable=1, attn_path="sdpa", k_drop=0, kept_frac=1.0, needle_kept=1.0, t_pipe_s="", t_tf_s="",
                  relerr_k=0.0, relerr_v=0.0, cenerr_k=0.0, attn_err=0.0, attn_err_max=0.0, attn_err_wo=0.0,
@@ -1830,6 +2227,7 @@ def x1_item(ans, it, a, combos, calib, s2cfg, info):
         s0, s1 = lo * CHUNK, (hi + 1) * CHUNK
         loc = {m: [b - lo for b in o if lo <= b <= hi] for m, o in orders.items()}
         tctx = TCtx(km, n, calib=calib, orders=loc, deep=deep_layers(L))
+        tctx.xlcal = calib_xl                     # 10/21：xl:…:cal 用（None＝沒有 :cal 的組合）
         pos = torch.arange(s0, s1, device=km.device)
         for c in combos:
             if dirty:
@@ -1946,6 +2344,9 @@ def cmd_screen(a):
     calib = None
     if any(s["op"] == "lr" for c in combos for s in c["stages"]):
         calib = load_calib(a.calib, ans.km, a.model, {(t, s) for t, _, _, s in plan})
+    calib_xl = None
+    if any(s.get("cal") for c in combos for s in c["stages"]):        # 10/21
+        calib_xl = load_calib_xl(getattr(a, "calib_xl", None), ans.km, a.model, {(t, s) for t, _, _, s in plan})
     P = json.load(open(a.params_file))["params"][a.model]
     s2cfg = None if a.no_s2 else s2_config(a, a.model)
     si, sk = parse_shard(a.shard)
@@ -1969,7 +2370,7 @@ def cmd_screen(a):
             t0 = time.time()
             it = T.make_item(task, b1, b2, seed, ans.tok, P.get(task))
             assert it["item_id"] == item_id_of(task, b1, b2, seed), it["item_id"]
-            rows_s2, rows, checks = x1_item(ans, it, a, combos, calib, s2cfg, info)
+            rows_s2, rows, checks = x1_item(ans, it, a, combos, calib, s2cfg, info, calib_xl=calib_xl)
             hl, intr = host_level(), intruders(watch)
             if rows_s2:
                 for r in rows_s2:
@@ -2229,7 +2630,7 @@ def _rho(e):
 
 
 # ============================================================================ gen（X2）
-def x2_item(ans, it, configs, calib, info, nb):
+def x2_item(ans, it, configs, calib, info, nb, calib_xl=None, xl_cache=False):
     import torch
     import m10_drop as DR
     import m10_sweep as SW
@@ -2255,6 +2656,9 @@ def x2_item(ans, it, configs, calib, info, nb):
     s0, s1 = lo * CHUNK, (hi + 1) * CHUNK
     tctx = TCtx(km, n, calib=calib, orders={m: [b - lo for b in o if lo <= b <= hi] for m, o in orders.items()},
                 deep=deep_layers(km.L))
+    tctx.xlcal = calib_xl                         # 10/21：xl:…:cal 用
+    if xl_cache:                                  # 10/21：gen --xl-cache（同題同秩的每題 SVD 只算一次）
+        tctx.xl_cache = xl_cache_plan(configs)
     pos = torch.arange(s0, s1, device=km.device)
     nd = torch.tensor([t for b in st.needle for t in range(b * CHUNK, (b + 1) * CHUNK)], dtype=torch.long, device=km.device)
     dirty = False
@@ -2327,6 +2731,9 @@ def cmd_gen(a):
     calib = None
     if any(s["op"] == "lr" for c in configs for s in c["stages"]):
         calib = load_calib(a.calib, ans.km, a.model, {(t, s) for t, _, _, s in plan})
+    calib_xl = None
+    if any(s.get("cal") for c in configs for s in c["stages"]):       # 10/21
+        calib_xl = load_calib_xl(getattr(a, "calib_xl", None), ans.km, a.model, {(t, s) for t, _, _, s in plan})
     P = json.load(open(a.params_file))["params"][a.model]
     lc = None
     if nb == LC_BLOCKS:
@@ -2346,7 +2753,7 @@ def cmd_gen(a):
     chk = open(side_path(a.out, ".checks.jsonl"), "a")
     watch = start_watch(a.out)
     rid = os.environ.get("RUN_ID", "adhoc")
-    cal_rid = (calib or {}).get("meta", {}).get("run_id", "")
+    cal_rid = calib_rids(calib, calib_xl)
     t_all, n_new = time.time(), 0
     try:
         for k, (task, b1, b2, seed) in enumerate(plan):
@@ -2358,7 +2765,7 @@ def cmd_gen(a):
             t0 = time.time()
             it = T.make_item(task, b1, b2, seed, ans.tok, P.get(task), n_blocks=nb)
             assert it["item_id"] == item_id_of(task, b1, b2, seed), it["item_id"]
-            rows = x2_item(ans, it, configs, calib, info, nb)
+            rows = x2_item(ans, it, configs, calib, info, nb, calib_xl=calib_xl, xl_cache=getattr(a, "xl_cache", False))
             hl, intr = host_level(), intruders(watch)
             for r in rows:
                 r.update(run_id=rid, ts=ts(), shard=a.shard, model=a.model, ctx=a.ctx, n_blocks=nb, calib_run_id=cal_rid,
@@ -2489,8 +2896,436 @@ def cmd_gen_report(a):
     print("\n".join(L[:80]))
 
 
+# ============================================================================ 10/21 延伸的報告（CPU；不碰 torch）
+X2B_TEXT = {
+    "design": f"X2b：新題 seed {X2B_SEED0} 起（T2–T5 各 {X2B_N} 題＝{4 * X2B_N} 題），和 X1（{X1_SEED0}）、校準（{CALIB_SEED0}）、X2（{X2_SEED0}）"
+              "不重疊；32K；配置＝code/m16_xstack_combos_v2.json 的 x2b（協調者列的 10 個＋只用第一版 X2 決定的池子缺口單一方法："
+              "兩個模型的 q:int2_kivi、Qwen 的 xl:k22:v34；Llama 11 個、Qwen 12 個；roles／budgets 照第一版 x2_selection.json）。",
+    "pairing": "合併（X2＋X2b）：配置集合 C＝X2b 的配置裡、第一版 X2 有量的（≥90% 的 X2 題有這個配置；X2 每一層都是全部 96 題，"
+               "少數題缺＝那題寫到一半）；題目＝E0 與 C 的每個配置都有的題（每題所有配置都有，逐題配對；被排除的題數另列）。"
+               "X2b 有、X2 沒有的配置（例如 Qwen 的 xl:k22:v34+q:int8_token）只在「只用 X2b」報。",
+    "rules": "M1／M2／完整性／MLPerf 照第一版寫死的規則（STOP_TEXT 的 M1、M2、completeness、MLPerf；judge_x2 原樣）重算，"
+             "只是單一方法池與組合池限制在 C。:cal 的配置不進任何池（校準基底另判，見 xlcal）。",
+    "pool_gap": "池子缺口（事先寫死；只標註、不改判定）：第一版池子裡、不在 C 的配置——單一方法若位元組比 < 合併後的 B*(單一)（或 B*(單一) 不存在）"
+                "而且只用 X2 的 CI 上界 ≥ −ε（多量可能過 ε）→ 合併的 r 可能偏小（偏向 GO）；組合同理（位元組比 < B*(組合)（或不存在）"
+                "且 CI 上界 ≥ −ε）→ r 可能偏大（偏向 NO-GO）。",
+    "variants": "A＝只用 X2、第一版的整個池（重現第一版）；B＝只用 X2、池子限制在 C；C＝只用 X2b（池子 C；X2b 獨有的配置另列）；"
+                "D＝X2＋X2b（池子 C）。主要讀 D；A→B＝限制池子的效果、B→D＝加題數的效果、C＝獨立重複。",
+    "feasible_v2": "v2/x2_feasible.csv：每個配置用能拿到最多題的那一組：在 C → D；只在 X2b → C；其他 → A（第一版的題）；欄位 source 標明。",
+    "complete": f"X2b 每個模型 {4 * X2B_N} 題齊全才算完成（x2b_complete）；判定本身照第一版的 ≥{MIN_ITEMS} 題規則。",
+}
+XLCAL_TEXT = {
+    "design": f"xKV 的基底事先用校準題算好（seed {CALIB_SEED0} 起的 8 題，和 PCA 校準同一套、和所有評測題不重疊；每 4 層一個窗口、"
+              "K（逆 RoPE）／V 各一個；不去平均的 ΣZᵀZ 的前 R 個特徵向量），所有題共用。比較＝同一題、同一個行程裡，"
+              "校準基底版 vs 每題 SVD 的同名配置（同秩、同係數量化）。",
+    "tf": f"TF 篩選（X1 的前 {XLCAL_TF_N} 題／任務＝{4 * XLCAL_TF_N} 題）：只報告、不判定。每題 SVD 的 TF 取自 X1 同一題的列（跨 run；"
+          "E0 是否逐值重現另列），另在同一個行程量 xl:k11:v17 當錨點（同 run 配對＋和 X1 的重現）。",
+    "rule": f"判定（生成答對率、X2 的 {4 * XLCAL_GEN_N} 題、逐題配對：校準 − 每題 SVD，bootstrap 10,000 次的 95% CI）："
+            "CI 上界 < −2 個百分點 → MUST_PER_ITEM（必須每題算 SVD）；CI 下界 ≥ −2 個百分點 → CAN_PRECOMPUTE（可以事先算好基底）；"
+            "其他 → UNDETERMINED（題數不夠分辨）。",
+    "aggregate": f"每個模型：三對都 CAN_PRECOMPUTE → CAN_PRECOMPUTE；任一對 MUST_PER_ITEM → MUST_PER_ITEM（至少那個秩要每題算）；其他 → UNDETERMINED；"
+                 f"題數 < {MIN_ITEMS} → INCOMPLETE。整體：兩個模型都 CAN → CAN；任一模型 MUST → MUST；其他照實寫。",
+    "bytes": "同秩時，校準版的每請求位元組＝每題 SVD 版減掉每題的基底（基底跨請求共用，列在 bytes_shared，大小和每題的基底相同）。"
+             "所以 CAN_PRECOMPUTE＝同秩不比每題 SVD 差、而且每請求更省。攤提〔算術〕：共用基底 S 由 N 個請求（或同一個請求的多次還原）"
+             "分攤，每請求多 S/N；N＝1 時正好等於每題 SVD 版（打平點恆為 1），report 列 N＝1／8／64 的攤提後位元組比。"
+             "實際部署只要存最高秩的一份基底（低秩取前幾欄），S 以最高秩那份為準會更大，這裡照每個配置自己的秩算。",
+}
+
+
+def _gen_rows(globs):
+    """X2／X2b／xlcal 的生成逐列：讀檔、去重、只留做完的題、只留 32K。另回傳原始列（E0 重現檢查用）。"""
+    paths = sorted({p for g in globs for p in glob.glob(g)})
+    raw = read_rows(paths)
+    rows, partial = dedupe_complete(raw, ("model", "ctx", "item_id", "spec"))
+    return [r for r in rows if r.get("ctx", "32K") == "32K"], partial, paths, raw
+
+
+def e0_repro(raw) -> dict:
+    """同一題的 E0 被量了不只一次（X2 每一層的 run 各量一次 E0）：分數是否全部相同（決定性的證據；只記錄）。"""
+    by = {}
+    for r in raw:
+        if r["spec"] == "E0" and r.get("ctx", "32K") == "32K":
+            by.setdefault((r["model"], r["item_id"]), []).append(float(r["gen_score"]))
+    multi = {k: v for k, v in by.items() if len(v) > 1}
+    diff = sorted(f"{m}/{i}" for (m, i), v in multi.items() if len(set(v)) > 1)
+    return dict(items_measured_more_than_once=len(multi), items_with_different_e0=len(diff), examples=diff[:10])
+
+
+def restrict_rows(rows, specs):
+    """只留 E0 與 specs 的列，而且只留 E0 與 specs 每一個都有的題（每題所有配置都有）。回傳 (列, 題的集合)。"""
+    want = set(specs) | {"E0"}
+    have = {}
+    for r in rows:
+        if r["spec"] in want:
+            have.setdefault(r["item_id"], set()).add(r["spec"])
+    items = {i for i, s in have.items() if s >= want}
+    return [r for r in rows if r["spec"] in want and r["item_id"] in items], items
+
+
+def with_roles(tab: dict, v1: dict, plan: dict) -> dict:
+    """roles／budgets 一律照事先寫死的檔：第一版 x2_selection.json（M2 的主要組合、最好的單一方法），第一版沒有的照 X2b 計畫檔。"""
+    for s, c in tab.items():
+        e = v1.get(s) or plan.get(s)
+        c["roles"] = [x for x in (e["roles"] if e else []) if x != "x2b"] or ["x2b_only"]
+        c["budgets"] = [float(b) for b in (e["budgets"] if e else [])]
+    return tab
+
+
+def x2_single(c) -> bool:
+    """judge_x2 的單一方法池（同一個條件；self-test 核對）。"""
+    return c["n_lossy"] == 1 and bool(c["deployable"]) and not ({"deploy_broken", "random_drop"} & set(c["roles"]))
+
+
+def x2_combo(c) -> bool:
+    return c["n_lossy"] >= 2 and bool(c["deployable"]) and "random_drop" not in c["roles"]
+
+
+def pool_gaps(full: dict, sub: dict, M1: dict) -> dict:
+    """X2B_TEXT['pool_gap']：第一版池子裡、不在 sub 的配置，多量之後可能改變 B* 的。"""
+    b1, b2 = M1.get("bstar_single"), M1.get("bstar_combo")
+    out = {"single_bias_to_go": [], "combo_bias_to_nogo": []}
+    for s, c in sorted(full.items()):
+        if s in sub or c["diff"]["hi"] < -EPS:
+            continue
+        if x2_single(c) and (b1 is None or c["ratio"] < b1):
+            out["single_bias_to_go"].append(dict(spec=s, ratio=c["ratio"], diff=c["diff"]))
+        elif x2_combo(c) and (b2 is None or c["ratio"] < b2):
+            out["combo_bias_to_nogo"].append(dict(spec=s, ratio=c["ratio"], diff=c["diff"]))
+    return out
+
+
+def _judge_variant(acc: dict) -> dict:
+    J = judge_x2(acc, {})
+    J.pop("rule_text", None)
+    J["n_items"] = {m: (max(c["n"] for c in tab.values()) if tab else 0) for m, tab in acc.items()}
+    J["complete"] = all(v >= MIN_ITEMS for v in J["n_items"].values()) and set(acc) == set(MODEL_INFO)
+    if not J["complete"]:
+        J["M1_verdict"] = f"INCOMPLETE（每個模型至少 {MIN_ITEMS} 題：{J['n_items']}；成分只供參考）／" + J["M1_verdict"]
+    return J
+
+
+def write_x3_files_v2(entries: list, rid: str, ts_: str, out_dir: str) -> dict:
+    """v2 的 x2_feasible.csv／x2_unmapped.csv：同 write_x3_files 的欄位＋source（x2+x2b／x2b／x2）。entries＝[(model, spec, c, source, src_run_ids)]。"""
+    import csv
+    feas, unm = [], []
+    for m, spec, c, source, src in sorted(entries, key=lambda e: (e[0], e[1])):
+        if any(x.get("cal") for x in parse_spec(spec)):
+            continue
+        seg, why = x3_segment(spec, m)
+        row = dict(model=m, combo=spec, feasible=int(c["eps_pass"]), run_id=rid, ts=ts_, ratio=c["ratio"],
+                   acc=round(c["acc"], 6), acc_e0=round(c["acc_e0"], 6), acc_delta=round(c["diff"]["mean"], 6),
+                   acc_delta_lo=round(c["diff"]["lo"], 6), acc_delta_hi=round(c["diff"]["hi"], 6), eps=EPS,
+                   mlperf99=int(c["mlperf0.99"]), mlperf999=int(c["mlperf0.999"]), n_items=c["n"], src_run_ids=src, source=source)
+        if seg is not None:
+            assert seg in X3_SEGMENTS, seg
+            feas.append(dict(row, x3_segment=seg))
+        else:
+            unm.append(dict(row, reason=why))
+    out = {}
+    for name, rows, fields in (("x2_feasible.csv", feas, X3_FIELDS + ["source"]),
+                               ("x2_unmapped.csv", unm, [f for f in X3_FIELDS if f != "x3_segment"] + ["source", "reason"])):
+        if not rows:
+            out[name] = "沒有列 → 不寫"
+            continue
+        with open(os.path.join(out_dir, name), "w", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=fields)
+            w.writeheader()
+            w.writerows(rows)
+        out[name] = dict(rows=len(rows), feasible=sum(r["feasible"] for r in rows))
+    return out
+
+
+def _guard_v2(out_dir: str):
+    if os.path.abspath(out_dir) == os.path.abspath(OUT_DIR):
+        raise SystemExit(f"--out-dir 是第一版的目錄 {OUT_DIR}：10/21 延伸的輸出一律寫到新目錄（預設 {OUT_DIR_V2}），不覆蓋第一版的檔")
+
+
+def _hw(d):
+    return None if not d else (d["hi"] - d["lo"]) / 2
+
+
+def cmd_x2b_report(a):
+    """X2＋X2b 的合併報告（X2B_TEXT）：A／B／C／D 四種並列、M1／M2／完整性／MLPerf 照第一版的規則重算，另寫 v2 的 x2_feasible.csv。"""
+    _guard_v2(a.out_dir)
+    rows2, part2, paths2, raw2 = _gen_rows(a.raw_x2)
+    rowsb, partb, pathsb, rawb = _gen_rows(a.raw_x2b)
+    v1sel = json.load(open(a.selection))
+    plan = json.load(open(a.plan))
+    rid = os.environ.get("RUN_ID", "adhoc")
+    rep = dict(run_id=rid, ts=ts(), rule_text=X2B_TEXT, x2_rule_text={k: STOP_TEXT[k] for k in ("M1", "M2", "completeness", "MLPerf")},
+               eps=EPS, files_x2=paths2, files_x2b=pathsb, src_run_ids_x2=sorted({r["run_id"] for r in rows2}),
+               src_run_ids_x2b=sorted({r["run_id"] for r in rowsb}), incomplete_items_x2=part2, incomplete_items_x2b=partb,
+               e0_repro_x2=e0_repro(raw2), e0_repro_x2b=e0_repro(rawb), plan_run_id=plan.get("run_id"),
+               contention_x2b=dict(rows_with_intruders=sum(1 for r in rowsb if r.get("own_gpu_intruders") not in ("0", "NOT_CHECKED")),
+                                   host_levels=sorted({r.get("host_level", "") for r in rowsb})), models={})
+    acc = {k: {} for k in "ABCD"}
+    full_tabs, entries = {}, []
+    src2, srcb = ";".join(rep["src_run_ids_x2"]), ";".join(rep["src_run_ids_x2b"])
+    for m in MODEL_INFO:
+        v1 = {e["spec"]: e for e in v1sel["models"].get(m, {}).get("configs", [])}
+        pl = {e["spec"]: e for e in plan["models"][m]["configs"]}
+        specs_b = [s for s in pl if not any(x.get("cal") for x in parse_spec(s))]
+        R2 = [r for r in rows2 if r["model"] == m]
+        Rb = [r for r in rowsb if r["model"] == m]
+        items2 = {r["item_id"] for r in R2 if r["spec"] == "E0"}
+        have2 = {}
+        for r in R2:
+            have2.setdefault(r["spec"], set()).add(r["item_id"])
+        C = [s for s in specs_b if items2 and len(have2.get(s, set()) & items2) >= 0.9 * len(items2)]
+        only_b = [s for s in specs_b if s not in C]
+        tabA, _ = gen_table(R2)
+        rB, iB = restrict_rows(R2, C)
+        rC, iC = restrict_rows(Rb, C)
+        rCx, iCx = restrict_rows(Rb, specs_b)
+        rD, iD = restrict_rows(R2 + Rb, C)
+        assert not (iB & iC), "X2 與 X2b 的題重疊（seed 應該互不重疊）"
+        tabs = {"A": tabA, "B": gen_table(rB)[0], "C": gen_table(rC)[0], "D": gen_table(rD)[0]}
+        tabCx = with_roles(gen_table(rCx)[0], v1, pl)
+        for k in tabs:
+            with_roles(tabs[k], v1, pl)
+            acc[k][m] = {s: c for s, c in tabs[k].items() if not any(x.get("cal") for x in parse_spec(s))}
+        full_tabs[m] = tabs["A"]
+        for s, c in tabs["A"].items():
+            if s not in C and s not in only_b:
+                entries.append((m, s, c, "x2", src2))
+        for s in C:
+            if s in tabs["D"]:
+                entries.append((m, s, tabs["D"][s], "x2+x2b", src2 + ";" + srcb))
+        for s in only_b:
+            if s in tabCx:
+                entries.append((m, s, tabCx[s], "x2b", srcb))
+        rep["models"][m] = dict(C=C, only_x2b=only_b, n_items=dict(A=len(items2), B=len(iB), C=len(iC), C_all_x2b_configs=len(iCx), D=len(iD)),
+                                x2b_complete=len(iCx) >= 4 * X2B_N,
+                                items_dropped_x2=sorted(items2 - iB)[:20], n_items_dropped_x2=len(items2 - iB),
+                                configs={k: {s: {kk: vv for kk, vv in c.items() if kk != "per_item"} for s, c in tabs[k].items()
+                                             if k == "A" and s in C or k != "A"} for k in tabs},
+                                configs_x2b_only={s: {kk: vv for kk, vv in tabCx[s].items() if kk != "per_item"} for s in only_b if s in tabCx})
+    J = {k: _judge_variant(acc[k]) for k in "ABCD"}
+    for k in "BCD":
+        J[k]["pool_gaps"] = {m: pool_gaps(full_tabs[m], acc[k][m], J[k]["models"][m]["M1"]) for m in acc[k]}
+    rep["judge"] = J
+    os.makedirs(a.out_dir, exist_ok=True)
+    rep["x3_files"] = write_x3_files_v2(entries, rid, rep["ts"], a.out_dir)
+    json.dump(rep, open(os.path.join(a.out_dir, "x2b_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
+    L = ["# X2＋X2b：加題數後的生成答對率與判定（10/21 延伸；規則照第一版，事先寫死的合併方式見最後）", "",
+         f"X2 run：{len(rep['src_run_ids_x2'])} 個；X2b run：{'、'.join(rep['src_run_ids_x2b']) or '（沒有）'}；"
+         f"不齊全的題（沒用）：X2 {len(part2)}、X2b {len(partb)}", "",
+         f"E0 重現（同一題量了不只一次）：X2 {rep['e0_repro_x2']['items_measured_more_than_once']} 題、分數不同 "
+         f"{rep['e0_repro_x2']['items_with_different_e0']} 題", ""]
+    for m in MODEL_INFO:
+        M = rep["models"][m]
+        L += [f"## {m}：題數 A／B／C／D＝{M['n_items']['A']}／{M['n_items']['B']}／{M['n_items']['C']}／{M['n_items']['D']}"
+              f"（X2b 齊全：{'是' if M['x2b_complete'] else '否'}；X2 因缺配置被排除 {M['n_items_dropped_x2']} 題）", "",
+              "| 組合 | 位元組比 | 只用 X2：答對率、對 E0（百分點，CI） | 只用 X2b | X2＋X2b | ε（D） | CI 半寬 X2→D | ≥99% E0（D） | ≥99.9% E0（D） |",
+              "|:--|--:|--:|--:|--:|:--|--:|:--|:--|"]
+        TB, TC, TD = (acc[k][m] for k in "BCD")
+        for s in sorted(M["C"], key=lambda s: (TD[s]["ratio"] if s in TD else 9, s)):
+            b, c, d = TB.get(s), TC.get(s), TD.get(s)
+
+            def cell(x):
+                return "—" if not x else f"{100 * x['acc']:.1f}、{_ci(x['diff'], 100, 1)}（n {x['n']}）"
+            hw = f"{100 * _hw(b['diff']):.1f}→{100 * _hw(d['diff']):.1f}" if b and d else "—"
+            L.append(f"| {s} | {(d or b or c)['ratio']:.4f} | {cell(b)} | {cell(c)} | {cell(d)} | "
+                     f"{'過' if d and d['eps_pass'] else '沒過'} | {hw} | {'過' if d and d['mlperf0.99'] else '沒過'} | "
+                     f"{'過' if d and d['mlperf0.999'] else '沒過'} |")
+        for s in M["only_x2b"]:
+            x = M["configs_x2b_only"].get(s)
+            if x:
+                L.append(f"| {s}（只有 X2b） | {x['ratio']:.4f} | — | {100 * x['acc']:.1f}、{_ci(x['diff'], 100, 1)}（n {x['n']}） | — | "
+                         f"{'過' if x['eps_pass'] else '沒過'}（X2b） | — | {'過' if x['mlperf0.99'] else '沒過'} | {'過' if x['mlperf0.999'] else '沒過'} |")
+        L.append("")
+    L += ["## 判定（A＝只用 X2、第一版的池；B＝只用 X2、池 C；C＝只用 X2b；D＝X2＋X2b）", "",
+          "| 變體 | 模型 | B*(單一) | B*(組合) | r | M1（整體） | MLPerf99 r | MLPerf99.9 r | 池子缺口（偏 GO／偏 NO-GO） |", "|:--|:--|--:|--:|--:|:--|--:|--:|:--|"]
+    for k in "ABCD":
+        for m in MODEL_INFO:
+            Mm = J[k]["models"].get(m)
+            if not Mm:
+                continue
+            g = J[k].get("pool_gaps", {}).get(m)
+            gs = "—" if g is None else (f"{len(g['single_bias_to_go'])}：{', '.join(x['spec'] for x in g['single_bias_to_go']) or '無'}／"
+                                         f"{len(g['combo_bias_to_nogo'])}：{', '.join(x['spec'] for x in g['combo_bias_to_nogo']) or '無'}")
+            L.append(f"| {k} | {m} | {Mm['M1']['bstar_single']} | {Mm['M1']['bstar_combo']} | {Mm['M1']['r']} | {J[k]['M1_verdict']} | "
+                     f"{Mm['M1_mlperf0.99']['r']} | {Mm['M1_mlperf0.999']['r']} | {gs} |")
+    L += ["", "M2（每個預算：主要組合 − 最好的單一方法，配對差，百分點）：", "",
+          "| 變體 | 模型 | 預算 | 主要組合 | 最好的單一 | 有空間 | 差 [CI] | 支持 NO-GO | Holm |", "|:--|:--|:--|:--|:--|:--|--:|:--|:--|"]
+    for k in "ABCD":
+        for m in MODEL_INFO:
+            for B, e in J[k]["models"].get(m, {}).get("M2", {}).items():
+                d = e.get("diff_primary_minus_single")
+                L.append(f"| {k} | {m} | {B} | {e.get('primary')} | {e.get('best_single')} | {e.get('room', '—')} | "
+                         f"{_ci(d, 100, 1) if d else e.get('status', '—')} | {e.get('supports_nogo', '—')} | "
+                         f"{(e.get('holm') or {}).get('reject', '—')} |")
+    L += ["", "## 給 X3 的可行集（v2；feasible＝ε 判定，source 標明用哪一組題）", "", json.dumps(rep["x3_files"], ensure_ascii=False), "",
+          "## 事先寫死的合併方式與規則", ""]
+    L += [f"- **{k}**：{v}" for k, v in X2B_TEXT.items()]
+    L += [f"- **第一版 {k}**：{v}" for k, v in rep["x2_rule_text"].items()]
+    open(os.path.join(a.out_dir, "tables_x2b.md"), "w").write("\n".join(L) + "\n")
+    print("\n".join(L[:90]))
+
+
+def xlcal_verdict(d) -> str:
+    if d is None:
+        return "NOT_MEASURED"
+    if d["hi"] < -EPS:
+        return "MUST_PER_ITEM"
+    if d["lo"] >= -EPS:
+        return "CAN_PRECOMPUTE"
+    return "UNDETERMINED"
+
+
+def xlcal_aggregate(vs: list) -> str:
+    if not vs or "NOT_MEASURED" in vs:
+        return "NOT_MEASURED"
+    if "MUST_PER_ITEM" in vs:
+        return "MUST_PER_ITEM"
+    if all(v == "CAN_PRECOMPUTE" for v in vs):
+        return "CAN_PRECOMPUTE"
+    return "UNDETERMINED"
+
+
+def _by_item_spec(rows):
+    out = {}
+    for r in rows:
+        out.setdefault(r["model"], {}).setdefault(r["item_id"], {})[r["spec"]] = r
+    return out
+
+
+def cmd_xlcal_report(a):
+    """xKV 校準基底 vs 每題 SVD（XLCAL_TEXT）：TF 篩選（只報）＋生成答對率的判定、位元組與攤提、和 X1／X2 的重現。"""
+    _guard_v2(a.out_dir)
+    pairs = xlcal_pairs()
+    rid = os.environ.get("RUN_ID", "adhoc")
+    tf_paths = sorted({p for g in a.raw_tf for p in glob.glob(g)})
+    tf_rows, tf_part = dedupe_complete(read_rows(tf_paths), ("model", "item_id", "range", "spec"))
+    x1_paths = sorted({p for g in a.raw_x1 for p in glob.glob(g)})
+    want_x1 = {"E0"} | {ref for _, ref in pairs}
+    x1_rows = [r for r in read_rows(x1_paths) if r["spec"] in want_x1 and r.get("range", "") in ("", "full")]
+    gen_rows, gen_part, gen_paths, _ = _gen_rows(a.raw_gen)
+    x2_rows = _gen_rows(a.raw_x2)[0] if a.raw_x2 else []
+    rep = dict(run_id=rid, ts=ts(), rule_text=XLCAL_TEXT, eps=EPS, pairs=pairs, files_tf=tf_paths, files_gen=gen_paths,
+               files_x1=x1_paths, src_run_ids_tf=sorted({r["run_id"] for r in tf_rows}),
+               src_run_ids_gen=sorted({r["run_id"] for r in gen_rows}), incomplete_items_tf=tf_part, incomplete_items_gen=gen_part,
+               calib_xl={}, models={})
+    for p in sorted({p for g in (a.calib_xl_summary or []) for p in glob.glob(g)}):
+        s = json.load(open(p))
+        rep["calib_xl"][s["settings"]["model"]] = {k: s.get(k) for k in ("run_id", "ts", "sha256", "n_tokens", "R", "settings",
+                                                                          "energy_captured_uncentered", "rope_probe")}
+    TF, X1, G, X2 = _by_item_spec(tf_rows), _by_item_spec(x1_rows), _by_item_spec(gen_rows), _by_item_spec(x2_rows)
+    verdicts = {}
+    for m in MODEL_INFO:
+        info = MODEL_INFO[m]
+        M = rep["models"][m] = {}
+        # ---- TF（只報）
+        cal_specs = [c for c, _ in pairs]
+        anchor = "xl:k11:v17"
+        ours, x1 = TF.get(m, {}), X1.get(m, {})
+        items = sorted(i for i, d in ours.items() if "E0" in d and all(c in d for c in cal_specs)
+                       and i in x1 and "E0" in x1[i] and all(r in x1[i] for _, r in pairs))
+        e0eq = [i for i in items if float(ours[i]["E0"]["gold_lp"]) == float(x1[i]["E0"]["gold_lp"])
+                and ours[i]["E0"]["first_ok"] == x1[i]["E0"]["first_ok"]]
+        anc = [i for i in items if anchor in ours[i]]
+        anc_eq = [i for i in anc if float(ours[i][anchor]["gold_lp"]) == float(x1[i][anchor]["gold_lp"])]
+        adiff = [abs(float(ours[i][anchor]["gold_lp"]) - float(x1[i][anchor]["gold_lp"])) for i in anc]
+        tf = M["tf"] = dict(n_items=len(items), e0_bitwise_repro_vs_x1=f"{len(e0eq)}/{len(items)}",
+                            anchor_bitwise_repro_vs_x1=f"{len(anc_eq)}/{len(anc)}", anchor_max_abs_diff=max(adiff) if adiff else None,
+                            pairs={})
+
+        def dlp(r):
+            return float(r["gold_lp"]) - float(r["gold_lp_e0"])
+
+        def dfo(r):
+            return int(r["first_ok"]) - int(r["first_ok_e0"])
+        for c, ref in pairs:
+            e = tf["pairs"][f"{c} vs {ref}"] = dict(
+                d_gold_lp_cal=boot2([dlp(ours[i][c]) for i in items]), d_gold_lp_ref_x1=boot2([dlp(x1[i][ref]) for i in items]),
+                cal_minus_ref_gold_lp=boot2([dlp(ours[i][c]) - dlp(x1[i][ref]) for i in items]),
+                cal_minus_ref_first_ok=boot2([dfo(ours[i][c]) - dfo(x1[i][ref]) for i in items]),
+                kl_median_cal=statistics.median([float(ours[i][c]["kl"]) for i in items]) if items else None,
+                kl_median_ref=statistics.median([float(x1[i][ref]["kl"]) for i in items]) if items else None)
+            for p in ("relerr_k", "relerr_v", "attn_err"):
+                vc = [_f(ours[i][c], p) for i in items if _f(ours[i][c], p) is not None]
+                vr = [_f(x1[i][ref], p) for i in items if _f(x1[i][ref], p) is not None]
+                e[f"{p}_cal"] = statistics.mean(vc) if vc else None
+                e[f"{p}_ref"] = statistics.mean(vr) if vr else None
+            if c.startswith(anchor + ":cal") and anc:
+                e["within_run_cal_minus_anchor_gold_lp"] = boot2([dlp(ours[i][c]) - dlp(ours[i][anchor]) for i in anc])
+        # ---- 生成（判定）
+        g = G.get(m, {})
+        specs = [s for pr in pairs for s in pr]
+        gi = sorted(i for i, d in g.items() if "E0" in d and all(s in d for s in specs))
+        gen = M["gen"] = dict(n_items=len(gi), configs={}, pairs={})
+        for s in specs:
+            sc = [float(g[i][s]["gen_score"]) for i in gi]
+            e0 = [float(g[i]["E0"]["gen_score"]) for i in gi]
+            d = boot2([x - y for x, y in zip(sc, e0)]) if gi else None
+            br = int(g[gi[0]][s]["bytes_region"]) if gi else None
+            gen["configs"][s] = dict(acc=statistics.mean(sc) if gi else None, acc_e0=statistics.mean(e0) if gi else None, diff=d,
+                                     eps_pass=bool(d and d["lo"] >= -EPS), ratio=float(g[gi[0]][s]["ratio_region"]) if gi else None,
+                                     bytes_region=br)
+        vs = []
+        for c, ref in pairs:
+            d = boot2([float(g[i][c]["gen_score"]) - float(g[i][ref]["gen_score"]) for i in gi]) if gi else None
+            v = xlcal_verdict(d)
+            stg = validate(parse_spec(c), info, N_BLOCKS - 1)
+            shared = sum(x for k, x in predict_bytes(stg, info, N_BLOCKS - 1).items() if k.startswith("shared."))
+            bc, bref = gen["configs"][c]["bytes_region"], gen["configs"][ref]["bytes_region"]
+            cb = info["L"] * 2 * info["H"] * CHUNK * info["D"] * 2 * (N_BLOCKS - 1)
+            gen["pairs"][f"{c} vs {ref}"] = dict(cal_minus_ref=d, verdict=v, bytes_region_cal=bc, bytes_region_ref=bref,
+                                                 bytes_shared_basis=shared,
+                                                 amortized_ratio=({str(N): round((bc + shared / N) / cb, 6) for N in (1, 8, 64)}
+                                                                  if bc is not None else None))
+            vs.append(v)
+        verdicts[m] = "INCOMPLETE" if len(gi) < MIN_ITEMS else xlcal_aggregate(vs)
+        gen["verdict"] = verdicts[m]
+        rp = [(i, s) for i in gi for s in ["E0"] + [ref for _, ref in pairs] if i in X2.get(m, {}) and s in X2[m][i]]
+        gen["repro_vs_x2"] = dict(n=len(rp), equal=sum(1 for i, s in rp if float(X2[m][i][s]["gen_score"]) == float(g[i][s]["gen_score"])),
+                                  by_spec={s: f"{sum(1 for i, t in rp if t == s and float(X2[m][i][s]['gen_score']) == float(g[i][s]['gen_score']))}"
+                                              f"/{sum(1 for _, t in rp if t == s)}" for s in ["E0"] + [ref for _, ref in pairs]})
+    vals = list(verdicts.values())
+    rep["verdict"] = ("CAN_PRECOMPUTE" if vals and all(v == "CAN_PRECOMPUTE" for v in vals) else
+                      "MUST_PER_ITEM" if "MUST_PER_ITEM" in vals else "；".join(f"{m} {v}" for m, v in verdicts.items()))
+    rep["verdict_by_model"] = verdicts
+    os.makedirs(a.out_dir, exist_ok=True)
+    json.dump(rep, open(os.path.join(a.out_dir, "xlcal_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
+    L = ["# xKV：事先校準的基底 vs 每題 SVD（10/21 延伸；判定事先寫死，見最後）", "",
+         f"TF run：{'、'.join(rep['src_run_ids_tf']) or '（沒有）'}；生成 run：{'、'.join(rep['src_run_ids_gen']) or '（沒有）'}", "",
+         f"**整體判定：{rep['verdict']}**（每個模型：{json.dumps(verdicts, ensure_ascii=False)}）", ""]
+    for m in MODEL_INFO:
+        M = rep["models"][m]
+        cx = rep["calib_xl"].get(m, {})
+        L += [f"## {m}", "", f"校準基底：run {cx.get('run_id', 'NOT_FOUND')}、{cx.get('n_tokens')} token、R＝{cx.get('R')}", "",
+              f"### 生成（{M['gen']['n_items']} 題；判定 {M['gen']['verdict']}；和 X2 的逐值重現 {M['gen']['repro_vs_x2']['equal']}/{M['gen']['repro_vs_x2']['n']}）", "",
+              "| 校準版 vs 每題 SVD | 校準 − 每題 SVD（百分點，CI） | 判定 | 每請求位元組比 校準／每題 | 共用基底（MB） | 攤提後 N＝1／8／64 |", "|:--|--:|:--|--:|--:|--:|"]
+        for k, e in M["gen"]["pairs"].items():
+            c, ref = k.split(" vs ")
+            rc, rr = M["gen"]["configs"][c]["ratio"], M["gen"]["configs"][ref]["ratio"]
+            am = e["amortized_ratio"] or {}
+            L.append(f"| {k} | {_ci(e['cal_minus_ref'], 100, 1)} | {e['verdict']} | {rc}／{rr} | {e['bytes_shared_basis'] / 1e6:.1f} | "
+                     f"{'／'.join(str(am.get(x)) for x in ('1', '8', '64'))} |")
+        L += ["", "| 配置 | 位元組比 | 答對率 | 對 E0（百分點，CI） | ε |", "|:--|--:|--:|--:|:--|"]
+        for s, c in M["gen"]["configs"].items():
+            if c["acc"] is not None:
+                L.append(f"| {s} | {c['ratio']:.4f} | {100 * c['acc']:.1f} | {_ci(c['diff'], 100, 1)} | {'過' if c['eps_pass'] else '沒過'} |")
+        L += ["", f"### TF 篩選（{M['tf']['n_items']} 題；只報）：E0 和 X1 逐值重現 {M['tf']['e0_bitwise_repro_vs_x1']}、"
+                  f"錨點 xl:k11:v17 和 X1 逐值重現 {M['tf']['anchor_bitwise_repro_vs_x1']}", "",
+              "| 校準版 vs 每題 SVD（X1） | Δgold_lp 校準 | Δgold_lp 每題 | 校準 − 每題 Δgold_lp | 校準 − 每題 Δfirst_ok（百分點） | relerr K 校準／每題 | relerr V 校準／每題 |",
+              "|:--|--:|--:|--:|--:|--:|--:|"]
+        for k, e in M["tf"]["pairs"].items():
+            def f4(x):
+                return "—" if x is None else f"{x:.4f}"
+            L.append(f"| {k} | {_ci(e['d_gold_lp_cal'])} | {_ci(e['d_gold_lp_ref_x1'])} | {_ci(e['cal_minus_ref_gold_lp'])} | "
+                     f"{_ci(e['cal_minus_ref_first_ok'], 100, 1)} | {f4(e['relerr_k_cal'])}／{f4(e['relerr_k_ref'])} | "
+                     f"{f4(e['relerr_v_cal'])}／{f4(e['relerr_v_ref'])} |")
+        L.append("")
+    L += ["## 事先寫死的設計與判定", ""] + [f"- **{k}**：{v}" for k, v in XLCAL_TEXT.items()]
+    open(os.path.join(a.out_dir, "tables_xlcal.md"), "w").write("\n".join(L) + "\n")
+    print("\n".join(L[:80]))
+
+
 # ============================================================================ gpu-selftest
 def cmd_gpu_selftest(a):
+    if getattr(a, "new_checks", "none") != "none":
+        return cmd_gpu_selftest_new(a)          # 10/21：只跑新的檢查；原本的檢查照舊用不加 --new-checks 的指令
     import numpy as np
     import torch
     import m10_codec_x as X10
@@ -2651,6 +3486,134 @@ def cmd_gpu_selftest(a):
     m2 = S2.tf(st, lp0, kk)
     check("tf_pipeline_eq_load_fmt_place[int4_kivi]", same_kv and m1 == m2, m_pipeline=m1, m_place=m2)
     st.place(frozenset())
+    res["all_pass"] = ok
+    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
+    json.dump(res, open(a.out, "w"), indent=1, ensure_ascii=False, default=str)
+    print("ALL PASS" if ok else "SOME FAILED", f"（{len(res['checks'])} 項）", flush=True)
+    sys.exit(0 if ok else 1)
+
+
+def cmd_gpu_selftest_new(a):
+    """10/21 延伸的 GPU 檢查（38b／38c 開頭的冒煙）。--new-checks x2b：CPU 版出題＝m10_quality、X2b 每個配置的位元組＝預測、
+    --xl-cache 和不用快取逐位元相同；xlcal：校準基底的格式與正交、torch vs numpy、Eckart–Young（校準基底的誤差不會比同一份資料的
+    精確 SVD 小）、整個 32K 區的位元組與有限值。題目＝DS1／X1 的第一題（seed 60000）。"""
+    import numpy as np
+    import torch
+    import m10_sweep as SW
+    import m10_tasks as T
+    from m10_quality import Answerer
+    res, ok = {"checks": {}, "model": a.model, "new_checks": a.new_checks, "run_id": os.environ.get("RUN_ID", "adhoc"), "ts": ts()}, True
+
+    def check(name, cond, **kw):
+        nonlocal ok
+        ok &= bool(cond)
+        res["checks"][name] = {"pass": bool(cond), **kw}
+        print(("PASS " if cond else "FAIL ") + name, json.dumps(kw, default=str)[:400], flush=True)
+
+    info = MODEL_INFO[a.model]
+    ans = Answerer(a.model)
+    km = ans.km
+    check_info(km, info)
+    P = json.load(open(a.params_file))["params"][a.model]
+    it = T.make_item("T2", "front", "back", X1_SEED0, ans.tok, P.get("T2"))
+    st = SW.Item(ans, it)
+    n = st.ctx_len
+    tctx = TCtx(km, n, deep=deep_layers(km.L))
+    c_np = tctx.cos[0, :, :km.D // 2].double().cpu().numpy()
+    s_np = tctx.sin[0, :, :km.D // 2].double().cpu().numpy()
+    Ls, W = 8, 4
+    Xs = km.kv[:Ls, :, :, CHUNK:5 * CHUNK].clone()
+    pos = torch.arange(CHUNK, 5 * CHUNK, device=km.device)
+    Xn = Xs.float().cpu().numpy()
+    posn = np.arange(CHUNK, 5 * CHUNK)
+    info_s = dict(info, L=Ls)
+    orders = {"KEYDIFF": [2, 0, 3, 1]}
+    want = a.new_checks
+    if want in ("x2b", "both"):
+        for tasks, nn, s0 in ((["T2", "T3", "T4", "T5"], X2B_N, X2B_SEED0), (["T2", "T3", "T4", "T5"], XLCAL_GEN_N, X2_SEED0),
+                              (["T2", "T3", "T4", "T5"], XLCAL_TF_N, X1_SEED0)):
+            c1, c2 = plan_interleaved_cpu(tasks, nn, s0), plan_interleaved(tasks, nn, s0)
+            check(f"plan_cpu_eq_m10[{s0}x{nn}]", c1 == c2, n=len(c1))
+        tcs = TCtx(km, n, orders=orders, deep=list(range(Ls // 2, Ls)))
+        for spec in plan_specs("x2b", a.model):
+            stg = validate(parse_spec(spec), info_s, 4)
+            with torch.inference_mode():
+                td, _, tby, _ = t_pipeline(stg, Xs, pos, tcs, info_s)
+            check(f"x2b_slice_bytes_finite[{spec}]", tby == predict_bytes(stg, info_s, 4) and bool(torch.isfinite(td.float()).all()),
+                  bytes=tby)
+        # --xl-cache：先跑 +int8（存快取）再跑 +int4（用快取）＝不用快取的 +int4；另記不用快取跑兩次是不是逐位元相同（決定性）
+        for sa, sb in (("xl:k22:v34+q:int8_token", "xl:k22:v34+q:int4_kivi"), ("xl:k11:v17", "xl:k11:v17+q:int4_kivi")):
+            cfgs = [dict(spec=s, stages=validate(parse_spec(s), info_s, 4)) for s in (sa, sb)]
+            tcc = TCtx(km, n, orders=orders, deep=list(range(Ls // 2, Ls)))
+            tcc.xl_cache = xl_cache_plan(cfgs)
+            with torch.inference_mode():
+                da, _, ba, _ = t_pipeline(cfgs[0]["stages"], Xs, pos, tcc, info_s)
+                dc, _, bc, _ = t_pipeline(cfgs[1]["stages"], Xs, pos, tcc, info_s)
+                du, _, bu, _ = t_pipeline(cfgs[1]["stages"], Xs, pos, tcs, info_s)
+                du2, _, _, _ = t_pipeline(cfgs[1]["stages"], Xs, pos, tcs, info_s)
+                dau, _, _, _ = t_pipeline(cfgs[0]["stages"], Xs, pos, tcs, info_s)
+            det = bool(torch.equal(du, du2))
+            same = bool(torch.equal(dc, du) and torch.equal(da, dau))
+            rel = float((dc.float() - du.float()).norm() / du.float().norm().clamp_min(1e-30))
+            rel2 = float((du2.float() - du.float()).norm() / du.float().norm().clamp_min(1e-30))
+            # 決定性時要逐位元相同；SVD 本身不決定（du≠du2）時，快取的差不能比「重算一次」的差大（只會更一致）
+            cond = (same if det else rel <= 2 * rel2 + 1e-7) and bc == bu and tcc.xl_cache["hits"] == 2 and not tcc.xl_cache["store"]
+            check(f"xl_cache_eq_uncached[{sa}→{sb}]", cond, bitwise_equal=same, svd_deterministic=det, rel=rel, rel_recompute=rel2,
+                  hits=tcc.xl_cache["hits"], misses=tcc.xl_cache["misses"])
+    if want in ("xlcal", "both"):
+        cal = load_calib_xl(a.calib_xl, km, a.model)
+        meta = cal["meta"]
+        R = meta["R"]
+        need = max(r for s in plan_specs("xlcal", a.model) for x in parse_spec(s) if x["op"] == "xl" for r in (x["rk"], x["rv"]))
+        orth = {}
+        for h in "kv":
+            U = cal[f"{h}_U"]
+            I = torch.eye(U.shape[-1], device=U.device)
+            orth[h] = float((U.transpose(-1, -2) @ U - I).abs().max())
+        check("xlcal_meta_shape_orthonormal", meta["W"] == W and R >= need * W * km.H and tuple(cal["k_U"].shape) == (km.L // W, W * km.H * km.D, R)
+              and max(orth.values()) <= 1e-3, R=R, need=need * W * km.H, orth_maxdev=orth, run_id=meta["run_id"],
+              energy=meta.get("energy_captured_uncentered"))
+        cal_s = {f"{h}_U": cal[f"{h}_U"][:Ls // W] for h in "kv"}
+        tcs = TCtx(km, n, orders=orders, deep=list(range(Ls // 2, Ls)))
+        tcs.xlcal = cal_s
+        ncx = NCtx(c_np, s_np, orders=orders, deep=tcs.deep, xlcal={k: v.double().cpu().numpy() for k, v in cal_s.items()})
+        for spec in ("xl:k11:v17:cal", "xl:k22:v34:cal+q:int4_kivi", "xl:k28:v42:cal+q:int4_kivi", "drop:KEYDIFF:0.5+xl:k11:v17:cal"):
+            stg = validate(parse_spec(spec), info_s, 4)
+            with torch.inference_mode():
+                td, tidx, tby, _ = t_pipeline(stg, Xs, pos, tcs, info_s)
+            nd_, nidx, nby, ex = np_pipeline(stg, Xn, posn, ncx, info_s)
+            same_idx = (tidx is None and nidx is None) or (tidx is not None and nidx is not None and np.array_equal(tidx.cpu().numpy(), nidx))
+            tdn = td.float().cpu().numpy()
+            rel = float(np.linalg.norm(tdn - nd_) / max(np.linalg.norm(nd_), 1e-30))
+            pb = predict_bytes(stg, info_s, 4)
+            check(f"xlcal_torch_vs_numpy[{spec}]", rel <= 1e-2 and same_idx and tby == nby == pb
+                  and not any(k in tby for k in ("k.basis", "v.basis")), rel=rel, bytes=tby, cal_err=ex)
+        # Eckart–Young：同一份資料上，校準基底的誤差 ≥ 精確 SVD（numpy）的誤差（每個窗口、K／V）
+        for rk, rv in ((11, 17), (22, 34)):
+            _, _, _, ex_c = np_pipeline(validate(parse_spec(f"xl:k{rk}:v{rv}:cal"), info_s, 4), Xn, posn, ncx, info_s)
+            _, _, _, ex_s = np_pipeline(validate(parse_spec(f"xl:k{rk}:v{rv}"), info_s, 4), Xn, posn, ncx, info_s)
+            ratio = {h: [c / s for c, s in zip(ex_c[f"{h}.cal_err"], ex_s[f"{h}.svd_err"])] for h in "kv"}
+            check(f"xlcal_eckart_young[k{rk}v{rv}]", all(x >= 0.999 for v in ratio.values() for x in v), err_ratio_cal_over_svd=ratio,
+                  cal_err=ex_c, svd_err=ex_s)
+        # 整個 32K 區（block 1..最後）：位元組＝預測、沒有每題基底、有限值；記重建誤差與時間（只記錄）
+        tcf = TCtx(km, n, deep=deep_layers(km.L))
+        tcf.xlcal = cal
+        Xf = km.kv[:, :, :, CHUNK:n]
+        nreg = n // CHUNK - 1
+        for spec in plan_specs("xlcal", a.model):
+            stg = validate(parse_spec(spec), info, nreg)
+            if not any(x.get("cal") for x in stg):
+                continue
+            torch.cuda.synchronize()
+            t0 = time.time()
+            with torch.inference_mode():
+                td, _, tby, _ = t_pipeline(stg, Xf, torch.arange(CHUNK, n, device=km.device), tcf, info)
+                torch.cuda.synchronize()
+                tp = round(time.time() - t0, 3)
+                rel = t_relerr(Xf, td, None)
+            check(f"xlcal_full_region[{spec}]", tby == predict_bytes(stg, info, nreg) and bool(torch.isfinite(td.float()).all()),
+                  bytes=tby, t_pipe_s=tp, **rel)
+            del td
     res["all_pass"] = ok
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     json.dump(res, open(a.out, "w"), indent=1, ensure_ascii=False, default=str)
@@ -2900,15 +3863,435 @@ def self_test() -> bool:
         check(f"x3_segments_covered[{m}]", mapped == set(X3_SEGMENTS) - {"droptok_k50", "droptok_k25", "droptok_k50_int4"},
               mapped=sorted(mapped))
     check("x3_unmapped_reason", x3_segment("drop:KEYDIFF:0.5+q:int4_kivi", "llama")[0] is None
-          and x3_segment("xl:k11:v17", "qwen")[0] is None and x3_segment("q:fp8_head", "qwen")[0] == "fp8"
-          and x3_segment("q:fp8_head", "llama")[0] is None)
-    ok &= _selftest_report_e2e(check)
+          and x3_segment("xl:k5:v9", "qwen")[0] is None and x3_segment("q:fp8_head", "qwen")[0] == "fp8"
+          and x3_segment("q:fp8_head", "llama")[0] is None
+          and x3_segment("xl:k11:v17", "qwen")[0] == "xkv_k11v17"                       # 10/21 加的對應
+          and x3_segment("xl:k11:v17:cal", "qwen")[0] is None and "校準" in x3_segment("xl:k11:v17:cal", "qwen")[1])
+    # 先呼叫再合併：`ok &= f(check)` 會在 f 跑之前就讀 ok，f 裡面 check 失敗設的 False 會被蓋掉（10/21 抓到，原本的 e2e 也受影響）
+    r_e2e = _selftest_report_e2e(check)
+    r_1021 = _selftest_1021(check)
+    ok = ok and r_e2e and r_1021
     # 14. 沒有 import torch（規則：第二階段在量時間）
     bad_mods = [m for m in ("torch", "vllm", "transformers") if m in sys.modules]
     check("no_torch_imported", not bad_mods, imported=bad_mods)
     n = len(res)
     print(f"{'ALL PASS' if ok else 'SOME FAILED'}（{n} 項）", flush=True)
     return ok
+
+
+def x3_compatible_copy(src: str, dst: str) -> str:
+    """self-test 用：X3（另一個 agent）的 seg_catalog 還沒加 10/21 的 xkv_k* 段時，load_x2 會丟例外（規則 7，照設計）。
+    self-test 只驗我們的欄位與名字，所以把 catalog 還沒有的段濾掉、印 INFO（不算 PASS／FAIL）；正式的核對在 38bz（讀不懂 → NEEDS_HUMAN）。"""
+    import csv
+    import m16_xtime as XT
+    cat = set(XT.seg_catalog())
+    pending = sorted(set(X3_SEGMENTS) - cat)
+    if pending:
+        print(f"INFO（不算 PASS／FAIL）：X3 的 seg_catalog 還沒有 {pending}；self-test 的 load_x2 先濾掉這些列，38bz 會正式核對", flush=True)
+    rows = list(csv.DictReader(open(src))) if os.path.exists(src) else []
+    if not rows:
+        return src
+    with open(dst, "w", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows([r for r in rows if r["x3_segment"] in cat])
+    return dst
+
+
+def _selftest_1021(check) -> bool:
+    """10/21 延伸（X2→X3 對應、:cal、X2b 計畫、合併報告的配對、xKV 校準的判定、工作池、舊子命令照舊）。合成數字只驗邏輯。"""
+    import csv
+    import gzip
+    import tempfile
+    np = _np()
+    ok0 = True
+    rng = np.random.default_rng(1021)
+    # ---- a. X2→X3 的新對應
+    for m in MODEL_INFO:
+        good = all(canonical(parse_spec(k)) == k and x3_segment(k, m) == (v, "") and v in X3_SEGMENTS for k, v in X3_MAP_1021.items())
+        check(f"x3_map_1021[{m}]", good and len(X3_MAP_1021) == 7, n=len(X3_MAP_1021))
+    v1f = os.path.join(OUT_DIR, "x2_feasible.csv")
+    v1u = os.path.join(OUT_DIR, "x2_unmapped.csv")
+    if os.path.exists(v1f) and os.path.exists(v1u):
+        rf, ru = list(csv.DictReader(open(v1f))), list(csv.DictReader(open(v1u)))
+        same = all(x3_segment(r["combo"], r["model"])[0] == r["x3_segment"] for r in rf)
+        moved = sorted({r["combo"] for r in ru if x3_segment(r["combo"], r["model"])[0] is not None})
+        check("x3_map_v1_rows_unchanged_except_1021", same and set(moved) <= set(X3_MAP_1021), moved_to_feasible=moved)
+    else:
+        print("INFO：第一版的 x2_feasible.csv／x2_unmapped.csv 不在，跳過 x3_map_v1_rows_unchanged_except_1021", flush=True)
+    # ---- b. :cal 的語法
+    for s in ("xl:k22:v34:cal+q:int4_kivi", "drop:KEYDIFF:0.5+xl:k11:v17:cal", "xl:k11:v17:cal", "xl:k28:v42:cal+q:kv-int4_kivi-int2_kivi"):
+        try:
+            validate(parse_spec(s), MODEL_INFO["llama"], 63)
+            check(f"accept_cal[{s}]", True)
+        except SpecError as ex:
+            check(f"accept_cal[{s}]", False, why=str(ex))
+    for s in ("xl:k11:v17:cal+drop:KEYDIFF:0.5", "lr:k16:cal", "xl:k11:v17:cal+q:vllm_fp8", "xl:k11:v17:cal+q:mxfp4", "mc:cal"):
+        try:
+            validate(parse_spec(s), MODEL_INFO["llama"], 63)
+            check(f"reject_cal[{s}]", False)
+        except SpecError as ex:
+            check(f"reject_cal[{s}]", True, why=str(ex)[:80])
+    check("cal_canonical", canonical(parse_spec("xl:k22:v34:w4:cal+q:int4_kivi")) == "xl:k22:v34:cal+q:int4_kivi"
+          and canonical(parse_spec("xl:k22:v34:cal:w2")) == "xl:k22:v34:w2:cal" and "cal" not in parse_spec("xl:k22:v34")[0]
+          and spec_attrs(parse_spec("xl:k22:v34:cal+q:int4_kivi"))["families"] == "quant+xlayer")
+    # ---- c. 位元組：校準版＝每題版減掉每題基底（基底改列 shared）；舊組合的位元組和 X1 實測（GPU 上 assert 過的實際位元組）逐一相同
+    for m in MODEL_INFO:
+        info = MODEL_INFO[m]
+        okb, det = True, {}
+        for rk, rv, q in ((11, 17, ""), (22, 34, "+q:int4_kivi"), (28, 42, "+q:int4_kivi"), (22, 34, "+q:int8_token")):
+            sc, si = f"xl:k{rk}:v{rv}:cal{q}", f"xl:k{rk}:v{rv}{q}"
+            bc, bi = predict_bytes(parse_spec(sc), info, 63), predict_bytes(parse_spec(si), info, 63)
+            basis = bi["k.basis"] + bi["v.basis"]
+            okb &= ("k.basis" not in bc and "v.basis" not in bc and bc["shared.k.basis"] + bc["shared.v.basis"] == basis
+                    and sum(bc.values()) == sum(bi.values()))
+            cb = info["L"] * 2 * info["H"] * CHUNK * info["D"] * 2 * 63
+            rc, ri = predict_ratio(sc, m), predict_ratio(si, m)
+            okb &= abs((ri - rc) - basis / cb) < 2e-6
+            det[sc] = dict(ratio_cal=rc, ratio_per_item=ri, basis_MB=round(basis / 1e6, 1))
+        check(f"cal_bytes[{m}]", okb, **det)
+        cf = os.path.join(OUT_DIR, f"configs_{m}.csv")
+        if os.path.exists(cf):
+            rows = list(csv.DictReader(open(cf)))
+            mism = [(r["spec"], float(r["ratio"]), predict_ratio(r["spec"], m)) for r in rows
+                    if abs(float(r["ratio"]) - predict_ratio(r["spec"], m)) > 1e-6]
+            check(f"bytes_unchanged_vs_x1_measured[{m}]", not mism and len(rows) >= 120, n=len(rows), mismatch=mism[:5])
+        else:
+            print(f"INFO：{cf} 不在，跳過 bytes_unchanged_vs_x1_measured[{m}]", flush=True)
+    # ---- d. numpy：校準基底＝同一份資料的前 r 個特徵向量時，誤差＝Eckart–Young（精確 SVD）；別的資料的基底只會更差；位元組＝預測
+    info_s = dict(L=4, H=2, Hq=4, D=32)
+    Ch, nreg, D_ = 64, 4, 32
+    Tr = Ch * nreg
+    inv = 1.0 / (10000 ** (np.arange(0, D_, 2) / D_))
+    angf = np.arange(Ch + Tr)[:, None] * inv[None, :]
+    cf_, sf_ = np_bf16(np.cos(angf)).astype(np.float64), np_bf16(np.sin(angf)).astype(np.float64)
+    posn = np.arange(Ch, Ch + Tr)
+
+    def mkX(seed):
+        g = np.random.default_rng(seed)
+        low = g.normal(size=(4, 2, 2, Tr, 6)) @ g.normal(size=(6, D_)) + 0.3 * g.normal(size=(4, 2, 2, Tr, D_))
+        return np_bf16(low.astype(np.float32))
+
+    def windowZ(X, hi):
+        src = X[:, hi]
+        return np.concatenate([(np_rope_inv(src[l].astype(np.float64), cf_[posn], sf_[posn]) if hi == 0 else src[l].astype(np.float64))
+                               .transpose(1, 0, 2).reshape(Tr, 2 * D_) for l in range(4)], axis=1)
+    Xa, Xb = mkX(1), mkX(2)
+    R = 64
+    cal_same = {f"{h}_U": np_xl_calib([windowZ(Xa, hi)], R)[0][None] for hi, h in enumerate("kv")}
+    cal_other = {f"{h}_U": np_xl_calib([windowZ(Xb, hi), windowZ(mkX(3), hi)], R)[0][None] for hi, h in enumerate("kv")}
+    ncs = NCtx(cf_, sf_, orders={"KEYDIFF": [2, 0, 3, 1]}, deep=[2, 3], chunk=Ch, xlcal=cal_same)
+    nco = NCtx(cf_, sf_, orders={"KEYDIFF": [2, 0, 3, 1]}, deep=[2, 3], chunk=Ch, xlcal=cal_other)
+    _, _, _, ex_s = np_pipeline(validate(parse_spec("xl:k2:v3"), info_s, nreg), Xa, posn, ncs, info_s)
+    _, _, _, ex_c = np_pipeline(validate(parse_spec("xl:k2:v3:cal"), info_s, nreg), Xa, posn, ncs, info_s)
+    _, _, _, ex_o = np_pipeline(validate(parse_spec("xl:k2:v3:cal"), info_s, nreg), Xa, posn, nco, info_s)
+    eq = all(abs(c - s) <= 1e-6 * max(s, 1e-12) for h in "kv" for c, s in zip(ex_c[f"{h}.cal_err"], ex_s[f"{h}.svd_err"]))
+    ge = all(o >= s * (1 - 1e-9) for h in "kv" for o, s in zip(ex_o[f"{h}.cal_err"], ex_s[f"{h}.svd_err"]))
+    check("xlcal_np_eckart_young", eq and ge, same_data=ex_c, other_data=ex_o, exact_svd=ex_s)
+    for sp in ("xl:k2:v3:cal", "xl:k2:v3:cal+q:int4_kivi", "drop:KEYDIFF:0.5+xl:k2:v3:cal+q:kv-int4_kivi-int2_kivi", "xl:k2:v3:cal+q:int8_token"):
+        stg = validate(parse_spec(sp), info_s, nreg)
+        dd, idx, by, _ = np_pipeline(stg, Xa, posn, nco, info_s)
+        Tk = Tr if idx is None else len(idx)
+        check(f"xlcal_np_bytes_shape[{sp}]", by == predict_bytes(stg, info_s, nreg, Ch) and dd.shape == (4, 2, 2, Tk, D_)
+              and np.isfinite(dd).all() and "k.basis" not in by, bytes=by)
+    Zs = [rng.normal(size=(50, 12)), rng.normal(size=(30, 12))]
+    U_, ev_ = np_xl_calib(Zs, 5)
+    _, S_, Vt_ = np.linalg.svd(np.concatenate(Zs), full_matrices=False)
+    check("xlcal_np_calib_eq_stacked_svd", np.allclose(np.abs(U_.T @ Vt_[:5].T), np.eye(5), atol=1e-8) and np.allclose(ev_[:5], S_[:5] ** 2))
+    # ---- e. 計畫檔、題目不重疊、CPU 版出題
+    check("rotations_from_source", rotations_from_source() == [("front", "back"), ("mid", "front"), ("back", "mid")])
+    T4 = ["T2", "T3", "T4", "T5"]
+    keys = {name: {(t, s) for t, _, _, s in plan_interleaved_cpu(T4, n_, s0)}
+            for name, n_, s0 in (("x1", 24, X1_SEED0), ("calib", 2, CALIB_SEED0), ("x2", 24, X2_SEED0), ("x2b", X2B_N, X2B_SEED0))}
+    tfk = {(t, s) for t, _, _, s in plan_interleaved_cpu(T4, XLCAL_TF_N, X1_SEED0)}
+    gk = {(t, s) for t, _, _, s in plan_interleaved_cpu(T4, XLCAL_GEN_N, X2_SEED0)}
+    disj = all(not (keys[a] & keys[b]) for a in keys for b in keys if a < b)
+    check("seeds_disjoint", disj and tfk <= keys["x1"] and gk == keys["x2"] and len(keys["x2b"]) == 4 * X2B_N
+          and not (keys["calib"] & (tfk | gk | keys["x2b"])), sizes={k: len(v) for k, v in keys.items()})
+    x2raw = sorted(glob.glob(os.path.join(DATA, "x2", "x2_*_32K_*_s*.csv.gz")))
+    if x2raw:
+        with contextlib.redirect_stdout(open(os.devnull, "w")):
+            ids = {r["item_id"] for r in read_rows(x2raw[:4]) if r["spec"] == "E0"}
+        want = {item_id_of(*p) for p in plan_interleaved_cpu(T4, 24, X2_SEED0)}
+        check("plan_cpu_item_ids_eq_x2_raw", ids and ids <= want, n_raw=len(ids), n_plan=len(want))
+    else:
+        print("INFO：X2 的逐列檔不在，跳過 plan_cpu_item_ids_eq_x2_raw", flush=True)
+    v1s = os.path.join(OUT_DIR, "x2_selection.json")
+    v1sel = json.load(open(v1s)) if os.path.exists(v1s) else {"go": True, "models": {}}
+    pb = build_plan("x2b", v1sel)
+    px = build_plan("xlcal", v1sel)
+    cfg = {m: {e["spec"]: e for e in pb["models"][m]["configs"]} for m in MODEL_INFO}
+    okp = len(cfg["llama"]) == 11 and len(cfg["qwen"]) == 12 and all(list(cfg[m]) == plan_specs("x2b", m) for m in MODEL_INFO)
+    okp &= all(s in cfg[m] for m in MODEL_INFO for s in ("q:int2_kivi", "xl:k11:v17", "xl:k16:v16", "xl:k22:v34+q:int4_kivi",
+                                                         "xl:k28:v42+q:int4_kivi", "xl:k22:v34+q:int8_token", "q:kv-int4_kivi-int2_kivi"))
+    okp &= "q:vllm_fp8" in cfg["llama"] and "q:int8_token" in cfg["qwen"] and "q:vllm_fp8" not in cfg["qwen"]
+    if v1sel.get("models"):
+        okp &= ("primary" in cfg["llama"]["xl:k22:v34+q:int8_token"]["roles"] and cfg["qwen"]["xl:k22:v34+q:int8_token"]["roles"] == ["x2b"]
+                and "deploy" in cfg["llama"]["q:vllm_fp8"]["roles"] and "deploy" in cfg["qwen"]["q:int8_token"]["roles"])
+    okp &= all(len(px["models"][m]["configs"]) == 6 for m in MODEL_INFO) and px["seed0"] == X2_SEED0 and px["n"] == XLCAL_GEN_N
+    okp &= pb["seed0"] == X2B_SEED0 and pb["n"] == X2B_N and all(e["tiers"] == ["core"] for m in MODEL_INFO for e in pb["models"][m]["configs"])
+    check("plan_x2b_xlcal", okp, x2b={m: list(cfg[m]) for m in cfg})
+    lst = plan_specs("x2b", "llama")
+    adj = all(abs(lst.index(a) - lst.index(b)) == 1 for a, b in (("xl:k11:v17", "xl:k11:v17+q:int4_kivi"),
+                                                                ("xl:k22:v34+q:int4_kivi", "xl:k22:v34+q:int8_token")))
+    xp = xl_cache_plan([dict(stages=parse_spec(s)) for s in lst])
+    xq = xl_cache_plan([dict(stages=parse_spec(s)) for s in plan_specs("x2b", "qwen")])
+    check("xl_cache_plan_x2b", adj and xp["uses"] == {(0, 11, 4): 2, (1, 17, 4): 2, (0, 16, 4): 1, (1, 16, 4): 1, (0, 22, 4): 2,
+                                                     (1, 34, 4): 2, (0, 28, 4): 1, (1, 42, 4): 1}
+          and xq["uses"][(0, 22, 4)] == 3 and xq["uses"][(1, 34, 4)] == 3, uses={str(k): v for k, v in xp["uses"].items()})
+    with tempfile.TemporaryDirectory() as d:
+        po = os.path.join(d, "x2b_selection.json")
+        with contextlib.redirect_stdout(open(os.devnull, "w")):
+            cmd_plan(SimpleNamespace(which="x2b", selection=v1s, out=po))
+            cmd_plan(SimpleNamespace(which="x2b", selection=v1s, out=po))       # 內容相同 → 不重寫
+            j = json.load(open(po))
+            j["models"]["llama"]["configs"] = j["models"]["llama"]["configs"][:-1]
+            json.dump(j, open(po, "w"))
+            try:
+                cmd_plan(SimpleNamespace(which="x2b", selection=v1s, out=po))
+                refused = False
+            except SystemExit:
+                refused = True
+        check("plan_no_silent_overwrite", refused)
+        # ---- f. pending：shard 的切法和 cmd_gen 相同（k % 份數）、做完的題（列數 ≥ n_rows_item）不算
+        out = os.path.join(d, "x2b_llama_32K_s1.csv.gz")
+        plan = plan_interleaved_cpu(T4, 8, X2B_SEED0)
+        mine = [item_id_of(*p) for k, p in enumerate(plan) if k % 3 == 1]
+        with gzip.open(out, "wt", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=["run_id", "item_id", "spec", "n_rows_item"])
+            w.writeheader()
+            for s in ("E0", "a", "b"):
+                w.writerow(dict(run_id="SYN", item_id=mine[0], spec=s, n_rows_item=3))
+            w.writerow(dict(run_id="SYN", item_id=mine[1], spec="E0", n_rows_item=3))     # 寫到一半 → 沒做完
+        pend = shard_pending(T4, 8, X2B_SEED0, "1/3", out)
+        parts = [set(shard_pending(T4, 8, X2B_SEED0, f"{i}/3", os.path.join(d, "none_s0.csv"))) for i in range(3)]
+        check("pending_shards", pend == mine[1:] and set().union(*parts) == {item_id_of(*p) for p in plan}
+              and sum(len(p) for p in parts) == len(plan), n_pending=len(pend))
+        # ---- g. 合併報告（X2＋X2b）的配對邏輯
+        ok0 &= _selftest_x2b_report(check, d, v1s if os.path.exists(v1s) else None)
+        ok0 &= _selftest_xlcal_report(check, d)
+        ok0 &= _selftest_pool(check, d)
+    # ---- h. 37d／37e／37f／37zz、02 的指令照樣解析得了（新旗子都有預設＝舊行為）
+    ap = build_parser()
+    sel, cal = os.path.join(OUT_DIR, "x2_selection.json"), "/mlsteam/data/tiara/stage3/xstack/calib_llama.pt"
+    olds = [["gen", "--model", "llama", "--ctx", "32K", "--tier", "ext", "--n", "24", "--selection", sel, "--calib", cal, "--shard", "0/3",
+             "--budget-min", "100", "--out", "/x/x2_llama_32K_ext_s0.csv.gz"],
+            ["gen", "--model", "qwen", "--ctx", "128K", "--tier", "128k", "--selection", sel, "--calib", cal, "--shard", "1/2",
+             "--budget-min", "100", "--out", "/x/x2_qwen_128K_128k_s1.csv.gz"],
+            ["gen-report", "--raw", "/x/x2_*_s*.csv.gz", "--selection", sel, "--out-dir", OUT_DIR],
+            ["gpu-selftest", "--model", "llama", "--calib", cal, "--out", "/x/g.json"],
+            ["screen", "--model", "llama", "--smoke", "--calib", cal, "--out", "/x/x1_smoke_llama_s0.csv"]]
+    pa = [ap.parse_args(x) for x in olds]
+    check("old_commands_parse_with_old_defaults", pa[0].calib_xl is None and not pa[0].xl_cache and pa[1].ctx == "128K"
+          and pa[3].new_checks == "none" and pa[4].calib_xl is None and all(COMMANDS[p.cmd] in globals() for p in pa))
+    return ok0
+
+
+def _selftest_x2b_report(check, d, v1s) -> bool:
+    """合成：X2 96 題（第一版挑的配置，其中 1 題缺一個 C 的配置、Qwen 沒量 xl:k22:v34+q:int8_token）、X2b 192 題（計畫的全部配置）→ x2b-report。
+    核對 C、被排除的題、D 的配對差＝直接算的、A＝第一版 gen-report 的判定、v2 的 x2_feasible 的 source、不准寫到第一版的目錄。"""
+    import csv
+    import gzip
+    import random
+    rnd = random.Random(7)
+    v1sel = json.load(open(v1s)) if v1s else None
+    if v1sel is None:
+        print("INFO：第一版 x2_selection.json 不在，跳過合併報告的 self-test", flush=True)
+        return True
+    plan = build_plan("x2b", v1sel)
+    pp = os.path.join(d, "x2b_plan.json")
+    json.dump(plan, open(pp, "w"))
+    vs = os.path.join(d, "v1sel.json")
+    json.dump(v1sel, open(vs, "w"))
+    acc_true = {}
+
+    def p_ok(spec):
+        return acc_true.setdefault(spec, 0.3 + 0.6 * rnd.random())
+    expect = {}
+    for tag, n_items, s0, src in (("x2", 96, X2_SEED0, "v1"), ("x2b", 192, X2B_SEED0, "plan")):
+        path = os.path.join(d, f"{tag}_syn_s0.csv.gz")
+        with gzip.open(path, "wt", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=FIELDS_X2)
+            w.writeheader()
+            for m in MODEL_INFO:
+                specs = [e["spec"] for e in (v1sel if src == "v1" else plan)["models"][m]["configs"]]
+                if src == "v1" and m == "qwen":
+                    specs = [s for s in specs if s != "xl:k22:v34+q:int8_token"]
+                for k in range(n_items):
+                    iid = f"T2_syn_s{s0 + k}"
+                    e0 = int(rnd.random() < 0.75)
+                    sp = [s for s in specs if not (src == "v1" and m == "llama" and k == 5 and s == "xl:k11:v17")]
+                    rows = [dict(spec="E0", gen_score=e0, ratio_region=1.0)]
+                    for s in sp:
+                        if s == "xl:k28:v42+q:int4_kivi":
+                            sc = e0 - (1 if (k % 10 == 0 and e0) else 0)        # 已知的配對差：每 10 題、E0 對的那題掉 1
+                            expect.setdefault((m, tag), []).append((iid, sc - e0))
+                        else:
+                            sc = int(rnd.random() < p_ok(s))
+                        rows.append(dict(spec=s, gen_score=sc, ratio_region=1.0 if s == "none" else predict_ratio(s, m)))
+                    for r in rows:
+                        w.writerow(dict(r, run_id=f"SYN-{tag}", ts="t", model=m, ctx="32K", item_id=iid, n_rows_item=len(rows),
+                                        roles="", budgets="", own_gpu_intruders=0, host_level="QUIET"))
+    out = os.path.join(d, "v2rep")
+    with contextlib.redirect_stdout(open(os.devnull, "w")):
+        cmd_x2b_report(SimpleNamespace(raw_x2=[os.path.join(d, "x2_syn_s*.csv.gz")], raw_x2b=[os.path.join(d, "x2b_syn_s*.csv.gz")],
+                                       selection=vs, plan=pp, out_dir=out))
+    rep = json.load(open(os.path.join(out, "x2b_report.json")))
+    L, Q = rep["models"]["llama"], rep["models"]["qwen"]
+    okc = ("xl:k22:v34+q:int8_token" not in Q["C"] and Q["only_x2b"] == ["xl:k22:v34+q:int8_token"]
+           and L["C"] == plan_specs("x2b", "llama") and len(Q["C"]) == len(plan_specs("x2b", "qwen")) - 1
+           and L["n_items"] == dict(A=96, B=95, C=192, C_all_x2b_configs=192, D=287) and Q["n_items"]["D"] == 288 and L["x2b_complete"])
+    dD = rep["judge"]["D"]
+    vals = [v for tag in ("x2", "x2b") for iid, v in expect[("llama", tag)] if iid != f"T2_syn_s{X2_SEED0 + 5}"]
+    got = L["configs"]["D"]["xl:k28:v42+q:int4_kivi"]["diff"]
+    okd = abs(got["mean"] - statistics.mean(vals)) < 1e-12 and got["n"] == len(vals) == 287
+    rows2 = [r for r in read_rows([os.path.join(d, "x2_syn_s0.csv.gz")])]
+    J1 = judge_x2({m: with_roles(gen_table([r for r in rows2 if r["model"] == m])[0],
+                                 {e["spec"]: e for e in v1sel["models"][m]["configs"]}, {}) for m in MODEL_INFO}, {})
+    oka = all(rep["judge"]["A"]["models"][m]["M1"] == json.loads(json.dumps(J1["models"][m]["M1"], default=str)) for m in MODEL_INFO)
+    fx = list(csv.DictReader(open(os.path.join(out, "x2_feasible.csv"))))
+    src = {(r["model"], r["combo"]): r["source"] for r in fx}
+    oks = (src.get(("llama", "q:int4_kivi")) == "x2+x2b" and src.get(("qwen", "xl:k22:v34+q:int8_token")) == "x2b"
+           and any(v == "x2" for v in src.values()) and all(r["x3_segment"] in X3_SEGMENTS for r in fx))
+    try:
+        cmd_x2b_report(SimpleNamespace(raw_x2=[], raw_x2b=[], selection=vs, plan=pp, out_dir=OUT_DIR))
+        okg = False
+    except SystemExit:
+        okg = True
+    check("x2b_report_pairing", okc and okd and oka and oks and okg and "pool_gaps" in dD and dD["complete"],
+          C_qwen=Q["C"], n_llama=L["n_items"], d_mean=(got["mean"], statistics.mean(vals)), A_eq_v1_judge=oka, sources_ok=oks,
+          guard_v1_dir=okg, verdicts={k: rep["judge"][k]["M1_verdict"] for k in "ABCD"})
+    try:
+        fx3 = x3_compatible_copy(os.path.join(out, "x2_feasible.csv"), os.path.join(d, "v2_x3.csv"))
+        import m16_xtime as XT
+        x3 = XT.load_x2(fx3)
+        check("x2b_report_x3_load_x2", x3 is not None, feasible={k: sorted(v) for k, v in x3["feasible"].items()})
+    except ImportError as ex:
+        check("x2b_report_x3_load_x2", False, why=f"m16_xtime 匯入不了：{ex}")
+    return True
+
+
+def _selftest_xlcal_report(check, d) -> bool:
+    """合成：TF（本次＋X1 的列）與生成（6 個配置＋E0、60 題）→ xlcal-report。三對各造成 CAN／MUST／UNDETERMINED → 模型＝MUST；
+    另一個模型三對都相同 → CAN；判定規則的邊界直接測。"""
+    import csv
+    import gzip
+    import random
+    rnd = random.Random(11)
+    pairs = xlcal_pairs()
+    check("xlcal_verdict_rules", xlcal_verdict(dict(lo=-0.019, hi=0.01)) == "CAN_PRECOMPUTE" and xlcal_verdict(dict(lo=-0.08, hi=-0.021)) ==
+          "MUST_PER_ITEM" and xlcal_verdict(dict(lo=-0.05, hi=0.01)) == "UNDETERMINED" and xlcal_verdict(None) == "NOT_MEASURED"
+          and xlcal_aggregate(["CAN_PRECOMPUTE", "MUST_PER_ITEM", "UNDETERMINED"]) == "MUST_PER_ITEM"
+          and xlcal_aggregate(["CAN_PRECOMPUTE"] * 3) == "CAN_PRECOMPUTE" and xlcal_aggregate(["CAN_PRECOMPUTE", "UNDETERMINED"]) == "UNDETERMINED")
+    gp, tp, xp = (os.path.join(d, f"xl_{t}_s0.csv.gz") for t in ("gen", "tf", "x1"))
+    n = 60
+    with gzip.open(gp, "wt", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=FIELDS_X2)
+        w.writeheader()
+        for m in MODEL_INFO:
+            for k in range(n):
+                iid = f"T2_g_s{X2_SEED0 + k}"
+                e0 = int(rnd.random() < 0.8)
+                rows = [dict(spec="E0", gen_score=e0, ratio_region=1.0, bytes_region="")]
+                for j, (c, ref) in enumerate(pairs):
+                    r = int(rnd.random() < 0.8)
+                    if m == "qwen" or j == 0:
+                        cs = r                                                          # 相同 → CAN
+                    elif j == 1:
+                        cs = 0 if r and k % 3 else r                                   # 大幅變差 → MUST
+                    else:
+                        r = 1 if k % 20 == 0 else r                                    # 小差（60 題裡 3 題掉 1）→ UNDETERMINED
+                        cs = 0 if k % 20 == 0 else r
+                    for s, sc in ((ref, r), (c, cs)):
+                        by = bytes_summary(predict_bytes(parse_spec(s), MODEL_INFO[m], 63), MODEL_INFO[m], 63, 64)
+                        rows.append(dict(spec=s, gen_score=sc, ratio_region=by["ratio_region"], bytes_region=by["bytes_region"]))
+                for r_ in rows:
+                    w.writerow(dict(r_, run_id="SYNG", ts="t", model=m, ctx="32K", item_id=iid, n_rows_item=len(rows)))
+    for path, specs, tag in ((tp, [c for c, _ in pairs] + ["xl:k11:v17"], "SYNT"), (xp, [r for _, r in pairs], "SYNX1")):
+        with gzip.open(path, "wt", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=FIELDS_X1)
+            w.writeheader()
+            for m in MODEL_INFO:
+                for k in range(12):
+                    iid = f"T2_t_s{X1_SEED0 + k}"
+                    rows = [dict(spec="E0", range="", gold_lp=-1.0, first_ok=1)]
+                    rows += [dict(spec=s, range="full", gold_lp=-1.0 - 0.1 * rnd.random(), first_ok=1, relerr_k=0.1, relerr_v=0.2, attn_err=0.05)
+                             for s in specs]
+                    for r_ in rows:
+                        w.writerow(dict(r_, run_id=tag, ts="t", model=m, item_id=iid, gold_lp_e0=-1.0, first_ok_e0=1, kl=0.01,
+                                        n_rows_item=len(rows)))
+    out = os.path.join(d, "xlrep")
+    with contextlib.redirect_stdout(open(os.devnull, "w")):
+        cmd_xlcal_report(SimpleNamespace(raw_tf=[tp], raw_gen=[gp], raw_x1=[xp], raw_x2=None, calib_xl_summary=[], out_dir=out))
+    rep = json.load(open(os.path.join(out, "xlcal_report.json")))
+    pv = {m: [e["verdict"] for e in rep["models"][m]["gen"]["pairs"].values()] for m in MODEL_INFO}
+    bk = [(e["amortized_ratio"]["1"], rep["models"]["llama"]["gen"]["configs"][k.split(" vs ")[1]]["ratio"], e["amortized_ratio"]["64"])
+          for k, e in rep["models"]["llama"]["gen"]["pairs"].items()]
+    okv = (pv["llama"] == ["CAN_PRECOMPUTE", "MUST_PER_ITEM", "UNDETERMINED"] and pv["qwen"] == ["CAN_PRECOMPUTE"] * 3
+           and rep["verdict_by_model"] == {"llama": "MUST_PER_ITEM", "qwen": "CAN_PRECOMPUTE"} and rep["verdict"] == "MUST_PER_ITEM"
+           and all(abs(a1 - rr) <= 2e-6 and a64 < a1 for a1, rr, a64 in bk) and rep["models"]["llama"]["tf"]["n_items"] == 12
+           and rep["models"]["llama"]["tf"]["e0_bitwise_repro_vs_x1"] == "12/12")
+    check("xlcal_report_verdicts", okv, verdicts=pv, amortized_n1_vs_per_item_n64=bk, by_model=rep["verdict_by_model"])
+    return True
+
+
+def _selftest_pool(check, d) -> bool:
+    """x_pool.sh（bash）：假的 m7run／oncard。14 個單位（Llama 6 份 44 GiB、Qwen 8 份 28 GiB 交錯）、兩張卡、每卡 ≤3 個行程／≤100 GiB；
+    其中 1 個單位的待做檢查回 0（已做完 → 不開行程）。核對：每個 (模型, shard) 恰好被領一次、做完的沒開、其他各開一次、每卡同時的
+    行程數與 GiB 沒超過、兩張卡都有領、回 0；另一輪讓 1 個單位失敗 → 回非 0。"""
+    import subprocess
+    pool_sh = os.path.join(HERE, "m16_queue", "jobs", "x_pool.sh")
+    script = r'''
+set -u
+T=$1; FAIL=$2
+XP_CAP_GB=100; XP_MAXP=3; XP_POLL_S=0.05
+source "$3"
+oncard() { local c=$1; shift; TIARA_GPU=$c "$@"; }
+m7run() { local n=$1; shift; echo "S $n $TIARA_GPU $(date +%s%N)" >> $T/ev; "$@"; local r=$?; echo "E $n $TIARA_GPU $(date +%s%N)" >> $T/ev; return $r; }
+nh() { echo "NH $*" >> $T/nh; }
+P=$T/pool; xp_init $P
+for u in $(xp_order llama 6 qwen 8); do m=${u%:*}; i=${u#*:}
+  gb=28; [ $m = llama ] && gb=44
+  pend=-; [ $u = qwen:3 ] && pend="echo 0"
+  cmd="sleep 0.$((RANDOM % 3 + 1))"; [ "$FAIL" = 1 ] && [ $u = llama:2 ] && cmd=false
+  xp_add $P $m $gb u-$m-$i "$pend" $cmd
+done
+xp_run $P 10 0 1 > $T/out.log 2>&1; echo $? > $T/rc
+'''
+    res = {}
+    for fail in (0, 1):
+        T = os.path.join(d, f"pool{fail}")
+        os.makedirs(T)
+        subprocess.run(["bash", "-c", script, "pool", T, str(fail), pool_sh], check=False, timeout=120)
+        rc = int(open(os.path.join(T, "rc")).read().strip())
+        ev = [ln.split() for ln in open(os.path.join(T, "ev"))] if os.path.exists(os.path.join(T, "ev")) else []
+        res[fail] = (T, rc, ev)
+    T, rc, ev = res[0]
+    P = os.path.join(T, "pool")
+    n = int(open(os.path.join(P, "n")).read())
+    claims = sorted(os.listdir(os.path.join(P, "claim")))
+    started = [e[1] for e in ev if e[0] == "S"]
+    names = {open(os.path.join(P, "u", str(k), "name")).read().strip() for k in range(n)}
+    gb = {nm: (44 if "llama" in nm else 28) for nm in names}
+    peak, ok_cap = {}, True
+    cur = {}
+    for kind, nm, card, t in sorted(ev, key=lambda e: (int(e[3]), 0 if e[0] == "E" else 1)):
+        c = cur.setdefault(card, [0, 0])
+        if kind == "S":
+            c[0] += 1
+            c[1] += gb[nm]
+        else:
+            c[0] -= 1
+            c[1] -= gb[nm]
+        ok_cap &= c[0] <= 3 and c[1] <= 100
+        peak[card] = max(peak.get(card, (0, 0)), tuple(c))
+    cards = {open(os.path.join(P, "claim", k, "card")).read().strip() for k in claims}
+    okp = (rc == 0 and n == 14 and len(claims) == 14 and sorted(started) == sorted(names - {"u-qwen-3"}) and len(started) == len(set(started))
+           and "u-qwen-3" not in started and ok_cap and cards == {"0", "1"})
+    T1, rc1, ev1 = res[1]
+    check("pool_each_unit_claimed_once", okp and rc1 != 0, n_units=n, n_claimed=len(claims), n_started=len(started), cards=sorted(cards),
+          peak_per_card=peak, rc=rc, rc_with_failure=rc1)
+    return True
 
 
 def _selftest_report_e2e(check) -> bool:
@@ -2980,8 +4363,9 @@ def _selftest_report_e2e(check) -> bool:
               verdict=rep2["judge"]["M1_verdict"], x3=rep2.get("x3_files"))
         fp = os.path.join(out, "x2_feasible.csv")
         try:
+            fp_x3 = x3_compatible_copy(fp, os.path.join(d, "x2_feasible_x3.csv"))
             import m16_xtime as XT
-            x3 = XT.load_x2(fp)
+            x3 = XT.load_x2(fp_x3)
             check("e2e_x3_load_x2_accepts_x2_feasible", x3 is not None and set(x3["feasible"]) <= set(MODEL_INFO),
                   feasible={k: sorted(v) for k, v in x3["feasible"].items()})
         except ImportError as ex:
@@ -2994,9 +4378,7 @@ def _selftest_report_e2e(check) -> bool:
 
 
 # ============================================================================ main
-def main():
-    if "--self-test" in sys.argv[1:]:
-        sys.exit(0 if self_test() else 1)
+def build_parser():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     sp = ap.add_subparsers(dest="cmd", required=True)
     c = sp.add_parser("calib")
@@ -3034,6 +4416,7 @@ def main():
     s.add_argument("--shard", default="0/1")
     s.add_argument("--out", required=True)
     s.add_argument("--smoke", action="store_true", help="1 題（DS1 第一題）、組合用清單的 smoke、印每一列")
+    s.add_argument("--calib-xl", default=None, help="10/21：xKV 校準基底（有 xl:…:cal 的組合才要）")
     r = sp.add_parser("report")
     r.add_argument("--raw", nargs="+", required=True)
     r.add_argument("--range-name", default="full")
@@ -3055,6 +4438,9 @@ def main():
     g.add_argument("--budget-min", type=float, default=0)
     g.add_argument("--shard", default="0/1")
     g.add_argument("--out", required=True)
+    g.add_argument("--calib-xl", default=None, help="10/21：xKV 校準基底（有 xl:…:cal 的配置才要）")
+    g.add_argument("--xl-cache", action="store_true",
+                   help="10/21：同一題裡同一個 (K/V, 秩) 的每題 SVD 只算一次（xl:k22:v34+q:int4_kivi 與 +q:int8_token 共用；預設關＝照舊）")
     gr = sp.add_parser("gen-report")
     gr.add_argument("--raw", nargs="+", required=True)
     gr.add_argument("--selection", default=os.path.join(OUT_DIR, "x2_selection.json"))
@@ -3064,9 +4450,57 @@ def main():
     t.add_argument("--calib", required=True)
     t.add_argument("--params-file", default=PARAMS)
     t.add_argument("--out", required=True)
-    a = ap.parse_args()
-    {"calib": cmd_calib, "screen": cmd_screen, "report": cmd_report, "gen": cmd_gen, "gen-report": cmd_gen_report,
-     "gpu-selftest": cmd_gpu_selftest}[a.cmd](a)
+    t.add_argument("--new-checks", choices=["none", "x2b", "xlcal", "both"], default="none",
+                   help="10/21：只跑新的檢查（x2b：出題、X2b 配置、--xl-cache；xlcal：校準基底）；none＝原本的全部檢查")
+    t.add_argument("--calib-xl", default=None, help="--new-checks xlcal／both 要")
+    # ---- 10/21 延伸（x_stack_howto.md §14）
+    cx = sp.add_parser("calib-xl", help="xKV 事先校準的基底（GPU）")
+    cx.add_argument("--model", choices=list(MODEL_INFO), required=True)
+    cx.add_argument("--tasks", nargs="+", default=["T2", "T3", "T4", "T5"])
+    cx.add_argument("--n", type=int, default=2, help="每個任務幾題（預設 2 → 8 題；和 PCA 的 calib 同一套）")
+    cx.add_argument("--seed0", type=int, default=CALIB_SEED0)
+    cx.add_argument("--params-file", default=PARAMS)
+    cx.add_argument("--w", type=int, default=4, help="每個窗口幾層（xKV 預設 4）")
+    cx.add_argument("--rank-max", type=int, default=XLCAL_RANK_MAX, help="存到「每 head 每層等效秩」多少（×W×H 維）")
+    cx.add_argument("--out", help=f"預設 {DATA}/calib_xl_<model>.pt")
+    cx.add_argument("--summary-dir", default=OUT_DIR_V2)
+    cx.add_argument("--force", action="store_true")
+    pl = sp.add_parser("plan", help="X2b／xKV 校準生成的計畫檔（CPU）")
+    pl.add_argument("--which", choices=["x2b", "xlcal"], required=True)
+    pl.add_argument("--selection", default=os.path.join(OUT_DIR, "x2_selection.json"), help="第一版的挑選（roles／budgets 照它）")
+    pl.add_argument("--out", required=True)
+    pe = sp.add_parser("pending", help="工作池用：這個 shard 還有幾題沒做（CPU）")
+    pe.add_argument("--tasks", nargs="+", default=["T2", "T3", "T4", "T5"])
+    pe.add_argument("--n", type=int, required=True)
+    pe.add_argument("--seed0", type=int, required=True)
+    pe.add_argument("--shard", required=True)
+    pe.add_argument("--out", required=True)
+    xr = sp.add_parser("x2b-report", help="X2＋X2b 的合併報告（CPU）")
+    xr.add_argument("--raw-x2", nargs="+", required=True)
+    xr.add_argument("--raw-x2b", nargs="+", required=True)
+    xr.add_argument("--selection", default=os.path.join(OUT_DIR, "x2_selection.json"))
+    xr.add_argument("--plan", default=os.path.join(OUT_DIR_V2, "x2b_selection.json"))
+    xr.add_argument("--out-dir", default=OUT_DIR_V2)
+    cr = sp.add_parser("xlcal-report", help="xKV 校準基底 vs 每題 SVD 的報告（CPU）")
+    cr.add_argument("--raw-tf", nargs="+", required=True)
+    cr.add_argument("--raw-gen", nargs="+", required=True)
+    cr.add_argument("--raw-x1", nargs="+", required=True)
+    cr.add_argument("--raw-x2", nargs="+", default=None)
+    cr.add_argument("--calib-xl-summary", nargs="+", default=[os.path.join(OUT_DIR_V2, "calib_xl_*.json")])
+    cr.add_argument("--out-dir", default=OUT_DIR_V2)
+    return ap
+
+
+COMMANDS = {"calib": "cmd_calib", "screen": "cmd_screen", "report": "cmd_report", "gen": "cmd_gen", "gen-report": "cmd_gen_report",
+            "gpu-selftest": "cmd_gpu_selftest", "calib-xl": "cmd_calib_xl", "plan": "cmd_plan", "pending": "cmd_pending",
+            "x2b-report": "cmd_x2b_report", "xlcal-report": "cmd_xlcal_report"}
+
+
+def main():
+    if "--self-test" in sys.argv[1:]:
+        sys.exit(0 if self_test() else 1)
+    a = build_parser().parse_args()
+    globals()[COMMANDS[a.cmd]](a)
 
 
 if __name__ == "__main__":

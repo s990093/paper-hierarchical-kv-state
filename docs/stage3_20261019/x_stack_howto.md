@@ -303,3 +303,147 @@ cp code/m16_queue/jobs/36z_x1_report.sh code/m16_queue/jobs/37z_x2_report.sh cod
 3. **X3 的 droptok**：我們的丟是 block 粒度，對不到 X3 的 `droptok_k*`；要不要請 X3 補「block 丟（只搬留下的 BF16 block、不用解碼）」與「block 丟＋量化」兩種段，或在 X3 的模式 X 用「量化段 × 留下的比例」近似。
 4. **vllm_fp8 的截／溢位**：如果要確定 vLLM 的行為，需要另外讀 ROCm kernel 或在 vLLM 上實測（不在本任務範圍）。
 5. **共用檔**：這次**不需要改任何共用檔**。唯一的「侵入」是 `reuse_item` 在 X1 的行程裡暫時換掉 `m10_sweep.Item` 這個名字（省一次 prefill；有次數核對）；不想要的話，改成每題 prefill 兩次（每題多約 8 秒、每個模型多約 13 分鐘〔估〕）。
+
+---
+
+## 14. 10/21 延伸：X2→X3 對應、X2b（加題數）、xKV 事先校準的基底、兩卡共用工作池
+
+> **狀態（2026-10-21 03:5xZ）**：程式與 job 檔寫好，**還沒有在 GPU 上跑**（寫的時候第三階段自己的 37d 正在 GPU 上量，不能開 GPU 行程、不能 import torch）。
+> 做過的：`python -m py_compile`；`--self-test`（CPU、不 import torch）**147 項 ALL PASS**（10/21 加的見 §14.9）；job 檔 `bash -n`；用假的 `m7run`（GPU 指令只記錄、`plan`／`pending` 真的跑）把 38b1／38c1 的工作池整個建一次（34 個單位、兩張卡都有領、每個產生的指令都用真的 argparse 解析過）；
+> `x2b-report` 在第一版 X2 的真實逐列上跑一次（輸出到 scratchpad、不進 results）：變體 A 的 M1 和第一版 `x2_report.json` 逐項相同。
+> **判定規則在看到任何 X2b／xKV 校準的數字之前寫死在這裡與程式常數（`X2B_TEXT`、`XLCAL_TEXT`）**，之後不改。時間全部〔估〕，依據在 §14.6。self-review，不是 cross-model review。
+
+### 14.1 為什麼
+
+1. **統計力**：X2 每個模型 96 題時，答對率差的 95% CI 半寬約 3–4 個百分點（例：Llama `xl:k28:v42+q:int4_kivi` −2.2 [−5.8, +0.7]），ε 規則（CI 下界 ≥ −2）連 INT4 KIVI（Llama −0.8 [−3.7, +1.4]）都過不了，Llama 的 M1 判不了。→ **X2b**：同樣的生成計分、新題 192 題／模型，和 X2 的 96 題合併成 288 題。
+2. **實用性**：現在的 xKV 每題用整段 KV 算 SVD（基底每題一份、算在請求的位元組裡）。如果基底可以事先用校準題算好、所有題共用，每請求就不用帶基底（Llama 的 `xl:k28:v42+q:int4_kivi`：0.1202 → 0.0854〔算術〕），也省掉每題的 SVD。→ **`xl:…:cal`**。
+3. **X3**：X3 的 map 說「X NO-GO 但 xKV+INT4 段缺」；X3 另一個 agent 加了同名的 `xkv_k*` 解碼段 → 我們補 **X2→X3 對應**。
+4. **只有一張卡在動**（協調者 10/21 補充）：X1／X2 的 job 是「卡 0 Llama、卡 1 Qwen」，先做完的那張卡閒到 job 結束。→ 38b／38c 改用 **兩卡共用工作池**（§14.5）。
+
+### 14.2 X2→X3 對應（`X3_MAP_1021`）
+
+| 我們的組合 | x3_segment |
+|:--|:--|
+| `xl:k11:v17`、`xl:k22:v34`、`xl:k28:v42` | `xkv_k11v17`、`xkv_k22v34`、`xkv_k28v42` |
+| `xl:k11:v17+q:int4_kivi`、`xl:k22:v34+q:int4_kivi`、`xl:k28:v42+q:int4_kivi` | `xkv_k11v17_int4`、`xkv_k22v34_int4`、`xkv_k28v42_int4` |
+| `xl:k22:v34+q:int8_token` | `xkv_k22v34_int8` |
+| `xl:…:cal`（任何） | 對不到（基底常駐、不用每題搬；X3 的 xkv_* 把每題基底算進要搬的位元組） |
+
+- 名字和 `m16_xtime.py` 的 `XKV2` 逐字相同（10/21 核對過；`--self-test` 的 `e2e_x3_load_x2_accepts_x2_feasible`／`x2b_report_x3_load_x2` 用 X3 的 `load_x2` 讀我們寫的檔）。
+- **注意（要人決定，§14.11 第 1 點）**：對應是全域的，所以佇列裡的 **37zz（重出第一版報告）會把這 7 個組合從第一版的 `x2_unmapped.csv` 移到 `x2_feasible.csv`**（其他列不變；self-test `x3_map_v1_rows_unchanged_except_1021` 核對）。
+- 舊的 self-test 有個 bug 一起修了：`ok &= _selftest_report_e2e(check)` 會在函式跑之前就讀 `ok`，函式裡的失敗被蓋掉；改成先呼叫再合併。修完之後原本的 e2e 檢查照樣全過。
+
+### 14.3 X2b：加題數（38b*）
+
+**設計（事先寫死；`X2B_TEXT`、`code/m16_xstack_combos_v2.json` 的 `x2b`）**
+- 題目：新題 **seed 63000 起、T2–T5 各 48 題＝192 題**／模型，32K，和 X1（60000）、校準（61000）、X2（62000）不重疊（self-test `seeds_disjoint`）。
+- 配置（照列的順序量；同一個每題 SVD 的排在一起）：協調者列的 10 個——`none`、`q:int4_kivi`、部署對照（Llama `q:vllm_fp8`、Qwen `q:int8_token`）、`q:kv-int4_kivi-int2_kivi`、`xl:k11:v17`、`xl:k16:v16`、`xl:k11:v17+q:int4_kivi`、`xl:k22:v34+q:int4_kivi`、`xl:k28:v42+q:int4_kivi`、`xl:k22:v34+q:int8_token`；
+  **另加「池子缺口」的單一方法**（只用第一版 X2 的數字決定、看到 X2b 之前）：第一版 M1 單一方法池裡、位元組比 < 第一版 B*(單一) 而且 CI 上界 ≥ −ε 的——兩個模型的 `q:int2_kivi`、Qwen 的 `xl:k22:v34`。不加的話合併後 B*(單一) 可能偏大 → r 偏小（**偏向 GO**）。Qwen `xl:k32:v32`（0.2659）沒加（每題多一次 SVD，約 0.5 卡小時〔估〕），由 report 的 `pool_gaps` 標出。→ Llama 11 個、Qwen 12 個（加的 3 個多半共用快取或沒有 SVD，成本約 +0.3 卡小時〔估〕）。
+- roles／budgets 照第一版 `x2_selection.json`（M2 的主要組合、最好的單一方法不重選）；計畫檔 `v2/x2b_selection.json` 由 `plan --which x2b` 寫（已存在而內容不同 → 停，不默默改）。
+- `gen --xl-cache`：同一題裡同一個 (K/V, 秩) 的每題 SVD 只算一次（`xl:k22:v34+q:int4_kivi` 與 `+q:int8_token`、`xl:k11:v17` 與 `+q:int4_kivi`、Qwen 的 `xl:k22:v34` 三個）。SVD 的輸入逐位元相同（每個配置前都還原 KV），所以結果應該和不用快取逐位元相同——**冒煙的 gpu-selftest `xl_cache_eq_uncached` 核對**（SVD 本身若不決定，退一步要求快取的差 ≤ 重算一次的差）。
+
+**合併與判定（事先寫死；照第一版的規則重算，不換規則）**
+- 配置集合 **C**＝X2b 的配置裡、第一版 X2 有量的（≥90% 的 X2 題有）；題目＝E0 與 C 的每個配置都有的題（**每題所有配置都有、逐題配對**；排除的題數另列）。X2b 有、X2 沒有的（Qwen `xl:k22:v34+q:int8_token`）只在「只用 X2b」報。
+- 四種變體並列：**A**＝只用 X2、第一版的整個池（重現第一版）；**B**＝只用 X2、池子限制在 C；**C**＝只用 X2b；**D**＝X2＋X2b。主要讀 **D**；A→B＝限制池子的效果、B→D＝加題數的效果、C＝獨立重複。
+- 寫的時候的試算（不是結果、不進 results）：`x2b-report --raw-x2 "/mlsteam/data/tiara/stage3/xstack/x2/x2_*_s*.csv.gz" --raw-x2b <沒有檔>`（輸出在 scratchpad）——變體 A 的 M1 和第一版 `x2_report.json` 逐項相同；兩個模型共 192 題的 E0 被量了不只一次，分數不同的 0 題。正式數字以 38bz 的 `x2b_report.json` 為準。
+- 每個變體照第一版的 `judge_x2` 原樣算 M1（B*、r、GO／ASK／NO-GO）、M2（每個預算的主要組合 − 最好的單一方法、Holm）、完整性、MLPerf 99%／99.9% 的 B* 與 r；每個配置另列答對率、對 E0 的差與 CI、ε、≥99%／≥99.9%、CI 半寬（X2 → D）。`:cal` 不進任何池。
+- **池子缺口**（只標註、不改判定）：第一版池子裡、不在 C 的配置——單一方法若位元組比 < D 的 B*(單一)（或不存在）且 X2 的 CI 上界 ≥ −ε → r 可能偏小（偏向 GO）；組合同理 → r 可能偏大（偏向 NO-GO）。用第一版的真實逐列試算 B 時，Llama 的單一方法缺口是 `q:int2_kivi`（已加）、組合缺口 `drop:KEYDIFF:0.25+q:int4_kivi` 等 3 個；Qwen 單一方法缺口 `q:int2_kivi`、`xl:k22:v34`（已加）、`xl:k32:v32`。
+- 完整性：X2b 每個模型 192 題齊全才算完成（`x2b_complete`）；判定本身照第一版的 ≥48 題。
+- 給 X3：`v2/x2_feasible.csv`、`v2/x2_unmapped.csv`（同第一版欄位＋`source`）：在 C → D 的題；只在 X2b → C；其他 → A（第一版的題）。**不覆蓋第一版的檔**（`--out-dir` 是第一版的目錄就停）。
+
+### 14.4 xKV 事先校準的基底（38c*）
+
+**作法**
+- `calib-xl`：校準題＝和 PCA 的 `calib` 同一套（seed 61000 起、T2–T5 各 2 題、約 25.8 萬 token；和所有評測題不重疊，`load_calib_xl` 再核對一次）。每個窗口（4 層）、K（模型自己的 cos/sin 逆 RoPE）／V 各一個：Z＝[token, 4·H·128]，**不去平均**（照 xKV 與每題 SVD 版），FP64 累加 ΣZᵀZ，最後 eigh 取前 R 個特徵向量（R＝每 head 每層等效秩 64 × 4 × H：Llama 2048／4096 維、Qwen 1024／2048 維；存檔 Llama 每半邊 268 MB〔算術〕）。第一題做 RoPE 的資料自身核對（規則 6）。摘要寫 `v2/calib_xl_<m>.json`（run_id、sha256、能量）。
+- `xl:k<r>:v<r>:cal`：係數＝Z·U[:, :r]（FP32）、照常量化；重建用 BF16 的基底（和每題 SVD 的基底同一個存法）。和每題版同樣的窗口、Z、RoPE、量化——只差基底從哪裡來。不接受 `xl:…:cal+drop`（基底和題目無關，順序對照沒有意義）。
+- **位元組帳**：每請求＝係數（＋量化的 scale／zero）；基底列 `shared.k.basis`／`shared.v.basis`（大小和每題的基底相同），不算進請求。**攤提**〔算術〕：S 由 N 個請求分攤，每請求多 S/N；N＝1 時正好等於每題 SVD 版（打平點恆為 1）。例（區內位元組比）：
+
+| 配置 | 每題 SVD | 校準（N→∞） | N＝8 | N＝64 | 共用基底 |
+|:--|--:|--:|--:|--:|--:|
+| Llama `xl:k11:v17` | 0.1233 | 0.1094 | 0.1111 | 0.1096 | 58.7 MB |
+| Llama `xl:k22:v34+q:int4_kivi` | 0.0961 | 0.0684 | 0.0718 | 0.0688 | 117.4 MB |
+| Llama `xl:k28:v42+q:int4_kivi` | 0.1202 | 0.0854 | 0.0898 | 0.0860 | 146.8 MB |
+| Qwen `xl:k11:v17` | 0.1163 | 0.1094 | 0.1102 | 0.1095 | 12.8 MB |
+| Qwen `xl:k22:v34+q:int4_kivi` | 0.0822 | 0.0684 | 0.0701 | 0.0686 | 25.7 MB |
+| Qwen `xl:k28:v42+q:int4_kivi` | 0.1028 | 0.0854 | 0.0876 | 0.0857 | 32.1 MB |
+
+  實際部署只要存最高秩的一份基底（低秩取前幾欄），所以 S 以最高秩那份為準；表裡照每個配置自己的秩算。
+
+**流程**：`calib-xl` → **TF 篩選**（X1 的前 12 題／任務＝48 題；`screen --no-s2 --combos code/m16_xstack_combos_v2.json`：E0＋3 個校準版＋每題 SVD 的錨點 `xl:k11:v17`）→ **生成**（X2 的 96 題、seed 62000：3 個校準版＋3 個每題 SVD 的同名配置＋E0，**同一題、同一個行程配對**）。
+
+**判定（事先寫死；`XLCAL_TEXT`）**
+- 每一對（`xl:k11:v17:cal` vs `xl:k11:v17`、`xl:k22:v34:cal+q:int4_kivi` vs `xl:k22:v34+q:int4_kivi`、`xl:k28:v42:cal+q:int4_kivi` vs `xl:k28:v42+q:int4_kivi`），生成答對率逐題配對差（校準 − 每題 SVD），bootstrap 10,000 次的 95% CI：
+  - **CI 上界 < −2 個百分點 → MUST_PER_ITEM（必須每題算 SVD）**；
+  - **CI 下界 ≥ −2 個百分點 → CAN_PRECOMPUTE（可以事先算好基底）**；
+  - 其他 → UNDETERMINED（題數不夠分辨）。
+- TF 篩選用的 48 題，X1 的逐列裡兩個模型都有 E0 與 3 個每題 SVD 的同名配置（10/21 核對：48／48）。
+- 每個模型：三對都 CAN → CAN；任一對 MUST → MUST（至少那個秩要每題算）；其他 → UNDETERMINED；題數 < 48 → INCOMPLETE。整體：兩個模型都 CAN → CAN；任一 MUST → MUST；其他照實寫。
+- 同秩比較：校準版的每請求位元組一定比每題版少（少掉每題基底），所以 CAN＝「同秩不比較差、而且每請求更省」。
+- **TF 只報、不判定**：每題 SVD 的 TF 取自 X1 同一題的列（跨 run）；E0 的 gold_lp 和 X1 是否逐值相同、錨點 `xl:k11:v17` 和 X1 是否逐值相同都列出來（決定跨 run 的 TF 比較能不能信）。生成那段另列 E0 與 3 個每題 SVD 配置和 X2 同一題的逐值重現。
+
+**gpu-selftest 的新檢查**（`--new-checks xlcal --calib-xl …`）：校準檔的形狀、窗口、R、`UᵀU≈I`（≤1e-3）；8 層切片上 torch vs numpy 參考（4 個 :cal 組合，含先 drop；相對誤差 ≤1e-2、位元組＝預測、沒有每題基底的鍵）；**Eckart–Young**（同一份資料上，校準基底的 pre-RoPE 誤差 ≥ 精確 SVD 的 0.999 倍，每個窗口、K／V）；整個 32K 區的 3 個 :cal 配置：位元組＝預測、有限值，記重建誤差與 `t_pipe_s`。
+`--new-checks x2b`：CPU 版出題＝`m10_quality.plan_interleaved`（3 組 seed）；X2b 每個配置在切片上的位元組與有限值；`xl_cache_eq_uncached`（兩組）。
+
+### 14.5 兩卡共用工作池（`code/m16_queue/jobs/x_pool.sh`；38b*／38c* 用）
+
+- 工作切成固定的單位清單（(模型, shard i/n, 階段)；**n 在兩張卡之間共用、不重疊**）；X2b：Llama 12 份（每份 16 題）、Qwen 8 份（24 題）；xKV 校準：TF 每個模型 2 份、生成 Llama 6 份／Qwen 4 份。兩個模型照 (i+0.5)/n 交錯排（`xp_order`）。
+- 每張卡一個 worker，照順序領「第一個還沒被領、這張卡放得下的」單位；**領取鎖＝`mkdir 池/claim/<k>`**（原子）。每卡同時 ≤ `XP_MAXP`＝4 個行程、登記 ≤ `XP_CAP_GB`＝165 GiB（Llama 每行程 46、Qwen 30：實測 peak 39.8／41.8、25.1／26.6 GiB＋快取／基底）→ 檔頭 NEED-GB 170。
+- 領到先問 `m16_xstack.py pending`（CPU、不載模型）：0 題 → 跳過；否則開行程，`--budget-min`＝開跑時離工作池預算結束還有幾分鐘。逐題續跑照舊：每段 job 重建工作池，做完的 shard 被跳過。
+- 每個單位結束時由它自己的子 shell 寫 `池/claim/<k>/rc`，worker 每 `XP_POLL_S`（5 秒）看一次——**不用 `wait -n`**（bash 已經回收的背景工作 `wait -n` 會說 no such job，self-test 抓到）。任一單位失敗 → 那張卡不再領新的、等手上的跑完 → job 寫 NEEDS_HUMAN、exit 1。
+- 不動 `x_common.sh` 的 `x_par`／`x2_model`／`x2_seq`（37e／37f 還在用）。冒煙在第 1 段（38b1／38c1）跑一次、過了寫 `SMOKE_OK`（記程式的 sha）；後面幾段沒有它、或程式在冒煙之後改過 → NEEDS_HUMAN、exit 1。
+
+### 14.6 時間估計（全部〔估〕）
+
+**依據（實測）**：
+- X2 的逐列檔（`/mlsteam/data/tiara/stage3/xstack/x2/*.csv.gz`；每題寫入的 `ts`、run 目錄名的開始時間；同一張卡上並行的 shard 合計）：Llama core（17 個配置、8 個 xKV、3 個 shard）**8.98 卡秒／列、158.7 卡秒／題**；Llama x3（14 個配置、1 個 xKV）3.44 卡秒／列；Qwen core（17、6 個 xKV、4 個 shard）3.78；Qwen x3 3.14、ext 3.41。對照 43ab 的 1,892 列／小時／兩卡＝3.8 卡秒／列（§8 的 B）。**xKV 的每題 SVD 是 Llama 的主要成本。**
+- X1 逐列的 `t_pipe_s`（同卡 3–4 個行程時的中位數）：Llama `xl:k11:v17` 38.4 s、`xl:k16:v16` 33.4、`xl:k22:v34+q:int4_kivi` 58.5、`+q:int8_token` 51.9、`xl:k28:v42+q:int4_kivi` 79.0；Qwen 15.8、19.8、34.4、34.9、44.4；量化 ≤0.44 s。
+- 由這兩個推每個行程每題的時間 ≈ 列數 × 每列基本時間（Llama 5.6 s、Qwen 6.6–8.1 s：X2 每題時間扣掉 xKV 的 `t_pipe_s` 後平均）＋Σ xKV 的 `t_pipe_s`（快取命中的算 1–2 s），卡秒／題＝÷ 每卡行程數（X1／X2 量的時候 Llama 3、Qwen 4）。
+
+| job | 內容 | GPU 時間〔估〕 |
+|:--|:--|:--|
+| 38b1 | plan＋冒煙（每卡：gpu-selftest x2b、1 題全部配置）＋工作池 | 冒煙 10–20 分鐘；本段 ≤ 約 1.8 小時（預算 100 分鐘＋最後一題的尾巴） |
+| 38b2／38b3／38b4 | 工作池續跑 | 每段 ≤ 約 1.8 小時；做完的段數幾分鐘就結束 |
+| X2b 全部 | Llama 192 題 × 12 列（Σ xKV 約 213 s，快取後）≈ 93 卡秒／題 → **4.0–6.0 卡小時**；Qwen 192 × 13 列（Σ 約 117 s）≈ 51–56 卡秒／題 → **2.7–3.0 卡小時** | 合計 6.7–9.0 卡小時 → 兩卡共用約 **3.3–4.5 小時牆鐘**（不用快取約 +1.3 卡小時）；38b1–38b3 的容量約 4.6 小時，38b4 是保險 |
+| 38c1 | plan＋calib-xl（每個模型 8 題 prefill＋4096 維 FP64 的 ΣZᵀZ 與 eigh；**ROCm 上 4096 維 FP64 eigh 的速度 NOT_MEASURED**；PCA 的 calib 8 題 42 秒）＋冒煙＋工作池 | calib-xl 3–15 分鐘、冒煙 10–15 分鐘；本段 ≤ 約 1.8 小時 |
+| xKV 校準全部 | TF：Llama 48 題 ≈ 22 卡秒／題（錨點 38 s＋校準版每個約 1–2 s）、Qwen ≈ 10 → 約 0.4 卡小時；生成：Llama 96 題 × 7 列（3 個每題 SVD Σ 176 s）≈ 74 卡秒／題 → 2.0 卡小時、Qwen ≈ 38 → 1.0 卡小時 | 合計約 3.4 卡小時 → 兩卡約 **1.7 小時**＋calib／冒煙 0.3–0.5 小時 → 38c1＋38c2（38c2 約 0.3–1 小時） |
+| 38bz／38cz | CPU 報告 | 數分鐘（CPU；bootstrap 約 4 個變體 × 24 個配置 × 10,000 次） |
+
+不確定的地方：同卡混跑兩個模型、每卡 4 個行程時的爭用（X1／X2 量的是同卡同模型 3–4 個）；Llama 每題的生成長度（壞掉的配置會生成到上限）。冒煙的 log 會印 peak GiB 與每題秒數，量到之後可以改 `XP_GB_*`、shard 數（`x_ext.sh`，或 job 前 export）。
+
+### 14.7 怎麼排
+
+```bash
+cp code/m16_queue/jobs/38b[1-4]_x2b_gen.sh code/m16_queue/jobs/38c[12]_xkv_cal.sh /mlsteam/data/tiara/stage3/jobs/queue/
+cp code/m16_queue/jobs/38bz_x2b_report.sh code/m16_queue/jobs/38cz_xkv_cal_report.sh /mlsteam/data/tiara/stage3/jobs/queue_c/
+# x_common.sh、x_pool.sh、x_ext.sh 不要複製（job 從 repo source 它們）
+```
+- 檔名（位元組排序）：`38a_x3_micro2` < `38b1…38b4` < `38bz` < `38c1`、`38c2` < `38cz` < `38d*`（C1b）< `38z_x3_map2` < `39_x3_micro` < `39v_x3_validate` < `40_v0`。GPU job 都排在 39v、40 之前；佇列裡 38b 會整段先跑完才輪到 38c（runner 照排序、挑第一個依賴滿足的）——要先跑 38c 的話把 38c 改名或延後排 38b。
+- 依賴：38b*／38c* `AFTER: 37z_x2_report`（已 done）；38bz `AFTER: 38b1–38b4`；38cz `AFTER: 38c1 38c2`。**沒排的 job 要從 AFTER 拿掉**（runner 要所有 AFTER 都有 .done）。
+- CPU 自測：`source code/m7_env.sh; OMP_NUM_THREADS=4 nice -n 19 taskset -c 0-3 python code/m16_xstack.py --self-test`。
+
+### 14.8 冒煙要看什麼
+
+- **38b1**（`$XD/smoke/v2/`）：`gpu_selftest_x2b_<m>.json` 全過，特別是 `xl_cache_eq_uncached[*]` 的 `bitwise_equal`（不是 true 而 `svd_deterministic` 是 false 的話，要人看 rel／rel_recompute）與 `plan_cpu_eq_m10[*]`；`x2b_smoke_<m>_s0.csv`：1 題、E0＋全部配置各一列（`smoke_rows_ok`），gen 裡位元組＝預測的 assert 沒觸發；log 的 **peak GiB**（> 46／30 → 調 `XP_GB_*`）與這題花幾秒。
+- **38c1**：`v2/calib_xl_<m>.json` 的 RoPE 核對（correct ≤0.02）、能量（只看合不合理）、`t_eigh_s`；`gpu_selftest_xlcal_<m>.json`：`xlcal_meta_shape_orthonormal`、`xlcal_torch_vs_numpy[*]`、`xlcal_eckart_young[*]`（`err_ratio_cal_over_svd` 也是第一眼的「校準基底在這題上差多少」）、`xlcal_full_region[*]` 的 `t_pipe_s`；TF 與生成各 1 題的列。
+- 工作池：`$XD/pool/<job>/log`——兩張卡都有領、每個單位的 rc、做完被跳過的、沒領到留給下一段的。
+
+### 14.9 輸出怎麼讀、自測
+
+- `v2/tables_x2b.md`：每個模型一張表（只用 X2／只用 X2b／X2＋X2b 的答對率與 CI、ε、CI 半寬 X2→D、MLPerf）；判定表（A／B／C／D × 模型：B*、r、M1、MLPerf 的 r、池子缺口）；M2 表；給 X3 的檔。`v2/x2b_report.json` 有全部成分，含 `e0_repro_x2`（第一版 X2 每一層的 run 都各量一次 E0：同一題的 E0 分數是不是全部相同＝跨 run 決定性的證據）。
+- `v2/tables_xlcal.md`：整體判定；每個模型的三對（差與 CI、判定、位元組比、共用基底、攤提）、每個配置對 E0、TF 篩選表與重現。
+- `--self-test`：10/21 加了 a–h 八段（X2→X3 對應與第一版列的變化、:cal 語法、位元組（含「舊組合的位元組比＝X1 在 GPU 上 assert 過的實際值」161／161 個）、numpy 的 Eckart–Young、計畫檔與題目不重疊（含 CPU 版出題＝X2 逐列的題號）、pending 的切法、合併報告的配對（已知差的合成資料逐值核對、A＝第一版判定、不准寫第一版目錄）、xKV 校準判定的三種結果、**工作池每個單位恰好被領一次**、37d／37e／37f／37zz／02 的指令照樣解析）。
+
+### 14.10 已知限制
+
+1. GPU 路徑（calib-xl、:cal 的 torch 實作、--xl-cache、新的 gpu-selftest）都還沒在 GPU 上跑過；冒煙是第一次。
+2. 校準基底不去平均（照 xKV）；校準題 8 題、約 25.8 萬 token，和 PCA 校準同一套。基底跨任務的退化沒有另外量（TF 的四個任務各有 12 題，表裡可以看分任務的差——report 沒有分任務列，要的話另算）。
+3. X2b 的 C 只含第一版有量的配置；第一版池子裡其他的配置用 `pool_gaps` 標出，不補量。
+4. xKV 校準的生成比較在 X2 的同一批 96 題上（為了和 X2 的每題 SVD 結果對照重現）；它和 X2b 的題不同。
+5. 工作池的 GiB 是登記值，不是實際用量的上限（MI300X 192 GB；165 GiB 留約 27 GB 給其他）。
+
+### 14.11 需要人決定的事
+
+1. **37zz 會用新對應重寫第一版的 `x2_feasible.csv`／`x2_unmapped.csv`**（7 個 xKV 組合從 unmapped 移到 feasible；其他列不變）。若第一版的檔要保持 37z 當時的樣子，撤掉 37zz 或請我把新對應改成只在 v2 生效。
+2. **X2b 多加了 3 個配置**（兩個模型的 `q:int2_kivi`、Qwen 的 `xl:k22:v34`；理由 §14.3，約 +0.3 卡小時〔估〕）。要嚴格照 10 個的話把 `combos_v2.json` 的這 3 個拿掉（要在 38b1 之前；之後改會被 plan 擋下）。
+3. **排序**：照檔名 38b（約 3.3–4.5 小時）整段先跑完才輪到 38c（約 2 小時）。38c 的答案（能不能事先算基底）比較快出來；要先跑就調整排序。
+4. **省 GPU 的選項（沒做）**：38c 的生成裡 3 個每題 SVD 的配置在 X2 已經量過同一批題（約佔 38c 的 2.6 卡小時）；X2 的 E0 跨 run 重量 192 次都逐值相同，跨 run 配對大概可信，但我照指示做同 run 配對。要省的話可以從 `xlcal_pairs` 的生成計畫拿掉每題 SVD、改用 X2 的列（要改 report 與事先寫死的規則，另開版本）。
