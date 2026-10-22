@@ -1,0 +1,7 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 x3.html。 -->
+<p>（草稿）micro 20261020-212244-m16-x3-micro-llama、20261020-213232-m16-x3-micro-qwen；map v1 20261021-025231-m16-x3-map；補缺口 micro2 20261021-075914／080256、寫入成本 20261021-080628／082103；map v2 20261021-123143-m16-x3-map2。</p>
+<ul><li>map v1：STOP-0 成立；L、Q 的 STOP-2a；模式 X STOP-2b（A 對最好固定格式只好 2.2%）——但 xKV＋INT4 沒有解碼段（缺口）。</li>
+<li>寫入（壓縮）成本（T＝16,384 token、全部窗口，GPU 閒）：Llama <code>k11v17</code> 10.8 s、<code>k22v34</code> 24.6 s、<code>k28v42</code> 31.3 s；Qwen 3.9、9.6、12.7 s；duty 0.9 時 Llama <code>k11v17</code> 33.1 s、Qwen 14.8 s；係數量化 1–4 ms。</li>
+<li>map v2：模式 Q STOP-0 照舊；L、Q STOP-2a；模式 X STOP-2c（A 對最好固定格式 +6.5%）→ 照規則停下來問使用者；A 對 S 只 +0.9%；T-d 成立 → validate 要跑（8 格；38j 排隊中）。Qwen 慢層 <code>xkv_k22v34_int4</code> 對單用 INT4 快 61–69%；CPU pinned 只差 0–12%。</li>
+<li>E-L3：低秩重建在 duty 0.9 慢 2.79–2.80 倍（Llama），INT4 1.34 倍；Qwen 2.64–2.78 倍 vs 2.05 倍。</li>
+<li>validate v2：NOT_MEASURED（38j 還沒跑）。</li></ul>

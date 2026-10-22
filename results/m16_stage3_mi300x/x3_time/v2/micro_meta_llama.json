@@ -1,0 +1,368 @@
+{
+ "run_id": "20261021-075914-m16-x3-micro2-llama",
+ "ts": "2026-10-21T08:02:55+00:00",
+ "model": "llama",
+ "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+ "rope_theta": 500000.0,
+ "shape": {
+  "L": 32,
+  "H": 8,
+  "D": 128
+ },
+ "n_blocks": 32,
+ "region_tokens": [
+  16384,
+  32768
+ ],
+ "reps": 5,
+ "min_rep_s": 0.1,
+ "bg_seconds": 2.0,
+ "rec_pos": [],
+ "rec_reps": 0,
+ "states": [
+  [
+   "idle",
+   0.0
+  ],
+  [
+   "busy1",
+   0.4
+  ],
+  [
+   "busy2",
+   0.7
+  ],
+  [
+   "busy3",
+   0.9
+  ]
+ ],
+ "busy_levels": "results/m10_restore2_mi300x/busy_levels_q4.json",
+ "hsa_enable_sdma": "unset(預設 1)",
+ "store_impl": "triton",
+ "smoke": false,
+ "t_build_s": 47.0,
+ "torch": "2.10.0+rocm7.0",
+ "hip": "7.0.51831",
+ "device": "AMD Radeon Graphics",
+ "fp8_fmt": "fp8_token",
+ "contaminated": false,
+ "host_level": "UNOBSERVABLE_HOST",
+ "busy_stats": [
+  {
+   "phase": "timing",
+   "state": "busy1",
+   "duty": 0.4,
+   "cu_mask": "",
+   "ready": "READY matmul_ms=1.658",
+   "n_matmul": 3956,
+   "seconds": 19.567,
+   "matmul_per_s": 202.177
+  },
+  {
+   "phase": "timing",
+   "state": "busy2",
+   "duty": 0.7,
+   "cu_mask": "",
+   "ready": "READY matmul_ms=1.657",
+   "n_matmul": 7084,
+   "seconds": 20.929,
+   "matmul_per_s": 338.478
+  },
+  {
+   "phase": "timing",
+   "state": "busy3",
+   "duty": 0.9,
+   "cu_mask": "",
+   "ready": "READY matmul_ms=1.660",
+   "n_matmul": 9306,
+   "seconds": 21.179,
+   "matmul_per_s": 439.398
+  }
+ ],
+ "wcost": null,
+ "note_rope": "RoPE 用 rope_theta 的預設 inv_freq（沒有套 llama3 的 rope_scaling）：只影響數值，不影響時間",
+ "segments": {
+  "bf16": {
+   "family": "raw",
+   "kind": "none",
+   "feed": {},
+   "ops": [
+    "h2d_region"
+   ],
+   "bytes_blk": 67108864,
+   "bytes_req": 0,
+   "bytes_resident": 0,
+   "fmt": "bf16",
+   "impl": {
+    "h2d_region": "逐 block copy_ 進 KV 視圖（Restorer._load）"
+   },
+   "kernel": "",
+   "n_copies": {
+    "h2d_region": 32
+   },
+   "check": "ok"
+  },
+  "xkv_k11v17": {
+   "family": "xlayer",
+   "kind": "single",
+   "feed": {
+    "dq_oneshot": "h2d_region",
+    "dq_perblock": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_perblock",
+    "dq_oneshot",
+    "h2d_req"
+   ],
+   "bytes_blk": 7340032,
+   "bytes_req": 58720256,
+   "bytes_resident": 0,
+   "fmt": "xKV（xl:k11:v17）：每 4 層聯合秩 K 352、V 544；係數 bf16；基底 BF16 每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底",
+    "h2d_req": "只搬基底（K、V 各一份）",
+    "dq_oneshot": "BF16 torch.matmul＋每層 store（triton）一次整段",
+    "dq_perblock": "每 block 一次 matmul＋store（triton）"
+   },
+   "kernel": "",
+   "n_copies": {
+    "h2d_region": 66,
+    "h2d_req": 2
+   },
+   "check": "ok"
+  },
+  "xkv_k22v34": {
+   "family": "xlayer",
+   "kind": "single",
+   "feed": {
+    "dq_oneshot": "h2d_region",
+    "dq_perblock": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_perblock",
+    "dq_oneshot",
+    "h2d_req"
+   ],
+   "bytes_blk": 14680064,
+   "bytes_req": 117440512,
+   "bytes_resident": 0,
+   "fmt": "xKV（xl:k22:v34）：每 4 層聯合秩 K 704、V 1088；係數 bf16；基底 BF16 每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底",
+    "h2d_req": "只搬基底（K、V 各一份）",
+    "dq_oneshot": "BF16 torch.matmul＋每層 store（triton）一次整段",
+    "dq_perblock": "每 block 一次 matmul＋store（triton）"
+   },
+   "kernel": "",
+   "n_copies": {
+    "h2d_region": 66,
+    "h2d_req": 2
+   },
+   "check": "ok"
+  },
+  "xkv_k28v42": {
+   "family": "xlayer",
+   "kind": "single",
+   "feed": {
+    "dq_oneshot": "h2d_region",
+    "dq_perblock": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_perblock",
+    "dq_oneshot",
+    "h2d_req"
+   ],
+   "bytes_blk": 18350080,
+   "bytes_req": 146800640,
+   "bytes_resident": 0,
+   "fmt": "xKV（xl:k28:v42）：每 4 層聯合秩 K 896、V 1344；係數 bf16；基底 BF16 每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底",
+    "h2d_req": "只搬基底（K、V 各一份）",
+    "dq_oneshot": "BF16 torch.matmul＋每層 store（triton）一次整段",
+    "dq_perblock": "每 block 一次 matmul＋store（triton）"
+   },
+   "kernel": "",
+   "n_copies": {
+    "h2d_region": 66,
+    "h2d_req": 2
+   },
+   "check": "ok"
+  },
+  "xkv_k11v17_int4": {
+   "family": "combo",
+   "kind": "combo",
+   "feed": {
+    "dq_oneshot": "h2d_region",
+    "dq_perblock": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_perblock",
+    "dq_oneshot",
+    "h2d_req"
+   ],
+   "bytes_blk": 2293760,
+   "bytes_req": 58720256,
+   "bytes_resident": 0,
+   "fmt": "xKV（xl:k11:v17+q:int4_kivi）：每 4 層聯合秩 K 352、V 544；係數 kivi4；基底 BF16 每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底",
+    "h2d_req": "只搬基底（K、V 各一份）",
+    "dq_oneshot": "coef_dequant（Triton）→ BF16 torch.matmul＋每層 store（triton）一次整段",
+    "dq_perblock": "coef_dequant → 每 block 一次 matmul＋store（triton）"
+   },
+   "kernel": "m16_xtime_kern.coef_dequant",
+   "n_copies": {
+    "h2d_region": 194,
+    "h2d_req": 2
+   },
+   "check": "ok"
+  },
+  "xkv_k22v34_int4": {
+   "family": "combo",
+   "kind": "combo",
+   "feed": {
+    "dq_oneshot": "h2d_region",
+    "dq_perblock": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_perblock",
+    "dq_oneshot",
+    "h2d_req"
+   ],
+   "bytes_blk": 4587520,
+   "bytes_req": 117440512,
+   "bytes_resident": 0,
+   "fmt": "xKV（xl:k22:v34+q:int4_kivi）：每 4 層聯合秩 K 704、V 1088；係數 kivi4；基底 BF16 每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底",
+    "h2d_req": "只搬基底（K、V 各一份）",
+    "dq_oneshot": "coef_dequant（Triton）→ BF16 torch.matmul＋每層 store（triton）一次整段",
+    "dq_perblock": "coef_dequant → 每 block 一次 matmul＋store（triton）"
+   },
+   "kernel": "m16_xtime_kern.coef_dequant",
+   "n_copies": {
+    "h2d_region": 194,
+    "h2d_req": 2
+   },
+   "check": "ok"
+  },
+  "xkv_k28v42_int4": {
+   "family": "combo",
+   "kind": "combo",
+   "feed": {
+    "dq_oneshot": "h2d_region",
+    "dq_perblock": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_perblock",
+    "dq_oneshot",
+    "h2d_req"
+   ],
+   "bytes_blk": 5734400,
+   "bytes_req": 146800640,
+   "bytes_resident": 0,
+   "fmt": "xKV（xl:k28:v42+q:int4_kivi）：每 4 層聯合秩 K 896、V 1344；係數 kivi4；基底 BF16 每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底",
+    "h2d_req": "只搬基底（K、V 各一份）",
+    "dq_oneshot": "coef_dequant（Triton）→ BF16 torch.matmul＋每層 store（triton）一次整段",
+    "dq_perblock": "coef_dequant → 每 block 一次 matmul＋store（triton）"
+   },
+   "kernel": "m16_xtime_kern.coef_dequant",
+   "n_copies": {
+    "h2d_region": 194,
+    "h2d_req": 2
+   },
+   "check": "ok"
+  },
+  "xkv_k22v34_int8": {
+   "family": "combo",
+   "kind": "combo",
+   "feed": {
+    "dq_oneshot": "h2d_region",
+    "dq_perblock": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_perblock",
+    "dq_oneshot",
+    "h2d_req"
+   ],
+   "bytes_blk": 7372800,
+   "bytes_req": 117440512,
+   "bytes_resident": 0,
+   "fmt": "xKV（xl:k22:v34+q:int8_token）：每 4 層聯合秩 K 704、V 1088；係數 int8_token；基底 BF16 每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底",
+    "h2d_req": "只搬基底（K、V 各一份）",
+    "dq_oneshot": "coef_dequant（Triton）→ BF16 torch.matmul＋每層 store（triton）一次整段",
+    "dq_perblock": "coef_dequant → 每 block 一次 matmul＋store（triton）"
+   },
+   "kernel": "m16_xtime_kern.coef_dequant",
+   "n_copies": {
+    "h2d_region": 130,
+    "h2d_req": 2
+   },
+   "check": "ok"
+  },
+  "int4_kivi": {
+   "family": "quant",
+   "kind": "single",
+   "feed": {
+    "dq_oneshot": "h2d_stack",
+    "dq_perblock": "h2d_stack"
+   },
+   "ops": [
+    "h2d_stack",
+    "dq_perblock",
+    "dq_oneshot"
+   ],
+   "bytes_blk": 20971520,
+   "bytes_req": 0,
+   "bytes_resident": 0,
+   "fmt": "int4_kivi",
+   "impl": {
+    "h2d_stack": "逐 block 搬進一次拆的暫存區（Restorer._load_defer）",
+    "dq_oneshot": "m10_dequant_fast.decode_multi（第二階段 P3／S4）",
+    "dq_perblock": "m10_dequant_fast.decode_variant（第二階段 P0）"
+   },
+   "kernel": "k3:4:1",
+   "n_copies": {
+    "h2d_stack": 192
+   },
+   "check": "ok"
+  },
+  "xkv_g4_f8": {
+   "family": "xlayer",
+   "kind": "single",
+   "feed": {
+    "dq_oneshot": "h2d_region"
+   },
+   "ops": [
+    "h2d_region",
+    "dq_oneshot"
+   ],
+   "bytes_blk": 8388608,
+   "bytes_req": 67108864,
+   "bytes_resident": 0,
+   "fmt": "xKV：每 4 層共用 token 係數 r=512，基底每個 prompt 一份（算進搬的位元組）",
+   "impl": {
+    "h2d_region": "逐 block 搬係數＋每次還原搬一次基底",
+    "dq_oneshot": "torch.matmul＋每層 store（triton）"
+   },
+   "kernel": "",
+   "n_copies": {
+    "h2d_region": 66
+   },
+   "check": "ok"
+  }
+ }
+}

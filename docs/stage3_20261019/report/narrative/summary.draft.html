@@ -1,0 +1,11 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 summary.html。 -->
+<p><b>（草稿：只列事實，結論由主 session 寫）</b>到 10/21 16:3xZ 為止已完成：K1、I4、I1／I2、C1a、S1、X1、X2＋X2b、xKV 校準（38c）、X3（micro、map v1／v2、寫入成本）、C1b、I3（模擬＋重讀）。跑中或排隊：X4（38e–38i）、X3 validate v2（38j）、xKV 校準加題數（38k）、V0／F2／F1（40、50、51、52）。</p>
+<ul>
+<li>I1：實測／模擬全部在 0.973–1.050（判定：模擬可信、I1 收掉）。run 20261020-143840-m16-i1-grid。</li>
+<li>C1a：寫入時分數與 Quest 摘要都明顯高於隨機（G2、G4 不觸發）→ C1b 照計畫做。run 20261020-145315／150131-m16-c1a-*。</li>
+<li>S1：BF16 無損比 1.47（自然文字 32K）；只對慢的下層划算。run 20261020-150947-m16-s1-analyze。</li>
+<li>X2＋X2b：Qwen r＝0.35 → GO；Llama r＝∞（MLPerf 99%：r＝1.12）。report 20261021-123141-m16-x2b-report。</li>
+<li>xKV 校準 38c：兩個模型 UNDETERMINED。report 20261021-143600-m16-xlcal-report。</li>
+<li>X3 map v2：模式 X STOP-2c（A 對 F +6.5%）→ 照規則停下來問使用者；T-d 成立 → validate 排了（38j）。run 20261021-123143-m16-x3-map2。</li>
+<li>I3：主掃描 0／96 格比最好的現成規則好 ≥5% → 缺口不成立（模擬）。run 20261019-141254-m16-pausesim。</li>
+</ul>

@@ -1,0 +1,6 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 xlcal.html。 -->
+<p>（草稿）38c：calib 20261021-123131-m16-xlcal-calib-{llama,qwen}（seed 61000 的 8 題、258,048 token）、生成 20261021-123858…141255-m16-xlcal-*；report 20261021-143600-m16-xlcal-report。</p>
+<ul><li>判定：兩個模型都 UNDETERMINED（96 題）。</li>
+<li>Llama（校準 − 每題 SVD）：<code>xl:k22:v34+int4</code> +2.6 [−1.6, +7.5]、<code>xl:k28:v42+int4</code> +3.5 [−0.6, +8.2]；只降秩 <code>xl:k11:v17</code> −3.7 [−7.6, +0.2]。校準版 <code>xl:k28:v42:cal+q:int4_kivi</code>（位元組比 0.085，約 11.7 倍）對 E0 +1.3 [−1.7, +4.7]，過 ε。</li>
+<li>Qwen：<code>xl:k22:v34+int4</code> −2.1 [−6.0, +2.0]、<code>xl:k28:v42+int4</code> −2.2 [−5.5, +1.1]、只降秩 −5.2 [−10.3, +0.3]。</li>
+<li>38k（新 192 題，seed 66000 起）：NOT_MEASURED（排在 X4 與 38j 之後）。主要判定改成「只用新的 192 題」（看到新資料之前改定）。</li></ul>

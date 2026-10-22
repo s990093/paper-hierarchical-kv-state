@@ -1,0 +1,4 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 c1a.html。 -->
+<p>（草稿）run 20261020-145315-m16-c1a-{llama,qwen}-s{0,1,2}、20261020-150131-m16-c1a-{llama,qwen}-s{3,4,5}；每個模型 T2–T4 135 題＋T5 15 題，逐題檢查沒有 false。</p>
+<ul><li>recall@16 比隨機（25.4%）高（T2–T4，百分點）：寫入時 Llama KNORM +23.6、KEYDIFF +14.7、SNAP +10.8；Qwen KEYDIFF +19.2、KNORM +13.3、SNAP +13.1。QRY1 +14.6／+21.3。QUEST_MEAN +34.7／+44.5；FULLK_MEAN（上界）+61.1／+67.6。RND0 −0.1／−2.0。</li>
+<li>判定（G2、G4）：兩個模型都不觸發 → C1b 照計畫可以做。</li></ul>

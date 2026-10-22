@@ -1,0 +1,1 @@
+run_id,ts,model,gpu_state,duty,segment,op,fg_s,fg_iters,fg_mean_s,bg_n,bg_total_s,bg_rate_base,bg_rate_fg,bg_ratio,contaminated,run_contaminated

@@ -1,0 +1,26 @@
+{
+ "_doc": [
+  "m16_xstack.py 的 10/21 延伸（x_stack_howto.md §14）。**在看到任何 X2b／xKV 校準的數字之前**寫死，之後不改，只能另開版本。",
+  "groups／smoke：給 screen（xKV 校準的 TF 篩選，--combos 指到這個檔）用，格式同 m16_xstack_combos.json；role xlcal＝校準基底版、xlcal_ref＝同一個行程量的每題 SVD 錨點。",
+  "x2b：X2b（加題數）每個模型的配置，照列的順序量（同一個每題 SVD 的配置排在一起，給 gen --xl-cache）；roles／budgets 由 plan 子命令照第一版 x2_selection.json 補上。",
+  "x2b 除了協調者列的 10 個，另加『池子缺口』的單一方法（只用第一版 X2 的數字決定，看到 X2b 之前）：第一版 M1 單一方法池裡、位元組比 < 第一版 B*(單一)、而且 CI 上界 ≥ −ε 的——Llama q:int2_kivi（0.1875；−1.0 [−6.4, +4.7]）、Qwen q:int2_kivi（−7.1 [−13.2, −1.1]）與 xl:k22:v34（0.2326；−0.1 [−4.3, +4.3]）。不加的話合併後的 B*(單一) 可能偏大、r 偏小（偏向 GO）。Qwen 的 xl:k32:v32（0.2659）沒加（每題多一次 SVD，約 0.5 卡小時〔估〕），由 x2b-report 的 pool_gaps 標出。",
+  "xlcal_pairs：xKV 校準基底 vs 每題 SVD 的生成比較，每一對＝[校準基底版, 每題 SVD 的同名配置]（同秩、同係數量化）。",
+  "xl:…:cal＝基底用校準題（seed 61000 起的 8 題）事先算好、所有題共用；位元組帳不含每題基底（另列 shared）。"
+ ],
+ "version": "2026-10-21 v2",
+ "groups": [
+  {"id": "XCAL", "role": "xlcal", "why": "xKV 校準基底版（和 X2 的 primary／front 同秩：k22v34、k28v42 的 INT4 係數；k11v17 的 BF16 係數＝最好的單一 xKV）。每題 SVD 的 TF 取自 X1 同一題的列。",
+   "specs": ["xl:k11:v17:cal", "xl:k22:v34:cal+q:int4_kivi", "xl:k28:v42:cal+q:int4_kivi"]},
+  {"id": "XREF", "role": "xlcal_ref", "why": "同一個行程量一個每題 SVD（最便宜的 k11v17）當錨點：同 run 配對，並和 X1 的同一列比逐值重現（決定跨 run 配對能不能信）。",
+   "specs": ["xl:k11:v17"]}
+ ],
+ "smoke": ["xl:k11:v17:cal", "xl:k22:v34:cal+q:int4_kivi", "xl:k11:v17"],
+ "x2b": {
+  "llama": ["none", "q:int4_kivi", "q:vllm_fp8", "q:kv-int4_kivi-int2_kivi", "q:int2_kivi", "xl:k11:v17", "xl:k11:v17+q:int4_kivi", "xl:k16:v16",
+            "xl:k22:v34+q:int4_kivi", "xl:k22:v34+q:int8_token", "xl:k28:v42+q:int4_kivi"],
+  "qwen": ["none", "q:int4_kivi", "q:int8_token", "q:kv-int4_kivi-int2_kivi", "q:int2_kivi", "xl:k11:v17", "xl:k11:v17+q:int4_kivi", "xl:k16:v16",
+           "xl:k22:v34", "xl:k22:v34+q:int4_kivi", "xl:k22:v34+q:int8_token", "xl:k28:v42+q:int4_kivi"]
+ },
+ "xlcal_pairs": [["xl:k11:v17:cal", "xl:k11:v17"], ["xl:k22:v34:cal+q:int4_kivi", "xl:k22:v34+q:int4_kivi"],
+                 ["xl:k28:v42:cal+q:int4_kivi", "xl:k28:v42+q:int4_kivi"]]
+}

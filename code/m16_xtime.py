@@ -33,6 +33,13 @@ GPU 背景負載用 m10_speed.Busy（m7_busy，duty 0／0.4／0.7／0.9，讀 re
   lrk24_v4          組合：K 低秩 r＝24（＋RoPE）、V 用 INT4 KIVI（＝L5a 的 K24V4，位元組比 0.25）
   droptok_k50_int4  組合：每 head 留 50% token，留下的再 INT4 KIVI；解碼後 scatter
   merge_g2_int4     組合：合併 2 個 token，再 INT4 KIVI；解碼後展開
+  xkv_k<a>v<b>[_int4|_int8]   10/21 補缺口：X2 最好的 xKV 組合（m16_xstack 的 xl:k<a>:v<b>[+q:int4_kivi|+q:int8_token]），定義照 m16_xstack：
+                    每 4 個相鄰層一個窗口、K、V 秩不同（聯合秩＝a×4×H、b×4×H）、token 係數 [L/4, 1, T, r]、基底 [r, 4·H·128] BF16 每個
+                    prompt 一份（算進要搬的位元組）；係數存 BF16、或用 m10_codec_x.enc_half(…, "kivi4"／"int8_token", "k") 量化。
+                    解碼＝係數反量化（m16_xtime_kern.coef_dequant，和 dec_half 逐位元相同）→ BF16 GEMM → 每層 store（K 套 RoPE）。
+                    多量一個 h2d_req（只搬基底）：map 用它把基底的 H2D 當「每次還原一次」，不跟著 block 數線性外推。
+另外：wcost（--wcost；10/21 補缺口）＝xKV 的寫入（壓縮）成本：每題、每窗口 torch.svd_lowrank（K 先逆 RoPE；niter、多取幾個、
+      seed 照 m16_xstack）＋係數量化，載入區形狀、duty 0 與 0.9；只出表（write_cost.csv），不進還原決策圖。
 另外：recompute 探針（同一個 process 載 KVModel，量 forward_span 在幾個位置、各 duty 的時間 → 重算慢化倍數；
       第二階段只有 duty 0.7 的倍數，0.4 是第一階段單一 chunk，0.9 沒有）。
 計時：每個（segment, op）先暖機、定 inner（一次重複至少 --min-rep-s，跨過幾個 m7_busy 週期，取平均＝期望值），
@@ -59,6 +66,8 @@ GPU 背景負載用 m10_speed.Busy（m7_busy，duty 0／0.4／0.7／0.9，讀 re
       S＝只看連線的分層靜態（每（模型, 層）一個）、A＝連線＋GPU 忙（每格最好；忙碌已知的上界）。
   判定（寫死，見 x3_time_howto.md §4）：STOP-0、STOP-1、STOP-2a／2b／2c、GO_N5、T-a～T-d、E-L3。
   輸出：map_cells.csv、map_decision.csv、map_summary.json、flip_cells.json、constants_used.csv、map_report.md、decision_*.svg
+  10/21：--micro-dir 可以給多個目錄（第一個為主；後面的只補前面沒有的 segment，重疊的 segment 當跨 run 漂移的錨點、不覆蓋）；
+        有 wcost_<m>.csv 時另寫 write_cost.csv（寫入路徑成本，不進決策）。合併多個目錄時不准把輸出寫進第一版的目錄。
 
 ## validate（GPU）：map 挑的 4–8 格做端到端還原，和預測比（STOP-3）
   第二階段還原器支援的動作（raw、fp8／int8／int4 的一次拆或逐 block、int2／k4v2 的逐 block）→ 子行程跑 m10_speed.py grid
@@ -104,6 +113,21 @@ DROP_KEEP = (50, 25)
 MAIN_Q = ("fp8", "int8_token", "int4_kivi")
 NEW_Q = {"int2_kivi": "int2_kivi", "k4v2": "kv-int4_kivi-int2_kivi"}
 COMBOS = ("lrk24_v4", "droptok_k50_int4", "merge_g2_int4")
+# 10/21 補缺口：X2 最好的 xKV 組合（tables_x2.md、x2_unmapped.csv）。名稱 → (K 每 head 每層等效秩, V 的, 係數格式)。
+# 定義照 code/m16_xstack.py 的 xl 階段（聯合秩＝秩×XKV_W×H；係數 [L/W, 1, T, 聯合秩]；基底 [聯合秩, W·H·D] BF16、每題一份；
+# 係數量化＝m10_codec_x.enc_half(…, 格式, "k")；位元組＝m16_xstack.predict_bytes，自測逐項核對）。名稱是和寫 X2 的 agent 約好的，不要改。
+XKV_W = 4
+XKV2 = {"xkv_k11v17": (11, 17, "bf16"), "xkv_k22v34": (22, 34, "bf16"), "xkv_k28v42": (28, 42, "bf16"),
+        "xkv_k11v17_int4": (11, 17, "kivi4"), "xkv_k22v34_int4": (22, 34, "kivi4"), "xkv_k28v42_int4": (28, 42, "kivi4"),
+        "xkv_k22v34_int8": (22, 34, "int8_token")}
+XKV2_Q = {"bf16": "", "kivi4": "+q:int4_kivi", "int8_token": "+q:int8_token"}
+XKV2_SPEC = {s: f"xl:k{a}:v{b}{XKV2_Q[f]}" for s, (a, b, f) in XKV2.items()}      # ↔ m16_xstack 的組合寫法（canonical）
+XKV2_PAIRS = sorted({(a, b) for a, b, _ in XKV2.values()})
+COMBO_SEGS = set(COMBOS) | {s for s, (_, _, f) in XKV2.items() if f != "bf16"}      # T-a 的「組合」
+# xKV 的 svd_lowrank 參數：照 m16_xstack 的 XL_NITER、XL_OVERSAMPLE、XL_SEED（自測和 GPU 路徑都和它核對；不一樣就停）
+XL_NITER, XL_OVERSAMPLE, XL_SEED = 4, 16, 20261020
+BG_X2 = ["xkv_k22v34:dq_oneshot", "xkv_k22v34_int4:dq_oneshot"]                     # 10/21 micro 的背景拖慢（另外兩個新段的代表）
+WCOST_STATES = ("idle", "busy3")
 BG_DEFAULT = ["bf16:h2d_region", "int4_kivi:h2d_stack", "int4_kivi:dq_oneshot", "int4_kivi:dq_perblock",
               "fp8:dq_oneshot", "int8_token:dq_oneshot", "k4v2:dq_oneshot", "lr_r24:dq_oneshot", "lr_r40:dq_oneshot",
               "xkv_g4_f8:dq_oneshot", "merge_g2:dq_oneshot", "droptok_k50:dq_oneshot", "lrk24_v4:dq_oneshot"]
@@ -143,6 +167,12 @@ MICRO_FIELDS = ["run_id", "ts", "model", "gpu_state", "duty", "segment", "family
 BG_FIELDS = ["run_id", "ts", "model", "gpu_state", "duty", "segment", "op", "fg_s", "fg_iters", "fg_mean_s", "bg_n",
              "bg_total_s", "bg_rate_base", "bg_rate_fg", "bg_ratio", "contaminated", "run_contaminated"]
 REC_FIELDS = ["run_id", "ts", "model", "gpu_state", "duty", "chunk_idx", "rep", "s", "contaminated", "run_contaminated"]
+WC_FIELDS = ["run_id", "ts", "model", "gpu_state", "duty", "pair", "rk", "rv", "op", "half", "rank_joint", "coef_fmt", "W",
+             "n_windows", "T", "svd_q", "niter", "oversample", "reps", "t_med_s", "t_q1_s", "t_q3_s", "t_min_s", "t_max_s",
+             "contaminated", "run_contaminated", "host_level", "linalg"]
+WCT_FIELDS = ["run_id", "ts", "micro_run_id", "model", "segment", "spec", "duty", "t_svd_k_s", "t_svd_v_s", "t_quant_s",
+              "t_total_s", "t_total_per_block_s", "n_blocks", "bytes_coef", "bytes_basis", "ratio_vs_bf16",
+              "recompute_region_idle_s", "total_over_recompute", "note"]
 CELL_FIELDS = ["run_id", "ts", "micro_run_id", "model", "grid", "tier", "tier_kind", "link_GiBps", "gpu_state", "duty",
                "action", "segment", "dec", "family", "kind", "bytes_ratio", "T_s", "restore_mode", "b", "T_cake_s",
                "T_loadall_s", "flags"]
@@ -232,7 +262,37 @@ def seg_catalog(ranks=LR_RANKS):
                                     feed={"dq_oneshot": "h2d_region"})
     for c in COMBOS:
         cat[c] = dict(family="combo", kind="combo", ops=["h2d_region", "dq_oneshot"], feed={"dq_oneshot": "h2d_region"})
+    for s, (_, _, f) in XKV2.items():                # 10/21：BF16 係數＝單一方法（xlayer）；係數再量化＝組合
+        q = f != "bf16"
+        cat[s] = dict(family="combo" if q else "xlayer", kind="combo" if q else "single",
+                      ops=["h2d_region", "h2d_req", "dq_oneshot", "dq_perblock"],
+                      feed={"dq_oneshot": "h2d_region", "dq_perblock": "h2d_region"})
     return cat
+
+
+def xkv_coef_bytes(Lg, T, r, fmt):
+    """xKV 一半（K 或 V）的 token 係數 [Lg, 1, T, r] 用 fmt 存的位元組＝m16_xstack.half_bytes(fmt, (Lg,1,T,r), "k")
+    （m10_codec_x.enc_half 的實際 tensor 大小；kivi4 的 K 角色：每主成分、每 32 個 token 一組 FP16 scale＋zero）。"""
+    n = Lg * T * r
+    if fmt == "bf16":
+        return 2 * n
+    if fmt == "kivi4":
+        if T % 32 or r % 2:
+            raise ValueError(f"kivi4 係數要 T 是 32 的倍數、r 是偶數：T={T} r={r}")
+        return n // 2 + 2 * 2 * Lg * (T // 32) * r
+    if fmt == "int8_token":
+        return n + Lg * T * 4
+    raise ValueError(fmt)
+
+
+def xkv_bytes(model, rk, rv, fmt, T):
+    """10/21 的 xKV 段：T 個 token 的 (係數位元組, 基底位元組)。和 m16_xstack.predict_bytes 的 k.coef＋v.coef、k.basis＋v.basis 相同（自測核對）。"""
+    L, H, D = SHAPES[model]
+    if L % XKV_W:
+        raise ValueError(f"{model} 的層數 {L} 不能被 {XKV_W} 整除")
+    Lg = L // XKV_W
+    rs = [rh * XKV_W * H for rh in (rk, rv)]
+    return (sum(xkv_coef_bytes(Lg, T, r, fmt) for r in rs), sum(Lg * r * XKV_W * H * D * 2 for r in rs))
 
 
 # ====================================================================== 常數（讀檔、附出處；不抄數字）
@@ -420,15 +480,72 @@ def load_micro(micro_dir, models=MODELS):
             for d in sorted({d for d, _ in per}):
                 ratios = [med(per[(d, i)]) / idle[i] for (dd, i) in per if dd == d and i in idle]
                 if ratios and idle:
-                    rec[d] = dict(mult=med(ratios), n_pos=len(ratios),
+                    rec[d] = dict(mult=med(ratios), n_pos=len(ratios), run_id=rid,
                                   f_idle_probe={i: idle[i] for i in sorted(idle)})
         bg, bgp = {}, os.path.join(micro_dir, f"micro_bg_{m}.csv")
         if os.path.exists(bgp):
             for r in read_csv(bgp):
                 if r["run_id"] == rid and clean(r) and r["bg_ratio"] not in ("", NM):
                     bg[(dkey(r["duty"]), r["segment"], r["op"])] = float(r["bg_ratio"])
+        wc, wcp = {}, os.path.join(micro_dir, f"wcost_{m}.csv")            # 10/21：xKV 的寫入成本（同一個 micro run）
+        if os.path.exists(wcp):
+            for r in read_csv(wcp):
+                if r["run_id"] != rid:
+                    continue
+                k = (dkey(r["duty"]), r["pair"], r["op"])
+                if not clean(r):
+                    dropped.append("wcost|" + "|".join(map(str, k)))
+                    continue
+                wc[k] = dict(med=float(r["t_med_s"]), q1=float(r["t_q1_s"]), q3=float(r["t_q3_s"]), n=int(r["reps"]), run_id=rid)
         M[m] = dict(run_id=rid, meta=meta, n_blocks=int(meta["n_blocks"]), seg=meta["segments"], t=t, rec=rec, bg=bg,
-                    dropped=dropped, smoke=bool(meta.get("smoke")), file=cp)
+                    dropped=dropped, smoke=bool(meta.get("smoke")), file=cp, seg_rid={s: rid for s in meta["segments"]},
+                    drift=[], wcost=wc, dirs=[micro_dir])
+    return M
+
+
+def load_micro_dirs(micro_dirs, models=MODELS):
+    """10/21：多個 micro 目錄合併成一份（第一個為主）。後面的目錄只補「前面沒有的 segment」（時間、背景拖慢、位元組、出處 run_id 都跟著
+    那個 segment）；重疊的 segment（錨點，例如 bf16、int4_kivi）不覆蓋，只拿來算跨 run 漂移（drift：後 ÷ 前）。
+    recompute 探針、wcost 用第一個有的。不同目錄的載入區 block 數不同 → 丟例外（兩份時間不能拼）。"""
+    if isinstance(micro_dirs, str):
+        micro_dirs = [micro_dirs]
+    per = [load_micro(d, models) for d in micro_dirs]
+    M = {}
+    for m in models:
+        parts = [P[m] for P in per if P.get(m)]
+        if not parts:
+            M[m] = None
+            continue
+        base = dict(parts[0], seg=dict(parts[0]["seg"]), t=dict(parts[0]["t"]), bg=dict(parts[0]["bg"]),
+                    dropped=list(parts[0]["dropped"]), seg_rid=dict(parts[0]["seg_rid"]), drift=[],
+                    wcost=dict(parts[0]["wcost"]), dirs=list(parts[0]["dirs"]))
+        rids = [parts[0]["run_id"]]
+        for Mm in parts[1:]:
+            if Mm["n_blocks"] != base["n_blocks"]:
+                raise ValueError(f"{m}：micro 的載入區 block 數不同（{base['n_blocks']} vs {Mm['n_blocks']}，{Mm['dirs']}）→ 不能合併")
+            new = {s for s in Mm["seg"] if s not in base["seg"]}
+            for s in new:
+                base["seg"][s] = Mm["seg"][s]
+                base["seg_rid"][s] = Mm["run_id"]
+            for k, v in Mm["t"].items():
+                if k[1] in new:
+                    base["t"][k] = v
+                elif k in base["t"]:
+                    a, b = base["t"][k]["med"], v["med"]
+                    base["drift"].append(dict(duty=k[0], segment=k[1], op=k[2], t_first_s=a, t_later_s=b, ratio=b / a,
+                                              first_run_id=base["seg_rid"].get(k[1], rids[0]), later_run_id=Mm["run_id"],
+                                              warn=abs(b / a - 1) > TH["anchor_warn"]))
+            base["bg"].update({k: v for k, v in Mm["bg"].items() if k[1] in new})
+            base["dropped"] += [f"{Mm['run_id']}:{x}" for x in Mm["dropped"]]
+            if not base["rec"] and Mm["rec"]:
+                base["rec"] = Mm["rec"]
+            for k, v in Mm["wcost"].items():
+                base["wcost"].setdefault(k, v)
+            base["smoke"] = base["smoke"] or Mm["smoke"]
+            base["dirs"] += Mm["dirs"]
+            rids.append(Mm["run_id"])
+        base["run_id"] = ";".join(rids)
+        M[m] = base
     return M
 
 
@@ -462,8 +579,17 @@ def blk_costs(Mm, act, duty):
     th, td = t.get((duty, act["seg"], seg["feed"][dq])), t.get((duty, act["seg"], dq))
     if th is None or td is None:
         return None
-    return dict(h2d=th["med"] / n, dq_pb=td["med"] / n if act["dec"] == "perblock" else 0.0,
-                dq_os=td["med"] / n if act["dec"] == "oneshot" else 0.0, bytes=bytes_blk)
+    h2d, req = th["med"] / n, ""
+    if seg.get("bytes_req"):
+        # 每次還原搬一次的位元組（xKV 的基底）：micro 的 h2d 是「n 個 block 的係數＋1 份基底」。÷n 再 ×64 會把基底算 64/n 次。
+        # 10/21 的段另外量了只搬基底的 h2d_req → 每 block＝(h2d − h2d_req)÷n ＋ h2d_req÷64（基底一次攤到 64 塊，和 bytes 的算法一致）。
+        tr = t.get((duty, act["seg"], "h2d_req"))
+        if tr is not None and th["med"] > tr["med"]:
+            h2d, req = (th["med"] - tr["med"]) / n + tr["med"] / N_CTX, "split"
+        else:
+            req = "linear"                     # 第一版的 xkv_g4_f*：沒有 h2d_req，基底的 H2D 跟著 block 數線性外推（高估）
+    return dict(h2d=h2d, dq_pb=td["med"] / n if act["dec"] == "perblock" else 0.0,
+                dq_os=td["med"] / n if act["dec"] == "oneshot" else 0.0, bytes=bytes_blk, req=req)
 
 
 def f_mult(Mm, C, model, duty):
@@ -472,7 +598,7 @@ def f_mult(Mm, C, model, duty):
         return 1.0, "定義"
     r = Mm.get("rec", {}).get(duty)
     if r:
-        return r["mult"], f"micro recompute 探針（{Mm['run_id']}，{r['n_pos']} 個位置）"
+        return r["mult"], f"micro recompute 探針（{r.get('run_id', Mm['run_id'])}，{r['n_pos']} 個位置）"
     if abs(duty - 0.7) < 1e-9 and C.get(model, "mult_f_stage2_d0.7"):
         return C.get(model, "mult_f_stage2_d0.7"), "第二階段 summary_int4 compute_only"
     if abs(duty - 0.4) < 1e-9 and C.get("-", "mult_f_phase1_d0.4"):
@@ -592,6 +718,15 @@ def build_cells(M, C, s1, i4, models=MODELS, grid=False):
                         flags.append("慢層＋忙：第二階段 09 §5 的模擬在這種格子偏快 23–24%")
                     if a["dec"] == "cpu":
                         flags.append("無損：讀／解／H2D 完全重疊（樂觀）")
+                    if seg.get("bytes_req") and a["dec"] not in ("none", "cpu"):
+                        cc = blk_costs(Mm, a, d)
+                        if cc and cc["req"] == "linear":
+                            flags.append(f"基底的 H2D 跟著 block 數線性外推（{N_CTX} 塊時算 {N_CTX // Mm['n_blocks']} 份，高估；"
+                                         "第一版的段沒有量 h2d_req）")
+                        elif cc and cc["req"] == "split":
+                            flags.append("基底的 H2D 用 h2d_req 單獨算（每次還原一份）")
+                    if Mm.get("seg_rid", {}).get(a["seg"], Mm["run_id"]) != Mm.get("seg_rid", {}).get("bf16", Mm["run_id"]):
+                        flags.append(f"這個段的時間來自另一個 micro run（{Mm['seg_rid'][a['seg']]}；跨 run 漂移見報告）")
                     if msrc not in ("定義", NM) and not msrc.startswith("micro"):
                         flags.append(f"重算慢化取自 {msrc}")
                     rows.append(dict(model=m, grid="grid" if grid else "named", tier=tier["name"], tier_kind=tier["kind"],
@@ -600,7 +735,7 @@ def build_cells(M, C, s1, i4, models=MODELS, grid=False):
                                      bytes_ratio=round(br, 5), T_s=r["T"] if r else None,
                                      restore_mode=r["mode"] if r else NM, b=r["b"] if r else "",
                                      T_cake_s=r["T_cake"] if r else "", T_loadall_s=r["T_la"] if r else "",
-                                     flags="；".join(flags), micro_run_id=Mm["run_id"]))
+                                     flags="；".join(flags), micro_run_id=Mm.get("seg_rid", {}).get(a["seg"], Mm["run_id"])))
     return rows
 
 
@@ -748,8 +883,8 @@ def stacking_verdicts(dec, M):
         return dict(verdict=NM)
     ta_cells, wins = [], []
     for c in cs:
-        comb = {a: t for a, t in c["all"].items() if a.split("@")[0] in COMBOS}
-        sing = {a: t for a, t in c["all"].items() if a.split("@")[0] not in COMBOS}
+        comb = {a: t for a, t in c["all"].items() if a.split("@")[0] in COMBO_SEGS}
+        sing = {a: t for a, t in c["all"].items() if a.split("@")[0] not in COMBO_SEGS}
         if not comb or not sing:
             continue
         bc, bs = min(comb.values()), min(sing.values())
@@ -873,6 +1008,39 @@ def anchors(M, C, paths=None):
     return out
 
 
+def write_cost_table(M, C, models=MODELS):
+    """10/21：xKV 的寫入（壓縮）成本表（不進還原決策）。每（模型, 10/21 的 xKV 段, duty）：K、V 兩半的 svd_lowrank（含逆 RoPE、組 Z、取 A／B）
+    ＋係數量化（bf16＝轉型；kivi4／int8_token＝m10_codec_x.enc_half）。參考尺度：同一個載入區（最後 n 個 block）閒時重算的總時間
+    （bw.json 的 f(i) 加總）——只是比例尺，不是判定。缺任何一項 → NOT_MEASURED（不是 0）。"""
+    rows = []
+    for m in models:
+        Mm = M.get(m)
+        if not Mm or not Mm.get("wcost"):
+            continue
+        n = Mm["n_blocks"]
+        f_idle = C.get(m, "f_idle_s")
+        rec = sum(f_idle[N_CTX - n:]) if f_idle else None
+        cb = C.get(m, "chunk_bytes") or SHAPES[m][0] * 2 * SHAPES[m][1] * CHUNK * SHAPES[m][2] * 2
+        duties = sorted({k[0] for k in Mm["wcost"]})
+        for seg, (rk, rv, cf) in XKV2.items():
+            pair = f"k{rk}v{rv}"
+            coef, basis = xkv_bytes(m, rk, rv, cf, n * CHUNK)
+            for d in duties:
+                parts = [Mm["wcost"].get((d, pair, op)) for op in ("svd_k", "svd_v", f"q_{cf}")]
+                ok = all(parts)
+                tot = sum(p["med"] for p in parts) if ok else None
+                rids = sorted({p["run_id"] for p in parts if p})
+                rows.append(dict(model=m, segment=seg, spec=XKV2_SPEC[seg], duty=d,
+                                 t_svd_k_s=parts[0]["med"] if parts[0] else NM, t_svd_v_s=parts[1]["med"] if parts[1] else NM,
+                                 t_quant_s=parts[2]["med"] if parts[2] else NM, t_total_s=tot if ok else NM,
+                                 t_total_per_block_s=tot / n if ok else NM, n_blocks=n, bytes_coef=coef, bytes_basis=basis,
+                                 ratio_vs_bf16=round((coef + basis) / (n * cb), 6), recompute_region_idle_s=rec if rec else NM,
+                                 total_over_recompute=(tot / rec) if ok and rec else NM, micro_run_id=";".join(rids),
+                                 note="" if ok else "缺 " + "、".join(op for op, p in zip(("svd_k", "svd_v", f"q_{cf}"), parts)
+                                                                       if not p) + "（沒量或被污染）"))
+    return rows
+
+
 def select_flips(decs, verdicts, max_cells=8):
     """validate 的格子：GO_N5 的模式（L、Q；X 要有 X2 且 T-d 成立）裡，(1) A≠S 且好 ≥5%、(2) A≠F 且好 ≥5%、(3) 前兩名差 <10%。
     vllm_cpu 不選（沒有還原路徑可以驗）。每格要量的動作＝A、S、F、D（去重）。"""
@@ -984,7 +1152,8 @@ def _f(x, k=3, pct=False):
 def write_report(out, summ, decs, C):
     md = [f"# X3：壓縮組合的還原時間 × 連線速度 × GPU 忙（map，run {summ['run_id']}）", "",
           f"> 產生時間 {summ['ts']}；micro：{', '.join(f'{m} {r}' for m, r in summ['micro_run_ids'].items())}。"
-          " 全部是〔模擬〕：零件是 micro 的實測，還原規則照第二階段的還原器（m10_sweep_sim）。", ""]
+          " 全部是〔模擬〕：零件是 micro 的實測，還原規則照第二階段的還原器（m10_sweep_sim）。",
+          f"> micro 目錄：{summ.get('micro_dirs')}；X2 品質可行集：{summ['x2']}。", ""]
     if summ.get("smoke"):
         md += ["**冒煙資料：數字不可用，只驗管線。**", ""]
     md += ["## 判定（門檻在看數字前寫死，x3_time_howto.md §4）", ""]
@@ -1001,6 +1170,8 @@ def write_report(out, summ, decs, C):
                   + ("（只看時間：X2 沒有，T-a～T-d 不下結論）" if not v["X"]["x2"] else ""))
     else:
         md.append(f"- T-a～T-d：{st.get('verdict', NM)}")
+    if v["X"].get("x2_feasible_unmeasured"):
+        md.append(f"- ⚠ 模式 X 不完整：X2 判可行、但沒有 micro 時間的段 {v['X']['x2_feasible_unmeasured']}")
     for k, e in summ["el3"].items():
         md.append(f"- E-L3 {k}：{e['verdict']}" + (f"（重建忙/閒 {e['slow_lr']:.2f}×、INT4 {e['slow_int4']:.2f}×、"
                                                    f"忙時重建÷H2D {e['busy_recon_over_h2d']:.2f}）" if "slow_lr" in e else ""))
@@ -1034,6 +1205,27 @@ def write_report(out, summ, decs, C):
         md.append(f"| {x['model']} | {x['stage2']}（{x['run_id']}） | {x['config']} | {x['action']} | {x['duty']:g} | "
                   f"{x['meas_s'] * 1e3:.2f} | {x['pred_s'] * 1e3:.2f} | {x['rel_err']:+.1%}{' ⚠' if x['warn'] else ''} | "
                   f"{'是' if x['usable'] else '**否**'} |")
+    if summ.get("drift"):
+        md += ["", "## micro 跨 run 漂移（10/21：多個 micro 目錄合併；錨點＝重疊的 segment，用第一個目錄的值，這裡只看差多少）", "",
+               f"差 >{TH['anchor_warn']:.0%} 打 ⚠（不停；那個 duty 下兩次 run 拼起來的比較要打折看）。", "",
+               "| 模型 | duty | segment | op | 第一個 (ms) | 後來 (ms) | 後÷前 | run |", "|:--|--:|:--|:--|--:|--:|--:|:--|"]
+        for x in summ["drift"]:
+            md.append(f"| {x['model']} | {x['duty']:g} | {x['segment']} | {x['op']} | {x['t_first_s'] * 1e3:.3f} | "
+                      f"{x['t_later_s'] * 1e3:.3f} | {x['ratio']:.3f}{' ⚠' if x['warn'] else ''} | "
+                      f"{x['first_run_id']} → {x['later_run_id']} |")
+    if summ.get("write_cost"):
+        md += ["", "## 寫入路徑成本：xKV 壓縮（10/21；不進還原決策圖）", "",
+               "每題一次：K、V 兩半的 torch.svd_lowrank（每 4 層一個窗口、K 先逆 RoPE；niter、多取幾個、seed 照 m16_xstack）＋係數量化。"
+               "載入區形狀（最後 n 個 block）。「÷ 重算」＝除以同一段閒時重算的總時間（bw.json，只是比例尺）。", "",
+               "| 模型 | 段 | 組合 | duty | SVD K (ms) | SVD V (ms) | 量化 (ms) | 合計 (ms) | 每 block (ms) | 位元組比 | ÷ 重算 |",
+               "|:--|:--|:--|--:|--:|--:|--:|--:|--:|--:|--:|"]
+        for x in summ["write_cost"]:
+            def ms(v):
+                return f"{v * 1e3:.1f}" if isinstance(v, (int, float)) else str(v)
+            md.append(f"| {x['model']} | {x['segment']} | {x['spec']} | {x['duty']:g} | {ms(x['t_svd_k_s'])} | {ms(x['t_svd_v_s'])} | "
+                      f"{ms(x['t_quant_s'])} | {ms(x['t_total_s'])} | {ms(x['t_total_per_block_s'])} | {x['ratio_vs_bf16']:.4f} | "
+                      + (f"{x['total_over_recompute']:.2f}" if isinstance(x["total_over_recompute"], float) else str(x["total_over_recompute"]))
+                      + " |")
     md += ["", "## 常數（出處見 constants_used.csv）", "", "| 模型 | 常數 | 值 | 單位 | 檔 | run_id |", "|:--|:--|:--|:--|:--|:--|"]
     for r in C.rows:
         val = f"{r['value']:.6g}" if isinstance(r["value"], float) else r["value"]
@@ -1051,7 +1243,7 @@ def run_map(micro_dir, out, paths=None, models=MODELS, C=None, M=None, s1=None, 
     if C is None:
         C = load_constants(models, p)
     if M is None:
-        M = load_micro(micro_dir, models)
+        M = load_micro_dirs(micro_dir, models)
     if s1 is None and p.get("s1"):                     # paths 給空字串＝不讀（自測用）
         s1 = load_s1(p["s1"], models)
     if x2 is None and p.get("x2"):
@@ -1074,6 +1266,14 @@ def run_map(micro_dir, out, paths=None, models=MODELS, C=None, M=None, s1=None, 
             notes.append(f"{m} duty {d:g}：重算慢化 {('%.3f' % mult) if mult else NM}（{src}）")
     if smoke is None:
         smoke = any(Mm and Mm["smoke"] for Mm in M.values())
+    drift = [dict(model=m, **x) for m in models if M.get(m) for x in M[m].get("drift", [])]
+    if any(x["warn"] for x in drift):
+        notes.append(f"跨 run 漂移：{sum(x['warn'] for x in drift)} 個錨點的兩次 micro 差 >{TH['anchor_warn']:.0%}（見報告的漂移表）")
+    for m in models:
+        if M.get(m) and len(M[m].get("dirs", [])) > 1:
+            notes.append(f"{m}：micro 由 {len(M[m]['dirs'])} 個目錄合併（{'、'.join(rel(d) for d in M[m]['dirs'])}；第一個為主，"
+                         f"後面只補沒有的 segment）")
+    wct = write_cost_table(M, C, models)
     rows = build_cells(M, C, s1, i4, models)
     grows = build_cells(M, C, s1, i4, models, grid=True)
     for r in rows + grows:
@@ -1095,6 +1295,12 @@ def run_map(micro_dir, out, paths=None, models=MODELS, C=None, M=None, s1=None, 
         verd["L"]["stop2"] = dict(code="STOP-1", verdict="STOP-1 成立 → 模式 L NO-GO（D／F／S／A 的數字照報）",
                                   stop2_would_be=verd["L"]["stop2"])
     verd["X"]["x2"] = bool(x2)
+    if x2:                                     # 10/21：X2 判可行、但 micro 沒有時間的段 → 模式 X 的判定不完整（照實寫出來，不默默略過）
+        miss = {m: sorted(x2["feasible"].get(m, set()) - set(M[m]["seg"])) for m in models if M.get(m)}
+        miss = {m: v for m, v in miss.items() if v}
+        verd["X"]["x2_feasible_unmeasured"] = miss
+        if miss:
+            notes.append(f"⚠ X2 判可行、但 micro 沒有時間的段：{miss} → 模式 X 的判定少了它們（不完整）")
     verd["X"]["stacking"] = stacking_verdicts(decs["X"], M)
     if not x2:
         verd["X"]["stop2"] = dict(verd["X"]["stop2"], code="TIME_ONLY",
@@ -1135,6 +1341,8 @@ def run_map(micro_dir, out, paths=None, models=MODELS, C=None, M=None, s1=None, 
                               micro_run_id=M[c["model"]]["run_id"],
                               flags="近乎平手" if c["margin2"] is not None and c["margin2"] < TH["near_tie"] else ""))
     write_csv(os.path.join(out, "map_decision.csv"), drows, DEC_FIELDS)
+    if wct:
+        write_csv(os.path.join(out, "write_cost.csv"), [dict(r, run_id=rid, ts=ts) for r in wct], WCT_FIELDS)
     write_csv(os.path.join(out, "constants_used.csv"),
               [dict(r, run_id_map=rid, ts=ts) for r in C.rows],
               ["run_id_map", "ts", "model", "const", "value", "unit", "file", "run_id", "how"])
@@ -1144,7 +1352,8 @@ def run_map(micro_dir, out, paths=None, models=MODELS, C=None, M=None, s1=None, 
                 i4=dict(k_busy2=i4["k_busy2"], run_id=i4["run_id"]) if i4 else NM,
                 thresholds=TH, quality_Q=dict(sets=QUALITY_Q, src=QUALITY_Q_SRC),
                 aggregates=aggs, verdicts=verd, el3=e3, anchors=anc, worth_validate=worth, validate_reason=reason,
-                notes=notes)
+                notes=notes, micro_dirs={m: [rel(d) for d in M[m].get("dirs", [])] for m in models if M.get(m)},
+                drift=drift, write_cost=wct)
     json.dump(summ, open(os.path.join(out, "map_summary.json"), "w"), indent=1, ensure_ascii=False, default=str)
     json.dump(dict(run_id=rid, ts=ts, worth_validate=worth, reason=reason, modes=vmodes, cells=flips,
                    micro_run_ids=summ["micro_run_ids"], smoke=smoke),
@@ -1153,15 +1362,33 @@ def run_map(micro_dir, out, paths=None, models=MODELS, C=None, M=None, s1=None, 
     return summ
 
 
+def guard_map_out(out, micro_dirs):
+    """10/21：合併多個 micro 目錄（補缺口）的 map 不准寫進第一版的目錄（會蓋掉第一版的 map_*）。回傳錯誤訊息或 None。"""
+    if len(micro_dirs) > 1 and os.path.realpath(out) == os.path.realpath(RES):
+        return f"合併 {len(micro_dirs)} 個 micro 目錄的 map 不准寫進第一版的目錄 {rel(RES)}（用 --out {rel(os.path.join(RES, 'v2'))}）"
+    return None
+
+
+def guard_micro_out(out, segments):
+    """10/21：只量部分 segment 的 micro 不准寫進第一版的目錄（會蓋掉全量的 micro_<m>.csv）。回傳錯誤訊息或 None。"""
+    if segments and set(segments) | {"bf16"} != set(seg_catalog()) and os.path.realpath(out) == os.path.realpath(RES):
+        return f"只量部分 segment（{len(set(segments))} 個）的 micro 不准寫進第一版的目錄 {rel(RES)}（會蓋掉全量的 micro_<m>.csv）"
+    return None
+
+
 def cmd_map(a):
+    dirs = a.micro_dir if isinstance(a.micro_dir, list) else [a.micro_dir]
+    err = guard_map_out(a.out, dirs)
+    if err:
+        raise SystemExit(err)
     paths = {}
-    if a.s1:
-        paths["s1"] = a.s1
-    if a.x2:
-        paths["x2"] = a.x2
-    if a.i4:
-        paths["i4"] = a.i4
-    s = run_map(a.micro_dir, a.out, paths)
+    for k in ("s1", "x2", "i4"):
+        v = getattr(a, k)
+        if v:
+            if not os.path.exists(v):                # 明講要讀的檔不在 → 停（規則 7：查不到不等於沒有；不默默當成「沒有 X2」）
+                raise SystemExit(f"--{k} {v} 不存在")
+            paths[k] = v
+    s = run_map(dirs, a.out, paths)
     print(json.dumps(dict(worth_validate=s["worth_validate"], reason=s["validate_reason"],
                           Q_stop0=s["verdicts"]["Q"]["stop0"]["holds"],
                           stop2={md: s["verdicts"][md]["stop2"].get("code") for md in ("L", "Q", "X")}),
@@ -1188,7 +1415,7 @@ def check_config(model):
 class GSeg:
     def __init__(self, name, cat):
         self.name, self.family, self.kind, self.feed = name, cat["family"], cat["kind"], cat["feed"]
-        self.ops, self.h2d_one, self.dq_one, self.dq_all = {}, {}, None, None
+        self.ops, self.h2d_one, self.dq_one, self.dq_all, self.extra_ops = {}, {}, None, None, {}
         self.bytes_blk = self.bytes_req = self.bytes_resident = 0
         self.n_copies, self.impl, self.fmt, self.kernel, self.check = {}, {}, "", "", "not_run"
 
@@ -1258,6 +1485,7 @@ def build_segments(ctx, names, kern_of, fp8_fmt):
             sg.ops["dq_perblock"] = lambda: [sg.dq_one(j) for j in range(n)]
         if sg.dq_all is not None:
             sg.ops["dq_oneshot"] = sg.dq_all
+        sg.ops.update(sg.extra_ops)                       # 不是逐 block 的 op（10/21：xKV 的 h2d_req＝只搬基底）
         assert set(sg.ops) == set(cat[sg.name]["ops"]), (sg.name, sorted(sg.ops), cat[sg.name]["ops"])
 
     def region_parts(host_parts, dev):
@@ -1442,6 +1670,117 @@ def build_segments(ctx, names, kern_of, fp8_fmt):
                     msgs.append(f"逐 block 和一次整段差 {e:.3g}")
                 del one, refV
             del refK
+            sg.check = "ok" if not msgs else "FAIL：" + "；".join(msgs)
+        elif name in XKV2:
+            # 10/21 補缺口：照 m16_xstack 的 xl 階段。窗口 w＝第 w·W..(w+1)·W−1 層（相鄰層；y5[:, :, g] 寫到第 g＋w·W 層＝kv[g::W] 的第 w 個）。
+            # 係數 [Lg, 1, T, r]（r＝秩×W×H），K、V 秩不同；BF16 存，或 m10_codec_x.enc_half(…, cf, "k") 量化（kivi4：每主成分、沿 token
+            # 每 32 個一組，不跨 512-token block → 逐 block 編碼＝整段編碼，下面驗）。基底 [r, W·H·D] BF16、每個 prompt 一份。
+            rk_, rv_, cf = XKV2[name]
+            W = XKV_W
+            if L % W:
+                raise ValueError(f"{ctx.model} 的層數 {L} 不能被 {W} 整除")
+            Lg, GHD = L // W, W * H * D
+            rs = (rk_ * W * H, rv_ * W * H)
+            coefs = {kv_: [torch.randn((Lg, 1, CHUNK, rs[kv_]), generator=ctx.g, device=ctx.dev) for _ in range(n)]
+                     for kv_ in (0, 1)}
+
+            def enc(c32, cf=cf):
+                return {"x": c32.to(torch.bfloat16)} if cf == "bf16" else X.enc_half(c32.contiguous(), cf, "k")
+            hp = {kv_: [{k: t.cpu().pin_memory() for k, t in enc(c).items()} for c in coefs[kv_]] for kv_ in (0, 1)}
+            stg = {kv_: region_parts(hp[kv_], ctx.dev) for kv_ in (0, 1)}
+            h1 = {kv_: h2d_region_parts(stg[kv_], hp[kv_]) for kv_ in (0, 1)}
+            hb = {kv_: ctx.pin(ctx.randn(Lg, rs[kv_], GHD, scale=1.0 / math.sqrt(rs[kv_]))) for kv_ in (0, 1)}
+            sb = {kv_: torch.empty((Lg, rs[kv_], GHD), dtype=torch.bfloat16, device=ctx.dev) for kv_ in (0, 1)}
+            cbuf = {kv_: (stg[kv_]["x"][:, 0] if cf == "bf16" else
+                          torch.empty((Lg, T, rs[kv_]), dtype=torch.bfloat16, device=ctx.dev)) for kv_ in (0, 1)}
+            m0 = torch.zeros((L, H, D), dtype=torch.bfloat16, device=ctx.dev)
+
+            def h2d(j, h1=h1, hb=hb, sb=sb):
+                for kv_ in (0, 1):
+                    h1[kv_](j)
+                    if j == 0:                                   # 基底每個 prompt 一份：每次還原搬一次
+                        sb[kv_].copy_(hb[kv_], non_blocking=True)
+
+            def h2d_req(hb=hb, sb=sb):
+                for kv_ in (0, 1):
+                    sb[kv_].copy_(hb[kv_], non_blocking=True)
+
+            def coef(kv_, j=None, stg=stg, cbuf=cbuf, cf=cf):
+                """BF16 係數 [Lg, T 或 512, r]（量化的先反量化進 cbuf；j＝None 是整段）。"""
+                if cf == "bf16":
+                    return cbuf[kv_] if j is None else cbuf[kv_][:, j * CHUNK:(j + 1) * CHUNK]
+                p = stg[kv_] if j is None else {k: v.narrow(2, j * (v.shape[2] // n), v.shape[2] // n) for k, v in stg[kv_].items()}
+                out = cbuf[kv_] if j is None else cbuf[kv_][:, j * CHUNK:(j + 1) * CHUNK]
+                return KK.coef_dequant(p, cf, out)
+
+            def recon(kv_, cb, j=None, sb=sb, m0=m0, W=W, Lg=Lg):
+                Ts = cb.shape[1]
+                a0 = lo if j is None else lo + j * CHUNK
+                cos = ctx.cos if j is None else ctx.cos[j * CHUNK:(j + 1) * CHUNK]
+                sin = ctx.sin if j is None else ctx.sin[j * CHUNK:(j + 1) * CHUNK]
+                y5 = torch.matmul(cb, sb[kv_]).view(Lg, Ts, W, H, D)
+                for g in range(W):
+                    KK.store(y5[:, :, g].permute(0, 2, 1, 3), m0[g::W], cos, sin, ctx.kv[g::W, kv_, :, a0:a0 + Ts], kv_ == 0,
+                             ctx.store_impl)
+
+            def dq_all(coef=coef, recon=recon):                 # 預設參數綁住這一輪的 coef／recon（迴圈下一個 xKV 段會重新綁定名字）
+                for kv_ in (0, 1):
+                    recon(kv_, coef(kv_))
+
+            def dq_one(j, coef=coef, recon=recon):
+                for kv_ in (0, 1):
+                    recon(kv_, coef(kv_, j), j)
+            sg.h2d_one["h2d_region"], sg.dq_all, sg.dq_one = h2d, dq_all, dq_one
+            sg.extra_ops["h2d_req"] = h2d_req
+            sg.bytes_blk = sum(t.nbytes for kv_ in (0, 1) for t in hp[kv_][0].values())
+            sg.bytes_req = sum(hb[kv_].nbytes for kv_ in (0, 1))
+            want = xkv_bytes(ctx.model, rk_, rv_, cf, CHUNK)              # 規則 6：實際 tensor 大小 vs m16_xstack 的位元組帳
+            if (sg.bytes_blk, sg.bytes_req) != want:
+                raise ValueError(f"{name}：實際位元組 {(sg.bytes_blk, sg.bytes_req)} ≠ 位元組帳 {want}")
+            sg.n_copies.update(h2d_region=n * (len(hp[0][0]) + len(hp[1][0])) + 2, h2d_req=2)
+            sg.kernel = "m16_xtime_kern.coef_dequant" if cf != "bf16" else ""
+            sg.fmt = (f"xKV（{XKV2_SPEC[name]}）：每 {W} 層聯合秩 K {rs[0]}、V {rs[1]}；係數 {cf}；"
+                      "基底 BF16 每個 prompt 一份（算進搬的位元組）")
+            sg.impl.update(h2d_region="逐 block 搬係數（含 scale／zero）＋每次還原搬一次基底", h2d_req="只搬基底（K、V 各一份）",
+                           dq_oneshot=("" if cf == "bf16" else "coef_dequant（Triton）→ ") +
+                           f"BF16 torch.matmul＋每層 store（{ctx.store_impl}）一次整段",
+                           dq_perblock=("" if cf == "bf16" else "coef_dequant → ") + f"每 block 一次 matmul＋store（{ctx.store_impl}）")
+            finish(sg)
+            sg.ops["h2d_region"]()
+            ctx.sync()
+            msgs = []
+            if cf != "bf16":
+                for kv_ in (0, 1):
+                    full = X.enc_half(torch.cat(coefs[kv_], dim=2).contiguous(), cf, "k")
+                    bad = [k for k in full if not torch.equal(full[k], stg[kv_][k])]
+                    if bad:
+                        msgs.append(f"{'KV'[kv_]}：逐 block 編碼接起來 ≠ 整段編碼（{bad}）")
+                    ref = X.dec_half(stg[kv_], cf, "k", (Lg, 1, T, rs[kv_])).to(torch.bfloat16)[:, 0]
+                    if not torch.equal(coef(kv_), ref):
+                        msgs.append(f"{'KV'[kv_]}：coef_dequant 和 m10_codec_x.dec_half 不同")
+                    del full, ref
+            del coefs
+            ctx.region().zero_()
+            sg.ops["dq_oneshot"]()
+            ctx.sync()
+            for kv_, rope in ((0, True), (1, False)):
+                c32 = stg[kv_]["x"][:, 0].float() if cf == "bf16" else X.dec_half(stg[kv_], cf, "k", (Lg, 1, T, rs[kv_]))[:, 0]
+                y5 = torch.matmul(c32, sb[kv_].float()).view(Lg, T, W, H, D)
+                for g in (0, W - 1):
+                    ref = KK.store_torch(y5[:, :, g].permute(0, 2, 1, 3), m0[g::W], ctx.cos, ctx.sin,
+                                         torch.empty((Lg, H, T, D), dtype=torch.bfloat16, device=ctx.dev), rope)
+                    e = _relerr(torch, ctx.kv[g::W, kv_, :, lo:ctx.hi], ref)
+                    if e > 1e-2:
+                        msgs.append(f"{'KV'[kv_]} 第 {g} 組和 FP32 參考差 {e:.3g}")
+                del y5, c32
+            one = ctx.region().clone()
+            ctx.region().zero_()
+            sg.ops["dq_perblock"]()
+            ctx.sync()
+            e = _relerr(torch, ctx.region(), one)
+            if e > 1e-2:
+                msgs.append(f"逐 block 和一次整段差 {e:.3g}")
+            del one
             sg.check = "ok" if not msgs else "FAIL：" + "；".join(msgs)
         elif name.startswith("xkv_"):
             G, f = [int(x) for x in re.match(r"xkv_g(\d+)_f(\d+)", name).groups()]
@@ -1651,9 +1990,125 @@ def _time_ops(torch, ops, reps, min_rep_s, rng):
     return {k: (v, inner[k]) for k, v in res.items()}
 
 
+def _time_slow(torch, ops, reps, rng, warm=True):
+    """慢的 op（一次幾百毫秒到幾十秒，例如 svd_lowrank）：warm＝True 時照清單順序暖機一次（svd 在量化前；量化吃 svd 的輸出；
+    第一次呼叫有 rocSOLVER／MAGMA 的初始化），再 reps 次、每次重複把順序打散，每次跑一遍（inner＝1）。
+    同一個 process 第二個 duty 起不再暖機（函式庫已初始化、狀態已有，省 1/(reps+1) 的時間）。回傳 {(key, op): 每次的秒數 list}。"""
+    sync = torch.cuda.synchronize
+    for _, _, fn in (ops if warm else []):
+        fn()
+        sync()
+    res = {(k, o): [] for k, o, _ in ops}
+    for _ in range(reps):
+        order = list(ops)
+        rng.shuffle(order)
+        for k, o, fn in order:
+            sync()
+            t0 = time.perf_counter()
+            fn()
+            sync()
+            res[(k, o)].append(time.perf_counter() - t0)
+    return res
+
+
+def xstack_consts_check():
+    """GPU 路徑：svd_lowrank 的參數和 m16_xstack 核對（不一樣 → 丟例外）。m16_xstack 由別的 agent 維護，import 失敗照實記 NOT_CHECKED。"""
+    mine = dict(XL_NITER=XL_NITER, XL_OVERSAMPLE=XL_OVERSAMPLE, XL_SEED=XL_SEED, W=XKV_W)
+    try:
+        import m16_xstack as XS
+        got = dict(XL_NITER=XS.XL_NITER, XL_OVERSAMPLE=XS.XL_OVERSAMPLE, XL_SEED=XS.XL_SEED,
+                   W=XS.parse_spec("xl:k8:v8")[0]["w"])
+    except Exception as ex:                                   # noqa: BLE001（照實記，不當成「一致」）
+        return dict(mine, status=f"NOT_CHECKED（import m16_xstack 失敗：{ex!r}）")
+    if got != mine:
+        raise ValueError(f"svd_lowrank 參數和 m16_xstack 不同：本檔 {mine}，m16_xstack {got}")
+    return dict(mine, status="ok（和 m16_xstack 相同）")
+
+
+def build_wcost(ctx, pairs, fmts):
+    """10/21：xKV 寫入（壓縮）路徑的 op。照 m16_xstack.t_xl_half 的編碼那一半（解碼那一半不算寫入成本）：每個窗口 w（第 w·W..(w+1)·W−1 層），
+    K 先逆 RoPE（和 m16_xstack.t_rope_inv 同一個式子，用 ctx 的 FP32 cos/sin）→ [T, H·D] → 沿最後一維接 W 層成 Z [T, W·H·D]（FP32）→
+    torch.manual_seed(XL_SEED＋w) → torch.svd_lowrank(Z, q＝min(r＋XL_OVERSAMPLE, min(Z.shape)), niter＝XL_NITER) → A＝U[:, :r]·S[:r]、
+    B＝V[:, :r]ᵀ 轉 BF16；A 疊成 [Lg, 1, T, r]。量化＝bf16 轉型，或 m10_codec_x.enc_half(A, 格式, "k")（＝m16_xstack.t_halves_enc）。
+    pairs＝[(rk, rv)]；fmts＝{(rk, rv): {係數格式}}。來源 KV 是亂數（BF16，K 有離群 channel，同 micro 的 xreg）。
+    回傳 (ops＝[(key, op, fn)], info＝{(key, op): 欄位}, state)。"""
+    torch = ctx.torch
+    import m10_codec_x as X
+    L, H, D, T = ctx.L, ctx.H, ctx.D, ctx.T
+    W = XKV_W
+    if L % W:
+        raise ValueError(f"{ctx.model} 的層數 {L} 不能被 {W} 整除")
+    Lg = L // W
+    src = ctx.randn(L, 2, H, T, D, scale=2.0)
+    src[:, 0, :, :, 5] += 40
+    h = D // 2
+    c, s = ctx.cos[:, :h], ctx.sin[:, :h]                     # [T, D/2]（前後半相同，同 m16_xstack 取 cos[..., :h]）
+    state, ops, info = {}, [], {}
+
+    def rope_inv(y):                                          # = m16_xstack.t_rope_inv（y：[H, T, D] BF16 → FP32）
+        det = c * c + s * s
+        yf = y.float()
+        y1, y2 = yf[..., :h], yf[..., h:]
+        return torch.cat(((y1 * c + y2 * s) / det, (y2 * c - y1 * s) / det), dim=-1)
+
+    def enc_half_of(hi, rh):
+        r = rh * W * H
+        As, Bs = [], []
+        for w in range(Lg):
+            Z = torch.cat([(rope_inv(src[l, 0]) if hi == 0 else src[l, 1].float()).permute(1, 0, 2).reshape(T, H * D)
+                           for l in range(w * W, (w + 1) * W)], dim=1)
+            torch.manual_seed(XL_SEED + w)
+            U, S, V = torch.svd_lowrank(Z, q=min(r + XL_OVERSAMPLE, min(Z.shape)), niter=XL_NITER)
+            As.append(U[:, :r] * S[:r])
+            Bs.append(V[:, :r].T.contiguous().to(torch.bfloat16))
+            del Z, U, S, V
+        state[(hi, rh)] = (torch.stack(As).unsqueeze(1), Bs)
+
+    def quant(rk, rv, f):
+        for hi, rh in ((0, rk), (1, rv)):
+            A4 = state[(hi, rh)][0]
+            state[("q", hi, rh, f)] = A4.to(torch.bfloat16) if f == "bf16" else X.enc_half(A4.contiguous(), f, "k")
+
+    for rk, rv in pairs:
+        key = f"k{rk}v{rv}"
+        for hi, rh, op in ((0, rk, "svd_k"), (1, rv, "svd_v")):
+            r = rh * W * H
+            ops.append((key, op, lambda hi=hi, rh=rh: enc_half_of(hi, rh)))
+            info[(key, op)] = dict(pair=key, rk=rk, rv=rv, half="kv"[hi], rank_joint=r, coef_fmt="", W=W, n_windows=Lg, T=T,
+                                   svd_q=min(r + XL_OVERSAMPLE, T, W * H * D), niter=XL_NITER, oversample=XL_OVERSAMPLE)
+        for f in sorted(fmts[(rk, rv)]):
+            ops.append((key, f"q_{f}", lambda rk=rk, rv=rv, f=f: quant(rk, rv, f)))
+            info[(key, f"q_{f}")] = dict(pair=key, rk=rk, rv=rv, half="kv", rank_joint=f"{rk * W * H}/{rv * W * H}", coef_fmt=f,
+                                         W=W, n_windows=Lg, T=T, svd_q="", niter="", oversample="")
+    return ops, info, state
+
+
+def wcost_check(ctx, state, pairs, fmts):
+    """寫入路徑的輸出核對（規則 6）：A 的形狀、B 的形狀、量化後的位元組＝位元組帳（xkv_coef_bytes）、值有限。回傳訊息 list（空＝過）。"""
+    torch = ctx.torch
+    W, H, D, T = XKV_W, ctx.H, ctx.D, ctx.T
+    Lg = ctx.L // W
+    msgs = []
+    for rk, rv in pairs:
+        for hi, rh in ((0, rk), (1, rv)):
+            r = rh * W * H
+            A4, Bs = state[(hi, rh)]
+            if tuple(A4.shape) != (Lg, 1, T, r) or len(Bs) != Lg or tuple(Bs[0].shape) != (r, W * H * D):
+                msgs.append(f"k{rk}v{rv} {'KV'[hi]}：形狀 A {tuple(A4.shape)} B {len(Bs)}×{tuple(Bs[0].shape)}")
+            if not bool(torch.isfinite(A4).all()):
+                msgs.append(f"k{rk}v{rv} {'KV'[hi]}：A 有非有限值")
+            for f in fmts[(rk, rv)]:
+                q = state[("q", hi, rh, f)]
+                nb = q.nbytes if f == "bf16" else sum(t.nbytes for t in q.values())
+                if nb != xkv_coef_bytes(Lg, T, r, f):
+                    msgs.append(f"k{rk}v{rv} {'KV'[hi]} {f}：位元組 {nb} ≠ 位元組帳 {xkv_coef_bytes(Lg, T, r, f)}")
+    return msgs
+
+
 def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_LEVELS, reps=5, min_rep_s=0.1,
               segments=None, bg_list=None, bg_seconds=2.0, recompute=True, rec_pos=REC_POS, rec_reps=3,
-              store_impl="triton", smoke=False, seed=0):
+              store_impl="triton", smoke=False, seed=0, wcost=None, wcost_states=WCOST_STATES, wcost_reps=3):
+    """wcost：None 或 [(rk, rv)]（10/21：xKV 寫入成本；係數格式取 XKV2 裡這個秩組合用到的格式），在 wcost_states 各量一次。"""
     import torch
     from m10_speed import Busy, _watcher, model_glob
     import m10_dqsweep as DQ
@@ -1686,6 +2141,10 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
     t_build = time.perf_counter() - t_build
     bl = json.load(open(busy_levels))
     states = [(s, 0.0 if s == "idle" else float(bl[s])) for s in gpu_states]
+    wc_info = None
+    if wcost:
+        wc_info = dict(params=xstack_consts_check(), pairs=[list(p) for p in wcost], states=list(wcost_states), reps=wcost_reps,
+                       linalg=str(torch.backends.cuda.preferred_linalg_library()))
     watch, level = _watcher(os.path.join(out, f"gpu_guard_{rid}_{model}.json"))
     busy_pids, busy_stats = set(), []
 
@@ -1710,7 +2169,7 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
         for (s, o), (v, inner) in res.items():
             sg = segs[s]
             q1, q3 = quart(v)
-            bop = n_blocks * sg.bytes_blk + sg.bytes_req
+            bop = sg.bytes_req if o == "h2d_req" else n_blocks * sg.bytes_blk + sg.bytes_req
             rows.append(dict(run_id=rid, ts=now_iso(), model=model, gpu_state=st, duty=duty, segment=s, family=sg.family,
                              kind=sg.kind, fmt=sg.fmt, op=o, impl=sg.impl.get(o, ""), kernel=sg.kernel, n_blocks=n_blocks,
                              bytes_op=bop, bytes_bf16=bytes_bf16, bytes_ratio=round(bop / bytes_bf16, 5),
@@ -1718,6 +2177,35 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
                              t_q3_s=q3, t_min_s=min(v), t_max_s=max(v), contaminated=cflag, host_level=level,
                              hsa_enable_sdma=sdma, store_impl=store_impl))
         print(f"[timing] {model} {st} 完成（{len(res)} 個 op）", flush=True)
+    # 10/21：xKV 的寫入（壓縮）成本；只出表，不進還原決策
+    wc_rows = []
+    if wcost:
+        wfmts = {tuple(p): {f for a_, b_, f in XKV2.values() if (a_, b_) == tuple(p)} or {"bf16"} for p in wcost}
+        wops, winfo, wstate = build_wcost(ctx, [tuple(p) for p in wcost], wfmts)
+        for i_st, st in enumerate(wcost_states):
+            duty = 0.0 if st == "idle" else float(bl[st])
+            with Busy(duty, watch) as b:
+                if b.p:
+                    busy_pids.add(b.p.pid)
+                res = _time_slow(torch, wops, wcost_reps, rng, warm=(i_st == 0))
+                cflag = contaminated()
+            if b.p:
+                busy_stats.append(dict(phase="wcost", state=st, **(b.stats or {})))
+            for (k, o), v in res.items():
+                q1, q3 = quart(v)
+                wc_rows.append(dict(winfo[(k, o)], run_id=rid, ts=now_iso(), model=model, gpu_state=st, duty=duty, op=o, reps=len(v),
+                                    t_med_s=med(v), t_q1_s=q1, t_q3_s=q3, t_min_s=min(v), t_max_s=max(v), contaminated=cflag,
+                                    host_level=level, linalg=wc_info["linalg"]))
+            print(f"[wcost] {model} {st} 完成（{len(res)} 個 op）", flush=True)
+        msgs = wcost_check(ctx, wstate, [tuple(p) for p in wcost], wfmts)
+        wc_info["check"] = "ok" if not msgs else "FAIL：" + "；".join(msgs)
+        wstate.clear()
+        del wops
+        torch.cuda.empty_cache()
+        if msgs:
+            if watch is not None:
+                watch.__exit__(None, None, None)
+            raise SystemExit(f"{model} wcost 的輸出核對沒過：{msgs}（規則 2：停下來）")
     # 背景被拖慢多少：每個 (duty, seg:op) 一個新的 Busy；前後各一次只有背景當基準
     want = bg_list if bg_list is not None else BG_DEFAULT
     pairs = [tuple(x.split(":")) for x in want]
@@ -1785,7 +2273,7 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
         # 外人＝不在 Busy 的 pid 裡的（Busy 是自己的子行程，GpuWatcher 的 own_root 已排除；這裡再保守一次）
         run_c = bool({p for p in watch.intruders if p not in busy_pids}) or watch.started_clean is False
         watch.__exit__(None, None, None)
-    for r in rows + bg_rows + rec_rows:
+    for r in rows + bg_rows + rec_rows + wc_rows:
         r["run_contaminated"] = run_c
     if run_c is not False:
         # CLAUDE.md §3：被污染的量時間 run，結果不得寫進 results/ → 改寫到 run 目錄（adhoc 時寫到 out 底下標明的子目錄），map 讀不到
@@ -1798,12 +2286,14 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
     write_csv(os.path.join(out, f"micro_bg_{model}.csv"), bg_rows, BG_FIELDS)
     if rec_rows:
         write_csv(os.path.join(out, f"micro_recompute_{model}.csv"), rec_rows, REC_FIELDS)
+    if wc_rows:
+        write_csv(os.path.join(out, f"wcost_{model}.csv"), wc_rows, WC_FIELDS)
     meta = dict(run_id=rid, ts=now_iso(), model=model, model_path=mpath, rope_theta=theta, shape=dict(L=L, H=H, D=D),
                 n_blocks=n_blocks, region_tokens=[ctx.lo, ctx.hi], reps=reps, min_rep_s=min_rep_s, bg_seconds=bg_seconds,
                 rec_pos=list(rec_pos) if km else [], rec_reps=rec_reps if km else 0, states=states, busy_levels=rel(busy_levels),
                 hsa_enable_sdma=sdma, store_impl=store_impl, smoke=smoke, t_build_s=round(t_build, 1),
                 torch=torch.__version__, hip=torch.version.hip, device=torch.cuda.get_device_name(0),
-                fp8_fmt=fp8_fmt, contaminated=run_c, host_level=level, busy_stats=busy_stats,
+                fp8_fmt=fp8_fmt, contaminated=run_c, host_level=level, busy_stats=busy_stats, wcost=wc_info,
                 note_rope="RoPE 用 rope_theta 的預設 inv_freq（沒有套 llama3 的 rope_scaling）：只影響數值，不影響時間",
                 segments={s: dict(family=sg.family, kind=sg.kind, feed=sg.feed, ops=list(sg.ops), bytes_blk=sg.bytes_blk,
                                   bytes_req=sg.bytes_req, bytes_resident=sg.bytes_resident, fmt=sg.fmt, impl=sg.impl,
@@ -1817,11 +2307,35 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
     return meta
 
 
+def parse_pairs(xs):
+    """["k22v34", ...] → [(22, 34), ...]；"x2" → 10/21 的 xKV 段用到的所有秩組合。"""
+    if not xs:
+        return None
+    out = []
+    for x in xs:
+        if x == "x2":
+            out += [p for p in XKV2_PAIRS if p not in out]
+            continue
+        m_ = re.fullmatch(r"k(\d+)v(\d+)", x)
+        if not m_:
+            raise SystemExit(f"--wcost 的秩組合要寫成 k<a>v<b> 或 x2：{x}")
+        out.append((int(m_.group(1)), int(m_.group(2))))
+    return out
+
+
 def cmd_micro(a):
+    err = guard_micro_out(a.out, a.segments)
+    if err:
+        raise SystemExit(err)
+    if a.segments:
+        unknown = sorted(set(a.segments) - set(seg_catalog()))
+        if unknown:
+            raise SystemExit(f"--segments 有 seg_catalog 沒有的名字：{unknown}")
     for m in a.model:
         gpu_micro(m, a.out, n_blocks=a.n_blocks, gpu_states=a.gpu_states, busy_levels=a.busy_levels, reps=a.reps,
                   min_rep_s=a.min_rep_s, segments=a.segments, bg_list=a.bg, bg_seconds=a.bg_seconds,
-                  recompute=not a.no_recompute, rec_reps=a.rec_reps, store_impl=a.store_impl)
+                  recompute=not a.no_recompute, rec_reps=a.rec_reps, store_impl=a.store_impl,
+                  wcost=parse_pairs(a.wcost), wcost_states=a.wcost_states, wcost_reps=a.wcost_reps)
 
 
 # ====================================================================== GPU：validate
@@ -2055,18 +2569,38 @@ def cmd_smoke(a):
     os.makedirs(out, exist_ok=True)
     fails = []
     mdir = os.path.join(out, "micro")
+    segs = list(a.segments) if a.segments else None             # 10/21：只冒煙這些段（＋bf16）；不載模型、不量重算探針
+    if segs:
+        unknown = sorted(set(segs) - set(seg_catalog()))
+        if unknown:
+            raise SystemExit(f"--segments 有 seg_catalog 沒有的名字：{unknown}")
+    want = set(segs or seg_catalog()) | {"bf16"}
+    wc = parse_pairs(a.wcost) if a.wcost is not None else None
     for m in a.models:
         try:
-            meta = gpu_micro(m, mdir, n_blocks=4, gpu_states=("idle", "busy2"), reps=1, min_rep_s=0.005,
-                             bg_list=["int4_kivi:dq_oneshot", "lr_r24:dq_oneshot"], bg_seconds=0.5, recompute=True,
-                             rec_pos=(0, 3), rec_reps=1, store_impl=a.store_impl, smoke=True)
+            meta = gpu_micro(m, mdir, n_blocks=4, gpu_states=("idle", "busy2"), reps=1, min_rep_s=0.005, segments=segs,
+                             bg_list=(BG_X2[:1] if segs else ["int4_kivi:dq_oneshot", "lr_r24:dq_oneshot"]), bg_seconds=0.5,
+                             recompute=not segs, rec_pos=(0, 3), rec_reps=1, store_impl=a.store_impl, smoke=True,
+                             wcost=wc, wcost_states=("idle", "busy2"), wcost_reps=1)
             if meta["contaminated"] is not False:                  # 冒煙只驗程式；污染不算失敗，但照實印出
                 print(f"⚠ 冒煙 micro {m} 被污染（{meta['contaminated']}）：輸出在 {meta['out_dir']}，map 冒煙會缺這個模型", flush=True)
             bad = [s for s, v in meta["segments"].items() if v["check"] != "ok"]
             if bad:
                 fails.append(f"{m}：正確性沒過 {bad}")
-            if set(meta["segments"]) != set(seg_catalog()):
-                fails.append(f"{m}：segment 不齊 {sorted(set(seg_catalog()) - set(meta['segments']))}")
+            if set(meta["segments"]) != want:
+                fails.append(f"{m}：segment 不齊 {sorted(want - set(meta['segments']))}")
+            if wc:
+                wi = meta.get("wcost") or {}
+                if wi.get("check") != "ok":
+                    fails.append(f"{m}：wcost 核對 {wi.get('check')}")
+                print(f"wcost {m}：svd 參數 {wi.get('params')}；linalg {wi.get('linalg')}", flush=True)
+                wp = os.path.join(meta["out_dir"], f"wcost_{m}.csv")
+                if os.path.exists(wp):
+                    for r in read_csv(wp):
+                        print(f"  wcost {m} {r['gpu_state']} {r['pair']} {r['op']}：{float(r['t_med_s']) * 1e3:.1f} ms"
+                              f"（T={r['T']}，q={r['svd_q']}）", flush=True)
+                else:
+                    fails.append(f"{m}：沒有 wcost_{m}.csv")
             print(f"PASS micro {m}", flush=True)
         except BaseException as ex:                                # 冒煙要把錯誤照實記下來再停
             fails.append(f"{m} micro：{ex!r}")
@@ -2084,13 +2618,27 @@ def cmd_smoke(a):
             C = load_constants()
             b32 = C.get("llama", "link_b32")
             d["worth_validate"], d["reason"] = True, "冒煙：固定兩格"
-            d["cells"] = [dict(cell="llama|cpu_pinned|0.0", mode="Q", model="llama", tier="cpu_pinned", link_GiBps="", duty=0.0,
-                               priority=0, A="int4_kivi@oneshot", S="int4_kivi@oneshot", F="int4_kivi@oneshot",
-                               measure=[dict(action="int4_kivi@oneshot", role="A", pred_s=None),
-                                        dict(action="raw", role="D", pred_s=None)]),
-                          dict(cell="llama|b32|0.0", mode="X", model="llama", tier="b32", link_GiBps=b32, duty=0.0,
-                               priority=0, A="lr_r24@oneshot", S="lr_r24@oneshot", F="lr_r24@oneshot",
-                               measure=[dict(action="lr_r24@oneshot", role="A", pred_s=None)])]
+            xs = [x for x in (segs or []) if x in XKV2]
+            if segs and xs:                                       # 10/21：新段的載入線（h2d 含基底、一次拆、逐 block 拆）
+                xa = next((x for x in xs if XKV2[x][2] == "kivi4"), xs[-1])          # Llama：INT4 係數的一次拆＋逐 block、BF16 係數的一次拆
+                xb = next((x for x in xs if XKV2[x][2] == "int8_token"), xs[-1])     # Qwen：int8 係數的逐 block
+                d["cells"] = [dict(cell="llama|b32|0.0", mode="X", model="llama", tier="b32", link_GiBps=b32, duty=0.0,
+                                   priority=0, A=f"{xa}@oneshot", S=f"{xa}@perblock", F=f"{xs[0]}@oneshot",
+                                   measure=[dict(action=f"{xa}@oneshot", role="A", pred_s=None),
+                                            dict(action=f"{xa}@perblock", role="S", pred_s=None),
+                                            dict(action=f"{xs[0]}@oneshot", role="F", pred_s=None)]),
+                              dict(cell="qwen|b32|0.0", mode="X", model="qwen", tier="b32", link_GiBps=C.get("qwen", "link_b32"),
+                                   duty=0.0, priority=0, A=f"{xb}@perblock", S=f"{xb}@perblock", F=f"{xb}@perblock",
+                                   measure=[dict(action=f"{xb}@perblock", role="A", pred_s=None)])]
+                d["cells"] = [c for c in d["cells"] if c["model"] in a.models]
+            else:
+                d["cells"] = [dict(cell="llama|cpu_pinned|0.0", mode="Q", model="llama", tier="cpu_pinned", link_GiBps="", duty=0.0,
+                                   priority=0, A="int4_kivi@oneshot", S="int4_kivi@oneshot", F="int4_kivi@oneshot",
+                                   measure=[dict(action="int4_kivi@oneshot", role="A", pred_s=None),
+                                            dict(action="raw", role="D", pred_s=None)]),
+                              dict(cell="llama|b32|0.0", mode="X", model="llama", tier="b32", link_GiBps=b32, duty=0.0,
+                                   priority=0, A="lr_r24@oneshot", S="lr_r24@oneshot", F="lr_r24@oneshot",
+                                   measure=[dict(action="lr_r24@oneshot", role="A", pred_s=None)])]
             json.dump(d, open(fl, "w"), indent=1, ensure_ascii=False)
             va = argparse.Namespace(map_dir=os.path.join(out, "map"), out=os.path.join(out, "validate"), force=True, max_cells=8,
                                     launches=1, reps=1, lp_reps=1, main_length=4096, smoke=True)
@@ -2116,7 +2664,11 @@ def _synthetic_micro(model, spec, duties=(0.0, 0.4, 0.7, 0.9), n=32, rec=None):
              "lr_r24": 0.1875, "lr_r40": 0.3125, "merge_g2": 0.5, "lrk24_v4": 0.25}
     segs = {}
     for s in {k[0] for k in spec["t"]}:
-        segs[s] = dict(cat[s], bytes_blk=int(bb * ratio.get(s, 0.25)), bytes_req=0)
+        if s in XKV2:                                    # 10/21 的 xKV 段：位元組照位元組帳（基底算 bytes_req）
+            cb_, br_ = xkv_bytes(model, *XKV2[s], CHUNK)
+            segs[s] = dict(cat[s], bytes_blk=cb_, bytes_req=br_)
+        else:
+            segs[s] = dict(cat[s], bytes_blk=int(bb * ratio.get(s, 0.25)), bytes_req=0)
     t = {}
     for (s, o), v in spec["t"].items():
         for d in duties:
@@ -2142,6 +2694,209 @@ def _synthetic_consts(models=("llama",)):
     C.add("llama", "vllm_c6_T_s", 0.97, "s", "(合成)", "SELFTEST", "")
     C.add("llama", "vllm_c6_bytes", 4.0 * GiB, "B", "(合成)", "SELFTEST", "")
     return C
+
+
+def _write_synth_micro(d, model, rid, segs, times, n=32, rec=None, wcost=None, smoke=False):
+    """自測用：合成的 micro 寫成 gpu_micro 的檔案格式。segs：{seg: (bytes_blk, bytes_req)}；times：{(duty, seg, op): (秒, 污染)}；
+    rec：{duty: 重算慢化倍數}；wcost：[(duty, 秩組合, op, 秒, 污染)]。"""
+    cat = seg_catalog()
+    meta = dict(run_id=rid, n_blocks=n, smoke=smoke,
+                segments={s: dict(cat[s], bytes_blk=b, bytes_req=r) for s, (b, r) in segs.items()})
+    json.dump(meta, open(os.path.join(d, f"micro_meta_{model}.json"), "w"))
+    write_csv(os.path.join(d, f"micro_{model}.csv"),
+              [dict(run_id=rid, ts="t", model=model, duty=du, segment=sg, op=op, t_med_s=v, t_q1_s=v, t_q3_s=v, reps=5,
+                    contaminated=c, run_contaminated=False) for (du, sg, op), (v, c) in times.items()], MICRO_FIELDS)
+    if rec:
+        write_csv(os.path.join(d, f"micro_recompute_{model}.csv"),
+                  [dict(run_id=rid, ts="t", model=model, duty=du, chunk_idx=i, rep=0, s=0.03 * k, contaminated=False,
+                        run_contaminated=False) for du, k in {0.0: 1.0, **rec}.items() for i in (0, 8)], REC_FIELDS)
+    if wcost:
+        write_csv(os.path.join(d, f"wcost_{model}.csv"),
+                  [dict(run_id=rid, ts="t", model=model, duty=du, pair=pr, op=op, reps=3, t_med_s=v, t_q1_s=v, t_q3_s=v,
+                        t_min_s=v, t_max_s=v, contaminated=c, run_contaminated=False) for du, pr, op, v, c in wcost], WC_FIELDS)
+
+
+def _self_test_x2gap(check):
+    """10/21 補缺口的自測（只用 CPU、不 import torch）：新段的目錄；位元組帳（和 m16_xstack.predict_bytes 逐項核對，再和 X2 實際寫出的
+    ratio 核對）；基底 H2D 的攤法；多個 micro 目錄的合併與漂移；map 讀 --x2；寫入成本表；第一版目錄的保護。"""
+    import tempfile
+    cat = seg_catalog()
+    want = {"xkv_k11v17", "xkv_k22v34", "xkv_k28v42", "xkv_k11v17_int4", "xkv_k22v34_int4", "xkv_k28v42_int4", "xkv_k22v34_int8"}
+    check("10/21：seg_catalog 有 7 個新的 xKV 段（名字照和 X2 的約定）", want <= set(cat) and set(XKV2) == want,
+          sorted(set(XKV2) ^ want))
+    check("10/21：新段的 ops／feed／家族（BF16 係數＝xlayer 單一方法；係數量化＝combo）", all(
+        set(cat[s]["ops"]) == {"h2d_region", "h2d_req", "dq_oneshot", "dq_perblock"}
+        and cat[s]["feed"] == {"dq_oneshot": "h2d_region", "dq_perblock": "h2d_region"}
+        and (cat[s]["family"], cat[s]["kind"]) == (("xlayer", "single") if XKV2[s][2] == "bf16" else ("combo", "combo"))
+        for s in want))
+    check("10/21：新段對應的 X2 組合寫法", XKV2_SPEC == {
+        "xkv_k11v17": "xl:k11:v17", "xkv_k22v34": "xl:k22:v34", "xkv_k28v42": "xl:k28:v42",
+        "xkv_k11v17_int4": "xl:k11:v17+q:int4_kivi", "xkv_k22v34_int4": "xl:k22:v34+q:int4_kivi",
+        "xkv_k28v42_int4": "xl:k28:v42+q:int4_kivi", "xkv_k22v34_int8": "xl:k22:v34+q:int8_token"}, XKV2_SPEC)
+    try:
+        import m16_xstack as XS
+    except Exception as ex:                                      # noqa: BLE001
+        check("10/21：import m16_xstack（模組層只有標準函式庫）", False, repr(ex))
+        return
+    check("10/21：import m16_xstack 沒有帶進 torch", "torch" not in sys.modules)
+    check("10/21：svd_lowrank 參數和 m16_xstack 相同（niter、多取幾個、seed、窗口）",
+          (XS.XL_NITER, XS.XL_OVERSAMPLE, XS.XL_SEED, XS.parse_spec("xl:k8:v8")[0]["w"]) == (XL_NITER, XL_OVERSAMPLE, XL_SEED, XKV_W))
+    check("10/21：m16_xstack.MODEL_INFO 的形狀＝SHAPES",
+          all((XS.MODEL_INFO[m]["L"], XS.MODEL_INFO[m]["H"], XS.MODEL_INFO[m]["D"]) == SHAPES[m] for m in MODELS))
+    bad = []
+    for m in MODELS:
+        for sname, spec in XKV2_SPEC.items():
+            try:
+                st = XS.validate(XS.parse_spec(spec), XS.MODEL_INFO[m], 32)
+                by = XS.predict_bytes(st, XS.MODEL_INFO[m], 32)
+                got = (by["k.coef"] + by["v.coef"], by["k.basis"] + by["v.basis"])
+                mine, blk = xkv_bytes(m, *XKV2[sname], 32 * CHUNK), xkv_bytes(m, *XKV2[sname], CHUNK)
+                if XS.canonical(st) != spec or got != mine or (blk[0] * 32, blk[1]) != mine or \
+                        set(by) != {"k.coef", "v.coef", "k.basis", "v.basis"}:
+                    bad.append((m, sname, XS.canonical(st), got, mine, blk))
+            except Exception as ex:                              # noqa: BLE001
+                bad.append((m, sname, repr(ex)))
+    check("10/21：位元組帳＝m16_xstack.predict_bytes（32 個 block、兩個模型、7 段；逐 block ×32＝整段；組合寫法是 canonical）",
+          not bad, bad[:3])
+    xp0 = os.path.join(REPO, "results", "m16_stage3_mi300x", "x_stack", "x2_unmapped.csv")
+    try:
+        inv = {v: k for k, v in XKV2_SPEC.items()}
+        n_cmp, bad = 0, []
+        for r in read_csv(xp0):
+            if r["combo"] not in inv:
+                continue
+            m, nreg = r["model"], XS.N_BLOCKS - 1
+            L, H, D = SHAPES[m]
+            c_, b_ = xkv_bytes(m, *XKV2[inv[r["combo"]]], nreg * CHUNK)
+            ratio = round((c_ + b_) / (nreg * L * 2 * H * CHUNK * D * 2), 6)
+            n_cmp += 1
+            if abs(ratio - float(r["ratio"])) > 1e-6:
+                bad.append((m, r["combo"], ratio, r["ratio"]))
+        check("10/21：位元組帳 vs X2 實際寫出的 ratio（第一版 x2_unmapped.csv，63 個 block；規則 6 的資料自身核對）",
+              n_cmp >= 8 and not bad, f"比了 {n_cmp} 列；{bad[:3]}")
+    except (OSError, KeyError, ValueError) as ex:
+        check("10/21：讀 X2 的 x2_unmapped.csv", False, repr(ex))
+    # 基底 H2D 的攤法
+    sp = {("bf16", "h2d_region"): 0.040, ("xkv_k22v34_int4", "h2d_region"): 0.010, ("xkv_k22v34_int4", "h2d_req"): 0.004,
+          ("xkv_k22v34_int4", "dq_oneshot"): 0.006, ("xkv_k22v34_int4", "dq_perblock"): 0.009,
+          ("xkv_g4_f8", "h2d_region"): 0.008, ("xkv_g4_f8", "dq_oneshot"): 0.004}
+    Mx = _synthetic_micro("llama", dict(t=sp, busy={k: {d: 1.0 for d in (0.0, 0.4, 0.7, 0.9)} for k in sp}))
+    Mx["seg"]["xkv_g4_f8"]["bytes_req"] = 67108864
+    ax = dict(name="xkv_k22v34_int4@oneshot", seg="xkv_k22v34_int4", dec="oneshot", family="combo", kind="combo")
+    cx = blk_costs(Mx, ax, 0.0)
+    sx = Mx["seg"]["xkv_k22v34_int4"]
+    check("10/21：基底的 H2D＝(h2d − h2d_req)÷n ＋ h2d_req÷64；位元組＝係數＋基底÷64",
+          cx["req"] == "split" and abs(cx["h2d"] - ((0.010 - 0.004) / 32 + 0.004 / 64)) < 1e-15
+          and abs(cx["bytes"] - (sx["bytes_blk"] + sx["bytes_req"] / 64)) < 1e-6, cx)
+    c8 = blk_costs(Mx, dict(ax, name="xkv_g4_f8@oneshot", seg="xkv_g4_f8", family="xlayer", kind="single"), 0.0)
+    check("10/21：沒有 h2d_req 的舊段照第一版（線性外推、標 linear）", c8["req"] == "linear" and abs(c8["h2d"] - 0.008 / 32) < 1e-15)
+    pin = dict(name="cpu_pinned", kind="pinned", GiBps=None)
+    rr = restore_time([0.03] * N_CTX, 1.0, ax, pin, 0.0, Mx)
+    check("10/21：xKV 一次拆、CPU 層的全部載入＝64×h2d ＋ 64×dq÷32", abs(rr["T_la"] - (64 * cx["h2d"] + 64 * 0.006 / 32)) < 1e-12)
+    rows = build_cells({"llama": Mx}, _synthetic_consts(), None, None, ("llama",))
+    fx = [r["flags"] for r in rows if r["action"] == "xkv_k22v34_int4@oneshot" and r["tier"] == "cpu_pinned"]
+    f8 = [r["flags"] for r in rows if r["action"] == "xkv_g4_f8@oneshot" and r["tier"] == "cpu_pinned"]
+    check("10/21：map_cells 的旗標（新段 h2d_req、舊段線性外推）", fx and f8 and all("h2d_req" in x for x in fx)
+          and all("線性外推" in x for x in f8), (fx[:1], f8[:1]))
+    check("10/21：--wcost 的秩組合", parse_pairs(["x2"]) == [(11, 17), (22, 34), (28, 42)] and parse_pairs(["k22v34"]) == [(22, 34)]
+          and parse_pairs(None) is None)
+    check("10/21 保護：合併多個 micro 的 map 不准寫進第一版目錄",
+          bool(guard_map_out(RES, ["a", "b"])) and bool(guard_map_out(RES + "/", ["a", "b"])) and guard_map_out(RES, ["a"]) is None
+          and guard_map_out(os.path.join(RES, "v2"), ["a", "b"]) is None)
+    check("10/21 保護：只量部分段的 micro 不准寫進第一版目錄",
+          bool(guard_micro_out(RES, ["xkv_k22v34"])) and guard_micro_out(RES, None) is None
+          and guard_micro_out(RES, list(seg_catalog())) is None and guard_micro_out(os.path.join(RES, "v2"), ["xkv_k22v34"]) is None)
+    # 多個 micro 目錄的合併 → map（讀 --x2）→ 寫入成本表
+    L, H, D = SHAPES["llama"]
+    bb = L * 2 * H * CHUNK * D * 2
+    with tempfile.TemporaryDirectory() as td:
+        d1, d2, d3, d4 = (os.path.join(td, x) for x in ("v1", "v2", "out", "v4"))
+        for x in (d1, d2, d4):
+            os.makedirs(x)
+        duties = (0.0, 0.9)
+        t1, t2 = {}, {}
+        for du in duties:
+            k = 1.0 + du
+            anc = {(du, "bf16", "h2d_region"): 0.040 * k, (du, "int4_kivi", "h2d_stack"): 0.0137 * k,
+                   (du, "int4_kivi", "dq_oneshot"): 0.0017 * k, (du, "int4_kivi", "dq_perblock"): 0.0022 * k}
+            t1.update({kk: (v, False) for kk, v in anc.items()})
+            t1.update({(du, "xkv_g4_f8", "h2d_region"): (0.0073 * k, False), (du, "xkv_g4_f8", "dq_oneshot"): (0.004 * k, False)})
+            t2.update({kk: (v * (1.1 if kk[1] == "bf16" else 1.0), False) for kk, v in anc.items()})
+            t2.update({(du, "xkv_k22v34_int4", "h2d_region"): (0.0050 * k, False),
+                       (du, "xkv_k22v34_int4", "h2d_req"): (0.0025 * k, False),
+                       (du, "xkv_k22v34_int4", "dq_oneshot"): (0.0060 * k, False),
+                       (du, "xkv_k22v34_int4", "dq_perblock"): (0.0080 * k, du > 0)})
+        _write_synth_micro(d1, "llama", "R1", {"bf16": (bb, 0), "int4_kivi": (bb * 5 // 16, 0), "xkv_g4_f8": (8388608, 67108864)},
+                           t1, rec={0.9: 2.5})
+        wc = [(du, "k22v34", op, v * (1 + du), op == "q_bf16") for du in duties
+              for op, v in (("svd_k", 2.0), ("svd_v", 3.0), ("q_kivi4", 0.01), ("q_int8_token", 0.008), ("q_bf16", 0.002))]
+        _write_synth_micro(d2, "llama", "R2", {"bf16": (bb, 0), "int4_kivi": (bb * 5 // 16, 0),
+                                               "xkv_k22v34_int4": xkv_bytes("llama", 22, 34, "kivi4", CHUNK)}, t2, wcost=wc)
+        M2 = load_micro_dirs([d1, d2], ("llama",))["llama"]
+        check("10/21 合併：新段來自第二個目錄；舊段、錨點、重算探針用第一個", M2["seg_rid"]["xkv_k22v34_int4"] == "R2"
+              and M2["seg_rid"]["bf16"] == "R1" and abs(M2["t"][(0.0, "bf16", "h2d_region")]["med"] - 0.040) < 1e-12
+              and (0.0, "xkv_k22v34_int4", "h2d_req") in M2["t"] and M2["run_id"] == "R1;R2"
+              and M2["rec"].get(0.9, {}).get("run_id") == "R1")
+        dr = {(x["duty"], x["segment"], x["op"]): x for x in M2["drift"]}
+        check("10/21 合併：重疊的段只算漂移（bf16 後÷前＝1.1、不覆蓋；4 個 op × 2 個 duty）",
+              len(dr) == 8 and abs(dr[(0.0, "bf16", "h2d_region")]["ratio"] - 1.1) < 1e-9
+              and not dr[(0.0, "bf16", "h2d_region")]["warn"] and abs(dr[(0.9, "int4_kivi", "dq_oneshot")]["ratio"] - 1) < 1e-9)
+        check("10/21 合併：污染列不用（新段忙時的 dq_perblock、wcost 的 q_bf16）",
+              (0.9, "xkv_k22v34_int4", "dq_perblock") not in M2["t"] and (0.0, "k22v34", "q_bf16") not in M2["wcost"]
+              and (0.0, "k22v34", "svd_k") in M2["wcost"])
+        _write_synth_micro(d4, "llama", "R4", {"bf16": (bb, 0)}, {(0.0, "bf16", "h2d_region"): (0.04, False)}, n=4)
+        try:
+            load_micro_dirs([d1, d4], ("llama",))
+            raised = False
+        except ValueError:
+            raised = True
+        check("10/21 合併：載入區 block 數不同 → 丟例外", raised)
+        xp = os.path.join(td, "x2_feasible.csv")
+        write_csv(xp, [dict(model="llama", x3_segment="xkv_k22v34_int4", feasible="1", run_id="X2V2"),
+                       dict(model="llama", x3_segment="xkv_g4_f8", feasible="0", run_id="X2V2"),
+                       dict(model="llama", x3_segment="xkv_k28v42_int4", feasible="1", run_id="X2V2")],
+                  ["model", "x3_segment", "feasible", "run_id"])
+        fs = feasible_sets({"llama": M2}, None, load_x2(xp), ("llama",))
+        check("10/21 --x2：可行的新段進模式 X、不可行的不進、模式 Q 不變",
+              {"xkv_k22v34_int4@oneshot", "xkv_k22v34_int4@perblock"} <= fs["X"]["llama"]
+              and "xkv_g4_f8@oneshot" not in fs["X"]["llama"] and "xkv_k22v34_int4@oneshot" not in fs["Q"]["llama"])
+        try:
+            cmd_map(argparse.Namespace(micro_dir=[d1, d2], out=d3, s1=None, x2=xp, i4=None))
+            sm = json.load(open(os.path.join(d3, "map_summary.json")))
+            cells = read_csv(os.path.join(d3, "map_cells.csv"))
+            acts = {r["action"] for r in cells}
+            check("10/21 map --x2：用指定的檔、模式 X 有 X2、新段進動作集", sm["x2"]["file"] == rel(xp) and sm["verdicts"]["X"]["x2"]
+                  and {"xkv_k22v34_int4@oneshot", "xkv_k22v34_int4@perblock"} <= acts, sm["x2"])
+            fl = [r["flags"] for r in cells if r["action"] == "xkv_k22v34_int4@oneshot" and r["tier"] == "cpu_pinned"
+                  and r["grid"] == "named"]
+            check("10/21 map：新段標出「另一個 micro run」與 h2d_req、micro_run_id＝R2",
+                  fl and all("另一個 micro run" in x and "h2d_req" in x for x in fl)
+                  and {r["micro_run_id"] for r in cells if r["segment"] == "xkv_k22v34_int4"} == {"R2"})
+            check("10/21 map：T-a 把 xKV＋INT4 當組合", (sm["verdicts"]["X"]["stacking"].get("T_a") or {}).get("n_cells", 0) > 0)
+            check("10/21 map：X2 判可行但 micro 沒量的段照實列出（模式 X 不完整）",
+                  sm["verdicts"]["X"].get("x2_feasible_unmeasured") == {"llama": ["xkv_k28v42_int4"]}
+                  and "模式 X 不完整" in open(os.path.join(d3, "map_report.md")).read(), sm["verdicts"]["X"].get("x2_feasible_unmeasured"))
+            wct = read_csv(os.path.join(d3, "write_cost.csv"))
+            row = [r for r in wct if r["segment"] == "xkv_k22v34_int4" and float(r["duty"]) == 0.0]
+            check("10/21 寫入成本表：合計＝SVD K＋SVD V＋量化；有 run_id、ts、micro_run_id",
+                  row and abs(float(row[0]["t_total_s"]) - 5.01) < 1e-9 and row[0]["micro_run_id"] == "R2"
+                  and all(r["run_id"] and r["ts"] for r in wct), row[:1])
+            nm_ = [r for r in wct if r["segment"] == "xkv_k22v34" and float(r["duty"]) == 0.0]
+            oth = [r for r in wct if r["segment"] == "xkv_k11v17_int4"]
+            check("10/21 寫入成本表：缺一項（q_bf16 被污染）、沒量的秩組合 → NOT_MEASURED（不是 0）",
+                  nm_ and nm_[0]["t_total_s"] == NM and "q_bf16" in nm_[0]["note"] and oth and all(r["t_total_s"] == NM for r in oth))
+            rp = open(os.path.join(d3, "map_report.md")).read()
+            check("10/21 map 報告：有漂移表、寫入成本表、micro 目錄與 X2 的出處", "跨 run 漂移" in rp and "寫入路徑成本" in rp
+                  and "X2 品質可行集" in rp and "X2V2" in rp)
+        except Exception as ex:                                  # noqa: BLE001
+            check("10/21 map（合成的兩個 micro 目錄＋--x2）", False, repr(ex))
+        try:
+            cmd_map(argparse.Namespace(micro_dir=[d1, d2], out=os.path.join(td, "o2"), s1=None, x2=os.path.join(td, "nope.csv"), i4=None))
+            raised = False
+        except SystemExit:
+            raised = True
+        check("10/21 map：--x2 給了但檔不在 → 停、什麼都不寫（不當成「沒有 X2」）",
+              raised and not os.path.exists(os.path.join(td, "o2", "map_summary.json")))
 
 
 def self_test(out=None) -> bool:
@@ -2463,7 +3218,8 @@ def self_test(out=None) -> bool:
     except Exception as ex:
         check("第二階段錨點", False, repr(ex))
     check("seg_catalog：組合都標成 combo、ops 和 feed 一致", all(
-        (v["kind"] == "combo") == (k in COMBOS) and set(v["feed"].values()) <= set(v["ops"]) for k, v in seg_catalog().items()))
+        (v["kind"] == "combo") == (k in COMBO_SEGS) and set(v["feed"].values()) <= set(v["ops"]) for k, v in seg_catalog().items()))
+    _self_test_x2gap(check)
     check("整個自測沒有 import torch", "torch" not in sys.modules)
     print(f"{n_chk} 項；" + ("ALL PASS" if ok else "SOME FAILED"), flush=True)
     if out:
@@ -2479,6 +3235,8 @@ def main():
     ap.add_argument("--out", help="--smoke 的輸出目錄；--self-test 的結果 JSON")
     ap.add_argument("--models", nargs="+", default=list(MODELS), help="--smoke 用哪些模型")
     ap.add_argument("--store-impl", default="triton", choices=["triton", "torch"], help="--smoke 的低秩收尾寫法")
+    ap.add_argument("--segments", nargs="+", default=None, help="--smoke 只冒煙這些 segment（＋bf16；10/21 補缺口用）")
+    ap.add_argument("--wcost", nargs="*", default=None, help="--smoke 也冒煙 xKV 寫入成本（k22v34 …，或 x2）")
     sub = ap.add_subparsers(dest="cmd")
     p = sub.add_parser("micro", help="GPU：各解碼段的時間 × duty")
     p.add_argument("--model", nargs="+", choices=list(MODELS), required=True)
@@ -2494,11 +3252,16 @@ def main():
     p.add_argument("--no-recompute", action="store_true", help="不載模型、不量重算慢化")
     p.add_argument("--rec-reps", type=int, default=3)
     p.add_argument("--store-impl", default="triton", choices=["triton", "torch"])
+    p.add_argument("--wcost", nargs="*", default=None,
+                   help="10/21：xKV 寫入成本的秩組合（k22v34 …，或 x2＝10/21 的 xKV 段全部）；不給就不量")
+    p.add_argument("--wcost-states", nargs="+", default=list(WCOST_STATES))
+    p.add_argument("--wcost-reps", type=int, default=3)
     p = sub.add_parser("map", help="CPU：決策圖與判定")
-    p.add_argument("--micro-dir", default=RES)
+    p.add_argument("--micro-dir", nargs="+", default=[RES],
+                   help="micro 的輸出目錄；可以給多個（第一個為主，後面的只補沒有的 segment，重疊的當漂移錨點）")
     p.add_argument("--out", default=RES)
     p.add_argument("--s1", default=None)
-    p.add_argument("--x2", default=None)
+    p.add_argument("--x2", default=None, help="X2 的 x2_feasible.csv（預設 results/m16_stage3_mi300x/x_stack/x2_feasible.csv；給了但不存在 → 停）")
     p.add_argument("--i4", default=None)
     p = sub.add_parser("validate", help="GPU：map 挑的格子做端到端實測")
     p.add_argument("--map-dir", default=RES)

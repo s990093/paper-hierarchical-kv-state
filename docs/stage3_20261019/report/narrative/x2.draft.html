@@ -1,0 +1,5 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 x2.html。 -->
+<p>（草稿）X2 run 20261020-214139…20261021-020023-m16-x2-*；最終報告 20261021-075549-m16-x2-report-final。X2b run 20261021-0829…-m16-x2b-*，report 20261021-123141-m16-x2b-report（每個模型 X2b 192 題＋X2 96 題＝288 題，變體 D）。</p>
+<ul><li>X2（96 題）：E0 Llama 79.5%、Qwen 75.7%；Qwen r＝0.33 → GO；Llama r＝∞（MLPerf 99%：r＝1.12）。</li>
+<li>X2b（D，288 題）：Qwen <code>xl:k22:v34+q:int4_kivi</code>（約 12 倍）+0.3 [−1.9, +2.5] 過 ε；r＝0.35 → GO；M2 在 1/8 預算 +4.0 [+1.2, +6.9]（Holm 拒絕）。Llama <code>xl:k28:v42+q:int4_kivi</code>（約 8 倍）−1.2 [−2.8, +0.2]、<code>xl:k22:v34+q:int4_kivi</code>（約 10 倍）−1.4 [−3.6, +0.7]、<code>xl:k11:v17+q:int4_kivi</code>（約 21 倍）−2.2 [−4.2, −0.3]；r＝∞；MLPerf 99% r＝1.12、99.9% r＝0.55。</li>
+<li>128K（只探索）：E0 Llama 35.3%、Qwen 56.6%；Llama <code>xl:k22:v34+q:int4_kivi</code>（約 13 倍）+0.8 [−5.6, +6.3]；Qwen <code>xl:k28:v42+q:int4_kivi</code>（約 11 倍）−0.5 [−4.0, +2.7]；只降秩 Qwen <code>xl:k11:v17</code> −18.1。</li></ul>

@@ -1,0 +1,5 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 k1.html。 -->
+<p>（草稿）run 20261020-142819-m16-k1-kvstruct；RoPE 核對 6 份 dump 全部 PASS_PROBE。</p>
+<ul><li>低秩（rank 32，層×head 中位數；T4 32K）：K 在 RoPE 前 Llama 0.253／Qwen 0.241，RoPE 後 0.461／0.423；V 0.665／0.649。95% 能量需要的 rank：K_pre 40／36、K_post 84／82、V 110／108.5（滿 128）。前 4096 token 的基底套到後面：K_pre 0.268／0.253，K_post 0.616／0.580。128K 與 32K 相近（K_pre r32：0.240／0.237）。</li>
+<li>跨層（深半段中位數）：K、V、中心化前後、32K 與 128K、兩個模型全部在 −0.016～+0.022 → 照 L5b 條件（&lt;0.5），MiniCache／KVSharer 式逐 token 共用沒有依據，停；xKV 式不受影響。</li>
+<li>相鄰 token：K 的 cosine 中位數看起來高（RoPE 後 0.87），減掉平均後 0.52／0.55，≥0.9 的相鄰對只有 0.3%／0.7%；V 中位數 0.42、≥0.9 約 0.1–0.2%。T2 去平均後 0.20。</li></ul>

@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="770" height="426" font-family="Noto Sans CJK TC, sans-serif" font-size="11">
+<defs><pattern id="h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" stroke-width="2"/></pattern></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="10" y="20" font-size="14" font-weight="bold">X3 模式 Q・llama（名目層）</text>
+<text x="225.0" y="42" text-anchor="middle">duty 0</text>
+<text x="375.0" y="42" text-anchor="middle">duty 0.4</text>
+<text x="525.0" y="42" text-anchor="middle">duty 0.7</text>
+<text x="675.0" y="42" text-anchor="middle">duty 0.9</text>
+<text x="144" y="71.0" text-anchor="end">cpu_pinned</text>
+<rect x="150" y="50" width="148" height="32" fill="#3a6ea5"/>
+<text x="154" y="63" fill="#fff">int4_kivi·一次</text><text x="154" y="76" fill="#fff">30.3 ms，比 D +62%</text>
+<rect x="300" y="50" width="148" height="32" fill="#3a6ea5"/>
+<text x="304" y="63" fill="#fff">int4_kivi·一次</text><text x="304" y="76" fill="#fff">32.6 ms，比 D +67%</text>
+<rect x="450" y="50" width="148" height="32" fill="#3a6ea5"/>
+<text x="454" y="63" fill="#fff">int4_kivi·一次</text><text x="454" y="76" fill="#fff">33.9 ms，比 D +71%</text>
+<rect x="600" y="50" width="148" height="32" fill="#3a6ea5"/>
+<text x="604" y="63" fill="#fff">int4_kivi·一次</text><text x="604" y="76" fill="#fff">34.7 ms，比 D +73%</text>
+<text x="144" y="105.0" text-anchor="end">vllm_cpu</text>
+<rect x="150" y="84" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="84" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="97" fill="#fff">int4_kivi·一次</text><text x="154" y="110" fill="#fff">925.4 ms，比 D +5%</text>
+<rect x="300" y="84" width="148" height="32" fill="#eeeeee"/><text x="304" y="105.0" fill="#666">NOT_MEASURED</text>
+<rect x="450" y="84" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="84" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="97" fill="#fff">int4_kivi·一次</text><text x="454" y="110" fill="#fff">925.0 ms，比 D +8%</text>
+<rect x="600" y="84" width="148" height="32" fill="#eeeeee"/><text x="604" y="105.0" fill="#666">NOT_MEASURED</text>
+<text x="144" y="139.0" text-anchor="end">ssd_meas</text>
+<rect x="150" y="118" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="118" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="131" fill="#fff">int4_kivi·一次</text><text x="154" y="144" fill="#fff">152.6 ms，比 D +66%</text>
+<rect x="300" y="118" width="148" height="32" fill="#3a6ea5"/>
+<rect x="300" y="118" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="131" fill="#fff">int4_kivi·一次</text><text x="304" y="144" fill="#fff">163.0 ms，比 D +63%</text>
+<rect x="450" y="118" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="118" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="131" fill="#fff">int4_kivi·一次</text><text x="454" y="144" fill="#fff">163.5 ms，比 D +66%</text>
+<rect x="600" y="118" width="148" height="32" fill="#3a6ea5"/>
+<text x="604" y="131" fill="#fff">int4_kivi·一次</text><text x="604" y="144" fill="#fff">163.8 ms，比 D +65%</text>
+<text x="144" y="173.0" text-anchor="end">ssd_param</text>
+<rect x="150" y="152" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="152" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="165" fill="#fff">int4_kivi·一次</text><text x="154" y="178" fill="#fff">182.4 ms，比 D +62%</text>
+<rect x="300" y="152" width="148" height="32" fill="#3a6ea5"/>
+<rect x="300" y="152" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="165" fill="#fff">int4_kivi·一次</text><text x="304" y="178" fill="#fff">180.1 ms，比 D +63%</text>
+<rect x="450" y="152" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="152" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="165" fill="#fff">int4_kivi·一次</text><text x="454" y="178" fill="#fff">183.6 ms，比 D +67%</text>
+<rect x="600" y="152" width="148" height="32" fill="#3a6ea5"/>
+<text x="604" y="165" fill="#fff">int4_kivi·一次</text><text x="604" y="178" fill="#fff">180.5 ms，比 D +68%</text>
+<text x="144" y="207.0" text-anchor="end">b16</text>
+<rect x="150" y="186" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="186" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="199" fill="#fff">int4_kivi·一次</text><text x="154" y="212" fill="#fff">220.1 ms，比 D +61%</text>
+<rect x="300" y="186" width="148" height="32" fill="#3a6ea5"/>
+<rect x="300" y="186" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="199" fill="#fff">int4_kivi·一次</text><text x="304" y="212" fill="#fff">228.5 ms，比 D +63%</text>
+<rect x="450" y="186" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="186" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="199" fill="#fff">int4_kivi·一次</text><text x="454" y="212" fill="#fff">241.5 ms，比 D +66%</text>
+<rect x="600" y="186" width="148" height="32" fill="#3a6ea5"/>
+<text x="604" y="199" fill="#fff">int4_kivi·一次</text><text x="604" y="212" fill="#fff">241.8 ms，比 D +64%</text>
+<text x="144" y="241.0" text-anchor="end">b32</text>
+<rect x="150" y="220" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="220" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="233" fill="#fff">int4_kivi·一次</text><text x="154" y="246" fill="#fff">655.9 ms，比 D +52%</text>
+<rect x="300" y="220" width="148" height="32" fill="#3a6ea5"/>
+<rect x="300" y="220" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="233" fill="#fff">int4_kivi·一次</text><text x="304" y="246" fill="#fff">726.4 ms，比 D +56%</text>
+<rect x="450" y="220" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="220" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="233" fill="#fff">int4_kivi·一次</text><text x="454" y="246" fill="#fff">722.9 ms，比 D +61%</text>
+<rect x="600" y="220" width="148" height="32" fill="#3a6ea5"/>
+<rect x="600" y="220" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="233" fill="#fff">int4_kivi·一次</text><text x="604" y="246" fill="#fff">788.0 ms，比 D +61%</text>
+<text x="144" y="275.0" text-anchor="end">b48</text>
+<rect x="150" y="254" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="267" fill="#fff">int4_kivi·一次</text><text x="154" y="280" fill="#fff">1444.6 ms，比 D +39%</text>
+<rect x="300" y="254" width="148" height="32" fill="#3a6ea5"/>
+<rect x="300" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="267" fill="#fff">int4_kivi·一次</text><text x="304" y="280" fill="#fff">1712.9 ms，比 D +45%</text>
+<rect x="450" y="254" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="267" fill="#fff">int4_kivi·一次</text><text x="454" y="280" fill="#fff">1942.6 ms，比 D +50%</text>
+<rect x="600" y="254" width="148" height="32" fill="#3a6ea5"/>
+<rect x="600" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="267" fill="#fff">int4_kivi·一次</text><text x="604" y="280" fill="#fff">2163.5 ms，比 D +53%</text>
+<text x="144" y="309.0" text-anchor="end">nfs_meas</text>
+<rect x="150" y="288" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="301" fill="#fff">int4_kivi·一次</text><text x="154" y="314" fill="#fff">1537.5 ms，比 D +37%</text>
+<rect x="300" y="288" width="148" height="32" fill="#3a6ea5"/>
+<rect x="300" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="301" fill="#fff">int4_kivi·一次</text><text x="304" y="314" fill="#fff">1793.1 ms，比 D +45%</text>
+<rect x="450" y="288" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="301" fill="#fff">int4_kivi·一次</text><text x="454" y="314" fill="#fff">2050.3 ms，比 D +49%</text>
+<rect x="600" y="288" width="148" height="32" fill="#3a6ea5"/>
+<rect x="600" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="301" fill="#fff">int4_kivi·一次</text><text x="604" y="314" fill="#fff">2304.8 ms，比 D +51%</text>
+<text x="144" y="343.0" text-anchor="end">nfs_param</text>
+<rect x="150" y="322" width="148" height="32" fill="#3a6ea5"/>
+<rect x="150" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="335" fill="#fff">int4_kivi·一次</text><text x="154" y="348" fill="#fff">1653.3 ms，比 D +37%</text>
+<rect x="300" y="322" width="148" height="32" fill="#3a6ea5"/>
+<rect x="300" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="335" fill="#fff">int4_kivi·一次</text><text x="304" y="348" fill="#fff">1957.6 ms，比 D +42%</text>
+<rect x="450" y="322" width="148" height="32" fill="#3a6ea5"/>
+<rect x="450" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="335" fill="#fff">int4_kivi·一次</text><text x="454" y="348" fill="#fff">2271.1 ms，比 D +48%</text>
+<rect x="600" y="322" width="148" height="32" fill="#3a6ea5"/>
+<rect x="600" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="335" fill="#fff">int4_kivi·一次</text><text x="604" y="348" fill="#fff">2595.6 ms，比 D +49%</text>
+<rect x="10" y="374" width="12" height="12" fill="#9aa0a6"/><text x="26" y="384">raw</text>
+<rect x="105" y="374" width="12" height="12" fill="#2a9d8f"/><text x="121" y="384">lossless</text>
+<rect x="200" y="374" width="12" height="12" fill="#3a6ea5"/><text x="216" y="384">quant</text>
+<rect x="295" y="374" width="12" height="12" fill="#e07a1f"/><text x="311" y="384">lowrank</text>
+<rect x="390" y="374" width="12" height="12" fill="#8d5a3b"/><text x="406" y="384">xlayer</text>
+<rect x="485" y="374" width="12" height="12" fill="#7b4fa3"/><text x="501" y="384">merge</text>
+<rect x="580" y="374" width="12" height="12" fill="#c0392b"/><text x="596" y="384">drop</text>
+<rect x="675" y="374" width="12" height="12" fill="#2e8b57"/><text x="691" y="384">combo</text>
+<text x="10" y="406" fill="#444">斜線＝第一名和第二名差 &lt;5%；灰＝缺資料（NOT_MEASURED）</text>
+</svg>

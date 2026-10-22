@@ -1,0 +1,5 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 s1.html。 -->
+<p>（草稿）run 20261020-150947-m16-s1-analyze（＋breakeven）。</p>
+<ul><li>BF16 無損壓縮比（最好的 zstd:1 變體）：自然文字 32K 1.47（兩個模型）、128K 1.51–1.52；T2 1.67–1.72。只壓高位元組（bytes2hi）1.46。STOP-1（&lt;1.15）不觸發。</li>
+<li>CPU 解壓速度（壓縮比約 1.46 的格式）：0.5–2.1 GB/s（1–16 thread）。</li>
+<li>盈虧（pipelined）：NFS 級（0.33–0.37 GiB/s）省 32%；b32（1.47 GiB/s）省 21–25%；本地 SSD（7.8 GiB/s）沒好處（Qwen 最好 +1.2%，Llama 全負）；CPU 層（49.9 GiB/s）大幅變慢。</li></ul>

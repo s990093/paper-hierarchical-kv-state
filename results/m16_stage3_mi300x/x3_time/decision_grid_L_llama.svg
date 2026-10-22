@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="770" height="494" font-family="Noto Sans CJK TC, sans-serif" font-size="11">
+<defs><pattern id="h" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#fff" stroke-width="2"/></pattern></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="10" y="20" font-size="14" font-weight="bold">X3 模式 L・llama（L5c 連線格點）</text>
+<text x="225.0" y="42" text-anchor="middle">duty 0</text>
+<text x="375.0" y="42" text-anchor="middle">duty 0.4</text>
+<text x="525.0" y="42" text-anchor="middle">duty 0.7</text>
+<text x="675.0" y="42" text-anchor="middle">duty 0.9</text>
+<text x="144" y="71.0" text-anchor="end">cpu_pinned</text>
+<rect x="150" y="50" width="148" height="32" fill="#9aa0a6"/>
+<text x="154" y="63" fill="#fff">BF16</text><text x="154" y="76" fill="#fff">79.3 ms，比 D +0%</text>
+<rect x="300" y="50" width="148" height="32" fill="#9aa0a6"/>
+<text x="304" y="63" fill="#fff">BF16</text><text x="304" y="76" fill="#fff">99.9 ms，比 D +0%</text>
+<rect x="450" y="50" width="148" height="32" fill="#9aa0a6"/>
+<text x="454" y="63" fill="#fff">BF16</text><text x="454" y="76" fill="#fff">115.4 ms，比 D +0%</text>
+<rect x="600" y="50" width="148" height="32" fill="#9aa0a6"/>
+<text x="604" y="63" fill="#fff">BF16</text><text x="604" y="76" fill="#fff">129.7 ms，比 D +0%</text>
+<text x="144" y="105.0" text-anchor="end">link_20</text>
+<rect x="150" y="84" width="148" height="32" fill="#9aa0a6"/>
+<text x="154" y="97" fill="#fff">BF16</text><text x="154" y="110" fill="#fff">185.9 ms，比 D +0%</text>
+<rect x="300" y="84" width="148" height="32" fill="#9aa0a6"/>
+<text x="304" y="97" fill="#fff">BF16</text><text x="304" y="110" fill="#fff">200.0 ms，比 D +0%</text>
+<rect x="450" y="84" width="148" height="32" fill="#9aa0a6"/>
+<text x="454" y="97" fill="#fff">BF16</text><text x="454" y="110" fill="#fff">194.2 ms，比 D +0%</text>
+<rect x="600" y="84" width="148" height="32" fill="#9aa0a6"/>
+<text x="604" y="97" fill="#fff">BF16</text><text x="604" y="110" fill="#fff">200.0 ms，比 D +0%</text>
+<text x="144" y="139.0" text-anchor="end">link_12</text>
+<rect x="150" y="118" width="148" height="32" fill="#9aa0a6"/>
+<text x="154" y="131" fill="#fff">BF16</text><text x="154" y="144" fill="#fff">291.2 ms，比 D +0%</text>
+<rect x="300" y="118" width="148" height="32" fill="#9aa0a6"/>
+<text x="304" y="131" fill="#fff">BF16</text><text x="304" y="144" fill="#fff">329.6 ms，比 D +0%</text>
+<rect x="450" y="118" width="148" height="32" fill="#9aa0a6"/>
+<text x="454" y="131" fill="#fff">BF16</text><text x="454" y="144" fill="#fff">333.3 ms，比 D +0%</text>
+<rect x="600" y="118" width="148" height="32" fill="#9aa0a6"/>
+<text x="604" y="131" fill="#fff">BF16</text><text x="604" y="144" fill="#fff">333.3 ms，比 D +0%</text>
+<text x="144" y="173.0" text-anchor="end">link_7.87</text>
+<rect x="150" y="152" width="148" height="32" fill="#9aa0a6"/>
+<text x="154" y="165" fill="#fff">BF16</text><text x="154" y="178" fill="#fff">444.5 ms，比 D +0%</text>
+<rect x="300" y="152" width="148" height="32" fill="#9aa0a6"/>
+<text x="304" y="165" fill="#fff">BF16</text><text x="304" y="178" fill="#fff">436.8 ms，比 D +0%</text>
+<rect x="450" y="152" width="148" height="32" fill="#9aa0a6"/>
+<text x="454" y="165" fill="#fff">BF16</text><text x="454" y="178" fill="#fff">481.0 ms，比 D +0%</text>
+<rect x="600" y="152" width="148" height="32" fill="#9aa0a6"/>
+<text x="604" y="165" fill="#fff">BF16</text><text x="604" y="178" fill="#fff">471.2 ms，比 D +0%</text>
+<text x="144" y="207.0" text-anchor="end">link_6.98</text>
+<rect x="150" y="186" width="148" height="32" fill="#9aa0a6"/>
+<text x="154" y="199" fill="#fff">BF16</text><text x="154" y="212" fill="#fff">485.0 ms，比 D +0%</text>
+<rect x="300" y="186" width="148" height="32" fill="#9aa0a6"/>
+<text x="304" y="199" fill="#fff">BF16</text><text x="304" y="212" fill="#fff">491.5 ms，比 D +0%</text>
+<rect x="450" y="186" width="148" height="32" fill="#9aa0a6"/>
+<text x="454" y="199" fill="#fff">BF16</text><text x="454" y="212" fill="#fff">557.7 ms，比 D +0%</text>
+<rect x="600" y="186" width="148" height="32" fill="#9aa0a6"/>
+<text x="604" y="199" fill="#fff">BF16</text><text x="604" y="212" fill="#fff">573.1 ms，比 D +0%</text>
+<text x="144" y="241.0" text-anchor="end">link_3</text>
+<rect x="150" y="220" width="148" height="32" fill="#9aa0a6"/>
+<text x="154" y="233" fill="#fff">BF16</text><text x="154" y="246" fill="#fff">888.9 ms，比 D +0%</text>
+<rect x="300" y="220" width="148" height="32" fill="#9aa0a6"/>
+<text x="304" y="233" fill="#fff">BF16</text><text x="304" y="246" fill="#fff">982.2 ms，比 D +0%</text>
+<rect x="450" y="220" width="148" height="32" fill="#9aa0a6"/>
+<text x="454" y="233" fill="#fff">BF16</text><text x="454" y="246" fill="#fff">1060.0 ms，比 D +0%</text>
+<rect x="600" y="220" width="148" height="32" fill="#9aa0a6"/>
+<text x="604" y="233" fill="#fff">BF16</text><text x="604" y="246" fill="#fff">1130.6 ms，比 D +0%</text>
+<text x="144" y="275.0" text-anchor="end">link_1</text>
+<rect x="150" y="254" width="148" height="32" fill="#2a9d8f"/>
+<rect x="150" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="267" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="154" y="280" fill="#fff">1368.3 ms，比 D +19%</text>
+<rect x="300" y="254" width="148" height="32" fill="#2a9d8f"/>
+<rect x="300" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="267" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="304" y="280" fill="#fff">1634.0 ms，比 D +20%</text>
+<rect x="450" y="254" width="148" height="32" fill="#2a9d8f"/>
+<rect x="450" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="267" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="454" y="280" fill="#fff">1837.1 ms，比 D +23%</text>
+<rect x="600" y="254" width="148" height="32" fill="#2a9d8f"/>
+<rect x="600" y="254" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="267" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="604" y="280" fill="#fff">2025.1 ms，比 D +23%</text>
+<text x="144" y="309.0" text-anchor="end">link_0.83</text>
+<rect x="150" y="288" width="148" height="32" fill="#2a9d8f"/>
+<rect x="150" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="301" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="154" y="314" fill="#fff">1537.5 ms，比 D +17%</text>
+<rect x="300" y="288" width="148" height="32" fill="#2a9d8f"/>
+<rect x="300" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="301" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="304" y="314" fill="#fff">1803.1 ms，比 D +20%</text>
+<rect x="450" y="288" width="148" height="32" fill="#2a9d8f"/>
+<rect x="450" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="301" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="454" y="314" fill="#fff">2060.6 ms，比 D +22%</text>
+<rect x="600" y="288" width="148" height="32" fill="#2a9d8f"/>
+<rect x="600" y="288" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="301" fill="#fff">LL bytes2hi zstd:1 t16</text><text x="604" y="314" fill="#fff">2304.8 ms，比 D +24%</text>
+<text x="144" y="343.0" text-anchor="end">link_0.383</text>
+<rect x="150" y="322" width="148" height="32" fill="#2a9d8f"/>
+<rect x="150" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="335" fill="#fff">LL bytes2hi zstd:1 t1</text><text x="154" y="348" fill="#fff">2174.8 ms，比 D +11%</text>
+<rect x="300" y="322" width="148" height="32" fill="#2a9d8f"/>
+<rect x="300" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="335" fill="#fff">LL bytes2hi zstd:1 t1</text><text x="304" y="348" fill="#fff">2762.9 ms，比 D +15%</text>
+<rect x="450" y="322" width="148" height="32" fill="#2a9d8f"/>
+<rect x="450" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="335" fill="#fff">LL planes zstd:1 t16</text><text x="454" y="348" fill="#fff">3320.8 ms，比 D +18%</text>
+<rect x="600" y="322" width="148" height="32" fill="#2a9d8f"/>
+<rect x="600" y="322" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="335" fill="#fff">LL bytes2hi zstd:1 t1</text><text x="604" y="348" fill="#fff">3865.3 ms，比 D +19%</text>
+<text x="144" y="377.0" text-anchor="end">link_0.33</text>
+<rect x="150" y="356" width="148" height="32" fill="#2a9d8f"/>
+<rect x="150" y="356" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="369" fill="#fff">LL planes zstd:1 t1</text><text x="154" y="382" fill="#fff">2312.5 ms，比 D +13%</text>
+<rect x="300" y="356" width="148" height="32" fill="#2a9d8f"/>
+<rect x="300" y="356" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="369" fill="#fff">LL planes zstd:1 t1</text><text x="304" y="382" fill="#fff">2954.9 ms，比 D +13%</text>
+<rect x="450" y="356" width="148" height="32" fill="#2a9d8f"/>
+<rect x="450" y="356" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="369" fill="#fff">LL planes zstd:1 t1</text><text x="454" y="382" fill="#fff">3597.2 ms，比 D +17%</text>
+<rect x="600" y="356" width="148" height="32" fill="#2a9d8f"/>
+<rect x="600" y="356" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="369" fill="#fff">LL bytes2hi zstd:1 t1</text><text x="604" y="382" fill="#fff">4210.1 ms，比 D +18%</text>
+<text x="144" y="411.0" text-anchor="end">link_0.25</text>
+<rect x="150" y="390" width="148" height="32" fill="#2a9d8f"/>
+<rect x="150" y="390" width="148" height="32" fill="url(#h)"/>
+<text x="154" y="403" fill="#fff">LL bytes2 zlib:1 t16</text><text x="154" y="416" fill="#fff">2526.2 ms，比 D +8%</text>
+<rect x="300" y="390" width="148" height="32" fill="#2a9d8f"/>
+<rect x="300" y="390" width="148" height="32" fill="url(#h)"/>
+<text x="304" y="403" fill="#fff">LL bytes2hi zstd:1 t1</text><text x="304" y="416" fill="#fff">3256.9 ms，比 D +13%</text>
+<rect x="450" y="390" width="148" height="32" fill="#2a9d8f"/>
+<rect x="450" y="390" width="148" height="32" fill="url(#h)"/>
+<text x="454" y="403" fill="#fff">LL planes zstd:1 t1</text><text x="454" y="416" fill="#fff">4070.0 ms，比 D +14%</text>
+<rect x="600" y="390" width="148" height="32" fill="#2a9d8f"/>
+<rect x="600" y="390" width="148" height="32" fill="url(#h)"/>
+<text x="604" y="403" fill="#fff">LL bytes2hi zstd:1 t1</text><text x="604" y="416" fill="#fff">4931.7 ms，比 D +16%</text>
+<rect x="10" y="442" width="12" height="12" fill="#9aa0a6"/><text x="26" y="452">raw</text>
+<rect x="105" y="442" width="12" height="12" fill="#2a9d8f"/><text x="121" y="452">lossless</text>
+<rect x="200" y="442" width="12" height="12" fill="#3a6ea5"/><text x="216" y="452">quant</text>
+<rect x="295" y="442" width="12" height="12" fill="#e07a1f"/><text x="311" y="452">lowrank</text>
+<rect x="390" y="442" width="12" height="12" fill="#8d5a3b"/><text x="406" y="452">xlayer</text>
+<rect x="485" y="442" width="12" height="12" fill="#7b4fa3"/><text x="501" y="452">merge</text>
+<rect x="580" y="442" width="12" height="12" fill="#c0392b"/><text x="596" y="452">drop</text>
+<rect x="675" y="442" width="12" height="12" fill="#2e8b57"/><text x="691" y="452">combo</text>
+<text x="10" y="474" fill="#444">斜線＝第一名和第二名差 &lt;5%；灰＝缺資料（NOT_MEASURED）</text>
+</svg>

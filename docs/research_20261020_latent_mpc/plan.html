@@ -1,0 +1,828 @@
+<title>Latent MPC 推理計劃</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* 版面：單欄研究筆記；兩種「空間」用兩個色系貫穿全頁——文字空間＝赭橘、潛空間＝靛藍；停損關＝琥珀 */
+:root {
+  --bg: #f4f5f8;
+  --panel: #ffffff;
+  --ink: #171a24;
+  --muted: #5b6070;
+  --rule: #d8dbe4;
+  --latent: #3d4fc0;        /* 潛空間 */
+  --latent-soft: #e4e7f8;
+  --textsp: #b4521e;        /* 文字空間 */
+  --textsp-soft: #f8e5d9;
+  --gate: #8f5b00;          /* 停損關／要注意 */
+  --gate-soft: #f6ebd2;
+  --good: #2e7d4f;
+  --good-soft: #dcefe3;
+  --bad: #b3412e;
+  --bad-soft: #f6dcd6;
+  --s1: #2a78d6;            /* 圖表：A，CEM 64×5 */
+  --s2: #eb6834;            /* 圖表：文字前瞻 */
+  --s3: #1baf7a;            /* 圖表：A，CEM 800×10 */
+  --grid: #e6e8ee;
+  --f-display: "Noto Serif TC", "Songti TC", serif;
+  --f-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1118; --panel: #171a24; --ink: #e6e8ef; --muted: #9ba1b4; --rule: #2b303e;
+    --latent: #95a2f2; --latent-soft: #232a4d; --textsp: #f0915c; --textsp-soft: #3a2517;
+    --gate: #e7b553; --gate-soft: #342a12; --good: #6fd29a; --good-soft: #15301f;
+    --bad: #f08a76; --bad-soft: #3d1f19;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --grid: #262a36;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1118; --panel: #171a24; --ink: #e6e8ef; --muted: #9ba1b4; --rule: #2b303e;
+  --latent: #95a2f2; --latent-soft: #232a4d; --textsp: #f0915c; --textsp-soft: #3a2517;
+  --gate: #e7b553; --gate-soft: #342a12; --good: #6fd29a; --good-soft: #15301f;
+  --bad: #f08a76; --bad-soft: #3d1f19;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --grid: #262a36;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.72; }
+.wrap { max-width: 1000px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 32px 64px; display: grid; gap: 44px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.3; }
+h1 { font-size: clamp(28px, 4.4vw, 40px); letter-spacing: .01em; }
+h2 { font-size: 23px; }
+h3 { font-size: 16px; margin: 0; line-height: 1.45; }
+p { margin: 0; max-width: 70ch; }
+a { color: var(--latent); }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--latent); outline-offset: 2px; border-radius: 4px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--f-mono); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+section { display: grid; gap: 16px; min-width: 0; }
+.sec-head { display: grid; gap: 6px; }
+.lead { font-size: 17px; max-width: 64ch; }
+.ev { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); white-space: nowrap; }
+
+/* header */
+header { display: grid; gap: 14px; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 999px; font-size: 13px; border: 1px solid var(--rule); background: var(--panel); line-height: 1.6; }
+.pill .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+.pill.lat { color: var(--latent); border-color: var(--latent); background: var(--latent-soft); }
+.pill.gate { color: var(--gate); border-color: var(--gate); background: var(--gate-soft); }
+.pill.good { color: var(--good); border-color: var(--good); background: var(--good-soft); }
+.pill.bad { color: var(--bad); border-color: var(--bad); background: var(--bad-soft); }
+.pill.txt { color: var(--textsp); border-color: var(--textsp); background: var(--textsp-soft); }
+.pill span.k { color: var(--ink); }
+nav.toc { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding-block: 10px; }
+nav.toc a { text-decoration: none; color: var(--muted); }
+nav.toc a:hover { color: var(--latent); }
+
+/* verdict grid */
+.verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.vcard { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.vcard .vlabel { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: .06em; color: var(--muted); }
+.vcard .vhead { font-family: var(--f-display); font-size: 18px; line-height: 1.35; }
+.vcard.key { border-color: var(--latent); box-shadow: inset 0 0 0 1px var(--latent); }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; line-height: 1.55; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--rule); }
+th { font-weight: 700; font-size: 12.5px; color: var(--muted); background: var(--bg); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--f-mono); white-space: nowrap; }
+tr.group td { background: var(--latent-soft); color: var(--latent); font-weight: 700; font-size: 12.5px; letter-spacing: .03em; }
+.ov { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.ov.hi { background: var(--gate-soft); color: var(--gate); border: 1px solid var(--gate); }
+.ov.mid { background: var(--latent-soft); color: var(--latent); }
+.ov.lo { background: var(--bg); color: var(--muted); border: 1px solid var(--rule); }
+.ok { color: var(--good); font-weight: 700; }
+.no { color: var(--bad); font-weight: 700; }
+.part { color: var(--gate); font-weight: 700; }
+
+/* callout */
+.callout { border-left: 3px solid var(--latent); background: var(--latent-soft); padding: 14px 16px; border-radius: 0 10px 10px 0; display: grid; gap: 8px; }
+.callout.warn { border-left-color: var(--gate); background: var(--gate-soft); }
+.callout p { max-width: 74ch; }
+
+/* literature matrix */
+.matrix-wrap { overflow-x: auto; }
+.matrix { display: grid; grid-template-columns: 132px repeat(4, minmax(150px, 1fr)); gap: 4px; min-width: 760px; font-size: 13px; }
+.mx-h { font-size: 12px; color: var(--muted); font-weight: 700; padding: 6px 8px; display: flex; align-items: flex-end; line-height: 1.4; }
+.mx-r { font-size: 12.5px; font-weight: 700; padding: 10px 8px; color: var(--ink); line-height: 1.4; display: flex; align-items: center; }
+.mx-c { background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 8px; display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; min-height: 64px; }
+.mx-c.empty { background: transparent; border-style: dashed; }
+.mx-c.target { border: 2px solid var(--latent); background: var(--latent-soft); }
+.chip { display: inline-block; padding: 1px 8px; border-radius: 6px; background: var(--bg); border: 1px solid var(--rule); font-size: 12px; line-height: 1.6; white-space: nowrap; }
+.chip.hi { border-color: var(--gate); color: var(--gate); background: var(--gate-soft); font-weight: 700; }
+.chip.us { background: var(--latent); border-color: var(--latent); color: var(--panel); font-weight: 700; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.legend .chip { font-size: 11.5px; }
+
+/* problems */
+.probs { display: grid; gap: 10px; }
+.prob { display: grid; grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr); gap: 14px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; }
+.prob .pid { font-family: var(--f-mono); font-weight: 600; color: var(--bad); font-size: 15px; }
+.prob .fix { border-left: 2px solid var(--good); padding-left: 12px; }
+.prob .lbl { font-size: 11.5px; font-family: var(--f-mono); color: var(--muted); letter-spacing: .05em; display: block; margin-bottom: 2px; }
+@media (max-width: 640px) { .prob { grid-template-columns: 1fr; gap: 8px; } .prob .fix { border-left: none; border-top: 2px solid var(--good); padding-left: 0; padding-top: 8px; } }
+
+/* scorecard */
+.score { display: grid; grid-template-columns: minmax(200px, 2.2fr) repeat(4, minmax(92px, 1fr)) minmax(110px, 1.1fr); min-width: 780px; font-size: 13.5px; }
+.score > div { padding: 12px 10px; border-bottom: 1px solid var(--rule); display: flex; align-items: center; min-width: 0; }
+.score .sh { font-size: 12px; color: var(--muted); font-weight: 700; background: var(--bg); }
+.score .dname { display: grid; gap: 2px; align-items: start; }
+.score .dname b { font-size: 14.5px; }
+.score .rowA { background: var(--latent-soft); }
+.meter { display: inline-flex; gap: 4px; align-items: center; }
+.meter i { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--latent); display: inline-block; }
+.meter i.on { background: var(--latent); }
+.meter .n { font-family: var(--f-mono); font-size: 11.5px; color: var(--muted); margin-left: 4px; }
+
+/* diagram */
+.fig { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.fig-scroll { overflow-x: auto; }
+.fig svg { display: block; width: 100%; height: auto; }
+#arch { min-width: 760px; color: var(--muted); }
+.d-frozen { fill: var(--panel); stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.d-text { fill: var(--textsp-soft); stroke: var(--textsp); stroke-width: 1.5; }
+.d-lat { fill: var(--latent-soft); stroke: var(--latent); stroke-width: 1.5; }
+.d-gate { fill: var(--gate-soft); stroke: var(--gate); stroke-width: 1.5; }
+.d-t { fill: var(--ink); font-family: var(--f-body); font-size: 14px; font-weight: 700; }
+.d-s { fill: var(--muted); font-family: var(--f-body); font-size: 12px; }
+.d-tt { fill: var(--textsp); font-family: var(--f-body); font-size: 12.5px; font-weight: 700; }
+.d-lt { fill: var(--latent); font-family: var(--f-body); font-size: 12.5px; font-weight: 700; }
+.d-gt { fill: var(--gate); font-family: var(--f-body); font-size: 12.5px; font-weight: 700; }
+.d-arrow { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.d-arrow.lat { stroke: var(--latent); }
+.d-arrow.txt { stroke: var(--textsp); }
+.d-arrow.dash { stroke: var(--gate); stroke-dasharray: 5 4; }
+
+/* charts */
+.charts { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 14px; }
+@media (max-width: 760px) { .charts { grid-template-columns: 1fr; } }
+.chart-box { position: relative; }
+.c-axis { stroke: var(--rule); stroke-width: 1; }
+.c-grid { stroke: var(--grid); stroke-width: 1; }
+.c-tick { fill: var(--muted); font-family: var(--f-mono); font-size: 11px; }
+.c-lab { fill: var(--ink); font-family: var(--f-mono); font-size: 10.5px; }
+.c-cat { fill: var(--ink); font-family: var(--f-body); font-size: 12.5px; }
+.c-hit { fill: transparent; cursor: default; }
+.b1 { fill: var(--s1); } .b2 { fill: var(--s2); } .b3 { fill: var(--s3); }
+.sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; vertical-align: -1px; margin-right: 6px; }
+.sw.b1 { background: var(--s1); } .sw.b2 { background: var(--s2); } .sw.b3 { background: var(--s3); }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; line-height: 1.5; box-shadow: 0 4px 14px rgba(0,0,0,.12); white-space: nowrap; z-index: 2; }
+.hbars { display: grid; gap: 10px; }
+.hb { display: grid; grid-template-columns: 54px minmax(0, 1fr) 48px; gap: 10px; align-items: center; font-size: 13px; }
+.hb .track { position: relative; height: 18px; background: var(--bg); border-radius: 4px; }
+.hb .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--s1); border-radius: 0 4px 4px 0; }
+.hb .cap { position: absolute; top: -4px; bottom: -4px; width: 0; border-left: 2px dashed var(--gate); }
+.hb .v { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; }
+details { font-size: 13.5px; }
+details summary { cursor: pointer; color: var(--latent); }
+details[open] summary { margin-bottom: 8px; }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; }
+.stat .big { font-family: var(--f-display); font-size: 30px; line-height: 1.2; }
+.stat .big small { font-size: 15px; font-family: var(--f-body); color: var(--muted); }
+
+/* PoC flow */
+.flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 900px) { .flow { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .flow { grid-template-columns: 1fr; } }
+.step { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 12px; display: grid; gap: 6px; align-content: start; min-width: 0; position: relative; }
+.step.gate { border-color: var(--gate); box-shadow: inset 0 3px 0 var(--gate); }
+.step .sid { font-family: var(--f-mono); font-weight: 600; font-size: 13px; color: var(--gate); }
+.step .sid.plain { color: var(--muted); }
+.step .pass { font-size: 12.5px; color: var(--good); }
+.step .fail { font-size: 12.5px; color: var(--bad); }
+.step h3 { font-size: 14.5px; }
+.step p { font-size: 13px; }
+
+/* timeline */
+.tl { display: grid; grid-template-columns: 120px repeat(5, minmax(90px, 1fr)); gap: 4px; min-width: 700px; font-size: 12.5px; }
+.tl .th { color: var(--muted); font-weight: 700; padding: 4px 6px; font-size: 12px; line-height: 1.4; }
+.tl .lane { padding: 7px 6px; font-weight: 700; display: flex; align-items: center; }
+.tl .bar { border-radius: 6px; padding: 6px 8px; line-height: 1.4; }
+.tl .bar.tiara { background: var(--textsp-soft); color: var(--textsp); border: 1px solid var(--textsp); }
+.tl .bar.read { background: var(--bg); border: 1px solid var(--rule); }
+.tl .bar.poc { background: var(--latent-soft); color: var(--latent); border: 1px solid var(--latent); }
+.tl .bar.dec { background: var(--gate-soft); color: var(--gate); border: 1px solid var(--gate); font-weight: 700; }
+
+.cols2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.box { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+ul.tight { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+ol.tight { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+.src { columns: 2 320px; column-gap: 28px; font-size: 12.5px; margin: 0; padding-left: 18px; }
+.src li { break-inside: avoid; margin-bottom: 4px; }
+footer { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: no-preference) { .vcard, .step { transition: border-color .15s; } }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">研究計劃 · 2026-10-20 · 查新層級：摘要與 HTML · 本頁沒有新的量測</div>
+  <h1>Latent MPC 推理計劃</h1>
+  <p class="lead">把 V-JEPA 2-AC「小世界模型想像＋能量＋CEM＋MPC」的作法搬到 LLM 推理上。這份計劃回答四件事：有沒有人做過、原計劃哪裡要改、哪個方向最適合「凍結模型、大家都能外掛」，以及要用哪些模型、怎麼用最少的 GPU 先驗證。</p>
+  <div class="pills">
+    <span class="pill good"><span class="dot"></span><span class="k">查新：完整流程本次搜尋沒找到</span></span>
+    <span class="pill gate"><span class="dot"></span><span class="k">4 篇高重疊，投入前讀全文</span></span>
+    <span class="pill bad"><span class="dot"></span><span class="k">原計劃 6 個要改的地方</span></span>
+    <span class="pill lat"><span class="dot"></span><span class="k">主線：凍結 LLM＋文字先、潛未來</span></span>
+    <span class="pill txt"><span class="dot"></span><span class="k">PoC 3 道停損關，約 1–2 GPU 天（估算）</span></span>
+  </div>
+  <nav class="toc" aria-label="目錄">
+    <a href="#tldr">結論</a><a href="#analogy">類比</a><a href="#map">文獻地圖</a><a href="#papers">文獻表</a><a href="#fixes">要改的地方</a><a href="#directions">方向</a><a href="#method">方法 A</a><a href="#compute">計算量</a><a href="#kv">KV 與 Tiara</a><a href="#models">對應模型</a><a href="#poc">PoC</a><a href="#risks">風險</a><a href="#venues">投稿</a><a href="#sources">來源</a>
+  </nav>
+</header>
+
+<section id="tldr">
+  <div class="sec-head"><div class="eyebrow">一頁結論</div><h2>做得了，但要改成「第一步用真文字、後面才想像」</h2></div>
+  <div class="verdicts">
+    <div class="vcard">
+      <div class="vlabel">查新</div>
+      <div class="vhead">零件都有人做，組起來的沒找到</div>
+      <p class="small">有人在 LLM 上做過潛空間測試時搜尋（Soft Reasoning、LatentSeek、LTPO、LTO），也有人做過推理用的潛世界模型（Thoughts-as-Planning、CoLA）。但「凍結 base＋小 predictor 想像＋CEM＋MPC」這整套，本次沒找到。查不到不等於沒有。</p>
+    </div>
+    <div class="vcard">
+      <div class="vlabel">最大的問題</div>
+      <div class="vhead">LLM 的「執行一步」很便宜</div>
+      <p class="small">機器人動一下又貴又不能退回，所以要先想像。LLM 跑一個候選步只要一次 prefill，還能從 KV 分叉。H＝1 時，想像出來的狀態比不上免費拿到的真實狀態，世界模型等於白做。</p>
+    </div>
+    <div class="vcard key">
+      <div class="vlabel">建議主線</div>
+      <div class="vhead">方向 A：文字先、潛未來 MPC</div>
+      <p class="small">第 1 步取 LLM 產生的 N 個真候選。第 2…H 步在學出來的 8–32 維潛動作上做 CEM（對應 V-JEPA 2-AC 的 7 維動作），由 20–60M 的 predictor 想像、value 打分。base 不動，任何開源模型都能外掛。</p>
+    </div>
+    <div class="vcard">
+      <div class="vlabel">怎麼驗證</div>
+      <div class="vhead">K1 → K2 → K3 三道停損關</div>
+      <p class="small">K1 看 hidden state 裡有沒有對錯訊號，K2 看想像能不能贏過直接 value，K3 看同計算量下贏不贏。等 MI300X 租約 10/23 結束後在 3090 上跑，不搶 Tiara 的佇列。</p>
+    </div>
+  </div>
+</section>
+
+<section id="analogy">
+  <div class="sec-head"><div class="eyebrow">V-JEPA 2-AC → LLM</div><h2>類比在哪裡成立、在哪裡斷掉</h2>
+  <p class="muted small">V-JEPA 2-AC 的數字讀自 arXiv 2506.09985 的 HTML <span class="ev">〔HTML〕</span>：凍結 encoder；300M predictor（24 層、1024 維）；7 維動作；約 62 小時 DROID 影片（含失敗）；CEM 800 樣本 × 10 輪、規劃長度 1；每個動作 16 秒，Cosmos 要 4 分鐘；Pick-&-Place 成功率 65–80%，但 Grasp Box 只有 25%。</p></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>元素</th><th>V-JEPA 2-AC</th><th>LLM 版（建議）</th><th>成立？</th></tr></thead>
+      <tbody>
+        <tr><td>狀態</td><td>凍結 ViT 的影格表徵</td><td>凍結 LLM 第 ℓ 層、步驟邊界的 hidden state</td><td class="ok">成立</td></tr>
+        <tr><td>動作</td><td>7 維連續向量</td><td>第 1 步用文字；第 2…H 步用 8–32 維潛動作</td><td class="part">原計劃用 896–4096 維，不成立；改了才成立</td></tr>
+        <tr><td>世界模型</td><td>300M block-causal predictor</td><td>20–60M block-causal predictor</td><td class="ok">成立</td></tr>
+        <tr><td>目標</td><td>目標影像</td><td>沒有。改用 value（預測答對的機率）</td><td class="part">部分成立</td></tr>
+        <tr><td>能量</td><td>‖ẑ − z<sub>goal</sub>‖₁</td><td>−V(ẑ<sub>k+H</sub>)＋不確定度懲罰</td><td class="part">部分成立</td></tr>
+        <tr><td>執行動作</td><td>機器人移動：貴、不可逆</td><td>一次 prefill：便宜、可從 KV 分叉</td><td class="no">不成立，所以 H＝1 的想像沒有價值</td></tr>
+        <tr><td>對照的生成式基線</td><td>Cosmos：生成像素再規劃</td><td>RAP 式文字 rollout／MCTS：生成文字再規劃</td><td class="ok">成立，這就是要打的對手</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="callout">
+    <h3>關鍵推論 <span class="ev">〔判讀〕</span></h3>
+    <p>value head 是用 base policy 的蒙地卡羅結果訓練的，所以 V(z<sub>k+1</sub>) 本身就在估「照 base policy 走下去會答對的機率」。如果世界模型只是照同一個 policy 往下想像，在期望值上就跟 value head 重複。它要有用，只能靠兩種機制：</p>
+    <ul class="tight">
+      <li><b>機制 (a) 搜尋未來動作</b>：取 max over a₂…a<sub>H</sub>，而不是照 base policy 的期望。這需要便宜的潛動作。</li>
+      <li><b>機制 (b) 表徵學習</b>：把「預測下一個狀態」當輔助目標，讓 value 更準、更省資料。</li>
+    </ul>
+    <p>PoC 的 K2b 會把這兩種機制分開測。</p>
+  </div>
+</section>
+
+<section id="map">
+  <div class="sec-head"><div class="eyebrow">文獻地圖</div><h2>空著的格子：只訓練小頭、但真的在世界模型裡規劃</h2>
+  <p class="muted small">橫軸是要訓練多少，縱軸是推理時怎麼搜尋。每篇放在哪一格是我依摘要判斷的 <span class="ev">〔判讀〕</span>，不是量測。</p></div>
+  <div class="matrix-wrap">
+    <div class="matrix" role="table" aria-label="文獻依訓練需求與搜尋形式分類">
+      <div class="mx-h"></div>
+      <div class="mx-h">完全免訓練</div>
+      <div class="mx-h">只訓練小頭（base 凍結）</div>
+      <div class="mx-h">微調 base</div>
+      <div class="mx-h">從頭預訓練</div>
+
+      <div class="mx-r">世界模型＋規劃</div>
+      <div class="mx-c"><span class="chip">RAP（文字空間 MCTS）</span></div>
+      <div class="mx-c target"><span class="chip us">★ 方向 A：規劃推理步驟</span><span class="chip hi">Thoughts-as-Planning：規劃 prompt 編輯</span></div>
+      <div class="mx-c"><span class="chip hi">CoLA</span></div>
+      <div class="mx-c empty"></div>
+
+      <div class="mx-r">潛空間最佳化<br><span class="muted small">梯度／PG／BO</span></div>
+      <div class="mx-c"><span class="chip hi">Soft Reasoning</span><span class="chip">LatentSeek</span><span class="chip">LTPO</span><span class="chip">∇-Reasoner</span></div>
+      <div class="mx-c"><span class="chip hi">LTO</span></div>
+      <div class="mx-c empty"></div>
+      <div class="mx-c"><span class="chip">EBT（能量最小化）</span></div>
+
+      <div class="mx-r">取樣＋重排／提早停</div>
+      <div class="mx-c"><span class="chip">LED</span><span class="chip">Hogwild!</span><span class="chip">方向 B</span></div>
+      <div class="mx-c"><span class="chip">hidden state 探針</span><span class="chip">SoftCoT++</span></div>
+      <div class="mx-c empty"></div>
+      <div class="mx-c empty"></div>
+
+      <div class="mx-r">不搜尋</div>
+      <div class="mx-c"><span class="chip">Soft Thinking</span><span class="chip">KV Steering</span><span class="chip">LatentMAS</span></div>
+      <div class="mx-c"><span class="chip">SoftCoT</span><span class="chip">C2C</span></div>
+      <div class="mx-c"><span class="chip">Coconut</span><span class="chip">CODI</span><span class="chip">LLM-JEPA</span><span class="chip">Step STP</span><span class="chip">Latent JEPA？</span><span class="chip">Pearl？</span></div>
+      <div class="mx-c"><span class="chip">JEPA-Reasoner</span><span class="chip">NextLat</span></div>
+    </div>
+  </div>
+  <div class="legend">
+    <span><span class="chip us">★</span> 本計劃</span>
+    <span><span class="chip hi">名稱</span> 高重疊，投入前讀全文</span>
+    <span><span class="chip">名稱？</span> 訓練方式摘要沒寫，位置待確認</span>
+  </div>
+  <div class="callout warn">
+    <p><b>撞題風險（讀完全文後更新）</b>：Thoughts-as-Planning 的目標 LLM 是凍結的，也另外訓練了一個 4 層的小世界模型，形式跟我們很像；但它規劃的是「怎麼改 prompt／推理鏈的文字」，不是「每一題當下的下一個推理步驟」。撞題風險從「可能落在同一格」降為「形式相似、問題不同」。</p>
+  </div>
+</section>
+
+<section id="papers">
+  <div class="sec-head"><div class="eyebrow">文獻表</div><h2>30 篇相關工作與重疊程度</h2>
+  <p class="muted small">重疊程度是對本計劃而言 <span class="ev">〔判讀〕</span>。證據欄寫的是我讀到哪個層級：〔HTML〕用工具讀了全文前段，〔摘要〕只讀 arXiv 摘要頁，〔搜尋摘要〕只看到搜尋結果的片段，〔README〕讀了 GitHub。</p></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>論文</th><th>場所</th><th>做了什麼</th><th>重疊</th><th>程式碼</th><th>證據</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="6">推理的世界模型＋規劃</td></tr>
+        <tr><td>Thoughts-as-Planning<br><span class="muted small">2605.28842</span></td><td>arXiv</td><td>目標 LLM 凍結；另訓 4 層 512 維的小世界模型，預測「編輯推理鏈文字」（增刪字、重排步驟、改格式）的效果，抽 K 個候選編輯、往前想像 H 步、取預測獎勵最高者。規劃對象是 prompt，不是逐步推理。主表數字有疑點（StrategyQA 是是非題卻都低於 50%）</td><td><span class="ov hi">高（形式）</span></td><td class="ok">有</td><td class="ev">〔原文 p.1–8〕</td></tr>
+        <tr><td>CoLA<br><span class="muted small">2503.21383</span></td><td>ICML 2025</td><td>用逆動力學學潛動作，把 LLM <b>微調</b>成以潛動作為條件的世界模型。Llama-3.1-8B，MATH500：RL 42.4 vs 38.2，MCTS 變體 68.2</td><td><span class="ov hi">高</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>RAP<br><span class="muted small">2305.14992</span></td><td>EMNLP 2023</td><td>用 prompt 讓 LLM 當世界模型，在文字空間跑 MCTS。在這個類比裡相當於 Cosmos</td><td><span class="ov mid">中</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr class="group"><td colspan="6">推理時的潛空間最佳化</td></tr>
+        <tr><td>Soft Reasoning<br><span class="muted small">2505.24688</span></td><td>ICML 2025 spotlight</td><td>用<b>貝氏最佳化</b>搜尋第一個 token 的 embedding，目標由 verifier 引導。最接近「無導數的嵌入空間搜尋」</td><td><span class="ov hi">高</span></td><td class="ok">有</td><td class="ev">〔摘要〕</td></tr>
+        <tr><td>LTO<br><span class="muted small">2509.26314</span></td><td>ICLR 2026</td><td>在 Huginn-3.5B 的潛思考上訓練潛獎勵模型判斷對錯，再用機率式演算法最佳化潛思考</td><td><span class="ov hi">高</span></td><td class="no">無</td><td class="ev">〔摘要〕</td></tr>
+        <tr><td>LatentSeek<br><span class="muted small">2505.13308</span></td><td>arXiv</td><td>測試時對潛表徵做 policy gradient、用自產獎勵，不改權重。GSM8K／MATH-500／AIME</td><td><span class="ov mid">中–高</span></td><td class="ok">有</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>LTPO<br><span class="muted small">2510.04182</span></td><td>ICLR 2026</td><td>把潛思考向量當逐題參數，用信心型內在獎勵做 policy gradient，不更新權重</td><td><span class="ov mid">中–高</span></td><td class="no">無</td><td class="ev">〔摘要〕</td></tr>
+        <tr><td>∇-Reasoner<br><span class="muted small">2603.04948</span></td><td>ICLR 2026</td><td>測試時對 token logits 做梯度下降（似然＋獎勵模型），證明與 KL 正則 RL 對偶；模型呼叫少 10–40%</td><td><span class="ov mid">中</span></td><td class="no">無</td><td class="ev">〔摘要〕</td></tr>
+        <tr><td>EBT<br><span class="muted small">2507.02092</span></td><td>ICLR 2026 oral</td><td>Energy-Based Transformer：把預測當成能量最小化，也就是 System 2 思考。從頭訓練</td><td><span class="ov mid">中</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>LED<br><span class="muted small">2602.01698</span></td><td>arXiv</td><td>免訓練：用中間層 posterior 的熵挑探索候選，pass@1 ＋0.61</td><td><span class="ov lo">低</span></td><td class="ok">有</td><td class="ev">〔摘要〕</td></tr>
+        <tr class="group"><td colspan="6">hidden state 當 value（凍結模型）</td></tr>
+        <tr><td>Reasoning Models Know When They're Right<br><span class="muted small">2504.05419</span></td><td>arXiv</td><td>hidden state 探針能驗證中間答案，校準良好；拿來提早停，token 少 24%、表現不降</td><td><span class="ov hi">高</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>Mid-CoT 正確性探針<br><span class="muted small">2511.14773</span></td><td>arXiv</td><td>Qwen3-8B／Llama3.1-8B 在 MATH 上，推理 4 個 token 後，線性探針 ROC-AUC 約 0.8。這是 K1 門檻的先驗</td><td><span class="ov hi">高</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>LYNX ／ BLADE<br><span class="muted small">2512.05325 ／ 2607.28966</span></td><td>arXiv</td><td>用探針加保形預測，決定在哪裡提早停</td><td><span class="ov lo">低</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr class="group"><td colspan="6">JEPA × 語言</td></tr>
+        <tr><td>JEPA-Reasoner<br><span class="muted small">2512.19171</span></td><td>arXiv</td><td>JEPA 潛推理器加 Talker 還原文字，target 是 EMA embedding（動量 0.98）。0.9B 模型，GSM8K 8-shot 51.9 vs 同資料 Transformer 20.8。推理時沒有搜尋</td><td><span class="ov mid">中</span></td><td class="no">無</td><td class="ev">〔HTML〕</td></tr>
+        <tr><td>Semantic Step Prediction<br><span class="muted small">2604.18464</span></td><td>arXiv</td><td>在推理步驟邊界做 STP 正則，多步潛預測比凍結 baseline 準 168 倍；MLP 比線性外插再好 3–12 倍。支持 RQ1</td><td><span class="ov mid">中</span></td><td class="no">無</td><td class="ev">〔摘要〕</td></tr>
+        <tr><td>NextLat<br><span class="muted small">2511.05963</span></td><td>arXiv</td><td>預訓練時預測自己的下一個 hidden state，可證收斂到 belief state</td><td><span class="ov mid">中</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>LLM-JEPA<br><span class="muted small">2509.14252</span></td><td>arXiv</td><td>在 LLM 訓練中加 JEPA 損失，需要成對的多 view 資料</td><td><span class="ov lo">低</span></td><td class="ok">有</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>Latent JEPA（化學）／Pearl<br><span class="muted small">2610.01947 ／ 2604.08065</span></td><td>arXiv</td><td>潛思考加上 JEPA 的未來預測，分別用在化學與多模態工具使用</td><td><span class="ov lo">低</span></td><td class="no">無</td><td class="ev">〔摘要〕</td></tr>
+        <tr class="group"><td colspan="6">連續／潛 CoT</td></tr>
+        <tr><td>Coconut<br><span class="muted small">2412.06769</span></td><td>Meta</td><td>把 hidden state 接回輸入做連續推理，用課程學習；連續思考會呈現類似 BFS 的行為</td><td><span class="ov mid">中</span></td><td class="ok">有（官方，MIT）</td><td class="ev">〔README〕</td></tr>
+        <tr><td>SoftCoT ／ SoftCoT++<br><span class="muted small">2505.11484</span></td><td>ACL 2025 ／ arXiv</td><td>backbone 凍結，由小助手產生軟思考；++ 版讓軟思考多樣化，以支援 test-time scaling</td><td><span class="ov mid">中</span></td><td class="ok">有</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>Soft Thinking<br><span class="muted small">2505.15778</span></td><td>NeurIPS 2025</td><td>免訓練：用機率加權的 embedding 混合當概念 token。pass@1 最多＋2.48，token 最多少 22.4%</td><td><span class="ov lo">低–中</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>CODI<br><span class="muted small">2502.21074</span></td><td>EMNLP 2025</td><td>自蒸餾到連續 CoT；GPT-2 規模在 GSM8K 上首度追平顯式 CoT</td><td><span class="ov lo">低–中</span></td><td class="ok">有</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr class="group"><td colspan="6">潛狀態 × KV</td></tr>
+        <tr><td>LatentMAS<br><span class="muted small">2511.20639</span></td><td>ICML 2026</td><td>免訓練的多代理潛空間協作，以 KV 當工作記憶。output token 少 70.8–83.7%，端到端快 4–4.3 倍</td><td><span class="ov mid">中</span></td><td class="ok">有</td><td class="ev">〔原文 p.1〕</td></tr>
+        <tr><td>KV Cache Steering<br><span class="muted small">2507.08799</span></td><td>arXiv</td><td>對 KV 做一次性介入，引導凍結 LLM 的推理風格</td><td><span class="ov mid">中</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>Hogwild! Inference<br><span class="muted small">2504.06261</span></td><td>arXiv</td><td>多個 worker 共用同一份 KV、靠 RoPE 重排，不需要微調</td><td><span class="ov mid">中</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr><td>Cache-to-Cache<br><span class="muted small">2510.03215</span></td><td>ICLR 2026</td><td>投影並融合兩個模型的 KV 來溝通</td><td><span class="ov lo">低–中</span></td><td class="ok">有</td><td class="ev">〔搜尋摘要〕</td></tr>
+        <tr class="group"><td colspan="6">潛世界模型的規劃理論</td></tr>
+        <tr><td>A Control Theory of Predictability in Latent World Models<br><span class="muted small">2607.10362</span></td><td>arXiv</td><td>CEM receding horizon 的規劃 regret，取決於預測的計劃成本能不能追上真實成本，而不是平均預測誤差。所以 K2b 用排名相關係數</td><td><span class="ov mid">方法論</span></td><td class="muted">未查</td><td class="ev">〔搜尋摘要〕</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="cols2">
+    <div class="box">
+      <h3>計劃書引用的查核</h3>
+      <ul class="tight small">
+        <li>JEPA-Reasoner「指出 V-JEPA 2-AC 需要預先給定目標」：<span class="no">沒找到</span>。v3 HTML 的工具摘要說全文沒提到 V-JEPA 2-AC，引用前要自己翻原文。</li>
+        <li>JELAR（音訊）：<span class="no">查無</span>。</li>
+        <li>開源程式碼：LLM-JEPA <span class="ok">有</span>，Coconut <span class="ok">有（官方，MIT）</span>，JEPA-Reasoner <span class="no">沒有連結</span>。</li>
+        <li>V-JEPA 2-AC 的數字：<span class="ok">與原文一致</span>。「65–80%」對應的是 Pick-&-Place。</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h3>站得住的新穎點 <span class="ev">〔判讀〕</span></h3>
+      <ol class="tight small">
+        <li>凍結 base、用小 predictor 想像，取代昂貴的文字 rollout。這相當於 V-JEPA 2-AC 對 Cosmos，換成本計劃對 RAP。前提是潛動作要低維、H≥2。</li>
+        <li>用跟決策有關的指標評估推理世界模型，並檢定它跟 value 探針是否重複。就算結果是負面，這個分析也是新的。</li>
+        <li>用失敗軌跡訓練「動力學」。用失敗軌跡訓練 value 已經有人做過。</li>
+        <li>把 KV 算進計算量的比較。</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section id="fixes">
+  <div class="sec-head"><div class="eyebrow">原計劃要改的地方</div><h2>六個要改的地方（P5、P6 是讀全文後新增的）</h2></div>
+  <div class="probs">
+    <div class="prob"><div class="pid">P1</div><div><span class="lbl">問題</span><b>CEM 開在 896–4096 維上</b>：動作是步驟向量。在這種維度上抽出來的點會落在流形外，value head 會被鑽漏洞（假高分）。V-JEPA 2-AC 的動作只有 7 維。</div><div class="fix"><span class="lbl">改法</span>用逆動力學 a<sub>k</sub>＝g(z<sub>k</sub>, z<sub>k+1</sub>) 學出 8–32 維的潛動作，CEM 只在這上面搜尋。初始分佈取經驗分佈，並限制在 L1 球內（照 V-JEPA 2-AC 的作法）。</div></div>
+    <div class="prob"><div class="pid">P2</div><div><span class="lbl">問題</span><b>LLM 的「執行」很便宜</b>：第 1 步做 prefill 就能免費拿到真實的 z<sub>k+1</sub>，H＝1 的想像沒有意義。soft token 寫回凍結 LLM 也會分佈外（Coconut 要訓練才行）。</div><div class="fix"><span class="lbl">改法</span>第 1 步一律是 LLM 產生的真文字，想像只用在第 2…H 步。H＝1 改成對照組：步驟 beam 搭配 V(真實 z<sub>k+1</sub>)。soft token 降為選配。</div></div>
+    <div class="prob"><div class="pid">P3</div><div><span class="lbl">問題</span><b>EMA／stop-grad 是多的</b>：V-JEPA 2-AC 第二階段本來就凍結 encoder。目標是凍結 LLM 的 hidden state 時，目標固定，不會崩塌。</div><div class="fix"><span class="lbl">改法</span>刪掉「EMA 開／關」這個消融，改成監控 predictor 輸出的方差，並一律跟 copy、線性 baseline 比。E2（goal predictor）有循環論證的問題，降為選配。</div></div>
+    <div class="prob"><div class="pid">P4</div><div><span class="lbl">問題</span><b>計算優勢要算過才成立</b>：照搬 800×10 的 CEM 預算時，7.6B base、H＝4 的 FLOPs 是 39.6，比文字前瞻的 32 還貴。0.5B base 即使 CEM 降到 64×5，也只省 1.16 倍。</div><div class="fix"><span class="lbl">改法</span>CEM 降到約 64 樣本 × 5 輪。主實驗用 1.5B／7B 以上的 base，0.5B 只做煙霧測試。見下方 <a href="#compute">計算量</a>。</div></div>
+    <div class="prob"><div class="pid">P5</div><div><span class="lbl">問題</span><b>連續潛動作可能學到捷徑</b>：CoLA 刻意改用離散 codebook（N＝64），理由是連續潛動作容易只學到下一步的資訊、忽略更大的脈絡〔原文 p.16〕。</div><div class="fix"><span class="lbl">改法</span>列成 PoC 消融：連續 8–32 維 vs CoLA 式離散 codebook。</div></div>
+    <div class="prob"><div class="pid">P6</div><div><span class="lbl">問題</span><b>value 會被鑽漏洞，一般模型的探針校準差</b>：LTO 說獎勵模型不完美時，最佳化會去鑽它的錯〔原文 p.7〕；探針論文中 Llama-3.1-8B-Instruct 的 AUC 0.82 跟推理模型的 0.86 差不多，但 ECE 是 0.23 對 0.03〔原文 p.6〕。</div><div class="fix"><span class="lbl">改法</span>能量只用來排序、不當機率門檻；加 KL／不確定度懲罰；K1 同時在 R1-Distill 推理模型上跑。</div></div>
+  </div>
+</section>
+
+<section id="directions">
+  <div class="sec-head"><div class="eyebrow">方向比較</div><h2>以凍結模型、大家都能外掛為前提，五個方向的比較</h2>
+  <p class="muted small">1–5 分是我的主觀評分 <span class="ev">〔判讀〕</span>。可行性以「單張 24 GB 卡、4 週內」為準；「大家可用」指 base 凍結、可以外掛；「契合資產」指能不能重用 Tiara 的工具與量測。</p></div>
+  <div class="tbl-wrap">
+    <div class="score" role="table" aria-label="方向評分">
+      <div class="sh">方向</div><div class="sh">新穎</div><div class="sh">可行</div><div class="sh">大家可用</div><div class="sh">契合資產</div><div class="sh">建議</div>
+
+      <div class="dname rowA"><b>A　文字先、潛未來 MPC</b><span class="small muted">第 1 步用真候選，第 2…H 步在潛動作上做 CEM，由 predictor 想像、value 打分</span></div>
+      <div class="rowA"><span class="meter" aria-label="4 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+      <div class="rowA"><span class="meter" aria-label="3 分"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+      <div class="rowA"><span class="meter" aria-label="4 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+      <div class="rowA"><span class="meter" aria-label="3 分"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+      <div class="rowA"><span class="pill lat">主線</span></div>
+
+      <div class="dname"><b>B　零訓練潛能量</b><span class="small muted">能量全部取自凍結模型本身，例如強制作答的信心、候選 hidden state 的群聚一致性</span></div>
+      <div><span class="meter" aria-label="2 分"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+      <div><span class="meter" aria-label="5 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+      <div><span class="meter" aria-label="5 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+      <div><span class="meter" aria-label="2 分"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+      <div><span class="pill">A 的地板 baseline</span></div>
+
+      <div class="dname"><b>C　KV 感知搜尋</b><span class="small muted">每個比較都報 KV 峰值與 wall-clock；搜尋分支的 KV 依 value 做 Tiara 式放置</span></div>
+      <div><span class="meter" aria-label="3 分"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+      <div><span class="meter" aria-label="4 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+      <div><span class="meter" aria-label="4 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+      <div><span class="meter" aria-label="5 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+      <div><span class="pill txt">量測層；可獨立成系統論文</span></div>
+
+      <div class="dname"><b>原計劃照寫</b><span class="small muted">潛空間提案、高維 CEM、soft token 寫回</span></div>
+      <div><span class="meter" aria-label="4 分"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+      <div><span class="meter" aria-label="2 分"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+      <div><span class="meter" aria-label="3 分"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+      <div><span class="meter" aria-label="2 分"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+      <div><span class="pill bad">不建議照做</span></div>
+
+      <div class="dname"><b>D　從頭訓練 JEPA reasoner</b><span class="small muted">走 JEPA-Reasoner／EBT 的路線，自己預訓練</span></div>
+      <div><span class="meter" aria-label="3 分"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+      <div><span class="meter" aria-label="1 分"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+      <div><span class="meter" aria-label="1 分"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+      <div><span class="meter" aria-label="1 分"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+      <div><span class="pill bad">不建議</span></div>
+    </div>
+  </div>
+  <p class="small muted">組合建議：A 是要回答的問題，B 是內建的免訓練對照組，C 是量測方式。三者在同一套 PoC 裡一起跑。</p>
+</section>
+
+<section id="method">
+  <div class="sec-head"><div class="eyebrow">方法 A 的一個決策週期</div><h2>文字先、潛未來：每一步怎麼選</h2></div>
+  <div class="fig">
+    <div class="fig-scroll">
+      <svg id="arch" viewBox="0 0 980 370" role="img" aria-label="方法 A 流程：凍結 LLM 提出 N 個真實候選步，對每個候選在潛動作空間做 CEM，由小 predictor 想像後續狀態，用能量打分，執行最好的候選後重新規劃">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        </defs>
+        <!-- ① 凍結 LLM -->
+        <rect class="d-frozen" x="16" y="128" width="150" height="88" rx="10"/>
+        <text class="d-t" x="91" y="160" text-anchor="middle">凍結 LLM</text>
+        <text class="d-s" x="91" y="182" text-anchor="middle">題目＋已完成步驟</text>
+        <text class="d-s" x="91" y="200" text-anchor="middle">→ 狀態 zₖ</text>
+        <!-- 候選 -->
+        <text class="d-tt" x="299" y="44" text-anchor="middle">① 提出 N 個真實第 1 步</text>
+        <rect class="d-text" x="214" y="58" width="170" height="48" rx="8"/>
+        <text class="d-t" x="299" y="80" text-anchor="middle">候選 1（文字）</text>
+        <text class="d-s" x="299" y="97" text-anchor="middle">prefill → 真實 zₖ₊₁</text>
+        <rect class="d-text" x="214" y="126" width="170" height="48" rx="8"/>
+        <text class="d-t" x="299" y="148" text-anchor="middle">候選 2（文字）</text>
+        <text class="d-s" x="299" y="165" text-anchor="middle">prefill → 真實 zₖ₊₁</text>
+        <rect class="d-text" x="214" y="194" width="170" height="48" rx="8"/>
+        <text class="d-t" x="299" y="216" text-anchor="middle">候選 N（文字）</text>
+        <text class="d-s" x="299" y="233" text-anchor="middle">prefill → 真實 zₖ₊₁</text>
+        <path class="d-arrow txt" style="color:var(--textsp)" d="M166,160 C190,160 190,82 212,82" marker-end="url(#ah)"/>
+        <path class="d-arrow txt" style="color:var(--textsp)" d="M166,172 L212,150" marker-end="url(#ah)"/>
+        <path class="d-arrow txt" style="color:var(--textsp)" d="M166,184 C190,184 190,218 212,218" marker-end="url(#ah)"/>
+        <!-- ② CEM -->
+        <rect class="d-lat" x="440" y="112" width="172" height="100" rx="10"/>
+        <text class="d-t" x="526" y="142" text-anchor="middle">② 潛動作 CEM</text>
+        <text class="d-s" x="526" y="164" text-anchor="middle">8–32 維 · 64 樣本 × 5 輪</text>
+        <text class="d-s" x="526" y="184" text-anchor="middle">搜尋 a₂ … a_H</text>
+        <path class="d-arrow lat" style="color:var(--latent)" d="M384,82 C412,82 412,150 438,150" marker-end="url(#ah)"/>
+        <path class="d-arrow lat" style="color:var(--latent)" d="M384,150 L438,158" marker-end="url(#ah)"/>
+        <path class="d-arrow lat" style="color:var(--latent)" d="M384,218 C412,218 412,168 438,168" marker-end="url(#ah)"/>
+        <!-- ③ predictor -->
+        <rect class="d-lat" x="662" y="112" width="156" height="100" rx="10"/>
+        <text class="d-t" x="740" y="142" text-anchor="middle">③ 小 predictor</text>
+        <text class="d-s" x="740" y="164" text-anchor="middle">20–60M · block-causal</text>
+        <text class="d-s" x="740" y="184" text-anchor="middle">想像 ẑₖ₊₂ … ẑₖ₊H</text>
+        <path class="d-arrow lat" style="color:var(--latent)" d="M612,162 L660,162" marker-end="url(#ah)"/>
+        <!-- ④ 能量 -->
+        <rect class="d-gate" x="852" y="112" width="116" height="100" rx="10"/>
+        <text class="d-t" x="910" y="142" text-anchor="middle">④ 能量</text>
+        <text class="d-s" x="910" y="164" text-anchor="middle">−V(ẑₖ₊H)</text>
+        <text class="d-s" x="910" y="184" text-anchor="middle">＋不確定度</text>
+        <path class="d-arrow lat" style="color:var(--latent)" d="M818,162 L850,162" marker-end="url(#ah)"/>
+        <!-- CEM 更新迴圈 -->
+        <path class="d-arrow lat" style="color:var(--latent)" d="M910,112 L910,84 L526,84 L526,110" marker-end="url(#ah)"/>
+        <text class="d-lt" x="718" y="76" text-anchor="middle">更新 CEM 分佈（5 輪）</text>
+        <!-- H=1 捷徑 -->
+        <path class="d-arrow dash" style="color:var(--gate)" d="M299,242 L299,268 L880,268 L880,214" marker-end="url(#ah)"/>
+        <text class="d-gt" x="590" y="288" text-anchor="middle">H＝1 捷徑：直接 V(真實 zₖ₊₁)，不需要世界模型，這是 K2b 的對照組</text>
+        <!-- ⑤ 執行並重新規劃 -->
+        <path class="d-arrow txt" style="color:var(--textsp)" d="M950,212 L950,322 L91,322 L91,218" marker-end="url(#ah)"/>
+        <text class="d-tt" x="520" y="346" text-anchor="middle">⑤ 執行分數最好的候選（真文字，寫回 KV）→ 下一步重新規劃（MPC）</text>
+      </svg>
+    </div>
+    <div class="legend">
+      <span><span class="chip" style="border-style:dashed">虛框</span> 凍結，不訓練</span>
+      <span><span class="chip" style="background:var(--textsp-soft);border-color:var(--textsp)">赭橘</span> 文字空間，真的生成</span>
+      <span><span class="chip" style="background:var(--latent-soft);border-color:var(--latent)">靛藍</span> 潛空間，可訓練的小模型</span>
+      <span><span class="chip" style="background:var(--gate-soft);border-color:var(--gate)">琥珀</span> 打分</span>
+    </div>
+  </div>
+  <div class="cols2">
+    <div class="box"><h3>訓練目標（base 全程凍結）</h3>
+      <ul class="tight small">
+        <li>L<sub>tf</sub>：teacher forcing，‖P(z<sub>≤k</sub>, a<sub>≤k</sub>) − z<sub>k+1</sub>‖₁</li>
+        <li>L<sub>ro</sub>：2 步 rollout，照 V-JEPA 2-AC 的作法</li>
+        <li>L<sub>inv</sub>：逆動力學，搭配 8–32 維瓶頸。這是讓 CEM 可行的關鍵</li>
+        <li>L<sub>value</sub>：BCE，正確與錯誤的軌跡都用</li>
+        <li>不需要 EMA：目標是凍結的 hidden state</li>
+      </ul>
+    </div>
+    <div class="box"><h3>防止規劃器鑽 predictor 的漏洞</h3>
+      <ul class="tight small">
+        <li>潛動作限制在經驗分佈的 L1 球內（V-JEPA 2-AC 用的半徑是 0.075）</li>
+        <li>用 3–5 個 predictor 組成 ensemble，把彼此的不一致度加進能量當懲罰</li>
+        <li>評估時一律對照蒙地卡羅真值（K2b），不只看 L1 誤差</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="compute">
+  <div class="sec-head"><div class="eyebrow">計算量 〔算術〕</div><h2>H＝1 沒有優勢；V-JEPA 2-AC 的 CEM 預算不能照搬</h2>
+  <p class="muted small">單位是「解碼一個候選步驟」，約 2·N<sub>base</sub>·L FLOPs。設定：N＝8 個候選、每步 L＝40 token、predictor 50M、base 7.6B。方向 A 的成本 ＝ N ＋ N·S·(H−1)·u，其中 S 是每個候選的 CEM 樣本數，u ＝ N<sub>pred</sub>/(N<sub>base</sub>·L) ＝ 1.64×10⁻⁴。這是 FLOPs 近似，wall-clock 沒有量（<span class="mono">NOT_MEASURED</span>）。</p></div>
+  <div class="charts">
+    <div class="fig">
+      <h3>每次決策的成本，依規劃長度 H</h3>
+      <div class="legend">
+        <span><span class="sw b2"></span>文字前瞻（真的往下寫 H 步）</span>
+        <span><span class="sw b1"></span>A，CEM 64×5</span>
+        <span><span class="sw b3"></span>A，CEM 800×10（V-JEPA 2-AC 預算）</span>
+      </div>
+      <div class="chart-box" id="cbox">
+        <svg id="chart" viewBox="0 0 640 300" role="img" aria-label="分組長條圖：每次決策的成本。H=1 時三者皆為 8；H=2 時文字 16、A 64×5 為 8.42、A 800×10 為 18.53；H=4 時 32、9.26、39.58；H=8 時 64、10.95、81.68"></svg>
+        <div class="tip" id="tip" hidden></div>
+      </div>
+      <details>
+        <summary>看數據表</summary>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>H</th><th class="num">文字前瞻</th><th class="num">A，64×5</th><th class="num">A，800×10</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td class="num">8</td><td class="num">8.00</td><td class="num">8.00</td></tr>
+              <tr><td>2</td><td class="num">16</td><td class="num">8.42</td><td class="num">18.53</td></tr>
+              <tr><td>4</td><td class="num">32</td><td class="num">9.26</td><td class="num">39.58</td></tr>
+              <tr><td>8</td><td class="num">64</td><td class="num">10.95</td><td class="num">81.68</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+    <div class="fig">
+      <h3>H＝4 時省下的倍數，依 base 大小</h3>
+      <p class="small muted">文字前瞻成本 ÷ A 的成本（CEM 64×5）。虛線是上限 H＝4。</p>
+      <div class="hbars" id="hbars"></div>
+      <p class="small">0.5B 只省 1.16 倍，所以 0.5B 只適合做煙霧測試。base 越大，想像越划算。</p>
+    </div>
+  </div>
+</section>
+
+<section id="kv">
+  <div class="sec-head"><div class="eyebrow">KV 足跡 〔算術〕與 Tiara 的連結</div><h2>長 CoT 的搜尋分支，在 24 GB 卡上就是 Tiara 的容量問題</h2>
+  <p class="muted small">每 token 的 KV（BF16）＝ 2 × 層數 × KV 頭數 × head_dim × 2 bytes。層數與頭數讀自本機 hf-cache 的 config.json。</p></div>
+  <div class="stats">
+    <div class="stat"><span class="eyebrow">Llama-3.1-8B</span><span class="big">128 <small>KiB／token</small></span><span class="small muted">32 層 · 8 KV 頭 · 128</span></div>
+    <div class="stat"><span class="eyebrow">Qwen2.5-7B</span><span class="big">56 <small>KiB／token</small></span><span class="small muted">28 層 · 4 KV 頭 · 128</span></div>
+    <div class="stat"><span class="eyebrow">長 CoT 搜尋，16 分支 × 4,096 token</span><span class="big">8 <small>GiB（Llama-8B）</small></span><span class="small muted">Qwen-7B 是 3.5 GiB；24 GB 卡扣掉約 16 GB 權重後所剩不多</span></div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>情境</th><th class="num">額外 KV token</th><th class="num">Llama-8B</th><th class="num">Qwen-7B</th></tr></thead>
+      <tbody>
+        <tr><td>文字前瞻，N＝8、H＝4、L＝40</td><td class="num">1,280</td><td class="num">160 MiB</td><td class="num">70 MiB</td></tr>
+        <tr><td>方向 A，同設定（只寫第 1 步）</td><td class="num">320</td><td class="num">40 MiB</td><td class="num">17.5 MiB</td></tr>
+        <tr><td>長 CoT 搜尋，16 分支 × 4,096 token</td><td class="num">65,536</td><td class="num">8 GiB</td><td class="num">3.5 GiB</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="cols2">
+    <div class="box"><h3>可以直接重用的 Tiara 資產</h3>
+      <ul class="tight small">
+        <li><span class="mono">gpu_guard.py</span>：共用機器上防插隊</li>
+        <li>CLAUDE.md §4 的記錄協定：<span class="mono">run_id</span>、<span class="mono">cmd.sh</span>、<span class="mono">context.txt</span></li>
+        <li>GSM8K 本機已有：<span class="mono">/mlsteam/data/tiara/datasets/gsm8k/</span></li>
+        <li>vLLM harness、m10 品質 harness</li>
+        <li>Llama-8B／Qwen-7B 上已量好的 CPU、SSD 與重算成本</li>
+      </ul>
+    </div>
+    <div class="box"><h3>方向 C 的具體版本 <span class="ev">〔判讀〕</span></h3>
+      <p class="small">test-time search 同時保留 N 個分支的 KV。value head 會預測「這個分支之後還會不會被展開」，這可以直接當成 Tiara 動作空間 {GPU-BF16, FP8, INT4, CPU, SSD, DROP＋重算} 的放置訊號：低 value 的分支降精度或丟掉。這是 Tiara「在品質約束下、各動作成本不同」的同一個框架，換到搜尋情境來用。</p>
+    </div>
+  </div>
+</section>
+
+<section id="models">
+  <div class="sec-head"><div class="eyebrow">對應模型</div><h2>每個角色用哪個模型</h2>
+  <p class="muted small">本機狀態查自 <span class="mono">/mlsteam/data/tiara/hf-cache/hub</span>。標「未查證」的模型 id，下載前要先在 Hugging Face 上確認。</p></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>角色</th><th>模型</th><th>為什麼</th><th>本機</th><th>3090 24 GB</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="5">凍結 base（不訓練）</td></tr>
+        <tr><td>煙霧測試</td><td>Qwen2.5-0.5B-Instruct</td><td>跟計劃書一致，幾分鐘就能跑完；但計算優勢只有 1.16 倍，不能當主結果</td><td>需下載</td><td class="ok">可</td></tr>
+        <tr><td><b>PoC 主力</b></td><td>Qwen2.5-1.5B-Instruct，或 Qwen2.5-Math-1.5B-Instruct</td><td>GSM8K 上對錯都有，失敗軌跡夠多；計算優勢 2.25 倍</td><td>需下載</td><td class="ok">可</td></tr>
+        <tr><td><b>PoC 對照（新增）</b></td><td>DeepSeek-R1-Distill-Qwen-1.5B</td><td>探針論文顯示推理模型的對錯訊號更強、校準更好（見 P6），K1 兩個都跑</td><td>需下載</td><td class="ok">可</td></tr>
+        <tr><td><b>主實驗／方向 C</b></td><td>Llama-3.1-8B-Instruct、Qwen2.5-7B-Instruct</td><td>Tiara 已在這兩個模型上量過成本常數，方向 C 可以直接接上</td><td><span class="ok">Llama 已有</span>（unsloth 鏡像）；Qwen 本機只有 7B-Instruct-1M，跟文獻比較時建議另下標準版</td><td class="ok">可（權重約 15–16 GB）</td></tr>
+        <tr><td>長 CoT（方向 C）</td><td>DeepSeek-R1-Distill-Qwen-1.5B／7B，或 Qwen3-1.7B／4B／8B（thinking 模式）</td><td>搜尋分支長，KV 成本最明顯</td><td>需下載</td><td class="ok">可（8B 以下）</td></tr>
+        <tr class="group"><td colspan="5">對照組</td></tr>
+        <tr><td>訓練式潛推理</td><td>Coconut（官方碼）、CODI、Huginn-3.5B（LTO 用的）</td><td>對照「需要訓練的潛推理」</td><td>需下載 <span class="ev">〔Huginn 的 id 未查證〕</span></td><td class="ok">可</td></tr>
+        <tr><td>PRM／verifier</td><td>Qwen2.5-Math-PRM-7B</td><td>best-of-N 與步驟 beam 的標準強 baseline</td><td>需下載 <span class="ev">〔id 未查證〕</span></td><td class="ok">可</td></tr>
+        <tr class="group"><td colspan="5">新訓練的小模型（只有這些需要訓練）</td></tr>
+        <tr><td>predictor</td><td>4–6 層 block-causal Transformer，d＝512–768</td><td>約 20–60M，相當於 V-JEPA 2-AC 的 300M 按 base 大小縮小</td><td>—</td><td class="ok">可</td></tr>
+        <tr><td>潛動作編碼器</td><td>逆動力學 g(z<sub>k</sub>, z<sub>k+1</sub>)，瓶頸 8–32 維</td><td>約 1–5M。讓 CEM 能在低維上做，對應 7 維動作</td><td>—</td><td class="ok">可</td></tr>
+        <tr><td>value head</td><td>線性或 2 層 MLP 探針</td><td>約 1–5M。文獻的 AUC 約 0.8</td><td>—</td><td class="ok">可</td></tr>
+        <tr><td>解碼（可解釋性）</td><td>logit lens／Patchscopes，直接用凍結的 base</td><td>免訓練。訓練式 decoder 降為選配</td><td>—</td><td class="ok">可</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="poc">
+  <div class="sec-head"><div class="eyebrow">PoC：停損關先寫死</div><h2>三道關，任何一道沒過就停下來改方向</h2>
+  <p class="muted small">門檻是我選的 <span class="ev">〔判讀〕</span>，要在開跑前寫下（預先登記）；要改的話，開跑前改。每個 run 都走 CLAUDE.md §4.1 的殼，並用 <span class="mono">gpu_guard</span> 包住。</p></div>
+  <div class="flow">
+    <div class="step"><span class="sid plain">P0 資料</span><h3>取樣、切步、抽 hidden</h3><p>1.5B 模型；GSM8K train 2,000 題 × 8 次取樣，test 1,319 題。抽 4 個層的步驟邊界 hidden state。</p><span class="pass">過：載入斷言「步驟 token 數總和＝整條長度」全部成立（規則 6）</span><span class="fail">不過：停下回報</span></div>
+    <div class="step gate"><span class="sid">K1 訊號</span><h3>hidden state 有沒有對錯訊號</h3><p>按題目切 train／val，用線性探針從 z<sub>k</sub> 預測最終對錯。</p><span class="pass">過：軌跡中段 AUC ≥ 0.70</span><span class="fail">不過（&lt; 0.60）：E1 能量不可行，轉 B／C</span></div>
+    <div class="step"><span class="sid plain">K2a 健全性</span><h3>predictor 有沒有學到東西</h3><p>跟 copy baseline（ẑ<sub>k+1</sub>＝z<sub>k</sub>）、線性 baseline 比 L1 誤差。</p><span class="pass">過：L1 ≤ copy 的 0.8 倍</span><span class="fail">不過：回頭檢查切步方式與選的層</span></div>
+    <div class="step gate"><span class="sid">K2b 想像</span><h3>想像比直接 value 好嗎</h3><p>300 個前綴 × 8 個候選，每個續寫 8 次估真實 value。比 Spearman ρ：V(真實 z<sub>k+1</sub>)、H＝2／4 的 CEM 分數、接 predictor 特徵的 value。</p><span class="pass">過：後兩者任一比 V(真實) 高 ≥ ＋0.05</span><span class="fail">不過：世界模型多餘，寫成負面結果，主線轉 C</span></div>
+    <div class="step gate"><span class="sid">K3 同計算量</span><h3>端到端贏不贏</h3><p>GSM8K test 上比 greedy、SC@{4,8,16}、BoN＋探針、步驟 beam＋V(真實)、PRM beam、A（H＝2／4），報準確率對生成 token、FLOPs、KV 峰值、wall-clock。</p><span class="pass">過：至少一個預算點勝過步驟 beam＋V(真實) ≥ 1.0 pt，且 95% CI 不跨 0</span><span class="fail">不過：NO-GO，結果寫成分析</span></div>
+    <div class="step"><span class="sid plain">RQ3</span><h3>失敗軌跡有沒有用</h3><p>predictor 與 value 分別只用正確軌跡、或正確加錯誤軌跡訓練，用 K2b 的指標比。</p><span class="pass">報告兩者的差異</span></div>
+  </div>
+  <div class="fig">
+    <h3>時程 <span class="ev">🔶 計劃</span></h3>
+    <div class="fig-scroll">
+      <div class="tl" role="table" aria-label="時程">
+        <div class="th"></div><div class="th">10/21–10/23</div><div class="th">第 1 週<br>10/24–10/30</div><div class="th">第 2 週<br>10/31–11/6</div><div class="th">第 3 週<br>11/7–11/13</div><div class="th">第 4 週<br>11/14–11/20</div>
+        <div class="lane">GPU</div>
+        <div class="bar tiara">MI300X 只給 Tiara stage-2（租約 10/23 09:00Z 結束）</div>
+        <div class="bar poc">3090：P0＋K1</div>
+        <div class="bar poc">K2a＋K2b</div>
+        <div class="bar poc">K3</div>
+        <div class="bar dec">RQ3＋判定</div>
+        <div class="lane">閱讀</div>
+        <div class="bar read">—</div>
+        <div class="bar read" style="grid-column: span 2">讀完 4 篇高重疊論文的全文，K2 開跑前決定是否撞題</div>
+        <div class="bar read" style="grid-column: span 2">寫 RUNLOG、整理結果圖</div>
+      </div>
+    </div>
+    <p class="small muted">資源估計 <span class="ev">〔估算，NOT_MEASURED〕</span>：取樣約 4M token，K2b 續寫約 2.9M token，加上 hidden 抽取與小模型訓練，全程約 1–2 GPU 天。注意 Tiara 在 11 月有投稿（見 VENUES.md），所以 PoC 上限 4 週，Tiara 優先。</p>
+  </div>
+</section>
+
+<section id="risks">
+  <div class="sec-head"><div class="eyebrow">風險</div><h2>最可能出問題的地方</h2></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>風險</th><th>機率 <span class="ev">〔判讀〕</span></th><th>對策</th></tr></thead>
+      <tbody>
+        <tr><td>世界模型跟 value 探針重複（K2b 不過）</td><td><span class="ov hi">高</span></td><td>K2b 就是為了提早抓到這件事，結果寫成負面分析；主線轉 C</td></tr>
+        <tr><td>CEM 鑽 predictor 的漏洞（樂觀偏差）</td><td><span class="ov hi">中–高</span></td><td>ensemble 不一致度懲罰；潛動作限制在 L1 球內；一律對照蒙地卡羅真值</td></tr>
+        <tr><td>跟 Thoughts-as-Planning、CoLA 撞題</td><td><span class="ov mid">中</span></td><td>第 1 週先讀完全文，K2 開跑前決定</td></tr>
+        <tr><td>用換行切步不穩定</td><td><span class="ov mid">中</span></td><td>用固定 token 長度切分當對照；載入時寫斷言</td></tr>
+        <tr><td>跟 Tiara 的時程衝突</td><td><span class="ov mid">中</span></td><td>PoC 上限 4 週、約 2 GPU 天；Tiara 的截稿優先</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="venues">
+  <div class="sec-head"><div class="eyebrow">投稿場所 🔶</div><h2>頂會路線依 K3 的結果分流</h2>
+  <p class="muted small">截稿月份是依各會議典型的年度週期推估，<b>沒有查官方頁面</b>，投稿前一定要自己確認。</p></div>
+  <div class="cols2">
+    <div class="box"><h3><span class="ok">K3 GO</span>：正面結果</h3>
+      <ul class="tight small"><li>NeurIPS 2027（通常 5 月截稿）</li><li>ICML 2027（通常 1 月底，時間偏趕）</li><li>ICLR 2028（通常 9–10 月）</li><li>ACL／EMNLP 2027（走 ARR）；COLM 2027（通常 3 月）</li></ul>
+    </div>
+    <div class="box"><h3><span class="part">K2b／K3 不過</span>：負面但有價值</h3>
+      <ul class="tight small"><li>NeurIPS／ICLR 的 workshop</li><li>TMLR（隨時可投）</li><li>標題可以定成「推理世界模型什麼時候有用」的分析</li></ul>
+    </div>
+    <div class="box"><h3><span class="txt" style="color:var(--textsp);font-weight:700">方向 C</span>：系統論文</h3>
+      <ul class="tight small"><li>MLSys、EuroMLSys</li><li>要跟 Tiara 現有的投稿路線分開（見 VENUES.md）</li></ul>
+    </div>
+  </div>
+</section>
+
+<section id="sources">
+  <div class="sec-head"><div class="eyebrow">投入前要讀的全文與來源</div><h2>第 1 週先讀這四篇</h2></div>
+  <ol class="tight">
+    <li><b>Thoughts-as-Planning</b>：base 是否凍結？規劃器是什麼？有沒有 CEM 或 MPC？</li>
+    <li><b>CoLA</b>：潛動作的維度與離散化方式；MCTS 的成本</li>
+    <li><b>Soft Reasoning</b>：貝氏最佳化在幾維上做、預算多少；有沒有跟 SC 做同計算量比較</li>
+    <li><b>LTO</b>：潛獎勵模型的訓練資料與 AUC；能不能用在一般 LLM</li>
+  </ol>
+  <ul class="src">
+    <li><a href="https://arxiv.org/abs/2506.09985" target="_blank" rel="noopener">V-JEPA 2（2506.09985）</a></li>
+    <li><a href="https://arxiv.org/abs/2605.28842" target="_blank" rel="noopener">Thoughts-as-Planning（2605.28842）</a></li>
+    <li><a href="https://proceedings.mlr.press/v267/jia25e.html" target="_blank" rel="noopener">CoLA（ICML 2025）</a></li>
+    <li><a href="https://aclanthology.org/2023.emnlp-main.507" target="_blank" rel="noopener">RAP（EMNLP 2023）</a></li>
+    <li><a href="https://arxiv.org/abs/2505.24688" target="_blank" rel="noopener">Soft Reasoning（2505.24688）</a></li>
+    <li><a href="https://arxiv.org/abs/2509.26314" target="_blank" rel="noopener">LTO（2509.26314）</a></li>
+    <li><a href="https://arxiv.org/abs/2505.13308" target="_blank" rel="noopener">LatentSeek（2505.13308）</a></li>
+    <li><a href="https://arxiv.org/abs/2510.04182" target="_blank" rel="noopener">LTPO（2510.04182）</a></li>
+    <li><a href="https://arxiv.org/abs/2603.04948" target="_blank" rel="noopener">∇-Reasoner（2603.04948）</a></li>
+    <li><a href="https://arxiv.org/abs/2507.02092" target="_blank" rel="noopener">EBT（2507.02092）</a></li>
+    <li><a href="https://arxiv.org/abs/2602.01698" target="_blank" rel="noopener">LED（2602.01698）</a></li>
+    <li><a href="https://arxiv.org/abs/2504.05419" target="_blank" rel="noopener">Probing self-verification（2504.05419）</a></li>
+    <li><a href="https://arxiv.org/abs/2511.14773" target="_blank" rel="noopener">Mid-CoT probe（2511.14773）</a></li>
+    <li><a href="https://arxiv.org/abs/2512.05325" target="_blank" rel="noopener">LYNX（2512.05325）</a></li>
+    <li><a href="https://arxiv.org/abs/2607.28966" target="_blank" rel="noopener">BLADE（2607.28966）</a></li>
+    <li><a href="https://arxiv.org/abs/2512.19171" target="_blank" rel="noopener">JEPA-Reasoner（2512.19171）</a></li>
+    <li><a href="https://arxiv.org/abs/2604.18464" target="_blank" rel="noopener">Semantic Step Prediction（2604.18464）</a></li>
+    <li><a href="https://arxiv.org/abs/2511.05963" target="_blank" rel="noopener">NextLat（2511.05963）</a></li>
+    <li><a href="https://arxiv.org/abs/2509.14252" target="_blank" rel="noopener">LLM-JEPA（2509.14252）</a></li>
+    <li><a href="https://arxiv.org/abs/2610.01947" target="_blank" rel="noopener">Latent JEPA 化學（2610.01947）</a></li>
+    <li><a href="https://arxiv.org/abs/2604.08065" target="_blank" rel="noopener">Pearl（2604.08065）</a></li>
+    <li><a href="https://github.com/facebookresearch/coconut" target="_blank" rel="noopener">Coconut 官方碼</a></li>
+    <li><a href="https://arxiv.org/abs/2505.11484" target="_blank" rel="noopener">SoftCoT++（2505.11484）</a></li>
+    <li><a href="https://arxiv.org/abs/2505.15778" target="_blank" rel="noopener">Soft Thinking（2505.15778）</a></li>
+    <li><a href="https://aclanthology.org/2025.emnlp-main.36/" target="_blank" rel="noopener">CODI（EMNLP 2025）</a></li>
+    <li><a href="https://arxiv.org/abs/2511.20639" target="_blank" rel="noopener">LatentMAS（2511.20639）</a></li>
+    <li><a href="https://arxiv.org/abs/2507.08799" target="_blank" rel="noopener">KV Cache Steering（2507.08799）</a></li>
+    <li><a href="https://arxiv.org/abs/2504.06261" target="_blank" rel="noopener">Hogwild! Inference（2504.06261）</a></li>
+    <li><a href="https://arxiv.org/abs/2510.03215" target="_blank" rel="noopener">Cache-to-Cache（2510.03215）</a></li>
+    <li><a href="https://arxiv.org/abs/2607.10362" target="_blank" rel="noopener">Control Theory of Predictability（2607.10362）</a></li>
+  </ul>
+</section>
+
+<footer>
+  <div>文字底稿與完整紀錄：<span class="mono">docs/research_20261020_latent_mpc/README.md</span></div>
+  <div>入門導讀與論文精讀（55 頁 PDF，含原論文截圖，不放進公開 repo）：<span class="mono">/mlsteam/data/tiara/papers/latent_mpc_20261020/out/LatentMPC_guide_20261020.pdf</span></div>
+  <div>證據標記：〔HTML〕工具讀了全文前段 · 〔摘要〕只讀 arXiv 摘要 · 〔搜尋摘要〕只有搜尋片段 · 〔README〕GitHub · 〔算術〕公式計算 · 〔判讀〕推論或主觀評分 · 🔶 推估，需自行確認 · NOT_MEASURED 沒有量</div>
+  <div>本頁沒有任何新的 GPU／CPU 量測。所有計算量與 KV 數字都是公式算出來的，不是實測。</div>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var data = [
+    { h: "H＝1", v: [8, 8.00, 8.00] },
+    { h: "H＝2", v: [16, 8.42, 18.53] },
+    { h: "H＝4", v: [32, 9.26, 39.58] },
+    { h: "H＝8", v: [64, 10.95, 81.68] }
+  ];
+  var names = ["文字前瞻", "A，CEM 64×5", "A，CEM 800×10"];
+  var cls = ["b2", "b1", "b3"];
+  var X0 = 52, X1 = 628, Y0 = 18, Y1 = 254, YMAX = 90;
+  function y(v) { return Y1 - v / YMAX * (Y1 - Y0); }
+  var svg = document.getElementById("chart");
+  var s = "";
+  [0, 20, 40, 60, 80].forEach(function (t) {
+    s += '<line class="c-grid" x1="' + X0 + '" x2="' + X1 + '" y1="' + y(t) + '" y2="' + y(t) + '"/>';
+    s += '<text class="c-tick" x="' + (X0 - 8) + '" y="' + (y(t) + 4) + '" text-anchor="end">' + t + '</text>';
+  });
+  s += '<line class="c-axis" x1="' + X0 + '" x2="' + X1 + '" y1="' + Y1 + '" y2="' + Y1 + '"/>';
+  var cw = (X1 - X0) / data.length, bw = 30, gap = 3, gw = bw * 3 + gap * 2;
+  var hits = [];
+  data.forEach(function (d, i) {
+    var gx = X0 + cw * i + (cw - gw) / 2;
+    d.v.forEach(function (v, j) {
+      var x = gx + j * (bw + gap), top = y(v), hgt = Y1 - top;
+      var r = Math.min(4, hgt / 2);
+      s += '<path class="' + cls[j] + '" d="M' + x + ',' + Y1 + ' V' + (top + r) + ' Q' + x + ',' + top + ' ' + (x + r) + ',' + top + ' H' + (x + bw - r) + ' Q' + (x + bw) + ',' + top + ' ' + (x + bw) + ',' + (top + r) + ' V' + Y1 + ' Z"/>';
+      s += '<text class="c-lab" x="' + (x + bw / 2) + '" y="' + (top - 5) + '" text-anchor="middle">' + (v % 1 === 0 ? v : v.toFixed(1)) + '</text>';
+      hits.push({ x: x - 1, w: bw + 2, i: i, j: j });
+    });
+    s += '<text class="c-cat" x="' + (X0 + cw * i + cw / 2) + '" y="' + (Y1 + 22) + '" text-anchor="middle">' + d.h + '</text>';
+  });
+  s += '<text class="c-tick" x="' + X0 + '" y="' + (Y1 + 42) + '">單位：解碼一個候選步驟（N＝8、L＝40、base 7.6B）</text>';
+  hits.forEach(function (h, k) {
+    s += '<rect class="c-hit" data-k="' + k + '" x="' + h.x + '" y="' + Y0 + '" width="' + h.w + '" height="' + (Y1 - Y0) + '"/>';
+  });
+  svg.innerHTML = s;
+  var tip = document.getElementById("tip"), box = document.getElementById("cbox");
+  svg.querySelectorAll(".c-hit").forEach(function (el) {
+    el.addEventListener("mouseenter", function () {
+      var h = hits[+el.dataset.k], d = data[h.i], v = d.v[h.j];
+      var ratio = (d.v[0] / v).toFixed(2);
+      tip.innerHTML = '<b>' + d.h + ' · ' + names[h.j] + '</b><br>成本 ' + (v % 1 === 0 ? v : v.toFixed(2)) + (h.j === 0 ? '' : '<br>文字前瞻 ÷ 這個 ＝ ' + ratio + '×');
+      tip.hidden = false;
+      var bb = box.getBoundingClientRect(), eb = el.getBoundingClientRect();
+      var left = eb.left - bb.left + eb.width / 2 - tip.offsetWidth / 2;
+      left = Math.max(0, Math.min(left, bb.width - tip.offsetWidth));
+      tip.style.left = left + "px";
+      tip.style.top = "4px";
+    });
+    el.addEventListener("mouseleave", function () { tip.hidden = true; });
+  });
+
+  var rows = [["0.5B", 1.16], ["1.5B", 2.25], ["7.6B", 3.45], ["8B", 3.48]];
+  var MAXR = 4.4, hb = document.getElementById("hbars"), out = "";
+  rows.forEach(function (r) {
+    out += '<div class="hb"><span class="mono">' + r[0] + '</span><span class="track"><span class="fill" style="width:' + (r[1] / MAXR * 100).toFixed(1) + '%"></span><span class="cap" style="left:' + (4 / MAXR * 100).toFixed(1) + '%"></span></span><span class="v">' + r[1].toFixed(2) + '×</span></div>';
+  });
+  hb.innerHTML = out;
+})();
+</script>

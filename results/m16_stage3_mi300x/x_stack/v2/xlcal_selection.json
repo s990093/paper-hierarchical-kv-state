@@ -1,0 +1,160 @@
+{
+ "go": true,
+ "which": "xlcal",
+ "reason": "xKV 校準基底 vs 每題 SVD（code/m16_xstack_combos_v2.json 的 xlcal_pairs）",
+ "tasks": [
+  "T2",
+  "T3",
+  "T4",
+  "T5"
+ ],
+ "seed0": 62000,
+ "n": 24,
+ "tf_seed0": 60000,
+ "tf_n": 12,
+ "tf_combos": "code/m16_xstack_combos_v2.json",
+ "models": {
+  "llama": {
+   "configs": [
+    {
+     "spec": "xl:k11:v17:cal",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k11:v17",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    },
+    {
+     "spec": "xl:k22:v34:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    },
+    {
+     "spec": "xl:k28:v42:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k28:v42+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    }
+   ]
+  },
+  "qwen": {
+   "configs": [
+    {
+     "spec": "xl:k11:v17:cal",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k11:v17",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    },
+    {
+     "spec": "xl:k22:v34:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    },
+    {
+     "spec": "xl:k28:v42:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k28:v42+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    }
+   ]
+  }
+ },
+ "run_id": "20261021-123130-m16-xlcal-plan",
+ "ts": "2026-10-21T12:31:31+00:00"
+}
