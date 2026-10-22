@@ -5,7 +5,8 @@
 
 run：
   §2.2 正確性閘：固定 seed 的隨機 token，8K、32K；HF 整段 prefill（logits_to_keep=1）當參考；
-       每個候選以 512 一塊依序 prefill，比最後一個位置的 logits（argmax、top-5 集合、max|Δ|）。→ gate.csv
+       每個候選以 512 一塊依序 prefill，比最後一個位置的 logits（argmax、top-5 重疊數、max|Δ|）。→ gate.csv
+       （§8 偏離 2，10/22 冒煙之後、正式資料之前：top-5 從「集合相同」改成「至少 4 個相同」——冒煙裡 sdpa 自己在 2K 就不相同）
        接線檢查：第 0 層的 K、V（attention 之前算的）必須和 sdpa 逐位元相同，不同就停。
   §2.3 速度：C1 協定（暖機 4 塊，chunk 0–63 每塊前後 synchronize），rounds 輪，每輪候選順序輪換。→ speed.csv
 choose：§2.2 的過關規則＋§2.3 的分數（Σ_{i<64} 每塊各輪中位數）→ 每個模型的勝者；勝者沒有比 sdpa 快 ≥5% → stop_loss。
@@ -64,7 +65,7 @@ def cmd_run(a):
     os.makedirs(a.out_dir, exist_ok=True)
     rdir = os.path.join(os.environ.get("TIARA_RUNS", "."), run_id())
     gate = Out(os.path.join(a.out_dir, "gate.csv"),
-               ["model", "cand", "length", "status", "argmax_same", "top5_same", "max_abs_dlogit", "hf_argmax", "cand_argmax",
+               ["model", "cand", "length", "status", "argmax_same", "top5_same", "top5_overlap", "max_abs_dlogit", "hf_argmax", "cand_argmax",
                 "kv_l0_same_as_sdpa", "kv_last_max_abs_vs_sdpa", "error", "contaminated"])
     speed = Out(os.path.join(a.out_dir, "speed.csv"),
                 ["model", "cand", "round", "pos_in_round", "chunk_idx", "pos_end", "ms", "contaminated"])
@@ -99,6 +100,7 @@ def cmd_run(a):
                     if c == "sdpa":
                         l0_sdpa, last_sdpa = l0, last.clone()
                     row.update(status="ok", argmax_same=int(int(ref.argmax()) == int(lg.argmax())), top5_same=int(top_ref == top_c),
+                               top5_overlap=len(top_ref & top_c),
                                max_abs_dlogit=round(float((lg - ref).abs().max()), 6), hf_argmax=int(ref.argmax()),
                                cand_argmax=int(lg.argmax()),
                                kv_l0_same_as_sdpa=("" if l0_sdpa is None else int(torch.equal(l0, l0_sdpa))),
@@ -145,7 +147,7 @@ def cmd_choose(a):
     speed = list(csv.DictReader(open(os.path.join(a.out_dir, "speed.csv"))))
     if any(r["contaminated"] == "1" for r in gate + speed):
         raise SystemExit("[attn_bench choose] 有污染的列（contaminated=1）→ 停，要重量")
-    out = {"run_id": run_id(), "ts": ts(), "rule": "P0-1 §2.2–§2.3：過閘＝argmax 相同、top-5 相同、max|Δlogit| ≤ max(0.25, 2×sdpa)；"
+    out = {"run_id": run_id(), "ts": ts(), "rule": "P0-1 §2.2–§2.3（＋§8 偏離 2）：過閘＝argmax 相同、top-5 至少 4 個相同、max|Δlogit| ≤ max(0.25, 2×sdpa)；"
            "分數＝Σ_{i<64} 每塊各輪中位數；勝者沒有比 sdpa 快 ≥5% → stop_loss", "models": {}}
     for m in sorted({r["model"] for r in gate}):
         g = [r for r in gate if r["model"] == m]
@@ -156,10 +158,10 @@ def cmd_choose(a):
         for c in sorted({r["cand"] for r in g}):
             rows = [r for r in g if r["cand"] == c]
             p = len(rows) == len(LENS) and all(
-                r["status"] == "ok" and r["argmax_same"] == "1" and r["top5_same"] == "1"
+                r["status"] == "ok" and r["argmax_same"] == "1" and int(r["top5_overlap"]) >= 4      # §8 偏離 2：top-5 至少 4 個相同
                 and float(r["max_abs_dlogit"]) <= max(0.25, 2 * sd[int(r["length"])]) for r in rows)
             passed[c] = p
-            why[c] = [{k: r[k] for k in ("length", "status", "argmax_same", "top5_same", "max_abs_dlogit", "error")} for r in rows]
+            why[c] = [{k: r.get(k) for k in ("length", "status", "argmax_same", "top5_same", "top5_overlap", "max_abs_dlogit", "error")} for r in rows]
         sc = {}
         for c in sorted({r["cand"] for r in speed if r["model"] == m}):
             per = {}

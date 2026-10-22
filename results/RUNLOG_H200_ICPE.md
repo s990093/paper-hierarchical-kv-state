@@ -95,3 +95,14 @@
 - 21652（冒煙，還沒開跑）加：P0-2 的 GPU 重播（HINT-PF、k＝8、前 50 個請求）、P1-1 的 loadpath（`--smoke`）；時限 1:15（commit `ef98fd1`）。
 - 21653（P0-1 S1）的依賴從 `afterok:21652` 改成 `afterany:21652`（不讓冒煙裡別的實驗的失敗自動取消整條鏈），並 **`scontrol hold 21653`**：冒煙跑完、我看過結果才放行。
 - 開 `docs/h200/ICPE_EVIDENCE.md` 骨架（只放已核對的數字；待填的列標出是哪個實驗）。
+
+---
+
+## ICPE-SMOKE — job 21652（不量時間、不進 results）
+**狀態**: PASS（exit 0）　**執行時間**: 2026-10-22 15:51:32 → 15:54:46（+08:00）　**run_id**: `20261022-155134-icpe-p01-smoke`（輸出在 run 目錄的 `smoke/`）
+**看到的**:
+- attention：五個候選（sdpa、fa2、fa3、fa4、sdpa_cudnn）在 Llama、Qwen 都載得起來、跑得通；2K／8K 的 argmax 都和 HF 相同，max|Δlogit| ≤ 0.156；第 0 層 KV 和 sdpa 逐位元相同（接線對）。**sdpa 自己在 2K 的 top-5 就和 HF 不同**（兩個模型）→ 登記的「top-5 集合相同」會隨機踢掉候選 → P0-1 §8 偏離 2（改成至少 4 個相同；S1 還沒跑）。fa4（CuTe DSL）在 sm_90 可用。速度只量 8 塊（不算分數）：fa3 每塊的增加量約 sdpa 的一半。
+- m10_speed grid（fa3＋S4，CPU 層、nfs；G5b＋S0，CPU 層忙）各 1 次：跑完、`kv_bad` 0；G5b 在 CPU 層忙時又選了全部載入（0.235 s vs Cake 0.123 s）。
+- P0-2 重播（HINT-PF、k＝8、前 50 個請求）：跑完；50 個請求 GPU÷S_orig 的 TTFT 平均比 0.969、逐請求中位 0.951（小請求 GPU 較快：模擬把最後不滿的一塊算成整塊）；22 個請求排隊（序列開頭都是第一次的 prefill）。
+- P1-1 loadpath（`--smoke`，4 塊 ×16）：兩個模型都跑完、位元組帳斷言過。每題 SVD 版在冒煙裡會被 ×16 放大基底的搬運（只有冒煙這樣，正式 64 塊不縮放）。
+**之後**：`scontrol release 21653`（S1 仍等 DL_Lab4 的 3 個 job 結束）。
