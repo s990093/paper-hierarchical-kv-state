@@ -247,3 +247,10 @@
 
 - **失敗 5**（10/22 04:09Z）：`40_v0` 的 V0-b（APC on）文字題 `v0check` FAIL（run `20261022-040931-m16-v0b-txt`，rc=3）：3 題裡 2 題 gpu_hit 的輸出在第 7、15 個 token 和 miss 分歧，**分歧位置 miss 的 top-1／top-2 logprob 差都是 0.0**（數值平手）；miss_cold、gpu_hit_cached、determinism（miss vs miss2）全 PASS；V0-a（APC off）與 V0-b 亂數題全 PASS。判讀：命中路徑（只算最後幾個 token）和完整 prefill 的加總順序不同，平手時 argmax 會翻；這是 `v0_f1_i3_howto.md` §2「不一致時怎麼讀」預料的情況，不是 KV 錯（真正的無損證據是 F1 的逐 block 位元組比對，第一階段已做）。
 - 修法：`40_v0.sh` 加 `tie_ok`：只在「非 match 的檢查全 PASS、而且每個分歧位置 margin ≤ 1e-3」時記 NEEDS_HUMAN（資訊）並當成通過，其他情況照樣停。用這次的真實 json 測：判「只是數值平手」；把一個 margin 改成 0.5 的反向對照判「不是」。04:1xZ 重跑 V0。
+- V0 重跑（10/22 04:11–04:28Z）完成：a（APC off）、b（APC on）、c（APC＋CPU 卸載）、d（＋ROCM_ATTN patch）、e（fs 分層）都能跑；不一致的只有 b-txt、c-rnd、d-txt、e-rnd，**分歧位置 margin 全部 ≤ 1e-3（數值平手）**，照 tie_ok 當成通過、記成資訊 NEEDS_HUMAN。
+
+## F2　共用前綴 burst（重現 vLLM #44294；10/22 04:28–05:46Z，全部 CLEAN）〔實測〕
+
+- run：`20261022-0430…-m16-f2-*`（A＝APC、ROCM_ATTN；A′(Ap)＝APC、TRITON_ATTN；B＝APC＋CPU 卸載（connector 會強制 TRITON_ATTN）；C＝不復用；每格 3 次、evict＝reset）。產出 `results/m16_stage3_mi300x/f2_shared_prefix_burst/`（summary_*.json、requests_*.csv）。
+- burst 的 makespan（秒，3 次中位數；P＝前綴長、N＝同時請求數）：P＝10K、N＝64：A 2.20、A′ 4.41、B 4.42、C 49.2；P＝32K、N＝64：A 5.44、A′ 14.50、B 11.53、C 382；P＝32K、N＝32：A 4.04、A′ 12.19、B 8.36。B 的 connector log：N＝64 時 63 個請求被「chunks being loaded」延後過。
+- 判讀：**#44294 的「開卸載慢一倍」在 MI300X／vLLM 0.28 沒有重現**——和同後端的 A′ 比，B 在 10K 時打平、32K 時更快（延後邏輯有觸發，但淨效果不負）。B 對 A 慢約 2 倍，**全部來自 connector 強制改用 TRITON_ATTN**（A′ 對 A 一樣慢約 2 倍）。→ ROCm 上開 CPU 卸載的真正代價是注意力後端的退回，不是延後邏輯；這也支持候選 3（AMD 上的還原路徑）。
