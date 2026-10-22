@@ -12,6 +12,8 @@
 #
 #   sbatch --job-name=icpe-p01s1 --time=3:00:00 code/r_h200_icpe.sh --part p01s1   # 量時間：S1 attention 比較＋勝者的校準（P0-1 §2）
 #   sbatch --job-name=icpe-p01ab --time=6:00:00 code/r_h200_icpe.sh --part p01ab   # 量時間：(a) B 主設定、(b) 還原格子（P0-1 §3.1–3.2）
+#   sbatch --job-name=icpe-p02   --time=8:00:00 code/r_h200_icpe.sh --part p02     # 量時間：P0-2 的 GPU 重播（冒煙＋12 個 run）
+#   sbatch --job-name=icpe-cpu   --time=6:00:00 code/r_h200_icpe.sh --part cpu     # 只用 CPU：P0-1 (c) X1／X5 三個版本、P0-2 的全尺寸 HINT-PF 模擬
 #   bash code/r_h200_icpe.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 量時間的 part 開跑前檢查：節點上有我們自己的別的 job（同一個 Slurm 使用者，含 DL_Lab4）→ 退出（memory h200-no-self-cotenancy-for-timing；
@@ -43,8 +45,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  p01s1|p01ab) TIMING=1 ;;
-  *) echo "要 --part p01s1|p01ab" >&2; exit 2 ;;
+  p01s1|p01ab|p02) TIMING=1 ;;
+  cpu) TIMING=0 ;;
+  *) echo "要 --part p01s1|p01ab|p02|cpu" >&2; exit 2 ;;
 esac
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # shellcheck disable=SC1091
@@ -52,6 +55,10 @@ source "$REPO/code/env_h200.sh"
 cd "$REPO"
 ulimit -c 0
 P01=$REPO/results/icpe_h200/p01
+P02=$REPO/results/icpe_h200/p02
+# 3b 的模擬（X1、X5）與 P0-2：Mooncake trace 用 /work 上那份（sha256 和 X1 文件相同：conversation b8cbb061…、toolagent 48a2db1a…）
+export P3_CONST=h200 X1_TRACE_DIR=$TIARA_HOME/datasets/traces X5_TRACE_DIR=$TIARA_HOME/datasets/traces
+P3LOCAL=/tmp/hungweilai-p3/icpe                                          # 大的原始輸出（npz）放 hgx-cn01 本地，不進 /work 配額
 export M10_SWEEP_DIR=$REPO/results/m10_sweep_h200 M10_PRECISION_DIR=$REPO/results/m10_precision_h200
 export M10_BUSY_LEVELS=$REPO/results/m7_write_policy_h200/busy_levels.json
 
@@ -68,7 +75,14 @@ if [ "$DRY" = 0 ]; then
   echo "[r_h200_icpe] $(date -Is) part=$PART job=$SLURM_JOB_ID node=${SLURMD_NODENAME:-?} git=$(git rev-parse --short HEAD)"
   echo "[r_h200_icpe] 同節點的 job（開跑時）："; squeue -h -w "${SLURMD_NODENAME:-$(hostname -s)}" -o '%i %u %a %b %T %M'
   nvidia-smi --query-gpu=index,name,pci.bus_id,memory.total,memory.used --format=csv
-  mkdir -p "$P01/attn" "$P01/calib" "$P01/b" "$P01/grid"
+  mkdir -p "$P01/attn" "$P01/calib" "$P01/b" "$P01/grid" "$P02" "$P3LOCAL"
+  python3 - "$TIARA_HOME/datasets/traces" <<'PY' || { echo "[r_h200_icpe] Mooncake trace 的 sha256 不對 → 停" >&2; exit 2; }
+import hashlib, sys
+want = {"conversation_trace.jsonl": "b8cbb061a85206d7", "toolagent_trace.jsonl": "48a2db1a13d3bc05"}
+for f, h in want.items():
+    got = hashlib.sha256(open(f"{sys.argv[1]}/{f}", "rb").read()).hexdigest()
+    print("[r_h200_icpe]", f, got[:16]); assert got.startswith(h), (f, got)
+PY
 fi
 
 STARTED=1; [ -n "$FROM" ] && STARTED=0
@@ -146,6 +160,50 @@ if [ "$PART" = p01ab ]; then
       done
     done
   done
+fi
+
+# ============================================================== P0-2 GPU 重播（§5–§7）
+if [ "$PART" = p02 ]; then
+  if [ "$DRY" = 1 ]; then KK="<k>"; else
+    KK=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['chosen_k'])" "$P02/select.json") || { echo "沒有 $P02/select.json" >&2; exit 2; }
+    python3 - "$P02/selftest.csv" <<'PY' || { echo "[r_h200_icpe] P0-2 的 CPU 自測沒有全過（§7）→ 停" >&2; exit 2; }
+import csv, sys
+rows = list(csv.DictReader(open(sys.argv[1])))
+last = max(r["run_id"] for r in rows)
+bad = [r["check"] for r in rows if r["run_id"] == last and r["passed"] != "True"]
+print("[r_h200_icpe] selftest", last, "fail:", bad); sys.exit(1 if bad or not rows else 0)
+PY
+  fi
+  step P02-SMOKE m7run icpe-p02-smoke python code/icpe/x1_gpu.py gpu --out "$P02" --k "$KK" --cpu 128 --policy LRU --max-req 100 --csv gpu_smoke.csv
+  # 12 個 run 的順序（固定 seed 20261023 打亂；§6）
+  ORDER=$(python3 - <<'PY'
+import random
+runs = [(c, p, 0) for c in (128, 256) for p in ("LRU", "FREQ2Q", "O-BEL", "HINT-PF", "O-PF")] + [(128, "LRU", 1), (256, "LRU", 1)]
+random.Random(20261023).shuffle(runs)
+for c, p, r in runs:
+    print(c, p, r)
+PY
+)
+  while read -r c pol rep; do
+    step "P02-$c-$pol-r$rep" m7run "icpe-p02-$c-$pol-r$rep" python code/icpe/x1_gpu.py gpu --out "$P02" --k "$KK" --cpu "$c" --policy "$pol" --rep "$rep"
+  done <<< "$ORDER"
+fi
+
+# ============================================================== 只用 CPU：P0-1 (c)（§3.3）＋P0-2 全尺寸 HINT-PF（只報告）
+if [ "$PART" = cpu ]; then
+  VS="V0 V2"
+  if [ "$DRY" = 1 ] || { [ -f "$P01/calib/calib_c1.csv" ] && [ -f "$P01/calib/calib_c5.csv" ] && [ "$(win llama)" != STOP ]; }; then VS="V0 V1 V2"
+  else skip "P0-1 (c) V1" "Llama 沒有 V1 的校準（S1 停損或還沒跑）"; fi
+  for V in $VS; do
+    FV="python code/icpe/p3_fvar.py --variant $V --calib $P01/calib --out-root $P01/sim_$V"
+    step "P01C-$V-X1-SWEEP" m7run "icpe-p01c-x1-sweep-$V" env RUN_DIR="$P3LOCAL/x1sweep_$V" bash -c "mkdir -p $P3LOCAL/x1sweep_$V && $FV x1 sweep --workers 14"
+    step "P01C-$V-X1-AN"    m7run "icpe-p01c-x1-an-$V" $FV x1 analyze --sweep x1_sweep.csv --traces conversation toolagent
+    step "P01C-$V-X1-H1800" m7run "icpe-p01c-x1-h1800-$V" $FV x1 analyze --sweep x1_sweep.csv --traces conversation toolagent --dead-h 1800 --out-prefix x1h1800
+    step "P01C-$V-X1-H3600" m7run "icpe-p01c-x1-h3600-$V" $FV x1 analyze --sweep x1_sweep.csv --traces conversation toolagent --dead-h 3600 --out-prefix x1h3600
+    step "P01C-$V-X5-GRID"  m7run "icpe-p01c-x5-grid-$V" bash -c "rm -rf $P3LOCAL/x5_$V && mkdir -p $P3LOCAL/x5_$V $P01/sim_$V/x5 && $FV x5 --out-dir $P01/sim_$V/x5 --raw-dir $P3LOCAL/x5_$V --procs 14"
+    step "P01C-$V-X5-AN"    m7run "icpe-p01c-x5-an-$V" $FV x5a --out-dir "$P01/sim_$V/x5" --raw-dir "$P3LOCAL/x5_$V"
+  done
+  step P02-FULLSIM m7run icpe-p02-fullsim python code/icpe/x1_gpu.py fullsim --out "$P02"
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_icpe] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi
