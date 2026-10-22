@@ -1,0 +1,32 @@
+[
+ {
+  "state": "busy1",
+  "length": 32768,
+  "duty": 0.4,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.649",
+  "n_matmul": 935,
+  "seconds": 4.291,
+  "matmul_per_s": 217.898
+ },
+ {
+  "state": "busy2",
+  "length": 32768,
+  "duty": 0.7,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.653",
+  "n_matmul": 2392,
+  "seconds": 6.406,
+  "matmul_per_s": 373.4
+ },
+ {
+  "state": "busy3",
+  "length": 32768,
+  "duty": 0.9,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.655",
+  "n_matmul": 7076,
+  "seconds": 14.796,
+  "matmul_per_s": 478.237
+ }
+]

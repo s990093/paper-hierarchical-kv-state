@@ -1,0 +1,5 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,ssd_meas,busy3,E0,cake,10,0.31086,0.89516,2 3,0.0,1790967808.0,,,0,0,20261022-011846-m16-x3-validate2
+32768,ssd_meas,busy3,E0,loadall,10,0.22363,0.79627,0,0.0,1879048192.0,,,0,0,20261022-011846-m16-x3-validate2
+32768,ssd_meas,busy3,E1,cake,10,0.10904,0.6906,1,63.0,578027520.0,,,0,0,20261022-011846-m16-x3-validate2
+32768,ssd_meas,busy3,E1,loadall,10,0.07465,0.66338,0,64.0,587202560.0,,,0,0,20261022-011846-m16-x3-validate2
