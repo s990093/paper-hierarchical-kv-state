@@ -73,6 +73,7 @@
 | · | `code/h200_port_stage.py`、`code/r_h200_*.sh` | MI300X 的佇列腳本換路徑、run 名稱（m10h-） | 不會 |
 | · | `m10_cake_ratio.py`、`m10_int4_sensitivity.py` | `M10_PRECISION_DIR`（沒有 Qwen regrid 就用 speed_qwen）、`M10_SENS_OUT` | 不會（MI300X 資料回歸逐字相同） |
 | ⚠ | `m10_iowall.py` | `M10_IOWALL_GRIDS`：run 編號表換成 H200 的主線格子（`results/m10_tier_h200/iowall_grids_h200.json`） | 會，照設計（用 H200 自己量的格子）；Qwen FP8 用原格子（H200 沒有重量那次） |
+| ⚠ | `m7_model.py` 的 `M7_ATTN`（ICPE P0-1，10/22） | attention 可換成 vLLM 內附的 FlashAttention 2／3／4 或 cuDNN SDPA；沒設＝`sdpa`，程式路徑和原本逐位元相同 | **會**：只在 ICPE P0-1 的 run 裡設（`results/icpe_h200/p01/`），用來回答「重算跟 vLLM 一樣快時結論變不變」。其他所有 H200 數字都是 `sdpa`。引用 P0-1 的數字要寫是哪個 attention（`docs/h200/icpe/P0-1_recompute_speed.md`） |
 | ⚠ | `code/tests_h200/` | Triton 在 sm_90 的 AOT 編譯測試、反向對照 | 證據，不是數字 |
 
 ## 5. 只在一台有的結果
