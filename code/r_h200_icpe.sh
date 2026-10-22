@@ -12,6 +12,7 @@
 #
 #   sbatch --job-name=icpe-p01s1 --time=3:00:00 code/r_h200_icpe.sh --part p01s1   # 量時間：S1 attention 比較＋勝者的校準（P0-1 §2）
 #   sbatch --job-name=icpe-p01ab --time=6:00:00 code/r_h200_icpe.sh --part p01ab   # 量時間：(a) B 主設定、(b) 還原格子（P0-1 §3.1–3.2）
+#   sbatch --job-name=icpe-p01brr --time=0:30:00 code/r_h200_icpe.sh --part p01brr # 量時間：P0-1 (b) 和 G_swa 重疊的 2 個 run 照重疊重跑（qwen fa3 L501）
 #   sbatch --job-name=icpe-p02   --time=8:00:00 code/r_h200_icpe.sh --part p02     # 量時間：P0-2 的 GPU 重播（冒煙＋12 個 run）
 #   sbatch --job-name=icpe-cpu   --time=6:00:00 code/r_h200_icpe.sh --part cpu     # 只用 CPU：P0-1 (c) X1／X5 三個版本、P0-2 的全尺寸 HINT-PF 模擬
 #   sbatch --job-name=icpe-p12   --time=6:00:00 code/r_h200_icpe.sh --part p12     # 只用 CPU：P1-2（X1 FI、X5 事後版本、X4 f×0.5）
@@ -49,9 +50,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  p01s1|p01ab|p02|p2|p11t) TIMING=1 ;;
+  p01s1|p01ab|p01brr|p02|p2|p11t) TIMING=1 ;;
   cpu|p12|p11q) TIMING=0 ;;
-  *) echo "要 --part p01s1|p01ab|p02|cpu|p12|p2|p11q|p11t" >&2; exit 2 ;;
+  *) echo "要 --part p01s1|p01ab|p01brr|p02|cpu|p12|p2|p11q|p11t" >&2; exit 2 ;;
 esac
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # shellcheck disable=SC1091
@@ -164,6 +165,16 @@ if [ "$PART" = p01ab ]; then
       done
     done
   done
+fi
+
+# ============================================================== P0-1 (b) 照重疊重跑（10/22 23:41 起 G_swa 和 qwen fa3 L501 的兩步重疊；grid/EXCLUDED_RUNS.csv）
+if [ "$PART" = p01brr ]; then
+  m=qwen; L=501; arm=$(win qwen); F=$(fmt_of $m int4); G=$(fmt_of $m fp8)
+  K4=$(python code/m10_dqsweep.py env S4 --model $m --fmt "$F"); K0=$(python code/m10_dqsweep.py env S0 --model $m --fmt "$F")
+  step "P01BRR-$m-S4-$arm-L$L" m7run "icpe-p01b-$m-s4-$arm-rr" env $K4 M7_ATTN="$arm" bash -c \
+    "python code/m10_speed.py grid --model $m --fmt $F --base-fmt $G --bw-json $P01/grid/bw_$m.json --configs E0 E1 --bw-names cpu b32 nfs --gpu-states idle busy --extra-modes loadall --refs --lengths --launches 1 --reps 5 --launch0 $L --out-dir $P01/grid/${m}_s4_$arm --blocks-out \$TIARA_RUNS/\$RUN_ID/blocks.csv"
+  step "P01BRR-$m-G5B-$arm-L$L" m7run "icpe-p01b-$m-g5b-$arm-rr" env $K0 M7_ATTN="$arm" M10_MEET=g5b bash -c \
+    "python code/m10_speed.py grid --model $m --fmt $F --base-fmt $G --bw-json $P01/grid/bw_$m.json --configs E0 E1 --bw-names cpu b32 nfs --gpu-states idle busy --extra-modes loadall claim --refs --lengths --launches 1 --reps 5 --launch0 $L --out-dir $P01/grid/${m}_g5b_$arm --blocks-out \$TIARA_RUNS/\$RUN_ID/blocks.csv"
 fi
 
 # ============================================================== P0-2 GPU 重播（§5–§7）

@@ -122,10 +122,18 @@ def cmd_analyze_a(a):
     print("δ*", dstar, "passed", out["passed"])
 
 
+def _excluded():
+    """和我們自己的 job 重疊、照重疊要重跑的 run（grid/EXCLUDED_RUNS.csv）；它們的列不進判定。"""
+    import pandas as pd
+    p = os.path.join(P01, "grid", "EXCLUDED_RUNS.csv")
+    return set(pd.read_csv(p).run_id) if os.path.exists(p) else set()
+
+
 def _grid_rows(m, kind, arm):
     import pandas as pd
     pth = os.path.join(P01, "grid", f"{m}_{kind}_{arm}", "restores.csv")
     d = pd.read_csv(pth)
+    d = d[~d.run_id.isin(_excluded())]
     d["arm"], d["kind"] = arm, kind
     return d
 
@@ -184,7 +192,9 @@ def cmd_analyze_b(a):
     C.to_csv(os.path.join(P01, "p01b_cells.csv"), index=False)
     G.to_csv(os.path.join(P01, "p01b_g5b.csv"), index=False)
     g5sum = {arm: float(x.g5b_over_best.mean()) for arm, x in G.groupby("arm")} if len(G) else {}
-    out = dict(run_id=run_id(), ts=ts(), n_cells=len(C), n_flips=int(C.flip.sum()) if len(C) else None,
+    if len(C) and (C.n_per_mode < 10).any():
+        problems.append(f"有格子每種方式不到 10 次（排除重疊的 run 後還沒重跑）：{C[C.n_per_mode < 10][['model', 'tier', 'gpu', 'config', 'n_per_mode']].to_dict('records')}")
+    out = dict(run_id=run_id(), ts=ts(), excluded_runs=sorted(_excluded()), n_cells=len(C), n_flips=int(C.flip.sum()) if len(C) else None,
                flips=C[C.flip].to_dict("records") if len(C) else [], weak_changes=C[C.weak_change].to_dict("records") if len(C) else [],
                passed=bool(len(C) == 24 and not C.flip.any() and not problems),
                g5b_mean_over_best_by_arm=g5sum, problems=problems,
