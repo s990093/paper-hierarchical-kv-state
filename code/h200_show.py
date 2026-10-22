@@ -358,7 +358,7 @@ def cmd_help(a):
             ("log [JOB=<id>] [RAW=1]", "slurm-*.out 整理成步驟表（耗時、exit、失敗的錯誤）＋最新 run 末段"),
             ("runs [N=15]", "最近的 run 目錄：開始、耗時、exit、CONTAMINATED"),
             ("gpu [JOB=<id>]", "進正在跑的 job 看一次 GPU（使用率、記憶體、功率、process）"),
-            ("nvtop [JOB=<id>]", "所有正在跑的 job 各開一格 nvtop（tmux 分格，q 一次全關；JOB= 只看一個）"),
+            ("nvtop [JOB=<id>|PANES=1]", "所有正在跑的 job 的卡畫在同一個畫面（q 離開）；JOB= 原生 nvtop；PANES=1 tmux 分格"),
             ("usage", "lab 內每個人的用量與 fairshare（協調用）"),
         ]),
         ("送 job", "yellow", [

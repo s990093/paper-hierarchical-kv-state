@@ -112,9 +112,18 @@ gpu:
 	@srun --jobid=$(RUNJOB) --overlap -n1 bash -c 'nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu,clocks.sm --format=csv; echo ---; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv' \
 	  | $(SHOW) gpu --job $(RUNJOB)
 
-# 每個 job 的 cgroup 只看得到自己的卡：沒給 JOB 時每個 RUNNING 的 job 開一格 tmux（q 一次全關）
+# 每個 job 的 cgroup 只看得到自己的卡、計算節點不能 ssh，所以單一 nvtop 只看得到一張：
+#   make nvtop            所有 RUNNING 的 job 的卡畫在同一個畫面（code/h200_gputop.py，q 離開）
+#   make nvtop JOB=<id>   那個 job 的原生 nvtop（有行程表）
+#   make nvtop PANES=1    每個 job 一格原生 nvtop（tmux 分格，q 一次全關）
 nvtop:
+ifneq ($(JOB),)
 	@SLURM_BIN=$(SLURM_BIN) NVTOP=$(NVTOP) bash code/h200_nvtop.sh $(JOB)
+else ifneq ($(PANES),)
+	@SLURM_BIN=$(SLURM_BIN) NVTOP=$(NVTOP) bash code/h200_nvtop.sh
+else
+	@SLURM_BIN=$(SLURM_BIN) python3 code/h200_gputop.py
+endif
 
 test-submit:
 	@sbatch --test-only code/r_h200_all.sh 2>&1 | tail -1 | $(SHOW) testsubmit --script code/r_h200_all.sh
