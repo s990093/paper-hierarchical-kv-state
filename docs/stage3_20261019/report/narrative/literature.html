@@ -1,0 +1,9 @@
+<p>文獻由 agent 讀全文或摘要整理（self-review，不是 cross-model）。對這一輪設計影響最大的幾點：</p>
+<ul>
+<li><b>Intel KV Cache 四件套</b>只有 KV Shrink 有程式（只壓 BF16 高位元組的無損壓縮，不支援 AMD）；另外三個名字只出現在媒體報導。所以四件套只當「方向的分類」，實驗全部自己設計。</li>
+<li><b>「κ 隨硬體變」已被做過</b>（Stony Brook FSL-26-02、EfficientAgent），而且前人（CacheFlow、InferCept、FSL-26-02）都假設計算和搬運互不干擾 → 專案原本的 κ 主張不再當主軸，改看「現場狀況」。</li>
+<li><b>壓縮的組合</b>：兩兩組合已有約 25 篇；「同一個預算下聯合分配」有 RDKV、JoLT、KVTC；xKV（每 4 層聯合 SVD）在 Llama-3.1-8B 64K 壓 8 倍贏 KIVI-2。但<b>三種以上、長上下文、同位元組的系統性比較，加上搬運速度與 GPU 忙碌</b>查不到 → X1–X4 的設計來源。</li>
+<li><b>卸載時壓縮</b>：依頻寬選格式已有人做（CacheGen、KVServe、AdaptCache）；沒人把「GPU 忙不忙」放進決策 → X3 的設計來源。</li>
+<li><b>跨層共用與 token 合併</b>：第三方報告 MiniCache 在 Llama-3.1-8B 長上下文上崩、合併的好處小；我們的 K1 與 X1 都證實了。</li>
+<li><b>業界主流</b>：引擎預設 BF16、生產常開 FP8；主流是先在架構上縮 KV（GQA、MLA、局部注意力），量化疊在上面。精度不是越低越好：2–3 bit 有懸崖，INT4 是我們量到的甜蜜點。</li>
+</ul>
