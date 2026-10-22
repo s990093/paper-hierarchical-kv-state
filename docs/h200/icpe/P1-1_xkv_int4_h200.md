@@ -32,7 +32,7 @@
 - **題目**：32K，T2–T5 各 48 題＝192 題，**seed0＝67000**（新；程式核對不和 X1、PCA／xKV 校準、X2、X2b、X4a、X4b、38k（66000）、C1a、44c 重疊）。同一題的所有配置在同一個行程裡配對。
 - **校準基底**：H200 自己算（`m16_xstack.py calib-xl --model <m>`：seed 61000、T2–T5 各 2 題、聯合秩存到每 head 等效 64；和 MI300X 38c 同一套校準題），sha256 記下。不借 MI300X 的檔（不在這台）。
 - **路徑**：`m16_xstack.py gen --model <m> --selection <P1-1 的選擇檔> --ctx 32K --tier core --n 48 --seed0 67000 --calib-xl <校準檔> --xl-cache --out <逐列>`（和 38k 同一條生成路徑；位元組照 `predict_bytes`，`:cal` 的共用基底另列）。H200 上要改的只有路徑（環境變數，MI300X 預設不變），程式先過 `gpu-selftest`（`--new-checks both`）再跑。
-- **指標**：答對率；對 E0、對 `q:int4_kivi` 的逐題配對差＋95% bootstrap CI（`m16_xstack.boot2`，同 X4b）；ε�＝CI 下界 ≥ −2 個百分點；MLPerf 99%＝答對率 ≥ E0 的 99%（點估計）。
+- **指標**：答對率；對 E0、對 `q:int4_kivi` 的逐題配對差＋95% bootstrap CI（`m16_xstack.boot2`，同 X4b）；ε＝CI 下界 ≥ −2 個百分點；MLPerf 99%＝答對率 ≥ E0 的 99%（點估計）。
 - **判定（描述，不是 go/no-go）**：
   - Q-a「Qwen 約 8 倍接近無損」：主配置 `xl:k34:v51:cal+q:int4_kivi` 過 MLPerf 99% → 在 H200 成立；另報每題 SVD 版。
   - Q-b「Llama 8–12 倍約掉 1–3 個百分點」：照實報兩個主配置的點估計與 CI。
