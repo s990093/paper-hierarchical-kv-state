@@ -1,0 +1,3262 @@
+{
+ "run_id": "20261021-201525-m16-x4-lossless",
+ "ts": "2026-10-21T20:23:20+00:00",
+ "rule": "（計畫 §3）某一軸加在「xKV＋INT4」上，同倍數帶（±10%）內答對率（TF 的 Δgold_lp；生成的配對差）沒有比「把同樣的位元組省在降秩或係數位元上」差 → 這一軸值得疊；差 → 不值得。計畫沒寫統計門檻，這裡寫死成：帶內「有這一軸的最好配置」−「沒有這一軸的最好配置」的逐題配對差（bootstrap 10,000 次）95% CI 上界 < 0 → 差（不值得疊）；其他 → 沒有比較差（值得疊）。無損：真實壓縮比（zstd:3）≥ 1.05 倍 → 值得疊（在慢連線上；速度由 X3 決定）。",
+ "head_codec": "zstd:3",
+ "worth": 1.05,
+ "n_dumps": 64,
+ "affinity": [
+  0,
+  1,
+  2,
+  3
+ ],
+ "summary": {
+  "llama": {
+   "xl:k11:v17": {
+    "stored": 2084569088,
+    "comp": {
+     "zstd:-3": 1824991858,
+     "zstd:1": 1450870683,
+     "zstd:3": 1491317168
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.1422,
+     "zstd:1": 1.4368,
+     "zstd:3": 1.3978
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1251.15,
+     "zstd:3|t4": 4348.35,
+     "zstd:-3|t1": 2606.3999999999996,
+     "zstd:-3|t4": 8709.5
+    }
+   },
+   "xl:k11:v17+drop:KNORM:0.125+q:int4_kivi": {
+    "stored": 739508256,
+    "comp": {
+     "zstd:-3": 703607928,
+     "zstd:1": 636590377,
+     "zstd:3": 642449299
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.051,
+     "zstd:1": 1.1617,
+     "zstd:3": 1.1511
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1240.25,
+     "zstd:3|t4": 4633.549999999999,
+     "zstd:-3|t1": 5020.95,
+     "zstd:-3|t4": 12262.95
+    }
+   },
+   "xl:k12:v18+q:int4_kivi": {
+    "stored": 870973440,
+    "comp": {
+     "zstd:-3": 832419823,
+     "zstd:1": 756431942,
+     "zstd:3": 762649630
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0463,
+     "zstd:1": 1.1514,
+     "zstd:3": 1.142
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1237.9499999999998,
+     "zstd:3|t4": 4218.6,
+     "zstd:-3|t1": 5368.45,
+     "zstd:-3|t4": 13612.05
+    }
+   },
+   "xl:k16:v24+drop:KNORM:0.125+q:int4_kivi": {
+    "stored": 1056440352,
+    "comp": {
+     "zstd:-3": 1005301999,
+     "zstd:1": 909896581,
+     "zstd:3": 918384459
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0509,
+     "zstd:1": 1.1611,
+     "zstd:3": 1.1503
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1229.1,
+     "zstd:3|t4": 4501.75,
+     "zstd:-3|t1": 4972.85,
+     "zstd:-3|t4": 12534.5
+    }
+   },
+   "xl:k19:v29+q:int4_kivi": {
+    "stored": 1393557504,
+    "comp": {
+     "zstd:-3": 1332117469,
+     "zstd:1": 1210820363,
+     "zstd:3": 1221296198
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0461,
+     "zstd:1": 1.1509,
+     "zstd:3": 1.141
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1236.25,
+     "zstd:3|t4": 4695.65,
+     "zstd:-3|t1": 5252.45,
+     "zstd:-3|t4": 12590.2
+    }
+   },
+   "xl:k29:v44+q:int4_kivi": {
+    "stored": 2119368704,
+    "comp": {
+     "zstd:-3": 2025761097,
+     "zstd:1": 1841729328,
+     "zstd:3": 1857962536
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0462,
+     "zstd:1": 1.1507,
+     "zstd:3": 1.1407
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1234.9,
+     "zstd:3|t4": 4761.65,
+     "zstd:-3|t1": 5222.35,
+     "zstd:-3|t4": 12679.55
+    }
+   },
+   "xl:k7:v11": {
+    "stored": 1340080128,
+    "comp": {
+     "zstd:-3": 1170303346,
+     "zstd:1": 930978626,
+     "zstd:3": 957357307
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.1451,
+     "zstd:1": 1.4394,
+     "zstd:3": 1.3998
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1257.4,
+     "zstd:3|t4": 4771.85,
+     "zstd:-3|t1": 2575.5,
+     "zstd:-3|t4": 8837.05
+    }
+   },
+   "xl:k9:v14+q:kv-int4_kivi-int2_kivi": {
+    "stored": 552140800,
+    "comp": {
+     "zstd:-3": 521498441,
+     "zstd:1": 455292437,
+     "zstd:3": 458978773
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0588,
+     "zstd:1": 1.2127,
+     "zstd:3": 1.203
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1225.85,
+     "zstd:3|t4": 4706.1,
+     "zstd:-3|t1": 4674.299999999999,
+     "zstd:-3|t4": 12565.349999999999
+    }
+   }
+  },
+  "qwen": {
+   "xl:k11:v17+q:kv-int4_kivi-int2_kivi": {
+    "stored": 242851840,
+    "comp": {
+     "zstd:-3": 232968221,
+     "zstd:1": 206230077,
+     "zstd:3": 206621510
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0424,
+     "zstd:1": 1.1776,
+     "zstd:3": 1.1753
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1194.9,
+     "zstd:3|t4": 4073.6,
+     "zstd:-3|t1": 5806.7,
+     "zstd:-3|t4": 12452.45
+    }
+   },
+   "xl:k12:v18": {
+    "stored": 922091520,
+    "comp": {
+     "zstd:-3": 803754064,
+     "zstd:1": 639446572,
+     "zstd:3": 657743125
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.1472,
+     "zstd:1": 1.442,
+     "zstd:3": 1.4019
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1259.9,
+     "zstd:3|t4": 4561.35,
+     "zstd:-3|t1": 2612.9,
+     "zstd:-3|t4": 8620.3
+    }
+   },
+   "xl:k14:v21+q:int4_kivi": {
+    "stored": 380334080,
+    "comp": {
+     "zstd:-3": 369010849,
+     "zstd:1": 340747402,
+     "zstd:3": 341987002
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0307,
+     "zstd:1": 1.1162,
+     "zstd:3": 1.1121
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1179.0,
+     "zstd:3|t4": 4018.3999999999996,
+     "zstd:-3|t1": 6653.45,
+     "zstd:-3|t4": 13959.6
+    }
+   },
+   "xl:k14:v21+q:kv-int4_kivi-int2_kivi": {
+    "stored": 304467968,
+    "comp": {
+     "zstd:-3": 292713679,
+     "zstd:1": 259377036,
+     "zstd:3": 260076036
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0402,
+     "zstd:1": 1.1738,
+     "zstd:3": 1.1707
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1186.85,
+     "zstd:3|t4": 4135.55,
+     "zstd:-3|t1": 5394.95,
+     "zstd:-3|t4": 10552.75
+    }
+   },
+   "xl:k17:v26+q:int4_kivi": {
+    "stored": 467267584,
+    "comp": {
+     "zstd:-3": 453894098,
+     "zstd:1": 419262886,
+     "zstd:3": 420984787
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.0295,
+     "zstd:1": 1.1145,
+     "zstd:3": 1.1099
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1212.9,
+     "zstd:3|t4": 4061.6000000000004,
+     "zstd:-3|t1": 6735.0,
+     "zstd:-3|t4": 13673.25
+    }
+   },
+   "xl:k23:v35+q:int4_kivi": {
+    "stored": 630267904,
+    "comp": {
+     "zstd:-3": 613080884,
+     "zstd:1": 566398973,
+     "zstd:3": 569028112
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.028,
+     "zstd:1": 1.1128,
+     "zstd:3": 1.1076
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1203.25,
+     "zstd:3|t4": 4470.35,
+     "zstd:-3|t1": 6678.95,
+     "zstd:-3|t4": 13575.400000000001
+    }
+   },
+   "xl:k34:v51+q:int4_kivi": {
+    "stored": 923668480,
+    "comp": {
+     "zstd:-3": 899391797,
+     "zstd:1": 830971012,
+     "zstd:3": 835287704
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.027,
+     "zstd:1": 1.1116,
+     "zstd:3": 1.1058
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1206.75,
+     "zstd:3|t4": 4445.7,
+     "zstd:-3|t1": 6590.65,
+     "zstd:-3|t4": 14758.75
+    }
+   },
+   "xl:k6:v9": {
+    "stored": 461045760,
+    "comp": {
+     "zstd:-3": 397247124,
+     "zstd:1": 317190296,
+     "zstd:3": 326670279
+    },
+    "items": [
+     "T2_front-back_s64000",
+     "T3_front-back_s64000",
+     "T4_front-back_s64000",
+     "T5_global_s64000"
+    ],
+    "ratio": {
+     "zstd:-3": 1.1606,
+     "zstd:1": 1.4535,
+     "zstd:3": 1.4113
+    },
+    "worth_stacking": true,
+    "decomp_MBps_median": {
+     "zstd:3|t1": 1260.5500000000002,
+     "zstd:3|t4": 4778.35,
+     "zstd:-3|t1": 2458.1000000000004,
+     "zstd:-3|t4": 8334.35
+    }
+   }
+  }
+ },
+ "per_dump": [
+  {
+   "spec": "xl:k11:v17",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 521142272,
+   "comp": {
+    "zstd:-3": 457936643,
+    "zstd:1": 364047192,
+    "zstd:3": 373158620
+   },
+   "ratio": {
+    "zstd:-3": 1.138,
+    "zstd:1": 1.4315,
+    "zstd:3": 1.3966
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3924,
+    "k.basis": 1.4059,
+    "v.coef.bf16": 1.3963,
+    "v.basis": 1.4144
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 270.4,
+     "decomp_MBps": 1248.7
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1109.2,
+     "decomp_MBps": 4408.4
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 642.6,
+     "decomp_MBps": 2584.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2564.6,
+     "decomp_MBps": 8963.3
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 184877064,
+   "comp": {
+    "zstd:-3": 175487570,
+    "zstd:1": 159302950,
+    "zstd:3": 160684909
+   },
+   "ratio": {
+    "zstd:-3": 1.0535,
+    "zstd:1": 1.1605,
+    "zstd:3": 1.1506
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0415,
+    "k.coef.scale": 1.1474,
+    "k.coef.zero": 1.1327,
+    "k.basis": 1.4059,
+    "v.coef.q": 1.0392,
+    "v.coef.scale": 1.1563,
+    "v.coef.zero": 1.1402,
+    "v.basis": 1.4144
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 301.1,
+     "decomp_MBps": 1222.4
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1207.1,
+     "decomp_MBps": 4712.6
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1062.3,
+     "decomp_MBps": 5008.4
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3412.4,
+     "decomp_MBps": 12042.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 217743360,
+   "comp": {
+    "zstd:-3": 207637858,
+    "zstd:1": 189319352,
+    "zstd:3": 190793488
+   },
+   "ratio": {
+    "zstd:-3": 1.0487,
+    "zstd:1": 1.1501,
+    "zstd:3": 1.1413
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0406,
+    "k.coef.scale": 1.1483,
+    "k.coef.zero": 1.1333,
+    "k.basis": 1.406,
+    "v.coef.q": 1.0384,
+    "v.coef.scale": 1.1574,
+    "v.coef.zero": 1.1409,
+    "v.basis": 1.4145
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 302.8,
+     "decomp_MBps": 1225.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1166.2,
+     "decomp_MBps": 4147.5
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1078.1,
+     "decomp_MBps": 5209.3
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3469.0,
+     "decomp_MBps": 13832.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k16:v24+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 264110088,
+   "comp": {
+    "zstd:-3": 250869517,
+    "zstd:1": 227760978,
+    "zstd:3": 229847158
+   },
+   "ratio": {
+    "zstd:-3": 1.0528,
+    "zstd:1": 1.1596,
+    "zstd:3": 1.1491
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0384,
+    "k.coef.scale": 1.1484,
+    "k.coef.zero": 1.1339,
+    "k.basis": 1.4064,
+    "v.coef.q": 1.0369,
+    "v.coef.scale": 1.1572,
+    "v.coef.zero": 1.1413,
+    "v.basis": 1.4151
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 317.3,
+     "decomp_MBps": 1222.7
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1208.1,
+     "decomp_MBps": 4465.3
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1051.7,
+     "decomp_MBps": 4785.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4050.6,
+     "decomp_MBps": 12526.2
+    }
+   }
+  },
+  {
+   "spec": "xl:k19:v29+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 348389376,
+   "comp": {
+    "zstd:-3": 332507737,
+    "zstd:1": 303183525,
+    "zstd:3": 305786873
+   },
+   "ratio": {
+    "zstd:-3": 1.0478,
+    "zstd:1": 1.1491,
+    "zstd:3": 1.1393
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0366,
+    "k.coef.scale": 1.1492,
+    "k.coef.zero": 1.1346,
+    "k.basis": 1.4067,
+    "v.coef.q": 1.0356,
+    "v.coef.scale": 1.1587,
+    "v.coef.zero": 1.1427,
+    "v.basis": 1.4153
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 320.0,
+     "decomp_MBps": 1225.1
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1293.4,
+     "decomp_MBps": 4493.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1086.7,
+     "decomp_MBps": 5231.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4359.6,
+     "decomp_MBps": 12827.0
+    }
+   }
+  },
+  {
+   "spec": "xl:k29:v44+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 529842176,
+   "comp": {
+    "zstd:-3": 505924563,
+    "zstd:1": 461207766,
+    "zstd:3": 465300481
+   },
+   "ratio": {
+    "zstd:-3": 1.0473,
+    "zstd:1": 1.1488,
+    "zstd:3": 1.1387
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0351,
+    "k.coef.scale": 1.1511,
+    "k.coef.zero": 1.1366,
+    "k.basis": 1.4076,
+    "v.coef.q": 1.0348,
+    "v.coef.scale": 1.1562,
+    "v.coef.zero": 1.1423,
+    "v.basis": 1.4158
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 335.5,
+     "decomp_MBps": 1229.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1372.3,
+     "decomp_MBps": 4748.4
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1106.9,
+     "decomp_MBps": 5186.3
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4413.8,
+     "decomp_MBps": 12932.8
+    }
+   }
+  },
+  {
+   "spec": "xl:k7:v11",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 335020032,
+   "comp": {
+    "zstd:-3": 293507672,
+    "zstd:1": 233515573,
+    "zstd:3": 239412536
+   },
+   "ratio": {
+    "zstd:-3": 1.1414,
+    "zstd:1": 1.4347,
+    "zstd:3": 1.3993
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3957,
+    "k.basis": 1.4056,
+    "v.coef.bf16": 1.3994,
+    "v.basis": 1.4132
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 276.9,
+     "decomp_MBps": 1256.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1069.7,
+     "decomp_MBps": 4962.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 620.7,
+     "decomp_MBps": 2605.6
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2546.3,
+     "decomp_MBps": 8969.8
+    }
+   }
+  },
+  {
+   "spec": "xl:k9:v14+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 138035200,
+   "comp": {
+    "zstd:-3": 130002033,
+    "zstd:1": 113871540,
+    "zstd:3": 114567997
+   },
+   "ratio": {
+    "zstd:-3": 1.0618,
+    "zstd:1": 1.2122,
+    "zstd:3": 1.2048
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0441,
+    "k.coef.scale": 1.1474,
+    "k.coef.zero": 1.132,
+    "k.basis": 1.4058,
+    "v.coef.q": 1.2018,
+    "v.coef.scale": 1.1565,
+    "v.coef.zero": 1.1398,
+    "v.basis": 1.4139
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 302.4,
+     "decomp_MBps": 1207.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1169.1,
+     "decomp_MBps": 4692.3
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 985.7,
+     "decomp_MBps": 4590.4
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3666.7,
+     "decomp_MBps": 13168.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 521142272,
+   "comp": {
+    "zstd:-3": 456829888,
+    "zstd:1": 363236004,
+    "zstd:3": 372632033
+   },
+   "ratio": {
+    "zstd:-3": 1.1408,
+    "zstd:1": 1.4347,
+    "zstd:3": 1.3985
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3951,
+    "k.basis": 1.4064,
+    "v.coef.bf16": 1.3983,
+    "v.basis": 1.4134
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 271.2,
+     "decomp_MBps": 1253.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1092.8,
+     "decomp_MBps": 4306.6
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 636.1,
+     "decomp_MBps": 2628.6
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2556.2,
+     "decomp_MBps": 7861.5
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 184877064,
+   "comp": {
+    "zstd:-3": 175464973,
+    "zstd:1": 159524910,
+    "zstd:3": 160823906
+   },
+   "ratio": {
+    "zstd:-3": 1.0536,
+    "zstd:1": 1.1589,
+    "zstd:3": 1.1496
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0377,
+    "k.coef.scale": 1.1519,
+    "k.coef.zero": 1.1352,
+    "k.basis": 1.4064,
+    "v.coef.q": 1.0386,
+    "v.coef.scale": 1.1588,
+    "v.coef.zero": 1.1413,
+    "v.basis": 1.4134
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 270.2,
+     "decomp_MBps": 1245.4
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1070.9,
+     "decomp_MBps": 4695.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1000.9,
+     "decomp_MBps": 5033.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3460.5,
+     "decomp_MBps": 10372.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 217743360,
+   "comp": {
+    "zstd:-3": 207637070,
+    "zstd:1": 189728366,
+    "zstd:3": 191037271
+   },
+   "ratio": {
+    "zstd:-3": 1.0487,
+    "zstd:1": 1.1477,
+    "zstd:3": 1.1398
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0364,
+    "k.coef.scale": 1.1524,
+    "k.coef.zero": 1.1358,
+    "k.basis": 1.4064,
+    "v.coef.q": 1.0372,
+    "v.coef.scale": 1.1592,
+    "v.coef.zero": 1.1416,
+    "v.basis": 1.4134
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 270.4,
+     "decomp_MBps": 1261.9
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1052.4,
+     "decomp_MBps": 4626.3
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1007.4,
+     "decomp_MBps": 5288.4
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3778.4,
+     "decomp_MBps": 13159.5
+    }
+   }
+  },
+  {
+   "spec": "xl:k16:v24+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 264110088,
+   "comp": {
+    "zstd:-3": 250914373,
+    "zstd:1": 228453829,
+    "zstd:3": 230291915
+   },
+   "ratio": {
+    "zstd:-3": 1.0526,
+    "zstd:1": 1.1561,
+    "zstd:3": 1.1468
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0341,
+    "k.coef.scale": 1.1521,
+    "k.coef.zero": 1.1368,
+    "k.basis": 1.4067,
+    "v.coef.q": 1.0339,
+    "v.coef.scale": 1.1588,
+    "v.coef.zero": 1.1425,
+    "v.basis": 1.4137
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 283.4,
+     "decomp_MBps": 1264.7
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1112.4,
+     "decomp_MBps": 4538.2
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1015.6,
+     "decomp_MBps": 4969.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3893.4,
+     "decomp_MBps": 12542.8
+    }
+   }
+  },
+  {
+   "spec": "xl:k19:v29+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 348389376,
+   "comp": {
+    "zstd:-3": 332651064,
+    "zstd:1": 304275313,
+    "zstd:3": 306568717
+   },
+   "ratio": {
+    "zstd:-3": 1.0473,
+    "zstd:1": 1.145,
+    "zstd:3": 1.1364
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0319,
+    "k.coef.scale": 1.1527,
+    "k.coef.zero": 1.1372,
+    "k.basis": 1.4067,
+    "v.coef.q": 1.0317,
+    "v.coef.scale": 1.1584,
+    "v.coef.zero": 1.1425,
+    "v.basis": 1.4139
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 290.7,
+     "decomp_MBps": 1292.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1187.8,
+     "decomp_MBps": 4789.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1009.0,
+     "decomp_MBps": 5273.0
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4105.3,
+     "decomp_MBps": 13320.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k29:v44+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 529842176,
+   "comp": {
+    "zstd:-3": 506181054,
+    "zstd:1": 463239635,
+    "zstd:3": 466772437
+   },
+   "ratio": {
+    "zstd:-3": 1.0467,
+    "zstd:1": 1.1438,
+    "zstd:3": 1.1351
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0301,
+    "k.coef.scale": 1.1529,
+    "k.coef.zero": 1.139,
+    "k.basis": 1.4073,
+    "v.coef.q": 1.0298,
+    "v.coef.scale": 1.1559,
+    "v.coef.zero": 1.1417,
+    "v.basis": 1.4143
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 314.2,
+     "decomp_MBps": 1297.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1281.9,
+     "decomp_MBps": 4837.3
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1107.9,
+     "decomp_MBps": 5229.0
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4362.5,
+     "decomp_MBps": 12586.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k7:v11",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 335020032,
+   "comp": {
+    "zstd:-3": 291896067,
+    "zstd:1": 232702173,
+    "zstd:3": 238858419
+   },
+   "ratio": {
+    "zstd:-3": 1.1477,
+    "zstd:1": 1.4397,
+    "zstd:3": 1.4026
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3998,
+    "k.basis": 1.4061,
+    "v.coef.bf16": 1.4028,
+    "v.basis": 1.413
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 271.7,
+     "decomp_MBps": 1258.0
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1081.4,
+     "decomp_MBps": 4734.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 642.8,
+     "decomp_MBps": 2545.4
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2518.4,
+     "decomp_MBps": 8843.4
+    }
+   }
+  },
+  {
+   "spec": "xl:k9:v14+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 138035200,
+   "comp": {
+    "zstd:-3": 129714125,
+    "zstd:1": 113979509,
+    "zstd:3": 114645952
+   },
+   "ratio": {
+    "zstd:-3": 1.0641,
+    "zstd:1": 1.2111,
+    "zstd:3": 1.204
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0407,
+    "k.coef.scale": 1.1516,
+    "k.coef.zero": 1.1344,
+    "k.basis": 1.4063,
+    "v.coef.q": 1.2019,
+    "v.coef.scale": 1.1595,
+    "v.coef.zero": 1.1405,
+    "v.basis": 1.4132
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 278.2,
+     "decomp_MBps": 1209.3
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1071.0,
+     "decomp_MBps": 4719.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 861.8,
+     "decomp_MBps": 4574.3
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3286.5,
+     "decomp_MBps": 11961.8
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 521142272,
+   "comp": {
+    "zstd:-3": 450134960,
+    "zstd:1": 359804201,
+    "zstd:3": 371644880
+   },
+   "ratio": {
+    "zstd:-3": 1.1577,
+    "zstd:1": 1.4484,
+    "zstd:3": 1.4023
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3979,
+    "k.basis": 1.4041,
+    "v.coef.bf16": 1.4037,
+    "v.basis": 1.412
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 275.6,
+     "decomp_MBps": 1265.0
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1121.2,
+     "decomp_MBps": 4390.1
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 614.2,
+     "decomp_MBps": 2501.7
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2424.9,
+     "decomp_MBps": 8520.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 184877064,
+   "comp": {
+    "zstd:-3": 176229111,
+    "zstd:1": 159183846,
+    "zstd:3": 160813021
+   },
+   "ratio": {
+    "zstd:-3": 1.0491,
+    "zstd:1": 1.1614,
+    "zstd:3": 1.1496
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0274,
+    "k.coef.scale": 1.2005,
+    "k.coef.zero": 1.1776,
+    "k.basis": 1.4041,
+    "v.coef.q": 1.0297,
+    "v.coef.scale": 1.2202,
+    "v.coef.zero": 1.1931,
+    "v.basis": 1.412
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 386.0,
+     "decomp_MBps": 1243.9
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1513.8,
+     "decomp_MBps": 4571.4
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1098.0,
+     "decomp_MBps": 4989.1
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3847.4,
+     "decomp_MBps": 13004.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 217743360,
+   "comp": {
+    "zstd:-3": 208479501,
+    "zstd:1": 189091475,
+    "zstd:3": 190846690
+   },
+   "ratio": {
+    "zstd:-3": 1.0444,
+    "zstd:1": 1.1515,
+    "zstd:3": 1.1409
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0275,
+    "k.coef.scale": 1.2004,
+    "k.coef.zero": 1.1774,
+    "k.basis": 1.4041,
+    "v.coef.q": 1.03,
+    "v.coef.scale": 1.2198,
+    "v.coef.zero": 1.1931,
+    "v.basis": 1.4121
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 393.4,
+     "decomp_MBps": 1239.3
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1563.1,
+     "decomp_MBps": 4216.5
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1132.2,
+     "decomp_MBps": 5564.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3970.0,
+     "decomp_MBps": 14035.0
+    }
+   }
+  },
+  {
+   "spec": "xl:k16:v24+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 264110088,
+   "comp": {
+    "zstd:-3": 251686309,
+    "zstd:1": 227376127,
+    "zstd:3": 229687130
+   },
+   "ratio": {
+    "zstd:-3": 1.0494,
+    "zstd:1": 1.1616,
+    "zstd:3": 1.1499
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0281,
+    "k.coef.scale": 1.1996,
+    "k.coef.zero": 1.1768,
+    "k.basis": 1.4042,
+    "v.coef.q": 1.0301,
+    "v.coef.scale": 1.2174,
+    "v.coef.zero": 1.1919,
+    "v.basis": 1.4126
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 384.6,
+     "decomp_MBps": 1233.1
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1500.1,
+     "decomp_MBps": 4697.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1120.0,
+     "decomp_MBps": 4975.8
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4179.5,
+     "decomp_MBps": 8773.3
+    }
+   }
+  },
+  {
+   "spec": "xl:k19:v29+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 348389376,
+   "comp": {
+    "zstd:-3": 333433427,
+    "zstd:1": 302481698,
+    "zstd:3": 305328126
+   },
+   "ratio": {
+    "zstd:-3": 1.0449,
+    "zstd:1": 1.1518,
+    "zstd:3": 1.141
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0283,
+    "k.coef.scale": 1.1991,
+    "k.coef.zero": 1.1776,
+    "k.basis": 1.4044,
+    "v.coef.q": 1.0301,
+    "v.coef.scale": 1.215,
+    "v.coef.zero": 1.1912,
+    "v.basis": 1.4129
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 392.2,
+     "decomp_MBps": 1236.7
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1591.4,
+     "decomp_MBps": 4601.4
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1163.3,
+     "decomp_MBps": 5311.1
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4548.9,
+     "decomp_MBps": 12353.4
+    }
+   }
+  },
+  {
+   "spec": "xl:k29:v44+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 529842176,
+   "comp": {
+    "zstd:-3": 506876717,
+    "zstd:1": 459996453,
+    "zstd:3": 464391736
+   },
+   "ratio": {
+    "zstd:-3": 1.0453,
+    "zstd:1": 1.1518,
+    "zstd:3": 1.1409
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0292,
+    "k.coef.scale": 1.1961,
+    "k.coef.zero": 1.1778,
+    "k.basis": 1.405,
+    "v.coef.q": 1.0303,
+    "v.coef.scale": 1.2063,
+    "v.coef.zero": 1.1878,
+    "v.basis": 1.4136
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 391.3,
+     "decomp_MBps": 1240.0
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1609.3,
+     "decomp_MBps": 4541.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1166.3,
+     "decomp_MBps": 5215.7
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4612.3,
+     "decomp_MBps": 12772.2
+    }
+   }
+  },
+  {
+   "spec": "xl:k7:v11",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 335020032,
+   "comp": {
+    "zstd:-3": 289186239,
+    "zstd:1": 231136400,
+    "zstd:3": 238837839
+   },
+   "ratio": {
+    "zstd:-3": 1.1585,
+    "zstd:1": 1.4494,
+    "zstd:3": 1.4027
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.398,
+    "k.basis": 1.4039,
+    "v.coef.bf16": 1.4046,
+    "v.basis": 1.4109
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 278.0,
+     "decomp_MBps": 1264.3
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1091.1,
+     "decomp_MBps": 4658.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 622.5,
+     "decomp_MBps": 2464.6
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2323.8,
+     "decomp_MBps": 8495.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k9:v14+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 138035200,
+   "comp": {
+    "zstd:-3": 130961838,
+    "zstd:1": 114166615,
+    "zstd:3": 115420581
+   },
+   "ratio": {
+    "zstd:-3": 1.054,
+    "zstd:1": 1.2091,
+    "zstd:3": 1.1959
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0269,
+    "k.coef.scale": 1.2006,
+    "k.coef.zero": 1.1772,
+    "k.basis": 1.4039,
+    "v.coef.q": 1.1464,
+    "v.coef.scale": 1.2213,
+    "v.coef.zero": 1.1937,
+    "v.basis": 1.4116
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 402.3,
+     "decomp_MBps": 1258.9
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1575.5,
+     "decomp_MBps": 4519.1
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1069.3,
+     "decomp_MBps": 4758.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3606.4,
+     "decomp_MBps": 13348.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 521142272,
+   "comp": {
+    "zstd:-3": 460090367,
+    "zstd:1": 363783286,
+    "zstd:3": 373881635
+   },
+   "ratio": {
+    "zstd:-3": 1.1327,
+    "zstd:1": 1.4326,
+    "zstd:3": 1.3939
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3906,
+    "k.basis": 1.4026,
+    "v.coef.bf16": 1.3932,
+    "v.basis": 1.4105
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 271.8,
+     "decomp_MBps": 1246.5
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1094.4,
+     "decomp_MBps": 4298.2
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 627.9,
+     "decomp_MBps": 2669.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2556.5,
+     "decomp_MBps": 8898.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 184877064,
+   "comp": {
+    "zstd:-3": 176426274,
+    "zstd:1": 158578671,
+    "zstd:3": 160127463
+   },
+   "ratio": {
+    "zstd:-3": 1.0479,
+    "zstd:1": 1.1658,
+    "zstd:3": 1.1546
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0376,
+    "k.coef.scale": 1.1809,
+    "k.coef.zero": 1.1643,
+    "k.basis": 1.4026,
+    "v.coef.q": 1.043,
+    "v.coef.scale": 1.1888,
+    "v.coef.zero": 1.1703,
+    "v.basis": 1.4105
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 378.1,
+     "decomp_MBps": 1236.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1505.3,
+     "decomp_MBps": 3934.2
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1058.6,
+     "decomp_MBps": 5136.3
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3912.0,
+     "decomp_MBps": 12483.2
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 217743360,
+   "comp": {
+    "zstd:-3": 208665394,
+    "zstd:1": 188292749,
+    "zstd:3": 189972181
+   },
+   "ratio": {
+    "zstd:-3": 1.0435,
+    "zstd:1": 1.1564,
+    "zstd:3": 1.1462
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0381,
+    "k.coef.scale": 1.1807,
+    "k.coef.zero": 1.1639,
+    "k.basis": 1.4029,
+    "v.coef.q": 1.0434,
+    "v.coef.scale": 1.1885,
+    "v.coef.zero": 1.1701,
+    "v.basis": 1.4107
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 389.4,
+     "decomp_MBps": 1236.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1527.2,
+     "decomp_MBps": 4220.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1150.4,
+     "decomp_MBps": 5448.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4285.1,
+     "decomp_MBps": 13391.4
+    }
+   }
+  },
+  {
+   "spec": "xl:k16:v24+drop:KNORM:0.125+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 264110088,
+   "comp": {
+    "zstd:-3": 251831800,
+    "zstd:1": 226305647,
+    "zstd:3": 228558256
+   },
+   "ratio": {
+    "zstd:-3": 1.0488,
+    "zstd:1": 1.1671,
+    "zstd:3": 1.1555
+   },
+   "part_ratio": {
+    "mask": 0.4706,
+    "k.coef.q": 1.0396,
+    "k.coef.scale": 1.1799,
+    "k.coef.zero": 1.1638,
+    "k.basis": 1.4037,
+    "v.coef.q": 1.0441,
+    "v.coef.scale": 1.1862,
+    "v.coef.zero": 1.1688,
+    "v.basis": 1.4117
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 387.4,
+     "decomp_MBps": 1225.1
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1496.0,
+     "decomp_MBps": 4430.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1116.6,
+     "decomp_MBps": 4996.0
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4125.2,
+     "decomp_MBps": 12839.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k19:v29+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 348389376,
+   "comp": {
+    "zstd:-3": 333525241,
+    "zstd:1": 300879827,
+    "zstd:3": 303612482
+   },
+   "ratio": {
+    "zstd:-3": 1.0446,
+    "zstd:1": 1.1579,
+    "zstd:3": 1.1475
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0406,
+    "k.coef.scale": 1.1784,
+    "k.coef.zero": 1.1631,
+    "k.basis": 1.4042,
+    "v.coef.q": 1.0449,
+    "v.coef.scale": 1.1844,
+    "v.coef.zero": 1.1679,
+    "v.basis": 1.4124
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 395.1,
+     "decomp_MBps": 1235.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1609.6,
+     "decomp_MBps": 4859.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1152.5,
+     "decomp_MBps": 4447.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4214.6,
+     "decomp_MBps": 11083.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k29:v44+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 529842176,
+   "comp": {
+    "zstd:-3": 506778763,
+    "zstd:1": 457285474,
+    "zstd:3": 461497882
+   },
+   "ratio": {
+    "zstd:-3": 1.0455,
+    "zstd:1": 1.1587,
+    "zstd:3": 1.1481
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0427,
+    "k.coef.scale": 1.1751,
+    "k.coef.zero": 1.1607,
+    "k.basis": 1.4054,
+    "v.coef.q": 1.0457,
+    "v.coef.scale": 1.1787,
+    "v.coef.zero": 1.1646,
+    "v.basis": 1.4138
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 404.5,
+     "decomp_MBps": 1218.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1642.6,
+     "decomp_MBps": 4774.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1143.2,
+     "decomp_MBps": 5309.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4611.1,
+     "decomp_MBps": 12583.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k7:v11",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 335020032,
+   "comp": {
+    "zstd:-3": 295713368,
+    "zstd:1": 233624480,
+    "zstd:3": 240248513
+   },
+   "ratio": {
+    "zstd:-3": 1.1329,
+    "zstd:1": 1.434,
+    "zstd:3": 1.3945
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3915,
+    "k.basis": 1.4012,
+    "v.coef.bf16": 1.394,
+    "v.basis": 1.4085
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 271.8,
+     "decomp_MBps": 1251.5
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1069.7,
+     "decomp_MBps": 4809.0
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 637.6,
+     "decomp_MBps": 2628.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2504.0,
+     "decomp_MBps": 8830.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k9:v14+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "llama",
+   "dump_run_id": "20261021-183519-m16-x4-dump-llama",
+   "stored": 138035200,
+   "comp": {
+    "zstd:-3": 130820445,
+    "zstd:1": 113274773,
+    "zstd:3": 114344243
+   },
+   "ratio": {
+    "zstd:-3": 1.0552,
+    "zstd:1": 1.2186,
+    "zstd:3": 1.2072
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0364,
+    "k.coef.scale": 1.1814,
+    "k.coef.zero": 1.1653,
+    "k.basis": 1.402,
+    "v.coef.q": 1.2022,
+    "v.coef.scale": 1.1898,
+    "v.coef.zero": 1.1712,
+    "v.basis": 1.4097
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 362.9,
+     "decomp_MBps": 1242.4
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1398.6,
+     "decomp_MBps": 4851.5
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1024.0,
+     "decomp_MBps": 4790.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3388.8,
+     "decomp_MBps": 10382.3
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 60712960,
+   "comp": {
+    "zstd:-3": 57780560,
+    "zstd:1": 51250027,
+    "zstd:3": 51160429
+   },
+   "ratio": {
+    "zstd:-3": 1.0508,
+    "zstd:1": 1.1846,
+    "zstd:3": 1.1867
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0666,
+    "k.coef.scale": 1.1445,
+    "k.coef.zero": 1.1279,
+    "k.basis": 1.4033,
+    "v.coef.q": 1.2474,
+    "v.coef.scale": 1.1471,
+    "v.coef.zero": 1.1326,
+    "v.basis": 1.4129
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 281.9,
+     "decomp_MBps": 1146.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 841.1,
+     "decomp_MBps": 4111.0
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1476.9,
+     "decomp_MBps": 5482.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2840.3,
+     "decomp_MBps": 12367.8
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230522880,
+   "comp": {
+    "zstd:-3": 201823901,
+    "zstd:1": 160504751,
+    "zstd:3": 164424971
+   },
+   "ratio": {
+    "zstd:-3": 1.1422,
+    "zstd:1": 1.4362,
+    "zstd:3": 1.402
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.4028,
+    "k.basis": 1.4034,
+    "v.coef.bf16": 1.4007,
+    "v.basis": 1.4131
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 269.2,
+     "decomp_MBps": 1262.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1027.0,
+     "decomp_MBps": 4634.6
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 789.1,
+     "decomp_MBps": 2691.0
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2277.5,
+     "decomp_MBps": 8798.8
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 95083520,
+   "comp": {
+    "zstd:-3": 91904041,
+    "zstd:1": 85045476,
+    "zstd:3": 85128147
+   },
+   "ratio": {
+    "zstd:-3": 1.0346,
+    "zstd:1": 1.118,
+    "zstd:3": 1.1169
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0588,
+    "k.coef.scale": 1.143,
+    "k.coef.zero": 1.1272,
+    "k.basis": 1.4034,
+    "v.coef.q": 1.0548,
+    "v.coef.scale": 1.1469,
+    "v.coef.zero": 1.1329,
+    "v.basis": 1.4135
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 277.5,
+     "decomp_MBps": 1140.5
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 936.1,
+     "decomp_MBps": 3808.4
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1079.3,
+     "decomp_MBps": 6484.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2787.4,
+     "decomp_MBps": 13984.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 76116992,
+   "comp": {
+    "zstd:-3": 72727391,
+    "zstd:1": 64593080,
+    "zstd:3": 64574541
+   },
+   "ratio": {
+    "zstd:-3": 1.0466,
+    "zstd:1": 1.1784,
+    "zstd:3": 1.1787
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0588,
+    "k.coef.scale": 1.143,
+    "k.coef.zero": 1.1272,
+    "k.basis": 1.4034,
+    "v.coef.q": 1.2309,
+    "v.coef.scale": 1.1468,
+    "v.coef.zero": 1.1329,
+    "v.basis": 1.4135
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 282.5,
+     "decomp_MBps": 1146.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 873.1,
+     "decomp_MBps": 4025.4
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1005.7,
+     "decomp_MBps": 5421.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2639.2,
+     "decomp_MBps": 10153.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k17:v26+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 116816896,
+   "comp": {
+    "zstd:-3": 113137871,
+    "zstd:1": 104746381,
+    "zstd:3": 104947939
+   },
+   "ratio": {
+    "zstd:-3": 1.0325,
+    "zstd:1": 1.1152,
+    "zstd:3": 1.1131
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0528,
+    "k.coef.scale": 1.1437,
+    "k.coef.zero": 1.1278,
+    "k.basis": 1.4035,
+    "v.coef.q": 1.0499,
+    "v.coef.scale": 1.1472,
+    "v.coef.zero": 1.1332,
+    "v.basis": 1.4141
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 279.8,
+     "decomp_MBps": 1181.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 994.6,
+     "decomp_MBps": 4322.0
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1513.5,
+     "decomp_MBps": 2122.6
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3218.3,
+     "decomp_MBps": 13507.4
+    }
+   }
+  },
+  {
+   "spec": "xl:k23:v35+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 157566976,
+   "comp": {
+    "zstd:-3": 152942510,
+    "zstd:1": 141666173,
+    "zstd:3": 142091744
+   },
+   "ratio": {
+    "zstd:-3": 1.0302,
+    "zstd:1": 1.1122,
+    "zstd:3": 1.1089
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0466,
+    "k.coef.scale": 1.144,
+    "k.coef.zero": 1.1281,
+    "k.basis": 1.4039,
+    "v.coef.q": 1.0442,
+    "v.coef.scale": 1.1487,
+    "v.coef.zero": 1.1345,
+    "v.basis": 1.4149
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 295.0,
+     "decomp_MBps": 1176.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1084.4,
+     "decomp_MBps": 4451.6
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1209.4,
+     "decomp_MBps": 6636.7
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3834.7,
+     "decomp_MBps": 9939.3
+    }
+   }
+  },
+  {
+   "spec": "xl:k34:v51+q:int4_kivi",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230917120,
+   "comp": {
+    "zstd:-3": 224526832,
+    "zstd:1": 207964639,
+    "zstd:3": 208795824
+   },
+   "ratio": {
+    "zstd:-3": 1.0285,
+    "zstd:1": 1.1104,
+    "zstd:3": 1.1059
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0412,
+    "k.coef.scale": 1.1448,
+    "k.coef.zero": 1.1295,
+    "k.basis": 1.4048,
+    "v.coef.q": 1.0405,
+    "v.coef.scale": 1.1505,
+    "v.coef.zero": 1.1365,
+    "v.basis": 1.4157
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 312.8,
+     "decomp_MBps": 1170.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1228.9,
+     "decomp_MBps": 4146.6
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1231.8,
+     "decomp_MBps": 6080.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4499.9,
+     "decomp_MBps": 14802.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k6:v9",
+   "item_id": "T2_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 115261440,
+   "comp": {
+    "zstd:-3": 99377299,
+    "zstd:1": 79343389,
+    "zstd:3": 81378177
+   },
+   "ratio": {
+    "zstd:-3": 1.1598,
+    "zstd:1": 1.4527,
+    "zstd:3": 1.4164
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.4208,
+    "k.basis": 1.4039,
+    "v.coef.bf16": 1.4143,
+    "v.basis": 1.4113
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 272.8,
+     "decomp_MBps": 1266.4
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1002.8,
+     "decomp_MBps": 4690.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 640.4,
+     "decomp_MBps": 2542.3
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2162.3,
+     "decomp_MBps": 8596.0
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 60712960,
+   "comp": {
+    "zstd:-3": 57373507,
+    "zstd:1": 51045492,
+    "zstd:3": 50930364
+   },
+   "ratio": {
+    "zstd:-3": 1.0582,
+    "zstd:1": 1.1894,
+    "zstd:3": 1.1921
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0743,
+    "k.coef.scale": 1.1555,
+    "k.coef.zero": 1.133,
+    "k.basis": 1.4043,
+    "v.coef.q": 1.2477,
+    "v.coef.scale": 1.1596,
+    "v.coef.zero": 1.1401,
+    "v.basis": 1.4135
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 257.5,
+     "decomp_MBps": 1106.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 830.6,
+     "decomp_MBps": 4036.2
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1038.2,
+     "decomp_MBps": 5310.1
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3082.6,
+     "decomp_MBps": 12537.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230522880,
+   "comp": {
+    "zstd:-3": 198823157,
+    "zstd:1": 159016753,
+    "zstd:3": 163567426
+   },
+   "ratio": {
+    "zstd:-3": 1.1594,
+    "zstd:1": 1.4497,
+    "zstd:3": 1.4093
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.4113,
+    "k.basis": 1.4045,
+    "v.coef.bf16": 1.408,
+    "v.basis": 1.4136
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 272.2,
+     "decomp_MBps": 1264.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1026.9,
+     "decomp_MBps": 4574.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 720.8,
+     "decomp_MBps": 1685.6
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2306.2,
+     "decomp_MBps": 6913.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 95083520,
+   "comp": {
+    "zstd:-3": 91459799,
+    "zstd:1": 84725276,
+    "zstd:3": 84867689
+   },
+   "ratio": {
+    "zstd:-3": 1.0396,
+    "zstd:1": 1.1223,
+    "zstd:3": 1.1204
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0634,
+    "k.coef.scale": 1.1575,
+    "k.coef.zero": 1.1352,
+    "k.basis": 1.4043,
+    "v.coef.q": 1.0556,
+    "v.coef.scale": 1.159,
+    "v.coef.zero": 1.1405,
+    "v.basis": 1.4138
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 225.7,
+     "decomp_MBps": 1125.3
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 831.2,
+     "decomp_MBps": 3937.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1029.6,
+     "decomp_MBps": 6343.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2557.3,
+     "decomp_MBps": 11007.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 76116992,
+   "comp": {
+    "zstd:-3": 72305458,
+    "zstd:1": 64420679,
+    "zstd:3": 64373255
+   },
+   "ratio": {
+    "zstd:-3": 1.0527,
+    "zstd:1": 1.1816,
+    "zstd:3": 1.1824
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0634,
+    "k.coef.scale": 1.1575,
+    "k.coef.zero": 1.1352,
+    "k.basis": 1.4043,
+    "v.coef.q": 1.2286,
+    "v.coef.scale": 1.1584,
+    "v.coef.zero": 1.1405,
+    "v.basis": 1.4138
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 242.0,
+     "decomp_MBps": 1127.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 830.2,
+     "decomp_MBps": 4013.2
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 962.3,
+     "decomp_MBps": 5368.4
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2579.5,
+     "decomp_MBps": 10952.4
+    }
+   }
+  },
+  {
+   "spec": "xl:k17:v26+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 116816896,
+   "comp": {
+    "zstd:-3": 112743095,
+    "zstd:1": 104543978,
+    "zstd:3": 104796790
+   },
+   "ratio": {
+    "zstd:-3": 1.0361,
+    "zstd:1": 1.1174,
+    "zstd:3": 1.1147
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0548,
+    "k.coef.scale": 1.1567,
+    "k.coef.zero": 1.1365,
+    "k.basis": 1.4044,
+    "v.coef.q": 1.0488,
+    "v.coef.scale": 1.1578,
+    "v.coef.zero": 1.1399,
+    "v.basis": 1.4141
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 240.6,
+     "decomp_MBps": 1176.7
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 849.5,
+     "decomp_MBps": 4044.3
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1040.6,
+     "decomp_MBps": 6686.8
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2962.1,
+     "decomp_MBps": 14468.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k23:v35+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 157566976,
+   "comp": {
+    "zstd:-3": 152688892,
+    "zstd:1": 141633372,
+    "zstd:3": 142139175
+   },
+   "ratio": {
+    "zstd:-3": 1.0319,
+    "zstd:1": 1.1125,
+    "zstd:3": 1.1085
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0459,
+    "k.coef.scale": 1.1559,
+    "k.coef.zero": 1.1384,
+    "k.basis": 1.4045,
+    "v.coef.q": 1.0409,
+    "v.coef.scale": 1.157,
+    "v.coef.zero": 1.1408,
+    "v.basis": 1.4144
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 238.9,
+     "decomp_MBps": 1178.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 927.0,
+     "decomp_MBps": 3653.0
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1125.3,
+     "decomp_MBps": 6699.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3571.9,
+     "decomp_MBps": 14036.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k34:v51+q:int4_kivi",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230917120,
+   "comp": {
+    "zstd:-3": 224502201,
+    "zstd:1": 208269070,
+    "zstd:3": 209222228
+   },
+   "ratio": {
+    "zstd:-3": 1.0286,
+    "zstd:1": 1.1087,
+    "zstd:3": 1.1037
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0379,
+    "k.coef.scale": 1.1539,
+    "k.coef.zero": 1.1387,
+    "k.basis": 1.405,
+    "v.coef.q": 1.0356,
+    "v.coef.scale": 1.1549,
+    "v.coef.zero": 1.1408,
+    "v.basis": 1.415
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 271.6,
+     "decomp_MBps": 1202.9
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1117.6,
+     "decomp_MBps": 4578.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1159.5,
+     "decomp_MBps": 6261.1
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4633.9,
+     "decomp_MBps": 14714.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k6:v9",
+   "item_id": "T3_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 115261440,
+   "comp": {
+    "zstd:-3": 96756816,
+    "zstd:1": 78336577,
+    "zstd:3": 80660384
+   },
+   "ratio": {
+    "zstd:-3": 1.1912,
+    "zstd:1": 1.4714,
+    "zstd:3": 1.429
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.4357,
+    "k.basis": 1.4046,
+    "v.coef.bf16": 1.4266,
+    "v.basis": 1.4129
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 272.3,
+     "decomp_MBps": 1254.7
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 992.8,
+     "decomp_MBps": 4865.8
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 611.4,
+     "decomp_MBps": 2373.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2351.2,
+     "decomp_MBps": 8072.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 60712960,
+   "comp": {
+    "zstd:-3": 58911946,
+    "zstd:1": 52034924,
+    "zstd:3": 52387992
+   },
+   "ratio": {
+    "zstd:-3": 1.0306,
+    "zstd:1": 1.1668,
+    "zstd:3": 1.1589
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0257,
+    "k.coef.scale": 1.2056,
+    "k.coef.zero": 1.1817,
+    "k.basis": 1.4005,
+    "v.coef.q": 1.149,
+    "v.coef.scale": 1.2222,
+    "v.coef.zero": 1.1927,
+    "v.basis": 1.4105
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 529.3,
+     "decomp_MBps": 1251.3
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1258.9,
+     "decomp_MBps": 3843.2
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1214.1,
+     "decomp_MBps": 6130.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3736.3,
+     "decomp_MBps": 13403.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230522880,
+   "comp": {
+    "zstd:-3": 199946415,
+    "zstd:1": 159227008,
+    "zstd:3": 164512672
+   },
+   "ratio": {
+    "zstd:-3": 1.1529,
+    "zstd:1": 1.4478,
+    "zstd:3": 1.4012
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3986,
+    "k.basis": 1.4006,
+    "v.coef.bf16": 1.4025,
+    "v.basis": 1.4107
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 278.7,
+     "decomp_MBps": 1257.0
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1038.0,
+     "decomp_MBps": 4504.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 723.1,
+     "decomp_MBps": 2534.8
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2152.2,
+     "decomp_MBps": 8528.3
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 95083520,
+   "comp": {
+    "zstd:-3": 92809039,
+    "zstd:1": 85512348,
+    "zstd:3": 86026664
+   },
+   "ratio": {
+    "zstd:-3": 1.0245,
+    "zstd:1": 1.1119,
+    "zstd:3": 1.1053
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0267,
+    "k.coef.scale": 1.2022,
+    "k.coef.zero": 1.1798,
+    "k.basis": 1.4007,
+    "v.coef.q": 1.0308,
+    "v.coef.scale": 1.2176,
+    "v.coef.zero": 1.1911,
+    "v.basis": 1.4112
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 472.0,
+     "decomp_MBps": 1233.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1346.6,
+     "decomp_MBps": 4098.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 2170.8,
+     "decomp_MBps": 7490.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3415.6,
+     "decomp_MBps": 14707.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 76116992,
+   "comp": {
+    "zstd:-3": 73842076,
+    "zstd:1": 65282436,
+    "zstd:3": 65726198
+   },
+   "ratio": {
+    "zstd:-3": 1.0308,
+    "zstd:1": 1.166,
+    "zstd:3": 1.1581
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0267,
+    "k.coef.scale": 1.2022,
+    "k.coef.zero": 1.1798,
+    "k.basis": 1.4007,
+    "v.coef.q": 1.1492,
+    "v.coef.scale": 1.2185,
+    "v.coef.zero": 1.1911,
+    "v.basis": 1.4112
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 443.1,
+     "decomp_MBps": 1231.1
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1302.8,
+     "decomp_MBps": 4245.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1594.8,
+     "decomp_MBps": 2799.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2960.2,
+     "decomp_MBps": 7889.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k17:v26+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 116816896,
+   "comp": {
+    "zstd:-3": 113991381,
+    "zstd:1": 105036877,
+    "zstd:3": 105672181
+   },
+   "ratio": {
+    "zstd:-3": 1.0248,
+    "zstd:1": 1.1122,
+    "zstd:3": 1.1055
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0278,
+    "k.coef.scale": 1.1992,
+    "k.coef.zero": 1.1776,
+    "k.basis": 1.4009,
+    "v.coef.q": 1.0309,
+    "v.coef.scale": 1.2162,
+    "v.coef.zero": 1.1901,
+    "v.basis": 1.4119
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 415.2,
+     "decomp_MBps": 1247.5
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1488.8,
+     "decomp_MBps": 3734.3
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1428.4,
+     "decomp_MBps": 6783.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4916.8,
+     "decomp_MBps": 12035.2
+    }
+   }
+  },
+  {
+   "spec": "xl:k23:v35+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 157566976,
+   "comp": {
+    "zstd:-3": 153720670,
+    "zstd:1": 141647733,
+    "zstd:3": 142498398
+   },
+   "ratio": {
+    "zstd:-3": 1.025,
+    "zstd:1": 1.1124,
+    "zstd:3": 1.1057
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0291,
+    "k.coef.scale": 1.1969,
+    "k.coef.zero": 1.1767,
+    "k.basis": 1.4011,
+    "v.coef.q": 1.0313,
+    "v.coef.scale": 1.2122,
+    "v.coef.zero": 1.1876,
+    "v.basis": 1.4127
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 445.4,
+     "decomp_MBps": 1228.4
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1499.8,
+     "decomp_MBps": 4489.1
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1348.5,
+     "decomp_MBps": 6658.7
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4239.5,
+     "decomp_MBps": 14058.5
+    }
+   }
+  },
+  {
+   "spec": "xl:k34:v51+q:int4_kivi",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230917120,
+   "comp": {
+    "zstd:-3": 225205089,
+    "zstd:1": 207550118,
+    "zstd:3": 208829533
+   },
+   "ratio": {
+    "zstd:-3": 1.0254,
+    "zstd:1": 1.1126,
+    "zstd:3": 1.1058
+   },
+   "part_ratio": {
+    "k.coef.q": 1.03,
+    "k.coef.scale": 1.194,
+    "k.coef.zero": 1.1757,
+    "k.basis": 1.4018,
+    "v.coef.q": 1.0318,
+    "v.coef.scale": 1.2044,
+    "v.coef.zero": 1.1845,
+    "v.basis": 1.4135
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 441.2,
+     "decomp_MBps": 1215.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1808.1,
+     "decomp_MBps": 4782.0
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1375.4,
+     "decomp_MBps": 6920.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 5735.8,
+     "decomp_MBps": 12041.5
+    }
+   }
+  },
+  {
+   "spec": "xl:k6:v9",
+   "item_id": "T4_front-back_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 115261440,
+   "comp": {
+    "zstd:-3": 99736314,
+    "zstd:1": 79415951,
+    "zstd:3": 82155320
+   },
+   "ratio": {
+    "zstd:-3": 1.1557,
+    "zstd:1": 1.4514,
+    "zstd:3": 1.403
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3999,
+    "k.basis": 1.4003,
+    "v.coef.bf16": 1.4048,
+    "v.basis": 1.4076
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 272.5,
+     "decomp_MBps": 1268.7
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1023.9,
+     "decomp_MBps": 4488.0
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 731.4,
+     "decomp_MBps": 2735.2
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2136.2,
+     "decomp_MBps": 7101.7
+    }
+   }
+  },
+  {
+   "spec": "xl:k11:v17+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 60712960,
+   "comp": {
+    "zstd:-3": 58902208,
+    "zstd:1": 51899634,
+    "zstd:3": 52142725
+   },
+   "ratio": {
+    "zstd:-3": 1.0307,
+    "zstd:1": 1.1698,
+    "zstd:3": 1.1644
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0316,
+    "k.coef.scale": 1.1808,
+    "k.coef.zero": 1.162,
+    "k.basis": 1.3998,
+    "v.coef.q": 1.1825,
+    "v.coef.scale": 1.1884,
+    "v.coef.zero": 1.1674,
+    "v.basis": 1.4092
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 398.9,
+     "decomp_MBps": 1243.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1190.9,
+     "decomp_MBps": 4279.2
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1274.6,
+     "decomp_MBps": 6335.5
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3917.3,
+     "decomp_MBps": 11628.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k12:v18",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230522880,
+   "comp": {
+    "zstd:-3": 203160591,
+    "zstd:1": 160698060,
+    "zstd:3": 165238056
+   },
+   "ratio": {
+    "zstd:-3": 1.1347,
+    "zstd:1": 1.4345,
+    "zstd:3": 1.3951
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3935,
+    "k.basis": 1.4,
+    "v.coef.bf16": 1.3951,
+    "v.basis": 1.4093
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 271.2,
+     "decomp_MBps": 1252.8
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 994.3,
+     "decomp_MBps": 4547.8
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 779.0,
+     "decomp_MBps": 2708.6
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2325.0,
+     "decomp_MBps": 8712.3
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 95083520,
+   "comp": {
+    "zstd:-3": 92837970,
+    "zstd:1": 85464302,
+    "zstd:3": 85964502
+   },
+   "ratio": {
+    "zstd:-3": 1.0242,
+    "zstd:1": 1.1126,
+    "zstd:3": 1.1061
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0331,
+    "k.coef.scale": 1.1793,
+    "k.coef.zero": 1.161,
+    "k.basis": 1.4003,
+    "v.coef.q": 1.0364,
+    "v.coef.scale": 1.1865,
+    "v.coef.zero": 1.1664,
+    "v.basis": 1.41
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 406.3,
+     "decomp_MBps": 1217.5
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1327.0,
+     "decomp_MBps": 4151.0
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1219.9,
+     "decomp_MBps": 6822.7
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4114.3,
+     "decomp_MBps": 13935.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 76116992,
+   "comp": {
+    "zstd:-3": 73838754,
+    "zstd:1": 65080841,
+    "zstd:3": 65402042
+   },
+   "ratio": {
+    "zstd:-3": 1.0309,
+    "zstd:1": 1.1696,
+    "zstd:3": 1.1638
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0331,
+    "k.coef.scale": 1.1793,
+    "k.coef.zero": 1.161,
+    "k.basis": 1.4003,
+    "v.coef.q": 1.1826,
+    "v.coef.scale": 1.186,
+    "v.coef.zero": 1.1664,
+    "v.basis": 1.41
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 394.9,
+     "decomp_MBps": 1227.1
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1175.6,
+     "decomp_MBps": 4372.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1328.0,
+     "decomp_MBps": 6644.1
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3130.8,
+     "decomp_MBps": 12979.6
+    }
+   }
+  },
+  {
+   "spec": "xl:k17:v26+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 116816896,
+   "comp": {
+    "zstd:-3": 114021751,
+    "zstd:1": 104935650,
+    "zstd:3": 105567877
+   },
+   "ratio": {
+    "zstd:-3": 1.0245,
+    "zstd:1": 1.1132,
+    "zstd:3": 1.1066
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0338,
+    "k.coef.scale": 1.179,
+    "k.coef.zero": 1.1606,
+    "k.basis": 1.4006,
+    "v.coef.q": 1.037,
+    "v.coef.scale": 1.1847,
+    "v.coef.zero": 1.1655,
+    "v.basis": 1.411
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 453.3,
+     "decomp_MBps": 1244.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1381.5,
+     "decomp_MBps": 4078.9
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1322.2,
+     "decomp_MBps": 6933.3
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 3821.0,
+     "decomp_MBps": 13839.1
+    }
+   }
+  },
+  {
+   "spec": "xl:k23:v35+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 157566976,
+   "comp": {
+    "zstd:-3": 153728812,
+    "zstd:1": 141451695,
+    "zstd:3": 142298795
+   },
+   "ratio": {
+    "zstd:-3": 1.025,
+    "zstd:1": 1.1139,
+    "zstd:3": 1.1073
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0354,
+    "k.coef.scale": 1.1761,
+    "k.coef.zero": 1.1598,
+    "k.basis": 1.4013,
+    "v.coef.q": 1.0379,
+    "v.coef.scale": 1.1827,
+    "v.coef.zero": 1.1643,
+    "v.basis": 1.4123
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 442.3,
+     "decomp_MBps": 1228.3
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1494.5,
+     "decomp_MBps": 4592.6
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1316.1,
+     "decomp_MBps": 6956.6
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4457.0,
+     "decomp_MBps": 13114.2
+    }
+   }
+  },
+  {
+   "spec": "xl:k34:v51+q:int4_kivi",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 230917120,
+   "comp": {
+    "zstd:-3": 225157675,
+    "zstd:1": 207187185,
+    "zstd:3": 208440119
+   },
+   "ratio": {
+    "zstd:-3": 1.0256,
+    "zstd:1": 1.1145,
+    "zstd:3": 1.1078
+   },
+   "part_ratio": {
+    "k.coef.q": 1.0367,
+    "k.coef.scale": 1.1736,
+    "k.coef.zero": 1.1578,
+    "k.basis": 1.4027,
+    "v.coef.q": 1.039,
+    "v.coef.scale": 1.1771,
+    "v.coef.zero": 1.1617,
+    "v.basis": 1.4137
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 426.8,
+     "decomp_MBps": 1210.6
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1776.9,
+     "decomp_MBps": 4312.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 1321.7,
+     "decomp_MBps": 6923.9
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 4952.4,
+     "decomp_MBps": 15000.9
+    }
+   }
+  },
+  {
+   "spec": "xl:k6:v9",
+   "item_id": "T5_global_s64000",
+   "model": "qwen",
+   "dump_run_id": "20261021-183445-m16-x4-dump-qwen",
+   "stored": 115261440,
+   "comp": {
+    "zstd:-3": 101376695,
+    "zstd:1": 80094379,
+    "zstd:3": 82476398
+   },
+   "ratio": {
+    "zstd:-3": 1.137,
+    "zstd:1": 1.4391,
+    "zstd:3": 1.3975
+   },
+   "part_ratio": {
+    "k.coef.bf16": 1.3965,
+    "k.basis": 1.399,
+    "v.coef.bf16": 1.3975,
+    "v.basis": 1.4063
+   },
+   "speed": {
+    "zstd:3|t1": {
+     "comp_MBps": 264.9,
+     "decomp_MBps": 1253.2
+    },
+    "zstd:3|t4": {
+     "comp_MBps": 1041.4,
+     "decomp_MBps": 5071.7
+    },
+    "zstd:-3|t1": {
+     "comp_MBps": 647.3,
+     "decomp_MBps": 1508.1
+    },
+    "zstd:-3|t4": {
+     "comp_MBps": 2249.7,
+     "decomp_MBps": 8870.1
+    }
+   }
+  }
+ ]
+}
