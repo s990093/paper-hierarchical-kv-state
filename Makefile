@@ -112,9 +112,9 @@ gpu:
 	@srun --jobid=$(RUNJOB) --overlap -n1 bash -c 'nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,power.draw,temperature.gpu,clocks.sm --format=csv; echo ---; nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv' \
 	  | $(SHOW) gpu --job $(RUNJOB)
 
+# 每個 job 的 cgroup 只看得到自己的卡：沒給 JOB 時每個 RUNNING 的 job 開一格 tmux（q 一次全關）
 nvtop:
-	@[ -n "$(RUNJOB)" ] || { echo "沒有正在跑的 job（make status 看）"; exit 1; }
-	srun --jobid=$(RUNJOB) --overlap -n1 --pty $(NVTOP)
+	@SLURM_BIN=$(SLURM_BIN) NVTOP=$(NVTOP) bash code/h200_nvtop.sh $(JOB)
 
 test-submit:
 	@sbatch --test-only code/r_h200_all.sh 2>&1 | tail -1 | $(SHOW) testsubmit --script code/r_h200_all.sh
