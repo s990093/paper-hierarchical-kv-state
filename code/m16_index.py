@@ -317,6 +317,14 @@ def supp_rows():
         for k, c in d["configs"].items():
             rows.append(dict(exp="I3g", cell=f"{k}|{c['desc']}", metric=f"return-turn TTFT P95 (sim pred {c['pred_p95']}); rank {d['verdict_rank']}; flip {d['verdict_flip']}",
                              value=round(c["p95"], 4) if c.get("p95") is not None else "", unit="s", kind="measured", status="ok", run_id=c["run_id"], source=rel(p)))
+    p = os.path.join(RES, "i3g_agentic/i3g_posthoc.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        for k, r in d["per_config"].items():
+            q, io = d["vs_b"].get(f"{k}_vs_b"), d["io"][k]
+            rows.append(dict(exp="I3g-posthoc", cell=k, metric=f"return-turn TTFT P95 session-bootstrap CI {r['p95_ci']}" +
+                             (f"; ratio vs b {q['p95_ratio']:.3f} CI {q['ratio_ci']}" if q else "") + f"; lookup async delay mean {io['lookup_async_delay_mean']} s (post-hoc)",
+                             value=round(r["p95"], 4), unit="s", kind="measured", status="ok", run_id=d["run_id"] + ";" + d["source_report"], source=rel(p)))
     p = os.path.join(RES, "x_stack/v3/xlcal_eqbytes.json")
     if os.path.exists(p):
         d = json.load(open(p))
@@ -329,7 +337,7 @@ def supp_rows():
 
 
 PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b",
-           "K1b", "X4a-Wbig", "X4a-Wall", "X3grid-matmul", "X3grid-mem", "xlcal-eqbytes"]
+           "K1b", "X4a-Wbig", "X4a-Wall", "X3grid-matmul", "X3grid-mem", "xlcal-eqbytes", "I3g-posthoc"]
 
 
 def main():

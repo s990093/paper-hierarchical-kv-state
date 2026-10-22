@@ -465,7 +465,7 @@ EXPS = [
          jobs=["40_v0", "50_f2", "51_f1", "52_f1"], kind="實測（vLLM 端到端）"),
     dict(key="supp", sec="4.14", title="10/22 補跑：W 大／全部層一組、X3 翻轉格子（兩種背景）、I3g、38k 同位元組",
          files=["x_stack/x4/wbig/x4w_report.json", "x_stack/x4/wall/x4w_report.json", "x3_time/v3grid/x3grid_report.json",
-                "x3_time/v3grid_mem/x3grid_report.json", "i3g_agentic/i3g_report.json", "x_stack/v3/xlcal_eqbytes.json"],
+                "x3_time/v3grid_mem/x3grid_report.json", "i3g_agentic/i3g_report.json", "i3g_agentic/i3g_posthoc.json", "x_stack/v3/xlcal_eqbytes.json"],
          jobs=["61_", "62_", "62b", "63_", "63b", "64_"], kind="實測（TF、端到端還原、vLLM 端到端）"),
 ]
 
@@ -3340,7 +3340,7 @@ def sec_supp(d: Doc, ctx: Ctx):
              "(5) 事後分析，只當探索。全部在跑之前寫進 experiment_log.md。",
         limits=["X4a 的補跑只有 teacher forcing（答對率的代理），沒有生成答對率；「全部層一組」是看過 K1b 的 Qwen CPU 結果之後才加的（跑之前登記）。",
                 "X3 的兩種背景都是合成的（duty 週期），不是真實併發的 decode。",
-                "I3g 只有 1 個 seed、Llama 一個模型；模擬用的是 harness 的常數，vLLM 的重算與 CPU 路徑和它不同。",
+                "I3g 只有 1 個 seed、每個設定只跑一次、Llama 一個模型；HBM 是人為壓到參考工作集的 0.25 倍（MI300X 192 GB 實際上不會這麼緊）；模擬用的是 harness 的常數，vLLM 的重算與 CPU 路徑和它不同；NFS 的等待是 metadata 延遲還是排在讀寫後面，沒有拆開。",
                 "38k 的同位元組比較是看過結果之後才提的。"])
     exp_head(d, ctx, e, spec)
 
@@ -3437,6 +3437,43 @@ def sec_supp(d: Doc, ctx: Ctx):
                 f"判定：RANK <b>{esc(j['verdict_rank'])}</b>（實測排名 {esc(j['rank_measured'])}，模擬 {esc(j['rank_sim'])}）；FLIP <b>{esc(j['verdict_flip'])}</b>。"
                 "出處：i3g_agentic/i3g_report.json（逐請求在 requests_*.csv）。")
     d.raw(add_table(ctx, sec, "I3g：agent 工具暫停後回來那一輪的 TTFT（vLLM 0.28 端到端）", t_i3g))
+
+    def f_i3g():
+        p = os.path.join(ctx.res, "i3g_agentic", "i3g_report.json")
+        j = read_json(p)
+        plt = plt_setup(ctx)
+        fig, ax = plt.subplots(figsize=(6.4, 3.0))
+        for i, k in enumerate(("a", "b", "c", "d")):
+            c = j["configs"].get(k)
+            if not c:
+                continue
+            s = read_json(os.path.join(ctx.res, "i3g_agentic", f"summary_{c['run_id']}.json"))
+            bt = s["ttft_by_turn"]
+            ts = sorted(bt, key=int)
+            ax.plot([int(t) for t in ts], [bt[t]["p95"] for t in ts], "-o", ms=3, color=C[i % len(C)], label=f"{k}：{c['desc']}")
+        ax.set_yscale("log")
+        ax.set_xlabel("第幾輪（0＝第一輪，其他＝工具暫停後回來）")
+        ax.set_ylabel("TTFT P95（秒，對數）")
+        ax.legend(fontsize=6.5)
+        fig.tight_layout()
+        return fig, "每輪的 TTFT P95（含第一輪）。d 連第一輪都慢＝排隊（server log 的 Waiting 最多 38 個，c 最多 3 個；runs/20261022-192812-m16-srv-i3g-d、20261022-191155-m16-srv-i3g-c）。出處：i3g_agentic/summary_*.json 的 ttft_by_turn。"
+    d.raw(add_fig(ctx, sec, "I3g：每一輪的 TTFT P95（四個設定）", f_i3g))
+
+    def t_i3gp():
+        p = os.path.join(ctx.res, "i3g_agentic", "i3g_posthoc.json")
+        j = read_json(p)
+        ctx.src(sec, p, [j["run_id"], j["source_report"]])
+        rows = []
+        for k in ("a", "b", "c", "d"):
+            r, q, io = j["per_config"][k], j["vs_b"].get(f"{k}_vs_b"), j["io"][k]
+            g = lambda x, n=2: x if isinstance(x, str) else fx(x, n)  # noqa: E731
+            rows.append([k, f"{fx(r['p95'], 2)} [{fx(r['p95_ci'][0], 2)}, {fx(r['p95_ci'][1], 2)}]",
+                         f"{fx(q['p95_ratio'], 2)} [{fx(q['ratio_ci'][0], 2)}, {fx(q['ratio_ci'][1], 2)}]" if q else "（基準）",
+                         g(io["ttft_mean_all"]), g(io["lookup_async_delay_mean"]), g(io["load_gbps"]), g(io["store_gbps"])])
+        return (["設定", "回來那一輪 P95 [95% CI]", "對 b 的比 [95% CI]", "TTFT 平均（全部）", "查下層的等待平均（秒／請求）", "載入 GB/s", "寫出 GB/s"], rows,
+                f"<b>事後分析</b>（不是事先寫死的判定）：以 session 為單位的配對 bootstrap（{j['n_sessions']} 個 session、B＝{j['B']}）；每個設定只跑一次，跑與跑之間的變異不在區間裡。"
+                "「查下層的等待」＝vllm:kv_offload_lookup_async_delay_seconds 的平均（請求查下層、結果還沒回來到查完的時間）。a 沒有卸載。出處：i3g_agentic/i3g_posthoc.json。")
+    d.raw(add_table(ctx, sec, "I3g 事後分析：誤差範圍與 NFS 慢在哪", t_i3gp))
 
     def t_eqb():
         p = os.path.join(ctx.res, "x_stack/v3/xlcal_eqbytes.json")

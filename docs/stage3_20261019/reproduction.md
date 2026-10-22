@@ -92,10 +92,11 @@ S3_ROLE=cpu    setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/
 | `63b_x3_flipgrid_mem.sh` | X3 翻轉格子（頻寬型背景） | 同上＋`M10_BUSY_SCRIPT=code/m16_busy_mem.py` | `results/.../x3_time/v3grid_mem/` |
 | `64_i3g.sh` | I3g：agent 暫停（vLLM 端到端，a／b／c／d） | `m16_workload.py gen-agentic`、`m16_vllm_bench.py`、`m16_i3g_report.py` | `results/.../i3g_agentic/` |
 | （手動，CPU） | K1b：跨層子空間、Tucker | `m16_k1_tucker.py run／report`（Llama 要分塊 Gram，見失敗 5） | `results/.../k1_kvstruct/tucker/` |
+| （手動，CPU） | I3g 事後分析（session bootstrap、NFS 查找等待） | `m16_i3g_posthoc.py` | `results/.../i3g_agentic/i3g_posthoc.*` |
 | （手動，CPU） | 38k 同位元組（事後） | `m16_xlcal_eqbytes.py` | `results/.../x_stack/v3/xlcal_eqbytes.*` |
 | （手動，CPU） | 交付 md | `python3 code/m16_narr2md.py`（從 `report/narrative/*.html` 轉出 `results_analysis.md`、`stage3_candidates.md`） | `docs/stage3_20261019/` |
 
-撤下沒跑的：`61b_k1b_more_dumps`／`61bz_k1b_more`（使用者「實驗都可以了」；在 `retired_20261020/`）。
+撤下沒跑的：`61b_k1b_more_dumps`／`61bz_k1b_more`（使用者「實驗都可以了」；佇列那份在 `/mlsteam/data/tiara/stage3/jobs/retired_20261020/`，repo 那份在 `code/m16_queue/retired/`）。
 
 S2（`m16_s2_equalbytes.py`）沒有單獨的 GPU job：X1 篩選時順便產生同位元組的子集（`s2part_*`），由 `36z_x1_report.sh` 的 `m16_s2_equalbytes.py report` 出表（`results/.../x_stack/s2_subset/`）。
 
