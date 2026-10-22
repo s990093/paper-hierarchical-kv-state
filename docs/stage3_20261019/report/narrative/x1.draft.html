@@ -1,0 +1,5 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 x1.html。 -->
+<p>（草稿）run 20261020-155515／-155519／-173921／-193056-m16-x1-{llama,qwen}-s*（21 個）；report results/m16_stage3_mi300x/x_stack/x1_report.json（run 20261020-212246-m16-x1-report）。Llama 61 題、Qwen 96 題，各 161 個配置。</p>
+<ul><li>判定（S1-b）：0.125、0.0625 兩個預算、兩個模型，最好組合都明顯好過最好單一方法 → X2 GO。TF 版 r：Llama 0.32、Qwen 0.35。</li>
+<li>家族（同預算約 0.25）：丟 block（KNORM／KEYDIFF 0.75）−19.0／−26.4；合併 merge:4 −72.8／−70.9；最好的組合幾乎都是 xKV 式跨層低秩＋係數再量化。</li>
+<li>代理（以配置為單位的 Spearman，對 KL）：relerr_k +0.50、relerr_v +0.59；崩潰 AUROC 0.54–0.60。</li></ul>

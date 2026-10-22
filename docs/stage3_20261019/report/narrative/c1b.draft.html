@@ -1,0 +1,3 @@
+<!-- 草稿（只列事實）：數字照 docs/stage3_20261019/experiment_log.md 原文抄、附 run_id。報告不採用 .draft.html；主 session 改寫成解讀後另存為 c1b.html。 -->
+<p>（草稿）qtime：20261021-143835-…-qtime-llama、20261021-143911-…-qtime-qwen（CLEAN；qwen 重開那次 CONTAMINATED、沒寫進 results），llama 重開那次 20261021-151109 也 CLEAN。38da／38db／38dz 在 10/21 16:33Z 完成（runner log）；experiment_log 還沒有 C1b 結果的節——數字請看報告第 4.10 節自動產生的圖表與 results/m16_stage3_mi300x/c1_selective_restore/{c1b_summary.json, tables_c1b.md}。</p>
+<p>失敗 4（10/21 14:53Z）：38da 工作池領 llama shard 3 時，read_rows 的警告印到 stdout、被當成工作名 → 修法：pool-claim 期間 redirect_stdout(sys.stderr)；15:10Z 重排 38da（逐題續跑）。</p>
