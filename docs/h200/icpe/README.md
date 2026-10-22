@@ -26,8 +26,8 @@
 | P0-1 | 重算速度的效度威脅（harness ÷ vLLM ≈ 1.75）：最快的 attention 重量 f(i)，重跑第一階段延後測試、第二階段還原格子、3b X1／X5 | [P0-1_recompute_speed.md](P0-1_recompute_speed.md) | 登記 |
 | P0-2 | 3b「猜誰會回來」的 GPU 驗證（X1 headroom 最大的設定，縮小比例重播） | [P0-2_x1_gpu_validation.md](P0-2_x1_gpu_validation.md) | 登記 |
 | P1-1 | 壓縮疊加（低秩＋INT4）在 H200 重現：品質＋慢層端到端還原 | （10/27 前登記） | — |
-| P1-2 | 便宜的 CPU 對稱重跑（X1 截尾、FreeInference、X5 事後版、X4 f×0.5、X4 排隊占比拆解） | （10/27 前登記） | — |
-| P2 | CPU 層、GPU 忙時 G5b 選錯 11.5% 那幾格，2 個新 seed | （11/1 前登記） | — |
+| P1-2 | 便宜的 CPU 對稱重跑（X1 截尾、FreeInference、X5 事後版、X4 f×0.5、X4 排隊占比拆解） | [P1-2_cpu_symmetric_reruns.md](P1-2_cpu_symmetric_reruns.md) | 登記 |
+| P2 | CPU 層、GPU 忙時 G5b 選錯 11.5% 那幾格，2 個新 seed | [P2_g5b_cpu_busy_reseed.md](P2_g5b_cpu_busy_reseed.md) | 登記 |
 | （最低優先） | 下一篇的「讀取時依問題決定每塊清楚度」前向篩選 | 有空檔的 GPU 才做；不進這篇 | — |
 
 執行紀錄：[`results/RUNLOG_H200_ICPE.md`](../../../results/RUNLOG_H200_ICPE.md)。
