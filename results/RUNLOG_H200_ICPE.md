@@ -90,3 +90,8 @@
 | 21669 | `icpe-p11q` | afterany:21655 | P1-1 (Q)：PCA／xKV 校準、gpu-selftest、192 題生成（不量時間；和 CPU 的 21656、21662 可以同時） |
 | 21663 | `icpe-p2` | **改成** afterany:21662、afterany:21669 | （量時間，不能和 21669 重疊） |
 | 21670 | `icpe-p11t` | afterany:21663 | P1-1 (T)：loadpath 冒煙＋8 格＋CPU 層、壓縮時間 |
+
+### 10/22 冒煙 job 加做、S1 改成手動放行
+- 21652（冒煙，還沒開跑）加：P0-2 的 GPU 重播（HINT-PF、k＝8、前 50 個請求）、P1-1 的 loadpath（`--smoke`）；時限 1:15（commit `ef98fd1`）。
+- 21653（P0-1 S1）的依賴從 `afterok:21652` 改成 `afterany:21652`（不讓冒煙裡別的實驗的失敗自動取消整條鏈），並 **`scontrol hold 21653`**：冒煙跑完、我看過結果才放行。
+- 開 `docs/h200/ICPE_EVIDENCE.md` 骨架（只放已核對的數字；待填的列標出是哪個實驗）。
