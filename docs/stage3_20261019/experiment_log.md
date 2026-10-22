@@ -242,3 +242,8 @@
 - run：`20261022-013407…-m16-xlcal3-*`（工作池）；report `results/m16_stage3_mi300x/x_stack/v3/tables_xlcal3.md`。校準基底 sha256 和 38c 相同。
 - **主要判定（新的 192 題，獨立檢驗）：兩個模型都 UNDETERMINED**。Llama：`k22v34+int4` 校準 − 每題 +2.1 [+0.0, +4.4]（CAN）、`k28v42+int4` −1.5 [−4.3, +1.2]；Qwen：−1.3 [−4.1, +1.5]、−0.5 [−3.2, +2.3]。合併 288 題（參考）同樣 UNDETERMINED。
 - 判讀：四對點估計 −1.5～+2.1，平均約 0，CI 半寬約 2.5–3 個百分點 → 事先校準的共用基底和每題 SVD 差在 ±2–4 個百分點內，**看不出系統性變差，但也證明不了「不輸」**。Llama 校準版 `xl:k22:v34:cal+q:int4_kivi`（約 14.6 倍、每請求位元組比 0.068）對 E0 −0.3 [−2.0, +1.4]（合併 288 題，過 ε）。
+
+## V0　vLLM 0.28（ROCm）APC／CPU 卸載／分層能不能跑、命中 vs 不命中輸出是否相同
+
+- **失敗 5**（10/22 04:09Z）：`40_v0` 的 V0-b（APC on）文字題 `v0check` FAIL（run `20261022-040931-m16-v0b-txt`，rc=3）：3 題裡 2 題 gpu_hit 的輸出在第 7、15 個 token 和 miss 分歧，**分歧位置 miss 的 top-1／top-2 logprob 差都是 0.0**（數值平手）；miss_cold、gpu_hit_cached、determinism（miss vs miss2）全 PASS；V0-a（APC off）與 V0-b 亂數題全 PASS。判讀：命中路徑（只算最後幾個 token）和完整 prefill 的加總順序不同，平手時 argmax 會翻；這是 `v0_f1_i3_howto.md` §2「不一致時怎麼讀」預料的情況，不是 KV 錯（真正的無損證據是 F1 的逐 block 位元組比對，第一階段已做）。
+- 修法：`40_v0.sh` 加 `tie_ok`：只在「非 match 的檢查全 PASS、而且每個分歧位置 margin ≤ 1e-3」時記 NEEDS_HUMAN（資訊）並當成通過，其他情況照樣停。用這次的真實 json 測：判「只是數值平手」；把一個 margin 改成 0.5 的反向對照判「不是」。04:1xZ 重跑 V0。
