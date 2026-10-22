@@ -1,0 +1,9 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy3,E0,cake,10,0.25619,0.91622,1 2,0.0,4160749568.0,,,10,0,20261022-011846-m16-x3-validate2
+32768,cpu,busy3,E0,loadall,10,0.14012,0.80556,0,0.0,4294967296.0,,,10,0,20261022-011846-m16-x3-validate2
+32768,cpu,busy3,E1,cake,10,0.12751,0.79331,1,63.0,1056964608.0,,,10,0,20261022-011846-m16-x3-validate2
+32768,cpu,busy3,E1,loadall,10,0.06772,0.74534,0,64.0,1073741824.0,,,10,0,20261022-011846-m16-x3-validate2
+32768,cpu,idle,E0,cake,10,0.09556,0.17092,3,0.0,4093640704.0,,,10,0,20261022-011846-m16-x3-validate2
+32768,cpu,idle,E0,loadall,10,0.08368,0.1596,0,0.0,4294967296.0,,,10,0,20261022-011846-m16-x3-validate2
+32768,cpu,idle,E1,cake,10,0.0653,0.14058,1 2,62.0,1040187392.0,,,10,0,20261022-011846-m16-x3-validate2
+32768,cpu,idle,E1,loadall,10,0.03228,0.10811,0,64.0,1073741824.0,,,10,0,20261022-011846-m16-x3-validate2

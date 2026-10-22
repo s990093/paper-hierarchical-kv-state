@@ -1,0 +1,26 @@
+{
+  "gpu": 1,
+  "started_clean": true,
+  "contaminated": false,
+  "verdict": "CLEAN",
+  "intruders": [],
+  "n_dirty_samples": 0,
+  "paused_intervals": [
+    {
+      "from": "2026-10-22T01:24:26.186213+00:00",
+      "to": "2026-10-22T01:24:27.903675+00:00",
+      "reason": "m7_busy teardown"
+    },
+    {
+      "from": "2026-10-22T01:24:36.203431+00:00",
+      "to": "2026-10-22T01:24:37.913973+00:00",
+      "reason": "m7_busy teardown"
+    },
+    {
+      "from": "2026-10-22T01:24:54.821386+00:00",
+      "to": "2026-10-22T01:24:56.534825+00:00",
+      "reason": "m7_busy teardown"
+    }
+  ],
+  "discarded_samples_overlapping_pause": 0
+}

@@ -1,0 +1,80 @@
+{
+ "model": "qwen",
+ "fmt": "int4_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0",
+  "E1"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "ssd_param",
+   "kind": "throttle",
+   "GiBps": 6.98115234375
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "busy3",
+   "duty": 0.9
+  }
+ ],
+ "reps": 5,
+ "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/x3_time/v2/validate/harness/qwen_int4_kivi_S4_ssd_param",
+ "blocks_out": "/mlsteam/data/tiara/runs/20261022-011846-m16-x3-validate2/blocks_qwen_int4_kivi_S4_ssd_param.csv",
+ "verify": true,
+ "extra_modes": [
+  "loadall"
+ ],
+ "extra_tiers": [],
+ "argv": [
+  "/mlsteam/workspace/paper-hierarchical-kv-state/code/m10_speed.py",
+  "grid",
+  "--model",
+  "qwen",
+  "--fmt",
+  "int4_kivi",
+  "--base-fmt",
+  "fp8_head",
+  "--out-dir",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/x3_time/v2/validate/harness/qwen_int4_kivi_S4_ssd_param",
+  "--bw-json",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/x3_time/v2/validate/harness/qwen_int4_kivi_S4_ssd_param/bw_x3.json",
+  "--bw-names",
+  "ssd_param",
+  "--gpu-states",
+  "busy3",
+  "--busy-levels",
+  "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_restore2_mi300x/busy_levels_q4.json",
+  "--configs",
+  "E0",
+  "E1",
+  "--refs",
+  "--lengths",
+  "--extra-modes",
+  "loadall",
+  "--launches",
+  "2",
+  "--reps",
+  "5",
+  "--launch0",
+  "400",
+  "--blocks-out",
+  "/mlsteam/data/tiara/runs/20261022-011846-m16-x3-validate2/blocks_qwen_int4_kivi_S4_ssd_param.csv"
+ ],
+ "run_id": "20261022-011846-m16-x3-validate2",
+ "restore_variant": {
+  "kernel": "k3:64:1",
+  "sched": "defer",
+  "group": 1,
+  "prio": false,
+  "unit": 512,
+  "meet": "claim",
+  "io_prio": false
+ }
+}

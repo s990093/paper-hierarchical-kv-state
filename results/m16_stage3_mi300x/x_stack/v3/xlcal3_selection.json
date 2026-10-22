@@ -1,0 +1,123 @@
+{
+ "go": true,
+ "which": "xlcal3",
+ "reason": "xKV 校準基底 vs 每題 SVD，只比 INT4 的兩對（使用者 10/21）",
+ "tasks": [
+  "T2",
+  "T3",
+  "T4",
+  "T5"
+ ],
+ "seed0": 66000,
+ "n": 48,
+ "pairs": [
+  [
+   "xl:k22:v34:cal+q:int4_kivi",
+   "xl:k22:v34+q:int4_kivi"
+  ],
+  [
+   "xl:k28:v42:cal+q:int4_kivi",
+   "xl:k28:v42+q:int4_kivi"
+  ]
+ ],
+ "models": {
+  "llama": {
+   "configs": [
+    {
+     "spec": "xl:k22:v34:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    },
+    {
+     "spec": "xl:k28:v42:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k28:v42+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    }
+   ]
+  },
+  "qwen": {
+   "configs": [
+    {
+     "spec": "xl:k22:v34:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k22:v34+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    },
+    {
+     "spec": "xl:k28:v42:cal+q:int4_kivi",
+     "roles": [
+      "xlcal"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "校準基底版"
+    },
+    {
+     "spec": "xl:k28:v42+q:int4_kivi",
+     "roles": [
+      "xlcal_ref"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "why": "每題 SVD 的同名配置（同一題、同一個行程配對）"
+    }
+   ]
+  }
+ },
+ "run_id": "20261022-013130-m16-xlcal3-plan",
+ "ts": "2026-10-22T01:31:30+00:00"
+}

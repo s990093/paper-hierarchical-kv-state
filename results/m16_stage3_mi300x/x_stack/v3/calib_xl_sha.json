@@ -1,0 +1,26 @@
+{
+ "run_id": "20261022-031317-m16-xlcal3-calibsha",
+ "ts": "2026-10-22T03:13:18+00:00",
+ "models": {
+  "llama": {
+   "file": "/mlsteam/data/tiara/stage3/xstack/calib_xl_llama.pt",
+   "summary": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/x_stack/v2/calib_xl_llama.json",
+   "sha256": "9433330226f5575f6e0e5ba998bf0bcbb4bf35821057cb329c9f7afba642fa2e",
+   "expected": "9433330226f5575f6e0e5ba998bf0bcbb4bf35821057cb329c9f7afba642fa2e",
+   "calib_run_id": "20261021-123131-m16-xlcal-calib-llama",
+   "n_tokens": 258048,
+   "R": 2048,
+   "ok": true
+  },
+  "qwen": {
+   "file": "/mlsteam/data/tiara/stage3/xstack/calib_xl_qwen.pt",
+   "summary": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/x_stack/v2/calib_xl_qwen.json",
+   "sha256": "d291ae6dc16ea8c0a17a94ae551d325d267a992bde6c0a7a593f09729f532392",
+   "expected": "d291ae6dc16ea8c0a17a94ae551d325d267a992bde6c0a7a593f09729f532392",
+   "calib_run_id": "20261021-123131-m16-xlcal-calib-qwen",
+   "n_tokens": 258048,
+   "R": 1024,
+   "ok": true
+  }
+ }
+}
