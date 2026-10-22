@@ -445,6 +445,7 @@ def md(out: dict, js: list, d: str, meths: list):
         L_.append(f"| {k} | {e['per_layer']['e95']:.0f}／{mo['C']['size']} | {e['token_mode']['e95']} | {mo['L']['e95']}／{mo['L']['size']} | "
                   f"{mo['H']['e95']}／{mo['H']['size']} | {mo['D']['e95']}／{mo['D']['size']} | {mo['C']['e95']}／{mo['C']['size']} |")
     for k, q in out["q2"].items():
+        meths = [m for m in q["table"][0] if m.startswith(("xkv_G", "tucker", "two_G")) and not m.endswith("_ratio")]   # 每個模型的分組不同（Llama 8／16／32、Qwen 7／14／28）
         L_ += ["", f"## Q2 {k}：xKV-G4 操作點的同樣位元組下的相對誤差（兩題平均；括號＝÷xKV-G4）", "",
                "| 等效秩 | 倍數（結構） | xKV-G4 | " + " | ".join(m for m in meths if m != "xkv_G4") + " |",
                "|--:|--:|--:|" + "--:|" * (len(meths) - 1)]

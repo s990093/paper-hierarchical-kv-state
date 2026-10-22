@@ -1084,7 +1084,7 @@ def sec_k1(d: Doc, ctx: Ctx):
     d.h3("K1b　Tucker（多維分解）與「跨層共用的到底是什麼」（10/22 補）")
     d.raw("<div class='box-rule'>使用者 10/22 問：「相鄰層同一 token 的 KV 完全不像，這樣不能跨層？」「Tucker 多一個維度壓縮？」"
           "同一批 32K dump（兩個模型 × T4／T2，全部層；K＝RoPE 前；不去平均＝照 X 系列的 xKV），只用 CPU。事先寫死：<br>"
-          "<b>Q1</b>：相鄰層的 token 子空間重疊（每層前 64 個左奇異向量；‖U<sub>l</sub>ᵀU<sub>l+1</sub>‖²／64，減平均）≥0.5 且同 token cosine ≤0.1"
+          "<b>Q1</b>：相鄰層的 token 子空間重疊（每層前 64 個左奇異向量；‖U<sub>l</sub><sup>T</sup>U<sub>l+1</sub>‖²／64，減平均）≥0.5 且同 token cosine ≤0.1"
           " → 跨層共用的是「token 子空間」不是「向量」。<br>"
           "<b>Q2</b>：在 xKV 每 4 層（X 系列）的操作點、同樣位元組下，4 維／3 維 Tucker 的上界（HOSVD）或兩側分解的誤差 ≤0.9×xKV，"
           "而且兩個模型的 K 都有 → GO（值得做 GPU 答對率）；否則 STOP。指標＝相對 Frobenius 誤差，只能篩選（X1：和答對率只中度相關）。</div>")
@@ -1114,7 +1114,7 @@ def sec_k1(d: Doc, ctx: Ctx):
             ax.set_xlabel("層 l（和 l+1 比）")
             ax.set_ylim(-0.1, 1.0)
         axs[0].set_ylabel("重疊／cosine")
-        axs[1].legend(fontsize=6.4)
+        axs[1].legend(fontsize=6.2, loc="center", bbox_to_anchor=(0.5, 0.27), ncol=2)
         fig.tight_layout()
         return fig, ("實線＝相鄰層 token 子空間重疊（1＝同一個子空間；灰線＝隨機子空間的期望值 64／32768）；點線＝同一 token 的 cosine"
                      "（同一座標比，K1 的那個量）。紅虛線＝Q1 門檻 0.5。出處：k1_kvstruct/tucker/xlayer_subspace.csv。")
@@ -1144,10 +1144,10 @@ def sec_k1(d: Doc, ctx: Ctx):
                         out.append(statistics.mean(vals) if len(vals) == len(jm) else float("nan"))
                     return out
                 lines = [("xkv_G1", "每層各自 SVD", "#9aa0a6", "-", 1.1), ("xkv_G4", "xKV 每 4 層（X 系列）", C[0], "-", 2.2),
-                         (f"xkv_G{Lm}", f"全部 {Lm} 層一組（＝Tucker 的 token 模態）", "#0b2f5c", "-", 1.1),
+                         (f"xkv_G{Lm}", "全部層一組（Llama 32／Qwen 28；＝Tucker 的 token 模態）", "#0b2f5c", "-", 1.1),
                          ("tucker4_hi", "4 維 Tucker 上界（HOSVD）", C[7], "-", 1.3),
                          ("tucker4_lo", "4 維 Tucker 下界（最樂觀）", C[7], ":", 1.4),
-                         (f"two_G{G2}", f"兩側：token 跨 {G2} 層＋每層通道基底", C[2], "--", 1.3)]
+                         (f"two_G{G2}", "兩側：token 跨 8／7 層＋每層通道基底", C[2], "--", 1.3)]
                 ymax = 0.0
                 for k, lab, col, ls, lw in lines:
                     if k not in jm[0]["kinds"][kind]["curves"]:
@@ -1161,6 +1161,9 @@ def sec_k1(d: Doc, ctx: Ctx):
                         ax.axvline(t["factor"], color="#bbbbbb", lw=0.6, ls="--")
                 ax.set_xscale("log")
                 ax.set_xlim(1.5, 48)
+                ax.set_xticks([2, 4, 8, 16, 32])
+                ax.set_xticklabels(["2", "4", "8", "16", "32"])
+                ax.minorticks_off()
                 ax.set_ylim(0, ymax * 1.05 if ymax > 0 else 1)
                 ax.set_title(f"{MODEL_LABEL[m]}：{'K（RoPE 前）' if kind == 'K' else 'V'}")
                 if i == 1:
@@ -3465,7 +3468,12 @@ def compose(ctx: Ctx) -> str:
     d.h(1, "ch4", "4　實驗結果")
     d.p("每一節的固定順序：狀態 → 要回答的問題 → 作法 → 主要圖表 → 事先寫死的判定與結果 → 解讀（主 session 撰寫）→ 限制 → run_id 與檔案出處。"
         "圖表的數字全部在產生報告時從結果檔讀；沒有結果的畫 NOT_MEASURED 佔位。〔模擬〕＝用實測常數算的、不是量測。")
+    skip = set(filter(None, os.environ.get("M16_REPORT_SKIP", "").split(",")))   # 除錯用：跳過某些章節（函式名）
     for fn in SECTIONS:
+        if fn.__name__ in skip:
+            k_ = fn.__name__[4:]
+            d.h(2, f"exp_{k_}", f"{EX(k_)['sec']}　（除錯：本次建置跳過）")
+            continue
         try:
             fn(d, ctx)
         except Exception as ex:                  # noqa: BLE001
