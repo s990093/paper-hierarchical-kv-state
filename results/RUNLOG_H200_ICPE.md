@@ -106,3 +106,16 @@
 - P0-2 重播（HINT-PF、k＝8、前 50 個請求）：跑完；50 個請求 GPU÷S_orig 的 TTFT 平均比 0.969、逐請求中位 0.951（小請求 GPU 較快：模擬把最後不滿的一塊算成整塊）；22 個請求排隊（序列開頭都是第一次的 prefill）。
 - P1-1 loadpath（`--smoke`，4 塊 ×16）：兩個模型都跑完、位元組帳斷言過。每題 SVD 版在冒煙裡會被 ×16 放大基底的搬運（只有冒煙這樣，正式 64 塊不縮放）。
 **之後**：`scontrol release 21653`（S1 仍等 DL_Lab4 的 3 個 job 結束）。
+
+---
+
+## ICPE-P01-S1 — job 21653（P0-1 §2：最快的 attention＋勝者的校準；量時間）
+**狀態**: PASS　**執行時間**: 2026-10-22 20:57:35 → 21:03:42（+08:00）　**開跑時**：DL_Lab4 的 3 個 job 已經提早結束；節點上沒有我們別的 job（runner 檢查過）；別人的 job 6 個（`slurm-icpe-p01s1-21653.out`）。
+**run_id**: `20261022-205738-icpe-p01-attn-llama`、`…-205836-icpe-p01-attn-qwen`、`…-205931-icpe-p01-attn-choose`（推算；見 slurm log）、`…-205934-icpe-p01-c1`、`…-205953-icpe-p01-calibf-llama`、`…-210010-icpe-p01-c5`、C4 same＋restart ×10（`…-2100xx`～`…-210309-icpe-p01-c4-*`）、`…-210325-icpe-p01-calibf-qwen`；全部 exit 0。
+**產出檔**: `results/icpe_h200/p01/attn/{gate.csv,speed.csv,choice.json,gpu_guard_*.json}`、`results/icpe_h200/p01/calib/{calib_c1.csv,calib_c5.csv,c4_noise.csv,speed_{llama,qwen}/}`
+**關鍵數字**〔實測〕:
+- 正確性閘（8K、32K）：五個候選兩個模型都過；argmax 都相同、top-5 重疊都是 5／5、max|Δlogit| ≤ 0.125。（偏離 2 的「至少 4 個」在這次沒有作用：全部 5／5。）
+- 速度（Σ_{i<64} f(i)，3 輪中位數，ms）：Llama sdpa 2,107.2、fa2 2,049.5、**fa3 1,583.0**、fa4 1,605.5、sdpa_cudnn 2,041.7；Qwen sdpa 1,854.0、fa2 1,806.5、**fa3 1,400.4**、fa4 1,416.8、sdpa_cudnn 1,782.4。→ **勝者 fa3**（Llama 0.751×、Qwen 0.755× sdpa），停損沒觸發。
+- 勝者的校準：C1（Llama，fa3）f(0) 18.17、f(63) 30.92 ms，斜率 **0.2104** ms/塊（sdpa 0.4730），Σ64＝1,569.8 ms（sdpa 2,091.4）；calib-f Σ64：Llama 1.5741 s、Qwen 1.3934 s；C5 duty 0.6／1.0 變慢 1.536／**1.970** 倍（sdpa 1.511／1.945）；C4 δ 0.02–0.03% → δ\*＝5%。
+- 新的 harness ÷ vLLM 預設 32K（只報告）：Llama 1.574／1.2106＝**1.30**、Qwen 1.393／1.0590＝**1.32**（sdpa 時 1.75／1.76）→ 最快的 attention 只補回一部分；「跟 vLLM 一樣快」只能靠 (c) 的 V2。
+**失敗與異常**: 無。
