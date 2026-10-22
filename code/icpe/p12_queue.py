@@ -50,7 +50,7 @@ def main():
     for _, c in hot.iterrows():
         q = sw
         for k in CELL:
-            q = q[q[k] == c[k]] if q[k].dtype == object else q[np.isclose(q[k].astype(float), float(c[k]))]
+            q = q[np.isclose(q[k].astype(float), float(c[k]))] if pd.api.types.is_numeric_dtype(q[k]) else q[q[k].astype(str) == str(c[k])]
         rv = c.best_rival_mean
         comp = []
         for sd, x in q.groupby("seed"):
