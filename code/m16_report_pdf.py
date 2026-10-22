@@ -463,6 +463,10 @@ EXPS = [
     dict(key="vllm", sec="4.13", title="V0／F2／F1　vLLM 0.28 的復用與卸載",
          files=["v0_vllm_smoke/v0check_*.json", "f2_shared_prefix_burst/summary_*.json", "f1_prefix_reuse/summary_*.json"],
          jobs=["40_v0", "50_f2", "51_f1", "52_f1"], kind="實測（vLLM 端到端）"),
+    dict(key="supp", sec="4.14", title="10/22 補跑：W 大／全部層一組、X3 翻轉格子（兩種背景）、I3g、38k 同位元組",
+         files=["x_stack/x4/wbig/x4w_report.json", "x_stack/x4/wall/x4w_report.json", "x3_time/v3grid/x3grid_report.json",
+                "x3_time/v3grid_mem/x3grid_report.json", "i3g_agentic/i3g_report.json", "x_stack/v3/xlcal_eqbytes.json"],
+         jobs=["61_", "62_", "62b", "63_", "63b", "64_"], kind="實測（TF、端到端還原、vLLM 端到端）"),
 ]
 
 
@@ -3309,7 +3313,145 @@ def previews(path: str, outdir: str, pages: list, dpi=80) -> list:
 
 
 # ============================================================================ build
-SECTIONS = [sec_k1, sec_i4, sec_i1, sec_c1a, sec_s1, sec_x1, sec_x2, sec_xlcal, sec_x3, sec_c1b, sec_x4, sec_i3, sec_vllm]
+# ---------------------------------------------------------------------------- 4.14 10/22 補跑
+X3G_ACTIONS = ("raw", "int4_kivi@oneshot", "k4v2@perblock", "xkv_k22v34@oneshot", "xkv_k22v34_int4@oneshot", "xkv_k11v17_int4@oneshot")
+X3G_LABEL = {"raw": "BF16 原樣", "int4_kivi@oneshot": "INT4", "k4v2@perblock": "K4V2", "xkv_k22v34@oneshot": "低秩 k22",
+             "xkv_k22v34_int4@oneshot": "低秩 k22＋INT4", "xkv_k11v17_int4@oneshot": "低秩 k11＋INT4"}
+X3G_BG = (("v3grid", "算力型背景（matmul）"), ("v3grid_mem", "頻寬型背景（大陣列複製）"))
+
+
+def sec_supp(d: Doc, ctx: Ctx):
+    e = EX("supp")
+    sec = e["sec"]
+    spec = dict(
+        q="10/22 租約結束前補的六件（使用者選）：(1) X4a 當初為了時間縮掉的「每 8／7 層一組」，以及 K1b 之後加的「全部層一組」，同位元組下答對率代理會不會更好？"
+          "(2) Qwen 256K（見 4.11）；(3) X3「最快格式隨 GPU 忙碌翻轉」只有 4 對實測 → 完整格子，並換成頻寬型背景再量一次；"
+          "(4) I3 的模擬預測在 vLLM 端到端上成不成立；(5) 38k 的同位元組事後分析。",
+        method="(1) m16_x4w.py＋m16_x4.py tf：X4a 同一批 96 題，T 20／24／32 × INT4／K4V2，W 大（或全部層）與同 T 的 W4 逐題配對。"
+               "(3) m16_x3grid.py＋m16_xtime.py validate：2 模型 × 3 層（cpu_pinned、b16、ssd_meas）× 4 個 duty × 6 個動作＝144 個端到端還原，"
+               "背景各一次（m7_busy＝matmul；m16_busy_mem＝2 GiB 陣列複製）。(4) m16_vllm_bench.py：Llama、64 個 agent session、HBM 壓到參考工作集的 0.25 倍，"
+               "a＝APC、b＝＋CPU、c＝＋本地檔案層、d＝＋NFS 檔案層。(5) 38k 新 192 題逐題配對。",
+        rule="(1) W 大（或全部層）− W4 的 gold_lp 逐題差 bootstrap 95% CI：任一 (T, 位元) 下界 &gt;0 → W_BIG_BETTER；全部上界 &lt;0 → W_BIG_WORSE；其他 UNDETERMINED。"
+             "(3) 每條（模型, 層）duty 0 與 0.9 的最快動作不同、兩端各快 ≥5% → 翻轉；兩個模型都有 → FLIP_REPRODUCED。"
+             "(4) 回來那一輪 TTFT P95：c 最低且 d 最高 → SIM_RANK_CONFIRMED；P95(c) ≤ 0.95×P95(b) 且 P95(d) ≥ 1.05×P95(b) → FLIP_CONFIRMED。"
+             "(5) 事後分析，只當探索。全部在跑之前寫進 experiment_log.md。",
+        limits=["X4a 的補跑只有 teacher forcing（答對率的代理），沒有生成答對率；「全部層一組」是看過 K1b 的 Qwen CPU 結果之後才加的（跑之前登記）。",
+                "X3 的兩種背景都是合成的（duty 週期），不是真實併發的 decode。",
+                "I3g 只有 1 個 seed、Llama 一個模型；模擬用的是 harness 的常數，vLLM 的重算與 CPU 路徑和它不同。",
+                "38k 的同位元組比較是看過結果之後才提的。"])
+    exp_head(d, ctx, e, spec)
+
+    def t_x4w(sub):
+        def t():
+            p = os.path.join(ctx.res, "x_stack/x4", sub, "x4w_report.json")
+            j = read_json(p)
+            ctx.src(sec, p, [j["run_id"]] + list(j.get("src_run_ids", [])))
+            rows = []
+            for m, dm in j["models"].items():
+                for r in dm["pairs"]:
+                    c = r["gold_lp_diff"]
+                    rows.append([esc(MODEL_LABEL.get(m, m)), str(r["T"]), esc(r["bits"]),
+                                 f"<code>{esc(r['wbig'])}</code>（{fx(r['mult_wbig'], 1)}×）", f"<code>{esc(r['w4'])}</code>（{fx(r['mult_w4'], 1)}×）",
+                                 str(c["n"]), f"{fx(c['mean'], 2)} [{fx(c['lo'], 2)}, {fx(c['hi'], 2)}]", fx(r.get("first_ok_diff"), 3)])
+            note = ("gold_lp 差＝W 大（或全部層）減 W4，正＝較好；first_ok 差同方向。判定："
+                    + "；".join(f"{esc(MODEL_LABEL.get(m, m))} <b>{esc(dm['verdict'])}</b>（{dm['n_items']} 題）" for m, dm in j["models"].items())
+                    + f"。出處：x_stack/x4/{sub}/x4w_report.json。")
+            return (["模型", "T", "係數", "W 大／全部層（倍數）", "W4（倍數）", "題數", "gold_lp 差 [95% CI]", "first_ok 差"], rows, note)
+        return t
+    d.raw(add_table(ctx, sec, "X4a 補跑：每 8／7 層一組 vs 每 4 層（TF，逐題配對）", t_x4w("wbig")))
+    d.raw(add_table(ctx, sec, "X4a 補跑：全部層一組 vs 每 4 層（TF，逐題配對）", t_x4w("wall")))
+
+    def x3g(sub):
+        p = os.path.join(ctx.res, "x3_time", sub, "x3grid_report.json")
+        j = read_json(p)
+        ctx.src(sec, p, [j["run_id"]] + list(j.get("src_run_ids", [])))
+        return j
+
+    def t_x3g():
+        rows, verd = [], []
+        for sub, lab in X3G_BG:
+            try:
+                j = x3g(sub)
+            except NotMeasured:
+                rows.append([esc(lab), "—", "—", "<span class='nm'>NOT_MEASURED</span>", "", "", ""])
+                continue
+            verd.append(f"{esc(lab)}：<b>{esc(j['verdict'])}</b>（{j['n_ok']}／{j['n_rows']} 列可用、污染 {j['n_contaminated']}）")
+            for s in j["series"]:
+                if s.get("status") != "OK":
+                    rows.append([esc(lab), esc(MODEL_LABEL.get(s["model"], s["model"])), esc(s["tier"]), esc(s.get("status")), "", "", ""])
+                    continue
+                bd = "／".join(esc(X3G_LABEL.get(s["best_by_duty"].get(k), s["best_by_duty"].get(k) or "—")) for k in ("0.0", "0.4", "0.7", "0.9"))
+                rows.append([esc(lab), esc(MODEL_LABEL.get(s["model"], s["model"])), esc(s["tier"]), bd, "是" if s["flip"] else "否",
+                             esc(X3G_LABEL.get(s["best_fixed"], s["best_fixed"])), fx(100 * s["adaptive_gain"], 1) + "%" if s.get("adaptive_gain") is not None else "—"])
+        if not verd:
+            raise NotMeasured("x3_time/v3grid*/x3grid_report.json 都不存在（63／63b 還沒跑完）")
+        return (["背景", "模型", "層", "最快的動作（duty 0／0.4／0.7／0.9）", "翻轉", "固定最好的一種", "依情況選的好處"], rows,
+                "判定：" + "；".join(verd) + "。依情況選的好處＝每個 duty 各挑最快 vs 固定最好的一種（幾何平均）。出處：x3_time/v3grid*/x3grid_report.json。")
+    d.raw(add_table(ctx, sec, "X3 翻轉格子：每條（模型, 層）各 duty 下最快的格式", t_x3g))
+
+    def f_x3g(sub, lab):
+        def f():
+            j = x3g(sub)
+            plt = plt_setup(ctx)
+            fig, axs = plt.subplots(2, 3, figsize=(7.4, 4.6), sharex=True)
+            cols = {a: C[i % len(C)] for i, a in enumerate(X3G_ACTIONS)}
+            for s in j["series"]:
+                if s.get("status") != "OK":
+                    continue
+                i, k = MODELS.index(s["model"]), ["cpu_pinned", "b16", "ssd_meas"].index(s["tier"])
+                ax = axs[i][k]
+                ds = sorted(s["times"], key=float)
+                for a in X3G_ACTIONS:
+                    ys = [s["times"][dd].get(a) for dd in ds]
+                    if any(y is not None for y in ys):
+                        ax.plot([float(dd) for dd in ds], [y if y is not None else float("nan") for y in ys], "-o", ms=3, color=cols[a],
+                                label=X3G_LABEL[a])
+                ax.set_yscale("log")
+                ax.set_title(f"{MODEL_LABEL[s['model']]}・{s['tier']}{'（翻轉）' if s['flip'] else ''}", fontsize=8)
+                if i == 1:
+                    ax.set_xlabel("GPU 忙碌 duty")
+                if k == 0:
+                    ax.set_ylabel("還原時間（秒，對數）")
+            axs[0][2].legend(fontsize=5.8)
+            fig.tight_layout()
+            return fig, f"{lab}：每條線＝一種格式的端到端還原時間（中位數）。出處：x3_time/{sub}/x3grid_report.json（逐列在 validate_cells.csv）。"
+        return f
+    for sub, lab in X3G_BG:
+        d.raw(add_fig(ctx, sec, f"X3 翻轉格子：還原時間 vs GPU 忙碌（{lab}）", f_x3g(sub, lab)))
+
+    def t_i3g():
+        p = os.path.join(ctx.res, "i3g_agentic", "i3g_report.json")
+        j = read_json(p)
+        ctx.src(sec, p, [j["run_id"]] + [c["run_id"] for c in j["configs"].values()])
+        rows = []
+        for k in ("a", "b", "c", "d"):
+            c = j["configs"].get(k)
+            if not c:
+                rows.append([k, "", "<span class='nm'>NOT_MEASURED</span>", "", "", "", ""])
+                continue
+            rows.append([k, esc(c["desc"]), str(c["n_return"]), fx(c["p50"], 2), fx(c["p95"], 2), fx(c["pred_p95"], 2), fx(c["meas_over_pred"], 2)])
+        return (["設定", "說明", "回來那一輪 n", "P50（秒）", "P95（秒）", "模擬 P95", "實測／模擬"], rows,
+                f"判定：RANK <b>{esc(j['verdict_rank'])}</b>（實測排名 {esc(j['rank_measured'])}，模擬 {esc(j['rank_sim'])}）；FLIP <b>{esc(j['verdict_flip'])}</b>。"
+                "出處：i3g_agentic/i3g_report.json（逐請求在 requests_*.csv）。")
+    d.raw(add_table(ctx, sec, "I3g：agent 工具暫停後回來那一輪的 TTFT（vLLM 0.28 端到端）", t_i3g))
+
+    def t_eqb():
+        p = os.path.join(ctx.res, "x_stack/v3/xlcal_eqbytes.json")
+        j = read_json(p)
+        ctx.src(sec, p, [j["run_id"], j["source_run"]])
+        rows = []
+        for m, rs in j["models"].items():
+            for r in rs:
+                c = r["diff"]
+                rows.append([esc(MODEL_LABEL.get(m, m)), esc(r["why"]), f"{fx(r['ratio_A'], 4)}／{fx(r['ratio_B'], 4)}", str(c["n"]),
+                             f"{fx(100 * c['mean'], 1)} [{fx(100 * c['lo'], 1)}, {fx(100 * c['hi'], 1)}]"])
+        return (["模型", "比較", "每請求位元組比（A／B）", "題數", "答對率差 A−B（百分點）"], rows,
+                "<b>事後分析</b>（看過 38k 之後才提），只當探索；38k 的判定不變。出處：x_stack/v3/xlcal_eqbytes.json。")
+    d.raw(add_table(ctx, sec, "38k 的同位元組重新分析（共用基底的高秩 vs 每題 SVD 的低秩）", t_eqb))
+    exp_tail(d, ctx, e, spec)
+
+
+SECTIONS = [sec_k1, sec_i4, sec_i1, sec_c1a, sec_s1, sec_x1, sec_x2, sec_xlcal, sec_x3, sec_c1b, sec_x4, sec_i3, sec_vllm, sec_supp]
 
 
 def compose(ctx: Ctx) -> str:

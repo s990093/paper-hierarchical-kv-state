@@ -171,12 +171,14 @@ class Busy:
             mask = os.environ.get("M10_BUSY_CU_MASK")
             if mask:
                 env["HSA_CU_MASK"] = mask
-            self.p = subprocess.Popen([sys.executable, os.path.join(HERE, "m7_busy.py"), "--duty", str(self.duty)],
+            # 10/22（m16 X3 翻轉格子）：M10_BUSY_SCRIPT 可換成別的背景（例：code/m16_busy_mem.py＝記憶體頻寬型）；沒設＝m7_busy.py（原行為）
+            script = os.environ.get("M10_BUSY_SCRIPT") or os.path.join(HERE, "m7_busy.py")
+            self.p = subprocess.Popen([sys.executable, script, "--duty", str(self.duty)],
                                       stdout=subprocess.PIPE, text=True, env=env)
             line = self.p.stdout.readline()
             if not line.startswith("READY"):
-                raise RuntimeError(f"m7_busy 沒有啟動：{line!r}")
-            self.stats = {"duty": self.duty, "cu_mask": mask or "", "ready": line.strip()}
+                raise RuntimeError(f"{os.path.basename(script)} 沒有啟動：{line!r}")
+            self.stats = {"duty": self.duty, "cu_mask": mask or "", "ready": line.strip(), "script": os.path.basename(script)}
             time.sleep(1.0)
         return self
 

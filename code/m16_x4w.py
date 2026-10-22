@@ -31,6 +31,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import m16_x4 as X4  # noqa: E402
 
 COMBOS_X4W = os.path.join(os.path.dirname(os.path.abspath(__file__)), "m16_xstack_combos_x4w.json")
+COMBOS_X4WALL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "m16_xstack_combos_x4wall.json")
+# 變體：wbig＝每 8／7 層（10/22 15:3xZ 事先登記）；wall＝全部層一組（Llama 32、Qwen 28；10/22 16:0xZ 看過 K1b 的 Qwen CPU 結果——
+# 「全部層一組」同位元組重建誤差是 xKV-G4 的 0.78–0.85（K）／0.69（V）——之後加的 GPU 檢驗，判定規則同 wbig，跑之前登記）
+VARIANTS = {"wbig": dict(path=COMBOS_X4W, W=lambda m: X4.wval(m, "wbig"), tag="W 大"),
+            "wall": dict(path=COMBOS_X4WALL, W=lambda m: X4.MODEL_INFO[m]["L"], tag="全部層一組")}
 BITS_X4W = ("int4", "k4v2")
 N_BOOT = 10000
 
@@ -39,7 +44,7 @@ def now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
-def build(model: str) -> dict:
+def build(model: str, variant: str = "wbig") -> dict:
     cfg, pairs, skipped = {}, [], []
 
     def add(spec, role, why, T):
@@ -49,7 +54,7 @@ def build(model: str) -> dict:
                 e[k].append(v)
         if T is not None and T not in e["targets"]:
             e["targets"].append(T)
-    wb = X4.wval(model, "wbig")
+    wb = VARIANTS[variant]["W"](model)
     for T in X4.WBIG_T:
         for bits in BITS_X4W:
             b_big = X4.best_rank(model, T, bits, wb, "diag", None, rk_cap=16)
@@ -72,16 +77,17 @@ def build(model: str) -> dict:
     return dict(configs=out, pairs=pairs, skipped=skipped)
 
 
-def grid_doc() -> dict:
+def grid_doc(variant: str = "wbig") -> dict:
     return {"_doc": ["m16_x4w.py 的 X4a 補跑配置（10/22；在跑任何 W 大之前產生，之後不改；--self-test 核對＝程式重算）。",
                      f"T∈{list(X4.WBIG_T)} × 係數 {list(BITS_X4W)}：W 大（Llama 8、Qwen 7；K 秩 ≤16）與 W＝4 各挑倍數最接近 T、在 ±10% 內的秩"
                      "（m16_x4.best_rank，和 X4a 同一個規則）；pairs 是逐題配對比較的對。"],
-            "version": "2026-10-22 x4w v1", "targets": list(X4.WBIG_T), "bits": list(BITS_X4W),
-            "models": {m: build(m) for m in X4.MODEL_INFO}}
+            "version": "2026-10-22 x4w v1", "variant": variant, "targets": list(X4.WBIG_T), "bits": list(BITS_X4W),
+            "models": {m: build(m, variant) for m in X4.MODEL_INFO}}
 
 
 def cmd_grid(a):
-    g = grid_doc()
+    g = grid_doc(a.variant)
+    a.out = a.out or VARIANTS[a.variant]["path"]
     if os.path.exists(a.out):
         old = json.load(open(a.out))
         if old.get("models") == json.loads(json.dumps(g["models"])):
@@ -176,21 +182,32 @@ def self_test() -> bool:
         nonlocal ok
         ok &= bool(cond)
         print(("PASS " if cond else "FAIL ") + name + (f"  {info}" if info else ""))
-    g = grid_doc()
+    for variant in VARIANTS:
+        ok &= _check_variant(variant, check)
+    b = boot([1.0] * 10)
+    check("bootstrap：常數 → CI 縮成一點", b["lo"] == b["hi"] == 1.0)
+    print("self-test：" + ("ALL PASS" if ok else "有 FAIL"))
+    return ok
+
+
+def _check_variant(variant, check) -> bool:
+    ok = True
+    g = grid_doc(variant)
     for m, v in g["models"].items():
         check(f"{m}：有配對", len(v["pairs"]) >= 1, str(len(v["pairs"])))
         for p in v["pairs"]:
-            check(f"{m} T={p['T']} {p['bits']}：W 大的 W＝{X4.wval(m, 'wbig')}、W4 的 W＝4",
-                  X4.spec_meta(p["wbig"])["W"] == X4.wval(m, "wbig") and X4.spec_meta(p["w4"])["W"] == 4)
+            c = X4.spec_meta(p["wbig"])["W"] == VARIANTS[variant]["W"](m) and X4.spec_meta(p["w4"])["W"] == 4
+            ok &= c
+            check(f"[{variant}] {m} T={p['T']} {p['bits']}：W＝{VARIANTS[variant]['W'](m)} 對 W4", c)
             check(f"{m} T={p['T']} {p['bits']}：兩個都在 T±10%", X4.in_band(p["mult_wbig"], p["T"]) and X4.in_band(p["mult_w4"], p["T"]))
         w4_x4a = {c["spec"] for c in json.load(open(X4.COMBOS_X4))["models"][m]["configs"]}
         same = [p["w4"] in w4_x4a for p in v["pairs"]]
         check(f"{m}：W4 那一邊和 X4a 的 alloc 同一個規則（{sum(same)}／{len(same)} 個本來就在 X4a 的格點裡）", True)
-    if os.path.exists(COMBOS_X4W):
-        check("combos_x4w.json＝程式重算", json.load(open(COMBOS_X4W)).get("models") == json.loads(json.dumps(g["models"])))
-    b = boot([1.0] * 10)
-    check("bootstrap：常數 → CI 縮成一點", b["lo"] == b["hi"] == 1.0)
-    print("self-test：" + ("ALL PASS" if ok else "有 FAIL"))
+    path = VARIANTS[variant]["path"]
+    if os.path.exists(path):
+        c = json.load(open(path)).get("models") == json.loads(json.dumps(g["models"]))
+        ok &= c
+        check(f"{os.path.basename(path)}＝程式重算", c)
     return ok
 
 
@@ -199,7 +216,8 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     sp = ap.add_subparsers(dest="cmd")
     g = sp.add_parser("grid")
-    g.add_argument("--out", default=COMBOS_X4W)
+    g.add_argument("--out", default=None)
+    g.add_argument("--variant", choices=list(VARIANTS), default="wbig")
     r = sp.add_parser("report")
     r.add_argument("--raw", required=True)
     r.add_argument("--combos", default=COMBOS_X4W)

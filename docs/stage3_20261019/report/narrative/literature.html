@@ -1,9 +1,21 @@
-<p>文獻由 agent 讀全文或摘要整理（self-review，不是 cross-model）。對這一輪設計影響最大的幾點：</p>
+<p>文獻由 agent 讀全文或摘要整理（self-review，不是 cross-model）。分兩輪：10/19–10/20 設計實驗前的 L0–L6，以及 10/22 依結果重新查新的 L7a–L7d（關鍵說法另由主 session 抽查）。</p>
+<h4>設計實驗時（10/19–10/20）對設計影響最大的幾點</h4>
 <ul>
 <li><b>Intel KV Cache 四件套</b>只有 KV Shrink 有程式（只壓 BF16 高位元組的無損壓縮，不支援 AMD）；另外三個名字只出現在媒體報導。所以四件套只當「方向的分類」，實驗全部自己設計。</li>
-<li><b>「κ 隨硬體變」已被做過</b>（Stony Brook FSL-26-02、EfficientAgent），而且前人（CacheFlow、InferCept、FSL-26-02）都假設計算和搬運互不干擾 → 專案原本的 κ 主張不再當主軸，改看「現場狀況」。</li>
-<li><b>壓縮的組合</b>：兩兩組合已有約 25 篇；「同一個預算下聯合分配」有 RDKV、JoLT、KVTC；xKV（每 4 層聯合 SVD）在 Llama-3.1-8B 64K 壓 8 倍贏 KIVI-2。但<b>三種以上、長上下文、同位元組的系統性比較，加上搬運速度與 GPU 忙碌</b>查不到 → X1–X4 的設計來源。</li>
-<li><b>卸載時壓縮</b>：依頻寬選格式已有人做（CacheGen、KVServe、AdaptCache）；沒人把「GPU 忙不忙」放進決策 → X3 的設計來源。</li>
+<li><b>「κ 隨硬體變」已被做過</b>（Stony Brook FSL-26-02、EfficientAgent）→ 專案原本的 κ 主張不再當主軸，改看「現場狀況」。</li>
+<li><b>壓縮的組合</b>：兩兩組合已有約 25 篇；「同一個預算下聯合分配」有 RDKV、JoLT、KVTC；xKV（每 4 層聯合 SVD）在 Llama-3.1-8B 64K 壓 8 倍贏 KIVI-2 → X1–X4 的設計來源。（當時寫「三種以上、長上下文、同位元組的系統性比較查不到」，10/22 更正，見下。）</li>
+<li><b>卸載時壓縮</b>：依頻寬選格式已有人做（CacheGen、KVServe、AdaptCache）；沒查到有人把「GPU 忙不忙」放進決策 → X3 的設計來源。</li>
 <li><b>跨層共用與 token 合併</b>：第三方報告 MiniCache 在 Llama-3.1-8B 長上下文上崩、合併的好處小；我們的 K1 與 X1 都證實了。</li>
 <li><b>業界主流</b>：引擎預設 BF16、生產常開 FP8；主流是先在架構上縮 KV（GQA、MLA、局部注意力），量化疊在上面。精度不是越低越好：2–3 bit 有懸崖，INT4 是我們量到的甜蜜點。</li>
 </ul>
+<h4>10/22 查新複查（L7a–L7d）：每個方向的最接近前作、被做掉的、還剩的</h4>
+<table>
+<tr><th>方向</th><th>最接近／最大威脅</th><th>已被做掉的</th><th>沒查到（還剩的新意）</th></tr>
+<tr><td>疊加壓縮＋分層（原候選 1）</td><td>KVTC（ICLR 2026）；xKV</td><td>全部層與 head 串起來做離線 PCA、去 RoPE、DP 分配位元（0 位元＝降秩）、DEFLATE、放 GPU 外；跨層 SVD＋4／3 bit</td><td>≥32K–128K 的生成答對率（獨立樣本、CI）；壓縮格式在 CPU／SSD／NFS 的實測還原時間，以及 GPU 忙時最快格式翻轉</td></tr>
+<tr><td>跨層共用子空間、Tucker（K1b）</td><td>xKV；JoLT（arXiv 2607.12550）；arXiv 2609.28029</td><td>「逐 token 不像、主奇異向量對齊」（xKV）；用相鄰層奇異向量的平方 cosine 分組、層與 head 模態不動的部分 Tucker（JoLT，不訓練、到 64K）；Tucker／CP／TT 比較，head 與 layer 模態接近滿秩（2609.28029）</td><td>32K、每題、「全部層一組」這個點的量測（它們只到 T≈1K／8K 或分組）</td></tr>
+<tr><td>爭用感知的還原格式（原候選 2）</td><td>KVServe（SIGCOMM'26）；HCache（EuroSys'25）</td><td>執行期依工作負載／頻寬／SLO 選壓縮組合（KVServe）；矩陣乘法型的 KV 重建（HCache，離線定一次）；解壓會搶 GPU（ShadowServe、KVCodec、Tutti 都寫了，用靜態隔離避開）</td><td>把「執行期 GPU 忙碌」當選格式的輸入；動作集裡有矩陣乘法型重建時的翻轉。<b>更正</b>：之前「前人都假設計算與搬運互不干擾」說太滿</td></tr>
+<tr><td>AMD 搬運路徑（原候選 3）</td><td>vLLM PR #52700（open）、#42212（已合併）</td><td>OffloadingConnector 的 Triton zero-copy 快路徑（CUDA 已合併；ROCm 版待合併）；ROCm 7.14 的批次 memcpy（#43018 已合併）；SGLang HiCache 的 ROCm 路徑</td><td>MI300X 上逐塊／批次／zero-copy 隨片段大小與 GPU 忙碌的交叉點與干擾；搬得快之後 8K 的卸載邊界會不會翻正</td></tr>
+<tr><td>多輪選擇性還原的索引（原候選 4）</td><td>LOCKS（arXiv 2607.24555）；ShadowKV；IMPRESS（FAST'25）</td><td>decode 時用低秩／低位元 K 摘要選頁、比 Quest 準（LOCKS、SAKI、FIER、YAKV）；共用基底的低秩打分召回偏低</td><td>還原時一次選完、多輪第 2 輪、512-token block、索引位元組算進下層搬運、直接用疊加格式的低秩係數當索引、補載</td></tr>
+<tr><td>多 session 還原（I1）、agent 暫停（I3）</td><td>ObjectCache；Continuum v7；vLLM RFC #57103</td><td>多請求聯合分頻寬（遠端物件儲存）；用「程式結束」訊號釋放 KV（Continuum）</td><td>「知道 session 結束」值多少；NFS 下層的規則</td></tr>
+</table>
+<p>其他更正：ShadowKV 選 chunk 用的是 RoPE 後的 chunk 平均（landmark），低秩 K 只用來重建（之前寫成「用低秩 K 做取回」）；K1b 一節「沒查到 Tucker 用在 KV 活化值上」是錯的（JoLT、2609.28029 都是，L5d 的參考清單裡就有）。各篇的閱讀深度、核對狀態與 URL 在 <code>lit/L7a–L7d</code>；這一輪沒有一篇讀到全文，最深是讀 HTML 的指定章節。</p>

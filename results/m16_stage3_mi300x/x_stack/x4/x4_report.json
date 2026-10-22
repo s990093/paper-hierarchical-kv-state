@@ -1,6 +1,6 @@
 {
- "run_id": "20261021-232940-m16-x4-report",
- "ts": "2026-10-21T23:29:41+00:00",
+ "run_id": "20261022-155523-m16-x4-report",
+ "ts": "2026-10-22T15:55:23+00:00",
  "rule_text": {
   "Q-A": "（計畫 §3）某一軸加在「xKV＋INT4」上，同倍數帶（±10%）內答對率（TF 的 Δgold_lp；生成的配對差）沒有比「把同樣的位元組省在降秩或係數位元上」差 → 這一軸值得疊；差 → 不值得。計畫沒寫統計門檻，這裡寫死成：帶內「有這一軸的最好配置」−「沒有這一軸的最好配置」的逐題配對差（bootstrap 10,000 次）95% CI 上界 < 0 → 差（不值得疊）；其他 → 沒有比較差（值得疊）。無損：真實壓縮比（zstd:3）≥ 1.05 倍 → 值得疊（在慢連線上；速度由 X3 決定）。",
   "Q-B": "（計畫 §3）每個目標倍數下 TF 最好的分法進 X4b 生成；生成的最佳分法（帶內 X4b 配置裡答對率最高的）就是那個倍數的「最佳配比」。最佳配比在 ε 內的最大倍數＝極限。",
@@ -66,7 +66,9 @@
    "/mlsteam/data/tiara/stage3/xstack/x4/gen/x4b_qwen_32K_s4.csv.gz",
    "/mlsteam/data/tiara/stage3/xstack/x4/gen/x4b_qwen_32K_s5.csv.gz",
    "/mlsteam/data/tiara/stage3/xstack/x4/gen/x4b_qwen_32K_s6.csv.gz",
-   "/mlsteam/data/tiara/stage3/xstack/x4/gen/x4b_qwen_32K_s7.csv.gz"
+   "/mlsteam/data/tiara/stage3/xstack/x4/gen/x4b_qwen_32K_s7.csv.gz",
+   "/mlsteam/data/tiara/stage3/xstack/x4/q256/x4q256_qwen_256K_s0.csv.gz",
+   "/mlsteam/data/tiara/stage3/xstack/x4/q256/x4q256_qwen_256K_s1.csv.gz"
   ],
   "turns": [
    "/mlsteam/data/tiara/stage3/xstack/x4/turns/x4d_llama_32K_s0.csv.gz",
@@ -142,7 +144,11 @@
   "20261021-223946-m16-x4d-qwen-s2",
   "20261021-225642-m16-x4d-llama-s4",
   "20261021-230427-m16-x4d-qwen-s3",
-  "20261021-230433-m16-x4d-llama-s5"
+  "20261021-230433-m16-x4d-llama-s5",
+  "20261021-233633-m16-x4q256-qwen-s0",
+  "20261021-233633-m16-x4q256-qwen-s1",
+  "20261022-153732-m16-x4q256-qwen-s0",
+  "20261022-153732-m16-x4q256-qwen-s1"
  ],
  "incomplete_items": {
   "tf": [],
@@ -9594,6 +9600,221 @@
        "diff_vs_int4": null
       }
      }
+    },
+    "256K": {
+     "n_items": 18,
+     "configs": {
+      "xl:k34:v51+q:int4_kivi": {
+       "spec": "xl:k34:v51+q:int4_kivi",
+       "n": 18,
+       "ratio": 0.1064,
+       "multiple": 9.398496240601505,
+       "W": 4,
+       "rk": 34,
+       "rv": 51,
+       "bits": "int4",
+       "drop_method": "",
+       "drop_frac": 0.0,
+       "xl": 1,
+       "roles": [
+        "frontier"
+       ],
+       "deployable": 1,
+       "acc": 0.5583333333333333,
+       "acc_e0": 0.4666666666666667,
+       "diff": {
+        "mean": 0.09166666666666666,
+        "lo": -0.022222222222222216,
+        "hi": 0.23333333333333334,
+        "p_le0": 0.0592,
+        "n": 18
+       },
+       "mlperf0.99": true,
+       "mlperf0.999": true,
+       "eps_pass": false,
+       "diff_vs_anchor": {
+        "mean": 0.03611111111111112,
+        "lo": -0.04444444444444443,
+        "hi": 0.11666666666666667,
+        "p_le0": 0.1618,
+        "n": 18
+       }
+      },
+      "xl:k23:v35+q:int4_kivi": {
+       "spec": "xl:k23:v35+q:int4_kivi",
+       "n": 18,
+       "ratio": 0.072602,
+       "multiple": 13.773725241728878,
+       "W": 4,
+       "rk": 23,
+       "rv": 35,
+       "bits": "int4",
+       "drop_method": "",
+       "drop_frac": 0.0,
+       "xl": 1,
+       "roles": [
+        "frontier"
+       ],
+       "deployable": 1,
+       "acc": 0.5333333333333333,
+       "acc_e0": 0.4666666666666667,
+       "diff": {
+        "mean": 0.06666666666666668,
+        "lo": -0.044444444444444446,
+        "hi": 0.2111111111111111,
+        "p_le0": 0.1446,
+        "n": 18
+       },
+       "mlperf0.99": true,
+       "mlperf0.999": true,
+       "eps_pass": false,
+       "diff_vs_anchor": {
+        "mean": 0.011111111111111115,
+        "lo": -0.06666666666666667,
+        "hi": 0.08888888888888889,
+        "p_le0": 0.3704,
+        "n": 18
+       }
+      },
+      "xl:k17:v26+q:int4_kivi": {
+       "spec": "xl:k17:v26+q:int4_kivi",
+       "n": 18,
+       "ratio": 0.053826,
+       "multiple": 18.578382194478504,
+       "W": 4,
+       "rk": 17,
+       "rv": 26,
+       "bits": "int4",
+       "drop_method": "",
+       "drop_frac": 0.0,
+       "xl": 1,
+       "roles": [
+        "frontier"
+       ],
+       "deployable": 1,
+       "acc": 0.575,
+       "acc_e0": 0.4666666666666667,
+       "diff": {
+        "mean": 0.10833333333333334,
+        "lo": -0.03055555555555555,
+        "hi": 0.25562499999999905,
+        "p_le0": 0.0571,
+        "n": 18
+       },
+       "mlperf0.99": true,
+       "mlperf0.999": true,
+       "eps_pass": false,
+       "diff_vs_anchor": {
+        "mean": 0.052777777777777785,
+        "lo": -0.049999999999999996,
+        "hi": 0.15,
+        "p_le0": 0.1461,
+        "n": 18
+       }
+      },
+      "q:int4_kivi": {
+       "spec": "q:int4_kivi",
+       "n": 18,
+       "ratio": 0.3125,
+       "multiple": 3.2,
+       "W": 0,
+       "rk": 0,
+       "rv": 0,
+       "bits": "int4_kivi",
+       "drop_method": "",
+       "drop_frac": 0.0,
+       "xl": 0,
+       "roles": [
+        "control"
+       ],
+       "deployable": 1,
+       "acc": 0.5222222222222223,
+       "acc_e0": 0.4666666666666667,
+       "diff": {
+        "mean": 0.05555555555555555,
+        "lo": 0.0,
+        "hi": 0.16666666666666666,
+        "p_le0": 0.3545,
+        "n": 18
+       },
+       "mlperf0.99": true,
+       "mlperf0.999": true,
+       "eps_pass": true,
+       "diff_vs_anchor": null
+      }
+     },
+     "limits": {
+      "status": "INCOMPLETE（18 題 < 48）"
+     },
+     "holds": {
+      "xl:k34:v51+q:int4_kivi": {
+       "multiple": 9.4,
+       "eps_pass": false,
+       "diff": {
+        "mean": 0.09166666666666666,
+        "lo": -0.022222222222222216,
+        "hi": 0.23333333333333334,
+        "p_le0": 0.0592,
+        "n": 18
+       },
+       "diff_vs_int4": {
+        "mean": 0.03611111111111112,
+        "lo": -0.04444444444444443,
+        "hi": 0.11666666666666667,
+        "p_le0": 0.1618,
+        "n": 18
+       }
+      },
+      "xl:k23:v35+q:int4_kivi": {
+       "multiple": 13.77,
+       "eps_pass": false,
+       "diff": {
+        "mean": 0.06666666666666668,
+        "lo": -0.044444444444444446,
+        "hi": 0.2111111111111111,
+        "p_le0": 0.1446,
+        "n": 18
+       },
+       "diff_vs_int4": {
+        "mean": 0.011111111111111115,
+        "lo": -0.06666666666666667,
+        "hi": 0.08888888888888889,
+        "p_le0": 0.3704,
+        "n": 18
+       }
+      },
+      "xl:k17:v26+q:int4_kivi": {
+       "multiple": 18.58,
+       "eps_pass": false,
+       "diff": {
+        "mean": 0.10833333333333334,
+        "lo": -0.03055555555555555,
+        "hi": 0.25562499999999905,
+        "p_le0": 0.0571,
+        "n": 18
+       },
+       "diff_vs_int4": {
+        "mean": 0.052777777777777785,
+        "lo": -0.049999999999999996,
+        "hi": 0.15,
+        "p_le0": 0.1461,
+        "n": 18
+       }
+      },
+      "q:int4_kivi": {
+       "multiple": 3.2,
+       "eps_pass": true,
+       "diff": {
+        "mean": 0.05555555555555555,
+        "lo": 0.0,
+        "hi": 0.16666666666666666,
+        "p_le0": 0.3545,
+        "n": 18
+       },
+       "diff_vs_int4": null
+      }
+     },
+     "status": "INCOMPLETE（18 題 < 48；只供參考）"
     }
    },
    "pareto_gen_png": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/x_stack/x4/pareto_x4b_qwen.png",
