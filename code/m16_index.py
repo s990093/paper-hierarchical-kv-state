@@ -233,11 +233,53 @@ def x3():
     return rows
 
 
+def c1b():
+    rows = []
+    p = os.path.join(RES, "c1_selective_restore/c1b_cells.csv")
+    if not os.path.exists(p):
+        return rows
+    for r in csv.DictReader(open(p)):
+        if r["group"] != "T2-T4":
+            continue
+        rows.append(dict(exp="C1b", cell=f"{r['model']}|{r['cell']}", metric=f"turn-2 accuracy diff vs FULL [CI {r['diff_lo']}, {r['diff_hi']}]; moved {r['ratio_moved']}",
+                         value=r["diff_mean"], unit="fraction", kind="measured", status="ok", run_id=r["run_id"], source=rel(p)))
+    return rows
+
+
+def vllm_rows():
+    """V0（每個設定的 overall）、F2（burst makespan 中位數）、F1（f1_report.json 每格的收益）。"""
+    import re
+    rows = []
+    for p in sorted(glob.glob(os.path.join(RES, "v0_vllm_smoke/v0check_*.json"))):
+        d = json.load(open(p))
+        rows.append(dict(exp="V0", cell=d["run_id"], metric="v0check overall (FAIL only at exact ties is accepted, see experiment_log 失敗 5)",
+                         value=d.get("overall"), unit="", kind="measured", status="ok", run_id=d["run_id"], source=rel(p)))
+    g = {}
+    for p in glob.glob(os.path.join(RES, "f2_shared_prefix_burst/summary_*.json")):
+        m = re.search(r"m16-f2-([A-Za-z]+)-P(\d+)-N(\d+)-r\d", p)
+        if m:
+            d = json.load(open(p))
+            g.setdefault((m.group(1), m.group(2), m.group(3)), []).append((d["burst"]["makespan_s"], d["run_id"]))
+    for (c, P, N), v in sorted(g.items()):
+        rows.append(dict(exp="F2", cell=f"{c}|P{P}|N{N}", metric="burst makespan (median of reps)",
+                         value=round(statistics.median(x[0] for x in v), 3), unit="s", kind="measured", status="ok",
+                         run_id=v[0][1], source=rel(os.path.join(RES, "f2_shared_prefix_burst"))))
+    p = os.path.join(RES, "f1_prefix_reuse/f1_report.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        for r in d["rows"]:
+            cell = f"L{r['L']}|{r['cap']}|ov{r['overlap']}|{r['arrival']}"
+            for k in ("apc_vs_off_mean", "cpu_vs_apc_mean"):
+                rows.append(dict(exp="F1", cell=cell, metric=f"{k} (1 - TTFT ratio)", value=r[k], unit="fraction", kind="measured",
+                                 status="ok", run_id=d["run_id"], source=rel(p)))
+    return rows
+
+
 PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a() + x1() + x2() + x3()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a() + x1() + x2() + x3() + vllm_rows() + c1b()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:

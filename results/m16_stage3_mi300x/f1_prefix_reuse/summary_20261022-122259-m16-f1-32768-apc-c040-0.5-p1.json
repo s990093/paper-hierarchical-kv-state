@@ -1,0 +1,432 @@
+{
+ "run_id": "20261022-122259-m16-f1-32768-apc-c040-0.5-p1",
+ "ts_start": "2026-10-22T12:22:59+00:00",
+ "ts_end": "2026-10-22T12:29:51+00:00",
+ "workload": {
+  "path": "/mlsteam/data/tiara/stage3/workloads/f1/w_32768_0.5_p1_0.0984.jsonl",
+  "kind": "prefix_overlap",
+  "sha256": "19c56bc5926c54baee8fc549ad466fb5340a5ddeff4b86fd00ad40ab0fa434a5",
+  "n": 32,
+  "meta": {
+   "generator": "gen-prefix",
+   "n": 32,
+   "sha256": "19c56bc5926c54baee8fc549ad466fb5340a5ddeff4b86fd00ad40ab0fa434a5",
+   "created": "2026-10-22T07:35:51+00:00",
+   "run_id": "NOT_SET",
+   "workset": {
+    "block": 16,
+    "ws_blocks": 36864,
+    "ws_prompt_tokens_in_full_blocks": 589824,
+    "total_prompt_tokens": 1048576,
+    "total_max_tokens": 4096,
+    "ws_blocks_incl_output": 37152,
+    "ideal_hit_tokens": 458752,
+    "ideal_hit_frac": 0.4375,
+    "max_prompt_len": 32768
+   }
+  }
+ },
+ "server_config": {
+  "run_id": "20261022-120601-m16-srv-f1-32768-apc-c040",
+  "created": "2026-10-22T12:06:02+00:00",
+  "model": "llama",
+  "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "apc": "on",
+  "offload": "none",
+  "offload_info": {
+   "spec": "none"
+  },
+  "kv_transfer_config": null,
+  "gpu": 1,
+  "gpu_blocks": 26330,
+  "kv_cache_gib": null,
+  "gpu_mem_util": null,
+  "block_size": 16,
+  "max_model_len": 34816,
+  "rocm_attn_patch": false,
+  "attention_backend": "TRITON_ATTN",
+  "connector_debug": false,
+  "logging_config": null,
+  "extra_args": "",
+  "port": 8016,
+  "url": "http://127.0.0.1:8016",
+  "engine_id": "m16-20261022-120601-m16-srv-f1-32768-apc-c040",
+  "server_log": "/mlsteam/data/tiara/runs/20261022-120601-m16-srv-f1-32768-apc-c040/vllm_server.log",
+  "venv": "/mlsteam/workspace/venv/tiara-v028",
+  "cmd": [
+   "/mlsteam/workspace/venv/tiara-v028/bin/vllm",
+   "serve",
+   "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+   "--host",
+   "127.0.0.1",
+   "--port",
+   "8016",
+   "--served-model-name",
+   "m",
+   "--max-model-len",
+   "34816",
+   "--seed",
+   "0",
+   "--enable-prompt-tokens-details",
+   "--enable-prefix-caching",
+   "--num-gpu-blocks-override",
+   "26330",
+   "--block-size",
+   "16",
+   "--attention-backend",
+   "TRITON_ATTN"
+  ],
+  "env": {
+   "VLLM_SERVER_DEV_MODE": "1",
+   "HIP_VISIBLE_DEVICES": "1",
+   "CUDA_VISIBLE_DEVICES": "1",
+   "HF_HOME": "/mlsteam/data/tiara/hf-cache",
+   "PYTHONUNBUFFERED": "1"
+  },
+  "use_rocr": false,
+  "label": "f1-32768-apc-c040"
+ },
+ "args": {
+  "cmd": "run",
+  "workload": "/mlsteam/data/tiara/stage3/workloads/f1/w_32768_0.5_p1_0.0984.jsonl",
+  "url": null,
+  "server_config": "/mlsteam/data/tiara/runs/20261022-120601-m16-srv-f1-32768-apc-c040/serve_config.json",
+  "model_name": "m",
+  "label": "f1_32768_apc_c040_0.5_p1",
+  "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/f1_prefix_reuse",
+  "run_dir": null,
+  "timeout_s": 1800,
+  "server_warmup": 2,
+  "settle_s": 3.0,
+  "block_size": 16,
+  "guard": "on",
+  "guard_own_root": 1277569,
+  "dry_run": false,
+  "dry_service_s": 0.0,
+  "time_scale": 1.0,
+  "max_requests": null,
+  "max_inflight": null,
+  "reset_before": "on",
+  "reset_external": false,
+  "slo_ttft": [
+   7.0979,
+   23.6598
+  ],
+  "slo_tpot": null,
+  "warmup_lead": null,
+  "warmup_noise": 0.0,
+  "warmup_seed": 0,
+  "restore_est": null,
+  "evict": null,
+  "phases": "seed,evict,burst",
+  "phase_gap_s": 2.0,
+  "server_log": null
+ },
+ "guard": {
+  "impl": "GpuWatcher(gpu=1,own_root=1277569)",
+  "verdict": "CLEAN",
+  "contaminated": false,
+  "report": {
+   "gpu": 1,
+   "started_clean": true,
+   "contaminated": false,
+   "verdict": "CLEAN",
+   "intruders": [],
+   "n_dirty_samples": 0,
+   "paused_intervals": [],
+   "discarded_samples_overlapping_pause": 0
+  }
+ },
+ "timing_valid": true,
+ "timing_note": "OK",
+ "n_measured": 32,
+ "n_ok": 32,
+ "n_failed": 0,
+ "n_failed_all_rows": 0,
+ "ttft_s": {
+  "n": 32,
+  "p50": 3.2018734123557806,
+  "p95": 7.370975508727132,
+  "p99": 8.500664410376922,
+  "mean": 4.0641936497122515,
+  "max": 8.52237338386476
+ },
+ "tpot_s": {
+  "n": 32,
+  "p50": 0.009497213888708063,
+  "p95": 0.059602996298133974,
+  "p99": 0.060834763091952196,
+  "mean": 0.019210608800970325,
+  "max": 0.06115152936164788
+ },
+ "itl_chunk_mean_s": {
+  "n": 32,
+  "p50": 0.00964916931092739,
+  "p95": 0.06161501293683499,
+  "p99": 0.06229731026363072,
+  "mean": 0.019633099135200012,
+  "max": 0.0625940347624729
+ },
+ "e2e_s": {
+  "n": 32,
+  "p50": 5.663760975934565,
+  "p95": 10.76112402472645,
+  "p99": 10.914211331224069,
+  "mean": 6.50401846843306,
+  "max": 10.951924132183194
+ },
+ "send_lag_s": {
+  "n": 32,
+  "p50": 0.010546828154474497,
+  "p95": 0.10045141386799514,
+  "p99": 0.10068916749209166,
+  "mean": 0.019367911474546418,
+  "max": 0.1007910082116723
+ },
+ "n_out_mismatch": 0,
+ "prompt_len_mismatch": 0,
+ "throughput": {
+  "makespan_s": 405.03103967476636,
+  "out_tok_per_s": 10.11280518966898,
+  "req_per_s": 0.07900629054428891,
+  "n_out_total": 4096
+ },
+ "goodput": [
+  {
+   "slo_ttft_s": 7.0979,
+   "slo_tpot_s": null,
+   "n_meet": 30,
+   "frac_of_measured": 0.9375,
+   "goodput_req_per_s": 0.07406839738527085
+  },
+  {
+   "slo_ttft_s": 23.6598,
+   "slo_tpot_s": null,
+   "n_meet": 32,
+   "frac_of_measured": 1.0,
+   "goodput_req_per_s": 0.07900629054428891
+  }
+ ],
+ "client_cached": {
+  "n": 32,
+  "sum_cached": 458752,
+  "sum_prompt": 1048576,
+  "frac": 0.4375
+ },
+ "server": {
+  "phases": [],
+  "resets": [
+   {
+    "when": "before",
+    "ok": true,
+    "tries": 1
+   }
+  ],
+  "server_models": {
+   "object": "list",
+   "data": [
+    {
+     "id": "m",
+     "object": "model",
+     "created": 1792671780,
+     "owned_by": "vllm",
+     "root": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+     "parent": null,
+     "max_model_len": 34816,
+     "permission": [
+      {
+       "id": "modelperm-92e6d2bbccbe2ca8",
+       "object": "model_permission",
+       "created": 1792671780,
+       "allow_create_engine": false,
+       "allow_sampling": true,
+       "allow_logprobs": true,
+       "allow_search_indices": false,
+       "allow_view": true,
+       "allow_fine_tuning": false,
+       "organization": "*",
+       "group": null,
+       "is_blocking": false
+      }
+     ]
+    }
+   ]
+  },
+  "server_warmup": [
+   {
+    "ok": 1,
+    "error": "",
+    "ttft_s": 0.02886524796485901,
+    "e2e_s": 0.03307097125798464
+   },
+   {
+    "ok": 1,
+    "error": "",
+    "ttft_s": 0.4278777362778783,
+    "e2e_s": 0.42839520517736673
+   }
+  ],
+  "t0_wall": "2026-10-22T12:23:03+00:00",
+  "t_last_s": 405.0312943449244,
+  "metrics_scrape": {
+   "before": "OK",
+   "after": "OK"
+  },
+  "metrics": {
+   "series": {
+    "prefix_cache_queries": {
+     "delta": 1048576.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prefix_cache_queries_total",
+     "before": 4237824.0,
+     "after": 5286400.0
+    },
+    "prefix_cache_hits": {
+     "delta": 458752.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prefix_cache_hits_total",
+     "before": 458752.0,
+     "after": 917504.0
+    },
+    "external_prefix_cache_queries": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:external_prefix_cache_queries_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "external_prefix_cache_hits": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:external_prefix_cache_hits_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "prompt_tokens": {
+     "delta": 1048576.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_total",
+     "before": 4237824.0,
+     "after": 5286400.0
+    },
+    "prompt_tokens_cached": {
+     "delta": 458752.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_cached_total",
+     "before": 458752.0,
+     "after": 917504.0
+    },
+    "prompt_tokens_local_compute": {
+     "delta": 589824.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+     "before": 3779072.0,
+     "after": 4368896.0
+    },
+    "prompt_tokens_local_cache_hit": {
+     "delta": 458752.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+     "before": 458752.0,
+     "after": 917504.0
+    },
+    "prompt_tokens_external_kv_transfer": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "generation_tokens": {
+     "delta": 4096.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:generation_tokens_total",
+     "before": 16404.0,
+     "after": 20500.0
+    },
+    "num_preemptions": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:num_preemptions_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "offload_load_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_load_bytes_total"
+    },
+    "offload_load_time_s": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_load_time_total"
+    },
+    "offload_store_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_store_bytes_total"
+    },
+    "offload_store_time_s": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_store_time_total"
+    },
+    "offload_allocation_failure": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_allocation_failure_total"
+    },
+    "offload_lookup_async_delay_sum_s": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_lookup_async_delay_seconds_sum"
+    },
+    "offload_lookup_async_delay_count": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_lookup_async_delay_seconds_count"
+    },
+    "offload_legacy_bytes_cpu_to_gpu": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}"
+    },
+    "offload_legacy_bytes_gpu_to_cpu": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}"
+    },
+    "tiering_read_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_read_bytes_total"
+    },
+    "tiering_write_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_write_bytes_total"
+    },
+    "tiering_chunk_queries": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_chunk_queries_total"
+    },
+    "tiering_chunk_hits": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_chunk_hits_total"
+    }
+   },
+   "derived": {
+    "local_prefix_hit_rate": 0.4375,
+    "external_prefix_hit_rate": "NO_QUERIES",
+    "cached_prompt_token_frac": 0.4375,
+    "offload_load_gib_per_s_vllm": "NOT_AVAILABLE"
+   }
+  },
+  "connector_log": {
+   "status": "NOT_AVAILABLE",
+   "reason": "沒有給 --server-log"
+  }
+ }
+}

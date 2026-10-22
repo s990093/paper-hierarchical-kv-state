@@ -254,3 +254,10 @@
 - run：`20261022-0430…-m16-f2-*`（A＝APC、ROCM_ATTN；A′(Ap)＝APC、TRITON_ATTN；B＝APC＋CPU 卸載（connector 會強制 TRITON_ATTN）；C＝不復用；每格 3 次、evict＝reset）。產出 `results/m16_stage3_mi300x/f2_shared_prefix_burst/`（summary_*.json、requests_*.csv）。
 - burst 的 makespan（秒，3 次中位數；P＝前綴長、N＝同時請求數）：P＝10K、N＝64：A 2.20、A′ 4.41、B 4.42、C 49.2；P＝32K、N＝64：A 5.44、A′ 14.50、B 11.53、C 382；P＝32K、N＝32：A 4.04、A′ 12.19、B 8.36。B 的 connector log：N＝64 時 63 個請求被「chunks being loaded」延後過。
 - 判讀：**#44294 的「開卸載慢一倍」在 MI300X／vLLM 0.28 沒有重現**——和同後端的 A′ 比，B 在 10K 時打平、32K 時更快（延後邏輯有觸發，但淨效果不負）。B 對 A 慢約 2 倍，**全部來自 connector 強制改用 TRITON_ATTN**（A′ 對 A 一樣慢約 2 倍）。→ ROCm 上開 CPU 卸載的真正代價是注意力後端的退回，不是延後邏輯；這也支持候選 3（AMD 上的還原路徑）。
+
+## F1　前綴復用地圖（51_*、52_*，10/22 05:46–13:24Z，全部 CLEAN）〔實測〕
+
+- 18 個 job、54 格 × 3 種設定（off＝不復用、apc、apccpu＝APC＋CPU 卸載；全部 TRITON_ATTN，事先寫死以免後端混雜），L＝8K／32K × 容量 ample／c075／c040 × 重疊 0／0.5／1.0 × 到達 burst／Poisson 0.5λ_sat／0.9λ_sat。校準：8K t1＝0.455 s、λ_sat＝1.97 req/s；32K t1＝4.73 s、λ_sat＝0.197 req/s（`calib_*.json`）。報告 `code/m16_f1_report.py`（run `20261022-132645-m16-f1-report`）→ `results/m16_stage3_mi300x/f1_prefix_reuse/f1_report.{md,json}`。
+- **判定（照事先條件的字面）：SUCCESS**——54 格裡 18 格 APC 收益 <5%；**但這 18 格全是重疊 0%（沒有東西可復用），屬於當然結果**。重疊 50%：APC 讓平均 TTFT 少 20–62%；重疊 100%：少 76–93%；容量（ample → c040）與到達率幾乎不改變這個結論。→ 照實寫：APC 的收益只由重疊決定、單調，**F1 原本想找的「非當然的不划算區域」沒有找到**（接近停止條件的精神）。
+- **CPU 卸載對 APC 的邊界（有意思的部分）**：8K 時 CPU 卸載幾乎都讓 TTFT 變差（−1%～−112%，容量緊＋高負載時最差：c040、重疊 0、0.9λ 平均 −112%、P95 −136%）；32K 時幾乎都變好（+3%～+15%）。後端已固定為 TRITON_ATTN，所以這是卸載本身的成本（寫入 CPU、排程）對上省下的重算：**提示越短，卸載越不划算，而且在容量緊、負載高時會反過來傷害**。
+- 三種指標（平均、P95、goodput@1.5×t1）選出不同最佳設定的格子 6 個，都在 8K、重疊 0 這類差異很小的格子。

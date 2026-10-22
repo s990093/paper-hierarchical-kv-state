@@ -3,8 +3,8 @@
 <tr><th>排名</th><th>候選題目</th><th>證據（這一輪）</th><th>前人</th><th>風險</th><th>下一步</th></tr>
 <tr><td>1</td><td><b>疊加 KV 壓縮的配比與分層搬運</b>：跨層低秩（RoPE 前）＋係數量化＋無損，配比隨目標倍數變，壓縮後放到 CPU／SSD／NFS</td><td>X1／X2／X2b／X4：組合在每個倍數都顯著好過單一方法；約 8 倍接近無損、12 倍掉 1–3；128K 撐得住、多輪不傷；慢層還原快約 3 倍（實測）</td><td>xKV 做了跨層 SVD＋4-bit；兩兩組合很多；「三軸以上、長上下文、同位元組＋搬運」的系統性比較查不到</td><td>新意要靠「配比地圖＋分層」而不是單一方法；Llama 在 ε 內判不了；每題 SVD 太慢</td><td>事先校準基底的正式檢驗（更多題）＋把配比地圖做成依目標倍數自動選的規則，接上 vLLM 的卸載路徑</td></tr>
 <tr><td>2</td><td><b>爭用感知的還原格式選擇</b>：還原時依 GPU 忙不忙、連線快慢，在 INT4、低秩組合、不壓縮之間選</td><td>X3 實測：最快格式隨 GPU 忙碌翻轉（閒時低秩最快、忙時 INT4 最快、低秩＋INT4 比不壓縮慢）；實測「依情況選」對固定一種 +27.6%（4 組）；低秩重建忙時慢 2.8 倍</td><td>依頻寬選格式有人做（CacheGen、KVServe、AdaptCache），<b>沒人把 GPU 忙碌放進決策</b>；前作都假設互不干擾</td><td>只有 4 組實測，模擬圖不可信（STOP-3）；需要真實的併發負載</td><td>在真實併發（多請求 decode 同時跑）下，量各格式還原時間與 TTFT，確認翻轉在實際服務中出現</td></tr>
-<tr><td>3</td><td><b>AMD 上的快速 KV 還原路徑</b>：用 zero-copy gather kernel 取代 vLLM 的逐塊 copy</td><td>I4：逐塊 copy 1–3 GiB/s、zero-copy 約 53 GiB/s（18–45 倍）；vLLM ROCm CPU 層約 4.1 GiB/s</td><td>ROCm 的批次 memcpy PR 還沒合併；NVIDIA 端有 GDRCopy／DSA 類作法</td><td>偏工程、新意有限；要改 vLLM 的連接器</td><td>把 gather kernel 接進 vLLM OffloadingConnector，量端到端 TTFT（vLLM 那組 F1／F2 的結果可當基準）</td></tr>
+<tr><td>3</td><td><b>AMD 上的快速 KV 還原路徑</b>：用 zero-copy gather kernel 取代 vLLM 的逐塊 copy</td><td>I4：逐塊 copy 1–3 GiB/s、zero-copy 約 53 GiB/s（18–45 倍）；vLLM ROCm CPU 層約 4.1 GiB/s；F2：開卸載會強制退回 TRITON 注意力，高併發慢約一倍；F1：8K 提示開卸載幾乎都變慢、容量緊時慢一倍以上，32K 才變快</td><td>ROCm 的批次 memcpy PR 還沒合併；NVIDIA 端有 GDRCopy／DSA 類作法</td><td>偏工程、新意有限；要改 vLLM 的連接器</td><td>把 gather kernel 接進 vLLM OffloadingConnector，量端到端 TTFT，看 F1 裡 8K 的卸載邊界能不能翻正（F1／F2 的結果當基準）</td></tr>
 <tr><td>4</td><td><b>用低秩 K 當選擇性還原的索引</b></td><td>C1b：Quest 摘要不夠準（STOP），但完整 K 的上界很好（Qwen 只放回 1/4 不掉）；K1：K 在 RoPE 前 32 維就留住大部分能量</td><td>ShadowKV 在 decode 時用低秩 K 做稀疏取回；還原時選 block 的版本沒找到</td><td>只有上界的間接證據，還沒做任何實驗</td><td>用 RoPE 前低秩 K 打分，在 C1b 的題組上看能不能逼近完整 K 的上界</td></tr>
 </table>
 <p>使用者原本的兩個問題在這個排名裡的位置：問題①（量化＋token 重要性）→ 重要性拿來<b>丟</b>不划算，拿來<b>挑要搬哪些</b>需要更好的索引（候選 4）；真正省位元組的是疊加（候選 1）。問題②（agent）→ 這次不做，等顯存有壓力的情境。</p>
-<p>（vLLM 的 V0／F2／F1 結果出來後，會更新候選 3 的證據。）</p>
+
