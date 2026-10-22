@@ -1,0 +1,150 @@
+{
+ "go": true,
+ "which": "icpe_p11",
+ "reason": "ICPE P1-1：xKV＋INT4 在 H200 重現（docs/h200/icpe/P1-1_xkv_int4_h200.md §2）",
+ "tasks": [
+  "T2",
+  "T3",
+  "T4",
+  "T5"
+ ],
+ "seed0": 67000,
+ "n": 48,
+ "pairs": {
+  "qwen": [
+   [
+    "xl:k34:v51:cal+q:int4_kivi",
+    "xl:k34:v51+q:int4_kivi"
+   ]
+  ],
+  "llama": [
+   [
+    "xl:k29:v44:cal+q:int4_kivi",
+    "xl:k29:v44+q:int4_kivi"
+   ],
+   [
+    "xl:k19:v29:cal+q:int4_kivi",
+    "xl:k19:v29+q:int4_kivi"
+   ]
+  ]
+ },
+ "models": {
+  "qwen": {
+   "configs": [
+    {
+     "spec": "q:int4_kivi",
+     "roles": [
+      "ref_int4"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.3125,
+     "why": "可部署的強對照"
+    },
+    {
+     "spec": "xl:k34:v51:cal+q:int4_kivi",
+     "roles": [
+      "main"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.10376,
+     "why": "P1-1 主配置（校準基底）"
+    },
+    {
+     "spec": "xl:k34:v51+q:int4_kivi",
+     "roles": [
+      "x4b_same"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.124841,
+     "why": "和 MI300X X4b 同一個配置（每題 SVD）"
+    }
+   ]
+  },
+  "llama": {
+   "configs": [
+    {
+     "spec": "q:int4_kivi",
+     "roles": [
+      "ref_int4"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.3125,
+     "why": "可部署的強對照"
+    },
+    {
+     "spec": "xl:k29:v44:cal+q:int4_kivi",
+     "roles": [
+      "main"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.089111,
+     "why": "P1-1 主配置（校準基底）"
+    },
+    {
+     "spec": "xl:k19:v29:cal+q:int4_kivi",
+     "roles": [
+      "main"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.058594,
+     "why": "P1-1 主配置（校準基底）"
+    },
+    {
+     "spec": "xl:k29:v44+q:int4_kivi",
+     "roles": [
+      "x4b_same"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.125322,
+     "why": "和 MI300X X4b 同一個配置（每題 SVD）"
+    },
+    {
+     "spec": "xl:k19:v29+q:int4_kivi",
+     "roles": [
+      "x4b_same"
+     ],
+     "tiers": [
+      "core"
+     ],
+     "budgets": [],
+     "ratio_region": 0.082403,
+     "why": "和 MI300X X4b 同一個配置（每題 SVD）"
+    }
+   ]
+  }
+ },
+ "seed_overlap": {
+  "x1": 0,
+  "calib": 0,
+  "x2": 0,
+  "x2b": 0,
+  "x4a": 0,
+  "x4b": 0,
+  "xlcal3": 0,
+  "c1a": 0,
+  "lc128k": 0
+ },
+ "run_id": "20261022-122600-icpe-p11-plan",
+ "ts": "2026-10-22T12:26:01+08:00"
+}
