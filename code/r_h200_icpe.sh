@@ -16,6 +16,8 @@
 #   sbatch --job-name=icpe-cpu   --time=6:00:00 code/r_h200_icpe.sh --part cpu     # 只用 CPU：P0-1 (c) X1／X5 三個版本、P0-2 的全尺寸 HINT-PF 模擬
 #   sbatch --job-name=icpe-p12   --time=6:00:00 code/r_h200_icpe.sh --part p12     # 只用 CPU：P1-2（X1 FI、X5 事後版本、X4 f×0.5）
 #   sbatch --job-name=icpe-p2    --time=2:00:00 code/r_h200_icpe.sh --part p2      # 量時間：P2（G5b CPU 層忙，2 個新 seed）
+#   sbatch --job-name=icpe-p11q  --time=8:00:00 code/r_h200_icpe.sh --part p11q    # 品質（不量時間，但不和量時間的 job 重疊）：P1-1 (Q)
+#   sbatch --job-name=icpe-p11t  --time=3:00:00 code/r_h200_icpe.sh --part p11t    # 量時間：P1-1 (T)（全部載入、壓縮時間）
 #   bash code/r_h200_icpe.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 量時間的 part 開跑前檢查：節點上有我們自己的別的 job（同一個 Slurm 使用者，含 DL_Lab4）→ 退出（memory h200-no-self-cotenancy-for-timing；
@@ -47,9 +49,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  p01s1|p01ab|p02|p2) TIMING=1 ;;
-  cpu|p12) TIMING=0 ;;
-  *) echo "要 --part p01s1|p01ab|p02|cpu|p12|p2" >&2; exit 2 ;;
+  p01s1|p01ab|p02|p2|p11t) TIMING=1 ;;
+  cpu|p12|p11q) TIMING=0 ;;
+  *) echo "要 --part p01s1|p01ab|p02|cpu|p12|p2|p11q|p11t" >&2; exit 2 ;;
 esac
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # shellcheck disable=SC1091
@@ -255,6 +257,36 @@ if [ "$PART" = p2 ]; then
       done
     done
   done
+fi
+
+# ============================================================== P1-1 (Q)（docs/h200/icpe/P1-1_xkv_int4_h200.md §2）
+if [ "$PART" = p11q ]; then
+  P11=$REPO/results/icpe_h200/p11
+  export X_DATA=$P3LOCAL/xstack                                             # 校準基底（每個約 150 MB）放本地；逐列輸出進 results
+  XD=$X_DATA
+  [ "$DRY" = 0 ] && mkdir -p "$XD" "$P11/raw" "$P11/calib"
+  step P11Q-PLAN m7run icpe-p11-plan python code/icpe/p11_tools.py plan
+  for m in qwen llama; do
+    step "P11Q-CALIB-$m"   m7run "icpe-p11-calib-$m"   python code/m16_xstack.py calib --model $m --out "$XD/calib_$m.pt" --summary-dir "$P11/calib"
+    step "P11Q-CALIBXL-$m" m7run "icpe-p11-calibxl-$m" python code/m16_xstack.py calib-xl --model $m --out "$XD/calib_xl_$m.pt" --summary-dir "$P11/calib"
+    step "P11Q-SELFTEST-$m" m7run "icpe-p11-gpuselftest-$m" python code/m16_xstack.py gpu-selftest --model $m --calib "$XD/calib_$m.pt" \
+      --calib-xl "$XD/calib_xl_$m.pt" --new-checks both --out "$P11/calib/gpu_selftest_$m.json"
+    step "P11Q-GEN-$m" m7run "icpe-p11-gen-$m" python code/m16_xstack.py gen --model $m --selection "$P11/p11_selection.json" --ctx 32K \
+      --tier core --n 48 --seed0 67000 --calib-xl "$XD/calib_xl_$m.pt" --xl-cache --out "$P11/raw/p11_gen_$m.csv.gz"
+  done
+  step P11Q-REPORT m7run icpe-p11-report-q python code/icpe/p11_tools.py report-q --raw "$P11/raw/p11_gen_qwen.csv.gz" "$P11/raw/p11_gen_llama.csv.gz"
+fi
+
+# ============================================================== P1-1 (T)（量時間；§3）
+if [ "$PART" = p11t ]; then
+  P11=$REPO/results/icpe_h200/p11
+  [ "$DRY" = 0 ] && mkdir -p "$P11/time"
+  for m in llama qwen; do
+    step "P11T-SMOKE-$m" m7run "icpe-p11t-smoke-$m" python code/icpe/p11_time.py loadpath --model $m --out "$P11/time" --reps 1 --smoke
+    step "P11T-LP-$m"    m7run "icpe-p11t-lp-$m"    python code/icpe/p11_time.py loadpath --model $m --out "$P11/time" --reps 5
+    step "P11T-WC-$m"    m7run "icpe-p11t-wc-$m"    python code/icpe/p11_time.py wcost --model $m --out "$P11/time" --reps 3
+  done
+  step P11T-REPORT m7run icpe-p11-report-t python code/icpe/p11_tools.py report-t
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_icpe] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi
