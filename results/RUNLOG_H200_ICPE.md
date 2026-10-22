@@ -57,3 +57,20 @@
 | 21655 | `icpe-p02` | afterany:21654 | P0-2 冒煙＋12 個重播 |
 | 21656 | `icpe-cpu` | afterany:21655 | P0-1 (c)（V0／V1／V2）＋P0-2 全尺寸 HINT-PF |
 送出時 Slurm 預估 21652 在 10/22 20:54（+08:00）開始（lab 的 CPU 上限）。量時間的 job 開跑時還會再檢查節點上沒有我們自己的別的 job。
+
+---
+
+## ICPE-P12-D — X4「排隊占比」的拆解（head node，CPU；P1-2 §3，登記 2026-10-22T04:14Z）
+
+**狀態**: PASS（第一次 exit 1，修正後重跑）
+**run_id**:
+- `20261022-121501-icpe-p12-queue` — **exit 1**：`ValueError: could not convert string to float: 'conversation'`（`p12_queue.py` 用 `dtype == object` 判字串欄；pandas 3 的字串欄是 Arrow 字串型，不是 object → 把 trace 欄當數字）。我的程式錯，沒有產出。改成 `pd.api.types.is_numeric_dtype`（commit 見下）後重跑。
+- `20261022-121515-icpe-p12-queue` — exit 0
+**指令**: `bash code/icpe/headrun.sh icpe-p12-queue python code/icpe/p12_queue.py --cfg results/p3_explore_h200/x4/x4_verdict_cfg.csv --sweep $TIARA_RUNS/20261021-012002-p3h-x4-sweep/x4_sweep.csv --out results/icpe_h200/p12/x4`
+**產出檔**: `results/icpe_h200/p12/x4/{p12_queue_verdict.json, p12_queue_cells.csv}`
+**關鍵數字**〔模擬，H200 常數；資料＝H200 已跑的 X4 主掃描 run `20261021-012002-p3h-x4-sweep`〕:
+- **D1**：可進判定 262 格，NP 的排隊 p99 ÷ TTFT p99：中位 **0.983**、最小 0.846、p10 0.947 → ≥0.90 → **「p99 尾端仍幾乎全是排隊」成立**（3090 分支：中位 0.995、最小 0.939）。
+- **D2**：可進判定且平均 headroom ≥5% 的 63 格裡，43 格「Δ還原 ÷ Δ ≥ 0.5」→ **「平均值的空間主要來自還原變快」**（Δ還原占比中位 0.64）。這 63 格的最好對手多半是 QP（不用預測的佇列預取），其次 GP。
+- 只報告：QP 對 NP 的 p99 改善中位 3.1%、最大 25.9%。
+**失敗與異常**: 上面的 exit 1（程式錯，已修）。
+**與 3090 分支的差異**: D1 方向相同（H200 的排隊占比略低：中位 0.983 vs 0.995）。D2 是 H200 才有的問題（3090 的平均只到「可能」）。

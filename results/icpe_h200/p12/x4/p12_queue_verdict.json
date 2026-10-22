@@ -1,0 +1,28 @@
+{
+ "run_id": "20261022-121515-icpe-p12-queue",
+ "ts": "2026-10-22T12:15:18+08:00",
+ "src_cfg": "results/p3_explore_h200/x4/x4_verdict_cfg.csv",
+ "src_sweep_run": [
+  "20261021-012002-p3h-x4-sweep"
+ ],
+ "D1": {
+  "n_cells": 262,
+  "median": 0.9834281498142806,
+  "min": 0.8457157440848363,
+  "p10": 0.9469685261465474,
+  "max": 0.9982411520927964,
+  "holds": true
+ },
+ "D2": {
+  "n_cells": 63,
+  "n_restore_dominant": 43,
+  "restore_dominant_majority": true,
+  "conclusion": "平均值的空間主要來自還原變快",
+  "median_restore_share": 0.6361268668188297
+ },
+ "report_only_QP": {
+  "qp_vs_np_p99_median": 0.0314769984921853,
+  "qp_vs_np_p99_max": 0.2594267060176334
+ },
+ "rule": "P1-2 §3（事先登記 2026-10-22T04:14Z）"
+}
