@@ -14,6 +14,8 @@
 #   sbatch --job-name=icpe-p01ab --time=6:00:00 code/r_h200_icpe.sh --part p01ab   # 量時間：(a) B 主設定、(b) 還原格子（P0-1 §3.1–3.2）
 #   sbatch --job-name=icpe-p02   --time=8:00:00 code/r_h200_icpe.sh --part p02     # 量時間：P0-2 的 GPU 重播（冒煙＋12 個 run）
 #   sbatch --job-name=icpe-cpu   --time=6:00:00 code/r_h200_icpe.sh --part cpu     # 只用 CPU：P0-1 (c) X1／X5 三個版本、P0-2 的全尺寸 HINT-PF 模擬
+#   sbatch --job-name=icpe-p12   --time=6:00:00 code/r_h200_icpe.sh --part p12     # 只用 CPU：P1-2（X1 FI、X5 事後版本、X4 f×0.5）
+#   sbatch --job-name=icpe-p2    --time=2:00:00 code/r_h200_icpe.sh --part p2      # 量時間：P2（G5b CPU 層忙，2 個新 seed）
 #   bash code/r_h200_icpe.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 量時間的 part 開跑前檢查：節點上有我們自己的別的 job（同一個 Slurm 使用者，含 DL_Lab4）→ 退出（memory h200-no-self-cotenancy-for-timing；
@@ -45,9 +47,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  p01s1|p01ab|p02) TIMING=1 ;;
-  cpu) TIMING=0 ;;
-  *) echo "要 --part p01s1|p01ab|p02|cpu" >&2; exit 2 ;;
+  p01s1|p01ab|p02|p2) TIMING=1 ;;
+  cpu|p12) TIMING=0 ;;
+  *) echo "要 --part p01s1|p01ab|p02|cpu|p12|p2" >&2; exit 2 ;;
 esac
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # shellcheck disable=SC1091
@@ -204,6 +206,55 @@ if [ "$PART" = cpu ]; then
     step "P01C-$V-X5-AN"    m7run "icpe-p01c-x5-an-$V" $FV x5a --out-dir "$P01/sim_$V/x5" --raw-dir "$P3LOCAL/x5_$V"
   done
   step P02-FULLSIM m7run icpe-p02-fullsim python code/icpe/x1_gpu.py fullsim --out "$P02"
+fi
+
+# ============================================================== P1-2（只用 CPU；docs/h200/icpe/P1-2_cpu_symmetric_reruns.md §2）
+if [ "$PART" = p12 ]; then
+  P12=$REPO/results/icpe_h200/p12
+  export TIARA_DATASETS=/tmp/hungweilai-p3/datasets X4_TRACE_DIR=$TIARA_HOME/datasets/traces    # FreeInference 在 hgx-cn01 本地（P3 移植下載的）
+  P3PY=$TIARA_HOME/venvs/tiara-p3/bin/python
+  step P12-VERIFY m7run icpe-p12-data-verify "$P3PY" -I code/h200_p3_verify_data.py "$TIARA_DATASETS" mooncake freeinference
+  FV="python code/icpe/p3_fvar.py --variant V0 --out-root $P12"
+  WEEKS="fi:2026-05-17_2026-05-23 fi:2026-05-24_2026-05-30 fi:2026-05-31_2026-06-06 fi:2026-06-07_2026-06-13 fi:2026-06-14_2026-06-20 fi:2026-06-21_2026-06-27"
+  # A2：X1 的 FreeInference（前 6 週，只跑 Cake）
+  step P12-A2-SWEEP   m7run icpe-p12-x1fi-sweep env RUN_DIR="$P3LOCAL/p12_x1fi" bash -c "mkdir -p $P3LOCAL/p12_x1fi && $FV x1 sweep --workers 14 --traces $WEEKS --rules session_id --modes cake --out x1_sweep_fi.csv"
+  step P12-A2-AN      m7run icpe-p12-x1fi-an $FV x1 analyze --sweep x1_sweep_fi.csv --traces freeinference --out-prefix x1fi
+  step P12-A2-AN-USER m7run icpe-p12-x1fiuser-an $FV x1 analyze --sweep x1_sweep_fi.csv --traces freeinference --metric mean_ret_user --out-prefix x1fiuser
+  # B1–B4：X5 事後版本（同一個 out-dir，檔名用 sfx 分開）
+  x5v() {   # x5v <短名> <raw 子目錄> <x5_run 參數...> -- <x5_analyze 參數...>
+    local nm=$1 raw=$P3LOCAL/$2; shift 2
+    local run=() an=(); while [ $# -gt 0 ] && [ "$1" != -- ]; do run+=("$1"); shift; done; shift; an=("$@")
+    m7run "icpe-p12-x5-$nm" bash -c "rm -rf $raw && mkdir -p $raw $P12/x5 && $FV x5 --out-dir $P12/x5 --raw-dir $raw --procs 14 ${run[*]}" || return 1
+    m7run "icpe-p12-x5-$nm-an" $FV x5a --out-dir "$P12/x5" --raw-dir "$raw" "${an[@]}"
+  }
+  step P12-B1-STRICT       x5v strict       p12_x5_strict       --rule strict --variants reg -- --sfx _strict --rule strict
+  step P12-B2-FI           x5v fi           p12_x5_fi           --fi --variants reg -- --sfx _fi
+  step P12-B3-CENS1800     x5v cens1800     p12_x5_cens1800     --censor-H 1800 --main-only -- --sfx _cens1800
+  step P12-B3-STRICT-1800  x5v strict-cens1800 p12_x5_strict_cens1800 --rule strict --censor-H 1800 --main-only --variants reg -- --sfx _strict_cens1800 --rule strict
+  step P12-B3-FI-1800      x5v fi-cens1800  p12_x5_fi_cens1800  --fi --censor-H 1800 --main-only --variants reg -- --sfx _fi_cens1800
+  step P12-B3-FI-3600      x5v fi-cens3600  p12_x5_fi_cens3600  --fi --censor-H 3600 --main-only --variants reg -- --sfx _fi_cens3600
+  step P12-B4-LOADONLY     x5v loadonly     p12_x5_loadonly     --variants loadonly --main-only -- --sfx _loadonly --variant loadonly
+  # B5：只算 ≤32K（主格子的 raw＝P0-1 (c) V0 的 X5 格子，和 git 的 H200 主格子逐值相同才算數；B1 的 strict raw）
+  step P12-B5-LE32K m7run icpe-p12-x5-le32k $FV x5s --out-dir "$P12/x5" --sets "subtree::$P3LOCAL/x5_V0" "strict:_strict:$P3LOCAL/p12_x5_strict"
+  # C1：X4 f×0.5
+  step P12-C1-SWEEP m7run icpe-p12-x4f05-sweep $FV x4 sweep --procs 14 --rules loose strict --fscale 0.5 --p 0.3 0.4 0.5 --out x4_sweep_f05.csv
+  if [ "$DRY" = 1 ]; then F05="<x4f05-sweep 的 run 目錄>"; else F05=$(ls -d "$TIARA_RUNS"/*-icpe-p12-x4f05-sweep 2>/dev/null | sort | tail -1); fi
+  step P12-C1-AN m7run icpe-p12-x4f05-an $FV x4 analyze --inp "$F05/x4_sweep_f05.csv" --out-seed x4_f05_verdict_seed.csv --out-cfg x4_f05_verdict_cfg.csv
+fi
+
+# ============================================================== P2（量時間；docs/h200/icpe/P2_g5b_cpu_busy_reseed.md §2）
+if [ "$PART" = p2 ]; then
+  P2D=$REPO/results/icpe_h200/p2
+  for L in 310 311; do
+    for m in llama qwen; do
+      for tag in fp8 int4; do
+        F=$(fmt_of $m $tag); G=$(fmt_of $m fp8)
+        K0=$(python code/m10_dqsweep.py env S0 --model $m --fmt "$F")
+        step "P2-$m-$tag-L$L" m7run "icpe-p2-$m-$tag-L$L" env $K0 M10_MEET=g5b bash -c \
+          "python code/m10_speed.py grid --model $m --fmt $F --base-fmt $G --bw-json $M10_PRECISION_DIR/speed_$m/bw.json --configs E0 E1 R25 --refs --lengths --bw-names cpu --gpu-states busy --extra-modes loadall claim --launches 1 --reps 10 --launch0 $L --out-dir $P2D/${m}_${tag}_cpu_g5b_L$L --blocks-out \$TIARA_RUNS/\$RUN_ID/blocks.csv"
+      done
+    done
+  done
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_icpe] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi

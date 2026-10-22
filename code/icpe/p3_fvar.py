@@ -4,6 +4,8 @@
   python code/icpe/p3_fvar.py ... x1 analyze --sweep x1_sweep.csv --traces conversation toolagent [--dead-h 3600 --out-prefix x1h3600]
   python code/icpe/p3_fvar.py ... x5 --out-dir <out-root>/x5 --raw-dir <raw> --procs 14        （＝x5_run.py 的參數）
   python code/icpe/p3_fvar.py ... x5a --out-dir <out-root>/x5 --raw-dir <raw>                   （＝x5_analyze.py 的參數）
+  python code/icpe/p3_fvar.py --variant V0 ... x5s --out-dir ... --sets ...                      （＝x5_short_only.py，P1-2 B5）
+  python code/icpe/p3_fvar.py --variant V0 ... x4 sweep|analyze ...                              （＝x4_sim.py，只改輸出目錄；P1-2 C1）
 
 版本：
   V0  不換（回歸：結果應和 results/p3_explore_h200 逐值相同，run_id／ts 除外）
@@ -124,7 +126,7 @@ def main():
     ap.add_argument("--variant", choices=["V0", "V1", "V2"], required=True)
     ap.add_argument("--calib", default=os.path.join(REPO, "results", "icpe_h200", "p01", "calib"))
     ap.add_argument("--out-root", required=True)
-    ap.add_argument("tool", choices=["x1", "x5", "x5a"])
+    ap.add_argument("tool", choices=["x1", "x5", "x5a", "x5s", "x4"])
     ap.add_argument("rest", nargs=argparse.REMAINDER)
     a = ap.parse_args()
     os.makedirs(a.out_root, exist_ok=True)
@@ -138,10 +140,21 @@ def main():
         import x5_run
         sys.argv = ["x5_run.py"] + a.rest
         x5_run.main()
-    else:
+    elif a.tool == "x5a":
         import x5_analyze
         sys.argv = ["x5_analyze.py"] + a.rest
         x5_analyze.main()
+    elif a.tool == "x5s":                         # P1-2 B5：只算 ≤32K（只讀 raw，不用常數）
+        import x5_short_only
+        sys.argv = ["x5_short_only.py"] + a.rest
+        x5_short_only.main()
+    else:                                        # P1-2 C1：X4（f×0.5 用它自己的 --fscale；V1／V2 不支援）
+        assert a.variant == "V0", "x4 只支援 V0（P1-2 的 f×0.5 用 x4_sim 自己的 --fscale）"
+        import x4_sim
+        x4_sim.OUT = os.path.join(a.out_root, "x4")
+        os.makedirs(x4_sim.OUT, exist_ok=True)
+        sys.argv = ["x4_sim.py"] + a.rest
+        x4_sim.main()
     with open(os.path.join(a.out_root, "fvar_runs.jsonl"), "a") as fh:
         fh.write(json.dumps(note, ensure_ascii=False, default=str) + "\n")
 
