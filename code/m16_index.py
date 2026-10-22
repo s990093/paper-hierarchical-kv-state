@@ -275,11 +275,65 @@ def vllm_rows():
     return rows
 
 
-PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b"]
+def supp_rows():
+    """10/22 補跑：K1b（Tucker／跨層）、X4a W 大／全部層、X3 翻轉格子（兩種背景）、I3g、38k 同位元組（事後）。"""
+    rows = []
+    p = os.path.join(RES, "k1_kvstruct/tucker/summary.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        rid = ";".join(d.get("sources", []))
+        for k, v in d["q1"].items():
+            rows.append(dict(exp="K1b", cell=f"{k}|adjacent layers", metric="token-subspace overlap (centered, top-64) vs same-token cosine; verdict " + v["verdict"],
+                             value=round(v["overlap_centered"], 4), unit="fraction", kind="measured", status="ok", run_id=rid, source=rel(p)))
+        for k, q in d["q2"].items():
+            for t in q["table"]:
+                for m in [m for m in t if m.endswith("_ratio") and t[m] is not None]:
+                    rows.append(dict(exp="K1b", cell=f"{k}|rhe{t['rhe']}|{m[:-6]}", metric="relerr ÷ xKV-G4 at same bytes (structure only)",
+                                     value=round(t[m], 4), unit="ratio", kind="measured", status="ok", run_id=rid, source=rel(p)))
+    for sub, tag in (("wbig", "X4a-Wbig"), ("wall", "X4a-Wall")):
+        p = os.path.join(RES, f"x_stack/x4/{sub}/x4w_report.json")
+        if not os.path.exists(p):
+            continue
+        d = json.load(open(p))
+        for m, dm in d["models"].items():
+            for r in dm["pairs"]:
+                c = r["gold_lp_diff"]
+                rows.append(dict(exp=tag, cell=f"{m}|T{r['T']}|{r['bits']}", metric=f"gold_lp diff (W big − W4) [CI {c['lo']:.3f}, {c['hi']:.3f}]; mult {r['mult_wbig']} vs {r['mult_w4']}; verdict {dm['verdict']}",
+                                 value=round(c["mean"], 4), unit="nats", kind="measured", status="ok", run_id=";".join(d["src_run_ids"]), source=rel(p)))
+    for sub, tag in (("v3grid", "X3grid-matmul"), ("v3grid_mem", "X3grid-mem")):
+        p = os.path.join(RES, f"x3_time/{sub}/x3grid_report.json")
+        if not os.path.exists(p):
+            continue
+        d = json.load(open(p))
+        for s in d["series"]:
+            if s.get("status") != "OK":
+                continue
+            rows.append(dict(exp=tag, cell=f"{s['model']}|{s['tier']}", metric=f"flip={s['flip']}; best by duty {s['best_by_duty']}; best fixed {s['best_fixed']}; verdict {d['verdict']}",
+                             value=round(s["adaptive_gain"], 4) if s.get("adaptive_gain") is not None else "", unit="adaptive gain (fraction)", kind="measured",
+                             status="ok", run_id=";".join(d["src_run_ids"]), source=rel(p)))
+    p = os.path.join(RES, "i3g_agentic/i3g_report.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        for k, c in d["configs"].items():
+            rows.append(dict(exp="I3g", cell=f"{k}|{c['desc']}", metric=f"return-turn TTFT P95 (sim pred {c['pred_p95']}); rank {d['verdict_rank']}; flip {d['verdict_flip']}",
+                             value=round(c["p95"], 4) if c.get("p95") is not None else "", unit="s", kind="measured", status="ok", run_id=c["run_id"], source=rel(p)))
+    p = os.path.join(RES, "x_stack/v3/xlcal_eqbytes.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        for m, rs in d["models"].items():
+            for r in rs:
+                c = r["diff"]
+                rows.append(dict(exp="xlcal-eqbytes", cell=f"{m}|{r['A']} vs {r['B']}", metric=f"accuracy diff A−B [CI {c['lo']:.4f}, {c['hi']:.4f}]; bytes {r['ratio_A']} vs {r['ratio_B']} (post-hoc)",
+                                 value=round(c["mean"], 4), unit="fraction", kind="measured", status="ok", run_id=d["run_id"] + ";" + d["source_run"], source=rel(p)))
+    return rows
+
+
+PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b",
+           "K1b", "X4a-Wbig", "X4a-Wall", "X3grid-matmul", "X3grid-mem", "xlcal-eqbytes"]
 
 
 def main():
-    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a() + x1() + x2() + x3() + vllm_rows() + c1b()
+    rows = i1_prediction() + i1_measured() + s1() + i4() + i3s() + i3r() + k1() + c1a() + x1() + x2() + x3() + vllm_rows() + c1b() + supp_rows()
     have = {r["exp"] for r in rows}
     for e in PLANNED:
         if e not in have:

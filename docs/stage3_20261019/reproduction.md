@@ -80,6 +80,23 @@ S3_ROLE=cpu    setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/
 | （手動，CPU） | 結果索引 | `python -I code/m16_index.py` | 每列 run_id＋source；沒跑的寫 NOT_MEASURED | `docs/stage3_20261019/results.csv` |
 | `90_report_pdf.sh`（或手動） | 完整 PDF 報告 | `m16_report_pdf.py build`（自測：`m16_report_pdf.py self-test`） | `report/README.md`；文字在 `report/narrative/*.html` | `/mlsteam/data/tiara/stage3/report/stage3_report.pdf` |
 
+
+**10/22 補跑**（設計與事先寫死的判定：`experiment_log.md`「10/22 15:3xZ 起：補跑」）：
+
+| job | 實驗 | 主要程式 | 輸出 |
+|:--|:--|:--|:--|
+| `61_x4c_256k_qwen_noT5.sh` → `61z_x4_report_256k.sh` | Qwen 256K（只跑 T2–T4，T5 在 256K 補不滿） | `m16_x4.py gen`（續跑 38i1） | `results/.../x_stack/x4/`（x4_report 重出） |
+| `62_x4a_wbig.sh` → `62z_x4w_report.sh` | X4a 每 8／7 層一組（TF） | `m16_x4w.py grid／report`＋`m16_x4.py tf --combos code/m16_xstack_combos_x4w.json` | `results/.../x_stack/x4/wbig/` |
+| `62b_x4a_wall.sh` → `62bz_x4wall_report.sh` | X4a 全部層一組（TF） | 同上，`--variant wall`、`m16_xstack_combos_x4wall.json` | `results/.../x_stack/x4/wall/` |
+| `63_x3_flipgrid.sh` | X3 翻轉格子（算力型背景） | `m16_x3grid.py build／report`＋`m16_xtime.py validate` | `results/.../x3_time/v3grid/`（中間檔在 `/mlsteam/data/tiara/stage3/x3grid/`） |
+| `63b_x3_flipgrid_mem.sh` | X3 翻轉格子（頻寬型背景） | 同上＋`M10_BUSY_SCRIPT=code/m16_busy_mem.py` | `results/.../x3_time/v3grid_mem/` |
+| `64_i3g.sh` | I3g：agent 暫停（vLLM 端到端，a／b／c／d） | `m16_workload.py gen-agentic`、`m16_vllm_bench.py`、`m16_i3g_report.py` | `results/.../i3g_agentic/` |
+| （手動，CPU） | K1b：跨層子空間、Tucker | `m16_k1_tucker.py run／report`（Llama 要分塊 Gram，見失敗 5） | `results/.../k1_kvstruct/tucker/` |
+| （手動，CPU） | 38k 同位元組（事後） | `m16_xlcal_eqbytes.py` | `results/.../x_stack/v3/xlcal_eqbytes.*` |
+| （手動，CPU） | 交付 md | `python3 code/m16_narr2md.py`（從 `report/narrative/*.html` 轉出 `results_analysis.md`、`stage3_candidates.md`） | `docs/stage3_20261019/` |
+
+撤下沒跑的：`61b_k1b_more_dumps`／`61bz_k1b_more`（使用者「實驗都可以了」；在 `retired_20261020/`）。
+
 S2（`m16_s2_equalbytes.py`）沒有單獨的 GPU job：X1 篩選時順便產生同位元組的子集（`s2part_*`），由 `36z_x1_report.sh` 的 `m16_s2_equalbytes.py report` 出表（`results/.../x_stack/s2_subset/`）。
 
 ### 2.3 結果文件
