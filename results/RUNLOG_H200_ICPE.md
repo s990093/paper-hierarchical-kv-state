@@ -24,3 +24,36 @@
   - 之後：群組 1,464G／1,536G、我們帳號 79,451M（2026-10-22T03:52Z）。Llama-3.1-8B（14.97 GiB）、Qwen2.5-7B-1M（14.2 GiB）、noDCA 變體（連到 Qwen 的 blob）都在。要重下載就用上面兩個 revision。
 **GPU**：使用者自己的 DL_Lab4 有 3 個 job 在 hgx-cn01 跑（21566 `G_long300` 到 10/23 16:24、21567 `H_hr480` 到 20:24、21568 `I_xl192` 到 22:22，+08:00 的時限），排隊的 3 個（21570 `G_swa`、21571 `H_swa`、21618 `F3_mim`）。
 - 使用者選「把排隊的 DL_Lab4 先 hold（建議）」：`scontrol hold 21570 21571 21618`（2026-10-22T03:5xZ）。在跑的 3 個不動；P0 量時間的 job 等它們結束、節點上沒有我們別的 job 才開跑。**P0 量時間做完要 `scontrol release 21570 21571 21618`**。
+
+---
+
+## ICPE-P0 — P0-1、P0-2 的程式與送出（2026-10-22）
+
+**程式**（commit `e6338bd`、`099552f`、`9d7f506`）：`m7_model.py` 的 `M7_ATTN`（沒設＝sdpa，程式路徑不變）、`code/icpe/attn_bench.py`、`p01_tools.py`、`smoke_p01.sh`、`x1_gpu.py`、`p3_fvar.py`、`headrun.sh`、`code/r_h200_icpe.sh`（part p01s1、p01ab、p02、cpu）。NV_PORTING_NOTES 加一列（`M7_ATTN`）。
+**P0-1 偏離 1**（寫在任何資料之前，見 P0-1 §8）：G5b 只配 S0／S2，判定用的 Cake／全部載入改在 S4 量、G5b 另在 S0 量。
+
+**head node 的開發檢查**（scratchpad，不進 results）：x1_gpu selftest（k＝16）全過；`p3_fvar` V0 在 conversation／R1／128 GiB 的 36 格和 git 的 `x1_sweep.csv.gz` 逐值相同（差 0.0）；V2 的 X5：f×0.5710、CPU 層校正比值不變、慢層 gate 仍過。
+
+### P0-2 的 CPU 步驟（head node，`code/icpe/headrun.sh`，§4、§7、§6 的 S_orig）
+| run_id | 指令 | exit | 產出 |
+|:--|:--|:--:|:--|
+| `20261022-120540-icpe-p02-select` | `x1_gpu.py select --out results/icpe_h200/p02` | 0 | `select.json`：**k＝8**（k＝4 的 ρ̂＝0.534 > 0.30；k＝8 的 ρ̂＝0.276、O-PF 對 LRU 23.1%／19.9%；k＝16 ρ̂＝0.156、18.5%／16.5%） |
+| `20261022-120545-icpe-p02-selftest` | `x1_gpu.py selftest --out … --k 8` | 0 | `selftest.csv`：9／9 過（重播≡Engine.run 5 個做法；L_a＝0 時 HINT-PF≡LRU；L_a 中位 22.9 s；HINT-PF 預取 136.8 GiB；ChanTier） |
+| `20261022-120549-icpe-p02-sim-orig` | `x1_gpu.py sim --out … --k 8` | 0 | `sim_requests.csv`（S_orig） |
+
+縮小後（k＝8：1,535 個請求、467 個回來請求；CPU 16／32 GiB）的模擬，回來請求平均 TTFT（s）〔模擬〕：
+| 容量 | LRU | FREQ2Q | O-BEL | HINT-PF | O-PF |
+|:--|--:|--:|--:|--:|--:|
+| 128/8＝16 GiB | 0.3052 | 0.2997 | 0.2669 | 0.2441 | 0.2346 |
+| 256/8＝32 GiB | 0.2937 | 0.2936 | 0.2536 | 0.2440 | 0.2352 |
+- 〔判讀〕縮小後的 headroom 比全尺寸小（全尺寸 O-PF 對 LRU 52%／47%，這裡 23%／20%）：抽樣 session 也拿掉了跨 session 的前綴共用；GPU 驗證的是「縮小後這個設定的模擬」，論文要寫比例與這個差。
+
+### 送出的 job（全部 `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch`，鏈在一起、不重疊）
+| job | 名稱 | 依賴 | 內容 |
+|:--|:--|:--|:--|
+| 21652 | `icpe-p01-smoke` | — | 冒煙（不量時間、不進 results）：FA2／FA3／FA4／cuDNN 接線、grid 在 fa3＋S4＋nfs |
+| 21653 | `icpe-p01s1` | afterok:21652、afterany:21566:21567:21568（DL_Lab4 在跑的 3 個） | P0-1 S1＋勝者的校準 |
+| 21654 | `icpe-p01ab` | afterok:21653 | P0-1 (a)(b) |
+| 21655 | `icpe-p02` | afterany:21654 | P0-2 冒煙＋12 個重播 |
+| 21656 | `icpe-cpu` | afterany:21655 | P0-1 (c)（V0／V1／V2）＋P0-2 全尺寸 HINT-PF |
+送出時 Slurm 預估 21652 在 10/22 20:54（+08:00）開始（lab 的 CPU 上限）。量時間的 job 開跑時還會再檢查節點上沒有我們自己的別的 job。

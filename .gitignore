@@ -98,3 +98,7 @@ project_context.md
 results/m10_sweep_h200/analysis/agg_*.csv
 results/m10_sweep_h200/confirm/speed_*/restores.csv
 results/m10_sweep_h200/confirm/quality_*.csv
+# ICPE 補量：>1 MB 的逐請求 CSV 只進 .gz（原檔留在原處）
+results/icpe_h200/p02/sim_requests.csv
+results/icpe_h200/p02/gpu_requests.csv
+results/icpe_h200/p01/b/b_share.csv
