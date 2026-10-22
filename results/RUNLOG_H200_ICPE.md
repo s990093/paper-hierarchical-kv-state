@@ -81,3 +81,12 @@
 | 21662 | `icpe-p12` | afterany:21656 | P1-2（CPU）：X1 FI、X5 事後版本 B1–B5、X4 f×0.5（D 已在 head node 算完） |
 | 21663 | `icpe-p2` | afterany:21662 | P2（量時間）：G5b CPU 層忙，seed 310／311 |
 **注意**：P2（以及之後 P1-1 的量時間）也不能和 DL_Lab4 同時跑。使用者 10/22 只同意 hold 到「P0 量時間做完」；P0 做完時要再問一次：放出 DL_Lab4（P1／P2 的量時間就等它們），還是繼續 hold 到 ICPE 的量時間全部做完。runner 開跑前會檢查，節點上有我們自己的 job 就直接退出（不會污染）。
+
+### 10/22 加送：P1-1（登記 `68d248e`；程式 `9d…`→`1b6a2c2`）
+- **head node（CPU）**：`20261022-122600-icpe-p11-plan`（exit 0）→ `results/icpe_h200/p11/p11_selection.json`：Qwen `q:int4_kivi`、`xl:k34:v51:cal+q:int4_kivi`（9.64 倍，每請求不含共用基底）、`xl:k34:v51+q:int4_kivi`（8.01 倍）；Llama `q:int4_kivi`、`xl:k29:v44:cal+…`（11.22 倍）、`xl:k19:v29:cal+…`（17.07 倍）、`xl:k29:v44+…`（7.98 倍）、`xl:k19:v29+…`（12.14 倍）。新題 seed 67000 和 x1／calib／x2／x2b／x4a／x4b／xlcal3／c1a／44c 都 0 重疊。
+- **m16_xtime 的改動**：`M16_XKV_EXTRA` 加新段（`_cal`＝共用基底常駐 GPU、還原不搬）。沒設時段清單不變；CPU 自測 97 項的結果和改之前（暫時 worktree 在 HEAD）相同——兩邊都只有 1 項 FAIL，是舊的（「位元組帳 vs X2 實際寫出的 ratio，第一版 x2_unmapped.csv 比了 0 列」：MI300X 37zz 之後那個檔變空，和這次無關）。新段的位元組（coef＋basis）和 `m16_xstack.predict_bytes` 逐項相同（head node 核對）。
+| job | 名稱 | 依賴 | 內容 |
+|:--|:--|:--|:--|
+| 21669 | `icpe-p11q` | afterany:21655 | P1-1 (Q)：PCA／xKV 校準、gpu-selftest、192 題生成（不量時間；和 CPU 的 21656、21662 可以同時） |
+| 21663 | `icpe-p2` | **改成** afterany:21662、afterany:21669 | （量時間，不能和 21669 重疊） |
+| 21670 | `icpe-p11t` | afterany:21663 | P1-1 (T)：loadpath 冒煙＋8 格＋CPU 層、壓縮時間 |
