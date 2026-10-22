@@ -261,3 +261,13 @@
 - **判定（照事先條件的字面）：SUCCESS**——54 格裡 18 格 APC 收益 <5%；**但這 18 格全是重疊 0%（沒有東西可復用），屬於當然結果**。重疊 50%：APC 讓平均 TTFT 少 20–62%；重疊 100%：少 76–93%；容量（ample → c040）與到達率幾乎不改變這個結論。→ 照實寫：APC 的收益只由重疊決定、單調，**F1 原本想找的「非當然的不划算區域」沒有找到**（接近停止條件的精神）。
 - **CPU 卸載對 APC 的邊界（有意思的部分）**：8K 時 CPU 卸載幾乎都讓 TTFT 變差（−1%～−112%，容量緊＋高負載時最差：c040、重疊 0、0.9λ 平均 −112%、P95 −136%）；32K 時幾乎都變好（+3%～+15%）。後端已固定為 TRITON_ATTN，所以這是卸載本身的成本（寫入 CPU、排程）對上省下的重算：**提示越短，卸載越不划算，而且在容量緊、負載高時會反過來傷害**。
 - 三種指標（平均、P95、goodput@1.5×t1）選出不同最佳設定的格子 6 個，都在 8K、重疊 0 這類差異很小的格子。
+
+## 收尾（10/22 13:30Z 起）
+
+- 交付文件：`results_analysis.md`（各實驗解讀，報告 PDF 的文字版）、`stage3_candidates.md`（候選排名）；`reproduction.md` §2.2 補齊全部 job；`results/RUNLOG_MI300X.md` 加 Milestone 16 指標。commit `89dff4b`。
+- 最終 PDF：run `20261022-133248-m16-report-pdf`（git 89dff4b），77 頁、2.71 MB，驗收 ok（字型只有 Noto Sans CJK TC、頁尾齊、目錄 48 條、NOT_MEASURED 圖表 0）。字型缺字 3 個照替換表處理（U+2717→×、U+FE0F 去掉），來源是內嵌的 `experiment_matrix.md`／`research_map.md`。
+- 備份（只在資料盤，不進 git）：
+  - `/mlsteam/data/tiara/backup_stage3_mi300x_20261022.tar.gz`（1.09 GB，10,888 個檔）＝`runs/*m16*`＋`stage3/`（排除 `stage3/smoke/kv_*`，可重生）＋`results/m16_stage3_mi300x/`；`gzip -t` 通過。打包在最終 PDF 之前，所以另包
+  - `/mlsteam/data/tiara/backup_stage3_mi300x_20261022_final_report.tar.gz`（8.5 MB）＝`stage3/report/`＋最終 PDF 的 run 目錄。
+  - 校驗碼：`/mlsteam/data/tiara/backup_stage3_mi300x_20261022.sha256`。
+  - 沒備份：`/var/tmp/tiara_s3/kv_dumps/`（本地盤，`05_s1_kvdump.sh` 可重生）。
