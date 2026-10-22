@@ -1,0 +1,718 @@
+{
+ "_doc": [
+  "m16_x4w.py 的 X4a 補跑配置（10/22；在跑任何 W 大之前產生，之後不改；--self-test 核對＝程式重算）。",
+  "T∈[20, 24, 32] × 係數 ['int4', 'k4v2']：W 大（Llama 8、Qwen 7；K 秩 ≤16）與 W＝4 各挑倍數最接近 T、在 ±10% 內的秩（m16_x4.best_rank，和 X4a 同一個規則）；pairs 是逐題配對比較的對。"
+ ],
+ "version": "2026-10-22 x4w v1",
+ "targets": [
+  20,
+  24,
+  32
+ ],
+ "bits": [
+  "int4",
+  "k4v2"
+ ],
+ "models": {
+  "llama": {
+   "configs": [
+    {
+     "spec": "xl:k6:v9:w8+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.028797,
+     "multiple": 34.726,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 8,
+     "rk": 6,
+     "rv": 9,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:k4v2"
+     ],
+     "why": "W＝8、k4v2、落在 32 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k7:v11+q:int4_kivi",
+     "ratio": 0.030901,
+     "multiple": 32.361,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 7,
+     "rv": 11,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:int4"
+     ],
+     "why": "W＝4、int4、落在 32 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.032649,
+     "multiple": 30.629,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 9,
+     "rv": 14,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:k4v2"
+     ],
+     "why": "W＝4、k4v2、落在 32 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k6:v9:w8+q:int4_kivi",
+     "ratio": 0.033191,
+     "multiple": 30.129,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 8,
+     "rk": 6,
+     "rv": 9,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:int4"
+     ],
+     "why": "W＝8、int4、落在 32 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k7:v11:w8+q:int4_kivi",
+     "ratio": 0.03983,
+     "multiple": 25.107,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 8,
+     "rk": 7,
+     "rv": 11,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:int4"
+     ],
+     "why": "W＝8、int4、落在 24 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.042713,
+     "multiple": 23.412,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:k4v2"
+     ],
+     "why": "W＝4、k4v2、落在 24 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15+q:int4_kivi",
+     "ratio": 0.042918,
+     "multiple": 23.3,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 10,
+     "rv": 15,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:int4"
+     ],
+     "why": "W＝4、int4、落在 24 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14:w8+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.044058,
+     "multiple": 22.697,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 8,
+     "rk": 9,
+     "rv": 14,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:k4v2"
+     ],
+     "why": "W＝8、k4v2、落在 24 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15:w8+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.047995,
+     "multiple": 20.836,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 8,
+     "rk": 10,
+     "rv": 15,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:k4v2"
+     ],
+     "why": "W＝8、k4v2、落在 20 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.049832,
+     "multiple": 20.067,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:k4v2"
+     ],
+     "why": "W＝4、k4v2、落在 20 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14:w8+q:int4_kivi",
+     "ratio": 0.050894,
+     "multiple": 19.649,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 8,
+     "rk": 9,
+     "rv": 14,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:int4"
+     ],
+     "why": "W＝8、int4、落在 20 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18+q:int4_kivi",
+     "ratio": 0.051502,
+     "multiple": 19.417,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:int4"
+     ],
+     "why": "W＝4、int4、落在 20 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "none",
+     "ratio": 1.0,
+     "multiple": 1.0,
+     "bands": [],
+     "targets": [],
+     "W": 0,
+     "rk": 0,
+     "rv": 0,
+     "bits": "none",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 0,
+     "roles": [
+      "control"
+     ],
+     "why": "E0 對照（tf 每題本來就算 E0）",
+     "deployable": 1
+    }
+   ],
+   "pairs": [
+    {
+     "T": 20,
+     "bits": "int4",
+     "wbig": "xl:k9:v14:w8+q:int4_kivi",
+     "w4": "xl:k12:v18+q:int4_kivi",
+     "mult_wbig": 19.649,
+     "mult_w4": 19.417
+    },
+    {
+     "T": 20,
+     "bits": "k4v2",
+     "wbig": "xl:k10:v15:w8+q:kv-int4_kivi-int2_kivi",
+     "w4": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+     "mult_wbig": 20.836,
+     "mult_w4": 20.067
+    },
+    {
+     "T": 24,
+     "bits": "int4",
+     "wbig": "xl:k7:v11:w8+q:int4_kivi",
+     "w4": "xl:k10:v15+q:int4_kivi",
+     "mult_wbig": 25.107,
+     "mult_w4": 23.3
+    },
+    {
+     "T": 24,
+     "bits": "k4v2",
+     "wbig": "xl:k9:v14:w8+q:kv-int4_kivi-int2_kivi",
+     "w4": "xl:k12:v18+q:kv-int4_kivi-int2_kivi",
+     "mult_wbig": 22.697,
+     "mult_w4": 23.412
+    },
+    {
+     "T": 32,
+     "bits": "int4",
+     "wbig": "xl:k6:v9:w8+q:int4_kivi",
+     "w4": "xl:k7:v11+q:int4_kivi",
+     "mult_wbig": 30.129,
+     "mult_w4": 32.361
+    },
+    {
+     "T": 32,
+     "bits": "k4v2",
+     "wbig": "xl:k6:v9:w8+q:kv-int4_kivi-int2_kivi",
+     "w4": "xl:k9:v14+q:kv-int4_kivi-int2_kivi",
+     "mult_wbig": 34.726,
+     "mult_w4": 30.629
+    }
+   ],
+   "skipped": []
+  },
+  "qwen": {
+   "configs": [
+    {
+     "spec": "xl:k8:v12+q:int4_kivi",
+     "ratio": 0.029374,
+     "multiple": 34.044,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 8,
+     "rv": 12,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:int4"
+     ],
+     "why": "W＝4、int4、落在 32 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k7:v11:w7+q:int4_kivi",
+     "ratio": 0.029785,
+     "multiple": 33.574,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 7,
+     "rk": 7,
+     "rv": 11,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:int4"
+     ],
+     "why": "W＝7、int4、落在 32 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k9:v14:w7+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.031223,
+     "multiple": 32.028,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 7,
+     "rk": 9,
+     "rv": 14,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:k4v2"
+     ],
+     "why": "W＝7、k4v2、落在 32 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.032823,
+     "multiple": 30.466,
+     "bands": [
+      32
+     ],
+     "targets": [
+      32
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:k4v2"
+     ],
+     "why": "W＝4、k4v2、落在 32 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18:w7+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.040853,
+     "multiple": 24.478,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 7,
+     "rk": 12,
+     "rv": 18,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:k4v2"
+     ],
+     "why": "W＝7、k4v2、落在 24 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k11:v17+q:int4_kivi",
+     "ratio": 0.041124,
+     "multiple": 24.317,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 11,
+     "rv": 17,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:int4"
+     ],
+     "why": "W＝4、int4、落在 24 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.041151,
+     "multiple": 24.301,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:k4v2"
+     ],
+     "why": "W＝4、k4v2、落在 24 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k10:v15:w7+q:int4_kivi",
+     "ratio": 0.041368,
+     "multiple": 24.173,
+     "bands": [
+      24
+     ],
+     "targets": [
+      24
+     ],
+     "W": 7,
+     "rk": 10,
+     "rv": 15,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:int4"
+     ],
+     "why": "W＝7、int4、落在 24 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k12:v18:w7+q:int4_kivi",
+     "ratio": 0.049642,
+     "multiple": 20.144,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 7,
+     "rk": 12,
+     "rv": 18,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:int4"
+     ],
+     "why": "W＝7、int4、落在 20 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k17:v26+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.05046,
+     "multiple": 19.818,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 17,
+     "rv": 26,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:k4v2"
+     ],
+     "why": "W＝4、k4v2、落在 20 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k14:v21+q:int4_kivi",
+     "ratio": 0.051405,
+     "multiple": 19.453,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 4,
+     "rk": 14,
+     "rv": 21,
+     "bits": "int4",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "w4:int4"
+     ],
+     "why": "W＝4、int4、落在 20 倍（配對）",
+     "deployable": 1
+    },
+    {
+     "spec": "xl:k15:v23:w7+q:kv-int4_kivi-int2_kivi",
+     "ratio": 0.051649,
+     "multiple": 19.361,
+     "bands": [
+      20
+     ],
+     "targets": [
+      20
+     ],
+     "W": 7,
+     "rk": 15,
+     "rv": 23,
+     "bits": "k4v2",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 1,
+     "roles": [
+      "wbig:k4v2"
+     ],
+     "why": "W＝7、k4v2、落在 20 倍",
+     "deployable": 1
+    },
+    {
+     "spec": "none",
+     "ratio": 1.0,
+     "multiple": 1.0,
+     "bands": [],
+     "targets": [],
+     "W": 0,
+     "rk": 0,
+     "rv": 0,
+     "bits": "none",
+     "drop_method": "",
+     "drop_frac": 0.0,
+     "xl": 0,
+     "roles": [
+      "control"
+     ],
+     "why": "E0 對照（tf 每題本來就算 E0）",
+     "deployable": 1
+    }
+   ],
+   "pairs": [
+    {
+     "T": 20,
+     "bits": "int4",
+     "wbig": "xl:k12:v18:w7+q:int4_kivi",
+     "w4": "xl:k14:v21+q:int4_kivi",
+     "mult_wbig": 20.144,
+     "mult_w4": 19.453
+    },
+    {
+     "T": 20,
+     "bits": "k4v2",
+     "wbig": "xl:k15:v23:w7+q:kv-int4_kivi-int2_kivi",
+     "w4": "xl:k17:v26+q:kv-int4_kivi-int2_kivi",
+     "mult_wbig": 19.361,
+     "mult_w4": 19.818
+    },
+    {
+     "T": 24,
+     "bits": "int4",
+     "wbig": "xl:k10:v15:w7+q:int4_kivi",
+     "w4": "xl:k11:v17+q:int4_kivi",
+     "mult_wbig": 24.173,
+     "mult_w4": 24.317
+    },
+    {
+     "T": 24,
+     "bits": "k4v2",
+     "wbig": "xl:k12:v18:w7+q:kv-int4_kivi-int2_kivi",
+     "w4": "xl:k14:v21+q:kv-int4_kivi-int2_kivi",
+     "mult_wbig": 24.478,
+     "mult_w4": 24.301
+    },
+    {
+     "T": 32,
+     "bits": "int4",
+     "wbig": "xl:k7:v11:w7+q:int4_kivi",
+     "w4": "xl:k8:v12+q:int4_kivi",
+     "mult_wbig": 33.574,
+     "mult_w4": 34.044
+    },
+    {
+     "T": 32,
+     "bits": "k4v2",
+     "wbig": "xl:k9:v14:w7+q:kv-int4_kivi-int2_kivi",
+     "w4": "xl:k11:v17+q:kv-int4_kivi-int2_kivi",
+     "mult_wbig": 32.028,
+     "mult_w4": 30.466
+    }
+   ],
+   "skipped": []
+  }
+ }
+}

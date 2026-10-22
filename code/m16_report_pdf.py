@@ -434,7 +434,7 @@ def md_section(path: str, start_pat: str, end_pat: str = r"^## ", max_chars=None
 
 # ============================================================================ 實驗登記（狀態一覽用；只列檔名與 job 名，沒有結果數字）
 EXPS = [
-    dict(key="k1", sec="4.1", title="K1　KV 結構（低秩／跨層／相鄰 token）", files=["k1_kvstruct/summary.json", "k1_kvstruct/xlayer.csv"],
+    dict(key="k1", sec="4.1", title="K1　KV 結構（低秩／跨層／相鄰 token）", files=["k1_kvstruct/summary.json", "k1_kvstruct/xlayer.csv", "k1_kvstruct/tucker/summary.json"],
          jobs=["06_k1"], kind="實測（CPU，KV 幾何量）"),
     dict(key="i4", sec="4.2", title="I4　KV 從 CPU 搬回 GPU 的搬法", files=["i4_copy_batching/copybench_sdma0.csv", "i4_copy_batching/copybench_sdma1.csv"],
          jobs=["20_i4", "21_i4"], kind="實測（量時間）"),
@@ -971,7 +971,9 @@ def sec_k1(d: Doc, ctx: Ctx):
              "在這兩個模型上沒有依據，停；xKV 式（共用子空間）不受這條影響，交給 X1 量品質。",
         limits=["每個（模型, 任務）只有一題的 KV；128K 只選部分層。",
                 "幾何量不等於答對率：低秩誤差小不保證生成答對，能不能換成答對率要看 X1／X2。",
-                "低秩是每（層, head）各自的 SVD（不是 xKV 的跨層聯合 SVD）；聯合版的誤差只在 lowrank.csv 的 head＝all 列。"])
+                "低秩是每（層, head）各自的 SVD（不是 xKV 的跨層聯合 SVD）；聯合版的誤差只在 lowrank.csv 的 head＝all 列。",
+                "K1b（Tucker）只比重建誤差、不去平均（照 xKV），K 的平均方向佔大部分能量，所以誤差的絕對值看起來很小，要看比值；"
+                "Tucker 只有上下界、沒有真的組核心張量；位元組只算結構（同精度），沒有含量化。"])
     exp_head(d, ctx, e, spec)
 
     def kdir():
@@ -1072,6 +1074,123 @@ def sec_k1(d: Doc, ctx: Ctx):
         return fig, ("每個盒子＝所有（層, head）的相鄰 token cosine 中位數的分布（T4，32K）；下方數字＝cosine ≥0.9 的相鄰對比例"
                      "（層×head 的中位數）。出處：k1_full/adjtok.csv。")
     d.raw(add_fig(ctx, sec, "K1：相鄰 token 的 cosine", f_adj))
+
+    # ---- K1b（10/22 補）：Tucker 與跨層共用；程式 code/m16_k1_tucker.py，事先寫死的條件在 experiment_log.md「K1b」
+    TK = os.path.join(K, "tucker")
+    d.h3("K1b　Tucker（多維分解）與「跨層共用的到底是什麼」（10/22 補）")
+    d.raw("<div class='box-rule'>使用者 10/22 問：「相鄰層同一 token 的 KV 完全不像，這樣不能跨層？」「Tucker 多一個維度壓縮？」"
+          "同一批 32K dump（兩個模型 × T4／T2，全部層；K＝RoPE 前；不去平均＝照 X 系列的 xKV），只用 CPU。事先寫死：<br>"
+          "<b>Q1</b>：相鄰層的 token 子空間重疊（每層前 64 個左奇異向量；‖U<sub>l</sub>ᵀU<sub>l+1</sub>‖²／64，減平均）≥0.5 且同 token cosine ≤0.1"
+          " → 跨層共用的是「token 子空間」不是「向量」。<br>"
+          "<b>Q2</b>：在 xKV 每 4 層（X 系列）的操作點、同樣位元組下，4 維／3 維 Tucker 的上界（HOSVD）或兩側分解的誤差 ≤0.9×xKV，"
+          "而且兩個模型的 K 都有 → GO（值得做 GPU 答對率）；否則 STOP。指標＝相對 Frobenius 誤差，只能篩選（X1：和答對率只中度相關）。</div>")
+
+    def f_k1b_sub():
+        p = os.path.join(TK, "xlayer_subspace.csv")
+        rows = read_csv(p)
+        ctx.src(sec, p, rids_of_rows(rows))
+        plt = plt_setup(ctx)
+        fig, axs = two_panels(plt, h=2.8, sharey=True)
+        for ax, m in zip(axs, MODELS):
+            for kind, col in (("K", C[0]), ("V", C[2])):
+                g = defaultdict(list)
+                for r in rows:
+                    if r["model"] == m and r["kind"] == kind:
+                        g[int(r["l"])].append(r)
+                ls_ = sorted(g)
+                if not ls_:
+                    continue
+                ax.plot(ls_, [statistics.mean(float(r["overlap_centered"]) for r in g[x]) for x in ls_], "-", marker=".", ms=3,
+                        color=col, label=f"{kind}：token 子空間重疊（減平均）")
+                ax.plot(ls_, [statistics.mean(float(r["cos"]) for r in g[x]) for x in ls_], ":", color=col, lw=1.3,
+                        label=f"{kind}：同一 token 的 cosine")
+            ax.axhline(statistics.mean(float(r["overlap_random"]) for r in rows), color="#999", lw=0.6)
+            ax.axhline(0.5, color=C[7], ls="--", lw=1)
+            ax.set_title(f"{MODEL_LABEL[m]}（T4／T2 平均，32K）")
+            ax.set_xlabel("層 l（和 l+1 比）")
+            ax.set_ylim(-0.1, 1.0)
+        axs[0].set_ylabel("重疊／cosine")
+        axs[1].legend(fontsize=6.4)
+        fig.tight_layout()
+        return fig, ("實線＝相鄰層 token 子空間重疊（1＝同一個子空間；灰線＝隨機子空間的期望值 64／32768）；點線＝同一 token 的 cosine"
+                     "（同一座標比，K1 的那個量）。紅虛線＝Q1 門檻 0.5。出處：k1_kvstruct/tucker/xlayer_subspace.csv。")
+    d.raw(add_fig(ctx, sec, "K1b：相鄰層「向量不像」但「token 子空間很像」", f_k1b_sub))
+
+    def f_k1b_curves():
+        fs = sorted(glob.glob(os.path.join(TK, "tucker_*.json")))
+        if not fs:
+            raise NotMeasured("k1_kvstruct/tucker/tucker_*.json 不存在")
+        js = [read_json(f) for f in fs]
+        for f, j in zip(fs, js):
+            ctx.src(sec, f, [j["run_id"]])
+        plt = plt_setup(ctx)
+        fig, axs = plt.subplots(2, 2, figsize=(7.2, 5.6))
+        for i, m in enumerate(MODELS):
+            jm = [j for j in js if j["model"] == m]
+            if not jm:
+                continue
+            rg, Lm, G2 = jm[0]["rgrid"], jm[0]["L"], max(jm[0]["two"])
+            for c, kind in enumerate(("K", "V")):
+                ax = axs[i][c]
+
+                def cv(k):
+                    out = []
+                    for n in range(len(rg)):
+                        vals = [j["kinds"][kind]["curves"][k][n] for j in jm if j["kinds"][kind]["curves"][k][n] is not None]
+                        out.append(statistics.mean(vals) if len(vals) == len(jm) else float("nan"))
+                    return out
+                lines = [("xkv_G1", "每層各自 SVD", "#9aa0a6", "-", 1.1), ("xkv_G4", "xKV 每 4 層（X 系列）", C[0], "-", 2.2),
+                         (f"xkv_G{Lm}", f"全部 {Lm} 層一組（＝Tucker 的 token 模態）", "#0b2f5c", "-", 1.1),
+                         ("tucker4_hi", "4 維 Tucker 上界（HOSVD）", C[7], "-", 1.3),
+                         ("tucker4_lo", "4 維 Tucker 下界（最樂觀）", C[7], ":", 1.4),
+                         (f"two_G{G2}", f"兩側：token 跨 {G2} 層＋每層通道基底", C[2], "--", 1.3)]
+                ymax = 0.0
+                for k, lab, col, ls, lw in lines:
+                    if k not in jm[0]["kinds"][kind]["curves"]:
+                        continue
+                    ys = cv(k)
+                    xs = [1 / r for r in rg]
+                    ax.plot(xs, ys, ls, color=col, lw=lw, label=lab)
+                    ymax = max([ymax] + [y for x, y in zip(xs, ys) if 1.5 <= x <= 48 and not math.isnan(y)])
+                for t in jm[0]["kinds"][kind]["op_points"]:
+                    if t["in_x_series"]:
+                        ax.axvline(t["factor"], color="#bbbbbb", lw=0.6, ls="--")
+                ax.set_xscale("log")
+                ax.set_xlim(1.5, 48)
+                ax.set_ylim(0, ymax * 1.05 if ymax > 0 else 1)
+                ax.set_title(f"{MODEL_LABEL[m]}：{'K（RoPE 前）' if kind == 'K' else 'V'}")
+                if i == 1:
+                    ax.set_xlabel("結構壓縮倍數（同精度，不含量化）")
+                if c == 0:
+                    ax.set_ylabel("相對誤差（不去平均）")
+        axs[0][1].legend(fontsize=6.0, loc="upper left")
+        fig.tight_layout()
+        return fig, ("同樣位元組（橫軸）下各種分解的重建誤差；灰虛線＝X 系列實際用的 xKV 操作點（K 11／22／28、V 17／34／42）。"
+                     "Tucker 只畫得出上下界（不組核心張量）；下界是「任何 Tucker 都不可能更好」。兩題平均。出處：k1_kvstruct/tucker/tucker_*.json。")
+    d.raw(add_fig(ctx, sec, "K1b：同位元組下，xKV、Tucker、兩側分解的重建誤差", f_k1b_curves))
+
+    def t_k1b():
+        s = read_json(os.path.join(TK, "summary.json"))
+        ctx.src(sec, os.path.join(TK, "summary.json"), [s["run_id"]] + list(s["sources"]))
+        out = []
+        for key, q in s["q2"].items():
+            m, kind = key.rsplit("_", 1)
+            for t in q["table"]:
+                if not t["in_x_series"]:
+                    continue
+                gs = [k for k in t if k.startswith("xkv_G") and not k.endswith("_ratio")]
+                gall = max(gs, key=lambda k: int(k[5:]))
+                two = [t[k + "_ratio"] for k in t if k.startswith("two_G") and not k.endswith("_ratio") and t[k + "_ratio"] is not None]
+                out.append([esc(MODEL_LABEL.get(m, m)), kind, f"{kind.lower()}{t['rhe']}", fx(t["factor"], 1) + "×", fx(t["xkv_G4"], 4),
+                            fx(t["xkv_G1_ratio"], 2), fx(t[gall + "_ratio"], 2), fx(t["tucker4_hi_ratio"], 2), fx(t["tucker4_lo_ratio"], 2),
+                            fx(t["tucker3_hi_ratio"], 2), fx(min(two) if two else None, 2)])
+        q1 = "；".join(f"{esc(k)} cosine {fx(v['cos'], 3)}、重疊（減平均）{fx(v['overlap_centered'], 2)} → <b>{esc(v['verdict'])}</b>"
+                       for k, v in s["q1"].items())
+        return (["模型", "種類", "X 系列設定", "結構倍數", "xKV-G4 誤差", "每層各自", "全部層一組", "4 維 Tucker 上界", "4 維 Tucker 下界",
+                 "3 維 Tucker 上界", "兩側（最好）"], out,
+                f"從「每層各自」起的欄位＝同位元組下的相對誤差 ÷ xKV-G4（&lt;1 比 xKV-G4 好）；兩題平均。Q1：{q1}。"
+                f"Q2 判定：<b>{esc(s['verdict_q2'])}</b>。出處：k1_kvstruct/tucker/summary.json（op_points.csv 有全部操作點）。")
+    d.raw(add_table(ctx, sec, "K1b：X 系列操作點上，其他分解相對 xKV-G4 的誤差比", t_k1b))
 
     def rule():
         def t():

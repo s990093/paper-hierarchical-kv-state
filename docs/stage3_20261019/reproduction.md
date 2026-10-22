@@ -60,6 +60,7 @@ S3_ROLE=cpu    setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/
 | `00_smoke.sh`、`02_smoke_x.sh`、`03_smoke_xtime.sh`、`04_smoke_c1a.sh` | 冒煙 | 各 GPU 程式最小設定 | — | `/mlsteam/data/tiara/stage3/smoke/`（不進 results） |
 | `05_s1_kvdump.sh`（兩卡並行）→ `35_s1_cpubench.sh`（排他、CPU_QUIET、綁 8–23 核） | S1 無損壓縮 | `m16_s1_kvdump.py`、`m16_s1_lossless.py analyze／breakeven` | `experiment_matrix.md` S1 卡 | `/var/tmp/tiara_s3/kv_dumps/`（可重生）、`results/m16_stage3_mi300x/s1_lossless/` |
 | `06_k1_kvstruct.sh` | K1 KV 結構 | `m16_kvstruct.py ropecheck／analyze` | `k1_kvstruct_howto.md` | `results/.../k1_kvstruct/`（大檔見該目錄 `BIG_FILES.md`） |
+| （手動，CPU；10/22 補） | K1b Tucker 與跨層共用 | `m16_k1_tucker.py run`（每份 dump 一個行程，8 核）→ `report` | `experiment_log.md`「K1b」（事先寫死 Q1／Q2）；自測 `--self-test` | `results/.../k1_kvstruct/tucker/`（譜在 `/mlsteam/data/tiara/stage3/k1/tucker_spectra_*.npz`） |
 | `20_i4_sdma0.sh`、`21_i4_sdma1.sh` | I4 搬法 | `m16_i4_copybench.py` | `experiment_matrix.md` I4 卡 | `results/.../i4_copy_batching/` |
 | `30_i1_interf.sh`、`31_i1_grid.sh` | I1／I2 | `m16_i1_multisession.py`（排程核心 `m16_mcake.py`） | `experiment_matrix.md` I1 卡；預測見 §1 | `results/.../i1_concurrent_restore/` |
 | `33a_c1a.sh`、`33b_c1a.sh` → `33z_c1a_report.sh` | C1a 預測第 2 輪 block | `m16_c1a_predict.py run／report`（`c1a_common.sh`） | `c1a_s2_howto.md` | `results/.../c1a_predictive/` |
