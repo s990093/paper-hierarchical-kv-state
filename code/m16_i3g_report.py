@@ -37,14 +37,17 @@ def pct(v: list, q: float):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--in", dest="inp", default="results/m16_stage3_mi300x/i3g_agentic")
+    ap.add_argument("--pred", choices=("llama", "none"), default="llama",
+                    help="none＝沒有模擬預測（Qwen，66）：RANK 改成和 Llama 的實測排序比（c 最低且 d 最高 → RANK_SAME_AS_LLAMA）")
     a = ap.parse_args()
+    pred = PRED if a.pred == "llama" else {k: None for k in PRED}
     rid = os.environ.get("RUN_ID", "adhoc")
     cfg, bad = {}, []
     for f in sorted(glob.glob(os.path.join(a.inp, "summary_*.json"))):
         d = json.load(open(f))
         lab = (d.get("args", {}).get("label") or "")
         k = lab.rsplit("_", 1)[-1] if lab.startswith("i3g_") else None
-        if k not in PRED:
+        if k not in pred:
             continue
         if d.get("guard", {}).get("contaminated") or not d.get("timing_valid", True):
             bad.append(os.path.basename(f))
@@ -55,18 +58,19 @@ def main():
                and r["ok"] in ("1", "True") and r["ttft_s"]]
         first = [float(r["ttft_s"]) for r in rows if r["turn"] == "0" and r["is_warmup"] in ("0", "False", "") and r["ok"] in ("1", "True") and r["ttft_s"]]
         cfg[k] = dict(run_id=d["run_id"], label=lab, n_return=len(ret), p50=pct(ret, 0.5), p95=pct(ret, 0.95), mean=sum(ret) / len(ret) if ret else None,
-                      first_p95=pct(first, 0.95), n_failed=d.get("n_failed"), pred_p95=PRED[k], desc=DESC[k],
-                      meas_over_pred=(pct(ret, 0.95) / PRED[k]) if ret else None, metrics=d.get("server", {}).get("metrics") or None)
-    have = all(k in cfg for k in PRED)
+                      first_p95=pct(first, 0.95), n_failed=d.get("n_failed"), pred_p95=pred[k], desc=DESC[k],
+                      meas_over_pred=(pct(ret, 0.95) / pred[k]) if ret and pred[k] else None, metrics=d.get("server", {}).get("metrics") or None)
+    have = all(k in cfg for k in pred)
     if have:
-        p = {k: cfg[k]["p95"] for k in PRED}
+        p = {k: cfg[k]["p95"] for k in pred}
         rank = sorted(p, key=p.get)
-        rank_v = "SIM_RANK_CONFIRMED" if rank[0] == "c" and rank[-1] == "d" else "SIM_RANK_REJECTED"
+        ok = rank[0] == "c" and rank[-1] == "d"
+        rank_v = ("SIM_RANK_CONFIRMED" if ok else "SIM_RANK_REJECTED") if a.pred == "llama" else ("RANK_SAME_AS_LLAMA" if ok else "RANK_DIFFERS_FROM_LLAMA")
         flip_v = "FLIP_CONFIRMED" if p["c"] <= 0.95 * p["b"] and p["d"] >= 1.05 * p["b"] else "FLIP_NOT_CONFIRMED"
     else:
         rank, rank_v, flip_v = None, "INCOMPLETE", "INCOMPLETE"
     out = dict(run_id=rid, ts=datetime.now(timezone.utc).isoformat(timespec="seconds"), configs=cfg, contaminated_excluded=bad,
-               rank_measured=rank, rank_sim=sorted(PRED, key=PRED.get), verdict_rank=rank_v, verdict_flip=flip_v,
+               rank_measured=rank, rank_sim=sorted(PRED, key=PRED.get) if a.pred == "llama" else None, pred=a.pred, verdict_rank=rank_v, verdict_flip=flip_v,
                rule=("RANK：回來那一輪 TTFT P95，c 最低且 d 最高 → SIM_RANK_CONFIRMED；FLIP：P95(c) ≤ 0.95×P95(b) 且 P95(d) ≥ 1.05×P95(b) → FLIP_CONFIRMED。"
                      "實測／預測的 ±30% 只是參考。污染的 run 不算。"))
     json.dump(out, open(os.path.join(a.inp, "i3g_report.json"), "w"), indent=1, ensure_ascii=False)
@@ -74,12 +78,12 @@ def main():
     L = [f"# I3g：agent 工具暫停時 KV 的去留（vLLM 0.28 端到端；run {rid}）", "",
          f"判定：RANK **{rank_v}**（實測排名 {rank}；模擬 {out['rank_sim']}）；FLIP **{flip_v}**", "",
          "| 設定 | 說明 | 回來那一輪 n | P50 | P95 | 平均 | 第一輪 P95 | 模擬 P95 | 實測／模擬 | run |", "|:--|:--|--:|--:|--:|--:|--:|--:|--:|:--|"]
-    for k in PRED:
+    for k in pred:
         c = cfg.get(k)
         if not c:
-            L.append(f"| {k} | {DESC[k]} | NOT_MEASURED | | | | | {PRED[k]} | | |")
+            L.append(f"| {k} | {DESC[k]} | NOT_MEASURED | | | | | {pred[k] or '—'} | | |")
             continue
-        L.append(f"| {k} | {c['desc']} | {c['n_return']} | {f(c['p50'])} | {f(c['p95'])} | {f(c['mean'])} | {f(c['first_p95'])} | {PRED[k]} | "
+        L.append(f"| {k} | {c['desc']} | {c['n_return']} | {f(c['p50'])} | {f(c['p95'])} | {f(c['mean'])} | {f(c['first_p95'])} | {pred[k] or '—'} | "
                  f"{f(c['meas_over_pred'], 2)} | {c['run_id']} |")
     L += ["", "規則：" + out["rule"], f"排除的污染 run：{bad or '無'}"]
     open(os.path.join(a.inp, "i3g_report.md"), "w").write("\n".join(L) + "\n")

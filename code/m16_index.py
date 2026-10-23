@@ -325,6 +325,28 @@ def supp_rows():
             rows.append(dict(exp="I3g-posthoc", cell=k, metric=f"return-turn TTFT P95 session-bootstrap CI {r['p95_ci']}" +
                              (f"; ratio vs b {q['p95_ratio']:.3f} CI {q['ratio_ci']}" if q else "") + f"; lookup async delay mean {io['lookup_async_delay_mean']} s (post-hoc)",
                              value=round(r["p95"], 4), unit="s", kind="measured", status="ok", run_id=d["run_id"] + ";" + d["source_report"], source=rel(p)))
+    p = os.path.join(RES, "i3g_agentic/rep/i3g_rep_report.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        for key, r in d["runs"].items():
+            rows.append(dict(exp="I3g-rep", cell=f"{key}|{r['cond']}|card {r['card']}", metric=f"return-turn TTFT P95; verdict {d['verdict']}",
+                             value=round(r["p95"], 4) if r.get("p95") is not None else "", unit="s", kind="measured", status="ok",
+                             run_id=r["run_id"] + ";" + d["run_id"], source=rel(p)))
+    p = os.path.join(RES, "i3g_agentic/qwen/i3g_report.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        for k, c in d["configs"].items():
+            rows.append(dict(exp="I3g-qwen", cell=f"{k}|{c['desc']}", metric=f"return-turn TTFT P95 (Qwen); rank {d['verdict_rank']}; flip {d['verdict_flip']}",
+                             value=round(c["p95"], 4) if c.get("p95") is not None else "", unit="s", kind="measured", status="ok", run_id=c["run_id"], source=rel(p)))
+    p = os.path.join(RES, "i3g_agentic/nfs_lookup/nfs_lookup_report.json")
+    if os.path.exists(p):
+        d = json.load(open(p))
+        for lab, r in d["runs"].items():
+            k = {"nfs": "d", "local": "c"}.get(lab)
+            for ph, q in r["phases"].items():
+                rho = d["rho"].get(k, {}).get(ph) if isinstance(d["rho"].get(k), dict) else None
+                rows.append(dict(exp="nfs-lookup", cell=f"{lab}|{ph}", metric=f"single-thread access(F_OK) mean latency; rho vs I3g {k} = {rho}; verdict {d['verdict']} / {d['verdict_cause']}",
+                                 value=round(q["all"]["mean"], 7), unit="s", kind="measured", status="ok", run_id=r["run_id"] + ";" + d["run_id"], source=rel(p)))
     p = os.path.join(RES, "x_stack/v3/xlcal_eqbytes.json")
     if os.path.exists(p):
         d = json.load(open(p))
@@ -337,7 +359,7 @@ def supp_rows():
 
 
 PLANNED = ["S1", "K1", "I4", "I1-interf", "I1-grid", "C1a", "X1", "X2", "X3", "V0", "F2", "F1", "I3s", "I3g", "C1b",
-           "K1b", "X4a-Wbig", "X4a-Wall", "X3grid-matmul", "X3grid-mem", "xlcal-eqbytes", "I3g-posthoc"]
+           "K1b", "X4a-Wbig", "X4a-Wall", "X3grid-matmul", "X3grid-mem", "xlcal-eqbytes", "I3g-posthoc", "I3g-rep", "I3g-qwen", "nfs-lookup"]
 
 
 def main():

@@ -465,7 +465,7 @@ EXPS = [
          jobs=["40_v0", "50_f2", "51_f1", "52_f1"], kind="實測（vLLM 端到端）"),
     dict(key="supp", sec="4.14", title="10/22 補跑：W 大／全部層一組、X3 翻轉格子（兩種背景）、I3g、38k 同位元組",
          files=["x_stack/x4/wbig/x4w_report.json", "x_stack/x4/wall/x4w_report.json", "x3_time/v3grid/x3grid_report.json",
-                "x3_time/v3grid_mem/x3grid_report.json", "i3g_agentic/i3g_report.json", "i3g_agentic/i3g_posthoc.json", "x_stack/v3/xlcal_eqbytes.json"],
+                "x3_time/v3grid_mem/x3grid_report.json", "i3g_agentic/i3g_report.json", "i3g_agentic/i3g_posthoc.json", "i3g_agentic/rep/i3g_rep_report.json", "i3g_agentic/qwen/i3g_report.json", "i3g_agentic/nfs_lookup/nfs_lookup_report.json", "x_stack/v3/xlcal_eqbytes.json"],
          jobs=["61_", "62_", "62b", "63_", "63b", "64_"], kind="實測（TF、端到端還原、vLLM 端到端）"),
 ]
 
@@ -3329,18 +3329,20 @@ def sec_supp(d: Doc, ctx: Ctx):
     spec = dict(
         q="10/22 租約結束前補的六件（使用者選）：(1) X4a 當初為了時間縮掉的「每 8／7 層一組」，以及 K1b 之後加的「全部層一組」，同位元組下答對率代理會不會更好？"
           "(2) Qwen 256K（見 4.11）；(3) X3「最快格式隨 GPU 忙碌翻轉」只有 4 對實測 → 完整格子，並換成頻寬型背景再量一次；"
-          "(4) I3 的模擬預測在 vLLM 端到端上成不成立；(5) 38k 的同位元組事後分析。",
+          "(4) I3 的模擬預測在 vLLM 端到端上成不成立（10/23 加：b、c 重跑、換 Qwen、NFS 等待拆解）；(5) 38k 的同位元組事後分析。",
         method="(1) m16_x4w.py＋m16_x4.py tf：X4a 同一批 96 題，T 20／24／32 × INT4／K4V2，W 大（或全部層）與同 T 的 W4 逐題配對。"
                "(3) m16_x3grid.py＋m16_xtime.py validate：2 模型 × 3 層（cpu_pinned、b16、ssd_meas）× 4 個 duty × 6 個動作＝144 個端到端還原，"
                "背景各一次（m7_busy＝matmul；m16_busy_mem＝2 GiB 陣列複製）。(4) m16_vllm_bench.py：Llama、64 個 agent session、HBM 壓到參考工作集的 0.25 倍，"
-               "a＝APC、b＝＋CPU、c＝＋本地檔案層、d＝＋NFS 檔案層。(5) 38k 新 192 題逐題配對。",
+               "a＝APC、b＝＋CPU、c＝＋本地檔案層、d＝＋NFS 檔案層；10/23 重跑 b、c 各兩次（兩張卡同時、交叉順序），Qwen 用同一份工作負載、每層 token 容量相同；"
+               "NFS 拆解：m16_nfs_lookup.py，一條執行緒做 5,000 次存在檢查（安靜／背景寫／背景寫＋讀），推回 64 的查找執行緒忙碌度。(5) 38k 新 192 題逐題配對。",
         rule="(1) W 大（或全部層）− W4 的 gold_lp 逐題差 bootstrap 95% CI：任一 (T, 位元) 下界 &gt;0 → W_BIG_BETTER；全部上界 &lt;0 → W_BIG_WORSE；其他 UNDETERMINED。"
              "(3) 每條（模型, 層）duty 0 與 0.9 的最快動作不同、兩端各快 ≥5% → 翻轉；兩個模型都有 → FLIP_REPRODUCED。"
-             "(4) 回來那一輪 TTFT P95：c 最低且 d 最高 → SIM_RANK_CONFIRMED；P95(c) ≤ 0.95×P95(b) 且 P95(d) ≥ 1.05×P95(b) → FLIP_CONFIRMED。"
+             "(4) 回來那一輪 TTFT P95：c 最低且 d 最高 → SIM_RANK_CONFIRMED（Qwen：RANK_SAME_AS_LLAMA）；P95(c) ≤ 0.95×P95(b) 且 P95(d) ≥ 1.05×P95(b) → FLIP_CONFIRMED。"
+             "重跑：三對都 c ≤ 0.95×b → C_BETTER_REPLICATED。NFS 拆解：ρ ≥ 0.8 → LOOKUP_THREAD_SATURATED、&lt; 0.3 → NOT_EXPLAINED_BY_LOOKUP_LATENCY。"
              "(5) 事後分析，只當探索。全部在跑之前寫進 experiment_log.md。",
         limits=["X4a 的補跑只有 teacher forcing（答對率的代理），沒有生成答對率；「全部層一組」是看過 K1b 的 Qwen CPU 結果之後才加的（跑之前登記）。",
                 "X3 的兩種背景都是合成的（duty 週期），不是真實併發的 decode。",
-                "I3g 只有 1 個 seed、每個設定只跑一次、Llama 一個模型；HBM 是人為壓到參考工作集的 0.25 倍（MI300X 192 GB 實際上不會這麼緊）；模擬用的是 harness 的常數，vLLM 的重算與 CPU 路徑和它不同；NFS 的等待是 metadata 延遲還是排在讀寫後面，沒有拆開。",
+                "I3g 只有一份工作負載（1 個 seed）；Llama 的 b、c 跑了 3 次（其中 2 次兩張卡同時跑），a、d 和 Qwen 各 1 次；NFS 的讀取上限沒量；HBM 是人為壓到參考工作集的 0.25 倍（MI300X 192 GB 實際上不會這麼緊）；模擬用的是 harness 的常數，vLLM 的重算與 CPU 路徑和它不同；NFS 拆解的微量測和 64 不同時間、背景寫＋讀的階段寫入只到 12–16 MB/s。",
                 "38k 的同位元組比較是看過結果之後才提的。"])
     exp_head(d, ctx, e, spec)
 
@@ -3470,10 +3472,66 @@ def sec_supp(d: Doc, ctx: Ctx):
             rows.append([k, f"{fx(r['p95'], 2)} [{fx(r['p95_ci'][0], 2)}, {fx(r['p95_ci'][1], 2)}]",
                          f"{fx(q['p95_ratio'], 2)} [{fx(q['ratio_ci'][0], 2)}, {fx(q['ratio_ci'][1], 2)}]" if q else "（基準）",
                          g(io["ttft_mean_all"]), g(io["lookup_async_delay_mean"]), g(io["load_gbps"]), g(io["store_gbps"])])
-        return (["設定", "回來那一輪 P95 [95% CI]", "對 b 的比 [95% CI]", "TTFT 平均（全部）", "查下層的等待平均（秒／請求）", "載入 GB/s", "寫出 GB/s"], rows,
+        return (["設定", "回來那一輪 P95 [95% CI]", "對 b 的比 [95% CI]", "TTFT 平均（全部）", "查下層＋搬回 CPU 的等待平均（秒／請求）", "CPU→GPU 載入 GB/s", "GPU→CPU 寫出 GB/s"], rows,
                 f"<b>事後分析</b>（不是事先寫死的判定）：以 session 為單位的配對 bootstrap（{j['n_sessions']} 個 session、B＝{j['B']}）；每個設定只跑一次，跑與跑之間的變異不在區間裡。"
-                "「查下層的等待」＝vllm:kv_offload_lookup_async_delay_seconds 的平均（請求查下層、結果還沒回來到查完的時間）。a 沒有卸載。出處：i3g_agentic/i3g_posthoc.json。")
+                "「查下層＋搬回 CPU 的等待」＝vllm:kv_offload_lookup_async_delay_seconds 的平均：請求因下層查找還沒回來（RETRY）或找到了但正從下層搬回 CPU（HIT_PENDING）而被延後的時間（10/23 讀原始碼更正：原本只寫成查找）。a 沒有卸載。出處：i3g_agentic/i3g_posthoc.json。")
     d.raw(add_table(ctx, sec, "I3g 事後分析：誤差範圍與 NFS 慢在哪", t_i3gp))
+
+    def t_i3grep():
+        p = os.path.join(ctx.res, "i3g_agentic", "rep", "i3g_rep_report.json")
+        j = read_json(p)
+        ctx.src(sec, p, [j["run_id"]] + [r["run_id"] for r in j["runs"].values()])
+        rows = []
+        for r in ("r1", "r2", "r3"):
+            b, c, q = j["runs"].get(f"b_{r}"), j["runs"].get(f"c_{r}"), j["pairs"].get(r)
+            cond = esc((b or c or {}).get("cond", ""))
+            if not q:
+                rows.append([r, cond, fx(b["p95"], 3) if b and b.get("p95") else "<span class='nm'>NOT_MEASURED</span>",
+                             fx(c["p95"], 3) if c and c.get("p95") else "<span class='nm'>NOT_MEASURED</span>", "", ""])
+                continue
+            rows.append([r, cond, fx(q["p95_b"], 3), fx(q["p95_c"], 3), fx(q["ratio"], 3), "是" if q["c_better"] else "否"])
+        sp = "；".join(f"{k} {fx(s['min'], 2)}–{fx(s['max'], 2)} 秒（{s['n_runs']} 次）" for k, s in j["spread"].items() if s["n_runs"])
+        return (["對", "條件", "b 的 P95（秒）", "c 的 P95（秒）", "c／b", "c 好 ≥5%？"], rows,
+                f"判定：<b>{esc(j['verdict'])}</b>。同一設定各次的 P95：{esc(sp)}。r2、r3 是兩張卡同時跑（共用主機記憶體與 PCIe），r1 是 64 單卡。"
+                "出處：i3g_agentic/rep/i3g_rep_report.json。")
+    d.raw(add_table(ctx, sec, "I3g 重跑：本地檔案層（c）對只加 CPU 卸載（b），三對", t_i3grep))
+
+    def t_i3gq():
+        p = os.path.join(ctx.res, "i3g_agentic", "qwen", "i3g_report.json")
+        j = read_json(p)
+        ctx.src(sec, p, [j["run_id"]] + [c["run_id"] for c in j["configs"].values()])
+        rows = []
+        for k in ("a", "b", "c", "d"):
+            c = j["configs"].get(k)
+            if not c:
+                rows.append([k, "", "<span class='nm'>NOT_MEASURED</span>", "", "", ""])
+                continue
+            rows.append([k, esc(c["desc"]), str(c["n_return"]), fx(c["p50"], 2), fx(c["p95"], 2), fx(c["first_p95"], 2)])
+        return (["設定", "說明", "回來那一輪 n", "P50（秒）", "P95（秒）", "第一輪 P95（秒）"], rows,
+                f"判定：RANK <b>{esc(j['verdict_rank'])}</b>（實測排名 {esc(j['rank_measured'])}）；FLIP <b>{esc(j['verdict_flip'])}</b>。"
+                "同一份工作負載、每一層的 token 容量和 Llama 相同（CPU 14.4 GiB、檔案層上限 66 GiB＝Llama 的 ×0.4375，照 KV 位元組比）。"
+                "出處：i3g_agentic/qwen/i3g_report.json。")
+    d.raw(add_table(ctx, sec, "I3g 換 Qwen：回來那一輪的 TTFT（vLLM 0.28 端到端）", t_i3gq))
+
+    def t_nfs():
+        p = os.path.join(ctx.res, "i3g_agentic", "nfs_lookup", "nfs_lookup_report.json")
+        j = read_json(p)
+        ctx.src(sec, p, [j["run_id"]] + [r["run_id"] for r in j["runs"].values()])
+        rows = []
+        for lab, k in (("local", "c"), ("nfs", "d")):
+            r = j["runs"].get(lab)
+            if not r:
+                rows.append([lab, "", "<span class='nm'>NOT_MEASURED</span>", "", "", "", ""])
+                continue
+            for ph, q in r["phases"].items():
+                rows.append([("本地 /var/tmp" if lab == "local" else "NFS"), ph, f"{q['bg_write_mbps']:.0f}／{q['bg_read_mbps']:.0f}",
+                             fx(1000 * q["all"]["mean"], 3), fx(1000 * q["all"]["p95"], 3),
+                             f"{fx(1000 * q['hit']['mean'], 3)}／{fx(1000 * q['miss']['mean'], 3)}", fx(j["rho"][k][ph], 2)])
+        return (["目錄", "階段", "背景寫／讀 MB/s", "平均（ms）", "P95（ms）", "命中／未命中平均（ms）", "ρ（推回 64）"], rows,
+                f"判定：<b>{esc(j['verdict'])}</b>；<b>{esc(j['verdict_cause'])}</b>。ρ＝64 的 chunk_queries × 平均延遲 ÷ makespan"
+                "（vLLM 檔案層用一條執行緒依序做存在檢查；ρ 接近 1 就會排隊）。Q＝安靜、W＝背景寫、WR＝背景寫＋讀。和 64 不同時間量，NFS 是共用的。"
+                "出處：i3g_agentic/nfs_lookup/nfs_lookup_report.json。")
+    d.raw(add_table(ctx, sec, "NFS 等待拆解：單次存在檢查的延遲與查找執行緒的忙碌度", t_nfs))
 
     def t_eqb():
         p = os.path.join(ctx.res, "x_stack/v3/xlcal_eqbytes.json")

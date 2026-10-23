@@ -91,6 +91,9 @@ S3_ROLE=cpu    setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/
 | `63_x3_flipgrid.sh` | X3 翻轉格子（算力型背景） | `m16_x3grid.py build／report`＋`m16_xtime.py validate` | `results/.../x3_time/v3grid/`（中間檔在 `/mlsteam/data/tiara/stage3/x3grid/`） |
 | `63b_x3_flipgrid_mem.sh` | X3 翻轉格子（頻寬型背景） | 同上＋`M10_BUSY_SCRIPT=code/m16_busy_mem.py` | `results/.../x3_time/v3grid_mem/` |
 | `64_i3g.sh` | I3g：agent 暫停（vLLM 端到端，a／b／c／d） | `m16_workload.py gen-agentic`、`m16_vllm_bench.py`、`m16_i3g_report.py` | `results/.../i3g_agentic/` |
+| `65_i3g_rep.sh` | I3g 重跑：b、c 各兩次（兩張卡同時、交叉順序） | `m16_vllm_bench.py`、`m16_i3g_rep_report.py` | `results/.../i3g_agentic/rep/` |
+| `66a_i3g_qwen_ab.sh` → `66b_i3g_qwen_cd.sh` | I3g 換 Qwen（同一份工作負載、每層 token 容量相同；timing runner 以 `S3_CUTOFF=2026-10-23T03:30:00Z` 重開後跑） | `m16_vllm_bench.py`、`m16_i3g_report.py --pred none` | `results/.../i3g_agentic/qwen/` |
+| （手動，CPU） | NFS 等待拆解（單次存在檢查延遲、查找執行緒忙碌度） | `m16_nfs_lookup.py run --dir /var/tmp --label local`、`run --dir /mlsteam/data/tiara/stage3 --label nfs`、`report` | `results/.../i3g_agentic/nfs_lookup/` |
 | （手動，CPU） | K1b：跨層子空間、Tucker | `m16_k1_tucker.py run／report`（Llama 要分塊 Gram，見失敗 5） | `results/.../k1_kvstruct/tucker/` |
 | （手動，CPU） | I3g 事後分析（session bootstrap、NFS 查找等待） | `m16_i3g_posthoc.py` | `results/.../i3g_agentic/i3g_posthoc.*` |
 | （手動，CPU） | 38k 同位元組（事後） | `m16_xlcal_eqbytes.py` | `results/.../x_stack/v3/xlcal_eqbytes.*` |

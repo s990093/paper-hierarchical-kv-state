@@ -3,8 +3,8 @@
 
   1. 誤差範圍：以 session 為單位的配對 bootstrap（64 個 session 有放回抽樣、四個設定用同一組抽樣，因為工作負載一樣），
      算「回來那一輪」TTFT P95 的差（x − b）與比（x ／ b）的 95% 區間。每個設定只跑一次，跑與跑之間的變異不在這個區間裡。
-  2. d（NFS）慢在哪：vLLM 0.28 的 vllm:kv_offload_lookup_async_delay_seconds＝請求第一次「查下層、結果還沒回來」到查完的時間
-     （kv_connector/v1/offloading/scheduler.py:564-575、:975-987），拿它的平均和 TTFT 平均比；另報載入／寫出的位元組與時間。
+  2. d（NFS）慢在哪：vLLM 0.28 的 vllm:kv_offload_lookup_async_delay_seconds＝請求第一次被延後（下層查找還沒回來 RETRY，或找到了但正從下層搬回 CPU 的 HIT_PENDING）
+     到不再延後的時間（kv_connector/v1/offloading/scheduler.py:564-575、:609-631、:975-987；tiering/manager.py:336-416）——**包含 promotion 的等待**，不只是存在檢查，拿它的平均和 TTFT 平均比；另報載入／寫出的位元組與時間。
 
   python3 -I code/m16_i3g_posthoc.py --in results/m16_stage3_mi300x/i3g_agentic
 """
@@ -96,13 +96,13 @@ def main():
         L.append(f"| {k} | {f(r['p95'], 3)} | [{f(r['p95_ci'][0])}, {f(r['p95_ci'][1])}] | " +
                  (f"{q['p95_diff']:+.2f} | [{q['diff_ci'][0]:+.2f}, {q['diff_ci'][1]:+.2f}] | {q['p95_ratio']:.2f} | [{q['ratio_ci'][0]:.2f}, {q['ratio_ci'][1]:.2f}] |"
                   if q else "（基準） | | | |"))
-    L += ["", "| 設定 | TTFT 平均（全部請求） | 查下層的等待平均（秒／請求） | 載入 GB | 載入 GB/s | 寫出 GB | 寫出 GB/s | 檔案層讀 GB | 檔案層寫 GB | prompt 命中比例 |",
+    L += ["", "| 設定 | TTFT 平均（全部請求） | 查下層＋搬回 CPU 的等待平均（秒／請求） | CPU→GPU 載入 GB | CPU→GPU 載入 GB/s | 寫出 GB | 寫出 GB/s | 檔案層讀 GB | 檔案層寫 GB | prompt 命中比例 |",
           "|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|"]
     for k in KEYS:
         r = io[k]
         L.append(f"| {k} | {f(r['ttft_mean_all'])} | {f(r['lookup_async_delay_mean'])} | {f(r['load_gb'], 0)} | {f(r['load_gbps'])} | {f(r['store_gb'], 0)} | "
                  f"{f(r['store_gbps'])} | {f(r['tier_read_gb'], 0)} | {f(r['tier_write_gb'], 0)} | {f(r['prompt_cached_frac'])} |")
-    L += ["", "查下層的等待＝vllm:kv_offload_lookup_async_delay_seconds 的 sum／count（count＝有等過的請求數；count＝0 記 0＝從沒等過）。a 沒有卸載，這些欄是 NOT_AVAILABLE。"]
+    L += ["", "查下層＋搬回 CPU 的等待＝vllm:kv_offload_lookup_async_delay_seconds 的 sum／count（請求因下層查找或 promotion 被延後的時間）（count＝有等過的請求數；count＝0 記 0＝從沒等過）。a 沒有卸載，這些欄是 NOT_AVAILABLE。"]
     open(os.path.join(a.inp, "i3g_posthoc.md"), "w").write("\n".join(L) + "\n")
     print("\n".join(L))
 

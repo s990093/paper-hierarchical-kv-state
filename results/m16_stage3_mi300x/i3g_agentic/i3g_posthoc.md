@@ -1,4 +1,4 @@
-# I3g 事後分析（不是事先寫死的判定；run 20261022-195647-m16-i3g-posthoc，讀 20261022-195405-m16-i3g-report）
+# I3g 事後分析（不是事先寫死的判定；run 20261023-012819-m16-i3g-posthoc，讀 20261022-195405-m16-i3g-report）
 
 誤差範圍＝以 session 為單位的配對 bootstrap（61 個 session、B＝2000、seed 20261022）；每個設定只跑一次，跑與跑之間的變異不在區間裡。
 
@@ -9,11 +9,11 @@
 | c | 1.664 | [1.52, 1.84] | -0.37 | [-0.66, +0.01] | 0.82 | [0.72, 1.00] |
 | d | 105.143 | [102.59, 111.74] | +103.11 | [+100.67, +109.54] | 51.63 | [45.74, 61.47] |
 
-| 設定 | TTFT 平均（全部請求） | 查下層的等待平均（秒／請求） | 載入 GB | 載入 GB/s | 寫出 GB | 寫出 GB/s | 檔案層讀 GB | 檔案層寫 GB | prompt 命中比例 |
+| 設定 | TTFT 平均（全部請求） | 查下層＋搬回 CPU 的等待平均（秒／請求） | CPU→GPU 載入 GB | CPU→GPU 載入 GB/s | 寫出 GB | 寫出 GB/s | 檔案層讀 GB | 檔案層寫 GB | prompt 命中比例 |
 |:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
 | a | 0.93 | NOT_AVAILABLE | NOT_AVAILABLE | NOT_AVAILABLE | NOT_AVAILABLE | NOT_AVAILABLE | NOT_AVAILABLE | NOT_AVAILABLE | 0.15 |
 | b | 0.71 | 0.00 | 167 | 4.31 | 245 | 4.66 | NOT_AVAILABLE | NOT_AVAILABLE | 0.50 |
 | c | 0.66 | 0.15 | 309 | 4.41 | 102 | 4.60 | 144 | 101 | 0.79 |
 | d | 41.83 | 41.25 | 348 | 4.40 | 102 | 4.70 | 183 | 101 | 0.79 |
 
-查下層的等待＝vllm:kv_offload_lookup_async_delay_seconds 的 sum／count（count＝有等過的請求數；count＝0 記 0＝從沒等過）。a 沒有卸載，這些欄是 NOT_AVAILABLE。
+查下層＋搬回 CPU 的等待＝vllm:kv_offload_lookup_async_delay_seconds 的 sum／count（請求因下層查找或 promotion 被延後的時間）（count＝有等過的請求數；count＝0 記 0＝從沒等過）。a 沒有卸載，這些欄是 NOT_AVAILABLE。
