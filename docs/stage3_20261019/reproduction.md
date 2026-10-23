@@ -96,6 +96,7 @@ S3_ROLE=cpu    setsid nohup bash code/m16_queue/runner.sh > /mlsteam/data/tiara/
 | （手動，CPU） | NFS 等待拆解（單次存在檢查延遲、查找執行緒忙碌度） | `m16_nfs_lookup.py run --dir /var/tmp --label local`、`run --dir /mlsteam/data/tiara/stage3 --label nfs`、`report` | `results/.../i3g_agentic/nfs_lookup/` |
 | （手動，CPU） | K1b：跨層子空間、Tucker | `m16_k1_tucker.py run／report`（Llama 要分塊 Gram，見失敗 5） | `results/.../k1_kvstruct/tucker/` |
 | （手動，CPU） | I3g 事後分析（session bootstrap、NFS 查找等待） | `m16_i3g_posthoc.py` | `results/.../i3g_agentic/i3g_posthoc.*` |
+| （手動，CPU） | I3g 換 Qwen：報告重出（規則文字修正）與事後分析 | `m16_i3g_report.py --in results/.../i3g_agentic/qwen --pred none`、`m16_i3g_posthoc.py --in results/.../i3g_agentic/qwen` | `results/.../i3g_agentic/qwen/i3g_report.*`、`i3g_posthoc.*` |
 | （手動，CPU） | 38k 同位元組（事後） | `m16_xlcal_eqbytes.py` | `results/.../x_stack/v3/xlcal_eqbytes.*` |
 | （手動，CPU） | 交付 md | `python3 code/m16_narr2md.py`（從 `report/narrative/*.html` 轉出 `results_analysis.md`、`stage3_candidates.md`） | `docs/stage3_20261019/` |
 

@@ -465,7 +465,7 @@ EXPS = [
          jobs=["40_v0", "50_f2", "51_f1", "52_f1"], kind="實測（vLLM 端到端）"),
     dict(key="supp", sec="4.14", title="10/22 補跑：W 大／全部層一組、X3 翻轉格子（兩種背景）、I3g、38k 同位元組",
          files=["x_stack/x4/wbig/x4w_report.json", "x_stack/x4/wall/x4w_report.json", "x3_time/v3grid/x3grid_report.json",
-                "x3_time/v3grid_mem/x3grid_report.json", "i3g_agentic/i3g_report.json", "i3g_agentic/i3g_posthoc.json", "i3g_agentic/rep/i3g_rep_report.json", "i3g_agentic/qwen/i3g_report.json", "i3g_agentic/nfs_lookup/nfs_lookup_report.json", "x_stack/v3/xlcal_eqbytes.json"],
+                "x3_time/v3grid_mem/x3grid_report.json", "i3g_agentic/i3g_report.json", "i3g_agentic/i3g_posthoc.json", "i3g_agentic/rep/i3g_rep_report.json", "i3g_agentic/qwen/i3g_report.json", "i3g_agentic/qwen/i3g_posthoc.json", "i3g_agentic/nfs_lookup/nfs_lookup_report.json", "x_stack/v3/xlcal_eqbytes.json"],
          jobs=["61_", "62_", "62b", "63_", "63b", "64_"], kind="實測（TF、端到端還原、vLLM 端到端）"),
 ]
 
@@ -3500,17 +3500,29 @@ def sec_supp(d: Doc, ctx: Ctx):
         p = os.path.join(ctx.res, "i3g_agentic", "qwen", "i3g_report.json")
         j = read_json(p)
         ctx.src(sec, p, [j["run_id"]] + [c["run_id"] for c in j["configs"].values()])
+        pp = os.path.join(ctx.res, "i3g_agentic", "qwen", "i3g_posthoc.json")
+        ph = read_json(pp) if os.path.exists(pp) else None
+        if ph:
+            ctx.src(sec, pp, [ph["run_id"], ph["source_report"]])
+        ll = read_json(os.path.join(ctx.res, "i3g_agentic", "i3g_report.json"))["configs"]
+        nm = "<span class='nm'>NOT_MEASURED</span>"
         rows = []
         for k in ("a", "b", "c", "d"):
             c = j["configs"].get(k)
             if not c:
-                rows.append([k, "", "<span class='nm'>NOT_MEASURED</span>", "", "", ""])
+                rows.append([k, "", nm, "", "", "", "", "", ""])
                 continue
-            rows.append([k, esc(c["desc"]), str(c["n_return"]), fx(c["p50"], 2), fx(c["p95"], 2), fx(c["first_p95"], 2)])
-        return (["設定", "說明", "回來那一輪 n", "P50（秒）", "P95（秒）", "第一輪 P95（秒）"], rows,
+            q = ph["vs_b"].get(f"{k}_vs_b") if ph else None
+            io = ph["io"][k] if ph else None
+            rows.append([k, esc(c["desc"]), str(c["n_return"]), fx(c["p50"], 2), fx(c["p95"], 2),
+                         (f"{fx(q['p95_ratio'], 2)} [{fx(q['ratio_ci'][0], 2)}, {fx(q['ratio_ci'][1], 2)}]" if q else "（基準）") if ph else nm,
+                         (io["lookup_async_delay_mean"] if isinstance(io["lookup_async_delay_mean"], str) else fx(io["lookup_async_delay_mean"], 2)) if ph else nm,
+                         fx(ll[k]["p95"], 2) if k in ll else nm, fx(c["p95"] / ll[k]["p95"], 2) if k in ll else nm])
+        return (["設定", "說明", "回來那一輪 n", "P50（秒）", "P95（秒）", "對 b 的比 [95% CI]（事後）", "查下層＋搬回 CPU 的等待平均（秒／請求）", "Llama 的 P95（秒）", "Qwen／Llama"], rows,
                 f"判定：RANK <b>{esc(j['verdict_rank'])}</b>（實測排名 {esc(j['rank_measured'])}）；FLIP <b>{esc(j['verdict_flip'])}</b>。"
                 "同一份工作負載、每一層的 token 容量和 Llama 相同（CPU 14.4 GiB、檔案層上限 66 GiB＝Llama 的 ×0.4375，照 KV 位元組比）。"
-                "出處：i3g_agentic/qwen/i3g_report.json。")
+                "對 b 的比與等待是事後分析（session bootstrap，同 Llama 的做法；每個設定只跑一次）。Llama 的 P95 取 64 那一次（r1）。"
+                "出處：i3g_agentic/qwen/i3g_report.json、i3g_agentic/qwen/i3g_posthoc.json、i3g_agentic/i3g_report.json。")
     d.raw(add_table(ctx, sec, "I3g 換 Qwen：回來那一輪的 TTFT（vLLM 0.28 端到端）", t_i3gq))
 
     def t_nfs():

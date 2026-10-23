@@ -72,11 +72,13 @@ def main():
     out = dict(run_id=rid, ts=datetime.now(timezone.utc).isoformat(timespec="seconds"), configs=cfg, contaminated_excluded=bad,
                rank_measured=rank, rank_sim=sorted(PRED, key=PRED.get) if a.pred == "llama" else None, pred=a.pred, verdict_rank=rank_v, verdict_flip=flip_v,
                rule=("RANK：回來那一輪 TTFT P95，c 最低且 d 最高 → SIM_RANK_CONFIRMED；FLIP：P95(c) ≤ 0.95×P95(b) 且 P95(d) ≥ 1.05×P95(b) → FLIP_CONFIRMED。"
-                     "實測／預測的 ±30% 只是參考。污染的 run 不算。"))
+                     "實測／預測的 ±30% 只是參考。污染的 run 不算。") if a.pred == "llama" else
+                    ("RANK：回來那一輪 TTFT P95，c 最低且 d 最高（和 Llama 的實測排名同型）→ RANK_SAME_AS_LLAMA，否則 RANK_DIFFERS_FROM_LLAMA；"
+                     "FLIP：P95(c) ≤ 0.95×P95(b) 且 P95(d) ≥ 1.05×P95(b) → FLIP_CONFIRMED。沒有模擬預測。污染的 run 不算。"))
     json.dump(out, open(os.path.join(a.inp, "i3g_report.json"), "w"), indent=1, ensure_ascii=False)
     f = lambda x, n=3: "—" if x is None else f"{x:.{n}f}"  # noqa: E731
     L = [f"# I3g：agent 工具暫停時 KV 的去留（vLLM 0.28 端到端；run {rid}）", "",
-         f"判定：RANK **{rank_v}**（實測排名 {rank}；模擬 {out['rank_sim']}）；FLIP **{flip_v}**", "",
+         f"判定：RANK **{rank_v}**（實測排名 {rank}；模擬 {out['rank_sim'] or '無'}）；FLIP **{flip_v}**", "",
          "| 設定 | 說明 | 回來那一輪 n | P50 | P95 | 平均 | 第一輪 P95 | 模擬 P95 | 實測／模擬 | run |", "|:--|:--|--:|--:|--:|--:|--:|--:|--:|:--|"]
     for k in pred:
         c = cfg.get(k)
