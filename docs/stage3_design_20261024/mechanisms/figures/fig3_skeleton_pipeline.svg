@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="620" viewBox="0 0 960 620" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<defs>
+<marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5F5E5A"/></marker>
+<pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" stroke="#D9D9D6" stroke-width="3"/></pattern>
+</defs>
+<rect width="960" height="620" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 3　P1 的核心（M01＋M02）：HBM 留縮圖；回來時一層一層挑、一層一層補</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">上：14B・256K 在 H200 上 84.7 GiB 的 KV 預算怎麼用（〔算術〕arith §1）；中：回來那一輪的逐層流水（示意）；下：TTFT（〔算術〕arith §9）</text>
+
+<!-- top: HBM -->
+<text x="40" y="96" font-size="12.5" font-weight="600" fill="#2C2C2A">現在</text>
+<text x="40" y="112" font-size="11" fill="#5F5E5A">整份留或整份搬</text>
+<rect x="220" y="84" width="385" height="30" fill="#1F4E79"/><text x="412" y="104" font-size="12" fill="#ffffff" text-anchor="middle">活躍的 session　48 GiB</text>
+<rect x="605" y="84" width="295" height="30" fill="url(#hatch)" stroke="#A6A6A6"/><text x="752" y="104" font-size="11.5" fill="#5F5E5A" text-anchor="middle">36.7 GiB 放不下第二個 → 別的 session 全搬走</text>
+
+<text x="40" y="152" font-size="12.5" font-weight="600" fill="#2C2C2A">M01</text>
+<text x="40" y="168" font-size="11" fill="#5F5E5A">留縮圖</text>
+<rect x="220" y="140" width="385" height="30" fill="#1F4E79"/><text x="412" y="160" font-size="12" fill="#ffffff" text-anchor="middle">活躍的 session　48 GiB</text>
+<g fill="#8FAADC" stroke="#ffffff" stroke-width="1.5">
+<rect x="605" y="140" width="24.1" height="30"/><rect x="629.1" y="140" width="24.1" height="30"/><rect x="653.2" y="140" width="24.1" height="30"/><rect x="677.3" y="140" width="24.1" height="30"/>
+<rect x="701.4" y="140" width="24.1" height="30"/><rect x="725.5" y="140" width="24.1" height="30"/><rect x="749.6" y="140" width="24.1" height="30"/><rect x="773.7" y="140" width="24.1" height="30"/>
+<rect x="797.8" y="140" width="24.1" height="30"/><rect x="821.9" y="140" width="24.1" height="30"/><rect x="846" y="140" width="24.1" height="30"/><rect x="870.1" y="140" width="24.1" height="30"/>
+</g>
+<text x="900" y="188" font-size="11.5" fill="#1F4E79" text-anchor="end">12 個暫停 session 的 16 倍粗底（各 3 GiB）；精修與完整版在 CPU／NVMe</text>
+
+<!-- middle: pipeline -->
+<text x="40" y="232" font-size="13" font-weight="600" fill="#2C2C2A">使用者回來（第 2 輪的新問題）</text>
+<text x="40" y="286" font-size="12.5" font-weight="600" fill="#2C2C2A">GPU 計算</text>
+<text x="40" y="376" font-size="12.5" font-weight="600" fill="#2C2C2A">PCIe／慢層</text>
+
+<g font-size="11">
+<!-- transfers -->
+<rect x="190" y="356" width="44" height="30" fill="#E07B24"/><text x="212" y="375" fill="#ffffff" text-anchor="middle">補 L1</text>
+<rect x="240" y="356" width="60" height="30" fill="#F4B183"/><text x="270" y="375" fill="#2C2C2A" text-anchor="middle">預取 L2</text>
+<rect x="340" y="356" width="60" height="30" fill="#F4B183"/><text x="370" y="375" fill="#2C2C2A" text-anchor="middle">預取 L3</text>
+<rect x="440" y="356" width="60" height="30" fill="#F4B183"/><text x="470" y="375" fill="#2C2C2A" text-anchor="middle">預取 L4</text>
+<rect x="540" y="356" width="60" height="30" fill="#F4B183"/><text x="570" y="375" fill="#2C2C2A" text-anchor="middle">預取 L5</text>
+<rect x="600" y="356" width="22" height="30" fill="#E07B24"/><text x="611" y="402" fill="#E07B24" text-anchor="middle">補漏</text>
+<!-- compute -->
+<rect x="240" y="266" width="92" height="34" fill="#1F4E79"/><text x="286" y="280" fill="#ffffff" text-anchor="middle">第 1 層</text><text x="286" y="294" fill="#DAE3F3" text-anchor="middle">挑→注意力</text>
+<rect x="340" y="266" width="92" height="34" fill="#1F4E79"/><text x="386" y="280" fill="#ffffff" text-anchor="middle">第 2 層</text><text x="386" y="294" fill="#DAE3F3" text-anchor="middle">挑→注意力</text>
+<rect x="440" y="266" width="92" height="34" fill="#1F4E79"/><text x="486" y="280" fill="#ffffff" text-anchor="middle">第 3 層</text><text x="486" y="294" fill="#DAE3F3" text-anchor="middle">挑→注意力</text>
+<rect x="540" y="266" width="92" height="34" fill="#1F4E79"/><text x="586" y="280" fill="#ffffff" text-anchor="middle">第 4 層</text><text x="586" y="294" fill="#DAE3F3" text-anchor="middle">挑→注意力</text>
+<rect x="640" y="266" width="92" height="34" fill="#1F4E79"/><text x="686" y="280" fill="#ffffff" text-anchor="middle">第 5 層</text><text x="686" y="294" fill="#DAE3F3" text-anchor="middle">挑→注意力</text>
+<text x="760" y="288" font-size="14" fill="#5F5E5A">…</text>
+<rect x="790" y="266" width="92" height="34" fill="#1F4E79"/><text x="836" y="280" fill="#ffffff" text-anchor="middle">最後一層</text><text x="836" y="294" fill="#DAE3F3" text-anchor="middle">→ 開始回答</text>
+</g>
+<!-- arrows: selection of layer l guides prefetch of l+1 -->
+<g stroke="#5F5E5A" stroke-width="1.2" fill="none" marker-end="url(#arr)">
+<path d="M300,300 L300,352"/>
+<path d="M400,300 L400,352"/>
+<path d="M500,300 L500,352"/>
+</g>
+<text x="292" y="330" font-size="10.5" fill="#5F5E5A" text-anchor="end">第 1 層挑的塊</text>
+<text x="292" y="344" font-size="10.5" fill="#5F5E5A" text-anchor="end">→ 猜第 2 層要補的</text>
+<rect x="640" y="318" width="290" height="58" rx="6" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="652" y="337" font-size="11.5" fill="#2C2C2A">第 ℓ＋1 層的 query 用「已經補好」的</text>
+<text x="652" y="353" font-size="11.5" fill="#2C2C2A">第 1…ℓ 層算 → 不再是在粗 KV 上算的</text>
+<text x="652" y="369" font-size="10.5" fill="#5F5E5A">（L8a §0 第 6 點：兩趟做法的誤差沒人量過）</text>
+
+<!-- bottom: TTFT bars -->
+<text x="40" y="440" font-size="13" font-weight="600" fill="#2C2C2A">14B・256K、問題 512 token、ρ＝1/4 的 TTFT（秒）</text>
+<g font-size="11.5" fill="#2C2C2A">
+<text x="40" y="474">本地 NVMe</text>
+<text x="40" y="552">CPU 層</text>
+</g>
+<g font-size="11">
+<rect x="150" y="458" width="600" height="13" fill="#A6A6A6"/><text x="756" y="469" fill="#5F5E5A">全部 BF16 載入　7.25</text>
+<rect x="150" y="474" width="106" height="13" fill="#8FAADC"/><text x="262" y="485" fill="#1F4E79">兩趟（先挑再補再算）　1.28</text>
+<rect x="150" y="490" width="45.4" height="13" fill="#1F4E79"/><text x="201" y="501" fill="#1F4E79">逐層流水（M02）　0.55</text>
+<rect x="150" y="536" width="105.2" height="13" fill="#A6A6A6"/><text x="261" y="547" fill="#5F5E5A">全部 BF16 載入　1.27</text>
+<rect x="150" y="552" width="67.6" height="13" fill="#8FAADC"/><text x="224" y="563" fill="#1F4E79">兩趟　0.82</text>
+<rect x="150" y="568" width="31.1" height="13" fill="#1F4E79"/><text x="187" y="579" fill="#1F4E79">逐層流水　0.38</text>
+</g>
+<text x="40" y="606" font-size="11" fill="#5F5E5A">對「全部 INT4」（NVMe 2.15＋0.37 s）是約 4.6 倍；品質要靠 A0／G-M01/02 證明（沒量到之前都是預測）</text>
+</svg>

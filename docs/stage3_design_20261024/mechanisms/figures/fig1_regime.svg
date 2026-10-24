@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="540" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 1　到了 128K–256K，回來那一輪才變成大問題</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">左：H200 的 HBM 放得下幾個 session；右：14B・256K 一個 session 回來的 TTFT（問題 512 token）。全部是〔算術〕（arith §1、§9）</text>
+
+<!-- left panel -->
+<text x="40" y="90" font-size="13" font-weight="600" fill="#2C2C2A">HBM 放得下幾個 session（KV 預算 ÷ 每個 session）</text>
+<g font-size="12" fill="#2C2C2A">
+<text x="40" y="134">Llama-3.1-8B・128K</text>
+<text x="40" y="189">Qwen2.5-7B・256K</text>
+<text x="40" y="244">NeMo-12B・128K</text>
+<text x="40" y="299">Qwen2.5-14B・128K</text>
+<text x="40" y="354">Qwen2.5-14B・256K</text>
+</g>
+<line x1="190" y1="105" x2="190" y2="372" stroke="#7F7F7F" stroke-width="1"/>
+<g>
+<rect x="190" y="116" width="12.4" height="12" fill="#1F4E79"/><text x="208" y="126" font-size="11" fill="#1F4E79">6</text>
+<rect x="190" y="132" width="200.8" height="12" fill="#8FAADC"/><text x="396" y="142" font-size="11" fill="#2C2C2A">97</text>
+<rect x="190" y="171" width="12.4" height="12" fill="#1F4E79"/><text x="208" y="181" font-size="11" fill="#1F4E79">6</text>
+<rect x="190" y="187" width="229.8" height="12" fill="#8FAADC"/><text x="425" y="197" font-size="11" fill="#2C2C2A">111</text>
+<rect x="190" y="226" width="8.3" height="12" fill="#1F4E79"/><text x="204" y="236" font-size="11" fill="#1F4E79">4</text>
+<rect x="190" y="242" width="147" height="12" fill="#8FAADC"/><text x="343" y="252" font-size="11" fill="#2C2C2A">71</text>
+<rect x="190" y="281" width="6.2" height="12" fill="#1F4E79"/><text x="202" y="291" font-size="11" fill="#1F4E79">3</text>
+<rect x="190" y="297" width="115.9" height="12" fill="#8FAADC"/><text x="312" y="307" font-size="11" fill="#2C2C2A">56</text>
+<rect x="190" y="336" width="3" height="12" fill="#1F4E79"/><text x="199" y="346" font-size="11" font-weight="600" fill="#C0504D">1</text>
+<rect x="190" y="352" width="58" height="12" fill="#8FAADC"/><text x="254" y="362" font-size="11" fill="#2C2C2A">28</text>
+</g>
+<rect x="40" y="390" width="12" height="12" fill="#1F4E79"/><text x="58" y="400" font-size="12" fill="#2C2C2A">完整 KV</text>
+<rect x="130" y="390" width="12" height="12" fill="#8FAADC"/><text x="148" y="400" font-size="12" fill="#2C2C2A">16 倍粗底（M01）</text>
+
+<!-- right panel -->
+<text x="500" y="90" font-size="13" font-weight="600" fill="#2C2C2A">14B・256K 回來那一輪的 TTFT（秒，對數軸）</text>
+<g font-size="12" fill="#2C2C2A">
+<text x="500" y="139">CPU 層</text>
+<text x="500" y="219">本地 NVMe</text>
+<text x="500" y="299">NFS 級</text>
+</g>
+<rect x="600" y="121" width="90.5" height="12" fill="#A6A6A6"/><text x="696" y="131" font-size="11" fill="#5F5E5A">1.27</text>
+<rect x="600" y="137" width="47.1" height="12" fill="#1F4E79"/><text x="653" y="147" font-size="11" fill="#1F4E79">0.38</text>
+<rect x="600" y="201" width="152.5" height="12" fill="#A6A6A6"/><text x="758" y="211" font-size="11" fill="#5F5E5A">7.25</text>
+<rect x="600" y="217" width="60.6" height="12" fill="#1F4E79"/><text x="667" y="227" font-size="11" fill="#1F4E79">0.55</text>
+<rect x="600" y="281" width="259.3" height="12" fill="#A6A6A6"/><text x="865" y="291" font-size="11" fill="#5F5E5A">145</text>
+<rect x="600" y="297" width="169.2" height="12" fill="#1F4E79"/><text x="775" y="307" font-size="11" fill="#1F4E79">11.6</text>
+<line x1="600" y1="330" x2="928" y2="330" stroke="#7F7F7F" stroke-width="1"/>
+<g font-size="10.5" fill="#5F5E5A" text-anchor="middle">
+<line x1="600" y1="330" x2="600" y2="335" stroke="#7F7F7F"/><text x="600" y="347">0.1</text>
+<line x1="682" y1="330" x2="682" y2="335" stroke="#7F7F7F"/><text x="682" y="347">1</text>
+<line x1="764" y1="330" x2="764" y2="335" stroke="#7F7F7F"/><text x="764" y="347">10</text>
+<line x1="846" y1="330" x2="846" y2="335" stroke="#7F7F7F"/><text x="846" y="347">100</text>
+<line x1="928" y1="330" x2="928" y2="335" stroke="#7F7F7F"/><text x="928" y="347">1000</text>
+</g>
+<rect x="500" y="364" width="12" height="12" fill="#A6A6A6"/><text x="518" y="374" font-size="12" fill="#2C2C2A">全部 BF16 載入，再 prefill 問題</text>
+<rect x="500" y="384" width="12" height="12" fill="#1F4E79"/><text x="518" y="394" font-size="12" fill="#2C2C2A">M01 粗底常駐＋M02 逐層流水（ρ＝1/4）</text>
+<text x="500" y="414" font-size="11" fill="#5F5E5A">實測錨點：Qwen2.5-7B・256K 的 Cake E0，CPU 層 0.373 s、b48 層 18.6 s</text>
+
+<!-- bottom facts -->
+<g>
+<rect x="40" y="436" width="280" height="84" rx="6" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="56" y="460" font-size="13" font-weight="600" fill="#2C2C2A">F3　重算貴在注意力</text>
+<text x="56" y="482" font-size="12" fill="#2C2C2A">重算 ÷ CPU 層載入：32K 16 倍、128K 37 倍</text>
+<text x="56" y="502" font-size="11" fill="#5F5E5A">〔算術，由 H200 實測的冷 prefill 擬合〕</text>
+<rect x="340" y="436" width="280" height="84" rx="6" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="356" y="460" font-size="13" font-weight="600" fill="#2C2C2A">F4　decode 讓 tensor core 閒著</text>
+<text x="356" y="482" font-size="12" fill="#2C2C2A">每步 2.6–4.0 FLOP／byte；吃滿要 189</text>
+<text x="356" y="502" font-size="11" fill="#5F5E5A">〔算術，H200 實測 matmul 與 HBM〕</text>
+<rect x="640" y="436" width="280" height="84" rx="6" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="656" y="460" font-size="13" font-weight="600" fill="#2C2C2A">F5　低位元的傷害隨長度變大</text>
+<text x="656" y="482" font-size="12" fill="#2C2C2A">Qwen int2：32K −9.7 → 256K −14.4 分</text>
+<text x="656" y="502" font-size="11" fill="#5F5E5A">〔實測，tables_longctx256 §2，n＝36〕</text>
+</g>
+</svg>

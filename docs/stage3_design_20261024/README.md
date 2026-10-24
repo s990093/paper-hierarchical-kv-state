@@ -2,6 +2,8 @@
 
 > **一句話**：寫入端只存一份「可以分層讀」的 KV；使用者回來時，**當下的 GPU 資源**決定用什麼方式、分多少 SM 去還原（主線 B），**新問題**決定每一塊讀多清楚（副線 A）。
 >
+> **10/24 補充**：只靠 B 機率太低 → [mechanisms/](mechanisms/README.md) 列了 16 個新機制候選（主推：M01＋M02 粗底常駐與逐層挑塊、M08 搭 decode 的便車），主設定換成 128K–256K、8B–14B，並把 11/17 的決策表擴成三種論文形狀。
+>
 > 這是第三階段（路 2）的核心頁。所有文件都從這裡連出去。路 1（ICPE）的證據表在 `origin/h200` 的 `docs/h200/ICPE_EVIDENCE.md`。
 
 ---
@@ -68,6 +70,7 @@
 | [06_tracker.md](06_tracker.md) | 實驗追蹤表 |
 | [07_advisor_qa.md](07_advisor_qa.md) | 給老師的三個問題的建議回答（附查證來源） |
 | [08_kill_argument.md](08_kill_argument.md) | 最強的拒稿理由與回應（self-review）；由此新增到 05 的四個項目 |
+| [mechanisms/](mechanisms/README.md) | 10/24 補充：16 個新機制候選（M01–M16）、128K–256K 的有利設定、新增的閘、P1／P2／P3 三種論文形狀；摘要級查新 |
 | `lit/L8a–L8e` | 這輪的文獻查新（全文閱讀、標頁碼；self-review，不是 cross-model） |
 | `lit/V8_verifier.md` | 零前文 verifier 對 14 條關鍵說法的原文核對 |
 | `figures/` | 圖 1–4（SVG） |
