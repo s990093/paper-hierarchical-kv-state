@@ -1,0 +1,249 @@
+{
+ "run_id": "20261022-205931-icpe-p01-attn-choose",
+ "ts": "2026-10-22T20:59:34+08:00",
+ "rule": "P0-1 §2.2–§2.3（＋§8 偏離 2）：過閘＝argmax 相同、top-5 至少 4 個相同、max|Δlogit| ≤ max(0.25, 2×sdpa)；分數＝Σ_{i<64} 每塊各輪中位數；勝者沒有比 sdpa 快 ≥5% → stop_loss",
+ "models": {
+  "llama": {
+   "passed": {
+    "fa2": true,
+    "fa3": true,
+    "fa4": true,
+    "sdpa": true,
+    "sdpa_cudnn": true
+   },
+   "gate_detail": {
+    "fa2": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.0625",
+      "error": ""
+     }
+    ],
+    "fa3": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     }
+    ],
+    "fa4": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.0625",
+      "error": ""
+     }
+    ],
+    "sdpa": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.125",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.0",
+      "error": ""
+     }
+    ],
+    "sdpa_cudnn": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.125",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     }
+    ]
+   },
+   "score_ms": {
+    "fa2": 2049.496,
+    "fa3": 1582.991,
+    "fa4": 1605.527,
+    "sdpa": 2107.235,
+    "sdpa_cudnn": 2041.651
+   },
+   "winner": "fa3",
+   "winner_vs_sdpa": 0.7512,
+   "stop_loss": false
+  },
+  "qwen": {
+   "passed": {
+    "fa2": true,
+    "fa3": true,
+    "fa4": true,
+    "sdpa": true,
+    "sdpa_cudnn": true
+   },
+   "gate_detail": {
+    "fa2": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.125",
+      "error": ""
+     }
+    ],
+    "fa3": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.0625",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.125",
+      "error": ""
+     }
+    ],
+    "fa4": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.085938",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.125",
+      "error": ""
+     }
+    ],
+    "sdpa": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.078125",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.0",
+      "error": ""
+     }
+    ],
+    "sdpa_cudnn": [
+     {
+      "length": "8192",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     },
+     {
+      "length": "32768",
+      "status": "ok",
+      "argmax_same": "1",
+      "top5_same": "1",
+      "top5_overlap": "5",
+      "max_abs_dlogit": "0.09375",
+      "error": ""
+     }
+    ]
+   },
+   "score_ms": {
+    "fa2": 1806.507,
+    "fa3": 1400.44,
+    "fa4": 1416.836,
+    "sdpa": 1853.968,
+    "sdpa_cudnn": 1782.413
+   },
+   "winner": "fa3",
+   "winner_vs_sdpa": 0.7554,
+   "stop_loss": false
+  }
+ }
+}

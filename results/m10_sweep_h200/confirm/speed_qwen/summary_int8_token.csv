@@ -1,0 +1,57 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,E1s,cake,30,0.21764,0.26224,6 7,58.0,878051328.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,busy,SW-ERR-10,cake,30,0.35004,0.39181,10,6.0,1500119040.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,busy,SW-R0-10,cake,30,0.3504,0.39197,10,5.0,1514340352.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,busy,SW-R1-10,cake,30,0.3496,0.39127,10,5.0,1514340352.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,busy,SW-R2-10,cake,30,0.3507,0.39208,10,5.0,1514340352.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,busy,SW-R3-10,cake,30,0.34994,0.39135,10,5.0,1514340352.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,busy,SW-R4-10,cake,30,0.34969,0.39112,10,5.0,1514340352.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,idle,E1s,cake,30,0.18628,0.20798,9 10,54.0,817496064.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,idle,SW-ERR-10,cake,30,0.2921,0.31676,15 16,6.0,1353318400.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,idle,SW-R0-10,cake,30,0.30736,0.32901,15 16,5.0,1352400896.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,idle,SW-R1-10,cake,30,0.30735,0.32897,15 16,5.0,1352400896.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,idle,SW-R2-10,cake,30,0.30729,0.32915,15 16,5.0,1352400896.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,idle,SW-R3-10,cake,30,0.3071,0.32879,15 16,4.0,1352400896.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b16,idle,SW-R4-10,cake,30,0.30715,0.3289,15 16,5.0,1352400896.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,busy,E1s,cake,30,0.60056,0.64221,16,48.0,726663168.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,busy,SW-ERR-10,cake,30,0.9101,0.9509,22 23,4.0,1146880000.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,busy,SW-R0-10,cake,30,0.91038,0.95161,22 23,4.0,1147797504.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,busy,SW-R1-10,cake,30,0.909,0.94979,22 23,4.0,1161101312.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,busy,SW-R2-10,cake,30,0.90945,0.95088,22 23,4.0,1147797504.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,busy,SW-R3-10,cake,30,0.90342,0.94427,22 23,4.0,1161101312.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,busy,SW-R4-10,cake,30,0.90865,0.94961,22 23,4.0,1147797504.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,idle,E1s,cake,30,0.47726,0.49889,22 23,41.0,620691456.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,idle,SW-ERR-10,cake,30,0.7156,0.73727,31 32,0.0,939524096.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,idle,SW-R0-10,cake,30,0.70206,0.72391,31 32,3.5,911998976.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,idle,SW-R1-10,cake,30,0.70257,0.72431,30 31 32,3.0,911998976.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,idle,SW-R2-10,cake,30,0.70203,0.72382,30 31 32,3.0,911998976.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,idle,SW-R3-10,cake,30,0.70263,0.72435,31 32,3.0,911998976.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b32,idle,SW-R4-10,cake,30,0.70362,0.72542,30 31 32,3.0,912457728.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,busy,E1s,cake,30,1.33506,1.37947,31,33.0,499580928.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,busy,SW-ERR-10,cake,30,1.83266,1.87446,40,0.0,704643072.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,busy,SW-R0-10,cake,30,1.80117,1.85011,39 40,3.0,691339264.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,busy,SW-R1-10,cake,30,1.80259,1.85319,39 40,3.0,691339264.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,busy,SW-R2-10,cake,30,1.80162,1.85201,39 40,3.0,691339264.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,busy,SW-R3-10,cake,30,1.80226,1.85323,39 40,3.0,691339264.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,busy,SW-R4-10,cake,30,1.83434,1.87565,39 40,2.0,691339264.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,idle,E1s,cake,30,0.95977,0.98155,39 40,24.0,363331584.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,idle,SW-ERR-10,cake,30,1.22716,1.24876,48,0.0,469762048.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,idle,SW-R0-10,cake,30,1.2269,1.24876,46 47 48,1.0,470679552.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,idle,SW-R1-10,cake,30,1.22562,1.24741,47 48,2.0,470679552.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,idle,SW-R2-10,cake,30,1.22637,1.24809,46 47 48,1.5,470679552.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,idle,SW-R3-10,cake,30,1.22556,1.24738,46 47 48,2.0,470679552.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,b48,idle,SW-R4-10,cake,30,1.22942,1.25113,46 47 48,1.0,470679552.0,,,0,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,busy,E1s,cake,30,0.07888,0.12066,2,62.0,938606592.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,busy,SW-ERR-10,cake,30,0.0682,0.1098,2 3,6.0,1735000064.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,busy,SW-R0-10,cake,30,0.06778,0.10952,2 3,6.0,1735000064.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,busy,SW-R1-10,cake,30,0.06777,0.10969,2 3,6.0,1735000064.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,busy,SW-R2-10,cake,30,0.06816,0.10984,2 3,6.0,1735000064.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,busy,SW-R3-10,cake,30,0.06781,0.1097,2 3,6.0,1735000064.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,busy,SW-R4-10,cake,30,0.06778,0.10951,2 3,6.0,1735000064.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,idle,E1s,cake,30,0.04201,0.06356,2,62.0,938606592.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,idle,SW-ERR-10,cake,30,0.05353,0.0752,2 3,6.0,1705639936.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,idle,SW-R0-10,cake,30,0.05354,0.07512,2 3,6.0,1705639936.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,idle,SW-R1-10,cake,30,0.05358,0.07517,2 3,6.0,1705639936.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,idle,SW-R2-10,cake,30,0.05354,0.07518,3,6.0,1705639936.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,idle,SW-R3-10,cake,30,0.05353,0.07514,3,6.0,1705639936.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token
+32768,cpu,idle,SW-R4-10,cake,30,0.05354,0.07525,2 3,6.0,1705639936.0,,,30,0,20261018-193816-m10h-confirm-grid-qwen-int8_token

@@ -1,0 +1,98 @@
+run_id,ts,trace,check,value,threshold,passed,note
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,len(hash_ids)==ceil(input_length/512),1.0,>=0.95,True,m8_trace_oracle.load_trace
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,prefix_chain_bad_pos,0.0,==0,True,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,child_input>=parent_input+(1-0.1)*parent_output,0.939371,>=0.9,True,n_pairs=3975；容差 0 時 0.8926
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,parent_fanout_frac_gt1,0.007121,report,True,max=8
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,median(gap_s/parent_output_tok),0.343875,0.01..10 s/token（timestamp 是毫秒）,True,
+20261017-175040-p3x2-mc-conversation,2026-10-17T17:50:44+08:00,mooncake_conversation,max_requests_per_session,43.0,report,True,一個 session 太大＝共用前綴把不同 session 併在一起（pitfall #2）
+20261017-175041-p3x2-mc-toolagent,2026-10-17T17:50:45+08:00,mooncake_toolagent,len(hash_ids)==ceil(input_length/512),1.0,>=0.95,True,m8_trace_oracle.load_trace
+20261017-175041-p3x2-mc-toolagent,2026-10-17T17:50:45+08:00,mooncake_toolagent,prefix_chain_bad_pos,0.0,==0,True,
+20261017-175041-p3x2-mc-toolagent,2026-10-17T17:50:45+08:00,mooncake_toolagent,child_input>=parent_input+(1-0.1)*parent_output,0.794878,>=0.9,False,n_pairs=16400；容差 0 時 0.7828
+20261017-175041-p3x2-mc-toolagent,2026-10-17T17:50:45+08:00,mooncake_toolagent,parent_fanout_frac_gt1,0.280026,report,True,max=46
+20261017-175041-p3x2-mc-toolagent,2026-10-17T17:50:45+08:00,mooncake_toolagent,median(gap_s/parent_output_tok),0.338707,0.01..10 s/token（timestamp 是毫秒）,True,
+20261017-175041-p3x2-mc-toolagent,2026-10-17T17:50:45+08:00,mooncake_toolagent,max_requests_per_session,9202.0,report,True,一個 session 太大＝共用前綴把不同 session 併在一起（pitfall #2）
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,len(hash_ids)==ceil(input_length/16),1.0,>=0.95,True,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,timestamp_sorted,1.0,==1,True,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,parent_missing_frac,0.0,==0,True,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,child_hash_prefix==parent_hash[:-1],1.0,>=0.95,True,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,child_turn==parent_turn+1,1.0,>=0.99,True,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,child_ts>=parent_ts,1.0,==1,True,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,median(gap_s/parent_output_tok),0.287525,0.01..10 s/token（timestamp 是秒）,True,
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,frac(gap < 1ms*parent_output),0.0,<0.05,True,≥1000 token/s 的解碼＝單位不對
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,child_input>=parent_input+0.9*parent_output,1.0,report,True,thinking 會去掉推理內容，只報告
+20261017-175042-p3x2-bl-traceA,2026-10-17T17:50:48+08:00,bailian_traceA,parent_fanout_frac_gt1,0.0,report,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,len(hash_ids)==ceil(input_length/16),1.0,>=0.95,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,timestamp_sorted,1.0,==1,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,parent_missing_frac,0.0,==0,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,child_hash_prefix==parent_hash[:-1],0.963333,>=0.95,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,child_turn==parent_turn+1,1.0,>=0.99,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,child_ts>=parent_ts,1.0,==1,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,median(gap_s/parent_output_tok),0.036341,0.01..10 s/token（timestamp 是秒）,True,
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,frac(gap < 1ms*parent_output),0.004255,<0.05,True,≥1000 token/s 的解碼＝單位不對
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,child_input>=parent_input+0.9*parent_output,0.780833,report,True,thinking 會去掉推理內容，只報告
+20261017-175045-p3x2-bl-thinking,2026-10-17T17:50:49+08:00,bailian_thinking,parent_fanout_frac_gt1,0.0,report,True,
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,tool execution_time_ms == result_ts - ts (±1 ms),1.0,>=0.95,True,n_tool=11614
+20261017-175047-p3x2-cachewise,2026-10-17T17:50:52+08:00,cachewise,manifest num_sessions,94.0,report,True,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,len(hash_ids)==ceil(input_length/16),1.0,>=0.95,True,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,timestamp_sorted,1.0,==1,True,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,parent_missing_frac,0.0,==0,True,
+20261017-175043-p3x2-bl-traceB,2026-10-17T17:50:53+08:00,bailian_traceB,n_child_requests,0.0,report,True,全部是根請求：沒有 session 結構
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,len(hash_ids)==ceil(input_length/16),1.0,>=0.95,True,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,timestamp_sorted,1.0,==1,True,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,parent_missing_frac,0.0,==0,True,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,child_hash_prefix==parent_hash[:-1],0.995664,>=0.95,True,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,child_turn==parent_turn+1,1.0,>=0.99,True,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,child_ts>=parent_ts,1.0,==1,True,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,median(gap_s/parent_output_tok),0.199257,0.01..10 s/token（timestamp 是秒）,True,
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,frac(gap < 1ms*parent_output),0.0,<0.05,True,≥1000 token/s 的解碼＝單位不對
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,child_input>=parent_input+0.9*parent_output,0.994098,report,True,thinking 會去掉推理內容，只報告
+20261017-175046-p3x2-bl-coder,2026-10-17T17:50:55+08:00,bailian_coder,parent_fanout_frac_gt1,0.0,report,True,
+20261017-175040-p3x2-wccpt,2026-10-17T17:52:05+08:00,wildchat_1m,"chars_per_token(Llama-3.1 tokenizer, random sample)",3.804026,measure,True,"{""n_conv"": 2002, ""chars"": 10515354, ""tokens"": 2764270, ""tokenizer"": ""/ssd8/hungwei/paper-hkv/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5"", ""seed"": 0, ""chars_per_token"": 3.8040256559598014}"
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,top_timestamp==max(assistant timestamp),1.0,>=0.99,True,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,turn==n_user_messages,1.0,>=0.99,True,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,assistant_ts_nondecreasing_in_conv,1.0,>=0.99,True,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,alternating_user_assistant,1.0,report,True,
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,frac(gap_s < next_reply_chars/2000),1e-05,report,True,assistant timestamp 若是回應完成時刻，gap 應 ≥ 下一則回應的生成時間；這個比例大＝timestamp 不是完成時刻
+20261017-175255-p3x2-wc,2026-10-17T17:53:17+08:00,wildchat_1m,frac(gap==0),8e-06,report,True,timestamp 解析度 1 s
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,tool execution_time_ms == result_ts - ts (±1 ms),1.0,>=0.95,True,n_tool=11614
+20261017-175316-p3x2-cachewise2,2026-10-17T17:53:20+08:00,cachewise,manifest num_sessions,94.0,report,True,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,len(hash_ids)==ceil(input_length/512),1.0,>=0.95,True,m8_trace_oracle.load_trace
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,prefix_chain_bad_pos,0.0,==0,True,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,child_input>=parent_input+(1-0.1)*parent_output,0.939371,>=0.9,True,n_pairs=3975；容差 0 時 0.8926
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,parent_fanout_frac_gt1,0.007121,report,True,max=8
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,median(gap_s/parent_output_tok),0.343875,0.01..10 s/token（timestamp 是毫秒）,True,
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,strict_links_cut_frac,0.070189,report,True,事後敏感度：切掉的父子連結比例
+20261017-175914-p3x2-ph-mc-strict,2026-10-17T17:59:19+08:00,mooncake_conversation_strict,max_requests_per_session,43.0,report,True,一個 session 太大＝共用前綴把不同 session 併在一起（pitfall #2）
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,len(hash_ids)==ceil(input_length/512),1.0,>=0.95,True,m8_trace_oracle.load_trace
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,prefix_chain_bad_pos,0.0,==0,True,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,child_input>=parent_input+(1-0.1)*parent_output,0.939371,>=0.9,True,n_pairs=3975；容差 0 時 0.8926
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,parent_fanout_frac_gt1,0.007121,report,True,max=8
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,median(gap_s/parent_output_tok),0.343875,0.01..10 s/token（timestamp 是毫秒）,True,
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,strict_links_cut_frac,0.070189,report,True,事後敏感度：切掉的父子連結比例
+20261017-175941-p3x2-ph-mc-strict2,2026-10-17T17:59:45+08:00,mooncake_conversation_strict,max_requests_per_session,43.0,report,True,一個 session 太大＝共用前綴把不同 session 併在一起（pitfall #2）
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,len(hash_ids)==ceil(input_length/512),1.0,>=0.95,True,m8_trace_oracle.load_trace
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,prefix_chain_bad_pos,0.0,==0,True,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,lit_rule_ambiguous_children,8630.0,report,True,候選父不止一個而不連的子請求數
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,child_input>=parent_input+(1-0.1)*parent_output,0.940066,>=0.9,True,n_pairs=2436；容差 0 時 0.8900
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,parent_fanout_frac_gt1,0.002469,report,True,max=2
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,median(gap_s/parent_output_tok),0.339881,0.01..10 s/token（timestamp 是毫秒）,True,
+20261017-180543-p3x2-mc-lit,2026-10-17T18:05:51+08:00,mooncake_conversation_lit,max_requests_per_session,3.0,report,True,一個 session 太大＝共用前綴把不同 session 併在一起（pitfall #2）
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,requests_overlapping_previous (start < max previous end),17.0,report,True,共 1222199 個請求；閒置開始改用累積最晚結束
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,len(block_ids) check skipped,nan,report,True,只在主分析 run 檢查（讀 8 GB 太久）
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,steps_consecutive_0..n-1_per_session,1.0,>=0.99,True,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,start_ms<=end_ms,1.0,==1,True,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,ttft_ms<=end_ms-start_ms,1.0,>=0.99,True,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,median((end-start-ttft)/completion_tokens) ms/token,3.977011,0.5..500（時間是毫秒）,True,解碼速度；秒會是 ~0.02、微秒會是 ~2e4
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,"tool latency_ms == next.start - end (±max(1s,5%))",1.0,report,True,n=1134643
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,n_subagent_sessions,2034.0,report,True,
+20261017-181644-p3x2-fi2,2026-10-17T18:16:57+08:00,freeinference,n_users,267.0,report,True,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,requests_overlapping_previous (start < max previous end),17.0,report,True,共 1222199 個請求；閒置開始改用累積最晚結束
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,len(block_ids) check skipped,nan,report,True,只在主分析 run 檢查（讀 8 GB 太久）
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,steps_consecutive_0..n-1_per_session,1.0,>=0.99,True,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,start_ms<=end_ms,1.0,==1,True,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,ttft_ms<=end_ms-start_ms,1.0,>=0.99,True,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,median((end-start-ttft)/completion_tokens) ms/token,3.977011,0.5..500（時間是毫秒）,True,解碼速度；秒會是 ~0.02、微秒會是 ~2e4
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,"tool latency_ms == next.start - end (±max(1s,5%))",1.0,report,True,n=1134643
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,n_subagent_sessions,2034.0,report,True,
+20261017-181823-p3x2-fi3,2026-10-17T18:18:35+08:00,freeinference,n_users,267.0,report,True,
+20261017-181642-p3x2-fi-blocks,2026-10-17T18:18:45+08:00,freeinference,len(block_ids)==floor(sum(role_tokens)/16),1.0,>=0.95,True,"n=1222199；逐週 [('2026-05-17_2026-05-23', 1.0), ('2026-05-24_2026-05-30', 1.0), ('2026-05-31_2026-06-06', 1.0), ('2026-06-07_2026-06-13', 1.0), ('2026-06-14_2026-06-20', 1.0), ('2026-06-21_2026-06-27', 1.0), ('2026-06-28_2026-07-04', 1.0), ('2026-07-05_2026-07-11', 1.0), ('2026-07-12_2026-07-18', 1.0), ('2026-07-19_2026-07-25', 1.0), ('2026-07-26_2026-08-01', 1.0), ('2026-08-02_2026-08-08', 1.0), ('2026-08-09_2026-08-15', 1.0), ('2026-08-16_2026-08-22', 1.0), ('2026-08-23_2026-08-29', 1.0), ('2026-08-30_2026-09-05', 1.0)]"

@@ -1,0 +1,48 @@
+{
+ "run_id": "20261018-130635-p3sim-anasyn2",
+ "ts": "2026-10-18T13:06:39+08:00",
+ "mode": "full",
+ "cells_csv": "/ssd8/hungwei/paper-hkv/p3_map/synthetic_e2e_A1/map_cells.csv",
+ "verdict": "ASK",
+ "reason": "沒有任何進判定的真實資料（有效 session <100、不完整或只有合成資料）",
+ "go_cells": [],
+ "used": [],
+ "not_used": {
+  "synth": "合成"
+ },
+ "n_boot": 1000,
+ "seed": 20261018,
+ "guard": 1.05,
+ "traces": {
+  "synth": {
+   "slices": [
+    "synth/small-seed1"
+   ],
+   "eligible": true,
+   "complete": true,
+   "eff_sessions": 250.10782123791915,
+   "source": "synthetic",
+   "synthetic": true
+  }
+ },
+ "synthetic_pseudo_verdict": {
+  "used": [
+   "synth"
+  ],
+  "not_used": {},
+  "go_cells": [],
+  "mode": "full",
+  "verdict": "ASK",
+  "reason": "沒有滿足 GO，也不是全部上界 <5%（最高的 CI 下界 54.8%）"
+ },
+ "boot_q": {
+  "synth|H": {
+   "q": 2.6888191479547174,
+   "cells": 15
+  },
+  "synth|2H": {
+   "q": 2.720399692728854,
+   "cells": 15
+  }
+ }
+}

@@ -1,0 +1,9 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b32,busy,E0,cake,30,1.42369,1.47499,0,0.0,1879048192.0,,,0,0,20261020-143635-m10h-rs2-q5a-qwen-fp8
+32768,b32,busy,E1,cake,30,0.71242,0.76182,0,64.0,939581440.0,,,0,0,20261020-143635-m10h-rs2-q5a-qwen-fp8
+32768,b32,idle,E0,cake,30,1.42383,1.44615,0,0.0,1879048192.0,,,0,0,20261020-143635-m10h-rs2-q5a-qwen-fp8
+32768,b32,idle,E1,cake,30,0.7126,0.73476,0,64.0,939581440.0,,,0,0,20261020-143635-m10h-rs2-q5a-qwen-fp8
+32768,cpu,busy,E0,cake,30,0.23529,0.28154,0,0.0,1879048192.0,,,30,0,20261020-143635-m10h-rs2-q5a-qwen-fp8
+32768,cpu,busy,E1,cake,30,0.11789,0.16374,0,64.0,939581440.0,,,30,0,20261020-143635-m10h-rs2-q5a-qwen-fp8
+32768,cpu,idle,E0,cake,30,0.03911,0.06118,0,0.0,1879048192.0,,,30,0,20261020-143635-m10h-rs2-q5a-qwen-fp8
+32768,cpu,idle,E1,cake,30,0.01864,0.0404,0,64.0,939581440.0,,,30,0,20261020-143635-m10h-rs2-q5a-qwen-fp8

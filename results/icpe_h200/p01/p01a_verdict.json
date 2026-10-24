@@ -1,0 +1,62 @@
+{
+ "run_id": "20261022-234955-icpe-p01a-analyze",
+ "ts": "2026-10-22T23:50:12+08:00",
+ "c4_delta_pct": 0.029694196538174813,
+ "delta_star_pct": 5.0,
+ "n_cpu_frac": 3,
+ "contaminated_rows": 0,
+ "kv_bad": 0,
+ "passed": true,
+ "rule": "P0-1 §3.1：每個 cpu_frac，S5 對 S4+（回來請求 TTFT 中位數，rep 0–5 合併；正＝S5 快）≤ +δ*",
+ "rows": [
+  {
+   "run_id": "20261022-234955-icpe-p01a-analyze",
+   "ts": "2026-10-22T23:50:12+08:00",
+   "cpu_frac": 0.25,
+   "n_reps": 6,
+   "s4plus_median": 0.845896,
+   "s5_median": 0.8452850000000001,
+   "s5_vs_s4plus_pct": 0.0722311016957069,
+   "delta_star_pct": 5.0,
+   "passed": true,
+   "s5_vs_s4plus_mean_pct": 0.7387493544372018,
+   "best_simple": "S4",
+   "s5_vs_best_simple_pct": -16.225844862624758,
+   "old_merged_s5_vs_s4plus_pct": -0.0308998098190268,
+   "src_runs": "20261022-210344-icpe-p01a-b-nfs-gap0"
+  },
+  {
+   "run_id": "20261022-234955-icpe-p01a-analyze",
+   "ts": "2026-10-22T23:50:12+08:00",
+   "cpu_frac": 0.5,
+   "n_reps": 6,
+   "s4plus_median": 0.6912745,
+   "s5_median": 0.6945505000000001,
+   "s5_vs_s4plus_pct": -0.4739072539201224,
+   "delta_star_pct": 5.0,
+   "passed": true,
+   "s5_vs_s4plus_mean_pct": -0.08559456959098863,
+   "best_simple": "S1",
+   "s5_vs_best_simple_pct": -26.02458979211538,
+   "old_merged_s5_vs_s4plus_pct": -0.1165959995705487,
+   "src_runs": "20261022-210344-icpe-p01a-b-nfs-gap0"
+  },
+  {
+   "run_id": "20261022-234955-icpe-p01a-analyze",
+   "ts": "2026-10-22T23:50:12+08:00",
+   "cpu_frac": 1.0,
+   "n_reps": 6,
+   "s4plus_median": 0.480257,
+   "s5_median": 0.480113,
+   "s5_vs_s4plus_pct": 0.0299839460955348,
+   "delta_star_pct": 5.0,
+   "passed": true,
+   "s5_vs_s4plus_mean_pct": 0.03180106604744561,
+   "best_simple": "S2b",
+   "s5_vs_best_simple_pct": -0.0460520283730561,
+   "old_merged_s5_vs_s4plus_pct": 0.0280299475394935,
+   "src_runs": "20261022-210344-icpe-p01a-b-nfs-gap0"
+  }
+ ],
+ "m7_analyze_errors": []
+}

@@ -1,0 +1,9 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,E1s,cake,30,0.29618,0.34825,6 7,57.0,1972371456.0,,,0,0,20261017-093513-m10h-grid-2b-int8_token-llama
+32768,b16,idle,E1s,cake,30,0.24074,0.26685,10 11,53.0,1833959424.0,,,0,0,20261017-093513-m10h-grid-2b-int8_token-llama
+32768,b32,busy,E1s,cake,30,0.7175,0.77211,16 17,48.0,1660944384.0,,,0,0,20261017-093513-m10h-grid-2b-int8_token-llama
+32768,b32,idle,E1s,cake,30,0.55707,0.58336,23,41.0,1418723328.0,,,0,0,20261017-093513-m10h-grid-2b-int8_token-llama
+32768,b48,busy,E1s,cake,30,1.5326,1.58487,31,33.0,1141899264.0,,,0,0,20261017-093513-m10h-grid-2b-int8_token-llama
+32768,b48,idle,E1s,cake,30,1.0974,1.12337,40,24.0,830472192.0,,,0,0,20261017-093513-m10h-grid-2b-int8_token-llama
+32768,cpu,busy,E1s,cake,30,0.14328,0.1952,3,61.0,2110783488.0,,,30,0,20261017-093513-m10h-grid-2b-int8_token-llama
+32768,cpu,idle,E1s,cake,30,0.07539,0.10148,2 3,61.0,2110783488.0,,,30,0,20261017-093513-m10h-grid-2b-int8_token-llama

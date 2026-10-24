@@ -10,7 +10,8 @@ import sys
 
 import pandas as pd
 
-RES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "m7_write_policy_mi300x")
+# 預設＝MI300X 的目錄；平台 C（H200）由 M7_RES（env_h200.sh）設（2026-10-16）
+RES = os.environ.get("M7_RES") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "m7_write_policy_mi300x")
 NWT = ["S0", "S1", "S2b", "S4", "S4+", "S4+P", "S4L"]
 WT = ["S5", "S5s", "S5L", "S5P", "S5c"]
 KEYS = ["cpu_gibps", "release", "workload", "ssd_dev", "f_scale", "wl_seed", "cpu_frac"]

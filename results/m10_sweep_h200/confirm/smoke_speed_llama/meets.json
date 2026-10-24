@@ -1,0 +1,168 @@
+{
+ "model": "llama",
+ "source_run_ids": [
+  "20261018-164901-m10h-confirm-ssmoke-llama"
+ ],
+ "meets": {
+  "SW-R0-25@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R0-90@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R3-20@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R1-25@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R4-20@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R2-25@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R3-90@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-M-90@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R1-90@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-ERR-25@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R1-20@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-ERR-20@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R4-90@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R4-25@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "E0": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R2-20@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R2-90@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  },
+  "SW-R3-25@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "SW-R0-20@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "E1s@int2_kivi": {
+   "cpu": {
+    "idle": 3,
+    "idle_all": [
+     3
+    ]
+   }
+  }
+ }
+}

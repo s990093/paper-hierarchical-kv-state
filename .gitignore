@@ -69,16 +69,36 @@ results/m7_explore_mi300x/r1_sim_longalpaca7b.csv
 # GPU 崩潰時的 core dump（幾十 GB）
 gpucore.*
 
+# 2026-10-16：>1 MB 的 H200 模擬輸出，進 git 的是 .gz（原檔留著給之後的分析讀）
+results/m7_explore_h200/r1_sim_longalpaca7b.csv
+results/m7_write_policy_h200/sim_sweep.csv
+results/m7_write_policy_h200/b_share.csv
+# 2026-10-16：B 重跑（job 20631）與合併組的 b_share 原檔 >1 MB，進 git 的是 .gz
+results/m7_write_policy_h200_rerun/b_share.csv
+results/m7_write_policy_h200_merged/b_share.csv
+
 # ── m10：逐次還原的 restores.csv 超過 1 MB，進 git 的是 .gz ─────────────────
 results/m10_precision_mi300x/speed_*/restores*.csv
+results/m10_precision_h200/speed_*/restores*.csv
 results/m10_sweep_mi300x/confirm/speed_*/restores.csv
 results/m10_sweep_mi300x/confirm/quality_*.csv
 results/m10_drop_mi300x/ds2/quality_*.csv
 results/m10_match_mi300x/*/*/restores.csv
+results/m10_drop_h200/ds2/quality_*.csv
+results/m10_match_h200/*/*/restores.csv
 
 # ── m10 品質逐列 CSV（每個約 2 MB）：只進壓縮檔 .csv.gz；原檔留在磁碟給 analyze 的萬用字元用 ──
 results/m10_precision_mi300x/quality/*.csv
 results/m10_precision_mi300x/quality_sealed/*.csv
+results/m10_precision_h200/quality/*.csv
+results/m10_precision_h200/quality_sealed/*.csv
 
 # paper-writing skill: strategic framing notes (not shared)
 project_context.md
+results/m10_sweep_h200/analysis/agg_*.csv
+results/m10_sweep_h200/confirm/speed_*/restores.csv
+results/m10_sweep_h200/confirm/quality_*.csv
+# ICPE 補量：>1 MB 的逐請求 CSV 只進 .gz（原檔留在原處）
+results/icpe_h200/p02/sim_requests.csv
+results/icpe_h200/p02/gpu_requests.csv
+results/icpe_h200/p01/b/b_share.csv

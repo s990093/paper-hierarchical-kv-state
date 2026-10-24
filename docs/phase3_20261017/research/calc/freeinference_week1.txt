@@ -1,0 +1,11 @@
+2026-10-17T17:49:50+08:00
+cmd: tiara/bin/python -I p3scripts/fi_stats.py papers/fi_data (week 2026-05-17, HF sha 16d3c04d)
+sessions 125 users 8 subagent sessions 19 harness {'kilo': 46, 'opencode': 31, 'hermes': 28, 'cline': 15, 'pi': 5}
+requests 10738 step_trigger {'tool': 9953, 'user': 785}
+waited_for {'tool': 9885, 'user': 660, nan: 125, 'ask_user_tool': 48, 'subagent': 20}
+unit check len(block_ids)==floor(sum(role_tokens)/16): 1.0  (ceil variant: 0.06453715775749674 )
+prompt_tokens(provider) pctl 50/90/99 [ 89242. 139809. 192914.] >=8K 0.9923635686347551 >=32K 0.8821940771093314 >=128K 0.138573291115664
+user-initiated (non-first) n 660 gap s pctl 10/50/90/99 [2.50000e+01 1.75000e+02 3.58650e+03 3.46868e+04] neg 0.0
+tool-triggered n 9953 gap s pctl 10/50/90/99 [  0.5   3.4  30.5 294.7] neg 0.0
+tool latency_ms pctl 50/90/99 [  3526.  27423. 258377.] nan frac 0.0025465402177730946
+turns(user requests) per session pctl 50/90 [ 3. 11.]

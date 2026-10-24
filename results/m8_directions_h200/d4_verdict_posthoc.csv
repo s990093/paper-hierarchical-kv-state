@@ -1,0 +1,16 @@
+run_id,ts,trace,klass,n_cells,median_gap_T,median_gap_W,min_gap_T,max_gap_T,min_gap_W,max_gap_W,src_sim_run,rule
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,conversation,kev_a,6,-0.058981,1.0,-0.118465,0.012366,0.0,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,conversation,kev_b,6,-0.05023,0.044067,-0.110205,0.01072,0.0,0.498567,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,conversation,opt,6,0.000251,0.75545,0.0,0.012366,0.0,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,conversation,wtp_a,6,0.000251,0.75545,0.0,0.012366,0.0,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,conversation,wtp_b,6,-0.048205,0.043031,-0.097382,0.00878,0.0,0.250194,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,synthetic,kev_a,6,-0.013442,0.931857,-0.294519,0.035485,0.618699,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,synthetic,kev_b,6,-0.027846,0.057417,-0.247999,0.019586,-0.042394,0.383116,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,synthetic,opt,6,0.00424,0.655962,0.0,0.051277,0.579712,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,synthetic,wtp_a,6,0.00424,0.601593,0.0,0.035485,0.579712,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,synthetic,wtp_b,6,-0.033728,0.050775,-0.207682,0.012542,-0.257713,0.255692,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,toolagent,kev_a,6,-0.114114,1.0,-0.228296,0.008631,0.0,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,toolagent,kev_b,6,-0.063169,-0.663306,-0.211144,0.007111,-4.114264,0.099465,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,toolagent,opt,6,3.4e-05,0.0,0.0,0.008631,0.0,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,toolagent,wtp_a,6,3.4e-05,0.0,0.0,0.008631,0.0,1.0,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive
+20261016-122750-m7h-d4-gap2b,2026-10-16T12:27:55+08:00,toolagent,wtp_b,6,-0.041772,-1.233783,-0.082134,0.006304,-4.132823,0.096197,20261016-120623-m7h-d4-sim2,posthoc_sim2_KEV_local_G0_total_median6_not_decisive

@@ -26,7 +26,9 @@ from m7_write_policy import RES, SCHED, BState, load_f, load_params, make_worklo
 
 MiB = 1 << 20
 CB = int(os.environ.get("M7_CHUNK_BYTES", 64 * MiB))   # 換模型時和 m7_write_policy 一起設
-D2H_BPS = 44.8 * GiB      # C0（calib_c0.csv）D2H 實測中位數，只用於 capture 的時間
+# C0（calib_c0.csv）D2H_pinned 64 MiB 的中位數，只用於 capture 的時間。MI300X 44.756 → 44.8（預設）。
+# 其他平台用 M7_D2H_GIBPS 設（2026-10-16，平台 C：r_h200_cpu.sh 從 H200 的 calib_c0.csv 用同一個算法算）
+D2H_BPS = float(os.environ.get("M7_D2H_GIBPS", "44.8")) * GiB
 
 
 class _Pool:

@@ -171,6 +171,9 @@ class Busy:
             mask = os.environ.get("M10_BUSY_CU_MASK")
             if mask:
                 env["HSA_CU_MASK"] = mask
+            mps = os.environ.get("M10_BUSY_MPS_PCT")                # H200（13_h200_repro §14）：CUDA MPS 下背景能用的 SM 比例；沒設時不變
+            if mps:
+                env["CUDA_MPS_ACTIVE_THREAD_PERCENTAGE"] = mps
             # 10/22（m16 X3 翻轉格子）：M10_BUSY_SCRIPT 可換成別的背景（例：code/m16_busy_mem.py＝記憶體頻寬型）；沒設＝m7_busy.py（原行為）
             script = os.environ.get("M10_BUSY_SCRIPT") or os.path.join(HERE, "m7_busy.py")
             self.p = subprocess.Popen([sys.executable, script, "--duty", str(self.duty)],
@@ -178,7 +181,8 @@ class Busy:
             line = self.p.stdout.readline()
             if not line.startswith("READY"):
                 raise RuntimeError(f"{os.path.basename(script)} 沒有啟動：{line!r}")
-            self.stats = {"duty": self.duty, "cu_mask": mask or "", "ready": line.strip(), "script": os.path.basename(script)}
+            self.stats = {"duty": self.duty, "cu_mask": mask or "", "ready": line.strip(), "script": os.path.basename(script),
+                          **({"mps_pct": mps} if mps else {})}
             time.sleep(1.0)
         return self
 
@@ -786,8 +790,8 @@ def main():
         p.add_argument("--bw-json", required=True, help="calib-f 的 bw.json")
         p.add_argument("--bw-names", nargs="+", default=["b16", "b32", "b48", "cpu"])
         p.add_argument("--gpu-states", nargs="+", default=["idle", "busy"])
-        p.add_argument("--busy-levels", default=os.path.join(HERE, "..", "results", "m7_write_policy_mi300x",
-                                                             "busy_levels.json"))
+        p.add_argument("--busy-levels", default=os.environ.get("M10_BUSY_LEVELS")      # H200：環境變數（10/19；沒設時不變）
+                       or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x", "busy_levels.json"))
         p.add_argument("--busy-key", default="busy2", help="gpu_state=busy 用 busy_levels 裡哪個 duty（約 2 倍慢）")
         p.add_argument("--fmt", default="fp8_head")
         p.add_argument("--base-fmt", default="fp8_head", help="meets.json 裡不加 @fmt 的格式（第 1 階選定的 FP8 粒度）")

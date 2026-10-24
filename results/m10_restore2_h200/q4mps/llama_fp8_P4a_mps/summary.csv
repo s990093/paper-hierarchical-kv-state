@@ -1,0 +1,9 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E0,cake,30,0.13367,0.26507,1,0.0,4227858432.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps
+32768,cpu,busy,E0,loadall,30,0.11508,0.24418,0,0.0,4294967296.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps
+32768,cpu,busy,E1,cake,30,0.12747,0.25951,1,63.0,2179989504.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps
+32768,cpu,busy,E1,loadall,30,0.06057,0.1899,0,64.0,2214592512.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps
+32768,cpu,idle,E0,cake,30,0.08434,0.11099,4,0.0,4026531840.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps
+32768,cpu,idle,E0,loadall,30,0.08516,0.11233,0,0.0,4294967296.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps
+32768,cpu,idle,E1,cake,30,0.06222,0.08887,2 3,61.0,2110783488.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps
+32768,cpu,idle,E1,loadall,30,0.04641,0.0735,0,64.0,2214592512.0,,,30,0,20261020-232133-m10h-mps-q4-llama-fp8-P4a_mps

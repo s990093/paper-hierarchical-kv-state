@@ -25,8 +25,11 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
-R2 = os.path.join(REPO, "results", "m10_restore2_mi300x")
-SW = os.path.join(REPO, "results", "m10_sweep_mi300x", "dqsweep")
+# H200（10/19；沒設時不變）：M10_RESTORE2_DIR、M10_SWEEP_DIR、M10_PRECISION_DIR
+R2 = os.environ.get("M10_RESTORE2_DIR") or os.path.join(REPO, "results", "m10_restore2_mi300x")
+SWROOT = os.environ.get("M10_SWEEP_DIR") or os.path.join(REPO, "results", "m10_sweep_mi300x")
+SW = os.path.join(SWROOT, "dqsweep")
+PREC = os.environ.get("M10_PRECISION_DIR") or os.path.join(REPO, "results", "m10_precision_mi300x")
 MODELS = ("llama", "qwen")
 TAGS = ("fp8", "int4")
 # 13 §3.1：Q4 的方法＝（S 組代號, 另外的環境變數）；"@p4a" 等由 cumask.json 換成實際遮罩
@@ -37,7 +40,7 @@ MASKED = ("P4a", "P4b")
 
 
 def fmt_of(m, tag):
-    return json.load(open(os.path.join(REPO, "results", "m10_precision_mi300x", "fmt_select", "fmt_choice.json")))["choice"][m][tag]
+    return json.load(open(os.path.join(PREC, "fmt_select", "fmt_choice.json")))["choice"][m][tag]
 
 
 def gm(xs):
@@ -144,7 +147,10 @@ def cmd_smoke_check(a):
         rows = latest_rows(d)
         chk(bool(rows) and all(r["kv_bad"] in ("", "0") for r in rows), f"{name}：KV 逐位元（S2k8＋優先權＋遮罩、GPU 忙）")
         bs = [x for f in glob.glob(os.path.join(d, "busy_*.json")) for x in json.load(open(f))]
-        chk(bool(bs) and all(x.get("n_matmul", 0) > 0 and x.get("cu_mask") for x in bs), f"{name}：背景吞吐有記錄、遮罩有傳 {bs[:1]}")
+        # 遮罩只在 cumask 生效（OK_cumask）時才傳；H200（CUDA 沒有 HSA_CU_MASK）沒生效 → 只檢查背景吞吐（10/19；MI300X 有 OK_cumask，行為不變）
+        need_mask = os.path.exists(os.path.join(S, "OK_cumask"))
+        chk(bool(bs) and all(x.get("n_matmul", 0) > 0 and (x.get("cu_mask") or not need_mask) for x in bs),
+            f"{name}：背景吞吐有記錄{'、遮罩有傳' if need_mask else '（遮罩沒生效，不傳）'} {bs[:1]}")
     rows = latest_rows(os.path.join(S, "dqx"))
     chk(bool(rows) and all(r["kv_bad"] in ("", "0") for r in rows), "dqx：新格式融合 kernel 的還原 KV 逐位元（int2_kivi）")
     if not fails:
@@ -361,15 +367,18 @@ def report_q4(md, out):
     pk = os.path.join(R2, "q4_pick.json")
     if os.path.exists(pk):
         md += [f"帶到長 context 的方法（13 §3.2）：**{json.load(open(pk))['pick']}**", ""]
+    lvf = os.path.join(R2, "busy_levels_q4.json")          # 欄位照這份（H200 沒有 busy3；13_h200_repro §12）
+    lv = json.load(open(lvf)) if os.path.exists(lvf) else {"busy1": 0.4, "busy2": 0.7, "busy3": 0.9}
+    bks = sorted(k for k in lv if k.startswith("busy"))
     md += ["#### 背景強度掃描（13 §3.3；int4_kivi；CPU 層；E1 中位數 s，cake／loadall）", "",
-           "| 模型 | 方法 | busy1（0.4） | busy2（0.7） | busy3（0.9） |", "|:--|:--|:--|:--|:--|"]
+           "| 模型 | 方法 | " + " | ".join(f"{b}（{lv[b]}）" for b in bks) + " |", "|:--|:--|" + ":--|" * len(bks)]
     for d in sorted(glob.glob(os.path.join(R2, "q4duty", "*"))):
         rows = latest_rows(d)
         if not rows:
             continue
         name = os.path.basename(d)
         cells = [f"{_f(med(rows, mode='cake', gpu_state=b, config='E1'))}／{_f(med(rows, mode='loadall', gpu_state=b, config='E1'))}"
-                 for b in ("busy1", "busy2", "busy3")]
+                 for b in bks]
         md.append(f"| {name.split('_')[0]} | {name.split('_')[-1]} | " + " | ".join(cells) + f" |{'' if usable(d, rows) else ' **不可用**'}")
     md.append("")
 
@@ -411,7 +420,7 @@ def report_q2(md, out):
 
 def report_q3(md, out):
     md += ["## Q3：新格式的融合 kernel（13 §5）", "",
-           "真實 CPU 層，32K；中位數（s）。原寫法＝43 的速度格子（`results/m10_sweep_mi300x/confirm/speed_<m>/summary_<格式>.csv`）。", "",
+           f"真實 CPU 層，32K；中位數（s）。原寫法＝43 的速度格子（`{os.path.relpath(SWROOT, REPO)}/confirm/speed_<m>/summary_<格式>.csv`）。", "",
            "| 模型 | 格式 | 配置 | 閒：原寫法 → 融合 | 忙：原寫法 → 融合 | 可用 |", "|:--|:--|:--|:--|:--|:--|"]
     for d in sorted(glob.glob(os.path.join(R2, "q3", "speed_*"))):
         m, f = os.path.basename(d)[len("speed_"):].split("_", 1)
@@ -420,7 +429,7 @@ def report_q3(md, out):
             continue
         new = {(r["gpu_state"], r["config"]): float(r["median_t_restore"]) for r in csv.DictReader(open(sp[0]))
                if r["bw_name"] == "cpu" and r["mode"] == "cake" and r["length"] == "32768"}
-        op = os.path.join(REPO, "results", "m10_sweep_mi300x", "confirm", f"speed_{m}", f"summary_{f}.csv")
+        op = os.path.join(SWROOT, "confirm", f"speed_{m}", f"summary_{f}.csv")
         old = {(r["gpu_state"], r["config"]): float(r["median_t_restore"]) for r in csv.DictReader(open(op))
                if r["bw_name"] == "cpu" and r["mode"] == "cake" and r["length"] == "32768"} if os.path.exists(op) else {}
         guards = [json.load(open(g)) for g in glob.glob(os.path.join(d, "gpu_guard_*.json"))]
@@ -486,7 +495,7 @@ def report_q5(md, out):
                     dlt = v[mode] - v["bf16"]
                     be = "一直划算" if dlt <= 0 else f"{save / dlt:.0f}"
                     md.append(f"| {m} | {tag} | {'閒' if st == 'idle' else '忙'} | {1e3 * save:.1f} | {1e3 * dlt:.3f} | {be} |")
-    md += ["", "### (d) vLLM 0.28 ROCm：BF16 KV vs FP8 KV（attention 裡拆）", "",
+    md += ["", f"### (d) vLLM 0.28 {'CUDA' if 'h200' in os.path.basename(R2) else 'ROCm'}：BF16 KV vs FP8 KV（attention 裡拆）", "",
            "| 模型 | KV | context | prefill＋1（s） | 每個 token 的 decode（ms） |", "|:--|:--|:--|--:|--:|"]
     mp = os.path.join(R2, "q5", "vllm_kvdecode", "vllm_kvdecode_meta.json")
     if os.path.exists(mp):

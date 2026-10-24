@@ -1,0 +1,19 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E0,cake,30,0.12119,0.17359,0 3 4,0.0,4093640704.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,E0,claim,30,0.12005,0.17215,3,0.0,4093640704.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,E0,loadall,30,0.24028,0.29592,0,0.0,4294967296.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,E1,cake,30,0.23625,0.29224,0 2,64.0,1342177280.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,E1,claim,30,0.07597,0.12828,2,62.0,1300234240.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,E1,loadall,30,0.23634,0.29249,0,64.0,1342177280.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,R25,cake,30,0.2368,0.29343,0 3,16.0,3556769792.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,R25,claim,30,0.11911,0.17162,3,16.0,3355443200.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,busy,R25,loadall,30,0.23851,0.29542,0,16.0,3556769792.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,E0,cake,30,0.08511,0.11189,0 3 4 5,0.0,4026531840.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,E0,claim,30,0.08385,0.11018,4 5,0.0,4026531840.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,E0,loadall,30,0.08505,0.11191,0,0.0,4294967296.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,E1,cake,30,0.03159,0.05819,0,64.0,1342177280.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,E1,claim,30,0.04596,0.07228,2,62.0,1300234240.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,E1,loadall,30,0.03144,0.05806,0,64.0,1342177280.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,R25,cake,30,0.07213,0.09896,0 4,16.0,3556769792.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,R25,claim,30,0.08227,0.10851,3 4,16.0,3288334336.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b
+32768,cpu,idle,R25,loadall,30,0.07189,0.09872,0,16.0,3556769792.0,,,30,0,20261020-134643-m10h-rs2-q2-llama-int4-cpu_g5b

@@ -1,0 +1,104 @@
+{
+ "model": "llama",
+ "fmt": "int2_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0",
+  "SW-ERR-25",
+  "SW-ERR-20",
+  "SW-M-90",
+  "SW-R0-20",
+  "SW-R1-20",
+  "SW-R2-20",
+  "SW-R3-20",
+  "SW-R4-20",
+  "E1s",
+  "SW-R0-25",
+  "SW-R1-25",
+  "SW-R2-25",
+  "SW-R3-25",
+  "SW-R4-25",
+  "SW-R0-90",
+  "SW-R1-90",
+  "SW-R2-90",
+  "SW-R3-90",
+  "SW-R4-90"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "b16",
+   "kind": "throttle",
+   "GiBps": 8.8331
+  },
+  {
+   "name": "b32",
+   "kind": "throttle",
+   "GiBps": 2.49
+  },
+  {
+   "name": "b48",
+   "kind": "throttle",
+   "GiBps": 0.7222
+  },
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 1.0
+  }
+ ],
+ "reps": 10,
+ "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_sweep_h200/confirm/speed_llama",
+ "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261018-164945-m10h-confirm-grid-llama-int2_kivi/blocks.csv",
+ "verify": true,
+ "need_att": false,
+ "argv": [
+  "/raid/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/code/m10_confirm.py",
+  "speed",
+  "--model",
+  "llama",
+  "--fmt",
+  "int2_kivi",
+  "--configs",
+  "E0",
+  "SW-ERR-25",
+  "SW-ERR-20",
+  "SW-M-90",
+  "SW-R0-20",
+  "SW-R1-20",
+  "SW-R2-20",
+  "SW-R3-20",
+  "SW-R4-20",
+  "E1s",
+  "SW-R0-25",
+  "SW-R1-25",
+  "SW-R2-25",
+  "SW-R3-25",
+  "SW-R4-25",
+  "SW-R0-90",
+  "SW-R1-90",
+  "SW-R2-90",
+  "SW-R3-90",
+  "SW-R4-90",
+  "--out-dir",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_sweep_h200/confirm/speed_llama",
+  "--bw-json",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_llama/bw.json",
+  "--blocks-out",
+  "/work/ChihChungHsu/hungweilai/tiara-runs/20261018-164945-m10h-confirm-grid-llama-int2_kivi/blocks.csv"
+ ],
+ "run_id": "20261018-164945-m10h-confirm-grid-llama-int2_kivi"
+}

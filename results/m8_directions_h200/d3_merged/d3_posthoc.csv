@@ -1,0 +1,56 @@
+run_id,ts,rule,dataset,n,hits,hit_rate,baseline_majority,baseline_hits,baseline_rate,note,balanced_acc
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → matters,GPU P1,17,12,0.7058823529411765,True,11.0,0.6470588235294118,th=0.6437(fit P1),0.7727272727272727
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → matters,GPU P1,17,12,0.7058823529411765,True,11.0,0.6470588235294118,,0.5833333333333334
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → matters,GPU A08,6,5,0.8333333333333334,True,6.0,1.0,th=0.6437(fit P1),0.4166666666666667
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → matters,GPU A08,6,6,1.0,True,6.0,1.0,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → matters,GPU R1,5,0,0.0,True,5.0,1.0,th=0.6437(fit P1),0.0
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → matters,GPU R1,5,5,1.0,True,5.0,1.0,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → matters,SIM08,390,140,0.358974358974359,True,356.0,0.9128205128205128,th=0.6437(fit P1),0.6222736285525446
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → matters,SIM08,390,356,0.9128205128205128,True,356.0,0.9128205128205128,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → matters,SIMR1 llama,320,175,0.546875,True,231.0,0.721875,th=0.6437(fit P1),0.6792402354200107
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → matters,SIMR1 llama,320,231,0.721875,True,231.0,0.721875,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → matters,SIMR1 longalpaca,320,122,0.38125,True,254.0,0.79375,th=0.6437(fit P1),0.5990217131949416
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → matters,SIMR1 longalpaca,320,254,0.79375,True,254.0,0.79375,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → beats_S1,GPU P1,17,12,0.7058823529411765,False,16.0,0.9411764705882353,th=0.6437(fit P1),0.84375
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → beats_S1,GPU P1,17,2,0.11764705882352941,False,16.0,0.9411764705882353,,0.53125
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → beats_S1,GPU A08,6,4,0.6666666666666666,True,3.0,0.5,th=0.6437(fit P1),0.6666666666666666
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → beats_S1,GPU A08,6,3,0.5,True,3.0,0.5,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → beats_S1,GPU R1,5,4,0.8,False,4.0,0.8,th=0.6437(fit P1),0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → beats_S1,GPU R1,5,1,0.2,False,4.0,0.8,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → beats_S1,SIM08,390,258,0.6615384615384615,True,208.0,0.5333333333333333,th=0.6437(fit P1),0.6768543956043956
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → beats_S1,SIM08,390,208,0.5333333333333333,True,208.0,0.5333333333333333,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → beats_S1,SIMR1 llama,320,243,0.759375,False,227.0,0.709375,th=0.6437(fit P1),0.7034484392023116
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → beats_S1,SIMR1 llama,320,93,0.290625,False,227.0,0.709375,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH |D|>=th → beats_S1,SIMR1 longalpaca,320,192,0.6,False,176.0,0.55,th=0.6437(fit P1),0.5694444444444444
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH ref cpu_frac<1 → beats_S1,SIMR1 longalpaca,320,144,0.45,False,176.0,0.55,,0.5
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip matters,A08,2,2,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip matters,P1,2,1,0.5,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip matters,R1,1,1,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip matters,SIM08,3,2,0.6666666666666666,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip matters,SIMR1_llama31_8b,64,39,0.609375,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip matters,SIMR1_longalpaca7b,64,35,0.546875,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip beats_S1,A08,2,1,0.5,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip beats_S1,P1,2,2,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip beats_S1,R1,1,0,0.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip beats_S1,SIM08,3,2,0.6666666666666666,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip beats_S1,SIMR1_llama31_8b,64,30,0.46875,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip beats_S1,SIMR1_longalpaca7b,64,15,0.234375,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R3_meas,A08,2,1,0.5,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R3_meas,P1,2,2,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R3_meas,R1,1,0,0.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R3_meas,SIM08,3,2,0.6666666666666666,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R3_meas,SIMR1_llama31_8b,64,35,0.546875,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R3_meas,SIMR1_longalpaca7b,64,28,0.4375,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip best_NWT,A08,2,0,0.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip best_NWT,P1,2,0,0.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip best_NWT,R1,1,0,0.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip best_NWT,SIM08,3,2,0.6666666666666666,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip best_NWT,SIMR1_llama31_8b,64,18,0.28125,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip best_NWT,SIMR1_longalpaca7b,64,10,0.15625,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R2_meas,A08,2,2,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R2_meas,P1,2,2,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R2_meas,R1,1,1,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R2_meas,SIM08,3,3,1.0,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R2_meas,SIMR1_llama31_8b,64,57,0.890625,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH seed-flip R2_meas,SIMR1_longalpaca7b,64,53,0.828125,,,,hits＝同一組物理條件、所有 seed 標籤相同的組數；1−hit_rate＝物理常數單獨無法決定的比例,
+20261016-220626-m7h-d3m-kappa-map,2026-10-16T14:06:27+00:00,PH R1 label=TTFT,A0(all 28),28,26,0.9285714285714286,useful,25.0,0.8928571428571429,cells where TTFT says not useful: 4096/7Gbps;4096/nfs;8192/nfs,

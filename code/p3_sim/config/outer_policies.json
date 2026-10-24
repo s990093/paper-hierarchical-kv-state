@@ -1,0 +1,45 @@
+{
+ "doc": "外層做法 E1–E6（04_prereg_map.md §2）。參數照 X6（docs/phase3_20261017/explore/X6_real_systems.md §4.1，permalink 代號 [V*]/[L*]/[S*]/[M*]/[D*]/[A*] 見 X6 附錄）。'used' 是模擬器真的讀的欄位；'x6' 是查到的系統預設，'not_modeled' 是有查到但模擬器沒做的機制（寫在 06_simulator.md §2）。",
+ "E1": {
+  "name": "CPU only, LRU evict -> drop (miss = recompute)",
+  "represents": "vLLM 0.28 OffloadingConnector, single CPU tier",
+  "used": {"tiers": ["cpu"], "cpu_order": "lru", "on_cpu_evict": "drop", "write_through": false, "ssd_write_min_uses": null, "idle_demote_s": null, "queue_prefetch": false},
+  "x6": {"eviction_policy": "lru (default; arc optional) [V1][V3]", "evict_when": "only when space is needed, ref_cnt==0 [V4]", "store_threshold": "single tier only, default store all [V3][V8]", "lookup": "longest prefix from block 0 [V9]"},
+  "not_modeled": ["touch order is reversed in vLLM (tail blocks of a request are evicted first) [V2]; the session engine evicts whole sessions (X1 semantics)", "ARC option"]
+ },
+ "E2": {
+  "name": "CPU + SSD, CPU full -> demote LRU session to SSD (case b)",
+  "represents": "LMCache (per 04 §2); in X6 the closest default is Mooncake offload_on_evict, LMCache in-process default is write-through (H0) -> see E3",
+  "used": {"tiers": ["cpu", "ssd"], "cpu_order": "lru", "on_cpu_evict": "demote", "write_through": false, "ssd_write_min_uses": null, "idle_demote_s": null, "queue_prefetch": false, "ssd_capacity": "unlimited"},
+  "x6": {"cache_policy": "LRU default (LFU/FIFO/MRU) [L1][L2]", "disk": "LRU (H0)", "mooncake_offload_on_evict": "default off [M2]"},
+  "not_modeled": ["SSD tier capacity / SSD eviction (unlimited, as X1)", "watermark eviction (Mooncake 90%/5%, LMCache MP 0.8/0.2) [M1][L6]: evict-as-needed instead"]
+ },
+ "E3": {
+  "name": "write-through: every block written to CPU is also written to SSD",
+  "represents": "SGLang HiCache write_through (default) [S1]; also vLLM 0.28 tiering 'Always offload to all tiers' [V6] and LMCache in-process store (H0)",
+  "used": {"tiers": ["cpu", "ssd"], "cpu_order": "lru", "on_cpu_evict": "demote", "write_through": true, "ssd_write_min_uses": null, "idle_demote_s": null, "queue_prefetch": false, "ssd_capacity": "unlimited"},
+  "x6": {"write_policy": "write_through (default) / write_through_selective / write_back [S1]"},
+  "not_modeled": ["L2->L3 backup happens after L1->L2 completes (H0); here the SSD write is issued at round end together with the CPU write"]
+ },
+ "E4": {
+  "name": "write to SSD only after a block has been used the 2nd time",
+  "represents": "SGLang write_through_selective (hit 2 times) [S1]; Dynamo KVBM presence_lfu (min_lfu_count=8) [D1]; AIBrix HOT (first hit in L1) [A1]",
+  "used": {"tiers": ["cpu", "ssd"], "cpu_order": "lru", "on_cpu_evict": "demote_if_on_ssd_else_drop", "write_through": false, "ssd_write_min_uses": 2, "idle_demote_s": null, "queue_prefetch": false, "ssd_capacity": "unlimited"},
+  "x6": {"sglang_selective_hits": 2, "dynamo_min_lfu_count": 8, "aibrix_l2_policy": "HOT (default)"},
+  "not_modeled": ["Dynamo's threshold 8 (only 2 is run, per 04 §2)"]
+ },
+ "E5": {
+  "name": "E2 + demote to SSD when idle > T (case a)",
+  "represents": "Mooncake soft pin (default 30 min, reads do not extend it) [M1]",
+  "used": {"tiers": ["cpu", "ssd"], "cpu_order": "lru", "on_cpu_evict": "demote", "write_through": false, "ssd_write_min_uses": null, "idle_demote_s": [300, 1800, 3600], "idle_clock": "session's last request arrival (trace time)", "queue_prefetch": false, "ssd_capacity": "unlimited"},
+  "x6": {"default_kv_soft_pin_ttl": "30 min [M1]", "max_kv_soft_pin_ttl": "24 h", "default_kv_lease_ttl": "10 s", "soft_pin_reads_extend": false},
+  "not_modeled": ["Mooncake semantics are 'soft-pinned objects are evicted last'; 04 §2 defines E5 as 'idle > T -> move to SSD', which is what is simulated (plus E2's capacity LRU when CPU is full before T)"]
+ },
+ "E6": {
+  "name": "E2 + start reading SSD blocks as soon as a request enters the queue",
+  "represents": "SGLang HiCache L3->host prefetch on entering the waiting queue [S5]; LMCache async lookup prefetch [L1][L9]",
+  "used": {"tiers": ["cpu", "ssd"], "cpu_order": "lru", "on_cpu_evict": "demote", "write_through": false, "ssd_write_min_uses": null, "idle_demote_s": null, "queue_prefetch": true, "serve": "fifo1 (one GPU, FIFO; X4) — in serve=trace there is no queue and E6 == E2", "ssd_capacity": "unlimited"},
+  "x6": {"prefetch_trigger": "request enters waiting queue [S5]", "stop_policy": "best_effort / wait_complete / timeout [S6]", "timeout_code_default": "1 s + 0.25 s per 1K tokens, threshold 256 tokens [S6]", "timeout_doc": "2 s + 0.1 s per 1K tokens, cap 30 s [S9] (doc and code disagree; X6 used code)"},
+  "not_modeled": ["prefetch timeout: the request does not proceed before its prefetch completes; Cake restore waits on in-flight blocks (X4 QP semantics, 'wait_complete'-like)"]
+ }
+}

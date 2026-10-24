@@ -1,0 +1,77 @@
+{
+ "model": "qwen",
+ "fmt": "fp8_head",
+ "new_tokens": 256,
+ "lengths": [
+  129024
+ ],
+ "main_length": 129024,
+ "configs": [
+  "E0",
+  "E1"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 1.0
+  }
+ ],
+ "reps": 5,
+ "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_restore2_h200/q1/qwen_129024_fp8_nodq",
+ "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261020-160620-m10h-rs2-q1-qwen-129024-fp8-nodq/blocks.csv",
+ "verify": true,
+ "extra_modes": [],
+ "extra_tiers": [],
+ "argv": [
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/code/m10_speed.py",
+  "grid",
+  "--model",
+  "qwen",
+  "--fmt",
+  "fp8_head",
+  "--base-fmt",
+  "fp8_head",
+  "--out-dir",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_restore2_h200/q1/qwen_129024_fp8_nodq",
+  "--bw-json",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_qwen/bw.json",
+  "--bw-names",
+  "cpu",
+  "--configs",
+  "E0",
+  "E1",
+  "--refs",
+  "--lengths",
+  "--main-length",
+  "129024",
+  "--launches",
+  "2",
+  "--reps",
+  "5",
+  "--launch0",
+  "300",
+  "--blocks-out",
+  "/work/ChihChungHsu/hungweilai/tiara-runs/20261020-160620-m10h-rs2-q1-qwen-129024-fp8-nodq/blocks.csv"
+ ],
+ "run_id": "20261020-160620-m10h-rs2-q1-qwen-129024-fp8-nodq",
+ "restore_variant": {
+  "kernel": "k3:16:2",
+  "sched": "nodq",
+  "group": 1,
+  "prio": false,
+  "unit": 512,
+  "meet": "none",
+  "io_prio": false
+ }
+}

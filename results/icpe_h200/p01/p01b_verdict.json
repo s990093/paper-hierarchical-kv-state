@@ -1,0 +1,40 @@
+{
+ "run_id": "20261022-235134-icpe-p01b-analyze-excl",
+ "ts": "2026-10-22T23:51:37+08:00",
+ "excluded_runs": [
+  "20261022-233934-icpe-p01b-qwen-s4-fa3",
+  "20261022-234206-icpe-p01b-qwen-g5b-fa3"
+ ],
+ "n_cells": 24,
+ "n_flips": 0,
+ "flips": [],
+ "weak_changes": [
+  {
+   "run_id": "20261022-235134-icpe-p01b-analyze-excl",
+   "ts": "2026-10-22T23:51:37+08:00",
+   "model": "llama",
+   "tier": "cpu",
+   "gpu": "idle",
+   "config": "E0",
+   "attn_new": "fa3",
+   "sdpa_cake": 0.084355,
+   "sdpa_loadall": 0.08519650000000001,
+   "sdpa_winner": "tie",
+   "new_cake": 0.1001635,
+   "new_loadall": 0.08494650000000001,
+   "new_winner": "loadall",
+   "n_per_mode": 10,
+   "flip": false,
+   "weak_change": true
+  }
+ ],
+ "passed": false,
+ "g5b_mean_over_best_by_arm": {
+  "fa3": 1.3338743309602936,
+  "sdpa": 1.2109331036050517
+ },
+ "problems": [
+  "有格子每種方式不到 10 次（排除重疊的 run 後還沒重跑）：[{'model': 'qwen', 'tier': 'cpu', 'gpu': 'idle', 'config': 'E0', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'cpu', 'gpu': 'idle', 'config': 'E1', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'cpu', 'gpu': 'busy', 'config': 'E0', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'cpu', 'gpu': 'busy', 'config': 'E1', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'b32', 'gpu': 'idle', 'config': 'E0', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'b32', 'gpu': 'idle', 'config': 'E1', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'b32', 'gpu': 'busy', 'config': 'E0', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'b32', 'gpu': 'busy', 'config': 'E1', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'nfs', 'gpu': 'idle', 'config': 'E0', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'nfs', 'gpu': 'idle', 'config': 'E1', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'nfs', 'gpu': 'busy', 'config': 'E0', 'n_per_mode': 5}, {'model': 'qwen', 'tier': 'nfs', 'gpu': 'busy', 'config': 'E1', 'n_per_mode': 5}]"
+ ],
+ "rule": "P0-1 §3.2＋§8 偏離 1：S4 下每格 {Cake, 全部載入} 中位數較小者（差 ≤5% 平手）；兩邊都不是平手且不同＝翻轉；24 格 0 翻轉＝成立"
+}

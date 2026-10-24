@@ -1,0 +1,32 @@
+{
+ "model": "llama",
+ "source_run_ids": [
+  "20261020-122431-m10h-rs2-smoke-dqx"
+ ],
+ "meets": {
+  "SW-R0-20@int2_kivi": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "E0": {
+   "cpu": {
+    "idle": 4,
+    "idle_all": [
+     4
+    ]
+   }
+  },
+  "E1s@int2_kivi": {
+   "cpu": {
+    "idle": 1,
+    "idle_all": [
+     1
+    ]
+   }
+  }
+ }
+}

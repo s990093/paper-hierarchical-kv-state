@@ -1,0 +1,9 @@
+run_id,ts,trace,check,value,expect,ok,note
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,sessions,94,>=1000,BELOW,只報告（README §1）
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,tool_calls_with_result,11614,,,
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,tool_exec_ms_vs_result_minus_issue_mismatch_gt1ms,0,==0,OK,規則 6：execution_time_ms 用 result_timestamp − timestamp 驗算
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,tool_return_events,10576,,,
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,tool_lead_s_pctl,p1=0 p5=0 p10=0 p25=0.044 p50=0.082 p75=1.406 p90=14.61 p95=42.4 p99=287.5,,,
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,tool_return_ctx_tokens_pctl,p1=1.768e+04 p5=2.623e+04 p10=3.375e+04 p25=5.152e+04 p50=8.005e+04 p75=1.163e+05 p90=1.416e+05 p95=1.531e+05 p99=1.793e+05,,,
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,human_prompt_events,2587,,,
+20261021-011445-p3h-x3-leads-cachewise,2026-10-20T17:14:49+00:00,cachewise,human_think_s_pctl,p1=-4662 p5=-416.4 p10=0 p25=2.615 p50=17.14 p75=51.7 p90=122.4 p95=209.2 p99=2123,,,使用者 prompt 時間 − 前一個 assistant 訊息時間（含讀、想、打字；assistant 訊息時間戳是否＝回應結束未驗證）

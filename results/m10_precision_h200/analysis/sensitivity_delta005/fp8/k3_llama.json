@@ -1,0 +1,16 @@
+{
+ "model": "llama",
+ "per_config": {
+  "E1s@fp8k0_token": {
+   "eps_all_conds": true,
+   "speed_not_worse": false,
+   "pass": false
+  },
+  "E1s@int8_token": {
+   "eps_all_conds": true,
+   "speed_not_worse": false,
+   "pass": false
+  }
+ },
+ "K3": false
+}

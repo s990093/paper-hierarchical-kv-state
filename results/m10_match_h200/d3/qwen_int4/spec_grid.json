@@ -1,0 +1,125 @@
+{
+ "model": "qwen",
+ "fmt": "int4_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E0",
+  "E1s",
+  "E0-DF25",
+  "E0-DF50",
+  "E0-DB25",
+  "E0-DB50",
+  "E0-DR25",
+  "E0-DR50",
+  "E1s-DF25",
+  "E1s-DF50",
+  "E1s-DB25",
+  "E1s-DB50",
+  "E1s-DR25",
+  "E1s-DR50"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  },
+  {
+   "name": "b16",
+   "kind": "throttle",
+   "GiBps": 4.33
+  },
+  {
+   "name": "b32",
+   "kind": "throttle",
+   "GiBps": 1.2297
+  },
+  {
+   "name": "b48",
+   "kind": "throttle",
+   "GiBps": 0.3582
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 1.0
+  }
+ ],
+ "reps": 5,
+ "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_match_h200/d3/qwen_int4",
+ "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261020-201722-m10h-md-d3-qwen/blocks.csv",
+ "verify": true,
+ "extra_modes": [
+  "loadall"
+ ],
+ "extra_tiers": [
+  "cpu"
+ ],
+ "argv": [
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/code/m10_speed.py",
+  "grid",
+  "--model",
+  "qwen",
+  "--fmt",
+  "int4_kivi",
+  "--base-fmt",
+  "fp8_head",
+  "--out-dir",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_match_h200/d3/qwen_int4",
+  "--bw-json",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_match_h200/bw_qwen.json",
+  "--bw-names",
+  "cpu",
+  "b16",
+  "b32",
+  "b48",
+  "--configs",
+  "E0",
+  "E1s",
+  "E0-DF25",
+  "E0-DF50",
+  "E0-DB25",
+  "E0-DB50",
+  "E0-DR25",
+  "E0-DR50",
+  "E1s-DF25",
+  "E1s-DF50",
+  "E1s-DB25",
+  "E1s-DB50",
+  "E1s-DR25",
+  "E1s-DR50",
+  "--refs",
+  "--lengths",
+  "--extra-modes",
+  "loadall",
+  "--extra-tiers",
+  "cpu",
+  "--launches",
+  "2",
+  "--reps",
+  "5",
+  "--launch0",
+  "800",
+  "--blocks-out",
+  "/work/ChihChungHsu/hungweilai/tiara-runs/20261020-201722-m10h-md-d3-qwen/blocks.csv"
+ ],
+ "run_id": "20261020-201722-m10h-md-d3-qwen",
+ "restore_variant": {
+  "kernel": "k1",
+  "sched": "serial",
+  "group": 1,
+  "prio": false,
+  "unit": 512,
+  "meet": "claim",
+  "io_prio": false
+ }
+}

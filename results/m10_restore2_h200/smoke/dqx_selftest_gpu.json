@@ -1,0 +1,283 @@
+{
+ "device": "cuda",
+ "interp": false,
+ "all_pass": true,
+ "checks": [
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "mxfp4",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "kv-int8_token-int4_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "fp8e5_head",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "fp8e5_token",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "kv-fp8_token-int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "kv-int4_token-mxfp4",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "kv-bf16-int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    32,
+    2,
+    8,
+    512,
+    128
+   ],
+   "fmt": "kv-fp8_head-int8_token",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "mxfp4",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "kv-int4_kivi-int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "kv-int8_token-int4_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "fp8e5_head",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "fp8e5_token",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "kv-fp8_token-int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "kv-int4_token-mxfp4",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "kv-bf16-int2_kivi",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "shape": [
+    28,
+    2,
+    4,
+    512,
+    128
+   ],
+   "fmt": "kv-fp8_head-int8_token",
+   "supported": true,
+   "equal": true,
+   "n_diff": 0
+  },
+  {
+   "fmt": "nvfp4",
+   "supported": false
+  },
+  {
+   "fmt": "int2h_g32",
+   "supported": false
+  },
+  {
+   "fmt": "int4h_token",
+   "supported": false
+  },
+  {
+   "fmt": "kv-nvfp4-int4_kivi",
+   "supported": false
+  }
+ ]
+}

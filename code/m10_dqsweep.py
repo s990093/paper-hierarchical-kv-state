@@ -29,7 +29,7 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(HERE)
-SW_DEFAULT = os.path.join(REPO, "results", "m10_sweep_mi300x", "dqsweep")
+SW_DEFAULT = os.path.join(os.environ.get("M10_SWEEP_DIR") or os.path.join(REPO, "results", "m10_sweep_mi300x"), "dqsweep")   # （H200：環境變數，沒設時不變；2026-10-17）
 
 METHODS = {
     "S0": {},
@@ -91,7 +91,8 @@ def cmd_kernels(a):
     x = (torch.randn(SHAPES[a.model], device="cuda") * 2).to(torch.bfloat16)
     x[:, 0, :, :, 5] += 40                                   # K 的離群通道
     variants = ["k0", "k1", "k2", "k4"] + K3_GRID
-    duty = json.load(open(os.path.join(REPO, "results", "m7_write_policy_mi300x", "busy_levels.json")))["busy2"]
+    duty = json.load(open(os.environ.get("M10_BUSY_LEVELS")
+                          or os.path.join(REPO, "results", "m7_write_policy_mi300x", "busy_levels.json")))["busy2"]   # （H200：環境變數，沒設時不變；2026-10-17）
     watch, level = _watcher(os.path.join(a.out_dir, f"gpu_guard_{rid}_kernels_{a.model}.json"))
     busy_pid = set()
     encs, wants, fns, bit = {}, {}, {}, {}
@@ -313,6 +314,11 @@ REF_SUMMARY = {
     ("qwen", "fp8"): ("m10_precision_mi300x/speed_qwen_regrid/summary_fp8.csv", "m10_sweep_mi300x/speed_dqfast_qwen/summary.csv"),
     ("qwen", "int4"): ("m10_precision_mi300x/speed_qwen/summary_int4.csv", "m10_sweep_mi300x/speed_dqfast_int4_qwen/summary.csv"),
 }
+if os.environ.get("M10_PRECISION_DIR") and os.environ.get("M10_SWEEP_DIR"):   # H200（10/19；沒設時不變）：主線、42 用 H200 自己的格子（沒有 Qwen regrid）
+    _P, _S = os.environ["M10_PRECISION_DIR"], os.environ["M10_SWEEP_DIR"]
+    REF_SUMMARY = {(m, t): (os.path.join(_P, f"speed_{m}", f"summary_{t}.csv"),
+                            os.path.join(_S, f"speed_dqfast{'_int4' if t == 'int4' else ''}_{m}", "summary.csv"))
+                   for m in ("llama", "qwen") for t in ("fp8", "int4")}
 MIXED = ["F25", "M25", "B25", "R25"]
 
 
@@ -338,7 +344,8 @@ def cmd_report(a):
                     "≤ 1＋δ* 算不輸（03 §2.4；δ* 是主線凍結的 noise.json）；gpu_guard 不是 CLEAN 或有污染列 → 那個 run 的時間不能用",
                finalists=fins, champion=champ, cells=[], problems=[])
     for m in ("llama", "qwen"):
-        dstar = json.load(open(os.path.join(REPO, "results", "m10_precision_mi300x", f"speed_{m}", "noise.json")))["delta_star"]
+        prec = os.environ.get("M10_PRECISION_DIR") or os.path.join(REPO, "results", "m10_precision_mi300x")   # H200：環境變數（10/19；沒設時不變）
+        dstar = json.load(open(os.path.join(prec, f"speed_{m}", "noise.json")))["delta_star"]
         for tag in ("fp8", "int4"):
             for meth in fins:
                 for suf in ("", "_b32"):

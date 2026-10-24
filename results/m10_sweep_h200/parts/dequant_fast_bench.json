@@ -1,0 +1,181 @@
+{
+ "checks": {
+  "bitwise[fp8_head]": {
+   "pass": true
+  },
+  "into_view[fp8_head]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_head]": {
+   "bitwise": true
+  },
+  "bitwise[fp8_channel]": {
+   "pass": true
+  },
+  "into_view[fp8_channel]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_channel]": {
+   "bitwise": true
+  },
+  "bitwise[fp8_token]": {
+   "pass": true
+  },
+  "into_view[fp8_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[fp8_token]": {
+   "bitwise": true
+  },
+  "bitwise[int8_token]": {
+   "pass": true
+  },
+  "into_view[int8_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[int8_token]": {
+   "bitwise": true
+  },
+  "bitwise[int4_token]": {
+   "pass": true
+  },
+  "into_view[int4_token]": {
+   "pass": true
+  },
+  "compiled_bitwise[int4_token]": {
+   "bitwise": true
+  },
+  "bitwise[int4_kivi]": {
+   "pass": true
+  },
+  "into_view[int4_kivi]": {
+   "pass": true
+  },
+  "compiled_bitwise[int4_kivi]": {
+   "bitwise": true
+  }
+ },
+ "bench": {
+  "llama_block|fp8_head|torch": {
+   "median_ms": 0.2918,
+   "eff_GBps": 345.0
+  },
+  "llama_block|fp8_head|fused": {
+   "median_ms": 0.0686,
+   "eff_GBps": 1466.6
+  },
+  "llama_block|fp8_head|torch_compile": {
+   "median_ms": 0.0531,
+   "eff_GBps": 1896.2
+  },
+  "llama_block|fp8_token|torch": {
+   "median_ms": 0.2945,
+   "eff_GBps": 345.3
+  },
+  "llama_block|fp8_token|fused": {
+   "median_ms": 0.0863,
+   "eff_GBps": 1178.1
+  },
+  "llama_block|fp8_token|torch_compile": {
+   "median_ms": 0.0532,
+   "eff_GBps": 1913.6
+  },
+  "llama_block|int8_token|torch": {
+   "median_ms": 0.2841,
+   "eff_GBps": 358.0
+  },
+  "llama_block|int8_token|fused": {
+   "median_ms": 0.0826,
+   "eff_GBps": 1232.0
+  },
+  "llama_block|int8_token|torch_compile": {
+   "median_ms": 0.0529,
+   "eff_GBps": 1922.9
+  },
+  "llama_block|int4_token|torch": {
+   "median_ms": 0.4528,
+   "eff_GBps": 187.6
+  },
+  "llama_block|int4_token|fused": {
+   "median_ms": 0.0798,
+   "eff_GBps": 1063.8
+  },
+  "llama_block|int4_token|torch_compile": {
+   "median_ms": 0.0514,
+   "eff_GBps": 1653.7
+  },
+  "llama_block|int4_kivi|torch": {
+   "median_ms": 0.5776,
+   "eff_GBps": 152.5
+  },
+  "llama_block|int4_kivi|fused": {
+   "median_ms": 0.0638,
+   "eff_GBps": 1381.1
+  },
+  "llama_block|int4_kivi|torch_compile": {
+   "median_ms": 0.1371,
+   "eff_GBps": 642.4
+  },
+  "qwen_block|fp8_head|torch": {
+   "median_ms": 0.1382,
+   "eff_GBps": 318.7
+  },
+  "qwen_block|fp8_head|fused": {
+   "median_ms": 0.043,
+   "eff_GBps": 1024.8
+  },
+  "qwen_block|fp8_head|torch_compile": {
+   "median_ms": 0.0464,
+   "eff_GBps": 948.5
+  },
+  "qwen_block|fp8_token|torch": {
+   "median_ms": 0.1391,
+   "eff_GBps": 319.8
+  },
+  "qwen_block|fp8_token|fused": {
+   "median_ms": 0.0509,
+   "eff_GBps": 874.0
+  },
+  "qwen_block|fp8_token|torch_compile": {
+   "median_ms": 0.0389,
+   "eff_GBps": 1143.6
+  },
+  "qwen_block|int8_token|torch": {
+   "median_ms": 0.1347,
+   "eff_GBps": 330.3
+  },
+  "qwen_block|int8_token|fused": {
+   "median_ms": 0.0492,
+   "eff_GBps": 904.2
+  },
+  "qwen_block|int8_token|torch_compile": {
+   "median_ms": 0.0385,
+   "eff_GBps": 1155.0
+  },
+  "qwen_block|int4_token|torch": {
+   "median_ms": 0.208,
+   "eff_GBps": 178.6
+  },
+  "qwen_block|int4_token|fused": {
+   "median_ms": 0.0467,
+   "eff_GBps": 795.9
+  },
+  "qwen_block|int4_token|torch_compile": {
+   "median_ms": 0.0464,
+   "eff_GBps": 800.3
+  },
+  "qwen_block|int4_kivi|torch": {
+   "median_ms": 0.2858,
+   "eff_GBps": 134.9
+  },
+  "qwen_block|int4_kivi|fused": {
+   "median_ms": 0.0519,
+   "eff_GBps": 742.9
+  },
+  "qwen_block|int4_kivi|torch_compile": {
+   "median_ms": 0.0775,
+   "eff_GBps": 497.0
+  }
+ },
+ "all_pass": true
+}

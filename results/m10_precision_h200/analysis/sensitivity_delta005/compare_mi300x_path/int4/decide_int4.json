@@ -1,0 +1,29 @@
+{
+ "tier": "int4",
+ "llama": {
+  "per_config": {
+   "E1": false,
+   "E1s": false,
+   "E1sr": false
+  },
+  "K1": false,
+  "K1s": false,
+  "power_ok": true,
+  "model_pass": false,
+  "power_blocks": false
+ },
+ "qwen": {
+  "per_config": {
+   "E1": false,
+   "E1s": false,
+   "E1sr": false
+  },
+  "K1": false,
+  "K1s": false,
+  "power_ok": true,
+  "model_pass": false,
+  "power_blocks": false
+ },
+ "next_frozen_code": "（同 next）",
+ "next": "INT4 階：Llama 均勻不夠 → Step 2 在 Llama 上做（03 §2.5 第 4 步、§1.1）"
+}

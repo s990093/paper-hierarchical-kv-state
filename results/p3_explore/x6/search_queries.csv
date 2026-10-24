@@ -1,0 +1,417 @@
+run_id,ts,batch,repo,query,exit_code,n_results
+20261017-175148-p3x6-issues,2026-10-17T09:51:54Z,1,vllm-project/vllm,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:51:58Z,1,vllm-project/vllm,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:52:02Z,1,vllm-project/vllm,multi-turn prefix cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:52:06Z,1,vllm-project/vllm,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:52:09Z,1,vllm-project/vllm,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:52:13Z,1,vllm-project/vllm,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:52:17Z,1,vllm-project/vllm,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:52:22Z,1,vllm-project/vllm,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:52:25Z,1,vllm-project/vllm,kv cache ttl,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:52:29Z,1,vllm-project/vllm,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:52:33Z,1,vllm-project/vllm,cache ttl,0,9
+20261017-175148-p3x6-issues,2026-10-17T09:52:38Z,1,vllm-project/vllm,pin prefix,0,7
+20261017-175148-p3x6-issues,2026-10-17T09:52:41Z,1,vllm-project/vllm,pin kv cache,0,4
+20261017-175148-p3x6-issues,2026-10-17T09:52:47Z,1,vllm-project/vllm,cache retention,0,100
+20261017-175148-p3x6-issues,2026-10-17T09:52:51Z,1,vllm-project/vllm,kv retention,0,9
+20261017-175148-p3x6-issues,2026-10-17T09:52:55Z,1,vllm-project/vllm,session kv cache,0,4
+20261017-175148-p3x6-issues,2026-10-17T09:52:58Z,1,vllm-project/vllm,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:02Z,1,vllm-project/vllm,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:06Z,1,vllm-project/vllm,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:09Z,1,vllm-project/vllm,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:13Z,1,vllm-project/vllm,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:17Z,1,vllm-project/vllm,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:21Z,1,vllm-project/vllm,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:25Z,1,vllm-project/vllm,offload ttft,0,3
+20261017-175148-p3x6-issues,2026-10-17T09:53:29Z,1,vllm-project/vllm,cpu offload ttft,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:53:33Z,1,vllm-project/vllm,cache hit rate drop,0,4
+20261017-175148-p3x6-issues,2026-10-17T09:53:37Z,1,vllm-project/vllm,keep kv cache,0,9
+20261017-175148-p3x6-issues,2026-10-17T09:53:41Z,1,vllm-project/vllm,preserve kv cache,0,10
+20261017-175148-p3x6-issues,2026-10-17T09:53:45Z,1,LMCache/LMCache,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:48Z,1,LMCache/LMCache,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:52Z,1,LMCache/LMCache,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:53:56Z,1,LMCache/LMCache,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:00Z,1,LMCache/LMCache,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:03Z,1,LMCache/LMCache,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:07Z,1,LMCache/LMCache,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:11Z,1,LMCache/LMCache,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:15Z,1,LMCache/LMCache,kv cache ttl,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:54:18Z,1,LMCache/LMCache,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:22Z,1,LMCache/LMCache,cache ttl,0,3
+20261017-175148-p3x6-issues,2026-10-17T09:54:26Z,1,LMCache/LMCache,pin prefix,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:30Z,1,LMCache/LMCache,pin kv cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:54:34Z,1,LMCache/LMCache,cache retention,0,4
+20261017-175148-p3x6-issues,2026-10-17T09:54:37Z,1,LMCache/LMCache,kv retention,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:54:41Z,1,LMCache/LMCache,session kv cache,0,3
+20261017-175148-p3x6-issues,2026-10-17T09:54:45Z,1,LMCache/LMCache,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:49Z,1,LMCache/LMCache,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:52Z,1,LMCache/LMCache,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:54:56Z,1,LMCache/LMCache,prefetch timeout,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:55:00Z,1,LMCache/LMCache,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:04Z,1,LMCache/LMCache,prefetch ttft,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:55:07Z,1,LMCache/LMCache,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:11Z,1,LMCache/LMCache,offload ttft,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:55:15Z,1,LMCache/LMCache,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:19Z,1,LMCache/LMCache,cache hit rate drop,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:23Z,1,LMCache/LMCache,keep kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:27Z,1,LMCache/LMCache,preserve kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:55:30Z,1,sgl-project/sglang,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:34Z,1,sgl-project/sglang,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:38Z,1,sgl-project/sglang,multi-turn prefix cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:55:42Z,1,sgl-project/sglang,multi turn cache hit,0,10
+20261017-175148-p3x6-issues,2026-10-17T09:55:46Z,1,sgl-project/sglang,agent kv cache,0,3
+20261017-175148-p3x6-issues,2026-10-17T09:55:50Z,1,sgl-project/sglang,agentic kv cache,0,3
+20261017-175148-p3x6-issues,2026-10-17T09:55:54Z,1,sgl-project/sglang,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:55:58Z,1,sgl-project/sglang,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:56:02Z,1,sgl-project/sglang,kv cache ttl,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:56:06Z,1,sgl-project/sglang,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:56:10Z,1,sgl-project/sglang,cache ttl,0,7
+20261017-175148-p3x6-issues,2026-10-17T09:56:13Z,1,sgl-project/sglang,pin prefix,0,6
+20261017-175148-p3x6-issues,2026-10-17T09:56:17Z,1,sgl-project/sglang,pin kv cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:56:22Z,1,sgl-project/sglang,cache retention,0,12
+20261017-175148-p3x6-issues,2026-10-17T09:56:26Z,1,sgl-project/sglang,kv retention,0,4
+20261017-175148-p3x6-issues,2026-10-17T09:56:30Z,1,sgl-project/sglang,session kv cache,0,5
+20261017-175148-p3x6-issues,2026-10-17T09:56:34Z,1,sgl-project/sglang,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:56:38Z,1,sgl-project/sglang,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:56:42Z,1,sgl-project/sglang,evicted too early,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:56:47Z,1,sgl-project/sglang,prefetch timeout,0,28
+20261017-175148-p3x6-issues,2026-10-17T09:56:50Z,1,sgl-project/sglang,prefetch slow,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:56:54Z,1,sgl-project/sglang,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:56:59Z,1,sgl-project/sglang,hicache prefetch,0,53
+20261017-175148-p3x6-issues,2026-10-17T09:57:02Z,1,sgl-project/sglang,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:06Z,1,sgl-project/sglang,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:10Z,1,sgl-project/sglang,cache hit rate drop,0,4
+20261017-175148-p3x6-issues,2026-10-17T09:57:14Z,1,sgl-project/sglang,keep kv cache,0,5
+20261017-175148-p3x6-issues,2026-10-17T09:57:18Z,1,sgl-project/sglang,preserve kv cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:57:22Z,1,kvcache-ai/Mooncake,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:25Z,1,kvcache-ai/Mooncake,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:29Z,1,kvcache-ai/Mooncake,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:33Z,1,kvcache-ai/Mooncake,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:36Z,1,kvcache-ai/Mooncake,agent kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:57:40Z,1,kvcache-ai/Mooncake,agentic kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:57:44Z,1,kvcache-ai/Mooncake,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:48Z,1,kvcache-ai/Mooncake,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:52Z,1,kvcache-ai/Mooncake,kv cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:57:55Z,1,kvcache-ai/Mooncake,prefix cache ttl,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:57:59Z,1,kvcache-ai/Mooncake,cache ttl,0,11
+20261017-175148-p3x6-issues,2026-10-17T09:58:03Z,1,kvcache-ai/Mooncake,pin prefix,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:07Z,1,kvcache-ai/Mooncake,pin kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:11Z,1,kvcache-ai/Mooncake,cache retention,0,4
+20261017-175148-p3x6-issues,2026-10-17T09:58:15Z,1,kvcache-ai/Mooncake,kv retention,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:58:18Z,1,kvcache-ai/Mooncake,session kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:22Z,1,kvcache-ai/Mooncake,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:26Z,1,kvcache-ai/Mooncake,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:30Z,1,kvcache-ai/Mooncake,evicted too early,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:58:34Z,1,kvcache-ai/Mooncake,prefetch timeout,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:58:38Z,1,kvcache-ai/Mooncake,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:41Z,1,kvcache-ai/Mooncake,prefetch ttft,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:58:45Z,1,kvcache-ai/Mooncake,hicache prefetch,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:58:49Z,1,kvcache-ai/Mooncake,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:53Z,1,kvcache-ai/Mooncake,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:58:57Z,1,kvcache-ai/Mooncake,cache hit rate drop,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:59:01Z,1,kvcache-ai/Mooncake,keep kv cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T09:59:04Z,1,kvcache-ai/Mooncake,preserve kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:59:08Z,1,ai-dynamo/dynamo,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:12Z,1,ai-dynamo/dynamo,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:16Z,1,ai-dynamo/dynamo,multi-turn prefix cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T09:59:20Z,1,ai-dynamo/dynamo,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:23Z,1,ai-dynamo/dynamo,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:27Z,1,ai-dynamo/dynamo,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:31Z,1,ai-dynamo/dynamo,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:35Z,1,ai-dynamo/dynamo,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:39Z,1,ai-dynamo/dynamo,kv cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:43Z,1,ai-dynamo/dynamo,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:46Z,1,ai-dynamo/dynamo,cache ttl,0,8
+20261017-175148-p3x6-issues,2026-10-17T09:59:50Z,1,ai-dynamo/dynamo,pin prefix,0,9
+20261017-175148-p3x6-issues,2026-10-17T09:59:54Z,1,ai-dynamo/dynamo,pin kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T09:59:59Z,1,ai-dynamo/dynamo,cache retention,0,19
+20261017-175148-p3x6-issues,2026-10-17T10:00:03Z,1,ai-dynamo/dynamo,kv retention,0,4
+20261017-175148-p3x6-issues,2026-10-17T10:00:07Z,1,ai-dynamo/dynamo,session kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:11Z,1,ai-dynamo/dynamo,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:14Z,1,ai-dynamo/dynamo,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:18Z,1,ai-dynamo/dynamo,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:22Z,1,ai-dynamo/dynamo,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:26Z,1,ai-dynamo/dynamo,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:30Z,1,ai-dynamo/dynamo,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:34Z,1,ai-dynamo/dynamo,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:38Z,1,ai-dynamo/dynamo,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:41Z,1,ai-dynamo/dynamo,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:45Z,1,ai-dynamo/dynamo,cache hit rate drop,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:00:49Z,1,ai-dynamo/dynamo,keep kv cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T10:00:53Z,1,ai-dynamo/dynamo,preserve kv cache,0,3
+20261017-175148-p3x6-issues,2026-10-17T10:00:57Z,1,llm-d/llm-d,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:00Z,1,llm-d/llm-d,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:04Z,1,llm-d/llm-d,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:08Z,1,llm-d/llm-d,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:12Z,1,llm-d/llm-d,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:15Z,1,llm-d/llm-d,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:19Z,1,llm-d/llm-d,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:23Z,1,llm-d/llm-d,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:27Z,1,llm-d/llm-d,kv cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:31Z,1,llm-d/llm-d,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:35Z,1,llm-d/llm-d,cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:39Z,1,llm-d/llm-d,pin prefix,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:43Z,1,llm-d/llm-d,pin kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:01:47Z,1,llm-d/llm-d,cache retention,0,3
+20261017-175148-p3x6-issues,2026-10-17T10:01:51Z,1,llm-d/llm-d,kv retention,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:01:55Z,1,llm-d/llm-d,session kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:01:59Z,1,llm-d/llm-d,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:03Z,1,llm-d/llm-d,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:06Z,1,llm-d/llm-d,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:10Z,1,llm-d/llm-d,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:14Z,1,llm-d/llm-d,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:18Z,1,llm-d/llm-d,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:22Z,1,llm-d/llm-d,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:26Z,1,llm-d/llm-d,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:29Z,1,llm-d/llm-d,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:33Z,1,llm-d/llm-d,cache hit rate drop,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:37Z,1,llm-d/llm-d,keep kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:41Z,1,llm-d/llm-d,preserve kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:45Z,1,llm-d/llm-d-kv-cache,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:49Z,1,llm-d/llm-d-kv-cache,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:52Z,1,llm-d/llm-d-kv-cache,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:02:56Z,1,llm-d/llm-d-kv-cache,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:00Z,1,llm-d/llm-d-kv-cache,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:04Z,1,llm-d/llm-d-kv-cache,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:08Z,1,llm-d/llm-d-kv-cache,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:12Z,1,llm-d/llm-d-kv-cache,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:15Z,1,llm-d/llm-d-kv-cache,kv cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:19Z,1,llm-d/llm-d-kv-cache,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:23Z,1,llm-d/llm-d-kv-cache,cache ttl,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:03:27Z,1,llm-d/llm-d-kv-cache,pin prefix,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:31Z,1,llm-d/llm-d-kv-cache,pin kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:34Z,1,llm-d/llm-d-kv-cache,cache retention,0,3
+20261017-175148-p3x6-issues,2026-10-17T10:03:38Z,1,llm-d/llm-d-kv-cache,kv retention,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:42Z,1,llm-d/llm-d-kv-cache,session kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:46Z,1,llm-d/llm-d-kv-cache,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:49Z,1,llm-d/llm-d-kv-cache,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:53Z,1,llm-d/llm-d-kv-cache,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:03:57Z,1,llm-d/llm-d-kv-cache,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:01Z,1,llm-d/llm-d-kv-cache,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:05Z,1,llm-d/llm-d-kv-cache,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:08Z,1,llm-d/llm-d-kv-cache,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:12Z,1,llm-d/llm-d-kv-cache,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:16Z,1,llm-d/llm-d-kv-cache,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:19Z,1,llm-d/llm-d-kv-cache,cache hit rate drop,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:23Z,1,llm-d/llm-d-kv-cache,keep kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:04:27Z,1,llm-d/llm-d-kv-cache,preserve kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:31Z,1,llm-d/llm-d-router,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:34Z,1,llm-d/llm-d-router,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:38Z,1,llm-d/llm-d-router,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:42Z,1,llm-d/llm-d-router,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:45Z,1,llm-d/llm-d-router,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:49Z,1,llm-d/llm-d-router,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:53Z,1,llm-d/llm-d-router,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:04:57Z,1,llm-d/llm-d-router,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:01Z,1,llm-d/llm-d-router,kv cache ttl,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:05:04Z,1,llm-d/llm-d-router,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:08Z,1,llm-d/llm-d-router,cache ttl,0,3
+20261017-175148-p3x6-issues,2026-10-17T10:05:12Z,1,llm-d/llm-d-router,pin prefix,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:16Z,1,llm-d/llm-d-router,pin kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:05:20Z,1,llm-d/llm-d-router,cache retention,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:24Z,1,llm-d/llm-d-router,kv retention,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:28Z,1,llm-d/llm-d-router,session kv cache,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:05:32Z,1,llm-d/llm-d-router,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:36Z,1,llm-d/llm-d-router,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:40Z,1,llm-d/llm-d-router,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:43Z,1,llm-d/llm-d-router,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:47Z,1,llm-d/llm-d-router,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:51Z,1,llm-d/llm-d-router,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:55Z,1,llm-d/llm-d-router,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:05:59Z,1,llm-d/llm-d-router,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:02Z,1,llm-d/llm-d-router,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:06Z,1,llm-d/llm-d-router,cache hit rate drop,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:06:10Z,1,llm-d/llm-d-router,keep kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:14Z,1,llm-d/llm-d-router,preserve kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:18Z,1,vllm-project/aibrix,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:22Z,1,vllm-project/aibrix,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:25Z,1,vllm-project/aibrix,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:29Z,1,vllm-project/aibrix,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:33Z,1,vllm-project/aibrix,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:36Z,1,vllm-project/aibrix,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:40Z,1,vllm-project/aibrix,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:44Z,1,vllm-project/aibrix,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:48Z,1,vllm-project/aibrix,kv cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:51Z,1,vllm-project/aibrix,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:06:55Z,1,vllm-project/aibrix,cache ttl,0,6
+20261017-175148-p3x6-issues,2026-10-17T10:06:59Z,1,vllm-project/aibrix,pin prefix,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:03Z,1,vllm-project/aibrix,pin kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:07Z,1,vllm-project/aibrix,cache retention,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:07:11Z,1,vllm-project/aibrix,kv retention,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:14Z,1,vllm-project/aibrix,session kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:18Z,1,vllm-project/aibrix,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:22Z,1,vllm-project/aibrix,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:26Z,1,vllm-project/aibrix,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:30Z,1,vllm-project/aibrix,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:33Z,1,vllm-project/aibrix,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:37Z,1,vllm-project/aibrix,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:41Z,1,vllm-project/aibrix,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:44Z,1,vllm-project/aibrix,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:48Z,1,vllm-project/aibrix,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:52Z,1,vllm-project/aibrix,cache hit rate drop,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:07:56Z,1,vllm-project/aibrix,keep kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:00Z,1,vllm-project/aibrix,preserve kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:04Z,1,NVIDIA/TensorRT-LLM,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:07Z,1,NVIDIA/TensorRT-LLM,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:11Z,1,NVIDIA/TensorRT-LLM,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:15Z,1,NVIDIA/TensorRT-LLM,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:19Z,1,NVIDIA/TensorRT-LLM,agent kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:22Z,1,NVIDIA/TensorRT-LLM,agentic kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:26Z,1,NVIDIA/TensorRT-LLM,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:30Z,1,NVIDIA/TensorRT-LLM,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:34Z,1,NVIDIA/TensorRT-LLM,kv cache ttl,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:08:38Z,1,NVIDIA/TensorRT-LLM,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:08:42Z,1,NVIDIA/TensorRT-LLM,cache ttl,0,2
+20261017-175148-p3x6-issues,2026-10-17T10:08:46Z,1,NVIDIA/TensorRT-LLM,pin prefix,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:08:50Z,1,NVIDIA/TensorRT-LLM,pin kv cache,0,5
+20261017-175148-p3x6-issues,2026-10-17T10:08:54Z,1,NVIDIA/TensorRT-LLM,cache retention,0,29
+20261017-175148-p3x6-issues,2026-10-17T10:08:58Z,1,NVIDIA/TensorRT-LLM,kv retention,0,5
+20261017-175148-p3x6-issues,2026-10-17T10:09:02Z,1,NVIDIA/TensorRT-LLM,session kv cache,0,5
+20261017-175148-p3x6-issues,2026-10-17T10:09:06Z,1,NVIDIA/TensorRT-LLM,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:10Z,1,NVIDIA/TensorRT-LLM,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:13Z,1,NVIDIA/TensorRT-LLM,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:18Z,1,NVIDIA/TensorRT-LLM,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:21Z,1,NVIDIA/TensorRT-LLM,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:25Z,1,NVIDIA/TensorRT-LLM,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:29Z,1,NVIDIA/TensorRT-LLM,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:33Z,1,NVIDIA/TensorRT-LLM,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:36Z,1,NVIDIA/TensorRT-LLM,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:40Z,1,NVIDIA/TensorRT-LLM,cache hit rate drop,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:44Z,1,NVIDIA/TensorRT-LLM,keep kv cache,0,10
+20261017-175148-p3x6-issues,2026-10-17T10:09:49Z,1,NVIDIA/TensorRT-LLM,preserve kv cache,0,14
+20261017-175148-p3x6-issues,2026-10-17T10:09:53Z,1,vllm-project/production-stack,multi-turn evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:09:56Z,1,vllm-project/production-stack,multi-turn eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:00Z,1,vllm-project/production-stack,multi-turn prefix cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:04Z,1,vllm-project/production-stack,multi turn cache hit,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:07Z,1,vllm-project/production-stack,agent kv cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T10:10:11Z,1,vllm-project/production-stack,agentic kv cache,0,2
+20261017-175148-p3x6-issues,2026-10-17T10:10:15Z,1,vllm-project/production-stack,agentic cache eviction,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:19Z,1,vllm-project/production-stack,tool call kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:22Z,1,vllm-project/production-stack,kv cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:26Z,1,vllm-project/production-stack,prefix cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:30Z,1,vllm-project/production-stack,cache ttl,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:34Z,1,vllm-project/production-stack,pin prefix,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:38Z,1,vllm-project/production-stack,pin kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:41Z,1,vllm-project/production-stack,cache retention,0,1
+20261017-175148-p3x6-issues,2026-10-17T10:10:45Z,1,vllm-project/production-stack,kv retention,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:49Z,1,vllm-project/production-stack,session kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:53Z,1,vllm-project/production-stack,session cache evict,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:10:57Z,1,vllm-project/production-stack,conversation cache evicted,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:01Z,1,vllm-project/production-stack,evicted too early,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:05Z,1,vllm-project/production-stack,prefetch timeout,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:08Z,1,vllm-project/production-stack,prefetch slow,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:12Z,1,vllm-project/production-stack,prefetch ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:16Z,1,vllm-project/production-stack,hicache prefetch,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:20Z,1,vllm-project/production-stack,offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:24Z,1,vllm-project/production-stack,cpu offload ttft,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:28Z,1,vllm-project/production-stack,cache hit rate drop,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:32Z,1,vllm-project/production-stack,keep kv cache,0,0
+20261017-175148-p3x6-issues,2026-10-17T10:11:36Z,1,vllm-project/production-stack,preserve kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:11:53Z,2,vllm-project/vllm,tool call pause eviction,0,1
+20261017-181123-p3x6-issues2,2026-10-17T10:11:58Z,2,vllm-project/vllm,re-prefill,0,100
+20261017-181123-p3x6-issues2,2026-10-17T10:12:02Z,2,vllm-project/vllm,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:06Z,2,vllm-project/vllm,cache thrashing,0,13
+20261017-181123-p3x6-issues2,2026-10-17T10:12:10Z,2,vllm-project/vllm,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:14Z,2,vllm-project/vllm,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:18Z,2,vllm-project/vllm,kv hints,0,8
+20261017-181123-p3x6-issues2,2026-10-17T10:12:22Z,2,vllm-project/vllm,retention directive,0,4
+20261017-181123-p3x6-issues2,2026-10-17T10:12:26Z,2,vllm-project/vllm,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:30Z,2,vllm-project/vllm,hicache eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:34Z,2,vllm-project/vllm,offload eviction policy,0,1
+20261017-181123-p3x6-issues2,2026-10-17T10:12:38Z,2,vllm-project/vllm,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:42Z,2,LMCache/LMCache,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:47Z,2,LMCache/LMCache,re-prefill,0,100
+20261017-181123-p3x6-issues2,2026-10-17T10:12:51Z,2,LMCache/LMCache,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:12:55Z,2,LMCache/LMCache,cache thrashing,0,2
+20261017-181123-p3x6-issues2,2026-10-17T10:12:59Z,2,LMCache/LMCache,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:03Z,2,LMCache/LMCache,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:07Z,2,LMCache/LMCache,kv hints,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:12Z,2,LMCache/LMCache,retention directive,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:16Z,2,LMCache/LMCache,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:20Z,2,LMCache/LMCache,hicache eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:24Z,2,LMCache/LMCache,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:28Z,2,LMCache/LMCache,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:32Z,2,sgl-project/sglang,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:37Z,2,sgl-project/sglang,re-prefill,0,100
+20261017-181123-p3x6-issues2,2026-10-17T10:13:41Z,2,sgl-project/sglang,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:47Z,2,sgl-project/sglang,cache thrashing,0,5
+20261017-181123-p3x6-issues2,2026-10-17T10:13:51Z,2,sgl-project/sglang,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:54Z,2,sgl-project/sglang,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:13:59Z,2,sgl-project/sglang,kv hints,0,15
+20261017-181123-p3x6-issues2,2026-10-17T10:14:03Z,2,sgl-project/sglang,retention directive,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:07Z,2,sgl-project/sglang,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:11Z,2,sgl-project/sglang,hicache eviction,0,13
+20261017-181123-p3x6-issues2,2026-10-17T10:14:15Z,2,sgl-project/sglang,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:19Z,2,sgl-project/sglang,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:23Z,2,kvcache-ai/Mooncake,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:28Z,2,kvcache-ai/Mooncake,re-prefill,0,100
+20261017-181123-p3x6-issues2,2026-10-17T10:14:32Z,2,kvcache-ai/Mooncake,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:36Z,2,kvcache-ai/Mooncake,cache thrashing,0,1
+20261017-181123-p3x6-issues2,2026-10-17T10:14:40Z,2,kvcache-ai/Mooncake,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:44Z,2,kvcache-ai/Mooncake,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:48Z,2,kvcache-ai/Mooncake,kv hints,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:51Z,2,kvcache-ai/Mooncake,retention directive,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:56Z,2,kvcache-ai/Mooncake,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:14:59Z,2,kvcache-ai/Mooncake,hicache eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:03Z,2,kvcache-ai/Mooncake,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:07Z,2,kvcache-ai/Mooncake,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:11Z,2,ai-dynamo/dynamo,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:18Z,2,ai-dynamo/dynamo,re-prefill,0,100
+20261017-181123-p3x6-issues2,2026-10-17T10:15:22Z,2,ai-dynamo/dynamo,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:25Z,2,ai-dynamo/dynamo,cache thrashing,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:29Z,2,ai-dynamo/dynamo,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:33Z,2,ai-dynamo/dynamo,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:38Z,2,ai-dynamo/dynamo,kv hints,0,33
+20261017-181123-p3x6-issues2,2026-10-17T10:15:42Z,2,ai-dynamo/dynamo,retention directive,0,1
+20261017-181123-p3x6-issues2,2026-10-17T10:15:46Z,2,ai-dynamo/dynamo,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:50Z,2,ai-dynamo/dynamo,hicache eviction,0,2
+20261017-181123-p3x6-issues2,2026-10-17T10:15:54Z,2,ai-dynamo/dynamo,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:15:58Z,2,ai-dynamo/dynamo,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:01Z,2,llm-d/llm-d,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:06Z,2,llm-d/llm-d,re-prefill,0,79
+20261017-181123-p3x6-issues2,2026-10-17T10:16:10Z,2,llm-d/llm-d,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:14Z,2,llm-d/llm-d,cache thrashing,0,1
+20261017-181123-p3x6-issues2,2026-10-17T10:16:18Z,2,llm-d/llm-d,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:22Z,2,llm-d/llm-d,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:26Z,2,llm-d/llm-d,kv hints,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:30Z,2,llm-d/llm-d,retention directive,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:34Z,2,llm-d/llm-d,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:37Z,2,llm-d/llm-d,hicache eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:41Z,2,llm-d/llm-d,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:45Z,2,llm-d/llm-d,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:48Z,2,llm-d/llm-d-kv-cache,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:16:53Z,2,llm-d/llm-d-kv-cache,re-prefill,0,4
+20261017-181123-p3x6-issues2,2026-10-17T10:16:56Z,2,llm-d/llm-d-kv-cache,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:00Z,2,llm-d/llm-d-kv-cache,cache thrashing,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:05Z,2,llm-d/llm-d-kv-cache,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:09Z,2,llm-d/llm-d-kv-cache,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:13Z,2,llm-d/llm-d-kv-cache,kv hints,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:17Z,2,llm-d/llm-d-kv-cache,retention directive,0,1
+20261017-181123-p3x6-issues2,2026-10-17T10:17:21Z,2,llm-d/llm-d-kv-cache,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:25Z,2,llm-d/llm-d-kv-cache,hicache eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:29Z,2,llm-d/llm-d-kv-cache,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:33Z,2,llm-d/llm-d-kv-cache,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:37Z,2,vllm-project/aibrix,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:41Z,2,vllm-project/aibrix,re-prefill,0,100
+20261017-181123-p3x6-issues2,2026-10-17T10:17:45Z,2,vllm-project/aibrix,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:49Z,2,vllm-project/aibrix,cache thrashing,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:53Z,2,vllm-project/aibrix,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:17:57Z,2,vllm-project/aibrix,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:01Z,2,vllm-project/aibrix,kv hints,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:04Z,2,vllm-project/aibrix,retention directive,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:08Z,2,vllm-project/aibrix,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:12Z,2,vllm-project/aibrix,hicache eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:16Z,2,vllm-project/aibrix,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:20Z,2,vllm-project/aibrix,session_id kv cache,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:24Z,2,NVIDIA/TensorRT-LLM,tool call pause eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:30Z,2,NVIDIA/TensorRT-LLM,re-prefill,0,100
+20261017-181123-p3x6-issues2,2026-10-17T10:18:34Z,2,NVIDIA/TensorRT-LLM,resume session ttft,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:38Z,2,NVIDIA/TensorRT-LLM,cache thrashing,0,4
+20261017-181123-p3x6-issues2,2026-10-17T10:18:41Z,2,NVIDIA/TensorRT-LLM,LRU eviction agent,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:45Z,2,NVIDIA/TensorRT-LLM,eviction policy multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:49Z,2,NVIDIA/TensorRT-LLM,kv hints,0,3
+20261017-181123-p3x6-issues2,2026-10-17T10:18:53Z,2,NVIDIA/TensorRT-LLM,retention directive,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:18:57Z,2,NVIDIA/TensorRT-LLM,cache miss recompute multi-turn,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:19:01Z,2,NVIDIA/TensorRT-LLM,hicache eviction,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:19:05Z,2,NVIDIA/TensorRT-LLM,offload eviction policy,0,0
+20261017-181123-p3x6-issues2,2026-10-17T10:19:09Z,2,NVIDIA/TensorRT-LLM,session_id kv cache,0,0

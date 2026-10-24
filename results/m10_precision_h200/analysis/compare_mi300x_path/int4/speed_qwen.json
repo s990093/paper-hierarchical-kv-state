@@ -1,0 +1,230 @@
+{
+ "model": "qwen",
+ "summary": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_qwen/summary_int4.csv",
+ "x_summary": null,
+ "delta_star": 0.05,
+ "rule": "X 不輸＝每格 median(X) ≤ min(F25,M25,B25,R25 的 median)×(1+δ*)（03 §2.4）",
+ "cells": [
+  {
+   "config": "E1",
+   "bw": "b16",
+   "gpu_state": "busy",
+   "median_x": 0.22499,
+   "fastest_mixed": 0.3216,
+   "ratio": 0.6996,
+   "not_worse": true
+  },
+  {
+   "config": "E1",
+   "bw": "b16",
+   "gpu_state": "idle",
+   "median_x": 0.17226,
+   "fastest_mixed": 0.26791,
+   "ratio": 0.643,
+   "not_worse": true
+  },
+  {
+   "config": "E1",
+   "bw": "b32",
+   "gpu_state": "busy",
+   "median_x": 0.42072,
+   "fastest_mixed": 0.78483,
+   "ratio": 0.5361,
+   "not_worse": true
+  },
+  {
+   "config": "E1",
+   "bw": "b32",
+   "gpu_state": "idle",
+   "median_x": 0.3631,
+   "fastest_mixed": 0.5911,
+   "ratio": 0.6143,
+   "not_worse": true
+  },
+  {
+   "config": "E1",
+   "bw": "b48",
+   "gpu_state": "busy",
+   "median_x": 1.03558,
+   "fastest_mixed": 1.50823,
+   "ratio": 0.6866,
+   "not_worse": true
+  },
+  {
+   "config": "E1",
+   "bw": "b48",
+   "gpu_state": "idle",
+   "median_x": 0.76541,
+   "fastest_mixed": 1.00663,
+   "ratio": 0.7604,
+   "not_worse": true
+  },
+  {
+   "config": "E1",
+   "bw": "cpu",
+   "gpu_state": "busy",
+   "median_x": 0.12231,
+   "fastest_mixed": 0.07236,
+   "ratio": 1.6903,
+   "not_worse": false
+  },
+  {
+   "config": "E1",
+   "bw": "cpu",
+   "gpu_state": "idle",
+   "median_x": 0.06486,
+   "fastest_mixed": 0.0557,
+   "ratio": 1.1645,
+   "not_worse": false
+  },
+  {
+   "config": "E1s",
+   "bw": "b16",
+   "gpu_state": "busy",
+   "median_x": 0.2251,
+   "fastest_mixed": 0.3216,
+   "ratio": 0.6999,
+   "not_worse": true
+  },
+  {
+   "config": "E1s",
+   "bw": "b16",
+   "gpu_state": "idle",
+   "median_x": 0.17253,
+   "fastest_mixed": 0.26791,
+   "ratio": 0.644,
+   "not_worse": true
+  },
+  {
+   "config": "E1s",
+   "bw": "b32",
+   "gpu_state": "busy",
+   "median_x": 0.41987,
+   "fastest_mixed": 0.78483,
+   "ratio": 0.535,
+   "not_worse": true
+  },
+  {
+   "config": "E1s",
+   "bw": "b32",
+   "gpu_state": "idle",
+   "median_x": 0.36283,
+   "fastest_mixed": 0.5911,
+   "ratio": 0.6138,
+   "not_worse": true
+  },
+  {
+   "config": "E1s",
+   "bw": "b48",
+   "gpu_state": "busy",
+   "median_x": 1.03163,
+   "fastest_mixed": 1.50823,
+   "ratio": 0.684,
+   "not_worse": true
+  },
+  {
+   "config": "E1s",
+   "bw": "b48",
+   "gpu_state": "idle",
+   "median_x": 0.76599,
+   "fastest_mixed": 1.00663,
+   "ratio": 0.7609,
+   "not_worse": true
+  },
+  {
+   "config": "E1s",
+   "bw": "cpu",
+   "gpu_state": "busy",
+   "median_x": 0.12171,
+   "fastest_mixed": 0.07236,
+   "ratio": 1.682,
+   "not_worse": false
+  },
+  {
+   "config": "E1s",
+   "bw": "cpu",
+   "gpu_state": "idle",
+   "median_x": 0.06507,
+   "fastest_mixed": 0.0557,
+   "ratio": 1.1682,
+   "not_worse": false
+  },
+  {
+   "config": "E1sr",
+   "bw": "b16",
+   "gpu_state": "busy",
+   "median_x": 0.22506,
+   "fastest_mixed": 0.3216,
+   "ratio": 0.6998,
+   "not_worse": true
+  },
+  {
+   "config": "E1sr",
+   "bw": "b16",
+   "gpu_state": "idle",
+   "median_x": 0.17239,
+   "fastest_mixed": 0.26791,
+   "ratio": 0.6435,
+   "not_worse": true
+  },
+  {
+   "config": "E1sr",
+   "bw": "b32",
+   "gpu_state": "busy",
+   "median_x": 0.45016,
+   "fastest_mixed": 0.78483,
+   "ratio": 0.5736,
+   "not_worse": true
+  },
+  {
+   "config": "E1sr",
+   "bw": "b32",
+   "gpu_state": "idle",
+   "median_x": 0.36906,
+   "fastest_mixed": 0.5911,
+   "ratio": 0.6244,
+   "not_worse": true
+  },
+  {
+   "config": "E1sr",
+   "bw": "b48",
+   "gpu_state": "busy",
+   "median_x": 1.04827,
+   "fastest_mixed": 1.50823,
+   "ratio": 0.695,
+   "not_worse": true
+  },
+  {
+   "config": "E1sr",
+   "bw": "b48",
+   "gpu_state": "idle",
+   "median_x": 0.79229,
+   "fastest_mixed": 1.00663,
+   "ratio": 0.7871,
+   "not_worse": true
+  },
+  {
+   "config": "E1sr",
+   "bw": "cpu",
+   "gpu_state": "busy",
+   "median_x": 0.12166,
+   "fastest_mixed": 0.07236,
+   "ratio": 1.6813,
+   "not_worse": false
+  },
+  {
+   "config": "E1sr",
+   "bw": "cpu",
+   "gpu_state": "idle",
+   "median_x": 0.06484,
+   "fastest_mixed": 0.0557,
+   "ratio": 1.1641,
+   "not_worse": false
+  }
+ ],
+ "not_worse": {
+  "E1": false,
+  "E1s": false,
+  "E1sr": false
+ }
+}

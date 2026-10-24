@@ -32,14 +32,17 @@ import numpy as np
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RES7 = os.path.join(HERE, "..", "results", "m7_write_policy_mi300x")
+# 預設＝MI300X 的 f(i) 與限速層；平台 C（H200）：M7_RES（calib_c1.csv）、M7_TIER_PARAMS（2026-10-16）
+RES7 = os.environ.get("M7_RES") or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x")
+TIER_PARAMS = os.environ.get("M7_TIER_PARAMS") or os.path.join(HERE, "..", "results", "m7_write_policy_mi300x", "tier_params.json")
 GiB = 1 << 30
 MiB = 1 << 20
 KiB = 1 << 10
 CHUNK = 512
 TS = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
 RUN_ID = os.environ.get("RUN_ID")
-CALIB_RUN = "20261008-130316-m7-c1"
+# calib_c1.csv 必須來自這個 run（MI300X 第一階段的 C1）。平台 C（H200）由 M7_CALIB_RUN 指定 R2 的 C1 run（2026-10-16）
+CALIB_RUN = os.environ.get("M7_CALIB_RUN", "20261008-130316-m7-c1")
 
 
 # ----------------------------------------------------------------------------- 共用
@@ -98,7 +101,7 @@ def llama_lin_params() -> float:
 
 
 def bw_list():
-    tp = json.load(open(os.path.join(RES7, "tier_params.json")))
+    tp = json.load(open(TIER_PARAMS))
     # 第一階段用過的頻寬（GiB/s）
     return tp, [("nfs", tp["nfs"]["read_GiBps"]), ("7Gbps", 0.814907), ("1GiBps", 1.0), ("25Gbps", 2.910383),
                 ("vllm_cpu", 3.69), ("local_ssd", tp["local"]["read_GiBps"]), ("100Gbps", 11.641532),
@@ -226,7 +229,7 @@ LITC_HYBRID = [
 
 
 def part_ssm(out, cfgdir, a, b, src_run):
-    tp = json.load(open(os.path.join(RES7, "tier_params.json")))
+    tp = json.load(open(TIER_PARAMS))
     # 規則 6 式的交叉驗算：兩個模型從 config 重算一份狀態大小，必須對上 Lit-C
     nh = json.load(open(os.path.join(cfgdir, "nvidia_Nemotron-H-8B-Base-8K.json")))
     nm = nh["hybrid_override_pattern"].count("M")
@@ -420,7 +423,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--cfg-vl", required=True)
     ap.add_argument("--cfg", required=True)
-    ap.add_argument("--out", default=os.path.join(HERE, "..", "results", "m8_directions"))
+    ap.add_argument("--out", default=os.environ.get("M8_OUT") or os.path.join(HERE, "..", "results", "m8_directions"))
     args = ap.parse_args()
     assert RUN_ID, "要用 m7run 包起來（需要 RUN_ID）"
     os.makedirs(args.out, exist_ok=True)

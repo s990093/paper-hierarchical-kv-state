@@ -1,0 +1,32 @@
+{
+ "run_id": "20261021-023658-p3h-map-cmp",
+ "ts": "2026-10-21T02:37:02+08:00",
+ "ref": "results/p3_sim",
+ "new": "/work/ChihChungHsu/hungweilai/paper-hkv-p3/results/p3_sim_h200",
+ "renamed": [
+  "c0_ssd_util.csv=c0_ssd_util_mi300x.csv"
+ ],
+ "ignored_fields": [
+  "cache",
+  "code",
+  "code_commit",
+  "download_date",
+  "downloaded_by",
+  "host",
+  "path",
+  "run_id",
+  "ts"
+ ],
+ "kept_rows": {},
+ "files": {
+  "c0_ssd_util.csv": {
+   "n_ref": 120,
+   "n_new": 120,
+   "key": [],
+   "n_diff": 0,
+   "diffs": [],
+   "verdict": "IDENTICAL"
+  }
+ },
+ "verdict": "IDENTICAL"
+}

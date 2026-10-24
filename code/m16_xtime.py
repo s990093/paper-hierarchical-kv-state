@@ -121,7 +121,18 @@ XKV2 = {"xkv_k11v17": (11, 17, "bf16"), "xkv_k22v34": (22, 34, "bf16"), "xkv_k28
         "xkv_k11v17_int4": (11, 17, "kivi4"), "xkv_k22v34_int4": (22, 34, "kivi4"), "xkv_k28v42_int4": (28, 42, "kivi4"),
         "xkv_k22v34_int8": (22, 34, "int8_token")}
 XKV2_Q = {"bf16": "", "kivi4": "+q:int4_kivi", "int8_token": "+q:int8_token"}
-XKV2_SPEC = {s: f"xl:k{a}:v{b}{XKV2_Q[f]}" for s, (a, b, f) in XKV2.items()}      # ↔ m16_xstack 的組合寫法（canonical）
+# ICPE P1-1（H200，2026-10-22；docs/h200/icpe/P1-1_xkv_int4_h200.md §3）：M16_XKV_EXTRA＝"k34v51_int4,k34v51_int4_cal,…" 加額外的 xKV 段
+# （名字 xkv_<那一段>）。沒設時 XKV2 與段清單逐位元不變（MI300X 的 micro／map／self-test 照舊）。
+#   _cal＝事先校準的共用基底（m16_xstack 的 xl:…:cal）：基底常駐 GPU、還原時不搬（bytes_req＝0），建段時搬一次。
+XKV2_CAL = set()
+for _tok in filter(None, (x.strip() for x in os.environ.get("M16_XKV_EXTRA", "").split(","))):
+    _m = re.fullmatch(r"k(\d+)v(\d+)_(bf16|int4|int8)(_cal)?", _tok)
+    if not _m:
+        raise ValueError(f"M16_XKV_EXTRA 看不懂：{_tok!r}（要 k<a>v<b>_<bf16|int4|int8>[_cal]）")
+    XKV2[f"xkv_{_tok}"] = (int(_m.group(1)), int(_m.group(2)), {"bf16": "bf16", "int4": "kivi4", "int8": "int8_token"}[_m.group(3)])
+    if _m.group(4):
+        XKV2_CAL.add(f"xkv_{_tok}")
+XKV2_SPEC = {s: f"xl:k{a}:v{b}{':cal' if s in XKV2_CAL else ''}{XKV2_Q[f]}" for s, (a, b, f) in XKV2.items()}      # ↔ m16_xstack 的組合寫法（canonical）
 XKV2_PAIRS = sorted({(a, b) for a, b, _ in XKV2.values()})
 COMBO_SEGS = set(COMBOS) | {s for s, (_, _, f) in XKV2.items() if f != "bf16"}      # T-a 的「組合」
 # xKV 的 svd_lowrank 參數：照 m16_xstack 的 XL_NITER、XL_OVERSAMPLE、XL_SEED（自測和 GPU 路徑都和它核對；不一樣就停）
@@ -1695,10 +1706,15 @@ def build_segments(ctx, names, kern_of, fp8_fmt):
                           torch.empty((Lg, T, rs[kv_]), dtype=torch.bfloat16, device=ctx.dev)) for kv_ in (0, 1)}
             m0 = torch.zeros((L, H, D), dtype=torch.bfloat16, device=ctx.dev)
 
-            def h2d(j, h1=h1, hb=hb, sb=sb):
+            cal_ = name in XKV2_CAL                             # ICPE P1-1：共用基底常駐 GPU（建段時搬一次，還原時不搬）
+            if cal_:
+                for kv_ in (0, 1):
+                    sb[kv_].copy_(hb[kv_])
+
+            def h2d(j, h1=h1, hb=hb, sb=sb, cal_=cal_):
                 for kv_ in (0, 1):
                     h1[kv_](j)
-                    if j == 0:                                   # 基底每個 prompt 一份：每次還原搬一次
+                    if j == 0 and not cal_:                      # 基底每個 prompt 一份：每次還原搬一次
                         sb[kv_].copy_(hb[kv_], non_blocking=True)
 
             def h2d_req(hb=hb, sb=sb):
@@ -1733,8 +1749,10 @@ def build_segments(ctx, names, kern_of, fp8_fmt):
             sg.h2d_one["h2d_region"], sg.dq_all, sg.dq_one = h2d, dq_all, dq_one
             sg.extra_ops["h2d_req"] = h2d_req
             sg.bytes_blk = sum(t.nbytes for kv_ in (0, 1) for t in hp[kv_][0].values())
-            sg.bytes_req = sum(hb[kv_].nbytes for kv_ in (0, 1))
+            sg.bytes_req = 0 if cal_ else sum(hb[kv_].nbytes for kv_ in (0, 1))
             want = xkv_bytes(ctx.model, rk_, rv_, cf, CHUNK)              # 規則 6：實際 tensor 大小 vs m16_xstack 的位元組帳
+            if cal_:
+                want = (want[0], 0)                                       # :cal 的每請求位元組不含共用基底（m16_xstack 記在 shared.*）
             if (sg.bytes_blk, sg.bytes_req) != want:
                 raise ValueError(f"{name}：實際位元組 {(sg.bytes_blk, sg.bytes_req)} ≠ 位元組帳 {want}")
             sg.n_copies.update(h2d_region=n * (len(hp[0][0]) + len(hp[1][0])) + 2, h2d_req=2)

@@ -8,9 +8,11 @@
 import csv, os
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-P = os.path.join(REPO, "results", "m10_precision_mi300x")
+P = os.environ.get("M10_PRECISION_DIR") or os.path.join(REPO, "results", "m10_precision_mi300x")   # H200：環境變數（10/19；沒設時不變）
 SRC = [("llama", "fp8", "speed_llama/summary_fp8.csv"), ("llama", "int4", "speed_llama/summary_int4.csv"),
-       ("qwen", "fp8", "speed_qwen_regrid/summary_fp8.csv"), ("qwen", "int4", "speed_qwen/summary_int4.csv")]
+       ("qwen", "fp8", "speed_qwen_regrid/summary_fp8.csv" if os.path.isdir(os.path.join(P, "speed_qwen_regrid"))
+        else "speed_qwen/summary_fp8.csv"),                      # H200 沒有 Qwen 重量那次
+       ("qwen", "int4", "speed_qwen/summary_int4.csv")]
 TIERS = ["cpu", "b16", "b32", "b48"]
 
 

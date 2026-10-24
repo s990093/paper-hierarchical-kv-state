@@ -1,0 +1,81 @@
+{
+ "run_id": "20261022-120540-icpe-p02-select",
+ "ts": "2026-10-22T12:05:43+08:00",
+ "rule": "P0-2 §4：最小的 k 使 ρ̂ ≤ 0.30 且 O-PF 對 LRU 的 headroom 在 128/k 或 256/k ≥ 15%",
+ "candidates": {
+  "4": {
+   "n_req": 3010,
+   "n_ret": 870,
+   "span_s": 3536.999,
+   "cells": {
+    "128": {
+     "cap_bytes": 34359738368,
+     "LRU_mean_ret": 0.31039682821421477,
+     "O-PF_mean_ret": 0.20939624637124457,
+     "headroom_OPF_vs_LRU": 0.325391797409948,
+     "rho_hat": 0.533586614969632
+    },
+    "256": {
+     "cap_bytes": 68719476736,
+     "LRU_mean_ret": 0.300481739183798,
+     "O-PF_mean_ret": 0.2101406641225509,
+     "headroom_OPF_vs_LRU": 0.30065412729120117,
+     "rho_hat": 0.530959643440698
+    }
+   },
+   "rho_hat": 0.533586614969632,
+   "ok_rho": false,
+   "ok_headroom": true
+  },
+  "8": {
+   "n_req": 1535,
+   "n_ret": 467,
+   "span_s": 3536.999,
+   "cells": {
+    "128": {
+     "cap_bytes": 17179869184,
+     "LRU_mean_ret": 0.30518331873995275,
+     "O-PF_mean_ret": 0.23458593842819078,
+     "headroom_OPF_vs_LRU": 0.23132778227606246,
+     "rho_hat": 0.2760766635113208
+    },
+    "256": {
+     "cap_bytes": 34359738368,
+     "LRU_mean_ret": 0.2937366323510663,
+     "O-PF_mean_ret": 0.2352333909296569,
+     "headroom_OPF_vs_LRU": 0.19916903435962274,
+     "rho_hat": 0.274489404418411
+    }
+   },
+   "rho_hat": 0.2760766635113208,
+   "ok_rho": true,
+   "ok_headroom": true
+  },
+  "16": {
+   "n_req": 795,
+   "n_ret": 258,
+   "span_s": 3534.0,
+   "cells": {
+    "128": {
+     "cap_bytes": 8589934592,
+     "LRU_mean_ret": 0.3359863557499513,
+     "O-PF_mean_ret": 0.2739514641985329,
+     "headroom_OPF_vs_LRU": 0.18463515107020054,
+     "rho_hat": 0.15565008801990948
+    },
+    "256": {
+     "cap_bytes": 17179869184,
+     "LRU_mean_ret": 0.3291199403893454,
+     "O-PF_mean_ret": 0.2747989612200629,
+     "headroom_OPF_vs_LRU": 0.16504918876997038,
+     "rho_hat": 0.15514880472533213
+    }
+   },
+   "rho_hat": 0.15565008801990948,
+   "ok_rho": true,
+   "ok_headroom": true
+  }
+ },
+ "chosen_k": 8,
+ "fallback": false
+}

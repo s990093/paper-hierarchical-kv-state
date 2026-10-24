@@ -1,0 +1,249 @@
+run_id,ts,trace,metric,value,note
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_req,12031,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,unit_match_rate,1.0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,ts_min,0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,ts_max,3536999,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,chain_bad_pos,0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,chain_bad_prev,0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,max_input_len,126195,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_blocks_all,182790,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_blocks_full,170899,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,gap_ratio_ms_per_tok_median,347.36842105263156,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_new,8056,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_cont,3511,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_fork,464,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_sessions,8520,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,sessions_with_ge2_requests,1923,≥1 次回來＝獨立回來事件的 session 數
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,requests_per_session_mean,1.4120892018779343,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,requests_per_session_max,43,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,n_with_candidate_parent,3975,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,fork_due_to_length_rule,427,有候選父，但 input(r) < input(p)+output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_new_user_tokens_p10,7.0,input(r)−input(p)−output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_new_user_tokens_p50,35.0,input(r)−input(p)−output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_new_user_tokens_p90,4619.0,input(r)−input(p)−output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_gap_s_p10,45.0,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_gap_s_p25,69.001,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_gap_s_p50,129.001,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_gap_s_p75,279.0,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_gap_s_p90,489.0,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_gap_ms_per_parent_out_tok_median,347.36842105263156,D4 §4.1 同法（父輸出 ≥50 token）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,frac_cont_gap_lt_5ms_per_out_tok,0.0,間隔短於 5 ms/輸出 token（>200 tok/s 解碼，物理上很可疑）
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,frac_cont_gap_zero,0.0,timestamp 解析度約 1 s
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,full_blocks_per_req_mean,22.981547668522982,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,full_blocks_per_req_p50,13.0,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,full_blocks_per_req_max,246,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,cont_full_blocks_mean,26.72002278553119,
+20261017-175203-p3x1-char,2026-10-17T17:52:07+08:00,conversation,working_set_GiB_bf16,10681.1875,不同的完整 block × 64 MiB
+20261017-175203-p3x1-char,2026-10-17T17:52:08+08:00,conversation,reuse_accesses_same_session,81630,完整 block 的重用存取，之前被同一個 session 寫過
+20261017-175203-p3x1-char,2026-10-17T17:52:08+08:00,conversation,reuse_accesses_cross_session,23962,之前只被別的 session 寫過（共用前綴、分叉）
+20261017-175203-p3x1-char,2026-10-17T17:52:08+08:00,conversation,distinct_full_block0,1,
+20261017-175203-p3x1-char,2026-10-17T17:52:08+08:00,conversation,top_block0_share,1.0,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_req,23608,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,unit_match_rate,1.0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,ts_min,0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,ts_max,3536999,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,chain_bad_pos,0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,chain_bad_prev,0,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,max_input_len,126195,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_blocks_all,183300,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_blocks_full,159983,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,gap_ratio_ms_per_tok_median,345.71941858457615,載入驗證（規則 6）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_new,7208,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_cont,7132,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_fork,9268,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_sessions,16476,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,sessions_with_ge2_requests,4862,≥1 次回來＝獨立回來事件的 session 數
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,requests_per_session_mean,1.4328720563243507,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,requests_per_session_max,43,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,n_with_candidate_parent,16400,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,fork_due_to_length_rule,3562,有候選父，但 input(r) < input(p)+output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_new_user_tokens_p10,10.0,input(r)−input(p)−output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_new_user_tokens_p50,275.0,input(r)−input(p)−output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_new_user_tokens_p90,1976.6000000000022,input(r)−input(p)−output(p)
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_gap_s_p10,0.0,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_gap_s_p25,0.0,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_gap_s_p50,3.001,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_gap_s_p75,120.001,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_gap_s_p90,291.0,同 session 兩輪的到達間隔
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_gap_ms_per_parent_out_tok_median,345.71941858457615,D4 §4.1 同法（父輸出 ≥50 token）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,frac_cont_gap_lt_5ms_per_out_tok,0.004037685060565276,間隔短於 5 ms/輸出 token（>200 tok/s 解碼，物理上很可疑）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,frac_cont_gap_zero,0.43199663488502527,timestamp 解析度約 1 s
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,full_blocks_per_req_mean,16.352126397831242,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,full_blocks_per_req_p50,12.0,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,full_blocks_per_req_max,246,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,cont_full_blocks_mean,18.832024677509814,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,working_set_GiB_bf16,9998.9375,不同的完整 block × 64 MiB
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,reuse_accesses_same_session,118697,完整 block 的重用存取，之前被同一個 session 寫過
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,reuse_accesses_cross_session,107361,之前只被別的 session 寫過（共用前綴、分叉）
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,distinct_full_block0,4,
+20261017-175203-p3x1-char,2026-10-17T17:52:09+08:00,toolagent,top_block0_share,0.4633175194849204,
+20261017-175203-p3x1-char,2026-10-17T17:52:11+08:00,qwen_traceA_blksz_16.jsonl,bailian_n_req,43058,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:11+08:00,qwen_traceA_blksz_16.jsonl,bailian_n_true_parent,19957,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:11+08:00,qwen_traceA_blksz_16.jsonl,bailian_tp,19634,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:11+08:00,qwen_traceA_blksz_16.jsonl,bailian_fp,646,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:11+08:00,qwen_traceA_blksz_16.jsonl,bailian_fn,323,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:11+08:00,qwen_traceA_blksz_16.jsonl,bailian_precision,0.968145956607495,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:11+08:00,qwen_traceA_blksz_16.jsonl,bailian_recall,0.9838152026857744,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:15+08:00,qwen_coder_blksz_16.jsonl,bailian_n_req,43011,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:15+08:00,qwen_coder_blksz_16.jsonl,bailian_n_true_parent,16605,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:15+08:00,qwen_coder_blksz_16.jsonl,bailian_tp,16322,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:15+08:00,qwen_coder_blksz_16.jsonl,bailian_fp,4124,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:15+08:00,qwen_coder_blksz_16.jsonl,bailian_fn,283,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:15+08:00,qwen_coder_blksz_16.jsonl,bailian_precision,0.7982979555903356,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-175203-p3x1-char,2026-10-17T17:52:15+08:00,qwen_coder_blksz_16.jsonl,bailian_recall,0.9829569406805179,前綴鏈重建規則（16-token block）對 parent_chat_id
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_req,12031,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,unit_match_rate,1.0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,ts_min,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,ts_max,3536999,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,chain_bad_pos,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,chain_bad_prev,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,max_input_len,126195,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_blocks_all,182790,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_blocks_full,170899,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,gap_ratio_ms_per_tok_median,347.36842105263156,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_new,8056,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_cont,3511,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_fork,464,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_sessions,8520,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,sessions_with_ge2_requests,1923,≥1 次回來＝獨立回來事件的 session 數
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,requests_per_session_mean,1.4120892018779343,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,requests_per_session_max,43,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,n_with_candidate_parent,3975,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,fork_due_to_length_rule,427,有候選父，但 input(r) < input(p)+output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_new_user_tokens_p10,7.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_new_user_tokens_p50,35.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_new_user_tokens_p90,4619.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_gap_s_p10,45.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_gap_s_p25,69.001,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_gap_s_p50,129.001,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_gap_s_p75,279.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_gap_s_p90,489.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_gap_ms_per_parent_out_tok_median,347.36842105263156,D4 §4.1 同法（父輸出 ≥50 token）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,frac_cont_gap_lt_5ms_per_out_tok,0.0,間隔短於 5 ms/輸出 token（>200 tok/s 解碼，物理上很可疑）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,frac_cont_gap_zero,0.0,timestamp 解析度約 1 s
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,full_blocks_per_req_mean,22.981547668522982,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,full_blocks_per_req_p50,13.0,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,full_blocks_per_req_max,246,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,cont_full_blocks_mean,26.72002278553119,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,working_set_GiB_bf16,10681.1875,不同的完整 block × 64 MiB
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,reuse_accesses_same_session,81630,完整 block 的重用存取，之前被同一個 session 寫過
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,reuse_accesses_cross_session,23962,之前只被別的 session 寫過（共用前綴、分叉）
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,distinct_full_block0,1,
+20261017-180326-p3x1-char2,2026-10-17T18:03:30+08:00,conversation|R1,top_block0_share,1.0,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_req,12031,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,unit_match_rate,1.0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,ts_min,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,ts_max,3536999,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,chain_bad_pos,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,chain_bad_prev,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,max_input_len,126195,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_blocks_all,182790,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_blocks_full,170899,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,gap_ratio_ms_per_tok_median,316.7724626988031,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_new,8056,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_cont,2357,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_fork,1618,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_sessions,9674,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,sessions_with_ge2_requests,1581,≥1 次回來＝獨立回來事件的 session 數
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,requests_per_session_mean,1.2436427537729997,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,requests_per_session_max,16,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,n_with_candidate_parent,3975,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,fork_due_to_length_rule,427,有候選父，但 input(r) < input(p)+output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_new_user_tokens_p10,8.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_new_user_tokens_p50,72.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_new_user_tokens_p90,5937.600000000001,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_gap_s_p10,54.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_gap_s_p25,78.001,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_gap_s_p50,147.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_gap_s_p75,312.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_gap_s_p90,522.001,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_gap_ms_per_parent_out_tok_median,316.7724626988031,D4 §4.1 同法（父輸出 ≥50 token）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,frac_cont_gap_lt_5ms_per_out_tok,0.0,間隔短於 5 ms/輸出 token（>200 tok/s 解碼，物理上很可疑）
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,frac_cont_gap_zero,0.0,timestamp 解析度約 1 s
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,full_blocks_per_req_mean,22.981547668522982,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,full_blocks_per_req_p50,13.0,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,full_blocks_per_req_max,246,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,cont_full_blocks_mean,28.48069579974544,
+20261017-180326-p3x1-char2,2026-10-17T18:03:31+08:00,conversation|R2,working_set_GiB_bf16,10681.1875,不同的完整 block × 64 MiB
+20261017-180326-p3x1-char2,2026-10-17T18:03:32+08:00,conversation|R2,reuse_accesses_same_session,55991,完整 block 的重用存取，之前被同一個 session 寫過
+20261017-180326-p3x1-char2,2026-10-17T18:03:32+08:00,conversation|R2,reuse_accesses_cross_session,49601,之前只被別的 session 寫過（共用前綴、分叉）
+20261017-180326-p3x1-char2,2026-10-17T18:03:32+08:00,conversation|R2,distinct_full_block0,1,
+20261017-180326-p3x1-char2,2026-10-17T18:03:32+08:00,conversation|R2,top_block0_share,1.0,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_req,23608,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,unit_match_rate,1.0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,ts_min,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,ts_max,3536999,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,chain_bad_pos,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,chain_bad_prev,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,max_input_len,126195,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_blocks_all,183300,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_blocks_full,159983,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,gap_ratio_ms_per_tok_median,345.71941858457615,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_new,7208,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_cont,7132,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_fork,9268,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_sessions,16476,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,sessions_with_ge2_requests,4862,≥1 次回來＝獨立回來事件的 session 數
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,requests_per_session_mean,1.4328720563243507,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,requests_per_session_max,43,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,n_with_candidate_parent,16400,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,fork_due_to_length_rule,3562,有候選父，但 input(r) < input(p)+output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_new_user_tokens_p10,10.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_new_user_tokens_p50,275.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_new_user_tokens_p90,1976.6000000000022,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_gap_s_p10,0.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_gap_s_p25,0.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_gap_s_p50,3.001,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_gap_s_p75,120.001,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_gap_s_p90,291.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_gap_ms_per_parent_out_tok_median,345.71941858457615,D4 §4.1 同法（父輸出 ≥50 token）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,frac_cont_gap_lt_5ms_per_out_tok,0.004037685060565276,間隔短於 5 ms/輸出 token（>200 tok/s 解碼，物理上很可疑）
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,frac_cont_gap_zero,0.43199663488502527,timestamp 解析度約 1 s
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,full_blocks_per_req_mean,16.352126397831242,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,full_blocks_per_req_p50,12.0,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,full_blocks_per_req_max,246,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,cont_full_blocks_mean,18.832024677509814,
+20261017-180326-p3x1-char2,2026-10-17T18:03:33+08:00,toolagent|R1,working_set_GiB_bf16,9998.9375,不同的完整 block × 64 MiB
+20261017-180326-p3x1-char2,2026-10-17T18:03:34+08:00,toolagent|R1,reuse_accesses_same_session,118697,完整 block 的重用存取，之前被同一個 session 寫過
+20261017-180326-p3x1-char2,2026-10-17T18:03:34+08:00,toolagent|R1,reuse_accesses_cross_session,107361,之前只被別的 session 寫過（共用前綴、分叉）
+20261017-180326-p3x1-char2,2026-10-17T18:03:34+08:00,toolagent|R1,distinct_full_block0,4,
+20261017-180326-p3x1-char2,2026-10-17T18:03:34+08:00,toolagent|R1,top_block0_share,0.4633175194849204,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_req,23608,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,unit_match_rate,1.0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,ts_min,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,ts_max,3536999,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,chain_bad_pos,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,chain_bad_prev,0,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,max_input_len,126195,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_blocks_all,183300,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_blocks_full,159983,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,gap_ratio_ms_per_tok_median,315.4761904761905,載入驗證（規則 6）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_new,7208,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_cont,2378,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_fork,14022,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_sessions,21230,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,sessions_with_ge2_requests,1631,≥1 次回來＝獨立回來事件的 session 數
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,requests_per_session_mean,1.1120113047574187,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,requests_per_session_max,16,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,n_with_candidate_parent,16400,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,fork_due_to_length_rule,3562,有候選父，但 input(r) < input(p)+output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_new_user_tokens_p10,8.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_new_user_tokens_p50,80.0,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_new_user_tokens_p90,5512.900000000001,input(r)−input(p)−output(p)
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_gap_s_p10,54.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_gap_s_p25,78.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_gap_s_p50,141.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_gap_s_p75,285.0,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_gap_s_p90,465.90040000000056,同 session 兩輪的到達間隔
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_gap_ms_per_parent_out_tok_median,315.4761904761905,D4 §4.1 同法（父輸出 ≥50 token）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,frac_cont_gap_lt_5ms_per_out_tok,0.0,間隔短於 5 ms/輸出 token（>200 tok/s 解碼，物理上很可疑）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,frac_cont_gap_zero,0.0,timestamp 解析度約 1 s
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,full_blocks_per_req_mean,16.352126397831242,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,full_blocks_per_req_p50,12.0,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,full_blocks_per_req_max,246,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,cont_full_blocks_mean,26.82842724978974,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,working_set_GiB_bf16,9998.9375,不同的完整 block × 64 MiB
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,reuse_accesses_same_session,53113,完整 block 的重用存取，之前被同一個 session 寫過
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,reuse_accesses_cross_session,172945,之前只被別的 session 寫過（共用前綴、分叉）
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,distinct_full_block0,4,
+20261017-180326-p3x1-char2,2026-10-17T18:03:35+08:00,toolagent|R2,top_block0_share,0.4633175194849204,

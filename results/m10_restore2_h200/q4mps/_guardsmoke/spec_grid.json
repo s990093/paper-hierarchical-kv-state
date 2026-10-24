@@ -1,0 +1,71 @@
+{
+ "model": "qwen",
+ "fmt": "int4_kivi",
+ "new_tokens": 256,
+ "lengths": [
+  32768
+ ],
+ "main_length": 32768,
+ "configs": [
+  "E1"
+ ],
+ "refs": [],
+ "tiers": [
+  {
+   "name": "cpu",
+   "kind": "cpu"
+  }
+ ],
+ "gpu_states": [
+  {
+   "name": "idle",
+   "duty": 0.0
+  },
+  {
+   "name": "busy",
+   "duty": 1.0
+  }
+ ],
+ "reps": 1,
+ "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_restore2_h200/q4mps/_guardsmoke",
+ "blocks_out": null,
+ "verify": true,
+ "extra_modes": [],
+ "extra_tiers": [],
+ "argv": [
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/code/m10_speed.py",
+  "grid",
+  "--model",
+  "qwen",
+  "--fmt",
+  "int4_kivi",
+  "--base-fmt",
+  "fp8_head",
+  "--out-dir",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_restore2_h200/q4mps/_guardsmoke",
+  "--bw-json",
+  "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_qwen/bw.json",
+  "--bw-names",
+  "cpu",
+  "--configs",
+  "E1",
+  "--refs",
+  "--lengths",
+  "--launches",
+  "1",
+  "--reps",
+  "1",
+  "--launch0",
+  "300"
+ ],
+ "run_id": "20261020-231833-m10h-mps-guardsmoke",
+ "restore_variant": {
+  "kernel": "k1",
+  "sched": "serial",
+  "group": 1,
+  "prio": false,
+  "unit": 512,
+  "meet": "claim",
+  "io_prio": false
+ }
+}

@@ -158,7 +158,7 @@ step R3-B-main m7run m7h-b-nfs-gap0 env M7_IO_MODEL=share python $P b --reps 3 -
 # ===== R2（續）　C6：vLLM 0.28＋OffloadingConnector；記下實際用的 attention backend（03 §R2 C6 列）=====
 step R2-C6 m7run m7h-c6-vllm python code/m7_c6_vllm.py --out "$R/c6_vllm.csv" --reps 6
 step R2-C6-backend m7run m7h-c6-backend bash -c \
-  'd=$(ls -d "$TIARA_RUNS"/*-m7h-c6-vllm 2>/dev/null | tail -1); test -n "$d" -a -f "$d/vllm_server.log" || { echo "找不到 C6 的 vllm_server.log" >&2; exit 1; }; { echo "source: $d/vllm_server.log"; grep -iE "backend|attention" "$d/vllm_server.log" | head -40; } | tee "$M7_RES/c6_vllm_backend.txt"'
+  'd=$(ls -d "$TIARA_RUNS"/*-m7h-c6-vllm 2>/dev/null | tail -1); test -n "$d" -a -f "$d/vllm_server.log" || { echo "找不到 C6 的 vllm_server.log" >&2; exit 1; }; { echo "source: $d/vllm_server.log"; grep -iE "backend|attention|sampl" "$d/vllm_server.log" | head -40; } | tee "$M7_RES/c6_vllm_backend.txt"'
 # 第二個時段的雜訊（MI300X 上 t2 也是在最後量的）
 step R2-C4-t2-same m7run m7h-c4-same-t2 python $P noise --reps 10 --slot t2 --proc-mode same
 for i in $(seq 1 5); do

@@ -14,7 +14,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(__file__))
 from m7_sim import load_f, load_params, simulate, summarize  # noqa: E402
 
-RES = os.path.join(os.path.dirname(__file__), "..", "results", "m7_write_policy_mi300x")
+# 預設＝MI300X 的目錄；平台 C（H200）由 M7_RES（env_h200.sh）設（2026-10-16）
+RES = os.environ.get("M7_RES") or os.path.join(os.path.dirname(__file__), "..", "results", "m7_write_policy_mi300x")
 WT = ["S5", "S5s", "S5L", "S5P", "S5c"]                     # 寫入時決定
 NWT = ["S0", "S1", "S2b", "S4", "S4+", "S4+P", "S4L"]        # 寫入不看位置
 TS = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")   # 分析時間；run_id 指回 GPU 原始列

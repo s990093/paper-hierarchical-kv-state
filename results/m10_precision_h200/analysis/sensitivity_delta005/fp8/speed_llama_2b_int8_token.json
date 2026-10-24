@@ -1,0 +1,84 @@
+{
+ "model": "llama",
+ "summary": "/work/ChihChungHsu/hungweilai/tmp/claude-1046/-work-ChihChungHsu-hungweilai-paper-hierarchical-kv-state/a7c7b4ae-39a3-413c-a648-55aecdd2b3eb/scratchpad/d005/prec/speed_llama/summary_fp8.csv",
+ "x_summary": "/work/ChihChungHsu/hungweilai/tmp/claude-1046/-work-ChihChungHsu-hungweilai-paper-hierarchical-kv-state/a7c7b4ae-39a3-413c-a648-55aecdd2b3eb/scratchpad/d005/prec/speed_llama/summary_2b_int8_token.csv",
+ "delta_star": 0.05,
+ "rule": "X 不輸＝每格 median(X) ≤ min(F25,M25,B25,R25 的 median)×(1+δ*)（03 §2.4）",
+ "cells": [
+  {
+   "config": "E1s@int8_token",
+   "bw": "b16",
+   "gpu_state": "busy",
+   "median_x": 0.29618,
+   "fastest_mixed": 0.3636,
+   "ratio": 0.8146,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b16",
+   "gpu_state": "idle",
+   "median_x": 0.24074,
+   "fastest_mixed": 0.30959,
+   "ratio": 0.7776,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b32",
+   "gpu_state": "busy",
+   "median_x": 0.7175,
+   "fastest_mixed": 0.9406,
+   "ratio": 0.7628,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b32",
+   "gpu_state": "idle",
+   "median_x": 0.55707,
+   "fastest_mixed": 0.72309,
+   "ratio": 0.7704,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b48",
+   "gpu_state": "busy",
+   "median_x": 1.5326,
+   "fastest_mixed": 1.85506,
+   "ratio": 0.8262,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b48",
+   "gpu_state": "idle",
+   "median_x": 1.0974,
+   "fastest_mixed": 1.24624,
+   "ratio": 0.8806,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "cpu",
+   "gpu_state": "busy",
+   "median_x": 0.14328,
+   "fastest_mixed": 0.12534,
+   "ratio": 1.1431,
+   "not_worse": false
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "cpu",
+   "gpu_state": "idle",
+   "median_x": 0.07539,
+   "fastest_mixed": 0.08523,
+   "ratio": 0.8845,
+   "not_worse": true
+  }
+ ],
+ "not_worse": {
+  "E1s@int8_token": false
+ }
+}

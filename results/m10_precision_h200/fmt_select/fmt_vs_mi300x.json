@@ -1,0 +1,25 @@
+{
+ "rule": "13 §3-4：H200 照 07 §3 重選；任一個和 MI300X 不同就停",
+ "h200": {
+  "llama": {
+   "fp8": "fp8_token",
+   "int4": "int4_kivi"
+  },
+  "qwen": {
+   "fp8": "fp8_head",
+   "int4": "int4_kivi"
+  }
+ },
+ "mi300x": {
+  "llama": {
+   "fp8": "fp8_token",
+   "int4": "int4_kivi"
+  },
+  "qwen": {
+   "fp8": "fp8_head",
+   "int4": "int4_kivi"
+  }
+ },
+ "same": true,
+ "diff": []
+}

@@ -1,0 +1,9 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E0,cake,30,0.06883,0.11317,2,0.0,1820327936.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3
+32768,cpu,busy,E0,loadall,30,0.236,0.28214,0,0.0,1879048192.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3
+32768,cpu,busy,E1,cake,30,0.03681,0.08084,1,63.0,578027520.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3
+32768,cpu,busy,E1,loadall,30,0.01698,0.0627,0,64.0,587202560.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3
+32768,cpu,idle,E0,cake,30,0.05394,0.07576,3,0.0,1790967808.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3
+32768,cpu,idle,E0,loadall,30,0.03913,0.06123,0,0.0,1879048192.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3
+32768,cpu,idle,E1,cake,30,0.02286,0.04465,1,63.0,578027520.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3
+32768,cpu,idle,E1,loadall,30,0.0141,0.03602,0,64.0,587202560.0,,,30,0,20261020-125439-m10h-rs2-q4-qwen-int4-P3

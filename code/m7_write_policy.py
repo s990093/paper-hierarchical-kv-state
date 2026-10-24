@@ -452,10 +452,13 @@ def anchor(a):
     km.prefill_chunked(s.ids[:maxn * CHUNK])
     host_all = capture(km, range(maxn), pool)
     roots = {"local": "/var/tmp/m7anchor", "nfs": os.path.join(RUNS_ROOT, "_m7anchor")}
+    want_real = "real" in a.io      # H200（使用者 10/16：「都用模擬限速」）：--io sim，不建真實裝置、不寫檔
     for dev in ("cpu", "local", "nfs"):
         sim = mk_tier(f"{'cpu' if dev == 'cpu' else 'ssd_' + dev}", P[dev])
         if dev == "cpu":
             real = Tier("cpu_real", read_Bps=0, write_Bps=0)
+        elif not want_real:
+            real = None
         else:
             real = FileTier(f"ssd_{dev}_real", roots[dev])
             for i in range(maxn):
@@ -466,6 +469,8 @@ def anchor(a):
             n = L // CHUNK
             for mode in ("load_only", "cake"):
                 for io, tier, R in (("sim", sim, rs), ("real", real, rr)):
+                    if io not in a.io:
+                        continue
                     for rep in range(a.reps):
                         tier.reset_clock()
                         io0 = int([x for x in open("/proc/self/io") if x.startswith("read_bytes")][0].split()[1])
@@ -483,7 +488,7 @@ def anchor(a):
                         o.row(device=dev, io=io, rep=rep, L=L, read_bytes_delta=io1 - io0, disk_foreign_mib=foreign,
                               contaminated_gpu=g.gpu_contaminated, contaminated_disk=foreign > 64, kv_bad=bad, **rec)
                         print(dev, L, mode, io, rep, round(rec["ttft"], 4), rec["meet"], io1 - io0, flush=True)
-        if dev != "cpu":
+        if dev != "cpu" and want_real:
             for i in range(maxn):
                 os.remove(real.path(f"c{i}"))
 
@@ -503,17 +508,21 @@ def a2(a):
     hostX = capture(km, range(nX), pool)
     wbuf = pool.get()   # 背景寫入的內容（大小正確即可）
     roots = {"local": "/var/tmp/m7a2", "nfs": os.path.join(RUNS_ROOT, "_m7a2")}
+    want_real = "real" in a.io      # H200：--io sim，不建真實裝置、不寫檔（背景寫入只走限速器的 reserve_write）
     for dev in a.devs:
-        real = FileTier(f"ssd_{dev}_real", roots[dev])
-        for i in range(nX):
+        real = FileTier(f"ssd_{dev}_real", roots[dev]) if want_real else None
+        for i in range(nX if want_real else 0):
             real.write_file(f"x{i}", hostX[i]); rr.keys[i] = f"x{i}"
-        os.sync()
+        if want_real:
+            os.sync()
         sim = mk_tier(f"ssd_{dev}", P[dev])
         ell = CHUNK_BYTES / sim.read_Bps
         b = write_boundary(nW, f, ell)
         bg = {"none": 0, "S3_partial": nW - b, "S0_full": nW}
         for bgname, cnt in bg.items():
             for io in ("real", "sim"):
+                if io not in a.io:
+                    continue
                 for rep in range(a.reps):
                     sim.reset_clock()
                     tier = real if io == "real" else sim
@@ -556,7 +565,7 @@ def a2(a):
                             os.remove(real.path(f"w{k}"))
                         except FileNotFoundError:
                             pass
-        for i in range(nX):
+        for i in range(nX if want_real else 0):
             os.remove(real.path(f"x{i}"))
 
 
@@ -882,6 +891,8 @@ def main():
     p.add_argument("--b2", action="store_true", help="08 消融：寫到 b2_*.csv")
     p.add_argument("--release", default="free", choices=["free", "hold"])
     p.add_argument("--workload", default="chat", choices=list(SCHED))
+    p.add_argument("--io", nargs="+", default=["sim", "real"], choices=["sim", "real"],
+                   help="anchor／a2 只跑哪一邊（預設兩邊，同 MI300X；H200 只有限速層 → sim）")
     a = p.parse_args()
     if a.strategies is None:   # 2026-10-08：B 曾誤用 A1 的預設清單而崩潰（run m7-b-nfs-gap0），改成依子命令給預設
         a.strategies = STRATS_B if a.cmd == "b" else ["S0", "S2a", "S3", "S5", "CPUall"]

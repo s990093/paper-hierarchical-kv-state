@@ -1,0 +1,300 @@
+{
+ "generated": "2026-10-16T09:06:16+08:00",
+ "run_id": "20261016-090548-h200-repro-compare-gzfix",
+ "overall": "REPRODUCED：(0)(1)(2) 都過；(3) 見下",
+ "delta_pct_h200": 1.7621027222743737,
+ "delta_pct_mi300x": 6.170331955775014,
+ "delta_star_pct": 5.0,
+ "criteria": {
+  "0_kv_bad": {
+   "status": "PASS",
+   "h200_kv_bad_total": 0,
+   "rule": "A0、A1、B 的 kv_bad 合計＝0（03 §R1）；FAIL → 停下回報"
+  },
+  "1_cake_useful": {
+   "status": "REPRODUCED",
+   "n_cells_over_delta_star": 25,
+   "n_cells": 28,
+   "max_gain_pct": 93.3344724359938,
+   "bands_at_max_L": [
+    "100Gbps",
+    "25Gbps",
+    "32Gbps",
+    "56Gbps",
+    "7Gbps",
+    "local",
+    "nfs"
+   ],
+   "mi300x_bands_at_max_L": [
+    "100Gbps",
+    "25Gbps",
+    "32Gbps",
+    "56Gbps",
+    "7Gbps",
+    "local",
+    "nfs"
+   ],
+   "rule": "至少一個（頻寬, L）格：min(只算, 只載) ÷ Cake − 1 > δ*（03 §R3 第一列）；不過 → 停下回報，不進 D0"
+  },
+  "2_s5_vs_s4plus": {
+   "status": "REPRODUCED",
+   "cells": [
+    {
+     "cpu_frac": 0.25,
+     "h200_pct": -0.0738897162324815,
+     "n_reps_h200": 3,
+     "state": "REPRODUCED"
+    },
+    {
+     "cpu_frac": 0.5,
+     "h200_pct": -0.2403497503263333,
+     "n_reps_h200": 3,
+     "state": "REPRODUCED"
+    },
+    {
+     "cpu_frac": 1.0,
+     "h200_pct": 0.0280299475394935,
+     "n_reps_h200": 3,
+     "state": "REPRODUCED"
+    }
+   ],
+   "rule": "B 主設定每個 cpu_frac：|S5 對 S4+| ≤ δ* → 重現；S5 快超過 δ* → 不重現（和第一階段相反，停下回報）；S5 慢超過 δ* → CHECK（方向沒相反，但超出 ±δ*，回報）"
+  },
+  "3_busy_no_backup": {
+   "status": "PARTIAL",
+   "same_direction": "9/11",
+   "cells": [
+    {
+     "cell": [
+      "local",
+      "busy1",
+      "16384"
+     ],
+     "mi300x_pct": 36.23878146969064,
+     "h200_pct": 24.334747255327898,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "local",
+      "busy1",
+      "32768"
+     ],
+     "mi300x_pct": 29.233559318858187,
+     "h200_pct": 31.309121459772427,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "local",
+      "busy2",
+      "4096"
+     ],
+     "mi300x_pct": 45.56492362775387,
+     "h200_pct": -2.529704867765417,
+     "same_direction": false
+    },
+    {
+     "cell": [
+      "local",
+      "busy2",
+      "8192"
+     ],
+     "mi300x_pct": 29.19454156352195,
+     "h200_pct": 48.77069642543888,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "local",
+      "busy2",
+      "16384"
+     ],
+     "mi300x_pct": 52.02372095464185,
+     "h200_pct": 61.90623772074979,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "local",
+      "busy2",
+      "32768"
+     ],
+     "mi300x_pct": 66.37197492739332,
+     "h200_pct": 53.25197527251445,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "nfs",
+      "busy1",
+      "16384"
+     ],
+     "mi300x_pct": 13.217493246631664,
+     "h200_pct": -3.948921252951997,
+     "same_direction": false
+    },
+    {
+     "cell": [
+      "nfs",
+      "busy1",
+      "32768"
+     ],
+     "mi300x_pct": 14.219350329865357,
+     "h200_pct": 4.369601579588491,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "nfs",
+      "busy2",
+      "8192"
+     ],
+     "mi300x_pct": 23.33473192708249,
+     "h200_pct": 9.724296247817763,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "nfs",
+      "busy2",
+      "16384"
+     ],
+     "mi300x_pct": 24.917505997338456,
+     "h200_pct": 5.083668791652149,
+     "same_direction": true
+    },
+    {
+     "cell": [
+      "nfs",
+      "busy2",
+      "32768"
+     ],
+     "mi300x_pct": 30.500439025510268,
+     "h200_pct": 15.761448165162127,
+     "same_direction": true
+    }
+   ],
+   "rule": "MI300X 上顯著（CI 不重疊、> δ、S3 較慢）的格子，H200 上也是 S3 較慢；只記錄回報，不擋 D0"
+  },
+  "4_c6": {
+   "status": "REPORT_ONLY",
+   "by_L": {
+    "mi300x": {
+     "8192": {
+      "vllm_cold_compute_s": 0.443245,
+      "vllm_warm_cpu_load_s": 0.29176,
+      "vllm_cpu_to_gpu_GiBps": 4.024998149805665,
+      "harness_compute_only_s": 0.645396,
+      "harness_over_vllm_cold": 1.4560705704520074
+     },
+     "16384": {
+      "vllm_cold_compute_s": 1.3044,
+      "vllm_warm_cpu_load_s": 0.552875,
+      "vllm_cpu_to_gpu_GiBps": 4.0948625026036956,
+      "harness_compute_only_s": 1.439303,
+      "harness_over_vllm_cold": 1.1034214964734743
+     },
+     "32768": {
+      "vllm_cold_compute_s": 4.584395,
+      "vllm_warm_cpu_load_s": 1.080465,
+      "vllm_cpu_to_gpu_GiBps": 4.10675617416216,
+      "harness_compute_only_s": 3.758715,
+      "harness_over_vllm_cold": 0.8198933556118092
+     }
+    },
+    "h200": {
+     "8192": {
+      "vllm_cold_compute_s": 0.209465,
+      "vllm_warm_cpu_load_s": 0.04621,
+      "vllm_cpu_to_gpu_GiBps": 42.01046311051554,
+      "harness_compute_only_s": 0.360013,
+      "harness_over_vllm_cold": 1.7187262788532691
+     },
+     "16384": {
+      "vllm_cold_compute_s": 0.481715,
+      "vllm_warm_cpu_load_s": 0.07263,
+      "vllm_cpu_to_gpu_GiBps": 47.99716227454577,
+      "harness_compute_only_s": 0.8305575000000001,
+      "harness_over_vllm_cold": 1.7241678170702595
+     },
+     "32768": {
+      "vllm_cold_compute_s": 1.22416,
+      "vllm_warm_cpu_load_s": 0.128195,
+      "vllm_cpu_to_gpu_GiBps": 49.867693189555915,
+      "harness_compute_only_s": 2.130982,
+      "harness_over_vllm_cold": 1.7407708142726441
+     }
+    }
+   },
+   "vllm_backend_log": {
+    "mi300x": "NOT_MEASURED",
+    "h200": "': False}, 'max_cudagraph_capture_size': 512, 'dynamic_shapes_config': {'type': <DynamicShapesType.BACKED: 'backed'>, 'evaluate_guards': False, 'assume_32_bit_indexing': False}, 'local_cache_dir': None, 'fast_moe_cold_start': False, 'static_all_moe_layers': []}, kernel_config=KernelConfig(ir_op_priority=IrOpPriorityConfig(rms_norm=['native'], fused_add_rms_norm=['native']), enable_flashinfer_autotune=True, enable_cutedsl_warmup=True, enable_jit_warmup=True, enable_bf16x3_router_gemm=False, moe_backend='auto', linear_backend='auto')\n(EngineCore pid=1884235) INFO 10-16 08:56:53 [parallel_state.py:1638] world_size=1 rank=0 local_rank=0 distributed_init_method=file:///tmp/vllm_dist_2a4dbb6508de4058b1edc89acc01e9a8 backend=nccl\n(EngineCore pid=1884235) INFO 10-16 08:56:55 [cuda.py:486] Using FLASH_ATTN attention backend out of potential backends: ['FLASH_ATTN', 'FLASHINFER', 'TRITON_ATTN', 'FLEX_ATTENTION'].\n(EngineCore pid=1884235) INFO 10-16 08:56:55 [flash_attn.py:866] Using FlashAttention version 3\n(EngineCore pid=1884235) INFO 10-16 08:56:58 [topk_topp_sampler.py:46] FlashInfer top-p/top-k sampling disabled via VLLM_USE_FLASHINFER_SAMPLER=0.\n(EngineCore pid=1884235) INFO 10-16 08:57:02 [backends.py:1094] Using cache directory: /work/ChihChungHsu/hungweilai/.cache/vllm/torch_compile_cache/afcb73bade/rank_0_0/backbone for vLLM's torch.compile\n(EngineCore pid=1884235) INFO 10-16 08:57:02 [backends.py:1155] Dynamo bytecode transform time: 3.87 s\n(EngineCore pid=1884235) INFO 10-16 08:57:07 [backends.py:393] Compiling a graph for compile range (1, 8192) takes 4.68 s\n(EngineCore pid=1884235) INFO 10-16 08:57:10 [backends.py:920] collected artifacts: 33 entries, 3 artifacts, 4950597 bytes total\n(APIServer pid=1884157) WARNING 10-16 08:58:00 [model.py:1713] Default vLLM sampling parameters have been overridden by the model's `generation_config.json`: `{'temperature': 0.6, 'top_p': 0.9}`. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`."
+   },
+   "rule": "harness ÷ vLLM 只報告，不判定（03 §R3 第四列；D0 的 §5.2 會拆開）"
+  }
+ },
+ "mi300x_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m7_write_policy_mi300x",
+ "h200_dir": "/work/ChihChungHsu/hungweilai/tiara-runs/20261016-090548-h200-repro-compare-gzfix/h200_snapshot",
+ "tier_params": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m7_write_policy_mi300x/tier_params.json",
+ "fig_dir": "/work/ChihChungHsu/hungweilai/tiara-runs/20261016-090548-h200-repro-compare-gzfix/figs",
+ "analysis_errors": {
+  "mi300x": [],
+  "h200": []
+ },
+ "input_run_ids_h200": {
+  "a0.csv": [
+   "20261016-061749-m7h-a0"
+  ],
+  "a1_share.csv": [
+   "20261016-062450-m7h-a1"
+  ],
+  "b_share.csv": [
+   "20261016-063929-m7h-b-nfs-gap0"
+  ],
+  "c4_noise.csv": [
+   "20261016-061430-m7h-c4-same-t1",
+   "20261016-061447-m7h-c4-restart-t1",
+   "20261016-061501-m7h-c4-restart-t1",
+   "20261016-061516-m7h-c4-restart-t1",
+   "20261016-061530-m7h-c4-restart-t1",
+   "20261016-061544-m7h-c4-restart-t1",
+   "20261016-061559-m7h-c4-restart-t1",
+   "20261016-061613-m7h-c4-restart-t1",
+   "20261016-061627-m7h-c4-restart-t1",
+   "20261016-061641-m7h-c4-restart-t1",
+   "20261016-061655-m7h-c4-restart-t1",
+   "20261016-085841-m7h-c4-same-t2",
+   "20261016-085857-m7h-c4-restart-t2",
+   "20261016-085912-m7h-c4-restart-t2",
+   "20261016-085926-m7h-c4-restart-t2",
+   "20261016-085940-m7h-c4-restart-t2",
+   "20261016-085955-m7h-c4-restart-t2"
+  ],
+  "c6_vllm.csv": [
+   "20261016-085632-m7h-c6-vllm"
+  ],
+  "calib_c0.csv": [
+   "20261016-061254-m7h-c0"
+  ],
+  "calib_c0_duplex.csv": [
+   "20261016-061303-m7h-duplex"
+  ],
+  "calib_c1.csv": [
+   "20261016-061311-m7h-c1"
+  ],
+  "calib_c5.csv": [
+   "20261016-061331-m7h-c5"
+  ],
+  "calib_c7_self.csv": [
+   "20261016-061709-m7h-c7self"
+  ]
+ },
+ "note": "只比方向；兩台的數字不放進精度這條線的任何圖或判定（03 §R3）。算法＝m7_analyze.py（calib／a0／a1／b）。",
+ "mi300x_recompute_vs_committed_maxabs": {
+  "summary_a0_speedup.csv": 0.0,
+  "summary_a1_pairs.csv": 0.0,
+  "summary_b_verdict.csv": 0.0,
+  "summary_c4.csv": 0.0
+ }
+}

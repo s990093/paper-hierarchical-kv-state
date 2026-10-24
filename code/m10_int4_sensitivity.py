@@ -19,7 +19,7 @@ import math
 import os
 import statistics as st
 
-R = "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x"
+R = os.environ.get("M10_PRECISION_DIR") or "/mlsteam/workspace/paper-hierarchical-kv-state/results/m10_precision_mi300x"   # H200：環境變數（10/19；沒設時不變）
 CFGS = {"llama": [("step1", "E1s@int8_token", "INT8（每 token）"), ("step1", "E1s@fp8k0_token", "FP8 K 先減平均"),
                   ("step1", "E1", "FP8（主線）"), ("int4end", "E1@int4_kivi", "INT4 KIVI")],
         "qwen": [("step1", "E1s@int8_token", "INT8（每 token）"), ("step1", "E1s@fp8k0_head", "FP8 K 先減平均"),
@@ -75,7 +75,8 @@ def main():
         out[m] = res
     md += ["每 token Δlog p＝（低精度的標準答案 log 機率 − E0 的）÷ 答案 token 數，同一題配對；± 是 95% CI 半寬。",
            "負的＝模型對標準答案的信心變低。exp(−0.01)≈0.99，也就是每個 token 的機率約低 1%。"]
-    d = f"{R}/analysis/int4"
+    d = os.environ.get("M10_SENS_OUT") or f"{R}/analysis/int4"   # H200：判定沒走到 INT4，輸出另放（10/19；沒設時不變）
+    os.makedirs(d, exist_ok=True)
     json.dump(out, open(f"{d}/sensitivity.json", "w"), ensure_ascii=False, indent=1)
     open(f"{d}/sensitivity.md", "w").write("\n".join(md) + "\n")
     print("\n".join(md))

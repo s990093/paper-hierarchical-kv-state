@@ -1,0 +1,45 @@
+{
+ "label": "完整",
+ "n": 12,
+ "policies": [
+  "F",
+  "M",
+  "B",
+  "R0",
+  "R1",
+  "ERR",
+  "ATT",
+  "AXE",
+  "ORC"
+ ],
+ "fracs": [
+  0.1,
+  0.25,
+  0.5,
+  0.75,
+  0.9
+ ],
+ "readout_b": true,
+ "est_h": 0.51,
+ "pilot_seconds_per_item": {
+  "qwen|508": 152.4
+ },
+ "pilot_items": {
+  "qwen|508": {
+   "T2_front-back_s40000": [
+    164.6,
+    "20261019-033605-m10h-lc-pilot-qwen-508"
+   ],
+   "T3_front-back_s40000": [
+    164.2,
+    "20261019-033605-m10h-lc-pilot-qwen-508"
+   ],
+   "T4_front-back_s40000": [
+    128.5,
+    "20261019-033605-m10h-lc-pilot-qwen-508"
+   ]
+  }
+ },
+ "platform": "H200",
+ "rule": "10_longctx_plan §3.3（MI300X 的 longctx_plan_n.py 同一條）"
+}

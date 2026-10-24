@@ -1,0 +1,1 @@
+{"idle": 0.0, "busy1": 0.6, "busy2": 1.0, "_note": "H200（13_h200_repro §12）：busy1、busy2＝H200 主線（results/m7_write_policy_h200/busy_levels.json，duty 0.6／1.0）；MI300X 的 busy3（duty 0.9）不跑：H200 的 busy2 已經是 duty 1.0"}

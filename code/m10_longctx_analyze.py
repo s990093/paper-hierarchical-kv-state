@@ -28,7 +28,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 REPO = os.path.dirname(HERE)
-R = os.path.join(REPO, "results", "m10_precision_mi300x")
+R = os.environ.get("M10_PRECISION_DIR") or os.path.join(REPO, "results", "m10_precision_mi300x")   # H200：M10_PRECISION_DIR（沒設時不變；2026-10-17）
 LEN = {64: "32K", 128: "64K", 252: "128K"}
 TOKENS = {64: 32768, 128: 65536, 252: 129024}
 N_BOOT, SEED = 10_000, 0
@@ -175,7 +175,8 @@ def speed(lc, m):
     out = {}
     for tier in ("fp8", "int4"):
         f = fmt_of(m, tier)
-        base = os.path.join(R, "speed_qwen_regrid" if (m == "qwen" and tier == "fp8") else f"speed_{m}", f"summary_{tier}.csv")
+        rg = m == "qwen" and tier == "fp8" and os.path.isdir(os.path.join(R, "speed_qwen_regrid"))   # H200 沒有重量那次（10/17）
+        base = os.path.join(R, "speed_qwen_regrid" if rg else f"speed_{m}", f"summary_{tier}.csv")
         srcs = [("32K", base, None, 32768)] + [(LEN[nb], os.path.join(lc, f"speed_{m}_{TOKENS[nb]}_{f}", "summary.csv"),
                                                 os.path.join(lc, f"speed_{m}_{TOKENS[nb]}_{f}"), TOKENS[nb]) for nb in (128, 252)]
         for L, p, d, want_len in srcs:

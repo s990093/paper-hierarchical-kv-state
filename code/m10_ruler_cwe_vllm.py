@@ -17,7 +17,7 @@ import json
 import os
 from datetime import datetime
 
-LLAMA = "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*"
+LLAMA = os.environ.get("M7_LLAMA_GLOB") or "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/*"   # H200：env_h200.sh 設（10/17 加，沒設時不變）
 
 
 def string_match_all(pred, refs):

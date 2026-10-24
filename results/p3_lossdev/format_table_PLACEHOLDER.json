@@ -1,0 +1,27 @@
+{
+ "label": "PLACEHOLDER：大小由位元數算（不是量測）；品質判準照 04_prereg_map §3（BF16、8-bit 一律過；INT4 只在 context ≤ 32K 過；INT2 只能給不會再被讀的）。results/p3_formats/format_table.json 出來後換掉重跑。",
+ "model": "llama-3.1-8b",
+ "bytes_per_token_bf16": 131072,
+ "formats": {
+  "bf16": {
+   "ratio": 1.0,
+   "pass_max_ctx": null,
+   "derivation": "16 bit"
+  },
+  "int8": {
+   "ratio": 0.5078125,
+   "pass_max_ctx": null,
+   "derivation": "8 bit＋每 token 每 head 一個 fp16 scale（128 維）"
+  },
+  "int4": {
+   "ratio": 0.3125,
+   "pass_max_ctx": 32768,
+   "derivation": "KIVI：4 bit＋每 32 個一組 fp16 scale＋zero"
+  },
+  "int2": {
+   "ratio": 0.1875,
+   "pass_max_ctx": 0,
+   "derivation": "KIVI：2 bit＋每 32 個一組 fp16 scale＋zero；讀取一律算不過"
+  }
+ }
+}

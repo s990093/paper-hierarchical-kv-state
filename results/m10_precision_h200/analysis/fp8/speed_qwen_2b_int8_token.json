@@ -1,0 +1,84 @@
+{
+ "model": "qwen",
+ "summary": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_qwen/summary_fp8.csv",
+ "x_summary": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/m10_precision_h200/speed_qwen/summary_2b_int8_token.csv",
+ "delta_star": 0.05,
+ "rule": "X 不輸＝每格 median(X) ≤ min(F25,M25,B25,R25 的 median)×(1+δ*)（03 §2.4）",
+ "cells": [
+  {
+   "config": "E1s@int8_token",
+   "bw": "b16",
+   "gpu_state": "busy",
+   "median_x": 0.22032,
+   "fastest_mixed": 0.31826,
+   "ratio": 0.6923,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b16",
+   "gpu_state": "idle",
+   "median_x": 0.18732,
+   "fastest_mixed": 0.26734,
+   "ratio": 0.7007,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b32",
+   "gpu_state": "busy",
+   "median_x": 0.57735,
+   "fastest_mixed": 0.80524,
+   "ratio": 0.717,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b32",
+   "gpu_state": "idle",
+   "median_x": 0.48011,
+   "fastest_mixed": 0.62546,
+   "ratio": 0.7676,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b48",
+   "gpu_state": "busy",
+   "median_x": 1.35036,
+   "fastest_mixed": 1.61652,
+   "ratio": 0.8354,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "b48",
+   "gpu_state": "idle",
+   "median_x": 0.96604,
+   "fastest_mixed": 1.07529,
+   "ratio": 0.8984,
+   "not_worse": true
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "cpu",
+   "gpu_state": "busy",
+   "median_x": 0.07989,
+   "fastest_mixed": 0.07115,
+   "ratio": 1.1228,
+   "not_worse": false
+  },
+  {
+   "config": "E1s@int8_token",
+   "bw": "cpu",
+   "gpu_state": "idle",
+   "median_x": 0.04213,
+   "fastest_mixed": 0.05468,
+   "ratio": 0.7705,
+   "not_worse": true
+  }
+ ],
+ "not_worse": {
+  "E1s@int8_token": false
+ }
+}

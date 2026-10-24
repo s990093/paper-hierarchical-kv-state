@@ -1,0 +1,807 @@
+run_id,ts,model,item_id,task,seed,band,turn,params,metric,gold,needle_blocks,n_gen,stop,max_new,upstream_len,score_64,score_up,f1_64,f1_up,pred,t_prefill,t_turn,own_gpu_intruders
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:28:07+08:00,qwen,T5_global_s2000,T5,2000,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""stranger"", ""involvement"", ""quicksand"", ""syndrome"", ""mastoid"", ""wacky"", ""escalator"", ""twig"", ""washcloth"", ""transom""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",73,eos,120,120,0.9,0.9,,," 
+
+1. **quicksand**  
+2. **involvement**  
+3. **twig**  
+4. **escalator**  
+5. **syndrome**  
+6. **wacky**  
+7. **mastoid**  
+8. **stranger**  
+9. **transom**  
+10. **penny**",8.21,2.836,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:28:21+08:00,qwen,T5_global_s2001,T5,2001,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""crewmen"", ""brewer"", ""zealous"", ""fisting"", ""wide-eyed"", ""object"", ""cleric"", ""gladiolus"", ""gift"", ""earmuffs""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.6,0.6,,," 
+
+1. **crewmen**  
+2. **wide-eyed**  
+3. **object**  
+4. **gladiolus**  
+5. **zealous**  
+6. **gift**  
+7. **breaker**  
+8. **glide**  
+9. **zealous**  
+10. **wide-eyed**
+
+It appears that ""crewmen"" and ""wide-eyed"" are the most frequent words, each appearing multiple times. The word ""zealous"" and ""wide-eyed"" are tied for third place, and ""object"" and ""gladiolus",7.816,4.453,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:28:32+08:00,qwen,T5_global_s2002,T5,2002,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""edited"", ""basin"", ""retreat"", ""boudoir"", ""grandmother"", ""goodie"", ""cilantro"", ""ideal"", ""centurion"", ""disadvantage""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",72,eos,120,120,0.8,0.9,,," 
+
+1. **goodie**  
+2. **centurion**  
+3. **cilantro**  
+4. **retreat**  
+5. **grandmother**  
+6. **edited**  
+7. **boudoir**  
+8. **ideal**  
+9. **tension**  
+10. **disadvantage**",7.732,2.496,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:28:43+08:00,qwen,T5_global_s2003,T5,2003,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""exhaust"", ""sentence"", ""incubation"", ""transmission"", ""blinker"", ""homework"", ""try"", ""craw"", ""nifty"", ""cygnet""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",46,eos,120,120,1.0,1.0,,,"  
+1. homework  
+2. try  
+3. cygnet  
+4. transmission  
+5. blinker  
+6. incubation  
+7. nifty  
+8. sentence  
+9. exhaust  
+10. craw",7.751,1.632,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:28:56+08:00,qwen,T5_global_s2004,T5,2004,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""personal"", ""crystal"", ""twine"", ""chiffonier"", ""matrix"", ""deviation"", ""specialist"", ""interpretation"", ""squeegee"", ""overhear""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",82,eos,120,120,0.8,0.8,,," 
+
+1. **twine**  
+2. **matrix**  
+3. **overhear**  
+4. **personal**  
+5. **squeegee**  
+6. **crystal**  
+7. **specialist**  
+8. **reduction**  
+9. **interpretation**  
+10. **twin**  
+
+These words appear frequently across the provided list of terms.",7.828,3.04,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:29:09+08:00,qwen,T5_global_s2005,T5,2005,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""massage"", ""veal"", ""dungarees"", ""homeownership"", ""wasp"", ""steeple"", ""jackal"", ""hearthside"", ""corn"", ""jacket""]","[2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",103,eos,120,120,0.7,0.7,,," 
+
+1. **corn**  
+2. **jacket**  
+3. **wasp**  
+4. **homeownership**  
+5. **dungarees**  
+6. **veal**  
+7. **hearthside**  
+8. **corn**  
+9. **jacket**  
+10. **wasp**
+
+It appears that ""corn"" and ""jacket"" are repeated due to the nature of the list, but they are still the most frequent words.",7.882,3.691,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:29:22+08:00,qwen,T5_global_s2006,T5,2006,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""frightened"", ""heat"", ""praise"", ""mariachi"", ""elbow"", ""nationality"", ""hound"", ""professional"", ""dirndl"", ""redundant""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.8,0.8,,," 
+
+1. **elbow**  
+2. **frightened**  
+3. **professional**  
+4. **redundant**  
+5. **hound**  
+6. **heat**  
+7. **dirndl**  
+8. **mariachi**  
+9. **elbow** (repeated)  
+10. **frightened** (repeated)
+
+It appears that ""elbow"" and ""frightened"" are repeated due to the nature of the list. If we consider unique words, the top 10 would be:
+
+1.",7.816,4.357,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:29:35+08:00,qwen,T5_global_s2007,T5,2007,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""attendant"", ""roller"", ""drink"", ""nondisclosure"", ""mandarin"", ""bandanna"", ""lewd"", ""proximity"", ""balalaika"", ""epauliere""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",83,eos,120,120,0.8,0.8,,,"  
+1. **drink**  
+2. **attendant**  
+3. **bandanna**  
+4. **roller**  
+5. **proximity**  
+6. **lewd**  
+7. **mandarin**  
+8. **eagle**  
+9. **balalaika**  
+10. **mystery**  
+
+These words appear more frequently than others in the provided list.",7.624,3.181,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:29:47+08:00,qwen,T5_global_s2008,T5,2008,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""wring"", ""orange"", ""bran"", ""association"", ""institution"", ""bandanna"", ""butter"", ""praise"", ""webmail"", ""stadium""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62]",94,eos,120,120,0.5,0.5,,,"  
+1. **webmail**  
+2. **institution**  
+3. **orange**  
+4. **association**  
+5. **butter**  
+6. **orange**  
+7. **orange**  
+8. **institution**  
+9. **orange**  
+10. **orange**
+
+It appears that ""orange"" is the most common word, appearing 10 times in the list. The word ""institution"" appears 5 times.",7.498,3.641,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:29:59+08:00,qwen,T5_global_s2009,T5,2009,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""conditioner"", ""part"", ""busy"", ""fly"", ""wrong"", ""ballot"", ""meander"", ""verdict"", ""counselor"", ""homogenate""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",81,eos,120,120,0.9,0.9,,,"  
+1. **meander**  
+2. **busy**  
+3. **fly**  
+4. **ballot**  
+5. **conditioner**  
+6. **verdict**  
+7. **part**  
+8. **counselor**  
+9. **wrong**  
+10. **mechanism**  
+
+These words appear frequently across the provided list of terms.",7.412,3.318,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:30:12+08:00,qwen,T5_global_s2010,T5,2010,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""rhetoric"", ""confused"", ""collateral"", ""smite"", ""doll"", ""sandpaper"", ""icing"", ""gall-bladder"", ""corruption"", ""unit""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",87,eos,120,120,0.5,0.5,,," 
+
+1. confused  
+2. sandpaper  
+3. unit  
+4. rhetoric  
+5. doll  
+6. ice  
+7. collar  
+8. ice  
+9. unit  
+10. confused  
+
+It appears there might be some repetition or duplication in the list, as ""ice"" and ""unit"" are listed multiple times. If you can provide the list again without duplicates, I can give a more accurate count.",7.326,3.426,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:30:24+08:00,qwen,T5_global_s2011,T5,2011,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""keyboarding"", ""organ"", ""enthusiasm"", ""complicity"", ""monitor"", ""ignorance"", ""toffee"", ""autoimmunity"", ""slice"", ""dislike""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",86,eos,120,120,0.5,0.5,,," 
+
+1. keyboarding  
+2. toffee  
+3. monitor  
+4. slice  
+5. complicity  
+6. monitor  
+7. monitor  
+8. monitor  
+9. monitor  
+10. monitor  
+
+It appears that ""monitor"" is the most frequently occurring word in this list, appearing 10 times. The next most common words are ""keyboarding"" and ""toffee,"" each appearing twice.",7.421,3.505,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:30:38+08:00,qwen,T5_global_s2012,T5,2012,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""chug"", ""wary"", ""monger"", ""vex"", ""twig"", ""thong"", ""divider"", ""octet"", ""lymphocyte"", ""dromedary""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.2,0.2,,," 
+
+1. **thong**  
+2. **thong**  
+3. **thong**  
+4. **thong**  
+5. **thong**  
+6. **octet**  
+7. **thong**  
+8. **thong**  
+9. **thong**  
+10. **thong**
+
+It appears that ""thong"" is the overwhelmingly most frequent word in this list, appearing multiple times. If you meant to provide a different list or have a mix of common words, please provide the correct list and I can re-evaluate.",7.441,4.845,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:30:50+08:00,qwen,T5_global_s2013,T5,2013,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""applewood"", ""party"", ""beginner"", ""hardcover"", ""faded"", ""therapist"", ""fireman"", ""castanet"", ""deficit"", ""shaw""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",90,eos,120,120,0.7,0.7,,," 
+
+1. **fireman**  
+2. **beginner**  
+3. **deficit**  
+4. **shaw**  
+5. **applewood**  
+6. **party**  
+7. **castanet**  
+8. **applewood**  
+9. **applewood**  
+10. **applewood**
+
+It appears that ""applewood"" is the most common word, appearing multiple times in the list.",7.285,3.815,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:02+08:00,qwen,T5_global_s2014,T5,2014,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""convenience"", ""certificate"", ""surface"", ""bouquet"", ""respite"", ""seal"", ""mobile"", ""rambunctious"", ""objective"", ""burly""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",82,eos,120,120,0.7,0.8,,," 
+
+1. **convenience**  
+2. **mobile**  
+3. **objective**  
+4. **respite**  
+5. **surface**  
+6. **burly**  
+7. **certificate**  
+8. **rampant**  
+9. **saffron**  
+10. **bouquet**  
+
+These words appear frequently across the provided list of terms.",6.9,3.567,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:08+08:00,qwen,T5_global_s2015,T5,2015,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""trace"", ""cheque"", ""boysenberry"", ""shaker"", ""sell"", ""pillbox"", ""pomegranate"", ""hook"", ""diaphragm"", ""ballet""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",83,eos,120,120,0.8,0.8,,," 
+
+1. **cheque**  
+2. **boysenberry**  
+3. **diaphragm**  
+4. **trace**  
+5. **hook**  
+6. **pomegranate**  
+7. **ballet**  
+8. **seller**  
+9. **diaphragm**  
+10. **trace**
+
+These words appear frequently across the provided list of terms.",3.165,1.463,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:14+08:00,qwen,T5_global_s2016,T5,2016,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""nit"", ""marxism"", ""grow"", ""smelly"", ""binoculars"", ""hops"", ""shrill"", ""rhetoric"", ""absent"", ""convenience""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",71,eos,120,120,0.8,0.8,,," 
+
+1. **convenience**  
+2. **nit**  
+3. **hops**  
+4. **absent**  
+5. **binoculars**  
+6. **rhetoric**  
+7. **grow**  
+8. **shrink**  
+9. **smelly**  
+10. **treatment**",2.891,1.137,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:20+08:00,qwen,T5_global_s2017,T5,2017,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""consonant"", ""agreement"", ""airfare"", ""mailing"", ""wallaby"", ""academy"", ""database"", ""tadpole"", ""holiday"", ""diet""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.8,0.8,,,"  
+1. **airfare**  
+2. **holiday**  
+3. **diet**  
+4. **tadpole**  
+5. **database**  
+6. **academy**  
+7. **mailing**  
+8. **consonant**  
+9. **tadpole**  
+10. **tadpole**
+
+### Explanation:
+- **airfare** appears frequently, likely due to its repeated occurrence in the list.
+- **holiday** and **diet** are also very common.
+- **tadpole** appears multiple times, likely due to its",3.031,2.073,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:26+08:00,qwen,T5_global_s2018,T5,2018,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""painter"", ""combative"", ""blast"", ""mayonnaise"", ""monk"", ""anticodon"", ""grill"", ""cute"", ""charming"", ""persuade""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",99,eos,120,120,0.4,0.4,,," 
+
+1. mayonnaise  
+2. combative  
+3. monk  
+4. grill  
+5. explosion  
+6. mayonnaise  
+7. mayonnaise  
+8. mayonnaise  
+9. mayonnaise  
+10. mayonnaise  
+
+It appears that ""mayonnaise"" is by far the most common word in this list, appearing 10 times. The next most common words are ""combative"" and ""monk,"" each appearing twice.",2.195,2.05,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:30+08:00,qwen,T5_global_s2019,T5,2019,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""participate"", ""recapitulation"", ""compromise"", ""contrail"", ""paw"", ""hear"", ""gelatin"", ""soot"", ""chicken"", ""elephant""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",44,eos,120,120,0.8,0.8,,,"  
+1. soot  
+2. contrail  
+3. elephant  
+4. participate  
+5. gelatin  
+6. hear  
+7. compromise  
+8. paw  
+9. gel  
+10. node",2.028,0.915,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:36+08:00,qwen,T5_global_s2020,T5,2020,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""trade"", ""resume"", ""selective"", ""binoculars"", ""powerful"", ""sailing"", ""publicity"", ""location"", ""prostrate"", ""freezer""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.7,0.9,,,"  
+1. **binoculars**  
+2. **location**  
+3. **powerful**  
+4. **trade**  
+5. **prostrate**  
+6. **selective**  
+7. **publicity**  
+8. **rescue** (Note: ""rescue"" appears as ""resume"" in the list, which is likely a typo)  
+9. **sailing**  
+10. **prostrate** (Note: This word appears multiple times, likely due to repetition or typo)  
+
+If ""resume"" is intended to be ""rescue",2.634,2.16,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:42+08:00,qwen,T5_global_s2021,T5,2021,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""vehicle"", ""inscription"", ""inquisitive"", ""bit"", ""underwire"", ""boring"", ""shelf"", ""assessment"", ""credible"", ""litter""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",92,eos,120,120,0.8,0.8,,,"  
+1. inquisitive  
+2. vehicle  
+3. assessment  
+4. underwire  
+5. shelf  
+6. boring  
+7. litter  
+8. credible  
+9. pulse  
+10. codec  
+
+*Note: The word ""pulse"" appears 10 times, and ""codec"" appears 9 times. Depending on the exact frequency, ""pulse"" or ""codec"" could be the 10th most common word.",2.229,1.8,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:48+08:00,qwen,T5_global_s2022,T5,2022,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""reset"", ""watchful"", ""nerve"", ""customer"", ""cookbook"", ""neon"", ""lose"", ""own"", ""ficlet"", ""connection""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",88,eos,120,120,0.4,0.4,,," 
+
+1. **connection**  
+2. **customer**  
+3. **neon**  
+4. **lose**  
+5. **neon**  
+6. **neon**  
+7. **customer**  
+8. **customer**  
+9. **neon**  
+10. **connection**
+
+It appears that ""neon"" and ""customer"" are the most frequently occurring words, each appearing multiple times.",3.198,1.826,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:31:55+08:00,qwen,T5_global_s2023,T5,2023,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""forum"", ""seeker"", ""icecream"", ""visor"", ""pajamas"", ""step-sister"", ""church"", ""pinot"", ""sideboard"", ""boudoir""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",109,eos,120,120,0.6,0.6,,," 
+
+1. pinot  
+2. sideboard  
+3. church  
+4. pajamas  
+5. icecream  
+6. forum  
+7. pinot  
+8. pinot  
+9. pajamas  
+10. icecream  
+
+It appears that ""pinot"" and ""pajamas"" and ""icecream"" are tied for appearing most frequently, with ""sideboard"" and ""church"" also appearing frequently. However, if we are to list them distinctly by frequency, ""pinot"" appears the most times.",2.648,2.246,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:00+08:00,qwen,T5_global_s2024,T5,2024,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""expect"", ""dramatize"", ""arrow"", ""chalk"", ""village"", ""march"", ""recession"", ""psychologist"", ""rugby"", ""writer""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",79,eos,120,120,0.9,0.9,,,"  
+1. **recession**  
+2. **march**  
+3. **writer**  
+4. **expect**  
+5. **chalk**  
+6. **village**  
+7. **psychologist**  
+8. **arrow**  
+9. **dramatize**  
+10. **psychology**  
+
+These words appear frequently across the provided list.",2.791,1.632,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:06+08:00,qwen,T5_global_s2025,T5,2025,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""classification"", ""specialty"", ""organizing"", ""marsh"", ""eardrum"", ""lead"", ""baby"", ""excite"", ""repository"", ""pride""]","[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",97,eos,120,120,0.9,0.9,,," 
+
+1. **excite**  
+2. **baby**  
+3. **marsh**  
+4. **organizing**  
+5. **eardrum**  
+6. **classification**  
+7. **lead**  
+8. **specialty**  
+9. **repository**  
+10. **specialty**  
+
+Note: The word ""specialty"" appears twice in the top 10, but it is listed only once in the answer for clarity.",2.583,1.997,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:13+08:00,qwen,T5_global_s2026,T5,2026,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""likeable"", ""sum"", ""quantity"", ""talent"", ""score"", ""car"", ""appellation"", ""sectional"", ""volatility"", ""poster""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.8,0.8,,,"  
+1. likeable  
+2. quantity  
+3. score  
+4. car  
+5. talent  
+6. sectional  
+7. sum  
+8. poster  
+9. temple  
+10. likeable  
+
+It seems there was a mistake in the provided list for the top 10 most common words, as ""temple"" does not appear in the list. Based on the data, the correct top 10 should be:  
+
+1. likeable  
+2. quantity  
+3. score  
+4. car  
+5. talent  
+6. sectional  
+7. sum  
+",2.484,2.437,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:19+08:00,qwen,T5_global_s2027,T5,2027,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""headlight"", ""sty"", ""tweezers"", ""own"", ""inquiry"", ""chasuble"", ""pawnshop"", ""veneer"", ""collaboration"", ""gherkin""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",49,eos,120,120,0.9,0.9,,," 
+
+1. headlight  
+2. gherkin  
+3. pawnshop  
+4. sty  
+5. tweezers  
+6. inquiry  
+7. chasuble  
+8. collaboration  
+9. own  
+10. pencil",3.903,1.014,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:27+08:00,qwen,T5_global_s2028,T5,2028,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""fanny-pack"", ""e-reader"", ""chauffeur"", ""breed"", ""oat"", ""trashy"", ""parchment"", ""abnormal"", ""lacking"", ""pew""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",113,eos,120,120,0.1,0.1,,," 
+
+1. **pew**  
+2. **pumpkin**  
+3. **pew**  
+4. **pew**  
+5. **pew**  
+6. **pew**  
+7. **pew**  
+8. **pew**  
+9. **pew**  
+10. **pew**
+
+It appears that ""pew"" is the overwhelmingly most common word in this list, appearing multiple times consecutively. If you intended to provide a different list, please check and provide the correct data.",3.385,2.273,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:34+08:00,qwen,T5_global_s2029,T5,2029,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""guttural"", ""disposal"", ""reconsideration"", ""artist"", ""waiver"", ""economy"", ""divert"", ""proctor"", ""banana"", ""papa""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.4,0.4,,," 
+
+1. **banana**  
+2. **proctor**  
+3. **economy**  
+4. **reconsideration**  
+5. **proctor** (appears multiple times, likely due to repetition)  
+6. **proctor**  
+7. **banana**  
+8. **proctor**  
+9. **proctor**  
+10. **proctor**
+
+It appears that ""proctor"" is the most frequently occurring word, and ""banana"" is the second most frequent. The list seems to have many repeated entries of ""proctor,"" which is",3.768,2.181,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:41+08:00,qwen,T5_global_s2030,T5,2030,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""jumpy"", ""pick"", ""fugato"", ""tactics"", ""walnut"", ""criteria"", ""attic"", ""armadillo"", ""interlay"", ""employee""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",68,eos,120,120,0.9,0.9,,," 
+
+1. **armadillo**  
+2. **jumpy**  
+3. **employee**  
+4. **criteria**  
+5. **tactics**  
+6. **attic**  
+7. **pick**  
+8. **interlay**  
+9. **walnut**  
+10. **air**",3.986,1.22,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:47+08:00,qwen,T5_global_s2031,T5,2031,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""effectiveness"", ""mascara"", ""begonia"", ""disengagement"", ""health"", ""nasty"", ""foot"", ""gemsbok"", ""experiment"", ""catalogue""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 62, 63]",99,eos,120,120,0.9,0.9,,," 
+
+1. **experiment**  
+2. **gemsbok**  
+3. **foot**  
+4. **nasty**  
+5. **catalogue**  
+6. **disengagement**  
+7. **health**  
+8. **begonia**  
+9. **mascara**  
+10. **foot**  
+
+Note: The word ""foot"" appears twice in the top 10, which is likely due to its high frequency in the list.",3.926,1.553,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:32:54+08:00,qwen,T5_global_s2032,T5,2032,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""formicarium"", ""reprocessing"", ""enrollment"", ""tiara"", ""measure"", ""fiery"", ""piece"", ""bolt"", ""dynamics"", ""vision""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",79,eos,120,120,0.7,0.8,,," 
+
+1. **enrollment**  
+2. **bolt**  
+3. **piece**  
+4. **dynamics**  
+5. **vision**  
+6. **tiara**  
+7. **measure**  
+8. **fire**  
+9. **fireman**  
+10. **formicarium**  
+
+These words appear frequently across the provided list of terms.",3.779,1.088,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:00+08:00,qwen,T5_global_s2033,T5,2033,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""scarification"", ""napkin"", ""reaction"", ""substitution"", ""health-care"", ""dough"", ""fee"", ""catsup"", ""radiate"", ""freak""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",57,eos,120,120,0.7,0.7,,," 
+
+1. catsup  
+2. dough  
+3. reaction  
+4. napkin  
+5. fee  
+6. scarification  
+7. radiate  
+8. dough  
+9. fee  
+10. napkin  
+
+These words appear frequently based on the provided list.",3.654,0.984,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:06+08:00,qwen,T5_global_s2034,T5,2034,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""reunion"", ""spare"", ""repayment"", ""wend"", ""forebear"", ""patty"", ""gynaecology"", ""edible"", ""tapioca"", ""sill""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.7,0.7,,," 
+
+1. **tapioca**  
+2. **reunion**  
+3. **forebear**  
+4. **spare**  
+5. **gynaecology**  
+6. **sill**  
+7. **repayment**  
+8. **amble** (Note: ""amble"" appears to be a typo and should likely be ""amble"" or another word)  
+9. **amble** (Note: This is likely a typo and should be corrected)  
+10. **amble** (Note: This is likely a typo and should be corrected)
+
+It",2.397,2.048,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:11+08:00,qwen,T5_global_s2035,T5,2035,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""yard"", ""lightscreen"", ""understanding"", ""pail"", ""diadem"", ""carol"", ""sandpaper"", ""fresh"", ""disclaimer"", ""chalk""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",80,eos,120,120,0.7,0.8,,," 
+
+1. **chalk**  
+2. **yard**  
+3. **pail**  
+4. **diadem**  
+5. **sandpaper**  
+6. **carol**  
+7. **lightscreen**  
+8. **chowder**  
+9. **diagram**  
+10. **fresh**
+
+These words appear frequently across the provided list of terms.",3.398,1.076,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:18+08:00,qwen,T5_global_s2036,T5,2036,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""minister"", ""influx"", ""zebra"", ""blogger"", ""analog"", ""speaking"", ""syndrome"", ""moustache"", ""revise"", ""epee""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",96,eos,120,120,0.8,0.9,,,"  
+1. **influx**  
+2. **moustache**  
+3. **speaking**  
+4. **minister**  
+5. **blogger**  
+6. **zebra**  
+7. **analogue** (or **analog**)  
+8. **syndrome**  
+9. **tension**  
+10. **revision** (or **revise**)
+
+These words appear frequently across the provided list of terms.",3.298,1.891,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:24+08:00,qwen,T5_global_s2037,T5,2037,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""relaxation"", ""trail"", ""brush"", ""visit"", ""neighbourhood"", ""straight"", ""gelatin"", ""overjoyed"", ""lumber"", ""ptarmigan""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",111,eos,120,120,0.6,0.6,,," 
+
+1. overjoyed  
+2. trail  
+3. neighborhood  
+4. gelatin  
+5. brush  
+6. ptarmigan  
+7. relaxation  
+8. overjoyed  
+9. overjoyed  
+10. overjoyed  
+
+It appears that ""overjoyed"" is the word that appears most frequently, with a total of four occurrences. The next most common words are ""trail,"" ""neighborhood,"" ""gelatin,"" ""brush,"" ""ptarmigan,"" and ""relaxation,"" each appearing twice.",1.85,2.161,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:30+08:00,qwen,T5_global_s2038,T5,2038,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""hype"", ""stiletto"", ""yoga"", ""fisting"", ""dilapidation"", ""disguise"", ""freckle"", ""marriage"", ""borrower"", ""shark""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.0,0.0,,," 
+
+1. **fre** (appears 104 times)
+2. **fre** (appears 104 times)
+3. **fre** (appears 104 times)
+4. **fre** (appears 104 times)
+5. **fre** (appears 104 times)
+6. **fre** (appears 104 times)
+7. **fre** (appears 104 times)
+8. **fre** (appears 104 times)
+9. **fre** (appe",3.14,2.451,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:36+08:00,qwen,T5_global_s2039,T5,2039,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""cry"", ""espadrille"", ""agonizing"", ""spreadsheet"", ""charlatan"", ""organic"", ""boil"", ""pumped"", ""rhetorical"", ""studio""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",104,eos,120,120,0.6,0.6,,," 
+
+1. **boil**  
+2. **pumped**  
+3. **cry**  
+4. **spreadsheet**  
+5. **studio**  
+6. **organic**  
+7. **cry**  
+8. **pumped**  
+9. **spreadsheet**  
+10. **studio**
+
+It appears that ""cry"" and ""pumped"" are tied for the second and fifth positions, and ""spreadsheet"" and ""studio"" are tied for the seventh and ninth positions.",2.119,2.148,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:43+08:00,qwen,T5_global_s2040,T5,2040,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""waggish"", ""yoyo"", ""realign"", ""mode"", ""mitten"", ""methodology"", ""samovar"", ""plant"", ""rough"", ""spur""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",70,eos,120,120,0.8,0.9,,," 
+
+1. **mode**  
+2. **waggish**  
+3. **yoyo**  
+4. **rough**  
+5. **plant**  
+6. **samovar**  
+7. **mitten**  
+8. **methodology**  
+9. **puppet**  
+10. **realign**",3.8,1.408,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:48+08:00,qwen,T5_global_s2041,T5,2041,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""silly"", ""sorghum"", ""cereal"", ""steer"", ""e-book"", ""diesel"", ""capital"", ""default"", ""morsel"", ""envious""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.6,0.6,,," 
+
+1. **sorghum**  
+2. **cereal**  
+3. **e-book**  
+4. **steer**  
+5. **default**  
+6. **silly**  
+7. **steak**  
+8. **sorghum**  
+9. **sorghum**  
+10. **sorghum**
+
+It appears that ""sorghum"" is the most frequently occurring word in this list, appearing multiple times. The next most common words are ""cereal,"" ""e-book,"" ""steer,"" """,1.815,2.428,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:33:54+08:00,qwen,T5_global_s2042,T5,2042,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""vase"", ""sprag"", ""crew"", ""bacon"", ""rheumatism"", ""teacher"", ""outlook"", ""bawdy"", ""fate"", ""fountain""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",118,eos,120,120,0.7,0.7,,," 
+
+1. **outlook**  
+2. **teacher**  
+3. **rheumatism**  
+4. **crew**  
+5. **fountain**  
+6. **bawdy**  
+7. **vase**  
+8. **teacher** (appears multiple times, confirming its high frequency)  
+9. **rheumatism** (appears multiple times, confirming its high frequency)  
+10. **fountain** (appears multiple times, confirming its high frequency)
+
+These words are the most frequently occurring in the provided list.",1.936,2.428,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:01+08:00,qwen,T5_global_s2043,T5,2043,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""clearing"", ""gold"", ""overcharge"", ""inspiration"", ""escort"", ""turnover"", ""prevention"", ""painter"", ""investigate"", ""shoelace""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",99,eos,120,120,0.7,0.7,,,"  
+1. **turnover**  
+2. **shoelace**  
+3. **gold**  
+4. **clearing**  
+5. **inspiration**  
+6. **overcharge**  
+7. **painter**  
+8. **prevent**  
+9. **shoe**  
+10. **gold**  
+
+Note: The word ""gold"" appears twice in the top 10, but it is listed only once in the answer for clarity.",3.202,2.023,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:06+08:00,qwen,T5_global_s2044,T5,2044,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""review"", ""ease"", ""shoelace"", ""encourage"", ""favorite"", ""melodic"", ""overload"", ""flight"", ""skywalk"", ""unsuitable""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.5,0.6,,," 
+
+1. **flight**  
+2. **shoelace**  
+3. **favorite**  
+4. **skywalk**  
+5. **enclosure**  
+6. **melodic**  
+7. **shoelace** (appears multiple times, but distinct from the first occurrence)  
+8. **review**  
+9. **melodic** (appears multiple times, but distinct from the first occurrence)  
+10. **shoelace** (appears multiple times, but distinct from the first occurrence)
+
+Given the repetition of ""sho",2.064,2.102,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:13+08:00,qwen,T5_global_s2045,T5,2045,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""eggnog"", ""duplexer"", ""participate"", ""obesity"", ""washbasin"", ""nephew"", ""home"", ""determine"", ""commandment"", ""diffuse""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",73,eos,120,120,0.7,0.7,,," 
+
+1. **home**  
+2. **eggnog**  
+3. **obesity**  
+4. **washbasin**  
+5. **nephew**  
+6. **commandment**  
+7. **duplexer**  
+8. **tub**  
+9. **tunic**  
+10. **sister**",3.347,1.525,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:17+08:00,qwen,T5_global_s2046,T5,2046,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""rub"", ""peony"", ""chug"", ""torpid"", ""prefer"", ""bower"", ""pine"", ""imminent"", ""grease"", ""scrim""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",95,eos,120,120,0.1,0.1,,,"  
+1. **peony**  
+2. **peony**  
+3. **peony**  
+4. **peony**  
+5. **peony**  
+6. **peony**  
+7. **peony**  
+8. **peony**  
+9. **peony**  
+10. **peony**
+
+It appears that ""peony"" is the overwhelmingly most common word in this list, appearing multiple times consecutively.",1.956,1.508,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:24+08:00,qwen,T5_global_s2047,T5,2047,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""chutney"", ""signature"", ""scientist"", ""frown"", ""baggy"", ""rooster"", ""diadem"", ""hometown"", ""depressive"", ""cyclooxygenase""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",80,eos,120,120,0.6,0.6,,," 
+
+1. rooster  
+2. scientist  
+3. cyclooxygenase  
+4. hometown  
+5. frown  
+6. chutney  
+7. depression  
+8. rooster  
+9. scientist  
+10. chutney  
+
+It appears there are some duplications and potential errors in the list, but based on the provided data, these are the most frequent words.",3.289,1.64,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:27+08:00,qwen,T5_global_s2048,T5,2048,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""handover"", ""rye"", ""philanthropy"", ""down"", ""dissonance"", ""worth"", ""reflection"", ""endorsement"", ""harald"", ""official""]","[2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",60,eos,120,120,0.9,0.9,,," 
+
+1. dissonance  
+2. handover  
+3. rye  
+4. philanthropy  
+5. reflection  
+6. down  
+7. endorsement  
+8. official  
+9. theism  
+10. harald  
+
+These words appear frequently across the provided list of terms.",2.122,0.811,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:35+08:00,qwen,T5_global_s2049,T5,2049,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""trouble"", ""watercress"", ""skirt"", ""ice-cream"", ""claim"", ""hydrogen"", ""character"", ""melon"", ""veldt"", ""commission""]","[2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.7,0.7,,," 
+
+1. **melon**  
+2. **watercress**  
+3. **trouble**  
+4. **commission**  
+5. **ice-cream**  
+6. **character**  
+7. **skirt**  
+8. **melon** (appears multiple times, confirming its high frequency)  
+9. **trouble** (appears multiple times, confirming its high frequency)  
+10. **ice-cream** (appears multiple times, confirming its high frequency)
+
+Note: The word ""melon"" appears multiple times in the list, as do",3.201,2.428,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:41+08:00,qwen,T5_global_s2050,T5,2050,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""zone"", ""revenue"", ""ultimatum"", ""stride"", ""lack"", ""slimy"", ""insurrection"", ""cloud"", ""monocle"", ""behold""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",79,eos,120,120,0.5,0.5,,,"  
+1. cloud  
+2. revenue  
+3. zone  
+4. stride  
+5. lack  
+6. cloud  
+7. cloud  
+8. revenue  
+9. revenue  
+10. cloud  
+
+It appears that ""cloud"" and ""revenue"" are the most frequent words, with ""cloud"" appearing 19 times and ""revenue"" appearing 12 times.",3.336,1.621,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:48+08:00,qwen,T5_global_s2051,T5,2051,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""quizzical"", ""elbow"", ""hacienda"", ""refectory"", ""itchy"", ""lapdog"", ""workhorse"", ""ambience"", ""bread"", ""enactment""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.8,0.9,,,"  
+1. **elbow**  
+2. **refectory**  
+3. **workhorse**  
+4. **itchy**  
+5. **bread**  
+6. **quizzical**  
+7. **hacienda**  
+8. **ambience**  
+9. **sleeve** (assuming ""sleeve"" is a typo and should be ""elbow"")  
+10. **enactment**  
+
+If ""sleeve"" is not a typo, then ""sleeve"" would be the 10th most common word",2.873,2.422,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:52+08:00,qwen,T5_global_s2052,T5,2052,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""tense"", ""beating"", ""sightseeing"", ""buying"", ""prairie"", ""region"", ""mutation"", ""sprat"", ""filly"", ""rabbi""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",101,eos,120,120,0.8,0.8,,," 
+
+1. **prairie**  
+2. **buying**  
+3. **region**  
+4. **filly**  
+5. **tense**  
+6. **sightseeing**  
+7. **rabbi**  
+8. **ecology**  
+9. **mutation**  
+10. **sightseeing**  
+
+Note: The word ""sightseeing"" appears twice in the top 10 list, but it is counted only once in the ranking.",1.901,1.36,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:34:57+08:00,qwen,T5_global_s2053,T5,2053,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""guilder"", ""guilty"", ""juvenile"", ""stage"", ""reader"", ""zoologist"", ""narrow"", ""wolf"", ""filter"", ""step-aunt""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",68,eos,120,120,0.8,0.8,,," 
+
+1. **filter**  
+2. **step-aunt**  
+3. **zoologist**  
+4. **guilty**  
+5. **stage**  
+6. **juvenile**  
+7. **reader**  
+8. **wolf**  
+9. **sauce**  
+10. **savior**",1.822,0.919,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:35:01+08:00,qwen,T5_global_s2054,T5,2054,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""masonry"", ""bathrobe"", ""chiffonier"", ""cradle"", ""wick"", ""undershirt"", ""cable"", ""panel"", ""mute"", ""look""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.3,0.3,,," 
+
+1. **panel**  
+2. **look**  
+3. **cable**  
+4. **understanding** (Note: ""understanding"" is not in the provided list, so this might be a placeholder or a typo. The actual most common word ""understanding"" is not present in the list.)  
+5. **cable**  
+6. **look**  
+7. **panel**  
+8. **look**  
+9. **cable**  
+10. **look**
+
+It appears there is a repetition or typo in the list, as ""look",1.815,1.647,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:35:07+08:00,qwen,T5_global_s2055,T5,2055,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""facet"", ""kilogram"", ""scissors"", ""league"", ""abandoned"", ""geography"", ""flour"", ""moon"", ""fillet"", ""naughty""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",108,eos,120,120,0.2,0.2,,,"  
+1. **flour**  
+2. **flour**  
+3. **flour**  
+4. **league**  
+5. **flour**  
+6. **flour**  
+7. **flour**  
+8. **flour**  
+9. **flour**  
+10. **flour**
+
+It appears that ""flour"" is the overwhelmingly most common word in this list, appearing multiple times. If you meant to provide a different list, please check and provide the correct data.",1.82,1.452,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:35:10+08:00,qwen,T5_global_s2056,T5,2056,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""phrase"", ""signet"", ""berry"", ""desert"", ""milkshake"", ""wink"", ""whisker"", ""min"", ""turmeric"", ""step-father""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 55, 56, 57, 58, 59, 60, 61, 62, 63]",120,len,120,120,0.6,0.6,,," 
+
+1. **whisker**  
+2. **milkshake**  
+3. **step-father**  
+4. **desert**  
+5. **phrase**  
+6. **berry**  
+7. **turbine** (Note: This word appears frequently, but it's not in the provided list. Please check the list for accuracy.)  
+8. **turbine** (Note: This word appears frequently, but it's not in the provided list. Please check the list for accuracy.)  
+9. **turbine** (Note: This word",1.815,1.628,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:35:16+08:00,qwen,T5_global_s2057,T5,2057,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""stacking"", ""birdhouse"", ""storyboard"", ""mother-in-law"", ""window"", ""steal"", ""spicy"", ""seemly"", ""jodhpurs"", ""morbid""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",115,eos,120,120,0.8,0.9,,," 
+
+1. **jodhpurs**  
+2. **window**  
+3. **stacking**  
+4. **mother-in-law**  
+5. **seemly**  
+6. **birdhouse**  
+7. **morbid**  
+8. **steal**  
+9. **spicy**  
+10. **stacking**  
+
+Note: The word ""stacking"" appears twice in the top 10, but it is the same word. If you want distinct words, ""stacking"" would be counted only once.",1.812,1.544,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:35:20+08:00,qwen,T5_global_s2058,T5,2058,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""encouragement"", ""ATM"", ""exasperation"", ""harbour"", ""somber"", ""blackness"", ""cirrhosis"", ""leg"", ""roadway"", ""adapter""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63]",120,len,120,120,0.3,0.4,,," 
+
+1. **exhibition** (appears 10 times)
+2. **blackness** (appears 10 times)
+3. **adapter** (appears 10 times)
+4. **roadway** (appears 10 times)
+5. **enclosure** (appears 9 times)
+6. **cirrhosis** (appears 9 times)
+7. **enclosure** (appears 9 times)
+8. **roadway** (appears 9 times)
+9. **adapter** (appears 9 times",1.814,1.643,3
+20261017-072744-m10h-e0chk-qwen-T5,2026-10-17T07:35:25+08:00,qwen,T5_global_s2059,T5,2059,global,1,"{""freq_cw"": 30, ""freq_ucw"": 3, ""num_cw"": 10}",string_match_all,"[""zoo"", ""forearm"", ""knowledge"", ""motorboat"", ""iceberg"", ""cotton"", ""addiction"", ""meteor"", ""rag"", ""peacock""]","[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63]",43,eos,120,120,0.8,0.8,,,"  
+1. motorboat  
+2. knowledge  
+3. forearm  
+4. rag  
+5. iceberg  
+6. cotton  
+7. peacock  
+8. zoo  
+9. comic  
+10. cotton",1.821,0.584,3

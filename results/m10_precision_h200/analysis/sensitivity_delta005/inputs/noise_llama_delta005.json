@@ -1,0 +1,119 @@
+{
+ "cells": {
+  "32768|b16|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.35133,
+    0.35015,
+    0.35029
+   ],
+   "overall_median": 0.35061,
+   "delta": 0.003371291258743799,
+   "b_values": [
+    15,
+    16
+   ]
+  },
+  "32768|b32|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.81887,
+    0.8182,
+    0.81864
+   ],
+   "overall_median": 0.81857,
+   "delta": 0.0008264442617402959,
+   "b_values": [
+    31,
+    32
+   ]
+  },
+  "32768|b48|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    1.40193,
+    1.40136,
+    1.40094
+   ],
+   "overall_median": 1.40141,
+   "delta": 0.0007053592676251933,
+   "b_values": [
+    47,
+    48
+   ]
+  },
+  "32768|cpu|idle": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.10215,
+    0.09287,
+    0.10181
+   ],
+   "overall_median": 0.10186,
+   "delta": 0.09102333138618773,
+   "b_values": [
+    4,
+    5
+   ]
+  },
+  "32768|b16|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.40462,
+    0.40592,
+    0.40463
+   ],
+   "overall_median": 0.40537,
+   "delta": 0.0032180516787769825,
+   "b_values": [
+    10
+   ]
+  },
+  "32768|b32|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    1.0491,
+    1.04804,
+    1.05049
+   ],
+   "overall_median": 1.04994,
+   "delta": 0.002338713978756958,
+   "b_values": [
+    23
+   ]
+  },
+  "32768|b48|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    2.11169,
+    2.11522,
+    2.1198
+   ],
+   "overall_median": 2.11734,
+   "delta": 0.003830750807794604,
+   "b_values": [
+    40
+   ]
+  },
+  "32768|cpu|busy": {
+   "n_launch": 3,
+   "launch_medians": [
+    0.15526,
+    0.12117,
+    0.12081
+   ],
+   "overall_median": 0.12121,
+   "delta": 0.28424513435692667,
+   "b_values": [
+    3,
+    4
+   ]
+  }
+ },
+ "delta": 0.28424513435692667,
+ "delta_star": 0.05,
+ "rule": "δ＝各格（E0、cake）各 process 中位數 (max−min)÷整體中位數 的最大值；δ*＝max(5%, δ)（03 §5.3）",
+ "run_id": "20261017-074226-m10h-noise-llama",
+ "model": "llama",
+ "sensitivity_note": "13 §11.3：只報告的對照，δ* 改成 0.05（原本 0.28424513435692667）"
+}

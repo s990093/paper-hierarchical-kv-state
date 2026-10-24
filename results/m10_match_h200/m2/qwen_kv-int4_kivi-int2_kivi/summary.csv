@@ -1,0 +1,25 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,-,compute_only,10,3.6122,3.65385,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,E1s,cake,10,0.13289,0.1759,4 5,60.0,440401920.0,27.1816,,6,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b16,busy,E1s,load_only,10,0.23741,0.28349,64,63.0,491782144.0,15.215,,10,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,-,compute_only,10,1.86519,1.88694,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,E1s,cake,10,0.10658,0.12871,4 5 6,58.0,425721856.0,17.501,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b16,idle,E1s,load_only,10,0.10612,0.12826,64,63.0,491782144.0,17.5764,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,-,compute_only,10,3.59929,3.64044,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,E1s,cake,10,0.3562,0.39847,10,54.0,396361728.0,10.1046,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b32,busy,E1s,load_only,10,0.46734,0.51728,64,63.0,491782144.0,7.7017,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,-,compute_only,10,1.86748,1.88927,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,E1s,cake,10,0.29002,0.31211,10 14 15,49.0,359661568.0,6.4391,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b32,idle,E1s,load_only,10,0.37273,0.3948,64,63.0,491782144.0,5.0103,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,-,compute_only,10,3.60339,3.64482,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,E1s,cake,10,0.84702,0.89008,21,43.0,315621376.0,4.2542,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b48,busy,E1s,load_only,10,1.36454,1.41499,64,63.0,491782144.0,2.6407,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,-,compute_only,10,1.86597,1.88779,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,E1s,cake,10,0.66984,0.69183,21 29 30,34.0,249561088.0,2.7857,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,b48,idle,E1s,load_only,10,1.27897,1.30108,64,63.0,491782144.0,1.459,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,nfs,busy,-,compute_only,10,3.60659,3.64827,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,nfs,busy,E1s,cake,10,0.89808,0.94092,21 22,42.0,308281344.0,4.0159,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,nfs,busy,E1s,load_only,10,1.4717,1.52251,64,63.0,491782144.0,2.4506,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,nfs,idle,-,compute_only,10,1.86337,1.88657,64,0.0,0.0,1.0,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,nfs,idle,E1s,cake,10,0.69878,0.72074,31,33.0,242221056.0,2.6666,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi
+32768,nfs,idle,E1s,load_only,10,1.38371,1.40578,64,63.0,491782144.0,1.3466,,0,0,20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi

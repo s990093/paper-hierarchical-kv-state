@@ -1,0 +1,68 @@
+{
+ "formula": "service_est_ms = A + B*output_tokens + C*input_tokens (clip >= 0)",
+ "A": 1509.2071378337419,
+ "B": 14.212997448707114,
+ "C": 0.01484057044196145,
+ "fit": "statsmodels QuantReg q=0.5 on (end_ms-start_ms) ~ 1 + completion_tokens + sum(role_tokens)",
+ "n_rows_weeks": 399463,
+ "n_fit": 200000,
+ "seed": 0,
+ "abs_resid_ms_pctl_all": {
+  "p50": 2541.776193574079,
+  "p90": 9386.133348555239
+ },
+ "frac_pred_le_dur_all": 0.49977594921181684,
+ "dur_ms_pctl": {
+  "p10": 938.0,
+  "p50": 5872.0,
+  "p90": 19883.0
+ },
+ "output_tokens_pctl": {
+  "p10": 43.0,
+  "p50": 137.0,
+  "p90": 813.0
+ },
+ "input_tokens_pctl": {
+  "p10": 20524.0,
+  "p50": 88653.0,
+  "p90": 231216.59999999998
+ },
+ "ttft_ms_pctl": {
+  "p10": 637.0,
+  "p50": 4288.0,
+  "p90": 12278.0
+ },
+ "source": "freeinference",
+ "weeks": [
+  "2026-05-17_2026-05-23",
+  "2026-05-24_2026-05-30",
+  "2026-05-31_2026-06-06",
+  "2026-06-07_2026-06-13",
+  "2026-06-14_2026-06-20",
+  "2026-06-21_2026-06-27",
+  "2026-06-28_2026-07-04",
+  "2026-07-05_2026-07-11",
+  "2026-07-12_2026-07-18",
+  "2026-07-19_2026-07-25"
+ ],
+ "note": "FreeInference 訓練週（week01–10）的中位數迴歸；跨來源粗估，只用來把服務時間從間隔裡扣掉",
+ "run_id": "20261020-230139-p3h-data-ficonst",
+ "ts": "2026-10-20T15:01:48+00:00",
+ "code": {
+  "git_head": "d0da904f3c407159204f06ee8237bf80347503f2",
+  "p3_data_uncommitted": false,
+  "files": {
+   "build.py": "8e2b567bd7a4c22944995e906941f7d2adba8f462f40e47bc5a35c5a9545db45",
+   "crosscheck.py": "e044530c707fd31dd59ae2ba4c78148531ca6b206849e6fc0a8018d7582fd0bf",
+   "load_bailian.py": "0e2a8922d24cdcec40241371e8340a02e5f06373c3127c239b38e3fb66b33280",
+   "load_burstgpt.py": "3b7f1f92ce96a80b50f4b0483d812b575bcb9ed8c3d236e22e3b2c53830042e3",
+   "load_cachewise.py": "0aad9d3551dd68232d3341b5dcacb680ad18f9fc06aab124c72530a7addbfac7",
+   "load_freeinference.py": "ba038f30021019cfa16f1f82f98462c870f93436d45ab0f044ec3fa6eb6a14cf",
+   "load_mooncake.py": "bb2c7f764a603d930b21817314edaf5fc356d8c3c37e944fe453333bbe0f66bc",
+   "load_wildchat.py": "f5a8fcbd33c5b55ec1ce360ac455297d7793bf0b459c3d8eb033194304e4ebfb",
+   "schema.py": "88542c24065ec958816296e49eff0c73192d5d7c4306a09cff7acb31aa50618a",
+   "synth.py": "f78bb5001ae80bb53f666b46271e15e6fcb9c5c16d110b60d0f3712e1554eede",
+   "test_p3_data.py": "f21ba258e59c9e53a62027ca09c19c5d43ace656a22dac3555b6cdf3672a472e"
+  }
+ }
+}

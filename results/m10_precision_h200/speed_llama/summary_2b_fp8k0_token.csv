@@ -1,0 +1,9 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,b16,busy,E1s,cake,30,0.30917,0.36116,7,57.0,1976107008.0,,,0,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama
+32768,b16,idle,E1s,cake,30,0.24405,0.27023,10 11,53.0,1837432832.0,,,0,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama
+32768,b32,busy,E1s,cake,30,0.71832,0.7714,16 17,48.0,1664090112.0,,,0,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama
+32768,b32,idle,E1s,cake,30,0.56273,0.58917,23 24,41.0,1421410304.0,,,0,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama
+32768,b48,busy,E1s,cake,30,1.53495,1.58691,31,33.0,1144061952.0,,,0,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama
+32768,b48,idle,E1s,cake,30,1.09819,1.12454,40,24.0,832045056.0,,,0,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama
+32768,cpu,busy,E1s,cake,30,0.15054,0.20277,3,61.0,2114781184.0,,,30,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama
+32768,cpu,idle,E1s,cake,30,0.07955,0.10568,3,61.0,2114781184.0,,,30,0,20261017-093130-m10h-grid-2b-fp8k0_token-llama

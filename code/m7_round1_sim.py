@@ -16,7 +16,8 @@ import m7_sim  # noqa: E402
 from m7_round1_analyze import load_f_csv  # noqa: E402
 from m7_write_policy import CHUNK_BYTES, load_params  # noqa: E402
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "m7_explore_mi300x")
+# 輸出目錄：預設＝MI300X 的；平台 C（H200）由 M7_EXPLORE 設（2026-10-16）
+OUT = os.environ.get("M7_EXPLORE") or os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "m7_explore_mi300x")
 STRATS = ["S0", "S1", "S2b", "S4", "S4+", "S4+P", "S4L", "S4B", "S4W", "S4C", "S5", "S5s", "S5L", "S5P", "S5c"]
 GRID = dict(cpu_gibps=[None, 11.6, 3.69, 1.0], release=["free", "hold"], workload=["chat", "doc"],
             ssd_dev=["nfs", "local"], cpu_frac=[0.25, 0.5], wl_seed=[0, 1, 2, 3, 4])
