@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="360" viewBox="0 0 960 360" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="360" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 4　第三階段時程（10/24–12/31，H200）</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">菱形＝決定點；虛線框＝路 1（ICPE）佔用使用者時間的期間，GPU job 照常自動跑</text>
+<!-- axis: x = 170 + day*11, day0 = 10/24 -->
+<line x1="170" y1="300" x2="929" y2="300" stroke="#7F7F7F"/>
+<g font-size="11" fill="#5F5E5A" text-anchor="middle">
+<line x1="170" y1="296" x2="170" y2="304" stroke="#7F7F7F"/><text x="170" y="318">10/24</text>
+<line x1="258" y1="296" x2="258" y2="304" stroke="#7F7F7F"/><text x="258" y="318">11/1</text>
+<line x1="335" y1="296" x2="335" y2="304" stroke="#7F7F7F"/><text x="335" y="318">11/8</text>
+<line x1="412" y1="296" x2="412" y2="304" stroke="#7F7F7F"/><text x="412" y="318">11/15</text>
+<line x1="489" y1="296" x2="489" y2="304" stroke="#7F7F7F"/><text x="489" y="318">11/22</text>
+<line x1="588" y1="296" x2="588" y2="304" stroke="#7F7F7F"/><text x="588" y="318">12/1</text>
+<line x1="665" y1="296" x2="665" y2="304" stroke="#7F7F7F"/><text x="665" y="318">12/8</text>
+<line x1="742" y1="296" x2="742" y2="304" stroke="#7F7F7F"/><text x="742" y="318">12/15</text>
+<line x1="819" y1="296" x2="819" y2="304" stroke="#7F7F7F"/><text x="819" y="318">12/22</text>
+<line x1="918" y1="296" x2="918" y2="304" stroke="#7F7F7F"/><text x="918" y="318">12/31</text>
+</g>
+<!-- ICPE band -->
+<rect x="170" y="70" width="264" height="222" fill="none" stroke="#C0504D" stroke-dasharray="5 4"/>
+<g font-size="12.5" fill="#2C2C2A">
+<text x="20" y="96">路 1：ICPE</text>
+<rect x="170" y="82" width="110" height="20" rx="3" fill="#F4B183"/><text x="225" y="97" font-size="11" text-anchor="middle">H200 補量</text>
+<rect x="280" y="82" width="154" height="20" rx="3" fill="#F8CBAD"/><text x="357" y="97" font-size="11" text-anchor="middle">寫作（摘要 11/9、全文 11/16）</text>
+<text x="20" y="134">第 0 段：準備</text>
+<rect x="170" y="120" width="110" height="20" rx="3" fill="#C9C9C9"/><text x="225" y="135" font-size="11" text-anchor="middle">C0、W0、程式</text>
+<text x="20" y="172">篩選閘</text>
+<rect x="280" y="158" width="154" height="20" rx="3" fill="#8FAADC"/><text x="357" y="173" font-size="11" text-anchor="middle">A0、B0、C1、D0</text>
+<text x="20" y="210">主實驗</text>
+<rect x="445" y="196" width="286" height="20" rx="3" fill="#2F5597"/><text x="588" y="211" font-size="11" fill="#ffffff" text-anchor="middle">A1、A2、B1（A-DL1 視 A0）</text>
+<text x="20" y="248">消融與規模</text>
+<rect x="731" y="234" width="198" height="20" rx="3" fill="#1F4E79"/><text x="830" y="249" font-size="11" fill="#ffffff" text-anchor="middle">X1–X5；V1 有空才做</text>
+<text x="20" y="282">決定點</text>
+</g>
+<!-- milestones -->
+<polygon points="269,270 276,277 269,284 262,277" fill="#C0504D"/><text x="269" y="265" font-size="10.5" fill="#2C2C2A" text-anchor="middle">11/2 判準凍結</text>
+<polygon points="440,270 447,277 440,284 433,277" fill="#C0504D"/><text x="452" y="265" font-size="10.5" fill="#2C2C2A" text-anchor="start">11/17 GO／STOP</text>
+<polygon points="720,270 727,277 720,284 713,277" fill="#C0504D"/><text x="720" y="265" font-size="10.5" fill="#2C2C2A" text-anchor="middle">12/13 投哪裡</text>
+<text x="480" y="346" font-size="11.5" fill="#5F5E5A" text-anchor="middle">GPU 小時〔估計，NOT_MEASURED〕：篩選約 40–55；主實驗約 120–180；消融與規模約 100–150</text>
+</svg>

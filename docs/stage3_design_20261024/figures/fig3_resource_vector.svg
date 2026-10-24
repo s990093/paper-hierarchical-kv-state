@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="480" viewBox="0 0 960 480" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="480" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 3　還原的每種做法吃不同的 GPU 資源；背景搶哪一種，就拖慢哪些做法</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">左：資源需求是示意〔判讀〕，B0 要實測成干擾矩陣。右：已經量到的證據</text>
+
+<!-- header -->
+<text x="40" y="96" font-size="13" font-weight="600" fill="#2C2C2A">還原的做法</text>
+<text x="300" y="88" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">PCIe／</text>
+<text x="300" y="104" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">copy engine</text>
+<text x="390" y="96" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">SM 運算</text>
+<text x="480" y="96" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">Tensor core</text>
+<text x="570" y="96" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">HBM 頻寬</text>
+<line x1="30" y1="114" x2="615" y2="114" stroke="#2C2C2A" stroke-width="1.2"/>
+
+<!-- rows -->
+<g font-size="12.5" fill="#2C2C2A">
+<text x="40" y="146">copy engine 搬運（DMA）</text>
+<circle cx="300" cy="142" r="8" fill="#1F4E79"/><circle cx="570" cy="142" r="6" fill="none" stroke="#1F4E79" stroke-width="2"/>
+<text x="40" y="186">SM 驅動的 zero-copy 搬運</text>
+<circle cx="300" cy="182" r="8" fill="#1F4E79"/><circle cx="390" cy="182" r="8" fill="#1F4E79"/><circle cx="570" cy="182" r="6" fill="none" stroke="#1F4E79" stroke-width="2"/>
+<text x="40" y="226">INT4／FP8 反量化</text>
+<circle cx="390" cy="222" r="8" fill="#1F4E79"/><circle cx="570" cy="222" r="8" fill="#1F4E79"/>
+<text x="40" y="266">低秩重建（矩陣乘）</text>
+<circle cx="480" cy="262" r="8" fill="#1F4E79"/><circle cx="570" cy="262" r="6" fill="none" stroke="#1F4E79" stroke-width="2"/>
+<text x="40" y="306">重算（prefill，Cake 前段）</text>
+<circle cx="480" cy="302" r="8" fill="#1F4E79"/><circle cx="390" cy="302" r="6" fill="none" stroke="#1F4E79" stroke-width="2"/><circle cx="570" cy="302" r="6" fill="none" stroke="#1F4E79" stroke-width="2"/>
+</g>
+<line x1="30" y1="324" x2="615" y2="324" stroke="#2C2C2A" stroke-width="1.2"/>
+<text x="40" y="352" font-size="12.5" font-weight="600" fill="#2C2C2A">背景主要搶</text>
+<rect x="258" y="336" width="84" height="26" rx="4" fill="#FBE5D6"/><text x="300" y="354" font-size="11" fill="#2C2C2A" text-anchor="middle">別的卸載流量</text>
+<rect x="390" y="336" width="134" height="26" rx="4" fill="#FBE5D6"/><text x="457" y="354" font-size="11" fill="#2C2C2A" text-anchor="middle">prefill、大批次、matmul</text>
+<rect x="530" y="336" width="80" height="26" rx="4" fill="#FBE5D6"/><text x="570" y="354" font-size="11" fill="#2C2C2A" text-anchor="middle">小批次 decode</text>
+<circle cx="48" cy="392" r="7" fill="#1F4E79"/><text x="62" y="396" font-size="11.5" fill="#5F5E5A">主要</text>
+<circle cx="118" cy="392" r="6" fill="none" stroke="#1F4E79" stroke-width="2"/><text x="132" y="396" font-size="11.5" fill="#5F5E5A">次要</text>
+
+<!-- evidence -->
+<rect x="640" y="76" width="296" height="380" rx="8" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="656" y="102" font-size="13.5" font-weight="600" fill="#2C2C2A">已經量到的</text>
+<text x="656" y="130" font-size="12" font-weight="600" fill="#1F4E79">算力型背景（matmul）</text>
+<text x="664" y="150" font-size="11.5" fill="#2C2C2A">最快格式翻轉 3／6 條（MI300X）</text>
+<text x="664" y="168" font-size="11.5" fill="#2C2C2A">低秩＋INT4：閒時最快，忙時比</text>
+<text x="664" y="186" font-size="11.5" fill="#2C2C2A">不壓縮還慢（O8）</text>
+<text x="656" y="218" font-size="12" font-weight="600" fill="#1F4E79">頻寬型背景（HBM 複製）</text>
+<text x="664" y="238" font-size="11.5" fill="#2C2C2A">不翻轉 0／6，只慢 5–30%（O8）</text>
+<text x="656" y="270" font-size="12" font-weight="600" fill="#1F4E79">空間共用＋分 SM（H200 MPS）</text>
+<text x="664" y="290" font-size="11.5" fill="#2C2C2A">背景佔滿 SM：Cake 0.397 s</text>
+<text x="664" y="308" font-size="11.5" fill="#2C2C2A">背景限 75% SM：Cake 0.076 s，</text>
+<text x="664" y="326" font-size="11.5" fill="#2C2C2A">背景吞吐 0.78（O9）</text>
+<text x="656" y="358" font-size="12" font-weight="600" fill="#C0504D">還沒量</text>
+<text x="664" y="378" font-size="11.5" fill="#2C2C2A">真實 decode／chunked prefill／</text>
+<text x="664" y="396" font-size="11.5" fill="#2C2C2A">混合批次當背景時，排序會不會</text>
+<text x="664" y="414" font-size="11.5" fill="#2C2C2A">變、分 SM 值多少 → B0</text>
+<text x="480" y="470" font-size="11.5" fill="#5F5E5A" text-anchor="middle">數字的平台、條件與 run_id 見 02_observations.md 的 O7–O9</text>
+</svg>
