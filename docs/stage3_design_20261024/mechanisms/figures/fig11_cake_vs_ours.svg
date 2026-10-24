@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="560" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 11　第 3 次改法：Cake 回來時把整本拿回；我們只拿新問題需要的那幾頁</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">例子：Llama-3.1-8B、128K token（KV 16 GiB），從 SSD 級的慢層（約 8.8 GiB/s）回來。Cake 是實測；改法是〔算術〕，品質還沒量</text>
+
+<!-- column headers -->
+<text x="250" y="88" font-size="14" font-weight="600" fill="#5F5E5A" text-anchor="middle">暫停的時候（GPU 上留什麼）</text>
+<text x="660" y="88" font-size="14" font-weight="600" fill="#5F5E5A" text-anchor="middle">回來的時候（怎麼拿回來）</text>
+<line x1="40" y1="100" x2="920" y2="100" stroke="#D9D9D6"/>
+
+<!-- Cake row -->
+<text x="40" y="132" font-size="14" font-weight="600" fill="#2C2C2A">Cake</text>
+<text x="40" y="150" font-size="11.5" fill="#5F5E5A">（SOTA）</text>
+<rect x="120" y="116" width="260" height="40" rx="4" fill="#ffffff" stroke="#A6A6A6" stroke-dasharray="5,4"/>
+<text x="250" y="141" font-size="12" fill="#5F5E5A" text-anchor="middle">什麼都不留：整本 16 GiB 收進倉庫</text>
+<!-- cake restore lanes -->
+<text x="420" y="128" font-size="11.5" fill="#2C2C2A">小明重抄</text>
+<rect x="490" y="116" width="150" height="18" fill="#E07B24"/><text x="565" y="129" font-size="11" fill="#ffffff" text-anchor="middle">第 1 頁 → 往後</text>
+<text x="420" y="152" font-size="11.5" fill="#2C2C2A">快遞搬原版</text>
+<rect x="490" y="140" width="150" height="18" fill="#1F4E79"/><text x="565" y="153" font-size="11" fill="#ffffff" text-anchor="middle">← 最後一頁往前</text>
+<line x1="640" y1="110" x2="640" y2="166" stroke="#C0504D" stroke-dasharray="4,3"/>
+<text x="646" y="128" font-size="11" fill="#C0504D">碰頭</text>
+<rect x="680" y="128" width="40" height="18" fill="#8FAADC"/><text x="700" y="141" font-size="10.5" fill="#1F4E79" text-anchor="middle">問題</text>
+<text x="730" y="142" font-size="12" fill="#2C2C2A">→ 回答</text>
+<text x="800" y="132" font-size="13" font-weight="600" fill="#C0504D">1.46 秒</text>
+<text x="800" y="150" font-size="11" fill="#5F5E5A">（實測）</text>
+
+<line x1="40" y1="180" x2="920" y2="180" stroke="#D9D9D6"/>
+
+<!-- Ours row -->
+<text x="40" y="214" font-size="14" font-weight="600" fill="#1F4E79">改法</text>
+<text x="40" y="232" font-size="11.5" fill="#5F5E5A">（縮圖還原）</text>
+<rect x="120" y="198" width="260" height="40" rx="4" fill="#DAE3F3" stroke="#8FAADC"/>
+<text x="250" y="216" font-size="12" fill="#1F4E79" text-anchor="middle">留一本縮印版（1/16 大，1 GiB）</text>
+<text x="250" y="232" font-size="11" fill="#5F5E5A" text-anchor="middle">原版照樣收進倉庫</text>
+<!-- per layer -->
+<g font-size="10.5">
+<text x="420" y="210" font-size="11.5" fill="#2C2C2A">GPU 逐層</text>
+<rect x="490" y="198" width="34" height="18" fill="#1F4E79"/><text x="507" y="211" fill="#ffffff" text-anchor="middle">1</text>
+<rect x="526" y="198" width="34" height="18" fill="#1F4E79"/><text x="543" y="211" fill="#ffffff" text-anchor="middle">2</text>
+<rect x="562" y="198" width="34" height="18" fill="#1F4E79"/><text x="579" y="211" fill="#ffffff" text-anchor="middle">3</text>
+<text x="606" y="211" fill="#5F5E5A">…</text>
+<text x="420" y="234" font-size="11.5" fill="#2C2C2A">快遞只搬</text>
+<rect x="490" y="222" width="30" height="18" fill="#F4B183"/><rect x="526" y="222" width="30" height="18" fill="#F4B183"/><rect x="562" y="222" width="30" height="18" fill="#F4B183"/>
+<text x="606" y="235" fill="#E07B24">挑中的頁</text>
+</g>
+<rect x="660" y="210" width="40" height="18" fill="#8FAADC"/><text x="680" y="223" font-size="10.5" fill="#1F4E79" text-anchor="middle">回答</text>
+<text x="800" y="214" font-size="13" font-weight="600" fill="#1F4E79">約 0.15 秒</text>
+<text x="800" y="232" font-size="11" fill="#5F5E5A">（算術，品質待驗）</text>
+
+<!-- explanation box -->
+<rect x="40" y="262" width="880" height="96" rx="8" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="56" y="286" font-size="12.5" font-weight="600" fill="#2C2C2A">改法的每一層在做什麼</text>
+<text x="56" y="308" font-size="12" fill="#2C2C2A">① 用新問題在縮印版上看：這一層哪幾頁跟問題有關（約 1/4）　② 只叫快遞送那幾頁的原版（INT4，總共約 1.25 GiB）</text>
+<text x="56" y="328" font-size="12" fill="#2C2C2A">③ 算這一層的時候，下一層要的頁已經在路上　④ 沒挑到的頁看縮印版：變糊，但不會整頁不見</text>
+<text x="56" y="348" font-size="11.5" fill="#5F5E5A">和 Cake 的差別只有一處：「整本拿回」改成「看了新問題，只拿需要的原版」。其他（倉庫、層級、Cake 的重抄）都可以照用</text>
+
+<!-- numbers table -->
+<text x="40" y="390" font-size="13" font-weight="600" fill="#2C2C2A">同一個例子，換不同快慢的倉庫（秒；Cake 實測／改法算術）</text>
+<g font-size="12" fill="#2C2C2A">
+<rect x="40" y="400" width="880" height="26" fill="#EEF3FA"/>
+<text x="56" y="418" font-weight="600">倉庫</text><text x="300" y="418" font-weight="600">Cake</text><text x="470" y="418" font-weight="600">改法</text><text x="640" y="418" font-weight="600">快幾倍</text>
+<text x="56" y="446">SSD 級（約 8.8 GiB/s）</text><text x="300" y="446">1.46</text><text x="470" y="446">0.15–0.25</text><text x="640" y="446">約 6–10 倍</text>
+<text x="56" y="470">較慢（約 2.5 GiB/s）</text><text x="300" y="470">3.92</text><text x="470" y="470">0.52–0.56</text><text x="640" y="470">約 6–7 倍</text>
+<text x="56" y="494">很慢（約 0.7 GiB/s）</text><text x="300" y="494">8.43</text><text x="470" y="494">1.45–1.79</text><text x="640" y="494">約 4–5 倍</text>
+<text x="56" y="518">NFS 級（約 0.33 GiB/s）</text><text x="300" y="518">8.42（算術）</text><text x="470" y="518">2.53–3.89</text><text x="640" y="518">約 2–3 倍</text>
+</g>
+<text x="40" y="546" font-size="11" fill="#5F5E5A">倉庫越慢，Cake 的「重抄」幫得越多，差距變小。範圍的兩端＝只用改法／改法再加上 Cake 的重抄（arith §10）。快幾倍用算術對算術比</text>
+</svg>

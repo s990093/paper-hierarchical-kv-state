@@ -245,6 +245,33 @@ def section_resume_ttft():
     print()
 
 
+def section_vs_cake():
+    print("## 10. 和 SOTA（Cake）同一把尺比：Llama-3.1-8B・128K（252 塊、每塊 64 MiB）\n")
+    print("兩邊都是理想的算術：Cake＝第 5 節的精確重算會合（再加問題 prefill）；粗底常駐＋逐層流水＝第 9 節的公式（ρ＝1/4、INT4 精修）；"
+          "合用＝前段照 Cake 精確重算、後段只補挑中塊的精修（粗估，沒算逐層流水）。實測的 Cake（harness E0、GPU 閒）放旁邊當錨點。\n")
+    print("| 層 | 實測 Cake (s) | 算術 Cake＋prefill (s) | 算術 粗底＋逐層 (s) | 算術 合用 (s) | 粗底＋逐層比 Cake 快 | 合用比 Cake 快 |")
+    print("|:--|--:|--:|--:|--:|--:|--:|")
+    m, c, nb, blk = "Llama-3.1-8B", "128K", 252, 64
+    L = MODELS[m][0]
+    pf = prefill_s(m, c, 512)
+    measured = {"b16": 1.45894, "b32": 3.91662, "b48": 8.43251}   # tables_longctx.md §5（fp8 列的 E0）
+    for t, bw in (("b16", 8.83), ("b32", 2.49), ("b48", 0.72), ("NFS", 0.331)):
+        cake = cake_meet(nb, blk, bw, 1.0)[1] + pf
+        ref = kv_gib(m, CTX[c]) / INT4_RATIO / 4 / bw
+        pipe = max(pf, ref) + ref / L
+        per_ref_s = blk / 1024 / INT4_RATIO / 4 / bw
+        best = None
+        for b in range(nb + 1):
+            tt = max(recompute_prefix_ms(b) / 1000, (nb - b) * per_ref_s)
+            if best is None or tt < best[1]:
+                best = (b, tt)
+        comb = best[1] + pf
+        meas = fmt(measured[t]) if t in measured else "—"
+        print(f"| {t} | {meas} | {fmt(cake)} | {fmt(pipe)} | {fmt(comb)}（b＝{best[0]}） | {fmt(cake / pipe, 1)}× | {fmt(cake / comb, 1)}× |")
+    print("\n讀法：層越慢，Cake 的前段重算幫得越多，「粗底＋逐層」對 Cake 的優勢從約 10 倍縮到約 2 倍；和 Cake 合用可以拿回一部分。"
+          "品質（ρ＝1/4 夠不夠）沒量，要 A0。\n")
+
+
 def self_test():
     assert kv_bytes_per_token("Llama-3.1-8B") == 131072
     assert kv_bytes_per_token("Qwen2.5-7B-1M") == 57344
@@ -278,6 +305,7 @@ def main():
     section_cpu_attention()
     section_decode()
     section_resume_ttft()
+    section_vs_cake()
 
 
 if __name__ == "__main__":
