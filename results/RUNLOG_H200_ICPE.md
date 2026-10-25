@@ -186,3 +186,17 @@ FileNotFoundError: /work/ChihChungHsu/hungweilai/hf-cache/hub/models--Qwen--Qwen
 - P0-2 全尺寸 HINT-PF（只報告，24 格）：HINT-PF 對 LRU 5.6–47.8%、O-PF 對 LRU 5.5–52.4%；HINT-PF÷O-PF 的改善比例 SSD 中位 0.939、b32 0.949、NFS 1.117；6 格 > 1（NFS 128／256 GiB 四格 1.25–1.45）。
 **失敗與異常**: 上面兩次分析失敗（叫錯／程式錯，已修）。沒做：V2 對第二階段 §5.5 `whatif_recompute.json` 的對照（只報告項）。
 **P0-1 總判定**：(a) 成立、(c) 成立、(b) 暫定 0 翻轉 → 等 p01brr（22233）重跑後 `p01_tools.py analyze-b`＋`verdict`。
+
+---
+
+## ICPE-P12 第一次 — job 21662 FAILED（2026-10-25 20:23:37 → 20:41:16 +08:00；只用 CPU）
+**完成的步驟**（全部 exit 0）：`20261025-202341`～ P12-VERIFY、A2（X1 FreeInference sweep＋兩個 analyze）、B1（strict）、B2（FI）；B3 的 x5 run `20261025-203700-icpe-p12-x5-cens1800`（exit 0）。
+**失敗**：`20261025-204109-icpe-p12-x5-cens1800-an`，exit 1：
+```
+File ".../code/p3x/x5_analyze.py", line 103, in bootstrap
+    sa = np.bincount(inv, weights=a, minlength=nu)
+ValueError: The weights and list don't have the same length.
+```
+**原因（我的 runner 錯）**：`x5_analyze.bootstrap` 用環境變數 `X5_CENSOR_H` 重建設限遮罩（ret ∧ prevT ≤ T_end − H，和 `x5_run.apply_censor` 同一式），`x5_run` 則用 `--censor-H`。runner 的 `x5v` 只把 `--censor-H` 給了 run，analyze 沒有設 `X5_CENSOR_H` → 用沒設限的 session 清單對設限後的 TTFT 陣列。3090 分支的同一步（`20261017-220051-…-cens1800` 等）exit 0，所以當時有設這個變數。
+**修正**：`x5v` 從 run 參數取 `--censor-H` 的值，analyze 用 `env X5_CENSOR_H=<H>`（沒設限的步驟 H＝0，和之前一樣）。寫新檔再 mv（22236 正在用這支）。
+**重送**：**22240** `icpe-p12 --from P12-B3-CENS1800`（B3 的 x5 run 重跑一次，raw 目錄先刪，所以輸出和 analyze 一致）。p01brr 22233 的依賴加上 22240（現在：afterany:21907:21909:22236:22238:22240；已滿足的 Slurm 會自己拿掉）。

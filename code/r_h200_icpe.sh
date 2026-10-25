@@ -253,8 +253,10 @@ if [ "$PART" = p12 ]; then
   x5v() {   # x5v <短名> <raw 子目錄> <x5_run 參數...> -- <x5_analyze 參數...>
     local nm=$1 raw=$P3LOCAL/$2; shift 2
     local run=() an=(); while [ $# -gt 0 ] && [ "$1" != -- ]; do run+=("$1"); shift; done; shift; an=("$@")
+    # x5_analyze 的 bootstrap 用環境變數 X5_CENSOR_H 重建同一個設限遮罩（x5_run 是 --censor-H）；10/25 第一次沒傳 → 長度對不上（RUNLOG ICPE-P12）
+    local H=0 i; for ((i = 0; i < ${#run[@]}; i++)); do [ "${run[$i]}" = --censor-H ] && H=${run[$((i + 1))]}; done
     m7run "icpe-p12-x5-$nm" bash -c "rm -rf $raw && mkdir -p $raw $P12/x5 && $FV x5 --out-dir $P12/x5 --raw-dir $raw --procs 14 ${run[*]}" || return 1
-    m7run "icpe-p12-x5-$nm-an" $FV x5a --out-dir "$P12/x5" --raw-dir "$raw" "${an[@]}"
+    m7run "icpe-p12-x5-$nm-an" env X5_CENSOR_H="$H" $FV x5a --out-dir "$P12/x5" --raw-dir "$raw" "${an[@]}"
   }
   step P12-B1-STRICT       x5v strict       p12_x5_strict       --rule strict --variants reg -- --sfx _strict --rule strict
   step P12-B2-FI           x5v fi           p12_x5_fi           --fi --variants reg -- --sfx _fi
