@@ -698,6 +698,7 @@ def build_parser():
         s.add_argument("--seg-blocks", type=int, default=16, help="粗底分段編碼的 block 數")
         s.add_argument("--params-file", default=PARAMS)
         s.add_argument("--force", action="store_true")
+        s.add_argument("--gm04", action="store_true", help="TF 時順便量 G-M04（問題前綴的挑塊）")
     return ap
 
 

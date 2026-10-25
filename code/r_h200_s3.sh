@@ -153,9 +153,9 @@ if [[ "$PART" == a0-* ]]; then
   step CALIB-$M ensure_calib "$M"
   if [ "$PART" = a0-smoke ]; then
     step SELFTEST-$CELL m7run s3-a0-selftest-$CELL bash -c "python code/s3/a0.py gpu-selftest --cell $CELL --out \"\$RUN_DIR/gpu_selftest.json\""
-    step SMOKE-$CELL m7run s3-a0-smoke-$CELL bash -c "python code/s3/a0.py tf --cell $CELL --smoke --max-items 2 --out \"\$RUN_DIR/smoke_tf.csv.gz\""
+    step SMOKE-$CELL m7run s3-a0-smoke-$CELL bash -c "python code/s3/a0.py tf --cell $CELL --smoke --max-items 2 --gm04 --out \"\$RUN_DIR/smoke_tf.csv.gz\""
   fi
-  [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+  [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET" --gm04
   [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
 fi
 
