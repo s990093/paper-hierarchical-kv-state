@@ -60,3 +60,16 @@
 - `r_h200_s3.sh` 的 `ensure_models` 在 check 通過後 refresh；`ensure_calib` 也 touch 校準檔。
 - ICPE 的 runner 只呼叫 `check`：改成不比 mtime 之後，refresh 不會讓它誤判。
 **失敗與異常**: 無。
+
+---
+
+## S3-C0-v1 — C0 還原方式預測（head node，CPU；2026-10-25）
+
+**狀態**: FAIL（判準 GC-GO 沒過，照實記）
+**登記**: `docs/stage3_design_20261024/runs/C0_cost_model.md`（2026-10-25T12:57:12Z，commit `c9c9970`，評估之前）
+**run_id**: `20261025-205728-s3-c0-eval-v1`
+**指令**: `RUN_ID=… python3 code/s3/c0.py eval`
+**產出檔**: `results/s3_h200/c0/{c0_report.json,tables_c0.md,cells.csv}`
+**關鍵數字**〔實測〕: 352 格。平均／最差代價：長度 48.9%／542%、負載 55.1%／415%、平台 56.7%／542%、kernel 33.4%／255%；永遠 Cake 6.6–13.0%／60–108%；G5／G5b 8.4–45.1%（有量的格）。
+**失敗與異常**: 無程式錯誤。預測器在「忙」的格子選了全部載入（parts 的忙時 H2D 倍數≈1.0，實測全部載入忙時慢約 6 倍）。判讀見登記文件的結果節。
+**之後**: ICPE 的 p01brr、P2 收齊後跑 C0-v2（同程式、同判準）。
