@@ -31,7 +31,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Monitor, SendMessage
 ## 2. 速度判準的「雜訊」（05 §2.1；2026-10-25 補）
 
 - σ_noise＝**baseline 那一臂**在同一個 allocation、同一張卡、同一輪隨機順序裡 ≥6 次的相對標準差，每個量測點各自算。
-- δ*＝max(5%, 2σ)。「有改進」：中位數差 > δ* **且**差的 95% CI（對 rep 重抽 10,000 次）下界 > 0；「沒有變慢」：變慢 ≤ δ* **且** CI 上界 ≤ δ*。P95 用 P95 的 bootstrap 標準誤。
+- δ*＝max(5%, 2σ)。「有改進」：中位數差 > δ* **且**差的 95% CI（對 rep 重抽 10,000 次）下界 > 0；「沒有變慢」：變慢 ≤ δ* **且** CI 上界 ≤ δ*。點估計過、CI 沒過 → **INCONCLUSIVE**（加重複次數再判，不算過也不算變慢）。P95 用 P95 的 bootstrap 標準誤。
 - 每個量時間的 CSV 列都要有 `n_rep`、`sigma_rel`、`delta_star`（不到 6 次寫 NOT_MEASURED）。**2σ > 5% 的點先回報、不判定。**
 - 只套用到還沒看過時間數字的 run；看過的維持原判準，只附「事後以 2σ 重算（只供參考）」。品質判準（配對 bootstrap、ε＝2 pp、≥288 題）不套用。
 
