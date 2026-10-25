@@ -341,9 +341,11 @@ class ItemState:
 
     # ---- 打分 ---------------------------------------------------------------
     @torch.inference_mode()
-    def question_pass(self, want_q: bool = True):
-        """KV 緩衝現在的樣子（原值或粗底）上跑一次新問題：每層的 ctx_mass [L, nreg]，以及每層的 q [L, Hq, nq, D]（FP32）。"""
-        km, nreg, nq = self.sess.km, self.sess.nreg, len(self.q_ids)
+    def question_pass(self, want_q: bool = True, ids: list | None = None):
+        """KV 緩衝現在的樣子（原值或粗底）上跑一次新問題（ids＝None：完整的 query_ids）：每層的 ctx_mass [L, nreg]，
+        以及每層的 q [L, Hq, nq, D]（FP32）。"""
+        ids = self.q_ids if ids is None else ids
+        km, nreg, nq = self.sess.km, self.sess.nreg, len(ids)
         mass = torch.zeros(km.L, nreg, dtype=torch.float64, device=km.device)
         qcap = torch.empty(km.L, km.Hq, nq, km.D, dtype=torch.float32, device=km.device) if want_q else None
 
@@ -351,7 +353,7 @@ class ItemState:
             mass[li] = ctx_mass(km, q, km.kv[li, 0, :, :self.ctx_end], nq, nreg)
             if want_q:
                 qcap[li] = q[:, :nq].float()
-        forward_hooked(km, torch.tensor(self.q_ids, device=km.device), self.ctx_end, hook=hook)
+        forward_hooked(km, torch.tensor(ids, device=km.device), self.ctx_end, hook=hook)
         return mass, qcap
 
     @torch.inference_mode()
@@ -564,6 +566,51 @@ def onepass_hook(sess, st, m: int, code: int, nq: int, record: list):
     return hook
 
 
+# ============================================================================ G-M04（runs/G_M04_prefix_select.md）
+GM04_P = (0.25, 0.5, 0.75)
+GM04_RHO = ("1/8", "1/4")
+GM04_FIELDS = ["run_id", "ts", "cell", "model", "n_blocks", "item_id", "task", "seed", "turn", "p", "rho", "m", "n_q_text", "n_ids",
+               "recall", "overlap_full", "found", "n_rows_item"]
+
+
+def find_sub(seq: list, sub: list) -> int:
+    n = len(sub)
+    for i in range(len(seq) - n + 1):
+        if seq[i:i + n] == sub:
+            return i
+    return -1
+
+
+def gm04_item(sess, st, cell, mass_full):
+    """問題的前綴挑塊：ORACLE（全域）在前綴的 token 上算；和完整 query_ids 的 ORACLE（mass_full）比。"""
+    enc = sess.T._enc(sess.ans.tok)
+    qt = enc(st.tr["question"])
+    i0 = find_sub(st.q_ids, qt)
+    base = dict(cell=cell, model=sess.model, n_blocks=sess.nb, item_id=st.it["item_id"], task=st.it["task"], seed=st.it["seed"],
+                turn=st.turn, n_q_text=len(qt))
+    rows = []
+    full = {r: topm(mass_full.sum(0), A.m_of(r, sess.nreg)) for r in GM04_RHO}
+    nd = set(st.needle)
+
+    def rec(sel):
+        return round(len(nd & set(sel)) / len(nd), 4) if nd else ""
+    for r in GM04_RHO:
+        rows.append(dict(base, p=1.0, rho=r, m=len(full[r]), n_ids=len(st.q_ids), recall=rec(full[r]), overlap_full=1.0, found=int(i0 >= 0)))
+    if i0 < 0:
+        for p in GM04_P:
+            for r in GM04_RHO:
+                rows.append(dict(base, p=p, rho=r, m="", n_ids="", recall="NOT_MEASURED", overlap_full="NOT_MEASURED", found=0))
+        return rows
+    for p in GM04_P:
+        ids = st.q_ids[:i0 + max(1, math.ceil(p * len(qt)))]
+        mass, _ = st.question_pass(want_q=False, ids=ids)
+        for r in GM04_RHO:
+            sel = topm(mass.sum(0), A.m_of(r, sess.nreg))
+            rows.append(dict(base, p=p, rho=r, m=len(sel), n_ids=len(ids), recall=rec(sel),
+                             overlap_full=round(len(set(sel) & set(full[r])) / len(sel), 4), found=1))
+    return rows
+
+
 # ============================================================================ 一題的 TF
 def row_base(sess, st, cell, c):
     info = sess.info
@@ -575,7 +622,7 @@ def row_base(sess, st, cell, c):
                 f=round(c["f"], 6), multiple=round(1 / c["f"], 4))
 
 
-def run_item(sess, st, cfgs, cell, mode: str):
+def run_item(sess, st, cfgs, cell, mode: str, gm04: bool = False):
     """mode＝tf：每個配置 teacher forcing；gen：每個配置生成。回傳列（不含 run_id、ts、監控欄）。"""
     km = sess.km
     nq = len(st.q_ids)
@@ -617,6 +664,7 @@ def run_item(sess, st, cfgs, cell, mode: str):
         sels.mass["ORACLE"], q_exact = sels.st.question_pass(want_q="EXACT-Q" in need)
     else:
         q_exact = None
+    gm04_rows = gm04_item(sess, st, cell, sels.mass["ORACLE"]) if (mode == "tf" and gm04 and "ORACLE" in sels.mass) else []
     # 均勻配置（直接寫進緩衝）
     for c in cfgs:
         if c["kind"] != "uniform":
@@ -679,6 +727,7 @@ def run_item(sess, st, cfgs, cell, mode: str):
         finally:
             km.key_keep = None
         finish(c, res, t0, sel=sel, gran=c["gran"])
+    run_item.gm04_rows = gm04_rows
     return rows, time.time() - t_item
 
 
@@ -737,6 +786,10 @@ def _loop(a, kind: str):
     rid = A.run_id()
     watch = start_watch(out)
     fo, w = A.open_out(out, fields)
+    gm = kind == "tf" and getattr(a, "gm04", False)
+    if gm:
+        gout = out.replace(f"a0_{kind}_", "gm04_") if not a.smoke else out.replace(".csv", "_gm04.csv")
+        go, gw = A.open_out(gout, GM04_FIELDS)
     t_start = time.time()
     try:
         for k, r in enumerate(todo):
@@ -747,7 +800,7 @@ def _loop(a, kind: str):
             if it["item_id"] != r["item_id"]:
                 raise RuntimeError(f"item_id {it['item_id']} ≠ 計畫的 {r['item_id']}")
             st = ItemState(sess, it, r["turn"])
-            rows, t_item = run_item(sess, st, cfgs, a.cell, kind)
+            rows, t_item = run_item(sess, st, cfgs, a.cell, kind, gm04=gm)
             lvl, intr = host_level(), intruders(watch)
             for x in rows:
                 x.update(run_id=rid, ts=A.ts(), calib_run_id=sess.calib_rid, t_prefill_s=round(st.t_prefill, 2),
@@ -756,6 +809,12 @@ def _loop(a, kind: str):
                     x["set"] = r["set"]
                 w.writerow({f: x.get(f, "") for f in fields})
             fo.flush()
+            if gm:
+                g = run_item.gm04_rows
+                for x in g:
+                    x.update(run_id=rid, ts=A.ts(), n_rows_item=len(g))
+                    gw.writerow({f: x.get(f, "") for f in GM04_FIELDS})
+                go.flush()
             e0 = rows[0]
             print(f"[{k + 1}/{len(todo)}] {it['item_id']} t{r['turn']} prefill {st.t_prefill:.1f}s 題 {t_item:.1f}s "
                   f"{len(rows)} 列 copies={st.comp.n_block_copies}/{st.comp.n_layer_copies} "
@@ -764,6 +823,8 @@ def _loop(a, kind: str):
             torch.cuda.empty_cache()
     finally:
         fo.close()
+        if gm:
+            go.close()
         finish_watch(watch, out)
 
 
