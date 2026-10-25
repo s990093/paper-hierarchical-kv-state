@@ -165,7 +165,12 @@ def main():
     elif a.cmd == "next-icpe":
         print(" ".join(next_icpe(my_jobs())))
     elif a.cmd == "add-dep":
-        add_dep(a.to, a.job)
+        # 目標已經「準備好」（只剩在等 s3-* 或什麼都不等）→ 不加：新的 s3 job 開跑時反正會讓位給它，加了只會讓它等到
+        # 我們的 job 拿到卡、讓位之後才能排程（10/26 00:3x：21655 p02 因此多等 22356／22357）
+        if a.to in yield_target(my_jobs()):
+            print(f"[sched] {a.to} 已經準備好（只剩在等 s3 的 job 或什麼都不等）→ 不加 afterany:{a.job}（新 job 會讓位）")
+        else:
+            add_dep(a.to, a.job)
 
 
 if __name__ == "__main__":

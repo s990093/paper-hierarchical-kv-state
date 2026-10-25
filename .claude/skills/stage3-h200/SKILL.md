@@ -45,7 +45,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Monitor, SendMessage
 ## 4. GPU 排程：和 ICPE 共用（使用者 10/25「排滿：stage3 品質先填空檔」）
 
 - stage-3 的品質 job 切成 ≤4 小時、可續跑的分片（`--shard i/n`、`--budget-min`），一有空卡就跑。
-- **送出新 job 時**：`for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-dep --to $t --job <新 job>; done`（保留原本的依賴；ICPE session 也會改同一份清單，留著它的）。
+- **送出新 job 時**：`for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-dep --to $t --job <新 job>; done`（保留原本的依賴；ICPE session 也會改同一份清單，留著它的）。目標已經準備好（只剩在等 s3 的 job 或什麼都不等）時 `add-dep` 會自己跳過（新 job 開跑會讓位；加了只會讓 ICPE 白等）。**改 ICPE job 的依賴（含移除我們加的）會被權限擋下**，要使用者同意。
 - **讓位規則**（`code/s3/sched.py yield-target`，runner 開跑時自動做）：ICPE 量時間的 job 只剩在等 s3-* 的 job（或什麼都不等），或 hold 中但前一個 ICPE 量時間的 job 剛結束 ≤60 分鐘 → 這個 stage-3 job 原樣重送一份（`--dependency=afterany:<ICPE job>`）然後 exit 0。重送出來的 job **不要**再加進 ICPE 的依賴（會死結）。
 - **hold 中的 ICPE job 一律不動**（只有 ICPE session 能 release）。DL_Lab4 的 job 算「我們自己的」。
 - stage-3 量時間的 job 排在 ICPE 量時間的鏈之後；送出前 `squeue -u $USER -w hgx-cn01` 確認。
