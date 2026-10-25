@@ -1,0 +1,10 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E0,cake,10,0.23379,0.28717,0 3 4,0.0,4294967296.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,E0,claim,10,0.15301,0.20399,3 4,0.0,4026531840.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,E0,loadall,10,0.23544,0.28941,0,0.0,4294967296.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,E1,cake,10,0.23131,0.28498,0 2,64.0,1342177280.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,E1,claim,10,0.07466,0.1264,2,62.0,1300234240.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,E1,loadall,10,0.23251,0.28687,0,64.0,1342177280.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,R25,cake,10,0.11545,0.16679,0 3,16.0,3401580544.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,R25,claim,10,0.1163,0.16745,3,15.5,3378511872.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310
+32768,cpu,busy,R25,loadall,10,0.23435,0.28889,0,16.0,3556769792.0,,,10,0,20261026-055944-icpe-p2-llama-int4-L310

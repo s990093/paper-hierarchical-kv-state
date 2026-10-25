@@ -81,9 +81,89 @@
 
 ## 8. 結果
 
-GPU 重播（job 21655）還沒跑（hold 中，排在 p01brr 之後）。下面是已經有的 CPU 部分。
+**判定：模擬可信（三條都成立）**。`p02_verdict.json`：`passed: true`、`problems: []`（run `20261026-040946-icpe-p02-analyze`）。
 
-### 8.1 只報告：HINT-PF 在全尺寸 X1 格子〔模擬，H200 常數〕
+### 8.1 縮小比例（§4）〔模擬〕
+run `20261022-120540-icpe-p02-select` → `results/icpe_h200/p02/select.json`。**k＝8**（不是退回的 16）：
+- k＝4：ρ̂＝0.534，沒過 ≤0.30。
+- k＝8：ρ̂＝0.276；O-PF 對 LRU 的 headroom 128／8＝16 GiB 是 23.1%，256／8＝32 GiB 是 19.9%。兩條都過。
+- 縮小後 1,535 個請求，其中回來請求 467 個，跨 3,537 s。
+
+S_orig：run `20261022-120549-icpe-p02-sim-orig` → `sim_requests.csv`（ref＝S_orig）。CPU 自測 9/9 過（`selftest.csv`）。
+
+### 8.2 GPU 重播（job 21655）〔實測〕
+**執行**：
+- 2026-10-26 00:48:04 → 04:06:29（+08:00），exit 0，git `cbe8aee`，Llama-3.1-8B，模型從 hgx-cn01 的 /tmp（pinned revision，開跑前 `fetch_models.py check` 過）。
+- 冒煙 `20261026-004808-icpe-p02-smoke`：LRU 128、前 100 個請求，exit 0，沒有污染 → `gpu_smoke.csv`。
+- 正式 12 個 run 照 seed 20261023 的順序跑完，全部 exit 0。
+
+**乾淨度**：
+- 13 個 run 的 `gpu_guard_*.json` 都是 `contaminated: false`，`intruders` 和 `smi_failures` 都是空的。
+- run 目錄沒有 `CONTAMINATED`，stderr 沒有 `SmiUnavailable`。
+- sacct：這段時間 hgx-cn01 上沒有我們自己的別的 job（stage3 的 22356／22357 各跑 3–4 s 讓位，00:48:04 已結束）。
+- `p02_analyze` 收進 12 個乾淨、完整（1,535 列）的 run。
+
+**S_real**：run `20261026-040756-icpe-p02-sim-real`，`x1_gpu.py sim --times gpu_requests.csv`，附加到 `sim_requests.csv`（ref＝S_real）。
+
+**判定**（對 S_orig；`p02_cells.csv`、`p02_pairs.csv`、`p02_signs.csv`）：
+
+回來請求平均 TTFT（s），實測 ÷ S_orig：
+
+| CPU | 做法 | GPU | S_orig | 比值 | S_real | 實測÷S_real |
+|--:|:--|--:|--:|--:|--:|--:|
+| 16 GiB（128／8） | LRU | 0.2779 | 0.3052 | 0.911 | 0.2804 | 0.991 |
+| | FREQ2Q | 0.2767 | 0.2997 | 0.923 | 0.2805 | 0.986 |
+| | O-BEL | 0.2521 | 0.2669 | 0.944 | 0.2584 | 0.976 |
+| | HINT-PF | 0.2381 | 0.2441 | 0.975 | 0.2349 | 1.013 |
+| | O-PF | 0.2288 | 0.2346 | 0.975 | 0.2295 | 0.997 |
+| 32 GiB（256／8） | LRU | 0.2725 | 0.2937 | 0.928 | 0.2758 | 0.988 |
+| | FREQ2Q | 0.2724 | 0.2936 | 0.928 | 0.2768 | 0.984 |
+| | O-BEL | 0.2377 | 0.2536 | 0.937 | 0.2461 | 0.966 |
+| | HINT-PF | 0.2374 | 0.2440 | 0.973 | 0.2348 | 1.011 |
+| | O-PF | 0.2289 | 0.2352 | 0.973 | 0.2301 | 0.995 |
+
+1. **比值**：10 格都在 [0.9, 1.1]，範圍 0.911–0.975。**成立**。最靠邊的是 LRU 16 GiB 的 0.911。
+2. **排序**：S_orig 差 ≥5% 的對，16 GiB 有 8 對、32 GiB 有 7 對，GPU 上先後全部相同。**成立**。
+   差 <5%、不判的 5 對：
+   - LRU／FREQ2Q：1.8%、0.04%；
+   - HINT-PF／O-PF：4.1%、3.7%；
+   - 32 GiB 的 O-BEL／HINT-PF：4.0%。
+3. **headroom 正負號**：8 個比較的 S_orig |headroom| 都 ≥2%，GPU 上全部同號。**成立**。
+
+| CPU | 比較 | S_orig | GPU |
+|--:|:--|--:|--:|
+| 16 GiB | O-BEL 對 min(LRU, FREQ2Q) | +10.9% | +8.9% |
+| | O-PF 對 LRU | +23.1% | +17.7% |
+| | HINT-PF 對 LRU | +20.0% | +14.3% |
+| | O-PF 對 HINT-PF | +3.9% | +3.9% |
+| 32 GiB | O-BEL 對 min(LRU, FREQ2Q) | +13.6% | +12.7% |
+| | O-PF 對 LRU | +19.9% | +16.0% |
+| | HINT-PF 對 LRU | +16.9% | +12.9% |
+| | O-PF 對 HINT-PF | +3.6% | +3.6% |
+
+### 8.3 只報告（GPU 重播）
+- **偏向**：GPU 每一格都比 S_orig 快（比值全 <1）。LRU、FREQ2Q 偏最多（0.91–0.93），O-PF、HINT-PF 最少（0.97–0.98）。所以 GPU 上的 headroom 比模擬小：
+  - 對 LRU 的三個是模擬的 0.72–0.94 倍〔算術〕；
+  - O-PF 對 HINT-PF 幾乎一樣（0.997、0.998 倍）。
+- **O-PF 對 LRU 在 GPU 上**：16 GiB 17.7%、32 GiB 16.0%，兩格都還 ≥15%。HINT-PF 對 LRU 在 GPU 上是 14.3%、12.9%。
+- **對 S_real**：實測÷S_real 是 0.966–1.013。到達時間換成 GPU 實際開始時間後，模擬和實測差不到 3.5%。
+  〔判讀，沒有另外驗證〕S_orig 的偏差大部分來自排隊造成的開始時間位移：請求比原始到達晚開始，I/O 線上的寫入、預取有較多時間做完，所以 TTFT 變短。被降級越多的做法（LRU、FREQ2Q）受益越多。
+- **每個請求的實測÷S_orig**：中位數 0.933–0.979，p10 0.704–0.870，p90 1.025–1.113。
+- **兩次 LRU**：16 GiB 0.27788 vs 0.27751 s，32 GiB 0.27254 vs 0.27219 s，相對差都是 0.13%。
+- **HINT-PF 拿到 O-PF 改善的比例**〔算術，從上表〕：
+  - 縮小設定的模擬：0.865（16 GiB）、0.851（32 GiB）；
+  - GPU：0.811、0.806。
+- **⚠ 排隊**：每個 run 約 51% 的請求要排隊（>1 ms），全部請求平均排隊 1.09–1.15 s，最長 16.4–17.0 s。GPU 忙碌比例（TTFT 總和÷3,537 s）只有 0.257–0.263〔算術〕，所以排隊來自到達很集中，不是整體負載高〔判讀〕。
+  - 回來請求平均排隊 1.19–1.26 s，比 TTFT 本身（0.23–0.28 s）大好幾倍。
+  - 照 §5 登記，TTFT 不含排隊（和 X1 模擬的「GPU 不排隊」同義）。若把排隊算進去（`p02_signs.csv` 的 `headroom_gpu_incl_queue`，只報告）：
+    - O-PF 對 LRU 只剩 7.9%／4.6%；
+    - HINT-PF 對 LRU 只剩 6.0%／3.9%；
+    - O-BEL 對 min(LRU, FREQ2Q) 只剩 2.2%／3.0%。
+  - 這個重播一次只做一個請求、不做 batching，所以這裡的排隊量不代表真的 server〔判讀〕。但它表示：論文若寫回來請求的端到端延遲，X1 的 headroom 只適用於「GPU 不排隊」的前提，要寫明。
+- **D2H**（回合結束新 block 寫回主機）：每個 run 總共 10.2–45.5 s。
+- **縮小 vs 全尺寸**〔模擬〕：O-PF 對 LRU 在全尺寸（SSD、閒、128／256 GiB；`fullsim_hint.csv`）是 52.4%／47.3%，縮小設定是 23.1%／19.9%。縮小後 headroom 不到一半。§4 寫過縮小會讓跨 session 的前綴共用變少，但 headroom 變小的原因沒有另外查。所以 GPU 驗證的是模擬器在縮小 trace 上的準度，不是全尺寸 headroom 的大小。
+
+### 8.4 只報告：HINT-PF 在全尺寸 X1 格子〔模擬，H200 常數〕
 run `20261025-202314-icpe-p02-fullsim`（job 21656）→ `results/icpe_h200/p02/fullsim_hint.csv`；conversation、R1、Cake，三個慢層 × GPU 閒／忙 × CPU 128／256／512／1,024 GiB＝24 格。
 - HINT-PF 對 LRU 的回來請求平均 TTFT 改善 5.6–47.8%；O-PF 對 LRU 5.5–52.4%。
 - HINT-PF 拿到 O-PF 改善的比例（hint_vs_lru ÷ opf_vs_lru）：本地 SSD 0.912–0.982（中位 0.939）、b32 0.916–1.009（0.949）、NFS 級 0.816–1.454（1.117）。
@@ -91,4 +171,4 @@ run `20261025-202314-icpe-p02-fullsim`（job 21656）→ `results/icpe_h200/p02/
 
 ## 9. 偏離登記
 
-（還沒有。）
+- 判準沒有改。`p02_analyze.py` 在看過結果後加了三個只報告的欄位（`p02_cells.csv` 的 `ret_queue_mean`、`ret_ttft_plus_queue_mean`，`p02_signs.csv` 的 `headroom_gpu_incl_queue`），不進判定；加之前後的判定輸出相同（`20261026-040806-…` 與 `20261026-040946-icpe-p02-analyze`）。

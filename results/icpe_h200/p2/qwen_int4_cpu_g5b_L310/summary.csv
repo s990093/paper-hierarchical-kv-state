@@ -1,0 +1,10 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E0,cake,10,0.06732,0.109,0 2,0.0,1820327936.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,E0,claim,10,0.06725,0.10934,2,0.0,1820327936.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,E0,loadall,10,0.23199,0.27733,0,0.0,1879048192.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,E1,cake,10,0.14736,0.19219,0 2,63.0,578027520.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,E1,claim,10,0.06612,0.11008,2,62.0,568852480.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,E1,loadall,10,0.23229,0.27691,0,64.0,587202560.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,R25,cake,10,0.23093,0.27611,0 2 3,16.0,1556086784.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,R25,claim,10,0.06668,0.10906,2,16.0,1497366528.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310
+32768,cpu,busy,R25,loadall,10,0.23184,0.27736,0,16.0,1556086784.0,,,10,0,20261026-060113-icpe-p2-qwen-int4-L310

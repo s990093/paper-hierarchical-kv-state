@@ -1,0 +1,13 @@
+[
+ {
+  "state": "busy",
+  "length": 32768,
+  "duty": 1.0,
+  "cu_mask": "",
+  "ready": "READY matmul_ms=1.396",
+  "script": "m7_busy.py",
+  "n_matmul": 8852,
+  "seconds": 19.918,
+  "matmul_per_s": 444.422
+ }
+]

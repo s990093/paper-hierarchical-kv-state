@@ -247,3 +247,48 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 **之後**：15:2xZ `scontrol update 21655 Dependency=afterany:22313:22314`（p01brr 結束後開跑的兩個 stage3 job；若它們照讓位規則退出就馬上滿足）→ `scontrol release 21655 21663 21670`。(b) 的定稿分析（`p01_tools.py analyze-b`＋`verdict`）還沒跑。
 - **P0-1 定稿（head node，2026-10-26 00:34 +08）**：`20261026-003415-icpe-p01b-analyze-final`（exit 0）→ (b) **24 格 0 翻轉、成立**（排除重疊的 2 個 run、加入重跑的 2 個，Qwen fa3 每格 10 次）；`20261026-003427-icpe-p01-verdict`（exit 0）→ **P0-1 總判定成立**（a、b、c 都 True）。注意：重跑時 m10_speed 改寫了 `grid/qwen_{s4,g5b}_fa3/` 的 `summary.csv`、`meets.json`、`spec_grid.json`（換成重跑那次的），`restores.csv` 是附加；分析只讀 `restores.csv`（按 run_id 排除），舊版在 git 歷史（`ce34075`）。
 - **量時間鏈（2026-10-26 00:3x +08）**：21655 p02 等 stage3 的 22356、22357（stage3 session 照「排滿」規則加的；它們開跑時會讓位）。hgx-cn01 的 8 張卡全被別人的 job 佔著（Priority），還沒有我們的 job 在跑。
+
+## ICPE-P02 — job 21655（P0-2 GPU 重播：冒煙＋12 個 run；量時間）
+**狀態**: PASS（模擬可信，三條判準都成立）　**執行時間**: 2026-10-26 00:48:04 → 04:06:29（+08:00），exit 0，git `cbe8aee`　**同節點**：只有別人的 job；sacct：這段時間沒有我們自己的別的 job（stage3 的 22356／22357 讓位，00:48:04 已結束）
+**run_id**: 冒煙 `20261026-004808-icpe-p02-smoke`；正式 `20261026-004945-icpe-p02-256-O-BEL-r0`、`…-010551-…-256-O-PF-r0`、`…-012215-…-256-FREQ2Q-r0`、`…-013828-…-128-LRU-r0`、`…-015512-…-128-O-BEL-r0`、`…-021119-…-128-LRU-r1`、`…-022804-…-128-FREQ2Q-r0`、`…-024413-…-256-LRU-r0`、`…-030054-…-256-HINT-PF-r0`、`…-031720-…-128-HINT-PF-r0`、`…-033341-…-256-LRU-r1`、`…-035022-…-128-O-PF-r0`（全部 exit 0；`gpu_guard_*.json` 都 `contaminated: false`、intruders／smi_failures 空；沒有 CONTAMINATED、stderr 沒有 SmiUnavailable）
+**之後（head node）**:
+- `20261026-040738-icpe-p02-sim-real` **exit 1**：`FileNotFoundError: '/ssd8/hungwei/paper-hkv/datasets/mooncake/traces/conversation_trace.jsonl'`。head node 的 shell 沒設 `X1_TRACE_DIR`、`P3_CONST`。在 `load_P` 就失敗，沒有寫進 `sim_requests.csv`（行數 15,351 不變）。
+- 照 10/22 sim-orig 的環境（`P3_CONST=h200 X1_TRACE_DIR=$HOME/datasets/traces M7_RES=… TIARA_RUNS=…`）重跑 → `20261026-040756-icpe-p02-sim-real` exit 0。S_real 12 個 run 附加到 `sim_requests.csv`（33,771 行）。
+- `20261026-040806-icpe-p02-analyze` exit 0 → 判定 passed。
+- 加了只報告的「含排隊」欄位後重跑 `20261026-040946-icpe-p02-analyze` exit 0，判定欄位逐值相同（P0-2 §9）。
+**產出檔**: `results/icpe_h200/p02/{gpu_requests.csv.xz（原檔 4.8 MB gitignore；xz 880 KB，讀回逐值相同）, gpu_smoke.csv, gpu_guard_*.json, sim_requests.csv.gz（含 S_real）, p02_cells.csv, p02_pairs.csv, p02_signs.csv, p02_verdict.json}`
+**關鍵數字**〔實測，縮小 k＝8：1,535 請求／467 回來請求，CPU 16／32 GiB，Llama-3.1-8B，SDPA〕:
+- 回來請求平均 TTFT 實測÷S_orig：10 格 0.911–0.975（全在 [0.9, 1.1]）。
+- 排序：S_orig 差 ≥5% 的 15 對全同；5 對 <5% 不判。
+- headroom 正負號：8 個全同。O-PF 對 LRU：模擬 23.1%／19.9%，GPU 17.7%／16.0%。HINT-PF 對 LRU：20.0%／16.9% → 14.3%／12.9%。
+- 對 S_real：0.966–1.013。兩次 LRU 差 0.13%。
+- 回來請求平均排隊 1.19–1.26 s（TTFT 不含排隊，照登記）；含排隊時 O-PF 對 LRU 7.9%／4.6%（只報告）。
+- 細節：`docs/h200/icpe/P0-2_x1_gpu_validation.md` §8。
+**失敗與異常**: S_real 第一次的環境變數（上面）。量時間的部分無。
+**與論文假設的差異**: X1 模擬在縮小 trace 上偏慢 2.5–9%（GPU 比模擬快），對 LRU 偏最多 → 模擬高估 headroom（GPU 上是模擬的 0.72–0.94 倍）。符號與排序不變。
+**接著**: 21663 p2 等 hgx-cn01 的空卡（8 張都被別人佔著，Priority），之後是 21670 p11t。
+
+## ICPE-P01-C 補：V2 對第二階段 §5.5（2026-10-26，只報告，只讀檔）
+不跑新的模擬，只讀已有的兩個檔做算術：`docs/h200/report_stage2_h200/derived/whatif_recompute.json` 和 P0-1 §1 的表。
+- f 的縮小倍數：V2 ×0.5710／×0.5678，§5.5 ×0.5750／×0.5731（Llama／Qwen）。
+- 方向一致：重算變快 → 重算分到的工作變多。
+- §5.5 估 CPU 層 Llama 會翻成 Cake，但 (b) 的 fa3 實測同一格是全部載入較快。vLLM 級的這一格沒有實測。
+- 細節：P0-1 §7.4 最後一點。
+
+## ICPE-P2 — job 21663（P2：G5b 在 CPU 層、GPU 忙，換 seed 310／311；量時間）
+**狀態**: PASS（跑完、乾淨；判定＝**部分穩定**）　**執行時間**: 2026-10-26 05:58:53 → 06:04:56（+08:00），exit 0，git `0489306`　**同節點**：只有別人的 job；sacct：這段時間沒有我們自己的別的 job
+**run_id**: `20261026-055856-icpe-p2-llama-fp8-L310`、`…-055944-…-llama-int4-L310`、`…-060031-…-qwen-fp8-L310`、`…-060113-…-qwen-int4-L310`、`…-060154-…-llama-fp8-L311`、`…-060245-…-llama-int4-L311`、`…-060332-…-qwen-fp8-L311`、`…-060415-…-qwen-int4-L311`（全部 exit 0）。乾淨度：
+- `gpu_guard` 8 個都 CLEAN；
+- `contaminated_gpu` 全 False，`kv_bad` 0；
+- 沒有 CONTAMINATED，沒有 SmiUnavailable。
+分析 `20261026-060616-icpe-p2-analyze`（head node，exit 0）。
+**指令**: `sbatch --job-name=icpe-p2 code/r_h200_icpe.sh --part p2`（P2 §2 的 m10_speed grid，`M10_MEET=g5b`，CPU 層、busy、E0/E1/R25 × cake/claim/loadall × 10 次）
+**產出檔**: `results/icpe_h200/p2/{<m>_<fmt>_cpu_g5b_L{310,311}/, p2_cells.csv, p2_verdict.json}`
+**關鍵數字**〔實測〕:
+- 原本選錯的 10 格：穩 4（Llama int4 E1、Qwen fp8 E1、Qwen int4 E1、Qwen int4 R25）、不穩 5、沒重現 1（Llama int4 R25）。照 §3 → 部分穩定。
+- 對照 2 格這次兩個 seed 都 >1.05。
+- 24 個（格 × seed）：全部載入都比 Cake 慢 1.52–3.52 倍；G5b 選全部載入 0.3–1.0。
+- 細節：`docs/h200/icpe/P2_g5b_cpu_busy_reseed.md` §6。
+**失敗與異常**: 無。
+**與論文假設的差異**: ICPE_EVIDENCE E3 原本寫「穩定的平台差異」，不成立（部分穩定）。可以寫的是「每格都常選錯、多慢隨 seed 變」。
+**接著**: 21670 p11t（afterany:21663，已滿足；等空卡）。
