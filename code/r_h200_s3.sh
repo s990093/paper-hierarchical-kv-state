@@ -179,10 +179,10 @@ if [ "$PART" = b0-prep ]; then
   for m in llama qwen; do
     step B0-BGCHECK-$m m7run s3-b0-bgcheck-$m bash -c "python code/s3/b0.py bgcheck --model $m --out \"\$RUN_DIR/bgcheck_$m.csv\""
   done
-  step B0-SMOKE m7run s3-b0-smoke bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes stream,stream_hi --bgs idle,decode:8:8192,cprefill:2048:65536 --prims h2d_batch,sm_gather_12,dq_int4,dq_fp8,dq_nvfp4,lr_recon,recompute1,e2e_cake_bf16_cpu,e2e_load_int4_b32 --reps 1 --out "$RUN_DIR/smoke.csv"'
-  step B0-SMOKE-M08 m7run s3-b0-smoke-m08 bash -c 'python code/s3/b0.py run --model qwen --setup m08 --modes stream --bgs idle,decode:4:258048 --prims recompute1,qprefill,lr_recon --reps 1 --out "$RUN_DIR/smoke_m08.csv"'
+  step B0-SMOKE m7run s3-b0-smoke bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes stream,stream_hi --bgs idle,decode:8:8192,cprefill:2048:65536 --prims h2d_batch,sm_gather_12,dq_int4,dq_fp8,dq_nvfp4,dq_vq,lr_recon,recompute1,e2e_cake_bf16_cpu,e2e_load_int4_b32 --reps 6 --out "$RUN_DIR/smoke.csv"'
+  step B0-SMOKE-M08 m7run s3-b0-smoke-m08 bash -c 'python code/s3/b0.py run --model qwen --setup m08 --modes stream --bgs idle,decode:4:258048 --prims recompute1,qprefill,dq_vq,lr_recon --reps 6 --out "$RUN_DIR/smoke_m08.csv"'
   step MPS-ON mps_on
-  step B0-SMOKE-MPS m7run s3-b0-smoke-mps bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes mps,mps75 --bgs decode:32:8192 --prims recompute1,h2d_batch --reps 1 --out "$RUN_DIR/smoke_mps.csv"'
+  step B0-SMOKE-MPS m7run s3-b0-smoke-mps bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes mps,mps75 --bgs decode:32:8192 --prims recompute1,h2d_batch,dq_vq --reps 6 --out "$RUN_DIR/smoke_mps.csv"'
 fi
 if [ "$PART" = b0-run ]; then
   step MODELS ensure_models "$MODEL"
