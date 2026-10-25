@@ -45,3 +45,18 @@
 **計畫檔**: `results/s3_h200/a0/plan_{L128,Q128,Q256,Q14-256,L32,Q32}.json`（每格 186–187 個 TF 配置；seed 和既有題組 0 重疊）。
 **和 05／06 的差異**（登記 §5，登記前決定）：K2 家族不當粗底（倍數上限約 10×，做不到 16–32×）→ 改成 KSCAN-2b 挑法；粗底用校準基底（:cal）；加 ONE-PASS、ORACLE-L、BASE-ATTN-L；生成 192＋96＝288 題；32K 只當 TF 對照列。
 **送出**: `sbatch --job-name=s3-a0smoke-L128 --time=1:00:00 --dependency=afterany:22235 code/r_h200_s3.sh --part a0-smoke --cell L128` → **22237**（校準 llama → gpu-selftest → 2 題、16 個配置的 TF 冒煙；輸出在 run 目錄，不進 results）。照「排滿」的規則，ICPE 的 22233 依賴改成 afterany:21662,21905,21907,21909,22235,22236,22237（前 6 個是 ICPE session 設的）；已通知 ICPE session。
+
+---
+
+## S3-FETCH — 模型權重下載到 hgx-cn01 /tmp（job 22235）
+
+**狀態**: PASS（exit 0）　**執行時間**: 2026-10-25 20:28:10 → 20:36:3x（+08:00）　**run_id**: `20261025-202810-s3-fetch`
+**指令**: `sbatch --job-name=s3-fetch --time=1:00:00 code/r_h200_s3.sh --part fetch`
+**產出檔**: `results/s3_h200/env/models_manifest_20261025-202810-s3-fetch.json`（每個檔的名稱、大小、HF 的 sha256／git blob sha1）
+**結果**〔實測〕: Llama 14.97 GiB（下載 130 s、13 個檔全對）、Qwen-7B 14.20 GiB（126 s、15 個）、Qwen-14B 27.52 GiB（226 s、19 個）；`check --full` 三個都 OK。
+**compute node 的 /tmp**（manifest 的 `node`）: `D /tmp 1777 root root 30d`（和 head node 相同）、`systemd-tmpfiles-clean.timer` 每天；開機時間 2026-06-15；`/tmp` 在根分割區 `/dev/md0`（1.8T，剩 892G）、**掛載選項 `noatime,nodiratime`**。
+**因此改了程式**（看到 manifest 之後）：noatime 下讀檔不會更新存取時間，tmpfiles 只看得到 mtime／ctime → 下載後 30 天（約 11/24）會被刪，用不用都一樣。
+- `fetch_models.py check` 改成只比大小與 inode（不比 mtime）；新增 `refresh`（touch blob、symlink、戳記、目錄）。
+- `r_h200_s3.sh` 的 `ensure_models` 在 check 通過後 refresh；`ensure_calib` 也 touch 校準檔。
+- ICPE 的 runner 只呼叫 `check`：改成不比 mtime 之後，refresh 不會讓它誤判。
+**失敗與異常**: 無。

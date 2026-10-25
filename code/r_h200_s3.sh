@@ -111,7 +111,8 @@ step() {
 # 要 GPU 的 part 開跑前呼叫：戳記對不上 → 重抓一次 → 再核對（重抓後還不對就停）
 ensure_models() {
   [ "$DRY" = 1 ] && { echo "[ensure_models $*]"; return 0; }
-  python3 code/s3/fetch_models.py check --root "$S3_MODEL_ROOT" --models "$@" && return 0
+  python3 code/s3/fetch_models.py check --root "$S3_MODEL_ROOT" --models "$@" \
+    && { python3 code/s3/fetch_models.py refresh --root "$S3_MODEL_ROOT" --models "$@"; return $?; }   # /tmp 是 noatime：touch 一次
   echo "[r_h200_s3] 權重不在或對不上 → 重抓：$*"
   m7run s3-fetch python code/s3/fetch_models.py fetch --root "$S3_MODEL_ROOT" --models "$@" || return 2
   python3 code/s3/fetch_models.py check --root "$S3_MODEL_ROOT" --models "$@"
@@ -128,7 +129,8 @@ ensure_calib() {
   local M=$1
   [ "$DRY" = 1 ] && { echo "[ensure_calib $M]"; return 0; }
   mkdir -p "$S3_LOCAL/xstack"
-  flock "$S3_LOCAL/.calib-$M.lock" bash -c "[ -f '$S3_LOCAL/xstack/calib_xl_$M.pt' ] || TIARA_SHORT=s3-a0-calib-$M bash '$REPO/code/tiara.sbatch' python code/s3/a0.py calib --model $M"
+  flock "$S3_LOCAL/.calib-$M.lock" bash -c "[ -f '$S3_LOCAL/xstack/calib_xl_$M.pt' ] || TIARA_SHORT=s3-a0-calib-$M bash '$REPO/code/tiara.sbatch' python code/s3/a0.py calib --model $M" \
+    && touch "$S3_LOCAL/xstack/calib_xl_$M.pt" "$S3_LOCAL/xstack/calib_xl_$M.pt.json"     # noatime：touch 才不會被 30 天清掉
 }
 if [[ "$PART" == a0-* ]]; then
   M=$(python3 -c "import sys; sys.path.insert(0, 'code/s3'); import a0; print(a0.CELLS[sys.argv[1]]['model'])" "$CELL") \
