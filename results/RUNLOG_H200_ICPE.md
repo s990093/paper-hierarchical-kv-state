@@ -238,3 +238,10 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 2. **我補的**：ICPE 量時間用的路徑多半不讀 `watch.contaminated`，而是自己用 `intruders`＋`started_clean` 算（要排除自己的 busy 背景 pid），所以 (1) 傳不過去。這些地方都加上 `or bool(getattr(watch, "smi_failures", None))`：`m10_speed.py`（grid：p01brr、p2）、`m10_dqsweep.py`、`m7_write_policy.py`（gpu_contaminated＋CONTAMINATED 檔也記 smi_failures）、`m16_xtime.py` 三處（gpu_loadpath 每列、run 級、wcost 計時 ctx：p11t）、`code/icpe/p11_time.py`（wcost）。`attn_bench.py`、`x1_gpu.py` 本來就用 `w.contaminated`，不用改。
    - 一旦失敗過，之後每一列都算髒（不知道缺口影響哪幾列，保守）。nvidia-smi 沒失敗時行為逐位元相同（式子多一個 False）。
    - 驗證：五個檔 py_compile 過；式子在「乾淨／失敗過／沒有這個屬性的舊 watcher／開始就髒」四種假物件上結果都對；讀 CONTAMINATED 檔的程式都只看存在或前 90 字。
+
+---
+
+## ICPE-P01BRR — job 22233（P0-1 (b) 照重疊重跑；量時間）
+**狀態**: PASS　**執行時間**: 2026-10-25 23:09:43 → 23:15:41（+08:00），exit 0　**同節點**：只有別人的 job（runner 檢查過）；sacct：這段時間沒有我們自己的別的 job（22313／22314 是之後才開跑）
+**run_id**: `20261025-230946-icpe-p01b-qwen-s4-fa3-rr`、`20261025-231221-icpe-p01b-qwen-g5b-fa3-rr`（exit 0；沒有 CONTAMINATED、stderr 沒有 SmiUnavailable；模型從 /tmp，同 revision）
+**之後**：15:2xZ `scontrol update 21655 Dependency=afterany:22313:22314`（p01brr 結束後開跑的兩個 stage3 job；若它們照讓位規則退出就馬上滿足）→ `scontrol release 21655 21663 21670`。(b) 的定稿分析（`p01_tools.py analyze-b`＋`verdict`）還沒跑。
