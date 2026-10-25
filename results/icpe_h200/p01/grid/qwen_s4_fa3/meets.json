@@ -2,7 +2,8 @@
  "model": "qwen",
  "source_run_ids": [
   "20261022-230747-icpe-p01b-qwen-s4-fa3",
-  "20261022-233934-icpe-p01b-qwen-s4-fa3"
+  "20261022-233934-icpe-p01b-qwen-s4-fa3",
+  "20261025-230946-icpe-p01b-qwen-s4-fa3-rr"
  ],
  "meets": {
   "E0": {
@@ -99,18 +100,18 @@
     ]
    },
    "nfs": {
-    "idle": 36,
+    "idle": 37,
     "idle_all": [
      36,
      36,
-     36,
+     37,
      37,
      37
     ],
     "busy": 27,
     "busy_all": [
-     26,
-     26,
+     27,
+     27,
      27,
      27,
      27

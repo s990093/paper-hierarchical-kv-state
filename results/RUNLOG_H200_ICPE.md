@@ -245,3 +245,5 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 **狀態**: PASS　**執行時間**: 2026-10-25 23:09:43 → 23:15:41（+08:00），exit 0　**同節點**：只有別人的 job（runner 檢查過）；sacct：這段時間沒有我們自己的別的 job（22313／22314 是之後才開跑）
 **run_id**: `20261025-230946-icpe-p01b-qwen-s4-fa3-rr`、`20261025-231221-icpe-p01b-qwen-g5b-fa3-rr`（exit 0；沒有 CONTAMINATED、stderr 沒有 SmiUnavailable；模型從 /tmp，同 revision）
 **之後**：15:2xZ `scontrol update 21655 Dependency=afterany:22313:22314`（p01brr 結束後開跑的兩個 stage3 job；若它們照讓位規則退出就馬上滿足）→ `scontrol release 21655 21663 21670`。(b) 的定稿分析（`p01_tools.py analyze-b`＋`verdict`）還沒跑。
+- **P0-1 定稿（head node，2026-10-26 00:34 +08）**：`20261026-003415-icpe-p01b-analyze-final`（exit 0）→ (b) **24 格 0 翻轉、成立**（排除重疊的 2 個 run、加入重跑的 2 個，Qwen fa3 每格 10 次）；`20261026-003427-icpe-p01-verdict`（exit 0）→ **P0-1 總判定成立**（a、b、c 都 True）。注意：重跑時 m10_speed 改寫了 `grid/qwen_{s4,g5b}_fa3/` 的 `summary.csv`、`meets.json`、`spec_grid.json`（換成重跑那次的），`restores.csv` 是附加；分析只讀 `restores.csv`（按 run_id 排除），舊版在 git 歷史（`ce34075`）。
+- **量時間鏈（2026-10-26 00:3x +08）**：21655 p02 等 stage3 的 22356、22357（stage3 session 照「排滿」規則加的；它們開跑時會讓位）。hgx-cn01 的 8 張卡全被別人的 job 佔著（Priority），還沒有我們的 job 在跑。
