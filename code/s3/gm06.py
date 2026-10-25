@@ -22,6 +22,7 @@ import time
 from datetime import datetime
 
 import numa_probe as NP                          # 只記錄：每份來源 pinned 實際落在哪個節點（numa_local／remote 有沒有真的綁到）
+import guard as G                                # 量時間的 run 的 GPU 監看（CLAUDE.md §3）；4 張卡都看
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -191,6 +192,8 @@ def cmd_run(a):
         rows.append(dict(run_id=rid, ts=ts(), test=test, k=k, n_rep=len(times), t_med_s=statistics.median(times),
                          gibps_med=statistics.median(g), sigma_rel=sr, delta_star=ds, reps_s=";".join(f"{t:.5f}" for t in times), **kw))
         print(json.dumps(rows[-1]), flush=True)
+    out_csv = os.path.join(a.out_dir, f"gm06_{rid}.csv")
+    gw = G.Timing(out_csv, gpus=range(n))
     per = 4 * GiB
     srcs = [pinned(per) for _ in range(n)]
     dsts = [torch.empty(per, dtype=torch.uint8, device=f"cuda:{i}") for i in range(n)]
@@ -273,12 +276,15 @@ def cmd_run(a):
     else:
         rows.append(dict(run_id=rid, ts=ts(), test="numa", k=1, n_rep=0, t_med_s=NM, gibps_med=NM, sigma_rel=NM, delta_star=NM, reps_s="",
                          note=f"GPU 0 的 NUMA 節點 {node0!r}、節點數 {len(nodes)}：量不了"))
+    dest = gw.finish()                                            # 污染 → run 目錄，不進 results
+    for r in rows:
+        r["own_gpu_intruders"] = gw.status()
     keys = sorted({k for r in rows for k in r})
-    with open(os.path.join(a.out_dir, f"gm06_{rid}.csv"), "w", newline="") as f:
+    with open(dest, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader()
         w.writerows(rows)
-    print("[gm06] NUMA 存在", NP.save(os.path.join(a.out_dir, f"gm06_{rid}.csv"), rid, **numa), flush=True)
+    print("[gm06] NUMA 存在", NP.save(dest, rid, **numa), flush=True)
 
 
 def cmd_report(a):
@@ -286,8 +292,9 @@ def cmd_report(a):
     rows = []
     for p in sorted(glob.glob(os.path.join(OUT, "gm06_*.csv"))):
         rows += list(csv.DictReader(open(p)))
+    rows, bad = G.drop_contaminated(rows)
     mp = {int(r["k"]): [float(x) for x in r["reps_s"].split(";")] for r in rows if r["test"] == "multipath_16g" and r["reps_s"]}
-    res = dict(run_id=run_id(), ts=ts())
+    res = dict(run_id=run_id(), ts=ts(), excluded_contaminated_runs=bad)
     if 1 in mp and 2 in mp:
         rng = np.random.default_rng(0)
         a1, a2 = np.asarray(mp[1]), np.asarray(mp[2])

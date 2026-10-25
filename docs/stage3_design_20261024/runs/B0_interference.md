@@ -114,3 +114,9 @@ b0 每個模型：stream 兩種約 1 小時、MPS 四種約 2.2 小時；m08 兩
 
 ### 偏離 2（2026-10-25T13:33:09Z；使用者 10/25 選「G-M11 VQ（併進 B0）」；還沒有任何 B0 的時間數字）：還原動作加 `dq_vq`
 - b0 與 m08 的動作清單加 `dq_vq`（查表式 VQ 解碼，定義與判準見 [G_M11_vq.md](G_M11_vq.md)）；它不在「生產格式子集」裡。開頭的正確性核對加一項「VQ 解碼＝碼本查表」。B0 自己的判準（FLIP／SHARE／STATIC／G-M08）不變。
+
+### 偏離 3（2026-10-25T14:23:30Z；實作，判準不變；B0／G-M08 還沒有任何時間數字）：量測期間加 GpuWatcher，被污染的 run 不寫進 results
+
+- **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。B0 原本就有監看，但被污染的 CSV 留在 `results/s3_h200/b0/raw/`、report 也照讀，和本登記「contaminated 的 run 不進 results、重量」不一致；現在污染 → 這個 run 的 CSV 和 `_numa.json` 搬到 run 目錄。B0 冒煙 22242 的四個 gpu_guard.json 都是 CLEAN（MPS 模式在 runner 設了 `GPU_GUARD_JOB_CGROUP_OWN=1`，guard.py 用同一個 own_root）。
+- **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
+- **影響的 run**：全部（都還沒跑）。

@@ -25,3 +25,11 @@
 
 - **M07 的「遠端」那一列不可用**（另一個 session 10/25 找到，使用者選「只推記錄、不修」）：\`gm06.py\` 先配本地的 4 GiB pinned、\`del\`，再配「遠端」的 4 GiB；torch 的 pinned 快取會把同一塊（同一個位址）還回來，所以 \`numa_remote\` 實際量到的是本地記憶體。每列的 \`src_numa\` 欄會照實記下緩衝真正落在哪個節點；報告時 \`numa_remote\` 一律標成「不可用（快取重用）」，不拿來比本地／遠端。
 - 不影響 G-M06 的判準（k＝2 的端到端加速 ≥1.6）。要修的話是量法變更，必須在任何 gm06 數字之前寫成偏離。
+
+## 偏離（登記之後）
+
+### 偏離 1（2026-10-25T14:23:30Z；實作，判準不變；G-M06 還沒有任何時間數字）：量測期間加 GpuWatcher，被污染的 run 不寫進 results
+
+- **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。4 張卡**都**監看（任何一張被污染 → 整個 run 不進 results）。
+- **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
+- **影響的 run**：全部（都還沒跑）。

@@ -35,6 +35,7 @@ REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
 import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
+import guard as G                                                 # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
 
 OUT = os.path.join(REPO, "results", "s3_h200", "b0")
 CHUNK = 512
@@ -452,7 +453,7 @@ def measure_block(tgt, bg, prims, reps, seed, rate_fn, solo, stream, w, base_row
 def cmd_run(a):
     import torch
     from bgengine import Background
-    from m16_c1a_predict import finish_watch, host_level, intruders, start_watch
+    from m16_c1a_predict import host_level
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     tgt = Target(a.model, a.setup, a.calib_xl)
     print("[b0] 正確性：", json.dumps(tgt.check()), flush=True)
@@ -463,7 +464,7 @@ def cmd_run(a):
     bgs = BGS[(a.setup, a.model)] if not a.bgs else a.bgs.split(",")
     lo, hi = torch.cuda.Stream.priority_range()
     rid = run_id()
-    watch = start_watch(a.out)
+    gw = G.Timing(a.out)                                          # 開不起來 → 丟錯（量時間的 run 不能在看不到的情況下跑）
     new = not os.path.exists(a.out)
     fo = open(a.out, "a", newline="")
     w = csv.DictWriter(fo, fieldnames=FIELDS)
@@ -494,7 +495,7 @@ def cmd_run(a):
                     stream = torch.cuda.Stream(device=tgt.km.device, priority=(hi if mode == "stream_hi" else 0))
                 tgt.mode = mode
                 base = dict(run_id=rid, model=a.model, setup=a.setup, ctx_tokens=tgt.nb * CHUNK, bg=bgspec, bg_tokens_per_step=tps,
-                            mode=mode, host_level=host_level(), own_gpu_intruders=intruders(watch), bg_solo_sigma_rel=bsr,
+                            mode=mode, host_level=host_level(), own_gpu_intruders=gw.status(), bg_solo_sigma_rel=bsr,
                             bg_delta_star=bds)
                 try:
                     measure_block(tgt, None, prims, a.reps, seed, rate_fn, solo, stream, w, base)
@@ -510,12 +511,14 @@ def cmd_run(a):
                 print(f"[b0] {bgspec} × {mode} 做完（solo {solo:.2f} 步/s）", flush=True)
     finally:
         fo.close()
-        finish_watch(watch, a.out)
+        gw.finish()
         try:
             tgt.probe_numa("end")
         except Exception as ex:          # noqa: BLE001  結束時查不到：照實印，start／bench 那幾次照存
             print(f"[b0] NUMA 結束時的查詢失敗：{ex!r}", flush=True)
-        print("[b0] NUMA 存在", NP.save(a.out, rid, **tgt.numa_log), flush=True)
+        side = NP.save(a.out, rid, **tgt.numa_log)
+        print("[b0] NUMA 存在", side, flush=True)
+        G.evict(gw, [a.out, side if isinstance(side, str) else ""])     # 污染 → 這個 run 的 CSV 和 sidecar 搬出 results
 
 
 def start_bgproc(a, spec: str, pct: int):
@@ -810,9 +813,10 @@ def judge_gm11(st: dict) -> dict:
 def cmd_report(a):
     import glob
     paths = sorted(glob.glob(os.path.join(OUT, "raw", "*.csv")))
-    rows = _rows(paths)
+    rows, bad = G.drop_contaminated(_rows(paths))
     res = judge(rows)
-    doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows), **res)
+    doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows),
+               excluded_contaminated_runs=bad, **res)
     os.makedirs(OUT, exist_ok=True)
     json.dump(doc, open(os.path.join(OUT, "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
     print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows", "provisional_because_noisy")}

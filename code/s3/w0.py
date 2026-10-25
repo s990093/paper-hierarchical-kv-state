@@ -28,12 +28,13 @@ REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
 import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
+import guard as G                                                 # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
 
 CHUNK = 512
 OUT = os.path.join(REPO, "results", "s3_h200", "w0")
 SPECS = {"B16": (20, 30, "int4_kivi"), "B32": (13, 20, "kv-int4_kivi-int2_kivi")}      # A0 登記 §1.3
 FIELDS = ["run_id", "ts", "model", "where", "bg", "part", "rep", "t_s", "bytes_in", "gibps_in", "bytes_out", "threads",
-          "bg_ratio", "bg_solo_rate", "n_rep", "sigma_rel", "delta_star", "host_level"] + NP.ROW_FIELDS
+          "bg_ratio", "bg_solo_rate", "n_rep", "sigma_rel", "delta_star", "host_level", "own_gpu_intruders"] + NP.ROW_FIELDS
 NM = "NOT_MEASURED"
 
 
@@ -120,6 +121,7 @@ def cmd_run(a):
     rid = run_id()
     rows = []
     lvl = host_level()
+    gw = G.Timing(a.out)
     numa, nf = {}, {}
 
     def rec(where, bg, part, rep, t, bout, threads, br="", solo=""):
@@ -172,12 +174,15 @@ def cmd_run(a):
         sr, ds = noise([r["t_s"] for r in rs])
         for r in rs:
             r.update(n_rep=len(rs), sigma_rel=sr, delta_star=ds)
-    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-    with open(a.out, "w", newline="") as f:
+    dest = gw.finish()                                            # 污染 → run 目錄，不進 results
+    for r in rows:
+        r["own_gpu_intruders"] = gw.status()
+    os.makedirs(os.path.dirname(os.path.abspath(dest)), exist_ok=True)
+    with open(dest, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
         w.writerows(rows)
-    print("[w0] NUMA 存在", NP.save(a.out, rid, **numa), flush=True)
+    print("[w0] NUMA 存在", NP.save(dest, rid, **numa), flush=True)
 
 
 DEMAND = {   # 登記 §2：HBM 滿時每秒要降多少 GiB＝prefill 產生 KV 的速度（tokens/s × 每 token 的 KV 位元組）
@@ -193,7 +198,8 @@ def cmd_report(a):
     rows = []
     for p in sorted(glob.glob(os.path.join(OUT, "raw", "*.csv"))):
         rows += list(csv.DictReader(open(p)))
-    out = dict(run_id=run_id(), ts=ts(), cells={}, verdict={}, noisy=[])
+    rows, bad = G.drop_contaminated(rows)
+    out = dict(run_id=run_id(), ts=ts(), cells={}, verdict={}, noisy=[], excluded_contaminated_runs=bad)
     for m, d in DEMAND.items():
         dem = d["tok_s"] * d["kv_per_token"] / 2**30
         mr = [r for r in rows if r["model"] == m and r["where"] == "cpu" and r["bg"] == "idle"]

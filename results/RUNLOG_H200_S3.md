@@ -170,3 +170,10 @@
 **為什麼**: 生成那條路（含第 2 輪的尾段、L128 的 M05 三個配置）還沒在 GPU 上跑過；TF 挑完配置就要送 288 題的生成分片，先驗程式。
 **做法**: `--part a0-gensmoke --cell L128`：`a0.py gen --smoke --max-items 2 --shard 0/192` → 單輪 1 題（`T2_front-back_s72000`）＋第 2 輪 1 題（`T2_front-back_s73000`）；配置是固定的 8 個（E0、U|q:int4_kivi、P|B32|1/8|int4|{ORACLE, ORACLE-L, BASE-ATTN, BASE-ATTN-L, ONE-PASS}、D|1/8|int4|ORACLE）＋M05 的 3 個，**不看任何 TF 分數挑**；輸出在 run 目錄，不進 results。
 **送出**: job **22308**（加進 ICPE 22233 的依賴）。ICPE 22233 現在只剩在等 stage-3 的 job，照讓位規則，22308 和其他排隊中的品質分片開跑時會讓位到 22233 之後。
+
+## S3-GUARD-2 — 量時間的閘量測期間沒有監看；B0 被污染的 CSV 會留在 results（2026-10-25 22:1x；已補，都還沒跑）
+
+**怎麼發現的**: ICPE session 稽核 S3-GUARD-1 之後提醒：W0、G-fio、G-M12 速度、G-M06 只有 runner 開跑時的獨佔檢查（只看得到我們自己的 job），量測期間沒有 GpuWatcher，違反 CLAUDE.md §3（gpu_guard 必用）。我查的時候另外發現：B0 有監看，但被污染時只在 run 目錄留 CONTAMINATED（訊息還寫「品質實驗」），CSV 照樣在 `results/s3_h200/b0/raw/`，`b0.py report` 也照讀；每列的 `own_gpu_intruders` 是每個區塊量測**之前**取的值。
+**修正**: 新增 `code/s3/guard.py`（`Timing`／`status`／`finish`／`evict`／`drop_contaminated`）。五個量時間的 part（b0.py run、w0.py run、gfio.py run、gm12.py speed、gm06.py run〔4 張卡都看〕）都改用它：監看開不起來 → 停；被污染（含監看期間 nvidia-smi 失敗過）→ 結果寫到／搬到 run 目錄的 `<檔名>.CONTAMINATED`＋`CONTAMINATED`，不進 results；四個 report（b0、w0、gm12、gm06）再按 run_id 排除，記在 `excluded_contaminated_runs`。
+**驗證（head node，沒有 GPU，不是量測、沒有 run_id 進 results）**: `guard.py --self-test` PASS（乾淨、監看失敗、開跑前有外來者、開頭查不到 → 丟錯、evict、drop_contaminated）；b0／w0／gfio／gm06／gm12 的 `--self-test` 都 PASS；用假的 nvidia-smi 把 `gfio.py run` 在 head node 整條跑兩次（小檔、輸出在 scratchpad）：乾淨 → CSV 在 results、`own_gpu_intruders=0`；第一次取樣時 nvidia-smi 卡 25 秒 → 記 1 次失敗、照樣繼續取樣（共 215 次查詢）、結果改寫到 run 目錄、`UNOBSERVED:0`、verdict `UNOBSERVED_DURING_RUN`。W0／G-M12 速度／G-M06／B0 的新程式碼要等 GPU job 才會第一次跑到（B0 冒煙 2，22306，會先跑到 B0 這一支）。
+**登記**: W0（偏離 2）、G-fio（偏離 2）、G-M12（偏離 1）、G-M06（偏離 1）、B0（偏離 3）各補一段「實作，判準不變」；都在任何時間數字之前。

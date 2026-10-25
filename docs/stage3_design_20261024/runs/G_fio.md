@@ -21,3 +21,9 @@
 ### 偏離 1（2026-10-25T13:06:45Z；使用者要求；G-fio 還沒跑）：每格量 6 次＋雜訊欄位
 - **改了什麼**：每個（目錄, 樣式, 大小, 執行緒）讀 6 次（每次 /tmp 讀 4 GiB、/work 讀 2 GiB；原本每格 1 次 8 GiB），CSV 每列加 `n_rep`、`sigma_rel`、`delta_star`；常數用 6 次的中位數。G-fio 沒有過／停的判定，只換算術常數；2σ > 5% 的格子照實標出、不拿來當常數（先回報）。
 - **為什麼**：同 runs/README.md「共同規則」。**受影響**：G-fio 的全部 run（都還沒跑）。
+
+### 偏離 2（2026-10-25T14:23:30Z；實作，判準不變；G-fio 還沒有任何時間數字）：量測期間加 GpuWatcher，被污染的 run 不寫進 results
+
+- **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。G-fio 只讀檔、不用 GPU，監看的是這個 job 的卡（同一個規則，便宜）；別人的磁碟 I/O 看不到（NOT_OBSERVABLE），照舊只記 `_fs.json`。
+- **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
+- **影響的 run**：全部（都還沒跑）。
