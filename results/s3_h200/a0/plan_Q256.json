@@ -1,0 +1,3623 @@
+{
+ "run_id": "20261025-202337-adhoc",
+ "ts": "2026-10-25T20:23:37+08:00",
+ "cell": "Q256",
+ "model": "qwen",
+ "n_blocks": 504,
+ "nreg": 503,
+ "n_configs": 186,
+ "sets": {
+  "tf": {
+   "seed0": 71000,
+   "n": 24,
+   "tasks": [
+    "T2",
+    "T3",
+    "T4",
+    "T5"
+   ],
+   "turn": 0,
+   "n_items": 96
+  },
+  "gen1": {
+   "seed0": 72000,
+   "n": 48,
+   "tasks": [
+    "T2",
+    "T3",
+    "T4",
+    "T5"
+   ],
+   "turn": 0,
+   "n_items": 192
+  },
+  "gen2": {
+   "seed0": 73000,
+   "n": 32,
+   "tasks": [
+    "T2",
+    "T3",
+    "T4"
+   ],
+   "turn": 1,
+   "n_items": 96
+  }
+ },
+ "seed_overlap": {
+  "x1": 0,
+  "calib": 0,
+  "x2": 0,
+  "x2b": 0,
+  "x4a": 0,
+  "x4b": 0,
+  "xlcal3": 0,
+  "p11": 0,
+  "c1a": 0,
+  "lc128k": 0,
+  "tf∩gen1": 0,
+  "tf∩gen2": 0,
+  "gen1∩gen2": 0
+ },
+ "configs": [
+  {
+   "cid": "E0",
+   "kind": "E0",
+   "roles": [
+    "ref"
+   ],
+   "deployable": true,
+   "bytes_base": 0,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 0,
+   "f": 1.0
+  },
+  {
+   "cid": "U|q:int4_kivi",
+   "kind": "uniform",
+   "spec": "q:int4_kivi",
+   "roles": [
+    "grid"
+   ],
+   "deployable": true,
+   "bytes_base": 4615045120,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 0,
+   "f": 0.3125
+  },
+  {
+   "cid": "U|q:int2_kivi",
+   "kind": "uniform",
+   "spec": "q:int2_kivi",
+   "roles": [
+    "grid"
+   ],
+   "deployable": true,
+   "bytes_base": 2769027072,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 0,
+   "f": 0.1875
+  },
+  {
+   "cid": "U|xl:k40:v60:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k40:v60:cal+q:int4_kivi",
+   "roles": [
+    "grid",
+    "match:B16|1/16|bf16"
+   ],
+   "deployable": true,
+   "bytes_base": 1802752000,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 45875200,
+   "f": 0.1220703125
+  },
+  {
+   "cid": "U|xl:k27:v40:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k27:v40:cal+q:int4_kivi",
+   "roles": [
+    "grid"
+   ],
+   "deployable": true,
+   "bytes_base": 1207843840,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 30736384,
+   "f": 0.081787109375
+  },
+  {
+   "cid": "U|xl:k20:v30:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "roles": [
+    "grid"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.06103515625
+  },
+  {
+   "cid": "U|xl:k16:v24:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k16:v24:cal+q:int4_kivi",
+   "roles": [
+    "grid"
+   ],
+   "deployable": true,
+   "bytes_base": 721100800,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 18350080,
+   "f": 0.048828125
+  },
+  {
+   "cid": "U|xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "grid"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.039794921875
+  },
+  {
+   "cid": "U|xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "grid"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.030517578125
+  },
+  {
+   "cid": "U|xl:k26:v39:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k26:v39:cal+q:int4_kivi",
+   "roles": [
+    "match:B16|1/16|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 1171788800,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 29818880,
+   "f": 0.079345703125
+  },
+  {
+   "cid": "U|xl:k43:v64:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k43:v64:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B16|1/8|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 1467440128,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 49086464,
+   "f": 0.099365234375
+  },
+  {
+   "cid": "U|xl:k60:v90:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k60:v90:cal+q:int4_kivi",
+   "roles": [
+    "match:B16|1/8|bf16"
+   ],
+   "deployable": true,
+   "bytes_base": 2704128000,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 68812800,
+   "f": 0.18310546875
+  },
+  {
+   "cid": "U|xl:k60:v90:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k60:v90:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B16|1/4|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 2055137280,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 68812800,
+   "f": 0.13916015625
+  },
+  {
+   "cid": "U|xl:k64:v96:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k64:v96:cal+q:int4_kivi",
+   "roles": [
+    "match:B16|1/4|bf16",
+    "match:B24|1/4|bf16",
+    "match:B32|1/4|bf16"
+   ],
+   "deployable": true,
+   "bytes_base": 2884403200,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 73400320,
+   "f": 0.1953125
+  },
+  {
+   "cid": "U|xl:k25:v38:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k25:v38:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B24|1/16|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 861715456,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 28901376,
+   "f": 0.058349609375
+  },
+  {
+   "cid": "U|xl:k33:v50:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k33:v50:cal+q:int4_kivi",
+   "roles": [
+    "match:B24|1/16|bf16"
+   ],
+   "deployable": true,
+   "bytes_base": 1496284160,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 38076416,
+   "f": 0.101318359375
+  },
+  {
+   "cid": "U|xl:k34:v51:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k34:v51:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B24|1/8|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 1164577792,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 38993920,
+   "f": 0.078857421875
+  },
+  {
+   "cid": "U|xl:k54:v81:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k54:v81:cal+q:int4_kivi",
+   "roles": [
+    "match:B24|1/8|bf16"
+   ],
+   "deployable": true,
+   "bytes_base": 2433715200,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 61931520,
+   "f": 0.164794921875
+  },
+  {
+   "cid": "U|xl:k51:v76:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k51:v76:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B24|1/4|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 1741458432,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 58261504,
+   "f": 0.117919921875
+  },
+  {
+   "cid": "U|xl:k21:v32:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k21:v32:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B32|1/16|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 724706304,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 24313856,
+   "f": 0.049072265625
+  },
+  {
+   "cid": "U|xl:k30:v45:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k30:v45:cal+q:int4_kivi",
+   "roles": [
+    "match:B32|1/16|bf16"
+   ],
+   "deployable": true,
+   "bytes_base": 1352064000,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 34406400,
+   "f": 0.091552734375
+  },
+  {
+   "cid": "U|xl:k30:v45:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k30:v45:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B32|1/8|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 1027568640,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 34406400,
+   "f": 0.069580078125
+  },
+  {
+   "cid": "U|xl:k51:v76:cal+q:int4_kivi",
+   "kind": "uniform",
+   "spec": "xl:k51:v76:cal+q:int4_kivi",
+   "roles": [
+    "match:B32|1/8|bf16"
+   ],
+   "deployable": true,
+   "bytes_base": 2289495040,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 58261504,
+   "f": 0.155029296875
+  },
+  {
+   "cid": "U|xl:k47:v70:cal+q:kv-int4_kivi-int2_kivi",
+   "kind": "uniform",
+   "spec": "xl:k47:v70:cal+q:kv-int4_kivi-int2_kivi",
+   "roles": [
+    "match:B32|1/4|int4"
+   ],
+   "deployable": true,
+   "bytes_base": 1604449280,
+   "bytes_refine": 0,
+   "bytes_index": 0,
+   "bytes_shared": 53673984,
+   "f": 0.108642578125
+  },
+  {
+   "cid": "P|B16|1/16|int4|ORACLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.12266537493787276
+  },
+  {
+   "cid": "P|B16|1/16|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.12266537493787276
+  },
+  {
+   "cid": "P|B16|1/16|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.12266537493787276
+  },
+  {
+   "cid": "P|B16|1/16|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.12266537493787276
+  },
+  {
+   "cid": "P|B16|1/16|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.12266537493787276
+  },
+  {
+   "cid": "P|B16|1/16|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.12266537493787276
+  },
+  {
+   "cid": "P|B16|1/8|int4|ORACLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.18628366519632206
+  },
+  {
+   "cid": "P|B16|1/8|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.18628366519632206
+  },
+  {
+   "cid": "P|B16|1/8|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.18628366519632206
+  },
+  {
+   "cid": "P|B16|1/8|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.18628366519632206
+  },
+  {
+   "cid": "P|B16|1/8|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.18628366519632206
+  },
+  {
+   "cid": "P|B16|1/8|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.18628366519632206
+  },
+  {
+   "cid": "P|B16|1/4|int4|ORACLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.3115321741426441
+  },
+  {
+   "cid": "P|B16|1/4|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.3115321741426441
+  },
+  {
+   "cid": "P|B16|1/4|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 901376000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.3115321741426441
+  },
+  {
+   "cid": "P|B16|1/4|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.3115321741426441
+  },
+  {
+   "cid": "P|B16|1/4|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.3115321741426441
+  },
+  {
+   "cid": "P|B16|1/4|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.3115321741426441
+  },
+  {
+   "cid": "P|B16|1/16|int4|QUEST-512",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "QUEST-512",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 28844032,
+   "bytes_shared": 22937600,
+   "f": 0.08224772458996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|KSCAN-2b",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "KSCAN-2b",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 1384513536,
+   "bytes_shared": 22937600,
+   "f": 0.17404459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|WRITE-TIME",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "WRITE-TIME",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 63,
+   "bytes_shared": 22937600,
+   "f": 0.08029460385589902
+  },
+  {
+   "cid": "P|B16|1/16|int4|RANDOM",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "RANDOM",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|RECENT",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "RECENT",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/16|int4|SEQ",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "SEQ",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08029459958996024
+  },
+  {
+   "cid": "P|B16|1/8|int4|QUEST-512",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "QUEST-512",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 28844032,
+   "bytes_shared": 22937600,
+   "f": 0.10212844029572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|KSCAN-2b",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "KSCAN-2b",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 1384513536,
+   "bytes_shared": 22937600,
+   "f": 0.19392531529572565
+  },
+  {
+   "cid": "P|B16|1/8|int4|WRITE-TIME",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "WRITE-TIME",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 63,
+   "bytes_shared": 22937600,
+   "f": 0.10017531956166444
+  },
+  {
+   "cid": "P|B16|1/8|int4|RANDOM",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "RANDOM",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|RECENT",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "RECENT",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/8|int4|SEQ",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "SEQ",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10017531529572564
+  },
+  {
+   "cid": "P|B16|1/4|int4|QUEST-512",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "QUEST-512",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 28844032,
+   "bytes_shared": 22937600,
+   "f": 0.14126859934145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|KSCAN-2b",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "KSCAN-2b",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 1384513536,
+   "bytes_shared": 22937600,
+   "f": 0.23306547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|WRITE-TIME",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "WRITE-TIME",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 63,
+   "bytes_shared": 22937600,
+   "f": 0.13931547860739008
+  },
+  {
+   "cid": "P|B16|1/4|int4|RANDOM",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "RANDOM",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|RECENT",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "RECENT",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B16|1/4|int4|SEQ",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "SEQ",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 901376000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.13931547434145128
+  },
+  {
+   "cid": "P|B24|1/16|int4|ORACLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.05905436521496024
+  },
+  {
+   "cid": "P|B24|1/16|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.05905436521496024
+  },
+  {
+   "cid": "P|B24|1/16|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.05905436521496024
+  },
+  {
+   "cid": "P|B24|1/16|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.05905436521496024
+  },
+  {
+   "cid": "P|B24|1/16|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.05905436521496024
+  },
+  {
+   "cid": "P|B24|1/16|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.05905436521496024
+  },
+  {
+   "cid": "P|B24|1/16|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.10142514056287276
+  },
+  {
+   "cid": "P|B24|1/16|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.10142514056287276
+  },
+  {
+   "cid": "P|B24|1/16|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.10142514056287276
+  },
+  {
+   "cid": "P|B24|1/16|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.10142514056287276
+  },
+  {
+   "cid": "P|B24|1/16|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.10142514056287276
+  },
+  {
+   "cid": "P|B24|1/16|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.10142514056287276
+  },
+  {
+   "cid": "P|B24|1/8|int4|ORACLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.07893508092072564
+  },
+  {
+   "cid": "P|B24|1/8|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.07893508092072564
+  },
+  {
+   "cid": "P|B24|1/8|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.07893508092072564
+  },
+  {
+   "cid": "P|B24|1/8|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.07893508092072564
+  },
+  {
+   "cid": "P|B24|1/8|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.07893508092072564
+  },
+  {
+   "cid": "P|B24|1/8|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.07893508092072564
+  },
+  {
+   "cid": "P|B24|1/8|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.16504343082132206
+  },
+  {
+   "cid": "P|B24|1/8|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.16504343082132206
+  },
+  {
+   "cid": "P|B24|1/8|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.16504343082132206
+  },
+  {
+   "cid": "P|B24|1/8|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.16504343082132206
+  },
+  {
+   "cid": "P|B24|1/8|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.16504343082132206
+  },
+  {
+   "cid": "P|B24|1/8|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.16504343082132206
+  },
+  {
+   "cid": "P|B24|1/4|int4|ORACLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.11807523996645129
+  },
+  {
+   "cid": "P|B24|1/4|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.11807523996645129
+  },
+  {
+   "cid": "P|B24|1/4|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.11807523996645129
+  },
+  {
+   "cid": "P|B24|1/4|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.11807523996645129
+  },
+  {
+   "cid": "P|B24|1/4|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.11807523996645129
+  },
+  {
+   "cid": "P|B24|1/4|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.11807523996645129
+  },
+  {
+   "cid": "P|B24|1/4|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.2902919397676441
+  },
+  {
+   "cid": "P|B24|1/4|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.2902919397676441
+  },
+  {
+   "cid": "P|B24|1/4|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 587697152,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.2902919397676441
+  },
+  {
+   "cid": "P|B24|1/4|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.2902919397676441
+  },
+  {
+   "cid": "P|B24|1/4|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.2902919397676441
+  },
+  {
+   "cid": "P|B24|1/4|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 587697152,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.2902919397676441
+  },
+  {
+   "cid": "P|B32|1/16|int4|ORACLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.09214779681287276
+  },
+  {
+   "cid": "P|B32|1/16|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.09214779681287276
+  },
+  {
+   "cid": "P|B32|1/16|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.09214779681287276
+  },
+  {
+   "cid": "P|B32|1/16|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.09214779681287276
+  },
+  {
+   "cid": "P|B32|1/16|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.09214779681287276
+  },
+  {
+   "cid": "P|B32|1/16|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 910163968,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.09214779681287276
+  },
+  {
+   "cid": "P|B32|1/8|int4|ORACLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.15576608707132206
+  },
+  {
+   "cid": "P|B32|1/8|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.15576608707132206
+  },
+  {
+   "cid": "P|B32|1/8|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.15576608707132206
+  },
+  {
+   "cid": "P|B32|1/8|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.15576608707132206
+  },
+  {
+   "cid": "P|B32|1/8|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.15576608707132206
+  },
+  {
+   "cid": "P|B32|1/8|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1849688064,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.15576608707132206
+  },
+  {
+   "cid": "P|B32|1/4|int4|ORACLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|ORACLE-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|EXACT-Q",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|BASE-ATTN",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|ONE-PASS",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|bf16|ORACLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.2810145960176441
+  },
+  {
+   "cid": "P|B32|1/4|bf16|ORACLE-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.2810145960176441
+  },
+  {
+   "cid": "P|B32|1/4|bf16|EXACT-Q",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "EXACT-Q",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": false,
+   "bytes_base": 450688000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.2810145960176441
+  },
+  {
+   "cid": "P|B32|1/4|bf16|BASE-ATTN",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.2810145960176441
+  },
+  {
+   "cid": "P|B32|1/4|bf16|BASE-ATTN-L",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "BASE-ATTN-L",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.2810145960176441
+  },
+  {
+   "cid": "P|B32|1/4|bf16|ONE-PASS",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ONE-PASS",
+   "gran": "layer",
+   "roles": [
+    "core"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 3699376128,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.2810145960176441
+  },
+  {
+   "cid": "P|B32|1/16|int4|QUEST-512",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "QUEST-512",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 28844032,
+   "bytes_shared": 15138816,
+   "f": 0.05173014646496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|KSCAN-2b",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "KSCAN-2b",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 1384513536,
+   "bytes_shared": 15138816,
+   "f": 0.14352702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|WRITE-TIME",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "WRITE-TIME",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 63,
+   "bytes_shared": 15138816,
+   "f": 0.04977702573089903
+  },
+  {
+   "cid": "P|B32|1/16|int4|RANDOM",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "RANDOM",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|RECENT",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "RECENT",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/16|int4|SEQ",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "SEQ",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 284426240,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.04977702146496024
+  },
+  {
+   "cid": "P|B32|1/8|int4|QUEST-512",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "QUEST-512",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 28844032,
+   "bytes_shared": 15138816,
+   "f": 0.07161086217072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|KSCAN-2b",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "KSCAN-2b",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 1384513536,
+   "bytes_shared": 15138816,
+   "f": 0.16340773717072565
+  },
+  {
+   "cid": "P|B32|1/8|int4|WRITE-TIME",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "WRITE-TIME",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 63,
+   "bytes_shared": 15138816,
+   "f": 0.06965774143666444
+  },
+  {
+   "cid": "P|B32|1/8|int4|RANDOM",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "RANDOM",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|RECENT",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "RECENT",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/8|int4|SEQ",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "SEQ",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 578027520,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.06965773717072564
+  },
+  {
+   "cid": "P|B32|1/4|int4|QUEST-512",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "QUEST-512",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 28844032,
+   "bytes_shared": 15138816,
+   "f": 0.11075102121645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|KSCAN-2b",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "KSCAN-2b",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 1384513536,
+   "bytes_shared": 15138816,
+   "f": 0.20254789621645128
+  },
+  {
+   "cid": "P|B32|1/4|int4|WRITE-TIME",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "WRITE-TIME",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 63,
+   "bytes_shared": 15138816,
+   "f": 0.10879790048239009
+  },
+  {
+   "cid": "P|B32|1/4|int4|RANDOM",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "RANDOM",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|RECENT",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "RECENT",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "P|B32|1/4|int4|SEQ",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "SEQ",
+   "gran": "global",
+   "roles": [
+    "extra"
+   ],
+   "deployable": true,
+   "bytes_base": 450688000,
+   "bytes_refine": 1156055040,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10879789621645129
+  },
+  {
+   "cid": "D|1/16|int4|ORACLE",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 284426240,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.01925944760589903
+  },
+  {
+   "cid": "D|1/16|int4|ORACLE-L",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 284426240,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.01925944760589903
+  },
+  {
+   "cid": "D|1/16|int4|BASE-ATTN",
+   "kind": "drop",
+   "base": "B32",
+   "rho": "1/16",
+   "m": 31,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": true,
+   "bytes_base": 0,
+   "bytes_refine": 284426240,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.01925944760589903
+  },
+  {
+   "cid": "D|1/16|bf16|ORACLE",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 910163968,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.061630222953811556
+  },
+  {
+   "cid": "D|1/16|bf16|ORACLE-L",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 910163968,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.061630222953811556
+  },
+  {
+   "cid": "D|1/16|bf16|BASE-ATTN",
+   "kind": "drop",
+   "base": "B32",
+   "rho": "1/16",
+   "m": 31,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": true,
+   "bytes_base": 0,
+   "bytes_refine": 910163968,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.061630222953811556
+  },
+  {
+   "cid": "D|1/8|int4|ORACLE",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 578027520,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.039140163311664436
+  },
+  {
+   "cid": "D|1/8|int4|ORACLE-L",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 578027520,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.039140163311664436
+  },
+  {
+   "cid": "D|1/8|int4|BASE-ATTN",
+   "kind": "drop",
+   "base": "B32",
+   "rho": "1/8",
+   "m": 63,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": true,
+   "bytes_base": 0,
+   "bytes_refine": 578027520,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.039140163311664436
+  },
+  {
+   "cid": "D|1/8|bf16|ORACLE",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 1849688064,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.12524851321226085
+  },
+  {
+   "cid": "D|1/8|bf16|ORACLE-L",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 1849688064,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.12524851321226085
+  },
+  {
+   "cid": "D|1/8|bf16|BASE-ATTN",
+   "kind": "drop",
+   "base": "B32",
+   "rho": "1/8",
+   "m": 63,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": true,
+   "bytes_base": 0,
+   "bytes_refine": 1849688064,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.12524851321226085
+  },
+  {
+   "cid": "D|1/4|int4|ORACLE",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 1156055040,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.07828032235739009
+  },
+  {
+   "cid": "D|1/4|int4|ORACLE-L",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 1156055040,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.07828032235739009
+  },
+  {
+   "cid": "D|1/4|int4|BASE-ATTN",
+   "kind": "drop",
+   "base": "B32",
+   "rho": "1/4",
+   "m": 126,
+   "target": "int4",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": true,
+   "bytes_base": 0,
+   "bytes_refine": 1156055040,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.07828032235739009
+  },
+  {
+   "cid": "D|1/4|bf16|ORACLE",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 3699376128,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.25049702215858294
+  },
+  {
+   "cid": "D|1/4|bf16|ORACLE-L",
+   "kind": "drop",
+   "base": "",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "ORACLE-L",
+   "gran": "layer",
+   "roles": [
+    "drop"
+   ],
+   "deployable": false,
+   "bytes_base": 0,
+   "bytes_refine": 3699376128,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.25049702215858294
+  },
+  {
+   "cid": "D|1/4|bf16|BASE-ATTN",
+   "kind": "drop",
+   "base": "B32",
+   "rho": "1/4",
+   "m": 126,
+   "target": "bf16",
+   "selector": "BASE-ATTN",
+   "gran": "global",
+   "roles": [
+    "drop"
+   ],
+   "deployable": true,
+   "bytes_base": 0,
+   "bytes_refine": 3699376128,
+   "bytes_index": 63,
+   "bytes_shared": 0,
+   "f": 0.25049702215858294
+  }
+ ]
+}
