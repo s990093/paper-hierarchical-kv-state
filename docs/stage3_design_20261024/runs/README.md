@@ -22,7 +22,7 @@ runner：`code/r_h200_s3.sh`；RUNLOG：`results/RUNLOG_H200_S3.md`；GPU 排程
 操作定義寫在 [05 §2.1](../05_poc_plan_h200.md)。所有**量時間**的 run 的判準段都引用它，摘要如下：
 
 - σ_noise＝baseline 配置在同一個 Slurm allocation、同一張卡、同一輪隨機順序裡重複 ≥6 次的相對標準差（σ÷中位數），每個量測點各自算、不跨點共用。
-- δ\*＝max(5%, 2×σ_noise)。「有改進」：中位數差 > δ\* 且差的 95% CI（對 rep 重抽 10,000 次）下界 > 0。「沒有變慢」：變慢 ≤ δ\* 且變慢的 95% CI 上界 ≤ δ\*。P95 同規則，σ 用 P95 的 bootstrap 標準誤。
+- δ\*＝max(5%, 2×σ_noise)。「有改進」：中位數差 > δ\* 且差的 95% CI（對 rep 重抽 10,000 次）下界 > 0。「沒有變慢」：變慢 ≤ δ\* 且變慢的 95% CI 上界 ≤ δ\*。點估計過、CI 沒過 → INCONCLUSIVE（要加重複次數）。P95 同規則，σ 用 P95 的 bootstrap 標準誤。
 - CSV 每列有 `n_rep`、`sigma_rel`、`delta_star`（P95：`p95_sigma_rel`、`p95_delta_star`）；量不到寫 NOT_MEASURED。
 - 2σ > 5% 的點＝量測太晃：先回報，不拿來判定。
 - 品質判準（A0、G-M04）不變，不套用 σ 規則。

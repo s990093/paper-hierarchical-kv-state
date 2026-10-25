@@ -638,7 +638,10 @@ def judge(rows) -> dict:
         if sp >= thr and lo > 1 and bg_ok:
             res["share"].append(dict(model=m, bg=bg, prim=prim, mode=mode, speedup=sp, threshold=thr, ratio_ci=[lo, hi],
                                      bg_ratio=v["bg_ratio"], bg_ratio_ci_lo=blo))
-    res["GB0_SHARE"] = bool(res["share"])
+        elif sp >= thr and lo > 1 and v["bg_ratio"] >= 0.90:             # 點估計過、CI 沒過 → INCONCLUSIVE（要加重複次數）
+            res.setdefault("share_inconclusive", []).append(dict(model=m, bg=bg, prim=prim, mode=mode, speedup=sp,
+                                                                 bg_ratio=v["bg_ratio"], bg_ratio_ci_lo=blo))
+    res["GB0_SHARE"] = True if res["share"] else ("INCONCLUSIVE" if res.get("share_inconclusive") else False)
     # ---- STATIC：並列最好（和最快的差 ≤ δ*）的等級；存在一個等級，每個背景都有並列最好的在它相鄰一級內
     lv = {"mps": 0, "mps87": 1, "mps75": 2, "mps50": 3}
     ties = {}
@@ -670,11 +673,14 @@ def judge(rows) -> dict:
         slo, shi = ratio_ci(idle["reps"], v["reps"])
         blo, bhi = median_ci(v["bg_ratios"]) if len(v["bg_ratios"]) >= 2 else (None, None)
         slow = 1 - v["bg_ratio"]
-        bg_ok = slow <= v["bg_ds"] and blo is not None and (1 - blo) <= v["bg_ds"]
-        ok = speed >= 0.60 and bg_ok
+        point_ok = speed >= 0.60 and slow <= v["bg_ds"]
+        ci_ok = blo is not None and (1 - blo) <= v["bg_ds"]
+        status = "ok" if (point_ok and ci_ok) else ("inconclusive" if point_ok else "fail")
         res["m08"].append(dict(model=m, bg=bg, mode=mode, prim=prim, speed_vs_idle=speed, speed_ci=[slo, shi], bg_slowdown=slow,
-                               bg_slowdown_ci_hi=(1 - blo) if blo is not None else None, bg_delta_star=v["bg_ds"], ok=ok))
-    res["G_M08"] = "PASS" if any(x["ok"] for x in res["m08"]) else ("STOP" if res["m08"] else "NOT_MEASURED")
+                               bg_slowdown_ci_hi=(1 - blo) if blo is not None else None, bg_delta_star=v["bg_ds"],
+                               ok=status == "ok", status=status))
+    st_m08 = {x["status"] for x in res["m08"]}
+    res["G_M08"] = ("PASS" if "ok" in st_m08 else "INCONCLUSIVE" if "inconclusive" in st_m08 else "STOP" if res["m08"] else "NOT_MEASURED")
     res["provisional_because_noisy"] = bool(res["noisy"])
     return res
 
@@ -735,6 +741,12 @@ def self_test() -> bool:
              bg_delta_star="0.05") for _ in range(6)]
     chk(f"G-M08 背景慢 10% > δ* 5% → {judge(rows4)['G_M08']}", judge(rows4)["G_M08"] in ("STOP", "PASS") and
         not any(x["ok"] for x in judge(rows4)["m08"] if x["model"] == "llama"))
+    rows5 = [x for x in rows if x["bg"] != "decode:4:129024"]
+    for rep, br in enumerate((0.99, 0.90, 0.99, 0.90, 0.99, 0.99)):          # 中位數 0.99（慢 1%），但很分散 → CI 上界 > 5%
+        for m in ("llama", "qwen"):
+            rows5.append(dict(model=m, setup="m08", bg="decode:4:129024", mode="stream", prim="recompute1", t_med_s=str(1.4),
+                              bg_ratio=str(br), bg_delta_star="0.05"))
+    chk(f"G-M08 點估計過、CI 上界超過 δ* → {judge(rows5)['G_M08']}", judge(rows5)["G_M08"] == "INCONCLUSIVE")
     print("self-test", "PASS" if ok else "FAIL")
     return ok
 

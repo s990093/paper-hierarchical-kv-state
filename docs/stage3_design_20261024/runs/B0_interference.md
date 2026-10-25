@@ -110,3 +110,4 @@ b0 每個模型：stream 兩種約 1 小時、MPS 四種約 2.2 小時；m08 兩
 - **CSV 加欄位**：`n_rep`、`sigma_rel`、`delta_star`、`p95_sigma_rel`、`p95_delta_star`、`bg_solo_sigma_rel`、`bg_delta_star`；少於 6 個時間窗的點寫 NOT_MEASURED。
 - **為什麼**：05 §2 原本只寫「δ\*＝max(5%, H200 上量到的雜訊)」，雜訊沒有定義怎麼量；這份登記直接取 5%。
 - **受影響的 run**：全部 B0／G-M08 的 run（`b0-run`）。到這一刻都還沒跑：冒煙 22238 在量任何還原之前失敗（block 範圍越界）；冒煙 22242 正在跑（輸出在 run 目錄、不進 results、不判定）。看過的數字只有 P0b 背景自檢的單獨速度（每步毫秒），判準不用它。
+- **補充（同日，還沒有任何時間數字）**：「沒有變慢」的點估計 ≤ δ\* 但 95% CI 上界 > δ\* → 那一格記 **INCONCLUSIVE**（要加重複次數），不算過也不算變慢。G-M08：有任何一格過 → PASS；沒有過、但有 INCONCLUSIVE → **INCONCLUSIVE**（先加重複次數再判）；都明確沒過 → STOP。GB0-SHARE 的「背景吞吐少 ≤10%」同樣：點估計過但 CI 下界 < 0.90 → 那一格 INCONCLUSIVE。
