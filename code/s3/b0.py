@@ -50,9 +50,9 @@ BGS = {
 REALISTIC = ("decode:", "mixed:", "cprefill:")                 # 05 §5.3「像真實服務的背景」
 CTX = {("b0", "llama"): 64, ("b0", "qwen"): 64, ("m08", "llama"): 252, ("m08", "qwen"): 504}
 PRIMS_B0 = ["h2d_contig", "h2d_perblock", "h2d_batch", "sm_gather_12", "sm_gather_32", "sm_gather_132", "dq_int4", "dq_int4_torch",
-            "dq_fp8", "dq_nvfp4", "lr_recon", "recompute1", "e2e_cake_bf16_cpu", "e2e_load_bf16_cpu", "e2e_cake_int4_cpu",
+            "dq_fp8", "dq_nvfp4", "dq_vq", "lr_recon", "recompute1", "e2e_cake_bf16_cpu", "e2e_load_bf16_cpu", "e2e_cake_int4_cpu",
             "e2e_load_int4_cpu", "e2e_cake_bf16_b32", "e2e_load_bf16_b32", "e2e_cake_int4_b32", "e2e_load_int4_b32"]
-PRIMS_M08 = ["recompute1", "qprefill", "dq_int4", "lr_recon", "h2d_batch"]
+PRIMS_M08 = ["recompute1", "qprefill", "dq_int4", "dq_vq", "lr_recon", "h2d_batch"]
 PRODUCTION = ("h2d_contig", "h2d_perblock", "h2d_batch", "sm_gather_12", "sm_gather_32", "sm_gather_132", "dq_int4", "dq_int4_torch",
               "dq_fp8", "dq_nvfp4", "recompute1", "qprefill")        # 05 §5.2 / 08 §3：只用生產格式（沒有低秩重建）
 COMPUTE_PRIMS = ("recompute1", "qprefill", "lr_recon")            # G-M08 的「計算型」還原
@@ -197,6 +197,52 @@ class Target:
         self.numa_log[when] = self.numa
         return self.numa
 
+    # ---- G-M11：查表式 VQ（product quantization；runs/G_M11_vq.md）----
+    def vq(self, d_sub: int = 4, k: int = 256, iters: int = 6, sample: int = 65536):
+        """每個（層, K/V, 子空間）一本 k 項的碼本（d_sub 維）：從這個 session 的 KV 抽 sample 個向量跑 iters 次 Lloyd；
+        碼＝uint8 [nblk, L, 2, H, 512, D/d_sub]。解碼＝查表（gather），不用 tensor core。每個值 8/d_sub bit。"""
+        if getattr(self, "_vq", None) is None:
+            torch, km = self.torch, self.km
+            L, H, D = km.L, km.H, km.D
+            S = D // d_sub
+            X = torch.stack(self.ref)                                            # [nblk, L, 2, H, 512, D]
+            g = torch.Generator(device=km.device).manual_seed(5)
+            cb = torch.empty(L, 2, S, k, d_sub, dtype=torch.bfloat16, device=km.device)
+            codes = torch.empty(X.shape[:-1] + (S,), dtype=torch.uint8, device=km.device)
+            for l in range(L):
+                for kv in range(2):
+                    V = X[:, l, kv].reshape(-1, S, d_sub).float()                # [N, S, d]
+                    idx = torch.randint(0, V.shape[0], (min(sample, V.shape[0]),), generator=g, device=km.device)
+                    P = V[idx].transpose(0, 1).contiguous()                      # [S, n, d]
+                    C = P[:, torch.randperm(P.shape[1], generator=g, device=km.device)[:k]].clone()   # [S, k, d]
+                    for _ in range(iters):
+                        a = torch.cdist(P, C).argmin(-1)                         # [S, n]
+                        for si in range(S):
+                            sums = torch.zeros(k, d_sub, device=km.device).index_add_(0, a[si], P[si])
+                            cnt = torch.bincount(a[si], minlength=k).clamp_min(1).unsqueeze(1).float()
+                            C[si] = torch.where(torch.bincount(a[si], minlength=k).unsqueeze(1) > 0, sums / cnt, C[si])
+                    cb[l, kv] = C.to(torch.bfloat16)
+                    Cb = cb[l, kv].float()                                       # 用存下來的 BF16 碼本編碼（和解碼一致）
+                    cc_all = torch.empty(V.shape[0], S, dtype=torch.uint8, device=km.device)
+                    for c0 in range(0, V.shape[0], 1 << 18):
+                        part = V[c0:c0 + (1 << 18)].transpose(0, 1)               # [S, m, d]
+                        cc_all[c0:c0 + (1 << 18)] = torch.cdist(part, Cb).argmin(-1).to(torch.uint8).T
+                    codes[:, l, kv] = cc_all.view(codes.shape[0], H, CHUNK, S)
+            self._vq = dict(cb=cb, codes=codes, S=S, d=d_sub, k=k,
+                            nbytes=int(codes.numel() + cb.numel() * 2 // len(self.blocks)))
+        return self._vq
+
+    def dq_vq(self):
+        torch, km, V = self.torch, self.km, self.vq()
+        cb, codes, S, d = V["cb"], V["codes"], V["S"], V["d"]
+        ar = torch.arange(S, device=km.device)
+        for bi, i in enumerate(self.blocks):
+            blk = km.chunk_view(i)                                                # [L, 2, H, 512, D]
+            for l in range(km.L):
+                for kv in range(2):
+                    c = codes[bi, l, kv].long()                                   # [H, 512, S]
+                    blk[l, kv].copy_(cb[l, kv][ar, c].reshape(km.H, CHUNK, km.D))
+
     # ---- xKV（B16）的係數：事先編碼，只量解碼（係數反量化＋乘基底＋RoPE）----
     def xl(self):
         if self._xl is None:
@@ -290,6 +336,8 @@ class Target:
         elif prim == "dq_nvfp4":
             for i, e in zip(self.blocks, self.enc["nvfp4"]):
                 self.X10.decode(e, out=km.chunk_view(i))
+        elif prim == "dq_vq":
+            self.dq_vq()
         elif prim == "lr_recon":
             self.lr_recon()
         elif prim == "recompute1":
@@ -307,6 +355,8 @@ class Target:
         u = self.unit * self.bytes_block
         if prim.startswith(("h2d", "sm_gather")):
             return u
+        if prim == "dq_vq":
+            return self.vq()["codes"].numel() // 1 + 0
         if prim.startswith("dq_"):
             f = {"dq_int4": "int4_kivi", "dq_int4_torch": "int4_kivi", "dq_fp8": "fp8_token", "dq_nvfp4": "nvfp4"}[prim]
             return sum(e.nbytes for e in self.enc[f])
@@ -329,6 +379,15 @@ class Target:
         self.run("dq_int4")
         torch.cuda.synchronize()
         out["dq_int4_fused_equal_torch"] = all(torch.equal(km.chunk_view(i), r) for i, r in zip(self.blocks, ref4))
+        V = self.vq()
+        self.run("dq_vq")
+        torch.cuda.synchronize()
+        bi, l, kv = 0, 0, 1
+        c = V["codes"][bi, l, kv].long()
+        want = V["cb"][l, kv][torch.arange(V["S"], device=km.device), c].reshape(km.H, CHUNK, km.D)
+        out["dq_vq_equal_lookup"] = bool(torch.equal(km.chunk_view(self.blocks[bi])[l, kv], want))
+        out["vq_relerr_block0"] = round(float((km.chunk_view(self.blocks[0]).float() - self.ref[0].float()).norm()
+                                              / self.ref[0].float().norm()), 4)
         for i, r in zip(self.blocks, self.ref):
             km.chunk_view(i).copy_(r)
         return out
@@ -706,7 +765,46 @@ def judge(rows) -> dict:
     st_m08 = {x["status"] for x in res["m08"]}
     res["G_M08"] = ("PASS" if "ok" in st_m08 else "INCONCLUSIVE" if "inconclusive" in st_m08 else "STOP" if res["m08"] else "NOT_MEASURED")
     res["provisional_because_noisy"] = bool(res["noisy"])
+    res["G_M11"] = judge_gm11(st)
     return res
+
+
+def judge_gm11(st: dict) -> dict:
+    """runs/G_M11_vq.md：慢幾倍＝t(背景, stream)／t(閒, stream)。VQ 在 matmul 背景下比 INT4（融合 kernel）少慢：
+    INT4 的慢幾倍 ÷ VQ 的慢幾倍 −1 > δ*（δ*＝INT4 在 matmul 背景那一格的），且這個比的 95% CI（四格各自對 rep 重抽）下界 > 1。"""
+    import numpy as np
+    out = {}
+    for m in sorted({k[0] for k in st}):
+        cells = {(bg, prim): st.get((m, "b0", bg, "stream", prim)) for bg in ("idle", "matmul", "decode:32:8192")
+                 for prim in ("dq_vq", "dq_int4")}
+        if any(cells[(bg, p)] is None for bg in ("idle", "matmul") for p in ("dq_vq", "dq_int4")):
+            out[m] = dict(verdict="NOT_MEASURED")
+            continue
+        use = [cells[(bg, p)] for bg in ("idle", "matmul") for p in ("dq_vq", "dq_int4")]
+        if any(c["ds"] == NM or c["noisy"] for c in use):
+            out[m] = dict(verdict="NOISY_OR_NOT_MEASURED")
+            continue
+        sv = cells[("matmul", "dq_vq")]["t"] / cells[("idle", "dq_vq")]["t"]
+        si = cells[("matmul", "dq_int4")]["t"] / cells[("idle", "dq_int4")]["t"]
+        rng = np.random.default_rng(0)
+
+        def bm(c):
+            A = np.asarray(c["reps"])
+            return np.median(A[rng.integers(0, A.size, size=(N_BOOT, A.size))], axis=1)
+        r = (bm(cells[("matmul", "dq_int4")]) / bm(cells[("idle", "dq_int4")])) / (bm(cells[("matmul", "dq_vq")]) / bm(cells[("idle", "dq_vq")]))
+        lo, hi = float(np.percentile(r, 2.5)), float(np.percentile(r, 97.5))
+        thr = cells[("matmul", "dq_int4")]["ds"]
+        ok = si / sv - 1 > thr and lo > 1
+        dec = {}
+        if cells[("decode:32:8192", "dq_vq")] and cells[("decode:32:8192", "dq_int4")]:
+            dec = dict(vq=cells[("decode:32:8192", "dq_vq")]["t"] / cells[("idle", "dq_vq")]["t"],
+                       int4=cells[("decode:32:8192", "dq_int4")]["t"] / cells[("idle", "dq_int4")]["t"])
+        out[m] = dict(slowdown_vq_matmul=sv, slowdown_int4_matmul=si, ratio=si / sv, ratio_ci=[lo, hi], delta_star=thr,
+                      verdict="PASS" if ok else "STOP", decode_background=dec)
+    v = [x["verdict"] for x in out.values()]
+    out["verdict"] = ("PASS" if v and all(x == "PASS" for x in v) else "PARTIAL" if "PASS" in v
+                      else "STOP" if v and all(x == "STOP" for x in v) else "NOT_DETERMINED")
+    return out
 
 
 def cmd_report(a):
@@ -717,7 +815,8 @@ def cmd_report(a):
     doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows), **res)
     os.makedirs(OUT, exist_ok=True)
     json.dump(doc, open(os.path.join(OUT, "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
-    print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows", "provisional_because_noisy")},
+    print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows", "provisional_because_noisy")}
+                     | {"G_M11": doc["G_M11"].get("verdict")},
                      ensure_ascii=False), f"noisy={len(doc['noisy'])} not_measured={len(doc['not_measured'])} skipped={len(doc['skipped'])}")
     if doc["noisy"]:
         print("⚠ 有 2σ > 5% 的格子（05 §2.1 第 5 點：先回報、不拿來判定）：", doc["noisy"][:10])

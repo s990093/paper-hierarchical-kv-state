@@ -213,6 +213,42 @@ def matched_uniform(fP: float, cands: list):
     return best
 
 
+# ---- M05（runs/M05_duo_heads.md）：DuoAttention 的頭表（只有 Llama-3.1-8B-Instruct 有釋出）；只加進 L128 的生成
+M05_P = (0.25, 0.5, 0.75)
+M05_DIR = os.path.join(OUT.replace(os.path.join("s3_h200", "a0"), os.path.join("s3_h200", "m05")), "duo_patterns",
+                       "Meta-Llama-3.1-8B-Instruct")
+M05_SINK, M05_RECENT = 128, 256                        # 頭表的 config.json（sink_size、recent_size）
+
+
+def m05_pattern() -> list:
+    """[L][H] 的分數（越大越像檢索頭）。"""
+    rows = [[float(x) for x in l.split()] for l in open(os.path.join(M05_DIR, "full_attention_heads.tsv")) if l.strip()]
+    return rows
+
+
+def m05_streaming(p: float) -> list:
+    """分數最低的 round(p·L·H) 個（層, KV head）＝串流頭（只看 sink＋最近 recent 個 token）；平手照（層, head）順序。"""
+    pat = m05_pattern()
+    flat = sorted(((v, l, h) for l, r in enumerate(pat) for h, v in enumerate(r)))
+    k = int(round(p * len(flat)))
+    return sorted((l, h) for _, l, h in flat[:k])
+
+
+def m05_configs(model: str, nreg: int) -> list:
+    if model != "llama":
+        return []
+    info = info_of(model)
+    out = []
+    for p in M05_P:
+        st = m05_streaming(p)
+        frac = len(st) / (info["L"] * info["H"])
+        keep_tok = min(nreg * CHUNK, M05_RECENT)                    # 串流頭在區內只讀最近 recent 個 token（sink 在 block 0 裡）
+        f = (1 - frac) + frac * keep_tok / (nreg * CHUNK)
+        out.append(dict(cid=f"H|duo|{p}", kind="duo", p=p, n_streaming=len(st), roles=["M05"], deployable=True,
+                        bytes_base=int(round(f * region_bf16(info, nreg))), bytes_refine=0, bytes_index=0, bytes_shared=0, f=f))
+    return out
+
+
 def tf_configs(model: str, nreg: int) -> list:
     """一題的 TF 配置（登記 §1.5），順序＝執行順序（同一個粗底的放在一起）。"""
     info = info_of(model)
