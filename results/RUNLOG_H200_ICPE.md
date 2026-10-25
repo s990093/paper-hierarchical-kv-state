@@ -147,3 +147,5 @@
 - account `ChihChungHsu` 的上限：gres/gpu＝4、cpu＝64（`sacctmgr`），lab 其他人的 job 也算在裡面。`cpu`／`p12` 只用 CPU 但 runner 要一張卡（smi_index 檢查），所以也占一格。
 - 若 DL_Lab4 之後又送新的 job 到 hgx-cn01，量時間的 part 開跑時會被 runner 擋下（exit 2），跑到一半才開始的只能事後用 sacct 對照、照重疊重跑。
 - origin/main 從上次 merge 後多了 24 個 commit（含 `code/m10_speed.py`：`M10_BUSY_SCRIPT` 環境變數，沒設時行為不變）。**ICPE 的量時間跑完之前不 merge**（p01brr 要和原本 (b) 同一份程式）；寫 ICPE_EVIDENCE 之前再 merge。
+- **更正（同日 11:5xZ，使用者：「h200 已經併入 main，之後結果直接送 main」）**：上一行「量時間跑完之前不 merge」作廢。已 `git merge origin/main` 進 h200（`dd9e4bc`；main 多的程式只有 m16_*／s3_mech_arith 與 m10_speed 的 `M10_BUSY_SCRIPT`，沒設時行為不變、只在 busy JSON 多一個 `script` 欄——ICPE 的 CSV 不受影響，p01brr 仍和原本 (b) 同一條程式路徑）；`code/h200_gitpush.sh` 改成推 origin/main（origin/h200 跟著同一個 commit，`916ae50`）。
+- ICPE_EVIDENCE.md：A1、A1''、A2、A3、A4、A5（暫定）、C1、D2、D3、E2 補上 run_id（MI300X 的從 main 的結果檔讀；H200 的都核對過 run 目錄在、exit 0）。D2 改成只算 INT4（舊值 21.5–54.5%／22–57% 含 FP8）。
