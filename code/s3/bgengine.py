@@ -215,6 +215,21 @@ class Background:
         n = sum(1 for t in self._t if t0 <= t <= t1)
         return n / (t1 - t0)
 
+    def solo_rates(self, n: int = 6, seconds: float = 1.0) -> list:
+        """背景單獨跑：n 個 seconds 秒的時間窗各自的每秒步數（05 §2.1：σ 從這裡算）。"""
+        if self.idle:
+            return [0.0] * n
+        self.start()
+        time.sleep(0.5)
+        out = []
+        for _ in range(n):
+            t0 = time.perf_counter()
+            time.sleep(seconds)
+            t1 = time.perf_counter()
+            out.append(self.rate(t0, t1))
+        self.stop()
+        return out
+
     def solo_rate(self, seconds: float = 2.0) -> float:
         """背景單獨跑的每秒步數（自檢：P0b 的「背景單獨跑時的吞吐」）。"""
         if self.idle:

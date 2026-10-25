@@ -32,7 +32,17 @@ CHUNK = 512
 OUT = os.path.join(REPO, "results", "s3_h200", "w0")
 SPECS = {"B16": (20, 30, "int4_kivi"), "B32": (13, 20, "kv-int4_kivi-int2_kivi")}      # A0 登記 §1.3
 FIELDS = ["run_id", "ts", "model", "where", "bg", "part", "rep", "t_s", "bytes_in", "gibps_in", "bytes_out", "threads",
-          "bg_ratio", "bg_solo_rate", "host_level"]
+          "bg_ratio", "bg_solo_rate", "n_rep", "sigma_rel", "delta_star", "host_level"]
+NM = "NOT_MEASURED"
+
+
+def noise(vals: list) -> tuple:
+    """05 §2.1：(sigma_rel, delta_star)；少於 6 次 → NOT_MEASURED。"""
+    v = [float(x) for x in vals]
+    if len(v) < 6 or statistics.median(v) == 0:
+        return NM, NM
+    sr = statistics.stdev(v) / statistics.median(v)
+    return round(sr, 6), round(max(0.05, 2 * sr), 6)
 
 
 def run_id():
@@ -149,6 +159,13 @@ def cmd_run(a):
         bg.stop()
         del bg
         torch.cuda.empty_cache()
+    cells = {}
+    for r in rows:
+        cells.setdefault((r["where"], r["bg"], r["part"]), []).append(r)
+    for rs in cells.values():
+        sr, ds = noise([r["t_s"] for r in rs])
+        for r in rs:
+            r.update(n_rep=len(rs), sigma_rel=sr, delta_star=ds)
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
@@ -163,28 +180,52 @@ DEMAND = {   # 登記 §2：HBM 滿時每秒要降多少 GiB＝prefill 產生 KV
 
 
 def cmd_report(a):
+    """登記 §2＋偏離 1（05 §2.1）：每個粗底，CPU 的「粗底＋精修」速度（第 i 次粗底配第 i 次 INT4）的中位數、σ、δ*、95% CI。"""
     import glob
+    import numpy as np
     rows = []
     for p in sorted(glob.glob(os.path.join(OUT, "raw", "*.csv"))):
         rows += list(csv.DictReader(open(p)))
-    out = dict(run_id=run_id(), ts=ts(), cells={}, verdict={})
+    out = dict(run_id=run_id(), ts=ts(), cells={}, verdict={}, noisy=[])
     for m, d in DEMAND.items():
         dem = d["tok_s"] * d["kv_per_token"] / 2**30
-        cpu = {}
-        for part in ("B16", "B32", "INT4"):
-            t = [float(r["t_s"]) for r in rows if r["model"] == m and r["where"] == "cpu" and r["part"] == part]
-            cpu[part] = statistics.median(t) if t else None
-        if any(v is None for v in cpu.values()):
+        mr = [r for r in rows if r["model"] == m and r["where"] == "cpu" and r["bg"] == "idle"]
+        if not mr:
             out["verdict"][m] = "NOT_MEASURED"
             continue
-        bytes_in = float(next(r["bytes_in"] for r in rows if r["model"] == m))
-        tot = {b: cpu[b] + cpu["INT4"] for b in ("B16", "B32")}                 # 粗底＋精修都要做
-        gibps = {b: bytes_in / t / 2**30 for b, t in tot.items()}
-        out["cells"][m] = dict(demand_gibps=dem, demand_src=d["src"], cpu_s=cpu, cpu_total_s=tot, cpu_gibps=gibps)
-        out["verdict"][m] = "GW0_PASS" if min(gibps.values()) >= dem else "GW0_FAIL"
+        bytes_in = float(mr[0]["bytes_in"])
+        t = {p: [float(r["t_s"]) for r in sorted(mr, key=lambda r: int(r["rep"])) if r["part"] == p] for p in ("B16", "B32", "INT4")}
+        cm, vs = {}, []
+        for b in ("B16", "B32"):
+            n = min(len(t[b]), len(t["INT4"]))
+            g = [bytes_in / (t[b][i] + t["INT4"][i]) / 2**30 for i in range(n)]
+            sr, ds = noise(g)
+            if ds == NM:
+                cm[b] = dict(verdict="NOT_MEASURED", n_rep=n)
+                vs.append("NOT_MEASURED")
+                continue
+            G = np.asarray(g)
+            rng = np.random.default_rng(0)
+            meds = np.median(G[rng.integers(0, G.size, size=(10000, G.size))], axis=1)
+            lo, hi = float(np.percentile(meds, 2.5)), float(np.percentile(meds, 97.5))
+            med = float(np.median(G))
+            if 2 * sr > 0.05:
+                out["noisy"].append([m, b])
+                v = "NOISY"
+            elif med > dem * (1 + ds) and lo > dem:
+                v = "GW0_PASS"
+            elif med < dem * (1 - ds) and hi < dem:
+                v = "GW0_FAIL"
+            else:
+                v = "GW0_UNDETERMINED"
+            cm[b] = dict(gibps_median=med, ci=[lo, hi], n_rep=n, sigma_rel=sr, delta_star=ds, verdict=v)
+            vs.append(v)
+        out["cells"][m] = dict(demand_gibps=dem, demand_src=d["src"], by_base=cm)
+        out["verdict"][m] = ("GW0_PASS" if all(v == "GW0_PASS" for v in vs) else "GW0_FAIL" if any(v == "GW0_FAIL" for v in vs)
+                             else "NOISY" if any(v == "NOISY" for v in vs) else "GW0_UNDETERMINED" if vs else "NOT_MEASURED")
     os.makedirs(OUT, exist_ok=True)
     json.dump(out, open(os.path.join(OUT, "w0_report.json"), "w"), indent=1, ensure_ascii=False)
-    print(json.dumps(out["verdict"], ensure_ascii=False))
+    print(json.dumps(out["verdict"], ensure_ascii=False), "noisy:", out["noisy"])
 
 
 def self_test() -> bool:

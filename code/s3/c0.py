@@ -125,7 +125,7 @@ def build_cells():
                         t_g5=statistics.median(c["g5"]) if len(c["g5"]) >= MIN_REPS else "", n_cake=len(c["cake"]),
                         n_full=len(c["full"]), bytes_full=statistics.median(c["bytes"]), n_low=statistics.median(c["nlow"]),
                         bw_GiBps=(min(c["bw"]) if c["bw"] else ""), src_dirs="|".join(sorted(c["src"])),
-                        run_ids="|".join(sorted(c["runs"]))))
+                        run_ids="|".join(sorted(c["runs"])), cake_reps=list(c["cake"]), full_reps=list(c["full"])))
     return out, excl
 
 
@@ -282,7 +282,7 @@ def cmd_cells(a):
         w.writeheader()
         rid = run_id()
         for c in cells:
-            w.writerow(dict(c, run_id=rid, ts=ts()))
+            w.writerow({k: v for k, v in dict(c, run_id=rid, ts=ts()).items() if k in ["run_id", "ts"] + FIELDS})
     by = {}
     for c in cells:
         k = (c["platform"], c["kernel"], c["length"], c["state"])
@@ -313,6 +313,47 @@ def cmd_eval(a):
     print("\n".join(md))
 
 
+def ref2sigma(cells: list) -> dict:
+    """05 §2.1 的雜訊規則「事後」套到 C0-v1（只供參考，不改 GC-FAIL）：每個測試格，δ*＝max(5%, 2σ)，σ＝最好那一臂的
+    t_restore 相對標準差（≥6 次才算）；選的那一臂離最好 ≤ δ* 就算 0 代價。2σ > 5% 或不到 6 次的格子不算、另計數。"""
+    out = {}
+    for name, fn in SPLITS.items():
+        groups = {}
+        for c in cells:
+            side = fn(c)
+            if side is None:
+                continue
+            g = c["platform"] if PER_PLATFORM[name] else "all"
+            groups.setdefault(g, {"train": [], "test": []})[side].append(c)
+        rg, n_nm, n_noisy = [], 0, 0
+        for g, d in groups.items():
+            if not d["train"] or not d["test"]:
+                continue
+            c0, c1 = fit_overheads(d["train"])
+            for c in d["test"]:
+                best = c["cake_reps"] if c["t_cake"] <= c["t_full"] else c["full_reps"]
+                if len(best) < 6:
+                    n_nm += 1
+                    continue
+                sr = statistics.stdev(best) / statistics.median(best)
+                if 2 * sr > 0.05:
+                    n_noisy += 1
+                    continue
+                ds = max(0.05, 2 * sr)
+                r = regret(c, predict(c, constants(c), c0, c1)["choice"])
+                rg.append(0.0 if r <= ds else r)
+        out[name] = dict(n=len(rg), mean=(statistics.fmean(rg) if rg else None), worst=(max(rg) if rg else None),
+                         n_not_measured=n_nm, n_noisy=n_noisy)
+    return out
+
+
+def cmd_ref2sigma(a):
+    cells, _ = build_cells()
+    res = dict(run_id=run_id(), ts=ts(), note="事後以 05 §2.1 的 2σ 規則重算，只供參考；C0-v1 的判定（GC-FAIL）不變", splits=ref2sigma(cells))
+    json.dump(res, open(os.path.join(OUT, "c0_ref2sigma.json"), "w"), indent=1, ensure_ascii=False)
+    print(json.dumps(res["splits"], ensure_ascii=False))
+
+
 def self_test() -> bool:
     k = dict(f0=0.01, alpha=0.0, B=10 * GiB, m_c=1.0, m_l=1.0, d=0.0, m_d=1.0)
     cell = dict(n_blocks=64, bytes_full=64 * (1 << 26), n_low=0)
@@ -332,10 +373,11 @@ def main():
     sub = ap.add_subparsers(dest="cmd")
     sub.add_parser("cells")
     sub.add_parser("eval")
+    sub.add_parser("ref2sigma")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    {"cells": cmd_cells, "eval": cmd_eval}[a.cmd](a)
+    {"cells": cmd_cells, "eval": cmd_eval, "ref2sigma": cmd_ref2sigma}[a.cmd](a)
 
 
 if __name__ == "__main__":

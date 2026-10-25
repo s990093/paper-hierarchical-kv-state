@@ -93,3 +93,12 @@
 **產出檔**: `results/s3_h200/env/p0e_env_20261025-204305-s3-b0-env.json`
 **結果**: H200、132 個 SM；torch 2.13.0+cu130；CUDA stream 優先權範圍 [0, −3]；**green context 可用**（`torch.cuda.green_contexts.GreenContext.create(num_sms=32)`＋一次 matmul 跑通）；MPS 控制程式 `/usr/bin/nvidia-cuda-mps-control` 在。
 **對 B0 的影響**: B0 登記 §4 第 4 點：green context 能用 → 另外登記一節才加進共用方式（還沒加）。
+
+---
+
+## S3-NOISE — 速度判準的「雜訊」補上操作定義（使用者要求；2026-10-25）
+
+**改的檔**：`05_poc_plan_h200.md` §2 的速度判準那一格＋新的 §2.1；`runs/README.md` 的「共同規則」與受影響的 run 表；`runs/B0_interference.md`、`runs/W0_write_cost.md`、`runs/G_fio.md` 各加偏離 1；`runs/C0_cost_model.md`、`runs/G_M13_race_sim.md` 各加一行「事後以 2σ 重算的結果（只供參考）」。程式：`code/s3/b0.py`（每列 `n_rep`、`sigma_rel`、`delta_star`、`p95_sigma_rel`、`p95_delta_star`、`bg_solo_sigma_rel`、`bg_delta_star`；判定加 δ*＋bootstrap CI；2σ>5% 的格子列出、不判定）、`bgengine.py`（背景單獨跑量 6 個時間窗）、`w0.py`（三個欄位；GW0 改成 PASS／FAIL／UNDETERMINED／NOISY）、`gfio.py`（每格 6 次＋三個欄位）、`c0.py ref2sigma`、`gm13.py ref2sigma`（只供參考）。
+**套新規則（還沒看過時間數字）**：B0＋G-M08、W0、G-fio（只有欄位，沒有判定）、之後的量時間的閘。
+**維持舊判準（已看過結果）**：C0-v1（GC-FAIL）、G-M13（GM13-PASS）；C0-v2 也維持（判準已看過）。品質（A0、G-M04）不變。
+**參考值**：C0 事後 2σ：平均代價 22.2–31.6%（kernel 切法 0%），每個切法有 2–53 格 2σ>5%；G-M13：c、H0 的 P95 2σ＝10.4%、18.0%（都 >5%），H0 的 CI 上界 1.69 s ≤ 門檻 2.50 s。

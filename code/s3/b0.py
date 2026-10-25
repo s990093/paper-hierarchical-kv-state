@@ -60,7 +60,59 @@ MPS_PCTS = (100, 87, 75, 50)
 WINDOW_S = 1.0                                                    # 一次「量」的最短時間窗（背景吞吐要夠多步才準）
 FIELDS = ["run_id", "ts", "model", "setup", "ctx_tokens", "bg", "bg_tokens_per_step", "mode", "prim", "production", "rep",
           "order_idx", "n_exec", "t_med_s", "t_p95_s", "t_min_s", "t_window_s", "bg_steps", "bg_rate", "bg_solo_rate", "bg_ratio",
+          "n_rep", "sigma_rel", "delta_star", "p95_sigma_rel", "p95_delta_star", "bg_solo_sigma_rel", "bg_delta_star",
           "unit_blocks", "bytes", "seed", "gpu_mem_gib", "host_level", "own_gpu_intruders"]
+NM = "NOT_MEASURED"
+MIN_NOISE_REPS = 6                                                # 05 §2.1：σ 要 ≥6 次
+N_BOOT = 10000
+
+
+def noise(vals: list) -> tuple:
+    """05 §2.1：(sigma_rel, delta_star)；少於 6 次 → NOT_MEASURED。"""
+    v = [float(x) for x in vals]
+    if len(v) < MIN_NOISE_REPS or statistics.median(v) == 0:
+        return NM, NM
+    sr = statistics.stdev(v) / statistics.median(v)
+    return round(sr, 6), round(max(0.05, 2 * sr), 6)
+
+
+def boot_se_median(vals: list, seed: int = 0) -> float | None:
+    """median 的 bootstrap 標準誤（對 rep 重抽 N_BOOT 次）。"""
+    import numpy as np
+    v = np.asarray([float(x) for x in vals])
+    if v.size < MIN_NOISE_REPS:
+        return None
+    rng = np.random.default_rng(seed)
+    return float(np.median(v[rng.integers(0, v.size, size=(N_BOOT, v.size))], axis=1).std(ddof=1))
+
+
+def p95_noise(p95s: list) -> tuple:
+    """P95 的雜訊：P95 的估計＝各 rep 的 P95 的中位數；σ＝它的 bootstrap 標準誤 ÷ 估計（05 §2.1 第 2 點）。"""
+    se = boot_se_median(p95s)
+    if se is None:
+        return NM, NM
+    m = statistics.median(float(x) for x in p95s)
+    sr = se / m if m else None
+    return (NM, NM) if sr is None else (round(sr, 6), round(max(0.05, 2 * sr), 6))
+
+
+def ratio_ci(a: list, b: list, seed: int = 0) -> tuple:
+    """median(a)／median(b) 的 95% CI（兩臂各自對 rep 重抽 N_BOOT 次）。"""
+    import numpy as np
+    A, B = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    rng = np.random.default_rng(seed)
+    ma = np.median(A[rng.integers(0, A.size, size=(N_BOOT, A.size))], axis=1)
+    mb = np.median(B[rng.integers(0, B.size, size=(N_BOOT, B.size))], axis=1)
+    r = ma / mb
+    return float(np.percentile(r, 2.5)), float(np.percentile(r, 97.5))
+
+
+def median_ci(a: list, seed: int = 0) -> tuple:
+    import numpy as np
+    A = np.asarray(a, dtype=float)
+    rng = np.random.default_rng(seed)
+    m = np.median(A[rng.integers(0, A.size, size=(N_BOOT, A.size))], axis=1)
+    return float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5))
 
 
 def run_id() -> str:
@@ -297,6 +349,7 @@ def measure_block(tgt, bg, prims, reps, seed, rate_fn, solo, stream, w, base_row
         stream.synchronize()
         t_est = max(1e-5, time.perf_counter() - t0)
         n_exec = max(1, math.ceil(WINDOW_S / t_est))
+        rows = []
         for rep in range(reps):
             ts_ = []
             w0 = time.perf_counter()
@@ -309,11 +362,16 @@ def measure_block(tgt, bg, prims, reps, seed, rate_fn, solo, stream, w, base_row
             w1 = time.perf_counter()
             steps, rate = rate_fn(w0, w1)
             ts_.sort()
-            w.writerow(dict(base_row, prim=prim, production=int(prim in PRODUCTION), rep=rep, order_idx=oi, n_exec=n_exec,
-                            t_med_s=statistics.median(ts_), t_p95_s=ts_[min(len(ts_) - 1, math.ceil(0.95 * len(ts_)) - 1)],
-                            t_min_s=ts_[0], t_window_s=w1 - w0, bg_steps=steps, bg_rate=rate, bg_solo_rate=solo,
-                            bg_ratio=(rate / solo if solo else ""), unit_blocks=tgt.unit, bytes=tgt.bytes_of(prim), seed=seed,
-                            gpu_mem_gib=round(torch.cuda.max_memory_allocated() / 2**30, 1), ts=ts()))
+            rows.append(dict(base_row, prim=prim, production=int(prim in PRODUCTION), rep=rep, order_idx=oi, n_exec=n_exec,
+                             t_med_s=statistics.median(ts_), t_p95_s=ts_[min(len(ts_) - 1, math.ceil(0.95 * len(ts_)) - 1)],
+                             t_min_s=ts_[0], t_window_s=w1 - w0, bg_steps=steps, bg_rate=rate, bg_solo_rate=solo,
+                             bg_ratio=(rate / solo if solo else ""), unit_blocks=tgt.unit, bytes=tgt.bytes_of(prim), seed=seed,
+                             gpu_mem_gib=round(torch.cuda.max_memory_allocated() / 2**30, 1), ts=ts()))
+        sr, ds = noise([r["t_med_s"] for r in rows])
+        psr, pds = p95_noise([r["t_p95_s"] for r in rows])
+        for r in rows:
+            r.update(n_rep=len(rows), sigma_rel=sr, delta_star=ds, p95_sigma_rel=psr, p95_delta_star=pds)
+            w.writerow(r)
 
 
 def cmd_run(a):
@@ -342,11 +400,14 @@ def cmd_run(a):
                 seed = a.seed * 1000 + bi * 10 + modes.index(mode)
                 if mode.startswith("mps"):
                     pct = int(mode[3:] or 100)
-                    proc, rate_fn, solo, tps = start_bgproc(a, bgspec, pct)
+                    proc, rate_fn, solo, tps, bsr = start_bgproc(a, bgspec, pct)
+                    bds = round(max(0.05, 2 * bsr), 6) if isinstance(bsr, float) else NM
                     stream = torch.cuda.Stream(device=tgt.km.device)
                 else:
                     bg = Background(tgt.km, bgspec, priority=(lo if mode == "stream_bglow" else 0))
-                    solo = bg.solo_rate(2.0)
+                    solo_list = bg.solo_rates(MIN_NOISE_REPS, 1.0)
+                    solo = statistics.median(solo_list)
+                    bsr, bds = noise(solo_list) if bgspec != "idle" else (NM, NM)
                     bg.start()
                     time.sleep(0.5)
                     tps = getattr(bg, "tokens_per_step", 0)
@@ -357,7 +418,8 @@ def cmd_run(a):
                     stream = torch.cuda.Stream(device=tgt.km.device, priority=(hi if mode == "stream_hi" else 0))
                 tgt.mode = mode
                 base = dict(run_id=rid, model=a.model, setup=a.setup, ctx_tokens=tgt.nb * CHUNK, bg=bgspec, bg_tokens_per_step=tps,
-                            mode=mode, host_level=host_level(), own_gpu_intruders=intruders(watch))
+                            mode=mode, host_level=host_level(), own_gpu_intruders=intruders(watch), bg_solo_sigma_rel=bsr,
+                            bg_delta_star=bds)
                 try:
                     measure_block(tgt, None, prims, a.reps, seed, rate_fn, solo, stream, w, base)
                 finally:
@@ -403,6 +465,8 @@ def start_bgproc(a, spec: str, pct: int):
     solo_line = next(m for m in marks if isinstance(m, str) and m.startswith("SOLO"))
     solo = float(solo_line.split()[1])
     tps = int(solo_line.split()[2])
+    bsr = solo_line.split()[3] if len(solo_line.split()) > 3 else NM
+    bsr = float(bsr) if bsr not in (NM, "") else NM
 
     def rate_fn(t0, t1):
         pts = [m for m in marks if isinstance(m, tuple)]
@@ -412,7 +476,7 @@ def start_bgproc(a, spec: str, pct: int):
         tt = [t for t, n in pts if t0 <= t <= t1]
         return inside[-1] - inside[0], (inside[-1] - inside[0]) / (tt[-1] - tt[0])
     time.sleep(0.5)
-    return p, rate_fn, solo, tps
+    return p, rate_fn, solo, tps, bsr
 
 
 def cmd_bgproc(a):
@@ -423,8 +487,9 @@ def cmd_bgproc(a):
     from bgengine import Background
     km = KVModel(max_len=1024)
     bg = Background(km, a.spec)
-    solo = bg.solo_rate(2.0)
-    print(f"SOLO {solo} {getattr(bg, 'tokens_per_step', 0)}", flush=True)
+    sl = bg.solo_rates(MIN_NOISE_REPS, 1.0)
+    sr, _ = noise(sl)
+    print(f"SOLO {statistics.median(sl)} {getattr(bg, 'tokens_per_step', 0)} {sr}", flush=True)
     bg.start()
     t_end = time.time() + a.seconds
     while time.time() < t_end:
@@ -500,83 +565,117 @@ def _rows(paths):
 
 
 def cell_stats(rows) -> dict:
-    """(model, setup, bg, mode, prim) → 中位數（各次的 t_med_s 的中位數）、P95、背景吞吐比的中位數、n。"""
+    """(model, setup, bg, mode, prim) → 每個 rep 的時間（t_med_s）、中位數、σ、δ*、背景吞吐比的每個 rep、背景的 δ*。"""
     g = {}
     for r in rows:
         k = (r["model"], r["setup"], r["bg"], r["mode"], r["prim"])
         g.setdefault(k, []).append(r)
     out = {}
     for k, rs in g.items():
-        t = sorted(float(r["t_med_s"]) for r in rs)
-        br = [float(r["bg_ratio"]) for r in rs if r["bg_ratio"] not in ("", None)]
-        out[k] = dict(t=statistics.median(t), p95=t[min(len(t) - 1, math.ceil(0.95 * len(t)) - 1)], n=len(t),
-                      bg_ratio=statistics.median(br) if br else None)
+        reps = [float(r["t_med_s"]) for r in rs]
+        br = [float(r["bg_ratio"]) for r in rs if r.get("bg_ratio") not in ("", None)]
+        sr, ds = noise(reps)
+        bds = rs[0].get("bg_delta_star", NM)
+        bds = float(bds) if bds not in (NM, "", None) else NM
+        out[k] = dict(t=statistics.median(reps), reps=reps, n=len(reps), sr=sr, ds=ds,
+                      noisy=isinstance(sr, float) and 2 * sr > 0.05,
+                      bg_ratio=statistics.median(br) if br else None, bg_ratios=br, bg_ds=bds,
+                      bg_noisy=isinstance(bds, float) and bds > 0.05)
     return out
 
 
-def judge(rows, delta: float = 0.05) -> dict:
-    """登記 §2 的 GB0-FLIP／SHARE／STATIC 與 G-M08。"""
+def judge(rows) -> dict:
+    """登記 §2 的判準＋偏離 1（05 §2.1 的雜訊規則）。2σ > 5% 或 σ 量不到的格子不判定、列出來。"""
     st = cell_stats(rows)
-    res = dict(flip=[], share=[], static={}, m08=[])
+    res = dict(flip=[], share=[], static={}, m08=[], skipped=[],
+               noisy=[list(k) for k, v in st.items() if v["noisy"] or v["bg_noisy"]],
+               not_measured=[list(k) for k, v in st.items() if v["ds"] == NM])
+
+    def usable(*cells):
+        return all(c is not None and c["ds"] != NM and not c["noisy"] for c in cells)
+    # ---- FLIP：baseline＝那個背景下「閒時最快的計畫」
     lines = {}
     for (m, s, bg, mode, prim), v in st.items():
         if s == "b0" and prim.startswith("e2e_") and mode == "stream":
-            tier = prim.split("_")[-1]
-            lines.setdefault((m, tier), {}).setdefault(bg, {})[prim] = v["t"]
+            lines.setdefault((m, prim.split("_")[-1]), {}).setdefault(bg, {})[prim] = v
     for (m, tier), byb in lines.items():
         idle = byb.get("idle")
         if not idle:
             continue
-        best_idle = min(idle, key=idle.get)
+        best_idle = min(idle, key=lambda p: idle[p]["t"])
         for bg, plans in byb.items():
             if bg == "idle" or not bg.startswith(REALISTIC):
                 continue
-            best = min(plans, key=plans.get)
-            if best != best_idle and plans.get(best_idle) and plans[best_idle] / plans[best] - 1 >= 0.10:
-                res["flip"].append(dict(model=m, tier=tier, bg=bg, idle_best=best_idle, best=best,
-                                        gain=plans[best_idle] / plans[best] - 1))
-    flip_lines = {(x["model"], x["tier"]) for x in res["flip"]}
-    res["GB0_FLIP"] = any(sum(1 for x in res["flip"] if x["bg"] == bg) >= 2 and len({(x["model"], x["tier"]) for x in res["flip"]
-                                                                                      if x["bg"] == bg}) >= 2
-                          for bg in {x["bg"] for x in res["flip"]})
-    res["flip_lines"] = sorted(flip_lines)
-    # SHARE：同一個（模型, 背景, 動作），某個共用方式比 stream（預設）快 ≥30%，而且背景吞吐 ≥ 單獨跑的 0.90
-    best_mode = {}
+            best = min(plans, key=lambda p: plans[p]["t"])
+            if best == best_idle or best_idle not in plans:
+                continue
+            base, cand = plans[best_idle], plans[best]
+            if not usable(base, cand):
+                res["skipped"].append(dict(test="FLIP", model=m, tier=tier, bg=bg, why="noisy_or_not_measured"))
+                continue
+            gain = base["t"] / cand["t"] - 1
+            thr = max(0.10, base["ds"])
+            lo, hi = ratio_ci(base["reps"], cand["reps"])
+            if gain >= thr and lo > 1:
+                res["flip"].append(dict(model=m, tier=tier, bg=bg, idle_best=best_idle, best=best, gain=gain, threshold=thr,
+                                        ratio_ci=[lo, hi]))
+    res["GB0_FLIP"] = any(len({(x["model"], x["tier"]) for x in res["flip"] if x["bg"] == bg}) >= 2 for bg in {x["bg"] for x in res["flip"]})
+    # ---- SHARE：baseline＝同一格的 stream
     for (m, s, bg, mode, prim), v in st.items():
         if s != "b0" or mode == "stream" or not bg.startswith(REALISTIC):
             continue
         ref = st.get((m, s, bg, "stream", prim))
-        if not ref or v["bg_ratio"] is None:
+        if ref is None or not v["bg_ratios"]:
+            continue
+        if not usable(ref, v) or v["bg_noisy"]:
+            res["skipped"].append(dict(test="SHARE", model=m, bg=bg, prim=prim, mode=mode, why="noisy_or_not_measured"))
             continue
         sp = ref["t"] / v["t"] - 1
-        if sp >= 0.30 and v["bg_ratio"] >= 0.90:
-            res["share"].append(dict(model=m, bg=bg, prim=prim, mode=mode, speedup=sp, bg_ratio=v["bg_ratio"]))
+        thr = max(0.30, ref["ds"])
+        lo, hi = ratio_ci(ref["reps"], v["reps"])
+        blo, _ = median_ci(v["bg_ratios"]) if len(v["bg_ratios"]) >= 2 else (None, None)
+        bg_ok = v["bg_ratio"] >= 0.90 and blo is not None and blo >= 0.90
+        if sp >= thr and lo > 1 and bg_ok:
+            res["share"].append(dict(model=m, bg=bg, prim=prim, mode=mode, speedup=sp, threshold=thr, ratio_ci=[lo, hi],
+                                     bg_ratio=v["bg_ratio"], bg_ratio_ci_lo=blo))
     res["GB0_SHARE"] = bool(res["share"])
-    # STATIC：每個（模型, 背景, 動作），在背景吞吐 ≥0.90 的 MPS 比例裡最快的那一級；所有像真實的背景都在相鄰一級內 → 固定預留
+    # ---- STATIC：並列最好（和最快的差 ≤ δ*）的等級；存在一個等級，每個背景都有並列最好的在它相鄰一級內
     lv = {"mps": 0, "mps87": 1, "mps75": 2, "mps50": 3}
+    ties = {}
     for (m, s, bg, mode, prim), v in st.items():
-        if s != "b0" or mode not in lv or not bg.startswith(REALISTIC) or v["bg_ratio"] is None or v["bg_ratio"] < 0.90:
+        if s != "b0" or mode not in lv or not bg.startswith(REALISTIC) or v["bg_ratio"] is None or v["bg_ratio"] < 0.90 or not usable(v):
             continue
-        k = (m, prim)
-        cur = best_mode.setdefault(k, {}).get(bg)
-        if cur is None or v["t"] < st[(m, s, bg, cur, prim)]["t"]:
-            best_mode[k][bg] = mode
-    for (m, prim), byb in best_mode.items():
-        levels = [lv[x] for x in byb.values()]
-        res["static"][f"{m}|{prim}"] = dict(best=byb, static=(max(levels) - min(levels) <= 1) if levels else None)
+        ties.setdefault((m, prim), {}).setdefault(bg, {})[mode] = v
+    for (m, prim), byb in ties.items():
+        sets = {}
+        for bg, cells in byb.items():
+            bm = min(cells, key=lambda k: cells[k]["t"])
+            thr = cells[bm]["t"] * (1 + cells[bm]["ds"])
+            sets[bg] = sorted(lv[k] for k, c in cells.items() if c["t"] <= thr)
+        static = any(all(any(abs(l - L) <= 1 for l in ls) for ls in sets.values()) for L in range(4)) if sets else None
+        res["static"][f"{m}|{prim}"] = dict(tie_levels=sets, static=static)
     vals = [v["static"] for v in res["static"].values() if v["static"] is not None]
     res["GB0_STATIC"] = bool(vals) and all(vals)
-    # G-M08：長 context decode 背景下，計算型還原拿到單獨（閒）速度的 ≥60%，背景吞吐 ≥0.95（TPOT 慢 ≤5%）
+    # ---- G-M08：速度 ≥ 閒時 60%（門檻不變）＋背景「沒有變慢」：變慢 ≤ δ*（背景單獨跑的 σ）且 CI 上界 ≤ δ*
     for (m, s, bg, mode, prim), v in st.items():
-        if s != "m08" or not bg.startswith("decode:") or prim not in COMPUTE_PRIMS or v["bg_ratio"] is None:
+        if s != "m08" or not bg.startswith("decode:") or prim not in COMPUTE_PRIMS or not v["bg_ratios"]:
             continue
         idle = st.get((m, s, "idle", "stream", prim))
-        if not idle:
+        if idle is None:
+            continue
+        if not usable(idle, v) or v["bg_ds"] == NM or v["bg_noisy"]:
+            res["skipped"].append(dict(test="G-M08", model=m, bg=bg, prim=prim, mode=mode, why="noisy_or_not_measured"))
             continue
         speed = idle["t"] / v["t"]
-        ok = speed >= 0.60 and v["bg_ratio"] >= 0.95
-        res["m08"].append(dict(model=m, bg=bg, mode=mode, prim=prim, speed_vs_idle=speed, bg_ratio=v["bg_ratio"], ok=ok))
+        slo, shi = ratio_ci(idle["reps"], v["reps"])
+        blo, bhi = median_ci(v["bg_ratios"]) if len(v["bg_ratios"]) >= 2 else (None, None)
+        slow = 1 - v["bg_ratio"]
+        bg_ok = slow <= v["bg_ds"] and blo is not None and (1 - blo) <= v["bg_ds"]
+        ok = speed >= 0.60 and bg_ok
+        res["m08"].append(dict(model=m, bg=bg, mode=mode, prim=prim, speed_vs_idle=speed, speed_ci=[slo, shi], bg_slowdown=slow,
+                               bg_slowdown_ci_hi=(1 - blo) if blo is not None else None, bg_delta_star=v["bg_ds"], ok=ok))
     res["G_M08"] = "PASS" if any(x["ok"] for x in res["m08"]) else ("STOP" if res["m08"] else "NOT_MEASURED")
+    res["provisional_because_noisy"] = bool(res["noisy"])
     return res
 
 
@@ -588,7 +687,10 @@ def cmd_report(a):
     doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows), **res)
     os.makedirs(OUT, exist_ok=True)
     json.dump(doc, open(os.path.join(OUT, "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
-    print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows")}, ensure_ascii=False))
+    print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows", "provisional_because_noisy")},
+                     ensure_ascii=False), f"noisy={len(doc['noisy'])} not_measured={len(doc['not_measured'])} skipped={len(doc['skipped'])}")
+    if doc["noisy"]:
+        print("⚠ 有 2σ > 5% 的格子（05 §2.1 第 5 點：先回報、不拿來判定）：", doc["noisy"][:10])
 
 
 def self_test() -> bool:
@@ -599,11 +701,14 @@ def self_test() -> bool:
         print(("PASS " if c else "FAIL ") + name)
         ok &= bool(c)
     chk("隨機順序可重現、是排列", plan_order(PRIMS_B0, 3) == plan_order(PRIMS_B0, 3) and sorted(plan_order(PRIMS_B0, 3)) == sorted(PRIMS_B0))
+    chk("noise：6 次才有 σ、δ* 下限 5%", noise([1.0] * 5) == (NM, NM) and noise([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])[1] == 0.05
+        and noise([1.0, 1.2, 0.8, 1.1, 0.9, 1.0])[1] > 0.05)
     rows = []
 
-    def add(m, s, bg, mode, prim, t, br):
+    def add(m, s, bg, mode, prim, t, br, jitter=0.002, bds=0.05):
         for rep in range(6):
-            rows.append(dict(model=m, setup=s, bg=bg, mode=mode, prim=prim, t_med_s=str(t * (1 + 0.01 * rep)), bg_ratio=str(br)))
+            rows.append(dict(model=m, setup=s, bg=bg, mode=mode, prim=prim, t_med_s=str(t * (1 + jitter * (rep - 2.5))),
+                             bg_ratio=(str(br + 0.001 * (rep - 2.5)) if br != "" else ""), bg_delta_star=str(bds)))
     for m in ("llama", "qwen"):
         for tier in ("cpu", "b32"):
             add(m, "b0", "idle", "stream", f"e2e_cake_bf16_{tier}", 1.0, "")
@@ -611,16 +716,25 @@ def self_test() -> bool:
             add(m, "b0", "cprefill:2048:65536", "stream", f"e2e_cake_bf16_{tier}", 3.0, 0.8)
             add(m, "b0", "cprefill:2048:65536", "stream", f"e2e_load_int4_{tier}", 1.5, 0.9)
         add(m, "b0", "decode:32:8192", "stream", "recompute1", 1.0, 0.7)
-        add(m, "b0", "decode:32:8192", "mps87", "recompute1", 0.6, 0.92)
+        add(m, "b0", "decode:32:8192", "mps87", "recompute1", 0.6, 0.95)
         add(m, "b0", "decode:32:8192", "mps", "recompute1", 0.9, 0.85)
         add(m, "m08", "idle", "stream", "recompute1", 1.0, "")
-        add(m, "m08", "decode:4:129024", "stream", "recompute1", 1.4, 0.97)
+        add(m, "m08", "decode:4:129024", "stream", "recompute1", 1.4, 0.98)
     r = judge(rows)
     chk(f"FLIP（兩個模型 × 兩層都翻）→ {r['GB0_FLIP']}", r["GB0_FLIP"] is True)
-    chk(f"SHARE（mps87 快 67%、背景 0.92）→ {r['GB0_SHARE']}", r["GB0_SHARE"] is True)
-    chk(f"G-M08（速度 0.71、背景 0.97）→ {r['G_M08']}", r["G_M08"] == "PASS")
+    chk(f"SHARE（mps87 快 67%、背景 0.95）→ {r['GB0_SHARE']}", r["GB0_SHARE"] is True)
+    chk(f"G-M08（速度 0.71、背景慢 2%、δ* 5%）→ {r['G_M08']}", r["G_M08"] == "PASS")
     rows2 = [x for x in rows if x["bg"] != "cprefill:2048:65536"]
     chk("沒有翻轉的資料 → FLIP False", judge(rows2)["GB0_FLIP"] is False)
+    rows3 = [dict(x, t_med_s=str(float(x["t_med_s"]) * (1 + 0.2 * ((hash(x["prim"] + x["mode"] + str(i)) % 7) - 3) / 3)))
+             for i, x in enumerate(rows)]
+    r3 = judge(rows3)
+    chk(f"很晃（2σ > 5%）的格子 → 列出 {len(r3['noisy'])} 格、不判定", len(r3["noisy"]) > 0 and r3["provisional_because_noisy"])
+    rows4 = [x for x in rows if x["bg"] != "decode:4:129024"] + [
+        dict(model="llama", setup="m08", bg="decode:4:129024", mode="stream", prim="recompute1", t_med_s=str(1.4), bg_ratio="0.90",
+             bg_delta_star="0.05") for _ in range(6)]
+    chk(f"G-M08 背景慢 10% > δ* 5% → {judge(rows4)['G_M08']}", judge(rows4)["G_M08"] in ("STOP", "PASS") and
+        not any(x["ok"] for x in judge(rows4)["m08"] if x["model"] == "llama"))
     print("self-test", "PASS" if ok else "FAIL")
     return ok
 

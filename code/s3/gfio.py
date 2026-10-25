@@ -21,7 +21,19 @@ import threading
 import time
 from datetime import datetime
 
-FIELDS = ["run_id", "ts", "dir", "fs", "pattern", "io_bytes", "threads", "total_bytes", "t_s", "gibps", "iops", "file_gib"]
+FIELDS = ["run_id", "ts", "dir", "fs", "pattern", "io_bytes", "threads", "total_bytes", "t_s", "gibps", "iops", "file_gib",
+          "n_rep", "sigma_rel", "delta_star", "gibps_reps"]
+NM = "NOT_MEASURED"
+
+
+def noise(vals: list) -> tuple:
+    """05 §2.1：(sigma_rel, delta_star)；少於 6 次 → NOT_MEASURED。"""
+    import statistics
+    v = [float(x) for x in vals]
+    if len(v) < 6 or statistics.median(v) == 0:
+        return NM, NM
+    sr = statistics.stdev(v) / statistics.median(v)
+    return round(sr, 6), round(max(0.05, 2 * sr), 6)
 MiB = 1 << 20
 
 
@@ -104,7 +116,8 @@ def cmd_run(a):
     gibs = a.gib if len(a.gib) == len(a.dir) else None
     if gibs is None:
         raise SystemExit(f"--dir {len(a.dir)} 個、--gib {len(a.gib)} 個：要一對一")
-    for d, gib in zip(a.dir, gibs):
+    tots = a.total_gib if a.total_gib and len(a.total_gib) == len(a.dir) else [4.0] * len(a.dir)
+    for d, gib, tot_gib in zip(a.dir, gibs, tots):
         os.makedirs(d, exist_ok=True)
         fi = fs_info(d)
         info.append(fi)
@@ -114,11 +127,16 @@ def cmd_run(a):
             for pattern, ios in (("seq", (1 * MiB, 4 * MiB, 64 * MiB)), ("rand", (128 * 1024, 2 * MiB, 64 * MiB))):
                 for io in ios:
                     for thr in (1, 4, 8):
-                        total = min(size, max(io * thr * 4, int(a.total_gib * (1 << 30)) // io * io))
-                        dt = read_test(path, size, io, pattern, thr, total)
+                        total = min(size, max(io * thr * 4, int(tot_gib * (1 << 30)) // io * io))
+                        dts = [read_test(path, size, io, pattern, thr, total) for _ in range(a.reps)]
+                        g = [total / dt / (1 << 30) for dt in dts]
+                        import statistics
+                        sr, ds = noise(g)
+                        dt = statistics.median(dts)
                         rows.append(dict(run_id=rid, ts=ts(), dir=d, fs=fi["findmnt"], pattern=pattern, io_bytes=io, threads=thr,
-                                         total_bytes=total, t_s=round(dt, 4), gibps=round(total / dt / (1 << 30), 3),
-                                         iops=round(total / io / dt, 1), file_gib=round(size / (1 << 30), 2)))
+                                         total_bytes=total, t_s=round(dt, 4), gibps=round(statistics.median(g), 3),
+                                         iops=round(total / io / dt, 1), file_gib=round(size / (1 << 30), 2), n_rep=len(g),
+                                         sigma_rel=sr, delta_star=ds, gibps_reps=";".join(f"{x:.3f}" for x in g)))
                         print(json.dumps(rows[-1]), flush=True)
         finally:
             if os.path.exists(path):
@@ -149,7 +167,8 @@ def main():
     s = sub.add_parser("run")
     s.add_argument("--dir", action="append", required=True)
     s.add_argument("--gib", type=float, action="append", required=True, help="每個 --dir 一個（同樣順序）")
-    s.add_argument("--total-gib", type=float, default=8, help="每個（樣式, 大小, 執行緒）讀多少")
+    s.add_argument("--total-gib", type=float, action="append", help="每個 --dir 一個：每次讀多少（預設 4 GiB）")
+    s.add_argument("--reps", type=int, default=6, help="每格讀幾次（05 §2.1：σ 要 ≥6 次）")
     s.add_argument("--out", required=True)
     a = ap.parse_args()
     if a.self_test:

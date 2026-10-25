@@ -203,7 +203,7 @@ if [ "$PART" = w0gfio ]; then
     step W0-$m m7run s3-w0-$m bash -c "python code/s3/w0.py run --model $m --threads 16 --reps 6 --out $S3/w0/raw/w0_${m}_\$RUN_ID.csv"
   done
   step W0-REPORT python3 code/s3/w0.py report
-  step GFIO m7run s3-gfio bash -c "python code/s3/gfio.py run --dir $S3_LOCAL/gfio --gib 16 --dir $TIARA_HOME/tmp/gfio --gib 4 --out $S3/gfio/gfio_\$RUN_ID.csv"
+  step GFIO m7run s3-gfio bash -c "python code/s3/gfio.py run --dir $S3_LOCAL/gfio --gib 16 --total-gib 4 --dir $TIARA_HOME/tmp/gfio --gib 4 --total-gib 2 --reps 6 --out $S3/gfio/gfio_\$RUN_ID.csv"
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_s3] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi
