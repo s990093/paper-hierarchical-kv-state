@@ -1,0 +1,132 @@
+{
+ "run_id": "20261026-003236-adhoc",
+ "ts": "2026-10-26T00:32:36+08:00",
+ "cell": "Q128",
+ "tf_items": 96,
+ "tf_items_planned": 96,
+ "partial": false,
+ "pair": "L128",
+ "pair_note": "",
+ "rule": "登記 §1.6（G1–G4）",
+ "configs": [
+  "E0",
+  "U|q:int4_kivi",
+  "U|xl:k35:v52:cal+q:kv-int4_kivi-int2_kivi",
+  "P|B16|1/16|int4|ORACLE",
+  "P|B16|1/16|int4|ORACLE-L",
+  "P|B16|1/16|int4|BASE-ATTN",
+  "P|B16|1/16|int4|BASE-ATTN-L",
+  "P|B16|1/16|int4|ONE-PASS",
+  "D|1/16|int4|ORACLE",
+  "P|B24|1/8|int4|ORACLE",
+  "P|B24|1/8|int4|ORACLE-L",
+  "P|B24|1/8|int4|BASE-ATTN",
+  "P|B24|1/8|int4|BASE-ATTN-L",
+  "P|B24|1/8|int4|ONE-PASS",
+  "U|xl:k33:v50:cal+q:kv-int4_kivi-int2_kivi",
+  "P|B24|1/16|int4|ORACLE",
+  "P|B24|1/16|int4|ORACLE-L",
+  "P|B24|1/16|int4|BASE-ATTN",
+  "P|B24|1/16|int4|BASE-ATTN-L",
+  "P|B24|1/16|int4|ONE-PASS",
+  "U|xl:k25:v38:cal+q:kv-int4_kivi-int2_kivi",
+  "P|B32|1/8|int4|ORACLE",
+  "U|xl:k29:v44:cal+q:kv-int4_kivi-int2_kivi"
+ ],
+ "why": {
+  "E0": [
+   "G3 錨點"
+  ],
+  "U|q:int4_kivi": [
+   "G3 錨點"
+  ],
+  "U|xl:k35:v52:cal+q:kv-int4_kivi-int2_kivi": [
+   "G3 TF 最好的均勻（f ≤ 1/12）",
+   "G2 #1 同位元組配對"
+  ],
+  "P|B16|1/16|int4|ORACLE": [
+   "G2 #1"
+  ],
+  "P|B16|1/16|int4|ORACLE-L": [
+   "G2 #1"
+  ],
+  "P|B16|1/16|int4|BASE-ATTN": [
+   "G2 #1"
+  ],
+  "P|B16|1/16|int4|BASE-ATTN-L": [
+   "G2 #1"
+  ],
+  "P|B16|1/16|int4|ONE-PASS": [
+   "G2 #1"
+  ],
+  "D|1/16|int4|ORACLE": [
+   "G2 #1 丟塊對照"
+  ],
+  "P|B24|1/8|int4|ORACLE": [
+   "G2 #2"
+  ],
+  "P|B24|1/8|int4|ORACLE-L": [
+   "G2 #2"
+  ],
+  "P|B24|1/8|int4|BASE-ATTN": [
+   "G2 #2"
+  ],
+  "P|B24|1/8|int4|BASE-ATTN-L": [
+   "G2 #2"
+  ],
+  "P|B24|1/8|int4|ONE-PASS": [
+   "G2 #2"
+  ],
+  "U|xl:k33:v50:cal+q:kv-int4_kivi-int2_kivi": [
+   "G2 #2 同位元組配對"
+  ],
+  "P|B24|1/16|int4|ORACLE": [
+   "G2 #3"
+  ],
+  "P|B24|1/16|int4|ORACLE-L": [
+   "G2 #3"
+  ],
+  "P|B24|1/16|int4|BASE-ATTN": [
+   "G2 #3"
+  ],
+  "P|B24|1/16|int4|BASE-ATTN-L": [
+   "G2 #3"
+  ],
+  "P|B24|1/16|int4|ONE-PASS": [
+   "G2 #3"
+  ],
+  "U|xl:k25:v38:cal+q:kv-int4_kivi-int2_kivi": [
+   "G2 #3 同位元組配對"
+  ],
+  "P|B32|1/8|int4|ORACLE": [
+   "G4 另一格的 G1"
+  ],
+  "U|xl:k29:v44:cal+q:kv-int4_kivi-int2_kivi": [
+   "G4 同位元組配對"
+  ]
+ },
+ "g1": [
+  [
+   "B16",
+   "1/16",
+   "int4"
+  ],
+  [
+   "B24",
+   "1/8",
+   "int4"
+  ],
+  [
+   "B24",
+   "1/16",
+   "int4"
+  ]
+ ],
+ "g4": [
+  [
+   "B32",
+   "1/8",
+   "int4"
+  ]
+ ]
+}
