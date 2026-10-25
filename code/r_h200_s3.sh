@@ -93,6 +93,10 @@ if [ "$DRY" = 0 ]; then
   # 讓位（code/s3/sched.py）：ICPE 量時間的 job 如果只剩在等 stage3（或已經在等資源），這個 job 不佔這個空檔：
   # 原樣重送一份、排在那個 ICPE job 之後，然後結束（exit 0；它在 ICPE 的依賴裡是 afterany，所以 ICPE 可以開跑）
   ytgt=$(python3 "$REPO/code/s3/sched.py" yield-target 2>/dev/null || true)
+  # 品質的 job 也讓位給「只剩在等 stage-3」的 stage-3 量時間 job（s3-T-*；同一個重送做法）
+  if [ -z "$ytgt" ] && [ "$TIMING" = 0 ]; then
+    ytgt=$(python3 "$REPO/code/s3/sched.py" s3-timing-target --me "$SLURM_JOB_ID" 2>/dev/null || true)
+  fi
   if [ -n "$ytgt" ]; then
     tl=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TimeLimit=[^ ]*' | cut -d= -f2)
     dep=$(echo "$ytgt" | tr ' ' '\n' | sed 's/^/afterany:/' | paste -sd,)
@@ -102,7 +106,16 @@ if [ "$DRY" = 0 ]; then
     exit 0
   fi
   if [ "$TIMING" = 1 ] && [ -n "$mine" ]; then
-    echo "[r_h200_s3] 量時間：節點上還有我們自己的 job 在跑 → 停：" >&2; echo "$mine" >&2; exit 2
+    # 量時間不和自己人同時跑：重送一份排在那些 job 之後（不直接失敗）；品質的 job 會讓位給排隊中的它
+    run_ids=$(printf '%s\n' "$mine" | awk '{print $1}')
+    dep=$(echo "$run_ids" | sed 's/^/afterany:/' | paste -sd,)
+    tl=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TimeLimit=[^ ]*' | cut -d= -f2)
+    gres=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TresPerNode=[^ ]*' | cut -d= -f2 | sed 's/gres\/gpu:/gpu:/; s/gres:gpu:/gpu:/')
+    cpus=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'NumCPUs=[0-9]*' | cut -d= -f2)
+    nj=$(env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --parsable --job-name="$SLURM_JOB_NAME" --time="$tl" --dependency="$dep" \
+         ${gres:+--gres=$gres} ${cpus:+--cpus-per-task=$cpus} -D "$REPO" "$REPO/code/r_h200_s3.sh" "${ORIG_ARGS[@]}")
+    echo "[r_h200_s3] 量時間：節點上還有我們自己的 job（$(echo $run_ids)）→ 重送成 $nj（$dep），這個 job 結束" >&2
+    exit 0
   fi
   echo "[r_h200_s3] $(date -Is) part=$PART job=$SLURM_JOB_ID node=$NODE git=$(git rev-parse --short HEAD) timing=$TIMING"
   echo "[r_h200_s3] 同節點的 job（開跑時）："; squeue -h -w "$NODE" -o '%i %u %a %j %b %T %M'
