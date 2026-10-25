@@ -60,9 +60,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep) TIMING=0 ;;
+  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run) TIMING=0 ;;
   b0-run|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|gm06" >&2; exit 2 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -255,6 +255,13 @@ if [ "$PART" = d0-prep ]; then
   step D0-PYLIBS m7run s3-d0-pylibs bash -c "$(declare -f d0_pylibs); S3_LOCAL=$S3_LOCAL DRY=0 d0_pylibs"
   # 轉接層（code/s3/d0_shim：flash_attn → infllm_v2 的 dense varlen）＋pylibs 排在最前面
   step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$REPO/code/s3/d0_shim:$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
+fi
+# D0 量測（runs/D0_native_index.md；品質）：要先有 PASS 的冒煙（kernel 與 pylibs 已在 /tmp；不在就重編）
+if [ "$PART" = d0-run ]; then
+  step MODELS ensure_models minicpm
+  step D0-BUILD m7run s3-d0-build bash -c "$(declare -f d0_build); S3_LOCAL=$S3_LOCAL D0_SRC_COMMIT=$D0_SRC_COMMIT DRY=0 d0_build"
+  step D0-PYLIBS m7run s3-d0-pylibs bash -c "$(declare -f d0_pylibs); S3_LOCAL=$S3_LOCAL DRY=0 d0_pylibs"
+  step D0-RUN-${SHARD%%/*} m7run "s3-d0-run-s${SHARD%%/*}" bash -c "PYTHONPATH=$REPO/code/s3/d0_shim:$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py run --shard $SHARD --budget-min $BUDGET"
 fi
 
 # ---- G-M06＋M07（runs/G_M06_multipath.md）：4 卡 job ------------------------------------------------------------
