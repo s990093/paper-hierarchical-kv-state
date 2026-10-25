@@ -59,9 +59,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-tf|a0-gen|b0-prep|gm12-q) TIMING=0 ;;
+  fetch|a0-smoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep) TIMING=0 ;;
   b0-run|w0gfio|gm12-s) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s" >&2; exit 2 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -204,6 +204,29 @@ fi
 if [ "$PART" = gm12-s ]; then
   step MODELS ensure_models llama qwen
   for m in llama qwen; do step GM12-S-$m m7run s3-gm12-s-$m python code/s3/gm12.py speed --model $m; done
+fi
+
+# ---- D0 的可行性（P0f）：MiniCPM4.1-8B＋infllmv2_cuda_impl（裝在本地的獨立目錄，不碰 conda 環境）------------------------
+D0_SRC_COMMIT=93cf2ec28e5a                                   # OpenBMB/infllmv2_cuda_impl main（10/25 讀；feature_infer 分支已不在）
+d0_build() {
+  [ "$DRY" = 1 ] && { echo "[d0_build]"; return 0; }
+  local D=$S3_LOCAL/d0
+  mkdir -p "$D"
+  if [ -f "$D/pylibs/.built_$D0_SRC_COMMIT" ]; then echo "[d0] kernel 已編好（$D0_SRC_COMMIT）"; return 0; fi
+  rm -rf "$D/src" "$D/pylibs" "$D/wheels"
+  git clone https://github.com/OpenBMB/infllmv2_cuda_impl.git "$D/src" || return 2
+  git -C "$D/src" checkout "$D0_SRC_COMMIT" || return 2
+  git -C "$D/src" submodule update --init --recursive || return 2
+  export CUDA_HOME=/cm/shared/apps/cuda13.3 PATH=/cm/shared/apps/cuda13.3/bin:$PATH MAX_JOBS=16 TORCH_CUDA_ARCH_LIST=9.0
+  nvcc --version | tail -2
+  (cd "$D/src" && pip wheel --no-deps --no-build-isolation -w "$D/wheels" .) || return 2
+  pip install --no-deps --target "$D/pylibs" "$D"/wheels/*.whl || return 2
+  touch "$D/pylibs/.built_$D0_SRC_COMMIT"
+}
+if [ "$PART" = d0-prep ]; then
+  step MODELS ensure_models minicpm
+  step D0-BUILD m7run s3-d0-build bash -c "$(declare -f d0_build); S3_LOCAL=$S3_LOCAL D0_SRC_COMMIT=$D0_SRC_COMMIT DRY=0 d0_build"
+  step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
 fi
 
 # ---- W0、G-fio（runs/W0_write_cost.md、runs/G_fio.md）------------------------------------------------------
