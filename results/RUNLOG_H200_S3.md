@@ -206,3 +206,9 @@
 **判斷**: `ctx_mass` 一個分塊最多約 1.5 GiB；失敗時 PyTorch 已經握著 138.9 GiB 的活張量（保留未用只有 185 MiB → 不是碎片化），冒煙時一題是 71.7 GB → 跨題累積。原因：`ItemState.comp = Composer(self)`、`Composer.st = st`（參照循環），`Composer.stores` 握著這題的原值／INT4 緩衝 → `_loop` 的 `del st` 釋放不了，要等 Python 的循環 GC。
 **修正**（`fix(s3-a0)`）: `a0_gpu.free_item(st)` 每題結束打斷循環 → `del st` → `gc.collect()` → `empty_cache()`；每題印 `mem_after_item`（確認不再累積）。G-M12 品質（`gm12.py quality`，同一個 ItemState）同樣處理；gm12 裡 guard 的別名改成 `GD`（避免和函式內的 `import a0_gpu as G` 混淆；原本沒有撞到）。只改記憶體管理，算法與輸出不變。L128、Q128（96/96 做完）沒有受影響。
 **重送**: Q256 分片 0（從第 40 題接著做）。分片 1（T3＋T5）等 S3-A0-FAIL-1 的決定。
+
+## S3-A0-DEV3 — 使用者決定：256K 不做 T5；取消多餘的舊副本（2026-10-26 00:3x）
+
+- 使用者 10/26：「256K 不做 T5」→ A0 偏離 3（`runs/A0_progressive_restore.md`）：Q256／Q14-256 的 TF 72 題、生成 192（gen1 T2–T4 各 64）＋96＝288。`a0.py --self-test` 新增 4 項都 PASS；seed 重疊全為 0；Q256 TF 兩個分片各 36 題、Q14-256 四個分片各 18 題（原本全是 T5 的分片 3 也有 18 題）。
+- 使用者 10/26：「取消」→ `scancel` 22282–22285、22287–22294（S3-BUG-1 錯誤重送的 12 個副本；22286 不是我們的）。
+- 重送 Q256 分片 0 → 22356（S3-A0-FAIL-2 的記憶體修正之後）；Q256 分片 1 → 見下一個 commit。

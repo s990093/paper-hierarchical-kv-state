@@ -799,7 +799,7 @@ def _loop(a, kind: str):
     si, sk = A.parse_shard(a.shard)
     out = a.out or os.path.join(A.RAW, f"a0_{kind}_{a.cell}_s{si}.csv.gz")
     paths = sorted(set(glob_out(kind, a.cell)) | {out}) if not a.smoke else [out]
-    todo = A.pending(sets, a.shard, [p for p in paths if os.path.exists(p)])
+    todo = A.pending(sets, a.shard, [p for p in paths if os.path.exists(p)], a.cell)
     if a.max_items:
         todo = todo[:a.max_items]
     print(f"[a0 {kind}] {a.cell}：{len(cfgs)} 個配置、這個分片還有 {len(todo)} 題 → {out}", flush=True)
