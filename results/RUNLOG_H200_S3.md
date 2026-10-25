@@ -192,3 +192,10 @@
 - `d0.py smoke`：`sparse_config` 照 README（kernel 32／stride 16／init 1／block 64／window 2048／topk 64／use_nope false／dense_len 8192；和程式裡 `.get()` 的預設相同）；確認每層都是 `MiniCPMInfLLMv2Attention`；infllm_v2 的呼叫分 dense／sparse 計數；記第一次 sparse 呼叫的 `topk_idx` 形狀（D0 量法要用）；`logits_to_keep=1`。
 **head node 驗證（沒有 GPU；不是量測）**: 轉接層的 pad／unpad 來回一致；scratchpad 側裝 transformers 4.56.1＋hub 0.36.2＋tokenizers 0.22.2 後，transformers 的相依檢查通過，`modeling_minicpm.py` import 成功，`flash_attn_*` 綁到轉接層；`is_flash_attn_greater_or_equal_2_10()`＝True（讀 dist-info）。GPU 上的部分（infllm_v2 編譯、SDPA 對答案、稀疏路徑）等 22307。
 **和 05 §7 的差異**: 05 寫「HF transformers ≥4.56＋infllmv2_cuda_impl（feature_infer 分支）」。feature_infer 分支已不在，用 main `93cf2ec2`（10/25 記過）；transformers 用 4.56.1；dense 的 attention 由 infllm_v2 的核心算，不是 flash-attn 套件。
+
+## S3-A0-FAIL-1 — 256K 的 T5（cwe）題產生不出來（job 22314，2026-10-25 23:17；停下回報）
+
+**錯誤（完整）**: `m10_tasks.py:697 _cwe → RuntimeError: cwe 詞表不夠長，補不滿`（`a0_gpu._loop` → `make_item(T5, ..., n_blocks=504)`）；run `20261025-231553-s3-a0-tf-Q256-s1`，exit 1；runner 停在 `TF-Q256-1`。
+**原因**: T5 的常見詞任務要用詞表把情境填滿；256K（504 個 512-token 塊）時詞表不夠。Q256／Q14-256 的冒煙只做前 2 題（T2、T3），沒有碰到 T5。
+**影響**: Q256、Q14-256（判定格）每個分片遇到 T5 題都會停：22313（Q256 分片 0，跑中）、22315–22318（Q14-256，排隊中）。128K／32K 的格子不受影響（L128、Q128 已做完 96/96）。
+**待使用者決定**（判準登記的事，不自己改）：(a) 256K 的格子不做 T5（寫成 A0 偏離，判定只用 T2–T4）；(b) 加長 cwe 詞表（題目會和 128K 不同）；(c) 其他。
