@@ -80,7 +80,14 @@ if [ "$DRY" = 0 ]; then
   python -c 'import sys; sys.path.insert(0, "code"); from gpu_guard import smi_index; print("[r_h200_icpe] smi_index(0) =", smi_index(0))' \
     || { echo "[r_h200_icpe] cuda:0 對不到 nvidia-smi 的卡 → 停" >&2; exit 2; }
   if [ "$TIMING" = 1 ]; then
-    others=$(squeue -h -w "${SLURMD_NODENAME:-$(hostname -s)}" -u "$USER" -t R -o '%i %j' | awk -v me="$SLURM_JOB_ID" '$1!=me')
+    # 10/25：stage3 的 job 開跑時若看到 ICPE 量時間的 job 可以跑了，會自己重送到後面、exit 0（main 23e509e）。
+    # 兩邊同一輪排程一起開跑時，等它讓開：每 60 s 再查一次，最多 15 次；還有別的 job 才退出。量測只在沒有別的 job 時開始。
+    for _try in $(seq 1 15); do
+      others=$(squeue -h -w "${SLURMD_NODENAME:-$(hostname -s)}" -u "$USER" -t R -o '%i %j' | awk -v me="$SLURM_JOB_ID" '$1!=me')
+      [ -z "$others" ] && break
+      echo "[r_h200_icpe] $(date -Is) 節點上還有我們自己的 job（第 $_try／15 次，60 s 後再查）：$(echo $others)" >&2
+      [ "$_try" -lt 15 ] && sleep 60
+    done
     if [ -n "$others" ]; then
       echo "[r_h200_icpe] 節點上還有我們自己的 job 在跑 → 停（量時間不和自己人同時跑）：" >&2; echo "$others" >&2; exit 2
     fi
