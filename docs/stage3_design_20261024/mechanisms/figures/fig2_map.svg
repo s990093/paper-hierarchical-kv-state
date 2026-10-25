@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="560" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 2　16 個候選：用了哪一種讀取時才有的資訊 × 打哪一個瓶頸</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">顏色是建議（下方圖例）；新意與評分見 README §2，每張卡在 02–04</text>
+
+<!-- column headers -->
+<g font-size="13" font-weight="600" fill="#2C2C2A" text-anchor="middle">
+<text x="275" y="92">位元組／品質</text>
+<text x="475" y="92">頻寬</text>
+<text x="675" y="92">算力</text>
+<text x="855" y="92">排隊／尾巴</text>
+</g>
+<!-- row labels -->
+<g font-size="13" font-weight="600" fill="#2C2C2A">
+<text x="40" y="160">新問題</text>
+<text x="40" y="294">現場資源</text>
+<text x="40" y="420">空檔與時間</text>
+</g>
+<g font-size="11" fill="#5F5E5A">
+<text x="40" y="178">讀什麼、讀多清楚</text>
+<text x="40" y="312">用什麼讀</text>
+<text x="40" y="438">什麼時候做</text>
+</g>
+
+<!-- grid cells -->
+<g fill="#FBFBFA" stroke="#D9D9D6">
+<rect x="180" y="104" width="190" height="124"/><rect x="380" y="104" width="190" height="124"/><rect x="580" y="104" width="190" height="124"/><rect x="780" y="104" width="150" height="124"/>
+<rect x="180" y="236" width="190" height="126"/><rect x="380" y="236" width="190" height="126"/><rect x="580" y="236" width="190" height="126"/><rect x="780" y="236" width="150" height="126"/>
+<rect x="180" y="370" width="190" height="110"/><rect x="380" y="370" width="190" height="110"/><rect x="580" y="370" width="190" height="110"/><rect x="780" y="370" width="150" height="110"/>
+</g>
+
+<g font-size="11.5">
+<!-- 新問題 × 位元組 -->
+<rect x="187" y="112" width="176" height="24" rx="12" fill="#1F4E79"/><text x="275" y="128" fill="#ffffff" text-anchor="middle">M01 粗底常駐</text>
+<rect x="187" y="140" width="176" height="24" rx="12" fill="#1F4E79"/><text x="275" y="156" fill="#ffffff" text-anchor="middle">M02 逐層挑塊流水</text>
+<rect x="187" y="168" width="176" height="24" rx="12" fill="#DAE3F3" stroke="#8FAADC"/><text x="275" y="184" fill="#1F4E79" text-anchor="middle">M03 有保證的精修</text>
+<rect x="187" y="196" width="176" height="24" rx="12" fill="#ffffff" stroke="#A6A6A6"/><text x="275" y="212" fill="#2C2C2A" text-anchor="middle">M05 依頭還原（離線頭表）</text>
+<text x="475" y="170" fill="#A6A6A6" text-anchor="middle">—</text>
+<text x="675" y="170" fill="#A6A6A6" text-anchor="middle">—</text>
+<text x="855" y="170" fill="#A6A6A6" text-anchor="middle">—</text>
+
+<!-- 現場資源 -->
+<text x="275" y="302" fill="#A6A6A6" text-anchor="middle">—</text>
+<rect x="387" y="262" width="176" height="24" rx="12" fill="#DAE3F3" stroke="#8FAADC"/><text x="475" y="278" fill="#1F4E79" text-anchor="middle">M06 借鄰卡的 PCIe</text>
+<rect x="387" y="292" width="176" height="24" rx="12" fill="#ffffff" stroke="#A6A6A6"/><text x="475" y="308" fill="#2C2C2A" text-anchor="middle">M07 還原感知路由</text>
+<rect x="587" y="241" width="176" height="21" rx="10.5" fill="#1F4E79"/><text x="675" y="256" fill="#ffffff" text-anchor="middle">M08 搭 decode 的便車</text>
+<rect x="587" y="265" width="176" height="21" rx="10.5" fill="#FFF2CC" stroke="#E07B24"/><text x="675" y="280" fill="#2C2C2A" text-anchor="middle">M09 互補格式＝原 B</text>
+<rect x="587" y="289" width="176" height="21" rx="10.5" fill="#ffffff" stroke="#A6A6A6"/><text x="675" y="304" fill="#2C2C2A" text-anchor="middle">M10 還原的 SM 租約</text>
+<rect x="587" y="313" width="176" height="21" rx="10.5" fill="#ffffff" stroke="#A6A6A6"/><text x="675" y="328" fill="#2C2C2A" text-anchor="middle">M11 查表式 codec（DL）</text>
+<rect x="587" y="337" width="176" height="21" rx="10.5" fill="#ffffff" stroke="#A6A6A6"/><text x="675" y="352" fill="#2C2C2A" text-anchor="middle">M16 DL 挑塊器／干擾模型</text>
+<rect x="785" y="262" width="140" height="24" rx="12" fill="#FFF2CC" stroke="#E07B24"/><text x="855" y="278" fill="#2C2C2A" text-anchor="middle">M13 搬運和重算賽跑</text>
+<rect x="785" y="292" width="140" height="24" rx="12" fill="#ffffff" stroke="#A6A6A6"/><text x="855" y="308" fill="#2C2C2A" text-anchor="middle">M14 兩段式佇列</text>
+
+<!-- 空檔與時間 -->
+<rect x="187" y="413" width="176" height="24" rx="12" fill="#ffffff" stroke="#A6A6A6"/><text x="275" y="429" fill="#2C2C2A" text-anchor="middle">M04 打字時就挑塊</text>
+<text x="475" y="429" fill="#A6A6A6" text-anchor="middle">—</text>
+<rect x="587" y="413" width="176" height="24" rx="12" fill="#DAE3F3" stroke="#8FAADC"/><text x="675" y="429" fill="#1F4E79" text-anchor="middle">M12 先近似、後補精</text>
+<rect x="785" y="413" width="140" height="24" rx="12" fill="#D9D9D6"/><text x="855" y="429" fill="#7F7F7F" text-anchor="middle">M15 草稿先行</text>
+</g>
+
+<!-- legend -->
+<g font-size="12">
+<rect x="180" y="502" width="64" height="22" rx="11" fill="#1F4E79"/><text x="212" y="517" fill="#ffffff" text-anchor="middle">主推</text>
+<rect x="258" y="502" width="64" height="22" rx="11" fill="#DAE3F3" stroke="#8FAADC"/><text x="290" y="517" fill="#1F4E79" text-anchor="middle">次推</text>
+<rect x="336" y="502" width="128" height="22" rx="11" fill="#FFF2CC" stroke="#E07B24"/><text x="400" y="517" fill="#2C2C2A" text-anchor="middle">規劃器／安全網</text>
+<rect x="478" y="502" width="110" height="22" rx="11" fill="#ffffff" stroke="#A6A6A6"/><text x="533" y="517" fill="#2C2C2A" text-anchor="middle">延伸／元件</text>
+<rect x="602" y="502" width="80" height="22" rx="11" fill="#D9D9D6"/><text x="642" y="517" fill="#7F7F7F" text-anchor="middle">不建議</text>
+<text x="700" y="517" fill="#5F5E5A">否決與已被做掉的 9 條：05</text>
+</g>
+</svg>

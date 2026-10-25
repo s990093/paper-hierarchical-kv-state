@@ -1,0 +1,752 @@
+{
+ "run_id": "20261022-195405-m16-i3g-report",
+ "ts": "2026-10-22T19:54:05+00:00",
+ "configs": {
+  "a": {
+   "run_id": "20261022-184119-m16-i3g-a",
+   "label": "i3g_a",
+   "n_return": 300,
+   "p50": 0.6133119696751237,
+   "p95": 2.3993544530589137,
+   "mean": 0.9317741759928564,
+   "first_p95": 2.94870884376578,
+   "n_failed": 0,
+   "pred_p95": 4.33,
+   "desc": "APC（擠掉就重算）",
+   "meas_over_pred": 0.5541234302676475,
+   "metrics": {
+    "series": {
+     "prefix_cache_queries": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_queries_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prefix_cache_hits": {
+      "delta": 558992.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 558992.0
+     },
+     "external_prefix_cache_queries": {
+      "delta": 0.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_queries_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "external_prefix_cache_hits": {
+      "delta": 0.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "prompt_tokens": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prompt_tokens_cached": {
+      "delta": 558992.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_cached_total",
+      "before": 0.0,
+      "after": 558992.0
+     },
+     "prompt_tokens_local_compute": {
+      "delta": 3188732.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+      "before": 8704.0,
+      "after": 3197436.0
+     },
+     "prompt_tokens_local_cache_hit": {
+      "delta": 558992.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+      "before": 0.0,
+      "after": 558992.0
+     },
+     "prompt_tokens_external_kv_transfer": {
+      "delta": 0.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "generation_tokens": {
+      "delta": 46592.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:generation_tokens_total",
+      "before": 4.0,
+      "after": 46596.0
+     },
+     "num_preemptions": {
+      "delta": 0.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:num_preemptions_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_load_bytes": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_load_bytes_total"
+     },
+     "offload_load_time_s": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_load_time_total"
+     },
+     "offload_store_bytes": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_store_bytes_total"
+     },
+     "offload_store_time_s": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_store_time_total"
+     },
+     "offload_allocation_failure": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_allocation_failure_total"
+     },
+     "offload_lookup_async_delay_sum_s": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_sum"
+     },
+     "offload_lookup_async_delay_count": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_count"
+     },
+     "offload_legacy_bytes_cpu_to_gpu": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}"
+     },
+     "offload_legacy_bytes_gpu_to_cpu": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}"
+     },
+     "tiering_read_bytes": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_read_bytes_total"
+     },
+     "tiering_write_bytes": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_write_bytes_total"
+     },
+     "tiering_chunk_queries": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_chunk_queries_total"
+     },
+     "tiering_chunk_hits": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_chunk_hits_total"
+     }
+    },
+    "derived": {
+     "local_prefix_hit_rate": 0.14915506051139304,
+     "external_prefix_hit_rate": "NO_QUERIES",
+     "cached_prompt_token_frac": 0.14915506051139304,
+     "offload_load_gib_per_s_vllm": "NOT_AVAILABLE"
+    }
+   }
+  },
+  "b": {
+   "run_id": "20261022-185726-m16-i3g-b",
+   "label": "i3g_b",
+   "n_return": 300,
+   "p50": 0.5268510109744966,
+   "p95": 2.036598624661565,
+   "mean": 0.7327959762296329,
+   "first_p95": 1.4826423812657585,
+   "n_failed": 0,
+   "pred_p95": 3.0,
+   "desc": "APC＋CPU 卸載",
+   "meas_over_pred": 0.6788662082205216,
+   "metrics": {
+    "series": {
+     "prefix_cache_queries": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_queries_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prefix_cache_hits": {
+      "delta": 598000.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 598000.0
+     },
+     "external_prefix_cache_queries": {
+      "delta": 3149724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_queries_total",
+      "before": 8704.0,
+      "after": 3158428.0
+     },
+     "external_prefix_cache_hits": {
+      "delta": 1273296.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 1273296.0
+     },
+     "prompt_tokens": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prompt_tokens_cached": {
+      "delta": 1871296.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_cached_total",
+      "before": 0.0,
+      "after": 1871296.0
+     },
+     "prompt_tokens_local_compute": {
+      "delta": 1876428.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+      "before": 8704.0,
+      "after": 1885132.0
+     },
+     "prompt_tokens_local_cache_hit": {
+      "delta": 598000.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+      "before": 0.0,
+      "after": 598000.0
+     },
+     "prompt_tokens_external_kv_transfer": {
+      "delta": 1273296.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+      "before": 0.0,
+      "after": 1273296.0
+     },
+     "generation_tokens": {
+      "delta": 46592.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:generation_tokens_total",
+      "before": 4.0,
+      "after": 46596.0
+     },
+     "num_preemptions": {
+      "delta": 0.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:num_preemptions_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_load_bytes": {
+      "delta": 166893453312.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_load_bytes_total",
+      "before": 0.0,
+      "after": 166893453312.0
+     },
+     "offload_load_time_s": {
+      "delta": 38.75868166881801,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_load_time_total",
+      "before": 0.0,
+      "after": 38.75868166881801
+     },
+     "offload_store_bytes": {
+      "delta": 244855078912.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_store_bytes_total",
+      "before": 67108864.0,
+      "after": 244922187776.0
+     },
+     "offload_store_time_s": {
+      "delta": 52.53293673920631,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_store_time_total",
+      "before": 0.014219998359680176,
+      "after": 52.54715673756599
+     },
+     "offload_allocation_failure": {
+      "delta": 0.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=REGISTERED_NO_SAMPLE",
+      "series": "vllm:kv_offload_allocation_failure_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_lookup_async_delay_sum_s": {
+      "delta": 0.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=REGISTERED_NO_SAMPLE",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_sum",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_lookup_async_delay_count": {
+      "delta": 0.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=REGISTERED_NO_SAMPLE",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_count",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_legacy_bytes_cpu_to_gpu": {
+      "delta": 166893453312.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}",
+      "before": 0.0,
+      "after": 166893453312.0
+     },
+     "offload_legacy_bytes_gpu_to_cpu": {
+      "delta": 244855078912.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}",
+      "before": 67108864.0,
+      "after": 244922187776.0
+     },
+     "tiering_read_bytes": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_read_bytes_total"
+     },
+     "tiering_write_bytes": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_write_bytes_total"
+     },
+     "tiering_chunk_queries": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_chunk_queries_total"
+     },
+     "tiering_chunk_hits": {
+      "delta": "NOT_AVAILABLE",
+      "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+      "series": "vllm:kv_offload_tiering_chunk_hits_total"
+     }
+    },
+    "derived": {
+     "local_prefix_hit_rate": 0.15956351108032502,
+     "external_prefix_hit_rate": 0.40425637293934324,
+     "cached_prompt_token_frac": 0.4993153177768694,
+     "offload_load_gib_per_s_vllm": 4.0102406462923454
+    }
+   }
+  },
+  "c": {
+   "run_id": "20261022-191335-m16-i3g-c",
+   "label": "i3g_c",
+   "n_return": 300,
+   "p50": 0.6190196387469769,
+   "p95": 1.6641479804646226,
+   "mean": 0.6820259261627992,
+   "first_p95": 0.8772478748578575,
+   "n_failed": 0,
+   "pred_p95": 0.97,
+   "desc": "APC＋CPU＋檔案層（本地 /var/tmp）",
+   "meas_over_pred": 1.7156164747057965,
+   "metrics": {
+    "series": {
+     "prefix_cache_queries": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_queries_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prefix_cache_hits": {
+      "delta": 617360.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 617360.0
+     },
+     "external_prefix_cache_queries": {
+      "delta": 3130364.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_queries_total",
+      "before": 8704.0,
+      "after": 3139068.0
+     },
+     "external_prefix_cache_hits": {
+      "delta": 2358064.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 2358064.0
+     },
+     "prompt_tokens": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prompt_tokens_cached": {
+      "delta": 2975424.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_cached_total",
+      "before": 0.0,
+      "after": 2975424.0
+     },
+     "prompt_tokens_local_compute": {
+      "delta": 772300.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+      "before": 8704.0,
+      "after": 781004.0
+     },
+     "prompt_tokens_local_cache_hit": {
+      "delta": 617360.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+      "before": 0.0,
+      "after": 617360.0
+     },
+     "prompt_tokens_external_kv_transfer": {
+      "delta": 2358064.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+      "before": 0.0,
+      "after": 2358064.0
+     },
+     "generation_tokens": {
+      "delta": 46592.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:generation_tokens_total",
+      "before": 4.0,
+      "after": 46596.0
+     },
+     "num_preemptions": {
+      "delta": 0.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:num_preemptions_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_load_bytes": {
+      "delta": 309076164608.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_load_bytes_total",
+      "before": 0.0,
+      "after": 309076164608.0
+     },
+     "offload_load_time_s": {
+      "delta": 70.0203353190422,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_load_time_total",
+      "before": 0.0,
+      "after": 70.0203353190422
+     },
+     "offload_store_bytes": {
+      "delta": 102003376128.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_store_bytes_total",
+      "before": 67108864.0,
+      "after": 102070484992.0
+     },
+     "offload_store_time_s": {
+      "delta": 22.193132405042647,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_store_time_total",
+      "before": 0.014404958724975585,
+      "after": 22.20753736376762
+     },
+     "offload_allocation_failure": {
+      "delta": 0.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=REGISTERED_NO_SAMPLE",
+      "series": "vllm:kv_offload_allocation_failure_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_lookup_async_delay_sum_s": {
+      "delta": 53.59756326023489,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_sum",
+      "before": 0.009513922967016697,
+      "after": 53.60707718320191
+     },
+     "offload_lookup_async_delay_count": {
+      "delta": 364.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_count",
+      "before": 2.0,
+      "after": 366.0
+     },
+     "offload_legacy_bytes_cpu_to_gpu": {
+      "delta": 309076164608.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}",
+      "before": 0.0,
+      "after": 309076164608.0
+     },
+     "offload_legacy_bytes_gpu_to_cpu": {
+      "delta": 102003376128.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}",
+      "before": 67108864.0,
+      "after": 102070484992.0
+     },
+     "tiering_read_bytes": {
+      "delta": 143713632256.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_tiering_read_bytes_total",
+      "before": 0.0,
+      "after": 143713632256.0
+     },
+     "tiering_write_bytes": {
+      "delta": 100929634304.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_tiering_write_bytes_total",
+      "before": 67108864.0,
+      "after": 100996743168.0
+     },
+     "tiering_chunk_queries": {
+      "delta": 264398.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_tiering_chunk_queries_total",
+      "before": 546.0,
+      "after": 264944.0
+     },
+     "tiering_chunk_hits": {
+      "delta": 147379.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_tiering_chunk_hits_total",
+      "before": 0.0,
+      "after": 147379.0
+     }
+    },
+    "derived": {
+     "local_prefix_hit_rate": 0.16472931304439709,
+     "external_prefix_hit_rate": 0.753287477111288,
+     "cached_prompt_token_frac": 0.7939282615261957,
+     "offload_load_gib_per_s_vllm": 4.110943029099128
+    }
+   }
+  },
+  "d": {
+   "run_id": "20261022-192954-m16-i3g-d",
+   "label": "i3g_d",
+   "n_return": 300,
+   "p50": 51.41766698518768,
+   "p95": 105.14259326974862,
+   "mean": 48.17438068185933,
+   "first_p95": 54.42263794192112,
+   "n_failed": 0,
+   "pred_p95": 13.39,
+   "desc": "APC＋CPU＋檔案層（NFS）",
+   "meas_over_pred": 7.852322126194818,
+   "metrics": {
+    "series": {
+     "prefix_cache_queries": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_queries_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prefix_cache_hits": {
+      "delta": 322960.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 322960.0
+     },
+     "external_prefix_cache_queries": {
+      "delta": 3424764.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_queries_total",
+      "before": 8704.0,
+      "after": 3433468.0
+     },
+     "external_prefix_cache_hits": {
+      "delta": 2652464.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:external_prefix_cache_hits_total",
+      "before": 0.0,
+      "after": 2652464.0
+     },
+     "prompt_tokens": {
+      "delta": 3747724.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_total",
+      "before": 8704.0,
+      "after": 3756428.0
+     },
+     "prompt_tokens_cached": {
+      "delta": 2975424.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_cached_total",
+      "before": 0.0,
+      "after": 2975424.0
+     },
+     "prompt_tokens_local_compute": {
+      "delta": 772300.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+      "before": 8704.0,
+      "after": 781004.0
+     },
+     "prompt_tokens_local_cache_hit": {
+      "delta": 322960.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+      "before": 0.0,
+      "after": 322960.0
+     },
+     "prompt_tokens_external_kv_transfer": {
+      "delta": 2652464.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+      "before": 0.0,
+      "after": 2652464.0
+     },
+     "generation_tokens": {
+      "delta": 46592.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:generation_tokens_total",
+      "before": 4.0,
+      "after": 46596.0
+     },
+     "num_preemptions": {
+      "delta": 0.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:num_preemptions_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_load_bytes": {
+      "delta": 347663761408.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_load_bytes_total",
+      "before": 0.0,
+      "after": 347663761408.0
+     },
+     "offload_load_time_s": {
+      "delta": 78.92655308532711,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_load_time_total",
+      "before": 0.0,
+      "after": 78.92655308532711
+     },
+     "offload_store_bytes": {
+      "delta": 102003376128.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_store_bytes_total",
+      "before": 67108864.0,
+      "after": 102070484992.0
+     },
+     "offload_store_time_s": {
+      "delta": 21.723136013805888,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_store_time_total",
+      "before": 0.014583078384399414,
+      "after": 21.737719092190286
+     },
+     "offload_allocation_failure": {
+      "delta": 0.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=REGISTERED_NO_SAMPLE",
+      "series": "vllm:kv_offload_allocation_failure_total",
+      "before": 0.0,
+      "after": 0.0
+     },
+     "offload_lookup_async_delay_sum_s": {
+      "delta": 15015.12375521008,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_sum",
+      "before": 0.1833060784265399,
+      "after": 15015.307061288506
+     },
+     "offload_lookup_async_delay_count": {
+      "delta": 364.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_lookup_async_delay_seconds_count",
+      "before": 2.0,
+      "after": 366.0
+     },
+     "offload_legacy_bytes_cpu_to_gpu": {
+      "delta": 347663761408.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}",
+      "before": 0.0,
+      "after": 347663761408.0
+     },
+     "offload_legacy_bytes_gpu_to_cpu": {
+      "delta": 102003376128.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}",
+      "before": 67108864.0,
+      "after": 102070484992.0
+     },
+     "tiering_read_bytes": {
+      "delta": 182752116736.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_tiering_read_bytes_total",
+      "before": 0.0,
+      "after": 182752116736.0
+     },
+     "tiering_write_bytes": {
+      "delta": 100929634304.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_tiering_write_bytes_total",
+      "before": 67108864.0,
+      "after": 100996743168.0
+     },
+     "tiering_chunk_queries": {
+      "delta": 301413.0,
+      "status": "before=OK;after=OK",
+      "series": "vllm:kv_offload_tiering_chunk_queries_total",
+      "before": 546.0,
+      "after": 301959.0
+     },
+     "tiering_chunk_hits": {
+      "delta": 165779.0,
+      "status": "before=REGISTERED_NO_SAMPLE;after=OK",
+      "series": "vllm:kv_offload_tiering_chunk_hits_total",
+      "before": 0.0,
+      "after": 165779.0
+     }
+    },
+    "derived": {
+     "local_prefix_hit_rate": 0.08617496912792938,
+     "external_prefix_hit_rate": 0.7744954104866788,
+     "cached_prompt_token_frac": 0.7939282615261957,
+     "offload_load_gib_per_s_vllm": 4.102385024022971
+    }
+   }
+  }
+ },
+ "contaminated_excluded": [],
+ "rank_measured": [
+  "c",
+  "b",
+  "a",
+  "d"
+ ],
+ "rank_sim": [
+  "c",
+  "b",
+  "a",
+  "d"
+ ],
+ "verdict_rank": "SIM_RANK_CONFIRMED",
+ "verdict_flip": "FLIP_CONFIRMED",
+ "rule": "RANK：回來那一輪 TTFT P95，c 最低且 d 最高 → SIM_RANK_CONFIRMED；FLIP：P95(c) ≤ 0.95×P95(b) 且 P95(d) ≥ 1.05×P95(b) → FLIP_CONFIRMED。實測／預測的 ±30% 只是參考。污染的 run 不算。"
+}

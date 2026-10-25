@@ -1,0 +1,927 @@
+{
+ "run_id": "20261022-053314-m16-f2-C-P10240-N64-r3",
+ "ts_start": "2026-10-22T05:33:15+00:00",
+ "ts_end": "2026-10-22T05:34:21+00:00",
+ "workload": {
+  "path": "/mlsteam/data/tiara/stage3/workloads/f2/b_10240_64.jsonl",
+  "kind": "shared_prefix_burst",
+  "sha256": "78f7553fb0061298bc9af5a2efb59c5ddcd45b9c50ab3e939f25fc5758188190",
+  "n": 65,
+  "meta": {
+   "generator": "gen-burst",
+   "n": 65,
+   "sha256": "78f7553fb0061298bc9af5a2efb59c5ddcd45b9c50ab3e939f25fc5758188190",
+   "created": "2026-10-22T04:28:55+00:00",
+   "run_id": "NOT_SET",
+   "workset": {
+    "block": 16,
+    "ws_blocks": 1680,
+    "ws_prompt_tokens_in_full_blocks": 26880,
+    "total_prompt_tokens": 682240,
+    "total_max_tokens": 4097,
+    "ws_blocks_incl_output": 2002,
+    "ideal_hit_tokens": 655360,
+    "ideal_hit_frac": 0.9606003752345216,
+    "max_prompt_len": 10496
+   }
+  }
+ },
+ "server_config": {
+  "run_id": "20261022-050241-m16-srv-f2C",
+  "created": "2026-10-22T05:02:41+00:00",
+  "model": "llama",
+  "model_path": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+  "apc": "off",
+  "offload": "none",
+  "offload_info": {
+   "spec": "none"
+  },
+  "kv_transfer_config": null,
+  "gpu": 1,
+  "gpu_blocks": null,
+  "kv_cache_gib": null,
+  "gpu_mem_util": null,
+  "block_size": null,
+  "max_model_len": 34816,
+  "rocm_attn_patch": false,
+  "attention_backend": null,
+  "connector_debug": false,
+  "logging_config": null,
+  "extra_args": "",
+  "port": 8016,
+  "url": "http://127.0.0.1:8016",
+  "engine_id": "m16-20261022-050241-m16-srv-f2C",
+  "server_log": "/mlsteam/data/tiara/runs/20261022-050241-m16-srv-f2C/vllm_server.log",
+  "venv": "/mlsteam/workspace/venv/tiara-v028",
+  "cmd": [
+   "/mlsteam/workspace/venv/tiara-v028/bin/vllm",
+   "serve",
+   "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+   "--host",
+   "127.0.0.1",
+   "--port",
+   "8016",
+   "--served-model-name",
+   "m",
+   "--max-model-len",
+   "34816",
+   "--seed",
+   "0",
+   "--enable-prompt-tokens-details",
+   "--no-enable-prefix-caching"
+  ],
+  "env": {
+   "VLLM_SERVER_DEV_MODE": "1",
+   "HIP_VISIBLE_DEVICES": "1",
+   "CUDA_VISIBLE_DEVICES": "1",
+   "HF_HOME": "/mlsteam/data/tiara/hf-cache",
+   "PYTHONUNBUFFERED": "1"
+  },
+  "use_rocr": false,
+  "label": "f2C"
+ },
+ "args": {
+  "cmd": "run",
+  "workload": "/mlsteam/data/tiara/stage3/workloads/f2/b_10240_64.jsonl",
+  "url": null,
+  "server_config": "/mlsteam/data/tiara/runs/20261022-050241-m16-srv-f2C/serve_config.json",
+  "model_name": "m",
+  "label": "f2_C_P10240_N64_r3",
+  "out_dir": "/mlsteam/workspace/paper-hierarchical-kv-state/results/m16_stage3_mi300x/f2_shared_prefix_burst",
+  "run_dir": null,
+  "timeout_s": 1800,
+  "server_warmup": 2,
+  "settle_s": 3.0,
+  "block_size": 16,
+  "guard": "on",
+  "guard_own_root": 1211316,
+  "dry_run": false,
+  "dry_service_s": 0.0,
+  "time_scale": 1.0,
+  "max_requests": null,
+  "max_inflight": null,
+  "reset_before": "on",
+  "reset_external": false,
+  "slo_ttft": [],
+  "slo_tpot": null,
+  "warmup_lead": null,
+  "warmup_noise": 0.0,
+  "warmup_seed": 0,
+  "restore_est": null,
+  "evict": "reset",
+  "phases": "seed,evict,burst",
+  "phase_gap_s": 3.0,
+  "server_log": "/mlsteam/data/tiara/runs/20261022-050241-m16-srv-f2C/vllm_server.log"
+ },
+ "guard": {
+  "impl": "GpuWatcher(gpu=1,own_root=1211316)",
+  "verdict": "CLEAN",
+  "contaminated": false,
+  "report": {
+   "gpu": 1,
+   "started_clean": true,
+   "contaminated": false,
+   "verdict": "CLEAN",
+   "intruders": [],
+   "n_dirty_samples": 0,
+   "paused_intervals": [],
+   "discarded_samples_overlapping_pause": 0
+  }
+ },
+ "timing_valid": true,
+ "timing_note": "OK",
+ "n_measured": 64,
+ "n_ok": 64,
+ "n_failed": 0,
+ "n_failed_all_rows": 0,
+ "ttft_s": {
+  "n": 64,
+  "p50": 21.151811942458153,
+  "p95": 41.963701601931824,
+  "p99": 46.26751778670586,
+  "mean": 22.32304996701714,
+  "max": 47.73830009903759
+ },
+ "tpot_s": {
+  "n": 64,
+  "p50": 0.44111802001735045,
+  "p95": 0.7386215674572639,
+  "p99": 0.7556512801573863,
+  "mean": 0.4218856737884741,
+  "max": 0.7612981907875528
+ },
+ "itl_chunk_mean_s": {
+  "n": 64,
+  "p50": 0.44111802001735045,
+  "p95": 0.7386215674572639,
+  "p99": 0.7556512801573863,
+  "mean": 0.4218856737884741,
+  "max": 0.7612981907875528
+ },
+ "e2e_s": {
+  "n": 64,
+  "p50": 48.94244167394936,
+  "p95": 49.183066652342674,
+  "p99": 49.19217896847986,
+  "mean": 48.901895063885604,
+  "max": 49.194733954034746
+ },
+ "send_lag_s": {
+  "n": 64,
+  "p50": 0.008410698268562555,
+  "p95": 0.014241063268855214,
+  "p99": 0.014720490202307701,
+  "mean": 0.008362364358617924,
+  "max": 0.014863242395222187
+ },
+ "n_out_mismatch": 0,
+ "prompt_len_mismatch": 0,
+ "throughput": {
+  "makespan_s": 49.20834477059543,
+  "out_tok_per_s": 83.23791460767798,
+  "req_per_s": 1.3005924157449684,
+  "n_out_total": 4096
+ },
+ "goodput": [],
+ "client_cached": {
+  "n": 64,
+  "sum_cached": 0,
+  "sum_prompt": 671744,
+  "frac": 0.0
+ },
+ "burst": {
+  "n": 64,
+  "makespan_s": 49.20834477059543,
+  "ttft_max_s": 47.73830009903759
+ },
+ "server": {
+  "phases": [
+   {
+    "phase": "seed",
+    "n": 1,
+    "t_start_s": 0.008947174064815044,
+    "n_sent": 1,
+    "t_end_s": 0.4487947840243578,
+    "metrics": {
+     "series": {
+      "prefix_cache_queries": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prefix_cache_queries_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prefix_cache_hits": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prefix_cache_hits_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "external_prefix_cache_queries": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:external_prefix_cache_queries_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "external_prefix_cache_hits": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:external_prefix_cache_hits_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens": {
+       "delta": 10496.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_total",
+       "before": 10123264.0,
+       "after": 10133760.0
+      },
+      "prompt_tokens_cached": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_cached_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens_local_compute": {
+       "delta": 10496.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+       "before": 10123264.0,
+       "after": 10133760.0
+      },
+      "prompt_tokens_local_cache_hit": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens_external_kv_transfer": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "generation_tokens": {
+       "delta": 1.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:generation_tokens_total",
+       "before": 29603.0,
+       "after": 29604.0
+      },
+      "num_preemptions": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:num_preemptions_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "offload_load_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_load_bytes_total"
+      },
+      "offload_load_time_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_load_time_total"
+      },
+      "offload_store_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_store_bytes_total"
+      },
+      "offload_store_time_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_store_time_total"
+      },
+      "offload_allocation_failure": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_allocation_failure_total"
+      },
+      "offload_lookup_async_delay_sum_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_lookup_async_delay_seconds_sum"
+      },
+      "offload_lookup_async_delay_count": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_lookup_async_delay_seconds_count"
+      },
+      "offload_legacy_bytes_cpu_to_gpu": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}"
+      },
+      "offload_legacy_bytes_gpu_to_cpu": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}"
+      },
+      "tiering_read_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_read_bytes_total"
+      },
+      "tiering_write_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_write_bytes_total"
+      },
+      "tiering_chunk_queries": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_chunk_queries_total"
+      },
+      "tiering_chunk_hits": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_chunk_hits_total"
+      }
+     },
+     "derived": {
+      "local_prefix_hit_rate": "NO_QUERIES",
+      "external_prefix_hit_rate": "NO_QUERIES",
+      "cached_prompt_token_frac": 0.0,
+      "offload_load_gib_per_s_vllm": "NOT_AVAILABLE"
+     }
+    }
+   },
+   {
+    "phase": "evict",
+    "n": 0,
+    "t_start_s": 3.485319665633142,
+    "reset": {
+     "ok": true,
+     "tries": 1
+    },
+    "n_sent": 0,
+    "t_end_s": 3.4918708438053727,
+    "metrics": {
+     "series": {
+      "prefix_cache_queries": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prefix_cache_queries_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prefix_cache_hits": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prefix_cache_hits_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "external_prefix_cache_queries": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:external_prefix_cache_queries_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "external_prefix_cache_hits": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:external_prefix_cache_hits_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_total",
+       "before": 10133760.0,
+       "after": 10133760.0
+      },
+      "prompt_tokens_cached": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_cached_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens_local_compute": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+       "before": 10133760.0,
+       "after": 10133760.0
+      },
+      "prompt_tokens_local_cache_hit": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens_external_kv_transfer": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "generation_tokens": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:generation_tokens_total",
+       "before": 29604.0,
+       "after": 29604.0
+      },
+      "num_preemptions": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:num_preemptions_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "offload_load_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_load_bytes_total"
+      },
+      "offload_load_time_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_load_time_total"
+      },
+      "offload_store_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_store_bytes_total"
+      },
+      "offload_store_time_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_store_time_total"
+      },
+      "offload_allocation_failure": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_allocation_failure_total"
+      },
+      "offload_lookup_async_delay_sum_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_lookup_async_delay_seconds_sum"
+      },
+      "offload_lookup_async_delay_count": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_lookup_async_delay_seconds_count"
+      },
+      "offload_legacy_bytes_cpu_to_gpu": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}"
+      },
+      "offload_legacy_bytes_gpu_to_cpu": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}"
+      },
+      "tiering_read_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_read_bytes_total"
+      },
+      "tiering_write_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_write_bytes_total"
+      },
+      "tiering_chunk_queries": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_chunk_queries_total"
+      },
+      "tiering_chunk_hits": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_chunk_hits_total"
+      }
+     },
+     "derived": {
+      "local_prefix_hit_rate": "NO_QUERIES",
+      "external_prefix_hit_rate": "NO_QUERIES",
+      "cached_prompt_token_frac": "NO_QUERIES",
+      "offload_load_gib_per_s_vllm": "NOT_AVAILABLE"
+     }
+    }
+   },
+   {
+    "phase": "burst",
+    "n": 64,
+    "t_start_s": 6.528225805610418,
+    "n_sent": 64,
+    "t_end_s": 55.78795165196061,
+    "metrics": {
+     "series": {
+      "prefix_cache_queries": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prefix_cache_queries_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prefix_cache_hits": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prefix_cache_hits_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "external_prefix_cache_queries": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:external_prefix_cache_queries_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "external_prefix_cache_hits": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:external_prefix_cache_hits_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens": {
+       "delta": 671744.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_total",
+       "before": 10133760.0,
+       "after": 10805504.0
+      },
+      "prompt_tokens_cached": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_cached_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens_local_compute": {
+       "delta": 671744.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+       "before": 10133760.0,
+       "after": 10805504.0
+      },
+      "prompt_tokens_local_cache_hit": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "prompt_tokens_external_kv_transfer": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "generation_tokens": {
+       "delta": 4096.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:generation_tokens_total",
+       "before": 29604.0,
+       "after": 33700.0
+      },
+      "num_preemptions": {
+       "delta": 0.0,
+       "status": "before=OK;after=OK",
+       "series": "vllm:num_preemptions_total",
+       "before": 0.0,
+       "after": 0.0
+      },
+      "offload_load_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_load_bytes_total"
+      },
+      "offload_load_time_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_load_time_total"
+      },
+      "offload_store_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_store_bytes_total"
+      },
+      "offload_store_time_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_store_time_total"
+      },
+      "offload_allocation_failure": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_allocation_failure_total"
+      },
+      "offload_lookup_async_delay_sum_s": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_lookup_async_delay_seconds_sum"
+      },
+      "offload_lookup_async_delay_count": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_lookup_async_delay_seconds_count"
+      },
+      "offload_legacy_bytes_cpu_to_gpu": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}"
+      },
+      "offload_legacy_bytes_gpu_to_cpu": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}"
+      },
+      "tiering_read_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_read_bytes_total"
+      },
+      "tiering_write_bytes": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_write_bytes_total"
+      },
+      "tiering_chunk_queries": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_chunk_queries_total"
+      },
+      "tiering_chunk_hits": {
+       "delta": "NOT_AVAILABLE",
+       "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+       "series": "vllm:kv_offload_tiering_chunk_hits_total"
+      }
+     },
+     "derived": {
+      "local_prefix_hit_rate": "NO_QUERIES",
+      "external_prefix_hit_rate": "NO_QUERIES",
+      "cached_prompt_token_frac": 0.0,
+      "offload_load_gib_per_s_vllm": "NOT_AVAILABLE"
+     }
+    }
+   }
+  ],
+  "resets": [
+   {
+    "when": "before",
+    "ok": true,
+    "tries": 1
+   },
+   {
+    "when": "evict",
+    "ok": true,
+    "tries": 1
+   }
+  ],
+  "server_models": {
+   "object": "list",
+   "data": [
+    {
+     "id": "m",
+     "object": "model",
+     "created": 1792647195,
+     "owned_by": "vllm",
+     "root": "/mlsteam/data/tiara/hf-cache/hub/models--unsloth--Llama-3.1-8B-Instruct/snapshots/4699cc75b550f9c6f3173fb80f4703b62d946aa5",
+     "parent": null,
+     "max_model_len": 34816,
+     "permission": [
+      {
+       "id": "modelperm-b5618663d8f5e03e",
+       "object": "model_permission",
+       "created": 1792647195,
+       "allow_create_engine": false,
+       "allow_sampling": true,
+       "allow_logprobs": true,
+       "allow_search_indices": false,
+       "allow_view": true,
+       "allow_fine_tuning": false,
+       "organization": "*",
+       "group": null,
+       "is_blocking": false
+      }
+     ]
+    }
+   ]
+  },
+  "server_warmup": [
+   {
+    "ok": 1,
+    "error": "",
+    "ttft_s": 0.028738336637616158,
+    "e2e_s": 0.033260488882660866
+   },
+   {
+    "ok": 1,
+    "error": "",
+    "ttft_s": 0.32531602028757334,
+    "e2e_s": 0.32581032905727625
+   }
+  ],
+  "t0_wall": "2026-10-22T05:33:19+00:00",
+  "evict_mode": "reset",
+  "phases_run": [
+   "seed",
+   "evict",
+   "burst"
+  ],
+  "t_last_s": 58.807604882866144,
+  "metrics_scrape": {
+   "before": "OK",
+   "after": "OK"
+  },
+  "metrics": {
+   "series": {
+    "prefix_cache_queries": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prefix_cache_queries_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "prefix_cache_hits": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prefix_cache_hits_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "external_prefix_cache_queries": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:external_prefix_cache_queries_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "external_prefix_cache_hits": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:external_prefix_cache_hits_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "prompt_tokens": {
+     "delta": 682240.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_total",
+     "before": 10123264.0,
+     "after": 10805504.0
+    },
+    "prompt_tokens_cached": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_cached_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "prompt_tokens_local_compute": {
+     "delta": 682240.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_by_source_total{source=\"local_compute\"}",
+     "before": 10123264.0,
+     "after": 10805504.0
+    },
+    "prompt_tokens_local_cache_hit": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_by_source_total{source=\"local_cache_hit\"}",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "prompt_tokens_external_kv_transfer": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:prompt_tokens_by_source_total{source=\"external_kv_transfer\"}",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "generation_tokens": {
+     "delta": 4097.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:generation_tokens_total",
+     "before": 29603.0,
+     "after": 33700.0
+    },
+    "num_preemptions": {
+     "delta": 0.0,
+     "status": "before=OK;after=OK",
+     "series": "vllm:num_preemptions_total",
+     "before": 0.0,
+     "after": 0.0
+    },
+    "offload_load_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_load_bytes_total"
+    },
+    "offload_load_time_s": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_load_time_total"
+    },
+    "offload_store_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_store_bytes_total"
+    },
+    "offload_store_time_s": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_store_time_total"
+    },
+    "offload_allocation_failure": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_allocation_failure_total"
+    },
+    "offload_lookup_async_delay_sum_s": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_lookup_async_delay_seconds_sum"
+    },
+    "offload_lookup_async_delay_count": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_lookup_async_delay_seconds_count"
+    },
+    "offload_legacy_bytes_cpu_to_gpu": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"CPU_to_GPU\"}"
+    },
+    "offload_legacy_bytes_gpu_to_cpu": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_total_bytes_total{transfer_type=\"GPU_to_CPU\"}"
+    },
+    "tiering_read_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_read_bytes_total"
+    },
+    "tiering_write_bytes": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_write_bytes_total"
+    },
+    "tiering_chunk_queries": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_chunk_queries_total"
+    },
+    "tiering_chunk_hits": {
+     "delta": "NOT_AVAILABLE",
+     "status": "before=NOT_REGISTERED;after=NOT_REGISTERED",
+     "series": "vllm:kv_offload_tiering_chunk_hits_total"
+    }
+   },
+   "derived": {
+    "local_prefix_hit_rate": "NO_QUERIES",
+    "external_prefix_hit_rate": "NO_QUERIES",
+    "cached_prompt_token_frac": 0.0,
+    "offload_load_gib_per_s_vllm": "NOT_AVAILABLE"
+   }
+  },
+  "connector_log": {
+   "status": "DEBUG_OFF（serve 沒加 --connector-debug：延後訊息是 DEBUG，計數不能用）",
+   "path": "/mlsteam/data/tiara/runs/20261022-050241-m16-srv-f2C/vllm_server.log",
+   "byte_range": [
+    139845,
+    148442
+   ],
+   "delay_chunks_being_loaded": {
+    "lines": 0,
+    "distinct_requests": 0
+   },
+   "delay_inflight_transfers": {
+    "lines": 0,
+    "distinct_requests": 0
+   },
+   "delay_backend_requested": {
+    "lines": 0,
+    "distinct_requests": 0
+   },
+   "hit_offloaded_tokens": {
+    "lines": 0,
+    "distinct_requests": 0
+   },
+   "debug_lines_from_offloading_scheduler": 0
+  }
+ }
+}

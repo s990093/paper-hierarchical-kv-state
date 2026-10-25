@@ -1,0 +1,2 @@
+<p>KV 散在很多小塊時，<b>搬法決定速度</b>：逐塊 copy 只有 1–3 GiB/s，和 vLLM 在 ROCm 上 CPU 層實測約 4.1 GiB/s 同一個量級；GPU kernel 直接讀 pinned host（zero-copy）約 53 GiB/s，快 18–45 倍；CPU 端先收集再一次 copy 約 20 GiB/s。這表示 vLLM 在 AMD 上 CPU 卸載慢，主因是每次 copy 的固定成本，而不是頻寬。</p>
+<p>在這個單純搬運的測試裡，背景負載（busy2）幾乎不影響搬運速度，和第二階段「GPU 忙時 H2D 慢約一半」不同；兩者設定不同（第二階段是還原器的整段流程），這一輪沒有再追，列為限制。</p>

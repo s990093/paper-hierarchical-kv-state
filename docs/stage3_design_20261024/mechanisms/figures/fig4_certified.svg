@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="500" viewBox="0 0 960 500" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="500" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 4　M03：算出每一塊「最多能讓輸出差多少」，從大的補起，補到總上界 ≤ ε</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">示意〔判讀〕，高度不是量測值。上界＝注意力權重 a_j × 降級時存下的 V 殘差範數 e_j；上界實際有多緊，NOT_MEASURED</text>
+
+<!-- left: per-block bounds -->
+<text x="60" y="90" font-size="13" font-weight="600" fill="#2C2C2A">每一塊的上界（依大小排序）</text>
+<line x1="60" y1="380" x2="580" y2="380" stroke="#7F7F7F"/>
+<g>
+<rect x="70" y="230" width="28" height="150" fill="#1F4E79"/>
+<rect x="106" y="260" width="28" height="120" fill="#1F4E79"/>
+<rect x="142" y="285" width="28" height="95" fill="#1F4E79"/>
+<rect x="178" y="320" width="28" height="60" fill="#1F4E79"/>
+<rect x="214" y="340" width="28" height="40" fill="#8FAADC"/>
+<rect x="250" y="350" width="28" height="30" fill="#8FAADC"/>
+<rect x="286" y="358" width="28" height="22" fill="#8FAADC"/>
+<rect x="322" y="362" width="28" height="18" fill="#8FAADC"/>
+<rect x="358" y="366" width="28" height="14" fill="#8FAADC"/>
+<rect x="394" y="369" width="28" height="11" fill="#8FAADC"/>
+<rect x="430" y="371" width="28" height="9" fill="#8FAADC"/>
+<rect x="466" y="373" width="28" height="7" fill="#8FAADC"/>
+<rect x="502" y="374" width="28" height="6" fill="#8FAADC"/>
+<rect x="538" y="375" width="28" height="5" fill="#8FAADC"/>
+</g>
+<text x="138" y="220" font-size="12" fill="#1F4E79" text-anchor="middle">補細節（讀精修）</text>
+<text x="390" y="330" font-size="12" fill="#1F4E79" text-anchor="middle">留粗底（只讀縮圖）</text>
+<text x="320" y="400" font-size="11.5" fill="#5F5E5A" text-anchor="middle">塊（同一層、同一個 KV head；實際是每層、每個 head 各做一次）</text>
+
+<!-- stacked remaining bound vs epsilon -->
+<text x="640" y="90" font-size="13" font-weight="600" fill="#2C2C2A">沒補的塊，上界加起來</text>
+<line x1="620" y1="380" x2="760" y2="380" stroke="#7F7F7F"/>
+<g fill="#8FAADC" stroke="#ffffff" stroke-width="1">
+<rect x="660" y="340" width="40" height="40"/><rect x="660" y="310" width="40" height="30"/><rect x="660" y="288" width="40" height="22"/><rect x="660" y="270" width="40" height="18"/><rect x="660" y="256" width="40" height="14"/><rect x="660" y="245" width="40" height="11"/><rect x="660" y="236" width="40" height="9"/><rect x="660" y="229" width="40" height="7"/><rect x="660" y="223" width="40" height="6"/><rect x="660" y="218" width="40" height="5"/>
+</g>
+<line x1="630" y1="210" x2="760" y2="210" stroke="#C0504D" stroke-width="2" stroke-dasharray="6,4"/>
+<text x="766" y="214" font-size="13" font-weight="600" fill="#C0504D">ε</text>
+<text x="690" y="400" font-size="11.5" fill="#5F5E5A" text-anchor="middle">總和 ≤ ε → 停，有證書</text>
+
+<!-- right notes -->
+<g font-size="12" fill="#2C2C2A">
+<rect x="790" y="96" width="150" height="116" rx="6" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="802" y="118" font-weight="600">Top-k（Quest、ReadKV）</text>
+<text x="802" y="140">固定挑 k 塊</text>
+<text x="802" y="160">沒挑的丟掉或只讀粗</text>
+<text x="802" y="180">沒有誤差保證</text>
+<text x="802" y="200" fill="#C0504D">漏一塊就可能錯（O4）</text>
+<rect x="790" y="226" width="150" height="138" rx="6" fill="#EEF3FA" stroke="#8FAADC"/>
+<text x="802" y="248" font-weight="600" fill="#1F4E79">證書（M03）</text>
+<text x="802" y="270">簡單的題補幾塊就停</text>
+<text x="802" y="290">難的題自動多補</text>
+<text x="802" y="310">每個問題都知道</text>
+<text x="802" y="330">「最多差多少」</text>
+<text x="802" y="350" fill="#5F5E5A" font-size="11">經典：Fagin threshold 演算法</text>
+</g>
+
+<!-- K-first strip -->
+<rect x="60" y="428" width="880" height="54" rx="6" fill="#FFF2CC" stroke="#E07B24"/>
+<text x="76" y="451" font-size="12.5" font-weight="600" fill="#2C2C2A">「K 先到」版本：</text>
+<text x="190" y="451" font-size="12.5" fill="#2C2C2A">所有塊的 K 先讀到 INT8 或原精度（K 只佔一半位元組）→ 注意力權重 a_j 幾乎精確</text>
+<text x="190" y="471" font-size="12.5" fill="#2C2C2A">→ V 的誤差上界 ＝ Σ（沒補 V 的塊）a_j × e_j，可以直接算，而且很緊；V 只補權重大的塊</text>
+</svg>

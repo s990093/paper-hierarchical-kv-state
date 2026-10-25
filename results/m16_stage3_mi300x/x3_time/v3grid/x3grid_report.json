@@ -1,0 +1,323 @@
+{
+ "series": [
+  {
+   "model": "llama",
+   "tier": "cpu_pinned",
+   "status": "OK",
+   "best_by_duty": {
+    "0.0": "xkv_k11v17_int4@oneshot",
+    "0.4": "xkv_k11v17_int4@oneshot",
+    "0.7": "int4_kivi@oneshot",
+    "0.9": "int4_kivi@oneshot"
+   },
+   "flip": true,
+   "flip_margins": [
+    0.5580697746117134,
+    1.2519353277579826
+   ],
+   "best_fixed": "int4_kivi@oneshot",
+   "adaptive_gain": 0.13590357248941443,
+   "times": {
+    "0.0": {
+     "raw": 0.083423,
+     "int4_kivi@oneshot": 0.03297,
+     "k4v2@perblock": 0.032280500000000004,
+     "xkv_k22v34@oneshot": 0.03422153601422906,
+     "xkv_k22v34_int4@oneshot": 0.028681022115051746,
+     "xkv_k11v17_int4@oneshot": 0.021160798147320747
+    },
+    "0.4": {
+     "raw": 0.101887,
+     "int4_kivi@oneshot": 0.0349825,
+     "k4v2@perblock": 0.042527999999999996,
+     "xkv_k22v34@oneshot": 0.04801434185355902,
+     "xkv_k22v34_int4@oneshot": 0.043375641107559204,
+     "xkv_k11v17_int4@oneshot": 0.03038691310212016
+    },
+    "0.7": {
+     "raw": 0.123948,
+     "int4_kivi@oneshot": 0.035603,
+     "k4v2@perblock": 0.0546665,
+     "xkv_k22v34@oneshot": 0.06660443870350718,
+     "xkv_k22v34_int4@oneshot": 0.06788431666791439,
+     "xkv_k11v17_int4@oneshot": 0.04201044933870435
+    },
+    "0.9": {
+     "raw": 0.139541,
+     "int4_kivi@oneshot": 0.0371455,
+     "k4v2@perblock": 0.0672355,
+     "xkv_k22v34@oneshot": 0.08597227418795228,
+     "xkv_k22v34_int4@oneshot": 0.12589939264580607,
+     "xkv_k11v17_int4@oneshot": 0.08364926371723413
+    }
+   }
+  },
+  {
+   "model": "llama",
+   "tier": "b16",
+   "status": "OK",
+   "best_by_duty": {
+    "0.0": "xkv_k11v17_int4@oneshot",
+    "0.4": "xkv_k11v17_int4@oneshot",
+    "0.7": "xkv_k11v17_int4@oneshot",
+    "0.9": "xkv_k11v17_int4@oneshot"
+   },
+   "flip": false,
+   "flip_margins": null,
+   "best_fixed": "xkv_k11v17_int4@oneshot",
+   "adaptive_gain": 0.0,
+   "times": {
+    "0.0": {
+     "raw": 0.5728679999999999,
+     "int4_kivi@oneshot": 0.225006,
+     "k4v2@perblock": 0.192267,
+     "xkv_k22v34@oneshot": 0.1988246813416481,
+     "xkv_k22v34_int4@oneshot": 0.0854454510845244,
+     "xkv_k11v17_int4@oneshot": 0.045374737586826086
+    },
+    "0.4": {
+     "raw": 0.6363624999999999,
+     "int4_kivi@oneshot": 0.2436115,
+     "k4v2@perblock": 0.2463475,
+     "xkv_k22v34@oneshot": 0.20466698333621025,
+     "xkv_k22v34_int4@oneshot": 0.11236475594341755,
+     "xkv_k11v17_int4@oneshot": 0.06410853937268257
+    },
+    "0.7": {
+     "raw": 0.6649125,
+     "int4_kivi@oneshot": 0.24086,
+     "k4v2@perblock": 0.2613525,
+     "xkv_k22v34@oneshot": 0.21040878584608436,
+     "xkv_k22v34_int4@oneshot": 0.1435491470620036,
+     "xkv_k11v17_int4@oneshot": 0.08416932774707675
+    },
+    "0.9": {
+     "raw": 0.7594815,
+     "int4_kivi@oneshot": 0.2438795,
+     "k4v2@perblock": 0.2674895,
+     "xkv_k22v34@oneshot": 0.21989182429388165,
+     "xkv_k22v34_int4@oneshot": 0.17731149680912495,
+     "xkv_k11v17_int4@oneshot": 0.12234356394037604
+    }
+   }
+  },
+  {
+   "model": "llama",
+   "tier": "ssd_meas",
+   "status": "OK",
+   "best_by_duty": {
+    "0.0": "xkv_k11v17_int4@oneshot",
+    "0.4": "xkv_k11v17_int4@oneshot",
+    "0.7": "xkv_k11v17_int4@oneshot",
+    "0.9": "xkv_k11v17_int4@oneshot"
+   },
+   "flip": false,
+   "flip_margins": null,
+   "best_fixed": "xkv_k11v17_int4@oneshot",
+   "adaptive_gain": 0.0,
+   "times": {
+    "0.0": {
+     "raw": 0.414138,
+     "int4_kivi@oneshot": 0.157809,
+     "k4v2@perblock": 0.1289575,
+     "xkv_k22v34@oneshot": 0.13721832213923335,
+     "xkv_k22v34_int4@oneshot": 0.06152397487312555,
+     "xkv_k11v17_int4@oneshot": 0.03330256789922714
+    },
+    "0.4": {
+     "raw": 0.46188850000000004,
+     "int4_kivi@oneshot": 0.165316,
+     "k4v2@perblock": 0.1477535,
+     "xkv_k22v34@oneshot": 0.14022190496325493,
+     "xkv_k22v34_int4@oneshot": 0.08488439721986651,
+     "xkv_k11v17_int4@oneshot": 0.04377839062362909
+    },
+    "0.7": {
+     "raw": 0.48277950000000003,
+     "int4_kivi@oneshot": 0.1643095,
+     "k4v2@perblock": 0.173809,
+     "xkv_k22v34@oneshot": 0.1492054951377213,
+     "xkv_k22v34_int4@oneshot": 0.12223859084770083,
+     "xkv_k11v17_int4@oneshot": 0.06456123245880008
+    },
+    "0.9": {
+     "raw": 0.5096970000000001,
+     "int4_kivi@oneshot": 0.1656165,
+     "k4v2@perblock": 0.1906155,
+     "xkv_k22v34@oneshot": 0.16095538483932614,
+     "xkv_k22v34_int4@oneshot": 0.15296764066442847,
+     "xkv_k11v17_int4@oneshot": 0.10509445890784264
+    }
+   }
+  },
+  {
+   "model": "qwen",
+   "tier": "cpu_pinned",
+   "status": "OK",
+   "best_by_duty": {
+    "0.0": "xkv_k11v17_int4@oneshot",
+    "0.4": "int4_kivi@oneshot",
+    "0.7": "int4_kivi@oneshot",
+    "0.9": "int4_kivi@oneshot"
+   },
+   "flip": true,
+   "flip_margins": [
+    0.2778939988900422,
+    2.5881033212055073
+   ],
+   "best_fixed": "int4_kivi@oneshot",
+   "adaptive_gain": 0.05946211791579903,
+   "times": {
+    "0.0": {
+     "raw": 0.0388435,
+     "int4_kivi@oneshot": 0.017368,
+     "k4v2@perblock": 0.019293499999999998,
+     "xkv_k22v34@oneshot": 0.015028038993477821,
+     "xkv_k22v34_int4@oneshot": 0.015607417561113834,
+     "xkv_k11v17_int4@oneshot": 0.01359111163765192
+    },
+    "0.4": {
+     "raw": 0.047424499999999994,
+     "int4_kivi@oneshot": 0.018203499999999997,
+     "k4v2@perblock": 0.0261295,
+     "xkv_k22v34@oneshot": 0.020481683313846588,
+     "xkv_k22v34_int4@oneshot": 0.02124233590438962,
+     "xkv_k11v17_int4@oneshot": 0.020408542826771736
+    },
+    "0.7": {
+     "raw": 0.0557765,
+     "int4_kivi@oneshot": 0.018687000000000002,
+     "k4v2@perblock": 0.04198,
+     "xkv_k22v34@oneshot": 0.03348999563604593,
+     "xkv_k22v34_int4@oneshot": 0.04182662256062031,
+     "xkv_k11v17_int4@oneshot": 0.040928694885224104
+    },
+    "0.9": {
+     "raw": 0.059599,
+     "int4_kivi@oneshot": 0.020720500000000003,
+     "k4v2@perblock": 0.051752,
+     "xkv_k22v34@oneshot": 0.04981814092025161,
+     "xkv_k22v34_int4@oneshot": 0.08281261706724763,
+     "xkv_k11v17_int4@oneshot": 0.07434729486703873
+    }
+   }
+  },
+  {
+   "model": "qwen",
+   "tier": "b16",
+   "status": "OK",
+   "best_by_duty": {
+    "0.0": "xkv_k11v17_int4@oneshot",
+    "0.4": "xkv_k11v17_int4@oneshot",
+    "0.7": "xkv_k11v17_int4@oneshot",
+    "0.9": "xkv_k11v17_int4@oneshot"
+   },
+   "flip": false,
+   "flip_margins": null,
+   "best_fixed": "xkv_k11v17_int4@oneshot",
+   "adaptive_gain": 0.0,
+   "times": {
+    "0.0": {
+     "raw": 0.4788155,
+     "int4_kivi@oneshot": 0.18525750000000002,
+     "k4v2@perblock": 0.15871600000000002,
+     "xkv_k22v34@oneshot": 0.15062556276097894,
+     "xkv_k22v34_int4@oneshot": 0.055960824713110924,
+     "xkv_k11v17_int4@oneshot": 0.02927827462553978
+    },
+    "0.4": {
+     "raw": 0.5268545,
+     "int4_kivi@oneshot": 0.201738,
+     "k4v2@perblock": 0.1937565,
+     "xkv_k22v34@oneshot": 0.15264717815443873,
+     "xkv_k22v34_int4@oneshot": 0.07459874590858817,
+     "xkv_k11v17_int4@oneshot": 0.042529601603746414
+    },
+    "0.7": {
+     "raw": 0.6102305,
+     "int4_kivi@oneshot": 0.19857350000000001,
+     "k4v2@perblock": 0.1915745,
+     "xkv_k22v34@oneshot": 0.15309384744614363,
+     "xkv_k22v34_int4@oneshot": 0.1007580254226923,
+     "xkv_k11v17_int4@oneshot": 0.06207368103787303
+    },
+    "0.9": {
+     "raw": 0.6326595,
+     "int4_kivi@oneshot": 0.2024835,
+     "k4v2@perblock": 0.20401950000000002,
+     "xkv_k22v34@oneshot": 0.15389529010280967,
+     "xkv_k22v34_int4@oneshot": 0.13090457767248154,
+     "xkv_k11v17_int4@oneshot": 0.1049676607362926
+    }
+   }
+  },
+  {
+   "model": "qwen",
+   "tier": "ssd_meas",
+   "status": "OK",
+   "best_by_duty": {
+    "0.0": "xkv_k11v17_int4@oneshot",
+    "0.4": "xkv_k11v17_int4@oneshot",
+    "0.7": "xkv_k11v17_int4@oneshot",
+    "0.9": "xkv_k22v34@oneshot"
+   },
+   "flip": true,
+   "flip_margins": [
+    2.454176466106796,
+    0.26416014005290833
+   ],
+   "best_fixed": "xkv_k11v17_int4@oneshot",
+   "adaptive_gain": 0.05691795434300617,
+   "times": {
+    "0.0": {
+     "raw": 0.2146045,
+     "int4_kivi@oneshot": 0.0726455,
+     "k4v2@perblock": 0.057440000000000005,
+     "xkv_k22v34@oneshot": 0.05550586013123393,
+     "xkv_k22v34_int4@oneshot": 0.02220568945631385,
+     "xkv_k11v17_int4@oneshot": 0.016069202218204737
+    },
+    "0.4": {
+     "raw": 0.206094,
+     "int4_kivi@oneshot": 0.073122,
+     "k4v2@perblock": 0.076481,
+     "xkv_k22v34@oneshot": 0.06076310947537422,
+     "xkv_k22v34_int4@oneshot": 0.03475313866510987,
+     "xkv_k11v17_int4@oneshot": 0.02098482148721814
+    },
+    "0.7": {
+     "raw": 0.22360449999999998,
+     "int4_kivi@oneshot": 0.074348,
+     "k4v2@perblock": 0.0944315,
+     "xkv_k22v34@oneshot": 0.06392313726246357,
+     "xkv_k22v34_int4@oneshot": 0.05201442167162895,
+     "xkv_k11v17_int4@oneshot": 0.042147202882915735
+    },
+    "0.9": {
+     "raw": 0.217808,
+     "int4_kivi@oneshot": 0.074322,
+     "k4v2@perblock": 0.1041675,
+     "xkv_k22v34@oneshot": 0.06600635778158903,
+     "xkv_k22v34_int4@oneshot": 0.08838164620101452,
+     "xkv_k11v17_int4@oneshot": 0.08344260649755597
+    }
+   }
+  }
+ ],
+ "n_flip": 3,
+ "flip_by_model": {
+  "llama": true,
+  "qwen": true
+ },
+ "verdict": "FLIP_REPRODUCED（兩個模型都至少一條翻轉）",
+ "n_rows": 144,
+ "n_ok": 144,
+ "n_contaminated": 0,
+ "run_id": "20261022-175920-m16-x3grid-report",
+ "ts": "2026-10-22T17:59:21+00:00",
+ "src_run_ids": [
+  "20261022-171510-m16-x3grid-validate"
+ ],
+ "val_dir": "/mlsteam/data/tiara/stage3/x3grid/validate",
+ "rule": "每條（模型, 層）：duty 0 與 0.9 的最快動作不同，而且兩端最快的都比對方的選擇快 ≥5% → 翻轉。兩個模型都至少一條翻轉 → FLIP_REPRODUCED；只有一個 → FLIP_PARTIAL；都沒有 → NO_FLIP。另報：依情況選（每個 duty 各挑最快）對「固定最好的一種」的幾何平均好處。污染列不算。"
+}

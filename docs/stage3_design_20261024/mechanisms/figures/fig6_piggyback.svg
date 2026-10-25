@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<defs>
+<marker id="ag" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5F5E5A"/></marker>
+</defs>
+<rect width="960" height="540" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 6　M08：長 context 的 decode 只用到一點點算力；還原的計算搭它的便車</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">左：H200 的 roofline（實測 788.1 TFLOPS、4,173.9 GB/s；decode 的點是〔算術〕arith §8）。右：每一步 decode 裡資源的使用（示意）</text>
+
+<!-- roofline axes: x 70..450 (AI 1..1000, 126.7px/dec), y 400..90 (TFLOPS 1..1000, 103.3px/dec) -->
+<line x1="70" y1="400" x2="450" y2="400" stroke="#7F7F7F"/>
+<line x1="70" y1="400" x2="70" y2="90" stroke="#7F7F7F"/>
+<g font-size="10.5" fill="#5F5E5A" text-anchor="middle">
+<text x="70" y="416">1</text><text x="196.7" y="416">10</text><text x="323.4" y="416">100</text><text x="450" y="416">1000</text>
+</g>
+<g font-size="10.5" fill="#5F5E5A" text-anchor="end">
+<text x="64" y="404">1</text><text x="64" y="300.7">10</text><text x="64" y="197.4">100</text><text x="64" y="94">1000</text>
+</g>
+<text x="260" y="438" font-size="11.5" fill="#2C2C2A" text-anchor="middle">每 byte 做幾個 FLOP（對數）</text>
+<text x="24" y="245" font-size="11.5" fill="#2C2C2A" text-anchor="middle" transform="rotate(-90 24 245)">可達到的 TFLOPS（對數）</text>
+<!-- roof -->
+<polyline points="70,335.9 358.4,100.8 450,100.8" fill="none" stroke="#1F4E79" stroke-width="2.5"/>
+<line x1="358.4" y1="100.8" x2="358.4" y2="400" stroke="#A6A6A6" stroke-dasharray="4,4"/>
+<text x="362" y="392" font-size="11" fill="#5F5E5A">189</text>
+<text x="200" y="92" font-size="11.5" fill="#1F4E79">算力上限 788 TFLOPS</text>
+<text x="96" y="352" font-size="11" fill="#1F4E79" transform="rotate(-39 96 352)">HBM 頻寬上限</text>
+<!-- decode points -->
+<circle cx="122.6" cy="293.0" r="5" fill="#C0504D"/>
+<circle cx="138.9" cy="279.7" r="5" fill="#C0504D"/>
+<circle cx="146.3" cy="273.7" r="5" fill="#C0504D"/>
+<text x="156" y="300" font-size="11.5" fill="#C0504D">長 context decode</text>
+<text x="156" y="316" font-size="11" fill="#C0504D">2.6–4.0 FLOP／byte</text>
+<text x="156" y="332" font-size="11" fill="#C0504D">只用到算力的 1–2%</text>
+<!-- restore compute -->
+<circle cx="412" cy="100.8" r="6" fill="#E07B24"/>
+<text x="446" y="170" font-size="11" fill="#E07B24" text-anchor="end">重算、低秩重建、</text>
+<text x="446" y="185" font-size="11" fill="#E07B24" text-anchor="end">問題 prefill</text>
+<text x="446" y="200" font-size="11" fill="#E07B24" text-anchor="end">（算力型，示意）</text>
+<path d="M150,262 C220,200 300,160 398,108" fill="none" stroke="#5F5E5A" stroke-dasharray="5,4" marker-end="url(#ag)"/>
+<text x="236" y="176" font-size="11" fill="#5F5E5A" transform="rotate(-30 236 176)">資源需求互補</text>
+
+<!-- right: iteration timeline -->
+<text x="520" y="90" font-size="13" font-weight="600" fill="#2C2C2A">三步 decode（每步時間 τ，上限 (1＋Δ)τ）</text>
+<g font-size="12" fill="#2C2C2A">
+<text x="520" y="138">HBM 頻寬</text>
+<text x="520" y="198">Tensor core</text>
+</g>
+<g>
+<rect x="610" y="120" width="96" height="28" fill="#1F4E79"/><rect x="716" y="120" width="96" height="28" fill="#1F4E79"/><rect x="822" y="120" width="96" height="28" fill="#1F4E79"/>
+<text x="658" y="139" font-size="11" fill="#ffffff" text-anchor="middle">讀全部 KV</text><text x="764" y="139" font-size="11" fill="#ffffff" text-anchor="middle">讀全部 KV</text><text x="870" y="139" font-size="11" fill="#ffffff" text-anchor="middle">讀全部 KV</text>
+<rect x="610" y="180" width="96" height="28" fill="#ffffff" stroke="#D9D9D6"/><rect x="716" y="180" width="96" height="28" fill="#ffffff" stroke="#D9D9D6"/><rect x="822" y="180" width="96" height="28" fill="#ffffff" stroke="#D9D9D6"/>
+<rect x="610" y="180" width="4" height="28" fill="#1F4E79"/><rect x="716" y="180" width="4" height="28" fill="#1F4E79"/><rect x="822" y="180" width="4" height="28" fill="#1F4E79"/>
+<rect x="616" y="182" width="86" height="24" fill="#F4B183"/><rect x="722" y="182" width="86" height="24" fill="#F4B183"/><rect x="828" y="182" width="60" height="24" fill="#F4B183"/>
+<text x="659" y="198" font-size="10.5" fill="#2C2C2A" text-anchor="middle">還原的計算</text><text x="765" y="198" font-size="10.5" fill="#2C2C2A" text-anchor="middle">還原的計算</text><text x="858" y="198" font-size="10.5" fill="#2C2C2A" text-anchor="middle">減半</text>
+<g stroke="#C0504D" stroke-width="1.5" stroke-dasharray="4,3"><line x1="711" y1="110" x2="711" y2="218"/><line x1="817" y1="110" x2="817" y2="218"/><line x1="923" y1="110" x2="923" y2="218"/></g>
+</g>
+<text x="923" y="232" font-size="10.5" fill="#C0504D" text-anchor="end">超過 (1＋Δ)τ → 下一步預算減半（AIMD）</text>
+
+<rect x="520" y="256" width="410" height="146" rx="6" fill="#F7F7F5" stroke="#D9D9D6"/>
+<text x="534" y="278" font-size="12.5" font-weight="600" fill="#2C2C2A">已經量到的（H200，Llama FP8，E1）</text>
+<text x="534" y="300" font-size="12" fill="#2C2C2A">MPS 不限：Cake 0.397 s</text>
+<text x="534" y="320" font-size="12" fill="#2C2C2A">背景限 87% SM：Cake 0.127 s，背景吞吐 0.91</text>
+<text x="534" y="340" font-size="12" fill="#2C2C2A">背景限 75% SM：Cake 0.076 s，背景吞吐 0.78</text>
+<text x="534" y="360" font-size="11" fill="#5F5E5A">（O9，results/m10_restore2_h200/q4mps/；背景是合成的）</text>
+<text x="534" y="384" font-size="12" fill="#C0504D">沒量：真實的 128K–256K decode 當背景 → 閘 G-M08</text>
+
+<rect x="40" y="456" width="890" height="64" rx="6" fill="#EEF3FA" stroke="#8FAADC"/>
+<text x="56" y="480" font-size="12.5" fill="#2C2C2A"><tspan font-weight="600" fill="#1F4E79">和前作的差別：</tspan>Sarathi 搭便車的是「新請求的 prefill」；POD-Attention 融合的是 prefill＋decode 的注意力；</text>
+<text x="56" y="502" font-size="12.5" fill="#2C2C2A">BitDecoding 融合的是「自己的」反量化；Bidaw 假設 SM 有空。M08 塞的是「別的 session 的還原」，預算來自量到的 decode 空檔。</text>
+</svg>

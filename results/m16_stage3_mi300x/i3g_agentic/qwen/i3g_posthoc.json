@@ -1,0 +1,143 @@
+{
+ "run_id": "20261023-023703-m16-i3gq-posthoc",
+ "ts": "2026-10-23T02:37:04+00:00",
+ "posthoc": true,
+ "source_report": "20261023-023703-m16-i3gq-report2",
+ "source_runs": {
+  "a": "20261023-012811-m16-i3gq-a",
+  "b": "20261023-014404-m16-i3gq-b",
+  "c": "20261023-015948-m16-i3gq-c",
+  "d": "20261023-021537-m16-i3gq-d"
+ },
+ "n_sessions": 61,
+ "n_return": {
+  "a": 300,
+  "b": 300,
+  "c": 300,
+  "d": 300
+ },
+ "B": 2000,
+ "seed": 20261022,
+ "per_config": {
+  "a": {
+   "p95": 1.989324038429186,
+   "p95_ci": [
+    1.8689407976344228,
+    2.2060030288994312
+   ]
+  },
+  "b": {
+   "p95": 1.6137314504012472,
+   "p95_ci": [
+    1.54500228613615,
+    1.9525803737342358
+   ]
+  },
+  "c": {
+   "p95": 1.137200975092128,
+   "p95_ci": [
+    0.9475163700990369,
+    1.311974486336112
+   ]
+  },
+  "d": {
+   "p95": 26.381002085609367,
+   "p95_ci": [
+    23.119853532640192,
+    29.133847903460264
+   ]
+  }
+ },
+ "vs_b": {
+  "a_vs_b": {
+   "p95_diff": 0.3755925880279387,
+   "diff_ci": [
+    0.024307825093856646,
+    0.5950237117439975
+   ],
+   "p95_ratio": 1.2327478887113152,
+   "ratio_ci": [
+    1.012844739916965,
+    1.3721925122353806
+   ]
+  },
+  "c_vs_b": {
+   "p95_diff": -0.4765304753091193,
+   "diff_ci": [
+    -0.8173036158178002,
+    -0.3981133948056959
+   ],
+   "p95_ratio": 0.704702740229403,
+   "ratio_ci": [
+    0.5690837986034932,
+    0.7456844159917346
+   ]
+  },
+  "d_vs_b": {
+   "p95_diff": 24.76727063520812,
+   "diff_ci": [
+    21.445281063086586,
+    27.481798561371388
+   ],
+   "p95_ratio": 16.347826696350158,
+   "ratio_ci": [
+    13.006559378392295,
+    18.264842510862184
+   ]
+  }
+ },
+ "io": {
+  "a": {
+   "ttft_mean_all": 0.7840859159535555,
+   "n_all": 364,
+   "lookup_async_delay_mean": "NOT_AVAILABLE",
+   "lookup_async_delay_sum": "NOT_AVAILABLE",
+   "load_gb": "NOT_AVAILABLE",
+   "load_gbps": "NOT_AVAILABLE",
+   "store_gb": "NOT_AVAILABLE",
+   "store_gbps": "NOT_AVAILABLE",
+   "tier_read_gb": "NOT_AVAILABLE",
+   "tier_write_gb": "NOT_AVAILABLE",
+   "prompt_cached_frac": 0.1572794581457973
+  },
+  "b": {
+   "ttft_mean_all": 0.5990605280110306,
+   "n_all": 364,
+   "lookup_async_delay_mean": 0.0,
+   "lookup_async_delay_sum": 0.0,
+   "load_gb": 72.26261504,
+   "load_gbps": 2.2019730042740226,
+   "store_gb": 107.532386304,
+   "store_gbps": 2.4494514676295176,
+   "tier_read_gb": "NOT_AVAILABLE",
+   "tier_write_gb": "NOT_AVAILABLE",
+   "prompt_cached_frac": 0.49965685840259316
+  },
+  "c": {
+   "ttft_mean_all": 0.4776843994379985,
+   "n_all": 364,
+   "lookup_async_delay_mean": 0.09417980209832172,
+   "lookup_async_delay_sum": 34.281447963789105,
+   "load_gb": 136.237416448,
+   "load_gbps": 2.2841544559820535,
+   "store_gb": 44.626477056,
+   "store_gbps": 2.3106384234001887,
+   "tier_read_gb": 61.85353216,
+   "tier_write_gb": 44.156715008,
+   "prompt_cached_frac": 0.7939282615261957
+  },
+  "d": {
+   "ttft_mean_all": 5.483217923405611,
+   "n_all": 364,
+   "lookup_async_delay_mean": 5.071584351353122,
+   "lookup_async_delay_sum": 1846.0567038925365,
+   "load_gb": 135.94198016,
+   "load_gbps": 2.2855223951178436,
+   "store_gb": 44.626477056,
+   "store_gbps": 2.4220422173037397,
+   "tier_read_gb": 71.499251712,
+   "tier_write_gb": 44.156715008,
+   "prompt_cached_frac": 0.7939282615261957
+  }
+ }
+}

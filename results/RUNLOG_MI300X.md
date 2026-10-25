@@ -1250,3 +1250,19 @@ seed 0 −3.1%／+1.2%／+11.8%／+4.5%；seed 1 +0.5%／+0.5%／+9.0%／+9.5%�
   - harness 只算（15.21，32K，GPU 閒）Llama 3.64、Qwen 3.10 → 比預設 vLLM 慢 1.67 倍、1.72 倍；比 512 切法快（0.87 倍、0.83 倍）。和 15.22 的判讀相同，現在有 guard 紀錄。
 - 第二階段的兩個佇列（queue/、queue_g0/）在 13:59:17Z 全部清空，沒有 WANT_BOTH。已通知第三階段 session。
 - NEEDS_HUMAN 的 90、91 共 5 行，已移到 .handled，處置就是上面這些。
+
+---
+
+## Milestone 16 — 第三階段前置探索（題目篩選；MI300X 雙卡）
+
+> 這一節只放指標；完整紀錄在 `docs/stage3_20261019/`，不在這裡重抄。
+
+**狀態**: DONE（探索，不是 go/no-go 停損點；每個實驗的成功／停止條件都在看數字前寫死，判定見各節）
+**執行時間**: 2026-10-19 13:40Z（第一個 CPU run `20261019-134046-m16-i1pred`）→ GPU 部分 2026-10-22 13:24:59Z 全部結束；報告 2026-10-22
+**run_id**: 每個實驗的 run_id 在 `docs/stage3_20261019/experiment_log.md`；逐數字的出處在 `docs/stage3_20261019/results.csv`（1400 列，每列 run_id＋source；只有 I3g 是 NOT_MEASURED，沒跑）
+**指令**: `docs/stage3_20261019/reproduction.md`（runner、job 清單、每支程式）
+**產出檔**: `results/m16_stage3_mi300x/`（14 個實驗目錄）；大檔見各目錄的 `BIG_FILES.md`；報告 PDF `/mlsteam/data/tiara/stage3/report/stage3_report.pdf`（產生器 `code/m16_report_pdf.py`）
+**關鍵數字**: `docs/stage3_20261019/results_analysis.md`（各實驗解讀）、`docs/stage3_20261019/stage3_candidates.md`（候選排名）
+**失敗與異常**: 6 件，全部記在 `experiment_log.md` 並照「記錄、停下、修正、重跑」處理：冒煙 KV 太短（4→16 block）、xstack gpu-selftest 容差（1e-5→1e-3）、`x_ext.sh` 在 `set -u` 下的變數展開、C1b 把 stdout 雜訊當工作名、V0 分歧只在數值平手（加 `tie_ok`，margin ≤ 1e-3）、38i1 Qwen 256K 因 `m10_tasks._cwe` 詞表不夠長而失敗（沒有資料，已 retire）。
+**與論文假設的差異**: 這一輪不改 `main.tex`；第三階段的題目方向見候選排名。
+**審查**: 文獻與程式的核對為 self-review，非 cross-model。

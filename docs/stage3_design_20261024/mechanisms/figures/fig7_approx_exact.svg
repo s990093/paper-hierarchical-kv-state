@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<defs>
+<pattern id="dots" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.2" fill="#E07B24"/></pattern>
+</defs>
+<rect width="960" height="540" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 7　M12：先用稀疏重算開始回答，回答期間用空檔補回精確（「精度債」）</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">上：一輪的時間線（示意）；下：Cake 的時間與會合點（Llama・128K、252 塊，〔算術〕arith §5；稀疏重算的品質 NOT_MEASURED）</text>
+
+<!-- timeline -->
+<g font-size="12" fill="#2C2C2A">
+<text x="40" y="104">前段：重算</text>
+<text x="40" y="148">後段：從慢層載入</text>
+<text x="40" y="192">回答（decode）</text>
+<text x="40" y="236">背景：精確重算</text>
+</g>
+<line x1="180" y1="80" x2="180" y2="250" stroke="#2C2C2A" stroke-width="1.5"/>
+<text x="180" y="74" font-size="11.5" fill="#2C2C2A" text-anchor="middle">使用者回來</text>
+<rect x="180" y="88" width="230" height="26" fill="url(#dots)" stroke="#E07B24"/>
+<rect x="222" y="92" width="146" height="18" fill="#ffffff" opacity="0.85"/>
+<text x="295" y="105" font-size="11.5" fill="#2C2C2A" text-anchor="middle">稀疏重算前 b 塊（近似）</text>
+<rect x="180" y="132" width="230" height="26" fill="#1F4E79"/>
+<text x="295" y="149" font-size="11.5" fill="#ffffff" text-anchor="middle">載入後 N−b 塊</text>
+<rect x="180" y="88" width="300" height="26" fill="none" stroke="#7F7F7F" stroke-dasharray="5,4"/>
+<rect x="180" y="132" width="300" height="70" fill="none" stroke="none"/>
+<text x="484" y="105" font-size="10.5" fill="#7F7F7F">← 精確 Cake 要到這裡</text>
+<line x1="410" y1="80" x2="410" y2="250" stroke="#C0504D" stroke-width="1.5" stroke-dasharray="5,3"/>
+<text x="410" y="74" font-size="11.5" fill="#C0504D" text-anchor="middle">會合 → 開始回答（TTFT）</text>
+<rect x="414" y="176" width="466" height="26" fill="#8FAADC"/>
+<text x="647" y="193" font-size="11.5" fill="#1F4E79" text-anchor="middle">回答：頻寬型，tensor core 閒著（F4）</text>
+<g fill="#E2EFDA" stroke="#ffffff" stroke-width="2">
+<rect x="414" y="220" width="60" height="24"/><rect x="476" y="220" width="64" height="24"/><rect x="542" y="220" width="70" height="24"/><rect x="614" y="220" width="76" height="24"/><rect x="692" y="220" width="84" height="24"/>
+</g>
+<text x="595" y="237" font-size="11" fill="#2C2C2A" text-anchor="middle">依序精確重算第 0…b 塊，算好一塊換一塊（搭 M08 的便車）</text>
+<line x1="900" y1="80" x2="900" y2="250" stroke="#2C2C2A" stroke-width="1.5"/>
+<text x="900" y="74" font-size="11.5" fill="#2C2C2A" text-anchor="middle">下一輪</text>
+<text x="900" y="266" font-size="11" fill="#1F4E79" text-anchor="middle">全部是精確的</text>
+
+<!-- bottom bars -->
+<text x="40" y="306" font-size="13" font-weight="600" fill="#2C2C2A">Cake 的時間（秒）：精確重算 vs 稀疏重算（密度 0.1）</text>
+<g font-size="12" fill="#2C2C2A">
+<text x="40" y="342">b16（8.83 GiB/s）</text>
+<text x="40" y="386">b32（2.49 GiB/s）</text>
+<text x="40" y="430">b48（0.72 GiB/s）</text>
+<text x="40" y="474">NFS 級（0.331 GiB/s）</text>
+</g>
+<g font-size="11">
+<rect x="200" y="326" width="83.1" height="13" fill="#A6A6A6"/><text x="289" y="337" fill="#5F5E5A">1.38　（b＝57）</text>
+<rect x="200" y="342" width="78.3" height="13" fill="#E07B24"/><text x="284" y="353" fill="#E07B24">1.30　（b＝69）　−6%</text>
+<rect x="200" y="370" width="208.3" height="13" fill="#A6A6A6"/><text x="414" y="381" fill="#5F5E5A">3.46　（b＝115）</text>
+<rect x="200" y="386" width="167.4" height="13" fill="#E07B24"/><text x="373" y="397" fill="#E07B24">2.78　（b＝142）　−20%</text>
+<rect x="200" y="414" width="391.9" height="13" fill="#A6A6A6"/><text x="598" y="425" fill="#5F5E5A">6.51　（b＝177）</text>
+<rect x="200" y="430" width="249.8" height="13" fill="#E07B24"/><text x="456" y="441" fill="#E07B24">4.15　（b＝205）　−36%</text>
+<rect x="200" y="458" width="500.3" height="13" fill="#A6A6A6"/><text x="706" y="469" fill="#5F5E5A">8.31　（b＝208）</text>
+<rect x="200" y="474" width="281.1" height="13" fill="#E07B24"/><text x="487" y="485" fill="#E07B24">4.67　（b＝228）　−44%</text>
+</g>
+<text x="40" y="512" font-size="11" fill="#5F5E5A">實測對照（harness E0 Cake，GPU 閒）：b16 1.46、b32 3.92、b48 8.43 s。算術是理想的兩線並行，比實測快，只看方向與幅度；快的層幾乎沒好處。</text>
+<text x="40" y="530" font-size="11" fill="#5F5E5A">前作：MInference（第一次 prefill）、SparseX（稀疏挑「哪些 token」重算，2606.01751）、Cake（只有精確重算）。</text>
+</svg>

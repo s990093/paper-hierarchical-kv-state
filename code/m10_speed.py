@@ -174,12 +174,15 @@ class Busy:
             mps = os.environ.get("M10_BUSY_MPS_PCT")                # H200（13_h200_repro §14）：CUDA MPS 下背景能用的 SM 比例；沒設時不變
             if mps:
                 env["CUDA_MPS_ACTIVE_THREAD_PERCENTAGE"] = mps
-            self.p = subprocess.Popen([sys.executable, os.path.join(HERE, "m7_busy.py"), "--duty", str(self.duty)],
+            # 10/22（m16 X3 翻轉格子）：M10_BUSY_SCRIPT 可換成別的背景（例：code/m16_busy_mem.py＝記憶體頻寬型）；沒設＝m7_busy.py（原行為）
+            script = os.environ.get("M10_BUSY_SCRIPT") or os.path.join(HERE, "m7_busy.py")
+            self.p = subprocess.Popen([sys.executable, script, "--duty", str(self.duty)],
                                       stdout=subprocess.PIPE, text=True, env=env)
             line = self.p.stdout.readline()
             if not line.startswith("READY"):
-                raise RuntimeError(f"m7_busy 沒有啟動：{line!r}")
-            self.stats = {"duty": self.duty, "cu_mask": mask or "", "ready": line.strip(), **({"mps_pct": mps} if mps else {})}
+                raise RuntimeError(f"{os.path.basename(script)} 沒有啟動：{line!r}")
+            self.stats = {"duty": self.duty, "cu_mask": mask or "", "ready": line.strip(), "script": os.path.basename(script),
+                          **({"mps_pct": mps} if mps else {})}
             time.sleep(1.0)
         return self
 
