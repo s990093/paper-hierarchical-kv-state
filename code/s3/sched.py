@@ -19,6 +19,7 @@ import subprocess
 import sys
 
 ICPE_TIMING = re.compile(r"^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$")
+S3_TIMING = re.compile(r"^s3-T-")                       # stage-3 量時間的 job 一律用這個前綴命名
 SLURM = "/cm/local/apps/slurm/current/bin"
 
 
@@ -103,6 +104,23 @@ def yield_target(jobs: dict) -> list:
     return out
 
 
+def s3_timing_target(jobs: dict, me: str) -> list:
+    """品質（不量時間）的 stage-3 job 讓位給「只剩在等 s3-* 的 job（或什麼都不等）」的 stage-3 量時間 job（和 ICPE 同一個規則）。"""
+    out = []
+    for i, (n, st, rs) in jobs.items():
+        if i == me or not S3_TIMING.match(n) or st != "PENDING" or "Held" in rs:
+            continue
+        unf = [d for _, d, s in parse_dep(dep_of(i)) if s == "unfulfilled"]
+        if not unf or all(jobs.get(d, ("",))[0].startswith("s3-") for d in unf):
+            out.append(i)
+    return out
+
+
+def running_mine_on_node(jobs: dict, me: str, node: str) -> list:
+    out = sh(["squeue", "-h", "--me", "-w", node, "-t", "R", "-o", "%i"]).split()
+    return [i for i in out if i != me]
+
+
 def add_dep(to: str, job: str):
     deps = [f"{k}:{d}" for k, d, s in parse_dep(dep_of(to)) if s == "unfulfilled"]
     deps.append(f"afterany:{job}")
@@ -115,6 +133,11 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     sub = ap.add_subparsers(dest="cmd")
     sub.add_parser("yield-target")
+    s = sub.add_parser("s3-timing-target")
+    s.add_argument("--me", required=True)
+    s = sub.add_parser("running-mine")
+    s.add_argument("--me", required=True)
+    s.add_argument("--node", required=True)
     sub.add_parser("next-icpe")
     s = sub.add_parser("add-dep")
     s.add_argument("--to", required=True)
@@ -130,6 +153,10 @@ def main():
         sys.exit(0 if ok else 1)
     if a.cmd == "yield-target":
         print(" ".join(yield_target(my_jobs())))
+    elif a.cmd == "s3-timing-target":
+        print(" ".join(s3_timing_target(my_jobs(), a.me)))
+    elif a.cmd == "running-mine":
+        print(" ".join(running_mine_on_node(my_jobs(), a.me, a.node)))
     elif a.cmd == "next-icpe":
         print(" ".join(next_icpe(my_jobs())))
     elif a.cmd == "add-dep":
