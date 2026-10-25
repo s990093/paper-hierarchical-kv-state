@@ -68,13 +68,14 @@ RHOS = ("1/16", "1/8", "1/4")
 TARGETS = ("int4", "bf16")
 CORE_SEL = ("ORACLE", "ORACLE-L", "EXACT-Q", "BASE-ATTN", "BASE-ATTN-L", "ONE-PASS")
 EXTRA_SEL = ("QUEST-512", "KSCAN-2b", "WRITE-TIME", "RANDOM", "RECENT", "SEQ")
+DIAG_SEL = ("ORACLE-NEEDLE",)             # 偏離 2：知道答案位置的對照（只報告、不參與 GA0 的判定）
 EXTRA_BASES = ("B16", "B32")
 DROP_SEL = ("ORACLE", "ORACLE-L", "BASE-ATTN")
 DROP_BASE = "B32"                         # 丟塊對照的 BASE-ATTN 用 B32 第一趟的挑法
 GRAN = {"ORACLE": "global", "ORACLE-L": "layer", "EXACT-Q": "global", "BASE-ATTN": "global", "BASE-ATTN-L": "layer",
         "ONE-PASS": "layer", "QUEST-512": "global", "KSCAN-2b": "global", "WRITE-TIME": "global", "RANDOM": "global",
-        "RECENT": "global", "SEQ": "global"}
-ORACLE_SEL = ("ORACLE", "ORACLE-L", "EXACT-Q")                                   # 不可部署
+        "RECENT": "global", "SEQ": "global", "ORACLE-NEEDLE": "global"}
+ORACLE_SEL = ("ORACLE", "ORACLE-L", "EXACT-Q", "ORACLE-NEEDLE")                                   # 不可部署
 GO_F = 1 / 12
 BYTES_TOL = 1.05
 EPS = 2.0                                     # 百分點
@@ -241,6 +242,8 @@ def tf_configs(model: str, nreg: int) -> list:
             for tgt in TARGETS:
                 for sel in CORE_SEL:
                     add(cfg_prog(base, rho, tgt, sel, info, nreg, "core"))
+                for sel in DIAG_SEL:
+                    add(cfg_prog(base, rho, tgt, sel, info, nreg, "diag"))
         if base in EXTRA_BASES:
             for rho in RHOS:
                 for sel in EXTRA_SEL:
@@ -599,7 +602,7 @@ def self_test() -> bool:
     kinds = {}
     for c in cfgs:
         kinds[c["kind"]] = kinds.get(c["kind"], 0) + 1
-    chk(f"配置數 {len(cfgs)} {kinds}", kinds.get("prog") == 144 and kinds.get("drop") == 18 and kinds.get("E0") == 1
+    chk(f"配置數 {len(cfgs)} {kinds}", kinds.get("prog") == 162 and kinds.get("drop") == 18 and kinds.get("E0") == 1
         and 8 <= kinds.get("uniform", 0) <= 26)
     chk("cid 唯一", len({c["cid"] for c in cfgs}) == len(cfgs))
     p = next(c for c in cfgs if c["cid"] == "P|B32|1/8|int4|ORACLE")

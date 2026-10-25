@@ -1,11 +1,11 @@
 {
- "run_id": "20261025-202338-adhoc",
- "ts": "2026-10-25T20:23:38+08:00",
+ "run_id": "20261025-204501-adhoc",
+ "ts": "2026-10-25T20:45:01+08:00",
  "cell": "Q32",
  "model": "qwen",
  "n_blocks": 64,
  "nreg": 63,
- "n_configs": 186,
+ "n_configs": 204,
  "sets": {
   "tf": {
    "seed0": 71000,
@@ -518,6 +518,26 @@
    "f": 0.08087642609126984
   },
   {
+   "cid": "P|B16|1/16|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 4,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 112896000,
+   "bytes_refine": 36700160,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.08087642609126984
+  },
+  {
    "cid": "P|B16|1/16|bf16|ORACLE",
    "kind": "prog",
    "base": "B16",
@@ -631,6 +651,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 112896000,
+   "bytes_refine": 117440512,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.12452721974206349
+  },
+  {
+   "cid": "P|B16|1/16|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/16",
+   "m": 4,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 112896000,
    "bytes_refine": 117440512,
    "bytes_index": 0,
@@ -758,6 +798,26 @@
    "f": 0.10071769593253968
   },
   {
+   "cid": "P|B16|1/8|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 8,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 112896000,
+   "bytes_refine": 73400320,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.10071769593253968
+  },
+  {
    "cid": "P|B16|1/8|bf16|ORACLE",
    "kind": "prog",
    "base": "B16",
@@ -871,6 +931,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 112896000,
+   "bytes_refine": 234881024,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.18801928323412698
+  },
+  {
+   "cid": "P|B16|1/8|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/8",
+   "m": 8,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 112896000,
    "bytes_refine": 234881024,
    "bytes_index": 0,
@@ -998,6 +1078,26 @@
    "f": 0.14040023561507936
   },
   {
+   "cid": "P|B16|1/4|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 16,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 112896000,
+   "bytes_refine": 146800640,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.14040023561507936
+  },
+  {
    "cid": "P|B16|1/4|bf16|ORACLE",
    "kind": "prog",
    "base": "B16",
@@ -1111,6 +1211,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 112896000,
+   "bytes_refine": 469762048,
+   "bytes_index": 0,
+   "bytes_shared": 22937600,
+   "f": 0.31500341021825395
+  },
+  {
+   "cid": "P|B16|1/4|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B16",
+   "spec": "xl:k20:v30:cal+q:int4_kivi",
+   "rho": "1/4",
+   "m": 16,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 112896000,
    "bytes_refine": 469762048,
    "bytes_index": 0,
@@ -1598,6 +1718,26 @@
    "f": 0.05963619171626984
   },
   {
+   "cid": "P|B24|1/16|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 4,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 73608192,
+   "bytes_refine": 36700160,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.05963619171626984
+  },
+  {
    "cid": "P|B24|1/16|bf16|ORACLE",
    "kind": "prog",
    "base": "B24",
@@ -1711,6 +1851,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 73608192,
+   "bytes_refine": 117440512,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.10328698536706349
+  },
+  {
+   "cid": "P|B24|1/16|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 4,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 73608192,
    "bytes_refine": 117440512,
    "bytes_index": 0,
@@ -1838,6 +1998,26 @@
    "f": 0.07947746155753968
   },
   {
+   "cid": "P|B24|1/8|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 8,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 73608192,
+   "bytes_refine": 73400320,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.07947746155753968
+  },
+  {
    "cid": "P|B24|1/8|bf16|ORACLE",
    "kind": "prog",
    "base": "B24",
@@ -1951,6 +2131,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 73608192,
+   "bytes_refine": 234881024,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.16677904885912698
+  },
+  {
+   "cid": "P|B24|1/8|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 8,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 73608192,
    "bytes_refine": 234881024,
    "bytes_index": 0,
@@ -2078,6 +2278,26 @@
    "f": 0.11916000124007936
   },
   {
+   "cid": "P|B24|1/4|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 16,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 73608192,
+   "bytes_refine": 146800640,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.11916000124007936
+  },
+  {
    "cid": "P|B24|1/4|bf16|ORACLE",
    "kind": "prog",
    "base": "B24",
@@ -2191,6 +2411,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 73608192,
+   "bytes_refine": 469762048,
+   "bytes_index": 0,
+   "bytes_shared": 19726336,
+   "f": 0.29376317584325395
+  },
+  {
+   "cid": "P|B24|1/4|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B24",
+   "spec": "xl:k17:v26:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 16,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 73608192,
    "bytes_refine": 469762048,
    "bytes_index": 0,
@@ -2318,6 +2558,26 @@
    "f": 0.05035884796626984
   },
   {
+   "cid": "P|B32|1/16|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 4,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 56448000,
+   "bytes_refine": 36700160,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.05035884796626984
+  },
+  {
    "cid": "P|B32|1/16|bf16|ORACLE",
    "kind": "prog",
    "base": "B32",
@@ -2431,6 +2691,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 56448000,
+   "bytes_refine": 117440512,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.09400964161706349
+  },
+  {
+   "cid": "P|B32|1/16|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/16",
+   "m": 4,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 56448000,
    "bytes_refine": 117440512,
    "bytes_index": 0,
@@ -2558,6 +2838,26 @@
    "f": 0.07020011780753968
   },
   {
+   "cid": "P|B32|1/8|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 8,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 56448000,
+   "bytes_refine": 73400320,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.07020011780753968
+  },
+  {
    "cid": "P|B32|1/8|bf16|ORACLE",
    "kind": "prog",
    "base": "B32",
@@ -2671,6 +2971,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 56448000,
+   "bytes_refine": 234881024,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.15750170510912698
+  },
+  {
+   "cid": "P|B32|1/8|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/8",
+   "m": 8,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 56448000,
    "bytes_refine": 234881024,
    "bytes_index": 0,
@@ -2798,6 +3118,26 @@
    "f": 0.10988265749007936
   },
   {
+   "cid": "P|B32|1/4|int4|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 16,
+   "target": "int4",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
+   "bytes_base": 56448000,
+   "bytes_refine": 146800640,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.10988265749007936
+  },
+  {
    "cid": "P|B32|1/4|bf16|ORACLE",
    "kind": "prog",
    "base": "B32",
@@ -2911,6 +3251,26 @@
     "core"
    ],
    "deployable": true,
+   "bytes_base": 56448000,
+   "bytes_refine": 469762048,
+   "bytes_index": 0,
+   "bytes_shared": 15138816,
+   "f": 0.28448583209325395
+  },
+  {
+   "cid": "P|B32|1/4|bf16|ORACLE-NEEDLE",
+   "kind": "prog",
+   "base": "B32",
+   "spec": "xl:k13:v20:cal+q:kv-int4_kivi-int2_kivi",
+   "rho": "1/4",
+   "m": 16,
+   "target": "bf16",
+   "selector": "ORACLE-NEEDLE",
+   "gran": "global",
+   "roles": [
+    "diag"
+   ],
+   "deployable": false,
    "bytes_base": 56448000,
    "bytes_refine": 469762048,
    "bytes_index": 0,

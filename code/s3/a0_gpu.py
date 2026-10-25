@@ -532,6 +532,10 @@ class Selections:
         nreg = self.sess.nreg
         if sel in ("ORACLE", "EXACT-Q", "BASE-ATTN"):
             return topm(self.mass[sel].sum(0), m)
+        if sel == "ORACLE-NEEDLE":                          # 偏離 2（診斷、不參與判定）：答案所在的塊先、其餘照 ORACLE 的分數
+            nd = sorted(set(self.st.needle))
+            rest = [j for j in topm(self.mass["ORACLE"].sum(0), nreg) if j not in set(nd)]
+            return (nd + rest)[:m]
         if sel in ("ORACLE-L", "BASE-ATTN-L"):
             M = self.mass[sel[:-2]]
             return [topm(M[l], m) for l in range(M.shape[0])]
@@ -609,7 +613,7 @@ def run_item(sess, st, cfgs, cell, mode: str):
         e0_gen = res
     finish(next(c for c in cfgs if c["cid"] == "E0"), res, t0)
     need = {c.get("selector") for c in cfgs if c["kind"] in ("prog", "drop")}
-    if need & {"ORACLE", "ORACLE-L", "EXACT-Q"}:
+    if need & {"ORACLE", "ORACLE-L", "EXACT-Q", "ORACLE-NEEDLE"}:
         sels.mass["ORACLE"], q_exact = sels.st.question_pass(want_q="EXACT-Q" in need)
     else:
         q_exact = None
@@ -715,6 +719,7 @@ def _loop(a, kind: str):
         keep = {"E0", "U|q:int4_kivi", f"U|{A.BASES['B32']}", "P|B32|1/8|int4|ORACLE", "P|B32|1/8|int4|ORACLE-L",
                 "P|B32|1/8|int4|EXACT-Q", "P|B32|1/8|int4|BASE-ATTN", "P|B32|1/8|int4|BASE-ATTN-L", "P|B32|1/8|int4|ONE-PASS",
                 "P|B32|1/8|int4|QUEST-512", "P|B32|1/8|int4|KSCAN-2b", "P|B32|1/8|int4|WRITE-TIME", "P|B16|1/16|bf16|ORACLE",
+                "P|B32|1/8|int4|ORACLE-NEEDLE",
                 "D|1/8|bf16|ORACLE", "D|1/8|int4|ORACLE-L", "D|1/8|bf16|BASE-ATTN"}
         cfgs = [c for c in cfgs if c["cid"] in keep]
         if not a.out:
@@ -810,19 +815,29 @@ def cmd_gpu_selftest(a):
     write_uniform(sess, st, A.BASES["B32"])
     st.comp.apply(want_array(sess, [], "global", ORIG, ORIG))
     out["compose_back_to_orig_equal_e0"] = bool(torch.equal(st.score(), lp0))
-    # 4. 分段編碼＝整段編碼（區內前 32 塊）
+    # 4. 分段編碼 vs 整段編碼（區內前 32 塊）：位元組要相同；cuBLAS 依列數挑 GEMM 演算法，fp32 捨入可能不同 → 不要求逐位元，
+    #    要求重建誤差（‖X̂−X‖／‖X‖）的差 ≤1%（偏離 1：所有格子固定分段 16 塊）
     stages = XS.validate(XS.parse_spec(A.BASES["B16"]), sess.info, sess.nreg)
     nb32 = min(32, sess.nreg)
     X = torch.cat([st.orig.block(j) for j in range(nb32)], dim=3)
     pos = torch.arange(CHUNK, (nb32 + 1) * CHUNK, device=km.device)
-    d_full, *_ = XS.t_pipeline(stages, X, pos, sess.cx, sess.info)
-    segs = []
+    d_full, _, by_full, _ = XS.t_pipeline(stages, X, pos, sess.cx, sess.info)
+    segs, by_seg = [], {}
     for j0 in range(0, nb32, 8):
         Xs = torch.cat([st.orig.block(j) for j in range(j0, j0 + 8)], dim=3)
         ps = torch.arange((j0 + 1) * CHUNK, (j0 + 9) * CHUNK, device=km.device)
-        segs.append(XS.t_pipeline(stages, Xs, ps, sess.cx, sess.info)[0])
-    out["segmented_encode_equal"] = bool(torch.equal(d_full, torch.cat(segs, dim=3)))
-    del X, d_full, segs
+        d, _, b, _ = XS.t_pipeline(stages, Xs, ps, sess.cx, sess.info)
+        segs.append(d)
+        for k, v in b.items():
+            by_seg[k] = v if k.startswith("shared.") else by_seg.get(k, 0) + v
+    d_seg = torch.cat(segs, dim=3)
+    nx = X.float().norm()
+    e_full, e_seg = float((d_full.float() - X.float()).norm() / nx), float((d_seg.float() - X.float()).norm() / nx)
+    out["segmented_bytes_equal"] = by_full == by_seg
+    out["segmented_relerr_full"], out["segmented_relerr_seg"] = round(e_full, 6), round(e_seg, 6)
+    out["segmented_frac_values_differ"] = round(float((d_full != d_seg).float().mean()), 6)
+    out["segmented_relerr_ok"] = abs(e_seg - e_full) <= 0.01 * e_full
+    del X, d_full, segs, d_seg
     # 5. INT4 store＝t_full_q 的一塊
     x = st.orig.block(3)
     y, _ = XS.t_full_q(x.contiguous(), "int4_kivi", CHUNK)
@@ -849,7 +864,7 @@ def cmd_gpu_selftest(a):
     out["oracle_top8"] = topm(mass.sum(0), 8)
     out["copies"] = [st.comp.n_block_copies, st.comp.n_layer_copies]
     out["mem_gb"] = round(torch.cuda.max_memory_allocated() / 2**30, 1)
-    must = ("forward_hooked_equal", "noop_hook_equal", "compose_back_to_orig_equal_e0", "segmented_encode_equal",
+    must = ("forward_hooked_equal", "noop_hook_equal", "compose_back_to_orig_equal_e0", "segmented_bytes_equal", "segmented_relerr_ok",
             "int4_equal_t_full_q", "onepass_m0_equal_base", "onepass_all_bf16_equal_e0", "oracle_mass_ok")
     ok = all(out[k] is True for k in must)
     out["pass"] = ok
