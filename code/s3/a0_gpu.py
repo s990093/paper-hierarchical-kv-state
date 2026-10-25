@@ -773,7 +773,12 @@ def _loop(a, kind: str):
     plan = json.load(open(os.path.join(A.OUT, f"plan_{a.cell}.json")))
     cfgs_all = plan["configs"]
     if kind == "gen":
-        sel = json.load(open(os.path.join(A.OUT, f"gen_selection_{a.cell}.json")))
+        sp = os.path.join(A.OUT, f"gen_selection_{a.cell}.json")
+        if a.smoke and not os.path.exists(sp):                     # 生成的冒煙：TF 還沒挑之前，用固定的一小組（不看任何分數）
+            sel = dict(configs=["E0", "U|q:int4_kivi", "P|B32|1/8|int4|ORACLE", "P|B32|1/8|int4|ORACLE-L", "P|B32|1/8|int4|BASE-ATTN",
+                                "P|B32|1/8|int4|BASE-ATTN-L", "P|B32|1/8|int4|ONE-PASS", "D|1/8|int4|ORACLE"])
+        else:
+            sel = json.load(open(sp))
         by = {c["cid"]: c for c in cfgs_all}
         cfgs = [by[cid] for cid in sel["configs"]]
         if a.cell == "L128":                                         # runs/M05_duo_heads.md：L128 的生成另外加 M05 的 3 個配置
@@ -781,15 +786,15 @@ def _loop(a, kind: str):
         sets, fields = ["gen1", "gen2"], A.GEN_FIELDS
     else:
         cfgs, sets, fields = cfgs_all, ["tf"], A.TF_FIELDS
-    if a.smoke:
+    if a.smoke and kind == "tf":
         keep = {"E0", "U|q:int4_kivi", f"U|{A.BASES['B32']}", "P|B32|1/8|int4|ORACLE", "P|B32|1/8|int4|ORACLE-L",
                 "P|B32|1/8|int4|EXACT-Q", "P|B32|1/8|int4|BASE-ATTN", "P|B32|1/8|int4|BASE-ATTN-L", "P|B32|1/8|int4|ONE-PASS",
                 "P|B32|1/8|int4|QUEST-512", "P|B32|1/8|int4|KSCAN-2b", "P|B32|1/8|int4|WRITE-TIME", "P|B16|1/16|bf16|ORACLE",
                 "P|B32|1/8|int4|ORACLE-NEEDLE",
                 "D|1/8|bf16|ORACLE", "D|1/8|int4|ORACLE-L", "D|1/8|bf16|BASE-ATTN"}
         cfgs = [c for c in cfgs if c["cid"] in keep]
-        if not a.out:
-            raise SystemExit("--smoke 要給 --out（冒煙的輸出不進 results）")
+    if a.smoke and not a.out:
+        raise SystemExit("--smoke 要給 --out（冒煙的輸出不進 results）")
     si, sk = A.parse_shard(a.shard)
     out = a.out or os.path.join(A.RAW, f"a0_{kind}_{a.cell}_s{si}.csv.gz")
     paths = sorted(set(glob_out(kind, a.cell)) | {out}) if not a.smoke else [out]

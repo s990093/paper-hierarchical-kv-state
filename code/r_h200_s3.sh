@@ -60,9 +60,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep) TIMING=0 ;;
+  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep) TIMING=0 ;;
   b0-run|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|gm06" >&2; exit 2 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|gm06" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -169,6 +169,8 @@ if [[ "$PART" == a0-* ]]; then
     step SELFTEST-$CELL m7run s3-a0-selftest-$CELL bash -c "python code/s3/a0.py gpu-selftest --cell $CELL --out \"\$RUN_DIR/gpu_selftest.json\""
     step SMOKE-$CELL m7run s3-a0-smoke-$CELL bash -c "python code/s3/a0.py tf --cell $CELL --smoke --max-items 2 --gm04 --out \"\$RUN_DIR/smoke_tf.csv.gz\""
   fi
+  # 生成的冒煙：單輪 1 題＋第 2 輪 1 題（--max-items 照題組的順序，第 2 輪的題在後面 → 用 --shard 讓兩組各出一題）
+  [ "$PART" = a0-gensmoke ] && step GENSMOKE-$CELL m7run s3-a0-gensmoke-$CELL bash -c "python code/s3/a0.py gen --cell $CELL --smoke --max-items 2 --shard 0/192 --out \"\$RUN_DIR/smoke_gen.csv.gz\""
   [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET" --gm04
   [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
 fi
