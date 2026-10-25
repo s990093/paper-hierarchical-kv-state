@@ -61,8 +61,39 @@ def next_icpe(jobs: dict) -> list:
     return [i for i, (n, st, rs) in jobs.items() if ICPE_TIMING.match(n) and st == "PENDING" and "Held" not in rs]
 
 
+HELD_GRACE_MIN = 60     # ICPE session 10/25 的要求：前一個 ICPE 量時間的 job 結束後這段時間內，hold 中的下一個也算「準備好了」
+
+
+def last_icpe_timing_end() -> float | None:
+    """最近一個已結束的 ICPE 量時間 job 的結束時間（epoch 秒）；查不到 → None。"""
+    import time as _t
+    out = sh(["sacct", "--me", "-X", "-n", "-P", "-S", "now-2days", "-o", "JobName,State,End"])
+    ends = []
+    for line in out.splitlines():
+        n, st, end = (line.split("|") + ["", "", ""])[:3]
+        if ICPE_TIMING.match(n) and end and end not in ("Unknown", "None") and not st.startswith(("PENDING", "RUNNING")):
+            try:
+                ends.append(_t.mktime(_t.strptime(end, "%Y-%m-%dT%H:%M:%S")))
+            except ValueError:
+                pass
+    return max(ends) if ends else None
+
+
+def held_icpe(jobs: dict) -> list:
+    return [i for i, (n, st, rs) in jobs.items() if ICPE_TIMING.match(n) and st == "PENDING" and "Held" in rs]
+
+
 def yield_target(jobs: dict) -> list:
     out = []
+    # hold 中的 ICPE 量時間 job：沒有其他沒 hold 的 ICPE 量時間 job 在排隊或在跑，而且上一個剛結束（≤ HELD_GRACE_MIN 分鐘）
+    # → ICPE session 正在看上一個的結果、馬上要放行它（10/25 的要求）→ 也讓位
+    active = [i for i, (n, st, rs) in jobs.items() if ICPE_TIMING.match(n) and ("Held" not in rs)]
+    held = held_icpe(jobs)
+    if held and not active:
+        import time as _t
+        last = last_icpe_timing_end()
+        if last is not None and _t.time() - last <= HELD_GRACE_MIN * 60:
+            out.append(min(held, key=int))
     for i in next_icpe(jobs):
         unf = [d for _, d, s in parse_dep(dep_of(i)) if s == "unfulfilled"]
         if unf and all(jobs.get(d, ("",))[0].startswith("s3-") for d in unf):
