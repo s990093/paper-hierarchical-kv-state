@@ -14,6 +14,9 @@
 #   sbatch --job-name=s3-a0smoke-L128 --time=1:00:00 code/r_h200_s3.sh --part a0-smoke --cell L128   # A0：校準＋gpu-selftest＋2 題冒煙（不進 results）
 #   sbatch --job-name=s3-a0tf-L128-0 --time=4:00:00 code/r_h200_s3.sh --part a0-tf --cell L128 --shard 0/1   # A0 TF 篩選的一個分片
 #   sbatch --job-name=s3-a0gen-L128-0 --time=4:00:00 code/r_h200_s3.sh --part a0-gen --cell L128 --shard 0/2 # A0 生成的一個分片
+#   sbatch --job-name=s3-b0prep --time=1:00:00 code/r_h200_s3.sh --part b0-prep                  # B0 冒煙（不量時間）：P0e、背景自檢、少量格子、MPS 冒煙
+#   sbatch --job-name=s3-b0-llama-b0-stream --time=4:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes stream,stream_hi  # 量時間
+#   sbatch --job-name=s3-b0-llama-b0-mps --time=6:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes mps,mps87,mps75,mps50  # 量時間（自動開 MPS）
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 排程（使用者 2026-10-25「排滿：stage3 品質先填空檔」，memory stage3-gpu-scheduling）：
@@ -36,7 +39,7 @@ if [ -z "${R_H200_S3_REEXEC:-}" ] && [ -n "${SLURM_JOB_ID:-}" ]; then
   echo "[r_h200_s3] 改執行 repo 裡的版本：$REPO/code/r_h200_s3.sh（git $(git -C "$REPO" rev-parse --short HEAD)）"
   exec bash "$REPO/code/r_h200_s3.sh" "$@"
 fi
-PART=""; DRY=0; LIST=0; FROM=""; CELL=""; SHARD="0/1"; BUDGET=210
+PART=""; DRY=0; LIST=0; FROM=""; CELL=""; SHARD="0/1"; BUDGET=210; MODEL=""; SETUP=""; MODES=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --part) PART="$2"; shift 2 ;;
@@ -46,14 +49,21 @@ while [ $# -gt 0 ]; do
     --cell) CELL="$2"; shift 2 ;;
     --shard) SHARD="$2"; shift 2 ;;
     --budget-min) BUDGET="$2"; shift 2 ;;
+    --model) MODEL="$2"; shift 2 ;;
+    --setup) SETUP="$2"; shift 2 ;;
+    --modes) MODES="$2"; shift 2 ;;
     -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "不認得的參數：$1" >&2; exit 2 ;;
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-tf|a0-gen) TIMING=0 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen" >&2; exit 2 ;;
+  fetch|a0-smoke|a0-tf|a0-gen|b0-prep) TIMING=0 ;;
+  b0-run) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run" >&2; exit 2 ;;
 esac
+if [ "$PART" = b0-run ]; then
+  [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
+fi
 case "$PART" in a0-*) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
 ICPE_TIMING_RE='^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$'     # r_h200_icpe.sh 裡 TIMING=1 的 part
 
@@ -132,6 +142,40 @@ if [[ "$PART" == a0-* ]]; then
   fi
   [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
   [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+fi
+
+# ---- B0＋G-M08（docs/stage3_design_20261024/runs/B0_interference.md）---------------------------------------
+# MPS：job 自己的 pipe／log 目錄（和 h200_queue/h2_mps_p4.sh 同一個做法）；結束時關 daemon、把 log 留在 run 的結果旁邊
+mps_on() {
+  [ "$DRY" = 1 ] && { echo "[mps_on]"; return 0; }
+  command -v nvidia-cuda-mps-control >/dev/null || { echo "[r_h200_s3] 找不到 nvidia-cuda-mps-control" >&2; return 2; }
+  export CUDA_MPS_PIPE_DIRECTORY=$S3_LOCAL/mps_pipe_${SLURM_JOB_ID} CUDA_MPS_LOG_DIRECTORY=$S3_LOCAL/mps_log_${SLURM_JOB_ID}
+  mkdir -p "$CUDA_MPS_PIPE_DIRECTORY" "$CUDA_MPS_LOG_DIRECTORY"
+  nvidia-cuda-mps-control -d || return 2
+  export GPU_GUARD_JOB_CGROUP_OWN=1
+  trap 'echo quit | nvidia-cuda-mps-control; sleep 2; mkdir -p $S3/b0/mps_log_$SLURM_JOB_ID; cp $CUDA_MPS_LOG_DIRECTORY/* $S3/b0/mps_log_$SLURM_JOB_ID/ 2>/dev/null; rm -rf $CUDA_MPS_PIPE_DIRECTORY $CUDA_MPS_LOG_DIRECTORY' EXIT
+  echo "[r_h200_s3] MPS daemon 開了（pipe $CUDA_MPS_PIPE_DIRECTORY）"
+}
+if [ "$PART" = b0-prep ]; then
+  step MODELS ensure_models llama qwen
+  step CALIB-llama ensure_calib llama
+  step CALIB-qwen ensure_calib qwen
+  step B0-ENV m7run s3-b0-env bash -c 'python code/s3/b0.py env --out "$RUN_DIR/env.json"'
+  for m in llama qwen; do
+    step B0-BGCHECK-$m m7run s3-b0-bgcheck-$m bash -c "python code/s3/b0.py bgcheck --model $m --out \"\$RUN_DIR/bgcheck_$m.csv\""
+  done
+  step B0-SMOKE m7run s3-b0-smoke bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes stream,stream_hi --bgs idle,decode:8:8192,cprefill:2048:65536 --prims h2d_batch,sm_gather_12,dq_int4,dq_fp8,dq_nvfp4,lr_recon,recompute1,e2e_cake_bf16_cpu,e2e_load_int4_b32 --reps 1 --out "$RUN_DIR/smoke.csv"'
+  step B0-SMOKE-M08 m7run s3-b0-smoke-m08 bash -c 'python code/s3/b0.py run --model qwen --setup m08 --modes stream --bgs idle,decode:4:258048 --prims recompute1,qprefill,lr_recon --reps 1 --out "$RUN_DIR/smoke_m08.csv"'
+  step MPS-ON mps_on
+  step B0-SMOKE-MPS m7run s3-b0-smoke-mps bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes mps,mps75 --bgs decode:32:8192 --prims recompute1,h2d_batch --reps 1 --out "$RUN_DIR/smoke_mps.csv"'
+fi
+if [ "$PART" = b0-run ]; then
+  step MODELS ensure_models "$MODEL"
+  step CALIB-$MODEL ensure_calib "$MODEL"
+  case "$MODES" in *mps*) step MPS-ON mps_on ;; esac
+  mkdir -p "$S3/b0/raw"
+  TAG=$(echo "$MODES" | tr ',' '-')
+  step B0-RUN m7run "s3-b0-$MODEL-$SETUP-$TAG" bash -c "python code/s3/b0.py run --model $MODEL --setup $SETUP --modes $MODES --reps 6 --seed 1 --out $S3/b0/raw/b0_${MODEL}_${SETUP}_${TAG}_\$RUN_ID.csv"
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_s3] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi
