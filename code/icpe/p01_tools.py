@@ -263,7 +263,7 @@ def cmd_analyze_c(a):
             for thr in (0.15, 0.05):
                 x = mm[(mm.headroom_v0 >= thr) != (mm.headroom_v >= thr)]
                 for _, r in x.iterrows():
-                    cross.append(dict(run_id=run_id(), ts=ts(), variant=V, exp="X1", threshold=thr, **{k: r[k] for k in k1},
+                    cross.append(dict(run_id=run_id(), ts=ts(), fvar=V, exp="X1", threshold=thr, **{k: r[k] for k in k1},
                                       headroom_v0=r.headroom_v0, headroom_v=r.headroom_v))
             e = pd.read_csv(os.path.join(P01, f"sim_{V}", "x5", "x5_headroom.csv"))
             m5 = e0.merge(e, on=k5, suffixes=("_v0", "_v"))
@@ -271,7 +271,7 @@ def cmd_analyze_c(a):
             for thr in (0.15, 0.05):
                 x = m5[(m5.headroom_v0 >= thr) != (m5.headroom_v >= thr)]
                 for _, r in x.iterrows():
-                    cross.append(dict(run_id=run_id(), ts=ts(), variant=V, exp="X5", threshold=thr, **{k: r[k] for k in k5},
+                    cross.append(dict(run_id=run_id(), ts=ts(), fvar=V, exp="X5", threshold=thr, **{k: r[k] for k in k5},
                                       headroom_v0=r.headroom_v0, headroom_v=r.headroom_v))
     keys = ("x1_registered", "x1_H3600", "x5_registered")
     judged = {V: (None if not words.get(V) or not words.get("V0") else all(words[V][k] == words["V0"][k] for k in keys))
