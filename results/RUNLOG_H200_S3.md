@@ -146,3 +146,27 @@
 **修正**（`fix(s3)` commit）: 只有等的全是 stage-3 **品質** job（或什麼都不等）的計時 job 才算準備好；在等鏈上前一個 s3-T 或 ICPE 的都不算。
 **補救**: 重新送出正確的 job：Q256 22296／22297、Q14-256 22298–22301、L32 22302、Q32 22303、G-M12 品質 22304／22305、B0 冒煙 2 22306、D0 22307（都加進 ICPE 22233 的依賴）。錯誤重送的 22282–22294 還在佇列裡（排在整條計時鏈之後）：取消要使用者同意（scancel 被權限擋下）；不取消的話，它們輪到時題目都已做完，會直接結束。
 **同時合進來的**: 另一個 session 的 NUMA 紀錄（main `5d0ae0c`：`code/s3/numa_probe.py`，b0／w0／gfio／gm12／gm06 只多記錄欄位，判定不讀）；合併後所有自檢 PASS。
+
+---
+
+## S3-GUARD-1 — GpuWatcher 在 nvidia-smi 逾時後停止監看，卻照樣報 CLEAN（2026-10-25 21:44:46 +08；已修）
+
+**看到的**: hgx-cn01 上四個同時在跑的 run，stderr 都有同一段 traceback：監看執行緒呼叫 `nvidia-smi --query-gpu=index,uuid` **逾時 20 秒** → `gpu_guard.SmiUnavailable` → 執行緒結束。四個 stderr.log 的最後修改時間都是 **21:44:46.44x**（＝節點上的 nvidia-smi 同時卡住）。之後不再取樣；結束時 `__exit__` 補的那一次取樣成功，`*.gpu_guard.json` 寫 `verdict: CLEAN`、`n_dirty_samples: 0`。
+- 受影響的 run：`20261025-210503-s3-a0-tf-L128-s0`（job 22250，還在跑）、`20261025-212904-s3-a0-tf-Q128-s0`（job 22251，還在跑）、`20261025-214036-s3-a0-smoke-Q14-256`（job 22253，冒煙、不進 results）、ICPE 的 `20261025-210417-icpe-p11-gen-llama`（job 22236，另一個 checkout `paper-hierarchical-kv-state`；不是我的 run，只通知）。四個都是品質 run。
+**影響**: 品質規則（CLAUDE.md §3）：分數保留，時間欄本來就不用。但 22250／22251 在 **21:44:46 以後**寫的列，`own_gpu_intruders` 記的是 0，實際上那段時間**沒人在看**（NOT_OBSERVED），結束時的 gpu_guard.json 也會寫 CLEAN。這兩個 run 的爭用紀錄要讀成：21:44:46 之前有看、之後沒有。A0 的判準只用分數，不受影響；它們的 `t_cfg_s`／`t_prefill_s` 不得用來下任何時間結論（本來就不用）。
+**為什麼重要**: 同一個監看也包住 B0 的量時間 run（`b0.py run` 用 `m16_c1a_predict.start_watch`）。在量時間的 run 裡發生的話，被污染的時間會被標成乾淨（規則 7：查不到 ≠ 沒有）。
+**修正**（`fix(s3)` commit）: `GpuWatcher._try_sample`：每次 `SmiUnavailable` 都記進 `smi_failures`（時間＋錯誤），照樣繼續取樣；有任何失敗 → `contaminated=True`、`verdict=UNOBSERVED_DURING_RUN`、報告多 `n_smi_failures`／`smi_failures`；`m16_c1a_predict.intruders()` 在有失敗後每列寫 `UNOBSERVED:<外來者數>`（下游的計數把它算成「有外來者」，是保守的一邊）。`code/test_gpu_guard_slurm.py` 加一個測試（10 個全過）。只改本 worktree（main）；正在跑的 22250／22251 已載入舊程式，不受影響。
+**還不知道**: nvidia-smi 為什麼卡住、卡了多久：NOT_MEASURED（監看只知道「超過 20 秒」）。
+
+## S3-A0-SMOKE-Q14 — A0 Q14-256 冒煙（job 22253；2026-10-25 21:35–21:50 +08）
+
+**狀態**: PASS（程式）
+**run_id**: `20261025-213508-s3-a0-calib-qwen14`、`20261025-213607-s3-a0-selftest-Q14-256`、`20261025-214036-s3-a0-smoke-Q14-256`
+**指令**: `sbatch --job-name=s3-a0smoke-Q14-256 ... code/r_h200_s3.sh --part a0-smoke --cell Q14-256`
+**看到的**: 校準 qwen14 exit 0（R＝3072）；gpu-selftest 全部 true（`pass: true`；store＝host、seg＝16；mem 107.8 GB）；TF 冒煙 2 題 × 17 個配置跑完、exit 0（每題 prefill 約 87–88 s、一題 122–154 s）。監看在 21:44:46 掛掉（S3-GUARD-1），冒煙的輸出不進 results。分數沒有看（冒煙只驗程式）。
+
+## S3-A0-GENSMOKE — A0 生成路徑的冒煙（送出 2026-10-25 22:0x +08）
+
+**為什麼**: 生成那條路（含第 2 輪的尾段、L128 的 M05 三個配置）還沒在 GPU 上跑過；TF 挑完配置就要送 288 題的生成分片，先驗程式。
+**做法**: `--part a0-gensmoke --cell L128`：`a0.py gen --smoke --max-items 2 --shard 0/192` → 單輪 1 題（`T2_front-back_s72000`）＋第 2 輪 1 題（`T2_front-back_s73000`）；配置是固定的 8 個（E0、U|q:int4_kivi、P|B32|1/8|int4|{ORACLE, ORACLE-L, BASE-ATTN, BASE-ATTN-L, ONE-PASS}、D|1/8|int4|ORACLE）＋M05 的 3 個，**不看任何 TF 分數挑**；輸出在 run 目錄，不進 results。
+**送出**: job **22308**（加進 ICPE 22233 的依賴）。ICPE 22233 現在只剩在等 stage-3 的 job，照讓位規則，22308 和其他排隊中的品質分片開跑時會讓位到 22233 之後。

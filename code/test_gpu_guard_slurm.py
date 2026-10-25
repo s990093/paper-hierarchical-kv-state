@@ -6,6 +6,7 @@
   3. 看得到整個節點、沒有外來 process → QUIET（原本的判斷照舊）。
   4. 不在 Slurm、AMD：行為和改之前一樣。
   5. smi_index：CUDA_VISIBLE_DEVICES 對到 nvidia-smi 的哪張卡；對不上就丟錯，不猜。
+  6. GpuWatcher 取樣中 nvidia-smi 逾時：執行緒不死、照樣繼續取樣，結果不能是 CLEAN（10/25 21:44:46 實例）。
 
   python code/test_gpu_guard_slurm.py      # 全部通過印 ALL OK，失敗丟 AssertionError
 """
@@ -140,6 +141,35 @@ def test_smi_index():
         except gg.SmiUnavailable:
             continue
         raise AssertionError(f"smi_index should raise for {kw} logical={logical}")
+
+
+
+def test_watcher_survives_smi_failure():
+    state = {"fail": False, "n": 0}
+
+    def _smi(query, extra=None):
+        state["n"] += 1
+        if state["fail"]:
+            raise gg.SmiUnavailable("nvidia-smi 執行失敗：timed out after 20 seconds")
+        return {"gpu=index": [["0"]], "gpu=index,uuid": [["0", "GPU-0000"]],
+                "compute-apps=gpu_uuid,pid,used_memory": []}[query]
+    with mock.patch.object(gg, "vendor", lambda: "nvidia"), mock.patch.object(gg, "_smi", _smi), \
+         mock.patch.object(gg, "_holders", lambda gpu: {}, create=True):
+        w = gg.GpuWatcher(gpu=0, poll_s=0.01)
+        try:
+            w.__enter__()
+        except Exception:                    # foreign_on 在這台機器上需要的其他查詢：跳過開頭的檢查，直接測取樣
+            w.started_clean = True
+        w._sample = lambda: _smi("gpu=index,uuid")
+        state["fail"] = True
+        w._try_sample()
+        w._try_sample()
+        state["fail"] = False
+        w._try_sample()                      # 恢復後照樣取樣
+        assert len(w.smi_failures) == 2, w.smi_failures
+        assert w.contaminated and w.verdict() == "UNOBSERVED_DURING_RUN", w.verdict()
+        assert w.report()["n_smi_failures"] == 2
+        w._stop.set()
 
 
 if __name__ == "__main__":

@@ -154,7 +154,11 @@ def host_level() -> str:
 
 
 def intruders(watch):
-    return "NOT_CHECKED" if watch is None else len(watch.intruders)
+    if watch is None:
+        return "NOT_CHECKED"
+    if getattr(watch, "smi_failures", None):          # 監看有一段時間查不到（gpu_guard 10/25）→ 不能報 0
+        return f"UNOBSERVED:{len(watch.intruders)}"
+    return len(watch.intruders)
 
 
 def finish_watch(watch, out: str):

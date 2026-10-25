@@ -423,6 +423,7 @@ class GpuWatcher:
     started_clean: bool | None = None
     paused_intervals: list[dict] = field(default_factory=list)
     discarded_samples: int = 0
+    smi_failures: list[dict] = field(default_factory=list)
     _pause_gen: int = 0
     _paused: threading.Event = field(default_factory=threading.Event)
     _stop: threading.Event = field(default_factory=threading.Event)
@@ -430,7 +431,8 @@ class GpuWatcher:
 
     @property
     def contaminated(self) -> bool:
-        return bool(self.intruders) or self.started_clean is False
+        # 取樣失敗過 → 那段時間沒人在看，不能說乾淨（規則 7）
+        return bool(self.intruders) or self.started_clean is False or bool(self.smi_failures)
 
     def pause(self, reason: str):
         """自己的 server 關閉期間暫停取樣。
@@ -474,9 +476,17 @@ class GpuWatcher:
         if f:
             self.samples.append({"ts": now, "foreign": f})
 
+    def _try_sample(self) -> None:
+        """2026-10-25 21:44:46 hgx-cn01：nvidia-smi 全節點卡住 >20 s，SmiUnavailable 讓監看執行緒直接死掉，
+        之後不再取樣、結束時仍報 CLEAN（規則 7：查不到 ≠ 沒有）。現在每次失敗都記下來，照樣繼續取樣。"""
+        try:
+            self._sample()
+        except SmiUnavailable as e:
+            self.smi_failures.append({"ts": datetime.now().astimezone().isoformat(), "error": str(e)[:300]})
+
     def _loop(self) -> None:
         while not self._stop.wait(self.poll_s):
-            self._sample()
+            self._try_sample()
 
     def __enter__(self) -> GpuWatcher:
         pre = foreign_on(self.gpu, self.own_root)
@@ -493,7 +503,7 @@ class GpuWatcher:
         self._stop.set()
         if self._t:
             self._t.join(timeout=self.poll_s + 2)
-        self._sample()
+        self._try_sample()
         if self.out_path:
             Path(self.out_path).parent.mkdir(parents=True, exist_ok=True)
             Path(self.out_path).write_text(json.dumps(self.report(), indent=2) + "\n")
@@ -508,6 +518,8 @@ class GpuWatcher:
             "n_dirty_samples": len(self.samples),
             "paused_intervals": self.paused_intervals,
             "discarded_samples_overlapping_pause": self.discarded_samples,
+            "n_smi_failures": len(self.smi_failures),
+            "smi_failures": self.smi_failures[:50],
         }
 
     def verdict(self) -> str:
@@ -515,6 +527,8 @@ class GpuWatcher:
             return "CONTAMINATED_AT_START"
         if self.intruders:
             return "CONTAMINATED_DURING_RUN"
+        if self.smi_failures:
+            return "UNOBSERVED_DURING_RUN"
         return "CLEAN"
 
 
