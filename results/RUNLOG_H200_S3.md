@@ -240,3 +240,11 @@
 **修正**（`fix(s3-b0)`）: 每個背景結束時 `rate_fn = None`、`del bg`、`gc.collect()`、`empty_cache()`，並印釋放後的已配置量。釋放乾淨時：目標 60.5＋背景 64 ≈ 125 GiB < 139.8。
 **部分輸出**: 這個 run 在失敗前寫進 `results/s3_h200/b0/raw/` 的 CSV、gpu_guard.json、_numa.json 搬到 run 目錄（`*.FAILED_RUN`），不進 results；沒有看任何時間數字。整個 run 重量。
 **重送**: llama b0 stream,stream_hi 排到量時間鏈最後（afterany:22281）。下一個 22272（qwen b0）開跑時會用修正後的程式（另跑 qwen／b0 的閘）。
+
+## S3-B0-RUN-qwen-b0 — B0 qwen b0（stream, stream_hi）量完（job 22272，2026-10-26 07:05–08:0x）
+
+**狀態**: 完成（只記執行狀態；B0 的判定等全部 8 個 run 做完、`b0.py report` 之後）
+**run_id**: 閘 `B0-GATE-qwen-b0`（07:05–07:08 PASS）；量測 `20261026-070828-s3-b0-qwen-b0-stream-stream_hi`
+**指令**: `sbatch --job-name=s3-T-b0-qwen-b0-stream --time=3:00:00 --dependency=afterany:22271 code/r_h200_s3.sh --part b0-run --model qwen --setup b0 --modes stream,stream_hi`
+**產出**: `results/s3_h200/b0/raw/b0_qwen_b0_stream-stream_hi_20261026-070828-s3-b0-qwen-b0-stream-stream_hi.{csv,gpu_guard.json,_numa.json}`
+**完整性**: 2016 列（8 背景 × 2 模式 × 21 原語 × 6 次）；guard `CLEAN`（`n_smi_failures` 0）、每列 `own_gpu_intruders` 0；`numa_local` 全 `yes`；`host_level` 全 `UNOBSERVABLE_HOST`（Slurm cgroup，照規則照實記）；每列都有 `n_rep`＝6、`sigma_rel`、`delta_star`。背景釋放後 GPU 已配置量維持約 40 GiB（S3-B0-FAIL-1 的修正有效）。時間數字還沒看。
