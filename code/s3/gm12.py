@@ -30,6 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
 import a0 as A  # noqa: E402
+import numa_probe as NP  # noqa: E402（只記錄：speed 是 GPU 上的重算，計時區間不碰主機緩衝 → 只記卡與 cpuset 在哪個節點）
 
 CHUNK = 512
 OUT = os.path.join(A.REPO, "results", "s3_h200", "gm12")
@@ -197,6 +198,8 @@ def cmd_speed(a):
     torch.cuda.synchronize()
     pooled = init_pooled(km, nb)
     rows, rid = [], A.run_id()
+    numa = NP.probe(torch.cuda.current_device())
+    print("[gm12] NUMA：", json.dumps(numa["summary"], ensure_ascii=False), flush=True)
     for i in SPEED_BLOCKS:
         for arm in ["dense"] + [f"sparse{d}" for d in DENS]:
             ts_ = []
@@ -222,6 +225,7 @@ def cmd_speed(a):
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
+    print("[gm12] NUMA 存在", NP.save(p, rid, start=numa), flush=True)
 
 
 def cmd_gpu_selftest(a):

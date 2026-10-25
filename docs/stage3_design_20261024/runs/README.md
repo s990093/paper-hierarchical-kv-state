@@ -59,6 +59,8 @@ H200 節點是 2× EPYC 9554。pinned 記憶體和卡不在同一個 NUMA 節點
 | P0e（`b0.py env`） | `env.json` 的 `numa`（另配 64 MiB pinned 來查） |
 | W0（`w0.py run`） | 每列同樣四欄（緩衝＝CPU 編碼讀的那份 KV，一般記憶體）；另存 `<名稱>_numa.json`（start、end） |
 | G-fio（`gfio.py run`） | `_fs.json` 的 `numa`（job 的 cpuset 與看得到的卡；gfio 不用 pinned 記憶體，所以沒有緩衝欄） |
+| G-M12 速度（`gm12.py speed`） | `gm12s_*_numa.json`（卡與 cpuset；計時區間只有 GPU 重算、不碰主機緩衝，所以沒有加欄） |
+| G-M06＋M07（`gm06.py run`） | 每列 `src_numa`（那一列用的來源 pinned 實際在哪個節點，h2d_simul 逐卡列出）；`gm06_<run_id>_numa.json`（srcs、big、numa_local、numa_remote）。卡的節點本來就記在 `topo_<run_id>.json` |
 
 - **判準一律不變**。`numa_local` 不進任何判定，B0、W0、G-fio 的登記也不改。
 - `numa_local≠yes` 的 run 怎麼處理，**還沒有規則**：先照實回報，要不要重量由使用者決定。
