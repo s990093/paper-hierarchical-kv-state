@@ -129,3 +129,21 @@
 **(a)**（`20261022-234955-icpe-p01a-analyze`，head node）：S5 對 S4+（回來請求 TTFT 中位數，rep 0–5 合併，正＝S5 快）cpu 0.25／0.5／1.0 ＝ **+0.07%／−0.47%／+0.03%**，δ\*＝5%（C4 δ 0.03%）→ **三格都成立 → (a) 成立**。平均值版 +0.74／−0.09／+0.03%；S5 對最好的簡單策略 −16.2%（S4）／−26.0%（S1）／−0.05%（S2b）；舊合併組（sdpa）−0.03／−0.12／+0.03%。污染列 0、kv_bad 0。產出 `p01a_table.csv`、`p01a_verdict.json`、`b/b_share.csv.gz`。
 **(b) 暫定**（`20261022-235022-icpe-p01b-analyze-provisional` 含重疊的 run；`…-icpe-p01b-analyze-excl` 排除後）：24 格 **0 翻轉**（兩種都是）；弱變化 1 格：Llama CPU 層閒 E0，sdpa 平手（Cake 0.0844／全部載入 0.0852 s）→ fa3 全部載入較快（Cake 0.1002／0.0849：fa3 時 Cake 反而變慢，原因沒查）。慢層每格都還是 Cake 最好（fa3 的 Cake 快 4–19%）。G5b ÷ 最好（只報告，S0）：sdpa 1.21、fa3 1.33。排除重疊的 run 後 Qwen fa3 每格只剩 5 次 → 判定要等 `p01brr` 重跑才定。
 **排程（2026-10-22 23:5x）**：使用者要 lab 的 GPU 先給 DL_Lab4（另一個 session 照使用者的要求 hold 了 21655、21656、21662、21663、21669、21670）。我只把 21656、21669 的依賴改回 `afterany:21655`（放行時 P0-2 先自己跑，不和 CPU／品質 job 重疊），沒有放行、沒有重送。使用者說可以之後：先送 `p01brr`（afterany 無），再 `scontrol release`，並讓 21655 接在 `p01brr` 後面。
+
+---
+
+## ICPE 恢復排程（2026-10-25T11:34Z，使用者：「先跑重跑 p01brr，確認後再 release，繼續 ICPE」）
+**節點狀態（`date -u` 11:31Z）**：DL_Lab4 還有 2 個在跑（21907 `J_kd`，時限到 10/26 06:35 +08；21779 `final_ens`，10/25 19:26 +08 剛開跑，時限 16 h），2 個排著（21905 `final2` afterany:21779；21909 `final3` afterany:21907,21905）。照 memory h200-no-self-cotenancy-for-timing（DL_Lab4 算自己的），量時間的 `p01brr` 現在開跑只會被 runner 擋下退出 → **量時間的 job 改排在 DL_Lab4 這 4 個之後**；不量時間的先跑（和 DL_Lab4 同時跑不違反規則：DL_Lab4 不量時間）。
+**改動**（沒有改任何 DL_Lab4 的 job）：
+| job | 名稱 | 依賴（新） | 狀態 |
+|:--|:--|:--|:--|
+| 21656 | `icpe-cpu` | 無（原 afterany:21655） | release → 11:34Z 開跑 |
+| 21669 | `icpe-p11q` | 無（原 afterany:21655） | release → 等 account 的 4 卡上限（MaxGRESPerAccount） |
+| 21662 | `icpe-p12` | afterany:21656（不變） | release |
+| **22233** | `icpe-p01brr`（新送，0:30） | afterany:21656:21662:21669（ICPE 不量時間的）＋21779:21905:21907:21909（DL_Lab4） | 不 hold |
+| 21655 | `icpe-p02` | **afterany:22233** | **仍 hold**：p01brr 跑完、我看過（含 sacct 對照有沒有和自己的 job 重疊）才放 |
+| 21663 | `icpe-p2` | **afterany:21655**（原 afterany:21662,21669） | 仍 hold |
+| 21670 | `icpe-p11t` | afterany:21663（不變） | 仍 hold |
+- account `ChihChungHsu` 的上限：gres/gpu＝4、cpu＝64（`sacctmgr`），lab 其他人的 job 也算在裡面。`cpu`／`p12` 只用 CPU 但 runner 要一張卡（smi_index 檢查），所以也占一格。
+- 若 DL_Lab4 之後又送新的 job 到 hgx-cn01，量時間的 part 開跑時會被 runner 擋下（exit 2），跑到一半才開始的只能事後用 sacct 對照、照重疊重跑。
+- origin/main 從上次 merge 後多了 24 個 commit（含 `code/m10_speed.py`：`M10_BUSY_SCRIPT` 環境變數，沒設時行為不變）。**ICPE 的量時間跑完之前不 merge**（p01brr 要和原本 (b) 同一份程式）；寫 ICPE_EVIDENCE 之前再 merge。
