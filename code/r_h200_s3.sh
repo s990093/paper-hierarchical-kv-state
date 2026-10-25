@@ -59,14 +59,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-tf|a0-gen|b0-prep) TIMING=0 ;;
-  b0-run|w0gfio) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio" >&2; exit 2 ;;
+  fetch|a0-smoke|a0-tf|a0-gen|b0-prep|gm12-q) TIMING=0 ;;
+  b0-run|w0gfio|gm12-s) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
 fi
-case "$PART" in a0-*) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
+case "$PART" in a0-*|gm12-q) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
 ICPE_TIMING_RE='^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$'     # r_h200_icpe.sh 裡 TIMING=1 的 part
 
 # 模型權重：本地 /tmp（code/s3/fetch_models.py）。env_h200.sh 的 M7_*_GLOB 用 ${HF_HOME}，所以先設 HF_HOME
@@ -191,6 +191,19 @@ if [ "$PART" = b0-run ]; then
   mkdir -p "$S3/b0/raw"
   TAG=$(echo "$MODES" | tr ',' '-')
   step B0-RUN m7run "s3-b0-$MODEL-$SETUP-$TAG" bash -c "python code/s3/b0.py run --model $MODEL --setup $SETUP --modes $MODES --reps 6 --seed 1 --out $S3/b0/raw/b0_${MODEL}_${SETUP}_${TAG}_\$RUN_ID.csv"
+fi
+
+# ---- G-M12（runs/G_M12_sparse_recompute.md）-----------------------------------------------------------------
+if [ "$PART" = gm12-q ]; then
+  M=$(python3 -c "import sys; sys.path.insert(0, 'code/s3'); import a0; print(a0.CELLS[sys.argv[1]]['model'])" "$CELL")
+  SI=${SHARD%%/*}
+  step MODELS ensure_models "$M"
+  [ "$SI" = 0 ] && step GM12-SELFTEST-$CELL m7run s3-gm12-selftest-$CELL bash -c "python code/s3/gm12.py gpu-selftest --cell $CELL --out \"\$RUN_DIR/gm12_selftest.json\""
+  step GM12-Q-$CELL-$SI m7run s3-gm12-q-$CELL-s$SI python code/s3/gm12.py quality --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+fi
+if [ "$PART" = gm12-s ]; then
+  step MODELS ensure_models llama qwen
+  for m in llama qwen; do step GM12-S-$m m7run s3-gm12-s-$m python code/s3/gm12.py speed --model $m; done
 fi
 
 # ---- W0、G-fio（runs/W0_write_cost.md、runs/G_fio.md）------------------------------------------------------
