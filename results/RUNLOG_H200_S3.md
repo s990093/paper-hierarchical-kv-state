@@ -113,3 +113,26 @@
 **量時間的鏈（s3-T-*，afterany ICPE 的 p11t 21670，一個接一個）**：22271 B0 llama b0 stream → 22272 qwen b0 stream → 22273 llama m08 stream → 22274 qwen m08 stream → 22275 llama b0 MPS → 22276 qwen b0 MPS → 22277 llama m08 MPS → 22278 qwen m08 MPS → 22279 W0＋G-fio → 22280 G-M12 速度 → 22281 G-M06（4 卡）。
 **排程規則的補強**：stage-3 量時間的 job 開跑時有我們別的 job 在跑 → 重送排在它們之後（不失敗）；品質的 job 讓位給「只剩在等 stage-3」的 s3-T-*（和 ICPE 同一個規則；`code/s3/sched.py`）。ICPE 量時間的 job 若在 p01brr 結束後 hold 中（等 ICPE session 檢查），60 分鐘內也讓位（ICPE session 的要求）。
 **觀察**：DL_Lab4 的 21907（J_kd）、21909（final3）在 2026-10-25 21:03:08 被取消（不是這個 session、也不是 ICPE session 取消的）。
+
+---
+
+## S3-NUMA — 量時間的 run 記 NUMA 位置（只記錄；使用者要求，2026-10-25）
+
+**狀態**: 程式改好；在 lab-3090 上驗過程式（**不是 H200**）；H200 上還沒跑過
+**為什麼**: `docs/H200_SLURM.md` 第 158 行寫了兩件事：pinned 記憶體要和卡在同一個 NUMA 節點；每個 job 拿到的卡可能不同，要每次記錄。但 stage-3 的程式沒有記：`b0.py env` 只有 torch、SM、stream 優先權、green context、MPS；pinned 配置（`b0.py` 的 `contig_host`、`m7_model.host_chunk`、`m10_speed.Bench`）也沒有綁 NUMA。
+**改的檔**: 新增 `code/s3/numa_probe.py`；`code/s3/b0.py`（`env` 加 `numa`；`run` 每列多 `gpu_numa`、`cpuset_numa`、`buf_numa`、`numa_local`，另存 `<名稱>_numa.json`，含 start／bench／end 三個時點）；`code/s3/w0.py`（同樣四欄＋`_numa.json`）；`code/s3/gfio.py`（`_fs.json` 加 `numa`）。runner 沒改。規則寫在 `docs/stage3_design_20261024/runs/README.md` 的「共同規則：NUMA 位置」。
+**判準**: 不變。`numa_local` 不進任何判定；`numa_local≠yes` 的 run 先回報，要不要重量由使用者決定（還沒定規則）。
+**程式驗證（lab-3090，driver 550.163.01、kernel 6.8.0-138；沒有 run_id，不進 results，不是 H200 的數字）**
+- `numa_probe.py --self-test` 在 Mac（只有邏輯；move_pages 照實印 NOT_AVAILABLE）和 lab-3090 上都 PASS。lab-3090 上，一般記憶體與 libcuda `cuMemHostAlloc` 配的 pinned 記憶體，抽樣的每一頁都查得到節點。
+- `torch_gpu`：torch 2.6 只有 `uuid`（沒有 `pci_*` 屬性），用 uuid 對 nvidia-smi，GPU 5 → `0000:8b:00.0` → 節點 1，和 sysfs 一致。
+- 用假的 Target 走 B0 的寫列路徑（`measure_block`、`probe_numa`、`NP.save`）：CSV 有四欄，sidecar 有 start／bench／end，end 含 `bench_bf`、`bench_lp`。`taskset -c 0-23`（節點 0）＋GPU 5（節點 1）→ `numa_local=no`；`taskset -c 24-47`（節點 1）→ `yes`。
+- **看到的現象（lab-3090）**: `b0.py env` 在 `taskset -c 24-47`（節點 1）、GPU 5（節點 1）下，64 MiB pinned 抽樣 64 頁有 **57 頁在節點 0**。當時節點 1 的 MemFree 0.47 GiB（其餘多為 page cache，FilePages 約 78 GiB），`zone_reclaim_mode=0`，所以 kernel 沒有先回收本地 page cache，而是直接配到節點 0。**cpuset 對了，不代表 pinned 就在同一邊**。這就是 probe 另外記每個節點可用記憶體的原因。
+**H200 上還不知道（NOT_VERIFIED）**: H200 的 driver 與 kernel 和 lab-3090 不同，move_pages 查不查得到 pinned 頁要看第一個 `b0-prep`／`b0-run` 的輸出；查不到時會寫 NOT_AVAILABLE（附原因），不會當成 yes。
+**合併 main 之後補的（同一天）**: main 新增了兩個量時間的 part，也接上記錄：`gm12.py speed`（只記 sidecar，因為計時區間不碰主機緩衝）、`gm06.py run`（每列 `src_numa`＋sidecar）。
+**順手發現的 gm06 問題（沒有改，待決定）**: 在 lab-3090 上跑縮小版 `gm06.cmd_run`（GiB 換成 MiB、2 張卡、拓撲用替身；只驗記錄，不是量測）時，`numa_remote` 要求綁節點 0，但頁實際在**節點 1**。用 torch 2.6 單獨重現後確認原因：
+- `set_mempolicy` 本身有效：全新配置的 6 MiB 綁節點 0 → 64／64 頁在節點 0。
+- 問題在 gm06 的順序：先 `pinned(4 GiB, local)`、`del`，再 `pinned(4 GiB, remote)`。torch 的 pinned 快取把**同一塊**（位址相同）還回來，所以 remote 拿到的還是 local 那塊。
+- 先呼叫 `torch._C._host_emptyCache()` 再配 → 正確落在節點 0。
+
+影響：M07 的「NUMA 本地／遠端差」是登記裡的「另報」項目，不進 G-M06 的判準（k＝2 加速 ≥1.6）。照現在的程式跑，遠端那一列量到的會是本地記憶體。G-M06 在 H200 上已排隊（S3-QUEUE-1 的 22281，量時間的鏈最後一個），還沒跑。改 gm06 的量法不在「只記錄」的範圍內，而且是另一個 session 的程式，所以先不改，待使用者決定。新的 `src_numa` 欄就算不修也會把這件事照實記下來。H200（torch 2.13）的快取行為：NOT_VERIFIED。
+**失敗與異常**: 無。

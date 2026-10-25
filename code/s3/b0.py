@@ -34,6 +34,7 @@ CODE = os.path.dirname(HERE)
 REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
+import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
 
 OUT = os.path.join(REPO, "results", "s3_h200", "b0")
 CHUNK = 512
@@ -61,7 +62,7 @@ WINDOW_S = 1.0                                                    # 一次「量
 FIELDS = ["run_id", "ts", "model", "setup", "ctx_tokens", "bg", "bg_tokens_per_step", "mode", "prim", "production", "rep",
           "order_idx", "n_exec", "t_med_s", "t_p95_s", "t_min_s", "t_window_s", "bg_steps", "bg_rate", "bg_solo_rate", "bg_ratio",
           "n_rep", "sigma_rel", "delta_star", "p95_sigma_rel", "p95_delta_star", "bg_solo_sigma_rel", "bg_delta_star",
-          "unit_blocks", "bytes", "seed", "gpu_mem_gib", "host_level", "own_gpu_intruders"]
+          "unit_blocks", "bytes", "seed", "gpu_mem_gib", "host_level", "own_gpu_intruders"] + NP.ROW_FIELDS
 NM = "NOT_MEASURED"
 MIN_NOISE_REPS = 6                                                # 05 §2.1：σ 要 ≥6 次
 N_BOOT = 10000
@@ -181,6 +182,20 @@ class Target:
         self._xl = None
         self.calib_xl = calib_xl
         self.bench = None
+        self.numa, self.numa_log = None, {}
+
+    # ---- NUMA（只記錄）：主機緩衝的頁在哪個節點；e2e 的 Bench 第一次用到才建，建好再查一次 ----
+    def numa_buffers(self) -> dict:
+        b = {"contig_host": self.contig_host, "host_blocks": self.host}
+        if self.bench is not None:
+            b.update(bench_bf=self.bench.bf, bench_lp=self.bench.lp)
+        return b
+
+    def probe_numa(self, when: str) -> dict:
+        self.numa = NP.probe(self.torch.cuda.current_device(), self.numa_buffers(),
+                             smi=self.numa["gpus_visible"] if self.numa else None)
+        self.numa_log[when] = self.numa
+        return self.numa
 
     # ---- G-M11：查表式 VQ（product quantization；runs/G_M11_vq.md）----
     def vq(self, d_sub: int = 4, k: int = 256, iters: int = 6, sample: int = 65536):
@@ -285,6 +300,7 @@ class Target:
             self.tiers = {"cpu": dict(kind="cpu", name="cpu"),
                           "b32": dict(kind="throttle", name="b32", GiBps=float(bw["targets"]["b32"]["GiBps"]))}
             self.bw_run_id = bw["run_id"]
+            self.probe_numa("bench")                                # 在暖機那一次裡（不計時）
         _, mode, fmt, tier = plan.split("_")
         set_rs_priority(self.bench.rs, high=getattr(self, "mode", "stream") == "stream_hi")
         lp = [fmt == "int4"] * self.nb
@@ -425,7 +441,7 @@ def measure_block(tgt, bg, prims, reps, seed, rate_fn, solo, stream, w, base_row
                              t_med_s=statistics.median(ts_), t_p95_s=ts_[min(len(ts_) - 1, math.ceil(0.95 * len(ts_)) - 1)],
                              t_min_s=ts_[0], t_window_s=w1 - w0, bg_steps=steps, bg_rate=rate, bg_solo_rate=solo,
                              bg_ratio=(rate / solo if solo else ""), unit_blocks=tgt.unit, bytes=tgt.bytes_of(prim), seed=seed,
-                             gpu_mem_gib=round(torch.cuda.max_memory_allocated() / 2**30, 1), ts=ts()))
+                             gpu_mem_gib=round(torch.cuda.max_memory_allocated() / 2**30, 1), ts=ts(), **NP.row_fields(tgt.numa)))
         sr, ds = noise([r["t_med_s"] for r in rows])
         psr, pds = p95_noise([r["t_p95_s"] for r in rows])
         for r in rows:
@@ -440,6 +456,7 @@ def cmd_run(a):
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     tgt = Target(a.model, a.setup, a.calib_xl)
     print("[b0] 正確性：", json.dumps(tgt.check()), flush=True)
+    print("[b0] NUMA：", json.dumps(tgt.probe_numa("start")["summary"], ensure_ascii=False), flush=True)
     prims = PRIMS_B0 if a.setup == "b0" else PRIMS_M08
     if a.prims:
         prims = [p for p in prims if p in a.prims.split(",")]
@@ -494,6 +511,11 @@ def cmd_run(a):
     finally:
         fo.close()
         finish_watch(watch, a.out)
+        try:
+            tgt.probe_numa("end")
+        except Exception as ex:          # noqa: BLE001  結束時查不到：照實印，start／bench 那幾次照存
+            print(f"[b0] NUMA 結束時的查詢失敗：{ex!r}", flush=True)
+        print("[b0] NUMA 存在", NP.save(a.out, rid, **tgt.numa_log), flush=True)
 
 
 def start_bgproc(a, spec: str, pct: int):
@@ -609,6 +631,8 @@ def cmd_env(a):
         out["green_context"] = f"NOT_AVAILABLE: {ex!r}"
     out["mps_control_binary"] = shutil.which("nvidia-cuda-mps-control") or "NOT_FOUND"
     out["mps_pipe_dir"] = os.environ.get("CUDA_MPS_PIPE_DIRECTORY", "")
+    pin = torch.empty(64 << 20, dtype=torch.uint8, pin_memory=True).fill_(1)          # 這個 process 配的 pinned 落在哪一邊
+    out["numa"] = NP.probe(torch.cuda.current_device(), {"pinned_64MiB": pin})
     print(json.dumps(out, ensure_ascii=False, indent=1))
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     json.dump(out, open(a.out, "w"), indent=1, ensure_ascii=False)

@@ -21,6 +21,8 @@ import threading
 import time
 from datetime import datetime
 
+import numa_probe as NP                          # 只記錄：job 的 cpuset 與這個 job 的卡在哪個 NUMA 節點（gfio 不用 pinned 記憶體）
+
 FIELDS = ["run_id", "ts", "dir", "fs", "pattern", "io_bytes", "threads", "total_bytes", "t_s", "gibps", "iops", "file_gib",
           "n_rep", "sigma_rel", "delta_star", "gibps_reps"]
 NM = "NOT_MEASURED"
@@ -113,6 +115,9 @@ def fs_info(d: str) -> dict:
 
 def cmd_run(a):
     rid, rows, info = run_id(), [], []
+    numa = NP.probe()
+    print("[gfio] NUMA：", json.dumps(dict(cpus=numa["job"].get("affinity"), cpuset_nodes=numa["job"].get("cpuset_nodes"),
+                                           gpus=numa["gpus_visible"]), ensure_ascii=False), flush=True)
     gibs = a.gib if len(a.gib) == len(a.dir) else None
     if gibs is None:
         raise SystemExit(f"--dir {len(a.dir)} 個、--gib {len(a.gib)} 個：要一對一")
@@ -146,7 +151,7 @@ def cmd_run(a):
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
         w.writerows(rows)
-    json.dump(dict(run_id=rid, ts=ts(), fs=info), open(os.path.splitext(a.out)[0] + "_fs.json", "w"), indent=1, ensure_ascii=False)
+    json.dump(dict(run_id=rid, ts=ts(), fs=info, numa=numa), open(os.path.splitext(a.out)[0] + "_fs.json", "w"), indent=1, ensure_ascii=False)
 
 
 def self_test() -> bool:

@@ -21,6 +21,8 @@ import threading
 import time
 from datetime import datetime
 
+import numa_probe as NP                          # 只記錄：每份來源 pinned 實際落在哪個節點（numa_local／remote 有沒有真的綁到）
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(REPO, "results", "s3_h200", "gm06")
@@ -192,6 +194,16 @@ def cmd_run(a):
     per = 4 * GiB
     srcs = [pinned(per) for _ in range(n)]
     dsts = [torch.empty(per, dtype=torch.uint8, device=f"cuda:{i}") for i in range(n)]
+    numa = {"srcs": NP.probe(0, {f"src_gpu{i}": s for i, s in enumerate(srcs)})}
+    smi = numa["srcs"]["gpus_visible"]
+
+    def bn(p, name):
+        """probe 裡一組緩衝的「節點:抽樣頁數」；查不到 → NOT_AVAILABLE＋原因。"""
+        b = p["buffers"][name]
+        if "status" in b:
+            return b["status"]
+        s = ";".join(f"{k}:{v}" for k, v in b["nodes"].items())
+        return s + (f";unresolved:{sum(b['errors'].values())}" if b["errors"] else "") if s else f"{NP.NA}: {b['errors']}"
     # 1. 1／2／4 張卡同時 H2D（每張卡 4 GiB）
     for k in (1, 2, 4):
         if k > n:
@@ -202,7 +214,8 @@ def cmd_run(a):
             if rep:
                 tot.append(t)
                 each.append(e)
-        rec("h2d_simul", k, tot, k * per, per_gpu_gibps=";".join(f"{per / statistics.median([x[i] for x in each]) / GiB:.2f}" for i in range(k)))
+        rec("h2d_simul", k, tot, k * per, per_gpu_gibps=";".join(f"{per / statistics.median([x[i] for x in each]) / GiB:.2f}" for i in range(k)),
+            src_numa=" | ".join(f"g{i}={bn(numa['srcs'], f'src_gpu{i}')}" for i in range(k)))
     # 2. NVLink D2D：GPU j → GPU 0（各自、同時）
     for j in range(1, n):
         times = []
@@ -218,6 +231,7 @@ def cmd_run(a):
     total = TOTAL_GIB * GiB
     big = pinned(total)
     dst0 = torch.empty(total, dtype=torch.uint8, device="cuda:0")
+    numa["big"] = NP.probe(0, {"big_16g": big}, smi=smi)
     for k in (1, 2, 4):
         if k > n:
             continue
@@ -228,7 +242,7 @@ def cmd_run(a):
             t, _ = timed_parallel(fns)
             if rep:
                 times.append(t)
-        rec("multipath_16g", k, times, total)
+        rec("multipath_16g", k, times, total, src_numa=bn(numa["big"], "big_16g"))
         if k == 1:
             ok = True
         else:
@@ -248,12 +262,13 @@ def cmd_run(a):
                 rows.append(dict(run_id=rid, ts=ts(), test=f"numa_{where}", k=1, n_rep=0, t_med_s=NM, gibps_med=NM, sigma_rel=NM,
                                  delta_star=NM, reps_s="", note=f"set_mempolicy 失敗：{ex}（cgroup 不允許那個節點？）"))
                 continue
+            numa[f"numa_{where}"] = NP.probe(0, {f"numa_{where}": src}, smi=smi)      # 綁的節點有沒有真的生效
             times = []
             for rep in range(REPS + 1):
                 t, _ = timed_parallel([h2d_fn(0, src, dsts[0])])
                 if rep:
                     times.append(t)
-            rec(f"numa_{where}", 1, times, per, numa_node=node)
+            rec(f"numa_{where}", 1, times, per, numa_node=node, src_numa=bn(numa[f"numa_{where}"], f"numa_{where}"))
             del src
     else:
         rows.append(dict(run_id=rid, ts=ts(), test="numa", k=1, n_rep=0, t_med_s=NM, gibps_med=NM, sigma_rel=NM, delta_star=NM, reps_s="",
@@ -263,6 +278,7 @@ def cmd_run(a):
         w = csv.DictWriter(f, fieldnames=keys)
         w.writeheader()
         w.writerows(rows)
+    print("[gm06] NUMA 存在", NP.save(os.path.join(a.out_dir, f"gm06_{rid}.csv"), rid, **numa), flush=True)
 
 
 def cmd_report(a):

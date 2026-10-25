@@ -34,6 +34,7 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Monitor, SendMessage
 - δ*＝max(5%, 2σ)。「有改進」：中位數差 > δ* **且**差的 95% CI（對 rep 重抽 10,000 次）下界 > 0；「沒有變慢」：變慢 ≤ δ* **且** CI 上界 ≤ δ*。點估計過、CI 沒過 → **INCONCLUSIVE**（加重複次數再判，不算過也不算變慢）。P95 用 P95 的 bootstrap 標準誤。
 - 每個量時間的 CSV 列都要有 `n_rep`、`sigma_rel`、`delta_star`（不到 6 次寫 NOT_MEASURED）。**2σ > 5% 的點先回報、不判定。**
 - 只套用到還沒看過時間數字的 run；看過的維持原判準，只附「事後以 2σ 重算（只供參考）」。品質判準（配對 bootstrap、ε＝2 pp、≥288 題）不套用。
+- **NUMA 位置（只記錄，不進判定；10/25）**：`code/s3/numa_probe.py`。B0、W0 每列多 `gpu_numa`、`cpuset_numa`、`buf_numa`、`numa_local`，CSV 旁邊有 `<名稱>_numa.json`（start／bench／end）；`b0.py env` 有 `numa`；G-fio 記在 `_fs.json`；G-M12 速度只記 sidecar；G-M06 每列 `src_numa`＋sidecar。`numa_local≠yes` 的 run 先照實回報，要不要重量由使用者決定（還沒定規則）。**cpuset 對了不代表 pinned 在同一邊**：本地節點沒空間、`zone_reclaim_mode=0` 時頁會配到另一邊（lab-3090 實例見 RUNLOG S3-NUMA）。
 
 ## 3. 模型與大檔：全部在 hgx-cn01 本地 /tmp
 
