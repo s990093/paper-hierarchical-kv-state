@@ -267,3 +267,10 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 **失敗與異常**: S_real 第一次的環境變數（上面）。量時間的部分無。
 **與論文假設的差異**: X1 模擬在縮小 trace 上偏慢 2.5–9%（GPU 比模擬快），對 LRU 偏最多 → 模擬高估 headroom（GPU 上是模擬的 0.72–0.94 倍）。符號與排序不變。
 **接著**: 21663 p2 等 hgx-cn01 的空卡（8 張都被別人佔著，Priority），之後是 21670 p11t。
+
+## ICPE-P01-C 補：V2 對第二階段 §5.5（2026-10-26，只報告，只讀檔）
+不跑新的模擬，只讀已有的兩個檔做算術：`docs/h200/report_stage2_h200/derived/whatif_recompute.json` 和 P0-1 §1 的表。
+- f 的縮小倍數：V2 ×0.5710／×0.5678，§5.5 ×0.5750／×0.5731（Llama／Qwen）。
+- 方向一致：重算變快 → 重算分到的工作變多。
+- §5.5 估 CPU 層 Llama 會翻成 Cake，但 (b) 的 fa3 實測同一格是全部載入較快。vLLM 級的這一格沒有實測。
+- 細節：P0-1 §7.4 最後一點。
