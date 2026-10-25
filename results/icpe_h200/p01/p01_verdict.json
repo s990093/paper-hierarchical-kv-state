@@ -1,0 +1,19 @@
+{
+ "run_id": "20261026-003427-icpe-p01-verdict",
+ "ts": "2026-10-26T00:34:28+08:00",
+ "s1_choice": {
+  "llama": "fa3",
+  "qwen": "fa3"
+ },
+ "s1_stop_loss": {
+  "llama": false,
+  "qwen": false
+ },
+ "parts": {
+  "a": true,
+  "b": true,
+  "c": true
+ },
+ "overall": "成立",
+ "note": "None＝那一部分沒有資料（NOT_MEASURED），不是成立"
+}

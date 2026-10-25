@@ -152,11 +152,12 @@ S1 約 20 分；2.4 約 30 分；(a) 約 2 小時（R3-B-main 3 rep 是 67 分�
 
 **(a) 成立**：重算換成 fa3（f(i) 也換成 fa3 的 C1）之後，寫入時決定仍然沒有贏過延後版；S5 對最好的簡單策略仍是 −16%／−26%／−0.05%。
 
-### 7.3 (b) 還原格子（**暫定**）
+### 7.3 (b) 還原格子（定稿：job 21654＋重跑 22233）
 
-24 格 0 翻轉、1 格弱變化（Llama CPU 層閒 E0：平手 → 全部載入；fa3 時 Cake 從 0.084 變 0.100 s，原因沒查）。慢層每格仍是 Cake。Qwen fa3 L501 的兩個 run 和我們自己的 DL_Lab4 job 重疊 → 排除、要照重疊重跑（`--part p01brr`，等使用者讓出 GPU）；重跑前 Qwen fa3 每格只有 5 次，所以 (b) 還不能正式判。
-
-（(b) 等 p01brr（job 22233）重跑後定稿。）
+**(b) 成立：24 格 0 翻轉**（`results/icpe_h200/p01/p01b_verdict.json`，run `20261026-003415-icpe-p01b-analyze-final`）。和 G_swa 重疊的兩個 run（`20261022-233934-…-qwen-s4-fa3`、`…-234206-…-qwen-g5b-fa3`）排除；重跑 `20261025-230946-icpe-p01b-qwen-s4-fa3-rr`、`20261025-231221-icpe-p01b-qwen-g5b-fa3-rr`（乾淨、沒有重疊）補上，每格每種方式 10 次。
+- 慢層（b32、NFS 級）每格仍是 Cake 最好，fa3 的 Cake 比 sdpa 快 4–19%；CPU 層的最佳方式和 sdpa 相同。
+- 弱變化 1 格（只報告）：Llama、CPU 層、閒、E0：sdpa 平手（Cake 0.0844／全部載入 0.0852 s）→ fa3 全部載入較快（Cake 0.1002／0.0849 s）。fa3 時這格 Cake 反而變慢，原因沒查。
+- G5b ÷ 最好（只報告，S0）：sdpa 1.21、fa3 1.33。
 
 ### 7.4 (c) 3b 的 X1、X5 換常數（job 21656，2026-10-25 19:34–20:23 +08:00；RUNLOG ICPE-P01-C）
 
@@ -178,6 +179,10 @@ S1 約 20 分；2.4 約 30 分；(a) 約 2 小時（R3-B-main 3 rep 是 67 分�
 - 沒做：V2 和第二階段報告 §5.5 估計（`whatif_recompute.json`）的對照（登記的「只報告」項；之後補或寫 NOT_DONE）。
 
 分析 run 的兩次失敗（都是我叫錯或程式錯，沒有產出）：`20261025-202403-icpe-p01c-analyze` 用了系統 python（沒有 numpy）；`20261025-202411-icpe-p01c-analyze` `TypeError: dict() got multiple values for keyword argument 'variant'`（X5 的 key 欄裡本來就有 `variant`，和我記版本的欄同名）→ 把版本欄改名 `fvar` 後重跑。
+
+### 7.5 P0-1 總判定：**成立**（run `20261026-003427-icpe-p01-verdict`，`results/icpe_h200/p01/p01_verdict.json`）
+
+(a)、(b)、(c) 都成立：H200 上最快的 attention（fa3，重算 0.75 倍）實測下，寫入時決定仍沒贏過延後版、每層最佳還原方式沒有翻轉；「重算跟 vLLM 一樣快」（V2，模擬）時 3b 的 X1、X5 判定字也不變。限制：GPU 實測只到 fa3 這一級（harness ÷ vLLM 仍 1.30／1.32），vLLM 級只有模擬（V2）。
 
 ## 8. 偏離登記
 

@@ -39,7 +39,7 @@
  ],
  "reps": 5,
  "out_dir": "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/icpe_h200/p01/grid/qwen_g5b_fa3",
- "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261022-234206-icpe-p01b-qwen-g5b-fa3/blocks.csv",
+ "blocks_out": "/work/ChihChungHsu/hungweilai/tiara-runs/20261025-231221-icpe-p01b-qwen-g5b-fa3-rr/blocks.csv",
  "verify": true,
  "extra_modes": [
   "loadall",
@@ -81,9 +81,9 @@
   "--out-dir",
   "/work/ChihChungHsu/hungweilai/paper-hierarchical-kv-state/results/icpe_h200/p01/grid/qwen_g5b_fa3",
   "--blocks-out",
-  "/work/ChihChungHsu/hungweilai/tiara-runs/20261022-234206-icpe-p01b-qwen-g5b-fa3/blocks.csv"
+  "/work/ChihChungHsu/hungweilai/tiara-runs/20261025-231221-icpe-p01b-qwen-g5b-fa3-rr/blocks.csv"
  ],
- "run_id": "20261022-234206-icpe-p01b-qwen-g5b-fa3",
+ "run_id": "20261025-231221-icpe-p01b-qwen-g5b-fa3-rr",
  "restore_variant": {
   "kernel": "k1",
   "sched": "serial",
