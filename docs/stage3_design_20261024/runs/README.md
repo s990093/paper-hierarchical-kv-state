@@ -42,3 +42,21 @@ runner：`code/r_h200_s3.sh`；RUNLOG：`results/RUNLOG_H200_S3.md`；GPU 排程
 | A0、G-M04 | 品質 | 不變 |
 | P0e | 沒有時間判定（能／不能） | 不適用 |
 | 之後的量時間的閘（G-M06、G-M11、G-M12 速度、A2…） | 還沒登記 | 登記時直接照 05 §2.1 |
+
+---
+
+## 共同規則：NUMA 位置（2026-10-25 補；只記錄，不是 deviation）
+
+H200 節點是 2× EPYC 9554。pinned 記憶體和卡不在同一個 NUMA 節點時，H2D 會變慢（`docs/H200_SLURM.md` 第 158 行；慢多少 NOT_MEASURED）。每個 job 拿到的卡可能不同，而原本的程式沒有記錄這件事。所以每個量時間的 run 現在都會記三件事（`code/s3/numa_probe.py`）：GPU 在哪個節點、job 的 cpuset 涵蓋哪些節點、主機緩衝的頁實際落在哪個節點（`move_pages(2)` 每組抽 64 頁，另記所在 VMA 在 `/proc/self/numa_maps` 的整段頁數）。另外也記每個節點的可用記憶體、`zone_reclaim_mode`、`numa_balancing`。
+
+| run | 記在哪 |
+|:--|:--|
+| B0＋G-M08（`b0.py run`） | 每列多四欄 `gpu_numa`、`cpuset_numa`、`buf_numa`（「節點:抽樣頁數;…」）、`numa_local`（yes／no／NOT_AVAILABLE＋原因）。CSV 旁邊另存 `<名稱>_numa.json`，含 start、bench（e2e 的 CPU 層第一次建好時，在暖機那一次裡）、end 三個時點 |
+| P0e（`b0.py env`） | `env.json` 的 `numa`（另配 64 MiB pinned 來查） |
+| W0（`w0.py run`） | 每列同樣四欄（緩衝＝CPU 編碼讀的那份 KV，一般記憶體）；另存 `<名稱>_numa.json`（start、end） |
+| G-fio（`gfio.py run`） | `_fs.json` 的 `numa`（job 的 cpuset 與看得到的卡；gfio 不用 pinned 記憶體，所以沒有緩衝欄） |
+
+- **判準一律不變**。`numa_local` 不進任何判定，B0、W0、G-fio 的登記也不改。
+- `numa_local≠yes` 的 run 怎麼處理，**還沒有規則**：先照實回報，要不要重量由使用者決定。
+- 查不到就照實寫 NOT_AVAILABLE，不當成「在同一邊」（CLAUDE.md 規則 7）。
+- **cpuset 對了，不代表 pinned 就在同一邊**：本地節點沒有空間、而且 `zone_reclaim_mode=0` 時，kernel 會把頁配到另一個節點。lab-3090 上的實例見 `results/RUNLOG_H200_S3.md` 的 S3-NUMA 節。

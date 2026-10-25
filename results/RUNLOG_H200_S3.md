@@ -102,3 +102,19 @@
 **套新規則（還沒看過時間數字）**：B0＋G-M08、W0、G-fio（只有欄位，沒有判定）、之後的量時間的閘。
 **維持舊判準（已看過結果）**：C0-v1（GC-FAIL）、G-M13（GM13-PASS）；C0-v2 也維持（判準已看過）。品質（A0、G-M04）不變。
 **參考值**：C0 事後 2σ：平均代價 22.2–31.6%（kernel 切法 0%），每個切法有 2–53 格 2σ>5%；G-M13：c、H0 的 P95 2σ＝10.4%、18.0%（都 >5%），H0 的 CI 上界 1.69 s ≤ 門檻 2.50 s。
+
+---
+
+## S3-NUMA — 量時間的 run 記 NUMA 位置（只記錄；使用者要求，2026-10-25）
+
+**狀態**: 程式改好；在 lab-3090 上驗過程式（**不是 H200**）；H200 上還沒跑過
+**為什麼**: `docs/H200_SLURM.md` 第 158 行寫了兩件事：pinned 記憶體要和卡在同一個 NUMA 節點；每個 job 拿到的卡可能不同，要每次記錄。但 stage-3 的程式沒有記：`b0.py env` 只有 torch、SM、stream 優先權、green context、MPS；pinned 配置（`b0.py` 的 `contig_host`、`m7_model.host_chunk`、`m10_speed.Bench`）也沒有綁 NUMA。
+**改的檔**: 新增 `code/s3/numa_probe.py`；`code/s3/b0.py`（`env` 加 `numa`；`run` 每列多 `gpu_numa`、`cpuset_numa`、`buf_numa`、`numa_local`，另存 `<名稱>_numa.json`，含 start／bench／end 三個時點）；`code/s3/w0.py`（同樣四欄＋`_numa.json`）；`code/s3/gfio.py`（`_fs.json` 加 `numa`）。runner 沒改。規則寫在 `docs/stage3_design_20261024/runs/README.md` 的「共同規則：NUMA 位置」。
+**判準**: 不變。`numa_local` 不進任何判定；`numa_local≠yes` 的 run 先回報，要不要重量由使用者決定（還沒定規則）。
+**程式驗證（lab-3090，driver 550.163.01、kernel 6.8.0-138；沒有 run_id，不進 results，不是 H200 的數字）**
+- `numa_probe.py --self-test` 在 Mac（只有邏輯；move_pages 照實印 NOT_AVAILABLE）和 lab-3090 上都 PASS。lab-3090 上，一般記憶體與 libcuda `cuMemHostAlloc` 配的 pinned 記憶體，抽樣的每一頁都查得到節點。
+- `torch_gpu`：torch 2.6 只有 `uuid`（沒有 `pci_*` 屬性），用 uuid 對 nvidia-smi，GPU 5 → `0000:8b:00.0` → 節點 1，和 sysfs 一致。
+- 用假的 Target 走 B0 的寫列路徑（`measure_block`、`probe_numa`、`NP.save`）：CSV 有四欄，sidecar 有 start／bench／end，end 含 `bench_bf`、`bench_lp`。`taskset -c 0-23`（節點 0）＋GPU 5（節點 1）→ `numa_local=no`；`taskset -c 24-47`（節點 1）→ `yes`。
+- **看到的現象（lab-3090）**: `b0.py env` 在 `taskset -c 24-47`（節點 1）、GPU 5（節點 1）下，64 MiB pinned 抽樣 64 頁有 **57 頁在節點 0**。當時節點 1 的 MemFree 0.47 GiB（其餘多為 page cache，FilePages 約 78 GiB），`zone_reclaim_mode=0`，所以 kernel 沒有先回收本地 page cache，而是直接配到節點 0。**cpuset 對了，不代表 pinned 就在同一邊**。這就是 probe 另外記每個節點可用記憶體的原因。
+**H200 上還不知道（NOT_VERIFIED）**: H200 的 driver 與 kernel 和 lab-3090 不同，move_pages 查不查得到 pinned 頁要看第一個 `b0-prep`／`b0-run` 的輸出；查不到時會寫 NOT_AVAILABLE（附原因），不會當成 yes。
+**失敗與異常**: 無。

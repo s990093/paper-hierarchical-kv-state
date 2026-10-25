@@ -27,12 +27,13 @@ CODE = os.path.dirname(HERE)
 REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
+import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
 
 CHUNK = 512
 OUT = os.path.join(REPO, "results", "s3_h200", "w0")
 SPECS = {"B16": (20, 30, "int4_kivi"), "B32": (13, 20, "kv-int4_kivi-int2_kivi")}      # A0 登記 §1.3
 FIELDS = ["run_id", "ts", "model", "where", "bg", "part", "rep", "t_s", "bytes_in", "gibps_in", "bytes_out", "threads",
-          "bg_ratio", "bg_solo_rate", "n_rep", "sigma_rel", "delta_star", "host_level"]
+          "bg_ratio", "bg_solo_rate", "n_rep", "sigma_rel", "delta_star", "host_level"] + NP.ROW_FIELDS
 NM = "NOT_MEASURED"
 
 
@@ -119,15 +120,19 @@ def cmd_run(a):
     rid = run_id()
     rows = []
     lvl = host_level()
+    numa, nf = {}, {}
 
     def rec(where, bg, part, rep, t, bout, threads, br="", solo=""):
         rows.append(dict(run_id=rid, ts=ts(), model=a.model, where=where, bg=bg, part=part, rep=rep, t_s=round(t, 5),
                          bytes_in=bytes_in, gibps_in=round(bytes_in / t / 2**30, 3), bytes_out=bout, threads=threads,
-                         bg_ratio=br, bg_solo_rate=solo, host_level=lvl))
-        print(json.dumps(rows[-1]), flush=True)
+                         bg_ratio=br, bg_solo_rate=solo, host_level=lvl, **nf))
+        print(json.dumps(rows[-1], ensure_ascii=False), flush=True)
     # (i) CPU
     torch.set_num_threads(a.threads)
     Xc = Xg.cpu()
+    numa["start"] = NP.probe(torch.cuda.current_device(), {"cpu_input": Xc})       # CPU 編碼讀的那份 KV（一般記憶體）
+    nf.update(NP.row_fields(numa["start"]))
+    print("[w0] NUMA：", json.dumps(numa["start"]["summary"], ensure_ascii=False), flush=True)
     cos_c, sin_c = cos_g.cpu(), sin_g.cpu()
     calc = {k: (v.cpu() if hasattr(v, "cpu") else v) for k, v in cal.items()}
     for part in ("B16", "B32", "INT4"):
@@ -159,6 +164,7 @@ def cmd_run(a):
         bg.stop()
         del bg
         torch.cuda.empty_cache()
+    numa["end"] = NP.probe(torch.cuda.current_device(), {"cpu_input": Xc}, smi=numa["start"]["gpus_visible"])
     cells = {}
     for r in rows:
         cells.setdefault((r["where"], r["bg"], r["part"]), []).append(r)
@@ -171,6 +177,7 @@ def cmd_run(a):
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
         w.writerows(rows)
+    print("[w0] NUMA 存在", NP.save(a.out, rid, **numa), flush=True)
 
 
 DEMAND = {   # 登記 §2：HBM 滿時每秒要降多少 GiB＝prefill 產生 KV 的速度（tokens/s × 每 token 的 KV 位元組）
