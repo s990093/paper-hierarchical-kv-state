@@ -665,6 +665,21 @@ def run_item(sess, st, cfgs, cell, mode: str, gm04: bool = False):
     else:
         q_exact = None
     gm04_rows = gm04_item(sess, st, cell, sels.mass["ORACLE"]) if (mode == "tf" and gm04 and "ORACLE" in sels.mass) else []
+    # M05：DuoAttention 的串流頭（全部原值；串流頭只看 sink＋最近 recent 個 context token）
+    for c in cfgs:
+        if c["kind"] != "duo":
+            continue
+        t0 = time.time()
+        st.comp.apply(want_array(sess, [], "global", ORIG, ORIG))
+        kk = torch.ones(km.L, km.H, km.max_len, dtype=torch.bool, device=km.device)
+        for l, h in A.m05_streaming(c["p"]):
+            kk[l, h, A.M05_SINK:max(A.M05_SINK, st.ctx_end - A.M05_RECENT)] = False
+        km.key_keep = kk
+        try:
+            res = measure()
+        finally:
+            km.key_keep = None
+        finish(c, res, t0)
     # 均勻配置（直接寫進緩衝）
     for c in cfgs:
         if c["kind"] != "uniform":
@@ -761,6 +776,8 @@ def _loop(a, kind: str):
         sel = json.load(open(os.path.join(A.OUT, f"gen_selection_{a.cell}.json")))
         by = {c["cid"]: c for c in cfgs_all}
         cfgs = [by[cid] for cid in sel["configs"]]
+        if a.cell == "L128":                                         # runs/M05_duo_heads.md：L128 的生成另外加 M05 的 3 個配置
+            cfgs += A.m05_configs(model, nb - 1)
         sets, fields = ["gen1", "gen2"], A.GEN_FIELDS
     else:
         cfgs, sets, fields = cfgs_all, ["tf"], A.TF_FIELDS
