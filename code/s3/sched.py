@@ -111,7 +111,12 @@ def s3_timing_target(jobs: dict, me: str) -> list:
         if i == me or not S3_TIMING.match(n) or st != "PENDING" or "Held" in rs:
             continue
         unf = [d for _, d, s in parse_dep(dep_of(i)) if s == "unfulfilled"]
-        if not unf or all(jobs.get(d, ("",))[0].startswith("s3-") for d in unf):
+        # 只有「等的全是 stage-3 的品質 job」（或什麼都不等）才算準備好了；在等鏈上前一個 s3-T-*、或在等 ICPE 的 → 還沒輪到它
+        # （10/25 21:5x 的 bug：鏈上 22272–22281 被當成準備好，所有品質 job 都讓位到整條鏈之後）
+        def quality(d):
+            n = jobs.get(d, ("",))[0]
+            return n.startswith("s3-") and not S3_TIMING.match(n)
+        if not unf or all(quality(d) for d in unf):
             out.append(i)
     return out
 
