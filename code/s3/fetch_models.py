@@ -41,6 +41,8 @@ MODELS = {
     "llama": dict(repo="unsloth/Llama-3.1-8B-Instruct", rev="4699cc75b550f9c6f3173fb80f4703b62d946aa5", glob_env="M7_LLAMA_GLOB"),
     "qwen": dict(repo="Qwen/Qwen2.5-7B-Instruct-1M", rev="e28526f7bb80e2a9c8af03b831a9af3812f18fba", glob_env="M7_QWEN_GLOB"),
     "qwen14": dict(repo="Qwen/Qwen2.5-14B-Instruct-1M", rev="620fad32de7bdd2293b3d99b39eba2fe63e97438", glob_env="M7_QWEN14_GLOB"),
+    # D0（runs/D0_native_index.md；2026-10-25 從 HF API 讀）：原生稀疏注意力 InfLLM-v2
+    "minicpm": dict(repo="openbmb/MiniCPM4.1-8B", rev="3a8dfed9c79a45e07dbff95bcd49d792343fa1a3", glob_env="M7_MINICPM_GLOB"),
 }
 
 

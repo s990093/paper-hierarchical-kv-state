@@ -88,6 +88,34 @@ def cmd_run(a):
     print("\n".join(md))
 
 
+def p95_boot(vals: list, seed: int = 0, n: int = 10000) -> tuple:
+    """P95（m16_i3g_report.pct）的 bootstrap：對請求重抽 n 次 → (P95, 標準誤, 2.5%, 97.5%)。I3g 每個設定只跑一次，重抽的是請求。"""
+    import numpy as np
+    v = np.asarray(vals, dtype=float)
+    rng = np.random.default_rng(seed)
+    b = np.percentile(v[rng.integers(0, v.size, size=(n, v.size))], 95, axis=1, method="linear")
+    return pct(list(v), 0.95), float(b.std(ddof=1)), float(np.percentile(b, 2.5)), float(np.percentile(b, 97.5))
+
+
+def cmd_ref2sigma(a):
+    """05 §2.1 事後套用（只供參考；GM13-PASS 不變）：P95 的 δ*＝max(5%, 2×SE／P95)。"""
+    pts = cold_points()
+    rr = RUNS["llama"]
+    d, c = returns(rr["d"]), returns(rr["c"])
+    race = [min(float(r["ttft_s"]), t_cold(float(r["prompt_len"]), pts)) for r in d]
+    out = {}
+    for name, v in (("c", [float(r["ttft_s"]) for r in c]), ("H0", race)):
+        p, se, lo, hi = p95_boot(v)
+        out[name] = dict(p95=p, se=se, ci=[lo, hi], sigma_rel=se / p, delta_star=max(0.05, 2 * se / p), noisy=bool(2 * se / p > 0.05))
+    thr = 1.5 * out["c"]["p95"]
+    out["reference"] = dict(threshold=thr, h0_ci_hi=out["H0"]["ci"][1], h0_p95_le_thr=bool(out["H0"]["p95"] <= thr),
+                            h0_ci_hi_le_thr=bool(out["H0"]["ci"][1] <= thr),
+                            note="事後以 2σ 重算，只供參考；GM13-PASS（原判準）不變")
+    res = dict(run_id=run_id(), ts=datetime.now().astimezone().isoformat(timespec="seconds"), **out)
+    json.dump(res, open(os.path.join(OUT, "gm13_ref2sigma.json"), "w"), indent=1, ensure_ascii=False)
+    print(json.dumps(res, ensure_ascii=False, indent=1))
+
+
 def self_test() -> bool:
     pts = [(8192, 0.44), (16384, 1.3), (32768, 4.58)]
     ok = abs(t_cold(8192, pts) - 0.44) < 1e-12 and abs(t_cold(4096, pts) - 0.22) < 1e-12 and abs(t_cold(24576, pts) - 2.94) < 1e-9
@@ -102,4 +130,4 @@ if __name__ == "__main__":
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    cmd_run(a)
+    {"run": cmd_run, "ref2sigma": cmd_ref2sigma}[a.cmd](a)

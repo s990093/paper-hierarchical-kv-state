@@ -84,3 +84,65 @@
 **產出檔**: `results/s3_h200/gm13/{gm13_report.json,tables_gm13.md}`
 **關鍵數字**〔實測資料的重播〕: Llama 回來那一輪 P95：d 105.14 s → H0 1.40 s（門檻 1.5×c＝2.50 s），H1 2.75 s；重算贏 81%／78%。Qwen：NOT_MEASURED（MI300X 沒有 Qwen 的 vLLM 冷 prefill）。
 **限制**: 不模擬額外重算搶 GPU（偏樂觀）、不模擬取消讀取讓 NFS 變空（偏悲觀）。
+
+---
+
+## S3-P0e — 環境（P0e；B0 冒煙 job 22238 的第一步，2026-10-25 20:43 +08）
+
+**狀態**: PASS　**run_id**: `20261025-204305-s3-b0-env`　**指令**: `python code/s3/b0.py env --out $RUN_DIR/env.json`
+**產出檔**: `results/s3_h200/env/p0e_env_20261025-204305-s3-b0-env.json`
+**結果**: H200、132 個 SM；torch 2.13.0+cu130；CUDA stream 優先權範圍 [0, −3]；**green context 可用**（`torch.cuda.green_contexts.GreenContext.create(num_sms=32)`＋一次 matmul 跑通）；MPS 控制程式 `/usr/bin/nvidia-cuda-mps-control` 在。
+**對 B0 的影響**: B0 登記 §4 第 4 點：green context 能用 → 另外登記一節才加進共用方式（還沒加）。
+
+---
+
+## S3-NOISE — 速度判準的「雜訊」補上操作定義（使用者要求；2026-10-25）
+
+**改的檔**：`05_poc_plan_h200.md` §2 的速度判準那一格＋新的 §2.1；`runs/README.md` 的「共同規則」與受影響的 run 表；`runs/B0_interference.md`、`runs/W0_write_cost.md`、`runs/G_fio.md` 各加偏離 1；`runs/C0_cost_model.md`、`runs/G_M13_race_sim.md` 各加一行「事後以 2σ 重算的結果（只供參考）」。程式：`code/s3/b0.py`（每列 `n_rep`、`sigma_rel`、`delta_star`、`p95_sigma_rel`、`p95_delta_star`、`bg_solo_sigma_rel`、`bg_delta_star`；判定加 δ*＋bootstrap CI；2σ>5% 的格子列出、不判定）、`bgengine.py`（背景單獨跑量 6 個時間窗）、`w0.py`（三個欄位；GW0 改成 PASS／FAIL／UNDETERMINED／NOISY）、`gfio.py`（每格 6 次＋三個欄位）、`c0.py ref2sigma`、`gm13.py ref2sigma`（只供參考）。
+**套新規則（還沒看過時間數字）**：B0＋G-M08、W0、G-fio（只有欄位，沒有判定）、之後的量時間的閘。
+**維持舊判準（已看過結果）**：C0-v1（GC-FAIL）、G-M13（GM13-PASS）；C0-v2 也維持（判準已看過）。品質（A0、G-M04）不變。
+**參考值**：C0 事後 2σ：平均代價 22.2–31.6%（kernel 切法 0%），每個切法有 2–53 格 2σ>5%；G-M13：c、H0 的 P95 2σ＝10.4%、18.0%（都 >5%），H0 的 CI 上界 1.69 s ≤ 門檻 2.50 s。
+
+---
+
+## S3-QUEUE-1 — 10/25 晚上的登記與送出（使用者 10/25：「排滿」、四個新候選全加）
+
+**新登記**（都在任何數字之前 commit）：G-M04（併在 A0 TF）、G-M11（併在 B0，B0 偏離 2）、M05（併在 A0 L128 生成）、G-M12（品質＋速度）、G-M06＋M07（4 卡）；D0 先做可行性（P0f，job 22270），量測的登記等讀過 MiniCPM 的 modeling 程式再寫。
+**冒煙**：A0 L128（22241）PASS；A0 Q256（22252）PASS（自檢過、71.7 GB；每題 prefill 31 s、每個配置約 0.5 s）；B0（22242）PASS（stream／stream_hi／m08 256K／MPS 都跑通、開頭的正確性核對全過）；A0 Q14-256（22253）跑中；B0 第二次（22267，含 dq_vq、6 次）排隊。
+**品質 job（排滿，ICPE 的 22233 會等它們；開跑時照讓位規則）**：A0 TF L128 22250（跑中，每題約 74 s〔實測〕）、Q128 22251、Q256 22254／22255、Q14-256 22256–22259（afterok 冒煙）、L32 22260、Q32 22261；G-M12 品質 L128 22268、Q128 22269；D0 可行性 22270。
+**量時間的鏈（s3-T-*，afterany ICPE 的 p11t 21670，一個接一個）**：22271 B0 llama b0 stream → 22272 qwen b0 stream → 22273 llama m08 stream → 22274 qwen m08 stream → 22275 llama b0 MPS → 22276 qwen b0 MPS → 22277 llama m08 MPS → 22278 qwen m08 MPS → 22279 W0＋G-fio → 22280 G-M12 速度 → 22281 G-M06（4 卡）。
+**排程規則的補強**：stage-3 量時間的 job 開跑時有我們別的 job 在跑 → 重送排在它們之後（不失敗）；品質的 job 讓位給「只剩在等 stage-3」的 s3-T-*（和 ICPE 同一個規則；`code/s3/sched.py`）。ICPE 量時間的 job 若在 p01brr 結束後 hold 中（等 ICPE session 檢查），60 分鐘內也讓位（ICPE session 的要求）。
+**觀察**：DL_Lab4 的 21907（J_kd）、21909（final3）在 2026-10-25 21:03:08 被取消（不是這個 session、也不是 ICPE session 取消的）。
+
+---
+
+## S3-NUMA — 量時間的 run 記 NUMA 位置（只記錄；使用者要求，2026-10-25）
+
+**狀態**: 程式改好；在 lab-3090 上驗過程式（**不是 H200**）；H200 上還沒跑過
+**為什麼**: `docs/H200_SLURM.md` 第 158 行寫了兩件事：pinned 記憶體要和卡在同一個 NUMA 節點；每個 job 拿到的卡可能不同，要每次記錄。但 stage-3 的程式沒有記：`b0.py env` 只有 torch、SM、stream 優先權、green context、MPS；pinned 配置（`b0.py` 的 `contig_host`、`m7_model.host_chunk`、`m10_speed.Bench`）也沒有綁 NUMA。
+**改的檔**: 新增 `code/s3/numa_probe.py`；`code/s3/b0.py`（`env` 加 `numa`；`run` 每列多 `gpu_numa`、`cpuset_numa`、`buf_numa`、`numa_local`，另存 `<名稱>_numa.json`，含 start／bench／end 三個時點）；`code/s3/w0.py`（同樣四欄＋`_numa.json`）；`code/s3/gfio.py`（`_fs.json` 加 `numa`）。runner 沒改。規則寫在 `docs/stage3_design_20261024/runs/README.md` 的「共同規則：NUMA 位置」。
+**判準**: 不變。`numa_local` 不進任何判定；`numa_local≠yes` 的 run 先回報，要不要重量由使用者決定（還沒定規則）。
+**程式驗證（lab-3090，driver 550.163.01、kernel 6.8.0-138；沒有 run_id，不進 results，不是 H200 的數字）**
+- `numa_probe.py --self-test` 在 Mac（只有邏輯；move_pages 照實印 NOT_AVAILABLE）和 lab-3090 上都 PASS。lab-3090 上，一般記憶體與 libcuda `cuMemHostAlloc` 配的 pinned 記憶體，抽樣的每一頁都查得到節點。
+- `torch_gpu`：torch 2.6 只有 `uuid`（沒有 `pci_*` 屬性），用 uuid 對 nvidia-smi，GPU 5 → `0000:8b:00.0` → 節點 1，和 sysfs 一致。
+- 用假的 Target 走 B0 的寫列路徑（`measure_block`、`probe_numa`、`NP.save`）：CSV 有四欄，sidecar 有 start／bench／end，end 含 `bench_bf`、`bench_lp`。`taskset -c 0-23`（節點 0）＋GPU 5（節點 1）→ `numa_local=no`；`taskset -c 24-47`（節點 1）→ `yes`。
+- **看到的現象（lab-3090）**: `b0.py env` 在 `taskset -c 24-47`（節點 1）、GPU 5（節點 1）下，64 MiB pinned 抽樣 64 頁有 **57 頁在節點 0**。當時節點 1 的 MemFree 0.47 GiB（其餘多為 page cache，FilePages 約 78 GiB），`zone_reclaim_mode=0`，所以 kernel 沒有先回收本地 page cache，而是直接配到節點 0。**cpuset 對了，不代表 pinned 就在同一邊**。這就是 probe 另外記每個節點可用記憶體的原因。
+**H200 上還不知道（NOT_VERIFIED）**: H200 的 driver 與 kernel 和 lab-3090 不同，move_pages 查不查得到 pinned 頁要看第一個 `b0-prep`／`b0-run` 的輸出；查不到時會寫 NOT_AVAILABLE（附原因），不會當成 yes。
+**合併 main 之後補的（同一天）**: main 新增了兩個量時間的 part，也接上記錄：`gm12.py speed`（只記 sidecar，因為計時區間不碰主機緩衝）、`gm06.py run`（每列 `src_numa`＋sidecar）。
+**順手發現的 gm06 問題（沒有改，待決定）**: 在 lab-3090 上跑縮小版 `gm06.cmd_run`（GiB 換成 MiB、2 張卡、拓撲用替身；只驗記錄，不是量測）時，`numa_remote` 要求綁節點 0，但頁實際在**節點 1**。用 torch 2.6 單獨重現後確認原因：
+- `set_mempolicy` 本身有效：全新配置的 6 MiB 綁節點 0 → 64／64 頁在節點 0。
+- 問題在 gm06 的順序：先 `pinned(4 GiB, local)`、`del`，再 `pinned(4 GiB, remote)`。torch 的 pinned 快取把**同一塊**（位址相同）還回來，所以 remote 拿到的還是 local 那塊。
+- 先呼叫 `torch._C._host_emptyCache()` 再配 → 正確落在節點 0。
+
+影響：M07 的「NUMA 本地／遠端差」是登記裡的「另報」項目，不進 G-M06 的判準（k＝2 加速 ≥1.6）。照現在的程式跑，遠端那一列量到的會是本地記憶體。G-M06 在 H200 上已排隊（S3-QUEUE-1 的 22281，量時間的鏈最後一個），還沒跑。改 gm06 的量法不在「只記錄」的範圍內，而且是另一個 session 的程式，所以先不改，待使用者決定。新的 `src_numa` 欄就算不修也會把這件事照實記下來。H200（torch 2.13）的快取行為：NOT_VERIFIED。
+**失敗與異常**: 無。
+
+---
+
+## S3-BUG-1 — 讓位規則的 bug：品質 job 全部讓位到計時鏈之後（2026-10-25 21:4x–21:5x；已修）
+
+**看到的**: Q256（22254、22255）、Q14-256（22256–22259）、L32（22260）、Q32（22261）、G-M12 品質（22268、22269）、D0（22270）、B0 冒煙 2（22267）開跑後都「讓位」給 s3-T 計時鏈的 22272–22281，重送成 22282–22294（afterany 整條鏈）。沒有量到任何東西（每個 job 都在第一步之前結束，exit 0）。
+**原因**: `sched.py s3-timing-target` 把「等的全是 s3-* job」的計時 job 當成準備好了；鏈上的 22272–22281 等的是前一個 s3-T，也算進去了。
+**修正**（`fix(s3)` commit）: 只有等的全是 stage-3 **品質** job（或什麼都不等）的計時 job 才算準備好；在等鏈上前一個 s3-T 或 ICPE 的都不算。
+**補救**: 重新送出正確的 job：Q256 22296／22297、Q14-256 22298–22301、L32 22302、Q32 22303、G-M12 品質 22304／22305、B0 冒煙 2 22306、D0 22307（都加進 ICPE 22233 的依賴）。錯誤重送的 22282–22294 還在佇列裡（排在整條計時鏈之後）：取消要使用者同意（scancel 被權限擋下）；不取消的話，它們輪到時題目都已做完，會直接結束。
+**同時合進來的**: 另一個 session 的 NUMA 紀錄（main `5d0ae0c`：`code/s3/numa_probe.py`，b0／w0／gfio／gm12／gm06 只多記錄欄位，判定不讀）；合併後所有自檢 PASS。

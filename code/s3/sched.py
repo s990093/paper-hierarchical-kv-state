@@ -19,6 +19,7 @@ import subprocess
 import sys
 
 ICPE_TIMING = re.compile(r"^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$")
+S3_TIMING = re.compile(r"^s3-T-")                       # stage-3 量時間的 job 一律用這個前綴命名
 SLURM = "/cm/local/apps/slurm/current/bin"
 
 
@@ -61,8 +62,39 @@ def next_icpe(jobs: dict) -> list:
     return [i for i, (n, st, rs) in jobs.items() if ICPE_TIMING.match(n) and st == "PENDING" and "Held" not in rs]
 
 
+HELD_GRACE_MIN = 60     # ICPE session 10/25 的要求：前一個 ICPE 量時間的 job 結束後這段時間內，hold 中的下一個也算「準備好了」
+
+
+def last_icpe_timing_end() -> float | None:
+    """最近一個已結束的 ICPE 量時間 job 的結束時間（epoch 秒）；查不到 → None。"""
+    import time as _t
+    out = sh(["sacct", "--me", "-X", "-n", "-P", "-S", "now-2days", "-o", "JobName,State,End"])
+    ends = []
+    for line in out.splitlines():
+        n, st, end = (line.split("|") + ["", "", ""])[:3]
+        if ICPE_TIMING.match(n) and end and end not in ("Unknown", "None") and not st.startswith(("PENDING", "RUNNING")):
+            try:
+                ends.append(_t.mktime(_t.strptime(end, "%Y-%m-%dT%H:%M:%S")))
+            except ValueError:
+                pass
+    return max(ends) if ends else None
+
+
+def held_icpe(jobs: dict) -> list:
+    return [i for i, (n, st, rs) in jobs.items() if ICPE_TIMING.match(n) and st == "PENDING" and "Held" in rs]
+
+
 def yield_target(jobs: dict) -> list:
     out = []
+    # hold 中的 ICPE 量時間 job：沒有其他沒 hold 的 ICPE 量時間 job 在排隊或在跑，而且上一個剛結束（≤ HELD_GRACE_MIN 分鐘）
+    # → ICPE session 正在看上一個的結果、馬上要放行它（10/25 的要求）→ 也讓位
+    active = [i for i, (n, st, rs) in jobs.items() if ICPE_TIMING.match(n) and ("Held" not in rs)]
+    held = held_icpe(jobs)
+    if held and not active:
+        import time as _t
+        last = last_icpe_timing_end()
+        if last is not None and _t.time() - last <= HELD_GRACE_MIN * 60:
+            out.append(min(held, key=int))
     for i in next_icpe(jobs):
         unf = [d for _, d, s in parse_dep(dep_of(i)) if s == "unfulfilled"]
         if unf and all(jobs.get(d, ("",))[0].startswith("s3-") for d in unf):
@@ -70,6 +102,28 @@ def yield_target(jobs: dict) -> list:
         elif not unf:                     # 沒有在等任何人（等資源）→ 也讓位：我們一開跑它就會被我們擋住
             out.append(i)
     return out
+
+
+def s3_timing_target(jobs: dict, me: str) -> list:
+    """品質（不量時間）的 stage-3 job 讓位給「只剩在等 s3-* 的 job（或什麼都不等）」的 stage-3 量時間 job（和 ICPE 同一個規則）。"""
+    out = []
+    for i, (n, st, rs) in jobs.items():
+        if i == me or not S3_TIMING.match(n) or st != "PENDING" or "Held" in rs:
+            continue
+        unf = [d for _, d, s in parse_dep(dep_of(i)) if s == "unfulfilled"]
+        # 只有「等的全是 stage-3 的品質 job」（或什麼都不等）才算準備好了；在等鏈上前一個 s3-T-*、或在等 ICPE 的 → 還沒輪到它
+        # （10/25 21:5x 的 bug：鏈上 22272–22281 被當成準備好，所有品質 job 都讓位到整條鏈之後）
+        def quality(d):
+            n = jobs.get(d, ("",))[0]
+            return n.startswith("s3-") and not S3_TIMING.match(n)
+        if not unf or all(quality(d) for d in unf):
+            out.append(i)
+    return out
+
+
+def running_mine_on_node(jobs: dict, me: str, node: str) -> list:
+    out = sh(["squeue", "-h", "--me", "-w", node, "-t", "R", "-o", "%i"]).split()
+    return [i for i in out if i != me]
 
 
 def add_dep(to: str, job: str):
@@ -84,6 +138,11 @@ def main():
     ap.add_argument("--self-test", action="store_true")
     sub = ap.add_subparsers(dest="cmd")
     sub.add_parser("yield-target")
+    s = sub.add_parser("s3-timing-target")
+    s.add_argument("--me", required=True)
+    s = sub.add_parser("running-mine")
+    s.add_argument("--me", required=True)
+    s.add_argument("--node", required=True)
     sub.add_parser("next-icpe")
     s = sub.add_parser("add-dep")
     s.add_argument("--to", required=True)
@@ -99,6 +158,10 @@ def main():
         sys.exit(0 if ok else 1)
     if a.cmd == "yield-target":
         print(" ".join(yield_target(my_jobs())))
+    elif a.cmd == "s3-timing-target":
+        print(" ".join(s3_timing_target(my_jobs(), a.me)))
+    elif a.cmd == "running-mine":
+        print(" ".join(running_mine_on_node(my_jobs(), a.me, a.node)))
     elif a.cmd == "next-icpe":
         print(" ".join(next_icpe(my_jobs())))
     elif a.cmd == "add-dep":

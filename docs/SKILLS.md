@@ -150,3 +150,11 @@ diff -ru <repo>/.claude/skills/<name> /ssd7/hungwei/paper-hkv/vendor-skills/aris
 | wanshuiyin/ARIS | MIT © 2026 wanshuiyin | `.claude/skills/LICENSE.ARIS` |
 
 兩者皆 MIT，允許 vendored 進本 public repo，保留原授權聲明即可。
+
+---
+
+## 專案自己寫的 skill（不是 vendored）
+
+| skill | 寫的時間 | 內容 |
+|:--|:--|:--|
+| `.claude/skills/stage3-h200/` | 2026-10-25 | 第三階段（`docs/stage3_design_20261024/`）在 H200 的 runbook：登記與偏離的流程、速度雜訊的操作定義（05 §2.1）、模型放 compute node 的 /tmp（noatime 的 30 天清理）、和 ICPE 共用 GPU 的排程與讓位規則、`code/r_h200_s3.sh` 的 part、已經踩過的坑、回報與 commit 規矩。數字不放在 skill 裡，以 results／RUNLOG 為準 |

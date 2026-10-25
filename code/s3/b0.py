@@ -34,6 +34,7 @@ CODE = os.path.dirname(HERE)
 REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
+import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
 
 OUT = os.path.join(REPO, "results", "s3_h200", "b0")
 CHUNK = 512
@@ -49,9 +50,9 @@ BGS = {
 REALISTIC = ("decode:", "mixed:", "cprefill:")                 # 05 §5.3「像真實服務的背景」
 CTX = {("b0", "llama"): 64, ("b0", "qwen"): 64, ("m08", "llama"): 252, ("m08", "qwen"): 504}
 PRIMS_B0 = ["h2d_contig", "h2d_perblock", "h2d_batch", "sm_gather_12", "sm_gather_32", "sm_gather_132", "dq_int4", "dq_int4_torch",
-            "dq_fp8", "dq_nvfp4", "lr_recon", "recompute1", "e2e_cake_bf16_cpu", "e2e_load_bf16_cpu", "e2e_cake_int4_cpu",
+            "dq_fp8", "dq_nvfp4", "dq_vq", "lr_recon", "recompute1", "e2e_cake_bf16_cpu", "e2e_load_bf16_cpu", "e2e_cake_int4_cpu",
             "e2e_load_int4_cpu", "e2e_cake_bf16_b32", "e2e_load_bf16_b32", "e2e_cake_int4_b32", "e2e_load_int4_b32"]
-PRIMS_M08 = ["recompute1", "qprefill", "dq_int4", "lr_recon", "h2d_batch"]
+PRIMS_M08 = ["recompute1", "qprefill", "dq_int4", "dq_vq", "lr_recon", "h2d_batch"]
 PRODUCTION = ("h2d_contig", "h2d_perblock", "h2d_batch", "sm_gather_12", "sm_gather_32", "sm_gather_132", "dq_int4", "dq_int4_torch",
               "dq_fp8", "dq_nvfp4", "recompute1", "qprefill")        # 05 §5.2 / 08 §3：只用生產格式（沒有低秩重建）
 COMPUTE_PRIMS = ("recompute1", "qprefill", "lr_recon")            # G-M08 的「計算型」還原
@@ -60,7 +61,59 @@ MPS_PCTS = (100, 87, 75, 50)
 WINDOW_S = 1.0                                                    # 一次「量」的最短時間窗（背景吞吐要夠多步才準）
 FIELDS = ["run_id", "ts", "model", "setup", "ctx_tokens", "bg", "bg_tokens_per_step", "mode", "prim", "production", "rep",
           "order_idx", "n_exec", "t_med_s", "t_p95_s", "t_min_s", "t_window_s", "bg_steps", "bg_rate", "bg_solo_rate", "bg_ratio",
-          "unit_blocks", "bytes", "seed", "gpu_mem_gib", "host_level", "own_gpu_intruders"]
+          "n_rep", "sigma_rel", "delta_star", "p95_sigma_rel", "p95_delta_star", "bg_solo_sigma_rel", "bg_delta_star",
+          "unit_blocks", "bytes", "seed", "gpu_mem_gib", "host_level", "own_gpu_intruders"] + NP.ROW_FIELDS
+NM = "NOT_MEASURED"
+MIN_NOISE_REPS = 6                                                # 05 §2.1：σ 要 ≥6 次
+N_BOOT = 10000
+
+
+def noise(vals: list) -> tuple:
+    """05 §2.1：(sigma_rel, delta_star)；少於 6 次 → NOT_MEASURED。"""
+    v = [float(x) for x in vals]
+    if len(v) < MIN_NOISE_REPS or statistics.median(v) == 0:
+        return NM, NM
+    sr = statistics.stdev(v) / statistics.median(v)
+    return round(sr, 6), round(max(0.05, 2 * sr), 6)
+
+
+def boot_se_median(vals: list, seed: int = 0) -> float | None:
+    """median 的 bootstrap 標準誤（對 rep 重抽 N_BOOT 次）。"""
+    import numpy as np
+    v = np.asarray([float(x) for x in vals])
+    if v.size < MIN_NOISE_REPS:
+        return None
+    rng = np.random.default_rng(seed)
+    return float(np.median(v[rng.integers(0, v.size, size=(N_BOOT, v.size))], axis=1).std(ddof=1))
+
+
+def p95_noise(p95s: list) -> tuple:
+    """P95 的雜訊：P95 的估計＝各 rep 的 P95 的中位數；σ＝它的 bootstrap 標準誤 ÷ 估計（05 §2.1 第 2 點）。"""
+    se = boot_se_median(p95s)
+    if se is None:
+        return NM, NM
+    m = statistics.median(float(x) for x in p95s)
+    sr = se / m if m else None
+    return (NM, NM) if sr is None else (round(sr, 6), round(max(0.05, 2 * sr), 6))
+
+
+def ratio_ci(a: list, b: list, seed: int = 0) -> tuple:
+    """median(a)／median(b) 的 95% CI（兩臂各自對 rep 重抽 N_BOOT 次）。"""
+    import numpy as np
+    A, B = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    rng = np.random.default_rng(seed)
+    ma = np.median(A[rng.integers(0, A.size, size=(N_BOOT, A.size))], axis=1)
+    mb = np.median(B[rng.integers(0, B.size, size=(N_BOOT, B.size))], axis=1)
+    r = ma / mb
+    return float(np.percentile(r, 2.5)), float(np.percentile(r, 97.5))
+
+
+def median_ci(a: list, seed: int = 0) -> tuple:
+    import numpy as np
+    A = np.asarray(a, dtype=float)
+    rng = np.random.default_rng(seed)
+    m = np.median(A[rng.integers(0, A.size, size=(N_BOOT, A.size))], axis=1)
+    return float(np.percentile(m, 2.5)), float(np.percentile(m, 97.5))
 
 
 def run_id() -> str:
@@ -129,6 +182,66 @@ class Target:
         self._xl = None
         self.calib_xl = calib_xl
         self.bench = None
+        self.numa, self.numa_log = None, {}
+
+    # ---- NUMA（只記錄）：主機緩衝的頁在哪個節點；e2e 的 Bench 第一次用到才建，建好再查一次 ----
+    def numa_buffers(self) -> dict:
+        b = {"contig_host": self.contig_host, "host_blocks": self.host}
+        if self.bench is not None:
+            b.update(bench_bf=self.bench.bf, bench_lp=self.bench.lp)
+        return b
+
+    def probe_numa(self, when: str) -> dict:
+        self.numa = NP.probe(self.torch.cuda.current_device(), self.numa_buffers(),
+                             smi=self.numa["gpus_visible"] if self.numa else None)
+        self.numa_log[when] = self.numa
+        return self.numa
+
+    # ---- G-M11：查表式 VQ（product quantization；runs/G_M11_vq.md）----
+    def vq(self, d_sub: int = 4, k: int = 256, iters: int = 6, sample: int = 65536):
+        """每個（層, K/V, 子空間）一本 k 項的碼本（d_sub 維）：從這個 session 的 KV 抽 sample 個向量跑 iters 次 Lloyd；
+        碼＝uint8 [nblk, L, 2, H, 512, D/d_sub]。解碼＝查表（gather），不用 tensor core。每個值 8/d_sub bit。"""
+        if getattr(self, "_vq", None) is None:
+            torch, km = self.torch, self.km
+            L, H, D = km.L, km.H, km.D
+            S = D // d_sub
+            X = torch.stack(self.ref)                                            # [nblk, L, 2, H, 512, D]
+            g = torch.Generator(device=km.device).manual_seed(5)
+            cb = torch.empty(L, 2, S, k, d_sub, dtype=torch.bfloat16, device=km.device)
+            codes = torch.empty(X.shape[:-1] + (S,), dtype=torch.uint8, device=km.device)
+            for l in range(L):
+                for kv in range(2):
+                    V = X[:, l, kv].reshape(-1, S, d_sub).float()                # [N, S, d]
+                    idx = torch.randint(0, V.shape[0], (min(sample, V.shape[0]),), generator=g, device=km.device)
+                    P = V[idx].transpose(0, 1).contiguous()                      # [S, n, d]
+                    C = P[:, torch.randperm(P.shape[1], generator=g, device=km.device)[:k]].clone()   # [S, k, d]
+                    for _ in range(iters):
+                        a = torch.cdist(P, C).argmin(-1)                         # [S, n]
+                        for si in range(S):
+                            sums = torch.zeros(k, d_sub, device=km.device).index_add_(0, a[si], P[si])
+                            cnt = torch.bincount(a[si], minlength=k).clamp_min(1).unsqueeze(1).float()
+                            C[si] = torch.where(torch.bincount(a[si], minlength=k).unsqueeze(1) > 0, sums / cnt, C[si])
+                    cb[l, kv] = C.to(torch.bfloat16)
+                    Cb = cb[l, kv].float()                                       # 用存下來的 BF16 碼本編碼（和解碼一致）
+                    cc_all = torch.empty(V.shape[0], S, dtype=torch.uint8, device=km.device)
+                    for c0 in range(0, V.shape[0], 1 << 18):
+                        part = V[c0:c0 + (1 << 18)].transpose(0, 1)               # [S, m, d]
+                        cc_all[c0:c0 + (1 << 18)] = torch.cdist(part, Cb).argmin(-1).to(torch.uint8).T
+                    codes[:, l, kv] = cc_all.view(codes.shape[0], H, CHUNK, S)
+            self._vq = dict(cb=cb, codes=codes, S=S, d=d_sub, k=k,
+                            nbytes=int(codes.numel() + cb.numel() * 2 // len(self.blocks)))
+        return self._vq
+
+    def dq_vq(self):
+        torch, km, V = self.torch, self.km, self.vq()
+        cb, codes, S, d = V["cb"], V["codes"], V["S"], V["d"]
+        ar = torch.arange(S, device=km.device)
+        for bi, i in enumerate(self.blocks):
+            blk = km.chunk_view(i)                                                # [L, 2, H, 512, D]
+            for l in range(km.L):
+                for kv in range(2):
+                    c = codes[bi, l, kv].long()                                   # [H, 512, S]
+                    blk[l, kv].copy_(cb[l, kv][ar, c].reshape(km.H, CHUNK, km.D))
 
     # ---- xKV（B16）的係數：事先編碼，只量解碼（係數反量化＋乘基底＋RoPE）----
     def xl(self):
@@ -187,6 +300,7 @@ class Target:
             self.tiers = {"cpu": dict(kind="cpu", name="cpu"),
                           "b32": dict(kind="throttle", name="b32", GiBps=float(bw["targets"]["b32"]["GiBps"]))}
             self.bw_run_id = bw["run_id"]
+            self.probe_numa("bench")                                # 在暖機那一次裡（不計時）
         _, mode, fmt, tier = plan.split("_")
         set_rs_priority(self.bench.rs, high=getattr(self, "mode", "stream") == "stream_hi")
         lp = [fmt == "int4"] * self.nb
@@ -222,6 +336,8 @@ class Target:
         elif prim == "dq_nvfp4":
             for i, e in zip(self.blocks, self.enc["nvfp4"]):
                 self.X10.decode(e, out=km.chunk_view(i))
+        elif prim == "dq_vq":
+            self.dq_vq()
         elif prim == "lr_recon":
             self.lr_recon()
         elif prim == "recompute1":
@@ -239,6 +355,8 @@ class Target:
         u = self.unit * self.bytes_block
         if prim.startswith(("h2d", "sm_gather")):
             return u
+        if prim == "dq_vq":
+            return self.vq()["codes"].numel() // 1 + 0
         if prim.startswith("dq_"):
             f = {"dq_int4": "int4_kivi", "dq_int4_torch": "int4_kivi", "dq_fp8": "fp8_token", "dq_nvfp4": "nvfp4"}[prim]
             return sum(e.nbytes for e in self.enc[f])
@@ -261,6 +379,15 @@ class Target:
         self.run("dq_int4")
         torch.cuda.synchronize()
         out["dq_int4_fused_equal_torch"] = all(torch.equal(km.chunk_view(i), r) for i, r in zip(self.blocks, ref4))
+        V = self.vq()
+        self.run("dq_vq")
+        torch.cuda.synchronize()
+        bi, l, kv = 0, 0, 1
+        c = V["codes"][bi, l, kv].long()
+        want = V["cb"][l, kv][torch.arange(V["S"], device=km.device), c].reshape(km.H, CHUNK, km.D)
+        out["dq_vq_equal_lookup"] = bool(torch.equal(km.chunk_view(self.blocks[bi])[l, kv], want))
+        out["vq_relerr_block0"] = round(float((km.chunk_view(self.blocks[0]).float() - self.ref[0].float()).norm()
+                                              / self.ref[0].float().norm()), 4)
         for i, r in zip(self.blocks, self.ref):
             km.chunk_view(i).copy_(r)
         return out
@@ -297,6 +424,7 @@ def measure_block(tgt, bg, prims, reps, seed, rate_fn, solo, stream, w, base_row
         stream.synchronize()
         t_est = max(1e-5, time.perf_counter() - t0)
         n_exec = max(1, math.ceil(WINDOW_S / t_est))
+        rows = []
         for rep in range(reps):
             ts_ = []
             w0 = time.perf_counter()
@@ -309,11 +437,16 @@ def measure_block(tgt, bg, prims, reps, seed, rate_fn, solo, stream, w, base_row
             w1 = time.perf_counter()
             steps, rate = rate_fn(w0, w1)
             ts_.sort()
-            w.writerow(dict(base_row, prim=prim, production=int(prim in PRODUCTION), rep=rep, order_idx=oi, n_exec=n_exec,
-                            t_med_s=statistics.median(ts_), t_p95_s=ts_[min(len(ts_) - 1, math.ceil(0.95 * len(ts_)) - 1)],
-                            t_min_s=ts_[0], t_window_s=w1 - w0, bg_steps=steps, bg_rate=rate, bg_solo_rate=solo,
-                            bg_ratio=(rate / solo if solo else ""), unit_blocks=tgt.unit, bytes=tgt.bytes_of(prim), seed=seed,
-                            gpu_mem_gib=round(torch.cuda.max_memory_allocated() / 2**30, 1), ts=ts()))
+            rows.append(dict(base_row, prim=prim, production=int(prim in PRODUCTION), rep=rep, order_idx=oi, n_exec=n_exec,
+                             t_med_s=statistics.median(ts_), t_p95_s=ts_[min(len(ts_) - 1, math.ceil(0.95 * len(ts_)) - 1)],
+                             t_min_s=ts_[0], t_window_s=w1 - w0, bg_steps=steps, bg_rate=rate, bg_solo_rate=solo,
+                             bg_ratio=(rate / solo if solo else ""), unit_blocks=tgt.unit, bytes=tgt.bytes_of(prim), seed=seed,
+                             gpu_mem_gib=round(torch.cuda.max_memory_allocated() / 2**30, 1), ts=ts(), **NP.row_fields(tgt.numa)))
+        sr, ds = noise([r["t_med_s"] for r in rows])
+        psr, pds = p95_noise([r["t_p95_s"] for r in rows])
+        for r in rows:
+            r.update(n_rep=len(rows), sigma_rel=sr, delta_star=ds, p95_sigma_rel=psr, p95_delta_star=pds)
+            w.writerow(r)
 
 
 def cmd_run(a):
@@ -323,6 +456,7 @@ def cmd_run(a):
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     tgt = Target(a.model, a.setup, a.calib_xl)
     print("[b0] 正確性：", json.dumps(tgt.check()), flush=True)
+    print("[b0] NUMA：", json.dumps(tgt.probe_numa("start")["summary"], ensure_ascii=False), flush=True)
     prims = PRIMS_B0 if a.setup == "b0" else PRIMS_M08
     if a.prims:
         prims = [p for p in prims if p in a.prims.split(",")]
@@ -342,11 +476,14 @@ def cmd_run(a):
                 seed = a.seed * 1000 + bi * 10 + modes.index(mode)
                 if mode.startswith("mps"):
                     pct = int(mode[3:] or 100)
-                    proc, rate_fn, solo, tps = start_bgproc(a, bgspec, pct)
+                    proc, rate_fn, solo, tps, bsr = start_bgproc(a, bgspec, pct)
+                    bds = round(max(0.05, 2 * bsr), 6) if isinstance(bsr, float) else NM
                     stream = torch.cuda.Stream(device=tgt.km.device)
                 else:
                     bg = Background(tgt.km, bgspec, priority=(lo if mode == "stream_bglow" else 0))
-                    solo = bg.solo_rate(2.0)
+                    solo_list = bg.solo_rates(MIN_NOISE_REPS, 1.0)
+                    solo = statistics.median(solo_list)
+                    bsr, bds = noise(solo_list) if bgspec != "idle" else (NM, NM)
                     bg.start()
                     time.sleep(0.5)
                     tps = getattr(bg, "tokens_per_step", 0)
@@ -357,7 +494,8 @@ def cmd_run(a):
                     stream = torch.cuda.Stream(device=tgt.km.device, priority=(hi if mode == "stream_hi" else 0))
                 tgt.mode = mode
                 base = dict(run_id=rid, model=a.model, setup=a.setup, ctx_tokens=tgt.nb * CHUNK, bg=bgspec, bg_tokens_per_step=tps,
-                            mode=mode, host_level=host_level(), own_gpu_intruders=intruders(watch))
+                            mode=mode, host_level=host_level(), own_gpu_intruders=intruders(watch), bg_solo_sigma_rel=bsr,
+                            bg_delta_star=bds)
                 try:
                     measure_block(tgt, None, prims, a.reps, seed, rate_fn, solo, stream, w, base)
                 finally:
@@ -373,6 +511,11 @@ def cmd_run(a):
     finally:
         fo.close()
         finish_watch(watch, a.out)
+        try:
+            tgt.probe_numa("end")
+        except Exception as ex:          # noqa: BLE001  結束時查不到：照實印，start／bench 那幾次照存
+            print(f"[b0] NUMA 結束時的查詢失敗：{ex!r}", flush=True)
+        print("[b0] NUMA 存在", NP.save(a.out, rid, **tgt.numa_log), flush=True)
 
 
 def start_bgproc(a, spec: str, pct: int):
@@ -403,6 +546,8 @@ def start_bgproc(a, spec: str, pct: int):
     solo_line = next(m for m in marks if isinstance(m, str) and m.startswith("SOLO"))
     solo = float(solo_line.split()[1])
     tps = int(solo_line.split()[2])
+    bsr = solo_line.split()[3] if len(solo_line.split()) > 3 else NM
+    bsr = float(bsr) if bsr not in (NM, "") else NM
 
     def rate_fn(t0, t1):
         pts = [m for m in marks if isinstance(m, tuple)]
@@ -412,7 +557,7 @@ def start_bgproc(a, spec: str, pct: int):
         tt = [t for t, n in pts if t0 <= t <= t1]
         return inside[-1] - inside[0], (inside[-1] - inside[0]) / (tt[-1] - tt[0])
     time.sleep(0.5)
-    return p, rate_fn, solo, tps
+    return p, rate_fn, solo, tps, bsr
 
 
 def cmd_bgproc(a):
@@ -423,8 +568,9 @@ def cmd_bgproc(a):
     from bgengine import Background
     km = KVModel(max_len=1024)
     bg = Background(km, a.spec)
-    solo = bg.solo_rate(2.0)
-    print(f"SOLO {solo} {getattr(bg, 'tokens_per_step', 0)}", flush=True)
+    sl = bg.solo_rates(MIN_NOISE_REPS, 1.0)
+    sr, _ = noise(sl)
+    print(f"SOLO {statistics.median(sl)} {getattr(bg, 'tokens_per_step', 0)} {sr}", flush=True)
     bg.start()
     t_end = time.time() + a.seconds
     while time.time() < t_end:
@@ -485,6 +631,8 @@ def cmd_env(a):
         out["green_context"] = f"NOT_AVAILABLE: {ex!r}"
     out["mps_control_binary"] = shutil.which("nvidia-cuda-mps-control") or "NOT_FOUND"
     out["mps_pipe_dir"] = os.environ.get("CUDA_MPS_PIPE_DIRECTORY", "")
+    pin = torch.empty(64 << 20, dtype=torch.uint8, pin_memory=True).fill_(1)          # 這個 process 配的 pinned 落在哪一邊
+    out["numa"] = NP.probe(torch.cuda.current_device(), {"pinned_64MiB": pin})
     print(json.dumps(out, ensure_ascii=False, indent=1))
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     json.dump(out, open(a.out, "w"), indent=1, ensure_ascii=False)
@@ -500,84 +648,163 @@ def _rows(paths):
 
 
 def cell_stats(rows) -> dict:
-    """(model, setup, bg, mode, prim) → 中位數（各次的 t_med_s 的中位數）、P95、背景吞吐比的中位數、n。"""
+    """(model, setup, bg, mode, prim) → 每個 rep 的時間（t_med_s）、中位數、σ、δ*、背景吞吐比的每個 rep、背景的 δ*。"""
     g = {}
     for r in rows:
         k = (r["model"], r["setup"], r["bg"], r["mode"], r["prim"])
         g.setdefault(k, []).append(r)
     out = {}
     for k, rs in g.items():
-        t = sorted(float(r["t_med_s"]) for r in rs)
-        br = [float(r["bg_ratio"]) for r in rs if r["bg_ratio"] not in ("", None)]
-        out[k] = dict(t=statistics.median(t), p95=t[min(len(t) - 1, math.ceil(0.95 * len(t)) - 1)], n=len(t),
-                      bg_ratio=statistics.median(br) if br else None)
+        reps = [float(r["t_med_s"]) for r in rs]
+        br = [float(r["bg_ratio"]) for r in rs if r.get("bg_ratio") not in ("", None)]
+        sr, ds = noise(reps)
+        bds = rs[0].get("bg_delta_star", NM)
+        bds = float(bds) if bds not in (NM, "", None) else NM
+        out[k] = dict(t=statistics.median(reps), reps=reps, n=len(reps), sr=sr, ds=ds,
+                      noisy=isinstance(sr, float) and 2 * sr > 0.05,
+                      bg_ratio=statistics.median(br) if br else None, bg_ratios=br, bg_ds=bds,
+                      bg_noisy=isinstance(bds, float) and bds > 0.05)
     return out
 
 
-def judge(rows, delta: float = 0.05) -> dict:
-    """登記 §2 的 GB0-FLIP／SHARE／STATIC 與 G-M08。"""
+def judge(rows) -> dict:
+    """登記 §2 的判準＋偏離 1（05 §2.1 的雜訊規則）。2σ > 5% 或 σ 量不到的格子不判定、列出來。"""
     st = cell_stats(rows)
-    res = dict(flip=[], share=[], static={}, m08=[])
+    res = dict(flip=[], share=[], static={}, m08=[], skipped=[],
+               noisy=[list(k) for k, v in st.items() if v["noisy"] or v["bg_noisy"]],
+               not_measured=[list(k) for k, v in st.items() if v["ds"] == NM])
+
+    def usable(*cells):
+        return all(c is not None and c["ds"] != NM and not c["noisy"] for c in cells)
+    # ---- FLIP：baseline＝那個背景下「閒時最快的計畫」
     lines = {}
     for (m, s, bg, mode, prim), v in st.items():
         if s == "b0" and prim.startswith("e2e_") and mode == "stream":
-            tier = prim.split("_")[-1]
-            lines.setdefault((m, tier), {}).setdefault(bg, {})[prim] = v["t"]
+            lines.setdefault((m, prim.split("_")[-1]), {}).setdefault(bg, {})[prim] = v
     for (m, tier), byb in lines.items():
         idle = byb.get("idle")
         if not idle:
             continue
-        best_idle = min(idle, key=idle.get)
+        best_idle = min(idle, key=lambda p: idle[p]["t"])
         for bg, plans in byb.items():
             if bg == "idle" or not bg.startswith(REALISTIC):
                 continue
-            best = min(plans, key=plans.get)
-            if best != best_idle and plans.get(best_idle) and plans[best_idle] / plans[best] - 1 >= 0.10:
-                res["flip"].append(dict(model=m, tier=tier, bg=bg, idle_best=best_idle, best=best,
-                                        gain=plans[best_idle] / plans[best] - 1))
-    flip_lines = {(x["model"], x["tier"]) for x in res["flip"]}
-    res["GB0_FLIP"] = any(sum(1 for x in res["flip"] if x["bg"] == bg) >= 2 and len({(x["model"], x["tier"]) for x in res["flip"]
-                                                                                      if x["bg"] == bg}) >= 2
-                          for bg in {x["bg"] for x in res["flip"]})
-    res["flip_lines"] = sorted(flip_lines)
-    # SHARE：同一個（模型, 背景, 動作），某個共用方式比 stream（預設）快 ≥30%，而且背景吞吐 ≥ 單獨跑的 0.90
-    best_mode = {}
+            best = min(plans, key=lambda p: plans[p]["t"])
+            if best == best_idle or best_idle not in plans:
+                continue
+            base, cand = plans[best_idle], plans[best]
+            if not usable(base, cand):
+                res["skipped"].append(dict(test="FLIP", model=m, tier=tier, bg=bg, why="noisy_or_not_measured"))
+                continue
+            gain = base["t"] / cand["t"] - 1
+            thr = max(0.10, base["ds"])
+            lo, hi = ratio_ci(base["reps"], cand["reps"])
+            if gain >= thr and lo > 1:
+                res["flip"].append(dict(model=m, tier=tier, bg=bg, idle_best=best_idle, best=best, gain=gain, threshold=thr,
+                                        ratio_ci=[lo, hi]))
+    res["GB0_FLIP"] = any(len({(x["model"], x["tier"]) for x in res["flip"] if x["bg"] == bg}) >= 2 for bg in {x["bg"] for x in res["flip"]})
+    # ---- SHARE：baseline＝同一格的 stream
     for (m, s, bg, mode, prim), v in st.items():
         if s != "b0" or mode == "stream" or not bg.startswith(REALISTIC):
             continue
         ref = st.get((m, s, bg, "stream", prim))
-        if not ref or v["bg_ratio"] is None:
+        if ref is None or not v["bg_ratios"]:
+            continue
+        if not usable(ref, v) or v["bg_noisy"]:
+            res["skipped"].append(dict(test="SHARE", model=m, bg=bg, prim=prim, mode=mode, why="noisy_or_not_measured"))
             continue
         sp = ref["t"] / v["t"] - 1
-        if sp >= 0.30 and v["bg_ratio"] >= 0.90:
-            res["share"].append(dict(model=m, bg=bg, prim=prim, mode=mode, speedup=sp, bg_ratio=v["bg_ratio"]))
-    res["GB0_SHARE"] = bool(res["share"])
-    # STATIC：每個（模型, 背景, 動作），在背景吞吐 ≥0.90 的 MPS 比例裡最快的那一級；所有像真實的背景都在相鄰一級內 → 固定預留
+        thr = max(0.30, ref["ds"])
+        lo, hi = ratio_ci(ref["reps"], v["reps"])
+        blo, _ = median_ci(v["bg_ratios"]) if len(v["bg_ratios"]) >= 2 else (None, None)
+        bg_ok = v["bg_ratio"] >= 0.90 and blo is not None and blo >= 0.90
+        if sp >= thr and lo > 1 and bg_ok:
+            res["share"].append(dict(model=m, bg=bg, prim=prim, mode=mode, speedup=sp, threshold=thr, ratio_ci=[lo, hi],
+                                     bg_ratio=v["bg_ratio"], bg_ratio_ci_lo=blo))
+        elif sp >= thr and lo > 1 and v["bg_ratio"] >= 0.90:             # 點估計過、CI 沒過 → INCONCLUSIVE（要加重複次數）
+            res.setdefault("share_inconclusive", []).append(dict(model=m, bg=bg, prim=prim, mode=mode, speedup=sp,
+                                                                 bg_ratio=v["bg_ratio"], bg_ratio_ci_lo=blo))
+    res["GB0_SHARE"] = True if res["share"] else ("INCONCLUSIVE" if res.get("share_inconclusive") else False)
+    # ---- STATIC：並列最好（和最快的差 ≤ δ*）的等級；存在一個等級，每個背景都有並列最好的在它相鄰一級內
     lv = {"mps": 0, "mps87": 1, "mps75": 2, "mps50": 3}
+    ties = {}
     for (m, s, bg, mode, prim), v in st.items():
-        if s != "b0" or mode not in lv or not bg.startswith(REALISTIC) or v["bg_ratio"] is None or v["bg_ratio"] < 0.90:
+        if s != "b0" or mode not in lv or not bg.startswith(REALISTIC) or v["bg_ratio"] is None or v["bg_ratio"] < 0.90 or not usable(v):
             continue
-        k = (m, prim)
-        cur = best_mode.setdefault(k, {}).get(bg)
-        if cur is None or v["t"] < st[(m, s, bg, cur, prim)]["t"]:
-            best_mode[k][bg] = mode
-    for (m, prim), byb in best_mode.items():
-        levels = [lv[x] for x in byb.values()]
-        res["static"][f"{m}|{prim}"] = dict(best=byb, static=(max(levels) - min(levels) <= 1) if levels else None)
+        ties.setdefault((m, prim), {}).setdefault(bg, {})[mode] = v
+    for (m, prim), byb in ties.items():
+        sets = {}
+        for bg, cells in byb.items():
+            bm = min(cells, key=lambda k: cells[k]["t"])
+            thr = cells[bm]["t"] * (1 + cells[bm]["ds"])
+            sets[bg] = sorted(lv[k] for k, c in cells.items() if c["t"] <= thr)
+        static = any(all(any(abs(l - L) <= 1 for l in ls) for ls in sets.values()) for L in range(4)) if sets else None
+        res["static"][f"{m}|{prim}"] = dict(tie_levels=sets, static=static)
     vals = [v["static"] for v in res["static"].values() if v["static"] is not None]
     res["GB0_STATIC"] = bool(vals) and all(vals)
-    # G-M08：長 context decode 背景下，計算型還原拿到單獨（閒）速度的 ≥60%，背景吞吐 ≥0.95（TPOT 慢 ≤5%）
+    # ---- G-M08：速度 ≥ 閒時 60%（門檻不變）＋背景「沒有變慢」：變慢 ≤ δ*（背景單獨跑的 σ）且 CI 上界 ≤ δ*
     for (m, s, bg, mode, prim), v in st.items():
-        if s != "m08" or not bg.startswith("decode:") or prim not in COMPUTE_PRIMS or v["bg_ratio"] is None:
+        if s != "m08" or not bg.startswith("decode:") or prim not in COMPUTE_PRIMS or not v["bg_ratios"]:
             continue
         idle = st.get((m, s, "idle", "stream", prim))
-        if not idle:
+        if idle is None:
+            continue
+        if not usable(idle, v) or v["bg_ds"] == NM or v["bg_noisy"]:
+            res["skipped"].append(dict(test="G-M08", model=m, bg=bg, prim=prim, mode=mode, why="noisy_or_not_measured"))
             continue
         speed = idle["t"] / v["t"]
-        ok = speed >= 0.60 and v["bg_ratio"] >= 0.95
-        res["m08"].append(dict(model=m, bg=bg, mode=mode, prim=prim, speed_vs_idle=speed, bg_ratio=v["bg_ratio"], ok=ok))
-    res["G_M08"] = "PASS" if any(x["ok"] for x in res["m08"]) else ("STOP" if res["m08"] else "NOT_MEASURED")
+        slo, shi = ratio_ci(idle["reps"], v["reps"])
+        blo, bhi = median_ci(v["bg_ratios"]) if len(v["bg_ratios"]) >= 2 else (None, None)
+        slow = 1 - v["bg_ratio"]
+        point_ok = speed >= 0.60 and slow <= v["bg_ds"]
+        ci_ok = blo is not None and (1 - blo) <= v["bg_ds"]
+        status = "ok" if (point_ok and ci_ok) else ("inconclusive" if point_ok else "fail")
+        res["m08"].append(dict(model=m, bg=bg, mode=mode, prim=prim, speed_vs_idle=speed, speed_ci=[slo, shi], bg_slowdown=slow,
+                               bg_slowdown_ci_hi=(1 - blo) if blo is not None else None, bg_delta_star=v["bg_ds"],
+                               ok=status == "ok", status=status))
+    st_m08 = {x["status"] for x in res["m08"]}
+    res["G_M08"] = ("PASS" if "ok" in st_m08 else "INCONCLUSIVE" if "inconclusive" in st_m08 else "STOP" if res["m08"] else "NOT_MEASURED")
+    res["provisional_because_noisy"] = bool(res["noisy"])
+    res["G_M11"] = judge_gm11(st)
     return res
+
+
+def judge_gm11(st: dict) -> dict:
+    """runs/G_M11_vq.md：慢幾倍＝t(背景, stream)／t(閒, stream)。VQ 在 matmul 背景下比 INT4（融合 kernel）少慢：
+    INT4 的慢幾倍 ÷ VQ 的慢幾倍 −1 > δ*（δ*＝INT4 在 matmul 背景那一格的），且這個比的 95% CI（四格各自對 rep 重抽）下界 > 1。"""
+    import numpy as np
+    out = {}
+    for m in sorted({k[0] for k in st}):
+        cells = {(bg, prim): st.get((m, "b0", bg, "stream", prim)) for bg in ("idle", "matmul", "decode:32:8192")
+                 for prim in ("dq_vq", "dq_int4")}
+        if any(cells[(bg, p)] is None for bg in ("idle", "matmul") for p in ("dq_vq", "dq_int4")):
+            out[m] = dict(verdict="NOT_MEASURED")
+            continue
+        use = [cells[(bg, p)] for bg in ("idle", "matmul") for p in ("dq_vq", "dq_int4")]
+        if any(c["ds"] == NM or c["noisy"] for c in use):
+            out[m] = dict(verdict="NOISY_OR_NOT_MEASURED")
+            continue
+        sv = cells[("matmul", "dq_vq")]["t"] / cells[("idle", "dq_vq")]["t"]
+        si = cells[("matmul", "dq_int4")]["t"] / cells[("idle", "dq_int4")]["t"]
+        rng = np.random.default_rng(0)
+
+        def bm(c):
+            A = np.asarray(c["reps"])
+            return np.median(A[rng.integers(0, A.size, size=(N_BOOT, A.size))], axis=1)
+        r = (bm(cells[("matmul", "dq_int4")]) / bm(cells[("idle", "dq_int4")])) / (bm(cells[("matmul", "dq_vq")]) / bm(cells[("idle", "dq_vq")]))
+        lo, hi = float(np.percentile(r, 2.5)), float(np.percentile(r, 97.5))
+        thr = cells[("matmul", "dq_int4")]["ds"]
+        ok = si / sv - 1 > thr and lo > 1
+        dec = {}
+        if cells[("decode:32:8192", "dq_vq")] and cells[("decode:32:8192", "dq_int4")]:
+            dec = dict(vq=cells[("decode:32:8192", "dq_vq")]["t"] / cells[("idle", "dq_vq")]["t"],
+                       int4=cells[("decode:32:8192", "dq_int4")]["t"] / cells[("idle", "dq_int4")]["t"])
+        out[m] = dict(slowdown_vq_matmul=sv, slowdown_int4_matmul=si, ratio=si / sv, ratio_ci=[lo, hi], delta_star=thr,
+                      verdict="PASS" if ok else "STOP", decode_background=dec)
+    v = [x["verdict"] for x in out.values()]
+    out["verdict"] = ("PASS" if v and all(x == "PASS" for x in v) else "PARTIAL" if "PASS" in v
+                      else "STOP" if v and all(x == "STOP" for x in v) else "NOT_DETERMINED")
+    return out
 
 
 def cmd_report(a):
@@ -588,7 +815,11 @@ def cmd_report(a):
     doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows), **res)
     os.makedirs(OUT, exist_ok=True)
     json.dump(doc, open(os.path.join(OUT, "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
-    print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows")}, ensure_ascii=False))
+    print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows", "provisional_because_noisy")}
+                     | {"G_M11": doc["G_M11"].get("verdict")},
+                     ensure_ascii=False), f"noisy={len(doc['noisy'])} not_measured={len(doc['not_measured'])} skipped={len(doc['skipped'])}")
+    if doc["noisy"]:
+        print("⚠ 有 2σ > 5% 的格子（05 §2.1 第 5 點：先回報、不拿來判定）：", doc["noisy"][:10])
 
 
 def self_test() -> bool:
@@ -599,11 +830,14 @@ def self_test() -> bool:
         print(("PASS " if c else "FAIL ") + name)
         ok &= bool(c)
     chk("隨機順序可重現、是排列", plan_order(PRIMS_B0, 3) == plan_order(PRIMS_B0, 3) and sorted(plan_order(PRIMS_B0, 3)) == sorted(PRIMS_B0))
+    chk("noise：6 次才有 σ、δ* 下限 5%", noise([1.0] * 5) == (NM, NM) and noise([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])[1] == 0.05
+        and noise([1.0, 1.2, 0.8, 1.1, 0.9, 1.0])[1] > 0.05)
     rows = []
 
-    def add(m, s, bg, mode, prim, t, br):
+    def add(m, s, bg, mode, prim, t, br, jitter=0.002, bds=0.05):
         for rep in range(6):
-            rows.append(dict(model=m, setup=s, bg=bg, mode=mode, prim=prim, t_med_s=str(t * (1 + 0.01 * rep)), bg_ratio=str(br)))
+            rows.append(dict(model=m, setup=s, bg=bg, mode=mode, prim=prim, t_med_s=str(t * (1 + jitter * (rep - 2.5))),
+                             bg_ratio=(str(br + 0.001 * (rep - 2.5)) if br != "" else ""), bg_delta_star=str(bds)))
     for m in ("llama", "qwen"):
         for tier in ("cpu", "b32"):
             add(m, "b0", "idle", "stream", f"e2e_cake_bf16_{tier}", 1.0, "")
@@ -611,16 +845,31 @@ def self_test() -> bool:
             add(m, "b0", "cprefill:2048:65536", "stream", f"e2e_cake_bf16_{tier}", 3.0, 0.8)
             add(m, "b0", "cprefill:2048:65536", "stream", f"e2e_load_int4_{tier}", 1.5, 0.9)
         add(m, "b0", "decode:32:8192", "stream", "recompute1", 1.0, 0.7)
-        add(m, "b0", "decode:32:8192", "mps87", "recompute1", 0.6, 0.92)
+        add(m, "b0", "decode:32:8192", "mps87", "recompute1", 0.6, 0.95)
         add(m, "b0", "decode:32:8192", "mps", "recompute1", 0.9, 0.85)
         add(m, "m08", "idle", "stream", "recompute1", 1.0, "")
-        add(m, "m08", "decode:4:129024", "stream", "recompute1", 1.4, 0.97)
+        add(m, "m08", "decode:4:129024", "stream", "recompute1", 1.4, 0.98)
     r = judge(rows)
     chk(f"FLIP（兩個模型 × 兩層都翻）→ {r['GB0_FLIP']}", r["GB0_FLIP"] is True)
-    chk(f"SHARE（mps87 快 67%、背景 0.92）→ {r['GB0_SHARE']}", r["GB0_SHARE"] is True)
-    chk(f"G-M08（速度 0.71、背景 0.97）→ {r['G_M08']}", r["G_M08"] == "PASS")
+    chk(f"SHARE（mps87 快 67%、背景 0.95）→ {r['GB0_SHARE']}", r["GB0_SHARE"] is True)
+    chk(f"G-M08（速度 0.71、背景慢 2%、δ* 5%）→ {r['G_M08']}", r["G_M08"] == "PASS")
     rows2 = [x for x in rows if x["bg"] != "cprefill:2048:65536"]
     chk("沒有翻轉的資料 → FLIP False", judge(rows2)["GB0_FLIP"] is False)
+    rows3 = [dict(x, t_med_s=str(float(x["t_med_s"]) * (1 + 0.2 * ((hash(x["prim"] + x["mode"] + str(i)) % 7) - 3) / 3)))
+             for i, x in enumerate(rows)]
+    r3 = judge(rows3)
+    chk(f"很晃（2σ > 5%）的格子 → 列出 {len(r3['noisy'])} 格、不判定", len(r3["noisy"]) > 0 and r3["provisional_because_noisy"])
+    rows4 = [x for x in rows if x["bg"] != "decode:4:129024"] + [
+        dict(model="llama", setup="m08", bg="decode:4:129024", mode="stream", prim="recompute1", t_med_s=str(1.4), bg_ratio="0.90",
+             bg_delta_star="0.05") for _ in range(6)]
+    chk(f"G-M08 背景慢 10% > δ* 5% → {judge(rows4)['G_M08']}", judge(rows4)["G_M08"] in ("STOP", "PASS") and
+        not any(x["ok"] for x in judge(rows4)["m08"] if x["model"] == "llama"))
+    rows5 = [x for x in rows if x["bg"] != "decode:4:129024"]
+    for rep, br in enumerate((0.99, 0.90, 0.99, 0.90, 0.99, 0.99)):          # 中位數 0.99（慢 1%），但很分散 → CI 上界 > 5%
+        for m in ("llama", "qwen"):
+            rows5.append(dict(model=m, setup="m08", bg="decode:4:129024", mode="stream", prim="recompute1", t_med_s=str(1.4),
+                              bg_ratio=str(br), bg_delta_star="0.05"))
+    chk(f"G-M08 點估計過、CI 上界超過 δ* → {judge(rows5)['G_M08']}", judge(rows5)["G_M08"] == "INCONCLUSIVE")
     print("self-test", "PASS" if ok else "FAIL")
     return ok
 

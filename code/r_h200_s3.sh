@@ -18,6 +18,7 @@
 #   sbatch --job-name=s3-b0-llama-b0-stream --time=4:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes stream,stream_hi  # 量時間
 #   sbatch --job-name=s3-b0-llama-b0-mps --time=6:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes mps,mps87,mps75,mps50  # 量時間（自動開 MPS）
 #   sbatch --job-name=s3-w0gfio --time=1:00:00 code/r_h200_s3.sh --part w0gfio                    # 量時間：W0（兩個模型）＋G-fio
+#   sbatch --job-name=s3-gm06 --time=1:00:00 --gres=gpu:4 --cpus-per-task=64 --mem=680G code/r_h200_s3.sh --part gm06   # 4 卡、量時間
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 排程（使用者 2026-10-25「排滿：stage3 品質先填空檔」，memory stage3-gpu-scheduling）：
@@ -59,14 +60,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-tf|a0-gen|b0-prep) TIMING=0 ;;
-  b0-run|w0gfio) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio" >&2; exit 2 ;;
+  fetch|a0-smoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep) TIMING=0 ;;
+  b0-run|w0gfio|gm12-s|gm06) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|gm06" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
 fi
-case "$PART" in a0-*) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
+case "$PART" in a0-*|gm12-q) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
 ICPE_TIMING_RE='^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$'     # r_h200_icpe.sh 裡 TIMING=1 的 part
 
 # 模型權重：本地 /tmp（code/s3/fetch_models.py）。env_h200.sh 的 M7_*_GLOB 用 ${HF_HOME}，所以先設 HF_HOME
@@ -92,6 +93,10 @@ if [ "$DRY" = 0 ]; then
   # 讓位（code/s3/sched.py）：ICPE 量時間的 job 如果只剩在等 stage3（或已經在等資源），這個 job 不佔這個空檔：
   # 原樣重送一份、排在那個 ICPE job 之後，然後結束（exit 0；它在 ICPE 的依賴裡是 afterany，所以 ICPE 可以開跑）
   ytgt=$(python3 "$REPO/code/s3/sched.py" yield-target 2>/dev/null || true)
+  # 品質的 job 也讓位給「只剩在等 stage-3」的 stage-3 量時間 job（s3-T-*；同一個重送做法）
+  if [ -z "$ytgt" ] && [ "$TIMING" = 0 ]; then
+    ytgt=$(python3 "$REPO/code/s3/sched.py" s3-timing-target --me "$SLURM_JOB_ID" 2>/dev/null || true)
+  fi
   if [ -n "$ytgt" ]; then
     tl=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TimeLimit=[^ ]*' | cut -d= -f2)
     dep=$(echo "$ytgt" | tr ' ' '\n' | sed 's/^/afterany:/' | paste -sd,)
@@ -101,7 +106,16 @@ if [ "$DRY" = 0 ]; then
     exit 0
   fi
   if [ "$TIMING" = 1 ] && [ -n "$mine" ]; then
-    echo "[r_h200_s3] 量時間：節點上還有我們自己的 job 在跑 → 停：" >&2; echo "$mine" >&2; exit 2
+    # 量時間不和自己人同時跑：重送一份排在那些 job 之後（不直接失敗）；品質的 job 會讓位給排隊中的它
+    run_ids=$(printf '%s\n' "$mine" | awk '{print $1}')
+    dep=$(echo "$run_ids" | sed 's/^/afterany:/' | paste -sd,)
+    tl=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TimeLimit=[^ ]*' | cut -d= -f2)
+    gres=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TresPerNode=[^ ]*' | cut -d= -f2 | sed 's/gres\/gpu:/gpu:/; s/gres:gpu:/gpu:/')
+    cpus=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'NumCPUs=[0-9]*' | cut -d= -f2)
+    nj=$(env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --parsable --job-name="$SLURM_JOB_NAME" --time="$tl" --dependency="$dep" \
+         ${gres:+--gres=$gres} ${cpus:+--cpus-per-task=$cpus} -D "$REPO" "$REPO/code/r_h200_s3.sh" "${ORIG_ARGS[@]}")
+    echo "[r_h200_s3] 量時間：節點上還有我們自己的 job（$(echo $run_ids)）→ 重送成 $nj（$dep），這個 job 結束" >&2
+    exit 0
   fi
   echo "[r_h200_s3] $(date -Is) part=$PART job=$SLURM_JOB_ID node=$NODE git=$(git rev-parse --short HEAD) timing=$TIMING"
   echo "[r_h200_s3] 同節點的 job（開跑時）："; squeue -h -w "$NODE" -o '%i %u %a %j %b %T %M'
@@ -179,10 +193,10 @@ if [ "$PART" = b0-prep ]; then
   for m in llama qwen; do
     step B0-BGCHECK-$m m7run s3-b0-bgcheck-$m bash -c "python code/s3/b0.py bgcheck --model $m --out \"\$RUN_DIR/bgcheck_$m.csv\""
   done
-  step B0-SMOKE m7run s3-b0-smoke bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes stream,stream_hi --bgs idle,decode:8:8192,cprefill:2048:65536 --prims h2d_batch,sm_gather_12,dq_int4,dq_fp8,dq_nvfp4,lr_recon,recompute1,e2e_cake_bf16_cpu,e2e_load_int4_b32 --reps 1 --out "$RUN_DIR/smoke.csv"'
-  step B0-SMOKE-M08 m7run s3-b0-smoke-m08 bash -c 'python code/s3/b0.py run --model qwen --setup m08 --modes stream --bgs idle,decode:4:258048 --prims recompute1,qprefill,lr_recon --reps 1 --out "$RUN_DIR/smoke_m08.csv"'
+  step B0-SMOKE m7run s3-b0-smoke bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes stream,stream_hi --bgs idle,decode:8:8192,cprefill:2048:65536 --prims h2d_batch,sm_gather_12,dq_int4,dq_fp8,dq_nvfp4,dq_vq,lr_recon,recompute1,e2e_cake_bf16_cpu,e2e_load_int4_b32 --reps 6 --out "$RUN_DIR/smoke.csv"'
+  step B0-SMOKE-M08 m7run s3-b0-smoke-m08 bash -c 'python code/s3/b0.py run --model qwen --setup m08 --modes stream --bgs idle,decode:4:258048 --prims recompute1,qprefill,dq_vq,lr_recon --reps 6 --out "$RUN_DIR/smoke_m08.csv"'
   step MPS-ON mps_on
-  step B0-SMOKE-MPS m7run s3-b0-smoke-mps bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes mps,mps75 --bgs decode:32:8192 --prims recompute1,h2d_batch --reps 1 --out "$RUN_DIR/smoke_mps.csv"'
+  step B0-SMOKE-MPS m7run s3-b0-smoke-mps bash -c 'python code/s3/b0.py run --model llama --setup b0 --modes mps,mps75 --bgs decode:32:8192 --prims recompute1,h2d_batch,dq_vq --reps 6 --out "$RUN_DIR/smoke_mps.csv"'
 fi
 if [ "$PART" = b0-run ]; then
   step MODELS ensure_models "$MODEL"
@@ -191,6 +205,50 @@ if [ "$PART" = b0-run ]; then
   mkdir -p "$S3/b0/raw"
   TAG=$(echo "$MODES" | tr ',' '-')
   step B0-RUN m7run "s3-b0-$MODEL-$SETUP-$TAG" bash -c "python code/s3/b0.py run --model $MODEL --setup $SETUP --modes $MODES --reps 6 --seed 1 --out $S3/b0/raw/b0_${MODEL}_${SETUP}_${TAG}_\$RUN_ID.csv"
+fi
+
+# ---- G-M12（runs/G_M12_sparse_recompute.md）-----------------------------------------------------------------
+if [ "$PART" = gm12-q ]; then
+  M=$(python3 -c "import sys; sys.path.insert(0, 'code/s3'); import a0; print(a0.CELLS[sys.argv[1]]['model'])" "$CELL")
+  SI=${SHARD%%/*}
+  step MODELS ensure_models "$M"
+  [ "$SI" = 0 ] && step GM12-SELFTEST-$CELL m7run s3-gm12-selftest-$CELL bash -c "python code/s3/gm12.py gpu-selftest --cell $CELL --out \"\$RUN_DIR/gm12_selftest.json\""
+  step GM12-Q-$CELL-$SI m7run s3-gm12-q-$CELL-s$SI python code/s3/gm12.py quality --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+fi
+if [ "$PART" = gm12-s ]; then
+  step MODELS ensure_models llama qwen
+  for m in llama qwen; do step GM12-S-$m m7run s3-gm12-s-$m python code/s3/gm12.py speed --model $m; done
+fi
+
+# ---- D0 的可行性（P0f）：MiniCPM4.1-8B＋infllmv2_cuda_impl（裝在本地的獨立目錄，不碰 conda 環境）------------------------
+D0_SRC_COMMIT=93cf2ec28e5a                                   # OpenBMB/infllmv2_cuda_impl main（10/25 讀；feature_infer 分支已不在）
+d0_build() {
+  [ "$DRY" = 1 ] && { echo "[d0_build]"; return 0; }
+  local D=$S3_LOCAL/d0
+  mkdir -p "$D"
+  if [ -f "$D/pylibs/.built_$D0_SRC_COMMIT" ]; then echo "[d0] kernel 已編好（$D0_SRC_COMMIT）"; return 0; fi
+  rm -rf "$D/src" "$D/pylibs" "$D/wheels"
+  git clone https://github.com/OpenBMB/infllmv2_cuda_impl.git "$D/src" || return 2
+  git -C "$D/src" checkout "$D0_SRC_COMMIT" || return 2
+  git -C "$D/src" submodule update --init --recursive || return 2
+  export CUDA_HOME=/cm/shared/apps/cuda13.3 PATH=/cm/shared/apps/cuda13.3/bin:$PATH MAX_JOBS=16 TORCH_CUDA_ARCH_LIST=9.0
+  nvcc --version | tail -2
+  (cd "$D/src" && pip wheel --no-deps --no-build-isolation -w "$D/wheels" .) || return 2
+  pip install --no-deps --target "$D/pylibs" "$D"/wheels/*.whl || return 2
+  touch "$D/pylibs/.built_$D0_SRC_COMMIT"
+}
+if [ "$PART" = d0-prep ]; then
+  step MODELS ensure_models minicpm
+  step D0-BUILD m7run s3-d0-build bash -c "$(declare -f d0_build); S3_LOCAL=$S3_LOCAL D0_SRC_COMMIT=$D0_SRC_COMMIT DRY=0 d0_build"
+  step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
+fi
+
+# ---- G-M06＋M07（runs/G_M06_multipath.md）：4 卡 job ------------------------------------------------------------
+if [ "$PART" = gm06 ]; then
+  [ "$DRY" = 1 ] || [ "$(python3 -c 'import torch;print(torch.cuda.device_count())')" -ge 4 ] || { echo "[r_h200_s3] gm06 要 4 張卡" >&2; exit 2; }
+  mkdir -p "$S3/gm06"
+  step GM06 m7run s3-gm06 python code/s3/gm06.py run --out-dir "$S3/gm06"
+  step GM06-REPORT python3 code/s3/gm06.py report
 fi
 
 # ---- W0、G-fio（runs/W0_write_cost.md、runs/G_fio.md）------------------------------------------------------
@@ -203,7 +261,7 @@ if [ "$PART" = w0gfio ]; then
     step W0-$m m7run s3-w0-$m bash -c "python code/s3/w0.py run --model $m --threads 16 --reps 6 --out $S3/w0/raw/w0_${m}_\$RUN_ID.csv"
   done
   step W0-REPORT python3 code/s3/w0.py report
-  step GFIO m7run s3-gfio bash -c "python code/s3/gfio.py run --dir $S3_LOCAL/gfio --gib 16 --dir $TIARA_HOME/tmp/gfio --gib 4 --out $S3/gfio/gfio_\$RUN_ID.csv"
+  step GFIO m7run s3-gfio bash -c "python code/s3/gfio.py run --dir $S3_LOCAL/gfio --gib 16 --total-gib 4 --dir $TIARA_HOME/tmp/gfio --gib 4 --total-gib 2 --reps 6 --out $S3/gfio/gfio_\$RUN_ID.csv"
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_s3] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi
