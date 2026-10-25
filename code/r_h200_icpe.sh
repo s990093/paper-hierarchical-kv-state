@@ -273,7 +273,9 @@ if [ "$PART" = p12 ]; then
   step P12-B3-FI-3600      x5v fi-cens3600  p12_x5_fi_cens3600  --fi --censor-H 3600 --main-only --variants reg -- --sfx _fi_cens3600
   step P12-B4-LOADONLY     x5v loadonly     p12_x5_loadonly     --variants loadonly --main-only -- --sfx _loadonly --variant loadonly
   # B5：只算 ≤32K（主格子的 raw＝P0-1 (c) V0 的 X5 格子，和 git 的 H200 主格子逐值相同才算數；B1 的 strict raw）
-  step P12-B5-LE32K m7run icpe-p12-x5-le32k $FV x5s --out-dir "$P12/x5" --sets "subtree::$P3LOCAL/x5_V0" "strict:_strict:$P3LOCAL/p12_x5_strict"
+  # x5_short_only 從同一個 out-dir 讀兩組的 x5_headroom{sfx}.csv；主格子（sfx ''）的在 P0-1 (c) V0（和 git 逐值相同，p01c_verdict.json），
+  # 10/25 第一次沒複製過來 → FileNotFoundError（RUNLOG ICPE-P12）。複製的檔保留原本的 run_id 欄（V0 的 x5-an run）。
+  step P12-B5-LE32K m7run icpe-p12-x5-le32k bash -c "cp $P01/sim_V0/x5/x5_headroom.csv $P12/x5/x5_headroom.csv && $FV x5s --out-dir $P12/x5 --sets subtree::$P3LOCAL/x5_V0 strict:_strict:$P3LOCAL/p12_x5_strict"
   # C1：X4 f×0.5
   step P12-C1-SWEEP m7run icpe-p12-x4f05-sweep $FV x4 sweep --procs 14 --rules loose strict --fscale 0.5 --p 0.3 0.4 0.5 --out x4_sweep_f05.csv
   if [ "$DRY" = 1 ]; then F05="<x4f05-sweep 的 run 目錄>"; else F05=$(ls -d "$TIARA_RUNS"/*-icpe-p12-x4f05-sweep 2>/dev/null | sort | tail -1); fi

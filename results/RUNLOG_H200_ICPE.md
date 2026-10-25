@@ -201,3 +201,16 @@ ValueError: The weights and list don't have the same length.
 **修正**：`x5v` 從 run 參數取 `--censor-H` 的值，analyze 用 `env X5_CENSOR_H=<H>`（沒設限的步驟 H＝0，和之前一樣）。寫新檔再 mv（22236 正在用這支）。
 **重送**：**22240** `icpe-p12 --from P12-B3-CENS1800`（B3 的 x5 run 重跑一次，raw 目錄先刪，所以輸出和 analyze 一致）。p01brr 22233 的依賴加上 22240（現在：afterany:21907:21909:22236:22238:22240；已滿足的 Slurm 會自己拿掉）。
 - **10/25 12:5xZ runner 小改**（stage3 session 告知 main `23e509e`：stage3 的 job 開跑時若看到沒 hold、只等 s3-* 或沒有依賴的 ICPE 量時間 job，就重送自己到它後面、exit 0）：量時間 part 的「節點上有自己的 job → 退出」改成每 60 s 再查、最多 15 次，還有才退出。目的：兩邊同一輪排程一起開跑時，等 stage3 讓開，不讓量時間鏈一路 exit 2。量測仍然只在節點上沒有我們別的 job 時才開始。
+
+## ICPE-P12 第二次 — job 22240 FAILED（2026-10-25 20:47:01 → 21:00:15 +08:00；只用 CPU）
+**完成的步驟**（全部 exit 0）：B3 四個（cens1800、strict-cens1800、fi-cens1800、fi-cens3600 的 run＋analyze；`X5_CENSOR_H` 修正有效）、B4（loadonly）。
+**失敗**：`20261025-210010-icpe-p12-x5-le32k`，exit 1：
+```
+File ".../code/p3x/x5_short_only.py", line 31, in main
+    h = pd.read_csv(os.path.join(a.out_dir, f"x5_headroom{sfx}.csv"))
+FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p12/x5/x5_headroom.csv'
+```
+**原因（我的 runner 錯）**：`x5_short_only` 從同一個 `--out-dir` 讀兩組的 `x5_headroom{sfx}.csv`；主格子（sfx ''）是 P0-1 (c) V0 算的，檔在 `results/icpe_h200/p01/sim_V0/x5/`，沒有放到 p12 的 out-dir。
+**修正**：B5 這一步先 `cp results/icpe_h200/p01/sim_V0/x5/x5_headroom.csv results/icpe_h200/p12/x5/`（複製的檔保留原 run_id 欄＝V0 的 `20261025-195015-icpe-p01c-x5-an-V0`；它和 git 的 H200 主格子逐值相同，見 ICPE-P01-C），再跑原本的 `x5s`。登記（P1-2 §2 B5：主格子 raw＋B1 strict raw）不變。
+**重送**：**22249** `icpe-p12 --from P12-B5-LE32K`（B5、C1 sweep、C1 analyze）；p01brr 22233 的依賴 22240 換成 22249。
+- **10/25 13:0xZ 排程變化（不是這個 session 做的）**：DL_Lab4 的 21907 `J_kd`、21909 `final3` 在 21:03:08（+08）被取消（sacct：CANCELLED）。p01brr 22233 現在只等 22236（p11q）、22249（p12）和 stage3 session 加的 s3-* job（22242、22250–22261）。照 stage3 的自動讓位（main 23e509e），p11q／p12 結束後 p01brr 只剩 s3-* 依賴，之後開跑的 s3 job 會自己重送到 p01brr 後面 → p01brr 最多等那時已經在跑的 s3 分片（≤4 h）。
