@@ -413,7 +413,7 @@ def worker(spec: dict):
         if watch is None:
             return "NOT_CHECKED"
         bad = {p: v for p, v in watch.intruders.items() if p not in busy_pid}
-        return bool(bad) or watch.started_clean is False
+        return bool(bad) or watch.started_clean is False or bool(getattr(watch, "smi_failures", None))   # nvidia-smi 失敗過＝那段沒人看（規則 7）
 
     for length in lengths:
         n = length // 512

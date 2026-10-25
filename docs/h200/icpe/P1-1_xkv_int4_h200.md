@@ -95,6 +95,8 @@ run：生成 `20261025-203913-icpe-p11-gen-qwen`、`20261025-210417-icpe-p11-gen
 - **Q-c**：三個 X4b 同配置，H200 的 CI 和 MI300X 的 CI 都有交集 → **相容**。判定字：Qwen `k34v51` 兩台都是「ε 沒過、MLPerf 過」→ **相同**；Llama `k29v44`、`k19v29` 在 H200「ε 過、MLPerf 過」、在 MI300X「ε 沒過、MLPerf 沒過」→ **不同**（H200 好得多：+0.1、+0.4 vs −3.3、−3.6）。（`p11q_report.json` 只算了 CI 交集；判定字的比較是我照 MI300X `x4_report.json` 的 `eps_pass`／`mlperf0.99` 逐格對的。）〔判讀，沒有驗證〕兩台的題目不同（seed 67000 vs 65000；Llama E0 71.6 vs 77.6%），Llama 在 MI300X 掉的 3 個百分點在 H200 的新題上沒有出現；原因沒查。
 - **Q-d**：校準基底 − 每題 SVD：Qwen −0.2 [−2.0, +1.7]；Llama k29v44 −0.7 [−3.3, +1.7]、k19v29 −1.0 [−3.6, +1.3] → 兩個模型都 **UNDETERMINED**（同 MI300X 38k）。
 
+- **爭用紀錄的缺口**（stage3 session 10/25 發現，我核對過）：`20261025-210417-icpe-p11-gen-llama` 的 stderr 有 `SmiUnavailable: ... timed out after 20 seconds`（2026-10-25 21:44:46 +08，hgx-cn01 上 nvidia-smi 全節點卡住）。舊的 GpuWatcher 在那之後就停止取樣，結束時仍寫 CLEAN → 這個 run 21:44:46 以後的爭用紀錄等於沒有。品質量測量的是分數（同題、temperature 0），不受影響（CLAUDE.md §3）；`latency_ms` 本來就不用。gpu_guard 已修（main `6c450c9`，ICPE 的手寫判斷另修，RUNLOG ICPE-GUARD）。
+
 ### 7.2 (T) 時間
 （job 21670，hold 中，排在量時間鏈最後。）
 

@@ -141,7 +141,7 @@ def cmd_kernels(a):
     contaminated = None
     if watch is not None:
         bad = {p: v for p, v in watch.intruders.items() if p not in busy_pid}
-        contaminated = bool(bad) or watch.started_clean is False
+        contaminated = bool(bad) or watch.started_clean is False or bool(getattr(watch, "smi_failures", None))   # nvidia-smi 失敗過＝那段沒人看（規則 7）
         watch.__exit__(None, None, None)
     for r in rows:
         r["contaminated_gpu"] = contaminated if contaminated is not None else "NOT_CHECKED"

@@ -136,7 +136,7 @@ def cmd_wcost(a):
                 busy_pids.add(b.p.pid)
             res = XT._time_slow(torch, ops, a.reps, rng, warm=(i == 0))
             bad = {p for p in (watch.intruders if watch else {}) if p not in busy_pids}
-            cflag = (bool(bad) or watch.started_clean is False) if watch else "NOT_CHECKED"
+            cflag = (bool(bad) or watch.started_clean is False or bool(getattr(watch, "smi_failures", None))) if watch else "NOT_CHECKED"   # nvidia-smi 失敗過＝沒人看（規則 7）
         for (k, o), v in res.items():
             q1, q3 = XT.quart(v)
             rows.append(dict(run_id=rid, ts=ts(), model=a.model, duty=d, pair=k, op=o, reps=len(v), t_med_s=XT.med(v), t_q1_s=q1,

@@ -142,7 +142,7 @@ class Guard:
         if _WATCH is None:
             return "NOT_CHECKED"
         bad = {p: v for p, v in _WATCH.intruders.items() if p not in self.allow}
-        return bool(bad) or _WATCH.started_clean is False
+        return bool(bad) or _WATCH.started_clean is False or bool(getattr(_WATCH, "smi_failures", None))   # nvidia-smi 失敗過＝那段沒人看（規則 7）
 
     def disk_foreign_mib(self, own_bytes):
         tot = (self.d1[0] - self.d0[0]) + (self.d1[1] - self.d0[1])
@@ -906,8 +906,8 @@ def main():
          "b": b_exp}[a.cmd](a)
     finally:
         stop_watch()
-        if _WATCH is not None and any(p not in _ALLOW for p in _WATCH.intruders):
-            open(os.path.join(rd, "CONTAMINATED"), "w").write(json.dumps(_WATCH.intruders, default=str))
+        if _WATCH is not None and (any(p not in _ALLOW for p in _WATCH.intruders) or getattr(_WATCH, "smi_failures", None)):
+            open(os.path.join(rd, "CONTAMINATED"), "w").write(json.dumps(dict(intruders=_WATCH.intruders, smi_failures=getattr(_WATCH, "smi_failures", [])), default=str))
 
 
 if __name__ == "__main__":

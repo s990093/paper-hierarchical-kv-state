@@ -2170,7 +2170,7 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
         if watch is None:
             return "NOT_CHECKED"
         bad = {p: v for p, v in watch.intruders.items() if p not in busy_pids}
-        return bool(bad) or watch.started_clean is False
+        return bool(bad) or watch.started_clean is False or bool(getattr(watch, "smi_failures", None))   # nvidia-smi 失敗過＝那段沒人看（規則 7）
     sdma = os.environ.get("HSA_ENABLE_SDMA", "unset(預設 1)")
     bytes_bf16 = n_blocks * segs["bf16"].bytes_blk
     rng = random.Random(f"x3|{model}|{seed}")
@@ -2289,7 +2289,7 @@ def gpu_micro(model, out, n_blocks=32, gpu_states=GPU_STATES, busy_levels=BUSY_L
     run_c = bool(watch.contaminated) if watch is not None else "NOT_CHECKED"
     if watch is not None:
         # 外人＝不在 Busy 的 pid 裡的（Busy 是自己的子行程，GpuWatcher 的 own_root 已排除；這裡再保守一次）
-        run_c = bool({p for p in watch.intruders if p not in busy_pids}) or watch.started_clean is False
+        run_c = bool({p for p in watch.intruders if p not in busy_pids}) or watch.started_clean is False or bool(getattr(watch, "smi_failures", None))
         watch.__exit__(None, None, None)
     for r in rows + bg_rows + rec_rows + wc_rows:
         r["run_contaminated"] = run_c
@@ -2438,7 +2438,7 @@ def gpu_loadpath(model, items, reps, out, smoke=False):
                         ts_.append(time.perf_counter() - t0)            # 第 0 次是暖機
                 bad = {p for p in (watch.intruders if watch else {}) if p not in busy_pids}
                 res.append(dict(it, meas_s=med(ts_) * (N_CTX / n), n_reps=len(ts_), q=quart(ts_),
-                                contaminated=(bool(bad) or (watch.started_clean is False)) if watch else "NOT_CHECKED",
+                                contaminated=(bool(bad) or (watch.started_clean is False) or bool(getattr(watch, "smi_failures", None))) if watch else "NOT_CHECKED",
                                 note=f"{n} 個 block 量到再 ×{N_CTX // n}" if n != N_CTX else ""))
     if watch:
         watch.__exit__(None, None, None)

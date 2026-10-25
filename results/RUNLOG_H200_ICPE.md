@@ -227,3 +227,14 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 ## ICPE-P12 第三次 — job 22249 PASS（2026-10-25 21:03:09 → 21:04:59 +08:00）＋並排
 **run_id**: `20261025-210316-icpe-p12-x5-le32k`、`…-210326-icpe-p12-x4f05-sweep`、`…-210449-icpe-p12-x4f05-an`（exit 0）；並排 `20261025-215527-icpe-p12-compare`（head node，`code/icpe/p12_compare.py`，exit 0）→ `results/icpe_h200/p12/p12_compare.{csv,json}`
 **關鍵數字**〔模擬，H200 常數〕: 15 項判定字 **14 項和 3090 分支一致**；不一致：X4 f×0.5 的 p90（只報告；H200 可能、3090 死路）。登記的 p99 兩邊都死路。表：`docs/h200/icpe/P1-2_cpu_symmetric_reruns.md` §6。
+
+---
+
+## ICPE-GUARD — gpu_guard 在 nvidia-smi 逾時後報 CLEAN（2026-10-25，stage3 session 發現；我核對＋補修 ICPE 用的路徑）
+**事件**：2026-10-25 21:44:46 +08，hgx-cn01 上 nvidia-smi 全節點卡住 >20 s。舊的 `GpuWatcher` 監看執行緒遇到 `SmiUnavailable` 就結束，之後不再取樣；`__exit__` 補的那次取樣成功 → `gpu_guard.json` 照樣 CLEAN（違反 CLAUDE.md 規則 7）。
+**核對**：`grep -l SmiUnavailable $TIARA_RUNS/*/stderr.log` → 只有 4 個 run：`20261025-210417-icpe-p11-gen-llama`（ICPE，品質，分數不受影響；P1-1 §7.1 已註明）和 stage3 的 3 個。**ICPE 所有量時間的 run（P0-1 S1、(a)、(b)，10/22）以及 tiara-runs 裡其他 H200 run 都沒有這個訊號** → 不用回頭重判。
+**修正**：
+1. main `6c450c9`（stage3 session）：`GpuWatcher` 每次 `SmiUnavailable` 記進 `smi_failures`、繼續取樣；`contaminated`／`verdict()` 把失敗算成 UNOBSERVED（髒）。h200 已 fast-forward 合進來。
+2. **我補的**：ICPE 量時間用的路徑多半不讀 `watch.contaminated`，而是自己用 `intruders`＋`started_clean` 算（要排除自己的 busy 背景 pid），所以 (1) 傳不過去。這些地方都加上 `or bool(getattr(watch, "smi_failures", None))`：`m10_speed.py`（grid：p01brr、p2）、`m10_dqsweep.py`、`m7_write_policy.py`（gpu_contaminated＋CONTAMINATED 檔也記 smi_failures）、`m16_xtime.py` 三處（gpu_loadpath 每列、run 級、wcost 計時 ctx：p11t）、`code/icpe/p11_time.py`（wcost）。`attn_bench.py`、`x1_gpu.py` 本來就用 `w.contaminated`，不用改。
+   - 一旦失敗過，之後每一列都算髒（不知道缺口影響哪幾列，保守）。nvidia-smi 沒失敗時行為逐位元相同（式子多一個 False）。
+   - 驗證：五個檔 py_compile 過；式子在「乾淨／失敗過／沒有這個屬性的舊 watcher／開始就髒」四種假物件上結果都對；讀 CONTAMINATED 檔的程式都只看存在或前 90 字。
