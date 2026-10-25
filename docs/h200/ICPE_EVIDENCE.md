@@ -1,6 +1,6 @@
 # ICPE 2027：論文主張 → 證據對照表（H200 補量）
 
-> **狀態：填寫中（2026-10-22 開檔；10/25 補上 MI300X 與已有 H200 列的 run_id）**。11/2 前填完；每一列一個主張、一個數字、平台、run_id、實測或模擬。
+> **狀態：數字齊了（2026-10-25T22:21Z，`date -u`）**。ICPE 補量的實驗（P0-1、P0-2、P1-1、P1-2、P2）都跑完，沒有「待」的列。2026-10-22 開檔，10/25 補上 MI300X 與已有 H200 列的 run_id。每一列一個主張、一個數字、平台、run_id、實測或模擬。
 > 「待」＝ICPE 補量的實驗還沒跑完（括號是哪一個）；「待補 run_id」＝數字已知、run_id 還沒從 RUNLOG 抄過來核對。
 > 規則：數字只抄原始檔或 RUNLOG 裡有 run_id 的；平台分開寫，不混成一個數；模擬一律標〔模擬〕。self-review，不是 cross-model review。
 > 實驗與判準：[`icpe/README.md`](icpe/README.md)；執行紀錄：[`results/RUNLOG_H200_ICPE.md`](../../results/RUNLOG_H200_ICPE.md)。
@@ -44,7 +44,8 @@
 | D1 | INT4 容量 3.2 倍 | 每 block 20,971,520 vs 67,108,864 B | 兩台（算術） | `results/m10_tier_mi300x/iowall.json` | 算術 | 已有 |
 | D2 | INT4 在慢層讓還原變快 | INT4 對 BF16（E1 對 E0，限速層 b16／b32／b48，閒＋忙，每台 12 格）：H200 Llama 37.4–49.1%、Qwen 36.7–54.5%；MI300X Llama 36.1–55.2%、Qwen 38.1–56.9%；污染列 0 | 兩台 | H200 `20261017-094511-m10h-grid-int4-llama`、`20261017-103540-m10h-grid-int4-qwen`（`results/m10_precision_h200/speed_*/k0_verdict_int4.json`）；MI300X `20261016-034902-m10-grid-int4-llama`、`20261016-052143-m10-grid-int4-qwen`（`results/m10_precision_mi300x/speed_*/k0_verdict_int4.json`） | 實測 | 已有（舊列的 21.5–54.5%／22–57% 含 FP8，這裡只算 INT4） |
 | D3 | 低秩＋INT4 約 8 倍：Qwen 接近無損 | MI300X X4b（32K，192 題，seed 65000）：Qwen `xl:k34:v51+q:int4_kivi` 8.01 倍 −0.7 [−3.5, +2.0]（MLPerf 99% 過、ε 沒過）；Llama `k29v44` 7.98 倍 −3.3 [−6.5, −0.4]、`k19v29` 12.14 倍 −3.6 [−6.9, −0.5]。**H200**（192 題，seed 67000 新題）：Qwen 主配置 `xl:k34:v51:cal+q:int4_kivi` 9.64 倍 −0.6 [−2.9, +1.8]（MLPerf 99% 過，邊際 0.08 個百分點）、每題 SVD 8.01 倍 −0.4 [−2.7, +1.8]；Llama `:cal` 11.22 倍 −0.6 [−3.3, +2.0]、17.07 倍 −0.7 [−3.4, +2.1]；Llama 每題 SVD 7.98 倍 +0.1、12.14 倍 +0.4（ε 過；和 MI300X CI 相容但判定字不同） | 兩台 | MI300X `20261022-155523-m16-x4-report`（main）；H200 `20261025-203913-icpe-p11-gen-qwen`、`20261025-210417-icpe-p11-gen-llama` → `20261025-215237-icpe-p11-report-q`（`results/icpe_h200/p11/p11q_report.json`） | 實測 | 已有 |
-| D4 | 低秩＋INT4 在慢層比 INT4 快 | MI300X validate：SSD 級 2.5–3.4 倍；CPU 層 GPU 忙反而慢 | MI300X | `20261022-011846-m16-x3-validate2` | 實測 | 已有；H200 待（P1-1 T） |
+| D4 | 低秩＋INT4 在慢層比 INT4 快 | MI300X validate：SSD 級 2.5–3.4 倍；CPU 層 GPU 忙反而慢 | MI300X | `20261022-011846-m16-x3-validate2` | 實測 | 已有 |
+| D4-H200 | 同上（H200） | **不成立**（登記：`:cal` 版慢層 8 格都要快 >5%）：6/8。GPU 閒：b32 2.20–3.28 倍、NFS 級 1.14–1.73 倍；NFS 級忙 1.48–2.44 倍；**b32 忙 0.57–0.63 倍（INT4 較快）**——GPU 忙時低秩的全部載入有約 0.71–0.77 s 的底，b32 蓋不住〔底的原因是判讀〕。每題 SVD 版 5/8。CPU 層忙慢 21–43 倍（同 MI300X 方向）。壓縮：每題 SVD 1.14–2.51 倍 prefill，`:cal` 0.023–0.062 倍 → 論文寫「慢層、GPU 閒（或慢層慢到蓋過重建）時才比 INT4 快」 | H200 | P1-1 T job 21670（`20261026-061250-icpe-p11t-lp-llama`、`…-061722-…-lp-qwen`、`…-061535-…-wc-llama`、`…-061837-…-wc-qwen`）→ `20261026-061907-icpe-p11-report-t`（`results/icpe_h200/p11/p11t_report.json`、`p11t_cells.csv`、`time/`）；INT4 端到端＝P0-1 (b) sdpa 組 | 實測 | 已有（主張要加條件） |
 
 ## E. 效度威脅與跨平台
 
@@ -53,3 +54,13 @@
 | E1 | harness 的重算比 vLLM 慢 | 32K 只算 ÷ vLLM 預設：Llama 1.75、Qwen 1.76（MI300X 1.67／1.72） | H200 | job 21409（`20261021-025538-m10h-vllmg1-llama-default` 等 4 個 run） | 實測 | 已有 |
 | E2 | 用 H200 最快的 attention 之後的 harness ÷ vLLM | 32K：Llama 1.574／1.2106＝1.30、Qwen 1.393／1.0590＝1.32（sdpa 時 1.75／1.76）；fa3 Σ64 f 是 sdpa 的 0.751／0.755 | H200 | job 21653：`20261022-205738-icpe-p01-attn-llama`、`…-205836-icpe-p01-attn-qwen`、`…-205953-icpe-p01-calibf-llama`、`…-210325-icpe-p01-calibf-qwen`（`results/icpe_h200/p01/attn/choice.json`、`calib/speed_*`）；vLLM 分母同 E1 | 實測 | 已有 |
 | E3 | G5b 在 CPU 層、GPU 忙時選錯是穩定的平台差異 | H200 原值：12 格裡 10 格 G5b ÷ 最好 1.3–3.5 倍（整體 11.5%；MI300X 0.4%）。**新 seed 310、311（P2）：部分穩定**——原本選錯的 10 格裡 4 格兩個 seed 都 >1.05、5 格只有一個、1 格都沒有；兩個對照格這次兩個 seed 都 >1.05。24 個（格 × seed）裡全部載入都比 Cake 慢 1.52–3.52 倍，G5b 選全部載入 30–100% 的次數；中位數 r 只看選錯有沒有過半〔判讀〕 → 論文寫「G5b 在 H200 CPU 層忙時常選錯（每格 ≥3 成）、多慢隨 seed 變」，不寫「逐格可重現」 | H200 | job 21109（`results/m10_restore2_h200/report_13.json`）；P2 job 21663（`20261026-055856-icpe-p2-llama-fp8-L310`～`20261026-060415-icpe-p2-qwen-int4-L311`）→ `20261026-060616-icpe-p2-analyze`（`results/icpe_h200/p2/p2_verdict.json`、`p2_cells.csv`） | 實測 | 已有（主張要改寫） |
+
+## F. 寫論文時要改寫或加條件的主張（從上面各列整理；不是新數字）
+
+| 列 | 原本的說法 | 證據支持的說法 |
+|:--|:--|:--|
+| E3 | G5b 在 H200 CPU 層、GPU 忙時選錯是穩定的平台差異 | 每格都常選錯（30–100% 的次數選了較慢的全部載入），但多慢、中位數有沒有過 5% 隨 seed 變；不寫「逐格可重現」 |
+| D4-H200 | 低秩＋INT4 在慢層比 INT4 快 | 只在慢層且 GPU 閒、或慢層慢到蓋過重建（NFS 級）時成立；b32、GPU 忙時 INT4 較快；CPU 層 GPU 忙時低秩慢一個數量級以上（兩台同方向） |
+| B6 | X1 的模擬在 GPU 上站得住 | 成立（比值、排序、正負號），但 GPU 上對 LRU 的 headroom 比模擬小 6–28%（O-PF 對 HINT-PF 不變）；而且只在「TTFT 不含排隊」的定義下。含排隊時 O-PF 對 LRU 只剩 4.6–7.9%（這個重播不做 batching，排隊量不代表真的 server） |
+| C2 | HINT-PF 拿到 O-PF 的大部分 | 全尺寸模擬中位 0.94–1.12；GPU 實測（縮小）0.81。6 格模擬 >1 要附上（O-PF 不是上界） |
+| A5 | 每層最佳還原方式在重算變快時不翻轉 | fa3 實測 24 格 0 翻轉；1 格弱變化（Llama CPU 層閒 E0）。vLLM 級的速度只有第二階段 §5.5 的估計，估計這一格（CPU 層 Llama）會翻成 Cake，沒有實測（P0-1 §7.4） |

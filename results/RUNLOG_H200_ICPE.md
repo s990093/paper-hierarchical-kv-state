@@ -292,3 +292,27 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 **失敗與異常**: 無。
 **與論文假設的差異**: ICPE_EVIDENCE E3 原本寫「穩定的平台差異」，不成立（部分穩定）。可以寫的是「每格都常選錯、多慢隨 seed 變」。
 **接著**: 21670 p11t（afterany:21663，已滿足；等空卡）。
+
+## ICPE-P11T — job 21670（P1-1 (T)：慢層的低秩＋INT4 對 INT4；量時間）
+**狀態**: PASS（跑完、乾淨；判定＝**不成立**，`:cal` 6/8）　**執行時間**: 2026-10-26 06:12:29 → 06:19:10（+08:00），exit 0，git `64868d8`（含開跑前的 report-t 修正，P1-1 §8）　**同節點**：只有別人的 job；sacct：這段時間沒有我們自己的別的 job
+**run_id**: `20261026-061232-icpe-p11t-smoke-llama`、`…-061250-icpe-p11t-lp-llama`、`…-061535-icpe-p11t-wc-llama`、`…-061709-…-smoke-qwen`、`…-061722-…-lp-qwen`、`…-061837-…-wc-qwen`、`…-061907-icpe-p11-report-t`（全部 exit 0）。乾淨度：
+- `gpu_guard` 6 個都 CLEAN；
+- `loadpath.csv` 48 列都沒有污染；
+- 沒有 CONTAMINATED，沒有 SmiUnavailable。
+**產出檔**: `results/icpe_h200/p11/{time/loadpath.csv, time/loadpath_smoke.csv, time/wcost.csv, time/gpu_guard_*.json, p11t_cells.csv, p11t_report.json}`
+**關鍵數字**〔實測，32K〕:
+- `:cal` 的全部載入 ÷ INT4 端到端最好（倍數＝INT4 ÷ 低秩）：
+  - b32 閒 2.20–3.28 倍、NFS 級閒 1.14–1.73、NFS 級忙 1.48–2.44；
+  - **b32 忙 0.57–0.63**（兩個模型都不成立）。
+- 每題 SVD 版 5/8。
+- GPU 忙時低秩的全部載入有約 0.71–0.77 s 的底（b32、CPU 層都是）。
+- CPU 層忙慢 21–43 倍。
+- 壓縮：每題 SVD 2.13–5.33 s（閒），`:cal` 0.042–0.131 s。
+- 細節：`docs/h200/icpe/P1-1_xkv_int4_h200.md` §7.2。
+**失敗與異常**: 無。
+**與論文假設的差異**: 「低秩＋INT4 在慢層比 INT4 快」在 H200 要加條件（GPU 閒，或慢層慢到蓋過重建）。ICPE_EVIDENCE D4-H200、§F。
+
+---
+
+## ICPE 量時間鏈結束（2026-10-26 06:19 +08）
+P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有「待」的列，§F 列出要改寫或加條件的主張。stage3 的 s3-T-* 鏈（22271 起，afterany:21670）現在可以開跑。
