@@ -1,0 +1,16 @@
+{
+ "run_id": "20261025-204305-s3-b0-env",
+ "ts": "2026-10-25T20:43:11+08:00",
+ "torch": "2.13.0+cu130",
+ "cuda": "13.0",
+ "device": "NVIDIA H200",
+ "sm_count": 132,
+ "stream_priority_range": [
+  0,
+  -3
+ ],
+ "green_context_supported_flag": true,
+ "green_context": "AVAILABLE (create num_sms=32 + matmul ran)",
+ "mps_control_binary": "/usr/bin/nvidia-cuda-mps-control",
+ "mps_pipe_dir": ""
+}

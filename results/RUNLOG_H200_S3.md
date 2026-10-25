@@ -84,3 +84,12 @@
 **產出檔**: `results/s3_h200/gm13/{gm13_report.json,tables_gm13.md}`
 **關鍵數字**〔實測資料的重播〕: Llama 回來那一輪 P95：d 105.14 s → H0 1.40 s（門檻 1.5×c＝2.50 s），H1 2.75 s；重算贏 81%／78%。Qwen：NOT_MEASURED（MI300X 沒有 Qwen 的 vLLM 冷 prefill）。
 **限制**: 不模擬額外重算搶 GPU（偏樂觀）、不模擬取消讀取讓 NFS 變空（偏悲觀）。
+
+---
+
+## S3-P0e — 環境（P0e；B0 冒煙 job 22238 的第一步，2026-10-25 20:43 +08）
+
+**狀態**: PASS　**run_id**: `20261025-204305-s3-b0-env`　**指令**: `python code/s3/b0.py env --out $RUN_DIR/env.json`
+**產出檔**: `results/s3_h200/env/p0e_env_20261025-204305-s3-b0-env.json`
+**結果**: H200、132 個 SM；torch 2.13.0+cu130；CUDA stream 優先權範圍 [0, −3]；**green context 可用**（`torch.cuda.green_contexts.GreenContext.create(num_sms=32)`＋一次 matmul 跑通）；MPS 控制程式 `/usr/bin/nvidia-cuda-mps-control` 在。
+**對 B0 的影響**: B0 登記 §4 第 4 點：green context 能用 → 另外登記一節才加進共用方式（還沒加）。
