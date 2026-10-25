@@ -18,6 +18,7 @@
 #   sbatch --job-name=s3-b0-llama-b0-stream --time=4:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes stream,stream_hi  # 量時間
 #   sbatch --job-name=s3-b0-llama-b0-mps --time=6:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes mps,mps87,mps75,mps50  # 量時間（自動開 MPS）
 #   sbatch --job-name=s3-w0gfio --time=1:00:00 code/r_h200_s3.sh --part w0gfio                    # 量時間：W0（兩個模型）＋G-fio
+#   sbatch --job-name=s3-gm06 --time=1:00:00 --gres=gpu:4 --cpus-per-task=64 --mem=680G code/r_h200_s3.sh --part gm06   # 4 卡、量時間
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 排程（使用者 2026-10-25「排滿：stage3 品質先填空檔」，memory stage3-gpu-scheduling）：
@@ -60,8 +61,8 @@ while [ $# -gt 0 ]; do
 done
 case "$PART" in
   fetch|a0-smoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep) TIMING=0 ;;
-  b0-run|w0gfio|gm12-s) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep" >&2; exit 2 ;;
+  b0-run|w0gfio|gm12-s|gm06) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|gm06" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -227,6 +228,14 @@ if [ "$PART" = d0-prep ]; then
   step MODELS ensure_models minicpm
   step D0-BUILD m7run s3-d0-build bash -c "$(declare -f d0_build); S3_LOCAL=$S3_LOCAL D0_SRC_COMMIT=$D0_SRC_COMMIT DRY=0 d0_build"
   step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
+fi
+
+# ---- G-M06＋M07（runs/G_M06_multipath.md）：4 卡 job ------------------------------------------------------------
+if [ "$PART" = gm06 ]; then
+  [ "$DRY" = 1 ] || [ "$(python3 -c 'import torch;print(torch.cuda.device_count())')" -ge 4 ] || { echo "[r_h200_s3] gm06 要 4 張卡" >&2; exit 2; }
+  mkdir -p "$S3/gm06"
+  step GM06 m7run s3-gm06 python code/s3/gm06.py run --out-dir "$S3/gm06"
+  step GM06-REPORT python3 code/s3/gm06.py report
 fi
 
 # ---- W0、G-fio（runs/W0_write_cost.md、runs/G_fio.md）------------------------------------------------------

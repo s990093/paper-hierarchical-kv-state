@@ -13,6 +13,7 @@
 | M05（品質，併在 A0 L128 生成） | [M05_duo_heads.md](M05_duo_heads.md) | `code/s3/a0.py`（`m05_configs`）、`a0_gpu.py`（`kind=duo`） | `results/s3_h200/a0/raw/a0_gen_L128_*` | 已登記 |
 | G-M12（品質＋量時間） | [G_M12_sparse_recompute.md](G_M12_sparse_recompute.md) | `code/s3/gm12.py` | `results/s3_h200/gm12/` | 已登記 |
 | G-M11（量時間，併在 B0） | [G_M11_vq.md](G_M11_vq.md) | `code/s3/b0.py`（`dq_vq`） | `results/s3_h200/b0/` | 已登記 |
+| G-M06＋M07（4 卡、量時間） | [G_M06_multipath.md](G_M06_multipath.md) | `code/s3/gm06.py` | `results/s3_h200/gm06/` | 已登記 |
 | W0（量時間） | [W0_write_cost.md](W0_write_cost.md) | `code/s3/w0.py` | `results/s3_h200/w0/` | 已登記 |
 | G-fio（量時間） | [G_fio.md](G_fio.md) | `code/s3/gfio.py` | `results/s3_h200/gfio/` | 已登記 |
 
