@@ -1,0 +1,348 @@
+{
+ "checks": {
+  "plan_cpu_eq_m10[63000x48]": {
+   "pass": true,
+   "n": 192
+  },
+  "plan_cpu_eq_m10[62000x24]": {
+   "pass": true,
+   "n": 96
+  },
+  "plan_cpu_eq_m10[60000x12]": {
+   "pass": true,
+   "n": 48
+  },
+  "x2b_slice_bytes_finite[none]": {
+   "pass": true,
+   "bytes": {
+    "raw": 67108864
+   }
+  },
+  "x2b_slice_bytes_finite[q:int4_kivi]": {
+   "pass": true,
+   "bytes": {
+    "q": 20971520
+   }
+  },
+  "x2b_slice_bytes_finite[q:vllm_fp8]": {
+   "pass": true,
+   "bytes": {
+    "q": 33554432,
+    "shared.scale": 64
+   }
+  },
+  "x2b_slice_bytes_finite[q:kv-int4_kivi-int2_kivi]": {
+   "pass": true,
+   "bytes": {
+    "q": 16777216
+   }
+  },
+  "x2b_slice_bytes_finite[q:int2_kivi]": {
+   "pass": true,
+   "bytes": {
+    "q": 12582912
+   }
+  },
+  "x2b_slice_bytes_finite[xl:k11:v17]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 2883584,
+    "k.basis": 5767168,
+    "v.coef": 4456448,
+    "v.basis": 8912896
+   }
+  },
+  "x2b_slice_bytes_finite[xl:k11:v17+q:int4_kivi]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 901120,
+    "k.basis": 5767168,
+    "v.coef": 1392640,
+    "v.basis": 8912896
+   }
+  },
+  "x2b_slice_bytes_finite[xl:k16:v16]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 4194304,
+    "k.basis": 8388608,
+    "v.coef": 4194304,
+    "v.basis": 8388608
+   }
+  },
+  "x2b_slice_bytes_finite[xl:k22:v34+q:int4_kivi]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 1802240,
+    "k.basis": 11534336,
+    "v.coef": 2785280,
+    "v.basis": 17825792
+   }
+  },
+  "x2b_slice_bytes_finite[xl:k22:v34+q:int8_token]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 2899968,
+    "k.basis": 11534336,
+    "v.coef": 4472832,
+    "v.basis": 17825792
+   }
+  },
+  "x2b_slice_bytes_finite[xl:k28:v42+q:int4_kivi]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 2293760,
+    "k.basis": 14680064,
+    "v.coef": 3440640,
+    "v.basis": 22020096
+   }
+  },
+  "xl_cache_eq_uncached[xl:k22:v34+q:int8_token→xl:k22:v34+q:int4_kivi]": {
+   "pass": true,
+   "bitwise_equal": true,
+   "svd_deterministic": true,
+   "rel": 0.0,
+   "rel_recompute": 0.0,
+   "hits": 2,
+   "misses": 2
+  },
+  "xl_cache_eq_uncached[xl:k11:v17→xl:k11:v17+q:int4_kivi]": {
+   "pass": true,
+   "bitwise_equal": true,
+   "svd_deterministic": true,
+   "rel": 0.0,
+   "rel_recompute": 0.0,
+   "hits": 2,
+   "misses": 2
+  },
+  "xlcal_meta_shape_orthonormal": {
+   "pass": true,
+   "R": 2048,
+   "need": 1344,
+   "orth_maxdev": {
+    "k": 3.2186508178710938e-06,
+    "v": 3.159046173095703e-06
+   },
+   "run_id": "20261025-210242-icpe-p11-calibxl-llama",
+   "energy": {
+    "k": {
+     "4": 0.9802999722981074,
+     "8": 0.987975047036335,
+     "11": 0.9906699284761029,
+     "16": 0.9933465451625844,
+     "17": 0.9937354660472799,
+     "22": 0.9952646952095466,
+     "28": 0.9965144824199952,
+     "32": 0.9971290398181711,
+     "34": 0.9973892565568061,
+     "42": 0.998200911770909,
+     "64": 0.999352698886661
+    },
+    "v": {
+     "4": 0.7841830272885719,
+     "8": 0.8518650065468232,
+     "11": 0.8781772738503808,
+     "16": 0.9067921667279675,
+     "17": 0.9112134505417173,
+     "22": 0.929335006887678,
+     "28": 0.9451613754480254,
+     "32": 0.9533593820863331,
+     "34": 0.9569301306670739,
+     "42": 0.9685300998993038,
+     "64": 0.9868450021656687
+    }
+   }
+  },
+  "xlcal_torch_vs_numpy[xl:k11:v17:cal]": {
+   "pass": true,
+   "rel": 0.0029409329872578382,
+   "bytes": {
+    "k.coef": 2883584,
+    "shared.k.basis": 5767168,
+    "v.coef": 4456448,
+    "shared.v.basis": 8912896
+   },
+   "cal_err": {
+    "k.cal_err": [
+     0.027718423407790488,
+     0.05180027282281408
+    ],
+    "v.cal_err": [
+     0.0913621488187548,
+     0.1501127482450441
+    ]
+   }
+  },
+  "xlcal_torch_vs_numpy[xl:k22:v34:cal+q:int4_kivi]": {
+   "pass": true,
+   "rel": 0.0029595177620649338,
+   "bytes": {
+    "k.coef": 1802240,
+    "shared.k.basis": 11534336,
+    "v.coef": 2785280,
+    "shared.v.basis": 17825792
+   },
+   "cal_err": {
+    "k.cal_err": [
+     0.017445360260721375,
+     0.03492669337779217
+    ],
+    "v.cal_err": [
+     0.05679562577403807,
+     0.10639621206763605
+    ]
+   }
+  },
+  "xlcal_torch_vs_numpy[xl:k28:v42:cal+q:int4_kivi]": {
+   "pass": true,
+   "rel": 0.0029618951957672834,
+   "bytes": {
+    "k.coef": 2293760,
+    "shared.k.basis": 14680064,
+    "v.coef": 3440640,
+    "shared.v.basis": 22020096
+   },
+   "cal_err": {
+    "k.cal_err": [
+     0.014007679127468578,
+     0.02973753172609973
+    ],
+    "v.cal_err": [
+     0.04558886419999283,
+     0.09275142823593174
+    ]
+   }
+  },
+  "xlcal_torch_vs_numpy[drop:KEYDIFF:0.5+xl:k11:v17:cal]": {
+   "pass": true,
+   "rel": 0.002958436496555805,
+   "bytes": {
+    "mask": 1,
+    "k.coef": 1441792,
+    "shared.k.basis": 5767168,
+    "v.coef": 2228224,
+    "shared.v.basis": 8912896
+   },
+   "cal_err": {
+    "k.cal_err": [
+     0.022158377107671705,
+     0.041649166861139536
+    ],
+    "v.cal_err": [
+     0.07322673151758605,
+     0.1200677580364692
+    ]
+   }
+  },
+  "xlcal_eckart_young[k11v17]": {
+   "pass": true,
+   "err_ratio_cal_over_svd": {
+    "k": [
+     11.664668461052875,
+     5.800038267441652
+    ],
+    "v": [
+     23.18421620181868,
+     8.230134381029757
+    ]
+   },
+   "cal_err": {
+    "k.cal_err": [
+     0.027718423407790488,
+     0.05180027282281408
+    ],
+    "v.cal_err": [
+     0.0913621488187548,
+     0.1501127482450441
+    ]
+   },
+   "svd_err": {
+    "k.svd_err": [
+     0.0023762718589336205,
+     0.00893102259576345
+    ],
+    "v.svd_err": [
+     0.0039407046597325955,
+     0.018239404278871805
+    ]
+   }
+  },
+  "xlcal_eckart_young[k22v34]": {
+   "pass": true,
+   "err_ratio_cal_over_svd": {
+    "k": [
+     11.569867144770514,
+     9.226175398071042
+    ],
+    "v": [
+     35.69656307560725,
+     17.384170772750686
+    ]
+   },
+   "cal_err": {
+    "k.cal_err": [
+     0.017445360260721375,
+     0.03492669337779217
+    ],
+    "v.cal_err": [
+     0.05679562577403807,
+     0.10639621206763605
+    ]
+   },
+   "svd_err": {
+    "k.svd_err": [
+     0.0015078271895806977,
+     0.00378560908186229
+    ],
+    "v.svd_err": [
+     0.0015910670630598768,
+     0.0061202926189847275
+    ]
+   }
+  },
+  "xlcal_full_region[xl:k11:v17:cal]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 181665792,
+    "shared.k.basis": 23068672,
+    "v.coef": 280756224,
+    "shared.v.basis": 35651584
+   },
+   "t_pipe_s": 0.162,
+   "relerr_k": 0.0541847,
+   "relerr_v": 0.1696617,
+   "cenerr_k": 0.0787259
+  },
+  "xlcal_full_region[xl:k22:v34:cal+q:int4_kivi]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 113541120,
+    "shared.k.basis": 46137344,
+    "v.coef": 175472640,
+    "shared.v.basis": 71303168
+   },
+   "t_pipe_s": 0.251,
+   "relerr_k": 0.0463774,
+   "relerr_v": 0.1349869,
+   "cenerr_k": 0.0673826
+  },
+  "xlcal_full_region[xl:k28:v42:cal+q:int4_kivi]": {
+   "pass": true,
+   "bytes": {
+    "k.coef": 144506880,
+    "shared.k.basis": 58720256,
+    "v.coef": 216760320,
+    "shared.v.basis": 88080384
+   },
+   "t_pipe_s": 0.293,
+   "relerr_k": 0.0421859,
+   "relerr_v": 0.1208428,
+   "cenerr_k": 0.0612927
+  }
+ },
+ "model": "llama",
+ "new_checks": "both",
+ "run_id": "20261025-210323-icpe-p11-gpuselftest-llama",
+ "ts": "2026-10-25T21:03:30+08:00",
+ "all_pass": true
+}

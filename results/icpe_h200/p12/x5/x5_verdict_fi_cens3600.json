@@ -1,0 +1,20 @@
+{
+ "run_id": "20261025-205915-icpe-p12-x5-fi-cens3600-an",
+ "ts": "2026-10-25T20:59:25+08:00",
+ "verdict_registered": "死路",
+ "n_main_cells": 24,
+ "n_main_cells_ge15": 0,
+ "main_headroom_max": 0.02450041667850647,
+ "main_headroom_median": 0.0012044880291797347,
+ "main_headroom_min": 0.00011313678285611124,
+ "reg_all_cells": 24,
+ "reg_cells_ge5": 0,
+ "reg_cells_ge15": 0,
+ "reg_headroom_max": 0.02450041667850647,
+ "verdict_excess_variant_report_only": "NOT_RUN",
+ "excess_main_headroom_max": null,
+ "excess_main_cells_ge15": 0,
+ "oracle_violations": 0,
+ "main_cells_ge15_with_ci_lo_ge15": 0,
+ "cells_ge15": []
+}
