@@ -75,7 +75,8 @@ def main():
                           gpu_median=float(x.ttft.median()), s_orig_median=float(so[(so.cpu_GiB == cg) & (so.policy == pol)].ttft.median()),
                           queued_frac_all=float((g[g.run_id == rid].queue_s > 1e-3).mean()),
                           queue_s_mean_all=float(g[g.run_id == rid].queue_s.mean()),
-                          d2h_s_sum=float(g[g.run_id == rid].d2h_s.sum())))
+                          d2h_s_sum=float(g[g.run_id == rid].d2h_s.sum()),
+                          ret_queue_mean=float(x.queue_s.mean()), ret_ttft_plus_queue_mean=float((x.ttft + x.queue_s).mean())))  # 只報告：含排隊
     C = pd.DataFrame(cells)
     if len(C) != 10:
         problems.append(f"rep 0 的格子只有 {len(C)} 個（要 10）")
@@ -100,8 +101,10 @@ def main():
             rs, rg = min(c.loc[r, "s_orig_mean"] for r in rivals), min(c.loc[r, "gpu_mean"] for r in rivals)
             hs, hg = (rs - c.loc[orc, "s_orig_mean"]) / rs, (rg - c.loc[orc, "gpu_mean"]) / rg
             judged = abs(hs) >= 0.02
+            rq = min(c.loc[r, "ret_ttft_plus_queue_mean"] for r in rivals)
             signs.append(dict(run_id=run_id(), ts=ts(), cpu_GiB=cg, component=orc, rivals="/".join(rivals), headroom_sim=hs, headroom_gpu=hg,
-                              judged=bool(judged), same_sign=bool(np.sign(hs) == np.sign(hg)) if judged else None))
+                              judged=bool(judged), same_sign=bool(np.sign(hs) == np.sign(hg)) if judged else None,
+                              headroom_gpu_incl_queue=(rq - c.loc[orc, "ret_ttft_plus_queue_mean"]) / rq))  # 只報告，不判
     S = pd.DataFrame(signs)
     # 雜訊：LRU 兩次
     noise = []
