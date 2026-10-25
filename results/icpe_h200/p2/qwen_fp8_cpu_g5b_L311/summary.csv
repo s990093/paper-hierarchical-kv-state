@@ -1,0 +1,10 @@
+length,bw_name,gpu_state,config,mode,n,median_t_restore,median_ttft,b_values,median_fp8_read,median_bytes_read,speedup_vs_compute_only,speedup_vs_load_only_E0,copy_bound_rows,contaminated_rows,run_ids
+32768,cpu,busy,E0,cake,10,0.23238,0.27836,0,0.0,1879048192.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,E0,claim,10,0.06766,0.10946,2 3,0.0,1820327936.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,E0,loadall,10,0.23373,0.27952,0,0.0,1879048192.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,E1,cake,10,0.23042,0.2757,0 2,64.0,939581440.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,E1,claim,10,0.06615,0.10806,2,62.0,910219520.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,E1,loadall,10,0.23226,0.27772,0,64.0,939581440.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,R25,cake,10,0.06775,0.11118,0 2,16.0,1600140416.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,R25,claim,10,0.06711,0.10918,2,16.0,1585461248.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311
+32768,cpu,busy,R25,loadall,10,0.2333,0.27927,0,16.0,1644181504.0,,,10,0,20261026-060332-icpe-p2-qwen-fp8-L311

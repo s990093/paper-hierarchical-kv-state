@@ -274,3 +274,21 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 - 方向一致：重算變快 → 重算分到的工作變多。
 - §5.5 估 CPU 層 Llama 會翻成 Cake，但 (b) 的 fa3 實測同一格是全部載入較快。vLLM 級的這一格沒有實測。
 - 細節：P0-1 §7.4 最後一點。
+
+## ICPE-P2 — job 21663（P2：G5b 在 CPU 層、GPU 忙，換 seed 310／311；量時間）
+**狀態**: PASS（跑完、乾淨；判定＝**部分穩定**）　**執行時間**: 2026-10-26 05:58:53 → 06:04:56（+08:00），exit 0，git `0489306`　**同節點**：只有別人的 job；sacct：這段時間沒有我們自己的別的 job
+**run_id**: `20261026-055856-icpe-p2-llama-fp8-L310`、`…-055944-…-llama-int4-L310`、`…-060031-…-qwen-fp8-L310`、`…-060113-…-qwen-int4-L310`、`…-060154-…-llama-fp8-L311`、`…-060245-…-llama-int4-L311`、`…-060332-…-qwen-fp8-L311`、`…-060415-…-qwen-int4-L311`（全部 exit 0）。乾淨度：
+- `gpu_guard` 8 個都 CLEAN；
+- `contaminated_gpu` 全 False，`kv_bad` 0；
+- 沒有 CONTAMINATED，沒有 SmiUnavailable。
+分析 `20261026-060616-icpe-p2-analyze`（head node，exit 0）。
+**指令**: `sbatch --job-name=icpe-p2 code/r_h200_icpe.sh --part p2`（P2 §2 的 m10_speed grid，`M10_MEET=g5b`，CPU 層、busy、E0/E1/R25 × cake/claim/loadall × 10 次）
+**產出檔**: `results/icpe_h200/p2/{<m>_<fmt>_cpu_g5b_L{310,311}/, p2_cells.csv, p2_verdict.json}`
+**關鍵數字**〔實測〕:
+- 原本選錯的 10 格：穩 4（Llama int4 E1、Qwen fp8 E1、Qwen int4 E1、Qwen int4 R25）、不穩 5、沒重現 1（Llama int4 R25）。照 §3 → 部分穩定。
+- 對照 2 格這次兩個 seed 都 >1.05。
+- 24 個（格 × seed）：全部載入都比 Cake 慢 1.52–3.52 倍；G5b 選全部載入 0.3–1.0。
+- 細節：`docs/h200/icpe/P2_g5b_cpu_busy_reseed.md` §6。
+**失敗與異常**: 無。
+**與論文假設的差異**: ICPE_EVIDENCE E3 原本寫「穩定的平台差異」，不成立（部分穩定）。可以寫的是「每格都常選錯、多慢隨 seed 變」。
+**接著**: 21670 p11t（afterany:21663，已滿足；等空卡）。
