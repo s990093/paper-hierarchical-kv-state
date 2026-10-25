@@ -101,13 +101,16 @@ def fs_info(d: str) -> dict:
 
 def cmd_run(a):
     rid, rows, info = run_id(), [], []
-    for d in a.dir:
+    gibs = a.gib if len(a.gib) == len(a.dir) else None
+    if gibs is None:
+        raise SystemExit(f"--dir {len(a.dir)} 個、--gib {len(a.gib)} 個：要一對一")
+    for d, gib in zip(a.dir, gibs):
         os.makedirs(d, exist_ok=True)
         fi = fs_info(d)
         info.append(fi)
         path = os.path.join(d, f"gfio_{rid}.bin")
         try:
-            size = write_file(path, a.gib)
+            size = write_file(path, gib)
             for pattern, ios in (("seq", (1 * MiB, 4 * MiB, 64 * MiB)), ("rand", (128 * 1024, 2 * MiB, 64 * MiB))):
                 for io in ios:
                     for thr in (1, 4, 8):
@@ -145,7 +148,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd")
     s = sub.add_parser("run")
     s.add_argument("--dir", action="append", required=True)
-    s.add_argument("--gib", type=float, default=16)
+    s.add_argument("--gib", type=float, action="append", required=True, help="每個 --dir 一個（同樣順序）")
     s.add_argument("--total-gib", type=float, default=8, help="每個（樣式, 大小, 執行緒）讀多少")
     s.add_argument("--out", required=True)
     a = ap.parse_args()
