@@ -11,6 +11,9 @@
 # r_h200_s3.sh — 第三階段（docs/stage3_design_20261024/）在 H200 的 runner。每一步一個 run 目錄（m7run）。
 #
 #   sbatch --job-name=s3-fetch --time=1:00:00 code/r_h200_s3.sh --part fetch     # 模型權重 → hgx-cn01 /tmp（不量時間）
+#   sbatch --job-name=s3-a0smoke-L128 --time=1:00:00 code/r_h200_s3.sh --part a0-smoke --cell L128   # A0：校準＋gpu-selftest＋2 題冒煙（不進 results）
+#   sbatch --job-name=s3-a0tf-L128-0 --time=4:00:00 code/r_h200_s3.sh --part a0-tf --cell L128 --shard 0/1   # A0 TF 篩選的一個分片
+#   sbatch --job-name=s3-a0gen-L128-0 --time=4:00:00 code/r_h200_s3.sh --part a0-gen --cell L128 --shard 0/2 # A0 生成的一個分片
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 排程（使用者 2026-10-25「排滿：stage3 品質先填空檔」，memory stage3-gpu-scheduling）：
@@ -33,26 +36,31 @@ if [ -z "${R_H200_S3_REEXEC:-}" ] && [ -n "${SLURM_JOB_ID:-}" ]; then
   echo "[r_h200_s3] 改執行 repo 裡的版本：$REPO/code/r_h200_s3.sh（git $(git -C "$REPO" rev-parse --short HEAD)）"
   exec bash "$REPO/code/r_h200_s3.sh" "$@"
 fi
-PART=""; DRY=0; LIST=0; FROM=""
+PART=""; DRY=0; LIST=0; FROM=""; CELL=""; SHARD="0/1"; BUDGET=210
 while [ $# -gt 0 ]; do
   case "$1" in
     --part) PART="$2"; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     --list) LIST=1; DRY=1; shift ;;
     --from) FROM="$2"; shift 2 ;;
+    --cell) CELL="$2"; shift 2 ;;
+    --shard) SHARD="$2"; shift 2 ;;
+    --budget-min) BUDGET="$2"; shift 2 ;;
     -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
     *) echo "不認得的參數：$1" >&2; exit 2 ;;
   esac
 done
 case "$PART" in
-  fetch) TIMING=0 ;;
-  *) echo "要 --part fetch" >&2; exit 2 ;;
+  fetch|a0-smoke|a0-tf|a0-gen) TIMING=0 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen" >&2; exit 2 ;;
 esac
+case "$PART" in a0-*) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
 ICPE_TIMING_RE='^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$'     # r_h200_icpe.sh 裡 TIMING=1 的 part
 
 # 模型權重：本地 /tmp（code/s3/fetch_models.py）。env_h200.sh 的 M7_*_GLOB 用 ${HF_HOME}，所以先設 HF_HOME
 export S3_MODEL_ROOT=/tmp/hungweilai-models/hf-cache
 export HF_HOME=$S3_MODEL_ROOT
+export S3_LOCAL=/tmp/hungweilai-s3                                      # 校準基底等大檔（本地）
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # shellcheck disable=SC1091
 source "$REPO/code/env_h200.sh"
@@ -102,6 +110,28 @@ ensure_models() {
 if [ "$PART" = fetch ]; then
   step FETCH m7run s3-fetch python code/s3/fetch_models.py fetch --root "$S3_MODEL_ROOT" --models llama qwen qwen14
   step CHECK-FULL python3 code/s3/fetch_models.py check --root "$S3_MODEL_ROOT" --models llama qwen qwen14 --full
+fi
+
+# ---- A0（docs/stage3_design_20261024/runs/A0_progressive_restore.md）----------------------------------------
+# 校準基底：沒有就算（同一個模型的兩個分片同時開跑時用 flock 排隊；m16_xstack.cmd_calib_xl 遇到設定、sha256 相同的檔會跳過）
+ensure_calib() {
+  local M=$1
+  [ "$DRY" = 1 ] && { echo "[ensure_calib $M]"; return 0; }
+  mkdir -p "$S3_LOCAL/xstack"
+  flock "$S3_LOCAL/.calib-$M.lock" bash -c "[ -f '$S3_LOCAL/xstack/calib_xl_$M.pt' ] || TIARA_SHORT=s3-a0-calib-$M bash '$REPO/code/tiara.sbatch' python code/s3/a0.py calib --model $M"
+}
+if [[ "$PART" == a0-* ]]; then
+  M=$(python3 -c "import sys; sys.path.insert(0, 'code/s3'); import a0; print(a0.CELLS[sys.argv[1]]['model'])" "$CELL") \
+    || { echo "[r_h200_s3] 不認得的 --cell $CELL" >&2; exit 2; }
+  SI=${SHARD%%/*}
+  step MODELS ensure_models "$M"
+  step CALIB-$M ensure_calib "$M"
+  if [ "$PART" = a0-smoke ]; then
+    step SELFTEST-$CELL m7run s3-a0-selftest-$CELL bash -c "python code/s3/a0.py gpu-selftest --cell $CELL --out \"\$RUN_DIR/gpu_selftest.json\""
+    step SMOKE-$CELL m7run s3-a0-smoke-$CELL bash -c "python code/s3/a0.py tf --cell $CELL --smoke --max-items 2 --out \"\$RUN_DIR/smoke_tf.csv.gz\""
+  fi
+  [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+  [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_s3] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi

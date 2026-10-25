@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -128,6 +129,10 @@ def cmd_fetch(a):
     from huggingface_hub import snapshot_download
     rid, rows = run_id(), []
     os.makedirs(os.path.join(a.root, "hub"), exist_ok=True)
+    lock = open(os.path.join(a.root, ".fetch.lock"), "w")          # 同一台機器上兩個 job 不同時下載（等前一個做完）
+    t_lock = time.time()
+    fcntl.flock(lock, fcntl.LOCK_EX)
+    print(f"[fetch] 拿到下載鎖（等了 {time.time() - t_lock:.0f}s）", flush=True)
     free = shutil.disk_usage(a.root).free
     print(f"[fetch] root={a.root} free={free / 2**30:.0f} GiB", flush=True)
     for key in a.models:
