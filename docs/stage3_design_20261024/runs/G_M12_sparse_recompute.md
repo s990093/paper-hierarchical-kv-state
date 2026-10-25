@@ -20,3 +20,11 @@
 
 ## 登記
 - 登記時間（`date -u`）：**2026-10-25T13:38:00Z**；commit 訊息開頭 `docs(s3-gm12): prereg`。登記時沒有任何 G-M12 的數字（程式只過了 CPU 自測）。
+
+## 偏離（登記之後）
+
+### 偏離 1（2026-10-25T14:23:30Z；實作，判準不變；G-M12 速度 還沒有任何時間數字）：量測期間加 GpuWatcher，被污染的 run 不寫進 results
+
+- **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。品質（TF）那一半不受影響（照品質規則：分數保留、逐列記爭用）。
+- **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
+- **影響的 run**：全部（都還沒跑）。

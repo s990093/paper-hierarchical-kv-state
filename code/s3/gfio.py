@@ -22,9 +22,10 @@ import time
 from datetime import datetime
 
 import numa_probe as NP                          # 只記錄：job 的 cpuset 與這個 job 的卡在哪個 NUMA 節點（gfio 不用 pinned 記憶體）
+import guard as G                                # 量時間的 run 的 GPU 監看（CLAUDE.md §3）
 
 FIELDS = ["run_id", "ts", "dir", "fs", "pattern", "io_bytes", "threads", "total_bytes", "t_s", "gibps", "iops", "file_gib",
-          "n_rep", "sigma_rel", "delta_star", "gibps_reps"]
+          "n_rep", "sigma_rel", "delta_star", "gibps_reps", "own_gpu_intruders"]
 NM = "NOT_MEASURED"
 
 
@@ -122,6 +123,7 @@ def cmd_run(a):
     if gibs is None:
         raise SystemExit(f"--dir {len(a.dir)} 個、--gib {len(a.gib)} 個：要一對一")
     tots = a.total_gib if a.total_gib and len(a.total_gib) == len(a.dir) else [4.0] * len(a.dir)
+    gw = G.Timing(a.out)
     for d, gib, tot_gib in zip(a.dir, gibs, tots):
         os.makedirs(d, exist_ok=True)
         fi = fs_info(d)
@@ -146,12 +148,15 @@ def cmd_run(a):
         finally:
             if os.path.exists(path):
                 os.remove(path)
-    os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
-    with open(a.out, "w", newline="") as f:
+    dest = gw.finish()                                            # 污染 → run 目錄，不進 results
+    for r in rows:
+        r["own_gpu_intruders"] = gw.status()
+    os.makedirs(os.path.dirname(os.path.abspath(dest)), exist_ok=True)
+    with open(dest, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=FIELDS)
         w.writeheader()
         w.writerows(rows)
-    json.dump(dict(run_id=rid, ts=ts(), fs=info, numa=numa), open(os.path.splitext(a.out)[0] + "_fs.json", "w"), indent=1, ensure_ascii=False)
+    json.dump(dict(run_id=rid, ts=ts(), fs=info, numa=numa), open(os.path.splitext(dest)[0] + "_fs.json", "w"), indent=1, ensure_ascii=False)
 
 
 def self_test() -> bool:

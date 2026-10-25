@@ -32,3 +32,9 @@
 - **改了什麼**：GW0 的比較對象（需求速率）是常數，σ 用被量的那一臂（CPU 壓縮的 6 次）。**GW0-PASS**：CPU「粗底＋精修」的壓縮速度中位數 > 需求速率 ×(1＋δ\*)，且速度的 95% CI（對 rep 重抽 10,000 次）下界 > 需求速率（B16、B32 都要）。**GW0-FAIL**：中位數 < 需求速率 ×(1−δ\*) 且 CI 上界 < 需求速率。其他 → **GW0-UNDETERMINED**（照實報告，不判 PASS／FAIL）。2σ > 5% 的點先回報。
 - **CSV 加欄位**：`n_rep`、`sigma_rel`、`delta_star`（每個 (where, bg, part)）。
 - **為什麼**：同 runs/README.md「共同規則」。**受影響**：W0 的全部 run（都還沒跑）。
+
+### 偏離 2（2026-10-25T14:23:30Z；實作，判準不變；W0 還沒有任何時間數字）：量測期間加 GpuWatcher，被污染的 run 不寫進 results
+
+- **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。
+- **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
+- **影響的 run**：全部（都還沒跑）。

@@ -30,6 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
 import a0 as A  # noqa: E402
+import guard as G  # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
 import numa_probe as NP  # noqa: E402（只記錄：speed 是 GPU 上的重算，計時區間不碰主機緩衝 → 只記卡與 cpuset 在哪個節點）
 
 CHUNK = 512
@@ -200,6 +201,9 @@ def cmd_speed(a):
     rows, rid = [], A.run_id()
     numa = NP.probe(torch.cuda.current_device())
     print("[gm12] NUMA：", json.dumps(numa["summary"], ensure_ascii=False), flush=True)
+    os.makedirs(os.path.join(OUT, "raw"), exist_ok=True)
+    p = a.out or os.path.join(OUT, "raw", f"gm12s_{a.model}_{rid}.csv")
+    gw = G.Timing(p)
     for i in SPEED_BLOCKS:
         for arm in ["dense"] + [f"sparse{d}" for d in DENS]:
             ts_ = []
@@ -219,8 +223,9 @@ def cmd_speed(a):
                              reps_ms=";".join(f"{1e3 * t:.4f}" for t in ts_), sigma_rel=round(sr, 6), delta_star=round(max(0.05, 2 * sr), 6),
                              host_level=host_level()))
             print(json.dumps(rows[-1]), flush=True)
-    os.makedirs(os.path.join(OUT, "raw"), exist_ok=True)
-    p = a.out or os.path.join(OUT, "raw", f"gm12s_{a.model}_{rid}.csv")
+    p = gw.finish()                                               # 污染 → run 目錄，不進 results
+    for r in rows:
+        r["own_gpu_intruders"] = gw.status()
     with open(p, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader()
@@ -262,8 +267,12 @@ def cmd_report(a):
         rows = A.read_rows(sorted(glob.glob(os.path.join(OUT, "raw", f"gm12q_{cell}_s*.csv.gz"))))
         tab = A.table(rows, "d_gold_lp")
         res["quality"][cell] = {cid: A.boot(v.values()) for cid, v in tab.items() if cid != "E0"}
+    res["excluded_contaminated_runs"] = []
     for p in sorted(glob.glob(os.path.join(OUT, "raw", "gm12s_*.csv"))):
-        rows = list(csv.DictReader(open(p)))
+        rows, bad = G.drop_contaminated(list(csv.DictReader(open(p))))
+        res["excluded_contaminated_runs"] += bad
+        if not rows:
+            continue
         m = rows[0]["model"]
         by = {}
         for r in rows:

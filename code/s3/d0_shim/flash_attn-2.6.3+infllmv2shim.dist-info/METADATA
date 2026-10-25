@@ -1,0 +1,4 @@
+Metadata-Version: 2.1
+Name: flash_attn
+Version: 2.6.3+infllmv2shim
+Summary: D0 shim over infllm_v2 dense varlen (not flash-attn; see flash_attn/__init__.py)
