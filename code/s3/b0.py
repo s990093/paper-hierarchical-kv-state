@@ -99,7 +99,10 @@ class Target:
         km.prefill_chunked(self.ids[:self.nb * CHUNK])
         torch.cuda.synchronize()
         u = self.unit
-        self.blocks = list(range(1, 1 + u))                       # 動作作用在 block 1..u（block 0 不動）
+        # 動作作用的塊：m08＝block 1..u（block 0 不動）；b0 的 u＝64＝整個 session → block 0..63（不能超出 context：
+        # 10/25 冒煙 22238 用了 1..64，lr_recon 取 RoPE 的 cos／sin 越界）
+        self.blocks = list(range(1, 1 + u)) if 1 + u <= self.nb else list(range(0, u))
+        assert self.blocks[-1] < self.nb, (self.blocks[-1], self.nb)
         self.ref = [km.chunk_view(i).clone() for i in self.blocks]
         self.host = [km.host_chunk() for _ in self.blocks]
         for h, r in zip(self.host, self.ref):
