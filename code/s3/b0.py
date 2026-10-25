@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gc
 import json
 import math
 import os
@@ -505,8 +506,13 @@ def cmd_run(a):
                         proc.wait(60)
                     else:
                         bg.stop()
+                        # rate_fn 的預設參數握著 bg：不清掉的話，上一個背景的 KV／CUDA graph 要等下一個背景建好才釋放
+                        # （10/26 22271：decode:64:8192 要 64 GiB 時，這個 process 已經用了 123.76 GiB → OOM）
+                        rate_fn = None
                         del bg
+                        gc.collect()
                         torch.cuda.empty_cache()
+                        print(f"[b0] 背景釋放後 GPU 已配置 {torch.cuda.memory_allocated() / 2**30:.1f} GiB", flush=True)
                 fo.flush()
                 print(f"[b0] {bgspec} × {mode} 做完（solo {solo:.2f} 步/s）", flush=True)
     finally:

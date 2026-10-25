@@ -231,3 +231,12 @@
 
 **問題**: 照讓位規則，品質 job 讓位給 s3-T 量時間的 job → B0 冒煙 2（22369；含 `dq_vq`、guard 監看、NUMA 紀錄）會被排到整條 s3-T 鏈之後，B0 的量時間 run 會先跑沒冒煙過的程式（Qwen 的 b0 設定也從沒冒煙過）。用 job 依賴當閘不行：讓位時重送會換編號、afterok 就被滿足了。
 **改法**（`code/r_h200_s3.sh` 的 `b0-run`）: 每組（模型, 設定）在這份程式（b0.py、bgengine.py、guard.py、numa_probe.py、gpu_guard.py 的 sha256 前 16 碼）上第一次量時間前，先在同一個獨佔的 allocation 裡跑 `b0.py run --modes stream --bgs idle --reps 6`（這個設定的全部原語），輸出在 run 目錄、不進 results、不判定；過了在 `$TIARA_RUNS/.s3_gates/` 留戳記。失敗 → step 停下（規則 2）。在 MPS daemon 開之前跑。
+
+## S3-B0-FAIL-1 — B0 llama b0 量時間（job 22271）在建 decode:64:8192 背景時 OOM（2026-10-26 06:29；已修，重送）
+
+**閘**: `B0-GATE-llama-b0` PASS（run `20261026-062242-s3-b0-gate-llama-b0`：開頭的正確性核對全為 true，含 `dq_vq_equal_lookup`；126 列；`own_gpu_intruders` 全 0；`numa_local=yes`〔GPU 0、cpuset 節點 0、pinned 緩衝 128 頁抽樣都在節點 0〕——H200 上第一次查到 pinned 頁的位置，move_pages 可用；目標 session 的 GPU 峰值 60.5 GiB）。
+**錯誤（完整）**: `bgengine.py:47 ModelStep.__init__ → torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 64.12 GiB. GPU 0 has a total capacity of 139.79 GiB of which 16.00 GiB is free. Including non-PyTorch memory, this process has 123.76 GiB memory in use. Of the allocated memory 120.46 GiB is allocated by PyTorch, with 22.00 MiB allocated in private pools (e.g., CUDA Graphs), and 2.56 GiB is reserved by PyTorch but unallocated.`；run `20261026-062548-s3-b0-llama-b0-stream-stream_hi`；runner 停在 `B0-RUN`。
+**原因**: `decode:64:8192`＝64 條 × 8K 的分頁 KV（Llama 64 GiB）。上一個背景沒有釋放：`rate_fn` 的預設參數 `bg=bg` 握著它，`finally` 裡的 `del bg` 不會釋放 → 新背景建好前，舊背景的 KV 還在。冒煙只用過 decode:8 與 cprefill（小），閘只跑 idle，所以沒碰到。
+**修正**（`fix(s3-b0)`）: 每個背景結束時 `rate_fn = None`、`del bg`、`gc.collect()`、`empty_cache()`，並印釋放後的已配置量。釋放乾淨時：目標 60.5＋背景 64 ≈ 125 GiB < 139.8。
+**部分輸出**: 這個 run 在失敗前寫進 `results/s3_h200/b0/raw/` 的 CSV、gpu_guard.json、_numa.json 搬到 run 目錄（`*.FAILED_RUN`），不進 results；沒有看任何時間數字。整個 run 重量。
+**重送**: llama b0 stream,stream_hi 排到量時間鏈最後（afterany:22281）。下一個 22272（qwen b0）開跑時會用修正後的程式（另跑 qwen／b0 的閘）。
