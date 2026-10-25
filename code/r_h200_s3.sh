@@ -17,6 +17,7 @@
 #   sbatch --job-name=s3-b0prep --time=1:00:00 code/r_h200_s3.sh --part b0-prep                  # B0 冒煙（不量時間）：P0e、背景自檢、少量格子、MPS 冒煙
 #   sbatch --job-name=s3-b0-llama-b0-stream --time=4:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes stream,stream_hi  # 量時間
 #   sbatch --job-name=s3-b0-llama-b0-mps --time=6:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes mps,mps87,mps75,mps50  # 量時間（自動開 MPS）
+#   sbatch --job-name=s3-w0gfio --time=1:00:00 code/r_h200_s3.sh --part w0gfio                    # 量時間：W0（兩個模型）＋G-fio
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 排程（使用者 2026-10-25「排滿：stage3 品質先填空檔」，memory stage3-gpu-scheduling）：
@@ -39,6 +40,7 @@ if [ -z "${R_H200_S3_REEXEC:-}" ] && [ -n "${SLURM_JOB_ID:-}" ]; then
   echo "[r_h200_s3] 改執行 repo 裡的版本：$REPO/code/r_h200_s3.sh（git $(git -C "$REPO" rev-parse --short HEAD)）"
   exec bash "$REPO/code/r_h200_s3.sh" "$@"
 fi
+ORIG_ARGS=("$@")                                              # 讓位時原樣重送用
 PART=""; DRY=0; LIST=0; FROM=""; CELL=""; SHARD="0/1"; BUDGET=210; MODEL=""; SETUP=""; MODES=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -58,8 +60,8 @@ while [ $# -gt 0 ]; do
 done
 case "$PART" in
   fetch|a0-smoke|a0-tf|a0-gen|b0-prep) TIMING=0 ;;
-  b0-run) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run" >&2; exit 2 ;;
+  b0-run|w0gfio) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -86,6 +88,17 @@ if [ "$DRY" = 0 ]; then
   icpe_t=$(printf '%s\n' "$mine" | awk '{print $2}' | grep -E "$ICPE_TIMING_RE" || true)
   if [ -n "$icpe_t" ]; then
     echo "[r_h200_s3] 節點上有 ICPE 量時間的 job 在跑（$icpe_t）→ 不開跑（exit 3；stage3 不和 ICPE 量時間重疊）" >&2; exit 3
+  fi
+  # 讓位（code/s3/sched.py）：ICPE 量時間的 job 如果只剩在等 stage3（或已經在等資源），這個 job 不佔這個空檔：
+  # 原樣重送一份、排在那個 ICPE job 之後，然後結束（exit 0；它在 ICPE 的依賴裡是 afterany，所以 ICPE 可以開跑）
+  ytgt=$(python3 "$REPO/code/s3/sched.py" yield-target 2>/dev/null || true)
+  if [ -n "$ytgt" ]; then
+    tl=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TimeLimit=[^ ]*' | cut -d= -f2)
+    dep=$(echo "$ytgt" | tr ' ' '\n' | sed 's/^/afterany:/' | paste -sd,)
+    nj=$(env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --parsable --job-name="$SLURM_JOB_NAME" --time="$tl" --dependency="$dep" \
+         -D "$REPO" "$REPO/code/r_h200_s3.sh" "${ORIG_ARGS[@]}")
+    echo "[r_h200_s3] 讓位給 ICPE 量時間的 job $ytgt：重送成 $nj（$dep），這個 job 結束" >&2
+    exit 0
   fi
   if [ "$TIMING" = 1 ] && [ -n "$mine" ]; then
     echo "[r_h200_s3] 量時間：節點上還有我們自己的 job 在跑 → 停：" >&2; echo "$mine" >&2; exit 2
@@ -178,6 +191,19 @@ if [ "$PART" = b0-run ]; then
   mkdir -p "$S3/b0/raw"
   TAG=$(echo "$MODES" | tr ',' '-')
   step B0-RUN m7run "s3-b0-$MODEL-$SETUP-$TAG" bash -c "python code/s3/b0.py run --model $MODEL --setup $SETUP --modes $MODES --reps 6 --seed 1 --out $S3/b0/raw/b0_${MODEL}_${SETUP}_${TAG}_\$RUN_ID.csv"
+fi
+
+# ---- W0、G-fio（runs/W0_write_cost.md、runs/G_fio.md）------------------------------------------------------
+if [ "$PART" = w0gfio ]; then
+  step MODELS ensure_models llama qwen
+  step CALIB-llama ensure_calib llama
+  step CALIB-qwen ensure_calib qwen
+  mkdir -p "$S3/w0/raw" "$S3/gfio"
+  for m in llama qwen; do
+    step W0-$m m7run s3-w0-$m bash -c "python code/s3/w0.py run --model $m --threads 16 --reps 6 --out $S3/w0/raw/w0_${m}_\$RUN_ID.csv"
+  done
+  step W0-REPORT python3 code/s3/w0.py report
+  step GFIO m7run s3-gfio bash -c "python code/s3/gfio.py run --dir $S3_LOCAL/gfio --gib 16 --dir $TIARA_HOME/tmp/gfio --gib 4 --out $S3/gfio/gfio_\$RUN_ID.csv"
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_s3] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi

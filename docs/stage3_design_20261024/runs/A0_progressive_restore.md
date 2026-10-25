@@ -147,3 +147,16 @@ TF：L128 約 1.5、Q128 約 1、Q256 約 4、Q14-256 約 8 GPU 小時；生成�
 - 登記時間（`date -u`）：**2026-10-25T12:23:54Z**；commit：見 `git log -- docs/stage3_design_20261024/runs/A0_progressive_restore.md` 的第一個 commit（commit 訊息開頭 `docs(s3-a0): prereg`）。
 - 登記時還沒有任何 A0 的數字：模型權重還在下載（job 22235 排隊中），沒有跑過任何 GPU 步驟。
 - 程式：`code/s3/a0.py`（CPU 自測 PASS）、`code/s3/a0_gpu.py`（還沒在 GPU 上跑過；gpu-selftest 是第一步）。計畫檔：`results/s3_h200/a0/plan_<cell>.json`。
+
+---
+
+## 偏離（登記之後；每一條寫明在看到什麼之後決定）
+
+### 偏離 1（2026-10-25T12:45:24Z；看到第一次 gpu-selftest 之後、任何 TF／生成之前）：粗底分段編碼不和整段逐位元相同 → 固定分段 16 塊
+- job 22237 的 gpu-selftest（run `20261025-204200-s3-a0-selftest-L128`）：分段（8 塊）和整段（32 塊）編碼的**位元組相同**，但解碼值不逐位元相同（`segmented_encode_equal: false`）。原因：係數＝Z·U 是 fp32 GEMM，cuBLAS 依列數（token 數）挑不同的演算法，捨入不同，量化後少數值不同。其他 7 項自檢都過。
+- 決定：所有判定格、所有配置一律用**同一個分段（16 塊）**編碼（`--seg-blocks 16`，預設），配置之間、格子之間的比較用同一個編碼器。自檢改成「位元組相同、重建誤差的差 ≤1%」。登記 §1.3 的粗底定義不變。
+
+### 偏離 2（同上時間；同一次 gpu-selftest，只看了 1 題的 ORACLE 前 8 名、沒有看任何分數）：加一個只報告的對照挑法 ORACLE-NEEDLE
+- 那一題（T2_front-back_s71000，128K）ORACLE 的前 8 塊都是最後 50 塊附近，不含答案所在的 4 塊（全部 head 的 attention 加總被「近期」的 head 主導）。只是 1 題的診斷輸出。
+- 決定：**判準不改**（GA0-GO 仍只看 ORACLE／ORACLE-L）。另加 ORACLE-NEEDLE：答案所在的塊先放進去、其餘照 ORACLE 的分數排（T5 沒有答案位置 → 等於 ORACLE）。它只當診斷：如果 ORACLE-NEEDLE 過、ORACLE 不過，就照實寫成「重要的塊夠集中，但用 attention 挑不到」，11/17 列為 GA0-WEAK 的一種，不判 GO。
+- TF 配置每格多 18 個（3 粗底 × 3 ρ × 2 精修），每格合計 204–205 個。
