@@ -103,12 +103,18 @@ def verify_one(snap: str, f: dict) -> dict:
 
 
 def file_ids(snap: str, names: list) -> dict:
-    """戳記：每個檔案（跟著 symlink 到 blob）的大小、inode、mtime。被清掉或換過就對不上。"""
+    """戳記：每個檔案（跟著 symlink 到 blob）的大小、inode、mtime。check 只比大小與 inode（被清掉重抓、被截斷都會變）；
+    不比 mtime：compute node 的 /tmp 是 noatime 掛載，tmpfiles 30 天的清理只看 mtime／ctime，所以每個 job 會 refresh（touch）一次。"""
     out = {}
     for n in names:
         st = os.stat(os.path.join(snap, n))
         out[n] = [st.st_size, st.st_ino, int(st.st_mtime)]
     return out
+
+
+def same_ids(a: dict, b: dict) -> list:
+    """不同的檔名（只比 [大小, inode]）。"""
+    return [n for n in b if list(a.get(n, [None, None]))[:2] != list(b[n])[:2]]
 
 
 def node_tmp_policy() -> dict:
@@ -183,9 +189,9 @@ def check_one(key: str, root: str, full: bool) -> tuple:
         ids = file_ids(snap, names)
     except FileNotFoundError as ex:
         return False, f"{key}：檔案不見了（{ex.filename}）"
-    if ids != {k: list(v) for k, v in stamp["ids"].items()}:
-        diff = [n for n in names if ids.get(n) != list(stamp["ids"].get(n, []))]
-        return False, f"{key}：{len(diff)} 個檔案的大小／inode／mtime 和戳記不同：{diff[:4]}"
+    diff = same_ids(ids, stamp["ids"])
+    if diff:
+        return False, f"{key}：{len(diff)} 個檔案的大小／inode 和戳記不同：{diff[:4]}"
     if full:
         bad = [r for r in (verify_one(snap, f) for f in stamp["files"]) if not r["ok"]]
         if bad:
@@ -200,6 +206,33 @@ def cmd_check(a):
         print(("[check] " if ok else "[check] ✗ ") + msg, flush=True)
         ok_all &= ok
     sys.exit(0 if ok_all else 3)
+
+
+def refresh_one(key: str, root: str) -> int:
+    """touch 這個模型的每個檔（blob 與 snapshot 裡的 symlink）、戳記、目錄：/tmp 是 noatime，tmpfiles 的 30 天看 mtime。"""
+    snap = snap_dir(key, root)
+    stamp = json.load(open(os.path.join(snap, STAMP)))
+    n = 0
+    for f in stamp["files"]:
+        p = os.path.join(snap, f["name"])
+        os.utime(p)                                            # 跟著 symlink：blob
+        os.utime(p, follow_symlinks=False)                     # symlink 自己
+        n += 1
+    os.utime(os.path.join(snap, STAMP))
+    d = snap
+    while os.path.realpath(d) != os.path.realpath(root) and d != "/":
+        os.utime(d)
+        d = os.path.dirname(d)
+    return n
+
+
+def cmd_refresh(a):
+    for key in a.models:
+        ok, msg = check_one(key, a.root, False)
+        if not ok:
+            print("[refresh] ✗ " + msg, flush=True)
+            sys.exit(3)
+        print(f"[refresh] {key}：touch {refresh_one(key, a.root)} 個檔", flush=True)
 
 
 def cmd_env(a):
@@ -229,8 +262,11 @@ def self_test() -> bool:
             json.dump(dict(repo="org/name", rev="r1", run_id="x", files=exp, ids=file_ids(snap, ["a.json"])),
                       open(os.path.join(snap, STAMP), "w"))
             ok &= check_one("t", d, True)[0]
-            os.utime(f1, (0, 0))                                   # mtime 變了 → 不算在
-            ok &= not check_one("t", d, False)[0]
+            os.utime(f1, (0, 0))                                   # mtime 變了（refresh）→ 還是算在
+            ok &= check_one("t", d, False)[0]
+            ok &= refresh_one("t", d) == 1 and check_one("t", d, True)[0]
+            open(f1, "w").write("{}")                               # 同一個 inode 重寫（大小一樣）→ check 抓不到，--full 抓得到雜湊（這裡內容相同所以仍過）
+            ok &= check_one("t", d, True)[0]
             os.remove(f1)
             ok &= not check_one("t", d, False)[0]
             ok &= "missing" in verify_one(snap, exp[0])["why"]
@@ -245,7 +281,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--self-test", action="store_true")
     sub = ap.add_subparsers(dest="cmd")
-    for name in ("fetch", "check", "env"):
+    for name in ("fetch", "check", "env", "refresh"):
         s = sub.add_parser(name)
         s.add_argument("--models", nargs="+", default=list(MODELS), choices=list(MODELS))
         s.add_argument("--root", default=ROOT)
@@ -256,7 +292,7 @@ def main():
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
-    {"fetch": cmd_fetch, "check": cmd_check, "env": cmd_env}[a.cmd](a)
+    {"fetch": cmd_fetch, "check": cmd_check, "env": cmd_env, "refresh": cmd_refresh}[a.cmd](a)
 
 
 if __name__ == "__main__":
