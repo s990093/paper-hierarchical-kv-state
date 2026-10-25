@@ -220,3 +220,9 @@
 **指令**: `python code/s3/a0.py select-gen --cell L128`、`--cell Q128`
 **產出**: `results/s3_h200/a0/gen_selection_L128.json`（run_id `20261026-003235-adhoc`，24 個配置；生成時另加 M05 的 3 個）、`gen_selection_Q128.json`（`20261026-003236-adhoc`，23 個配置）。G1 挑到的（粗底, f, 目標）：L128 B16·1/16·int4、B24·1/8·int4、B32·1/8·int4；Q128 B16·1/16·int4、B24·1/8·int4、B24·1/16·int4。
 **下一步**: 生成冒煙（22325）PASS 之後送生成分片（每格 288 題）。
+
+## S3-SCHED-2 — 加進 ICPE 依賴的新 s3 job 讓 p02 白等（2026-10-26 00:4x；改 sched.py，ICPE job 沒動）
+
+**看到的**: 00:3x 送 Q256 分片 0／1（22356、22357）時照規則 `add-dep` 加進 21655（p02）、21663、21670 的依賴。當時 p02 已經沒有別的依賴（只等資源）→ 加了之後 p02 只剩在等這兩個 s3 job：它們一拿到卡就會讓位（不會死結），但在那之前 p02 不能排程。其他 10 個 s3 品質 job 00:4x 開跑後都照規則讓位到 21655 之後（22359–22371）。
+**想做但被擋下的**: 把 22356／22357 從三個 ICPE job 的依賴拿掉（`scontrol update JobId=21655 Dependency=` 等）→ 被權限擋下（auto mode：Interfere With Workloads），沒有繞過；p02 會在 22356／22357 開跑讓位後排程。
+**修正**: `sched.py add-dep` 在目標已經準備好（`yield-target` 會選它）時跳過、印原因；skill §4 補註。
