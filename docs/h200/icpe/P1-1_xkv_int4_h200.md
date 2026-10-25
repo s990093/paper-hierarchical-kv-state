@@ -98,8 +98,12 @@ run：生成 `20261025-203913-icpe-p11-gen-qwen`、`20261025-210417-icpe-p11-gen
 - **爭用紀錄的缺口**（stage3 session 10/25 發現，我核對過）：`20261025-210417-icpe-p11-gen-llama` 的 stderr 有 `SmiUnavailable: ... timed out after 20 seconds`（2026-10-25 21:44:46 +08，hgx-cn01 上 nvidia-smi 全節點卡住）。舊的 GpuWatcher 在那之後就停止取樣，結束時仍寫 CLEAN → 這個 run 21:44:46 以後的爭用紀錄等於沒有。品質量測量的是分數（同題、temperature 0），不受影響（CLAUDE.md §3）；`latency_ms` 本來就不用。gpu_guard 已修（main `6c450c9`，ICPE 的手寫判斷另修，RUNLOG ICPE-GUARD）。
 
 ### 7.2 (T) 時間
-（job 21670，hold 中，排在量時間鏈最後。）
+（job 21670 排隊中，是量時間鏈的最後一個；開跑前修了 `report-t` 的一個 bug，見 §8。）
 
 ## 8. 偏離登記
 
-（還沒有。）
+- **2026-10-25T22:09:19Z（`date -u`），p11t（job 21670）開跑前、還沒有任何 (T) 資料**：修 `code/icpe/p11_tools.py report-t` 的一個 bug。
+  - **原本**：每題 SVD 版的判定用 `seg.str.contains("int4")` 選段，會把 INT4 自己（`int4_kivi`，cal＝False）的載入線也算進「低秩＋INT4」。它幾乎不可能比 INT4 端到端快 5%，所以每題 SVD 版的判定一定是不成立。
+  - **改成**：只有 `xkv_*` 的段進判定；`int4_kivi` 留在表裡當同量法的對照，另加只報告的欄 `t_int4_lp_s`、`speedup_vs_int4_lp`。
+  - `:cal` 版（登記的主判定）選到的段不變。每格要「該模型的每個秩組合都快」：Qwen 1 個（k34v51），Llama 2 個（k29v44、k19v29）。這是程式在資料前就有的寫法，不改。
+  - 驗證：假資料（`:cal` 全快、每題 SVD 在 NFS 級慢）→ `:cal` 8/8 成立、每題 SVD 4/8；修之前同一份假資料的每題 SVD 會是 0/8。

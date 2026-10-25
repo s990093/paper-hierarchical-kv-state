@@ -172,16 +172,19 @@ def cmd_report_t(a):
                 q = g[(g.bw_name == tier) & (g.gpu_state == st)]
                 ti4 = min(q[q["mode"] == "cake"].t_restore.median(), q[q["mode"] == "loadall"].t_restore.median()) if len(q) else None
                 x = lp[(lp.model == m) & (lp.tier == tier) & (lp.duty.astype(float) == duty)]
+                lp4 = x[x.seg == "int4_kivi"].meas_s.astype(float)
+                tlp4 = float(lp4.iloc[0]) if len(lp4) else None      # 只報告：INT4 用同一種量法（全部載入的載入線）
                 for _, r in x.iterrows():
                     rows.append(dict(run_id=run_id(), ts=ts(), model=m, tier=tier, gpu=st, seg=r.seg, cal=bool(r.cal), t_meas_s=float(r.meas_s),
                                      t_int4_e2e_s=ti4, speedup_vs_int4=(ti4 / float(r.meas_s)) if ti4 else None,
                                      faster=bool(ti4 and float(r.meas_s) < 0.95 * ti4), bytes_lb_s=float(r.bytes_lb_s) if "bytes_lb_s" in r else None,
-                                     judged=tier in ("b32", "nfs")))
+                                     t_int4_lp_s=tlp4, speedup_vs_int4_lp=(tlp4 / float(r.meas_s)) if tlp4 else None,
+                                     judged=tier in ("b32", "nfs") and str(r.seg).startswith("xkv_")))   # int4_kivi 本身是對照，不進判定
     T = pd.DataFrame(rows)
     T.to_csv(os.path.join(a.out_dir, "p11t_cells.csv"), index=False)
     out = dict(run_id=run_id(), ts=ts(), problems=problems, rule="P1-1 §3：每格 :cal 版全部載入 < INT4 端到端最好 ×0.95；慢層 8 格都成立＝成立")
     for cal in (True, False):
-        J = T[T.judged & (T.cal == cal) & T.seg.str.contains("int4")]
+        J = T[T.judged & (T.cal == cal)]                     # judged 只含 xkv_* 的段（每格三個秩組合都要快）
         key = "cal" if cal else "per_item"
         per = J.groupby(["model", "tier", "gpu"]).faster.all() if len(J) else None
         out[key] = dict(n_cells=int(len(per)) if per is not None else 0, n_faster=int(per.sum()) if per is not None else 0,
