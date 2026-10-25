@@ -200,3 +200,4 @@ ValueError: The weights and list don't have the same length.
 **原因（我的 runner 錯）**：`x5_analyze.bootstrap` 用環境變數 `X5_CENSOR_H` 重建設限遮罩（ret ∧ prevT ≤ T_end − H，和 `x5_run.apply_censor` 同一式），`x5_run` 則用 `--censor-H`。runner 的 `x5v` 只把 `--censor-H` 給了 run，analyze 沒有設 `X5_CENSOR_H` → 用沒設限的 session 清單對設限後的 TTFT 陣列。3090 分支的同一步（`20261017-220051-…-cens1800` 等）exit 0，所以當時有設這個變數。
 **修正**：`x5v` 從 run 參數取 `--censor-H` 的值，analyze 用 `env X5_CENSOR_H=<H>`（沒設限的步驟 H＝0，和之前一樣）。寫新檔再 mv（22236 正在用這支）。
 **重送**：**22240** `icpe-p12 --from P12-B3-CENS1800`（B3 的 x5 run 重跑一次，raw 目錄先刪，所以輸出和 analyze 一致）。p01brr 22233 的依賴加上 22240（現在：afterany:21907:21909:22236:22238:22240；已滿足的 Slurm 會自己拿掉）。
+- **10/25 12:5xZ runner 小改**（stage3 session 告知 main `23e509e`：stage3 的 job 開跑時若看到沒 hold、只等 s3-* 或沒有依賴的 ICPE 量時間 job，就重送自己到它後面、exit 0）：量時間 part 的「節點上有自己的 job → 退出」改成每 60 s 再查、最多 15 次，還有才退出。目的：兩邊同一輪排程一起開跑時，等 stage3 讓開，不讓量時間鏈一路 exit 2。量測仍然只在節點上沒有我們別的 job 時才開始。
