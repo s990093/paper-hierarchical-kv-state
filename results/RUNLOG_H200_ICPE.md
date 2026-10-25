@@ -170,3 +170,19 @@ FileNotFoundError: /work/ChihChungHsu/hungweilai/hf-cache/hub/models--Qwen--Qwen
 | 22235 | `s3-fetch`（stage3 session 送的） | — | 權重 → hgx-cn01 /tmp |
 | **22236** | `icpe-p11q` | afterany:22235 | `--from P11Q-CALIB-qwen`（PLAN 已在 21669 跑完） |
 | 22233 | `icpe-p01brr` | afterany:21656:21662:21779:21905:21907:21909:22235:**22236** | 21669 換成 22236；22235 是 stage3 session 加的（使用者 10/25「排滿：stage3 品質先填空檔」：下一個 ICPE 量時間的 job 等正在跑的 stage3 job） |
+
+---
+
+## ICPE-P01-C — job 21656（P0-1 (c) X1／X5 換常數 V0／V1／V2＋P0-2 全尺寸 HINT-PF；只用 CPU）
+**狀態**: PASS　**執行時間**: 2026-10-25 19:34:17 → 20:23:36（+08:00），exit 0　**同節點**：DL_Lab4 的 J_kd、final_ens（不量時間的 job，允許）
+**run_id**: `20261025-193420-icpe-p01c-x1-sweep-V0`、`…-194544-…-x1-an-V0`、`…-194549-…-x1-h1800-V0`、`…-194554-…-x1-h3600-V0`、`…-194600-…-x5-grid-V0`、`…-195015-…-x5-an-V0`；V1：`20261025-195031`～`…-200641`（同 6 步）；V2：`20261025-200651`～`…-202304`；`20261025-202314-icpe-p02-fullsim`。全部 exit 0。
+**分析**（head node）：`20261025-202403-icpe-p01c-analyze` exit 1（我用了系統 python，`ModuleNotFoundError: No module named 'numpy'`）；`20261025-202411-icpe-p01c-analyze` exit 1（`TypeError: dict() got multiple values for keyword argument 'variant'`：X5 的 key 欄有 `variant`，和我記版本的欄撞名；我的程式錯）→ `p01_tools.py` 版本欄改名 `fvar`；`20261025-202422-icpe-p01c-analyze` exit 0。
+**指令**: `bash code/icpe/headrun.sh icpe-p01c-analyze ~/.conda/envs/tiara/bin/python code/icpe/p01_tools.py analyze-c`
+**產出檔**: `results/icpe_h200/p01/sim_{V0,V1,V2}/{x1,x5}/`、`p01c_verdict.json`、`p01c_crossings.csv`；`results/icpe_h200/p02/fullsim_hint.csv`
+**關鍵數字**〔模擬〕:
+- V0 回歸：和 git 的 `results/p3_explore_h200/{x1,x5}` 逐值相同（X1 1,152 列、X5 384 列，最大差 0；判定字相同）。
+- 判定字（X1 原登記／X1 截尾 H＝3,600／X5 登記；只報告 H＝1,800）：V0、V1、V2 全部「有看頭」→ **(c) 成立**。
+- X1（rule＝min，384 格）≥15%：167／168／169 格；X5（48 格）≥15%：11／16／17 格，最大 37.4／40.6／41.5%。跨門檻 85 列（X5 只往上）。
+- P0-2 全尺寸 HINT-PF（只報告，24 格）：HINT-PF 對 LRU 5.6–47.8%、O-PF 對 LRU 5.5–52.4%；HINT-PF÷O-PF 的改善比例 SSD 中位 0.939、b32 0.949、NFS 1.117；6 格 > 1（NFS 128／256 GiB 四格 1.25–1.45）。
+**失敗與異常**: 上面兩次分析失敗（叫錯／程式錯，已修）。沒做：V2 對第二階段 §5.5 `whatif_recompute.json` 的對照（只報告項）。
+**P0-1 總判定**：(a) 成立、(c) 成立、(b) 暫定 0 翻轉 → 等 p01brr（22233）重跑後 `p01_tools.py analyze-b`＋`verdict`。

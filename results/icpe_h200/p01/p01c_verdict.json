@@ -1,0 +1,41 @@
+{
+ "run_id": "20261025-202422-icpe-p01c-analyze",
+ "ts": "2026-10-25T20:24:24+08:00",
+ "words": {
+  "V0": {
+   "x1_registered": "有看頭",
+   "x1_H1800": "有看頭",
+   "x1_H3600": "有看頭",
+   "x5_registered": "有看頭"
+  },
+  "V1": {
+   "x1_registered": "有看頭",
+   "x1_H1800": "有看頭",
+   "x1_H3600": "有看頭",
+   "x5_registered": "有看頭"
+  },
+  "V2": {
+   "x1_registered": "有看頭",
+   "x1_H1800": "有看頭",
+   "x1_H3600": "有看頭",
+   "x5_registered": "有看頭"
+  }
+ },
+ "same_as_V0": {
+  "V1": true,
+  "V2": true
+ },
+ "v0_regression": {
+  "x1_headroom_max_abs_diff": 0.0,
+  "x1_cells": 1152,
+  "x5_headroom_max_abs_diff": 0.0,
+  "x5_cells": 384,
+  "x1_word_git": "有看頭",
+  "x5_word_git": "有看頭",
+  "identical": true
+ },
+ "n_crossings": 85,
+ "passed": true,
+ "problems": [],
+ "rule": "P0-1 §3.3：V1、V2 的 X1 原登記、X1 截尾 H=3,600、X5 登記判定的字都和 V0 相同；V1 沒跑（S1 停損）時只用 V2 判"
+}

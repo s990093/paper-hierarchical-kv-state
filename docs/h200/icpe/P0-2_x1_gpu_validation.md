@@ -81,7 +81,13 @@
 
 ## 8. 結果
 
-（還沒有。）
+GPU 重播（job 21655）還沒跑（hold 中，排在 p01brr 之後）。下面是已經有的 CPU 部分。
+
+### 8.1 只報告：HINT-PF 在全尺寸 X1 格子〔模擬，H200 常數〕
+run `20261025-202314-icpe-p02-fullsim`（job 21656）→ `results/icpe_h200/p02/fullsim_hint.csv`；conversation、R1、Cake，三個慢層 × GPU 閒／忙 × CPU 128／256／512／1,024 GiB＝24 格。
+- HINT-PF 對 LRU 的回來請求平均 TTFT 改善 5.6–47.8%；O-PF 對 LRU 5.5–52.4%。
+- HINT-PF 拿到 O-PF 改善的比例（hint_vs_lru ÷ opf_vs_lru）：本地 SSD 0.912–0.982（中位 0.939）、b32 0.916–1.009（0.949）、NFS 級 0.816–1.454（1.117）。
+- **6 格 HINT-PF 比 O-PF 還好**（比例 > 1）：NFS 級 128／256 GiB 的閒、忙四格（1.25–1.45），b32 512／1,024 GiB 忙兩格（1.003、1.009）。〔推論，沒有另外驗證〕O-PF 不是所有預取做法的上界：兩者預取機制相同，但 O-PF 騰空間仍照 LRU、可能把快回來的 session 降級；HINT-PF 不降級有提示在等的 session（§3）。慢層越慢，這個差越大。論文若寫「HINT-PF 拿到 O-PF 的大部分」，要附這 6 格。
 
 ## 9. 偏離登記
 
