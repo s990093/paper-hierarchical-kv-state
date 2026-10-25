@@ -40,6 +40,7 @@ if [ -z "${R_H200_S3_REEXEC:-}" ] && [ -n "${SLURM_JOB_ID:-}" ]; then
   echo "[r_h200_s3] 改執行 repo 裡的版本：$REPO/code/r_h200_s3.sh（git $(git -C "$REPO" rev-parse --short HEAD)）"
   exec bash "$REPO/code/r_h200_s3.sh" "$@"
 fi
+ORIG_ARGS=("$@")                                              # 讓位時原樣重送用
 PART=""; DRY=0; LIST=0; FROM=""; CELL=""; SHARD="0/1"; BUDGET=210; MODEL=""; SETUP=""; MODES=""
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -87,6 +88,17 @@ if [ "$DRY" = 0 ]; then
   icpe_t=$(printf '%s\n' "$mine" | awk '{print $2}' | grep -E "$ICPE_TIMING_RE" || true)
   if [ -n "$icpe_t" ]; then
     echo "[r_h200_s3] 節點上有 ICPE 量時間的 job 在跑（$icpe_t）→ 不開跑（exit 3；stage3 不和 ICPE 量時間重疊）" >&2; exit 3
+  fi
+  # 讓位（code/s3/sched.py）：ICPE 量時間的 job 如果只剩在等 stage3（或已經在等資源），這個 job 不佔這個空檔：
+  # 原樣重送一份、排在那個 ICPE job 之後，然後結束（exit 0；它在 ICPE 的依賴裡是 afterany，所以 ICPE 可以開跑）
+  ytgt=$(python3 "$REPO/code/s3/sched.py" yield-target 2>/dev/null || true)
+  if [ -n "$ytgt" ]; then
+    tl=$(scontrol show job "$SLURM_JOB_ID" | grep -o 'TimeLimit=[^ ]*' | cut -d= -f2)
+    dep=$(echo "$ytgt" | tr ' ' '\n' | sed 's/^/afterany:/' | paste -sd,)
+    nj=$(env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --parsable --job-name="$SLURM_JOB_NAME" --time="$tl" --dependency="$dep" \
+         -D "$REPO" "$REPO/code/r_h200_s3.sh" "${ORIG_ARGS[@]}")
+    echo "[r_h200_s3] 讓位給 ICPE 量時間的 job $ytgt：重送成 $nj（$dep），這個 job 結束" >&2
+    exit 0
   fi
   if [ "$TIMING" = 1 ] && [ -n "$mine" ]; then
     echo "[r_h200_s3] 量時間：節點上還有我們自己的 job 在跑 → 停：" >&2; echo "$mine" >&2; exit 2
