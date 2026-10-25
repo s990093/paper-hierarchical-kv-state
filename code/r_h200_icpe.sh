@@ -55,6 +55,14 @@ case "$PART" in
   *) echo "要 --part p01s1|p01ab|p01brr|p02|cpu|p12|p2|p11q|p11t" >&2; exit 2 ;;
 esac
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
+# 模型權重（2026-10-25）：/work 的 hf-cache 從 10/23 起是空的（Llama、Qwen-7B、noDCA 都不在；誰刪的查不到）。使用者決定權重只放
+# hgx-cn01 本地 /tmp：stage3 的 code/s3/fetch_models.py 下載同一個 revision（Llama 4699cc75…、Qwen e28526f7…）、逐檔對 HF 的雜湊、留戳記。
+# HF_HOME 在 source env_h200.sh 之前設好，M7_LLAMA_GLOB／M7_QWEN_GLOB／M7_MODEL_GLOB 就跟著它（先 unset，免得送出端帶進舊值）。
+# 這支只檢查、不下載（fetch_models 沒有鎖，避免和 s3-fetch 同時寫）；cpu／p12 不載模型，不檢查。
+export ICPE_MODEL_ROOT="${ICPE_MODEL_ROOT:-/tmp/hungweilai-models/hf-cache}"
+export HF_HOME="$ICPE_MODEL_ROOT"
+unset M7_LLAMA_GLOB M7_QWEN_GLOB M7_MODEL_GLOB
+case "$PART" in cpu|p12) NEED_MODELS=0 ;; *) NEED_MODELS=1 ;; esac
 # shellcheck disable=SC1091
 source "$REPO/code/env_h200.sh"
 cd "$REPO"
@@ -76,6 +84,14 @@ if [ "$DRY" = 0 ]; then
     if [ -n "$others" ]; then
       echo "[r_h200_icpe] 節點上還有我們自己的 job 在跑 → 停（量時間不和自己人同時跑）：" >&2; echo "$others" >&2; exit 2
     fi
+  fi
+  if [ "$NEED_MODELS" = 1 ]; then
+    python3 "$REPO/code/s3/fetch_models.py" check --root "$ICPE_MODEL_ROOT" --models llama qwen \
+      || { echo "[r_h200_icpe] 模型權重不在 $ICPE_MODEL_ROOT（或戳記對不上）→ 停（exit 3）。先跑 s3-fetch（code/r_h200_s3.sh --part fetch），再重送" >&2; exit 3; }
+    want=$(python3 "$REPO/code/s3/fetch_models.py" env --root "$ICPE_MODEL_ROOT" --models llama qwen | sort)
+    have=$(printf 'export HF_HOME=%s\nexport M7_LLAMA_GLOB=%s\nexport M7_QWEN_GLOB=%s\n' "$HF_HOME" "$M7_LLAMA_GLOB" "$M7_QWEN_GLOB" | sort)
+    [ "$want" = "$have" ] || { echo "[r_h200_icpe] env_h200.sh 的模型路徑和 fetch_models 的不同 → 停：" >&2; diff <(echo "$want") <(echo "$have") >&2; exit 2; }
+    echo "[r_h200_icpe] 模型：M7_LLAMA_GLOB=$M7_LLAMA_GLOB M7_QWEN_GLOB=$M7_QWEN_GLOB M7_MODEL_GLOB=$M7_MODEL_GLOB"
   fi
   echo "[r_h200_icpe] $(date -Is) part=$PART job=$SLURM_JOB_ID node=${SLURMD_NODENAME:-?} git=$(git rev-parse --short HEAD)"
   echo "[r_h200_icpe] 同節點的 job（開跑時）："; squeue -h -w "${SLURMD_NODENAME:-$(hostname -s)}" -o '%i %u %a %b %T %M'

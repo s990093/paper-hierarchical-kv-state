@@ -149,3 +149,24 @@
 - origin/main 從上次 merge 後多了 24 個 commit（含 `code/m10_speed.py`：`M10_BUSY_SCRIPT` 環境變數，沒設時行為不變）。**ICPE 的量時間跑完之前不 merge**（p01brr 要和原本 (b) 同一份程式）；寫 ICPE_EVIDENCE 之前再 merge。
 - **更正（同日 11:5xZ，使用者：「h200 已經併入 main，之後結果直接送 main」）**：上一行「量時間跑完之前不 merge」作廢。已 `git merge origin/main` 進 h200（`dd9e4bc`；main 多的程式只有 m16_*／s3_mech_arith 與 m10_speed 的 `M10_BUSY_SCRIPT`，沒設時行為不變、只在 busy JSON 多一個 `script` 欄——ICPE 的 CSV 不受影響，p01brr 仍和原本 (b) 同一條程式路徑）；`code/h200_gitpush.sh` 改成推 origin/main（origin/h200 跟著同一個 commit，`916ae50`）。
 - ICPE_EVIDENCE.md：A1、A1''、A2、A3、A4、A5（暫定）、C1、D2、D3、E2 補上 run_id（MI300X 的從 main 的結果檔讀；H200 的都核對過 run 目錄在、exit 0）。D2 改成只算 INT4（舊值 21.5–54.5%／22–57% 含 FP8）。
+
+---
+
+## ICPE-P11Q 第一次 — job 21669 FAILED（2026-10-25 20:01:20 → 20:01:36 +08:00）
+**狀態**: FAIL（exit 1；第 2 步）　**run_id**: `20261025-200124-icpe-p11-plan`（exit 0；`p11_selection.json` 和 10/22 的逐位元相同，git 沒有變動）、`20261025-200128-icpe-p11-calib-qwen`（**exit 1**）
+**錯誤**（`slurm-icpe-p11q-21669.out`）：
+```
+File ".../code/m7_model.py", line 39, in model_path
+    raise FileNotFoundError(g)
+FileNotFoundError: /work/ChihChungHsu/hungweilai/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/e28526f7bb80e2a9c8af03b831a9af3812f18fba
+```
+**原因**：`/work/ChihChungHsu/hungweilai/hf-cache/hub/` 整個是空的（目錄 mtime 2026-10-23 03:12 +08）；`$HOME/models/`（noDCA）也是空的。10/22 的 P0-1 S1／(a)／(b) 都在這之前跑完（載得到模型）。誰刪的：查不到（NOT_VERIFIED；stage3 session 的 `RUNLOG_H200_S3.md` S3-0 也記了同一件事）。群組配額剩 49G。
+**使用者的決定（10/25，經 stage3 session 轉達，寫在 `RUNLOG_H200_S3.md` S3-0）**：權重全部只放 hgx-cn01 本地 `/tmp/hungweilai-models/hf-cache`（HF_HOME 的版面），由 stage3 的 `code/s3/fetch_models.py` 下載**同一個 revision**（Llama `4699cc75…`、Qwen `e28526f7…`）、逐檔對 HF 的 sha256／git blob sha1；ICPE 自己改路徑。
+**改動**（`code/r_h200_icpe.sh`，寫新檔再 mv，在跑的 21656 不受影響）：source env_h200.sh 之前 `HF_HOME=$ICPE_MODEL_ROOT`（預設上面那個 /tmp 路徑）並 unset `M7_*_GLOB` → 三個 GLOB 跟著新路徑；要載模型的 part（cpu、p12 以外）開跑前 `fetch_models.py check --models llama qwen`（大小＋inode＋mtime 對戳記），不在就 exit 3；再核對 env_h200 算出的路徑和 `fetch_models.py env` 逐字相同。這支只檢查、不下載（fetch_models 沒有鎖，不和 s3-fetch 搶著寫）。ICPE 的程式都不用 noDCA（那是 vLLM 用的；E1 的 vLLM 分母是 10/21 量的）。
+**對可比性**：同一個 revision、逐檔雜湊驗過 → 權重位元組和 10/22 相同；載入時間不在任何量測裡。p01brr 重跑和原本 (b) 仍是同一份模型、同一條程式路徑。
+**重送**：
+| job | 名稱 | 依賴 | 內容 |
+|:--|:--|:--|:--|
+| 22235 | `s3-fetch`（stage3 session 送的） | — | 權重 → hgx-cn01 /tmp |
+| **22236** | `icpe-p11q` | afterany:22235 | `--from P11Q-CALIB-qwen`（PLAN 已在 21669 跑完） |
+| 22233 | `icpe-p01brr` | afterany:21656:21662:21779:21905:21907:21909:22235:**22236** | 21669 換成 22236；22235 是 stage3 session 加的（使用者 10/25「排滿：stage3 品質先填空檔」：下一個 ICPE 量時間的 job 等正在跑的 stage3 job） |
