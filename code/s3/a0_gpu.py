@@ -10,6 +10,7 @@
 """
 from __future__ import annotations
 
+import gc
 import hashlib
 import json
 import math
@@ -841,13 +842,26 @@ def _loop(a, kind: str):
             print(f"[{k + 1}/{len(todo)}] {it['item_id']} t{r['turn']} prefill {st.t_prefill:.1f}s 題 {t_item:.1f}s "
                   f"{len(rows)} 列 copies={st.comp.n_block_copies}/{st.comp.n_layer_copies} "
                   + (f"E0 gold_lp {e0['gold_lp']:.3f}" if kind == "tf" else f"E0 score {e0['score']}"), flush=True)
+            free_item(st)
             del st
+            gc.collect()
             torch.cuda.empty_cache()
+            print(f"    mem_after_item {torch.cuda.memory_allocated() / 2**30:.1f} GiB", flush=True)
     finally:
         fo.close()
         if gm:
             go.close()
         finish_watch(watch, out)
+
+
+def free_item(st):
+    """一題做完：打斷 ItemState ↔ Composer 的參照循環（st.comp.st 指回 st；comp.stores 握著這題的原值／INT4 緩衝）。
+    10/26 Q256 分片 0（job 22313）：只 del st 不會釋放，要等 Python 的循環 GC，GPU 緩衝跨題累積，第 40 題時 PyTorch 握著 138.9 GiB → OOM。
+    呼叫端接著 del st、gc.collect()、empty_cache()。"""
+    if getattr(st, "comp", None) is not None:
+        st.comp.st = None
+        st.comp.stores = {}
+        st.comp = None
 
 
 def glob_out(kind, cell):

@@ -199,3 +199,10 @@
 **原因**: T5 的常見詞任務要用詞表把情境填滿；256K（504 個 512-token 塊）時詞表不夠。Q256／Q14-256 的冒煙只做前 2 題（T2、T3），沒有碰到 T5。
 **影響**: Q256、Q14-256（判定格）每個分片遇到 T5 題都會停：22313（Q256 分片 0，跑中）、22315–22318（Q14-256，排隊中）。128K／32K 的格子不受影響（L128、Q128 已做完 96/96）。
 **待使用者決定**（判準登記的事，不自己改）：(a) 256K 的格子不做 T5（寫成 A0 偏離，判定只用 T2–T4）；(b) 加長 cwe 詞表（題目會和 128K 不同）；(c) 其他。
+
+## S3-A0-FAIL-2 — Q256 分片 0 在第 40 題 GPU 記憶體不足（job 22313，2026-10-26 00:13；已修，重送）
+
+**錯誤（完整）**: `torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 414.00 MiB. GPU 0 has a total capacity of 139.79 GiB of which 45.31 MiB is free. ... Of the allocated memory 138.89 GiB is allocated by PyTorch, and 185.09 MiB is reserved by PyTorch but unallocated.`（`run_item → question_pass → forward_hooked → ctx_mass`；題 `T4_mid-front_s71019`）；run `20261025-231545-s3-a0-tf-Q256-s0`；前 39 題正常寫進 `results/s3_h200/a0/raw/a0_tf_Q256_s0.csv.gz`（每題 prefill 約 30 s、一題 50–61 s〔實測〕）。
+**判斷**: `ctx_mass` 一個分塊最多約 1.5 GiB；失敗時 PyTorch 已經握著 138.9 GiB 的活張量（保留未用只有 185 MiB → 不是碎片化），冒煙時一題是 71.7 GB → 跨題累積。原因：`ItemState.comp = Composer(self)`、`Composer.st = st`（參照循環），`Composer.stores` 握著這題的原值／INT4 緩衝 → `_loop` 的 `del st` 釋放不了，要等 Python 的循環 GC。
+**修正**（`fix(s3-a0)`）: `a0_gpu.free_item(st)` 每題結束打斷循環 → `del st` → `gc.collect()` → `empty_cache()`；每題印 `mem_after_item`（確認不再累積）。G-M12 品質（`gm12.py quality`，同一個 ItemState）同樣處理；gm12 裡 guard 的別名改成 `GD`（避免和函式內的 `import a0_gpu as G` 混淆；原本沒有撞到）。只改記憶體管理，算法與輸出不變。L128、Q128（96/96 做完）沒有受影響。
+**重送**: Q256 分片 0（從第 40 題接著做）。分片 1（T3＋T5）等 S3-A0-FAIL-1 的決定。
