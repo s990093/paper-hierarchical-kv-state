@@ -203,6 +203,15 @@ fi
 if [ "$PART" = b0-run ]; then
   step MODELS ensure_models "$MODEL"
   step CALIB-$MODEL ensure_calib "$MODEL"
+  # 量測前的閘（10/26）：這組（模型, 設定）在這份程式（b0／bgengine／guard／numa_probe／gpu_guard 的雜湊）上還沒冒煙過 →
+  # 先在同一個獨佔的 allocation 裡跑一次：背景 idle、stream、這個設定的全部原語各 6 次，輸出在 run 目錄（不進 results）。
+  # 為什麼不用 job 依賴：品質 job（b0prep2）會讓位給量時間的 job、重送成新編號，依賴就斷了。失敗 → step 停下（規則 2）。
+  mkdir -p "$S3/b0"
+  B0SIG=$(cat code/s3/b0.py code/s3/bgengine.py code/s3/guard.py code/s3/numa_probe.py code/gpu_guard.py | sha256sum | cut -c1-16)
+  if [ ! -f "$S3/b0/gate_pass_${MODEL}_${SETUP}_$B0SIG" ]; then
+    step B0-GATE-$MODEL-$SETUP m7run "s3-b0-gate-$MODEL-$SETUP" bash -c "python code/s3/b0.py run --model $MODEL --setup $SETUP --modes stream --bgs idle --reps 6 --seed 9 --out \"\$RUN_DIR/gate_smoke.csv\""
+    [ "$DRY" = 1 ] || date -Is > "$S3/b0/gate_pass_${MODEL}_${SETUP}_$B0SIG"
+  fi
   case "$MODES" in *mps*) step MPS-ON mps_on ;; esac
   mkdir -p "$S3/b0/raw"
   TAG=$(echo "$MODES" | tr ',' '-')

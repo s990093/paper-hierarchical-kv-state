@@ -226,3 +226,8 @@
 **看到的**: 00:3x 送 Q256 分片 0／1（22356、22357）時照規則 `add-dep` 加進 21655（p02）、21663、21670 的依賴。當時 p02 已經沒有別的依賴（只等資源）→ 加了之後 p02 只剩在等這兩個 s3 job：它們一拿到卡就會讓位（不會死結），但在那之前 p02 不能排程。其他 10 個 s3 品質 job 00:4x 開跑後都照規則讓位到 21655 之後（22359–22371）。
 **想做但被擋下的**: 把 22356／22357 從三個 ICPE job 的依賴拿掉（`scontrol update JobId=21655 Dependency=` 等）→ 被權限擋下（auto mode：Interfere With Workloads），沒有繞過；p02 會在 22356／22357 開跑讓位後排程。
 **修正**: `sched.py add-dep` 在目標已經準備好（`yield-target` 會選它）時跳過、印原因；skill §4 補註。
+
+## S3-B0-GATE — B0 量時間前的冒煙閘（2026-10-26 06:2x；判準不變）
+
+**問題**: 照讓位規則，品質 job 讓位給 s3-T 量時間的 job → B0 冒煙 2（22369；含 `dq_vq`、guard 監看、NUMA 紀錄）會被排到整條 s3-T 鏈之後，B0 的量時間 run 會先跑沒冒煙過的程式（Qwen 的 b0 設定也從沒冒煙過）。用 job 依賴當閘不行：讓位時重送會換編號、afterok 就被滿足了。
+**改法**（`code/r_h200_s3.sh` 的 `b0-run`）: 每組（模型, 設定）在這份程式（b0.py、bgengine.py、guard.py、numa_probe.py、gpu_guard.py 的 sha256 前 16 碼）上第一次量時間前，先在同一個獨佔的 allocation 裡跑 `b0.py run --modes stream --bgs idle --reps 6`（這個設定的全部原語），輸出在 run 目錄、不進 results、不判定；過了在 `$TIARA_RUNS/.s3_gates/` 留戳記。失敗 → step 停下（規則 2）。在 MPS daemon 開之前跑。
