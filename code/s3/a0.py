@@ -49,8 +49,8 @@ WRITE_METHOD = {"llama": "KNORM", "qwen": "KEYDIFF", "qwen14": "KEYDIFF"}       
 CELLS = {   # 判定格（登記 §1.1）；ctl＝32K 對照列（只跑 TF、不判定）
     "L128": dict(model="llama", nb=252, judged=True, pair="Q128"),
     "Q128": dict(model="qwen", nb=252, judged=True, pair="L128"),
-    "Q256": dict(model="qwen", nb=504, judged=True, pair="Q14-256"),
-    "Q14-256": dict(model="qwen14", nb=504, judged=True, pair="Q256"),
+    "Q256": dict(model="qwen", nb=504, judged=True, pair="Q14-256", no_t5=True),
+    "Q14-256": dict(model="qwen14", nb=504, judged=True, pair="Q256", no_t5=True),
     "L32": dict(model="llama", nb=64, judged=False, pair=None),
     "Q32": dict(model="qwen", nb=64, judged=False, pair=None),
 }
@@ -100,19 +100,31 @@ def item_id_of(task, b1, b2, seed) -> str:
     return f"{task}_{'-'.join(tb)}_s{seed}"
 
 
-def plan_set(name: str) -> list:
-    s = SETS[name]
+# A0 偏離 3（2026-10-26，使用者選「256K 不做 T5」）：256K 時 cwe 詞表填不滿 504 塊（RUNLOG S3-A0-FAIL-1）→ 256K 的格子只用 T2–T4。
+# TF 72 題（T2–T4 各 24，和其他格的 T2–T4 同一批題）；gen1 改成 T2–T4 各 64（seed 72000–72063：前 48 個和其他格相同，
+# 72048–72063 是新的）→ 生成仍是 192＋96＝288（05 §2：每個判定格 ≥288）；gen2 本來就沒有 T5，不變。
+SETS_NO_T5 = {"tf": dict(SETS["tf"], tasks=("T2", "T3", "T4")),
+              "gen1": dict(SETS["gen1"], n=64, tasks=("T2", "T3", "T4")),
+              "gen2": SETS["gen2"]}
+
+
+def sets_for(cell: str | None) -> dict:
+    return SETS_NO_T5 if cell and CELLS[cell].get("no_t5") else SETS
+
+
+def plan_set(name: str, cell: str | None = None) -> list:
+    s = sets_for(cell)[name]
     return [dict(task=t, b1=b1, b2=b2, seed=seed, item_id=item_id_of(t, b1, b2, seed), turn=s["turn"], set=name)
             for t, b1, b2, seed in XS.plan_interleaved_cpu(list(s["tasks"]), s["n"], s["seed0"])]
 
 
 def seed_overlap() -> dict:
-    ours = {(r["task"], r["seed"]) for k in SETS for r in plan_set(k)}
+    ours = {(r["task"], r["seed"]) for c in (None, "Q256") for k in SETS for r in plan_set(k, c)}
     out = {}
     for k, (s0, n) in USED_SEEDS.items():
         used = {(t, s) for t, _, _, s in XS.plan_interleaved_cpu(["T2", "T3", "T4", "T5"], n, s0)}
         out[k] = len(ours & used)
-    sets = {k: {(r["task"], r["seed"]) for r in plan_set(k)} for k in SETS}
+    sets = {k: {(r["task"], r["seed"]) for c in (None, "Q256") for r in plan_set(k, c)} for k in SETS}
     out["tf∩gen1"] = len(sets["tf"] & sets["gen1"])
     out["tf∩gen2"] = len(sets["tf"] & sets["gen2"])
     out["gen1∩gen2"] = len(sets["gen1"] & sets["gen2"])
@@ -374,17 +386,17 @@ def parse_shard(s: str):
     return i, n
 
 
-def pending(set_names, shard: str, paths) -> list:
+def pending(set_names, shard: str, paths, cell: str | None = None) -> list:
     si, sk = parse_shard(shard)
     done = done_items(paths)
-    items = [r for name in set_names for r in plan_set(name)]
+    items = [r for name in set_names for r in plan_set(name, cell)]
     return [r for k, r in enumerate(items) if k % sk == si and (r["item_id"], str(r["turn"])) not in done]
 
 
 def cmd_pending(a):
     paths = sorted(glob.glob(out_glob(a.kind, a.cell)))
     sets = ["tf"] if a.kind == "tf" else ["gen1", "gen2"]
-    print(len(pending(sets, a.shard, paths)))
+    print(len(pending(sets, a.shard, paths, a.cell)))
 
 
 # ============================================================================ 統計
@@ -473,7 +485,7 @@ def cmd_select_gen(a):
     plan = json.load(open(os.path.join(OUT, f"plan_{a.cell}.json")))
     rows = read_rows(sorted(glob.glob(out_glob("tf", a.cell))))
     n_items = len({(r["item_id"], r["turn"]) for r in rows if r["cid"] == "E0"})
-    want = len(plan_set("tf"))
+    want = len(plan_set("tf", a.cell))
     if n_items < want and not a.allow_partial:
         raise SystemExit(f"{a.cell}：TF 只有 {n_items}／{want} 題做完 → 不挑（要挑就加 --allow-partial，會寫進檔案）")
     pair, pair_g1, pair_note = CELLS[a.cell]["pair"], None, ""
@@ -626,6 +638,14 @@ def self_test() -> bool:
     ov = seed_overlap()
     chk(f"seed 不重疊 {ov}", not any(ov.values()))
     chk("題數 96／192／96", [len(plan_set(k)) for k in ("tf", "gen1", "gen2")] == [96, 192, 96])
+    n5 = [len(plan_set(k, c)) for c in ("Q256", "Q14-256") for k in ("tf", "gen1", "gen2")]
+    chk(f"256K（偏離 3）：題數 72／192／96、沒有 T5 → {n5}", n5 == [72, 192, 96] * 2
+        and not any(r["task"] == "T5" for c in ("Q256", "Q14-256") for k in SETS for r in plan_set(k, c)))
+    d1 = {r["item_id"] for r in plan_set("gen1") if r["task"] != "T5"}
+    e1 = {r["item_id"] for r in plan_set("gen1", "Q256")}
+    chk("256K gen1：其他格的 T2–T4 題全部在裡面、另外 48 題是新的", d1 <= e1 and len(e1 - d1) == 48
+        and {r["item_id"] for r in plan_set("tf", "Q256")} == {r["item_id"] for r in plan_set("tf") if r["task"] != "T5"})
+    chk("生成合計 ≥288（每個判定格）", all(len(plan_set("gen1", c)) + len(plan_set("gen2", c)) >= 288 for c in CELLS if CELLS[c]["judged"]))
     chk("item_id 唯一", len({r["item_id"] for k in SETS for r in plan_set(k)}) == 384)
     for m in INFO:
         info = info_of(m)

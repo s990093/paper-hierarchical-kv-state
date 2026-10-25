@@ -192,3 +192,31 @@
 - `d0.py smoke`：`sparse_config` 照 README（kernel 32／stride 16／init 1／block 64／window 2048／topk 64／use_nope false／dense_len 8192；和程式裡 `.get()` 的預設相同）；確認每層都是 `MiniCPMInfLLMv2Attention`；infllm_v2 的呼叫分 dense／sparse 計數；記第一次 sparse 呼叫的 `topk_idx` 形狀（D0 量法要用）；`logits_to_keep=1`。
 **head node 驗證（沒有 GPU；不是量測）**: 轉接層的 pad／unpad 來回一致；scratchpad 側裝 transformers 4.56.1＋hub 0.36.2＋tokenizers 0.22.2 後，transformers 的相依檢查通過，`modeling_minicpm.py` import 成功，`flash_attn_*` 綁到轉接層；`is_flash_attn_greater_or_equal_2_10()`＝True（讀 dist-info）。GPU 上的部分（infllm_v2 編譯、SDPA 對答案、稀疏路徑）等 22307。
 **和 05 §7 的差異**: 05 寫「HF transformers ≥4.56＋infllmv2_cuda_impl（feature_infer 分支）」。feature_infer 分支已不在，用 main `93cf2ec2`（10/25 記過）；transformers 用 4.56.1；dense 的 attention 由 infllm_v2 的核心算，不是 flash-attn 套件。
+
+## S3-A0-FAIL-1 — 256K 的 T5（cwe）題產生不出來（job 22314，2026-10-25 23:17；停下回報）
+
+**錯誤（完整）**: `m10_tasks.py:697 _cwe → RuntimeError: cwe 詞表不夠長，補不滿`（`a0_gpu._loop` → `make_item(T5, ..., n_blocks=504)`）；run `20261025-231553-s3-a0-tf-Q256-s1`，exit 1；runner 停在 `TF-Q256-1`。
+**原因**: T5 的常見詞任務要用詞表把情境填滿；256K（504 個 512-token 塊）時詞表不夠。Q256／Q14-256 的冒煙只做前 2 題（T2、T3），沒有碰到 T5。
+**影響**: Q256、Q14-256（判定格）每個分片遇到 T5 題都會停：22313（Q256 分片 0，跑中）、22315–22318（Q14-256，排隊中）。128K／32K 的格子不受影響（L128、Q128 已做完 96/96）。
+**待使用者決定**（判準登記的事，不自己改）：(a) 256K 的格子不做 T5（寫成 A0 偏離，判定只用 T2–T4）；(b) 加長 cwe 詞表（題目會和 128K 不同）；(c) 其他。
+
+## S3-A0-FAIL-2 — Q256 分片 0 在第 40 題 GPU 記憶體不足（job 22313，2026-10-26 00:13；已修，重送）
+
+**錯誤（完整）**: `torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 414.00 MiB. GPU 0 has a total capacity of 139.79 GiB of which 45.31 MiB is free. ... Of the allocated memory 138.89 GiB is allocated by PyTorch, and 185.09 MiB is reserved by PyTorch but unallocated.`（`run_item → question_pass → forward_hooked → ctx_mass`；題 `T4_mid-front_s71019`）；run `20261025-231545-s3-a0-tf-Q256-s0`；前 39 題正常寫進 `results/s3_h200/a0/raw/a0_tf_Q256_s0.csv.gz`（每題 prefill 約 30 s、一題 50–61 s〔實測〕）。
+**判斷**: `ctx_mass` 一個分塊最多約 1.5 GiB；失敗時 PyTorch 已經握著 138.9 GiB 的活張量（保留未用只有 185 MiB → 不是碎片化），冒煙時一題是 71.7 GB → 跨題累積。原因：`ItemState.comp = Composer(self)`、`Composer.st = st`（參照循環），`Composer.stores` 握著這題的原值／INT4 緩衝 → `_loop` 的 `del st` 釋放不了，要等 Python 的循環 GC。
+**修正**（`fix(s3-a0)`）: `a0_gpu.free_item(st)` 每題結束打斷循環 → `del st` → `gc.collect()` → `empty_cache()`；每題印 `mem_after_item`（確認不再累積）。G-M12 品質（`gm12.py quality`，同一個 ItemState）同樣處理；gm12 裡 guard 的別名改成 `GD`（避免和函式內的 `import a0_gpu as G` 混淆；原本沒有撞到）。只改記憶體管理，算法與輸出不變。L128、Q128（96/96 做完）沒有受影響。
+**重送**: Q256 分片 0（從第 40 題接著做）。分片 1（T3＋T5）等 S3-A0-FAIL-1 的決定。
+
+## S3-A0-DEV3 — 使用者決定：256K 不做 T5；取消多餘的舊副本（2026-10-26 00:3x）
+
+- 使用者 10/26：「256K 不做 T5」→ A0 偏離 3（`runs/A0_progressive_restore.md`）：Q256／Q14-256 的 TF 72 題、生成 192（gen1 T2–T4 各 64）＋96＝288。`a0.py --self-test` 新增 4 項都 PASS；seed 重疊全為 0；Q256 TF 兩個分片各 36 題、Q14-256 四個分片各 18 題（原本全是 T5 的分片 3 也有 18 題）。
+- 使用者 10/26：「取消」→ `scancel` 22282–22285、22287–22294（S3-BUG-1 錯誤重送的 12 個副本；22286 不是我們的）。
+- 重送 Q256 分片 0 → 22356（S3-A0-FAIL-2 的記憶體修正之後）；Q256 分片 1 → 見下一個 commit。
+
+## S3-A0-SEL-128 — L128／Q128 的生成配置（登記 §1.6 G1–G4；2026-10-26 00:32，head node）
+
+**狀態**: 完成
+**輸入**: `results/s3_h200/a0/raw/a0_tf_L128_s0.csv.gz`（run `20261025-210503-s3-a0-tf-L128-s0`，job 22250，96／96 題）、`a0_tf_Q128_s0.csv.gz`（run `20261025-212904-s3-a0-tf-Q128-s0`，job 22251，96／96 題）。兩個 run 在 21:44:46 之後的爭用紀錄是「沒人在看」（S3-GUARD-1）；品質 run，分數照用。
+**指令**: `python code/s3/a0.py select-gen --cell L128`、`--cell Q128`
+**產出**: `results/s3_h200/a0/gen_selection_L128.json`（run_id `20261026-003235-adhoc`，24 個配置；生成時另加 M05 的 3 個）、`gen_selection_Q128.json`（`20261026-003236-adhoc`，23 個配置）。G1 挑到的（粗底, f, 目標）：L128 B16·1/16·int4、B24·1/8·int4、B32·1/8·int4；Q128 B16·1/16·int4、B24·1/8·int4、B24·1/16·int4。
+**下一步**: 生成冒煙（22325）PASS 之後送生成分片（每格 288 題）。

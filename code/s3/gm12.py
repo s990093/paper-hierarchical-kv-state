@@ -30,7 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
 import a0 as A  # noqa: E402
-import guard as G  # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
+import guard as GD  # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
 import numa_probe as NP  # noqa: E402（只記錄：speed 是 GPU 上的重算，計時區間不碰主機緩衝 → 只記卡與 cpuset 在哪個節點）
 
 CHUNK = 512
@@ -177,7 +177,10 @@ def cmd_quality(a):
                 w.writerow({f: x.get(f, "") for f in QF})
             fo.flush()
             print(f"[{kk + 1}/{len(todo)}] {it['item_id']} " + " ".join(f"{x['cid']}:{x.get('t_recompute_s', '')}s" for x in rows[1:]), flush=True)
+            G.free_item(st)
             del st
+            import gc
+            gc.collect()
             torch.cuda.empty_cache()
     finally:
         fo.close()
@@ -203,7 +206,7 @@ def cmd_speed(a):
     print("[gm12] NUMA：", json.dumps(numa["summary"], ensure_ascii=False), flush=True)
     os.makedirs(os.path.join(OUT, "raw"), exist_ok=True)
     p = a.out or os.path.join(OUT, "raw", f"gm12s_{a.model}_{rid}.csv")
-    gw = G.Timing(p)
+    gw = GD.Timing(p)
     for i in SPEED_BLOCKS:
         for arm in ["dense"] + [f"sparse{d}" for d in DENS]:
             ts_ = []
@@ -269,7 +272,7 @@ def cmd_report(a):
         res["quality"][cell] = {cid: A.boot(v.values()) for cid, v in tab.items() if cid != "E0"}
     res["excluded_contaminated_runs"] = []
     for p in sorted(glob.glob(os.path.join(OUT, "raw", "gm12s_*.csv"))):
-        rows, bad = G.drop_contaminated(list(csv.DictReader(open(p))))
+        rows, bad = GD.drop_contaminated(list(csv.DictReader(open(p))))
         res["excluded_contaminated_runs"] += bad
         if not rows:
             continue
