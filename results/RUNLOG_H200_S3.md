@@ -177,3 +177,18 @@
 **修正**: 新增 `code/s3/guard.py`（`Timing`／`status`／`finish`／`evict`／`drop_contaminated`）。五個量時間的 part（b0.py run、w0.py run、gfio.py run、gm12.py speed、gm06.py run〔4 張卡都看〕）都改用它：監看開不起來 → 停；被污染（含監看期間 nvidia-smi 失敗過）→ 結果寫到／搬到 run 目錄的 `<檔名>.CONTAMINATED`＋`CONTAMINATED`，不進 results；四個 report（b0、w0、gm12、gm06）再按 run_id 排除，記在 `excluded_contaminated_runs`。
 **驗證（head node，沒有 GPU，不是量測、沒有 run_id 進 results）**: `guard.py --self-test` PASS（乾淨、監看失敗、開跑前有外來者、開頭查不到 → 丟錯、evict、drop_contaminated）；b0／w0／gfio／gm06／gm12 的 `--self-test` 都 PASS；用假的 nvidia-smi 把 `gfio.py run` 在 head node 整條跑兩次（小檔、輸出在 scratchpad）：乾淨 → CSV 在 results、`own_gpu_intruders=0`；第一次取樣時 nvidia-smi 卡 25 秒 → 記 1 次失敗、照樣繼續取樣（共 215 次查詢）、結果改寫到 run 目錄、`UNOBSERVED:0`、verdict `UNOBSERVED_DURING_RUN`。W0／G-M12 速度／G-M06／B0 的新程式碼要等 GPU job 才會第一次跑到（B0 冒煙 2，22306，會先跑到 B0 這一支）。
 **登記**: W0（偏離 2）、G-fio（偏離 2）、G-M12（偏離 1）、G-M06（偏離 1）、B0（偏離 3）各補一段「實作，判準不變」；都在任何時間數字之前。
+
+## S3-D0-0 — D0 冒煙（P0f）原本一定會失敗：照 modeling 程式補齊（2026-10-25 22:2x；job 22307 還沒跑）
+
+**怎麼發現的**: 寫 D0 登記前，在 head node 把 `openbmb/MiniCPM4.1-8B` 固定 revision `3a8dfed9…` 的 `modeling_minicpm.py`（sha256 前 16 碼 `cd81d52e8e0d35d0`）、`config.json`、`README.md` 抓到 scratchpad 讀（只讀，不執行）。
+**原本的冒煙會在哪裡失敗（四處）**
+1. modeling 程式 import 的是 `infllm_v2`（`infllmv2_cuda_impl` repo 裝出來的套件名），冒煙卻 import／包 `infllmv2_cuda_impl` → import 失敗。
+2. `flash_attn` 和 `infllm_v2` 包在同一個裸 `try/except: pass` 裡；conda 環境沒有 flash-attn（torch 2.13＋CUDA 13，沒有現成的 wheel）→ 靜默跳過，呼叫時才 NameError。
+3. `config.json` 沒有 `sparse_config` → 整個模型走 dense（README：要自己加）；稀疏類別還要求 `attn_implementation == "flash_attention_2"`。
+4. 環境的 transformers 是 5.19，modeling 程式照 4.56.1 寫（config 的 `transformers_version`）；5.19 沒有 `transformers.utils.import_utils.is_torch_fx_available` → import 失敗（head node 實測）。
+**改法（D0 專用，不動 conda 環境）**
+- `code/s3/d0_shim/flash_attn`：轉接層，`flash_attn_varlen_func`／`flash_attn_func` 走 `infllm_v2.infllmv2_attn_varlen_func(topk_idx=None)`（infllm_v2 是 FA2 分出來的；topk_idx=None → 傳給核心的 block mask 是 None）＋`bert_padding` 三個函式（FA < 2.7 的 4 值介面，modeling 程式就是這樣拆的）＋dist-info（版本 `2.6.3+infllmv2shim`，讓 transformers 的 flash_attention_2 檢查過）。冒煙先拿 torch SDPA 對答案（GQA 32/2，causal，正方形與右下對齊各一），對不上就停。
+- runner 加 `D0-PYLIBS`：`pip install --no-deps --target /tmp/hungweilai-s3/d0/pylibs transformers==4.56.1 "huggingface_hub>=0.34,<1.0" "tokenizers>=0.22,<=0.23.0"`，裝了什麼記在 log 與 `.pip_list`；冒煙的 PYTHONPATH＝轉接層:pylibs:原本的。
+- `d0.py smoke`：`sparse_config` 照 README（kernel 32／stride 16／init 1／block 64／window 2048／topk 64／use_nope false／dense_len 8192；和程式裡 `.get()` 的預設相同）；確認每層都是 `MiniCPMInfLLMv2Attention`；infllm_v2 的呼叫分 dense／sparse 計數；記第一次 sparse 呼叫的 `topk_idx` 形狀（D0 量法要用）；`logits_to_keep=1`。
+**head node 驗證（沒有 GPU；不是量測）**: 轉接層的 pad／unpad 來回一致；scratchpad 側裝 transformers 4.56.1＋hub 0.36.2＋tokenizers 0.22.2 後，transformers 的相依檢查通過，`modeling_minicpm.py` import 成功，`flash_attn_*` 綁到轉接層；`is_flash_attn_greater_or_equal_2_10()`＝True（讀 dist-info）。GPU 上的部分（infllm_v2 編譯、SDPA 對答案、稀疏路徑）等 22307。
+**和 05 §7 的差異**: 05 寫「HF transformers ≥4.56＋infllmv2_cuda_impl（feature_infer 分支）」。feature_infer 分支已不在，用 main `93cf2ec2`（10/25 記過）；transformers 用 4.56.1；dense 的 attention 由 infllm_v2 的核心算，不是 flash-attn 套件。

@@ -239,10 +239,22 @@ d0_build() {
   pip install --no-deps --target "$D/pylibs" "$D"/wheels/*.whl || return 2
   touch "$D/pylibs/.built_$D0_SRC_COMMIT"
 }
+# MiniCPM 的 modeling 程式是照 transformers 4.56.1 寫的（config.json；5.x 沒有 is_torch_fx_available、cache layer API 不同）
+# → 側裝到 D0 自己的 pylibs（不動 conda 環境）；hub／tokenizers 照 4.56.1 的相依範圍。裝了什麼印進 log＋.pip_list
+d0_pylibs() {
+  [ "$DRY" = 1 ] && { echo "[d0_pylibs]"; return 0; }
+  local D=$S3_LOCAL/d0
+  if [ -f "$D/pylibs/.tf_4.56.1" ]; then echo "[d0] transformers 4.56.1 已裝"; cat "$D/pylibs/.pip_list"; return 0; fi
+  pip install --no-deps --target "$D/pylibs" "transformers==4.56.1" "huggingface_hub>=0.34,<1.0" "tokenizers>=0.22,<=0.23.0" || return 2
+  pip list --path "$D/pylibs" 2>/dev/null | tee "$D/pylibs/.pip_list"
+  touch "$D/pylibs/.tf_4.56.1"
+}
 if [ "$PART" = d0-prep ]; then
   step MODELS ensure_models minicpm
   step D0-BUILD m7run s3-d0-build bash -c "$(declare -f d0_build); S3_LOCAL=$S3_LOCAL D0_SRC_COMMIT=$D0_SRC_COMMIT DRY=0 d0_build"
-  step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
+  step D0-PYLIBS m7run s3-d0-pylibs bash -c "$(declare -f d0_pylibs); S3_LOCAL=$S3_LOCAL DRY=0 d0_pylibs"
+  # 轉接層（code/s3/d0_shim：flash_attn → infllm_v2 的 dense varlen）＋pylibs 排在最前面
+  step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$REPO/code/s3/d0_shim:$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
 fi
 
 # ---- G-M06＋M07（runs/G_M06_multipath.md）：4 卡 job ------------------------------------------------------------
