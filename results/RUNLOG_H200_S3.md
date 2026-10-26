@@ -255,3 +255,12 @@
 **run_id**: llama：閘 `B0-GATE-llama-m08` PASS → 量測 `20261026-080412-s3-b0-llama-m08-stream-stream_hi`；qwen：閘 `B0-GATE-qwen-m08` PASS → `20261026-084740-s3-b0-qwen-m08-stream-stream_hi`
 **產出**: `results/s3_h200/b0/raw/b0_{llama,qwen}_m08_stream-stream_hi_<run_id>.{csv,gpu_guard.json,_numa.json}`
 **完整性**: llama 216 列（3 背景 × 2 模式 × 6 原語 × 6 次）、qwen 288 列（4 × 2 × 6 × 6）；兩個 guard 都 `CLEAN`（smi 失敗 0）、`own_gpu_intruders` 全 0、`numa_local` 全 `yes`、`n_rep`＝6、`sigma_rel`／`delta_star` 都有值。時間數字還沒看。
+
+## S3-B0-FAIL-2 — B0 llama b0 MPS（job 22275）在 MPS 下 illegal memory access（2026-10-26 09:07；停下、診斷中）
+
+**閘**: `B0-GATE-llama-b0` PASS（b0.py 改過 → 新的雜湊，重跑一次）。MPS daemon 開了（`mps_log_22275`）。
+**錯誤（完整）**: `terminate called after throwing an instance of 'c10::AcceleratorError' what(): CUDA error: an illegal memory access was encountered`（在 `CachingHostAllocator` free 時才報出來，非同步）→ Aborted（core dumped），exit 134；run `20261026-090451-s3-b0-llama-b0-mps-mps87-mps75-mps50`；runner 停在 `B0-RUN`。
+**MPS server log**: 09:07:45.706 背景 process（PID 2115399）先退出 → 09:07:46.023 `Client {PID: 2115041 …} encountered a fatal GPU error`（主程式），server 拆掉這個 client、重設 device 0。
+**做到哪裡**: 第一個區塊 `decode:64:8192 × mps` 做完 21 個原語中的 17 個（102 列）；照同一個種子重算的順序，第 18 個是 **`lr_recon`**。`lr_recon` 在 stream 模式下（22272、B0 冒煙）都正常 → 只在 MPS 下出事；這個區塊的背景另一個 process 就用 64 GiB，加上主程式約 60 GiB，整張卡幾乎全滿，也可能有關。原因還不知道（NOT_VERIFIED）。
+**處理**: 部分輸出（CSV／guard／numa）搬到 run 目錄（`*.FAILED_RUN`），不進 results，沒有看時間數字；`scontrol hold 22276`（qwen b0 MPS，同樣會跑 lr_recon）；22277／22278（m08 MPS）照鏈排在它後面；W0＋G-fio（22279）的依賴拿掉，先跑。
+**診斷**: 新 part `b0-diag`（量時間類、獨佔、輸出只在 run 目錄）：MPS 下只跑 `lr_recon`、`recompute1`，`CUDA_LAUNCH_BLOCKING=1`，背景 decode:8:8192（小）與 decode:64:8192（大）各一次、各記 exit code。

@@ -61,8 +61,8 @@ while [ $# -gt 0 ]; do
 done
 case "$PART" in
   fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run) TIMING=0 ;;
-  b0-run|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06" >&2; exit 2 ;;
+  b0-run|b0-diag|w0gfio|gm12-s|gm06) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -216,6 +216,17 @@ if [ "$PART" = b0-run ]; then
   mkdir -p "$S3/b0/raw"
   TAG=$(echo "$MODES" | tr ',' '-')
   step B0-RUN m7run "s3-b0-$MODEL-$SETUP-$TAG" bash -c "python code/s3/b0.py run --model $MODEL --setup $SETUP --modes $MODES --reps 6 --seed 1 --out $S3/b0/raw/b0_${MODEL}_${SETUP}_${TAG}_\$RUN_ID.csv"
+fi
+
+# ---- B0 MPS 的診斷（S3-B0-FAIL-2：22275 在 MPS 下 lr_recon 時 illegal memory access）：輸出只在 run 目錄、不進 results
+# 每個背景各跑一次（CUDA_LAUNCH_BLOCKING=1 定位 kernel；背景小／大對照），各自記 exit code，第一個失敗也照樣跑第二個
+if [ "$PART" = b0-diag ]; then
+  step MODELS ensure_models llama
+  step CALIB-llama ensure_calib llama
+  step MPS-ON mps_on
+  for bg in decode:8:8192 decode:64:8192; do
+    step "B0-DIAG-${bg//:/_}" m7run s3-b0-diag bash -c "CUDA_LAUNCH_BLOCKING=1 python code/s3/b0.py run --model llama --setup b0 --modes mps --bgs $bg --prims lr_recon,recompute1 --reps 6 --seed 7 --out \"\$RUN_DIR/diag.csv\"; echo DIAG_EXIT=\$?"
+  done
 fi
 
 # ---- G-M12（runs/G_M12_sparse_recompute.md）-----------------------------------------------------------------
