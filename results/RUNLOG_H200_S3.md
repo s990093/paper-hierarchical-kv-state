@@ -361,3 +361,7 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 
 **run_id**: `20261026-131551-s3-b0-qwen-b0-mps-mps87-mps75-mps50`（閘 qwen／b0 先 PASS；第一個同時有「優雅停止背景」＋「檢查前清快取」的 B0 run）。**完整性**: 4032 列（8 背景 × 4 模式 × 21 原語 × 6 次），全部放得下、沒有 NOT_MEASURED；guard `CLEAN`、`own_gpu_intruders` 0、`numa_local` yes。終止背景 31 次都沒有 fatal GPU error（S3-B0-FAIL-3 的修正有效）。時間數字還沒看。
 **B0 剩下**: llama b0 MPS（22453）、qwen m08 MPS（22454）；之後 `b0.py report`。
+
+## S3-B0-RUN-llama-b0-mps — llama b0 MPS 重量完成（job 22453，2026-10-26 14:49–16:1x）
+
+**run_id**: `20261026-144940-s3-b0-llama-b0-mps-mps87-mps75-mps50`。**完整性**: 3612 列＝28 個區塊量到（各 126 列）＋`decode:64:8192` × mps／mps87／mps75／mps50 照 B0 偏離 4 寫 NOT_MEASURED（84 列；`背景 process 約 85.1 GiB（權重 15.0＋背景 64.1＋餘量 6）＋主程式還會長 0.4 GiB > 可用 82.3 GiB`——清了快取之後的可用量，和 S3-B0-FAIL-4 估的 ≈82 相符）；guard `CLEAN`、`own_gpu_intruders` 0、量到的列 `numa_local` yes。時間數字還沒看。
