@@ -400,3 +400,4 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 **指令**: `python3 code/s3/kvs_s0.py report` → `results/s3_h200/kvs_s0/s0_verdict.json`
 **關鍵數字（實測）**: ρ＝1/4 中位數 u2_global **0.540**、u2_layer **0.543** → 不是 STOP-S（> 0.85 才停）→ **CONTINUE**。ov_global 0.921；rec_own_2 0.898 vs rec_cross_2 0.556（重疊主要是不分問題的塊；答案塊各不相同）；rec_union_2＝rec_own_2。細節：`runs/S0_union.md` 結果節。
 **接著送**: Q128（1 片）、Q256（1 片）、Q14-256（2 片；每題約 90 s）——使用者 10/26「都做掉」＋登記 §2 CONTINUE。
+- **送出**（2026-10-26 18:3x）：`sbatch --job-name=s3-kvs-s0-<cell>-<i> --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell <cell> --shard <i/n>` → Q128 0/1 **22516**、Q256 0/1 **22517**、Q14-256 0/2 **22518**、1/2 **22519**（next-icpe 為空，沒加依賴）。四格都跑完後 `kvs_s0.py report` 做 11/17 預篩（要 A0 的判定；A0 還沒判完 → `PENDING_A0`）。
