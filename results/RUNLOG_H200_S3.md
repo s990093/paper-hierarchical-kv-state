@@ -407,3 +407,22 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 **看到的**: `quota -s -g ChihChungHsu`：1523G／1536G（limit）。18:53 A0 TF Q14-256 分片 0（job 22498，run `20261026-181019-s3-a0-tf-Q14-256-s0`）在關輸出檔時 `OSError: [Errno 122] Disk quota exceeded` → FAILED；輸出 `a0_tf_Q14-256_s0.csv.gz` 被截斷（`gzip: unexpected end of file`，可讀 855 行）。19:0x head node 上 `git pull` 也 `fatal: error when closing loose object file: Disk quota exceeded`（ICPE session 跑 `git fsck --connectivity-only` 確認共用物件庫沒壞）。19:01 降到 1520G（群組用量在波動；我們帳號 79 GB，其餘是群組其他人的）。
 **處理**: 先 `scontrol hold` stage-3 排隊中的 17 個 job（避免連環失敗與寫壞的檔）；通知 ICPE session（它沒有 job、沒有寫 /work）。使用者 10/26：「DL_Lab4 刪掉，那個做好了」→「刪掉權重」→ 只刪 `DL_Lab4/runs/` 下 34 個權重檔（`best_ema.pt`、`last.pt`、`swa_cycle*.pt`、`pretrained.pt`；33.35 GiB）；程式、資料、圖、log、npy／npz／pkl（約 16 GiB）、`.venv` 都沒動。之後群組 **1487G**（剩約 49 GB）、我們帳號 44.8 GB。
 **恢復**: 截斷的 `a0_tf_Q14-256_s0.csv.gz` 與同一分片的 `gm04_Q14-256_s0.csv.gz` 搬到 run 目錄（`*.TRUNCATED`、`*.FROM_FAILED_SHARD`，不進 results）；放行 17 個 job；分片 0 重送 → **22527**（從頭做）。
+
+## S3-KVS-F0P — F0P 優先權反轉：INHERIT-ONLY〔模擬〕（2026-10-26 19:02–19:25，H200 head node）
+
+**狀態**: 完成；判定 **INHERIT-ONLY**（Qwen 重現同樣）。依偏離 1 改在 H200 head node 跑（使用者 10/26「不要在 mac 跑」），Mac 的 run 已作廢。
+**run_id**: 決定性 `20261026-190229-s3-kvs-f0p-dec`；全網格 `20261026-190431-s3-kvs-f0p-full`；報告 `20261026-192513-kvs-f0p-adhoc`
+**指令**:
+```bash
+git fetch origin claude/llm-inference-deadlock-mapping-e6acb7 && git merge --ff-only FETCH_HEAD   # → a8859d3，push main
+source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1
+python3 code/s3/kvs_f0p.py --self-test                                                   # 141 項 ALL PASS
+m7run s3-kvs-f0p-dec nice -n 10 python3 code/s3/kvs_f0p.py run --slice decisive --jobs 8
+python3 code/s3/kvs_f0p.py report                                                         # 決定性：CONTINUE
+m7run s3-kvs-f0p-full nice -n 10 python3 code/s3/kvs_f0p.py run --slice full --jobs 8
+python3 code/s3/kvs_f0p.py report
+```
+**產出**: `results/s3_h200/kvs_f0p/{f0p_decisive_h200_llama.csv, f0p_full_*_*.csv.gz, f0p_verdict.json}`；共享請求明細 `$TIARA_RUNS/20261026-190229-s3-kvs-f0p-dec/f0p_decisive_requests.json.gz`
+**關鍵數字〔模擬〕**: 決定性 12 格 inv4 0.115～4.140（全部 > 5% → CONTINUE）。全網格 Llama：(E) inv4 > 15% 的格 H200 58.7%、MI300X 50.5% ✓；(X) esc > 5% 的格 9.0%、4.5% ✗ → INHERIT-ONLY。esc > 5% 的格全是 C4（自己重算）、全在 nfs；D4 從沒贏過繼承。ρ_b＝0 的 inv4 都是 0.0（健全檢查過）。細節：`docs/kv_sharing_hiding_20261026/runs/F0P_priority.md` 結果節。
+**重現檢查（只報告）**: 決定性 CSV 去掉 run_id、ts 後的 sha256 和 Mac 那份**相同**（`b96cf08f…f8a`，72 列）。
+**失敗與異常**: 一開始 `git pull` 遇到 /work 群組配額滿（S3-QUOTA-1），配額恢復後重做同步；F0P 本身沒有失敗。
