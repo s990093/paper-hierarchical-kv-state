@@ -120,3 +120,9 @@ b0 每個模型：stream 兩種約 1 小時、MPS 四種約 2.2 小時；m08 兩
 - **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。B0 原本就有監看，但被污染的 CSV 留在 `results/s3_h200/b0/raw/`、report 也照讀，和本登記「contaminated 的 run 不進 results、重量」不一致；現在污染 → 這個 run 的 CSV 和 `_numa.json` 搬到 run 目錄。B0 冒煙 22242 的四個 gpu_guard.json 都是 CLEAN（MPS 模式在 runner 設了 `GPU_GUARD_JOB_CGROUP_OWN=1`，guard.py 用同一個 own_root）。
 - **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
 - **影響的 run**：全部（都還沒跑）。
+
+### 偏離 4（2026-10-26T02:47:24Z；實作＋容量規則；還沒有任何 MPS 的時間數字——22275 在第一個 MPS 區塊就失敗，部分輸出沒看、已搬出 results）：MPS 下放不下的格子寫 NOT_MEASURED
+
+- **為什麼**：MPS 模式的背景在另一個 process，要**自己再載一份權重**；stream 模式的背景和主程式共用權重。22275（llama b0 MPS）的第一個區塊 `decode:64:8192`：背景 process 80.12 GiB（權重約 15＋分頁 KV 64.12）＋主程式 59.27 GiB > 139.79 GiB → 主程式在 `lr_recon` OOM（之後才冒出 illegal memory access）。診斷 job 22389（MPS、只跑 lr_recon／recompute1、decode:8 與 decode:64）都正常 → 不是 lr_recon 的 bug，是容量。
+- **改什麼**（`b0.py run`、`bgengine.step_bytes`）：有 MPS 模式時，量測前先把每個動作跑一次，取得主程式的峰值；每個 MPS 區塊開背景 process 前算「背景 process ≈ 權重＋背景常駐位元組（`step_bytes`，和 ModelStep 同一個算法）＋6 GiB 餘量」，加上「主程式還會長多少（峰值 − 現在）」，大於 `cudaMemGetInfo` 的可用量 → 這個（背景, 模式）的每個動作寫一列 `t_med_s=NOT_MEASURED`、`note` 寫原因，跳過。report 把這些格子列進 `not_measured`（不當成任何一邊的證據）。
+- **影響**：只影響 MPS 的格子；判準不改。照算法，llama b0 的 `decode:64:8192` 在 MPS 下會是 NOT_MEASURED；其他格子放不放得下要看執行時的實際數字（照實記在 `note`）。stream／stream_hi 不受影響。CSV 多一欄 `note`（加在最後）。

@@ -273,3 +273,9 @@
 **產出**: `results/s3_h200/w0/raw/w0_{llama,qwen}_<run_id>.{csv,gpu_guard.json,_numa.json}`、`results/s3_h200/w0/w0_report.json`
 **關鍵數字（實測）**: CPU 16 核壓縮速度 Llama B16 0.283、B32 0.298 GiB/s（需求 3.27）；Qwen 0.529、0.601 GiB/s（需求 1.26）。GPU 側每請求 31–124 ms，期間背景吞吐比 0.13–0.44。輸出位元組和 A0 的 predict_bytes 逐一相同。細節在 `runs/W0_write_cost.md` 的結果節。
 **失敗與異常**: `W0-REPORT` 失敗（exit 1）：`UnboundLocalError: cannot access local variable 'G'`——`w0.py cmd_report` 後面有 `G = np.asarray(g)`，把 guard 的別名 `G` 變成區域變數（S3-GUARD-2 引進的，我的錯）。量測不受影響。修正：五支程式裡 guard 的別名都改成 `GD`；自檢都 PASS；報告在 head node 重跑成功。G-fio 重送（`--from GFIO`）。
+
+## S3-B0-FAIL-2（續）— 原因：MPS 下的容量；B0 偏離 4（2026-10-26 10:5x）
+
+**診斷結果**: job 22389（run `20261026-104206-s3-b0-diag` 等，MPS、`CUDA_LAUNCH_BLOCKING=1`、只跑 lr_recon／recompute1）decode:8:8192 與 decode:64:8192 都 `DIAG_EXIT=0` → 沒有重現。回頭看 22275 的完整 stderr：第一個錯誤其實是主程式的 **OOM**（`lr_recon → xl() → torch.cat`：`Tried to allocate 512.00 MiB … Process 2115101 has 60.00 MiB … this process has 59.27 GiB … Process 2115399 has 80.12 GiB`），illegal memory access 是之後冒出來的。背景 process 80.12 GiB＝自己的權重（約 15）＋分頁 KV 64.12 GiB（`step_bytes` 算出 64.12，和 OOM 訊息相同）。
+**處理**: B0 偏離 4（`runs/B0_interference.md`）：MPS 區塊開背景前檢查容量，放不下 → NOT_MEASURED（附原因），不讓整個 run 崩。`b0.py --self-test` 加一項（report 遇到 NOT_MEASURED 的列）PASS。b0.py／bgengine.py 改了 → 下一個 B0 job 會重跑閘。
+**排程**: 放行 22276（qwen b0 MPS）；llama b0 MPS 重送到鏈尾。
