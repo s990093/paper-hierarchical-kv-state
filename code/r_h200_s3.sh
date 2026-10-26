@@ -62,8 +62,8 @@ while [ $# -gt 0 ]; do
 done
 case "$PART" in
   fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run|kvs-s0) TIMING=0 ;;
-  b0-run|b0-diag|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06|kvs-s0" >&2; exit 2 ;;
+  b0-run|b0-diag|gm11-redo|w0gfio|gm12-s|gm06) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|gm11-redo|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06|kvs-s0" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -244,6 +244,19 @@ if [ "$PART" = b0-diag ]; then
   for bg in decode:8:8192 decode:64:8192; do
     step "B0-DIAG-${bg//:/_}" m7run s3-b0-diag bash -c "CUDA_LAUNCH_BLOCKING=1 python code/s3/b0.py run --model llama --setup b0 --modes mps --bgs $bg --prims lr_recon,recompute1 --reps 6 --seed 7 --out \"\$RUN_DIR/diag.csv\"; echo DIAG_EXIT=\$?"
   done
+fi
+
+# ---- G-M11 重量（runs/G_M11_vq.md 偏離 1；使用者 10/26「都做掉」）：只量判準的四格（閒／matmul × dq_vq／dq_int4，b0、stream），
+# 每格 12 次、兩個模型；輸出放 results/s3_h200/b0/gm11/（不進 B0 的 raw，判定只用這個 run 的四格）
+if [ "$PART" = gm11-redo ]; then
+  step MODELS ensure_models llama qwen
+  step CALIB-llama ensure_calib llama
+  step CALIB-qwen ensure_calib qwen
+  mkdir -p "$S3/b0/gm11"
+  for m in llama qwen; do
+    step GM11-$m m7run s3-gm11-$m bash -c "python code/s3/b0.py run --model $m --setup b0 --modes stream --bgs idle,matmul --prims dq_vq,dq_int4 --reps 12 --seed 11 --out $S3/b0/gm11/b0_gm11_${m}_\$RUN_ID.csv"
+  done
+  step GM11-REPORT python3 code/s3/b0.py report --raw-dir "$S3/b0/gm11" --name gm11_report.json
 fi
 
 # ---- G-M12（runs/G_M12_sparse_recompute.md）-----------------------------------------------------------------

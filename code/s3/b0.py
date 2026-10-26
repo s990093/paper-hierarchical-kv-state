@@ -858,13 +858,14 @@ def judge_gm11(st: dict) -> dict:
 
 def cmd_report(a):
     import glob
-    paths = sorted(glob.glob(os.path.join(OUT, "raw", "*.csv")))
+    raw = getattr(a, "raw_dir", "") or os.path.join(OUT, "raw")
+    paths = sorted(glob.glob(os.path.join(raw, "*.csv")))
     rows, bad = GD.drop_contaminated(_rows(paths))
     res = judge(rows)
     doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows),
                excluded_contaminated_runs=bad, **res)
     os.makedirs(OUT, exist_ok=True)
-    json.dump(doc, open(os.path.join(OUT, "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
+    json.dump(doc, open(os.path.join(OUT, getattr(a, "name", "") or "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
     print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows", "provisional_because_noisy")}
                      | {"G_M11": doc["G_M11"].get("verdict")},
                      ensure_ascii=False), f"noisy={len(doc['noisy'])} not_measured={len(doc['not_measured'])} skipped={len(doc['skipped'])}")
@@ -956,7 +957,9 @@ def main():
     s.add_argument("--model", choices=list(INFO), required=True)
     s.add_argument("--spec", required=True)
     s.add_argument("--seconds", type=float, default=3600)
-    sub.add_parser("report")
+    s = sub.add_parser("report")
+    s.add_argument("--raw-dir", default="", help="讀哪個目錄的 CSV（預設 results/s3_h200/b0/raw）；G-M11 重量用 results/s3_h200/b0/gm11")
+    s.add_argument("--name", default="b0_report.json")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)

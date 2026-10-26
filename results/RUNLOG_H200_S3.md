@@ -371,3 +371,9 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 **狀態**: 8 個量時間 run 全部完成（guard 都 CLEAN）；報告 run_id `20261026-162611-adhoc`。
 **指令**: `source code/env_h200.sh; python code/s3/b0.py report` → `results/s3_h200/b0/b0_report.json`
 **判定**: **GB0-FLIP 不成立**（2 條線因太晃未判定）；**GB0-SHARE 成立**（18 格；最強 llama cprefill × e2e_load_int4_b32 × mps87 比 stream 快 4.28×、背景比 0.980）；**GB0-STATIC 不成立**（只有 dq_vq 不是固定等級，20／22 是）；**G-M08 STOP**（45 個候選全不過，背景吞吐比 0.33–0.65）；**G-M11 NOT_DETERMINED**（閒時 dq_int4 σ_rel 0.124／0.086）。讀法：B1 只做「還原給多少 SM」。379 格 2σ > 5% 只回報、不判定；84 列 NOT_MEASURED（llama decode:64 × MPS，容量）。細節：`runs/B0_interference.md`、`runs/G_M11_vq.md` 的結果節。
+
+## S3-SCHED-4 — 使用者 10/26「都做掉」：G-M06 放行；讓位規則不讓給卡在帳號上限的量時間 job
+
+- `scontrol release 22281`（G-M06）：排隊原因 `AssocGrpCpuLimit`（要 64 核＝整個 lab 帳號；當時 chihchung 1 個 job 在跑、17 個在排）。
+- `sched.py s3-timing-target`：量時間 job 的排隊原因是 `Assoc*`（卡在帳號上限）→ 品質 job **不讓位**給它（讓了也只是一起等別的使用者；它要等帳號整個空出來才排得上，那時本來就不會和我們的 job 重疊）。自檢 PASS。
+- G-M11 重量：runner part `gm11-redo`（G-M11 偏離 1）；F0 全網格：head node 背景跑（`--jobs 8`）；S0-2 其他 3 格：等 L128 的判定（登記：L128 STOP-S → 其他 3 格不跑）。
