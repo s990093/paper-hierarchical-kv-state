@@ -314,3 +314,19 @@
 **修正**: 檢查前先 `empty_cache()`（`ef6f1b4`，B0 偏離 4 的補充）；qwen b0 MPS（22432）已用這一版。
 **處理**: 這個 run 的 CSV／guard／numa 搬到 run 目錄（`*.SUPERSEDED`），不進 results（量到的格子本身沒問題，但和重量混在一起 report 會把兩個 run 的 rep 合在一個格子裡）；沒有看時間數字。llama b0 MPS 重送（afterany:22432）。
 - **同一個問題也影響 qwen m08 MPS（22278）**：`decode:6:258048` 被判放不下時記的「可用 101.1 GiB」也是沒清快取量的；主程式峰值 31.5 GiB → 清了大約有 107 GiB，比要的 104.3 多，很可能其實放得下。這個 run 也搬出 results（`*.SUPERSEDED`）、整個重量（afterany 新的 llama b0 MPS）。llama m08 MPS（22277）每格都放得下、沒有 NOT_MEASURED，保留。
+
+## S3-KVS-F0 — F0 跟隨者模擬：尺準 PASS；決定性實驗 CONTINUE〔模擬〕（2026-10-26 14:00–14:01，head node）
+
+**狀態**: F0-CAL PASS；決定性實驗 **CONTINUE**；全網格**沒跑**（使用者指示先回報）。
+**run_id**: `20261026-140045-s3-kvs-f0-cal`、`20261026-140113-s3-kvs-f0-dec`、報告 `20261026-140130-kvs-f0-adhoc`
+**指令**:
+```bash
+python3 code/s3/kvs_f0.py --self-test                 # 59 項 ALL PASS
+source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1  # head node：tiara.sbatch 預設拒絕 Slurm 外的數字指令；使用者指示在 head node 跑
+m7run s3-kvs-f0-cal python3 code/s3/kvs_f0.py cal
+m7run s3-kvs-f0-dec python3 code/s3/kvs_f0.py run --slice decisive
+python3 code/s3/kvs_f0.py report
+```
+**產出**: `results/s3_h200/kvs_f0/{f0_cal.json, f0_decisive_h200_llama.csv, f0_verdict.json}`；每個請求的明細 `$TIARA_RUNS/20261026-140113-s3-kvs-f0-dec/f0_decisive_requests.json.gz`
+**關鍵數字〔模擬〕**: 尺準 16／16 個（面板, tier）比值在 [0.9, 1.1]（0.933–0.989）。12 格最好固定規則：P5×7、P1＝P4×3、P0×1、P4×1（不全同）；P6 對它的改進最大 +0.21%、全部 <5%、最差 −167.5%（nfs 128K ρ_o＝0.8，那一格整體 P95 被別人的工作主導，P0 的共享請求 P95 749.6 s）。P6 對 P4：−99.2%～+87.1%；對 P5：0.0%～+40.0%。細節：`docs/kv_sharing_hiding_20261026/runs/F0_follower_sim.md` 結果節。
+**失敗與異常**: `m7run` 第一次在 head node 被 `tiara.sbatch` 擋下（`不在 Slurm job 裡`），改設 `TIARA_ALLOW_NO_SLURM=1` 後照常建 run 目錄；不影響數字。
