@@ -306,3 +306,10 @@
 ## S3-B0-RUN-llama-b0-stream — llama b0（stream, stream_hi）重量完成（job 22384，2026-10-26 11:4x–12:3x）
 
 **run_id**: `20261026-115242-s3-b0-llama-b0-stream-stream_hi`（閘 llama／b0 先 PASS）。**完整性**: 2016 列（8 背景 × 2 模式 × 21 原語 × 6 次），沒有 NOT_MEASURED；guard `CLEAN`、`own_gpu_intruders` 0、`numa_local` yes、`n_rep` 6；背景釋放後 GPU 已配置約 57 GiB（S3-B0-FAIL-1 的修正有效）。B0／G-M08 的 stream 部分（llama、qwen × b0、m08）全部量完。時間數字還沒看。
+
+## S3-B0-FAIL-4 — llama b0 MPS（job 22431）：25 格被誤判成「放不下」（2026-10-26 12:48–13:12；重量）
+
+**看到的**: run `20261026-124828-s3-b0-llama-b0-mps-mps87-mps75-mps50` 正常結束（exit 0、guard `CLEAN`），但 1512 列裡只有 matmul ×4、decode:8:8192 ×3、idle × mps 量到；其餘 25 格寫 NOT_MEASURED，而且「可用」一路變少：decode:64 時 61.3 GiB → decode:8／cprefill／hbm 時 24.9 → idle／mixed／decode:32 時 19.6 GiB；同時「主程式還會長」只有 0.1–0.4 GiB（主程式配置的量沒變）。連 idle（背景只要權重＋餘量 21 GiB）都被判放不下。
+**原因**: MPS 模式每個區塊結束時只終止背景、沒有 `empty_cache()`（stream 模式有）→ 主程式 PyTorch 快取保留的記憶體一路累積，`cudaMemGetInfo` 把它算成已用；背景 process 也真的拿不到那些記憶體。`decode:64:8192` 那一格清了也放不下（S3-B0-FAIL-2）。
+**修正**: 檢查前先 `empty_cache()`（`ef6f1b4`，B0 偏離 4 的補充）；qwen b0 MPS（22432）已用這一版。
+**處理**: 這個 run 的 CSV／guard／numa 搬到 run 目錄（`*.SUPERSEDED`），不進 results（量到的格子本身沒問題，但和重量混在一起 report 會把兩個 run 的 rep 合在一個格子裡）；沒有看時間數字。llama b0 MPS 重送（afterany:22432）。
