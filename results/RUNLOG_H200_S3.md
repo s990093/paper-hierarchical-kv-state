@@ -432,3 +432,16 @@ python3 code/s3/kvs_f0p.py report
 - runner 的 `a0-gen`、`d0-run` 加冒煙閘（同 S3-B0-GATE 的做法）：這份程式（a0／a0_gpu；d0／d0_shim 的雜湊）在這一格還沒過冒煙 → 先在同一個 job 裡跑（生成：2 題；D0：P0f 冒煙），輸出在 run 目錄、不看分數；過了在 `$TIARA_RUNS/.s3_gates/` 留戳記；失敗 → step 停下。理由：獨立的冒煙 job 會讓位、重送成新編號，afterok 會斷。
 - 送出：A0 生成 L128、Q128 各 4 片（288 題；每片 `--budget-min 210`、可續跑）；D0 量測 1 片（192 題）。原本排隊中的 `a0gensmoke-L128`、`d0prep` 照留（先跑到的那個留戳記，另一個就跳過冒煙）。送出前 `quota -s -g ChihChungHsu` 見下一行。
 - 配額（送出前）：1487G／1536G。job：A0 生成 L128 0–3／4 → **22528–22531**、Q128 0–3／4 → **22532–22535**；D0 量測 0/1 → **22536**（next-icpe 為空，沒加依賴）。佇列裡我們的 job 共 27 個。
+
+## S3-GM12-FAIL-1 — G-M12 品質 Q128 的 GPU 自檢沒過（job 22505，2026-10-27 02:34；停下回報）
+
+**錯誤**: run `20261027-023424-s3-gm12-selftest-Q128`：`gm12 gpu-selftest 沒過` `{"dense_path_max_abs_diff": 28.3125, "n_select": [2, 3, 3, 3, 10, 25], "ok": false}`；runner 停在 `GM12-SELFTEST-Q128`（exit 1）。
+**對照**: L128 的同一個自檢（run `20261027-005002-s3-gm12-selftest-L128`）`dense_path_max_abs_diff` **0.0**（逐位元相同）、ok。
+**判斷（NOT_VERIFIED）**: 參考 KV 是 ItemState 的 fa3 prefill（和 L128 相同路徑）。sparse_chunk 在 d＝1 時把 GQA 拆成每個 KV head 一條序列（Qwen 7 個 q head／1 個 KV head；Llama 4／1），KVModel 是整組一起送 fa3。Llama 逐位元相同、Qwen 差 28 → 可能是 fa3 對兩種形狀選了不同的 split-KV（加總順序不同）、在 28 層裡累積，加上 Qwen 的 K 有 bias、數值大（絕對差被放大）；也可能是 Qwen 才有的結構差異。要在 GPU 上量逐層差、相對差、`num_splits=1` 時是否歸零才知道。
+**判準**: 登記（`runs/G_M12_sparse_recompute.md` §2）：「d＝1 時的 KV 和 KVModel fa3 prefill 的 KV 最大差 < 0.25，否則停」→ **G-M12 的 Qwen 品質停下**，不改門檻。待使用者決定是否做上面的診斷。
+
+## S3-D0-FAIL-1 — D0 的 infllm_v2 編不起來：上游 cutlass 標頭檔的語法錯（job 22507，2026-10-27 02:38；停下回報）
+
+**錯誤**: run `20261027-023815-s3-d0-build`：`/tmp/hungweilai-s3/d0/src/csrc/cutlass/include/cutlass/cuda_host_adapter.hpp:122:2: error: #else after #else`、`:93: error: the conditional began here`、`:148:2: error: #endif without #if`、`:154:2: error: #endif without #if` → `ERROR: Failed building wheel for infllm_v2`；runner 停在 `D0-BUILD`（exit 2）。
+**原因（已查證）**: infllmv2_cuda_impl `93cf2ec2` 的子模組 `csrc/cutlass`＝`zhangyan-didu/cutlass` branch `infllmv2-cuda13` commit `424c5a03`。那一版的 `include/cutlass/cuda_host_adapter.hpp` 第 103 與 145 行是 `if ((CUDACC_VER_MAJOR > 12) || (CUDACC_VER_MAJOR == 12 && CUDACC_VER_MINOR >= 5))`——少了 `#`、巨集名少了底線（應為 `__CUDACC_VER_MAJOR__`），所以前處理器的 #if／#else／#endif 對不起來。是上游的錯，不是這裡的設定（head node 從 raw.githubusercontent.com 抓同一個 commit 的檔案確認）。
+**處理**: `scontrol hold 22536`（D0 量測，會在同一步失敗）。可行的做法（待使用者決定，都要寫成 D0 偏離）：(a) 編譯前在 job 本地把那兩行改成 `#if ((__CUDACC_VER_MAJOR__ > 12) || (__CUDACC_VER_MAJOR__ == 12 && __CUDACC_VER_MINOR__ >= 5))`（只修語法，不改演算法）；(b) 換一個能編的 infllmv2 commit；(c) D0 這一輪不做。
