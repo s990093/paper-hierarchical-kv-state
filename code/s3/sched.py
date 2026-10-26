@@ -104,6 +104,17 @@ def yield_target(jobs: dict) -> list:
     return out
 
 
+def gpus_of(job: str) -> int:
+    """這個 job 要幾張卡（squeue %b：gres/gpu:4、gres:gpu:4、gpu:h200:2 …）；查不到 → 1（照舊讓位，保守）。"""
+    import re
+    try:
+        b = sh(["squeue", "-h", "-j", job, "-o", "%b"]).strip()
+    except Exception:                                   # noqa: BLE001
+        return 1
+    m = re.search(r"gpu(?::[A-Za-z0-9_]+)?:(\d+)", b)
+    return int(m.group(1)) if m else 1
+
+
 def s3_timing_target(jobs: dict, me: str) -> list:
     """品質（不量時間）的 stage-3 job 讓位給「只剩在等 s3-* 的 job（或什麼都不等）」的 stage-3 量時間 job（和 ICPE 同一個規則）。"""
     out = []
@@ -113,6 +124,10 @@ def s3_timing_target(jobs: dict, me: str) -> list:
         # 卡在帳號上限（AssocGrp*：例 4 卡的 G-M06 要整個 lab 帳號）→ 不讓位：讓了也只是大家一起等別的使用者，
         # 它要等帳號整個空出來才排得上，那時本來就不會和我們的 job 重疊（使用者 10/26「都做掉」，S3-SCHED-4）
         if rs.startswith("Assoc"):
+            continue
+        # 多卡的量時間 job（G-M06 要 4 卡＝整個 lab 帳號）：它一開跑，帳號上限就保證我們沒有別的 job 在跑 → 不需要讓位
+        # （10/27 06:xx：G-M06 的排隊原因從 AssocGrpCpuLimit 變成 Resources 時，a0gen-Q128-1 讓位到它後面，S3-SCHED-5）
+        if gpus_of(i) > 1:
             continue
         unf = [d for _, d, s in parse_dep(dep_of(i)) if s == "unfulfilled"]
         # 只有「等的全是 stage-3 的品質 job」（或什麼都不等）才算準備好了；在等鏈上前一個 s3-T-*、或在等 ICPE 的 → 還沒輪到它
