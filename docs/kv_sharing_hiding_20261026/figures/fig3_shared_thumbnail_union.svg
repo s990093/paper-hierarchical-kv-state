@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="560" viewBox="0 0 960 560" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="560" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 3　很多人問同一份文件時，縮圖還原要拿的是「大家挑到的頁的聯集」</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">GPU 上一直留著 P 的縮印版（每頁都有、但比較糊）；每個人的新問題挑出自己要的頁，只從 CPU／SSD 拿這些頁的原版。示意圖</text>
+<line x1="40" y1="68" x2="920" y2="68" stroke="#D9D9D6"/>
+
+<!-- column headers -->
+<text x="150" y="92" font-size="14" font-weight="600" fill="#5F5E5A" text-anchor="middle">GPU 上的縮印版（共用）</text>
+<text x="470" y="92" font-size="14" font-weight="600" fill="#5F5E5A" text-anchor="middle">每個人的問題挑到的頁</text>
+<text x="790" y="92" font-size="14" font-weight="600" fill="#5F5E5A" text-anchor="middle">要從下層拿的原版</text>
+
+<!-- thumbnail grid 4x4 pages -->
+<g font-size="11" text-anchor="middle" fill="#5F5E5A">
+<rect x="70" y="110" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="88" y="128">1</text>
+<rect x="110" y="110" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="128" y="128">2</text>
+<rect x="150" y="110" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="168" y="128">3</text>
+<rect x="190" y="110" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="208" y="128">4</text>
+<rect x="70" y="142" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="88" y="160">5</text>
+<rect x="110" y="142" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="128" y="160">6</text>
+<rect x="150" y="142" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="168" y="160">7</text>
+<rect x="190" y="142" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="208" y="160">8</text>
+<rect x="70" y="174" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="88" y="192">9</text>
+<rect x="110" y="174" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="128" y="192">10</text>
+<rect x="150" y="174" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="168" y="192">11</text>
+<rect x="190" y="174" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="208" y="192">12</text>
+<rect x="70" y="206" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="88" y="224">13</text>
+<rect x="110" y="206" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="128" y="224">14</text>
+<rect x="150" y="206" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="168" y="224">15</text>
+<rect x="190" y="206" width="36" height="28" fill="#EAF0F8" stroke="#8FAADC"/><text x="208" y="224">16</text>
+</g>
+<text x="150" y="256" font-size="11.5" fill="#5F5E5A" text-anchor="middle">1/16 大小，一份給所有人用</text>
+
+<!-- per-user selections -->
+<g font-size="12" fill="#2C2C2A">
+<text x="300" y="128" font-weight="600">U1</text>
+<text x="300" y="168" font-weight="600">U2</text>
+<text x="300" y="208" font-weight="600">U3</text>
+</g>
+<!-- U1: 3 7 15 12 -->
+<g font-size="11" text-anchor="middle">
+<rect x="330" y="114" width="30" height="22" fill="#1F4E79"/><text x="345" y="129" fill="#ffffff">3</text>
+<rect x="364" y="114" width="30" height="22" fill="#1F4E79"/><text x="379" y="129" fill="#ffffff">7</text>
+<rect x="398" y="114" width="30" height="22" fill="#1F4E79"/><text x="413" y="129" fill="#ffffff">15</text>
+<rect x="432" y="114" width="30" height="22" fill="#E07B24"/><text x="447" y="129" fill="#ffffff">12</text>
+<!-- U2: 3 7 15 13 -->
+<rect x="330" y="154" width="30" height="22" fill="#1F4E79"/><text x="345" y="169" fill="#ffffff">3</text>
+<rect x="364" y="154" width="30" height="22" fill="#1F4E79"/><text x="379" y="169" fill="#ffffff">7</text>
+<rect x="398" y="154" width="30" height="22" fill="#1F4E79"/><text x="413" y="169" fill="#ffffff">15</text>
+<rect x="432" y="154" width="30" height="22" fill="#E07B24"/><text x="447" y="169" fill="#ffffff">13</text>
+<!-- U3: 3 7 15 9 -->
+<rect x="330" y="194" width="30" height="22" fill="#1F4E79"/><text x="345" y="209" fill="#ffffff">3</text>
+<rect x="364" y="194" width="30" height="22" fill="#1F4E79"/><text x="379" y="209" fill="#ffffff">7</text>
+<rect x="398" y="194" width="30" height="22" fill="#1F4E79"/><text x="413" y="209" fill="#ffffff">15</text>
+<rect x="432" y="194" width="30" height="22" fill="#E07B24"/><text x="447" y="209" fill="#ffffff">9</text>
+</g>
+<rect x="490" y="118" width="12" height="12" fill="#1F4E79"/><text x="508" y="128" font-size="11" fill="#2C2C2A">大家都挑到的頁</text>
+<rect x="490" y="140" width="12" height="12" fill="#E07B24"/><text x="508" y="150" font-size="11" fill="#2C2C2A">只有自己挑到的頁</text>
+<text x="330" y="240" font-size="11" fill="#5F5E5A">各自拿：3 人 × 4 頁 ＝ 12 頁</text>
+
+<!-- arrow -->
+<path d="M600,170 L660,170" stroke="#5F5E5A" stroke-width="1.6" marker-end="url(#a)"/>
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5F5E5A"/></marker></defs>
+
+<!-- union fetch -->
+<g font-size="11" text-anchor="middle">
+<rect x="680" y="130" width="30" height="22" fill="#1F4E79"/><text x="695" y="145" fill="#ffffff">3</text>
+<rect x="714" y="130" width="30" height="22" fill="#1F4E79"/><text x="729" y="145" fill="#ffffff">7</text>
+<rect x="748" y="130" width="30" height="22" fill="#1F4E79"/><text x="763" y="145" fill="#ffffff">15</text>
+<rect x="782" y="130" width="30" height="22" fill="#E07B24"/><text x="797" y="145" fill="#ffffff">12</text>
+<rect x="816" y="130" width="30" height="22" fill="#E07B24"/><text x="831" y="145" fill="#ffffff">13</text>
+<rect x="850" y="130" width="30" height="22" fill="#E07B24"/><text x="865" y="145" fill="#ffffff">9</text>
+</g>
+<text x="780" y="176" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">聯集只要 6 頁（每頁只拿一次）</text>
+<text x="780" y="196" font-size="11" fill="#5F5E5A" text-anchor="middle">先拿「最多人要」的頁 → 最多人最早能往下算</text>
+<text x="780" y="214" font-size="11" fill="#5F5E5A" text-anchor="middle">（古典對應：cooperative scans、VoD batching）</text>
+
+<line x1="40" y1="280" x2="920" y2="280" stroke="#D9D9D6"/>
+
+<!-- two regimes -->
+<text x="40" y="308" font-size="14" font-weight="600" fill="#2C2C2A">聯集會多大，決定這個做法在共享時是更划算還是失效</text>
+<rect x="40" y="322" width="420" height="120" rx="6" fill="#F3F7F1" stroke="#6A9F58"/>
+<text x="56" y="346" font-size="13" font-weight="600" fill="#3B6E2F">情況 A：大家挑到的頁大多重疊</text>
+<text x="56" y="368" font-size="12" fill="#2C2C2A">人越多，每人分攤的搬運越少；</text>
+<text x="56" y="388" font-size="12" fill="#2C2C2A">縮印版 1 份、核心頁 1 份，服務一群人。</text>
+<text x="56" y="414" font-size="11.5" fill="#5F5E5A">我們的前置證據〔實測，C1a，K＝2，合成題 32K〕：</text>
+<text x="56" y="432" font-size="11.5" fill="#5F5E5A">兩個不同問題的前 16 塊重疊 86%（Llama）／77%（Qwen），隨機 25%</text>
+<rect x="500" y="322" width="420" height="120" rx="6" fill="#FBF1EA" stroke="#E07B24"/>
+<text x="516" y="346" font-size="13" font-weight="600" fill="#A3561A">情況 B：每個人問的地方都不一樣</text>
+<text x="516" y="368" font-size="12" fill="#2C2C2A">聯集很快長到整份文件；</text>
+<text x="516" y="388" font-size="12" fill="#2C2C2A">這時乾脆整份拿回（Cake）再共用，比較好。</text>
+<text x="516" y="414" font-size="11.5" fill="#5F5E5A">交界在哪：聯集大小 U(K) × 慢層頻寬 vs 整份還原時間</text>
+<text x="516" y="432" font-size="11.5" fill="#5F5E5A">K＞2 的 U(K)：NOT_MEASURED</text>
+
+<text x="40" y="474" font-size="12" fill="#2C2C2A">還沒回答的問題：</text>
+<text x="40" y="494" font-size="11.5" fill="#5F5E5A">① 真實的「多人問同一份文件」資料上，U(K) 長得多快？（C1a 只有合成題、兩個問題、所有層平均的排名）</text>
+<text x="40" y="512" font-size="11.5" fill="#5F5E5A">② 逐層挑的時候（每一層各挑各的），重疊會不會比「所有層平均」低很多？</text>
+<text x="40" y="530" font-size="11.5" fill="#5F5E5A">③ 重疊的部分是不是只是「最近的頁、開頭的頁」這種不分問題的頁？如果是，答案所在的頁還是各不相同。</text>
+<text x="40" y="548" font-size="11.5" fill="#5F5E5A">C1a 的 QRY1 對第 2 輪答案頁的 recall@16 只比隨機高 14.6（Llama）／21.3（Qwen）個百分點 → ③ 很可能成立〔判讀〕。</text>
+</svg>

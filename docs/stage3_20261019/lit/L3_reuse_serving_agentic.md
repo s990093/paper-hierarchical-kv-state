@@ -214,7 +214,7 @@
 
 - **搶佔**：V1 預設也是唯一的方式是重算；`_preempt_request` 把 `num_computed_tokens` 歸零〔repo 卡 `D8_vLLM_Optimization_Preemption.md`；原始碼 `v1/core/sched/scheduler.py:956-968`〕。指標有 `num_preemptions`〔原始碼 `v1/metrics/loggers.py:133-144`〕。
 - **0.19.1 `OffloadingConnector` 的延後載入**：開 GPU prefix caching 時，排程端用 `_blocks_being_loaded` 追蹤正在從 CPU 載回的 block；**新請求命中的 block 如果正被別人載入，`get_num_new_matched_tokens` 回 `None`，請求被延後**〔原始碼 `distributed/kv_transfer/kv_connector/v1/offloading/scheduler.py:47-51、126-140`〕。
-- **vLLM issue #44294**（2026-06-02 開，〔原文〕）：2×L40S、TP=2、Qwen3-8B、`cpu_bytes_to_use`≈57.6 GB、50 併發共用 10,000-token 前綴、輸出 128：TTFT 不卸載 5.95 s、0.19.1 卸載 11.46 s、0.17.1 卸載 0.90 s；吞吐開銷 0.19.1 −39.9%、0.17.1 −6.5%。維護者沒回應；2026-10-07 被機器人以 not planned 關閉，修正 PR #44295 同樣關閉。
+- **vLLM issue #44294**（2026-06-02 開，〔原文〕）：2×L40S、TP=2、Qwen3-8B、`cpu_bytes_to_use`≈57.6 GB、50 併發共用 10,000-token 前綴、輸出 128：TTFT 不卸載 5.95 s、0.19.1 卸載 11.46 s、0.17.1 卸載 0.90 s；吞吐開銷 0.19.1 −39.9%、0.17.1 −6.5%。維護者沒回應；2026-10-07 被機器人以 not planned 關閉，修正 PR #44295 同樣關閉。**〔2026-10-26 更正〕PR #44295 沒有關閉，至 2026-10-26 仍是 OPEN（stale、needs-rebase）；見 `docs/kv_sharing_hiding_20261026/lit/L1_strata_and_engines.md` §2.2、`lit/V_verifier.md` #11。**
 - 〔判讀〕這是 Strata 所說 delayed hit 的工程版本，而且**正好在我們的版本裡**。在 MI300X 上是否同樣發生：NOT_MEASURED（repo F1 的卸載測試用的是 0.28）。
 - **期限前最小版本**：X2（§7），半天。
 
