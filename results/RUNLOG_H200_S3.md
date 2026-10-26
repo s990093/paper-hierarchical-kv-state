@@ -385,3 +385,19 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 **產出**: `results/s3_h200/kvs_f0/f0_full_{h200,mi300x}_{llama,qwen}.csv.gz`、`f0_verdict.json`
 **關鍵數字〔模擬〕**: R*＝P5（兩個平台）；Llama：gain > 15% 的格 H200 36（11.1%）、MI300X 38（11.7%）→ (i) 過；gain < −5% 的格 1／4（最差 −19.4%／−20.5%）→ (ii) 不過；(iii) 過 → **ASK**。Qwen 重現同樣的樣子。細節：`runs/F0_follower_sim.md`。
 **失敗與異常**: 全網格的 CSV 每個約 2.2 MB（> 1 MB）→ 改寫成 .csv.gz（`fix(s3-kvs-f0)`：run 寫 .gz、report 兩種都讀）；壓縮後重跑 report 判定相同。
+
+## S3-GM11-REDO — G-M11 四格重量（job 22478，2026-10-26 18:05–18:08）：仍 NOT_DETERMINED
+
+**run_id**: `20261026-180520-s3-gm11-llama`、`20261026-180657-s3-gm11-qwen`；報告 `20261026-180825-adhoc`
+**指令**: `sbatch --job-name=s3-T-gm11redo --time=1:00:00 code/r_h200_s3.sh --part gm11-redo`
+**產出**: `results/s3_h200/b0/gm11/*.csv`（各 48 列）、`results/s3_h200/b0/gm11_report.json`
+**關鍵數字（實測）**: 閒時 dq_int4 σ_rel llama 0.038、qwen 0.102（2σ > 5% → 不判定）；其他三格 σ_rel ≤ 0.003。guard 都 CLEAN。
+**判定**: G-M11 **NOT_DETERMINED**（照偏離 1 事先約定）。閒時 INT4 kernel 在兩次 run 都不穩、有背景時穩；時脈切換的解釋 NOT_VERIFIED。後續選項在 `runs/G_M11_vq.md`。
+
+## S3-KVS-S0（續）— L128 判定 CONTINUE；送出另外 3 格（2026-10-26 18:3x）
+
+**run_id**: 冒煙 `20261026-180827-s3-kvs-s0-smoke-L128`；正式 `20261026-180852-s3-kvs-s0-L128-s0`（job 22497＝22455 讓位重送；96／96 題，guard CLEAN）；報告 `20261026-183013-adhoc`
+**指令**: `python3 code/s3/kvs_s0.py report` → `results/s3_h200/kvs_s0/s0_verdict.json`
+**關鍵數字（實測）**: ρ＝1/4 中位數 u2_global **0.540**、u2_layer **0.543** → 不是 STOP-S（> 0.85 才停）→ **CONTINUE**。ov_global 0.921；rec_own_2 0.898 vs rec_cross_2 0.556（重疊主要是不分問題的塊；答案塊各不相同）；rec_union_2＝rec_own_2。細節：`runs/S0_union.md` 結果節。
+**接著送**: Q128（1 片）、Q256（1 片）、Q14-256（2 片；每題約 90 s）——使用者 10/26「都做掉」＋登記 §2 CONTINUE。
+- **送出**（2026-10-26 18:3x）：`sbatch --job-name=s3-kvs-s0-<cell>-<i> --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell <cell> --shard <i/n>` → Q128 0/1 **22516**、Q256 0/1 **22517**、Q14-256 0/2 **22518**、1/2 **22519**（next-icpe 為空，沒加依賴）。四格都跑完後 `kvs_s0.py report` 做 11/17 預篩（要 A0 的判定；A0 還沒判完 → `PENDING_A0`）。
