@@ -387,8 +387,9 @@ def cmd_run(a):
         for r in rows:
             by.setdefault((r["platform"], r["model"]), []).append(r)
     for (plat, model), rows in by.items():
-        p = os.path.join(a.out, f"f0_{a.slice}_{plat}_{model}.csv")
-        with open(p, "w", newline="") as fh:
+        # 全網格每個面板約 2.2 MB → 寫 .csv.gz（約 0.2 MB；repo 的檔案 <1 MB，CLAUDE.md §2）
+        p = os.path.join(a.out, f"f0_{a.slice}_{plat}_{model}.csv" + (".gz" if a.slice == "full" else ""))
+        with (gzip.open(p, "wt", newline="") if p.endswith(".gz") else open(p, "w", newline="")) as fh:
             w = csv.DictWriter(fh, fieldnames=FIELDS)
             w.writeheader()
             for r in rows:
@@ -432,7 +433,7 @@ def cmd_cal(a):
 
 
 def _read(path: str) -> list:
-    rows = list(csv.DictReader(open(path)))
+    rows = list(csv.DictReader(gzip.open(path, "rt") if path.endswith(".gz") else open(path)))
     for r in rows:
         r["ttft_p95"] = float(r["ttft_p95"])
     return rows
@@ -491,7 +492,8 @@ def cmd_report(a):
     dp = os.path.join(a.out, "f0_decisive_h200_llama.csv")
     if os.path.exists(dp):
         rep["decisive"] = verdict_decisive(_read(dp))
-    full = {plat: os.path.join(a.out, f"f0_full_{plat}_llama.csv") for plat in ("h200", "mi300x")}
+    full = {plat: os.path.join(a.out, f"f0_full_{plat}_llama.csv.gz") for plat in ("h200", "mi300x")}
+    full = {k: (p if os.path.exists(p) else p[:-3]) for k, p in full.items()}       # 舊的未壓縮檔也讀
     if all(os.path.exists(p) for p in full.values()):
         rep["full_llama"] = verdict_full({k: _read(p) for k, p in full.items()})
     if rep["cal"] != "PASS":

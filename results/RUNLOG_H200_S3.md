@@ -377,3 +377,11 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 - `scontrol release 22281`（G-M06）：排隊原因 `AssocGrpCpuLimit`（要 64 核＝整個 lab 帳號；當時 chihchung 1 個 job 在跑、17 個在排）。
 - `sched.py s3-timing-target`：量時間 job 的排隊原因是 `Assoc*`（卡在帳號上限）→ 品質 job **不讓位**給它（讓了也只是一起等別的使用者；它要等帳號整個空出來才排得上，那時本來就不會和我們的 job 重疊）。自檢 PASS。
 - G-M11 重量：runner part `gm11-redo`（G-M11 偏離 1）；F0 全網格：head node 背景跑（`--jobs 8`）；S0-2 其他 3 格：等 L128 的判定（登記：L128 STOP-S → 其他 3 格不跑）。
+
+## S3-KVS-F0（續）— F0 全網格：問人（ASK）〔模擬〕（2026-10-26 16:36–16:39，head node）
+
+**run_id**: `20261026-163625-s3-kvs-f0-full`；報告 `20261026-163950-kvs-f0-adhoc`
+**指令**: `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run s3-kvs-f0-full nice -n 10 python3 code/s3/kvs_f0.py run --slice full --jobs 8; python3 code/s3/kvs_f0.py report`
+**產出**: `results/s3_h200/kvs_f0/f0_full_{h200,mi300x}_{llama,qwen}.csv.gz`、`f0_verdict.json`
+**關鍵數字〔模擬〕**: R*＝P5（兩個平台）；Llama：gain > 15% 的格 H200 36（11.1%）、MI300X 38（11.7%）→ (i) 過；gain < −5% 的格 1／4（最差 −19.4%／−20.5%）→ (ii) 不過；(iii) 過 → **ASK**。Qwen 重現同樣的樣子。細節：`runs/F0_follower_sim.md`。
+**失敗與異常**: 全網格的 CSV 每個約 2.2 MB（> 1 MB）→ 改寫成 .csv.gz（`fix(s3-kvs-f0)`：run 寫 .gz、report 兩種都讀）；壓縮後重跑 report 判定相同。
