@@ -366,7 +366,7 @@
 
 ### H4 KVFlow（repo D4 表內已有一行，這裡補評測細節）
 
-- Z. Pan *et al.*, "KVFlow: Efficient Prefix Caching for Accelerating LLM-Based Multi-Agent Workflows," NeurIPS 2025（proceedings 已確認）. arXiv 2507.07400（已開）。官方程式 NOT_FOUND。〔部分〕
+- Z. Pan *et al.*, "KVFlow: Efficient Prefix Caching for Accelerating LLM-Based Multi-Agent Workflows," NeurIPS 2025（proceedings 已確認）. arXiv 2507.07400（已開）。官方程式 NOT_FOUND。**〔2026-10-26 更正〕官方程式在 `github.com/PanZaifeng/KVFlow`（Apache-2.0，SGLang 的 fork；README 寫是 KVFlow 與 ScaleSim 的原始碼）；見 `docs/kv_sharing_hiding_20261026/runs/R0_reproduce.md`。**〔部分〕
 - **方法**：Agent Step Graph 給每個 agent「幾步後會執行」；據此做 radix tree 節點層級淘汰；背景執行緒從 CPU 預取下一步會用的 KV；預取來不及時改排已在 GPU 的 agent〔原文 §3〕。
 - **假設**：原文 Fig. 2 說 PCIe 傳 KV 遠比重算快，所以卸到 CPU 是記憶體壓力下的有效策略〔原文 §2〕。
 - **原文數字**：(1) Llama-3.1-8B、A10G 24GB、原文寫「2GB/s PCIe Gen1」；(2) Qwen2.5-32B、H100 80GB、64 GB/s PCIe Gen5；10-agent 循序 workflow，合成 prompt（固定 4,096／8,192 + 動態後綴）；batch 1；對 SGLang（含 HiCache）單 workflow 最多 1.83 倍、多 workflow 併發最多 2.19 倍〔原文 §4、摘要〕。

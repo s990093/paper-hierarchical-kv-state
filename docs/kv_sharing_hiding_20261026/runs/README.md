@@ -17,9 +17,9 @@
 
 | 閘 | 文件 | 程式 | 結果 | 狀態 |
 |:--|:--|:--|:--|:--|
-| T0 | [T0_arrivals.md](T0_arrivals.md) | `code/s3/kvs_t0.py` | `results/s3_h200/kvs_t0/` | 已登記（2026-10-26），程式 CPU 自測 |
-| S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | 已登記（2026-10-26），程式 CPU 自測；GPU 冒煙未跑 |
-| F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 已登記（2026-10-26），程式 CPU 自測 |
+| T0 | [T0_arrivals.md](T0_arrivals.md) | `code/s3/kvs_t0.py` | `results/s3_h200/kvs_t0/` | 已登記；自測 15 項全過、合成 trace 冒煙過；**未跑**（trace 只在 H200） |
+| S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | 已登記（偏離 1）；CPU 自測 22 項全過、runner dry-run 過；**GPU 冒煙未跑** |
+| F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 已登記（偏離 1）；自測 59 項全過（含 F0-CAL (a)：N＝1 時和 m16_mcake 的 Cake 完全相同）；**未跑**（cal、決定性實驗、全網格） |
 | R0（復現 Strata、KVFlow） | [R0_reproduce.md](R0_reproduce.md) | — | — | **計畫，未登記**：先查可行性 |
 
 ## 3. 共同規則
@@ -29,3 +29,11 @@
 - 所有 CSV 都有 `run_id`、`ts`；大輸出放 run 目錄（`$TIARA_RUNS/<run_id>/`），results 只放摘要。
 - 這三個閘都**不量時間**（T0、F0 是 CPU；S0-2 是品質型），所以不套用 05 §2.1 的速度雜訊規則。F0 的結論是〔模擬〕，要 F1 在真引擎上驗證才算數。
 - 文獻與這幾份登記都是 self-review，不是 cross-model review（CLAUDE.md §5）。
+
+## 4. 下一步（怎麼跑）
+
+| 閘 | 在哪跑 | 指令 | 時間 |
+|:--|:--|:--|:--|
+| F0 | 任何 CPU（常數都在 repo；純 Python） | `python code/s3/kvs_f0.py cal` → `run --slice decisive` → （沒 STOP 才）`run --slice full --jobs 16` → `report` | 決定性幾分鐘；全網格單核約 40 分鐘〔估計〕 |
+| T0 | H200 head node（trace 在 `$TIARA_DATASETS/traces`） | `source code/env_h200.sh; python code/s3/kvs_t0.py run` | 幾分鐘 |
+| S0-2 | H200 GPU（品質型 job） | `sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1`；送出時照 skill §4 加進 ICPE 的依賴 | 約 1 GPU 小時（L128）〔估計〕 |

@@ -19,6 +19,7 @@
 #   sbatch --job-name=s3-b0-llama-b0-mps --time=6:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes mps,mps87,mps75,mps50  # 量時間（自動開 MPS）
 #   sbatch --job-name=s3-w0gfio --time=1:00:00 code/r_h200_s3.sh --part w0gfio                    # 量時間：W0（兩個模型）＋G-fio
 #   sbatch --job-name=s3-gm06 --time=1:00:00 --gres=gpu:4 --cpus-per-task=64 --mem=680G code/r_h200_s3.sh --part gm06   # 4 卡、量時間
+#   sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1   # KVS S0-2（品質型；第一次先 1 題冒煙）
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 排程（使用者 2026-10-25「排滿：stage3 品質先填空檔」，memory stage3-gpu-scheduling）：
@@ -60,14 +61,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run) TIMING=0 ;;
+  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run|kvs-s0) TIMING=0 ;;
   b0-run|b0-diag|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06" >&2; exit 2 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06|kvs-s0" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
 fi
-case "$PART" in a0-*|gm12-q) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
+case "$PART" in a0-*|gm12-q|kvs-s0) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
 ICPE_TIMING_RE='^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$'     # r_h200_icpe.sh 裡 TIMING=1 的 part
 
 # 模型權重：本地 /tmp（code/s3/fetch_models.py）。env_h200.sh 的 M7_*_GLOB 用 ${HF_HOME}，所以先設 HF_HOME
@@ -173,6 +174,22 @@ if [[ "$PART" == a0-* ]]; then
   [ "$PART" = a0-gensmoke ] && step GENSMOKE-$CELL m7run s3-a0-gensmoke-$CELL bash -c "python code/s3/a0.py gen --cell $CELL --smoke --max-items 2 --shard 0/192 --out \"\$RUN_DIR/smoke_gen.csv.gz\""
   [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET" --gm04
   [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+fi
+
+# ---- KVS S0-2（docs/kv_sharing_hiding_20261026/runs/S0_union.md）：兩個使用者挑的塊的聯集（品質型，不量時間）----------
+# 重用 A0 的題目與打分（不改 A0）。這份程式（kvs_s0／a0_gpu／a0 的雜湊）在這一格還沒冒煙過 → 先跑 1 題冒煙（輸出在 run 目錄、不看分數）。
+if [ "$PART" = kvs-s0 ]; then
+  M=$(python3 -c "import sys; sys.path.insert(0, 'code/s3'); import a0; print(a0.CELLS[sys.argv[1]]['model'])" "$CELL") \
+    || { echo "[r_h200_s3] 不認得的 --cell $CELL" >&2; exit 2; }
+  SI=${SHARD%%/*}
+  step MODELS ensure_models "$M"
+  GATES=$TIARA_RUNS/.s3_gates; [ "$DRY" = 1 ] || mkdir -p "$GATES"
+  S0SIG=$(cat code/s3/kvs_s0.py code/s3/a0_gpu.py code/s3/a0.py | sha256sum | cut -c1-16)
+  if [ ! -f "$GATES/kvs_s0_${CELL}_$S0SIG" ]; then
+    step KVS-S0-SMOKE-$CELL m7run s3-kvs-s0-smoke-$CELL bash -c "python code/s3/kvs_s0.py run --cell $CELL --smoke --max-items 1 --out \"\$RUN_DIR/smoke_s0.csv.gz\""
+    [ "$DRY" = 1 ] || echo "$(date -Is) job=$SLURM_JOB_ID" > "$GATES/kvs_s0_${CELL}_$S0SIG"
+  fi
+  step KVS-S0-$CELL-$SI m7run s3-kvs-s0-$CELL-s$SI python code/s3/kvs_s0.py run --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
 fi
 
 # ---- B0＋G-M08（docs/stage3_design_20261024/runs/B0_interference.md）---------------------------------------
