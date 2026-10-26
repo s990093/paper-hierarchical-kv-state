@@ -330,3 +330,17 @@ python3 code/s3/kvs_f0.py report
 **產出**: `results/s3_h200/kvs_f0/{f0_cal.json, f0_decisive_h200_llama.csv, f0_verdict.json}`；每個請求的明細 `$TIARA_RUNS/20261026-140113-s3-kvs-f0-dec/f0_decisive_requests.json.gz`
 **關鍵數字〔模擬〕**: 尺準 16／16 個（面板, tier）比值在 [0.9, 1.1]（0.933–0.989）。12 格最好固定規則：P5×7、P1＝P4×3、P0×1、P4×1（不全同）；P6 對它的改進最大 +0.21%、全部 <5%、最差 −167.5%（nfs 128K ρ_o＝0.8，那一格整體 P95 被別人的工作主導，P0 的共享請求 P95 749.6 s）。P6 對 P4：−99.2%～+87.1%；對 P5：0.0%～+40.0%。細節：`docs/kv_sharing_hiding_20261026/runs/F0_follower_sim.md` 結果節。
 **失敗與異常**: `m7run` 第一次在 head node 被 `tiara.sbatch` 擋下（`不在 Slurm job 裡`），改設 `TIARA_ALLOW_NO_SLURM=1` 後照常建 run 目錄；不影響數字。
+
+## S3-KVS-T0 — T0 Mooncake trace 統計：單位檢查 PASS（2026-10-26 14:03，head node）
+
+**狀態**: 完成（只報告；單位檢查 PASS）
+**run_id**: `20261026-140345-s3-kvs-t0`
+**指令**:
+```bash
+source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1
+python3 code/s3/kvs_t0.py --self-test          # 15 項 ALL PASS
+m7run s3-kvs-t0 python3 code/s3/kvs_t0.py run
+```
+**產出**: `results/s3_h200/kvs_t0/t0_summary.csv`（1,546 列）；`$TIARA_RUNS/20261026-140345-s3-kvs-t0/t0_groups_*.json.gz`
+**關鍵數字（實測，trace 統計）**: 單位檢查 toolagent S＝6K w＝±1 s **0.3893**（之後 1 s：0.3400）∈ [0.19, 0.76]；conversation 同設定 0.0000；T0-c 跟隨者比例 toolagent S＝6K 0.340（cpu、nvme）／0.340（nfs），conversation ≤0.0007；T0-d λ·W 中位數全部 ≤0.094。toolagent 群內相鄰間隔 p50＝0.0 s（跟隨者大多和領頭同一個時間戳）。細節：`runs/T0_arrivals.md` 結果節。
+**失敗與異常**: 無（`m7run` 在 head node 用 `TIARA_ALLOW_NO_SLURM=1`，同 S3-KVS-F0）。
