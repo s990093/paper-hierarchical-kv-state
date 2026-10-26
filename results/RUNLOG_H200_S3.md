@@ -248,3 +248,10 @@
 **指令**: `sbatch --job-name=s3-T-b0-qwen-b0-stream --time=3:00:00 --dependency=afterany:22271 code/r_h200_s3.sh --part b0-run --model qwen --setup b0 --modes stream,stream_hi`
 **產出**: `results/s3_h200/b0/raw/b0_qwen_b0_stream-stream_hi_20261026-070828-s3-b0-qwen-b0-stream-stream_hi.{csv,gpu_guard.json,_numa.json}`
 **完整性**: 2016 列（8 背景 × 2 模式 × 21 原語 × 6 次）；guard `CLEAN`（`n_smi_failures` 0）、每列 `own_gpu_intruders` 0；`numa_local` 全 `yes`；`host_level` 全 `UNOBSERVABLE_HOST`（Slurm cgroup，照規則照實記）；每列都有 `n_rep`＝6、`sigma_rel`、`delta_star`。背景釋放後 GPU 已配置量維持約 40 GiB（S3-B0-FAIL-1 的修正有效）。時間數字還沒看。
+
+## S3-B0-RUN-m08-stream — G-M08 的 llama／qwen（stream, stream_hi）量完（jobs 22273、22274，2026-10-26 08:03–09:0x）
+
+**狀態**: 完成（只記執行狀態；判定等 B0 全部做完）
+**run_id**: llama：閘 `B0-GATE-llama-m08` PASS → 量測 `20261026-080412-s3-b0-llama-m08-stream-stream_hi`；qwen：閘 `B0-GATE-qwen-m08` PASS → `20261026-084740-s3-b0-qwen-m08-stream-stream_hi`
+**產出**: `results/s3_h200/b0/raw/b0_{llama,qwen}_m08_stream-stream_hi_<run_id>.{csv,gpu_guard.json,_numa.json}`
+**完整性**: llama 216 列（3 背景 × 2 模式 × 6 原語 × 6 次）、qwen 288 列（4 × 2 × 6 × 6）；兩個 guard 都 `CLEAN`（smi 失敗 0）、`own_gpu_intruders` 全 0、`numa_local` 全 `yes`、`n_rep`＝6、`sigma_rel`／`delta_star` 都有值。時間數字還沒看。
