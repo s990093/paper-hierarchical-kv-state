@@ -32,8 +32,10 @@
 
 ## 4. 下一步（怎麼跑）
 
+**使用者 2026-10-26：三個閘全部在 H200 跑**（F0 雖然是純 Python、任何 CPU 都能跑，也在 H200 head node 跑，紀錄一律進 `results/RUNLOG_H200_S3.md` 的 `S3-KVS-*` 節）。
+
 | 閘 | 在哪跑 | 指令 | 時間 |
 |:--|:--|:--|:--|
-| F0 | 任何 CPU（常數都在 repo；純 Python） | `python code/s3/kvs_f0.py cal` → `run --slice decisive` → （沒 STOP 才）`run --slice full --jobs 16` → `report` | 決定性幾分鐘；全網格單核約 40 分鐘〔估計〕 |
+| F0 | H200 head node（純 Python，不用 GPU、不用 conda） | `python code/s3/kvs_f0.py cal` → `run --slice decisive` → （沒 STOP 才）`run --slice full --jobs 16` → `report` | 決定性幾分鐘；全網格單核約 40 分鐘〔估計〕 |
 | T0 | H200 head node（trace 在 `$TIARA_DATASETS/traces`） | `source code/env_h200.sh; python code/s3/kvs_t0.py run` | 幾分鐘 |
 | S0-2 | H200 GPU（品質型 job） | `sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1`；送出時照 skill §4 加進 ICPE 的依賴 | 約 1 GPU 小時（L128）〔估計〕 |
