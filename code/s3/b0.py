@@ -492,6 +492,7 @@ def cmd_run(a):
                     from bgengine import step_bytes
                     need = mps_fit["weights"] + step_bytes(tgt.km, bgspec) + MPS_MARGIN
                     grow = max(0, mps_fit["main_peak"] - torch.cuda.memory_allocated())
+                    torch.cuda.empty_cache()                    # 快取保留的不算已用（10/26 22431：沒清時「可用」少算約 20 GiB）
                     free = torch.cuda.mem_get_info()[0]
                     if need + grow > free:
                         note = (f"MPS 背景放不下：背景 process 約 {need / 2**30:.1f} GiB（權重 {mps_fit['weights'] / 2**30:.1f}＋背景 "
