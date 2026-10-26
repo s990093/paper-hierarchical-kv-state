@@ -28,7 +28,7 @@ REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
 import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
-import guard as G                                                 # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
+import guard as GD                                                # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
 
 CHUNK = 512
 OUT = os.path.join(REPO, "results", "s3_h200", "w0")
@@ -121,7 +121,7 @@ def cmd_run(a):
     rid = run_id()
     rows = []
     lvl = host_level()
-    gw = G.Timing(a.out)
+    gw = GD.Timing(a.out)
     numa, nf = {}, {}
 
     def rec(where, bg, part, rep, t, bout, threads, br="", solo=""):
@@ -198,7 +198,7 @@ def cmd_report(a):
     rows = []
     for p in sorted(glob.glob(os.path.join(OUT, "raw", "*.csv"))):
         rows += list(csv.DictReader(open(p)))
-    rows, bad = G.drop_contaminated(rows)
+    rows, bad = GD.drop_contaminated(rows)
     out = dict(run_id=run_id(), ts=ts(), cells={}, verdict={}, noisy=[], excluded_contaminated_runs=bad)
     for m, d in DEMAND.items():
         dem = d["tok_s"] * d["kv_per_token"] / 2**30

@@ -264,3 +264,12 @@
 **做到哪裡**: 第一個區塊 `decode:64:8192 × mps` 做完 21 個原語中的 17 個（102 列）；照同一個種子重算的順序，第 18 個是 **`lr_recon`**。`lr_recon` 在 stream 模式下（22272、B0 冒煙）都正常 → 只在 MPS 下出事；這個區塊的背景另一個 process 就用 64 GiB，加上主程式約 60 GiB，整張卡幾乎全滿，也可能有關。原因還不知道（NOT_VERIFIED）。
 **處理**: 部分輸出（CSV／guard／numa）搬到 run 目錄（`*.FAILED_RUN`），不進 results，沒有看時間數字；`scontrol hold 22276`（qwen b0 MPS，同樣會跑 lr_recon）；22277／22278（m08 MPS）照鏈排在它後面；W0＋G-fio（22279）的依賴拿掉，先跑。
 **診斷**: 新 part `b0-diag`（量時間類、獨佔、輸出只在 run 目錄）：MPS 下只跑 `lr_recon`、`recompute1`，`CUDA_LAUNCH_BLOCKING=1`，背景 decode:8:8192（小）與 decode:64:8192（大）各一次、各記 exit code。
+
+## S3-W0 — W0 寫入端成本（job 22279，2026-10-26 10:28–10:33）：GW0-FAIL；報告那一步的 bug
+
+**狀態**: W0 量完、判定 **GW0-FAIL（llama、qwen）**；G-fio 沒跑到（runner 停在 W0-REPORT）。
+**run_id**: `20261026-102851-s3-w0-llama`、`20261026-103153-s3-w0-qwen`（guard 都 `CLEAN`、`numa_local` yes、各 54 列）；報告 `20261026-103416-adhoc`（head node）。
+**指令**: `sbatch --job-name=s3-T-w0gfio ... code/r_h200_s3.sh --part w0gfio`；報告 `python code/s3/w0.py report`
+**產出**: `results/s3_h200/w0/raw/w0_{llama,qwen}_<run_id>.{csv,gpu_guard.json,_numa.json}`、`results/s3_h200/w0/w0_report.json`
+**關鍵數字（實測）**: CPU 16 核壓縮速度 Llama B16 0.283、B32 0.298 GiB/s（需求 3.27）；Qwen 0.529、0.601 GiB/s（需求 1.26）。GPU 側每請求 31–124 ms，期間背景吞吐比 0.13–0.44。輸出位元組和 A0 的 predict_bytes 逐一相同。細節在 `runs/W0_write_cost.md` 的結果節。
+**失敗與異常**: `W0-REPORT` 失敗（exit 1）：`UnboundLocalError: cannot access local variable 'G'`——`w0.py cmd_report` 後面有 `G = np.asarray(g)`，把 guard 的別名 `G` 變成區域變數（S3-GUARD-2 引進的，我的錯）。量測不受影響。修正：五支程式裡 guard 的別名都改成 `GD`；自檢都 PASS；報告在 head node 重跑成功。G-fio 重送（`--from GFIO`）。

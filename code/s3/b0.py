@@ -36,7 +36,7 @@ REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
 import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
-import guard as G                                                 # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
+import guard as GD                                                # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
 
 OUT = os.path.join(REPO, "results", "s3_h200", "b0")
 CHUNK = 512
@@ -465,7 +465,7 @@ def cmd_run(a):
     bgs = BGS[(a.setup, a.model)] if not a.bgs else a.bgs.split(",")
     lo, hi = torch.cuda.Stream.priority_range()
     rid = run_id()
-    gw = G.Timing(a.out)                                          # 開不起來 → 丟錯（量時間的 run 不能在看不到的情況下跑）
+    gw = GD.Timing(a.out)                                          # 開不起來 → 丟錯（量時間的 run 不能在看不到的情況下跑）
     new = not os.path.exists(a.out)
     fo = open(a.out, "a", newline="")
     w = csv.DictWriter(fo, fieldnames=FIELDS)
@@ -524,7 +524,7 @@ def cmd_run(a):
             print(f"[b0] NUMA 結束時的查詢失敗：{ex!r}", flush=True)
         side = NP.save(a.out, rid, **tgt.numa_log)
         print("[b0] NUMA 存在", side, flush=True)
-        G.evict(gw, [a.out, side if isinstance(side, str) else ""])     # 污染 → 這個 run 的 CSV 和 sidecar 搬出 results
+        GD.evict(gw, [a.out, side if isinstance(side, str) else ""])     # 污染 → 這個 run 的 CSV 和 sidecar 搬出 results
 
 
 def start_bgproc(a, spec: str, pct: int):
@@ -819,7 +819,7 @@ def judge_gm11(st: dict) -> dict:
 def cmd_report(a):
     import glob
     paths = sorted(glob.glob(os.path.join(OUT, "raw", "*.csv")))
-    rows, bad = G.drop_contaminated(_rows(paths))
+    rows, bad = GD.drop_contaminated(_rows(paths))
     res = judge(rows)
     doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows),
                excluded_contaminated_runs=bad, **res)

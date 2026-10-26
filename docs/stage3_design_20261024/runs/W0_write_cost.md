@@ -38,3 +38,23 @@
 - **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。
 - **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
 - **影響的 run**：全部（都還沒跑）。
+
+---
+
+## 結果（2026-10-26；job 22279）
+
+- **run_id**：llama `20261026-102851-s3-w0-llama`、qwen `20261026-103153-s3-w0-qwen`（H200，16 核、1 張卡；兩個 guard 都 `CLEAN`、`own_gpu_intruders` 0、`numa_local` yes）；報告 `python code/s3/w0.py report`（head node，run_id `20261026-103416-adhoc`）→ `results/s3_h200/w0/w0_report.json`。
+- **判定：GW0-FAIL（兩個模型）**。CPU 16 核「粗底＋精修」的壓縮速度（中位數，95% CI）：
+
+| 模型 | 需求 | B16＋INT4 | B32＋INT4 |
+|:--|--:|--:|--:|
+| Llama | 3.27 GiB/s | 0.283 [0.280, 0.286] GiB/s | 0.298 [0.292, 0.301] GiB/s |
+| Qwen | 1.26 GiB/s（寬鬆的那一邊，見 §2） | 0.529 [0.518, 0.536] GiB/s | 0.601 [0.588, 0.604] GiB/s |
+
+  σ_rel 0.011–0.017，δ\*＝5%，沒有 2σ > 5% 的格子。差距：Llama 約 11×、Qwen 約 2.1–2.4×。
+- **另報（不判定）**：
+  - GPU 側（另一條 stream）每個 32K 請求的編碼時間（中位數）：Llama 閒時 B16 113.6 ms／B32 87.9 ms／INT4 71.2 ms；和 decode:32:8192 一起時 123.5／98.8／99.7 ms。Qwen 閒時 36.9／30.8／33.7 ms；和背景一起時 43.0／36.4／49.4 ms。
+  - 壓縮的那段時間，背景 decode:32:8192 的吞吐比（÷ 單獨跑）：Llama B16 0.127、B32 0.158、INT4 0.391；Qwen 0.253、0.298、0.442。
+  - CPU 各段（中位數）：Llama B16 粗底 8.93 s、B32 8.22 s、INT4 5.03 s；Qwen 2.77 s、2.39 s、0.47 s（Qwen CPU INT4 的 σ_rel 0.077，單獨看 2σ > 5%；判定用的是組合後的速度，σ 0.015／0.017）。
+  - 輸出位元組（63 塊）和 A0 的 `predict_bytes` 逐一相同：Llama B16 258,048,000、B32 129,024,000、INT4 1,321,205,760；Qwen 112,896,000、56,448,000、578,027,520（共用基底另計，不在每個請求裡）。
+- **含意（照 §2）**：「降級到慢層時才在 CPU 壓縮」在這台不成立 → 要在 GPU→CPU 卸載時就在 GPU 上壓；GPU 側的時間與它對背景的拖慢（上面的吞吐比）是 B 方向要算進去的成本。
