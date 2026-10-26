@@ -302,3 +302,7 @@
 
 **看到的**: 22281（G-M06，`--gres=gpu:4`）排隊原因 `AssocGrpCpuLimit`：這個分區每張卡固定 16 核 → 4 卡＝64 核＝lab 帳號的 CPU 上限（和 hao、chihchung 共用）→ 只有整個帳號都空著時才跑得起來。當時 llama b0 stream 重量（22384）和 13 個品質 job（22418–22430，讓位重送的）都用 afterany 排在它後面；照讓位規則，品質 job 還會一直讓位給這個「準備好但拿不到資源」的 job → 全部停擺。
 **處理**: `scontrol hold 22281`（讓位規則本來就跳過 hold 中的 job）；22384、22418–22430 的依賴拿掉（都是 stage-3 自己的 job）。G-M06 什麼時候跑，待使用者決定（要整個帳號空檔）。
+
+## S3-B0-RUN-llama-b0-stream — llama b0（stream, stream_hi）重量完成（job 22384，2026-10-26 11:4x–12:3x）
+
+**run_id**: `20261026-115242-s3-b0-llama-b0-stream-stream_hi`（閘 llama／b0 先 PASS）。**完整性**: 2016 列（8 背景 × 2 模式 × 21 原語 × 6 次），沒有 NOT_MEASURED；guard `CLEAN`、`own_gpu_intruders` 0、`numa_local` yes、`n_rep` 6；背景釋放後 GPU 已配置約 57 GiB（S3-B0-FAIL-1 的修正有效）。B0／G-M08 的 stream 部分（llama、qwen × b0、m08）全部量完。時間數字還沒看。
