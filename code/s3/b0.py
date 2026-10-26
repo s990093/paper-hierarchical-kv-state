@@ -530,8 +530,9 @@ def cmd_run(a):
                     measure_block(tgt, None, prims, a.reps, seed, rate_fn, solo, stream, w, base)
                 finally:
                     if mode.startswith("mps"):
+                        torch.cuda.synchronize()                    # 自己的工作先做完，再請背景優雅地停（cmd_bgproc 的 SIGTERM 處理）
                         proc.terminate()
-                        proc.wait(60)
+                        proc.wait(120)
                     else:
                         bg.stop()
                         # rate_fn 的預設參數握著 bg：不清掉的話，上一個背景的 KV／CUDA graph 要等下一個背景建好才釋放
@@ -608,12 +609,19 @@ def cmd_bgproc(a):
     sl = bg.solo_rates(MIN_NOISE_REPS, 1.0)
     sr, _ = noise(sl)
     print(f"SOLO {statistics.median(sl)} {getattr(bg, 'tokens_per_step', 0)} {sr}", flush=True)
+    # SIGTERM → 只設旗標：跳出迴圈、等在途的步驟做完（bg.stop 會 join、等 event）、synchronize，再自己結束。
+    # 10/26 22275／22276：主程式在 SIGTERM 直接殺掉背景 process 之後 0.2–0.3 s 出現 fatal GPU error（MPS）→ 不在 graph 還在跑時被殺。
+    import signal
+    stop = {"f": False}
+    signal.signal(signal.SIGTERM, lambda *_: stop.__setitem__("f", True))
     bg.start()
     t_end = time.time() + a.seconds
-    while time.time() < t_end:
+    while time.time() < t_end and not stop["f"]:
         time.sleep(0.25)
         print(f"T {time.perf_counter()} {bg.steps}", flush=True)
     bg.stop()
+    torch.cuda.synchronize()
+    print("STOPPED", flush=True)
 
 
 def cmd_bgcheck(a):

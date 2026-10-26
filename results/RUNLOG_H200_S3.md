@@ -284,3 +284,11 @@
 
 - **G-fio**：run `20261026-104426-s3-gfio`，36 列，guard `CLEAN`。compute node 上 /tmp＝md0 ext4、/work＝md1 ext4（本地，不是 NFS）。本地 NVMe 常數（/tmp 64 MiB 循序 8 執行緒）＝**8.07 GiB/s**（σ 0.018）；NFS 的列照 01 §3 繼續用限速層。4 個格子 2σ > 5%（不是判定用的那格）。細節：`runs/G_fio.md` 的結果節。
 - **G-M12 速度**：runs `20261026-103958-s3-gm12-s-llama`、`20261026-104031-s3-gm12-s-qwen`，各 15 列（5 個位置 × dense／sparse0.1／sparse0.2，每點 6 次），guard 都 `CLEAN`。判定等 G-M12 的品質那一半（gm12q 排在量時間鏈之後）。時間數字還沒看。
+
+## S3-B0-FAIL-3 — qwen b0 MPS（job 22276）：終止背景 process 之後主程式 fatal GPU error（2026-10-26 10:59；已改、重送）
+
+**看到的**: 容量檢查正常（主程式峰值 40.1 GiB、背景另載權重 14.2 GiB）；`decode:128:8192` × mps／mps87／mps75 三個區塊做完（各 126 列），mps75 的最後一列 10:59:15 → 主程式 `proc.terminate()` 終止背景（MPS log：背景 PID 2214985 在 10:59:15.868 退出）→ 10:59:16.060 `Client {PID: 2205735 …} encountered a fatal GPU error`（主程式），在下一個區塊開頭的 `torch.cuda.mem_get_info()` 報出 `CUDA error: an illegal memory access was encountered` → abort（exit 134）。run `20261026-105034-s3-b0-qwen-b0-mps-mps87-mps75-mps50`。前面沒有 OOM。
+**和 22275 一樣的模式**: 22275 也是「背景退出 → 0.3 s 後主程式 fatal」（那次是主程式先 OOM、finally 終止背景）。兩次都在 SIGTERM 直接殺掉背景 process 之後；之前好幾次終止都沒事 → 偶發。
+**判斷（NOT_VERIFIED）**: 背景 process 在 CUDA graph 還在 GPU 上跑時被殺，MPS 下會連累同一張卡上的另一個 client。
+**改法**: `cmd_bgproc` 收到 SIGTERM 只設旗標 → 跳出迴圈 → `bg.stop()`（等在途的步驟）→ `synchronize` → 自己結束（印 STOPPED）；主程式終止背景前先 `synchronize`、`wait` 放寬到 120 s。量法不變。
+**部分輸出**: 搬到 run 目錄（`*.FAILED_RUN`），不進 results，沒有看時間數字。**重送**: qwen b0 MPS 排到鏈尾。22277（llama m08 MPS）已用舊程式在跑；22278 之後的 MPS job 用新程式。
