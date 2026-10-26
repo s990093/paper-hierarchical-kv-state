@@ -385,3 +385,11 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 **產出**: `results/s3_h200/kvs_f0/f0_full_{h200,mi300x}_{llama,qwen}.csv.gz`、`f0_verdict.json`
 **關鍵數字〔模擬〕**: R*＝P5（兩個平台）；Llama：gain > 15% 的格 H200 36（11.1%）、MI300X 38（11.7%）→ (i) 過；gain < −5% 的格 1／4（最差 −19.4%／−20.5%）→ (ii) 不過；(iii) 過 → **ASK**。Qwen 重現同樣的樣子。細節：`runs/F0_follower_sim.md`。
 **失敗與異常**: 全網格的 CSV 每個約 2.2 MB（> 1 MB）→ 改寫成 .csv.gz（`fix(s3-kvs-f0)`：run 寫 .gz、report 兩種都讀）；壓縮後重跑 report 判定相同。
+
+## S3-GM11-REDO — G-M11 四格重量（job 22478，2026-10-26 18:05–18:08）：仍 NOT_DETERMINED
+
+**run_id**: `20261026-180520-s3-gm11-llama`、`20261026-180657-s3-gm11-qwen`；報告 `20261026-180825-adhoc`
+**指令**: `sbatch --job-name=s3-T-gm11redo --time=1:00:00 code/r_h200_s3.sh --part gm11-redo`
+**產出**: `results/s3_h200/b0/gm11/*.csv`（各 48 列）、`results/s3_h200/b0/gm11_report.json`
+**關鍵數字（實測）**: 閒時 dq_int4 σ_rel llama 0.038、qwen 0.102（2σ > 5% → 不判定）；其他三格 σ_rel ≤ 0.003。guard 都 CLEAN。
+**判定**: G-M11 **NOT_DETERMINED**（照偏離 1 事先約定）。閒時 INT4 kernel 在兩次 run 都不穩、有背景時穩；時脈切換的解釋 NOT_VERIFIED。後續選項在 `runs/G_M11_vq.md`。

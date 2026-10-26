@@ -29,3 +29,10 @@
 - **看過什麼之後決定**：看過 B0 報告的 G-M11 結果（NOT_DETERMINED）、四格各自的 σ_rel（上面結果節），以及**閒時 dq_int4 那一格的 6 次**：llama 3.431／2.790／2.770／2.764／3.428／2.723 ms，qwen 2.814／3.399／3.084／2.804／2.821／2.810 ms（分成約 2.76 與 3.43 兩群，**雙峰**，不是單一離群值）。**沒有看** VQ 對 INT4 的比或它的 CI。
 - **改什麼**：另開一個量時間的 run（runner part `gm11-redo`），只量判準的四格（閒／matmul × dq_vq／dq_int4，b0、stream），**每格 12 次**（05 §2.1：量不準就加重複次數），兩個模型；輸出放 `results/s3_h200/b0/gm11/`，**判定只用這個 run 的四格**（σ 要在同一個 allocation 裡算，不和 B0 原本的 6 次合併）；報告 `b0.py report --raw-dir results/s3_h200/b0/gm11 --name gm11_report.json`。
 - **如果還是 2σ > 5%**：照 §2 維持 NOT_DETERMINED、照實回報（雙峰的話加次數不一定會讓 σ 變小）。
+
+### 偏離 1 的結果（2026-10-26 18:05–18:08；job 22478）
+
+- **run_id**：llama `20261026-180520-s3-gm11-llama`、qwen `20261026-180657-s3-gm11-qwen`（各 48 列＝4 格 × 12 次；guard 都 `CLEAN`）→ `results/s3_h200/b0/gm11/`；報告 `b0.py report --raw-dir results/s3_h200/b0/gm11 --name gm11_report.json`（run_id `20261026-180825-adhoc`）。
+- **判定：仍然 NOT_DETERMINED（兩個模型）**。閒時 dq_int4 的 σ_rel：llama **0.038**（2σ＝7.7%）、qwen **0.102**，仍 2σ > 5%；其他三格都穩：dq_vq 閒 0.0022／0.0030、matmul 0.0026／0.0020；dq_int4 matmul 0.0021／0.0013。照偏離 1 的事先約定，維持 NOT_DETERMINED，**沒有看** VQ 對 INT4 的比。
+- **現象（只報告）**：只有「閒時的 INT4 融合 kernel」在兩次獨立的 run、兩個模型都不穩（B0 原本 6 次是雙峰）；有 matmul 背景時同一個 kernel 很穩。一個可能的解釋是閒時 GPU 時脈在兩個狀態之間切換——**NOT_VERIFIED**（沒有量時脈）。
+- **還能怎麼做（待使用者決定，都要另寫偏離）**：(a) 量測時同時記 GPU 時脈（nvidia-smi `clocks.sm`），看雙峰是不是對到時脈；(b) 閒時那一格改用固定時脈（需要權限，可能做不到）；(c) 接受 NOT_DETERMINED，G-M11 這一輪不判。
