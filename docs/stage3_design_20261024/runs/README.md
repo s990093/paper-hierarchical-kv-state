@@ -14,7 +14,7 @@
 | G-M12（品質＋量時間） | [G_M12_sparse_recompute.md](G_M12_sparse_recompute.md) | `code/s3/gm12.py` | `results/s3_h200/gm12/` | 已登記 |
 | G-M11（量時間，併在 B0） | [G_M11_vq.md](G_M11_vq.md) | `code/s3/b0.py`（`dq_vq`） | `results/s3_h200/b0/` | 已登記 |
 | G-M06＋M07（4 卡、量時間） | [G_M06_multipath.md](G_M06_multipath.md) | `code/s3/gm06.py` | `results/s3_h200/gm06/` | 已登記 |
-| W0（量時間） | [W0_write_cost.md](W0_write_cost.md) | `code/s3/w0.py` | `results/s3_h200/w0/` | 已登記 |
+| W0（量時間） | [W0_write_cost.md](W0_write_cost.md) | `code/s3/w0.py` | `results/s3_h200/w0/` | **GW0-FAIL**（llama、qwen；10/26，job 22279） |
 | G-fio（量時間） | [G_fio.md](G_fio.md) | `code/s3/gfio.py` | `results/s3_h200/gfio/` | 已登記 |
 | D0（品質；MiniCPM4.1-8B 原生索引） | [D0_native_index.md](D0_native_index.md) | `code/s3/d0.py`、`code/s3/d0_shim/` | `results/s3_h200/d0/` | 已登記，待冒煙（22307） |
 
