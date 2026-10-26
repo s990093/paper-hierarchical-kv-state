@@ -18,7 +18,7 @@
 | 閘 | 文件 | 程式 | 結果 | 狀態 |
 |:--|:--|:--|:--|:--|
 | T0 | [T0_arrivals.md](T0_arrivals.md) | `code/s3/kvs_t0.py` | `results/s3_h200/kvs_t0/` | **完成**（10/26，run `20261026-140345-s3-kvs-t0`）：單位檢查 PASS（toolagent 0.389） |
-| S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | L128 已送出（job 22455，10/26，排隊中）；其他 3 格等使用者決定 |
+| S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | **4 格都完成**（10/27）：ρ＝1/4 中位數 0.536–0.557，全部 ≤ 0.75；11/17 預篩 **PENDING_A0** |
 | F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 尺準 **PASS**；決定性實驗 **CONTINUE**〔模擬〕（10/26）；全網格等使用者決定 |
 | F0P（F0＋兩個優先級：優先權反轉） | [F0P_priority.md](F0P_priority.md) | `code/s3/kvs_f0p.py`（import `kvs_f0`，不改它） | `results/s3_h200/kvs_f0p/` | **INHERIT-ONLY**〔模擬〕（10/26，H200 head node；run `20261026-190431-s3-kvs-f0p-full`）：反轉大（(E) 58.7%／50.5%），繼承就夠（(X) 9.0%／4.5%）；Qwen 重現；決定性 CSV 和 Mac 的 sha256 相同 |
 | R0（復現 Strata、KVFlow） | [R0_reproduce.md](R0_reproduce.md) | — | — | **計畫，未登記**：先查可行性 |

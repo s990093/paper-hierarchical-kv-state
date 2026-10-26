@@ -445,3 +445,9 @@ python3 code/s3/kvs_f0p.py report
 **錯誤**: run `20261027-023815-s3-d0-build`：`/tmp/hungweilai-s3/d0/src/csrc/cutlass/include/cutlass/cuda_host_adapter.hpp:122:2: error: #else after #else`、`:93: error: the conditional began here`、`:148:2: error: #endif without #if`、`:154:2: error: #endif without #if` → `ERROR: Failed building wheel for infllm_v2`；runner 停在 `D0-BUILD`（exit 2）。
 **原因（已查證）**: infllmv2_cuda_impl `93cf2ec2` 的子模組 `csrc/cutlass`＝`zhangyan-didu/cutlass` branch `infllmv2-cuda13` commit `424c5a03`。那一版的 `include/cutlass/cuda_host_adapter.hpp` 第 103 與 145 行是 `if ((CUDACC_VER_MAJOR > 12) || (CUDACC_VER_MAJOR == 12 && CUDACC_VER_MINOR >= 5))`——少了 `#`、巨集名少了底線（應為 `__CUDACC_VER_MAJOR__`），所以前處理器的 #if／#else／#endif 對不起來。是上游的錯，不是這裡的設定（head node 從 raw.githubusercontent.com 抓同一個 commit 的檔案確認）。
 **處理**: `scontrol hold 22536`（D0 量測，會在同一步失敗）。可行的做法（待使用者決定，都要寫成 D0 偏離）：(a) 編譯前在 job 本地把那兩行改成 `#if ((__CUDACC_VER_MAJOR__ > 12) || (__CUDACC_VER_MAJOR__ == 12 && __CUDACC_VER_MINOR__ >= 5))`（只修語法，不改演算法）；(b) 換一個能編的 infllmv2 commit；(c) D0 這一輪不做。
+
+## S3-KVS-S0（續 2）— S0-2 四格都完成：預篩 PENDING_A0（2026-10-27 04:28）
+
+**run_id**: Q128 `20261027-024744-s3-kvs-s0-Q128-s0`、Q256 `20261027-030441-s3-kvs-s0-Q256-s0`、Q14-256 `20261027-030624-…-s0`／`20261027-030901-…-s1`（L128 見前節）；報告 `20261027-042845-adhoc`
+**指令**: `python3 code/s3/kvs_s0.py report` → `results/s3_h200/kvs_s0/s0_verdict.json`
+**關鍵數字（實測）**: ρ＝1/4 中位數 u2_global／u2_layer：L128 0.540／0.543、Q128 0.556／0.557、Q256 0.544／0.543、Q14-256 0.536／0.538 → 4 格都 ≤ 0.75。預篩 **PENDING_A0**（S0 那一半成立，等 A0 GO／STOP／WEAK）。四格都是「重疊高、答案塊各不相同」（rec_cross_2 0.55–0.63 vs rec_own_2 0.90–0.97）。guard 都 CLEAN。細節：`runs/S0_union.md`。
