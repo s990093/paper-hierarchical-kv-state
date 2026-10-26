@@ -401,3 +401,9 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 **關鍵數字（實測）**: ρ＝1/4 中位數 u2_global **0.540**、u2_layer **0.543** → 不是 STOP-S（> 0.85 才停）→ **CONTINUE**。ov_global 0.921；rec_own_2 0.898 vs rec_cross_2 0.556（重疊主要是不分問題的塊；答案塊各不相同）；rec_union_2＝rec_own_2。細節：`runs/S0_union.md` 結果節。
 **接著送**: Q128（1 片）、Q256（1 片）、Q14-256（2 片；每題約 90 s）——使用者 10/26「都做掉」＋登記 §2 CONTINUE。
 - **送出**（2026-10-26 18:3x）：`sbatch --job-name=s3-kvs-s0-<cell>-<i> --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell <cell> --shard <i/n>` → Q128 0/1 **22516**、Q256 0/1 **22517**、Q14-256 0/2 **22518**、1/2 **22519**（next-icpe 為空，沒加依賴）。四格都跑完後 `kvs_s0.py report` 做 11/17 預篩（要 A0 的判定；A0 還沒判完 → `PENDING_A0`）。
+
+## S3-QUOTA-1 — /work 群組配額碰到上限（2026-10-26 18:53–19:1x）；刪 DL_Lab4 的權重（使用者指示）
+
+**看到的**: `quota -s -g ChihChungHsu`：1523G／1536G（limit）。18:53 A0 TF Q14-256 分片 0（job 22498，run `20261026-181019-s3-a0-tf-Q14-256-s0`）在關輸出檔時 `OSError: [Errno 122] Disk quota exceeded` → FAILED；輸出 `a0_tf_Q14-256_s0.csv.gz` 被截斷（`gzip: unexpected end of file`，可讀 855 行）。19:0x head node 上 `git pull` 也 `fatal: error when closing loose object file: Disk quota exceeded`（ICPE session 跑 `git fsck --connectivity-only` 確認共用物件庫沒壞）。19:01 降到 1520G（群組用量在波動；我們帳號 79 GB，其餘是群組其他人的）。
+**處理**: 先 `scontrol hold` stage-3 排隊中的 17 個 job（避免連環失敗與寫壞的檔）；通知 ICPE session（它沒有 job、沒有寫 /work）。使用者 10/26：「DL_Lab4 刪掉，那個做好了」→「刪掉權重」→ 只刪 `DL_Lab4/runs/` 下 34 個權重檔（`best_ema.pt`、`last.pt`、`swa_cycle*.pt`、`pretrained.pt`；33.35 GiB）；程式、資料、圖、log、npy／npz／pkl（約 16 GiB）、`.venv` 都沒動。之後群組 **1487G**（剩約 49 GB）、我們帳號 44.8 GB。
+**恢復**: 截斷的 `a0_tf_Q14-256_s0.csv.gz` 與同一分片的 `gm04_Q14-256_s0.csv.gz` 搬到 run 目錄（`*.TRUNCATED`、`*.FROM_FAILED_SHARD`，不進 results）；放行 17 個 job；分片 0 重送 → **22527**（從頭做）。
