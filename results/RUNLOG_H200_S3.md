@@ -292,3 +292,8 @@
 **判斷（NOT_VERIFIED）**: 背景 process 在 CUDA graph 還在 GPU 上跑時被殺，MPS 下會連累同一張卡上的另一個 client。
 **改法**: `cmd_bgproc` 收到 SIGTERM 只設旗標 → 跳出迴圈 → `bg.stop()`（等在途的步驟）→ `synchronize` → 自己結束（印 STOPPED）；主程式終止背景前先 `synchronize`、`wait` 放寬到 120 s。量法不變。
 **部分輸出**: 搬到 run 目錄（`*.FAILED_RUN`），不進 results，沒有看時間數字。**重送**: qwen b0 MPS 排到鏈尾。22277（llama m08 MPS）已用舊程式在跑；22278 之後的 MPS job 用新程式。
+
+## S3-B0-RUN-m08-mps — G-M08 的 llama／qwen（mps, mps87, mps75）量完（jobs 22277、22278，2026-10-26 11:01–11:2x）
+
+**run_id**: llama `20261026-110117-s3-b0-llama-m08-mps-mps87-mps75`（22277，終止背景用的還是舊做法，9 次都沒出事）；qwen `20261026-111118-s3-b0-qwen-m08-mps-mps87-mps75`（22278，第一個用優雅停止的 run）。
+**完整性**: llama 324 列（3 背景 × 3 模式 × 6 原語 × 6 次），全部放得下；qwen 342 列：9 格量到（各 36 列），**`decode:6:258048` × mps／mps87／mps75 是 NOT_MEASURED**（B0 偏離 4 的容量檢查：`MPS 背景放不下：背景 process 約 102.9 GiB（權重 14.2＋背景 82.7＋餘量 6）＋主程式還會長 1.4 GiB > 可用 101.1 GiB`）。兩個 guard 都 `CLEAN`、`own_gpu_intruders` 全 0、量到的列 `numa_local` 全 yes（NOT_MEASURED 的列沒有 NUMA 欄位）。主程式峰值：llama 38.3 GiB、qwen 31.5 GiB。時間數字還沒看。
