@@ -20,7 +20,7 @@
 | T0 | [T0_arrivals.md](T0_arrivals.md) | `code/s3/kvs_t0.py` | `results/s3_h200/kvs_t0/` | **完成**（10/26，run `20261026-140345-s3-kvs-t0`）：單位檢查 PASS（toolagent 0.389） |
 | S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | L128 已送出（job 22455，10/26，排隊中）；其他 3 格等使用者決定 |
 | F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 尺準 **PASS**；決定性實驗 **CONTINUE**〔模擬〕（10/26）；全網格等使用者決定 |
-| F0P（F0＋兩個優先級：優先權反轉） | [F0P_priority.md](F0P_priority.md) | `code/s3/kvs_f0p.py`（import `kvs_f0`，不改它） | `results/s3_h200/kvs_f0p/` | **已登記**（10/26），在 Mac 上跑（純 CPU） |
+| F0P（F0＋兩個優先級：優先權反轉） | [F0P_priority.md](F0P_priority.md) | `code/s3/kvs_f0p.py`（import `kvs_f0`，不改它） | `results/s3_h200/kvs_f0p/` | **已登記**（10/26）；偏離 1：改在 **H200 head node** 跑（使用者 10/26「不要在 mac 跑」），Mac 上的決定性 run 作廢、全網格中止；**等 H200 跑** |
 | R0（復現 Strata、KVFlow） | [R0_reproduce.md](R0_reproduce.md) | — | — | **計畫，未登記**：先查可行性 |
 
 ## 3. 共同規則

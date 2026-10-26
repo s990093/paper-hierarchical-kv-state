@@ -175,4 +175,27 @@ python3 code/s3/kvs_f0p.py report                          # 判定表
 
 ## 偏離
 
-（尚無）
+### 偏離 1（2026-10-26T10:45:58Z；決定性實驗已在 Mac 跑完，全網格跑到一半時）
+
+- **改什麼**：§5 原本寫「在 Mac 上跑」。使用者 10/26 指示「不要在 mac 跑」，所以改在 H200 head node 跑。
+  - 做法同 F0：`source code/env_h200.sh`、`TIARA_ALLOW_NO_SLURM=1`、`m7run`。
+  - 由 H200 上的 session 執行；紀錄進 `results/RUNLOG_H200_S3.md` 的 `S3-KVS-F0P` 節。
+- **Mac 上已經發生的事（照實記）**：
+  - 決定性實驗 run `20261026-184009-s3-kvs-f0p-dec` 已經跑完（commit `4c8e670`，自測 141／141 PASS）。
+    - report（run `20261026-184019-s3-kvs-f0p-rep`）的判定是 CONTINUE：12 格的 inv4 全部 > 5%。
+    - **這份輸出作廢**，不進 `results/`。檔案移到 Mac 上那個 run 目錄的 `superseded_results/`（`$HOME/tiara-runs/`），目錄裡有 `SUPERSEDED` 檔。
+    - **撰寫者已經看過這 12 格的數字。**
+  - 全網格 run `20261026-184050-s3-kvs-f0p-full` 跑到一半被中止（`pkill`，Terminated，exit 144）。
+    - 程式只在最後寫 CSV，所以沒有任何全網格輸出，撰寫者也沒有看過任何全網格數字。
+    - run 目錄有 `ABORTED` 檔。
+- **影響**：判準、模型、網格、程式都不變，判定以 H200 的 run 為準。
+- **重現檢查（只報告，不影響判定）**：
+  - 程式是純 Python、固定 seed，H200 重跑決定性實驗應該得到相同的 CSV（`run_id`、`ts` 兩欄除外）。
+  - Mac 那份 72 列去掉這兩欄後的 sha256 是 `b96cf08fcc9b3c2450147b03ab7bc3517da3ce757ff8c18b917fc4a6a5147f8a`。
+  - 在 H200 上用同一個算法算：
+
+```bash
+python3 -c "import csv,hashlib;r=list(csv.DictReader(open('results/s3_h200/kvs_f0p/f0p_decisive_h200_llama.csv')));k=[c for c in r[0] if c not in('run_id','ts')];print(len(r),hashlib.sha256('\n'.join(','.join(x[c] for c in k) for x in r).encode()).hexdigest())"
+```
+
+  - 不同時照實記錄，例如 Python 版本不同、亂數流不同。判定仍用 H200 的數字。
