@@ -356,3 +356,8 @@ env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-kvs-s0-L128-0 --time=4:
 for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-dep --to $t --job 22455; done   # next-icpe 是空的（ICPE 沒有量時間的 job）→ 沒加
 ```
 **排程**: 品質型（TIMING＝0），照讓位規則會排在 stage-3 剩下的 B0 MPS 量時間 job（22453、22454）之後。跑完之後：`python3 code/s3/kvs_s0.py report` → `results/s3_h200/kvs_s0/s0_verdict.json`，判準：L128 的 ρ＝1/4 `u2_global`、`u2_layer` 中位數**都** > 0.85 → STOP-S，否則 CONTINUE。
+
+## S3-B0-RUN-qwen-b0-mps — qwen b0（mps, mps87, mps75, mps50）量完（job 22432，2026-10-26 13:15–14:4x）
+
+**run_id**: `20261026-131551-s3-b0-qwen-b0-mps-mps87-mps75-mps50`（閘 qwen／b0 先 PASS；第一個同時有「優雅停止背景」＋「檢查前清快取」的 B0 run）。**完整性**: 4032 列（8 背景 × 4 模式 × 21 原語 × 6 次），全部放得下、沒有 NOT_MEASURED；guard `CLEAN`、`own_gpu_intruders` 0、`numa_local` yes。終止背景 31 次都沒有 fatal GPU error（S3-B0-FAIL-3 的修正有效）。時間數字還沒看。
+**B0 剩下**: llama b0 MPS（22453）、qwen m08 MPS（22454）；之後 `b0.py report`。
