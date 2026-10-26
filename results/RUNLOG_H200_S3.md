@@ -279,3 +279,8 @@
 **診斷結果**: job 22389（run `20261026-104206-s3-b0-diag` 等，MPS、`CUDA_LAUNCH_BLOCKING=1`、只跑 lr_recon／recompute1）decode:8:8192 與 decode:64:8192 都 `DIAG_EXIT=0` → 沒有重現。回頭看 22275 的完整 stderr：第一個錯誤其實是主程式的 **OOM**（`lr_recon → xl() → torch.cat`：`Tried to allocate 512.00 MiB … Process 2115101 has 60.00 MiB … this process has 59.27 GiB … Process 2115399 has 80.12 GiB`），illegal memory access 是之後冒出來的。背景 process 80.12 GiB＝自己的權重（約 15）＋分頁 KV 64.12 GiB（`step_bytes` 算出 64.12，和 OOM 訊息相同）。
 **處理**: B0 偏離 4（`runs/B0_interference.md`）：MPS 區塊開背景前檢查容量，放不下 → NOT_MEASURED（附原因），不讓整個 run 崩。`b0.py --self-test` 加一項（report 遇到 NOT_MEASURED 的列）PASS。b0.py／bgengine.py 改了 → 下一個 B0 job 會重跑閘。
 **排程**: 放行 22276（qwen b0 MPS）；llama b0 MPS 重送到鏈尾。
+
+## S3-GFIO — G-fio（job 22417，2026-10-26 10:44）＋ G-M12 速度（job 22280，10:39–10:41）
+
+- **G-fio**：run `20261026-104426-s3-gfio`，36 列，guard `CLEAN`。compute node 上 /tmp＝md0 ext4、/work＝md1 ext4（本地，不是 NFS）。本地 NVMe 常數（/tmp 64 MiB 循序 8 執行緒）＝**8.07 GiB/s**（σ 0.018）；NFS 的列照 01 §3 繼續用限速層。4 個格子 2σ > 5%（不是判定用的那格）。細節：`runs/G_fio.md` 的結果節。
+- **G-M12 速度**：runs `20261026-103958-s3-gm12-s-llama`、`20261026-104031-s3-gm12-s-qwen`，各 15 列（5 個位置 × dense／sparse0.1／sparse0.2，每點 6 次），guard 都 `CLEAN`。判定等 G-M12 的品質那一半（gm12q 排在量時間鏈之後）。時間數字還沒看。

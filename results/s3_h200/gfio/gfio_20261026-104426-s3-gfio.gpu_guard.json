@@ -1,0 +1,22 @@
+{
+ "out": "/work/ChihChungHsu/hungweilai/paper-hkv-stage3/results/s3_h200/gfio/gfio_20261026-104426-s3-gfio.csv",
+ "contaminated": false,
+ "gpus": [
+  0
+ ],
+ "watches": [
+  {
+   "gpu": 0,
+   "started_clean": true,
+   "contaminated": false,
+   "verdict": "CLEAN",
+   "intruders": [],
+   "n_dirty_samples": 0,
+   "paused_intervals": [],
+   "discarded_samples_overlapping_pause": 0,
+   "n_smi_failures": 0,
+   "smi_failures": [],
+   "logical_gpu": 0
+  }
+ ]
+}

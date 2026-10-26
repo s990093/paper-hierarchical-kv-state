@@ -1,0 +1,70 @@
+{
+ "run_id": "20261026-104426-s3-gfio",
+ "ts": "2026-10-26T10:47:36+08:00",
+ "fs": [
+  {
+   "dir": "/tmp/hungweilai-s3/gfio",
+   "df_T": "/dev/md0       ext4 1921205408 903829716 919710008  50% /",
+   "findmnt": "/dev/md0 ext4   rw,noatime,nodiratime"
+  },
+  {
+   "dir": "/work/ChihChungHsu/hungweilai/tmp/gfio",
+   "df_T": "/dev/md1       ext4 29884363448 7138059792 21246046172  26% /raid",
+   "findmnt": "/dev/md1 ext4   rw,noatime,nodiratime,quota,usrquota,grpquota,stripe=128"
+  }
+ ],
+ "numa": {
+  "ts": "2026-10-26T10:44:31+08:00",
+  "host": "hgx-cn01",
+  "kernel": "6.8.0-90-generic",
+  "job": {
+   "env": {
+    "SLURM_JOB_ID": "22417",
+    "SLURMD_NODENAME": "hgx-cn01",
+    "SLURM_CPUS_ON_NODE": "16",
+    "SLURM_JOB_GPUS": "0",
+    "CUDA_VISIBLE_DEVICES": "0"
+   },
+   "cpus_allowed": "0-15",
+   "mems_allowed": "0-1",
+   "affinity": "0-15",
+   "node_cpulist": {
+    "0": "0-63",
+    "1": "64-127"
+   },
+   "cpuset_nodes": [
+    0
+   ],
+   "node_mem_gib": {
+    "0": {
+     "MemTotal": 755.65,
+     "MemFree": 62.12,
+     "FilePages": 606.68
+    },
+    "1": {
+     "MemTotal": 755.89,
+     "MemFree": 13.21,
+     "FilePages": 604.26
+    }
+   },
+   "zone_reclaim_mode": "0",
+   "numa_balancing": "1"
+  },
+  "gpus_visible": [
+   {
+    "index": 0,
+    "uuid": "GPU-41fd729e-0e0f-dad2-0f58-59ba3734f5c9",
+    "bus": "0000:03:00.0",
+    "numa_node": 0
+   }
+  ],
+  "buffers": {},
+  "summary": {
+   "gpu_numa": "NOT_AVAILABLE",
+   "cpuset_numa": "0",
+   "buf_numa": "NOT_AVAILABLE",
+   "numa_local": "NOT_AVAILABLE: gpu numa_node=NOT_AVAILABLE: 沒有指定 GPU; 沒有查到任何緩衝頁"
+  },
+  "probe_s": 0.0487
+ }
+}
