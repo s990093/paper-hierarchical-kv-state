@@ -173,6 +173,16 @@ if [[ "$PART" == a0-* ]]; then
   # 生成的冒煙：單輪 1 題＋第 2 輪 1 題（--max-items 照題組的順序，第 2 輪的題在後面 → 用 --shard 讓兩組各出一題）
   [ "$PART" = a0-gensmoke ] && step GENSMOKE-$CELL m7run s3-a0-gensmoke-$CELL bash -c "python code/s3/a0.py gen --cell $CELL --smoke --max-items 2 --shard 0/192 --out \"\$RUN_DIR/smoke_gen.csv.gz\""
   [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET" --gm04
+  # 生成的閘（10/26）：這份程式（a0／a0_gpu 的雜湊）在這一格還沒過生成冒煙 → 先在同一個 job 裡跑一次（2 題、輸出在 run 目錄、不看分數）。
+  # 為什麼不用 job 依賴：冒煙 job 會讓位、重送成新編號，afterok 就斷了（S3-B0-GATE 同一個理由）。失敗 → step 停下（規則 2）。
+  if [ "$PART" = a0-gen ]; then
+    GATES=$TIARA_RUNS/.s3_gates; [ "$DRY" = 1 ] || mkdir -p "$GATES"
+    GSIG=$(cat code/s3/a0.py code/s3/a0_gpu.py | sha256sum | cut -c1-16)
+    if [ ! -f "$GATES/a0gen_${CELL}_$GSIG" ]; then
+      step GENSMOKE-$CELL m7run s3-a0-gensmoke-$CELL bash -c "python code/s3/a0.py gen --cell $CELL --smoke --max-items 2 --shard 0/192 --out \"\$RUN_DIR/smoke_gen.csv.gz\""
+      [ "$DRY" = 1 ] || echo "$(date -Is) job=$SLURM_JOB_ID" > "$GATES/a0gen_${CELL}_$GSIG"
+    fi
+  fi
   [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
 fi
 
@@ -311,6 +321,13 @@ if [ "$PART" = d0-run ]; then
   step MODELS ensure_models minicpm
   step D0-BUILD m7run s3-d0-build bash -c "$(declare -f d0_build); S3_LOCAL=$S3_LOCAL D0_SRC_COMMIT=$D0_SRC_COMMIT DRY=0 d0_build"
   step D0-PYLIBS m7run s3-d0-pylibs bash -c "$(declare -f d0_pylibs); S3_LOCAL=$S3_LOCAL DRY=0 d0_pylibs"
+  # D0 冒煙的閘（10/26；理由同生成的閘）：這份 d0.py＋轉接層還沒過冒煙 → 先跑 P0f 冒煙（輸出在 run 目錄）；失敗 → 停
+  GATES=$TIARA_RUNS/.s3_gates; [ "$DRY" = 1 ] || mkdir -p "$GATES"
+  DSIG=$(cat code/s3/d0.py code/s3/d0_shim/flash_attn/*.py | sha256sum | cut -c1-16)
+  if [ ! -f "$GATES/d0_$DSIG" ]; then
+    step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$REPO/code/s3/d0_shim:$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
+    [ "$DRY" = 1 ] || echo "$(date -Is) job=$SLURM_JOB_ID" > "$GATES/d0_$DSIG"
+  fi
   step D0-RUN-${SHARD%%/*} m7run "s3-d0-run-s${SHARD%%/*}" bash -c "PYTHONPATH=$REPO/code/s3/d0_shim:$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py run --shard $SHARD --budget-min $BUDGET"
 fi
 

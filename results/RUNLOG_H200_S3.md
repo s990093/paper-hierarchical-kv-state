@@ -426,3 +426,8 @@ python3 code/s3/kvs_f0p.py report
 **關鍵數字〔模擬〕**: 決定性 12 格 inv4 0.115～4.140（全部 > 5% → CONTINUE）。全網格 Llama：(E) inv4 > 15% 的格 H200 58.7%、MI300X 50.5% ✓；(X) esc > 5% 的格 9.0%、4.5% ✗ → INHERIT-ONLY。esc > 5% 的格全是 C4（自己重算）、全在 nfs；D4 從沒贏過繼承。ρ_b＝0 的 inv4 都是 0.0（健全檢查過）。細節：`docs/kv_sharing_hiding_20261026/runs/F0P_priority.md` 結果節。
 **重現檢查（只報告）**: 決定性 CSV 去掉 run_id、ts 後的 sha256 和 Mac 那份**相同**（`b96cf08f…f8a`，72 列）。
 **失敗與異常**: 一開始 `git pull` 遇到 /work 群組配額滿（S3-QUOTA-1），配額恢復後重做同步；F0P 本身沒有失敗。
+
+## S3-QUEUE-2 — 把卡在冒煙後面的工作也送進佇列（2026-10-26 19:4x；使用者：「不急，只是把任務送出最大化」）
+
+- runner 的 `a0-gen`、`d0-run` 加冒煙閘（同 S3-B0-GATE 的做法）：這份程式（a0／a0_gpu；d0／d0_shim 的雜湊）在這一格還沒過冒煙 → 先在同一個 job 裡跑（生成：2 題；D0：P0f 冒煙），輸出在 run 目錄、不看分數；過了在 `$TIARA_RUNS/.s3_gates/` 留戳記；失敗 → step 停下。理由：獨立的冒煙 job 會讓位、重送成新編號，afterok 會斷。
+- 送出：A0 生成 L128、Q128 各 4 片（288 題；每片 `--budget-min 210`、可續跑）；D0 量測 1 片（192 題）。原本排隊中的 `a0gensmoke-L128`、`d0prep` 照留（先跑到的那個留戳記，另一個就跳過冒煙）。送出前 `quota -s -g ChihChungHsu` 見下一行。
