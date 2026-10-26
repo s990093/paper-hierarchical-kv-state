@@ -127,3 +127,21 @@ b0 每個模型：stream 兩種約 1 小時、MPS 四種約 2.2 小時；m08 兩
 - **改什麼**（`b0.py run`、`bgengine.step_bytes`）：有 MPS 模式時，量測前先把每個動作跑一次，取得主程式的峰值；每個 MPS 區塊開背景 process 前算「背景 process ≈ 權重＋背景常駐位元組（`step_bytes`，和 ModelStep 同一個算法）＋6 GiB 餘量」，加上「主程式還會長多少（峰值 − 現在）」，大於 `cudaMemGetInfo` 的可用量 → 這個（背景, 模式）的每個動作寫一列 `t_med_s=NOT_MEASURED`、`note` 寫原因，跳過。report 把這些格子列進 `not_measured`（不當成任何一邊的證據）。
 - **影響**：只影響 MPS 的格子；判準不改。照算法，llama b0 的 `decode:64:8192` 在 MPS 下會是 NOT_MEASURED；其他格子放不放得下要看執行時的實際數字（照實記在 `note`）。stream／stream_hi 不受影響。CSV 多一欄 `note`（加在最後）。
 - **補充（2026-10-26 05:0xZ，同一條偏離）**：可用量在 `cudaMemGetInfo` 之前先 `empty_cache()`（PyTorch 快取保留的記憶體不算已用）。22431（llama b0 MPS）用的是沒清的版本，`decode:64:8192` 那時記「可用 61.3 GiB」；清了也放不下（約 139.8 − 56.3 − context ≈ 82 < 85.5），結論相同。之後的 MPS run 用清過的版本。
+
+---
+
+## 結果（2026-10-26；8 個量時間 run，全部 guard CLEAN）
+
+**輸入**（`results/s3_h200/b0/raw/`，12,936 列）：llama b0 stream `20261026-115242-…`、qwen b0 stream `20261026-070828-…`、llama m08 stream `20261026-080412-…`、qwen m08 stream `20261026-084740-…`、llama b0 MPS `20261026-144940-…`、qwen b0 MPS `20261026-131551-…`、llama m08 MPS `20261026-110117-…`、qwen m08 MPS `20261026-161352-…`。每個 run 先過同一份程式的閘；失敗／被取代的 run（S3-B0-FAIL-1～4）都搬出了 results。**報告**：`python code/s3/b0.py report`（head node，run_id `20261026-162611-adhoc`）→ `results/s3_h200/b0/b0_report.json`。
+
+| 判準 | 結果 | 依據 |
+|:--|:--|:--|
+| **GB0-FLIP** | **不成立**（可判定的線上） | 沒有任何像真實服務的背景讓 ≥2 條線的最快計畫翻轉；2 條線因格子 2σ > 5% 跳過（llama cpu × cprefill:2048:65536、qwen cpu × decode:128:8192），那 2 條**未判定** |
+| **GB0-SHARE** | **成立** | 18 格 MPS 比 stream 快 ≥30%、背景吞吐比 ≥0.90、CI 下界也過；最強：llama cprefill:2048:65536 × e2e_load_int4_b32 × mps87 快 4.28×（CI [4.26, 4.29]，背景比 0.980）、llama 同背景 e2e_load_bf16_b32 × mps87 2.35×、qwen cprefill × e2e_load_bf16_b32 × mps75 2.31×（背景比 1.000）、qwen mixed:512:32:8192 × dq_vq × mps87 1.78×；另有 5 格點估計過、CI 沒過（INCONCLUSIVE，不算） |
+| **GB0-STATIC** | **不成立** | 22 個（模型, 動作）裡 20 個的最好 MPS 等級在相鄰一級之內；不成立的只有 **llama dq_vq、qwen dq_vq** |
+| **G-M08** | **STOP** | 45 個（模型, 長 context decode 背景, 共用方式, 計算型動作）全部不過：背景吞吐比 0.33–0.65（要 ≥0.95）；動作速度最高到閒時的 0.763（qwen decode:4:258048 × mps × qprefill） |
+
+- **讀法（§2）**：FLIP 不成立、SHARE 成立 →「**B1 只做『還原給多少 SM』**」，B 不做線上選擇器。STATIC 不成立只因為 dq_vq；其他動作固定預留就夠。G-M08 STOP：「長 context decode 沒有可用的空檔」。
+- **太晃的格子（05 §2.1 第 5 點：只回報）**：379 格 2σ > 5%（集中在 b0 的 stream／MPS 各模式）；這些格子沒有拿來判定，所以報告標 `provisional_because_noisy`。上面三個「成立／不成立」都是在**可判定的格子**上得出的；FLIP 有 2 條線、SHARE 有 266 格因此沒判。
+- **NOT_MEASURED**：llama `decode:64:8192` × 4 種 MPS 等級（84 列；B0 偏離 4 的容量規則：背景 process 85.5 GiB > 可用 82.3 GiB）。
+- **時間數字的使用**：這一節之前沒有看過任何 B0 的時間數字（RUNLOG 各 run 只記完整性）。

@@ -365,3 +365,9 @@ for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-
 ## S3-B0-RUN-llama-b0-mps — llama b0 MPS 重量完成（job 22453，2026-10-26 14:49–16:1x）
 
 **run_id**: `20261026-144940-s3-b0-llama-b0-mps-mps87-mps75-mps50`。**完整性**: 3612 列＝28 個區塊量到（各 126 列）＋`decode:64:8192` × mps／mps87／mps75／mps50 照 B0 偏離 4 寫 NOT_MEASURED（84 列；`背景 process 約 85.1 GiB（權重 15.0＋背景 64.1＋餘量 6）＋主程式還會長 0.4 GiB > 可用 82.3 GiB`——清了快取之後的可用量，和 S3-B0-FAIL-4 估的 ≈82 相符）；guard `CLEAN`、`own_gpu_intruders` 0、量到的列 `numa_local` yes。時間數字還沒看。
+
+## S3-B0 — B0＋G-M08＋G-M11 的判定（2026-10-26 16:2x，head node 報告）
+
+**狀態**: 8 個量時間 run 全部完成（guard 都 CLEAN）；報告 run_id `20261026-162611-adhoc`。
+**指令**: `source code/env_h200.sh; python code/s3/b0.py report` → `results/s3_h200/b0/b0_report.json`
+**判定**: **GB0-FLIP 不成立**（2 條線因太晃未判定）；**GB0-SHARE 成立**（18 格；最強 llama cprefill × e2e_load_int4_b32 × mps87 比 stream 快 4.28×、背景比 0.980）；**GB0-STATIC 不成立**（只有 dq_vq 不是固定等級，20／22 是）；**G-M08 STOP**（45 個候選全不過，背景吞吐比 0.33–0.65）；**G-M11 NOT_DETERMINED**（閒時 dq_int4 σ_rel 0.124／0.086）。讀法：B1 只做「還原給多少 SM」。379 格 2σ > 5% 只回報、不判定；84 列 NOT_MEASURED（llama decode:64 × MPS，容量）。細節：`runs/B0_interference.md`、`runs/G_M11_vq.md` 的結果節。
