@@ -313,3 +313,4 @@
 **原因**: MPS 模式每個區塊結束時只終止背景、沒有 `empty_cache()`（stream 模式有）→ 主程式 PyTorch 快取保留的記憶體一路累積，`cudaMemGetInfo` 把它算成已用；背景 process 也真的拿不到那些記憶體。`decode:64:8192` 那一格清了也放不下（S3-B0-FAIL-2）。
 **修正**: 檢查前先 `empty_cache()`（`ef6f1b4`，B0 偏離 4 的補充）；qwen b0 MPS（22432）已用這一版。
 **處理**: 這個 run 的 CSV／guard／numa 搬到 run 目錄（`*.SUPERSEDED`），不進 results（量到的格子本身沒問題，但和重量混在一起 report 會把兩個 run 的 rep 合在一個格子裡）；沒有看時間數字。llama b0 MPS 重送（afterany:22432）。
+- **同一個問題也影響 qwen m08 MPS（22278）**：`decode:6:258048` 被判放不下時記的「可用 101.1 GiB」也是沒清快取量的；主程式峰值 31.5 GiB → 清了大約有 107 GiB，比要的 104.3 多，很可能其實放得下。這個 run 也搬出 results（`*.SUPERSEDED`）、整個重量（afterany 新的 llama b0 MPS）。llama m08 MPS（22277）每格都放得下、沒有 NOT_MEASURED，保留。
