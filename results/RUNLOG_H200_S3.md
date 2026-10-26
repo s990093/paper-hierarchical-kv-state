@@ -431,3 +431,4 @@ python3 code/s3/kvs_f0p.py report
 
 - runner 的 `a0-gen`、`d0-run` 加冒煙閘（同 S3-B0-GATE 的做法）：這份程式（a0／a0_gpu；d0／d0_shim 的雜湊）在這一格還沒過冒煙 → 先在同一個 job 裡跑（生成：2 題；D0：P0f 冒煙），輸出在 run 目錄、不看分數；過了在 `$TIARA_RUNS/.s3_gates/` 留戳記；失敗 → step 停下。理由：獨立的冒煙 job 會讓位、重送成新編號，afterok 會斷。
 - 送出：A0 生成 L128、Q128 各 4 片（288 題；每片 `--budget-min 210`、可續跑）；D0 量測 1 片（192 題）。原本排隊中的 `a0gensmoke-L128`、`d0prep` 照留（先跑到的那個留戳記，另一個就跳過冒煙）。送出前 `quota -s -g ChihChungHsu` 見下一行。
+- 配額（送出前）：1487G／1536G。job：A0 生成 L128 0–3／4 → **22528–22531**、Q128 0–3／4 → **22532–22535**；D0 量測 0/1 → **22536**（next-icpe 為空，沒加依賴）。佇列裡我們的 job 共 27 個。
