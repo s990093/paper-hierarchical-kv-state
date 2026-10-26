@@ -17,9 +17,9 @@
 
 | 閘 | 文件 | 程式 | 結果 | 狀態 |
 |:--|:--|:--|:--|:--|
-| T0 | [T0_arrivals.md](T0_arrivals.md) | `code/s3/kvs_t0.py` | `results/s3_h200/kvs_t0/` | 已登記；自測 15 項全過、合成 trace 冒煙過；**未跑**（trace 只在 H200） |
-| S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | 已登記（偏離 1）；CPU 自測 22 項全過、runner dry-run 過；**GPU 冒煙未跑** |
-| F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 已登記（偏離 1）；自測 59 項全過（含 F0-CAL (a)：N＝1 時和 m16_mcake 的 Cake 完全相同）；**未跑**（cal、決定性實驗、全網格） |
+| T0 | [T0_arrivals.md](T0_arrivals.md) | `code/s3/kvs_t0.py` | `results/s3_h200/kvs_t0/` | **完成**（10/26，run `20261026-140345-s3-kvs-t0`）：單位檢查 PASS（toolagent 0.389） |
+| S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | L128 已送出（job 22455，10/26，排隊中）；其他 3 格等使用者決定 |
+| F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 尺準 **PASS**；決定性實驗 **CONTINUE**〔模擬〕（10/26）；全網格等使用者決定 |
 | R0（復現 Strata、KVFlow） | [R0_reproduce.md](R0_reproduce.md) | — | — | **計畫，未登記**：先查可行性 |
 
 ## 3. 共同規則

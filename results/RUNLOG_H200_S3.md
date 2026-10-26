@@ -344,3 +344,15 @@ m7run s3-kvs-t0 python3 code/s3/kvs_t0.py run
 **產出**: `results/s3_h200/kvs_t0/t0_summary.csv`（1,546 列）；`$TIARA_RUNS/20261026-140345-s3-kvs-t0/t0_groups_*.json.gz`
 **關鍵數字（實測，trace 統計）**: 單位檢查 toolagent S＝6K w＝±1 s **0.3893**（之後 1 s：0.3400）∈ [0.19, 0.76]；conversation 同設定 0.0000；T0-c 跟隨者比例 toolagent S＝6K 0.340（cpu、nvme）／0.340（nfs），conversation ≤0.0007；T0-d λ·W 中位數全部 ≤0.094。toolagent 群內相鄰間隔 p50＝0.0 s（跟隨者大多和領頭同一個時間戳）。細節：`runs/T0_arrivals.md` 結果節。
 **失敗與異常**: 無（`m7run` 在 head node 用 `TIARA_ALLOW_NO_SLURM=1`，同 S3-KVS-F0）。
+
+## S3-KVS-S0 — S0-2 兩人聯集 u(2)：L128 送出（2026-10-26 14:0x；排隊中）
+
+**狀態**: 排隊中（job **22455**）；Q128、Q256、Q14-256 照使用者指示**先不送**。
+**指令**:
+```bash
+python3 code/s3/kvs_s0.py --self-test                      # 22 項 ALL PASS（head node）
+bash code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1 --dry-run   # MODELS → KVS-S0-SMOKE-L128（1 題冒煙，輸出在 run 目錄）→ KVS-S0-L128-0
+env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1   # → 22455
+for t in $(python3 code/s3/sched.py next-icpe); do python3 code/s3/sched.py add-dep --to $t --job 22455; done   # next-icpe 是空的（ICPE 沒有量時間的 job）→ 沒加
+```
+**排程**: 品質型（TIMING＝0），照讓位規則會排在 stage-3 剩下的 B0 MPS 量時間 job（22453、22454）之後。跑完之後：`python3 code/s3/kvs_s0.py report` → `results/s3_h200/kvs_s0/s0_verdict.json`，判準：L128 的 ρ＝1/4 `u2_global`、`u2_layer` 中位數**都** > 0.85 → STOP-S，否則 CONTINUE。
