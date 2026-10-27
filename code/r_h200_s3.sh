@@ -18,7 +18,7 @@
 #   sbatch --job-name=s3-b0-llama-b0-stream --time=4:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes stream,stream_hi  # 量時間
 #   sbatch --job-name=s3-b0-llama-b0-mps --time=6:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes mps,mps87,mps75,mps50  # 量時間（自動開 MPS）
 #   sbatch --job-name=s3-w0gfio --time=1:00:00 code/r_h200_s3.sh --part w0gfio                    # 量時間：W0（兩個模型）＋G-fio
-#   sbatch --job-name=s3-gm06 --time=1:00:00 --gres=gpu:4 --cpus-per-task=64 --mem=680G code/r_h200_s3.sh --part gm06   # 4 卡、量時間
+#   sbatch --job-name=s3-T-gm06 --time=1:00:00 --gres=gpu:2 code/r_h200_s3.sh --part gm06   # 2 卡（G-M06 偏離 2）、量時間
 #   sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1   # KVS S0-2（品質型；第一次先 1 題冒煙）
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
@@ -356,7 +356,7 @@ fi
 
 # ---- G-M06＋M07（runs/G_M06_multipath.md）：4 卡 job ------------------------------------------------------------
 if [ "$PART" = gm06 ]; then
-  [ "$DRY" = 1 ] || [ "$(python3 -c 'import torch;print(torch.cuda.device_count())')" -ge 4 ] || { echo "[r_h200_s3] gm06 要 4 張卡" >&2; exit 2; }
+  [ "$DRY" = 1 ] || [ "$(python3 -c 'import torch;print(torch.cuda.device_count())')" -ge 2 ] || { echo "[r_h200_s3] gm06 要 ≥2 張卡（偏離 2）" >&2; exit 2; }
   mkdir -p "$S3/gm06"
   step GM06 m7run s3-gm06 python code/s3/gm06.py run --out-dir "$S3/gm06"
   step GM06-REPORT python3 code/s3/gm06.py report

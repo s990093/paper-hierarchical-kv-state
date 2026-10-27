@@ -127,7 +127,8 @@ def s3_timing_target(jobs: dict, me: str) -> list:
             continue
         # 多卡的量時間 job（G-M06 要 4 卡＝整個 lab 帳號）：它一開跑，帳號上限就保證我們沒有別的 job 在跑 → 不需要讓位
         # （10/27 06:xx：G-M06 的排隊原因從 AssocGrpCpuLimit 變成 Resources 時，a0gen-Q128-1 讓位到它後面，S3-SCHED-5）
-        if gpus_of(i) > 1:
+        # G-M06 偏離 2（10/28 改 2 卡）：2 卡的 job 不再保證帳號被佔滿 → 只對 ≥4 卡的 job 不讓位
+        if gpus_of(i) >= 4:
             continue
         unf = [d for _, d, s in parse_dep(dep_of(i)) if s == "unfulfilled"]
         # 只有「等的全是 stage-3 的品質 job」（或什麼都不等）才算準備好了；在等鏈上前一個 s3-T-*、或在等 ICPE 的 → 還沒輪到它
