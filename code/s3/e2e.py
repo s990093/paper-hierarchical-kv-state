@@ -450,7 +450,7 @@ def cmd_report(a):
     for p in sorted(glob.glob(os.path.join(OUT, "raw", "e2e_*.csv"))):
         rows += list(csv.DictReader(open(p)))
     assert rows, "沒有 E2E 的結果"
-    agg = defaultdict(lambda: dict(sum=0.0, n=0, sum_user=0.0, n_user=0, BW=0.0, W=0.0))
+    agg = defaultdict(lambda: dict(sum=0.0, n=0, sum_user=0.0, n_user=0, BW=0.0, W=0.0, p95=[]))
     for r in rows:
         k = (r["model"], r["trace"], r["slow"], int(r["cpu_GiB"]), r["bg"], r["cfg"], r["mode"], r["half"])
         g = agg[k]
@@ -458,8 +458,12 @@ def cmd_report(a):
         if r.get("n_user") not in (None, ""):
             g["sum_user"] += float(r["sum_user"]); g["n_user"] += int(r["n_user"])
         g["BW"] += float(r["B"]) * float(r["W"]); g["W"] += float(r["W"])
+        if r.get("p95") not in (None, ""):
+            g["p95"].append(float(r["p95"]))
+    # P95（只報告，§5）：conversation 是單一重播的 P95；FreeInference 只有每週的 P95（沒有逐請求的列可合併）→ 報各週 P95 的中位數
     val = {k: dict(ttft=(g["sum"] / g["n"] if g["n"] else None), B=(g["BW"] / g["W"] if g["W"] else None),
-                   ttft_user=(g["sum_user"] / g["n_user"] if g["n_user"] else None)) for k, g in agg.items()}
+                   ttft_user=(g["sum_user"] / g["n_user"] if g["n_user"] else None),
+                   p95=(statistics.median(g["p95"]) if g["p95"] else None), n_p95=len(g["p95"])) for k, g in agg.items()}
     cells = [(m, t, s, c, b) for m in MODELS for t in TRACES for s in SLOWS for c in CPUS for b in BGS]
 
     def get(cellk, cfg, mode, half):
@@ -514,6 +518,16 @@ def cmd_report(a):
                    o_share=((k0["ttft"] - k3["ttft"]) / (k0["ttft"] - o["ttft"]) if (k0 and o and k0["ttft"] != o["ttft"]) else None),
                    pass_at_B090=bool(gain > GO_GAIN and Bk3 >= 0.90),
                    ttft_user=dict(K2=k2["ttft_user"], K3=k3["ttft_user"]) if c[1] == "freeinference" else None)
+        # 只報告（§5）：P95 與開發集的數字；不進判定
+        dv = {cfg: get(c, cfg, md, "dev") for cfg, md in (("K0", "stream"), ("K1", "stream"), ("K2", "stream"),
+                                                           ("K3", ms or "stream"), ("O", ms or "stream"))}
+        if ms is None:
+            dv["K3"] = dv["K2"]
+        row.update(p95=dict(kind="replay" if c[1] == "conversation" else "median_of_weekly",
+                            K2=k2["p95"], K3=k3["p95"], K0=k0 and k0["p95"], O=o and o["p95"]),
+                   dev=dict(ttft={x: y and y["ttft"] for x, y in dv.items()}, B={x: y and y["B"] for x, y in dv.items()},
+                            gain_k3_vs_k2=((dv["K2"]["ttft"] - dv["K3"]["ttft"]) / dv["K2"]["ttft"]
+                                           if dv["K2"] and dv["K3"] and dv["K2"]["ttft"] else None)))
         res.append(row)
     if n_nm > GO_CELLS:
         v = "NOT_DETERMINED"
