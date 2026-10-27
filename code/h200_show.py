@@ -485,7 +485,7 @@ def usage_cluster(a, user):
         mine = sum(run.get(a.account, {}).values())
         t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="h200q 佔用（RUNNING＝正在用卡；PENDING＝排隊中的卡數）",
                   title_justify="left", title_style="bold")
-        for col, j in (("lab", "left"), ("user", "left"), ("跑中卡", "right"), ("排隊卡", "right")):
+        for col, j in (("account", "left"), ("user", "left"), ("跑中卡", "right"), ("排隊卡", "right")):
             t.add_column(col, justify=j, no_wrap=True)
         for acct in sorted(set(run) | set(pend), key=lambda x: -sum(run.get(x, {}).values())):
             for u in sorted(set(run.get(acct, {})) | set(pend.get(acct, {}))):
@@ -495,7 +495,7 @@ def usage_cluster(a, user):
         cap = 4
         con.print(Text("  全機 8 張：", "dim") + bar(used / 8, 16) + Text(f" {used}/8 在用，{8 - used} 空", "dim"))
         con.print(Text(f"  {a.account}：", "dim") + bar(mine / cap, 16) + Text(
-            f" {mine}/{cap}（lab 上限）" + ("，已滿，新 job 會排隊" if mine >= cap else ""), "dim"))
+            f" {mine}/{cap}（account 上限）" + ("，已滿，新 job 會排隊" if mine >= cap else ""), "dim"))
     mine_q = slurm_ok("squeue", "-h", "-u", user, "-o", "%i|%j|%T|%M|%b|%R")
     if mine_q is None:
         con.print(Text("  我的 job：squeue 查詢失敗", "bold red"))
@@ -508,23 +508,51 @@ def usage_cluster(a, user):
         for r in rows:
             t.add_row(r[0], r[1], Text(r[2], STATE_STYLE.get(r[2], "")), r[3], str(gpu_count(r[4])), r[5])
         con.print(t if rows else Text("  沒有 job 在跑或排隊", "dim"))
-    sh = slurm_ok("sshare", "-a", "-P", "-n", "-o", "account,user,rawusage,effectvusage,fairshare")
-    if sh is not None:
-        accts = [r.split("|") for r in sh.splitlines() if r.count("|") >= 4 and not r.split("|")[1].strip()]
-        accts = [r for r in accts if r[0].strip() not in ("root", "admin") and num(r[2]) > 0]
-        accts.sort(key=lambda r: -num(r[2]))
-        top = num(accts[0][2]) if accts else 1
-        t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="各 lab 累計用量（RawUsage，有衰減）",
+    # 只看 H200（h200q）：sshare 的 RawUsage 是全叢集（含 H100），所以改從 job 紀錄算 GPU 小時。
+    # 每個 job 依 [Start, End或現在] 與視窗的交集裁切，跨月／還在跑的 job 不會多算。
+    now = dt.datetime.now()
+    wins = (("本月", now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)),
+            ("近7天", now - dt.timedelta(days=7)))
+    sa = slurm_ok("sacct", "-a", "-X", "-n", "-P", "-r", "h200q", "-S", wins[0][1].strftime("%Y-%m-%dT%H:%M:%S")
+                  if wins[0][1] < wins[1][1] else wins[1][1].strftime("%Y-%m-%dT%H:%M:%S"),
+                  "-o", "Account,Start,End,AllocTRES")
+    if sa is None:
+        con.print(Text("  H200 用量：sacct 查詢失敗", "bold red"))
+    else:
+        hrs = {}
+        for ln in sa.splitlines():
+            f = ln.split("|")
+            m = re.search(r"gres/gpu=(\d+)", f[3]) if len(f) > 3 else None
+            if not m or f[1] in ("", "Unknown", "None"):
+                continue
+            try:
+                st = dt.datetime.fromisoformat(f[1])
+                en = dt.datetime.fromisoformat(f[2]) if f[2] not in ("", "Unknown", "None") else now
+            except ValueError:
+                continue
+            for name, w0 in wins:
+                sec = (min(en, now) - max(st, w0)).total_seconds()
+                if sec > 0:
+                    hrs[(f[0], name)] = hrs.get((f[0], name), 0.0) + sec / 3600 * int(m.group(1))
+        accts = sorted({k[0] for k in hrs}, key=lambda x: -hrs.get((x, "本月"), 0))
+        tot = {n: sum(v for (_, nn), v in hrs.items() if nn == n) or 1 for n, _ in wins}
+        top = max((hrs.get((x, "本月"), 0) for x in accts), default=0) or 1
+        t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="H200 用量（GPU 小時；只算 h200q，不含 H100）",
                   title_justify="left", title_style="bold")
-        t.add_column("lab", no_wrap=True)
-        t.add_column("", no_wrap=True)
-        t.add_column("RawUsage", justify="right")
-        t.add_column("占全機", justify="right")
-        for r in accts:
-            t.add_row(r[0].strip(), bar(num(r[2]) / top, 20, "cyan"), f"{int(num(r[2])):,}",
-                      f"{num(r[3]) * 100:.1f}%",
-                      style="bold magenta" if r[0].strip() == a.account else None)
+        t.add_column("account", no_wrap=True)
+        t.add_column("本月", no_wrap=True)
+        t.add_column("", justify="right")
+        t.add_column("占", justify="right")
+        t.add_column("近7天", justify="right")
+        t.add_column("占", justify="right")
+        for x in accts:
+            m_, w_ = hrs.get((x, "本月"), 0), hrs.get((x, "近7天"), 0)
+            t.add_row(x, bar(m_ / top, 20, "cyan"), f"{m_:,.0f}", f"{m_ / tot['本月'] * 100:.0f}%",
+                      f"{w_:,.0f}", f"{w_ / tot['近7天'] * 100:.0f}%",
+                      style="bold magenta" if x == a.account else None)
         con.print(t)
+        con.print(Text(f"  合計：本月 {tot['本月']:,.0f}、近7天 {tot['近7天']:,.0f} GPU 小時"
+                       f"（8 張卡一週上限 {8 * 168:,}）", "dim"))
     # 硬碟：/work 配額是 group 共用，滿了所有寫入都會失敗（Errno 122）
     t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="硬碟", title_justify="left", title_style="bold")
     for col in ("位置", "已用", "上限", "", "備註"):
@@ -562,7 +590,7 @@ def cmd_usage(a):
     tot = next((r for r in rows if not r[1]), None)
     users = sorted((r for r in rows if r[1]), key=lambda r: -num(r[4]))
     top = max((num(r[4]) for r in users), default=0) or 1
-    t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title=f"{a.account} 的用量與 fairshare",
+    t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title=f"{a.account} 內各人的 RawUsage 與 fairshare（全叢集記帳，含 H100）",
               title_justify="left", title_style="bold")
     t.add_column("user", no_wrap=True)
     t.add_column("用量（RawUsage）", no_wrap=True)
@@ -576,7 +604,7 @@ def cmd_usage(a):
                   style="bold magenta" if r[1] == user else None)
     con.print(t)
     if tot:
-        con.print(Text(f"  lab 合計 RawUsage {int(num(tot[4])):,}，占全叢集 {num(tot[5]) * 100:.1f}%"
+        con.print(Text(f"  account 合計 RawUsage {int(num(tot[4])):,}，占全叢集（含 H100）{num(tot[5]) * 100:.1f}%"
                        "（FairShare 越低，排隊優先序越低）", "dim"))
 
 
