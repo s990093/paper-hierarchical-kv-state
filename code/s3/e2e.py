@@ -47,6 +47,8 @@ import x1_gpu as XG  # noqa: E402
 assert PF.PLAT == "h200", "E2E-C 只用 H200 的常數（登記 §1）"
 GiB = XS.GiB
 OUT = os.path.join(REPO, "results", "s3_h200", "e2e")
+if PF.TIER:                                              # ICPE T1（docs/h200/icpe/T1_h200_cpu_tier.md）：CPU 層換 H200 的常數，輸出另放
+    OUT = os.path.join(PF.T1_ROOT, "e2e")
 B0RAW = os.path.join(REPO, "results", "s3_h200", "b0", "raw")
 MODELS = ("llama", "qwen")
 TRACES = ("conversation", "freeinference")

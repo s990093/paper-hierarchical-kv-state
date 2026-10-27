@@ -47,6 +47,16 @@ _RUNS = {
 }
 TIER_PARAMS = os.path.join(REPO, "results", "m7_write_policy_mi300x", "tier_params.json")
 IOWALL = os.path.join(REPO, "results", "m10_tier_mi300x", "iowall.json")
+# T1（docs/h200/icpe/T1_h200_cpu_tier.md，2026-10-28；ICPE 只用 H200）：P3_TIER=h200cpu → CPU 層換成 H200 自己量的（SSD、NFS 照舊），
+# 探索的輸出改到 results/icpe_h200/t1/explore/。沒設＝原本的行為，逐位元不變。
+TIER = os.environ.get("P3_TIER", "")
+if TIER not in ("", "h200cpu"):
+    raise SystemExit(f"P3_TIER={TIER!r}：只接受 h200cpu（或不設）")
+if TIER and PLAT != "h200":
+    raise SystemExit(f"P3_TIER={TIER} 只配 P3_CONST=h200（現在是 {PLAT}）")
+T1_ROOT = os.path.join(REPO, "results", "icpe_h200", "t1")
+if TIER:
+    TIER_PARAMS = os.path.join(T1_ROOT, "tier_params_h200cpu.json")
 
 
 def rdir(mi300x_name, *parts):
@@ -60,7 +70,10 @@ def run(mi300x_run_id):
 
 
 def explore_out(x):
-    """探索的輸出目錄：mi300x＝results/p3_explore/<x>（原本的）；h200＝results/p3_explore_h200/<x>（不覆寫 3090 的結果）。"""
+    """探索的輸出目錄：mi300x＝results/p3_explore/<x>（原本的）；h200＝results/p3_explore_h200/<x>（不覆寫 3090 的結果）；
+    P3_TIER=h200cpu＝results/icpe_h200/t1/explore/<x>（不覆寫 H200 原本的結果）。"""
+    if TIER:
+        return os.path.join(T1_ROOT, "explore", x)
     return os.path.join(REPO, "results", "p3_explore" if PLAT == "mi300x" else "p3_explore_h200", x)
 
 

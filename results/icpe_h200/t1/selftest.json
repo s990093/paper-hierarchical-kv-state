@@ -1,0 +1,209 @@
+{
+ "run_id": "20261028-065511-icpe-t1-selftest",
+ "ts": "2026-10-28T06:55:36+08:00",
+ "ok": true,
+ "checks": [
+  {
+   "check": "1a 沒設：tier_params＝MI300X 的檔",
+   "ok": true,
+   "info": "results/m7_write_policy_mi300x/tier_params.json"
+  },
+  {
+   "check": "1b 沒設：X1 的 cpu＝MI300X 的值",
+   "ok": true,
+   "info": [
+    "35.4159",
+    "35.5482",
+    "1.161"
+   ]
+  },
+  {
+   "check": "1c 沒設：X4 的 cpu＝MI300X 的值",
+   "ok": true,
+   "info": "results/m7_write_policy_mi300x/tier_params.json"
+  },
+  {
+   "check": "1d 沒設：輸出在原本的位置",
+   "ok": true,
+   "info": {
+    "e2e": "results/s3_h200/e2e",
+    "explore_x5": "results/p3_explore_h200/x5",
+    "x1": "results/p3_explore_h200/x1",
+    "x3": "results/p3_explore_h200/x3",
+    "x4": "results/p3_explore_h200/x4"
+   }
+  },
+  {
+   "check": "2a 設了：X1 的 cpu＝新值",
+   "ok": true,
+   "info": [
+    "43.588800000000006",
+    "41.1687",
+    "1.002"
+   ]
+  },
+  {
+   "check": "2b 設了：X1 其他常數不變",
+   "ok": true,
+   "info": null
+  },
+  {
+   "check": "2c 設了：X3 的 cpu＝新值、其他不變",
+   "ok": true,
+   "info": {
+    "llama": "46803117617.97121",
+    "qwen": "46803117617.97121"
+   }
+  },
+  {
+   "check": "2d 設了：X4 的 cpu＝新值、local／nfs 不變",
+   "ok": true,
+   "info": "results/icpe_h200/t1/tier_params_h200cpu.json"
+  },
+  {
+   "check": "2e 設了：E2E 的 cpu＝新值、其他不變",
+   "ok": true,
+   "info": null
+  },
+  {
+   "check": "2f 新檔的 local、nfs、derate 和 MI300X 的逐位元相同",
+   "ok": true,
+   "info": null
+  },
+  {
+   "check": "3 X5 的成本常數設不設開關逐值相同",
+   "ok": true,
+   "info": {
+    "llama": "a49037f148aa18be",
+    "qwen": "1e79c82fe5d1863e"
+   }
+  },
+  {
+   "check": "4 設了：輸出都在 results/icpe_h200/t1/ 底下",
+   "ok": true,
+   "info": {
+    "e2e": "results/icpe_h200/t1/e2e",
+    "explore_x5": "results/icpe_h200/t1/explore/x5",
+    "x1": "results/icpe_h200/t1/explore/x1",
+    "x3": "results/icpe_h200/t1/explore/x3",
+    "x4": "results/icpe_h200/t1/explore/x4"
+   }
+  }
+ ],
+ "dump_off": {
+  "e2e": {
+   "cpu": {
+    "llama": {
+     "k": "1.161",
+     "r": "35.4159",
+     "w": "35.5482"
+    },
+    "qwen": {
+     "k": "1.161",
+     "r": "35.4159",
+     "w": "35.5482"
+    }
+   },
+   "rest": "b61ddb831ea45ff9"
+  },
+  "paths": {
+   "e2e": "results/s3_h200/e2e",
+   "explore_x5": "results/p3_explore_h200/x5",
+   "x1": "results/p3_explore_h200/x1",
+   "x3": "results/p3_explore_h200/x3",
+   "x4": "results/p3_explore_h200/x4"
+  },
+  "tier": "",
+  "tier_params": "results/m7_write_policy_mi300x/tier_params.json",
+  "x1": {
+   "cpu": {
+    "k": "1.161",
+    "r": "35.4159",
+    "w": "35.5482"
+   },
+   "rest": "f3963b4ab79c2dd5"
+  },
+  "x3": {
+   "cpu_Bps": {
+    "llama": "38027533064.6016",
+    "qwen": "38027533064.6016"
+   },
+   "rest": "7870d2d3a91c55b2",
+   "tiers": "6d18c291ebb8a5ed"
+  },
+  "x4": {
+   "cpu": {
+    "c_ms": "0.0",
+    "ell_chunk_ms": "1.7647440838719333",
+    "k_read": "1.161",
+    "read_GiBps": "35.4159",
+    "write_GiBps": "35.5482"
+   },
+   "local": "5f017e4b16c85dce",
+   "nfs": "5bcdaa5da9c9253d",
+   "tier_env": "results/m7_write_policy_mi300x/tier_params.json"
+  },
+  "x5": {
+   "llama": "a49037f148aa18be",
+   "qwen": "1e79c82fe5d1863e"
+  }
+ },
+ "dump_on": {
+  "e2e": {
+   "cpu": {
+    "llama": {
+     "k": "1.002",
+     "r": "43.588800000000006",
+     "w": "41.1687"
+    },
+    "qwen": {
+     "k": "1.002",
+     "r": "43.588800000000006",
+     "w": "41.1687"
+    }
+   },
+   "rest": "b61ddb831ea45ff9"
+  },
+  "paths": {
+   "e2e": "results/icpe_h200/t1/e2e",
+   "explore_x5": "results/icpe_h200/t1/explore/x5",
+   "x1": "results/icpe_h200/t1/explore/x1",
+   "x3": "results/icpe_h200/t1/explore/x3",
+   "x4": "results/icpe_h200/t1/explore/x4"
+  },
+  "tier": "h200cpu",
+  "tier_params": "results/icpe_h200/t1/tier_params_h200cpu.json",
+  "x1": {
+   "cpu": {
+    "k": "1.002",
+    "r": "43.588800000000006",
+    "w": "41.1687"
+   },
+   "rest": "f3963b4ab79c2dd5"
+  },
+  "x3": {
+   "cpu_Bps": {
+    "llama": "46803117617.97121",
+    "qwen": "46803117617.97121"
+   },
+   "rest": "7870d2d3a91c55b2",
+   "tiers": "6d18c291ebb8a5ed"
+  },
+  "x4": {
+   "cpu": {
+    "c_ms": "0.0",
+    "ell_chunk_ms": "1.4338545681459454",
+    "k_read": "1.002",
+    "read_GiBps": "43.588800000000006",
+    "write_GiBps": "41.1687"
+   },
+   "local": "5f017e4b16c85dce",
+   "nfs": "5bcdaa5da9c9253d",
+   "tier_env": "results/icpe_h200/t1/tier_params_h200cpu.json"
+  },
+  "x5": {
+   "llama": "a49037f148aa18be",
+   "qwen": "1e79c82fe5d1863e"
+  }
+ }
+}
