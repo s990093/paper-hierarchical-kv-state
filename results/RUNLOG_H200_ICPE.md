@@ -316,3 +316,15 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 
 ## ICPE 量時間鏈結束（2026-10-26 06:19 +08）
 P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有「待」的列，§F 列出要改寫或加條件的主張。stage3 的 s3-T-* 鏈（22271 起，afterany:21670）現在可以開跑。
+
+---
+
+## ICPE-T1-START — ICPE 改成只用 H200：CPU 層換成 H200 的常數，重跑受影響的模擬（登記 `docs/h200/icpe/T1_h200_cpu_tier.md`，2026-10-27T22:50:34Z，commit a9c11bd）
+
+- **緣由**：使用者 10/28「這個新主張是給 ICPE 只會有一個平台 都h200」「好登記 ok」，層級常數選「只換 CPU 層」（SSD、NFS 維持限速模擬的裝置層）。原本「H200 常數」的模擬，CPU／SSD／NFS 都用 MI300X 的 `tier_params.json`（03 §R2）。
+- **新常數**（`code/icpe/t1.py build`，run `20261028-065334-icpe-t1-build` → `results/icpe_h200/t1/tier_params_h200cpu.json`）：照 `code/m7_params.py` 的規則，用 H200 的 C0 `20261016-061254-m7h-c0` 與 duplex `20261016-061303-m7h-duplex`：cpu 讀 43.5888、寫 41.1687 GiB/s、k_read 1.002（MI300X：35.4159、35.5482、1.161）。local、nfs 逐位元照抄。和登記 §1 的值相同（build 內斷言）。
+- **開關**：`P3_TIER=h200cpu`（`code/p3_platform.py`：TIER_PARAMS 換新檔、`explore_out` 改到 `results/icpe_h200/t1/explore/`；`code/s3/e2e.py` 的輸出改到 `results/icpe_h200/t1/e2e/`）。沒設＝原本的行為。commit e208ca4。
+- **自檢**：`20261028-065511-icpe-t1-selftest` **PASS**（12 項：沒設時讀 MI300X 的值、輸出在原位；設了只有 cpu 改變；X5 的成本常數設不設開關逐值相同 → X5 不重跑；輸出都在 t1 底下）。第一次 `20261028-065354-icpe-t1-selftest` exit 1：只有 2d（X4）不過，原因是自檢的 dump 先 import 了 `x3_restore`（它會載入 `m7_write_policy`，那時 `M7_TIER_PARAMS` 還是 env_h200.sh 的值）；實際的 X4 由 `x4_sim` 當主程式、先設好再 import，不受影響。dump 改成先 import `x4_sim`、runner 也直接 export 新的 `M7_TIER_PARAMS` 當保險。是我的自檢程式的錯，沒有產生模擬數字。
+- **報告程式**：`t1.py report`（commit 8d3eee7），在任何 T1 數字之前寫好；舊對舊測過：0 差異，B1／B2／B3／B4／B7／C1／C2 的 summary 重現 ICPE_EVIDENCE 的值。
+- **compute node**：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1 -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1` → **job 22762**（2026-10-28 07:0x +08 開跑，hgx-cn01；不量時間；ICPE 沒有在等的 job，`sched.py next-icpe` 空；配額 1356G／1536G）。步驟：自檢 → X1 V0／V1／V2（sweep、analyze、H1800、H3600）→ fullsim → X1 FreeInference（前 6 週）→ X3（validate、tables、leads、hide）→ X4（trace、validate、sweep、analyze）。
+- **之後（head node）**：`p12_queue.py`（T1 的 X4）→ `t1.py report`；E2E-C 的 T1 版等現在那份 E2E-C（FreeInference 還在跑）跑完再跑（登記 §6）。
