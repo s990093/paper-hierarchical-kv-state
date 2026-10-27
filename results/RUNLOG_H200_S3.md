@@ -531,3 +531,10 @@ python3 code/s3/kvs_f0p.py report
 **失敗與異常**: 第一次（run `20261028-020046-s3-g9-explore`，exit≠0）是我新寫的程式的筆誤（`A.ROOT` → 應為 `A.REPO`，AttributeError），修正後重跑；不是量測失敗。
 **關鍵數字（代理指標）**: 7.8% 位元組的 `P|B24|1/8|int4` 草稿：TF 逐 token 和 E0 argmax 一致 0.93–0.97（四格）；整段生成和 E0 相同 0.47–0.60。普通 INT4（31%）0.97–0.985／0.67–0.75。完整表見 `lit/L9_g9_speculative_restore.md`。
 **查新（self-review、摘要層級）**: VeriCache（arXiv 2605.17613，2026-05）、Lynx（2607.01831，2026-07）已經做了「壓縮 KV 先生成、完整 KV 到了再驗證、無損」；QuantSpec（ICML 2025）、MASW（2608.30252）同類 → **G9 新意低，不建議當新方向**。
+
+## S3-E2E-DRAFT — 組合策略端到端評估：可行性＋判準草稿（使用者 10/28「好」；沒有跑任何數字）
+
+- 讀程式確認：ICPE 的 X1 模型已經是「CPU BF16＋慢層 INT4＋Cake」，HINT-PF／O-PF 已有（C2）；GPU 忙只有一個合成倍數（2.07），沒有 MPS、沒有背景吞吐。P0-2 的 GPU 重播（job 21655，12 run，3:18:25）只有 GPU 閒。
+- B0 的 MPS 是限制背景 process；`bg_ratio` 的分母是同一個上限下的 solo → SHARE 的 ≥0.90 **不含上限本身的代價**（O9：matmul 限 87% ×1.051、75% ×1.18）。端到端要另算，可以用 B0 每區塊的 `bg_solo_rate` 算，不用新量測。
+- 模擬器需要的 B0 格子：Llama 144／175、Qwen 150／175 過 2σ ≤ 5%（只數格子，沒有看新數值）。
+- 草稿：`docs/stage3_design_20261024/runs/E2E_combo_DRAFT.md`（配置 K0–K3、O；格子；判準待使用者確認；風險；程式 2–4 天、GPU 約 6–7 小時〔估計〕）。
