@@ -77,6 +77,9 @@ allowed-tools: Bash(*), Read, Grep, Glob, Edit, Write, Monitor, SendMessage
 - 微基準（parts）的忙時 H2D 是單塊的 CUDA event 時間，**量不到時間片共用下的等待**（C0-v1 失敗的原因）。
 - 不要原地改正在跑的 runner：寫 `.new` 再 `mv`（bash 邊跑邊讀）。
 - 改 memory 前先讀（ICPE session 也會寫同一個 memory 目錄）。
+- **4 卡的 job（G-M06）＝整個 lab 帳號**：每張卡固定 16 核，4 卡＝64 核＝帳號上限 → 只有帳號全空時才排得上（`AssocGrpCpuLimit`）。別讓別的 job 用 afterany 排在它後面；沒有空檔時先 hold（讓位規則會跳過 hold 中的 job）。
+- **MPS 的背景在另一個 process、自己再載一份權重**：容量要多算一份權重（B0 偏離 4 的檢查）；終止背景要優雅（SIGTERM 只設旗標、等在途步驟做完），硬殺會讓主程式 fatal GPU error（S3-B0-FAIL-3）。
+- **別名別用單一字母**：函式裡任何地方對同名變數賦值，整個函式都會把它當區域變數（S3-W0 的 `G`）。
 
 ## 7. 回報與 commit
 

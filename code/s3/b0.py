@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gc
 import json
 import math
 import os
@@ -35,7 +36,7 @@ REPO = os.path.dirname(CODE)
 sys.path.insert(0, CODE)
 sys.path.insert(0, HERE)
 import numa_probe as NP                                           # noqa: E402（只記錄 NUMA 位置，不進判定）
-import guard as G                                                 # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
+import guard as GD                                                # noqa: E402（量時間的 run 的 GPU 監看，CLAUDE.md §3）
 
 OUT = os.path.join(REPO, "results", "s3_h200", "b0")
 CHUNK = 512
@@ -59,11 +60,12 @@ PRODUCTION = ("h2d_contig", "h2d_perblock", "h2d_batch", "sm_gather_12", "sm_gat
 COMPUTE_PRIMS = ("recompute1", "qprefill", "lr_recon")            # G-M08 的「計算型」還原
 UNIT_BLOCKS = {"b0": 64, "m08": 16}                              # 每個動作處理幾塊（m08 用 16 塊當一個單位）
 MPS_PCTS = (100, 87, 75, 50)
+MPS_MARGIN = 6 << 30                                              # 背景 process 的 CUDA context、activation、graph、MPS server 的餘量
 WINDOW_S = 1.0                                                    # 一次「量」的最短時間窗（背景吞吐要夠多步才準）
 FIELDS = ["run_id", "ts", "model", "setup", "ctx_tokens", "bg", "bg_tokens_per_step", "mode", "prim", "production", "rep",
           "order_idx", "n_exec", "t_med_s", "t_p95_s", "t_min_s", "t_window_s", "bg_steps", "bg_rate", "bg_solo_rate", "bg_ratio",
           "n_rep", "sigma_rel", "delta_star", "p95_sigma_rel", "p95_delta_star", "bg_solo_sigma_rel", "bg_delta_star",
-          "unit_blocks", "bytes", "seed", "gpu_mem_gib", "host_level", "own_gpu_intruders"] + NP.ROW_FIELDS
+          "unit_blocks", "bytes", "seed", "gpu_mem_gib", "host_level", "own_gpu_intruders", "note"] + NP.ROW_FIELDS
 NM = "NOT_MEASURED"
 MIN_NOISE_REPS = 6                                                # 05 §2.1：σ 要 ≥6 次
 N_BOOT = 10000
@@ -464,18 +466,46 @@ def cmd_run(a):
     bgs = BGS[(a.setup, a.model)] if not a.bgs else a.bgs.split(",")
     lo, hi = torch.cuda.Stream.priority_range()
     rid = run_id()
-    gw = G.Timing(a.out)                                          # 開不起來 → 丟錯（量時間的 run 不能在看不到的情況下跑）
+    gw = GD.Timing(a.out)                                          # 開不起來 → 丟錯（量時間的 run 不能在看不到的情況下跑）
     new = not os.path.exists(a.out)
     fo = open(a.out, "a", newline="")
     w = csv.DictWriter(fo, fieldnames=FIELDS)
     if new:
         w.writeheader()
+    # MPS：背景在另一個 process、自己載一份權重 → 先把每個動作跑一次，拿到主程式的峰值，之後每個區塊開背景前檢查放不放得下
+    # （10/26 22275：llama decode:64:8192 的背景 process 80.12 GiB＋主程式 59.27 GiB > 139.79 GiB → OOM）
+    mps_fit = None
+    if any(m.startswith("mps") for m in a.modes.split(",")):
+        with torch.cuda.stream(torch.cuda.Stream(device=tgt.km.device)):
+            for prim in prims:
+                tgt.run(prim)
+        torch.cuda.synchronize()
+        mps_fit = dict(main_peak=torch.cuda.max_memory_allocated(),
+                       weights=sum(p.numel() * p.element_size() for p in tgt.km.hf.parameters()))
+        print(f"[b0] MPS：主程式峰值 {mps_fit['main_peak'] / 2**30:.1f} GiB、背景要另載的權重 {mps_fit['weights'] / 2**30:.1f} GiB", flush=True)
     try:
         modes = a.modes.split(",")
         for bi, bgspec in enumerate(plan_order(bgs, a.seed)):            # 背景的順序也隨機
             for mode in modes:
                 seed = a.seed * 1000 + bi * 10 + modes.index(mode)
                 if mode.startswith("mps"):
+                    from bgengine import step_bytes
+                    need = mps_fit["weights"] + step_bytes(tgt.km, bgspec) + MPS_MARGIN
+                    grow = max(0, mps_fit["main_peak"] - torch.cuda.memory_allocated())
+                    torch.cuda.empty_cache()                    # 快取保留的不算已用（10/26 22431：沒清時「可用」少算約 20 GiB）
+                    free = torch.cuda.mem_get_info()[0]
+                    if need + grow > free:
+                        note = (f"MPS 背景放不下：背景 process 約 {need / 2**30:.1f} GiB（權重 {mps_fit['weights'] / 2**30:.1f}＋背景 "
+                                f"{step_bytes(tgt.km, bgspec) / 2**30:.1f}＋餘量 {MPS_MARGIN / 2**30:.0f}）＋主程式還會長 {grow / 2**30:.1f} GiB "
+                                f"> 可用 {free / 2**30:.1f} GiB")
+                        print(f"[b0] {bgspec} × {mode}：NOT_MEASURED（{note}）", flush=True)
+                        for prim in prims:
+                            w.writerow({f: v for f, v in dict(run_id=rid, ts=ts(), model=a.model, setup=a.setup, ctx_tokens=tgt.nb * CHUNK,
+                                                               bg=bgspec, mode=mode, prim=prim, t_med_s=NM, n_rep=0, sigma_rel=NM,
+                                                               delta_star=NM, seed=seed, note=note, host_level=host_level(),
+                                                               own_gpu_intruders=gw.status()).items()})
+                        fo.flush()
+                        continue
                     pct = int(mode[3:] or 100)
                     proc, rate_fn, solo, tps, bsr = start_bgproc(a, bgspec, pct)
                     bds = round(max(0.05, 2 * bsr), 6) if isinstance(bsr, float) else NM
@@ -501,12 +531,18 @@ def cmd_run(a):
                     measure_block(tgt, None, prims, a.reps, seed, rate_fn, solo, stream, w, base)
                 finally:
                     if mode.startswith("mps"):
+                        torch.cuda.synchronize()                    # 自己的工作先做完，再請背景優雅地停（cmd_bgproc 的 SIGTERM 處理）
                         proc.terminate()
-                        proc.wait(60)
+                        proc.wait(120)
                     else:
                         bg.stop()
+                        # rate_fn 的預設參數握著 bg：不清掉的話，上一個背景的 KV／CUDA graph 要等下一個背景建好才釋放
+                        # （10/26 22271：decode:64:8192 要 64 GiB 時，這個 process 已經用了 123.76 GiB → OOM）
+                        rate_fn = None
                         del bg
+                        gc.collect()
                         torch.cuda.empty_cache()
+                        print(f"[b0] 背景釋放後 GPU 已配置 {torch.cuda.memory_allocated() / 2**30:.1f} GiB", flush=True)
                 fo.flush()
                 print(f"[b0] {bgspec} × {mode} 做完（solo {solo:.2f} 步/s）", flush=True)
     finally:
@@ -518,7 +554,7 @@ def cmd_run(a):
             print(f"[b0] NUMA 結束時的查詢失敗：{ex!r}", flush=True)
         side = NP.save(a.out, rid, **tgt.numa_log)
         print("[b0] NUMA 存在", side, flush=True)
-        G.evict(gw, [a.out, side if isinstance(side, str) else ""])     # 污染 → 這個 run 的 CSV 和 sidecar 搬出 results
+        GD.evict(gw, [a.out, side if isinstance(side, str) else ""])     # 污染 → 這個 run 的 CSV 和 sidecar 搬出 results
 
 
 def start_bgproc(a, spec: str, pct: int):
@@ -574,12 +610,19 @@ def cmd_bgproc(a):
     sl = bg.solo_rates(MIN_NOISE_REPS, 1.0)
     sr, _ = noise(sl)
     print(f"SOLO {statistics.median(sl)} {getattr(bg, 'tokens_per_step', 0)} {sr}", flush=True)
+    # SIGTERM → 只設旗標：跳出迴圈、等在途的步驟做完（bg.stop 會 join、等 event）、synchronize，再自己結束。
+    # 10/26 22275／22276：主程式在 SIGTERM 直接殺掉背景 process 之後 0.2–0.3 s 出現 fatal GPU error（MPS）→ 不在 graph 還在跑時被殺。
+    import signal
+    stop = {"f": False}
+    signal.signal(signal.SIGTERM, lambda *_: stop.__setitem__("f", True))
     bg.start()
     t_end = time.time() + a.seconds
-    while time.time() < t_end:
+    while time.time() < t_end and not stop["f"]:
         time.sleep(0.25)
         print(f"T {time.perf_counter()} {bg.steps}", flush=True)
     bg.stop()
+    torch.cuda.synchronize()
+    print("STOPPED", flush=True)
 
 
 def cmd_bgcheck(a):
@@ -654,6 +697,8 @@ def cell_stats(rows) -> dict:
     """(model, setup, bg, mode, prim) → 每個 rep 的時間（t_med_s）、中位數、σ、δ*、背景吞吐比的每個 rep、背景的 δ*。"""
     g = {}
     for r in rows:
+        if r.get("t_med_s") == NM:                                # 量不到的格子（例：MPS 放不下）→ judge 另外列進 not_measured
+            continue
         k = (r["model"], r["setup"], r["bg"], r["mode"], r["prim"])
         g.setdefault(k, []).append(r)
     out = {}
@@ -675,7 +720,8 @@ def judge(rows) -> dict:
     st = cell_stats(rows)
     res = dict(flip=[], share=[], static={}, m08=[], skipped=[],
                noisy=[list(k) for k, v in st.items() if v["noisy"] or v["bg_noisy"]],
-               not_measured=[list(k) for k, v in st.items() if v["ds"] == NM])
+               not_measured=[list(k) for k, v in st.items() if v["ds"] == NM]
+               + sorted({(r["model"], r["setup"], r["bg"], r["mode"], r["prim"]) for r in rows if r.get("t_med_s") == NM}))
 
     def usable(*cells):
         return all(c is not None and c["ds"] != NM and not c["noisy"] for c in cells)
@@ -812,13 +858,14 @@ def judge_gm11(st: dict) -> dict:
 
 def cmd_report(a):
     import glob
-    paths = sorted(glob.glob(os.path.join(OUT, "raw", "*.csv")))
-    rows, bad = G.drop_contaminated(_rows(paths))
+    raw = getattr(a, "raw_dir", "") or os.path.join(OUT, "raw")
+    paths = sorted(glob.glob(os.path.join(raw, "*.csv")))
+    rows, bad = GD.drop_contaminated(_rows(paths))
     res = judge(rows)
     doc = dict(run_id=run_id(), ts=ts(), inputs=[os.path.relpath(p, REPO) for p in paths], n_rows=len(rows),
                excluded_contaminated_runs=bad, **res)
     os.makedirs(OUT, exist_ok=True)
-    json.dump(doc, open(os.path.join(OUT, "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
+    json.dump(doc, open(os.path.join(OUT, getattr(a, "name", "") or "b0_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
     print(json.dumps({k: doc[k] for k in ("GB0_FLIP", "GB0_SHARE", "GB0_STATIC", "G_M08", "n_rows", "provisional_because_noisy")}
                      | {"G_M11": doc["G_M11"].get("verdict")},
                      ensure_ascii=False), f"noisy={len(doc['noisy'])} not_measured={len(doc['not_measured'])} skipped={len(doc['skipped'])}")
@@ -874,6 +921,14 @@ def self_test() -> bool:
             rows5.append(dict(model=m, setup="m08", bg="decode:4:129024", mode="stream", prim="recompute1", t_med_s=str(1.4),
                               bg_ratio=str(br), bg_delta_star="0.05"))
     chk(f"G-M08 點估計過、CI 上界超過 δ* → {judge(rows5)['G_M08']}", judge(rows5)["G_M08"] == "INCONCLUSIVE")
+    nm_rows = rows + [dict(model="llama", setup="b0", bg="decode:64:8192", mode="mps", prim=pr, t_med_s=NM, bg_ratio="", bg_delta_star=NM)
+                      for pr in ("recompute1", "h2d_batch")]
+    try:
+        rn = judge(nm_rows)
+        chk("NOT_MEASURED 的列（MPS 放不下）：report 不出錯、列進 not_measured",
+            ["llama", "b0", "decode:64:8192", "mps", "recompute1"] in [list(x) for x in rn["not_measured"]])
+    except Exception as ex:                                       # noqa: BLE001
+        chk(f"NOT_MEASURED 的列：report 出錯 {ex!r}", False)
     print("self-test", "PASS" if ok else "FAIL")
     return ok
 
@@ -902,7 +957,9 @@ def main():
     s.add_argument("--model", choices=list(INFO), required=True)
     s.add_argument("--spec", required=True)
     s.add_argument("--seconds", type=float, default=3600)
-    sub.add_parser("report")
+    s = sub.add_parser("report")
+    s.add_argument("--raw-dir", default="", help="讀哪個目錄的 CSV（預設 results/s3_h200/b0/raw）；G-M11 重量用 results/s3_h200/b0/gm11")
+    s.add_argument("--name", default="b0_report.json")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)

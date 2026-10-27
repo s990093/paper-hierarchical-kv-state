@@ -22,7 +22,7 @@ import time
 from datetime import datetime
 
 import numa_probe as NP                          # 只記錄：job 的 cpuset 與這個 job 的卡在哪個 NUMA 節點（gfio 不用 pinned 記憶體）
-import guard as G                                # 量時間的 run 的 GPU 監看（CLAUDE.md §3）
+import guard as GD                               # 量時間的 run 的 GPU 監看（CLAUDE.md §3）
 
 FIELDS = ["run_id", "ts", "dir", "fs", "pattern", "io_bytes", "threads", "total_bytes", "t_s", "gibps", "iops", "file_gib",
           "n_rep", "sigma_rel", "delta_star", "gibps_reps", "own_gpu_intruders"]
@@ -123,7 +123,7 @@ def cmd_run(a):
     if gibs is None:
         raise SystemExit(f"--dir {len(a.dir)} 個、--gib {len(a.gib)} 個：要一對一")
     tots = a.total_gib if a.total_gib and len(a.total_gib) == len(a.dir) else [4.0] * len(a.dir)
-    gw = G.Timing(a.out)
+    gw = GD.Timing(a.out)
     for d, gib, tot_gib in zip(a.dir, gibs, tots):
         os.makedirs(d, exist_ok=True)
         fi = fs_info(d)

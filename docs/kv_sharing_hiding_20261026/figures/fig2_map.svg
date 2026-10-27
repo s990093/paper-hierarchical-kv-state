@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="660" viewBox="0 0 960 660" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="660" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 2　三向交集的地圖：機制都被做了，策略還開著</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">只列代表作；位置依 lit/L1–L4 讀原文的結果（self-review）。右框是本次查不到前作的策略問題（查不到 ≠ 沒有）</text>
+
+<circle cx="330" cy="270" r="170" fill="#1F4E79" fill-opacity="0.08" stroke="#1F4E79" stroke-width="1.5"/>
+<circle cx="530" cy="270" r="170" fill="#E07B24" fill-opacity="0.08" stroke="#E07B24" stroke-width="1.5"/>
+<circle cx="430" cy="430" r="170" fill="#6A9F58" fill-opacity="0.08" stroke="#6A9F58" stroke-width="1.5"/>
+
+<text x="150" y="104" font-size="15" font-weight="600" fill="#1F4E79" text-anchor="middle">共享</text>
+<text x="150" y="122" font-size="11.5" fill="#1F4E79" text-anchor="middle">（避免工作）</text>
+<text x="712" y="104" font-size="15" font-weight="600" fill="#A3561A" text-anchor="middle">隱藏延遲</text>
+<text x="430" y="630" font-size="15" font-weight="600" fill="#3B6E2F" text-anchor="middle">排程</text>
+
+<g font-size="11.5" fill="#2C2C2A" text-anchor="middle">
+<text x="235" y="222">vLLM APC</text>
+<text x="235" y="239">SGLang Radix</text>
+<text x="235" y="256">LMCache</text>
+<text x="235" y="273">KVCOMM（非前綴）</text>
+</g>
+<g font-size="11.5" fill="#2C2C2A" text-anchor="middle">
+<text x="628" y="222">Cake</text>
+<text x="628" y="239">逐層管線</text>
+<text x="628" y="256">InfiniGen、ShadowKV</text>
+<text x="628" y="273">SwiftCache（借 HBM）</text>
+</g>
+<g font-size="11.5" fill="#2C2C2A" text-anchor="middle">
+<text x="430" y="545">Sarathi-Serve、DistServe</text>
+<text x="430" y="562">VTC、HRRN</text>
+</g>
+<g font-size="11" fill="#2C2C2A" text-anchor="middle">
+<text x="430" y="202">CacheBlend</text>
+<text x="430" y="218">RAGCache</text>
+<text x="430" y="234">TokenLake</text>
+</g>
+<g font-size="11" fill="#2C2C2A" text-anchor="middle">
+<text x="330" y="372">PEEK、Feather</text>
+<text x="330" y="388">Preble、DLPM</text>
+<text x="330" y="404">SGLang LPM</text>
+<text x="330" y="420" fill="#5F5E5A">（只看 GPU）</text>
+</g>
+<g font-size="11" fill="#2C2C2A" text-anchor="middle">
+<text x="530" y="372">vLLM 非同步載入</text>
+<text x="530" y="388">Cascade、Bidaw</text>
+<text x="530" y="404">TempoKV、ConServe</text>
+<text x="530" y="420">Cache-Craft、PCR</text>
+</g>
+
+<rect x="376" y="276" width="108" height="66" rx="6" fill="#ffffff" stroke="#C0504D" stroke-width="1.5"/>
+<text x="430" y="296" font-size="13" font-weight="600" fill="#C0504D" text-anchor="middle">Strata</text>
+<text x="430" y="313" font-size="13" font-weight="600" fill="#C0504D" text-anchor="middle">KVFlow</text>
+<text x="430" y="332" font-size="9.5" fill="#5F5E5A" text-anchor="middle">＋引擎的延後去重</text>
+
+<rect x="722" y="140" width="220" height="440" rx="8" fill="#FBF6EE" stroke="#A3561A" stroke-dasharray="6,4"/>
+<text x="832" y="166" font-size="14" font-weight="600" fill="#A3561A" text-anchor="middle">還開著（策略層）</text>
+<g font-size="11.5" fill="#2C2C2A">
+<text x="736" y="196" font-weight="600">O1 跟隨者怎麼辦</text>
+<text x="736" y="213" fill="#5F5E5A">等／再載一次／自己重算</text>
+<text x="736" y="229" fill="#5F5E5A">依人數、剩餘時間、κ</text>
+<text x="736" y="257" font-weight="600">O2 人數 × 下層成本排序</text>
+<text x="736" y="274" fill="#5F5E5A">PEEK 只看 GPU</text>
+<text x="736" y="302" font-weight="600">O3 刻意等更多共享者</text>
+<text x="736" y="319" fill="#5F5E5A">VoD batching 的 KV 版</text>
+<text x="736" y="347" font-weight="600">O5 挑頁的聯集</text>
+<text x="736" y="364" fill="#5F5E5A">多人問同一份文件時</text>
+<text x="736" y="380" fill="#5F5E5A">聯集大小沒人量過</text>
+<text x="736" y="408" font-weight="600">O7 誰付取回成本</text>
+<text x="736" y="425" fill="#5F5E5A">非共享者會不會被餓死</text>
+<text x="736" y="453" font-weight="600">O8 跨硬體會不會翻轉</text>
+<text x="736" y="470" fill="#5F5E5A">所有前作只在 NVIDIA</text>
+<text x="736" y="504" fill="#A3561A">O4 一起 decode、O6 NVLink</text>
+<text x="736" y="520" fill="#A3561A">扇出：威脅中或有反證，</text>
+<text x="736" y="536" fill="#A3561A">先停放（見 03）</text>
+</g>
+</svg>

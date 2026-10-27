@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="600" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 1　同一個情境的四種做法：誰少等了</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">共享文件 P（Llama-3.1-8B、128K，KV 16 GiB）平時在 SSD；U1 先來問 P，U2 稍後也來問 P；U3、U4 在做別的生成。示意圖，長度不按比例</text>
+
+<!-- legend -->
+<rect x="200" y="68" width="14" height="12" fill="#1F4E79"/><text x="219" y="79" font-size="11.5" fill="#2C2C2A">I/O 搬 P</text>
+<rect x="290" y="68" width="14" height="12" fill="#E07B24"/><text x="309" y="79" font-size="11.5" fill="#2C2C2A">GPU 重算 P</text>
+<rect x="390" y="68" width="14" height="12" fill="#8FAADC"/><text x="409" y="79" font-size="11.5" fill="#2C2C2A">U1／U2 的問題</text>
+<rect x="510" y="68" width="14" height="12" fill="#6A9F58"/><text x="529" y="79" font-size="11.5" fill="#2C2C2A">U3、U4 的生成</text>
+<rect x="630" y="68" width="14" height="12" fill="#E5E5E2" stroke="#BDBDB8"/><text x="649" y="79" font-size="11.5" fill="#2C2C2A">GPU 閒著</text>
+<line x1="40" y1="92" x2="920" y2="92" stroke="#D9D9D6"/>
+<text x="700" y="108" font-size="12" font-weight="600" fill="#5F5E5A">誰少等了</text>
+
+<!-- arrival markers (shared x positions) -->
+<!-- x(t)=366 at U1 arrival, 407 at U2 arrival -->
+
+<!-- Row A: baseline -->
+<text x="40" y="130" font-size="14" font-weight="600" fill="#2C2C2A">基準</text>
+<text x="40" y="148" font-size="11.5" fill="#5F5E5A">同步搬、各搬各的</text>
+<text x="190" y="133" font-size="11" fill="#5F5E5A">I/O</text>
+<text x="190" y="157" font-size="11" fill="#5F5E5A">GPU</text>
+<rect x="366" y="120" width="205" height="18" fill="#1F4E79"/><text x="468" y="133" font-size="11" fill="#ffffff" text-anchor="middle">搬 P（給 U1）</text>
+<rect x="571" y="120" width="105" height="18" fill="#1F4E79" opacity="0.75"/><text x="623" y="133" font-size="11" fill="#ffffff" text-anchor="middle">再搬一次（U2）→</text>
+<rect x="366" y="144" width="205" height="18" fill="#E5E5E2" stroke="#BDBDB8"/><text x="468" y="157" font-size="11" fill="#5F5E5A" text-anchor="middle">閒（等搬完）</text>
+<rect x="571" y="144" width="27" height="18" fill="#8FAADC"/><text x="584" y="157" font-size="10" fill="#1F4E79" text-anchor="middle">U1</text>
+<rect x="598" y="144" width="78" height="18" fill="#E5E5E2" stroke="#BDBDB8"/><text x="637" y="157" font-size="10.5" fill="#5F5E5A" text-anchor="middle">閒 →</text>
+<path d="M366,114 l-5,-8 h10 z" fill="#2C2C2A"/><text x="366" y="103" font-size="10.5" fill="#2C2C2A" text-anchor="middle">U1 到</text>
+<path d="M407,114 l-5,-8 h10 z" fill="#2C2C2A"/><text x="414" y="103" font-size="10.5" fill="#2C2C2A" text-anchor="start">U2 到</text>
+<text x="700" y="133" font-size="12" fill="#C0504D">沒有人</text>
+<text x="700" y="151" font-size="11" fill="#5F5E5A">U2 等最久；U3、U4 也被卡住</text>
+<line x1="40" y1="176" x2="920" y2="176" stroke="#EDEDEA"/>
+
+<!-- Row B: reduction -->
+<text x="40" y="208" font-size="14" font-weight="600" fill="#2C2C2A">降低延遲</text>
+<text x="40" y="226" font-size="11.5" fill="#5F5E5A">Cake、壓縮、更快的搬法</text>
+<text x="190" y="211" font-size="11" fill="#5F5E5A">I/O</text>
+<text x="190" y="235" font-size="11" fill="#5F5E5A">GPU</text>
+<rect x="366" y="198" width="102" height="18" fill="#1F4E79"/><text x="417" y="211" font-size="11" fill="#ffffff" text-anchor="middle">搬後段</text>
+<rect x="468" y="198" width="102" height="18" fill="#1F4E79" opacity="0.75"/><text x="519" y="211" font-size="11" fill="#ffffff" text-anchor="middle">搬後段（U2）</text>
+<rect x="366" y="222" width="102" height="18" fill="#E07B24"/><text x="417" y="235" font-size="11" fill="#ffffff" text-anchor="middle">重算前段</text>
+<rect x="468" y="222" width="27" height="18" fill="#8FAADC"/><text x="481" y="235" font-size="10" fill="#1F4E79" text-anchor="middle">U1</text>
+<rect x="495" y="222" width="75" height="18" fill="#E07B24" opacity="0.75"/><text x="532" y="235" font-size="10.5" fill="#ffffff" text-anchor="middle">重算（U2）</text>
+<rect x="570" y="222" width="27" height="18" fill="#8FAADC"/><text x="583" y="235" font-size="10" fill="#1F4E79" text-anchor="middle">U2</text>
+<text x="700" y="211" font-size="12" fill="#2C2C2A">U1、U2 都少等</text>
+<text x="700" y="229" font-size="11" fill="#5F5E5A">但 P 還是搬了兩次</text>
+<line x1="40" y1="254" x2="920" y2="254" stroke="#EDEDEA"/>
+
+<!-- Row C: avoidance -->
+<text x="40" y="286" font-size="14" font-weight="600" fill="#2C2C2A">避免工作</text>
+<text x="40" y="304" font-size="11.5" fill="#5F5E5A">U2 掛在進行中的搬運上</text>
+<text x="190" y="289" font-size="11" fill="#5F5E5A">I/O</text>
+<text x="190" y="313" font-size="11" fill="#5F5E5A">GPU</text>
+<rect x="366" y="276" width="205" height="18" fill="#1F4E79"/><text x="468" y="289" font-size="11" fill="#ffffff" text-anchor="middle">搬 P 一次（U1、U2 共用）</text>
+<rect x="366" y="300" width="205" height="18" fill="#E5E5E2" stroke="#BDBDB8"/><text x="468" y="313" font-size="11" fill="#5F5E5A" text-anchor="middle">閒（等搬完）</text>
+<rect x="571" y="300" width="44" height="18" fill="#8FAADC"/><text x="593" y="313" font-size="10" fill="#1F4E79" text-anchor="middle">U1＋U2</text>
+<path d="M407,262 C407,270 412,272 420,276" fill="none" stroke="#C0504D" stroke-width="1.5"/><text x="420" y="268" font-size="10.5" fill="#C0504D">U2 掛上去</text>
+<text x="700" y="289" font-size="12" fill="#2C2C2A">U2 少等很多</text>
+<text x="700" y="307" font-size="11" fill="#5F5E5A">U1 不變；GPU 還是閒著</text>
+<line x1="40" y1="332" x2="920" y2="332" stroke="#EDEDEA"/>
+
+<!-- Row D: hiding -->
+<text x="40" y="364" font-size="14" font-weight="600" fill="#2C2C2A">隱藏延遲</text>
+<text x="40" y="382" font-size="11.5" fill="#5F5E5A">搬的時候 GPU 先做別人的</text>
+<text x="190" y="367" font-size="11" fill="#5F5E5A">I/O</text>
+<text x="190" y="391" font-size="11" fill="#5F5E5A">GPU</text>
+<rect x="366" y="354" width="205" height="18" fill="#1F4E79"/><text x="468" y="367" font-size="11" fill="#ffffff" text-anchor="middle">搬 P</text>
+<rect x="366" y="378" width="205" height="18" fill="#6A9F58"/><text x="468" y="391" font-size="11" fill="#ffffff" text-anchor="middle">U3、U4 的生成</text>
+<rect x="571" y="378" width="44" height="18" fill="#8FAADC"/><text x="593" y="391" font-size="10" fill="#1F4E79" text-anchor="middle">U1＋U2</text>
+<text x="700" y="367" font-size="12" fill="#2C2C2A">U3、U4、整體吞吐</text>
+<text x="700" y="385" font-size="11" fill="#C0504D">U1 的等待沒有變短</text>
+<line x1="40" y1="410" x2="920" y2="410" stroke="#EDEDEA"/>
+
+<!-- Row E: speculation -->
+<text x="40" y="442" font-size="14" font-weight="600" fill="#2C2C2A">預先做</text>
+<text x="40" y="460" font-size="11.5" fill="#5F5E5A">U1 還在打字就開始搬</text>
+<text x="190" y="445" font-size="11" fill="#5F5E5A">I/O</text>
+<text x="190" y="469" font-size="11" fill="#5F5E5A">GPU</text>
+<rect x="257" y="432" width="205" height="18" fill="#1F4E79" opacity="0.6" stroke="#1F4E79" stroke-dasharray="4,3"/><text x="359" y="445" font-size="11" fill="#ffffff" text-anchor="middle">先搬 P（猜 U1 會問）</text>
+<rect x="462" y="456" width="27" height="18" fill="#8FAADC"/><text x="475" y="469" font-size="10" fill="#1F4E79" text-anchor="middle">U1</text>
+<line x1="366" y1="452" x2="366" y2="480" stroke="#2C2C2A" stroke-dasharray="2,2"/><text x="370" y="486" font-size="10" fill="#2C2C2A">U1 送出</text>
+<text x="700" y="445" font-size="12" fill="#2C2C2A">U1 少等</text>
+<text x="700" y="463" font-size="11" fill="#5F5E5A">猜錯就白搬，還擠到別人</text>
+<line x1="40" y1="498" x2="920" y2="498" stroke="#D9D9D6"/>
+
+<!-- footer -->
+<text x="40" y="526" font-size="12.5" font-weight="600" fill="#2C2C2A">三者一起（本資料夾要查的）：</text>
+<text x="40" y="546" font-size="12" fill="#2C2C2A">排程器同時知道誰共用 P、P 在哪一層、還要多久才到、有幾個人在等 P、GPU 現在還能做什麼，</text>
+<text x="40" y="566" font-size="12" fill="#2C2C2A">再決定：誰先跑、要不要等更多人、P 用什麼方式拿回、拿回後留多久。</text>
+<text x="40" y="586" font-size="11" fill="#5F5E5A">要讓「U1 自己」少等，只有兩條路：自己的工作和自己的等待重疊（逐層管線、Cake），或少拿（只拿需要的部分、不重複拿）。</text>
+</svg>

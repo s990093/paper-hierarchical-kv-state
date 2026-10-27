@@ -19,6 +19,7 @@
 #   sbatch --job-name=s3-b0-llama-b0-mps --time=6:00:00 code/r_h200_s3.sh --part b0-run --model llama --setup b0 --modes mps,mps87,mps75,mps50  # 量時間（自動開 MPS）
 #   sbatch --job-name=s3-w0gfio --time=1:00:00 code/r_h200_s3.sh --part w0gfio                    # 量時間：W0（兩個模型）＋G-fio
 #   sbatch --job-name=s3-gm06 --time=1:00:00 --gres=gpu:4 --cpus-per-task=64 --mem=680G code/r_h200_s3.sh --part gm06   # 4 卡、量時間
+#   sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1   # KVS S0-2（品質型；第一次先 1 題冒煙）
 #   bash code/r_h200_s3.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 排程（使用者 2026-10-25「排滿：stage3 品質先填空檔」，memory stage3-gpu-scheduling）：
@@ -60,14 +61,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run) TIMING=0 ;;
-  b0-run|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06" >&2; exit 2 ;;
+  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run|kvs-s0) TIMING=0 ;;
+  b0-run|b0-diag|gm11-redo|w0gfio|gm12-s|gm06) TIMING=1 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|gm11-redo|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06|kvs-s0" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
 fi
-case "$PART" in a0-*|gm12-q) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
+case "$PART" in a0-*|gm12-q|kvs-s0) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
 ICPE_TIMING_RE='^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$'     # r_h200_icpe.sh 裡 TIMING=1 的 part
 
 # 模型權重：本地 /tmp（code/s3/fetch_models.py）。env_h200.sh 的 M7_*_GLOB 用 ${HF_HOME}，所以先設 HF_HOME
@@ -172,7 +173,33 @@ if [[ "$PART" == a0-* ]]; then
   # 生成的冒煙：單輪 1 題＋第 2 輪 1 題（--max-items 照題組的順序，第 2 輪的題在後面 → 用 --shard 讓兩組各出一題）
   [ "$PART" = a0-gensmoke ] && step GENSMOKE-$CELL m7run s3-a0-gensmoke-$CELL bash -c "python code/s3/a0.py gen --cell $CELL --smoke --max-items 2 --shard 0/192 --out \"\$RUN_DIR/smoke_gen.csv.gz\""
   [ "$PART" = a0-tf ] && step TF-$CELL-$SI m7run s3-a0-tf-$CELL-s$SI python code/s3/a0.py tf --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET" --gm04
+  # 生成的閘（10/26）：這份程式（a0／a0_gpu 的雜湊）在這一格還沒過生成冒煙 → 先在同一個 job 裡跑一次（2 題、輸出在 run 目錄、不看分數）。
+  # 為什麼不用 job 依賴：冒煙 job 會讓位、重送成新編號，afterok 就斷了（S3-B0-GATE 同一個理由）。失敗 → step 停下（規則 2）。
+  if [ "$PART" = a0-gen ]; then
+    GATES=$TIARA_RUNS/.s3_gates; [ "$DRY" = 1 ] || mkdir -p "$GATES"
+    GSIG=$(cat code/s3/a0.py code/s3/a0_gpu.py | sha256sum | cut -c1-16)
+    if [ ! -f "$GATES/a0gen_${CELL}_$GSIG" ]; then
+      step GENSMOKE-$CELL m7run s3-a0-gensmoke-$CELL bash -c "python code/s3/a0.py gen --cell $CELL --smoke --max-items 2 --shard 0/192 --out \"\$RUN_DIR/smoke_gen.csv.gz\""
+      [ "$DRY" = 1 ] || echo "$(date -Is) job=$SLURM_JOB_ID" > "$GATES/a0gen_${CELL}_$GSIG"
+    fi
+  fi
   [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+fi
+
+# ---- KVS S0-2（docs/kv_sharing_hiding_20261026/runs/S0_union.md）：兩個使用者挑的塊的聯集（品質型，不量時間）----------
+# 重用 A0 的題目與打分（不改 A0）。這份程式（kvs_s0／a0_gpu／a0 的雜湊）在這一格還沒冒煙過 → 先跑 1 題冒煙（輸出在 run 目錄、不看分數）。
+if [ "$PART" = kvs-s0 ]; then
+  M=$(python3 -c "import sys; sys.path.insert(0, 'code/s3'); import a0; print(a0.CELLS[sys.argv[1]]['model'])" "$CELL") \
+    || { echo "[r_h200_s3] 不認得的 --cell $CELL" >&2; exit 2; }
+  SI=${SHARD%%/*}
+  step MODELS ensure_models "$M"
+  GATES=$TIARA_RUNS/.s3_gates; [ "$DRY" = 1 ] || mkdir -p "$GATES"
+  S0SIG=$(cat code/s3/kvs_s0.py code/s3/a0_gpu.py code/s3/a0.py | sha256sum | cut -c1-16)
+  if [ ! -f "$GATES/kvs_s0_${CELL}_$S0SIG" ]; then
+    step KVS-S0-SMOKE-$CELL m7run s3-kvs-s0-smoke-$CELL bash -c "python code/s3/kvs_s0.py run --cell $CELL --smoke --max-items 1 --out \"\$RUN_DIR/smoke_s0.csv.gz\""
+    [ "$DRY" = 1 ] || echo "$(date -Is) job=$SLURM_JOB_ID" > "$GATES/kvs_s0_${CELL}_$S0SIG"
+  fi
+  step KVS-S0-$CELL-$SI m7run s3-kvs-s0-$CELL-s$SI python code/s3/kvs_s0.py run --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
 fi
 
 # ---- B0＋G-M08（docs/stage3_design_20261024/runs/B0_interference.md）---------------------------------------
@@ -216,6 +243,30 @@ if [ "$PART" = b0-run ]; then
   mkdir -p "$S3/b0/raw"
   TAG=$(echo "$MODES" | tr ',' '-')
   step B0-RUN m7run "s3-b0-$MODEL-$SETUP-$TAG" bash -c "python code/s3/b0.py run --model $MODEL --setup $SETUP --modes $MODES --reps 6 --seed 1 --out $S3/b0/raw/b0_${MODEL}_${SETUP}_${TAG}_\$RUN_ID.csv"
+fi
+
+# ---- B0 MPS 的診斷（S3-B0-FAIL-2：22275 在 MPS 下 lr_recon 時 illegal memory access）：輸出只在 run 目錄、不進 results
+# 每個背景各跑一次（CUDA_LAUNCH_BLOCKING=1 定位 kernel；背景小／大對照），各自記 exit code，第一個失敗也照樣跑第二個
+if [ "$PART" = b0-diag ]; then
+  step MODELS ensure_models llama
+  step CALIB-llama ensure_calib llama
+  step MPS-ON mps_on
+  for bg in decode:8:8192 decode:64:8192; do
+    step "B0-DIAG-${bg//:/_}" m7run s3-b0-diag bash -c "CUDA_LAUNCH_BLOCKING=1 python code/s3/b0.py run --model llama --setup b0 --modes mps --bgs $bg --prims lr_recon,recompute1 --reps 6 --seed 7 --out \"\$RUN_DIR/diag.csv\"; echo DIAG_EXIT=\$?"
+  done
+fi
+
+# ---- G-M11 重量（runs/G_M11_vq.md 偏離 1；使用者 10/26「都做掉」）：只量判準的四格（閒／matmul × dq_vq／dq_int4，b0、stream），
+# 每格 12 次、兩個模型；輸出放 results/s3_h200/b0/gm11/（不進 B0 的 raw，判定只用這個 run 的四格）
+if [ "$PART" = gm11-redo ]; then
+  step MODELS ensure_models llama qwen
+  step CALIB-llama ensure_calib llama
+  step CALIB-qwen ensure_calib qwen
+  mkdir -p "$S3/b0/gm11"
+  for m in llama qwen; do
+    step GM11-$m m7run s3-gm11-$m bash -c "python code/s3/b0.py run --model $m --setup b0 --modes stream --bgs idle,matmul --prims dq_vq,dq_int4 --reps 12 --seed 11 --out $S3/b0/gm11/b0_gm11_${m}_\$RUN_ID.csv"
+  done
+  step GM11-REPORT python3 code/s3/b0.py report --raw-dir "$S3/b0/gm11" --name gm11_report.json
 fi
 
 # ---- G-M12（runs/G_M12_sparse_recompute.md）-----------------------------------------------------------------
@@ -270,6 +321,13 @@ if [ "$PART" = d0-run ]; then
   step MODELS ensure_models minicpm
   step D0-BUILD m7run s3-d0-build bash -c "$(declare -f d0_build); S3_LOCAL=$S3_LOCAL D0_SRC_COMMIT=$D0_SRC_COMMIT DRY=0 d0_build"
   step D0-PYLIBS m7run s3-d0-pylibs bash -c "$(declare -f d0_pylibs); S3_LOCAL=$S3_LOCAL DRY=0 d0_pylibs"
+  # D0 冒煙的閘（10/26；理由同生成的閘）：這份 d0.py＋轉接層還沒過冒煙 → 先跑 P0f 冒煙（輸出在 run 目錄）；失敗 → 停
+  GATES=$TIARA_RUNS/.s3_gates; [ "$DRY" = 1 ] || mkdir -p "$GATES"
+  DSIG=$(cat code/s3/d0.py code/s3/d0_shim/flash_attn/*.py | sha256sum | cut -c1-16)
+  if [ ! -f "$GATES/d0_$DSIG" ]; then
+    step D0-SMOKE m7run s3-d0-smoke bash -c "PYTHONPATH=$REPO/code/s3/d0_shim:$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py smoke --out \"\$RUN_DIR/d0_smoke.json\""
+    [ "$DRY" = 1 ] || echo "$(date -Is) job=$SLURM_JOB_ID" > "$GATES/d0_$DSIG"
+  fi
   step D0-RUN-${SHARD%%/*} m7run "s3-d0-run-s${SHARD%%/*}" bash -c "PYTHONPATH=$REPO/code/s3/d0_shim:$S3_LOCAL/d0/pylibs:\$PYTHONPATH python code/s3/d0.py run --shard $SHARD --budget-min $BUDGET"
 fi
 

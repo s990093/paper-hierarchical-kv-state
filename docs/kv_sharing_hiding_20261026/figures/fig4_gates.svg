@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="470" fill="#ffffff"/>
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#5F5E5A"/></marker></defs>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 4　三道閘：先用 CPU 和既有數據，再用 GPU</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">判準都是草案，要在看到數字前登記（commit＋date -u）。灰框＝只用 CPU；藍框＝要 GPU</text>
+
+<!-- column labels -->
+<text x="130" y="88" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">現在–11/2（ICPE 優先）</text>
+<text x="430" y="88" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">11/3–11/16</text>
+<text x="680" y="88" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">11/17 判定</text>
+<text x="860" y="88" font-size="13" font-weight="600" fill="#5F5E5A" text-anchor="middle">之後</text>
+<line x1="40" y1="98" x2="920" y2="98" stroke="#D9D9D6"/>
+
+<!-- row A: union -->
+<text x="40" y="130" font-size="13" font-weight="600" fill="#1F4E79">候選 A</text>
+<text x="40" y="147" font-size="11" fill="#5F5E5A">多人共用縮圖</text>
+<rect x="110" y="116" width="150" height="56" rx="6" fill="#F2F2F0" stroke="#A6A6A6"/>
+<text x="185" y="138" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">S0-1 既有 C1a</text>
+<text x="185" y="157" font-size="11" fill="#5F5E5A" text-anchor="middle">K＝2、32K（已可算）</text>
+<rect x="340" y="116" width="180" height="56" rx="6" fill="#EAF0F8" stroke="#1F4E79"/>
+<text x="430" y="138" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">S0-2 獨立小 job</text>
+<text x="430" y="157" font-size="11" fill="#5F5E5A" text-anchor="middle">K＝2、128K／256K，2–5 GPU 時</text>
+<rect x="600" y="116" width="160" height="56" rx="6" fill="#ffffff" stroke="#2C2C2A"/>
+<text x="680" y="138" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">A0 GO 且 u(2) ≤ 0.75？</text>
+<text x="680" y="157" font-size="11" fill="#5F5E5A" text-anchor="middle">A0 STOP → A 一起停</text>
+<rect x="800" y="116" width="120" height="56" rx="6" fill="#EAF0F8" stroke="#1F4E79"/>
+<text x="860" y="138" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">S0-3</text>
+<text x="860" y="157" font-size="11" fill="#5F5E5A" text-anchor="middle">K≤8、真實資料</text>
+<path d="M260,144 L336,144" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a)"/>
+<path d="M520,144 L596,144" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a)"/>
+<path d="M760,144 L796,144" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a)"/>
+
+<!-- row T0 -->
+<text x="40" y="232" font-size="13" font-weight="600" fill="#5F5E5A">輔助</text>
+<text x="40" y="249" font-size="11" fill="#5F5E5A">到達型態</text>
+<rect x="110" y="218" width="150" height="56" rx="6" fill="#F2F2F0" stroke="#A6A6A6"/>
+<text x="185" y="240" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">T0 Mooncake trace</text>
+<text x="185" y="259" font-size="11" fill="#5F5E5A" text-anchor="middle">共享者間隔、等待人數</text>
+<path d="M185,274 L185,300 L336,320" stroke="#5F5E5A" stroke-width="1.4" fill="none" marker-end="url(#a)"/>
+<text x="250" y="300" font-size="10.5" fill="#5F5E5A">到達參數</text>
+
+<!-- row B: follower -->
+<text x="40" y="334" font-size="13" font-weight="600" fill="#A3561A">候選 B</text>
+<text x="40" y="351" font-size="11" fill="#5F5E5A">等／載／算</text>
+<rect x="110" y="320" width="150" height="56" rx="6" fill="#F2F2F0" stroke="#A6A6A6"/>
+<text x="185" y="342" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">寫 F0 模擬器</text>
+<text x="185" y="361" font-size="11" fill="#5F5E5A" text-anchor="middle">擴充 m16_mcake</text>
+<rect x="340" y="320" width="180" height="56" rx="6" fill="#F2F2F0" stroke="#A6A6A6"/>
+<text x="430" y="342" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">F0 跑 P0–P6</text>
+<text x="430" y="361" font-size="11" fill="#5F5E5A" text-anchor="middle">H200、MI300X 常數</text>
+<rect x="600" y="320" width="160" height="56" rx="6" fill="#ffffff" stroke="#2C2C2A"/>
+<text x="680" y="342" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">P5 贏 &gt;15%</text>
+<text x="680" y="361" font-size="11" fill="#5F5E5A" text-anchor="middle">而且固定規則會翻轉？</text>
+<rect x="800" y="320" width="120" height="56" rx="6" fill="#EAF0F8" stroke="#1F4E79"/>
+<text x="860" y="342" font-size="12" font-weight="600" fill="#2C2C2A" text-anchor="middle">F1</text>
+<text x="860" y="361" font-size="11" fill="#5F5E5A" text-anchor="middle">H200 vLLM 重現</text>
+<path d="M260,348 L336,348" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a)"/>
+<path d="M520,348 L596,348" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a)"/>
+<path d="M760,348 L796,348" stroke="#5F5E5A" stroke-width="1.4" marker-end="url(#a)"/>
+
+<line x1="40" y1="400" x2="920" y2="400" stroke="#D9D9D6"/>
+<text x="40" y="424" font-size="12" fill="#2C2C2A">停損：&gt;15% GO、5–15% 停下來問人、&lt;5% STOP（CLAUDE.md §7）。F0 另加「沒有翻轉就 STOP」：只找到一條固定的好規則是工程，不是研究。</text>
+<text x="40" y="446" font-size="12" fill="#2C2C2A">S0：11/17 先用 u(2) ≤ 0.75 預篩；S0-3 之後 u(4) ≤ 0.60 GO、≥ 0.85 STOP。u(K)＝K 個人挑到的塊的聯集 ÷ (K × 每人挑的塊數)。</text>
+</svg>

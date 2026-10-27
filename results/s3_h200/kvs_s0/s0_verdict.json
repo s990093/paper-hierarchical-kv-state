@@ -1,0 +1,36 @@
+{
+ "medians": {
+  "L128": {
+   "n_items": 96,
+   "u2_global": 0.539683,
+   "u2_layer": 0.5432790000000001
+  },
+  "Q128": {
+   "n_items": 96,
+   "u2_global": 0.555556,
+   "u2_layer": 0.5571145
+  },
+  "Q14-256": {
+   "n_items": 96,
+   "u2_global": 0.535714,
+   "u2_layer": 0.538401
+  },
+  "Q256": {
+   "n_items": 96,
+   "u2_global": 0.543651,
+   "u2_layer": 0.5430135
+  }
+ },
+ "a0": "NOT_MEASURED",
+ "decisive": "CONTINUE",
+ "cells_le_075": [
+  "L128",
+  "Q128",
+  "Q256",
+  "Q14-256"
+ ],
+ "prescreen": "PENDING_A0",
+ "run_id": "20261027-042845-adhoc",
+ "ts": "2026-10-27T04:28:45+08:00",
+ "n_rows": 1152
+}

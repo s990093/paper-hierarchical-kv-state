@@ -1,0 +1,68 @@
+{
+ "run_id": "20261026-103416-adhoc",
+ "ts": "2026-10-26T10:34:16+08:00",
+ "cells": {
+  "llama": {
+   "demand_gibps": 3.2679738562091503,
+   "demand_src": "RUNLOG_H200.md R2-C6：vLLM 0.28 冷 prefill 32K 1.224 s",
+   "by_base": {
+    "B16": {
+     "gibps_median": 0.2825621238256104,
+     "ci": [
+      0.28012530083971243,
+      0.28628619260552063
+     ],
+     "n_rep": 6,
+     "sigma_rel": 0.010507,
+     "delta_star": 0.05,
+     "verdict": "GW0_FAIL"
+    },
+    "B32": {
+     "gibps_median": 0.29837096714454325,
+     "ci": [
+      0.29245912262888496,
+      0.3009225783723515
+     ],
+     "n_rep": 6,
+     "sigma_rel": 0.013569,
+     "delta_star": 0.05,
+     "verdict": "GW0_FAIL"
+    }
+   }
+  },
+  "qwen": {
+   "demand_gibps": 1.2559207693411798,
+   "demand_src": "ICPE P0-1 S1：harness fa3 calib-f Σ64＝1.3934 s（vLLM 的 Qwen prefill 在 H200 沒量過）",
+   "by_base": {
+    "B16": {
+     "gibps_median": 0.5289478864332939,
+     "ci": [
+      0.5184574371624697,
+      0.5356178334111821
+     ],
+     "n_rep": 6,
+     "sigma_rel": 0.014837,
+     "delta_star": 0.05,
+     "verdict": "GW0_FAIL"
+    },
+    "B32": {
+     "gibps_median": 0.6006269919095355,
+     "ci": [
+      0.5883009168295326,
+      0.6040659253934175
+     ],
+     "n_rep": 6,
+     "sigma_rel": 0.01679,
+     "delta_star": 0.05,
+     "verdict": "GW0_FAIL"
+    }
+   }
+  }
+ },
+ "verdict": {
+  "llama": "GW0_FAIL",
+  "qwen": "GW0_FAIL"
+ },
+ "noisy": [],
+ "excluded_contaminated_runs": []
+}

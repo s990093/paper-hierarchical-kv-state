@@ -131,6 +131,29 @@ class HbmStep:
         return self.b
 
 
+def step_bytes(km, spec: str) -> int:
+    """這個背景常駐的 GPU 位元組（KV／緩衝；不含 activation、CUDA graph、CUDA context）。和 ModelStep／MatmulStep／HbmStep
+    同一個算法，只算不配置——B0 的 MPS 模式開背景 process 之前，用來判斷放不放得下（10/26 22275）。"""
+    p = spec.split(":")
+    if p[0] == "idle":
+        return 0
+    if p[0] == "matmul":
+        return 3 * 4096 * 4096 * 2
+    if p[0] == "hbm":
+        return 2 * (int(2.0 * (1 << 30)) // 2) * 2
+    if p[0] == "decode":
+        n_dec, S, n_pre, S0 = int(p[1]), int(p[2]), 0, 0
+    elif p[0] == "cprefill":
+        n_dec, S, n_pre, S0 = 0, 0, int(p[1]), int(p[2])
+    elif p[0] == "mixed":
+        n_dec, S, n_pre, S0 = int(p[2]), int(p[3]), int(p[1]), int(p[3])
+    else:
+        raise ValueError(spec)
+    seqs = [(1, S + 1)] * n_dec + ([(n_pre, S0 + n_pre)] if n_pre else [])
+    pages = sum(math.ceil(k / PAGE) for _, k in seqs)
+    return km.L * 2 * pages * PAGE * km.H * km.D * 2
+
+
 def make_step(km, spec: str):
     """spec：idle｜decode:B:S｜cprefill:C:S0｜mixed:P:B:S｜matmul｜hbm。"""
     p = spec.split(":")

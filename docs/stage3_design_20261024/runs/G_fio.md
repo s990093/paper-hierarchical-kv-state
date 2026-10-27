@@ -27,3 +27,13 @@
 - **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。G-fio 只讀檔、不用 GPU，監看的是這個 job 的卡（同一個規則，便宜）；別人的磁碟 I/O 看不到（NOT_OBSERVABLE），照舊只記 `_fs.json`。
 - **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
 - **影響的 run**：全部（都還沒跑）。
+
+---
+
+## 結果（2026-10-26；job 22417）
+
+- **run_id** `20261026-104426-s3-gfio`（36 列；guard `CLEAN`、`own_gpu_intruders` 0）→ `results/s3_h200/gfio/gfio_20261026-104426-s3-gfio.{csv,_fs.json,gpu_guard.json}`。
+- **檔案系統（compute node 上）**：`/tmp`＝`/dev/md0` ext4（noatime）；`/work`＝`/dev/md1` ext4 掛在 `/raid`（quota、stripe=128）——**在 hgx-cn01 自己身上 /work 不是 NFS**（head node 上看到的是 NFS）。
+- **照 §2 換的常數**：「本地 NVMe」＝/tmp 64 MiB 循序讀、8 執行緒＝**8.07 GiB/s**（6 次中位數，σ_rel 0.018，δ\*＝5%）。「NFS」的列：compute node 上的 /work 是本地檔案系統 → 照 01 §3 **繼續用限速層代替**（不拿 /work 的數字當 NFS）。
+- **另報（中位數 GiB/s；1／4／8 執行緒）**：/tmp 循序 1 MiB 2.49／8.26／9.64、4 MiB 4.83／9.52／9.87、64 MiB 5.96／8.19／8.07；隨機 128 KiB 0.41／1.63／3.25、2 MiB 3.23／8.91／9.76、64 MiB 5.93／8.17／7.88。/work 循序 1 MiB 3.75／14.02／25.98、4 MiB 6.20／22.89／41.23、64 MiB 6.05／14.91／17.67；隨機 128 KiB 0.77／3.05／5.81、2 MiB 5.16／19.27／34.56、64 MiB 6.12／14.96／17.69。
+- **2σ > 5% 的格子（照偏離 1：標出、不當常數）**：/tmp 循序 4 MiB×4（σ 0.031）、/tmp 隨機 64 MiB×4（0.031）、/work 循序 4 MiB×1（0.027）、/work 隨機 2 MiB×1（0.042）。判定用的那一格（/tmp 64 MiB×8）不在裡面。
