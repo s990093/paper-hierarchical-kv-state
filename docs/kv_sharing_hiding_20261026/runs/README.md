@@ -37,6 +37,6 @@
 
 | 閘 | 在哪跑 | 指令 | 時間 |
 |:--|:--|:--|:--|
-| F0 | H200 head node（純 Python，不用 GPU、不用 conda） | `python code/s3/kvs_f0.py cal` → `run --slice decisive` → （沒 STOP 才）`run --slice full --jobs 16` → `report` | 決定性幾分鐘；全網格單核約 40 分鐘〔估計〕；**封存**（使用者 10/27：之後再探索；結果與程式保留，F0 的 ASK 不再待決） |
+| F0 | H200 head node（純 Python，不用 GPU、不用 conda） | `python code/s3/kvs_f0.py cal` → `run --slice decisive` → （沒 STOP 才）`run --slice full --jobs 16` → `report` | 決定性幾分鐘；全網格單核約 40 分鐘〔估計〕 |
 | T0 | H200 head node（trace 在 `$TIARA_DATASETS/traces`） | `source code/env_h200.sh; python code/s3/kvs_t0.py run` | 幾分鐘 |
 | S0-2 | H200 GPU（品質型 job） | `sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1`；送出時照 skill §4 加進 ICPE 的依賴 | 約 1 GPU 小時（L128）〔估計〕 |
