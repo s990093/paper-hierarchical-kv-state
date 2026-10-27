@@ -538,3 +538,11 @@ python3 code/s3/kvs_f0p.py report
 - B0 的 MPS 是限制背景 process；`bg_ratio` 的分母是同一個上限下的 solo → SHARE 的 ≥0.90 **不含上限本身的代價**（O9：matmul 限 87% ×1.051、75% ×1.18）。端到端要另算，可以用 B0 每區塊的 `bg_solo_rate` 算，不用新量測。
 - 模擬器需要的 B0 格子：Llama 144／175、Qwen 150／175 過 2σ ≤ 5%（只數格子，沒有看新數值）。
 - 草稿：`docs/stage3_design_20261024/runs/E2E_combo_DRAFT.md`（10/28 改名 E2E_combo.md 並登記）（配置 K0–K3、O；格子；判準待使用者確認；風險；程式 2–4 天、GPU 約 6–7 小時〔估計〕）。
+
+## S3-E2E-RUN — E2E-C 第一段（模擬）開跑（登記 `runs/E2E_combo.md`，2026-10-27T18:43:56Z，commit 633cdd8；偏離 1）
+
+- 資料：FreeInference rev `16d3c04d` 下載到 `/work/ChihChungHsu/hungweilai/datasets/freeinference_agentic_trace`（run `20261028-023841-s3-fi-dl`；81 檔 sha256 全對；7.8 GiB，配額 1354G／1536G）。第一次（`20261028-023749-s3-fi-dl`）因為 `TIARA_VENV` 沒設而失敗，補上 H200 的 venv／hf CLI 路徑後重跑。Mooncake conversation：`/work/…/datasets/traces/conversation_trace.jsonl` 的 git blob＝Mooncake `d750cdd` 的同一檔（12,031 筆）。
+- 自測 PASS（閒時 BgView ≡ View 逐請求逐位元；leads 對 x1_gpu；B0 每塊位元組交叉驗算）。
+- D 檢查（`20261028-024941-s3-e2e-dcheck`）：兩個模型 0 個可用組合 → 偏離 1：都用 3.3。第一次 `20261028-024903-s3-e2e-dcheck` 是程式的錯（BF 斷言），沒有數字。
+- conversation：`20261028-025101-s3-e2e-run-llama-conv`、`20261028-025151-s3-e2e-run-qwen-conv`（各約 50 秒）。
+- FreeInference（16 週、1,222,199 筆）：`s3-e2e-run-{llama,qwen}-fi`，head node 背景兩個 process（使用者指示 head node 跑 CPU）。
