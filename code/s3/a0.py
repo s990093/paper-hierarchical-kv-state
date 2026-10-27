@@ -663,6 +663,16 @@ def cmd_a0c_report(a):
         n = len({(r["item_id"], r["turn"]) for r in rows if r["cid"] == "E0"})
         jc = judge_cell(rows, cfgs, dict(configs=a0c_configs(cell)))
         res[cell] = dict(n_items=n, n_items_planned=want, complete=n >= want, p=jc["configs"].get(A0C_P), acc=jc["acc"])
+        # §4「一併報告（不判定）」：單輪／第 2 輪、找答案（T2–T4）／彙整（T5）分開；U* 沿用全體選出的那一個
+        ustar = (res[cell]["p"] or {}).get("ustar")
+        tab, sub = table(rows, "score"), {}
+        for name, keep in (("gen1c", lambda r: r["set"] == "gen1c"), ("gen2c", lambda r: r["set"] == "gen2c"),
+                           ("T2-T4", lambda r: r["task"] != "T5"), ("T5", lambda r: r["task"] == "T5")):
+            keys = {(r["item_id"], r["turn"]) for r in rows if keep(r)}
+            t = {cid: {k: v for k, v in d.items() if k in keys} for cid, d in tab.items()}
+            sub[name] = dict(n=len(keys), acc={c: 100 * statistics.fmean(t[c].values()) for c in ("E0", A0C_P, ustar) if t.get(c)},
+                             d_e0=paired(t, A0C_P, "E0", 100), d_ustar=paired(t, A0C_P, ustar, 100) if ustar else None)
+        res[cell]["breakdown"] = sub
     q, l = res.get(A0C_CELL), res.get(A0C_PAIR)
     if not (q and l and q["complete"] and l["complete"] and q["p"] and l["p"]):
         v = "NOT_MEASURED"

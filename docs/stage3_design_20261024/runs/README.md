@@ -15,7 +15,7 @@
 | G-M11（量時間，併在 B0） | [G_M11_vq.md](G_M11_vq.md) | `code/s3/b0.py`（`dq_vq`） | `results/s3_h200/b0/` | **NOT_DETERMINED**（閒時 dq_int4 太晃；10/26 重量 12 次仍晃） |
 | G-M06＋M07（4 卡、量時間） | [G_M06_multipath.md](G_M06_multipath.md) | `code/s3/gm06.py` | `results/s3_h200/gm06/` | 已登記 |
 | W0（量時間） | [W0_write_cost.md](W0_write_cost.md) | `code/s3/w0.py` | `results/s3_h200/w0/` | **GW0-FAIL**（llama、qwen；10/26，job 22279） |
-| A0-C（品質；A0 最接近 GO 的配置的確認性實驗） | [A0C_confirm.md](A0C_confirm.md) | `code/s3/a0.py`、`a0_gpu.py --a0c` | `results/s3_h200/a0/a0c_*` | 已登記（10/27） |
+| A0-C（品質；A0 最接近 GO 的配置的確認性實驗） | [A0C_confirm.md](A0C_confirm.md) | `code/s3/a0.py`、`a0_gpu.py --a0c` | `results/s3_h200/a0/a0c_*` | **A0C-STOP**（10/28）：Q128 的 P 對 U* +1.28 [−0.27, +2.88]（< +2）、對 E0 −2.58；A0 的 WEAK 沒有被確認 |
 | G-fio（量時間） | [G_fio.md](G_fio.md) | `code/s3/gfio.py` | `results/s3_h200/gfio/` | **完成**：本地 NVMe 8.07 GiB/s；/work 在 compute node 是本地 ext4（NFS 列續用限速層）（10/26，job 22417） |
 | D0（品質；MiniCPM4.1-8B 原生索引） | [D0_native_index.md](D0_native_index.md) | `code/s3/d0.py`、`code/s3/d0_shim/` | `results/s3_h200/d0/` | 已登記，待冒煙（22307） |
 
