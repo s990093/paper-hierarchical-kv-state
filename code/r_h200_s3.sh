@@ -61,14 +61,14 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run|kvs-s0|gm12-diag) TIMING=0 ;;
+  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run|kvs-s0|gm12-diag|a0c-gen) TIMING=0 ;;
   b0-run|b0-diag|gm11-redo|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|gm11-redo|w0gfio|gm12-q|gm12-s|gm12-diag|d0-prep|d0-run|gm06|kvs-s0" >&2; exit 2 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|gm11-redo|w0gfio|gm12-q|gm12-s|gm12-diag|d0-prep|d0-run|gm06|kvs-s0|a0c-gen" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
 fi
-case "$PART" in a0-*|gm12-q|kvs-s0) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
+case "$PART" in a0-*|a0c-gen|gm12-q|kvs-s0) [ -n "$CELL" ] || { echo "--part $PART 要 --cell" >&2; exit 2; } ;; esac
 ICPE_TIMING_RE='^icpe-(p01s1|p01ab|p01brr|p02|p2|p11t)$'     # r_h200_icpe.sh 裡 TIMING=1 的 part
 
 # 模型權重：本地 /tmp（code/s3/fetch_models.py）。env_h200.sh 的 M7_*_GLOB 用 ${HF_HOME}，所以先設 HF_HOME
@@ -184,6 +184,22 @@ if [[ "$PART" == a0-* ]]; then
     fi
   fi
   [ "$PART" = a0-gen ] && step GEN-$CELL-$SI m7run s3-a0-gen-$CELL-s$SI python code/s3/a0.py gen --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+fi
+
+# ---- A0-C（runs/A0C_confirm.md）：A0 最接近 GO 的配置在 864 個新題上的確認（品質型）；第一次先跑 2 題冒煙（不看分數）
+if [ "$PART" = a0c-gen ]; then
+  M=$(python3 -c "import sys; sys.path.insert(0, 'code/s3'); import a0; print(a0.CELLS[sys.argv[1]]['model'])" "$CELL") \
+    || { echo "[r_h200_s3] 不認得的 --cell $CELL" >&2; exit 2; }
+  SI=${SHARD%%/*}
+  step MODELS ensure_models "$M"
+  step CALIB-$M ensure_calib "$M"
+  GATES=$TIARA_RUNS/.s3_gates; [ "$DRY" = 1 ] || mkdir -p "$GATES"
+  CSIG=$(cat code/s3/a0.py code/s3/a0_gpu.py | sha256sum | cut -c1-16)
+  if [ ! -f "$GATES/a0cgen_${CELL}_$CSIG" ]; then
+    step A0C-SMOKE-$CELL m7run s3-a0c-smoke-$CELL bash -c "python code/s3/a0.py gen --a0c --cell $CELL --smoke --max-items 2 --shard 0/576 --out \"\$RUN_DIR/smoke_a0c.csv.gz\""
+    [ "$DRY" = 1 ] || echo "$(date -Is) job=$SLURM_JOB_ID" > "$GATES/a0cgen_${CELL}_$CSIG"
+  fi
+  step A0C-$CELL-$SI m7run s3-a0c-$CELL-s$SI python code/s3/a0.py gen --a0c --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
 fi
 
 # ---- KVS S0-2（docs/kv_sharing_hiding_20261026/runs/S0_union.md）：兩個使用者挑的塊的聯集（品質型，不量時間）----------

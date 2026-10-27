@@ -769,7 +769,11 @@ def _session(a, model, nb):
 
 
 def _loop(a, kind: str):
+    import glob
     from m16_c1a_predict import finish_watch, host_level, intruders, start_watch
+    a0c = kind == "gen" and getattr(a, "a0c", False)
+    if getattr(a, "a0c", False) and (kind != "gen" or a.cell not in (A.A0C_CELL, A.A0C_PAIR)):
+        raise SystemExit(f"--a0c 只用在 gen、{A.A0C_CELL}／{A.A0C_PAIR}")
     model, nb = _cell_args(a)
     plan = json.load(open(os.path.join(A.OUT, f"plan_{a.cell}.json")))
     cfgs_all = plan["configs"]
@@ -782,9 +786,11 @@ def _loop(a, kind: str):
             sel = json.load(open(sp))
         by = {c["cid"]: c for c in cfgs_all}
         cfgs = [by[cid] for cid in sel["configs"]]
-        if a.cell == "L128":                                         # runs/M05_duo_heads.md：L128 的生成另外加 M05 的 3 個配置
+        if a.cell == "L128" and not a0c:                             # runs/M05_duo_heads.md：L128 的生成另外加 M05 的 3 個配置
             cfgs += A.m05_configs(model, nb - 1)
-        sets, fields = ["gen1", "gen2"], A.GEN_FIELDS
+        sets, fields = (["gen1c", "gen2c"] if a0c else ["gen1", "gen2"]), A.GEN_FIELDS
+        if a0c:                                                      # runs/A0C_confirm.md §3：固定配置清單（只由位元組比決定）
+            cfgs = [by[cid] for cid in A.a0c_configs(a.cell)]
     else:
         cfgs, sets, fields = cfgs_all, ["tf"], A.TF_FIELDS
     if a.smoke and kind == "tf":
@@ -797,9 +803,10 @@ def _loop(a, kind: str):
     if a.smoke and not a.out:
         raise SystemExit("--smoke 要給 --out（冒煙的輸出不進 results）")
     si, sk = A.parse_shard(a.shard)
-    out = a.out or os.path.join(A.RAW, f"a0_{kind}_{a.cell}_s{si}.csv.gz")
-    paths = sorted(set(glob_out(kind, a.cell)) | {out}) if not a.smoke else [out]
-    todo = A.pending(sets, a.shard, [p for p in paths if os.path.exists(p)], a.cell)
+    out = a.out or os.path.join(A.RAW, (f"a0c_gen_{a.cell}_s{si}.csv.gz" if a0c else f"a0_{kind}_{a.cell}_s{si}.csv.gz"))
+    prior = glob.glob(A.a0c_glob(a.cell)) if a0c else glob_out(kind, a.cell)
+    paths = sorted(set(prior) | {out}) if not a.smoke else [out]
+    todo = A.pending(sets, a.shard, [p for p in paths if os.path.exists(p)], None if a0c else a.cell)
     if a.max_items:
         todo = todo[:a.max_items]
     print(f"[a0 {kind}] {a.cell}：{len(cfgs)} 個配置、這個分片還有 {len(todo)} 題 → {out}", flush=True)
