@@ -19,8 +19,8 @@
 |:--|:--|:--|:--|:--|
 | T0 | [T0_arrivals.md](T0_arrivals.md) | `code/s3/kvs_t0.py` | `results/s3_h200/kvs_t0/` | **完成**（10/26，run `20261026-140345-s3-kvs-t0`）：單位檢查 PASS（toolagent 0.389） |
 | S0（S0-2） | [S0_union.md](S0_union.md) | `code/s3/kvs_s0.py`；runner part `kvs-s0` | `results/s3_h200/kvs_s0/` | **4 格都完成**（10/27）：ρ＝1/4 中位數 0.536–0.557，全部 ≤ 0.75；11/17 預篩 **ASK**（A0＝WEAK，10/27） |
-| F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 尺準 **PASS**；決定性實驗 **CONTINUE**〔模擬〕（10/26）；全網格等使用者決定 |
-| F0P（F0＋兩個優先級：優先權反轉） | [F0P_priority.md](F0P_priority.md) | `code/s3/kvs_f0p.py`（import `kvs_f0`，不改它） | `results/s3_h200/kvs_f0p/` | **INHERIT-ONLY**〔模擬〕（10/26，H200 head node；run `20261026-190431-s3-kvs-f0p-full`）：反轉大（(E) 58.7%／50.5%），繼承就夠（(X) 9.0%／4.5%）；Qwen 重現；決定性 CSV 和 Mac 的 sha256 相同 |
+| F0 | [F0_follower_sim.md](F0_follower_sim.md) | `code/s3/kvs_f0.py` | `results/s3_h200/kvs_f0/` | 尺準 **PASS**；決定性實驗 **CONTINUE**〔模擬〕（10/26）；全網格等使用者決定；**封存**（使用者 10/27：之後再探索；結果與程式保留，F0 的 ASK 不再待決） |
+| F0P（F0＋兩個優先級：優先權反轉） | [F0P_priority.md](F0P_priority.md) | `code/s3/kvs_f0p.py`（import `kvs_f0`，不改它） | `results/s3_h200/kvs_f0p/` | **INHERIT-ONLY**〔模擬〕（10/26，H200 head node；run `20261026-190431-s3-kvs-f0p-full`）：反轉大（(E) 58.7%／50.5%），繼承就夠（(X) 9.0%／4.5%）；Qwen 重現；決定性 CSV 和 Mac 的 sha256 相同；**封存**（使用者 10/27：之後再探索；結果與程式保留，F0 的 ASK 不再待決） |
 | R0（復現 Strata、KVFlow） | [R0_reproduce.md](R0_reproduce.md) | — | — | **計畫，未登記**：先查可行性 |
 
 ## 3. 共同規則
@@ -37,6 +37,6 @@
 
 | 閘 | 在哪跑 | 指令 | 時間 |
 |:--|:--|:--|:--|
-| F0 | H200 head node（純 Python，不用 GPU、不用 conda） | `python code/s3/kvs_f0.py cal` → `run --slice decisive` → （沒 STOP 才）`run --slice full --jobs 16` → `report` | 決定性幾分鐘；全網格單核約 40 分鐘〔估計〕 |
+| F0 | H200 head node（純 Python，不用 GPU、不用 conda） | `python code/s3/kvs_f0.py cal` → `run --slice decisive` → （沒 STOP 才）`run --slice full --jobs 16` → `report` | 決定性幾分鐘；全網格單核約 40 分鐘〔估計〕；**封存**（使用者 10/27：之後再探索；結果與程式保留，F0 的 ASK 不再待決） |
 | T0 | H200 head node（trace 在 `$TIARA_DATASETS/traces`） | `source code/env_h200.sh; python code/s3/kvs_t0.py run` | 幾分鐘 |
 | S0-2 | H200 GPU（品質型 job） | `sbatch --job-name=s3-kvs-s0-L128-0 --time=4:00:00 code/r_h200_s3.sh --part kvs-s0 --cell L128 --shard 0/1`；送出時照 skill §4 加進 ICPE 的依賴 | 約 1 GPU 小時（L128）〔估計〕 |

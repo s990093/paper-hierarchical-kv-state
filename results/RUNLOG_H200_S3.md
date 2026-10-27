@@ -469,3 +469,7 @@ python3 code/s3/kvs_f0p.py report
 ## S3-GM12-DIAG — G-M12 Qwen 自檢失敗的診斷（使用者 10/27「G-M12 的 Qwen 自檢 ok」；只報告、判準不改）
 
 - 新增 `gm12.py diag`＋runner part `gm12-diag`：Q128 與 L128（對照）各跑兩輪（default；兩條路徑都強制 fa3 `num_splits=1`），d＝1 時逐層記 K／V 的最大差、參考值最大量級、相對差、最大差處差幾個 bf16 刻度、不相等的比例。第 0 層不經過 attention：若只是加總順序的捨入差，第 0 層必為 0。輸出只在 run 目錄。
+
+## S3-KVS-ARCHIVE — F0、F0P 封存（使用者 10/27）
+
+使用者 10/27：「第三條（F0、F0P）封存，之後再探索」。`docs/kv_sharing_hiding_20261026/runs/README.md` 兩列標「封存」；結果（`results/s3_h200/kvs_f0/`、`kvs_f0p/`）、程式（`code/s3/kvs_f0.py`、`kvs_f0p.py`）、登記檔都保留不動。F0 全網格的「問人」不再待決；F0P 的 INHERIT-ONLY 照登記記為負面結果。S0（多人共用縮圖）不在封存範圍，跟著 A0 走。
