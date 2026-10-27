@@ -452,8 +452,107 @@ def cmd_gpu(a):
     con.print(t if procs else Text("（GPU 上沒有 process）", "dim"))
 
 
+def slurm_ok(*args):
+    """像 slurm()，但指令失敗（非 0 結束、逾時、找不到）回 None——「查不到」不能被讀成「沒有人在用」。"""
+    exe = shutil.which(args[0]) or os.path.join(SLURM_BIN, args[0])
+    try:
+        r = subprocess.run([exe, *args[1:]], capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def gpu_count(gres):
+    m = re.search(r"gpu(?::[A-Za-z0-9_]+)?:(\d+)", gres or "")
+    return int(m.group(1)) if m else 0
+
+
+def usage_cluster(a, user):
+    """啟動前總覽：H200 八張卡誰在用、各 lab 用量、/work 配額、我們自己的 job。"""
+    out = slurm_ok("squeue", "-h", "-p", "h200q", "-o", "%T|%a|%u|%b|%i")
+    if out is None:
+        con.print(Panel(Text("squeue 查詢失敗——不能當作「卡是空的」", "bold red"), title="h200q 佔用",
+                        title_align="left", border_style="red"))
+    else:
+        run, pend = {}, {}
+        for ln in out.splitlines():
+            st, acct, u, gres, _ = (ln.split("|") + [""] * 5)[:5]
+            d = run if st == "RUNNING" else pend if st == "PENDING" else None
+            if d is not None:
+                d.setdefault(acct, {}).setdefault(u, 0)
+                d[acct][u] += gpu_count(gres)
+        used = sum(sum(v.values()) for v in run.values())
+        mine = sum(run.get(a.account, {}).values())
+        t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="h200q 佔用（RUNNING＝正在用卡；PENDING＝排隊中的卡數）",
+                  title_justify="left", title_style="bold")
+        for col, j in (("lab", "left"), ("user", "left"), ("跑中卡", "right"), ("排隊卡", "right")):
+            t.add_column(col, justify=j, no_wrap=True)
+        for acct in sorted(set(run) | set(pend), key=lambda x: -sum(run.get(x, {}).values())):
+            for u in sorted(set(run.get(acct, {})) | set(pend.get(acct, {}))):
+                t.add_row(acct, u, str(run.get(acct, {}).get(u, 0)) or "0", str(pend.get(acct, {}).get(u, 0)),
+                          style="bold magenta" if u == user else None)
+        con.print(t)
+        cap = 4
+        con.print(Text("  全機 8 張：", "dim") + bar(used / 8, 16) + Text(f" {used}/8 在用，{8 - used} 空", "dim"))
+        con.print(Text(f"  {a.account}：", "dim") + bar(mine / cap, 16) + Text(
+            f" {mine}/{cap}（lab 上限）" + ("，已滿，新 job 會排隊" if mine >= cap else ""), "dim"))
+    mine_q = slurm_ok("squeue", "-h", "-u", user, "-o", "%i|%j|%T|%M|%b|%R")
+    if mine_q is None:
+        con.print(Text("  我的 job：squeue 查詢失敗", "bold red"))
+    else:
+        rows = [r.split("|") for r in mine_q.splitlines() if r]
+        t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title=f"{user} 的 job（{len(rows)} 個）",
+                  title_justify="left", title_style="bold")
+        for col in ("id", "名稱", "狀態", "已跑", "卡", "節點／原因"):
+            t.add_column(col, no_wrap=True)
+        for r in rows:
+            t.add_row(r[0], r[1], Text(r[2], STATE_STYLE.get(r[2], "")), r[3], str(gpu_count(r[4])), r[5])
+        con.print(t if rows else Text("  沒有 job 在跑或排隊", "dim"))
+    sh = slurm_ok("sshare", "-a", "-P", "-n", "-o", "account,user,rawusage,effectvusage,fairshare")
+    if sh is not None:
+        accts = [r.split("|") for r in sh.splitlines() if r.count("|") >= 4 and not r.split("|")[1].strip()]
+        accts = [r for r in accts if r[0].strip() not in ("root", "admin") and num(r[2]) > 0]
+        accts.sort(key=lambda r: -num(r[2]))
+        top = num(accts[0][2]) if accts else 1
+        t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="各 lab 累計用量（RawUsage，有衰減）",
+                  title_justify="left", title_style="bold")
+        t.add_column("lab", no_wrap=True)
+        t.add_column("", no_wrap=True)
+        t.add_column("RawUsage", justify="right")
+        t.add_column("占全機", justify="right")
+        for r in accts:
+            t.add_row(r[0].strip(), bar(num(r[2]) / top, 20, "cyan"), f"{int(num(r[2])):,}",
+                      f"{num(r[3]) * 100:.1f}%",
+                      style="bold magenta" if r[0].strip() == a.account else None)
+        con.print(t)
+    # 硬碟：/work 配額是 group 共用，滿了所有寫入都會失敗（Errno 122）
+    t = Table(box=box.SIMPLE_HEAD, header_style="bold dim", title="硬碟", title_justify="left", title_style="bold")
+    for col in ("位置", "已用", "上限", "", "備註"):
+        t.add_column(col, no_wrap=col != "備註", overflow="fold")
+    for who, args in (("group", ["-g", a.group]), ("user", ["-u", user])):
+        try:
+            q = subprocess.run(["quota", "-s", *args], capture_output=True, text=True, timeout=15)
+            f = q.stdout.strip().splitlines()[-1].split()
+            used, lim = f[1], f[3]
+            u_g, l_g = (num(used) / (1024 if used.endswith("M") else 1), num(lim) / (1024 if lim.endswith("M") else 1))
+            t.add_row(f"/work 配額 {who}", used, lim, bar(u_g / l_g, 16),
+                      Text("接近上限，先別送批次" if u_g / l_g > 0.95 else "", "bold red"))
+        except (OSError, subprocess.SubprocessError, IndexError, ZeroDivisionError):
+            t.add_row(f"/work 配額 {who}", Text("查詢失敗", "bold red"), "", "", "")
+    for path, note in (("/work", "整個檔案系統（配額才是實際上限）"),
+                       (os.environ.get("TMPDIR") or "/tmp", "head node 的 /tmp——滿了工具會 ENOSPC")):
+        try:
+            d = shutil.disk_usage(path)
+            t.add_row(path, f"{d.used / 2**30:,.0f}G", f"{d.total / 2**30:,.0f}G", bar(d.used / d.total, 16),
+                      Text(note, "dim"))
+        except OSError:
+            t.add_row(path, Text("查詢失敗", "bold red"), "", "", "")
+    con.print(t)
+
+
 def cmd_usage(a):
     user = os.environ.get("USER") or getpass.getuser()
+    usage_cluster(a, user)
     out = slurm("sshare", "-A", a.account, "-a", "-P", "-n",
                 "-o", "account,user,rawshares,normshares,rawusage,effectvusage,fairshare")
     if out is None:
@@ -566,7 +665,9 @@ def main():
     px.add_argument("-n", type=int, default=5, help="每種警告列幾筆")
     sub.add_parser("help")
     sub.add_parser("gpu").add_argument("--job")
-    sub.add_parser("usage").add_argument("--account", default="chihchunghsu")
+    sp = sub.add_parser("usage")
+    sp.add_argument("--account", default="chihchunghsu")
+    sp.add_argument("--group", default="ChihChungHsu")
     sub.add_parser("env")
     sub.add_parser("dryrun").add_argument("--title", default="")
     sub.add_parser("testsubmit").add_argument("--script", default="")
