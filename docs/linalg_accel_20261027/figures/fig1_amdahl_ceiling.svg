@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="470" viewBox="0 0 960 470" font-family="'PingFang TC','Noto Sans CJK TC','Microsoft JhengHei',sans-serif">
+<rect width="960" height="470" fill="#ffffff"/>
+<text x="480" y="30" font-size="18" font-weight="600" fill="#2C2C2A" text-anchor="middle">圖 1　只把注意力加速，重算最多快約 4 倍，還是比從 CPU、SSD 搬回慢</text>
+<text x="480" y="52" font-size="12.5" fill="#5F5E5A" text-anchor="middle">Llama-3.1-8B・128K（KV 16 GiB）。全部是〔算術〕：重算＝a·n＋c·n²（H200 16K／32K 實測擬合，arith §4）；搬回＝16 GiB ÷ 頻寬</text>
+<text x="240" y="105" font-size="13" fill="#2C2C2A" text-anchor="end">現在的重算（vLLM 冷 prefill）</text>
+<rect x="250.0" y="90" width="62.0" height="22" fill="#1F4E79"/>
+<text x="281.0" y="105" font-size="11.5" fill="#ffffff" text-anchor="middle">2.82</text>
+<rect x="312.0" y="90" width="183.0" height="22" fill="#C55A11"/>
+<text x="403.6" y="105" font-size="11.5" fill="#ffffff" text-anchor="middle">注意力 8.32</text>
+<text x="503.1" y="105" font-size="12.5" fill="#2C2C2A">11.14 s</text>
+<text x="240" y="149" font-size="13" fill="#2C2C2A" text-anchor="end">注意力變免費（理論極限）</text>
+<rect x="250.0" y="134" width="62.0" height="22" fill="#1F4E79"/>
+<text x="320.0" y="149" font-size="12.5" fill="#2C2C2A">2.82 s（最多快 3.95 倍）</text>
+<line x1="40" y1="168" x2="920" y2="168" stroke="#BFBFBF" stroke-dasharray="4 4"/>
+<text x="240" y="199" font-size="13" fill="#2C2C2A" text-anchor="end">從 CPU 記憶體搬回</text>
+<rect x="250.0" y="184" width="6.6" height="22" fill="#548235"/>
+<text x="264.6" y="199" font-size="12.5" fill="#2C2C2A">0.30 s</text>
+<text x="240" y="243" font-size="13" fill="#2C2C2A" text-anchor="end">從 SSD 級（8.8 GiB/s）搬回</text>
+<rect x="250.0" y="228" width="40.0" height="22" fill="#548235"/>
+<text x="298.0" y="243" font-size="12.5" fill="#2C2C2A">1.82 s</text>
+<text x="240" y="287" font-size="13" fill="#2C2C2A" text-anchor="end">較慢層（2.5 GiB/s）</text>
+<rect x="250.0" y="272" width="140.8" height="22" fill="#548235"/>
+<text x="398.8" y="287" font-size="12.5" fill="#2C2C2A">6.40 s</text>
+<text x="240" y="331" font-size="13" fill="#2C2C2A" text-anchor="end">很慢層（0.7 GiB/s）</text>
+<rect x="250.0" y="316" width="502.9" height="22" fill="#548235"/>
+<text x="760.9" y="331" font-size="12.5" fill="#2C2C2A">22.86 s</text>
+<text x="240" y="375" font-size="13" fill="#2C2C2A" text-anchor="end">NFS 級（0.33 GiB/s）</text>
+<rect x="250.0" y="360" width="550.0" height="22" fill="#548235"/>
+<text x="794.0" y="375" font-size="12" fill="#ffffff" text-anchor="end">≫ 48.5 s（超出圖）</text>
+<line x1="250" y1="80" x2="250" y2="408" stroke="#7F7F7F"/>
+<line x1="250" y1="408" x2="800.0" y2="408" stroke="#7F7F7F"/>
+<text x="250.0" y="424" font-size="11" fill="#5F5E5A" text-anchor="middle">0 s</text>
+<text x="360.0" y="424" font-size="11" fill="#5F5E5A" text-anchor="middle">5 s</text>
+<text x="470.0" y="424" font-size="11" fill="#5F5E5A" text-anchor="middle">10 s</text>
+<text x="580.0" y="424" font-size="11" fill="#5F5E5A" text-anchor="middle">15 s</text>
+<text x="690.0" y="424" font-size="11" fill="#5F5E5A" text-anchor="middle">20 s</text>
+<text x="800.0" y="424" font-size="11" fill="#5F5E5A" text-anchor="middle">25 s</text>
+<text x="40" y="448" font-size="13" fill="#2C2C2A">• 現在：倉庫比 1.4 GiB/s 慢，重算才划算</text>
+<text x="40" y="468" font-size="13" fill="#2C2C2A">• 注意力免費：界線移到 5.7 GiB/s（慢 SSD、網路儲存會翻成重算）</text>
+<rect x="560" y="62" width="12" height="12" fill="#1F4E79"/><text x="578" y="72" font-size="12" fill="#2C2C2A">注意力以外的矩陣乘（MLP、投影）</text><rect x="770" y="62" width="12" height="12" fill="#C55A11"/><text x="788" y="72" font-size="12" fill="#2C2C2A">注意力（n² 項）</text>
+</svg>
