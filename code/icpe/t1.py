@@ -187,14 +187,205 @@ def cmd_selftest(a):
     sys.exit(0 if ok else 1)
 
 
+# ============================================================================ report（§5）
+R = lambda *p: os.path.join(REPO, "results", *p)                     # noqa: E731
+META = {"run_id", "ts", "src_runs", "src", "src_run", "src_sweep_run", "src_cfg"}
+K_X1 = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "component"]
+K_X4 = ["trace", "rule", "p", "cpu_GiB", "slow", "fscale"]
+K_FS = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore"]
+# （舊檔, 新檔, 鍵）：舊＝MI300X 的 CPU 層（ICPE_EVIDENCE 的值），新＝T1
+PAIRS = []
+for _V in ("V0", "V1", "V2"):
+    for _p in ("x1", "x1h1800", "x1h3600"):
+        PAIRS += [(R("icpe_h200", "p01", f"sim_{_V}", "x1", f"{_p}_verdict.csv"), os.path.join(T1, "p01", f"sim_{_V}", "x1", f"{_p}_verdict.csv"),
+                   ["rule", "component"]),
+                  (R("icpe_h200", "p01", f"sim_{_V}", "x1", f"{_p}_headroom_components.csv"),
+                   os.path.join(T1, "p01", f"sim_{_V}", "x1", f"{_p}_headroom_components.csv"), K_X1)]
+for _p in ("x1fi", "x1fiuser"):
+    PAIRS += [(R("icpe_h200", "p12", "x1", f"{_p}_verdict.csv"), os.path.join(T1, "p12", "x1", f"{_p}_verdict.csv"), ["rule", "component"]),
+              (R("icpe_h200", "p12", "x1", f"{_p}_headroom_components.csv"), os.path.join(T1, "p12", "x1", f"{_p}_headroom_components.csv"), K_X1)]
+PAIRS += [(R("p3_explore_h200", "x4", "x4_verdict_cfg.csv"), os.path.join(T1, "explore", "x4", "x4_verdict_cfg.csv"), K_X4),
+          (R("p3_explore_h200", "x4", "x4_verdict_verdicts.csv"), os.path.join(T1, "explore", "x4", "x4_verdict_verdicts.csv"), ["metric", "group"]),
+          (R("icpe_h200", "p12", "x4", "p12_queue_cells.csv"), os.path.join(T1, "p12", "x4", "p12_queue_cells.csv"), K_X4),
+          (R("icpe_h200", "p02", "fullsim_hint.csv"), os.path.join(T1, "p02", "fullsim_hint.csv"), K_FS),
+          (R("p3_explore_h200", "x3", "x3_restore_validate_summary.csv"), os.path.join(T1, "explore", "x3", "x3_restore_validate_summary.csv"),
+           ["variant", "scope"])]
+JPAIRS = [(R("p3_explore_h200", "x3", "x3_verdict.json"), os.path.join(T1, "explore", "x3", "x3_verdict.json")),
+          (R("icpe_h200", "p12", "x4", "p12_queue_verdict.json"), os.path.join(T1, "p12", "x4", "p12_queue_verdict.json")),
+          (R("s3_h200", "e2e", "e2e_report.json"), os.path.join(T1, "e2e", "e2e_report.json"))]
+
+
+def _isnum(s):
+    import pandas as pd
+    return pd.api.types.is_numeric_dtype(s) and not pd.api.types.is_bool_dtype(s)
+
+
+def cmp_csv(old, new, keys):
+    import pandas as pd
+    rel = lambda p: os.path.relpath(p, REPO)                          # noqa: E731
+    if not (os.path.exists(old) and os.path.exists(new)):
+        return dict(old=rel(old), new=rel(new), status="NOT_MEASURED", missing=[rel(p) for p in (old, new) if not os.path.exists(p)])
+    a, b = pd.read_csv(old), pd.read_csv(new)
+    cols = [c for c in a.columns if c not in keys and c not in META and c in b.columns]
+    m = a.merge(b, on=keys, how="outer", suffixes=("_old", "_new"), indicator=True).copy()
+    out = dict(old=rel(old), new=rel(new), status="ok", keys=keys, n_old=len(a), n_new=len(b), n_both=int((m._merge == "both").sum()),
+               only_old=int((m._merge == "left_only").sum()), only_new=int((m._merge == "right_only").sum()),
+               src_old=sorted({str(x) for x in a.get("run_id", [])}), src_new=sorted({str(x) for x in b.get("run_id", [])}), cols={})
+    m = m[m._merge == "both"]
+    for c in cols:
+        x, y = m[c + "_old"], m[c + "_new"]
+        if _isnum(x) and _isnum(y):
+            d = (y.astype(float) - x.astype(float))
+            out["cols"][c] = dict(kind="num", max_abs_diff=float(d.abs().max()) if len(d) else 0.0,
+                                  n_changed=int((d.abs() > 1e-12).sum()))
+        else:
+            ch = m[~((x.isna() & y.isna()) | (x.astype(str) == y.astype(str)))]          # 兩邊都空＝沒變
+            out["cols"][c] = dict(kind="str", n_changed=len(ch),
+                                  changes=[dict({k: (r[k].item() if hasattr(r[k], "item") else r[k]) for k in keys},
+                                                old=str(r[c + "_old"]), new=str(r[c + "_new"])) for _, r in ch.iterrows()])
+    if "headroom" in cols:                                          # 跨門檻的格子（README 規則 6）：rule＝min（判定用）或沒有 rule＝min 的檔就全部
+        mm = m[m.rule == "min"] if "rule" in m.columns and (m.rule == "min").any() else m
+        cr = []
+        for thr in (0.15, 0.05):
+            x = mm[(mm.headroom_old >= thr) != (mm.headroom_new >= thr)]
+            cr += [dict({k: (r[k].item() if hasattr(r[k], "item") else r[k]) for k in keys}, threshold=thr,
+                        headroom_old=float(r.headroom_old), headroom_new=float(r.headroom_new)) for _, r in x.iterrows()]
+        out["crossings"] = cr
+    return out
+
+
+def _leaves(x, p=""):
+    if isinstance(x, dict):
+        for k, v in x.items():
+            if k in META:
+                continue
+            yield from _leaves(v, f"{p}.{k}" if p else str(k))
+    elif isinstance(x, list):
+        for i, v in enumerate(x):
+            yield from _leaves(v, f"{p}[{i}]")
+    else:
+        yield p, x
+
+
+def cmp_json(old, new):
+    rel = lambda p: os.path.relpath(p, REPO)                          # noqa: E731
+    if not (os.path.exists(old) and os.path.exists(new)):
+        return dict(old=rel(old), new=rel(new), status="NOT_MEASURED", missing=[rel(p) for p in (old, new) if not os.path.exists(p)])
+    A, B = dict(_leaves(json.load(open(old)))), dict(_leaves(json.load(open(new))))
+    ch = []
+    for k in sorted(set(A) | set(B)):
+        a, b = A.get(k, "<無>"), B.get(k, "<無>")
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)) and not isinstance(a, bool) and not isinstance(b, bool):
+            if a != b:
+                ch.append(dict(path=k, old=a, new=b, diff=b - a))
+        elif a != b:
+            ch.append(dict(path=k, old=a, new=b))
+    return dict(old=rel(old), new=rel(new), status="ok", n_leaves=len(set(A) | set(B)), n_changed=len(ch), changes=ch)
+
+
+def summary(root_p01, root_p12, root_x3, root_q, root_fs, root_e2e):
+    """ICPE_EVIDENCE B、C 各列的那幾個數，用同一個定義從一組目錄算（舊目錄算出來要等於 ICPE_EVIDENCE 寫的值）。"""
+    import pandas as pd
+    S = {}
+
+    def hc(d, p):
+        f = os.path.join(d, f"{p}_headroom_components.csv")
+        return pd.read_csv(f) if os.path.exists(f) else None
+    for V in ("V0", "V1", "V2"):
+        d = os.path.join(root_p01, f"sim_{V}", "x1")
+        for p in ("x1", "x1h1800", "x1h3600"):
+            q = hc(d, p)
+            if q is None:
+                S[f"{V}.{p}"] = "NOT_MEASURED"
+                continue
+            q = q[q.rule == "min"]
+            S[f"{V}.{p}"] = dict(n_cells=len(q), max_by_component={k: float(v) for k, v in q.groupby("component").headroom.max().items()},
+                                 n_ge15_all=int((q.headroom >= 0.15).sum()), n_ge15_odrop=int((q[q.component == "O-DROP"].headroom >= 0.15).sum()))
+            vf = os.path.join(d, f"{p}_verdict.csv")
+            if os.path.exists(vf):
+                v = pd.read_csv(vf)
+                w = v[v.rule == "min"].verdict_rule.unique()
+                S[f"{V}.{p}"]["word"] = str(w[0]) if len(w) == 1 else f"<{list(w)}>"
+            if V == "V0" and p == "x1":
+                b1 = q[(q.trace == "conversation") & (q.slow == "ssd") & (q.gpu == "idle") & (q.restore == "cake") & q.cpu_GiB.isin([128, 256])]
+                S["B1"] = {f"{r.component}@{int(r.cpu_GiB)}": float(r.headroom) for r in b1.itertuples()}
+    for p in ("x1fi", "x1fiuser"):
+        q = hc(os.path.join(root_p12, "x1"), p)
+        S[f"B3.{p}"] = "NOT_MEASURED" if q is None else dict(n_cells=len(q), max=float(q.headroom.max()))
+    xv = os.path.join(root_x3, "x3_verdict.json")
+    if os.path.exists(xv):
+        x = json.load(open(xv))
+        S["C1"] = {k: dict(verdict=x[k].get("verdict"), interesting_cells=x[k].get("interesting_cells"), main_cells=x[k].get("main_cells"),
+                           best_time_weighted_hidden=max((c.get("time_weighted_hidden", float("nan")) for c in x[k].get("main_best", [])), default=None),
+                           nfs_best=max(((c.get("time_weighted_hidden"), c.get("trace"), c.get("signal")) for c in x[k].get("main_best", [])
+                                         if c.get("tier") == "nfs"), default=None))
+                   for k in ("v1_original_registration", "v2_with_freeinference") if k in x}
+    else:
+        S["C1"] = "NOT_MEASURED"
+    qv = os.path.join(root_q, "p12_queue_verdict.json")
+    S["B4"] = json.load(open(qv)) if os.path.exists(qv) else "NOT_MEASURED"
+    if isinstance(S["B4"], dict):
+        S["B4"] = {k: S["B4"][k] for k in ("D1", "D2", "report_only_QP") if k in S["B4"]}
+    fs = os.path.join(root_fs, "fullsim_hint.csv")
+    if os.path.exists(fs):
+        f = pd.read_csv(fs)
+        S["C2"] = dict(hint_vs_lru=[float(f.hint_vs_lru.min()), float(f.hint_vs_lru.max())], opf_vs_lru=[float(f.opf_vs_lru.min()), float(f.opf_vs_lru.max())],
+                       share_median_by_slow={k: float(v) for k, v in f.groupby("slow").hint_share_of_opf.median().items()},
+                       n_share_gt1=int((f.hint_share_of_opf > 1).sum()))
+    else:
+        S["C2"] = "NOT_MEASURED"
+    er = os.path.join(root_e2e, "e2e_report.json")
+    if os.path.exists(er):
+        e = json.load(open(er))
+        S["E2E"] = {k: e.get(k) for k in ("verdict", "n_pass", "n_ask_level", "n_not_measured", "pass_per_model", "m_star")}
+    else:
+        S["E2E"] = "NOT_MEASURED"
+    # B7（P0-1 §3.3 的規則）：V1、V2 的 X1 原登記、X1 截尾 H=3,600 的字和 V0 相同；X5 不重跑（字沿用舊的 p01c_verdict.json）
+    w = {V: (S[f"{V}.x1"].get("word") if isinstance(S[f"{V}.x1"], dict) else None,
+             S[f"{V}.x1h3600"].get("word") if isinstance(S[f"{V}.x1h3600"], dict) else None) for V in ("V0", "V1", "V2")}
+    S["B7"] = dict(words=w, same_as_V0={V: (None if None in w[V] or None in w["V0"] else w[V] == w["V0"]) for V in ("V1", "V2")})
+    return S
+
+
+def cmd_report(a):
+    import pandas as pd
+    comps = [cmp_csv(o, n, k) for o, n, k in PAIRS] + [cmp_json(o, n) for o, n in JPAIRS]
+    old = summary(R("icpe_h200", "p01"), R("icpe_h200", "p12"), R("p3_explore_h200", "x3"), R("icpe_h200", "p12", "x4"), R("icpe_h200", "p02"),
+                  R("s3_h200", "e2e"))
+    new = summary(os.path.join(T1, "p01"), os.path.join(T1, "p12"), os.path.join(T1, "explore", "x3"), os.path.join(T1, "p12", "x4"),
+                  os.path.join(T1, "p02"), os.path.join(T1, "e2e"))
+    p01c_old = json.load(open(R("icpe_h200", "p01", "p01c_verdict.json")))
+    new["B7"]["x5_words_reused"] = {V: p01c_old["words"][V]["x5_registered"] for V in ("V0", "V1", "V2")}
+    old["B7"]["x5_words_reused"] = new["B7"]["x5_words_reused"]
+    rows = []
+    for k in sorted(set(old) | set(new)):
+        for path, ov in (dict(_leaves(old[k])) if isinstance(old.get(k), (dict, list)) else {"": old.get(k)}).items():
+            nv = (dict(_leaves(new[k])) if isinstance(new.get(k), (dict, list)) else {"": new.get(k)}).get(path, "NOT_MEASURED")
+            d = (nv - ov) if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in (ov, nv)) else None
+            rows.append(dict(run_id=run_id(), ts=ts(), item=k + (f".{path}" if path else ""), old_mi300x_cpu=ov, new_h200_cpu=nv, diff=d,
+                             changed=(ov != nv)))
+    word_changes = [dict(file=c["new"], col=col, changes=v["changes"]) for c in comps if c.get("status") == "ok" and "cols" in c
+                    for col, v in c["cols"].items() if v["kind"] == "str" and v["n_changed"]]
+    crossings = [dict(file=c["new"], **x) for c in comps if c.get("crossings") for x in c["crossings"]]
+    nm = [c["new"] for c in comps if c.get("status") == "NOT_MEASURED"]
+    doc = dict(run_id=run_id(), ts=ts(), prereg="docs/h200/icpe/T1_h200_cpu_tier.md", tier_params=os.path.relpath(NEW, REPO),
+               summary_old=old, summary_new=new, n_word_changes=sum(len(w["changes"]) for w in word_changes), word_changes=word_changes,
+               n_crossings=len(crossings), crossings=crossings, not_measured=nm, comparisons=comps)
+    json.dump(doc, open(os.path.join(T1, "t1_compare.json"), "w"), indent=1, ensure_ascii=False, default=str)
+    pd.DataFrame(rows).to_csv(os.path.join(T1, "t1_compare.csv"), index=False)
+    print(json.dumps(dict(n_word_changes=doc["n_word_changes"], n_crossings=len(crossings), not_measured=nm,
+                          E2E_old=old.get("E2E"), E2E_new=new.get("E2E"), B7=new["B7"]), ensure_ascii=False, default=str))
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
     sp.add_parser("build")
     sp.add_parser("selftest")
     sp.add_parser("dump")
+    sp.add_parser("report")
     a = ap.parse_args()
-    dict(build=cmd_build, selftest=cmd_selftest, dump=cmd_dump)[a.cmd](a)
+    dict(build=cmd_build, selftest=cmd_selftest, dump=cmd_dump, report=cmd_report)[a.cmd](a)
 
 
 if __name__ == "__main__":
