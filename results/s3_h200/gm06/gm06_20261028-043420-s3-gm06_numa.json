@@ -1,0 +1,360 @@
+{
+ "20261028-043420-s3-gm06": {
+  "srcs": {
+   "ts": "2026-10-28T04:34:31+08:00",
+   "host": "hgx-cn01",
+   "kernel": "6.8.0-90-generic",
+   "job": {
+    "env": {
+     "SLURM_JOB_ID": "22728",
+     "SLURMD_NODENAME": "hgx-cn01",
+     "SLURM_CPUS_ON_NODE": "32",
+     "SLURM_JOB_GPUS": "2,3",
+     "CUDA_VISIBLE_DEVICES": "0,1"
+    },
+    "cpus_allowed": "32-63",
+    "mems_allowed": "0-1",
+    "affinity": "32-63",
+    "node_cpulist": {
+     "0": "0-63",
+     "1": "64-127"
+    },
+    "cpuset_nodes": [
+     0
+    ],
+    "node_mem_gib": {
+     "0": {
+      "MemTotal": 755.65,
+      "MemFree": 338.18,
+      "FilePages": 361.94
+     },
+     "1": {
+      "MemTotal": 755.89,
+      "MemFree": 14.12,
+      "FilePages": 688.5
+     }
+    },
+    "zone_reclaim_mode": "0",
+    "numa_balancing": "1"
+   },
+   "gpus_visible": [
+    {
+     "index": 0,
+     "uuid": "GPU-3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+     "bus": "0000:51:00.0",
+     "numa_node": 0
+    },
+    {
+     "index": 1,
+     "uuid": "GPU-28b82872-1b7b-1604-fb01-c511fef7b88f",
+     "bus": "0000:63:00.0",
+     "numa_node": 0
+    }
+   ],
+   "gpu": {
+    "torch_index": 0,
+    "name": "NVIDIA H200",
+    "bus": "0000:51:00.0",
+    "uuid": "3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+    "smi_index": 0,
+    "numa_node": 0
+   },
+   "buffers": {
+    "src_gpu0": {
+     "spans": 1,
+     "bytes": 4294967296,
+     "pages_sampled": 64,
+     "nodes": {
+      "0": 64
+     },
+     "errors": {},
+     "vma": {
+      "vmas": 1,
+      "vmas_in_numa_maps": 1,
+      "pages": {
+       "0": 1048576
+      }
+     }
+    },
+    "src_gpu1": {
+     "spans": 1,
+     "bytes": 4294967296,
+     "pages_sampled": 64,
+     "nodes": {
+      "0": 64
+     },
+     "errors": {},
+     "vma": {
+      "vmas": 1,
+      "vmas_in_numa_maps": 1,
+      "pages": {
+       "0": 1048576
+      }
+     }
+    }
+   },
+   "summary": {
+    "gpu_numa": 0,
+    "cpuset_numa": "0",
+    "buf_numa": "0:128",
+    "numa_local": "yes"
+   },
+   "probe_s": 0.344
+  },
+  "big": {
+   "ts": "2026-10-28T04:34:42+08:00",
+   "host": "hgx-cn01",
+   "kernel": "6.8.0-90-generic",
+   "job": {
+    "env": {
+     "SLURM_JOB_ID": "22728",
+     "SLURMD_NODENAME": "hgx-cn01",
+     "SLURM_CPUS_ON_NODE": "32",
+     "SLURM_JOB_GPUS": "2,3",
+     "CUDA_VISIBLE_DEVICES": "0,1"
+    },
+    "cpus_allowed": "32-63",
+    "mems_allowed": "0-1",
+    "affinity": "32-63",
+    "node_cpulist": {
+     "0": "0-63",
+     "1": "64-127"
+    },
+    "cpuset_nodes": [
+     0
+    ],
+    "node_mem_gib": {
+     "0": {
+      "MemTotal": 755.65,
+      "MemFree": 321.3,
+      "FilePages": 377.94
+     },
+     "1": {
+      "MemTotal": 755.89,
+      "MemFree": 14.12,
+      "FilePages": 688.5
+     }
+    },
+    "zone_reclaim_mode": "0",
+    "numa_balancing": "1"
+   },
+   "gpus_visible": [
+    {
+     "index": 0,
+     "uuid": "GPU-3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+     "bus": "0000:51:00.0",
+     "numa_node": 0
+    },
+    {
+     "index": 1,
+     "uuid": "GPU-28b82872-1b7b-1604-fb01-c511fef7b88f",
+     "bus": "0000:63:00.0",
+     "numa_node": 0
+    }
+   ],
+   "gpu": {
+    "torch_index": 0,
+    "name": "NVIDIA H200",
+    "bus": "0000:51:00.0",
+    "uuid": "3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+    "smi_index": 0,
+    "numa_node": 0
+   },
+   "buffers": {
+    "big_16g": {
+     "spans": 1,
+     "bytes": 17179869184,
+     "pages_sampled": 64,
+     "nodes": {
+      "0": 64
+     },
+     "errors": {},
+     "vma": {
+      "vmas": 1,
+      "vmas_in_numa_maps": 1,
+      "pages": {
+       "0": 4194304
+      }
+     }
+    }
+   },
+   "summary": {
+    "gpu_numa": 0,
+    "cpuset_numa": "0",
+    "buf_numa": "0:64",
+    "numa_local": "yes"
+   },
+   "probe_s": 0.2615
+  },
+  "numa_local": {
+   "ts": "2026-10-28T04:34:48+08:00",
+   "host": "hgx-cn01",
+   "kernel": "6.8.0-90-generic",
+   "job": {
+    "env": {
+     "SLURM_JOB_ID": "22728",
+     "SLURMD_NODENAME": "hgx-cn01",
+     "SLURM_CPUS_ON_NODE": "32",
+     "SLURM_JOB_GPUS": "2,3",
+     "CUDA_VISIBLE_DEVICES": "0,1"
+    },
+    "cpus_allowed": "32-63",
+    "mems_allowed": "0-1",
+    "affinity": "32-63",
+    "node_cpulist": {
+     "0": "0-63",
+     "1": "64-127"
+    },
+    "cpuset_nodes": [
+     0
+    ],
+    "node_mem_gib": {
+     "0": {
+      "MemTotal": 755.65,
+      "MemFree": 317.18,
+      "FilePages": 381.95
+     },
+     "1": {
+      "MemTotal": 755.89,
+      "MemFree": 14.14,
+      "FilePages": 688.5
+     }
+    },
+    "zone_reclaim_mode": "0",
+    "numa_balancing": "1"
+   },
+   "gpus_visible": [
+    {
+     "index": 0,
+     "uuid": "GPU-3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+     "bus": "0000:51:00.0",
+     "numa_node": 0
+    },
+    {
+     "index": 1,
+     "uuid": "GPU-28b82872-1b7b-1604-fb01-c511fef7b88f",
+     "bus": "0000:63:00.0",
+     "numa_node": 0
+    }
+   ],
+   "gpu": {
+    "torch_index": 0,
+    "name": "NVIDIA H200",
+    "bus": "0000:51:00.0",
+    "uuid": "3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+    "smi_index": 0,
+    "numa_node": 0
+   },
+   "buffers": {
+    "numa_local": {
+     "spans": 1,
+     "bytes": 4294967296,
+     "pages_sampled": 64,
+     "nodes": {
+      "0": 64
+     },
+     "errors": {},
+     "vma": {
+      "vmas": 1,
+      "vmas_in_numa_maps": 1,
+      "pages": {
+       "0": 1048576
+      }
+     }
+    }
+   },
+   "summary": {
+    "gpu_numa": 0,
+    "cpuset_numa": "0",
+    "buf_numa": "0:64",
+    "numa_local": "yes"
+   },
+   "probe_s": 0.2918
+  },
+  "numa_remote": {
+   "ts": "2026-10-28T04:34:49+08:00",
+   "host": "hgx-cn01",
+   "kernel": "6.8.0-90-generic",
+   "job": {
+    "env": {
+     "SLURM_JOB_ID": "22728",
+     "SLURMD_NODENAME": "hgx-cn01",
+     "SLURM_CPUS_ON_NODE": "32",
+     "SLURM_JOB_GPUS": "2,3",
+     "CUDA_VISIBLE_DEVICES": "0,1"
+    },
+    "cpus_allowed": "32-63",
+    "mems_allowed": "0-1",
+    "affinity": "32-63",
+    "node_cpulist": {
+     "0": "0-63",
+     "1": "64-127"
+    },
+    "cpuset_nodes": [
+     0
+    ],
+    "node_mem_gib": {
+     "0": {
+      "MemTotal": 755.65,
+      "MemFree": 317.19,
+      "FilePages": 381.95
+     },
+     "1": {
+      "MemTotal": 755.89,
+      "MemFree": 14.14,
+      "FilePages": 688.5
+     }
+    },
+    "zone_reclaim_mode": "0",
+    "numa_balancing": "1"
+   },
+   "gpus_visible": [
+    {
+     "index": 0,
+     "uuid": "GPU-3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+     "bus": "0000:51:00.0",
+     "numa_node": 0
+    },
+    {
+     "index": 1,
+     "uuid": "GPU-28b82872-1b7b-1604-fb01-c511fef7b88f",
+     "bus": "0000:63:00.0",
+     "numa_node": 0
+    }
+   ],
+   "gpu": {
+    "torch_index": 0,
+    "name": "NVIDIA H200",
+    "bus": "0000:51:00.0",
+    "uuid": "3a94272a-0676-37fc-2f5e-8ccd31296fc1",
+    "smi_index": 0,
+    "numa_node": 0
+   },
+   "buffers": {
+    "numa_remote": {
+     "spans": 1,
+     "bytes": 4294967296,
+     "pages_sampled": 64,
+     "nodes": {
+      "0": 64
+     },
+     "errors": {},
+     "vma": {
+      "vmas": 1,
+      "vmas_in_numa_maps": 1,
+      "pages": {
+       "0": 1048576
+      }
+     }
+    }
+   },
+   "summary": {
+    "gpu_numa": 0,
+    "cpuset_numa": "0",
+    "buf_numa": "0:64",
+    "numa_local": "yes"
+   },
+   "probe_s": 0.288
+  }
+ }
+}

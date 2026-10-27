@@ -546,3 +546,15 @@ python3 code/s3/kvs_f0p.py report
 - D 檢查（`20261028-024941-s3-e2e-dcheck`）：兩個模型 0 個可用組合 → 偏離 1：都用 3.3。第一次 `20261028-024903-s3-e2e-dcheck` 是程式的錯（BF 斷言），沒有數字。
 - conversation：`20261028-025101-s3-e2e-run-llama-conv`、`20261028-025151-s3-e2e-run-qwen-conv`（各約 50 秒）。
 - FreeInference（16 週、1,222,199 筆）：`s3-e2e-run-{llama,qwen}-fi`，head node 背景兩個 process（使用者指示 head node 跑 CPU）。
+
+## S3-GM06 — G-M06（2 卡版）：**G-M06-PASS**（job 22728，2026-10-28 04:34）
+
+**狀態**: PASS
+**執行時間**: 2026-10-28T04:34:20+08:00 → 04:34:59（job 22728，hgx-cn01，GPU 實體 2、3）
+**run_id**: `20261028-043420-s3-gm06`（量測）；`20261028-044359-s3-gm06-report`（head node 重出報告）
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-T-gm06 --time=1:00:00 --gres=gpu:2 code/r_h200_s3.sh --part gm06`；報告 `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run s3-gm06-report python code/s3/gm06.py report`
+**產出檔**: `results/s3_h200/gm06/`（CSV 7 列、numa／gpu_guard／topo json、`gm06_report.json`）
+**關鍵數字**: 16 GiB 還原進 GPU 0：k＝1 0.29905 s（53.50 GiB/s）、k＝2 0.15056 s（106.27 GiB/s）→ **加速 1.986×，CI 下界 1.985**（判準 ≥1.6 且 CI 下界 ≥1.6）。k＝1 臂 2σ 0.06%。2 卡同時 H2D 各 53.45 GiB/s（單卡 53.43）；NVLink D2D GPU 1→0 368.17 GiB/s；M07 本地 53.36 GiB/s，「遠端」列不可用（已知的 pinned 快取重用，`src_numa` 0:64）。guard 兩卡 CLEAN。
+**失敗與異常**: 無。runner 的 GM06-REPORT 沒走 m7run → job 內的報告 run_id 是 `20261028-043459-adhoc`；head node 用 m7run 重出一份（數字逐位元相同），以重出的為準。
+**限制**: 只代表分到的這一對卡（NUMA 0、不同 PCIe switch、NV18）；鄰卡閒置；鄰卡在 decode 時的 TPOT 影響沒量；k＝4 NOT_MEASURED（偏離 2）。
+**意思**: 06 §4：A0 不過、G-M08 不過、G-M06 過 → **P4**（短的量測＋機制論文）。G-M06 跑完，「它跑的期間不送別的 stage-3 job」解除。
