@@ -51,6 +51,11 @@ done
 [ "$PART" = t1 ] || { echo "要 --part t1" >&2; exit 2; }
 
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
+# X3 的 x3_leads 要 tokenizer（固定 revision：Llama 4699cc75…、Qwen e28526f7…）。/work 的 hf-cache 從 10/23 起是空的，權重只在 hgx-cn01 的
+# /tmp（code/s3/fetch_models.py 下載同一個 revision、逐檔對雜湊）→ 同 r_h200_icpe.sh：HF_HOME 在 source env_h200.sh 之前指過去（job 22762 在這裡失敗）
+export ICPE_MODEL_ROOT="${ICPE_MODEL_ROOT:-/tmp/hungweilai-models/hf-cache}"
+export HF_HOME="$ICPE_MODEL_ROOT"
+unset M7_LLAMA_GLOB M7_QWEN_GLOB M7_MODEL_GLOB
 # shellcheck disable=SC1091
 source "$REPO/code/env_h200.sh"
 cd "$REPO"
@@ -80,6 +85,9 @@ if [ "$DRY" = 0 ]; then
   [ -x "$P3PY" ] || { echo "[r_h200_t1] 找不到 $P3PY" >&2; exit 2; }
   [ -f "$M7_TIER_PARAMS" ] || { echo "[r_h200_t1] 找不到 $M7_TIER_PARAMS（先在 head node 跑 code/icpe/t1.py build）" >&2; exit 2; }
   for f in calib_c1.csv calib_c5.csv; do [ -f "$P01/calib/$f" ] || { echo "[r_h200_t1] 缺 $P01/calib/$f（V1 要用）" >&2; exit 2; }; done
+  python3 "$REPO/code/s3/fetch_models.py" check --root "$ICPE_MODEL_ROOT" --models llama qwen \
+    || { echo "[r_h200_t1] tokenizer／權重不在 $ICPE_MODEL_ROOT（或戳記對不上）→ 停。先跑 s3-fetch（code/r_h200_s3.sh --part fetch）" >&2; exit 3; }
+  echo "[r_h200_t1] HF_HOME=$HF_HOME TIARA_HF_HUB=$TIARA_HF_HUB"
   mkdir -p "$T1" "$P3LOCAL" "$RAW"
   echo "[r_h200_t1] $(date -Is) part=$PART job=$SLURM_JOB_ID node=${SLURMD_NODENAME:-?} git=$(git rev-parse --short HEAD)"
   echo "[r_h200_t1] 同節點我們的 job："; squeue -u "$USER" -w "${SLURMD_NODENAME:-hgx-cn01}" -h -o '  %i %j %T %M' 2>&1
