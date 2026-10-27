@@ -459,3 +459,9 @@ python3 code/s3/kvs_f0p.py report
 - **256K 的 A0 TF 做完**：Q256（22509、22510）、Q14-256（22527、22499、22500、22501）各 72／72 題（A0 偏離 3）；`gzip -t` 都過。`a0.py select-gen`：Q256 23 個配置（run `20261027-063058-adhoc`；G1 B16·1/16·int4、B24·1/8·int4、B32·1/8·int4）、Q14-256 24 個配置（`20261027-063059-adhoc`；G1 B24·1/16·int4、B24·1/8·int4、B32·1/8·int4）→ `gen_selection_{Q256,Q14-256}.json`。
 - **生成速度（實測，切分片用）**：Q128 每題約 6 s＋prefill 9.7 s（run `20261027-062635-s3-a0-gen-Q128-s2`）；Q128 生成冒煙 PASS（`20261027-061411-s3-a0-gensmoke-Q128`）。256K：Q256 切 4 片、Q14-256 切 8 片（每片預計 1–1.5 小時〔估計〕；第一片會先跑生成冒煙）。
 - 送出（配額 1339G／1536G）：A0 生成 Q256 0–3／4 → **22606–22609**；Q14-256 0–7／8 → **22610–22617**（next-icpe 為空）。
+
+## S3-A0 — A0 漸進還原的判定：GA0-WEAK（2026-10-27 15:54，head node 報告）
+
+**狀態**: 四個判定格的 TF 與生成全部完成（生成各 288／288；TF L128／Q128 96、Q256／Q14-256 72〔偏離 3〕）；40 個結果檔 `gzip -t` 都過。
+**指令**: `source code/env_h200.sh; python code/s3/a0.py report` → `results/s3_h200/a0/a0_report.json`（run_id `20261027-155423-adhoc`）
+**判定**: **GA0-WEAK**——條件 2（P 對 E0 的 CI 下界 ≥ −2 pp）在所有 f ≤ 1/12 的 ORACLE／ORACLE-L 配置都不過；條件 3 在 Q128、Q256、Q14-256 有過。最接近 GO：**Q128 B24·1/8·int4·ORACLE**（f 0.078；對 E0 −0.35 [−2.05, +1.44]；對 U* +3.47 [+1.25, +5.73]；L128 同配置對自己 U* +2.37）——條件 2 差 0.05 pp。GA0-SEL NOT_APPLICABLE；G-M02：L128／Q128／Q14-256 SUPPORTED、Q256 NOT_SUPPORTED（差值都小、CI 跨 0）。照 §2：不判 GO、照實報告、11/17 討論。連帶 S0-2 預篩 → **ASK**（`kvs_s0.py report` run `20261027-155545-adhoc`）。細節：`runs/A0_progressive_restore.md` 結果節。

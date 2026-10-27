@@ -6,7 +6,7 @@
 
 | 閘 | 文件 | 程式 | 結果 | 狀態 |
 |:--|:--|:--|:--|:--|
-| A0（＝G-M01/02） | [A0_progressive_restore.md](A0_progressive_restore.md) | `code/s3/a0.py`、`code/s3/a0_gpu.py` | `results/s3_h200/a0/` | 已登記，待冒煙 |
+| A0（＝G-M01/02） | [A0_progressive_restore.md](A0_progressive_restore.md) | `code/s3/a0.py`、`code/s3/a0_gpu.py` | `results/s3_h200/a0/` | **GA0-WEAK**（10/27）：條件 2 全不過；最接近 GO 的 Q128 B24·1/8 差 0.05 pp |
 | B0＋G-M08（量時間） | [B0_interference.md](B0_interference.md) | `code/s3/b0.py`、`code/s3/bgengine.py` | `results/s3_h200/b0/` | **FLIP 不成立、SHARE 成立、STATIC 不成立（只有 dq_vq）；G-M08 STOP**（10/26） |
 | G-M04（品質，併在 A0 TF） | [G_M04_prefix_select.md](G_M04_prefix_select.md) | `code/s3/a0_gpu.py --gm04` | `results/s3_h200/a0/raw/gm04_*` | 已登記 |
 | C0（CPU） | [C0_cost_model.md](C0_cost_model.md) | `code/s3/c0.py` | `results/s3_h200/c0/` | 已登記 |
