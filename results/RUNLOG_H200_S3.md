@@ -537,4 +537,4 @@ python3 code/s3/kvs_f0p.py report
 - 讀程式確認：ICPE 的 X1 模型已經是「CPU BF16＋慢層 INT4＋Cake」，HINT-PF／O-PF 已有（C2）；GPU 忙只有一個合成倍數（2.07），沒有 MPS、沒有背景吞吐。P0-2 的 GPU 重播（job 21655，12 run，3:18:25）只有 GPU 閒。
 - B0 的 MPS 是限制背景 process；`bg_ratio` 的分母是同一個上限下的 solo → SHARE 的 ≥0.90 **不含上限本身的代價**（O9：matmul 限 87% ×1.051、75% ×1.18）。端到端要另算，可以用 B0 每區塊的 `bg_solo_rate` 算，不用新量測。
 - 模擬器需要的 B0 格子：Llama 144／175、Qwen 150／175 過 2σ ≤ 5%（只數格子，沒有看新數值）。
-- 草稿：`docs/stage3_design_20261024/runs/E2E_combo_DRAFT.md`（配置 K0–K3、O；格子；判準待使用者確認；風險；程式 2–4 天、GPU 約 6–7 小時〔估計〕）。
+- 草稿：`docs/stage3_design_20261024/runs/E2E_combo_DRAFT.md`（10/28 改名 E2E_combo.md 並登記）（配置 K0–K3、O；格子；判準待使用者確認；風險；程式 2–4 天、GPU 約 6–7 小時〔估計〕）。
