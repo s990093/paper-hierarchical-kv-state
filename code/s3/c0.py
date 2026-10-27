@@ -371,12 +371,15 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--self-test", action="store_true")
     sub = ap.add_subparsers(dest="cmd")
-    sub.add_parser("cells")
-    sub.add_parser("eval")
-    sub.add_parser("ref2sigma")
+    for name in ("cells", "eval", "ref2sigma"):
+        s = sub.add_parser(name)
+        s.add_argument("--out-dir", default="", help="輸出目錄（預設 results/s3_h200/c0；C0-v2 用 results/s3_h200/c0/v2，不覆蓋 v1）")
     a = ap.parse_args()
     if a.self_test:
         sys.exit(0 if self_test() else 1)
+    if getattr(a, "out_dir", ""):
+        global OUT
+        OUT = a.out_dir
     {"cells": cmd_cells, "eval": cmd_eval, "ref2sigma": cmd_ref2sigma}[a.cmd](a)
 
 

@@ -473,3 +473,12 @@ python3 code/s3/kvs_f0p.py report
 ## S3-KVS-ARCHIVE — F0、F0P 封存（使用者 10/27）
 
 使用者 10/27：「第三條（F0、F0P）封存，之後再探索」。`docs/kv_sharing_hiding_20261026/runs/README.md` 兩列標「封存」；結果（`results/s3_h200/kvs_f0/`、`kvs_f0p/`）、程式（`code/s3/kvs_f0.py`、`kvs_f0p.py`）、登記檔都保留不動。F0 全網格的「問人」不再待決；F0P 的 INHERIT-ONLY 照登記記為負面結果。S0（多人共用縮圖）不在封存範圍，跟著 A0 走。
+
+## S3-C0-v2 — C0 再跑一次：GC-FAIL（同 v1）；發現 §1 對 p01 資料的描述有誤（2026-10-27 16:40，head node）
+
+**狀態**: GC-FAIL（照登記，v1、v2 都報）
+**run_id**: `20261027-164026-s3-c0-cells-v2`、`20261027-164036-s3-c0-eval-v2`、`20261027-164051-s3-c0-ref2sigma-v2`
+**指令**: `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; for s in cells eval ref2sigma; do m7run s3-c0-$s-v2 python3 code/s3/c0.py $s --out-dir results/s3_h200/c0/v2; done`
+**產出**: `results/s3_h200/c0/v2/`（v1 留在 `results/s3_h200/c0/`）
+**關鍵數字（實測資料上的預測評估）**: 352 格；平均代價 長度 48.93%、負載 55.09%、平台 56.68%、kernel 33.45%（和 v1 相同）。差別只在 ICPE p01brr 補的 12 格（5→10 次，中位數變動 < 0.5%）。P2 不納入（不在 §1 來源清單、且是融合 dequant）。
+**失敗與異常**: 發現 C0 登記 §1 的括號描述錯了：`icpe_h200/p01/grid` 的 run 用融合 dequant（llama sdpa `k3:8:2`、qwen fa3 `k1`），不是 S0；預測器的 d 用 PyTorch 版 → icpe 格子（含整個 kernel 切法）的反量化成本被高估。v1、v2 都受影響；照實記，要修就另登記 C0-v3。
