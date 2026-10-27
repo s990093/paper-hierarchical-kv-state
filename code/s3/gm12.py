@@ -293,17 +293,31 @@ def cmd_report(a):
                               max_2sigma=max(2 * s for _, _, s in pts))
         res["speed"][m] = slope
     # 判定（登記 §2）
+    # 三值：True／False／None（量不到或太晃，判不了）。「兩格都要過」→ 任何一個量到的不過就是 False，缺的只在其餘都過時才讓結果變 None
+    def all3(xs):
+        return False if False in xs else (None if None in xs else True)
     verdict = {}
     for d in DENS:
-        q_ok = all(res["quality"].get(cell, {}).get(f"S|{d}|1.0") and res["quality"][cell][f"S|{d}|1.0"]["lo"] >= -2.0 for cell in CELLS)
-        s_ok = []
-        for m, sl in res["speed"].items():
+        qs = []
+        for cell in CELLS:
+            b = res["quality"].get(cell, {}).get(f"S|{d}|1.0")
+            qs.append(None if not b else b["lo"] >= -2.0)          # Q128 沒跑（使用者 10/28 收掉）→ None
+        ss = []
+        for m in ("llama", "qwen"):
+            sl = res["speed"].get(m, {})
             dn, sp = sl.get("dense"), sl.get(f"sparse{d}")
-            if dn and sp:
-                s_ok.append(sp["slope_ms_per_block"] / dn["slope_ms_per_block"] <= 0.3 and sp["ci"][1] / dn["slope_ms_per_block"] <= 0.3)
-        verdict[str(d)] = dict(quality_ok=q_ok, speed_ok=(all(s_ok) if s_ok else None))
-    any_pass = any(v["quality_ok"] and v["speed_ok"] for v in verdict.values())
-    res["verdict"] = dict(by_density=verdict, G_M12="PASS" if any_pass else ("NOT_MEASURED" if not res["speed"] else "STOP"))
+            if not (dn and sp):
+                ss.append(None)
+            elif max(dn["max_2sigma"], sp["max_2sigma"]) > 0.05:      # 登記 §2：任何一點 2σ > 5% → 先回報、不判定
+                ss.append(None)
+            else:
+                ss.append(sp["slope_ms_per_block"] / dn["slope_ms_per_block"] <= 0.3 and sp["ci"][1] / dn["slope_ms_per_block"] <= 0.3)
+        q_ok, s_ok = all3(qs), all3(ss)
+        verdict[str(d)] = dict(quality_by_cell=dict(zip(CELLS, qs)), speed_by_model=dict(zip(("llama", "qwen"), ss)),
+                               quality_ok=q_ok, speed_ok=s_ok, passed=(False if False in (q_ok, s_ok) else (None if None in (q_ok, s_ok) else True)))
+    ps = [v["passed"] for v in verdict.values()]
+    res["verdict"] = dict(by_density=verdict, missing_quality=[cell for cell in CELLS if not res["quality"].get(cell)],
+                          G_M12="PASS" if True in ps else ("STOP" if all(p is False for p in ps) else "NOT_DETERMINED"))
     os.makedirs(OUT, exist_ok=True)
     json.dump(res, open(os.path.join(OUT, "gm12_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
     print(json.dumps(res["verdict"], ensure_ascii=False))

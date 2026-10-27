@@ -517,3 +517,10 @@ python3 code/s3/kvs_f0p.py report
 
 - 4 卡版 22281 從 10/26 19:08 可以開跑起一直排不上（`AssocGrpCpuLimit`：帳號 4 張卡要同時空出來）。照 `runs/G_M06_multipath.md` 偏離 2（2026-10-27T17:41:33Z，登記時沒有任何 G-M06 數字）改成 2 卡：判準不變（k＝2 對 k＝1），k＝4 的各項 NOT_MEASURED；分到的那一對卡的拓撲照實記、不推論。runner 的卡數檢查 ≥4 → ≥2；`sched.py` 的「多卡量時間 job 不讓位」例外改成只對 ≥4 卡（commit 13dd058；兩支自檢 PASS、dry-run 正常）。
 - `scancel 22281`；送出 `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-T-gm06 --time=1:00:00 --gres=gpu:2 code/r_h200_s3.sh --part gm06` → **22728**（QOS h200q_2g，32 CPU；送出時配額 1364G，next-icpe 為空）。送出時排隊原因 `AssocGrpCpuLimit`（同帳號其他人用滿 64 CPU）。它跑的期間不送別的 stage-3 job。
+
+## S3-CLOSE-1 — 收掉不影響決策表的項目（使用者 10/28「第 2–5 項都照建議做」）
+
+- **D0**：`scancel 22536`（held 的量測 job）；GD0 NOT_MEASURED（上游編譯錯誤＋A0 STOP）。登記檔加「結案」。
+- **G-M11**：接受 NOT_DETERMINED，不再量。登記檔加「結案」。
+- **G-M12**：Q128 品質不跑（NOT_MEASURED）。用既有資料出報告：**G-M12-STOP**（run `20261028-015835-s3-gm12-report`）——L128 品質 F＝1.0 的 Δgold_lp d＝0.1 −14.56 [−17.24, −11.93]、d＝0.2 −8.64 [−10.38, −6.92]（要 ≥ −2）；qwen 速度比 0.47×、0.93×（要 ≤ 0.3×；2σ < 1%）；llama 速度 2σ 26–35% → 不判定。兩格都要過，所以缺 Q128 也判得出。`gm12.py report` 改成三值判定，並補上登記 §2 的「2σ > 5% 不判定」（原本沒做）；過渡版報告 `20261028-015735-s3-gm12-report` 被覆蓋。
+- **KVS S0-2 預篩**：ASK → **STOP-S**（使用者決定；A0 WEAK＋A0-C STOP）。
