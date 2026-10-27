@@ -309,11 +309,71 @@ def cmd_report(a):
     print(json.dumps(res["verdict"], ensure_ascii=False))
 
 
+def cmd_diag(a):
+    """只報告（RUNLOG S3-GM12-FAIL-1 的診斷；自檢與判準都不改）。d＝1 時逐層比較 sparse_chunk 和 fa3 prefill 的 KV，
+    兩輪：default、兩條路徑都強制 fa3 num_splits=1。第 0 層的 K／V 不經過 attention → 若只是加總順序造成的捨入差，第 0 層必為 0。"""
+    import gc
+    import torch
+    import vllm.vllm_flash_attn as VF
+    import a0_gpu as G
+    c = A.CELLS[a.cell]
+    model, nb = c["model"], c["nb"]
+    sess = G.Session(model, nb, store="gpu", calib_xl=a.calib_xl or G.calib_path(model))
+    r = A.plan_set("tf")[0]
+    it = sess.T.make_item(r["task"], r["b1"], r["b2"], r["seed"], sess.ans.tok, sess.P.get(r["task"]), n_blocks=nb)
+    km = sess.km
+    ids = torch.tensor(it["context_ids"], device=km.device)
+    orig = VF.flash_attn_varlen_func
+    out = dict(cell=a.cell, model=model, run_id=A.run_id(), ts=A.ts(), item=it["item_id"], modes={})
+    for mode in ("default", "splits1"):
+        if mode == "splits1":
+            def fa1(*x, **k):
+                k["num_splits"] = 1
+                return orig(*x, **k)
+            VF.flash_attn_varlen_func = fa1          # KVModel.set_attn 與 sparse_chunk 都在呼叫時才從模組取
+        else:
+            VF.flash_attn_varlen_func = orig
+        try:
+            st = G.ItemState(sess, it, 0)                                      # fa3 prefill（這一輪的 fa 設定）
+            ref = km.kv[:, :, :, :32 * CHUNK].clone()
+            pooled = init_pooled(km, nb)
+            with torch.inference_mode():
+                for i in range(1, 32):
+                    sparse_chunk(km, ids, i, 1.0, pooled)
+            new = km.kv[:, :, :, :32 * CHUNK]
+            layers = []
+            for li in range(km.L):
+                row = dict(layer=li)
+                for kv, name in ((0, "k"), (1, "v")):
+                    rf, nw = ref[li, kv].float(), new[li, kv].float()
+                    d = (nw - rf).abs()
+                    j = int(d.argmax())
+                    v = float(rf.flatten()[j])
+                    ulp = 2.0 ** (math.floor(math.log2(abs(v))) - 7) if v != 0 else 2.0 ** -133
+                    row.update({f"{name}_max_diff": round(float(d.max()), 6), f"{name}_max_abs_ref": round(float(rf.abs().max()), 4),
+                                f"{name}_rel": round(float(d.max()) / max(1e-12, float(rf.abs().max())), 8),
+                                f"{name}_ulps_at_max": round(float(d.max()) / ulp, 3),
+                                f"{name}_frac_neq": round(float((d > 0).float().mean()), 6)})
+                layers.append(row)
+            out["modes"][mode] = dict(max_diff=max(max(l_["k_max_diff"], l_["v_max_diff"]) for l_ in layers),
+                                      first_layer_with_diff=next((l_["layer"] for l_ in layers if max(l_["k_max_diff"], l_["v_max_diff"]) > 0), None),
+                                      layers=layers)
+            print(mode, json.dumps({k: v for k, v in out["modes"][mode].items() if k != "layers"}), flush=True)
+            G.free_item(st)
+            del st, ref, new
+            gc.collect()
+            torch.cuda.empty_cache()
+        finally:
+            VF.flash_attn_varlen_func = orig
+    json.dump(out, open(a.out, "w"), indent=1)
+    print(json.dumps({m: {k: v for k, v in x.items() if k != "layers"} for m, x in out["modes"].items()}), flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--self-test", action="store_true")
     sub = ap.add_subparsers(dest="cmd")
-    for name in ("quality", "gpu-selftest"):
+    for name in ("quality", "gpu-selftest", "diag"):
         s = sub.add_parser(name)
         s.add_argument("--cell", choices=CELLS, required=True)
         s.add_argument("--shard", default="0/1")
@@ -331,7 +391,7 @@ def main():
         ok &= [n_select(i, 0.2) for i in (10, 100)] == [3, 20]
         print("self-test", "PASS" if ok else "FAIL")
         sys.exit(0 if ok else 1)
-    {"quality": cmd_quality, "speed": cmd_speed, "gpu-selftest": cmd_gpu_selftest, "report": cmd_report}[a.cmd](a)
+    {"quality": cmd_quality, "speed": cmd_speed, "gpu-selftest": cmd_gpu_selftest, "diag": cmd_diag, "report": cmd_report}[a.cmd](a)
 
 
 if __name__ == "__main__":

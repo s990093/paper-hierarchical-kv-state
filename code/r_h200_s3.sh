@@ -61,9 +61,9 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run|kvs-s0) TIMING=0 ;;
+  fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|gm12-q|d0-prep|d0-run|kvs-s0|gm12-diag) TIMING=0 ;;
   b0-run|b0-diag|gm11-redo|w0gfio|gm12-s|gm06) TIMING=1 ;;
-  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|gm11-redo|w0gfio|gm12-q|gm12-s|d0-prep|d0-run|gm06|kvs-s0" >&2; exit 2 ;;
+  *) echo "要 --part fetch|a0-smoke|a0-gensmoke|a0-tf|a0-gen|b0-prep|b0-run|b0-diag|gm11-redo|w0gfio|gm12-q|gm12-s|gm12-diag|d0-prep|d0-run|gm06|kvs-s0" >&2; exit 2 ;;
 esac
 if [ "$PART" = b0-run ]; then
   [ -n "$MODEL" ] && [ -n "$SETUP" ] && [ -n "$MODES" ] || { echo "b0-run 要 --model --setup --modes" >&2; exit 2; }
@@ -276,6 +276,13 @@ if [ "$PART" = gm12-q ]; then
   step MODELS ensure_models "$M"
   [ "$SI" = 0 ] && step GM12-SELFTEST-$CELL m7run s3-gm12-selftest-$CELL bash -c "python code/s3/gm12.py gpu-selftest --cell $CELL --out \"\$RUN_DIR/gm12_selftest.json\""
   step GM12-Q-$CELL-$SI m7run s3-gm12-q-$CELL-s$SI python code/s3/gm12.py quality --cell "$CELL" --shard "$SHARD" --budget-min "$BUDGET"
+fi
+# G-M12 自檢失敗的診斷（S3-GM12-FAIL-1；只報告，判準不改）：Q128 與 L128（對照）各跑 default／num_splits=1 兩輪
+if [ "$PART" = gm12-diag ]; then
+  step MODELS ensure_models llama qwen
+  for c in Q128 L128; do
+    step GM12-DIAG-$c m7run s3-gm12-diag-$c bash -c "python code/s3/gm12.py diag --cell $c --out \"\$RUN_DIR/gm12_diag_$c.json\""
+  done
 fi
 if [ "$PART" = gm12-s ]; then
   step MODELS ensure_models llama qwen
