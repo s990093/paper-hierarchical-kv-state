@@ -488,3 +488,15 @@ python3 code/s3/kvs_f0p.py report
 - 程式（commit 89e1f50）：`a0.py` 加 gen1c（seed0 77000，T2–T5 各 144）、gen2c（78000，T2–T4 各 96，第 2 輪）＝864 題，seed 重疊檢查涵蓋 A0、USED_SEEDS、D0（重疊 0）；每格固定配置清單（Q128 9 個、L128 10 個，只由 plan 檔的位元組比決定）；`gen --a0c` 寫 `raw/a0c_gen_<cell>_s<i>.csv.gz`（A0 report 不讀）；`a0c-report` 照登記 §4。自檢 PASS。runner part `a0c-gen`（品質型；每格第一片先跑 2 題冒煙，輸出在 run 目錄、不看分數）。dry-run 正常。
 - 送出（2026-10-27 16:52，配額 1339G／1536G，next-icpe 為空 → 沒加依賴）：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-a0cgen-<cell>-<i> --time=4:00:00 code/r_h200_s3.sh --part a0c-gen --cell <cell> --shard <i>/<n>` → Q128 0–3／4 **22662–22665**、L128 0–5／6 **22666–22671**。
 - 送出時帳號 4 卡由同帳號其他人的 job 佔滿（`AssocGrpCpuLimit`），會排在 22661（gm12-diag）之後輪到。
+
+## S3-GM12-DIAG-RESULT — Qwen 自檢差 28 全部來自 fa3 的 split-KV（加總順序）；程式邏輯逐位元正確（job 22661，2026-10-27 18:44）
+
+**狀態**: 診斷完成（只報告；G-M12 的判準與 Qwen 的「停」都不改）
+**run_id**: `20261027-184414-s3-gm12-diag-Q128`、`20261027-184450-s3-gm12-diag-L128`（輸出 `gm12_diag_<cell>.json` 在 run 目錄；題目 `T2_front-back_s71000`，d＝1）
+**指令**: `sbatch --job-name=s3-gm12diag --time=1:00:00 code/r_h200_s3.sh --part gm12-diag`
+**關鍵數字**:
+- Q128 default：最大差 **28.3125**；第 0 層 K／V 差 **0**；第 1 層起 28 層有 27 層不同（第 1 層 K 最大差 0.5＝1 個 bf16 刻度、11.8% 元素不同；往後層層放大，K 最大差／參考最大量級最高 0.68（第 17 層）、V 最高 1.10（第 20 層）；第 27 層 V 最大差 28.3125、82.9% 元素不同）。
+- Q128 兩條路徑都強制 fa3 `num_splits=1`：28 層**全部 0.0**（逐位元相同）。
+- L128（對照）：default 與 `num_splits=1` 都 **0.0**。
+**讀法**: 第 0 層（不經過 attention）為 0、第 1 層起只差 1 個刻度、`num_splits=1` 時全部歸零 → 差異只來自 fa3 對兩種形狀（每個 KV head 一條序列 vs 整組）選了不同的 split-KV、加總順序不同；不是 sparse_chunk 的邏輯錯。這 1 個刻度在 Qwen 128K 的 28 層裡被放大到和數值本身同量級（L128 兩種形狀剛好選到同一個 split，所以沒出現）。
+**對判準的意思**: 登記的自檢門檻（< 0.25）在 default 設定下過不了，原因是數值路徑而不是程式；要做 Qwen 就得改設定（例：兩條路徑都固定 `num_splits=1`），那是 G-M12 偏離，要使用者決定。
