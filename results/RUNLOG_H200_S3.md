@@ -524,3 +524,10 @@ python3 code/s3/kvs_f0p.py report
 - **G-M11**：接受 NOT_DETERMINED，不再量。登記檔加「結案」。
 - **G-M12**：Q128 品質不跑（NOT_MEASURED）。用既有資料出報告：**G-M12-STOP**（run `20261028-015835-s3-gm12-report`）——L128 品質 F＝1.0 的 Δgold_lp d＝0.1 −14.56 [−17.24, −11.93]、d＝0.2 −8.64 [−10.38, −6.92]（要 ≥ −2）；qwen 速度比 0.47×、0.93×（要 ≤ 0.3×；2σ < 1%）；llama 速度 2σ 26–35% → 不判定。兩格都要過，所以缺 Q128 也判得出。`gm12.py report` 改成三值判定，並補上登記 §2 的「2σ > 5% 不判定」（原本沒做）；過渡版報告 `20261028-015735-s3-gm12-report` 被覆蓋。
 - **KVS S0-2 預篩**：ASK → **STOP-S**（使用者決定；A0 WEAK＋A0-C STOP）。
+
+## S3-G9-EXPLORE — G9 投機式還原：零 GPU 探索＋查新（使用者 10/28 第 5 項；探索性，不是判定）
+
+**指令**: `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run s3-g9-explore python code/s3/g9_explore.py` → `results/s3_h200/g9/explore.json`（run_id `20261028-020109-s3-g9-explore`；只讀 A0／A0-C 既有的 TF 與生成檔）
+**失敗與異常**: 第一次（`20261028-020051-s3-g9-explore` 附近，exit≠0）是我新寫的程式的筆誤（`A.ROOT` → 應為 `A.REPO`，AttributeError），修正後重跑；不是量測失敗。
+**關鍵數字（代理指標）**: 7.8% 位元組的 `P|B24|1/8|int4` 草稿：TF 逐 token 和 E0 argmax 一致 0.93–0.97（四格）；整段生成和 E0 相同 0.47–0.60。普通 INT4（31%）0.97–0.985／0.67–0.75。完整表見 `lit/L9_g9_speculative_restore.md`。
+**查新（self-review、摘要層級）**: VeriCache（arXiv 2605.17613，2026-05）、Lynx（2607.01831，2026-07）已經做了「壓縮 KV 先生成、完整 KV 到了再驗證、無損」；QuantSpec（ICML 2025）、MASW（2608.30252）同類 → **G9 新意低，不建議當新方向**。
