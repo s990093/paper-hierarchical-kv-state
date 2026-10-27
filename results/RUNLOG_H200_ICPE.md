@@ -328,3 +328,12 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - **報告程式**：`t1.py report`（commit 8d3eee7），在任何 T1 數字之前寫好；舊對舊測過：0 差異，B1／B2／B3／B4／B7／C1／C2 的 summary 重現 ICPE_EVIDENCE 的值。
 - **compute node**：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1 -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1` → **job 22762**（2026-10-28 07:0x +08 開跑，hgx-cn01；不量時間；ICPE 沒有在等的 job，`sched.py next-icpe` 空；配額 1356G／1536G）。步驟：自檢 → X1 V0／V1／V2（sweep、analyze、H1800、H3600）→ fullsim → X1 FreeInference（前 6 週）→ X3（validate、tables、leads、hide）→ X4（trace、validate、sweep、analyze）。
 - **之後（head node）**：`p12_queue.py`（T1 的 X4）→ `t1.py report`；E2E-C 的 T1 版等現在那份 E2E-C（FreeInference 還在跑）跑完再跑（登記 §6）。
+
+## ICPE-T1-FAIL-1 — job 22762 在 T1-X3-LEADS 失敗（2026-10-28 07:43；runner 設定錯，已修、從 T1-X3-EVENTS 重送 job 22772）
+
+- **跑完的步驟**（06:58–07:43，都 exit 0）：T1-SELFTEST；T1-X1-V0／V1／V2 的 SWEEP、AN、H1800、H3600；T1-FULLSIM；T1-P12-VERIFY、X1FI-SWEEP、X1FI-AN、X1FI-AN-USER；T1-EX-NEED、EX-VERIFY；T1-X3-VALIDATE、X3-TABLES、X3-TABLES-RUN、X3-EVENTS。log：`$TIARA_RUNS/slurm-icpe-t1-22762.out`。
+- **失敗**：`T1-X3-LEADS` 的第一個來源 `x3_leads.py consts`：
+  `OSError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/work/ChihChungHsu/hungweilai/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/e28526f7bb80e2a9c8af03b831a9af3812f18fba'. Use `repo_type` argument if needed.`（`AutoTokenizer.from_pretrained` 找不到目錄，當成 repo id）
+- **原因**：`x3_leads.py` 的 tokenizer 路徑＝`$TIARA_HF_HUB/models--…/snapshots/<固定 revision>`；`r_h200_t1.sh` 沒有像 `r_h200_icpe.sh` 那樣在 source env_h200.sh 之前把 `HF_HOME` 指到 hgx-cn01 的 `/tmp/hungweilai-models/hf-cache`，所以指到 /work 的 hf-cache（10/23 起是空的）。10/21 原本那次 X3 跑的時候 /work 的 hf-cache 還在。我的 runner 漏抄，不是模擬的問題。
+- **修正**（commit 見 `fix(icpe-t1)`）：runner 開頭設 `ICPE_MODEL_ROOT`／`HF_HOME`（同 r_h200_icpe.sh），開跑時 `fetch_models.py check --models llama qwen`。revision 相同（Llama `4699cc75…`、Qwen `e28526f7…`，fetch_models 逐檔對過 HF 的雜湊）→ 輸入不變。
+- **重送**：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1b -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1 --from T1-X3-EVENTS` → **job 22772**（排隊中：帳號 4 卡滿；同使用者的 kc-la08-* 是品質 run、不計時，可以同節點）。T1-X3-EVENTS 會把舊的事件目錄改名、重建。
