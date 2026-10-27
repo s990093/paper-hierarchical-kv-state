@@ -512,3 +512,8 @@ python3 code/s3/kvs_f0p.py report
 **失敗與異常**: 無
 **與 A0 的差異**: Q128 的 P 在 A0 舊題目上 P−U* +3.47、P−E0 −0.35；新題目上縮成 +1.28、−2.58（登記 §1 預先講的贏家詛咒）。L128 新舊幾乎相同（+2.37 → +2.32）。
 **意思**: 方向 A 停、寫成負面結果；A0 的 WEAK 記為「沒有被確認」。06 §4：P3 不成立（P1、P2 已由 G-M08 STOP 排除）→ 剩 P4（G-M06）或負面結果／方向 C。KVS S0-2 預篩：A0-C 只在 GO 時改寫，STOP 不改 → 仍「問人」。
+
+## S3-GM06-2GPU — G-M06 改 2 卡（偏離 2；使用者 10/28「改兩卡」）
+
+- 4 卡版 22281 從 10/26 19:08 可以開跑起一直排不上（`AssocGrpCpuLimit`：帳號 4 張卡要同時空出來）。照 `runs/G_M06_multipath.md` 偏離 2（2026-10-27T17:41:33Z，登記時沒有任何 G-M06 數字）改成 2 卡：判準不變（k＝2 對 k＝1），k＝4 的各項 NOT_MEASURED；分到的那一對卡的拓撲照實記、不推論。runner 的卡數檢查 ≥4 → ≥2；`sched.py` 的「多卡量時間 job 不讓位」例外改成只對 ≥4 卡（commit 13dd058；兩支自檢 PASS、dry-run 正常）。
+- `scancel 22281`；送出 `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-T-gm06 --time=1:00:00 --gres=gpu:2 code/r_h200_s3.sh --part gm06` → **22728**（QOS h200q_2g，32 CPU；送出時配額 1364G，next-icpe 為空）。送出時排隊原因 `AssocGrpCpuLimit`（同帳號其他人用滿 64 CPU）。它跑的期間不送別的 stage-3 job。
