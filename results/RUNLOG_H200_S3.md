@@ -482,3 +482,9 @@ python3 code/s3/kvs_f0p.py report
 **產出**: `results/s3_h200/c0/v2/`（v1 留在 `results/s3_h200/c0/`）
 **關鍵數字（實測資料上的預測評估）**: 352 格；平均代價 長度 48.93%、負載 55.09%、平台 56.68%、kernel 33.45%（和 v1 相同）。差別只在 ICPE p01brr 補的 12 格（5→10 次，中位數變動 < 0.5%）。P2 不納入（不在 §1 來源清單、且是融合 dequant）。
 **失敗與異常**: 發現 C0 登記 §1 的括號描述錯了：`icpe_h200/p01/grid` 的 run 用融合 dequant（llama sdpa `k3:8:2`、qwen fa3 `k1`），不是 S0；預測器的 d 用 PyTorch 版 → icpe 格子（含整個 kernel 切法）的反量化成本被高估。v1、v2 都受影響；照實記，要修就另登記 C0-v3。
+
+## S3-A0C-SUBMIT — A0-C 確認性實驗送出（使用者 10/27「做」；登記 `runs/A0C_confirm.md`，2026-10-27T08:48:21Z，commit e005950）
+
+- 程式（commit 89e1f50）：`a0.py` 加 gen1c（seed0 77000，T2–T5 各 144）、gen2c（78000，T2–T4 各 96，第 2 輪）＝864 題，seed 重疊檢查涵蓋 A0、USED_SEEDS、D0（重疊 0）；每格固定配置清單（Q128 9 個、L128 10 個，只由 plan 檔的位元組比決定）；`gen --a0c` 寫 `raw/a0c_gen_<cell>_s<i>.csv.gz`（A0 report 不讀）；`a0c-report` 照登記 §4。自檢 PASS。runner part `a0c-gen`（品質型；每格第一片先跑 2 題冒煙，輸出在 run 目錄、不看分數）。dry-run 正常。
+- 送出（2026-10-27 16:52，配額 1339G／1536G，next-icpe 為空 → 沒加依賴）：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-a0cgen-<cell>-<i> --time=4:00:00 code/r_h200_s3.sh --part a0c-gen --cell <cell> --shard <i>/<n>` → Q128 0–3／4 **22662–22665**、L128 0–5／6 **22666–22671**。
+- 送出時帳號 4 卡由同帳號其他人的 job 佔滿（`AssocGrpCpuLimit`），會排在 22661（gm12-diag）之後輪到。
