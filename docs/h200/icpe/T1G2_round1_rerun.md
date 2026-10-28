@@ -38,3 +38,5 @@
 - 登記時 repo HEAD：`8ad833d`（本檔隨下一個 commit 進 git）
 
 ## 偏離（登記之後）
+
+- 2026-10-28T15:08:47Z：別的使用者的 job 照 T1G 附加 1 處理（`docs/h200/icpe/T1G_gpu_rerun.md`），只報告，不改判定。
