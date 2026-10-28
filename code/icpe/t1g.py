@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import csv
 import glob
+import json
 import os
 import socket
 import subprocess
@@ -100,15 +101,51 @@ def cmd_overlap(a):
     return 1 if hits else 0
 
 
+A3_PREF = ("S5L", "S5c")           # T1G-2 §1 第 3 步：平手取原本 A／B／C 用過的策略，再平手取字母序第一個
+
+
+def cmd_a3_plan(a):
+    """T1G-2 §1 第 2、3 步：r1_sim_configs.csv 的存活設定（Llama）＋每格 best_wt 出現最多的策略 → a3_plan.tsv（runner 的 --part a3 讀）。"""
+    from collections import Counter
+    cfg = [r for r in csv.DictReader(open(os.path.join(a.dir, "r1_sim_configs.csv")))
+           if r["model"] == "llama31_8b" and r["survive"] == "True"]
+    ver = list(csv.DictReader(open(os.path.join(a.dir, "r1_sim_verdict.csv"))))
+    tp = json.load(open(a.tier_params))
+    tier_cpu = float(tp["cpu"]["read_GiBps"])
+    key = ("release", "workload", "ssd_dev", "cpu_frac")
+    rows = []
+    for c in cfg:
+        g = [v for v in ver if v["model"] == "llama31_8b" and abs(float(v["cpu_gibps"]) - float(c["cpu_gibps"])) < 1e-6
+             and all(v[k] == c[k] for k in key)]
+        assert len(g) == 5, (c, len(g))
+        cnt = Counter(v["best_wt"] for v in g)
+        top = max(cnt.values())
+        tied = sorted(s for s, n in cnt.items() if n == top)
+        wt = next((s for s in A3_PREF if s in tied), tied[0])
+        cg = float(c["cpu_gibps"])
+        over = "" if abs(cg - tier_cpu) < 1e-6 else f"{cg:g}"          # tier_params 的 CPU 層 → 不設 M7_CPU_GIBPS
+        assert c["workload"] == "doc", c                                # 原本的 GPU 確認只做 doc（r_h200_r1h.sh）
+        tag = f"{c['release']}_{c['ssd_dev']}_c{cg:.2f}_f{c['cpu_frac']}"
+        rows.append([tag, over or "-", c["release"], c["ssd_dev"], c["cpu_frac"], wt, f"{cg:.4f}", dict(cnt)])
+    with open(os.path.join(a.dir, "a3_plan.tsv"), "w") as fh:
+        fh.write("# tag cpu_override release ssd cpu_frac wt cpu_gibps best_wt_counts\n")
+        for r in rows:
+            fh.write("\t".join(str(x) for x in r) + "\n")
+    for r in rows:
+        print("[t1g a3-plan]", *r)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
+    s = sp.add_parser("a3-plan"); s.add_argument("--dir", required=True); s.add_argument("--tier-params", required=True)
     s = sp.add_parser("wait-clear"); s.add_argument("--job", required=True); s.add_argument("--node"); s.add_argument("--max-min", type=float, default=360)
     s = sp.add_parser("overlap"); s.add_argument("--job", required=True); s.add_argument("--node")
     s.add_argument("--start", required=True); s.add_argument("--end", required=True); s.add_argument("--step", required=True)
     s.add_argument("--short", required=True); s.add_argument("--log", required=True)
     a = ap.parse_args()
-    sys.exit({"wait-clear": cmd_wait_clear, "overlap": cmd_overlap}[a.cmd](a))
+    sys.exit({"wait-clear": cmd_wait_clear, "overlap": cmd_overlap, "a3-plan": cmd_a3_plan}[a.cmd](a))
 
 
 if __name__ == "__main__":

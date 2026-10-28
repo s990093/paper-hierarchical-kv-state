@@ -11,6 +11,7 @@
 # r_h200_t1g.sh — ICPE T1G（docs/h200/icpe/T1G_gpu_rerun.md）：CPU 層換成 H200 自己量的常數（T1），重量 GPU 實測的 run。
 #
 #   sbatch --job-name=icpe-t1g code/r_h200_t1g.sh --part all      # a1pp → a1p → a2 → p02（量時間）
+#   sbatch --job-name=icpe-t1g2 code/r_h200_t1g.sh --part a3      # T1G-2（docs/h200/icpe/T1G2_round1_rerun.md）：a3_plan.tsv 的存活設定 × seed 0–4（量時間；不在 all 裡）
 #   bash code/r_h200_t1g.sh --part <p> --list | --dry-run ；--from <步驟> 接著跑
 #
 # 指令和原本的 run 相同，只改：M7_TIER_PARAMS／P3_TIER＝T1 的常數、輸出目錄＝results/icpe_h200/t1/gpu/<part>（登記 §2）。
@@ -43,8 +44,8 @@ while [ $# -gt 0 ]; do
   esac
 done
 case "$PART" in
-  a1pp|a1p|a2|p02|all) ;;
-  *) echo "要 --part a1pp|a1p|a2|p02|all" >&2; exit 2 ;;
+  a1pp|a1p|a2|p02|all|a3) ;;
+  *) echo "要 --part a1pp|a1p|a2|p02|all|a3" >&2; exit 2 ;;
 esac
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # 模型權重在 hgx-cn01 本地 /tmp（同 r_h200_icpe.sh）
@@ -82,7 +83,7 @@ PY
   echo "[r_h200_t1g] $(date -Is) part=$PART job=$SLURM_JOB_ID node=${SLURMD_NODENAME:-?} git=$(git rev-parse --short HEAD) TP=$TP"
   echo "[r_h200_t1g] 同節點的 job（開跑時）："; squeue -h -w "${SLURMD_NODENAME:-$(hostname -s)}" -o '%i %u %a %b %T %M'
   nvidia-smi --query-gpu=index,name,pci.bus_id,memory.total,memory.used --format=csv
-  mkdir -p "$T1G/a1pp" "$T1G/a1p" "$T1G/a2" "$T1G/p02"
+  mkdir -p "$T1G/a1pp" "$T1G/a1p" "$T1G/a2" "$T1G/p02" "$T1G/a3"
 fi
 
 STARTED=1; [ -n "$FROM" ] && STARTED=0
@@ -111,7 +112,7 @@ step() {   # step <名稱> <m7run 短名> <指令...>：等節點沒有自己人
   OVL_STEPS="$OVL_STEPS $name"
   return 0
 }
-want_part() { [ "$PART" = all ] || [ "$PART" = "$1" ]; }
+want_part() { { [ "$PART" = all ] && [ "$1" != a3 ]; } || [ "$PART" = "$1" ]; }
 
 # ============================================================== A1''：B 主設定、fa3（原 run 20261022-210344-icpe-p01a-b-nfs-gap0）
 if want_part a1pp; then
@@ -151,6 +152,24 @@ PY
     step "T1G-P02-$c-$pol-r$rep" "icpe-t1g-p02-$c-$pol-r$rep" m7run "icpe-t1g-p02-$c-$pol-r$rep" python code/icpe/x1_gpu.py gpu --out "$T1G/p02" --k 8 --cpu "$c" --policy "$pol" --rep "$rep"
   done <<< "$ORDER"
   unset P3_TIER
+fi
+
+# ============================================================== A3（T1G-2）：第 1 輪存活設定的 GPU 確認（同 code/r_h200_r1h.sh 的做法）
+if want_part a3; then
+  PLAN=$T1G/a3/a3_plan.tsv
+  [ -f "$PLAN" ] || { echo "[r_h200_t1g] 沒有 $PLAN（先在 head node 跑 t1g.py a3-plan）" >&2; exit 2; }
+  CTRL="S1 S2b S4 S4+ S4+P S4L S4B S4W S4C"
+  while IFS=$'\t' read -r tag over rel ssd frac wt _rest; do
+    case "$tag" in ''|'#'*) continue ;; esac
+    OUTA=$T1G/a3/r1h_gpu_llama_doc_$tag.csv
+    if [ "$DRY" = 0 ] && [ -z "$FROM" ] && [ -e "$OUTA" ]; then echo "[r_h200_t1g] $OUTA 已經存在（附加寫入會混在一起）→ 停" >&2; exit 2; fi
+    CPUENV=""; [ "$over" != "-" ] && CPUENV="M7_CPU_GIBPS=$over"
+    for seed in 0 1 2 3 4; do
+      step "T1G-A3-$tag-s$seed" "icpe-t1g2-r1h-$tag-s$seed" m7run "icpe-t1g2-r1h-$tag-s$seed" env M7_TIER_PARAMS="$TP" M7_F_CSV="$M7H/calib_c1.csv" \
+        M7_RES="$T1G/a3" M7_IO_MODEL=share $CPUENV M7_B2_OUT="$OUTA" python code/m7_write_policy.py b --b2 --workload doc --release "$rel" \
+        --ssd-dev "$ssd" --wl-seed $seed --strategies $CTRL "$wt" --cpu-fracs "$frac" --reps 3 --verify
+    done
+  done < <(grep -v '^#' "$PLAN")
 fi
 
 if [ "$STARTED" = 0 ]; then echo "[r_h200_t1g] 沒有叫做 '$FROM' 的步驟。可用的：$SEEN" >&2; exit 2; fi

@@ -364,3 +364,18 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - CPU 前置（head node，T1 常數）：P02 selftest `20261028-162428-icpe-t1g-p02-selftest` 9/9 PASS；S_orig `20261028-162505-icpe-t1g-p02-sim-orig`（開跑）。
 - 送出：job **22882** `icpe-t1g`（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1g code/r_h200_t1g.sh --part all`；A1'' → A1' → A2 → P02，原本的時間合計約 10 小時；`--time 1-12:00:00`）。送出時 PENDING（Priority）。
 - 排程：每一步開跑前等節點上沒有我們自己的別的 job；跑完用 sacct 查重疊（`results/icpe_h200/t1/gpu/overlap.csv`），重疊就重跑、最多 3 次（登記 §4）。
+
+## ICPE-T1G2-PREP — A3 的第 1 輪模擬在 T1 常數下重選存活設定（head node，2026-10-28 16:31–16:36；登記 `docs/h200/icpe/T1G2_round1_rerun.md`，2026-10-28T08:30:41Z，commit 1833593）
+
+- **第一次是我設定錯，作廢、沒有看輸出**：`20261028-163102-icpe-t1g2-r1-sim`、`…-163232-…-r1-sim-an` 沒有設 `M7_D2H_GIBPS`，`m7_sim.py` 退回 44.8（MI300X 的值）；原本的 H200 run 是 49.5（`r_h200_cpu.sh` 從 H200 C0 算的）。輸出被下一次覆寫。
+- 重跑：`M7_D2H_GIBPS=49.5`（用 `r_h200_cpu.sh` 同一段程式從 `results/m7_write_policy_h200/calib_c0.csv` 重算，等於 49.5）`M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json M7_EXPLORE=results/icpe_h200/t1/gpu/a3`：`20261028-163333-icpe-t1g2-r1-sim`（`m7_round1_sim.py --model llama31_8b`）→ `20261028-163501-icpe-t1g2-r1-sim-an`（`m7_round1_analyze.py sim`）。
+- **回歸**：同一條指令、不換 tier params（`20261028-163538-icpe-t1g2-r1-sim-regress`，輸出在 scratchpad）→ 和 git 的 `results/m7_explore_h200/r1_sim_llama31_8b.csv` 4,800 列逐值相同（只差 run_id、ts）。
+- **存活設定〔模擬〕**：原本 3 個（11.6／hold／nfs／0.5、35.42／free／local／0.5、35.42／hold／nfs／0.25）→ T1 常數下 **2 個**：11.6／hold／doc／nfs／0.5（3/5 seed，g_nwt 中位 26.9%，best_wt S5L 5/5）、43.59／hold／doc／nfs／0.25（4/5，6.9%，S5c 4/5）。35.42→43.59／free／local／0.5 不再存活。
+- 計畫：`python3 code/icpe/t1g.py a3-plan --dir results/icpe_h200/t1/gpu/a3 --tier-params …` → `a3_plan.tsv`。runner 加 `--part a3`（不在 `all` 裡；寫 `.new` 再 mv）。
+- 送出：job **22886** `icpe-t1g2`（`--dependency=afterany:22882`，10 個 run，原本的速度約 5.5 小時）。
+- 排程：22882 `icpe-t1g` 改成 `afterany:22876`（使用者 10/28：kv-cliffs 排好的 LA01 → LA03 → LQ2 先跑完再讓 Tiara）。
+
+## ICPE-A4' — A4 的 H200 列（不用新的 run）
+
+- Llama INT4 的 Step 2 在 H200 早就算過：10/18「δ\* 用 5% 的對照」（RUNLOG_H200 該節）的 `results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/step2_llama_int4.json`，資料＝H200 封存的 `quality_sealed/int4mix_llama_*`。F25／M25／B25 對 R25（讀法 B、b32，閒／忙）−0.47～+0.08 個百分點、CI 都含 0 → stable_gap_1_2＝False → **K2**（MI300X ±0.33）。δ\* 只影響「不比 R25 慢」那一條，品質門檻是 ≥2 個百分點，所以和 δ\* 無關。
+- 加進 `docs/h200/ICPE_EVIDENCE.md` 的 A4' 列。A4 不需要 GPU。
