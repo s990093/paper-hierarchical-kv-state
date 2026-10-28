@@ -309,6 +309,7 @@ def one(part, ev, base, regress):
     import pandas as pd
     drop, U, pts, nm_steps = units(part, ev)
     if len(U):
+        U = U.rename(columns={"run_id": "src_run"})
         U.insert(0, "ts", t1g.ts())
         U.insert(0, "run_id", t1g.run_id())
         U.to_csv(os.path.join(EXP, f"units_{part}.csv"), index=False)

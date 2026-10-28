@@ -393,3 +393,26 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - `t1_compare`：除 E2E 各項補上值以外，和 10/28 那份相同。
 **失敗與異常**: 第一次送出 `20261028-1608{22,23,24,26}-*` exit 127（我在 zsh 下用 `$var` 拆字串，沒有跑任何東西）；改用 bash 重送。
 **與原本的差異**: 無（判定字相同）。
+
+## ICPE-T1G — CPU 層換成 H200 的常數，重量 GPU 實測（第一批：A1''、A1'、A2、B6／C2）：判定字全部不變（job 22882，2026-10-28 17:18 → 10/29 02:57 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T1G_gpu_rerun.md`；結果節同檔）
+**執行時間**: 2026-10-28T17:18:14+08:00 → 2026-10-29T02:56:49+08:00（GPU）；分析到 03:02
+**run_id**: A1'' `20261028-171820-icpe-t1g-a1pp-b-nfs-gap0`；A1' `20261028-185448-icpe-t1g-a1p-b-nfs-gap0`；A2 `20261028-204748-icpe-t1g-a2-b2-g1-doc-hold-cpu3.69-s0`、`20261028-220610-…-g1-doc-hold-cpu3.69-s1`、`20261028-230008-…-g2-chat-hold-s0`；P02 smoke `20261028-233823-icpe-t1g-p02-smoke`＋12 個 `20261028-233954-icpe-t1g-p02-256-O-BEL-r0` … `20261029-024041-icpe-t1g-p02-128-O-PF-r0`；分析 `20261029-023018-icpe-t1g-analyze-a1a2`、`20261029-030016-icpe-t1g-analyze-p02`；附加 1 `20261029-022626-icpe-t1g-exposure-scan`、`20261029-*-icpe-t1g-exposure-old`、`20261029-023222-icpe-t1g-exposure-regress`、`20261029-023333-icpe-t1g-exposure-a1a2`、`20261029-030108-icpe-t1g-exposure-p02`
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1g code/r_h200_t1g.sh --part all`（22882）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1 X1_TRACE_DIR=/work/ChihChungHsu/hungweilai/datasets/traces; m7run icpe-t1g-analyze-<…> python code/icpe/t1g.py analyze --part <a1pp|a1p|a2|p02>`；`python code/icpe/t1g_exposure.py scan|analyze --part <p> [--regress]|old --label <L> [--main-b] --csv <原本的 CSV>`
+**產出檔**: `results/icpe_h200/t1/gpu/{a1pp,a1p,a2,p02}/`（含 `analysis/`）、`overlap.csv`、`t1g_compare.json`、`exposure/`
+**關鍵數字**（實測）:
+- 排程：18 步全部「重疊：無」、`wait-clear` 都等 0 次、沒有重跑、沒有污染。
+- A1''（fa3）S5 對 S4+（正＝S5 快）：−0.37／−0.37／+0.01%（舊 +0.07／−0.47／+0.03%），δ\* 5% → 成立（同）。
+- A1'（sdpa）：+1.16／+0.09／−0.02%（舊 −0.03／−0.12／+0.03%），δ\* 5%（C4 雜訊 1.76%）→ 成立（同）。
+- A2：GPU 列 0/16 過（同）。
+- B6：實測÷模擬 0.911–0.987（舊 0.911–0.975）、排序、8 個正負號全同 → 成立（同）。
+- C2（GPU，縮小）：HINT-PF 對 LRU 14.5／12.9%、O-PF 對 LRU 17.9／16.2%，HINT-PF 拿到 O-PF 改善的 0.81／0.79（舊 0.81／0.81）；含排隊時 O-PF 對 LRU 8.1／4.7%（只報告）。
+- 附加 1（別的使用者的 job，只報告）：
+  - 暴露單位：A1'' 29／180、A1' 26／180、A2 45／132、P02 1／12；拿掉後沒有任何判定字不同（多數點剩不到 6 次 → NM）。
+  - 同一點暴露÷沒暴露：A1''、A1'、A2 g1-s0 的中位都在 ±0.1% 內；**A2 chat g2-s0 中位 +8.0%（8 點裡 6 點變慢；窗裡 13 個事件，10 個同 lab 帳號）**，那幾列本來就輸 10–217%，不會翻。
+  - 原本的 run 也有一樣的鄰居（例如 A1'' 25／180、A3 104／450）。
+**失敗與異常**:
+- `20261029-025847-icpe-t1g-analyze-p02` exit 1：`FileNotFoundError: '/work/ChihChungHsu/hungweilai/datasets/mooncake/traces/conversation_trace.jsonl'`。head node 沒設 `X1_TRACE_DIR`，和 10/26 原本的 P02 分析同一個問題。在 `load_trace` 就失敗，沒寫出東西；設了之後重跑。
+- `20261029-023149-icpe-t1g-exposure-regress` exit 1：`ValueError: cannot insert run_id, already exists`，我新寫的 `t1g_exposure.py` 單位表欄名撞名，改成 `src_run` 後重跑。
+**與原本的差異**: 判定字全部相同；照 T1 §5，ICPE（只用 H200）改用新值。第二批 A3（T1G-2，job 22886）在跑。

@@ -1,0 +1,17 @@
+{
+ "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+ "ts": "2026-10-29T02:31:14+08:00",
+ "part": "a2",
+ "src_runs": [
+  "20261028-204748-icpe-t1g-a2-b2-g1-doc-hold-cpu3.69-s0",
+  "20261028-220610-icpe-t1g-a2-b2-g1-doc-hold-cpu3.69-s1",
+  "20261028-230008-icpe-t1g-a2-b2-g2-chat-hold-s0"
+ ],
+ "not_measured_steps": [],
+ "status": "DONE",
+ "gpu_rows": 16,
+ "gpu_pass": 0,
+ "old_gpu_rows": 16,
+ "old_gpu_pass": 0,
+ "rule": "08 消融：寫入時決定的策略同時贏最好的不看位置與 S4B 各 ≥5%（GPU 列）"
+}

@@ -1,0 +1,147 @@
+{
+ "run_id": "20261029-030016-icpe-t1g-analyze-p02",
+ "ts": "2026-10-29T03:00:35+08:00",
+ "part": "p02",
+ "src_runs": [
+  "20261028-233954-icpe-t1g-p02-256-O-BEL-r0",
+  "20261028-235558-icpe-t1g-p02-256-O-PF-r0",
+  "20261029-001222-icpe-t1g-p02-256-FREQ2Q-r0",
+  "20261029-002841-icpe-t1g-p02-128-LRU-r0",
+  "20261029-004528-icpe-t1g-p02-128-O-BEL-r0",
+  "20261029-010134-icpe-t1g-p02-128-LRU-r1",
+  "20261029-011818-icpe-t1g-p02-128-FREQ2Q-r0",
+  "20261029-013427-icpe-t1g-p02-256-LRU-r0",
+  "20261029-015111-icpe-t1g-p02-256-HINT-PF-r0",
+  "20261029-020738-icpe-t1g-p02-128-HINT-PF-r0",
+  "20261029-022400-icpe-t1g-p02-256-LRU-r1",
+  "20261029-024041-icpe-t1g-p02-128-O-PF-r0"
+ ],
+ "not_measured_steps": [],
+ "status": "DONE",
+ "new": {
+  "run_id": "20261029-030016-icpe-t1g-analyze-p02",
+  "ts": "2026-10-29T03:00:34+08:00",
+  "k": 8,
+  "criteria": {
+   "ratio_in_band": true,
+   "ranking": true,
+   "headroom_sign": true
+  },
+  "passed": true,
+  "n_clean_runs": 12,
+  "problems": [],
+  "out_of_band": [],
+  "ranking_mismatch": [],
+  "sign_mismatch": [],
+  "not_judged_pairs": [
+   {
+    "cpu_GiB": 128,
+    "a": "LRU",
+    "b": "FREQ2Q",
+    "sim_rel_diff": 0.020489306594836693
+   },
+   {
+    "cpu_GiB": 128,
+    "a": "HINT-PF",
+    "b": "O-PF",
+    "sim_rel_diff": 0.044111446011620994
+   },
+   {
+    "cpu_GiB": 256,
+    "a": "LRU",
+    "b": "FREQ2Q",
+    "sim_rel_diff": 0.003510957773814663
+   },
+   {
+    "cpu_GiB": 256,
+    "a": "O-BEL",
+    "b": "HINT-PF",
+    "sim_rel_diff": 0.024126833323535907
+   },
+   {
+    "cpu_GiB": 256,
+    "a": "HINT-PF",
+    "b": "O-PF",
+    "sim_rel_diff": 0.040359775193681634
+   }
+  ],
+  "not_judged_signs": [],
+  "lru_noise": [
+   {
+    "cpu_GiB": 128,
+    "rep0": 0.27759563812399696,
+    "rep1": 0.27732568337109403,
+    "rel_diff": 0.0009729478484466972
+   },
+   {
+    "cpu_GiB": 256,
+    "rep0": 0.27184602342210945,
+    "rep1": 0.27182091451479357,
+    "rel_diff": 9.236871166441646e-05
+   }
+  ]
+ },
+ "old": {
+  "run_id": "20261026-040946-icpe-p02-analyze",
+  "ts": "2026-10-26T04:09:49+08:00",
+  "k": 8,
+  "criteria": {
+   "ratio_in_band": true,
+   "ranking": true,
+   "headroom_sign": true
+  },
+  "passed": true,
+  "n_clean_runs": 12,
+  "problems": [],
+  "out_of_band": [],
+  "ranking_mismatch": [],
+  "sign_mismatch": [],
+  "not_judged_pairs": [
+   {
+    "cpu_GiB": 128,
+    "a": "LRU",
+    "b": "FREQ2Q",
+    "sim_rel_diff": 0.018240606153627787
+   },
+   {
+    "cpu_GiB": 128,
+    "a": "HINT-PF",
+    "b": "O-PF",
+    "sim_rel_diff": 0.040687011988601494
+   },
+   {
+    "cpu_GiB": 256,
+    "a": "LRU",
+    "b": "FREQ2Q",
+    "sim_rel_diff": 0.00037406006734956316
+   },
+   {
+    "cpu_GiB": 256,
+    "a": "O-BEL",
+    "b": "HINT-PF",
+    "sim_rel_diff": 0.03954410881069686
+   },
+   {
+    "cpu_GiB": 256,
+    "a": "HINT-PF",
+    "b": "O-PF",
+    "sim_rel_diff": 0.037158747865629345
+   }
+  ],
+  "not_judged_signs": [],
+  "lru_noise": [
+   {
+    "cpu_GiB": 128,
+    "rep0": 0.27787578980611904,
+    "rep1": 0.2775136355462242,
+    "rel_diff": 0.0013041453198900138
+   },
+   {
+    "cpu_GiB": 256,
+    "rep0": 0.2725412290288051,
+    "rep1": 0.27218550492309396,
+    "rel_diff": 0.0013060644302527484
+   }
+  ]
+ }
+}
