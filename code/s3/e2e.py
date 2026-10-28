@@ -471,13 +471,13 @@ def cmd_report(a):
     def get(cellk, cfg, mode, half):
         return val.get(tuple(cellk) + (cfg, mode, half))
     # m*（§4）
-    mstar = {}
+    mstar, mstar_cand = {}, {}
     for m in MODELS:
         for b in BGS:
             devc = [c for c in cells if c[0] == m and c[4] == b]
             cand = []
             for mode in MPS_MODES:
-                ok, gains = True, []
+                ok, gains, Bs = True, [], []
                 for c in devc:
                     k2, k3 = get(c, "K2", "stream", "dev"), get(c, "K3", mode, "dev")
                     if not (k2 and k3 and k2["ttft"] and k3["ttft"] is not None):
@@ -485,8 +485,14 @@ def cmd_report(a):
                         break
                     ok &= k3["B"] >= B_MIN
                     gains.append((k2["ttft"] - k3["ttft"]) / k2["ttft"])
+                    Bs.append(k3["B"])
                 if ok and len(gains) == len(devc):
                     cand.append((statistics.median(gains), -MPS_MODES.index(mode), mode))
+                # 只報告（10/28 判定之後加；不進判定）：每個候選等級的開發集 B 範圍與改善中位數，說明 m* 為什麼選它或選不出來
+                mstar_cand[f"{m}|{b}|{mode}"] = dict(
+                    n_dev=len(gains), n_dev_cells=len(devc), eligible=bool(ok and len(gains) == len(devc)),
+                    B_dev_min=min(Bs) if Bs else None, B_dev_max=max(Bs) if Bs else None,
+                    n_B_ok=sum(x >= B_MIN for x in Bs), gain_dev_median=statistics.median(gains) if gains else None)
             mstar[f"{m}|{b}"] = max(cand)[2] if cand else None
     # 判定（§5）
     res, n_pass, n_ask, n_nm = [], 0, 0, 0
@@ -541,7 +547,7 @@ def cmd_report(a):
         v = "E2E-NOGO"
     doc = dict(run_id=run_id(), ts=ts(), prereg="docs/stage3_design_20261024/runs/E2E_combo.md", verdict=v, n_pass=n_pass,
                n_ask_level=n_ask, n_not_measured=n_nm, pass_per_model=dict(per_model), m_star=mstar,
-               dcheck=json.load(open(os.path.join(OUT, "dcheck.json"))), cells=res, sources=sorted({r["run_id"] for r in rows}))
+               m_star_candidates=mstar_cand, dcheck=json.load(open(os.path.join(OUT, "dcheck.json"))), cells=res, sources=sorted({r["run_id"] for r in rows}))
     json.dump(doc, open(os.path.join(OUT, "e2e_report.json"), "w"), indent=1, ensure_ascii=False, default=str)
     print(json.dumps(dict(verdict=v, n_pass=n_pass, n_ask=n_ask, n_nm=n_nm, per_model=dict(per_model), m_star=mstar), ensure_ascii=False))
 

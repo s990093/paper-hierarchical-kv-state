@@ -123,3 +123,100 @@
 - **改什麼**：登記 §3.2 只寫了「可用組合 ≥ 80% 在 10% 內 → 3.1，否則 3.3」，沒寫可用組合為 0 的情況。照最保守的讀法：分解沒辦法被確認 → 不信基本動作的相乘 → **兩個模型都用 3.3**（端到端比值；3.3 不需要 `dq_int4` 的倍數）。程式本來就這樣處理（`frac`＝0 → `e2e`），這裡把它寫明。
 - **3.3 下哪些不可用**（照 §3.1 的 2σ 規則，在跑任何配置之前查的）：Llama cprefill × mps50（`e2e_cake_int4_cpu` 2σ 39%）；Qwen cprefill × stream（`e2e_cake_int4_b32` 2σ 7.6%）→ 照 §3.1，Qwen × cprefill 的 8 格全部 NOT_MEASURED；Qwen cprefill × mps（同一個動作 2σ 11%）。NOT_MEASURED 共 8 格，沒有超過 §5 的 8 格 → 判定照常。
 - **影響**：判準不變。另外記下一個程式的錯（不是偏離）：第一次 `dcheck`（run `20261028-024903-s3-e2e-dcheck`）因為 Qwen 時先換了 `x1_sim.BF`、再呼叫 ICPE 的 `constants()`（它斷言 Llama 的 BF）而失敗，沒有產生數字；已修。
+
+---
+
+## 結果（2026-10-28，第一段〔模擬〕）：**E2E-NOGO**
+
+- **報告**：run `20261028-161142-s3-e2e-report` → `results/s3_h200/e2e/e2e_report.json`（指令：`source code/env_h200.sh; export P3_CONST=h200 TIARA_ALLOW_NO_SLURM=1; m7run s3-e2e-report python code/s3/e2e.py report`）。第一次報告 run `20261028-160552-s3-e2e-report` 的判定與 32 格逐值相同；第二次只多了 `m_star_candidates`（下面「m\* 的候選」那張表；**判定之後加的、只報告**，判定的程式沒有動）。
+- **資料**：`20261028-025101-s3-e2e-run-llama-conv`、`20261028-025151-s3-e2e-run-qwen-conv`、`20261028-025305-s3-e2e-run-llama-fi`（14:22 結束）、`20261028-025307-s3-e2e-run-qwen-fi`（11:53 結束）；四個 exit 0、stderr 空；`results/s3_h200/e2e/raw/e2e_{llama,qwen}_{conversation,freeinference}.csv`＋`.meta.json`。D 檢查：`20261028-024941-s3-e2e-dcheck`（偏離 1）。
+- **判定**：過 **0** 格（Llama 0、Qwen 0）；「Δ ≥ 5% 且 B ≥ 0.95」0 格；NOT_MEASURED 8 格（≤ 8，照常判定）→ **E2E-NOGO**：「MPS 預留在端到端的好處不成立」。照 §9，第二段（GPU 驗證）不做。
+- **為什麼**：四個（模型, 背景）的 m\* 都選不出來（§4：要 8 個開發格的 B 都 ≥ 0.95）。**任何一個 MPS 等級、任何一個開發格的 B 都沒有到 0.95**（最高 0.944，Llama × cprefill × mps）；Qwen × cprefill 沒有可用的等級（偏離 1 的 NOT_MEASURED）。於是 K3 ≡ K2、Δ＝0。MPS 本身在開發集上讓 TTFT 改善很多（各等級 8 格的中位數 33–79%；8 格含 FreeInference 的 4 格，受下面的異常影響），擋下它的是背景吞吐：B 含上限本身的代價 cap(g, m) 和整條 trace 上前景占 GPU 的比例 φ（§3.4）；B0 的 SHARE（背景 0.98）是單一動作、不含 cap 的微基準。
+- **不受 FreeInference 異常（下面）影響**：只看 conversation 的開發格，B 也都不到 0.95（同一張候選表的範圍）。
+
+### 32 格（測試集；TTFT＝回來請求的平均，秒；B＝背景吞吐，相對「沒有上限、單獨跑」）
+
+| 模型 | trace | 慢層 | CPU | 背景 | 判定 | Δ (K2−K3)/K2 | K3 的 B | K0 | K1 | K2 | O | K0 的 B | K2 的 B |
+|:--|:--|:--|--:|:--|:--|--:|--:|--:|--:|--:|--:|--:|--:|
+| llama | conv | ssd | 128 | cprefill | FAIL | 0.0% | 0.789 | 3.83 | 3.25 | 2.23 | 2.35 | 0.801 | 0.789 |
+| llama | conv | ssd | 128 | mixed | FAIL | 0.0% | 0.687 | 1.50 | 1.05 | 0.65 | 0.65 | 0.682 | 0.687 |
+| llama | conv | ssd | 256 | cprefill | FAIL | 0.0% | 0.790 | 3.48 | 2.99 | 2.29 | 2.37 | 0.798 | 0.790 |
+| llama | conv | ssd | 256 | mixed | FAIL | 0.0% | 0.688 | 1.34 | 0.96 | 0.66 | 0.66 | 0.683 | 0.688 |
+| llama | conv | nfs | 128 | cprefill | FAIL | 0.0% | 0.819 | 12.55 | 9.45 | 6.17 | 7.27 | 0.837 | 0.819 |
+| llama | conv | nfs | 128 | mixed | FAIL | 0.0% | 0.711 | 5.04 | 3.03 | 1.96 | 2.32 | 0.707 | 0.711 |
+| llama | conv | nfs | 256 | cprefill | FAIL | 0.0% | 0.814 | 10.28 | 8.17 | 5.27 | 6.12 | 0.831 | 0.814 |
+| llama | conv | nfs | 256 | mixed | FAIL | 0.0% | 0.707 | 4.10 | 2.62 | 1.66 | 1.93 | 0.703 | 0.707 |
+| llama | FI | ssd | 128 | cprefill | FAIL | 0.0% | 0.935 | 72.15 | 36.56 | 87.03 | 61.60 | 0.936 | 0.935 |
+| llama | FI | ssd | 128 | mixed | FAIL | 0.0% | 0.926 | 26.31 | 10.50 | 26.73 | 18.49 | 0.924 | 0.926 |
+| llama | FI | ssd | 256 | cprefill | FAIL | 0.0% | 0.938 | 27.55 | 22.28 | 66.31 | 28.64 | 0.940 | 0.938 |
+| llama | FI | ssd | 256 | mixed | FAIL | 0.0% | 0.936 | 8.25 | 5.99 | 20.20 | 8.30 | 0.943 | 0.936 |
+| llama | FI | nfs | 128 | cprefill | FAIL | 0.0% | 0.931 | 216.49 | 216.42 | 527.93 | 705.10 | 0.932 | 0.931 |
+| llama | FI | nfs | 128 | mixed | FAIL | 0.0% | 0.907 | 85.52 | 67.94 | 169.51 | 224.18 | 0.904 | 0.907 |
+| llama | FI | nfs | 256 | cprefill | FAIL | 0.0% | 0.936 | 55.78 | 51.82 | 214.36 | 338.23 | 0.938 | 0.936 |
+| llama | FI | nfs | 256 | mixed | FAIL | 0.0% | 0.929 | 19.77 | 15.36 | 70.26 | 105.32 | 0.929 | 0.929 |
+| qwen | conv | ssd | 128 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | conv | ssd | 128 | mixed | FAIL | 0.0% | 0.696 | 0.82 | 0.57 | 0.45 | 0.45 | 0.686 | 0.696 |
+| qwen | conv | ssd | 256 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | conv | ssd | 256 | mixed | FAIL | 0.0% | 0.703 | 0.64 | 0.51 | 0.49 | 0.49 | 0.694 | 0.703 |
+| qwen | conv | nfs | 128 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | conv | nfs | 128 | mixed | FAIL | 0.0% | 0.701 | 2.13 | 1.46 | 0.64 | 0.46 | 0.694 | 0.701 |
+| qwen | conv | nfs | 256 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | conv | nfs | 256 | mixed | FAIL | 0.0% | 0.706 | 1.26 | 0.97 | 0.56 | 0.49 | 0.695 | 0.706 |
+| qwen | FI | ssd | 128 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | FI | ssd | 128 | mixed | FAIL | 0.0% | 0.950 | 4.00 | 3.67 | 5.11 | 3.63 | 0.957 | 0.950 |
+| qwen | FI | ssd | 256 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | FI | ssd | 256 | mixed | FAIL | 0.0% | 0.962 | 3.66 | 3.65 | 3.65 | 3.65 | 0.962 | 0.962 |
+| qwen | FI | nfs | 128 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | FI | nfs | 128 | mixed | FAIL | 0.0% | 0.939 | 8.89 | 6.23 | 41.96 | 41.89 | 0.944 | 0.939 |
+| qwen | FI | nfs | 256 | cprefill | NOT_MEASURED | | | | | | | | |
+| qwen | FI | nfs | 256 | mixed | FAIL | 0.0% | 0.961 | 3.77 | 3.70 | 4.11 | 3.73 | 0.960 | 0.961 |
+
+（m\* 全部選不出來 → 每格 K3＝K2；O 用 m\* 或沒有 m\* 時的 stream。）
+
+### m\* 的候選（開發集；只報告，判定之後加進 `e2e_report.json` 的 `m_star_candidates`）
+
+| （模型, 背景） | 等級 | 可算的開發格 | 開發集 B 範圍 | B ≥ 0.95 的格數 | 開發改善中位數 (K2−K3)/K2 |
+|:--|:--|--:|:--|--:|--:|
+| llama, cprefill | mps | 8/8 | 0.766–0.944 | 0 | 56.7% |
+| llama, cprefill | mps87 | 8/8 | 0.667–0.779 | 0 | 74.5% |
+| llama, cprefill | mps75 | 8/8 | 0.638–0.765 | 0 | 78.9% |
+| llama, cprefill | mps50 | 0/8 | — | 0 | — |
+| llama, mixed | mps | 8/8 | 0.613–0.908 | 0 | 37.7% |
+| llama, mixed | mps87 | 8/8 | 0.595–0.849 | 0 | 38.0% |
+| llama, mixed | mps75 | 8/8 | 0.584–0.832 | 0 | 40.1% |
+| llama, mixed | mps50 | 8/8 | 0.449–0.638 | 0 | 45.7% |
+| qwen, cprefill | mps | 0/8 | — | 0 | — |
+| qwen, cprefill | mps87 | 0/8 | — | 0 | — |
+| qwen, cprefill | mps75 | 0/8 | — | 0 | — |
+| qwen, cprefill | mps50 | 0/8 | — | 0 | — |
+| qwen, mixed | mps | 8/8 | 0.623–0.921 | 0 | 33.3% |
+| qwen, mixed | mps87 | 8/8 | 0.599–0.874 | 0 | 33.8% |
+| qwen, mixed | mps75 | 8/8 | 0.586–0.811 | 0 | 35.0% |
+| qwen, mixed | mps50 | 8/8 | 0.467–0.635 | 0 | 44.3% |
+
+### 只報告的項目（§5，不判定）
+
+- **K0→K1→K2 的增量（conversation，24 格裡可算的 12 格）**：K0→K1（INT4）Llama 14.2–39.8%、Qwen 20.5–31.3%；K1→K2（打字提示預取）Llama 23.5–38.5%、Qwen 5.0–56.3%；K0→K2 Llama 34.3–61.0%、Qwen 24.4–70.0%。K3＝K2，所以 K3 對 K0 就是 K0→K2。
+- **O 的上界比例 (K0 − K3)／(K0 − O)（conversation）**：0.89–1.21；12 格裡 10 格 ≥ 1（O-PF 騰空間照 LRU，不是上界；同 ICPE C2 的〔推論〕）。
+- **B（conversation，stream）**：K0 0.68–0.84、K2 0.69–0.82。不加任何上限、只算前景占用，背景在 conversation 上就掉 16–32%。
+- **B ≥ 0.90 的版本**：0 格過（m\* 是照 0.95 選的；K3＝K2 時 Δ＝0）。
+- **P95（conversation，單一重播）**：K0／K2／O，例：Llama SSD 128 cprefill 11.76／6.10／6.07 秒、Llama NFS 128 mixed 14.22／6.98／9.10 秒、Qwen NFS 128 mixed 7.85／1.95／1.16 秒（逐格在 `e2e_report.json` 的 `p95`）。
+- **開發集**：每格的開發集 TTFT／B 在 `e2e_report.json` 的 `dev`；開發集的 Δ 全部 0（K3＝K2）。
+- **FreeInference 的使用者發起子集**：在 `ttft_user`（K2＝K3）。
+
+### FreeInference 的異常（照實記；沒有驗證原因）
+
+- **前 6 週和 ICPE 一致**：第 1–6 週（ICPE X1-FI 跑的就是這 6 週；回來請求數逐週相同，例：第 1 週 10,613）K0、K1、K2、O 的 TTFT 幾乎相同（例：Llama SSD 128 cprefill 第 1 週測試集 12.77 秒，四個配置都一樣）＝ICPE B3「FreeInference 沒有空間」。
+- **第 7–16 週 ICPE 沒有跑過（X1-FI 的 sweep 每個設定只有前 6 週）；從第 9 週起負載重很多**（測試集每週回來請求 3.7–10.1 萬筆，第 1 週 0.53 萬），平均 TTFT 升到幾十到上千秒（例：Llama NFS 128 cprefill 第 16 週 K1 511.88、K2 1,149.21、O 1,354.46 秒），而且**預取（K2 的打字提示、O 的 oracle）比不預取更慢**。所以 32 格表裡 FreeInference 可算的 12 格，K1→K2 有 11 格是負的（−11% 到 −573%）、1 格 +0.2%；O 的比例沒有意義。
+- **推論（沒有驗證）**：慢層通道被塞滿、請求在通道上排隊，預取再加慢層讀取的流量。X1 不模擬請求排隊，但慢層通道是逐筆排的。**這些數字不拿來下任何結論**；判定不受影響（見上）。
+- 要不要查（例如加通道使用率的輸出、或只取前 8 週），由使用者決定。
+
+### NOT_MEASURED（8 格，照偏離 1）
+
+- Qwen × cprefill:2048:65536 的 8 格（2 trace × 2 慢層 × 2 CPU）：stream 的 `e2e_cake_int4_b32` 2σ 7.6%（σ 0.038169，參考 0.002244）；mps 同一個動作 2σ 11%。
+- 另外 Llama × cprefill × mps50 不可用（`e2e_cake_int4_cpu` 2σ 39%），只少一個候選等級，格子照算。
+
+### 意思
+
+- 組合策略裡「固定 MPS 預留」這一條腿，在端到端、背景吞吐預算 0.95 之下不成立：它是用背景吞吐換前景 TTFT 的取捨，不是免費的。ICPE 的「不用預測、只要固定預留」的說法要改。
+- 不用預測的另一條腿（INT4，K0→K1）和打字提示預取（K1→K2）在 conversation 上照舊有效〔模擬〕。

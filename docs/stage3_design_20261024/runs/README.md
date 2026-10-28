@@ -16,7 +16,7 @@
 | G-M06＋M07（2 卡〔偏離 2〕、量時間） | [G_M06_multipath.md](G_M06_multipath.md) | `code/s3/gm06.py` | `results/s3_h200/gm06/` | **G-M06-PASS**（k＝2 1.986×，CI 下界 1.985；run 20261028-043420-s3-gm06） |
 | W0（量時間） | [W0_write_cost.md](W0_write_cost.md) | `code/s3/w0.py` | `results/s3_h200/w0/` | **GW0-FAIL**（llama、qwen；10/26，job 22279） |
 | A0-C（品質；A0 最接近 GO 的配置的確認性實驗） | [A0C_confirm.md](A0C_confirm.md) | `code/s3/a0.py`、`a0_gpu.py --a0c` | `results/s3_h200/a0/a0c_*` | **A0C-STOP**（10/28）：Q128 的 P 對 U* +1.28 [−0.27, +2.88]（< +2）、對 E0 −2.58；A0 的 WEAK 沒有被確認 |
-| E2E-C（端到端組合：INT4＋Cake＋打字提示預取＋MPS；第一段模擬） | [E2E_combo.md](E2E_combo.md) | `code/s3/e2e.py` | `results/s3_h200/e2e/` | 已登記（10/28） |
+| E2E-C（端到端組合：INT4＋Cake＋打字提示預取＋MPS；第一段模擬） | [E2E_combo.md](E2E_combo.md) | `code/s3/e2e.py` | `results/s3_h200/e2e/` | **E2E-NOGO**（10/28）：0/32 格過；m\* 全部選不出來——任何 MPS 等級、任何開發格的背景吞吐 B 都 < 0.95（最高 0.944）→ K3＝K2；NOT_MEASURED 8 格（Qwen × cprefill）；第二段不做。FreeInference 第 9–16 週有未驗證的異常（預取變慢） |
 | G-fio（量時間） | [G_fio.md](G_fio.md) | `code/s3/gfio.py` | `results/s3_h200/gfio/` | **完成**：本地 NVMe 8.07 GiB/s；/work 在 compute node 是本地 ext4（NFS 列續用限速層）（10/26，job 22417） |
 | D0（品質；MiniCPM4.1-8B 原生索引） | [D0_native_index.md](D0_native_index.md) | `code/s3/d0.py`、`code/s3/d0_shim/` | `results/s3_h200/d0/` | **不做**（10/28 使用者；上游 cutlass 編譯錯誤，A0 STOP 後不影響決策表）→ NOT_MEASURED |
 

@@ -558,3 +558,17 @@ python3 code/s3/kvs_f0p.py report
 **失敗與異常**: 無。runner 的 GM06-REPORT 沒走 m7run → job 內的報告 run_id 是 `20261028-043459-adhoc`；head node 用 m7run 重出一份（數字逐位元相同），以重出的為準。
 **限制**: 只代表分到的這一對卡（NUMA 0、不同 PCIe switch、NV18）；鄰卡閒置；鄰卡在 decode 時的 TPOT 影響沒量；k＝4 NOT_MEASURED（偏離 2）。
 **意思**: 06 §4：A0 不過、G-M08 不過、G-M06 過 → **P4**（短的量測＋機制論文）。G-M06 跑完，「它跑的期間不送別的 stage-3 job」解除。
+
+## S3-E2E — E2E-C 第一段（模擬）：**E2E-NOGO**（2026-10-28 16:11，head node 報告）
+
+**狀態**: NOGO（判準照登記 `runs/E2E_combo.md` §5；偏離 1）
+**執行時間**: 2026-10-28T02:51 → 14:22（四個模擬）；報告 16:05、16:11
+**run_id**: 資料 `20261028-025101-s3-e2e-run-llama-conv`、`20261028-025151-s3-e2e-run-qwen-conv`、`20261028-025305-s3-e2e-run-llama-fi`、`20261028-025307-s3-e2e-run-qwen-fi`；D 檢查 `20261028-024941-s3-e2e-dcheck`；報告 `20261028-160552-s3-e2e-report`（第一次）、`20261028-161142-s3-e2e-report`（以這個為準：判定與 32 格逐值相同，多了只報告的 `m_star_candidates`）
+**指令**: `source code/env_h200.sh; export P3_CONST=h200 TIARA_ALLOW_NO_SLURM=1; m7run s3-e2e-report python code/s3/e2e.py report`
+**產出檔**: `results/s3_h200/e2e/e2e_report.json`；`results/s3_h200/e2e/raw/e2e_{llama,qwen}_{conversation,freeinference}.csv`＋`.meta.json`
+**關鍵數字**〔模擬〕: 過 0／32 格（Llama 0、Qwen 0）；ASK 級 0 格；NOT_MEASURED 8 格（Qwen × cprefill）。四個（模型, 背景）的 m\* 都選不出來：每個 MPS 等級的開發集 B 都 < 0.95（最高 0.944，Llama × cprefill × mps；B ≥ 0.95 的開發格 0 個），所以 K3＝K2、Δ＝0。開發集上 MPS 的 TTFT 改善中位數 33–79%（含 FreeInference 的格子）。只報告：conversation K0→K1（INT4）Llama 14.2–39.8%、Qwen 20.5–31.3%；K1→K2（打字提示預取）Llama 23.5–38.5%、Qwen 5.0–56.3%；conversation 上 stream 的 B：K0 0.68–0.84、K2 0.69–0.82。逐格見 `runs/E2E_combo.md` 結果節。
+**失敗與異常**:
+1. FreeInference 第 9–16 週：平均 TTFT 升到幾十到上千秒，預取（K2、O）比不預取更慢（例：Llama NFS 128 cprefill 第 16 週測試集 K1 511.88、K2 1,149.21、O 1,354.46 秒）。第 1–6 週和 ICPE X1-FI 一致（回來請求數逐週相同，四個配置幾乎相同）。原因沒有驗證（推論：慢層通道被塞滿）；這些數字不下結論。判定不受影響：conversation 的開發格 B 也都 < 0.95。
+2. 監看的錯：背景監看用 `pgrep -f "python code/s3/e2e.py run --model"`，比對到監看自己的 shell 指令列，永遠不結束 → Llama 14:22 跑完，16:05 才出報告。沒有影響任何數字；之後改等 run 目錄的 `exit_code`。
+**與預期的差異**: B0 的 SHARE（背景 0.98，單一動作、不含上限的代價）在端到端不成立；算上 cap(g, m) 與前景占用率 φ 之後，背景吞吐預算 0.95 沒有任何 MPS 等級守得住。
+**意思**: 照 §9，第二段（GPU 驗證）不做。ICPE「固定 MPS 預留是不用預測的增益」要改寫成「延遲換背景吞吐的取捨」。E2E-C 的 T1 版（CPU 層換 H200 的常數）16:09 開跑（`20261028-160904-icpe-t1-e2e-llama-conv`、`…-160905-…-qwen-conv`、`…-160906-…-llama-fi`、`…-160907-…-qwen-fi`；D 檢查 `20261028-160754-icpe-t1-e2e-dcheck` 兩個模型 0 個可用組合，同登記版）。第一次下的四個（`20261028-1608{22,23,24,26}-icpe-t1-e2e-run-*`）是我的 shell 錯（zsh 不拆字，參數組錯），exit 127、沒有執行、沒有輸出。
