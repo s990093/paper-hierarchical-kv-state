@@ -1,0 +1,4 @@
+run_id,ts,check,n,max_abs_diff_s,ok
+20261028-081514-icpe-t1-x4-validate,2026-10-28T00:15:19+00:00,V3_cake_vs_sim_restore,2000,0.0,True
+20261028-081514-icpe-t1-x4-validate,2026-10-28T00:15:19+00:00,V4_events_vs_serial_original_ov1e4,36,1.3387762010097504e-09,False
+20261028-081514-icpe-t1-x4-validate,2026-10-28T00:15:19+00:00,V4_events_vs_serial_same_abs_times,36,0.0,True

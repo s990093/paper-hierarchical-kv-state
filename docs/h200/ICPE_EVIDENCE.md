@@ -3,6 +3,7 @@
 > **狀態：數字齊了（2026-10-25T22:21Z，`date -u`）**。ICPE 補量的實驗（P0-1、P0-2、P1-1、P1-2、P2）都跑完，沒有「待」的列。2026-10-22 開檔，10/25 補上 MI300X 與已有 H200 列的 run_id。每一列一個主張、一個數字、平台、run_id、實測或模擬。
 > 「待」＝ICPE 補量的實驗還沒跑完（括號是哪一個）；「待補 run_id」＝數字已知、run_id 還沒從 RUNLOG 抄過來核對。
 > 規則：數字只抄原始檔或 RUNLOG 裡有 run_id 的；平台分開寫，不混成一個數；模擬一律標〔模擬〕。self-review，不是 cross-model review。
+> **2026-10-28：ICPE 改成只用 H200（使用者）。B、C 節標「H200 常數」的模擬列，以 T1（CPU 層換成 H200 自己量的常數；SSD、NFS 不變）的值為主**——判定字全部不變、數字見 [`icpe/T1_h200_cpu_tier.md`](icpe/T1_h200_cpu_tier.md) 的結果節；下面各列的數字是舊的（CPU 層 35.4 GiB/s，MI300X 的 tier_params）。MI300X 的列不進這篇。
 > 實驗與判準：[`icpe/README.md`](icpe/README.md)；執行紀錄：[`results/RUNLOG_H200_ICPE.md`](../../results/RUNLOG_H200_ICPE.md)。
 
 ## A. 寫入時預知＝0（第一、二階段）

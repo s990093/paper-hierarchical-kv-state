@@ -337,3 +337,23 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - **原因**：`x3_leads.py` 的 tokenizer 路徑＝`$TIARA_HF_HUB/models--…/snapshots/<固定 revision>`；`r_h200_t1.sh` 沒有像 `r_h200_icpe.sh` 那樣在 source env_h200.sh 之前把 `HF_HOME` 指到 hgx-cn01 的 `/tmp/hungweilai-models/hf-cache`，所以指到 /work 的 hf-cache（10/23 起是空的）。10/21 原本那次 X3 跑的時候 /work 的 hf-cache 還在。我的 runner 漏抄，不是模擬的問題。
 - **修正**（commit 見 `fix(icpe-t1)`）：runner 開頭設 `ICPE_MODEL_ROOT`／`HF_HOME`（同 r_h200_icpe.sh），開跑時 `fetch_models.py check --models llama qwen`。revision 相同（Llama `4699cc75…`、Qwen `e28526f7…`，fetch_models 逐檔對過 HF 的雜湊）→ 輸入不變。
 - **重送**：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1b -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1 --from T1-X3-EVENTS` → **job 22772**（排隊中：帳號 4 卡滿；同使用者的 kc-la08-* 是品質 run、不計時，可以同節點）。T1-X3-EVENTS 會把舊的事件目錄改名、重建。
+
+## ICPE-T1 — CPU 層換成 H200 的常數：B、C 節判定字全部不變（jobs 22762／22772／22788＋head node 報告，2026-10-28 06:58–08:20 +08）
+
+**狀態**: PASS（照登記跑完；E2E-C 的 T1 版還沒跑，等登記的那份 E2E-C 跑完）
+**執行時間**: 2026-10-28T06:58:20+08:00 → 08:20:16（compute node 三段＋head node）
+**run_id**: 自檢 `20261028-065820-icpe-t1-selftest`；X1 `20261028-065829`～`…-073308-icpe-t1-x1-*`（V0／V1／V2 各 sweep、an、h1800、h3600）；fullsim `…-073312-icpe-t1-p02-fullsim`；X1 FreeInference `…-073351`～`…-074221-icpe-t1-p12-x1fi*`；X3 `…-074241`～`…-081248-icpe-t1-x3-*`；X4 `…-081502`、`…-081741`、`…-081922-icpe-t1-x4-*`；排隊拆解 `…-082005-icpe-t1-p12-queue`；報告 `…-082016-icpe-t1-report`
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1 -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1`（22762）、`… --from T1-X3-EVENTS`（22772）、`… --from T1-X4-SWEEP`（22788）；head node `source code/env_h200.sh; export P3_CONST=h200 P3_TIER=h200cpu TIARA_ALLOW_NO_SLURM=1; m7run icpe-t1-p12-queue python code/icpe/p12_queue.py --cfg results/icpe_h200/t1/explore/x4/x4_verdict_cfg.csv --sweep $TIARA_RUNS/20261028-081741-icpe-t1-x4-sweep/x4_sweep.csv --out results/icpe_h200/t1/p12/x4; m7run icpe-t1-report python code/icpe/t1.py report`
+**產出檔**: `results/icpe_h200/t1/`；並排 `results/icpe_h200/t1/t1_compare.{csv,json}`
+**關鍵數字**〔模擬〕（舊＝MI300X 的 CPU 層 → 新＝H200 的 CPU 層）:
+- **判定字全部不變**：X1（V0／V1／V2 × 原登記／H1800／H3600）9 個「有看頭」；P0-1 (c) 成立；X1 FreeInference 死路；X4 的 30 個判定相同；B4 的 D1、D2 同結論；X3 原登記／加 FreeInference「有看頭」。
+- B1（conversation、SSD、閒、Cake，128／256 GiB）：O-PF 48.9／44.6% → 50.5／46.5%；O-ORD 25.4／27.0% → 27.65／31.0%；O-DROP 27.0／32.8% → 27.6／34.9%。
+- B2：O-DROP 最大 45.9%（48 格 ≥15%）→ 47.7%（58 格）；截尾 H＝3,600 仍 0.0%（0 格）；O-PF 91.8 → 92.4%、O-ORD 99.9 → 99.9%。
+- B3（X1）：FreeInference 0.28% → 0.30%（使用者發起 1.48% → 1.52%）。X5（2.44%）不受影響、沒重跑。
+- B4：D1 中位 0.983 → 0.983（最小 0.846 → 0.837；可判 262 → 264 格）；D2 43／63 → 44／65。
+- B7：X1 ≥15% 的格 167／168／169 → 190／192／189。
+- C1：36／36、37／54，NFS 級最好的格 98.74% → 98.74%。
+- C2：HINT-PF 對 LRU 5.6–47.8% → 6.9–49.1%；O-PF 對 LRU 5.5–52.4% → 7.0–54.2%；HINT-PF÷O-PF 中位 SSD 0.939 → 0.933、b32 0.949 → 0.941、NFS 1.117 → 1.118；>1 的格 6 → 4。
+- 跨門檻（rule＝min，0.05／0.15）：271 列，全部往上跨；逐格在 `t1_compare.json`。
+**失敗與異常**: ICPE-T1-FAIL-1（tokenizer 路徑，runner 的錯，已修）；`T1-X4-VALIDATE` exit 1——V1 54/160（參考值是舊常數算的；沒設開關時 160/160），V2–V4 過 → 偏離 1（`docs/h200/icpe/T1_h200_cpu_tier.md`），不當停止條件、從 sweep 接著跑。
+**與原本的差異**: 照登記 §5，ICPE（只用 H200）改用新值；舊值＝「CPU 層以 35.4 GiB/s 限速時」的敏感度。沒重跑、列為限制：X5；CPU 層在 GPU 上被限速成 35.4 GiB/s 的 GPU 實測 run（A1'、A1''、A2、A3、B6、C2 的 GPU 縮小重播）；SSD、NFS 級。`docs/h200/ICPE_EVIDENCE.md` 開頭加了一行指向 T1 的結果。
