@@ -379,3 +379,17 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 
 - Llama INT4 的 Step 2 在 H200 早就算過：10/18「δ\* 用 5% 的對照」（RUNLOG_H200 該節）的 `results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/step2_llama_int4.json`，資料＝H200 封存的 `quality_sealed/int4mix_llama_*`。F25／M25／B25 對 R25（讀法 B、b32，閒／忙）−0.47～+0.08 個百分點、CI 都含 0 → stable_gap_1_2＝False → **K2**（MI300X ±0.33）。δ\* 只影響「不比 R25 慢」那一條，品質門檻是 ≥2 個百分點，所以和 δ\* 無關。
 - 加進 `docs/h200/ICPE_EVIDENCE.md` 的 A4' 列。A4 不需要 GPU。
+
+## ICPE-T1-E2E — E2E-C 的 T1 版：判定和登記版相同（E2E-NOGO）（head node，2026-10-28 16:07 → 2026-10-29 02:19 +08）
+
+**狀態**: PASS（只報告；登記 `docs/h200/icpe/T1_h200_cpu_tier.md` §5）
+**執行時間**: 2026-10-28T16:07:54+08:00 → 2026-10-29T02:19:00+08:00
+**run_id**: `20261028-160754-icpe-t1-e2e-dcheck`；`20261028-160904-icpe-t1-e2e-llama-conv`、`20261028-160905-icpe-t1-e2e-qwen-conv`、`20261028-160906-icpe-t1-e2e-llama-fi`、`20261028-160907-icpe-t1-e2e-qwen-fi`；`20261029-021758-icpe-t1-e2e-report`；`20261029-021836-icpe-t1-e2e-curve`；`20261029-021851-icpe-t1-report`
+**指令**: `source code/env_h200.sh; export P3_CONST=h200 P3_TIER=h200cpu TIARA_ALLOW_NO_SLURM=1; m7run icpe-t1-e2e-dcheck python code/s3/e2e.py dcheck; m7run icpe-t1-e2e-<model>-<trace> python code/s3/e2e.py run --model <llama|qwen> --trace <conversation|freeinference>`（四個在背景同時跑）；跑完 `m7run icpe-t1-e2e-report python code/s3/e2e.py report; m7run icpe-t1-e2e-curve python code/s3/e2e_curve.py --root results/icpe_h200/t1/e2e; m7run icpe-t1-report python code/icpe/t1.py report`
+**產出檔**: `results/icpe_h200/t1/e2e/`；`results/icpe_h200/t1/t1_compare.{csv,json}`
+**關鍵數字**〔模擬〕:
+- 判定 E2E-NOGO：0／32 格過、ASK 0、NOT_MEASURED 8（Qwen × cprefill），m\* 全空——和登記版（`results/s3_h200/e2e/e2e_report.json`）相同。
+- MPS 取捨（只報告）：不設上限的 MPS 對 K2 的 TTFT 改善 30.7–62.9%（登記版 32.9–63.0%），B 比 stream 少 0～6.5 個點（登記版 0～6.7）。
+- `t1_compare`：除 E2E 各項補上值以外，和 10/28 那份相同。
+**失敗與異常**: 第一次送出 `20261028-1608{22,23,24,26}-*` exit 127（我在 zsh 下用 `$var` 拆字串，沒有跑任何東西）；改用 bash 重送。
+**與原本的差異**: 無（判定字相同）。
