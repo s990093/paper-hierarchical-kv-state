@@ -572,3 +572,9 @@ python3 code/s3/kvs_f0p.py report
 2. 監看的錯：背景監看用 `pgrep -f "python code/s3/e2e.py run --model"`，比對到監看自己的 shell 指令列，永遠不結束 → Llama 14:22 跑完，16:05 才出報告。沒有影響任何數字；之後改等 run 目錄的 `exit_code`。
 **與預期的差異**: B0 的 SHARE（背景 0.98，單一動作、不含上限的代價）在端到端不成立；算上 cap(g, m) 與前景占用率 φ 之後，背景吞吐預算 0.95 沒有任何 MPS 等級守得住。
 **意思**: 照 §9，第二段（GPU 驗證）不做。ICPE「固定 MPS 預留是不用預測的增益」要改寫成「延遲換背景吞吐的取捨」。E2E-C 的 T1 版（CPU 層換 H200 的常數）16:09 開跑（`20261028-160904-icpe-t1-e2e-llama-conv`、`…-160905-…-qwen-conv`、`…-160906-…-llama-fi`、`…-160907-…-qwen-fi`；D 檢查 `20261028-160754-icpe-t1-e2e-dcheck` 兩個模型 0 個可用組合，同登記版）。第一次下的四個（`20261028-1608{22,23,24,26}-icpe-t1-e2e-run-*`）是我的 shell 錯（zsh 不拆字，參數組錯），exit 127、沒有執行、沒有輸出。
+
+## S3-E2E-POST — E2E-C 判定之後的補充（只報告；2026-10-28 16:45–17:10，head node）
+
+- MPS 取捨曲線 `20261028-165753-s3-e2e-curve`（`results/s3_h200/e2e/mps_tradeoff.{csv,png}`）：基準線 K2（stream）的 B 在 conversation 只有 0.70–0.80 → 登記的絕對門檻 0.95 在 conversation 到不了；不設上限的 mps 相對 stream TTFT 改善 33–63%、B 只變 0 到 −7 個百分點〔模擬〕。B0 的背景單獨速度 mps÷stream＝1.000（cprefill、mixed，兩個模型）。
+- FreeInference 異常診斷 `20261028-164518-s3-e2e-diag-fi`（`results/s3_h200/e2e/diag/fi_anomaly.csv`，第 1、9 週）：H3（背景放大）排除；H2（預取沒有准入控制，把快要用的塊擠出 CPU）是主因；H1 次要。細節見 `runs/E2E_combo.md`「判定之後的補充」B 節。
+- **異常**：第 16 週的診斷占 32 GB，head node 可用記憶體剩 3 GB；Claude Code 收掉了背景監看（記憶體不足時的自動處理）。我停掉診斷（exit 143），可用記憶體回到 39 GB；第 16 週沒有寫進結果。T1 的兩個 FreeInference run 沒有受影響。
