@@ -357,3 +357,10 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - 跨門檻（rule＝min，0.05／0.15）：271 列，全部往上跨；逐格在 `t1_compare.json`。
 **失敗與異常**: ICPE-T1-FAIL-1（tokenizer 路徑，runner 的錯，已修）；`T1-X4-VALIDATE` exit 1——V1 54/160（參考值是舊常數算的；沒設開關時 160/160），V2–V4 過 → 偏離 1（`docs/h200/icpe/T1_h200_cpu_tier.md`），不當停止條件、從 sweep 接著跑。
 **與原本的差異**: 照登記 §5，ICPE（只用 H200）改用新值；舊值＝「CPU 層以 35.4 GiB/s 限速時」的敏感度。沒重跑、列為限制：X5；CPU 層在 GPU 上被限速成 35.4 GiB/s 的 GPU 實測 run（A1'、A1''、A2、A3、B6、C2 的 GPU 縮小重播）；SSD、NFS 級。`docs/h200/ICPE_EVIDENCE.md` 開頭加了一行指向 T1 的結果。
+
+## ICPE-T1G-START — CPU 層換成 H200 的常數，重量 GPU 實測的 run（第一批；登記 `docs/h200/icpe/T1G_gpu_rerun.md`，2026-10-28T08:25:20Z，commit dd43fcb）
+
+- 使用者 10/28：GPU 不要空著，「兩批都排，T1 先」；和 kc-\* 共存「照規則，等 kc-\* 空檔」。
+- CPU 前置（head node，T1 常數）：P02 selftest `20261028-162428-icpe-t1g-p02-selftest` 9/9 PASS；S_orig `20261028-162505-icpe-t1g-p02-sim-orig`（開跑）。
+- 送出：job **22882** `icpe-t1g`（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1g code/r_h200_t1g.sh --part all`；A1'' → A1' → A2 → P02，原本的時間合計約 10 小時；`--time 1-12:00:00`）。送出時 PENDING（Priority）。
+- 排程：每一步開跑前等節點上沒有我們自己的別的 job；跑完用 sacct 查重疊（`results/icpe_h200/t1/gpu/overlap.csv`），重疊就重跑、最多 3 次（登記 §4）。
