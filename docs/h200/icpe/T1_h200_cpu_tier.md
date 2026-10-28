@@ -85,4 +85,9 @@
 
 ## 偏離（登記之後）
 
-（無）
+### 偏離 1（2026-10-28T00:17:34Z；看過 X4 validate 的 V1 驗證數字，沒有看過任何 T1 的結果數字）：X4-VALIDATE 的 V1 在 T1 下不適用，不當成停止條件
+
+- **發生什麼**：runner 照原本 explore 的順序，在 X4 sweep 前多跑了 trace 與 validate（登記 §3 的 B4 只列 sweep、analyze＋`p12_queue.py`）。job 22772 的 `T1-X4-VALIDATE`（run `20261028-081514-icpe-t1-x4-validate`）exit 1：V2 10/10 完全相同、V3 最大差 0、V4 最大差 0，但 **V1 54/160 格在 1% 內**（要 ≥95%；|err| 最大 11.2%）。
+- **原因**（診斷，只報告、不進 results；scratch 腳本照抄 `x4_sim.cmd_validate` 的 V1 迴圈）：V1 拿 X4 的模擬器去比 `results/m7_explore_h200/r1_sim_llama31_8b.csv`，那份參考是用**舊的** CPU 層常數算的。沒設開關時 V1 **160/160**（10/21 原本也過；程式沒改）；設了開關時 54/160，各參考 CPU 頻寬組都差 6.7–11.2%——即使參考格指定了 CPU 讀頻寬，寫入頻寬與 k_read 仍換成新值。所以 V1 檢查的是「兩個模擬器的程式一致」，在舊常數下已成立，T1 下參考值本身就不同，不適用。
+- **改什麼**：T1 不把 X4-VALIDATE 當停止條件；從 `T1-X4-SWEEP` 接著跑（sweep、analyze，同登記 §3）。validate 的輸出（`results/icpe_h200/t1/explore/x4/x4_validate_v*.csv`）照實保留、在報告裡列出。
+- **影響**：判準不變；B4 的數字照登記算。
