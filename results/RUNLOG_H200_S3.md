@@ -578,3 +578,16 @@ python3 code/s3/kvs_f0p.py report
 - MPS 取捨曲線 `20261028-165753-s3-e2e-curve`（`results/s3_h200/e2e/mps_tradeoff.{csv,png}`）：基準線 K2（stream）的 B 在 conversation 只有 0.70–0.80 → 登記的絕對門檻 0.95 在 conversation 到不了；不設上限的 mps 相對 stream TTFT 改善 33–63%、B 只變 0 到 −7 個百分點〔模擬〕。B0 的背景單獨速度 mps÷stream＝1.000（cprefill、mixed，兩個模型）。
 - FreeInference 異常診斷 `20261028-164518-s3-e2e-diag-fi`（`results/s3_h200/e2e/diag/fi_anomaly.csv`，第 1、9 週）：H3（背景放大）排除；H2（預取沒有准入控制，把快要用的塊擠出 CPU）是主因；H1 次要。細節見 `runs/E2E_combo.md`「判定之後的補充」B 節。
 - **異常**：第 16 週的診斷占 32 GB，head node 可用記憶體剩 3 GB；Claude Code 收掉了背景監看（記憶體不足時的自動處理）。我停掉診斷（exit 143），可用記憶體回到 39 GB；第 16 週沒有寫進結果。T1 的兩個 FreeInference run 沒有受影響。
+
+## S3-E2E-DIAG-W16 — FreeInference 第 16 週的診斷補跑（只報告；head node，2026-10-29 02:35–03:13）
+
+**狀態**: PASS（只報告；不改 E2E-C 的判定）
+**run_id**: `20261029-023519-s3-e2e-diag-fi-w16`
+**指令**: `source code/env_h200.sh; unset P3_TIER; export P3_CONST=h200 TIARA_ALLOW_NO_SLURM=1; m7run s3-e2e-diag-fi-w16 python code/s3/e2e_diag.py --model llama --weeks 2026-08-30_2026-09-05 --slows ssd nfs --cpu 128 --bg cprefill:2048:65536 --out results/s3_h200/e2e/diag/fi_anomaly.csv`
+**產出檔**: `results/s3_h200/e2e/diag/fi_anomaly.csv`（附加 12 列，共 36 列；第 16 週之前沒有任何列）
+**關鍵數字**〔模擬〕:
+- NFS 沒有背景時的測試集 TTFT：LRU 62.07 s、HINT-PF 155.11 s、O-PF 170.48 s。有背景時是 511.88／1,149.21／1,354.46 s，和 E2E 報告相同。
+- H3 排除。H2 仍在：CPU 載入 42.0M → 10.4M／2.5M，重算 31.0M → 60.6M／68.1M，降級 59.7K → 149K／181K。
+- H1 變成主要的一部分：慢層讀使用率 LRU 0.612 → 0.901／0.932。
+- 細節見 `runs/E2E_combo.md` 判定之後的補充 B 節。
+**失敗與異常**: 無（這次 head node 可用記憶體 30–49 GB，沒有再出問題）。
