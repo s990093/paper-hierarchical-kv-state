@@ -416,3 +416,20 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - `20261029-025847-icpe-t1g-analyze-p02` exit 1：`FileNotFoundError: '/work/ChihChungHsu/hungweilai/datasets/mooncake/traces/conversation_trace.jsonl'`。head node 沒設 `X1_TRACE_DIR`，和 10/26 原本的 P02 分析同一個問題。在 `load_trace` 就失敗，沒寫出東西；設了之後重跑。
 - `20261029-023149-icpe-t1g-exposure-regress` exit 1：`ValueError: cannot insert run_id, already exists`，我新寫的 `t1g_exposure.py` 單位表欄名撞名，改成 `src_run` 後重跑。
 **與原本的差異**: 判定字全部相同；照 T1 §5，ICPE（只用 H200）改用新值。第二批 A3（T1G-2，job 22886）在跑。
+
+## ICPE-T1G2 — A3 的 GPU 確認在 T1 常數下重做：判定字不變（GPU 上沒有存活設定）（job 22886，2026-10-29 02:56 → 09:15 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T1G2_round1_rerun.md`；結果節同檔）
+**執行時間**: 2026-10-29T02:56:50+08:00 → 2026-10-29T09:15:29+08:00（GPU）；分析到 09:18
+**run_id**: 11.6／0.5 `20261029-025653-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s0`、`20261029-034007-…-s1`、`20261029-040833-…-s2`、`20261029-044421-…-s3`、`20261029-051726-…-s4`；43.59／0.25 `20261029-054220-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s0`、`20261029-063557-…-s1`、`20261029-071444-…-s2`、`20261029-075923-…-s3`、`20261029-084254-…-s4`；分析 `20261029-091732-icpe-t1g-analyze-a3`；附加 1 `20261029-091805-icpe-t1g-exposure-scan2`、`20261029-091816-icpe-t1g-exposure-a3-regress`、`20261029-091830-icpe-t1g-exposure-a3`
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1g2 --time=1-00:00:00 --dependency=afterany:22882 code/r_h200_t1g.sh --part a3`（22886）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run icpe-t1g-analyze-a3 python code/icpe/t1g.py analyze --part a3`；`python code/icpe/t1g_exposure.py scan`、`analyze --part a3 --regress`、`analyze --part a3`
+**產出檔**: `results/icpe_h200/t1/gpu/a3/`（`r1h_gpu_llama_doc_<格>.csv`、`r1_gpu_{summary,verdict}_<格>.csv`、`analysis/verdict.json`）、`overlap.csv`、`t1g_compare.json`、`exposure/{exposure_steps.csv,units_a3.csv,t1g_exposure.json}`
+**關鍵數字**（實測）:
+- 排程：10 步全部「重疊：無」、`wait-clear` 都等 0 次、沒有重跑、沒有污染。
+- 11.6／hold／doc／nfs／0.5（S5L）：2/5 seed 過（seed 0、2；對最好的不看位置 +15.5、+24.5%）→ 不存活（原本 A 也是 2/5，同樣 seed 0、2）。
+- 43.59／hold／doc／nfs／0.25（S5c）：2/5（seed 1、3；+7.8、+7.2%）→ 不存活（原本 C〔35.42〕也是 2/5，同樣 seed 1、3）。
+- **A3 的判定字：GPU 上存活 0/2（原本 0/3）→ 不變。**
+- 模擬對 GPU：|誤差| ≤10% 的格 46/50、44/50。
+- 附加 1（只報告）：暴露單位 11/300（只在 43.59 的 s0、s2；事件都不是同 lab 帳號）；影子回歸逐值相同；拿掉後沒有判定字不同（43.59 的 seed 0、2 → NM，剩 2/3 過）；暴露÷沒暴露 8 點中位 −1.6%（s0）、−0.3%（s2），0 點變慢。
+**失敗與異常**: 無。（`b_workload_seed<k>.json` 被第二格覆寫；兩格同 seed 的工作負載在 stdout 逐字相同。）
+**與原本的差異**: 判定字相同。T1G 兩批（A1''、A1'、A2、B6／C2、A3）全部的判定字都和原本相同；照 T1 §5，ICPE（只用 H200）改用新值。

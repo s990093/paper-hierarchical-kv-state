@@ -284,5 +284,53 @@
     }
    ]
   }
+ },
+ "a3": {
+  "run_id": "20261029-091732-icpe-t1g-analyze-a3",
+  "ts": "2026-10-29T09:17:46+08:00",
+  "part": "a3",
+  "cells": [
+   {
+    "tag": "hold_nfs_c11.60_f0.5",
+    "cpu_gibps": 11.6,
+    "release": "hold",
+    "ssd": "nfs",
+    "cpu_frac": 0.5,
+    "wt": "S5L",
+    "src_runs": [
+     "20261029-025653-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s0",
+     "20261029-034007-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s1",
+     "20261029-040833-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s2",
+     "20261029-044421-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s3",
+     "20261029-051726-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s4"
+    ],
+    "not_measured_steps": [],
+    "seeds_judged": 5,
+    "seeds_pass": 2,
+    "survive": false
+   },
+   {
+    "tag": "hold_nfs_c43.59_f0.25",
+    "cpu_gibps": 43.5888,
+    "release": "hold",
+    "ssd": "nfs",
+    "cpu_frac": 0.25,
+    "wt": "S5c",
+    "src_runs": [
+     "20261029-054220-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s0",
+     "20261029-063557-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s1",
+     "20261029-071444-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s2",
+     "20261029-075923-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s3",
+     "20261029-084254-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s4"
+    ],
+    "not_measured_steps": [],
+    "seeds_judged": 5,
+    "seeds_pass": 2,
+    "survive": false
+   }
+  ],
+  "n_survive": 0,
+  "old": "H200 自己 3 格 0/3（results/m7_explore_h200/r1_gpu_verdict_{A,B,C}.csv）",
+  "rule": "寫入時決定策略的回來請求 TTFT 中位數同時贏最好的不看位置、S4B、S4W、S4C 各 ≥5%，≥3/5 seed → 存活"
  }
 }

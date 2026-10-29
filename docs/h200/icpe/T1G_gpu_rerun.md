@@ -149,3 +149,4 @@
 - 自己的程式錯（`t1g_exposure.py`，第一次 regress `20261029-023149-icpe-t1g-exposure-regress`）：單位表已經有 `run_id` 欄（來源 run），再插入這次的 run_id 時撞名，exit 1。單位表的欄改名成 `src_run` 後重跑。
 - **產出**：`results/icpe_h200/t1/gpu/{a1pp,a1p,a2,p02}/`（>1 MB 的原始列壓縮：`b_share.csv.gz`、`b2_share.csv.gz`、`gpu_requests.csv.xz`；`analysis/` 底下篩過的副本由 `t1g.py analyze` 重建，不進 git）、`overlap.csv`、`t1g_compare.json`、`exposure/`。
 - **意思**：CPU 層換成 H200 自己的常數之後，GPU 實測的第一批（A1''、A1'、A2、B6／C2）**判定字一個都沒有變**，數字的變化都在 1.2 個百分點以內。照 T1 §5，ICPE（只用 H200）改用新值。
+- **第二批 A3（T1G-2，2026-10-29）**：判定字也不變（GPU 上存活 0/2，原本 0/3）。結果在 [`T1G2_round1_rerun.md`](T1G2_round1_rerun.md) 的結果節。
