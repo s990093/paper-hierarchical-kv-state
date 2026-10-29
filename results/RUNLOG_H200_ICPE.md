@@ -448,3 +448,18 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - 只報告：同一張卡 par 對 solo −1.1%～+0.9%；30 個窗有 11 個碰到別的使用者的 job 開始／結束（最多 2 個）；E5 的 job `numa_local=no`。
 **失敗與異常**: 第一次分析 `20261029-123913-icpe-cal-analyze` 的「別的使用者事件」NOT_MEASURED：`tz_convert() takes exactly 2 positional arguments (1 given)`（我在 `other_user_events` 對 pandas Timestamp 呼叫 `astimezone()`）；也漏了登記 §4 的「依卡、依 NUMA」報告。修好、補上後重跑，判定與 8 個指標的數字相同。
 **與原本的差異**: 原本的規則是量時間的 job 一律不和我們自己的 job 同時跑；現在對這兩類 job 放寬成「兩個、不同 NUMA 節點」。
+
+## ICPE-T3 — 還原規劃器換成更強的 STAIR（簡化、照 CacheFlow 的想法）：判定字全部不變（head node 2026-10-29 12:12 → 14:10；job 23063 15:13 → 15:23 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T3_planner_sensitivity.md`，2026-10-29T04:10:54Z；偏離 1：只報告的比值改成回來的請求；異常 1；結果節同檔）
+**執行時間**: head node 2026-10-29T12:12 → 14:10；job 23063 15:13 → 15:23；比對 15:23
+**run_id**: `20261029-121210-icpe-t3-selftest`、`20261029-121338-icpe-t3-x1-sweep-V0`、`…-x1-sweep-V1`、`…-x1-sweep-V2`、各 `icpe-t3-x1-{an,h1800,h3600}-V*`、`icpe-t3-p02-fullsim`、`20261029-141742-icpe-t3-ratio`（第一次 `20261029-141015-icpe-t3-ratio` 子集錯，見偏離 1）、`20261029-151304-icpe-t3-p12-data-verify`、`20261029-151325-icpe-t3-p12-x1fi-sweep`、`20261029-152317-icpe-t3-p12-x1fi-an`、`20261029-152324-icpe-t3-p12-x1fiuser-an`、`20261029-152352-icpe-t3-report`
+**指令**: `bash code/r_h200_t3.sh --part head`（head node）；`sbatch code/r_h200_t3.sh --part fi`（23063）；`source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1 P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json; m7run icpe-t3-ratio python code/icpe/t3.py ratio; m7run icpe-t3-report python code/icpe/t3.py report`
+**產出檔**: `results/icpe_h200/t3/`
+**關鍵數字**（模擬）:
+- 11 個判定檔的判定字 0 個改變；V0–V2 × 3 都「有看頭」；B7 相同 → **ICPE 的判定字對更強的規劃器穩健**。
+- B1（conversation、SSD、閒置、CPU 128）：O-PF 0.505→0.429、O-DROP 0.276→0.209、O-NOW 0.080→0.055。≥15% 的格：V0 190→181、V1 192→179、V2 189→174；H1800 的 O-DROP ≥15% 格 9／7／6→11／9／8（唯一變多的）。
+- C2 HINT-PF ÷ O-PF 中位 SSD／b32／NFS 0.933／0.941／1.118 → 0.924／0.933／0.932；>1 的格 4→2。B3 不變（0.0030／0.0152）。
+- 比值（回來的請求）STAIR ÷ Cake 中位 SSD 0.95／0.94、NFS 0.49／0.63。
+**失敗與異常**: (1) 我的錯：`t3.py ratio` 第一次把所有還原都算進去（登記是回來的請求）→ 改正、重跑（偏離 1，commit 4b650a3）。(2) 異常 1：SSD 慢層正在寫入時，STAIR 有 0.5–0.6% 的回來的請求比 Cake 慢（最多 2.28 倍）：名目成本把寫入中的讀取倍數 k＝3.306 套到每一塊，但寫入在途中結束；自檢用新的 I/O 線，沒抓到。規劃器照登記不改。
+**與 ICPE_EVIDENCE 的差異**: 判定字不變；C2 的「中位 0.94–1.12」換成 STAIR 是 0.92–0.93（NFS 不再 >1）→ 這個範圍要寫成依規劃器而定。ICPE_EVIDENCE 還沒改（要使用者決定）。
