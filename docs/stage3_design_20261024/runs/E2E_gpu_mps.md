@@ -65,3 +65,4 @@
 - **為什麼**：有 cprefill 背景時，一個 run 的牆鐘時間遠超我登記時的估計（我估整串 6–7 小時；cprefill-stream-r1 一個 run 就約 2.4 小時），整串會超過 12 小時的上限，到時正在跑的那個 run 會被砍掉；而 23063 排在 23050 之後。在步驟邊界切，已完成的 run 都不丟；被砍的 mixed-stream-r0 只跑了幾秒，沒有寫進 results（`e2e_gpu.py gpu` 只在 run 結束時寫）。
 - **影響**：idle-r0、cprefill-stream-r1 在 23050 的卡（PCI `31:00.0`）上；其餘 13 個 run（全部 rep 0 的判定格，以及其餘的 rep 1）在續跑那個 job 的卡上，可能是另一張卡。**判定用的格（rep 0）全部在同一個 job、同一張卡**；只報告的「idle 對 stream 的差」和「cprefill stream 的 rep 0／rep 1 差」會跨卡，報告時註明卡。
 - **看過的數字**：runner 每 200 個請求印一行的 TTFT（idle-r0 全部、cprefill-stream-r1 的前 600 個）、idle-r0 的 run 摘要（`t_replay_s`）。沒有算任何格的平均，也沒有看模擬對 GPU 的比值。這個決定只看牆鐘時間。
+- **實際執行**：23050 在 2026-10-29T15:12:59+08:00 取消（`E2EG-cprefill-stream-r1` 15:12:54 結束、重疊：無；`E2EG-mixed-stream-r0` 的 run `20261029-151254-s3-e2eg-mixed-stream-r0` 只跑了 5 秒，沒有寫進 results）。續跑的 job：**23080**（`--time=36:00:00 --dependency=afterany:23063`，`--from E2EG-mixed-stream-r0`）。
