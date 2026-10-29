@@ -58,6 +58,12 @@ ALL_VIEWS = [(s, g, m) for s in SLOWS for g in GPUS for m in MODES]
 TRACES = ["conversation", "toolagent"]
 
 S_NONE, S_CPU, S_SLOW, S_DROP = 0, 1, 2, 3
+# ICPE T3（docs/h200/icpe/T3_planner_sensitivity.md）：X1_PLANNER=stair → mode＝cake 的還原改用 STAIR（照 CacheFlow 的想法自己寫的簡化版）；
+# 沒設＝原本的 Cake（逐位元不變）。
+PLANNER = os.environ.get("X1_PLANNER", "cake")
+if PLANNER not in ("cake", "stair"):
+    raise SystemExit(f"X1_PLANNER={PLANNER!r}：只接受 cake 或 stair")
+STAIR_NLAY = 32                  # Llama-3.1-8B 的層數：會合點的粒度＝1/32 塊
 
 # 策略：(順序, 被選中時的動作, 回合結束的 hook, 預取)
 POLICIES = {
@@ -192,6 +198,7 @@ class View:
     def __init__(self, K, slow, gpu, mode, nmax, nreq, slow_bytes=None, dq=None):
         self.key = (slow, gpu, mode)
         self.slow_name, self.gpu, self.mode = slow, gpu, mode
+        self.planner = PLANNER
         self.f = f_array(K, nmax, gpu)
         self.Fc = [0.0]
         for x in self.f:
@@ -226,11 +233,87 @@ class View:
             m = self._mcpu[n] = p
         return m
 
+    def _stair(self, lay, blocks, L, t0, pf_done):
+        """T3 §1 的 STAIR：會合點可以落在一塊的中間（1/STAIR_NLAY 塊）、CPU 線與慢層線同時載入（合計受 GPU 輸入頻寬＝CPU 線讀取頻寬限制）。
+        用名目成本選會合點，再用原本的 Chan.read 執行。回傳 (結束時間, 整塊重算的塊數, nC, nS)。"""
+        f, cpu, slow, d, i4, Fc = self.f, self.cpu, self.slow, self.d, self.i4, self.Fc
+        sc0, ss0 = max(t0, cpu.t_free), max(t0, slow.t_free)
+        mc = cpu.k if cpu.t_free_w > sc0 else 1.0
+        ms = slow.k if slow.t_free_w > ss0 else 1.0
+        lc_blk, lc_i4, ls_blk = BF / cpu.r * mc, i4 / cpu.r * mc + d, i4 / slow.r * ms + d
+        # 從最後一塊往前載入到第 m 塊時，各線的名目完成時間（相對 t0；CPU 線要等預取完成 pf_done）與位元組
+        bc, bs, rin = sc0 - t0, ss0 - t0, cpu.r
+        Tc, Ts, Sb = [bc] * (L + 1), [bs] * (L + 1), [0.0] * (L + 1)
+        hc, hs = [False] * (L + 1), [False] * (L + 1)
+        rd = [0.0] * L
+        for i in range(L - 1, -1, -1):
+            k = lay[i]
+            Tc[i], Ts[i], Sb[i], hc[i], hs[i] = Tc[i + 1], Ts[i + 1], Sb[i + 1], hc[i + 1], hs[i + 1]
+            if k == 1:
+                Tc[i] += lc_blk; Sb[i] += BF; hc[i] = True                      # noqa: E702
+            elif k == 2:
+                rd[i] = pf_done[blocks[i]] - t0
+                Tc[i] = max(Tc[i], rd[i]) + lc_i4; Sb[i] += i4; hc[i] = True    # noqa: E702
+            else:
+                Ts[i] += ls_blk; Sb[i] += i4; hs[i] = True                      # noqa: E702
+
+        def load(m):
+            return max(Tc[m] if hc[m] else 0.0, Ts[m] if hs[m] else 0.0, Sb[m] / rin)
+        m = 0
+        while m <= L and Fc[m] < load(m):
+            m += 1
+        if m == 0:
+            j, x = -1, 0.0                             # 全部載入
+        elif m > L:
+            j, x = L - 1, 1.0                          # 全部重算
+        else:
+            j = m - 1                                  # 第 j 塊裡的某一層交會
+            k = lay[j]
+            a = (lc_blk if k == 1 else lc_i4 if k == 2 else ls_blk)
+            c0 = (max(Tc[j + 1], rd[j]) if k == 2 else Tc[j + 1]) if (hc[j + 1] or k in (1, 2)) else 0.0
+            comps = [(c0, a if k in (1, 2) else 0.0),
+                     (Ts[j + 1] if (hs[j + 1] or k == 3) else 0.0, a if k == 3 else 0.0),
+                     (Sb[j + 1] / rin, (BF if k == 1 else i4) / rin)]
+            xs = [(A0 + aa - Fc[j]) / (f[j] + aa) for A0, aa in comps if f[j] + aa > 0]
+            xr = min(1.0, max(0.0, max(xs) if xs else 0.0))
+
+            def obj(xx):
+                return max(Fc[j] + xx * f[j], *(A0 + (1 - xx) * aa for A0, aa in comps))
+            lo = math.floor(xr * STAIR_NLAY) / STAIR_NLAY
+            hi = math.ceil(xr * STAIR_NLAY) / STAIR_NLAY
+            x = lo if obj(lo) <= obj(hi) else hi
+        rt = t0 + (Fc[j] + x * f[j] if j >= 0 else 0.0)
+        lc = ls = t0
+        nbytes = 0.0
+        nC = nS = 0
+        for i in range(L - 1, j - 1 if j >= 0 else -1, -1):
+            w = 1.0 if i > j else 1.0 - x
+            if w <= 0:
+                continue
+            k = lay[i]
+            if k == 1:
+                lc = cpu.read(BF * w, lc)
+                nbytes += BF * w
+                nC += 1
+            elif k == 2:
+                pd = pf_done[blocks[i]]
+                lc = cpu.read(i4 * w, lc if lc > pd else pd) + d * w
+                nbytes += i4 * w
+                nC += 1
+            else:
+                ls = slow.read(i4 * w, ls) + d * w
+                nbytes += i4 * w
+                nS += 1
+        end = max(rt, lc, ls, t0 + nbytes / rin)
+        return end, (j + 1 if x >= 1.0 else j) if j >= 0 else 0, nC, nS
+
     def restore(self, lay, blocks, L, n_all, t0, old_n, pf_done):
         """lay[i]∈{1: CPU BF16, 2: CPU INT4（預取）, 3: 慢層 INT4}，i<L。回傳 (TTFT, 還原舊 context, nC, nS, 重算數)。"""
         f, cpu, slow, d, i4 = self.f, self.cpu, self.slow, self.d, self.i4
         nC = nS = 0
-        if self.mode == "cake":
+        if self.mode == "cake" and self.planner == "stair":
+            end, meet, nC, nS = self._stair(lay, blocks, L, t0, pf_done)
+        elif self.mode == "cake":
             p, q, rt, lt = 0, L - 1, t0, t0
             while p <= q:
                 if rt <= lt:
