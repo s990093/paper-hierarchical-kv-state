@@ -366,6 +366,72 @@ license: CC-BY-4.0（HF dataset card）
 EOF
 }
 
+do_tracelab() {   # 2026-10-29 加（H200；ICPE 長上下文 agent trace）：UW SyFI TraceLab release v0.0.2 的逐事件 coding-agent trace
+  local d="$D/tracelab" tag=v0.0.2 commit=61fea8f97277d0aa247cc2e4c7e31f90ed2bea1c
+  local sha=11ce51ec0a25e3d1d95b025bca2f7d1647e47571eb7cc968acd5fc64d4b4fb65      # GitHub release API 的 asset digest
+  fresh "$d" || return 0
+  get "https://github.com/uw-syfi/TraceLab/releases/download/$tag/syfi_coding_trace.jsonl.gz" "$d/syfi_coding_trace.jsonl.gz" || return 1
+  sha_ok "$d/syfi_coding_trace.jsonl.gz" "$sha" || return 1
+  get "https://raw.githubusercontent.com/uw-syfi/TraceLab/$commit/README.md" "$d/README.upstream.md" || return 1
+  readme "$d" <<EOF
+dataset: TraceLab（UW SyFI）coding-agent trace，逐事件 ms 時間戳、prefix／new token 切分、沒有內容
+source: https://github.com/uw-syfi/TraceLab （release $tag，tag commit $commit）
+included: syfi_coding_trace.jsonl.gz（sha256 $sha＝release API 的 digest）、README.upstream.md
+license: repo Apache-2.0（GitHub API）；資料授權照上游 README
+EOF
+}
+
+do_semianalysis() {   # 2026-10-29 加：SemiAnalysis cc-traces-weka-062126（Claude Code proxy 匿名化 trace，有時間與 64-token hash）
+  local d="$D/semianalysis_cc_traces" rev=23f152f6f0f9399a85901b89a6458def0ef16729
+  local g; g=$(curl -fsS "https://huggingface.co/api/datasets/semianalysisai/cc-traces-weka-062126" | "$PY" -I -c "import json,sys; print(json.load(sys.stdin).get('gated'))") || return 1
+  if [ "$g" != "False" ]; then echo "[semianalysis] gated=$g → NEEDS_USER（不繞過）"; return 3; fi
+  fresh "$d" || return 0
+  local v; v=$(_hf_dataset semianalysisai/cc-traces-weka-062126 "$rev" "$d" "README.md" "stats.txt" "traces.jsonl") || { echo "$v"; return 1; }
+  echo "$v"
+  readme "$d" <<EOF
+dataset: SemiAnalysis cc-traces-weka-062126（Claude Code 經 proxy 匿名化；每請求 t、in、out、hash_ids、api_time；block_size 64）
+source: https://huggingface.co/datasets/semianalysisai/cc-traces-weka-062126
+revision: $rev（gated=$g）
+included: README.md、stats.txt、traces.jsonl（沒下載 plots/）
+integrity: $(echo "$v" | tail -1)
+license: apache-2.0（HF 標籤）
+EOF
+}
+
+do_exgentic() {   # 2026-10-29 加：Exgentic agent-llm-traces（OpenTelemetry span，真實工具時長，session_id）
+  local d="$D/exgentic_agent_llm_traces" rev=70036b93a04e61b0ea2706a68b962f4f26774587
+  local g; g=$(curl -fsS "https://huggingface.co/api/datasets/Exgentic/agent-llm-traces" | "$PY" -I -c "import json,sys; print(json.load(sys.stdin).get('gated'))") || return 1
+  if [ "$g" != "False" ]; then echo "[exgentic] gated=$g → NEEDS_USER（不繞過）"; return 3; fi
+  fresh "$d" || return 0
+  local v; v=$(_hf_dataset Exgentic/agent-llm-traces "$rev" "$d" "README.md" "data/*.parquet") || { echo "$v"; return 1; }
+  echo "$v"
+  readme "$d" <<EOF
+dataset: Exgentic agent-llm-traces（OpenTelemetry span：開始／結束、輸入／輸出 token、訊息、工具、session_id）
+source: https://huggingface.co/datasets/Exgentic/agent-llm-traces
+revision: $rev（gated=$g）
+included: README.md、data/*.parquet
+integrity: $(echo "$v" | tail -1)
+license: cdla-permissive-2.0（HF 標籤）
+EOF
+}
+
+do_codexswe() {   # 2026-10-29 加：Inferact codex_swebenchpro_traces（Codex 在 SWE-bench Pro 上的呼叫，有內容）
+  local d="$D/codex_swebenchpro_traces" rev=0d52ae8c75738117be9e58c7071bd9a5b43ff78f
+  local g; g=$(curl -fsS "https://huggingface.co/api/datasets/Inferact/codex_swebenchpro_traces" | "$PY" -I -c "import json,sys; print(json.load(sys.stdin).get('gated'))") || return 1
+  if [ "$g" != "False" ]; then echo "[codexswe] gated=$g → NEEDS_USER（不繞過）"; return 3; fi
+  fresh "$d" || return 0
+  local v; v=$(_hf_dataset Inferact/codex_swebenchpro_traces "$rev" "$d") || { echo "$v"; return 1; }
+  echo "$v"
+  readme "$d" <<EOF
+dataset: Inferact codex_swebenchpro_traces（610 trial、約 2 萬次呼叫，有內容）
+source: https://huggingface.co/datasets/Inferact/codex_swebenchpro_traces
+revision: $rev（gated=$g）
+included: 全部（README.md、codex_swebenchpro.json）
+integrity: $(echo "$v" | tail -1)
+license: mit（HF 標籤）
+EOF
+}
+
 do_lmsys() {   # 只查狀態，不下載
   local g; g=$(curl -fsS "https://huggingface.co/api/datasets/lmsys/lmsys-chat-1m" | "$PY" -I -c "import json,sys; print(json.load(sys.stdin).get('gated'))") || return 1
   echo "[lmsys] lmsys/lmsys-chat-1m gated=$g"
