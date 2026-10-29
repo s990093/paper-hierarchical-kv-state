@@ -120,7 +120,7 @@ class DualView:
                 self.cpu, self.slow = c0, s0
                 self.planner = "cake"
                 r_c = base.restore(self, lay, blocks, L, n_all, t0, old_n, pf_done)
-                self.pairs.append((L, r_c[1], r_s[1]))
+                self.pairs.append((len(self.pairs), L, r_c[1], r_s[1]))      # 引擎依 r＝0..N−1 每個請求還原一次 → 第 i 次＝請求 i
                 return r_c
         return _V()
 
@@ -137,14 +137,19 @@ def cmd_ratio(a):
         for cg in (128, 256):
             v = DualView(XS, K, slow, P["nmax"], len(P["full"]))
             XS.Engine(P, "LRU", cg * XS.GiB, [v], K).run()
-            pr = pd.DataFrame(v.pairs, columns=["L", "rest_cake", "rest_stair"])
-            pr = pr[(pr.L > 0) & (pr.rest_cake > 0)]
-            q = pr.rest_stair / pr.rest_cake
-            rows.append(dict(run_id=run_id(), ts=ts(), trace="conversation", rule="R1", policy="LRU", slow=slow, cpu_GiB=cg, n=len(pr),
-                             ratio_median=float(q.median()), ratio_p10=float(q.quantile(.1)), ratio_p90=float(q.quantile(.9)),
-                             ratio_min=float(q.min()), ratio_max=float(q.max()), frac_le_0_9=float((q <= 0.9).mean()),
-                             n_ret=int((kind == 1).sum())))
-            print(json.dumps(rows[-1], ensure_ascii=False), flush=True)
+            pr = pd.DataFrame(v.pairs, columns=["r", "L", "rest_cake", "rest_stair"])
+            assert len(pr) == len(kind) and (pr.r.values == np.arange(len(kind))).all(), (len(pr), len(kind))
+            pr["kind"] = kind
+            # §2 登記的是「回來的請求」（kind＝1）；「全部還原」另列、只報告（T3 偏離 1）
+            for subset, sel in (("returning", pr.kind == 1), ("all_restores", pr.kind >= 0)):
+                s = pr[sel & (pr.L > 0) & (pr.rest_cake > 0)]
+                q = s.rest_stair / s.rest_cake
+                rows.append(dict(run_id=run_id(), ts=ts(), trace="conversation", rule="R1", policy="LRU", slow=slow, cpu_GiB=cg, subset=subset,
+                                 n=len(s), ratio_median=float(q.median()), ratio_p10=float(q.quantile(.1)), ratio_p90=float(q.quantile(.9)),
+                                 ratio_min=float(q.min()), ratio_max=float(q.max()), frac_le_0_9=float((q <= 0.9).mean()),
+                                 frac_gt_1=float((q > 1 + 1e-9).mean()), n_gt_1=int((q > 1 + 1e-9).sum()),
+                                 L_median=float(s.L.median()), n_ret=int((kind == 1).sum())))
+                print(json.dumps(rows[-1], ensure_ascii=False), flush=True)
     os.makedirs(T3, exist_ok=True)
     pd.DataFrame(rows).to_csv(os.path.join(T3, "t3_ratio.csv"), index=False)
     return 0
