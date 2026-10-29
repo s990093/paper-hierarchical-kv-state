@@ -58,3 +58,10 @@
 - 登記時 repo HEAD：`15eef10`（本檔隨下一個 commit 進 git）
 
 ## 偏離（登記之後）
+
+### 偏離 1（寫於 2026-10-29T06:15Z，切 job 之前）：分成兩個 Slurm job
+
+- **改什麼**：job 23050（時限 12 小時）做完 `E2EG-cprefill-stream-r1` 之後，在下一步 `E2EG-mixed-stream-r0` 剛開始時 `scancel`；剩下的步驟（從 `E2EG-mixed-stream-r0` 起，含 MPS 那一段）另送一個 job：`sbatch --time=36:00:00 code/r_h200_e2e_gpu.sh --from E2EG-mixed-stream-r0`，排在 T3 的 FreeInference 部分（23063，只跑模擬，T1 的同一步約 9 分鐘）之後。設定、順序（同一個固定 seed）、判準都不變。
+- **為什麼**：有 cprefill 背景時，一個 run 的牆鐘時間遠超我登記時的估計（我估整串 6–7 小時；cprefill-stream-r1 一個 run 就約 2.4 小時），整串會超過 12 小時的上限，到時正在跑的那個 run 會被砍掉；而 23063 排在 23050 之後。在步驟邊界切，已完成的 run 都不丟；被砍的 mixed-stream-r0 只跑了幾秒，沒有寫進 results（`e2e_gpu.py gpu` 只在 run 結束時寫）。
+- **影響**：idle-r0、cprefill-stream-r1 在 23050 的卡（PCI `31:00.0`）上；其餘 13 個 run（全部 rep 0 的判定格，以及其餘的 rep 1）在續跑那個 job 的卡上，可能是另一張卡。**判定用的格（rep 0）全部在同一個 job、同一張卡**；只報告的「idle 對 stream 的差」和「cprefill stream 的 rep 0／rep 1 差」會跨卡，報告時註明卡。
+- **看過的數字**：runner 每 200 個請求印一行的 TTFT（idle-r0 全部、cprefill-stream-r1 的前 600 個）、idle-r0 的 run 摘要（`t_replay_s`）。沒有算任何格的平均，也沒有看模擬對 GPU 的比值。這個決定只看牆鐘時間。
