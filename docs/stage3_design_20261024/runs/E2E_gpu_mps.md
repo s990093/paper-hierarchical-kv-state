@@ -66,3 +66,4 @@
 - **影響**：idle-r0、cprefill-stream-r1 在 23050 的卡（PCI `31:00.0`）上；其餘 13 個 run（全部 rep 0 的判定格，以及其餘的 rep 1）在續跑那個 job 的卡上，可能是另一張卡。**判定用的格（rep 0）全部在同一個 job、同一張卡**；只報告的「idle 對 stream 的差」和「cprefill stream 的 rep 0／rep 1 差」會跨卡，報告時註明卡。
 - **看過的數字**：runner 每 200 個請求印一行的 TTFT（idle-r0 全部、cprefill-stream-r1 的前 600 個）、idle-r0 的 run 摘要（`t_replay_s`）。沒有算任何格的平均，也沒有看模擬對 GPU 的比值。這個決定只看牆鐘時間。
 - **實際執行**：23050 在 2026-10-29T15:12:59+08:00 取消（`E2EG-cprefill-stream-r1` 15:12:54 結束、重疊：無；`E2EG-mixed-stream-r0` 的 run `20261029-151254-s3-e2eg-mixed-stream-r0` 只跑了 5 秒，沒有寫進 results）。續跑的 job：**23080**（`--time=36:00:00 --dependency=afterany:23063`，`--from E2EG-mixed-stream-r0`）。
+- **卡**：23080 拿到的也是 PCI `31:00.0`（`slurm-s3-e2e-gpu-23080.out` 的 nvidia-smi），所以 15 個 run 全部在同一張卡上；上面「可能跨卡」的影響不存在。
