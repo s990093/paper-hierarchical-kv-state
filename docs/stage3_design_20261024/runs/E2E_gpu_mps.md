@@ -67,3 +67,41 @@
 - **看過的數字**：runner 每 200 個請求印一行的 TTFT（idle-r0 全部、cprefill-stream-r1 的前 600 個）、idle-r0 的 run 摘要（`t_replay_s`）。沒有算任何格的平均，也沒有看模擬對 GPU 的比值。這個決定只看牆鐘時間。
 - **實際執行**：23050 在 2026-10-29T15:12:59+08:00 取消（`E2EG-cprefill-stream-r1` 15:12:54 結束、重疊：無；`E2EG-mixed-stream-r0` 的 run `20261029-151254-s3-e2eg-mixed-stream-r0` 只跑了 5 秒，沒有寫進 results）。續跑的 job：**23080**（`--time=36:00:00 --dependency=afterany:23063`，`--from E2EG-mixed-stream-r0`）。
 - **卡**：23080 拿到的也是 PCI `31:00.0`（`slurm-s3-e2e-gpu-23080.out` 的 nvidia-smi），所以 15 個 run 全部在同一張卡上；上面「可能跨卡」的影響不存在。
+
+---
+
+## 結果（2026-10-30）：**MPS-GPU-INVALID**
+
+- **執行**：job 23050（2026-10-29 12:37–15:12，idle-r0、cprefill-stream-r1；偏離 1）＋ job 23080（15:23 → 10-30 02:11，其餘 13 個）；全部在 PCI `31:00.0`；15 個 run 都跑完 1,535 個請求，gpu_guard 都乾淨，重疊都沒有（`overlap.csv`），沒有重跑。模擬（S_orig＋S_real）`20261030-021241-s3-e2eg-sim`；報告 `20261030-021318-s3-e2eg-report`（`report.json`）。
+- **判定**：可量 9 格（≥6）。(b) 7 格裡 4 格不成立 → **MPS-GPU-INVALID**；(a) 6/9＝67%、(c) 1/9＝11%（也都不到 80%）。
+
+回來請求的平均 TTFT（不含排隊）；gain＝1 − TTFT(m)／TTFT(stream)：
+
+| 格 | GPU（s） | S_orig（s） | (a) 比值 | gain GPU | gain 模擬 | (b) | ρ GPU／模擬 | B GPU／模擬 | (c) |
+|:--|--:|--:|--:|--:|--:|:--|:--|:--|:--|
+| cprefill × stream | 2.443 | 1.999 | 1.222 ✗ | — | — | — | 0.852／0.768 | 0.868／0.809 | ✗ |
+| cprefill × mps | 0.975 | 1.424 | 0.685 ✗ | 60.1% | 28.8% | ✗（31 pp） | 0.811／0.760 | 0.814／0.806 | ✗（Δρ 0.0504） |
+| cprefill × mps87 | 0.770 | 0.756 | 1.018 ✓ | 68.5% | 62.2% | ✓ | 0.836／0.800 | 0.712／0.739 | ✓ |
+| cprefill × mps75 | 0.566 | 0.555 | 1.021 ✓ | 76.8% | 72.3% | ✓ | 0.727／0.777 | 0.684／0.749 | ✗ |
+| cprefill × mps50 | 0.417 | NOT_MEASURED | — | — | — | — | 0.812／— | — | — |
+| mixed × stream | 0.745 | 0.608 | 1.226 ✗ | — | — | — | 0.693／0.640 | 0.789／0.845 | ✗ |
+| mixed × mps | 0.515 | 0.498 | 1.034 ✓ | 30.9% | 18.1% | ✗（13 pp） | 0.650／0.597 | 0.791／0.830 | ✗ |
+| mixed × mps87 | 0.455 | 0.493 | 0.923 ✓ | 38.9% | 18.8% | ✗（20 pp） | 0.631／0.624 | 0.753／0.788 | ✗ |
+| mixed × mps75 | 0.432 | 0.471 | 0.917 ✓ | 42.0% | 22.4% | ✗（20 pp） | 0.608／0.628 | 0.752／0.794 | ✗ |
+| mixed × mps50 | 0.405 | 0.374 | 1.083 ✓ | 45.6% | 38.5% | ✓ | 0.746／0.620 | 0.612／0.606 | ✗ |
+
+- **方向（照實）**：7 格有 gain 的，GPU 和模擬**正負號全部一致**（MPS 讓 TTFT 比 stream 低），而且 **GPU 的 gain 在 7 格都比模擬大**（多 5–31 個百分點）→ 模擬對 MPS 的 TTFT 好處是**低估**。不一致主要來自兩處：stream 這條基準 GPU 比模擬慢 22%（兩個背景都是），以及 cprefill × mps（100%）GPU 比模擬快 32%。
+- **照登記**：論文的 MPS 曲線只能寫〔模擬〕，並附 GPU 的反例（上表）。第一段的 E2E-NOGO 不變。
+
+只報告（§3）：
+- idle：GPU 0.2377 s、模擬 0.2411 s（0.986）。
+- 雜訊（rep 1 ÷ rep 0 − 1）：cprefill stream +0.04%（rep 1 在 23050、rep 0 在 23080，同一張卡）、mixed stream −0.36%、cprefill mps +0.07%、mixed mps −0.01%。
+- S_real 的比值（GPU ÷ S_real）：idle 1.022；stream 1.28–1.31；cprefill mps 0.71；其餘 0.95–1.12。
+- GPU 的 P95：cprefill stream 5.20 s → mps 3.43、mps87 2.23、mps75 1.55、mps50 1.12；mixed stream 1.63 → mps 1.44、mps87 1.22、mps75 1.17、mps50 1.10。
+- 平均 `queue_s`（回來的請求）：idle 1.2 s；cprefill stream 2,456 s、mps 730、mps87 42、mps75 12.5、mps50 5.4；mixed stream 11.2、mps 8.3、mps87 6.4、mps75 5.6、mps50 5.2。cprefill × stream／mps 的重播跟不上到達（所以一個 run 要 2–2.4 小時）。
+
+診斷（登記外，只報告，不改判定）：
+- 背景單獨跑的速度是量化的：cprefill 每秒剛好 6.0／5.0／5.0／3.5 步（mps／mps87／mps75／mps50），所以 cprefill 的 cap_gpu 解析度約 17%，比 (c) 的 ±0.03 粗。
+- GPU 的 TTFT 拆開（回來的請求平均）：idle 還原 0.053＋新 token 0.185 s；cprefill stream 0.794＋1.649；mixed stream 0.208＋0.537。TTFT 大半是新 token 的 prefill。
+- MPS log（`mps_log_23080/`）：22 行「User did not send valid credentials」，每行都緊接在一個成功的 client 連線之前；server.log 的「failed to receive command … assuming client exit」出現在 client 結束時。只記錄。
+- **產出**：`results/s3_h200/e2e_gpu/`（`report.json`、`gpu_runs.csv`、`gpu_requests_{stream,mps}.csv.xz`、`sim_requests.csv.xz`、`sim_summary.json`、`overlap.csv`、`gpu_guard_*.json`、`mps_log_23080/`）。

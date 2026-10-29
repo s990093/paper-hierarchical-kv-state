@@ -591,3 +591,17 @@ python3 code/s3/kvs_f0p.py report
 - H1 變成主要的一部分：慢層讀使用率 LRU 0.612 → 0.901／0.932。
 - 細節見 `runs/E2E_combo.md` 判定之後的補充 B 節。
 **失敗與異常**: 無（這次 head node 可用記憶體 30–49 GB，沒有再出問題）。
+
+## S3-E2E-GPU — E2E-C 第二段（GPU 附錄，使用者 10/29 要求）：**MPS-GPU-INVALID**（job 23050＋23080，2026-10-29 12:37 → 10-30 02:11 +08）
+
+**狀態**: PASS（照登記判定；登記 `docs/stage3_design_20261024/runs/E2E_gpu_mps.md`，2026-10-29T03:03:43Z；偏離 1：12 小時上限 → 在步驟邊界切成兩個 job；結果節同檔）
+**執行時間**: 23050 2026-10-29T12:37 → 15:12（取消於步驟邊界）；23080 15:23 → 10-30T02:11；模擬＋報告 02:12–02:13
+**run_id**: GPU 15 個 `20261029-124311-s3-e2eg-idle-stream-r0` … `20261030-014221-s3-e2eg-mixed-mps50-r0`（清單 `results/s3_h200/e2e_gpu/gpu_runs.csv`）；冒煙 `20261029-123749-s3-e2eg-smoke-stream`、23080 的 `s3-e2eg-smoke-mps`；被切掉的 `20261029-151254-s3-e2eg-mixed-stream-r0`（5 秒、沒寫進 results）；模擬 `20261030-021241-s3-e2eg-sim`；報告 `20261030-021318-s3-e2eg-report`
+**指令**: `sbatch code/r_h200_e2e_gpu.sh`（23050）；`sbatch --time=36:00:00 --dependency=afterany:23063 code/r_h200_e2e_gpu.sh --from E2EG-mixed-stream-r0`（23080）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1 P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json; m7run s3-e2eg-sim python code/s3/e2e_gpu.py sim --out results/s3_h200/e2e_gpu; m7run s3-e2eg-report python code/s3/e2e_gpu.py report --out results/s3_h200/e2e_gpu`
+**產出檔**: `results/s3_h200/e2e_gpu/`
+**關鍵數字**（GPU 實測＋模擬）:
+- 可量 9 格；(b) 4/7 不成立 → **MPS-GPU-INVALID**；(a) 67%、(c) 11%。
+- 7 格的 gain 正負號全部一致，GPU 的 gain 全部比模擬大 5–31 pp（模擬低估 MPS 的 TTFT 好處）。stream 基準 GPU÷模擬＝1.22（兩個背景）；cprefill × mps 0.685。
+- idle GPU÷模擬＝0.986；rep 雜訊 ≤0.4%。
+**失敗與異常**: 無程式失敗。偏離 1（我登記時估 6–7 小時，實際 cprefill 一個 run 約 2–2.4 小時：重播跟不上到達，平均排隊 2,456 s）。診斷：背景速度量化（cprefill cap 解析度約 17%）；MPS log 的 credentials 訊息只記錄。
+**與第一段的差異**: 第一段 E2E-NOGO 不變；論文的 MPS 曲線只能寫〔模擬〕＋GPU 反例。
