@@ -433,3 +433,18 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - 附加 1（只報告）：暴露單位 11/300（只在 43.59 的 s0、s2；事件都不是同 lab 帳號）；影子回歸逐值相同；拿掉後沒有判定字不同（43.59 的 seed 0、2 → NM，剩 2/3 過）；暴露÷沒暴露 8 點中位 −1.6%（s0）、−0.3%（s2），0 點變慢。
 **失敗與異常**: 無。（`b_workload_seed<k>.json` 被第二格覆寫；兩格同 seed 的工作負載在 stdout 逐字相同。）
 **與原本的差異**: 判定字相同。T1G 兩批（A1''、A1'、A2、B6／C2、A3）全部的判定字都和原本相同；照 T1 §5，ICPE（只用 H200）改用新值。
+
+## ICPE-T2 — 平行爭用校準：CAL-OK（兩個 job、不同 NUMA 節點的卡；同 NUMA 沒量到）（2026-10-29 10:28 → 12:38 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T2_parallel_calibration.md`，2026-10-29T02:28:14Z；偏離 1：每波 2 個；結果節同檔）
+**執行時間**: 2026-10-29T10:28 → 12:38（15 個單卡 job）；分析 12:40
+**run_id**: 每個 job 兩個部件 `20261029-*-icpe-cal-<波>-<job>-mb`／`-rp`（job 23031–23037、23051–23059，清單 `results/icpe_h200/calib/jobs.tsv`）；分析 `20261029-124037-icpe-cal-analyze`（第一次 `20261029-123913-icpe-cal-analyze`，見失敗與異常）
+**指令**: `bash code/icpe/calib_submit.sh`（之後偏離 1 手動重串，見登記）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run icpe-cal-analyze python code/icpe/calib.py analyze`
+**產出檔**: `results/icpe_h200/calib/`（`calib_report.json`、`calib_metrics.csv`、`calib_windows*.csv`、`raw/`）
+**關鍵數字**（實測）:
+- solo 14 個部件窗、par 16 個（k 全部 1）、partial／excluded 0；gpu_guard 都乾淨。
+- 8 個指標都 OK：變慢 −2.19%～+0.94%，95% CI 上界最大 +4.02%（e2e_cake_bf16_cpu），δ\* 都是 5%。→ **CAL-OK**，同時最多 2 個。
+- **範圍**：每一對都是 NUMA 0（PCI 31:00.0）＋ NUMA 1（E5:00.0）；同 NUMA 的一對沒有量到 → 只允許「兩個、不同 NUMA 節點」。MPS 的 job 不在範圍內。
+- 只報告：同一張卡 par 對 solo −1.1%～+0.9%；30 個窗有 11 個碰到別的使用者的 job 開始／結束（最多 2 個）；E5 的 job `numa_local=no`。
+**失敗與異常**: 第一次分析 `20261029-123913-icpe-cal-analyze` 的「別的使用者事件」NOT_MEASURED：`tz_convert() takes exactly 2 positional arguments (1 given)`（我在 `other_user_events` 對 pandas Timestamp 呼叫 `astimezone()`）；也漏了登記 §4 的「依卡、依 NUMA」報告。修好、補上後重跑，判定與 8 個指標的數字相同。
+**與原本的差異**: 原本的規則是量時間的 job 一律不和我們自己的 job 同時跑；現在對這兩類 job 放寬成「兩個、不同 NUMA 節點」。

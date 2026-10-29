@@ -76,3 +76,32 @@
   - 結果：solo 7 個、par 8 個（原本 6／9）；k 的中位數會是 1，所以 CAL-OK 時的「同時最多」照 §4 的公式是 2。
 - **不改**：探針、分類規則（§3 用實際時間判）、判準（§4）。
 - E2E GPU 驗證（job 23050）原本接在波 3 後面，改成接在波 4（23058、23059）後面（afterany）。
+
+---
+
+## 結果（2026-10-29）：**CAL-OK**（範圍：兩個 job、在不同 NUMA 節點的卡上）
+
+- **job**：solo 23031、23032、23036、23037、23053、23054、23057；par 波 1 23033／23034（`--n 3`，barrier 等滿 30 分鐘後照跑）、波 2 23051／23052、波 3 23055／23056、波 4 23058／23059。10:28 → 12:38，15 個都 COMPLETED、exit 0；gpu_guard 都沒有判污染；校準以外的我們的 job 在任何部件窗裡都是 0。
+- **分析**：`20261029-124037-icpe-cal-analyze`（`calib.py analyze`）。第一次 `20261029-123913-icpe-cal-analyze` 的判定和數字相同，但「別的使用者的事件」那一項因為我寫錯時區轉換（`tz_convert() takes exactly 2 positional arguments`）是 NOT_MEASURED，而且漏了 §4 要報告的「依卡、依 NUMA」→ 修好、補上後重跑；判定的程式沒動。
+- **分類**（§3，用實際時間）：solo 14 個部件窗、par 16 個（k 全部 = 1）、partial 0、excluded 0。
+
+| 指標 | 變慢 d（par 中位 ÷ solo 中位 − 1） | 95% CI | σ（solo） | δ\* | 字 |
+|:--|--:|:--|--:|--:|:--|
+| mb：h2d_perblock | +0.02% | −0.00～+0.06% | 0.02% | 5% | OK |
+| mb：h2d_batch | +0.85% | +0.19～+1.70% | 0.07% | 5% | OK |
+| mb：recompute1 | +0.94% | −0.09～+1.80% | 0.76% | 5% | OK |
+| mb：e2e_cake_bf16_cpu | +0.58% | +0.08～+4.02% | 1.69% | 5% | OK |
+| mb：e2e_cake_int4_cpu | +0.84% | +0.06～+1.88% | 0.43% | 5% | OK |
+| mb：e2e_cake_int4_b32 | −2.19% | −2.98～+1.02% | 1.51% | 5% | OK |
+| mb：e2e_load_int4_b32 | +0.02% | −0.02～+0.28% | 0.01% | 5% | OK |
+| rp：回來請求平均 TTFT | +0.34% | −0.18～+0.77% | 0.41% | 5% | OK |
+
+- **判定：CAL-OK**（mb、rp 都 OK）；照 §4 的公式，同時最多 1＋floor(median k)＝**2** 個。
+- **範圍（照實寫，重要）**：
+  - 這次只拿到兩張卡：PCI `31:00.0`（NUMA 0）和 `E5:00.0`（NUMA 1）。**每一對同時跑的 job 都是一個在 NUMA 0、一個在 NUMA 1**；同一個 NUMA 節點上的兩張卡一起跑：**NOT_MEASURED**。
+  - 所以可以用的規則是：**兩個我們的單卡量時間 job（這兩類：還原微基準、縮小版 GPU 重播），在不同 NUMA 節點的卡上，可以同時跑**。同一個 NUMA 節點、三個以上、MPS 的 job：照舊依序跑。
+  - E5 那張卡上的 job，NUMA 探針都記 `numa_local=no`（pinned 緩衝和卡不在同一個節點）；31 那張都是 `yes`。只記錄，不進判定（stage-3 skill §2 的 NUMA 規則）。
+- **只報告**：
+  - 同一張卡上 par 對 solo：31（solo 6、par 4）各指標 −1.1%～+0.5%；E5（solo 1、par 4）−0.3%～+0.9%。
+  - 窗裡別的使用者的 job 開始／結束（前後各 120 s）：30 個部件窗有 11 個碰到，最多 2 個事件。
+- **產出**：`results/icpe_h200/calib/`（`calib_report.json`、`calib_metrics.csv`、`calib_windows.csv`、`calib_windows_classified.csv`、`jobs.tsv`、`raw/` 2.9 MB：每個 job 的 `mb_<job>.csv`、`rp_<job>.csv`、gpu_guard、NUMA）。

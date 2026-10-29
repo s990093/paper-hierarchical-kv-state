@@ -224,8 +224,8 @@ def values(W):
 def other_user_events(W):
     """只報告：窗前後各 120 s 內，節點上別的使用者的 job 開始／結束次數（只記數目）。"""
     try:
-        t0 = min(W.t0) - timedelta(days=2)
-        out = t1g._run(["sacct", "-a", "-X", "-P", "-n", "-S", t0.astimezone().strftime("%Y-%m-%dT%H:%M:%S"), "-o", "JobID,User,NodeList,Start,End"])
+        t0 = (min(W.t0) - timedelta(days=2)).to_pydatetime().astimezone()          # pandas Timestamp（UTC）→ 本地時間給 sacct
+        out = t1g._run(["sacct", "-a", "-X", "-P", "-n", "-S", t0.strftime("%Y-%m-%dT%H:%M:%S"), "-o", "JobID,User,NodeList,Start,End"])
     except Exception as e:     # noqa: BLE001
         return {"status": f"NOT_MEASURED（sacct：{e}）"}
     ev = []
@@ -239,7 +239,8 @@ def other_user_events(W):
                 ev.append(t)
     res = {}
     for _, r in W.iterrows():
-        a, b = r.t0 - timedelta(seconds=EVENT_PAD_S), r.t1 + timedelta(seconds=EVENT_PAD_S)
+        a = (r.t0 - timedelta(seconds=EVENT_PAD_S)).to_pydatetime()
+        b = (r.t1 + timedelta(seconds=EVENT_PAD_S)).to_pydatetime()
         res[f"{r.job}:{r.comp}"] = sum(a <= t <= b for t in ev)
     return {"status": "ok", "events_per_window": res}
 
@@ -254,6 +255,17 @@ def analyze(W, V, rng, events=None):
         per[m] = judge(S, P, rng)
         per[m]["by_k"] = {int(k): dict(n=len(g), med=float(np.median(g.value)), d=float(np.median(g.value) / np.median(S) - 1) if len(S) else None)
                           for k, g in x[x.cls == "par"].groupby("k")}
+    numa = V[V.comp == "mb"].groupby("job").gpu_numa.first().to_dict() if "gpu_numa" in V else {}
+    for m, x in V.groupby("metric"):                        # 只報告（§4）：同一張卡上 solo 對 par、各 NUMA 節點
+        S = x[x.cls == "solo"]
+        by = {}
+        for g, y in x.groupby("gpu"):
+            s_, p_ = y[y.cls == "solo"].value, y[(y.cls == "par") & (y.k >= 1)].value
+            by[str(g)] = dict(n_S=len(s_), n_P=len(p_), med_S=float(np.median(s_)) if len(s_) else None,
+                              d=float(np.median(p_) / np.median(s_) - 1) if len(s_) and len(p_) else None)
+        per[m]["by_gpu"] = by
+        per[m]["numa_of_job"] = {int(j): str(numa.get(j)) for j in x.job}
+        del S
     pk = W[(W.cls == "par") & (W.k >= 1)].k
     res = {kind: probe_ok(per, kind) for kind in ("mb", "rp")}
     if res["mb"] == "OK" and res["rp"] == "OK":

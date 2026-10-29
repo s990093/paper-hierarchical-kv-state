@@ -1,0 +1,25 @@
+job	name	depends_on	args
+23031	icpe-cal-s1-1		--cond solo --wave s1 --n 1
+23032	icpe-cal-s2-1	23031	--cond solo --wave s2 --n 1
+23033	icpe-cal-w1-1	23032	--cond par --wave w1 --n 3
+23034	icpe-cal-w1-2	23032	--cond par --wave w1 --n 3
+23035	icpe-cal-w1-3	23032	--cond par --wave w1 --n 3
+23036	icpe-cal-s3-1	23033:23034:23035	--cond solo --wave s3 --n 1
+23037	icpe-cal-s4-1	23036	--cond solo --wave s4 --n 1
+23038	icpe-cal-w2-1	23037	--cond par --wave w2 --n 3
+23039	icpe-cal-w2-2	23037	--cond par --wave w2 --n 3
+23040	icpe-cal-w2-3	23037	--cond par --wave w2 --n 3
+23041	icpe-cal-s5-1	23038:23039:23040	--cond solo --wave s5 --n 1
+23042	icpe-cal-s6-1	23041	--cond solo --wave s6 --n 1
+23043	icpe-cal-w3-1	23042	--cond par --wave w3 --n 3
+23044	icpe-cal-w3-2	23042	--cond par --wave w3 --n 3
+23045	icpe-cal-w3-3	23042	--cond par --wave w3 --n 3
+23051	icpe-cal-w2-1	23037	--cond par --wave w2 --n 2 (deviation 1)
+23052	icpe-cal-w2-2	23037	--cond par --wave w2 --n 2 (deviation 1)
+23053	icpe-cal-s5-1	23051:23052	--cond solo --wave s5 --n 1 (deviation 1)
+23054	icpe-cal-s6-1	23053	--cond solo --wave s6 --n 1 (deviation 1)
+23055	icpe-cal-w3-1	23054	--cond par --wave w3 --n 2 (deviation 1)
+23056	icpe-cal-w3-2	23054	--cond par --wave w3 --n 2 (deviation 1)
+23057	icpe-cal-s7-1	23055:23056	--cond solo --wave s7 --n 1 (deviation 1)
+23058	icpe-cal-w4-1	23057	--cond par --wave w4 --n 2 (deviation 1)
+23059	icpe-cal-w4-2	23057	--cond par --wave w4 --n 2 (deviation 1)
