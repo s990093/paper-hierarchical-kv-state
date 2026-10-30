@@ -114,6 +114,24 @@
       "ttft_sim_s": 0.5545334815272454
      }
     },
+    "curve_T1_primary": {
+     "stream": {
+      "B_median": 0.8007683144702802,
+      "gain_vs_K2_median": 0.0
+     },
+     "mps": {
+      "B_median": 0.7773613202975851,
+      "gain_vs_K2_median": 0.5042356183057056
+     },
+     "mps87": {
+      "B_median": 0.6681294199303468,
+      "gain_vs_K2_median": 0.7172160431409371
+     },
+     "mps75": {
+      "B_median": 0.6427883488951728,
+      "gain_vs_K2_median": 0.7777562642589307
+     }
+    },
     "curve_registered": {
      "stream": {
       "B_median": 0.8018333852925859,
@@ -186,6 +204,28 @@
       "gain_sim": 0.3846800247479806,
       "ttft_gpu_s": 0.40495445491941506,
       "ttft_sim_s": 0.373926756233289
+     }
+    },
+    "curve_T1_primary": {
+     "stream": {
+      "B_median": 0.6968987115906992,
+      "gain_vs_K2_median": 0.0
+     },
+     "mps": {
+      "B_median": 0.6316111196344003,
+      "gain_vs_K2_median": 0.3324476524138053
+     },
+     "mps87": {
+      "B_median": 0.6072118148604118,
+      "gain_vs_K2_median": 0.3371224618571272
+     },
+     "mps75": {
+      "B_median": 0.6016704950110567,
+      "gain_vs_K2_median": 0.3633197311108301
+     },
+     "mps50": {
+      "B_median": 0.4701798482070248,
+      "gain_vs_K2_median": 0.4470417528246147
      }
     },
     "curve_registered": {
@@ -387,7 +427,8 @@
   }
  ],
  "notes": [
-  "Simulation curve = the registered E2E-C run (results/s3_h200/e2e/mps_tradeoff.csv); the T1 rerun with H200 CPU-tier constants (results/icpe_h200/t1/e2e/mps_tradeoff.csv) is report-only per its registration (docs/h200/icpe/T1_h200_cpu_tier.md); differences listed in plotted_values.",
+  "Primary curve = the T1 rerun with the H200 CPU-tier constants (results/icpe_h200/t1/e2e/mps_tradeoff.csv), consistent with EVIDENCE M4; faint dashed curve = the registered E2E-C run with the CPU tier at 35.4 GiB/s (results/s3_h200/e2e/mps_tradeoff.csv). Both give the same registered verdict (E2E-NOGO); differences listed in plotted_values.",
+  "'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). The b32 tier (2.49 GiB/s) is also H200-derived: read from results/m10_precision_h200/speed_llama/bw.json (run_id 20261017-074151-m10h-calibf-llama), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. Only the SSD-class and NFS-class throttle constants carry over from an earlier platform.",
   "Curve points: test half, Llama-3.1-8B, Mooncake conversation, median over 4 cells (2 slow tiers x 2 CPU sizes); y = (K2 - K3(m)) / K2 with K2 = INT4 + typing-hint prefetch under stream sharing; x = background throughput ratio B.",
   "Scaled-down points (hollow = simulation of the replayed workload, filled = H200 measured): Llama-3.1-8B, conversation sampled 1/8, CPU 128 GiB scaled, SSD class, Cake, INT4 on the slow tier, HINT-PF; gain = 1 - TTFT(m) / TTFT(stream); report.json verdict: MPS-GPU-INVALID",
   "Registered E2E-C pass rule drawn as dashed lines: Delta > 15% and B >= 0.95 (docs/stage3_design_20261024/runs/E2E_combo.md section 4); thresholds are rule constants, not data."

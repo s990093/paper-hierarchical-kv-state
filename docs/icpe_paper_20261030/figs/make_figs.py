@@ -141,13 +141,13 @@ class Src:
                 if x not in cur:
                     cur.append(x)
 
-    def csv(self, relpath, related_cols=()):
+    def csv(self, relpath, related_cols=(), run_col="run_id"):
         p = REPO / relpath
         d = pd.read_csv(p)
-        if "run_id" not in d.columns:
-            raise SystemExit(f"{relpath}: no run_id column")
+        if run_col not in d.columns:
+            raise SystemExit(f"{relpath}: no {run_col} column")
         rel_ids = {c: _runs(d[c].unique()) for c in related_cols if c in d.columns}
-        self._reg(p, _runs(d["run_id"].unique()), rel_ids)
+        self._reg(p, _runs(" ".join(str(x) for x in d[run_col].unique()).split()) if run_col != "run_id" else _runs(d[run_col].unique()), rel_ids)
         return d
 
     def json(self, relpath, related_keys=()):
@@ -243,6 +243,11 @@ def fig3():
         return out
 
     chat_t1 = chat_cells(f"{T1}/p01/sim_V0/x1/x1_headroom_components.csv")
+    # truncated at H = 3,600 s ("never returns" only for decisions >= H before the trace ends; EVIDENCE B2)
+    chat_tr = chat_cells(f"{T1}/p01/sim_V0/x1/x1h3600_headroom_components.csv")
+    for c, q in (("O-DROP", 0.0), ("O-NOW", 0.0)):
+        for cpu in (128, 256):
+            s.check(f"chat T1 H3600 {c}@{cpu} (%)", round(100 * chat_tr[(c, cpu)], 2), q, 0.005, "EVIDENCE B2 (0.0% after H = 3,600 s)")
     chat_t3 = chat_cells(f"{T3}/p01/sim_V0/x1/x1_headroom_components.csv")
     cmp1 = s.csv(f"{T1}/t1_compare.csv").set_index("item")
     cmp3 = s.csv(f"{T3}/t3_compare.csv").set_index("item")
@@ -270,6 +275,12 @@ def fig3():
     x5c_best = x5c.loc[x5c.headroom.idxmax()]
     x5_all_best = x5m.loc[x5m.headroom.idxmax()]
     chat_x5 = float(x5c_best.headroom)
+    # X5 truncation exists for the Mooncake traces only at H = 1,800 s
+    x5t = s.csv("results/icpe_h200/p12/x5/x5_headroom_cens1800.csv", related_cols=("run_id_cells",))
+    x5tv = s.json("results/icpe_h200/p12/x5/x5_verdict_cens1800.json")
+    x5tm = x5t[(x5t.model == "llama") & (x5t.dq == "k0") & (x5t.variant == "reg")]
+    s.check("X5 H1800 main max (both Mooncake traces)", float(x5tm.headroom.max()), x5tv["main_headroom_max"], 1e-6, "x5_verdict_cens1800.json")
+    chat_x5_tr = float(x5tm[x5tm.trace == "conversation"].headroom.max())
     s.notes.append(
         f"x5_verdict.json main_headroom_max = {x5v['main_headroom_max']:.4f} is over 48 main cells of two Mooncake traces; "
         f"its argmax is trace '{x5_all_best.trace}' (cpu {x5_all_best.cpu_GiB} GiB, {x5_all_best.slow}, GPU {x5_all_best.gpu}). "
@@ -315,7 +326,17 @@ def fig3():
     s.notes.append("Agent X1 bars are the max over 24 cells (slow tier SSD/b32/NFS x GPU idle/busy x CPU 128-1024 GiB, Cake); "
                    "agent X5 is the max over its 24 main cells (Llama, tiers b16/b32/b48 x GPU idle/busy x CPU 128-1024 GiB).")
 
+    # agent panel check (not drawn): X5 on FreeInference truncated at H = 3,600 s; X1 FreeInference has no truncated run
+    x5fv_tr = s.json("results/icpe_h200/p12/x5/x5_verdict_fi_cens3600.json")
+    s.notes.append(f"Agent panel check: FreeInference X5 truncated at H = 3,600 s has max {x5fv_tr['main_headroom_max']:.4f} "
+                   f"(untruncated {agent_x5:.4f}), verdict '{x5fv_tr['verdict_registered']}'; X1 on FreeInference has no truncated run "
+                   "(its untruncated maxima are already < 2%). The agent panel is unchanged.")
+    s.notes.append("Hollow circles in the chat panel = the same cell after truncation: X1 components at H = 3,600 s "
+                   "(x1h3600_headroom_components.csv); X5 only exists truncated at H = 1,800 s (x5_headroom_cens1800.csv, conversation main cells).")
     s.values = {
+        "chat_T1_truncated_H3600": {f"{c}@{cpu}GiB": v for (c, cpu), v in chat_tr.items()},
+        "chat_X5_truncated_H1800_conversation_main_max": chat_x5_tr,
+        "agent_X5_truncated_H3600_max": x5fv_tr["main_headroom_max"],
         "units": "oracle headroom over the best symmetric rival, fraction (plotted x100 as %)",
         "chat_T1_cake": {f"{c}@{cpu}GiB": v for (c, cpu), v in chat_t1.items()},
         "chat_T3_stair": {f"{c}@{cpu}GiB": v for (c, cpu), v in chat_t3.items()},
@@ -329,27 +350,32 @@ def fig3():
 
     # ---- plot
     rows = X1_COMPS + ["X5"]
-    fig, axes = plt.subplots(2, 1, figsize=(FULL_W, 6.0), sharex=True,
-                             gridspec_kw=dict(hspace=0.58, left=0.28, right=0.975, top=0.865, bottom=0.08))
+    fig, axes = plt.subplots(2, 1, figsize=(FULL_W, 6.6), sharex=True,
+                             gridspec_kw=dict(hspace=0.72, left=0.28, right=0.975, top=0.84, bottom=0.075))
     h = 0.34
     xmax = 60.0
 
-    def panel(ax, vals_a, vals_b, t3_a, t3_b, x5_val, x5_color, title, lab_a, lab_b, lab_x5):
+    def panel(ax, vals_a, vals_b, t3_a, t3_b, x5_val, x5_color, title, lab_a, lab_b, lab_x5, tr_a=None, tr_b=None, x5_tr=None):
         ys = np.arange(len(rows))[::-1]
         for y, r in zip(ys, rows):
             if r == "X5":
-                bars = [(y, x5_val, x5_color, None)]
+                bars = [(y, x5_val, x5_color, None, x5_tr)]
             else:
-                bars = [(y + h / 2 + 0.01, vals_a[r], BLUE, t3_a.get(r) if t3_a else None),
-                        (y - h / 2 - 0.01, vals_b[r], BLUE_LIGHT, t3_b.get(r) if t3_b else None)]
-            for yy, v, col, t3 in bars:
+                bars = [(y + h / 2 + 0.01, vals_a[r], BLUE, t3_a.get(r) if t3_a else None, tr_a.get(r) if tr_a else None),
+                        (y - h / 2 - 0.01, vals_b[r], BLUE_LIGHT, t3_b.get(r) if t3_b else None, tr_b.get(r) if tr_b else None)]
+            for yy, v, col, t3, tr in bars:
                 ax.barh(yy, 100 * v, height=h, color=col, edgecolor="none", zorder=2)
                 end = 100 * max(v, t3 if t3 is not None else v)
                 if t3 is not None:
                     ax.plot(100 * t3, yy, marker="D", ms=5.5, mfc=WHITE, mec=INK, mew=1.1, zorder=4, ls="none")
+                lab = pct_label(v)
+                if tr is not None:
+                    ax.plot(100 * tr, yy, marker="o", ms=5, mfc=WHITE, mec=INK, mew=1.0, zorder=5, ls="none", clip_on=False)
+                    if abs(tr - v) > 0.0005:
+                        lab += f"  \u2192 {pct_label(tr)} truncated"
                 # labels of bars that end left of the 5% line sit just right of it (keeps them off the marks)
                 lx = 5.6 if end < 4.4 else end + 0.8
-                ax.text(lx, yy, pct_label(v), va="center", ha="left", fontsize=7.5, color=INK, zorder=5)
+                ax.text(lx, yy, lab, va="center", ha="left", fontsize=7.5, color=INK, zorder=5)
         ax.set_yticks(ys)
         ax.set_yticklabels([ROW_LABEL[r] for r in rows], fontsize=7.5, color=INK)
         ax.set_ylim(-0.6, len(rows) - 0.4)
@@ -359,21 +385,25 @@ def fig3():
         ax.set_axisbelow(True)
         for t in (5, 15):
             ax.axvline(t, **THRESH_STYLE)
-        ax.set_xlim(0, xmax)
-        ax.text(0.0, 1.21, title, transform=ax.transAxes, ha="left", va="bottom", fontsize=8.5, color=INK, fontweight="bold")
+        ax.set_xlim(-1.2, xmax)
+        ax.text(-0.36, 1.30 if tr_a else 1.20, title, transform=ax.transAxes, ha="left", va="bottom", fontsize=8.5, color=INK, fontweight="bold")
         ax.tick_params(labelbottom=True)
         handles = [Patch(color=BLUE, label=lab_a), Patch(color=BLUE_LIGHT, label=lab_b)]
         if lab_x5:
             handles.append(Patch(color=x5_color, label=lab_x5))
         handles.append(Line2D([], [], marker="D", ms=5.5, mfc=WHITE, mec=INK, mew=1.1, ls="none", label="same, STAIR planner (T3)"))
-        ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.0, 1.07), ncol=len(handles), fontsize=7.5,
+        if tr_a:
+            handles.append(Line2D([], [], marker="o", ms=5, mfc=WHITE, mec=INK, mew=1.0, ls="none",
+                                  label="same, truncated (H = 3,600 s; X5: 1,800 s)"))
+        ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(-0.37, 1.075), ncol=min(len(handles), 3), fontsize=7.5,
                   handlelength=1.2, columnspacing=1.0, borderaxespad=0.2)
 
     panel(axes[0], {c: chat_t1[(c, 128)] for c in X1_COMPS}, {c: chat_t1[(c, 256)] for c in X1_COMPS},
           {c: chat_t3[(c, 128)] for c in X1_COMPS}, {c: chat_t3[(c, 256)] for c in X1_COMPS},
           chat_x5, MUTED,
           "Chat trace: Mooncake conversation (SSD class, GPU idle, Cake planner)",
-          "CPU 128 GiB", "CPU 256 GiB", "X5: max over 24 cells")
+          "CPU 128 GiB", "CPU 256 GiB", "X5: max over 24 cells",
+          tr_a={c: chat_tr[(c, 128)] for c in X1_COMPS}, tr_b={c: chat_tr[(c, 256)] for c in X1_COMPS}, x5_tr=chat_x5_tr)
     panel(axes[1], ag_all, ag_usr, ag3_all, ag3_usr, agent_x5, BLUE,
           "Agent trace: FreeInference (each bar = max over 24 cells)",
           "all returning requests", "user-initiated only", None)
@@ -591,8 +621,10 @@ def fig6():
     t1v = s.csv(t1_path, related_cols=("src_runs",))
     rep = s.json("results/s3_h200/e2e_gpu/report.json")
     runs = s.csv("results/s3_h200/e2e_gpu/gpu_runs.csv").set_index("run_id")
-    s.notes.append(f"Simulation curve = the registered E2E-C run ({reg_path}); the T1 rerun with H200 CPU-tier constants "
-                   f"({t1_path}) is report-only per its registration (docs/h200/icpe/T1_h200_cpu_tier.md); differences listed in plotted_values.")
+    s.notes.append(f"Primary curve = the T1 rerun with the H200 CPU-tier constants ({t1_path}), consistent with EVIDENCE M4; "
+                   f"faint dashed curve = the registered E2E-C run with the CPU tier at 35.4 GiB/s ({reg_path}). "
+                   "Both give the same registered verdict (E2E-NOGO); differences listed in plotted_values.")
+    s.notes.append(T1_NOTE)
     s.notes.append("Curve points: test half, Llama-3.1-8B, Mooncake conversation, median over 4 cells (2 slow tiers x 2 CPU sizes); "
                    "y = (K2 - K3(m)) / K2 with K2 = INT4 + typing-hint prefetch under stream sharing; x = background throughput ratio B.")
     s.notes.append("Scaled-down points (hollow = simulation of the replayed workload, filled = H200 measured): Llama-3.1-8B, "
@@ -608,6 +640,7 @@ def fig6():
     vals = {}
     diffs = []
     allB = list(reg[(reg.model == "llama") & (reg.trace == "conversation") & (reg.half == "test") & reg.bg.isin(bgs)].B_median)
+    allB += list(t1v[(t1v.model == "llama") & (t1v.trace == "conversation") & (t1v.half == "test") & t1v.bg.isin(bgs)].B_median)
     allB += [c["B_gpu"] for c in rep["cells"].values() if c.get("status") == "ok"]
     allB += [c["sim"]["B"] for c in rep["cells"].values() if c.get("status") == "ok"]
     XMIN = math.floor((min(allB) - 0.03) * 20) / 20
@@ -619,14 +652,19 @@ def fig6():
             if m in t.index:
                 diffs.append(dict(bg=bg, mode=m, d_gain_pp=100 * (t.loc[m, "gain_vs_K2_median"] - r.loc[m, "gain_vs_K2_median"]),
                                   d_B=t.loc[m, "B_median"] - r.loc[m, "B_median"]))
-        cx = [float(r.loc[m, "B_median"]) for m in modes]
-        cy = [100 * float(r.loc[m, "gain_vs_K2_median"]) for m in modes]
+        tmodes = [m for m in MPS_ORDER if m in t.index]
+        cx = [float(t.loc[m, "B_median"]) for m in tmodes]
+        cy = [100 * float(t.loc[m, "gain_vs_K2_median"]) for m in tmodes]
+        rx = [float(r.loc[m, "B_median"]) for m in modes]
+        ry = [100 * float(r.loc[m, "gain_vs_K2_median"]) for m in modes]
         # registered pass region
         ax.axhline(15, **THRESH_STYLE)
         ax.axvline(0.95, **THRESH_STYLE)
         ax.add_patch(plt.Rectangle((0.95, 15), 0.10, 100, color=BAND, zorder=0, lw=0))
+        ax.plot(rx, ry, color=MUTED, lw=1.0, ls=(0, (3, 2)), zorder=2, marker="o", ms=3.5, mfc=WHITE, mec=MUTED, mew=0.8,
+                label="simulation, registered (CPU tier 35.4 GiB/s)")
         ax.plot(cx, cy, color=BLUE, lw=2, zorder=3, marker="o", ms=5.5, mec=WHITE, mew=1.0,
-                label="simulation (registered E2E-C, full size, median of 4 cells)")
+                label="simulation, T1 constants (full size, median of 4 cells)")
         # scaled-down sim + GPU
         sx, sy, gx, gy, glab, skipped = [], [], [], [], [], []
         for m in MPS_ORDER:
@@ -660,7 +698,10 @@ def fig6():
         for x_, y_, m in zip(gx, gy, glab):
             dx, dy, ha, va = LABEL_OFFSET.get((bg, m), (6, -2, "left", "top"))
             ax.annotate(MPS_LABEL[m], (x_, y_), xytext=(dx, dy), textcoords="offset points", fontsize=7, color=INK, ha=ha, va=va)
-        vals.setdefault(bg, {})["curve_registered"] = {m: dict(B_median=float(r.loc[m, "B_median"]),
+        vals.setdefault(bg, {})["curve_T1_primary"] = {m: dict(B_median=float(t.loc[m, "B_median"]),
+                                                                gain_vs_K2_median=float(t.loc[m, "gain_vs_K2_median"]))
+                                                       for m in tmodes}
+        vals[bg]["curve_registered"] = {m: dict(B_median=float(r.loc[m, "B_median"]),
                                                                 gain_vs_K2_median=float(r.loc[m, "gain_vs_K2_median"]))
                                                        for m in modes}
         vals[bg]["not_plotted"] = skipped
@@ -939,9 +980,259 @@ def fig9():
     s.write(fig, "fig9_fi_capacity.png")
 
 
+# ================================================================ fig10: decision map (restore time relative to the row's best)
+MAP_TIERS = ["cpu", "b16", "b32", "b48", "nfs"]
+MAP_TIER_LABEL = {"cpu": "CPU", "b16": "b16", "b32": "b32", "b48": "b48", "nfs": "NFS"}
+MAP_OPTS = ["bf16_load", "bf16_cake", "int4_load", "int4_cake", "recompute", "lowrank_load"]
+MAP_OPT_LABEL = {"bf16_load": "BF16\nload-all", "bf16_cake": "BF16\nCake", "int4_load": "INT4\nload-all", "int4_cake": "INT4\nCake",
+                 "recompute": "recompute\nall", "lowrank_load": "low-rank\n+INT4 load"}
+MAP_RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]   # palette blue 100..700
+
+
+def _lowrank_cfg(seg):
+    import re
+    m_ = re.fullmatch(r"xkv_k(\d+)v(\d+)_int4(_cal)?", seg)
+    if not m_:
+        return None
+    return f"xl:k{m_.group(1)}:v{m_.group(2)}{':cal' if m_.group(3) else ''}+q:int4_kivi"
+
+
+def _parse_m1(path):
+    """Expected values from docs/icpe_paper_20261030/EVIDENCE.md section M1 (used only for cross-checks)."""
+    import re
+    out = {}
+    tier = {"CPU": "cpu", "b16": "b16", "b32": "b32", "b48": "b48", "NFS": "nfs"}
+    gpu = {"閒": "idle", "忙": "busy"}
+    for line in open(path, encoding="utf-8"):
+        m_ = re.match(r"\|\s*(Llama|Qwen)／(CPU|b16|b32|b48|NFS)／(閒|忙)\s*\|(.*)", line)
+        if not m_:
+            continue
+        cols = [c.strip() for c in m_.group(4).split("|")]
+
+        def num(c):
+            c = c.replace("\\*", "").replace("*", "").strip()
+            return None if c.startswith("NOT_MEASURED") else float(c)
+        row = dict(zip(["bf16_load", "bf16_cake", "int4_load", "int4_cake", "recompute"], [num(c) for c in cols[:5]]))
+        lr = cols[5]
+        if lr.startswith("NOT_MEASURED"):
+            row["lowrank_pass"] = row["lowrank_fail"] = None
+        else:
+            before, _, inside = lr.partition("（")
+            pas = [float(x) for x in re.findall(r"\d+\.\d+", before)]
+            fail = [float(x) for x in re.findall(r"\d+\.\d+", inside)]
+            row["lowrank_pass"] = min(pas) if pas else None
+            row["lowrank_fail"] = min(fail) if fail else None
+        out[(m_.group(1).lower(), tier[m_.group(2)], gpu[m_.group(3)])] = row
+    return out
+
+
+def fig10():
+    s = Src("fig10_map")
+    p01b = s.csv("results/icpe_h200/p01/p01b_cells.csv")
+    p11t = s.csv("results/icpe_h200/p11/p11t_cells.csv")
+    q = s.json("results/icpe_h200/p11/p11q_report.json", related_keys=("src_run_ids",))
+    ro_path = REPO / "results/m10_precision_h200/analysis/report_only/report_only.json"
+    ro = json.load(open(ro_path))          # no run_id field in this file: registered by path + sha256 only
+    s._reg(ro_path, [], {})
+    s.notes.append("report_only.json has no run_id field; it is identified by path and sha256 (EVIDENCE M2 cites it with p11q_report.json).")
+    models = ["llama", "qwen"]
+    LEN = 32768
+    grid = {}
+    names = {}
+    eps = {}
+    for m in models:
+        summ = s.csv(f"results/m10_precision_h200/speed_{m}/summary.csv", run_col="run_ids")
+        noise = s.json(f"results/m10_precision_h200/speed_{m}/noise.json")
+        bw = s.json(f"results/m10_precision_h200/speed_{m}/bw.json")
+        names[m] = Path(str(bw["model_path"]).split("models--")[-1].split("/")[0]).name.split("--")[-1]
+        s.values.setdefault("throttle_GiBps", {})[m] = {k: v["GiBps"] for k, v in bw["targets"].items()}
+        sm = summ[summ.length == LEN]
+        if int(sm.contaminated_rows.sum()) != 0:
+            raise SystemExit(f"{m}: contaminated rows in summary.csv")
+
+        def d2(tier, g, cfg, mode):
+            r = sm[(sm.bw_name == tier) & (sm.gpu_state == g) & (sm.config == cfg) & (sm["mode"] == mode)]
+            return float(one(r, f"{m} {tier} {g} {cfg} {mode}").median_t_restore) if len(r) else None
+
+        # quality flags (M2): INT4 = config E1 / q:int4_kivi; low-rank variants from p11q
+        qcfg = q["models"][m]["configs"]
+        int4_readings = {}
+        for item in (f"{m}|int4|T1", f"{m}|int4|LB"):
+            for rd, x in ro["items"].get(item, {}).get("result", {}).get("E1", {}).items():
+                if isinstance(x, dict) and "eps_pass" in x:
+                    int4_readings[f"{ {'T1': 'NIAH-T1', 'LB': 'LongBench'}[item.split('|')[2]]} {rd}"] = bool(x["eps_pass"])
+        int4_readings["32K 192-item set"] = bool(qcfg["q:int4_kivi"]["eps_pass"])
+        int4_fail = [k for k, v in int4_readings.items() if not v]
+        eps[m] = {"int4_readings": int4_readings, "int4_fails_some_reading": bool(int4_fail), "int4_failing_readings": int4_fail,
+                  "lowrank": {}}
+        for tier in MAP_TIERS:
+            for g in ("idle", "busy"):
+                row = {}
+                if tier in ("cpu", "b32", "nfs"):
+                    for cfg, fmt in (("E0", "bf16"), ("E1", "int4")):
+                        r = one(p01b[(p01b.model == m) & (p01b.tier == tier) & (p01b.gpu == g) & (p01b.config == cfg)], f"p01b {m} {tier} {g} {cfg}")
+                        row[f"{fmt}_cake"] = float(r.sdpa_cake)
+                        row[f"{fmt}_load"] = float(r.sdpa_loadall)
+                else:
+                    row["bf16_cake"] = d2(tier, g, "E0", "cake")
+                    row["bf16_load"] = d2(tier, g, "E0", "load_only")
+                    row["int4_cake"] = d2(tier, g, "E1", "cake")
+                    row["int4_load"] = d2(tier, g, "E1", "load_only")
+                row["recompute"] = d2(tier, g, "-", "compute_only") if tier != "nfs" else None
+                lr = p11t[(p11t.model == m) & (p11t.tier == tier) & (p11t.gpu == g) & p11t.seg.str.startswith("xkv_")]
+                lr_info = None
+                if len(lr):
+                    vs = []
+                    for r in lr.itertuples():
+                        c = _lowrank_cfg(r.seg)
+                        if c not in qcfg:
+                            raise SystemExit(f"no quality entry for {r.seg} ({c})")
+                        vs.append(dict(seg=r.seg, cfg=c, t=float(r.t_meas_s), eps_pass=bool(qcfg[c]["eps_pass"])))
+                    ok = [v for v in vs if v["eps_pass"]]
+                    pick = min(ok or vs, key=lambda v: v["t"])
+                    lr_info = dict(shown=pick, fastest_eps_fail=min((v for v in vs if not v["eps_pass"]), key=lambda v: v["t"], default=None),
+                                   variants=vs)
+                    row["lowrank_load"] = pick["t"]
+                    eps[m]["lowrank"][f"{tier}|{g}"] = lr_info
+                else:
+                    row["lowrank_load"] = None
+                nkey = f"{LEN}|{tier}|{g}"
+                delta = max(0.05, float(noise["cells"][nkey]["delta"])) if nkey in noise["cells"] else 0.05
+                # options whose shown format fails eps in every reading do not set the row's best
+                lowrank_ok = lr_info is not None and lr_info["shown"]["eps_pass"]
+                cand = {k: v for k, v in row.items() if v is not None and (k != "lowrank_load" or lowrank_ok)}
+                best_k = min(cand, key=cand.get)
+                best = cand[best_k]
+                ratio = {k: (v / best if v is not None else None) for k, v in row.items()}
+                ties = [k for k, v in ratio.items() if k != best_k and v is not None and v <= 1 + delta and k in cand]
+                grid[(m, tier, g)] = dict(t=row, ratio=ratio, best=best_k, ties=ties, delta=delta,
+                                          best_excl_lowrank=min({k: v for k, v in row.items() if v is not None and k != "lowrank_load"},
+                                                                key=lambda k: row[k]))
+
+    # ---- cross-check every number against EVIDENCE M1
+    ev = REPO / "docs/icpe_paper_20261030/EVIDENCE.md"
+    m1 = _parse_m1(ev)
+    s.check("EVIDENCE M1 rows parsed", float(len(m1)), 20.0, 0, rel(ev))
+    for key, exp in sorted(m1.items()):
+        got = grid[key]["t"]
+        for k in ("bf16_load", "bf16_cake", "int4_load", "int4_cake", "recompute"):
+            e = exp[k]
+            g_ = got[k]
+            if e is None or g_ is None:
+                s.check(f"M1 {key} {k} measured?", float(g_ is not None), float(e is not None), 0, "EVIDENCE M1 (NOT_MEASURED)")
+                continue
+            dec = 4 if e < 1 else 3
+            tol = 0.5 * 10 ** -(len(f"{e}".split(".")[1]) if "." in f"{e}" else dec) + 1e-12
+            s.check(f"M1 {key} {k}", g_, e, tol, "EVIDENCE M1")
+        info = eps[key[0]]["lowrank"].get(f"{key[1]}|{key[2]}")
+        shown_pass = info["shown"]["t"] if info and info["shown"]["eps_pass"] else None
+        fail_fast = info["fastest_eps_fail"]["t"] if info and info["fastest_eps_fail"] else None
+        for nm, g_, e in (("low-rank fastest eps-pass", shown_pass, exp["lowrank_pass"]), ("low-rank fastest eps-fail", fail_fast, exp["lowrank_fail"])):
+            if e is None or g_ is None:
+                s.check(f"M1 {key} {nm} present?", float(g_ is not None), float(e is not None), 0, "EVIDENCE M1")
+            else:
+                s.check(f"M1 {key} {nm}", g_, e, 0.00005 + 1e-12, "EVIDENCE M1")
+
+    wc = s.csv("results/icpe_h200/p11/time/wcost.csv")
+    if bool(wc.contaminated.any()):
+        raise SystemExit("wcost.csv has contaminated rows")
+    svd = wc[wc.op.isin(["svd_k", "svd_v"])].groupby(["model", "pair", "duty"]).t_med_s.sum()
+    shown_llama = sorted({v["shown"]["seg"] for v in eps["llama"]["lowrank"].values() if v["shown"]["eps_pass"]})
+    shown_pairs = sorted({__import__("re").search(r"k\d+v\d+", x).group(0) for x in shown_llama})
+    svd_txt = "; ".join(f"Llama {pr} {svd.loc[('llama', pr, 0.0)]:.2f} s idle / {svd.loc[('llama', pr, 1.0)]:.2f} s busy"
+                        for pr in shown_pairs)
+    s.check("Llama k19v29 SVD write cost, idle (s, 2 decimals)", round(float(svd.loc[("llama", "k19v29", 0.0)]), 2), 3.24, 0.005,
+            "EVIDENCE M1 note (1.23 + 2.01 = 3.24 s)")
+    s.notes.append("The map is restore time only: it excludes the write-time per-item SVD of the low-rank format, paid once per 32K "
+                   f"request when the KV is written ({svd_txt}; results/icpe_h200/p11/time/wcost.csv, svd_k + svd_v medians).")
+    s.values = {
+        "lowrank_write_time_svd_s": {f"{m_}|{pr}|duty{d}": float(v) for (m_, pr, d), v in svd.items()},
+        "throttle_GiBps": s.values.get("throttle_GiBps"),
+        "units": "t = median restore time of one returning request (s), 32K-token context; ratio = t / t(best option in the row)",
+        "rule_best": "best = fastest measured option in the row; low-rank counts only if its shown variant passes eps",
+        "rule_tie": "tie = within max(5% (A5 registered tie rule), the row's noise delta from speed_<model>/noise.json) of the best",
+        "cells": {f"{m}|{tier}|{g}": v for (m, tier, g), v in grid.items()},
+        "quality_eps": eps,
+        "model_names": names,
+    }
+    s.notes.append("Sources as in EVIDENCE.md section M: CPU tier / b32 / NFS class = p01b_cells.csv (sdpa; 10 runs per mode); "
+                   "b16 / b48 and recompute-all = speed_<model>/summary.csv (32K, 30 runs); low-rank + INT4 load-all = p11t_cells.csv "
+                   "(t_meas_s; load-all only, no Cake path). INT4 load-all on b16 / b48 is the per-block dequant path (D2), "
+                   "on CPU / b32 / NFS the load-all + one-shot unpack path (A5). NFS recompute-all and SSD class: NOT_MEASURED.")
+
+    # ---- plot
+    from matplotlib.colors import LinearSegmentedColormap, LogNorm
+    cmap = LinearSegmentedColormap.from_list("blue_ramp", MAP_RAMP)
+    allr = [v for c in grid.values() for v in c["ratio"].values() if v is not None]
+    norm = LogNorm(vmin=1.0, vmax=max(allr))
+    rows = [(tier, g) for tier in MAP_TIERS for g in ("idle", "busy")]
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 4.7), gridspec_kw=dict(left=0.095, right=0.985, top=0.84, bottom=0.235, wspace=0.05))
+    for ax, m in zip(axes, models):
+        for i, (tier, g) in enumerate(rows):
+            c = grid[(m, tier, g)]
+            for j, k in enumerate(MAP_OPTS):
+                r = c["ratio"][k]
+                if r is None:
+                    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor=BAND, edgecolor=BASELINE, hatch="////", lw=0, zorder=1))
+                    ax.text(j, i, "n/m", ha="center", va="center", fontsize=7, color=INK2, zorder=3)
+                    continue
+                col = cmap(norm(max(r, 1.0)))
+                ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor=col, edgecolor=WHITE, lw=1.0, zorder=1))
+                lum = 0.2126 * col[0] + 0.7152 * col[1] + 0.0722 * col[2]
+                txt = f"{r:.2f}" if r < 10 else (f"{r:.1f}" if r < 100 else f"{r:.0f}")
+                if k in c["ties"]:
+                    txt = "≈" + txt
+                lr_fail = k == "lowrank_load" and not eps[m]["lowrank"][f"{tier}|{g}"]["shown"]["eps_pass"]
+                ax.text(j, i, txt, ha="center", va="center", fontsize=7, color=INK if lum > 0.45 else WHITE, zorder=3,
+                        fontweight="bold" if k == c["best"] else "normal", fontstyle="italic" if lr_fail else "normal")
+                if k == c["best"]:
+                    ax.add_patch(plt.Rectangle((j - 0.46, i - 0.46), 0.92, 0.92, facecolor="none", edgecolor=INK, lw=1.6, zorder=4))
+        ax.set_xlim(-0.5, len(MAP_OPTS) - 0.5)
+        ax.set_ylim(len(rows) - 0.5, -0.5)
+        ax.set_xticks(range(len(MAP_OPTS)))
+        dag = {"int4_load": eps[m]["int4_fails_some_reading"], "int4_cake": eps[m]["int4_fails_some_reading"],
+               "lowrank_load": any(not v["shown"]["eps_pass"] for v in eps[m]["lowrank"].values())}
+        ax.set_xticklabels([MAP_OPT_LABEL[k] + ("†" if dag.get(k) else "") for k in MAP_OPTS], fontsize=7, color=INK)
+        ax.xaxis.tick_top()
+        ax.tick_params(axis="both", length=0)
+        ax.set_yticks(range(len(rows)))
+        ax.set_yticklabels([f"{MAP_TIER_LABEL[t]} · {g}" for t, g in rows] if ax is axes[0] else [], fontsize=7.5, color=INK)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        for yb in range(1, len(MAP_TIERS)):
+            ax.axhline(2 * yb - 0.5, color=WHITE, lw=2.5, zorder=5)
+        ax.set_title(names[m], loc="left", fontsize=8, color=INK, pad=24)
+    # footnotes (built from the files)
+    det = []
+    for m in models:
+        short = {"llama": "Llama", "qwen": "Qwen"}[m]
+        if eps[m]["int4_fails_some_reading"]:
+            rd, prev = [], None
+            for x in eps[m]["int4_failing_readings"]:
+                task, _, rname = x.partition(" ")
+                rd.append(rname if task == prev else x)
+                prev = task
+            det.append(f"{short} INT4 ({', '.join(rd)})")
+        if any(not v["shown"]["eps_pass"] for v in eps[m]["lowrank"].values()):
+            det.append(f"{short} low-rank (all variants)")
+    lines = [
+        "Cell = restore time \u00f7 best in row (32K context, H200 measured).  Bold + box = best;  \u2248 = within max(5%, row noise) "
+        "of best;  n/m = not measured.",
+        "Low-rank column: fastest variant that passes \u03b5 (Llama: per-item SVD).  Where no variant passes, the fastest is shown in "
+        "italics and is not used as the best.",
+        "\u2020 fails \u03b5 (CI lower bound \u2265 \u22122 pp) in at least one reading: " + "; ".join(det) + ".",
+        "Restore time only: excludes the write-time SVD that low-rank pays once per 32K request (" + svd_txt + ").",
+        "INT4 load-all is the per-block dequant path on b16 / b48 and the one-shot unpack path on CPU / b32 / NFS.  "
+        "Throttle bandwidths per model: sidecar.",
+    ]
+    for li, txt in enumerate(lines):
+        fig.text(0.012, 0.172 - li * 0.0355, txt, fontsize=7, color=INK2, ha="left", va="top")
+    s.write(fig, "fig10_map.png")
+
+
 TIER_MARK = {"b32": "s", "ssd": "^", "nfs": "D"}   # slow tier -> marker (fig8 panel c, fig9), so identity is not hue-only
 
-FIGURES = {"fig3": fig3, "fig4": fig4, "fig5": fig5, "fig6": fig6, "fig7": fig7, "fig8": fig8, "fig9": fig9}
+FIGURES = {"fig3": fig3, "fig4": fig4, "fig5": fig5, "fig6": fig6, "fig7": fig7, "fig8": fig8, "fig9": fig9, "fig10": fig10}
 
 if __name__ == "__main__":
     want = sys.argv[1:] or list(FIGURES)

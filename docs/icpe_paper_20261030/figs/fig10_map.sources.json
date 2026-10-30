@@ -1,0 +1,2163 @@
+{
+ "figure": "fig10_map.png",
+ "layout": {
+  "intended_width": "ACM full width (figure*)",
+  "width_in": 7.0,
+  "height_in": 4.7,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/icpe_h200/p01/p01b_cells.csv",
+   "sha256": "296ce77f125672188e02c4ad9e6f6a1c4044a4a07045bf5f2e0a3b5f04309625",
+   "run_id": [
+    "20261026-003415-icpe-p01b-analyze-final"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/p11/p11t_cells.csv",
+   "sha256": "e236ea6f04d2a0d152f412f42bd71fdb67a7a40aa85ffbdc6bd661d677cbdf82",
+   "run_id": [
+    "20261026-061907-icpe-p11-report-t"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/p11/p11q_report.json",
+   "sha256": "7297ebd6d468db4c698dc1c8d65e9f03b29a216457af353a417d14fda0f07040",
+   "run_id": [
+    "20261025-215237-icpe-p11-report-q"
+   ],
+   "related_run_ids": {
+    "src_run_ids": [
+     "['20261025-203913-icpe-p11-gen-qwen', '20261025-210417-icpe-p11-gen-llama']"
+    ]
+   }
+  },
+  {
+   "path": "results/m10_precision_h200/analysis/report_only/report_only.json",
+   "sha256": "7fabb2f9c5bd277b8c45bd307e7e1af6b2dda9d89a0fa6a6eeedb819fab2300e",
+   "run_id": [],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_llama/summary.csv",
+   "sha256": "43473c83fb6b0d32c2512eabac96e09a041dd7ddc5452b64fae6f76499503a37",
+   "run_id": [
+    "20261017-094511-m10h-grid-int4-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_llama/noise.json",
+   "sha256": "52c2bc8af3eeb93c997d0e6ea60227e9f64856adac48906be746708494c67021",
+   "run_id": [
+    "20261017-074226-m10h-noise-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_llama/bw.json",
+   "sha256": "3ed82aa8b7178bb9edb9d9e9ac41f7edb7f727aa6412db9754e3f375614d3b83",
+   "run_id": [
+    "20261017-074151-m10h-calibf-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_qwen/summary.csv",
+   "sha256": "70ecbd5737b60731bef8201c9992d61debea45122ecd4e9360aebf1c36b078b9",
+   "run_id": [
+    "20261017-103540-m10h-grid-int4-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_qwen/noise.json",
+   "sha256": "4cfda45c943b237683fab6736a1d5c4bf6c316bbc3cd714cbb0ae367bf060353",
+   "run_id": [
+    "20261017-074659-m10h-noise-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_qwen/bw.json",
+   "sha256": "b28283bb8678f517be664d52289a366f78c7de27f16e0a23aeeb596b01166d0b",
+   "run_id": [
+    "20261017-074209-m10h-calibf-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/p11/time/wcost.csv",
+   "sha256": "237ae8c0b29d7189bd8742f8e9df17a6aaa7257043dc28fc01a4511f5a76767c",
+   "run_id": [
+    "20261026-061535-icpe-p11t-wc-llama",
+    "20261026-061837-icpe-p11t-wc-qwen"
+   ],
+   "related_run_ids": {}
+  }
+ ],
+ "plotted_values": {
+  "lowrank_write_time_svd_s": {
+   "llama|k19v29|duty0.0": 3.243355184793472,
+   "llama|k19v29|duty1.0": 6.211649764329195,
+   "llama|k29v44|duty0.0": 5.314947705715895,
+   "llama|k29v44|duty1.0": 10.003314198926091,
+   "qwen|k34v51|duty0.0": 2.1292587369680405,
+   "qwen|k34v51|duty1.0": 4.079634899273515
+  },
+  "throttle_GiBps": {
+   "llama": {
+    "b16": 8.8331,
+    "b32": 2.49,
+    "b48": 0.7222
+   },
+   "qwen": {
+    "b16": 4.33,
+    "b32": 1.2297,
+    "b48": 0.3582
+   }
+  },
+  "units": "t = median restore time of one returning request (s), 32K-token context; ratio = t / t(best option in the row)",
+  "rule_best": "best = fastest measured option in the row; low-rank counts only if its shown variant passes eps",
+  "rule_tie": "tie = within max(5% (A5 registered tie rule), the row's noise delta from speed_<model>/noise.json) of the best",
+  "cells": {
+   "llama|cpu|idle": {
+    "t": {
+     "bf16_cake": 0.084355,
+     "bf16_load": 0.0851965,
+     "int4_cake": 0.028973,
+     "int4_load": 0.029128,
+     "recompute": 2.10382,
+     "lowrank_load": 0.020748671144247
+    },
+    "ratio": {
+     "bf16_cake": 4.065561568427922,
+     "bf16_load": 4.106118382604107,
+     "int4_cake": 1.396378582443983,
+     "int4_load": 1.4038489403730487,
+     "recompute": 101.3954091504953,
+     "lowrank_load": 1.0
+    },
+    "best": "lowrank_load",
+    "ties": [],
+    "delta": 0.09102333138618773,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|cpu|busy": {
+    "t": {
+     "bf16_cake": 0.120818,
+     "bf16_load": 0.238261,
+     "int4_cake": 0.044523,
+     "int4_load": 0.034236,
+     "recompute": 4.05128,
+     "lowrank_load": 0.7204781174659729
+    },
+    "ratio": {
+     "bf16_cake": 3.5289753475873344,
+     "bf16_load": 6.959370253534291,
+     "int4_cake": 1.3004731861198737,
+     "int4_load": 1.0,
+     "recompute": 118.33391751372824,
+     "lowrank_load": 21.044459559118263
+    },
+    "best": "int4_load",
+    "ties": [],
+    "delta": 0.28424513435692667,
+    "best_excl_lowrank": "int4_load"
+   },
+   "llama|b16|idle": {
+    "t": {
+     "bf16_cake": 0.35055,
+     "bf16_load": 0.45299,
+     "int4_cake": 0.18833,
+     "int4_load": 0.19154,
+     "recompute": 2.10494,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.8613603780597885,
+     "bf16_load": 2.4052992088355545,
+     "int4_cake": 1.0,
+     "int4_load": 1.0170445494610523,
+     "recompute": 11.176870387086497,
+     "lowrank_load": null
+    },
+    "best": "int4_cake",
+    "ties": [
+     "int4_load"
+    ],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|b16|busy": {
+    "t": {
+     "bf16_cake": 0.40075,
+     "bf16_load": 0.45299,
+     "int4_cake": 0.24142,
+     "int4_load": 0.26956,
+     "recompute": 4.0514,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.659970176455969,
+     "bf16_load": 1.876356557037528,
+     "int4_cake": 1.0,
+     "int4_load": 1.1165603512550744,
+     "recompute": 16.781542539971834,
+     "lowrank_load": null
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|b32|idle": {
+    "t": {
+     "bf16_cake": 0.8226605,
+     "bf16_load": 1.607094,
+     "int4_cake": 0.377213,
+     "int4_load": 0.5066740000000001,
+     "recompute": 2.10576,
+     "lowrank_load": 0.1429986823350191
+    },
+    "ratio": {
+     "bf16_cake": 5.752923639342779,
+     "bf16_load": 11.2385231371215,
+     "int4_cake": 2.6378774534177922,
+     "int4_load": 3.5432074738490096,
+     "recompute": 14.725730094957093,
+     "lowrank_load": 1.0
+    },
+    "best": "lowrank_load",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|b32|busy": {
+    "t": {
+     "bf16_cake": 1.0651285,
+     "bf16_load": 1.607,
+     "int4_cake": 0.4510575,
+     "int4_load": 0.5127185000000001,
+     "recompute": 4.04816,
+     "lowrank_load": 0.7446063552051783
+    },
+    "ratio": {
+     "bf16_cake": 2.361402925347655,
+     "bf16_load": 3.5627386752243337,
+     "int4_cake": 1.0,
+     "int4_load": 1.1367031919433777,
+     "recompute": 8.974820283445016,
+     "lowrank_load": 1.650801406040645
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|b48|idle": {
+    "t": {
+     "bf16_cake": 1.40074,
+     "bf16_load": 5.53887,
+     "int4_cake": 0.87649,
+     "int4_load": 1.78807,
+     "recompute": 2.10606,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.5981243368435465,
+     "bf16_load": 6.319376148045044,
+     "int4_cake": 1.0,
+     "int4_load": 2.040034683795594,
+     "recompute": 2.4028340311925978,
+     "lowrank_load": null
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|b48|busy": {
+    "t": {
+     "bf16_cake": 2.11095,
+     "bf16_load": 5.53887,
+     "int4_cake": 1.18463,
+     "int4_load": 1.85687,
+     "recompute": 4.04971,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.781948794138254,
+     "bf16_load": 4.675611794399939,
+     "int4_cake": 1.0,
+     "int4_load": 1.5674683234427627,
+     "recompute": 3.4185441867925004,
+     "lowrank_load": null
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|nfs|idle": {
+    "t": {
+     "bf16_cake": 1.705393,
+     "bf16_load": 12.0822915,
+     "int4_cake": 1.241222,
+     "int4_load": 3.780333,
+     "recompute": null,
+     "lowrank_load": 0.9998153988271952
+    },
+    "ratio": {
+     "bf16_cake": 1.7057078756743118,
+     "bf16_load": 12.084522316992503,
+     "int4_cake": 1.241451173342579,
+     "int4_load": 3.781030982753828,
+     "recompute": null,
+     "lowrank_load": 1.0
+    },
+    "best": "lowrank_load",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "llama|nfs|busy": {
+    "t": {
+     "bf16_cake": 2.833957,
+     "bf16_load": 12.082136,
+     "int4_cake": 1.773678,
+     "int4_load": 3.78676,
+     "recompute": null,
+     "lowrank_load": 1.0120558608323336
+    },
+    "ratio": {
+     "bf16_cake": 2.800198200195492,
+     "bf16_load": 11.93821059448579,
+     "int4_cake": 1.752549507041335,
+     "int4_load": 3.7416511741611753,
+     "recompute": null,
+     "lowrank_load": 1.0
+    },
+    "best": "lowrank_load",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "qwen|cpu|idle": {
+    "t": {
+     "bf16_cake": 0.053963,
+     "bf16_load": 0.0391505,
+     "int4_cake": 0.0227545,
+     "int4_load": 0.014134,
+     "recompute": 1.84795,
+     "lowrank_load": 0.0132961831986904
+    },
+    "ratio": {
+     "bf16_cake": 3.8179567001556527,
+     "bf16_load": 2.7699518890618364,
+     "int4_cake": 1.6099122682892315,
+     "int4_load": 1.0,
+     "recompute": 130.74501202773453,
+     "lowrank_load": 0.9407233054118013
+    },
+    "best": "int4_load",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_load"
+   },
+   "qwen|cpu|busy": {
+    "t": {
+     "bf16_cake": 0.0689154999999999,
+     "bf16_load": 0.235511,
+     "int4_cake": 0.0363514999999999,
+     "int4_load": 0.0166385,
+     "recompute": 3.56188,
+     "lowrank_load": 0.7069474533200264
+    },
+    "ratio": {
+     "bf16_cake": 4.14192986146587,
+     "bf16_load": 14.154581242299486,
+     "int4_cake": 2.1847822820566694,
+     "int4_load": 1.0,
+     "recompute": 214.0745860504252,
+     "lowrank_load": 42.488653022810134
+    },
+    "best": "int4_load",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_load"
+   },
+   "qwen|b16|idle": {
+    "t": {
+     "bf16_cake": 0.30909,
+     "bf16_load": 0.4043,
+     "int4_cake": 0.17226,
+     "int4_load": 0.16003,
+     "recompute": 1.84778,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.9314503530588012,
+     "bf16_load": 2.5264012997562957,
+     "int4_cake": 1.076423170655502,
+     "int4_load": 1.0,
+     "recompute": 11.546460038742735,
+     "lowrank_load": null
+    },
+    "best": "int4_load",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_load"
+   },
+   "qwen|b16|busy": {
+    "t": {
+     "bf16_cake": 0.35533,
+     "bf16_load": 0.4043,
+     "int4_cake": 0.22499,
+     "int4_load": 0.24819,
+     "recompute": 3.55805,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.5793146362060535,
+     "bf16_load": 1.7969687541668518,
+     "int4_cake": 1.0,
+     "int4_load": 1.1031156940308458,
+     "recompute": 15.814258411484955,
+     "lowrank_load": null
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "qwen|b32|idle": {
+    "t": {
+     "bf16_cake": 0.725232,
+     "bf16_load": 1.4237845,
+     "int4_cake": 0.3336665,
+     "int4_load": 0.4475325,
+     "recompute": 1.84843,
+     "lowrank_load": 0.1515574548393488
+    },
+    "ratio": {
+     "bf16_cake": 2.173523563198583,
+     "bf16_load": 4.2670885449992735,
+     "int4_cake": 1.0,
+     "int4_load": 1.3412569137147423,
+     "recompute": 5.539753016859649,
+     "lowrank_load": 0.45421837325397907
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "qwen|b32|busy": {
+    "t": {
+     "bf16_cake": 0.9383745,
+     "bf16_load": 1.4236535,
+     "int4_cake": 0.3992965,
+     "int4_load": 0.4486015,
+     "recompute": 3.55769,
+     "lowrank_load": 0.7067266684025526
+    },
+    "ratio": {
+     "bf16_cake": 2.350069434618135,
+     "bf16_load": 3.5654044049972886,
+     "int4_cake": 1.0,
+     "int4_load": 1.1234796698693827,
+     "recompute": 8.909895278320747,
+     "lowrank_load": 1.7699295345753159
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "qwen|b48|idle": {
+    "t": {
+     "bf16_cake": 1.23149,
+     "bf16_load": 4.88577,
+     "int4_cake": 0.76541,
+     "int4_load": 1.56295,
+     "recompute": 1.84802,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.6089285480984046,
+     "bf16_load": 6.383206386119857,
+     "int4_cake": 1.0,
+     "int4_load": 2.041977502253694,
+     "recompute": 2.414418416273631,
+     "lowrank_load": null
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "qwen|b48|busy": {
+    "t": {
+     "bf16_cake": 1.86198,
+     "bf16_load": 4.88577,
+     "int4_cake": 1.03558,
+     "int4_load": 1.62632,
+     "recompute": 3.55729,
+     "lowrank_load": null
+    },
+    "ratio": {
+     "bf16_cake": 1.7980069139998842,
+     "bf16_load": 4.717906873442902,
+     "int4_cake": 1.0,
+     "int4_load": 1.5704436161378166,
+     "recompute": 3.4350702022055275,
+     "lowrank_load": null
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "qwen|nfs|idle": {
+    "t": {
+     "bf16_cake": 1.3220934999999998,
+     "bf16_load": 5.286417,
+     "int4_cake": 0.783749,
+     "int4_load": 1.6548005,
+     "recompute": null,
+     "lowrank_load": 0.5523697063326836
+    },
+    "ratio": {
+     "bf16_cake": 1.6868838110160265,
+     "bf16_load": 6.745038271181207,
+     "int4_cake": 1.0,
+     "int4_load": 2.1113908917268156,
+     "recompute": null,
+     "lowrank_load": 0.7047788339540894
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   },
+   "qwen|nfs|busy": {
+    "t": {
+     "bf16_cake": 1.958579,
+     "bf16_load": 5.286353500000001,
+     "int4_cake": 1.042848,
+     "int4_load": 1.6555879999999998,
+     "recompute": null,
+     "lowrank_load": 0.706957258284092
+    },
+    "ratio": {
+     "bf16_cake": 1.8781059176409218,
+     "bf16_load": 5.06915053775814,
+     "int4_cake": 1.0,
+     "int4_load": 1.5875640553561017,
+     "recompute": null,
+     "lowrank_load": 0.6779101635943992
+    },
+    "best": "int4_cake",
+    "ties": [],
+    "delta": 0.05,
+    "best_excl_lowrank": "int4_cake"
+   }
+  },
+  "quality_eps": {
+   "llama": {
+    "int4_readings": {
+     "NIAH-T1 A": true,
+     "NIAH-T1 B-idle": true,
+     "NIAH-T1 B-busy": true,
+     "NIAH-T1 B-i2b": true,
+     "LongBench A": true,
+     "32K 192-item set": true
+    },
+    "int4_fails_some_reading": false,
+    "int4_failing_readings": [],
+    "lowrank": {
+     "cpu|idle": {
+      "shown": {
+       "seg": "xkv_k19v29_int4",
+       "cfg": "xl:k19:v29+q:int4_kivi",
+       "t": 0.020748671144247,
+       "eps_pass": true
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k19v29_int4_cal",
+       "cfg": "xl:k19:v29:cal+q:int4_kivi",
+       "t": 0.019058683887124,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k29v44_int4",
+        "cfg": "xl:k29:v44+q:int4_kivi",
+        "t": 0.0266115255653858,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k29v44_int4_cal",
+        "cfg": "xl:k29:v44:cal+q:int4_kivi",
+        "t": 0.0236745532602071,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k19v29_int4",
+        "cfg": "xl:k19:v29+q:int4_kivi",
+        "t": 0.020748671144247,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k19v29_int4_cal",
+        "cfg": "xl:k19:v29:cal+q:int4_kivi",
+        "t": 0.019058683887124,
+        "eps_pass": false
+       }
+      ]
+     },
+     "cpu|busy": {
+      "shown": {
+       "seg": "xkv_k19v29_int4",
+       "cfg": "xl:k19:v29+q:int4_kivi",
+       "t": 0.7204781174659729,
+       "eps_pass": true
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k19v29_int4_cal",
+       "cfg": "xl:k19:v29:cal+q:int4_kivi",
+       "t": 0.7183351647108793,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k29v44_int4",
+        "cfg": "xl:k29:v44+q:int4_kivi",
+        "t": 0.7280685659497976,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k29v44_int4_cal",
+        "cfg": "xl:k29:v44:cal+q:int4_kivi",
+        "t": 0.7252059262245893,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k19v29_int4",
+        "cfg": "xl:k19:v29+q:int4_kivi",
+        "t": 0.7204781174659729,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k19v29_int4_cal",
+        "cfg": "xl:k19:v29:cal+q:int4_kivi",
+        "t": 0.7183351647108793,
+        "eps_pass": false
+       }
+      ]
+     },
+     "b32|idle": {
+      "shown": {
+       "seg": "xkv_k19v29_int4",
+       "cfg": "xl:k19:v29+q:int4_kivi",
+       "t": 0.1429986823350191,
+       "eps_pass": true
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k19v29_int4_cal",
+       "cfg": "xl:k19:v29:cal+q:int4_kivi",
+       "t": 0.1151542719453573,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k29v44_int4",
+        "cfg": "xl:k29:v44+q:int4_kivi",
+        "t": 0.2111599817872047,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k29v44_int4_cal",
+        "cfg": "xl:k29:v44:cal+q:int4_kivi",
+        "t": 0.1538285575807094,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k19v29_int4",
+        "cfg": "xl:k19:v29+q:int4_kivi",
+        "t": 0.1429986823350191,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k19v29_int4_cal",
+        "cfg": "xl:k19:v29:cal+q:int4_kivi",
+        "t": 0.1151542719453573,
+        "eps_pass": false
+       }
+      ]
+     },
+     "b32|busy": {
+      "shown": {
+       "seg": "xkv_k19v29_int4",
+       "cfg": "xl:k19:v29+q:int4_kivi",
+       "t": 0.7446063552051783,
+       "eps_pass": true
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k19v29_int4_cal",
+       "cfg": "xl:k19:v29:cal+q:int4_kivi",
+       "t": 0.71836400590837,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k29v44_int4",
+        "cfg": "xl:k29:v44+q:int4_kivi",
+        "t": 0.7709997408092022,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k29v44_int4_cal",
+        "cfg": "xl:k29:v44:cal+q:int4_kivi",
+        "t": 0.7207144517451525,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k19v29_int4",
+        "cfg": "xl:k19:v29+q:int4_kivi",
+        "t": 0.7446063552051783,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k19v29_int4_cal",
+        "cfg": "xl:k19:v29:cal+q:int4_kivi",
+        "t": 0.71836400590837,
+        "eps_pass": false
+       }
+      ]
+     },
+     "nfs|idle": {
+      "shown": {
+       "seg": "xkv_k19v29_int4",
+       "cfg": "xl:k19:v29+q:int4_kivi",
+       "t": 0.9998153988271952,
+       "eps_pass": true
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k19v29_int4_cal",
+       "cfg": "xl:k19:v29:cal+q:int4_kivi",
+       "t": 0.7165528479963541,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k29v44_int4",
+        "cfg": "xl:k29:v44+q:int4_kivi",
+        "t": 1.5180158112198114,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k29v44_int4_cal",
+        "cfg": "xl:k29:v44:cal+q:int4_kivi",
+        "t": 1.087305137887597,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k19v29_int4",
+        "cfg": "xl:k19:v29+q:int4_kivi",
+        "t": 0.9998153988271952,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k19v29_int4_cal",
+        "cfg": "xl:k19:v29:cal+q:int4_kivi",
+        "t": 0.7165528479963541,
+        "eps_pass": false
+       }
+      ]
+     },
+     "nfs|busy": {
+      "shown": {
+       "seg": "xkv_k19v29_int4",
+       "cfg": "xl:k19:v29+q:int4_kivi",
+       "t": 1.0120558608323336,
+       "eps_pass": true
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k19v29_int4_cal",
+       "cfg": "xl:k19:v29:cal+q:int4_kivi",
+       "t": 0.7276689521968365,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k29v44_int4",
+        "cfg": "xl:k29:v44+q:int4_kivi",
+        "t": 1.5311401542276144,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k29v44_int4_cal",
+        "cfg": "xl:k29:v44:cal+q:int4_kivi",
+        "t": 1.100358797237277,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k19v29_int4",
+        "cfg": "xl:k19:v29+q:int4_kivi",
+        "t": 1.0120558608323336,
+        "eps_pass": true
+       },
+       {
+        "seg": "xkv_k19v29_int4_cal",
+        "cfg": "xl:k19:v29:cal+q:int4_kivi",
+        "t": 0.7276689521968365,
+        "eps_pass": false
+       }
+      ]
+     }
+    }
+   },
+   "qwen": {
+    "int4_readings": {
+     "NIAH-T1 A": true,
+     "NIAH-T1 B-idle": true,
+     "NIAH-T1 B-busy": false,
+     "NIAH-T1 B-i2b": false,
+     "LongBench A": true,
+     "32K 192-item set": true
+    },
+    "int4_fails_some_reading": true,
+    "int4_failing_readings": [
+     "NIAH-T1 B-busy",
+     "NIAH-T1 B-i2b"
+    ],
+    "lowrank": {
+     "cpu|idle": {
+      "shown": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.0132961831986904,
+       "eps_pass": false
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.0132961831986904,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k34v51_int4",
+        "cfg": "xl:k34:v51+q:int4_kivi",
+        "t": 0.0140265356749296,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k34v51_int4_cal",
+        "cfg": "xl:k34:v51:cal+q:int4_kivi",
+        "t": 0.0132961831986904,
+        "eps_pass": false
+       }
+      ]
+     },
+     "cpu|busy": {
+      "shown": {
+       "seg": "xkv_k34v51_int4",
+       "cfg": "xl:k34:v51+q:int4_kivi",
+       "t": 0.7069474533200264,
+       "eps_pass": false
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k34v51_int4",
+       "cfg": "xl:k34:v51+q:int4_kivi",
+       "t": 0.7069474533200264,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k34v51_int4",
+        "cfg": "xl:k34:v51+q:int4_kivi",
+        "t": 0.7069474533200264,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k34v51_int4_cal",
+        "cfg": "xl:k34:v51:cal+q:int4_kivi",
+        "t": 0.7079634480178356,
+        "eps_pass": false
+       }
+      ]
+     },
+     "b32|idle": {
+      "shown": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.1515574548393488,
+       "eps_pass": false
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.1515574548393488,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k34v51_int4",
+        "cfg": "xl:k34:v51+q:int4_kivi",
+        "t": 0.1811534501612186,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k34v51_int4_cal",
+        "cfg": "xl:k34:v51:cal+q:int4_kivi",
+        "t": 0.1515574548393488,
+        "eps_pass": false
+       }
+      ]
+     },
+     "b32|busy": {
+      "shown": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.7067266684025526,
+       "eps_pass": false
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.7067266684025526,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k34v51_int4",
+        "cfg": "xl:k34:v51+q:int4_kivi",
+        "t": 0.7285301107913256,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k34v51_int4_cal",
+        "cfg": "xl:k34:v51:cal+q:int4_kivi",
+        "t": 0.7067266684025526,
+        "eps_pass": false
+       }
+      ]
+     },
+     "nfs|idle": {
+      "shown": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.5523697063326836,
+       "eps_pass": false
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.5523697063326836,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k34v51_int4",
+        "cfg": "xl:k34:v51+q:int4_kivi",
+        "t": 0.6621650140732527,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k34v51_int4_cal",
+        "cfg": "xl:k34:v51:cal+q:int4_kivi",
+        "t": 0.5523697063326836,
+        "eps_pass": false
+       }
+      ]
+     },
+     "nfs|busy": {
+      "shown": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.706957258284092,
+       "eps_pass": false
+      },
+      "fastest_eps_fail": {
+       "seg": "xkv_k34v51_int4_cal",
+       "cfg": "xl:k34:v51:cal+q:int4_kivi",
+       "t": 0.706957258284092,
+       "eps_pass": false
+      },
+      "variants": [
+       {
+        "seg": "xkv_k34v51_int4",
+        "cfg": "xl:k34:v51+q:int4_kivi",
+        "t": 0.8158657215535641,
+        "eps_pass": false
+       },
+       {
+        "seg": "xkv_k34v51_int4_cal",
+        "cfg": "xl:k34:v51:cal+q:int4_kivi",
+        "t": 0.706957258284092,
+        "eps_pass": false
+       }
+      ]
+     }
+    }
+   }
+  },
+  "model_names": {
+   "llama": "Llama-3.1-8B-Instruct",
+   "qwen": "Qwen2.5-7B-Instruct-1M"
+  }
+ },
+ "checks": [
+  {
+   "what": "EVIDENCE M1 rows parsed",
+   "value_in_plotted_file": 20.0,
+   "expected": 20.0,
+   "tolerance": 0,
+   "expected_from": "docs/icpe_paper_20261030/EVIDENCE.md",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'busy') bf16_load",
+   "value_in_plotted_file": 0.45299,
+   "expected": 0.453,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'busy') bf16_cake",
+   "value_in_plotted_file": 0.40075,
+   "expected": 0.4008,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'busy') int4_load",
+   "value_in_plotted_file": 0.26956,
+   "expected": 0.2696,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'busy') int4_cake",
+   "value_in_plotted_file": 0.24142,
+   "expected": 0.2414,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'busy') recompute",
+   "value_in_plotted_file": 4.0514,
+   "expected": 4.051,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'busy') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'busy') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'idle') bf16_load",
+   "value_in_plotted_file": 0.45299,
+   "expected": 0.453,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'idle') bf16_cake",
+   "value_in_plotted_file": 0.35055,
+   "expected": 0.3505,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'idle') int4_load",
+   "value_in_plotted_file": 0.19154,
+   "expected": 0.1915,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'idle') int4_cake",
+   "value_in_plotted_file": 0.18833,
+   "expected": 0.1883,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'idle') recompute",
+   "value_in_plotted_file": 2.10494,
+   "expected": 2.105,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'idle') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b16', 'idle') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'busy') bf16_load",
+   "value_in_plotted_file": 1.607,
+   "expected": 1.607,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'busy') bf16_cake",
+   "value_in_plotted_file": 1.0651285,
+   "expected": 1.0651,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'busy') int4_load",
+   "value_in_plotted_file": 0.5127185000000001,
+   "expected": 0.5127,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'busy') int4_cake",
+   "value_in_plotted_file": 0.4510575,
+   "expected": 0.4511,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'busy') recompute",
+   "value_in_plotted_file": 4.04816,
+   "expected": 4.048,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'busy') low-rank fastest eps-pass",
+   "value_in_plotted_file": 0.7446063552051783,
+   "expected": 0.7446,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'busy') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.71836400590837,
+   "expected": 0.7184,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'idle') bf16_load",
+   "value_in_plotted_file": 1.607094,
+   "expected": 1.6071,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'idle') bf16_cake",
+   "value_in_plotted_file": 0.8226605,
+   "expected": 0.8227,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'idle') int4_load",
+   "value_in_plotted_file": 0.5066740000000001,
+   "expected": 0.5067,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'idle') int4_cake",
+   "value_in_plotted_file": 0.377213,
+   "expected": 0.3772,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'idle') recompute",
+   "value_in_plotted_file": 2.10576,
+   "expected": 2.106,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'idle') low-rank fastest eps-pass",
+   "value_in_plotted_file": 0.1429986823350191,
+   "expected": 0.143,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b32', 'idle') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.1151542719453573,
+   "expected": 0.1152,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'busy') bf16_load",
+   "value_in_plotted_file": 5.53887,
+   "expected": 5.5389,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'busy') bf16_cake",
+   "value_in_plotted_file": 2.11095,
+   "expected": 2.111,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'busy') int4_load",
+   "value_in_plotted_file": 1.85687,
+   "expected": 1.8569,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'busy') int4_cake",
+   "value_in_plotted_file": 1.18463,
+   "expected": 1.1846,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'busy') recompute",
+   "value_in_plotted_file": 4.04971,
+   "expected": 4.05,
+   "tolerance": 0.0050000000010000005,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'busy') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'busy') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'idle') bf16_load",
+   "value_in_plotted_file": 5.53887,
+   "expected": 5.5389,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'idle') bf16_cake",
+   "value_in_plotted_file": 1.40074,
+   "expected": 1.4007,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'idle') int4_load",
+   "value_in_plotted_file": 1.78807,
+   "expected": 1.7881,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'idle') int4_cake",
+   "value_in_plotted_file": 0.87649,
+   "expected": 0.8765,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'idle') recompute",
+   "value_in_plotted_file": 2.10606,
+   "expected": 2.106,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'idle') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'b48', 'idle') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'busy') bf16_load",
+   "value_in_plotted_file": 0.238261,
+   "expected": 0.2383,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'busy') bf16_cake",
+   "value_in_plotted_file": 0.120818,
+   "expected": 0.1208,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'busy') int4_load",
+   "value_in_plotted_file": 0.034236,
+   "expected": 0.0342,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'busy') int4_cake",
+   "value_in_plotted_file": 0.044523,
+   "expected": 0.0445,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'busy') recompute",
+   "value_in_plotted_file": 4.05128,
+   "expected": 4.051,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'busy') low-rank fastest eps-pass",
+   "value_in_plotted_file": 0.7204781174659729,
+   "expected": 0.7205,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'busy') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.7183351647108793,
+   "expected": 0.7183,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'idle') bf16_load",
+   "value_in_plotted_file": 0.0851965,
+   "expected": 0.0852,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'idle') bf16_cake",
+   "value_in_plotted_file": 0.084355,
+   "expected": 0.0844,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'idle') int4_load",
+   "value_in_plotted_file": 0.029128,
+   "expected": 0.0291,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'idle') int4_cake",
+   "value_in_plotted_file": 0.028973,
+   "expected": 0.029,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'idle') recompute",
+   "value_in_plotted_file": 2.10382,
+   "expected": 2.104,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'idle') low-rank fastest eps-pass",
+   "value_in_plotted_file": 0.020748671144247,
+   "expected": 0.0207,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'cpu', 'idle') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.019058683887124,
+   "expected": 0.0191,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'busy') bf16_load",
+   "value_in_plotted_file": 12.082136,
+   "expected": 12.082,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'busy') bf16_cake",
+   "value_in_plotted_file": 2.833957,
+   "expected": 2.834,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'busy') int4_load",
+   "value_in_plotted_file": 3.78676,
+   "expected": 3.7868,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'busy') int4_cake",
+   "value_in_plotted_file": 1.773678,
+   "expected": 1.7737,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'busy') recompute measured?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1 (NOT_MEASURED)",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'busy') low-rank fastest eps-pass",
+   "value_in_plotted_file": 1.0120558608323336,
+   "expected": 1.0121,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'busy') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.7276689521968365,
+   "expected": 0.7277,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'idle') bf16_load",
+   "value_in_plotted_file": 12.0822915,
+   "expected": 12.082,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'idle') bf16_cake",
+   "value_in_plotted_file": 1.705393,
+   "expected": 1.7054,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'idle') int4_load",
+   "value_in_plotted_file": 3.780333,
+   "expected": 3.7803,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'idle') int4_cake",
+   "value_in_plotted_file": 1.241222,
+   "expected": 1.2412,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'idle') recompute measured?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1 (NOT_MEASURED)",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'idle') low-rank fastest eps-pass",
+   "value_in_plotted_file": 0.9998153988271952,
+   "expected": 0.9998,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('llama', 'nfs', 'idle') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.7165528479963541,
+   "expected": 0.7166,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'busy') bf16_load",
+   "value_in_plotted_file": 0.4043,
+   "expected": 0.4043,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'busy') bf16_cake",
+   "value_in_plotted_file": 0.35533,
+   "expected": 0.3553,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'busy') int4_load",
+   "value_in_plotted_file": 0.24819,
+   "expected": 0.2482,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'busy') int4_cake",
+   "value_in_plotted_file": 0.22499,
+   "expected": 0.225,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'busy') recompute",
+   "value_in_plotted_file": 3.55805,
+   "expected": 3.558,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'busy') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'busy') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'idle') bf16_load",
+   "value_in_plotted_file": 0.4043,
+   "expected": 0.4043,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'idle') bf16_cake",
+   "value_in_plotted_file": 0.30909,
+   "expected": 0.3091,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'idle') int4_load",
+   "value_in_plotted_file": 0.16003,
+   "expected": 0.16,
+   "tolerance": 0.0050000000010000005,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'idle') int4_cake",
+   "value_in_plotted_file": 0.17226,
+   "expected": 0.1723,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'idle') recompute",
+   "value_in_plotted_file": 1.84778,
+   "expected": 1.848,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'idle') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b16', 'idle') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'busy') bf16_load",
+   "value_in_plotted_file": 1.4236535,
+   "expected": 1.4237,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'busy') bf16_cake",
+   "value_in_plotted_file": 0.9383745,
+   "expected": 0.9384,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'busy') int4_load",
+   "value_in_plotted_file": 0.4486015,
+   "expected": 0.4486,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'busy') int4_cake",
+   "value_in_plotted_file": 0.3992965,
+   "expected": 0.3993,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'busy') recompute",
+   "value_in_plotted_file": 3.55769,
+   "expected": 3.558,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'busy') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'busy') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.7067266684025526,
+   "expected": 0.7067,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'idle') bf16_load",
+   "value_in_plotted_file": 1.4237845,
+   "expected": 1.4238,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'idle') bf16_cake",
+   "value_in_plotted_file": 0.725232,
+   "expected": 0.7252,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'idle') int4_load",
+   "value_in_plotted_file": 0.4475325,
+   "expected": 0.4475,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'idle') int4_cake",
+   "value_in_plotted_file": 0.3336665,
+   "expected": 0.3337,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'idle') recompute",
+   "value_in_plotted_file": 1.84843,
+   "expected": 1.848,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'idle') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b32', 'idle') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.1515574548393488,
+   "expected": 0.1516,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'busy') bf16_load",
+   "value_in_plotted_file": 4.88577,
+   "expected": 4.8858,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'busy') bf16_cake",
+   "value_in_plotted_file": 1.86198,
+   "expected": 1.862,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'busy') int4_load",
+   "value_in_plotted_file": 1.62632,
+   "expected": 1.6263,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'busy') int4_cake",
+   "value_in_plotted_file": 1.03558,
+   "expected": 1.0356,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'busy') recompute",
+   "value_in_plotted_file": 3.55729,
+   "expected": 3.557,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'busy') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'busy') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'idle') bf16_load",
+   "value_in_plotted_file": 4.88577,
+   "expected": 4.8858,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'idle') bf16_cake",
+   "value_in_plotted_file": 1.23149,
+   "expected": 1.2315,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'idle') int4_load",
+   "value_in_plotted_file": 1.56295,
+   "expected": 1.563,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'idle') int4_cake",
+   "value_in_plotted_file": 0.76541,
+   "expected": 0.7654,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'idle') recompute",
+   "value_in_plotted_file": 1.84802,
+   "expected": 1.848,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'idle') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'b48', 'idle') low-rank fastest eps-fail present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'busy') bf16_load",
+   "value_in_plotted_file": 0.235511,
+   "expected": 0.2355,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'busy') bf16_cake",
+   "value_in_plotted_file": 0.0689154999999999,
+   "expected": 0.0689,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'busy') int4_load",
+   "value_in_plotted_file": 0.0166385,
+   "expected": 0.0166,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'busy') int4_cake",
+   "value_in_plotted_file": 0.0363514999999999,
+   "expected": 0.0364,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'busy') recompute",
+   "value_in_plotted_file": 3.56188,
+   "expected": 3.562,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'busy') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'busy') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.7069474533200264,
+   "expected": 0.7069,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'idle') bf16_load",
+   "value_in_plotted_file": 0.0391505,
+   "expected": 0.0392,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'idle') bf16_cake",
+   "value_in_plotted_file": 0.053963,
+   "expected": 0.054,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'idle') int4_load",
+   "value_in_plotted_file": 0.014134,
+   "expected": 0.0141,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'idle') int4_cake",
+   "value_in_plotted_file": 0.0227545,
+   "expected": 0.0228,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'idle') recompute",
+   "value_in_plotted_file": 1.84795,
+   "expected": 1.848,
+   "tolerance": 0.000500000001,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'idle') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'cpu', 'idle') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.0132961831986904,
+   "expected": 0.0133,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'busy') bf16_load",
+   "value_in_plotted_file": 5.286353500000001,
+   "expected": 5.2864,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'busy') bf16_cake",
+   "value_in_plotted_file": 1.958579,
+   "expected": 1.9586,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'busy') int4_load",
+   "value_in_plotted_file": 1.6555879999999998,
+   "expected": 1.6556,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'busy') int4_cake",
+   "value_in_plotted_file": 1.042848,
+   "expected": 1.0428,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'busy') recompute measured?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1 (NOT_MEASURED)",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'busy') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'busy') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.706957258284092,
+   "expected": 0.707,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'idle') bf16_load",
+   "value_in_plotted_file": 5.286417,
+   "expected": 5.2864,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'idle') bf16_cake",
+   "value_in_plotted_file": 1.3220934999999998,
+   "expected": 1.3221,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'idle') int4_load",
+   "value_in_plotted_file": 1.6548005,
+   "expected": 1.6548,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'idle') int4_cake",
+   "value_in_plotted_file": 0.783749,
+   "expected": 0.7837,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'idle') recompute measured?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1 (NOT_MEASURED)",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'idle') low-rank fastest eps-pass present?",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "M1 ('qwen', 'nfs', 'idle') low-rank fastest eps-fail",
+   "value_in_plotted_file": 0.5523697063326836,
+   "expected": 0.5524,
+   "tolerance": 5.0000001000000005e-05,
+   "expected_from": "EVIDENCE M1",
+   "status": "match"
+  },
+  {
+   "what": "Llama k19v29 SVD write cost, idle (s, 2 decimals)",
+   "value_in_plotted_file": 3.24,
+   "expected": 3.24,
+   "tolerance": 0.005,
+   "expected_from": "EVIDENCE M1 note (1.23 + 2.01 = 3.24 s)",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "report_only.json has no run_id field; it is identified by path and sha256 (EVIDENCE M2 cites it with p11q_report.json).",
+  "The map is restore time only: it excludes the write-time per-item SVD of the low-rank format, paid once per 32K request when the KV is written (Llama k19v29 3.24 s idle / 6.21 s busy; results/icpe_h200/p11/time/wcost.csv, svd_k + svd_v medians).",
+  "Sources as in EVIDENCE.md section M: CPU tier / b32 / NFS class = p01b_cells.csv (sdpa; 10 runs per mode); b16 / b48 and recompute-all = speed_<model>/summary.csv (32K, 30 runs); low-rank + INT4 load-all = p11t_cells.csv (t_meas_s; load-all only, no Cake path). INT4 load-all on b16 / b48 is the per-block dequant path (D2), on CPU / b32 / NFS the load-all + one-shot unpack path (A5). NFS recompute-all and SSD class: NOT_MEASURED."
+ ]
+}
