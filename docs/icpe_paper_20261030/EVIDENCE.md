@@ -13,7 +13,7 @@
 6. headroom＝1 − T_oracle ÷ T_對手，T＝回來請求的平均 TTFT；對手＝最好的對稱（不預知）策略；rule＝min 是 R1、R2 兩種 session 重建規則取小。
 7. 「有看頭」＝某元件在同一（trace, 慢層, GPU）、Cake、≥2 種 CPU 容量下 ≥15%；「死路」＝所有格 <5%；其他＝「可能」。
 8. 只用 H200。MI300X 的數字列在「H200 上沒有的」，不能寫進論文。
-9. ⏳：目前沒有在跑的列（T4 已完成，見 B3-T4）；「待決」一節是要使用者決定的措辭。
+9. ⏳：目前沒有在跑的實驗（T4、T5 已完成，見 B3-T4、B3-T5）；⏳待決＝數字已核對、論文措辭等使用者決定（「待決」一節）。
 10. 寫的人在動筆前先讀「不能寫的」與文末「差異清單」。
 
 ---
@@ -32,8 +32,13 @@
 | trace：FreeInference 前 6 週（2026-05-17～06-27） | 129,717 個請求；回來的 128,072；使用者發起的回來 5,242 | `results/icpe_h200/t1/p12/x1/x1_sweep_fi.csv.gz`（`20261028-073351-icpe-t1-p12-x1fi-sweep`） | ✓ |
 | FreeInference 全 16 週（只當背景） | 1,222,199 請求、14,036 session；使用者回來 73,472、工具回來 1,134,688 | `docs/phase3_20261017/03b_data_report.md` §4（run `20261017-221053-p3data-crosscheck`，3090 分支；資料性質，不是平台量測） | ⚠ 只在文件 |
 | CPU 層（T1） | 讀 43.5888、寫 41.1687 GiB/s、k_read 1.002（H200 C0 最慢一次 ×0.9） | `results/icpe_h200/t1/tier_params_h200cpu.json`（`20261028-065334-icpe-t1-build`；來源 `20261016-061254-m7h-c0`、`20261016-061303-m7h-duplex`） | ✓ |
-| SSD 級（local） | 讀 6.981、寫 1.911 GiB/s、k_read 3.306 | 同上（**逐位元抄自 MI300X 的 tier_params**，使用者選擇；限速模擬層，不是真的 SSD） | ✓ |
-| NFS 級 | 讀 0.331、寫 0.601 GiB/s、k_read 1.673 | 同上（同上，抄自 MI300X） | ✓ |
+| SSD 級（local） | 讀 6.981、寫 1.911 GiB/s、k_read 3.306——**MI300X 量的**，不是 H200 | 同上檔：`t1.derived_from`＝`results/m7_write_policy_mi300x/tier_params.json`、`unchanged`＝[local, nfs, derate]、`k_read_source`「local/nfs: copied from the MI300X tier_params.json」（逐位元照抄，使用者選擇；限速模擬層，不是真的 SSD） | ✓ |
+| NFS 級 | 讀 0.331、寫 0.601 GiB/s、k_read 1.673——**MI300X 量的**，不是 H200 | 同上 | ✓ |
+| 模擬常數的出處（總結） | H200 量的：CPU 層（T1）、f(i) 重算時間、忙倍數、反量化、b\* 限速層的目標頻寬、每塊位元組。**MI300X 量的：SSD 級與 NFS 級的讀寫頻寬與 k_read**。所有 SSD／NFS 級的格子（含 B1、B2、B3-T5 的 NFS 5.6–11.8%、B6、C2、T4 的 NFS 列）都依賴這兩組 MI300X 常數。論文只能寫「CPU 層與重算的常數在 H200 上量；SSD／NFS 級沿用 MI300X 的量測」 | `tier_params_h200cpu.json`；`code/p3x/x1_sim.py` `constants()` | ✓ |
+| X1 模擬的還原底 | `restore="cake"` 對整個儲存的前綴（CPU BF16、CPU 上預取的 INT4、慢層 INT4 混在一起）用 Cake：從前面重算、從後面依 layout 逐塊讀 CPU 或慢層，會合點以塊為單位；`"load"`＝全部載入。**沒有**實作 A5 的「每層固定規則」（CPU 層 INT4 全部載入＋慢層 Cake）。對 headroom 的影響 NOT_VERIFIED | `code/p3x/x1_sim.py` `View.restore()`（第 310 行起） | ✓（讀程式） |
+| X1 的對手集合 | 每個元件只和「同樣動作」的不預知策略比：O-ORD {LRU, LRU2, ARC, S3-FIFO, GDSF, PENS}；O-DROP {LRU, LRU+NONE, LRU+2HW, LRU+2HA}；O-NOW {LRU, LRU+NONE, LRU+2HW}；**O-PF {LRU, LRU+RPF}**（見 B1-R） | `code/p3x/x1_sim.py` `RIVALS`（第 96–101 行） | ✓（讀程式） |
+| 打字提示的提前量 | **合成的，不是 trace 裡的訊號**（Mooncake 沒有按鍵時間）：L＝min(打字時間, think time)；打字時間＝max(新輸入 token − 10, 0) × 每 token 字元數（Llama 英文 4.269）÷（51.56 WPM × 5 字元 ÷ 60 s）；51.56 WPM＝Dhakal et al. CHI'18 的桌機平均（照抄句子的速度）；think time＝兩請求間隔 − 估計的生成時間（TPOT 50 ms）。X3 另有手機 36.17 WPM 的敏感度 | `code/icpe/x1_gpu.py` `leads()`（第 48、112–134 行）；`code/p3x/x3_hide.py` 第 40–44 行；`docs/phase3_20261017/explore/X3_short_horizon_prefetch.md` §5、L21、L78 | ✓（讀程式） |
+| CPU 容量÷工作集（`cpu_frac_ws`，只報告） | CPU 128 GiB：Mooncake conversation 1.20%、toolagent 1.28%；FreeInference 逐週 0.78／1.11／1.60／2.08／7.27／8.06%（6 週裡 2 週比 Mooncake 吃緊）；FreeInference 16 GiB 逐週 0.10–1.01%。→「CPU 相對工作集吃緊」不能區分 FreeInference 與 Mooncake；真正的差別要用命中率（B3-T4：128 GiB CPU 命中 99.29%）〔判讀〕 | `results/icpe_h200/t1/p01/sim_V0/x1/x1_sweep.csv.gz`（`20261028-065829-icpe-t1-x1-sweep-V0`）；`results/icpe_h200/t5/p12/x1/x1_sweep_fi.csv.gz`（`20261030-102447-icpe-t5-x1fi-sweep`） | ⚠ 註13 |
 | b\* 慢層（重算＝載入的會合點在第 b 塊） | Llama b16／b32／b48＝8.83／2.49／0.722 GiB/s；Qwen 4.33／1.23／0.358 GiB/s；X1 的 b32＝2.49（讀寫、k＝1） | `results/m10_precision_h200/speed_*/bw.json` | ✓ |
 | 門檻 | δ\*＝max(5%, 雜訊)；雜訊定義依實驗（A1：C4 雜訊；D2：各 launch 中位數的 (max−min)÷中位；第三階段：2σ）；≥15%「有看頭」、<5%「死路」；品質 ε＝95% CI 下界 ≥ −2 個百分點（第二階段另要求輔助任務 ≥ −5 pp、四種讀法都過） | 各登記；`code/m10_analyze.py`（EPS_CI −0.02、CONDS 4 種） | ✓ |
 | GPU 驗證（B6）設定 | 縮小 k＝8：Mooncake conversation 依 session 抽 1/8（1,535 請求、467 個回來）；SSD 級；CPU 16／32 GiB（＝128／256 ÷ 8）；Llama-3.1-8B；Cake；5 個策略 × 2 容量＋LRU 重複 2 次＝12 個乾淨 run；TTFT 不含排隊 | `results/icpe_h200/t1/gpu/p02/gpu_requests.csv.xz`（T1G，`20261028-233954-…`～`20261029-024041-icpe-t1g-p02-128-O-PF-r0`） | ✓ |
@@ -48,7 +53,7 @@
 | A1' | 同上，sdpa | （T1G）+1.16／+0.09／−0.02%；C4 雜訊 1.76% → δ\* 5% → 成立 | CPU 層 35.4（合併組）：−0.03／−0.12／+0.03% | 〔實測〕 | `…/t1/gpu/a1p/b_share.csv.gz`（`20261028-185448-icpe-t1g-a1p-b-nfs-gap0`）；舊 `results/m7_write_policy_h200_merged/`（`20261016-063929-m7h-b-nfs-gap0`＋`20261016-172445-m7h-b-nfs-gap0-r36-rr`） | ✓ 原始列重算 |
 | A2 | 08 消融：寫入時決定同時贏「最好的不看位置」與 S4B 各 ≥5% | （T1G）GPU 0/16；同 run 的模擬列 0/16 | CPU 層 35.4：GPU 0/16 | 〔實測〕 | `…/t1/gpu/a2/analysis/b2_verdict.csv`（`20261028-204748-icpe-t1g-a2-b2-g1-doc-hold-cpu3.69-s0`、`20261028-220610-…-s1`、`20261028-230008-…-g2-chat-hold-s0`） | ✓ 註12 |
 | A3 | 第 1 輪模擬存活的設定上 GPU 確認 | （T1G-2）T1 常數下模擬存活 2 個（11.6／hold／doc／NFS／0.5，S5L；43.59／hold／doc／NFS／0.25，S5c）→ GPU 各 2/5 seed（要 ≥3/5）→ **存活 0/2** | CPU 層 35.4：H200 自己 3 格 0/3 | 〔實測〕 | `…/t1/gpu/a3/r1_gpu_verdict_*.csv`（10 個 run `20261029-025653-icpe-t1g2-r1h-…-s0`～`20261029-084254-…-s4`）→ `analysis/verdict.json`（`20261029-091732-icpe-t1g-analyze-a3`）；模擬 `20261028-163501-icpe-t1g2-r1-sim-an`；舊 `results/m7_explore_h200/r1_gpu_verdict_{A,B,C}.csv` | ✓ 註1 |
-| A4 | 依位置決定精度沒有幫助（H200 自己的判定路徑：Qwen、FP8 階 Step 2） | F25 對 R25 品質 +17.3／+18.8 pp（閒／忙）但慢 8.0%／9.9%（>δ\* 5%）；M25 −4.9／−4.4、B25 −3.4／−1.9 pp → 穩定差距 1、2 都不成立 → **K2**。〔判讀〕F25 品質好是因為那段沒被讀到 | — | 〔實測〕 | `results/m10_precision_h200/analysis/fp8/step2_qwen_seedA.json`；資料 `20261018-074632-m10h-f8m-qwen-T24-s0`～`…-085357-…-s5`、`20261018-092427-m10h-f8m-qwen-T5` | ✓ 註2 |
+| A4 | 依位置決定精度沒有幫助（H200 自己的判定路徑：Qwen、FP8 階 Step 2） | F25 對 R25 品質 +17.3／+18.8 pp（閒／忙）但慢 8.0%／9.9%（>δ\* 5%）；M25 −4.9／−4.4、B25 −3.4／−1.9 pp → 穩定差距 1、2 都不成立 → **K2**。〔判讀〕F25 品質好是因為那段沒被讀到。注意：登記的是**品質**檢定，不是 TTFT 檢定；B25 還原比 R25 快 6.2%／4.3%（閒／忙，沒判雜訊；不能寫的 23） | — | 〔實測〕 | `results/m10_precision_h200/analysis/fp8/step2_qwen_seedA.json`；資料 `20261018-074632-m10h-f8m-qwen-T24-s0`～`…-085357-…-s5`、`20261018-092427-m10h-f8m-qwen-T5` | ✓ 註2 |
 | A4' | 同上，Llama INT4（「δ\* 用 5% 的對照」路徑，H200 封存資料） | F25／M25／B25 對 R25（讀法 B、b32、閒／忙）−0.47～+0.08 pp，6 個 CI 都含 0 → K2 | — | 〔實測〕 | `…/analysis/sensitivity_delta005/compare_mi300x_path/int4/step2_llama_int4.json`（資料 `quality_sealed/int4mix_llama_*`；RUNLOG_H200 10/18「δ\* 用 5% 的對照」） | ✓ 註2 |
 | A5 | 每層最佳還原方式在重算變快（fa3，0.75 倍）時不翻轉 | 24 格 0 翻轉；1 格弱變化（Llama、CPU 層閒、E0：平手→全部載入）；慢層 16 格全是 Cake（比全部載入快 16.5–87.5%）；CPU 層：INT4（E1）全部載入勝或平手，**BF16（E0）GPU 忙時 Cake 勝**（Llama 0.152 vs 0.238 s、Qwen 0.068 vs 0.236 s）→ P0-1 總判定成立 | sdpa 同字；fa3 的 Cake 比 sdpa 快 3.4–18.8%；T1G 沒有重量（不在 T1 §4 清單） | 〔實測〕 | `results/icpe_h200/p01/p01b_cells.csv`、`p01b_verdict.json`（`20261026-003415-icpe-p01b-analyze-final`；重跑 `20261025-230946-…-qwen-s4-fa3-rr`、`…-231221-…-qwen-g5b-fa3-rr`）；`p01_verdict.json`（`20261026-003427-icpe-p01-verdict`） | ⚠ 註3 |
 
@@ -57,10 +62,15 @@
 | ID | 主張（一句） | 主數字（版本） | 敏感度（其他版本） | 標記 | 來源檔＋run_id | 核對 |
 |:--|:--|:--|:--|:--|:--|:--|
 | B1 | 聊天 trace 上 oracle 天花板高（X1 最大的設定：conversation、SSD 級、GPU 閒、Cake） | （T1，Cake）CPU 128／256 GiB：O-PF 50.5／46.5%、O-ORD 27.6／31.0%、O-DROP 27.6／34.9%、O-NOW 8.0／7.4%；X1 判定「有看頭」（R1、R2、min 都是）；這幾格都沒有寫入飽和 | T3（STAIR）：42.9／39.4、20.9／24.2、20.9／27.4、5.5／5.1%；CPU 層 35.4：48.9／44.6、25.4／27.0、27.0／32.8、8.0／7.4% | 〔模擬〕 | `results/icpe_h200/t1/p01/sim_V0/x1/x1_headroom_components.csv`（`20261028-070955-icpe-t1-x1-an-V0` ← `…-065829-…-sweep-V0`）；T3 `…/t3/p01/sim_V0/x1/`（`20261029-125151-icpe-t3-x1-an-V0`）；舊 `…/p01/sim_V0/x1/`（`20261025-194544-icpe-p01c-x1-an-V0`） | ✓ 原始列重算 |
-| B2 | 「不回來就丟」（O-DROP）大半是 trace 太短；截尾後剩預取與降級順序 | （T1，V0，rule＝min，384 格）不截尾 O-DROP 最大 47.7%（≥15% 的格 58）；**H＝3,600 s：O-DROP 0.0%（0 格、0 熱組）**；O-PF、O-ORD 最大 92.4%、99.9% 不變；H1800／H3600 判定都「有看頭」（O-ORD 9、O-PF 11 個熱組）。H＝1,800：O-DROP 最大 24.1%（9 格），**1 個熱組**（conversation、NFS、GPU 忙、CPU 512／1,024；其中 1 格寫入飽和） | T3：47.7%（57）／H1800 19.4%（11 格，熱組 3，全飽和）／H3600 0.0；CPU 層 35.4：45.9%（48）／H1800 22.6%（4 格，0 熱組）／H3600 0.0 | 〔模擬〕 | `…/t1/p01/sim_V0/x1/x1{,h1800,h3600}_{headroom_components,verdict,hot_groups}.csv`（`…-070955`、`…-070959-…-h1800-V0`、`…-071003-…-h3600-V0`） | ⚠ 註4 |
-| B3-X1 | 真實 agent trace（FreeInference 前 6 週）上 X1 天花板消失 | （T1）四元件最大 0.30%（O-ORD）；只算使用者發起 1.52% → **死路** | T3：0.30／1.52%；CPU 層 35.4：0.28／1.48% | 〔模擬〕 | `…/t1/p12/x1/x1fi{,user}_verdict.csv`（`20261028-074217-icpe-t1-p12-x1fi-an`、`…-074221-…-x1fiuser-an`） | ✓ |
-| B3-X5 | 同上，「知道誰不回來」（X5） | 最大 2.44%（24 主格，0 格 ≥5%）→ **死路**；截尾 H1800 2.44%、H3600 2.45% | X5 不讀 CPU 層常數 → T1 不重跑（T1 §2 自檢 3）；T3 沒跑 | 〔模擬〕 | `results/icpe_h200/p12/x5/x5_verdict_fi{,_cens1800,_cens3600}.json`（`20261025-203614-icpe-p12-x5-fi-an`、`…-205709-…`、`…-205915-…`） | ✓ |
-| B3-T4 | 橋接 Liu 等人：命中率差距 vs TTFT 差距（同一段 FreeInference） | **BRIDGE-NO-GAP**（主設定 ssd、GPU 閒、回來請求）：CPU 8／16／32／64／128 GiB 的 G_hit＝3.03／6.01／4.85／0.83／0.07 pp，G_rec（沒命中就重算）＝1.4／5.8／15.9／11.8／0.9%，G_cake＝1.6／2.9／2.6／0.4／0.02%；沒有一個容量同時 G_hit ≥5 pp 且 G_rec ≥15%；128 GiB 時 CPU 命中 99.29%；有慢層時 CPU＋慢層命中 99.42%（每個容量） | 12 種（慢層×GPU×子集）全部 NO-GAP；只報告：NFS 級 G_cake 16／32 GiB＝17.7／27.7%（閒）、19.1／29.2%（忙），64 GiB 7.7%、128 GiB 0.3%（待決 4） | 〔模擬〕 | `results/icpe_h200/t4/t4_verdict.json`、`t4_cells.csv`（analyze `20261030-101546-icpe-t4-analyze` ← sweep `20261030-100335-icpe-t4-sweep`） | ✓ 由 ttft 欄重算 |
+| B1-ORD | 聊天的淘汰順序（O-ORD）上界，以及沒有免費訊號和它比過 | （T1，conversation、Cake、rule＝min，24 格）O-ORD 8.5–65.5%（中位 27.3%），20/24 ≥15%；最大 65.5% 在寫入飽和的 NFS 格（512 GiB、忙、對 GDSF）；不飽和的最大 31.0%（＝B1 的 256 GiB、SSD、閒，對 LRU2）；B1 兩格 27.6／31.0%；截尾 H3600 後 conversation 仍 6 個 O-ORD 熱組（4 個不靠飽和格）。**HINT-PF 只和 O-PF（預取）比過；沒有任何免費訊號對 O-ORD 的比較 → NOT_MEASURED**；聯合 oracle NOT_MEASURED | T3：conversation O-ORD 最大 48.7%；B1 兩格 20.9／24.2% | 〔模擬〕 | `results/icpe_h200/t1/p01/sim_V0/x1/x1{,h3600}_headroom_components.csv`、`x1h3600_hot_groups.csv`（`20261028-070955-icpe-t1-x1-an-V0`、`20261028-071003-icpe-t1-x1-h3600-V0`）；T3 `20261029-125151-icpe-t3-x1-an-V0` | ✓ 原始列重算 |
+| B1-R | 只報告：O-PF 換一組對手（不是登記的數字） | B1 兩格 O-PF 對 LRU2（O-PF 登記對手集合外、但在這兩格是最快的不預知策略）：CPU 128／256 GiB＝45.3／40.3%（R1、R2 取小；登記值 50.5／46.5% 是對 LRU／LRU+RPF）。R2、128 GiB：LRU 0.5154 s、LRU2 0.4667 s（快 9.4%）、O-PF 0.2551 s | T3：38.3／33.9%（登記值 42.9／39.4%） | 〔模擬〕 | `results/icpe_h200/t1/p01/sim_V0/x1/x1_sweep.csv.gz`（`20261028-065829-icpe-t1-x1-sweep-V0`）；T3 `results/icpe_h200/t3/p01/sim_V0/x1/x1_sweep.csv.gz`（`20261029-121338-icpe-t3-x1-sweep-V0`） | ✓ 原始列重算 |
+| B2 | 「不回來就丟」（O-DROP）大半是 trace 太短；截尾後剩預取與降級順序 | （T1，V0，rule＝min，384 格＝**conversation＋toolagent × Cake＋全部載入** × 4 元件；不是只有 chat）不截尾 O-DROP 最大 47.7%（≥15% 的格 58；只算 Cake：47.4%、28 格）；**H＝3,600 s：O-DROP 0.0%（0 格、0 熱組）**；O-PF、O-ORD 最大 92.4%、99.9% 不變；H1800／H3600 判定都「有看頭」（O-ORD 9、O-PF 11 個熱組）。H＝1,800：O-DROP 最大 24.1%（9 格），**1 個熱組**（conversation、NFS、GPU 忙、CPU 512／1,024；其中 1 格寫入飽和） | T3：47.7%（57）／H1800 19.4%（11 格，熱組 3，全飽和）／H3600 0.0；CPU 層 35.4：45.9%（48）／H1800 22.6%（4 格，0 熱組）／H3600 0.0 | 〔模擬〕 | `…/t1/p01/sim_V0/x1/x1{,h1800,h3600}_{headroom_components,verdict,hot_groups}.csv`（`…-070955`、`…-070959-…-h1800-V0`、`…-071003-…-h3600-V0`） | ⚠ 註4 |
+| B8 | Mooncake **toolagent**（tool／agent trace，和 conversation 同在 X1 網格）上 X1 天花板高 | （T1，Cake、rule＝min）判定「有看頭」；≥15% 的格 **40/96**（CPU 128:14、256:14、512:6、1,024:6；NFS 22、SSD 11、b32 7）；各元件最大 O-ORD **55.5%**（256 GiB、NFS、忙，對 LRU2，寫入飽和）、O-PF 41.6%（512、NFS、閒，飽和）、O-DROP 41.1%（512、NFS、忙，不飽和）、O-NOW 7.1%；不飽和的 ≥15% 格 23；熱組 O-DROP 4、O-ORD 3、O-PF 5。**截尾 H＝3,600 s＋只算不飽和格：仍 12 格 ≥15%**（全在 CPU 128／256 GiB、SSD 級／b32；O-PF 7 格最大 30.0%、O-ORD 5 格最大 17.0%）；H3600 熱組 O-ORD 3、O-PF 5（共 8；不靠飽和格的 1＋3） | T3：28/96 ≥15%，最大 O-ORD 36.2%；H3600＋不飽和 4 格（全 O-PF）；H3600 熱組 O-ORD 2、O-PF 4 | 〔模擬〕 | `results/icpe_h200/t1/p01/sim_V0/x1/x1{,h3600}_{headroom_components,hot_groups,verdict}.csv`（`20261028-070955-icpe-t1-x1-an-V0`、`20261028-071003-icpe-t1-x1-h3600-V0`）；T3 `…/t3/p01/sim_V0/x1/`（`20261029-125151`、`20261029-125229-icpe-t3-x1-h3600-V0`） | ✓ 原始列重算 |
+| B9 | Mooncake 兩條 trace 的 X1 ≥15% 格**不只**在小 CPU、慢的慢層 | （T1，conversation＋toolagent，Cake、rule＝min，192 格）≥15% **95/192**：依 CPU 128:28、256:31、**512:24、1,024:12**；依慢層 NFS 42、**SSD 級 29**、b32 24。**截尾 H3600＋只算不飽和：36 格**（128:16、256:12、**512:8**、1,024:0；SSD 19、b32 17、NFS 0）；512 GiB 那 8 格全是 conversation、SSD／b32 × 閒／忙 × O-ORD／O-PF，最大 O-PF 30.3%（SSD、閒，對 LRU+RPF）、O-ORD 24.2%（SSD、閒，對 GDSF） | T3：86/192（512:24、1,024:11；SSD 22）；H3600＋不飽和 28 格（512:8） | 〔模擬〕 | 同 B8 | ✓ 原始列重算 |
+| B3-X1 | 真實 agent trace（FreeInference 前 6 週）上 X1 天花板消失 | （T1，CPU 128–1,024 GiB）四元件最大 0.30%（O-ORD）；只算使用者發起 1.52% → **死路**。**適用範圍**（加上 B3-T5）：X1 的 4 個元件在 CPU 16–1,024 GiB 每一格都 <15%；5–12% 只出現在 O-ORD＋NFS 級、CPU 16–32 GiB；CPU ≥128 GiB 時 ≤0.30%。X5 是 ≤2.44%、只量 128–1,024 GiB（B3-X5）。**只對 FreeInference 成立**：Mooncake toolagent 的上界高（B8）。論文措辭 ⏳待決（待決 4） | T3：0.30／1.52%；CPU 層 35.4：0.28／1.48% | 〔模擬〕 | `…/t1/p12/x1/x1fi{,user}_verdict.csv`（`20261028-074217-icpe-t1-p12-x1fi-an`、`…-074221-…-x1fiuser-an`） | ✓ |
+| B3-X5 | 同上，「知道誰不回來」（X5） | 最大 2.44%（24 主格，0 格 ≥5%）→ **死路**；截尾 H1800 2.44%、H3600 2.45%。**只量了 CPU 128／256／512／1,024 GiB**（各容量最大 2.44／0.50／0.17／0.09%）；**CPU 16–64 GiB 的 X5＝NOT_MEASURED**（T5 只擴了 X1 的 4 個元件），不能寫成 <15% | X5 不讀 CPU 層常數 → T1 不重跑（T1 §2 自檢 3）；T3 沒跑 | 〔模擬〕 | `results/icpe_h200/p12/x5/x5_verdict_fi{,_cens1800,_cens3600}.json`（`20261025-203614-icpe-p12-x5-fi-an`、`…-205709-…`、`…-205915-…`）；CPU 範圍 `x5_headroom_fi.csv`、`x5_cells_fi.csv`（`20261025-203345-icpe-p12-x5-fi`） | ✓ |
+| B3-T4 | 橋接 Liu 等人：命中率差距 vs TTFT 差距（同一段 FreeInference） | **BRIDGE-NO-GAP**（主設定 ssd、GPU 閒、回來請求）：CPU 8／16／32／64／128 GiB 的 G_hit＝3.03／6.01／4.85／0.83／0.07 pp，G_rec（沒命中就重算）＝1.4／5.8／15.9／11.8／0.9%，G_cake＝1.6／2.9／2.6／0.4／0.02%；沒有一個容量同時 G_hit ≥5 pp 且 G_rec ≥15%；128 GiB 時 CPU 命中 99.29%；有慢層時 CPU＋慢層命中 99.42%（每個容量） | 12 種（慢層×GPU×子集）全部 NO-GAP；只報告：NFS 級 G_cake 16／32 GiB＝17.7／27.7%（閒）、19.1／29.2%（忙），64 GiB 7.7%、128 GiB 0.3%。**注意：G_cake 的對手是 LRU**；同樣這 4 格對「最好的對稱對手」（S3-FIFO）只剩 5.6–11.8%（B3-T5）→ 18–29% 大部分是 LRU 太弱（待決 4） | 〔模擬〕 | `results/icpe_h200/t4/t4_verdict.json`、`t4_cells.csv`（analyze `20261030-101546-icpe-t4-analyze` ← sweep `20261030-100335-icpe-t4-sweep`） | ✓ 由 ttft 欄重算 |
+| B3-T5 | FreeInference 上 CPU 縮到 16／32／64 GiB，X1 對最好的對稱對手仍沒有 ≥15% | 判定（X1 原登記規則）：全部回來的請求 **「可能」**、只算使用者發起 **「死路」**；熱組 0。Cake 96 格（4 元件×CPU 16／32／64／128×3 慢層×閒／忙）裡 4 格 ≥5%、0 格 ≥15%：全是 O-ORD（oracle O-BELS）、NFS 級、CPU 16／32 GiB＝5.59／5.92%、11.62／11.81%（閒／忙），對手都是 S3-FIFO，沒有寫入飽和。其他最大：O-PF 4.89%（32 GiB、b32、閒）、O-DROP ≤0.65%、O-NOW ≤0.06%；O-ORD 64 GiB 3.64%；SSD 級 O-ORD ≤1.66%。使用者發起：O-ORD ≤3.92%、O-PF ≤1.44%。只報告：O-PF 在 16 GiB 每格都是負的（最大 −4.38%），全網格最差 −29.5%（32 GiB、NFS、忙）；oracle 比某個對手慢的列 53（O-PF 18、O-NOW 14、O-ALL(report) 21） | CPU 128 GiB 的 828 列和 T1 逐值相同（自檢 PASS）；STAIR、其他 trace 沒跑。論文措辭 ⏳待決（待決 4） | 〔模擬〕 | `results/icpe_h200/t5/p12/x1/x1fi{,user}_{headroom_components,verdict,violations}.csv`（analyze `20261030-104731-icpe-t5-x1fi-an`、`20261030-104745-icpe-t5-x1fiuser-an` ← sweep `20261030-102447-icpe-t5-x1fi-sweep`）；`t5_check.json`（`20261030-104713-icpe-t5-check`）、`t5_report.json`（`20261030-104800-icpe-t5-report`） | ✓ 原始列重算 |
 | B4 | 併發時 p99 尾端是排隊，不是預測 | （T1）排隊占 NP p99 的中位 0.983（最小 0.837；264 格）→ D1 成立；平均 headroom ≥5% 的 65 格裡 44 格主要來自「還原變快」（還原占比中位 0.629）；只報告：QP 對 NP 的 p99 改善中位 3.5%（最大 28.1%） | CPU 層 35.4：0.983（0.846；262 格）、43／63；T3 沒跑 | 〔模擬〕 | `results/icpe_h200/t1/p12/x4/p12_queue_verdict.json`、`p12_queue_cells.csv`（`20261028-082005-icpe-t1-p12-queue` ← `20261028-081741-icpe-t1-x4-sweep`） | ✓ |
 | B5 | 預知值 ≥15% 的條件（X5「知道誰不回來」） | 登記判定「有看頭」：Llama 主格子 48 格裡 11 格 ≥15%（10 格 CI 下界也 ≥15%），最大 37.4%；11 格的分布：CPU 128（6）、256（4）、**512（1，15.2%）**；慢層 b48（9，0.722 GiB/s）、b32（2，2.49 GiB/s）、b16 0；GPU 閒 7／忙 4；**conversation 6、toolagent 5（最大 37.4% 在 toolagent）** | 事後版：嚴格規則 20 格／48.6%；截尾 H1800 11 格／37.1%；只載入 14 格／59.6%；只算 ≤32K：11→9 格、嚴格 20→15 格；Qwen（只報告）4/48、最大 27.6%；X5 不受 T1 影響；T3 沒跑 | 〔模擬〕 | `results/icpe_h200/p01/sim_V0/x5/x5_verdict.json`（`20261025-195015-icpe-p01c-x5-an-V0`；＝`20261021-012558-p3h-x5-analyze` 同值）；事後 `results/icpe_h200/p12/x5/x5_verdict_{strict,cens1800,loadonly}.json`、`x5_headroom_le32k.csv`（`20261025-203333`、`…-205114`、`…-210002`、`…-210316-icpe-p12-x5-le32k`） | ⚠ 註5 |
 | B6 | X1 模擬在 GPU 上站得住 | （T1G）實測÷S_orig 10 格 0.911–0.987（全在 [0.9, 1.1]）；S_orig 差 ≥5% 的 15 對排序全同；8 個 headroom 正負號全同 → **成立**。GPU 上 headroom 比模擬小：O-PF 對 LRU 17.9／16.2%（模擬 24.2／21.1%）；實測÷S_real 0.967–1.021。**TTFT 不含排隊**：回來請求平均排隊 1.19–1.26 s；含排隊時 O-PF 對 LRU 只剩 8.1／4.7%（只報告；重播不做 batching） | CPU 層 35.4：0.911–0.975；O-PF 對 LRU 17.7／16.0%（模擬 23.1／19.9）；含排隊 7.9／4.6% | 〔實測〕對〔模擬〕 | `results/icpe_h200/t1/gpu/p02/gpu_requests.csv.xz`（12 run）→ `analysis/p02_{cells,pairs,signs}.csv`（`20261029-030016-icpe-t1g-analyze-p02`）；舊 `results/icpe_h200/p02/`（`20261026-040946-icpe-p02-analyze`） | ✓ 原始列重算 |
@@ -89,7 +99,7 @@
 | ID | 主張（一句） | 主數字（版本） | 敏感度（其他版本） | 標記 | 來源檔＋run_id | 核對 |
 |:--|:--|:--|:--|:--|:--|:--|
 | S1 | 微基準：還原給固定 SM 份額比 stream 快、背景幾乎不掉 | GB0-SHARE 成立：18 格（模型, 背景, 動作, MPS 等級）比 stream 快 ≥30% 且背景吞吐比 ≥0.91；最強 Llama × cprefill 背景 × e2e_load_int4_b32 × mps87＝4.28 倍（CI [4.26, 4.29]）、背景比 0.980。GB0-STATIC 不成立（22 個動作裡 20 個的最佳等級固定；dq_vq 不固定）；GB0-FLIP 不成立（0 翻轉）。379 格 2σ>5% 不判；84 列 NOT_MEASURED（Llama decode:64×MPS，容量） | — | 〔實測，微基準〕 | `results/s3_h200/b0/b0_report.json`（`20261026-162611-adhoc`） | ✓ |
-| S2 | 端到端（模擬）：固定 MPS 預留守不住背景吞吐 | **E2E-NOGO**：0/32 格過、ASK 0、NOT_MEASURED 8（Qwen×cprefill）；四組（模型, 背景）都選不出 m\*（開發集 B 最高 0.945 < 0.95；登記版 0.944）。只報告（T1，測試集中位）：不設上限 MPS 對 K2（stream）TTFT 改善 30.7–62.9%，背景 B 少 −0.04～6.5 pp；stream 的 B：conversation 0.70–0.80、FreeInference 0.93–0.96 | 登記版（CPU 層 35.4）：同判定；30 → 32.9–63.0%、0～6.7 pp | 〔模擬〕 | T1：`results/icpe_h200/t1/e2e/e2e_report.json`（`20261029-021758-icpe-t1-e2e-report`）、`mps_tradeoff.csv`（`20261029-021836-icpe-t1-e2e-curve`）；登記版 `results/s3_h200/e2e/e2e_report.json`（`20261028-161142-s3-e2e-report`）、`mps_tradeoff.csv`（`20261028-165753-s3-e2e-curve`） | ✓ |
+| S2 | 端到端（模擬）：固定 MPS 預留守不住背景吞吐 | **E2E-NOGO**：32 格裡 24 格可判、**0/24 過**（status FAIL 24）、ASK 0；另 8 格是這 32 格**之內**的 NOT_MEASURED（Qwen×cprefill）；四組（模型, 背景）都選不出 m\*（開發集 B 最高 0.945 < 0.95；登記版 0.944）。只報告（T1，測試集中位）：不設上限 MPS 對 K2（stream）TTFT 改善 30.7–62.9%，背景 B 少 −0.04～6.5 pp；stream 的 B：conversation 0.70–0.80、FreeInference 0.93–0.96 | 登記版（CPU 層 35.4）：同判定；30 → 32.9–63.0%、0～6.7 pp | 〔模擬〕 | T1：`results/icpe_h200/t1/e2e/e2e_report.json`（`20261029-021758-icpe-t1-e2e-report`）、`mps_tradeoff.csv`（`20261029-021836-icpe-t1-e2e-curve`）；登記版 `results/s3_h200/e2e/e2e_report.json`（`20261028-161142-s3-e2e-report`）、`mps_tradeoff.csv`（`20261028-165753-s3-e2e-curve`） | ✓ |
 | S3 | MPS 取捨曲線的 GPU 附錄 | **MPS-GPU-INVALID**：可量 9 格；(b) 7 格裡 4 格 GPU 與模擬的 gain 差 >10 pp；7 格正負號全同，GPU 的 gain 全部比模擬大 4.6–31.3 pp；(a) 6/9、(c) 1/9；stream 基準 GPU÷模擬 1.22／1.23；idle 0.986。設定：Llama、conversation k＝8、SSD 級、CPU 16 GiB、HINT-PF、T1 常數 | — | 〔實測〕對〔模擬〕 | `results/s3_h200/e2e_gpu/report.json`（`20261030-021318-s3-e2eg-report`；15 個 GPU run 見 `gpu_runs.csv`；模擬 `20261030-021241-s3-e2eg-sim`） | ✓ |
 
 ## E. 效度
@@ -130,7 +140,7 @@
 1. **C2 措辭**。建議：「HINT-PF 拿到 O-PF 改善的 ≥0.92（中位；SSD／b32 兩種規劃器都是 0.92–0.94；NFS 級 Cake 1.118、STAIR 0.932）」。核對：SSD 0.933／0.924、b32 0.941／0.933、NFS 1.118／0.932 → 數字正確。但要同時寫：(i) 這是**全尺寸模擬的中位數**，逐格最小 0.814（Cake）／0.796（STAIR）；(ii) **GPU 實測（縮小）是 0.81／0.79**（T1G；你給的「0.81」是舊常數的 0.81／0.81）；(iii) NFS 級 >1 的格（O-PF 不是上界）在 T1 是 4 格、T3 是 2 格，而且 NFS 級多數格寫入飽和（註11）。
 2. **STAIR 例外**：「SSD 級回來請求 ≥99.4% STAIR ≤ Cake」正確（20/3,511＝0.57%、16/3,511＝0.46%）；最多慢 2.05／2.28 倍；NFS 0 個。
 3. **MPS 曲線**：標〔模擬〕＋GPU 檢查。核對：可比的 7 格正負號全同，GPU gain 大 **4.6–31.3 pp**（你寫的 5–31 是四捨五入，可用）；判定 MPS-GPU-INVALID（4/7 差 >10 pp）。
-4. **T4 的 NFS 觀察（只報告）**：NFS 級、CPU 16／32 GiB 時 O-BEL 對 LRU（分層＋Cake）G_cake＝17.7／27.7%（GPU 閒）、19.1／29.2%（忙）——B3「agent trace 天花板低」只在 X1 的網格（CPU ≥128 GiB）成立。故事怎麼用要你決定。（注意：這是對 LRU，不是 X1 的「最好的對稱對手」；這幾格有沒有寫入飽和 NOT_VERIFIED。）
+4. ⏳**待決：B3 與「預知何時值得做」判準的論文措辭**（使用者還沒決定；T5 登記是「先回報」）。已核對的事實：T4 的 NFS 級、CPU 16／32 GiB G_cake＝17.7–29.2% 是**對 LRU**；T5 對最好的對稱對手（S3-FIFO）同樣這幾格只剩 5.6–11.8%，沒有任何格 ≥15%，這幾格沒有寫入飽和。T5 文件建議的寫法（未定案）：「agent trace 上，CPU 16–1,024 GiB 都沒有任何預知元件 ≥15%；CPU ≥128 GiB 時 ≤0.30%」，判準不加 agent trace 的條件。**照原始檔，這句要改三處**：(i)「agent trace」要改成「FreeInference」——同樣是 tool／agent trace 的 Mooncake toolagent 上界高（B8：40/96 格 ≥15%，截尾＋不飽和後仍 12 格）；(ii)「任何預知元件」只對 X1 的 4 個元件成立，X5 只量了 128–1,024 GiB（16–64 GiB NOT_MEASURED）；(iii)「≥128 GiB 時 ≤0.30%」只對 X1，X5 是 ≤2.44%。T4 的登記說法仍有效：不能寫「差距被分層＋Cake 吸收」。同樣待決：「預知 ≥15% 的條件」若從 X1 歸納，CPU 512／1,024 GiB 與 SSD 級都有 ≥15% 的格（B9），只能說「X5 的 11 格」的條件（待決 5）。
 5. **B5 的條件句**（新發現，註5）：「CPU ≤256 GiB、慢層慢、聊天型」三個條件只有「慢層慢」完全成立；要改成例如「11 格裡 10 格在 CPU ≤256 GiB、全部在 b32／b48 慢層；conversation 與 toolagent 都有」。
 6. **INT4 品質措辭**（新發現，註7）：建議主引 D2-Q (a)（兩模型都過 ε）；(b) 要寫明 Qwen 在 GPU 忙的讀法沒過 ε。
 7. **C1 的 trace**（新發現，註6）：98.74% 不是論文那兩條 trace；Mooncake conversation 是 62–72%。
@@ -144,12 +154,12 @@
 - D2 的 MI300X 數字（Llama 36.1–55.2%、Qwen 38.1–56.9%）；D3 的 MI300X X4b（Qwen 8.01 倍 −0.7、Llama −3.3／−3.6）；D4 的 MI300X validate（SSD 級 2.5–3.4 倍）。
 - E1 的 MI300X 比值（1.67／1.72）；E3 的 MI300X 0.4%；第二階段 K3（Qwen INT8）在 MI300X 成立、H200 不成立。
 - G-M13（搬運與重算賽跑的重播）用的是 MI300X 的 I3g 資料。
-- SSD 級、NFS 級的頻寬常數本身是 MI300X 量的（使用者選擇沿用；論文要寫數值與出處，不能寫成 H200 的裝置量測）。
+- **SSD 級、NFS 級的讀寫頻寬與 k_read 是 MI300X 量的**（`tier_params_h200cpu.json` 的 `derived_from`＝`results/m7_write_policy_mi300x/tier_params.json`，逐位元照抄；使用者選擇沿用）。這兩組常數本身不是 H200 的證據；用到它們的 H200 模擬與 GPU 重播（B1、B2、B6、B8、B9、B3-T5 的 NFS 格、C2、T4 的 NFS 列、S3）可以用，但論文要寫數值與「沿用 MI300X 的量測」，不能寫「模擬常數都在 H200 上量」。
 
 ## 寫的人不能寫的
 
 1. 「差距被分層＋Cake 吸收了」（T4＝BRIDGE-NO-GAP）。登記的說法：B3 的低天花板＝「容量夠（CPU ≥128 GiB 時 CPU 命中 99.3%），在這個模型裡本來就沒差距」。
-2. 「agent trace 上預知沒用」而不加「CPU ≥128 GiB（X1 的網格）」（待決 4）。
+2. 「agent trace 上天花板 ≤0.30%」而不加「CPU ≥128 GiB」；CPU 16–32 GiB＋NFS 級時 O-ORD 有 5.6–11.8%（B3-T5）。也不能把 T4 對 LRU 的 17.7–29.2% 寫成預知的上界（對最好的對稱對手只有 5.6–11.8%）。措辭 ⏳待決（待決 4）。
 3. 「固定 SM 預留是不用預測的端到端增益」：E2E-NOGO＋MPS-GPU-INVALID → 只能寫「延遲換背景吞吐的取捨」〔模擬〕＋GPU 反例。
 4. 「Qwen INT4 品質在 ε 內」不加讀法條件；「INT4 讓還原變快」不加「限速慢層」（CPU 層 INT4 較慢）。
 5. 「低秩＋INT4 在慢層比 INT4 快」不加條件（6/8；b32、GPU 忙時 INT4 快）。
@@ -160,7 +170,17 @@
 10. 「G5b 選錯在每格可重現」（E3 部分穩定）。
 11. 「SSD／NFS 是真實裝置」；「vLLM 級重算有實測」（V2 是模擬的縮放，只有 V1＝fa3 是實測）。
 12. 「H＝1,800 s 截尾後 O-DROP 完全消失」（T1 下還有 1 個熱組；用 H＝3,600 s 的說法）。
-13. 第三階段 3b 的 README 規則：「模擬的『有看頭』只能篩，不能單獨進論文」——B 節的模擬上界必須和 B6 的 GPU 驗證一起寫。
+13. 第三階段 3b 的 README 規則：「模擬的『有看頭』只能篩，不能單獨進論文」——B 節的模擬上界必須和 B6 的 GPU 驗證一起寫（B6 只驗了 X1 conversation；X5、toolagent 沒有 GPU 驗證）。
+14. 「模擬器的常數都在 H200 上量」：SSD／NFS 級是 MI300X 的（設定表）。
+15. 「agent trace 上界低」不說是 FreeInference：Mooncake toolagent 上界高（B8）；論文用了三條 trace（conversation、toolagent、FreeInference），不是兩條。
+16. 「預知 ≥15% 的格子都在 CPU ≤256 GiB、慢層慢」當成全部元件的結論：X1 在 CPU 512／1,024 GiB、SSD 級都有 ≥15%（B9；截尾＋不飽和後 512 GiB 仍 8 格）。
+17. 「打字提示拿走了大部分、留給預測器的只剩一小段」不限定在預取：淘汰順序 O-ORD 的上界（B1 兩格 27.6／31.0%）沒有任何免費訊號比過，NOT_MEASURED（B1-ORD）。
+18. 「O-PF 對最好的不預知策略 50.5／46.5%」：登記的對手只有 LRU、LRU+RPF；對 LRU2 是 45.3／40.3%（B1-R，只報告）。寫「對同動作、最好的對稱對手」。
+19. 「X5 在 FreeInference 的 CPU 16–64 GiB 也 <15%」：NOT_MEASURED（B3-X5）。
+20. 「模擬的底＝Cake＋固定的分層規則」：X1 的 Cake 用在整個前綴（設定表「X1 模擬的還原底」）。
+21. 「打字提示的提前量來自 trace」：是用 token 數和 51.56 WPM 算出來的（設定表）；GPU 的 0.81／0.79 是實測時間，但提示時間本身是合成的。
+22. 「E2E-C 0/32 格過、另 8 格 NOT_MEASURED」：是 32 格裡 24 格可判、0/24 過，8 格 NOT_MEASURED 在 32 格之內（S2）。
+23. 「依位置決定精度對 TTFT 沒有收益」：A4／A4' 登記的是**品質**檢定（K2＝沒有穩定的品質差距）；原始檔裡 B25 的還原時間比 R25 快 4.3–8.6%（Llama 0.6708 vs 0.7342 s 閒、0.8926 vs 0.9430 s 忙；Qwen 0.6255 vs 0.6666、0.8089 vs 0.8451 s），沒有判雜訊。只能寫「同樣位元組下沒有穩定的品質收益」；TTFT 的說法只留給層級（A1''／A1'／A2／A3）。
 
 ## 差異清單（文件說法 vs 原始檔）
 
@@ -176,7 +196,10 @@
 10. **story README**「H200 上沒有：A4 的 Llama INT4 K2」：H200 有 A4'（對照路徑），要寫明不是 H200 的登記路徑。
 11. **story README／ICPE_EVIDENCE 的 B、C 節**數字全是舊常數（CPU 層 35.4）；B6「0.911–0.975」→ T1G 0.911–0.987；C2-GPU「0.81／0.81」→ 0.81／0.79；SM 預留「值得（端到端待定）」→ E2E-NOGO、MPS-GPU-INVALID。
 12. **FreeInference 請求數**：story §6 的 1,222,199 是 16 週合計；B3 只用前 6 週（129,717 請求、128,072 回來）。
-13. **檔內缺 run_id 欄**（CLAUDE.md §4.3）：`step2_qwen_seedA.json`、`step2_llama_int4.json`、`report_only.json`、`iowall.json`、`a3/r1_sim_configs.csv`；run_id 只能從 RUNLOG 抄。
+14. **CPU÷工作集**：`AUDIT.md` #10 寫「FreeInference 128 GiB 只占工作集 0.78–1.11%、16 GiB 0.10–0.14%」→ 原始檔逐週是 128 GiB 0.78–8.06%、16 GiB 0.10–1.01%（0.78／1.11% 只是第 6、第 1 週）。稽核的結論方向（FreeInference 有幾週比 Mooncake 1.20–1.28% 更吃緊，所以「容量相對工作集」分不出兩者）仍成立，但範圍要照原始檔寫。
+15. **trace 數**：ICPE_EVIDENCE／story 寫「兩條真實 trace」；X1、X5 網格實際有三條（conversation、toolagent、FreeInference），B5 的最大值 37.4% 就在 toolagent。
+16. **E2E-C 計數**：RUNLOG／T1 文件的「0／32 格過、NOT_MEASURED 8」容易讀成 32＋8；`e2e_report.json` 是 32 格＝FAIL 24＋NOT_MEASURED 8。
+17. **檔內缺 run_id 欄**（CLAUDE.md §4.3）：`step2_qwen_seedA.json`、`step2_llama_int4.json`、`report_only.json`、`iowall.json`、`a3/r1_sim_configs.csv`；run_id 只能從 RUNLOG 抄。
 
 ## 註
 
@@ -192,3 +215,4 @@
 10. G-M08：判定 ✓；背景吞吐比的範圍和文件不同——見差異 7。
 11. NFS 級寫入飽和（ρ_w ≥1，「free」語意讓還沒寫完的資料就能讀）：X1 rule＝min 的 Cake 格，NFS 級 T1 36/64、T3 61/64；SSD 級、b32 都是 0。B1 的格子（SSD）不受影響；C2、T4 的 NFS 數字要當較弱的證據（`fullsim_hint.csv`、`t4_cells.csv` 沒有飽和欄 → NOT_VERIFIED）。
 12. A2：別的使用者的 job（只報告）：A2 chat g2-s0 暴露的重複對沒暴露的中位 +8.0%（8 點裡 6 點變慢）；那幾列本來就輸最好的對手 10–217%，判定不翻。
+13. CPU÷工作集：數字 ✓（`cpu_frac_ws`＝CPU 容量 ÷ `P["ws_GiB"]`，`code/p3x/x1_sim.py` 第 1002 行）；⚠ 是 AUDIT.md 寫的範圍和原始檔不同——見差異 14。
