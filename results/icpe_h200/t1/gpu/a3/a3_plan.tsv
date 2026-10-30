@@ -1,0 +1,3 @@
+# tag cpu_override release ssd cpu_frac wt cpu_gibps best_wt_counts
+hold_nfs_c11.60_f0.5	11.6	hold	nfs	0.5	S5L	11.6000	{'S5L': 5}
+hold_nfs_c43.59_f0.25	-	hold	nfs	0.25	S5c	43.5888	{'S5c': 4, 'S5s': 1}

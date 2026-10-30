@@ -459,3 +459,149 @@ python3 code/s3/kvs_f0p.py report
 - **256K 的 A0 TF 做完**：Q256（22509、22510）、Q14-256（22527、22499、22500、22501）各 72／72 題（A0 偏離 3）；`gzip -t` 都過。`a0.py select-gen`：Q256 23 個配置（run `20261027-063058-adhoc`；G1 B16·1/16·int4、B24·1/8·int4、B32·1/8·int4）、Q14-256 24 個配置（`20261027-063059-adhoc`；G1 B24·1/16·int4、B24·1/8·int4、B32·1/8·int4）→ `gen_selection_{Q256,Q14-256}.json`。
 - **生成速度（實測，切分片用）**：Q128 每題約 6 s＋prefill 9.7 s（run `20261027-062635-s3-a0-gen-Q128-s2`）；Q128 生成冒煙 PASS（`20261027-061411-s3-a0-gensmoke-Q128`）。256K：Q256 切 4 片、Q14-256 切 8 片（每片預計 1–1.5 小時〔估計〕；第一片會先跑生成冒煙）。
 - 送出（配額 1339G／1536G）：A0 生成 Q256 0–3／4 → **22606–22609**；Q14-256 0–7／8 → **22610–22617**（next-icpe 為空）。
+
+## S3-A0 — A0 漸進還原的判定：GA0-WEAK（2026-10-27 15:54，head node 報告）
+
+**狀態**: 四個判定格的 TF 與生成全部完成（生成各 288／288；TF L128／Q128 96、Q256／Q14-256 72〔偏離 3〕）；40 個結果檔 `gzip -t` 都過。
+**指令**: `source code/env_h200.sh; python code/s3/a0.py report` → `results/s3_h200/a0/a0_report.json`（run_id `20261027-155423-adhoc`）
+**判定**: **GA0-WEAK**——條件 2（P 對 E0 的 CI 下界 ≥ −2 pp）在所有 f ≤ 1/12 的 ORACLE／ORACLE-L 配置都不過；條件 3 在 Q128、Q256、Q14-256 有過。最接近 GO：**Q128 B24·1/8·int4·ORACLE**（f 0.078；對 E0 −0.35 [−2.05, +1.44]；對 U* +3.47 [+1.25, +5.73]；L128 同配置對自己 U* +2.37）——條件 2 差 0.05 pp。GA0-SEL NOT_APPLICABLE；G-M02：L128／Q128／Q14-256 SUPPORTED、Q256 NOT_SUPPORTED（差值都小、CI 跨 0）。照 §2：不判 GO、照實報告、11/17 討論。連帶 S0-2 預篩 → **ASK**（`kvs_s0.py report` run `20261027-155545-adhoc`）。細節：`runs/A0_progressive_restore.md` 結果節。
+
+## S3-GM12-DIAG — G-M12 Qwen 自檢失敗的診斷（使用者 10/27「G-M12 的 Qwen 自檢 ok」；只報告、判準不改）
+
+- 新增 `gm12.py diag`＋runner part `gm12-diag`：Q128 與 L128（對照）各跑兩輪（default；兩條路徑都強制 fa3 `num_splits=1`），d＝1 時逐層記 K／V 的最大差、參考值最大量級、相對差、最大差處差幾個 bf16 刻度、不相等的比例。第 0 層不經過 attention：若只是加總順序的捨入差，第 0 層必為 0。輸出只在 run 目錄。
+
+## S3-KVS-ARCHIVE — F0、F0P 封存（使用者 10/27）
+
+使用者 10/27：「第三條（F0、F0P）封存，之後再探索」。`docs/kv_sharing_hiding_20261026/runs/README.md` 兩列標「封存」；結果（`results/s3_h200/kvs_f0/`、`kvs_f0p/`）、程式（`code/s3/kvs_f0.py`、`kvs_f0p.py`）、登記檔都保留不動。F0 全網格的「問人」不再待決；F0P 的 INHERIT-ONLY 照登記記為負面結果。S0（多人共用縮圖）不在封存範圍，跟著 A0 走。
+
+## S3-C0-v2 — C0 再跑一次：GC-FAIL（同 v1）；發現 §1 對 p01 資料的描述有誤（2026-10-27 16:40，head node）
+
+**狀態**: GC-FAIL（照登記，v1、v2 都報）
+**run_id**: `20261027-164026-s3-c0-cells-v2`、`20261027-164036-s3-c0-eval-v2`、`20261027-164051-s3-c0-ref2sigma-v2`
+**指令**: `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; for s in cells eval ref2sigma; do m7run s3-c0-$s-v2 python3 code/s3/c0.py $s --out-dir results/s3_h200/c0/v2; done`
+**產出**: `results/s3_h200/c0/v2/`（v1 留在 `results/s3_h200/c0/`）
+**關鍵數字（實測資料上的預測評估）**: 352 格；平均代價 長度 48.93%、負載 55.09%、平台 56.68%、kernel 33.45%（和 v1 相同）。差別只在 ICPE p01brr 補的 12 格（5→10 次，中位數變動 < 0.5%）。P2 不納入（不在 §1 來源清單、且是融合 dequant）。
+**失敗與異常**: 發現 C0 登記 §1 的括號描述錯了：`icpe_h200/p01/grid` 的 run 用融合 dequant（llama sdpa `k3:8:2`、qwen fa3 `k1`），不是 S0；預測器的 d 用 PyTorch 版 → icpe 格子（含整個 kernel 切法）的反量化成本被高估。v1、v2 都受影響；照實記，要修就另登記 C0-v3。
+
+## S3-A0C-SUBMIT — A0-C 確認性實驗送出（使用者 10/27「做」；登記 `runs/A0C_confirm.md`，2026-10-27T08:48:21Z，commit e005950）
+
+- 程式（commit 89e1f50）：`a0.py` 加 gen1c（seed0 77000，T2–T5 各 144）、gen2c（78000，T2–T4 各 96，第 2 輪）＝864 題，seed 重疊檢查涵蓋 A0、USED_SEEDS、D0（重疊 0）；每格固定配置清單（Q128 9 個、L128 10 個，只由 plan 檔的位元組比決定）；`gen --a0c` 寫 `raw/a0c_gen_<cell>_s<i>.csv.gz`（A0 report 不讀）；`a0c-report` 照登記 §4。自檢 PASS。runner part `a0c-gen`（品質型；每格第一片先跑 2 題冒煙，輸出在 run 目錄、不看分數）。dry-run 正常。
+- 送出（2026-10-27 16:52，配額 1339G／1536G，next-icpe 為空 → 沒加依賴）：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-a0cgen-<cell>-<i> --time=4:00:00 code/r_h200_s3.sh --part a0c-gen --cell <cell> --shard <i>/<n>` → Q128 0–3／4 **22662–22665**、L128 0–5／6 **22666–22671**。
+- 送出時帳號 4 卡由同帳號其他人的 job 佔滿（`AssocGrpCpuLimit`），會排在 22661（gm12-diag）之後輪到。
+
+## S3-GM12-DIAG-RESULT — Qwen 自檢差 28 全部來自 fa3 的 split-KV（加總順序）；程式邏輯逐位元正確（job 22661，2026-10-27 18:44）
+
+**狀態**: 診斷完成（只報告；G-M12 的判準與 Qwen 的「停」都不改）
+**run_id**: `20261027-184414-s3-gm12-diag-Q128`、`20261027-184450-s3-gm12-diag-L128`（輸出 `gm12_diag_<cell>.json` 在 run 目錄；題目 `T2_front-back_s71000`，d＝1）
+**指令**: `sbatch --job-name=s3-gm12diag --time=1:00:00 code/r_h200_s3.sh --part gm12-diag`
+**關鍵數字**:
+- Q128 default：最大差 **28.3125**；第 0 層 K／V 差 **0**；第 1 層起 28 層有 27 層不同（第 1 層 K 最大差 0.5＝1 個 bf16 刻度、11.8% 元素不同；往後層層放大，K 最大差／參考最大量級最高 0.68（第 17 層）、V 最高 1.10（第 20 層）；第 27 層 V 最大差 28.3125、82.9% 元素不同）。
+- Q128 兩條路徑都強制 fa3 `num_splits=1`：28 層**全部 0.0**（逐位元相同）。
+- L128（對照）：default 與 `num_splits=1` 都 **0.0**。
+**讀法**: 第 0 層（不經過 attention）為 0、第 1 層起只差 1 個刻度、`num_splits=1` 時全部歸零 → 差異只來自 fa3 對兩種形狀（每個 KV head 一條序列 vs 整組）選了不同的 split-KV、加總順序不同；不是 sparse_chunk 的邏輯錯。這 1 個刻度在 Qwen 128K 的 28 層裡被放大到和數值本身同量級（L128 兩種形狀剛好選到同一個 split，所以沒出現）。
+**對判準的意思**: 登記的自檢門檻（< 0.25）在 default 設定下過不了，原因是數值路徑而不是程式；要做 Qwen 就得改設定（例：兩條路徑都固定 `num_splits=1`），那是 G-M12 偏離，要使用者決定。
+
+## S3-A0C — A0-C 確認性實驗：**A0C-STOP**（2026-10-28 01:27，head node 報告）
+
+**狀態**: 完成；判定 A0C-STOP（照登記 `runs/A0C_confirm.md` §4，未改）
+**執行時間**: 生成 2026-10-27 18:45 → 10-28 01:21（job 22662–22671 全部 COMPLETED）
+**run_id**: 報告 `20261028-012712-s3-a0c-report`（第一次 `20261028-012521-s3-a0c-report` 判定相同，第二次只補 §4 的分組報告）；生成 `20261027-184623-s3-a0c-Q128-s0` 等 10 片、冒煙 `20261027-184535-s3-a0c-smoke-Q128` 與 L128 的對應 run
+**指令**: `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run s3-a0c-report python code/s3/a0.py a0c-report`
+**產出檔**: `results/s3_h200/a0/a0c_report.json`、`results/s3_h200/a0/raw/a0c_gen_{Q128,L128}_s*.csv.gz`（raw/ 照 `.gitignore` 不進 git，和 A0 相同，只在 /work 的這個 worktree；10 檔 `gzip -t` 過；Q128 7776 列＝864×9、L128 8640 列＝864×10；gpu_guard 全 CLEAN）
+**關鍵數字**: Q128（判定格）E0 60.17、P 57.60、U*＝`U|xl:k33:v50:…kivi` 56.31；P−E0 **−2.58 [−3.87, −1.34]**（條件 2 不過）、P−U* **+1.28 [−0.27, +2.88]**（條件 3 點估計 < +2 → STOP）。L128：P−E0 −1.86 [−3.37, −0.35]、P−U* +2.32 [+0.53, +4.10]。一併報告：Q128 的 T5 P−U* −3.19 [−5.56, −0.83]；T2–T4 P−U* +2.18 [+0.33, +4.03]（不判定）。完整表在登記檔結果節。
+**失敗與異常**: 無
+**與 A0 的差異**: Q128 的 P 在 A0 舊題目上 P−U* +3.47、P−E0 −0.35；新題目上縮成 +1.28、−2.58（登記 §1 預先講的贏家詛咒）。L128 新舊幾乎相同（+2.37 → +2.32）。
+**意思**: 方向 A 停、寫成負面結果；A0 的 WEAK 記為「沒有被確認」。06 §4：P3 不成立（P1、P2 已由 G-M08 STOP 排除）→ 剩 P4（G-M06）或負面結果／方向 C。KVS S0-2 預篩：A0-C 只在 GO 時改寫，STOP 不改 → 仍「問人」。
+
+## S3-GM06-2GPU — G-M06 改 2 卡（偏離 2；使用者 10/28「改兩卡」）
+
+- 4 卡版 22281 從 10/26 19:08 可以開跑起一直排不上（`AssocGrpCpuLimit`：帳號 4 張卡要同時空出來）。照 `runs/G_M06_multipath.md` 偏離 2（2026-10-27T17:41:33Z，登記時沒有任何 G-M06 數字）改成 2 卡：判準不變（k＝2 對 k＝1），k＝4 的各項 NOT_MEASURED；分到的那一對卡的拓撲照實記、不推論。runner 的卡數檢查 ≥4 → ≥2；`sched.py` 的「多卡量時間 job 不讓位」例外改成只對 ≥4 卡（commit 13dd058；兩支自檢 PASS、dry-run 正常）。
+- `scancel 22281`；送出 `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-T-gm06 --time=1:00:00 --gres=gpu:2 code/r_h200_s3.sh --part gm06` → **22728**（QOS h200q_2g，32 CPU；送出時配額 1364G，next-icpe 為空）。送出時排隊原因 `AssocGrpCpuLimit`（同帳號其他人用滿 64 CPU）。它跑的期間不送別的 stage-3 job。
+
+## S3-CLOSE-1 — 收掉不影響決策表的項目（使用者 10/28「第 2–5 項都照建議做」）
+
+- **D0**：`scancel 22536`（held 的量測 job）；GD0 NOT_MEASURED（上游編譯錯誤＋A0 STOP）。登記檔加「結案」。
+- **G-M11**：接受 NOT_DETERMINED，不再量。登記檔加「結案」。
+- **G-M12**：Q128 品質不跑（NOT_MEASURED）。用既有資料出報告：**G-M12-STOP**（run `20261028-015835-s3-gm12-report`）——L128 品質 F＝1.0 的 Δgold_lp d＝0.1 −14.56 [−17.24, −11.93]、d＝0.2 −8.64 [−10.38, −6.92]（要 ≥ −2）；qwen 速度比 0.47×、0.93×（要 ≤ 0.3×；2σ < 1%）；llama 速度 2σ 26–35% → 不判定。兩格都要過，所以缺 Q128 也判得出。`gm12.py report` 改成三值判定，並補上登記 §2 的「2σ > 5% 不判定」（原本沒做）；過渡版報告 `20261028-015735-s3-gm12-report` 被覆蓋。
+- **KVS S0-2 預篩**：ASK → **STOP-S**（使用者決定；A0 WEAK＋A0-C STOP）。
+
+## S3-G9-EXPLORE — G9 投機式還原：零 GPU 探索＋查新（使用者 10/28 第 5 項；探索性，不是判定）
+
+**指令**: `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run s3-g9-explore python code/s3/g9_explore.py` → `results/s3_h200/g9/explore.json`（run_id `20261028-020109-s3-g9-explore`；只讀 A0／A0-C 既有的 TF 與生成檔）
+**失敗與異常**: 第一次（run `20261028-020046-s3-g9-explore`，exit≠0）是我新寫的程式的筆誤（`A.ROOT` → 應為 `A.REPO`，AttributeError），修正後重跑；不是量測失敗。
+**關鍵數字（代理指標）**: 7.8% 位元組的 `P|B24|1/8|int4` 草稿：TF 逐 token 和 E0 argmax 一致 0.93–0.97（四格）；整段生成和 E0 相同 0.47–0.60。普通 INT4（31%）0.97–0.985／0.67–0.75。完整表見 `lit/L9_g9_speculative_restore.md`。
+**查新（self-review、摘要層級）**: VeriCache（arXiv 2605.17613，2026-05）、Lynx（2607.01831，2026-07）已經做了「壓縮 KV 先生成、完整 KV 到了再驗證、無損」；QuantSpec（ICML 2025）、MASW（2608.30252）同類 → **G9 新意低，不建議當新方向**。
+
+## S3-E2E-DRAFT — 組合策略端到端評估：可行性＋判準草稿（使用者 10/28「好」；沒有跑任何數字）
+
+- 讀程式確認：ICPE 的 X1 模型已經是「CPU BF16＋慢層 INT4＋Cake」，HINT-PF／O-PF 已有（C2）；GPU 忙只有一個合成倍數（2.07），沒有 MPS、沒有背景吞吐。P0-2 的 GPU 重播（job 21655，12 run，3:18:25）只有 GPU 閒。
+- B0 的 MPS 是限制背景 process；`bg_ratio` 的分母是同一個上限下的 solo → SHARE 的 ≥0.90 **不含上限本身的代價**（O9：matmul 限 87% ×1.051、75% ×1.18）。端到端要另算，可以用 B0 每區塊的 `bg_solo_rate` 算，不用新量測。
+- 模擬器需要的 B0 格子：Llama 144／175、Qwen 150／175 過 2σ ≤ 5%（只數格子，沒有看新數值）。
+- 草稿：`docs/stage3_design_20261024/runs/E2E_combo_DRAFT.md`（10/28 改名 E2E_combo.md 並登記）（配置 K0–K3、O；格子；判準待使用者確認；風險；程式 2–4 天、GPU 約 6–7 小時〔估計〕）。
+
+## S3-E2E-RUN — E2E-C 第一段（模擬）開跑（登記 `runs/E2E_combo.md`，2026-10-27T18:43:56Z，commit 633cdd8；偏離 1）
+
+- 資料：FreeInference rev `16d3c04d` 下載到 `/work/ChihChungHsu/hungweilai/datasets/freeinference_agentic_trace`（run `20261028-023841-s3-fi-dl`；81 檔 sha256 全對；7.8 GiB，配額 1354G／1536G）。第一次（`20261028-023749-s3-fi-dl`）因為 `TIARA_VENV` 沒設而失敗，補上 H200 的 venv／hf CLI 路徑後重跑。Mooncake conversation：`/work/…/datasets/traces/conversation_trace.jsonl` 的 git blob＝Mooncake `d750cdd` 的同一檔（12,031 筆）。
+- 自測 PASS（閒時 BgView ≡ View 逐請求逐位元；leads 對 x1_gpu；B0 每塊位元組交叉驗算）。
+- D 檢查（`20261028-024941-s3-e2e-dcheck`）：兩個模型 0 個可用組合 → 偏離 1：都用 3.3。第一次 `20261028-024903-s3-e2e-dcheck` 是程式的錯（BF 斷言），沒有數字。
+- conversation：`20261028-025101-s3-e2e-run-llama-conv`、`20261028-025151-s3-e2e-run-qwen-conv`（各約 50 秒）。
+- FreeInference（16 週、1,222,199 筆）：`s3-e2e-run-{llama,qwen}-fi`，head node 背景兩個 process（使用者指示 head node 跑 CPU）。
+
+## S3-GM06 — G-M06（2 卡版）：**G-M06-PASS**（job 22728，2026-10-28 04:34）
+
+**狀態**: PASS
+**執行時間**: 2026-10-28T04:34:20+08:00 → 04:34:59（job 22728，hgx-cn01，GPU 實體 2、3）
+**run_id**: `20261028-043420-s3-gm06`（量測）；`20261028-044359-s3-gm06-report`（head node 重出報告）
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=s3-T-gm06 --time=1:00:00 --gres=gpu:2 code/r_h200_s3.sh --part gm06`；報告 `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run s3-gm06-report python code/s3/gm06.py report`
+**產出檔**: `results/s3_h200/gm06/`（CSV 7 列、numa／gpu_guard／topo json、`gm06_report.json`）
+**關鍵數字**: 16 GiB 還原進 GPU 0：k＝1 0.29905 s（53.50 GiB/s）、k＝2 0.15056 s（106.27 GiB/s）→ **加速 1.986×，CI 下界 1.985**（判準 ≥1.6 且 CI 下界 ≥1.6）。k＝1 臂 2σ 0.06%。2 卡同時 H2D 各 53.45 GiB/s（單卡 53.43）；NVLink D2D GPU 1→0 368.17 GiB/s；M07 本地 53.36 GiB/s，「遠端」列不可用（已知的 pinned 快取重用，`src_numa` 0:64）。guard 兩卡 CLEAN。
+**失敗與異常**: 無。runner 的 GM06-REPORT 沒走 m7run → job 內的報告 run_id 是 `20261028-043459-adhoc`；head node 用 m7run 重出一份（數字逐位元相同），以重出的為準。
+**限制**: 只代表分到的這一對卡（NUMA 0、不同 PCIe switch、NV18）；鄰卡閒置；鄰卡在 decode 時的 TPOT 影響沒量；k＝4 NOT_MEASURED（偏離 2）。
+**意思**: 06 §4：A0 不過、G-M08 不過、G-M06 過 → **P4**（短的量測＋機制論文）。G-M06 跑完，「它跑的期間不送別的 stage-3 job」解除。
+
+## S3-E2E — E2E-C 第一段（模擬）：**E2E-NOGO**（2026-10-28 16:11，head node 報告）
+
+**狀態**: NOGO（判準照登記 `runs/E2E_combo.md` §5；偏離 1）
+**執行時間**: 2026-10-28T02:51 → 14:22（四個模擬）；報告 16:05、16:11
+**run_id**: 資料 `20261028-025101-s3-e2e-run-llama-conv`、`20261028-025151-s3-e2e-run-qwen-conv`、`20261028-025305-s3-e2e-run-llama-fi`、`20261028-025307-s3-e2e-run-qwen-fi`；D 檢查 `20261028-024941-s3-e2e-dcheck`；報告 `20261028-160552-s3-e2e-report`（第一次）、`20261028-161142-s3-e2e-report`（以這個為準：判定與 32 格逐值相同，多了只報告的 `m_star_candidates`）
+**指令**: `source code/env_h200.sh; export P3_CONST=h200 TIARA_ALLOW_NO_SLURM=1; m7run s3-e2e-report python code/s3/e2e.py report`
+**產出檔**: `results/s3_h200/e2e/e2e_report.json`；`results/s3_h200/e2e/raw/e2e_{llama,qwen}_{conversation,freeinference}.csv`＋`.meta.json`
+**關鍵數字**〔模擬〕: 過 0／32 格（Llama 0、Qwen 0）；ASK 級 0 格；NOT_MEASURED 8 格（Qwen × cprefill）。四個（模型, 背景）的 m\* 都選不出來：每個 MPS 等級的開發集 B 都 < 0.95（最高 0.944，Llama × cprefill × mps；B ≥ 0.95 的開發格 0 個），所以 K3＝K2、Δ＝0。開發集上 MPS 的 TTFT 改善中位數 33–79%（含 FreeInference 的格子）。只報告：conversation K0→K1（INT4）Llama 14.2–39.8%、Qwen 20.5–31.3%；K1→K2（打字提示預取）Llama 23.5–38.5%、Qwen 5.0–56.3%；conversation 上 stream 的 B：K0 0.68–0.84、K2 0.69–0.82。逐格見 `runs/E2E_combo.md` 結果節。
+**失敗與異常**:
+1. FreeInference 第 9–16 週：平均 TTFT 升到幾十到上千秒，預取（K2、O）比不預取更慢（例：Llama NFS 128 cprefill 第 16 週測試集 K1 511.88、K2 1,149.21、O 1,354.46 秒）。第 1–6 週和 ICPE X1-FI 一致（回來請求數逐週相同，四個配置幾乎相同）。原因沒有驗證（推論：慢層通道被塞滿）；這些數字不下結論。判定不受影響：conversation 的開發格 B 也都 < 0.95。
+2. 監看的錯：背景監看用 `pgrep -f "python code/s3/e2e.py run --model"`，比對到監看自己的 shell 指令列，永遠不結束 → Llama 14:22 跑完，16:05 才出報告。沒有影響任何數字；之後改等 run 目錄的 `exit_code`。
+**與預期的差異**: B0 的 SHARE（背景 0.98，單一動作、不含上限的代價）在端到端不成立；算上 cap(g, m) 與前景占用率 φ 之後，背景吞吐預算 0.95 沒有任何 MPS 等級守得住。
+**意思**: 照 §9，第二段（GPU 驗證）不做。ICPE「固定 MPS 預留是不用預測的增益」要改寫成「延遲換背景吞吐的取捨」。E2E-C 的 T1 版（CPU 層換 H200 的常數）16:09 開跑（`20261028-160904-icpe-t1-e2e-llama-conv`、`…-160905-…-qwen-conv`、`…-160906-…-llama-fi`、`…-160907-…-qwen-fi`；D 檢查 `20261028-160754-icpe-t1-e2e-dcheck` 兩個模型 0 個可用組合，同登記版）。第一次下的四個（`20261028-1608{22,23,24,26}-icpe-t1-e2e-run-*`）是我的 shell 錯（zsh 不拆字，參數組錯），exit 127、沒有執行、沒有輸出。
+
+## S3-E2E-POST — E2E-C 判定之後的補充（只報告；2026-10-28 16:45–17:10，head node）
+
+- MPS 取捨曲線 `20261028-165753-s3-e2e-curve`（`results/s3_h200/e2e/mps_tradeoff.{csv,png}`）：基準線 K2（stream）的 B 在 conversation 只有 0.70–0.80 → 登記的絕對門檻 0.95 在 conversation 到不了；不設上限的 mps 相對 stream TTFT 改善 33–63%、B 只變 0 到 −7 個百分點〔模擬〕。B0 的背景單獨速度 mps÷stream＝1.000（cprefill、mixed，兩個模型）。
+- FreeInference 異常診斷 `20261028-164518-s3-e2e-diag-fi`（`results/s3_h200/e2e/diag/fi_anomaly.csv`，第 1、9 週）：H3（背景放大）排除；H2（預取沒有准入控制，把快要用的塊擠出 CPU）是主因；H1 次要。細節見 `runs/E2E_combo.md`「判定之後的補充」B 節。
+- **異常**：第 16 週的診斷占 32 GB，head node 可用記憶體剩 3 GB；Claude Code 收掉了背景監看（記憶體不足時的自動處理）。我停掉診斷（exit 143），可用記憶體回到 39 GB；第 16 週沒有寫進結果。T1 的兩個 FreeInference run 沒有受影響。
+
+## S3-E2E-DIAG-W16 — FreeInference 第 16 週的診斷補跑（只報告；head node，2026-10-29 02:35–03:13）
+
+**狀態**: PASS（只報告；不改 E2E-C 的判定）
+**run_id**: `20261029-023519-s3-e2e-diag-fi-w16`
+**指令**: `source code/env_h200.sh; unset P3_TIER; export P3_CONST=h200 TIARA_ALLOW_NO_SLURM=1; m7run s3-e2e-diag-fi-w16 python code/s3/e2e_diag.py --model llama --weeks 2026-08-30_2026-09-05 --slows ssd nfs --cpu 128 --bg cprefill:2048:65536 --out results/s3_h200/e2e/diag/fi_anomaly.csv`
+**產出檔**: `results/s3_h200/e2e/diag/fi_anomaly.csv`（附加 12 列，共 36 列；第 16 週之前沒有任何列）
+**關鍵數字**〔模擬〕:
+- NFS 沒有背景時的測試集 TTFT：LRU 62.07 s、HINT-PF 155.11 s、O-PF 170.48 s。有背景時是 511.88／1,149.21／1,354.46 s，和 E2E 報告相同。
+- H3 排除。H2 仍在：CPU 載入 42.0M → 10.4M／2.5M，重算 31.0M → 60.6M／68.1M，降級 59.7K → 149K／181K。
+- H1 變成主要的一部分：慢層讀使用率 LRU 0.612 → 0.901／0.932。
+- 細節見 `runs/E2E_combo.md` 判定之後的補充 B 節。
+**失敗與異常**: 無（這次 head node 可用記憶體 30–49 GB，沒有再出問題）。
+
+## S3-E2E-GPU — E2E-C 第二段（GPU 附錄，使用者 10/29 要求）：**MPS-GPU-INVALID**（job 23050＋23080，2026-10-29 12:37 → 10-30 02:11 +08）
+
+**狀態**: PASS（照登記判定；登記 `docs/stage3_design_20261024/runs/E2E_gpu_mps.md`，2026-10-29T03:03:43Z；偏離 1：12 小時上限 → 在步驟邊界切成兩個 job；結果節同檔）
+**執行時間**: 23050 2026-10-29T12:37 → 15:12（取消於步驟邊界）；23080 15:23 → 10-30T02:11；模擬＋報告 02:12–02:13
+**run_id**: GPU 15 個 `20261029-124311-s3-e2eg-idle-stream-r0` … `20261030-014221-s3-e2eg-mixed-mps50-r0`（清單 `results/s3_h200/e2e_gpu/gpu_runs.csv`）；冒煙 `20261029-123749-s3-e2eg-smoke-stream`、23080 的 `s3-e2eg-smoke-mps`；被切掉的 `20261029-151254-s3-e2eg-mixed-stream-r0`（5 秒、沒寫進 results）；模擬 `20261030-021241-s3-e2eg-sim`；報告 `20261030-021318-s3-e2eg-report`
+**指令**: `sbatch code/r_h200_e2e_gpu.sh`（23050）；`sbatch --time=36:00:00 --dependency=afterany:23063 code/r_h200_e2e_gpu.sh --from E2EG-mixed-stream-r0`（23080）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1 P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json; m7run s3-e2eg-sim python code/s3/e2e_gpu.py sim --out results/s3_h200/e2e_gpu; m7run s3-e2eg-report python code/s3/e2e_gpu.py report --out results/s3_h200/e2e_gpu`
+**產出檔**: `results/s3_h200/e2e_gpu/`
+**關鍵數字**（GPU 實測＋模擬）:
+- 可量 9 格；(b) 4/7 不成立 → **MPS-GPU-INVALID**；(a) 67%、(c) 11%。
+- 7 格的 gain 正負號全部一致，GPU 的 gain 全部比模擬大 5–31 pp（模擬低估 MPS 的 TTFT 好處）。stream 基準 GPU÷模擬＝1.22（兩個背景）；cprefill × mps 0.685。
+- idle GPU÷模擬＝0.986；rep 雜訊 ≤0.4%。
+**失敗與異常**: 無程式失敗。偏離 1（我登記時估 6–7 小時，實際 cprefill 一個 run 約 2–2.4 小時：重播跟不上到達，平均排隊 2,456 s）。診斷：背景速度量化（cprefill cap 解析度約 17%）；MPS log 的 credentials 訊息只記錄。
+**與第一段的差異**: 第一段 E2E-NOGO 不變；論文的 MPS 曲線只能寫〔模擬〕＋GPU 反例。

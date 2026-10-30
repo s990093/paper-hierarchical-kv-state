@@ -316,3 +316,178 @@ FileNotFoundError: [Errno 2] No such file or directory: '.../results/icpe_h200/p
 
 ## ICPE 量時間鏈結束（2026-10-26 06:19 +08）
 P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有「待」的列，§F 列出要改寫或加條件的主張。stage3 的 s3-T-* 鏈（22271 起，afterany:21670）現在可以開跑。
+
+---
+
+## ICPE-T1-START — ICPE 改成只用 H200：CPU 層換成 H200 的常數，重跑受影響的模擬（登記 `docs/h200/icpe/T1_h200_cpu_tier.md`，2026-10-27T22:50:34Z，commit a9c11bd）
+
+- **緣由**：使用者 10/28「這個新主張是給 ICPE 只會有一個平台 都h200」「好登記 ok」，層級常數選「只換 CPU 層」（SSD、NFS 維持限速模擬的裝置層）。原本「H200 常數」的模擬，CPU／SSD／NFS 都用 MI300X 的 `tier_params.json`（03 §R2）。
+- **新常數**（`code/icpe/t1.py build`，run `20261028-065334-icpe-t1-build` → `results/icpe_h200/t1/tier_params_h200cpu.json`）：照 `code/m7_params.py` 的規則，用 H200 的 C0 `20261016-061254-m7h-c0` 與 duplex `20261016-061303-m7h-duplex`：cpu 讀 43.5888、寫 41.1687 GiB/s、k_read 1.002（MI300X：35.4159、35.5482、1.161）。local、nfs 逐位元照抄。和登記 §1 的值相同（build 內斷言）。
+- **開關**：`P3_TIER=h200cpu`（`code/p3_platform.py`：TIER_PARAMS 換新檔、`explore_out` 改到 `results/icpe_h200/t1/explore/`；`code/s3/e2e.py` 的輸出改到 `results/icpe_h200/t1/e2e/`）。沒設＝原本的行為。commit e208ca4。
+- **自檢**：`20261028-065511-icpe-t1-selftest` **PASS**（12 項：沒設時讀 MI300X 的值、輸出在原位；設了只有 cpu 改變；X5 的成本常數設不設開關逐值相同 → X5 不重跑；輸出都在 t1 底下）。第一次 `20261028-065354-icpe-t1-selftest` exit 1：只有 2d（X4）不過，原因是自檢的 dump 先 import 了 `x3_restore`（它會載入 `m7_write_policy`，那時 `M7_TIER_PARAMS` 還是 env_h200.sh 的值）；實際的 X4 由 `x4_sim` 當主程式、先設好再 import，不受影響。dump 改成先 import `x4_sim`、runner 也直接 export 新的 `M7_TIER_PARAMS` 當保險。是我的自檢程式的錯，沒有產生模擬數字。
+- **報告程式**：`t1.py report`（commit 8d3eee7），在任何 T1 數字之前寫好；舊對舊測過：0 差異，B1／B2／B3／B4／B7／C1／C2 的 summary 重現 ICPE_EVIDENCE 的值。
+- **compute node**：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1 -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1` → **job 22762**（2026-10-28 07:0x +08 開跑，hgx-cn01；不量時間；ICPE 沒有在等的 job，`sched.py next-icpe` 空；配額 1356G／1536G）。步驟：自檢 → X1 V0／V1／V2（sweep、analyze、H1800、H3600）→ fullsim → X1 FreeInference（前 6 週）→ X3（validate、tables、leads、hide）→ X4（trace、validate、sweep、analyze）。
+- **之後（head node）**：`p12_queue.py`（T1 的 X4）→ `t1.py report`；E2E-C 的 T1 版等現在那份 E2E-C（FreeInference 還在跑）跑完再跑（登記 §6）。
+
+## ICPE-T1-FAIL-1 — job 22762 在 T1-X3-LEADS 失敗（2026-10-28 07:43；runner 設定錯，已修、從 T1-X3-EVENTS 重送 job 22772）
+
+- **跑完的步驟**（06:58–07:43，都 exit 0）：T1-SELFTEST；T1-X1-V0／V1／V2 的 SWEEP、AN、H1800、H3600；T1-FULLSIM；T1-P12-VERIFY、X1FI-SWEEP、X1FI-AN、X1FI-AN-USER；T1-EX-NEED、EX-VERIFY；T1-X3-VALIDATE、X3-TABLES、X3-TABLES-RUN、X3-EVENTS。log：`$TIARA_RUNS/slurm-icpe-t1-22762.out`。
+- **失敗**：`T1-X3-LEADS` 的第一個來源 `x3_leads.py consts`：
+  `OSError: Repo id must be in the form 'repo_name' or 'namespace/repo_name': '/work/ChihChungHsu/hungweilai/hf-cache/hub/models--Qwen--Qwen2.5-7B-Instruct-1M/snapshots/e28526f7bb80e2a9c8af03b831a9af3812f18fba'. Use `repo_type` argument if needed.`（`AutoTokenizer.from_pretrained` 找不到目錄，當成 repo id）
+- **原因**：`x3_leads.py` 的 tokenizer 路徑＝`$TIARA_HF_HUB/models--…/snapshots/<固定 revision>`；`r_h200_t1.sh` 沒有像 `r_h200_icpe.sh` 那樣在 source env_h200.sh 之前把 `HF_HOME` 指到 hgx-cn01 的 `/tmp/hungweilai-models/hf-cache`，所以指到 /work 的 hf-cache（10/23 起是空的）。10/21 原本那次 X3 跑的時候 /work 的 hf-cache 還在。我的 runner 漏抄，不是模擬的問題。
+- **修正**（commit 見 `fix(icpe-t1)`）：runner 開頭設 `ICPE_MODEL_ROOT`／`HF_HOME`（同 r_h200_icpe.sh），開跑時 `fetch_models.py check --models llama qwen`。revision 相同（Llama `4699cc75…`、Qwen `e28526f7…`，fetch_models 逐檔對過 HF 的雜湊）→ 輸入不變。
+- **重送**：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1b -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1 --from T1-X3-EVENTS` → **job 22772**（排隊中：帳號 4 卡滿；同使用者的 kc-la08-* 是品質 run、不計時，可以同節點）。T1-X3-EVENTS 會把舊的事件目錄改名、重建。
+
+## ICPE-T1 — CPU 層換成 H200 的常數：B、C 節判定字全部不變（jobs 22762／22772／22788＋head node 報告，2026-10-28 06:58–08:20 +08）
+
+**狀態**: PASS（照登記跑完；E2E-C 的 T1 版還沒跑，等登記的那份 E2E-C 跑完）
+**執行時間**: 2026-10-28T06:58:20+08:00 → 08:20:16（compute node 三段＋head node）
+**run_id**: 自檢 `20261028-065820-icpe-t1-selftest`；X1 `20261028-065829`～`…-073308-icpe-t1-x1-*`（V0／V1／V2 各 sweep、an、h1800、h3600）；fullsim `…-073312-icpe-t1-p02-fullsim`；X1 FreeInference `…-073351`～`…-074221-icpe-t1-p12-x1fi*`；X3 `…-074241`～`…-081248-icpe-t1-x3-*`；X4 `…-081502`、`…-081741`、`…-081922-icpe-t1-x4-*`；排隊拆解 `…-082005-icpe-t1-p12-queue`；報告 `…-082016-icpe-t1-report`
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1 -o $TIARA_RUNS/slurm-%x-%j.out code/r_h200_t1.sh --part t1`（22762）、`… --from T1-X3-EVENTS`（22772）、`… --from T1-X4-SWEEP`（22788）；head node `source code/env_h200.sh; export P3_CONST=h200 P3_TIER=h200cpu TIARA_ALLOW_NO_SLURM=1; m7run icpe-t1-p12-queue python code/icpe/p12_queue.py --cfg results/icpe_h200/t1/explore/x4/x4_verdict_cfg.csv --sweep $TIARA_RUNS/20261028-081741-icpe-t1-x4-sweep/x4_sweep.csv --out results/icpe_h200/t1/p12/x4; m7run icpe-t1-report python code/icpe/t1.py report`
+**產出檔**: `results/icpe_h200/t1/`；並排 `results/icpe_h200/t1/t1_compare.{csv,json}`
+**關鍵數字**〔模擬〕（舊＝MI300X 的 CPU 層 → 新＝H200 的 CPU 層）:
+- **判定字全部不變**：X1（V0／V1／V2 × 原登記／H1800／H3600）9 個「有看頭」；P0-1 (c) 成立；X1 FreeInference 死路；X4 的 30 個判定相同；B4 的 D1、D2 同結論；X3 原登記／加 FreeInference「有看頭」。
+- B1（conversation、SSD、閒、Cake，128／256 GiB）：O-PF 48.9／44.6% → 50.5／46.5%；O-ORD 25.4／27.0% → 27.65／31.0%；O-DROP 27.0／32.8% → 27.6／34.9%。
+- B2：O-DROP 最大 45.9%（48 格 ≥15%）→ 47.7%（58 格）；截尾 H＝3,600 仍 0.0%（0 格）；O-PF 91.8 → 92.4%、O-ORD 99.9 → 99.9%。
+- B3（X1）：FreeInference 0.28% → 0.30%（使用者發起 1.48% → 1.52%）。X5（2.44%）不受影響、沒重跑。
+- B4：D1 中位 0.983 → 0.983（最小 0.846 → 0.837；可判 262 → 264 格）；D2 43／63 → 44／65。
+- B7：X1 ≥15% 的格 167／168／169 → 190／192／189。
+- C1：36／36、37／54，NFS 級最好的格 98.74% → 98.74%。
+- C2：HINT-PF 對 LRU 5.6–47.8% → 6.9–49.1%；O-PF 對 LRU 5.5–52.4% → 7.0–54.2%；HINT-PF÷O-PF 中位 SSD 0.939 → 0.933、b32 0.949 → 0.941、NFS 1.117 → 1.118；>1 的格 6 → 4。
+- 跨門檻（rule＝min，0.05／0.15）：271 列，全部往上跨；逐格在 `t1_compare.json`。
+**失敗與異常**: ICPE-T1-FAIL-1（tokenizer 路徑，runner 的錯，已修）；`T1-X4-VALIDATE` exit 1——V1 54/160（參考值是舊常數算的；沒設開關時 160/160），V2–V4 過 → 偏離 1（`docs/h200/icpe/T1_h200_cpu_tier.md`），不當停止條件、從 sweep 接著跑。
+**與原本的差異**: 照登記 §5，ICPE（只用 H200）改用新值；舊值＝「CPU 層以 35.4 GiB/s 限速時」的敏感度。沒重跑、列為限制：X5；CPU 層在 GPU 上被限速成 35.4 GiB/s 的 GPU 實測 run（A1'、A1''、A2、A3、B6、C2 的 GPU 縮小重播）；SSD、NFS 級。`docs/h200/ICPE_EVIDENCE.md` 開頭加了一行指向 T1 的結果。
+
+## ICPE-T1G-START — CPU 層換成 H200 的常數，重量 GPU 實測的 run（第一批；登記 `docs/h200/icpe/T1G_gpu_rerun.md`，2026-10-28T08:25:20Z，commit dd43fcb）
+
+- 使用者 10/28：GPU 不要空著，「兩批都排，T1 先」；和 kc-\* 共存「照規則，等 kc-\* 空檔」。
+- CPU 前置（head node，T1 常數）：P02 selftest `20261028-162428-icpe-t1g-p02-selftest` 9/9 PASS；S_orig `20261028-162505-icpe-t1g-p02-sim-orig`（開跑）。
+- 送出：job **22882** `icpe-t1g`（`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1g code/r_h200_t1g.sh --part all`；A1'' → A1' → A2 → P02，原本的時間合計約 10 小時；`--time 1-12:00:00`）。送出時 PENDING（Priority）。
+- 排程：每一步開跑前等節點上沒有我們自己的別的 job；跑完用 sacct 查重疊（`results/icpe_h200/t1/gpu/overlap.csv`），重疊就重跑、最多 3 次（登記 §4）。
+
+## ICPE-T1G2-PREP — A3 的第 1 輪模擬在 T1 常數下重選存活設定（head node，2026-10-28 16:31–16:36；登記 `docs/h200/icpe/T1G2_round1_rerun.md`，2026-10-28T08:30:41Z，commit 1833593）
+
+- **第一次是我設定錯，作廢、沒有看輸出**：`20261028-163102-icpe-t1g2-r1-sim`、`…-163232-…-r1-sim-an` 沒有設 `M7_D2H_GIBPS`，`m7_sim.py` 退回 44.8（MI300X 的值）；原本的 H200 run 是 49.5（`r_h200_cpu.sh` 從 H200 C0 算的）。輸出被下一次覆寫。
+- 重跑：`M7_D2H_GIBPS=49.5`（用 `r_h200_cpu.sh` 同一段程式從 `results/m7_write_policy_h200/calib_c0.csv` 重算，等於 49.5）`M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json M7_EXPLORE=results/icpe_h200/t1/gpu/a3`：`20261028-163333-icpe-t1g2-r1-sim`（`m7_round1_sim.py --model llama31_8b`）→ `20261028-163501-icpe-t1g2-r1-sim-an`（`m7_round1_analyze.py sim`）。
+- **回歸**：同一條指令、不換 tier params（`20261028-163538-icpe-t1g2-r1-sim-regress`，輸出在 scratchpad）→ 和 git 的 `results/m7_explore_h200/r1_sim_llama31_8b.csv` 4,800 列逐值相同（只差 run_id、ts）。
+- **存活設定〔模擬〕**：原本 3 個（11.6／hold／nfs／0.5、35.42／free／local／0.5、35.42／hold／nfs／0.25）→ T1 常數下 **2 個**：11.6／hold／doc／nfs／0.5（3/5 seed，g_nwt 中位 26.9%，best_wt S5L 5/5）、43.59／hold／doc／nfs／0.25（4/5，6.9%，S5c 4/5）。35.42→43.59／free／local／0.5 不再存活。
+- 計畫：`python3 code/icpe/t1g.py a3-plan --dir results/icpe_h200/t1/gpu/a3 --tier-params …` → `a3_plan.tsv`。runner 加 `--part a3`（不在 `all` 裡；寫 `.new` 再 mv）。
+- 送出：job **22886** `icpe-t1g2`（`--dependency=afterany:22882`，10 個 run，原本的速度約 5.5 小時）。
+- 排程：22882 `icpe-t1g` 改成 `afterany:22876`（使用者 10/28：kv-cliffs 排好的 LA01 → LA03 → LQ2 先跑完再讓 Tiara）。
+
+## ICPE-A4' — A4 的 H200 列（不用新的 run）
+
+- Llama INT4 的 Step 2 在 H200 早就算過：10/18「δ\* 用 5% 的對照」（RUNLOG_H200 該節）的 `results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/step2_llama_int4.json`，資料＝H200 封存的 `quality_sealed/int4mix_llama_*`。F25／M25／B25 對 R25（讀法 B、b32，閒／忙）−0.47～+0.08 個百分點、CI 都含 0 → stable_gap_1_2＝False → **K2**（MI300X ±0.33）。δ\* 只影響「不比 R25 慢」那一條，品質門檻是 ≥2 個百分點，所以和 δ\* 無關。
+- 加進 `docs/h200/ICPE_EVIDENCE.md` 的 A4' 列。A4 不需要 GPU。
+
+## ICPE-T1-E2E — E2E-C 的 T1 版：判定和登記版相同（E2E-NOGO）（head node，2026-10-28 16:07 → 2026-10-29 02:19 +08）
+
+**狀態**: PASS（只報告；登記 `docs/h200/icpe/T1_h200_cpu_tier.md` §5）
+**執行時間**: 2026-10-28T16:07:54+08:00 → 2026-10-29T02:19:00+08:00
+**run_id**: `20261028-160754-icpe-t1-e2e-dcheck`；`20261028-160904-icpe-t1-e2e-llama-conv`、`20261028-160905-icpe-t1-e2e-qwen-conv`、`20261028-160906-icpe-t1-e2e-llama-fi`、`20261028-160907-icpe-t1-e2e-qwen-fi`；`20261029-021758-icpe-t1-e2e-report`；`20261029-021836-icpe-t1-e2e-curve`；`20261029-021851-icpe-t1-report`
+**指令**: `source code/env_h200.sh; export P3_CONST=h200 P3_TIER=h200cpu TIARA_ALLOW_NO_SLURM=1; m7run icpe-t1-e2e-dcheck python code/s3/e2e.py dcheck; m7run icpe-t1-e2e-<model>-<trace> python code/s3/e2e.py run --model <llama|qwen> --trace <conversation|freeinference>`（四個在背景同時跑）；跑完 `m7run icpe-t1-e2e-report python code/s3/e2e.py report; m7run icpe-t1-e2e-curve python code/s3/e2e_curve.py --root results/icpe_h200/t1/e2e; m7run icpe-t1-report python code/icpe/t1.py report`
+**產出檔**: `results/icpe_h200/t1/e2e/`；`results/icpe_h200/t1/t1_compare.{csv,json}`
+**關鍵數字**〔模擬〕:
+- 判定 E2E-NOGO：0／32 格過、ASK 0、NOT_MEASURED 8（Qwen × cprefill），m\* 全空——和登記版（`results/s3_h200/e2e/e2e_report.json`）相同。
+- MPS 取捨（只報告）：不設上限的 MPS 對 K2 的 TTFT 改善 30.7–62.9%（登記版 32.9–63.0%），B 比 stream 少 0～6.5 個點（登記版 0～6.7）。
+- `t1_compare`：除 E2E 各項補上值以外，和 10/28 那份相同。
+**失敗與異常**: 第一次送出 `20261028-1608{22,23,24,26}-*` exit 127（我在 zsh 下用 `$var` 拆字串，沒有跑任何東西）；改用 bash 重送。
+**與原本的差異**: 無（判定字相同）。
+
+## ICPE-T1G — CPU 層換成 H200 的常數，重量 GPU 實測（第一批：A1''、A1'、A2、B6／C2）：判定字全部不變（job 22882，2026-10-28 17:18 → 10/29 02:57 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T1G_gpu_rerun.md`；結果節同檔）
+**執行時間**: 2026-10-28T17:18:14+08:00 → 2026-10-29T02:56:49+08:00（GPU）；分析到 03:02
+**run_id**: A1'' `20261028-171820-icpe-t1g-a1pp-b-nfs-gap0`；A1' `20261028-185448-icpe-t1g-a1p-b-nfs-gap0`；A2 `20261028-204748-icpe-t1g-a2-b2-g1-doc-hold-cpu3.69-s0`、`20261028-220610-…-g1-doc-hold-cpu3.69-s1`、`20261028-230008-…-g2-chat-hold-s0`；P02 smoke `20261028-233823-icpe-t1g-p02-smoke`＋12 個 `20261028-233954-icpe-t1g-p02-256-O-BEL-r0` … `20261029-024041-icpe-t1g-p02-128-O-PF-r0`；分析 `20261029-023018-icpe-t1g-analyze-a1a2`、`20261029-030016-icpe-t1g-analyze-p02`；附加 1 `20261029-022626-icpe-t1g-exposure-scan`、`20261029-*-icpe-t1g-exposure-old`、`20261029-023222-icpe-t1g-exposure-regress`、`20261029-023333-icpe-t1g-exposure-a1a2`、`20261029-030108-icpe-t1g-exposure-p02`
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1g code/r_h200_t1g.sh --part all`（22882）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1 X1_TRACE_DIR=/work/ChihChungHsu/hungweilai/datasets/traces; m7run icpe-t1g-analyze-<…> python code/icpe/t1g.py analyze --part <a1pp|a1p|a2|p02>`；`python code/icpe/t1g_exposure.py scan|analyze --part <p> [--regress]|old --label <L> [--main-b] --csv <原本的 CSV>`
+**產出檔**: `results/icpe_h200/t1/gpu/{a1pp,a1p,a2,p02}/`（含 `analysis/`）、`overlap.csv`、`t1g_compare.json`、`exposure/`
+**關鍵數字**（實測）:
+- 排程：18 步全部「重疊：無」、`wait-clear` 都等 0 次、沒有重跑、沒有污染。
+- A1''（fa3）S5 對 S4+（正＝S5 快）：−0.37／−0.37／+0.01%（舊 +0.07／−0.47／+0.03%），δ\* 5% → 成立（同）。
+- A1'（sdpa）：+1.16／+0.09／−0.02%（舊 −0.03／−0.12／+0.03%），δ\* 5%（C4 雜訊 1.76%）→ 成立（同）。
+- A2：GPU 列 0/16 過（同）。
+- B6：實測÷模擬 0.911–0.987（舊 0.911–0.975）、排序、8 個正負號全同 → 成立（同）。
+- C2（GPU，縮小）：HINT-PF 對 LRU 14.5／12.9%、O-PF 對 LRU 17.9／16.2%，HINT-PF 拿到 O-PF 改善的 0.81／0.79（舊 0.81／0.81）；含排隊時 O-PF 對 LRU 8.1／4.7%（只報告）。
+- 附加 1（別的使用者的 job，只報告）：
+  - 暴露單位：A1'' 29／180、A1' 26／180、A2 45／132、P02 1／12；拿掉後沒有任何判定字不同（多數點剩不到 6 次 → NM）。
+  - 同一點暴露÷沒暴露：A1''、A1'、A2 g1-s0 的中位都在 ±0.1% 內；**A2 chat g2-s0 中位 +8.0%（8 點裡 6 點變慢；窗裡 13 個事件，10 個同 lab 帳號）**，那幾列本來就輸 10–217%，不會翻。
+  - 原本的 run 也有一樣的鄰居（例如 A1'' 25／180、A3 104／450）。
+**失敗與異常**:
+- `20261029-025847-icpe-t1g-analyze-p02` exit 1：`FileNotFoundError: '/work/ChihChungHsu/hungweilai/datasets/mooncake/traces/conversation_trace.jsonl'`。head node 沒設 `X1_TRACE_DIR`，和 10/26 原本的 P02 分析同一個問題。在 `load_trace` 就失敗，沒寫出東西；設了之後重跑。
+- `20261029-023149-icpe-t1g-exposure-regress` exit 1：`ValueError: cannot insert run_id, already exists`，我新寫的 `t1g_exposure.py` 單位表欄名撞名，改成 `src_run` 後重跑。
+**與原本的差異**: 判定字全部相同；照 T1 §5，ICPE（只用 H200）改用新值。第二批 A3（T1G-2，job 22886）在跑。
+
+## ICPE-T1G2 — A3 的 GPU 確認在 T1 常數下重做：判定字不變（GPU 上沒有存活設定）（job 22886，2026-10-29 02:56 → 09:15 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T1G2_round1_rerun.md`；結果節同檔）
+**執行時間**: 2026-10-29T02:56:50+08:00 → 2026-10-29T09:15:29+08:00（GPU）；分析到 09:18
+**run_id**: 11.6／0.5 `20261029-025653-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s0`、`20261029-034007-…-s1`、`20261029-040833-…-s2`、`20261029-044421-…-s3`、`20261029-051726-…-s4`；43.59／0.25 `20261029-054220-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s0`、`20261029-063557-…-s1`、`20261029-071444-…-s2`、`20261029-075923-…-s3`、`20261029-084254-…-s4`；分析 `20261029-091732-icpe-t1g-analyze-a3`；附加 1 `20261029-091805-icpe-t1g-exposure-scan2`、`20261029-091816-icpe-t1g-exposure-a3-regress`、`20261029-091830-icpe-t1g-exposure-a3`
+**指令**: `env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --job-name=icpe-t1g2 --time=1-00:00:00 --dependency=afterany:22882 code/r_h200_t1g.sh --part a3`（22886）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run icpe-t1g-analyze-a3 python code/icpe/t1g.py analyze --part a3`；`python code/icpe/t1g_exposure.py scan`、`analyze --part a3 --regress`、`analyze --part a3`
+**產出檔**: `results/icpe_h200/t1/gpu/a3/`（`r1h_gpu_llama_doc_<格>.csv`、`r1_gpu_{summary,verdict}_<格>.csv`、`analysis/verdict.json`）、`overlap.csv`、`t1g_compare.json`、`exposure/{exposure_steps.csv,units_a3.csv,t1g_exposure.json}`
+**關鍵數字**（實測）:
+- 排程：10 步全部「重疊：無」、`wait-clear` 都等 0 次、沒有重跑、沒有污染。
+- 11.6／hold／doc／nfs／0.5（S5L）：2/5 seed 過（seed 0、2；對最好的不看位置 +15.5、+24.5%）→ 不存活（原本 A 也是 2/5，同樣 seed 0、2）。
+- 43.59／hold／doc／nfs／0.25（S5c）：2/5（seed 1、3；+7.8、+7.2%）→ 不存活（原本 C〔35.42〕也是 2/5，同樣 seed 1、3）。
+- **A3 的判定字：GPU 上存活 0/2（原本 0/3）→ 不變。**
+- 模擬對 GPU：|誤差| ≤10% 的格 46/50、44/50。
+- 附加 1（只報告）：暴露單位 11/300（只在 43.59 的 s0、s2；事件都不是同 lab 帳號）；影子回歸逐值相同；拿掉後沒有判定字不同（43.59 的 seed 0、2 → NM，剩 2/3 過）；暴露÷沒暴露 8 點中位 −1.6%（s0）、−0.3%（s2），0 點變慢。
+**失敗與異常**: 無。（`b_workload_seed<k>.json` 被第二格覆寫；兩格同 seed 的工作負載在 stdout 逐字相同。）
+**與原本的差異**: 判定字相同。T1G 兩批（A1''、A1'、A2、B6／C2、A3）全部的判定字都和原本相同；照 T1 §5，ICPE（只用 H200）改用新值。
+
+## ICPE-T2 — 平行爭用校準：CAL-OK（兩個 job、不同 NUMA 節點的卡；同 NUMA 沒量到）（2026-10-29 10:28 → 12:38 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T2_parallel_calibration.md`，2026-10-29T02:28:14Z；偏離 1：每波 2 個；結果節同檔）
+**執行時間**: 2026-10-29T10:28 → 12:38（15 個單卡 job）；分析 12:40
+**run_id**: 每個 job 兩個部件 `20261029-*-icpe-cal-<波>-<job>-mb`／`-rp`（job 23031–23037、23051–23059，清單 `results/icpe_h200/calib/jobs.tsv`）；分析 `20261029-124037-icpe-cal-analyze`（第一次 `20261029-123913-icpe-cal-analyze`，見失敗與異常）
+**指令**: `bash code/icpe/calib_submit.sh`（之後偏離 1 手動重串，見登記）；head node `source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run icpe-cal-analyze python code/icpe/calib.py analyze`
+**產出檔**: `results/icpe_h200/calib/`（`calib_report.json`、`calib_metrics.csv`、`calib_windows*.csv`、`raw/`）
+**關鍵數字**（實測）:
+- solo 14 個部件窗、par 16 個（k 全部 1）、partial／excluded 0；gpu_guard 都乾淨。
+- 8 個指標都 OK：變慢 −2.19%～+0.94%，95% CI 上界最大 +4.02%（e2e_cake_bf16_cpu），δ\* 都是 5%。→ **CAL-OK**，同時最多 2 個。
+- **範圍**：每一對都是 NUMA 0（PCI 31:00.0）＋ NUMA 1（E5:00.0）；同 NUMA 的一對沒有量到 → 只允許「兩個、不同 NUMA 節點」。MPS 的 job 不在範圍內。
+- 只報告：同一張卡 par 對 solo −1.1%～+0.9%；30 個窗有 11 個碰到別的使用者的 job 開始／結束（最多 2 個）；E5 的 job `numa_local=no`。
+**失敗與異常**: 第一次分析 `20261029-123913-icpe-cal-analyze` 的「別的使用者事件」NOT_MEASURED：`tz_convert() takes exactly 2 positional arguments (1 given)`（我在 `other_user_events` 對 pandas Timestamp 呼叫 `astimezone()`）；也漏了登記 §4 的「依卡、依 NUMA」報告。修好、補上後重跑，判定與 8 個指標的數字相同。
+**與原本的差異**: 原本的規則是量時間的 job 一律不和我們自己的 job 同時跑；現在對這兩類 job 放寬成「兩個、不同 NUMA 節點」。
+
+## ICPE-T3 — 還原規劃器換成更強的 STAIR（簡化、照 CacheFlow 的想法）：判定字全部不變（head node 2026-10-29 12:12 → 14:10；job 23063 15:13 → 15:23 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T3_planner_sensitivity.md`，2026-10-29T04:10:54Z；偏離 1：只報告的比值改成回來的請求；異常 1；結果節同檔）
+**執行時間**: head node 2026-10-29T12:12 → 14:10；job 23063 15:13 → 15:23；比對 15:23
+**run_id**: `20261029-121210-icpe-t3-selftest`、`20261029-121338-icpe-t3-x1-sweep-V0`、`…-x1-sweep-V1`、`…-x1-sweep-V2`、各 `icpe-t3-x1-{an,h1800,h3600}-V*`、`icpe-t3-p02-fullsim`、`20261029-141742-icpe-t3-ratio`（第一次 `20261029-141015-icpe-t3-ratio` 子集錯，見偏離 1）、`20261029-151304-icpe-t3-p12-data-verify`、`20261029-151325-icpe-t3-p12-x1fi-sweep`、`20261029-152317-icpe-t3-p12-x1fi-an`、`20261029-152324-icpe-t3-p12-x1fiuser-an`、`20261029-152352-icpe-t3-report`
+**指令**: `bash code/r_h200_t3.sh --part head`（head node）；`sbatch code/r_h200_t3.sh --part fi`（23063）；`source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1 P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json; m7run icpe-t3-ratio python code/icpe/t3.py ratio; m7run icpe-t3-report python code/icpe/t3.py report`
+**產出檔**: `results/icpe_h200/t3/`
+**關鍵數字**（模擬）:
+- 11 個判定檔的判定字 0 個改變；V0–V2 × 3 都「有看頭」；B7 相同 → **ICPE 的判定字對更強的規劃器穩健**。
+- B1（conversation、SSD、閒置、CPU 128）：O-PF 0.505→0.429、O-DROP 0.276→0.209、O-NOW 0.080→0.055。≥15% 的格：V0 190→181、V1 192→179、V2 189→174；H1800 的 O-DROP ≥15% 格 9／7／6→11／9／8（唯一變多的）。
+- C2 HINT-PF ÷ O-PF 中位 SSD／b32／NFS 0.933／0.941／1.118 → 0.924／0.933／0.932；>1 的格 4→2。B3 不變（0.0030／0.0152）。
+- 比值（回來的請求）STAIR ÷ Cake 中位 SSD 0.95／0.94、NFS 0.49／0.63。
+**失敗與異常**: (1) 我的錯：`t3.py ratio` 第一次把所有還原都算進去（登記是回來的請求）→ 改正、重跑（偏離 1，commit 4b650a3）。(2) 異常 1：SSD 慢層正在寫入時，STAIR 有 0.5–0.6% 的回來的請求比 Cake 慢（最多 2.28 倍）：名目成本把寫入中的讀取倍數 k＝3.306 套到每一塊，但寫入在途中結束；自檢用新的 I/O 線，沒抓到。規劃器照登記不改。
+**與 ICPE_EVIDENCE 的差異**: 判定字不變；C2 的「中位 0.94–1.12」換成 STAIR 是 0.92–0.93（NFS 不再 >1）→ 這個範圍要寫成依規劃器而定。ICPE_EVIDENCE 還沒改（要使用者決定）。
+
+## ICPE-T4 — 同一段 FreeInference，命中率的差距 vs TTFT 的差距（橋接 Liu 等人）：BRIDGE-NO-GAP（head node，2026-10-30 09:53 → 10:16 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T4_hit_vs_ttft_bridge.md`，2026-10-30T01:53:11Z；偏離：無；結果節同檔）。判定 BRIDGE-NO-GAP → 照登記 §4 先回報使用者，再改故事。
+**執行時間**: 2026-10-30T09:53:33 → 10:16:01 +08（head node，不用 GPU）
+**run_id**: `20261030-095333-icpe-t4-data-verify`、`20261030-095545-icpe-t4-selftest`（exit 1，見下）、`20261030-095812-icpe-t4-selftest`、`20261030-100335-icpe-t4-sweep`、`20261030-101546-icpe-t4-analyze`
+**指令**: `bash code/r_h200_t4.sh`；失敗後 `bash code/r_h200_t4.sh --from T4-SELFTEST`
+**產出檔**: `results/icpe_h200/t4/`
+**關鍵數字**（模擬；主設定 ssd、GPU 閒、回來的請求、6 週合併）:
+- G_hit（O-BEL+NONE 對 LRU+NONE 的 CPU 命中率）8／16／32／64／128 GiB：3.03／6.01／4.85／0.83／0.07 pp；G_rec（沒命中就重算時的 TTFT 改善）1.4／5.8／15.9／11.8／0.9%；G_cake（有慢層＋Cake）1.6／2.9／2.6／0.4／0.02%。沒有一個容量同時 G_hit ≥5 pp 且 G_rec ≥15% → 5 個都 NO-GAP；其他 11 種（慢層 × GPU × 子集）也都 NO-GAP。
+- 只報告：NFS 級慢層的 G_cake 在 16／32 GiB 是 17.7／27.7%（GPU 閒）、19.1／29.2%（忙）——CPU 層小、慢層慢時，agent trace 上 oracle 的順序對 LRU 也值 18–29%。
+**失敗與異常**: 我的錯：`t4.py` 的命中欄位 `n_ret` 和 X1 `summarize` 撞名，第一次 selftest `TypeError: dict() got multiple values for keyword argument 'n_ret'`（還沒算出數字）→ 改名 `nreq_*`（52a4ef9）、從 T4-SELFTEST 接著跑。
+**與 ICPE 故事的差異**: 不能寫「差距被分層＋Cake 吸收」；B3 的低上界只在 CPU ≥128 GiB 成立（容量夠）；CPU 層 ≤32 GiB、NFS 級時 agent trace 上 oracle 值 18–29%（對 LRU）。要使用者決定怎麼改。
+
+## ICPE-T5 — FreeInference 在 CPU 16–64 GiB 的 X1（對最好的對稱對手）：「可能」（head node，2026-10-30 10:23 → 10:48 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T5_fi_small_cpu.md`，2026-10-30T02:22:45Z；偏離：無；結果節同檔）。判定「可能」→ 照登記 §3 先回報使用者，再改論文。
+**執行時間**: 2026-10-30T10:23:02 → 10:48:15 +08（head node，不用 GPU）
+**run_id**: `20261030-102302-icpe-t5-data-verify`、`20261030-102447-icpe-t5-x1fi-sweep`、`20261030-104713-icpe-t5-check`、`20261030-104731-icpe-t5-x1fi-an`、`20261030-104745-icpe-t5-x1fiuser-an`、`20261030-104800-icpe-t5-report`
+**指令**: `bash code/r_h200_t5.sh`
+**產出檔**: `results/icpe_h200/t5/`
+**關鍵數字**（模擬；Cake；對最好的對稱對手）:
+- 檢查：CPU 128 GiB 的 828 列和 T1 逐值相同（0 列對不上）。
+- 判定：全部回來的請求「可能」（熱組 0）；使用者發起「死路」。
+- 最大 headroom：O-ORD 16／32／64 GiB 5.92／11.81／3.64%（都在 NFS 級；對手 S3-FIFO、S3-FIFO、PENS），O-PF 32 GiB 4.89%（b32），O-DROP ≤0.65%，O-NOW ≤0.06%。96 格裡 ≥5% 的 4 格全是 O-ORD、NFS 級、16／32 GiB；≥15% 的 0 格。
+- 只報告：T4 的 O-BEL 對 LRU 17.7–29.2%（同一批格子）換成最好的對稱對手只剩 5.6–11.8%；小容量時 O-PF 比對手慢（16 GiB 全部 <0），oracle 比某個對手慢的格 53 個。
+**失敗與異常**: 無。
+**與 ICPE 故事的差異**: B3 可以擴成「CPU 16–1,024 GiB 都 <15%」；5–12% 只在 CPU 16–32 GiB＋NFS 級的淘汰順序。要使用者決定寫法。

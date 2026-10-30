@@ -1,0 +1,107 @@
+# E2E-C 第二段：MPS 取捨在 GPU 上驗證（附錄登記）
+
+> **性質**：判準登記（事先寫死）。登記時間見文末。登記之後這一節以上不改；和登記不同的做法寫成文末的「偏離 N」。
+> **來源**：[E2E_combo.md](E2E_combo.md) §9 規定第二段要另寫附錄登記、在任何 GPU 數字之前。第一段判 E2E-NOGO，照 §9 原本不做；**使用者 2026-10-29 決定還是要做 GPU 驗證**（「MPS 在論文裡怎麼寫？……gpu」）。所以這一份是「NOGO 之後、使用者要求的驗證」，不改第一段的判定。
+> **要回答的**：E2E-C 的模擬把 B0 量到的「背景 × 共用方式」的倍數乘到 Cake 的還原上（第一段 §3.3、偏離 1），並用 §3.4 算背景吞吐。這條「MPS 等級 → TTFT 改善 vs 背景吞吐」的取捨曲線，在真的 GPU 上重播時對不對得上？
+> **範圍**：只有 H200、只有 Llama-3.1-8B、只有 conversation（縮小版，和 ICPE P0-2／B6 相同）；CPU 層用 T1 的常數（`P3_TIER=h200cpu`）。
+
+---
+
+## 1. 設定
+
+- **工作負載**：`x1_gpu.load_P(8)`（Mooncake conversation、R1、依 session 抽 1/8；1,535 個請求、467 個回來的請求），CPU 128 GiB → `cap_bytes(128, 8)`；慢層＝SSD 級；還原＝Cake；慢層存 INT4；**HINT-PF**（＝第一段的 K2／K3）。和 T1G 的 P02 HINT-PF 128 run 同一份工作負載與程式（`x1_gpu.GpuExec`、`replay`）。
+- **背景**：第一段的兩個 {cprefill:2048:65536, mixed:512:32:8192}（`bgengine.Background`）。
+- **共用方式**：stream（背景在同一個 process 的另一個 CUDA stream，同 B0）；mps、mps87、mps75、mps50（背景在另一個 process，`CUDA_MPS_ACTIVE_THREAD_PERCENTAGE`，同 B0 的 `start_bgproc`；MPS daemon 只在 mps 那一段開）。
+- **另加一個參考**：idle（沒有背景）。
+- **重複**：每格 1 次；另外 stream 與 mps（兩個背景）各多 1 次（rep 1），只用來報告雜訊。共 2×5＋1＋4＝**15 個 GPU run**，每個跑完整的 1,535 個請求。
+- **背景吞吐**：每個 run 開始前背景單獨跑 6×1 s（同 B0，得到 solo）；重播期間背景一直跑，量重播那段牆鐘時間裡的步數 → ρ_gpu＝共跑速度 ÷ solo。cap_gpu(g, m)＝solo(g, m)／solo(g, mps)（stream、mps＝1）。
+
+## 2. 模擬（同一份工作負載）
+
+- 用第一段的 `e2e.BgView`（path＝e2e，§3.3）、`e2e.factors`（B0 的資料、同一套 2σ 可用規則）、`XG.make_engine(P, "HINT-PF", cap, ...)`，跑同一個縮小版 P。
+- **S_orig**：原始到達時間。**S_real**（只報告）：用 GPU run 的實際開始時間（同 P0-2 的做法）。
+- 模擬的背景吞吐：整段重播一個時間窗，B_sim＝cap × (1 − φ·(1 − ρ̄))（§3.4 的公式，不切開發／測試）。GPU 的 B_gpu 用同一個公式，φ 用 GPU run 自己的 [t_start, t_start＋TTFT]（虛擬時間），ρ 用 ρ_gpu、cap 用 cap_gpu。
+- 模擬那一格的倍數不可用（2σ 規則）→ 那一格 NOT_MEASURED（只報 GPU 的數字）。
+
+## 3. 判準
+
+- 指標：回來請求（kind＝1）的平均 TTFT（不含排隊，同 B6）。
+- **(a) 比值**：每格（g, m）GPU ÷ S_orig 在 [0.9, 1.1]。
+- **(b) 取捨的形狀**：每個 g、每個 MPS 等級 m：gain(m)＝1 − TTFT(m)／TTFT(stream)。GPU 與 S_orig 的 gain 同號，而且相差 ≤ 10 個百分點。
+- **(c) 背景吞吐**：|ρ_gpu − ρ̄_sim| ≤ 0.05，而且 |B_gpu − B_sim| ≤ 0.03。
+- **判定**（只算可量的格；NOT_MEASURED 照實列出）：
+  - **MPS-GPU-VALID**：(b) 全部成立，而且 (a)、(c) 各在 ≥ 80% 的格成立。
+  - **MPS-GPU-PARTIAL**：(b) 全部成立，但 (a) 或 (c) 不到 80%。→ 論文只能寫「曲線的形狀在 GPU 上成立，絕對值〔模擬〕」。
+  - **MPS-GPU-INVALID**：(b) 有任何一格不成立。→ 論文的 MPS 曲線只能寫〔模擬〕，並附 GPU 的反例。
+  - 可量的 (g, m) 少於 6 格 → **NOT_DETERMINED**。
+- **只報告**：S_real 的比值；rep 0／rep 1 的差（雜訊）；idle 對 stream 的差；P95；`queue_s`。
+- 判定不改第一段 E2E-NOGO（那是 B ≥ 0.95 的判準，這裡驗的是模擬本身）。
+
+## 4. 程式與執行
+
+- `code/s3/e2e_gpu.py`：`gpu`（一個 run）、`sim`、`report`、`--self-test`（模擬的 BgView 在 idle 時和 `x1_gpu.replay(model_view=True)` 的 HINT-PF 逐請求相同）。
+- runner `code/r_h200_e2e_gpu.sh`：先冒煙（同一個 job、`--max-req 40`、cprefill × stream 與 × mps 各一次，輸出在 run 目錄、不進 results、不看數字），再正式跑；stream 那一段不開 MPS daemon，之後 `mps_on` 再跑 mps 那一段；順序：idle → stream 那一段（兩個背景 × rep 0、1，固定 seed 打亂）→ 開 MPS → mps 那一段（4 個等級 × 兩個背景的 rep 0，加 mps × 兩個背景的 rep 1，固定 seed 打亂）。
+- 量時間：照 T2（`docs/h200/icpe/T2_parallel_calibration.md`）的結論決定能不能和我們的別的 job 同時跑；T2 判之前 → 獨佔（等節點上沒有我們自己的別的 job；每個 run 查重疊，同 T1G）。
+- 輸出：`results/s3_h200/e2e_gpu/`（`gpu_requests.csv`、`gpu_runs.csv`、`sim_requests.csv`、`report.json`）。
+
+## 5. 已經看過的數字（登記前）
+
+- 第一段的全部結果（E2E-NOGO、32 格、MPS 曲線、FreeInference 的診斷）、T1 版。
+- B0 的全部結果；T1G 的 P02（HINT-PF 128 的 GPU 平均 TTFT 0.237 s 等）。
+- **沒有看過**：任何「縮小版 × 背景」的模擬或 GPU 數字。
+
+---
+
+## 登記
+
+- 登記時間（`date -u`）：2026-10-29T03:03:43Z
+- 登記時 repo HEAD：`15eef10`（本檔隨下一個 commit 進 git）
+
+## 偏離（登記之後）
+
+### 偏離 1（寫於 2026-10-29T06:15Z，切 job 之前）：分成兩個 Slurm job
+
+- **改什麼**：job 23050（時限 12 小時）做完 `E2EG-cprefill-stream-r1` 之後，在下一步 `E2EG-mixed-stream-r0` 剛開始時 `scancel`；剩下的步驟（從 `E2EG-mixed-stream-r0` 起，含 MPS 那一段）另送一個 job：`sbatch --time=36:00:00 code/r_h200_e2e_gpu.sh --from E2EG-mixed-stream-r0`，排在 T3 的 FreeInference 部分（23063，只跑模擬，T1 的同一步約 9 分鐘）之後。設定、順序（同一個固定 seed）、判準都不變。
+- **為什麼**：有 cprefill 背景時，一個 run 的牆鐘時間遠超我登記時的估計（我估整串 6–7 小時；cprefill-stream-r1 一個 run 就約 2.4 小時），整串會超過 12 小時的上限，到時正在跑的那個 run 會被砍掉；而 23063 排在 23050 之後。在步驟邊界切，已完成的 run 都不丟；被砍的 mixed-stream-r0 只跑了幾秒，沒有寫進 results（`e2e_gpu.py gpu` 只在 run 結束時寫）。
+- **影響**：idle-r0、cprefill-stream-r1 在 23050 的卡（PCI `31:00.0`）上；其餘 13 個 run（全部 rep 0 的判定格，以及其餘的 rep 1）在續跑那個 job 的卡上，可能是另一張卡。**判定用的格（rep 0）全部在同一個 job、同一張卡**；只報告的「idle 對 stream 的差」和「cprefill stream 的 rep 0／rep 1 差」會跨卡，報告時註明卡。
+- **看過的數字**：runner 每 200 個請求印一行的 TTFT（idle-r0 全部、cprefill-stream-r1 的前 600 個）、idle-r0 的 run 摘要（`t_replay_s`）。沒有算任何格的平均，也沒有看模擬對 GPU 的比值。這個決定只看牆鐘時間。
+- **實際執行**：23050 在 2026-10-29T15:12:59+08:00 取消（`E2EG-cprefill-stream-r1` 15:12:54 結束、重疊：無；`E2EG-mixed-stream-r0` 的 run `20261029-151254-s3-e2eg-mixed-stream-r0` 只跑了 5 秒，沒有寫進 results）。續跑的 job：**23080**（`--time=36:00:00 --dependency=afterany:23063`，`--from E2EG-mixed-stream-r0`）。
+- **卡**：23080 拿到的也是 PCI `31:00.0`（`slurm-s3-e2e-gpu-23080.out` 的 nvidia-smi），所以 15 個 run 全部在同一張卡上；上面「可能跨卡」的影響不存在。
+
+---
+
+## 結果（2026-10-30）：**MPS-GPU-INVALID**
+
+- **執行**：job 23050（2026-10-29 12:37–15:12，idle-r0、cprefill-stream-r1；偏離 1）＋ job 23080（15:23 → 10-30 02:11，其餘 13 個）；全部在 PCI `31:00.0`；15 個 run 都跑完 1,535 個請求，gpu_guard 都乾淨，重疊都沒有（`overlap.csv`），沒有重跑。模擬（S_orig＋S_real）`20261030-021241-s3-e2eg-sim`；報告 `20261030-021318-s3-e2eg-report`（`report.json`）。
+- **判定**：可量 9 格（≥6）。(b) 7 格裡 4 格不成立 → **MPS-GPU-INVALID**；(a) 6/9＝67%、(c) 1/9＝11%（也都不到 80%）。
+
+回來請求的平均 TTFT（不含排隊）；gain＝1 − TTFT(m)／TTFT(stream)：
+
+| 格 | GPU（s） | S_orig（s） | (a) 比值 | gain GPU | gain 模擬 | (b) | ρ GPU／模擬 | B GPU／模擬 | (c) |
+|:--|--:|--:|--:|--:|--:|:--|:--|:--|:--|
+| cprefill × stream | 2.443 | 1.999 | 1.222 ✗ | — | — | — | 0.852／0.768 | 0.868／0.809 | ✗ |
+| cprefill × mps | 0.975 | 1.424 | 0.685 ✗ | 60.1% | 28.8% | ✗（31 pp） | 0.811／0.760 | 0.814／0.806 | ✗（Δρ 0.0504） |
+| cprefill × mps87 | 0.770 | 0.756 | 1.018 ✓ | 68.5% | 62.2% | ✓ | 0.836／0.800 | 0.712／0.739 | ✓ |
+| cprefill × mps75 | 0.566 | 0.555 | 1.021 ✓ | 76.8% | 72.3% | ✓ | 0.727／0.777 | 0.684／0.749 | ✗ |
+| cprefill × mps50 | 0.417 | NOT_MEASURED | — | — | — | — | 0.812／— | — | — |
+| mixed × stream | 0.745 | 0.608 | 1.226 ✗ | — | — | — | 0.693／0.640 | 0.789／0.845 | ✗ |
+| mixed × mps | 0.515 | 0.498 | 1.034 ✓ | 30.9% | 18.1% | ✗（13 pp） | 0.650／0.597 | 0.791／0.830 | ✗ |
+| mixed × mps87 | 0.455 | 0.493 | 0.923 ✓ | 38.9% | 18.8% | ✗（20 pp） | 0.631／0.624 | 0.753／0.788 | ✗ |
+| mixed × mps75 | 0.432 | 0.471 | 0.917 ✓ | 42.0% | 22.4% | ✗（20 pp） | 0.608／0.628 | 0.752／0.794 | ✗ |
+| mixed × mps50 | 0.405 | 0.374 | 1.083 ✓ | 45.6% | 38.5% | ✓ | 0.746／0.620 | 0.612／0.606 | ✗ |
+
+- **方向（照實）**：7 格有 gain 的，GPU 和模擬**正負號全部一致**（MPS 讓 TTFT 比 stream 低），而且 **GPU 的 gain 在 7 格都比模擬大**（多 5–31 個百分點）→ 模擬對 MPS 的 TTFT 好處是**低估**。不一致主要來自兩處：stream 這條基準 GPU 比模擬慢 22%（兩個背景都是），以及 cprefill × mps（100%）GPU 比模擬快 32%。
+- **照登記**：論文的 MPS 曲線只能寫〔模擬〕，並附 GPU 的反例（上表）。第一段的 E2E-NOGO 不變。
+
+只報告（§3）：
+- idle：GPU 0.2377 s、模擬 0.2411 s（0.986）。
+- 雜訊（rep 1 ÷ rep 0 − 1）：cprefill stream +0.04%（rep 1 在 23050、rep 0 在 23080，同一張卡）、mixed stream −0.36%、cprefill mps +0.07%、mixed mps −0.01%。
+- S_real 的比值（GPU ÷ S_real）：idle 1.022；stream 1.28–1.31；cprefill mps 0.71；其餘 0.95–1.12。
+- GPU 的 P95：cprefill stream 5.20 s → mps 3.43、mps87 2.23、mps75 1.55、mps50 1.12；mixed stream 1.63 → mps 1.44、mps87 1.22、mps75 1.17、mps50 1.10。
+- 平均 `queue_s`（回來的請求）：idle 1.2 s；cprefill stream 2,456 s、mps 730、mps87 42、mps75 12.5、mps50 5.4；mixed stream 11.2、mps 8.3、mps87 6.4、mps75 5.6、mps50 5.2。cprefill × stream／mps 的重播跟不上到達（所以一個 run 要 2–2.4 小時）。
+
+診斷（登記外，只報告，不改判定）：
+- 背景單獨跑的速度是量化的：cprefill 每秒剛好 6.0／5.0／5.0／3.5 步（mps／mps87／mps75／mps50），所以 cprefill 的 cap_gpu 解析度約 17%，比 (c) 的 ±0.03 粗。
+- GPU 的 TTFT 拆開（回來的請求平均）：idle 還原 0.053＋新 token 0.185 s；cprefill stream 0.794＋1.649；mixed stream 0.208＋0.537。TTFT 大半是新 token 的 prefill。
+- MPS log（`mps_log_23080/`）：22 行「User did not send valid credentials」，每行都緊接在一個成功的 client 連線之前；server.log 的「failed to receive command … assuming client exit」出現在 client 結束時。只記錄。
+- **產出**：`results/s3_h200/e2e_gpu/`（`report.json`、`gpu_runs.csv`、`gpu_requests_{stream,mps}.csv.xz`、`sim_requests.csv.xz`、`sim_summary.json`、`overlap.csv`、`gpu_guard_*.json`、`mps_log_23080/`）。

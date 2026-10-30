@@ -1,0 +1,436 @@
+{
+ "figure": "fig6_mps.png",
+ "layout": {
+  "intended_width": "ACM full width (figure*)",
+  "width_in": 7.0,
+  "height_in": 3.8,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/s3_h200/e2e/mps_tradeoff.csv",
+   "sha256": "fd2bd13fdcb0f6f2c55596af09b897b9ab3b133d6abbd07f56e0b4f38aaa6192",
+   "run_id": [
+    "20261028-165753-s3-e2e-curve"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-025101-s3-e2e-run-llama-conv",
+     "20261028-025151-s3-e2e-run-qwen-conv",
+     "20261028-025305-s3-e2e-run-llama-fi",
+     "20261028-025307-s3-e2e-run-qwen-fi"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/e2e/mps_tradeoff.csv",
+   "sha256": "3b6d828b750e7d00071d9e2bd5cb0d72f5a0b67941a3a2aed85d31a287c5f649",
+   "run_id": [
+    "20261029-021836-icpe-t1-e2e-curve"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-160904-icpe-t1-e2e-llama-conv",
+     "20261028-160905-icpe-t1-e2e-qwen-conv",
+     "20261028-160906-icpe-t1-e2e-llama-fi",
+     "20261028-160907-icpe-t1-e2e-qwen-fi"
+    ]
+   }
+  },
+  {
+   "path": "results/s3_h200/e2e_gpu/report.json",
+   "sha256": "5734c04f584bdf203d9559369fb9f3c248658dfa0e21f133067d007d59ce6c4b",
+   "run_id": [
+    "20261030-021318-s3-e2eg-report"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/s3_h200/e2e_gpu/gpu_runs.csv",
+   "sha256": "8a6805ff0f98d6eb2b12c4bd88e46fc4c4798ff68e5665e3059607ddc09a106f",
+   "run_id": [
+    "20261029-124311-s3-e2eg-idle-stream-r0",
+    "20261029-125936-s3-e2eg-cprefill-stream-r1",
+    "20261029-152336-s3-e2eg-mixed-stream-r0",
+    "20261029-160739-s3-e2eg-cprefill-stream-r0",
+    "20261029-182057-s3-e2eg-mixed-stream-r1",
+    "20261029-190835-s3-e2eg-cprefill-mps-r1",
+    "20261029-201428-s3-e2eg-cprefill-mps87-r0",
+    "20261029-210908-s3-e2eg-mixed-mps75-r0",
+    "20261029-214011-s3-e2eg-cprefill-mps75-r0",
+    "20261029-222029-s3-e2eg-cprefill-mps-r0",
+    "20261029-232624-s3-e2eg-mixed-mps-r1",
+    "20261030-000316-s3-e2eg-mixed-mps87-r0",
+    "20261030-003557-s3-e2eg-mixed-mps-r0",
+    "20261030-011244-s3-e2eg-cprefill-mps50-r0",
+    "20261030-014221-s3-e2eg-mixed-mps50-r0"
+   ],
+   "related_run_ids": {}
+  }
+ ],
+ "plotted_values": {
+  "units": "B = background throughput ratio; gain fraction (plotted x100)",
+  "per_background": {
+   "cprefill:2048:65536": {
+    "scaled_down": {
+     "stream": {
+      "gpu_run": "20261029-160739-s3-e2eg-cprefill-stream-r0",
+      "B_gpu": 0.8681525038740261,
+      "gain_gpu": 0.0,
+      "B_sim": 0.8088901455327011,
+      "gain_sim": 0.0,
+      "ttft_gpu_s": 2.4429006139953207,
+      "ttft_sim_s": 1.9993331857832428
+     },
+     "mps": {
+      "gpu_run": "20261029-222029-s3-e2eg-cprefill-mps-r0",
+      "B_gpu": 0.8135460897176713,
+      "gain_gpu": 0.6008086402608457,
+      "B_sim": 0.8063078105851432,
+      "gain_sim": 0.2876174119428525,
+      "ttft_gpu_s": 0.975184817808407,
+      "ttft_sim_s": 1.4242901492768083
+     },
+     "mps87": {
+      "gpu_run": "20261029-201428-s3-e2eg-cprefill-mps87-r0",
+      "B_gpu": 0.7121890451186199,
+      "gain_gpu": 0.6848666543276691,
+      "B_sim": 0.7387080313854608,
+      "gain_sim": 0.6217013240084825,
+      "ttft_gpu_s": 0.7698394436333368,
+      "ttft_sim_s": 0.7563450970477035
+     },
+     "mps75": {
+      "gpu_run": "20261029-214011-s3-e2eg-cprefill-mps75-r0",
+      "B_gpu": 0.6841483868190015,
+      "gain_gpu": 0.7682619481681608,
+      "B_sim": 0.7490727592654524,
+      "gain_sim": 0.7226407857027564,
+      "ttft_gpu_s": 0.5661130291060794,
+      "ttft_sim_s": 0.5545334815272454
+     }
+    },
+    "curve_T1_primary": {
+     "stream": {
+      "B_median": 0.8007683144702802,
+      "gain_vs_K2_median": 0.0
+     },
+     "mps": {
+      "B_median": 0.7773613202975851,
+      "gain_vs_K2_median": 0.5042356183057056
+     },
+     "mps87": {
+      "B_median": 0.6681294199303468,
+      "gain_vs_K2_median": 0.7172160431409371
+     },
+     "mps75": {
+      "B_median": 0.6427883488951728,
+      "gain_vs_K2_median": 0.7777562642589307
+     }
+    },
+    "curve_registered": {
+     "stream": {
+      "B_median": 0.8018333852925859,
+      "gain_vs_K2_median": 0.0
+     },
+     "mps": {
+      "B_median": 0.7775804956501267,
+      "gain_vs_K2_median": 0.5171873121501825
+     },
+     "mps87": {
+      "B_median": 0.6681103662176151,
+      "gain_vs_K2_median": 0.7244845361541015
+     },
+     "mps75": {
+      "B_median": 0.6424434243360848,
+      "gain_vs_K2_median": 0.7813263346980562
+     }
+    },
+    "not_plotted": [
+     {
+      "cell": "cprefill:2048:65536|mps50",
+      "status": "NOT_MEASURED",
+      "reason": "cprefill:2048:65536×mps50×e2e_cake_int4_cpu：2σ 不過（0.193181／0.023906）"
+     }
+    ]
+   },
+   "mixed:512:32:8192": {
+    "scaled_down": {
+     "stream": {
+      "gpu_run": "20261029-152336-s3-e2eg-mixed-stream-r0",
+      "B_gpu": 0.7888919295932108,
+      "gain_gpu": 0.0,
+      "B_sim": 0.8451384481606881,
+      "gain_sim": 0.0,
+      "ttft_gpu_s": 0.7447438722584053,
+      "ttft_sim_s": 0.6076948112730098
+     },
+     "mps": {
+      "gpu_run": "20261030-003557-s3-e2eg-mixed-mps-r0",
+      "B_gpu": 0.7910777068374759,
+      "gain_gpu": 0.3090833558147221,
+      "B_sim": 0.8302495041340767,
+      "gain_sim": 0.18091901401748456,
+      "ttft_gpu_s": 0.5145559369983267,
+      "ttft_sim_s": 0.4977512651939555
+     },
+     "mps87": {
+      "gpu_run": "20261030-000316-s3-e2eg-mixed-mps87-r0",
+      "B_gpu": 0.7530155708971519,
+      "gain_gpu": 0.38853246659944174,
+      "B_sim": 0.7878320815918797,
+      "gain_sim": 0.18804994666957897,
+      "ttft_gpu_s": 0.45538669858502756,
+      "ttft_sim_s": 0.4934178344217405
+     },
+     "mps75": {
+      "gpu_run": "20261029-210908-s3-e2eg-mixed-mps75-r0",
+      "B_gpu": 0.752077393074491,
+      "gain_gpu": 0.4196630981892122,
+      "B_sim": 0.7939114746730819,
+      "gain_sim": 0.22420274100486715,
+      "ttft_gpu_s": 0.4322023514690121,
+      "ttft_sim_s": 0.4714479688911656
+     },
+     "mps50": {
+      "gpu_run": "20261030-014221-s3-e2eg-mixed-mps50-r0",
+      "B_gpu": 0.612005744912729,
+      "gain_gpu": 0.45625003440255607,
+      "B_sim": 0.6061132316467999,
+      "gain_sim": 0.3846800247479806,
+      "ttft_gpu_s": 0.40495445491941506,
+      "ttft_sim_s": 0.373926756233289
+     }
+    },
+    "curve_T1_primary": {
+     "stream": {
+      "B_median": 0.6968987115906992,
+      "gain_vs_K2_median": 0.0
+     },
+     "mps": {
+      "B_median": 0.6316111196344003,
+      "gain_vs_K2_median": 0.3324476524138053
+     },
+     "mps87": {
+      "B_median": 0.6072118148604118,
+      "gain_vs_K2_median": 0.3371224618571272
+     },
+     "mps75": {
+      "B_median": 0.6016704950110567,
+      "gain_vs_K2_median": 0.3633197311108301
+     },
+     "mps50": {
+      "B_median": 0.4701798482070248,
+      "gain_vs_K2_median": 0.4470417528246147
+     }
+    },
+    "curve_registered": {
+     "stream": {
+      "B_median": 0.6979584582297118,
+      "gain_vs_K2_median": 0.0
+     },
+     "mps": {
+      "B_median": 0.6314221472511137,
+      "gain_vs_K2_median": 0.3443460994147636
+     },
+     "mps87": {
+      "B_median": 0.6070281178427694,
+      "gain_vs_K2_median": 0.3491824209427223
+     },
+     "mps75": {
+      "B_median": 0.6014066322616365,
+      "gain_vs_K2_median": 0.3749407356051754
+     },
+     "mps50": {
+      "B_median": 0.4701160286357868,
+      "gain_vs_K2_median": 0.4545652159117656
+     }
+    },
+    "not_plotted": []
+   }
+  },
+  "t1_minus_registered_curve": [
+   {
+    "bg": "cprefill:2048:65536",
+    "mode": "stream",
+    "d_gain_pp": 0.0,
+    "d_B": -0.0010650708223056693
+   },
+   {
+    "bg": "cprefill:2048:65536",
+    "mode": "mps",
+    "d_gain_pp": -1.295169384447692,
+    "d_B": -0.0002191753525415674
+   },
+   {
+    "bg": "cprefill:2048:65536",
+    "mode": "mps87",
+    "d_gain_pp": -0.7268493013164345,
+    "d_B": 1.905371273169809e-05
+   },
+   {
+    "bg": "cprefill:2048:65536",
+    "mode": "mps75",
+    "d_gain_pp": -0.35700704391254945,
+    "d_B": 0.0003449245590879668
+   },
+   {
+    "bg": "mixed:512:32:8192",
+    "mode": "stream",
+    "d_gain_pp": 0.0,
+    "d_B": -0.0010597466390126487
+   },
+   {
+    "bg": "mixed:512:32:8192",
+    "mode": "mps",
+    "d_gain_pp": -1.1898447000958268,
+    "d_B": 0.00018897238328663413
+   },
+   {
+    "bg": "mixed:512:32:8192",
+    "mode": "mps87",
+    "d_gain_pp": -1.2059959085595096,
+    "d_B": 0.00018369701764231472
+   },
+   {
+    "bg": "mixed:512:32:8192",
+    "mode": "mps75",
+    "d_gain_pp": -1.1621004494345277,
+    "d_B": 0.0002638627494202517
+   },
+   {
+    "bg": "mixed:512:32:8192",
+    "mode": "mps50",
+    "d_gain_pp": -0.752346308715085,
+    "d_B": 6.381957123802184e-05
+   }
+  ],
+  "t1_minus_registered_max_abs_gain_pp": 1.295169384447692,
+  "t1_minus_registered_max_abs_B": 0.0010650708223056693
+ },
+ "checks": [
+  {
+   "what": "cprefill:2048:65536|mps gain_gpu = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.6008086402608457,
+   "expected": 0.6008086402608457,
+   "tolerance": 1e-09,
+   "expected_from": "report.json gpu ttft",
+   "status": "match"
+  },
+  {
+   "what": "cprefill:2048:65536|mps gain_sim = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.2876174119428525,
+   "expected": 0.2876174119428525,
+   "tolerance": 1e-09,
+   "expected_from": "report.json sim ret_ttft_mean",
+   "status": "match"
+  },
+  {
+   "what": "cprefill:2048:65536|mps87 gain_gpu = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.6848666543276691,
+   "expected": 0.6848666543276691,
+   "tolerance": 1e-09,
+   "expected_from": "report.json gpu ttft",
+   "status": "match"
+  },
+  {
+   "what": "cprefill:2048:65536|mps87 gain_sim = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.6217013240084825,
+   "expected": 0.6217013240084825,
+   "tolerance": 1e-09,
+   "expected_from": "report.json sim ret_ttft_mean",
+   "status": "match"
+  },
+  {
+   "what": "cprefill:2048:65536|mps75 gain_gpu = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.7682619481681608,
+   "expected": 0.7682619481681608,
+   "tolerance": 1e-09,
+   "expected_from": "report.json gpu ttft",
+   "status": "match"
+  },
+  {
+   "what": "cprefill:2048:65536|mps75 gain_sim = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.7226407857027564,
+   "expected": 0.7226407857027564,
+   "tolerance": 1e-09,
+   "expected_from": "report.json sim ret_ttft_mean",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps gain_gpu = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.3090833558147221,
+   "expected": 0.3090833558147221,
+   "tolerance": 1e-09,
+   "expected_from": "report.json gpu ttft",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps gain_sim = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.18091901401748456,
+   "expected": 0.18091901401748456,
+   "tolerance": 1e-09,
+   "expected_from": "report.json sim ret_ttft_mean",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps87 gain_gpu = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.38853246659944174,
+   "expected": 0.38853246659944174,
+   "tolerance": 1e-09,
+   "expected_from": "report.json gpu ttft",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps87 gain_sim = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.18804994666957897,
+   "expected": 0.18804994666957897,
+   "tolerance": 1e-09,
+   "expected_from": "report.json sim ret_ttft_mean",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps75 gain_gpu = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.4196630981892122,
+   "expected": 0.4196630981892122,
+   "tolerance": 1e-09,
+   "expected_from": "report.json gpu ttft",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps75 gain_sim = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.22420274100486715,
+   "expected": 0.22420274100486715,
+   "tolerance": 1e-09,
+   "expected_from": "report.json sim ret_ttft_mean",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps50 gain_gpu = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.45625003440255607,
+   "expected": 0.45625003440255607,
+   "tolerance": 1e-09,
+   "expected_from": "report.json gpu ttft",
+   "status": "match"
+  },
+  {
+   "what": "mixed:512:32:8192|mps50 gain_sim = 1 - ttft/ttft(stream)",
+   "value_in_plotted_file": 0.3846800247479806,
+   "expected": 0.3846800247479806,
+   "tolerance": 1e-09,
+   "expected_from": "report.json sim ret_ttft_mean",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "Primary curve = the T1 rerun with the H200 CPU-tier constants (results/icpe_h200/t1/e2e/mps_tradeoff.csv), consistent with EVIDENCE M4; faint dashed curve = the registered E2E-C run with the CPU tier at 35.4 GiB/s (results/s3_h200/e2e/mps_tradeoff.csv). Both give the same registered verdict (E2E-NOGO); differences listed in plotted_values.",
+  "'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). The b32 tier (2.49 GiB/s) is also H200-derived: read from results/m10_precision_h200/speed_llama/bw.json (run_id 20261017-074151-m10h-calibf-llama), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. Only the SSD-class and NFS-class throttle constants carry over from an earlier platform.",
+  "Curve points: test half, Llama-3.1-8B, Mooncake conversation, median over 4 cells (2 slow tiers x 2 CPU sizes); y = (K2 - K3(m)) / K2 with K2 = INT4 + typing-hint prefetch under stream sharing; x = background throughput ratio B.",
+  "Scaled-down points (hollow = simulation of the replayed workload, filled = H200 measured): Llama-3.1-8B, conversation sampled 1/8, CPU 128 GiB scaled, SSD class, Cake, INT4 on the slow tier, HINT-PF; gain = 1 - TTFT(m) / TTFT(stream); report.json verdict: MPS-GPU-INVALID",
+  "Registered E2E-C pass rule drawn as dashed lines: Delta > 15% and B >= 0.95 (docs/stage3_design_20261024/runs/E2E_combo.md section 4); thresholds are rule constants, not data."
+ ]
+}

@@ -239,3 +239,5 @@
 | G8 | **慢層的 refinement 再疊無損**（BF16 指數編碼）：只對慢層划算 | S1：NFS 級省 32% | A |
 | G9 | **投機式還原**：先用 base 生成草稿、refinement 到了再驗證；輸出和完整 KV 一樣，只是更早開始算（Lynx、QuantSpec 的想法搬到下層還原） | O4、O5 | A 的無損版 |
 | G10 | **MLA、滑動窗口、混合線性注意力的模型**：KV 結構不同，漸進式與資源向量的結論會不會變 | 待 L8c | X5 規模 |
+
+> **10/28 查新（[L9](lit/L9_g9_speculative_restore.md)，摘要層級、self-review）**：G9 已有直接前作——VeriCache（arXiv 2605.17613：壓縮 KV 草稿＋完整 KV 從 GPU 外換入驗證，兩者並行，輸出無損）與 Lynx（arXiv 2607.01831：anchor／residual 漸進傳輸＋投機生成）。新意低，不建議當新方向。

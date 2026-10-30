@@ -1,0 +1,64 @@
+{
+ "derate": 0.9,
+ "rule": "min(measured) * 0.9; C0 excludes rep 0 (warm-up); SSD from sustained per-chunk-file I/O, c=0；cpu＝H200（T1）",
+ "source_runs": [
+  "20261008-130257-m7-c0",
+  "20261008-130438-m7-c2",
+  "20261016-061254-m7h-c0",
+  "20261016-061303-m7h-duplex"
+ ],
+ "cpu": {
+  "read_GiBps": 43.588800000000006,
+  "write_GiBps": 41.1687,
+  "c_ms": 0.0,
+  "ell_chunk_ms": 1.4338545681459454,
+  "k_read": 1.002
+ },
+ "local": {
+  "read_GiBps": 6.98115234375,
+  "write_GiBps": 1.9106542968750002,
+  "c_ms": 0.0,
+  "measured_min_read_MiBps": 7943.0,
+  "measured_min_write_MiBps": 2173.9,
+  "regression_intercept_ms_info": 2.4945384190160307,
+  "ell_chunk_ms": 8.95267671045085,
+  "k_read": 3.306
+ },
+ "nfs": {
+  "read_GiBps": 0.331083984375,
+  "write_GiBps": 0.60099609375,
+  "c_ms": 0.0,
+  "measured_min_read_MiBps": 376.7,
+  "measured_min_write_MiBps": 683.8,
+  "regression_intercept_ms_info": 0.7935207296849087,
+  "ell_chunk_ms": 188.77385482110728,
+  "k_read": 1.673
+ },
+ "k_read_source": "cpu: H200 results/m7_write_policy_h200/calib_c0_duplex.csv median alone/with_d2h (run 20261016-061303-m7h-duplex), rounded to 3 decimals; local/nfs: copied from the MI300X tier_params.json (cpu: calib_c0_duplex.csv median alone/with_d2h (run m7-duplex); local/nfs: a2.csv real, median ms/load S0_full vs none (run m7-a2))",
+ "t1": {
+  "prereg": "docs/h200/icpe/T1_h200_cpu_tier.md",
+  "run_id": "20261028-065334-icpe-t1-build",
+  "ts": "2026-10-28T06:53:43+08:00",
+  "derived_from": "results/m7_write_policy_mi300x/tier_params.json",
+  "cpu_source": {
+   "c0": "20261016-061254-m7h-c0",
+   "duplex": "20261016-061303-m7h-duplex",
+   "h2d_min_GiBps": 48.432,
+   "d2h_min_GiBps": 45.743,
+   "duplex_alone_median": 53.528,
+   "duplex_with_d2h_median": 53.401
+  },
+  "unchanged": [
+   "local",
+   "nfs",
+   "derate"
+  ],
+  "mi300x_cpu": {
+   "read_GiBps": 35.4159,
+   "write_GiBps": 35.5482,
+   "c_ms": 0.0,
+   "ell_chunk_ms": 1.7647440838719333,
+   "k_read": 1.161
+  }
+ }
+}

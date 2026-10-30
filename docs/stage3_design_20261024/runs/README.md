@@ -6,17 +6,19 @@
 
 | 閘 | 文件 | 程式 | 結果 | 狀態 |
 |:--|:--|:--|:--|:--|
-| A0（＝G-M01/02） | [A0_progressive_restore.md](A0_progressive_restore.md) | `code/s3/a0.py`、`code/s3/a0_gpu.py` | `results/s3_h200/a0/` | 已登記，待冒煙 |
+| A0（＝G-M01/02） | [A0_progressive_restore.md](A0_progressive_restore.md) | `code/s3/a0.py`、`code/s3/a0_gpu.py` | `results/s3_h200/a0/` | **GA0-WEAK**（10/27）：條件 2 全不過；最接近 GO 的 Q128 B24·1/8 差 0.05 pp |
 | B0＋G-M08（量時間） | [B0_interference.md](B0_interference.md) | `code/s3/b0.py`、`code/s3/bgengine.py` | `results/s3_h200/b0/` | **FLIP 不成立、SHARE 成立、STATIC 不成立（只有 dq_vq）；G-M08 STOP**（10/26） |
 | G-M04（品質，併在 A0 TF） | [G_M04_prefix_select.md](G_M04_prefix_select.md) | `code/s3/a0_gpu.py --gm04` | `results/s3_h200/a0/raw/gm04_*` | 已登記 |
 | C0（CPU） | [C0_cost_model.md](C0_cost_model.md) | `code/s3/c0.py` | `results/s3_h200/c0/` | 已登記 |
 | M05（品質，併在 A0 L128 生成） | [M05_duo_heads.md](M05_duo_heads.md) | `code/s3/a0.py`（`m05_configs`）、`a0_gpu.py`（`kind=duo`） | `results/s3_h200/a0/raw/a0_gen_L128_*` | 已登記 |
-| G-M12（品質＋量時間） | [G_M12_sparse_recompute.md](G_M12_sparse_recompute.md) | `code/s3/gm12.py` | `results/s3_h200/gm12/` | 已登記 |
-| G-M11（量時間，併在 B0） | [G_M11_vq.md](G_M11_vq.md) | `code/s3/b0.py`（`dq_vq`） | `results/s3_h200/b0/` | **NOT_DETERMINED**（閒時 dq_int4 太晃；10/26 重量 12 次仍晃） |
-| G-M06＋M07（4 卡、量時間） | [G_M06_multipath.md](G_M06_multipath.md) | `code/s3/gm06.py` | `results/s3_h200/gm06/` | 已登記 |
+| G-M12（品質＋量時間） | [G_M12_sparse_recompute.md](G_M12_sparse_recompute.md) | `code/s3/gm12.py` | `results/s3_h200/gm12/` | **G-M12-STOP**（10/28）：L128 品質（F＝1.0）−14.6／−8.6 nats、qwen 速度 0.47×／0.93×（要 ≤0.3×）；Q128 品質沒跑（使用者收掉） |
+| G-M11（量時間，併在 B0） | [G_M11_vq.md](G_M11_vq.md) | `code/s3/b0.py`（`dq_vq`） | `results/s3_h200/b0/` | **NOT_DETERMINED**（閒時 dq_int4 太晃；10/26 重量 12 次仍晃）；10/28 使用者接受、不再量 |
+| G-M06＋M07（2 卡〔偏離 2〕、量時間） | [G_M06_multipath.md](G_M06_multipath.md) | `code/s3/gm06.py` | `results/s3_h200/gm06/` | **G-M06-PASS**（k＝2 1.986×，CI 下界 1.985；run 20261028-043420-s3-gm06） |
 | W0（量時間） | [W0_write_cost.md](W0_write_cost.md) | `code/s3/w0.py` | `results/s3_h200/w0/` | **GW0-FAIL**（llama、qwen；10/26，job 22279） |
+| A0-C（品質；A0 最接近 GO 的配置的確認性實驗） | [A0C_confirm.md](A0C_confirm.md) | `code/s3/a0.py`、`a0_gpu.py --a0c` | `results/s3_h200/a0/a0c_*` | **A0C-STOP**（10/28）：Q128 的 P 對 U* +1.28 [−0.27, +2.88]（< +2）、對 E0 −2.58；A0 的 WEAK 沒有被確認 |
+| E2E-C（端到端組合：INT4＋Cake＋打字提示預取＋MPS；第一段模擬） | [E2E_combo.md](E2E_combo.md) | `code/s3/e2e.py` | `results/s3_h200/e2e/` | **E2E-NOGO**（10/28）：0/32 格過；m\* 全部選不出來——任何 MPS 等級、任何開發格的背景吞吐 B 都 < 0.95（最高 0.944）→ K3＝K2；NOT_MEASURED 8 格（Qwen × cprefill）；第二段不做。FreeInference 第 9–16 週有未驗證的異常（預取變慢）。**GPU 附錄**（使用者 10/29 要求，[E2E_gpu_mps.md](E2E_gpu_mps.md)）：**MPS-GPU-INVALID**（10/30）——正負號全對，但 GPU 的 gain 比模擬大 5–31 pp → MPS 曲線只能寫〔模擬〕＋GPU 反例 |
 | G-fio（量時間） | [G_fio.md](G_fio.md) | `code/s3/gfio.py` | `results/s3_h200/gfio/` | **完成**：本地 NVMe 8.07 GiB/s；/work 在 compute node 是本地 ext4（NFS 列續用限速層）（10/26，job 22417） |
-| D0（品質；MiniCPM4.1-8B 原生索引） | [D0_native_index.md](D0_native_index.md) | `code/s3/d0.py`、`code/s3/d0_shim/` | `results/s3_h200/d0/` | 已登記，待冒煙（22307） |
+| D0（品質；MiniCPM4.1-8B 原生索引） | [D0_native_index.md](D0_native_index.md) | `code/s3/d0.py`、`code/s3/d0_shim/` | `results/s3_h200/d0/` | **不做**（10/28 使用者；上游 cutlass 編譯錯誤，A0 STOP 後不影響決策表）→ NOT_MEASURED |
 
 runner：`code/r_h200_s3.sh`；RUNLOG：`results/RUNLOG_H200_S3.md`；GPU 排程規則見 memory `stage3-gpu-scheduling`。
 

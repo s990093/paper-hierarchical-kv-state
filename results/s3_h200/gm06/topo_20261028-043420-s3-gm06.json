@@ -1,0 +1,26 @@
+{
+ "topo_m": "\u001b[4mGPU0\tGPU1\tNIC0\tNIC1\tNIC2\tNIC3\tNIC4\tNIC5\tNIC6\tNIC7\tNIC8\tNIC9\tCPU Affinity\tNUMA Affinity\tGPU NUMA ID\u001b[0m\nGPU0\t X \tNV18\tNODE\tPIX\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t32-63\t0\t\tN/A\nGPU1\tNV18\t X \tPIX\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t32-63\t0\t\tN/A\nNIC0\tNODE\tPIX\t X \tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t\t\t\t\nNIC1\tPIX\tNODE\tNODE\t X \tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t\t\t\t\nNIC2\tNODE\tNODE\tNODE\tNODE\t X \tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t\t\t\t\nNIC3\tNODE\tNODE\tNODE\tNODE\tNODE\t X \tPHB\tPHB\tNODE\tNODE\tNODE\tNODE\t\t\t\t\nNIC4\tNODE\tNODE\tNODE\tNODE\tNODE\tPHB\t X \tPIX\tNODE\tNODE\tNODE\tNODE\t\t\t\t\nNIC5\tNODE\tNODE\tNODE\tNODE\tNODE\tPHB\tPIX\t X \tNODE\tNODE\tNODE\tNODE\t\t\t\t\nNIC6\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t X \tNODE\tNODE\tNODE\t\t\t\t\nNIC7\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t X \tNODE\tNODE\t\t\t\t\nNIC8\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t X \tNODE\t\t\t\t\nNIC9\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\tNODE\t X \t\t\t\t\n\nLegend:\n\n  X    = Self\n  SYS  = Connection traversing PCIe as well as the SMP interconnect between NUMA nodes (e.g., QPI/UPI)\n  NODE = Connection traversing PCIe as well as the interconnect between PCIe Host Bridges within a NUMA node\n  PHB  = Connection traversing PCIe as well as a PCIe Host Bridge (typically the CPU)\n  PXB  = Connection traversing multiple PCIe bridges (without traversing the PCIe Host Bridge)\n  PIX  = Connection traversing at most a single PCIe bridge\n  NV#  = Connection traversing a bonded set of # NVLinks\n\nNIC Legend:\n\n  NIC0: mlx5_0\n  NIC1: mlx5_1\n  NIC2: mlx5_2\n  NIC3: mlx5_3\n  NIC4: mlx5_4\n  NIC5: mlx5_5\n  NIC6: mlx5_6\n  NIC7: mlx5_7\n  NIC8: mlx5_8\n  NIC9: mlx5_9",
+ "lscpu": "Model name:                           AMD EPYC 9554 64-Core Processor\nSocket(s):                            2\nNUMA node(s):                         2\nNUMA node0 CPU(s):                    0-63\nNUMA node1 CPU(s):                    64-127",
+ "cpuset": "0-127",
+ "mems": "0-1",
+ "gpus": [
+  {
+   "index": 0,
+   "name": "NVIDIA H200",
+   "bus": "0000:51:00.0",
+   "numa_node": "0",
+   "peer": {
+    "1": true
+   }
+  },
+  {
+   "index": 1,
+   "name": "NVIDIA H200",
+   "bus": "0000:63:00.0",
+   "numa_node": "0",
+   "peer": {
+    "0": true
+   }
+  }
+ ]
+}

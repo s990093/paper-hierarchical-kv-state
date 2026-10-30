@@ -1,0 +1,1250 @@
+{
+ "figure": "fig12_formats.png",
+ "layout": {
+  "intended_width": "ACM full width (figure*)",
+  "width_in": 7.0,
+  "height_in": 3.9,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/icpe_h200/p11/p11q_report.json",
+   "sha256": "7297ebd6d468db4c698dc1c8d65e9f03b29a216457af353a417d14fda0f07040",
+   "run_id": [
+    "20261025-215237-icpe-p11-report-q"
+   ],
+   "related_run_ids": {
+    "src_run_ids": [
+     "['20261025-203913-icpe-p11-gen-qwen', '20261025-210417-icpe-p11-gen-llama']"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/p11/p11t_cells.csv",
+   "sha256": "e236ea6f04d2a0d152f412f42bd71fdb67a7a40aa85ffbdc6bd661d677cbdf82",
+   "run_id": [
+    "20261026-061907-icpe-p11-report-t"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/p01/p01b_cells.csv",
+   "sha256": "296ce77f125672188e02c4ad9e6f6a1c4044a4a07045bf5f2e0a3b5f04309625",
+   "run_id": [
+    "20261026-003415-icpe-p01b-analyze-final"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_sweep_h200/parts/parts_llama.json",
+   "sha256": "95f5475ad77a53512b13d84ef30d49e9fd55b91f44c64f68572d6a55a2b85fb6",
+   "run_id": [
+    "20261017-111941-m10h-sweep-parts-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_llama/bw.json",
+   "sha256": "3ed82aa8b7178bb9edb9d9e9ac41f7edb7f727aa6412db9754e3f375614d3b83",
+   "run_id": [
+    "20261017-074151-m10h-calibf-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/llama_fp8_token/summary.csv",
+   "sha256": "522d8fe629d53d04d05580128ed4a8884bb8c59f9dd081d9a6555793eed2856c",
+   "run_id": [
+    "20261020-203130-m10h-md-m2-llama-fp8_token"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/llama_int4_kivi/summary.csv",
+   "sha256": "57b6db725f6a7b7d854a02831aef66dc26c29a5045c331b519b0811f9abfa69c",
+   "run_id": [
+    "20261020-205004-m10h-md-m2-llama-int4_kivi"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/llama_mxfp4/summary.csv",
+   "sha256": "e583dba6cd9f2727962a11daff3da59d34d48a42fbcf3e77b3c66612f745d110",
+   "run_id": [
+    "20261020-211336-m10h-md-m2-llama-mxfp4"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/llama_kv-int4_kivi-int2_kivi/summary.csv",
+   "sha256": "a3e933d490a29ff89a2c5cc34fbf052bacab43fb0cdc9bcf1a6a4220b4be8d90",
+   "run_id": [
+    "20261020-205827-m10h-md-m2-llama-kv-int4_kivi-int2_kivi"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/llama_int2_kivi/summary.csv",
+   "sha256": "24bb1069fdb488e4e380be3307ce67e73a924ca7f050945c3312191846bba2cb",
+   "run_id": [
+    "20261020-210619-m10h-md-m2-llama-int2_kivi"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_llama/summary.csv",
+   "sha256": "43473c83fb6b0d32c2512eabac96e09a041dd7ddc5452b64fae6f76499503a37",
+   "run_id": [
+    "20261017-094511-m10h-grid-int4-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_llama/summary_2b_int8_token.csv",
+   "sha256": "0da1f916a988e83c5d97365c38eb930ce552afe4b818e50cf875e3992bd31229",
+   "run_id": [
+    "20261017-093513-m10h-grid-2b-int8_token-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_llama/k0_verdict_fp8.json",
+   "sha256": "89a6a309b9f96b83f44b76d9507123d018f6a23fdd90b93b8412dd09cc6806f7",
+   "run_id": [
+    "20261017-075056-m10h-grid-fp8-llama"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_sweep_h200/analysis/agg_llama.csv.gz",
+   "sha256": "3a5c0e1231292c97a932fd7ea49a84beefa471dd6b11826e0822d5ac490e59b6",
+   "run_id": [],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/analysis/fp8/quality_llama_step1.json",
+   "sha256": "5eec72c3fbc32ebf49fdd7f3167ffbd1fba7328a4556cc0798d8c490080822a7",
+   "run_id": [
+    "20261018-025613-m10h-s1-llama-T24-s0",
+    "20261018-025728-m10h-s1-llama-T24-s1",
+    "20261018-025843-m10h-s1-llama-T24-s2",
+    "20261018-033736-m10h-s1-llama-T24-s3",
+    "20261018-033916-m10h-s1-llama-T24-s4",
+    "20261018-034046-m10h-s1-llama-T24-s5",
+    "20261018-042043-m10h-s1-llama-T5",
+    "20261018-082925-m10h-s1-llama-T1-s0",
+    "20261018-085601-m10h-s1-llama-LB-s0",
+    "20261018-091236-m10h-s1-llama-T1-s1",
+    "20261018-094628-m10h-s1-llama-LB-s1"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/quality_llama_int4.json",
+   "sha256": "5d3ebe2628f1ab40882e27043f2dba39d8f9b1b3b93fd151cce472dc7a364849",
+   "run_id": [
+    "20261018-025613-m10h-s1-llama-T24-s0",
+    "20261018-025728-m10h-s1-llama-T24-s1",
+    "20261018-025843-m10h-s1-llama-T24-s2",
+    "20261018-033736-m10h-s1-llama-T24-s3",
+    "20261018-033916-m10h-s1-llama-T24-s4",
+    "20261018-034046-m10h-s1-llama-T24-s5",
+    "20261018-042043-m10h-s1-llama-T5",
+    "20261018-043618-m10h-i4e-llama-T24-s0",
+    "20261018-043733-m10h-i4e-llama-T24-s1",
+    "20261018-043848-m10h-i4e-llama-T24-s2",
+    "20261018-044003-m10h-i4e-llama-T24-s3",
+    "20261018-051705-m10h-i4e-llama-T24-s4",
+    "20261018-052046-m10h-i4e-llama-T5",
+    "20261018-082925-m10h-s1-llama-T1-s0",
+    "20261018-085601-m10h-s1-llama-LB-s0",
+    "20261018-091236-m10h-s1-llama-T1-s1",
+    "20261018-094628-m10h-s1-llama-LB-s1",
+    "20261018-102443-m10h-i4e-llama-T1",
+    "20261018-112933-m10h-i4e-llama-LB"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_sweep_h200/parts/parts_qwen.json",
+   "sha256": "4437549a2a37c17a585985d4cf78b40da3359b983fd32129f2c845ceaff3ff38",
+   "run_id": [
+    "20261017-112036-m10h-sweep-parts-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_qwen/bw.json",
+   "sha256": "b28283bb8678f517be664d52289a366f78c7de27f16e0a23aeeb596b01166d0b",
+   "run_id": [
+    "20261017-074209-m10h-calibf-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/qwen_fp8_head/summary.csv",
+   "sha256": "4f0957a1c490e9515655fc18326a4a307f139396b86e10437872c038802c195e",
+   "run_id": [
+    "20261020-212139-m10h-md-m2-qwen-fp8_head"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/qwen_int4_kivi/summary.csv",
+   "sha256": "cb78460e869269c42b6e780df5ea4cc888f1fe4026f36330a36e586611f73263",
+   "run_id": [
+    "20261020-213454-m10h-md-m2-qwen-int4_kivi"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/qwen_mxfp4/summary.csv",
+   "sha256": "d9ecc7b8f1f3e38e9b31e42b2815b3bb26d3cff5a70cecdcd74b0ffcf33d20b8",
+   "run_id": [
+    "20261020-215417-m10h-md-m2-qwen-mxfp4"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/qwen_kv-int4_kivi-int2_kivi/summary.csv",
+   "sha256": "e29f46e2ba66aef02684ff7122792635b526e2804c0a72d404f571e51b8e4c8d",
+   "run_id": [
+    "20261020-214144-m10h-md-m2-qwen-kv-int4_kivi-int2_kivi"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_match_h200/m2/qwen_int2_kivi/summary.csv",
+   "sha256": "8b0e5528e963316814c771cd4dca283e524ce27aa30915521202a3269d315efe",
+   "run_id": [
+    "20261020-214805-m10h-md-m2-qwen-int2_kivi"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_qwen/summary.csv",
+   "sha256": "70ecbd5737b60731bef8201c9992d61debea45122ecd4e9360aebf1c36b078b9",
+   "run_id": [
+    "20261017-103540-m10h-grid-int4-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_qwen/summary_2b_int8_token.csv",
+   "sha256": "5a7bcfc9dffed359d573091d3074beebced9c47990e9db38ffd6806bb0665159",
+   "run_id": [
+    "20261017-094204-m10h-grid-2b-int8_token-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/speed_qwen/k0_verdict_fp8.json",
+   "sha256": "6089f339d9126d7f8bd78c0153a336566f8272252ada23f352f5faf8d6cc4d61",
+   "run_id": [
+    "20261017-084454-m10h-grid-fp8-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_sweep_h200/analysis/agg_qwen.csv.gz",
+   "sha256": "60a689c6153940bab3e87025695c79dcb2e824b8ba5805543ba15c1bf4d0c0f5",
+   "run_id": [],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/analysis/fp8/quality_qwen_step1.json",
+   "sha256": "23504c84b3ee8fd1b27c05884f2886353fdf2d0dfbdc754f4e7738cf463d51be",
+   "run_id": [
+    "20261018-035609-m10h-s1-qwen-T24-s0",
+    "20261018-035724-m10h-s1-qwen-T24-s1",
+    "20261018-035839-m10h-s1-qwen-T24-s2",
+    "20261018-035954-m10h-s1-qwen-T24-s3",
+    "20261018-040109-m10h-s1-qwen-T24-s4",
+    "20261018-050044-m10h-s1-qwen-T24-s5",
+    "20261018-050359-m10h-s1-qwen-T5",
+    "20261018-092647-m10h-s1-qwen-T1-s0",
+    "20261018-094702-m10h-s1-qwen-LB-s0"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/analysis/fp8/quality_qwen_step2b.json",
+   "sha256": "438e9a80223c2fa3052e23654b14ae30565c7ff22109ebaaac37228070b0512a",
+   "run_id": [
+    "20261018-035609-m10h-s1-qwen-T24-s0",
+    "20261018-035724-m10h-s1-qwen-T24-s1",
+    "20261018-035839-m10h-s1-qwen-T24-s2",
+    "20261018-035954-m10h-s1-qwen-T24-s3",
+    "20261018-040109-m10h-s1-qwen-T24-s4",
+    "20261018-050044-m10h-s1-qwen-T24-s5",
+    "20261018-050359-m10h-s1-qwen-T5",
+    "20261018-092647-m10h-s1-qwen-T1-s0",
+    "20261018-094702-m10h-s1-qwen-LB-s0"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/quality_qwen_int4.json",
+   "sha256": "39cc802740196cd8eec9239c9bd27488e4815de4149e902912e4de17e65ae890",
+   "run_id": [
+    "20261018-035609-m10h-s1-qwen-T24-s0",
+    "20261018-035724-m10h-s1-qwen-T24-s1",
+    "20261018-035839-m10h-s1-qwen-T24-s2",
+    "20261018-035954-m10h-s1-qwen-T24-s3",
+    "20261018-040109-m10h-s1-qwen-T24-s4",
+    "20261018-050044-m10h-s1-qwen-T24-s5",
+    "20261018-050359-m10h-s1-qwen-T5",
+    "20261018-053254-m10h-i4e-qwen-T24-s0",
+    "20261018-053409-m10h-i4e-qwen-T24-s1",
+    "20261018-053524-m10h-i4e-qwen-T24-s2",
+    "20261018-053639-m10h-i4e-qwen-T24-s3",
+    "20261018-053754-m10h-i4e-qwen-T24-s4",
+    "20261018-053909-m10h-i4e-qwen-T5",
+    "20261018-092647-m10h-s1-qwen-T1-s0",
+    "20261018-094702-m10h-s1-qwen-LB-s0",
+    "20261018-100042-m10h-s1-qwen-T1-s1",
+    "20261018-104132-m10h-s1-qwen-LB-s1",
+    "20261018-111557-m10h-i4e-qwen-T1",
+    "20261018-122628-m10h-i4e-qwen-LB"
+   ],
+   "related_run_ids": {}
+  }
+ ],
+ "plotted_values": {
+  "units": "x = BF16 bytes per block / format bytes per block; y = 1 - t_restore(format, Cake) / t_restore(BF16, Cake), slow tiers, 32K",
+  "screen_collapse_KL_threshold_display_only": 1.0,
+  "formats_formal_pass_both_models": [
+   "int4_kivi"
+  ],
+  "per_model": {
+   "llama": {
+    "fmts": {
+     "fp8": "fp8_token",
+     "int8_token": "int8_token",
+     "int4_kivi": "int4_kivi",
+     "int4_token": "int4_token",
+     "int4h_token": "int4h_token",
+     "mxfp4": "mxfp4",
+     "nvfp4": "nvfp4",
+     "kv-int4_kivi-int2_kivi": "kv-int4_kivi-int2_kivi",
+     "int2_kivi": "int2_kivi",
+     "int2h_g32": "int2h_g32"
+    },
+    "ratios": {
+     "fp8": 1.9393939393939394,
+     "int8_token": 1.9393939393939394,
+     "int4_kivi": 3.2,
+     "int4_token": 3.764705882352941,
+     "int4h_token": 3.764705882352941,
+     "mxfp4": 3.764705882352941,
+     "nvfp4": 3.555507330901002,
+     "kv-int4_kivi-int2_kivi": 4.0,
+     "int2_kivi": 5.333333333333333,
+     "int2h_g32": 5.333333333333333
+    },
+    "speed": {
+     "fp8": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.42263211828429226,
+       "b16|idle": 0.41264497878359263,
+       "b32|busy": 0.350277534326614,
+       "b32|idle": 0.3400466166508851,
+       "b48|busy": 0.2842490500944078,
+       "b48|idle": 0.2190379000481899,
+       "nfs|busy": 0.20329971013674064,
+       "nfs|idle": 0.13923568595515823
+      }
+     },
+     "int4_kivi": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.43141560532864887,
+       "b16|idle": 0.5997171145685998,
+       "b32|busy": 0.5783457257828918,
+       "b32|idle": 0.5400004855901135,
+       "b48|busy": 0.48173617100631716,
+       "b48|idle": 0.39352836125520874,
+       "nfs|busy": 0.3678862577982396,
+       "nfs|idle": 0.2725248844389504
+      }
+     },
+     "mxfp4": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.43336749133850583,
+       "b16|idle": 0.6613861386138613,
+       "b32|busy": 0.6190004994675486,
+       "b32|idle": 0.6024837934299658,
+       "b48|busy": 0.5326697592018462,
+       "b48|idle": 0.4413002806361085,
+       "nfs|busy": 0.4233274607484192,
+       "nfs|idle": 0.32222345903953975
+      }
+     },
+     "kv-int4_kivi-int2_kivi": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.43422144146781827,
+       "b16|idle": 0.6602828854314002,
+       "b32|busy": 0.6180863796141849,
+       "b32|idle": 0.604159079321145,
+       "b48|busy": 0.5442877456350964,
+       "b48|idle": 0.46329761601043173,
+       "nfs|busy": 0.4375205216832546,
+       "nfs|idle": 0.3346202743000428
+      }
+     },
+     "int2_kivi": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.6328258429707705,
+       "b16|idle": 0.7707779349363507,
+       "b32|busy": 0.7044000263869648,
+       "b32|idle": 0.6929856508121495,
+       "b48|busy": 0.632900533811977,
+       "b48|idle": 0.5523428862998554,
+       "nfs|busy": 0.525965887225186,
+       "nfs|idle": 0.41848039416716953
+      }
+     },
+     "int8_token": {
+      "source": "grid 2b (E1s) vs main grid E0 Cake",
+      "cells": {
+       "b16|busy": 0.2609357454772302,
+       "b16|idle": 0.31325060619027234,
+       "b32|busy": 0.3124562798853935,
+       "b32|idle": 0.3188520982099189,
+       "b48|busy": 0.27397617186574763,
+       "b48|idle": 0.21655696274826175
+      }
+     }
+    },
+    "status": {
+     "fp8": "formal_pass",
+     "int8_token": "screen_ok",
+     "int4_kivi": "formal_pass",
+     "int4_token": "screen_ok",
+     "int4h_token": "screen_ok",
+     "mxfp4": "screen_ok",
+     "nvfp4": "screen_ok",
+     "kv-int4_kivi-int2_kivi": "screen_ok",
+     "int2_kivi": "screen_ok",
+     "int2h_g32": "screen_ok"
+    },
+    "quality": {
+     "fp8": {
+      "screen_kl": 0.0040451197212405,
+      "screen_d_first_ok": 0.0104166666666666,
+      "n_items": 96,
+      "formal_readings": {
+       "A": true,
+       "B-idle": true,
+       "B-busy": true,
+       "B-i2b": true
+      }
+     },
+     "int8_token": {
+      "screen_kl": 0.0004510983231492,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96
+     },
+     "int4_kivi": {
+      "screen_kl": 0.0040785012488413,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96,
+      "formal_readings": {
+       "A": true,
+       "B-idle": true,
+       "B-busy": true,
+       "B-i2b": true,
+       "32K 192-item set": true
+      }
+     },
+     "int4_token": {
+      "screen_kl": 0.0424354216223339,
+      "screen_d_first_ok": -0.0104166666666666,
+      "n_items": 96
+     },
+     "int4h_token": {
+      "screen_kl": 0.0139075052517606,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96
+     },
+     "mxfp4": {
+      "screen_kl": 0.0621867289585982,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96
+     },
+     "nvfp4": {
+      "screen_kl": 0.0426042126364336,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96
+     },
+     "kv-int4_kivi-int2_kivi": {
+      "screen_kl": 0.0194505589509692,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96
+     },
+     "int2_kivi": {
+      "screen_kl": 0.1243999390186824,
+      "screen_d_first_ok": -0.0208333333333333,
+      "n_items": 96
+     },
+     "int2h_g32": {
+      "screen_kl": 0.3012493771481482,
+      "screen_d_first_ok": -0.03125,
+      "n_items": 96
+     }
+    },
+    "lowrank": {
+     "xkv_k19v29_int4": {
+      "cfg": "xl:k19:v29+q:int4_kivi",
+      "ratio": 12.13548050435057,
+      "status": "formal_pass",
+      "cells": {
+       "b32|idle": 0.8261753392377303,
+       "b32|busy": 0.3009234517664504,
+       "nfs|idle": 0.4137331402045187,
+       "nfs|busy": 0.6428824217049399
+      },
+      "label": "LR k19v29"
+     },
+     "xkv_k19v29_int4_cal": {
+      "cfg": "xl:k19:v29:cal+q:int4_kivi",
+      "ratio": 17.066593849199577,
+      "status": "formal_fail",
+      "cells": {
+       "b32|idle": 0.8600221209777821,
+       "b32|busy": 0.32556118261001366,
+       "nfs|idle": 0.5798312482833259,
+       "nfs|busy": 0.743232183058234
+      },
+      "label": "LR k19v29:cal"
+     },
+     "xkv_k29v44_int4": {
+      "cfg": "xl:k29:v44+q:int4_kivi",
+      "ratio": 7.979444949809292,
+      "status": "formal_pass",
+      "cells": {
+       "b32|idle": 0.7433206264465053,
+       "b32|busy": 0.27614391990337106,
+       "nfs|idle": 0.10987331880697793,
+       "nfs|busy": 0.45971651855422846
+      },
+      "label": "LR k29v44"
+     },
+     "xkv_k29v44_int4_cal": {
+      "cfg": "xl:k29:v44:cal+q:int4_kivi",
+      "ratio": 11.221959129624851,
+      "status": "formal_fail",
+      "cells": {
+       "b32|idle": 0.8130108865313098,
+       "b32|busy": 0.3233544574714201,
+       "nfs|idle": 0.36243133524788884,
+       "nfs|busy": 0.6117235380645235
+      },
+      "label": "LR k29v44:cal"
+     }
+    }
+   },
+   "qwen": {
+    "fmts": {
+     "fp8": "fp8_head",
+     "int8_token": "int8_token",
+     "int4_kivi": "int4_kivi",
+     "int4_token": "int4_token",
+     "int4h_token": "int4h_token",
+     "mxfp4": "mxfp4",
+     "nvfp4": "nvfp4",
+     "kv-int4_kivi-int2_kivi": "kv-int4_kivi-int2_kivi",
+     "int2_kivi": "int2_kivi",
+     "int2h_g32": "int2h_g32"
+    },
+    "ratios": {
+     "fp8": 1.9998779371376258,
+     "int8_token": 1.9393939393939394,
+     "int4_kivi": 3.2,
+     "int4_token": 3.764705882352941,
+     "int4h_token": 3.764705882352941,
+     "mxfp4": 3.764705882352941,
+     "nvfp4": 3.555459107554591,
+     "kv-int4_kivi-int2_kivi": 4.0,
+     "int2_kivi": 5.333333333333333,
+     "int2h_g32": 5.333333333333333
+    },
+    "speed": {
+     "fp8": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.3221912207519545,
+       "b16|idle": 0.41336792211119655,
+       "b32|busy": 0.39671031619290964,
+       "b32|idle": 0.34335334594401956,
+       "b48|busy": 0.30091053006236657,
+       "b48|idle": 0.23140522455282453,
+       "nfs|busy": 0.29446354353738013,
+       "nfs|idle": 0.2492795498037199
+      }
+     },
+     "int4_kivi": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.3324124975828061,
+       "b16|idle": 0.5979374839866769,
+       "b32|busy": 0.5725007984669435,
+       "b32|idle": 0.5412040463853935,
+       "b48|busy": 0.4675949044315296,
+       "b48|idle": 0.38682280272809166,
+       "nfs|busy": 0.4650931294576428,
+       "nfs|idle": 0.3937855970470997
+      }
+     },
+     "mxfp4": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.4557308212934058,
+       "b16|idle": 0.5601460415065335,
+       "b32|busy": 0.5695305014372405,
+       "b32|idle": 0.49953395290182856,
+       "b48|busy": 0.5235016627532644,
+       "b48|idle": 0.41759426071290695,
+       "nfs|busy": 0.50611113961722,
+       "nfs|idle": 0.42155980303912743
+      }
+     },
+     "kv-int4_kivi-int2_kivi": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.6328904113373297,
+       "b16|idle": 0.6586600051242635,
+       "b32|busy": 0.6207814329820078,
+       "b32|idle": 0.6024618252597527,
+       "b48|busy": 0.5500366549441675,
+       "b48|idle": 0.4612662463003475,
+       "nfs|busy": 0.5391862076042897,
+       "nfs|idle": 0.47145807017676555
+      }
+     },
+     "int2_kivi": {
+      "source": "M2 (E1s Cake vs M2 E0 Cake)",
+      "cells": {
+       "b16|busy": 0.6220061327660984,
+       "b16|idle": 0.7171726876761466,
+       "b32|busy": 0.7024592781858832,
+       "b32|idle": 0.6654193053156783,
+       "b48|busy": 0.6245418131979048,
+       "b48|idle": 0.5213212585252863,
+       "nfs|busy": 0.6102929857868542,
+       "nfs|idle": 0.5503104932341973
+      }
+     },
+     "int8_token": {
+      "source": "grid 2b (E1s) vs main grid E0 Cake",
+      "cells": {
+       "b16|busy": 0.37995666000619144,
+       "b16|idle": 0.393962923420363,
+       "b32|busy": 0.3762761302868254,
+       "b32|idle": 0.3328284372307607,
+       "b48|busy": 0.2747720168852512,
+       "b48|idle": 0.21555189242299977
+      }
+     }
+    },
+    "status": {
+     "fp8": "formal_fail",
+     "int8_token": "formal_pass",
+     "int4_kivi": "formal_pass",
+     "int4_token": "screen_collapse",
+     "int4h_token": "screen_collapse",
+     "mxfp4": "screen_collapse",
+     "nvfp4": "screen_collapse",
+     "kv-int4_kivi-int2_kivi": "screen_ok",
+     "int2_kivi": "screen_ok",
+     "int2h_g32": "screen_collapse"
+    },
+    "quality": {
+     "fp8": {
+      "screen_kl": 3.762035865142631,
+      "screen_d_first_ok": -0.0625,
+      "n_items": 96,
+      "formal_readings": {
+       "A": false,
+       "B-idle": false,
+       "B-busy": false,
+       "B-i2b": false
+      }
+     },
+     "int8_token": {
+      "screen_kl": 0.0048912089966818,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96,
+      "formal_readings": {
+       "A": true,
+       "B-idle": true,
+       "B-busy": true,
+       "B-i2b": true
+      }
+     },
+     "int4_kivi": {
+      "screen_kl": 0.0075932775263277,
+      "screen_d_first_ok": 0.0,
+      "n_items": 96,
+      "formal_readings": {
+       "A": true,
+       "B-idle": true,
+       "B-busy": true,
+       "B-i2b": true,
+       "32K 192-item set": true
+      }
+     },
+     "int4_token": {
+      "screen_kl": 10.79104849199454,
+      "screen_d_first_ok": -0.1875,
+      "n_items": 96
+     },
+     "int4h_token": {
+      "screen_kl": 11.845888117949167,
+      "screen_d_first_ok": -0.1875,
+      "n_items": 96
+     },
+     "mxfp4": {
+      "screen_kl": 11.03354469438394,
+      "screen_d_first_ok": -0.1875,
+      "n_items": 96
+     },
+     "nvfp4": {
+      "screen_kl": 13.94146897395452,
+      "screen_d_first_ok": -0.1354166666666666,
+      "n_items": 96
+     },
+     "kv-int4_kivi-int2_kivi": {
+      "screen_kl": 0.0484567328136536,
+      "screen_d_first_ok": -0.0104166666666666,
+      "n_items": 96
+     },
+     "int2_kivi": {
+      "screen_kl": 0.2219513752055111,
+      "screen_d_first_ok": -0.03125,
+      "n_items": 96
+     },
+     "int2h_g32": {
+      "screen_kl": 13.446932365496954,
+      "screen_d_first_ok": -0.15625,
+      "n_items": 96
+     }
+    },
+    "lowrank": {
+     "xkv_k34v51_int4": {
+      "cfg": "xl:k34:v51+q:int4_kivi",
+      "ratio": 8.010188960357576,
+      "status": "formal_fail",
+      "cells": {
+       "b32|idle": 0.7502131039981432,
+       "b32|busy": 0.2236254173665998,
+       "nfs|idle": 0.49915417171837484,
+       "nfs|busy": 0.5834399727794671
+      },
+      "label": "LR k34v51"
+     },
+     "xkv_k34v51_int4_cal": {
+      "cfg": "xl:k34:v51:cal+q:int4_kivi",
+      "ratio": 9.637625289128758,
+      "status": "formal_fail",
+      "cells": {
+       "b32|idle": 0.7910221076299049,
+       "b32|busy": 0.24686074866425656,
+       "nfs|idle": 0.5822007245836367,
+       "nfs|busy": 0.6390458295100213
+      },
+      "label": "LR k34v51:cal"
+     }
+    }
+   }
+  },
+  "display_jitter": {
+   "llama": {
+    "int8_token_true": 1.9393939393939394,
+    "int8_token_drawn": 2.0072727272727273
+   },
+   "qwen": {
+    "int8_token_true": 1.9393939393939394,
+    "int8_token_drawn": 1.9322492146257255
+   }
+  }
+ },
+ "checks": [
+  {
+   "what": "llama FP8 main-grid gain min (%)",
+   "value_in_plotted_file": 21.51,
+   "expected": 21.5,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F1 (not plotted)",
+   "status": "match"
+  },
+  {
+   "what": "llama FP8 main-grid gain max (%)",
+   "value_in_plotted_file": 31.72,
+   "expected": 31.7,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F1 (not plotted)",
+   "status": "match"
+  },
+  {
+   "what": "llama int4_token screening KL",
+   "value_in_plotted_file": 0.0424,
+   "expected": 0.042,
+   "tolerance": 0.000500001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "llama mxfp4 screening KL",
+   "value_in_plotted_file": 0.0622,
+   "expected": 0.062,
+   "tolerance": 0.000500001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "llama nvfp4 screening KL",
+   "value_in_plotted_file": 0.0426,
+   "expected": 0.043,
+   "tolerance": 0.000500001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "llama kv-int4_kivi-int2_kivi screening KL",
+   "value_in_plotted_file": 0.0195,
+   "expected": 0.0195,
+   "tolerance": 5.0001000000000005e-05,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "llama int2_kivi screening KL",
+   "value_in_plotted_file": 0.1244,
+   "expected": 0.124,
+   "tolerance": 0.000500001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "llama int2h_g32 screening KL",
+   "value_in_plotted_file": 0.3012,
+   "expected": 0.3,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "llama fp8 compression ratio",
+   "value_in_plotted_file": 1.94,
+   "expected": 1.94,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "llama int8_token compression ratio",
+   "value_in_plotted_file": 1.94,
+   "expected": 1.94,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "llama int4_kivi compression ratio",
+   "value_in_plotted_file": 3.2,
+   "expected": 3.2,
+   "tolerance": 0.055000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "llama int4_token compression ratio",
+   "value_in_plotted_file": 3.76,
+   "expected": 3.76,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "llama nvfp4 compression ratio",
+   "value_in_plotted_file": 3.56,
+   "expected": 3.56,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "llama kv-int4_kivi-int2_kivi compression ratio",
+   "value_in_plotted_file": 4.0,
+   "expected": 4.0,
+   "tolerance": 0.055000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "llama int2_kivi compression ratio",
+   "value_in_plotted_file": 5.33,
+   "expected": 5.33,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "llama fp8 slow-tier gain min (%)",
+   "value_in_plotted_file": 13.92,
+   "expected": 13.9,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama fp8 slow-tier gain max (%)",
+   "value_in_plotted_file": 42.26,
+   "expected": 42.3,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama int8_token slow-tier gain min (%)",
+   "value_in_plotted_file": 21.66,
+   "expected": 21.7,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama int8_token slow-tier gain max (%)",
+   "value_in_plotted_file": 31.89,
+   "expected": 31.9,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama int4_kivi slow-tier gain min (%)",
+   "value_in_plotted_file": 27.25,
+   "expected": 27.3,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama int4_kivi slow-tier gain max (%)",
+   "value_in_plotted_file": 59.97,
+   "expected": 60.0,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama mxfp4 slow-tier gain min (%)",
+   "value_in_plotted_file": 32.22,
+   "expected": 32.2,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama mxfp4 slow-tier gain max (%)",
+   "value_in_plotted_file": 66.14,
+   "expected": 66.1,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama kv-int4_kivi-int2_kivi slow-tier gain min (%)",
+   "value_in_plotted_file": 33.46,
+   "expected": 33.5,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama kv-int4_kivi-int2_kivi slow-tier gain max (%)",
+   "value_in_plotted_file": 66.03,
+   "expected": 66.0,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama int2_kivi slow-tier gain min (%)",
+   "value_in_plotted_file": 41.85,
+   "expected": 41.8,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama int2_kivi slow-tier gain max (%)",
+   "value_in_plotted_file": 77.08,
+   "expected": 77.1,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "llama low-rank compression ratios",
+   "value_in_plotted_file": 1.0,
+   "expected": 1.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE F7 / D3",
+   "status": "match"
+  },
+  {
+   "what": "qwen FP8 main-grid gain min (%)",
+   "value_in_plotted_file": 21.97,
+   "expected": 22.0,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F1 (not plotted)",
+   "status": "match"
+  },
+  {
+   "what": "qwen FP8 main-grid gain max (%)",
+   "value_in_plotted_file": 39.37,
+   "expected": 39.4,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F1 (not plotted)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int4_token screening KL",
+   "value_in_plotted_file": 10.791,
+   "expected": 10.8,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int4h_token screening KL",
+   "value_in_plotted_file": 11.8459,
+   "expected": 11.8,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "qwen mxfp4 screening KL",
+   "value_in_plotted_file": 11.0335,
+   "expected": 11.0,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "qwen nvfp4 screening KL",
+   "value_in_plotted_file": 13.9415,
+   "expected": 13.9,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "qwen kv-int4_kivi-int2_kivi screening KL",
+   "value_in_plotted_file": 0.0485,
+   "expected": 0.049,
+   "tolerance": 0.000500001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int2_kivi screening KL",
+   "value_in_plotted_file": 0.222,
+   "expected": 0.222,
+   "tolerance": 0.000500001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int2h_g32 screening KL",
+   "value_in_plotted_file": 13.4469,
+   "expected": 13.4,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F (screening)",
+   "status": "match"
+  },
+  {
+   "what": "qwen fp8 compression ratio",
+   "value_in_plotted_file": 2.0,
+   "expected": 2.0,
+   "tolerance": 0.055000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int8_token compression ratio",
+   "value_in_plotted_file": 1.94,
+   "expected": 1.94,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int4_kivi compression ratio",
+   "value_in_plotted_file": 3.2,
+   "expected": 3.2,
+   "tolerance": 0.055000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int4_token compression ratio",
+   "value_in_plotted_file": 3.76,
+   "expected": 3.76,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "qwen nvfp4 compression ratio",
+   "value_in_plotted_file": 3.56,
+   "expected": 3.56,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "qwen kv-int4_kivi-int2_kivi compression ratio",
+   "value_in_plotted_file": 4.0,
+   "expected": 4.0,
+   "tolerance": 0.055000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "qwen int2_kivi compression ratio",
+   "value_in_plotted_file": 5.33,
+   "expected": 5.33,
+   "tolerance": 0.010000001000000001,
+   "expected_from": "EVIDENCE F (bytes per block)",
+   "status": "match"
+  },
+  {
+   "what": "qwen fp8 slow-tier gain min (%)",
+   "value_in_plotted_file": 23.14,
+   "expected": 23.1,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen fp8 slow-tier gain max (%)",
+   "value_in_plotted_file": 41.34,
+   "expected": 41.3,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen int8_token slow-tier gain min (%)",
+   "value_in_plotted_file": 21.56,
+   "expected": 21.6,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen int8_token slow-tier gain max (%)",
+   "value_in_plotted_file": 39.4,
+   "expected": 39.4,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen int4_kivi slow-tier gain min (%)",
+   "value_in_plotted_file": 33.24,
+   "expected": 33.2,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen int4_kivi slow-tier gain max (%)",
+   "value_in_plotted_file": 59.79,
+   "expected": 59.8,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen mxfp4 slow-tier gain min (%)",
+   "value_in_plotted_file": 41.76,
+   "expected": 41.8,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen mxfp4 slow-tier gain max (%)",
+   "value_in_plotted_file": 56.95,
+   "expected": 57.0,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen kv-int4_kivi-int2_kivi slow-tier gain min (%)",
+   "value_in_plotted_file": 46.13,
+   "expected": 46.1,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen kv-int4_kivi-int2_kivi slow-tier gain max (%)",
+   "value_in_plotted_file": 65.87,
+   "expected": 65.9,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen int2_kivi slow-tier gain min (%)",
+   "value_in_plotted_file": 52.13,
+   "expected": 52.1,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen int2_kivi slow-tier gain max (%)",
+   "value_in_plotted_file": 71.72,
+   "expected": 71.7,
+   "tolerance": 0.050000001,
+   "expected_from": "EVIDENCE F",
+   "status": "match"
+  },
+  {
+   "what": "qwen low-rank compression ratios",
+   "value_in_plotted_file": 1.0,
+   "expected": 1.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE F7 / D3",
+   "status": "match"
+  },
+  {
+   "what": "formats with a formal eps pass on both models (count)",
+   "value_in_plotted_file": 1.0,
+   "expected": 1.0,
+   "tolerance": 0,
+   "expected_from": "EVIDENCE F: only INT4 KIVI",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "Speed sources: M2 matched runs (FP8, INT4 KIVI, MXFP4, K4V2, INT2 KIVI; E1s Cake vs the M2 E0 Cake; b16/b32/b48/NFS x idle/busy); INT8 = grid 2b E1s vs the main grid's E0 (b16/b32/b48 only, different runs); low-rank = p11t load-all t_meas_s vs p01b BF16 Cake (b32/NFS only). int4_token, int4h_token, NVFP4 and int2h_g32 restore times: NOT_MEASURED (bottom strip).",
+  "Quality: formal = registered main tasks T2-T5 in four readings (FP8, INT8, INT4) or the P1-1 32K 192-item set (low-rank, and INT4 also); screening = the 96-item KL / first-token sweep (agg_<model>.csv.gz, no run_id column; run ids in EVIDENCE F4). 'Collapse' for screening = KL >= 1 is a display threshold chosen here, not a registered rule."
+ ]
+}

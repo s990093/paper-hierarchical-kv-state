@@ -1,0 +1,336 @@
+{
+ "a1pp": {
+  "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+  "ts": "2026-10-29T02:30:48+08:00",
+  "part": "a1pp",
+  "src_run": "20261028-171820-icpe-t1g-a1pp-b-nfs-gap0",
+  "status": "DONE",
+  "c4_delta_pct": 0.029694196538174813,
+  "delta_star_pct": 5.0,
+  "contaminated_rows": 0,
+  "passed": true,
+  "old_passed": true,
+  "rule": "P0-1 §3.1：每個 cpu_frac，S5 對 S4+（回來請求 TTFT 中位數，rep 0–5）≤ +δ*；三格都過、污染列 0",
+  "rows": [
+   {
+    "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+    "ts": "2026-10-29T02:30:48+08:00",
+    "part": "a1pp",
+    "src_run": "20261028-171820-icpe-t1g-a1pp-b-nfs-gap0",
+    "cpu_frac": 0.25,
+    "n_reps": 6,
+    "s4plus_median": 0.8221944999999999,
+    "s5_median": 0.8252349999999999,
+    "s5_vs_s4plus_pct": -0.3698030088987462,
+    "delta_star_pct": 5.0,
+    "passed": true,
+    "s5_vs_s4plus_mean_pct": -1.2337112565792623,
+    "old_s5_vs_s4plus_pct": 0.0722311016957069
+   },
+   {
+    "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+    "ts": "2026-10-29T02:30:48+08:00",
+    "part": "a1pp",
+    "src_run": "20261028-171820-icpe-t1g-a1pp-b-nfs-gap0",
+    "cpu_frac": 0.5,
+    "n_reps": 6,
+    "s4plus_median": 0.682291,
+    "s5_median": 0.6847909999999999,
+    "s5_vs_s4plus_pct": -0.3664125717618943,
+    "delta_star_pct": 5.0,
+    "passed": true,
+    "s5_vs_s4plus_mean_pct": -0.3494276150764837,
+    "old_s5_vs_s4plus_pct": -0.4739072539201224
+   },
+   {
+    "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+    "ts": "2026-10-29T02:30:48+08:00",
+    "part": "a1pp",
+    "src_run": "20261028-171820-icpe-t1g-a1pp-b-nfs-gap0",
+    "cpu_frac": 1.0,
+    "n_reps": 6,
+    "s4plus_median": 0.4706985,
+    "s5_median": 0.4706424999999999,
+    "s5_vs_s4plus_pct": 0.0118972123344467,
+    "delta_star_pct": 5.0,
+    "passed": true,
+    "s5_vs_s4plus_mean_pct": -0.08421097433497639,
+    "old_s5_vs_s4plus_pct": 0.0299839460955348
+   }
+  ],
+  "m7_analyze_errors": []
+ },
+ "a1p": {
+  "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+  "ts": "2026-10-29T02:31:04+08:00",
+  "part": "a1p",
+  "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+  "status": "DONE",
+  "c4_delta_pct": 1.7621027222743737,
+  "delta_star_pct": 5.0,
+  "contaminated_rows": 0,
+  "passed": true,
+  "old_passed": null,
+  "rule": "P0-1 §3.1：每個 cpu_frac，S5 對 S4+（回來請求 TTFT 中位數，rep 0–5）≤ +δ*；三格都過、污染列 0",
+  "rows": [
+   {
+    "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+    "ts": "2026-10-29T02:31:03+08:00",
+    "part": "a1p",
+    "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+    "cpu_frac": 0.25,
+    "n_reps": 6,
+    "s4plus_median": 1.155961,
+    "s5_median": 1.14255,
+    "s5_vs_s4plus_pct": 1.1601602476208162,
+    "delta_star_pct": 5.0,
+    "passed": true,
+    "s5_vs_s4plus_mean_pct": 0.004075618199373105,
+    "old_s5_vs_s4plus_pct": -0.0308998098190268
+   },
+   {
+    "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+    "ts": "2026-10-29T02:31:03+08:00",
+    "part": "a1p",
+    "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+    "cpu_frac": 0.5,
+    "n_reps": 6,
+    "s4plus_median": 0.7881039999999999,
+    "s5_median": 0.787397,
+    "s5_vs_s4plus_pct": 0.0897089724198712,
+    "delta_star_pct": 5.0,
+    "passed": true,
+    "s5_vs_s4plus_mean_pct": 0.4695352681437349,
+    "old_s5_vs_s4plus_pct": -0.1165959995705487
+   },
+   {
+    "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+    "ts": "2026-10-29T02:31:03+08:00",
+    "part": "a1p",
+    "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+    "cpu_frac": 1.0,
+    "n_reps": 6,
+    "s4plus_median": 0.6373195,
+    "s5_median": 0.637451,
+    "s5_vs_s4plus_pct": -0.0206332930343338,
+    "delta_star_pct": 5.0,
+    "passed": true,
+    "s5_vs_s4plus_mean_pct": 0.04978421772307425,
+    "old_s5_vs_s4plus_pct": 0.0280299475394935
+   }
+  ],
+  "m7_analyze_errors": []
+ },
+ "a2": {
+  "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+  "ts": "2026-10-29T02:31:14+08:00",
+  "part": "a2",
+  "src_runs": [
+   "20261028-204748-icpe-t1g-a2-b2-g1-doc-hold-cpu3.69-s0",
+   "20261028-220610-icpe-t1g-a2-b2-g1-doc-hold-cpu3.69-s1",
+   "20261028-230008-icpe-t1g-a2-b2-g2-chat-hold-s0"
+  ],
+  "not_measured_steps": [],
+  "status": "DONE",
+  "gpu_rows": 16,
+  "gpu_pass": 0,
+  "old_gpu_rows": 16,
+  "old_gpu_pass": 0,
+  "rule": "08 消融：寫入時決定的策略同時贏最好的不看位置與 S4B 各 ≥5%（GPU 列）"
+ },
+ "p02": {
+  "run_id": "20261029-030016-icpe-t1g-analyze-p02",
+  "ts": "2026-10-29T03:00:35+08:00",
+  "part": "p02",
+  "src_runs": [
+   "20261028-233954-icpe-t1g-p02-256-O-BEL-r0",
+   "20261028-235558-icpe-t1g-p02-256-O-PF-r0",
+   "20261029-001222-icpe-t1g-p02-256-FREQ2Q-r0",
+   "20261029-002841-icpe-t1g-p02-128-LRU-r0",
+   "20261029-004528-icpe-t1g-p02-128-O-BEL-r0",
+   "20261029-010134-icpe-t1g-p02-128-LRU-r1",
+   "20261029-011818-icpe-t1g-p02-128-FREQ2Q-r0",
+   "20261029-013427-icpe-t1g-p02-256-LRU-r0",
+   "20261029-015111-icpe-t1g-p02-256-HINT-PF-r0",
+   "20261029-020738-icpe-t1g-p02-128-HINT-PF-r0",
+   "20261029-022400-icpe-t1g-p02-256-LRU-r1",
+   "20261029-024041-icpe-t1g-p02-128-O-PF-r0"
+  ],
+  "not_measured_steps": [],
+  "status": "DONE",
+  "new": {
+   "run_id": "20261029-030016-icpe-t1g-analyze-p02",
+   "ts": "2026-10-29T03:00:34+08:00",
+   "k": 8,
+   "criteria": {
+    "ratio_in_band": true,
+    "ranking": true,
+    "headroom_sign": true
+   },
+   "passed": true,
+   "n_clean_runs": 12,
+   "problems": [],
+   "out_of_band": [],
+   "ranking_mismatch": [],
+   "sign_mismatch": [],
+   "not_judged_pairs": [
+    {
+     "cpu_GiB": 128,
+     "a": "LRU",
+     "b": "FREQ2Q",
+     "sim_rel_diff": 0.020489306594836693
+    },
+    {
+     "cpu_GiB": 128,
+     "a": "HINT-PF",
+     "b": "O-PF",
+     "sim_rel_diff": 0.044111446011620994
+    },
+    {
+     "cpu_GiB": 256,
+     "a": "LRU",
+     "b": "FREQ2Q",
+     "sim_rel_diff": 0.003510957773814663
+    },
+    {
+     "cpu_GiB": 256,
+     "a": "O-BEL",
+     "b": "HINT-PF",
+     "sim_rel_diff": 0.024126833323535907
+    },
+    {
+     "cpu_GiB": 256,
+     "a": "HINT-PF",
+     "b": "O-PF",
+     "sim_rel_diff": 0.040359775193681634
+    }
+   ],
+   "not_judged_signs": [],
+   "lru_noise": [
+    {
+     "cpu_GiB": 128,
+     "rep0": 0.27759563812399696,
+     "rep1": 0.27732568337109403,
+     "rel_diff": 0.0009729478484466972
+    },
+    {
+     "cpu_GiB": 256,
+     "rep0": 0.27184602342210945,
+     "rep1": 0.27182091451479357,
+     "rel_diff": 9.236871166441646e-05
+    }
+   ]
+  },
+  "old": {
+   "run_id": "20261026-040946-icpe-p02-analyze",
+   "ts": "2026-10-26T04:09:49+08:00",
+   "k": 8,
+   "criteria": {
+    "ratio_in_band": true,
+    "ranking": true,
+    "headroom_sign": true
+   },
+   "passed": true,
+   "n_clean_runs": 12,
+   "problems": [],
+   "out_of_band": [],
+   "ranking_mismatch": [],
+   "sign_mismatch": [],
+   "not_judged_pairs": [
+    {
+     "cpu_GiB": 128,
+     "a": "LRU",
+     "b": "FREQ2Q",
+     "sim_rel_diff": 0.018240606153627787
+    },
+    {
+     "cpu_GiB": 128,
+     "a": "HINT-PF",
+     "b": "O-PF",
+     "sim_rel_diff": 0.040687011988601494
+    },
+    {
+     "cpu_GiB": 256,
+     "a": "LRU",
+     "b": "FREQ2Q",
+     "sim_rel_diff": 0.00037406006734956316
+    },
+    {
+     "cpu_GiB": 256,
+     "a": "O-BEL",
+     "b": "HINT-PF",
+     "sim_rel_diff": 0.03954410881069686
+    },
+    {
+     "cpu_GiB": 256,
+     "a": "HINT-PF",
+     "b": "O-PF",
+     "sim_rel_diff": 0.037158747865629345
+    }
+   ],
+   "not_judged_signs": [],
+   "lru_noise": [
+    {
+     "cpu_GiB": 128,
+     "rep0": 0.27787578980611904,
+     "rep1": 0.2775136355462242,
+     "rel_diff": 0.0013041453198900138
+    },
+    {
+     "cpu_GiB": 256,
+     "rep0": 0.2725412290288051,
+     "rep1": 0.27218550492309396,
+     "rel_diff": 0.0013060644302527484
+    }
+   ]
+  }
+ },
+ "a3": {
+  "run_id": "20261029-091732-icpe-t1g-analyze-a3",
+  "ts": "2026-10-29T09:17:46+08:00",
+  "part": "a3",
+  "cells": [
+   {
+    "tag": "hold_nfs_c11.60_f0.5",
+    "cpu_gibps": 11.6,
+    "release": "hold",
+    "ssd": "nfs",
+    "cpu_frac": 0.5,
+    "wt": "S5L",
+    "src_runs": [
+     "20261029-025653-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s0",
+     "20261029-034007-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s1",
+     "20261029-040833-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s2",
+     "20261029-044421-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s3",
+     "20261029-051726-icpe-t1g2-r1h-hold_nfs_c11.60_f0.5-s4"
+    ],
+    "not_measured_steps": [],
+    "seeds_judged": 5,
+    "seeds_pass": 2,
+    "survive": false
+   },
+   {
+    "tag": "hold_nfs_c43.59_f0.25",
+    "cpu_gibps": 43.5888,
+    "release": "hold",
+    "ssd": "nfs",
+    "cpu_frac": 0.25,
+    "wt": "S5c",
+    "src_runs": [
+     "20261029-054220-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s0",
+     "20261029-063557-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s1",
+     "20261029-071444-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s2",
+     "20261029-075923-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s3",
+     "20261029-084254-icpe-t1g2-r1h-hold_nfs_c43.59_f0.25-s4"
+    ],
+    "not_measured_steps": [],
+    "seeds_judged": 5,
+    "seeds_pass": 2,
+    "survive": false
+   }
+  ],
+  "n_survive": 0,
+  "old": "H200 自己 3 格 0/3（results/m7_explore_h200/r1_gpu_verdict_{A,B,C}.csv）",
+  "rule": "寫入時決定策略的回來請求 TTFT 中位數同時贏最好的不看位置、S4B、S4W、S4C 各 ≥5%，≥3/5 seed → 存活"
+ }
+}

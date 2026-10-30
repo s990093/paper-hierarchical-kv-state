@@ -1,0 +1,128 @@
+{
+ "run_id": "20261027-023555-s3-fetch",
+ "ts": "2026-10-27T02:38:15+08:00",
+ "root": "/tmp/hungweilai-models/hf-cache",
+ "node": {
+  "host": "hgx-cn01",
+  "tmpfiles_tmp_conf": "D /tmp 1777 root root 30d\ngrep: /etc/tmpfiles.d/tmp.conf: No such file or directory",
+  "etc_tmpfiles_d": "screen-cleanup.conf",
+  "clean_timer": "NEXT                        LEFT LAST                        PASSED UNIT                         ACTIVATES\nTue 2026-10-27 17:14:25 CST  14h Mon 2026-10-26 17:14:25 CST 9h ago systemd-tmpfiles-clean.timer systemd-tmpfiles-clean.service",
+  "uptime": "2026-06-15 16:35:28",
+  "df_tmp": "/dev/md0        1.8T  872G  868G  51% /",
+  "mount_tmp": "/dev/md0 ext4   rw,noatime,nodiratime"
+ },
+ "models": [
+  {
+   "run_id": "20261027-023555-s3-fetch",
+   "ts": "2026-10-27T02:38:15+08:00",
+   "model": "minicpm",
+   "repo": "openbmb/MiniCPM4.1-8B",
+   "rev": "3a8dfed9c79a45e07dbff95bcd49d792343fa1a3",
+   "path": "/tmp/hungweilai-models/hf-cache/hub/models--openbmb--MiniCPM4.1-8B/snapshots/3a8dfed9c79a45e07dbff95bcd49d792343fa1a3",
+   "n_files": 16,
+   "bytes": 16378602221,
+   "gib": 15.254,
+   "t_download_s": 133.5,
+   "t_verify_s": 3.4,
+   "files": [
+    {
+     "name": ".gitattributes",
+     "size": 1519,
+     "kind": "git_sha1",
+     "hash": "a6344aac8c09253b3b630fb776ae94478aa0275b"
+    },
+    {
+     "name": "README.md",
+     "size": 27572,
+     "kind": "git_sha1",
+     "hash": "d4640bcf45b13a0b4187d8b03112d319abdf57dd"
+    },
+    {
+     "name": "added_tokens.json",
+     "size": 216,
+     "kind": "git_sha1",
+     "hash": "7f0cedcb7641462cc71347e3cd09076de272cba1"
+    },
+    {
+     "name": "config.json",
+     "size": 3677,
+     "kind": "git_sha1",
+     "hash": "097029a36e63c14736d12a197f4eb1431d3c3aea"
+    },
+    {
+     "name": "configuration_minicpm.py",
+     "size": 9658,
+     "kind": "git_sha1",
+     "hash": "6d8fa079b1149ea33effc1e43ede04c8fa604a8f"
+    },
+    {
+     "name": "generation_config.json",
+     "size": 182,
+     "kind": "git_sha1",
+     "hash": "cf2547d9266129727d9eca87249cc4aa2ec12314"
+    },
+    {
+     "name": "model-00001-of-00004.safetensors",
+     "size": 4968335472,
+     "kind": "sha256",
+     "hash": "d893df3a00be018df333f102251db12de40d614a39438ee9721398b272b0b9c0"
+    },
+    {
+     "name": "model-00002-of-00004.safetensors",
+     "size": 4542417008,
+     "kind": "sha256",
+     "hash": "064bcba714ff425b660057fd2a09f9e55bbb0db75e52fc5d082ddf3fcf5af11e"
+    },
+    {
+     "name": "model-00003-of-00004.safetensors",
+     "size": 4936647824,
+     "kind": "sha256",
+     "hash": "a23c3ad2c4c1ca4eae8cbd0fd14cbc0391096cd167bb4969dc49b52abfac7a67"
+    },
+    {
+     "name": "model-00004-of-00004.safetensors",
+     "size": 1923141264,
+     "kind": "sha256",
+     "hash": "e3809c32918b84150715c343736a27fb4cf082473fb82505f87566d7179588ea"
+    },
+    {
+     "name": "model.safetensors.index.json",
+     "size": 23986,
+     "kind": "git_sha1",
+     "hash": "9ba028896ba63a34171a9239ae9f3c7f8917c9dd"
+    },
+    {
+     "name": "modeling_minicpm.py",
+     "size": 107699,
+     "kind": "git_sha1",
+     "hash": "9a1596165eada4c7e564feb54da021a3990f3147"
+    },
+    {
+     "name": "special_tokens_map.json",
+     "size": 630,
+     "kind": "git_sha1",
+     "hash": "2fcea2d88e22d7120780198704204786556b5293"
+    },
+    {
+     "name": "tokenizer.json",
+     "size": 6701371,
+     "kind": "git_sha1",
+     "hash": "15a2f9ba3a0b38ca3a84fa564598f90a38042614"
+    },
+    {
+     "name": "tokenizer.model",
+     "size": 1181204,
+     "kind": "sha256",
+     "hash": "bb74d51116831c3bf65db812c553f94ab0c88dcf97a5bbb37e3504f6d359c530"
+    },
+    {
+     "name": "tokenizer_config.json",
+     "size": 2939,
+     "kind": "git_sha1",
+     "hash": "47b9470aa50d6a60b8aebf84a15f5230d78972f7"
+    }
+   ]
+  }
+ ],
+ "note": "權重在 hgx-cn01 本地 /tmp（不算配額、不保證保留）；每個 job 開跑前用 `fetch_models.py check` 核對戳記。"
+}

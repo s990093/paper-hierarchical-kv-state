@@ -1,0 +1,36 @@
+{
+ "out": "/work/ChihChungHsu/hungweilai/paper-hkv-stage3/results/s3_h200/gm06/gm06_20261028-043420-s3-gm06.csv",
+ "contaminated": false,
+ "gpus": [
+  0,
+  1
+ ],
+ "watches": [
+  {
+   "gpu": 0,
+   "started_clean": true,
+   "contaminated": false,
+   "verdict": "CLEAN",
+   "intruders": [],
+   "n_dirty_samples": 0,
+   "paused_intervals": [],
+   "discarded_samples_overlapping_pause": 0,
+   "n_smi_failures": 0,
+   "smi_failures": [],
+   "logical_gpu": 0
+  },
+  {
+   "gpu": 1,
+   "started_clean": true,
+   "contaminated": false,
+   "verdict": "CLEAN",
+   "intruders": [],
+   "n_dirty_samples": 0,
+   "paused_intervals": [],
+   "discarded_samples_overlapping_pause": 0,
+   "n_smi_failures": 0,
+   "smi_failures": [],
+   "logical_gpu": 1
+  }
+ ]
+}

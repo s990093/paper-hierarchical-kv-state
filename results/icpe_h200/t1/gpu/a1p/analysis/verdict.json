@@ -1,0 +1,61 @@
+{
+ "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+ "ts": "2026-10-29T02:31:04+08:00",
+ "part": "a1p",
+ "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+ "status": "DONE",
+ "c4_delta_pct": 1.7621027222743737,
+ "delta_star_pct": 5.0,
+ "contaminated_rows": 0,
+ "passed": true,
+ "old_passed": null,
+ "rule": "P0-1 §3.1：每個 cpu_frac，S5 對 S4+（回來請求 TTFT 中位數，rep 0–5）≤ +δ*；三格都過、污染列 0",
+ "rows": [
+  {
+   "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+   "ts": "2026-10-29T02:31:03+08:00",
+   "part": "a1p",
+   "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+   "cpu_frac": 0.25,
+   "n_reps": 6,
+   "s4plus_median": 1.155961,
+   "s5_median": 1.14255,
+   "s5_vs_s4plus_pct": 1.1601602476208162,
+   "delta_star_pct": 5.0,
+   "passed": true,
+   "s5_vs_s4plus_mean_pct": 0.004075618199373105,
+   "old_s5_vs_s4plus_pct": -0.0308998098190268
+  },
+  {
+   "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+   "ts": "2026-10-29T02:31:03+08:00",
+   "part": "a1p",
+   "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+   "cpu_frac": 0.5,
+   "n_reps": 6,
+   "s4plus_median": 0.7881039999999999,
+   "s5_median": 0.787397,
+   "s5_vs_s4plus_pct": 0.0897089724198712,
+   "delta_star_pct": 5.0,
+   "passed": true,
+   "s5_vs_s4plus_mean_pct": 0.4695352681437349,
+   "old_s5_vs_s4plus_pct": -0.1165959995705487
+  },
+  {
+   "run_id": "20261029-023018-icpe-t1g-analyze-a1a2",
+   "ts": "2026-10-29T02:31:03+08:00",
+   "part": "a1p",
+   "src_run": "20261028-185448-icpe-t1g-a1p-b-nfs-gap0",
+   "cpu_frac": 1.0,
+   "n_reps": 6,
+   "s4plus_median": 0.6373195,
+   "s5_median": 0.637451,
+   "s5_vs_s4plus_pct": -0.0206332930343338,
+   "delta_star_pct": 5.0,
+   "passed": true,
+   "s5_vs_s4plus_mean_pct": 0.04978421772307425,
+   "old_s5_vs_s4plus_pct": 0.0280299475394935
+  }
+ ],
+ "m7_analyze_errors": []
+}

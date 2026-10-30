@@ -1,0 +1,736 @@
+{
+ "figure": "fig4_hint.png",
+ "layout": {
+  "intended_width": "ACM single column",
+  "width_in": 3.33,
+  "height_in": 4.05,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/icpe_h200/t1/p02/fullsim_hint.csv",
+   "sha256": "b94e9071305fb32f7f80a7e3678a60b0fe7255b9a66b6193522ca263841885c0",
+   "run_id": [
+    "20261028-073312-icpe-t1-p02-fullsim"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/t3/p02/fullsim_hint.csv",
+   "sha256": "837103e080cc3e46e0e0f6a93ca34bceaa1284ebee62cd67ebe13bcd39971220",
+   "run_id": [
+    "20261029-140918-icpe-t3-p02-fullsim"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/t1/gpu/p02/analysis/p02_cells.csv",
+   "sha256": "7522c34b33e9cd813c76aefb3409abd439b133167297c34d6817d18d227d6d23",
+   "run_id": [
+    "20261029-030016-icpe-t1g-analyze-p02"
+   ],
+   "related_run_ids": {
+    "gpu_run": [
+     "20261029-011818-icpe-t1g-p02-128-FREQ2Q-r0",
+     "20261029-020738-icpe-t1g-p02-128-HINT-PF-r0",
+     "20261029-002841-icpe-t1g-p02-128-LRU-r0",
+     "20261029-004528-icpe-t1g-p02-128-O-BEL-r0",
+     "20261029-024041-icpe-t1g-p02-128-O-PF-r0",
+     "20261029-001222-icpe-t1g-p02-256-FREQ2Q-r0",
+     "20261029-015111-icpe-t1g-p02-256-HINT-PF-r0",
+     "20261029-013427-icpe-t1g-p02-256-LRU-r0",
+     "20261028-233954-icpe-t1g-p02-256-O-BEL-r0",
+     "20261028-235558-icpe-t1g-p02-256-O-PF-r0"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/gpu/p02/analysis/p02_verdict.json",
+   "sha256": "5b86e38dc4a1c75abbf283dec53509320e4acf1ae72f40b9bfe9e07a6c766656",
+   "run_id": [
+    "20261029-030016-icpe-t1g-analyze-p02"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/p02/p02_cells.csv",
+   "sha256": "c7bd96e96b8928fbd72b34a2f4afb132d4976a7eec2968368ba2dc5515955a5c",
+   "run_id": [
+    "20261026-040946-icpe-p02-analyze"
+   ],
+   "related_run_ids": {
+    "gpu_run": [
+     "20261026-022804-icpe-p02-128-FREQ2Q-r0",
+     "20261026-031720-icpe-p02-128-HINT-PF-r0",
+     "20261026-013828-icpe-p02-128-LRU-r0",
+     "20261026-015512-icpe-p02-128-O-BEL-r0",
+     "20261026-035022-icpe-p02-128-O-PF-r0",
+     "20261026-012215-icpe-p02-256-FREQ2Q-r0",
+     "20261026-030054-icpe-p02-256-HINT-PF-r0",
+     "20261026-024413-icpe-p02-256-LRU-r0",
+     "20261026-004945-icpe-p02-256-O-BEL-r0",
+     "20261026-010551-icpe-p02-256-O-PF-r0"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/p02/p02_verdict.json",
+   "sha256": "b79617a878752c2a28f0f721a2c1411c8dcb3c31bdeb1678653b982213240d97",
+   "run_id": [
+    "20261026-040946-icpe-p02-analyze"
+   ],
+   "related_run_ids": {}
+  }
+ ],
+ "plotted_values": {
+  "units": "improvement of mean TTFT of returning requests over LRU, fraction (plotted x100)",
+  "cake_T1": [
+   {
+    "cpu_GiB": 128,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.4905007907631459,
+    "opf_vs_lru": 0.542257498147149,
+    "hint_share_of_opf": 0.9045532656332984
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.3945015083967416,
+    "opf_vs_lru": 0.4179158622047856,
+    "hint_share_of_opf": 0.943973522123526
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.4802404516578072,
+    "opf_vs_lru": 0.5287474656185701,
+    "hint_share_of_opf": 0.9082605267828272
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.369252019880542,
+    "opf_vs_lru": 0.386184404465843,
+    "hint_share_of_opf": 0.9561546650007234
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.3600781300888734,
+    "opf_vs_lru": 0.2734275230241121,
+    "hint_share_of_opf": 1.3169052116860969
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.2963196464361093,
+    "opf_vs_lru": 0.2049923556639387,
+    "hint_share_of_opf": 1.4455155924052656
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.4487427492854013,
+    "opf_vs_lru": 0.4933701928061135,
+    "hint_share_of_opf": 0.9095457241409594
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.349540982694406,
+    "opf_vs_lru": 0.3650090944400599,
+    "hint_share_of_opf": 0.9576226675409752
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.4348863683205219,
+    "opf_vs_lru": 0.4762867045025177,
+    "hint_share_of_opf": 0.9130768593987132
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.3234352732500661,
+    "opf_vs_lru": 0.3328645316981299,
+    "hint_share_of_opf": 0.9716723845584874
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.3860533137092689,
+    "opf_vs_lru": 0.3080603054038989,
+    "hint_share_of_opf": 1.2531744821946893
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.3167386363618443,
+    "opf_vs_lru": 0.2443247288665688,
+    "hint_share_of_opf": 1.296383865158497
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.2915265328377235,
+    "opf_vs_lru": 0.3177110659981905,
+    "hint_share_of_opf": 0.9175838176168024
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.2107480455218273,
+    "opf_vs_lru": 0.216121771190757,
+    "hint_share_of_opf": 0.9751356578315908
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.2785252456664133,
+    "opf_vs_lru": 0.3012886742792069,
+    "hint_share_of_opf": 0.924446451008316
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.187292320769893,
+    "opf_vs_lru": 0.1886260154565493,
+    "hint_share_of_opf": 0.9929294234232314
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.4547359540459715,
+    "opf_vs_lru": 0.4759155906580155,
+    "hint_share_of_opf": 0.9554970733722752
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.4113168796871168,
+    "opf_vs_lru": 0.418504914646252,
+    "hint_share_of_opf": 0.9828244909257254
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.1353603575756708,
+    "opf_vs_lru": 0.1467720978507715,
+    "hint_share_of_opf": 0.9222485714777786
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.0838184772780794,
+    "opf_vs_lru": 0.0861443685646097,
+    "hint_share_of_opf": 0.9730000773667996
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.12229527717264,
+    "opf_vs_lru": 0.1319889342824376,
+    "hint_share_of_opf": 0.9265570469032304
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.0693366813727065,
+    "opf_vs_lru": 0.0698380625306699,
+    "hint_share_of_opf": 0.9928208037308708
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.3982192693346927,
+    "opf_vs_lru": 0.4893581105869488,
+    "hint_share_of_opf": 0.8137583923091787
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.3816082932866914,
+    "opf_vs_lru": 0.4609034062749834,
+    "hint_share_of_opf": 0.8279571990383966
+   }
+  ],
+  "stair_T3": [
+   {
+    "cpu_GiB": 128,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.4102135990291677,
+    "opf_vs_lru": 0.4646377706454642,
+    "hint_share_of_opf": 0.8828675259424311
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.3323168311080412,
+    "opf_vs_lru": 0.3574775346457372,
+    "hint_share_of_opf": 0.9296159867426902
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.401684213227225,
+    "opf_vs_lru": 0.4518026259402159,
+    "hint_share_of_opf": 0.8890701163839123
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.3126632345424038,
+    "opf_vs_lru": 0.3314613361089759,
+    "hint_share_of_opf": 0.9432871966690206
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.2471522817298601,
+    "opf_vs_lru": 0.2356635574608092,
+    "hint_share_of_opf": 1.0487505339936212
+   },
+   {
+    "cpu_GiB": 128,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.1941101077830317,
+    "opf_vs_lru": 0.186182329922379,
+    "hint_share_of_opf": 1.0425807210810925
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.3754849720313657,
+    "opf_vs_lru": 0.4219568542518453,
+    "hint_share_of_opf": 0.8898657961063886
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.2965086267243844,
+    "opf_vs_lru": 0.3136048518250123,
+    "hint_share_of_opf": 0.945484819507297
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.3652770823448365,
+    "opf_vs_lru": 0.4079452925330187,
+    "hint_share_of_opf": 0.8954070289100624
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.2755193398669806,
+    "opf_vs_lru": 0.2866323371496949,
+    "hint_share_of_opf": 0.9612290874322724
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.2587993798878736,
+    "opf_vs_lru": 0.2622548770697879,
+    "hint_share_of_opf": 0.986823897345502
+   },
+   {
+    "cpu_GiB": 256,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.2115929336995189,
+    "opf_vs_lru": 0.213185710478805,
+    "hint_share_of_opf": 0.9925286888332764
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.2478436322602237,
+    "opf_vs_lru": 0.275055181133792,
+    "hint_share_of_opf": 0.901068764596977
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.1808014792605541,
+    "opf_vs_lru": 0.1885293274043532,
+    "hint_share_of_opf": 0.9590098354977707
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.2357525191576024,
+    "opf_vs_lru": 0.2597068789531596,
+    "hint_share_of_opf": 0.9077638609646628
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.1611940084647113,
+    "opf_vs_lru": 0.1649763488222466,
+    "hint_share_of_opf": 0.9770734388017605
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.3340429778863545,
+    "opf_vs_lru": 0.3807569238210078,
+    "hint_share_of_opf": 0.8773129442641118
+   },
+   {
+    "cpu_GiB": 512,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.2905895533169433,
+    "opf_vs_lru": 0.3378125455021995,
+    "hint_share_of_opf": 0.8602094776703647
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "ssd",
+    "gpu": "idle",
+    "hint_vs_lru": 0.1263952930896876,
+    "opf_vs_lru": 0.1375470608683301,
+    "hint_share_of_opf": 0.9189239834843306
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "ssd",
+    "gpu": "busy",
+    "hint_vs_lru": 0.0801322640261944,
+    "opf_vs_lru": 0.0830709553805208,
+    "hint_share_of_opf": 0.964624322172952
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "b32",
+    "gpu": "idle",
+    "hint_vs_lru": 0.1147300441028812,
+    "opf_vs_lru": 0.1243172696026558,
+    "hint_share_of_opf": 0.922880984030478
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "b32",
+    "gpu": "busy",
+    "hint_vs_lru": 0.0662300278497497,
+    "opf_vs_lru": 0.0673091591061791,
+    "hint_share_of_opf": 0.9839675421479112
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "nfs",
+    "gpu": "idle",
+    "hint_vs_lru": 0.3158891203625789,
+    "opf_vs_lru": 0.3969811663793403,
+    "hint_share_of_opf": 0.7957282287309497
+   },
+   {
+    "cpu_GiB": 1024,
+    "slow": "nfs",
+    "gpu": "busy",
+    "hint_vs_lru": 0.2928775329858089,
+    "opf_vs_lru": 0.367170246114938,
+    "hint_share_of_opf": 0.7976614011749943
+   }
+  ],
+  "median_share_by_slow_T1": {
+   "b32": 0.9413558559519769,
+   "nfs": 1.1179994865602074,
+   "ssd": 0.9331110468006523
+  },
+  "median_share_by_slow_T3": {
+   "b32": 0.9330840903497493,
+   "nfs": 0.9320684208048069,
+   "ssd": 0.9242699851135103
+  },
+  "cells_with_share_gt_1": {
+   "cake_T1": [
+    {
+     "cpu_GiB": 128,
+     "slow": "nfs",
+     "gpu": "idle",
+     "hint_share_of_opf": 1.3169052116860969
+    },
+    {
+     "cpu_GiB": 128,
+     "slow": "nfs",
+     "gpu": "busy",
+     "hint_share_of_opf": 1.4455155924052656
+    },
+    {
+     "cpu_GiB": 256,
+     "slow": "nfs",
+     "gpu": "idle",
+     "hint_share_of_opf": 1.2531744821946893
+    },
+    {
+     "cpu_GiB": 256,
+     "slow": "nfs",
+     "gpu": "busy",
+     "hint_share_of_opf": 1.296383865158497
+    }
+   ],
+   "stair_T3": [
+    {
+     "cpu_GiB": 128,
+     "slow": "nfs",
+     "gpu": "idle",
+     "hint_share_of_opf": 1.0487505339936212
+    },
+    {
+     "cpu_GiB": 128,
+     "slow": "nfs",
+     "gpu": "busy",
+     "hint_share_of_opf": 1.0425807210810925
+    }
+   ]
+  },
+  "gpu_scaled_down_T1G_primary": {
+   "k": 8,
+   "verdict_run_id": "20261029-030016-icpe-t1g-analyze-p02",
+   "cells": {
+    "128": {
+     "lru_s": 0.277595638123997,
+     "hint_s": 0.2372961595207771,
+     "opf_s": 0.2278529368301083,
+     "hint_vs_lru": 0.145173313513013,
+     "opf_vs_lru": 0.17919122083492367,
+     "hint_share_of_opf": 0.8101586273958754,
+     "sim_scaled_hint_share_of_opf": 0.8621706827456447,
+     "gpu_runs": {
+      "LRU": "20261029-002841-icpe-t1g-p02-128-LRU-r0",
+      "HINT-PF": "20261029-020738-icpe-t1g-p02-128-HINT-PF-r0",
+      "O-PF": "20261029-024041-icpe-t1g-p02-128-O-PF-r0"
+     }
+    },
+    "256": {
+     "lru_s": 0.2718460234221095,
+     "hint_s": 0.2367687966610749,
+     "opf_s": 0.2276910856382111,
+     "hint_vs_lru": 0.12903343708864323,
+     "opf_vs_lru": 0.1624262780380521,
+     "hint_share_of_opf": 0.794412324454139,
+     "sim_scaled_hint_share_of_opf": 0.8486745170888964,
+     "gpu_runs": {
+      "LRU": "20261029-013427-icpe-t1g-p02-256-LRU-r0",
+      "HINT-PF": "20261029-015111-icpe-t1g-p02-256-HINT-PF-r0",
+      "O-PF": "20261028-235558-icpe-t1g-p02-256-O-PF-r0"
+     }
+    }
+   }
+  },
+  "gpu_scaled_down_old_35p4GiBps": {
+   "k": 8,
+   "verdict_run_id": "20261026-040946-icpe-p02-analyze",
+   "cells": {
+    "128": {
+     "lru_s": 0.2778757898061191,
+     "hint_s": 0.238056339311555,
+     "opf_s": 0.2287803565967644,
+     "hint_vs_lru": 0.1432994595259527,
+     "opf_vs_lru": 0.17668121876903997,
+     "hint_share_of_opf": 0.8110622086735524,
+     "sim_scaled_hint_share_of_opf": 0.8648023361910087,
+     "gpu_runs": {
+      "LRU": "20261026-013828-icpe-p02-128-LRU-r0",
+      "HINT-PF": "20261026-031720-icpe-p02-128-HINT-PF-r0",
+      "O-PF": "20261026-035022-icpe-p02-128-O-PF-r0"
+     }
+    },
+    "256": {
+     "lru_s": 0.2725412290288052,
+     "hint_s": 0.2373764410622944,
+     "opf_s": 0.2288909721042665,
+     "hint_vs_lru": 0.12902557199077636,
+     "opf_vs_lru": 0.1601601969730797,
+     "hint_share_of_opf": 0.8056032299489705,
+     "sim_scaled_hint_share_of_opf": 0.8505898468057653,
+     "gpu_runs": {
+      "LRU": "20261026-024413-icpe-p02-256-LRU-r0",
+      "HINT-PF": "20261026-030054-icpe-p02-256-HINT-PF-r0",
+      "O-PF": "20261026-010551-icpe-p02-256-O-PF-r0"
+     }
+    }
+   }
+  }
+ },
+ "checks": [
+  {
+   "what": "T1G GPU HINT-PF share of O-PF gain, CPU 128 GiB cell",
+   "value_in_plotted_file": 0.81,
+   "expected": 0.81,
+   "tolerance": 0.005,
+   "expected_from": "coordinator / docs/h200/icpe/T1G_gpu_rerun.md (0.81 / 0.79)",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU HINT-PF share of O-PF gain, CPU 256 GiB cell",
+   "value_in_plotted_file": 0.79,
+   "expected": 0.79,
+   "tolerance": 0.005,
+   "expected_from": "coordinator / docs/h200/icpe/T1G_gpu_rerun.md (0.81 / 0.79)",
+   "status": "match"
+  },
+  {
+   "what": "old GPU HINT-PF share of O-PF gain, CPU 128 GiB cell",
+   "value_in_plotted_file": 0.81,
+   "expected": 0.81,
+   "tolerance": 0.005,
+   "expected_from": "ICPE_EVIDENCE C2 (0.81 / 0.81, old replay)",
+   "status": "match"
+  },
+  {
+   "what": "old GPU HINT-PF share of O-PF gain, CPU 256 GiB cell",
+   "value_in_plotted_file": 0.81,
+   "expected": 0.81,
+   "tolerance": 0.005,
+   "expected_from": "ICPE_EVIDENCE C2 (0.81 / 0.81, old replay)",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU HINT-PF over LRU, 128 (%)",
+   "value_in_plotted_file": 14.5,
+   "expected": 14.5,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU O-PF over LRU, 128 (%)",
+   "value_in_plotted_file": 17.9,
+   "expected": 17.9,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU HINT-PF over LRU, 256 (%)",
+   "value_in_plotted_file": 12.9,
+   "expected": 12.9,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU O-PF over LRU, 256 (%)",
+   "value_in_plotted_file": 16.2,
+   "expected": 16.2,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
+   "status": "match"
+  },
+  {
+   "what": "T1 median HINT-PF/O-PF share ssd",
+   "value_in_plotted_file": 0.933,
+   "expected": 0.933,
+   "tolerance": 0.0005,
+   "expected_from": "T1 doc C2 (new)",
+   "status": "match"
+  },
+  {
+   "what": "T1 median HINT-PF/O-PF share b32",
+   "value_in_plotted_file": 0.941,
+   "expected": 0.941,
+   "tolerance": 0.0005,
+   "expected_from": "T1 doc C2 (new)",
+   "status": "match"
+  },
+  {
+   "what": "T1 median HINT-PF/O-PF share nfs",
+   "value_in_plotted_file": 1.118,
+   "expected": 1.118,
+   "tolerance": 0.0005,
+   "expected_from": "T1 doc C2 (new)",
+   "status": "match"
+  },
+  {
+   "what": "T1 cells with share > 1",
+   "value_in_plotted_file": 4,
+   "expected": 4,
+   "tolerance": 0,
+   "expected_from": "T1 doc C2 (new)",
+   "status": "match"
+  },
+  {
+   "what": "T1 HINT-PF over LRU min (%)",
+   "value_in_plotted_file": 6.9,
+   "expected": 6.9,
+   "tolerance": 0.05,
+   "expected_from": "T1 doc C2",
+   "status": "match"
+  },
+  {
+   "what": "T1 HINT-PF over LRU max (%)",
+   "value_in_plotted_file": 49.1,
+   "expected": 49.1,
+   "tolerance": 0.05,
+   "expected_from": "T1 doc C2",
+   "status": "match"
+  },
+  {
+   "what": "T1 O-PF over LRU min (%)",
+   "value_in_plotted_file": 7.0,
+   "expected": 7.0,
+   "tolerance": 0.05,
+   "expected_from": "T1 doc C2",
+   "status": "match"
+  },
+  {
+   "what": "T1 O-PF over LRU max (%)",
+   "value_in_plotted_file": 54.2,
+   "expected": 54.2,
+   "tolerance": 0.05,
+   "expected_from": "T1 doc C2",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "GPU points: scaled-down replay (k = 8: 1/8 of the sessions, CPU tier 16 / 32 GiB for the 128 / 256 GiB cells), Llama-3.1-8B, SSD class, Cake; gain computed from gpu_mean in p02_cells.csv (LRU rep 0 run). 'sim_scaled_hint_share_of_opf' is the same ratio from the scaled-down simulation (s_orig_mean); not plotted.",
+  "Primary GPU points = T1G rerun with the H200 CPU-tier constants (docs/h200/icpe/T1G_gpu_rerun.md); hollow gray diamonds = the original replay with the CPU tier throttled at 35.4 GiB/s (results/icpe_h200/p02/p02_cells.csv).",
+  "'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). The b32 tier (2.49 GiB/s) is also H200-derived: read from results/m10_precision_h200/speed_llama/bw.json (run_id 20261017-074151-m10h-calibf-llama), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. Only the SSD-class and NFS-class throttle constants carry over from an earlier platform.",
+  "Simulation cells: Mooncake conversation, R1, SSD class / b32 / NFS class x GPU idle/busy x CPU 128-1024 GiB."
+ ]
+}

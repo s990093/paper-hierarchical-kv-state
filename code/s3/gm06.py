@@ -305,7 +305,7 @@ def cmd_report(a):
         noisy = isinstance(ds1, float) and ds1 > 0.05
         v = "NOISY" if noisy else ("PASS" if med >= 1.6 and lo >= 1.6 else "INCONCLUSIVE" if med >= 1.6 else "STOP")
         res.update(speedup_k2=med, speedup_k2_ci_lo=lo, verdict=v,
-                   speedup_k4=(float(np.median(a1) / np.median(mp[4])) if 4 in mp else None))
+                   speedup_k4=(float(np.median(a1) / np.median(mp[4])) if 4 in mp else NM))      # 2 卡版（偏離 2）→ NOT_MEASURED
     else:
         res["verdict"] = "NOT_MEASURED"
     os.makedirs(OUT, exist_ok=True)

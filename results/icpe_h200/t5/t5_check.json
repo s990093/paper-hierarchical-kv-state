@@ -1,0 +1,23 @@
+{
+ "run_id": "20261030-104713-icpe-t5-check",
+ "ts": "2026-10-30T10:47:31+08:00",
+ "sweep_run_id": [
+  "20261030-102447-icpe-t5-x1fi-sweep"
+ ],
+ "checks": [
+  {
+   "name": "1-reproduce-T1-128",
+   "passed": true,
+   "n_rows": 828,
+   "n_unmatched": 0,
+   "mismatches": []
+  },
+  {
+   "name": "2-policy-set",
+   "passed": true,
+   "n_week_cpu": 24,
+   "missing": []
+  }
+ ],
+ "passed": true
+}

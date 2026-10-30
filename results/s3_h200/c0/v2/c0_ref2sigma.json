@@ -1,0 +1,35 @@
+{
+ "run_id": "20261027-164051-s3-c0-ref2sigma-v2",
+ "ts": "2026-10-27T16:41:00+08:00",
+ "note": "事後以 05 §2.1 的 2σ 規則重算，只供參考；C0-v1 的判定（GC-FAIL）不變",
+ "splits": {
+  "length": {
+   "n": 74,
+   "mean": 0.22172427998374125,
+   "worst": 2.3192549560217097,
+   "n_not_measured": 0,
+   "n_noisy": 22
+  },
+  "load": {
+   "n": 121,
+   "mean": 0.30573489655982755,
+   "worst": 2.484143716295688,
+   "n_not_measured": 0,
+   "n_noisy": 55
+  },
+  "platform": {
+   "n": 148,
+   "mean": 0.27852617895734577,
+   "worst": 2.484143716295688,
+   "n_not_measured": 0,
+   "n_noisy": 52
+  },
+  "kernel": {
+   "n": 20,
+   "mean": 0.0,
+   "worst": 0.0,
+   "n_not_measured": 0,
+   "n_noisy": 4
+  }
+ }
+}

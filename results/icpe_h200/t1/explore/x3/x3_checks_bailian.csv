@@ -1,0 +1,47 @@
+run_id,ts,trace,check,value,expect,ok,note
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:10+00:00,traceA,unit_len_hash_eq_ceil_input_over_16,1.0,>=0.99,OK,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:10+00:00,traceA,n_requests,43058,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:10+00:00,traceA,n_children,19957,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:10+00:00,traceA,children_parent_missing,0,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:10+00:00,traceA,turn_eq_parent_turn_plus1_frac,1.0,==1,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,sessions_total,23101,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,sessions_with_return,9012,>=1000 才算真實 trace 門檻,OK,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,return_events,19957,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,new_tokens_raw_pctl,p1=12 p5=13 p10=14 p25=17 p50=23 p75=48 p90=201.4 p95=439 p99=1751,,,child.input−parent.input−parent.output
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,new_tokens_raw_neg_frac,0.0,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,common_prefix_over_parent_context_pctl,p1=0.09156 p5=0.155 p10=0.2543 p25=0.601 p50=0.7658 p75=0.8982 p90=0.9477 p95=0.9644 p99=0.9858,,,共同前綴 block×16 ÷ (父輸入＋父輸出)；<1 表示上一輪的 KV 只有一部分能重用
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,gap_s_pctl,p1=9.126 p5=19.17 p10=27.14 p25=50.32 p50=110.6 p75=291.1 p90=718.6 p95=1152 p99=2207,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,gap_s_per_parent_output_token_median,0.2875,0.01–10,OK,timestamp 單位＝秒 的驗算
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:11+00:00,traceA,return_types,"{""text"": 15297, ""search"": 3763, ""file"": 762, ""image"": 135}",,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:13+00:00,traceB,unit_len_hash_eq_ceil_input_over_16,1.0,>=0.99,OK,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:13+00:00,traceB,n_requests,172800,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:13+00:00,traceB,n_children,0,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:13+00:00,traceB,sessions_with_return,0,,,沒有 parent 連結 → 不能當 session trace
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:13+00:00,thinking,unit_len_hash_eq_ceil_input_over_16,1.0,>=0.99,OK,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,n_requests,10812,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,n_children,1200,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,children_parent_missing,0,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,turn_eq_parent_turn_plus1_frac,1.0,==1,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,sessions_total,9612,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,sessions_with_return,509,>=1000 才算真實 trace 門檻,BELOW,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,return_events,1200,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,new_tokens_raw_pctl,p1=-5678 p5=-1565 p10=-734.3 p25=-26 p50=34 p75=192 p90=2414 p95=5840 p99=1.057e+04,,,child.input−parent.input−parent.output
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,new_tokens_raw_neg_frac,0.265833,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,common_prefix_over_parent_context_pctl,p1=0.01248 p5=0.05836 p10=0.1365 p25=0.5118 p50=0.8876 p75=0.9621 p90=0.9846 p95=0.9899 p99=0.9954,,,共同前綴 block×16 ÷ (父輸入＋父輸出)；<1 表示上一輪的 KV 只有一部分能重用
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,gap_s_pctl,p1=2.15 p5=3.553 p10=5.061 p25=10.75 p50=28.57 p75=90 p90=255.3 p95=449.5 p99=1533,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,gap_s_per_parent_output_token_median,0.0363,0.01–10,OK,timestamp 單位＝秒 的驗算
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:14+00:00,thinking,return_types,"{""thinking"": 1200}",,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:15+00:00,coder,unit_len_hash_eq_ceil_input_over_16,1.0,>=0.99,OK,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:15+00:00,coder,n_requests,43011,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:15+00:00,coder,n_children,16605,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:15+00:00,coder,children_parent_missing,0,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:15+00:00,coder,turn_eq_parent_turn_plus1_frac,1.0,==1,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,sessions_total,26406,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,sessions_with_return,6693,>=1000 才算真實 trace 門檻,OK,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,return_events,16605,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,new_tokens_raw_pctl,p1=0 p5=14 p10=16 p25=23 p50=55 p75=290 p90=1142 p95=2035 p99=5218,,,child.input−parent.input−parent.output
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,new_tokens_raw_neg_frac,0.009937,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,common_prefix_over_parent_context_pctl,p1=0.03887 p5=0.1649 p10=0.3763 p25=0.643 p50=0.8304 p75=0.9336 p90=0.9887 p95=0.9949 p99=0.9973,,,共同前綴 block×16 ÷ (父輸入＋父輸出)；<1 表示上一輪的 KV 只有一部分能重用
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,gap_s_pctl,p1=1.596 p5=2.58 p10=6.12 p25=42.89 p50=117.7 p75=348 p90=941.8 p95=1609 p99=3489,,,
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,gap_s_per_parent_output_token_median,0.1993,0.01–10,OK,timestamp 單位＝秒 的驗算
+20261028-080907-icpe-t1-x3-leads-bailian,2026-10-28T00:09:16+00:00,coder,return_types,"{""coder"": 16605}",,,

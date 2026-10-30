@@ -28,3 +28,23 @@
 - **改什麼**：`code/s3/guard.py`（RUNLOG S3-GUARD-2）。量測開始前開監看（開不起來 → 這個 run 直接停，不在看不到的情況下量）；結束時被污染（有外來 process，或監看期間 nvidia-smi 查詢失敗過，S3-GUARD-1）→ 結果寫到 run 目錄的 `<檔名>.CONTAMINATED`、留 `CONTAMINATED` 檔，**不寫進 results**，要重量；每列多 `own_gpu_intruders`（0／外來者數／`UNOBSERVED:<n>`）；report 再按 run_id 排除一次（`excluded_contaminated_runs`）。品質（TF）那一半不受影響（照品質規則：分數保留、逐列記爭用）。
 - **為什麼**：CLAUDE.md §3（gpu_guard 必用；contaminated 的 run 不得寫進 results）。原本的程式只靠 runner 開跑時的獨佔檢查，量測期間沒有監看（ICPE session 10/25 提醒）。
 - **影響的 run**：全部（都還沒跑）。
+
+---
+
+## 結果（2026-10-28 01:58，head node 報告；以上各節未改）
+
+**判定：G-M12-STOP**（不需要 Q128 就判得出來）。
+- **Q128 品質沒跑**：GPU 自檢在 default 設定下過不了（RUNLOG S3-GM12-FAIL-1；診斷 S3-GM12-DIAG-RESULT：差異全來自 fa3 的 split-KV 加總順序）；使用者 10/28 決定不另寫偏離、不跑（06 §4 決策表裡用到 M12 的 P1、P2 已被 G-M08 STOP 排除）→ Q128 品質 NOT_MEASURED。
+- **為什麼仍判得出 STOP**：§2 的「品質過」要兩格都過、「速度過」要兩個模型都過。L128 的品質兩個 d 都不過，Qwen 的速度（2σ ≤ 5%、可判定）兩個 d 都不過 → 不論 Q128 品質如何，沒有任何 d 能過。
+- **指令**：`source code/env_h200.sh; export TIARA_ALLOW_NO_SLURM=1; m7run s3-gm12-report python code/s3/gm12.py report` → `results/s3_h200/gm12/gm12_report.json`（run_id `20261028-015835-s3-gm12-report`）。報告程式改成三值判定（缺的格／太晃的點＝判不了；任何量到的不過＝不過），並補上 §2「2σ > 5% 不判定」的檢查（原本的程式沒做）；前一次 `20261028-015735-s3-gm12-report` 用的是過渡版（缺格一律 NOT_MEASURED），已被覆蓋。
+- **資料**：品質 `raw/gm12q_L128_s0.csv.gz`（job 22304 的 run `20261027-005028-s3-gm12-q-L128-s0`，96 題，guard CLEAN）；速度 `raw/gm12s_{llama,qwen}_*.csv`（S3-GFIO 一節，guard CLEAN）。
+
+| L128 品質（TF Δgold_lp，nats，96 題） | F＝0.5 | F＝1.0（判定用） |
+|:--|:--|:--|
+| d＝0.1 | −4.63 [−5.81, −3.48] | **−14.56 [−17.24, −11.93]** |
+| d＝0.2 | −3.01 [−3.95, −2.12] | **−8.64 [−10.38, −6.92]** |
+
+| 速度（ms／塊的斜率；比值＝稀疏 ÷ dense） | dense | sparse 0.1 | sparse 0.2 | 判定 |
+|:--|:--|:--|:--|:--|
+| qwen | 0.1741 | 0.0818（0.47×，2σ 0.7%） | 0.1625（0.93×，2σ 0.9%） | 兩個 d 都 > 0.3× → 不過 |
+| llama | 0.2038 | 0.1774（0.87×，2σ 34.5%） | 0.3231（1.59×，2σ 26.4%） | 2σ > 5% → 不判定（只報告） |

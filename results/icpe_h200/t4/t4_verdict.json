@@ -1,0 +1,89 @@
+{
+ "run_id": "20261030-101546-icpe-t4-analyze",
+ "ts": "2026-10-30T10:16:01+08:00",
+ "sweep_run_id": "20261030-100335-icpe-t4-sweep",
+ "code_sha": "ececcc939299",
+ "rule": {
+  "hit_gap_pp": 5.0,
+  "gap": 0.15,
+  "small": 0.05,
+  "main": {
+   "slow": "ssd",
+   "gpu": "idle",
+   "subset": "ret"
+  }
+ },
+ "verdict": "BRIDGE-NO-GAP",
+ "main": [
+  {
+   "cpu_GiB": 8,
+   "G_hit_pp": 3.030148008711505,
+   "G_rec": 0.013810280983213019,
+   "G_load": 0.022137499796427096,
+   "G_cake": 0.015890613014681088,
+   "G_rec_cake": 0.013787839354826081,
+   "hr_lru_none": 13.19006247316465,
+   "hr_obel_none": 16.220210481876155,
+   "class": "NO-GAP"
+  },
+  {
+   "cpu_GiB": 16,
+   "G_hit_pp": 6.011972851090775,
+   "G_rec": 0.05787363131008738,
+   "G_load": 0.03859540022417629,
+   "G_cake": 0.02898872585590362,
+   "G_rec_cake": 0.05789267292062705,
+   "hr_lru_none": 46.61291903910874,
+   "hr_obel_none": 52.624891890199514,
+   "class": "NO-GAP"
+  },
+  {
+   "cpu_GiB": 32,
+   "G_hit_pp": 4.854743458477969,
+   "G_rec": 0.15944950688328263,
+   "G_load": 0.03369517770383168,
+   "G_cake": 0.025745296420549124,
+   "G_rec_cake": 0.1596515811849879,
+   "hr_lru_none": 82.0224380777382,
+   "hr_obel_none": 86.87718153621617,
+   "class": "NO-GAP"
+  },
+  {
+   "cpu_GiB": 64,
+   "G_hit_pp": 0.8347154960558498,
+   "G_rec": 0.11777995994672741,
+   "G_load": 0.0052146269985305915,
+   "G_cake": 0.004167734918636978,
+   "G_rec_cake": 0.11828248608620151,
+   "hr_lru_none": 97.5906348495048,
+   "hr_obel_none": 98.42535034556064,
+   "class": "NO-GAP"
+  },
+  {
+   "cpu_GiB": 128,
+   "G_hit_pp": 0.06573846873075695,
+   "G_rec": 0.008915640832433347,
+   "G_load": 0.0002562909559838955,
+   "G_cake": 0.00021656843478956578,
+   "G_rec_cake": 0.008971729972647058,
+   "hr_lru_none": 99.29127064609365,
+   "hr_obel_none": 99.35700911482441,
+   "class": "NO-GAP"
+  }
+ ],
+ "robustness": {
+  "ssd-idle-ret": "BRIDGE-NO-GAP",
+  "ssd-idle-user": "BRIDGE-NO-GAP",
+  "ssd-busy-ret": "BRIDGE-NO-GAP",
+  "ssd-busy-user": "BRIDGE-NO-GAP",
+  "b32-idle-ret": "BRIDGE-NO-GAP",
+  "b32-idle-user": "BRIDGE-NO-GAP",
+  "b32-busy-ret": "BRIDGE-NO-GAP",
+  "b32-busy-user": "BRIDGE-NO-GAP",
+  "nfs-idle-ret": "BRIDGE-NO-GAP",
+  "nfs-idle-user": "BRIDGE-NO-GAP",
+  "nfs-busy-ret": "BRIDGE-NO-GAP",
+  "nfs-busy-user": "BRIDGE-NO-GAP"
+ },
+ "negative_gap_cells": 0
+}

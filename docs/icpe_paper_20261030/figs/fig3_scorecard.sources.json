@@ -1,0 +1,743 @@
+{
+ "figure": "fig3_scorecard.png",
+ "layout": {
+  "intended_width": "ACM full width (figure*)",
+  "width_in": 7.0,
+  "height_in": 6.6,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/icpe_h200/t1/p01/sim_V0/x1/x1_headroom_components.csv",
+   "sha256": "eeab40a324a9428c9bb93c23900bc6a6776e16f2222e4b1ea876a4624683d57e",
+   "run_id": [
+    "20261028-070955-icpe-t1-x1-an-V0"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-065829-icpe-t1-x1-sweep-V0"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/p01/sim_V0/x1/x1h3600_headroom_components.csv",
+   "sha256": "ad1170b331e5fe790c94429e8efc651e18ba46fce4e0a96e23a41f4e48d7c50e",
+   "run_id": [
+    "20261028-071003-icpe-t1-x1-h3600-V0"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-065829-icpe-t1-x1-sweep-V0"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t3/p01/sim_V0/x1/x1_headroom_components.csv",
+   "sha256": "8a62c77912e3adcfe99786f68832b0e49406ec5ffc3e55b4e3a2dfb111827e4e",
+   "run_id": [
+    "20261029-125151-icpe-t3-x1-an-V0"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261029-121338-icpe-t3-x1-sweep-V0"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/t1_compare.csv",
+   "sha256": "c8280ae829ef5f71cdb394b5e4269fc9da80fcc1d60b32aee7bdec7d4c558ecf",
+   "run_id": [
+    "20261029-021851-icpe-t1-report"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/t3/t3_compare.csv",
+   "sha256": "963a2e3333f2e8dbb5e076da72624dacf72c7e40459fd45aee4916187c8a83b8",
+   "run_id": [
+    "20261029-152352-icpe-t3-report"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/p3_explore_h200/x5/x5_headroom.csv",
+   "sha256": "d95b5fdb84ceaa7263cdffb750dd1ff5208d217f3c1b021c07b00b5af75d11c7",
+   "run_id": [
+    "20261021-012558-p3h-x5-analyze"
+   ],
+   "related_run_ids": {
+    "run_id_cells": [
+     "20261021-012146-p3h-x5-grid"
+    ]
+   }
+  },
+  {
+   "path": "results/p3_explore_h200/x5/x5_verdict.json",
+   "sha256": "51b3fb08d9a69d792199bba0f82270cdd07ea99553734c6c1b3c0a5c358a87a4",
+   "run_id": [
+    "20261021-012558-p3h-x5-analyze"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/p12/x5/x5_headroom_cens1800.csv",
+   "sha256": "f508ee053332e8fd058faf3821f360a8e954c7bc274a18cdc7714f2668e72cba",
+   "run_id": [
+    "20261025-205114-icpe-p12-x5-cens1800-an"
+   ],
+   "related_run_ids": {
+    "run_id_cells": [
+     "20261025-204704-icpe-p12-x5-cens1800"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/p12/x5/x5_verdict_cens1800.json",
+   "sha256": "60abfbf1d30c00f2dbd74aed7c6604e35da84997bea94d0e0fdd9f503bb4a53e",
+   "run_id": [
+    "20261025-205114-icpe-p12-x5-cens1800-an"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/t1/p12/x1/x1fi_headroom_components.csv",
+   "sha256": "f499574225ed0a232c58100bdf6ff98de7c229b7dc729c94fa13c6ff348269dc",
+   "run_id": [
+    "20261028-074217-icpe-t1-p12-x1fi-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-073351-icpe-t1-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/p12/x1/x1fi_verdict.csv",
+   "sha256": "c823b8ee5734160cd7374bdb94283847800b011581d29db0f749f8cbd444cd70",
+   "run_id": [
+    "20261028-074217-icpe-t1-p12-x1fi-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-073351-icpe-t1-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/p12/x1/x1fiuser_headroom_components.csv",
+   "sha256": "241a476431f6bc775c549eeb8b0c01c00ee40de7442e1c87a62a5a0032ecf51e",
+   "run_id": [
+    "20261028-074221-icpe-t1-p12-x1fiuser-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-073351-icpe-t1-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/p12/x1/x1fiuser_verdict.csv",
+   "sha256": "140f3670789e2b3db50be3869d2d3e0ac7c0d73338995b63636cc9ef96b437ab",
+   "run_id": [
+    "20261028-074221-icpe-t1-p12-x1fiuser-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-073351-icpe-t1-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t3/p12/x1/x1fi_headroom_components.csv",
+   "sha256": "e9d13ea71734e308f4c26de4839fb1ba96a3cb289741f4b411121d8145059480",
+   "run_id": [
+    "20261029-152317-icpe-t3-p12-x1fi-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261029-151325-icpe-t3-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t3/p12/x1/x1fi_verdict.csv",
+   "sha256": "1ffb0532acabcfe1331003362c30824ff9a9c3d8c0c4f535bef9c9771ce7680d",
+   "run_id": [
+    "20261029-152317-icpe-t3-p12-x1fi-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261029-151325-icpe-t3-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t3/p12/x1/x1fiuser_headroom_components.csv",
+   "sha256": "0f0654b953f65a41b99e3ab6aef5de585c3a56b8a2abb08143f35755026435e8",
+   "run_id": [
+    "20261029-152324-icpe-t3-p12-x1fiuser-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261029-151325-icpe-t3-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t3/p12/x1/x1fiuser_verdict.csv",
+   "sha256": "96001f1dcda346ad3c43454ba87eedb0774bd54f6ef872eb0d30d8db54ed67ec",
+   "run_id": [
+    "20261029-152324-icpe-t3-p12-x1fiuser-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261029-151325-icpe-t3-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/p12/x5/x5_verdict_fi.json",
+   "sha256": "1c2a98e00825c631d9a79244d9add245112d03f92e04b76bfc7f3279a3629e45",
+   "run_id": [
+    "20261025-203614-icpe-p12-x5-fi-an"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/p12/x5/x5_headroom_fi.csv",
+   "sha256": "67502c1675a12121812b25ce60b5d11eacce755f7f3adca79204e9329238841c",
+   "run_id": [
+    "20261025-203614-icpe-p12-x5-fi-an"
+   ],
+   "related_run_ids": {
+    "run_id_cells": [
+     "20261025-203345-icpe-p12-x5-fi"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/p12/x5/x5_verdict_fi_cens3600.json",
+   "sha256": "f44c826e32a40af3a42e053462ad70f058ebae06ecb1d0a5a5a86f976ff60623",
+   "run_id": [
+    "20261025-205915-icpe-p12-x5-fi-cens3600-an"
+   ],
+   "related_run_ids": {}
+  }
+ ],
+ "plotted_values": {
+  "chat_T1_truncated_H3600": {
+   "O-PF@128GiB": 0.5049999805976694,
+   "O-PF@256GiB": 0.4645821132770015,
+   "O-ORD@128GiB": 0.2764977748447105,
+   "O-ORD@256GiB": 0.3101523777121671,
+   "O-DROP@128GiB": 0.0,
+   "O-DROP@256GiB": 0.0,
+   "O-NOW@128GiB": 0.0,
+   "O-NOW@256GiB": 0.0
+  },
+  "chat_X5_truncated_H1800_conversation_main_max": 0.35454,
+  "agent_X5_truncated_H3600_max": 0.02450041667850647,
+  "units": "oracle headroom over the best symmetric rival, fraction (plotted x100 as %)",
+  "chat_T1_cake": {
+   "O-PF@128GiB": 0.5049999805976694,
+   "O-PF@256GiB": 0.4645821132770015,
+   "O-ORD@128GiB": 0.2764977748447105,
+   "O-ORD@256GiB": 0.3101523777121671,
+   "O-DROP@128GiB": 0.2764579881335346,
+   "O-DROP@256GiB": 0.3486592360948526,
+   "O-NOW@128GiB": 0.0798289490533603,
+   "O-NOW@256GiB": 0.0741475467406936
+  },
+  "chat_T3_stair": {
+   "O-PF@128GiB": 0.428771525279325,
+   "O-PF@256GiB": 0.3939915716665158,
+   "O-ORD@128GiB": 0.2091516354362455,
+   "O-ORD@256GiB": 0.2416030157327488,
+   "O-DROP@128GiB": 0.2089601652104256,
+   "O-DROP@256GiB": 0.2742776827181618,
+   "O-NOW@128GiB": 0.0550523922636328,
+   "O-NOW@256GiB": 0.051439745783427
+  },
+  "chat_X5_max_conversation_main": 0.368224,
+  "chat_X5_argmax": {
+   "cpu_GiB": 128,
+   "slow": "b48",
+   "gpu": "idle"
+  },
+  "agent_T1_max_all_returning": {
+   "O-PF": 0.0022297168153533,
+   "O-ORD": 0.003027836865789,
+   "O-DROP": 0.0017273456991475,
+   "O-NOW": -1.963427645076044e-07
+  },
+  "agent_T1_argmax_all": {
+   "O-PF": "cpu 128 GiB, nfs, GPU idle",
+   "O-ORD": "cpu 128 GiB, nfs, GPU idle",
+   "O-DROP": "cpu 256 GiB, nfs, GPU idle",
+   "O-NOW": "cpu 1024 GiB, nfs, GPU idle"
+  },
+  "agent_T1_max_user_initiated": {
+   "O-PF": 0.0100913388029534,
+   "O-ORD": 0.0151892608068906,
+   "O-DROP": 0.0072739156177907,
+   "O-NOW": 3.480227730385524e-06
+  },
+  "agent_T1_argmax_user": {
+   "O-PF": "cpu 256 GiB, nfs, GPU idle",
+   "O-ORD": "cpu 128 GiB, nfs, GPU idle",
+   "O-DROP": "cpu 128 GiB, nfs, GPU idle",
+   "O-NOW": "cpu 128 GiB, nfs, GPU idle"
+  },
+  "agent_T3_max_all_returning": {
+   "O-PF": 0.0022327998381933,
+   "O-ORD": 0.0030401275108215,
+   "O-DROP": 0.0017436770816004,
+   "O-NOW": -7.385997907559299e-07
+  },
+  "agent_T3_max_user_initiated": {
+   "O-PF": 0.0101198471384948,
+   "O-ORD": 0.0151555582475019,
+   "O-DROP": 0.0073973329650306,
+   "O-NOW": 0.0
+  },
+  "agent_X5_max_main": 0.0243653364915612
+ },
+ "checks": [
+  {
+   "what": "chat T1 H3600 O-DROP@128 (%)",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0.005,
+   "expected_from": "EVIDENCE B2 (0.0% after H = 3,600 s)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 H3600 O-DROP@256 (%)",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0.005,
+   "expected_from": "EVIDENCE B2 (0.0% after H = 3,600 s)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 H3600 O-NOW@128 (%)",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0.005,
+   "expected_from": "EVIDENCE B2 (0.0% after H = 3,600 s)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 H3600 O-NOW@256 (%)",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0.005,
+   "expected_from": "EVIDENCE B2 (0.0% after H = 3,600 s)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-PF@128",
+   "value_in_plotted_file": 0.5049999805976694,
+   "expected": 0.5049999805976694,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-PF@256",
+   "value_in_plotted_file": 0.4645821132770015,
+   "expected": 0.4645821132770015,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-ORD@128",
+   "value_in_plotted_file": 0.2764977748447105,
+   "expected": 0.2764977748447105,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-ORD@256",
+   "value_in_plotted_file": 0.3101523777121671,
+   "expected": 0.3101523777121671,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-DROP@128",
+   "value_in_plotted_file": 0.2764579881335346,
+   "expected": 0.2764579881335346,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-DROP@256",
+   "value_in_plotted_file": 0.3486592360948526,
+   "expected": 0.3486592360948526,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-NOW@128",
+   "value_in_plotted_file": 0.0798289490533603,
+   "expected": 0.0798289490533603,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-NOW@256",
+   "value_in_plotted_file": 0.0741475467406936,
+   "expected": 0.0741475467406936,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/t1_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-PF@128",
+   "value_in_plotted_file": 0.428771525279325,
+   "expected": 0.428771525279325,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-PF@256",
+   "value_in_plotted_file": 0.3939915716665158,
+   "expected": 0.3939915716665158,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-ORD@128",
+   "value_in_plotted_file": 0.2091516354362455,
+   "expected": 0.2091516354362455,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-ORD@256",
+   "value_in_plotted_file": 0.2416030157327488,
+   "expected": 0.2416030157327488,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-DROP@128",
+   "value_in_plotted_file": 0.2089601652104256,
+   "expected": 0.2089601652104256,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-DROP@256",
+   "value_in_plotted_file": 0.2742776827181618,
+   "expected": 0.2742776827181618,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-NOW@128",
+   "value_in_plotted_file": 0.0550523922636328,
+   "expected": 0.0550523922636328,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T3 O-NOW@256",
+   "value_in_plotted_file": 0.051439745783427,
+   "expected": 0.051439745783427,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/t3_compare.csv B1",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-PF@128 (%)",
+   "value_in_plotted_file": 50.5,
+   "expected": 50.5,
+   "tolerance": 0.05,
+   "expected_from": "docs/h200/icpe/T1_h200_cpu_tier.md results table (B1 new)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-PF@256 (%)",
+   "value_in_plotted_file": 46.4582,
+   "expected": 46.5,
+   "tolerance": 0.05,
+   "expected_from": "docs/h200/icpe/T1_h200_cpu_tier.md results table (B1 new)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-ORD@128 (%)",
+   "value_in_plotted_file": 27.6498,
+   "expected": 27.65,
+   "tolerance": 0.005,
+   "expected_from": "docs/h200/icpe/T1_h200_cpu_tier.md results table (B1 new)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-ORD@256 (%)",
+   "value_in_plotted_file": 31.0152,
+   "expected": 31.0,
+   "tolerance": 0.05,
+   "expected_from": "docs/h200/icpe/T1_h200_cpu_tier.md results table (B1 new)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-DROP@128 (%)",
+   "value_in_plotted_file": 27.6458,
+   "expected": 27.6,
+   "tolerance": 0.05,
+   "expected_from": "docs/h200/icpe/T1_h200_cpu_tier.md results table (B1 new)",
+   "status": "match"
+  },
+  {
+   "what": "chat T1 O-DROP@256 (%)",
+   "value_in_plotted_file": 34.8659,
+   "expected": 34.9,
+   "tolerance": 0.05,
+   "expected_from": "docs/h200/icpe/T1_h200_cpu_tier.md results table (B1 new)",
+   "status": "match"
+  },
+  {
+   "what": "X5 main cells (both Mooncake traces)",
+   "value_in_plotted_file": 48,
+   "expected": 48,
+   "tolerance": 0,
+   "expected_from": "x5_verdict.json n_main_cells",
+   "status": "match"
+  },
+  {
+   "what": "X5 main max (both Mooncake traces)",
+   "value_in_plotted_file": 0.374211,
+   "expected": 0.37421080407494495,
+   "tolerance": 1e-06,
+   "expected_from": "x5_verdict.json main_headroom_max",
+   "status": "match"
+  },
+  {
+   "what": "X5 H1800 main max (both Mooncake traces)",
+   "value_in_plotted_file": 0.370516,
+   "expected": 0.37051609465945956,
+   "tolerance": 1e-06,
+   "expected_from": "x5_verdict_cens1800.json",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-PF max",
+   "value_in_plotted_file": 0.0022297168153533,
+   "expected": 0.0022297168153533,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-ORD max",
+   "value_in_plotted_file": 0.003027836865789,
+   "expected": 0.003027836865789,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-DROP max",
+   "value_in_plotted_file": 0.0017273456991475,
+   "expected": 0.0017273456991475,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-NOW max",
+   "value_in_plotted_file": -1.963427645076044e-07,
+   "expected": -1.963427645076044e-07,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-PF max",
+   "value_in_plotted_file": 0.0100913388029534,
+   "expected": 0.0100913388029534,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-ORD max",
+   "value_in_plotted_file": 0.0151892608068906,
+   "expected": 0.0151892608068906,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-DROP max",
+   "value_in_plotted_file": 0.0072739156177907,
+   "expected": 0.0072739156177907,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-NOW max",
+   "value_in_plotted_file": 3.480227730385524e-06,
+   "expected": 3.480227730385524e-06,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-PF max",
+   "value_in_plotted_file": 0.0022327998381933,
+   "expected": 0.0022327998381933,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-ORD max",
+   "value_in_plotted_file": 0.0030401275108215,
+   "expected": 0.0030401275108215,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-DROP max",
+   "value_in_plotted_file": 0.0017436770816004,
+   "expected": 0.0017436770816004,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fi_headroom_components.csv O-NOW max",
+   "value_in_plotted_file": -7.385997907559299e-07,
+   "expected": -7.385997907559299e-07,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fi_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-PF max",
+   "value_in_plotted_file": 0.0101198471384948,
+   "expected": 0.0101198471384948,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-ORD max",
+   "value_in_plotted_file": 0.0151555582475019,
+   "expected": 0.0151555582475019,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-DROP max",
+   "value_in_plotted_file": 0.0073973329650306,
+   "expected": 0.0073973329650306,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "x1fiuser_headroom_components.csv O-NOW max",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 1e-09,
+   "expected_from": "results/icpe_h200/t3/p12/x1/x1fiuser_verdict.csv",
+   "status": "match"
+  },
+  {
+   "what": "agent X1 max over components (all)",
+   "value_in_plotted_file": 0.003027836865789,
+   "expected": 0.003027836865789,
+   "tolerance": 1e-09,
+   "expected_from": "t1_compare.csv B3",
+   "status": "match"
+  },
+  {
+   "what": "agent X1 max over components (user)",
+   "value_in_plotted_file": 0.0151892608068906,
+   "expected": 0.0151892608068906,
+   "tolerance": 1e-09,
+   "expected_from": "t1_compare.csv B3",
+   "status": "match"
+  },
+  {
+   "what": "agent X1 max (all) %, 2 decimals",
+   "value_in_plotted_file": 0.3,
+   "expected": 0.3,
+   "tolerance": 0.005,
+   "expected_from": "T1 doc B3 0.30%",
+   "status": "match"
+  },
+  {
+   "what": "agent X1 max (user) %, 2 decimals",
+   "value_in_plotted_file": 1.52,
+   "expected": 1.52,
+   "tolerance": 0.005,
+   "expected_from": "T1 doc B3 1.52%",
+   "status": "match"
+  },
+  {
+   "what": "agent T3 X1 max (all)",
+   "value_in_plotted_file": 0.0030401275108215,
+   "expected": 0.0030401275108215,
+   "tolerance": 1e-09,
+   "expected_from": "t3_compare.csv B3",
+   "status": "match"
+  },
+  {
+   "what": "agent X5 main cells",
+   "value_in_plotted_file": 24,
+   "expected": 24,
+   "tolerance": 0,
+   "expected_from": "x5_verdict_fi.json n_main_cells",
+   "status": "match"
+  },
+  {
+   "what": "agent X5 max (csv vs verdict)",
+   "value_in_plotted_file": 0.024365,
+   "expected": 0.0243653364915612,
+   "tolerance": 1e-06,
+   "expected_from": "x5_headroom_fi.csv main cells",
+   "status": "match"
+  },
+  {
+   "what": "agent X5 max %, 2 decimals",
+   "value_in_plotted_file": 2.44,
+   "expected": 2.44,
+   "tolerance": 0.005,
+   "expected_from": "ICPE_EVIDENCE B3 2.44%",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "x5_verdict.json main_headroom_max = 0.3742 is over 48 main cells of two Mooncake traces; its argmax is trace 'toolagent' (cpu 128 GiB, b48, GPU idle). The chat panel plots the max over the 24 conversation cells only: 0.3682 (cpu 128 GiB, b48, GPU idle); 6 of 24 conversation cells >= 15%.",
+  "X5 values come from the pre-T1 X5 analyses (X5 does not read the CPU-tier constants, so T1 did not rerun it; docs/h200/icpe/T1_h200_cpu_tier.md). No T3 (STAIR) X5 exists, so X5 rows have no hollow marker.",
+  "Agent X1 bars are the max over 24 cells (slow tier SSD/b32/NFS x GPU idle/busy x CPU 128-1024 GiB, Cake); agent X5 is the max over its 24 main cells (Llama, tiers b16/b32/b48 x GPU idle/busy x CPU 128-1024 GiB).",
+  "Agent panel check: FreeInference X5 truncated at H = 3,600 s has max 0.0245 (untruncated 0.0244), verdict '死路'; X1 on FreeInference has no truncated run (its untruncated maxima are already < 2%). The agent panel is unchanged.",
+  "Hollow circles in the chat panel = the same cell after truncation: X1 components at H = 3,600 s (x1h3600_headroom_components.csv); X5 only exists truncated at H = 1,800 s (x5_headroom_cens1800.csv, conversation main cells).",
+  "'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). The b32 tier (2.49 GiB/s) is also H200-derived: read from results/m10_precision_h200/speed_llama/bw.json (run_id 20261017-074151-m10h-calibf-llama), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. Only the SSD-class and NFS-class throttle constants carry over from an earlier platform."
+ ]
+}

@@ -112,14 +112,36 @@ def sets_for(cell: str | None) -> dict:
     return SETS_NO_T5 if cell and CELLS[cell].get("no_t5") else SETS
 
 
+# ---- A0-C（runs/A0C_confirm.md；登記 2026-10-27T08:48:21Z）：A0 最接近 GO 的配置，在全新的 864 題上確認
+A0C_SETS = {"gen1c": dict(seed0=77000, n=144, tasks=("T2", "T3", "T4", "T5"), turn=0),
+            "gen2c": dict(seed0=78000, n=96, tasks=("T2", "T3", "T4"), turn=1)}
+A0C_P = "P|B24|1/8|int4|ORACLE"
+A0C_CELL, A0C_PAIR = "Q128", "L128"
+
+
+def a0c_configs(cell: str) -> list:
+    """登記 §3：E0、P、A0 生成配置裡 f_U ≤ 1.05·f_P 的均勻配置（U* 候選）、P 的三個可部署挑法。只看計畫檔的位元組比，不看分數。"""
+    plan = {c["cid"]: c for c in json.load(open(os.path.join(OUT, f"plan_{cell}.json")))["configs"]}
+    sel = json.load(open(os.path.join(OUT, f"gen_selection_{cell}.json")))["configs"]
+    fP = plan[A0C_P]["f"]
+    uni = [cid for cid in sel if plan[cid]["kind"] == "uniform" and plan[cid]["f"] <= BYTES_TOL * fP + 1e-12]
+    dep = [A0C_P.replace("ORACLE", s) for s in ("BASE-ATTN", "BASE-ATTN-L", "ONE-PASS")]
+    return ["E0", A0C_P] + uni + dep
+
+
+def a0c_glob(cell: str) -> str:
+    return os.path.join(RAW, f"a0c_gen_{cell}_s*.csv.gz")
+
+
 def plan_set(name: str, cell: str | None = None) -> list:
-    s = sets_for(cell)[name]
+    s = A0C_SETS[name] if name in A0C_SETS else sets_for(cell)[name]
     return [dict(task=t, b1=b1, b2=b2, seed=seed, item_id=item_id_of(t, b1, b2, seed), turn=s["turn"], set=name)
             for t, b1, b2, seed in XS.plan_interleaved_cpu(list(s["tasks"]), s["n"], s["seed0"])]
 
 
 def seed_overlap() -> dict:
-    ours = {(r["task"], r["seed"]) for c in (None, "Q256") for k in SETS for r in plan_set(k, c)}
+    ours = {(r["task"], r["seed"]) for c in (None, "Q256") for k in SETS for r in plan_set(k, c)} \
+        | {(r["task"], r["seed"]) for k in A0C_SETS for r in plan_set(k)}
     out = {}
     for k, (s0, n) in USED_SEEDS.items():
         used = {(t, s) for t, _, _, s in XS.plan_interleaved_cpu(["T2", "T3", "T4", "T5"], n, s0)}
@@ -628,6 +650,50 @@ def cmd_report(a):
 
 
 # ============================================================================ CPU 自測
+def cmd_a0c_report(a):
+    """runs/A0C_confirm.md §4：Q128 的 P 過條件 1–3，且 L128 的同一個 P 對自己的 U* 點估計 > 0 → A0C-GO；
+    Q128 條件 3 的點估計 < +2 → A0C-STOP；其他 → A0C-WEAK。GA0-SEL 只在 GO 時算。"""
+    res = {}
+    for cell in (A0C_CELL, A0C_PAIR):
+        cfgs = json.load(open(os.path.join(OUT, f"plan_{cell}.json")))["configs"]
+        rows = read_rows(sorted(glob.glob(a0c_glob(cell))))
+        if not rows:
+            continue
+        want = len(plan_set("gen1c")) + len(plan_set("gen2c"))
+        n = len({(r["item_id"], r["turn"]) for r in rows if r["cid"] == "E0"})
+        jc = judge_cell(rows, cfgs, dict(configs=a0c_configs(cell)))
+        res[cell] = dict(n_items=n, n_items_planned=want, complete=n >= want, p=jc["configs"].get(A0C_P), acc=jc["acc"])
+        # §4「一併報告（不判定）」：單輪／第 2 輪、找答案（T2–T4）／彙整（T5）分開；U* 沿用全體選出的那一個
+        ustar = (res[cell]["p"] or {}).get("ustar")
+        tab, sub = table(rows, "score"), {}
+        for name, keep in (("gen1c", lambda r: r["set"] == "gen1c"), ("gen2c", lambda r: r["set"] == "gen2c"),
+                           ("T2-T4", lambda r: r["task"] != "T5"), ("T5", lambda r: r["task"] == "T5")):
+            keys = {(r["item_id"], r["turn"]) for r in rows if keep(r)}
+            t = {cid: {k: v for k, v in d.items() if k in keys} for cid, d in tab.items()}
+            sub[name] = dict(n=len(keys), acc={c: 100 * statistics.fmean(t[c].values()) for c in ("E0", A0C_P, ustar) if t.get(c)},
+                             d_e0=paired(t, A0C_P, "E0", 100), d_ustar=paired(t, A0C_P, ustar, 100) if ustar else None)
+        res[cell]["breakdown"] = sub
+    q, l = res.get(A0C_CELL), res.get(A0C_PAIR)
+    if not (q and l and q["complete"] and l["complete"] and q["p"] and l["p"]):
+        v = "NOT_MEASURED"
+    else:
+        r, o = q["p"], l["p"]
+        ok_other = bool(o["d_ustar"] and o["d_ustar"]["mean"] > 0)
+        if r["c1"] and r["c2"] and r["c3"] and ok_other:
+            v = "A0C-GO"
+        elif not r["c3_point"]:
+            v = "A0C-STOP"
+        else:
+            v = "A0C-WEAK"
+    sel = None
+    if v == "A0C-GO":
+        sel = sel_share({A0C_CELL: dict(configs={A0C_P: q["p"]})}, [dict(cell=A0C_CELL, cid=A0C_P)])
+    doc = dict(run_id=run_id(), ts=ts(), prereg="docs/stage3_design_20261024/runs/A0C_confirm.md", p=A0C_P, verdict=v, sel=sel, cells=res)
+    p = os.path.join(OUT, "a0c_report.json")
+    json.dump(doc, open(p, "w"), indent=1, ensure_ascii=False, default=str)
+    print(json.dumps(dict(verdict=v, cells={c: dict(n=x["n_items"], planned=x["n_items_planned"]) for c, x in res.items()}), ensure_ascii=False), "→", p)
+
+
 def self_test() -> bool:
     ok = True
 
@@ -645,6 +711,9 @@ def self_test() -> bool:
     e1 = {r["item_id"] for r in plan_set("gen1", "Q256")}
     chk("256K gen1：其他格的 T2–T4 題全部在裡面、另外 48 題是新的", d1 <= e1 and len(e1 - d1) == 48
         and {r["item_id"] for r in plan_set("tf", "Q256")} == {r["item_id"] for r in plan_set("tf") if r["task"] != "T5"})
+    n0c = [len(plan_set(k)) for k in A0C_SETS]
+    chk(f"A0-C：題數 576／288 → {n0c}", n0c == [576, 288])
+    chk("A0-C：配置 Q128 9 個、L128 10 個", len(a0c_configs("Q128")) == 9 and len(a0c_configs("L128")) == 10)
     chk("生成合計 ≥288（每個判定格）", all(len(plan_set("gen1", c)) + len(plan_set("gen2", c)) >= 288 for c in CELLS if CELLS[c]["judged"]))
     chk("item_id 唯一", len({r["item_id"] for k in SETS for r in plan_set(k)}) == 384)
     for m in INFO:
@@ -740,6 +809,7 @@ def build_parser():
     s.add_argument("--pair-missing", action="store_true")
     s.add_argument("--force", action="store_true")
     sub.add_parser("report")
+    sub.add_parser("a0c-report")
     for name in ("calib", "tf", "gen", "gpu-selftest"):
         s = sub.add_parser(name)
         s.add_argument("--model", choices=list(INFO))
@@ -755,6 +825,7 @@ def build_parser():
         s.add_argument("--params-file", default=PARAMS)
         s.add_argument("--force", action="store_true")
         s.add_argument("--gm04", action="store_true", help="TF 時順便量 G-M04（問題前綴的挑塊）")
+        s.add_argument("--a0c", action="store_true", help="生成時改跑 A0-C（runs/A0C_confirm.md）的題組與固定配置")
     return ap
 
 
@@ -765,7 +836,8 @@ def main():
     if a.cmd in ("calib", "tf", "gen", "gpu-selftest"):
         import a0_gpu
         return {"calib": a0_gpu.cmd_calib, "tf": a0_gpu.cmd_tf, "gen": a0_gpu.cmd_gen, "gpu-selftest": a0_gpu.cmd_gpu_selftest}[a.cmd](a)
-    {"plan": cmd_plan, "pending": cmd_pending, "select-gen": cmd_select_gen, "report": cmd_report}[a.cmd](a)
+    {"plan": cmd_plan, "pending": cmd_pending, "select-gen": cmd_select_gen, "report": cmd_report,
+     "a0c-report": cmd_a0c_report}[a.cmd](a)
 
 
 if __name__ == "__main__":

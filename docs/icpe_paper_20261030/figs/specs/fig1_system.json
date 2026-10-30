@@ -1,0 +1,446 @@
+{
+ "title": "Fig. 1 - System model: tiers, Cake restore, foresight hooks, no-foresight levers",
+ "canvas": {
+  "width": 1100,
+  "height": 775
+ },
+ "style": {
+  "font_family": "Liberation Sans, Arial, Helvetica, sans-serif",
+  "font_size": 14,
+  "bg_color": "#FFFFFF",
+  "palette": [
+   "#2a78d6",
+   "#eb6834",
+   "#1baf7a",
+   "#52514e",
+   "#898781"
+  ]
+ },
+ "nodes": [
+  {
+   "id": "lg_tier",
+   "label": " ",
+   "x": 40,
+   "y": 592,
+   "width": 20,
+   "height": 14,
+   "shape": "rect",
+   "fill": "#f2f1ee",
+   "stroke": "#52514e"
+  },
+  {
+   "id": "lg_step",
+   "label": " ",
+   "x": 175,
+   "y": 592,
+   "width": 20,
+   "height": 14,
+   "shape": "rect",
+   "fill": "#FFFFFF",
+   "stroke": "#898781"
+  },
+  {
+   "id": "lg_hook",
+   "label": " ",
+   "x": 510,
+   "y": 592,
+   "width": 20,
+   "height": 14,
+   "shape": "rect",
+   "fill": "#fdeee7",
+   "stroke": "#eb6834"
+  },
+  {
+   "id": "lg_lever",
+   "label": " ",
+   "x": 860,
+   "y": 592,
+   "width": 20,
+   "height": 14,
+   "shape": "rect",
+   "fill": "#e3f5ee",
+   "stroke": "#1baf7a"
+  },
+  {
+   "id": "gpu",
+   "label": "GPU (H200 HBM)",
+   "sublabel": "KV of the running request; restore time counts toward TTFT",
+   "x": 480,
+   "y": 70,
+   "width": 400,
+   "height": 60,
+   "shape": "rect",
+   "fill": "#f2f1ee",
+   "stroke": "#52514e",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "write",
+   "label": "Write at end of turn",
+   "sublabel": "all blocks of the session to the CPU tier, BF16",
+   "x": 480,
+   "y": 180,
+   "width": 330,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#FFFFFF",
+   "stroke": "#898781",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "cpu",
+   "label": "CPU DRAM tier",
+   "sublabel": "fast, finite capacity (GiB)",
+   "x": 480,
+   "y": 290,
+   "width": 400,
+   "height": 60,
+   "shape": "rect",
+   "fill": "#f2f1ee",
+   "stroke": "#52514e",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "demote",
+   "label": "CPU tier full: demote or drop a session",
+   "sublabel": "INT4 to the slow tier, or drop (recompute on return)",
+   "x": 480,
+   "y": 400,
+   "width": 340,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#FFFFFF",
+   "stroke": "#898781",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "slow",
+   "label": "Slow tier: SSD class / NFS class",
+   "sublabel": "emulated by throttling (plus a throttled b32 tier)",
+   "x": 480,
+   "y": 510,
+   "width": 400,
+   "height": 60,
+   "shape": "rect",
+   "fill": "#f2f1ee",
+   "stroke": "#52514e",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "restore",
+   "label": "Restore on return",
+   "sublabel": "fixed per-tier rule, no prediction",
+   "x": 935,
+   "y": 290,
+   "width": 240,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#FFFFFF",
+   "stroke": "#898781",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "hook1",
+   "label": "(1) Write-time foresight",
+   "sublabel": "placement / precision by position",
+   "x": 140,
+   "y": 180,
+   "width": 230,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#fdeee7",
+   "stroke": "#eb6834",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "hook2",
+   "label": "(2) Return-time foresight",
+   "sublabel": "who returns, and when",
+   "x": 140,
+   "y": 400,
+   "width": 230,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#fdeee7",
+   "stroke": "#eb6834",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "hook3",
+   "label": "(3) Restore-time foresight",
+   "sublabel": "online selector: load all / Cake / recompute",
+   "x": 920,
+   "y": 165,
+   "width": 300,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#fdeee7",
+   "stroke": "#eb6834",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "mps",
+   "label": "No-foresight lever: MPS",
+   "sublabel": "reserve SMs: TTFT vs background throughput",
+   "x": 920,
+   "y": 60,
+   "width": 300,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#e3f5ee",
+   "stroke": "#1baf7a",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "int4",
+   "label": "No-foresight lever: INT4",
+   "sublabel": "3.2x fewer bytes per block on the slow tier",
+   "x": 920,
+   "y": 510,
+   "width": 300,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#e3f5ee",
+   "stroke": "#1baf7a",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "cake_rec",
+   "label": "GPU recomputes blocks 0, 1, 2 ...  >>",
+   "x": 330,
+   "y": 690,
+   "width": 440,
+   "height": 38,
+   "shape": "rect",
+   "fill": "#cde2fb",
+   "stroke": "#2a78d6",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  },
+  {
+   "id": "cake_meet",
+   "label": " ",
+   "x": 556,
+   "y": 690,
+   "width": 8,
+   "height": 58,
+   "shape": "rect",
+   "fill": "#0b0b0b",
+   "stroke": "#0b0b0b"
+  },
+  {
+   "id": "cake_load",
+   "label": "<<  ... n-2, n-1, n loaded from the tier",
+   "x": 782,
+   "y": 690,
+   "width": 440,
+   "height": 38,
+   "shape": "rect",
+   "fill": "#e3e2dc",
+   "stroke": "#52514e",
+   "text_color": "#0b0b0b",
+   "font_size": 13
+  }
+ ],
+ "edges": [
+  {
+   "from": "gpu",
+   "to": "write",
+   "color": "#52514e"
+  },
+  {
+   "from": "write",
+   "to": "cpu",
+   "color": "#52514e"
+  },
+  {
+   "from": "cpu",
+   "to": "demote",
+   "color": "#52514e"
+  },
+  {
+   "from": "demote",
+   "to": "slow",
+   "color": "#52514e"
+  },
+  {
+   "from": "cpu",
+   "to": "restore",
+   "label": "load all",
+   "color": "#2a78d6"
+  },
+  {
+   "from": "slow",
+   "to": "restore",
+   "label": "Cake (inset)",
+   "color": "#2a78d6"
+  },
+  {
+   "from": "restore",
+   "to": "gpu",
+   "label": "KV back in HBM",
+   "color": "#2a78d6"
+  },
+  {
+   "from": "hook1",
+   "to": "write",
+   "style": "dashed",
+   "color": "#eb6834"
+  },
+  {
+   "from": "hook2",
+   "to": "demote",
+   "style": "dashed",
+   "color": "#eb6834"
+  },
+  {
+   "from": "hook3",
+   "to": "restore",
+   "style": "dashed",
+   "color": "#eb6834"
+  },
+  {
+   "from": "mps",
+   "to": "gpu",
+   "style": "dashed",
+   "color": "#1baf7a"
+  },
+  {
+   "from": "int4",
+   "to": "slow",
+   "style": "dashed",
+   "color": "#1baf7a"
+  }
+ ],
+ "groups": [],
+ "labels": [
+  {
+   "text": "decides at write time where each block",
+   "x": 25,
+   "y": 225,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "goes and how precisely it is stored",
+   "x": 25,
+   "y": 239,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "O-PF: prefetch before the request returns",
+   "x": 25,
+   "y": 445,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "O-ORD: eviction order (Belady-like)",
+   "x": 25,
+   "y": 459,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "O-DROP / O-NOW: drop the never-returning",
+   "x": 25,
+   "y": 473,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "X5: know who never returns",
+   "x": 25,
+   "y": 487,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "Inset: Cake restore of one session's prefix (blocks 0 ... n)",
+   "x": 110,
+   "y": 640,
+   "font_size": 13,
+   "color": "#0b0b0b",
+   "anchor": "start"
+  },
+  {
+   "text": "meeting point",
+   "x": 556,
+   "y": 654,
+   "font_size": 11,
+   "color": "#0b0b0b",
+   "anchor": "middle"
+  },
+  {
+   "text": "block 0",
+   "x": 110,
+   "y": 728,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "block n",
+   "x": 1002,
+   "y": 728,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "end"
+  },
+  {
+   "text": "Both sides run at the same time (compute from the front, load from the back); restore ends where they meet.",
+   "x": 556,
+   "y": 760,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "memory tier",
+   "x": 58,
+   "y": 597,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "data-path step (base system, no foresight)",
+   "x": 193,
+   "y": 597,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "foresight hook (limit study: oracle headroom)",
+   "x": 528,
+   "y": 597,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "start"
+  },
+  {
+   "text": "no-foresight lever (measured gain)",
+   "x": 878,
+   "y": 597,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "start"
+  }
+ ]
+}

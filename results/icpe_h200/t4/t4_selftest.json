@@ -1,0 +1,38 @@
+{
+ "run_id": "20261030-095812-icpe-t4-selftest",
+ "ts": "2026-10-30T09:58:43+08:00",
+ "code_sha": "ececcc939299",
+ "checks": [
+  {
+   "name": "1-reproduce-T1",
+   "passed": true,
+   "detail": {
+    "compared": 18,
+    "mismatches": []
+   }
+  },
+  {
+   "name": "2-accounting",
+   "passed": true,
+   "detail": {
+    "policy": "LRU+NONE",
+    "cpu_GiB": 8,
+    "nreq_all": 10738,
+    "S_all": 0,
+    "U_all": 1682463,
+    "nfull_all": 1867057
+   }
+  },
+  {
+   "name": "3-obel-none-audit",
+   "passed": true,
+   "detail": {
+    "week": "fi:2026-05-17_2026-05-23",
+    "cpu_GiB": 8,
+    "n_drop": 8064,
+    "n_demote": 0
+   }
+  }
+ ],
+ "passed": true
+}

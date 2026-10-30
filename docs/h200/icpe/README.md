@@ -28,6 +28,9 @@
 | P1-1 | 壓縮疊加（低秩＋INT4）在 H200 重現：品質＋慢層端到端還原 | [P1-1_xkv_int4_h200.md](P1-1_xkv_int4_h200.md) | 登記 |
 | P1-2 | 便宜的 CPU 對稱重跑（X1 截尾、FreeInference、X5 事後版、X4 f×0.5、X4 排隊占比拆解） | [P1-2_cpu_symmetric_reruns.md](P1-2_cpu_symmetric_reruns.md) | 登記 |
 | P2 | CPU 層、GPU 忙時 G5b 選錯 11.5% 那幾格，2 個新 seed | [P2_g5b_cpu_busy_reseed.md](P2_g5b_cpu_busy_reseed.md) | 登記 |
+| T1 | ICPE 改成只用 H200（使用者 10/28）：CPU 層換成 H200 自己量的常數，重跑 B、C 節讀 CPU 層常數的模擬＋E2E-C（SSD、NFS 不換） | [T1_h200_cpu_tier.md](T1_h200_cpu_tier.md) | 結果：B、C 節判定字全部不變；E2E-C 的 T1 版在跑（10/28 16:09 起） |
+| T1G | T1 §4 的限制：CPU 層在 GPU 上被限速成 35.4 GiB/s 的 GPU 實測 run，用 H200 的常數重量（第一批：A1''、A1'、A2、B6／C2；A3、A4 另登記） | [T1G_gpu_rerun.md](T1G_gpu_rerun.md) | 已登記（10/28） |
+| T1G-2 | A3：第 1 輪模擬在 T1 常數下重選存活設定（CPU），存活的上 GPU 確認（同原本的做法） | [T1G2_round1_rerun.md](T1G2_round1_rerun.md) | 已登記（10/28） |
 | （最低優先） | 下一篇的「讀取時依問題決定每塊清楚度」前向篩選 | 有空檔的 GPU 才做；不進這篇 | — |
 
 執行紀錄：[`results/RUNLOG_H200_ICPE.md`](../../../results/RUNLOG_H200_ICPE.md)。
