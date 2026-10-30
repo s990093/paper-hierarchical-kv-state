@@ -21,6 +21,7 @@ import sys
 from pathlib import Path
 
 import matplotlib
+import matplotlib.text  # noqa: F401  (Text objects for the min-font check)
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
@@ -33,6 +34,16 @@ FIGS = Path(__file__).resolve().parent
 REPO = FIGS.parents[2]
 DPI = 200
 MAX_PNG_BYTES = 300 * 1024
+# ACM two-column layout: every figure is drawn at its physical placement width (no downscaling); all text >= 7 pt.
+FULL_W = 7.0     # full text width (figure*)
+COL_W = 3.33     # single column
+MIN_FONT_PT = 7.0
+_BW = "results/m10_precision_h200/speed_llama/bw.json"
+_bw = json.load(open(REPO / _BW))
+T1_NOTE = ("'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). "
+           f"The b32 tier ({_bw['targets']['b32']['GiBps']} GiB/s) is also H200-derived: read from {_BW} "
+           f"(run_id {_bw['run_id']}), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. "
+           "Only the SSD-class and NFS-class throttle constants carry over from an earlier platform.")
 
 # ---------------------------------------------------------------- palette (dataviz reference instance, light mode)
 BLUE = "#2a78d6"         # categorical slot 1: simulation (Cake planner, T1 constants) / primary condition
@@ -51,9 +62,12 @@ WHITE = "#ffffff"
 plt.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["Liberation Sans", "DejaVu Sans"],
-    "font.size": 9,
-    "axes.titlesize": 9.5,
-    "axes.labelsize": 9,
+    "font.size": 8,
+    "axes.titlesize": 8,
+    "axes.labelsize": 8,
+    "xtick.labelsize": 7.5,
+    "ytick.labelsize": 7.5,
+    "hatch.linewidth": 0.8,
     "axes.edgecolor": BASELINE,
     "axes.linewidth": 0.8,
     "axes.labelcolor": INK,
@@ -71,7 +85,7 @@ plt.rcParams.update({
     "xtick.major.size": 3,
     "ytick.major.size": 3,
     "legend.frameon": False,
-    "legend.fontsize": 8,
+    "legend.fontsize": 7.5,
     "figure.facecolor": WHITE,
     "axes.facecolor": WHITE,
     "savefig.facecolor": WHITE,
@@ -154,6 +168,17 @@ class Src:
         return ok
 
     def write(self, fig, fname):
+        w, h = (float(x) for x in fig.get_size_inches())
+        if abs(w - FULL_W) > 1e-6 and abs(w - COL_W) > 1e-6:
+            raise SystemExit(f"{fname}: width {w} in is neither full ({FULL_W}) nor column ({COL_W})")
+        fig.canvas.draw()
+        sizes = [x.get_fontsize() for x in fig.findobj(matplotlib.text.Text) if x.get_visible() and x.get_text().strip()]
+        small = min(sizes)
+        if small < MIN_FONT_PT - 1e-9:
+            raise SystemExit(f"{fname}: smallest text {small} pt < {MIN_FONT_PT} pt")
+        layout = {"intended_width": "ACM full width (figure*)" if abs(w - FULL_W) < 1e-6 else "ACM single column",
+                  "width_in": w, "height_in": round(h, 3), "dpi": DPI, "smallest_text_pt": small,
+                  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"}
         out = FIGS / fname
         fig.savefig(out, dpi=DPI, metadata={"Software": None})
         plt.close(fig)
@@ -162,6 +187,7 @@ class Src:
             print(f"  [{self.name}] WARNING: {fname} is {size} bytes (> {MAX_PNG_BYTES})")
         side = {
             "figure": fname,
+            "layout": layout,
             "script": rel(__file__),
             "rule": "every plotted value is read from the inputs below; nothing is typed in",
             "inputs": list(self.inputs.values()),
@@ -303,8 +329,8 @@ def fig3():
 
     # ---- plot
     rows = X1_COMPS + ["X5"]
-    fig, axes = plt.subplots(2, 1, figsize=(7.2, 6.8), sharex=True,
-                             gridspec_kw=dict(hspace=0.55, left=0.30, right=0.97, top=0.86, bottom=0.08))
+    fig, axes = plt.subplots(2, 1, figsize=(FULL_W, 6.0), sharex=True,
+                             gridspec_kw=dict(hspace=0.58, left=0.28, right=0.975, top=0.865, bottom=0.08))
     h = 0.34
     xmax = 60.0
 
@@ -325,7 +351,7 @@ def fig3():
                 lx = 5.6 if end < 4.4 else end + 0.8
                 ax.text(lx, yy, pct_label(v), va="center", ha="left", fontsize=7.5, color=INK, zorder=5)
         ax.set_yticks(ys)
-        ax.set_yticklabels([ROW_LABEL[r] for r in rows], fontsize=8, color=INK)
+        ax.set_yticklabels([ROW_LABEL[r] for r in rows], fontsize=7.5, color=INK)
         ax.set_ylim(-0.6, len(rows) - 0.4)
         ax.tick_params(axis="y", length=0)
         ax.spines["left"].set_visible(False)
@@ -334,13 +360,13 @@ def fig3():
         for t in (5, 15):
             ax.axvline(t, **THRESH_STYLE)
         ax.set_xlim(0, xmax)
-        ax.text(0.0, 1.20, title, transform=ax.transAxes, ha="left", va="bottom", fontsize=9.5, color=INK, fontweight="bold")
+        ax.text(0.0, 1.21, title, transform=ax.transAxes, ha="left", va="bottom", fontsize=8.5, color=INK, fontweight="bold")
         ax.tick_params(labelbottom=True)
         handles = [Patch(color=BLUE, label=lab_a), Patch(color=BLUE_LIGHT, label=lab_b)]
         if lab_x5:
             handles.append(Patch(color=x5_color, label=lab_x5))
         handles.append(Line2D([], [], marker="D", ms=5.5, mfc=WHITE, mec=INK, mew=1.1, ls="none", label="same, STAIR planner (T3)"))
-        ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.0, 1.065), ncol=len(handles), fontsize=7.5,
+        ax.legend(handles=handles, loc="lower left", bbox_to_anchor=(0.0, 1.07), ncol=len(handles), fontsize=7.5,
                   handlelength=1.2, columnspacing=1.0, borderaxespad=0.2)
 
     panel(axes[0], {c: chat_t1[(c, 128)] for c in X1_COMPS}, {c: chat_t1[(c, 256)] for c in X1_COMPS},
@@ -352,9 +378,10 @@ def fig3():
           "Agent trace: FreeInference (each bar = max over 24 cells)",
           "all returning requests", "user-initiated only", None)
     for ax in axes:
-        ax.text(5 - 0.4, 1.005, "< 5%: dead end", transform=ax.get_xaxis_transform(), ha="right", va="bottom", fontsize=7.3, color=INK2)
-        ax.text(15 + 0.4, 1.005, "≥ 15%: worth it", transform=ax.get_xaxis_transform(), ha="left", va="bottom", fontsize=7.3, color=INK2)
-    axes[1].set_xlabel("oracle headroom over the best symmetric rival (%) · simulation, H200 constants (T1)")
+        ax.text(5 - 0.4, 1.005, "< 5%: dead end", transform=ax.get_xaxis_transform(), ha="right", va="bottom", fontsize=7, color=INK2)
+        ax.text(15 + 0.4, 1.005, "≥ 15%: worth it", transform=ax.get_xaxis_transform(), ha="left", va="bottom", fontsize=7, color=INK2)
+    axes[1].set_xlabel("oracle headroom over the best symmetric rival (%) · simulation, T1 constants")
+    s.notes.append(T1_NOTE)
     s.write(fig, "fig3_scorecard.png")
 
 
@@ -434,43 +461,47 @@ def fig4():
     s.notes.append("Primary GPU points = T1G rerun with the H200 CPU-tier constants (docs/h200/icpe/T1G_gpu_rerun.md); "
                    f"hollow gray diamonds = the original replay with the CPU tier throttled at 35.4 GiB/s ({P02_OLD[0]}).")
 
-    fig, ax = plt.subplots(figsize=(5.4, 5.3), gridspec_kw=dict(left=0.12, right=0.97, top=0.86, bottom=0.10))
+    fig, ax = plt.subplots(figsize=(COL_W, 4.05), gridspec_kw=dict(left=0.155, right=0.965, top=0.79, bottom=0.10))
     lim = 60
     xs = np.array([0, lim])
     ax.plot(xs, xs, color=MUTED, lw=1.0, zorder=1)
     ax.plot(xs, 0.9 * xs, color=MUTED, lw=1.0, ls=(0, (4, 3)), zorder=1)
-    ax.text(lim - 1, lim - 3.2, "y = x", ha="right", va="top", fontsize=7.5, color=INK2, rotation=0)
-    ax.text(lim - 1, 0.9 * lim - 3.2, "y = 0.9x", ha="right", va="top", fontsize=7.5, color=INK2)
-    ax.scatter(100 * t1.opf_vs_lru, 100 * t1.hint_vs_lru, s=30, color=BLUE, edgecolor=WHITE, linewidth=1.0, zorder=3,
+    ax.text(47.5, 52.5, "y = x", ha="right", va="bottom", fontsize=7, color=INK2)
+    ax.text(59.5, 47.0, "y = 0.9x", ha="right", va="top", fontsize=7, color=INK2)
+    ax.scatter(100 * t1.opf_vs_lru, 100 * t1.hint_vs_lru, s=14, color=BLUE, edgecolor=WHITE, linewidth=0.6, zorder=3,
                label="simulation, Cake planner (T1), 24 cells")
-    ax.scatter(100 * t3.opf_vs_lru, 100 * t3.hint_vs_lru, s=34, marker="s", facecolor="none", edgecolor=BLUE, linewidth=1.1,
+    ax.scatter(100 * t3.opf_vs_lru, 100 * t3.hint_vs_lru, s=16, marker="s", facecolor="none", edgecolor=BLUE, linewidth=0.9,
                zorder=3, label="simulation, STAIR planner (T3), 24 cells")
     ox = [100 * gpu_old[c]["opf_vs_lru"] for c in sorted(gpu_old)]
     oy = [100 * gpu_old[c]["hint_vs_lru"] for c in sorted(gpu_old)]
     gx = [100 * gpu[c]["opf_vs_lru"] for c in sorted(gpu)]
     gy = [100 * gpu[c]["hint_vs_lru"] for c in sorted(gpu)]
-    ax.scatter(gx, gy, s=60, marker="D", color=ORANGE, edgecolor=WHITE, linewidth=1.0, zorder=5,
-               label=f"H200 measured, scaled-down 1/{k} (2 cells)")
-    ax.scatter(ox, oy, s=52, marker="D", facecolor="none", edgecolor=MUTED, linewidth=1.0, zorder=4,
+    ax.scatter(gx, gy, s=30, marker="D", color=ORANGE, edgecolor=WHITE, linewidth=0.7, zorder=5,
+               label=f"H200 measured, scaled down (k = {k}), 2 cells")
+    ax.scatter(ox, oy, s=26, marker="D", facecolor="none", edgecolor=MUTED, linewidth=0.8, zorder=4,
                label=f"same, {OLD_LABEL}")
     shares = " / ".join(f"{gpu[c]['hint_share_of_opf']:.2f}" for c in sorted(gpu))
-    ax.annotate(f"H200 measured (scaled-down):\nHINT-PF gets {shares} of\nO-PF's gain over LRU",
-                xy=(gx[0], gy[0]), xytext=(28, 9), fontsize=8, color=INK, ha="left", va="bottom",
-                arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8, shrinkA=2, shrinkB=5))
+    ax.annotate(f"H200: HINT-PF gets\n{shares} of O-PF's\ngain over LRU",
+                xy=(gx[0], gy[0]), xytext=(29, 10.5), fontsize=7, color=INK, ha="left", va="bottom",
+                arrowprops=dict(arrowstyle="-", color=INK2, lw=0.7, shrinkA=2, shrinkB=4))
     n1, n3 = len(above["cake_T1"]), len(above["stair_T3"])
     tiers = sorted({r["slow"] for v in above.values() for r in v})
     tier_txt = ", ".join({"nfs": "NFS class", "ssd": "SSD class"}.get(t, t) for t in tiers)
-    ax.text(lim - 1, 1.2, f"above y = x (hint beats oracle prefetch):\n{n1} Cake and {n3} STAIR cells, all {tier_txt}"
-            if len(tiers) == 1 else f"above y = x: {n1} Cake and {n3} STAIR cells ({tier_txt})",
-            fontsize=7.3, color=INK2, ha="right", va="bottom")
+    ax.text(lim - 1, 1.2, f"above y = x: {n1} Cake and\n{n3} STAIR cells, all {tier_txt}"
+            if len(tiers) == 1 else f"above y = x: {n1} Cake and\n{n3} STAIR cells ({tier_txt})",
+            fontsize=7, color=INK2, ha="right", va="bottom")
     ax.set_xlim(0, lim)
     ax.set_ylim(0, lim)
     ax.set_aspect("equal")
     ax.grid(True, zorder=0)
     ax.set_axisbelow(True)
-    ax.set_xlabel("O-PF (oracle prefetch) improvement over LRU (%)")
-    ax.set_ylabel("HINT-PF (typing-hint prefetch) improvement over LRU (%)")
-    ax.legend(loc="lower left", bbox_to_anchor=(-0.02, 1.0), ncol=2, fontsize=7.0, handletextpad=0.3, columnspacing=0.8)
+    ax.set_xticks([0, 20, 40, 60])
+    ax.set_yticks([0, 20, 40, 60])
+    ax.set_xlabel("O-PF (oracle prefetch) gain over LRU (%)")
+    ax.set_ylabel("HINT-PF (typing hint) gain over LRU (%)")
+    ax.legend(loc="lower left", bbox_to_anchor=(-0.17, 1.01), ncol=1, fontsize=7, handletextpad=0.3, borderaxespad=0.1,
+              labelspacing=0.3)
+    s.notes.append(T1_NOTE)
     s.notes.append("Simulation cells: Mooncake conversation, R1, SSD class / b32 / NFS class x GPU idle/busy x CPU 128-1024 GiB.")
     s.write(fig, "fig4_hint.png")
 
@@ -479,7 +510,7 @@ def fig4():
 def fig5():
     s = Src("fig5_int4")
     quoted = {"llama": (37.4, 49.1), "qwen": (36.7, 54.5)}
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.4), gridspec_kw=dict(left=0.08, right=0.99, top=0.80, bottom=0.17, wspace=0.18))
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 3.1), gridspec_kw=dict(left=0.08, right=0.99, top=0.79, bottom=0.18, wspace=0.18))
     vals = {}
     for ax, m in zip(axes, ("llama", "qwen")):
         base = f"results/m10_precision_h200/speed_{m}"
@@ -513,25 +544,26 @@ def fig5():
         x = np.arange(len(rows), dtype=float)
         x += np.repeat(np.arange(len(tiers)) * 0.5, 2)   # gap between tiers
         ax.bar(x - w / 2 - 0.01, [r["bf16_s"] for r in rows], width=w, color=MUTED, label="BF16 on the slow tier", zorder=2)
-        ax.bar(x + w / 2 + 0.01, [r["int4_s"] for r in rows], width=w, color=AQUA, label="INT4 on the slow tier", zorder=2)
+        ax.bar(x + w / 2 + 0.01, [r["int4_s"] for r in rows], width=w, facecolor=AQUA, edgecolor=WHITE, hatch="////", linewidth=0,
+               label="INT4 on the slow tier", zorder=2)
         top = max(r["bf16_s"] for r in rows)
         for xi, r in zip(x, rows):
-            ax.text(xi, r["bf16_s"] + 0.03 * top, f"−{100 * r['gain']:.1f}%", ha="center", va="bottom", fontsize=7.5, color=INK)
+            ax.text(xi, r["bf16_s"] + 0.03 * top, f"−{100 * r['gain']:.1f}%", ha="center", va="bottom", fontsize=7, color=INK)
         ax.set_xticks(x)
-        ax.set_xticklabels([r["gpu"] for r in rows], fontsize=7.5)
+        ax.set_xticklabels([r["gpu"] for r in rows], fontsize=7)
         for ti, t in enumerate(tiers):
             xc = x[2 * ti:2 * ti + 2].mean()
             ax.text(xc, -0.11, f"{t['name']}\n{t['GiBps']:.2f} GiB/s", transform=ax.get_xaxis_transform(), ha="center", va="top",
-                    fontsize=7.5, color=INK)
+                    fontsize=7, color=INK)
         ax.set_ylim(0, top * 1.15)
         ax.yaxis.grid(True, zorder=0)
         ax.set_axisbelow(True)
-        ax.set_title(f"{model_name}, {spec['main_length'] // 1024}K-token context", loc="left", fontsize=9, color=INK)
+        ax.set_title(f"{model_name}, {spec['main_length'] // 1024}K-token context", loc="left", fontsize=7.5, color=INK)
         ax.tick_params(axis="x", length=0)
     axes[0].set_ylabel("median restore time (s)")
-    axes[0].legend(loc="lower left", bbox_to_anchor=(0.0, 1.10), ncol=2, fontsize=8)
-    fig.text(0.99, 0.965, "numbers: INT4 vs BF16 restore-time change · H200 measured, throttled slow tiers, GPU idle / busy",
-             ha="right", va="top", fontsize=7.5, color=INK2)
+    axes[0].legend(loc="lower left", bbox_to_anchor=(0.0, 1.10), ncol=2, fontsize=7.5)
+    fig.text(0.99, 0.975, "numbers: INT4 vs BF16 restore-time change · H200 measured, throttled slow tiers, GPU idle / busy",
+             ha="right", va="top", fontsize=7, color=INK2)
     s.values = {"units": "seconds (median restore time over n_pairs paired runs); gain = 1 - INT4/BF16", **vals}
     s.notes.append("Only the throttled slow tiers are plotted (as asked). The same verdict files also hold the unthrottled CPU tier, "
                    "where INT4 does not help: see plotted_values.<model>.cpu_tier_not_plotted.")
@@ -571,8 +603,8 @@ def fig6():
     bgs = ["cprefill:2048:65536", "mixed:512:32:8192"]
     bg_title = {"cprefill:2048:65536": "background: chunked prefill (2048-token chunks, 64K context)",
                 "mixed:512:32:8192": "background: mixed prefill/decode (512 / 32, 8K context)"}
-    fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.9), sharey=True,
-                             gridspec_kw=dict(left=0.08, right=0.99, top=0.76, bottom=0.14, wspace=0.08))
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 3.8), sharey=True,
+                             gridspec_kw=dict(left=0.085, right=0.99, top=0.755, bottom=0.13, wspace=0.08))
     vals = {}
     diffs = []
     allB = list(reg[(reg.model == "llama") & (reg.trace == "conversation") & (reg.half == "test") & reg.bg.isin(bgs)].B_median)
@@ -632,7 +664,7 @@ def fig6():
                                                                 gain_vs_K2_median=float(r.loc[m, "gain_vs_K2_median"]))
                                                        for m in modes}
         vals[bg]["not_plotted"] = skipped
-        ax.set_title(bg_title[bg], loc="left", fontsize=8.5, color=INK)
+        ax.set_title(bg_title[bg], loc="left", fontsize=7.5, color=INK)
         ax.set_xlim(XMIN, 1.0)
         ax.set_ylim(-5, 85)
         ax.grid(True, zorder=0)
@@ -643,8 +675,8 @@ def fig6():
     h, l_ = axes[0].get_legend_handles_labels()
     h.append(Line2D([], [], **{k: v for k, v in THRESH_STYLE.items() if k != "zorder"}))
     l_.append("registered E2E-C rule: Δ > 15% and B ≥ 0.95")
-    fig.legend(h, l_, loc="upper left", bbox_to_anchor=(0.07, 0.995), ncol=2, fontsize=7.5, handletextpad=0.4, columnspacing=1.2)
-    fig.text(0.08, 0.835, "each line connects, in order: stream → MPS 100% → 87% → 75% → 50% (where available)",
+    fig.legend(h, l_, loc="upper left", bbox_to_anchor=(0.075, 0.995), ncol=2, fontsize=7, handletextpad=0.4, columnspacing=1.0)
+    fig.text(0.085, 0.835, "each line connects, in order: stream → MPS 100% → 87% → 75% → 50% (where available)",
              fontsize=7, color=INK2, ha="left", va="bottom")
     s.values = {"units": "B = background throughput ratio; gain fraction (plotted x100)", "per_background": vals,
                 "t1_minus_registered_curve": diffs,
@@ -672,7 +704,7 @@ def fig7():
                    f"T1G p02_verdict.json passed = {pv['passed']}, n_clean_runs = {pv['n_clean_runs']}; "
                    f"old replay passed = {pv_old['passed']}, n_clean_runs = {pv_old['n_clean_runs']}. "
                    "Filled = T1G rerun with H200 CPU-tier constants (main); hollow gray = old replay, CPU tier throttled at 35.4 GiB/s.")
-    fig, ax = plt.subplots(figsize=(5.6, 3.5), gridspec_kw=dict(left=0.16, right=0.97, top=0.80, bottom=0.14))
+    fig, ax = plt.subplots(figsize=(COL_W, 3.0), gridspec_kw=dict(left=0.20, right=0.97, top=0.76, bottom=0.15))
     ax.axvspan(0.9, 1.1, color=BAND, zorder=0, lw=0)
     ax.axvline(1.0, color=BASELINE, lw=0.8, zorder=1)
     for x in (0.9, 1.1):
@@ -687,8 +719,8 @@ def fig7():
             r = one(old[(old.policy == p) & (old.cpu_GiB == cpu)], f"old {p}@{cpu}")
             xo.append(float(r.ratio)); yo.append(y + off)
             old_vals.append(dict(policy=p, cpu_GiB_full_size=cpu, ratio=float(r.ratio), gpu_run=r.gpu_run))
-        ax.scatter(xo, yo, s=40 if markers[cpu] == "o" else 36, marker=markers[cpu], facecolor="none", edgecolor=MUTED,
-                   linewidth=1.0, zorder=3, label=f"{cpu} GiB cell, {OLD_LABEL}")
+        ax.scatter(xo, yo, s=22 if markers[cpu] == "o" else 20, marker=markers[cpu], facecolor="none", edgecolor=MUTED,
+                   linewidth=0.8, zorder=3, label=f"{cpu} GiB cell, {OLD_LABEL}")
     for cpu, off in zip(cpus, (0.13, -0.13)):
         xs_, ys_ = [], []
         for y, p in zip(ys, pols):
@@ -696,25 +728,28 @@ def fig7():
             xs_.append(float(r.ratio)); ys_.append(y + off)
             vals.append(dict(policy=p, cpu_GiB_full_size=cpu, cpu_GiB_replayed=cpu // k, ratio=float(r.ratio),
                              gpu_mean_s=float(r.gpu_mean), s_orig_mean_s=float(r.s_orig_mean), gpu_run=r.gpu_run, n_ret=int(r.n_ret)))
-        ax.scatter(xs_, ys_, s=40 if markers[cpu] == "o" else 36, marker=markers[cpu], color=ORANGE, edgecolor=WHITE,
-                   linewidth=1.0, zorder=4, label=f"{cpu} GiB cell (replayed at {cpu // k} GiB)")
+        ax.scatter(xs_, ys_, s=24 if markers[cpu] == "o" else 22, marker=markers[cpu], color=ORANGE, edgecolor=WHITE,
+                   linewidth=0.6, zorder=4, label=f"{cpu} GiB cell (replayed at {cpu // k} GiB)")
     lo = min(vals, key=lambda v: v["ratio"])
     hi = max(vals, key=lambda v: v["ratio"])
-    ax.text(1.0, -0.95, f"range {lo['ratio']:.3f}–{hi['ratio']:.3f}; all {len(vals)} cells inside [0.9, 1.1]",
-            fontsize=7.5, color=INK2, ha="center", va="center")
+    ax.text(1.0, -0.95, f"range {lo['ratio']:.3f}–{hi['ratio']:.3f};\nall {len(vals)} cells in [0.9, 1.1]",
+            fontsize=7, color=INK2, ha="center", va="center")
     ax.set_yticks(ys)
     ax.set_yticklabels(pols, color=INK)
-    ax.set_ylim(-1.3, len(pols) - 0.4)
+    ax.set_ylim(-1.45, len(pols) - 0.4)
     ax.tick_params(axis="y", length=0)
     ax.spines["left"].set_visible(False)
     ax.set_xlim(0.86, 1.14)
+    ax.set_xticks([0.9, 0.95, 1.0, 1.05, 1.1])
     ax.xaxis.grid(True, zorder=0)
     ax.set_axisbelow(True)
-    ax.set_xlabel("measured / simulated mean TTFT of returning requests")
+    ax.set_xlabel("measured / simulated mean TTFT")
     hs, ls_ = ax.get_legend_handles_labels()
-    order = [2, 3, 0, 1] if len(hs) == 4 else list(range(len(hs)))
-    ax.legend([hs[i] for i in order], [ls_[i] for i in order], loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2,
-              fontsize=7.2, handletextpad=0.3, columnspacing=1.0)
+    from matplotlib.legend_handler import HandlerTuple
+    # hs: [old 128, old 256, T1G 128, T1G 256]
+    ax.legend([hs[2], hs[3], (hs[0], hs[1])], [ls_[2], ls_[3], f"both cells, {OLD_LABEL}"],
+              handler_map={tuple: HandlerTuple(ndivide=None, pad=0.3)}, loc="lower left", bbox_to_anchor=(-0.22, 1.01), ncol=1,
+              fontsize=7, handletextpad=0.4, labelspacing=0.3, borderaxespad=0.1)
     s.values = {"units": "ratio = gpu_mean / s_orig_mean", "k": k, "cells_T1G_primary": vals, "cells_old_35p4GiBps": old_vals}
     s.write(fig, "fig7_validation.png")
 
@@ -752,7 +787,7 @@ def fig8():
                    "G_hit = CPU-tier hit ratio of O-BEL+NONE minus LRU+NONE (pp); G_rec = oracle order vs LRU with no slow tier, misses "
                    "recomputed (load-only restore); G_load = with slow tier, load-only restore; G_cake = with slow tier, Cake restore.")
 
-    fig, axes = plt.subplots(1, 3, figsize=(7.6, 3.0), gridspec_kw=dict(left=0.07, right=0.985, top=0.80, bottom=0.17, wspace=0.32))
+    fig, axes = plt.subplots(1, 3, figsize=(FULL_W, 3.0), gridspec_kw=dict(left=0.075, right=0.985, top=0.80, bottom=0.17, wspace=0.36))
 
     def logx(ax):
         ax.set_xscale("log", base=2)
@@ -764,34 +799,34 @@ def fig8():
         ax.set_axisbelow(True)
         ax.set_xlabel("CPU tier capacity (GiB)")
 
-    def line(ax, x, y, col, lab, lw=2, ls="-"):
-        ax.plot(x, y, color=col, lw=lw, ls=ls, marker="o", ms=4.5, mec=WHITE, mew=0.9, zorder=3, label=lab)
+    def line(ax, x, y, col, lab, lw=2, ls="-", mk="o"):
+        ax.plot(x, y, color=col, lw=lw, ls=ls, marker=mk, ms=4.5, mec=WHITE, mew=0.7, zorder=3, label=lab)
 
     a, b, c = axes
     logx(a)
     a.axhline(rule["hit_gap_pp"], **THRESH_STYLE)
     line(a, caps, main.G_hit_pp, INK2, "hit-ratio gap")
     a.set_ylabel("percentage points")
-    a.set_title("CPU-tier hit ratio:\noracle order minus LRU (no slow tier)", loc="left", fontsize=8, color=INK)
+    a.set_title("CPU-tier hit ratio:\noracle order minus LRU (no slow tier)", loc="left", fontsize=7.5, color=INK)
     a.text(caps.max() * 1.2, rule["hit_gap_pp"] + 0.15, f"{rule['hit_gap_pp']:g} pp", ha="right", va="bottom", fontsize=7, color=INK2)
     a.set_ylim(bottom=min(0, float(main.G_hit_pp.min())) - 0.3)
 
     logx(b)
     for t in (rule["small"], rule["gap"]):
         b.axhline(100 * t, **THRESH_STYLE)
-    line(b, caps, 100 * main.G_rec, BLUE, "no slow tier, recompute misses")
-    line(b, caps, 100 * main.G_load, AQUA, "slow tier, load only")
-    line(b, caps, 100 * main.G_cake, ORANGE, "slow tier + Cake")
+    line(b, caps, 100 * main.G_rec, BLUE, "no slow tier, recompute misses", mk="o")
+    line(b, caps, 100 * main.G_load, AQUA, "slow tier, load only", mk="s")
+    line(b, caps, 100 * main.G_cake, ORANGE, "slow tier + Cake", mk="^")
     b.set_ylabel("oracle gain vs LRU, mean TTFT (%)")
-    b.set_title("TTFT: oracle order vs LRU\n(SSD class, GPU idle)", loc="left", fontsize=8, color=INK)
+    b.set_title("TTFT: oracle order vs LRU\n(SSD class, GPU idle)", loc="left", fontsize=7.5, color=INK)
 
     logx(c)
     for t in (rule["small"], rule["gap"]):
         c.axhline(100 * t, **THRESH_STYLE)
-    line(c, caps, 100 * tier["b32"].G_cake, MUTED, "b32", lw=1.6)
-    line(c, caps, 100 * tier["ssd"].G_cake, ORANGE, "SSD class")
-    line(c, caps, 100 * tier["nfs"].G_cake, VIOLET, "NFS class")
-    c.set_title("TTFT, slow tier + Cake,\nby slow tier (GPU idle)", loc="left", fontsize=8, color=INK)
+    line(c, caps, 100 * tier["b32"].G_cake, MUTED, "b32", lw=1.6, mk=TIER_MARK["b32"])
+    line(c, caps, 100 * tier["ssd"].G_cake, ORANGE, "SSD class", mk=TIER_MARK["ssd"])
+    line(c, caps, 100 * tier["nfs"].G_cake, VIOLET, "NFS class", mk=TIER_MARK["nfs"])
+    c.set_title("TTFT, slow tier + Cake,\nby slow tier (GPU idle)", loc="left", fontsize=7.5, color=INK)
     c.set_ylabel("oracle gain vs LRU (%)")
     ymax = max(100 * float(np.nanmax(main[["G_rec", "G_load", "G_cake"]].to_numpy())),
                max(100 * float(d.G_cake.max()) for d in tier.values()), 100 * rule["gap"])
@@ -801,7 +836,9 @@ def fig8():
         ax.text(caps.max() * 1.2, 100 * rule["small"] + 0.3, f"{100 * rule['small']:g}%", ha="right", va="bottom", fontsize=7, color=INK2)
     b.legend(loc="upper left", fontsize=7, ncol=1, handlelength=1.5, borderaxespad=0.3)
     c.legend(loc="upper left", fontsize=7, ncol=1, handlelength=1.5, borderaxespad=0.3)
-    fig.text(0.07, 0.985, f"FreeInference ({n_weeks} weeks), returning requests, simulation", ha="left", va="top", fontsize=8, color=INK2)
+    fig.text(0.075, 0.985, f"FreeInference ({n_weeks} weeks), returning requests, simulation, T1 constants", ha="left", va="top",
+             fontsize=7.5, color=INK2)
+    s.notes.append(T1_NOTE)
     s.write(fig, "fig8_bridge.png")
 
 
@@ -864,8 +901,8 @@ def fig9():
 
     col = {"ssd": ORANGE, "b32": MUTED, "nfs": VIOLET}
     name = {"ssd": "SSD class", "b32": "b32", "nfs": "NFS class"}
-    fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.4), sharey=True,
-                             gridspec_kw=dict(left=0.09, right=0.99, top=0.80, bottom=0.15, wspace=0.08))
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 3.3), sharey=True,
+                             gridspec_kw=dict(left=0.09, right=0.99, top=0.79, bottom=0.15, wspace=0.08))
     for ax, c, lw, ms in ((axes[0], "O-ORD", 2.0, 4.5), (axes[1], "O-PF", 1.2, 3.5)):
         ax.set_xscale("log", base=2)
         ax.set_xticks(caps)
@@ -880,25 +917,29 @@ def fig9():
             ax.text(caps.max() * 1.25, th + 0.6, f"{th}%", ha="right", va="bottom", fontsize=7, color=INK2)
         for sl in tiers:
             y = curves[(c, sl)]
-            ax.plot(caps, 100 * y.to_numpy(), color=col[sl], lw=lw, marker="o", ms=ms, mec=WHITE, mew=0.8, zorder=3, label=name[sl])
+            ax.plot(caps, 100 * y.to_numpy(), color=col[sl], lw=lw, marker=TIER_MARK[sl], ms=ms, mec=WHITE, mew=0.6, zorder=3,
+                    label=name[sl])
         ax.axvspan(caps.min() / 1.3, 96, color=BAND, zorder=0, lw=0)
         ax.text(16 * 1.02, 0.98, "T5", transform=ax.get_xaxis_transform(), fontsize=7, color=INK2, va="top")
         ax.text(128 * 1.05, 0.98, "T1", transform=ax.get_xaxis_transform(), fontsize=7, color=INK2, va="top")
         ax.set_xlabel("CPU tier capacity (GiB)")
     axes[0].scatter(t4n_in.cpu_GiB, 100 * t4n_in.G_cake, s=34, facecolor="none", edgecolor=VIOLET, linewidth=1.2, zorder=4,
                     label="NFS class, vs LRU only (T4, GPU idle)")
-    axes[0].set_title("O-ORD: eviction order (main)", loc="left", fontsize=9, color=INK)
-    axes[1].set_title("O-PF: prefetch before return", loc="left", fontsize=9, color=INK)
+    axes[0].set_title("O-ORD: eviction order (main)", loc="left", fontsize=8, color=INK)
+    axes[1].set_title("O-PF: prefetch before return", loc="left", fontsize=8, color=INK)
     axes[0].set_ylabel("headroom over best symmetric rival (%)")
     lo = min(-5.0, 100 * min(float(y.min()) for y in curves.values()) - 3)
     hi = max(30.0, 100 * float(t4n_in.G_cake.max()) + 3)
     axes[0].set_ylim(lo, hi)
     h, l_ = axes[0].get_legend_handles_labels()
-    fig.legend(h, l_, loc="upper left", bbox_to_anchor=(0.07, 0.995), ncol=4, fontsize=7.5, handletextpad=0.4, columnspacing=1.2)
-    fig.text(0.08, 0.86, "FreeInference (agent trace), simulation, Cake, H200 constants; each point = max over GPU idle / busy",
-             fontsize=7.5, color=INK2, ha="left", va="bottom")
+    fig.legend(h, l_, loc="upper left", bbox_to_anchor=(0.08, 0.995), ncol=4, fontsize=7.5, handletextpad=0.4, columnspacing=1.2)
+    fig.text(0.09, 0.855, "FreeInference (agent trace), simulation, Cake, T1 constants; each point = max over GPU idle / busy",
+             fontsize=7, color=INK2, ha="left", va="bottom")
+    s.notes.append(T1_NOTE)
     s.write(fig, "fig9_fi_capacity.png")
 
+
+TIER_MARK = {"b32": "s", "ssd": "^", "nfs": "D"}   # slow tier -> marker (fig8 panel c, fig9), so identity is not hue-only
 
 FIGURES = {"fig3": fig3, "fig4": fig4, "fig5": fig5, "fig6": fig6, "fig7": fig7, "fig8": fig8, "fig9": fig9}
 

@@ -1,5 +1,13 @@
 {
  "figure": "fig7_validation.png",
+ "layout": {
+  "intended_width": "ACM single column",
+  "width_in": 3.33,
+  "height_in": 3.0,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
  "script": "docs/icpe_paper_20261030/figs/make_figs.py",
  "rule": "every plotted value is read from the inputs below; nothing is typed in",
  "inputs": [

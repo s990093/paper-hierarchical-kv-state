@@ -1,5 +1,13 @@
 {
  "figure": "fig4_hint.png",
+ "layout": {
+  "intended_width": "ACM single column",
+  "width_in": 3.33,
+  "height_in": 4.05,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
  "script": "docs/icpe_paper_20261030/figs/make_figs.py",
  "rule": "every plotted value is read from the inputs below; nothing is typed in",
  "inputs": [
@@ -722,6 +730,7 @@
  "notes": [
   "GPU points: scaled-down replay (k = 8: 1/8 of the sessions, CPU tier 16 / 32 GiB for the 128 / 256 GiB cells), Llama-3.1-8B, SSD class, Cake; gain computed from gpu_mean in p02_cells.csv (LRU rep 0 run). 'sim_scaled_hint_share_of_opf' is the same ratio from the scaled-down simulation (s_orig_mean); not plotted.",
   "Primary GPU points = T1G rerun with the H200 CPU-tier constants (docs/h200/icpe/T1G_gpu_rerun.md); hollow gray diamonds = the original replay with the CPU tier throttled at 35.4 GiB/s (results/icpe_h200/p02/p02_cells.csv).",
+  "'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). The b32 tier (2.49 GiB/s) is also H200-derived: read from results/m10_precision_h200/speed_llama/bw.json (run_id 20261017-074151-m10h-calibf-llama), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. Only the SSD-class and NFS-class throttle constants carry over from an earlier platform.",
   "Simulation cells: Mooncake conversation, R1, SSD class / b32 / NFS class x GPU idle/busy x CPU 128-1024 GiB."
  ]
 }

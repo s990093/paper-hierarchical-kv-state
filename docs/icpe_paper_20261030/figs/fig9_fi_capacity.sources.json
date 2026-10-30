@@ -1,5 +1,13 @@
 {
  "figure": "fig9_fi_capacity.png",
+ "layout": {
+  "intended_width": "ACM full width (figure*)",
+  "width_in": 7.0,
+  "height_in": 3.3,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
  "script": "docs/icpe_paper_20261030/figs/make_figs.py",
  "rule": "every plotted value is read from the inputs below; nothing is typed in",
  "inputs": [
@@ -544,6 +552,7 @@
  ],
  "notes": [
   "16-64 GiB from T5 (docs/h200/icpe/T5_fi_small_cpu.md), 128-1024 GiB from T1; T5's 128 GiB cells equal T1's (checked here). Each point = max over GPU idle/busy for that slow tier; FreeInference first weeks, all returning requests, Cake, H200 CPU-tier constants (simulation).",
-  "Hollow markers: T4's G_cake (oracle order O-BEL vs LRU only, NFS class, GPU idle, returning requests); T4's 8 GiB point (9.7%) is outside the plotted 16-1024 GiB range and not drawn. It is GPU idle only, while the lines take the max over GPU states."
+  "Hollow markers: T4's G_cake (oracle order O-BEL vs LRU only, NFS class, GPU idle, returning requests); T4's 8 GiB point (9.7%) is outside the plotted 16-1024 GiB range and not drawn. It is GPU idle only, while the lines take the max over GPU states.",
+  "'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). The b32 tier (2.49 GiB/s) is also H200-derived: read from results/m10_precision_h200/speed_llama/bw.json (run_id 20261017-074151-m10h-calibf-llama), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. Only the SSD-class and NFS-class throttle constants carry over from an earlier platform."
  ]
 }

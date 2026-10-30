@@ -1,5 +1,13 @@
 {
  "figure": "fig6_mps.png",
+ "layout": {
+  "intended_width": "ACM full width (figure*)",
+  "width_in": 7.0,
+  "height_in": 3.8,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
  "script": "docs/icpe_paper_20261030/figs/make_figs.py",
  "rule": "every plotted value is read from the inputs below; nothing is typed in",
  "inputs": [

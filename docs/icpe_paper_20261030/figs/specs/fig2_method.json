@@ -2,7 +2,7 @@
  "title": "Fig. 2 - Limit-study method: traces -> simulator -> oracle vs best symmetric rival -> headroom -> preregistered thresholds -> verdict",
  "canvas": {
   "width": 1200,
-  "height": 560
+  "height": 575
  },
  "style": {
   "font_family": "Liberation Sans, Arial, Helvetica, sans-serif",
@@ -33,7 +33,7 @@
   {
    "id": "sim",
    "label": "Trace simulator",
-   "sublabel": "H200-measured cost constants",
+   "sublabel": "T1 constants (see note below)",
    "x": 320,
    "y": 170,
    "width": 200,
@@ -111,7 +111,7 @@
   {
    "id": "micro",
    "label": "H200 microbenchmarks",
-   "sublabel": "restore, recompute and transfer costs",
+   "sublabel": "CPU-tier transfer and GPU recompute costs",
    "x": 520,
    "y": 420,
    "width": 260,
@@ -325,6 +325,14 @@
    "text": "The replay checks the simulator: measured/simulated TTFT ratio, policy ranking, and the sign of the headroom.",
    "x": 600,
    "y": 538,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "T1 constants: CPU tier, recompute and the b32 tier from H200 measurements; SSD / NFS-class throttle constants carried over from an earlier platform.",
+   "x": 600,
+   "y": 556,
    "font_size": 12,
    "color": "#52514e",
    "anchor": "middle"

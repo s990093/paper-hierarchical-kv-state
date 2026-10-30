@@ -1,5 +1,13 @@
 {
  "figure": "fig8_bridge.png",
+ "layout": {
+  "intended_width": "ACM full width (figure*)",
+  "width_in": 7.0,
+  "height_in": 3.0,
+  "dpi": 200,
+  "smallest_text_pt": 7.0,
+  "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
+ },
  "script": "docs/icpe_paper_20261030/figs/make_figs.py",
  "rule": "every plotted value is read from the inputs below; nothing is typed in",
  "inputs": [
@@ -241,6 +249,7 @@
  ],
  "notes": [
   "Brief from the coordinator: NFS-class G_cake about 18-28% at 16-32 GiB; file values: 8 GiB 9.7%, 16 GiB 17.7%, 32 GiB 27.7%, 64 GiB 7.7%, 128 GiB 0.3%.",
-  "Policies (simulation, FreeInference, 6 weekly slices merged, Llama-3.1-8B costs, H200 CPU-tier constants): G_hit = CPU-tier hit ratio of O-BEL+NONE minus LRU+NONE (pp); G_rec = oracle order vs LRU with no slow tier, misses recomputed (load-only restore); G_load = with slow tier, load-only restore; G_cake = with slow tier, Cake restore."
+  "Policies (simulation, FreeInference, 6 weekly slices merged, Llama-3.1-8B costs, H200 CPU-tier constants): G_hit = CPU-tier hit ratio of O-BEL+NONE minus LRU+NONE (pp); G_rec = oracle order vs LRU with no slow tier, misses recomputed (load-only restore); G_load = with slow tier, load-only restore; G_cake = with slow tier, Cake restore.",
+  "'T1 constants': the CPU tier and the GPU recompute cost were measured on the H200 (docs/h200/icpe/T1_h200_cpu_tier.md). The b32 tier (2.49 GiB/s) is also H200-derived: read from results/m10_precision_h200/speed_llama/bw.json (run_id 20261017-074151-m10h-calibf-llama), the bandwidth that puts Cake's meeting point at block 32 given the H200 recompute speed. Only the SSD-class and NFS-class throttle constants carry over from an earlier platform."
  ]
 }
