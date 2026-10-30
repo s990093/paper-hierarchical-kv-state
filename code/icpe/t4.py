@@ -146,7 +146,7 @@ def hit_fields(P, U, L, C, nf):
     for k in SUBSETS:
         x = m[k]
         out.update({f"U_{k}": int(U[x].sum()), f"C_{k}": int(C[x].sum()), f"S_{k}": int((L - C)[x].sum()),
-                    f"nfull_{k}": int(nf[x].sum()), f"n_{k}": int(x.sum())})
+                    f"nfull_{k}": int(nf[x].sum()), f"nreq_{k}": int(x.sum())})
     return out
 
 
@@ -212,8 +212,8 @@ def cmd_selftest(a):
     # 2. 記帳（run_one 裡的斷言；這裡再看一次總數）
     P, eng, views, U, L, C, nf = run_one(WEEKS[0], 8, "LRU+NONE", list(XS.ALL_VIEWS))
     hf = hit_fields(P, U, L, C, nf)
-    rec("2-accounting", hf["S_all"] == 0 and hf["n_all"] == len(P["full"]) and hf["U_all"] <= hf["nfull_all"],
-        dict(policy="LRU+NONE", cpu_GiB=8, n_all=hf["n_all"], S_all=hf["S_all"], U_all=hf["U_all"], nfull_all=hf["nfull_all"]))
+    rec("2-accounting", hf["S_all"] == 0 and hf["nreq_all"] == len(P["full"]) and hf["U_all"] <= hf["nfull_all"],
+        dict(policy="LRU+NONE", cpu_GiB=8, nreq_all=hf["nreq_all"], S_all=hf["S_all"], U_all=hf["U_all"], nfull_all=hf["nfull_all"]))
     # 3. O-BEL+NONE、8 GiB、audit 每 2,000 步
     try:
         P, eng, views, U, L, C, nf = run_one(WEEKS[0], 8, "O-BEL+NONE", list(XS.ALL_VIEWS), check=2000)
@@ -268,7 +268,7 @@ def cmd_analyze(a):
     assert d.run_id.nunique() == 1
     sweep_rid = d.run_id.iloc[0]
     # 命中率：每 (週, 容量, 策略) 各一份（12 種時間設定相同）→ 先去重再合併 6 週
-    hcols = [f"{p}_{k}" for k in SUBSETS for p in ("U", "C", "S", "nfull", "n")]
+    hcols = [f"{p}_{k}" for k in SUBSETS for p in ("U", "C", "S", "nfull", "nreq")]
     h1 = d.drop_duplicates(["trace", "cpu_GiB", "policy"])
     chk = d.groupby(["trace", "cpu_GiB", "policy"])[hcols].nunique().max().max()
     assert chk == 1, "同一個 (週, 容量, 策略) 的命中記帳在不同時間設定之間不一樣"
