@@ -476,3 +476,18 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - 只報告：NFS 級慢層的 G_cake 在 16／32 GiB 是 17.7／27.7%（GPU 閒）、19.1／29.2%（忙）——CPU 層小、慢層慢時，agent trace 上 oracle 的順序對 LRU 也值 18–29%。
 **失敗與異常**: 我的錯：`t4.py` 的命中欄位 `n_ret` 和 X1 `summarize` 撞名，第一次 selftest `TypeError: dict() got multiple values for keyword argument 'n_ret'`（還沒算出數字）→ 改名 `nreq_*`（52a4ef9）、從 T4-SELFTEST 接著跑。
 **與 ICPE 故事的差異**: 不能寫「差距被分層＋Cake 吸收」；B3 的低上界只在 CPU ≥128 GiB 成立（容量夠）；CPU 層 ≤32 GiB、NFS 級時 agent trace 上 oracle 值 18–29%（對 LRU）。要使用者決定怎麼改。
+
+## ICPE-T5 — FreeInference 在 CPU 16–64 GiB 的 X1（對最好的對稱對手）：「可能」（head node，2026-10-30 10:23 → 10:48 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T5_fi_small_cpu.md`，2026-10-30T02:22:45Z；偏離：無；結果節同檔）。判定「可能」→ 照登記 §3 先回報使用者，再改論文。
+**執行時間**: 2026-10-30T10:23:02 → 10:48:15 +08（head node，不用 GPU）
+**run_id**: `20261030-102302-icpe-t5-data-verify`、`20261030-102447-icpe-t5-x1fi-sweep`、`20261030-104713-icpe-t5-check`、`20261030-104731-icpe-t5-x1fi-an`、`20261030-104745-icpe-t5-x1fiuser-an`、`20261030-104800-icpe-t5-report`
+**指令**: `bash code/r_h200_t5.sh`
+**產出檔**: `results/icpe_h200/t5/`
+**關鍵數字**（模擬；Cake；對最好的對稱對手）:
+- 檢查：CPU 128 GiB 的 828 列和 T1 逐值相同（0 列對不上）。
+- 判定：全部回來的請求「可能」（熱組 0）；使用者發起「死路」。
+- 最大 headroom：O-ORD 16／32／64 GiB 5.92／11.81／3.64%（都在 NFS 級；對手 S3-FIFO、S3-FIFO、PENS），O-PF 32 GiB 4.89%（b32），O-DROP ≤0.65%，O-NOW ≤0.06%。96 格裡 ≥5% 的 4 格全是 O-ORD、NFS 級、16／32 GiB；≥15% 的 0 格。
+- 只報告：T4 的 O-BEL 對 LRU 17.7–29.2%（同一批格子）換成最好的對稱對手只剩 5.6–11.8%；小容量時 O-PF 比對手慢（16 GiB 全部 <0），oracle 比某個對手慢的格 53 個。
+**失敗與異常**: 無。
+**與 ICPE 故事的差異**: B3 可以擴成「CPU 16–1,024 GiB 都 <15%」；5–12% 只在 CPU 16–32 GiB＋NFS 級的淘汰順序。要使用者決定寫法。
