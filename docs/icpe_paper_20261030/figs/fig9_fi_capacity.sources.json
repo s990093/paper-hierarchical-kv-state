@@ -1,0 +1,549 @@
+{
+ "figure": "fig9_fi_capacity.png",
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/icpe_h200/t5/p12/x1/x1fi_headroom_components.csv",
+   "sha256": "393a860e3786760d4aa49410e145314423615fb75983ab996a68cc98c382c068",
+   "run_id": [
+    "20261030-104731-icpe-t5-x1fi-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261030-102447-icpe-t5-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/p12/x1/x1fi_headroom_components.csv",
+   "sha256": "f499574225ed0a232c58100bdf6ff98de7c229b7dc729c94fa13c6ff348269dc",
+   "run_id": [
+    "20261028-074217-icpe-t1-p12-x1fi-an"
+   ],
+   "related_run_ids": {
+    "src_runs": [
+     "20261028-073351-icpe-t1-p12-x1fi-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t5/t5_report.json",
+   "sha256": "0c63e19da750c1ade9303cbf9e052fd33a6ca674dc72174398b79ffce821c956",
+   "run_id": [
+    "20261030-104800-icpe-t5-report"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/icpe_h200/t4/t4_cells.csv",
+   "sha256": "3d03831a9b2721dc1d629c991699ad2e75076eba1399b1f58b5a286c78994878",
+   "run_id": [
+    "20261030-101546-icpe-t4-analyze"
+   ],
+   "related_run_ids": {
+    "sweep_run_id": [
+     "20261030-100335-icpe-t4-sweep"
+    ]
+   }
+  }
+ ],
+ "plotted_values": {
+  "units": "oracle headroom over the best symmetric rival (Cake), fraction; max over GPU idle/busy per slow tier",
+  "capacities_GiB": [
+   16,
+   32,
+   64,
+   128,
+   256,
+   512,
+   1024
+  ],
+  "O-ORD": {
+   "b32": {
+    "16": 0.0230830495410211,
+    "32": 0.0359841926310021,
+    "64": 0.0058366488209292,
+    "128": 0.0006292664373526,
+    "256": 0.0005139132178925,
+    "512": 0.0001911301185857,
+    "1024": 7.614681269123145e-05
+   },
+   "ssd": {
+    "16": 0.0119982066213965,
+    "32": 0.0165981830558831,
+    "64": 0.0028896991101797,
+    "128": 0.0002184576942175,
+    "256": 0.0001755576362669,
+    "512": 7.05306295250411e-05,
+    "1024": 2.887334156507913e-05
+   },
+   "nfs": {
+    "16": 0.0591540030939757,
+    "32": 0.1180792060876839,
+    "64": 0.0364060475072502,
+    "128": 0.003027836865789,
+    "256": 0.0025101566769324,
+    "512": 0.0008094915467876,
+    "1024": 0.0002788942706536
+   }
+  },
+  "O-PF": {
+   "b32": {
+    "16": -0.0900486301030528,
+    "32": 0.048864404828527,
+    "64": 0.0047262323738508,
+    "128": 0.0005024081034129,
+    "256": 0.0003721205418327,
+    "512": 8.070172489947077e-05,
+    "1024": 9.261990334138062e-06
+   },
+   "ssd": {
+    "16": -0.0437935504606286,
+    "32": 0.0264562873481282,
+    "64": 0.002590014551094,
+    "128": 0.0001721316923552,
+    "256": 0.0001292188513033,
+    "512": 2.769202588984716e-05,
+    "1024": 3.928446987333054e-06
+   },
+   "nfs": {
+    "16": -0.1918123775046973,
+    "32": -0.2468443272887686,
+    "64": -0.0412789926802514,
+    "128": 0.0022297168153533,
+    "256": 0.001912088327886,
+    "512": 0.0004043980678115,
+    "1024": 3.649991455868267e-05
+   }
+  },
+  "argmax_cells": {
+   "O-ORD|b32": [
+    {
+     "cpu_GiB": 16,
+     "headroom": 0.0230830495410211,
+     "gpu": "idle",
+     "best_rival": "S3FIFO",
+     "oracle_policy": "O-BELS",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 32,
+     "headroom": 0.0359841926310021,
+     "gpu": "idle",
+     "best_rival": "LRU2",
+     "oracle_policy": "O-BEL",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 64,
+     "headroom": 0.0058366488209292,
+     "gpu": "idle",
+     "best_rival": "PENS",
+     "oracle_policy": "O-BEL",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 128,
+     "headroom": 0.0006292664373526,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BEL",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 256,
+     "headroom": 0.0005139132178925,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 512,
+     "headroom": 0.0001911301185857,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 1024,
+     "headroom": 7.614681269123145e-05,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    }
+   ],
+   "O-ORD|ssd": [
+    {
+     "cpu_GiB": 16,
+     "headroom": 0.0119982066213965,
+     "gpu": "busy",
+     "best_rival": "S3FIFO",
+     "oracle_policy": "O-BELS",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 32,
+     "headroom": 0.0165981830558831,
+     "gpu": "busy",
+     "best_rival": "LRU2",
+     "oracle_policy": "O-BEL",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 64,
+     "headroom": 0.0028896991101797,
+     "gpu": "busy",
+     "best_rival": "PENS",
+     "oracle_policy": "O-BEL",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 128,
+     "headroom": 0.0002184576942175,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 256,
+     "headroom": 0.0001755576362669,
+     "gpu": "busy",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 512,
+     "headroom": 7.05306295250411e-05,
+     "gpu": "busy",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 1024,
+     "headroom": 2.887334156507913e-05,
+     "gpu": "busy",
+     "best_rival": "S3FIFO",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    }
+   ],
+   "O-ORD|nfs": [
+    {
+     "cpu_GiB": 16,
+     "headroom": 0.0591540030939757,
+     "gpu": "busy",
+     "best_rival": "S3FIFO",
+     "oracle_policy": "O-BELS",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 32,
+     "headroom": 0.1180792060876839,
+     "gpu": "busy",
+     "best_rival": "S3FIFO",
+     "oracle_policy": "O-BELS",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 64,
+     "headroom": 0.0364060475072502,
+     "gpu": "busy",
+     "best_rival": "PENS",
+     "oracle_policy": "O-BEL",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 128,
+     "headroom": 0.003027836865789,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BEL",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 256,
+     "headroom": 0.0025101566769324,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BEL",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 512,
+     "headroom": 0.0008094915467876,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 1024,
+     "headroom": 0.0002788942706536,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-BELS",
+     "source": "T1"
+    }
+   ],
+   "O-PF|b32": [
+    {
+     "cpu_GiB": 16,
+     "headroom": -0.0900486301030528,
+     "gpu": "busy",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 32,
+     "headroom": 0.048864404828527,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 64,
+     "headroom": 0.0047262323738508,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 128,
+     "headroom": 0.0005024081034129,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 256,
+     "headroom": 0.0003721205418327,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 512,
+     "headroom": 8.070172489947077e-05,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 1024,
+     "headroom": 9.261990334138062e-06,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    }
+   ],
+   "O-PF|ssd": [
+    {
+     "cpu_GiB": 16,
+     "headroom": -0.0437935504606286,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 32,
+     "headroom": 0.0264562873481282,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 64,
+     "headroom": 0.002590014551094,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 128,
+     "headroom": 0.0001721316923552,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 256,
+     "headroom": 0.0001292188513033,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 512,
+     "headroom": 2.769202588984716e-05,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 1024,
+     "headroom": 3.928446987333054e-06,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    }
+   ],
+   "O-PF|nfs": [
+    {
+     "cpu_GiB": 16,
+     "headroom": -0.1918123775046973,
+     "gpu": "busy",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 32,
+     "headroom": -0.2468443272887686,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 64,
+     "headroom": -0.0412789926802514,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T5"
+    },
+    {
+     "cpu_GiB": 128,
+     "headroom": 0.0022297168153533,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 256,
+     "headroom": 0.001912088327886,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 512,
+     "headroom": 0.0004043980678115,
+     "gpu": "idle",
+     "best_rival": "LRU+RPF",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    },
+    {
+     "cpu_GiB": 1024,
+     "headroom": 3.649991455868267e-05,
+     "gpu": "idle",
+     "best_rival": "LRU",
+     "oracle_policy": "O-PF",
+     "source": "T1"
+    }
+   ]
+  },
+  "T4_obel_vs_LRU_nfs_idle_cake": {
+   "8": 0.0966752,
+   "16": 0.177196,
+   "32": 0.276662,
+   "64": 0.0770123,
+   "128": 0.00302784
+  },
+  "t5_report_run_id": "20261030-104800-icpe-t5-report"
+ },
+ "checks": [
+  {
+   "what": "T5 vs T1 at 128 GiB: cells compared",
+   "value_in_plotted_file": 24,
+   "expected": 24,
+   "tolerance": 0,
+   "expected_from": "4 components x 3 slow x 2 GPU",
+   "status": "match"
+  },
+  {
+   "what": "T5 vs T1 at 128 GiB: max |headroom diff|",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0.0,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fi_headroom_components.csv",
+   "status": "match"
+  },
+  {
+   "what": "T5 vs T1 at 128 GiB: best_rival differs (cells)",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "results/icpe_h200/t1/p12/x1/x1fi_headroom_components.csv",
+   "status": "match"
+  },
+  {
+   "what": "O-ORD NFS max over GPU @ 16 GiB (%)",
+   "value_in_plotted_file": 5.9,
+   "expected": 5.9,
+   "tolerance": 0.05,
+   "expected_from": "coordinator / T5 doc",
+   "status": "match"
+  },
+  {
+   "what": "O-ORD NFS max over GPU @ 32 GiB (%)",
+   "value_in_plotted_file": 11.8,
+   "expected": 11.8,
+   "tolerance": 0.05,
+   "expected_from": "coordinator / T5 doc",
+   "status": "match"
+  },
+  {
+   "what": "O-ORD NFS max over GPU @ 64 GiB (%)",
+   "value_in_plotted_file": 3.6,
+   "expected": 3.6,
+   "tolerance": 0.05,
+   "expected_from": "coordinator / T5 doc",
+   "status": "match"
+  },
+  {
+   "what": "O-ORD NFS max over GPU @ 128 GiB (%)",
+   "value_in_plotted_file": 0.3,
+   "expected": 0.3,
+   "tolerance": 0.005,
+   "expected_from": "coordinator / T1 B3",
+   "status": "match"
+  },
+  {
+   "what": "cells >= 15% (all components, 16-1024 GiB)",
+   "value_in_plotted_file": 0.0,
+   "expected": 0.0,
+   "tolerance": 0,
+   "expected_from": "coordinator: nothing >= 15%",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "16-64 GiB from T5 (docs/h200/icpe/T5_fi_small_cpu.md), 128-1024 GiB from T1; T5's 128 GiB cells equal T1's (checked here). Each point = max over GPU idle/busy for that slow tier; FreeInference first weeks, all returning requests, Cake, H200 CPU-tier constants (simulation).",
+  "Hollow markers: T4's G_cake (oracle order O-BEL vs LRU only, NFS class, GPU idle, returning requests); T4's 8 GiB point (9.7%) is outside the plotted 16-1024 GiB range and not drawn. It is GPU idle only, while the lines take the max over GPU states."
+ ]
+}

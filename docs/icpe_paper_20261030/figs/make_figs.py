@@ -358,16 +358,22 @@ def fig3():
     s.write(fig, "fig3_scorecard.png")
 
 
-# ================================================================ fig4: typing hint vs oracle prefetch
-def fig4():
-    s = Src("fig4_hint")
-    t1 = s.csv("results/icpe_h200/t1/p02/fullsim_hint.csv")
-    t3 = s.csv("results/icpe_h200/t3/p02/fullsim_hint.csv")
-    for d, nm in ((t1, "T1"), (t3, "T3")):
-        if len(d) != 24 or set(d.trace) != {"conversation"} or set(d.slow) != {"ssd", "b32", "nfs"}:
-            raise SystemExit(f"fullsim_hint {nm}: unexpected cells")
-    cells = s.csv("results/icpe_h200/p02/p02_cells.csv", related_cols=("gpu_run",))
-    pv = s.json("results/icpe_h200/p02/p02_verdict.json")
+# ================================================================ GPU scaled-down replay (B6 / C2)
+# T1G = rerun with the H200 CPU-tier constants (paper's main version; docs/h200/icpe/T1G_gpu_rerun.md).
+# OLD = original replay with the CPU tier throttled at 35.4 GiB/s (shown faint, for reference).
+P02_T1G = ("results/icpe_h200/t1/gpu/p02/analysis/p02_cells.csv", "results/icpe_h200/t1/gpu/p02/analysis/p02_verdict.json")
+P02_OLD = ("results/icpe_h200/p02/p02_cells.csv", "results/icpe_h200/p02/p02_verdict.json")
+OLD_LABEL = "CPU tier 35.4 GiB/s (old)"
+
+
+def p02_load(s, which):
+    cells_path, verdict_path = which
+    cells = s.csv(cells_path, related_cols=("gpu_run",))
+    pv = s.json(verdict_path)
+    if pv["run_id"] not in set(cells.run_id):
+        raise SystemExit(f"{verdict_path} run_id {pv['run_id']} not in {cells_path}")
+    if not pv["passed"]:
+        print(f"  note: {verdict_path} passed = {pv['passed']}")
     k = int(pv["k"])
     gpu = {}
     for cpu in sorted(cells.cpu_GiB.unique()):
@@ -378,8 +384,30 @@ def fig4():
                              hint_share_of_opf=(L - H) / (L - O),
                              sim_scaled_hint_share_of_opf=(Ls - Hs) / (Ls - Os),
                              gpu_runs={p: g.loc[p, "gpu_run"] for p in ("LRU", "HINT-PF", "O-PF")})
-        s.check(f"GPU HINT-PF share of O-PF gain, CPU {cpu} GiB (full-size label)", round(gpu[int(cpu)]["hint_share_of_opf"], 2),
-                0.81, 0.005, "task brief / ICPE_EVIDENCE C2 (0.81)")
+    return cells, pv, k, gpu
+
+
+# ================================================================ fig4: typing hint vs oracle prefetch
+def fig4():
+    s = Src("fig4_hint")
+    t1 = s.csv("results/icpe_h200/t1/p02/fullsim_hint.csv")
+    t3 = s.csv("results/icpe_h200/t3/p02/fullsim_hint.csv")
+    for d, nm in ((t1, "T1"), (t3, "T3")):
+        if len(d) != 24 or set(d.trace) != {"conversation"} or set(d.slow) != {"ssd", "b32", "nfs"}:
+            raise SystemExit(f"fullsim_hint {nm}: unexpected cells")
+    _, pv, k, gpu = p02_load(s, P02_T1G)
+    _, pv_old, k_old, gpu_old = p02_load(s, P02_OLD)
+    if k_old != k:
+        raise SystemExit("old and T1G replays use different k")
+    for cpu, q in zip(sorted(gpu), (0.81, 0.79)):
+        s.check(f"T1G GPU HINT-PF share of O-PF gain, CPU {cpu} GiB cell", round(gpu[cpu]["hint_share_of_opf"], 2), q, 0.005,
+                "coordinator / docs/h200/icpe/T1G_gpu_rerun.md (0.81 / 0.79)")
+    for cpu in sorted(gpu_old):
+        s.check(f"old GPU HINT-PF share of O-PF gain, CPU {cpu} GiB cell", round(gpu_old[cpu]["hint_share_of_opf"], 2), 0.81, 0.005,
+                "ICPE_EVIDENCE C2 (0.81 / 0.81, old replay)")
+    for cpu, (qh, qo) in zip(sorted(gpu), ((14.5, 17.9), (12.9, 16.2))):
+        s.check(f"T1G GPU HINT-PF over LRU, {cpu} (%)", round(100 * gpu[cpu]["hint_vs_lru"], 1), qh, 0.05, "T1G doc numbers table")
+        s.check(f"T1G GPU O-PF over LRU, {cpu} (%)", round(100 * gpu[cpu]["opf_vs_lru"], 1), qo, 0.05, "T1G doc numbers table")
     t1_share_med = t1.groupby("slow").hint_share_of_opf.median().to_dict()
     for sl, q in (("ssd", 0.933), ("b32", 0.941), ("nfs", 1.118)):
         s.check(f"T1 median HINT-PF/O-PF share {sl}", round(t1_share_med[sl], 3), q, 0.0005, "T1 doc C2 (new)")
@@ -397,13 +425,16 @@ def fig4():
         "median_share_by_slow_T1": t1_share_med,
         "median_share_by_slow_T3": t3.groupby("slow").hint_share_of_opf.median().to_dict(),
         "cells_with_share_gt_1": above,
-        "gpu_scaled_down": {"k": k, "cells": gpu},
+        "gpu_scaled_down_T1G_primary": {"k": k, "verdict_run_id": pv["run_id"], "cells": gpu},
+        "gpu_scaled_down_old_35p4GiBps": {"k": k_old, "verdict_run_id": pv_old["run_id"], "cells": gpu_old},
     }
     s.notes.append(f"GPU points: scaled-down replay (k = {k}: 1/{k} of the sessions, CPU tier {128 // k} / {256 // k} GiB for the "
                    "128 / 256 GiB cells), Llama-3.1-8B, SSD class, Cake; gain computed from gpu_mean in p02_cells.csv "
                    "(LRU rep 0 run). 'sim_scaled_hint_share_of_opf' is the same ratio from the scaled-down simulation (s_orig_mean); not plotted.")
+    s.notes.append("Primary GPU points = T1G rerun with the H200 CPU-tier constants (docs/h200/icpe/T1G_gpu_rerun.md); "
+                   f"hollow gray diamonds = the original replay with the CPU tier throttled at 35.4 GiB/s ({P02_OLD[0]}).")
 
-    fig, ax = plt.subplots(figsize=(5.2, 5.0), gridspec_kw=dict(left=0.12, right=0.97, top=0.89, bottom=0.11))
+    fig, ax = plt.subplots(figsize=(5.4, 5.3), gridspec_kw=dict(left=0.12, right=0.97, top=0.86, bottom=0.10))
     lim = 60
     xs = np.array([0, lim])
     ax.plot(xs, xs, color=MUTED, lw=1.0, zorder=1)
@@ -414,10 +445,14 @@ def fig4():
                label="simulation, Cake planner (T1), 24 cells")
     ax.scatter(100 * t3.opf_vs_lru, 100 * t3.hint_vs_lru, s=34, marker="s", facecolor="none", edgecolor=BLUE, linewidth=1.1,
                zorder=3, label="simulation, STAIR planner (T3), 24 cells")
+    ox = [100 * gpu_old[c]["opf_vs_lru"] for c in sorted(gpu_old)]
+    oy = [100 * gpu_old[c]["hint_vs_lru"] for c in sorted(gpu_old)]
     gx = [100 * gpu[c]["opf_vs_lru"] for c in sorted(gpu)]
     gy = [100 * gpu[c]["hint_vs_lru"] for c in sorted(gpu)]
     ax.scatter(gx, gy, s=60, marker="D", color=ORANGE, edgecolor=WHITE, linewidth=1.0, zorder=5,
                label=f"H200 measured, scaled-down 1/{k} (2 cells)")
+    ax.scatter(ox, oy, s=52, marker="D", facecolor="none", edgecolor=MUTED, linewidth=1.0, zorder=4,
+               label=f"same, {OLD_LABEL}")
     shares = " / ".join(f"{gpu[c]['hint_share_of_opf']:.2f}" for c in sorted(gpu))
     ax.annotate(f"H200 measured (scaled-down):\nHINT-PF gets {shares} of\nO-PF's gain over LRU",
                 xy=(gx[0], gy[0]), xytext=(28, 9), fontsize=8, color=INK, ha="left", va="bottom",
@@ -435,7 +470,7 @@ def fig4():
     ax.set_axisbelow(True)
     ax.set_xlabel("O-PF (oracle prefetch) improvement over LRU (%)")
     ax.set_ylabel("HINT-PF (typing-hint prefetch) improvement over LRU (%)")
-    ax.legend(loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2, fontsize=7.3, handletextpad=0.3, columnspacing=1.0)
+    ax.legend(loc="lower left", bbox_to_anchor=(-0.02, 1.0), ncol=2, fontsize=7.0, handletextpad=0.3, columnspacing=0.8)
     s.notes.append("Simulation cells: Mooncake conversation, R1, SSD class / b32 / NFS class x GPU idle/busy x CPU 128-1024 GiB.")
     s.write(fig, "fig4_hint.png")
 
@@ -621,20 +656,23 @@ def fig6():
 # ================================================================ fig7: simulator vs GPU
 def fig7():
     s = Src("fig7_validation")
-    cells = s.csv("results/icpe_h200/p02/p02_cells.csv", related_cols=("gpu_run",))
-    pv = s.json("results/icpe_h200/p02/p02_verdict.json")
-    k = int(pv["k"])
+    cells, pv, k, _ = p02_load(s, P02_T1G)
+    old, pv_old, _, _ = p02_load(s, P02_OLD)
     order = ["LRU", "FREQ2Q", "O-BEL", "HINT-PF", "O-PF"]
     pols = [p for p in order if p in set(cells.policy)] + sorted(set(cells.policy) - set(order))
     cpus = sorted(int(c) for c in cells.cpu_GiB.unique())
-    s.check("ratio min (3 decimals)", round(float(cells.ratio.min()), 3), 0.911, 0.0005, "task brief / ICPE_EVIDENCE B6")
-    s.check("ratio max (3 decimals)", round(float(cells.ratio.max()), 3), 0.975, 0.0005, "task brief / ICPE_EVIDENCE B6")
-    s.check("all cells in band (csv in_band)", float(cells.in_band.all()), 1.0, 0, "p02_cells.csv in_band")
-    s.check("ratio recomputed gpu_mean / s_orig_mean", float((cells.gpu_mean / cells.s_orig_mean - cells.ratio).abs().max()), 0.0, 1e-9, "p02_cells.csv")
+    s.check("T1G ratio min (3 decimals)", round(float(cells.ratio.min()), 3), 0.911, 0.0005, "coordinator / T1G doc B6 (0.911-0.987)")
+    s.check("T1G ratio max (3 decimals)", round(float(cells.ratio.max()), 3), 0.987, 0.0005, "coordinator / T1G doc B6 (0.911-0.987)")
+    s.check("T1G all cells in band (csv in_band)", float(cells.in_band.all()), 1.0, 0, "p02_cells.csv in_band")
+    s.check("T1G ratio recomputed gpu_mean / s_orig_mean", float((cells.gpu_mean / cells.s_orig_mean - cells.ratio).abs().max()), 0.0, 1e-9, "p02_cells.csv")
+    s.check("old ratio min (3 decimals)", round(float(old.ratio.min()), 3), 0.911, 0.0005, "ICPE_EVIDENCE B6 (old replay)")
+    s.check("old ratio max (3 decimals)", round(float(old.ratio.max()), 3), 0.975, 0.0005, "ICPE_EVIDENCE B6 (old replay)")
     s.notes.append(f"Scaled-down replay: k = {k}, so the 128 / 256 GiB cells run with a {128 // k} / {256 // k} GiB CPU tier; "
                    f"Llama-3.1-8B, Mooncake conversation, SSD class, Cake; TTFT excludes queueing (registered). "
-                   f"p02_verdict.json passed = {pv['passed']}, n_clean_runs = {pv['n_clean_runs']}.")
-    fig, ax = plt.subplots(figsize=(5.4, 3.3), gridspec_kw=dict(left=0.17, right=0.97, top=0.82, bottom=0.15))
+                   f"T1G p02_verdict.json passed = {pv['passed']}, n_clean_runs = {pv['n_clean_runs']}; "
+                   f"old replay passed = {pv_old['passed']}, n_clean_runs = {pv_old['n_clean_runs']}. "
+                   "Filled = T1G rerun with H200 CPU-tier constants (main); hollow gray = old replay, CPU tier throttled at 35.4 GiB/s.")
+    fig, ax = plt.subplots(figsize=(5.6, 3.5), gridspec_kw=dict(left=0.16, right=0.97, top=0.80, bottom=0.14))
     ax.axvspan(0.9, 1.1, color=BAND, zorder=0, lw=0)
     ax.axvline(1.0, color=BASELINE, lw=0.8, zorder=1)
     for x in (0.9, 1.1):
@@ -642,6 +680,15 @@ def fig7():
     markers = {cpus[0]: "o", cpus[-1]: "s"}
     ys = np.arange(len(pols))[::-1]
     vals = []
+    old_vals = []
+    for cpu, off in zip(cpus, (0.13, -0.13)):
+        xo, yo = [], []
+        for y, p in zip(ys, pols):
+            r = one(old[(old.policy == p) & (old.cpu_GiB == cpu)], f"old {p}@{cpu}")
+            xo.append(float(r.ratio)); yo.append(y + off)
+            old_vals.append(dict(policy=p, cpu_GiB_full_size=cpu, ratio=float(r.ratio), gpu_run=r.gpu_run))
+        ax.scatter(xo, yo, s=40 if markers[cpu] == "o" else 36, marker=markers[cpu], facecolor="none", edgecolor=MUTED,
+                   linewidth=1.0, zorder=3, label=f"{cpu} GiB cell, {OLD_LABEL}")
     for cpu, off in zip(cpus, (0.13, -0.13)):
         xs_, ys_ = [], []
         for y, p in zip(ys, pols):
@@ -664,8 +711,11 @@ def fig7():
     ax.xaxis.grid(True, zorder=0)
     ax.set_axisbelow(True)
     ax.set_xlabel("measured / simulated mean TTFT of returning requests")
-    ax.legend(loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2, fontsize=7.5, handletextpad=0.3)
-    s.values = {"units": "ratio = gpu_mean / s_orig_mean", "k": k, "cells": vals}
+    hs, ls_ = ax.get_legend_handles_labels()
+    order = [2, 3, 0, 1] if len(hs) == 4 else list(range(len(hs)))
+    ax.legend([hs[i] for i in order], [ls_[i] for i in order], loc="lower left", bbox_to_anchor=(0.0, 1.0), ncol=2,
+              fontsize=7.2, handletextpad=0.3, columnspacing=1.0)
+    s.values = {"units": "ratio = gpu_mean / s_orig_mean", "k": k, "cells_T1G_primary": vals, "cells_old_35p4GiBps": old_vals}
     s.write(fig, "fig7_validation.png")
 
 
@@ -755,7 +805,102 @@ def fig8():
     s.write(fig, "fig8_bridge.png")
 
 
-FIGURES = {"fig3": fig3, "fig4": fig4, "fig5": fig5, "fig6": fig6, "fig7": fig7, "fig8": fig8}
+# ================================================================ fig9: FreeInference X1 headroom vs CPU-tier capacity (T5 + T1)
+def fig9():
+    s = Src("fig9_fi_capacity")
+    T5 = "results/icpe_h200/t5/p12/x1/x1fi_headroom_components.csv"
+    T1F = "results/icpe_h200/t1/p12/x1/x1fi_headroom_components.csv"
+    d5 = s.csv(T5, related_cols=("src_runs",))
+    d1 = s.csv(T1F, related_cols=("src_runs",))
+    for d, nm in ((d5, "T5"), (d1, "T1")):
+        if set(d.restore) != {"cake"} or set(d.trace) != {"freeinference"}:
+            raise SystemExit(f"{nm}: unexpected restore/trace values")
+    # T5's 128 GiB cells must equal T1's (the registered check; verified again here)
+    key = ["cpu_GiB", "slow", "gpu", "component"]
+    m = d5[d5.cpu_GiB == 128].merge(d1[d1.cpu_GiB == 128], on=key, suffixes=("_t5", "_t1"))
+    s.check("T5 vs T1 at 128 GiB: cells compared", len(m), 24, 0, "4 components x 3 slow x 2 GPU")
+    s.check("T5 vs T1 at 128 GiB: max |headroom diff|", float((m.headroom_t5 - m.headroom_t1).abs().max()), 0.0, 0.0, T1F)
+    s.check("T5 vs T1 at 128 GiB: best_rival differs (cells)", float((m.best_rival_t5 != m.best_rival_t1).sum()), 0.0, 0, T1F)
+    a = pd.concat([d5[d5.cpu_GiB < 128], d1], ignore_index=True)
+    caps = np.array(sorted(a.cpu_GiB.unique()))
+    tiers = ["b32", "ssd", "nfs"]
+    curves, argmax = {}, {}
+    for c in ("O-ORD", "O-PF"):
+        for sl in tiers:
+            sub = a[(a.component == c) & (a.slow == sl)]
+            idx = sub.groupby("cpu_GiB").headroom.idxmax()
+            best = sub.loc[idx].set_index("cpu_GiB").sort_index()
+            if list(best.index) != list(caps):
+                raise SystemExit(f"{c} {sl}: missing capacities")
+            curves[(c, sl)] = best.headroom
+            argmax[f"{c}|{sl}"] = [dict(cpu_GiB=int(ci), headroom=float(r.headroom), gpu=r.gpu, best_rival=r.best_rival,
+                                        oracle_policy=r.oracle_policy, source="T5" if ci < 128 else "T1")
+                                   for ci, r in best.iterrows()]
+    ordn = curves[("O-ORD", "nfs")]
+    for cpu, q in ((16, 5.9), (32, 11.8), (64, 3.6)):
+        s.check(f"O-ORD NFS max over GPU @ {cpu} GiB (%)", round(100 * float(ordn.loc[cpu]), 1), q, 0.05, "coordinator / T5 doc")
+    s.check("O-ORD NFS max over GPU @ 128 GiB (%)", round(100 * float(ordn.loc[128]), 2), 0.30, 0.005, "coordinator / T1 B3")
+    s.check("cells >= 15% (all components, 16-1024 GiB)", float((a.headroom >= 0.15).sum()), 0.0, 0, "coordinator: nothing >= 15%")
+    rep_ = s.json("results/icpe_h200/t5/t5_report.json")
+    # T4 overlay: oracle order vs LRU only (slow tier + Cake), NFS class, GPU idle, returning requests
+    t4 = s.csv("results/icpe_h200/t4/t4_cells.csv", related_cols=("sweep_run_id",))
+    t4n = t4[(t4.slow == "nfs") & (t4.gpu == "idle") & (t4.subset == "ret")].sort_values("cpu_GiB")
+    t4n_in = t4n[(t4n.cpu_GiB >= caps.min()) & (t4n.cpu_GiB <= caps.max())]
+    s.values = {
+        "units": "oracle headroom over the best symmetric rival (Cake), fraction; max over GPU idle/busy per slow tier",
+        "capacities_GiB": [int(x) for x in caps],
+        "O-ORD": {sl: {int(k): float(v) for k, v in curves[("O-ORD", sl)].items()} for sl in tiers},
+        "O-PF": {sl: {int(k): float(v) for k, v in curves[("O-PF", sl)].items()} for sl in tiers},
+        "argmax_cells": argmax,
+        "T4_obel_vs_LRU_nfs_idle_cake": {int(r.cpu_GiB): float(r.G_cake) for r in t4n.itertuples()},
+        "t5_report_run_id": rep_["run_id"],
+    }
+    s.notes.append("16-64 GiB from T5 (docs/h200/icpe/T5_fi_small_cpu.md), 128-1024 GiB from T1; T5's 128 GiB cells equal T1's "
+                   "(checked here). Each point = max over GPU idle/busy for that slow tier; FreeInference first weeks, all returning "
+                   "requests, Cake, H200 CPU-tier constants (simulation).")
+    s.notes.append("Hollow markers: T4's G_cake (oracle order O-BEL vs LRU only, NFS class, GPU idle, returning requests); "
+                   f"T4's 8 GiB point ({100 * float(t4n[t4n.cpu_GiB == 8].G_cake.iloc[0]) if (t4n.cpu_GiB == 8).any() else float('nan'):.1f}%) "
+                   "is outside the plotted 16-1024 GiB range and not drawn. It is GPU idle only, while the lines take the max over GPU states.")
+
+    col = {"ssd": ORANGE, "b32": MUTED, "nfs": VIOLET}
+    name = {"ssd": "SSD class", "b32": "b32", "nfs": "NFS class"}
+    fig, axes = plt.subplots(1, 2, figsize=(7.4, 3.4), sharey=True,
+                             gridspec_kw=dict(left=0.09, right=0.99, top=0.80, bottom=0.15, wspace=0.08))
+    for ax, c, lw, ms in ((axes[0], "O-ORD", 2.0, 4.5), (axes[1], "O-PF", 1.2, 3.5)):
+        ax.set_xscale("log", base=2)
+        ax.set_xticks(caps)
+        ax.set_xticklabels([f"{int(x):,}" for x in caps])
+        ax.minorticks_off()
+        ax.set_xlim(caps.min() / 1.3, caps.max() * 1.3)
+        ax.grid(True, zorder=0)
+        ax.set_axisbelow(True)
+        ax.axhline(0, color=BASELINE, lw=0.8, zorder=1)
+        for th in (5, 15):
+            ax.axhline(th, **THRESH_STYLE)
+            ax.text(caps.max() * 1.25, th + 0.6, f"{th}%", ha="right", va="bottom", fontsize=7, color=INK2)
+        for sl in tiers:
+            y = curves[(c, sl)]
+            ax.plot(caps, 100 * y.to_numpy(), color=col[sl], lw=lw, marker="o", ms=ms, mec=WHITE, mew=0.8, zorder=3, label=name[sl])
+        ax.axvspan(caps.min() / 1.3, 96, color=BAND, zorder=0, lw=0)
+        ax.text(16 * 1.02, 0.98, "T5", transform=ax.get_xaxis_transform(), fontsize=7, color=INK2, va="top")
+        ax.text(128 * 1.05, 0.98, "T1", transform=ax.get_xaxis_transform(), fontsize=7, color=INK2, va="top")
+        ax.set_xlabel("CPU tier capacity (GiB)")
+    axes[0].scatter(t4n_in.cpu_GiB, 100 * t4n_in.G_cake, s=34, facecolor="none", edgecolor=VIOLET, linewidth=1.2, zorder=4,
+                    label="NFS class, vs LRU only (T4, GPU idle)")
+    axes[0].set_title("O-ORD: eviction order (main)", loc="left", fontsize=9, color=INK)
+    axes[1].set_title("O-PF: prefetch before return", loc="left", fontsize=9, color=INK)
+    axes[0].set_ylabel("headroom over best symmetric rival (%)")
+    lo = min(-5.0, 100 * min(float(y.min()) for y in curves.values()) - 3)
+    hi = max(30.0, 100 * float(t4n_in.G_cake.max()) + 3)
+    axes[0].set_ylim(lo, hi)
+    h, l_ = axes[0].get_legend_handles_labels()
+    fig.legend(h, l_, loc="upper left", bbox_to_anchor=(0.07, 0.995), ncol=4, fontsize=7.5, handletextpad=0.4, columnspacing=1.2)
+    fig.text(0.08, 0.86, "FreeInference (agent trace), simulation, Cake, H200 constants; each point = max over GPU idle / busy",
+             fontsize=7.5, color=INK2, ha="left", va="bottom")
+    s.write(fig, "fig9_fi_capacity.png")
+
+
+FIGURES = {"fig3": fig3, "fig4": fig4, "fig5": fig5, "fig6": fig6, "fig7": fig7, "fig8": fig8, "fig9": fig9}
 
 if __name__ == "__main__":
     want = sys.argv[1:] or list(FIGURES)

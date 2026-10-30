@@ -20,6 +20,35 @@
    "related_run_ids": {}
   },
   {
+   "path": "results/icpe_h200/t1/gpu/p02/analysis/p02_cells.csv",
+   "sha256": "7522c34b33e9cd813c76aefb3409abd439b133167297c34d6817d18d227d6d23",
+   "run_id": [
+    "20261029-030016-icpe-t1g-analyze-p02"
+   ],
+   "related_run_ids": {
+    "gpu_run": [
+     "20261029-011818-icpe-t1g-p02-128-FREQ2Q-r0",
+     "20261029-020738-icpe-t1g-p02-128-HINT-PF-r0",
+     "20261029-002841-icpe-t1g-p02-128-LRU-r0",
+     "20261029-004528-icpe-t1g-p02-128-O-BEL-r0",
+     "20261029-024041-icpe-t1g-p02-128-O-PF-r0",
+     "20261029-001222-icpe-t1g-p02-256-FREQ2Q-r0",
+     "20261029-015111-icpe-t1g-p02-256-HINT-PF-r0",
+     "20261029-013427-icpe-t1g-p02-256-LRU-r0",
+     "20261028-233954-icpe-t1g-p02-256-O-BEL-r0",
+     "20261028-235558-icpe-t1g-p02-256-O-PF-r0"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t1/gpu/p02/analysis/p02_verdict.json",
+   "sha256": "5b86e38dc4a1c75abbf283dec53509320e4acf1ae72f40b9bfe9e07a6c766656",
+   "run_id": [
+    "20261029-030016-icpe-t1g-analyze-p02"
+   ],
+   "related_run_ids": {}
+  },
+  {
    "path": "results/icpe_h200/p02/p02_cells.csv",
    "sha256": "c7bd96e96b8928fbd72b34a2f4afb132d4976a7eec2968368ba2dc5515955a5c",
    "run_id": [
@@ -491,8 +520,43 @@
     }
    ]
   },
-  "gpu_scaled_down": {
+  "gpu_scaled_down_T1G_primary": {
    "k": 8,
+   "verdict_run_id": "20261029-030016-icpe-t1g-analyze-p02",
+   "cells": {
+    "128": {
+     "lru_s": 0.277595638123997,
+     "hint_s": 0.2372961595207771,
+     "opf_s": 0.2278529368301083,
+     "hint_vs_lru": 0.145173313513013,
+     "opf_vs_lru": 0.17919122083492367,
+     "hint_share_of_opf": 0.8101586273958754,
+     "sim_scaled_hint_share_of_opf": 0.8621706827456447,
+     "gpu_runs": {
+      "LRU": "20261029-002841-icpe-t1g-p02-128-LRU-r0",
+      "HINT-PF": "20261029-020738-icpe-t1g-p02-128-HINT-PF-r0",
+      "O-PF": "20261029-024041-icpe-t1g-p02-128-O-PF-r0"
+     }
+    },
+    "256": {
+     "lru_s": 0.2718460234221095,
+     "hint_s": 0.2367687966610749,
+     "opf_s": 0.2276910856382111,
+     "hint_vs_lru": 0.12903343708864323,
+     "opf_vs_lru": 0.1624262780380521,
+     "hint_share_of_opf": 0.794412324454139,
+     "sim_scaled_hint_share_of_opf": 0.8486745170888964,
+     "gpu_runs": {
+      "LRU": "20261029-013427-icpe-t1g-p02-256-LRU-r0",
+      "HINT-PF": "20261029-015111-icpe-t1g-p02-256-HINT-PF-r0",
+      "O-PF": "20261028-235558-icpe-t1g-p02-256-O-PF-r0"
+     }
+    }
+   }
+  },
+  "gpu_scaled_down_old_35p4GiBps": {
+   "k": 8,
+   "verdict_run_id": "20261026-040946-icpe-p02-analyze",
    "cells": {
     "128": {
      "lru_s": 0.2778757898061191,
@@ -527,19 +591,67 @@
  },
  "checks": [
   {
-   "what": "GPU HINT-PF share of O-PF gain, CPU 128 GiB (full-size label)",
+   "what": "T1G GPU HINT-PF share of O-PF gain, CPU 128 GiB cell",
    "value_in_plotted_file": 0.81,
    "expected": 0.81,
    "tolerance": 0.005,
-   "expected_from": "task brief / ICPE_EVIDENCE C2 (0.81)",
+   "expected_from": "coordinator / docs/h200/icpe/T1G_gpu_rerun.md (0.81 / 0.79)",
    "status": "match"
   },
   {
-   "what": "GPU HINT-PF share of O-PF gain, CPU 256 GiB (full-size label)",
+   "what": "T1G GPU HINT-PF share of O-PF gain, CPU 256 GiB cell",
+   "value_in_plotted_file": 0.79,
+   "expected": 0.79,
+   "tolerance": 0.005,
+   "expected_from": "coordinator / docs/h200/icpe/T1G_gpu_rerun.md (0.81 / 0.79)",
+   "status": "match"
+  },
+  {
+   "what": "old GPU HINT-PF share of O-PF gain, CPU 128 GiB cell",
    "value_in_plotted_file": 0.81,
    "expected": 0.81,
    "tolerance": 0.005,
-   "expected_from": "task brief / ICPE_EVIDENCE C2 (0.81)",
+   "expected_from": "ICPE_EVIDENCE C2 (0.81 / 0.81, old replay)",
+   "status": "match"
+  },
+  {
+   "what": "old GPU HINT-PF share of O-PF gain, CPU 256 GiB cell",
+   "value_in_plotted_file": 0.81,
+   "expected": 0.81,
+   "tolerance": 0.005,
+   "expected_from": "ICPE_EVIDENCE C2 (0.81 / 0.81, old replay)",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU HINT-PF over LRU, 128 (%)",
+   "value_in_plotted_file": 14.5,
+   "expected": 14.5,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU O-PF over LRU, 128 (%)",
+   "value_in_plotted_file": 17.9,
+   "expected": 17.9,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU HINT-PF over LRU, 256 (%)",
+   "value_in_plotted_file": 12.9,
+   "expected": 12.9,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
+   "status": "match"
+  },
+  {
+   "what": "T1G GPU O-PF over LRU, 256 (%)",
+   "value_in_plotted_file": 16.2,
+   "expected": 16.2,
+   "tolerance": 0.05,
+   "expected_from": "T1G doc numbers table",
    "status": "match"
   },
   {
@@ -609,6 +721,7 @@
  ],
  "notes": [
   "GPU points: scaled-down replay (k = 8: 1/8 of the sessions, CPU tier 16 / 32 GiB for the 128 / 256 GiB cells), Llama-3.1-8B, SSD class, Cake; gain computed from gpu_mean in p02_cells.csv (LRU rep 0 run). 'sim_scaled_hint_share_of_opf' is the same ratio from the scaled-down simulation (s_orig_mean); not plotted.",
+  "Primary GPU points = T1G rerun with the H200 CPU-tier constants (docs/h200/icpe/T1G_gpu_rerun.md); hollow gray diamonds = the original replay with the CPU tier throttled at 35.4 GiB/s (results/icpe_h200/p02/p02_cells.csv).",
   "Simulation cells: Mooncake conversation, R1, SSD class / b32 / NFS class x GPU idle/busy x CPU 128-1024 GiB."
  ]
 }
