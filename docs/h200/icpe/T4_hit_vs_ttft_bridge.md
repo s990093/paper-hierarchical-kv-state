@@ -75,3 +75,32 @@
 
 - 登記時間（`date -u`）：2026-10-30T01:53:11Z
 - 登記時 repo HEAD：`aca1f1b`（本檔隨下一個 commit 進 git）
+
+## 偏離（登記之後）
+
+無（判準與設定都照登記）。執行時的程式錯誤見下面「結果」的執行一行。
+
+---
+
+## 結果（2026-10-30）：BRIDGE-NO-GAP → 照 §4 先停下來回報使用者
+
+- **執行**（head node，都 exit 0，除了第一次 selftest）：資料驗證 `20261030-095333-icpe-t4-data-verify`（README.txt 的 sha256 全對）；selftest 第一次 `20261030-095545-icpe-t4-selftest` exit 1——**我的錯**：`t4.py` 的命中欄位 `n_ret` 和 X1 `summarize` 的 `n_ret` 撞名（`TypeError: dict() got multiple values for keyword argument 'n_ret'`），還沒算出任何數字就停了；改名成 `nreq_*`（commit 52a4ef9）後重跑 `20261030-095812-icpe-t4-selftest` **PASS**（重現 T1 18/18、記帳、O-BEL+NONE 8 GiB audit）；sweep `20261030-100335-icpe-t4-sweep`（120 個 job，約 12 分鐘）；analyze `20261030-101546-icpe-t4-analyze`。NOT_MEASURED：無。
+- **總判定**：**BRIDGE-NO-GAP**——主設定（ssd、GPU 閒、回來的請求）5 個容量都不是 GAP；12 種（慢層 × GPU × 子集）也都是 BRIDGE-NO-GAP。
+
+主設定（ssd、GPU 閒、回來的請求，6 週合併；〔模擬〕）：
+
+| CPU | G_hit（pp） | G_rec | G_load | G_cake | 命中率 LRU+NONE → O-BEL+NONE | 判定 |
+|--:|--:|--:|--:|--:|:--|:--|
+| 8 GiB | 3.03 | 1.4% | 2.2% | 1.6% | 13.2% → 16.2% | NO-GAP |
+| 16 GiB | 6.01 | 5.8% | 3.9% | 2.9% | 46.6% → 52.6% | NO-GAP |
+| 32 GiB | 4.85 | 15.9% | 3.4% | 2.6% | 82.0% → 86.9% | NO-GAP |
+| 64 GiB | 0.83 | 11.8% | 0.5% | 0.4% | 97.6% → 98.4% | NO-GAP |
+| 128 GiB | 0.07 | 0.9% | 0.03% | 0.02% | 99.29% → 99.36% | NO-GAP |
+
+只報告（§4；不改判定）：
+- **32 GiB 差一點**：G_rec 15.9%（≥15%）但 G_hit 4.85 pp（<5）→ 照登記不是 GAP。每週各自算時，G_hit 最大 7.7 pp（16 GiB）、G_rec 最大 21.1%（32 GiB）。
+- **TTFT 上的方向**（ssd）：沒命中就重算時 oracle 對 LRU 的改善 11.8–15.9%（32–64 GiB），有慢層、只載入剩 0.5–3.4%，有慢層＋Cake 剩 0.4–2.6%。有慢層時「CPU＋慢層」的命中率每個容量都是 99.4%（幾乎沒有東西被丟）。
+- **NFS 級慢層不一樣**：G_cake 在 8／16／32 GiB 是 9.7／17.7／27.7%（GPU 閒）、10.9／19.1／29.2%（GPU 忙），**比 G_rec 還大**；64 GiB 7.7%、128 GiB 0.3%。b32：3.0–6.2%（≤32 GiB）。→ CPU 層小（≤32 GiB）、慢層慢的時候，就算在 agent trace 上，oracle 的順序對 LRU 也值到 18–29%（只對 LRU，不是 X1 的「最好的對稱對手」）。
+- 只算使用者發起的回來請求：G_hit ≤5.07 pp、G_rec ≤7.8%。負的差距：0 格。
+- **意思（照 §4）**：論文**不能**寫「差距被分層＋Cake 吸收」。B3 的低上界照登記寫成「容量夠（CPU ≥128 GiB 時 CPU 層命中 99.3%），在這個模型裡本來就沒差距」。另外 NFS 級那一列顯示：B3「agent trace 上界低」只在 CPU ≥128 GiB（X1 的網格）成立——**這兩點都要先回報使用者再改故事**。
+- **產出**：`results/icpe_h200/t4/`（`t4_sweep.csv`、`t4_cells.csv`、`t4_weeks.csv`、`t4_verdict.json`、`t4_selftest.json`）。

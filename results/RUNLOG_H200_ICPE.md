@@ -463,3 +463,16 @@ P0-1、P0-2、P1-1、P1-2、P2 都跑完。`docs/h200/ICPE_EVIDENCE.md` 沒有�
 - 比值（回來的請求）STAIR ÷ Cake 中位 SSD 0.95／0.94、NFS 0.49／0.63。
 **失敗與異常**: (1) 我的錯：`t3.py ratio` 第一次把所有還原都算進去（登記是回來的請求）→ 改正、重跑（偏離 1，commit 4b650a3）。(2) 異常 1：SSD 慢層正在寫入時，STAIR 有 0.5–0.6% 的回來的請求比 Cake 慢（最多 2.28 倍）：名目成本把寫入中的讀取倍數 k＝3.306 套到每一塊，但寫入在途中結束；自檢用新的 I/O 線，沒抓到。規劃器照登記不改。
 **與 ICPE_EVIDENCE 的差異**: 判定字不變；C2 的「中位 0.94–1.12」換成 STAIR 是 0.92–0.93（NFS 不再 >1）→ 這個範圍要寫成依規劃器而定。ICPE_EVIDENCE 還沒改（要使用者決定）。
+
+## ICPE-T4 — 同一段 FreeInference，命中率的差距 vs TTFT 的差距（橋接 Liu 等人）：BRIDGE-NO-GAP（head node，2026-10-30 09:53 → 10:16 +08）
+
+**狀態**: PASS（登記 `docs/h200/icpe/T4_hit_vs_ttft_bridge.md`，2026-10-30T01:53:11Z；偏離：無；結果節同檔）。判定 BRIDGE-NO-GAP → 照登記 §4 先回報使用者，再改故事。
+**執行時間**: 2026-10-30T09:53:33 → 10:16:01 +08（head node，不用 GPU）
+**run_id**: `20261030-095333-icpe-t4-data-verify`、`20261030-095545-icpe-t4-selftest`（exit 1，見下）、`20261030-095812-icpe-t4-selftest`、`20261030-100335-icpe-t4-sweep`、`20261030-101546-icpe-t4-analyze`
+**指令**: `bash code/r_h200_t4.sh`；失敗後 `bash code/r_h200_t4.sh --from T4-SELFTEST`
+**產出檔**: `results/icpe_h200/t4/`
+**關鍵數字**（模擬；主設定 ssd、GPU 閒、回來的請求、6 週合併）:
+- G_hit（O-BEL+NONE 對 LRU+NONE 的 CPU 命中率）8／16／32／64／128 GiB：3.03／6.01／4.85／0.83／0.07 pp；G_rec（沒命中就重算時的 TTFT 改善）1.4／5.8／15.9／11.8／0.9%；G_cake（有慢層＋Cake）1.6／2.9／2.6／0.4／0.02%。沒有一個容量同時 G_hit ≥5 pp 且 G_rec ≥15% → 5 個都 NO-GAP；其他 11 種（慢層 × GPU × 子集）也都 NO-GAP。
+- 只報告：NFS 級慢層的 G_cake 在 16／32 GiB 是 17.7／27.7%（GPU 閒）、19.1／29.2%（忙）——CPU 層小、慢層慢時，agent trace 上 oracle 的順序對 LRU 也值 18–29%。
+**失敗與異常**: 我的錯：`t4.py` 的命中欄位 `n_ret` 和 X1 `summarize` 撞名，第一次 selftest `TypeError: dict() got multiple values for keyword argument 'n_ret'`（還沒算出數字）→ 改名 `nreq_*`（52a4ef9）、從 T4-SELFTEST 接著跑。
+**與 ICPE 故事的差異**: 不能寫「差距被分層＋Cake 吸收」；B3 的低上界只在 CPU ≥128 GiB 成立（容量夠）；CPU 層 ≤32 GiB、NFS 級時 agent trace 上 oracle 值 18–29%（對 LRU）。要使用者決定怎麼改。
