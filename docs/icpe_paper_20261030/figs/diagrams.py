@@ -69,7 +69,7 @@ LABELS = {
         "tb_head": "Restore time from the slow tier",
         "tb_load": "load all", "tb_rec": "recompute all", "tb_cake": "Cake",
         "tb_note": "shortest",
-        "rule": "Base, no prediction:\nCPU tier: load all;  slow tier: Cake",
+        "rule": "Base (no prediction): Cake restore\nsimulator: Cake over the whole prefix\non the GPU, best: a fixed per-tier rule",
         "lg_hook": "foresight plug point (an oracle tests it)",
         "lg_lever": "lever that needs no foresight",
         "lg_act": "action that needs foresight",
@@ -85,7 +85,8 @@ LABELS = {
         "gpu_t": "Measured on the GPU", "gpu_s": "one H200, real runs",
         "gpu_const": "cost constants\nfrom microbenchmarks",
         "gpu_hooks": "write, restore time",
-        "gpu_lev": "on vs. off",
+        "gpu_lev": "on vs. off", "gpu_mps": "microbench + check",
+        "sim_mps": "trade-off curve",
         "gpu_val": "scaled-down replay:\nmeasured / simulated TTFT\n0.911–0.987, same ranking",
         "lad_head": "Per decision: four arms on the same trace",
         "lad_sub": "bar = mean TTFT of returning requests (schematic)",
@@ -124,7 +125,7 @@ LABELS = {
         "tb_head": "從慢層還原的時間",
         "tb_load": "全部載入", "tb_rec": "全部重算", "tb_cake": "Cake",
         "tb_note": "最短",
-        "rule": "底（不預測）：\nCPU 層全部載入；慢層用 Cake",
+        "rule": "底（不預測）：Cake 還原\n模擬器：用在整個前綴\nGPU 上最佳：每層固定規則",
         "lg_hook": "預知的插入點（用 oracle 檢驗）",
         "lg_lever": "不用預知的旋鈕",
         "lg_act": "需要預知的動作",
@@ -139,7 +140,8 @@ LABELS = {
         "gpu_t": "在 GPU 上實測", "gpu_s": "一張 H200，實際執行",
         "gpu_const": "微基準量出\n成本常數",
         "gpu_hooks": "寫入時、還原時",
-        "gpu_lev": "開與關",
+        "gpu_lev": "開與關", "gpu_mps": "微基準＋GPU 對照",
+        "sim_mps": "取捨曲線",
         "gpu_val": "縮小重播：\nTTFT 實測÷模擬\n0.911–0.987，排序相同",
         "lad_head": "每個決策：同一條 trace 跑四種臂",
         "lad_sub": "長條＝回來請求的平均 TTFT（示意）",
@@ -426,12 +428,12 @@ def fig1(L):
     c.text(xc + 0.06, 1.29, L["tb_note"], size=FS_S, color=INK2)
     c.line([x0, x0], [1.15, 1.86], color=INK2, lw=0.6, z=6)
     # base rule
-    c.box(XB0, 0.79, 2.12, 0.30, fc="white", ec=INK2, lw=0.7, r=0.03)
-    c.text(XB0 + 0.08, 0.94, L["rule"], size=FS_S, ls=1.15)
+    c.box(XB0, 0.715, 2.12, 0.415, fc="white", ec=INK2, lw=0.7, r=0.03)
+    c.text(XB0 + 0.08, 0.9225, L["rule"], size=FS_S, ls=1.12)
 
     # legend (bottom of panel b)
-    yl = 0.62
-    dy = 0.128
+    yl = 0.585
+    dy = 0.122
     c.hook(XB0 + 0.08, yl, 1, r=0.055)
     c.text(XB0 + 0.22, yl, L["lg_hook"], size=FS_S)
     c.rect(XB0 + 0.03, yl - dy - 0.05, 0.10, 0.10, fc=LEV, ec=LEV, z=9)
@@ -447,13 +449,14 @@ def fig1(L):
 
 # ---------------------------------------------------------------- Fig 2
 def fig2(L):
-    W, H = 3.33, 4.62
+    U = 0.22                        # extra height of the two boxes
+    W, H = 3.33, 4.62 + U
     c = Canvas(W, H)
     X0, X1 = 0.05, W - 0.05
     # traces --------------------------------------------------------------
     c.text(X0, H - 0.05, L["tr_head"], size=FS_B, weight="bold", va="top")
     cw, gap = (X1 - X0 - 2 * 0.05) / 3, 0.05
-    ych0, ych1 = 4.04, 4.34
+    ych0, ych1 = 4.04 + U, 4.34 + U
     cx = []
     for i, k in enumerate(("tr1", "tr2", "tr3")):
         x = X0 + i * (cw + gap)
@@ -461,7 +464,7 @@ def fig2(L):
         c.text(x + cw / 2, (ych0 + ych1) / 2, L[k], size=FS_S, ha="center", ls=1.1)
         cx.append(x + cw / 2)
     # bus
-    yb = 3.95
+    yb = 3.95 + U
     for x in cx:
         c.line([x, x], [ych0, yb], color=INK2, lw=0.8)
     c.line([cx[0], cx[2]], [yb, yb], color=INK2, lw=0.8)
@@ -469,38 +472,41 @@ def fig2(L):
     # two boxes --------------------------------------------------------------
     SX0, SX1 = X0, 1.58
     GX0, GX1 = 1.76, X1
-    BY0, BY1 = 2.46, 3.84
+    BY0, BY1 = 2.44, 3.84 + U
     c.arrow(((SX0 + SX1) / 2, yb), ((SX0 + SX1) / 2, BY1), color=INK2, lw=0.8)
     c.arrow(((GX0 + GX1) / 2, yb), ((GX0 + GX1) / 2, BY1), color=INK2, lw=0.8)
     c.box(SX0, BY0, SX1 - SX0, BY1 - BY0, fc="white", ec=INK, lw=0.9, r=0.04)
     c.box(GX0, BY0, GX1 - GX0, BY1 - BY0, fc="white", ec=INK, lw=0.9, r=0.04)
     # simulator contents
-    c.text(SX0 + 0.08, 3.73, L["sim_t"], size=FS_B, weight="bold")
-    c.text(SX0 + 0.08, 3.585, L["sim_s"], size=FS_S, color=INK2)
-    yc1 = 3.31
+    c.text(SX0 + 0.08, 3.73 + U, L["sim_t"], size=FS_B, weight="bold")
+    c.text(SX0 + 0.08, 3.585 + U, L["sim_s"], size=FS_S, color=INK2)
+    yc1 = 3.31 + U
     c.box(SX0 + 0.07, yc1 - 0.14, SX1 - SX0 - 0.14, 0.28, fc=LANE_FC, ec=INK2, lw=0.7, r=0.025)
     c.text(SX0 + 0.12, yc1, L["c_h200"], size=FS_S, ls=1.1)
-    yc2 = 2.905
+    yc2 = 2.905 + U
     c.box(SX0 + 0.07, yc2 - 0.20, SX1 - SX0 - 0.14, 0.40, fc="white", ec=INK2, lw=0.7, r=0.025,
           ls=(0, (3, 2)))
     c.text(SX0 + 0.12, yc2, L["c_slow"], size=FS_S, ls=1.1)
-    yh = 2.585
+    yh = 2.585 + U
     c.hook(SX0 + 0.15, yh, 2)
     c.text(SX0 + 0.27, yh, L["sim_hook"], size=FS_S, color=ACC, weight="bold")
+    xe = c.lever(SX0 + 0.08, yh - 0.18, "MPS")
+    c.text(xe + 0.06, yh - 0.18, L["sim_mps"], size=FS_S)
     # GPU contents
-    c.text(GX0 + 0.08, 3.73, L["gpu_t"], size=FS_B, weight="bold")
-    c.text(GX0 + 0.08, 3.585, L["gpu_s"], size=FS_S, color=INK2)
+    c.text(GX0 + 0.08, 3.73 + U, L["gpu_t"], size=FS_B, weight="bold")
+    c.text(GX0 + 0.08, 3.585 + U, L["gpu_s"], size=FS_S, color=INK2)
     c.arrow((GX0, yc1), (SX1 - 0.07, yc1), color=INK, lw=0.9)
     c.text(GX0 + 0.08, yc1, L["gpu_const"], size=FS_S)
-    yg = 3.10
+    yg = 3.10 + U
     c.hook(GX0 + 0.15, yg, 1)
     c.hook(GX0 + 0.31, yg, 3)
     c.text(GX0 + 0.43, yg, L["gpu_hooks"], size=FS_S, color=ACC, weight="bold")
-    yl = 2.91
+    yl = 2.91 + U
     xe = c.lever(GX0 + 0.08, yl, "INT4")
-    xe = c.lever(xe + 0.05, yl, "MPS")
     c.text(xe + 0.06, yl, L["gpu_lev"], size=FS_S)
-    yv = 2.64
+    xe = c.lever(GX0 + 0.08, yl - 0.175, "MPS")
+    c.text(xe + 0.06, yl - 0.175, L["gpu_mps"], size=FS_S)
+    yv = 2.68
     c.text(GX0 + 0.08, yv, L["gpu_val"], size=FS_S, ls=1.1)
     c.arrow((GX0, yh), (SX1, yh), color=INK, lw=0.9, both=True)
 
