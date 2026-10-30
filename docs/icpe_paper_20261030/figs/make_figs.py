@@ -1104,8 +1104,13 @@ def fig10():
                 best_k = min(cand, key=cand.get)
                 best = cand[best_k]
                 ratio = {k: (v / best if v is not None else None) for k, v in row.items()}
-                ties = [k for k, v in ratio.items() if k != best_k and v is not None and v <= 1 + delta and k in cand]
-                grid[(m, tier, g)] = dict(t=row, ratio=ratio, best=best_k, ties=ties, delta=delta,
+                # Table 2 rule: margin = (t_other - t_best) / t_other; a margin <= max(5%, row noise) is only a weak win -> mark it
+                margin = {k: (cand[k] - best) / cand[k] for k in cand if k != best_k}
+                ties = [k for k, v in margin.items() if v <= delta]
+                runner = min(margin, key=margin.get) if margin else None
+                grid[(m, tier, g)] = dict(t=row, ratio=ratio, best=best_k, ties=ties, delta=delta, margin=margin,
+                                          runner_up=runner, runner_up_margin=margin.get(runner),
+                                          weak_win=bool(runner is not None and margin[runner] <= delta),
                                           best_excl_lowrank=min({k: v for k, v in row.items() if v is not None and k != "lowrank_load"},
                                                                 key=lambda k: row[k]))
 
@@ -1150,7 +1155,8 @@ def fig10():
         "throttle_GiBps": s.values.get("throttle_GiBps"),
         "units": "t = median restore time of one returning request (s), 32K-token context; ratio = t / t(best option in the row)",
         "rule_best": "best = fastest measured option in the row; low-rank counts only if its shown variant passes eps",
-        "rule_tie": "tie = within max(5% (A5 registered tie rule), the row's noise delta from speed_<model>/noise.json) of the best",
+        "rule_tie": ("weak win (marked with the approx sign) = an option whose margin (t_option - t_best) / t_option is <= "
+                     "max(5% (A5 registered tie rule), the row's noise delta from speed_<model>/noise.json); same rule as the paper's Table 2"),
         "cells": {f"{m}|{tier}|{g}": v for (m, tier, g), v in grid.items()},
         "quality_eps": eps,
         "model_names": names,
@@ -1216,8 +1222,8 @@ def fig10():
         if any(not v["shown"]["eps_pass"] for v in eps[m]["lowrank"].values()):
             det.append(f"{short} low-rank (all variants)")
     lines = [
-        "Cell = restore time \u00f7 best in row (32K context, H200 measured).  Bold + box = best;  \u2248 = within max(5%, row noise) "
-        "of best;  n/m = not measured.",
+        "Cell = restore time \u00f7 best in row (32K context, H200 measured).  Bold + box = best;  \u2248 = weak win: (t \u2212 t_best) / t "
+        "\u2264 max(5%, row noise);  n/m = not measured.",
         "Low-rank column: fastest variant that passes \u03b5 (Llama: per-item SVD).  Where no variant passes, the fastest is shown in "
         "italics and is not used as the best.",
         "\u2020 fails \u03b5 (CI lower bound \u2265 \u22122 pp) in at least one reading: " + "; ".join(det) + ".",

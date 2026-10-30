@@ -73,8 +73,8 @@ LABELS = {
         "lg_comp": "GPU recompute", "lg_load": "load (I/O)",
         # fig 11 (decision flow; numbers from EVIDENCE.md section M and B3/C2-GPU/G-M06)
         "q1": "Where is the KV?", "q1_s": "reuse + compress",
-        "rq1": "RQ1 \u00b7 restore method \u00d7 format", "rq2": "RQ2 \u00b7 GPU share",
-        "rq3": "RQ3 \u00b7 add prediction or a mechanism?",
+        "rq1": "Step 1: pick restore method and format", "rq2": "Step 2: share the GPU",
+        "rq3": "Step 3: add prediction or a mechanism?",
         "q2": "Background work?", "q2_s": "GPU resources",
         "q3": "Add prediction?", "q3_s": "expand: simulate the oracle bound",
         "q4": "Neighbour idle?", "q4_s": "expand: extra path",
@@ -117,10 +117,7 @@ LABELS = {
         "arm_base": "base: restore with Cake", "arm_rival": "best rival, no foresight",
         "arm_free": "free signal (typing hint)", "arm_oracle": "oracle (perfect foresight)",
         "headroom": r"headroom $= 1 - T_{\mathrm{oracle}}\,/\,T_{\mathrm{rival}}$",
-        "rul_head": "Verdict: the zone the headroom falls in",
-        "z1": "dead end", "z2": "possible", "z3": "worth it",
-        "rul_ax": "headroom",
-        "rul_note": "thresholds preregistered before any result",
+        "thr_note": "Preregistered threshold: worth it if the bound is \u226515%",
     },
     "zh": {
         "a_title": "(a) 一個 session 的 KV 在兩次請求之間",
@@ -149,8 +146,8 @@ LABELS = {
         "lg_pred": "需要預測的附加（oracle 研究）",
         "lg_comp": "GPU 重算", "lg_load": "載入（I/O）",
         "q1": "KV 在哪？", "q1_s": "重用＋壓縮",
-        "rq1": "RQ1 \u00b7 還原方式 \u00d7 格式", "rq2": "RQ2 \u00b7 GPU 份額",
-        "rq3": "RQ3 \u00b7 要不要再加預測或機制？",
+        "rq1": "第一步：選還原方式與格式", "rq2": "第二步：GPU 共用時分 SM",
+        "rq3": "第三步：要不要再加預測或機制",
         "q2": "GPU 有背景工作？", "q2_s": "GPU 資源",
         "q3": "要不要加預測？", "q3_s": "擴展：先模擬自己 trace 的上界",
         "q4": "鄰卡閒著嗎？", "q4_s": "擴展：多一條路徑",
@@ -192,10 +189,7 @@ LABELS = {
         "arm_base": "底：用 Cake 還原", "arm_rival": "最好的對手（不預知）",
         "arm_free": "免費訊號（打字提示）", "arm_oracle": "oracle（完美預知）",
         "headroom": r"headroom $= 1 - T_{\mathrm{oracle}}\,/\,T_{\mathrm{對手}}$",
-        "rul_head": "判定：headroom 落在哪一區",
-        "z1": "死路", "z2": "可能", "z3": "有看頭",
-        "rul_ax": "headroom",
-        "rul_note": "門檻在看到任何結果之前登記",
+        "thr_note": "門檻（事先登記）：上界 \u226515% 才算值得",
     },
 }
 
@@ -220,12 +214,12 @@ def setup_fonts(lang):
 
 # ---------------------------------------------------------------- drawing helpers
 class Canvas:
-    def __init__(self, w, h):
+    def __init__(self, w, h, y0=0.0):
         self.W, self.H = w, h
         self.fig = plt.figure(figsize=(w, h))
         self.ax = self.fig.add_axes([0, 0, 1, 1])
         self.ax.set_xlim(0, w)
-        self.ax.set_ylim(0, h)
+        self.ax.set_ylim(y0, y0 + h)
         self.ax.set_aspect("equal")
         self.ax.axis("off")
         self._r = None
@@ -552,8 +546,9 @@ def fig1(L):
 # ---------------------------------------------------------------- Fig 2
 def fig2(L):
     U = 0.22                        # extra height of the two boxes
+    YC = 0.72                       # height cut from the bottom after the threshold ruler was dropped
     W, H = 3.33, 4.62 + U
-    c = Canvas(W, H)
+    c = Canvas(W, H - YC, y0=YC)
     X0, X1 = 0.05, W - 0.05
     # traces --------------------------------------------------------------
     c.text(X0, H - 0.05, L["tr_head"], size=FS_B, weight="bold", va="top")
@@ -633,26 +628,8 @@ def fig2(L):
     c.arrow((xo, yd), (xr, yd), color=INK, lw=0.8, both=True, ms=6)
     c.text(X1, yd - 0.14, L["headroom"], size=FS_S, ha="right", weight="bold")
 
-    # ruler --------------------------------------------------------------------
-    c.arrow(((SX0 + SX1) / 2, 1.09), ((SX0 + SX1) / 2, 0.93), color=INK2, lw=0.8)
-    c.text(X0, 0.84, L["rul_head"], size=FS_B, weight="bold", va="center")
-    rx0, rx1 = 0.22, 3.18
-    ry0, ry1 = 0.43, 0.67
-    hmax = 25.0
-
-    def X(p):
-        return rx0 + (rx1 - rx0) * p / hmax
-    zones = [(0, 5, "white", None, "z1"), (5, 15, "#e3e3e3", "....", "z2"), (15, hmax, "#bdbdbd", "////", "z3")]
-    for a, b, fc, hatch, k in zones:
-        c.rect(X(a), ry0, X(b) - X(a), ry1 - ry0, fc=fc, ec=INK, lw=0.7, hatch=hatch, z=3)
-        c.text((X(a) + X(b)) / 2, (ry0 + ry1) / 2, L[k], size=FS, weight="bold", ha="center",
-               bbox=dict(fc="white", ec="none", pad=0.8, alpha=0.9))
-    c.arrow((rx1, ry0), (rx1 + 0.09, ry0), color=INK, lw=0.7, ms=5)
-    for p in (5, 15):
-        c.line([X(p), X(p)], [ry0 - 0.05, ry1], color=INK, lw=1.0, z=6)
-        c.text(X(p), ry0 - 0.12, f"{p}%", size=FS, weight="bold", ha="center")
-    c.text(rx1, ry0 - 0.12, L["rul_ax"], size=FS_S, color=INK2, ha="right")
-    c.text(W / 2, 0.11, L["rul_note"], size=FS_S, color=INK2, ha="center", style="italic")
+    # the preregistered threshold is one line of text, not a figure element of its own
+    c.text(X0, yd - 0.33, L["thr_note"], size=FS_S, color=INK2, style="italic")
     return c
 
 
@@ -666,7 +643,7 @@ def fig11(L):
     QY1 = H - 0.30
     QY0 = QY1 - 0.34
     qm = (QY0 + QY1) / 2
-    # the paper's research questions over the steps: RQ1 = step 1, RQ2 = step 2, RQ3 = steps 3-4
+    # step names over the boxes: step 1 = box 1, step 2 = box 2, step 3 = boxes 3a and 3b
     yr = QY1 + 0.075
     for (i0, i1, key) in ((0, 0, "rq1"), (1, 1, "rq2"), (2, 3, "rq3")):
         x0, x1 = cols[i0][0], cols[i1][0] + cols[i1][1]
@@ -674,8 +651,9 @@ def fig11(L):
         c.text(x0 + 0.02, yr + 0.035, L[key], size=FS, weight="bold", va="bottom")
     for i, (x, w, wc) in enumerate(cols):
         c.box(x, QY0, w, QY1 - QY0, fc=LANE_FC, ec=INK, lw=0.9, r=0.03, z=2)
-        c.rect(x + 0.05, qm - 0.075, 0.15, 0.15, fc=LEV, ec=LEV, z=4)
-        c.text(x + 0.125, qm - 0.003, str(i + 1), size=FS, color="white", weight="bold", ha="center", z=7)
+        c.rect(x + 0.05, qm - 0.075, 0.17, 0.15, fc=LEV, ec=LEV, z=4)
+        c.text(x + 0.135, qm - 0.003, ("1", "2", "3a", "3b")[i], size=FS_S, color="white", weight="bold",
+               ha="center", z=7)
         c.text(x + 0.26, QY1 - 0.045, L[f"q{i + 1}"], size=FS, weight="bold", va="top")
         c.text(x + 0.26, QY0 + 0.04, L[f"q{i + 1}_s"], size=FS_S, color=INK2, va="bottom")
         if i < len(cols) - 1:
