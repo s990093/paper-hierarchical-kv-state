@@ -1,0 +1,179 @@
+{
+ "figure": "fig7_validation.png",
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/icpe_h200/p02/p02_cells.csv",
+   "sha256": "c7bd96e96b8928fbd72b34a2f4afb132d4976a7eec2968368ba2dc5515955a5c",
+   "run_id": [
+    "20261026-040946-icpe-p02-analyze"
+   ],
+   "related_run_ids": {
+    "gpu_run": [
+     "20261026-022804-icpe-p02-128-FREQ2Q-r0",
+     "20261026-031720-icpe-p02-128-HINT-PF-r0",
+     "20261026-013828-icpe-p02-128-LRU-r0",
+     "20261026-015512-icpe-p02-128-O-BEL-r0",
+     "20261026-035022-icpe-p02-128-O-PF-r0",
+     "20261026-012215-icpe-p02-256-FREQ2Q-r0",
+     "20261026-030054-icpe-p02-256-HINT-PF-r0",
+     "20261026-024413-icpe-p02-256-LRU-r0",
+     "20261026-004945-icpe-p02-256-O-BEL-r0",
+     "20261026-010551-icpe-p02-256-O-PF-r0"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/p02/p02_verdict.json",
+   "sha256": "b79617a878752c2a28f0f721a2c1411c8dcb3c31bdeb1678653b982213240d97",
+   "run_id": [
+    "20261026-040946-icpe-p02-analyze"
+   ],
+   "related_run_ids": {}
+  }
+ ],
+ "plotted_values": {
+  "units": "ratio = gpu_mean / s_orig_mean",
+  "k": 8,
+  "cells": [
+   {
+    "policy": "LRU",
+    "cpu_GiB_full_size": 128,
+    "cpu_GiB_replayed": 16,
+    "ratio": 0.9105208992202408,
+    "gpu_mean_s": 0.2778757898061191,
+    "s_orig_mean_s": 0.3051833187399527,
+    "gpu_run": "20261026-013828-icpe-p02-128-LRU-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "FREQ2Q",
+    "cpu_GiB_full_size": 128,
+    "cpu_GiB_replayed": 16,
+    "ratio": 0.9231281095726048,
+    "gpu_mean_s": 0.2766765520830162,
+    "s_orig_mean_s": 0.2997163115432738,
+    "gpu_run": "20261026-022804-icpe-p02-128-FREQ2Q-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "O-BEL",
+    "cpu_GiB_full_size": 128,
+    "cpu_GiB_replayed": 16,
+    "ratio": 0.9444019289891714,
+    "gpu_mean_s": 0.2520863692649108,
+    "s_orig_mean_s": 0.2669269953045609,
+    "gpu_run": "20261026-015512-icpe-p02-128-O-BEL-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "HINT-PF",
+    "cpu_GiB_full_size": 128,
+    "cpu_GiB_replayed": 16,
+    "ratio": 0.975119048920282,
+    "gpu_mean_s": 0.238056339311555,
+    "s_orig_mean_s": 0.2441305393173758,
+    "gpu_run": "20261026-031720-icpe-p02-128-HINT-PF-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "O-PF",
+    "cpu_GiB_full_size": 128,
+    "cpu_GiB_replayed": 16,
+    "ratio": 0.975251791005353,
+    "gpu_mean_s": 0.2287803565967644,
+    "s_orig_mean_s": 0.2345859384281907,
+    "gpu_run": "20261026-035022-icpe-p02-128-O-PF-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "LRU",
+    "cpu_GiB_full_size": 256,
+    "cpu_GiB_replayed": 32,
+    "ratio": 0.9278421518194268,
+    "gpu_mean_s": 0.2725412290288052,
+    "s_orig_mean_s": 0.2937366323510663,
+    "gpu_run": "20261026-024413-icpe-p02-256-LRU-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "FREQ2Q",
+    "cpu_GiB_full_size": 256,
+    "cpu_GiB_replayed": 32,
+    "ratio": 0.927651400634106,
+    "gpu_mean_s": 0.2723833106984673,
+    "s_orig_mean_s": 0.2936267982911218,
+    "gpu_run": "20261026-012215-icpe-p02-256-FREQ2Q-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "O-BEL",
+    "cpu_GiB_full_size": 256,
+    "cpu_GiB_replayed": 32,
+    "ratio": 0.937099870704713,
+    "gpu_mean_s": 0.2376692541685489,
+    "s_orig_mean_s": 0.2536221181951697,
+    "gpu_run": "20261026-004945-icpe-p02-256-O-BEL-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "HINT-PF",
+    "cpu_GiB_full_size": 256,
+    "cpu_GiB_replayed": 32,
+    "ratio": 0.9729564701721564,
+    "gpu_mean_s": 0.2373764410622944,
+    "s_orig_mean_s": 0.2439743691927889,
+    "gpu_run": "20261026-030054-icpe-p02-256-HINT-PF-r0",
+    "n_ret": 467
+   },
+   {
+    "policy": "O-PF",
+    "cpu_GiB_full_size": 256,
+    "cpu_GiB_replayed": 32,
+    "ratio": 0.9730377613470408,
+    "gpu_mean_s": 0.2288909721042665,
+    "s_orig_mean_s": 0.2352333909296568,
+    "gpu_run": "20261026-010551-icpe-p02-256-O-PF-r0",
+    "n_ret": 467
+   }
+  ]
+ },
+ "checks": [
+  {
+   "what": "ratio min (3 decimals)",
+   "value_in_plotted_file": 0.911,
+   "expected": 0.911,
+   "tolerance": 0.0005,
+   "expected_from": "task brief / ICPE_EVIDENCE B6",
+   "status": "match"
+  },
+  {
+   "what": "ratio max (3 decimals)",
+   "value_in_plotted_file": 0.975,
+   "expected": 0.975,
+   "tolerance": 0.0005,
+   "expected_from": "task brief / ICPE_EVIDENCE B6",
+   "status": "match"
+  },
+  {
+   "what": "all cells in band (csv in_band)",
+   "value_in_plotted_file": 1.0,
+   "expected": 1.0,
+   "tolerance": 0,
+   "expected_from": "p02_cells.csv in_band",
+   "status": "match"
+  },
+  {
+   "what": "ratio recomputed gpu_mean / s_orig_mean",
+   "value_in_plotted_file": 3.3306690738754696e-16,
+   "expected": 0.0,
+   "tolerance": 1e-09,
+   "expected_from": "p02_cells.csv",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "Scaled-down replay: k = 8, so the 128 / 256 GiB cells run with a 16 / 32 GiB CPU tier; Llama-3.1-8B, Mooncake conversation, SSD class, Cake; TTFT excludes queueing (registered). p02_verdict.json passed = True, n_clean_runs = 12."
+ ]
+}

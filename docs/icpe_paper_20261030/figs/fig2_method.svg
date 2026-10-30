@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560" font-family="Liberation Sans, Arial, Helvetica, sans-serif">
+  <rect width="1200" height="560" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#555555"/>
+    </marker>
+    <marker id="arrow-c0" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#2a78d6"/>
+    </marker>
+    <marker id="arrow-c1" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#eb6834"/>
+    </marker>
+    <marker id="arrow-c2" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#1baf7a"/>
+    </marker>
+    <marker id="arrow-c3" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#52514e"/>
+    </marker>
+    <marker id="arrow-c4" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#898781"/>
+    </marker>
+  </defs>
+  <rect x="194.0" y="67.0" width="707.0" height="206.0" fill="#f7f9fd" stroke="#cde2fb" stroke-width="1" rx="8"/>
+  <text x="202.0" y="83.0" font-size="12" fill="#999999" font-weight="bold">Simulation (limit study)</text>
+  <rect x="21.0" y="366.0" width="1068.0" height="108.0" fill="#f4fbf8" stroke="#bfe6d6" stroke-width="1" rx="8"/>
+  <text x="29.0" y="382.0" font-size="12" fill="#999999" font-weight="bold">Measured on one H200</text>
+  <path d="M 190.0,170.0 L 220.0,170.0" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 420.0,149.2 L 455.0,141.9" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 420.0,190.8 L 455.0,198.1" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 665.0,142.8 L 705.0,151.5" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 665.0,197.2 L 705.0,188.5" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 875.0,170.0 L 900.0,170.0" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 1050.0,170.0 L 1075.0,170.0" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 496.0,390.0 L 344.0,200.0" stroke="#1baf7a" stroke-width="2" fill="none" marker-end="url(#arrow-c2)"/>
+  <rect x="386.3" y="277.0" width="67.4" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="420.0" y="289.0" font-size="11" fill="#777777" text-anchor="middle">constants</text>
+  <path d="M 205.6,390.0 L 304.4,200.0" stroke="#1baf7a" stroke-width="2" fill="none" marker-end="url(#arrow-c2)" stroke-dasharray="8,4"/>
+  <rect x="221.3" y="277.0" width="67.4" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="255.0" y="289.0" font-size="11" fill="#777777" text-anchor="middle">validates</text>
+  <path d="M 935.4,390.0 L 968.2,208.0" stroke="#1baf7a" stroke-width="2" fill="none" marker-end="url(#arrow-c2)"/>
+  <rect x="904.9" y="281.0" width="93.8" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="951.8" y="293.0" font-size="11" fill="#777777" text-anchor="middle">measured gain</text>
+  <rect x="20.0" y="140.0" width="170.0" height="60.0" fill="#f2f1ee" stroke="#52514e" stroke-width="2" rx="0"/>
+  <text x="105.0" y="166.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Real traces</text>
+  <text x="105.0" y="182.9" font-size="11" fill="#888888" text-anchor="middle">chat and agent</text>
+  <rect x="220.0" y="140.0" width="200.0" height="60.0" fill="#cde2fb" stroke="#2a78d6" stroke-width="2" rx="8"/>
+  <text x="320.0" y="166.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Trace simulator</text>
+  <text x="320.0" y="182.9" font-size="11" fill="#888888" text-anchor="middle">H200-measured cost constants</text>
+  <rect x="455.0" y="93.0" width="210.0" height="54.0" fill="#fdeee7" stroke="#eb6834" stroke-width="2" rx="8"/>
+  <text x="560.0" y="116.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Oracle policy</text>
+  <text x="560.0" y="132.9" font-size="11" fill="#888888" text-anchor="middle">perfect predictor of the future</text>
+  <rect x="455.0" y="193.0" width="210.0" height="54.0" fill="#FFFFFF" stroke="#898781" stroke-width="2" rx="8"/>
+  <text x="560.0" y="216.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Best symmetric rival</text>
+  <text x="560.0" y="232.9" font-size="11" fill="#888888" text-anchor="middle">same action set, no foresight</text>
+  <rect x="705.0" y="140.0" width="170.0" height="60.0" fill="#FFFFFF" stroke="#52514e" stroke-width="2" rx="8"/>
+  <text x="790.0" y="166.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Headroom</text>
+  <text x="790.0" y="182.9" font-size="11" fill="#888888" text-anchor="middle">1 - T_oracle / T_rival</text>
+  <rect x="900.0" y="132.0" width="150.0" height="76.0" fill="#f2f1ee" stroke="#52514e" stroke-width="2" rx="0"/>
+  <text x="975.0" y="158.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Preregistered</text>
+  <text x="975.0" y="174.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">thresholds</text>
+  <text x="975.0" y="190.9" font-size="11" fill="#888888" text-anchor="middle">fixed before any run</text>
+  <rect x="1075.0" y="140.0" width="110.0" height="60.0" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="2" rx="8"/>
+  <text x="1130.0" y="166.9" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="bold">Verdict</text>
+  <text x="1130.0" y="182.9" font-size="11" fill="#888888" text-anchor="middle">per foresight type</text>
+  <rect x="390.0" y="390.0" width="260.0" height="60.0" fill="#e3f5ee" stroke="#1baf7a" stroke-width="2" rx="8"/>
+  <text x="520.0" y="416.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">H200 microbenchmarks</text>
+  <text x="520.0" y="432.9" font-size="11" fill="#888888" text-anchor="middle">restore, recompute and transfer costs</text>
+  <rect x="45.0" y="390.0" width="290.0" height="60.0" fill="#e3f5ee" stroke="#1baf7a" stroke-width="2" rx="8"/>
+  <text x="190.0" y="416.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">GPU replay validation</text>
+  <text x="190.0" y="432.9" font-size="11" fill="#888888" text-anchor="middle">scaled-down workload; checks ratio, ranking, sign</text>
+  <rect x="795.0" y="390.0" width="270.0" height="60.0" fill="#e3f5ee" stroke="#1baf7a" stroke-width="2" rx="8"/>
+  <text x="930.0" y="416.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">GPU experiments</text>
+  <text x="930.0" y="432.9" font-size="11" fill="#888888" text-anchor="middle">write-time policies; INT4 and MPS gains</text>
+  <text x="105.0" y="222.0" font-size="11" fill="#52514e" text-anchor="middle">Mooncake conversation</text>
+  <text x="105.0" y="236.0" font-size="11" fill="#52514e" text-anchor="middle">(chat)</text>
+  <text x="105.0" y="254.0" font-size="11" fill="#52514e" text-anchor="middle">FreeInference (agent)</text>
+  <text x="790.0" y="222.0" font-size="11" fill="#52514e" text-anchor="middle">T = mean TTFT of</text>
+  <text x="790.0" y="236.0" font-size="11" fill="#52514e" text-anchor="middle">returning requests</text>
+  <text x="975.0" y="90.0" font-size="11" fill="#0b0b0b" text-anchor="middle">&gt;= 15%: worth it</text>
+  <text x="975.0" y="105.0" font-size="11" fill="#0b0b0b" text-anchor="middle">5-15%: possible</text>
+  <text x="975.0" y="120.0" font-size="11" fill="#0b0b0b" text-anchor="middle">&lt; 5%: dead end</text>
+  <text x="600.0" y="32.0" font-size="12" fill="#52514e" text-anchor="middle">Foresight plugs in at three points: write time (placement, precision), return time (O-PF, O-ORD, O-DROP / O-NOW, X5), restore time (online selector).</text>
+  <text x="600.0" y="50.0" font-size="12" fill="#52514e" text-anchor="middle">The oracle is an upper bound for any predictor of the same quantity; the rival gets the same actions without foresight.</text>
+  <text x="600.0" y="520.0" font-size="12" fill="#52514e" text-anchor="middle">No-foresight gains (INT4 bytes, MPS SM reservation) and write-time foresight are measured on the GPU directly.</text>
+  <text x="600.0" y="538.0" font-size="12" fill="#52514e" text-anchor="middle">The replay checks the simulator: measured/simulated TTFT ratio, policy ranking, and the sign of the headroom.</text>
+</svg>

@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 775" width="1100" height="775" font-family="Liberation Sans, Arial, Helvetica, sans-serif">
+  <rect width="1100" height="775" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#555555"/>
+    </marker>
+    <marker id="arrow-c0" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#2a78d6"/>
+    </marker>
+    <marker id="arrow-c1" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#eb6834"/>
+    </marker>
+    <marker id="arrow-c2" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#1baf7a"/>
+    </marker>
+    <marker id="arrow-c3" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#52514e"/>
+    </marker>
+    <marker id="arrow-c4" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#898781"/>
+    </marker>
+  </defs>
+  <path d="M 480.0,100.0 L 480.0,153.0" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 480.0,207.0 L 480.0,260.0" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 480.0,320.0 L 480.0,373.0" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 480.0,427.0 L 480.0,480.0" stroke="#52514e" stroke-width="2" fill="none" marker-end="url(#arrow-c3)"/>
+  <path d="M 680.0,290.0 L 815.0,290.0" stroke="#2a78d6" stroke-width="2" fill="none" marker-end="url(#arrow-c0)"/>
+  <rect x="717.1" y="272.0" width="60.8" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="747.5" y="284.0" font-size="11" fill="#777777" text-anchor="middle">load all</text>
+  <path d="M 542.0,480.0 L 873.0,320.0" stroke="#2a78d6" stroke-width="2" fill="none" marker-end="url(#arrow-c0)"/>
+  <rect x="663.9" y="382.0" width="87.2" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="707.5" y="394.0" font-size="11" fill="#777777" text-anchor="middle">Cake (inset)</text>
+  <path d="M 873.0,260.0 L 542.0,100.0" stroke="#2a78d6" stroke-width="2" fill="none" marker-end="url(#arrow-c0)"/>
+  <rect x="657.3" y="162.0" width="100.4" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="707.5" y="174.0" font-size="11" fill="#777777" text-anchor="middle">KV back in HBM</text>
+  <path d="M 255.0,180.0 L 315.0,180.0" stroke="#eb6834" stroke-width="2" fill="none" marker-end="url(#arrow-c1)" stroke-dasharray="8,4"/>
+  <path d="M 255.0,400.0 L 310.0,400.0" stroke="#eb6834" stroke-width="2" fill="none" marker-end="url(#arrow-c1)" stroke-dasharray="8,4"/>
+  <path d="M 923.2,192.0 L 931.4,260.0" stroke="#eb6834" stroke-width="2" fill="none" marker-end="url(#arrow-c1)" stroke-dasharray="8,4"/>
+  <path d="M 770.0,63.4 L 680.0,65.5" stroke="#1baf7a" stroke-width="2" fill="none" marker-end="url(#arrow-c2)" stroke-dasharray="8,4"/>
+  <path d="M 770.0,510.0 L 680.0,510.0" stroke="#1baf7a" stroke-width="2" fill="none" marker-end="url(#arrow-c2)" stroke-dasharray="8,4"/>
+  <rect x="30.0" y="585.0" width="20.0" height="14.0" fill="#f2f1ee" stroke="#52514e" stroke-width="2" rx="0"/>
+  <text x="40.0" y="596.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold"> </text>
+  <rect x="165.0" y="585.0" width="20.0" height="14.0" fill="#FFFFFF" stroke="#898781" stroke-width="2" rx="0"/>
+  <text x="175.0" y="596.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold"> </text>
+  <rect x="500.0" y="585.0" width="20.0" height="14.0" fill="#fdeee7" stroke="#eb6834" stroke-width="2" rx="0"/>
+  <text x="510.0" y="596.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold"> </text>
+  <rect x="850.0" y="585.0" width="20.0" height="14.0" fill="#e3f5ee" stroke="#1baf7a" stroke-width="2" rx="0"/>
+  <text x="860.0" y="596.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold"> </text>
+  <rect x="280.0" y="40.0" width="400.0" height="60.0" fill="#f2f1ee" stroke="#52514e" stroke-width="2" rx="0"/>
+  <text x="480.0" y="66.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">GPU (H200 HBM)</text>
+  <text x="480.0" y="82.9" font-size="11" fill="#888888" text-anchor="middle">KV of the running request; restore time counts toward TTFT</text>
+  <rect x="315.0" y="153.0" width="330.0" height="54.0" fill="#FFFFFF" stroke="#898781" stroke-width="2" rx="8"/>
+  <text x="480.0" y="177.1" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Write at end of turn</text>
+  <text x="480.0" y="192.1" font-size="10" fill="#888888" text-anchor="middle">all blocks of the session to the CPU tier, BF16</text>
+  <rect x="280.0" y="260.0" width="400.0" height="60.0" fill="#f2f1ee" stroke="#52514e" stroke-width="2" rx="0"/>
+  <text x="480.0" y="286.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">CPU DRAM tier</text>
+  <text x="480.0" y="302.9" font-size="11" fill="#888888" text-anchor="middle">fast, finite capacity (GiB)</text>
+  <rect x="310.0" y="373.0" width="340.0" height="54.0" fill="#FFFFFF" stroke="#898781" stroke-width="2" rx="8"/>
+  <text x="480.0" y="397.1" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">CPU tier full: demote or drop a session</text>
+  <text x="480.0" y="412.1" font-size="10" fill="#888888" text-anchor="middle">INT4 to the slow tier, or drop (recompute on return)</text>
+  <rect x="280.0" y="480.0" width="400.0" height="60.0" fill="#f2f1ee" stroke="#52514e" stroke-width="2" rx="0"/>
+  <text x="480.0" y="506.9" font-size="14" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Slow tier: SSD class / NFS class</text>
+  <text x="480.0" y="522.9" font-size="11" fill="#888888" text-anchor="middle">emulated by throttling (plus a throttled b32 tier)</text>
+  <rect x="815.0" y="260.0" width="240.0" height="60.0" fill="#FFFFFF" stroke="#898781" stroke-width="2" rx="8"/>
+  <text x="935.0" y="287.1" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">Restore on return</text>
+  <text x="935.0" y="302.1" font-size="10" fill="#888888" text-anchor="middle">fixed per-tier rule, no prediction</text>
+  <rect x="25.0" y="153.0" width="230.0" height="54.0" fill="#fdeee7" stroke="#eb6834" stroke-width="2" rx="8"/>
+  <text x="140.0" y="177.1" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">(1) Write-time foresight</text>
+  <text x="140.0" y="192.1" font-size="10" fill="#888888" text-anchor="middle">placement / precision by position</text>
+  <rect x="25.0" y="373.0" width="230.0" height="54.0" fill="#fdeee7" stroke="#eb6834" stroke-width="2" rx="8"/>
+  <text x="140.0" y="397.1" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">(2) Return-time foresight</text>
+  <text x="140.0" y="412.1" font-size="10" fill="#888888" text-anchor="middle">who returns, and when</text>
+  <rect x="770.0" y="138.0" width="300.0" height="54.0" fill="#fdeee7" stroke="#eb6834" stroke-width="2" rx="8"/>
+  <text x="920.0" y="162.1" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">(3) Restore-time foresight</text>
+  <text x="920.0" y="177.1" font-size="10" fill="#888888" text-anchor="middle">online selector: load all / Cake / recompute</text>
+  <rect x="770.0" y="33.0" width="300.0" height="54.0" fill="#e3f5ee" stroke="#1baf7a" stroke-width="2" rx="8"/>
+  <text x="920.0" y="57.0" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">No-foresight lever: MPS</text>
+  <text x="920.0" y="72.0" font-size="10" fill="#888888" text-anchor="middle">reserve SMs: TTFT vs background throughput</text>
+  <rect x="770.0" y="483.0" width="300.0" height="54.0" fill="#e3f5ee" stroke="#1baf7a" stroke-width="2" rx="8"/>
+  <text x="920.0" y="507.1" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">No-foresight lever: INT4</text>
+  <text x="920.0" y="522.0" font-size="10" fill="#888888" text-anchor="middle">3.2x fewer bytes per block on the slow tier</text>
+  <rect x="110.0" y="671.0" width="440.0" height="38.0" fill="#cde2fb" stroke="#2a78d6" stroke-width="2" rx="0"/>
+  <text x="330.0" y="694.5" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">GPU recomputes blocks 0, 1, 2 ...  &gt;&gt;</text>
+  <rect x="552.0" y="661.0" width="8.0" height="58.0" fill="#0b0b0b" stroke="#0b0b0b" stroke-width="2" rx="0"/>
+  <text x="556.0" y="694.9" font-size="14" fill="#333333" text-anchor="middle" font-weight="bold"> </text>
+  <rect x="562.0" y="671.0" width="440.0" height="38.0" fill="#e3e2dc" stroke="#52514e" stroke-width="2" rx="0"/>
+  <text x="782.0" y="694.5" font-size="13" fill="#0b0b0b" text-anchor="middle" font-weight="bold">&lt;&lt;  ... n-2, n-1, n loaded from the tier</text>
+  <text x="25.0" y="225.0" font-size="11" fill="#52514e" text-anchor="start">decides at write time where each block</text>
+  <text x="25.0" y="239.0" font-size="11" fill="#52514e" text-anchor="start">goes and how precisely it is stored</text>
+  <text x="25.0" y="445.0" font-size="11" fill="#52514e" text-anchor="start">O-PF: prefetch before the request returns</text>
+  <text x="25.0" y="459.0" font-size="11" fill="#52514e" text-anchor="start">O-ORD: eviction order (Belady-like)</text>
+  <text x="25.0" y="473.0" font-size="11" fill="#52514e" text-anchor="start">O-DROP / O-NOW: drop the never-returning</text>
+  <text x="25.0" y="487.0" font-size="11" fill="#52514e" text-anchor="start">X5: know who never returns</text>
+  <text x="110.0" y="640.0" font-size="13" fill="#0b0b0b" text-anchor="start">Inset: Cake restore of one session's prefix (blocks 0 ... n)</text>
+  <text x="556.0" y="654.0" font-size="11" fill="#0b0b0b" text-anchor="middle">meeting point</text>
+  <text x="110.0" y="728.0" font-size="11" fill="#52514e" text-anchor="start">block 0</text>
+  <text x="1002.0" y="728.0" font-size="11" fill="#52514e" text-anchor="end">block n</text>
+  <text x="556.0" y="760.0" font-size="12" fill="#52514e" text-anchor="middle">Both sides run at the same time (compute from the front, load from the back); restore ends where they meet.</text>
+  <text x="58.0" y="597.0" font-size="12" fill="#52514e" text-anchor="start">memory tier</text>
+  <text x="193.0" y="597.0" font-size="12" fill="#52514e" text-anchor="start">data-path step (base system, no foresight)</text>
+  <text x="528.0" y="597.0" font-size="12" fill="#52514e" text-anchor="start">foresight hook (limit study: oracle headroom)</text>
+  <text x="878.0" y="597.0" font-size="12" fill="#52514e" text-anchor="start">no-foresight lever (measured gain)</text>
+</svg>

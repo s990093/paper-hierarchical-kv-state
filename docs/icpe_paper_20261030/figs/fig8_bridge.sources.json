@@ -1,0 +1,246 @@
+{
+ "figure": "fig8_bridge.png",
+ "script": "docs/icpe_paper_20261030/figs/make_figs.py",
+ "rule": "every plotted value is read from the inputs below; nothing is typed in",
+ "inputs": [
+  {
+   "path": "results/icpe_h200/t4/t4_verdict.json",
+   "sha256": "580035b3c74655d67d45a4bc365540e96983ba9f2f5eab177fff537a5d33632d",
+   "run_id": [
+    "20261030-101546-icpe-t4-analyze"
+   ],
+   "related_run_ids": {
+    "sweep_run_id": [
+     "20261030-100335-icpe-t4-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t4/t4_cells.csv",
+   "sha256": "3d03831a9b2721dc1d629c991699ad2e75076eba1399b1f58b5a286c78994878",
+   "run_id": [
+    "20261030-101546-icpe-t4-analyze"
+   ],
+   "related_run_ids": {
+    "sweep_run_id": [
+     "20261030-100335-icpe-t4-sweep"
+    ]
+   }
+  },
+  {
+   "path": "results/icpe_h200/t4/t4_weeks.csv",
+   "sha256": "fd035abd6c21f1652df41a0bfaf16bb68cf5d82eced13a2bd767155670f05f2c",
+   "run_id": [
+    "20261030-101546-icpe-t4-analyze"
+   ],
+   "related_run_ids": {}
+  }
+ ],
+ "plotted_values": {
+  "units": "G_hit_pp in percentage points; G_rec / G_load / G_cake fractions (plotted x100)",
+  "registered_rule": {
+   "hit_gap_pp": 5.0,
+   "gap": 0.15,
+   "small": 0.05,
+   "main": {
+    "slow": "ssd",
+    "gpu": "idle",
+    "subset": "ret"
+   }
+  },
+  "registered_verdict": "BRIDGE-NO-GAP",
+  "robustness": {
+   "ssd-idle-ret": "BRIDGE-NO-GAP",
+   "ssd-idle-user": "BRIDGE-NO-GAP",
+   "ssd-busy-ret": "BRIDGE-NO-GAP",
+   "ssd-busy-user": "BRIDGE-NO-GAP",
+   "b32-idle-ret": "BRIDGE-NO-GAP",
+   "b32-idle-user": "BRIDGE-NO-GAP",
+   "b32-busy-ret": "BRIDGE-NO-GAP",
+   "b32-busy-user": "BRIDGE-NO-GAP",
+   "nfs-idle-ret": "BRIDGE-NO-GAP",
+   "nfs-idle-user": "BRIDGE-NO-GAP",
+   "nfs-busy-ret": "BRIDGE-NO-GAP",
+   "nfs-busy-user": "BRIDGE-NO-GAP"
+  },
+  "weeks_in_trace": 6,
+  "main_ssd_idle_ret": [
+   {
+    "cpu_GiB": 8,
+    "G_hit_pp": 3.03015,
+    "G_rec": 0.0138103,
+    "G_load": 0.0221375,
+    "G_cake": 0.0158906,
+    "G_rec_cake": 0.0137878,
+    "hr_lru_none": 13.1901,
+    "hr_obel_none": 16.2202,
+    "class": "NO-GAP"
+   },
+   {
+    "cpu_GiB": 16,
+    "G_hit_pp": 6.01197,
+    "G_rec": 0.0578736,
+    "G_load": 0.0385954,
+    "G_cake": 0.0289887,
+    "G_rec_cake": 0.0578927,
+    "hr_lru_none": 46.6129,
+    "hr_obel_none": 52.6249,
+    "class": "NO-GAP"
+   },
+   {
+    "cpu_GiB": 32,
+    "G_hit_pp": 4.85474,
+    "G_rec": 0.15945,
+    "G_load": 0.0336952,
+    "G_cake": 0.0257453,
+    "G_rec_cake": 0.159652,
+    "hr_lru_none": 82.0224,
+    "hr_obel_none": 86.8772,
+    "class": "NO-GAP"
+   },
+   {
+    "cpu_GiB": 64,
+    "G_hit_pp": 0.834715,
+    "G_rec": 0.11778,
+    "G_load": 0.00521463,
+    "G_cake": 0.00416773,
+    "G_rec_cake": 0.118282,
+    "hr_lru_none": 97.5906,
+    "hr_obel_none": 98.4254,
+    "class": "NO-GAP"
+   },
+   {
+    "cpu_GiB": 128,
+    "G_hit_pp": 0.0657385,
+    "G_rec": 0.00891564,
+    "G_load": 0.000256291,
+    "G_cake": 0.000216568,
+    "G_rec_cake": 0.00897173,
+    "hr_lru_none": 99.2913,
+    "hr_obel_none": 99.357,
+    "class": "NO-GAP"
+   }
+  ],
+  "G_cake_by_slow_idle_ret": {
+   "ssd": [
+    {
+     "cpu_GiB": 8,
+     "G_cake": 0.0158906,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 16,
+     "G_cake": 0.0289887,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 32,
+     "G_cake": 0.0257453,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 64,
+     "G_cake": 0.00416773,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 128,
+     "G_cake": 0.000216568,
+     "class": "NO-GAP"
+    }
+   ],
+   "b32": [
+    {
+     "cpu_GiB": 8,
+     "G_cake": 0.0305134,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 16,
+     "G_cake": 0.0596824,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 32,
+     "G_cake": 0.0615994,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 64,
+     "G_cake": 0.0101285,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 128,
+     "G_cake": 0.000629266,
+     "class": "NO-GAP"
+    }
+   ],
+   "nfs": [
+    {
+     "cpu_GiB": 8,
+     "G_cake": 0.0966752,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 16,
+     "G_cake": 0.177196,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 32,
+     "G_cake": 0.276662,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 64,
+     "G_cake": 0.0770123,
+     "class": "NO-GAP"
+    },
+    {
+     "cpu_GiB": 128,
+     "G_cake": 0.00302784,
+     "class": "NO-GAP"
+    }
+   ]
+  }
+ },
+ "checks": [
+  {
+   "what": "main G_hit_pp (cells csv vs verdict json), max abs diff",
+   "value_in_plotted_file": 3.4584779697865997e-06,
+   "expected": 0.0,
+   "tolerance": 0.0001,
+   "expected_from": "t4_verdict.json main",
+   "status": "match"
+  },
+  {
+   "what": "main G_rec (cells csv vs verdict json), max abs diff",
+   "value_in_plotted_file": 4.931167173760631e-07,
+   "expected": 0.0,
+   "tolerance": 0.0001,
+   "expected_from": "t4_verdict.json main",
+   "status": "match"
+  },
+  {
+   "what": "main G_load (cells csv vs verdict json), max abs diff",
+   "value_in_plotted_file": 2.2296168321334076e-08,
+   "expected": 0.0,
+   "tolerance": 0.0001,
+   "expected_from": "t4_verdict.json main",
+   "status": "match"
+  },
+  {
+   "what": "main G_cake (cells csv vs verdict json), max abs diff",
+   "value_in_plotted_file": 2.5855903619531606e-08,
+   "expected": 0.0,
+   "tolerance": 0.0001,
+   "expected_from": "t4_verdict.json main",
+   "status": "match"
+  }
+ ],
+ "notes": [
+  "Brief from the coordinator: NFS-class G_cake about 18-28% at 16-32 GiB; file values: 8 GiB 9.7%, 16 GiB 17.7%, 32 GiB 27.7%, 64 GiB 7.7%, 128 GiB 0.3%.",
+  "Policies (simulation, FreeInference, 6 weekly slices merged, Llama-3.1-8B costs, H200 CPU-tier constants): G_hit = CPU-tier hit ratio of O-BEL+NONE minus LRU+NONE (pp); G_rec = oracle order vs LRU with no slow tier, misses recomputed (load-only restore); G_load = with slow tier, load-only restore; G_cake = with slow tier, Cake restore."
+ ]
+}

@@ -1,0 +1,333 @@
+{
+ "title": "Fig. 2 - Limit-study method: traces -> simulator -> oracle vs best symmetric rival -> headroom -> preregistered thresholds -> verdict",
+ "canvas": {
+  "width": 1200,
+  "height": 560
+ },
+ "style": {
+  "font_family": "Liberation Sans, Arial, Helvetica, sans-serif",
+  "font_size": 14,
+  "bg_color": "#FFFFFF",
+  "palette": [
+   "#2a78d6",
+   "#eb6834",
+   "#1baf7a",
+   "#52514e",
+   "#898781"
+  ]
+ },
+ "nodes": [
+  {
+   "id": "traces",
+   "label": "Real traces",
+   "sublabel": "chat and agent",
+   "x": 105,
+   "y": 170,
+   "width": 170,
+   "height": 60,
+   "shape": "rect",
+   "fill": "#f2f1ee",
+   "stroke": "#52514e",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "sim",
+   "label": "Trace simulator",
+   "sublabel": "H200-measured cost constants",
+   "x": 320,
+   "y": 170,
+   "width": 200,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#cde2fb",
+   "stroke": "#2a78d6",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "oracle",
+   "label": "Oracle policy",
+   "sublabel": "perfect predictor of the future",
+   "x": 560,
+   "y": 120,
+   "width": 210,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#fdeee7",
+   "stroke": "#eb6834",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "rival",
+   "label": "Best symmetric rival",
+   "sublabel": "same action set, no foresight",
+   "x": 560,
+   "y": 220,
+   "width": 210,
+   "height": 54,
+   "shape": "rounded",
+   "fill": "#FFFFFF",
+   "stroke": "#898781",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "headroom",
+   "label": "Headroom",
+   "sublabel": "1 - T_oracle / T_rival",
+   "x": 790,
+   "y": 170,
+   "width": 170,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#FFFFFF",
+   "stroke": "#52514e",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "thresh",
+   "label": "Preregistered\nthresholds",
+   "sublabel": "fixed before any run",
+   "x": 975,
+   "y": 170,
+   "width": 150,
+   "height": 76,
+   "shape": "rect",
+   "fill": "#f2f1ee",
+   "stroke": "#52514e",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "verdict",
+   "label": "Verdict",
+   "sublabel": "per foresight type",
+   "x": 1130,
+   "y": 170,
+   "width": 110,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#0b0b0b",
+   "stroke": "#0b0b0b",
+   "text_color": "#FFFFFF"
+  },
+  {
+   "id": "micro",
+   "label": "H200 microbenchmarks",
+   "sublabel": "restore, recompute and transfer costs",
+   "x": 520,
+   "y": 420,
+   "width": 260,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#e3f5ee",
+   "stroke": "#1baf7a",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "replay",
+   "label": "GPU replay validation",
+   "sublabel": "scaled-down workload; checks ratio, ranking, sign",
+   "x": 190,
+   "y": 420,
+   "width": 290,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#e3f5ee",
+   "stroke": "#1baf7a",
+   "text_color": "#0b0b0b"
+  },
+  {
+   "id": "gpumeas",
+   "label": "GPU experiments",
+   "sublabel": "write-time policies; INT4 and MPS gains",
+   "x": 930,
+   "y": 420,
+   "width": 270,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#e3f5ee",
+   "stroke": "#1baf7a",
+   "text_color": "#0b0b0b"
+  }
+ ],
+ "edges": [
+  {
+   "from": "traces",
+   "to": "sim",
+   "color": "#52514e"
+  },
+  {
+   "from": "sim",
+   "to": "oracle",
+   "color": "#52514e"
+  },
+  {
+   "from": "sim",
+   "to": "rival",
+   "color": "#52514e"
+  },
+  {
+   "from": "oracle",
+   "to": "headroom",
+   "color": "#52514e"
+  },
+  {
+   "from": "rival",
+   "to": "headroom",
+   "color": "#52514e"
+  },
+  {
+   "from": "headroom",
+   "to": "thresh",
+   "color": "#52514e"
+  },
+  {
+   "from": "thresh",
+   "to": "verdict",
+   "color": "#52514e"
+  },
+  {
+   "from": "micro",
+   "to": "sim",
+   "label": "constants",
+   "color": "#1baf7a"
+  },
+  {
+   "from": "replay",
+   "to": "sim",
+   "label": "validates",
+   "style": "dashed",
+   "color": "#1baf7a",
+   "curve": false
+  },
+  {
+   "from": "gpumeas",
+   "to": "thresh",
+   "label": "measured gain",
+   "color": "#1baf7a"
+  }
+ ],
+ "groups": [
+  {
+   "id": "g_sim",
+   "label": "Simulation (limit study)",
+   "node_ids": [
+    "sim",
+    "oracle",
+    "rival",
+    "headroom"
+   ],
+   "fill": "#f7f9fd",
+   "stroke": "#cde2fb",
+   "padding": 26
+  },
+  {
+   "id": "g_gpu",
+   "label": "Measured on one H200",
+   "node_ids": [
+    "micro",
+    "replay",
+    "gpumeas"
+   ],
+   "fill": "#f4fbf8",
+   "stroke": "#bfe6d6",
+   "padding": 24
+  }
+ ],
+ "labels": [
+  {
+   "text": "Mooncake conversation",
+   "x": 105,
+   "y": 222,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "(chat)",
+   "x": 105,
+   "y": 236,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "FreeInference (agent)",
+   "x": 105,
+   "y": 254,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "T = mean TTFT of",
+   "x": 790,
+   "y": 222,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "returning requests",
+   "x": 790,
+   "y": 236,
+   "font_size": 11,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": ">= 15%: worth it",
+   "x": 975,
+   "y": 90,
+   "font_size": 11,
+   "color": "#0b0b0b",
+   "anchor": "middle"
+  },
+  {
+   "text": "5-15%: possible",
+   "x": 975,
+   "y": 105,
+   "font_size": 11,
+   "color": "#0b0b0b",
+   "anchor": "middle"
+  },
+  {
+   "text": "< 5%: dead end",
+   "x": 975,
+   "y": 120,
+   "font_size": 11,
+   "color": "#0b0b0b",
+   "anchor": "middle"
+  },
+  {
+   "text": "Foresight plugs in at three points: write time (placement, precision), return time (O-PF, O-ORD, O-DROP / O-NOW, X5), restore time (online selector).",
+   "x": 600,
+   "y": 32,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "The oracle is an upper bound for any predictor of the same quantity; the rival gets the same actions without foresight.",
+   "x": 600,
+   "y": 50,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "No-foresight gains (INT4 bytes, MPS SM reservation) and write-time foresight are measured on the GPU directly.",
+   "x": 600,
+   "y": 520,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "middle"
+  },
+  {
+   "text": "The replay checks the simulator: measured/simulated TTFT ratio, policy ranking, and the sign of the headroom.",
+   "x": 600,
+   "y": 538,
+   "font_size": 12,
+   "color": "#52514e",
+   "anchor": "middle"
+  }
+ ]
+}
