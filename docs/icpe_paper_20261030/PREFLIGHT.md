@@ -18,7 +18,7 @@
 | # | 規則（驗證） | 必須／建議 | v2 狀態 | 在哪改 |
 |:--|:--|:--|:--|:--|
 | a1 | 截止：摘要 11/9、全文 11/16、通知 2027-01-25、camera-ready 03-12，**全部 AoE** ✓[U1]；HotCRP：註冊 Nov 10、投稿 Nov 17，都是 06:59:59 AM EST ✓[U3] | 必須 | — | 見 (i) |
-| a2 | 兩個入口 `Regular-Research-Papers`／`Empirical-Experience-Reproduction-CaseStudy-Papers`，註冊時就要選 ✓[U3]。Regular＝「original research content with a compelling evaluation」；EERCS＝「empirical evaluation, real-life experiences, reproductions, or case studies」✓[U2] | 必須 | ✗ 還沒選 | 使用者決定。〔判讀〕limit study 兩邊都說得通，EERCS 的「empirical evaluation」比較貼近 |
+| a2 | 兩個入口 `Regular-Research-Papers`／`Empirical-Experience-Reproduction-CaseStudy-Papers`，註冊時就要選 ✓[U3]。**已定（使用者 10/30）：EERCS。**Regular＝「original research content with a compelling evaluation」；EERCS＝「empirical evaluation, real-life experiences, reproductions, or case studies」✓[U2] | 必須 | ✗ 還沒選 | 使用者決定。〔判讀〕limit study 兩邊都說得通，EERCS 的「empirical evaluation」比較貼近 |
 | a3 | Research Track 明文歡迎的只有「positive and negative reproduction studies」✓[U2]；一般的負面結果明文歡迎的是 ERT（2/1 截止，≤6 頁）✓[U6][U1]；被 Research Track 拒後能不能轉投 ERT：NOT_FOUND | 建議 | 待 v3 | 〔判讀〕摘要寫成「地圖＋上界」，不要寫成單純的負面結果 |
 | a4 | 至少 3 位 PC 審；看 novelty、relevance、technical quality、scientific soundness、clarity ✓[U2]。主題清單有「LLM inference pipelines, and agentic workflows」以及「LLM serving, batching, routing, caching」✓[U4] | 建議 | ✓ | 摘要用這些關鍵詞（會影響 bidding） |
 | a5 | 接受後強烈鼓勵投 artifact，可以拿 ACM badge ✓[U2]；AE Track 細節 TBA ✓[U7]；投稿時要不要附 data availability statement：NOT_FOUND | 建議 | — | 接受後再做 |
@@ -108,7 +108,7 @@ AUDIT 的 3 個高嚴重度問題（#1「agent trace」、#2「很窄」、#3 �
 
 ## (i) 時程（今天 10/30）
 
-**11/9 AoE 前（台灣 11/10 19:59:59）在 HotCRP 註冊**：① 必須：選 Regular 或 EERCS（a2）；② 必須：決定框架 (A) 或 (B)（PAPER 待決 1），寫好英文題目與摘要——bidding 看的是這版摘要；③ 必須：填作者、所屬機構、與 PC 的利益衝突；如果要上 arXiv，題目要另取（b5）；④ 建議：再查一次 arXiv（g7）。
+**11/9 AoE 前（台灣 11/10 19:59:59）在 HotCRP 註冊**：① 必須：選 EERCS 入口（a2，已定）；② 框架已定為 (C) 組合地圖（使用者 10/30），寫好英文題目與摘要——bidding 看的是這版摘要；③ 必須：填作者、所屬機構、與 PC 的利益衝突；如果要上 arXiv，題目要另取（b5）；④ 建議：再查一次 arXiv（g7）。
 
 **11/16 AoE 前（台灣 11/17 19:59:59）交全文**：① v3 翻成英文，用 acmart sigconf,anonymous,review，≤10 頁，含 CCS 與 keywords（c1–c3）；② 拿掉內部用的東西，代號改名或定義（c4、c5、b6）；③ 修圖（f1、f2、f4）；④ 偏離清單、sidecar 數字補進 EVIDENCE、E6 的 block 換算、待決 1–14 全部定案（e1、e3）；⑤ 讀文獻內文、補 bib，跑 `citation-audit` 與 `paper-claim-audit`，並註明不是 cross-model（g1、g4–g6）；⑥ 作者讀過核心程式後，定稿 AI 揭露（h2）；⑦ 對最後的 PDF 再掃一次匿名（用〈結果〉的 pattern，加上 metadata）。以上全部必須。**接受後**：ORCID、APC、AE（細節 TBA）。
 
