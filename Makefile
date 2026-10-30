@@ -7,7 +7,17 @@ SHELL := /bin/bash
 .SHELLFLAGS := -o pipefail -c
 SHOW = python3 code/h200_show.py
 
-.PHONY: all clean distclean figs check
+.PHONY: all clean distclean figs check claude
+
+# make claude <name>   (or: make claude NAME=<name>) — new tmux session running Claude Code.
+# The extra word is swallowed by the %: rule below so make doesn't treat it as a target.
+ifeq ($(firstword $(MAKECMDGOALS)),claude)
+CLAUDE_NAME := $(or $(NAME),$(word 2,$(MAKECMDGOALS)))
+%:
+	@:
+endif
+claude:
+	@bash code/tmux_claude.sh "$(CLAUDE_NAME)"
 
 all: $(MAIN).pdf
 
