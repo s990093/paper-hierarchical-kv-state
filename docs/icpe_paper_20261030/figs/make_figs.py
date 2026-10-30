@@ -1054,16 +1054,21 @@ def fig10():
             r = sm[(sm.bw_name == tier) & (sm.gpu_state == g) & (sm.config == cfg) & (sm["mode"] == mode)]
             return float(one(r, f"{m} {tier} {g} {cfg} {mode}").median_t_restore) if len(r) else None
 
-        # quality flags (M2): INT4 = config E1 / q:int4_kivi; low-rank variants from p11q
+        # quality flags (M2). Main test: registered main tasks T2-T5, four readings (quality_<m>_int4.json, config E1) and the
+        # P1-1 32K 192-item set (p11q). Report-only tests: multi-key NIAH (T1) and LongBench (report_only.json).
         qcfg = q["models"][m]["configs"]
-        int4_readings = {}
+        qp = REPO / f"results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/quality_{m}_int4.json"
+        qi4 = json.load(open(qp))          # has run_ids (list), no run_id field
+        s._reg(qp, _runs(qi4.get("run_ids", [])), {})
+        main_rd = {f"main T2-T5 {rd}": bool(x["eps_pass"]) for rd, x in qi4["configs"]["E1"].items() if isinstance(x, dict) and "eps_pass" in x}
+        main_rd["main 32K 192-item set"] = bool(qcfg["q:int4_kivi"]["eps_pass"])
+        ro_rd = {}
         for item in (f"{m}|int4|T1", f"{m}|int4|LB"):
             for rd, x in ro["items"].get(item, {}).get("result", {}).get("E1", {}).items():
                 if isinstance(x, dict) and "eps_pass" in x:
-                    int4_readings[f"{ {'T1': 'NIAH-T1', 'LB': 'LongBench'}[item.split('|')[2]]} {rd}"] = bool(x["eps_pass"])
-        int4_readings["32K 192-item set"] = bool(qcfg["q:int4_kivi"]["eps_pass"])
-        int4_fail = [k for k, v in int4_readings.items() if not v]
-        eps[m] = {"int4_readings": int4_readings, "int4_fails_some_reading": bool(int4_fail), "int4_failing_readings": int4_fail,
+                    ro_rd[f"{ {'T1': 'NIAH-T1', 'LB': 'LongBench'}[item.split('|')[2]]} {rd}"] = bool(x["eps_pass"])
+        eps[m] = {"int4_main_readings": main_rd, "int4_main_pass": all(main_rd.values()),
+                  "int4_report_only_readings": ro_rd, "int4_report_only_failing": [k for k, v in ro_rd.items() if not v],
                   "lowrank": {}}
         for tier in MAP_TIERS:
             for g in ("idle", "busy"):
@@ -1100,7 +1105,9 @@ def fig10():
                 delta = max(0.05, float(noise["cells"][nkey]["delta"])) if nkey in noise["cells"] else 0.05
                 # options whose shown format fails eps in every reading do not set the row's best
                 lowrank_ok = lr_info is not None and lr_info["shown"]["eps_pass"]
-                cand = {k: v for k, v in row.items() if v is not None and (k != "lowrank_load" or lowrank_ok)}
+                # the paper's rule: an option can be the best only if its format passes the main quality test
+                cand = {k: v for k, v in row.items() if v is not None and (k != "lowrank_load" or lowrank_ok)
+                        and (not k.startswith("int4") or eps[m]["int4_main_pass"])}
                 best_k = min(cand, key=cand.get)
                 best = cand[best_k]
                 ratio = {k: (v / best if v is not None else None) for k, v in row.items()}
@@ -1172,7 +1179,7 @@ def fig10():
     allr = [v for c in grid.values() for v in c["ratio"].values() if v is not None]
     norm = LogNorm(vmin=1.0, vmax=max(allr))
     rows = [(tier, g) for tier in MAP_TIERS for g in ("idle", "busy")]
-    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 4.7), gridspec_kw=dict(left=0.095, right=0.985, top=0.84, bottom=0.235, wspace=0.05))
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 5.0), gridspec_kw=dict(left=0.095, right=0.985, top=0.85, bottom=0.255, wspace=0.05))
     for ax, m in zip(axes, models):
         for i, (tier, g) in enumerate(rows):
             c = grid[(m, tier, g)]
@@ -1196,9 +1203,10 @@ def fig10():
         ax.set_xlim(-0.5, len(MAP_OPTS) - 0.5)
         ax.set_ylim(len(rows) - 0.5, -0.5)
         ax.set_xticks(range(len(MAP_OPTS)))
-        dag = {"int4_load": eps[m]["int4_fails_some_reading"], "int4_cake": eps[m]["int4_fails_some_reading"],
-               "lowrank_load": any(not v["shown"]["eps_pass"] for v in eps[m]["lowrank"].values())}
-        ax.set_xticklabels([MAP_OPT_LABEL[k] + ("†" if dag.get(k) else "") for k in MAP_OPTS], fontsize=7, color=INK)
+        i4 = "" if eps[m]["int4_main_pass"] and not eps[m]["int4_report_only_failing"] else ("\u2020" if eps[m]["int4_main_pass"] else "\u2021")
+        dag = {"int4_load": i4, "int4_cake": i4,
+               "lowrank_load": "\u2021" if any(not v["shown"]["eps_pass"] for v in eps[m]["lowrank"].values()) else ""}
+        ax.set_xticklabels([MAP_OPT_LABEL[k] + dag.get(k, "") for k in MAP_OPTS], fontsize=7, color=INK)
         ax.xaxis.tick_top()
         ax.tick_params(axis="both", length=0)
         ax.set_yticks(range(len(rows)))
@@ -1209,36 +1217,267 @@ def fig10():
             ax.axhline(2 * yb - 0.5, color=WHITE, lw=2.5, zorder=5)
         ax.set_title(names[m], loc="left", fontsize=8, color=INK, pad=24)
     # footnotes (built from the files)
-    det = []
+    det_ro, det_main = [], []
     for m in models:
         short = {"llama": "Llama", "qwen": "Qwen"}[m]
-        if eps[m]["int4_fails_some_reading"]:
+        if eps[m]["int4_report_only_failing"] and eps[m]["int4_main_pass"]:
             rd, prev = [], None
-            for x in eps[m]["int4_failing_readings"]:
+            for x in eps[m]["int4_report_only_failing"]:
                 task, _, rname = x.partition(" ")
                 rd.append(rname if task == prev else x)
                 prev = task
-            det.append(f"{short} INT4 ({', '.join(rd)})")
+            det_ro.append(f"{short} INT4 ({', '.join(rd)})")
+        if not eps[m]["int4_main_pass"]:
+            det_main.append(f"{short} INT4")
         if any(not v["shown"]["eps_pass"] for v in eps[m]["lowrank"].values()):
-            det.append(f"{short} low-rank (all variants)")
+            det_main.append(f"{short} low-rank (all variants)")
     lines = [
         "Cell = restore time \u00f7 best in row (32K context, H200 measured).  Bold + box = best;  \u2248 = weak win: (t \u2212 t_best) / t "
         "\u2264 max(5%, row noise);  n/m = not measured.",
         "Low-rank column: fastest variant that passes \u03b5 (Llama: per-item SVD).  Where no variant passes, the fastest is shown in "
         "italics and is not used as the best.",
-        "\u2020 fails \u03b5 (CI lower bound \u2265 \u22122 pp) in at least one reading: " + "; ".join(det) + ".",
+        "\u2020 passes \u03b5 (CI lower bound \u2265 \u22122 pp) on the main tasks but fails a report-only test: " + "; ".join(det_ro) + ".",
+        "\u2021 fails \u03b5 on the main test, so it is never counted as the best: " + "; ".join(det_main) + ".",
         "Restore time only: excludes the write-time SVD that low-rank pays once per 32K request (" + svd_txt + ").",
         "INT4 load-all is the per-block dequant path on b16 / b48 and the one-shot unpack path on CPU / b32 / NFS.  "
         "Throttle bandwidths per model: sidecar.",
     ]
     for li, txt in enumerate(lines):
-        fig.text(0.012, 0.172 - li * 0.0355, txt, fontsize=7, color=INK2, ha="left", va="top")
+        fig.text(0.012, 0.192 - li * 0.0328, txt, fontsize=7, color=INK2, ha="left", va="top")
     s.write(fig, "fig10_map.png")
+
+
+# ================================================================ fig12: format ladder (bytes vs slow-tier speedup vs quality)
+Q_STYLE = {   # quality status -> marker style (shape + fill carry identity; colour is secondary)
+    "formal_pass": dict(marker="o", ms=6.5, mfc=BLUE, mec=WHITE, mew=0.8, label="formal ε pass"),
+    "formal_fail": dict(marker="X", ms=7, mfc=ORANGE, mec=WHITE, mew=0.6, label="formal ε fail (collapse)"),
+    "screen_ok": dict(marker="o", ms=6, mfc=WHITE, mec=INK2, mew=1.1, label="screening only (no formal test)"),
+    "screen_collapse": dict(marker="X", ms=7, mfc=WHITE, mec=ORANGE, mew=1.1, label="screening only: collapses (KL ≥ 1)"),
+}
+FMT_LABEL = {"fp8": "FP8", "int8_token": "INT8", "int4_kivi": "INT4 KIVI", "int4_token": "int4_token", "int4h_token": "int4h_token",
+             "mxfp4": "MXFP4", "nvfp4": "NVFP4", "kv-int4_kivi-int2_kivi": "K4V2", "int2_kivi": "INT2 KIVI", "int2h_g32": "int2h_g32"}
+SCREEN_COLLAPSE_KL = 1.0     # display threshold only (collapsed formats have KL 3.8-13.9, the rest <= 0.31); not a registered rule
+
+
+def fig12():
+    import glob
+    import re
+    s = Src("fig12_formats")
+    models = ["llama", "qwen"]
+    q = s.json("results/icpe_h200/p11/p11q_report.json", related_keys=("src_run_ids",))
+    p11t = s.csv("results/icpe_h200/p11/p11t_cells.csv")
+    p01b = s.csv("results/icpe_h200/p01/p01b_cells.csv")
+    data, names = {}, {}
+    exp = {  # EVIDENCE.md section F (used for cross-checks only)
+        ("llama", "fp8"): (13.9, 42.3), ("qwen", "fp8"): (23.1, 41.3), ("llama", "int8_token"): (21.7, 31.9), ("qwen", "int8_token"): (21.6, 39.4),
+        ("llama", "int4_kivi"): (27.3, 60.0), ("qwen", "int4_kivi"): (33.2, 59.8), ("llama", "mxfp4"): (32.2, 66.1), ("qwen", "mxfp4"): (41.8, 57.0),
+        ("llama", "kv-int4_kivi-int2_kivi"): (33.5, 66.0), ("qwen", "kv-int4_kivi-int2_kivi"): (46.1, 65.9),
+        ("llama", "int2_kivi"): (41.8, 77.1), ("qwen", "int2_kivi"): (52.1, 71.7)}
+    exp_ratio = {"fp8": {"llama": 1.94, "qwen": 2.0}, "int8_token": {"llama": 1.94, "qwen": 1.94}, "int4_kivi": 3.2, "int4_token": 3.76,
+                 "nvfp4": 3.56, "kv-int4_kivi-int2_kivi": 4.0, "int2_kivi": 5.33}
+    exp_kl = {("llama", "int4_token"): 0.042, ("llama", "mxfp4"): 0.062, ("llama", "nvfp4"): 0.043, ("llama", "kv-int4_kivi-int2_kivi"): 0.0195,
+              ("llama", "int2_kivi"): 0.124, ("llama", "int2h_g32"): 0.30, ("qwen", "int4_token"): 10.8, ("qwen", "int4h_token"): 11.8,
+              ("qwen", "mxfp4"): 11.0, ("qwen", "nvfp4"): 13.9, ("qwen", "kv-int4_kivi-int2_kivi"): 0.049, ("qwen", "int2_kivi"): 0.222,
+              ("qwen", "int2h_g32"): 13.4}
+
+    def half_unit(v):
+        txt = f"{v}"
+        return 0.5 * 10 ** -(len(txt.split(".")[1]) if "." in txt else 0) + 1e-9
+
+    for m in models:
+        parts = s.json(f"results/m10_sweep_h200/parts/parts_{m}.json")
+        bw = s.json(f"results/m10_precision_h200/speed_{m}/bw.json")
+        names[m] = Path(str(bw["model_path"]).split("models--")[-1].split("/")[0]).name.split("--")[-1]
+        bf = float(parts["chunk_bytes_bf16"])
+        mpb = parts["median_per_block"]
+        fp8_dir = sorted(glob.glob(str(REPO / f"results/m10_match_h200/m2/{m}_fp8_*")))
+        if len(fp8_dir) != 1:
+            raise SystemExit(f"{m}: expected one M2 fp8 dir, got {fp8_dir}")
+        fp8_fmt = Path(fp8_dir[0]).name.split("_", 1)[1]
+        fmts = {"fp8": fp8_fmt, "int8_token": "int8_token", "int4_kivi": "int4_kivi", "int4_token": "int4_token",
+                "int4h_token": "int4h_token", "mxfp4": "mxfp4", "nvfp4": "nvfp4", "kv-int4_kivi-int2_kivi": "kv-int4_kivi-int2_kivi",
+                "int2_kivi": "int2_kivi", "int2h_g32": "int2h_g32"}
+        # speed: M2 (E1s Cake vs the M2 E0 Cake from the fp8 run), 32K, b16/b32/b48/NFS x idle/busy
+        e0m2 = s.csv(rel(Path(fp8_dir[0]) / "summary.csv"), run_col="run_ids")
+        e0m2 = e0m2[(e0m2.length == 32768) & (e0m2.config == "E0") & (e0m2["mode"] == "cake")].set_index(["bw_name", "gpu_state"]).median_t_restore
+        speed = {}
+        for key, f in fmts.items():
+            pth = REPO / f"results/m10_match_h200/m2/{m}_{f}/summary.csv"
+            if pth.exists():
+                d = s.csv(rel(pth), run_col="run_ids")
+                if int(d.contaminated_rows.sum()):
+                    raise SystemExit(f"{pth}: contaminated rows")
+                d = d[(d.length == 32768) & (d.config == "E1s") & (d["mode"] == "cake")].set_index(["bw_name", "gpu_state"]).median_t_restore
+                g = (1 - d / e0m2).dropna()
+                speed[key] = dict(source="M2 (E1s Cake vs M2 E0 Cake)", cells={f"{a}|{b}": float(v) for (a, b), v in g.items()})
+        # INT8: second grid (E1s) vs the main grid's E0 Cake (different runs), b16/b32/b48
+        main = s.csv(f"results/m10_precision_h200/speed_{m}/summary.csv", run_col="run_ids")
+        e0 = main[(main.length == 32768) & (main.config == "E0") & (main["mode"] == "cake")].set_index(["bw_name", "gpu_state"]).median_t_restore
+        i8 = s.csv(f"results/m10_precision_h200/speed_{m}/summary_2b_int8_token.csv", run_col="run_ids")
+        i8 = i8[(i8.length == 32768) & (i8.config == "E1s") & (i8["mode"] == "cake")].set_index(["bw_name", "gpu_state"]).median_t_restore
+        g = (1 - i8 / e0).dropna()
+        g = g[[k for k in g.index if k[0] != "cpu"]]
+        speed["int8_token"] = dict(source="grid 2b (E1s) vs main grid E0 Cake", cells={f"{a}|{b}": float(v) for (a, b), v in g.items()})
+        # FP8 main grid (check only)
+        vf = s.json(f"results/m10_precision_h200/speed_{m}/k0_verdict_fp8.json")
+        gf = [c["gain_E1_over_E0"] for c in vf["cells"] if c["bw_name"] != "cpu"]
+        for lo_hi, val in zip((0, 1), (min(gf), max(gf))):
+            e_ = {"llama": (21.5, 31.7), "qwen": (22.0, 39.4)}[m][lo_hi]
+            s.check(f"{m} FP8 main-grid gain {'min' if lo_hi == 0 else 'max'} (%)", round(100 * val, 2), e_, half_unit(e_), "EVIDENCE F1 (not plotted)")
+        # quality
+        status, qinfo = {}, {}
+        agg_p = REPO / f"results/m10_sweep_h200/analysis/agg_{m}.csv.gz"
+        agg = pd.read_csv(agg_p)
+        s._reg(agg_p, [], {})
+        scr = agg[(agg.policy == "ALL") & (agg.frac == 1.0) & (agg.readout == "A")].set_index("fmt")
+        for key, f in fmts.items():
+            if f in scr.index:
+                qinfo[key] = dict(screen_kl=float(scr.loc[f, "kl"]), screen_d_first_ok=float(scr.loc[f, "d_first_ok"]), n_items=int(scr.loc[f, "n_items"]))
+                status[key] = "screen_collapse" if scr.loc[f, "kl"] >= SCREEN_COLLAPSE_KL else "screen_ok"
+            if (m, key) in exp_kl:
+                e_ = exp_kl[(m, key)]
+                s.check(f"{m} {key} screening KL", round(float(scr.loc[f, "kl"]), 4), e_, half_unit(e_), "EVIDENCE F (screening)")
+        base = "results/m10_precision_h200/analysis"
+
+        def formal(path, cfg):
+            pth = REPO / path
+            d = json.load(open(pth))
+            s._reg(pth, _runs(d.get("run_ids", [])), {})
+            rd = {r: bool(x["eps_pass"]) for r, x in d["configs"][cfg].items() if isinstance(x, dict) and "eps_pass" in x}
+            return rd
+        fq = formal(f"{base}/fp8/quality_{m}_step1.json", "E1")
+        status["fp8"] = "formal_pass" if all(fq.values()) else "formal_fail"
+        qinfo.setdefault("fp8", {})["formal_readings"] = fq
+        if m == "qwen":
+            iq = formal(f"{base}/fp8/quality_qwen_step2b.json", "E1s@int8_token")
+            status["int8_token"] = "formal_pass" if all(iq.values()) else "formal_fail"
+            qinfo.setdefault("int8_token", {})["formal_readings"] = iq
+        i4 = formal(f"{base}/sensitivity_delta005/compare_mi300x_path/int4/quality_{m}_int4.json", "E1")
+        i4["32K 192-item set"] = bool(q["models"][m]["configs"]["q:int4_kivi"]["eps_pass"])
+        status["int4_kivi"] = "formal_pass" if all(i4.values()) else "formal_fail"
+        qinfo.setdefault("int4_kivi", {})["formal_readings"] = i4
+        # low-rank variants (formal = P1-1 32K 192 items)
+        lr = {}
+        e0b = p01b[(p01b.model == m) & (p01b.config == "E0")].set_index(["tier", "gpu"]).sdpa_cake
+        for seg in sorted(p11t[(p11t.model == m) & p11t.seg.str.startswith("xkv_")].seg.unique()):
+            c = _lowrank_cfg(seg)
+            cq = q["models"][m]["configs"][c]
+            x = p11t[(p11t.model == m) & (p11t.seg == seg) & p11t.tier.isin(["b32", "nfs"])].set_index(["tier", "gpu"]).t_meas_s
+            g = 1 - x / e0b.loc[x.index]
+            lr[seg] = dict(cfg=c, ratio=1.0 / float(cq["ratio"]), status="formal_pass" if cq["eps_pass"] else "formal_fail",
+                           cells={f"{a}|{b}": float(v) for (a, b), v in g.items()},
+                           label="LR " + re.sub(r"xkv_|_int4", "", seg).replace("_cal", ":cal"))
+        ratios = {key: bf / float(mpb[f"{f}|idle"]["bytes"]) for key, f in fmts.items() if f"{f}|idle" in mpb}
+        for key, e_ in exp_ratio.items():
+            e_ = e_[m] if isinstance(e_, dict) else e_
+            s.check(f"{m} {key} compression ratio", round(ratios[key], 2), e_, half_unit(e_) + 0.005, "EVIDENCE F (bytes per block)")
+        for key, (lo, hi) in exp.items():
+            if key[0] != m:
+                continue
+            v = list(speed[key[1]]["cells"].values())
+            s.check(f"{m} {key[1]} slow-tier gain min (%)", round(100 * min(v), 2), lo, half_unit(lo), "EVIDENCE F")
+            s.check(f"{m} {key[1]} slow-tier gain max (%)", round(100 * max(v), 2), hi, half_unit(hi), "EVIDENCE F")
+        lr_exp = {"llama": [7.98, 12.14, 11.22, 17.07], "qwen": [8.01, 9.64]}[m]
+        s.check(f"{m} low-rank compression ratios", float(sorted(round(v["ratio"], 2) for v in lr.values()) == sorted(lr_exp)), 1.0, 0,
+                "EVIDENCE F7 / D3")
+        data[m] = dict(fmts=fmts, ratios=ratios, speed=speed, status=status, quality=qinfo, lowrank=lr)
+    both = [k for k in ("fp8", "int8_token", "int4_kivi") if all(data[m]["status"].get(k) == "formal_pass" for m in models)]
+    s.check("formats with a formal eps pass on both models (count)", float(len(both)), 1.0, 0, "EVIDENCE F: only INT4 KIVI")
+    s.values = {"units": "x = BF16 bytes per block / format bytes per block; y = 1 - t_restore(format, Cake) / t_restore(BF16, Cake), slow tiers, 32K",
+                "screen_collapse_KL_threshold_display_only": SCREEN_COLLAPSE_KL,
+                "formats_formal_pass_both_models": both, "per_model": data}
+    s.notes.append("Speed sources: M2 matched runs (FP8, INT4 KIVI, MXFP4, K4V2, INT2 KIVI; E1s Cake vs the M2 E0 Cake; b16/b32/b48/NFS x idle/busy); "
+                   "INT8 = grid 2b E1s vs the main grid's E0 (b16/b32/b48 only, different runs); low-rank = p11t load-all t_meas_s vs "
+                   "p01b BF16 Cake (b32/NFS only). int4_token, int4h_token, NVFP4 and int2h_g32 restore times: NOT_MEASURED (bottom strip).")
+    s.notes.append("Quality: formal = registered main tasks T2-T5 in four readings (FP8, INT8, INT4) or the P1-1 32K 192-item set "
+                   "(low-rank, and INT4 also); screening = the 96-item KL / first-token sweep (agg_<model>.csv.gz, no run_id column; "
+                   "run ids in EVIDENCE F4). 'Collapse' for screening = KL >= 1 is a display threshold chosen here, not a registered rule.")
+
+    # ---- plot
+    fig, axes = plt.subplots(1, 2, figsize=(FULL_W, 3.9), sharey=True,
+                             gridspec_kw=dict(left=0.075, right=0.99, top=0.80, bottom=0.25, wspace=0.06))
+    # label placement only: (anchor 'med' or 'top', dx pt, dy pt, ha)
+    LAB = {"llama": {"fp8": ("med", -5, 0, "right"), "int8_token": ("med", 5, 0, "left")},
+           "qwen": {"fp8": ("med", 5, 0, "left"), "int8_token": ("med", -5, 0, "right"), "int2_kivi": ("top", 0, 3, "center")}}
+    LAB_ALL = {"int4_kivi": ("med", -5, 0, "right"), "mxfp4": ("top", -1, 7, "right"), "kv-int4_kivi-int2_kivi": ("top", 1, 3, "left"),
+               "int2_kivi": ("med", 5, 0, "left")}
+    NM_ROW = {"int4_token": (-7, "right"), "int4h_token": (-13, "right"), "nvfp4": (-19, "right"), "int2h_g32": (-7, "left")}
+    LR_SIDE = {"k29v44": "left", "k29v44:cal": "left", "k19v29": "right", "k19v29:cal": "right", "k34v51": "left", "k34v51:cal": "right"}
+    jitter = {}
+    for ax, m in zip(axes, models):
+        dm = data[m]
+        ax.set_xscale("log")
+        ax.axhspan(-26, -3, color=BAND, lw=0, zorder=0)
+        ax.text(28, -24.5, "restore time not measured", fontsize=7, color=INK2, va="bottom", ha="right")
+        ax.plot([1.0], [0.0], marker="D", ms=6, mfc=INK, mec=WHITE, ls="none", zorder=5)
+        ax.annotate("BF16 (reference)", (1.0, 0.0), xytext=(6, 4), textcoords="offset points", fontsize=7, color=INK)
+        nm_y = {}
+        f8, i8 = dm["ratios"]["fp8"], dm["ratios"]["int8_token"]
+        x_i8 = max(i8, f8 * 1.035) if i8 >= f8 else min(i8, f8 / 1.035)   # display only: keep INT8 off the FP8 marker
+        jitter[m] = {"int8_token_true": i8, "int8_token_drawn": x_i8}
+        for key in dm["fmts"]:
+            if key not in dm["ratios"]:
+                continue
+            x = x_i8 if key == "int8_token" else dm["ratios"][key]
+            st = dm["status"].get(key)
+            sty = {k: v for k, v in Q_STYLE[st].items() if k != "label"}
+            lab = FMT_LABEL[key]
+            if key in dm["speed"]:
+                v = np.array(sorted(dm["speed"][key]["cells"].values())) * 100
+                ax.plot([x, x], [v.min(), v.max()], color=INK2, lw=1.4, zorder=2, solid_capstyle="butt")
+                ax.plot([x], [np.median(v)], ls="none", zorder=4, **sty)
+                anc, dx, dy, ha = LAB[m].get(key) or LAB_ALL.get(key, ("med", 5, 0, "left"))
+                ay = v.max() if anc == "top" else np.median(v)
+                ax.annotate(lab, (x, ay), xytext=(dx, dy), textcoords="offset points", fontsize=7, color=INK, ha=ha,
+                            va="bottom" if anc == "top" else "center", fontweight="bold" if key in both else "normal")
+            else:
+                yy, side = NM_ROW[key]
+                ax.plot([x], [yy], ls="none", zorder=4, **{**sty, "ms": sty["ms"] - 1})
+                ax.annotate(lab, (x, yy), xytext=(-5 if side == "right" else 5, 0), textcoords="offset points", fontsize=7, color=INK,
+                            va="center", ha=side)
+        for seg, info in sorted(dm["lowrank"].items(), key=lambda kv: kv[1]["ratio"]):
+            v = np.array(sorted(info["cells"].values())) * 100
+            x = info["ratio"]
+            sty = {k: v_ for k, v_ in Q_STYLE[info["status"]].items() if k != "label"}
+            ax.plot([x, x], [v.min(), v.max()], color=INK2, lw=1.4, zorder=2, solid_capstyle="butt")
+            ax.plot([x], [np.median(v)], ls="none", zorder=4, **sty)
+            nm = info["label"][3:]
+            side = LR_SIDE.get(nm, "right")
+            ax.annotate(nm, (x, np.median(v)), xytext=(5 if side == "right" else -5, 0), textcoords="offset points", fontsize=7,
+                        color=INK, va="center", ha="left" if side == "right" else "right")
+        lrs = sorted(dm["lowrank"].values(), key=lambda i: i["ratio"])
+        ax.text(lrs[0]["ratio"] * 0.97, 90, "low-rank + INT4 (xKV)", fontsize=7, color=INK, ha="left", va="top")
+        ax.set_xlim(0.85, 30)
+        ax.set_ylim(-26, 92)
+        ax.set_xticks([1, 2, 4, 8, 16])
+        ax.set_xticklabels(["1×", "2×", "4×", "8×", "16×"])
+        ax.minorticks_off()
+        ax.grid(True, zorder=0)
+        ax.set_axisbelow(True)
+        ax.axhline(0, color=BASELINE, lw=0.8, zorder=1)
+        ax.set_title(names[m], loc="left", fontsize=8, color=INK)
+        ax.set_xlabel("compression vs BF16 (bytes per block, log scale)")
+    axes[0].set_ylabel("slow-tier restore time reduction vs BF16 (%)")
+    hd = [Line2D([], [], ls="none", **{k: v for k, v in sty.items() if k != "label"}, label=sty["label"]) for sty in Q_STYLE.values()]
+    hd.append(Line2D([], [], color=INK2, lw=1.4, label="range over slow tiers × GPU idle/busy (marker = median)"))
+    fig.legend(handles=hd, loc="upper left", bbox_to_anchor=(0.07, 0.995), ncol=3, fontsize=7, handletextpad=0.4, columnspacing=1.2)
+    lines = [
+        f"Bold: {', '.join(FMT_LABEL[k] for k in both)} is the only non-BF16 format with a formal ε pass on both models "
+        "(ε: CI lower bound ≥ −2 pp on the registered main tasks).",
+        "Formal fail: FP8 on Qwen (main tasks); low-rank :cal and all Qwen low-rank (32K set).  Screening = 96-item KL scan; "
+        "collapse = KL ≥ 1 (display).",
+        "Speed (H200, 32K): M2 runs on b16/b32/b48/NFS; INT8 from grid 2b (b16–b48; drawn ≤3.5% off its ratio); "
+        "low-rank: load-all vs BF16 Cake, b32/NFS.",
+    ]
+    for li, txt in enumerate(lines):
+        fig.text(0.012, 0.135 - li * 0.042, txt, fontsize=7, color=INK2, ha="left", va="top")
+    s.values["display_jitter"] = jitter
+    s.write(fig, "fig12_formats.png")
 
 
 TIER_MARK = {"b32": "s", "ssd": "^", "nfs": "D"}   # slow tier -> marker (fig8 panel c, fig9), so identity is not hue-only
 
-FIGURES = {"fig3": fig3, "fig4": fig4, "fig5": fig5, "fig6": fig6, "fig7": fig7, "fig8": fig8, "fig9": fig9, "fig10": fig10}
+FIGURES = {"fig3": fig3, "fig4": fig4, "fig5": fig5, "fig6": fig6, "fig7": fig7, "fig8": fig8, "fig9": fig9, "fig10": fig10, "fig12": fig12}
 
 if __name__ == "__main__":
     want = sys.argv[1:] or list(FIGURES)

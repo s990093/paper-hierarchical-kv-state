@@ -3,7 +3,7 @@
  "layout": {
   "intended_width": "ACM full width (figure*)",
   "width_in": 7.0,
-  "height_in": 4.7,
+  "height_in": 5.0,
   "dpi": 200,
   "smallest_text_pt": 7.0,
   "note": "drawn at the physical placement size; include at width=\\linewidth / \\textwidth without scaling"
@@ -70,6 +70,32 @@
    "related_run_ids": {}
   },
   {
+   "path": "results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/quality_llama_int4.json",
+   "sha256": "5d3ebe2628f1ab40882e27043f2dba39d8f9b1b3b93fd151cce472dc7a364849",
+   "run_id": [
+    "20261018-025613-m10h-s1-llama-T24-s0",
+    "20261018-025728-m10h-s1-llama-T24-s1",
+    "20261018-025843-m10h-s1-llama-T24-s2",
+    "20261018-033736-m10h-s1-llama-T24-s3",
+    "20261018-033916-m10h-s1-llama-T24-s4",
+    "20261018-034046-m10h-s1-llama-T24-s5",
+    "20261018-042043-m10h-s1-llama-T5",
+    "20261018-043618-m10h-i4e-llama-T24-s0",
+    "20261018-043733-m10h-i4e-llama-T24-s1",
+    "20261018-043848-m10h-i4e-llama-T24-s2",
+    "20261018-044003-m10h-i4e-llama-T24-s3",
+    "20261018-051705-m10h-i4e-llama-T24-s4",
+    "20261018-052046-m10h-i4e-llama-T5",
+    "20261018-082925-m10h-s1-llama-T1-s0",
+    "20261018-085601-m10h-s1-llama-LB-s0",
+    "20261018-091236-m10h-s1-llama-T1-s1",
+    "20261018-094628-m10h-s1-llama-LB-s1",
+    "20261018-102443-m10h-i4e-llama-T1",
+    "20261018-112933-m10h-i4e-llama-LB"
+   ],
+   "related_run_ids": {}
+  },
+  {
    "path": "results/m10_precision_h200/speed_qwen/summary.csv",
    "sha256": "70ecbd5737b60731bef8201c9992d61debea45122ecd4e9360aebf1c36b078b9",
    "run_id": [
@@ -90,6 +116,32 @@
    "sha256": "b28283bb8678f517be664d52289a366f78c7de27f16e0a23aeeb596b01166d0b",
    "run_id": [
     "20261017-074209-m10h-calibf-qwen"
+   ],
+   "related_run_ids": {}
+  },
+  {
+   "path": "results/m10_precision_h200/analysis/sensitivity_delta005/compare_mi300x_path/int4/quality_qwen_int4.json",
+   "sha256": "39cc802740196cd8eec9239c9bd27488e4815de4149e902912e4de17e65ae890",
+   "run_id": [
+    "20261018-035609-m10h-s1-qwen-T24-s0",
+    "20261018-035724-m10h-s1-qwen-T24-s1",
+    "20261018-035839-m10h-s1-qwen-T24-s2",
+    "20261018-035954-m10h-s1-qwen-T24-s3",
+    "20261018-040109-m10h-s1-qwen-T24-s4",
+    "20261018-050044-m10h-s1-qwen-T24-s5",
+    "20261018-050359-m10h-s1-qwen-T5",
+    "20261018-053254-m10h-i4e-qwen-T24-s0",
+    "20261018-053409-m10h-i4e-qwen-T24-s1",
+    "20261018-053524-m10h-i4e-qwen-T24-s2",
+    "20261018-053639-m10h-i4e-qwen-T24-s3",
+    "20261018-053754-m10h-i4e-qwen-T24-s4",
+    "20261018-053909-m10h-i4e-qwen-T5",
+    "20261018-092647-m10h-s1-qwen-T1-s0",
+    "20261018-094702-m10h-s1-qwen-LB-s0",
+    "20261018-100042-m10h-s1-qwen-T1-s1",
+    "20261018-104132-m10h-s1-qwen-LB-s1",
+    "20261018-111557-m10h-i4e-qwen-T1",
+    "20261018-122628-m10h-i4e-qwen-LB"
    ],
    "related_run_ids": {}
   },
@@ -757,16 +809,22 @@
   },
   "quality_eps": {
    "llama": {
-    "int4_readings": {
+    "int4_main_readings": {
+     "main T2-T5 A": true,
+     "main T2-T5 B-idle": true,
+     "main T2-T5 B-busy": true,
+     "main T2-T5 B-i2b": true,
+     "main 32K 192-item set": true
+    },
+    "int4_main_pass": true,
+    "int4_report_only_readings": {
      "NIAH-T1 A": true,
      "NIAH-T1 B-idle": true,
      "NIAH-T1 B-busy": true,
      "NIAH-T1 B-i2b": true,
-     "LongBench A": true,
-     "32K 192-item set": true
+     "LongBench A": true
     },
-    "int4_fails_some_reading": false,
-    "int4_failing_readings": [],
+    "int4_report_only_failing": [],
     "lowrank": {
      "cpu|idle": {
       "shown": {
@@ -1011,16 +1069,22 @@
     }
    },
    "qwen": {
-    "int4_readings": {
+    "int4_main_readings": {
+     "main T2-T5 A": true,
+     "main T2-T5 B-idle": true,
+     "main T2-T5 B-busy": true,
+     "main T2-T5 B-i2b": true,
+     "main 32K 192-item set": true
+    },
+    "int4_main_pass": true,
+    "int4_report_only_readings": {
      "NIAH-T1 A": true,
      "NIAH-T1 B-idle": true,
      "NIAH-T1 B-busy": false,
      "NIAH-T1 B-i2b": false,
-     "LongBench A": true,
-     "32K 192-item set": true
+     "LongBench A": true
     },
-    "int4_fails_some_reading": true,
-    "int4_failing_readings": [
+    "int4_report_only_failing": [
      "NIAH-T1 B-busy",
      "NIAH-T1 B-i2b"
     ],
