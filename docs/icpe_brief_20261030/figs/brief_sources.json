@@ -1,0 +1,252 @@
+{
+ "brief_o_overview.png": {
+  "evidence_rows": [
+   "M1",
+   "M3-g",
+   "S2",
+   "B1",
+   "B3-X1",
+   "C2-GPU",
+   "PAPER.md abstract"
+  ],
+  "values": {
+   "claims": [
+    "12.082 s -> 1.2412 s",
+    "11.0-40.7%",
+    "6.8x",
+    "30.7-62.9%",
+    "6.5 pp",
+    "FreeInference 0.30% (CPU 128 GiB)",
+    "Mooncake 50.5%",
+    "typing hint 0.81"
+   ]
+  }
+ },
+ "brief_0_story.png": {
+  "evidence_rows": [
+   "A2",
+   "A1''",
+   "A1'",
+   "B1",
+   "B3-X1",
+   "B3-T4",
+   "M1",
+   "M3-g",
+   "S2",
+   "C2-GPU"
+  ],
+  "values": {
+   "rows": [
+    "假設一: H200 上 16 組比較 0 組贏；TTFT 差 −0.37～+1.16%",
+    "轉向: 最慢那層 12.1 秒 → 1.24 秒，快 11.0–40.7%",
+    "意外: 同一種做法差 6.8 倍（CPU 記憶體層）",
+    "GPU 共用: 回答快 30.7–62.9%，別的工作最多慢 6.5 pp（模擬）",
+    "假設二: agent 紀錄最多 0.30%；對話紀錄最多 50.5%",
+    "免費訊號: 拿到完美預取改善量的 0.81"
+   ],
+   "transitions": [
+    "▼ 因為寫入時不用聰明（位置到搬的時候一樣看得到），\n所以改看回來的那一刻：我採用 Cake 當底，再把 KV 壓成 INT4",
+    "▼ 因為 CPU 層搬得快，INT4 省下的搬運有限，\n所以把「怎麼解壓」當獨立變數：我採用兩種解壓實作並列比較",
+    "▼ 因為真實服務的 GPU 不會只做搬回，\n所以讓搬回和別的工作同時跑：我採用 MPS，對照 stream 共用",
+    "▼ 因為預測的價值要在最好的固定做法之上量，\n所以以上面的做法當底：我採用完美預測（oracle）量上限",
+    "▼ 因為對話紀錄上預取有空間、但蓋預測器要花功夫，\n所以找免費的替代：我採用「使用者一開始打字」當預取訊號"
+   ]
+  }
+ },
+ "brief_m_method.png": {
+  "evidence_rows": [
+   "B6",
+   "§0",
+   "§3.1-3.4 of PAPER.md"
+  ],
+  "values": {
+   "panel_values": "no plotted data; B6 ratio range 0.911–0.987; ladder bars are schematic"
+  }
+ },
+ "brief_n_lookup.png": {
+  "evidence_rows": [
+   "M1",
+   "E3",
+   "M3-f",
+   "M3-g"
+  ],
+  "values": {
+   "cpu_one_shot_gain_busy": {
+    "Llama": 23.1,
+    "Qwen": 54.2
+   },
+   "slow_tier_gain_range": [
+    11.0,
+    40.7
+   ],
+   "per_block_slowdown": [
+    1.52,
+    3.52
+   ],
+   "always_cake_mean_extra_pct": 6.7,
+   "b16_gap_pct": 10.4
+  }
+ },
+ "brief_a_tier_time.png": {
+  "evidence_rows": [
+   "M1",
+   "§0 b*"
+  ],
+  "values": {
+   "tiers": [
+    "CPU\n記憶體",
+    "b16\n8.83 GiB/s",
+    "b32\n2.49",
+    "b48\n0.72",
+    "NFS 級\n0.33"
+   ],
+   "bf16_full_load_s": [
+    0.0852,
+    0.453,
+    1.6071,
+    5.5389,
+    12.082
+   ],
+   "int4_cake_s": [
+    0.029,
+    0.1883,
+    0.3772,
+    0.8765,
+    1.2412
+   ],
+   "full_recompute_s_measured_tiers": [
+    2.104,
+    2.105,
+    2.106,
+    2.106
+   ],
+   "ratio_NFS_bf16_over_int4cake": 9.73,
+   "ratio_note": "arithmetic from the two M1 cells"
+  }
+ },
+ "brief_b_dequant.png": {
+  "evidence_rows": [
+   "M1",
+   "M3-g"
+  ],
+  "values": {
+   "labels": [
+    "BF16\n整段搬回",
+    "BF16\nCake",
+    "INT4 整段搬回\n逐塊解壓",
+    "INT4 整段搬回\n一次拆完"
+   ],
+   "seconds": [
+    0.2383,
+    0.1208,
+    0.2325,
+    0.0342
+   ],
+   "ratio_M3g": "6.79 (seed 310) / 6.85 (seed 311)"
+  }
+ },
+ "brief_c_mps.png": {
+  "evidence_rows": [
+   "M4",
+   "S2",
+   "S3"
+  ],
+  "values": {
+   "Llama · chunked prefill 背景 · 對話 trace": [
+    [
+     0.801,
+     0.0
+    ],
+    [
+     0.777,
+     50.4
+    ],
+    [
+     0.668,
+     71.7
+    ],
+    [
+     0.643,
+     77.8
+    ]
+   ],
+   "Llama · chunked prefill 背景 · agent trace": [
+    [
+     0.937,
+     0.0
+    ],
+    [
+     0.937,
+     62.9
+    ],
+    [
+     0.772,
+     76.0
+    ],
+    [
+     0.752,
+     79.5
+    ]
+   ],
+   "Llama · mixed 背景 · 對話 trace": [
+    [
+     0.697,
+     0.0
+    ],
+    [
+     0.632,
+     33.2
+    ],
+    [
+     0.607,
+     33.7
+    ],
+    [
+     0.602,
+     36.3
+    ],
+    [
+     0.47,
+     44.7
+    ]
+   ]
+  }
+ },
+ "brief_d_prediction_ceiling.png": {
+  "evidence_rows": [
+   "B1",
+   "B3-X1",
+   "B3-T5",
+   "B3-T4",
+   "fig9_fi_capacity.sources.json"
+  ],
+  "values": {
+   "mooncake_conv_cpu128_prefetch_pct": 50.5,
+   "mooncake_conv_cpu128_eviction_pct": 27.6,
+   "fi_cpu128_prefetch_pct": 0.223,
+   "fi_cpu128_eviction_pct": 0.303,
+   "fi_cpu32_prefetch_max_pct": 4.886,
+   "fi_cpu32_eviction_max_pct": 11.808,
+   "fi_cpu128_hit_rate_pct": 99.29
+  }
+ },
+ "brief_e_typing_hint.png": {
+  "evidence_rows": [
+   "C2-GPU"
+  ],
+  "values": {
+   "CPU16": {
+    "LRU_s": 0.278,
+    "HINT_PF_s": 0.237,
+    "O_PF_s": 0.228,
+    "hint_over_oracle": 0.81
+   },
+   "CPU32": {
+    "LRU_s": 0.272,
+    "HINT_PF_s": 0.237,
+    "O_PF_s": 0.228,
+    "hint_over_oracle": 0.79
+   }
+  }
+ }
+}
