@@ -392,7 +392,7 @@ def fig_lookup():
                                       "per_block_slowdown": [1.52, 3.52], "always_cake_mean_extra_pct": 6.7, "b16_gap_pct": 10.4}, ["M1", "E3", "M3-f", "M3-g"])
 
 
-# ------------------------------------------------------------------ O: one-glance overview (problem -> how -> what we found)
+# ------------------------------------------------------------------ helpers shared with make_paper_overview.py
 PAPER_TEXT = (PAPER / "PAPER.md").read_text(encoding="utf-8")
 
 
@@ -402,87 +402,7 @@ def chkp(*literals):
         assert lit in PAPER_TEXT, f"{lit!r} not in PAPER.md"
 
 
-def fig_overview():
-    chkp("11.0–40.7%", "6.8 倍", "30.7–62.9%", "6.5 個百分點", "50.5%", "0.81", "12.082", "1.2412")
-    chk("| B3-X1 |", "0.30%")
-    from matplotlib.patches import FancyBboxPatch
-    GRN, GREY, GOLD, RED = "#1f8f5f", "#52514e", "#c58a10", "#c8472f"
-    fig = plt.figure(figsize=(11.0, 7.0))
-    ax = fig.add_axes([0.005, 0.005, 0.99, 0.99])
-    ax.set_xlim(0, 16.6); ax.set_ylim(0, 11.4); ax.axis("off")
-
-    def card(x, w, col, title):
-        ax.add_patch(FancyBboxPatch((x, 1.0), w, 9.6, boxstyle="round,pad=0.02,rounding_size=0.18", fc="white", ec=col, lw=2.2))
-        ax.add_patch(FancyBboxPatch((x, 9.8), w, 0.8, boxstyle="round,pad=0.02,rounding_size=0.18", fc=col, ec=col, lw=2.2))
-        ax.text(x + w / 2, 10.2, title, color="white", fontsize=14, fontweight="bold", ha="center", va="center")
-
-    def arrow(x0, x1, y=5.8):
-        ax.annotate("", xy=(x1, y), xytext=(x0, y), arrowprops=dict(arrowstyle="-|>", lw=2.6, color=INK2, shrinkA=0, shrinkB=0, mutation_scale=20))
-
-    xs, ws = [0.1, 5.4, 11.0], [4.6, 5.2, 5.5]
-    card(xs[0], ws[0], GREY, "要解決的問題")
-    card(xs[1], ws[1], BLUE, "我們怎麼做")
-    card(xs[2], ws[2], GRN, "我們發現")
-    arrow(xs[0] + ws[0] + 0.03, xs[1] - 0.03); arrow(xs[1] + ws[1] + 0.03, xs[2] - 0.03)
-
-    # ---- column 1: the problem
-    x0 = xs[0] + 0.3
-    def tier(y, label, fc, ec, dashed=False):
-        ax.add_patch(FancyBboxPatch((x0, y), 2.5, 0.95, boxstyle="round,pad=0.02,rounding_size=0.1", fc=fc, ec=ec, lw=1.8, ls=(0, (4, 3)) if dashed else "-"))
-        ax.text(x0 + 1.25, y + 0.475, label, ha="center", va="center", fontsize=10.5, fontweight="bold")
-    tier(8.35, "GPU", "#dbe8fb", BLUE)
-    tier(7.05, "CPU 記憶體", "#f6f5f1", INK2)
-    tier(5.75, "慢儲存\n（SSD／網路）", "#f6f5f1", "#898781", True)
-    ax.annotate("", xy=(x0 + 2.85, 8.8), xytext=(x0 + 2.85, 6.0), arrowprops=dict(arrowstyle="-|>", lw=2.2, color=ORANGE, shrinkA=0, shrinkB=0, mutation_scale=16))
-    ax.text(x0 + 3.0, 7.4, "使用者\n回來時，\n先搬回\nGPU", fontsize=9.8, color=ORANGE, fontweight="bold", va="center", linespacing=1.3)
-    ax.text(x0, 5.0, "對話停下來時，KV 被移出 GPU\n（KV＝已算好的中間結果）\n32K 對話的 KV 有 4.0 GiB", fontsize=9.4, va="top", linespacing=1.45)
-    ax.annotate("", xy=(x0 + 4.0, 3.05), xytext=(x0, 3.05), arrowprops=dict(arrowstyle="<->", lw=1.3, color=INK, shrinkA=0, shrinkB=0))
-    ax.text(x0 + 2.0, 3.13, "使用者等的時間＝首字延遲 TTFT", ha="center", va="bottom", fontsize=9.2, fontweight="bold")
-    ax.add_patch(plt.Rectangle((x0, 2.15), 2.75, 0.6, fc=ORANGE, ec="none")); ax.text(x0 + 1.375, 2.45, "搬回 KV", color="white", ha="center", va="center", fontsize=9.8, fontweight="bold")
-    ax.add_patch(plt.Rectangle((x0 + 2.75, 2.15), 1.25, 0.6, fc="#898781", ec="none")); ax.text(x0 + 3.375, 2.45, "算新訊息", color="white", ha="center", va="center", fontsize=9)
-    ax.text(x0, 1.75, "搬得慢，使用者就等得久", fontsize=10.2, va="top", fontweight="bold")
-
-    # ---- column 2: how
-    x1 = xs[1] + 0.25
-    steps = [
-        ("先問", "① 回來時怎麼送回最快？", "格式（BF16／INT4）× 送法\n（整段搬回／重算／Cake）", "GPU 直接量 [實測]"),
-        ("再問", "② GPU 還要做別的事怎麼分？", "MPS（保留給搬回的比例）\nvs 單純共用", "trace 模擬 ＋ GPU 檢查"),
-        ("最後問", "③ 再加預測，還能省多少？", "「完美預測」的上限、寫入時預知、\n免費訊號", "trace 模擬 ＋ GPU 重播"),
-    ]
-    tops = [9.5, 6.95, 4.4]
-    for (tag, q, detail, how), top in zip(steps, tops):
-        ax.add_patch(FancyBboxPatch((x1, top - 2.35), ws[1] - 0.5, 2.35, boxstyle="round,pad=0.02,rounding_size=0.12", fc="#f6f5f1", ec="none"))
-        ax.text(x1 + 0.15, top - 0.1, tag, fontsize=9.2, color=INK2, va="top")
-        ax.text(x1 + 0.15, top - 0.45, q, fontsize=10.6, fontweight="bold", va="top")
-        ax.text(x1 + 0.15, top - 0.98, detail, fontsize=9.1, va="top", linespacing=1.4)
-        ax.text(x1 + 0.15, top - 1.95, how, fontsize=9.1, color=BLUE, fontweight="bold", va="top")
-    ax.text(x1, 1.55, "每一步的判定門檻，都在看到數字之前先登記", fontsize=9.4, color=INK, fontweight="bold", va="center")
-
-    # ---- column 3: findings
-    x2 = xs[2] + 0.25
-    finds = [
-        ("① 查表就夠", "慢儲存：INT4＋Cake，最慢那層\n12.1 秒 → 1.24 秒（快 11.0–40.7%）\nCPU 記憶體：看 INT4 怎麼解壓，\n差 6.8 倍", GRN, 2.6),
-        ("② MPS 是取捨旋鈕", "回答快 30.7–62.9%，別的工作\n最多慢 6.5 個百分點；保留越多給\n搬回，別的工作越慢", GOLD, 2.2),
-        ("③ 預測的價值有上限、看紀錄", "agent 紀錄：完美預測也省不到 15%\n（128 GiB 時只有 0.30%）\n對話紀錄：最多省 50.5%\n免費的打字訊號拿到 0.81\n寫入時預知：量不到收益", RED, 3.0),
-    ]
-    y = 9.5
-    for t, body, col, h in finds:
-        ax.add_patch(FancyBboxPatch((x2, y - h), ws[2] - 0.5, h, boxstyle="round,pad=0.02,rounding_size=0.12", fc="white", ec=col, lw=1.8))
-        ax.add_patch(plt.Rectangle((x2, y - h), 0.13, h, fc=col, ec="none"))
-        ax.text(x2 + 0.3, y - 0.12, t, fontsize=10.8, fontweight="bold", va="top", color=INK)
-        ax.text(x2 + 0.3, y - 0.65, body, fontsize=9.1, va="top", linespacing=1.45)
-        y -= h + 0.2
-
-    # ---- bottom banner
-    ax.add_patch(FancyBboxPatch((0.1, 0.05), 16.4, 0.75, boxstyle="round,pad=0.02,rounding_size=0.12", fc="#eef4fb", ec=BLUE, lw=1.6))
-    ax.text(8.3, 0.43, "一句話：先查表選好做法、再分 GPU；要不要蓋預測器，先量「完美預測」的上限再決定", ha="center", va="center", fontsize=11.5, fontweight="bold")
-    fig.savefig(OUT / "brief_o_overview.pdf", bbox_inches="tight", pad_inches=0.1)
-    fig.savefig(OUT / "brief_o_overview.svg", bbox_inches="tight", pad_inches=0.1)
-    save(fig, "brief_o_overview.png", {"claims": ["12.082 s -> 1.2412 s", "11.0-40.7%", "6.8x", "30.7-62.9%", "6.5 pp", "FreeInference 0.30% (CPU 128 GiB)", "Mooncake 50.5%", "typing hint 0.81"]},
-         ["M1", "M3-g", "S2", "B1", "B3-X1", "C2-GPU", "PAPER.md abstract"])
-
-
 if __name__ == "__main__":
-    for f in (fig_overview, fig_story, fig_method, fig_lookup, fig_a, fig_b, fig_c, fig_d, fig_e):
+    for f in (fig_story, fig_method, fig_lookup, fig_a, fig_b, fig_c, fig_d, fig_e):
         f()
     (OUT / "brief_sources.json").write_text(json.dumps(SOURCES, ensure_ascii=False, indent=1), encoding="utf-8")

@@ -1,27 +1,4 @@
 {
- "brief_o_overview.png": {
-  "evidence_rows": [
-   "M1",
-   "M3-g",
-   "S2",
-   "B1",
-   "B3-X1",
-   "C2-GPU",
-   "PAPER.md abstract"
-  ],
-  "values": {
-   "claims": [
-    "12.082 s -> 1.2412 s",
-    "11.0-40.7%",
-    "6.8x",
-    "30.7-62.9%",
-    "6.5 pp",
-    "FreeInference 0.30% (CPU 128 GiB)",
-    "Mooncake 50.5%",
-    "typing hint 0.81"
-   ]
-  }
- },
  "brief_0_story.png": {
   "evidence_rows": [
    "A2",
