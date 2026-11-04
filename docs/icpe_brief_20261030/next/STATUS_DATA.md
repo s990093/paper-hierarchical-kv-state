@@ -2,6 +2,21 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T00:20+08:00 — 使用者：「11/9 要搞定」→ 縮格子方案 A（要 h200 登記偏離）
+
+**使用者 11/5 原話**：「太久了 不行 目標5 天內搞定」「11/9 要搞定 注意喔」。之後在 AskUserQuestion 選了：
+- **方案 A**：
+  1. **CPU 規則 23 → 17**：拿掉 6 個事後穩健性版本 `O-DROP-H1800／-H3600`、`O-NOW-H1800／-H3600`、`O-ALL-H1800／-H3600`（PREREG §4 的 ④ 只列 O-PF、O-BEL／O-BELS、O-DROP、O-NOW、O-ALL）。17＝LRU、LRU2、ARC、S3FIFO、GDSF、PENS、FREQ2Q、LRU+NONE、LRU+2HW、LRU+2HA、LRU+RPF、O-BEL、O-BELS、O-DROP、O-NOW、O-PF、O-ALL。
+  2. **TTL 值 7 → 3**：**0.3、10、300 s**（TTLA、TTLB 都是；0.3＝CacheScout、300＝SAGA 的 TTL_max、10＝對數中點）。GPU 規則＝LRU、BEL、TTLA:{0.3,10,300}、TTLB:{0.3,10,300}（8 個）。少了 TTL 值 → ② 只會變弱 → 上限只會偏高；**事後規則（現在登記）：主結果裡 ④ 對 ② 上限 ≥10% 的每一格，用原登記的 7 個 TTL 補跑 ②，報告用補跑後的值**。
+  3. **所有登記的紀錄變體都跑主結果的主時間設定**（cake × ssd／b32／nfs × GPU 閒／忙）：CacheWise 12（前綴＝結構推得）、TraceLab 3（c1／c2／c4，前綴＝結構推得）、SemiAnalysis 12、Bailian 3（traceA、thinking、coder）、Mooncake 4、FreeInference 6 週；CPU 9 個容量照 PREREG §4。每個變體 6,174 個 job。
+  4. **敏感度只跑代表格**（不是全部格子）：每份紀錄 1 個變體——CacheWise N16 s1、TraceLab c1、SemiAnalysis N16 s1、Bailian coder、Mooncake conversation R1 與 toolagent R1、FreeInference 第 1 週（2026-05-17_2026-05-23）——× CPU **111.0625、128 GiB**，跑：nvme807（cake）、只載入（4 個慢層）、`wt`、預取進 GPU、快取命中前綴（只 CacheWise／TraceLab）、截斷 128K（PREREG §4 敏感度 1）。
+- **CPU 維持 32 worker**。
+- 預估〔算術，32 worker、沒加速〕：主結果約 84.8 h（CW 7.1、TL 40.2、SA 31.2、其他 6.4）＋代表格約 15 h ≈ **99 h**；icpe-sim 的 Engine 加速出來就會縮短。W4、W3、第二批功能另算。
+
+**需要 h200 做什麼**：把上面 1–4 寫進 PREREG「偏離 3」（使用者 11/5 在 icpe-data 決定；我這邊**還沒看任何正式結果**——正式模擬還沒開始，G1 還沒過）。也請一併登記前一節的：CacheWise 5 份＝400 個對話、前綴主結果＝結構推得／敏感度＝快取命中、resume 複本不去重、Bailian traceB 跳過。我會等偏離 3 出現在 `origin/icpe-next-a` 才分析任何正式輸出。
+
+**需要 icpe-sim 做什麼**：同上一節（Engine 加速）；另外 W4（7fd39f3）過 G1 後告訴我。
+
 ## 2026-11-05T00:15+08:00 — 使用者決定排程；請 icpe-sim 加速 Engine
 
 **使用者 11/5 的決定**（AskUserQuestion，這個 session）
