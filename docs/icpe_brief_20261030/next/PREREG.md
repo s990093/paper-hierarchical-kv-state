@@ -95,3 +95,13 @@
 3. **APC 分兩批**。原文：「**APC：第一批＝GPU-LRU（session 粒度下完全相同，不另外跑）；第二批再加 block 粒度**。……請 `h200` 現在就登記『block 粒度 APC 做好後加進 ②；在那之前的結果標明 ② 不含 block 粒度 APC，做好後重算』。」→ 第一批的每個結果都要標「② 不含 block 粒度 APC」；block 粒度 APC 做好後，受影響的格子全部重算。
 4. **8.07 那格改用未四捨五入的實測值**：慢層讀 **8.068 GiB/s**（`results/s3_h200/gfio/gfio_20261026-104426-s3-gfio.csv`，/tmp、循序 64 MiB、8 執行緒、6 次中位數〔實測〕），寫 8.068 × (1.9106543 ÷ 6.9811523)＝**2.2081 GiB/s**〔算術〕，`k_read` 3.306 不變。取代第 4 項的 8.07／2.209（四捨五入後的值；`icpe-sim` 23:17 用的是讀 8.068、寫 2.2087，兩個數字不是同一個讀值算的）。
 5. **補充說明（不改設定）：② 的組合方式**。STATUS_SIM 23:17 使用者決定 4 原文：「比較：**每個 CPU 對手都配**（GPU 規則 × CPU 規則全部組合，各取最快）。」→ ② 在每一格是「GPU 層規則 × CPU 層規則」全部組合裡最快的那個。
+
+### 偏離 3（2026-11-04T15:36:14Z；`h200` 準備 W6 的程式時發現 §5 有兩處引用錯誤，更正；另把 W6c、W6a 的實作細節寫死。W6 還沒有任何資料，GPU 沒有排）
+
+使用者 11/4 對「接下來做什麼」回「你決定」；`h200` 決定先把 W6 的 runner 與分析寫好（不送出）。
+
+1. **更正 §5 W6c 引用的校準 run**：模擬用的 V1 常數（`results/icpe_h200/p01/calib/calib_c1.csv`）來自 run **`20261022-205934-icpe-p01-c1`**（Slurm job 21653，`code/r_h200_icpe.sh` 的 `P01-C1`）：`M7_ATTN=fa3 M7_RES=<輸出目錄> python code/m7_calib.py c1 --reps 3 --max-chunks 80`（fa3＝P0-1 §2.3 的 Llama 勝者）。§5 原本寫的 `20261016-061311-m7h-c1` 是 V0（sdpa）的校準，**不是**模擬用的那份。→ W6c＝同一條指令（`M7_ATTN=fa3`），只改 `--max-chunks 256`；另外用 `code/m7_guard_run.py` 包 GpuWatcher（原本那次沒有包），被污染就照暴露重跑、最多 3 次。輸出 `results/icpe_next/a/w6c/`。
+2. **W6c 敏感度怎麼換 f(i)**（偏離 1 說「只把 f(i) 換成 W6c 實測的值」；`h200` 的解讀，使用者可以改）：**整份換**——第 0–255 塊都用 W6c 這一次量的中位數，256 塊以後用 W6c 256 個點的線性外插（`p3_fvar.c1_f` 同一套）；**不**把 V1 的 0–79 塊和 W6c 的 80–255 塊接在一起（兩天量的混在一條曲線上）。GPU 忙倍數照用 V1 的 `calib_c5.csv`。0–79 塊 W6c 對 V1 的比值只報告。給模擬用的目錄＝`results/icpe_next/a/w6c/calib_for_sim/`（`p3_fvar.py --variant V1 --calib <這個目錄>`）。
+3. **更正 §5 W6b**：§5 寫「要先讓 `code/icpe/x1_gpu.py` 支援 oracle 淘汰順序」——**它已經支援**：`x1_gpu.py` 的 `POLICIES5`＝LRU、FREQ2Q、O-BEL、HINT-PF、O-PF，T1G 已經在 GPU 上跑過 O-BEL（`results/icpe_h200/t1/gpu/p02/`，k＝8、CPU 128／256 GiB 縮小成 16／32）。W6b 真正缺的是 **O-ORD 的其他固定對手**（LRU2、ARC、S3FIFO、GDSF、PENS）不能在重播裡跑。W6b 要跑哪些做法、幾次：在 `x1_gpu.py` 改好之後、跑之前另外登記。
+4. **W6a 的實作細節**（不改判準）：新的 6 次（rep 0–5）寫到新的目錄 `results/icpe_next/a/w6a/`，**不**沿用 T1G 舊的 rep 0；跑的順序＝6 輪、每輪 6 個設定（CPU 128／256 × LRU／HINT-PF／O-PF）、輪內用 seed 20261105＋輪次打亂；被污染照暴露重跑、最多 3 次；分析程式 `code/icpe/next_a_w6_analyze.py w6a`（每個 rep 內配對：gap＝1 − TTFT(O-PF) ÷ TTFT(HINT-PF)，判定字 ANY_GE_5／ALL_LT_5／INCOMPLETE）。
+5. **runner**：`code/icpe/next_a_w6.sh`（`--part w6c|w6a`；`--dry-run` 已在 head node 跑過）。檔名不在 NEXT_PLAN §3b 的 `next_a_*.py` 樣式內（是 `.sh`），但只有 `h200` 用。

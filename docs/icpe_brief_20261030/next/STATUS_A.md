@@ -70,3 +70,16 @@
 **需要使用者決定什麼**：NEXT_PLAN 的 W8 與 §5.9 有上面 1、3、4 三處寫法要改（計畫檔只由使用者或規劃的 session 改，`h200` 不改）。
 
 **下一步**：`h200` 的三件事（W1、W8、PREREG）都做完了；等使用者指示。
+
+## 2026-11-04 23:40（台灣）
+
+**做完什麼**：使用者「你決定」→ `h200` 不改 NEXT_PLAN（W8 的更正寫在 `W8_source_check.md` §4 當勘誤），改做 **W6 的準備（不送出、不用 GPU）**：
+- runner `code/icpe/next_a_w6.sh`（`--part w6c`：C1 延伸到 256 塊、fa3；`--part w6a`：C2 的 GPU 重播 36 個 run）；head node `--dry-run` 過。
+- 分析 `code/icpe/next_a_w6_analyze.py`（判準事先寫死）。用 T1G 舊的 rep 0 自檢：O-PF 比 HINT-PF 快 3.98%（128 GiB）／3.83%（256 GiB）、HINT-PF 拿到 O-PF 改善的 0.81／0.79（自檢輸出放 scratchpad，不進 results）。
+- PREREG **偏離 3**：W6c 引用的校準 run 更正成 V1 的 `20261022-205934-icpe-p01-c1`（fa3）；W6c 敏感度整份換 f(i)；W6b 的 `x1_gpu.py` 其實已能重播 O-BEL，缺的是 O-ORD 其他固定對手。
+
+**GPU 時間估計**〔估計〕：W6c 約 1–3 分鐘（80 塊 × 3 次花 17 s）；W6a 37 個 run × 約 16 分（T1G 每個 run 15–17 分）≈ 10 小時。
+
+**需要使用者決定什麼**：W6 什麼時候送出（使用者說現在不排）。
+
+**下一步**：等使用者指示。
