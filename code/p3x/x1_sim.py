@@ -1669,7 +1669,13 @@ class Engine:
         old_state = self.st[s]
         cw = 0
         rc, rl = self.ref_cpu, self.ref_live
-        for b in blocks:
+        # 加速（逐位元相同）：session 還在 CPU、舊清單是新清單的前綴 → 前綴的 +1／−1 互相抵銷（CPU 狀態的持有者的塊一定是
+        # BF16，所以 fmt、cpu_used、cw 都不變；遞減後 ref_cpu ≥ 1，_fix 不會做事）→ 只處理新加的尾巴、不用釋放舊的
+        k0 = 0
+        if old_state == S_CPU and self._fix_fast and old and len(old) <= len(blocks) and blocks[len(old) - 1] == old[-1] \
+                and blocks[:len(old)] == old:
+            k0 = len(old)
+        for b in (blocks[k0:] if k0 else blocks):
             rl[b] += 1
             rc[b] += 1
             fm = fmt[b]
@@ -1686,7 +1692,7 @@ class Engine:
                     self.spf[o] -= 1
                     self.pf_owner[b] = -1
         w = 0
-        if old_state in (S_CPU, S_SLOW):
+        if old_state in (S_CPU, S_SLOW) and not k0:
             if self._fix_fast:            # 加速（逐位元相同）：_fix 只有在「沒人持有」或「CPU 沒有持有者但有 BF16」時才做事
                 fix = self._fix
                 isc = old_state == S_CPU
@@ -1783,9 +1789,15 @@ class Engine:
         old_state = self.st[s]
         rl, rc, rg = self.ref_live, self.ref_cpu, self.ref_gpu
         gpf = self.gpf
+        # 加速（逐位元相同）：session 還在 GPU、舊清單是新清單的前綴 → 前綴的 ref_live／ref_gpu +1／−1 互相抵銷
+        # （ref_gpu ≥ 1，GPU 位元組不變；ref_cpu 不動，_fix 不會做事）→ 只處理新加的尾巴、不用釋放舊的
+        k0 = 0
+        if old_state == S_GPU and gpf is None and self._fix_fast and old and len(old) <= len(blocks) \
+                and blocks[len(old) - 1] == old[-1] and blocks[:len(old)] == old:
+            k0 = len(old)
         if gpf is None:                  # 加速（逐位元相同）：GPU 位元組是整數，累加順序不影響
             nn = 0
-            for b in blocks:
+            for b in (blocks[k0:] if k0 else blocks):
                 rl[b] += 1
                 x = rg[b] + 1
                 rg[b] = x
@@ -1807,7 +1819,7 @@ class Engine:
         if old_state == S_CPU:
             self._order_remove(s)
         fmt = self.fmt
-        if old_state in (S_CPU, S_SLOW, S_GPU):
+        if old_state in (S_CPU, S_SLOW, S_GPU) and not k0:
             if self._fix_fast:
                 # 加速（逐位元相同）：每塊的遞減與 _fix 合成一個迴圈——_fix(b) 只讀寫 b 自己的狀態（和整數計數），
                 # 一個 session 的清單裡每塊只出現一次；_fix 只有在「沒人持有」或「CPU 沒有持有者卻有 BF16」時才做事
@@ -1875,7 +1887,11 @@ class Engine:
         old_state = self.st[s]
         cw = 0
         rc, rl = self.ref_cpu, self.ref_live
-        for b in blocks:
+        k0 = 0                            # 加速（逐位元相同），同原本路徑的前綴說明
+        if old_state == S_CPU and self._fix_fast and old and len(old) <= len(blocks) and blocks[len(old) - 1] == old[-1] \
+                and blocks[:len(old)] == old:
+            k0 = len(old)
+        for b in (blocks[k0:] if k0 else blocks):
             rl[b] += 1
             rc[b] += 1
             fm = fmt[b]
@@ -1892,7 +1908,7 @@ class Engine:
                     self.spf[o] -= 1
                     self.pf_owner[b] = -1
         w = 0
-        if old_state in (S_CPU, S_SLOW):
+        if old_state in (S_CPU, S_SLOW) and not k0:
             if self._fix_fast:            # 加速（逐位元相同），同原本路徑的說明
                 fix = self._fix
                 isc = old_state == S_CPU
@@ -1933,8 +1949,12 @@ class Engine:
         oldg = self.gsb[s] if self.gin[s] else None
         keep = bool(blocks) and self.st[s] != S_DROP
         gpf = self.gpf
+        g0 = 0                            # 加速（逐位元相同）：GPU 上舊的那份是新清單的前綴 → 前綴的 +1／−1 互相抵銷
+        if keep and oldg and gpf is None and len(oldg) <= len(blocks) and blocks[len(oldg) - 1] == oldg[-1] \
+                and blocks[:len(oldg)] == oldg:
+            g0 = len(oldg)
         if keep:
-            for b in blocks:
+            for b in (blocks[g0:] if g0 else blocks):
                 rg[b] += 1
                 if rg[b] == 1:
                     if gpf is not None and gpf[b] >= 0:
@@ -1943,7 +1963,7 @@ class Engine:
                         self.gpu_used += BF
         if gpf is not None and self.gspf[s] > 0:
             self._g_unprefetch(s, old, push=False)
-        if oldg is not None:
+        if oldg is not None and not g0:
             self._g_release(oldg)
         if keep:
             self.gsb[s] = list(blocks)

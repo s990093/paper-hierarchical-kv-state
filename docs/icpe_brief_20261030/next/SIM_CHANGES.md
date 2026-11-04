@@ -118,3 +118,15 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - 最後由 G1（Mooncake X1 sweep V1 對 H200 的輸出）再驗一次。
 - **快多少**（CacheWise N16 試跑檔、LRU、CPU 128 GiB、同一台、load 約 65–80；只有第 1 項時）：12 種時間設定 32.2 → 18.9 s；1 種 5.6 → 4.8 s。第 2 項的效果還沒量（NOT_MEASURED）。
 - **有利還是不利**：無（結果相同）。
+
+### 12. 加速：回合結束跳過「互相抵銷的前綴」（逐位元相同）
+
+- **改了什麼**：session 回來時如果它還在 CPU（原本路徑、wt）或還在 GPU（wb），而且舊清單是新清單的前綴，前綴那段的 refcount +1／−1 互相抵銷（CPU 狀態的持有者的塊一定是 BF16，fmt、cpu_used、寫入量都不變；GPU 的 ref ≥ 1，GPU 位元組不變；`_fix` 不會做事）→ 只處理新加的尾巴、不跑釋放舊清單的迴圈。只在沒有慢層容量上限、沒有預取進 GPU 時用（那兩個有副作用）。
+- **驗證**：跨版本對 ac0c56e，Mooncake 2 份 × 24 個 CPU 規則 × 5 種 GPU 設定的 job 指紋 240／240 相同（run `20261105-002409-icpe-sim-prefixskip-xcheck`）。
+- **快多少**：NOT_MEASURED。
+
+### 13. `x1_nb` 的記憶體（TraceLab）
+
+- **問題**（icpe-data 量到）：09fd521 的向量化版本讀 TraceLab 試跑檔時最大 RSS 29.3 GB（6b17191 的純 Python 版 6.8 GB）。原因：`.tolist()` 每一格都造一個新的 Python int（約 36 bytes × 2.2 億 × 2 個清單）；純 Python 版用 `setdefault` 讓同一個 id 共用一個 int 物件（每格只有 8 bytes 指標）。
+- **改了什麼**：用 numpy 的 object 陣列（每個 id、每個請求 index 一個共用的 int 物件）取值再 `.tolist()`；中間的大陣列用完就 `del`。值完全相同。
+- **驗證**（run `20261105-003415-icpe-sim-nb-mem`）：Mooncake 來回轉換與負面測試照舊通過；TraceLab 試跑檔 `prepare_nb` 的結果（full、acc、nall、B、n_blocks_full）和 6b17191 的純 Python 版**完全相同**；最大 RSS 10.8 GB、119 s（純 Python 版 151 s）。
