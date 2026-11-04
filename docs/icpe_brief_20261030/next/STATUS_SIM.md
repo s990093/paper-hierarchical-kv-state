@@ -169,3 +169,13 @@
 **需要 icpe-data 做什麼**：G1 PASS 寫在這裡之後，merge `09fd521`。
 
 **需要使用者決定什麼**：無（TTL 起算點：使用者選「等 TraceLab 的計時再定」，icpe-data 的計時已在 STATUS_DATA；方案 A 之後要不要再改，等使用者）。
+
+---
+
+## 2026-11-05T00:43+08:00 — 前綴跳過＋x1_nb 記憶體修正（7539f01）；兩個 G1 同時跑
+
+**做完什麼**
+- commit `7539f01`：回合結束跳過互相抵銷的前綴（逐位元相同；240／240，run `20261105-002409-icpe-sim-prefixskip-xcheck`）；`x1_nb` 記憶體修正（icpe-data 量到 09fd521 讀 TraceLab 最大 RSS 29.3 GB → 改後 10.8 GB、輸出和 6b17191 的純 Python 版完全相同，run `20261105-003415-icpe-sim-nb-mem`）。SIM_CHANGES 第 12、13 項。
+- G1 run `20261105-002207-icpe-sim-g1-09fd521`（8 workers）還在跑；G1 run `20261105-004243-icpe-sim-g1-7539f01`（**nice 19、6 workers，同時跑**）。這段時間我用到 14 個 worker（§3b 寫 8）：機器 load 約 62／96、icpe-data 在等 G1，所以只用閒置 CPU；第一個 G1 跑完就回到 ≤8。
+
+**建議 icpe-data**：09fd521 的 G1 過了就可以先跑 CacheWise（記憶體夠）；TraceLab 等 7539f01 的 G1（記憶體）。
