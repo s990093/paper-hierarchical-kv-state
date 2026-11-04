@@ -2,6 +2,39 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T00:10+08:00 — 試跑計時完成；全部正式格子的 job 數與預估總時間
+
+**試跑計時**（全部用 icpe-next-sim 6b17191 的 git archive、GPU 層 111.0625 GiB wb；輸出不進 results/；機器 load 65–87／96）
+| run | 紀錄 | 內容 | 每個 job（秒） | 每個 worker RSS |
+|:--|:--|:--|:--|:--|
+| `20261104-235049-icpe-data-trial-cw-timing` | CacheWise N16 s1（943 萬 chunk） | CPU 64；LRU、GDSF、O-BEL、O-DROP、O-PF、O-ALL、LRU+RPF × GPU LRU／BEL／TTLA:10／TTLB:10；16 視角 LRU、O-BEL | 7.6–13.7（TTLA:10 約 12.5；16 視角 8.0–9.1） | 0.44 GB |
+| `20261104-235858-icpe-data-trial-cw-timing2` | 同上 | CPU 8、1024；LRU2、PENS、ARC、S3FIFO、O-NOW、O-ALL-H3600 × GPU LRU／TTLA:0.3 | GPU LRU 7.6–9.5；**TTLA:0.3 15.8–28.1** | 0.44 GB |
+| `20261104-235922-icpe-data-trial-cw-timing3` | 同上 | CPU 1024；O-BEL、O-BELS × GPU LRU／BEL | 7.1–9.0 | 0.44 GB |
+| `20261104-235459-icpe-data-trial-tl-timing` | TraceLab c1（2.23 億 chunk、665,453 請求） | CPU 64；LRU、O-BEL、O-PF × GPU LRU／TTLA:10 | **200–304**（中位約 250）；載入約 3.5 分鐘（舊版純 Python x1_nb；icpe-sim 3140f3c 已向量化） | **4.75 GB**（parent 峰值 6.8 GB） |
+
+每個 chunk 存取的成本兩份紀錄幾乎相同：CacheWise 11 s ÷ 943 萬＝1.17 µs，TraceLab 250 s ÷ 2.23 億＝1.12 µs〔算術〕→ SemiAnalysis（4,221 萬 chunk）用 1.15 µs/chunk 推算＝48.5 s/job（**推算，沒量**）。
+
+**job 數**（6b17191 的 `jobs_for` 數的；每個紀錄變體）：主結果（wb、預取到 CPU）全部時間設定＝49,014（分三批跑，結果和一次跑相同：① 主時間設定 cake×{ssd,b32,nfs}×{閒,忙}＝**18,342**、② nvme807×cake＝6,318、③ load×4 慢層＝24,354）；`wt` 再 49,014；預取進 GPU 11,520（其中主時間設定 4,320）。
+
+**預估總時間**〔算術：job 數 × 每 job 秒 ÷ 32 worker；每 job 秒的來源見最後一欄〕
+| 紀錄 | 變體 | 每 job 秒 | 主·主時間設定 | 主·全部時間設定 | wt | 預取進 GPU | 前綴＝快取（CW／TL） | 每 job 秒的來源 |
+|:--|--:|--:|--:|--:|--:|--:|--:|:--|
+| CacheWise | 12 | 11.0 | 21.0 h | 56.2 h | 56.2 h | 13.2 h | 56.2 h | 試跑實測 7.6–28.1 s，加權估 11 |
+| TraceLab | 3 | 250.0 | 119.4 h | 319.1 h | 319.1 h | 75.0 h | 319.1 h | 試跑實測 200–304 s（CPU 64；TTLA:0.3 沒量） |
+| SemiAnalysis | 12 | 48.5 | 92.7 h | 247.8 h | 247.8 h | 58.3 h | — | 推算：1.15 µs/chunk |
+| Bailian（traceA、thinking、coder） | 3 | 2.0 | 1.0 h | 2.6 h | 2.6 h | 0.6 h | — | 推算（沒量） |
+| Mooncake | 4 | 20.7 | 13.2 h | 35.2 h | 35.2 h | 8.3 h | — | G0 舊程式實測（沒開 GPU 層） |
+| FreeInference（6 週） | 6 | 5.0 | 4.8 h | 12.8 h | 12.8 h | 3.0 h | — | H200 T1／T5 每 job 中位 2.3–4.1 s（別台） |
+| **合計** | | | **252 h** | **674 h** | 674 h | 158 h | 375 h | |
+
+- 第一批全部（主＋wt＋預取進 GPU＋快取前綴）≈ **1,881 h ≈ 78 天**（32 worker）。還沒算：截斷 128K 的敏感度（每份紀錄再一份主結果）、第二批（慢層容量、block 粒度 APC 重算、排隊、W4 雜訊）＝NOT_ESTIMATED（程式還沒有）。
+- ICPE 要的：CacheWise 主·主時間設定 **21 h**；TraceLab 主·主時間設定 **119 h**（只跑 c1＝原始到達 **40 h**）。從 11/5 00:10 到 11/9 20:00 約 116 h。
+- 記憶體：TraceLab 32 個 worker × 4.75 GB ≈ 152 GB（這台可用約 324 GB、swap 已滿）。
+
+**需要 icpe-sim 做什麼**：你提過可以加速 Engine（結果要逐值相同）——TraceLab 的單一 job 是 4 分鐘級、全部格子是 78 天級，這是關鍵路徑。要不要做、先做哪個由使用者決定（我會問）。
+
+**需要使用者決定什麼**：ICPE 前跑不完的部分怎麼取捨（見下一個問題）；Bailian traceB。
+
 ## 2026-11-05T00:00+08:00 — G0 通過；Bailian 兩個新發現
 
 **做完什麼**
