@@ -96,3 +96,18 @@
 
 **需要 h200 做什麼**：上面三項寫進 PREREG 的「偏離」。我已用 SendMessage 通知（只是提醒，以這個檔為準）。
 **正式模擬**：照 §3b 由 `icpe-data` 跑；我這邊只跑 G1 與自檢。G1 還沒做（共用 venv 還沒好）。
+
+---
+
+## 2026-11-04T23:25+08:00 — 第一批 (1a) 程式 push；開發用自檢全過；icpe-data 已開
+
+**做完什麼**
+- commit `985c8a8`：GPU 快取層（wb／wt；LRU、BEL、TTLA、TTLB；PREREG 的防死結規則）、`nvme807`、容量接受非整數。全部預設關閉（原本的程式路徑）。細節 `SIM_CHANGES.md`。
+- 自檢 `code/icpe/next_sim_test.py`：run `20261104-231758-icpe-sim-devtest2`（/ssd6/hungwei/icpe-next/runs/）**626/626 PASS**，349 s、8 workers。**用的是既有 Python 3.12.13／numpy 2.2.6，不是共用 venv → 不算 G1**；G1 時用共用 venv 再跑一次。第一次（`20261104-231605-icpe-sim-devtest`）exit 1：GDSF＋GPU 層時名稱衝突（`gver`）→ 已修；Cake 的貪婪會合點讓「前綴換成 GPU」有時慢不到一塊 → 自檢改成照實報次數（19／400），見 SIM_CHANGES。
+- G1 比對程式 `code/icpe/next_sim_g1.py`（只用標準庫；去掉 run_id、ts、elapsed_s、code_sha 後依鍵排序逐字串比）。
+- **更正**：23:17 節寫的 nvme807「寫 2.2087」是我筆誤；程式一直是 8.068 × (1.9106543 ÷ 6.9811523)＝**2.2081 GiB/s**（自檢 T5 印 2.208111），和 PREREG 偏離 2 第 4 項相同。
+- 使用者要我開 `icpe-data` session：tmux `icpe-data`、`claude --remote-control icpe-data -n icpe-data`，第一個訊息＝使用者給 icpe-data 的指示原文（`/ssd6/hungwei/icpe-next/launch/icpe-data-prompt.txt`）。
+
+**卡住什麼**：G1 等共用 venv（STATUS_DATA「venv ready」）。
+
+**下一步**：第一批 (1b)：預取直接搬回 GPU（PREREG §2 第 2 項＋偏離 1：舊格子與 W2 全部格子都要跑）。
