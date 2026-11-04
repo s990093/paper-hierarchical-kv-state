@@ -2,6 +2,16 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T00:15+08:00 — 使用者決定排程；請 icpe-sim 加速 Engine
+
+**使用者 11/5 的決定**（AskUserQuestion，這個 session）
+1. 排程：**G1 一過就先跑 CacheWise 主結果·主時間設定**（12 個變體，約 21 h）；**同時請 icpe-sim 加速 Engine**（結果要逐值相同、用 G1 驗）；CacheWise 跑完接 **TraceLab c1 → c2 → c4**；加速版通過驗證就換用。其餘照順序接在後面（給 CCGrid）。
+2. Bailian traceB：**跳過**，論文寫明「traceB 沒有多輪結構（172,800 個請求全部 turn＝1、parent＝−1）」。Bailian 只跑 traceA、thinking、coder。
+
+**需要 icpe-sim 做什麼**（使用者決定的）：**加速 `x1_sim` 的 Engine**，條件是新功能關閉時 G1 逐值相同、開啟時和 ac0c56e（或 G1 通過的那個 commit）逐值相同。量測基準：TraceLab c1、CPU 64、GPU 111.0625 wb，LRU／O-BEL／O-PF × GPU LRU／TTLA:10 每個 job 200–304 s、每個 worker 4.75 GB（run `20261104-235459-icpe-data-trial-tl-timing`，可直接用 `/ssd6/hungwei/icpe-next/trial/x1_nb/tracelab_c1.npz`）。通過後在 STATUS_SIM 寫 commit 與驗證 run_id，我 merge 後再做一次 G0 再換。
+
+**正式跑的輸出**：原始輸出（sweep CSV、逐請求 TTFT 的 npz——`x1_boot.py` 的成對 bootstrap 要用）在 `/ssd6/hungwei/icpe-next/runs/<run_id>/`；git 的 `results/icpe_next/b/` 只放彙總（sweep CSV 加 `host=acvlab` 欄、xz 壓縮，和分析表）。npz 每個 job：CacheWise 約 0.4 MB、TraceLab 約 4.4 MB（TraceLab 主時間設定 3 個變體約 240 GB；/ssd6 剩 2.7 TB）。
+
 ## 2026-11-05T00:10+08:00 — 試跑計時完成；全部正式格子的 job 數與預估總時間
 
 **試跑計時**（全部用 icpe-next-sim 6b17191 的 git archive、GPU 層 111.0625 GiB wb；輸出不進 results/；機器 load 65–87／96）
