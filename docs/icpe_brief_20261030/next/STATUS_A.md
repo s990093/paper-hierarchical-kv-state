@@ -83,3 +83,14 @@
 **需要使用者決定什麼**：W6 什麼時候送出（使用者說現在不排）。
 
 **下一步**：等使用者指示。
+
+## 2026-11-04 23:50（台灣）
+
+**做完什麼**：使用者「W6 now」→ 送出 W6（W6b 的程式還沒寫，不送）。
+- **W6c**＝Slurm job **24443**（`icpe-next-w6c`，1 小時上限）；**W6a**＝job **24444**（`icpe-next-w6a`，14 小時上限）。從 worktree 送出，程式版本＝`9a6523d`（開跑時 runner 改執行 worktree 裡的版本；job 跑完之前不原地改 `code/icpe/next_a_w6.sh`）。
+- 排法（使用者選「改排在那些任務後」）：兩個都 `afterany` 掛在同一個 Slurm 使用者的 5 個 DL_Lab5 job 後面（執行中 24269、24282；排隊中 24265、24270、24271），W6a 另外掛在 W6c 後面。不動 DL_Lab5 的 job。實驗室帳號 4 張卡目前用滿（MaxGRESPerAccount），所以實際開跑還要等帳號有空卡。
+- 輸出：`results/icpe_next/a/w6c/`、`results/icpe_next/a/w6a/`；分析：`code/icpe/next_a_w6_analyze.py w6c`、`w6a`（head node）。
+
+**卡住什麼**：無（在排隊）。風險：如果之後又有新的 DL_Lab5 job 在 W6 跑的途中開跑，runner 只在開跑時檢查，途中的主機爭用 GpuWatcher 看不到——跑完要對 `cotenants_end.txt` 與 sacct 查重疊。
+
+**需要使用者決定什麼**：無。
