@@ -14,6 +14,9 @@
   T4 restore_gpu_prefix：隨機 layout，lay[0:g]＝GPU：g＝L 時 TTFT＝新 block 的重算時間、nC＝nS＝0、重算數＝n_all−L；
      同一個 layout 把前綴換成 GPU（全新 I/O 線）：只載入不會變慢；Cake 最多慢「一塊的成本」（貪婪會合點的離散誤差，次數照報）。
   T5 nvme807：常數＝G-fio CSV 的值；寫＝讀×SSD 級寫讀比；k_read＝SSD 級。
+  T6 gpu_pf_audit：預取直接搬回 GPU（PREREG §2 第 2 項）：wb／wt × {O-PF, LRU+RPF, O-ALL} × GPU 規則，GPU 4 GiB、CPU 32 GiB、
+     前 N 個請求，每 25 步稽核（含預取進 GPU 的塊：主人、計數、GPU 位元組）；有預取進 GPU 的塊被用到（報次數）。
+  T7 gpu_pf_tiny_eq_nopf：GPU 1 byte（放不下任何一塊）時，預取目的地＝GPU 的 O-PF／LRU+RPF ≡ 同樣設定但沒有預取的 LRU（逐位元）。
 只用 CPU；不碰 GPU。
 """
 from __future__ import annotations
@@ -144,6 +147,33 @@ def t4(rec):
         f"Cake 慢了不到一塊（貪婪會合點的離散誤差）{slack}")
 
 
+def t6_job(arg):
+    trace, pol, gpol, wm, nsub = arg
+    P = XS.prep(trace)
+    sub = dict(P)
+    for k in ("full", "nall", "tl", "kindc", "sessl", "parentl"):
+        sub[k] = P[k][:nsub]
+    keys = [("nfs", "busy", "cake")]
+    try:
+        views = XS.make_views(_K, sub, keys)
+        eng = XS.Engine(sub, pol, 32 * GiB, views, _K, check=25, gpu_cap=4 * GiB, gpu_policy=gpol, gpu_write=wm, pf_target="gpu")
+        eng.run()
+        return (f"gpu_pf_audit[{trace},{wm},{pol},G:{gpol}]", True,
+                f"前 {nsub} 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 {views[0].pf_bytes / GiB:.1f} GiB、GPU 命中 block {int(views[0].nG.sum())}、取消預取 {eng.n_unpf}")
+    except AssertionError as e:
+        return f"gpu_pf_audit[{trace},{wm},{pol},G:{gpol}]", False, repr(e)
+
+
+def t7_job(arg):
+    trace, pol, wm = arg
+    P = XS.prep(trace)
+    keys = [("nfs", "busy", "cake")]
+    _, v0 = run(P, "LRU", 128, keys, gpu_cap=1, gpu_policy="LRU", gpu_write=wm)
+    _, v1 = run(P, pol, 128, keys, gpu_cap=1, gpu_policy="LRU", gpu_write=wm, pf_target="gpu")
+    eq = fingerprint(v0) == fingerprint(v1)
+    return f"gpu_pf_tiny_eq_nopf[{trace},{wm},{pol}]", eq, "逐位元相同" if eq else "不同"
+
+
 def t5(rec):
     tp = __import__("json").load(open(XS.PF.TIER_PARAMS))
     x = XS.extra_slow("nvme807", tp)
@@ -186,8 +216,10 @@ def main():
     J1 = [(tr, p, c, gp) for tr in a.traces for c in a.cpu for p in pols for gp in GPOLS]
     J2 = [(tr, p, gp, wm, a.audit_n) for tr in a.traces for p in pols for gp in GPOLS for wm in XS.GPU_WRITES]
     J3 = [(tr, p, c) for tr in a.traces for c in a.cpu for p in pols]
+    J6 = [(tr, p, gp, wm, a.audit_n) for tr in a.traces for p in ("O-PF", "LRU+RPF", "O-ALL") for gp in GPOLS for wm in XS.GPU_WRITES]
+    J7 = [(tr, p, wm) for tr in a.traces for p in ("O-PF", "LRU+RPF") for wm in XS.GPU_WRITES]
     with get_context("fork").Pool(a.workers) as pool:
-        for fn, J in ((t1_job, J1), (t2_job, J2), (t3_job, J3)):
+        for fn, J in ((t1_job, J1), (t2_job, J2), (t3_job, J3), (t6_job, J6), (t7_job, J7)):
             for res in pool.imap(fn, J):
                 rec(*res)
             print(f"[{fn.__name__}] {len(J)} 個，累計 {time.time() - t0:.0f}s", flush=True)

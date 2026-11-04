@@ -44,7 +44,26 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
 
 ---
 
+### 5. 預取直接搬回 GPU（`--pf-target gpu`；第一批 1b）
+
+- **改了什麼**（PREREG §2 第 2 項的敏感度；偏離 1：舊格子與 W2 全部格子）：預取規則（O-PF、LRU+RPF、O-ALL 的預取）與觸發時機不變（請求之間、I/O 線空著時），目的地改成 GPU。
+  - 候選＝不在 GPU 上、資料在 CPU 或慢層的 session（`wb`：被 GPU 逐出時、被 CPU 降級時成為候選；`wt`：GPU 那份被丟掉時、被 CPU 降級時）。
+  - 搬哪些：這個 session 存著、不在 GPU 上的全部塊，從最後一塊往前。CPU 上的 BF16 走 CPU 線（43.59 GiB/s）；慢層的 INT4 走慢層線＋反量化 d；放進 GPU 是 BF16（64 MiB／塊，佔 GPU 預算）。
+  - 騰空間：只准逐出預取規則認為「比候選者冷」的 GPU session（O-PF：下次回來比候選者晚；RPF：上次存取比候選者早）；`wb` 逐出照常寫 CPU。
+  - 回來時：預取進 GPU 的塊（layout 代碼 4）不用載入，只等預取完成；回合結束後變成常駐（同一份資料，GPU 位元組不重算）。GPU 超量時先照 GPU 規則逐出 session；GPU 上沒有 session（或 RPF）時才取消預取（同 CPU 預取的順序）。session 被丟掉時，它預取進 GPU 的塊一起丟。
+  - 沒有預取的 CPU 規則不產生 `pf_target＝gpu` 的 job（結果相同）；分析時用 `pf_target＝cpu` 那份。
+  - 預取迴圈先 pop 再處理（提早結束就推回）：`wb` 騰空間時 CPU 層可能降級別的 session、把新候選推進 heap。原本的 CPU 預取推進去的鍵一定比頂端大（O-PF：最後一塊的下次存取 ≥ 第一個獨有塊的下次存取 ＞ 候選者的；RPF：被降級的比候選者舊），所以沒有這個問題、沒有改。
+- **為什麼**：PREREG：只預取到 CPU，oracle 回來時還要付 CPU→GPU 載入，上限偏低，和「去對手最有利的地方測」相反。
+- **有利還是不利**：對預測有利（完美預取可以完全不付載入）；RPF 也一起受惠。
+
+### 6. 有 GPU 軸的分析 `code/icpe/next_sim_analyze.py`；`x1_sim analyze` 加防呆
+
+- `x1_sim analyze` 的樞紐表只看 `policy`（`aggfunc="first"`）：sweep 有 GPU 軸時會靜默蓋掉 → 現在直接停下、叫人用 `next_sim_analyze.py`。
+- `next_sim_analyze.py`：每格 ④＝元件的 oracle 規則 × GPU 不預測規則裡最快、②＝對手 CPU 規則 × GPU 不預測規則裡最快（PREREG 偏離 2 第 5 項）；O-GPU＝GPU-BEL × CPU 不預測規則 對 GPU 不預測規則 × CPU 不預測規則；O-ALL(report)＝(O-ALL, BEL)；① 基準 (LRU, LRU) 另列。只算數字、不下判定字。
+- 驗證：拿 H200 的 T1 V1 sweep（沒有 GPU 軸）跑，和 H200 的 `x1_headroom_components.csv` 1,152 列逐列相同（T_oracle、T_rival、headroom 差 0；write_saturated、oracle_policy、best_rival 全同；run `20261104-233301-icpe-sim-analyze-check`）。
+
+---
+
 ## 下一步（未實作）
 
-- **預取直接搬回 GPU**（PREREG §2 第 2 項的敏感度；設計見 STATUS_SIM 2026-11-04T23:17 節）。
-- 第二批：雜訊（PREREG 模型 P／M、B1／B2、10 seed）、慢層容量 ⌊0.5 × n_blocks_full⌋＋慢層淘汰（② O-ORD 那組、④ Belady）、排隊、W5、block 粒度的 APC。
+- 第二批：雜訊（PREREG 模型 P／M、B1／B2、10 seed）、慢層容量 ⌊0.5 × n_blocks_full⌋＋慢層淘汰（② O-ORD 那組、④ Belady）、排隊、W5、block 粒度的 APC（偏離 2 第 3 項）。

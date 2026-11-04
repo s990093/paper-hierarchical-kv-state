@@ -349,13 +349,14 @@ class View:
         end = max(rt, lc, ls, t0 + nbytes / rin)
         return end, (j + 1 if x >= 1.0 else j) if j >= 0 else 0, nC, nS
 
-    def restore(self, lay, blocks, L, n_all, t0, old_n, pf_done, g=0):
+    def restore(self, lay, blocks, L, n_all, t0, old_n, pf_done, g=0, gpf_done=None):
         """lay[i]∈{1: CPU BF16, 2: CPU INT4（預取）, 3: 慢層 INT4}，i<L。回傳 (TTFT, 還原舊 context, nC, nS, 重算數)。
-        ICPE next：lay[0:g]＝0（已在 GPU，不用還原）；Cake 從第 g 塊開始重算、從最後一塊往前載入。g＝0 時和原本逐位元相同。"""
+        ICPE next：lay[0:g]＝0（已在 GPU，不用還原）；Cake 從第 g 塊開始重算、從最後一塊往前載入。g＝0 時和原本逐位元相同。
+        4＝預取進 GPU 的塊（已反量化成 BF16）：不用載入，只等預取完成（gpf_done）。"""
         f, cpu, slow, d, i4 = self.f, self.cpu, self.slow, self.d, self.i4
         nC = nS = 0
         if self.mode == "cake" and self.planner == "stair":
-            assert g == 0, "STAIR 不支援 GPU 層"
+            assert g == 0 and gpf_done is None, "STAIR 不支援 GPU 層"
             end, meet, nC, nS = self._stair(lay, blocks, L, t0, pf_done)
         elif self.mode == "cake":
             p, q, rt, lt = g, L - 1, t0, t0
@@ -372,6 +373,9 @@ class View:
                         pd = pf_done[blocks[q]]
                         lt = cpu.read(i4, lt if lt > pd else pd) + d
                         nC += 1
+                    elif k == 4:
+                        pd = gpf_done[blocks[q]]
+                        lt = lt if lt > pd else pd
                     else:
                         lt = slow.read(i4, lt) + d
                         nS += 1
@@ -389,6 +393,9 @@ class View:
                     pd = pf_done[blocks[i]]
                     lt = cpu.read(i4, lt if lt > pd else pd) + d
                     nC += 1
+                elif k == 4:
+                    pd = gpf_done[blocks[i]]
+                    lt = lt if lt > pd else pd
                 else:
                     lt = slow.read(i4, lt) + d
                     nS += 1
@@ -404,7 +411,8 @@ class View:
 
 # ================================================================== 引擎
 class Engine:
-    def __init__(self, P, policy, cap_bytes, views, K, gdsf_view=None, check=False, gpu_cap=0, gpu_policy="LRU", gpu_write="wb"):
+    def __init__(self, P, policy, cap_bytes, views, K, gdsf_view=None, check=False, gpu_cap=0, gpu_policy="LRU", gpu_write="wb",
+                 pf_target="cpu"):
         self.P = P
         self.full, self.nall, self.acc, self.t = P["full"], P["nall"], P["acc"], P["tl"]
         self.kind, self.sess, self.parent = P["kindc"], P["sessl"], P["parentl"]
@@ -472,8 +480,12 @@ class Engine:
         self.pf_sessions = set()
         # ICPE next：GPU 快取層（gpu_cap＝0＝關閉，下面都不建、step 走原本的路徑）
         self.G = gpu_cap
+        self.pf_target = pf_target
+        self.gpf = None               # 預取進 GPU 的塊的主人（只有 pf_target＝gpu 時才建）
         if self.G > 0:
             self._gpu_init(gpu_policy, gpu_write, B, S, len(P["full"]))
+        else:
+            assert pf_target == "cpu", "預取搬回 GPU 要開 GPU 層"
 
     # ---------------------------------------------------------- GPU 快取層（ICPE next）
     def _gpu_init(self, gpu_policy, gpu_write, B, S, nreq):
@@ -500,6 +512,12 @@ class Engine:
             self._fix = self._fix_g   # GPU 上的持有者也算活著（見 _fix_g）
         for v in self.views:
             v.nG = np.zeros(nreq, np.int32)
+        assert self.pf_target in ("cpu", "gpu"), self.pf_target
+        if self.pf_target == "gpu" and self.pf:     # PREREG §2 第 2 項的敏感度：預取直接搬回 GPU
+            self.gpf = [-1] * B
+            self.gpf_done = [0.0] * B
+            self.gspf = [0] * S
+            self.gpf_sessions = set()
 
     def _gbl(self, s):
         return self.sb[s] if self.gwrite == "wb" else self.gsb[s]
@@ -579,6 +597,8 @@ class Engine:
         self._order_add(x)
         self.n_gevict += 1
         self.g_wb_blocks += cw
+        if self.gpf is not None:
+            self._pf_push(x)
         return cw
 
     def _g_free_wt(self, x):
@@ -587,11 +607,20 @@ class Engine:
         self._g_release(self.gsb[x])
         self.gsb[x] = None
         self.n_gevict += 1
+        if self.gpf is not None and self.st[x] in (S_CPU, S_SLOW):
+            self._pf_push(x)
 
     def _g_enforce(self, s_new, now):
         """GPU 已用 > 預算時逐出。回傳寫進 CPU 的 block 數（wt 永遠 0）。"""
         cw = 0
         while self.gpu_used > self.G:
+            if self.gpf is not None and self.gpf_sessions and (self.pf == "rpf" or not self.glru):
+                if self.pf == "rpf":      # 同 CPU 預取：近期版預取進來的比 GPU 上的都舊，先清
+                    u = min(self.gpf_sessions, key=lambda x: self.last[x])
+                else:
+                    u = max(self.gpf_sessions, key=lambda x: (self.sT[x], -self.last[x]))
+                self._g_unprefetch(u, self.sb[u])
+                continue
             x = self._g_select(s_new, now)
             if self.gwrite == "wb":
                 cw += self._g_evict_wb(x)
@@ -616,6 +645,124 @@ class Engine:
                 v.slow.write(w * self.i4, exp)
             else:
                 self._g_free_wt(x)
+
+    # ---------------------------------------------------------- 預取直接搬回 GPU（PREREG §2 第 2 項的敏感度）
+    def _pf_push(self, s):
+        """s 離開 GPU、資料在 CPU 或慢層：變成預取候選（同 demote 裡的做法）。"""
+        if not self.sb[s]:
+            return
+        T = XT.next_access(self.acc, self.sb[s][-1], self.cur)
+        self.sT[s] = T
+        self.pfdone[s] = False
+        if self.pf == "opf" and T < INF:
+            heapq.heappush(self.pfheap, (T, s))
+        elif self.pf == "rpf":
+            heapq.heappush(self.pfheap, (-self.last[s], s))
+
+    def _gpf_claim(self, b):
+        """預取進 GPU 的塊被某個 session 的回合結束拿去當常駐（同一份資料，GPU 位元組不變）。"""
+        o = self.gpf[b]
+        self.gpf[b] = -1
+        self.gspf[o] -= 1
+        if self.gspf[o] <= 0:
+            self.gpf_sessions.discard(o)
+
+    def _g_unprefetch(self, s, bl, push=True):
+        """取消 s 預取進 GPU 的塊（bl＝要找的清單）。"""
+        gpf, rg = self.gpf, self.ref_gpu
+        for b in bl:
+            if gpf[b] == s:
+                gpf[b] = -1
+                if rg[b] == 0:
+                    self.gpu_used -= BF
+                self.gspf[s] -= 1
+        assert self.gspf[s] == 0, (s, self.gspf[s])
+        self.gpf_sessions.discard(s)
+        self.pfdone[s] = False
+        if push:
+            self.n_unpf += 1
+            if self.pf == "opf" and self.st[s] in (S_CPU, S_SLOW) and self.sT[s] < INF:
+                heapq.heappush(self.pfheap, (self.sT[s], s))
+
+    def _g_make_room(self, cand, need, now, v):
+        """預取 cand 進 GPU 需要 need 位元組：只准逐出預取規則認為「比 cand 冷」的 GPU session（同 make_room）。"""
+        if self.G - self.gpu_used >= need:
+            return True
+        rg = self.ref_gpu
+        if self.pf == "opf":
+            Tc = self.sT[cand]
+            el = []
+            for x in self.glru:
+                nx = self._next_req_bl(self._gbl(x), rg)
+                if nx > Tc:
+                    el.append((nx, -self.last[x], x))
+            el.sort(reverse=True)
+            order = [x for _, _, x in el]
+        else:
+            lc = self.last[cand]
+            order = sorted((x for x in self.glru if self.last[x] < lc), key=lambda x: self.last[x])
+        cw = 0
+        for x in order:
+            if self.G - self.gpu_used >= need:
+                break
+            if self.gwrite == "wb":
+                cw += self._g_evict_wb(x)
+            else:
+                self._g_free_wt(x)
+        if cw:
+            v.cpu.write(cw * BF, now)
+            w = self.enforce()
+            self.w_slow_blocks += w
+            v.slow.write(w * self.i4, now)
+        return self.G - self.gpu_used >= BF
+
+    def _advance_prefetch_gpu(self, t_from, t_to):
+        """同 advance_prefetch，但目的地是 GPU：候選＝不在 GPU 上、資料在 CPU 或慢層的 session；它存著、不在 GPU 上的塊
+        全部從最後一塊往前搬（GPU 上的塊載入成本＝0，Cake 的會合點退到最前面）。CPU 上的 BF16 走 CPU 線；慢層的 INT4 走慢層線
+        ＋反量化 d；放進 GPU 是 BF16（64 MiB／塊）。"""
+        v = self.views[0]
+        cpu, slow = v.cpu, v.slow
+        rg, gpf, fmt = self.ref_gpu, self.gpf, self.fmt
+        # 先 pop 再處理（提早結束就推回去）：wb 騰空間時 CPU 層可能降級別的 session、把新的候選推進 heap，heap 頂端會變
+        # （原本的 CPU 預取不會：它推進去的鍵一定比頂端大；這裡的 CPU 降級不經過「比候選者冷」的篩選）。
+        while self.pfheap:
+            key, s = heapq.heappop(self.pfheap)
+            if self.st[s] not in (S_CPU, S_SLOW) or self.gin[s] or self.pfdone[s] or \
+                    (self.pf == "opf" and key != self.sT[s]) or (self.pf == "rpf" and key != -self.last[s]):
+                continue
+            todo = [b for b in reversed(self.sb[s]) if rg[b] == 0 and gpf[b] < 0]
+            if not todo:
+                self.pfdone[s] = True
+                continue
+            sc = cpu.t_free if cpu.t_free > t_from else t_from
+            ss = slow.t_free if slow.t_free > t_from else t_from
+            st0 = sc if sc < ss else ss
+            if st0 >= t_to or not self._g_make_room(s, len(todo) * BF, st0, v):
+                heapq.heappush(self.pfheap, (key, s))
+                return
+            for b in todo:
+                fm = fmt[b]
+                ch = cpu if fm else slow
+                st = ch.t_free if ch.t_free > t_from else t_from
+                if st >= t_to or self.G - self.gpu_used < BF:
+                    heapq.heappush(self.pfheap, (key, s))
+                    return
+                if fm == 1:
+                    done = cpu.read(BF, st)
+                    v.pf_bytes += BF
+                elif fm == 2:
+                    pd = self.pf_done[b]
+                    done = cpu.read(self.i4, st if st > pd else pd) + v.d
+                    v.pf_bytes += self.i4
+                else:
+                    done = slow.read(self.i4, st) + v.d
+                    v.pf_bytes += self.i4
+                gpf[b] = s
+                self.gpf_done[b] = done
+                self.gpu_used += BF
+                self.gspf[s] += 1
+                self.gpf_sessions.add(s)
+            self.pfdone[s] = True
 
     def _fix_g(self, b):
         """wb 版的 _fix：ref_live 也算 GPU 上的持有者。CPU 那份沒有 CPU 狀態的持有者時釋放；只有還有慢層狀態的持有者
@@ -899,6 +1046,8 @@ class Engine:
     def drop(self, s):
         st = self.st[s]
         w = 0
+        if self.gpf is not None and self.gspf[s] > 0:
+            self._g_unprefetch(s, self.sb[s], push=False)
         if st in (S_CPU, S_SLOW):
             if st == S_CPU:
                 self.cpu_set.discard(s)
@@ -1053,7 +1202,10 @@ class Engine:
         if self.G > 0 and self.gorder == "ttla":
             self._g_expire(t)
         if self.pf:
-            self.advance_prefetch(self.t[r - 1] if r > 0 else t, t)
+            if self.gpf is not None:
+                self._advance_prefetch_gpu(self.t[r - 1] if r > 0 else t, t)
+            else:
+                self.advance_prefetch(self.t[r - 1] if r > 0 else t, t)
         self.cur = r
         blocks = self.full[r]
         fmt, on_slow = self.fmt, self.on_slow
@@ -1146,9 +1298,12 @@ class Engine:
         while g < n and rg[blocks[g]] > 0:
             g += 1
         lay = [0] * g
+        gpf = self.gpf
         for b in blocks[g:]:
             fm = fmt[b]
-            if fm == 1:
+            if gpf is not None and gpf[b] >= 0:
+                lay.append(4)
+            elif fm == 1:
                 lay.append(1)
             elif fm == 2:
                 lay.append(2)
@@ -1162,13 +1317,16 @@ class Engine:
                 assert rg[b] == 0, "GPU 上的 block 不是前綴"
             for b in blocks[L:]:
                 assert fmt[b] == 0 and not on_slow[b], "有存的 block 不是前綴（refcount 錯）"
+                assert gpf is None or gpf[b] < 0, "預取進 GPU 的 block 不在已存的前綴裡"
         kd = self.kind[r]
         old_n = len(self.full[self.parent[r]]) if kd == 1 else 0
         tend = []
+        g4 = g + (lay.count(4) if gpf is not None else 0)
+        gdone = self.gpf_done if gpf is not None else None
         for v in self.views:
-            tt, rs, nC, nS, nR = v.restore(lay, blocks, L, self.nall[r], t, old_n, self.pf_done, g)
+            tt, rs, nC, nS, nR = v.restore(lay, blocks, L, self.nall[r], t, old_n, self.pf_done, g, gdone)
             v.ttft[r], v.rest[r], v.nC[r], v.nS[r], v.nR[r] = tt, rs, nC, nS, nR
-            v.nG[r] = g
+            v.nG[r] = g4
             tend.append(t + tt)
         if self.gwrite == "wb":
             self._turn_end_wb(r, blocks, tend)
@@ -1184,11 +1342,17 @@ class Engine:
         old = self.sb[s] if self.sb[s] else []
         old_state = self.st[s]
         rl, rc, rg = self.ref_live, self.ref_cpu, self.ref_gpu
+        gpf = self.gpf
         for b in blocks:
             rl[b] += 1
             rg[b] += 1
             if rg[b] == 1:
-                self.gpu_used += BF
+                if gpf is not None and gpf[b] >= 0:
+                    self._gpf_claim(b)
+                else:
+                    self.gpu_used += BF
+        if gpf is not None and self.gspf[s] > 0:
+            self._g_unprefetch(s, old, push=False)   # 沒被這一輪用到的（通常沒有）
         w = 0
         if old_state == S_CPU:
             self._order_remove(s)
@@ -1285,11 +1449,17 @@ class Engine:
         rg = self.ref_gpu
         oldg = self.gsb[s] if self.gin[s] else None
         keep = bool(blocks) and self.st[s] != S_DROP
+        gpf = self.gpf
         if keep:
             for b in blocks:
                 rg[b] += 1
                 if rg[b] == 1:
-                    self.gpu_used += BF
+                    if gpf is not None and gpf[b] >= 0:
+                        self._gpf_claim(b)
+                    else:
+                        self.gpu_used += BF
+        if gpf is not None and self.gspf[s] > 0:
+            self._g_unprefetch(s, old, push=False)
         if oldg is not None:
             self._g_release(oldg)
         if keep:
@@ -1338,8 +1508,18 @@ class Engine:
                         cc[b] += self.st[s] == S_CPU
         assert len(self.glru) == sum(self.gin)
         assert cg == self.ref_gpu, "ref_gpu 和 GPU 上 session 的 block 對不上"
-        used = sum(BF for b in range(B) if self.ref_gpu[b] > 0)
+        gpf = self.gpf
+        used = sum(BF for b in range(B) if self.ref_gpu[b] > 0 or (gpf is not None and gpf[b] >= 0))
         assert used == self.gpu_used, (used, self.gpu_used)
+        if gpf is not None:
+            cnt = [0] * S
+            for b in range(B):
+                if gpf[b] >= 0:
+                    assert self.ref_gpu[b] == 0, "預取進 GPU 的塊同時是常駐"
+                    assert b in self.sb[gpf[b]], "預取進 GPU 的塊不屬於它的主人"
+                    cnt[gpf[b]] += 1
+            assert cnt == self.gspf, "gspf 對不上"
+            assert self.gpf_sessions == {x for x in range(S) if cnt[x] > 0}
         assert self.gpu_used <= self.G, (self.gpu_used, self.G)
         if self.gwrite == "wb":
             assert cl == self.ref_live and cc == self.ref_cpu, "wb：ref_live／ref_cpu 和 session 狀態對不上"
@@ -1430,7 +1610,7 @@ def _job(job):
     t0 = time.time()
     views = make_views(K, P, keys)
     gv = views[0] if POLICIES[policy][0] == "gdsf" else None
-    gkw = {} if gs is None else dict(gpu_cap=int(gs["G"] * GiB), gpu_policy=gs["pol"], gpu_write=gs["write"])
+    gkw = {} if gs is None else dict(gpu_cap=int(gs["G"] * GiB), gpu_policy=gs["pol"], gpu_write=gs["write"], pf_target=gs.get("pf", "cpu"))
     eng = Engine(P, policy, cpu_gib * GiB, views, K, gdsf_view=gv, **gkw).run()
     out = []
     rd = os.environ.get("RUN_DIR", "")
@@ -1440,20 +1620,22 @@ def _job(job):
         row = dict(trace=trace, rule=rule, cpu_GiB=cpu_gib, cpu_frac_ws=cpu_gib / P["ws_GiB"], policy=policy,
                    slow=v.slow_name, gpu=v.gpu, restore=v.mode)
         if _GPU_COLS:
-            row.update(gpu_GiB=gs["G"] if gs else 0, gpu_write=gs["write"] if gs else "none", gpu_policy=gs["pol"] if gs else "none")
+            row.update(gpu_GiB=gs["G"] if gs else 0, gpu_write=gs["write"] if gs else "none", gpu_policy=gs["pol"] if gs else "none",
+                       pf_target=gs.get("pf", "cpu") if gs else "cpu")
         out.append(dict(**row, **sm, elapsed_s=time.time() - t0))
         tag = f"{v.slow_name}_{v.gpu}_{v.mode}"
         arrs[f"ttft_{tag}"] = v.ttft
         arrs[f"rest_{tag}"] = v.rest
     if rd:
-        gtag = "" if gs is None else f"_G{gs['G']:g}-{gs['write']}-{gs['pol'].replace(':', '')}"
+        gtag = "" if gs is None else f"_G{gs['G']:g}-{gs['write']}-{gs['pol'].replace(':', '')}-pf{gs.get('pf', 'cpu')}"
         np.savez_compressed(os.path.join(rd, f"req_{trace}_{rule}_{cpu_gib}_{policy}{gtag}_{'-'.join(keys[0]) if len(keys) <= 2 else 'n' + str(len(keys))}.npz"),
                             **arrs)
     return out
 
 
-def gpu_specs(gpu_gib, gpu_writes, gpu_policies):
-    """ICPE next：GPU 層的設定組合。只有 0 → [None]（原本的路徑）；0 和其他值並列時 0 只出現一次。"""
+def gpu_specs(gpu_gib, gpu_writes, gpu_policies, pf_targets=("cpu",)):
+    """ICPE next：GPU 層的設定組合。只有 0 → [None]（原本的路徑）；0 和其他值並列時 0 只出現一次。
+    pf＝預取目的地（cpu＝主結果；gpu＝PREREG §2 第 2 項的敏感度；只對有預取的 CPU 規則產生 job，見 jobs_for）。"""
     out = []
     for G in gpu_gib:
         if G == 0:
@@ -1463,7 +1645,9 @@ def gpu_specs(gpu_gib, gpu_writes, gpu_policies):
             assert wm in GPU_WRITES, wm
             for gp in gpu_policies:
                 parse_gpol(gp)
-                out.append(dict(G=G, write=wm, pol=gp))
+                for pt in pf_targets:
+                    assert pt in ("cpu", "gpu"), pt
+                    out.append(dict(G=G, write=wm, pol=gp, pf=pt))
     return out
 
 
@@ -1478,6 +1662,8 @@ def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None
             for p in policies:
                 for gs in gspecs:
                     o, a, h, pf = POLICIES[p]
+                    if gs is not None and gs.get("pf", "cpu") == "gpu" and not pf:
+                        continue          # 沒有預取的規則：預取目的地沒有差別，只跑 pf＝cpu 那份
                     tdep = pf or (gs is not None and parse_gpol(gs["pol"])[1] is not None)   # TTL 也和時間設定有關
                     if tdep:
                         for k in views:
@@ -1498,7 +1684,7 @@ def cmd_sweep(a):
         if nm not in SLOWS and nm not in EXTRA_SLOWS:
             EXTRA_SLOWS.append(nm)
     _K = constants()
-    gspecs = gpu_specs(a.gpu_gib, a.gpu_write, a.gpu_policies)
+    gspecs = gpu_specs(a.gpu_gib, a.gpu_write, a.gpu_policies, a.pf_target)
     _GPU_COLS = any(g is not None for g in gspecs)
     for tr in a.traces:
         for ru in a.rules:
@@ -1640,6 +1826,9 @@ def cmd_analyze(a):
     if a.src_run:
         d = d[d.run_id.isin(a.src_run)]
     assert len(d), "沒有資料"
+    gax = [c for c in ("gpu_GiB", "gpu_write", "gpu_policy", "pf_target") if c in d.columns]
+    if gax and len(d[gax].drop_duplicates()) > 1:   # ICPE next：這裡的樞紐表只看 policy，GPU 軸會被 aggfunc="first" 靜默蓋掉
+        raise SystemExit("這份 sweep 有 GPU 層的軸（" + ", ".join(gax) + "）：x1_sim analyze 不處理，請用 code/icpe/next_sim_analyze.py")
     if a.traces:
         d = d[d.trace.isin(a.traces) | (d.trace.str.startswith("fi:") & ("freeinference" in a.traces))]
     fi = d.trace.str.startswith("fi:")
@@ -1840,6 +2029,7 @@ def main():
     s.add_argument("--gpu-gib", nargs="+", type=gib_arg, default=[0], help="GPU 快取層的 KV 預算（GiB）；0＝關閉；PREREG＝111.0625（1,777 塊）")
     s.add_argument("--gpu-write", nargs="+", default=["wb"], help="wb＝回寫互斥、wt＝直寫包含")
     s.add_argument("--gpu-policies", nargs="+", default=["LRU"], help="LRU、BEL、TTLA:<秒>、TTLB:<秒>")
+    s.add_argument("--pf-target", nargs="+", default=["cpu"], help="預取目的地：cpu（主結果）、gpu（敏感度；要開 GPU 層）")
     s = sp.add_parser("analyze")
     s.add_argument("--sweep", nargs="+", default=["x1_sweep.csv"])
     s.add_argument("--src-run", nargs="*", default=[])
