@@ -2,6 +2,17 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T00:42+08:00 — icpe-sim 09fd521（加速版）在 TraceLab 上的時間與記憶體（試跑，不進 results/）
+
+| run | 程式 | 內容 | 每個 job（秒） | 記憶體 |
+|:--|:--|:--|:--|:--|
+| `20261105-002230-icpe-data-trial-tl-timing-09fd521` | 09fd521（git archive） | 和 `20261104-235459`（6b17191）同一批 10 個 job | LRU 156.0（舊 215.8）、O-BEL 156.7（舊 200.3）、×TTLA:10 197–229（舊 246–254）、O-PF 200–249（舊 237–288）、O-PF×TTLA:10 322–327（舊 301–304）＝**0.93–1.44 倍**；**40 個輸出欄逐值相同** | `/usr/bin/time` 最大 RSS **29.3 GB**（舊 6.8 GB） |
+| `20261105-003309-icpe-data-trial-tl-mem-09fd521` | 09fd521 | TraceLab c1、CPU 64、LRU／O-BEL × TTLA:10／TTLB:10、8 worker；每 20 s 取 PSS | TTLB:10 126–136、TTLA:10 184–212 | 載入後 parent PSS 27.5 GiB；8 worker 時總 PSS 73.0 GiB、每個 worker 最多 8.3 GiB（`mem.log`） |
+
+- 29 GB 的原因（icpe-sim 說明）：向量化的 x1_nb 每個鍵都變成新的 Python int；它正在修（共用 int 物件＋提早釋放），和另一個逐值相同的加速一起放進新 commit、另做 G1。
+- **排法**（同使用者 00:15 的決定；icpe-sim 也這樣建議）：09fd521 的 G1 一過 → merge 09fd521 → G0 → 跑 `cw_main`（CacheWise 記憶體沒問題，0.44 GB／worker）。TraceLab 等修好記憶體的新 commit 過 G1 → merge → G0 → 跑 `tl_main`（照 09fd521 的量法，32 worker 約 210 GiB 以上，太緊）。
+- 更新的推算〔算術〕：TraceLab 每 job 約 200 s（130–330）→ `tl_main` 3 × 6,174 × 200 ÷ 32 ≈ 32 h。
+
 ## 2026-11-05T00:25+08:00 — 方案 A 已登記（PREREG 偏離 4）；佇列程式；等 G1
 
 - **PREREG 偏離 4**（`origin/icpe-next-a` 776e747；h200 用的是「偏離 4」，因為 3 已用在 W6）：內容＝下一節方案 A 的 1–4 點＋23:55／00:15 兩節的紀錄處理，已在 git 上核對。之後這裡提到方案 A 一律指偏離 4。
