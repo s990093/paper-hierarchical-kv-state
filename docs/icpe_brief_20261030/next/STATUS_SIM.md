@@ -196,7 +196,7 @@
 
 ---
 
-## 2026-11-05T01:45+08:00 — **G1 PASS：commit `7539f01`**（09fd521＋前綴跳過＋x1_nb 記憶體修正）
+## 2026-11-05T02:18+08:00 — **G1 PASS：commit `7539f01`**（09fd521＋前綴跳過＋x1_nb 記憶體修正）
 
 - G1 run `20261105-004243-icpe-sim-g1-7539f01`（detached checkout `/ssd6/hungwei/icpe-next/g1-7539f01`；共用 venv；nice 19、6 workers；新功能全部關閉）：同上一節的指令與比法，**4,416 列 × 29 欄，不同的格子 0 → PASS**（sweep 3,533 s，和 09fd521 的 G1 同時跑、優先順序最低，時間不能拿來比速度）。
 - 自檢 **997／997 PASS**。兩份摘要都已併進 `results/icpe_next/sim/g1_compare.csv`、`next_sim_test.csv`（每列有 run_id）。
