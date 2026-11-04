@@ -40,3 +40,15 @@
 **需要使用者決定什麼**：無（目前）。
 
 **下一步**：W1。
+
+## 2026-11-04 23:30（台灣）
+
+**做完什麼**：**W1 完成**（只用現有輸出、只報告）。run `20261104-231951-icpe-next-a-w1-hitrate`；結果與說明 `results/icpe_next/a/w1/`（README.md、`w1_summary_ssd_idle.csv`、`w1_hitrate_mooncake.csv`、`w1_hitrate_fi_t4.csv`、`w1_checks.json`）。自檢 K1–K3 全過。同為 CPU 128 GiB、SSD 級、GPU 閒：Mooncake 的 LRU CPU 命中率 5.87–41.49%，FreeInference 99.29% → 照 W1 的事先登記，「差距取決於固定規則命中多少」這個解釋不用拿掉。
+
+**卡住什麼**：無。
+
+**收到 `icpe-sim` 的訊息**：使用者在 `icpe-sim` 決定了 3 項 PREREG 偏離（TTLB、write-through 敏感度、APC 分兩批）；權威文字在 STATUS_SIM 的 2026-11-04T23:19+08:00 那節，**登記時 origin 上還沒有那節**。等它上 origin、使用者在 `h200` 確認後才寫進 PREREG。
+
+**需要使用者決定什麼**：上面 3 項偏離要不要登記（已在 `h200` 問）。
+
+**下一步**：W8 剩下的項目。

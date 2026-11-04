@@ -49,6 +49,7 @@ import pandas as pd  # noqa: E402
 
 SRC_MC = os.path.join(REPO, "results", "icpe_h200", "t1", "p01", "sim_V1", "x1", "x1_sweep.csv.gz")
 SRC_T4 = os.path.join(REPO, "results", "icpe_h200", "t4", "t4_sweep.csv")
+SRC_FI_T1 = os.path.join(REPO, "results", "icpe_h200", "t1", "p12", "x1", "x1_sweep_fi.csv.gz")
 OUT = os.path.join(REPO, "results", "icpe_next", "a", "w1")
 PF_POL = ("O-PF", "LRU+RPF", "O-ALL", "O-ALL-H1800", "O-ALL-H3600")
 
@@ -176,6 +177,31 @@ def main():
         sys.exit(1)
     write(os.path.join(OUT, "w1_hitrate_mooncake.csv"), rows, rid, ts)
     write(os.path.join(OUT, "w1_hitrate_fi_t4.csv"), fi_rows, rid, ts)
+    json.dump(meta, open(os.path.join(OUT, "w1_checks.json"), "w"), ensure_ascii=False, indent=1)
+
+    # ---------------- 摘要（只報告）：主設定 ssd／GPU 閒，加「CPU 容量佔工作集的比例」
+    # FreeInference 的工作集（BF16 GiB）每週不同；由 T1 x1_sweep_fi 的 cpu_GiB ÷ cpu_frac_ws 反推（只由紀錄決定），
+    # 8–64 GiB 的比例＝容量 ÷ 工作集〔算術〕。
+    fi1 = pd.read_csv(SRC_FI_T1)
+    ws = (fi1.cpu_GiB / fi1.cpu_frac_ws).groupby(fi1.trace)
+    ws_lo, ws_hi = float(ws.min().min()), float(ws.max().max())
+    assert (ws.max() - ws.min() < 1e-3 * ws.max()).all(), "同一週的工作集應該只有一個值"
+    wsw = ws.median()
+    assert set(wsw.index) == set(t4.trace.unique()), "T1 和 T4 的 FreeInference 週次不同"
+    summ = []
+    for r in rows:
+        if r["slow"] == "ssd" and r["gpu"] == "idle":
+            summ.append(dict(trace=r["trace"], rule=r["rule"], cpu_GiB=r["cpu_GiB"], policy=r["policy"],
+                             cpu_frac_ws_min=r["cpu_frac_ws"], cpu_frac_ws_max=r["cpu_frac_ws"],
+                             hr_cpu=r["hr_cpu"], hr_stored=r["hr_stored"], src_run_id=r["src_run_id"]))
+    for r in fi_rows:
+        fr = [r["cpu_GiB"] / w for w in wsw.values]
+        summ.append(dict(trace=r["trace"], rule=r["rule"], cpu_GiB=r["cpu_GiB"], policy=r["policy"],
+                         cpu_frac_ws_min=min(fr), cpu_frac_ws_max=max(fr),
+                         hr_cpu=r["hr_cpu"], hr_stored=r["hr_stored"], src_run_id=r["src_run_id"]))
+    write(os.path.join(OUT, "w1_summary_ssd_idle.csv"), summ, rid, ts)
+    meta.update(fi_ws_GiB_bf16_by_week={k: float(v) for k, v in wsw.items()}, fi_ws_src=os.path.relpath(SRC_FI_T1, REPO),
+                fi_ws_src_run_id=sorted(fi1.run_id.unique().tolist()))
     json.dump(meta, open(os.path.join(OUT, "w1_checks.json"), "w"), ensure_ascii=False, indent=1)
     print(json.dumps(checks, ensure_ascii=False)[:3000])
 
