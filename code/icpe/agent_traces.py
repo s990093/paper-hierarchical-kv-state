@@ -73,20 +73,216 @@ def load_freeinference():
 
 
 def load_tracelab():
+    """2026-11-04 加欄位（icpe-data，給 next_b_convert 用；原有欄位與 rule6 不變）：out（output_tokens）、provider、
+    trigger（第一個 timing event 是 tool_result＝'tool'、user_message＝'user'、其他＝'none'：這一輪沒記到輸入事件）。"""
     rows, ok, n = [], 0, 0
     with gzip.open(f"{DS}/tracelab/syfi_coding_trace.jsonl.gz", "rt") as fh:
         for ln in fh:
             r = json.loads(ln)
-            ev = [e["timestamp"] for e in r.get("timing_events") or [] if e.get("timestamp")]
-            if not ev:
+            evs = sorted(((_iso_ms(e["timestamp"]), e.get("event_type")) for e in r.get("timing_events") or [] if e.get("timestamp")),
+                         key=lambda x: x[0])
+            if not evs:
                 continue
             n += 1
             ok += int(r["prefix_tokens"] + r["newly_append_tokens"] == r["input_tokens_total"])
-            t = sorted(_iso_ms(x) for x in ev)
-            rows.append((r["session_id"], r["round_index"], t[0], t[-1], r["input_tokens_total"], r["prefix_tokens"], r.get("user")))
+            et0 = evs[0][1]
+            trig = "tool" if et0 == "tool_result" else ("user" if et0 == "user_message" else "none")
+            rows.append((r["session_id"], r["round_index"], evs[0][0], evs[-1][0], r["input_tokens_total"], r["prefix_tokens"], r.get("user"),
+                         r.get("output_tokens") or 0, r["provider"], trig))
     rule = _check("tracelab prefix+new=input", ok, n)
-    d = pd.DataFrame(rows, columns=["sid", "round", "start_ms", "end_ms", "inp", "prefix", "user"]).sort_values(["sid", "round"])
+    d = pd.DataFrame(rows, columns=["sid", "round", "start_ms", "end_ms", "inp", "prefix", "user", "out", "provider", "trigger"]
+                     ).sort_values(["sid", "round"])
     return d, dict(rule6=rule, abs_time=True, multi_user=True, n_users=int(d.user.nunique()))
+
+
+def load_cachewise():
+    """CacheWise CATraces（github cachewise-project/cachewise-coding-traces @ 181c435a；**沒有授權** → 原始資料、轉換後的紀錄、
+    逐對話的數字都不進 git）。讀 repo/raw_traces/project_*/session_*.jsonl（Claude Code 的原始 transcript，已去識別化）。
+
+    一列＝一次 LLM 呼叫＝一個 requestId（串流時同一個 requestId 會記成好幾個 assistant 節點，每個 content block 一個）：
+      inp＝input_tokens＋cache_creation_input_tokens＋cache_read_input_tokens（取最後一個節點；規則 6 (1) 驗同一 requestId 內相同）
+      out＝最後一個節點的 output_tokens（規則 6 (1) 驗同一 requestId 內不減；第一個節點的 1 是串流造成的）
+      start_ms＝第一個 assistant 節點的 parentUuid 指向的節點時間（user 文字或 tool_result＝請求送出的時間）；沒有 parent 時用第一個 assistant 節點
+      end_ms＝最後一個 assistant 節點的時間
+      prefix＝cache_read_input_tokens（供應商快取命中的前綴；5 分鐘／1 小時沒用就過期）
+      compact＝和同 session 上一個請求之間有沒有 compact_boundary（上下文被壓縮）
+      trigger＝'tool'（parent 是 tool_result）／'user'（parent 是使用者文字）／'none'
+    session（sid）：主對話＝<file>:main；子 agent（isSidechain，沿 parentUuid 走到第一個非 sidechain 節點或 None）＝<file>:<根 uuid>，
+    各自是一個 session（自己的 context）。conv＝<file>：到達合成時一個對話（主＋它的子 agent）一起排。
+    0 byte 的檔與沒有任何 LLM 呼叫的檔跳過並記數（meta）。
+
+    規則 6（CLAUDE.md §1；比例寫進 meta，不到門檻就停）：
+      (1) 同一 requestId 的 usage 輸入三欄相同 ≥ 0.99、output_tokens 不減 ≥ 0.99（＝一個 requestId 是一次呼叫、最後一個節點是最終值）
+      (2) NEXT_PLAN §5.6：同一 session 裡 cache_read(k) ≤ inp(k−1)＋out(k−1) ≥ 0.98（前綴不會比上一輪的上下文長）
+      (3) 時間單位：end−start ≥ 0 ≥ 0.95；out ≥ 50 時 (end−start)/out 的中位數在 [1, 10000] ms/token
+      (4) 兩種前綴算法互相驗算：間隔 < 10 s（快取一定還在）且沒有壓縮時，cache_read(k) ≥ 0.9 × inp(k−1) 的比例 ≥ 0.9
+          （＝「上一輪的整段輸入是這一輪的前綴」這個結構假設，在供應商快取還活著時和快取命中一致）
+    """
+    import collections
+    root = f"{DS}/cachewise-coding-traces/repo/raw_traces"
+    fs = sorted(glob.glob(f"{root}/project_*/session_*.jsonl"))
+    assert len(fs) == 94, f"cachewise：raw_traces 應有 94 個檔，看到 {len(fs)}"
+    rows = []
+    comp_by_conv = {}
+    n_req = same_in = mono_out = 0
+    n_empty_file = n_no_llm = n_parent_missing = 0
+    for f in fs:
+        conv = os.path.relpath(f, root)
+        recs = [json.loads(ln) for ln in open(f) if ln.strip()]
+        if not recs:
+            n_empty_file += 1
+            continue
+        byu = {r["uuid"]: r for r in recs if r.get("uuid")}
+        root_of = {}
+
+        def sroot(r):
+            u = r["uuid"]
+            if u in root_of:
+                return root_of[u]
+            path, cur = [], r
+            while True:
+                path.append(cur["uuid"])
+                p = byu.get(cur.get("parentUuid"))
+                if p is None or not p.get("isSidechain"):
+                    rt = cur["uuid"]
+                    break
+                if p["uuid"] in root_of:
+                    rt = root_of[p["uuid"]]
+                    break
+                cur = p
+            for x in path:
+                root_of[x] = rt
+            return rt
+
+        comp = sorted(_iso_ms(r["timestamp"]) for r in recs if r.get("type") == "system" and r.get("subtype") == "compact_boundary")
+        req = collections.OrderedDict()
+        for r in recs:
+            if r.get("type") == "assistant" and r.get("requestId"):
+                sid = f"{conv}:{sroot(r)}" if r.get("isSidechain") else f"{conv}:main"
+                req.setdefault((sid, r["requestId"]), []).append(r)
+        if not req:
+            n_no_llm += 1
+            continue
+        for (sid, rid), es in req.items():
+            us = [e["message"]["usage"] for e in es]
+            k3 = {(u.get("input_tokens", 0), u.get("cache_creation_input_tokens", 0), u.get("cache_read_input_tokens", 0)) for u in us}
+            outs = [u.get("output_tokens", 0) for u in us]
+            n_req += 1
+            same_in += int(len(k3) == 1)
+            mono_out += int(outs == sorted(outs))
+            u = us[-1]
+            inp = u.get("input_tokens", 0) + u.get("cache_creation_input_tokens", 0) + u.get("cache_read_input_tokens", 0)
+            p = byu.get(es[0].get("parentUuid"))
+            if p is None:
+                n_parent_missing += 1
+                t0, trig = _iso_ms(es[0]["timestamp"]), "none"
+            else:
+                t0 = _iso_ms(p["timestamp"])
+                c = (p.get("message") or {}).get("content") if p.get("type") == "user" else None
+                if isinstance(c, list) and any(isinstance(x, dict) and x.get("type") == "tool_result" for x in c):
+                    trig = "tool"
+                elif p.get("type") == "user":
+                    trig = "user"
+                else:
+                    trig = "none"
+            rows.append((conv, sid, rid, t0, _iso_ms(es[-1]["timestamp"]), inp, u.get("cache_read_input_tokens", 0), outs[-1], trig,
+                         es[0]["message"].get("model")))
+        comp_by_conv[conv] = comp
+    r1a = _check("cachewise 同一 requestId 的輸入三欄相同", same_in, n_req)
+    r1b = _check("cachewise 同一 requestId 的 output_tokens 不減", mono_out, n_req)
+    d = pd.DataFrame(rows, columns=["conv", "sid", "rid", "start_ms", "end_ms", "inp", "prefix", "out", "trigger", "model"])
+    # 順序＝檔案裡 requestId 的序號（去識別化後是每個檔從 req_00001 遞增，＝transcript 的先後）。不用 start_ms 排：
+    # parent 節點的時間在 resume 的檔裡會被改寫，依時間排會把 128 個請求排錯（2026-11-04 驗算，見 STATUS_DATA）
+    d["rnum"] = d.rid.str.extract(r"(\d+)$", expand=False).astype(np.int64)
+    d = d.sort_values(["sid", "rnum"], kind="stable").reset_index(drop=True)
+    g = d.groupby("sid", sort=False)
+    prev_inp, prev_out, prev_end = g.inp.shift(), g.out.shift(), g.end_ms.shift()
+    d["compact"] = [bool(pe == pe and any(pe <= x <= s for x in comp_by_conv[c])) for c, pe, s in zip(d.conv, prev_end, d.start_ms)]
+    m = prev_inp.notna()
+    r2 = _check("cachewise cache_read(k) ≤ inp(k−1)+out(k−1)", int((d.prefix[m] <= prev_inp[m] + prev_out[m]).sum()), int(m.sum()), thr=0.98)
+    dur = d.end_ms - d.start_ms
+    r3a = _check("cachewise end−start ≥ 0", int((dur >= 0).sum()), len(d), thr=0.95)
+    q = d.out >= 50
+    med = float((dur[q] / d.out[q]).median())
+    print(f"[cachewise] 規則 6 (3)：(end−start)/out 中位數 {med:.2f} ms/token（out ≥ 50，n={int(q.sum())}）", flush=True)
+    if not (1.0 <= med <= 1e4):
+        raise SystemExit(f"[cachewise] (end−start)/out 中位數 {med} ms/token 不合理：時間欄不是毫秒？→ 停")
+    gap = d.start_ms - prev_end
+    m4 = m & (gap < 10_000) & ~d.compact & (prev_inp > 0)
+    r4 = _check("cachewise 間隔<10s 時 cache_read(k) ≥ 0.9×inp(k−1)", int((d.prefix[m4] >= 0.9 * prev_inp[m4]).sum()), int(m4.sum()), thr=0.9)
+    meta = dict(rule6=min(r1a, r1b), rule6_same_input=r1a, rule6_out_nondecreasing=r1b, rule6_prefix_le_prev=r2, rule6_dur_nonneg=r3a,
+                rule6_ms_per_out_tok_median=med, rule6_struct_vs_cache_short_gap=r4, abs_time=False, multi_user=False,
+                n_files=len(fs), n_empty_file=n_empty_file, n_file_no_llm=n_no_llm, n_conv=int(d.conv.nunique()), n_sess=int(d.sid.nunique()),
+                n_sidechain_sess=int((~d.sid.str.endswith(":main")).groupby(d.sid).first().sum()), n_parent_missing=n_parent_missing,
+                n_compact=int(d.compact.sum()))
+    return d, meta
+
+
+def load_bailian(name):
+    """Qwen-Bailian（github alibaba-edu/qwen-bailian-usagetraces-anon @ 5f7439c5，Apache-2.0）：qwen_<name>_blksz_16.jsonl。
+    欄位：chat_id、parent_chat_id、timestamp（秒，trace 相對）、input_length、output_length、type、turn、hash_ids（16 token 一塊、鏈式）。
+    session＝沿 parent_chat_id 走到根（根的 chat_id）；prefix＝和 parent 共用的前導 hash 塊數 × 16（不超過 input_length）。
+    規則 6：
+      (1) len(hash_ids)==ceil(input_length/16) ≥ 0.99（16-token 塊）
+      (2) 鏈式前綴：同一個 hash 永遠在同一個位置、前一個 hash 也相同（違反次數＝0；chunk key 才能取第 32j+31 個 hash）
+      (3) 時間單位：同 session 前後兩輪的間隔 ÷ 上一輪 output_length（output ≥ 50）的中位數，以秒解讀在 [0.001, 10] s/token
+      (4) parent 欄位對 hash：有 parent 的請求，前導共用塊數 ≥ parent 的完整塊數的比例 ≥ 0.9（parent 的整段輸入是這一輪的前綴）
+    """
+    path = f"{DS}/qwen-bailian-usagetraces-anon/qwen_{name}_blksz_16.jsonl"
+    recs = [json.loads(ln) for ln in open(path)]
+    n = len(recs)
+    ok1 = sum(len(r["hash_ids"]) == math.ceil(r["input_length"] / 16) for r in recs)
+    r1 = _check(f"bailian-{name} len(hash_ids)=ceil(input/16)", ok1, n)
+    pos_of, prev_of = {}, {}
+    bad = 0
+    for r in recs:
+        p = -1
+        for i, b in enumerate(r["hash_ids"]):
+            if b in pos_of:
+                bad += (pos_of[b] != i) + (prev_of[b] != p)
+            else:
+                pos_of[b], prev_of[b] = i, p
+            p = b
+    if bad:
+        raise SystemExit(f"[bailian-{name}] 鏈式前綴被違反 {bad} 次 → 停")
+    idx = {r["chat_id"]: i for i, r in enumerate(recs)}
+    rootc = {}
+    sids, pref, par = [], [], []
+    n_par, ok4, n_par_missing = 0, 0, 0
+    for r in recs:
+        pc = r.get("parent_chat_id")
+        pi = idx.get(pc, -1) if pc not in (None, -1) else -1
+        if pc not in (None, -1) and pi < 0:
+            n_par_missing += 1
+        root = rootc[recs[pi]["chat_id"]] if pi >= 0 else r["chat_id"]
+        rootc[r["chat_id"]] = root
+        sids.append(root)
+        par.append(pi)
+        if pi >= 0:
+            ph, h = recs[pi]["hash_ids"], r["hash_ids"]
+            k = 0
+            while k < len(ph) and k < len(h) and ph[k] == h[k]:
+                k += 1
+            n_par += 1
+            ok4 += int(k >= recs[pi]["input_length"] // 16)
+            pref.append(min(k * 16, r["input_length"]))
+        else:
+            pref.append(0)
+    r4 = _check(f"bailian-{name} 前導共用塊 ≥ parent 的完整塊", ok4, n_par, thr=0.9)
+    d = pd.DataFrame(dict(sid=sids, chat_id=[r["chat_id"] for r in recs], parent=par, start_ms=[r["timestamp"] * 1000 for r in recs],
+                          inp=[r["input_length"] for r in recs], out=[r["output_length"] for r in recs], prefix=pref,
+                          turn=[r.get("turn") for r in recs]))
+    d["end_ms"] = np.nan
+    pm = d.parent >= 0
+    gap_s = (d.start_ms[pm].values - d.start_ms.values[d.parent[pm].values]) / 1000
+    pout = d.out.values[d.parent[pm].values]
+    q = pout >= 50
+    med = float(np.median(gap_s[q] / pout[q])) if q.any() else float("nan")
+    print(f"[bailian-{name}] 規則 6 (3)：間隔÷上一輪輸出 中位數 {med:.4f} s/token（n={int(q.sum())}）", flush=True)
+    if not (0.001 <= med <= 10):
+        raise SystemExit(f"[bailian-{name}] 間隔÷輸出 中位數 {med} s/token 不合理：timestamp 不是秒？→ 停")
+    return d, dict(rule6=r1, rule6_parent_prefix=r4, rule6_gap_s_per_out_tok_median=med, chain_bad=bad, abs_time=True, multi_user=True,
+                   n_parent_missing=n_par_missing, n_sess=int(d.sid.nunique()))
 
 
 def load_semianalysis():
