@@ -74,3 +74,20 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
 - **為什麼**：§3b：`icpe-data` 不能改 `code/p3x/*`，但新紀錄要進模擬器。
 - **驗證**：Mooncake conversation／toolagent 經 `x1_trace.prepare` → `write_nb` → `prep("nb:…")`，LRU、O-BEL、O-PF、GPU 層 111 GiB＋BEL：逐請求 TTFT、還原時間、工作集大小都相同（run `20261104-233613-icpe-sim-nb-roundtrip`）。
 - **有利還是不利**：無（只是載入方式）。
+
+---
+
+## 第二批
+
+### 8. W4 雜訊（`--noise-models P M --noise-lambdas ... --noise-draws B1 B2 --noise-seeds 0..9`；PREREG §2 第 6 項、§3 B）
+
+- **改了什麼**：完美預知的每一種用途都經過 `Engine._nz(s, idx)`：O-BEL／O-BELS 的順序（`select`）、O-DROP／O-NOW 的生死（`dead`）、O-PF 的預取順序與騰空間（`demote`／`make_room`）、GPU 層的 BEL（`_g_next`）、GPU 預取（`_pf_push`）。（慢層的 Belady 在第 9 項做好後也走這裡。）用 instance 覆蓋 `next_req`（同 `_fix` 的做法），沒有雜訊時原本的程式路徑不變；`demote` 只多一行有守衛的。
+  - 單位：模擬器的「下次回來」是請求 index（`next_access`）。加雜訊時先換成時間、加雜訊、再換回 index（第一個到達時間 ≥ 它的請求、至少是下一個請求）。
+  - **模型 P（照 PBKV 的混合）**：以機率 λ 把這個 session 的下次回來換成「上次回合結束時間＋經驗分佈裡抽的間隔」；經驗分佈＝這份紀錄每個請求到同一個 session 下一次請求的時間，之後不再回來＝INF（照它的經驗比例）。會猜錯生死。λ＝0、0.1、0.2、0.3、0.4。
+  - **模型 M（乘法誤差）**：剩餘時間（從詢問的那一刻算）×(1＋ε)、ε～U[−λ, λ]；不再回來維持不再回來。λ＝0、0.1、0.2、0.3。
+  - **B1**：每個回合結束抽一次（u、間隔、ε），到這個 session 下一次請求前不變；**B2**：每次問都重抽。`random.Random(seed)`，同一個 seed 逐位元可重現。
+  - **λ＝0** 直接回傳真值 → 必須和沒有雜訊逐值相同（自檢 T8；分析時再驗一次）。λ＝0 只跑一次（每個模型）。
+  - 只對「用到完美預知」的組合產生 job（`uses_oracle`：CPU 規則是 O-BEL／O-BELS／O-NOW／O-DROP／O-PF／O-ALL（含 -H 版），或 GPU 規則是 BEL）。
+  - 開了雜訊的 sweep 每列多 `noise_model`、`noise_lambda`、`noise_draw`、`noise_seed`（沒有雜訊的列：none、0、none、−1）。
+- **分析**：`next_sim_analyze.py` 每個雜訊設定各算一次（④ 用那個設定的列、② 用沒有雜訊的列；④ 那一邊沒有全部加雜訊的元件不算），輸出逐 seed 與 seed 間的中位數、最小–最大、平均±標準差。
+- **有利還是不利**：雜訊只會讓 ④ 變慢或不變〔推論；不保證，因為完美預知的貪婪規則本身不是最優〕→ 上限變小。

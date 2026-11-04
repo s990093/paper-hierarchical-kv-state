@@ -412,7 +412,7 @@ class View:
 # ================================================================== 引擎
 class Engine:
     def __init__(self, P, policy, cap_bytes, views, K, gdsf_view=None, check=False, gpu_cap=0, gpu_policy="LRU", gpu_write="wb",
-                 pf_target="cpu"):
+                 pf_target="cpu", noise=None):
         self.P = P
         self.full, self.nall, self.acc, self.t = P["full"], P["nall"], P["acc"], P["tl"]
         self.kind, self.sess, self.parent = P["kindc"], P["sessl"], P["parentl"]
@@ -479,6 +479,7 @@ class Engine:
         self.pfheap = []
         self.pf_sessions = set()
         # ICPE next：GPU 快取層（gpu_cap＝0＝關閉，下面都不建、step 走原本的路徑）
+        self.noise = None             # W4 雜訊（PREREG §2 第 6 項、§3 B）；None＝完美預知（原本的路徑）
         self.G = gpu_cap
         self.pf_target = pf_target
         self.gpf = None               # 預取進 GPU 的塊的主人（只有 pf_target＝gpu 時才建）
@@ -486,6 +487,8 @@ class Engine:
             self._gpu_init(gpu_policy, gpu_write, B, S, len(P["full"]))
         else:
             assert pf_target == "cpu", "預取搬回 GPU 要開 GPU 層"
+        if noise is not None:
+            self._noise_init(noise)
 
     # ---------------------------------------------------------- GPU 快取層（ICPE next）
     def _gpu_init(self, gpu_policy, gpu_write, B, S, nreq):
@@ -534,6 +537,11 @@ class Engine:
         b = bl[lo] if lo < len(bl) else bl[-1]
         return XT.next_access(self.acc, b, self.cur)
 
+    def _g_next(self, x):
+        """GPU 層的完美預知：x 獨有的第一塊（照 ref_gpu）下次被讀的請求 index（有雜訊時加雜訊）。"""
+        nx = self._next_req_bl(self._gbl(x), self.ref_gpu)
+        return nx if self.noise is None else self._nz(x, nx)
+
     def _g_add(self, s, te):
         """回合結束：s 進 GPU（或更新順序）；TTL 從 te 起算。"""
         self.gin[s] = True
@@ -557,7 +565,7 @@ class Engine:
             return next(iter(self.glru))
         if o == "bel":
             rg = self.ref_gpu
-            return max(self.glru, key=lambda x: (self._next_req_bl(self._gbl(x), rg), -self.last[x]))
+            return max(self.glru, key=lambda x: (self._g_next(x), -self.last[x]))
         for x in self.glru:            # TTL：沒在釘住期的，照 LRU
             if self.gexp[x] <= now:
                 return x
@@ -646,12 +654,72 @@ class Engine:
             else:
                 self._g_free_wt(x)
 
+    # ---------------------------------------------------------- W4 雜訊（PREREG §2 第 6 項、§3 B）
+    def _noise_init(self, nz):
+        """nz＝dict(model＝P|M, lam, draw＝B1|B2, seed)。完美預知的每一種用途（O-BEL／O-BELS 的順序、O-DROP／O-NOW 的生死、
+        O-PF 的預取順序與騰空間、GPU 層的 BEL、GPU 預取）都經過 _nz。λ＝0 時 _nz 直接回傳真值（自檢：和沒有雜訊逐值相同）。"""
+        m, lam, dr, seed = nz["model"], float(nz["lam"]), nz["draw"], int(nz["seed"])
+        assert m in ("P", "M") and dr in ("B1", "B2") and 0.0 <= lam < 1.0, nz
+        self.noise = dict(model=m, lam=lam, draw=dr, seed=seed)
+        self.nzm, self.nzl, self.nz_b1 = m, lam, dr == "B1"
+        self.nzrng = random.Random(seed)
+        # 模型 P 的經驗分佈：每個請求（回合結束）到同一個 session 下一次請求的時間；之後不再回來＝INF（照它的經驗比例）
+        nxt = {}
+        gaps = []
+        tl, sl = self.t, self.sess
+        for r in range(len(tl) - 1, -1, -1):
+            s = sl[r]
+            gaps.append(tl[nxt[s]] - tl[r] if s in nxt else INF)
+            nxt[s] = r
+        self.nz_gaps = gaps[::-1]
+        self.nzd = [None] * self.P["R"]["n_sess"]
+        self.next_req = self._next_req_nz      # select（O-BEL／O-BELS）、dead（O-DROP／O-NOW）、make_room（O-PF）都走這個
+
+    def _nz_sample(self):
+        rng = self.nzrng
+        return rng.random(), rng.choice(self.nz_gaps), rng.uniform(-self.nzl, self.nzl)
+
+    def _next_req_nz(self, s, ref):
+        nx, e = Engine.next_req(self, s, ref)
+        return self._nz(s, nx), e
+
+    def _nz(self, s, idx):
+        """真的「下次回來」（請求 index）→ 有雜訊的 index。B1：用這個 session 上次回合結束時抽的；B2：每次問都重抽。
+        P：以機率 λ 換成「上次回合結束＋經驗分佈裡抽的間隔」（可能變成不再回來、或不再回來變成會回來）；
+        M：剩餘時間（從現在算）×(1＋ε)、ε～U[−λ, λ]；不再回來維持不再回來。時間換回 index：第一個到達時間 ≥ 它的請求，至少是下一個請求。"""
+        if self.nzl == 0.0:
+            return idx
+        if self.nz_b1:
+            d = self.nzd[s]
+            if d is None:
+                d = self.nzd[s] = self._nz_sample()
+        else:
+            d = self._nz_sample()
+        u, g, eps = d
+        tl = self.t
+        if self.nzm == "P":
+            if u >= self.nzl:
+                return idx
+            if g >= INF:
+                return INF
+            Tq = tl[self.last[s]] + g
+        else:
+            if idx >= len(tl) or eps == 0.0:      # 含 INF（不再回來）；超過紀錄長度（只在截短的自檢裡會發生）照原值
+                return idx
+            tq = tl[self.cur] if self.cur >= 0 else tl[0]
+            Tq = tq + (tl[idx] - tq) * (1.0 + eps)
+        j = bisect.bisect_left(tl, Tq)
+        c = self.cur + 1
+        return j if j > c else c
+
     # ---------------------------------------------------------- 預取直接搬回 GPU（PREREG §2 第 2 項的敏感度）
     def _pf_push(self, s):
         """s 離開 GPU、資料在 CPU 或慢層：變成預取候選（同 demote 裡的做法）。"""
         if not self.sb[s]:
             return
         T = XT.next_access(self.acc, self.sb[s][-1], self.cur)
+        if self.noise is not None:
+            T = self._nz(s, T)
         self.sT[s] = T
         self.pfdone[s] = False
         if self.pf == "opf" and T < INF:
@@ -693,7 +761,7 @@ class Engine:
             Tc = self.sT[cand]
             el = []
             for x in self.glru:
-                nx = self._next_req_bl(self._gbl(x), rg)
+                nx = self._g_next(x)
                 if nx > Tc:
                     el.append((nx, -self.last[x], x))
             el.sort(reverse=True)
@@ -1035,6 +1103,8 @@ class Engine:
         self.res_sum += self.t[self.cur] - self.t[self.last[s]]   # 這次在 CPU 待了多久（上次回合到被降級）
         if self.pf:
             T = XT.next_access(self.acc, self.sb[s][-1], self.cur)
+            if self.noise is not None:
+                T = self._nz(s, T)
             self.sT[s] = T
             self.pfdone[s] = False
             if self.pf == "opf" and T < INF:
@@ -1207,6 +1277,8 @@ class Engine:
             else:
                 self.advance_prefetch(self.t[r - 1] if r > 0 else t, t)
         self.cur = r
+        if self.noise is not None and self.nz_b1:
+            self.nzd[self.sess[r]] = self._nz_sample()
         blocks = self.full[r]
         fmt, on_slow = self.fmt, self.on_slow
         if self.G > 0:      # ICPE next：GPU 上的 block 一定是前綴（session 粒度＋鏈式前綴）
@@ -1603,17 +1675,41 @@ OUTDIR_A = "x1"
 
 
 _GPU_COLS = False     # ICPE next：這次 sweep 有沒有開 GPU 層（有＝每列多 gpu_GiB／gpu_write／gpu_policy 與 _gpu_summary 的欄位）
+_NZ_COLS = False      # ICPE next：這次 sweep 有沒有雜訊（有＝每列多 noise_model／noise_lambda／noise_draw／noise_seed）
+
+
+def uses_oracle(policy, gs):
+    """這個組合有沒有用到完美預知（雜訊只對這些有意義）。"""
+    o, a, h, pf = POLICIES[policy]
+    return o in ("bel", "bels") or a == "onow" or h == "odrop" or pf == "opf" or (gs is not None and gs["pol"] == "BEL")
+
+
+def noise_specs(models, lams, draws, seeds):
+    """W4（PREREG §3 B）：λ＞0 → 每個模型 × 抽法 × seed；λ＝0 只跑一次（自檢：要和沒有雜訊的 oracle 逐值相同）。"""
+    out = []
+    for m in models:
+        for lam in lams:
+            if lam == 0:
+                out.append(dict(model=m, lam=0.0, draw=draws[0], seed=seeds[0]))
+                continue
+            for d in draws:
+                for sd in seeds:
+                    out.append(dict(model=m, lam=float(lam), draw=d, seed=int(sd)))
+    return out
 
 
 def _job(job):
     trace, rule, cpu_gib, policy, keys = job[:5]
     gs = job[5] if len(job) > 5 else None          # ICPE next：None＝GPU 層關閉（原本的路徑）
+    nz = job[6] if len(job) > 6 else None          # ICPE next：None＝完美預知
     K = _K
     P = prep(trace, rule)
     t0 = time.time()
     views = make_views(K, P, keys)
     gv = views[0] if POLICIES[policy][0] == "gdsf" else None
     gkw = {} if gs is None else dict(gpu_cap=int(gs["G"] * GiB), gpu_policy=gs["pol"], gpu_write=gs["write"], pf_target=gs.get("pf", "cpu"))
+    if nz is not None:
+        gkw["noise"] = nz
     eng = Engine(P, policy, cpu_gib * GiB, views, K, gdsf_view=gv, **gkw).run()
     out = []
     rd = os.environ.get("RUN_DIR", "")
@@ -1625,12 +1721,17 @@ def _job(job):
         if _GPU_COLS:
             row.update(gpu_GiB=gs["G"] if gs else 0, gpu_write=gs["write"] if gs else "none", gpu_policy=gs["pol"] if gs else "none",
                        pf_target=gs.get("pf", "cpu") if gs else "cpu")
+        if _NZ_COLS:
+            row.update(noise_model=nz["model"] if nz else "none", noise_lambda=nz["lam"] if nz else 0.0,
+                       noise_draw=nz["draw"] if nz else "none", noise_seed=nz["seed"] if nz else -1)
         out.append(dict(**row, **sm, elapsed_s=time.time() - t0))
         tag = f"{v.slow_name}_{v.gpu}_{v.mode}"
         arrs[f"ttft_{tag}"] = v.ttft
         arrs[f"rest_{tag}"] = v.rest
     if rd:
         gtag = "" if gs is None else f"_G{gs['G']:g}-{gs['write']}-{gs['pol'].replace(':', '')}-pf{gs.get('pf', 'cpu')}"
+        if nz is not None:
+            gtag += f"_nz{nz['model']}{nz['lam']:g}{nz['draw']}s{nz['seed']}"
         np.savez_compressed(os.path.join(rd, f"req_{trace}_{rule}_{cpu_gib}_{policy}{gtag}_{'-'.join(keys[0]) if len(keys) <= 2 else 'n' + str(len(keys))}.npz"),
                             **arrs)
     return out
@@ -1654,12 +1755,13 @@ def gpu_specs(gpu_gib, gpu_writes, gpu_policies, pf_targets=("cpu",)):
     return out
 
 
-def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None):
+def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None, nspecs=None):
     J = []
     slows = SLOWS if slows is None else slows
     allv = [(s, g, m) for s in slows for g in GPUS for m in MODES]    # slows＝SLOWS 時就是 ALL_VIEWS
     views = [k for k in allv if k[2] in modes]
     gspecs = [None] if not gspecs else gspecs
+    nspecs = [None] if not nspecs else nspecs
     for tr, ru in [(t_, r_) for t_ in traces for r_ in rules]:
         for c in cpus:
             for p in policies:
@@ -1667,21 +1769,24 @@ def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None
                     o, a, h, pf = POLICIES[p]
                     if gs is not None and gs.get("pf", "cpu") == "gpu" and not pf:
                         continue          # 沒有預取的規則：預取目的地沒有差別，只跑 pf＝cpu 那份
-                    tdep = pf or (gs is not None and parse_gpol(gs["pol"])[1] is not None)   # TTL 也和時間設定有關
-                    if tdep:
-                        for k in views:
-                            J.append((tr, ru, c, p, [k], gs))
-                    elif o == "gdsf":
-                        for s in slows:
-                            for g in GPUS:
-                                J.append((tr, ru, c, p, [(s, g, m) for m in modes], gs))
-                    else:
-                        J.append((tr, ru, c, p, list(views), gs))
+                    for nz in nspecs:
+                        if nz is not None and not uses_oracle(p, gs):
+                            continue      # 沒用到完美預知：雜訊沒有差別
+                        tdep = pf or (gs is not None and parse_gpol(gs["pol"])[1] is not None)   # TTL 也和時間設定有關
+                        if tdep:
+                            for k in views:
+                                J.append((tr, ru, c, p, [k], gs, nz))
+                        elif o == "gdsf":
+                            for s in slows:
+                                for g in GPUS:
+                                    J.append((tr, ru, c, p, [(s, g, m) for m in modes], gs, nz))
+                        else:
+                            J.append((tr, ru, c, p, list(views), gs, nz))
     return J
 
 
 def cmd_sweep(a):
-    global _K, _GPU_COLS
+    global _K, _GPU_COLS, _NZ_COLS
     import multiprocessing as mp
     for nm in a.slows:
         if nm not in SLOWS and nm not in EXTRA_SLOWS:
@@ -1689,10 +1794,12 @@ def cmd_sweep(a):
     _K = constants()
     gspecs = gpu_specs(a.gpu_gib, a.gpu_write, a.gpu_policies, a.pf_target)
     _GPU_COLS = any(g is not None for g in gspecs)
+    nspecs = noise_specs(a.noise_models, a.noise_lambdas, a.noise_draws, a.noise_seeds) if a.noise_models else [None]
+    _NZ_COLS = any(n is not None for n in nspecs)
     for tr in a.traces:
         for ru in a.rules:
             prep(tr, ru)
-    J = jobs_for(a.traces, a.rules, a.cpu, a.policies, a.modes, slows=a.slows, gspecs=gspecs)
+    J = jobs_for(a.traces, a.rules, a.cpu, a.policies, a.modes, slows=a.slows, gspecs=gspecs, nspecs=nspecs)
     # 重的（預取、scan）先跑
     J.sort(key=lambda j: (POLICIES[j[3]][3] is None, POLICIES[j[3]][0] not in ("bel", "bels", "pens", "pred", "lru2")))
     out_path = os.path.join(OUTDIR, a.out)
@@ -2033,6 +2140,10 @@ def main():
     s.add_argument("--gpu-write", nargs="+", default=["wb"], help="wb＝回寫互斥、wt＝直寫包含")
     s.add_argument("--gpu-policies", nargs="+", default=["LRU"], help="LRU、BEL、TTLA:<秒>、TTLB:<秒>")
     s.add_argument("--pf-target", nargs="+", default=["cpu"], help="預取目的地：cpu（主結果）、gpu（敏感度；要開 GPU 層）")
+    s.add_argument("--noise-models", nargs="*", default=[], help="W4：P（照 PBKV 的混合）、M（乘法誤差）；不給＝沒有雜訊")
+    s.add_argument("--noise-lambdas", nargs="+", type=float, default=[0.0, 0.1, 0.2, 0.3])
+    s.add_argument("--noise-draws", nargs="+", default=["B1", "B2"])
+    s.add_argument("--noise-seeds", nargs="+", type=int, default=list(range(10)))
     s = sp.add_parser("analyze")
     s.add_argument("--sweep", nargs="+", default=["x1_sweep.csv"])
     s.add_argument("--src-run", nargs="*", default=[])

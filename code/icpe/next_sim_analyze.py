@@ -13,6 +13,9 @@
   預取目的地：--pf-target gpu 時，有預取的 CPU 規則（O-PF、LRU+RPF、O-ALL）用 pf_target＝gpu 的列，其餘照 cpu（沒有預取就沒有差別）。
   多個重建規則（Mooncake R1／R2）時另加 rule＝min（每格取兩規則中較小的上限），同 x1_sim analyze。
   這裡只算數字，不下判定字；門檻（≥15%、5%）照 PREREG §1 由讀表的人套用。
+  W4 雜訊（sweep 有 noise_* 欄時）：每個雜訊設定 (模型, λ, 抽法, seed) 各算一次——用到完美預知的組合用那個設定的列、
+  其他（②）用沒有雜訊的列；輸出 <prefix>_noise_headroom.csv（逐 seed）與 <prefix>_noise_summary.csv（seed 間的中位數、
+  最小–最大、平均±標準差；PREREG §3 B）。λ＝0 的上限必須和沒有雜訊的相同（自檢，不同就停）。
 """
 from __future__ import annotations
 
@@ -33,11 +36,13 @@ import pandas as pd  # noqa: E402
 import x1_sim as XS  # noqa: E402
 
 CELL = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "gpu_GiB", "gpu_write"]
+NZ = ["noise_model", "noise_lambda", "noise_draw", "noise_seed"]
 
 
 def load(paths, pf_target, metric, dead_h):
     d = pd.concat([pd.read_csv(p) for p in paths], ignore_index=True)
-    for c, v in (("gpu_GiB", 0), ("gpu_write", "none"), ("gpu_policy", "none"), ("pf_target", "cpu")):
+    for c, v in (("gpu_GiB", 0), ("gpu_write", "none"), ("gpu_policy", "none"), ("pf_target", "cpu"),
+                 ("noise_model", "none"), ("noise_lambda", 0.0), ("noise_draw", "none"), ("noise_seed", -1)):
         if c not in d.columns:
             d[c] = v
     pfp = {p for p, spec in XS.POLICIES.items() if spec[3]}
@@ -50,12 +55,13 @@ def load(paths, pf_target, metric, dead_h):
         d = d[~d.policy.isin(["O-DROP", "O-NOW", "O-ALL"])].copy()
         d.loc[d.policy.str.endswith(f"-H{dead_h}"), "policy"] = d.policy.str.replace(f"-H{dead_h}", "", regex=False)
     d = d[~d.policy.str.contains("-H")]
-    dup = d.duplicated(CELL + ["policy", "gpu_policy"]).sum()
+    dup = d.duplicated(CELL + ["policy", "gpu_policy"] + NZ).sum()
     assert dup == 0, f"同一格同一個 (CPU 規則, GPU 規則) 有 {dup} 列重複：sweep 重複寫入？"
     return d, comp_pol
 
 
-def analyze(d, comp_pol):
+def analyze(d, comp_pol, oracle_keys=None):
+    """oracle_keys（雜訊用）：只算「④ 那一邊的組合全部都在 oracle_keys 裡」的元件（避免拿沒有雜訊的列混進來）。"""
     rows, viol = [], []
     src = ",".join(sorted(d.run_id.unique()))
     for key, g in d.groupby(CELL, sort=True):
@@ -75,6 +81,8 @@ def analyze(d, comp_pol):
             need = [(p, q) for p in ocpu for q in ogpu] + [(p, q) for p in rcpu for q in rgpu]
             if any(x not in T for x in need):
                 continue                                   # 這格沒有跑齊：不算（同 x1_sim analyze）
+            if oracle_keys is not None and any((p, q) not in oracle_keys for p in ocpu for q in ogpu):
+                continue
             o, r = best(ocpu, ogpu), best(rcpu, rgpu)
             To, Tr = o[0], r[0]
             rho_o, rho_r = T[(o[1], o[2])][1], T[(r[1], r[2])][1]
@@ -88,7 +96,8 @@ def analyze(d, comp_pol):
                         viol.append(dict(zip(CELL, key), component=comp, oracle_policy=o[1], oracle_gpu_policy=o[2], T_oracle=To,
                                          rival=p, rival_gpu_policy=q, T_rival=T[(p, q)][0], oracle_slower_by=(To - T[(p, q)][0]) / T[(p, q)][0]))
         og = "BEL" if "BEL" in gp_all else "none"
-        if ("O-ALL", og) in T and all((p, q) in T for p in XS.NON_ORACLE for q in gp_no):
+        if ("O-ALL", og) in T and all((p, q) in T for p in XS.NON_ORACLE for q in gp_no) and \
+                (oracle_keys is None or ("O-ALL", og) in oracle_keys):
             r = best(XS.NON_ORACLE, gp_no)
             To = T[("O-ALL", og)][0]
             rows.append(dict(zip(CELL, key), component="O-ALL(report)", oracle_policy="O-ALL", oracle_gpu_policy=og, T_oracle=To,
@@ -118,11 +127,38 @@ def main():
     ap.add_argument("--dead-h", type=int, default=0)
     a = ap.parse_args()
     d, comp_pol = load(a.sweep, a.pf_target, a.metric, a.dead_h)
-    H, V = analyze(d, comp_pol)
+    exact = d[d.noise_model == "none"]
+    H, V = analyze(exact, comp_pol)
+    noisy = d[d.noise_model != "none"]
+    NH = []
+    if len(noisy):
+        ck = CELL + ["component"]
+        hx = H.set_index(ck).headroom
+        for spec, g in noisy.groupby(NZ):
+            keys = set(zip(g.policy, g.gpu_policy))
+            base = exact[[k not in keys for k in zip(exact.policy, exact.gpu_policy)]]
+            h, _ = analyze(pd.concat([base, g], ignore_index=True), comp_pol, oracle_keys=keys)
+            for c, v in zip(NZ, spec):
+                h[c] = v
+            if spec[1] == 0:           # λ＝0 自檢
+                j = h.set_index(ck).headroom
+                common = j.index.intersection(hx.index)
+                dmax = float((j.loc[common] - hx.loc[common]).abs().max()) if len(common) else 0.0
+                assert dmax == 0.0, f"λ＝0 的上限和沒有雜訊的不同（最大差 {dmax}）：{spec}"
+                print(f"λ＝0 自檢 {spec}：{len(common)} 格和沒有雜訊的逐值相同")
+            NH.append(h)
     meta = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
                 host=socket.gethostname(), pf_target=a.pf_target, metric=a.metric, dead_h=a.dead_h)
     os.makedirs(a.out_dir, exist_ok=True)
-    for name, X in (("headroom_components", H), ("violations", V)):
+    outs = [("headroom_components", H), ("violations", V)]
+    if NH:
+        NHd = pd.concat(NH, ignore_index=True)
+        gk = CELL + ["component", "noise_model", "noise_lambda", "noise_draw"]
+        NS = NHd.groupby(gk).headroom.agg(n_seeds="size", median="median", min="min", max="max", mean="mean", sd="std").reset_index()
+        ex = H.set_index(CELL + ["component"]).headroom.rename("headroom_exact")
+        NS = NS.join(ex, on=CELL + ["component"])
+        outs += [("noise_headroom", NHd), ("noise_summary", NS)]
+    for name, X in outs:
         X = X.copy()
         for i, (k, v) in enumerate(meta.items()):
             X.insert(i, k, v)

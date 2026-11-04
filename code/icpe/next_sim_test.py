@@ -17,6 +17,9 @@
   T6 gpu_pf_audit：預取直接搬回 GPU（PREREG §2 第 2 項）：wb／wt × {O-PF, LRU+RPF, O-ALL} × GPU 規則，GPU 4 GiB、CPU 32 GiB、
      前 N 個請求，每 25 步稽核（含預取進 GPU 的塊：主人、計數、GPU 位元組）；有預取進 GPU 的塊被用到（報次數）。
   T7 gpu_pf_tiny_eq_nopf：GPU 1 byte（放不下任何一塊）時，預取目的地＝GPU 的 O-PF／LRU+RPF ≡ 同樣設定但沒有預取的 LRU（逐位元）。
+  T8 noise_lam0_eq_exact：W4 雜訊 λ＝0（模型 P／M × 抽法 B1／B2）≡ 沒有雜訊（逐位元）：O-BEL、O-BELS、O-DROP、O-NOW、O-PF、O-ALL，
+     GPU 層關閉、以及 GPU 111.0625 GiB＋BEL（wb）。PREREG §3 B 的自檢。
+  T9 noise_audit：λ＝0.3（P／M × B1／B2）每 25 步稽核沒有 AssertionError；同一個 seed 跑兩次逐位元相同；不同 seed 至少有一個請求不同（報）。
 只用 CPU；不碰 GPU。
 """
 from __future__ import annotations
@@ -174,6 +177,47 @@ def t7_job(arg):
     return f"gpu_pf_tiny_eq_nopf[{trace},{wm},{pol}]", eq, "逐位元相同" if eq else "不同"
 
 
+NZ_POLS = ["O-BEL", "O-BELS", "O-DROP", "O-NOW", "O-PF", "O-ALL"]
+
+
+def t8_job(arg):
+    trace, pol, gpu = arg
+    P = XS.prep(trace)
+    keys = keys_for(pol)
+    gkw = {} if not gpu else dict(gpu_cap=int(111.0625 * GiB), gpu_policy="BEL", gpu_write="wb")
+    _, v0 = run(P, pol, 128, keys, **gkw)
+    bad = []
+    for m in ("P", "M"):
+        for dr in ("B1", "B2"):
+            _, v1 = run(P, pol, 128, keys, noise=dict(model=m, lam=0.0, draw=dr, seed=3), **gkw)
+            if fingerprint(v0) != fingerprint(v1):
+                bad.append(f"{m}{dr}")
+    return (f"noise_lam0_eq_exact[{trace},{pol},{'G111-BEL' if gpu else 'G0'}]", not bad,
+            f"P／M × B1／B2 全部逐位元相同" if not bad else f"不同：{bad}")
+
+
+def t9_job(arg):
+    trace, pol, m, dr, nsub = arg
+    P = XS.prep(trace)
+    sub = dict(P)
+    for k in ("full", "nall", "tl", "kindc", "sessl", "parentl"):
+        sub[k] = P[k][:nsub]
+    keys = keys_for(pol)[:2] if len(keys_for(pol)) > 2 else keys_for(pol)
+    gkw = dict(gpu_cap=4 * GiB, gpu_policy="BEL", gpu_write="wb")
+    try:
+        outs = []
+        for seed in (1, 1, 2):
+            views = XS.make_views(_K, sub, keys)
+            XS.Engine(sub, pol, 32 * GiB, views, _K, check=25, noise=dict(model=m, lam=0.3, draw=dr, seed=seed), **gkw).run()
+            outs.append(fingerprint(views))
+        same = outs[0] == outs[1]
+        diff = outs[0] != outs[2]
+        return (f"noise_audit[{trace},{pol},{m}{dr}]", same,
+                f"λ＝0.3、前 {nsub} 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 {same}；seed 1 vs 2 不同 {diff}")
+    except AssertionError as e:
+        return f"noise_audit[{trace},{pol},{m}{dr}]", False, repr(e)
+
+
 def t5(rec):
     tp = __import__("json").load(open(XS.PF.TIER_PARAMS))
     x = XS.extra_slow("nvme807", tp)
@@ -218,8 +262,10 @@ def main():
     J3 = [(tr, p, c) for tr in a.traces for c in a.cpu for p in pols]
     J6 = [(tr, p, gp, wm, a.audit_n) for tr in a.traces for p in ("O-PF", "LRU+RPF", "O-ALL") for gp in GPOLS for wm in XS.GPU_WRITES]
     J7 = [(tr, p, wm) for tr in a.traces for p in ("O-PF", "LRU+RPF") for wm in XS.GPU_WRITES]
+    J8 = [(tr, p, g) for tr in a.traces for p in NZ_POLS for g in (False, True)]
+    J9 = [(tr, p, m, dr, a.audit_n) for tr in a.traces for p in NZ_POLS for m in ("P", "M") for dr in ("B1", "B2")]
     with get_context("fork").Pool(a.workers) as pool:
-        for fn, J in ((t1_job, J1), (t2_job, J2), (t3_job, J3), (t6_job, J6), (t7_job, J7)):
+        for fn, J in ((t1_job, J1), (t2_job, J2), (t3_job, J3), (t6_job, J6), (t7_job, J7), (t8_job, J8), (t9_job, J9)):
             for res in pool.imap(fn, J):
                 rec(*res)
             print(f"[{fn.__name__}] {len(J)} 個，累計 {time.time() - t0:.0f}s", flush=True)
