@@ -67,3 +67,10 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
 ## 下一步（未實作）
 
 - 第二批：雜訊（PREREG 模型 P／M、B1／B2、10 seed）、慢層容量 ⌊0.5 × n_blocks_full⌋＋慢層淘汰（② O-ORD 那組、④ Belady）、排隊、W5、block 粒度的 APC（偏離 2 第 3 項）。
+
+### 7. 新紀錄的載入點 `nb:<name>`（`code/p3x/x1_nb.py`）
+
+- **改了什麼**：`x1_sim.prep("nb:<name>")` 讀 `$X1_NB_DIR/<name>.npz`（預設 `/ssd6/hungwei/icpe-next/datasets/x1_nb`）；格式與檢查寫在 `x1_nb.py` 開頭（數值陣列＋JSON 字串，`allow_pickle=False`）。`icpe-data` 用 `x1_nb.write_nb(...)` 寫，寫之前和讀之後跑同一套檢查（鏈式前綴、parent 和 session 一致、t 非遞減、nall ≥ 完整 chunk 數、「session 的第一個請求 ⇔ kind≠cont」）。Mooncake 與 `fi:` 的路徑沒動（只多一個 `elif`）。
+- **為什麼**：§3b：`icpe-data` 不能改 `code/p3x/*`，但新紀錄要進模擬器。
+- **驗證**：Mooncake conversation／toolagent 經 `x1_trace.prepare` → `write_nb` → `prep("nb:…")`，LRU、O-BEL、O-PF、GPU 層 111 GiB＋BEL：逐請求 TTFT、還原時間、工作集大小都相同（run `20261104-233613-icpe-sim-nb-roundtrip`）。
+- **有利還是不利**：無（只是載入方式）。

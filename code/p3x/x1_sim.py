@@ -1546,6 +1546,9 @@ def prep(name, rule="R1"):
     if name.startswith("fi:"):      # FreeInference（事後加入，x1_fi.py）；session 用資料自帶的 session_id
         import x1_fi
         P = x1_fi.prepare_fi(name[3:])
+    elif name.startswith("nb:"):    # ICPE next：icpe-data 轉好的新紀錄（x1_nb.py；$X1_NB_DIR/<name>.npz）
+        import x1_nb
+        P = x1_nb.prepare_nb(name[3:])
     else:
         P = XT.prepare(name, rule=rule)
     R = P["R"]
