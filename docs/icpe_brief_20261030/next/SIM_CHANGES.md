@@ -104,3 +104,17 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
 ### 10. `x1_nb` 向量化
 
 - 檢查、重新編號、每塊的存取清單全部改用 numpy（TraceLab 有約 2.2 億個 chunk 存取，純 Python 要好幾分鐘、好幾 GB）。和原本的純 Python 版、以及 `x1_trace.prepare` 對拍：Mooncake 兩份的 full／acc 只差一對一的重新編號、n_blocks_full 與 nall 相同；故意弄壞鏈（在和 parent 共用的位置交換兩個鍵）與 parent 都會被擋下（run `20261104-235644-icpe-sim-nb-roundtrip3`）。
+
+### 11. 加速（結果逐位元相同；改到原本的程式路徑，所以 G1 重做）
+
+- **為什麼**：PREREG 網格很大（每份紀錄 48,258 個 job；icpe-data 量到 CacheWise N16 每個 job 7.6–13.7 s）。profile（run `20261104-235828-icpe-sim-profile-cw`）：12 種時間設定的 job，約 83% 的時間在 `View.restore` 的逐塊迴圈與 1 億次 `Chan.read` 呼叫。
+- **改了什麼**：
+  1. `View.restore`：`Chan.read` 內聯成區域變數（同樣的浮點運算、同樣的順序；還原期間沒有寫入，所以 `t_free_w` 固定；每塊的 BF／r、(BF／r)×k 先算好＝同一個除法的同一個值），最後把 I/O 線狀態寫回去。舊的保留為 `restore_ref`（只給對拍用）。
+  2. 回合結束釋放舊 block 的迴圈（原本路徑、wb、wt）：`_fix` 只有在「沒人持有」或「CPU 沒有持有者卻還有 BF16」時才做事，其他情況直接跳過呼叫（沒有慢層容量上限時；慢層上限的 `_fix` 包了有副作用的一層，就照舊每塊都叫）。
+  3. wb 的回合結束：GPU 位元組用區域整數累加（整數，順序不影響）；舊 block 的遞減、GPU 釋放、`_fix` 合成一個迴圈（`_fix(b)` 只讀寫 b 自己的狀態與整數計數，清單裡每塊只出現一次，所以和「先全部遞減再逐一 `_fix`」相同）；「釋放自己預取進 CPU 的 INT4」那個逐塊迴圈只在有預取的規則才跑（沒有預取就不會有 fmt＝2）。
+- **驗證**：
+  - `restore` 對 `restore_ref`：2,000 個隨機 layout（代碼 1–4、隨機的寫入干擾狀態、cake／load）回傳值與還原後的 I/O 線狀態逐位元相同；整個引擎 12 組（Mooncake 2 份 × LRU、O-BEL、O-PF、GDSF、GPU 層、預取到 GPU）逐請求逐位元相同（run `20261105-000344-icpe-sim-speedup-check`）。
+  - 跨版本：舊 checkout（ac0c56e）對新程式，Mooncake 2 份 × 24 個 CPU 規則（含 PRED）× 5 種 GPU 設定（關閉；wb 16 GiB 的 LRU、BEL、TTLA:10；wt LRU）、CPU 128 GiB，逐請求陣列與 I/O、引擎計數的 sha256：第 1、2 項 240／240 相同（run `20261105-000853-icpe-sim-fastpath-xcheck`）；加上第 3 項後新的一邊重跑：240／240 相同（run `20261105-001801-icpe-sim-fastpath-xcheck2`）。
+  - 最後由 G1（Mooncake X1 sweep V1 對 H200 的輸出）再驗一次。
+- **快多少**（CacheWise N16 試跑檔、LRU、CPU 128 GiB、同一台、load 約 65–80；只有第 1 項時）：12 種時間設定 32.2 → 18.9 s；1 種 5.6 → 4.8 s。第 2 項的效果還沒量（NOT_MEASURED）。
+- **有利還是不利**：無（結果相同）。

@@ -352,6 +352,111 @@ class View:
     def restore(self, lay, blocks, L, n_all, t0, old_n, pf_done, g=0, gpf_done=None):
         """lay[i]∈{1: CPU BF16, 2: CPU INT4（預取）, 3: 慢層 INT4}，i<L。回傳 (TTFT, 還原舊 context, nC, nS, 重算數)。
         ICPE next：lay[0:g]＝0（已在 GPU，不用還原）；Cake 從第 g 塊開始重算、從最後一塊往前載入。g＝0 時和原本逐位元相同。
+        4＝預取進 GPU 的塊（已反量化成 BF16）：不用載入，只等預取完成（gpf_done）。
+        加速（ICPE next；結果逐位元相同，自檢 T10 對 restore_ref）：Chan.read 內聯成區域變數，同樣的浮點運算、同樣的順序；
+        還原期間沒有寫入，所以 t_free_w 固定；每塊的 BF／r、(BF／r)×k 先算好（同一個除法、同一個值）。"""
+        f, cpu, slow, d, i4 = self.f, self.cpu, self.slow, self.d, self.i4
+        nC = nS = 0
+        if self.mode == "cake" and self.planner == "stair":
+            assert g == 0 and gpf_done is None, "STAIR 不支援 GPU 層"
+            end, meet, nC, nS = self._stair(lay, blocks, L, t0, pf_done)
+        else:
+            cf, cwf, cb, cn = cpu.t_free, cpu.t_free_w, cpu.busy_r, cpu.bytes_r
+            sf, swf, sb, sn = slow.t_free, slow.t_free_w, slow.busy_r, slow.bytes_r
+            cB = BF / cpu.r
+            cBk = cB * cpu.k
+            c4 = i4 / cpu.r
+            c4k = c4 * cpu.k
+            s4 = i4 / slow.r
+            s4k = s4 * slow.k
+            if self.mode == "cake":
+                p, q, rt, lt = g, L - 1, t0, t0
+                while p <= q:
+                    if rt <= lt:
+                        rt += f[p]
+                        p += 1
+                    else:
+                        k = lay[q]
+                        if k == 1:
+                            st = lt if lt > cf else cf
+                            dur = cBk if cwf > st else cB
+                            cf = st + dur
+                            cb += dur
+                            cn += BF
+                            lt = cf
+                            nC += 1
+                        elif k == 3:
+                            st = lt if lt > sf else sf
+                            dur = s4k if swf > st else s4
+                            sf = st + dur
+                            sb += dur
+                            sn += i4
+                            lt = sf + d
+                            nS += 1
+                        elif k == 2:
+                            pd = pf_done[blocks[q]]
+                            nw = lt if lt > pd else pd
+                            st = nw if nw > cf else cf
+                            dur = c4k if cwf > st else c4
+                            cf = st + dur
+                            cb += dur
+                            cn += i4
+                            lt = cf + d
+                            nC += 1
+                        else:              # 4
+                            pd = gpf_done[blocks[q]]
+                            lt = lt if lt > pd else pd
+                        q -= 1
+                end = rt if rt > lt else lt
+                meet = p
+            else:
+                lt = t0
+                for i in range(g, L):
+                    k = lay[i]
+                    if k == 1:
+                        st = lt if lt > cf else cf
+                        dur = cBk if cwf > st else cB
+                        cf = st + dur
+                        cb += dur
+                        cn += BF
+                        lt = cf
+                        nC += 1
+                    elif k == 3:
+                        st = lt if lt > sf else sf
+                        dur = s4k if swf > st else s4
+                        sf = st + dur
+                        sb += dur
+                        sn += i4
+                        lt = sf + d
+                        nS += 1
+                    elif k == 2:
+                        pd = pf_done[blocks[i]]
+                        nw = lt if lt > pd else pd
+                        st = nw if nw > cf else cf
+                        dur = c4k if cwf > st else c4
+                        cf = st + dur
+                        cb += dur
+                        cn += i4
+                        lt = cf + d
+                        nC += 1
+                    else:                  # 4
+                        pd = gpf_done[blocks[i]]
+                        lt = lt if lt > pd else pd
+                end = lt
+                meet = g
+            cpu.t_free, cpu.busy_r, cpu.bytes_r = cf, cb, cn
+            slow.t_free, slow.busy_r, slow.bytes_r = sf, sb, sn
+        self.last_end = end
+        Fc = self.Fc
+        base = end - t0
+        ttft = base + Fc[n_all] - Fc[L]
+        rest = base + (Fc[old_n] - Fc[L] if old_n > L else 0.0)
+        return ttft, rest, nC, nS, meet - g + (n_all - L)
+
+    def restore_ref(self, lay, blocks, L, n_all, t0, old_n, pf_done, g=0, gpf_done=None):
+        """（參考實作：ICPE next 加速前的版本，只給自檢對拍用；正式路徑用 restore。）
+        lay[i]∈{1: CPU BF16, 2: CPU INT4（預取）, 3: 慢層 INT4}，i<L。回傳 (TTFT, 還原舊 context, nC, nS, 重算數)。
+        ICPE next：lay[0:g]＝0（已在 GPU，不用還原）；Cake 從第 g 塊開始重算、從最後一塊往前載入。g＝0 時和原本逐位元相同。
         4＝預取進 GPU 的塊（已反量化成 BF16）：不用載入，只等預取完成（gpf_done）。"""
         f, cpu, slow, d, i4 = self.f, self.cpu, self.slow, self.d, self.i4
         nC = nS = 0
@@ -659,6 +764,7 @@ class Engine:
         self.pfheap = []
         self.pf_sessions = set()
         # ICPE next：GPU 快取層（gpu_cap＝0＝關閉，下面都不建、step 走原本的路徑）
+        self._fix_fast = True         # 加速：_fix 沒有副作用時可以跳過（慢層容量上限會包一層有副作用的 _fix → False）
         self.noise = None             # W4 雜訊（PREREG §2 第 6 項、§3 B）；None＝完美預知（原本的路徑）
         self.G = gpu_cap
         self.pf_target = pf_target
@@ -852,6 +958,7 @@ class Engine:
         self.sorder = SlowOrder(self, rule, self.sc_cap * self.i4, gdsf_view)
         self._fix_inner = self._fix
         self._fix = self._fix_sc
+        self._fix_fast = False
         self._demote_inner = self.demote
         self.demote = self._demote_sc
         self._enforce_inner = self.enforce
@@ -1580,11 +1687,21 @@ class Engine:
                     self.pf_owner[b] = -1
         w = 0
         if old_state in (S_CPU, S_SLOW):
-            for b in old:
-                rl[b] -= 1
-                if old_state == S_CPU:
-                    rc[b] -= 1
-                w += self._fix(b)
+            if self._fix_fast:            # 加速（逐位元相同）：_fix 只有在「沒人持有」或「CPU 沒有持有者但有 BF16」時才做事
+                fix = self._fix
+                isc = old_state == S_CPU
+                for b in old:
+                    rl[b] -= 1
+                    if isc:
+                        rc[b] -= 1
+                    if rl[b] == 0 or (rc[b] == 0 and fmt[b] == 1):
+                        w += fix(b)
+            else:
+                for b in old:
+                    rl[b] -= 1
+                    if old_state == S_CPU:
+                        rc[b] -= 1
+                    w += self._fix(b)
         if self.spf[s] <= 0:
             self.pf_sessions.discard(s)
         self.sb[s] = list(blocks)
@@ -1666,35 +1783,68 @@ class Engine:
         old_state = self.st[s]
         rl, rc, rg = self.ref_live, self.ref_cpu, self.ref_gpu
         gpf = self.gpf
-        for b in blocks:
-            rl[b] += 1
-            rg[b] += 1
-            if rg[b] == 1:
-                if gpf is not None and gpf[b] >= 0:
-                    self._gpf_claim(b)
-                else:
-                    self.gpu_used += BF
-        if gpf is not None and self.gspf[s] > 0:
-            self._g_unprefetch(s, old, push=False)   # 沒被這一輪用到的（通常沒有）
+        if gpf is None:                  # 加速（逐位元相同）：GPU 位元組是整數，累加順序不影響
+            nn = 0
+            for b in blocks:
+                rl[b] += 1
+                x = rg[b] + 1
+                rg[b] = x
+                if x == 1:
+                    nn += 1
+            self.gpu_used += nn * BF
+        else:
+            for b in blocks:
+                rl[b] += 1
+                rg[b] += 1
+                if rg[b] == 1:
+                    if gpf[b] >= 0:
+                        self._gpf_claim(b)
+                    else:
+                        self.gpu_used += BF
+            if self.gspf[s] > 0:
+                self._g_unprefetch(s, old, push=False)   # 沒被這一輪用到的（通常沒有）
         w = 0
         if old_state == S_CPU:
             self._order_remove(s)
-        if old_state in (S_CPU, S_SLOW, S_GPU):
-            for b in old:
-                rl[b] -= 1
-                if old_state == S_CPU:
-                    rc[b] -= 1
-            if old_state == S_GPU:
-                self._g_release(old)
-            for b in old:
-                w += self._fix(b)
         fmt = self.fmt
-        for b in blocks:                 # 自己預取進 CPU 的 INT4：已經搬上 GPU，不再需要
-            if fmt[b] == 2 and self.pf_owner[b] == s:
-                self.cpu_used -= self.i4
-                fmt[b] = 0
-                self.pf_owner[b] = -1
-                self.spf[s] -= 1
+        if old_state in (S_CPU, S_SLOW, S_GPU):
+            if self._fix_fast:
+                # 加速（逐位元相同）：每塊的遞減與 _fix 合成一個迴圈——_fix(b) 只讀寫 b 自己的狀態（和整數計數），
+                # 一個 session 的清單裡每塊只出現一次；_fix 只有在「沒人持有」或「CPU 沒有持有者卻有 BF16」時才做事
+                fix = self._fix
+                nf = 0
+                isc, isg = old_state == S_CPU, old_state == S_GPU
+                for b in old:
+                    rl[b] -= 1
+                    if isc:
+                        rc[b] -= 1
+                    elif isg:
+                        x = rg[b] - 1
+                        rg[b] = x
+                        if x == 0:
+                            nf += 1
+                    if rl[b] == 0 or (rc[b] == 0 and fmt[b] == 1):
+                        if nf:                    # （_fix 不讀 gpu_used；先補齊只是讓狀態在呼叫時一致）
+                            self.gpu_used -= nf * BF
+                            nf = 0
+                        w += fix(b)
+                self.gpu_used -= nf * BF
+            else:
+                for b in old:
+                    rl[b] -= 1
+                    if old_state == S_CPU:
+                        rc[b] -= 1
+                if old_state == S_GPU:
+                    self._g_release(old)
+                for b in old:
+                    w += self._fix(b)
+        if self.pf:                      # 自己預取進 CPU 的 INT4：已經搬上 GPU，不再需要（沒有預取的規則不會有 fmt＝2）
+            for b in blocks:
+                if fmt[b] == 2 and self.pf_owner[b] == s:
+                    self.cpu_used -= self.i4
+                    fmt[b] = 0
+                    self.pf_owner[b] = -1
+                    self.spf[s] -= 1
         if self.spf[s] <= 0:
             self.pf_sessions.discard(s)
         self.sb[s] = list(blocks)
@@ -1743,11 +1893,21 @@ class Engine:
                     self.pf_owner[b] = -1
         w = 0
         if old_state in (S_CPU, S_SLOW):
-            for b in old:
-                rl[b] -= 1
-                if old_state == S_CPU:
-                    rc[b] -= 1
-                w += self._fix(b)
+            if self._fix_fast:            # 加速（逐位元相同），同原本路徑的說明
+                fix = self._fix
+                isc = old_state == S_CPU
+                for b in old:
+                    rl[b] -= 1
+                    if isc:
+                        rc[b] -= 1
+                    if rl[b] == 0 or (rc[b] == 0 and fmt[b] == 1):
+                        w += fix(b)
+            else:
+                for b in old:
+                    rl[b] -= 1
+                    if old_state == S_CPU:
+                        rc[b] -= 1
+                    w += self._fix(b)
         if self.spf[s] <= 0:
             self.pf_sessions.discard(s)
         self.sb[s] = list(blocks)

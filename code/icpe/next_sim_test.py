@@ -19,6 +19,10 @@
   T7 gpu_pf_tiny_eq_nopf：GPU 1 byte（放不下任何一塊）時，預取目的地＝GPU 的 O-PF／LRU+RPF ≡ 同樣設定但沒有預取的 LRU（逐位元）。
   T8 noise_lam0_eq_exact：W4 雜訊 λ＝0（模型 P／M × 抽法 B1／B2）≡ 沒有雜訊（逐位元）：O-BEL、O-BELS、O-DROP、O-NOW、O-PF、O-ALL，
      GPU 層關閉、以及 GPU 111.0625 GiB＋BEL（wb）。PREREG §3 B 的自檢。
+  T10 restore_eq_ref：加速後的 View.restore 對加速前的 restore_ref：2,000 個隨機 layout（代碼 1–4、隨機寫入干擾）回傳值與 I/O 線狀態
+     逐位元相同；整個引擎（每種 CPU 規則、GPU 層關閉／wb BEL／預取到 GPU）逐請求逐位元相同。
+  T11 slowcap：慢層容量上限（第二批）：(a) 上限大到碰不到（frac＝1e6）× 每種慢層規則 ≡ 沒有上限（逐位元）；
+     (b) 上限很緊（frac＝0.05）× 每種慢層規則 × {LRU, O-BEL, O-PF}，GPU 關閉／wb 4 GiB，前 N 個請求每 25 步稽核沒有 AssertionError。
   T9 noise_audit：λ＝0.3（P／M × B1／B2）每 25 步稽核沒有 AssertionError；同一個 seed 跑兩次逐位元相同；不同 seed 至少有一個請求不同（報）。
 只用 CPU；不碰 GPU。
 """
@@ -218,6 +222,77 @@ def t9_job(arg):
         return f"noise_audit[{trace},{pol},{m}{dr}]", False, repr(e)
 
 
+def t10_single(rec):
+    rng = random.Random(5)
+    bad = 0
+    for trial in range(2000):
+        L = rng.randint(0, 200)
+        n_all = L + rng.randint(0, 20)
+        g = rng.randint(0, L)
+        slow, gst, mode = rng.choice(XS.SLOWS), rng.choice(XS.GPUS), rng.choice(["cake", "load"])
+        lay = [0] * g + [rng.choice([1, 2, 3, 4]) for _ in range(L - g)]
+        pf = [rng.uniform(0, 3) for _ in range(L)]
+        gp = [rng.uniform(0, 3) for _ in range(L)]
+        st0 = [rng.uniform(0, 4) for _ in range(4)]
+        outs = []
+        for fn in ("restore", "restore_ref"):
+            v = XS.View(_K, slow, gst, mode, 400, 1)
+            v.cpu.t_free, v.cpu.t_free_w, v.slow.t_free, v.slow.t_free_w = st0
+            o = getattr(v, fn)(lay, list(range(L)), L, n_all, 1.0, L, pf, g, gp)
+            outs.append((o, v.last_end, v.cpu.t_free, v.cpu.busy_r, v.cpu.bytes_r, v.slow.t_free, v.slow.busy_r, v.slow.bytes_r))
+        bad += outs[0] != outs[1]
+    rec("restore_eq_ref[single]", bad == 0, f"2,000 個隨機 layout，不一致 {bad}")
+
+
+def t10_job(arg):
+    trace, pol, gk = arg
+    P = XS.prep(trace)
+    keys = keys_for(pol)
+    gkw = {"none": {}, "wbBEL": dict(gpu_cap=int(16 * GiB), gpu_policy="BEL", gpu_write="wb"),
+           "pfgpu": dict(gpu_cap=int(16 * GiB), gpu_policy="LRU", gpu_write="wb", pf_target="gpu")}[gk]
+    new = XS.View.restore
+    res = []
+    for impl in (new, XS.View.restore_ref):
+        XS.View.restore = impl
+        try:
+            _, v = run(P, pol, 128, keys, **gkw)
+        finally:
+            XS.View.restore = new
+        res.append(fingerprint(v))
+    eq = res[0] == res[1]
+    return f"restore_eq_ref[{trace},{pol},{gk}]", eq, "逐位元相同" if eq else "不同"
+
+
+def t11a_job(arg):
+    trace, pol, sp = arg
+    P = XS.prep(trace)
+    keys = keys_for(pol)
+    if sp == "GDSF" and len(keys) > 2:
+        keys = [("ssd", "busy", "cake"), ("ssd", "busy", "load")]
+    _, v0 = run(P, pol, 128, keys)
+    views = XS.make_views(_K, P, keys)
+    XS.Engine(P, pol, 128 * GiB, views, _K, gdsf_view=views[0], slow_cap=1e6, slow_policy=sp).run()
+    eq = fingerprint(v0) == fingerprint(views)
+    return f"slowcap_huge_eq_none[{trace},{pol},{sp}]", eq, "逐位元相同" if eq else "不同"
+
+
+def t11b_job(arg):
+    trace, pol, sp, gk, nsub = arg
+    P = XS.prep(trace)
+    sub = dict(P)
+    for k in ("full", "nall", "tl", "kindc", "sessl", "parentl"):
+        sub[k] = P[k][:nsub]
+    keys = [("nfs", "busy", "cake")]
+    gkw = {} if gk == "none" else dict(gpu_cap=4 * GiB, gpu_policy="LRU", gpu_write="wb")
+    try:
+        views = XS.make_views(_K, sub, keys)
+        e = XS.Engine(sub, pol, 16 * GiB, views, _K, gdsf_view=views[0], check=25, slow_cap=0.05, slow_policy=sp, **gkw).run()
+        return (f"slowcap_audit[{trace},{pol},{sp},{gk}]", True,
+                f"前 {nsub} 個請求、上限 {e.sc_cap} 塊、每 25 步；丟乾淨副本 {e.n_sc_clean}、丟 session {e.n_sc_drop}")
+    except AssertionError as ex:
+        return f"slowcap_audit[{trace},{pol},{sp},{gk}]", False, repr(ex)
+
+
 def t5(rec):
     tp = __import__("json").load(open(XS.PF.TIER_PARAMS))
     x = XS.extra_slow("nvme807", tp)
@@ -256,6 +331,7 @@ def main():
     t0 = time.time()
     t4(rec)
     t5(rec)
+    t10_single(rec)
     pols = [p for p in XS.POLICIES]
     J1 = [(tr, p, c, gp) for tr in a.traces for c in a.cpu for p in pols for gp in GPOLS]
     J2 = [(tr, p, gp, wm, a.audit_n) for tr in a.traces for p in pols for gp in GPOLS for wm in XS.GPU_WRITES]
@@ -264,8 +340,13 @@ def main():
     J7 = [(tr, p, wm) for tr in a.traces for p in ("O-PF", "LRU+RPF") for wm in XS.GPU_WRITES]
     J8 = [(tr, p, g) for tr in a.traces for p in NZ_POLS for g in (False, True)]
     J9 = [(tr, p, m, dr, a.audit_n) for tr in a.traces for p in NZ_POLS for m in ("P", "M") for dr in ("B1", "B2")]
+    J10 = [(tr, p, gk) for tr in a.traces for p in pols for gk in ("none", "wbBEL")] + \
+        [(tr, p, "pfgpu") for tr in a.traces for p in ("O-PF", "LRU+RPF", "O-ALL")]
+    J11a = [(tr, p, sp) for tr in a.traces for p in ("LRU", "O-BEL", "O-PF", "GDSF") for sp in XS.SLOW_POLICIES]
+    J11b = [(tr, p, sp, gk, a.audit_n) for tr in a.traces for p in ("LRU", "O-BEL", "O-PF") for sp in XS.SLOW_POLICIES for gk in ("none", "wb")]
     with get_context("fork").Pool(a.workers) as pool:
-        for fn, J in ((t1_job, J1), (t2_job, J2), (t3_job, J3), (t6_job, J6), (t7_job, J7), (t8_job, J8), (t9_job, J9)):
+        for fn, J in ((t1_job, J1), (t2_job, J2), (t3_job, J3), (t6_job, J6), (t7_job, J7), (t8_job, J8), (t9_job, J9), (t10_job, J10),
+                      (t11a_job, J11a), (t11b_job, J11b)):
             for res in pool.imap(fn, J):
                 rec(*res)
             print(f"[{fn.__name__}] {len(J)} 個，累計 {time.time() - t0:.0f}s", flush=True)
