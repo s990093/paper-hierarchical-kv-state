@@ -48,6 +48,12 @@ POL17 = ["LRU", "LRU2", "ARC", "S3FIFO", "GDSF", "PENS", "FREQ2Q", "LRU+NONE", "
 TTL3 = ["0.3", "10", "300"]
 GPOL = ["LRU", "BEL"] + [f"TTLA:{t}" for t in TTL3] + [f"TTLB:{t}" for t in TTL3]
 MAIN_VIEWS = ["--slows", "ssd", "b32", "nfs", "--modes", "cake"]
+# PREREG 偏離 4 第 2 項的補跑規則：主結果裡 ④ 對 ② 上限 ≥10% 的每一格，用第 3 項原登記的 7 個 TTL 補跑 ②。
+# 已跑 0.3／10／300 → 只補 1／3／30／100（TTLA、TTLB）；CPU 規則＝② 用到的全部不預測規則（x1_sim.NON_ORACLE，ttl7cells 會核對）。
+TTL7_THR = 0.10
+TTL7_EXTRA = ["1", "3", "30", "100"]
+GPOL_TTL7 = [f"TTLA:{t}" for t in TTL7_EXTRA] + [f"TTLB:{t}" for t in TTL7_EXTRA]
+NON_ORACLE = ["LRU", "LRU2", "ARC", "S3FIFO", "GDSF", "PENS", "LRU+NONE", "LRU+2HW", "LRU+2HA", "LRU+RPF"]
 
 
 def sweep_args(cpus=CPU9, views=MAIN_VIEWS, write="wb", pf="cpu", gpol=GPOL, pols=POL17):
@@ -84,7 +90,30 @@ def blocks():
                   ("fi", f"fi_{FI_WEEKS[0]}_t128k")):
         S.append((f"{k}_t128k", nb(nm), sweep_args(CPU_REP)))
     P["sens_rep"] = S
+    # ≥10% 補跑：results/icpe_next/b/<plan>_ttl7/cells.csv（ttl7cells 從登記的分析表產生）→ 每個 (trace, rule, 慢層組合) 一個 block，
+    # CPU 容量＝這個組合裡要補的那些；GPU 閒／忙無法在 sweep 裡分開選，兩個都跑（多跑的只會讓 ② 更強）。
+    for base in list(P):
+        f = f"{REPO}/results/icpe_next/b/{base}_ttl7/cells.csv"
+        if os.path.exists(f):
+            P[f"{base}_ttl7"] = ttl7_blocks(f)
     return P
+
+
+def ttl7_blocks(path):
+    by = {}
+    with open(path, newline="") as fh:
+        for r in csv.DictReader(fh):
+            by.setdefault((r["trace"], r["rule"], float(r["cpu_GiB"])), set()).add(r["slow"])
+    grp = {}
+    for (tr, ru, c), sl in by.items():
+        grp.setdefault((tr, ru, tuple(s for s in ("ssd", "b32", "nfs") if s in sl)), []).append(c)
+    out = []
+    for (tr, ru, sl), cs in sorted(grp.items()):
+        cpus = [str(int(c)) if c == int(c) else repr(c) for c in sorted(cs)]   # 111.0625 不能用 :g（6 位有效數字）
+        name = f"{tr.replace('nb:', '').replace(':', '_')}_{ru}_{'-'.join(sl)}"
+        out.append((name, dict(traces=[tr], rules=[ru]),
+                    sweep_args(cpus, ["--slows", *sl, "--modes", "cake"], gpol=GPOL_TTL7, pols=NON_ORACLE)))
+    return out
 
 
 def sh(cmd, **kw):
@@ -245,16 +274,58 @@ def cmd_traces(a):
     return 0
 
 
+def cmd_ttl7cells(a):
+    """登記的分析表（next_sim_analyze.py 的 *_headroom_components.csv，3 個 TTL）→ results/icpe_next/b/<plan>_ttl7/cells.csv：
+    任何元件（含 O-ALL(report)）上限 ≥ TTL7_THR 的格子。O-ALL(report) 也算：它的 ② 也用到 GPU 層的 TTL，多補只會讓 ② 更強。"""
+    sys.path.insert(0, os.path.join(REPO, "code", "p3x"))
+    sys.path.insert(0, os.path.join(REPO, "code"))
+    import x1_sim as XS
+    assert NON_ORACLE == XS.NON_ORACLE, (NON_ORACLE, XS.NON_ORACLE)
+    assert set(sum(XS.RIVALS.values(), [])) <= set(NON_ORACLE)
+    rows = list(csv.DictReader(open(a.headroom, newline="")))
+    rids = {r["run_id"] for r in rows}
+    assert len(rids) == 1 and "adhoc" not in rids, rids
+    src = rids.pop()
+    for r in rows:   # 只接受主結果的設定
+        assert (r["restore"], r["gpu_write"], r["pf_target"], float(r["gpu_GiB"]), float(r["slow_cap_frac"])) == \
+               ("cake", "wb", "cpu", 111.0625, 0.0), r
+    key = ("trace", "rule", "cpu_GiB", "slow", "gpu")
+    cell = {}
+    for r in rows:
+        h = float(r["headroom"]) if r["headroom"] not in ("", "nan") else float("nan")
+        k = tuple(r[c] for c in key)
+        c = cell.setdefault(k, dict(max_headroom_ttl3=float("-inf"), components_ge=[]))
+        if h == h:
+            c["max_headroom_ttl3"] = max(c["max_headroom_ttl3"], h)
+            if h >= a.thr:
+                c["components_ge"].append(r["component"])
+    sel = [(k, v) for k, v in sorted(cell.items()) if v["components_ge"]]
+    dst = f"{REPO}/results/icpe_next/b/{a.plan}_ttl7"
+    os.makedirs(dst, exist_ok=True)
+    ts = datetime.now().astimezone().isoformat(timespec="seconds")
+    with open(f"{dst}/cells.csv", "w", newline="") as fh:
+        w = csv.writer(fh)
+        w.writerow(["run_id", "ts", "host", "src_analysis_run_id", "thr", *key, "max_headroom_ttl3", "components_ge_thr"])
+        for k, v in sel:
+            w.writerow([os.environ.get("RUN_ID", "adhoc"), ts, socket.gethostname(), src, a.thr, *k,
+                        f"{v['max_headroom_ttl3']:.6f}", "|".join(v["components_ge"])])
+    n_view = len({(k[0], k[1], k[2], k[3]) for k, _ in sel})
+    print(f"→ {dst}/cells.csv  cells={len(sel)}／{len(cell)}  (trace,rule,cpu,slow)={n_view}  jobs={n_view * 2 * len(NON_ORACLE) * len(GPOL_TTL7)}")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
     s = sp.add_parser("traces")
+    s = sp.add_parser("ttl7cells"); s.add_argument("--plan", required=True); s.add_argument("--headroom", required=True)
+    s.add_argument("--thr", type=float, default=TTL7_THR)
     s = sp.add_parser("list"); s.add_argument("--plans", nargs="*", default=[])
     s = sp.add_parser("run"); s.add_argument("--plans", nargs="+", required=True); s.add_argument("--workers", type=int, default=32)
     s.add_argument("--dry-run", action="store_true")
     s = sp.add_parser("collect"); s.add_argument("--plans", nargs="*", default=[])
     a = ap.parse_args()
-    sys.exit(dict(list=cmd_list, run=cmd_run, collect=cmd_collect, traces=cmd_traces)[a.cmd](a))
+    sys.exit(dict(list=cmd_list, run=cmd_run, collect=cmd_collect, traces=cmd_traces, ttl7cells=cmd_ttl7cells)[a.cmd](a))
 
 
 if __name__ == "__main__":
