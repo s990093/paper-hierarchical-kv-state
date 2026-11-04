@@ -111,3 +111,21 @@
 **卡住什麼**：G1 等共用 venv（STATUS_DATA「venv ready」）。
 
 **下一步**：第一批 (1b)：預取直接搬回 GPU（PREREG §2 第 2 項＋偏離 1：舊格子與 W2 全部格子都要跑）。
+
+---
+
+## 2026-11-04T23:34+08:00 — 第一批 (1b) push；G1 進行中
+
+**做完什麼**
+- commit `ac0c56e`：預取直接搬回 GPU（`--pf-target gpu`；PREREG §2 第 2 項＋偏離 1）；有 GPU 軸的分析 `code/icpe/next_sim_analyze.py`；`x1_sim analyze` 遇到有 GPU 軸的 sweep 會停（它的樞紐表只看 policy，會靜默蓋掉）。細節 SIM_CHANGES 第 5、6 項。
+- `next_sim_analyze.py` 驗證：H200 T1 V1 的 sweep（沒有 GPU 軸）→ 和 H200 的 `x1_headroom_components.csv` 1,152 列逐列相同（run `20261104-233301-icpe-sim-analyze-check`）。
+- G1（1a）run `20261104-232753-icpe-sim-g1-1a`（commit 985c8a8）跑到 300／1,328 時**我手動停掉**（`ABORTED` 檔）：1b 已經 push、包含 1a，直接對 ac0c56e 做一次 G1 比較快。沒有任何比對結果。
+- G1（1a＋1b）run `20261104-233425-icpe-sim-g1-1b`：commit ac0c56e、共用 venv、8 workers；跑完記結果。
+
+**需要 icpe-data 做什麼**（G1 過了之後）
+- merge 的對象＝G1 寫明通過的那個 commit。
+- 新旗標（都在 `x1_sim.py sweep`，經 `p3_fvar.py ... x1 sweep` 傳進去）：`--gpu-gib 111.0625`、`--gpu-write wb wt`、`--gpu-policies LRU BEL TTLA:0.3 ... TTLA:300 TTLB:0.3 ... TTLB:300`、`--pf-target cpu gpu`、`--slows ssd b32 nfs nvme807`、`--cpu 8 16 ... 1024 111.0625`。
+- 開了 GPU 層的 sweep 多這些欄：`gpu_GiB`、`gpu_write`、`gpu_policy`、`pf_target`、`ret_gpu_hits`、`n_gpu_evict`、`n_gpu_expire`、`gpu_wb_GiB`。
+- 有 GPU 軸的 sweep 用 `code/icpe/next_sim_analyze.py --sweep ... --out-dir ... [--pf-target gpu]` 算上限，**不要用 `x1_sim analyze`**。
+- job 數：TTL 規則和預取規則一樣，一個 job 只跑一種時間設定；`pf_target＝gpu` 只對有預取的規則產生 job。
+- 自己的紀錄格式（`prepare()` 回傳的 dict）不變；新紀錄要接進 `x1_sim.prep()` 的話，在 STATUS_DATA 寫你要的介面（例：名稱前綴＋讀你的轉換檔），我來加。
