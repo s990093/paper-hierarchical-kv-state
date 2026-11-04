@@ -150,71 +150,319 @@ def fig_c():
     save(fig, "brief_c_mps.png", {k: v[2] for k, v in rows.items()}, ["M4", "S2", "S3"])
 
 
-# ------------------------------------------------------------------ D: how much can perfect prediction save
+# ------------------------------------------------------------------ D: ceiling vs CPU capacity (standard axes: x = capacity, y = headroom)
 def fig_d():
-    chk("| B1 |", "50.5", "27.6")
-    fi_pf128 = FI_SIDECAR["O-PF"]["nfs"]["128"] * 100          # 0.22 %
-    fi_or128 = FI_SIDECAR["O-ORD"]["nfs"]["128"] * 100         # 0.30 %
-    fi_pf32 = max(FI_SIDECAR["O-PF"][t]["32"] for t in ("b32", "ssd", "nfs")) * 100      # 4.89 %
-    fi_or32 = max(FI_SIDECAR["O-ORD"][t]["32"] for t in ("b32", "ssd", "nfs")) * 100     # 11.81 %
+    from make_ceiling_table import CAPS, load
+    val, _ = load()
+    chk("| B1 |", "50.5", "46.5", "27.6", "31.0")
     chk("| B3-T5 |", "4.89", "11.81")
     chk("| B3-X1 |", "0.30%")
-    chk("| B3-T4 |", "99.29%")
-    groups = [
-        ("Mooncake 對話 trace\nCPU 128 GiB", 50.5, 27.6, ORANGE),
-        ("FreeInference（agent trace）\nCPU 128 GiB", fi_pf128, fi_or128, BLUE),
-        ("FreeInference\nCPU 32 GiB（上界最高的容量）", fi_pf32, fi_or32, BLUE),
-    ]
-    fig, ax = plt.subplots(figsize=(7.6, 4.7))
-    ypos = [2.2, 1.1, 0.0]
-    h = 0.34
-    for (lab, pf, orr, c), y in zip(groups, ypos):
-        ax.barh(y + h / 2, pf, h, color=c, alpha=1.0, label="完美預取（先把資料搬回來）" if y == 2.2 else None)
-        ax.barh(y - h / 2, orr, h, color=c, alpha=0.5, label="完美淘汰順序（擠出誰）" if y == 2.2 else None)
-        for v, yy in ((pf, y + h / 2), (orr, y - h / 2)):
-            ax.text(v + 1.2 if v < 1 else v + 0.8, yy, f"{v:.2f}%" if v < 10 else f"{v:.1f}%", va="center", fontsize=10.5, bbox=dict(fc="white", ec="none", pad=1))
-    ax.set_yticks(ypos); ax.set_yticklabels([g[0] for g in groups])
-    for xv, t in ((5, "5% 以下：死路"), (15, "15% 以上：值得做")):
-        ax.axvline(xv, color=INK2, lw=1, ls=(0, (4, 3)))
-        ax.text(xv + 0.4, 2.72, t, fontsize=9, color=INK2, va="bottom")
-    ax.set_xlim(0, 60); ax.set_ylim(-0.6, 3.0)
-    ax.set_xlabel("就算預測完全準確，最多還能把等待縮短幾 %（模擬）")
-    ax.set_title("預測值不值得，看固定規則還剩多少「沒命中」可補", loc="left")
-    ax.grid(axis="x", color=GRID, lw=0.6); ax.set_axisbelow(True)
-    ax.legend(loc="lower right", frameon=False, fontsize=9.5)
-    ax.text(58.5, 1.3, "128 GiB 時，回來的資料有\n99.29% 本來就在 CPU 層\n→ 沒有「沒命中」可補", ha="right", va="center", fontsize=9.5, color=BLUE)
-    fig.text(0.01, -0.03, "Mooncake：代表格（SSD 級、GPU 閒）。FreeInference：前 6 週，每格取各慢層×GPU 閒忙的最大值（對預測最有利的算法）。",
-             fontsize=8.5, color=INK2)
-    save(fig, "brief_d_prediction_ceiling.png",
-         {"mooncake_conv_cpu128_prefetch_pct": 50.5, "mooncake_conv_cpu128_eviction_pct": 27.6,
-          "fi_cpu128_prefetch_pct": round(fi_pf128, 3), "fi_cpu128_eviction_pct": round(fi_or128, 3),
-          "fi_cpu32_prefetch_max_pct": round(fi_pf32, 3), "fi_cpu32_eviction_max_pct": round(fi_or32, 3),
-          "fi_cpu128_hit_rate_pct": 99.29},
-         ["B1", "B3-X1", "B3-T5", "B3-T4", "fig9_fi_capacity.sources.json"])
+    series = [("freeinference", "FreeInference（真實 agent 服務紀錄）", BLUE, "o"),
+              ("conversation", "Mooncake conversation（對話）", ORANGE, "s"),
+              ("toolagent", "Mooncake toolagent（工具／agent）", VIOLET, "^")]
+    panels = [("O-PF", "預取：回來前先把資料搬好"), ("O-ORD", "淘汰順序：CPU 滿了，先擠掉最晚回來的")]
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 5.2), sharey=True)
+    plotted = {}
+    for ax, (comp, title) in zip(axes, panels):
+        for tr, lab, c, m in series:
+            pts = [(i, val[(tr, comp, "ssd", cap)]) for i, cap in enumerate(CAPS) if (tr, comp, "ssd", cap) in val]
+            ax.plot([p[0] for p in pts], [p[1] for p in pts], color=c, marker=m, lw=2.2, ms=6.5, label=lab, zorder=3)
+            plotted[f"{tr}/{comp}"] = {CAPS[i]: round(v, 3) for i, v in pts}
+            show = pts if tr != "freeinference" else [p for p in pts if p[0] in (0, 1, 3)]
+            for i, v in show:
+                ax.annotate(f"{v:.1f}" if abs(v) >= 1 else f"{v:.2f}", (i, v), textcoords="offset points", xytext=(0, 8 if v >= 0 else -14),
+                            ha="center", fontsize=9, color=c, zorder=5)
+        ax.axhline(0, color=INK2, lw=0.9, zorder=2)
+        ax.set_xticks(range(len(CAPS))); ax.set_xticklabels(CAPS)
+        ax.set_xlabel("CPU 記憶體容量（GiB）", fontsize=10.5)
+        ax.set_title(title, loc="left", fontsize=11)
+        ax.grid(axis="y", color=GRID, lw=0.6); ax.set_axisbelow(True)
+        ax.set_ylim(-11, 58)
+    axes[0].set_ylabel("完美預知讓 TTFT 縮短的 %", fontsize=10.5)
+    h, l = axes[0].get_legend_handles_labels()
+    fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, 0.925), ncol=3, frameon=False, fontsize=9.6, columnspacing=1.2, handletextpad=0.4)
+    fig.text(0.01, 0.985, "完美預知最多能讓回來的使用者少等多少？取決於紀錄，也取決於 CPU 記憶體多大", fontsize=13, fontweight="bold", va="top")
+    fig.subplots_adjust(left=0.075, right=0.985, top=0.80, bottom=0.30, wspace=0.06)
+    fig.text(0.01, 0.015,
+             "TTFT＝使用者回來後，等到第一個字的時間。縮短的 %＝完美預知相對於「同一個動作下最好的不預測做法」。CPU 記憶體容量＝用來停放對話 KV 的\n"
+             "CPU 記憶體大小。慢層＝SSD 級（讀 6.98 GiB/s）、Cake 還原、每格取 GPU 閒／忙的較大者；模擬、未截尾。Mooncake 只跑了 128–1,024 GiB，\n"
+             "所以線從 128 開始。FreeInference 的 SSD 級 16 GiB 預取是負的：完美預取反而比最好的不預測做法慢。",
+             fontsize=8.4, color=INK2, va="bottom", linespacing=1.4)
+    save(fig, "brief_d_prediction_ceiling.png", plotted, ["B1", "B3-X1", "B3-T5", "x1_headroom_components.csv (rule=min, Cake, SSD class)", "fig9_fi_capacity.sources.json"])
 
 
-# ------------------------------------------------------------------ E: typing hint on the GPU
+# ------------------------------------------------------------------ E: typing hint on the GPU (standard grouped bars)
 def fig_e():
-    chk("| C2-GPU |", "0.278", "0.272", "0.237", "0.228", "0.81", "0.79")
-    sets = {"CPU 16 GiB": (0.278, 0.237, 0.228, "0.81"), "CPU 32 GiB": (0.272, 0.237, 0.228, "0.79")}
-    fig, ax = plt.subplots(figsize=(7.2, 4.3))
-    w = 0.26
-    for i, (k, (lru, hint, orc, ratio)) in enumerate(sets.items()):
-        for j, (v, c, lab) in enumerate(((lru, GRAY, "LRU（不預測）"), (hint, BLUE, "打字提示預取（免費訊號）"), (orc, AQUA, "完美預取"))):
-            r = ax.bar(i + (j - 1) * (w + 0.02), v, w, color=c, label=lab if i == 0 else None)
-            ax.text(i + (j - 1) * (w + 0.02), v + 0.004, f"{v:.3f}", ha="center", fontsize=10.5)
+    chk("| C2-GPU |", "0.278", "0.272", "0.237", "0.228", "0.81", "0.79", "14.5", "17.9", "4.0")
+    chk("| B6 |", "8.1")
+    chk("| GPU 驗證（B6）設定 |", "128／256 ÷ 8", "1/8")
+    sets = {"16": (0.278, 0.237, 0.228, "0.81"), "32": (0.272, 0.237, 0.228, "0.79")}
+    fig, ax = plt.subplots(figsize=(7.6, 5.5))
+    w = 0.25
+    names = (("LRU（不預測）", GRAY), ("打字提示預取（偵測到使用者開始打字就先搬）", BLUE), ("完美預取（事先知道何時回來）", AQUA))
+    for i, (cap, (lru, hint, orc, ratio)) in enumerate(sets.items()):
+        for j, (v, (lab, c)) in enumerate(zip((lru, hint, orc), names)):
+            x = i + (j - 1) * (w + 0.02)
+            ax.bar(x, v, w, color=c, label=lab if i == 0 else None, zorder=3)
+            ax.text(x, v + 0.005, f"{v:.3f}", ha="center", fontsize=10.5)
         ax.text(i, 0.335, f"打字提示拿到完美預取\n改善量的 {ratio}", ha="center", fontsize=10.5, fontweight="bold", color=BLUE)
-    ax.set_xticks([0, 1]); ax.set_xticklabels(list(sets))
+    ax.set_xticks([0, 1]); ax.set_xticklabels([f"CPU 記憶體 {k} GiB\n（縮小 1/8，相當於全尺寸 {int(k) * 8} GiB）" for k in sets])
     ax.set_ylim(0, 0.40)
     ax.set_ylabel("回來請求的平均 TTFT（秒，越低越好）")
-    ax.set_title("不用預測模型，使用者一開始打字就預取：拿到完美預取改善量的八成", loc="left", fontsize=12)
     ax.grid(axis="y", color=GRID, lw=0.6); ax.set_axisbelow(True)
-    ax.legend(loc="upper center", frameon=False, fontsize=9.5, ncol=3, bbox_to_anchor=(0.5, -0.1))
-    fig.text(0.01, -0.12, "H200 GPU 縮小重播（Mooncake 對話 1/8、SSD 級、Llama）。縱軸從 0 起。打字時間是合成的（Mooncake 沒有按鍵紀錄）。只對預取有效。",
-             fontsize=8.5, color=INK2)
+    ax.legend(loc="upper center", frameon=False, fontsize=9.6, ncol=1, bbox_to_anchor=(0.5, -0.17))
+    fig.text(0.01, 0.985, "不用預測模型，使用者一開始打字就先搬：拿到完美預取好處的八成", fontsize=13, fontweight="bold", va="top")
+    fig.subplots_adjust(top=0.90, bottom=0.34, left=0.11, right=0.98)
+    fig.text(0.01, 0.012,
+             "H200 實測，Mooncake 對話依 session 抽 1/8、CPU 容量同比縮小、Llama-3.1-8B、SSD 級慢層。完美預取只比打字提示再快 4.0%（16 GiB）。打字時間是合成的\n"
+             "（Mooncake 沒有按鍵紀錄）。重播不含排隊；含排隊時完美預取比 LRU 快的幅度從 17.9% 掉到 8.1%（16 GiB）。",
+             fontsize=8.4, color=INK2, va="bottom", linespacing=1.4)
     save(fig, "brief_e_typing_hint.png",
          {"CPU16": {"LRU_s": 0.278, "HINT_PF_s": 0.237, "O_PF_s": 0.228, "hint_over_oracle": 0.81},
-          "CPU32": {"LRU_s": 0.272, "HINT_PF_s": 0.237, "O_PF_s": 0.228, "hint_over_oracle": 0.79}}, ["C2-GPU"])
+          "CPU32": {"LRU_s": 0.272, "HINT_PF_s": 0.237, "O_PF_s": 0.228, "hint_over_oracle": 0.79}}, ["C2-GPU", "B6"])
+
+
+# ------------------------------------------------------------------ S: schematic - why write-time placement does not help (interpretation)
+def fig_s():
+    from matplotlib.patches import FancyArrowPatch, Rectangle
+    chkp("寫入准入對 SSD 寫入量與壽命的好處不在本文的量測範圍", "Cake 從前段重算，還原時大多不讀前段")
+    N, K, KFULL = 64, 4, 24                      # 64 chunks of 512 tokens; K = example Cake meeting point; KFULL = illustration only
+    ORG, ORGE = "#f4a261", "#c9772e"
+    fig = plt.figure(figsize=(10.6, 6.6))
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, 100); ax.set_ylim(0, 100); ax.axis("off")
+    X0, X1 = 24.0, 98.0
+    bw = (X1 - X0) / N
+
+    def row(y, colors, hatch_first=0, h=5.4):
+        for i, c in enumerate(colors):
+            hatch = "////" if i < hatch_first else None
+            ax.add_patch(Rectangle((X0 + i * bw, y), bw * 0.9, h, fc=c, ec=ORGE if hatch else "white", lw=0.5 if hatch else 0.3, hatch=hatch, zorder=3))
+
+    def xc(i):
+        return X0 + i * bw
+    ax.text(1.2, 97.5, "示意圖：為什麼「寫入時套用」沒有比「CPU 滿了才套用」快", fontsize=14, fontweight="bold", va="top")
+    ax.text(1.2, 93.0, "一段 32K 對話切成 64 格（每格 512 個 token），第 1 格最舊、第 64 格最新", fontsize=10.5, color=INK2, va="top")
+    # ① what happens when the user returns
+    ax.text(1.2, 86.0, "① 使用者回來時，兩頭同時做", fontsize=12, fontweight="bold", va="center")
+    row(72.0, ["#4a8fe0"] * N, hatch_first=0)
+    row(72.0, [ORG] * K + ["#4a8fe0"] * (N - K), hatch_first=K)
+    ax.add_patch(FancyArrowPatch((xc(0), 80.5), (xc(K), 80.5), arrowstyle="-|>", mutation_scale=14, color=ORGE, lw=2))
+    ax.text(xc(0), 83.2, f"GPU 從第 1 格往後重算（例：前 {K} 格）", fontsize=10.3, color="#a85a1a", va="center")
+    ax.add_patch(FancyArrowPatch((X1, 80.5), (xc(K), 80.5), arrowstyle="-|>", mutation_scale=14, color="#2a78d6", lw=2))
+    ax.text(X1, 83.2, f"同時從儲存載入其餘 {N - K} 格", fontsize=10.3, color="#1e5aa8", va="center", ha="right")
+    ax.text(xc(0), 68.0, "第 1 格", fontsize=9, color=INK2, ha="left"); ax.text(X1, 68.0, "第 64 格", fontsize=9, color=INK2, ha="right")
+    ax.text(1.2, 76.0, "回來時怎麼拿", fontsize=10.3, color=INK2, va="center")
+    ax.text(X0, 63.0, f"→ 前 {K} 格是「重算」出來的，根本不從儲存讀。所以它們事先放在哪，回來時都用不到。", fontsize=10.8, fontweight="bold", va="center")
+    # ② CPU has room
+    ax.text(1.2, 55.0, "② CPU 還有空位時：只有前 4 格放哪不同", fontsize=12, fontweight="bold", va="center")
+    row(45.0, [GRAY] * K + [AQUA] * (N - K))
+    row(36.0, [AQUA] * N)
+    ax.text(1.2, 47.7, "寫入時套用", fontsize=10.8, va="center", fontweight="bold"); ax.text(1.2, 43.5, "對話一結束，前 4 格就放慢層", fontsize=8.6, va="center", color=INK2)
+    ax.text(1.2, 38.7, "CPU 滿了才套用", fontsize=10.8, va="center", fontweight="bold"); ax.text(1.2, 34.5, "先全放 CPU，滿了才降級", fontsize=8.6, va="center", color=INK2)
+    ax.add_patch(Rectangle((X0, 29.2), 2.2, 2.4, fc=AQUA, ec="none")); ax.text(X0 + 3.2, 30.4, "放 CPU", fontsize=9.5, va="center")
+    ax.add_patch(Rectangle((X0 + 14, 29.2), 2.2, 2.4, fc=GRAY, ec="none")); ax.text(X0 + 17.2, 30.4, "放慢層", fontsize=9.5, va="center")
+    # ③ CPU is tight
+    ax.text(1.2, 22.0, "③ CPU 快滿時：兩種做法都先把「最前面的格子」降到慢層，擺法一樣", fontsize=12, fontweight="bold", va="center")
+    row(13.0, [GRAY] * KFULL + [AQUA] * (N - KFULL))
+    ax.text(1.2, 15.7, "兩種做法", fontsize=10.8, va="center", fontweight="bold")
+    ax.text(xc(KFULL) + 1.0, 10.2, "（降幾格取決於 CPU 多大，這裡只是示意）", fontsize=9, color=INK2, va="center")
+    ax.text(1.2, 4.9, f"結論：不同的只有前 {K} 格，而它們回來時靠重算、用不到儲存裡的副本；CPU 一緊，兩種擺法就一樣。實測 TTFT 差 −0.37～+1.16%（圖 1）。", fontsize=10.6, fontweight="bold", va="center")
+    ax.text(1.2, 0.9, f"示意：前 {K} 格是用重算速度與 CPU 搬運速度算出的會合點的例子，實際值依設定而變。這個解釋是我們的判讀，沒有單獨驗證。", fontsize=8.4, color=INK2, va="center")
+    save(fig, "brief_s_write_time_schematic.png", {"N": N, "example_meeting_point": K}, ["PAPER §7.1", "m7_write_policy.py"])
+
+
+# ------------------------------------------------------------------ W: write-time placement vs apply-when-full (A1''/A1')
+def fig_w():
+    import csv
+    import gzip
+    import statistics as stt
+    root = HERE.parents[1] / "results" / "icpe_h200" / "t1" / "gpu"
+    chk("| A1'' |", "−0.37／−0.37／+0.01%", "rep 6", "δ\\* 5%")
+    chk("| A1' |", "+1.16／+0.09／−0.02%", "δ\\* 5%")
+    fracs = ("0.25", "0.5", "1.0")
+    impls = (("a1pp", "fa3", "重算用 fa3"), ("a1p", "sdpa", "重算用 sdpa"))
+    data = {}
+    for d, tag, _ in impls:
+        rows = list(csv.DictReader(gzip.open(root / d / "b_share.csv.gz", "rt")))
+        assert not any(r["contaminated_gpu"] == "True" for r in rows), "contaminated rows"
+        table = {r["cpu_frac"]: r for r in csv.DictReader(open(root / d / "analysis" / "table.csv"))}
+        for cf in fracs:
+            cell = {}
+            for strat in ("S5", "S4+"):
+                rr = [r for r in rows if r["strategy"] == strat and r["cpu_frac"] == cf and r["mode"] != "none"]
+                assert len(rr) == 144, (d, strat, cf, len(rr))
+                pooled = stt.median(float(r["ttft"]) for r in rr)
+                per_rep = [stt.median(float(r["ttft"]) for r in rr if r["rep"] == str(k)) for k in range(6)]
+                cell[strat] = (pooled, per_rep)
+            diff = (cell["S4+"][0] - cell["S5"][0]) / cell["S4+"][0] * 100
+            assert abs(diff - float(table[cf]["s5_vs_s4plus_pct"])) < 1e-6, (d, cf, diff)
+            assert abs(cell["S4+"][0] - float(table[cf]["s4plus_median"])) < 1e-9
+            data[(tag, cf)] = (cell, diff)
+    diffs = [v[1] for v in data.values()]
+    assert round(min(diffs), 2) == -0.37 and round(max(diffs), 2) == 1.16, (min(diffs), max(diffs))
+    xl = ["25%", "50%", "100%"]
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 5.4), sharey=True, gridspec_kw={"wspace": 0.08})
+    w = 0.34
+    plotted = {}
+    for ax, (d, tag, ttl) in zip(axes, impls):
+        for i, cf in enumerate(fracs):
+            cell, diff = data[(tag, cf)]
+            for j, (strat, c) in enumerate((("S5", BLUE), ("S4+", GRAY))):
+                x = i + (j - 0.5) * (w + 0.04)
+                pooled, per_rep = cell[strat]
+                ax.bar(x, pooled, w, color=c, zorder=3, label=("寫入時套用" if strat == "S5" else "CPU 滿了才套用") if i == 0 else None)
+                ax.scatter([x + (k - 2.5) * 0.028 for k in range(6)], per_rep, s=11, color=INK, zorder=5, linewidths=0)
+            top = max(max(cell["S5"][1]), max(cell["S4+"][1]))
+            ax.text(i, top + 0.045, f"差 {diff:+.2f}%".replace("-", "−"), ha="center", fontsize=10.5, fontweight="bold", color=INK)
+            plotted[f"{tag}/cpu_frac={cf}"] = {"S5_median_s": round(cell["S5"][0], 4), "S4plus_median_s": round(cell["S4+"][0], 4), "diff_pct": round(diff, 2)}
+        ax.set_xticks(range(3)); ax.set_xticklabels(xl)
+        ax.set_xlabel("CPU 能放下多少停放的 KV", fontsize=10.5)
+        ax.set_title(ttl, loc="left", fontsize=11.5)
+        ax.set_ylim(0, 1.4)
+        ax.grid(axis="y", color=GRID, lw=0.6); ax.set_axisbelow(True)
+    axes[0].set_ylabel("回來請求的 TTFT 中位數（秒，越低越好）", fontsize=10.5)
+    axes[0].legend(loc="upper right", frameon=False, fontsize=9.8)
+    fig.text(0.01, 0.985, "同一條位置規則，只換「何時套用」：TTFT 幾乎一樣（差 −0.37～+1.16%，門檻 5%）", fontsize=13, fontweight="bold", va="top")
+    fig.subplots_adjust(left=0.085, right=0.99, top=0.86, bottom=0.30)
+    fig.text(0.01, 0.015,
+             "規則＝依位置決定放哪層：前面的塊重算便宜，放慢層；後面的塊重算貴，放 CPU。寫入時套用＝對話一結束就這樣放；\n"
+             "CPU 滿了才套用＝先全放 CPU，滿了才把位置最前面的塊降到慢層。「差」＝寫入時套用比另一版快的 %（正＝較快），要快 5% 以上才算贏。\n"
+             "H200 實測、Llama-3.1-8B、32K、NFS 級慢層（限速模擬）、Cake 還原；8 個對話各 4 輪的小工作量，CPU 容量＝佔全部停放 KV 的比例。\n"
+             "每個設定重複 6 次：柱＝全部回來請求的中位數（登記的統計量），黑點＝每次重複的中位數。fa3／sdpa＝重算時用的注意力實作。",
+             fontsize=8.4, color=INK2, va="bottom", linespacing=1.4)
+    save(fig, "brief_w_write_time.png", plotted, ["A1''", "A1'"])
+
+
+# ------------------------------------------------------------------ T: two tables as images (Discord shows no markdown tables)
+_TOK = set("–−‑～／／+-%.,:")
+_NARROW = set("–−‑")
+_CLOSE = set("，。、；：）」』！？")
+
+
+def _is_tok(c):
+    return (ord(c) < 128 and c not in " \n") or c in _TOK
+
+
+def _wrap(text, units):
+    """Wrap on display width (CJK = 2 units, ASCII = 1). A run of ASCII/number/range characters is never split,
+    and closing punctuation never starts a line."""
+    out, cur, w, i = [], "", 0, 0
+    while i < len(text):
+        if text[i] == "\n":
+            out.append(cur); cur, w, i = "", 0, i + 1
+            continue
+        j = i + 1
+        if _is_tok(text[i]):
+            while j < len(text) and _is_tok(text[j]):
+                j += 1
+        tok = text[i:j]
+        tw = sum(1 if (ord(c) < 128 or c in _NARROW) else 2 for c in tok)
+        if w + tw > units and cur and tok[0] not in _CLOSE:
+            out.append(cur); cur, w = "", 0
+        cur += tok; w += tw; i = j
+    out.append(cur)
+    return out
+
+
+def draw_table(name, title, headers, widths, rows, fills, foot, box_row=None, fs=11.2, width_in=11.8, bold_last=True):
+    """rows: list of list of str; fills: list of list of colour or None; widths: relative column widths."""
+    tot = sum(widths)
+    colw = [width_in * 0.97 * w / tot for w in widths]
+    lh, padv, padh = fs * 1.5 / 72, 0.14, 0.10
+    def lines(cell, cw):
+        return _wrap(cell, int(2 * (cw - 2 * padh) * 72 / fs * 0.97))
+    hdr_lines = [lines(h, cw) for h, cw in zip(headers, colw)]
+    hdr_h = max(len(l) for l in hdr_lines) * lh + 2 * padv
+    row_ls = [[lines(c, cw) for c, cw in zip(r, colw)] for r in rows]
+    row_h = [max(len(l) for l in ls) * lh + 2 * padv for ls in row_ls]
+    foot_lines = foot.count("\n") + 1
+    top_in, foot_in = 0.62, 0.30 + 0.17 * foot_lines
+    H = top_in + hdr_h + sum(row_h) + foot_in
+    fig = plt.figure(figsize=(width_in, H))
+    ax = fig.add_axes([0, 0, 1, 1]); ax.set_xlim(0, width_in); ax.set_ylim(0, H); ax.axis("off")
+    ax.text(0.15, H - 0.12, title, fontsize=13.5, fontweight="bold", va="top")
+    x0, y = 0.15, H - top_in
+    ax.add_patch(plt.Rectangle((x0, y - hdr_h), sum(colw), hdr_h, fc="#ecebe4", ec="none", zorder=1))
+    x = x0
+    for h, ls, cw in zip(headers, hdr_lines, colw):
+        ax.text(x + padh, y - hdr_h / 2, "\n".join(ls), fontsize=fs, fontweight="bold", va="center", linespacing=1.5, color=INK)
+        x += cw
+    y -= hdr_h
+    for ri, (r, ls, rh) in enumerate(zip(rows, row_ls, row_h)):
+        x = x0
+        for ci, (c, l, cw) in enumerate(zip(r, ls, colw)):
+            f = fills[ri][ci]
+            if f:
+                ax.add_patch(plt.Rectangle((x, y - rh), cw, rh, fc=f, ec="none", zorder=1))
+            ax.text(x + padh, y - rh / 2, "\n".join(l), fontsize=fs, va="center", linespacing=1.5, color=INK,
+                    fontweight="bold" if (ci == 0 or (bold_last and ci == len(r) - 1)) else "normal", zorder=3)
+            x += cw
+        ax.plot([x0, x0 + sum(colw)], [y - rh, y - rh], color="#c3c2b7", lw=0.8, zorder=2)
+        if box_row == ri:
+            ax.add_patch(plt.Rectangle((x0, y - rh), sum(colw), rh, fc="none", ec=INK, lw=2.2, zorder=4))
+        y -= rh
+    ax.text(0.15, foot_in - 0.08, foot, fontsize=8.6, color=INK2, va="top", linespacing=1.45)
+    save(fig, name, {"rows": [r[0] for r in rows]}, [])
+
+
+def fig_tables():
+    # --- table 1: what deciding at write time bought (all numbers are the EVIDENCE rows A1''/A1'/A2/A3/A4/A4')
+    chk("| A1'' |", "−0.37／−0.37／+0.01%"); chk("| A1' |", "+1.16／+0.09／−0.02%")
+    chk("| A2 |", "0/16"); chk("| A3 |", "存活 0/2", "2/5")
+    chk("| A4 |", "+17.3／+18.8", "−4.9／−4.4", "−3.4／−1.9", "K2")
+    chk("| A4' |", "−0.47～+0.08", "6 個 CI 都含 0")
+    chkp("寫入准入對 SSD 寫入量與壽命的好處不在本文的量測範圍")
+    GREY_, GREEN_, AMBER_ = "#eeede7", "#dff1e8", "#faecc8"
+    rows = [
+        ["依位置決定放哪層", "同一條規則，寫入時套用 vs CPU 滿了才套用；比回來請求的 TTFT（圖 1）",
+         "差 −0.37～+1.16%（門檻 5%）。3 種 CPU 容量 × 2 種重算實作，各重複 6 次", "沒賺到"],
+        ["寫入時決定，同時贏兩個對手各 5% 以上", "消融：頻寬、容量、負載型態、重算成本等 7 個條件。GPU 比 16 組；模擬挑出的 2 個設定再上 GPU",
+         "0／16 組贏；2 個設定各只有 2／5 個隨機種子贏（要 3／5）", "沒賺到"],
+        ["依位置決定精度（前／中／後段各 25% 的塊降精度）", "和「同比例、隨機挑」的對照比答對率。Llama 用 INT4、Qwen 用 FP8",
+         "Llama INT4：差 −0.47～+0.08 pp，6 個信賴區間都含 0。Qwen FP8：前段 +17.3～+18.8、中段 −4.9～−4.4、後段 −3.4～−1.9 pp（GPU 閒／忙），方向不一",
+         "沒有穩定的差距"],
+        ["寫入准入（少寫慢層、保護 SSD 壽命）", "—", "沒量", "不在本文範圍"],
+    ]
+    fills = [[None, None, None, GREY_]] * 3 + [[None, None, None, None]]
+    draw_table("brief_t1_write_time.png", "寫入時就決定的事：量到的都沒有賺到",
+               ["寫入時決定什麼", "怎麼比", "量到什麼", "判定"], [2.5, 3.9, 4.6, 1.5], rows, fills,
+               "H200 實測、Llama-3.1-8B 與 Qwen2.5-7B、32K。pp＝百分點（答對率對基準的差）。每次 32K 請求切成 64 塊；前／中／後段＝第 1–16／24–39／48–63 塊，隨機對照＝從第 1–63 塊隨機抽 16 塊；\n"
+               "兩者存的位元組一樣，只有實際讀到的不同。〔判讀〕Qwen 前段「變好」是因為還原時大多不讀前段（Cake 從前段重算），不是真的好；它的 TTFT 反而慢 8.0／9.9%。")
+
+    # --- table 2: format vs size vs slow-tier speed vs the usual benchmarks (absolute scores = BF16 score + measured diff)
+    chk("| F1 |", "21.5–31.7%", "22.0–39.4%", "−48.3", "−36.2")
+    chk("| F3 |", "37.4–49.1%", "36.7–54.5%", "−0.8 [−2.2, +0.3]")
+    chk("| F6 |", "41.8–77.1%", "52.1–71.7%", "5.33×")
+    chk("| D2-Q |", "LongBench +0.2 [−1.2, +1.5]", "LongBench +0.2 [−0.6, +1.1]")
+    ro = json.load(open(HERE.parents[1] / "results" / "m10_precision_h200" / "analysis" / "report_only" / "report_only.json"))["items"]
+
+    def score(model, fmt, bench):
+        e0 = ro[f"{model}|e0acc|{bench}"]["result"]["acc"]
+        if fmt == "bf16":
+            return 100 * e0
+        d = ro[f"{model}|{fmt}|{bench}"]["result"]["E1"]["A"]["diff"]     # reading A = load everything
+        return 100 * (e0 + d)
+    sc = {(m, f, b): round(score(m, f, b), 1) for m in ("llama", "qwen") for f in ("bf16", "fp8", "int4") for b in ("T1", "LB")}
+    assert sc[("llama", "bf16", "T1")] == 99.7 and sc[("qwen", "fp8", "T1")] == 49.7 and sc[("qwen", "int4", "T1")] == 97.2
+    assert sc[("qwen", "fp8", "LB")] == 6.6 and sc[("llama", "int4", "LB")] == 41.0 and sc[("qwen", "int4", "LB")] == 43.0
+    assert ro["llama|e0acc|T1"]["result"]["n_rows"] == 360 and ro["llama|e0acc|LB"]["result"]["n_rows"] == 300
+    RED_ = "#f8dcd3"
+
+    def pair(f, b):
+        return f"Llama {sc[('llama', f, b)]:.1f}\nQwen {sc[('qwen', f, b)]:.1f}"
+    rows2 = [
+        ["BF16（16 位元，原精度）", "1×（基準）", "基準", pair("bf16", "T1"), pair("bf16", "LB")],
+        ["FP8（8 位元）", "1.94×", "21.5–39.4%", pair("fp8", "T1"), pair("fp8", "LB")],
+        ["INT4（4 位元，KIVI）", "3.2×", "36.7–54.5%", pair("int4", "T1"), pair("int4", "LB")],
+        ["INT2（2 位元，KIVI）", "5.33×", "41.8–77.1%", "沒測", "沒測\n（只有海選：誤差約是 INT4 的 30 倍）"],
+    ]
+    fills2 = [[None] * 5, [None, None, None, RED_, RED_], [None] * 5, [None, None, None, "#eeede7", "#eeede7"]]
+    draw_table("brief_t2_format.png", "精度越低，搬得越快；但答對率守得住的，只有 INT4",
+               ["格式（精度）", "KV 大小（壓縮）", "慢層還原比 BF16 快", "大海撈針答對率（%）", "LongBench 平均分數（0–100）"],
+               [2.9, 1.7, 2.2, 2.4, 3.3], rows2, fills2,
+               "H200 實測。慢層＝限速模擬的 b16／b32／b48（INT2 的範圍含 NFS 級），32K 單次還原、Cake 對 BF16。大海撈針＝多鍵 NIAH（180 題）；LongBench＝6 項長文問答（300 題）。\n"
+               "分數＝BF16 的分數加上量到的差（全部載入的讀法）。紅底＝Qwen 的 FP8 崩壞（主任務也掉 32.2 個百分點）。Qwen 的 INT4 在大海撈針的 Cake＋GPU 忙讀法少 0.8 個\n"
+               "百分點、信賴區間 [−2.2, +0.3]，沒過事先登記的門檻（下界 ≥ −2）。INT8、K4V2 未列入（沒有這兩項測驗）。", box_row=2, bold_last=False)
 
 
 # ------------------------------------------------------------------ 0: the story in one picture (because -> so -> I adopt)
@@ -403,6 +651,6 @@ def chkp(*literals):
 
 
 if __name__ == "__main__":
-    for f in (fig_story, fig_method, fig_lookup, fig_a, fig_b, fig_c, fig_d, fig_e):
+    for f in (fig_story, fig_method, fig_lookup, fig_a, fig_b, fig_c, fig_s, fig_w, fig_tables, fig_d, fig_e):
         f()
     (OUT / "brief_sources.json").write_text(json.dumps(SOURCES, ensure_ascii=False, indent=1), encoding="utf-8")

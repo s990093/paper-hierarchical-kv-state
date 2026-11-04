@@ -194,22 +194,58 @@
    "B1",
    "B3-X1",
    "B3-T5",
-   "B3-T4",
+   "x1_headroom_components.csv (rule=min, Cake, SSD class)",
    "fig9_fi_capacity.sources.json"
   ],
   "values": {
-   "mooncake_conv_cpu128_prefetch_pct": 50.5,
-   "mooncake_conv_cpu128_eviction_pct": 27.6,
-   "fi_cpu128_prefetch_pct": 0.223,
-   "fi_cpu128_eviction_pct": 0.303,
-   "fi_cpu32_prefetch_max_pct": 4.886,
-   "fi_cpu32_eviction_max_pct": 11.808,
-   "fi_cpu128_hit_rate_pct": 99.29
+   "freeinference/O-PF": {
+    "16": -4.379,
+    "32": 2.646,
+    "64": 0.259,
+    "128": 0.017,
+    "256": 0.013,
+    "512": 0.003,
+    "1024": 0.0
+   },
+   "conversation/O-PF": {
+    "128": 50.5,
+    "256": 46.458,
+    "512": 30.321,
+    "1024": 14.619
+   },
+   "toolagent/O-PF": {
+    "128": 30.036,
+    "256": 24.127,
+    "512": 10.931,
+    "1024": 2.537
+   },
+   "freeinference/O-ORD": {
+    "16": 1.2,
+    "32": 1.66,
+    "64": 0.289,
+    "128": 0.022,
+    "256": 0.018,
+    "512": 0.007,
+    "1024": 0.003
+   },
+   "conversation/O-ORD": {
+    "128": 27.65,
+    "256": 31.015,
+    "512": 24.159,
+    "1024": 10.231
+   },
+   "toolagent/O-ORD": {
+    "128": 17.003,
+    "256": 15.927,
+    "512": 7.868,
+    "1024": 1.586
+   }
   }
  },
  "brief_e_typing_hint.png": {
   "evidence_rows": [
-   "C2-GPU"
+   "C2-GPU",
+   "B6"
   ],
   "values": {
    "CPU16": {
@@ -224,6 +260,76 @@
     "O_PF_s": 0.228,
     "hint_over_oracle": 0.79
    }
+  }
+ },
+ "brief_w_write_time.png": {
+  "evidence_rows": [
+   "A1''",
+   "A1'"
+  ],
+  "values": {
+   "fa3/cpu_frac=0.25": {
+    "S5_median_s": 0.8252,
+    "S4plus_median_s": 0.8222,
+    "diff_pct": -0.37
+   },
+   "fa3/cpu_frac=0.5": {
+    "S5_median_s": 0.6848,
+    "S4plus_median_s": 0.6823,
+    "diff_pct": -0.37
+   },
+   "fa3/cpu_frac=1.0": {
+    "S5_median_s": 0.4706,
+    "S4plus_median_s": 0.4707,
+    "diff_pct": 0.01
+   },
+   "sdpa/cpu_frac=0.25": {
+    "S5_median_s": 1.1425,
+    "S4plus_median_s": 1.156,
+    "diff_pct": 1.16
+   },
+   "sdpa/cpu_frac=0.5": {
+    "S5_median_s": 0.7874,
+    "S4plus_median_s": 0.7881,
+    "diff_pct": 0.09
+   },
+   "sdpa/cpu_frac=1.0": {
+    "S5_median_s": 0.6375,
+    "S4plus_median_s": 0.6373,
+    "diff_pct": -0.02
+   }
+  }
+ },
+ "brief_t1_write_time.png": {
+  "evidence_rows": [],
+  "values": {
+   "rows": [
+    "依位置決定放哪層",
+    "寫入時決定，同時贏兩個對手各 5% 以上",
+    "依位置決定精度（前／中／後段各 25% 的塊降精度）",
+    "寫入准入（少寫慢層、保護 SSD 壽命）"
+   ]
+  }
+ },
+ "brief_t2_format.png": {
+  "evidence_rows": [],
+  "values": {
+   "rows": [
+    "BF16（16 位元，原精度）",
+    "FP8（8 位元）",
+    "INT4（4 位元，KIVI）",
+    "INT2（2 位元，KIVI）"
+   ]
+  }
+ },
+ "brief_s_write_time_schematic.png": {
+  "evidence_rows": [
+   "PAPER §7.1",
+   "m7_write_policy.py"
+  ],
+  "values": {
+   "N": 64,
+   "example_meeting_point": 4
   }
  }
 }

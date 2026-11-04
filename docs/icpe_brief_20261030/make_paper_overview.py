@@ -32,10 +32,10 @@ TXT = {
         title_a="(a) Prediction-first (common practice): build a predictor, then see the gain",
         title_b="(b) Ours: measure first, bound the value, then decide whether to build",
         trace="request trace", trace_b="3 real traces",
-        a_train="Train a predictor", a_train_sub="who returns · when · where to place", a_train_mono="predictor.fit(trace)",
+        a_train="Train a predictor", a_train_sub="who returns · when · where to place", a_train_mono="",
         a_band="for each returning request", a_band_mono="serve loop, predictor in the loop",
-        pills=("place", "evict", "prefetch"), a_pol="Predictor-driven policy", a_pol_mono="policy(pred)",
-        a_res="Restore parked KV", a_res_sub="load from CPU / storage", a_res_mono="restore(kv)",
+        pills=("evict", "prefetch", "TTL"), a_pol="Predictor-driven policy", a_pol_mono="",
+        a_res="Restore parked KV", a_res_sub="load from CPU / storage", a_res_mono="",
         a_ttft="TTFT", a_out="report gain", a_out_sub="vs. LRU or a weak base",
         a_note="the gain is known only\nafter the predictor\nhas been built",
         state="Registered before the run", doc1="thresholds <5% · ≥15%", doc2="rival set per action", doc3="deviation log",
@@ -47,18 +47,18 @@ TXT = {
         bracket="what prediction can still save", formula="ceiling = 1 − T(oracle) / T(rival)",
         card1="FreeInference (agent trace)", card2="Mooncake (chat trace)", rival_s="rival", oracle_s="oracle", gap_s="gap",
         hint_note="typing hint gets ≈0.8 of it",
-        scale_note="TTFT of returning requests, rival = 100%;  gap = 1 − T(oracle) / T(rival);  CPU 128 GiB (Mooncake: SSD class, GPU idle)",
+        scale_note="TTFT of returning requests, rival = 100%;  CPU 128 GiB (Mooncake: SSD class, GPU idle)",
         verdict="Verdict (registered)", v1="< 5%   stop", v2="5–15%   try a free signal", v3="≥ 15%   worth building",
         out_b="decision per trace", out_b1="FreeInference:\n≤ 0.30% → skip", out_b2="Mooncake:\n≤ 50.5% → typing\nhint first",
         note_b="the ceiling is known\nbefore any predictor\nis built",
-        hdr_a="common practice (from abstracts, not verified in full text)", hdr_b="ours",
+        hdr_a="common practice (stylised, from abstracts)", hdr_b="ours",
         rows=[
-            ("Input", "a request trace; the predictor is trained on it", "the same trace, with the best fixed restore (INT4 + Cake) as the base"),
-            ("Compare", "against LRU or a base without Cake", "against the best non-predictive rival for the same action (LRU, ARC, S3-FIFO ...)"),
-            ("Foresight", "a learned predictor: who returns, when, where to place", "an oracle that knows ONE future quantity at a time (prefetch, eviction order, drop)"),
-            ("Free signal", "rare (e.g. tool-reported progress used as a hint)", "user starts typing → prefetch; no model needed (0.81 of perfect prefetch)"),
-            ("Decide", "the gain is measured after the predictor exists", "ceiling = 1 − T(oracle)/T(rival); thresholds registered before the run"),
-            ("Output", "a predictor and the gain it reports", "a decision per trace: FreeInference ≤0.30% → skip; Mooncake ≤50.5% → typing hint"),
+            ("Input", "a request trace", "same trace + the best fixed restore (INT4 + Cake) as the base"),
+            ("Compare", "against LRU or a base without Cake", "against the best non-predictive rival for the same action"),
+            ("Foresight", "a learned predictor", "an oracle that knows ONE future quantity at a time"),
+            ("Free signal", "rare (e.g. tool-reported progress)", "user starts typing → prefetch (0.81 of perfect prefetch)"),
+            ("Decide", "gain measured after the predictor exists", "ceiling = 1 − T(oracle)/T(rival); thresholds registered"),
+            ("Output", "a predictor and its reported gain", "a decision per trace"),
         ],
         fonts=["Liberation Sans", "DejaVu Sans"],
     ),
@@ -66,10 +66,10 @@ TXT = {
         title_a="(a) 先建預測器、再看收益（常見做法）",
         title_b="(b) 本文：先量上限，再決定要不要蓋預測器",
         trace="請求紀錄", trace_b="3 份真實紀錄",
-        a_train="訓練預測器", a_train_sub="誰會回來·何時·該放哪", a_train_mono="predictor.fit(trace)",
+        a_train="訓練預測器", a_train_sub="誰會回來·何時·該放哪", a_train_mono="",
         a_band="每個回來的請求", a_band_mono="服務迴圈，預測器在迴圈裡",
-        pills=("放置", "淘汰", "預取"), a_pol="依預測決策", a_pol_mono="policy(pred)",
-        a_res="把停放的 KV 送回", a_res_sub="從 CPU／儲存載入", a_res_mono="restore(kv)",
+        pills=("淘汰", "預取", "TTL"), a_pol="依預測決策", a_pol_mono="",
+        a_res="把停放的 KV 送回", a_res_sub="從 CPU／儲存載入", a_res_mono="",
         a_ttft="TTFT", a_out="報告收益", a_out_sub="對 LRU 或較弱的底",
         a_note="預測器蓋好之後，\n才知道收益多少",
         state="開跑前先登記", doc1="門檻 <5%・≥15%", doc2="每種動作的對手", doc3="偏離紀錄",
@@ -81,22 +81,68 @@ TXT = {
         bracket="預測最多還能省的部分", formula="上限 = 1 − T(oracle) / T(對手)",
         card1="FreeInference（agent 紀錄）", card2="Mooncake（對話紀錄）", rival_s="對手", oracle_s="oracle", gap_s="差距",
         hint_note="打字提示拿到其中約 0.8",
-        scale_note="回來請求的 TTFT，對手 = 100%；差距 = 1 − T(oracle) / T(對手)；CPU 128 GiB（Mooncake：SSD 級、GPU 閒）",
+        scale_note="回來請求的 TTFT，對手 = 100%；CPU 128 GiB（Mooncake：SSD 級、GPU 閒）",
         verdict="判定（先登記）", v1="< 5%   不做", v2="5–15%   先試免費訊號", v3="≥ 15%   值得蓋",
         out_b="每份紀錄的決定", out_b1="FreeInference：\n≤ 0.30% → 不蓋", out_b2="Mooncake：\n≤ 50.5% → 先用\n打字提示",
         note_b="蓋預測器之前，\n就知道上限",
-        hdr_a="常見做法（依摘要整理，未逐篇核對全文）", hdr_b="本文",
+        hdr_a="常見做法（示意，依摘要整理）", hdr_b="本文",
         rows=[
-            ("輸入", "一份請求紀錄；預測器用它訓練", "同一份紀錄，加上最好的固定送回（INT4 + Cake）當底"),
-            ("比較", "對 LRU 或沒有 Cake 的底", "對同動作下最好的不預測對手（LRU、ARC、S3-FIFO …）"),
-            ("預知", "學出來的預測器：誰回來、何時、放哪", "oracle：一次只知道未來的一件事（預取、淘汰順序、丟棄）"),
-            ("免費訊號", "少見（例：工具回報的進度當提示）", "使用者一開始打字就預取；不需要模型（拿到完美預取的 0.81）"),
-            ("判定", "預測器蓋好之後才量收益", "上限 = 1 − T(oracle)/T(對手)；門檻開跑前先登記"),
-            ("輸出", "一個預測器和它報告的收益", "每份紀錄一個決定：FreeInference ≤0.30% 不蓋；Mooncake ≤50.5% 先用打字提示"),
+            ("輸入", "一份請求紀錄", "同一份紀錄＋最好的固定送回（INT4＋Cake）當底"),
+            ("比較", "對 LRU 或沒有 Cake 的底", "對同動作下最好的不預測對手"),
+            ("預知", "學出來的預測器", "oracle：一次只知道未來的一件事"),
+            ("免費訊號", "少見（例：工具回報的進度）", "使用者一開始打字就預取（完美預取的 0.81）"),
+            ("判定", "預測器蓋好之後才量收益", "上限 = 1 − T(oracle)/T(對手)；門檻先登記"),
+            ("輸出", "一個預測器和它報告的收益", "每份紀錄一個決定"),
         ],
         fonts=["Noto Sans TC", "DejaVu Sans"],
     ),
 }
+
+
+TXT["en"].update(dict(
+    title_b="(b) Ours: measure what prediction can still add on top of the fixed base",
+    doc1="thresholds",
+    gap_none="almost no gap", gap_none_n="(0.30%)", gap_big="big gap", gap_big_n="(50.5%)",
+    hint_s="free signal", left_note="little left for a learned predictor",
+    scale_note="TTFT, rival = 100%; CPU 128 GiB; free-signal bar from GPU replay",
+    verdict="Verdict (registered)", v1="tiny gap → don't build", v2="big gap → free signal first", v3="gap remains → consider building",
+    out_b="what prediction can add", out_b1="FreeInference:\nalmost nothing", out_b2="Mooncake:\nfree signal takes most", out_b3="open: eviction order\n(no free signal yet)",
+    note_b="the ceiling is known\nbefore any predictor\nis built",
+    title_a="(a) Prediction-based KV management (e.g. PBKV, CacheScout, CacheWise, SAGA)",
+    a_glyph="recompute or load", a_train_sub="next call · return time · tool latency", a_res_sub="recompute on a miss, or load from CPU",
+    a_out_sub="vs. LRU / vLLM", a_note="a few also add an\noracle or ground-truth\ncheck",
+    hdr_a="prediction-based work (baselines checked in the full texts)",
+    rows=[
+        ("Input", "a request trace or agent workflow", "same trace + the best fixed restore (INT4 + Cake) as the base"),
+        ("Compare", "against LRU, vLLM or SGLang prefix caching", "against the best non-predictive rival for the same action"),
+        ("Foresight", "a learned or pattern-based predictor (next call, tool latency)", "an oracle that knows ONE future quantity at a time"),
+        ("Free signal", "rare (e.g. tool-reported progress)", "user starts typing → prefetch; gets most of the perfect-prefetch gain"),
+        ("Measure", "gain vs. the baselines; a few add a ground-truth or oracle check", "ceiling = 1 − T(oracle)/T(rival); thresholds registered beforehand"),
+        ("Output", "a predictor and its reported gain", "how much prediction can still add, per trace"),
+    ],
+))
+TXT["zh"].update(dict(
+    title_b="(b) 本文：先量預測在固定的底之上還能再加多少",
+    doc1="門檻",
+    gap_none="幾乎沒有差距", gap_none_n="（0.30%）", gap_big="差距很大", gap_big_n="（50.5%）",
+    hint_s="免費訊號", left_note="剩給預測器的很少",
+    scale_note="TTFT，對手 = 100%；CPU 128 GiB；免費訊號長條取自 GPU 重播",
+    verdict="判定（先登記）", v1="差距很小 → 不值得蓋", v2="差距大 → 先試免費訊號", v3="還有差距 → 才考慮蓋",
+    out_b="預測還能再加多少", out_b1="FreeInference：\n幾乎沒有", out_b2="Mooncake：\n免費訊號拿走大部分", out_b3="待查：淘汰順序\n（還沒有免費訊號）",
+    note_b="蓋預測器之前，\n就知道上限",
+    title_a="(a) 預測型 KV 管理（例：PBKV、CacheScout、CacheWise、SAGA）",
+    a_glyph="重算或載入", a_train_sub="下一步呼叫·回來時間·工具延遲", a_res_sub="沒命中就重算，或從 CPU 載入",
+    a_out_sub="對 LRU／vLLM", a_note="少數還加了 oracle\n或真值的對照",
+    hdr_a="預測型研究（對照組已核對全文）",
+    rows=[
+        ("輸入", "一份請求紀錄或 agent 工作流", "同一份紀錄＋最好的固定送回（INT4＋Cake）當底"),
+        ("比較", "對 LRU、vLLM 或 SGLang 的前綴快取", "對同動作下最好的不預測對手"),
+        ("預知", "學出來或依模式推測的預測器（下一步呼叫、工具延遲）", "oracle：一次只知道未來的一件事"),
+        ("免費訊號", "少見（例：工具回報的進度）", "使用者一開始打字就預取；拿到完美預取的大部分好處"),
+        ("量測", "對照組的收益；少數加了真值或 oracle 對照", "上限 = 1 − T(oracle)/T(對手)；門檻事先登記"),
+        ("輸出", "一個預測器和它報告的收益", "每份紀錄：預測還能再加多少"),
+    ],
+))
 
 
 def build(lang):
@@ -162,10 +208,10 @@ def build(lang):
         txt(x + wo / 2, y + h + 3.3, t["recompute"], size=8.2, col="#c2570c")
         txt(x + wo + (w - wo) / 2, y + h + 3.3, t["load"], size=8.2, col=LOAD)
 
-    def load_glyph(x, y, w, h):
+    def load_glyph(x, y, w, h, label=None):
         ax.add_patch(Rectangle((x, y), w, h, fc=LOAD, ec=INK, lw=1.3, zorder=3))
         arrow(x + 0.3, y + h + 1.5, x + w - 0.3, y + h + 1.5, lw=1.4, col=LOAD, ms=11)
-        txt(x + w / 2, y + h + 3.3, t["load"], size=8.2, col=LOAD)
+        txt(x + w / 2, y + h + 3.3, label or t["load"], size=8.2, col=LOAD)
 
     def doc(x, y, w, h, col):
         f = 0.3 * w
@@ -183,7 +229,7 @@ def build(lang):
     label_block(31.5, 72.8, t["a_train"], t["a_train_sub"], t["a_train_mono"])
     arrow(41.4, 82, 46.4, 82)
 
-    ax.add_patch(Rectangle((47, 60), 69, 34, fc=LGREY, ec="none", zorder=1))
+    ax.add_patch(Rectangle((47, 64.5), 69, 29.5, fc=LGREY, ec="none", zorder=1))
     txt(50, 91.3, t["a_band"], size=11.5, bold=True, ha="left")
     mono_txt(50, 88.6, t["a_band_mono"], ha="left")
     ax.add_patch(FancyBboxPatch((51, 74), 15, 13, boxstyle="round,pad=0,rounding_size=0.5", fc="white", ec=INK, lw=1.6, zorder=3))
@@ -191,7 +237,7 @@ def build(lang):
         pill(58.5, yy, 11.8, 2.9, s, col)
     label_block(58.5, 71.6, t["a_pol"], None, t["a_pol_mono"])
     arrow(67.6, 80.5, 72.6, 80.5)
-    load_glyph(74, 78, 21, 5)
+    load_glyph(74, 78, 21, 5, label=t.get("a_glyph"))
     label_block(84.5, 74.4, t["a_res"], t["a_res_sub"], t["a_res_mono"])
     arrow(96.4, 80.5, 100.4, 80.5)
     ax.add_patch(Rectangle((101.5, 78.4), 5.2, 4.2, fc="#ee6a3a", ec="none", zorder=4))
@@ -229,54 +275,51 @@ def build(lang):
     mono_txt(33, 21.6, t["band_b_mono"].replace(", ", ",\n", 1), col=GREY, size=8.2)
     arrow(43.6, 32.0, 47.6, 32.0)
 
-    # two mini bar charts on the same scale: how big is the gap between the best rival and perfect foresight?
-    x_bar, full = 60.0, 24.0
-    oracle_fi = full * (1 - 0.0030)      # FreeInference: largest oracle ceiling 0.30%  (B3-X1)
-    oracle_mc = full * (1 - 0.505)       # Mooncake conversation, SSD class, GPU idle: prefetch oracle 50.5%  (B1)
+    # two mini bar charts on the same scale: how big is the gap between the best rival and perfect foresight,
+    # and how much of it does a free signal already take?
+    x_bar, full = 60.0, 34.0
+    oracle_fi = full * (1 - 0.0030)             # FreeInference: largest oracle ceiling 0.30%  (B3-X1)
+    oracle_mc = full * (1 - 0.505)              # Mooncake conversation, SSD class, GPU idle: prefetch oracle 50.5%  (B1)
+    hint_mc = full - 0.81 * (full - oracle_mc)  # typing hint reaches 0.81 of the gap (C2-GPU, GPU replay)
 
-    def mini(ytitle, y_riv, title, oracle_len, gap_txt, gap_col, first):
-        txt(49, ytitle, title, size=9.8, bold=True, ha="left")
-        for yy, lab, ln, col in ((y_riv, t["rival_s"], full, "#7f7e79"), (y_riv - 2.8, t["oracle_s"], oracle_len, "#b0225f")):
-            ax.add_patch(Rectangle((x_bar, yy - 1.0), ln, 2.0, fc=col, ec="none", zorder=4))
-            txt(x_bar - 1.2, yy, lab, size=8.8, ha="right")
-        ax.plot([x_bar - 0.3, x_bar - 0.3], [y_riv - 3.9, y_riv + 1.4], color=GREY, lw=1.1, zorder=4)
-        if first:
-            circle(50.2, y_riv, 2, r=1.05); circle(50.2, y_riv - 2.8, 3, r=1.05)
-        return x_bar + oracle_len
+    def bar(yy, lab, ln, col):
+        ax.add_patch(Rectangle((x_bar, yy - 0.95), ln, 1.9, fc=col, ec="none", zorder=4))
+        txt(x_bar - 1.2, yy, lab, size=8.8, ha="right")
 
-    xo1 = mini(39.0, 36.4, t["card1"], oracle_fi, "", RED, True)
-    txt(85.8, 35.0, f'{t["gap_s"]} 0.30%', size=9.6, bold=True, ha="left", col="#8a1c20")
-    ax.plot([49, 117], [31.2, 31.2], color="#c4c4c0", lw=1.0, zorder=3)
-    xo2 = mini(29.7, 27.1, t["card2"], oracle_mc, "", RED, False)
-    txt(85.8, 25.7, f'{t["gap_s"]} 50.5%', size=9.6, bold=True, ha="left", col="#1f6f48")
-    xr = x_bar + full
-    ax.plot([xo2, xo2], [23.7, 22.6], color=GREY, lw=1.1, ls=":", zorder=4)
-    ax.plot([xr, xr], [26.0, 22.6], color=GREY, lw=1.1, ls=":", zorder=4)
-    ax.annotate("", xy=(xo2, 22.6), xytext=(xr, 22.6), arrowprops=dict(arrowstyle="<->", lw=1.6, color=INK, shrinkA=0, shrinkB=0), zorder=5)
-    hint_x = xr - 0.81 * (xr - xo2)      # typing hint reaches 0.81 of the gap (C2-GPU, GPU replay)
-    ax.plot([hint_x], [23.6], marker="v", ms=7, color="#e8590c", zorder=6)
-    circle(66.0, 21.2, 4, r=1.05)
-    txt(67.5, 21.2, t["hint_note"], size=8.8, ha="left", col="#a8420a")
-    txt(49, 19.0, t["scale_note"], size=7.6, ha="left", col=GREY)
+    txt(49, 39.2, t["card1"], size=9.8, bold=True, ha="left")
+    bar(36.4, t["rival_s"], full, "#7f7e79"); bar(33.9, t["oracle_s"], oracle_fi, "#b0225f")
+    ax.plot([x_bar - 0.3, x_bar - 0.3], [32.7, 37.6], color=GREY, lw=1.1, zorder=4)
+    circle(50.2, 36.4, 2, r=1.05); circle(50.2, 33.9, 3, r=1.05)
+    txt(x_bar + full + 0.8, 36.2, t["gap_none"], size=9.0, bold=True, ha="left", col="#8a1c20")
+    txt(x_bar + full + 0.8, 34.1, t["gap_none_n"], size=8.0, ha="left", col=GREY)
+    ax.plot([49, 117], [31.6, 31.6], color="#c4c4c0", lw=1.0, zorder=3)
 
-    # verdict pills (registered thresholds); arrows from each gap to its verdict
-    txt(107.3, 41.0, t["verdict"], size=10.2, bold=True)
-    circle(97.8, 41.2, 5)
-    for yy, s_, col in ((37.4, t["v1"], "#f6cfc8"), (32.0, t["v2"], "#f8e4b4"), (26.6, t["v3"], "#c9ebd8")):
-        pill(107.3, yy, 19.0, 3.6, s_, col, size=8.8)
-    arrow(93.4, 35.2, 97.0, 37.0, lw=1.8, ms=13, col="#8a1c20")
-    arrow(93.4, 25.9, 97.0, 26.5, lw=1.8, ms=13, col="#1f6f48")
-    ax.annotate("", xy=(107.3, 42.7), xytext=(107.3, 45.4), arrowprops=dict(arrowstyle="-|>", lw=1.8, color=BLUE, ls=(0, (4, 3)), shrinkA=0, shrinkB=0, mutation_scale=15), zorder=5)
-    txt(108.8, 44.0, t["thr_note"], size=8.6, col=BLUE, ha="left")
+    txt(49, 30.0, t["card2"], size=9.8, bold=True, ha="left")
+    bar(27.6, t["rival_s"], full, "#7f7e79"); bar(25.3, t["hint_s"], hint_mc, "#f0b9a4"); bar(23.0, t["oracle_s"], oracle_mc, "#b0225f")
+    ax.plot([x_bar - 0.3, x_bar - 0.3], [21.9, 28.7], color=GREY, lw=1.1, zorder=4)
+    circle(50.2, 25.3, 4, r=1.05)
+    txt(x_bar + full + 0.8, 26.8, t["gap_big"], size=9.0, bold=True, ha="left", col="#1f6f48")
+    txt(x_bar + full + 0.8, 24.7, t["gap_big_n"], size=8.0, ha="left", col=GREY)
+    xo2, xh2 = x_bar + oracle_mc, x_bar + hint_mc
+    ax.plot([xo2, xo2], [22.0, 20.9], color=GREY, lw=1.1, ls=":", zorder=4)
+    ax.plot([xh2, xh2], [24.3, 20.9], color=GREY, lw=1.1, ls=":", zorder=4)
+    ax.annotate("", xy=(xo2, 20.9), xytext=(xh2, 20.9), arrowprops=dict(arrowstyle="<->", lw=1.6, color="#c2570c", shrinkA=0, shrinkB=0), zorder=5)
+    txt((xo2 + xh2) / 2, 19.5, t["left_note"], size=8.8, bold=True, col="#a8420a")
+    txt(117.5, 18.9, t["scale_note"], size=7.4, ha="right", col=GREY)
+
+    # reading the gap: the formula (no verdict / decision column)
+    circle(96.0, 41.6, 5)
+    txt(98.4, 41.6, t["formula"].replace(" − ", " −\n", 1), size=8.8, bold=True, ha="left", ls=1.2)
 
     # output
-    arrow(119.2, 32.5, 122.2, 32.5)
-    ax.add_patch(FancyBboxPatch((123, 26), 16.5, 13.5, boxstyle="round,pad=0,rounding_size=0.8", fc="white", ec=RED, lw=2.4, zorder=3))
-    txt(131.25, 37.6, t["out_b"], size=9.6, bold=True, col=RED)
-    txt(131.25, 34.0, t["out_b1"], size=8.8, col=RED)
-    txt(131.25, 29.3, t["out_b2"], size=8.8, col=RED)
-    circle(123.4, 39.6, 6)
-    txt(131.25, 22.2, t["note_b"], size=9.0, col=RED, ls=1.3)
+    arrow(119.2, 32.0, 122.2, 32.0)
+    ax.add_patch(FancyBboxPatch((123, 23.6), 16.5, 16.2, boxstyle="round,pad=0,rounding_size=0.8", fc="white", ec=RED, lw=2.4, zorder=3))
+    txt(131.25, 38.0, t["out_b"], size=9.4, bold=True, col=RED)
+    txt(131.25, 34.6, t["out_b1"], size=8.5, col=RED)
+    txt(131.25, 30.6, t["out_b2"], size=8.5, col=RED)
+    txt(131.25, 26.4, t["out_b3"], size=8.2, col=GREY)
+    circle(123.4, 40.0, 6)
+    txt(131.25, 20.4, t["note_b"], size=9.0, col=RED, ls=1.3)
 
     # ================================================================= legend table
     ax.add_patch(Rectangle((0.5, 0.6), 139, 17.6, fc="#f3f3f1", ec="none"))

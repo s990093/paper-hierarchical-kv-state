@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="604.8pt" height="892.8pt" viewBox="0 0 604.8 892.8" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-11-04T10:44:12.418628</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.11.2, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 892.8 
+L 604.8 892.8 
+L 604.8 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 22.9824 162.875676 
+L 581.8176 162.875676 
+Q 586.656 162.875676 586.656 158.04973 
+L 586.656 77.215135 
+Q 586.656 72.389189 581.8176 72.389189 
+L 22.9824 72.389189 
+Q 18.144 72.389189 18.144 77.215135 
+L 18.144 158.04973 
+Q 18.144 162.875676 22.9824 162.875676 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #f6f5f1; stroke: #6a6a66; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 22.9824 281.111351 
+L 581.8176 281.111351 
+Q 586.656 281.111351 586.656 276.285405 
+L 586.656 195.450811 
+Q 586.656 190.624865 581.8176 190.624865 
+L 22.9824 190.624865 
+Q 18.144 190.624865 18.144 195.450811 
+L 18.144 276.285405 
+Q 18.144 281.111351 22.9824 281.111351 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #f6f5f1; stroke: #c8472f; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 22.9824 399.347027 
+L 581.8176 399.347027 
+Q 586.656 399.347027 586.656 394.521081 
+L 586.656 313.686486 
+Q 586.656 308.860541 581.8176 308.860541 
+L 22.9824 308.860541 
+Q 18.144 308.860541 18.144 313.686486 
+L 18.144 394.521081 
+Q 18.144 399.347027 22.9824 399.347027 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #f6f5f1; stroke: #d49a1c; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_5">
+    <path d="M 22.9824 517.582703 
+L 581.8176 517.582703 
+Q 586.656 517.582703 586.656 512.756757 
+L 586.656 431.922162 
+Q 586.656 427.096216 581.8176 427.096216 
+L 22.9824 427.096216 
+Q 18.144 427.096216 18.144 431.922162 
+L 18.144 512.756757 
+Q 18.144 517.582703 22.9824 517.582703 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #f6f5f1; stroke: #2f6db5; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_6">
+    <path d="M 22.9824 635.818378 
+L 581.8176 635.818378 
+Q 586.656 635.818378 586.656 630.992432 
+L 586.656 550.157838 
+Q 586.656 545.331892 581.8176 545.331892 
+L 22.9824 545.331892 
+Q 18.144 545.331892 18.144 550.157838 
+L 18.144 630.992432 
+Q 18.144 635.818378 22.9824 635.818378 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #f6f5f1; stroke: #a8741a; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_7">
+    <path d="M 22.9824 754.054054 
+L 581.8176 754.054054 
+Q 586.656 754.054054 586.656 749.228108 
+L 586.656 668.393514 
+Q 586.656 663.567568 581.8176 663.567568 
+L 22.9824 663.567568 
+Q 18.144 663.567568 18.144 668.393514 
+L 18.144 749.228108 
+Q 18.144 754.054054 22.9824 754.054054 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #f6f5f1; stroke: #2a8a5a; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 22.9824 872.28973 
+L 581.8176 872.28973 
+Q 586.656 872.28973 586.656 867.463784 
+L 586.656 786.629189 
+Q 586.656 781.803243 581.8176 781.803243 
+L 22.9824 781.803243 
+Q 18.144 781.803243 18.144 786.629189 
+L 18.144 867.463784 
+Q 18.144 872.28973 22.9824 872.28973 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #f6f5f1; stroke: #1f6f48; stroke-width: 1.6; stroke-linejoin: miter"/>
+   </g>
+   <g id="text_1">
+    <text style="font-weight: 700; font-size: 17px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start" x="18.144" y="27.573514" transform="rotate(-0 18.144 27.573514)">一個問題，一條線</text>
+   </g>
+   <g id="text_2">
+    <text style="font-size: 10px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="18.144" y="49.646486" transform="rotate(-0 18.144 49.646486)">預測的價值＝完美預測比最好的不預測做法好多少；每一章回答上一章留下的問題</text>
+   </g>
+   <g id="patch_9">
+    <path d="M 18.144 162.875676 
+L 26.0064 162.875676 
+L 26.0064 72.389189 
+L 18.144 72.389189 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #6a6a66"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 18.144 281.111351 
+L 26.0064 281.111351 
+L 26.0064 190.624865 
+L 18.144 190.624865 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #c8472f"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 18.144 399.347027 
+L 26.0064 399.347027 
+L 26.0064 308.860541 
+L 18.144 308.860541 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #d49a1c"/>
+   </g>
+   <g id="patch_12">
+    <path d="M 18.144 517.582703 
+L 26.0064 517.582703 
+L 26.0064 427.096216 
+L 18.144 427.096216 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #2f6db5"/>
+   </g>
+   <g id="patch_13">
+    <path d="M 18.144 635.818378 
+L 26.0064 635.818378 
+L 26.0064 545.331892 
+L 18.144 545.331892 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #a8741a"/>
+   </g>
+   <g id="patch_14">
+    <path d="M 18.144 754.054054 
+L 26.0064 754.054054 
+L 26.0064 663.567568 
+L 18.144 663.567568 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #2a8a5a"/>
+   </g>
+   <g id="patch_15">
+    <path d="M 18.144 872.28973 
+L 26.0064 872.28973 
+L 26.0064 781.803243 
+L 18.144 781.803243 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #1f6f48"/>
+   </g>
+   <g id="patch_16">
+    <path d="M 50.8032 103.757838 
+C 54.011097 103.757838 57.088038 102.486608 59.356364 100.224121 
+C 61.624689 97.961634 62.8992 94.892613 62.8992 91.692973 
+C 62.8992 88.493333 61.624689 85.424312 59.356364 83.161825 
+C 57.088038 80.899338 54.011097 79.628108 50.8032 79.628108 
+C 47.595303 79.628108 44.518362 80.899338 42.250036 83.161825 
+C 39.981711 85.424312 38.7072 88.493333 38.7072 91.692973 
+C 38.7072 94.892613 39.981711 97.961634 42.250036 100.224121 
+C 44.518362 102.486608 47.595303 103.757838 50.8032 103.757838 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #6a6a66"/>
+   </g>
+   <g id="patch_17">
+    <path d="M 50.8032 221.993514 
+C 54.011097 221.993514 57.088038 220.722283 59.356364 218.459796 
+C 61.624689 216.19731 62.8992 213.128288 62.8992 209.928649 
+C 62.8992 206.729009 61.624689 203.659988 59.356364 201.397501 
+C 57.088038 199.135014 54.011097 197.863784 50.8032 197.863784 
+C 47.595303 197.863784 44.518362 199.135014 42.250036 201.397501 
+C 39.981711 203.659988 38.7072 206.729009 38.7072 209.928649 
+C 38.7072 213.128288 39.981711 216.19731 42.250036 218.459796 
+C 44.518362 220.722283 47.595303 221.993514 50.8032 221.993514 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #c8472f"/>
+   </g>
+   <g id="patch_18">
+    <path d="M 50.8032 340.229189 
+C 54.011097 340.229189 57.088038 338.957959 59.356364 336.695472 
+C 61.624689 334.432985 62.8992 331.363964 62.8992 328.164324 
+C 62.8992 324.964685 61.624689 321.895663 59.356364 319.633177 
+C 57.088038 317.37069 54.011097 316.099459 50.8032 316.099459 
+C 47.595303 316.099459 44.518362 317.37069 42.250036 319.633177 
+C 39.981711 321.895663 38.7072 324.964685 38.7072 328.164324 
+C 38.7072 331.363964 39.981711 334.432985 42.250036 336.695472 
+C 44.518362 338.957959 47.595303 340.229189 50.8032 340.229189 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #d49a1c"/>
+   </g>
+   <g id="patch_19">
+    <path d="M 50.8032 458.464865 
+C 54.011097 458.464865 57.088038 457.193635 59.356364 454.931148 
+C 61.624689 452.668661 62.8992 449.59964 62.8992 446.4 
+C 62.8992 443.20036 61.624689 440.131339 59.356364 437.868852 
+C 57.088038 435.606365 54.011097 434.335135 50.8032 434.335135 
+C 47.595303 434.335135 44.518362 435.606365 42.250036 437.868852 
+C 39.981711 440.131339 38.7072 443.20036 38.7072 446.4 
+C 38.7072 449.59964 39.981711 452.668661 42.250036 454.931148 
+C 44.518362 457.193635 47.595303 458.464865 50.8032 458.464865 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #2f6db5"/>
+   </g>
+   <g id="patch_20">
+    <path d="M 50.8032 576.700541 
+C 54.011097 576.700541 57.088038 575.42931 59.356364 573.166823 
+C 61.624689 570.904337 62.8992 567.835315 62.8992 564.635676 
+C 62.8992 561.436036 61.624689 558.367015 59.356364 556.104528 
+C 57.088038 553.842041 54.011097 552.570811 50.8032 552.570811 
+C 47.595303 552.570811 44.518362 553.842041 42.250036 556.104528 
+C 39.981711 558.367015 38.7072 561.436036 38.7072 564.635676 
+C 38.7072 567.835315 39.981711 570.904337 42.250036 573.166823 
+C 44.518362 575.42931 47.595303 576.700541 50.8032 576.700541 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #a8741a"/>
+   </g>
+   <g id="patch_21">
+    <path d="M 50.8032 694.936216 
+C 54.011097 694.936216 57.088038 693.664986 59.356364 691.402499 
+C 61.624689 689.140012 62.8992 686.070991 62.8992 682.871351 
+C 62.8992 679.671712 61.624689 676.60269 59.356364 674.340204 
+C 57.088038 672.077717 54.011097 670.806486 50.8032 670.806486 
+C 47.595303 670.806486 44.518362 672.077717 42.250036 674.340204 
+C 39.981711 676.60269 38.7072 679.671712 38.7072 682.871351 
+C 38.7072 686.070991 39.981711 689.140012 42.250036 691.402499 
+C 44.518362 693.664986 47.595303 694.936216 50.8032 694.936216 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #2a8a5a"/>
+   </g>
+   <g id="patch_22">
+    <path d="M 50.8032 813.171892 
+C 54.011097 813.171892 57.088038 811.900662 59.356364 809.638175 
+C 61.624689 807.375688 62.8992 804.306667 62.8992 801.107027 
+C 62.8992 797.907387 61.624689 794.838366 59.356364 792.575879 
+C 57.088038 790.313392 54.011097 789.042162 50.8032 789.042162 
+C 47.595303 789.042162 44.518362 790.313392 42.250036 792.575879 
+C 39.981711 794.838366 38.7072 797.907387 38.7072 801.107027 
+C 38.7072 804.306667 39.981711 807.375688 42.250036 809.638175 
+C 44.518362 811.900662 47.595303 813.171892 50.8032 813.171892 
+z
+" clip-path="url(#p2582ba9649)" style="fill: #1f6f48"/>
+   </g>
+   <g id="text_3">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="50.8032" y="96.364595" transform="rotate(-0 50.8032 96.364595)">1</text>
+   </g>
+   <g id="text_4">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="74.9952" y="96.252973" transform="rotate(-0 74.9952 96.252973)">問題與賭注</text>
+   </g>
+   <g id="text_5">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #6a6a66" x="42.336" y="118.226216" transform="rotate(-0 42.336 118.226216)">問</text>
+   </g>
+   <g id="text_6">
+    <text style="font-size: 10.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="118.606216" transform="rotate(-0 67.7376 118.606216)">預測能讓使用者回來時更快嗎？</text>
+   </g>
+   <g id="text_7">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #6a6a66" x="42.336" y="137.53" transform="rotate(-0 42.336 137.53)">答</text>
+   </g>
+   <g id="text_8">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="137.6685" transform="rotate(-0 67.7376 137.6685)">近年一批研究押注預測；我們一開始也這樣想</text>
+   </g>
+   <g id="text_9">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #111111" x="302.4" y="180.62627" transform="rotate(-0 302.4 180.62627)">▼ 預測的好處，最多有多大？</text>
+   </g>
+   <g id="text_10">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="50.8032" y="214.60027" transform="rotate(-0 50.8032 214.60027)">2</text>
+   </g>
+   <g id="text_11">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="74.9952" y="214.488649" transform="rotate(-0 74.9952 214.488649)">最直接的版本：寫入時預知</text>
+   </g>
+   <g id="text_12">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #c8472f" x="42.336" y="236.461892" transform="rotate(-0 42.336 236.461892)">問</text>
+   </g>
+   <g id="text_13">
+    <text style="font-size: 10.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="236.841892" transform="rotate(-0 67.7376 236.841892)">寫入時就依位置放好，有用嗎？</text>
+   </g>
+   <g id="text_14">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #c8472f" x="42.336" y="255.765676" transform="rotate(-0 42.336 255.765676)">答</text>
+   </g>
+   <g id="text_15">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="256.031676" transform="rotate(-0 67.7376 256.031676)">沒用：16 組比較 0 組贏（TTFT 差 −0.37～+1.16%）</text>
+   </g>
+   <g id="text_16">
+    <text style="font-size: 8.6px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="67.7376" y="272.314486" transform="rotate(-0 67.7376 272.314486)">位置回來時一樣看得到；最前面的塊回來時多半靠重算，不從儲存讀</text>
+   </g>
+   <g id="text_17">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #111111" x="302.4" y="298.861946" transform="rotate(-0 302.4 298.861946)">▼ 預測只剩「回來時」。怎麼公平地量它？</text>
+   </g>
+   <g id="text_18">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="50.8032" y="332.835946" transform="rotate(-0 50.8032 332.835946)">3</text>
+   </g>
+   <g id="text_19">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="74.9952" y="332.724324" transform="rotate(-0 74.9952 332.724324)">比較對象決定答案</text>
+   </g>
+   <g id="text_20">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #d49a1c" x="42.336" y="354.697568" transform="rotate(-0 42.336 354.697568)">問</text>
+   </g>
+   <g id="text_21">
+    <text style="font-size: 10.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="355.077568" transform="rotate(-0 67.7376 355.077568)">預測值多少，取決於跟誰比？</text>
+   </g>
+   <g id="text_22">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #d49a1c" x="42.336" y="374.001351" transform="rotate(-0 42.336 374.001351)">答</text>
+   </g>
+   <g id="text_23">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="374.287273" transform="rotate(-0 67.7376 374.287273)">是。同一個完美預知：只能重算 15.9% → 有慢層 3.4% → 再加 Cake 2.6%</text>
+   </g>
+   <g id="text_24">
+    <text style="font-size: 8.6px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="67.7376" y="390.296193" transform="rotate(-0 67.7376 390.296193)">FreeInference 前 6 週、CPU 32 GiB、慢層 6.98 GiB/s、GPU 閒、對 LRU（模擬；另掃容量與頻寬）</text>
+   </g>
+   <g id="text_25">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #111111" x="302.4" y="417.097622" transform="rotate(-0 302.4 417.097622)">▼ 所以先把「不預測」做到最強</text>
+   </g>
+   <g id="text_26">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="50.8032" y="451.071622" transform="rotate(-0 50.8032 451.071622)">4</text>
+   </g>
+   <g id="text_27">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="74.9952" y="450.96" transform="rotate(-0 74.9952 450.96)">把「不預測」的做法做到最強</text>
+   </g>
+   <g id="text_28">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #2f6db5" x="42.336" y="472.933243" transform="rotate(-0 42.336 472.933243)">問</text>
+   </g>
+   <g id="text_29">
+    <text style="font-size: 10.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="473.313243" transform="rotate(-0 67.7376 473.313243)">最好的不預測做法是什麼？</text>
+   </g>
+   <g id="text_30">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #2f6db5" x="42.336" y="492.237027" transform="rotate(-0 42.336 492.237027)">答</text>
+   </g>
+   <g id="text_31">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="492.354808" transform="rotate(-0 67.7376 492.354808)">在 Cake 上加 INT4：最慢那層 12.1 秒 → 1.24 秒；CPU 層看解壓寫法（差 6.8 倍）</text>
+   </g>
+   <g id="text_32">
+    <text style="font-size: 8.6px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="67.7376" y="508.785838" transform="rotate(-0 67.7376 508.785838)">Cake 是別人已發表的方法，不是我們的；為了公平，不是主角</text>
+   </g>
+   <g id="text_33">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #111111" x="302.4" y="535.333297" transform="rotate(-0 302.4 535.333297)">▼ 不預測的做法做好了，預測還剩多少？</text>
+   </g>
+   <g id="text_34">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="50.8032" y="569.307297" transform="rotate(-0 50.8032 569.307297)">5</text>
+   </g>
+   <g id="text_35">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="74.9952" y="569.195676" transform="rotate(-0 74.9952 569.195676)">在最強的不預測做法之上量上限</text>
+   </g>
+   <g id="text_36">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #a8741a" x="42.336" y="591.168919" transform="rotate(-0 42.336 591.168919)">問</text>
+   </g>
+   <g id="text_37">
+    <text style="font-size: 10.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="591.548919" transform="rotate(-0 67.7376 591.548919)">完美預測最多再省多少？</text>
+   </g>
+   <g id="text_38">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #a8741a" x="42.336" y="610.472703" transform="rotate(-0 42.336 610.472703)">答</text>
+   </g>
+   <g id="text_39">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="610.156984" transform="rotate(-0 67.7376 610.156984)">FreeInference ≤0.30%；Mooncake 預取 50.5% → 14.6%（128→1,024 GiB）</text>
+   </g>
+   <g id="text_40">
+    <text style="font-size: 8.6px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="67.7376" y="627.021514" transform="rotate(-0 67.7376 627.021514)">取決於固定規則已命中多少（FreeInference 99.29%；Mooncake 沒算）</text>
+   </g>
+   <g id="text_41">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #111111" x="302.4" y="653.568973" transform="rotate(-0 302.4 653.568973)">▼ Mooncake 的大上限是真的嗎？</text>
+   </g>
+   <g id="text_42">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="50.8032" y="687.542973" transform="rotate(-0 50.8032 687.542973)">6</text>
+   </g>
+   <g id="text_43">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="74.9952" y="687.431351" transform="rotate(-0 74.9952 687.431351)">大的上限還剩多少</text>
+   </g>
+   <g id="text_44">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #2a8a5a" x="42.336" y="709.404595" transform="rotate(-0 42.336 709.404595)">問</text>
+   </g>
+   <g id="text_45">
+    <text style="font-size: 10.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="709.784595" transform="rotate(-0 67.7376 709.784595)">簡單的打字線索能拿到多少？</text>
+   </g>
+   <g id="text_46">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #2a8a5a" x="42.336" y="728.708378" transform="rotate(-0 42.336 728.708378)">答</text>
+   </g>
+   <g id="text_47">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="728.862019" transform="rotate(-0 67.7376 728.862019)">打字提示拿到完美預取改善的 0.81；完美預取只比它快 4.0%</text>
+   </g>
+   <g id="text_48">
+    <text style="font-size: 8.6px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="67.7376" y="745.257189" transform="rotate(-0 67.7376 745.257189)">不是主流做法，是「不用預測」的參考點；含排隊上限再掉一半以上</text>
+   </g>
+   <g id="text_49">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #111111" x="302.4" y="771.804649" transform="rotate(-0 302.4 771.804649)">▼ 沒有這種簡單線索的部分呢？</text>
+   </g>
+   <g id="text_50">
+    <text style="font-weight: 700; font-size: 11.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: middle; fill: #ffffff" x="50.8032" y="805.778649" transform="rotate(-0 50.8032 805.778649)">7</text>
+   </g>
+   <g id="text_51">
+    <text style="font-weight: 700; font-size: 12px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="74.9952" y="805.667027" transform="rotate(-0 74.9952 805.667027)">結論</text>
+   </g>
+   <g id="text_52">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #1f6f48" x="42.336" y="827.64027" transform="rotate(-0 42.336 827.64027)">問</text>
+   </g>
+   <g id="text_53">
+    <text style="font-size: 10.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="828.02027" transform="rotate(-0 67.7376 828.02027)">預測值不值得？</text>
+   </g>
+   <g id="text_54">
+    <text style="font-weight: 700; font-size: 9.5px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #1f6f48" x="42.336" y="846.944054" transform="rotate(-0 42.336 846.944054)">答</text>
+   </g>
+   <g id="text_55">
+    <text style="font-weight: 700; font-size: 10.2px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #111111" x="67.7376" y="847.097695" transform="rotate(-0 67.7376 847.097695)">兩份紀錄上有限：FreeInference 幾乎沒有；對話上打字線索拿到大部分</text>
+   </g>
+   <g id="text_56">
+    <text style="font-size: 8.6px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="67.7376" y="862.933865" transform="rotate(-0 67.7376 862.933865)">待解：淘汰順序、Mooncake toolagent、Mooncake 命中率、真的預測器</text>
+   </g>
+  </g>
+  <g id="text_57">
+   <text style="font-size: 8.4px; font-family: 'Noto Sans TC', 'DejaVu Sans', sans-serif; text-anchor: start; fill: #5f5e5a" x="18.144" y="887.4432" transform="rotate(-0 18.144 887.4432)">實測：寫入時放置、INT4（在 Cake 上）、解壓、打字提示（GPU 縮小重播）。模擬：15.9%→2.6%、完美預測上限、含排隊。</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p2582ba9649">
+   <rect x="0" y="0" width="604.8" height="892.8"/>
+  </clipPath>
+ </defs>
+</svg>
