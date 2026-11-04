@@ -154,3 +154,18 @@
 2. **全部配對（×7）**：慢層規則（② LRU、LRU2、ARC、S3FIFO、GDSF、PENS；④ BEL）和 GPU 規則、CPU 規則全部組合，② 取最快（同偏離 2 第 5 項的精神）。
 
 → 這兩項 PREREG 第 5 項沒寫到細節；是否要 `h200` 記成偏離（或補充說明）由使用者決定。
+
+---
+
+## 2026-11-05T00:22+08:00 — 加速（逐位元相同）push；G1 在 09fd521 上跑
+
+**做完什麼**
+- G1（ac0c56e）run `20261104-233425-icpe-sim-g1-1b` 跑到 541／1,328 時**我手動停掉**（`ABORTED`；沒有比對結果）：icpe-data 要用的 `nb:` 載入點在它之後，G1 要涵蓋 icpe-data 會 merge 的那個 commit。
+- 慢層容量上限（`3140f3c`）、`x1_nb` 向量化（同 commit；Mooncake 來回轉換只差重新編號、負面測試會擋下，run `20261104-235644-icpe-sim-nb-roundtrip3`）、分析的慢層軸（`dc80390`；仍和 H200 的 1,152 列逐列相同，run `20261104-235745-icpe-sim-analyze-check2`）。
+- 加速（`09fd521`；SIM_CHANGES 第 11 項）：profile（run `20261104-235828-icpe-sim-profile-cw`，CacheWise 試跑檔，只量時間分佈）→ restore 內聯 `Chan.read`、`_fix` 快速路徑、wb 回合結束的迴圈。**逐位元相同**：restore 對 restore_ref（run `20261105-000344-icpe-sim-speedup-check`）；跨版本對 ac0c56e 240／240 個 job 的指紋（GPU 層關閉、wb LRU／BEL／TTLA:10、wt LRU；runs `20261105-000853-icpe-sim-fastpath-xcheck`、`20261105-001801-icpe-sim-fastpath-xcheck2`）。快多少（CacheWise N16 試跑檔、LRU、CPU 128 GiB，只有 restore 那一項時）：12 種時間設定 32.2 → 18.9 s、1 種 5.6 → 4.8 s；其他兩項 NOT_MEASURED。
+- 方案 A（PREREG 偏離 4，`776e747`）：不用改程式（CPU 規則、TTL 值、格子都是 sweep 的參數）。
+- G1 run `20261105-002207-icpe-sim-g1-09fd521`：commit 09fd521、新功能全部關閉、共用 venv、8 workers；之後跑自檢 T1–T11。跑完在這裡寫結果。
+
+**需要 icpe-data 做什麼**：G1 PASS 寫在這裡之後，merge `09fd521`。
+
+**需要使用者決定什麼**：無（TTL 起算點：使用者選「等 TraceLab 的計時再定」，icpe-data 的計時已在 STATUS_DATA；方案 A 之後要不要再改，等使用者）。
