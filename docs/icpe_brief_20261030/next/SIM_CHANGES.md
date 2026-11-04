@@ -91,3 +91,16 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - 開了雜訊的 sweep 每列多 `noise_model`、`noise_lambda`、`noise_draw`、`noise_seed`（沒有雜訊的列：none、0、none、−1）。
 - **分析**：`next_sim_analyze.py` 每個雜訊設定各算一次（④ 用那個設定的列、② 用沒有雜訊的列；④ 那一邊沒有全部加雜訊的元件不算），輸出逐 seed 與 seed 間的中位數、最小–最大、平均±標準差。
 - **有利還是不利**：雜訊只會讓 ④ 變慢或不變〔推論；不保證，因為完美預知的貪婪規則本身不是最優〕→ 上限變小。
+
+### 9. 慢層容量上限＋慢層淘汰規則（`--slow-cap-frac 0.5 --slow-policies LRU LRU2 ARC S3FIFO GDSF PENS BEL`；PREREG §2 第 5 項）
+
+- **改了什麼**：上限＝⌊frac × n_blocks_full⌋ 個 INT4 塊；慢層上**所有** INT4 塊都算（使用者 11/4）。超過時：① 先丟**乾淨的副本**（持有者都在 CPU／GPU、沒有慢層狀態的持有者；照變乾淨的先後；之後那個 session 再降級要重寫）；② 不夠再照慢層規則選一個**慢層狀態的 session** 整個丟掉（回來全部重算）。用 instance 覆蓋 `_fix`（計數、記下變乾淨的塊）、`demote`（進入慢層）、`enforce`（之後檢查上限），再加兩行有守衛的（回來時、被丟時離開慢層）；沒有上限時原本的程式路徑不變。
+  - 慢層規則（`SlowOrder`）：「進入慢層」＝一次存取、session 回來＝一次命中（ARC、S3FIFO 的頻率訊號）；LRU＝進入慢層的先後；LRU2、PENS、GDSF 用真實的請求紀錄與成本（GDSF 的成本＝每塊「留在慢層 vs 丟掉重算」省下的時間，和 CPU 的 GDSF 一樣一個 job 一組 (慢層, GPU 狀態)）；BEL＝下次最晚回來的先丟（④；走同一個 `next_req`，所以雜訊也套得上）。
+  - 組合：慢層規則和 GPU、CPU 規則全部配對（使用者 11/4：×7）。
+  - 開了上限的 sweep 每列多 `slow_cap_frac`、`slow_policy`、`slow_cap_blocks`、`n_slow_clean_evict`、`n_slow_sess_drop`。
+- **為什麼**：NEXT_PLAN §5.9「慢層容量」：容量有限時多了「慢層也要挑誰丟」的決定，對預測比較有利。
+- **有利還是不利**：對預測有利（多一個可以預知的決定）；同時整體變慢（丟掉的要重算）。
+
+### 10. `x1_nb` 向量化
+
+- 檢查、重新編號、每塊的存取清單全部改用 numpy（TraceLab 有約 2.2 億個 chunk 存取，純 Python 要好幾分鐘、好幾 GB）。和原本的純 Python 版、以及 `x1_trace.prepare` 對拍：Mooncake 兩份的 full／acc 只差一對一的重新編號、n_blocks_full 與 nall 相同；故意弄壞鏈（在和 parent 共用的位置交換兩個鍵）與 parent 都會被擋下（run `20261104-235644-icpe-sim-nb-roundtrip3`）。

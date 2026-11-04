@@ -28,7 +28,7 @@ import os
 import random
 import sys
 import time
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from datetime import datetime
 
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")
@@ -409,10 +409,190 @@ class View:
         return ttft, rest, nC, nS, meet - g + (n_all - L)
 
 
+# ================================================================== 慢層容量上限的淘汰規則（ICPE next 第二批；PREREG §2 第 5 項）
+SLOW_POLICIES = ["LRU", "LRU2", "ARC", "S3FIFO", "GDSF", "PENS", "BEL"]
+
+
+class SlowOrder:
+    """慢層狀態（S_SLOW）的 session 的淘汰順序。「進入慢層」（被 CPU 降級）＝一次存取；session 回來（離開慢層）＝一次命中
+    （ARC、S3FIFO 用它當頻率訊號）；LRU2、PENS、GDSF、BEL 用真實的請求紀錄／成本（同 CPU 層的同名規則）。"""
+
+    def __init__(self, eng, rule, cap_bytes, gdsf_view=None):
+        assert rule in SLOW_POLICIES, rule
+        self.e, self.rule, self.C = eng, rule, float(cap_bytes)
+        self.mem = OrderedDict()          # LRU 順序（也當成員集合）
+        self.hits = {}                    # session → 回來（命中）次數
+        self.T1, self.T2, self.B1, self.B2 = OrderedDict(), OrderedDict(), OrderedDict(), OrderedDict()
+        self.t1b = self.t2b = self.b1b = self.b2b = 0
+        self.p = 0.0
+        self.S, self.M, self.Gh = OrderedDict(), OrderedDict(), OrderedDict()
+        self.f, self.sz = {}, {}
+        self.sb_ = self.mb_ = 0
+        self.gH, self.gver, self.gheap, self.gL = {}, {}, [], 0.0
+        if rule == "GDSF":
+            v = gdsf_view
+            K = eng.K
+            ls = eng.i4 / (K["slow"][v.slow_name]["r"] * GiB) + v.d     # 留在慢層 vs 丟掉重算：每塊省下的時間
+            self.g_c = [max(fi - ls, 0.0) for fi in v.f]
+            self.g_cc = [0.0]
+            for x in self.g_c:
+                self.g_cc.append(self.g_cc[-1] + x)
+        if rule == "PENS":
+            fi = f_array(eng.K, eng.P["nmax"], "idle")
+            self.pens_fc = [0.0]
+            for x in fi:
+                self.pens_fc.append(self.pens_fc[-1] + x)
+
+    def size(self, s):
+        return len(self.e.sb[s]) * self.e.i4
+
+    def add(self, s):
+        e, r = self.e, self.rule
+        self.mem[s] = None
+        self.mem.move_to_end(s)
+        if r == "ARC":
+            size = self.size(s)
+            if s in self.B1:
+                self.b1b -= self.B1.pop(s)
+                self.p = min(self.C, self.p + max(1.0, self.b2b / max(self.b1b, 1)) * size)
+                self.T2[s] = size
+                self.t2b += size
+            elif s in self.B2:
+                self.b2b -= self.B2.pop(s)
+                self.p = max(0.0, self.p - max(1.0, self.b1b / max(self.b2b, 1)) * size)
+                self.T2[s] = size
+                self.t2b += size
+            elif self.hits.get(s, 0) > 0:
+                self.T2[s] = size
+                self.t2b += size
+            else:
+                self.T1[s] = size
+                self.t1b += size
+            while self.t1b + self.b1b > self.C and self.B1:
+                self.b1b -= self.B1.popitem(last=False)[1]
+            while self.t1b + self.t2b + self.b1b + self.b2b > 2 * self.C and self.B2:
+                self.b2b -= self.B2.popitem(last=False)[1]
+        elif r == "S3FIFO":
+            size = self.size(s)
+            self.sz[s] = size
+            self.f[s] = min(self.hits.get(s, 0), 3)
+            if s in self.Gh:
+                del self.Gh[s]
+                self.M[s] = None
+                self.mb_ += size
+            else:
+                self.S[s] = None
+                self.sb_ += size
+        elif r == "GDSF":
+            bl = e.sb[s]
+            n = len(bl)
+            ex = e.excl_start(s, e.ref_live)
+            cps = (self.g_cc[n] - self.g_cc[ex]) / ((n - ex) * e.i4) if ex < n else self.g_c[n - 1] / e.i4
+            H = self.gL + e.nreq[s] * cps * e.i4
+            v = self.gver.get(s, 0) + 1
+            self.gver[s] = v
+            heapq.heappush(self.gheap, (H, e.last[s], v, s))
+
+    def remove(self, s, hit):
+        """s 離開慢層（hit＝回來了；False＝被丟掉）。不在裡面就什麼都不做。"""
+        if s not in self.mem:
+            return
+        del self.mem[s]
+        if hit:
+            self.hits[s] = self.hits.get(s, 0) + 1
+        r = self.rule
+        if r == "ARC":
+            if s in self.T1:
+                self.t1b -= self.T1.pop(s)
+            elif s in self.T2:
+                self.t2b -= self.T2.pop(s)
+        elif r == "S3FIFO":
+            if s in self.S:
+                del self.S[s]
+                self.sb_ -= self.sz[s]
+            elif s in self.M:
+                del self.M[s]
+                self.mb_ -= self.sz[s]
+            self.f.pop(s, None)
+        elif r == "GDSF":
+            self.gver[s] = self.gver.get(s, 0) + 1
+
+    def select(self):
+        """選一個慢層狀態的 session 丟掉（呼叫端負責 drop）；沒有就回 None。選中的從結構裡拿掉（ARC／S3FIFO 進鬼表）。"""
+        if not self.mem:
+            return None
+        e, r = self.e, self.rule
+        if r == "LRU":
+            s = next(iter(self.mem))
+        elif r == "LRU2":
+            s = min(self.mem, key=lambda x: (e.prev[x] if e.nreq[x] >= 2 else -1, e.last[x]))
+        elif r == "PENS":
+            cur, fc = e.cur, self.pens_fc
+
+            def V(x):
+                n = len(e.sb[x])
+                ex = e.excl_start(x, e.ref_live)
+                cost = fc[n] - fc[ex] if ex < n else fc[n] - fc[n - 1]
+                return (cost / max(1, cur - e.last[x] + 1), e.last[x])
+            s = min(self.mem, key=V)
+        elif r == "BEL":
+            s = max(self.mem, key=lambda x: (e.next_req(x, e.ref_live)[0], -e.last[x]))
+        elif r == "GDSF":
+            s = None
+            while self.gheap:
+                H, _, v, x = heapq.heappop(self.gheap)
+                if self.gver.get(x) == v and x in self.mem:
+                    self.gL = H
+                    self.gver[x] = v + 1
+                    s = x
+                    break
+            if s is None:
+                s = next(iter(self.mem))
+        elif r == "ARC":
+            if self.T1 and (self.t1b > self.p or not self.T2):
+                s, sz = self.T1.popitem(last=False)
+                self.t1b -= sz
+                self.B1[s] = sz
+                self.b1b += sz
+            else:
+                s, sz = self.T2.popitem(last=False)
+                self.t2b -= sz
+                self.B2[s] = sz
+                self.b2b += sz
+        else:   # S3FIFO
+            Sc = 0.1 * self.C
+            while True:
+                if self.S and (self.sb_ > Sc or not self.M):
+                    x, _ = self.S.popitem(last=False)
+                    self.sb_ -= self.sz[x]
+                    if self.f[x] >= 1:
+                        self.f[x] = 0
+                        self.M[x] = None
+                        self.mb_ += self.sz[x]
+                        continue
+                    self.Gh[x] = None
+                    while len(self.Gh) > max(len(self.M), 1):
+                        self.Gh.popitem(last=False)
+                    del self.f[x]
+                    s = x
+                    break
+                x, _ = self.M.popitem(last=False)
+                if self.f[x] > 0:
+                    self.f[x] -= 1
+                    self.M[x] = None
+                    continue
+                self.mb_ -= self.sz[x]
+                del self.f[x]
+                s = x
+                break
+        self.mem.pop(s, None)
+        return s
+
+
 # ================================================================== 引擎
 class Engine:
     def __init__(self, P, policy, cap_bytes, views, K, gdsf_view=None, check=False, gpu_cap=0, gpu_policy="LRU", gpu_write="wb",
-                 pf_target="cpu", noise=None):
+                 pf_target="cpu", noise=None, slow_cap=None, slow_policy="LRU"):
         self.P = P
         self.full, self.nall, self.acc, self.t = P["full"], P["nall"], P["acc"], P["tl"]
         self.kind, self.sess, self.parent = P["kindc"], P["sessl"], P["parentl"]
@@ -489,6 +669,9 @@ class Engine:
             assert pf_target == "cpu", "預取搬回 GPU 要開 GPU 層"
         if noise is not None:
             self._noise_init(noise)
+        self.sc = None                # 慢層容量上限（第二批；PREREG §2 第 5 項）；None＝沒有上限（原本的路徑）
+        if slow_cap is not None:
+            self._sc_init(slow_cap, slow_policy, gdsf_view)
 
     # ---------------------------------------------------------- GPU 快取層（ICPE next）
     def _gpu_init(self, gpu_policy, gpu_write, B, S, nreq):
@@ -653,6 +836,68 @@ class Engine:
                 v.slow.write(w * self.i4, exp)
             else:
                 self._g_free_wt(x)
+
+    # ---------------------------------------------------------- 慢層容量上限（第二批；PREREG §2 第 5 項；使用者 11/4 的兩個決定）
+    def _sc_init(self, frac, rule, gdsf_view):
+        """上限＝⌊frac × n_blocks_full⌋ 個 INT4 塊；慢層上所有 INT4 塊都算。超過 → 先丟乾淨的副本（沒有慢層狀態的持有者；
+        照變乾淨的先後），不夠再照 rule 丟整個慢層狀態的 session（回來全部重算）。"""
+        assert 0 < frac, frac
+        if rule == "GDSF":
+            assert gdsf_view is not None, "慢層 GDSF 要指定時間設定（同 CPU 的 GDSF：一個 job 一組 (慢層, GPU 狀態)）"
+        self.sc = dict(frac=float(frac), rule=rule)
+        self.sc_cap = int(math.floor(frac * self.P["meta"]["n_blocks_full"]))
+        self.n_slow = sum(self.on_slow)
+        self.clean_q = deque()
+        self.n_sc_clean = self.n_sc_drop = 0
+        self.sorder = SlowOrder(self, rule, self.sc_cap * self.i4, gdsf_view)
+        self._fix_inner = self._fix
+        self._fix = self._fix_sc
+        self._demote_inner = self.demote
+        self.demote = self._demote_sc
+        self._enforce_inner = self.enforce
+        self.enforce = self._enforce_sc
+
+    def _slow_holders(self, b):
+        n = self.ref_live[b] - self.ref_cpu[b]
+        if self.G > 0 and self.gwrite == "wb":
+            n -= self.ref_gpu[b]
+        return n
+
+    def _fix_sc(self, b):
+        was = self.on_slow[b]
+        w = self._fix_inner(b)
+        now = self.on_slow[b]
+        if now != was:
+            self.n_slow += 1 if now else -1
+        if now and self._slow_holders(b) == 0:
+            self.clean_q.append(b)            # 可能變乾淨了（丟的時候再驗一次）
+        return w
+
+    def _demote_sc(self, s, now_by_view=None):
+        w = self._demote_inner(s, now_by_view)
+        self.sorder.add(s)
+        return w
+
+    def _enforce_sc(self):
+        w = self._enforce_inner()
+        self._slow_enforce()
+        return w
+
+    def _slow_enforce(self):
+        while self.n_slow > self.sc_cap:
+            if self.clean_q:
+                b = self.clean_q.popleft()
+                if self.on_slow[b] and self._slow_holders(b) == 0 and self.fmt[b] != 2:
+                    self.on_slow[b] = False
+                    self.n_slow -= 1
+                    self.n_sc_clean += 1
+                continue
+            s = self.sorder.select()
+            if s is None:
+                break
+            assert self.st[s] == S_SLOW, (s, self.st[s])
+            self.drop(s)
+            self.n_sc_drop += 1
 
     # ---------------------------------------------------------- W4 雜訊（PREREG §2 第 6 項、§3 B）
     def _noise_init(self, nz):
@@ -1116,6 +1361,8 @@ class Engine:
     def drop(self, s):
         st = self.st[s]
         w = 0
+        if self.sc is not None and st == S_SLOW:
+            self.sorder.remove(s, hit=False)
         if self.gpf is not None and self.gspf[s] > 0:
             self._g_unprefetch(s, self.sb[s], push=False)
         if st in (S_CPU, S_SLOW):
@@ -1223,6 +1470,8 @@ class Engine:
         if w:
             v.slow.write(w * self.i4, now)
             self.w_slow_blocks += w
+        if self.sc is not None:
+            self._slow_enforce()
         return self.C - self.cpu_used >= self.i4
 
     def advance_prefetch(self, t_from, t_to):
@@ -1279,6 +1528,8 @@ class Engine:
         self.cur = r
         if self.noise is not None and self.nz_b1:
             self.nzd[self.sess[r]] = self._nz_sample()
+        if self.sc is not None and self.st[self.sess[r]] == S_SLOW:
+            self.sorder.remove(self.sess[r], hit=True)       # 回來了：離開慢層
         blocks = self.full[r]
         fmt, on_slow = self.fmt, self.on_slow
         if self.G > 0:      # ICPE next：GPU 上的 block 一定是前綴（session 粒度＋鏈式前綴）
@@ -1562,6 +1813,11 @@ class Engine:
         assert self.cpu_used <= self.C or not self.cpu_set, (self.cpu_used, self.C)
         if self.G > 0:
             self.audit_gpu()
+        if self.sc is not None:
+            assert self.n_slow == sum(self.on_slow), (self.n_slow, sum(self.on_slow))
+            assert self.n_slow <= self.sc_cap or not self.sorder.mem, (self.n_slow, self.sc_cap)
+            ss = {x for x in range(self.P["R"]["n_sess"]) if self.st[x] == S_SLOW}
+            assert set(self.sorder.mem) == ss, "慢層的淘汰結構和慢層狀態的 session 對不上"
 
     def audit_gpu(self):
         """ICPE next：GPU 層的 refcount 守恆、已用位元組、wb 的各層持有者計數。"""
@@ -1676,12 +1932,26 @@ OUTDIR_A = "x1"
 
 _GPU_COLS = False     # ICPE next：這次 sweep 有沒有開 GPU 層（有＝每列多 gpu_GiB／gpu_write／gpu_policy 與 _gpu_summary 的欄位）
 _NZ_COLS = False      # ICPE next：這次 sweep 有沒有雜訊（有＝每列多 noise_model／noise_lambda／noise_draw／noise_seed）
+_SC_COLS = False      # ICPE next：這次 sweep 有沒有慢層容量上限（有＝每列多 slow_cap_frac／slow_policy／n_slow_clean_evict／n_slow_sess_drop）
 
 
-def uses_oracle(policy, gs):
+def uses_oracle(policy, gs, sc=None):
     """這個組合有沒有用到完美預知（雜訊只對這些有意義）。"""
     o, a, h, pf = POLICIES[policy]
-    return o in ("bel", "bels") or a == "onow" or h == "odrop" or pf == "opf" or (gs is not None and gs["pol"] == "BEL")
+    return o in ("bel", "bels") or a == "onow" or h == "odrop" or pf == "opf" or (gs is not None and gs["pol"] == "BEL") or \
+        (sc is not None and sc["pol"] == "BEL")
+
+
+def slow_specs(fracs, policies):
+    """第二批：慢層容量上限（佔 n_blocks_full 的比例）× 慢層規則。沒給比例 → [None]（沒有上限＝原本的路徑）。"""
+    if not fracs:
+        return [None]
+    out = []
+    for fr in fracs:
+        for sp in policies:
+            assert sp in SLOW_POLICIES, sp
+            out.append(dict(frac=float(fr), pol=sp))
+    return out
 
 
 def noise_specs(models, lams, draws, seeds):
@@ -1702,14 +1972,17 @@ def _job(job):
     trace, rule, cpu_gib, policy, keys = job[:5]
     gs = job[5] if len(job) > 5 else None          # ICPE next：None＝GPU 層關閉（原本的路徑）
     nz = job[6] if len(job) > 6 else None          # ICPE next：None＝完美預知
+    sc = job[7] if len(job) > 7 else None          # ICPE next：None＝慢層沒有上限
     K = _K
     P = prep(trace, rule)
     t0 = time.time()
     views = make_views(K, P, keys)
-    gv = views[0] if POLICIES[policy][0] == "gdsf" else None
+    gv = views[0] if (POLICIES[policy][0] == "gdsf" or (sc is not None and sc["pol"] == "GDSF")) else None
     gkw = {} if gs is None else dict(gpu_cap=int(gs["G"] * GiB), gpu_policy=gs["pol"], gpu_write=gs["write"], pf_target=gs.get("pf", "cpu"))
     if nz is not None:
         gkw["noise"] = nz
+    if sc is not None:
+        gkw.update(slow_cap=sc["frac"], slow_policy=sc["pol"])
     eng = Engine(P, policy, cpu_gib * GiB, views, K, gdsf_view=gv, **gkw).run()
     out = []
     rd = os.environ.get("RUN_DIR", "")
@@ -1724,6 +1997,11 @@ def _job(job):
         if _NZ_COLS:
             row.update(noise_model=nz["model"] if nz else "none", noise_lambda=nz["lam"] if nz else 0.0,
                        noise_draw=nz["draw"] if nz else "none", noise_seed=nz["seed"] if nz else -1)
+        if _SC_COLS:
+            row.update(slow_cap_frac=sc["frac"] if sc else 0.0, slow_policy=sc["pol"] if sc else "none")
+        if _SC_COLS:
+            sm.update(slow_cap_blocks=eng.sc_cap if sc else -1, n_slow_clean_evict=eng.n_sc_clean if sc else 0,
+                      n_slow_sess_drop=eng.n_sc_drop if sc else 0)
         out.append(dict(**row, **sm, elapsed_s=time.time() - t0))
         tag = f"{v.slow_name}_{v.gpu}_{v.mode}"
         arrs[f"ttft_{tag}"] = v.ttft
@@ -1732,6 +2010,8 @@ def _job(job):
         gtag = "" if gs is None else f"_G{gs['G']:g}-{gs['write']}-{gs['pol'].replace(':', '')}-pf{gs.get('pf', 'cpu')}"
         if nz is not None:
             gtag += f"_nz{nz['model']}{nz['lam']:g}{nz['draw']}s{nz['seed']}"
+        if sc is not None:
+            gtag += f"_sc{sc['frac']:g}{sc['pol']}"
         np.savez_compressed(os.path.join(rd, f"req_{trace}_{rule}_{cpu_gib}_{policy}{gtag}_{'-'.join(keys[0]) if len(keys) <= 2 else 'n' + str(len(keys))}.npz"),
                             **arrs)
     return out
@@ -1755,13 +2035,14 @@ def gpu_specs(gpu_gib, gpu_writes, gpu_policies, pf_targets=("cpu",)):
     return out
 
 
-def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None, nspecs=None):
+def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None, nspecs=None, sspecs=None):
     J = []
     slows = SLOWS if slows is None else slows
     allv = [(s, g, m) for s in slows for g in GPUS for m in MODES]    # slows＝SLOWS 時就是 ALL_VIEWS
     views = [k for k in allv if k[2] in modes]
     gspecs = [None] if not gspecs else gspecs
     nspecs = [None] if not nspecs else nspecs
+    sspecs = [None] if not sspecs else sspecs
     for tr, ru in [(t_, r_) for t_ in traces for r_ in rules]:
         for c in cpus:
             for p in policies:
@@ -1769,24 +2050,25 @@ def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None
                     o, a, h, pf = POLICIES[p]
                     if gs is not None and gs.get("pf", "cpu") == "gpu" and not pf:
                         continue          # 沒有預取的規則：預取目的地沒有差別，只跑 pf＝cpu 那份
-                    for nz in nspecs:
-                        if nz is not None and not uses_oracle(p, gs):
-                            continue      # 沒用到完美預知：雜訊沒有差別
-                        tdep = pf or (gs is not None and parse_gpol(gs["pol"])[1] is not None)   # TTL 也和時間設定有關
-                        if tdep:
-                            for k in views:
-                                J.append((tr, ru, c, p, [k], gs, nz))
-                        elif o == "gdsf":
-                            for s in slows:
-                                for g in GPUS:
-                                    J.append((tr, ru, c, p, [(s, g, m) for m in modes], gs, nz))
-                        else:
-                            J.append((tr, ru, c, p, list(views), gs, nz))
+                    for sc in sspecs:
+                        for nz in nspecs:
+                            if nz is not None and not uses_oracle(p, gs, sc):
+                                continue      # 沒用到完美預知：雜訊沒有差別
+                            tdep = pf or (gs is not None and parse_gpol(gs["pol"])[1] is not None)   # TTL 也和時間設定有關
+                            if tdep:
+                                for k in views:
+                                    J.append((tr, ru, c, p, [k], gs, nz, sc))
+                            elif o == "gdsf" or (sc is not None and sc["pol"] == "GDSF"):
+                                for s in slows:
+                                    for g in GPUS:
+                                        J.append((tr, ru, c, p, [(s, g, m) for m in modes], gs, nz, sc))
+                            else:
+                                J.append((tr, ru, c, p, list(views), gs, nz, sc))
     return J
 
 
 def cmd_sweep(a):
-    global _K, _GPU_COLS, _NZ_COLS
+    global _K, _GPU_COLS, _NZ_COLS, _SC_COLS
     import multiprocessing as mp
     for nm in a.slows:
         if nm not in SLOWS and nm not in EXTRA_SLOWS:
@@ -1796,10 +2078,12 @@ def cmd_sweep(a):
     _GPU_COLS = any(g is not None for g in gspecs)
     nspecs = noise_specs(a.noise_models, a.noise_lambdas, a.noise_draws, a.noise_seeds) if a.noise_models else [None]
     _NZ_COLS = any(n is not None for n in nspecs)
+    sspecs = slow_specs(a.slow_cap_frac, a.slow_policies)
+    _SC_COLS = any(x is not None for x in sspecs)
     for tr in a.traces:
         for ru in a.rules:
             prep(tr, ru)
-    J = jobs_for(a.traces, a.rules, a.cpu, a.policies, a.modes, slows=a.slows, gspecs=gspecs, nspecs=nspecs)
+    J = jobs_for(a.traces, a.rules, a.cpu, a.policies, a.modes, slows=a.slows, gspecs=gspecs, nspecs=nspecs, sspecs=sspecs)
     # 重的（預取、scan）先跑
     J.sort(key=lambda j: (POLICIES[j[3]][3] is None, POLICIES[j[3]][0] not in ("bel", "bels", "pens", "pred", "lru2")))
     out_path = os.path.join(OUTDIR, a.out)
@@ -2144,6 +2428,8 @@ def main():
     s.add_argument("--noise-lambdas", nargs="+", type=float, default=[0.0, 0.1, 0.2, 0.3])
     s.add_argument("--noise-draws", nargs="+", default=["B1", "B2"])
     s.add_argument("--noise-seeds", nargs="+", type=int, default=list(range(10)))
+    s.add_argument("--slow-cap-frac", nargs="*", type=float, default=[], help="慢層容量上限＝比例 × n_blocks_full（INT4 塊）；不給＝沒有上限")
+    s.add_argument("--slow-policies", nargs="+", default=SLOW_POLICIES, help="慢層滿時的規則：LRU LRU2 ARC S3FIFO GDSF PENS BEL")
     s = sp.add_parser("analyze")
     s.add_argument("--sweep", nargs="+", default=["x1_sweep.csv"])
     s.add_argument("--src-run", nargs="*", default=[])
