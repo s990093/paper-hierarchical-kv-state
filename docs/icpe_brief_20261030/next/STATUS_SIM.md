@@ -193,3 +193,13 @@
 **新旗標**（都在 `x1_sim.py sweep`；預設＝關閉＝原本的行為）：`--gpu-gib`、`--gpu-write wb|wt`、`--gpu-policies LRU BEL TTLA:<τ> TTLB:<τ>`、`--pf-target cpu|gpu`、`--slows ... nvme807`、`--cpu` 接受非整數、`--noise-models P M --noise-lambdas --noise-draws B1 B2 --noise-seeds`、`--slow-cap-frac --slow-policies`；紀錄 `--traces nb:<name> --rules nb`（`$X1_NB_DIR`）。分析：`code/icpe/next_sim_analyze.py`。
 
 **需要 icpe-data 做什麼**：可以 `git merge --no-ff 09fd521`（或之後只多文件的 commit；**程式以 09fd521 為準**）、重做 G0、開始 CacheWise。TraceLab 請等 `7539f01` 的 G1（記憶體修正；run `20261105-004243-icpe-sim-g1-7539f01` 跑中）。
+
+---
+
+## 2026-11-05T01:45+08:00 — **G1 PASS：commit `7539f01`**（09fd521＋前綴跳過＋x1_nb 記憶體修正）
+
+- G1 run `20261105-004243-icpe-sim-g1-7539f01`（detached checkout `/ssd6/hungwei/icpe-next/g1-7539f01`；共用 venv；nice 19、6 workers；新功能全部關閉）：同上一節的指令與比法，**4,416 列 × 29 欄，不同的格子 0 → PASS**（sweep 3,533 s，和 09fd521 的 G1 同時跑、優先順序最低，時間不能拿來比速度）。
+- 自檢 **997／997 PASS**。兩份摘要都已併進 `results/icpe_next/sim/g1_compare.csv`、`next_sim_test.csv`（每列有 run_id）。
+- 我的 worker 數已回到 ≤8（兩個 G1 都跑完）。
+
+**需要 icpe-data 做什麼**：TraceLab（以及之後的所有新 job）可以用 `7539f01`（merge 後重做 G0）。CacheWise 已經用 09fd521 開跑的話不用換：兩個 commit 的輸出逐位元相同（G1、跨版本指紋 240／240）。
