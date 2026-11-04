@@ -2,6 +2,33 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T07:20+08:00 — `cw_main` 跑完；merge 7539f01、G0 跑中；CacheWise ≥10% 補跑的格子
+
+**做完什麼**
+- **`cw_main` 12 個 block 全部 exit 0**（01:50 → 07:07，5.3 h，32 worker；每個 block 22.8–31.6 min，N 越大越久）。runs `20261105-015025` … `20261105-063533-icpe-data-cw_main-*`。每個 block 7,344 列（6,174 個 job），已收進 `results/icpe_next/b/cw_main/<block>/`（commit 0aac6d9、5094c9c）。`cpu_residence_s_mean` 的 NaN 只出現在 LRU+NONE／O-ALL／O-DROP 沒有 CPU 駐留結束事件的列，和 H200 參照檔同樣的模式。
+- **merge** `origin/icpe-next-sim` @ 03155d2 → `cc6b980`。程式＝7539f01（`git diff 7539f01 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 是空的；03155d2 只多 STATUS_SIM 與 G1 摘要）。
+- **G0（merge 後）**：run `20261105-070841-icpe-data-g0-merged-7539f01`（32 worker），跑中。
+- **CacheWise 的分析**：plan 跑完了，偏離 4 也已登記，所以照程序做。
+  - run `20261105-071035-icpe-data-analyze-cw_main-ttl3`（`next_sim_analyze.py --pf-target cpu`，3 個 TTL），表在 `results/icpe_next/b/analysis/cw_main_ttl3/`（commit 2b33cdb）。
+  - 先前的 run `…070937…` 作廢：沒有 export RUN_ID，run_id 欄寫成 `adhoc`。
+  - **這張表是補跑前的**；上限 ≥10% 的格子，報告要用補跑後的值。
+- **≥10% 補跑**（偏離 4 第 2 項）：run `20261105-071243-icpe-data-ttl7cells-cw_main` → `results/icpe_next/b/cw_main_ttl7/cells.csv`。
+  - 選法：648 格 (trace, CPU, 慢層, GPU 閒／忙) 裡，有任何元件（含 O-ALL(report)）上限 ≥10% 的有 **225 格**。
+  - 補跑內容：② 用其餘登記的 TTL **1／3／30／100 s**（TTLA、TTLB）× 10 個不預測的 CPU 規則（`x1_sim.NON_ORACLE`，程式會核對）。
+  - 佇列：plan `cw_main_ttl7` 有 17 個 block（每個 (紀錄, 慢層組合) 一個），**19,840 個 job**。
+  - sweep 不能只選 GPU 閒或忙，所以兩個都跑。多出來的列只會讓 ② 更強。
+- 分析程式記下的 **violations 221 列**（④ 的元件比某個 ② 規則慢），照原樣記錄，沒有處理：
+  - 慢的幅度中位數 0.5%、最大 6.4%。
+  - 集中在 O-PF 對 LRU+RPF（92 列）、O-PF 對 LRU（57 列）、O-NOW 對 LRU+2HW（62 列）。
+
+**接下來**（G0 PASS 之後，同一個佇列）：`next_b_queue.py run --plans cw_main_ttl7 tl_main --workers 32`。
+- `cw_main_ttl7` 推算〔算術〕約 2–3 h：TTL 的 job 在 CacheWise 試跑每個 12–28 s。
+- `tl_main` 推算約 32 h。
+- 之後：`old_main` → `sa_main` → `bl_main` → `sens_rep`。每個 plan 跑完都做同樣的分析與 ≥10% 補跑。
+- TraceLab 的補跑可能很貴：一個 job 約 200 s，每格 160 個 job。跑完 `tl_main` 先算格子數再排。
+
+**需要 icpe-sim 做什麼**：沒有要求。violations 只是告知：O-PF 在部分格子比 LRU+RPF 慢，最多 6.4%（CacheWise）。
+
 ## 2026-11-05T01:52+08:00 — merge 09fd521、G0 再通過、正式模擬 `cw_main` 開跑
 
 - **merge**：`git merge --no-ff 09fd521` → `a176e2d`（STATUS_SIM 2bad87e：G1 PASS on 09fd521，run `20261105-002207-icpe-sim-g1-09fd521`，4,416 列 × 29 欄 0 格不同、自檢 997／997）。只 merge 09fd521；7539f01（nb 記憶體修正＋prefix skip）的 G1 還在跑，過了再 merge。
