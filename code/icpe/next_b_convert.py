@@ -360,9 +360,29 @@ def conv_bailian(a, x1nb):
     return res
 
 
+def conv_fi(a, x1nb):
+    """FreeInference 的一週 → nb（只為了截斷 128K 的敏感度；主結果仍走 x1_sim 的 fi: 入口）。
+    讀 code/p3x/x1_fi.prepare_fi 的結果（不改那支檔；它自己做規則 6 的三項斷言）。nall＝max(ceil(Σrole_tokens/512), 完整塊數)，
+    所以「輸入 > 131072 token」＝nall > 256；這裡用 inp＝nall×512 當截斷判準（只影響判準與 meta 的長度統計）。"""
+    os.environ.setdefault("X1_FI_DIR", "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release")
+    sys.path.insert(0, a.p3x)
+    import x1_fi
+    res = []
+    for w in a.weeks:
+        P = x1_fi.prepare_fi(w)
+        d = pd.DataFrame(dict(sess=P["R"]["sess"], t=P["t"], inp=np.asarray(P["nall"], np.int64) * CHUNK, user=P["user_trigger"]))
+        name = f"fi_{w}" + ("_t128k" if a.trunc_128k else "")
+        m = base_meta("freeinference", a)
+        m.update(loader={k: v for k, v in P["meta"].items() if k != "path"}, source=dict(dir=x1_fi.FI_DIR, revision="16d3c04d"),
+                 arrival=dict(kind="original"), note="inp＝nall×512（截斷判準用；真正的 token 數在 x1_fi）")
+        res.append(finalize(name, d, [list(k) for k in P["full"]], a.out_dir, x1nb, m, a.trunc_128k))
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("trace", choices=["cachewise", "tracelab", "semianalysis", "bailian"])
+    ap.add_argument("trace", choices=["cachewise", "tracelab", "semianalysis", "bailian", "fi"])
+    ap.add_argument("--weeks", nargs="+", default=["2026-05-17_2026-05-23"])
     ap.add_argument("--N", nargs="+", type=int, default=[16, 32, 64, 72])
     ap.add_argument("--seeds", nargs="+", type=int, default=[1, 2, 3])
     ap.add_argument("--copies", type=int, default=5)
@@ -374,7 +394,7 @@ def main():
     ap.add_argument("--p3x", default=os.path.join(REPO, "code", "p3x"))
     a = ap.parse_args()
     x1nb = _x1nb(a.p3x)
-    fn = dict(cachewise=conv_cachewise, tracelab=conv_tracelab, semianalysis=conv_semianalysis, bailian=conv_bailian)[a.trace]
+    fn = dict(cachewise=conv_cachewise, tracelab=conv_tracelab, semianalysis=conv_semianalysis, bailian=conv_bailian, fi=conv_fi)[a.trace]
     res = fn(a, x1nb)
     summ = os.path.join(a.out_dir, "next_b_trace_summary.jsonl")
     with open(summ, "a") as fh:
