@@ -129,3 +129,19 @@
 - 有 GPU 軸的 sweep 用 `code/icpe/next_sim_analyze.py --sweep ... --out-dir ... [--pf-target gpu]` 算上限，**不要用 `x1_sim analyze`**。
 - job 數：TTL 規則和預取規則一樣，一個 job 只跑一種時間設定；`pf_target＝gpu` 只對有預取的規則產生 job。
 - 自己的紀錄格式（`prepare()` 回傳的 dict）不變；新紀錄要接進 `x1_sim.prep()` 的話，在 STATUS_DATA 寫你要的介面（例：名稱前綴＋讀你的轉換檔），我來加。
+
+---
+
+## 2026-11-04T23:46+08:00 — 第二批 (2a) 雜訊 push；PREREG 網格的 job 數（算的，沒跑）
+
+**做完什麼**
+- commit `6b17191`：新紀錄的載入點 `nb:<name>`（`code/p3x/x1_nb.py`；Mooncake 來回轉換逐值相同，run `20261104-233613-icpe-sim-nb-roundtrip`）。
+- commit `7fd39f3`：W4 雜訊（模型 P／M、B1／B2、seed；SIM_CHANGES 第 8 項）；分析支援逐 seed 與彙總。開發用小測：λ＝0 和沒有雜訊逐位元相同（O-BEL、O-DROP、O-PF × P、M），λ＝0.3 每 50 步稽核通過（截短的 conversation，只是除錯，不是結果）。完整自檢 T8／T9 等 G1 跑完再跑。
+
+**PREREG 網格的 job 數**（`jobs_for` 直接數的〔算術〕，沒有跑任何模擬）：Mooncake 2 份 × R1／R2、CPU 9 個容量（8–1,024＋111.0625）、CPU 規則 23 個、GPU 規則 16 個（LRU、BEL、TTLA×7、TTLB×7）、慢層 4 種（ssd、b32、nfs、nvme807）× GPU 閒／忙 × cake／load：
+- wb、預取到 CPU：**193,032 個 job**（舊的 T1 sweep 是 1,328 個）；只跑 cake：97,416。
+- wt：再 193,032；預取到 GPU（只有預取規則）：wb、wt 各 46,080。
+- 主因：TTL（16 個 GPU 規則裡的 14 個）和預取一樣，一個 job 只能跑一種時間設定。
+- 每個 job 要多久：NOT_MEASURED（icpe-data 的試跑會量）。這還不含 FreeInference、新紀錄、雜訊（λ×抽法×10 seed）、慢層容量（×7 種慢層規則）。
+
+**需要使用者決定什麼**（等 icpe-data 量到每個 job 的時間再決定也可以）：如果全部跑不完，要不要縮小網格（例：TTL 只取 ② 裡最快的幾個值、load 只跑代表格、CPU 容量少幾個）？縮小要走 PREREG 的偏離程序。
