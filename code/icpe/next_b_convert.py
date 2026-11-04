@@ -22,7 +22,8 @@
         不同 session 之間不共用（沒有內容資訊）。
       - SemiAnalysis（64-token hash，只在同一條紀錄內可比）：chunk j 的鍵＝(紀錄 id, hash_ids[0:8(j+1)]) 這整段前綴的編號
         （鏈式；同一條紀錄的主 agent 與子 agent 前綴相同就共用）。
-      - Bailian（16-token 鏈式 hash）：chunk j 的鍵＝hash_ids[32j+31]（鏈式 id 的最後一個決定整段前綴；同 x1_fi）。
+      - Bailian（16-token、**逐塊** salted SipHash，不是鏈式；上游 README）：chunk j 的鍵＝hash_ids[0:32(j+1)] 這整段前綴的編號
+        （同 SemiAnalysis；2026-11-04 traceA 的鏈式檢查違反 301,710 次，所以不能取 hash_ids[32j+31]）。
   * 時間：秒。同一個 session 內強制非遞減（t_k＝max(t_k, t_{k−1})，修正數記在 meta）；對話內的間隔一律用紀錄的真值。
   * 到達合成（只合成「對話什麼時候開始」）：
       - TraceLab：原始絕對時間；壓縮 c×：對話（session）開始時間 s → T0＋(s−T0)/c，對話內的偏移不動。c＝1 就是原始。
@@ -339,11 +340,16 @@ def conv_bailian(a, x1nb):
         d, lm = AT.load_bailian(f)
         recs = [json.loads(ln) for ln in open(f"{src}/qwen_{f}_blksz_16.jsonl")]
         sub = CHUNK // 16
+        kg = KeyGen()
         keys = []
-        for r in recs:
+        for r in recs:          # 逐塊 hash（不是鏈式）→ chunk j 的鍵＝hash_ids[0:32(j+1)] 這整段前綴的編號（同 SemiAnalysis）
             h = r["hash_ids"]
             nf = r["input_length"] // CHUNK
-            keys.append([int(h[sub * j + sub - 1]) for j in range(nf)])
+            ks, pv = [], None
+            for j in range(nf):
+                pv = kg.of((pv, tuple(h[sub * j:sub * (j + 1)])))
+                ks.append(pv)
+            keys.append(ks)
         d = d.rename(columns={"sid": "sess"})
         d["t"] = d.start_ms / 1000
         d["user"] = True

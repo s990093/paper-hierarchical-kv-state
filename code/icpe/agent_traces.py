@@ -222,9 +222,11 @@ def load_bailian(name):
     """Qwen-Bailian（github alibaba-edu/qwen-bailian-usagetraces-anon @ 5f7439c5，Apache-2.0）：qwen_<name>_blksz_16.jsonl。
     欄位：chat_id、parent_chat_id、timestamp（秒，trace 相對）、input_length、output_length、type、turn、hash_ids（16 token 一塊、鏈式）。
     session＝沿 parent_chat_id 走到根（根的 chat_id）；prefix＝和 parent 共用的前導 hash 塊數 × 16（不超過 input_length）。
+    hash_ids 的語意（上游 README「Anonymization Process」）：**每個 16-token 塊各自**做 salted SipHash-2-4 再重新編號——不是鏈式；
+    同樣內容的塊出現在不同位置會是同一個 id。2026-11-04 traceA 的鏈式檢查違反 301,710 次就是這個原因（coder 剛好 0 次）。
+    所以 chunk 鍵不能取第 32j+31 個 hash，要用整段前綴（next_b_convert.conv_bailian）。鏈式違反數只記在 meta，不再當停止條件。
     規則 6：
       (1) len(hash_ids)==ceil(input_length/16) ≥ 0.99（16-token 塊）
-      (2) 鏈式前綴：同一個 hash 永遠在同一個位置、前一個 hash 也相同（違反次數＝0；chunk key 才能取第 32j+31 個 hash）
       (3) 時間單位：同 session 前後兩輪的間隔 ÷ 上一輪 output_length（output ≥ 50）的中位數，以秒解讀在 [0.001, 10] s/token
       (4) parent 欄位對 hash：有 parent 的請求，前導共用塊數 ≥ parent 的完整塊數的比例 ≥ 0.9（parent 的整段輸入是這一輪的前綴）
     """
@@ -243,8 +245,7 @@ def load_bailian(name):
             else:
                 pos_of[b], prev_of[b] = i, p
             p = b
-    if bad:
-        raise SystemExit(f"[bailian-{name}] 鏈式前綴被違反 {bad} 次 → 停")
+    print(f"[bailian-{name}] 鏈式檢查違反 {bad} 次（逐塊 hash、不是鏈式，只記錄；見 docstring）", flush=True)
     idx = {r["chat_id"]: i for i, r in enumerate(recs)}
     rootc = {}
     sids, pref, par = [], [], []
