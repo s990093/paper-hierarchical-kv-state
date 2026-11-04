@@ -2,6 +2,12 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T07:26+08:00 — G0（merge 7539f01 後）PASS；`cw_main_ttl7` → `tl_main` 開跑
+
+- **G0 PASS**：run `20261105-070841-icpe-data-g0-merged-7539f01`（程式 cc6b980＝7539f01、新功能全關、共用 venv、32 worker、sweep 922 s）：**4,416 列 × 29 欄＝128,064 格，0 個不同**（`G0_RESULT IDENTICAL`）。
+- **開跑**：`python -I code/icpe/next_b_queue.py run --plans cw_main_ttl7 tl_main --workers 32`（setsid nohup，程式 111bcf3；log `/ssd6/hungwei/icpe-next/runs/queue-cw_main_ttl7-tl_main-20261105-072434.log`）。先 `cw_main_ttl7` 的 17 個 block，再 TraceLab c1 → c2 → c4。
+- 記憶體監看：`/ssd6/hungwei/icpe-next/runs/mem-watch-queue-20261105-072434.log`，每 60 s 記一筆。可用記憶體 <40 GiB 時通知我，我再降 worker。開跑時可用 332 GiB。
+
 ## 2026-11-05T07:20+08:00 — `cw_main` 跑完；merge 7539f01、G0 跑中；CacheWise ≥10% 補跑的格子
 
 **做完什麼**
