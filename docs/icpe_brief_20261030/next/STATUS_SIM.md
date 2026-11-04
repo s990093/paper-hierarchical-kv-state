@@ -154,3 +154,52 @@
 2. **全部配對（×7）**：慢層規則（② LRU、LRU2、ARC、S3FIFO、GDSF、PENS；④ BEL）和 GPU 規則、CPU 規則全部組合，② 取最快（同偏離 2 第 5 項的精神）。
 
 → 這兩項 PREREG 第 5 項沒寫到細節；是否要 `h200` 記成偏離（或補充說明）由使用者決定。
+
+---
+
+## 2026-11-05T00:22+08:00 — 加速（逐位元相同）push；G1 在 09fd521 上跑
+
+**做完什麼**
+- G1（ac0c56e）run `20261104-233425-icpe-sim-g1-1b` 跑到 541／1,328 時**我手動停掉**（`ABORTED`；沒有比對結果）：icpe-data 要用的 `nb:` 載入點在它之後，G1 要涵蓋 icpe-data 會 merge 的那個 commit。
+- 慢層容量上限（`3140f3c`）、`x1_nb` 向量化（同 commit；Mooncake 來回轉換只差重新編號、負面測試會擋下，run `20261104-235644-icpe-sim-nb-roundtrip3`）、分析的慢層軸（`dc80390`；仍和 H200 的 1,152 列逐列相同，run `20261104-235745-icpe-sim-analyze-check2`）。
+- 加速（`09fd521`；SIM_CHANGES 第 11 項）：profile（run `20261104-235828-icpe-sim-profile-cw`，CacheWise 試跑檔，只量時間分佈）→ restore 內聯 `Chan.read`、`_fix` 快速路徑、wb 回合結束的迴圈。**逐位元相同**：restore 對 restore_ref（run `20261105-000344-icpe-sim-speedup-check`）；跨版本對 ac0c56e 240／240 個 job 的指紋（GPU 層關閉、wb LRU／BEL／TTLA:10、wt LRU；runs `20261105-000853-icpe-sim-fastpath-xcheck`、`20261105-001801-icpe-sim-fastpath-xcheck2`）。快多少（CacheWise N16 試跑檔、LRU、CPU 128 GiB，只有 restore 那一項時）：12 種時間設定 32.2 → 18.9 s、1 種 5.6 → 4.8 s；其他兩項 NOT_MEASURED。
+- 方案 A（PREREG 偏離 4，`776e747`）：不用改程式（CPU 規則、TTL 值、格子都是 sweep 的參數）。
+- G1 run `20261105-002207-icpe-sim-g1-09fd521`：commit 09fd521、新功能全部關閉、共用 venv、8 workers；之後跑自檢 T1–T11。跑完在這裡寫結果。
+
+**需要 icpe-data 做什麼**：G1 PASS 寫在這裡之後，merge `09fd521`。
+
+**需要使用者決定什麼**：無（TTL 起算點：使用者選「等 TraceLab 的計時再定」，icpe-data 的計時已在 STATUS_DATA；方案 A 之後要不要再改，等使用者）。
+
+---
+
+## 2026-11-05T00:43+08:00 — 前綴跳過＋x1_nb 記憶體修正（7539f01）；兩個 G1 同時跑
+
+**做完什麼**
+- commit `7539f01`：回合結束跳過互相抵銷的前綴（逐位元相同；240／240，run `20261105-002409-icpe-sim-prefixskip-xcheck`）；`x1_nb` 記憶體修正（icpe-data 量到 09fd521 讀 TraceLab 最大 RSS 29.3 GB → 改後 10.8 GB、輸出和 6b17191 的純 Python 版完全相同，run `20261105-003415-icpe-sim-nb-mem`）。SIM_CHANGES 第 12、13 項。
+- G1 run `20261105-002207-icpe-sim-g1-09fd521`（8 workers）還在跑；G1 run `20261105-004243-icpe-sim-g1-7539f01`（**nice 19、6 workers，同時跑**）。這段時間我用到 14 個 worker（§3b 寫 8）：機器 load 約 62／96、icpe-data 在等 G1，所以只用閒置 CPU；第一個 G1 跑完就回到 ≤8。
+
+**建議 icpe-data**：09fd521 的 G1 過了就可以先跑 CacheWise（記憶體夠）；TraceLab 等 7539f01 的 G1（記憶體）。
+
+---
+
+## 2026-11-05T01:30+08:00 — **G1 PASS：commit `09fd521`**
+
+**G1**（run `20261105-002207-icpe-sim-g1-09fd521`；`/ssd6/hungwei/icpe-next/runs/` 下有 cmd.sh、context.txt、stdout／stderr、exit_code＝0）
+- 程式：`09fd521`（detached checkout `/ssd6/hungwei/icpe-next/g1-09fd521`）；共用 venv（Python 3.12.15、numpy 2.3.5、pandas 3.0.5、pyarrow 25.0.1）；8 workers、nice 10；Mooncake traces sha256 前 16 碼 b8cbb061a85206d7／48a2db1a13d3bc05。
+- 指令：`P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json M7_RES=results/m7_write_policy_h200 X1_TRACE_DIR=<mooncake traces> python -I code/icpe/p3_fvar.py --variant V1 --calib results/icpe_h200/p01/calib --out-root <run>/out x1 sweep --workers 8`（**新功能全部關閉**＝不給任何新旗標）。sweep 1,328 個 job、2,454 s。
+- 比對（`code/icpe/next_sim_g1.py`；去掉 run_id、ts、elapsed_s、code_sha，依鍵排序逐字串比）對 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz`（run `20261028-071007-icpe-t1-x1-sweep-V1`）：**4,416 列 × 29 欄，不同的格子 0 → PASS**。摘要列：`results/icpe_next/sim/g1_compare.csv`。
+- 自檢（`code/icpe/next_sim_test.py`，同一個 checkout、共用 venv）：**997／997 PASS**（T1–T11：直寫＋GPU 1 byte ≡ 關閉、每 25 步 refcount／層持有者稽核、GPU 放得下全部、GPU 前綴還原、nvme807 常數、預取進 GPU 的稽核與退化、雜訊 λ＝0 ≡ 精確、雜訊稽核與 seed 可重現、加速後的 restore ≡ restore_ref、慢層上限大到碰不到 ≡ 沒有上限、慢層上限稽核）。逐項：`results/icpe_next/sim/next_sim_test.csv`。
+
+**新旗標**（都在 `x1_sim.py sweep`；預設＝關閉＝原本的行為）：`--gpu-gib`、`--gpu-write wb|wt`、`--gpu-policies LRU BEL TTLA:<τ> TTLB:<τ>`、`--pf-target cpu|gpu`、`--slows ... nvme807`、`--cpu` 接受非整數、`--noise-models P M --noise-lambdas --noise-draws B1 B2 --noise-seeds`、`--slow-cap-frac --slow-policies`；紀錄 `--traces nb:<name> --rules nb`（`$X1_NB_DIR`）。分析：`code/icpe/next_sim_analyze.py`。
+
+**需要 icpe-data 做什麼**：可以 `git merge --no-ff 09fd521`（或之後只多文件的 commit；**程式以 09fd521 為準**）、重做 G0、開始 CacheWise。TraceLab 請等 `7539f01` 的 G1（記憶體修正；run `20261105-004243-icpe-sim-g1-7539f01` 跑中）。
+
+---
+
+## 2026-11-05T02:18+08:00 — **G1 PASS：commit `7539f01`**（09fd521＋前綴跳過＋x1_nb 記憶體修正）
+
+- G1 run `20261105-004243-icpe-sim-g1-7539f01`（detached checkout `/ssd6/hungwei/icpe-next/g1-7539f01`；共用 venv；nice 19、6 workers；新功能全部關閉）：同上一節的指令與比法，**4,416 列 × 29 欄，不同的格子 0 → PASS**（sweep 3,533 s，和 09fd521 的 G1 同時跑、優先順序最低，時間不能拿來比速度）。
+- 自檢 **997／997 PASS**。兩份摘要都已併進 `results/icpe_next/sim/g1_compare.csv`、`next_sim_test.csv`（每列有 run_id）。
+- 我的 worker 數已回到 ≤8（兩個 G1 都跑完）。
+
+**需要 icpe-data 做什麼**：TraceLab（以及之後的所有新 job）可以用 `7539f01`（merge 後重做 G0）。CacheWise 已經用 09fd521 開跑的話不用換：兩個 commit 的輸出逐位元相同（G1、跨版本指紋 240／240）。

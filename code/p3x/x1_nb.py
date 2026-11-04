@@ -56,11 +56,11 @@ def check(t, sess, parent, kind, nall, full_off, full_key, name="nb"):
         rank = np.empty(len(order), np.int64)
         rank[order] = np.arange(len(order))
         ids = rank[inv.reshape(-1)]
+        del uq, fi, inv, order, rank
     else:
         ids = np.zeros(0, np.int64)
     # 鏈式前綴（同 x1_trace 規則 6 (2)）：同一個鍵永遠在同一個位置、前一個鍵也一樣
-    starts = np.repeat(full_off[:-1], nf)
-    pos = np.arange(m) - starts
+    pos = np.arange(m) - np.repeat(full_off[:-1], nf)
     pred = np.full(m, -1, np.int64)
     if m:
         pred[1:] = ids[:-1]
@@ -70,7 +70,10 @@ def check(t, sess, parent, kind, nall, full_off, full_key, name="nb"):
     pred_ref = np.empty(B, np.int64)
     pos_ref[ids] = pos
     pred_ref[ids] = pred
-    bad = int((pos_ref[ids] != pos).sum() + (pred_ref[ids] != pred).sum())
+    bad = int((pos_ref[ids] != pos).sum())
+    del pos, pos_ref
+    bad += int((pred_ref[ids] != pred).sum())
+    del pred, pred_ref
     assert bad == 0, f"{name}: 鏈式前綴被違反 {bad} 次"
     st = dict(n_req=n, n_sessions=int(len(np.unique(sess))), n_cont=int(cont.sum()), n_fork=int((kind == 2).sum()),
               n_keys=B, chain_bad=bad, full_chunks_total=int(m))
@@ -102,17 +105,38 @@ def prepare_nb(name, nb_dir=None):
     t, sess, parent, kind, nall = z["t"], z["sess"], z["parent"], z["kind"], z["nall"]
     full_off, full_key = z["full_off"], z["full_key"]
     st, ids = check(t, sess, parent, kind, nall, full_off, full_key, name)
-    full = [x.tolist() for x in np.split(ids, full_off[1:-1])] if len(t) else []
+    del full_key
+    n, B = len(t), st["n_keys"]
+    # 記憶體（TraceLab 約 2.2 億個 chunk）：清單裡放「同一個 id 同一個 int 物件」（同原本 setdefault 的做法，每格只佔 8 bytes 指標），
+    # 不用 .tolist() 每格造一個新的 int（約 36 bytes）；中間的大陣列用完就丟
+    bobj = np.empty(B, dtype=object)
+    bobj[:] = list(range(B))
+    if n:
+        fo = bobj[ids]
+        full = [fo[full_off[i]:full_off[i + 1]].tolist() for i in range(n)]
+        del fo
+    else:
+        full = []
     nf = np.diff(full_off)
-    req = np.repeat(np.arange(len(t), dtype=np.int64), nf)
+    req = np.repeat(np.arange(n, dtype=np.int64), nf)
     order = np.lexsort((req, ids))                   # 依 block、再依請求排序（同一個請求裡一個鍵只出現一次）
-    ids_s, req_s = ids[order], req[order]
+    ids_s = ids[order]
+    del ids
+    req_s = req[order]
+    del req, order
+    robj = np.empty(n, dtype=object)
+    robj[:] = list(range(n))
+    ro = robj[req_s]
+    del req_s
     acc = {}
     if len(ids_s):
         cut = np.flatnonzero(np.diff(ids_s)) + 1
-        heads = ids_s[np.r_[0, cut]].tolist()
-        for b, g in zip(heads, np.split(req_s, cut)):
-            acc[b] = g.tolist()
+        heads = bobj[ids_s[np.r_[0, cut]]].tolist()
+        bnd = np.r_[0, cut, len(ids_s)].tolist()
+        del ids_s, cut
+        for i, b in enumerate(heads):
+            acc[b] = ro[bnd[i]:bnd[i + 1]].tolist()
+    del ro
     remap_n = st["n_keys"]
     meta = json.loads(str(z["meta_json"])) if "meta_json" in z.files else {}
     meta.update(trace=f"nb:{name}", path=path, n_blocks_full=len(acc), n_blocks_all=remap_n, **{f"load_{k}": v for k, v in st.items()})
