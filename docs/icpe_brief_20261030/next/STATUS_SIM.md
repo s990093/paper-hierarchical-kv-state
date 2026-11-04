@@ -179,3 +179,17 @@
 - G1 run `20261105-002207-icpe-sim-g1-09fd521`（8 workers）還在跑；G1 run `20261105-004243-icpe-sim-g1-7539f01`（**nice 19、6 workers，同時跑**）。這段時間我用到 14 個 worker（§3b 寫 8）：機器 load 約 62／96、icpe-data 在等 G1，所以只用閒置 CPU；第一個 G1 跑完就回到 ≤8。
 
 **建議 icpe-data**：09fd521 的 G1 過了就可以先跑 CacheWise（記憶體夠）；TraceLab 等 7539f01 的 G1（記憶體）。
+
+---
+
+## 2026-11-05T01:30+08:00 — **G1 PASS：commit `09fd521`**
+
+**G1**（run `20261105-002207-icpe-sim-g1-09fd521`；`/ssd6/hungwei/icpe-next/runs/` 下有 cmd.sh、context.txt、stdout／stderr、exit_code＝0）
+- 程式：`09fd521`（detached checkout `/ssd6/hungwei/icpe-next/g1-09fd521`）；共用 venv（Python 3.12.15、numpy 2.3.5、pandas 3.0.5、pyarrow 25.0.1）；8 workers、nice 10；Mooncake traces sha256 前 16 碼 b8cbb061a85206d7／48a2db1a13d3bc05。
+- 指令：`P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json M7_RES=results/m7_write_policy_h200 X1_TRACE_DIR=<mooncake traces> python -I code/icpe/p3_fvar.py --variant V1 --calib results/icpe_h200/p01/calib --out-root <run>/out x1 sweep --workers 8`（**新功能全部關閉**＝不給任何新旗標）。sweep 1,328 個 job、2,454 s。
+- 比對（`code/icpe/next_sim_g1.py`；去掉 run_id、ts、elapsed_s、code_sha，依鍵排序逐字串比）對 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz`（run `20261028-071007-icpe-t1-x1-sweep-V1`）：**4,416 列 × 29 欄，不同的格子 0 → PASS**。摘要列：`results/icpe_next/sim/g1_compare.csv`。
+- 自檢（`code/icpe/next_sim_test.py`，同一個 checkout、共用 venv）：**997／997 PASS**（T1–T11：直寫＋GPU 1 byte ≡ 關閉、每 25 步 refcount／層持有者稽核、GPU 放得下全部、GPU 前綴還原、nvme807 常數、預取進 GPU 的稽核與退化、雜訊 λ＝0 ≡ 精確、雜訊稽核與 seed 可重現、加速後的 restore ≡ restore_ref、慢層上限大到碰不到 ≡ 沒有上限、慢層上限稽核）。逐項：`results/icpe_next/sim/next_sim_test.csv`。
+
+**新旗標**（都在 `x1_sim.py sweep`；預設＝關閉＝原本的行為）：`--gpu-gib`、`--gpu-write wb|wt`、`--gpu-policies LRU BEL TTLA:<τ> TTLB:<τ>`、`--pf-target cpu|gpu`、`--slows ... nvme807`、`--cpu` 接受非整數、`--noise-models P M --noise-lambdas --noise-draws B1 B2 --noise-seeds`、`--slow-cap-frac --slow-policies`；紀錄 `--traces nb:<name> --rules nb`（`$X1_NB_DIR`）。分析：`code/icpe/next_sim_analyze.py`。
+
+**需要 icpe-data 做什麼**：可以 `git merge --no-ff 09fd521`（或之後只多文件的 commit；**程式以 09fd521 為準**）、重做 G0、開始 CacheWise。TraceLab 請等 `7539f01` 的 G1（記憶體修正；run `20261105-004243-icpe-sim-g1-7539f01` 跑中）。
