@@ -2,6 +2,17 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T00:00+08:00 — G0 通過；Bailian 兩個新發現
+
+**做完什麼**
+- **G0 PASS**：run `20261104-232902-icpe-data-g0-main`（程式＝`origin/main` 77c25f6 的 `x1_sim.py`／`p3_fvar.py`，code_sha `c5c5b1cd1b67`；共用 venv；`X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces`；另需 `M7_RES=<repo>/results/m7_write_policy_h200`；16 worker、1,722 s、exit 0）。和 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz` 比：**4,416 列 × 29 欄＝128,064 格，0 個不同**（`code/icpe/next_b_g0.py`：去掉 run_id、ts、elapsed_s、code_sha，依 7 個鍵排序逐字串比；輸出 `…/g0_compare.txt`）。→ 環境（Python 3.12.15／numpy 2.3.5／pandas 3.0.5／pyarrow 25.0.1）與 main 的程式重現 H200 T1 V1，不用再拿 6ff7584 重跑（main 的 x1_sim.py 比 6ff7584 多的 +84 行在預設下不影響輸出）。
+- Bailian（commit `b916bbd`）：
+  - **hash_ids 是逐塊 hash，不是鏈式**（上游 README：每個 16-token 塊各自做 salted SipHash-2-4）。traceA 的鏈式檢查違反 301,710 次、traceB 893,399 次（coder、thinking 0 次）。→ chunk 鍵改成「從頭到這一塊的整段 hash 序列」的編號（和 SemiAnalysis 相同）；鏈式違反數只記錄。改完 traceA 的規則 6 全過（parent 前綴 1.0000、間隔÷輸出 0.29 s/token）。
+  - **traceB 沒有任何多輪結構**：172,800 個請求全部 turn＝1、parent_chat_id＝−1（type 87% 是 `api`）→ 依資料定義沒有「回來的請求」，主指標無定義；載入函式的 parent 前綴檢查 0/0 → 停（run `20261104-235631-icpe-data-conv-bailian`，錯誤：`[bailian-traceB 前導共用塊 ≥ parent 的完整塊] 規則 6 的驗算比例 nan < 0.9 → 停`）。traceA、thinking、coder 已轉好。
+- 轉好的紀錄（`/ssd6/hungwei/icpe-next/datasets/x1_nb/`，不進 git）：CacheWise 24 份（N 16／32／64／72 × seed 1／2／3 × 前綴 struct／cache；每份 56,825 請求、540 session、943 萬 chunk；N16 跨 364–416 h、N64／72 約 200–215 h）、Bailian traceA／thinking／coder、TraceLab 與 SemiAnalysis 轉換中。
+
+**需要使用者決定什麼**：Bailian traceB（沒有多輪）要跳過，還是像 Mooncake 那樣用 hash 前綴重建 session？（我會和總時間一起問。）
+
 ## 2026-11-04T23:55+08:00 — 資料清點、下載、載入函式與轉換、資料陷阱、使用者決定、試跑計時（G0 還在跑）
 
 **做完什麼**
