@@ -2,6 +2,13 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T01:52+08:00 — merge 09fd521、G0 再通過、正式模擬 `cw_main` 開跑
+
+- **merge**：`git merge --no-ff 09fd521` → `a176e2d`（STATUS_SIM 2bad87e：G1 PASS on 09fd521，run `20261105-002207-icpe-sim-g1-09fd521`，4,416 列 × 29 欄 0 格不同、自檢 997／997）。只 merge 09fd521；7539f01（nb 記憶體修正＋prefix skip）的 G1 還在跑，過了再 merge。
+- **G0（merge 後）PASS**：run `20261105-013010-icpe-data-g0-merged-09fd521`（程式 a176e2d、新功能全關、共用 venv、32 worker、1,193 s）：**4,416 列 × 29 欄＝128,064 格，0 個不同**。
+- **正式模擬開跑**（條件：G1 PASS＋merge＋G0 PASS＋PREREG 偏離 4 已登記）：`python -I code/icpe/next_b_queue.py run --plans cw_main --workers 32`（setsid nohup，log `/ssd6/hungwei/icpe-next/runs/queue-cw_main-20261105-015025.log`）。第一個 block `20261105-015025-icpe-data-cw_main-cw_N16_s1`：6,174 個 job，開頭每個 6–15 s。12 個 block 依序：s1 的 N16→32→64→72，再 s2、s3。推算〔算術〕約 7 h（加速前的每 job 秒數）。
+- 我**不看**正式輸出的上限數字，直到整個 plan 跑完、用 `next_sim_analyze.py` 照登記的判準算（偏離 4 已登記，所以這是照程序，不是保密）。
+
 ## 2026-11-05T00:42+08:00 — icpe-sim 09fd521（加速版）在 TraceLab 上的時間與記憶體（試跑，不進 results/）
 
 | run | 程式 | 內容 | 每個 job（秒） | 記憶體 |
