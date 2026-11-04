@@ -105,3 +105,22 @@
 3. **更正 §5 W6b**：§5 寫「要先讓 `code/icpe/x1_gpu.py` 支援 oracle 淘汰順序」——**它已經支援**：`x1_gpu.py` 的 `POLICIES5`＝LRU、FREQ2Q、O-BEL、HINT-PF、O-PF，T1G 已經在 GPU 上跑過 O-BEL（`results/icpe_h200/t1/gpu/p02/`，k＝8、CPU 128／256 GiB 縮小成 16／32）。W6b 真正缺的是 **O-ORD 的其他固定對手**（LRU2、ARC、S3FIFO、GDSF、PENS）不能在重播裡跑。W6b 要跑哪些做法、幾次：在 `x1_gpu.py` 改好之後、跑之前另外登記。
 4. **W6a 的實作細節**（不改判準）：新的 6 次（rep 0–5）寫到新的目錄 `results/icpe_next/a/w6a/`，**不**沿用 T1G 舊的 rep 0；跑的順序＝6 輪、每輪 6 個設定（CPU 128／256 × LRU／HINT-PF／O-PF）、輪內用 seed 20261105＋輪次打亂；被污染照暴露重跑、最多 3 次；分析程式 `code/icpe/next_a_w6_analyze.py w6a`（每個 rep 內配對：gap＝1 − TTFT(O-PF) ÷ TTFT(HINT-PF)，判定字 ANY_GE_5／ALL_LT_5／INCOMPLETE）。
 5. **runner**：`code/icpe/next_a_w6.sh`（`--part w6c|w6a`；`--dry-run` 已在 head node 跑過）。檔名不在 NEXT_PLAN §3b 的 `next_a_*.py` 樣式內（是 `.sh`），但只有 `h200` 用。
+
+### 偏離 4（2026-11-04T16:15:11Z（H200 head node 的 `date -u`；STATUS_DATA 節名的 00:20+08:00 是 acvlab 的鐘）；使用者在 `icpe-data` 決定「方案 A」、在 `h200` 確認要登記；當下 `h200` 看過的正式結果只有 W1（和本偏離無關）；`icpe-data` 寫明正式模擬還沒開始、G1 還沒過）
+
+來源：`origin/icpe-next-data` @ `3ca8334` 的 `docs/icpe_brief_20261030/next/STATUS_DATA.md`，2026-11-05T00:20+08:00、00:15、2026-11-04T23:55 三節（以那份為準，下面是摘錄）。使用者原話（00:20 節）：「太久了 不行 目標5 天內搞定」「11/9 要搞定 注意喔」。使用者在 `h200` 回答「Yes, register all」，另外兩題選「Representative cells」（第 6 點）、「No, keep it queued」（第 7 點）。
+
+**取代**本檔先前「跑全部格子」的幾處：第 2 項與偏離 1 的「預取進 GPU 跑全部格子」、偏離 2 第 2 點的「`wt` 跑全部格子」、第 4 項的「每個跑 SSD 級的格子都加跑 8.07」、§3 A 的「舊紀錄全部格子都跑新功能」、偏離 1 的「W6c 敏感度跑全部正式格子」→ 一律改成下面第 4 點的代表格。
+
+1. **CPU 層規則 23 → 17**：拿掉 6 個事後穩健性版本（`O-DROP-H1800／-H3600`、`O-NOW-H1800／-H3600`、`O-ALL-H1800／-H3600`）。17＝LRU、LRU2、ARC、S3FIFO、GDSF、PENS、FREQ2Q、LRU+NONE、LRU+2HW、LRU+2HA、LRU+RPF、O-BEL、O-BELS、O-DROP、O-NOW、O-PF、O-ALL。
+2. **TTL 值 7 → 3**：**0.3、10、300 s**（TTLA、TTLB 都是）；GPU 層規則＝LRU、BEL、TTLA:{0.3, 10, 300}、TTLB:{0.3, 10, 300}（8 個）。少了 TTL 值 → ② 只會變弱 → 上限只會偏高。**事先登記的補跑規則**：主結果裡 ④ 對 ② 上限 **≥10%** 的每一格，用第 3 項原登記的 7 個 TTL（0.3／1／3／10／30／100／300 s）補跑 ②，報告用補跑後的值。〔`h200` 註：② 只會隨 TTL 值變多而變快，所以 3 個 TTL 下 <10% 的格子，7 個 TTL 下也 <10%，不會跨過 15% 門檻。〕
+3. **主結果＝所有登記的紀錄變體 × 主時間設定**（Cake × 慢層 ssd／b32／nfs × GPU 閒／忙）：CacheWise 12（N 16／32／64／72 × 佇列 seed 1／2／3；前綴＝結構推得）、TraceLab 3（開始時間壓縮 1×／2×／4×；前綴＝結構推得）、SemiAnalysis 12、Bailian 3（traceA、thinking、coder）、Mooncake 4（conversation／toolagent × R1／R2）、FreeInference 6 週；CPU 9 個容量照 §4（8–1,024 GiB＋111.0625）。
+4. **敏感度只跑代表格**：CacheWise N16 s1、TraceLab c1、SemiAnalysis N16 s1、Bailian coder、Mooncake conversation R1 與 toolagent R1、FreeInference 第 1 週（`2026-05-17_2026-05-23`）× CPU **111.0625、128 GiB**。敏感度＝nvme807（Cake）、只載入（4 個慢層）、`wt`、預取進 GPU、快取命中前綴（只有 CacheWise／TraceLab）、截斷 128K（§4 敏感度 1）。
+5. **紀錄的處理**（STATUS_DATA 23:55、00:15）：
+   - CacheWise 可用對話＝**80**（12 個原始檔 0 byte、2 個沒有 LLM 呼叫；108 個 session＝80 主＋28 子 agent）→ §3 D 的 5 份複本＝**400** 個對話（§3 D 的「470」是用 94 算的）。
+   - CacheWise／TraceLab 的「可以還原的前綴」：**主結果＝結構推得**（輸入沒有變短、中間沒有 compact_boundary → 上一輪整段輸入都算前綴；否則退回快取命中）；**敏感度＝快取命中**（NEXT_PLAN §5.6 原文的做法；供應商快取 5 分鐘／1 小時沒用就失效，長間隔回來會被當成沒有前綴）。
+   - Claude Code resume 複本**不去重**（照上游作者的做法）；論文限制寫明 CacheWise 16.6%、TraceLab 2.2% 的請求是複本。
+   - **Bailian traceB 跳過**：172,800 個請求全部 turn＝1、parent＝−1，沒有「回來的請求」，主指標沒有定義；論文寫明。
+6. **W6c 敏感度**（使用者在 `h200` 選）：跑第 4 點的代表格，不跑全部正式格子。
+7. **W6 不趕 11/9**（使用者在 `h200` 選）：job 24443／24444 照原樣排在 DL_Lab5 後面；趕不上的寫進 CCGrid 或限制。
+8. 不在方案 A 裡、另外算的：W4 雜訊、W3、第二批功能（慢層容量、block 粒度 APC、排隊）。照 STATUS_DATA 00:20 節，它們的格子另外定、跑之前登記。

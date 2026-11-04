@@ -94,3 +94,11 @@
 **卡住什麼**：無（在排隊）。風險：如果之後又有新的 DL_Lab5 job 在 W6 跑的途中開跑，runner 只在開跑時檢查，途中的主機爭用 GpuWatcher 看不到——跑完要對 `cotenants_end.txt` 與 sacct 查重疊。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-05 00:20（台灣）
+
+**做完什麼**：PREREG **偏離 4**（方案 A，使用者在 `icpe-data` 決定、在 `h200` 確認）：CPU 規則 17、TTL 0.3／10／300 s（上限 ≥10% 的格子用 7 個 TTL 補跑 ②）、主結果＝所有紀錄變體 × 主時間設定、敏感度只跑代表格（CW N16 s1、TL c1、SA N16 s1、Bailian coder、Mooncake conv R1／toolagent R1、FI 第 1 週 × CPU 111.0625／128）；CacheWise 400 個對話、前綴主＝結構推得／敏感度＝快取命中、resume 不去重、Bailian traceB 跳過。另外使用者在 `h200` 選：W6c 敏感度也只跑代表格；W6 不趕 11/9、照原樣排在 DL_Lab5 後面。
+
+**需要對方做什麼**：`icpe-data`、`icpe-sim` 照偏離 4。
+
+**需要使用者決定什麼**：無。
