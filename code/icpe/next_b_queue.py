@@ -1,4 +1,4 @@
-"""next_b_queue.py — ICPE next（icpe-data）：正式模擬的佇列（方案 A，STATUS_DATA 2026-11-05T00:20；PREREG 偏離 3 待 h200 登記）。
+"""next_b_queue.py — ICPE next（icpe-data）：正式模擬的佇列（方案 A，STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4（origin/icpe-next-a 776e747））。
 
   python -I code/icpe/next_b_queue.py list                      # 列出所有 plan 與 block、job 數
   python -I code/icpe/next_b_queue.py run --plans cw_main tl_main [--workers 32] [--dry-run]
@@ -207,7 +207,7 @@ def cmd_collect(a):
         ctx = open(f"{r['run']}/context.txt").read()
         man = dict(plan=plan, block=name, run_id=r["run_id"], host=host, run_dir=r["run"], rows=rows, elapsed_s=r["elapsed_s"],
                    finished=r["ts"], cmd=open(f"{r['run']}/cmd.sh").read(), context=ctx,
-                   note="方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 3）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）")
+                   note="方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）")
         with open(f"{dst}/manifest.json", "w") as fh:
             json.dump(man, fh, ensure_ascii=False, indent=1)
         n += 1
@@ -216,15 +216,45 @@ def cmd_collect(a):
     return 0
 
 
+def cmd_traces(a):
+    """轉好的紀錄 → results/icpe_next/b/traces/trace_summary.csv（每個變體一列的彙總；沒有逐對話的數字）。"""
+    import glob
+    host = socket.gethostname()
+    rows = []
+    for p in sorted(glob.glob(f"{NB_DIR}/*.meta.json")):
+        m = json.load(open(p))
+        L = m.get("loader") or {}
+        ar = m.get("arrival") or {}
+        rows.append(dict(run_id=m.get("run_id"), ts=m.get("ts"), host=m.get("host", host), name=m["name"], trace=m["trace"],
+                         prefix_rule=m.get("prefix_rule") if m["trace"] in ("cachewise", "tracelab") else "",
+                         arrival=ar.get("kind"), N=ar.get("N", ""), seed=ar.get("seed", ""), compress=ar.get("factor", ""),
+                         copies=ar.get("copies", ""), n_conv=ar.get("n_conv", ""), active_median=ar.get("active_median", ""),
+                         active_p10=ar.get("active_p10", ""), n_req=m["n_req"], n_sess=m["n_sess"], n_cont=m["n_cont"],
+                         full_chunks_total=m["full_chunks_total"], n_keys=m["write_check"]["n_keys"], span_h=round(m["span_s"] / 3600, 3),
+                         inp_tokens_median=m["inp_tokens_median"], inp_tokens_p90=m["inp_tokens_p90"], frac_inp_gt_128k=m["frac_inp_gt_128k"],
+                         trunc_frac_req_cut=(m.get("trunc_128k") or {}).get("frac_req_cut", ""), time_fix_within_session=m["time_fix_within_session"],
+                         rule6=json.dumps({k: v for k, v in L.items() if k.startswith("rule6")}, ensure_ascii=False),
+                         npz_sha256=sha256(p.replace(".meta.json", ".npz"))))
+    dst = f"{REPO}/results/icpe_next/b/traces"
+    os.makedirs(dst, exist_ok=True)
+    with open(f"{dst}/trace_summary.csv", "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(rows[0]))
+        w.writeheader()
+        w.writerows(rows)
+    print(f"→ {dst}/trace_summary.csv  rows={len(rows)}")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
+    s = sp.add_parser("traces")
     s = sp.add_parser("list"); s.add_argument("--plans", nargs="*", default=[])
     s = sp.add_parser("run"); s.add_argument("--plans", nargs="+", required=True); s.add_argument("--workers", type=int, default=32)
     s.add_argument("--dry-run", action="store_true")
     s = sp.add_parser("collect"); s.add_argument("--plans", nargs="*", default=[])
     a = ap.parse_args()
-    sys.exit(dict(list=cmd_list, run=cmd_run, collect=cmd_collect)[a.cmd](a))
+    sys.exit(dict(list=cmd_list, run=cmd_run, collect=cmd_collect, traces=cmd_traces)[a.cmd](a))
 
 
 if __name__ == "__main__":

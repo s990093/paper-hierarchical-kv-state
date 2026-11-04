@@ -2,6 +2,13 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T00:25+08:00 — 方案 A 已登記（PREREG 偏離 4）；佇列程式；等 G1
+
+- **PREREG 偏離 4**（`origin/icpe-next-a` 776e747；h200 用的是「偏離 4」，因為 3 已用在 W6）：內容＝下一節方案 A 的 1–4 點＋23:55／00:15 兩節的紀錄處理，已在 git 上核對。之後這裡提到方案 A 一律指偏離 4。
+- 佇列程式 `code/icpe/next_b_queue.py`（commit 8579ec6 起）：plan＝`cw_main`（12）→ `tl_main`（c1→c2→c4）→ `old_main`（Mooncake 4、FI 6 週）→ `sa_main`（12）→ `bl_main`（3）→ `sens_rep`（代表格的 nvme807／只載入／wt／預取進 GPU／快取前綴／截斷 128K）。每個 block 一個 run 目錄（§4.1 的殼）、失敗就整個停、重跑會跳過做完的；`collect` 把彙總寫進 `results/icpe_next/b/<plan>/<block>/`（加 host 欄、xz）。
+- 截斷 128K 的代表格紀錄（`--trunc-128k`：每個 session 遇到第一個 >131,072 token 的請求就截掉那一輪和之後）：CacheWise N16 s1 56,825 → 33,150 請求、SemiAnalysis N16 s1 98,827 → 40,799、FreeInference 第 1 週 → 6,313；TraceLab c1 轉換中。Mooncake（最長 126,195）、Bailian coder（最長 25,777）截斷後完全相同，不跑。
+- **卡住什麼**：等 icpe-sim 的 G1（它說會在「目前 HEAD＋Engine 加速」的新 commit 上做，含 x1_nb；ac0c56e 那次已停掉、沒有比對）。G1 寫進 STATUS_SIM 後：merge → G0（32 worker）→ 開跑 `cw_main`。
+
 ## 2026-11-05T00:20+08:00 — 使用者：「11/9 要搞定」→ 縮格子方案 A（要 h200 登記偏離）
 
 **使用者 11/5 原話**：「太久了 不行 目標5 天內搞定」「11/9 要搞定 注意喔」。之後在 AskUserQuestion 選了：
