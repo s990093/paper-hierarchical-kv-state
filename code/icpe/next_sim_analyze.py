@@ -8,7 +8,9 @@
   元件 c ∈ RIVALS（O-ORD、O-DROP、O-NOW、O-PF）：
      ④＝min over {CPU ∈ COMPONENT_POLICIES[c]} × {GPU 不預測的規則}；②＝min over {CPU ∈ RIVALS[c]} × {GPU 不預測的規則}。
   元件 O-GPU（GPU 層的完美淘汰）：④＝min over {CPU ∈ NON_ORACLE} × {BEL}；②＝min over {CPU ∈ NON_ORACLE} × {GPU 不預測的規則}。
-  O-ALL(report)：④＝(O-ALL, BEL)（GPU 層關閉時 (O-ALL, none)）；②＝min over NON_ORACLE × GPU 不預測的規則。只報告。
+  元件 O-SLOW（慢層容量上限時的完美淘汰；第二批）：④＝min over {CPU 不預測} × {GPU 不預測} × {慢層 BEL}；
+     ②＝min over {CPU 不預測} × {GPU 不預測} × {慢層 LRU、LRU2、ARC、S3FIFO、GDSF、PENS}。其他元件的慢層一律取慢層不預測規則裡最快的。
+  O-ALL(report)：④＝(O-ALL, BEL, BEL)（關閉的層用 none）；②＝min over 全部不預測的組合。只報告。
   上限＝(T② − T④) ÷ T②；① 基準＝(LRU, LRU)（關閉時 (LRU, none)），另列 T_base。
   預取目的地：--pf-target gpu 時，有預取的 CPU 規則（O-PF、LRU+RPF、O-ALL）用 pf_target＝gpu 的列，其餘照 cpu（沒有預取就沒有差別）。
   多個重建規則（Mooncake R1／R2）時另加 rule＝min（每格取兩規則中較小的上限），同 x1_sim analyze。
@@ -35,13 +37,14 @@ import pandas as pd  # noqa: E402
 
 import x1_sim as XS  # noqa: E402
 
-CELL = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "gpu_GiB", "gpu_write"]
+CELL = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "gpu_GiB", "gpu_write", "slow_cap_frac"]
 NZ = ["noise_model", "noise_lambda", "noise_draw", "noise_seed"]
 
 
 def load(paths, pf_target, metric, dead_h):
     d = pd.concat([pd.read_csv(p) for p in paths], ignore_index=True)
     for c, v in (("gpu_GiB", 0), ("gpu_write", "none"), ("gpu_policy", "none"), ("pf_target", "cpu"),
+                 ("slow_cap_frac", 0.0), ("slow_policy", "none"),
                  ("noise_model", "none"), ("noise_lambda", 0.0), ("noise_draw", "none"), ("noise_seed", -1)):
         if c not in d.columns:
             d[c] = v
@@ -55,7 +58,7 @@ def load(paths, pf_target, metric, dead_h):
         d = d[~d.policy.isin(["O-DROP", "O-NOW", "O-ALL"])].copy()
         d.loc[d.policy.str.endswith(f"-H{dead_h}"), "policy"] = d.policy.str.replace(f"-H{dead_h}", "", regex=False)
     d = d[~d.policy.str.contains("-H")]
-    dup = d.duplicated(CELL + ["policy", "gpu_policy"] + NZ).sum()
+    dup = d.duplicated(CELL + ["policy", "gpu_policy", "slow_policy"] + NZ).sum()
     assert dup == 0, f"同一格同一個 (CPU 規則, GPU 規則) 有 {dup} 列重複：sweep 重複寫入？"
     return d, comp_pol
 
@@ -65,45 +68,51 @@ def analyze(d, comp_pol, oracle_keys=None):
     rows, viol = [], []
     src = ",".join(sorted(d.run_id.unique()))
     for key, g in d.groupby(CELL, sort=True):
-        T = {(r.policy, r.gpu_policy): (float(r.mean_ret), float(r.rho_w)) for r in g.itertuples()}
-        gp_all = sorted({gp for _, gp in T})
+        T = {(r.policy, r.gpu_policy, r.slow_policy): (float(r.mean_ret), float(r.rho_w)) for r in g.itertuples()}
+        gp_all = sorted({k[1] for k in T})
+        sp_all = sorted({k[2] for k in T})
         gp_no = [x for x in gp_all if x != "BEL"]
-        base_g = "LRU" if "LRU" in gp_all else "none"
-        base = T.get(("LRU", base_g), (np.nan, np.nan))[0]
+        sp_no = [x for x in sp_all if x != "BEL"]
+        base = T.get(("LRU", "LRU" if "LRU" in gp_all else "none", "LRU" if "LRU" in sp_all else "none"), (np.nan, np.nan))[0]
 
-        def best(cpus, gps):
-            c = [(T[(p, q)][0], p, q) for p in cpus for q in gps if (p, q) in T]
+        def combos(cpus, gps, sps):
+            return [(p, q, u) for p in cpus for q in gps for u in sps]
+
+        def best(cs):
+            c = [(T[k][0],) + k for k in cs if k in T]
             return min(c) if c else None
-        comps = [(c, comp_pol[c], gp_no, XS.RIVALS[c], gp_no) for c in XS.RIVALS]
+        comps = [(c, combos(comp_pol[c], gp_no, sp_no), combos(XS.RIVALS[c], gp_no, sp_no)) for c in XS.RIVALS]
+        rival_all = combos(XS.NON_ORACLE, gp_no, sp_no)
         if "BEL" in gp_all:
-            comps.append(("O-GPU", XS.NON_ORACLE, ["BEL"], XS.NON_ORACLE, gp_no))
-        for comp, ocpu, ogpu, rcpu, rgpu in comps:
-            need = [(p, q) for p in ocpu for q in ogpu] + [(p, q) for p in rcpu for q in rgpu]
-            if any(x not in T for x in need):
+            comps.append(("O-GPU", combos(XS.NON_ORACLE, ["BEL"], sp_no), rival_all))
+        if "BEL" in sp_all:
+            comps.append(("O-SLOW", combos(XS.NON_ORACLE, gp_no, ["BEL"]), rival_all))
+        for comp, oset, rset in comps:
+            if any(x not in T for x in oset + rset):
                 continue                                   # 這格沒有跑齊：不算（同 x1_sim analyze）
-            if oracle_keys is not None and any((p, q) not in oracle_keys for p in ocpu for q in ogpu):
+            if oracle_keys is not None and any(k not in oracle_keys for k in oset):
                 continue
-            o, r = best(ocpu, ogpu), best(rcpu, rgpu)
+            o, r = best(oset), best(rset)
             To, Tr = o[0], r[0]
-            rho_o, rho_r = T[(o[1], o[2])][1], T[(r[1], r[2])][1]
-            rows.append(dict(zip(CELL, key), component=comp, oracle_policy=o[1], oracle_gpu_policy=o[2], T_oracle=To,
-                             best_rival=r[1], best_rival_gpu_policy=r[2], T_rival=Tr, headroom=(Tr - To) / Tr,
-                             write_saturated=bool(rho_o >= 1 or rho_r >= 1), rho_w_oracle=rho_o, rho_w_rival=rho_r,
-                             T_base=base, src_runs=src))
-            for p in rcpu:
-                for q in rgpu:
-                    if T[(p, q)][0] < To - 1e-12:
-                        viol.append(dict(zip(CELL, key), component=comp, oracle_policy=o[1], oracle_gpu_policy=o[2], T_oracle=To,
-                                         rival=p, rival_gpu_policy=q, T_rival=T[(p, q)][0], oracle_slower_by=(To - T[(p, q)][0]) / T[(p, q)][0]))
-        og = "BEL" if "BEL" in gp_all else "none"
-        if ("O-ALL", og) in T and all((p, q) in T for p in XS.NON_ORACLE for q in gp_no) and \
-                (oracle_keys is None or ("O-ALL", og) in oracle_keys):
-            r = best(XS.NON_ORACLE, gp_no)
-            To = T[("O-ALL", og)][0]
-            rows.append(dict(zip(CELL, key), component="O-ALL(report)", oracle_policy="O-ALL", oracle_gpu_policy=og, T_oracle=To,
-                             best_rival=r[1], best_rival_gpu_policy=r[2], T_rival=r[0], headroom=(r[0] - To) / r[0],
-                             write_saturated=bool(T[("O-ALL", og)][1] >= 1 or T[(r[1], r[2])][1] >= 1),
-                             rho_w_oracle=T[("O-ALL", og)][1], rho_w_rival=T[(r[1], r[2])][1], T_base=base, src_runs=src))
+            rho_o, rho_r = T[o[1:]][1], T[r[1:]][1]
+            rows.append(dict(zip(CELL, key), component=comp, oracle_policy=o[1], oracle_gpu_policy=o[2], oracle_slow_policy=o[3],
+                             T_oracle=To, best_rival=r[1], best_rival_gpu_policy=r[2], best_rival_slow_policy=r[3], T_rival=Tr,
+                             headroom=(Tr - To) / Tr, write_saturated=bool(rho_o >= 1 or rho_r >= 1), rho_w_oracle=rho_o,
+                             rho_w_rival=rho_r, T_base=base, src_runs=src))
+            for k in rset:
+                if T[k][0] < To - 1e-12:
+                    viol.append(dict(zip(CELL, key), component=comp, oracle_policy=o[1], oracle_gpu_policy=o[2],
+                                     oracle_slow_policy=o[3], T_oracle=To, rival=k[0], rival_gpu_policy=k[1], rival_slow_policy=k[2],
+                                     T_rival=T[k][0], oracle_slower_by=(To - T[k][0]) / T[k][0]))
+        ok_ = ("O-ALL", "BEL" if "BEL" in gp_all else "none", "BEL" if "BEL" in sp_all else "none")
+        if ok_ in T and all(k in T for k in rival_all) and (oracle_keys is None or ok_ in oracle_keys):
+            r = best(rival_all)
+            To = T[ok_][0]
+            rows.append(dict(zip(CELL, key), component="O-ALL(report)", oracle_policy="O-ALL", oracle_gpu_policy=ok_[1],
+                             oracle_slow_policy=ok_[2], T_oracle=To, best_rival=r[1], best_rival_gpu_policy=r[2],
+                             best_rival_slow_policy=r[3], T_rival=r[0], headroom=(r[0] - To) / r[0],
+                             write_saturated=bool(T[ok_][1] >= 1 or T[r[1:]][1] >= 1),
+                             rho_w_oracle=T[ok_][1], rho_w_rival=T[r[1:]][1], T_base=base, src_runs=src))
     H = pd.DataFrame(rows)
     if len(H) and H.rule.nunique() > 1:
         ck = [c for c in CELL if c != "rule"] + ["component"]
@@ -135,8 +144,8 @@ def main():
         ck = CELL + ["component"]
         hx = H.set_index(ck).headroom
         for spec, g in noisy.groupby(NZ):
-            keys = set(zip(g.policy, g.gpu_policy))
-            base = exact[[k not in keys for k in zip(exact.policy, exact.gpu_policy)]]
+            keys = set(zip(g.policy, g.gpu_policy, g.slow_policy))
+            base = exact[[k not in keys for k in zip(exact.policy, exact.gpu_policy, exact.slow_policy)]]
             h, _ = analyze(pd.concat([base, g], ignore_index=True), comp_pol, oracle_keys=keys)
             for c, v in zip(NZ, spec):
                 h[c] = v
