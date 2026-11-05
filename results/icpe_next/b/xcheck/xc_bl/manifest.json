@@ -1,0 +1,13 @@
+{
+ "plan": "xcheck",
+ "block": "xc_bl",
+ "run_id": "20261105-085155-icpe-data-xcheck-xc_bl",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261105-085155-icpe-data-xcheck-xc_bl",
+ "rows": 32,
+ "elapsed_s": 43.3,
+ "finished": "2026-11-05T08:52:39+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261105-085155-icpe-data-xcheck-xc_bl\nexport RUN_DIR=/ssd6/hungwei/icpe-next/runs/20261105-085155-icpe-data-xcheck-xc_bl/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261105-085155-icpe-data-xcheck-xc_bl/out x1 sweep --traces nb:bailian_coder --rules nb --cpu 64 --policies LRU GDSF O-BEL O-PF --slows ssd --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU BEL TTLA:10 TTLB:10 --pf-target cpu --workers 8\n",
+ "context": "date: 2026-11-05T08:51:55.463846+08:00\nhost: acvlab\nplan: xcheck\nblock: xc_bl\ngit HEAD: 9f9e2910b7f10c60258b773ea0a1b591e2ed97e5\ngit status:\nuptime:  08:51:55 up 19 days, 20:46, 40 users,  load average: 81.62, 71.40, 72.76\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440         114          39           1         286         320\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:bailian_coder: sha256 5387c02aac200f2fe893a00393c364184d10d17d8417a13b3f5aa367bc54e149  /ssd6/hungwei/icpe-next/datasets/x1_nb/bailian_coder.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}
