@@ -2,6 +2,22 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T18:20+08:00 — TraceLab c1 完成（maxtasks=4 後記憶體不再累積）；c2 在跑
+
+**做完什麼**
+- **`tl_main/tl_c1`**：run `20261105-115504-icpe-data-tl_main-tl_c1`，exit 0，6,174 個 job，sweep 19,670 s（40 worker，程式 2dc6c8a）。
+  - 已收進 `results/icpe_next/b/tl_main/tl_c1/`（7,344 列，xz）。
+- **記憶體**（`mem-guard-tl-20261105.log`）：worker 的 PSS 合計在 c1 和 c2 前 358 個 job 都在約 39–56 GiB 上下來回，**沒有隨 job 數增加**。maxtasks=4 有效，不改成 2。MemAvailable 約 290–315 GiB。
+
+**現在在跑什麼**
+- 40 worker：`tl_main/tl_c2`（17:27 開始）。之後 `tl_c4`。
+- 4 worker：`old_main/mooncake`，10,467／24,696 個 job（9.2 h）。worker 都在約 99% CPU，慢是 job 本身重，不是被搶。
+
+**時程**〔推算，用 tl_c1 每個（CPU 容量, 規則）的 job 耗時當尺度〕
+- `tl_c2`：還要約 6–7 h（同一組的 job 是 c1 的 1.28–1.42 倍）→ 約 11/6 01:00。`tl_c4`（npz 是 c1 的 1.5 倍）再約 9–10 h → 約 11/6 中午。
+- Mooncake 剩下的組，跟 TL 的比例差很多（四分位 0.02–0.20）→ 還要 2.5–23 h。之後 `fi6w`、`bailian3` 也在這條 4 worker 的佇列上。
+- 打算：40 worker 那條在 TL 主格＋TL 的 ≥10% 補跑＋`sens_rep tl_*` 做完後，若 4 worker 那條還有沒開始的 block，就在 block 交界把它停掉，剩下的改給 40 worker 跑（兩條佇列不同時排同一個 block）。
+
 ## 2026-11-05T11:56+08:00 — 敏感度格 19 個完成；merge 54fa2d8（maxtasks）、G0 PASS；TraceLab 重開
 
 **做完什麼**
