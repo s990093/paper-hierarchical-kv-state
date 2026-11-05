@@ -3,6 +3,29 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T09:26+08:00 — 40 worker 記憶體不夠、swap 增加 → 停掉作廢；**`sa_main` 改 20 worker 重跑**
+
+**發生什麼**
+- run `20261105-091241-icpe-trx-sa_main-sa_N16_s1`（40 worker）跑到 889／6174 job（681 s），**09:24 我手動停掉**（`kill -TERM` 整個行程群組），留了 `ABORTED` 檔，不 collect。
+- 記憶體（`$ROOT/runs/queue-sa_main-w40-20261105-091241.{mem.log,pss-5min.txt,pss-abort.txt}`）：
+
+| 時間 | 本組 PSS 合計 | 每個 worker PSS | MemAvailable | swap 用量 |
+|:--|:--|:--|:--|:--|
+| 09:13:14 | 5.5 GiB | — | 50.2 GiB | 245 MiB |
+| 09:17:49（開跑 5 分鐘） | 20.0 GiB | 中位數 501 MiB、p90 552、最大 637 | 36 GiB | 244 MiB |
+| 09:21:06 | 28.9 GiB | — | 26.9 GiB | 264 MiB（開始增加） |
+| 09:23:4x（停掉前） | 39.4 GiB | 中位數 968 MiB、最大 1,248；私有中位數 949 | 19.4 GiB | 885 MiB |
+
+- swap 的增加不是本組被換出（本組每個行程 `VmSwap` 都是 0），是記憶體壓力把別的使用者閒置的頁（gnome-shell、update-manager、uid 1010 的行程）擠進 swap。照規則「不准用到 swap」，仍然算本組造成的，所以停。
+- 漲法：09:17:49 → 09:19:00 只多 1.5 GiB；09:19 以後每 30 s 多約 2 GiB，時間上和 job 從 O-ALL（前 432 個）換到 O-PF／LRU+RPF 一致。所以看起來是這類 job 比較吃記憶體，不像單純越跑越漏；每個 worker 的上限**沒量到**。
+- 停掉後 swap 留在 885 MiB（被換出的頁要等那些行程用到才換回）。之後的基準改成 885 MiB。
+
+**處理**：照使用者 09:08 的決定（被停就作廢、降 worker 重跑）。09:24:52 重開 `run --plans sa_main --workers 20`（程式 828e1d3；log `$ROOT/runs/queue-sa_main-w20-20261105-092452.log`；記憶體監看同前）。20 是我依上面的量測選的：每個 worker 以 1.25–1.5 GiB 估，合計 25–30 GiB；本組約 29 GiB 時 swap 開始增加。之後在 block 之間依量到的峰值調整。
+
+**對時間的影響**〔算術〕：40 worker 時每秒約 1.37 個 job（前 540 個）。20 worker 約一半，一個 block 約 2.5 h，`sa_main` 12 個約 30–40 h。實際時間等第一個 block 跑完再寫。
+
+**需要 icpe-sim 知道**（不擋，只是告知）：SemiAnalysis（98,827 請求、4,200 萬 chunk）每個 worker 在 O-PF／LRU+RPF 的 job 上 PSS 約 1–1.25 GiB 而且還在漲（PSS 接近 RSS 的 2 GiB）。如果是 fork 後的 copy-on-write（refcount 碰到父行程的物件），共用的部分會慢慢變私有。這台 62 GiB，worker 數因此受限。
+
 ## 2026-11-05T09:14+08:00 — 指紋（不含 meta_json）13／13 相同；G0 PASS；xc_sa IDENTICAL；**`sa_main` 開跑（40 worker）**
 
 **做完什麼**
