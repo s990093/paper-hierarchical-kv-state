@@ -2,6 +2,93 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T09:00+08:00 — CacheWise 補跑完成；TraceLab 改 40 worker；**三台分工（使用者 11/5 決定）**；分析程式要補一個選項
+
+**做完什麼**
+- **`cw_main_ttl7` 17 個 block 全部 exit 0**（07:24 → 08:40，32 worker），19,840 列，已收進 `results/icpe_next/b/cw_main_ttl7/`。
+- **TraceLab 改 40 worker**（使用者 11/5：「改大一點 到 40 加速？」）。
+  - 量測：7539f01 的 TraceLab c1，32 worker 開跑後每個 worker 的 PSS 0.55–0.97 GiB，合計 20.4 GiB（parent 310 MiB）。load 約 67／96。
+  - 處理：c1 才跑 5 分鐘，就把整個佇列停掉（kill 行程群組）。run `20261105-084040-icpe-data-tl_main-tl_c1` 留了 `ABORTED` 檔說明原因，沒有收任何列。
+  - 重開：`run --plans tl_main --workers 40`，log `/ssd6/hungwei/icpe-next/runs/queue-tl_main-w40-20261105-084551.log`。記憶體監看在 `mem-watch-queue-tl_main-w40.log`。
+- **CacheWise 補跑後的分析**（run `20261105-084414-icpe-data-analyze-cw_main-ttl7`）發現一個問題，見下面「需要 icpe-sim 做什麼」。在它修好前，這張表不進 results/。
+- 佇列程式（本節 commit）：
+  - 路徑可用環境變數設定：`NEXT_B_ROOT`、`NEXT_B_PY`、`NEXT_B_NB_DIR`、`NEXT_B_MOONCAKE`、`NEXT_B_FI_DIR`、`NEXT_B_TAG`。
+  - `run --only '<glob>'`：只跑名稱符合的 block。
+  - plan `xcheck`：跨機器對拍，新功能開啟、小格子。`xc_sa`＝SemiAnalysis N16 s1、`xc_bl`＝Bailian coder；CPU 64、LRU／GDSF／O-BEL／O-PF × GPU LRU／BEL／TTLA:10／TTLB:10、ssd、cake。
+  - `digest`：紀錄 npz 的內容指紋。`savez_compressed` 的 zip 有時間戳，檔案的 sha256 每次轉換都不同，所以比內容。
+  - `next_b_g0.py`：也去掉 `host` 欄；有新功能的欄時也加進鍵；可讀 .xz。舊 G0 的比法不變：對 `20261105-070841` 的輸出重比，仍是 128,064 格 0 個不同。
+- **紀錄內容指紋**：run `20261105-084835-icpe-data-npz-digest` → `results/icpe_next/b/traces/npz_digest.csv`。涵蓋 SemiAnalysis 12＋N16 s1 t128k、Bailian 3、FI 第 1 週 t128k。
+
+**三台分工**（使用者 11/5 在 icpe-data 決定；NEXT_PLAN §3b「正式模擬都由 icpe-data 跑」因此改成下表）
+
+| 機器 | session | 跑什麼 |
+|:--|:--|:--|
+| acvlab | icpe-data | TraceLab：`tl_main` → `tl_main_ttl7`<br>CacheWise／TraceLab 的敏感度：`sens_rep --only 'cw_*' 'tl_*'`<br>CacheWise 沒有授權，**只能在 acvlab** |
+| TRX40（Threadripper 3960X 48 執行緒、62 GiB；不碰 GPU） | **icpe-trx**（新開） | SemiAnalysis：`sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'` |
+| H200 | h200 | 若 Slurm 能送純 CPU 的 job：`old_main` → `bl_main` → 兩者的 `_ttl7` → `sens_rep --only 'mc_*' 'fi_*' 'bl_*'`<br>不能的話留給 acvlab |
+
+授權：SemiAnalysis（Apache-2.0）、Bailian（Apache-2.0）、TraceLab（資料 CC BY 4.0）可以放別台；**CacheWise 不行**。
+
+### 給 `icpe-trx`（TRX40）的步驟
+
+任何一步失敗：記完整錯誤，寫進 STATUS_TRX，停下來。
+
+0. **Repo**：clone `https://github.com/s990093/paper-hierarchical-kv-state`，從 `origin/icpe-next-data` 的最新 commit 開分支 **`icpe-next-trx`**，push 那個分支。
+   - 只寫 `docs/icpe_brief_20261030/next/STATUS_TRX.md`（新檔，格式同本檔）和 `results/icpe_next/b/sa_*`、`results/icpe_next/b/analysis/sa_*`、`results/icpe_next/b/sens_rep/sa_*`。
+   - 不改任何程式。要改 `next_b_*` 就寫在 STATUS_TRX，由 icpe-data 改。
+   - 根目錄 `$ROOT` 放在一顆大磁碟上（例如 `/ssd4/hungwei/icpe-next`，先看 `df -h`；/ssd2 已 91%）。底下分 `venv/`、`uv-python/`、`datasets/`（下載）、`runs/`、`hf-home/`；程式在 repo 裡，和資料分開。
+1. **venv**：Python **3.12.15**、numpy **2.3.5**、pandas **3.0.5**、pyarrow **25.0.1**（相依 python-dateutil 4.0.0、tzdata 2026.6），和 acvlab 完全相同。
+   - 本機的 uv 裝不到 3.12.15 時：`uvx --from uv==0.13.7 uv python install 3.12.15 --install-dir $ROOT/uv-python --no-bin`。
+   - 把版本寫進 STATUS_TRX。
+2. **下載**（不受信任的資料：只讀 JSON／parquet、Python 一律 `-I`、資料和程式不同目錄）：
+   - `code/setup_3090_data.sh semianalysis`：HF revision 23f152f6，`hf_verify files=3 bad=0`。acvlab 的做法見 run `20261104-233022-icpe-data-dl-tracelab-semianalysis` 的環境變數（`TIARA_HOME`、`TIARA_DATASETS`、`HF_HOME`、`TIARA_HF_CLI`）。
+   - `code/setup_3090_data.sh mooncake`：commit d750cdda，conversation sha256 前 8 碼 `b8cbb061`、toolagent `48a2db1a`。
+3. **轉換**：
+   - p3x 用 `git archive 6b17191 code/p3x`，和 acvlab 轉換時同一版。
+   - 指令：`TIARA_DATASETS=$ROOT/datasets python -I code/icpe/next_b_convert.py semianalysis --N 16 32 64 72 --seeds 1 2 3 --out-dir $ROOT/datasets/x1_nb --p3x <archive>/code/p3x`
+   - 截斷版：同一支，`semianalysis --N 16 --seeds 1 --trunc-128k ...`。
+   - 驗證：`next_b_queue.py digest <13 個名字>` 要和 `results/icpe_next/b/traces/npz_digest.csv` **完全相同**。不同就停。
+4. **G0**：照 acvlab run `20261105-070841-icpe-data-g0-merged-7539f01` 的 `cmd.sh`（換成本機路徑、16 worker），對 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz` 用 `next_b_g0.py` 比，要 `G0_RESULT IDENTICAL`。
+5. **跨機器對拍（新功能）**：
+   - 環境：`NEXT_B_ROOT=$ROOT NEXT_B_PY=$ROOT/venv/bin/python NEXT_B_MOONCAKE=<mooncake traces> NEXT_B_TAG=icpe-trx`。
+   - 跑：`python -I code/icpe/next_b_queue.py run --plans xcheck --only xc_sa --workers 16`。
+   - 比：`next_b_g0.py results/icpe_next/b/xcheck/xc_sa/x1_sweep.csv.xz $ROOT/runs/<那個 run>/out/x1/x1_sweep.csv`，要 IDENTICAL。
+   - **不要** collect xcheck。
+6. **正式**（同一組環境變數）：
+   - `run --plans sa_main --workers 16`。
+   - 第一個 block 開跑 5 分鐘後，量每個 worker 的 PSS（`/proc/<pid>/smaps_rollup`）和 `free -g`。若 MemAvailable 保持 >12 GiB，就在 block 之間加 worker，最多 40。不能用到 swap。nice -n 10 已內建。
+   - 每個 block 跑完：`collect --plans sa_main` → commit `results(icpe-next-b): ...` → push `icpe-next-trx`。
+   - `sa_main` 12 個都完成後：
+     1. `RUN_ID=<run_id> python -I code/icpe/next_sim_analyze.py --sweep results/icpe_next/b/sa_main/*/x1_sweep.csv.xz --out-dir <run>/out --out-prefix sa_main_ttl3 --pf-target cpu`（§4.1 的殼，一定要 export RUN_ID）。
+     2. `ttl7cells --plan sa_main --headroom <run>/out/sa_main_ttl3_headroom_components.csv`。
+     3. 表（xz）放 `results/icpe_next/b/analysis/sa_main_ttl3/`，`cells.csv` 一起 commit。
+     4. `run --plans sa_main_ttl7` → collect。
+     5. `run --plans sens_rep --only 'sa_*'` → collect。
+   - **不解讀上限、不下判定**。最後的分析由 icpe-data 做。
+7. **規則**：
+   - CLAUDE.md 的不可協商規則：不編數字（沒跑寫 NOT_MEASURED）、失敗就記完整錯誤並停、每個數字追溯到指令與輸出檔、不改 main.tex。
+   - 不改 `code/p3x/*`、NEXT_PLAN、其他 STATUS 檔。
+   - 不用 GPU。CacheWise 的任何東西都不放 TRX40。
+   - git：不 stash、不 rebase、不合回 main；commit 結尾加 attribution。
+
+### 給 `h200` 的請求
+
+1. **先確認**：Slurm 能不能送純 CPU 的 job？每個節點幾核、多少記憶體、時間上限多少？可以的話，照上表接 `old_main`、`bl_main`。
+   - 步驟同 icpe-trx 的 0–7。差別一：分支、STATUS 檔用你自己的。差別二：資料。
+   - 資料：Mooncake、FI 你那邊已經有。Bailian 要下載（`setup_3090_data.sh bailian`，commit 5f7439c5）並轉換：`bailian --files traceA thinking coder`。FI 第 1 週要轉截斷版：`fi --weeks 2026-05-17_2026-05-23 --trunc-128k`。
+   - 指紋要和 `npz_digest.csv` 相同。xcheck 用 `xc_bl`。
+   - 不能送就回一句，我留在 acvlab 跑。
+2. **PREREG 釐清**（偏離 4 第 2 項的補跑規則）：見下一項。請寫一句釐清：「補跑 ② 時，④ 的 GPU 規則集合維持原本 3 個 TTL」。這正是 h200 註解「② 只會隨 TTL 值變多而變快」的前提；如果 ④ 也加 TTL，上限可能變大，這個論證就不成立。
+
+**需要 icpe-sim 做什麼**（不擋模擬，只擋 CacheWise 的最終表）
+- 問題：`next_sim_analyze.py` 對 4 個 CPU 元件（O-ORD／O-DROP／O-NOW／O-PF）的定義是 ④＝COMPONENT_POLICIES × {GPU 不預測規則}、②＝RIVALS × {GPU 不預測規則}，兩邊用**同一組** GPU 規則。
+- 偏離 4 的補跑只加在 ②。所以補跑過的 248 格裡，④ 缺新 TTL 的列，程式把這 4 個元件**整列不算**：2,896 列，補跑前是 3,888 列。O-GPU、O-ALL(report) 不受影響。
+- 請加一個選項，例如 `--rival-only-gpu TTLA:1 TTLA:3 TTLA:30 TTLA:100 TTLB:1 TTLB:3 TTLB:30 TTLB:100`：這些 GPU 規則只放進 ②（rset），不放進 ④（oset）。沒補跑的格子沒有這些列，結果和現在一樣。
+- 檢查：開這個選項時，任何格子的上限都不能比 3 個 TTL 時大。我在 CacheWise 上會驗。
+- 程式是你的，我不改。
+
+**需要使用者決定什麼**：無（分工已決定）。
+
 ## 2026-11-05T07:26+08:00 — G0（merge 7539f01 後）PASS；`cw_main_ttl7` → `tl_main` 開跑
 
 - **G0 PASS**：run `20261105-070841-icpe-data-g0-merged-7539f01`（程式 cc6b980＝7539f01、新功能全關、共用 venv、32 worker、sweep 922 s）：**4,416 列 × 29 欄＝128,064 格，0 個不同**（`G0_RESULT IDENTICAL`）。
