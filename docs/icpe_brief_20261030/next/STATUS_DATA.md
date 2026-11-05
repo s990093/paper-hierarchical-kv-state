@@ -2,6 +2,16 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T21:10+08:00 — load 超過 100，使用者決定不降 worker；新開分析 session icpe-ana
+
+- 20:22 起 acvlab 的 load 在 115–118（96 核）。上升的是其他使用者新開的工作，我們維持 44 個 worker，都用 `nice 10`。
+  - **使用者決定（11/5 21:00）：不降。** load 監看門檻改成連續 10 分鐘 >140 才通知。
+  - 記憶體正常：可用約 300 GiB，TraceLab worker 合計 37–41 GiB。
+- **新 session `icpe-ana`**（使用者要求；tmux `icpe-ana`，Opus、high effort、remote control）。
+  - 獨立的分析 session，只讀、只分析，不跑正式模擬、不動佇列、不碰 `/ssd6/hungwei/icpe-next/data`。
+  - worktree `/ssd6/hungwei/icpe-next/ana`，branch `icpe-next-ana`（只在本機，從 a60f05e 開出；push 前會先問使用者）。
+  - 開場指示在 `/ssd6/hungwei/icpe-next/ana_prompt_20261105.md`。
+
 ## 2026-11-05T18:20+08:00 — TraceLab c1 完成（maxtasks=4 後記憶體不再累積）；c2 在跑
 
 **做完什麼**
