@@ -4,6 +4,33 @@
 > icpe-ana 是分析 session：不跑正式模擬、不動佇列、不改 `code/p3x/*`。
 > 本分支只放**沒有 CacheWise** 的東西；CacheWise 上做過的速度與對拍只留在 acvlab。
 
+## 2026-11-06T03:05+08:00 — W4 雜訊（B1）移植進 Rust：以 icpe-sim `0b0ef1e` 為底，對拍全部相同
+
+**使用者 11/6**：「icpe-ana（我） 改sim」→ 雜訊由 icpe-ana 移植；`code/p3x/` 仍由 icpe-sim 合併（我不改）。
+
+**做完什麼**
+- `code/icpe/ana_x1fast/v4_noise_on_0b0ef1e/`：以 `0b0ef1e:code/p3x/x1fast/src/main.rs`（sha256 `d6c35d33…`）為底，只加雜訊（sha256 `1b0e7e08…`）。
+  - 逐位元重現 CPython `random.Random`：MT19937、`init_by_array`（seed 取絕對值切 32 位元）、`random()`、`_randbelow`（`getrandbits` 拒絕抽樣）、`uniform`；抽樣順序和 `x1_sim.Engine` 相同。
+  - 兩種模型 P／M、λ、抽法 **只有 B1**；工作描述多一欄 `nz=P|M,<λ>,B1,<seed>`。B2 或其他額外欄位 → Rust `panic`，由包裝退回 Python（B2 仍是 Python 速度，P4 的風險）。
+  - 有雜訊的 job 不走共用前段（`X1FAST_FORK`）分組。
+- **逐位元對拍**〔實測；`results/icpe_next/ana/rust_difftest_jobs.csv` 的 `engine` 欄〕：雜訊矩陣＝CPU 8／64 × 7 個規則（O-BEL、O-BELS、O-DROP、O-NOW、O-PF、O-ALL、LRU）× GPU 層（關、wb LRU／BEL／TTLA:10）× 5 組雜訊（P 0／0.2／0.4、M 0.1／0.3，不同 seed），只取會用到預知的 job。
+
+| 引擎 | 紀錄 | 矩陣 | 相同／總數 | 速度中位數 | run_id |
+|:--|:--|:--|--:|--:|:--|
+| v4（以 0b0ef1e 為底） | Bailian coder | 雜訊 | 250／250 | 29.7× | `20261106-005744-icpe-ana-diff-v4s-noise-nb_bailian_coder` |
+| v4（以 0b0ef1e 為底） | Mooncake conversation | 雜訊 | 250／250 | 20.3× | `20261106-020635-icpe-ana-diff-v4s-noise-conversation` |
+| v4（以 0b0ef1e 為底） | Bailian coder | 原本的寬矩陣（回歸） | 278／278 | 28.8× | `20261106-023426-icpe-ana-diff-v4s-broad-nb_bailian_coder` |
+| v4（以我的 v3 為底） | Bailian／Mooncake | 雜訊 | 250／250、250／250 | 28.0×、27.8× | `…-001101-…-v4-noise-nb_bailian_coder`、`…-012031-…-v4-noise-conversation` |
+
+  速度是機器有其他負載時量的，只當參考。
+
+**需要 icpe-sim 做什麼**
+1. 把 `v4_noise_on_0b0ef1e/src/main.rs` 換進 `code/p3x/x1fast/src/main.rs`（雜訊以外和 0b0ef1e 相同）。
+2. 包裝：`noise` 的 draw＝B1 時把 `nz=…` 加進 job 那一行、不再退回 Python；B2 照舊退回。
+3. 驗證：照 G1／xcheck 的比法加一組有雜訊的格子（例如 P4 候選格的一小塊）；過了寫進 STATUS_SIM。
+
+**還沒做**：B2 抽法、慢層容量上限、STAIR（都還是 Python）。P4 的格子要等 P1 結果（偏離 6）。
+
 ## 2026-11-06T00:45+08:00 — P1–P3 的 job 數與 Rust 時間推算；TraceLab 實測；v4（雜訊）對拍中
 
 **使用者 11/6**：「先把 icpe 搞定」→ kvsweep 暫停，icpe-ana 只做 ICPE 需要的事。

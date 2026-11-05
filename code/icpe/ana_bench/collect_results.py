@@ -30,7 +30,9 @@ rows = []
 for d in sorted(glob.glob(f"{RUNS}/*-icpe-ana-diff*")):
     if not ok(d) or not os.path.exists(f"{d}/diff.jsonl"):
         continue
-    ver = "v3_prefix_fork" if "-diff-fork-" in d else "v2_nextreq_cache" if "-diff-cache2-" in d else "v1_port" if "-diff-cache-" not in d else None
+    ver = ("v4_noise_on_0b0ef1e" if "-diff-v4s-" in d else "v4_noise_on_v3" if "-diff-v4-" in d else
+           "v3_prefix_fork" if "-diff-fork-" in d else "v2_nextreq_cache" if "-diff-cache2-" in d else
+           "v1_port" if "-diff-cache-" not in d else None)
     if ver is None:
         continue                       # 第一次 cache 對拍：比對腳本解析錯誤、沒有比到（見 RUST_NOTES 踩過的坑）
     for l in open(f"{d}/diff.jsonl"):
