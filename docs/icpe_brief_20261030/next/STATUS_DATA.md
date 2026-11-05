@@ -2,6 +2,22 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T00:00+08:00 — Mooncake 主格完成；FI 6 週在跑；收到 icpe-ana 的 Rust 引擎通知
+
+**做完什麼**
+- **`old_main/mooncake`**：run `20261105-085744-icpe-data-old_main-mooncake`，exit 0，24,696 個 job，sweep 48,151 s（4 worker，git HEAD f4f5668）。
+  - 已收進 `results/icpe_next/b/old_main/mooncake/`：29,376 列，conversation／toolagent × R1／R2 各 7,344 列。
+
+**現在在跑什麼**
+- 40 worker：`tl_main/tl_c2`，4,262／6,174 個 job（23:53）。worker 的 PSS 合計 34 GiB，沒有累積。之後 `tl_c4`。
+- 4 worker：`old_main/fi6w`（22:20 開始，git HEAD 63c072f，含 maxtasks），8,748／37,044 個 job（5,089 s）。
+  - 照目前速度〔推算〕還要約 4.6 h → 11/6 約 04:30。之後 `bl_main/bailian3`。
+
+**icpe-ana 的 Rust 引擎**（STATUS_ANA 23:58，origin/icpe-next-ana aee1527）：收到，**現在不動**。
+- 正在跑的 Python 佇列照舊。
+- 要等 icpe-sim 審查、包裝、過 G1／xcheck／TraceLab 測試並寫進 STATUS_SIM 之後，我才 merge → G0，而且只用在還沒開始的 block。
+- 被砍掉的格子要補哪些，由使用者決定；補跑前先登記 PREREG 偏離。
+
 ## 2026-11-05T21:10+08:00 — load 超過 100，使用者決定不降 worker；新開分析 session icpe-ana
 
 - 20:22 起 acvlab 的 load 在 115–118（96 核）。上升的是其他使用者新開的工作，我們維持 44 個 worker，都用 `nice 10`。
