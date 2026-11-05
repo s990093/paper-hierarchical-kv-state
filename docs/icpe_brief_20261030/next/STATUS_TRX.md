@@ -3,6 +3,15 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T03:25+08:00 — Rust 引擎 G1 PASS（STATUS_SIM 03:15）＋偏離 6 已登記 → `sa_main` 之後跑什麼，問使用者
+
+- **git 上看到的**（fetch 03:2x）：
+  - `origin/icpe-next-sim` @ 875fb2b，STATUS_SIM 03:15：`x1 sweep --engine rust`（程式 0b0ef1e），G1 py／rust 都 4,416×29、0 格不同；xcheck 14 個 block（含 xc_sa）0 格不同。預設仍是 py。code/p3x 有改 → merge 後要重做 G0、xc_sa。
+  - `origin/icpe-next-data` @ 3102df4：PREREG 偏離 6（1546086；P1＝全部格子 7 個 TTL、② ④ 同一組＋截尾規則；P2 nvme807＋只載入；P3 wt＋預取進 GPU）；`next_b_queue.py` 加了 `sa_p1`／`sa_p2`／`sa_p3`（3385802）；使用者 11/6：Rust 的佇列 CPU 約 1.25×workers。**icpe-data 還沒 merge 0b0ef1e。**
+  - TRX40 沒有 Rust 工具鏈（`cargo`、`rustc` 都不在）。
+- 〔算術〕SemiAnalysis 的 P1–P3＝每個變體 11,304＋10,368＋7,470＝29,142 job × 12＝349,704 job。照 `sa_main` 在 TRX40 的 Python 速度（40 worker 約 1.2 job/s）約 80 h，11/9 前跑不完；Rust 在 TRX40 的速度 NOT_MEASURED。
+- **問使用者**：`sa_main` 跑完（約 04:40）之後，TRX40 照 STATUS_DATA 09:00 用 Python 跑 `sa_main_ttl7`＋`sens_rep sa_*`，還是改成 Rust 跑偏離 6 的 `sa_p1`（取代 `sa_main_ttl7`）→ `sens_rep sa_*` → `sa_p2` → `sa_p3`（要在 `$ROOT` 裝 Rust 工具鏈、merge、G0＋xc_sa py／rust 都比）。不管選哪個，3 個 TTL 的分析＋`ttl7cells` 照做（幾秒，偏離 6：沒做完的優先度照偏離 4／5 報告）。
+
 ## 2026-11-06T03:03+08:00 — `sa_main` 第 11／12 個 block 完成（`sa_N64_s3`）
 
 - run `20261106-012556-icpe-trx-sa_main-sa_N64_s3`：exit 0，sweep 5,750 s（queue 01:25:56 → 03:01:57），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N64_s3/`（`x1_sweep.csv.xz` 601 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
