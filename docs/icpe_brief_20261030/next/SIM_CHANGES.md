@@ -130,3 +130,10 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
 - **問題**（icpe-data 量到）：09fd521 的向量化版本讀 TraceLab 試跑檔時最大 RSS 29.3 GB（6b17191 的純 Python 版 6.8 GB）。原因：`.tolist()` 每一格都造一個新的 Python int（約 36 bytes × 2.2 億 × 2 個清單）；純 Python 版用 `setdefault` 讓同一個 id 共用一個 int 物件（每格只有 8 bytes 指標）。
 - **改了什麼**：用 numpy 的 object 陣列（每個 id、每個請求 index 一個共用的 int 物件）取值再 `.tolist()`；中間的大陣列用完就 `del`。值完全相同。
 - **驗證**（run `20261105-003415-icpe-sim-nb-mem`）：Mooncake 來回轉換與負面測試照舊通過；TraceLab 試跑檔 `prepare_nb` 的結果（full、acc、nall、B、n_blocks_full）和 6b17191 的純 Python 版**完全相同**；最大 RSS 10.8 GB、119 s（純 Python 版 151 s）。
+
+### 14. 分析程式：`--rival-only-gpu`（`code/icpe/next_sim_analyze.py`；PREREG 偏離 4 第 2 項的補跑）
+
+- **為什麼**（icpe-data 在 STATUS_DATA 2026-11-05T09:00 提出）：偏離 4 的 ≥10% 補跑只把其餘 TTL（1／3／30／100 s 的 TTLA、TTLB）× 10 個不預測的 CPU 規則加進 ②。原本的分析程式讓 4 個 CPU 元件（O-ORD／O-DROP／O-NOW／O-PF）的 ④ 與 ② 用**同一組**「格子裡出現過的 GPU 不預測規則」，所以補跑過的格子 ④ 缺列 → 這 4 個元件整列不算（CacheWise：3,888 → 2,896 列）。
+- **改了什麼**：新選項 `--rival-only-gpu <GPU 規則…>`：這些 GPU 規則只放進 ②，④ 的 GPU 規則集合拿掉它們（＝補跑前的那一組）。影響 O-ORD／O-DROP／O-NOW／O-PF 與 O-SLOW 的 ④；O-GPU（④ 只用 BEL）、O-ALL(report)（④ 是固定組合）本來就不受影響。violations 多一欄 `rival_gpu_rival_only`（那個 ② 組合的 GPU 規則是不是只在 ② 的）；輸出的 meta 多一欄 `rival_only_gpu`。**不給選項時和之前逐格相同**（這兩欄都不出現）。
+- **防呆**：規則名必須在 sweep 裡出現過（打錯字就停）；不能含 BEL／none；開選項時自動再算一次「拿掉這些規則的列」，(格, 元件) 集合必須相同、每一列的上限都不能變大，不過就停。
+- **有利還是不利**：對預測**不利**（② 只多不少、④ 不變 → 上限只會變小或不變）。這正是 PREREG 偏離 4「② 只會隨 TTL 值變多而變快」的設定；icpe-data 已請 h200 在 PREREG 補一句「補跑 ② 時，④ 的 GPU 規則集合維持原本 3 個 TTL」。
