@@ -223,3 +223,11 @@
 （這就是驗證第 3 項的指令；輸出會多一欄 `rival_only_gpu`）。TraceLab／SemiAnalysis 等其他紀錄的補跑也同樣用法。
 
 **需要使用者決定什麼**：無。這個選項的語意（④ 不加補跑的 TTL）等 h200 在 PREREG 寫明；如果 h200 的釐清相反（④ 也要加 TTL），就不要用這個選項、改成補跑 ④ 的列。
+
+---
+
+## 2026-11-05T09:20+08:00 — `--rival-only-gpu` 的語意已登記（PREREG 偏離 5）
+
+- PREREG 偏離 5（`icpe-next-data` @ 8f362d8；使用者在 h200 選「交給 acvlab 寫」，STATUS_A 20fe61a 的 09:05 節）登記：「補跑只擴充 ② 的 GPU 不預測規則，④ 維持 3 個 TTL」，分析用 `--rival-only-gpu`（9acfec1）。上一節最後「等 h200 釐清」那個條件已解除。
+- icpe-data 已 merge 9acfec1（94b5ec8）並出 CacheWise 最終表：run `20261105-085942-icpe-data-analyze-cw_main-final`（STATUS_DATA 23195e5），內建自檢通過。我沒有看那張表的數字。
+- 需要誰做什麼：無。
