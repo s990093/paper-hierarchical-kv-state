@@ -1,7 +1,7 @@
 """next_b_queue.py — ICPE next（icpe-data）：正式模擬的佇列（方案 A，STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4（origin/icpe-next-a 776e747））。
 
   python -I code/icpe/next_b_queue.py list                      # 列出所有 plan 與 block、job 數
-  python -I code/icpe/next_b_queue.py run --plans cw_main tl_main [--workers 32] [--dry-run]
+  python -I code/icpe/next_b_queue.py run --plans cw_main tl_main [--workers 32] [--engine py|rust] [--dry-run]
   python -I code/icpe/next_b_queue.py collect --plans cw_main   # 把跑完的 block 彙總進 results/icpe_next/b/
 
 每個 block＝一次 `p3_fvar.py --variant V1 ... x1 sweep`（一個紀錄變體或一組小紀錄），照 CLAUDE.md §4.1 的殼：
@@ -11,6 +11,8 @@
   * 一個 block 失敗（exit ≠ 0）→ 整個佇列停下來、印錯誤（CLAUDE.md 規則 2）。不自動重試。
   * 跑完（exit 0）的 block 記在 /ssd6/hungwei/icpe-next/runs/next_b_queue_done.jsonl；重跑佇列會跳過它們。
   * nice -n 10、OMP 執行緒 1；程式＝本 worktree 的 HEAD（context.txt 記 commit 與 git status）。
+  * --engine rust（PREREG 偏離 6；icpe-sim G1 PASS 0b0ef1e、icpe-data G0 PASS 後才可用）：x1 sweep 加 --engine rust，
+    CPU 約 1.25×workers（Rust 執行緒 w＋摘要行程 w//4）；逐 job 時間記在 <run>/rust_timing.jsonl。只用在還沒開始的 block。
   * 寫進 git 的只有彙總：results/icpe_next/b/<plan>/<block>/x1_sweep.csv.xz（加 host 欄）＋manifest.json。
 """
 from __future__ import annotations
@@ -221,15 +223,19 @@ def cmd_count(a):
     return 0
 
 
-def run_block(plan, name, tr, args, workers, dry):
+def run_block(plan, name, tr, args, workers, dry, engine="py"):
     rid = datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{TAG}-{plan}-{name}"
     run = f"{RUNS}/{rid}"
     env = {"RUN_ID": rid, "RUN_DIR": f"{run}/req", "P3_CONST": "h200", "P3_TIER": "h200cpu",
            "M7_TIER_PARAMS": f"{REPO}/results/icpe_h200/t1/tier_params_h200cpu.json", "M7_RES": f"{REPO}/results/m7_write_policy_h200",
            "X1_NB_DIR": NB_DIR, "X1_TRACE_DIR": MOONCAKE, "X1_FI_DIR": FI_DIR,
            "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
+    if engine == "rust":
+        env["X1_RUST_TIMING_LOG"] = f"{run}/rust_timing.jsonl"
     argv = [PY, "-I", "code/icpe/p3_fvar.py", "--variant", "V1", "--calib", f"{REPO}/results/icpe_h200/p01/calib",
             "--out-root", f"{run}/out", "x1", "sweep", "--traces", *tr["traces"], "--rules", *tr["rules"], *args, "--workers", str(workers)]
+    if engine == "rust":
+        argv += ["--engine", "rust"]
     cmd = "cd " + REPO + "\n" + "".join(f"export {k}={v}\n" for k, v in env.items()) + "exec nice -n 10 " + " ".join(argv) + "\n"
     if dry:
         print(cmd)
@@ -238,7 +244,7 @@ def run_block(plan, name, tr, args, workers, dry):
     with open(f"{run}/cmd.sh", "w") as fh:
         fh.write(cmd)
     with open(f"{run}/context.txt", "w") as fh:
-        fh.write(f"date: {datetime.now().astimezone().isoformat()}\nhost: {socket.gethostname()}\nplan: {plan}\nblock: {name}\n")
+        fh.write(f"date: {datetime.now().astimezone().isoformat()}\nhost: {socket.gethostname()}\nplan: {plan}\nblock: {name}\nengine: {engine}\n")
         fh.write("git HEAD: " + sh(f"git -C {REPO} rev-parse HEAD"))
         fh.write("git status:\n" + sh(f"git -C {REPO} status --porcelain"))
         fh.write("uptime: " + sh("uptime"))
@@ -281,7 +287,7 @@ def cmd_run(a):
                 print(f"[skip] {plan}/{name} 已完成（{dn[(plan, name)]['run_id']}）", flush=True)
                 continue
             print(f"[{datetime.now():%m-%d %H:%M:%S}] start {plan}/{name}", flush=True)
-            rc, rid = run_block(plan, name, tr, args, a.workers, a.dry_run)
+            rc, rid = run_block(plan, name, tr, args, a.workers, a.dry_run, a.engine)
             print(f"[{datetime.now():%m-%d %H:%M:%S}] end   {plan}/{name} rc={rc} run={rid}", flush=True)
             if rc != 0:
                 err = open(f"{RUNS}/{rid}/stderr.log").read()[-4000:]
@@ -429,6 +435,7 @@ def main():
     s = sp.add_parser("count"); s.add_argument("--plans", nargs="+", required=True)
     s = sp.add_parser("run"); s.add_argument("--plans", nargs="+", required=True); s.add_argument("--workers", type=int, default=32)
     s.add_argument("--dry-run", action="store_true")
+    s.add_argument("--engine", choices=["py", "rust"], default="py", help="rust＝PREREG 偏離 6（CPU 約 1.25×workers）")
     s.add_argument("--only", nargs="*", default=[], help="只跑名稱符合這些 glob 的 block（例 'sa_*'）")
     s = sp.add_parser("collect"); s.add_argument("--plans", nargs="*", default=[])
     s.add_argument("--allow-xcheck", action="store_true", help="只有 acvlab 收 xcheck 的參考")

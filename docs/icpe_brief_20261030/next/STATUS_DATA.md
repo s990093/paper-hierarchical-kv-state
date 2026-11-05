@@ -2,6 +2,29 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T03:25+08:00 — tl_c2 完成；merge Rust 引擎（875fb2b）、G0（Rust）PASS；佇列工具加 `--engine rust`
+
+**做完什麼**
+- **`tl_main/tl_c2`**：run `20261105-172713-icpe-data-tl_main-tl_c2`，exit 0，6,174 個 job，sweep 32,060 s（40 worker）。
+  - 已收進 `results/icpe_next/b/tl_main/tl_c2/`：7,344 列（386f84d）。
+- **merge `origin/icpe-next-sim` @ 875fb2b**（304fd72）：照 STATUS_SIM 2026-11-06T03:15（Rust G1、自檢、14 個 block 的 xcheck 都 PASS）。
+  - merge 後 `code/p3x`、`p3_fvar.py`、`p3_platform.py` 和 0b0ef1e 逐位元相同（`git diff` 是空的）。
+- **G0（Rust 引擎）PASS**：run `20261106-031718-icpe-data-g0-rust-merged-0b0ef1e`。
+  - 設定：`--engine rust --workers 3`，新功能全關，共用 venv，nice 10。
+  - 結果：4,416 列 × 29 欄＝**128,064 格，0 個不同**（`G0_RESULT IDENTICAL`）。`py_fallback_jobs=0`，sweep 296 s。
+  - stdout 記了執行檔：`bin_sha256=001f462d…`、原始碼 `src_sha256=c867782a…`，code_sha 欄是 `8c1f52f7dd1f+rsc867782a`。
+  - Python 預設引擎這次沒有另做 G0：程式和 0b0ef1e 逐位元相同，而 icpe-sim 已在同一台、同一個共用 venv 對 0b0ef1e 跑過 Python 的 G1（4,416 × 29，0 個不同）。
+- **`next_b_queue.py run --engine {py,rust}`**（預設 py，行為不變）：
+  - rust 時 x1 sweep 加 `--engine rust`，逐 job 時間記在 `<run>/rust_timing.jsonl`。
+  - context.txt 多記一行 `engine:`。
+  - 空跑 `tl_p1 --only tl_c1_ttl --engine rust --workers 32` 檢查過，`check_p1` 通過。
+
+**現在在跑什麼**（都是 Python，merge 前開跑的 block 不受影響：worker 用 fork，程式在開跑時已載入）
+- 40 worker：`tl_main/tl_c4`，02:21 開始，03:16 時 454／6,174。
+- 4 worker：`old_main/fi6w`，03:16 時 22,693／37,044。
+
+**需要使用者決定什麼**：Rust 要不要接手已經開始的 `tl_c4`（見下一節）。
+
 ## 2026-11-06T00:45+08:00 — 偏離 6 的 P1–P3 排程已加；job 數和 icpe-ana 的推算完全相同
 
 - **`next_b_queue.py`** 新增：
