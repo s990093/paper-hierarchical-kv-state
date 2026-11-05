@@ -2273,9 +2273,14 @@ def cmd_sweep(a):
     w = None
     sha = code_sha()
     print(f"jobs={len(J)} workers={a.workers} code_sha={sha}", flush=True)
+    # ICPE next：worker 跑完 maxtasks 個 job 就換一個新的（從父行程重新 fork），不讓記憶體跨 job 一直累積
+    # （TRX40 量到：每個 job 留下一些、只升不降；STATUS_TRX 10:05）。不改任何 job 的計算：job 之間本來就不共用狀態
+    # （父行程先 prep 好紀錄，worker 只讀）；imap_unordered 的 chunksize＝1，所以一個 task＝一個 job。0＝不換（原本的行為）。
+    mt = getattr(a, "maxtasks", 4) or None
+    print(f"maxtasksperchild={mt}", flush=True)
     t0 = time.time()
     done = 0
-    with mp.get_context("fork").Pool(a.workers) as pool:
+    with mp.get_context("fork").Pool(a.workers, maxtasksperchild=mt) as pool:
         for res in pool.imap_unordered(_job, J):
             for row in res:
                 row = dict(run_id=run_id(), ts=now_ts(), **row, code_sha=sha)
@@ -2597,6 +2602,8 @@ def main():
     s.add_argument("--cpu", nargs="+", type=gib_arg, default=CPU_GIB)
     s.add_argument("--policies", nargs="+", default=[p for p in POLICIES if p != "PRED"])
     s.add_argument("--workers", type=int, default=8)
+    s.add_argument("--maxtasks", type=int, default=int(os.environ.get("X1_MAXTASKS", "4")),
+                   help="每個 worker 跑幾個 job 就換新的（重新 fork；避免記憶體累積；預設 4，可用 $X1_MAXTASKS 改）；0＝不換（原本的行為）")
     s.add_argument("--out", default="x1_sweep.csv")
     # ICPE next（預設＝原本的行為）
     s.add_argument("--slows", nargs="+", default=SLOWS, help="慢層等級；可加 nvme807（H200 本地 NVMe 實測）")
