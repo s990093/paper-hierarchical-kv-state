@@ -2,6 +2,31 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T00:45+08:00 — 偏離 6 的 P1–P3 排程已加；job 數和 icpe-ana 的推算完全相同
+
+- **`next_b_queue.py`** 新增：
+  - plan `{cw,tl,old,sa,bl}_p1`：每個主結果 block 拆成兩個。
+    - `_ttl`：8 個新 TTL 規則 × 15 個 CPU 規則（`NON_ORACLE`＋`COMPONENT_POLICIES`）。
+    - `_trunc`：6 個截尾規則 × 16 個 GPU 規則。
+  - plan `_p2`：每個主結果 block 拆成 `_nvme807`、`_load`。
+  - plan `_p3`：每個主結果 block 拆成 `_wt`、`_pfgpu`。
+  - P2／P3 的規則集合同 `sens_rep`。
+  - `count` 子指令：直接呼叫 `x1_sim.jobs_for` 數 job，不讀紀錄、不跑模擬。
+  - `check_p1`：`count` 和 `run`（plan 名稱以 `_p1` 結尾時）會先核對三件事，不符就停：
+    - 補跑的 CPU 規則正好是 `x1_sim.NON_ORACLE` ∪ `COMPONENT_POLICIES`。
+    - `RIVALS` 包含在 `NON_ORACLE` 裡。
+    - 截尾規則都在 `POLICIES` 裡。
+  - 起因：icpe-sim 11/6 提醒，④ 缺任何一個 TTL 時 `next_sim_analyze.py` 會靜默整列跳過。
+- **job 數**（run `20261106-004257-icpe-data-count-p1p3`，stdout 在 run 目錄）：
+  - 主結果每個變體 6,174，和實際 sweep 印的 `jobs=` 相同，這個數法可信。
+  - 每個變體多出的 job：P1 `_ttl` 6,480、`_trunc` 4,824；P2 `_nvme807` 2,214、`_load` 8,154；P3 `_wt` 6,174、`_pfgpu` 1,296。
+  - 40 個變體合計：P1 452,160＋P2 414,720＋P3 298,800＝**1,165,680**。
+  - **和 icpe-ana 的推算（STATUS_ANA 00:45）每一項都相同。**
+- **出表後的檢查**（P1 分析時做）：每份紀錄 × 每個元件的列數，要等於只有 3 個 TTL 時的列數。少了就停下來，不收進結果。
+- 還沒做的：
+  - 加 `--engine rust`。要等 icpe-sim 的包裝 commit 和 STATUS_SIM 的 G1／xcheck PASS。
+  - 分析時排除重複的格子：P1 和 `cw_main_ttl7` 重疊，P2／P3 和 `sens_rep` 的代表格重疊。分析 P1 時用主結果＋`_p1`，不放 `_ttl7`。
+
 ## 2026-11-06T00:15+08:00 — PREREG 偏離 6 已寫（補回砍掉的格子 P1–P4＋Rust 引擎）；使用者選「④ 也擴 7 個 TTL」
 
 **做完什麼**

@@ -57,6 +57,10 @@ TTL7_THR = 0.10
 TTL7_EXTRA = ["1", "3", "30", "100"]
 GPOL_TTL7 = [f"TTLA:{t}" for t in TTL7_EXTRA] + [f"TTLB:{t}" for t in TTL7_EXTRA]
 NON_ORACLE = ["LRU", "LRU2", "ARC", "S3FIFO", "GDSF", "PENS", "LRU+NONE", "LRU+2HW", "LRU+2HA", "LRU+RPF"]
+# PREREG 偏離 6 的 P1
+COMP5 = ["O-BEL", "O-BELS", "O-DROP", "O-NOW", "O-PF"]                                   # x1_sim.COMPONENT_POLICIES 的全部規則
+TRUNC6 = [f"{p}-H{h}" for h in (1800, 3600) for p in ("O-DROP", "O-NOW", "O-ALL")]     # 截尾版（--dead-h），只報告
+GPOL16 = GPOL + GPOL_TTL7                                                                # LRU、BEL、TTLA／TTLB × 7
 
 
 def sweep_args(cpus=CPU9, views=MAIN_VIEWS, write="wb", pf="cpu", gpol=GPOL, pols=POL17):
@@ -93,6 +97,20 @@ def blocks():
                   ("fi", f"fi_{FI_WEEKS[0]}_t128k")):
         S.append((f"{k}_t128k", nb(nm), sweep_args(CPU_REP)))
     P["sens_rep"] = S
+    # PREREG 偏離 6（P1–P3，照優先度）：每個主結果 block 補跑。P1：② 和 ④ 都用 7 個 TTL（只補 1／3／30／100，
+    # 配 NON_ORACLE＋元件規則；④ 缺任何一個 TTL，next_sim_analyze 會靜默整列跳過 → check_p1 核對）＋截尾規則（只報告）。
+    # P2／P3：規則集合同 sens_rep（17 × 8），從代表格擴到全部格子。
+    for base in ("cw_main", "tl_main", "old_main", "sa_main", "bl_main"):
+        k = base[:-5]
+        P[f"{k}_p1"] = [x for name, tr, _ in P[base] for x in (
+            (f"{name}_ttl", tr, sweep_args(gpol=GPOL_TTL7, pols=NON_ORACLE + COMP5)),
+            (f"{name}_trunc", tr, sweep_args(gpol=GPOL16, pols=TRUNC6)))]
+        P[f"{k}_p2"] = [x for name, tr, _ in P[base] for x in (
+            (f"{name}_nvme807", tr, sweep_args(views=["--slows", "nvme807", "--modes", "cake"])),
+            (f"{name}_load", tr, sweep_args(views=["--slows", "ssd", "b32", "nfs", "nvme807", "--modes", "load"])))]
+        P[f"{k}_p3"] = [x for name, tr, _ in P[base] for x in (
+            (f"{name}_wt", tr, sweep_args(write="wt")),
+            (f"{name}_pfgpu", tr, sweep_args(pf="gpu")))]
     # 跨機器對拍（新功能開啟）：acvlab 先跑並 collect（--allow-xcheck）當參考；別台跑同一個 block，用 next_b_g0.py 逐值比，相同才開跑正式的
     xa = sweep_args(["64"], ["--slows", "ssd", "--modes", "cake"], gpol=["LRU", "BEL", "TTLA:10", "TTLB:10"],
                     pols=["LRU", "GDSF", "O-BEL", "O-PF"])
@@ -149,6 +167,60 @@ def cmd_list(a):
             print(f"  {name:18s} {' '.join(tr['traces'])[:70]:70s} {st}")
 
 
+def import_xs():
+    sys.path.insert(0, os.path.join(REPO, "code", "p3x"))
+    sys.path.insert(0, os.path.join(REPO, "code"))
+    import x1_sim as XS
+    return XS
+
+
+def check_p1(XS):
+    """偏離 6 P1：④ 和 ② 必須用同一組 GPU 規則。next_sim_analyze 不加 --rival-only-gpu 時，某格的 ④ 缺任何一個 TTL，
+    那個元件就整列跳過、不報錯（icpe-sim 11/6 提醒）→ 補跑的 CPU 規則必須正好是 NON_ORACLE ∪ COMPONENT_POLICIES。"""
+    assert NON_ORACLE == XS.NON_ORACLE, (NON_ORACLE, XS.NON_ORACLE)
+    comp = [p for v in XS.COMPONENT_POLICIES.values() for p in v]
+    assert sorted(COMP5) == sorted(comp), (COMP5, comp)
+    assert set(sum(XS.RIVALS.values(), [])) <= set(NON_ORACLE)
+    for p in TRUNC6:
+        assert p in XS.POLICIES, p
+
+
+def parse_sweep(args):
+    d, k = {}, None
+    for x in args:
+        if x.startswith("--"):
+            k = x[2:]
+            d[k] = []
+        else:
+            d[k].append(x)
+    return d
+
+
+def cmd_count(a):
+    """每個 block 的 job 數（直接呼叫 x1_sim.jobs_for，和 sweep 開跑時印的 jobs= 同一個數）；不讀紀錄、不跑模擬。"""
+    XS = import_xs()
+    check_p1(XS)
+    P = blocks()
+    tot = 0
+    for plan in a.plans:
+        ptot = 0
+        for name, tr, args in P[plan]:
+            d = parse_sweep(args)
+            for nm in d["slows"]:
+                if nm not in XS.SLOWS and nm not in XS.EXTRA_SLOWS:
+                    XS.EXTRA_SLOWS.append(nm)
+            gs = XS.gpu_specs([float(x) for x in d["gpu-gib"]], d["gpu-write"], d["gpu-policies"], d["pf-target"])
+            J = XS.jobs_for(tr["traces"], tr["rules"], [float(x) for x in d["cpu"]], d["policies"], d["modes"],
+                            slows=d["slows"], gspecs=gs)
+            nv = len(tr["traces"]) * len(tr["rules"])
+            print(f"{plan:10s} {name:28s} variants={nv} jobs={len(J):7d} per_variant={len(J) / nv:9.1f}")
+            ptot += len(J)
+        print(f"{plan:10s} TOTAL jobs={ptot}")
+        tot += ptot
+    print(f"ALL TOTAL jobs={tot}")
+    return 0
+
+
 def run_block(plan, name, tr, args, workers, dry):
     rid = datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{TAG}-{plan}-{name}"
     run = f"{RUNS}/{rid}"
@@ -199,6 +271,8 @@ def sha256(p):
 def cmd_run(a):
     P = blocks()
     dn = done_set()
+    if any(p.endswith("_p1") for p in a.plans):
+        check_p1(import_xs())
     for plan in a.plans:
         for name, tr, args in P[plan]:
             if a.only and not any(fnmatch.fnmatch(name, pat) for pat in a.only):
@@ -352,6 +426,7 @@ def main():
     s = sp.add_parser("ttl7cells"); s.add_argument("--plan", required=True); s.add_argument("--headroom", required=True)
     s.add_argument("--thr", type=float, default=TTL7_THR)
     s = sp.add_parser("list"); s.add_argument("--plans", nargs="*", default=[])
+    s = sp.add_parser("count"); s.add_argument("--plans", nargs="+", required=True)
     s = sp.add_parser("run"); s.add_argument("--plans", nargs="+", required=True); s.add_argument("--workers", type=int, default=32)
     s.add_argument("--dry-run", action="store_true")
     s.add_argument("--only", nargs="*", default=[], help="只跑名稱符合這些 glob 的 block（例 'sa_*'）")
@@ -359,7 +434,7 @@ def main():
     s.add_argument("--allow-xcheck", action="store_true", help="只有 acvlab 收 xcheck 的參考")
     s = sp.add_parser("digest"); s.add_argument("names", nargs="+", help="NB_DIR 裡的紀錄名（不含 .npz）")
     a = ap.parse_args()
-    sys.exit(dict(list=cmd_list, run=cmd_run, collect=cmd_collect, traces=cmd_traces, ttl7cells=cmd_ttl7cells,
+    sys.exit(dict(list=cmd_list, count=cmd_count, run=cmd_run, collect=cmd_collect, traces=cmd_traces, ttl7cells=cmd_ttl7cells,
                   digest=cmd_digest)[a.cmd](a))
 
 
