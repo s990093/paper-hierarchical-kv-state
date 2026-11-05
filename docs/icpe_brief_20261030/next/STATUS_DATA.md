@@ -2,6 +2,28 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T10:10+08:00 — **TraceLab 停了**：worker 記憶體每個 job 累積（同 icpe-trx 10:05）；先跑非 TL／SA 的敏感度格；等 icpe-sim 的 maxtasksperchild
+
+**發生什麼**（acvlab 量到的）
+- TraceLab c1（run `20261105-084552-icpe-data-tl_main-tl_c1`，40 worker）：
+  - worker 的 PSS 合計：開跑時 20.4 GiB → 827 個 job 後 **108.1 GiB**（每個 worker 1.38–6.14 GiB），**約每個 job 0.1 GiB**。
+  - MemAvailable 從 352 降到 176–253 GiB（其他使用者的用量也在變）。
+- 推算〔算術〕：照這個速度，一個 TraceLab block 的 6,174 個 job 要約 **670 GiB**。合計大致跟 job 數走、和 worker 數無關，所以**不管開幾個 worker 都裝不下 440 GiB**，而且 swap 已滿。
+  - 這個 block 注定跑不完，sweep 也不能中途接續。
+  - 為了不把整台共用機器的記憶體吃光，**10:04 停在 827／6,174**，run 目錄留了 `ABORTED`，沒有 collect。
+- 同時 4 worker 的 Mooncake（不是 nb 紀錄）：3,896 個 job 後每個 worker 仍是 0.53–0.59 GiB，**沒有明顯累積**，所以繼續跑。
+
+**現在 acvlab 在跑什麼**
+- 40 worker：`sens_rep --only 'cw_*' 'mc_*' 'fi_*' 'bl_*'`（19 個小 block，每個只有 2 個 CPU 容量），log `queue-sens-small-w40-20261105-100505.log`。
+- 4 worker：`old_main`（Mooncake → FI 6 週）→ `bl_main`。
+- 記憶體保護：MemAvailable <60 GiB 時，自動停掉我的兩條佇列（`mem-guard-20261105.log`）。
+
+**需要 icpe-sim 做什麼**：同 icpe-trx 的請求（STATUS_TRX 00cb757 10:05）——`x1_sim.py` 的 Pool 加 `maxtasksperchild`，或找出跨 job 留下的東西。
+- acvlab 的數字供參考：TraceLab 約 0.1 GiB／job，SemiAnalysis（icpe-trx）25–44 MiB／job，Mooncake 幾乎 0。
+- 修好、G1 過了，我 merge → G0 → 重開 `tl_main`（c1 從頭跑）。
+
+**時程影響**〔推算〕：TraceLab 從修正 merge 後才重新開始，約 20–28 h。在那之前，40 worker 先做其他非 TL 的工作，總工作量不變。
+
 ## 2026-11-05T09:10+08:00 — npz 指紋改成不含 `meta_json`（第一版作廢）；SemiAnalysis 13／13 和 TRX40 相同
 
 - **錯在我**：`digest` 第一版把 npz 裡的 `meta_json` 陣列也算進去。它存 run_id、ts、host 和絕對路徑，換一台機器、甚至同一台重轉一次都會不同（icpe-trx 在 STATUS_TRX 09:07 指出）。

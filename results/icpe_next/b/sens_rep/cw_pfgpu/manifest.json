@@ -1,0 +1,13 @@
+{
+ "plan": "sens_rep",
+ "block": "cw_pfgpu",
+ "run_id": "20261105-101219-icpe-data-sens_rep-cw_pfgpu",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261105-101219-icpe-data-sens_rep-cw_pfgpu",
+ "rows": 288,
+ "elapsed_s": 120.9,
+ "finished": "2026-11-05T10:14:21+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261105-101219-icpe-data-sens_rep-cw_pfgpu\nexport RUN_DIR=/ssd6/hungwei/icpe-next/runs/20261105-101219-icpe-data-sens_rep-cw_pfgpu/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261105-101219-icpe-data-sens_rep-cw_pfgpu/out x1 sweep --traces nb:cachewise_N16_s1 --rules nb --cpu 111.0625 128 --policies LRU LRU2 ARC S3FIFO GDSF PENS FREQ2Q LRU+NONE LRU+2HW LRU+2HA LRU+RPF O-BEL O-BELS O-DROP O-NOW O-PF O-ALL --slows ssd b32 nfs --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU BEL TTLA:0.3 TTLA:10 TTLA:300 TTLB:0.3 TTLB:10 TTLB:300 --pf-target gpu --workers 40\n",
+ "context": "date: 2026-11-05T10:12:19.863196+08:00\nhost: acvlab\nplan: sens_rep\nblock: cw_pfgpu\ngit HEAD: cf079a3126816cc69a2fdcdce82faef2824b50be\ngit status:\nuptime:  10:12:19 up 19 days, 22:06, 41 users,  load average: 89.01, 97.79, 91.01\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440          87         146           0         206         346\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:cachewise_N16_s1: sha256 ec796dc48ed20b52e1f76b61cb75dc146b8febd69d1a6f45ef090bbb8039d6cd  /ssd6/hungwei/icpe-next/datasets/x1_nb/cachewise_N16_s1.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}

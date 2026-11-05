@@ -137,3 +137,30 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
 - **改了什麼**：新選項 `--rival-only-gpu <GPU 規則…>`：這些 GPU 規則只放進 ②，④ 的 GPU 規則集合拿掉它們（＝補跑前的那一組）。影響 O-ORD／O-DROP／O-NOW／O-PF 與 O-SLOW 的 ④；O-GPU（④ 只用 BEL）、O-ALL(report)（④ 是固定組合）本來就不受影響。violations 多一欄 `rival_gpu_rival_only`（那個 ② 組合的 GPU 規則是不是只在 ② 的）；輸出的 meta 多一欄 `rival_only_gpu`。**不給選項時和之前逐格相同**（這兩欄都不出現）。
 - **防呆**：規則名必須在 sweep 裡出現過（打錯字就停）；不能含 BEL／none；開選項時自動再算一次「拿掉這些規則的列」，(格, 元件) 集合必須相同、每一列的上限都不能變大，不過就停。
 - **有利還是不利**：對預測**不利**（② 只多不少、④ 不變 → 上限只會變小或不變）。這正是 PREREG 偏離 4「② 只會隨 TTL 值變多而變快」的設定；icpe-data 已請 h200 在 PREREG 補一句「補跑 ② 時，④ 的 GPU 規則集合維持原本 3 個 TTL」。
+
+### 15. x1 sweep 的 worker 定期換新：`--maxtasks`（預設 4；`code/p3x/x1_sim.py`，commit 54fa2d8）
+
+- **為什麼**：icpe-trx（STATUS_TRX 10:05，TRX40 SemiAnalysis 25–44 MiB／job）與 icpe-data（STATUS_DATA 10:10，acvlab TraceLab 約 0.1 GiB／job，c1 停在 827／6,174）都量到：worker 的記憶體每跑一個 job 就多一些、不會降。使用者選「請 icpe-sim 加 maxtasksperchild」（icpe-trx 轉達）。
+- **原因**（診斷 run `20261105-100705-icpe-sim-memdiag-sa`，SA N16 s1、CPU 128、ssd、cake、GPU 111.0625 GiB wb LRU／BEL × 6 個 CPU 規則＝20 個 job；只量記憶體）：
+  1. **開 GPU 層時 Engine 有循環參照**：`Engine.__init__` 裡 `self._fix = self._fix_g`（綁定方法存回自己身上；第一批 GPU 層是我加的）。`cycle_check.py`（Mooncake conversation R1）：GPU 關閉時，丟掉名字後 Engine 立刻被釋放；GPU 開（LRU、BEL、TTLA:10）時 Engine 還活著，要 `gc.collect()`（收 44 個物件）才釋放。雜訊（`self.next_req = self._next_req_nz`）、慢層上限的包裝層也是同一種寫法。
+  2. **fork 出來的 worker 很少做完整 gc**：父行程先載入的紀錄有大量會被 gc 追蹤的物件，算進「長期存活」的總數，所以 gen2 的觸發條件很難達到。20 個 job 裡三種跑法的 gen2 次數都是 0。
+  3. 釋放了的記憶體也不一定還給系統（碎片）。pymalloc 區塊數不是單調上升（plain：有些 job 降了最多約 60 萬塊；有預取的 O-PF／O-ALL／LRU+RPF 那幾個 job 每個多約 28–53 萬塊），但 Private_Dirty 從不下降。
+  4. 結果（`results/icpe_next/sim/memdiag_sa.csv`；`verify_csv.py` 對過 jsonl，逐值相同）：
+     - plain（原本、1 worker）：Private_Dirty 94 → 492 MiB；
+     - freeze（fork 前 `gc.freeze()`）：94 → 478 MiB，20 個 job 內沒有用；
+     - mt4（`maxtasksperchild=4`）：最大 226 MiB，每個新 worker 從 94–121 MiB 重新開始。
+  5. GPU 關閉的 Mooncake（G0／G1）幾乎不漲，和第 1 點一致。
+- **改了什麼**：`x1_sim.py sweep` 加 `--maxtasks k`（預設 4；環境變數 `$X1_MAXTASKS` 可改預設；`0`＝不換，就是原本的呼叫 `Pool(maxtasksperchild=None)`）。`mp.get_context("fork").Pool(workers, maxtasksperchild=k)`：一個 worker 跑完 k 個 job 就結束，Pool 再從父行程 fork 一個新的。`imap_unordered` 的 chunksize＝1，所以一個 task 就是一個 job。stdout 第二行印 `maxtasksperchild=<k>`。
+- **為什麼結果不會變**：
+  - job 之間本來就不共用狀態：父行程先 `prep` 好紀錄，worker 只讀。
+  - 原本 `imap_unordered` 把哪個 job 分給哪個 worker 就不固定，H200 和 acvlab 照樣逐值相同。所以每個 job 的結果本來就和「同一個 worker 之前跑過什麼」無關。
+  - 換 worker 只改變「哪個行程跑哪個 job」。
+- **驗證**：G1 run `20261105-100635-icpe-sim-g1-54fa2d8`。這次用的是**預設 k＝4**（stdout 印 `maxtasksperchild=4`），所以檢查的是新預設本身。結果 4,416 列 × 29 欄、不同的格子 0；自檢 997／997。
+  - icpe-trx 自己在 54fa2d8 上也做了：
+    - G0：128,064 格 IDENTICAL；
+    - xc_sa：1,280 格 IDENTICAL；
+    - 40 worker 試跑 SA：PSS 持平 7.3–9.4 GiB（1,329 個 job）。
+    - 出處：STATUS_TRX 9410199、d318434，是他們的數字。
+- **代價**：每 k 個 job 多一次 fork（加上新 worker 重新寫到父行程頁面時的 copy-on-write）。這個時間 NOT_MEASURED。
+- **沒做的**：直接打斷循環參照，例如 `_job` 最後清掉 Engine 的屬性，或父行程 `gc.freeze()` 加上每個 job 後 `gc.collect()`。這要另一次 G1，而且 k＝4 已經把累積限制住了，所以先不做。之後若要做，會另寫一項。
+- **有利還是不利**：無（結果逐位元相同）。
