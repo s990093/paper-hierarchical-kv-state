@@ -327,13 +327,17 @@ def cmd_ttl7cells(a):
 
 def cmd_digest(a):
     """紀錄 npz 的內容指紋（savez_compressed 的 zip 有時間戳，檔案 sha256 每次轉換都不同）：
-    依鍵名排序，sha256(鍵名、dtype、shape、位元組)。別台重新下載＋轉換後，指紋要和 acvlab 的相同才能用。"""
+    依鍵名排序，sha256(鍵名、dtype、shape、位元組)。別台重新下載＋轉換後，指紋要和 acvlab 的相同才能用。
+    不含 meta_json：它存 run_id／ts／host／絕對路徑，每台每次都不同（icpe-trx 11/5 09:07 指出；第一版含它，作廢）。
+    meta_json 裡的彙總欄位另由 trace_summary.csv 比。"""
     import numpy as np
     for nm in a.names:
         p = f"{NB_DIR}/{nm}.npz"
         h = hashlib.sha256()
         with np.load(p, allow_pickle=False) as z:
             for k in sorted(z.files):
+                if k == "meta_json":
+                    continue
                 x = np.ascontiguousarray(z[k])
                 h.update(f"{k}|{x.dtype.str}|{x.shape}|".encode())
                 h.update(x.tobytes())
