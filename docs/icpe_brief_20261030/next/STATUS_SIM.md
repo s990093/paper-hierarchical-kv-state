@@ -290,3 +290,73 @@
 - 這要另一次 G1，k＝4 已經夠用，所以先不做。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T03:15+08:00 — **Rust 引擎 G1 PASS：commit `0b0ef1e`**（`x1 sweep --engine rust`；預設 py 不變）
+
+回應使用者 11/5 的決定「並行驗證、接手未開始的」（icpe-ana 轉達）。icpe-ana 的請求是：審查 v3 → 包裝成和 x1 sweep 欄位相同的 `x1_sweep.csv` → G1、xcheck，加上 TraceLab 一個 block 的時間與記憶體。細節見 SIM_CHANGES 第 16 項。
+
+**怎麼用**
+- `x1 sweep … --engine rust`（或 `export X1_ENGINE=rust`）。
+  - 其他參數、輸出的 CSV 欄位、npz（`$RUN_DIR`）都和 Python 引擎相同。
+  - code_sha 會多 `+rs<8 碼>`；比對時本來就不看 code_sha 這欄。
+- **第一次用會自己編譯**（acvlab 上一次約 10 s）；同一份原始碼編好就共用。
+  - 工具鏈預設是 acvlab 上 icpe-ana 裝的。
+  - 執行檔放在 `$X1_RUST_WORK/build-<原始碼 sha>/fast/x1fast3`，預設 `X1_RUST_WORK=/ssd6/hungwei/icpe-next/x1fast-work`。
+  - 也可以用 `X1_RUST_BIN` 指定已編好的檔案。
+- **CPU**：`--workers w` 時，每份紀錄一個 Rust 行程，裡面有 w 個執行緒；另有 `max(1, w//4)` 個 Python 摘要行程，加上父行程。合計約 1.25 w 個核心〔算術〕。
+- **不支援的功能會自動用 Python Engine**，在 Rust 的 job 跑完之後才跑。
+  - 包括：W4 雜訊、慢層容量上限、STAIR。
+  - stdout 會印 `py_fallback_jobs=<數量> {原因: 數量}`。
+  - W4 雜訊的 B1：icpe-ana 的 v4（279eb7e）我已審查完。驗證排在 TraceLab 之後（CPU 額度），過了另寫一節。
+- **選填**：`X1_RUST_TIMING_LOG=<檔案>`，每個 job 一行 JSON（Rust 引擎時間、Rust 端總時間、從派出到讀回）。
+
+**驗證**（都是 detached checkout 0b0ef1e、共用 venv、nice 10）
+- run `20261106-002959-icpe-sim-g1-0b0ef1e`：
+  - **G1**：
+    - Python 預設引擎：4,416 列 × 29 欄，不同的格子 0；
+    - `--engine rust`：4,416 列 × 29 欄，不同的格子 0。
+  - **自檢**：997／997。
+  - **xcheck**：照 icpe-data 的 Python run 重跑（參數取自 origin/icpe-next-data @ 1546086 的 next_b_queue.py），逐格比 14 個 block。全部「不同的格子 0」，退回 Python 0 個。
+    - 包括 xc_sa、xc_bl；
+    - 以及 bl／mc／fi × nvme807、load、wt、pfgpu。
+- **TraceLab c1 一整個 block**：run `20261106-003131-icpe-sim-rust-tl_c1`。
+  - 設定：`--engine rust --workers 7`，參數取自 icpe-data 的 tl_main/tl_c1，也存逐請求 npz。跑完和 icpe-data 的 Python 輸出（run `20261105-115504-icpe-data-tl_main-tl_c1`，7,344 列）逐格比。
+  - **寫這節時還在跑**：03:02 開始，共 6,174 個 job。跑完會補一節，寫上：
+    - 逐格比的結果；
+    - 牆鐘時間、CPU 時間；
+    - PSS 峰值、MemAvailable 最低值。
+  - 到 03:14 為止量到的（`timing.jsonl`、`mem.jsonl`，在 run 目錄裡）：
+    - 父行程載入與準備 TraceLab 約 10 分鐘；Rust 讀紀錄 8.0 s，只讀一次。
+    - 前 164 個 job：Rust 引擎時間中位數 5.39 s（最短 3.15 s、最長 13.4 s）。從派出到讀回中位數 5.5 s，所以 1 個摘要行程不是瓶頸。
+    - 行程樹 PSS：準備階段最高 13.1 GiB；開跑後約 7.8 GiB，其中 x1fast 3.4 GiB。
+- 摘要檔，都有 run_id、ts、host：
+  - `results/icpe_next/sim/g1_compare.csv`：+2 列；
+  - `next_sim_test.csv`：+997 列；
+  - `rust_cmp.csv`（新）：14 個 block 的逐格比對，TraceLab 跑完再加一列；
+  - `rust_timing.csv`（新）：每個 block 的時間，以及同一 block 的 Python 參考 run 的時間。
+
+**時間**（都是共用機器、load 約 70；不同時段的比較只供參考）
+
+| block | 列數 | Rust（執行緒） | Python（workers） | 備註 |
+|:--|--:|:--|:--|:--|
+| G1（H200 V1） | 4,416 | 283.5 s（3） | 6,453 s（4） | 同時段 |
+| mc_load | 4,352 | 208 s（3） | 507 s（40） | Python 是 icpe-data 11/5 的 run |
+| bl_load | 2,176 | 103 s（3） | 419 s（40） | 同上 |
+| xc_sa | 32 | 10.4 s（3） | 171 s（8） | 同上 |
+| TraceLab c1 | 7,344 | 跑完補 | 19,670 s（40） | icpe-data 11/5 的 run（40 workers、maxtasks 4）|
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這個 commit（程式以 0b0ef1e 為準），然後**重做 G0**：code/p3x 有改。
+- 之後的 sweep 可以加 `--engine rust`。
+  - CPU 約 1.25×workers：例如 `--workers 32` 約 40 核。
+  - 正在跑的 Python 佇列不用停。
+- **分析程式的提醒**（P1 重跑時）：`next_sim_analyze.analyze` 在某個元件缺任何一個 ④ 或 ② 組合時，**會整個元件默默跳過**（第 97 行的 `continue`）。
+  - 7 個 TTL 都要進 ④ 時，請先核對每個元件的列數，再看結果。
+  - icpe-data 已說會加斷言。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0 與 xc_sa。
+- 要在 TRX40 上用 Rust，得**在 TRX40 自己編譯**（`X1_CARGO`、`CARGO_HOME`、`RUSTUP_HOME` 指向那台的工具鏈），然後用 `--engine rust` 再跑一次 xc_sa，和 Python 版逐格比對。
+- 執行檔只用 `--profile fast`、沒加 target-cpu，所以不用 FMA，結果應和 CPU 型號無關。但這是〔推論〕，TRX40 上 NOT_MEASURED。
+
+**需要使用者決定什麼**：無。

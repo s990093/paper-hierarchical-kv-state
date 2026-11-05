@@ -164,3 +164,66 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
 - **代價**：每 k 個 job 多一次 fork（加上新 worker 重新寫到父行程頁面時的 copy-on-write）。這個時間 NOT_MEASURED。
 - **沒做的**：直接打斷循環參照，例如 `_job` 最後清掉 Engine 的屬性，或父行程 `gc.freeze()` 加上每個 job 後 `gc.collect()`。這要另一次 G1，而且 k＝4 已經把累積限制住了，所以先不做。之後若要做，會另寫一項。
 - **有利還是不利**：無（結果逐位元相同）。
+
+---
+
+## 第三批：Rust 引擎（2026-11-06）
+
+### 16. Rust 引擎：`x1 sweep --engine rust`（預設 py＝原本；`code/p3x/x1fast/`、`code/p3x/x1_rust.py`，commit 0b0ef1e）
+
+- **為什麼**：
+  - 使用者 11/5 的決定「並行驗證、接手未開始的」，由 icpe-ana 轉達。
+  - icpe-ana 把 `x1_sim.Engine` 逐行移植成 Rust：origin/icpe-next-ana @ aee1527 的 `code/icpe/ana_x1fast/v3_prefix_fork`。
+  - 請 icpe-sim 做三件事：
+    1. 審查；
+    2. 包裝成和 x1 sweep 欄位相同的 `x1_sweep.csv`；
+    3. 跑 G1、xcheck，並量 TraceLab 一個 block 的時間與記憶體。
+- **審查**（self-review，不是另一個模型審的）：
+  - 引擎部分（原檔第 1–1218 行）**一行沒改**，用 diff 確認過。我的版本只在第 9 行後多 5 行說明。
+  - **同分時取哪一個**：Rust 的 `max_by_key` 取最後一個最大值，Python 的 `max` 取第一個。不會造成差異，因為所有比較鍵都含有不會重複的值（`-last[x]` 或 `x` 本身），不可能同分。
+  - **nx_cache**（每個 session「下次回來」的快取）：只在兩個條件都成立時沿用。
+    1. 群組的 epoch 沒變。群組＝共用 block 的 session，用 union-find 合併；群組內 ref 有變就 `bump`。
+    2. `cur` 還沒走到快取的值（或快取值是 INF）。
+    - `next_access(b, cur)`＝b 在 cur 之後第一次被讀。在 cur 走到它之前，這個值不會變，所以這樣沿用和每次重算相同。
+  - **Rust 版不支援的功能**：W4 雜訊、慢層容量上限、STAIR。這些 job 由 `unsupported()` 交給 Python Engine，在 Rust 的 job 之後跑。
+- **改了什麼**：
+  - `code/p3x/x1fast/src/main.rs`：只改 main() 的輸入輸出。
+    - 原本 main() 裡的 parse／build／finish 三個閉包搬成函式，內容照抄。
+    - 加**常駐模式**（`X1FAST_SERVE=1`）：
+      - 紀錄只讀一次；
+      - stdin 每行一個 job 目錄，`X1FAST_THREADS` 個執行緒一起跑；
+      - 每做完一個印一行 `done <目錄> <run_s> <wall_s>`。
+    - jobs.txt 一行不是 13 欄就停，不默默忽略多出來的欄位。
+  - `code/p3x/x1_rust.py`（新）：
+    - `prepare_trace`：紀錄 → CSR 二進位檔，用內容 sha256 定址。
+      - 用 A 驗 B：acc 總長＝full 總長；每個 block 的請求序號嚴格遞增；block id < 2^32。
+    - `write_job`：f／Fc 直接取自 Python 的 View。
+    - `read_outputs`：逐請求陣列、I/O 線狀態、預取位元組寫回 View。
+    - `Server`：每份紀錄一個常駐的 x1fast。
+    - 編譯：`cargo build --profile fast --offline --locked`，不加 target-cpu（不用 FMA，結果和 CPU 型號無關）。
+      - 執行檔放在 `$X1_RUST_WORK/build-<原始碼 sha>/`。
+  - `code/p3x/x1_sim.py`：
+    - 原本 `_job` 的「摘要、存 npz、組一列」搬成 `_job_rows`，內容照抄；Python 與 Rust 共用這一段。所以 CSV 欄位、格式、npz 都相同。
+    - `--engine {py,rust}`，預設 `$X1_ENGINE` 或 py。
+    - rust 時：
+      - code_sha 後面加 `+rs<原始碼 sha 前 8 碼>`；
+      - stdout 印執行檔 sha256 與退回 Python 的 job 數；
+      - 可選 `$X1_RUST_TIMING_LOG`（每個 job 一行 JSON）。
+  - `code/icpe/next_sim_cmp.py`（新）：通用的逐格比對。
+    - 比對時不看 run_id、ts、elapsed_s、code_sha、host 這幾欄。
+    - 鍵自動含 GPU、雜訊、慢層上限的欄位。
+- **CPU 用量**：
+  - `--workers w` 時：每份紀錄一個 Rust 行程，裡面有 w 個執行緒；另有 `max(1, w//4)` 個 Python 摘要行程，加上父行程。
+  - 合計約 1.25 w 個核心〔算術〕。
+- **驗證**：run `20261106-002959-icpe-sim-g1-0b0ef1e`，detached checkout 0b0ef1e、共用 venv、nice 10。
+  - **G1**：H200 V1 的 sweep 跑兩次，都是 4,416 列 × 29 欄、不同的格子 0。
+    - Python 預設引擎（4 workers）：6,453 s。
+    - `--engine rust`（3 執行緒）：283.5 s。
+    - 兩條同時段跑，load 約 70，時間只供參考。
+  - **自檢**：997／997。
+  - **xcheck**：icpe-data 的 Python 輸出（origin/icpe-next-data @ 1546086 的 next_b_queue.py 參數）用 `--engine rust`（3 執行緒）重跑，逐格比。14 個 block 全部「不同的格子 0」，退回 Python 的 job 0：
+    - xc_sa 32 列、xc_bl 32 列；
+    - bl／mc／fi × nvme807、load、wt、pfgpu：544／2,176／1,632／288、1,088／4,352／3,264／576、544／2,176／1,632／288 列。
+  - **TraceLab c1 一整個 block**：見 STATUS_SIM 的「Rust 引擎」那一節。
+    - run `20261106-003131-icpe-sim-rust-tl_c1`，7 執行緒，對 icpe-data 的 tl_main/tl_c1 Python 輸出（7,344 列）。寫這項時還在跑，結果補在 STATUS_SIM。
+- **有利還是不利**：無（逐格相同；Python 引擎只把摘要那一段搬成函式，計算沒有改，G1 用預設 py 驗過）。
