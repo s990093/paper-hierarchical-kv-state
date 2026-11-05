@@ -60,3 +60,12 @@ for d in sorted(glob.glob(f"{RUNS}/*-icpe-ana-approx-*")):
     if os.path.exists(p):
         rows += list(csv.DictReader(open(p)))
 write("approx_eval_sa.csv", rows)
+# 7. 瓶頸分析（修改前／修改後的分段比例）
+rows = []
+for d in sorted(glob.glob(f"{RUNS}/*-icpe-ana-bottleneck-sa")):
+    p = f"{d}/bottleneck.jsonl"
+    if os.path.exists(p):
+        for l in open(p):
+            r = json.loads(l); sh = r.pop("share")
+            r.update({f"share_{k}": v for k, v in sh.items()}); rows.append(r)
+write("bottleneck_sa.csv", rows)

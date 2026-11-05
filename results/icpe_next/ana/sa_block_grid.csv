@@ -1,3 +1,4 @@
 label,bin,fork,threads,n_jobs,rows_checked,rows_equal_formal,wall_s,cpu_s,fork_groups,fork_rstar_frac_median,stderr_tail,ts,host,run_id
 merge,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-fast/fast/x1fast,False,8,6174,7344,7344,688.4,5259.4,0,,,2026-11-05T23:31:40+0800,acvlab,20261105-231946-icpe-ana-grid-sa_N16_s1
 merge_cache,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt2-fast/fast/x1fast2,False,8,6174,7344,7344,686.2,5234.9,0,,"session groups: 550 groups for 2090 sessions, largest 153",2026-11-05T23:43:07+0800,acvlab,20261105-231946-icpe-ana-grid-sa_N16_s1
+merge_cache_fork,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt3-fast/fast/x1fast3,True,8,6174,7344,7344,746.3,5279.2,,0.0012,"session groups: 550 groups for 2090 sessions, largest 153",2026-11-05T23:55:33+0800,acvlab,20261105-231946-icpe-ana-grid-sa_N16_s1

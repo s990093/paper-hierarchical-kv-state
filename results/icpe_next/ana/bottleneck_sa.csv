@@ -1,0 +1,25 @@
+impl,policy,gpu_policy,total_s,trace,cpu_GiB,view,ts,host,run_id,share_TTL 到期,share_預取（含騰空間）,share_算版面,share_還原,share_回合結束（refcount）,share_GPU 擠出（含挑誰）,share_CPU 擠出（含挑誰）,share_其他
+python,LRU,LRU,38.211,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0,0.0,0.2075,0.1047,0.3452,0.151,0.1138,0.0779
+python,LRU,TTLA:10,81.033,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0033,0.0,0.1551,0.1177,0.3625,0.1644,0.1074,0.0894
+python,LRU,TTLB:10,36.672,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0,0.0,0.2055,0.114,0.3417,0.1447,0.1177,0.0764
+python,O-BEL,LRU,38.241,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0,0.0,0.2125,0.1056,0.3436,0.1438,0.1126,0.082
+python,O-BEL,BEL,27.975,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0,0.0,0.2417,0.0951,0.3247,0.1352,0.1234,0.08
+python,GDSF,LRU,35.479,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0,0.0,0.2067,0.1076,0.3396,0.1455,0.1199,0.0807
+python,O-PF,LRU,62.089,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0,0.2892,0.1347,0.0739,0.2504,0.0921,0.0892,0.0705
+python,LRU+RPF,TTLA:10,129.351,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0019,0.3471,0.0867,0.0751,0.2264,0.0933,0.0764,0.093
+rust_v1,LRU,LRU,0.5185,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0045,0.0044,0.2038,0.1484,0.3116,0.114,0.184,0.0293
+rust_v1,LRU,TTLA:10,0.875,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.2187,0.0025,0.1661,0.1861,0.3326,0.0301,0.044,0.0199
+rust_v1,LRU,TTLB:10,0.4047,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0053,0.0052,0.2118,0.1719,0.299,0.1079,0.1641,0.0348
+rust_v1,O-BEL,LRU,0.4133,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0053,0.0051,0.2056,0.1715,0.2968,0.1042,0.1782,0.0334
+rust_v1,O-BEL,BEL,0.5532,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0048,0.0048,0.2978,0.1011,0.2636,0.1315,0.1624,0.0339
+rust_v1,GDSF,LRU,0.6512,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0041,0.0041,0.231,0.1216,0.3051,0.1132,0.1883,0.0326
+rust_v1,O-PF,LRU,1.0245,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0023,0.3355,0.133,0.0906,0.2061,0.0594,0.1536,0.0195
+rust_v1,LRU+RPF,TTLA:10,1.8099,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.2094,0.2863,0.106,0.1142,0.2234,0.0165,0.0327,0.0115
+rust_new,LRU,LRU,0.5317,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.004,0.004,0.19,0.2362,0.2861,0.0947,0.1562,0.0288
+rust_new,LRU,TTLA:10,1.2655,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.2168,0.0022,0.1673,0.1672,0.3576,0.0252,0.0425,0.0212
+rust_new,LRU,TTLB:10,0.6457,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0044,0.0044,0.2213,0.137,0.3167,0.0968,0.1814,0.0381
+rust_new,O-BEL,LRU,0.6824,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0036,0.0036,0.2728,0.1278,0.2844,0.1119,0.1637,0.0321
+rust_new,O-BEL,BEL,0.3008,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.0066,0.0068,0.2365,0.164,0.2684,0.1057,0.1523,0.0598
+rust_new,GDSF,LRU,0.6488,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.004,0.0041,0.2202,0.1349,0.318,0.0969,0.1874,0.0345
+rust_new,O-PF,LRU,1.2906,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.002,0.3398,0.1567,0.086,0.2076,0.0492,0.1378,0.0209
+rust_new,LRU+RPF,TTLA:10,2.2398,nb:semianalysis_N16_s1,64.0,ssd/idle/cake,2026-11-05T23:58:20+0800,acvlab,20261105-234940-icpe-ana-bottleneck-sa,0.1914,0.2857,0.1152,0.1039,0.2402,0.0154,0.0369,0.0112
