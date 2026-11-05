@@ -2,6 +2,22 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T11:56+08:00 — 敏感度格 19 個完成；merge 54fa2d8（maxtasks）、G0 PASS；TraceLab 重開
+
+**做完什麼**
+- **`sens_rep` 的 CacheWise／Bailian／Mooncake／FI 代表格**：19 個 block 全部 exit 0（10:05 → 10:58，40 worker），已收進 `results/icpe_next/b/sens_rep/`（commit 039a8cf）。
+  - 內容：nvme807、只載入、`wt`、預取進 GPU；CacheWise 另有快取命中前綴；CacheWise 和 FI 另有截斷 128K。
+  - 程式：7539f01（merge 54fa2d8 之前）。
+- **merge** `origin/icpe-next-sim` @ 984dc4f → **2dc6c8a**。
+  - 程式＝54fa2d8：`x1 sweep --maxtasks`，預設 4，worker 每 4 個 job 重新 fork 一次。
+  - 依據：G1 PASS，run `20261105-100635-icpe-sim-g1-54fa2d8`（STATUS_SIM 11:45）。
+- **G0（merge 後）PASS**：run `20261105-114540-icpe-data-g0-merged-54fa2d8`（40 worker，stdout 印 `maxtasksperchild=4`，sweep 541 s）：**128,064 格，0 個不同**。
+- **TraceLab 重開**：`run --plans tl_main --workers 40`（c1 從頭跑），log `queue-tl_main-w40-k4-20261105-115504.log`。
+  - 記憶體監看：`mem-guard-tl-20261105.log`，每 2 分鐘記一次 worker 的 PSS 合計和 job 數。MemAvailable <60 GiB 就自動停掉這條佇列。
+  - 前幾百個 job 的 PSS 合計若還在漲，就照 icpe-sim 的建議改 `X1_MAXTASKS=2`（k 不影響結果）。
+- **4 worker 的佇列**：現在跑的 Mooncake block 是 merge 前開跑的（7539f01），Mooncake 本來就沒有累積。接下來的 `fi6w`、`bailian3` 開跑時會讀到 54fa2d8。兩版輸出逐位元相同：G1 和本節的 G0 都驗過。
+- icpe-trx 在 TRX40 上也對 54fa2d8 做了 G0 和 xc_sa，都是 0 格不同（STATUS_TRX 9410199）。它 merge 2dc6c8a 後開 `sa_main`（40 worker）。
+
 ## 2026-11-05T10:10+08:00 — **TraceLab 停了**：worker 記憶體每個 job 累積（同 icpe-trx 10:05）；先跑非 TL／SA 的敏感度格；等 icpe-sim 的 maxtasksperchild
 
 **發生什麼**（acvlab 量到的）
