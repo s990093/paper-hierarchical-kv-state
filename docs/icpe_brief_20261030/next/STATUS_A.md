@@ -116,3 +116,9 @@
 **W6 排程**：DL_Lab5 在 2026-11-05 08:44–08:48 送了 3 個新 job（24507、24508、24509），原本 W6 沒有排在它們後面。W6 開跑時若節點上有我們自己的 job，會等 15 分鐘後 exit 2。使用者選「W6c 加排在後面」→ `scontrol update JobId=24443 Dependency=afterany:24271:24507:24508:24509`（2026-11-05T00:55:07Z）。24444（W6a）原本就掛在 24443 後面，不動。DL_Lab5 的 job 不動。
 
 **需要使用者決定什麼**：PREREG 釐清怎麼登記（已在 `h200` 問）。
+
+## 2026-11-05 09:05（台灣）— PREREG 釐清交給 `icpe-data` 寫
+
+- 使用者在 `h200` 選「交給 acvlab 寫」：STATUS_DATA 9f9e291 請求 2 的那句（「補跑 ② 時，④ 的 GPU 規則集合維持原本 3 個 TTL」）**由 `icpe-data` 自己寫進 `PREREG.md`**（在 `icpe-next-data` 分支上）。從這次起 PREREG 不再只由 `h200` 寫。
+- `h200` 這邊不登記這一句。在看到 `icpe-data` 那個 commit 之前，`h200` 不改 `PREREG.md`，避免兩個分支同時改同一處、合併時衝突。
+- 建議寫法（照本檔偏離程序 §6，由 `icpe-data` 決定）：接在偏離 4 後面另起一節，不改偏離 4 原文；寫明 `date -u`、出處、理由，以及登記時已經看過哪些正式結果（CacheWise `cw_main_ttl3`／`cw_main_ttl7` 的分析 run `20261105-084414-icpe-data-analyze-cw_main-ttl7`）。
