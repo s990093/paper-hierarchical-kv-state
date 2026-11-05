@@ -3,6 +3,26 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T09:14+08:00 — 指紋（不含 meta_json）13／13 相同；G0 PASS；xc_sa IDENTICAL；**`sa_main` 開跑（40 worker）**
+
+**做完什麼**
+- **merge** `origin/icpe-next-data` @ ec74563 → `828e1d3`（`--no-ff`）。模擬程式 `code/p3x`、`code/icpe/p3_fvar.py`、`code/p3_platform.py` 和 f4f5668 逐位元相同（`git diff` 空）；改到的只有 `next_b_queue.py`（digest 跳過 `meta_json`）、`next_sim_analyze.py`（`--rival-only-gpu`）、`next_a_*` 與文件。
+- **指紋**：run `20261105-091102-icpe-trx-npz-digest-nometa`（程式 828e1d3 的 `next_b_queue.py digest`）對 `npz_digest.csv` 的 `content_sha256_no_meta`（acvlab run `20261105-090851-icpe-data-npz-digest-nometa`）：**13／13 SAME**（`DIGEST_RESULT IDENTICAL`）。和本檔 09:07 節的表也相同。icpe-data 的訊息說它比過也是 13／13；這裡是我自己重算、重比的結果。
+- **4. G0 PASS**：run `20261105-090000-icpe-trx-g0-f4f5668`（程式 f4f5668、新功能全關、16 worker、nice 10）：
+  - 指令：`P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json M7_RES=results/m7_write_policy_h200 X1_TRACE_DIR=$ROOT/datasets/mooncake/traces RUN_DIR=<run>/req OMP_NUM_THREADS=1 python -I code/icpe/p3_fvar.py --variant V1 --calib results/icpe_h200/p01/calib --out-root <run>/out x1 sweep --workers 16`（acvlab 的 G0 cmd.sh 在 acvlab 上、這裡看不到；照 STATUS_SIM G1 的指令＋queue 的環境變數組的）。
+  - `next_b_g0.py results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz <run>/out/x1/x1_sweep.csv`：**4,416 列 × 29 欄＝128,064 格，0 個不同**（`G0_RESULT IDENTICAL`）。
+  - sweep 1,328 個 job 687 s（16 worker）；最大 RSS（單一行程）385 MiB；整組 PSS 最多 2.96 GiB。
+  - G0 跑在 merge 前的 f4f5668；merge 沒有改模擬程式（上面），所以沒有重做。
+- **5. xc_sa IDENTICAL**：run `20261105-091126-icpe-trx-xcheck-xc_sa`（程式 828e1d3、16 worker、28 job、sweep 40.6 s），比對 run `20261105-091229-icpe-trx-xcheck-compare-xc_sa`：`next_b_g0.py results/icpe_next/b/xcheck/xc_sa/x1_sweep.csv.xz <run>/out/x1/x1_sweep.csv` → **32 列 × 40 欄＝1,280 格，0 個不同**。沒有 collect。
+  - 記憶體（09:12:03 一次取樣，`/proc/<pid>/smaps_rollup`）：16 個 worker 的 PSS 149–205 MiB、parent 174 MiB、queue 11 MiB，合計 3.2 GiB。這是 CPU 64 GiB 的小格子；`sa_main` 有到 1,024 GiB 的容量，worker 可能更大，開跑後再量。
+- **6. `sa_main` 開跑**：09:12:41，`python -I code/icpe/next_b_queue.py run --plans sa_main --workers 40`（程式 828e1d3；setsid；log `$ROOT/runs/queue-sa_main-w40-20261105-091241.log`；記憶體監看 `…091241.mem.log`，每 30 s，MemAvailable < 6 GiB 就停整組）。開跑時 MemAvailable 55 GiB、swap 245 MiB（基準）、load 6.1。第一個 block `sa_N16_s1`。
+
+**卡住什麼**：無。
+
+**需要別的 session 做什麼**：無。
+
+**需要使用者決定什麼**：無。
+
 ## 2026-11-05T09:07+08:00 — 轉換完成；**npz 內容指紋 13／13 和 acvlab 不同 → 停**（原因：指紋含 `meta_json`）；G0 跑中；**等 icpe-data 的新指紋**
 
 **做完什麼**
