@@ -3,6 +3,17 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T11:08+08:00 — 54fa2d8 上提前做 G0、xc_sa：都 IDENTICAL；仍等 G1 PASS＋icpe-data merge
+
+- 為了 G1／merge 一到就能開跑，先在 detached worktree `$ROOT/wt-sim-54fa2d8`（icpe-sim 54fa2d8，`--maxtasks` 預設 4）做我這邊要重做的兩個對拍：
+  - **G0**：run `20261105-105553-icpe-trx-g0-54fa2d8`（16 worker、新功能全關；stdout 印 `maxtasksperchild=4`；sweep 679 s、`/usr/bin/time` 11:21）。
+  - **xc_sa**：run `20261105-105555-icpe-trx-xcheck-xc_sa-54fa2d8`（同 queue 的 xc_sa 參數、16 worker）。不 collect。
+  - 兩個 run 的 cmd.sh 最後一步的比對失敗（`next_b_g0.py` 是 icpe-data 的檔，不在 icpe-sim 的 worktree：`can't open file '.../wt-sim-54fa2d8/code/icpe/next_b_g0.py'`，exit 2）；sweep 本身都跑完。兩個目錄留了 `COMPARE_FAILED_SEE_NEXT_RUN`。
+  - **比對**：run `20261105-110736-icpe-trx-compare-54fa2d8`（repo 828e1d3 的 `next_b_g0.py`）：
+    - G0 對 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz`：**4,416 列 × 29 欄＝128,064 格，0 個不同**。
+    - xc_sa 對 `results/icpe_next/b/xcheck/xc_sa/x1_sweep.csv.xz`：**32 列 × 40 欄＝1,280 格，0 個不同**。
+- 開跑條件：STATUS_SIM 寫 54fa2d8 的 G1 PASS ＋ icpe-data merge ＋ 我 merge 後 `git diff 54fa2d8 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 是空的（是空的，上面兩個對拍就適用；不是空的就重做）。然後 `sa_main` 40 worker。
+
 ## 2026-11-05T10:25+08:00 — icpe-sim 的修正 54fa2d8（`--maxtasks`，預設 4）在 TRX40 試跑：40 worker 記憶體持平；等 G1＋merge
 
 - icpe-sim 54fa2d8（`origin/icpe-next-sim`）：`x1 sweep --maxtasks`（預設 4、`$X1_MAXTASKS`；0＝原本）→ `Pool(maxtasksperchild)`。G1 跑中（icpe-sim 10:1x 的訊息；以 STATUS_SIM 為準）。
