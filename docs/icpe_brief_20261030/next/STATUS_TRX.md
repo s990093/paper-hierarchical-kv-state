@@ -3,6 +3,20 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T00:08+08:00 — `sa_main` 第 9／12 個 block 完成（`sa_N16_s3`）；icpe-ana 的 Rust 引擎與補跑草案（記錄，現在不動）
+
+- run `20261105-230217-icpe-trx-sa_main-sa_N16_s3`：exit 0，sweep 3,789 s（queue 23:02:17 → 00:05:37），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N16_s3/`（`x1_sweep.csv.xz` 537 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 23:02:17–00:05:37，120 筆）：本組 PSS 合計最高 9.8 GiB，MemAvailable 最低 46.5 GiB；swap 981 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N32_s3` 00:05:37 開跑。〔算術〕剩 3 個 block，照 s1／s2 同 N 的時間約 4.6 h → `sa_main` 約 11/6 04:40 跑完。
+- **sa_main 跑完後的步驟已備好**（本機 `$ROOT/tools/sa_post_main.sh`，不進 repo，只做過 `bash -n`）：§4.1 的殼跑 `next_sim_analyze.py … --out-prefix sa_main_ttl3 --pf-target cpu`（`export RUN_ID`、`nice -n 10`）→ 另一個殼跑 `ttl7cells --plan sa_main`。表的放法照 icpe-data 的 `analysis/cw_main_ttl3/`（headroom_components xz＋violations＋manifest.json）。檢查內容後才 commit。
+- **icpe-ana 的訊息**（資訊；以 git 為準，已核對 `origin/icpe-next-ana` 的 STATUS_ANA）：
+  - aee1527（23:58 節）：Rust 版 x1 引擎，和 `x1_sim.py` 逐位元相同；用本分支 `sa_main/sa_N16_s1` 對過 7,344／7,344 列相同。要等 icpe-sim 在 STATUS_SIM 寫 G1／xcheck PASS 才用；只用在還沒開始的 block。**`sa_main` 照舊用 Python 跑完。**
+  - 2e32946（00:20 節）：使用者 11/6 決定補回偏離 4 砍掉的格子（P1–P4），PREREG 偏離 6 由 icpe-data 寫（目前是草稿）。TRX40 的分工**草案**：SemiAnalysis 的補跑＋`sens_rep sa_*`，以及 SemiAnalysis、FreeInference、Bailian 的 P1–P3（Rust 要在 TRX40 另外編、另外對拍）。
+  - icpe-trx 的立場：等偏離 6 正式登記＋STATUS_SIM 的驗證；在那之前照 STATUS_DATA 09:00 的步驟走（`sa_main_ttl7`、`sens_rep sa_*` 用目前的 Python 佇列，除非 STATUS 改了）。
+  - **草案裡超出 TRX40 目前授權的兩點**（要使用者決定，輪到時問）：
+    1. FreeInference 的資料能不能放 TRX40：STATUS_DATA 09:00 的授權清單只有 SemiAnalysis、Bailian（Apache-2.0）、TraceLab（CC BY 4.0）；FreeInference 不在清單上。
+    2. 寫入範圍：使用者給 icpe-trx 的只有 `results/icpe_next/b/` 底下的 `sa_*`（＋`analysis/sa_*`、`sens_rep/sa_*`）。FreeInference、Bailian 的下載、轉換、結果目錄都在範圍外。
+
 ## 2026-11-05T23:03+08:00 — `sa_main` 第 8／12 個 block 完成（`sa_N72_s2`）；s2 四個都進 results
 
 - run `20261105-212443-icpe-trx-sa_main-sa_N72_s2`：exit 0，sweep 5,842 s（queue 21:24:43 → 23:02:17），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N72_s2/`（`x1_sweep.csv.xz` 607 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
