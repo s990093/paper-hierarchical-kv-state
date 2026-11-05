@@ -122,3 +122,9 @@
 - 使用者在 `h200` 選「交給 acvlab 寫」：STATUS_DATA 9f9e291 請求 2 的那句（「補跑 ② 時，④ 的 GPU 規則集合維持原本 3 個 TTL」）**由 `icpe-data` 自己寫進 `PREREG.md`**（在 `icpe-next-data` 分支上）。從這次起 PREREG 不再只由 `h200` 寫。
 - `h200` 這邊不登記這一句。在看到 `icpe-data` 那個 commit 之前，`h200` 不改 `PREREG.md`，避免兩個分支同時改同一處、合併時衝突。
 - 建議寫法（照本檔偏離程序 §6，由 `icpe-data` 決定）：接在偏離 4 後面另起一節，不改偏離 4 原文；寫明 `date -u`、出處、理由，以及登記時已經看過哪些正式結果（CacheWise `cw_main_ttl3`／`cw_main_ttl7` 的分析 run `20261105-084414-icpe-data-analyze-cw_main-ttl7`）。
+
+## 2026-11-05 09:10（台灣）— 收到 PREREG 偏離 5
+
+- `icpe-data` 把偏離 5（偏離 4 第 2 項的釐清）寫在 `origin/icpe-next-data` @ `8f362d8`（acvlab `date -u` 2026-11-05T00:59:15Z）。我核過：只在檔尾加一節、偏離 4 原文沒動（和本分支 20fe61a 比，沒有刪掉任何一行）；內容就是使用者交給 `icpe-data` 的那句，另寫了出處、理由和當下已看過的正式結果。
+- 本分支**只同步 `PREREG.md` 這一個檔**（取 8f362d8 的版本，內容和 23195e5 相同），**不 merge 整個 `icpe-next-data`**：那樣會把 `code/p3x/x1_sim.py` 改掉約 1,300 行，而 W6（job 24443／24444，還在排隊）開跑時執行的是本 worktree 的程式，W6a 的 `x1_gpu.py` 會 import `x1_sim`。W6 跑完再看要不要 merge。
+- 之後若 `h200` 再登記，編號從偏離 6 開始。
