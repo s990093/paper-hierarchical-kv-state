@@ -3,6 +3,15 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T09:41+08:00 — 20 worker 的記憶體也在漲；**使用者：允許 swap 小幅增加**
+
+- 20 worker（run `20261105-092452-icpe-trx-sa_main-sa_N16_s1`）09:40:20：本組 PSS 34.4 GiB（09:36 是 25.8 GiB），MemAvailable 23.5 GiB，swap 885 MiB（還沒增加）。09:38 時每個 worker PSS 中位數 1.54 GiB、最大 1.87 GiB；RSS 中位數 2.29 GiB、最大 2.62 GiB。
+- 父行程（p3_fvar）RSS 0.95 GiB，其中和 worker 共用約 0.76 GiB；worker 的 RSS 已經比父行程大，所以不只是 copy-on-write。
+- `x1_sim.py` 把重的 job（預取、scan）排在最前面先跑（`J.sort(...)`，2266 行），所以現在這段是記憶體最高的一段；每個 worker 的峰值**沒量到**。程式裡除了 `_PCACHE`（每份紀錄一個，父行程 fork 前就載好）沒有跨 job 的快取。
+- 09:39 加了 swap 保護 `$ROOT/tools/swapguard.sh`（swap 用量 > 門檻就 SIGTERM 整組），門檻先設 1,141 MiB（基準＋256）。
+- **使用者決定（11/5 09:4x，在 icpe-trx）**：選「允許 swap 小幅增加」＝swap 最多比基準多 2 GiB（門檻 **2,933 MiB**），MemAvailable < 6 GiB 才停。被換出去的是別的使用者閒置的桌面程式（gnome-shell 等）的頁，不影響模擬結果。這是對「不准用到 swap」的放寬，使用者明講。
+  - 另兩個選項（沒選）：繼續 20、被停就降 12；現在就停、改 12 重跑。
+
 ## 2026-11-05T09:26+08:00 — 40 worker 記憶體不夠、swap 增加 → 停掉作廢；**`sa_main` 改 20 worker 重跑**
 
 **發生什麼**
