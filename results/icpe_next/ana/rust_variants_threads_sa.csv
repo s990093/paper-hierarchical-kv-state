@@ -1,0 +1,8 @@
+label,bin,threads,n_jobs,sum_job_s,all_jobs_wall_s,trace_load_s,proc_wall_s,proc_cpu_s,out_hash,same_as_first,ts,host,run_id
+release_t1,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-release/release/x1fast,1,294,197.243,198.6,2.389,201.069,199.308,985f7d216dfb37bc,True,2026-11-05T23:00:32+0800,acvlab,adhoc
+fast_t1,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-fast/fast/x1fast,1,294,195.717,196.988,0.941,198.009,196.434,985f7d216dfb37bc,True,2026-11-05T23:03:55+0800,acvlab,adhoc
+native_t1,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-native/fast/x1fast,1,294,181.895,183.218,0.872,184.146,180.454,985f7d216dfb37bc,True,2026-11-05T23:07:02+0800,acvlab,adhoc
+fast_t2,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-fast/fast/x1fast,2,294,219.717,110.77,0.932,111.777,220.314,985f7d216dfb37bc,True,2026-11-05T23:08:58+0800,acvlab,adhoc
+fast_t4,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-fast/fast/x1fast,4,294,219.736,55.595,0.956,56.618,219.304,985f7d216dfb37bc,True,2026-11-05T23:09:59+0800,acvlab,adhoc
+fast_t8,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-fast/fast/x1fast,8,294,231.043,29.546,1.121,30.778,227.901,985f7d216dfb37bc,True,2026-11-05T23:10:34+0800,acvlab,adhoc
+fast_t16,/ssd6/hungwei/icpe-next/ana-bench/rust/tgt-fast/fast/x1fast,16,294,265.326,17.27,0.931,18.293,248.14,985f7d216dfb37bc,True,2026-11-05T23:10:56+0800,acvlab,adhoc

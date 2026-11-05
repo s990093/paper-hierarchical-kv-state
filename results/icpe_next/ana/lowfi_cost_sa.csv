@@ -1,0 +1,6 @@
+variant,n_req,frac_req,n_jobs,threads,wall_s,cpu_s,sum_job_s,run_id,host,trace
+full,98827,1.0,7344,8,954.4,5477.4,7613.6,20261105-221056-icpe-ana-lowfi-sa_N16_s1,acvlab,nb:semianalysis_N16_s1
+prefix0.25,24706,0.25,7344,8,340.8,1968.8,2717.2,20261105-221056-icpe-ana-lowfi-sa_N16_s1,acvlab,nb:semianalysis_N16_s1
+prefix0.5,49413,0.5,7344,8,546.6,3135.9,4361.8,20261105-221056-icpe-ana-lowfi-sa_N16_s1,acvlab,nb:semianalysis_N16_s1
+sample0.25,26759,0.2708,7344,8,562.8,3110.5,4495.5,20261105-221056-icpe-ana-lowfi-sa_N16_s1,acvlab,nb:semianalysis_N16_s1
+sample0.1,13580,0.1374,7344,8,244.4,1904.3,1951.3,20261105-221056-icpe-ana-lowfi-sa_N16_s1,acvlab,nb:semianalysis_N16_s1

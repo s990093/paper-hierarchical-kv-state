@@ -1,0 +1,1 @@
+export P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/ana-bench/src/results/icpe_h200/t1/tier_params_h200cpu.json M7_RES=/ssd6/hungwei/icpe-next/ana-bench/src/results/m7_write_policy_h200 X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
