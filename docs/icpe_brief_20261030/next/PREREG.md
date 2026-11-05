@@ -124,3 +124,31 @@
 6. **W6c 敏感度**（使用者在 `h200` 選）：跑第 4 點的代表格，不跑全部正式格子。
 7. **W6 不趕 11/9**（使用者在 `h200` 選）：job 24443／24444 照原樣排在 DL_Lab5 後面；趕不上的寫進 CCGrid 或限制。
 8. 不在方案 A 裡、另外算的：W4 雜訊、W3、第二批功能（慢層容量、block 粒度 APC、排隊）。照 STATUS_DATA 00:20 節，它們的格子另外定、跑之前登記。
+
+### 偏離 5（2026-11-05T00:59:15Z（acvlab 的 `date -u`）；**偏離 4 第 2 項的釐清**，不改偏離 4 原文；使用者在 `h200` 選「交給 acvlab 寫」（`origin/icpe-next-a` @ 20fe61a 的 STATUS_A「09:05」節），由 `icpe-data` 寫；當下 `icpe-data` 已經看過的正式結果列在本節最後）
+
+**釐清**：偏離 4 第 2 項「用第 3 項原登記的 7 個 TTL 補跑 ②」——補跑**只擴充 ② 的 GPU 層不預測規則**。
+- 擴充的內容：在原本的 LRU、TTLA／TTLB:{0.3, 10, 300} 之外，加 TTLA／TTLB 的 1、3、30、100 s，配 10 個不預測的 CPU 規則（`x1_sim.NON_ORACLE`）。
+- **④ 的 GPU 規則集合維持偏離 4 的 3 個 TTL**。
+- 受影響的只有 4 個 CPU 元件（O-ORD、O-DROP、O-NOW、O-PF）：它們的 ④ 也在 GPU 不預測規則裡取最快。O-GPU（④＝GPU BEL）和 O-ALL(report)（④＝O-ALL × BEL）的 ④ 不含 GPU 層的 TTL，不受影響。
+- 分析指令：`next_sim_analyze.py ... --rival-only-gpu TTLA:1 TTLA:3 TTLA:30 TTLA:100 TTLB:1 TTLB:3 TTLB:30 TTLB:100`（`icpe-sim` 9acfec1；每次執行都自檢：格子集合不變、沒有任何上限變大，否則停）。
+
+**為什麼要釐清**：`next_sim_analyze.py` 原本兩邊用同一組 GPU 規則。補跑只加在 ② 時，補跑過的格子裡 ④ 缺新 TTL 的列，4 個 CPU 元件就被整列不算。CacheWise 因此剩 2,896 列，補跑前是 3,888 列（run `20261105-084414-icpe-data-analyze-cw_main-ttl7`）。原文沒寫 ④ 要不要跟著加。
+
+**理由**：
+1. 偏離 4 原文寫的是「補跑 ②」。
+2. 偏離 4 的 `h200` 註「② 只會隨 TTL 值變多而變快，所以 3 個 TTL 下 <10% 的格子，7 個 TTL 下也 <10%」**只有在 ④ 不變時才成立**。若 ④ 也加 TTL，上限可能變大，沒有補跑的 <10% 格子就沒有保證，≥10% 的選格規則就失效。
+3. 方向保守：④ 不變、② 只會變快 → 補跑後的上限只會變小或不變。
+4. 不需要多跑模擬：已跑的 `cw_main_ttl7`（STATUS_DATA 07:20、09:00）就是這個集合。
+- 另一種做法（④ 也加 7 個 TTL，要多跑預測的 CPU 規則 × 8 個 TTL）**沒有跑**：NOT_MEASURED。
+
+**出處**：STATUS_DATA 9f9e291（請求 2）；STATUS_A 20fe61a（09:05）；`icpe-sim` 9acfec1（STATUS_SIM 08:57，驗證 run `20261105-085502-icpe-sim-analyze-rival-only`）。
+
+**寫本節時 `icpe-data` 已經看過的正式結果**（照實列出；寫本節的動機是上面那個「整列不算」的機制問題，不是看了數字之後挑方向）：
+- CacheWise 主結果 3 個 TTL 的分析（run `20261105-071035-icpe-data-analyze-cw_main-ttl3`；先前的 `…070937…` 內容相同、run_id 寫錯已作廢）：
+  - 12 個變體 × 元件的摘要：格數、最大值、中位數、≥15% 與 ≥5% 的格數。
+  - ≥10% 的格子：225 格，以及各 CPU 容量的分布。
+  - violations 221 列的摘要（最多 6.4%）。
+- 同一批加上補跑、沒有開新選項的分析（run `20261105-084414…`）：列數 2,896、被丟掉的是哪 4 個元件；72 列上限變小、0 列變大；violations 42 列；stdout 最後一列摘要。
+- 各 sweep 進度列裡個別 job 的 `mean_ret`：CacheWise 補跑、TraceLab c1 前幾十個 job、xcheck。
+- 其他紀錄（TraceLab、SemiAnalysis、Mooncake、FreeInference、Bailian）的上限：都還沒有結果，沒有看過。
