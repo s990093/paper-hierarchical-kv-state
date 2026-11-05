@@ -3,6 +3,20 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T07:55+08:00 — **`sa_main` 12／12 完成**；3 個 TTL 的分析＋`ttl7cells` 完成；下一步等使用者決定
+
+**做完什麼**
+- 最後一個 block：run `20261106-030157-icpe-trx-sa_main-sa_N72_s3`，exit 0，sweep 5,805 s（queue 03:01:57 → 04:38:54），7,344 列 → `results/icpe_next/b/sa_main/sa_N72_s3/`（commit de566f7）。記憶體（183 筆）：PSS 合計最高 10.4 GiB，MemAvailable 最低 45.6 GiB；swap 980 MiB。佇列 04:38:54 結束，兩個保護跟著結束、都沒觸發。
+- `sa_main` 12 個 block 都在 `results/icpe_next/b/sa_main/`：每個 7,344 列、`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`；程式都是 8ef0ada（＝sim 54fa2d8，maxtasksperchild 4），40 worker。sweep 時間 3,789–5,888 s，12 個合計 60,634 s。
+- **分析**（STATUS_DATA 09:00 第 6 步之 1）：run `20261106-074822-icpe-trx-analyze-sa_main-ttl3`，exit 0，stderr 空。`next_sim_analyze.py --sweep results/icpe_next/b/sa_main/*/x1_sweep.csv.xz --out-prefix sa_main_ttl3 --pf-target cpu`（`export RUN_ID`、`nice -n 10`；git HEAD de566f7，`code/` 和 8ef0ada 相同）。headroom_components 3,888 列、violations 5,322 列 → `results/icpe_next/b/analysis/sa_main_ttl3/`（兩個都 xz，解壓後和 run 目錄的原檔 `cmp` 相同；`manifest.json` 照 `analysis/cw_main_ttl3/` 的格式）。
+- **`ttl7cells`**（第 6 步之 2）：run `20261106-074827-icpe-trx-ttl7cells-sa_main`，exit 0：`cells=466／648  (trace,rule,cpu,slow)=253  jobs=40480` → `results/icpe_next/b/sa_main_ttl7/cells.csv`（每列有 run_id、ts、host、src_analysis_run_id）。
+- 上兩項 commit f0b13bb。不解讀、不下判定。
+
+**使用者決定（11/6，AskUserQuestion）**：TRX40 **只做 SemiAnalysis**。FreeInference、Bailian 的 P1–P3 不在 TRX40 跑。
+
+**還沒決定**：`sa_main` 之後 TRX40 跑什麼（Python 照 09:00 跑 `sa_main_ttl7`＋`sens_rep sa_*`，或改 Rust 跑偏離 6 的 `sa_p1`→`sens_rep sa_*`→`sa_p2`→`sa_p3`）。已再問使用者。在那之前 TRX40 不跑模擬、不 merge。
+- git 上（fetch 07:5x）：`origin/icpe-next-data` @ bc1e040 已 merge Rust 引擎（875fb2b → 304fd72）、G0（rust）PASS、佇列加 `run --engine rust`；`origin/icpe-next-sim` @ 47a4617 再加 W4 雜訊 B1（G1 PASS，STATUS_SIM 06:14），icpe-data 還沒 merge 這個。
+
 ## 2026-11-06T03:25+08:00 — Rust 引擎 G1 PASS（STATUS_SIM 03:15）＋偏離 6 已登記 → `sa_main` 之後跑什麼，問使用者
 
 - **git 上看到的**（fetch 03:2x）：
