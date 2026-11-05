@@ -8,13 +8,15 @@
 //   run_dir/jobs.txt：每行 `jobid order act hook pf dead_cut cap G gorder gttl gwrite pft view_id,view_id,...`
 //   輸出 run_dir/out/<jobid>/...
 //
+// icpe-ana v4（2026-11-06）：在 icpe-sim 0b0ef1e 的 code/p3x/x1fast/src/main.rs 上加 W4 雜訊（B1；CPython random.Random 逐位元重現）。
+// 沒有 nz= 欄位時和 0b0ef1e 逐位元相同。以下是 icpe-sim 原本的說明：
 // icpe-sim（2026-11-06）：本檔＝origin/icpe-next-ana @ aee1527 的 code/icpe/ana_x1fast/v3_prefix_fork/src/main.rs
 // （sha256 237ba2f8…）複製過來。引擎（Chan、View、OList、ISet、Trace、Eng 的全部方法）一行沒改；只改 main() 的輸入輸出：
 // 把 parse／build／finish 搬成函式（內容照抄）、加常駐模式 X1FAST_SERVE=1（給 code/p3x/x1_rust.py）、jobs.txt 多欄位就停。
 // 正式模擬經 `x1 sweep --engine rust`；驗證見 docs/icpe_brief_20261030/next/SIM_CHANGES.md 第 16 項。
 use std::cmp::{Ordering, Reverse};
 use std::collections::BinaryHeap;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 use std::env;
 use std::fs;
 use std::time::Instant;
@@ -190,6 +192,77 @@ impl<'a> View<'a> {
     }
 }
 
+// ------------------------------------------------------------------ CPython random.Random（MT19937）的逐位元重現
+#[derive(Clone)]
+struct Mt { mt: Vec<u32>, mti: usize }
+impl Mt {
+    fn init_genrand(s: u32) -> Self {
+        let mut mt = vec![0u32; 624];
+        mt[0] = s;
+        for i in 1..624 { mt[i] = 1812433253u32.wrapping_mul(mt[i - 1] ^ (mt[i - 1] >> 30)).wrapping_add(i as u32); }
+        Mt { mt, mti: 624 }
+    }
+    // random.Random(seed) 的 int 種子：key＝abs(seed) 的 32-bit 字（little-endian）；0 → [0]
+    fn from_seed(seed: i64) -> Self {
+        let mut n = seed.unsigned_abs();
+        let mut key: Vec<u32> = Vec::new();
+        while n > 0 { key.push((n & 0xffff_ffff) as u32); n >>= 32; }
+        if key.is_empty() { key.push(0); }
+        let mut m = Mt::init_genrand(19650218);
+        let (mut i, mut j) = (1usize, 0usize);
+        let kl = key.len();
+        let mut k = if 624 > kl { 624 } else { kl };
+        while k > 0 {
+            m.mt[i] = (m.mt[i] ^ (m.mt[i - 1] ^ (m.mt[i - 1] >> 30)).wrapping_mul(1664525)).wrapping_add(key[j]).wrapping_add(j as u32);
+            i += 1; j += 1;
+            if i >= 624 { m.mt[0] = m.mt[623]; i = 1; }
+            if j >= kl { j = 0; }
+            k -= 1;
+        }
+        k = 623;
+        while k > 0 {
+            m.mt[i] = (m.mt[i] ^ (m.mt[i - 1] ^ (m.mt[i - 1] >> 30)).wrapping_mul(1566083941)).wrapping_sub(i as u32);
+            i += 1;
+            if i >= 624 { m.mt[0] = m.mt[623]; i = 1; }
+            k -= 1;
+        }
+        m.mt[0] = 0x8000_0000;
+        m
+    }
+    fn u32(&mut self) -> u32 {
+        const MAG: [u32; 2] = [0, 0x9908_b0df];
+        if self.mti >= 624 {
+            let mt = &mut self.mt;
+            for kk in 0..624 {
+                let y = (mt[kk] & 0x8000_0000) | (mt[(kk + 1) % 624] & 0x7fff_ffff);
+                mt[kk] = mt[(kk + 397) % 624] ^ (y >> 1) ^ MAG[(y & 1) as usize];
+            }
+            self.mti = 0;
+        }
+        let mut y = self.mt[self.mti];
+        self.mti += 1;
+        y ^= y >> 11; y ^= (y << 7) & 0x9d2c_5680; y ^= (y << 15) & 0xefc6_0000; y ^= y >> 18;
+        y
+    }
+    fn random(&mut self) -> f64 {
+        let a = (self.u32() >> 5) as f64;
+        let b = (self.u32() >> 6) as f64;
+        (a * 67108864.0 + b) * (1.0 / 9007199254740992.0)
+    }
+    fn randbelow(&mut self, n: usize) -> usize {      // _randbelow_with_getrandbits（n < 2^32）
+        let k = (usize::BITS - n.leading_zeros()) as u32;
+        loop {
+            let r = (self.u32() >> (32 - k)) as usize;
+            if r < n { return r; }
+        }
+    }
+    fn uniform(&mut self, a: f64, b: f64) -> f64 { a + (b - a) * self.random() }
+}
+
+// W4 雜訊（照 x1_sim._noise_init／_nz_sample／_nz；只支援 B1 抽法）
+#[derive(Clone)]
+struct Noise { model_p: bool, lam: f64, rng: Mt, gaps: Vec<f64>, nzd: Vec<Option<(f64, f64, f64)>> }
+
 // ------------------------------------------------------------------ 有序串列（OrderedDict）與集合
 #[derive(Clone)]
 struct OList { prev: Vec<i64>, next: Vec<i64>, inn: Vec<bool>, val: Vec<i64>, head: i64, tail: i64, len: usize }
@@ -290,6 +363,7 @@ struct Eng<'a> {
     grp: &'a [u32], gep: Vec<u64>, nx_cache: [Vec<Cell<(i64, usize, u64)>>; 3],
     // 共用前段：multi＝同時維護 LRU／ARC／S3／GDSF 的順序結構（GDSF 只在 g_c 有算時）；第一次要擠 CPU 時設 diverged、不做任何選擇
     multi: bool, diverged: bool,
+    noise: Option<RefCell<Noise>>,
 }
 
 impl<'a> Eng<'a> {
@@ -329,8 +403,41 @@ impl<'a> Eng<'a> {
         }
         lo
     }
-    // next_req(s, ref)：ref 0＝ref_cpu、1＝ref_live
+    fn nz_sample(nz: &mut Noise) -> (f64, f64, f64) {
+        let u = nz.rng.random();
+        let g = nz.gaps[nz.rng.randbelow(nz.gaps.len())];
+        let lam = nz.lam;
+        let eps = nz.rng.uniform(-lam, lam);
+        (u, g, eps)
+    }
+    // = Engine._nz：真的「下次回來」（請求 index）→ 有雜訊的 index（B1）
+    fn nz(&self, s: usize, idx: i64) -> i64 {
+        let Some(cell) = &self.noise else { return idx };
+        let mut nz = cell.borrow_mut();
+        if nz.lam == 0.0 { return idx; }
+        let d = match nz.nzd[s] { Some(d) => d, None => { let d = Self::nz_sample(&mut nz); nz.nzd[s] = Some(d); d } };
+        let (u, g, eps) = d;
+        let tl = &self.tr.t;
+        let tq_target: f64;
+        if nz.model_p {
+            if u >= nz.lam { return idx; }
+            if g >= INF as f64 { return INF; }
+            tq_target = tl[self.last[s] as usize] + g;
+        } else {
+            if idx >= tl.len() as i64 || eps == 0.0 { return idx; }
+            let tq = if self.cur >= 0 { tl[self.cur as usize] } else { tl[0] };
+            tq_target = tq + (tl[idx as usize] - tq) * (1.0 + eps);
+        }
+        let j = tl.partition_point(|&x| x < tq_target) as i64;     // bisect_left
+        let c = self.cur + 1;
+        if j > c { j } else { c }
+    }
+    // next_req(s, ref)：ref 0＝ref_cpu、1＝ref_live（有雜訊時＝_next_req_nz：(nz(真的), e)）
     fn next_req(&self, s: usize, which: u8) -> (i64, usize) {
+        let (nx, e) = self.next_req_cached(s, which);
+        if self.noise.is_some() { (self.nz(s, nx), e) } else { (nx, e) }
+    }
+    fn next_req_cached(&self, s: usize, which: u8) -> (i64, usize) {
         let ep = self.gep[self.grp[s] as usize] + 1;
         let c = &self.nx_cache[which as usize][s];
         let (cnx, ce, cep) = c.get();
@@ -558,6 +665,7 @@ impl<'a> Eng<'a> {
         if self.pf != Pf::No {
             let bl = self.sbl(s);
             let t = self.tr.next_access(bl[bl.len() - 1], self.cur);
+            let t = if self.noise.is_some() { self.nz(s, t) } else { t };
             self.st_t[s] = t;
             self.pfdone[s] = false;
             if self.pf == Pf::Opf && t < INF { self.pfheap.push(Reverse((t, s))); }
@@ -709,6 +817,10 @@ impl<'a> Eng<'a> {
     // ---------------------------------------------------------- GPU 層
     fn gbl(&self, s: usize) -> &'a [u32] { if self.gwb { self.sbl(s) } else { self.bl_of(self.gsb[s]) } }
     fn g_next(&self, x: usize) -> i64 {
+        let nx = self.g_next_cached(x);
+        if self.noise.is_some() { self.nz(x, nx) } else { nx }
+    }
+    fn g_next_cached(&self, x: usize) -> i64 {
         let ep = self.gep[self.grp[x] as usize] + 1;
         let c = &self.nx_cache[2][x];
         let (cnx, ce, cep) = c.get();
@@ -830,6 +942,7 @@ impl<'a> Eng<'a> {
         let bl = self.sbl(s);
         if bl.is_empty() { return; }
         let t = self.tr.next_access(bl[bl.len() - 1], self.cur);
+        let t = if self.noise.is_some() { self.nz(s, t) } else { t };
         self.st_t[s] = t;
         self.pfdone[s] = false;
         if self.pf == Pf::Opf && t < INF { self.pfheap.push(Reverse((t, s))); }
@@ -946,6 +1059,7 @@ impl<'a> Eng<'a> {
             if self.has_gpf { self.advance_prefetch_gpu(tf, t); } else { self.advance_prefetch(tf, t); }
         }
         self.cur = r as i64;
+        if let Some(cell) = &self.noise { let mut nz = cell.borrow_mut(); let d = Self::nz_sample(&mut nz); nz.nzd[tr.sess[r] as usize] = Some(d); }
         let blocks = tr.blocks(r);
         if self.g > 0 { return self.step_gpu(r, t, blocks, lay, tend); }
         lay.clear();
@@ -1253,7 +1367,7 @@ fn load_run_data(rd_: &str) -> RunData {
 
 // ---- 一個 job 的規格
 struct Spec<'b> { jid: &'b str, order: Ord_, act: Act, hook: Hook, pf: Pf, dead_cut: f64, c: f64, g: i64, gorder: u8, gttl: f64,
-                  gwb: bool, pf_gpu: bool, vids: Vec<usize> }
+                  gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, i64)> }
 
 fn parse_spec(line: &str) -> Spec<'_> {
     let x: Vec<&str> = line.split_whitespace().collect();
@@ -1264,11 +1378,20 @@ fn parse_spec(line: &str) -> Spec<'_> {
     let hook = match x[3] { "-" => Hook::No, "2ha" => Hook::H2a, "odrop" => Hook::Odrop, o => panic!("hook {}", o) };
     let pf = match x[4] { "-" => Pf::No, "opf" => Pf::Opf, "rpf" => Pf::Rpf, o => panic!("pf {}", o) };
     let gorder: u8 = match x[8] { "-" => 0, "lru" => 0, "bel" => 1, "ttla" => 2, "ttlb" => 3, o => panic!("gorder {}", o) };
-    // icpe-sim：多出來的欄位（v4 的雜訊、慢層上限）這一版不支援 → 停下來，不要默默忽略
-    assert!(x.len() == 13, "jobs.txt 一行要 13 欄（這一版不支援雜訊／慢層上限）：{}", line);
+    // icpe-ana v4：13 欄，或 13 欄＋`nz=P|M,<lam>,B1,<seed>`（W4 雜訊，只支援 B1）；其他多出來的欄位（慢層上限等）→ 停下來
+    let mut nz = None;
+    for extra in &x[13..] {
+        if let Some(v) = extra.strip_prefix("nz=") {
+            let f: Vec<&str> = v.split(',').collect();
+            assert!(f.len() == 4 && (f[0] == "P" || f[0] == "M"), "nz={}", v);
+            assert!(f[2] == "B1", "Rust 只支援 B1 抽法（B2 請改用 Python）：nz={}", v);
+            assert!(nz.is_none(), "nz 欄位重複：{}", line);
+            nz = Some((f[0] == "P", parse_f(f[1]), f[3].parse::<i64>().unwrap()));
+        } else { panic!("jobs.txt 有不支援的欄位 {}（這一版不支援慢層上限）：{}", extra, line); }
+    }
     let sp = Spec { jid: x[0], order, act, hook, pf, dead_cut: parse_f(x[5]), c: parse_f(x[6]), g: x[7].parse().unwrap(), gorder,
                     gttl: if x[9] == "-" { 0.0 } else { parse_f(x[9]) }, gwb: x[10] != "wt", pf_gpu: x[11] == "gpu",
-                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect() };
+                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz };
     if sp.pf != Pf::No { assert!(sp.vids.len() == 1); }
     if sp.g > 0 && sp.gorder >= 2 { assert!(sp.vids.len() == 1); }
     sp
@@ -1296,6 +1419,18 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
     }
     let (g, pf) = (sp.g, sp.pf);
     let has_gpf = g > 0 && sp.pf_gpu && pf != Pf::No;
+    // W4 雜訊（照 x1_sim._noise_init：gaps[r]＝同一個 session 下一次請求的時間差，沒有下一次＝INF）
+    let noise = sp.nz.map(|(model_p, lam, seed)| {
+        assert!((0.0..1.0).contains(&lam));
+        let mut gaps = vec![0.0f64; nreq];
+        let mut nxt: Vec<i64> = vec![-1; ns];
+        for r in (0..nreq).rev() {
+            let s = tr.sess[r] as usize;
+            gaps[r] = if nxt[s] >= 0 { tr.t[nxt[s] as usize] - tr.t[r] } else { INF as f64 };
+            nxt[s] = r as i64;
+        }
+        RefCell::new(Noise { model_p, lam, rng: Mt::from_seed(seed), gaps, nzd: vec![None; ns] })
+    });
     Eng {
         tr, views, order, act, hook: sp.hook, pf, dead_cut: sp.dead_cut, c: sp.c, i4,
         ref_cpu: vec![0; nb], ref_live: vec![0; nb], on_slow: vec![false; nb], fmt: vec![0; nb], pf_done: vec![0.0; nb], pf_owner: vec![-1; nb],
@@ -1312,7 +1447,7 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
         gpver: vec![0; ns], gttlheap: BinaryHeap::new(), n_gevict: 0, n_gexpire: 0, g_wb_blocks: 0, sstart: sstart.to_vec(),
         has_gpf, gpf: vec![-1; if has_gpf { nb } else { 0 }], gpf_done: vec![0.0; if has_gpf { nb } else { 0 }],
         gspf: vec![0; ns], gpf_sessions: ISet::new(ns),
-        grp, gep: vec![0; ns], multi, diverged: false,
+        grp, gep: vec![0; ns], multi, diverged: false, noise,
         nx_cache: [(0..ns).map(|_| Cell::new((0, 0, 0))).collect(), (0..ns).map(|_| Cell::new((0, 0, 0))).collect(),
                    (0..ns).map(|_| Cell::new((0, 0, 0))).collect()],
     }
@@ -1474,7 +1609,7 @@ fn main() {
         let mut key_of: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
         for (i, l) in all.iter().enumerate() {
             let x: Vec<&str> = l.split_whitespace().collect();
-            if fork && x[3] == "-" && x[4] == "-" {
+            if fork && x[3] == "-" && x[4] == "-" && x.len() == 13 {
                 let key = format!("{} {}", x[3..].join(" "), "");
                 if let Some(&u) = key_of.get(&key) { units[u].push(i); continue; }
                 key_of.insert(key, units.len());
