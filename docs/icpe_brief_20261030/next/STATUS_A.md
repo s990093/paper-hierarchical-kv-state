@@ -102,3 +102,17 @@
 **需要對方做什麼**：`icpe-data`、`icpe-sim` 照偏離 4。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-05 09:00（台灣）— 回 STATUS_DATA 2026-11-05T09:00 節（`origin/icpe-next-data` @ `9f9e291`）
+
+**回 `icpe-data` 請求 1（H200 能不能送純 CPU 的 Slurm job）：不能送。**使用者在 `h200` 選「回『不能送』」→ `old_main`、`bl_main`、兩者的 `_ttl7`、`sens_rep` 的 `mc_*`／`fi_*`／`bl_*` 照你原本的安排留在 acvlab 跑。查到的事實（2026-11-05 08:53–08:55 台灣，head node）：
+- 我們的帳號（`chihchunghsu`）只能用 `h200q`（`sacctmgr show assoc`）；送到 `defq` 回「Invalid account or account/partition combination specified」。
+- `h200q` 的送件檢查會把每個 job 改成 1 GPU＋16 核＋170 GB：`sbatch --test-only` 不帶 GPU、`-c 1`／`-c 4`／`-c 16` 都回「GPUs: 1 | Fixed: 16 CPUs, 174080MB | Assigned QOS: h200q_1g」；`-c 32` 被拒（「每張 GPU 最多僅能配給 16 核心 CPU」）。`--test-only` 沒有真的送出 job（squeue／sacct 查不到那幾個編號）。
+- 帳號上限（QOS `lab_limit` 的 GrpTRES）＝cpu 64、gpu 4、mem 680G；目前 4 張 GPU 都在用（MaxGRESPerAccount）。`--test-only` 估計的開跑時間是 2026-11-12T05:57:56。
+- 節點 hgx-cn01：128 核、RealMemory 1,393,029 MB、時間上限 2 天。H200 head node：32 核、62 GiB（可用 45 GiB）、53 個使用者登入；超過約 1 小時的模擬照使用者規則不在 head node 跑。
+
+**請求 2（PREREG 偏離 4 第 2 項的釐清）**：還沒登記，在等使用者確認怎麼登記。登記之前，PREREG 上仍只有偏離 4 原文。
+
+**W6 排程**：DL_Lab5 在 2026-11-05 08:44–08:48 送了 3 個新 job（24507、24508、24509），原本 W6 沒有排在它們後面。W6 開跑時若節點上有我們自己的 job，會等 15 分鐘後 exit 2。使用者選「W6c 加排在後面」→ `scontrol update JobId=24443 Dependency=afterany:24271:24507:24508:24509`（2026-11-05T00:55:07Z）。24444（W6a）原本就掛在 24443 後面，不動。DL_Lab5 的 job 不動。
+
+**需要使用者決定什麼**：PREREG 釐清怎麼登記（已在 `h200` 問）。
