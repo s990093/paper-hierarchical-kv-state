@@ -227,3 +227,49 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - **TraceLab c1 一整個 block**：見 STATUS_SIM 的「Rust 引擎」那一節。
     - run `20261106-003131-icpe-sim-rust-tl_c1`，7 執行緒，對 icpe-data 的 tl_main/tl_c1 Python 輸出（7,344 列）。寫這項時還在跑，結果補在 STATUS_SIM。
 - **有利還是不利**：無（逐格相同；Python 引擎只把摘要那一段搬成函式，計算沒有改，G1 用預設 py 驗過）。
+
+### 17. Rust 引擎加 W4 雜訊的 B1 抽法（icpe-ana v4；`code/p3x/x1fast/src/main.rs`、`code/p3x/x1_rust.py`，commit 1304345）
+
+- **為什麼**：
+  - 使用者 11/6 的決定（STATUS_ANA 1ea44c9 轉達）：v4 的移植由 icpe-ana 做，icpe-sim 負責審查、包裝、G1。
+  - v4 放在 origin/icpe-next-ana @ 279eb7e 的 `code/icpe/ana_x1fast/v4_noise_on_0b0ef1e/src/main.rs`。它以 0b0ef1e 的 main.rs 為底，只加了雜訊。
+- **改了什麼**：
+  - `main.rs` 換成 v4，**原樣複製**（sha256 1b0e7e08…）。Cargo.toml 不換：套件名維持 x1fast3，v4 也沒有新的相依。
+  - `x1_rust.py`：
+    - `unsupported()`：慢層上限 → `slow_cap`；雜訊抽法不是 B1 → `noise_B2`，這兩種退回 Python。其餘雜訊（B1）交給 Rust。
+    - `write_job(…, nz=)`：jobs.txt 那行多一欄 `nz=<P|M>,<repr(λ)>,B1,<seed>`。
+      - λ＝0 也照送，對應 Python 的 `Engine(noise=dict(…))`：λ＝0 仍會抽亂數，但直接回傳真值。
+  - `x1_sim.py`：`_rust_sweep` 把 job 的雜訊設定傳給 `write_job`（只改這一行；Python 引擎的路徑沒動）。
+- **審查**（self-review）：
+  - **亂數**：對照 CPython 的 `_randommodule.c` 與 `random.py`，逐項相同：
+    - `init_genrand`、`init_by_array`（abs(seed) 切成 32 位元的字、0 → [0]）；
+    - `genrand_uint32`（產生 624 個值的那一段用 `%624` 的索引寫法，和 C 的三段迴圈等價）、tempering；
+    - `random()`（53 位元）；
+    - `choice`＝`_randbelow_with_getrandbits`（k＝bit_length；venv 是 Python 3.12.15）；
+    - `uniform`＝a＋(b−a)·random()。
+  - **雜訊的呼叫點**和 Python 一一對應：
+    | Python | Rust |
+    |:--|:--|
+    | `_next_req_nz`（BEL／BELS 選擇、dead、make_room） | `next_req` |
+    | `_g_next`（GPU 的 BEL、GPU 預取） | `g_next` |
+    | demote 與 `_pf_push` 的兩個 `T = self._nz(s, T)` | 同樣兩處 |
+  - **nx_cache**：存的是加雜訊**前**的值，每次查詢才算 `nz`；Python 也是每次查詢才算。所以模型 M 用到 `cur` 的部分不會因為快取而換了時間點。
+  - **B1 的抽樣**：在 `step` 裡 `cur＝r` 之後、GPU 分流之前，和 Python 相同。
+  - **其他多出來的欄位**（慢層上限等）→ Rust 直接停下來。
+  - 有雜訊的 job 不參與批次模式的 `X1FAST_FORK` 分組；常駐模式本來就不用。
+- **icpe-ana 的對拍**（逐請求陣列＋summarize 每欄，和 Python Engine 比）：
+  - Bailian 雜訊 250／250；
+  - Mooncake 雜訊 250／250；
+  - Bailian 寬矩陣回歸 278／278。
+  - 出處：STATUS_ANA 03:05、`results/icpe_next/ana/rust_difftest_jobs.csv`；是他們的數字。
+- **驗證**（icpe-sim）：run `20261106-043047-icpe-sim-g1-1304345`（detached checkout 1304345、共用 venv、nice 10；Rust 6 執行緒，Python 8 workers；04:31–06:11）。
+  - **G1**（`--engine rust`，新功能全關）：4,416 列 × 29 欄，不同的格子 0，退回 Python 0 個 → **PASS**。
+  - **xcheck**：0b0ef1e 驗過的那 14 個 block 再用 Rust 跑一次，和 icpe-data 的 Python 輸出逐格比，全部「不同的格子 0」，退回 Python 0 個。
+  - **雜訊對拍**：同一組參數先用 `--engine py` 跑、再用 `--engine rust` 跑，逐格比；比對的鍵含 4 個 noise 欄。
+    | block | 參數 | job（Rust／退回 Python） | 列 × 欄 | 不同的格子 |
+    |:--|:--|:--|:--|--:|
+    | nz_bl | Bailian nb；P、M × λ 0、0.1、0.3 × B1、B2 × seed 0、7；pf-target cpu、gpu | 1,764（980／784，都是 B2） | 2,232 × 44 | 0 |
+    | nz_mc | Mooncake conversation R1；同上但只有 B1、pf-target cpu | 740（740／0） | 1,000 × 41 | 0 |
+  - **對拍不是空的**：λ>0、B1、seed 0 的列，和同一格 λ＝0 的列比，nz_bl 496／496、nz_mc 400／400 至少有一個數值欄不同（`nz_effect.py`、`nz_effect.txt`，在 run 目錄）。
+  - 摘要：`results/icpe_next/sim/g1_compare.csv`（+1 列）、`rust_cmp.csv`（+16 列）、`rust_timing.csv`（+17 列）。
+- **有利還是不利**：無（逐格相同）。

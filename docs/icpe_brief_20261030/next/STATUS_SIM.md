@@ -410,3 +410,44 @@
 - 摘要：`results/icpe_next/sim/rust_cmp.csv`（+1 列 tl_c1）、`rust_timing.csv`（+1 列）、`rust_tl_resources.csv`（新，上面兩張表的數字）、`npz_cmp.csv`（新）。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T06:14+08:00 — **Rust 引擎加 W4 雜訊 B1：G1 PASS，commit `1304345`**（icpe-ana v4）
+
+回 icpe-ana 的請求（v4，279eb7e）：換進 main.rs、包裝在 draw＝B1 時送 `nz=`、加一小組有雜訊的格子驗證。細節見 SIM_CHANGES 第 17 項。
+
+**改了什麼**
+- `code/p3x/x1fast/src/main.rs` 換成 v4，原樣複製（sha256 1b0e7e08…）。
+- `x1_rust.py`：draw＝B1 的 job 在 jobs.txt 多送一欄 `nz=<P|M>,<repr(λ)>,B1,<seed>`，不再退回 Python。
+- `x1_sim.py`：`_rust_sweep` 把 job 的雜訊設定傳給 `write_job`，只改這一行。
+- **還會退回 Python 的**：雜訊 B2、慢層容量上限、STAIR。這更新 03:15 那節「怎麼用」的清單。
+- 原始碼的 sha 變了，所以第一次用會重新編譯（約 10 s），之後共用。
+
+**驗證**：run `20261106-043047-icpe-sim-g1-1304345`
+- 設定：detached checkout 1304345、共用 venv、nice 10；Rust 6 執行緒，Python 8 workers。
+- 時段：04:31–06:11，開始時 load 約 64。
+- **G1**：`--engine rust`，新功能全關，對 H200 V1。4,416 列 × 29 欄，不同的格子 0 → **PASS**。
+- **xcheck**：0b0ef1e 驗過的那 14 個 block 再用 Rust 跑一次，和 icpe-data 的 Python 輸出逐格比。全部「不同的格子 0」，退回 Python 0 個。
+- **雜訊對拍**：同一組參數先用 `--engine py`、再用 `--engine rust` 跑，逐格比；比對的鍵含 4 個 noise 欄。
+
+| block | 參數 | job（Rust／退回 Python） | 列 × 欄 | 不同的格子 | sweep 時間 Rust（6）／Python（8） |
+|:--|:--|:--|:--|--:|:--|
+| nz_bl | Bailian nb；P、M × λ 0、0.1、0.3 × B1、B2 × seed 0、7；GPU 0／111 GiB；pf-target cpu、gpu | 1,764（980／784，都是 B2） | 2,232 × 44 | 0 | 1,776 s／2,776 s |
+| nz_mc | Mooncake conversation R1；同上但只有 B1、pf-target cpu | 740（740／0） | 1,000 × 41 | 0 | 39 s／749 s |
+
+- 兩欄時間是前後接著跑的，不是同時。nz_bl 的 Rust 時間裡包含 784 個退回 Python 的 B2 job。
+- **對拍不是空的**：拿 λ>0、B1、seed 0 的列和同一格 λ＝0 的列比，nz_bl 496／496、nz_mc 400／400 至少有一個數值欄不同。
+  - 也就是說，雜訊確實有改變結果，而 Rust 和 Python 改出來的一樣。
+  - 檢查程式 `nz_effect.py`、輸出 `nz_effect.txt`，都在 run 目錄。
+- **摘要**：`results/icpe_next/sim/g1_compare.csv`（+1 列）、`rust_cmp.csv`（+16 列）、`rust_timing.csv`（+17 列）。
+- icpe-ana 自己的對拍（Bailian 雜訊 250／250、Mooncake 雜訊 250／250、寬矩陣回歸 278／278）見 STATUS_ANA 03:05，是他們的數字。
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這次 push 的 commit，然後**重做 G0**：code/p3x 有改。
+- 之後有 B1 雜訊的 sweep 加 `--engine rust`，就不會退回 Python。
+- workers 用 4 的倍數（見 04:32 那節）。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0。
+- 要在 TRX40 用 Rust，main.rs 變了，所以要在 TRX40 重新編譯（會自動編），再用 `--engine rust` 跑一次 xc_sa，和 Python 版逐格比對。
+
+**需要使用者決定什麼**：無。
