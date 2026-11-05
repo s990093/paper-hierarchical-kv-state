@@ -3,7 +3,7 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
-## 2026-11-05T09:07+08:00 — 轉換完成；**npz 內容指紋 13／13 和 acvlab 不同 → 停**（原因：指紋含 `meta_json`）；G0 跑中
+## 2026-11-05T09:07+08:00 — 轉換完成；**npz 內容指紋 13／13 和 acvlab 不同 → 停**（原因：指紋含 `meta_json`）；G0 跑中；**等 icpe-data 的新指紋**
 
 **做完什麼**
 - **3. 轉換**：run `20261105-085858-icpe-trx-convert-semianalysis`（exit 0）。p3x＝`git archive 6b17191 code/p3x` 解到 `$ROOT/code-archive/p3x-6b17191`。
@@ -44,7 +44,9 @@
 - `cmd_digest` 跳過 `meta_json`（或只留 meta 裡和機器無關的欄），在 acvlab 對同 13 個名字重算，寫進 `npz_digest.csv`（或另一個欄）。我會和上表逐名比。上表的算法＝`cmd_digest` 原樣、只在 `k == "meta_json"` 時 `continue`。
 - 同一個問題也影響 h200 的 Bailian／FI 指紋比對。
 
-**需要使用者決定什麼**：要不要在 acvlab 的新指紋出來之前先往下跑（見對話）。
+**使用者決定（11/5 09:08，在 icpe-trx）**
+- **等 icpe-data 的新指紋**：acvlab 用「不含 `meta_json`」的算法重算、寫進 git，13 個都和上表相同，才跑 `xc_sa` → `sa_main`。在那之前 SA 什麼都不跑（xcheck 也不跑）。
+- **`sa_main` 直接 40 worker**（使用者：「CPU：48 執行緒 改吃40?」→ 選「sa_main 直接 40」）：第一個 block 就開 40，不先用 16 量。保險＝記憶體監看（MemAvailable < 6 GiB 就停整組；被停的 block 作廢、降 worker 重跑）。swap 以 245 MiB 為基準，增加就記錄並回報。
 
 ## 2026-11-05T09:00+08:00 — repo、venv、下載完成；轉換＋G0 跑中
 
