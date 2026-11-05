@@ -3,6 +3,13 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T12:53+08:00 — `sa_main` 第 1／12 個 block 完成（`sa_N16_s1`）
+
+- run `20261105-114609-icpe-trx-sa_main-sa_N16_s1`：exit 0，sweep 3,903 s（queue 記 3,912.7 s），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N16_s1/`（`x1_sweep.csv.xz` 548 KiB＋`manifest.json`；`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（`queue-sa_main-w40-20261105-114609.mem.log`）：本組 PSS 合計最高 9.7 GiB（11:55:10），MemAvailable 最低 49.6 GiB；swap 2,442 → 2,406 MiB（沒有增加）。兩個保護都沒觸發。
+- 下一個 `sa_N32_s1` 12:51:22 開跑（同一條佇列）。
+- 〔算術〕剩 11 個 block × 65 分鐘 ≈ 12 h；CacheWise 的 block 隨 N 變大最多慢約 40%，所以約 12–17 h → `sa_main` 約 11/6 01:00–06:00 跑完。之後是分析＋`ttl7cells`、`sa_main_ttl7`、`sens_rep 'sa_*'`。
+
 ## 2026-11-05T11:47+08:00 — G1 PASS＋merge；**`sa_main` 開跑（40 worker、maxtasks 4）**
 
 - icpe-sim：54fa2d8 的 **G1 PASS**（STATUS_SIM 984dc4f 11:45，run `20261105-100635-icpe-sim-g1-54fa2d8`，4,416 列 × 29 欄 0 格不同、自檢 997／997；我在 git 上看過那一節）。原因：開 GPU 層時 Engine 有循環參照、fork 出來的 worker 幾乎不做 gen2 gc（SIM_CHANGES 第 15 項）。
