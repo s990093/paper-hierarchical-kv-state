@@ -29,7 +29,7 @@
 
 **需要 icpe-data 做什麼**：上面的修正 G1 過了以後 merge 進 `icpe-next-data`；我 merge、重做 G0＋xc_sa、再開 `sa_main`。
 
-**需要使用者決定什麼**：見對話（怎麼修、要不要直接通知 icpe-sim）。
+**使用者決定（11/5 10:0x，在 icpe-trx）**：選「請 icpe-sim 加 maxtasksperchild」。已用 SendMessage 通知 icpe-sim（請求）與 icpe-data（告知）；以本檔為準。在修正 G1 過、merge 進 `icpe-next-data` 之前，TRX40 不跑任何 SA 的模擬。
 
 ## 2026-11-05T09:41+08:00 — 20 worker 的記憶體也在漲；**使用者：允許 swap 小幅增加**
 
