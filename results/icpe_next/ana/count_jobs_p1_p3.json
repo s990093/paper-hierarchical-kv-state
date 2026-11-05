@@ -1,0 +1,83 @@
+{
+ "jobs_per_variant": {
+  "main_now（主結果、主時間設定，現在跑的）": 6174,
+  "P1a 7 個 TTL：新 8 個 GPU 規則 × 15 個 CPU 規則": 6480,
+  "P1b 截尾版：6 個規則 × 16 個 GPU 規則": 4824,
+  "P2a nvme807（cake）：17 × 8": 2214,
+  "P2b 只載入（ssd／b32／nfs／nvme807）：17 × 8": 8154,
+  "P3a wt（主時間設定）：17 × 8": 6174,
+  "P3b 預取進 GPU（主時間設定；只有預取規則）": 1296
+ },
+ "variants": {
+  "CacheWise": {
+   "n": 12,
+   "sec_per_job": 0.32,
+   "source": "NOT_MEASURED 整體平均；diff 中位數 34.6× → Python 11 s/34.6≈0.32〔推算〕"
+  },
+  "TraceLab": {
+   "n": 3,
+   "sec_per_job": 6.0,
+   "source": "實測 4.0–8.6 s（run 20261106-001155-icpe-ana-tlprobe），取 6.0〔推算〕"
+  },
+  "SemiAnalysis": {
+   "n": 12,
+   "sec_per_job": 0.67,
+   "source": "實測：294 個 job 196.4 s（run 20261105-225652-icpe-ana-variants-sa fast_t1）"
+  },
+  "Bailian": {
+   "n": 3,
+   "sec_per_job": 0.06,
+   "source": "Python 約 2 s/job（STATUS_DATA 推算）÷35〔推算〕"
+  },
+  "Mooncake": {
+   "n": 4,
+   "sec_per_job": 0.6,
+   "source": "Python 20.7 s/job（G0 實測，多視角）÷35〔推算〕"
+  },
+  "FreeInference": {
+   "n": 6,
+   "sec_per_job": 0.14,
+   "source": "Python 約 5 s/job（H200 T1／T5）÷35〔推算〕"
+  }
+ },
+ "threads": 40,
+ "thread_efficiency": 0.72,
+ "estimate": {
+  "P1a 7 個 TTL：新 8 個 GPU 規則 × 15 個 CPU 規則": {
+   "jobs": 259200,
+   "cpu_h": 59.9,
+   "wall_h_40threads_one_machine": 2.08,
+   "tracelab_share": 0.541
+  },
+  "P1b 截尾版：6 個規則 × 16 個 GPU 規則": {
+   "jobs": 192960,
+   "cpu_h": 44.6,
+   "wall_h_40threads_one_machine": 1.55,
+   "tracelab_share": 0.541
+  },
+  "P2a nvme807（cake）：17 × 8": {
+   "jobs": 88560,
+   "cpu_h": 20.5,
+   "wall_h_40threads_one_machine": 0.71,
+   "tracelab_share": 0.541
+  },
+  "P2b 只載入（ssd／b32／nfs／nvme807）：17 × 8": {
+   "jobs": 326160,
+   "cpu_h": 75.4,
+   "wall_h_40threads_one_machine": 2.62,
+   "tracelab_share": 0.541
+  },
+  "P3a wt（主時間設定）：17 × 8": {
+   "jobs": 246960,
+   "cpu_h": 57.1,
+   "wall_h_40threads_one_machine": 1.98,
+   "tracelab_share": 0.541
+  },
+  "P3b 預取進 GPU（主時間設定；只有預取規則）": {
+   "jobs": 51840,
+   "cpu_h": 12.0,
+   "wall_h_40threads_one_machine": 0.42,
+   "tracelab_share": 0.541
+  }
+ }
+}

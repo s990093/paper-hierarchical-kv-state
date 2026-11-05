@@ -4,6 +4,32 @@
 > icpe-ana 是分析 session：不跑正式模擬、不動佇列、不改 `code/p3x/*`。
 > 本分支只放**沒有 CacheWise** 的東西；CacheWise 上做過的速度與對拍只留在 acvlab。
 
+## 2026-11-06T00:45+08:00 — P1–P3 的 job 數與 Rust 時間推算；TraceLab 實測；v4（雜訊）對拍中
+
+**使用者 11/6**：「先把 icpe 搞定」→ kvsweep 暫停，icpe-ana 只做 ICPE 需要的事。
+
+**每個紀錄變體多出的 job 數**（直接呼叫參考實作的 `jobs_for` 數的，不是估；run `20261106-003251-icpe-ana-countjobs`，規則集合照偏離 6）
+
+| 項目 | 每個變體的 job | 40 個變體合計 | CPU 時〔推算〕 | 單台 40 執行緒牆鐘〔推算〕 |
+|:--|--:|--:|--:|--:|
+| 現在的主結果（對照） | 6,174 | — | — | — |
+| P1a 7 個 TTL：新 8 個 GPU 規則 × 15 個 CPU 規則 | 6,480 | 259,200 | 59.9 | 2.1 h |
+| P1b 截尾版：6 個規則 × 16 個 GPU 規則 | 4,824 | 192,960 | 44.6 | 1.6 h |
+| P2a nvme807（cake）：17 × 8 | 2,214 | 88,560 | 20.5 | 0.7 h |
+| P2b 只載入（4 個慢層）：17 × 8 | 8,154 | 326,160 | 75.4 | 2.6 h |
+| P3a `wt`（主時間設定）：17 × 8 | 6,174 | 246,960 | 57.1 | 2.0 h |
+| P3b 預取進 GPU（只有預取規則） | 1,296 | 51,840 | 12.0 | 0.4 h |
+| **合計 P1–P3** | | **1,165,680** | **≈270** | **≈9.4 h（一台）／約 5 h（兩台分）** |
+
+- 變體數：CacheWise 12、TraceLab 3、SemiAnalysis 12、Bailian 3、Mooncake 4、FreeInference 6。
+- 每 job 的 Rust 秒數：SemiAnalysis 0.67（實測，294 個 job）、TraceLab 6.0（實測 4.0–8.6，見下）、CacheWise 0.32／Mooncake 0.6／FreeInference 0.14／Bailian 0.06（Python 每 job 秒數 ÷ 35〔推算〕）；40 執行緒效率 0.72（16 執行緒實測 11.5×）。
+- **TraceLab 佔每一項 CPU 時的 54%**；**沒算進去**：Python 包裝端每個 job 的讀回、summarize、存 npz（NOT_MEASURED，icpe-sim 在量）。
+- P4（W4 雜訊）：要等 P1 之後的上限選出 ≥15% 的格子才知道 job 數 → NOT_ESTIMATED。B1 走 Rust；**B2 只能走 Python**，是 P4 的時間風險。
+
+**TraceLab c1 在 Rust 上**〔實測，run `20261106-001155-icpe-ana-tlprobe`，單執行緒、CPU 64 GiB〕：每 job 4.0–8.6 s（Python 200–304 s）；14／14 列 `mean_ret` 和正式 `tl_main/tl_c1` 相同；讀紀錄約 8 s；最大 RSS 4.5 GB（紀錄本身約 2.8 GB）。icpe-sim 已改成每份紀錄一個常駐的 Rust 行程（紀錄只讀一次）。`results/icpe_next/ana/tl_probe.csv`。
+
+**v4（W4 雜訊）**：只改引擎（MT19937／`random`／`randbelow`／`uniform` 逐位元重現 CPython `random.Random`；B1 抽法）。對拍中：Bailian coder 目前 88 個 job（O-BEL／O-BELS／O-DROP／O-NOW／O-PF × 模型 P、M × λ 0／0.1／0.2／0.3／0.4）**全部和 Python 逐位元相同**；跑完後把 commit 交給 icpe-sim 合併。
+
 ## 2026-11-06T00:20+08:00 — 補跑計畫（使用者決定：P1–P4 全做、照優先度）；分工；PREREG 偏離 6 由 icpe-data 寫
 
 **使用者 11/6 的決定**（AskUserQuestion＋訊息，本 session）
