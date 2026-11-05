@@ -231,3 +231,62 @@
 - PREREG 偏離 5（`icpe-next-data` @ 8f362d8；使用者在 h200 選「交給 acvlab 寫」，STATUS_A 20fe61a 的 09:05 節）登記：「補跑只擴充 ② 的 GPU 不預測規則，④ 維持 3 個 TTL」，分析用 `--rival-only-gpu`（9acfec1）。上一節最後「等 h200 釐清」那個條件已解除。
 - icpe-data 已 merge 9acfec1（94b5ec8）並出 CacheWise 最終表：run `20261105-085942-icpe-data-analyze-cw_main-final`（STATUS_DATA 23195e5），內建自檢通過。我沒有看那張表的數字。
 - 需要誰做什麼：無。
+
+---
+
+## 2026-11-05T11:45+08:00 — **G1 PASS：commit `54fa2d8`**（`--maxtasks`：worker 每 k 個 job 換新，預設 4）
+
+回應 icpe-trx（STATUS_TRX 10:05；使用者選「請 icpe-sim 加 maxtasksperchild」）與 icpe-data（STATUS_DATA 10:10）的請求。
+
+**做完什麼**
+- `code/p3x/x1_sim.py`：`x1 sweep` 加 `--maxtasks k`，傳給 `Pool(maxtasksperchild=k)`。
+  - 預設 4；`$X1_MAXTASKS` 可改預設；`0`＝不換＝原本的行為。
+  - stdout 第二行印 `maxtasksperchild=<k>`。
+  - 每個 job 的計算沒有改。細節、原因與理由見 SIM_CHANGES 第 15 項。
+- **G1**：run `20261105-100635-icpe-sim-g1-54fa2d8`。
+  - 設定：detached checkout `/ssd6/hungwei/icpe-next/g1-54fa2d8`、共用 venv、nice 10、5 workers、新功能全部關閉。
+  - **跑的是預設 k＝4**：`unset X1_MAXTASKS`，stdout 印 `maxtasksperchild=4`。
+  - 指令與比法同之前的 G1：sweep 1,328 個 job、4,213 s（load 約 97，時間不能拿來比）。
+  - 結果：**4,416 列 × 29 欄，不同的格子 0 → PASS**。
+  - 自檢 **997／997 PASS**。
+  - 兩份摘要已併進 `results/icpe_next/sim/g1_compare.csv`、`next_sim_test.csv`。
+- **記憶體診斷**：run `20261105-100705-icpe-sim-memdiag-sa`，只量記憶體。逐 job 的數字在 `results/icpe_next/sim/memdiag_sa.csv`。
+  - SA N16 s1，20 個 job：
+
+    | 跑法 | worker 數 | Private_Dirty（MiB） |
+    |:--|:--|:--|
+    | 原本 | 1 | 94 → 492 |
+    | fork 前 `gc.freeze()` | 1 | 94 → 478 |
+    | **k＝4** | 5 | **最大 226** |
+
+  - 原因：開 GPU 層時 Engine 有循環參照（`self._fix = self._fix_g`，我第一批加的）。fork 出來的 worker 又幾乎不做完整 gc：20 個 job 裡 gen2 是 0 次。再加上碎片。
+  - GPU 關閉時 Engine 立刻被釋放；開的時候要 `gc.collect()` 才釋放（`cycle_check.txt`）。
+
+**k 怎麼選（icpe-data 問 TraceLab）**
+- 建議**用預設 4**，不用設任何東西。
+- 換算〔算術，假設每個 job 的增量照 icpe-data 量的約 0.1 GiB〕：
+  - 每個 worker 最多比剛 fork 時多約 4 × 0.1 ＝ 0.4 GiB；
+  - 40 workers 合計最多多約 16 GiB，不再隨 job 數增加。
+- 一個 worker 活 4 個 job〔算術：icpe-data 量的 TraceLab 每 job 130–330 s → 約 9–22 分鐘〕。
+  - 每次換新的 fork 加 copy-on-write 時間是 NOT_MEASURED，但每 4 個 job 才一次。
+  - 父行程大（TraceLab 載入後 parent PSS 27.5 GiB，STATUS_DATA 00:42，09fd521 時量的），所以不建議 k＝1：每個新 worker 都要重新複製它寫到的頁面。
+- 剛 fork 的 worker 在 TraceLab 上多大：用 54fa2d8 量的是 **NOT_MEASURED**。
+  - 建議重開 `tl_main` 後，照 icpe-trx 的做法看前幾百個 job 的 PSS 合計。
+  - 還在漲就設 `X1_MAXTASKS=2`（k 的值不影響結果，理由同 SIM_CHANGES 15；G1 驗的是 4）。
+- icpe-trx 在 54fa2d8 上的 SA 試跑（40 workers，k＝4）：PSS 持平 7.3–9.4 GiB／1,329 個 job（STATUS_TRX d318434，他們的數字）。
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這個 commit。程式以 `54fa2d8` 為準；這次 commit 只多了文件和 results/。
+- `code/p3x` 有改，要**重做 G0**。
+- 然後重開 `tl_main`（c1 從頭跑）。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0 與 xc_sa。你們已經在 54fa2d8 上做過（STATUS_TRX 9410199，都 IDENTICAL）。
+- merge 後如果 `git diff 54fa2d8 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 是空的，那兩個對拍就適用。
+- 然後開 `sa_main`。
+
+**沒做的**
+- 直接打斷循環參照，例如 job 結束清掉 Engine，或父行程 `gc.freeze()` 加上每個 job 後 `gc.collect()`。
+- 這要另一次 G1，k＝4 已經夠用，所以先不做。
+
+**需要使用者決定什麼**：無。
