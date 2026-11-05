@@ -203,3 +203,23 @@
 - 我的 worker 數已回到 ≤8（兩個 G1 都跑完）。
 
 **需要 icpe-data 做什麼**：TraceLab（以及之後的所有新 job）可以用 `7539f01`（merge 後重做 G0）。CacheWise 已經用 09fd521 開跑的話不用換：兩個 commit 的輸出逐位元相同（G1、跨版本指紋 240／240）。
+
+---
+
+## 2026-11-05T08:57+08:00 — 分析程式加 `--rival-only-gpu`（回 STATUS_DATA 09:00 的請求）
+
+**做完什麼**
+- `code/icpe/next_sim_analyze.py` 加選項 `--rival-only-gpu <GPU 規則…>`：這些 GPU 規則只放進 ②、不放進 ④（④ 維持補跑前的 GPU 規則集合）。細節見 SIM_CHANGES 第 14 項。**模擬器（`code/p3x/*`）沒有改**，所以不用重做 G1；sweep 用的程式仍是 `7539f01`。
+- 開選項時程式自己會再算一次「拿掉這些規則的列」，(格, 元件) 集合不同或任何一列上限變大就停（就是 icpe-data 要驗的那一條）。
+- **驗證**（run `20261105-085502-icpe-sim-analyze-rival-only`，`/ssd6/hungwei/icpe-next/runs/` 下有 cmd.sh、cmp.py、context.txt、stdout／stderr、exit_code＝0；輸入是 `origin/icpe-next-data` @ 9f9e291 的 `cw_main` 12 個＋`cw_main_ttl7` 17 個 `x1_sweep.csv.xz`；摘要 `results/icpe_next/sim/analyze_check.csv`）：
+  1. 舊程式（03155d2）跑 `cw_main` ＝ icpe-data 的 `cw_main_ttl3` 表：headroom 3,888 列、violations 221 列，逐格相同（去掉 run_id、ts、host）。
+  2. 新程式**不給選項**＝舊程式，逐格相同：`cw_main`（3,888／221 列）、`cw_main`＋`cw_main_ttl7`（2,896／42 列，兩邊都同樣少算補跑格的 4 個元件）。
+  3. 新程式給 `--rival-only-gpu TTLA:1 TTLA:3 TTLA:30 TTLA:100 TTLB:1 TTLB:3 TTLB:30 TTLB:100`、`cw_main`＋`cw_main_ttl7`：內建自檢 PASS；對 `cw_main_ttl3` 表：**3,888 列、(格, 元件) 集合相同、上限變大的 0 列**（變小 213、相同 3,675）。這 19,840 列補跑的 CPU 規則全部在 NON_ORACLE。violations 369 列，其中 148 列的 ② 組合用到只在 ② 的 TTL。
+  4. 打錯字（`TTLA:7`）、給 `BEL`：都停下（AssertionError）。
+- 我沒有解讀任何上限數字。上面的計數只是檢查用。
+
+**需要 icpe-data 做什麼**：`git merge --no-ff` 這個 commit（只改 `code/icpe/next_sim_analyze.py` 與文件；`code/p3x` 不變，不用重做 G0）。之後 CacheWise 的最終表用：
+`RUN_ID=<run_id> python -I code/icpe/next_sim_analyze.py --sweep results/icpe_next/b/cw_main/*/x1_sweep.csv.xz results/icpe_next/b/cw_main_ttl7/*/x1_sweep.csv.xz --out-dir <run>/out --out-prefix cw_main_ttl7 --pf-target cpu --rival-only-gpu TTLA:1 TTLA:3 TTLA:30 TTLA:100 TTLB:1 TTLB:3 TTLB:30 TTLB:100`
+（這就是驗證第 3 項的指令；輸出會多一欄 `rival_only_gpu`）。TraceLab／SemiAnalysis 等其他紀錄的補跑也同樣用法。
+
+**需要使用者決定什麼**：無。這個選項的語意（④ 不加補跑的 TTL）等 h200 在 PREREG 寫明；如果 h200 的釐清相反（④ 也要加 TTL），就不要用這個選項、改成補跑 ④ 的列。

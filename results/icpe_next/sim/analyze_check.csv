@@ -1,0 +1,8 @@
+run_id,ts,host,check,a,b,rows_a,rows_b,cols_equal,diff_cells,keys_equal,headroom_larger,headroom_smaller,headroom_equal,passed
+20261105-085502-icpe-sim-analyze-rival-only,2026-11-05T08:56:38+08:00,acvlab,old_analyzer_vs_icpe-data_table,03155d2 cw_main headroom_components,icpe-data cw_main_ttl3 headroom_components,3888,3888,True,0,,,,,True
+20261105-085502-icpe-sim-analyze-rival-only,2026-11-05T08:56:38+08:00,acvlab,old_analyzer_vs_icpe-data_table,03155d2 cw_main violations,icpe-data cw_main_ttl3 violations,221,221,True,0,,,,,True
+20261105-085502-icpe-sim-analyze-rival-only,2026-11-05T08:56:38+08:00,acvlab,new_no_option_vs_old,new cw_main headroom_components,03155d2 cw_main headroom_components,3888,3888,True,0,,,,,True
+20261105-085502-icpe-sim-analyze-rival-only,2026-11-05T08:56:38+08:00,acvlab,new_no_option_vs_old,new cw_main violations,03155d2 cw_main violations,221,221,True,0,,,,,True
+20261105-085502-icpe-sim-analyze-rival-only,2026-11-05T08:56:38+08:00,acvlab,new_no_option_vs_old,new cw_main+ttl7 headroom_components,03155d2 cw_main+ttl7 headroom_components,2896,2896,True,0,,,,,True
+20261105-085502-icpe-sim-analyze-rival-only,2026-11-05T08:56:38+08:00,acvlab,new_no_option_vs_old,new cw_main+ttl7 violations,03155d2 cw_main+ttl7 violations,42,42,True,0,,,,,True
+20261105-085502-icpe-sim-analyze-rival-only,2026-11-05T08:56:38+08:00,acvlab,rival_only_vs_3ttl_table,new cw_main+ttl7 --rival-only-gpu (8 TTL) headroom_components,icpe-data cw_main_ttl3 headroom_components,3888,3888,,,True,0,213,3675,True

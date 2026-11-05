@@ -11,6 +11,10 @@
   元件 O-SLOW（慢層容量上限時的完美淘汰；第二批）：④＝min over {CPU 不預測} × {GPU 不預測} × {慢層 BEL}；
      ②＝min over {CPU 不預測} × {GPU 不預測} × {慢層 LRU、LRU2、ARC、S3FIFO、GDSF、PENS}。其他元件的慢層一律取慢層不預測規則裡最快的。
   O-ALL(report)：④＝(O-ALL, BEL, BEL)（關閉的層用 none）；②＝min over 全部不預測的組合。只報告。
+  --rival-only-gpu <GPU 規則…>（PREREG 偏離 4 第 2 項的補跑）：這些 GPU 規則只放進 ②，不放進 ④（④ 的 GPU 規則集合維持原本的）。
+     影響 O-ORD／O-DROP／O-NOW／O-PF 與 O-SLOW 的 ④；O-GPU 的 ④ 只用 BEL、O-ALL(report) 的 ④ 是固定組合，本來就不受影響。
+     不給（預設）＝和之前完全相同。給了會自檢：拿掉這些規則的列重算一次，兩邊的 (格, 元件) 集合必須相同、
+     每一列的上限都不能變大（② 只多不少、④ 不變），不過就停。
   上限＝(T② − T④) ÷ T②；① 基準＝(LRU, LRU)（關閉時 (LRU, none)），另列 T_base。
   預取目的地：--pf-target gpu 時，有預取的 CPU 規則（O-PF、LRU+RPF、O-ALL）用 pf_target＝gpu 的列，其餘照 cpu（沒有預取就沒有差別）。
   多個重建規則（Mooncake R1／R2）時另加 rule＝min（每格取兩規則中較小的上限），同 x1_sim analyze。
@@ -63,8 +67,9 @@ def load(paths, pf_target, metric, dead_h):
     return d, comp_pol
 
 
-def analyze(d, comp_pol, oracle_keys=None):
-    """oracle_keys（雜訊用）：只算「④ 那一邊的組合全部都在 oracle_keys 裡」的元件（避免拿沒有雜訊的列混進來）。"""
+def analyze(d, comp_pol, oracle_keys=None, rival_only=()):
+    """oracle_keys（雜訊用）：只算「④ 那一邊的組合全部都在 oracle_keys 裡」的元件（避免拿沒有雜訊的列混進來）。
+    rival_only：只放進 ②、不放進 ④ 的 GPU 規則（--rival-only-gpu）。"""
     rows, viol = [], []
     src = ",".join(sorted(d.run_id.unique()))
     for key, g in d.groupby(CELL, sort=True):
@@ -72,6 +77,7 @@ def analyze(d, comp_pol, oracle_keys=None):
         gp_all = sorted({k[1] for k in T})
         sp_all = sorted({k[2] for k in T})
         gp_no = [x for x in gp_all if x != "BEL"]
+        gp_or = [x for x in gp_no if x not in rival_only]     # ④ 用的 GPU 不預測規則（沒給 rival_only 時＝gp_no）
         sp_no = [x for x in sp_all if x != "BEL"]
         base = T.get(("LRU", "LRU" if "LRU" in gp_all else "none", "LRU" if "LRU" in sp_all else "none"), (np.nan, np.nan))[0]
 
@@ -81,12 +87,12 @@ def analyze(d, comp_pol, oracle_keys=None):
         def best(cs):
             c = [(T[k][0],) + k for k in cs if k in T]
             return min(c) if c else None
-        comps = [(c, combos(comp_pol[c], gp_no, sp_no), combos(XS.RIVALS[c], gp_no, sp_no)) for c in XS.RIVALS]
+        comps = [(c, combos(comp_pol[c], gp_or, sp_no), combos(XS.RIVALS[c], gp_no, sp_no)) for c in XS.RIVALS]
         rival_all = combos(XS.NON_ORACLE, gp_no, sp_no)
         if "BEL" in gp_all:
             comps.append(("O-GPU", combos(XS.NON_ORACLE, ["BEL"], sp_no), rival_all))
         if "BEL" in sp_all:
-            comps.append(("O-SLOW", combos(XS.NON_ORACLE, gp_no, ["BEL"]), rival_all))
+            comps.append(("O-SLOW", combos(XS.NON_ORACLE, gp_or, ["BEL"]), rival_all))
         for comp, oset, rset in comps:
             if any(x not in T for x in oset + rset):
                 continue                                   # 這格沒有跑齊：不算（同 x1_sim analyze）
@@ -101,9 +107,12 @@ def analyze(d, comp_pol, oracle_keys=None):
                              rho_w_rival=rho_r, T_base=base, src_runs=src))
             for k in rset:
                 if T[k][0] < To - 1e-12:
-                    viol.append(dict(zip(CELL, key), component=comp, oracle_policy=o[1], oracle_gpu_policy=o[2],
-                                     oracle_slow_policy=o[3], T_oracle=To, rival=k[0], rival_gpu_policy=k[1], rival_slow_policy=k[2],
-                                     T_rival=T[k][0], oracle_slower_by=(To - T[k][0]) / T[k][0]))
+                    v = dict(zip(CELL, key), component=comp, oracle_policy=o[1], oracle_gpu_policy=o[2],
+                             oracle_slow_policy=o[3], T_oracle=To, rival=k[0], rival_gpu_policy=k[1], rival_slow_policy=k[2],
+                             T_rival=T[k][0], oracle_slower_by=(To - T[k][0]) / T[k][0])
+                    if rival_only:
+                        v["rival_gpu_rival_only"] = k[1] in rival_only    # ④ 沒有這個 GPU 規則（登記如此）
+                    viol.append(v)
         ok_ = ("O-ALL", "BEL" if "BEL" in gp_all else "none", "BEL" if "BEL" in sp_all else "none")
         if ok_ in T and all(k in T for k in rival_all) and (oracle_keys is None or ok_ in oracle_keys):
             r = best(rival_all)
@@ -134,10 +143,33 @@ def main():
     ap.add_argument("--pf-target", default="cpu", choices=["cpu", "gpu"])
     ap.add_argument("--metric", default="mean_ret")
     ap.add_argument("--dead-h", type=int, default=0)
+    ap.add_argument("--rival-only-gpu", nargs="+", default=[], metavar="GPU_RULE",
+                    help="只放進 ②、不放進 ④ 的 GPU 規則（PREREG 偏離 4 第 2 項：補跑的 TTL），例：TTLA:1 TTLA:3 TTLB:1 …")
     a = ap.parse_args()
+    ro = tuple(dict.fromkeys(a.rival_only_gpu))
     d, comp_pol = load(a.sweep, a.pf_target, a.metric, a.dead_h)
+    if ro:
+        assert "BEL" not in ro and "none" not in ro, f"--rival-only-gpu 不能含 BEL／none：{ro}"
+        miss = [x for x in ro if x not in set(d.gpu_policy)]
+        assert not miss, f"--rival-only-gpu 的 {miss} 在 sweep 的 gpu_policy 裡一列都沒有（打錯字？）"
+        on_or = d[d.gpu_policy.isin(ro) & ~d.policy.isin(XS.NON_ORACLE)]
+        print(f"--rival-only-gpu {' '.join(ro)}：這些 GPU 規則有 {int(d.gpu_policy.isin(ro).sum())} 列；"
+              f"其中 CPU 規則不在 NON_ORACLE 的 {len(on_or)} 列（只會被 ④ 用到，所以不會用到）")
     exact = d[d.noise_model == "none"]
-    H, V = analyze(exact, comp_pol)
+    H, V = analyze(exact, comp_pol, rival_only=ro)
+    if ro:                             # 自檢：拿掉這些規則的列重算（＝原本的 GPU 規則集合）；格子集合相同、上限不變大
+        ck = CELL + ["component"]
+        H0, _ = analyze(exact[~exact.gpu_policy.isin(ro)], comp_pol)
+        a1, a0 = H.set_index(ck).headroom, H0.set_index(ck).headroom
+        assert a1.index.is_unique and a0.index.is_unique
+        only1, only0 = a1.index.difference(a0.index), a0.index.difference(a1.index)
+        assert len(only1) == 0 and len(only0) == 0, \
+            f"自檢失敗：(格, 元件) 集合不同：只在新的 {len(only1)} 列、只在拿掉後的 {len(only0)} 列；例 {list(only1[:3])} {list(only0[:3])}"
+        a0 = a0.loc[a1.index]
+        up = a1 > a0
+        assert not up.any(), f"自檢失敗：{int(up.sum())} 列的上限比拿掉這些規則時大；例 {list(a1.index[up.values][:3])}"
+        print(f"--rival-only-gpu 自檢 PASS：{len(a1)} 列（格, 元件）和拿掉這些規則時相同；"
+              f"上限沒有變大；有變小的 {int((a1 < a0).sum())} 列，相同的 {int((a1 == a0).sum())} 列")
     noisy = d[d.noise_model != "none"]
     NH = []
     if len(noisy):
@@ -146,7 +178,7 @@ def main():
         for spec, g in noisy.groupby(NZ):
             keys = set(zip(g.policy, g.gpu_policy, g.slow_policy))
             base = exact[[k not in keys for k in zip(exact.policy, exact.gpu_policy, exact.slow_policy)]]
-            h, _ = analyze(pd.concat([base, g], ignore_index=True), comp_pol, oracle_keys=keys)
+            h, _ = analyze(pd.concat([base, g], ignore_index=True), comp_pol, oracle_keys=keys, rival_only=ro)
             for c, v in zip(NZ, spec):
                 h[c] = v
             if spec[1] == 0:           # λ＝0 自檢
@@ -158,6 +190,8 @@ def main():
             NH.append(h)
     meta = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
                 host=socket.gethostname(), pf_target=a.pf_target, metric=a.metric, dead_h=a.dead_h)
+    if ro:
+        meta["rival_only_gpu"] = ";".join(ro)      # 沒給就不加這欄（和之前的輸出逐欄相同）
     os.makedirs(a.out_dir, exist_ok=True)
     outs = [("headroom_components", H), ("violations", V)]
     if NH:

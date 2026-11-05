@@ -2,6 +2,36 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-05T09:10+08:00 — npz 指紋改成不含 `meta_json`（第一版作廢）；SemiAnalysis 13／13 和 TRX40 相同
+
+- **錯在我**：`digest` 第一版把 npz 裡的 `meta_json` 陣列也算進去。它存 run_id、ts、host 和絕對路徑，換一台機器、甚至同一台重轉一次都會不同（icpe-trx 在 STATUS_TRX 09:07 指出）。
+- 修正：`cmd_digest` 跳過 `meta_json`，只算 8 個資料陣列（`full_key`、`full_off`、`kind`、`nall`、`parent`、`sess`、`t`、`user_trigger`）。
+- 重算：run `20261105-090851-icpe-data-npz-digest-nometa`，**取代** `results/icpe_next/b/traces/npz_digest.csv`。欄名改成 `content_sha256_no_meta`；第一版 run `20261105-084835-icpe-data-npz-digest` 作廢。
+- **和 TRX40 比**（`origin/icpe-next-trx` 652f943 的 STATUS_TRX 表，run `20261105-090355-icpe-trx-npz-digest`）：**SemiAnalysis 13／13 全部相同**（含 N16 s1 t128k）。
+  - 資料陣列逐位元相同。`meta_json` 的彙總欄位 icpe-trx 也比過，13／13 相同。
+  - → icpe-trx 可以照它的使用者決定往下做：xc_sa，然後 sa_main 用 40 worker。
+
+## 2026-11-05T09:05+08:00 — H200 不能接 → 舊紀錄＋Bailian 回 acvlab（第二條佇列 4 worker）；PREREG 偏離 5；CacheWise 最終上限表
+
+**分工更新**：h200 回報 H200 不能送純 CPU 的 Slurm job（STATUS_A 728cf82：h200q 會把每個 job 改成 1 GPU＋16 核＋170 GB，帳號的 4 張 GPU 已滿）。所以上一節表裡 H200 那一列**全部回到 acvlab**：`old_main`、`bl_main`、兩者的 `_ttl7`、`sens_rep` 的 `mc_*／fi_*／bl_*`。TRX40（icpe-trx）不變。
+
+**做完什麼**
+- **acvlab 第二條佇列**（使用者 11/5：先同意多開 8 個 worker，後改成「太多 改 4」）：`run --plans old_main bl_main --workers 4`，log `/ssd6/hungwei/icpe-next/runs/queue-old_bl-w4-20261105-085744.log`。
+  - 8 worker 的版本只跑了約 1 分鐘就停掉，run `20261105-085649-icpe-data-old_main-mooncake` 留了 `ABORTED` 檔。
+  - TraceLab 那條（40 worker）沒有動。現在我們共 44 個 worker。
+  - load 監看：連續 10 分鐘 >100 就通知我（`load-watch-20261105.log`）。
+- **merge**：
+  - `origin/icpe-next-sim` @ 9acfec1 → 94b5ec8。只改 `next_sim_analyze.py`，加了 `--rival-only-gpu`。
+  - `origin/icpe-next-a` @ 20fe61a → 9af6d04。PREREG 和 h200 自己的檔，和本分支的檔沒有重疊。
+  - 模擬程式（`code/p3x`、`p3_fvar.py`、`p3_platform.py`）和 7539f01 **逐位元相同**（`git diff` 是空的），所以沒有重做 G0。
+- **PREREG 偏離 5**（commit **8f362d8**，`date -u` 2026-11-05T00:59:15Z）：偏離 4 第 2 項的釐清——補跑只擴充 ② 的 GPU 規則，④ 維持 3 個 TTL。使用者在 h200 選「交給 acvlab 寫」（STATUS_A 20fe61a）。節內照實列出寫的當下我已經看過的正式結果。
+- **CacheWise 最終上限表**：run `20261105-085942-icpe-data-analyze-cw_main-final`（cw_main＋cw_main_ttl7，`--rival-only-gpu TTLA/TTLB:1/3/30/100`）→ `results/icpe_next/b/analysis/cw_main_final/`。
+  - 3,888 列，格子集合和補跑前相同。
+  - **0 列上限變大**、213 列變小。
+  - violations 369 列：② 多了規則，「④ 比某個 ② 組合慢」的列跟著變多。
+
+**需要 h200 做什麼**：PREREG 偏離 5 在 `icpe-next-data` 8f362d8。要不要 merge 進 `icpe-next-a` 由你決定；本分支已經 merge 過 20fe61a，所以只差這一節。
+
 ## 2026-11-05T09:00+08:00 — CacheWise 補跑完成；TraceLab 改 40 worker；**三台分工（使用者 11/5 決定）**；分析程式要補一個選項
 
 **做完什麼**
