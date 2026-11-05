@@ -343,7 +343,7 @@
 | mc_load | 4,352 | 208 s（3） | 507 s（40） | Python 是 icpe-data 11/5 的 run |
 | bl_load | 2,176 | 103 s（3） | 419 s（40） | 同上 |
 | xc_sa | 32 | 10.4 s（3） | 171 s（8） | 同上 |
-| TraceLab c1 | 7,344 | 跑完補 | 19,670 s（40） | icpe-data 11/5 的 run（40 workers、maxtasks 4）|
+| TraceLab c1 | 7,344 | 3,576 s（7；見 04:32 那節） | 19,670 s（40） | icpe-data 11/5 的 run（40 workers、maxtasks 4）|
 
 **需要 icpe-data 做什麼**
 - `git merge --no-ff` 這個 commit（程式以 0b0ef1e 為準），然後**重做 G0**：code/p3x 有改。
@@ -358,5 +358,55 @@
 - merge 後重做 G0 與 xc_sa。
 - 要在 TRX40 上用 Rust，得**在 TRX40 自己編譯**（`X1_CARGO`、`CARGO_HOME`、`RUSTUP_HOME` 指向那台的工具鏈），然後用 `--engine rust` 再跑一次 xc_sa，和 Python 版逐格比對。
 - 執行檔只用 `--profile fast`、沒加 target-cpu，所以不用 FMA，結果應和 CPU 型號無關。但這是〔推論〕，TRX40 上 NOT_MEASURED。
+
+**需要使用者決定什麼**：無。
+
+## 2026-11-06T04:32+08:00 — TraceLab c1 一整個 block 用 Rust 跑：逐格相同；時間與記憶體
+
+補上一節還在跑的 TraceLab。run `20261106-003131-icpe-sim-rust-tl_c1`：
+- 設定：detached checkout 0b0ef1e，`--engine rust --workers 7`（7 個 Rust 執行緒＋1 個摘要行程），nice 10。參數照 icpe-data 的 tl_main/tl_c1，也存逐請求 npz。
+- 時段：03:02–04:11，load 約 62–73。
+
+**結果和 Python 相同**
+- CSV：和 icpe-data 的 Python 輸出（run `20261105-115504-icpe-data-tl_main-tl_c1`）逐格比，7,344 列 × 40 欄，不同的格子 0 → **PASS**。
+- 逐請求 npz：兩邊檔名集合相同（6,174 個）。
+  - 每個檔案的每個陣列都比（key、dtype、shape、內容，NaN 視為相同）：先抽 300 個（seed 20261106，710 個陣列），再比全部 6,174 個（14,688 個陣列）。**不同的陣列 0**。
+  - 比對程式：`npz_cmp.py`，指令在 `cmd_npz.sh`，都在 run 目錄裡。
+
+**時間**（`/usr/bin/time -v`、sweep.log、timing.jsonl）
+
+| 項目 | 值 |
+|:--|:--|
+| 整個指令的牆鐘時間 | 4,174 s（1:09:34） |
+| 其中 sweep（6,174 個 job） | 3,576 s |
+| 其中準備（父行程載入紀錄、建 nb、轉成 Rust 的檔案）| 598 s〔算術：4,174 − 3,576〕 |
+| CPU 時間 | user 24,115 s＋sys 1,653 s，平均 617% |
+| Rust 引擎每個 job | 中位數 2.83 s、最長 18.97 s，合計 21,735 s |
+| Python 參考（icpe-data，40 workers，不同時段） | sweep 19,670 s |
+
+**記憶體**（memwatch：每 30 s 記行程樹各行程 `smaps_rollup` 的 Pss 合計，137 筆）
+
+| 項目 | 值 |
+|:--|:--|
+| 行程樹 PSS 最高：準備階段（Python 父行程） | 13,093 MiB |
+| 行程樹 PSS 最高：開跑後 | 8,251 MiB |
+| 其中 x1fast 最高 | 3,865 MiB |
+| 單一行程最大 RSS（`time -v`；準備階段的父行程） | 14.9 GB（14,890,176 KiB） |
+| MemAvailable 最低 | 272.4 GiB |
+
+**發現：`--workers 7` 時，1 個摘要行程在後半段跟不上**（結果不受影響，只影響時間）
+- sweep.log 的 `job=`（從派出到這個 job 的列寫完）：
+  - 前 1,500 個 job：每 500 個一段，中位數 5.3、5.8、6.2 s；
+  - 之後一路變長，最後約 415 s。
+  - 從派出到 Rust 做完（timing.jsonl 的 since_dispatch）最長只有 19 s，所以多出來的時間是在排隊等摘要。
+- 第 1,500 個 job 之後，摘要的速度約 1.88 job/s〔算術：(6,174 − 1,500) ÷ (3,575 − 1,088) s〕。Rust 約 2.26 job/s〔推論：最後一列寫完時 job＝415 s、Rust 端最長 19 s，所以 Rust 約在 3,160 s 前做完；(6,174 − 1,500) ÷ (3,160 − 1,088) s〕。所以最後約 415 s 是在等摘要。
+- 摘要行程數＝`max(1, w//4)`，`7//4＝1`。
+  - 需要的比例約 0.17〔推論：每個 Rust 執行緒 2.26 ÷ 7 ≈ 0.32 job/s，再 ÷ 1.88 job/s〕。
+  - w ≥ 8 時，摘要行程數 ÷ w 最低是 0.18（w＝11），勉強夠；w 是 4 的倍數時是 0.25。
+- **建議**：TraceLab 用 4 的倍數當 workers（例如 8 → 2 個摘要行程），不需要改程式。
+
+**檔案**
+- 我的這份 npz（26 GB）是重複的，icpe-data 那份 run 已有：先保留（/ssd6 還有 2.6 TB；刪了不能復原）。要空間時可以刪 `req/`，內容和 icpe-data 那份逐陣列相同。
+- 摘要：`results/icpe_next/sim/rust_cmp.csv`（+1 列 tl_c1）、`rust_timing.csv`（+1 列）、`rust_tl_resources.csv`（新，上面兩張表的數字）、`npz_cmp.csv`（新）。
 
 **需要使用者決定什麼**：無。

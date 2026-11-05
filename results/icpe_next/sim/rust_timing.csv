@@ -15,3 +15,4 @@ run_id,ts,host,block,engine,workers,n_rows,sweep_s,cmp_passed,ref_run_id,ref_eng
 20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T00:51:59+08:00,acvlab,fi_load,rust,3,2176,21.8,True,20261105-104939-icpe-data-sens_rep-fi_load,py,40,53.9,ref 是 icpe-data 11/5 的 run；不同時段、不同 load，時間只供參考
 20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T00:53:12+08:00,acvlab,fi_wt,rust,3,1632,11.8,True,20261105-105107-icpe-data-sens_rep-fi_wt,py,40,32.9,ref 是 icpe-data 11/5 的 run；不同時段、不同 load，時間只供參考
 20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T00:54:09+08:00,acvlab,fi_pfgpu,rust,3,288,7.1,True,20261105-105212-icpe-data-sens_rep-fi_pfgpu,py,40,19.8,ref 是 icpe-data 11/5 的 run；不同時段、不同 load，時間只供參考
+20261106-003131-icpe-sim-rust-tl_c1,2026-11-06T04:11:37+08:00,acvlab,tl_c1,rust,7,7344,3575.6,True,20261105-115504-icpe-data-tl_main-tl_c1,py,40,19670.1,ref 是 icpe-data 11/5 的 run；不同時段、不同 load，時間只供參考；記憶體見 STATUS_SIM
