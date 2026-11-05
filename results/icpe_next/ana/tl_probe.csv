@@ -1,0 +1,5 @@
+run_id,ts,host,trace,n_req,policy,gpu_policy,n_views,cpu_GiB,rust_job_s,rows_equal_formal,rows,rust_proc_wall_s,rust_maxrss_kb,convert_s
+20261106-001155-icpe-ana-tlprobe,2026-11-06T00:16:35+0800,acvlab,nb:tracelab_c1,665453,LRU,LRU,6,64.0,3.981064651,6,6,31.4,4455892,248.2
+20261106-001155-icpe-ana-tlprobe,2026-11-06T00:16:35+0800,acvlab,nb:tracelab_c1,665453,O-BEL,BEL,6,64.0,4.1005035,6,6,31.4,4455892,248.2
+20261106-001155-icpe-ana-tlprobe,2026-11-06T00:16:35+0800,acvlab,nb:tracelab_c1,665453,LRU,TTLA:10,1,64.0,6.995224903,1,1,31.4,4455892,248.2
+20261106-001155-icpe-ana-tlprobe,2026-11-06T00:16:35+0800,acvlab,nb:tracelab_c1,665453,O-PF,LRU,1,64.0,8.633810294,1,1,31.4,4455892,248.2

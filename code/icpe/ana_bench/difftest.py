@@ -57,11 +57,17 @@ elif matrix == "narrow":
     CPUS = [64.0]
     POLS = ["LRU", "LRU2", "ARC", "S3FIFO", "GDSF", "PENS", "LRU+RPF", "O-BEL", "O-BELS", "O-DROP", "O-NOW", "O-PF", "O-ALL"]
     GSETS = [None, ("wb", "LRU", "cpu"), ("wb", "BEL", "cpu"), ("wb", "TTLA:10", "cpu"), ("wt", "TTLB:10", "cpu"), ("wb", "TTLB:10", "gpu")]
+elif matrix == "noise":   # W4 雜訊（B1）：用到完美預知的規則 × 兩種模型 × λ × seed
+    CPUS = [8.0, 64.0]
+    POLS = ["O-BEL", "O-BELS", "O-DROP", "O-NOW", "O-PF", "O-ALL", "LRU"]
+    GSETS = [("wb", "LRU", "cpu"), ("wb", "BEL", "cpu"), ("wb", "TTLA:10", "cpu"), None]
+    NZS = [("P", 0.0, 3), ("P", 0.2, 3), ("P", 0.4, 7), ("M", 0.1, 3), ("M", 0.3, 9)]
 else:   # speed：正式網格裡最常見的形狀
     CPUS = [64.0]
     POLS = ["LRU", "LRU2", "ARC", "S3FIFO", "GDSF", "PENS", "O-BEL", "O-PF", "LRU+RPF"]
     GSETS = [("wb", "LRU", "cpu"), ("wb", "TTLA:10", "cpu"), ("wb", "TTLB:10", "cpu"), ("wb", "BEL", "cpu")]
 
+NZS = globals().get("NZS", [None])
 JOBS = []
 for c in CPUS:
     for p in POLS:
@@ -77,7 +83,10 @@ for c in CPUS:
                 keys = [("ssd", "busy", "cake"), ("ssd", "busy", "load")]
             else:
                 keys = ALLV if matrix == "broad" else ALLC
-            JOBS.append((p, c, gs, keys))
+            for nz in NZS:
+                if nz is not None and not XS.uses_oracle(p, gs):
+                    continue
+                JOBS.append((p, c, gs, keys, None if nz is None else dict(model=nz[0], lam=nz[1], draw="B1", seed=nz[2])))
 
 # ---- 時間設定的常數（用原本的 View 建，保證同一份 f、Fc、頻寬）
 rdir = os.path.join(work, f"run_{matrix}_{trace.replace(':', '_')}")
@@ -98,7 +107,7 @@ for x in fi:
 np.asarray(pfc, np.float64).tofile(os.path.join(rdir, "fc_idle.f64"))
 open(os.path.join(rdir, "i4.txt"), "w").write(str(K["int4_bytes"]))
 with open(os.path.join(rdir, "jobs.txt"), "w") as f:
-    for j, (p, c, gs, keys) in enumerate(JOBS):
+    for j, (p, c, gs, keys, nz) in enumerate(JOBS):
         o, a, h, pf = XS.POLICIES[p]
         dead = float(P["tl"][-1] - float(p.split("-H")[1])) if "-H" in p else float("inf")
         if gs is None:
@@ -107,7 +116,8 @@ with open(os.path.join(rdir, "jobs.txt"), "w") as f:
             go, gt = XS.parse_gpol(gs["pol"])
             gfields = [str(int(gs["G"] * XS.GiB)), go, "-" if gt is None else repr(gt), gs["write"], gs["pf"]]
         f.write(" ".join([f"j{j}", o, a, h or "-", pf or "-", repr(dead), repr(c * XS.GiB)] + gfields
-                         + [",".join(str(VID[k]) for k in keys)]) + "\n")
+                         + [",".join(str(VID[k]) for k in keys)]
+                         + ([] if nz is None else [f"nz={nz['model']},{nz['lam']!r},{nz['draw']},{nz['seed']}"])) + "\n")
 
 
 class E:
@@ -138,7 +148,7 @@ for line in open(os.path.join(rdir, "timing.txt")):
 
 nsame = ndiff = 0
 with open(out, "a") as fo:
-    for j, (p, c, gs, keys) in enumerate(JOBS):
+    for j, (p, c, gs, keys, nz) in enumerate(JOBS):
         od = os.path.join(rdir, "out", f"j{j}")
         views = XS.make_views(K, P, keys)
         for k, v in enumerate(views):
@@ -164,6 +174,8 @@ with open(out, "a") as fo:
             rv = XS.make_views(K, P, keys)
             gv = rv[0] if XS.POLICIES[p][0] == "gdsf" else None
             gkw = {} if gs is None else dict(gpu_cap=int(gs["G"] * XS.GiB), gpu_policy=gs["pol"], gpu_write=gs["write"], pf_target=gs["pf"])
+            if nz is not None:
+                gkw["noise"] = nz
             eng = XS.Engine(P, p, c * XS.GiB, rv, K, gdsf_view=gv, **gkw).run()
             ref_cpu = time.process_time() - c0
             d_ref = digest(rv, eng)
@@ -171,7 +183,7 @@ with open(out, "a") as fo:
                 nsame += 1
             else:
                 ndiff += 1
-        rec = dict(trace=trace, matrix=matrix, job=f"j{j}", policy=p, cpu_GiB=c,
+        rec = dict(trace=trace, matrix=matrix, job=f"j{j}", policy=p, cpu_GiB=c, noise="none" if nz is None else f"{nz['model']}:{nz['lam']}:{nz['draw']}:s{nz['seed']}",
                    gpu="off" if gs is None else f"{gs['write']}:{gs['pol']}:pf{gs['pf']}", n_views=len(keys),
                    views=";".join("/".join(k) for k in keys), rust_s=round(tim[f"j{j}"], 4), ref_cpu_s=None if ref_cpu is None else round(ref_cpu, 3),
                    speedup=None if ref_cpu is None else round(ref_cpu / tim[f"j{j}"], 1), sha_rust=d_rust, sha_ref=d_ref,
