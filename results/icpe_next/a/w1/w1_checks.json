@@ -1,0 +1,231 @@
+{
+ "run_id": "20261104-231951-icpe-next-a-w1-hitrate",
+ "ts": "2026-11-04T23:19:54+08:00",
+ "code_sha": "1939d334e089",
+ "src_mooncake": "results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz",
+ "src_mooncake_sha256": "eeef1276b863fa89aca2a61bc31669bbfb8cca82986f26ddf77edfbafd96e191",
+ "src_mooncake_run_id": [
+  "20261028-071007-icpe-t1-x1-sweep-V1"
+ ],
+ "src_t4": "results/icpe_h200/t4/t4_sweep.csv",
+ "src_t4_sha256": "ce8859a1d847a6df69a405376fbf3407a6aaf996f65dc581e597c553a91609e3",
+ "x1_trace_dir": "/work/ChihChungHsu/hungweilai/datasets/traces",
+ "traces": {
+  "conversation|R1": {
+   "U_ret": 81631,
+   "nall_ret": 97316,
+   "nfull_ret": 93814,
+   "n_ret": 3511,
+   "n_req": 12031,
+   "ws_blocks": 170899,
+   "unit_match_rate": 1.0
+  },
+  "conversation|R2": {
+   "U_ret": 55991,
+   "nall_ret": 69479,
+   "nfull_ret": 67129,
+   "n_ret": 2357,
+   "n_req": 12031,
+   "ws_blocks": 170899,
+   "unit_match_rate": 1.0
+  },
+  "toolagent|R1": {
+   "U_ret": 118723,
+   "nall_ret": 141428,
+   "nfull_ret": 134310,
+   "n_ret": 7132,
+   "n_req": 23608,
+   "ws_blocks": 159983,
+   "unit_match_rate": 1.0
+  },
+  "toolagent|R2": {
+   "U_ret": 53113,
+   "nall_ret": 66167,
+   "nfull_ret": 63798,
+   "n_ret": 2378,
+   "n_req": 23608,
+   "ws_blocks": 159983,
+   "unit_match_rate": 1.0
+  }
+ },
+ "fi_256_1024": "NOT_MEASURED（T1 x1_sweep_fi 只有 cake 列）",
+ "checks": {
+  "K1_t4_load_rows_equal_C": {
+   "n_load_rows": 720,
+   "n_cake_rows": 720,
+   "load_C_eq": 720,
+   "load_S_eq": 720,
+   "cake_le": 720,
+   "cake_lt": 720,
+   "pass": true
+  },
+  "K2_conversation_R1": {
+   "pass_": true,
+   "prep_n_ret": 3511,
+   "sweep_n_ret": [
+    3511
+   ],
+   "prep_n_req": 12031,
+   "sweep_n_req": [
+    12031
+   ]
+  },
+  "K2_conversation_R2": {
+   "pass_": true,
+   "prep_n_ret": 2357,
+   "sweep_n_ret": [
+    2357
+   ],
+   "prep_n_req": 12031,
+   "sweep_n_req": [
+    12031
+   ]
+  },
+  "K2_toolagent_R1": {
+   "pass_": true,
+   "prep_n_ret": 7132,
+   "sweep_n_ret": [
+    7132
+   ],
+   "prep_n_req": 23608,
+   "sweep_n_req": [
+    23608
+   ]
+  },
+  "K2_toolagent_R2": {
+   "pass_": true,
+   "prep_n_ret": 2378,
+   "sweep_n_ret": [
+    2378
+   ],
+   "prep_n_req": 23608,
+   "sweep_n_req": [
+    23608
+   ]
+  },
+  "K3_accounting": {
+   "pass_": true,
+   "n_rows": 2208,
+   "n_bad": 0
+  },
+  "K4_view_independent_report_only": {
+   "n_groups": 288,
+   "n_groups_varying": 16,
+   "varying": [
+    [
+     "conversation",
+     "R1",
+     "128",
+     "GDSF"
+    ],
+    [
+     "conversation",
+     "R1",
+     "256",
+     "GDSF"
+    ],
+    [
+     "conversation",
+     "R1",
+     "512",
+     "GDSF"
+    ],
+    [
+     "conversation",
+     "R1",
+     "1024",
+     "GDSF"
+    ],
+    [
+     "conversation",
+     "R2",
+     "128",
+     "GDSF"
+    ],
+    [
+     "conversation",
+     "R2",
+     "256",
+     "GDSF"
+    ],
+    [
+     "conversation",
+     "R2",
+     "512",
+     "GDSF"
+    ],
+    [
+     "conversation",
+     "R2",
+     "1024",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R1",
+     "128",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R1",
+     "256",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R1",
+     "512",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R1",
+     "1024",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R2",
+     "128",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R2",
+     "256",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R2",
+     "512",
+     "GDSF"
+    ],
+    [
+     "toolagent",
+     "R2",
+     "1024",
+     "GDSF"
+    ]
+   ]
+  },
+  "K5_t4_C_view_independent_report_only": {
+   "n_groups": 120,
+   "n_varying": 0
+  },
+  "fail": []
+ },
+ "fi_ws_GiB_bf16_by_week": {
+  "fi:2026-05-17_2026-05-23": 11537.183192583041,
+  "fi:2026-05-24_2026-05-30": 6139.346375668092,
+  "fi:2026-05-31_2026-06-06": 1760.6859797654483,
+  "fi:2026-06-07_2026-06-13": 1588.7496664246305,
+  "fi:2026-06-14_2026-06-20": 7983.876312412526,
+  "fi:2026-06-21_2026-06-27": 16324.448412192321
+ },
+ "fi_ws_src": "results/icpe_h200/t1/p12/x1/x1_sweep_fi.csv.gz",
+ "fi_ws_src_run_id": [
+  "20261028-073351-icpe-t1-p12-x1fi-sweep"
+ ]
+}
