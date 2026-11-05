@@ -2990,3 +2990,1000 @@ run_id,ts,host,test,passed,detail
 20261105-100635-icpe-sim-g1-54fa2d8,2026-11-05T11:41:44+08:00,acvlab,"slowcap_audit[toolagent,O-PF,PENS,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1118、丟 session 1090
 20261105-100635-icpe-sim-g1-54fa2d8,2026-11-05T11:41:44+08:00,acvlab,"slowcap_audit[toolagent,O-PF,BEL,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1156、丟 session 542
 20261105-100635-icpe-sim-g1-54fa2d8,2026-11-05T11:41:45+08:00,acvlab,"slowcap_audit[toolagent,O-PF,BEL,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1133、丟 session 530
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:09+08:00,acvlab,restore_gpu_prefix,True,400 個隨機 layout：g＝L 不符 0；前綴換成 GPU 反而變慢（只載入，或 Cake 超過一塊）0；Cake 慢了不到一塊（貪婪會合點的離散誤差）19
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:09+08:00,acvlab,nvme807_consts,True,讀 8.068 GiB/s、寫 2.208111 GiB/s、k_read 3.306（20261026-104426-s3-gfio；/ssd6/hungwei/icpe-next/g1-0b0ef1e/results/icpe_h200/t1/tier_params_h200cpu.json 的 local）
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:10+08:00,acvlab,restore_eq_ref[single],True,"2,000 個隨機 layout，不一致 0"
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:12+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:13+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:13+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:13+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:14+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PRED,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:14+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PRED,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:14+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PRED,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:14+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PRED,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:17+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU2,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:17+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU2,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:17+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU2,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:17+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU2,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:19+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,ARC,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:20+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,ARC,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:20+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,ARC,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:20+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,ARC,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:20+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,S3FIFO,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:20+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,S3FIFO,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:21+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,S3FIFO,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:21+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,S3FIFO,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:21+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,GDSF,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:21+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,GDSF,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:22+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,GDSF,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:22+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,GDSF,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:24+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PENS,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:24+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PENS,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:24+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PENS,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:24+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,PENS,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:26+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+NONE,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:26+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+NONE,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:26+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+NONE,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:26+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+NONE,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:27+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HW,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:27+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HW,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:27+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HW,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:27+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HW,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:28+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HA,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:29+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HA,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:29+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HA,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:29+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+2HA,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:29+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+RPF,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:29+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+RPF,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:30+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+RPF,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:30+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,LRU+RPF,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:45+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BEL,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:48+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BEL,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:48+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BEL,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:18:49+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BEL,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:10+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BELS,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:10+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BELS,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BELS,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-BELS,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-PF,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-PF,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:15+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-PF,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:16+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-PF,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:19+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:19+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:20+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:23+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:23+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,FREQ2Q,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:23+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,FREQ2Q,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:23+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,FREQ2Q,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:23+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,FREQ2Q,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:23+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H1800,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:24+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H1800,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:24+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H1800,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:24+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H1800,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:25+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H1800,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:26+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H1800,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:26+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H1800,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:26+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H1800,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:39+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H1800,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:39+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H1800,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:41+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H1800,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:43+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H1800,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:43+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H3600,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:43+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H3600,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:43+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H3600,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:43+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-DROP-H3600,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:43+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H3600,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:44+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H3600,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:44+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H3600,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:19:44+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-NOW-H3600,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:00+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H3600,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:00+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H3600,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:00+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H3600,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:01+08:00,acvlab,"wt_tiny_eq_off[conversation,128GiB,O-ALL-H3600,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:02+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:02+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:02+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:02+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:05+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PRED,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:08+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PRED,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:08+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PRED,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:08+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PRED,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:11+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU2,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:11+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU2,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:11+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU2,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:11+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU2,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:11+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,ARC,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:13+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,ARC,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:13+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,ARC,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:13+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,ARC,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:15+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,S3FIFO,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:16+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,S3FIFO,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:16+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,S3FIFO,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:16+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,S3FIFO,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:16+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,GDSF,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:16+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,GDSF,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:16+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,GDSF,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:17+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,GDSF,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:20+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PENS,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PENS,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PENS,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,PENS,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+NONE,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+NONE,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+NONE,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+NONE,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:23+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HW,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:24+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HW,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:24+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HW,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:24+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HW,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:25+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HA,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:26+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HA,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:26+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HA,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:26+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+2HA,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:26+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+RPF,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:27+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+RPF,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:27+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+RPF,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:20:27+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,LRU+RPF,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:21:22+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BEL,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:21:24+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BEL,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:21:24+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BEL,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:21:24+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BEL,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:26+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BELS,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BELS,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BELS,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-BELS,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:32+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:32+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:32+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:32+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:33+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-PF,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:33+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-PF,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:33+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-PF,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:34+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-PF,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:41+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:41+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:41+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:42+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:44+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,FREQ2Q,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:44+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,FREQ2Q,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:44+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,FREQ2Q,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:44+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,FREQ2Q,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:45+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H1800,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:46+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H1800,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:46+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H1800,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:46+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H1800,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:48+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H1800,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:48+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H1800,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:48+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H1800,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:22:48+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H1800,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:28+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H1800,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:28+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H1800,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:29+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H1800,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:30+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H1800,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:30+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H3600,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H3600,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H3600,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:31+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-DROP-H3600,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:32+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H3600,G:LRU]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:33+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H3600,G:BEL]",True,12 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:33+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H3600,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:23:33+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-NOW-H3600,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:24:44+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H3600,G:LRU]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:24:49+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H3600,G:BEL]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:24:49+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H3600,G:TTLA:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:24:58+08:00,acvlab,"wt_tiny_eq_off[toolagent,128GiB,O-ALL-H3600,G:TTLB:5]",True,1 種時間設定逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:04+08:00,acvlab,"audit[conversation,wb,LRU,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:04+08:00,acvlab,"audit[conversation,wt,LRU,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:04+08:00,acvlab,"audit[conversation,wb,LRU,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:04+08:00,acvlab,"audit[conversation,wt,LRU,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:04+08:00,acvlab,"audit[conversation,wb,LRU,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:04+08:00,acvlab,"audit[conversation,wt,LRU,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:09+08:00,acvlab,"audit[conversation,wb,LRU,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:09+08:00,acvlab,"audit[conversation,wt,LRU,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:10+08:00,acvlab,"audit[conversation,wb,PRED,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:10+08:00,acvlab,"audit[conversation,wt,PRED,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:10+08:00,acvlab,"audit[conversation,wb,PRED,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:11+08:00,acvlab,"audit[conversation,wt,PRED,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:13+08:00,acvlab,"audit[conversation,wb,PRED,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:13+08:00,acvlab,"audit[conversation,wt,PRED,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:16+08:00,acvlab,"audit[conversation,wb,PRED,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:16+08:00,acvlab,"audit[conversation,wt,PRED,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:16+08:00,acvlab,"audit[conversation,wb,LRU2,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:16+08:00,acvlab,"audit[conversation,wt,LRU2,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:18+08:00,acvlab,"audit[conversation,wb,LRU2,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:18+08:00,acvlab,"audit[conversation,wt,LRU2,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:22+08:00,acvlab,"audit[conversation,wb,LRU2,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 93、GPU 命中 block 1401
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:22+08:00,acvlab,"audit[conversation,wt,LRU2,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 93、GPU 命中 block 1401
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:22+08:00,acvlab,"audit[conversation,wb,LRU2,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1401
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:22+08:00,acvlab,"audit[conversation,wt,LRU2,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1401
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:25+08:00,acvlab,"audit[conversation,wb,ARC,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:25+08:00,acvlab,"audit[conversation,wt,ARC,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:25+08:00,acvlab,"audit[conversation,wb,ARC,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:25+08:00,acvlab,"audit[conversation,wt,ARC,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:28+08:00,acvlab,"audit[conversation,wb,ARC,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:28+08:00,acvlab,"audit[conversation,wt,ARC,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:28+08:00,acvlab,"audit[conversation,wb,ARC,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:29+08:00,acvlab,"audit[conversation,wt,ARC,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:32+08:00,acvlab,"audit[conversation,wb,S3FIFO,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:32+08:00,acvlab,"audit[conversation,wt,S3FIFO,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:34+08:00,acvlab,"audit[conversation,wb,S3FIFO,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:34+08:00,acvlab,"audit[conversation,wt,S3FIFO,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:34+08:00,acvlab,"audit[conversation,wb,S3FIFO,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:35+08:00,acvlab,"audit[conversation,wt,S3FIFO,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:35+08:00,acvlab,"audit[conversation,wb,S3FIFO,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:35+08:00,acvlab,"audit[conversation,wt,S3FIFO,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:40+08:00,acvlab,"audit[conversation,wb,GDSF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:40+08:00,acvlab,"audit[conversation,wt,GDSF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:41+08:00,acvlab,"audit[conversation,wb,GDSF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:41+08:00,acvlab,"audit[conversation,wt,GDSF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:42+08:00,acvlab,"audit[conversation,wb,GDSF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:42+08:00,acvlab,"audit[conversation,wt,GDSF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:46+08:00,acvlab,"audit[conversation,wb,GDSF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:46+08:00,acvlab,"audit[conversation,wt,GDSF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:47+08:00,acvlab,"audit[conversation,wb,PENS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:47+08:00,acvlab,"audit[conversation,wt,PENS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:47+08:00,acvlab,"audit[conversation,wb,PENS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:47+08:00,acvlab,"audit[conversation,wt,PENS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:52+08:00,acvlab,"audit[conversation,wb,PENS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:52+08:00,acvlab,"audit[conversation,wt,PENS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:52+08:00,acvlab,"audit[conversation,wb,PENS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:52+08:00,acvlab,"audit[conversation,wt,PENS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:52+08:00,acvlab,"audit[conversation,wb,LRU+NONE,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:52+08:00,acvlab,"audit[conversation,wt,LRU+NONE,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:54+08:00,acvlab,"audit[conversation,wb,LRU+NONE,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:54+08:00,acvlab,"audit[conversation,wt,LRU+NONE,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:57+08:00,acvlab,"audit[conversation,wb,LRU+NONE,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 109、GPU 命中 block 1441
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:57+08:00,acvlab,"audit[conversation,wt,LRU+NONE,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 109、GPU 命中 block 1441
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:57+08:00,acvlab,"audit[conversation,wb,LRU+NONE,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 0、GPU 命中 block 1441
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:57+08:00,acvlab,"audit[conversation,wt,LRU+NONE,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 0、GPU 命中 block 1441
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:58+08:00,acvlab,"audit[conversation,wb,LRU+2HW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:25:58+08:00,acvlab,"audit[conversation,wt,LRU+2HW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:01+08:00,acvlab,"audit[conversation,wb,LRU+2HW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:01+08:00,acvlab,"audit[conversation,wt,LRU+2HW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:02+08:00,acvlab,"audit[conversation,wb,LRU+2HW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 107、GPU 命中 block 1442
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:02+08:00,acvlab,"audit[conversation,wt,LRU+2HW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 107、GPU 命中 block 1442
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:04+08:00,acvlab,"audit[conversation,wb,LRU+2HW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 0、GPU 命中 block 1442
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:04+08:00,acvlab,"audit[conversation,wt,LRU+2HW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 0、GPU 命中 block 1442
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:04+08:00,acvlab,"audit[conversation,wb,LRU+2HA,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 284、到期 0、GPU 命中 block 1239
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:05+08:00,acvlab,"audit[conversation,wt,LRU+2HA,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 284、到期 0、GPU 命中 block 1239
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:07+08:00,acvlab,"audit[conversation,wb,LRU+2HA,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 260、到期 0、GPU 命中 block 1903
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:07+08:00,acvlab,"audit[conversation,wt,LRU+2HA,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 260、到期 0、GPU 命中 block 1903
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:07+08:00,acvlab,"audit[conversation,wb,LRU+2HA,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 283、到期 92、GPU 命中 block 1185
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:08+08:00,acvlab,"audit[conversation,wt,LRU+2HA,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 283、到期 92、GPU 命中 block 1185
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:12+08:00,acvlab,"audit[conversation,wb,LRU+2HA,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 283、到期 0、GPU 命中 block 1255
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:12+08:00,acvlab,"audit[conversation,wt,LRU+2HA,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 283、到期 0、GPU 命中 block 1255
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:12+08:00,acvlab,"audit[conversation,wb,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:12+08:00,acvlab,"audit[conversation,wt,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:16+08:00,acvlab,"audit[conversation,wb,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:16+08:00,acvlab,"audit[conversation,wt,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:16+08:00,acvlab,"audit[conversation,wb,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:16+08:00,acvlab,"audit[conversation,wt,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:18+08:00,acvlab,"audit[conversation,wb,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:18+08:00,acvlab,"audit[conversation,wt,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:21+08:00,acvlab,"audit[conversation,wb,O-BEL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:21+08:00,acvlab,"audit[conversation,wt,O-BEL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:21+08:00,acvlab,"audit[conversation,wb,O-BEL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:21+08:00,acvlab,"audit[conversation,wt,O-BEL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:26+08:00,acvlab,"audit[conversation,wb,O-BEL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 102、GPU 命中 block 1405
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:26+08:00,acvlab,"audit[conversation,wt,O-BEL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 103、GPU 命中 block 1405
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:26+08:00,acvlab,"audit[conversation,wb,O-BEL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1405
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:26+08:00,acvlab,"audit[conversation,wt,O-BEL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1405
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:26+08:00,acvlab,"audit[conversation,wb,O-BELS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:26+08:00,acvlab,"audit[conversation,wt,O-BELS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:31+08:00,acvlab,"audit[conversation,wb,O-BELS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:31+08:00,acvlab,"audit[conversation,wt,O-BELS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:32+08:00,acvlab,"audit[conversation,wb,O-BELS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 106、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:32+08:00,acvlab,"audit[conversation,wt,O-BELS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 105、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:32+08:00,acvlab,"audit[conversation,wb,O-BELS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:32+08:00,acvlab,"audit[conversation,wt,O-BELS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1494、到期 0、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:33+08:00,acvlab,"audit[conversation,wb,O-DROP,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 771、到期 0、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:34+08:00,acvlab,"audit[conversation,wt,O-DROP,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 771、到期 0、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:34+08:00,acvlab,"audit[conversation,wb,O-DROP,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 582、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:34+08:00,acvlab,"audit[conversation,wt,O-DROP,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 582、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:37+08:00,acvlab,"audit[conversation,wb,O-DROP,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 141、GPU 命中 block 1429
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:37+08:00,acvlab,"audit[conversation,wt,O-DROP,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 140、GPU 命中 block 1426
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:39+08:00,acvlab,"audit[conversation,wb,O-DROP,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 0、GPU 命中 block 1433
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:39+08:00,acvlab,"audit[conversation,wt,O-DROP,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 0、GPU 命中 block 1430
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:39+08:00,acvlab,"audit[conversation,wb,O-NOW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:39+08:00,acvlab,"audit[conversation,wt,O-NOW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:40+08:00,acvlab,"audit[conversation,wb,O-NOW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:40+08:00,acvlab,"audit[conversation,wt,O-NOW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:42+08:00,acvlab,"audit[conversation,wb,O-NOW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:42+08:00,acvlab,"audit[conversation,wt,O-NOW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:43+08:00,acvlab,"audit[conversation,wb,O-NOW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:43+08:00,acvlab,"audit[conversation,wt,O-NOW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:47+08:00,acvlab,"audit[conversation,wb,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:47+08:00,acvlab,"audit[conversation,wt,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:48+08:00,acvlab,"audit[conversation,wb,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:48+08:00,acvlab,"audit[conversation,wt,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:48+08:00,acvlab,"audit[conversation,wb,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 107、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:48+08:00,acvlab,"audit[conversation,wt,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 107、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:50+08:00,acvlab,"audit[conversation,wb,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:50+08:00,acvlab,"audit[conversation,wt,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:53+08:00,acvlab,"audit[conversation,wb,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 771、到期 0、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:53+08:00,acvlab,"audit[conversation,wt,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 771、到期 0、GPU 命中 block 1396
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:53+08:00,acvlab,"audit[conversation,wb,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 582、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:53+08:00,acvlab,"audit[conversation,wt,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 582、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:54+08:00,acvlab,"audit[conversation,wb,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 171、GPU 命中 block 1417
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:54+08:00,acvlab,"audit[conversation,wt,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 170、GPU 命中 block 1417
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:58+08:00,acvlab,"audit[conversation,wb,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 0、GPU 命中 block 1429
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:58+08:00,acvlab,"audit[conversation,wt,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 770、到期 0、GPU 命中 block 1429
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:58+08:00,acvlab,"audit[conversation,wb,FREQ2Q,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:26:58+08:00,acvlab,"audit[conversation,wt,FREQ2Q,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:01+08:00,acvlab,"audit[conversation,wb,FREQ2Q,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:01+08:00,acvlab,"audit[conversation,wt,FREQ2Q,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:01+08:00,acvlab,"audit[conversation,wb,FREQ2Q,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 92、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:01+08:00,acvlab,"audit[conversation,wt,FREQ2Q,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 92、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:03+08:00,acvlab,"audit[conversation,wb,FREQ2Q,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:03+08:00,acvlab,"audit[conversation,wt,FREQ2Q,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:06+08:00,acvlab,"audit[conversation,wb,O-DROP-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:06+08:00,acvlab,"audit[conversation,wt,O-DROP-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:06+08:00,acvlab,"audit[conversation,wb,O-DROP-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:06+08:00,acvlab,"audit[conversation,wt,O-DROP-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:08+08:00,acvlab,"audit[conversation,wb,O-DROP-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:08+08:00,acvlab,"audit[conversation,wt,O-DROP-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:09+08:00,acvlab,"audit[conversation,wb,O-DROP-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:09+08:00,acvlab,"audit[conversation,wt,O-DROP-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:12+08:00,acvlab,"audit[conversation,wb,O-NOW-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:12+08:00,acvlab,"audit[conversation,wt,O-NOW-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:12+08:00,acvlab,"audit[conversation,wb,O-NOW-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:12+08:00,acvlab,"audit[conversation,wt,O-NOW-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:15+08:00,acvlab,"audit[conversation,wb,O-NOW-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:15+08:00,acvlab,"audit[conversation,wt,O-NOW-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:15+08:00,acvlab,"audit[conversation,wb,O-NOW-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:15+08:00,acvlab,"audit[conversation,wt,O-NOW-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:16+08:00,acvlab,"audit[conversation,wb,O-ALL-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:17+08:00,acvlab,"audit[conversation,wt,O-ALL-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:19+08:00,acvlab,"audit[conversation,wb,O-ALL-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:19+08:00,acvlab,"audit[conversation,wt,O-ALL-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:20+08:00,acvlab,"audit[conversation,wb,O-ALL-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 121、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:21+08:00,acvlab,"audit[conversation,wt,O-ALL-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 121、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:23+08:00,acvlab,"audit[conversation,wb,O-ALL-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:23+08:00,acvlab,"audit[conversation,wt,O-ALL-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:23+08:00,acvlab,"audit[conversation,wb,O-DROP-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:23+08:00,acvlab,"audit[conversation,wt,O-DROP-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:24+08:00,acvlab,"audit[conversation,wb,O-DROP-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:25+08:00,acvlab,"audit[conversation,wt,O-DROP-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:26+08:00,acvlab,"audit[conversation,wb,O-DROP-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:26+08:00,acvlab,"audit[conversation,wt,O-DROP-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:28+08:00,acvlab,"audit[conversation,wb,O-DROP-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:28+08:00,acvlab,"audit[conversation,wt,O-DROP-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:28+08:00,acvlab,"audit[conversation,wb,O-NOW-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:28+08:00,acvlab,"audit[conversation,wt,O-NOW-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:30+08:00,acvlab,"audit[conversation,wb,O-NOW-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:30+08:00,acvlab,"audit[conversation,wt,O-NOW-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:32+08:00,acvlab,"audit[conversation,wb,O-NOW-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:32+08:00,acvlab,"audit[conversation,wt,O-NOW-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 90、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:33+08:00,acvlab,"audit[conversation,wb,O-NOW-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:33+08:00,acvlab,"audit[conversation,wt,O-NOW-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1402
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:34+08:00,acvlab,"audit[conversation,wb,O-ALL-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:34+08:00,acvlab,"audit[conversation,wt,O-ALL-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1496、到期 0、GPU 命中 block 1361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:36+08:00,acvlab,"audit[conversation,wb,O-ALL-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:36+08:00,acvlab,"audit[conversation,wt,O-ALL-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1307、到期 0、GPU 命中 block 2115
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:37+08:00,acvlab,"audit[conversation,wb,O-ALL-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 121、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:37+08:00,acvlab,"audit[conversation,wt,O-ALL-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 121、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:38+08:00,acvlab,"audit[conversation,wb,O-ALL-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:39+08:00,acvlab,"audit[conversation,wt,O-ALL-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1498、到期 0、GPU 命中 block 1399
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:41+08:00,acvlab,"audit[toolagent,wb,LRU,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:41+08:00,acvlab,"audit[toolagent,wt,LRU,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:42+08:00,acvlab,"audit[toolagent,wb,LRU,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:42+08:00,acvlab,"audit[toolagent,wt,LRU,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:43+08:00,acvlab,"audit[toolagent,wb,LRU,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:43+08:00,acvlab,"audit[toolagent,wt,LRU,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:45+08:00,acvlab,"audit[toolagent,wb,LRU,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:45+08:00,acvlab,"audit[toolagent,wt,LRU,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:46+08:00,acvlab,"audit[toolagent,wb,PRED,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:46+08:00,acvlab,"audit[toolagent,wt,PRED,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:48+08:00,acvlab,"audit[toolagent,wb,PRED,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:48+08:00,acvlab,"audit[toolagent,wt,PRED,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:48+08:00,acvlab,"audit[toolagent,wb,PRED,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:48+08:00,acvlab,"audit[toolagent,wt,PRED,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:50+08:00,acvlab,"audit[toolagent,wb,PRED,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:50+08:00,acvlab,"audit[toolagent,wt,PRED,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:52+08:00,acvlab,"audit[toolagent,wb,LRU2,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:52+08:00,acvlab,"audit[toolagent,wt,LRU2,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:53+08:00,acvlab,"audit[toolagent,wb,LRU2,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:53+08:00,acvlab,"audit[toolagent,wt,LRU2,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:54+08:00,acvlab,"audit[toolagent,wb,LRU2,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1345、到期 74、GPU 命中 block 6134
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:54+08:00,acvlab,"audit[toolagent,wt,LRU2,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1345、到期 74、GPU 命中 block 6134
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:57+08:00,acvlab,"audit[toolagent,wb,LRU2,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1345、到期 0、GPU 命中 block 6144
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:57+08:00,acvlab,"audit[toolagent,wt,LRU2,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1345、到期 0、GPU 命中 block 6144
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:58+08:00,acvlab,"audit[toolagent,wb,ARC,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:58+08:00,acvlab,"audit[toolagent,wt,ARC,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:58+08:00,acvlab,"audit[toolagent,wb,ARC,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:27:59+08:00,acvlab,"audit[toolagent,wt,ARC,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:02+08:00,acvlab,"audit[toolagent,wb,ARC,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:02+08:00,acvlab,"audit[toolagent,wt,ARC,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 74、GPU 命中 block 6104
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:02+08:00,acvlab,"audit[toolagent,wb,ARC,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:02+08:00,acvlab,"audit[toolagent,wt,ARC,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 0、GPU 命中 block 6114
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:03+08:00,acvlab,"audit[toolagent,wb,S3FIFO,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:03+08:00,acvlab,"audit[toolagent,wt,S3FIFO,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:06+08:00,acvlab,"audit[toolagent,wb,S3FIFO,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:06+08:00,acvlab,"audit[toolagent,wt,S3FIFO,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:06+08:00,acvlab,"audit[toolagent,wb,S3FIFO,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:06+08:00,acvlab,"audit[toolagent,wt,S3FIFO,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 74、GPU 命中 block 6109
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:08+08:00,acvlab,"audit[toolagent,wb,S3FIFO,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:09+08:00,acvlab,"audit[toolagent,wt,S3FIFO,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 0、GPU 命中 block 6119
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:10+08:00,acvlab,"audit[toolagent,wb,GDSF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:10+08:00,acvlab,"audit[toolagent,wt,GDSF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:12+08:00,acvlab,"audit[toolagent,wb,GDSF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:12+08:00,acvlab,"audit[toolagent,wt,GDSF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:16+08:00,acvlab,"audit[toolagent,wb,GDSF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 74、GPU 命中 block 6043
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:16+08:00,acvlab,"audit[toolagent,wt,GDSF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 74、GPU 命中 block 6043
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:16+08:00,acvlab,"audit[toolagent,wb,GDSF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 0、GPU 命中 block 6053
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:16+08:00,acvlab,"audit[toolagent,wt,GDSF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 0、GPU 命中 block 6053
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:16+08:00,acvlab,"audit[toolagent,wb,PENS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:16+08:00,acvlab,"audit[toolagent,wt,PENS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:18+08:00,acvlab,"audit[toolagent,wb,PENS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:18+08:00,acvlab,"audit[toolagent,wt,PENS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:19+08:00,acvlab,"audit[toolagent,wb,PENS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1352、到期 73、GPU 命中 block 6033
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:19+08:00,acvlab,"audit[toolagent,wt,PENS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1352、到期 73、GPU 命中 block 6069
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:20+08:00,acvlab,"audit[toolagent,wb,PENS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1352、到期 0、GPU 命中 block 6038
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:20+08:00,acvlab,"audit[toolagent,wt,PENS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1352、到期 0、GPU 命中 block 6074
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:22+08:00,acvlab,"audit[toolagent,wb,LRU+NONE,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:22+08:00,acvlab,"audit[toolagent,wt,LRU+NONE,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:26+08:00,acvlab,"audit[toolagent,wb,LRU+NONE,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:26+08:00,acvlab,"audit[toolagent,wt,LRU+NONE,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:26+08:00,acvlab,"audit[toolagent,wb,LRU+NONE,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 84、GPU 命中 block 6129
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:26+08:00,acvlab,"audit[toolagent,wt,LRU+NONE,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 84、GPU 命中 block 6129
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:26+08:00,acvlab,"audit[toolagent,wb,LRU+NONE,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6139
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:26+08:00,acvlab,"audit[toolagent,wt,LRU+NONE,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6139
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:28+08:00,acvlab,"audit[toolagent,wb,LRU+2HW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:28+08:00,acvlab,"audit[toolagent,wt,LRU+2HW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:31+08:00,acvlab,"audit[toolagent,wb,LRU+2HW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:31+08:00,acvlab,"audit[toolagent,wt,LRU+2HW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:31+08:00,acvlab,"audit[toolagent,wb,LRU+2HW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 83、GPU 命中 block 6084
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:31+08:00,acvlab,"audit[toolagent,wt,LRU+2HW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 83、GPU 命中 block 6084
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:33+08:00,acvlab,"audit[toolagent,wb,LRU+2HW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 0、GPU 命中 block 6094
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:33+08:00,acvlab,"audit[toolagent,wt,LRU+2HW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1349、到期 0、GPU 命中 block 6094
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:33+08:00,acvlab,"audit[toolagent,wb,LRU+2HA,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 274、到期 0、GPU 命中 block 7362
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:34+08:00,acvlab,"audit[toolagent,wt,LRU+2HA,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 274、到期 0、GPU 命中 block 7362
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:35+08:00,acvlab,"audit[toolagent,wb,LRU+2HA,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 241、到期 0、GPU 命中 block 8726
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:35+08:00,acvlab,"audit[toolagent,wt,LRU+2HA,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 241、到期 0、GPU 命中 block 8726
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:36+08:00,acvlab,"audit[toolagent,wb,LRU+2HA,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 284、到期 137、GPU 命中 block 6087
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:37+08:00,acvlab,"audit[toolagent,wt,LRU+2HA,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 284、到期 137、GPU 命中 block 6087
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:38+08:00,acvlab,"audit[toolagent,wb,LRU+2HA,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 282、到期 0、GPU 命中 block 6408
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:38+08:00,acvlab,"audit[toolagent,wt,LRU+2HA,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 282、到期 0、GPU 命中 block 6408
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:42+08:00,acvlab,"audit[toolagent,wb,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:42+08:00,acvlab,"audit[toolagent,wt,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:44+08:00,acvlab,"audit[toolagent,wb,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:44+08:00,acvlab,"audit[toolagent,wt,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:44+08:00,acvlab,"audit[toolagent,wb,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:44+08:00,acvlab,"audit[toolagent,wt,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:45+08:00,acvlab,"audit[toolagent,wb,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:45+08:00,acvlab,"audit[toolagent,wt,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:47+08:00,acvlab,"audit[toolagent,wb,O-BEL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:47+08:00,acvlab,"audit[toolagent,wt,O-BEL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:50+08:00,acvlab,"audit[toolagent,wb,O-BEL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:50+08:00,acvlab,"audit[toolagent,wt,O-BEL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:50+08:00,acvlab,"audit[toolagent,wb,O-BEL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1340、到期 84、GPU 命中 block 6373
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:50+08:00,acvlab,"audit[toolagent,wt,O-BEL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1341、到期 84、GPU 命中 block 6361
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:52+08:00,acvlab,"audit[toolagent,wb,O-BEL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1340、到期 0、GPU 命中 block 6383
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:53+08:00,acvlab,"audit[toolagent,wt,O-BEL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1341、到期 0、GPU 命中 block 6371
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:55+08:00,acvlab,"audit[toolagent,wb,O-BELS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:55+08:00,acvlab,"audit[toolagent,wt,O-BELS,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:56+08:00,acvlab,"audit[toolagent,wb,O-BELS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:28:56+08:00,acvlab,"audit[toolagent,wt,O-BELS,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:00+08:00,acvlab,"audit[toolagent,wb,O-BELS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1337、到期 84、GPU 命中 block 6471
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:00+08:00,acvlab,"audit[toolagent,wt,O-BELS,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1337、到期 84、GPU 命中 block 6471
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:00+08:00,acvlab,"audit[toolagent,wb,O-BELS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1337、到期 0、GPU 命中 block 6482
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:00+08:00,acvlab,"audit[toolagent,wt,O-BELS,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1337、到期 0、GPU 命中 block 6482
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:01+08:00,acvlab,"audit[toolagent,wb,O-DROP,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 516、到期 0、GPU 命中 block 5892
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:01+08:00,acvlab,"audit[toolagent,wt,O-DROP,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 516、到期 0、GPU 命中 block 5892
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:06+08:00,acvlab,"audit[toolagent,wb,O-DROP,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 311、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:06+08:00,acvlab,"audit[toolagent,wt,O-DROP,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 311、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:06+08:00,acvlab,"audit[toolagent,wb,O-DROP,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 552、到期 113、GPU 命中 block 5238
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:06+08:00,acvlab,"audit[toolagent,wt,O-DROP,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 552、到期 114、GPU 命中 block 5238
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:09+08:00,acvlab,"audit[toolagent,wb,O-DROP,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 550、到期 0、GPU 命中 block 5410
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:09+08:00,acvlab,"audit[toolagent,wt,O-DROP,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 550、到期 0、GPU 命中 block 5410
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:10+08:00,acvlab,"audit[toolagent,wb,O-NOW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:10+08:00,acvlab,"audit[toolagent,wt,O-NOW,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:10+08:00,acvlab,"audit[toolagent,wb,O-NOW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:12+08:00,acvlab,"audit[toolagent,wt,O-NOW,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:15+08:00,acvlab,"audit[toolagent,wb,O-NOW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:15+08:00,acvlab,"audit[toolagent,wt,O-NOW,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:16+08:00,acvlab,"audit[toolagent,wb,O-NOW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:16+08:00,acvlab,"audit[toolagent,wt,O-NOW,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:18+08:00,acvlab,"audit[toolagent,wb,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:18+08:00,acvlab,"audit[toolagent,wt,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:21+08:00,acvlab,"audit[toolagent,wb,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:21+08:00,acvlab,"audit[toolagent,wt,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:21+08:00,acvlab,"audit[toolagent,wb,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1336、到期 90、GPU 命中 block 6567
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:21+08:00,acvlab,"audit[toolagent,wt,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1336、到期 90、GPU 命中 block 6567
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:23+08:00,acvlab,"audit[toolagent,wb,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1336、到期 0、GPU 命中 block 6572
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:23+08:00,acvlab,"audit[toolagent,wt,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1336、到期 0、GPU 命中 block 6572
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:24+08:00,acvlab,"audit[toolagent,wb,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 516、到期 0、GPU 命中 block 5892
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:24+08:00,acvlab,"audit[toolagent,wt,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 516、到期 0、GPU 命中 block 5892
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:29+08:00,acvlab,"audit[toolagent,wb,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 311、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:29+08:00,acvlab,"audit[toolagent,wt,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 311、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:29+08:00,acvlab,"audit[toolagent,wb,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 546、到期 119、GPU 命中 block 5327
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:29+08:00,acvlab,"audit[toolagent,wt,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 546、到期 119、GPU 命中 block 5327
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:29+08:00,acvlab,"audit[toolagent,wb,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 544、到期 0、GPU 命中 block 5546
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:29+08:00,acvlab,"audit[toolagent,wt,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 544、到期 0、GPU 命中 block 5546
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:30+08:00,acvlab,"audit[toolagent,wb,FREQ2Q,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:30+08:00,acvlab,"audit[toolagent,wt,FREQ2Q,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:32+08:00,acvlab,"audit[toolagent,wb,FREQ2Q,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:32+08:00,acvlab,"audit[toolagent,wt,FREQ2Q,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:33+08:00,acvlab,"audit[toolagent,wb,FREQ2Q,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 75、GPU 命中 block 6124
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:33+08:00,acvlab,"audit[toolagent,wt,FREQ2Q,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 75、GPU 命中 block 6124
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:36+08:00,acvlab,"audit[toolagent,wb,FREQ2Q,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 0、GPU 命中 block 6134
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:36+08:00,acvlab,"audit[toolagent,wt,FREQ2Q,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1346、到期 0、GPU 命中 block 6134
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:38+08:00,acvlab,"audit[toolagent,wb,O-DROP-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:38+08:00,acvlab,"audit[toolagent,wt,O-DROP-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:38+08:00,acvlab,"audit[toolagent,wb,O-DROP-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:38+08:00,acvlab,"audit[toolagent,wt,O-DROP-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:39+08:00,acvlab,"audit[toolagent,wb,O-DROP-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:41+08:00,acvlab,"audit[toolagent,wt,O-DROP-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:41+08:00,acvlab,"audit[toolagent,wb,O-DROP-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:41+08:00,acvlab,"audit[toolagent,wt,O-DROP-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:42+08:00,acvlab,"audit[toolagent,wb,O-NOW-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:44+08:00,acvlab,"audit[toolagent,wt,O-NOW-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:45+08:00,acvlab,"audit[toolagent,wb,O-NOW-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:45+08:00,acvlab,"audit[toolagent,wt,O-NOW-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:47+08:00,acvlab,"audit[toolagent,wb,O-NOW-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:47+08:00,acvlab,"audit[toolagent,wt,O-NOW-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:50+08:00,acvlab,"audit[toolagent,wb,O-NOW-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:50+08:00,acvlab,"audit[toolagent,wt,O-NOW-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:50+08:00,acvlab,"audit[toolagent,wb,O-ALL-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:50+08:00,acvlab,"audit[toolagent,wt,O-ALL-H1800,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:53+08:00,acvlab,"audit[toolagent,wb,O-ALL-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:53+08:00,acvlab,"audit[toolagent,wt,O-ALL-H1800,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:53+08:00,acvlab,"audit[toolagent,wb,O-ALL-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 95、GPU 命中 block 6495
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:53+08:00,acvlab,"audit[toolagent,wt,O-ALL-H1800,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 95、GPU 命中 block 6495
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:57+08:00,acvlab,"audit[toolagent,wb,O-ALL-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 0、GPU 命中 block 6500
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:57+08:00,acvlab,"audit[toolagent,wt,O-ALL-H1800,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 0、GPU 命中 block 6500
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:57+08:00,acvlab,"audit[toolagent,wb,O-DROP-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:57+08:00,acvlab,"audit[toolagent,wt,O-DROP-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:58+08:00,acvlab,"audit[toolagent,wb,O-DROP-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:29:58+08:00,acvlab,"audit[toolagent,wt,O-DROP-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:02+08:00,acvlab,"audit[toolagent,wb,O-DROP-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:02+08:00,acvlab,"audit[toolagent,wt,O-DROP-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:02+08:00,acvlab,"audit[toolagent,wb,O-DROP-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:02+08:00,acvlab,"audit[toolagent,wt,O-DROP-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:02+08:00,acvlab,"audit[toolagent,wb,O-NOW-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:02+08:00,acvlab,"audit[toolagent,wt,O-NOW-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:04+08:00,acvlab,"audit[toolagent,wb,O-NOW-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:04+08:00,acvlab,"audit[toolagent,wt,O-NOW-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:07+08:00,acvlab,"audit[toolagent,wb,O-NOW-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:07+08:00,acvlab,"audit[toolagent,wt,O-NOW-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 72、GPU 命中 block 6067
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:08+08:00,acvlab,"audit[toolagent,wb,O-NOW-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:08+08:00,acvlab,"audit[toolagent,wt,O-NOW-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1348、到期 0、GPU 命中 block 6077
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:10+08:00,acvlab,"audit[toolagent,wb,O-ALL-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:10+08:00,acvlab,"audit[toolagent,wt,O-ALL-H3600,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1324、到期 0、GPU 命中 block 6944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:13+08:00,acvlab,"audit[toolagent,wb,O-ALL-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:13+08:00,acvlab,"audit[toolagent,wt,O-ALL-H3600,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1092、到期 0、GPU 命中 block 9013
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:13+08:00,acvlab,"audit[toolagent,wb,O-ALL-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 95、GPU 命中 block 6495
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:13+08:00,acvlab,"audit[toolagent,wt,O-ALL-H3600,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 95、GPU 命中 block 6495
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:14+08:00,acvlab,"audit[toolagent,wb,O-ALL-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 0、GPU 命中 block 6500
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:14+08:00,acvlab,"audit[toolagent,wt,O-ALL-H3600,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；GPU 逐出 1338、到期 0、GPU 命中 block 6500
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:16+08:00,acvlab,"huge_gpu[conversation,128GiB,LRU]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:16+08:00,acvlab,"huge_gpu[conversation,128GiB,PRED]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:16+08:00,acvlab,"huge_gpu[conversation,128GiB,LRU2]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:16+08:00,acvlab,"huge_gpu[conversation,128GiB,ARC]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:17+08:00,acvlab,"huge_gpu[conversation,128GiB,S3FIFO]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:17+08:00,acvlab,"huge_gpu[conversation,128GiB,GDSF]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:18+08:00,acvlab,"huge_gpu[conversation,128GiB,PENS]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:18+08:00,acvlab,"huge_gpu[conversation,128GiB,LRU+NONE]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:18+08:00,acvlab,"huge_gpu[conversation,128GiB,LRU+2HW]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:18+08:00,acvlab,"huge_gpu[conversation,128GiB,LRU+2HA]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 45606
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:18+08:00,acvlab,"huge_gpu[conversation,128GiB,LRU+RPF]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-BEL]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-BELS]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-DROP]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-NOW]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-PF]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-ALL]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,FREQ2Q]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-DROP-H1800]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-NOW-H1800]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-ALL-H1800]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-DROP-H3600]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:31+08:00,acvlab,"huge_gpu[conversation,128GiB,O-NOW-H3600]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:34+08:00,acvlab,"huge_gpu[conversation,128GiB,O-ALL-H3600]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 81631
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:34+08:00,acvlab,"huge_gpu[toolagent,128GiB,LRU]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:34+08:00,acvlab,"huge_gpu[toolagent,128GiB,PRED]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:34+08:00,acvlab,"huge_gpu[toolagent,128GiB,LRU2]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:34+08:00,acvlab,"huge_gpu[toolagent,128GiB,ARC]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:34+08:00,acvlab,"huge_gpu[toolagent,128GiB,S3FIFO]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:35+08:00,acvlab,"huge_gpu[toolagent,128GiB,GDSF]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:38+08:00,acvlab,"huge_gpu[toolagent,128GiB,PENS]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:38+08:00,acvlab,"huge_gpu[toolagent,128GiB,LRU+NONE]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:38+08:00,acvlab,"huge_gpu[toolagent,128GiB,LRU+2HW]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:38+08:00,acvlab,"huge_gpu[toolagent,128GiB,LRU+2HA]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 87029
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:30:38+08:00,acvlab,"huge_gpu[toolagent,128GiB,LRU+RPF]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:15+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-BEL]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-BELS]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-DROP]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-NOW]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-PF]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-ALL]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,FREQ2Q]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-DROP-H1800]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:17+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-NOW-H1800]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:21+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-ALL-H1800]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:21+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-DROP-H3600]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:21+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-NOW-H3600]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:37+08:00,acvlab,"huge_gpu[toolagent,128GiB,O-ALL-H3600]",True,wb≡wt TTFT True；回來的請求 nC＝nS＝0 True；wb 不寫 CPU／慢層 True；GPU 命中 block 118723
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:42+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 13.8 GiB、GPU 命中 block 527、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:42+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 13.8 GiB、GPU 命中 block 527、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:42+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 12.7 GiB、GPU 命中 block 750、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:42+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 12.3 GiB、GPU 命中 block 750、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:46+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 11.8 GiB、GPU 命中 block 561、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:46+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 11.9 GiB、GPU 命中 block 587、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:47+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 11.8 GiB、GPU 命中 block 561、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:47+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 11.9 GiB、GPU 命中 block 587、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:48+08:00,acvlab,"gpu_pf_audit[conversation,wb,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 256.6 GiB、GPU 命中 block 1361、取消預取 164
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:50+08:00,acvlab,"gpu_pf_audit[conversation,wt,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 256.6 GiB、GPU 命中 block 1361、取消預取 164
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:54+08:00,acvlab,"gpu_pf_audit[conversation,wb,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 449.1 GiB、GPU 命中 block 1510、取消預取 336
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:54+08:00,acvlab,"gpu_pf_audit[conversation,wt,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 449.1 GiB、GPU 命中 block 1510、取消預取 336
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:54+08:00,acvlab,"gpu_pf_audit[conversation,wb,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 495.6 GiB、GPU 命中 block 1382、取消預取 348
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:54+08:00,acvlab,"gpu_pf_audit[conversation,wt,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 495.6 GiB、GPU 命中 block 1382、取消預取 348
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:56+08:00,acvlab,"gpu_pf_audit[conversation,wb,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 491.8 GiB、GPU 命中 block 1382、取消預取 336
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:56+08:00,acvlab,"gpu_pf_audit[conversation,wt,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 491.8 GiB、GPU 命中 block 1382、取消預取 336
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:57+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 26.7 GiB、GPU 命中 block 610、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:58+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 25.5 GiB、GPU 命中 block 600、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:58+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 26.0 GiB、GPU 命中 block 856、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:31:58+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 24.8 GiB、GPU 命中 block 846、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:03+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 27.5 GiB、GPU 命中 block 680、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:03+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 26.3 GiB、GPU 命中 block 671、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:03+08:00,acvlab,"gpu_pf_audit[conversation,wb,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 27.6 GiB、GPU 命中 block 683、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:03+08:00,acvlab,"gpu_pf_audit[conversation,wt,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 26.3 GiB、GPU 命中 block 679、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:06+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 20.8 GiB、GPU 命中 block 1732、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:06+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-PF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 20.8 GiB、GPU 命中 block 1732、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:07+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 13.8 GiB、GPU 命中 block 3965、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:07+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-PF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 12.3 GiB、GPU 命中 block 3965、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:08+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 23.5 GiB、GPU 命中 block 2341、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:09+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-PF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 23.7 GiB、GPU 命中 block 2377、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:11+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 23.5 GiB、GPU 命中 block 2408、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:12+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-PF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 23.7 GiB、GPU 命中 block 2444、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:13+08:00,acvlab,"gpu_pf_audit[toolagent,wb,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 111.6 GiB、GPU 命中 block 6945、取消預取 82
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:13+08:00,acvlab,"gpu_pf_audit[toolagent,wt,LRU+RPF,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 111.6 GiB、GPU 命中 block 6945、取消預取 82
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:16+08:00,acvlab,"gpu_pf_audit[toolagent,wb,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 190.6 GiB、GPU 命中 block 8291、取消預取 185
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:16+08:00,acvlab,"gpu_pf_audit[toolagent,wt,LRU+RPF,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 190.6 GiB、GPU 命中 block 8291、取消預取 185
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:17+08:00,acvlab,"gpu_pf_audit[toolagent,wb,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 213.5 GiB、GPU 命中 block 6965、取消預取 204
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:18+08:00,acvlab,"gpu_pf_audit[toolagent,wt,LRU+RPF,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 213.5 GiB、GPU 命中 block 6965、取消預取 204
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:23+08:00,acvlab,"gpu_pf_audit[toolagent,wb,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 212.9 GiB、GPU 命中 block 6965、取消預取 198
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:23+08:00,acvlab,"gpu_pf_audit[toolagent,wt,LRU+RPF,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 212.9 GiB、GPU 命中 block 6965、取消預取 198
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:23+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 43.3 GiB、GPU 命中 block 1777、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:23+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-ALL,G:LRU]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 41.8 GiB、GPU 命中 block 1851、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:24+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 26.6 GiB、GPU 命中 block 3997、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:24+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-ALL,G:BEL]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 25.6 GiB、GPU 命中 block 3974、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:26+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 29.6 GiB、GPU 命中 block 1793、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:26+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-ALL,G:TTLA:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 29.8 GiB、GPU 命中 block 1590、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:28+08:00,acvlab,"gpu_pf_audit[toolagent,wb,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 29.8 GiB、GPU 命中 block 1846、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:28+08:00,acvlab,"gpu_pf_audit[toolagent,wt,O-ALL,G:TTLB:5]",True,前 1500 個請求、GPU 4 GiB、CPU 32 GiB、每 25 步；預取 28.9 GiB、GPU 命中 block 1770、取消預取 0
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:29+08:00,acvlab,"gpu_pf_tiny_eq_nopf[conversation,wb,O-PF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:29+08:00,acvlab,"gpu_pf_tiny_eq_nopf[conversation,wt,O-PF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:30+08:00,acvlab,"gpu_pf_tiny_eq_nopf[conversation,wb,LRU+RPF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:30+08:00,acvlab,"gpu_pf_tiny_eq_nopf[conversation,wt,LRU+RPF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:30+08:00,acvlab,"gpu_pf_tiny_eq_nopf[toolagent,wb,O-PF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:31+08:00,acvlab,"gpu_pf_tiny_eq_nopf[toolagent,wt,O-PF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:32+08:00,acvlab,"gpu_pf_tiny_eq_nopf[toolagent,wb,LRU+RPF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:32:32+08:00,acvlab,"gpu_pf_tiny_eq_nopf[toolagent,wt,LRU+RPF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:33:22+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-BEL,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:33:44+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-BEL,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:33:47+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-BELS,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:06+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-BELS,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:06+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-DROP,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:06+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-DROP,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:06+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-NOW,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:48+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-NOW,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:48+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-PF,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:56+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-PF,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:56+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-ALL,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:34:56+08:00,acvlab,"noise_lam0_eq_exact[conversation,O-ALL,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:38:34+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-BEL,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:38:34+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-BEL,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:38:55+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-BELS,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:40:31+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-BELS,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:40:31+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-DROP,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:40:31+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-DROP,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:40:31+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-NOW,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:15+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-NOW,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:15+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-PF,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:15+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-PF,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:15+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-ALL,G0]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:15+08:00,acvlab,"noise_lam0_eq_exact[toolagent,O-ALL,G111-BEL]",True,P／M × B1／B2 全部逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:28+08:00,acvlab,"noise_audit[conversation,O-BEL,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:30+08:00,acvlab,"noise_audit[conversation,O-BEL,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:30+08:00,acvlab,"noise_audit[conversation,O-BEL,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:31+08:00,acvlab,"noise_audit[conversation,O-BEL,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:41+08:00,acvlab,"noise_audit[conversation,O-BELS,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:42+08:00,acvlab,"noise_audit[conversation,O-BELS,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:43+08:00,acvlab,"noise_audit[conversation,O-BELS,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:50+08:00,acvlab,"noise_audit[conversation,O-BELS,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:52+08:00,acvlab,"noise_audit[conversation,O-DROP,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:53+08:00,acvlab,"noise_audit[conversation,O-DROP,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:43:57+08:00,acvlab,"noise_audit[conversation,O-DROP,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:02+08:00,acvlab,"noise_audit[conversation,O-DROP,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:05+08:00,acvlab,"noise_audit[conversation,O-NOW,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:05+08:00,acvlab,"noise_audit[conversation,O-NOW,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:15+08:00,acvlab,"noise_audit[conversation,O-NOW,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:16+08:00,acvlab,"noise_audit[conversation,O-NOW,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:16+08:00,acvlab,"noise_audit[conversation,O-PF,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:20+08:00,acvlab,"noise_audit[conversation,O-PF,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:29+08:00,acvlab,"noise_audit[conversation,O-PF,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:35+08:00,acvlab,"noise_audit[conversation,O-PF,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:35+08:00,acvlab,"noise_audit[conversation,O-ALL,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:35+08:00,acvlab,"noise_audit[conversation,O-ALL,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:42+08:00,acvlab,"noise_audit[conversation,O-ALL,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:44+08:00,acvlab,"noise_audit[conversation,O-ALL,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:49+08:00,acvlab,"noise_audit[toolagent,O-BEL,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:53+08:00,acvlab,"noise_audit[toolagent,O-BEL,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:54+08:00,acvlab,"noise_audit[toolagent,O-BEL,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:44:56+08:00,acvlab,"noise_audit[toolagent,O-BEL,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:04+08:00,acvlab,"noise_audit[toolagent,O-BELS,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:09+08:00,acvlab,"noise_audit[toolagent,O-BELS,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:09+08:00,acvlab,"noise_audit[toolagent,O-BELS,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:15+08:00,acvlab,"noise_audit[toolagent,O-BELS,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:16+08:00,acvlab,"noise_audit[toolagent,O-DROP,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:21+08:00,acvlab,"noise_audit[toolagent,O-DROP,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:24+08:00,acvlab,"noise_audit[toolagent,O-DROP,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:28+08:00,acvlab,"noise_audit[toolagent,O-DROP,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:28+08:00,acvlab,"noise_audit[toolagent,O-NOW,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:40+08:00,acvlab,"noise_audit[toolagent,O-NOW,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:40+08:00,acvlab,"noise_audit[toolagent,O-NOW,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:40+08:00,acvlab,"noise_audit[toolagent,O-NOW,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:40+08:00,acvlab,"noise_audit[toolagent,O-PF,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:50+08:00,acvlab,"noise_audit[toolagent,O-PF,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:50+08:00,acvlab,"noise_audit[toolagent,O-PF,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:56+08:00,acvlab,"noise_audit[toolagent,O-PF,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:45:56+08:00,acvlab,"noise_audit[toolagent,O-ALL,PB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:07+08:00,acvlab,"noise_audit[toolagent,O-ALL,PB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:07+08:00,acvlab,"noise_audit[toolagent,O-ALL,MB1]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:07+08:00,acvlab,"noise_audit[toolagent,O-ALL,MB2]",True,λ＝0.3、前 1500 個請求、GPU 4 GiB＋BEL、CPU 32 GiB、每 25 步稽核通過；同 seed 重跑相同 True；seed 1 vs 2 不同 True
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:09+08:00,acvlab,"restore_eq_ref[conversation,LRU,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:30+08:00,acvlab,"restore_eq_ref[conversation,LRU,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:30+08:00,acvlab,"restore_eq_ref[conversation,PRED,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:30+08:00,acvlab,"restore_eq_ref[conversation,PRED,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:30+08:00,acvlab,"restore_eq_ref[conversation,LRU2,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:38+08:00,acvlab,"restore_eq_ref[conversation,LRU2,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:38+08:00,acvlab,"restore_eq_ref[conversation,ARC,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:38+08:00,acvlab,"restore_eq_ref[conversation,ARC,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:38+08:00,acvlab,"restore_eq_ref[conversation,S3FIFO,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:48+08:00,acvlab,"restore_eq_ref[conversation,S3FIFO,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:46:48+08:00,acvlab,"restore_eq_ref[conversation,GDSF,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:01+08:00,acvlab,"restore_eq_ref[conversation,GDSF,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:01+08:00,acvlab,"restore_eq_ref[conversation,PENS,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:01+08:00,acvlab,"restore_eq_ref[conversation,PENS,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:01+08:00,acvlab,"restore_eq_ref[conversation,LRU+NONE,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:01+08:00,acvlab,"restore_eq_ref[conversation,LRU+NONE,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:01+08:00,acvlab,"restore_eq_ref[conversation,LRU+2HW,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:06+08:00,acvlab,"restore_eq_ref[conversation,LRU+2HW,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:06+08:00,acvlab,"restore_eq_ref[conversation,LRU+2HA,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:06+08:00,acvlab,"restore_eq_ref[conversation,LRU+2HA,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:06+08:00,acvlab,"restore_eq_ref[conversation,LRU+RPF,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:28+08:00,acvlab,"restore_eq_ref[conversation,LRU+RPF,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:28+08:00,acvlab,"restore_eq_ref[conversation,O-BEL,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:36+08:00,acvlab,"restore_eq_ref[conversation,O-BEL,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:36+08:00,acvlab,"restore_eq_ref[conversation,O-BELS,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:39+08:00,acvlab,"restore_eq_ref[conversation,O-BELS,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:39+08:00,acvlab,"restore_eq_ref[conversation,O-DROP,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:39+08:00,acvlab,"restore_eq_ref[conversation,O-DROP,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:39+08:00,acvlab,"restore_eq_ref[conversation,O-NOW,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:53+08:00,acvlab,"restore_eq_ref[conversation,O-NOW,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:53+08:00,acvlab,"restore_eq_ref[conversation,O-PF,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:55+08:00,acvlab,"restore_eq_ref[conversation,O-PF,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:55+08:00,acvlab,"restore_eq_ref[conversation,O-ALL,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:55+08:00,acvlab,"restore_eq_ref[conversation,O-ALL,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:47:55+08:00,acvlab,"restore_eq_ref[conversation,FREQ2Q,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:12+08:00,acvlab,"restore_eq_ref[conversation,FREQ2Q,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:12+08:00,acvlab,"restore_eq_ref[conversation,O-DROP-H1800,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:12+08:00,acvlab,"restore_eq_ref[conversation,O-DROP-H1800,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:12+08:00,acvlab,"restore_eq_ref[conversation,O-NOW-H1800,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:13+08:00,acvlab,"restore_eq_ref[conversation,O-NOW-H1800,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:13+08:00,acvlab,"restore_eq_ref[conversation,O-ALL-H1800,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:29+08:00,acvlab,"restore_eq_ref[conversation,O-ALL-H1800,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:29+08:00,acvlab,"restore_eq_ref[conversation,O-DROP-H3600,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:30+08:00,acvlab,"restore_eq_ref[conversation,O-DROP-H3600,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:30+08:00,acvlab,"restore_eq_ref[conversation,O-NOW-H3600,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:31+08:00,acvlab,"restore_eq_ref[conversation,O-NOW-H3600,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:31+08:00,acvlab,"restore_eq_ref[conversation,O-ALL-H3600,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:52+08:00,acvlab,"restore_eq_ref[conversation,O-ALL-H3600,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:48:52+08:00,acvlab,"restore_eq_ref[toolagent,LRU,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:49:57+08:00,acvlab,"restore_eq_ref[toolagent,LRU,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:49:57+08:00,acvlab,"restore_eq_ref[toolagent,PRED,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:49:57+08:00,acvlab,"restore_eq_ref[toolagent,PRED,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:49:57+08:00,acvlab,"restore_eq_ref[toolagent,LRU2,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:49:57+08:00,acvlab,"restore_eq_ref[toolagent,LRU2,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:49:57+08:00,acvlab,"restore_eq_ref[toolagent,ARC,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:50:01+08:00,acvlab,"restore_eq_ref[toolagent,ARC,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:50:01+08:00,acvlab,"restore_eq_ref[toolagent,S3FIFO,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:01+08:00,acvlab,"restore_eq_ref[toolagent,S3FIFO,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:01+08:00,acvlab,"restore_eq_ref[toolagent,GDSF,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:04+08:00,acvlab,"restore_eq_ref[toolagent,GDSF,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:04+08:00,acvlab,"restore_eq_ref[toolagent,PENS,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:20+08:00,acvlab,"restore_eq_ref[toolagent,PENS,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:20+08:00,acvlab,"restore_eq_ref[toolagent,LRU+NONE,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:25+08:00,acvlab,"restore_eq_ref[toolagent,LRU+NONE,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:51:25+08:00,acvlab,"restore_eq_ref[toolagent,LRU+2HW,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:52:23+08:00,acvlab,"restore_eq_ref[toolagent,LRU+2HW,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:52:23+08:00,acvlab,"restore_eq_ref[toolagent,LRU+2HA,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:52:23+08:00,acvlab,"restore_eq_ref[toolagent,LRU+2HA,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:52:23+08:00,acvlab,"restore_eq_ref[toolagent,LRU+RPF,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:52:23+08:00,acvlab,"restore_eq_ref[toolagent,LRU+RPF,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:52:32+08:00,acvlab,"restore_eq_ref[toolagent,O-BEL,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:53:36+08:00,acvlab,"restore_eq_ref[toolagent,O-BEL,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:53:44+08:00,acvlab,"restore_eq_ref[toolagent,O-BELS,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:53:47+08:00,acvlab,"restore_eq_ref[toolagent,O-BELS,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:53:47+08:00,acvlab,"restore_eq_ref[toolagent,O-DROP,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:53:47+08:00,acvlab,"restore_eq_ref[toolagent,O-DROP,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:53:47+08:00,acvlab,"restore_eq_ref[toolagent,O-NOW,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:54:09+08:00,acvlab,"restore_eq_ref[toolagent,O-NOW,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:54:09+08:00,acvlab,"restore_eq_ref[toolagent,O-PF,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:03+08:00,acvlab,"restore_eq_ref[toolagent,O-PF,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:03+08:00,acvlab,"restore_eq_ref[toolagent,O-ALL,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:03+08:00,acvlab,"restore_eq_ref[toolagent,O-ALL,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:03+08:00,acvlab,"restore_eq_ref[toolagent,FREQ2Q,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:07+08:00,acvlab,"restore_eq_ref[toolagent,FREQ2Q,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:07+08:00,acvlab,"restore_eq_ref[toolagent,O-DROP-H1800,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:09+08:00,acvlab,"restore_eq_ref[toolagent,O-DROP-H1800,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:09+08:00,acvlab,"restore_eq_ref[toolagent,O-NOW-H1800,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:55:20+08:00,acvlab,"restore_eq_ref[toolagent,O-NOW-H1800,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:56:16+08:00,acvlab,"restore_eq_ref[toolagent,O-ALL-H1800,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:56:16+08:00,acvlab,"restore_eq_ref[toolagent,O-ALL-H1800,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:56:16+08:00,acvlab,"restore_eq_ref[toolagent,O-DROP-H3600,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:56:22+08:00,acvlab,"restore_eq_ref[toolagent,O-DROP-H3600,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:56:22+08:00,acvlab,"restore_eq_ref[toolagent,O-NOW-H3600,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:56:31+08:00,acvlab,"restore_eq_ref[toolagent,O-NOW-H3600,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:57:11+08:00,acvlab,"restore_eq_ref[toolagent,O-ALL-H3600,none]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:09+08:00,acvlab,"restore_eq_ref[toolagent,O-ALL-H3600,wbBEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:09+08:00,acvlab,"restore_eq_ref[conversation,O-PF,pfgpu]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:09+08:00,acvlab,"restore_eq_ref[conversation,LRU+RPF,pfgpu]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:09+08:00,acvlab,"restore_eq_ref[conversation,O-ALL,pfgpu]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:09+08:00,acvlab,"restore_eq_ref[toolagent,O-PF,pfgpu]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:09+08:00,acvlab,"restore_eq_ref[toolagent,LRU+RPF,pfgpu]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:09+08:00,acvlab,"restore_eq_ref[toolagent,O-ALL,pfgpu]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:12+08:00,acvlab,"slowcap_huge_eq_none[conversation,LRU,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:12+08:00,acvlab,"slowcap_huge_eq_none[conversation,LRU,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:12+08:00,acvlab,"slowcap_huge_eq_none[conversation,LRU,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:12+08:00,acvlab,"slowcap_huge_eq_none[conversation,LRU,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:12+08:00,acvlab,"slowcap_huge_eq_none[conversation,LRU,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:14+08:00,acvlab,"slowcap_huge_eq_none[conversation,LRU,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:14+08:00,acvlab,"slowcap_huge_eq_none[conversation,LRU,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:28+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-BEL,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:28+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-BEL,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:29+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-BEL,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:40+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-BEL,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:40+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-BEL,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:42+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-BEL,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:43+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-BEL,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:43+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-PF,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:43+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-PF,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:43+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-PF,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:43+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-PF,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:43+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-PF,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:44+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-PF,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:44+08:00,acvlab,"slowcap_huge_eq_none[conversation,O-PF,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:44+08:00,acvlab,"slowcap_huge_eq_none[conversation,GDSF,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:44+08:00,acvlab,"slowcap_huge_eq_none[conversation,GDSF,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:44+08:00,acvlab,"slowcap_huge_eq_none[conversation,GDSF,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:44+08:00,acvlab,"slowcap_huge_eq_none[conversation,GDSF,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:45+08:00,acvlab,"slowcap_huge_eq_none[conversation,GDSF,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:45+08:00,acvlab,"slowcap_huge_eq_none[conversation,GDSF,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:45+08:00,acvlab,"slowcap_huge_eq_none[conversation,GDSF,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:47+08:00,acvlab,"slowcap_huge_eq_none[toolagent,LRU,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:48+08:00,acvlab,"slowcap_huge_eq_none[toolagent,LRU,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:50+08:00,acvlab,"slowcap_huge_eq_none[toolagent,LRU,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:50+08:00,acvlab,"slowcap_huge_eq_none[toolagent,LRU,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:50+08:00,acvlab,"slowcap_huge_eq_none[toolagent,LRU,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:50+08:00,acvlab,"slowcap_huge_eq_none[toolagent,LRU,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:58:51+08:00,acvlab,"slowcap_huge_eq_none[toolagent,LRU,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T02:59:49+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-BEL,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:28+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-BEL,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:28+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-BEL,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:28+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-BEL,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:48+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-BEL,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-BEL,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-BEL,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-PF,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-PF,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-PF,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-PF,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-PF,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-PF,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,O-PF,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,GDSF,LRU]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,GDSF,LRU2]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,GDSF,ARC]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,GDSF,S3FIFO]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,GDSF,GDSF]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,GDSF,PENS]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:54+08:00,acvlab,"slowcap_huge_eq_none[toolagent,GDSF,BEL]",True,逐位元相同
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:00:56+08:00,acvlab,"slowcap_audit[conversation,LRU,LRU,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3508、丟 session 943
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,LRU,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3728、丟 session 941
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,LRU2,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3393、丟 session 1006
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,LRU2,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3633、丟 session 1004
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,ARC,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3577、丟 session 976
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,ARC,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3828、丟 session 972
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,S3FIFO,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3556、丟 session 966
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,S3FIFO,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3754、丟 session 966
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:01+08:00,acvlab,"slowcap_audit[conversation,LRU,GDSF,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3133、丟 session 1334
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:03+08:00,acvlab,"slowcap_audit[conversation,LRU,GDSF,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3472、丟 session 1332
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:03+08:00,acvlab,"slowcap_audit[conversation,LRU,PENS,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3677、丟 session 1326
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:07+08:00,acvlab,"slowcap_audit[conversation,LRU,PENS,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3991、丟 session 1324
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:07+08:00,acvlab,"slowcap_audit[conversation,LRU,BEL,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 6251、丟 session 756
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:07+08:00,acvlab,"slowcap_audit[conversation,LRU,BEL,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 6375、丟 session 755
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:07+08:00,acvlab,"slowcap_audit[conversation,O-BEL,LRU,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 295、丟 session 830
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:07+08:00,acvlab,"slowcap_audit[conversation,O-BEL,LRU,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 539、丟 session 831
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:07+08:00,acvlab,"slowcap_audit[conversation,O-BEL,LRU2,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 462、丟 session 864
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:09+08:00,acvlab,"slowcap_audit[conversation,O-BEL,LRU2,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 847、丟 session 864
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:09+08:00,acvlab,"slowcap_audit[conversation,O-BEL,ARC,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 234、丟 session 854
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:10+08:00,acvlab,"slowcap_audit[conversation,O-BEL,ARC,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 575、丟 session 855
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:10+08:00,acvlab,"slowcap_audit[conversation,O-BEL,S3FIFO,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 266、丟 session 854
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:14+08:00,acvlab,"slowcap_audit[conversation,O-BEL,S3FIFO,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 645、丟 session 855
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:14+08:00,acvlab,"slowcap_audit[conversation,O-BEL,GDSF,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 142、丟 session 1127
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:14+08:00,acvlab,"slowcap_audit[conversation,O-BEL,GDSF,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 343、丟 session 1129
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:14+08:00,acvlab,"slowcap_audit[conversation,O-BEL,PENS,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 169、丟 session 1111
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:14+08:00,acvlab,"slowcap_audit[conversation,O-BEL,PENS,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 384、丟 session 1112
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:14+08:00,acvlab,"slowcap_audit[conversation,O-BEL,BEL,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 631、丟 session 758
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:15+08:00,acvlab,"slowcap_audit[conversation,O-BEL,BEL,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 1214、丟 session 758
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:15+08:00,acvlab,"slowcap_audit[conversation,O-PF,LRU,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 2895、丟 session 944
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:16+08:00,acvlab,"slowcap_audit[conversation,O-PF,LRU,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3059、丟 session 942
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:16+08:00,acvlab,"slowcap_audit[conversation,O-PF,LRU2,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 2652、丟 session 1018
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:17+08:00,acvlab,"slowcap_audit[conversation,O-PF,LRU2,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 2884、丟 session 1006
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:17+08:00,acvlab,"slowcap_audit[conversation,O-PF,ARC,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 2936、丟 session 979
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:18+08:00,acvlab,"slowcap_audit[conversation,O-PF,ARC,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3247、丟 session 977
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:18+08:00,acvlab,"slowcap_audit[conversation,O-PF,S3FIFO,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 2865、丟 session 969
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:19+08:00,acvlab,"slowcap_audit[conversation,O-PF,S3FIFO,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3113、丟 session 967
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:19+08:00,acvlab,"slowcap_audit[conversation,O-PF,GDSF,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 2393、丟 session 1338
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:22+08:00,acvlab,"slowcap_audit[conversation,O-PF,GDSF,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 2733、丟 session 1334
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:22+08:00,acvlab,"slowcap_audit[conversation,O-PF,PENS,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3211、丟 session 1328
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:24+08:00,acvlab,"slowcap_audit[conversation,O-PF,PENS,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 3565、丟 session 1321
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:24+08:00,acvlab,"slowcap_audit[conversation,O-PF,BEL,none]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 5868、丟 session 760
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:24+08:00,acvlab,"slowcap_audit[conversation,O-PF,BEL,wb]",True,前 1500 個請求、上限 8544 塊、每 25 步；丟乾淨副本 6002、丟 session 756
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:24+08:00,acvlab,"slowcap_audit[toolagent,LRU,LRU,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1013、丟 session 516
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:25+08:00,acvlab,"slowcap_audit[toolagent,LRU,LRU,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1035、丟 session 516
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:25+08:00,acvlab,"slowcap_audit[toolagent,LRU,LRU2,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1022、丟 session 506
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:28+08:00,acvlab,"slowcap_audit[toolagent,LRU,LRU2,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1043、丟 session 506
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:28+08:00,acvlab,"slowcap_audit[toolagent,LRU,ARC,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 966、丟 session 588
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:28+08:00,acvlab,"slowcap_audit[toolagent,LRU,ARC,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 982、丟 session 587
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:28+08:00,acvlab,"slowcap_audit[toolagent,LRU,S3FIFO,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 966、丟 session 588
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:28+08:00,acvlab,"slowcap_audit[toolagent,LRU,S3FIFO,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 982、丟 session 587
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:28+08:00,acvlab,"slowcap_audit[toolagent,LRU,GDSF,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1003、丟 session 1107
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:30+08:00,acvlab,"slowcap_audit[toolagent,LRU,GDSF,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1036、丟 session 1106
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:30+08:00,acvlab,"slowcap_audit[toolagent,LRU,PENS,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1366、丟 session 1087
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:32+08:00,acvlab,"slowcap_audit[toolagent,LRU,PENS,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1370、丟 session 1081
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:32+08:00,acvlab,"slowcap_audit[toolagent,LRU,BEL,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1240、丟 session 530
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:33+08:00,acvlab,"slowcap_audit[toolagent,LRU,BEL,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1267、丟 session 530
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:33+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,LRU,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 118、丟 session 441
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:33+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,LRU,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 249、丟 session 440
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:33+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,LRU2,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 139、丟 session 442
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:35+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,LRU2,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 269、丟 session 442
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:35+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,ARC,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 109、丟 session 481
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:37+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,ARC,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 268、丟 session 468
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:37+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,S3FIFO,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 109、丟 session 481
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:38+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,S3FIFO,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 268、丟 session 468
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:38+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,GDSF,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 44、丟 session 929
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:39+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,GDSF,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 201、丟 session 921
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:39+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,PENS,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 46、丟 session 901
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:41+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,PENS,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 305、丟 session 902
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:41+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,BEL,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 159、丟 session 528
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:43+08:00,acvlab,"slowcap_audit[toolagent,O-BEL,BEL,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 318、丟 session 527
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:43+08:00,acvlab,"slowcap_audit[toolagent,O-PF,LRU,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 783、丟 session 528
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:43+08:00,acvlab,"slowcap_audit[toolagent,O-PF,LRU,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 830、丟 session 526
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:43+08:00,acvlab,"slowcap_audit[toolagent,O-PF,LRU2,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 780、丟 session 509
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:43+08:00,acvlab,"slowcap_audit[toolagent,O-PF,LRU2,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 836、丟 session 509
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:43+08:00,acvlab,"slowcap_audit[toolagent,O-PF,ARC,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 777、丟 session 580
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:45+08:00,acvlab,"slowcap_audit[toolagent,O-PF,ARC,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 778、丟 session 584
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:45+08:00,acvlab,"slowcap_audit[toolagent,O-PF,S3FIFO,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 777、丟 session 580
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:48+08:00,acvlab,"slowcap_audit[toolagent,O-PF,S3FIFO,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 778、丟 session 584
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:48+08:00,acvlab,"slowcap_audit[toolagent,O-PF,GDSF,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 786、丟 session 1114
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:48+08:00,acvlab,"slowcap_audit[toolagent,O-PF,GDSF,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 760、丟 session 1105
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:48+08:00,acvlab,"slowcap_audit[toolagent,O-PF,PENS,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1135、丟 session 1093
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:48+08:00,acvlab,"slowcap_audit[toolagent,O-PF,PENS,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1118、丟 session 1090
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:48+08:00,acvlab,"slowcap_audit[toolagent,O-PF,BEL,none]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1156、丟 session 542
+20261106-002959-icpe-sim-g1-0b0ef1e,2026-11-06T03:01:50+08:00,acvlab,"slowcap_audit[toolagent,O-PF,BEL,wb]",True,前 1500 個請求、上限 7999 塊、每 25 步；丟乾淨副本 1133、丟 session 530

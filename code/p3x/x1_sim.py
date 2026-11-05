@@ -2113,6 +2113,8 @@ OUTDIR_A = "x1"
 _GPU_COLS = False     # ICPE next：這次 sweep 有沒有開 GPU 層（有＝每列多 gpu_GiB／gpu_write／gpu_policy 與 _gpu_summary 的欄位）
 _NZ_COLS = False      # ICPE next：這次 sweep 有沒有雜訊（有＝每列多 noise_model／noise_lambda／noise_draw／noise_seed）
 _SC_COLS = False      # ICPE next：這次 sweep 有沒有慢層容量上限（有＝每列多 slow_cap_frac／slow_policy／n_slow_clean_evict／n_slow_sess_drop）
+_ENGINE = "py"        # ICPE next：py＝Engine（原本）；rust＝x1_rust 的常駐 x1fast（sweep --engine rust；_rust_sweep）
+_XR = None            # x1_rust 模組（只有 --engine rust 才 import）
 
 
 def uses_oracle(policy, gs, sc=None):
@@ -2158,12 +2160,37 @@ def _job(job):
     t0 = time.time()
     views = make_views(K, P, keys)
     gv = views[0] if (POLICIES[policy][0] == "gdsf" or (sc is not None and sc["pol"] == "GDSF")) else None
-    gkw = {} if gs is None else dict(gpu_cap=int(gs["G"] * GiB), gpu_policy=gs["pol"], gpu_write=gs["write"], pf_target=gs.get("pf", "cpu"))
+    gkw = _gpu_kw(gs)
     if nz is not None:
         gkw["noise"] = nz
     if sc is not None:
         gkw.update(slow_cap=sc["frac"], slow_policy=sc["pol"])
     eng = Engine(P, policy, cpu_gib * GiB, views, K, gdsf_view=gv, **gkw).run()
+    return _job_rows(job, P, views, eng, t0)
+
+
+def _gpu_kw(gs):
+    return {} if gs is None else dict(gpu_cap=int(gs["G"] * GiB), gpu_policy=gs["pol"], gpu_write=gs["write"], pf_target=gs.get("pf", "cpu"))
+
+
+def _rust_post(job, jd, t0):
+    """--engine rust：Rust 跑完一個 job（jd＝它的目錄）→ 讀回 views → 和 Python 引擎同一段的摘要、存 npz（_job_rows）。"""
+    trace, rule, cpu_gib, policy, keys = job[:5]
+    P = prep(trace, rule)
+    views = make_views(_K, P, keys)
+    try:
+        eng = _XR.read_outputs(jd, P, views, _gpu_kw(job[5]), policy)
+    finally:
+        _XR.shutil.rmtree(jd, ignore_errors=True)
+    return _job_rows(job, P, views, eng, t0)
+
+
+def _job_rows(job, P, views, eng, t0):
+    """一個 job 跑完後：每個時間設定一列（summarize）＋逐請求 TTFT 的 npz（$RUN_DIR）。Python 與 Rust 引擎共用。"""
+    trace, rule, cpu_gib, policy, keys = job[:5]
+    gs = job[5] if len(job) > 5 else None
+    nz = job[6] if len(job) > 6 else None
+    sc = job[7] if len(job) > 7 else None
     out = []
     rd = os.environ.get("RUN_DIR", "")
     arrs = {}
@@ -2248,7 +2275,7 @@ def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None
 
 
 def cmd_sweep(a):
-    global _K, _GPU_COLS, _NZ_COLS, _SC_COLS
+    global _K, _GPU_COLS, _NZ_COLS, _SC_COLS, _ENGINE, _XR
     import multiprocessing as mp
     for nm in a.slows:
         if nm not in SLOWS and nm not in EXTRA_SLOWS:
@@ -2272,6 +2299,23 @@ def cmd_sweep(a):
     fh = open(out_path, "a", newline="")
     w = None
     sha = code_sha()
+    _ENGINE = getattr(a, "engine", "py")
+    if _ENGINE == "rust":         # ICPE next：Rust 引擎（x1_rust.py）。code_sha 加上 Rust 原始碼的 sha，CSV 看得出是哪個引擎
+        import x1_rust as _xr
+        _XR = _xr
+        rsha = _XR.src_sha()
+        b = _XR.binary()
+        for tr in a.traces:
+            for ru in a.rules:
+                td, tsha = _XR.prepare_trace(prep(tr, ru), tr, ru)
+                print(f"rust trace {tr} {ru} -> {td}", flush=True)
+        nfb = {}
+        for j in J:
+            why = _XR.unsupported(PLANNER, j[6], j[7])
+            if why:
+                nfb[why] = nfb.get(why, 0) + 1
+        sha = f"{sha}+rs{rsha[:8]}"
+        print(f"engine=rust src_sha256={rsha} bin={b} bin_sha256={_XR.file_sha(b)} py_fallback_jobs={sum(nfb.values())} {nfb}", flush=True)
     print(f"jobs={len(J)} workers={a.workers} code_sha={sha}", flush=True)
     # ICPE next：worker 跑完 maxtasks 個 job 就換一個新的（從父行程重新 fork），不讓記憶體跨 job 一直累積
     # （TRX40 量到：每個 job 留下一些、只升不降；STATUS_TRX 10:05）。不改任何 job 的計算：job 之間本來就不共用狀態
@@ -2280,23 +2324,89 @@ def cmd_sweep(a):
     print(f"maxtasksperchild={mt}", flush=True)
     t0 = time.time()
     done = 0
-    with mp.get_context("fork").Pool(a.workers, maxtasksperchild=mt) as pool:
-        for res in pool.imap_unordered(_job, J):
-            for row in res:
-                row = dict(run_id=run_id(), ts=now_ts(), **row, code_sha=sha)
-                if w is None:
-                    fields = list(row.keys())
-                    w = csv.DictWriter(fh, fieldnames=fields)
-                    if new:
-                        w.writeheader()
-                w.writerow({k: (round(v, 6) if isinstance(v, float) else v) for k, v in row.items()})
-            fh.flush()
-            done += 1
-            r0 = res[0]
-            print(f"[{done}/{len(J)} {time.time()-t0:.0f}s] {r0['trace']} {r0['rule']} {r0['cpu_GiB']} {r0['policy']} "
-                  f"views={len(res)} job={r0['elapsed_s']:.1f}s mean_ret[0]={r0['mean_ret']:.4f}", flush=True)
+
+    def put(res):
+        nonlocal w, fields, done
+        for row in res:
+            row = dict(run_id=run_id(), ts=now_ts(), **row, code_sha=sha)
+            if w is None:
+                fields = list(row.keys())
+                w = csv.DictWriter(fh, fieldnames=fields)
+                if new:
+                    w.writeheader()
+            w.writerow({k: (round(v, 6) if isinstance(v, float) else v) for k, v in row.items()})
+        fh.flush()
+        done += 1
+        r0 = res[0]
+        print(f"[{done}/{len(J)} {time.time()-t0:.0f}s] {r0['trace']} {r0['rule']} {r0['cpu_GiB']} {r0['policy']} "
+              f"views={len(res)} job={r0['elapsed_s']:.1f}s mean_ret[0]={r0['mean_ret']:.4f}", flush=True)
+    rust_ok = [_ENGINE == "rust" and _XR.unsupported(PLANNER, j[6], j[7]) is None for j in J]
+    JR = [j for j, ok in zip(J, rust_ok) if ok]
+    JP = [j for j, ok in zip(J, rust_ok) if not ok]          # --engine py（預設）：JP＝J（同樣的順序）＝原本的路徑
+    if JR:
+        _rust_sweep(JR, a.workers, put)
+    if JP:
+        with mp.get_context("fork").Pool(a.workers, maxtasksperchild=mt) as pool:
+            for res in pool.imap_unordered(_job, JP):
+                put(res)
     fh.close()
     print("sweep done", time.time() - t0, flush=True)
+
+
+def _rust_sweep(JR, workers, put):
+    """--engine rust（ICPE next）：每份紀錄一個常駐的 x1fast（紀錄只讀一次、workers 個執行緒），同時最多 workers 個 job 在跑；
+    父行程寫每個 job 的輸入目錄（x1_rust.write_job），Rust 跑完 → 小的 Pool（workers//4 個行程）讀回結果、做和 Python 引擎
+    同一段的摘要與存 npz（_rust_post → _job_rows）→ put 寫 CSV。任何錯誤（Rust 行程提早結束、讀回失敗）→ 整個 sweep 停下。"""
+    import multiprocessing as mp
+    import queue
+    events = queue.Queue()
+    me = sys.modules[__name__]
+    tlog = os.environ.get("X1_RUST_TIMING_LOG", "")
+    srv, meta = {}, {}
+    pend = deque(JR)
+    inflight = nrows = 0
+    # 摘要用的 worker 先 fork（之後才開讀取執行緒，不在有執行緒時 fork）；它們不跑引擎、沒有循環參照 → 不用定期換新
+    with mp.get_context("fork").Pool(max(1, workers // 4)) as pool:
+        try:
+            while nrows < len(JR):
+                while pend and inflight < workers:
+                    j = pend.popleft()
+                    key = (j[0], j[1])
+                    if key not in srv:
+                        srv[key] = _XR.Server(_XR._TDIR[key], workers, events)
+                    P = prep(*key)
+                    t0 = time.time()
+                    views = make_views(_K, P, j[4])
+                    jd = _XR.write_job(me, P, j[3], j[2] * GiB, views, _K, _gpu_kw(j[5]))
+                    meta[jd] = (j, t0)
+                    srv[key].submit(jd)
+                    inflight += 1
+                ev = events.get()
+                if ev[0] == "done":
+                    inflight -= 1
+                    j, t0 = meta.pop(ev[1])
+                    if tlog:
+                        with open(tlog, "a") as fh_:
+                            fh_.write(json.dumps(dict(trace=j[0], rule=j[1], cpu=j[2], policy=j[3], n_views=len(j[4]),
+                                                      gpu=j[5]["pol"] if j[5] else "off", run_s=ev[2], rust_wall_s=ev[3],
+                                                      since_dispatch_s=round(time.time() - t0, 3))) + "\n")
+                    pool.apply_async(_rust_post, (j, ev[1], t0), callback=lambda r: events.put(("rows", r)),
+                                     error_callback=lambda e: events.put(("err", e)))
+                elif ev[0] == "rows":
+                    put(ev[1])
+                    nrows += 1
+                elif ev[0] == "err":
+                    raise ev[1]
+                elif ev[0] == "eof" and not ev[1].closing:
+                    raise RuntimeError(f"x1fast（常駐，{ev[1].tdir}）提早結束，exit {ev[1].p.wait()}（錯誤訊息在 stderr）")
+        except BaseException:
+            for s_ in srv.values():
+                s_.kill()
+            raise
+        for s_ in srv.values():
+            rc = s_.close()
+            if rc != 0:
+                raise RuntimeError(f"x1fast（常駐，{s_.tdir}）exit {rc}")
 
 
 # ================================================================== selftest（§2.8 不變量）
@@ -2605,6 +2715,8 @@ def main():
     s.add_argument("--maxtasks", type=int, default=int(os.environ.get("X1_MAXTASKS", "4")),
                    help="每個 worker 跑幾個 job 就換新的（重新 fork；避免記憶體累積；預設 4，可用 $X1_MAXTASKS 改）；0＝不換（原本的行為）")
     s.add_argument("--out", default="x1_sweep.csv")
+    s.add_argument("--engine", choices=["py", "rust"], default=os.environ.get("X1_ENGINE", "py"),
+                   help="py＝原本的 Python Engine（預設）；rust＝code/p3x/x1fast（x1_rust.py；不支援的功能那個 job 自動用 py）")
     # ICPE next（預設＝原本的行為）
     s.add_argument("--slows", nargs="+", default=SLOWS, help="慢層等級；可加 nvme807（H200 本地 NVMe 實測）")
     s.add_argument("--gpu-gib", nargs="+", type=gib_arg, default=[0], help="GPU 快取層的 KV 預算（GiB）；0＝關閉；PREREG＝111.0625（1,777 塊）")

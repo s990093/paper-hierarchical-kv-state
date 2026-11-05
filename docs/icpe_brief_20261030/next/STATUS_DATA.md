@@ -2,6 +2,137 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T03:25+08:00 — tl_c2 完成；merge Rust 引擎（875fb2b）、G0（Rust）PASS；佇列工具加 `--engine rust`
+
+**做完什麼**
+- **`tl_main/tl_c2`**：run `20261105-172713-icpe-data-tl_main-tl_c2`，exit 0，6,174 個 job，sweep 32,060 s（40 worker）。
+  - 已收進 `results/icpe_next/b/tl_main/tl_c2/`：7,344 列（386f84d）。
+- **merge `origin/icpe-next-sim` @ 875fb2b**（304fd72）：照 STATUS_SIM 2026-11-06T03:15（Rust G1、自檢、14 個 block 的 xcheck 都 PASS）。
+  - merge 後 `code/p3x`、`p3_fvar.py`、`p3_platform.py` 和 0b0ef1e 逐位元相同（`git diff` 是空的）。
+- **G0（Rust 引擎）PASS**：run `20261106-031718-icpe-data-g0-rust-merged-0b0ef1e`。
+  - 設定：`--engine rust --workers 3`，新功能全關，共用 venv，nice 10。
+  - 結果：4,416 列 × 29 欄＝**128,064 格，0 個不同**（`G0_RESULT IDENTICAL`）。`py_fallback_jobs=0`，sweep 296 s。
+  - stdout 記了執行檔：`bin_sha256=001f462d…`、原始碼 `src_sha256=c867782a…`，code_sha 欄是 `8c1f52f7dd1f+rsc867782a`。
+  - Python 預設引擎這次沒有另做 G0：程式和 0b0ef1e 逐位元相同，而 icpe-sim 已在同一台、同一個共用 venv 對 0b0ef1e 跑過 Python 的 G1（4,416 × 29，0 個不同）。
+- **`next_b_queue.py run --engine {py,rust}`**（預設 py，行為不變）：
+  - rust 時 x1 sweep 加 `--engine rust`，逐 job 時間記在 `<run>/rust_timing.jsonl`。
+  - context.txt 多記一行 `engine:`。
+  - 空跑 `tl_p1 --only tl_c1_ttl --engine rust --workers 32` 檢查過，`check_p1` 通過。
+
+**現在在跑什麼**（都是 Python，merge 前開跑的 block 不受影響：worker 用 fork，程式在開跑時已載入）
+- 40 worker：`tl_main/tl_c4`，02:21 開始，03:16 時 454／6,174。
+- 4 worker：`old_main/fi6w`，03:16 時 22,693／37,044。
+
+**需要使用者決定什麼**：Rust 要不要接手已經開始的 `tl_c4`（見下一節）。
+
+## 2026-11-06T00:45+08:00 — 偏離 6 的 P1–P3 排程已加；job 數和 icpe-ana 的推算完全相同
+
+- **`next_b_queue.py`** 新增：
+  - plan `{cw,tl,old,sa,bl}_p1`：每個主結果 block 拆成兩個。
+    - `_ttl`：8 個新 TTL 規則 × 15 個 CPU 規則（`NON_ORACLE`＋`COMPONENT_POLICIES`）。
+    - `_trunc`：6 個截尾規則 × 16 個 GPU 規則。
+  - plan `_p2`：每個主結果 block 拆成 `_nvme807`、`_load`。
+  - plan `_p3`：每個主結果 block 拆成 `_wt`、`_pfgpu`。
+  - P2／P3 的規則集合同 `sens_rep`。
+  - `count` 子指令：直接呼叫 `x1_sim.jobs_for` 數 job，不讀紀錄、不跑模擬。
+  - `check_p1`：`count` 和 `run`（plan 名稱以 `_p1` 結尾時）會先核對三件事，不符就停：
+    - 補跑的 CPU 規則正好是 `x1_sim.NON_ORACLE` ∪ `COMPONENT_POLICIES`。
+    - `RIVALS` 包含在 `NON_ORACLE` 裡。
+    - 截尾規則都在 `POLICIES` 裡。
+  - 起因：icpe-sim 11/6 提醒，④ 缺任何一個 TTL 時 `next_sim_analyze.py` 會靜默整列跳過。
+- **job 數**（run `20261106-004257-icpe-data-count-p1p3`，stdout 在 run 目錄）：
+  - 主結果每個變體 6,174，和實際 sweep 印的 `jobs=` 相同，這個數法可信。
+  - 每個變體多出的 job：P1 `_ttl` 6,480、`_trunc` 4,824；P2 `_nvme807` 2,214、`_load` 8,154；P3 `_wt` 6,174、`_pfgpu` 1,296。
+  - 40 個變體合計：P1 452,160＋P2 414,720＋P3 298,800＝**1,165,680**。
+  - **和 icpe-ana 的推算（STATUS_ANA 00:45）每一項都相同。**
+- **出表後的檢查**（P1 分析時做）：每份紀錄 × 每個元件的列數，要等於只有 3 個 TTL 時的列數。少了就停下來，不收進結果。
+- **使用者決定（11/6 01:00）**：換成 Rust 後，CPU 總用量維持約 44。
+  - icpe-sim 的預告：`--workers N` 實際用約 1.25×N 個 CPU（N 個 Rust 執行緒＋N/4 個摘要行程）。
+  - 所以 Rust 的佇列設 N＝32 左右（約 40 個 CPU）。還有其他佇列同時跑時，合計也不超過約 44。
+- 還沒做的：
+  - 加 `--engine rust`。要等 icpe-sim 的包裝 commit 和 STATUS_SIM 的 G1／xcheck PASS。
+  - 分析時排除重複的格子：P1 和 `cw_main_ttl7` 重疊，P2／P3 和 `sens_rep` 的代表格重疊。分析 P1 時用主結果＋`_p1`，不放 `_ttl7`。
+
+## 2026-11-06T00:15+08:00 — PREREG 偏離 6 已寫（補回砍掉的格子 P1–P4＋Rust 引擎）；使用者選「④ 也擴 7 個 TTL」
+
+**做完什麼**
+- **PREREG 偏離 6**（`date -u` 2026-11-05T16:09:01Z）：照 STATUS_ANA 00:20 的草稿（`origin/icpe-next-ana` @ 1ea44c9；Rust 引擎的寫法用 icpe-sim 的包裝 `x1 sweep --engine rust`）。補上三樣：`date -u`、「寫的當下看過哪些正式結果」、「icpe-data 的解讀」。
+- **使用者在 icpe-data 的決定**（11/6 00:10 左右，AskUserQuestion）：P1 全部格子用 7 個 TTL 時，**④ 的 GPU 規則也擴到 7 個 TTL**（兩邊同一組）。
+  - 主結果的分析**不加** `--rival-only-gpu`。偏離 5 的算法只並列報告。
+  - 我在提問時向使用者說明了：偏離 5 寫的「方向保守」只就選格規則而言；② 比 ④ 多規則可挑時上限會偏低，對我們的主張反而有利。
+- 我寫的「解讀」（使用者可以改）：
+  - P2／P3 的規則集合同 `sens_rep`（17 個 CPU 規則 × 8 個 GPU 規則）。
+  - P4 用 P1 之後的上限選 ≥15% 的格子。
+  - 某個優先度沒做完時，報告值照偏離 4／5，並標明版本。
+
+**需要 h200 做什麼**：偏離 6 在本分支這個 commit。要不要同步進 `icpe-next-a` 由你決定（偏離 5 你是用 2e5757d 同步的）。
+
+**需要 icpe-sim 做什麼**：照 STATUS_ANA 的分工審查、包裝 Rust 引擎，並在 STATUS_SIM 寫 G1／xcheck PASS。主結果的分析用原本的「兩邊同一組 GPU 規則」，不需要新選項。
+
+**接下來我做什麼**：Python 佇列照舊跑完。Rust 驗證過、我 merge 並 G0 通過後，用 Rust 跑以下幾項，順序照 P1 → P4：
+- TraceLab 的 P1（取代原本的 ≥10% 補跑）和 `sens_rep tl_*`。
+- CacheWise 的 P1–P3（只能在 acvlab）。
+- Mooncake 的 P1。
+- 佇列工具會加 P1 的 plan：每個主結果 block 補 8 個 TTL 規則 × 15 個 CPU 規則，加上 6 個截尾規則 × 16 個 GPU 規則。
+
+## 2026-11-06T00:00+08:00 — Mooncake 主格完成；FI 6 週在跑；收到 icpe-ana 的 Rust 引擎通知
+
+**做完什麼**
+- **`old_main/mooncake`**：run `20261105-085744-icpe-data-old_main-mooncake`，exit 0，24,696 個 job，sweep 48,151 s（4 worker，git HEAD f4f5668）。
+  - 已收進 `results/icpe_next/b/old_main/mooncake/`：29,376 列，conversation／toolagent × R1／R2 各 7,344 列。
+
+**現在在跑什麼**
+- 40 worker：`tl_main/tl_c2`，4,262／6,174 個 job（23:53）。worker 的 PSS 合計 34 GiB，沒有累積。之後 `tl_c4`。
+- 4 worker：`old_main/fi6w`（22:20 開始，git HEAD 63c072f，含 maxtasks），8,748／37,044 個 job（5,089 s）。
+  - 照目前速度〔推算〕還要約 4.6 h → 11/6 約 04:30。之後 `bl_main/bailian3`。
+
+**icpe-ana 的 Rust 引擎**（STATUS_ANA 23:58，origin/icpe-next-ana aee1527）：收到，**現在不動**。
+- 正在跑的 Python 佇列照舊。
+- 要等 icpe-sim 審查、包裝、過 G1／xcheck／TraceLab 測試並寫進 STATUS_SIM 之後，我才 merge → G0，而且只用在還沒開始的 block。
+- 被砍掉的格子要補哪些，由使用者決定；補跑前先登記 PREREG 偏離。
+
+## 2026-11-05T21:10+08:00 — load 超過 100，使用者決定不降 worker；新開分析 session icpe-ana
+
+- 20:22 起 acvlab 的 load 在 115–118（96 核）。上升的是其他使用者新開的工作，我們維持 44 個 worker，都用 `nice 10`。
+  - **使用者決定（11/5 21:00）：不降。** load 監看門檻改成連續 10 分鐘 >140 才通知。
+  - 記憶體正常：可用約 300 GiB，TraceLab worker 合計 37–41 GiB。
+- **新 session `icpe-ana`**（使用者要求；tmux `icpe-ana`，Opus、high effort、remote control）。
+  - 獨立的分析 session，只讀、只分析，不跑正式模擬、不動佇列、不碰 `/ssd6/hungwei/icpe-next/data`。
+  - worktree `/ssd6/hungwei/icpe-next/ana`，branch `icpe-next-ana`（只在本機，從 a60f05e 開出；push 前會先問使用者）。
+  - 開場指示在 `/ssd6/hungwei/icpe-next/ana_prompt_20261105.md`。
+
+## 2026-11-05T18:20+08:00 — TraceLab c1 完成（maxtasks=4 後記憶體不再累積）；c2 在跑
+
+**做完什麼**
+- **`tl_main/tl_c1`**：run `20261105-115504-icpe-data-tl_main-tl_c1`，exit 0，6,174 個 job，sweep 19,670 s（40 worker，程式 2dc6c8a）。
+  - 已收進 `results/icpe_next/b/tl_main/tl_c1/`（7,344 列，xz）。
+- **記憶體**（`mem-guard-tl-20261105.log`）：worker 的 PSS 合計在 c1 和 c2 前 358 個 job 都在約 39–56 GiB 上下來回，**沒有隨 job 數增加**。maxtasks=4 有效，不改成 2。MemAvailable 約 290–315 GiB。
+
+**現在在跑什麼**
+- 40 worker：`tl_main/tl_c2`（17:27 開始）。之後 `tl_c4`。
+- 4 worker：`old_main/mooncake`，10,467／24,696 個 job（9.2 h）。worker 都在約 99% CPU，慢是 job 本身重，不是被搶。
+
+**時程**〔推算，用 tl_c1 每個（CPU 容量, 規則）的 job 耗時當尺度〕
+- `tl_c2`：還要約 6–7 h（同一組的 job 是 c1 的 1.28–1.42 倍）→ 約 11/6 01:00。`tl_c4`（npz 是 c1 的 1.5 倍）再約 9–10 h → 約 11/6 中午。
+- Mooncake 剩下的組，跟 TL 的比例差很多（四分位 0.02–0.20）→ 還要 2.5–23 h。之後 `fi6w`、`bailian3` 也在這條 4 worker 的佇列上。
+- 打算：40 worker 那條在 TL 主格＋TL 的 ≥10% 補跑＋`sens_rep tl_*` 做完後，若 4 worker 那條還有沒開始的 block，就在 block 交界把它停掉，剩下的改給 40 worker 跑（兩條佇列不同時排同一個 block）。
+
+## 2026-11-05T11:56+08:00 — 敏感度格 19 個完成；merge 54fa2d8（maxtasks）、G0 PASS；TraceLab 重開
+
+**做完什麼**
+- **`sens_rep` 的 CacheWise／Bailian／Mooncake／FI 代表格**：19 個 block 全部 exit 0（10:05 → 10:58，40 worker），已收進 `results/icpe_next/b/sens_rep/`（commit 039a8cf）。
+  - 內容：nvme807、只載入、`wt`、預取進 GPU；CacheWise 另有快取命中前綴；CacheWise 和 FI 另有截斷 128K。
+  - 程式：7539f01（merge 54fa2d8 之前）。
+- **merge** `origin/icpe-next-sim` @ 984dc4f → **2dc6c8a**。
+  - 程式＝54fa2d8：`x1 sweep --maxtasks`，預設 4，worker 每 4 個 job 重新 fork 一次。
+  - 依據：G1 PASS，run `20261105-100635-icpe-sim-g1-54fa2d8`（STATUS_SIM 11:45）。
+- **G0（merge 後）PASS**：run `20261105-114540-icpe-data-g0-merged-54fa2d8`（40 worker，stdout 印 `maxtasksperchild=4`，sweep 541 s）：**128,064 格，0 個不同**。
+- **TraceLab 重開**：`run --plans tl_main --workers 40`（c1 從頭跑），log `queue-tl_main-w40-k4-20261105-115504.log`。
+  - 記憶體監看：`mem-guard-tl-20261105.log`，每 2 分鐘記一次 worker 的 PSS 合計和 job 數。MemAvailable <60 GiB 就自動停掉這條佇列。
+  - 前幾百個 job 的 PSS 合計若還在漲，就照 icpe-sim 的建議改 `X1_MAXTASKS=2`（k 不影響結果）。
+- **4 worker 的佇列**：現在跑的 Mooncake block 是 merge 前開跑的（7539f01），Mooncake 本來就沒有累積。接下來的 `fi6w`、`bailian3` 開跑時會讀到 54fa2d8。兩版輸出逐位元相同：G1 和本節的 G0 都驗過。
+- icpe-trx 在 TRX40 上也對 54fa2d8 做了 G0 和 xc_sa，都是 0 格不同（STATUS_TRX 9410199）。它 merge 2dc6c8a 後開 `sa_main`（40 worker）。
+
 ## 2026-11-05T10:10+08:00 — **TraceLab 停了**：worker 記憶體每個 job 累積（同 icpe-trx 10:05）；先跑非 TL／SA 的敏感度格；等 icpe-sim 的 maxtasksperchild
 
 **發生什麼**（acvlab 量到的）
