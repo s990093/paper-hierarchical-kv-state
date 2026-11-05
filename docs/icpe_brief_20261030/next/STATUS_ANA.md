@@ -30,7 +30,7 @@
 | icpe-trx（TRX40） | SemiAnalysis 的補跑與 `sens_rep sa_*`；SemiAnalysis、FreeInference、Bailian 的 P1–P3（Rust 在 TRX40 上要另外編、另外對拍） |
 
 **PREREG 偏離 6 草稿**（給 icpe-data；照 §6 的格式補 `date -u` 與「寫的當下看過哪些正式結果」）
-1. **換用 Rust 引擎**：`code/icpe/ana_x1fast`（從 icpe-sim 寫進 STATUS_SIM 的驗證 commit 起），輸出和 `x1_sim.py` 逐位元相同（G1、xcheck、icpe-ana 的對拍 `results/icpe_next/ana/`）；不改任何格子的結果，所以不改分析計畫。
+1. **換用 Rust 引擎**：`x1 sweep --engine rust`（或 `$X1_ENGINE=rust`；程式在 `code/p3x/x1fast/`＝v3 原樣複製，從 icpe-sim 寫進 STATUS_SIM 的驗證 commit 起；不支援的功能——雜訊、慢層上限、STAIR——該 job 自動改用 Python；icpe-sim 00:1x 的訊息），輸出和 `x1_sim.py` 逐位元相同（G1、xcheck、icpe-ana 的對拍 `results/icpe_next/ana/`）；不改任何格子的結果，所以不改分析計畫。
 2. **補回偏離 4 砍掉的格子**（取代偏離 4 第 1、2、4 點的縮小，照優先度執行）：
    - P1：CPU 規則加回 `O-DROP／O-NOW／O-ALL -H1800／-H3600`（截尾版；照 `--dead-h` 的既有定義只報告，不改主判定）；全部格子的 ② 都用 7 個 TTL（0.3／1／3／10／30／100／300 s，TTLA、TTLB）。④ 的 GPU 規則集合是否也擴到 7 個 TTL：**要使用者決定**（偏離 5 的理由：④ 不變才保證「補跑只會讓上限變小」）。
    - P2：nvme807（cake）與只載入（ssd／b32／nfs／nvme807）擴到全部紀錄變體 × 主時間設定以外的全部時間設定。
