@@ -3,6 +3,16 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T10:25+08:00 — icpe-sim 的修正 54fa2d8（`--maxtasks`，預設 4）在 TRX40 試跑：40 worker 記憶體持平；等 G1＋merge
+
+- icpe-sim 54fa2d8（`origin/icpe-next-sim`）：`x1 sweep --maxtasks`（預設 4、`$X1_MAXTASKS`；0＝原本）→ `Pool(maxtasksperchild)`。G1 跑中（icpe-sim 10:1x 的訊息；以 STATUS_SIM 為準）。
+- **試跑**（不進 results/；程式＝detached worktree `$ROOT/wt-sim-54fa2d8` @ 54fa2d8，G1 未過）：run `20261105-100804-icpe-trx-trial-maxtasks4-w40`——sa_N16_s1、和 `sa_main` 相同的 sweep 參數、**40 worker**、`maxtasksperchild=4`（stdout 有印）。跑到 1,329／6,174 job（968 s，涵蓋最重的 O-ALL、O-PF、LRU+RPF 段）後手動停（`STOPPED` 檔）。
+  - 本組 PSS 合計：最高 **9.4 GiB**（10:09:46），之後在 7.3–8.8 GiB 之間，沒有往上漲（修正前同一段：889 job 時 39.4 GiB）。
+  - MemAvailable 最低 50.2 GiB；swap 2,495 → 2,486 MiB（沒有增加）。
+  - 速度：1,329 job／968 s＝每秒 1.37 個（修正前 40 worker 前 540 個：1.37）。
+- **計畫**：G1 PASS（STATUS_SIM）→ icpe-data merge 進 `icpe-next-data` → 我 merge、G0＋xc_sa（新程式）→ `sa_main` 用 **40 worker**（使用者先前決定的值；上面的量測顯示記憶體夠）。
+- 〔算術〕照每秒 1.37 個 job：一個 block 約 75 分鐘，`sa_main` 12 個約 15 h（N 大的 block 可能更久，CacheWise 多約 40%）。
+
 ## 2026-11-05T10:05+08:00 — **卡住**：worker 的記憶體每個 job 都在累積、不釋放 → `sa_main` 在 62 GiB 上跑不完；20 worker 的 block 被 swap 保護停掉
 
 **發生什麼**
