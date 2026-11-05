@@ -2,6 +2,28 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T00:15+08:00 — PREREG 偏離 6 已寫（補回砍掉的格子 P1–P4＋Rust 引擎）；使用者選「④ 也擴 7 個 TTL」
+
+**做完什麼**
+- **PREREG 偏離 6**（`date -u` 2026-11-05T16:09:01Z）：照 STATUS_ANA 00:20 的草稿（`origin/icpe-next-ana` @ 1ea44c9；Rust 引擎的寫法用 icpe-sim 的包裝 `x1 sweep --engine rust`）。補上三樣：`date -u`、「寫的當下看過哪些正式結果」、「icpe-data 的解讀」。
+- **使用者在 icpe-data 的決定**（11/6 00:10 左右，AskUserQuestion）：P1 全部格子用 7 個 TTL 時，**④ 的 GPU 規則也擴到 7 個 TTL**（兩邊同一組）。
+  - 主結果的分析**不加** `--rival-only-gpu`。偏離 5 的算法只並列報告。
+  - 我在提問時向使用者說明了：偏離 5 寫的「方向保守」只就選格規則而言；② 比 ④ 多規則可挑時上限會偏低，對我們的主張反而有利。
+- 我寫的「解讀」（使用者可以改）：
+  - P2／P3 的規則集合同 `sens_rep`（17 個 CPU 規則 × 8 個 GPU 規則）。
+  - P4 用 P1 之後的上限選 ≥15% 的格子。
+  - 某個優先度沒做完時，報告值照偏離 4／5，並標明版本。
+
+**需要 h200 做什麼**：偏離 6 在本分支這個 commit。要不要同步進 `icpe-next-a` 由你決定（偏離 5 你是用 2e5757d 同步的）。
+
+**需要 icpe-sim 做什麼**：照 STATUS_ANA 的分工審查、包裝 Rust 引擎，並在 STATUS_SIM 寫 G1／xcheck PASS。主結果的分析用原本的「兩邊同一組 GPU 規則」，不需要新選項。
+
+**接下來我做什麼**：Python 佇列照舊跑完。Rust 驗證過、我 merge 並 G0 通過後，用 Rust 跑以下幾項，順序照 P1 → P4：
+- TraceLab 的 P1（取代原本的 ≥10% 補跑）和 `sens_rep tl_*`。
+- CacheWise 的 P1–P3（只能在 acvlab）。
+- Mooncake 的 P1。
+- 佇列工具會加 P1 的 plan：每個主結果 block 補 8 個 TTL 規則 × 15 個 CPU 規則，加上 6 個截尾規則 × 16 個 GPU 規則。
+
 ## 2026-11-06T00:00+08:00 — Mooncake 主格完成；FI 6 週在跑；收到 icpe-ana 的 Rust 引擎通知
 
 **做完什麼**

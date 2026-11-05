@@ -152,3 +152,57 @@
 - 同一批加上補跑、沒有開新選項的分析（run `20261105-084414…`）：列數 2,896、被丟掉的是哪 4 個元件；72 列上限變小、0 列變大；violations 42 列；stdout 最後一列摘要。
 - 各 sweep 進度列裡個別 job 的 `mean_ret`：CacheWise 補跑、TraceLab c1 前幾十個 job、xcheck。
 - 其他紀錄（TraceLab、SemiAnalysis、Mooncake、FreeInference、Bailian）的上限：都還沒有結果，沒有看過。
+
+### 偏離 6（2026-11-05T16:09:01Z（acvlab 的 `date -u`）；**補回偏離 4 砍掉的格子（P1–P4，照優先度）＋換用 Rust 引擎的紀錄**；使用者在 `icpe-ana` 決定（`origin/icpe-next-ana` @ 1ea44c9 的 STATUS_ANA「2026-11-06T00:20」節），由 `icpe-data` 寫；P1 的「④ 的 GPU 規則要不要也擴」由使用者在 `icpe-data` 回答；當下 `icpe-data` 已經看過的正式結果列在本節最後）
+
+使用者的決定：
+- STATUS_ANA 00:20 原文：「被砍掉的格子**全部補**，照優先度：P1 → P2 → P3 → P4。」「PREREG 偏離 6 由 icpe-data 寫」。
+- 使用者在 `icpe-data` 的回答（AskUserQuestion，11/6）：「④ 也擴 7 個」。
+
+**1. 換用 Rust 引擎**（不改任何格子的結果，所以不改分析計畫，只記錄）
+- 用法：`x1 sweep --engine rust`（或 `$X1_ENGINE=rust`）。程式在 `code/p3x/x1fast/`，是 `icpe-ana` v3 原樣複製（`origin/icpe-next-ana` aee1527 的 `code/icpe/ana_x1fast/v3_prefix_fork`）。不支援的功能（W4 雜訊、慢層容量上限、STAIR）由該 job 自動改用 Python。
+- 從哪裡開始用：`icpe-sim` 審查、包裝，並在 STATUS_SIM 寫明 G1（新功能關閉的 4,416 列 × 29 欄逐位元相同）和 xcheck（xc_sa、xc_bl）PASS 的那個 commit 起。各機器 merge 之後還要再做自己的 G0（acvlab）或同等的對拍（TRX40）。開始用的 commit 寫進各自的 STATUS 和每個 run 的 context。
+- 只用在還沒開始的 block。已經用 Python 跑完或正在跑的 block 不重跑。
+- 依據（`icpe-ana` 的對拍，`results/icpe_next/ana/`，STATUS_ANA 23:58 節）：
+  - Bailian coder 278／278 個 job、Mooncake conversation 68／68 個 job，逐請求陣列與 `summarize` 的每一欄逐位元相同。
+  - SemiAnalysis N16 s1 整個正式 block：7,344／7,344 列和 `origin/icpe-next-trx` 的 `sa_main/sa_N16_s1` 在 CSV 的精度內相同。
+
+**2. 補回偏離 4 砍掉的格子**（取代偏離 4 第 1、2 點，以及第 4 點裡 nvme807、只載入、`wt`、預取進 GPU 這 4 項的縮小；照 P1 → P2 → P3 → P4 的順序執行）
+- **P1**
+  - **截尾版規則**：CPU 層規則加回偏離 4 第 1 點拿掉的 6 個：`O-DROP-H1800／-H3600`、`O-NOW-H1800／-H3600`、`O-ALL-H1800／-H3600`。
+    - 照 `x1_sim.py`／`next_sim_analyze.py` 的 `--dead-h` 既有定義，**只報告**，不改主判定。
+    - 範圍：主結果的全部格子（偏離 4 第 3 點）。GPU 規則和 P1 的其他規則相同。
+  - **② 用 7 個 TTL**：主結果的**全部格子**的 ② 都用第 3 項原登記的 7 個 TTL（0.3／1／3／10／30／100／300 s，TTLA、TTLB）。這取代偏離 4 第 2 項「只補跑上限 ≥10% 的格子」。
+  - **④ 也擴到同樣的 7 個 TTL**（使用者在 `icpe-data` 選）：
+    - 4 個 CPU 元件（O-ORD、O-DROP、O-NOW、O-PF）的 ④，在 {LRU、TTLA／TTLB × 7 個 TTL} 裡取最快。這和 ② 的 GPU 不預測規則集合相同。
+    - O-GPU（④＝GPU BEL）和 O-ALL(report) 不受影響。
+    - 分析：主結果**不加** `--rival-only-gpu`（兩邊用同一組 GPU 規則）。偏離 5 的算法（④ 維持 3 個 TTL，加 `--rival-only-gpu`）從同一批輸出也算得出來，**只並列報告**。
+  - **為什麼 ④ 也擴**：
+    - 偏離 5 讓 ④ 維持 3 個 TTL，理由是保證 ≥10% 的選格規則成立。全部格子都補跑之後不需要選格，這個理由不適用。
+    - ② 比 ④ 多 GPU 規則可挑時，上限會被算低，而上限低對「預測空間不大」的主張有利。偏離 5 寫的「方向保守」只就選格規則而言，對主張其實不保守。兩邊規則集合相同，才是公平比較。
+    - 要多跑的：已跑的 0.3／10／300 之外，TTLA／TTLB 的 1／3／30／100 s（8 個 GPU 規則），配 10 個不預測的 CPU 規則（`x1_sim.NON_ORACLE`）和 5 個元件的 CPU 規則（O-BEL、O-BELS、O-DROP、O-NOW、O-PF；`x1_sim.COMPONENT_POLICIES`）。
+- **P2**：nvme807（cake）與只載入（ssd／b32／nfs／nvme807），從偏離 4 第 4 點的代表格擴到主結果的全部格子（全部登記的紀錄變體 × CPU 9 個容量 × GPU 閒／忙）。
+- **P3**：`wt` 與預取進 GPU，同樣擴到主結果的全部格子。
+- **P4**：W4 雜訊，照第 6 項與 §3 B（兩種模型、兩種抽法、λ、λ>0 各 10 個 seed、λ＝0 自檢；和 §3 C 的佇列 seed 交叉）。範圍照 §3 B：④ 對 ② 上限 ≥15% 的每一格、每個元件。
+- **`icpe-data` 的解讀**（使用者可以改）：
+  - P2、P3 的規則集合和 `sens_rep` 相同：偏離 4 的 17 個 CPU 規則 × 8 個 GPU 規則（3 個 TTL）。P1 的 7 個 TTL 只用在主時間設定。
+  - P4 的 ≥15% 用 P1 之後的上限選格。
+  - 某份紀錄的某個優先度還沒做完時，它的報告值照偏離 4／5（含 ≥10% 補跑），並標明是哪一版。做完之後，報告值換成本節的版本，舊版保留。
+- **不在本節**：偏離 4 第 4 點的快取命中前綴、截斷 128K，以及第 6 點（W6c）。三者維持代表格。
+
+**3. 判準不變**：15%／5%，主指標＝回來請求的平均 TTFT。第一批的結果仍標「② 不含 block 粒度 APC」（偏離 2 第 3 點）。
+
+**寫本節時 `icpe-data` 已經看過的正式結果**（偏離 5 列過的之外，照實列出）：
+- **CacheWise 最終上限表**（偏離 5 的算法；run `20261105-085942-icpe-data-analyze-cw_main-final`）：
+  - stdout 的摘要：12 個變體 × 6 個元件的格數、最大值、中位數、≥15% 與 ≥5% 的格數。
+  - 3,888 列、0 列上限變大、213 列變小；violations 369 列。
+- **TraceLab c1**（`tl_main/tl_c1`）、**Mooncake**（`old_main/mooncake`）、**`sens_rep`** 19 個 block、**xcheck**：
+  - 只看了列數、表頭、TraceLab c1 的第一列，以及 sweep 進度列裡個別 job 的 `mean_ret`。
+  - xcheck 另外和 TRX40 逐值比較（0 格不同）。
+  - 都**沒有算上限**。
+- **SemiAnalysis**（`icpe-trx` 的 `sa_main`）：沒有打開。STATUS_TRX 只讀了進度。
+- **STATUS_ANA 23:58、00:20 兩節**：讀到文字描述，例如近似方法「會翻 15%／5% 判定」。沒有打開它的數字檔。
+- **本節的動機**：
+  - 補格子是使用者的決定。
+  - ④ 的問題是 `icpe-ana` 草稿提出的機制問題，不是看了數字之後挑方向。
+  - ④ 擴充後，上限只會變大或不變，方向對我們的主張不利。
