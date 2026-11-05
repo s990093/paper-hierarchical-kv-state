@@ -1,0 +1,3 @@
+run_id,ts,host,tag,new_dir,ref_dir,n_files_total,n_files_sampled,seed,n_arrays,n_diff_arrays,passed
+20261106-003131-icpe-sim-rust-tl_c1,2026-11-06T04:13:43+08:00,acvlab,tl_c1,/ssd6/hungwei/icpe-next/runs/20261106-003131-icpe-sim-rust-tl_c1/req,/ssd6/hungwei/icpe-next/runs/20261105-115504-icpe-data-tl_main-tl_c1/req,6174,300,20261106,710,0,True
+20261106-003131-icpe-sim-rust-tl_c1,2026-11-06T04:29:48+08:00,acvlab,tl_c1_all,/ssd6/hungwei/icpe-next/runs/20261106-003131-icpe-sim-rust-tl_c1/req,/ssd6/hungwei/icpe-next/runs/20261105-115504-icpe-data-tl_main-tl_c1/req,6174,6174,20261106,14688,0,True

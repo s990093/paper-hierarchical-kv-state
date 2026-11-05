@@ -2,11 +2,13 @@
 
 引擎＝icpe-ana 的移植（origin/icpe-next-ana @ aee1527 的 code/icpe/ana_x1fast/v3_prefix_fork），複製到 code/p3x/x1fast/：
 引擎部分一行沒改，只改 main() 的輸入輸出（加常駐模式）。審查與驗證見 SIM_CHANGES 第 16 項。
+W4 雜訊的 B1 抽法＝icpe-ana v4（origin/icpe-next-ana @ 279eb7e 的 code/icpe/ana_x1fast/v4_noise_on_0b0ef1e/src/main.rs，原樣複製）：
+jobs.txt 那一行多一欄 `nz=P|M,<λ>,B1,<seed>`。審查與驗證見 SIM_CHANGES 第 17 項。
 這裡只做「Python 準備輸入 → Rust 跑 → 讀回逐請求陣列填進原本的 View」：之後的 summarize、存 npz、寫 CSV 全部是
 x1_sim 原本那一段（_job_rows），所以輸出欄位與格式和 Python 引擎相同。
   prepare_trace：紀錄 → CSR 二進位檔（父行程做一次，內容 sha256 定址、可共用）
   Server：每份紀錄一個常駐的 x1fast（紀錄只讀一次、多執行緒）；write_job／read_outputs：一個 job 的輸入目錄與讀回
-Rust 版沒有的功能（W4 雜訊、慢層容量上限、STAIR）→ unsupported() 回傳原因，那些 job 用 Python Engine（x1_sim 先跑 Rust 的、再跑這些）。
+Rust 版沒有的功能（W4 雜訊的 B2 抽法、慢層容量上限、STAIR）→ unsupported() 回傳原因，那些 job 用 Python Engine（x1_sim 先跑 Rust 的、再跑這些）。
 
 環境變數：
   X1_RUST_BIN    已編好的執行檔（不給就用 X1_CARGO 編 code/p3x/x1fast，放 $X1_RUST_WORK/build-<原始碼 sha>/）
@@ -83,14 +85,21 @@ def binary():
 
 
 def unsupported(planner, nz, sc):
-    """Rust 版不支援的功能 → 原因字串；支援 → None。"""
-    if nz is not None:
-        return "noise"
+    """Rust 版不支援的功能 → 原因字串；支援 → None。W4 雜訊只支援 B1 抽法（v4）。"""
     if sc is not None:
         return "slow_cap"
+    if nz is not None and nz["draw"] != "B1":
+        return "noise_" + str(nz["draw"])
     if planner != "cake":
         return "stair"
     return None
+
+
+def nz_field(nz):
+    """W4 雜訊（B1）→ jobs.txt 多出來的那一欄 `nz=P|M,<λ>,B1,<seed>`；λ 用 repr（Rust 的 parse 讀回同一個 double）。"""
+    m, lam, dr, seed = nz["model"], float(nz["lam"]), nz["draw"], int(nz["seed"])
+    assert m in ("P", "M") and dr == "B1" and 0.0 <= lam < 1.0, nz
+    return f"nz={m},{lam!r},{dr},{seed}"
 
 
 def prepare_trace(P, trace, rule):
@@ -191,8 +200,9 @@ def check_job(XS, policy, views, K, gkw):
         assert all(v.slow_name == views[0].slow_name and v.gpu == views[0].gpu for v in views)
 
 
-def write_job(XS, P, policy, cap_bytes, views, K, gkw):
-    """一個 job 的輸入目錄（views.txt、f*／fc*、fc_idle.f64、i4.txt、一行的 jobs.txt）。f／Fc 直接取自 Python 的 View。"""
+def write_job(XS, P, policy, cap_bytes, views, K, gkw, nz=None):
+    """一個 job 的輸入目錄（views.txt、f*／fc*、fc_idle.f64、i4.txt、一行的 jobs.txt）。f／Fc 直接取自 Python 的 View。
+    nz＝W4 雜訊（x1_sim 的 noise spec；只能是 B1，見 unsupported）→ jobs.txt 多一欄 nz=…（同 Engine(noise=nz)；λ＝0 也照送）。"""
     check_job(XS, policy, views, K, gkw)
     o, a, h, pf = XS.POLICIES[policy]
     G = int(gkw.get("gpu_cap", 0))
@@ -222,7 +232,7 @@ def write_job(XS, P, policy, cap_bytes, views, K, gkw):
         gf = ["0", "-", "-", "wb", "cpu"]
     with open(os.path.join(jd, "jobs.txt"), "w") as fh:
         fh.write(" ".join(["j0", o, a, h or "-", pf or "-", repr(dead), repr(cap_bytes)] + gf
-                          + [",".join(str(i) for i in range(len(views)))]) + "\n")
+                          + [",".join(str(i) for i in range(len(views)))] + ([] if nz is None else [nz_field(nz)])) + "\n")
     return jd
 
 
