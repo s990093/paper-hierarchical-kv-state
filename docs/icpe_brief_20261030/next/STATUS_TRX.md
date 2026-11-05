@@ -3,6 +3,34 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T10:05+08:00 — **卡住**：worker 的記憶體每個 job 都在累積、不釋放 → `sa_main` 在 62 GiB 上跑不完；20 worker 的 block 被 swap 保護停掉
+
+**發生什麼**
+- 20 worker 的 run `20261105-092452-icpe-trx-sa_main-sa_N16_s1`：**09:57:27 swapguard 觸發**（swap 3,125 MiB > 使用者允許的 2,933 MiB），停在 1,958／6,174 job（1,946 s）。留了 `ABORTED`、`SWAPGUARD_KILLED`，不 collect。停掉前本組 PSS 49.3 GiB、MemAvailable 10.4 GiB。停掉後 MemAvailable 59.5 GiB、swap 2,503 MiB（別人的頁，慢慢換回）。
+- 兩次 run 的本組 PSS 合計 vs 已跑的 job 數（`mem.log`＋stdout 的進度列）：
+
+| run | 已跑 job | 本組 PSS 合計 | 合計 ÷ job 數 |
+|:--|:--|:--|:--|
+| 40 worker | 889 | 39.4 GiB | 44 MiB |
+| 20 worker | 約 950（09:41:54） | 36.5 GiB | 約 38 MiB |
+| 20 worker | 約 1,410（09:49:12） | 43.0 GiB | 約 30 MiB |
+| 20 worker | 1,958（09:57） | 49.3 GiB | 約 25 MiB |
+
+  合計大致跟「已跑的 job 數」走，和 worker 數關係不大。重的 job（O-ALL、O-PF、LRU+RPF）漲得快，後面的（O-BEL、PENS）慢一些，但**沒有持平**。
+
+**診斷試跑**（不進 results/）：run `20261105-095815-icpe-trx-trial-memgrowth-w1`——1 worker、SA N16 s1、CPU 128、PENS／LRU2／GDSF／ARC／S3FIFO／LRU × GPU LRU／BEL、ssd、cake，14 個 job（142 s）；每 2 s 記 worker 的 `smaps_rollup`（`worker_rss.log`）。
+- worker 的 Private_Dirty：開始 148 MiB → 14 個 job 後 388 MiB，**只升不降**；有的 job 一次 +45 MiB，有的持平（GDSF 4 個 job 只在第一個 +44）。RSS 958 → 1,198 MiB。
+- 結論（這台量到的）：worker 每跑一個 job 都留下一些記憶體、之後不還。`sa_main` 一個 block 6,174 個 job，20 worker 時每個 worker 約 309 個 → 照上面的量推〔算術〕每個 worker 5–14 GiB，這台 62 GiB 不管幾個 worker 都裝不下。
+- 是程式裡的洩漏還是 malloc 碎片，我分不出來；沒看程式改什麼，也沒有改。
+
+**需要 icpe-sim 做什麼**（擋 TRX40 的全部 SA 工作）
+- `x1_sim.py` 2278 行的 `mp.get_context("fork").Pool(a.workers)` 加 `maxtasksperchild`（例如 8–16），或找出跨 job 留下的東西。前者不改任何 job 的計算，worker 只是跑完 k 個 job 就換一個新的（從父行程重新 fork）。要做 G1。
+- acvlab 也一樣會累積，只是 440 GiB 看不出來；TraceLab（記憶體較大）40 worker 可能也值得看一下 mem-watch。
+
+**需要 icpe-data 做什麼**：上面的修正 G1 過了以後 merge 進 `icpe-next-data`；我 merge、重做 G0＋xc_sa、再開 `sa_main`。
+
+**需要使用者決定什麼**：見對話（怎麼修、要不要直接通知 icpe-sim）。
+
 ## 2026-11-05T09:41+08:00 — 20 worker 的記憶體也在漲；**使用者：允許 swap 小幅增加**
 
 - 20 worker（run `20261105-092452-icpe-trx-sa_main-sa_N16_s1`）09:40:20：本組 PSS 34.4 GiB（09:36 是 25.8 GiB），MemAvailable 23.5 GiB，swap 885 MiB（還沒增加）。09:38 時每個 worker PSS 中位數 1.54 GiB、最大 1.87 GiB；RSS 中位數 2.29 GiB、最大 2.62 GiB。
