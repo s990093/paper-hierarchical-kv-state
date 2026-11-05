@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import fnmatch
 import hashlib
 import io
 import json
@@ -30,13 +31,15 @@ from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
-ROOT = "/ssd6/hungwei/icpe-next"
+# 路徑：預設＝acvlab；別台（TRX40、H200）用環境變數指到自己的位置（STATUS_DATA 2026-11-05T09:xx 的分工）
+ROOT = os.environ.get("NEXT_B_ROOT", "/ssd6/hungwei/icpe-next")
 RUNS = f"{ROOT}/runs"
 DONE = f"{RUNS}/next_b_queue_done.jsonl"
-PY = f"{ROOT}/venv/bin/python"
-NB_DIR = f"{ROOT}/datasets/x1_nb"
-MOONCAKE = "/ssd8/hungwei/paper-hkv/datasets/mooncake/traces"
-FI_DIR = "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release"
+PY = os.environ.get("NEXT_B_PY", f"{ROOT}/venv/bin/python")
+NB_DIR = os.environ.get("NEXT_B_NB_DIR", f"{ROOT}/datasets/x1_nb")
+MOONCAKE = os.environ.get("NEXT_B_MOONCAKE", "/ssd8/hungwei/paper-hkv/datasets/mooncake/traces")
+FI_DIR = os.environ.get("NEXT_B_FI_DIR", "/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release")
+TAG = os.environ.get("NEXT_B_TAG", "icpe-data")      # run_id 裡的 session 名（acvlab＝icpe-data）
 FI_WEEKS = ["2026-05-17_2026-05-23", "2026-05-24_2026-05-30", "2026-05-31_2026-06-06",
             "2026-06-07_2026-06-13", "2026-06-14_2026-06-20", "2026-06-21_2026-06-27"]   # T1／T4／T5 用的 6 週
 
@@ -90,6 +93,10 @@ def blocks():
                   ("fi", f"fi_{FI_WEEKS[0]}_t128k")):
         S.append((f"{k}_t128k", nb(nm), sweep_args(CPU_REP)))
     P["sens_rep"] = S
+    # 跨機器對拍（新功能開啟）：acvlab 先跑並 collect（--allow-xcheck）當參考；別台跑同一個 block，用 next_b_g0.py 逐值比，相同才開跑正式的
+    xa = sweep_args(["64"], ["--slows", "ssd", "--modes", "cake"], gpol=["LRU", "BEL", "TTLA:10", "TTLB:10"],
+                    pols=["LRU", "GDSF", "O-BEL", "O-PF"])
+    P["xcheck"] = [("xc_sa", nb("semianalysis_N16_s1"), xa), ("xc_bl", nb("bailian_coder"), xa)]
     # ≥10% 補跑：results/icpe_next/b/<plan>_ttl7/cells.csv（ttl7cells 從登記的分析表產生）→ 每個 (trace, rule, 慢層組合) 一個 block，
     # CPU 容量＝這個組合裡要補的那些；GPU 閒／忙無法在 sweep 裡分開選，兩個都跑（多跑的只會讓 ② 更強）。
     for base in list(P):
@@ -143,7 +150,7 @@ def cmd_list(a):
 
 
 def run_block(plan, name, tr, args, workers, dry):
-    rid = datetime.now().strftime("%Y%m%d-%H%M%S") + f"-icpe-data-{plan}-{name}"
+    rid = datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{TAG}-{plan}-{name}"
     run = f"{RUNS}/{rid}"
     env = {"RUN_ID": rid, "RUN_DIR": f"{run}/req", "P3_CONST": "h200", "P3_TIER": "h200cpu",
            "M7_TIER_PARAMS": f"{REPO}/results/icpe_h200/t1/tier_params_h200cpu.json", "M7_RES": f"{REPO}/results/m7_write_policy_h200",
@@ -194,6 +201,8 @@ def cmd_run(a):
     dn = done_set()
     for plan in a.plans:
         for name, tr, args in P[plan]:
+            if a.only and not any(fnmatch.fnmatch(name, pat) for pat in a.only):
+                continue
             if (plan, name) in dn:
                 print(f"[skip] {plan}/{name} 已完成（{dn[(plan, name)]['run_id']}）", flush=True)
                 continue
@@ -214,6 +223,8 @@ def cmd_collect(a):
     n = 0
     for (plan, name), r in sorted(dn.items()):
         if a.plans and plan not in a.plans:
+            continue
+        if plan == "xcheck" and not a.allow_xcheck:   # 參考只由 acvlab 收；別台的 xcheck 用 next_b_g0.py 比，不寫進 results/
             continue
         src = f"{r['run']}/out/x1/x1_sweep.csv"
         dst = f"{REPO}/results/icpe_next/b/{plan}/{name}"
@@ -314,6 +325,22 @@ def cmd_ttl7cells(a):
     return 0
 
 
+def cmd_digest(a):
+    """紀錄 npz 的內容指紋（savez_compressed 的 zip 有時間戳，檔案 sha256 每次轉換都不同）：
+    依鍵名排序，sha256(鍵名、dtype、shape、位元組)。別台重新下載＋轉換後，指紋要和 acvlab 的相同才能用。"""
+    import numpy as np
+    for nm in a.names:
+        p = f"{NB_DIR}/{nm}.npz"
+        h = hashlib.sha256()
+        with np.load(p, allow_pickle=False) as z:
+            for k in sorted(z.files):
+                x = np.ascontiguousarray(z[k])
+                h.update(f"{k}|{x.dtype.str}|{x.shape}|".encode())
+                h.update(x.tobytes())
+        print(f"{nm} {h.hexdigest()}")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser()
     sp = ap.add_subparsers(dest="cmd", required=True)
@@ -323,9 +350,13 @@ def main():
     s = sp.add_parser("list"); s.add_argument("--plans", nargs="*", default=[])
     s = sp.add_parser("run"); s.add_argument("--plans", nargs="+", required=True); s.add_argument("--workers", type=int, default=32)
     s.add_argument("--dry-run", action="store_true")
+    s.add_argument("--only", nargs="*", default=[], help="只跑名稱符合這些 glob 的 block（例 'sa_*'）")
     s = sp.add_parser("collect"); s.add_argument("--plans", nargs="*", default=[])
+    s.add_argument("--allow-xcheck", action="store_true", help="只有 acvlab 收 xcheck 的參考")
+    s = sp.add_parser("digest"); s.add_argument("names", nargs="+", help="NB_DIR 裡的紀錄名（不含 .npz）")
     a = ap.parse_args()
-    sys.exit(dict(list=cmd_list, run=cmd_run, collect=cmd_collect, traces=cmd_traces, ttl7cells=cmd_ttl7cells)[a.cmd](a))
+    sys.exit(dict(list=cmd_list, run=cmd_run, collect=cmd_collect, traces=cmd_traces, ttl7cells=cmd_ttl7cells,
+                  digest=cmd_digest)[a.cmd](a))
 
 
 if __name__ == "__main__":

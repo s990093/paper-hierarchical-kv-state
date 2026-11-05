@@ -1,0 +1,13 @@
+{
+ "plan": "cw_main_ttl7",
+ "block": "cachewise_N72_s1_nb_ssd-b32-nfs",
+ "run_id": "20261105-080204-icpe-data-cw_main_ttl7-cachewise_N72_s1_nb_ssd-b32-nfs",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261105-080204-icpe-data-cw_main_ttl7-cachewise_N72_s1_nb_ssd-b32-nfs",
+ "rows": 2880,
+ "elapsed_s": 682.0,
+ "finished": "2026-11-05T08:13:27+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261105-080204-icpe-data-cw_main_ttl7-cachewise_N72_s1_nb_ssd-b32-nfs\nexport RUN_DIR=/ssd6/hungwei/icpe-next/runs/20261105-080204-icpe-data-cw_main_ttl7-cachewise_N72_s1_nb_ssd-b32-nfs/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261105-080204-icpe-data-cw_main_ttl7-cachewise_N72_s1_nb_ssd-b32-nfs/out x1 sweep --traces nb:cachewise_N72_s1 --rules nb --cpu 8 16 32 64 111.0625 128 --policies LRU LRU2 ARC S3FIFO GDSF PENS LRU+NONE LRU+2HW LRU+2HA LRU+RPF --slows ssd b32 nfs --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies TTLA:1 TTLA:3 TTLA:30 TTLA:100 TTLB:1 TTLB:3 TTLB:30 TTLB:100 --pf-target cpu --workers 32\n",
+ "context": "date: 2026-11-05T08:02:04.960726+08:00\nhost: acvlab\nplan: cw_main_ttl7\nblock: cachewise_N72_s1_nb_ssd-b32-nfs\ngit HEAD: 3f956cafda47dadbaa61328e3b671057c442052f\ngit status:\nuptime:  08:02:05 up 19 days, 19:56, 40 users,  load average: 81.19, 84.44, 84.71\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440         100          50           1         289         334\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:cachewise_N72_s1: sha256 f405d90e62a38f241a3b28b73bb8f87fcf41c50ddc86af3a9612aebe9a371178  /ssd6/hungwei/icpe-next/datasets/x1_nb/cachewise_N72_s1.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}
