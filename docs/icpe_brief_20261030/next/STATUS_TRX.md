@@ -3,6 +3,13 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-05T14:13+08:00 — `sa_main` 第 2／12 個 block 完成（`sa_N32_s1`）
+
+- run `20261105-125122-icpe-trx-sa_main-sa_N32_s1`：exit 0，sweep 4,771 s（queue 12:51:22 → 14:11:03），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N32_s1/`（`x1_sweep.csv.xz` 577 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。commit 8523791。
+- 記憶體（同一個 mem.log，12:51:22–14:11:03，150 筆）：本組 PSS 合計最高 10.2 GiB，MemAvailable 最低 47.8 GiB；swap 2,357–2,401 MiB（沒有往上漲）。兩個保護都還在跑、都沒觸發。
+- 下一個 `sa_N64_s1` 14:11:03 開跑。
+- 〔算術〕N32 比 N16 多 22%（4,771 vs 3,903 s）。剩 10 個 block：N16×2 約 130 分、N32×2 約 160 分，N64／N72 共 6 個還沒量到——每個抓 80–110 分 → 合計約 13–16 h → `sa_main` 約 11/6 03:00–06:00 跑完。
+
 ## 2026-11-05T12:53+08:00 — `sa_main` 第 1／12 個 block 完成（`sa_N16_s1`）
 
 - run `20261105-114609-icpe-trx-sa_main-sa_N16_s1`：exit 0，sweep 3,903 s（queue 記 3,912.7 s），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N16_s1/`（`x1_sweep.csv.xz` 548 KiB＋`manifest.json`；`host`＝`acvlab-TRX40-AORUS-MASTER`）。
