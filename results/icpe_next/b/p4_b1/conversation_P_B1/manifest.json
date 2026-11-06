@@ -1,0 +1,13 @@
+{
+ "plan": "p4_b1",
+ "block": "conversation_P_B1",
+ "run_id": "20261106-150342-icpe-data-p4_b1-conversation_P_B1",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261106-150342-icpe-data-p4_b1-conversation_P_B1",
+ "rows": 248419,
+ "elapsed_s": 1883.1,
+ "finished": "2026-11-06T15:35:06+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261106-150342-icpe-data-p4_b1-conversation_P_B1\nexport RUN_DIR=/ssd6/hungwei/icpe-next/runs/20261106-150342-icpe-data-p4_b1-conversation_P_B1/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd6/hungwei/icpe-next/runs/20261106-150342-icpe-data-p4_b1-conversation_P_B1/rust_timing.jsonl\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261106-150342-icpe-data-p4_b1-conversation_P_B1/out x1 sweep --traces conversation --rules R1 R2 --cpu 8 16 32 64 111.0625 128 256 512 1024 --policies ARC GDSF LRU LRU+2HA LRU+2HW LRU+NONE LRU+RPF LRU2 O-ALL O-BEL O-BELS O-DROP O-PF PENS S3FIFO --slows b32 nfs ssd --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU BEL TTLA:0.3 TTLA:1 TTLA:10 TTLA:100 TTLA:3 TTLA:30 TTLA:300 TTLB:0.3 TTLB:1 TTLB:10 TTLB:100 TTLB:3 TTLB:30 TTLB:300 --pf-target cpu --noise-models P --noise-lambdas 0 0.1 0.2 0.3 0.4 --noise-draws B1 --noise-seeds 0 1 2 3 4 5 6 7 8 9 --workers 35 --engine rust --jobs-from /ssd6/hungwei/icpe-next/runs/20261106-150342-icpe-data-p4_b1-conversation_P_B1/jobs.csv\n",
+ "context": "date: 2026-11-06T15:03:42.976065+08:00\nhost: acvlab\nplan: p4_b1\nblock: conversation_P_B1\nengine: rust\ngit HEAD: 7947e951c2ac0c832e0be34dbada6e3c34f6de0e\ngit status:\nuptime:  15:03:43 up 21 days,  2:58, 47 users,  load average: 44.30, 38.98, 40.19\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440          90          50           9         299         338\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}

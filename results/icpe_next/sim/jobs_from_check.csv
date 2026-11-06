@@ -1,0 +1,4 @@
+run_id,ts,host,tag,list_cells_this_sweep,list_cells_unmatched,full_rows,filtered_rows,expected_rows,expected_jobs,stdout_kept_jobs,stdout_dropped_jobs,stdout_unmatched,rowset_equal,list_covered,single_view_in_list,stdout_counts_ok,passed
+20261106-142035-icpe-sim-g1-1bf35bd,2026-11-06T14:34:47+08:00,acvlab,t1_rs_f,150,2,720,255,255,130,130,410,2,True,True,True,True,True
+20261106-142035-icpe-sim-g1-1bf35bd,2026-11-06T14:34:47+08:00,acvlab,t1_py_f,150,2,720,255,255,130,130,410,2,True,True,True,True,True
+20261106-142035-icpe-sim-g1-1bf35bd,2026-11-06T14:34:47+08:00,acvlab,t2_rs_f,150,56,1728,680,680,320,320,928,56,True,True,True,True,True

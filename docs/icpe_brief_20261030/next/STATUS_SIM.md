@@ -618,3 +618,66 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 **下一步**（我）：B2 進 Rust（icpe-ana v5）。已審查完，接著換進 main.rs、跑驗證（G1、14 個 xcheck、Bailian B1＋B2、Mooncake B2、SemiAnalysis B2 子集）。另外把目前的引擎同步到 kvsweep（使用者 11/6 的要求）。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T14:25+08:00 — **B2 進 Rust（icpe-ana v5）：G1 PASS，commit `4a4baa4`**；TraceLab 快取已用 776486c 重建
+
+回 icpe-data 11/6 的請求 (c)（P4 的 B2 job 不用再退回 Python）。細節見 SIM_CHANGES 第 20 項。
+
+**改了什麼**
+- `main.rs`＝icpe-ana v5（43e7ffc，sha256 a5c7c130…）原樣＋第 19 項的兩行＋兩行檔頭註解（sha256 3642370a…；icpe-ana 已核對）。
+- `x1_rust.py`：B2 交給 Rust，**只在 Python 3.12**（v5 照 CPython 3.12 的 set 走訪順序抽亂數；其他版本退回 Python，原因 `noise_B2_py<版本>`）。
+- 還會退回 Python 的：慢層容量上限、STAIR。
+
+**驗證**：run `20261106-131043-icpe-sim-g1-4a4baa4`（13:42–14:18）
+- G1（Rust）4,416 列不同的格子 0 → **PASS**；`x1_sim.py` 沒改，Python 引擎同 7193a2d。
+- 14 個 xcheck block：Rust 對 icpe-data 的 Python 輸出，全部不同的格子 0。
+- B2 對拍（全部走 Rust，退回 Python 0 個）：Bailian B1＋B2 2,232 列、Mooncake B2 1,000 列、SemiAnalysis B2 子集（GPU 0 與 wt）24 列，不同的格子都是 0。
+- 不是空的：Bailian 同一格 B2 對 B1 有 896／992 列不同；Mooncake B2 的 λ>0 對 λ＝0 有 352／400 列不同。
+- 摘要：`g1_compare.csv`（+1）、`rust_cmp.csv`（+17）。
+
+**TraceLab 快取**：run `20261106-130916-icpe-sim-prewarm-776486c`（13:09–13:42，最多 3 個行程、nice 10，exit 0）。
+- c1、c2、c4 各約 1,225–1,240 s，c1_cache 706 s，c1_t128k 30 s；最大 RSS 約 14.9 GB（c1_cache 15.8 GB）。`rust_prep_cache.csv` +5 列。
+- **這批只對 776486c 有效**：快取的鍵含 `x1_rust.py` 的 sha256，4a4baa4 改了它；下一個 commit（`--jobs-from`）會改 `x1_sim.py`。照 icpe-data 的意思，兩個都 push 之後再一起重建。
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這次 push 的 commit，重做 G0（code/p3x 有改）。
+- 之後 B2 的 job 加 `--engine rust` 就不會退回 Python（stdout 的 `py_fallback_jobs` 應該是 0）。venv 必須是 Python 3.12，否則 B2 會退回 Python。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0；main.rs 變了會自動重編。TRX40 的 venv 若不是 Python 3.12，B2 會退回 Python（stdout 會看到 `noise_B2_py…`）。
+- 用 `--engine rust` 跑一次 xc_sa 和 Python 版逐格比。
+
+**下一步**（我）：`--jobs-from`（icpe-data 的 P4 請求），驗證接著開跑，預計 16:15 左右 push；之後重建 TraceLab 快取、把引擎同步到 kvsweep。
+
+**需要使用者決定什麼**：無。
+
+## 2026-11-06T15:05+08:00 — **`x1 sweep --jobs-from <csv>`：G1 PASS，commit `1bf35bd`**（icpe-data 的 P4 請求）
+
+細節見 SIM_CHANGES 第 21 項。
+
+**怎麼用**
+- `x1 sweep … --jobs-from <csv>`，CSV 要有 `trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu`（其他欄忽略）。
+- 一個 job 留下 ⇔ 它某一個 view 的這 7 欄在清單裡：
+  - 有預取或 TTL 的 job 只有一個 view，所以就是它自己的 (slow, gpu) 要在清單裡；
+  - 涵蓋多個 view 的 job 只要一個 view 命中就整個照算（其他 view 的列也會輸出）。
+- 寫法：cpu_GiB 當浮點數比（8 和 8.0 相同）；其他欄是字串，和 x1_sweep.csv 相同；**GPU 層關閉的 job，gpu_policy 寫 `none`**。restore、gpu_GiB、gpu_write、pf_target、雜訊照命令列。
+- stdout 的 `jobs_from=` 那行：清單 sha256、列數、格子數、`cells_this_sweep`、`kept_jobs`、`dropped_jobs`、`unmatched_cells {policy: 數量}`，再列前 10 個 unmatched。
+  - unmatched＝清單裡有、這次的參數產生不出 job 的格子；只警告，不停。
+  - 有雜訊的 block：沒用到預知的規則（LRU、ARC、GDSF、LRU+RPF 等，GPU 規則不是 BEL 時）本來就不產生 job，會算進 unmatched，這是正常的。
+- 不給這個選項 → 和原本完全相同。
+
+**驗證**：run `20261106-142035-icpe-sim-g1-1bf35bd`（14:20–14:59）
+- G1：Python、Rust 各 4,416 列不同的格子 0 → **PASS**。
+- 測試清單取 p4_cells_distinct 的 Bailian 格子（含 GPU 0、TTL、3 個故意不存在的格子）。同一個 block 加和不加選項：
+  - 沒有雜訊：540 個 job 留 130；Rust、Python 的輸出（各 255 列）和不加選項的逐格相同。
+  - B1、B2 雜訊：1,248 個 job 留 320；680 列逐格相同。
+  - 獨立推算的列集合、job 數、unmatched 數都和實際相同；清單裡產生得出來的格子一格不少。
+- 摘要：`g1_compare.csv`（+2）、`rust_cmp.csv`（+3）、`jobs_from_check.csv`（新）。
+
+**準備快取**：`x1_sim.py` 變了，快取的鍵跟著變。push 後我照 icpe-data 的要求只重建 tl_c1、c2、c4（最多 3 個行程、nice 10、共用 x1fast-work），好了另外通知。
+
+**需要 icpe-data 做什麼**：`git merge --no-ff` 這次 push 的 commit（含 v5 4a4baa4 與這個），重做 G0，然後照你的 P4 排法跑。
+
+**需要 icpe-trx 做什麼**：merge 後重做 G0（main.rs 和 9167f11 相同，Rust 不用重編）；sa_p4 可以開始。
+
+**需要使用者決定什麼**：無。

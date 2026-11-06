@@ -2,6 +2,252 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T06:40+08:00 — **P4 的資料全部到齊**：68 個 block（acvlab 62＋TRX40 6）在 icpe-next-data 的 `results/icpe_next/b/p4_b{1,2}/`；SA 的 48 個在 icpe-next-trx 的 `sa_p4_b{1,2}/`
+
+- **acvlab 的佇列**（pid 2621451，48 workers）：最後一個 `p4_b2/tracelab_c4_M_B2` 05:22:07 → 06:25:24，rc=0。整個 P4 沒有 block 失敗。
+  - 現在 acvlab 沒有佇列在跑。
+  - 08:00 降回 35 的切換腳本印出 `SWITCH ABORTED: queue 2621451 exited before 08:00` 後退出，和預期一致。
+- **collect**：`next_b_queue.py collect --plans p4_b1 p4_b2`，log 是 `runs/collect-p4-20261107-061356.log`（61 個）和 `runs/collect-p4-20261107-062553.log`（1 個）。
+- **commit**（都已 push）：
+  - **8e7fc13**：TRX40 的 6 個 Mooncake 目錄，從 `origin/icpe-next-trx` a976925 checkout，blob 完全相同。
+    - `p4_b1/toolagent_{P,M}_B1`、`p4_b2/{conversation,toolagent}_{P,M}_B2`，1,243,186 列。
+  - **b0d84c4**：acvlab 的 62 個目錄，1,717,656 列。
+    - Bailian、CacheWise、TraceLab 的 B1＋B2，Mooncake conversation 的 B1。
+  - 68 個合計 **2,960,842 列**。
+  - 用 xz 照原樣 commit（最大 11.8 MB，合計約 93 MB）。依據是 icpe-trx 的使用者對 SA 的決定；我 11/7 跟使用者說過 acvlab 也照做，使用者沒有反對。
+- **核對**（68 個檔全部通過；腳本在 session scratchpad，結果見下）：
+  - `run_id` 單一值且等於 manifest，`host` 單一值，`code_sha`＝`3280b1c8799b+rs62b0932b`。
+  - `noise_model`／`noise_draw` 和 block 名稱一致，`trace` 單一值，`ts` 沒有空的。
+  - CSV 列數＝manifest 的 `rows`。
+  - 欄數：Mooncake 46；nb trace 49，多出 `n_ret_user`、`sum_ret_user`、`mean_ret_user`，和已在 git 的 `cw_main` 相同，是每格的彙總值，不是逐使用者的數字。
+  - acvlab 的 62 個 run：`exit_code`＝0、沒有 `STOPPED_NOT_USED`、`kept_jobs`＝`count`、`unmatched_cells=0`、`py_fallback_jobs=0`。
+  - 例外：`p4_b1/conversation_P_B1` 有存 npz（210,289 個，`RUN_DIR` 不是空的）。這是 15:40 那節記過的：那個 block 是改成不存 npz 之前開跑的。npz 不影響 sweep CSV。b0d84c4 的 commit 訊息寫「no npz」，漏了這個例外，以這裡為準。
+- **SA 的 P4**：在 `origin/icpe-next-trx` 的 `results/icpe_next/b/sa_p4_b1/`、`sa_p4_b2/`，各 24 個 block（b6eb4cd）。
+- **下一步**：通知 icpe-main，資料齊了，請它照 PREREG 寫 P4 的結果。
+
+## 2026-11-07T03:55+08:00 — load 已回到約 107；那個外來工作已結束 → acvlab P4 的 ETA 回到約 06:25（06:05～06:50）〔推算〕
+
+- 03:40 起 load 開始下降。03:40～03:50 連續 10 分鐘 <120，03:50 是 107.9。03:50 時那個 43 執行緒的工作已不在行程表上。
+- 速度回來了：`tracelab_c2_M_B2` 在 03:40:32 → 03:45:33 完成 2,541 個 job，每秒約 8.4 個。03:49:34 跑到 8,707／13,380。
+- **ETA**〔推算〕：剩下 `c2_M` 4,673、`c4_P` 32,480、`c4_M` 24,360 個 job。用 B1 的牆鐘速率，倍數 1.0／1.12／1.3，48 workers → **06:07／06:24／06:48**。之後約 20～30 分鐘收集、commit。
+- 整體到齊的時間又改由 TRX40 決定：icpe-trx 估 07:10～08:15 進 git。
+
+## 2026-11-07T03:40+08:00 — acvlab 整台 load 升到 155～178（96 核）：其他使用者 03:26 開了約 43 個執行緒的工作；我們的 TraceLab B2 速度減半 → ETA 延到約 07:00～09:30〔推算〕
+
+- **load 監看**：03:27 起連續 10 分鐘以上 load >140，03:37 是 157（`load-watch-20261106.log`）。
+  - 上升來自其他使用者 03:26 開的單一 Python 行程，約 4,300% CPU。
+  - 我們沒有變：48 workers，都用 `nice 10`，所以會讓給 nice 0 的工作。
+  - 記憶體沒問題：MemAvailable 約 330 GiB。
+  - 照使用者 11/5 21:00 的決定，別人造成的高 load 不降 worker，只通知。已通知使用者。
+- **完成**：`tracelab_c1_M_B2`（02:42:14，rc=0）、`tracelab_c2_P_B2`（02:42:14 → 03:21:18，2,344 s，rc=0）。
+  - 兩個都是 load 上升前跑完，時間和 02:35 用倍數 1.12 推的相符（653／2,389 s）。
+- **影響**：`tracelab_c2_M_B2`（03:21:18 開始）
+  - 03:21～03:27 每秒約 5.0 個 job。
+  - 03:27～03:36 降到每秒約 2.4 個。
+- **ETA**〔推算〕：剩下 `c2_M` 約 10,300 個 job、`c4_P` 32,480、`c4_M` 24,360。照原本速度約 2.8 h。
+  - 那個工作 03:37 就結束 → 約 06:25。
+  - 一直佔著到最後 → 約 09:10，08:00 之後降回 35 workers 會再晚一點。
+  - TRX40 的 Mooncake 估 07:10～08:15 進 git，所以整體到齊的時間可能改由 acvlab 決定。
+  - load 回到 120 以下持續 10 分鐘時，我會收到通知，再更新 ETA。
+
+## 2026-11-07T02:35+08:00 — acvlab 的 P4：Bailian、CacheWise 的 B2 全部完成；TraceLab B2 跑到 1／6；**B2 倍數：CacheWise 1.01、TraceLab c1 1.10、Bailian traceA 1.58／1.71** → ETA 約 06:15〔推算〕
+
+- **進度**：佇列 pid 2621451（48 workers），沒有 block 失敗。
+  - `bailian_traceA_P_B2`、`bailian_traceA_M_B2` 跑完，02:01:41 結束。
+  - 18 個 `cachewise_*_B2`：02:01:41 → 02:15:39，全部 rc=0。
+  - `tracelab_c1_P_B2`：02:15:39 → 02:30:35，rc=0，run `20261107-021539-icpe-data-p4_b2-tracelab_c1_P_B2`。
+  - 現在跑 `tracelab_c1_M_B2`。還剩 5 個 TraceLab B2 block。
+- **核對**：這個佇列到目前跑完的 23 個 block 全部通過：`kept_jobs`＝`count`、`unmatched_cells=0`、`py_fallback_jobs=0`、`export RUN_DIR=` 空的、沒有 npz、`exit_code`＝0。
+  - 23 個是 4 個 Bailian B2、18 個 CacheWise B2、`tracelab_c1_P_B2`。
+  - TraceLab 是 `prep=cache_hit`。
+- **B2 對 B1 的倍數**：每個 job 平均 `run_s`，B2 除以 B1，資料來自兩個 run 的 `rust_timing.jsonl`。
+  - B1 用 35 workers 跑，B2 用 48 workers，所以倍數裡也含 48 個 worker 互搶的效應。CacheWise 只有 1.01，可見這個效應在 acvlab 上不大。
+
+  | 範圍 | B1 job 數 | B1 每 job run_s | B2 job 數 | B2 每 job run_s | 倍數 |
+  |:--|--:|--:|--:|--:|--:|
+  | `bailian_traceA_P` | 44,895 | 1.418 | 43,800 | 2.239 | 1.58 |
+  | `bailian_traceA_M` | 33,945 | 1.773 | 32,850 | 3.030 | 1.71 |
+  | `cachewise_N64*`＋`N72*`（12 個 block） | 175,320 | 0.191 | 170,450 | 0.194 | 1.01 |
+  | `tracelab_c1_P` | 8,815 | 4.293 | 8,600 | 4.701 | 1.10 |
+
+  - 以牆鐘時間算：`tracelab_c1_P` 的 B1 是 1,125 s × 35 ÷ 8,815 ＝ 4.47 執行緒秒／job，B2 是 896 s × 48 ÷ 8,600 ＝ 5.00，倍數 1.12。
+  - 加上 00:50 那節的 Bailian coder 2.46，B2 變慢的程度因資料集而異。TRX40 的 Mooncake toolagent 約 1.9（STATUS_TRX 02:25，含 46 workers 的 SMT 效應）。
+- **ETA**〔推算〕：
+  - 剩 5 個 TraceLab B2 block。用各自 B1 的牆鐘速率（c1_M 4.34、c2_P 5.74、c2_M 5.51、c4_P 6.75、c4_M 6.26 執行緒秒／job）乘上倍數，除以 48。
+  - 倍數用 1.0／1.12／1.3 → **05:50／06:14／06:50**。
+  - 都在 08:00 之前，所以降回 35 workers 的切換不會觸發。佇列結束後那支腳本會印 `SWITCH ABORTED: queue … exited before 08:00` 後退出，這是正常的。
+  - 之後 `collect --plans p4_b1 p4_b2`、核對 manifest、commit、push，約 20～30 分鐘。
+- **TRX40 的 6 個 Mooncake block**（STATUS_TRX 02:25，31a28798）：完成 4／6。icpe-trx 估 07:10～08:15 進 git〔推算〕。
+  - 進 git 之後，我把 6 個目錄 checkout 進 icpe-next-data。
+  - 兩邊都齊了之後，通知 icpe-main 開始寫 P4 的結果。
+
+## 2026-11-07T01:00+08:00 — acvlab 的 P4 深夜加到 48 workers（使用者 11/7 00:5x 同意）；08:00 之後在 block 邊界降回 35
+
+- **使用者決定**（本 session）：我提「深夜把 35 個加到約 48 個，約快三分之一〔推算〕」，使用者回「可以」。也要 TRX40 用更多核心：已轉給 icpe-trx 判斷（TRX40 只有 48 個硬體執行緒，36 workers 約用 45 CPU）。
+- **切換**（`launch/switch_p4_workers_20261107.sh`，log `runs/switch-p4-w48-20261107.log`）：
+  - `p4_b2/bailian_coder_M_B2` 00:52:20 rc=0（run `20261107-002011-icpe-data-p4_b2-bailian_coder_M_B2`）。
+  - 下一個 `bailian_thinking_P_B2` 剛開始，00:52:21 就停下舊佇列（pid 1788262），沒有殘留行程。那個 run 寫上 `STOPPED_NOT_USED`。
+- **新佇列**：pid **2621451**，`--workers 48`，同樣的 plan 和 glob（不含 6 個 Mooncake block），git HEAD c014e76，log `queue-rust-P4-w48-noMC-20261107-005221.log`。
+  - `bailian_thinking_P_B2`、`bailian_thinking_M_B2` rc=0。
+  - `bailian_traceA_P_B2`（run `20261107-005246-…`）：`kept_jobs=43800`（＝`count`）、`unmatched_cells=0`、`py_fallback_jobs=0`、`RUN_DIR=` 空的。
+  - CPU〔推算〕：48＋12 個摘要行程＋1 ≈ 61。切換前整台 load 約 61，其中我們約 44。
+  - 監看：`watch_queues.sh 2621451`。
+- **降回 35**：`switch_p4_workers_20261107.sh 2621451 … 35 08:00` 已在等（log `runs/switch-p4-w35-morning-20261107.log`）。08:00 之後第一個 block 邊界重開成 35 workers。
+- **ETA**〔推算；假設 48 個執行緒的每執行緒速度不變，08:00 之後用 35 個〕：
+  - TraceLab／CacheWise 的 B2 倍數若是 1.0／1.5／2.5 → **06:00／07:50／12:55**。
+  - 全程用 35 個的話是 07:56／10:28／15:33。
+
+## 2026-11-07T00:50+08:00 — acvlab 的 P4：B1 全部完成；**B2 在 Bailian 慢約 2.5 倍** → ETA 改為 11/7 08:15～16:00〔推算，範圍大〕
+
+- **進度**：佇列 pid 1788262，沒有 block 失敗。
+  - `p4_b1` 交給 acvlab 的 block 全部 rc=0。最後一個是 `tracelab_c4_M_B1`，23:18:02 結束。
+  - `p4_b2` 從 23:18 開始。`bailian_coder_P_B2` 00:20:11 rc=0；`bailian_coder_M_B2` 跑到 24,327／33,390。
+- **新發現：B2 的 job 比 B1 慢**。用兩個 run 的 `rust_timing.jsonl` 比（`run_s` 是單一執行緒的秒數）：
+
+  | block | job 數 | run_s 中位數 | run_s 合計 |
+  |:--|--:|--:|--:|
+  | `p4_b1/bailian_coder_P_B1` | 45,633 | 0.268 | 52,047 |
+  | `p4_b2/bailian_coder_P_B2` | 44,520 | 0.444 | 130,072 |
+
+  - 每個 job 平均約 2.5 倍。
+  - SA 在 TRX40 沒有這個現象：`sa_p4_b1` 的 sweep 合計 10,701 s、`sa_p4_b2` 9,758 s（STATUS_TRX 21:15），job 數相近。
+  - 慢多少看紀錄而定，原因還沒查（B2 是每次呼叫都重抽，v5 在 Rust 裡模擬 CPython 的 set 順序）。不影響結果的正確性：`py_fallback_jobs=0`，Rust 對 Python 的 B2 對拍 0 差（STATUS_ANA 43e7ffc）。
+- **ETA**〔推算〕：
+  - acvlab 還剩 B2 的 Bailian 118,020 個 job（用 2.46 倍）、CacheWise 171,920、TraceLab 103,110。
+  - TL 和 CW 的 B2 倍數還沒量。用 1.0／1.5／2.5 倍估：**08:15／10:47／15:52**。
+  - CacheWise 的 B2 在 Bailian 之後跑，TraceLab 的 B2 最後跑。量到之後再縮小範圍。
+- **TRX40 的 6 個 Mooncake block**：00:45 還沒進 git（icpe-trx 估約 3 h，是用 B1 的速率算的）。其中 4 個是 B2，可能也比較慢。已傳訊息請 icpe-trx 回報進度。
+
+## 2026-11-06T19:50+08:00 — acvlab 的 P4 佇列已重開（不含交給 TRX40 的 6 個 Mooncake block）；ETA 更正為 11/7 約 04:40–05:35〔推算〕
+
+- **切換**（`switch_p4_mooncake_trx_20261106.sh`，log `runs/switch-p4-mooncake-trx-20261106.log`）：
+  - 舊佇列跑完 `p4_b1/tracelab_c2_P_B1`：18:49:39 → 19:39:40，rc=0，run `20261106-184939-icpe-data-p4_b1-tracelab_c2_P_B1`。
+  - 下一個 `tracelab_c2_M_B1` 19:39:40 剛開始，19:39:43 就停下舊的行程群組（pid 3531487），沒有殘留行程。那個 run（`20261106-193940-…-tracelab_c2_M_B1`）寫上 `STOPPED_NOT_USED`。
+- **新佇列**：pid **1788262**，19:39:43 開跑，git HEAD 58fdfae（程式和 f828e79 相同，之後只改了文件）。
+  - 指令：`run --plans 'p4_b1:conversation_*,bailian_*,cachewise_*,tracelab_*' 'p4_b2:bailian_*,cachewise_*,tracelab_*' --engine rust --workers 35`。
+  - log：`queue-rust-P4-w35-noMC-20261106-193943.log`。
+  - 第一個 block `p4_b1/tracelab_c2_M_B1`（run `20261106-193943-icpe-data-p4_b1-tracelab_c2_M_B1`）：`kept_jobs=13826`（＝`count`）、`unmatched_cells=0`、`py_fallback_jobs=0`、`export RUN_DIR=`（空的）、`prep=cache_hit 7.4s lite=True`。
+  - 監看：`watch_queues.sh 1788262`，load 監看繼續。
+- **ETA 更正**：19:20 那節寫 03:45，偏早。原因是 TraceLab c2 的實測速率比 c1 慢。
+  - `tracelab_c2_P_B1`：3,001 s × 35 ÷ 18,286 ＝ **5.74 執行緒秒／job**（c1 是 4.47）。
+  - c4 還沒量到。P1 時（Rust、同樣列數），c4 的時間介於 c1 和 c2 之間：`tl_p1` 的 `_ttl` 是 1,752／2,036／1,904 s，`_trunc` 是 1,477／1,865／1,527 s。
+  - 所以 c4 用 4.8～5.74 估：acvlab 剩 33 個 block，約 114～125 萬執行緒秒 → **11/7 約 04:40～05:35〔推算〕**。
+- TRX40（STATUS_TRX、icpe-trx 訊息）：已 merge 58fdfae（313a9aff），正在跑 Mooncake 的 Python 對 Rust 子集對拍；sa_p4 收完（約 21:00〔推算〕）、重做 G0 之後開跑那 6 個 block。
+
+## 2026-11-06T19:20+08:00 — **P4 的 6 個 Mooncake block 交給 TRX40**（最終清單）；acvlab 的佇列在下一個 block 邊界重開、不跑這 6 個
+
+**依據**
+- 使用者 11/6 約 19:10 在 icpe-main 說：「那帮我在 RTX 上面继续跑 P4 的任务，可以直接交给他。」RTX 指 TRX40，「他」指 icpe-next-trx。icpe-main 用訊息轉達，要 icpe-data 決定搬哪些 block。
+- icpe-trx 的使用者約 19:15 確認 **TRX40 只接 Mooncake**，不接 Bailian、TraceLab、CacheWise（STATUS_TRX 19:20，afc6e762）。CacheWise 本來就一律不離開 acvlab。
+- TRX40 已經有 Mooncake 原始紀錄，sha256 和 STATUS_DATA 相同：conversation `b8cbb061…`、toolagent `48a2db1a…`。所以不用搬任何資料，也不用重建載入快取。
+
+**交給 TRX40 的 block（最終清單）**：acvlab 都還沒開始跑。
+
+| plan | block | job 數 |
+|:--|:--|--:|
+| p4_b1 | toolagent_P_B1 | 196,718 |
+| p4_b1 | toolagent_M_B1 | 148,738 |
+| p4_b2 | conversation_P_B2 | 205,160 |
+| p4_b2 | conversation_M_B2 | 153,870 |
+| p4_b2 | toolagent_P_B2 | 191,920 |
+| p4_b2 | toolagent_M_B2 | 143,940 |
+| | **合計** | **1,040,346** |
+
+- 在 TRX40 用 `run --plans 'p4_b1:toolagent_*' 'p4_b2:conversation_*,toolagent_*' --engine rust --workers 36`。dry-run 要剛好是上表 6 個 block。
+  - `p4_b1` 的 `conversation_*` 已在 acvlab 跑完，**不要**放進 glob。
+- **TRX40 的核對**（照 sa_p4）：
+  - merge 後重做 G0，要 IDENTICAL；code_sha 要是 `3280b1c8799b+rs62b0932b`。
+  - 每個 block 檢查：`kept_jobs`＝`count`、`unmatched_cells=0`、`py_fallback_jobs=0`、`RUN_DIR` 是空的。
+  - 開跑前，icpe-trx 會在 TRX40 用 Mooncake toolagent 的 B1＋B2 子集做 Python 對 Rust 的對拍（STATUS_TRX 19:20）。
+- **收結果**：icpe-trx 在 TRX40 跑 `collect --plans p4_b1 p4_b2`，push 到 `icpe-next-trx`。
+  - TRX40 的完成清單裡只有這 6 個，所以只會產生 `results/icpe_next/b/p4_b1/toolagent_{P,M}_B1/`、`p4_b2/{conversation,toolagent}_{P,M}_B2/` 這 6 個目錄，`host` 欄是 TRX40 的 hostname。
+  - 和 acvlab 的目錄不重疊。icpe-data 再把這 6 個目錄 checkout 進 `icpe-next-data`，讓 P4 全部在同一個分支。
+- **TRX40 跑不完時**：在 STATUS_TRX 寫清楚哪些 block 沒做，acvlab 再用同樣的 glob 補跑。同一個 block 不會兩台都跑。
+
+**acvlab 怎麼跳過這 6 個**
+- 正在跑的佇列（pid 3531487）在開跑時就載入了完成清單和 block 清單，所以要重開。
+  - `launch/switch_p4_mooncake_trx_20261106.sh`：等目前的 `p4_b1/tracelab_c2_P_B1` 跑完、下一個 block 剛開始時，停下行程群組。
+  - 剛開始的那個 run 寫上 `STOPPED_NOT_USED`。
+  - 然後重開：`run --plans 'p4_b1:conversation_*,bailian_*,cachewise_*,tracelab_*' 'p4_b2:bailian_*,cachewise_*,tracelab_*' --engine rust --workers 35`，log 是 `queue-rust-P4-w35-noMC-<ts>.log`。新的 pid 之後補在這裡。
+- **dry-run 核對**（19:16，在 tl_c2_P_B1 還沒跑完時做；沒有建立 run 目錄）：
+  - 已完成跳過 28 個，要跑 34 個（含正在跑的 tl_c2_P_B1；重開時它已完成，會被跳過）。
+  - 28＋34＋6＝68，等於 p4_b1＋p4_b2 的全部 block，合計 2,297,276 個 job。
+  - 要跑的 34 個裡沒有任何 toolagent，也沒有 conversation 的 B2。34 個都是 `RUN_DIR=`（空的）、都有 `--jobs-from`。
+- **時間**〔推算，用 18:40 的速率〕：
+  - acvlab 剩 34 個 block、528,146 個 job、約 113 萬執行緒秒，35 個執行緒 → **11/7 約 03:45**（原本 06:50）。
+  - TRX40：104 萬個 job × 0.374（acvlab 的 Mooncake 速率）÷ 36 ≈ 3.0 h。TRX40 跑 Mooncake 的速度 NOT_MEASURED。
+
+## 2026-11-06T18:40+08:00 — acvlab P4 的 ETA 更新：11/7 約 06:50〔推算〕（15:40 估 03:00 偏低）
+
+- `p4_b1/tracelab_c1_P_B1` 跑完：18:17:08 → 18:35:53，rc=0，8,815 個 job。`unmatched_cells=0`，`py_fallback_jobs=0`。
+- **實測速率**（block 時間 × 35 ÷ job 數，用這個佇列和舊佇列 `conversation_P_B1` 的 log）：
+
+  | 紀錄 | 執行緒秒／job | 用了多少 job |
+  |:--|--:|--:|
+  | Mooncake conversation | 0.374 | 369,288 |
+  | Bailian | 1.324 | 167,184 |
+  | CacheWise | 0.264 | 176,832 |
+  | TraceLab（只有 c1） | 4.467 | 8,815 |
+
+- 剩下的 job × 上面的速率（toolagent 用 conversation 的速率；B2 用 B1 的速率；TL c2／c4 用 c1 的速率）：約 154 萬執行緒秒，35 個執行緒約 12.3 h → **11/7 約 06:50 跑完〔推算〕**。TraceLab 約占剩餘的 58%。
+  - 15:40 估 03:00，偏低的原因：Mooncake 用 0.31（實測 0.374），Bailian 沒有單獨估。
+- 執行緒數不變，維持約 44 個 CPU 的上限。
+
+## 2026-11-06T18:20+08:00 — TraceLab 的 P4 用上 icpe-sim 的載入快取；PREREG 同步偏離 7 更正與偏離 8
+
+- **TL 快取**：第一個 TraceLab 的 P4 block `p4_b1/tracelab_c1_P_B1`（run `20261106-181708-icpe-data-p4_b1-tracelab_c1_P_B1`）的 stdout 印 `prep=cache_hit 10.0s lite=True`。
+  - 用的是 icpe-sim 90dae78 建的快取（STATUS_SIM 15:50）。不需要 icpe-sim 再做什麼。
+- **acvlab P4 進度**（18:17）：這個佇列（pid 3531487）25 個 block rc=0，加上舊佇列的 `conversation_P_B1`，共 713,304／2,297,276 個 job（31%）。沒有 rc≠0。
+  - 已完成：Mooncake conversation（P、M）、Bailian 全部、CacheWise 全部的 B1。接著是 TraceLab 6 個 B1 block，然後 toolagent，再全部的 B2。
+  - TraceLab 的雜訊每個 job 要多久還沒量到；`tracelab_c1_P_B1` 跑完後再更新 ETA（15:40 的估計是 11/7 約 03:00〔推算〕）。
+- **PREREG**：從 `origin/icpe-next-a` 6b84a5c checkout 檔案，內容和 `origin/icpe-next-main` 相同（274 行）。
+  - 和上一版相比只有新增：19 行新增、0 行刪除。新增的是「偏離 7 更正」和「偏離 8」，兩段都是 icpe-main 寫的。
+
+## 2026-11-06T15:40+08:00 — acvlab 的 P4 用不存 npz 的程式重開；TRX40 的 sa_p4 15:16 開跑
+
+- 舊佇列跑完 `p4_b1/conversation_P_B1`：15:03:42 → 15:35:06，rc=0，210,289 個 job，1,884 s。這個 block 有存 npz，約 10 GB，留著。
+  - 15:35:07 停在 `conversation_M_B1` 剛開始的地方，那個 run 留了 `STOPPED_NOT_USED`。
+- **新佇列**：pid 3531487，`run --plans p4_b1 p4_b2 --engine rust --workers 35`，git HEAD f828e79，log `queue-rust-P4-w35-nonpz-20261106-153507.log`。
+  - 第一個 block `conversation_M_B1`：cmd 是 `export RUN_DIR=`，req/ 是空的。
+  - `kept_jobs=158999`，和 `count` 相同；`unmatched_cells=0`、`py_fallback_jobs=0`。
+- 監看：`watch_queues.sh 3531487`，以及 load 監看。
+- **時間**〔推算〕：Mooncake 的雜訊 job 實測約 0.31 執行緒秒（210,289 個 job × 35 ÷ 1,884 s）。
+  - TraceLab 用 P1 的 3.9 s 加約 25%（雜訊的額外成本）來估，約佔總量 2／3。
+  - 合計約 150 萬執行緒秒，35 個執行緒約 12 h → **11/7 約 03:00** 跑完。順序是全部 B1 先跑，再跑 B2。
+- **TRX40**（STATUS_TRX 15:20，cdea0d4）：merge f828e79 之後，15:16:47 開跑 `sa_p4_b1 sa_p4_b2`，36 個執行緒。
+  - 48 個 block 都是 `RUN_DIR=` 空的。第一個 block 的 kept 等於 `count`。
+  - 他們估約 19:45 跑完。
+
+## 2026-11-06T15:25+08:00 — P4 不存逐請求 npz（icpe-trx 的請求；兩台都適用）→ **icpe-trx 請 merge 本節的 commit 後再開始 sa_p4**
+
+- **問題**（STATUS_TRX 15:15，8d9d34b；他們的數字）：`next_b_queue` 設 `RUN_DIR=<run>/req`，x1_sim 每個 job 都會存一個 npz。
+  - SA 的 P4 有 1,434,342 個 view，約 1.2 TB〔推算〕；TRX40 的 /ssd4 只剩 548 GiB。
+  - acvlab：/ssd6 剩 2.0 TB（共用）。第一個 P4 block（Mooncake conversation）跑到一半就存了 5.5 GB、96,850 個檔。TL 每個 job 約 4 MB 以上，P4 的 TL 約 20 萬個 job → 約 0.9 TB〔推算〕。
+- **P4 需不需要 npz**：PREREG（§3 B、偏離 6／8）的 P4 只要求 seed 間的中位數、最小–最大、平均±標準差，`next_sim_analyze.py` 的雜訊分析只讀 sweep CSV。
+  - 全文沒有要求 bootstrap 或逐請求的資料（`grep bootstrap／x1_boot／逐請求` 只找到偏離 6 的對拍說明）。
+  - npz 只有 `x1_boot.py`（成對 bootstrap）會用到。之後如果要某幾格的逐請求資料，可以用同樣的參數重跑那幾格：程式是確定性的，結果會逐位元相同。
+- **改法**：`next_b_queue.py` 在 P4 的 block 加 `no_npz=True`，`RUN_DIR` 設成空字串，x1_sim 就不存 npz（`RUN_DIR` 在 x1_sim／x1_rust／p3_fvar 裡只用在這裡）。
+  - 其他 plan 不變，空跑核對過。
+  - 不改 icpe-sim 的程式。CSV、run_id 都照舊。
+- **acvlab 的 P4 佇列**（pid 3462686，15:03 開始）用的是開跑時載入的舊程式，會存 npz。
+  - 處理：`restart_p4_nonpz_20261106.sh` 等目前的 `p4_b1/conversation_P_B1` 跑完、下一個剛開始時停下，用新程式重開同樣的 plan。
+  - 已經存的那份（Mooncake，約 10 GB）留著。
+- **icpe-trx**：請 merge 本節的 commit，用 `--dry-run` 確認 `export RUN_DIR=`（空的），再開始 `sa_p4_b1 sa_p4_b2`。
+
+## 2026-11-06T15:10+08:00 — merge v5＋`--jobs-from`（d3a6376）、G0 PASS → **icpe-trx 可以開始 sa_p4**；acvlab 的 P4 開跑
+
+- STATUS_SIM 14:25：v5（B2 進 Rust，程式 4a4baa4）G1 PASS。STATUS_SIM 15:05：`--jobs-from`（程式 1bf35bd，疊在 v5 上）G1 PASS。
+- **先試合併**：在 detached worktree 合併 icpe-next-data HEAD 和 d3a6376，模擬程式和 1bf35bd 沒有差異。
+  - **G0（Rust）PASS**：run `20261106-150227-icpe-data-g0-rust-merged-1bf35bd`，`--workers 32`，**128,064 格 0 個不同**，sweep 24.2 s。執行檔是 `src_sha256=62b0932b…`，code_sha 是 `3280b1c8799b+rs62b0932b`。
+  - 正式 merge：**47707e0**，tree `4920721…` 和試合併相同。
+  - merge 後 `count --plans p4_b1 p4_b2 sa_p4_b1 sa_p4_b2` 仍是 3,301,642。
+- 共用 venv 是 Python 3.12.15，所以 B2 交給 Rust（v5 只在 3.12 時才用 Rust）。
+- **icpe-trx 可以開始 sa_p4**：merge `origin/icpe-next-data`（含 47707e0 或之後的 commit）→ 在 TRX40 重新編譯並做 G0、xc_sa 等對拍 → `run --plans sa_p4_b1 sa_p4_b2 --engine rust --workers 36`。
+  - `count` 應該是 48 個 block、1,004,366 個 job。
+  - 每個 block 開跑後，看 stdout 的 `jobs_from=`（kept／dropped／unmatched）：kept 要等於 `count` 的數字。
+- **acvlab**：`run --plans p4_b1 p4_b2 --engine rust --workers 35`（68 個 block、2,297,276 個 job），先跑完全部 B1 再跑 B2。pid 和 log 開跑後補。
+  - TL 快取：icpe-sim 用 d3a6376 重建 tl_c1／c2／c4，15:01 開始，約 21 分鐘。TL 的 block 在佇列後段，那時已經建好。
+
 ## 2026-11-06T14:15+08:00 — **acvlab 的 P1–P3（偏離 6）全部完成**；TRX40 的 SA P1–P3 也完成
 
 - TraceLab 的 P3 `*_wt` 已收進 git，3 個 block，各 7,344 列，程式是 363024a（wt 修正）：
