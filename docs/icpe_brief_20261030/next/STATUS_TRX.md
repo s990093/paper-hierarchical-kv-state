@@ -3,6 +3,45 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T00:50+08:00 — Mooncake P4：**2／6 完成**（rc=0、核對通過），第 3 個 `conversation_P_B2` 跑到約 53%；toolagent 比原本估的慢，**完成時間改為 11/7 約 06:00～11:00**〔推算〕
+
+回覆 icpe-data 的詢問（訊息，見 STATUS_DATA 00:50）。
+
+- **佇列**：pgid 2231622，log `$ROOT/runs/queue-p4mc-rust-w36-20261106-210352.log`，沒有 FAILED／KILLED，三個守門程式都沒觸發。
+
+  | block | 起 → 迄 | 牆鐘 | job 數 | `run_s` 合計（執行緒秒） | 每 job 平均 | 中位數／p90／max |
+  |:--|:--|--:|--:|--:|--:|:--|
+  | `p4_b1/toolagent_P_B1` | 21:03:52 → 22:28:44 | 5,092 s | 196,718 | 181,817 | 0.924 | 0.083／2.856／7.561 |
+  | `p4_b1/toolagent_M_B1` | 22:28:44 → 00:30:49 | 7,325 s | 148,738 | 262,866 | 1.767 | 0.082／5.570／8.238 |
+  | `p4_b2/conversation_P_B2` | 00:30:49 → 跑中 | — | 108,557／205,160（00:48:43） | 36,615（107,856 個 job 時） | 0.339（到目前） | — |
+  | `p4_b2/conversation_M_B2` | 未開始 | | 153,870 | | | |
+  | `p4_b2/toolagent_P_B2` | 未開始 | | 191,920 | | | |
+  | `p4_b2/toolagent_M_B2` | 未開始 | | 143,940 | | | |
+
+  - `run_s` 取自各 run 的 `rust_timing.jsonl`（單一執行緒秒數）。兩個完成的 block 有效並行度約 35.7、35.9（`run_s` 合計 ÷ 牆鐘）。
+- **完成的 2 個 block 逐項核對**都通過：
+  - `exit_code` 0；`kept_jobs` 等於 count（196,718、148,738）。
+  - `unmatched_cells=0`；`py_fallback_jobs=0`；`req/` 0 個檔；`rust_timing.jsonl` 行數等於 kept。
+  - stderr 只有 `session groups…` 與 `x1fast serve: trace_load_s…` 兩種行。
+  - `conversation_P_B2` 開頭的同樣檢查也正常：`kept_jobs=205160`，`unmatched_cells=0`，`py_fallback_jobs=0`。
+- **資源**（memwatch 21:03:54 → 00:46）：
+  - MemAvailable 最低 52,342 MiB；行程群組 PSS 最高 1,977 MiB。
+  - swap 一直 790 MiB；load1 最高 42.56；/ssd4 剩 541 GiB。
+- **為什麼比 3 h 久**：
+  - 21:15 的 3 h 是用 acvlab 的 0.374 執行緒秒／job 算的。TRX40 的 toolagent B1 實測是 0.924（P）和 1.767（M）。
+  - 重的 job 集中在 job 順序的 40%–80%：`toolagent_P_B1` 跑完一半的 job 時，`run_s` 只累積了 26%。所以不能用「跑完幾成 job」線性外推。
+- **ETA**〔推算〕：
+  - `conversation_P_B2`：用 toolagent B1 的「job 序位 → 累積 `run_s`」曲線外推，總共約 110,500–113,900 執行緒秒。約 **01:25** 結束。
+  - `conversation_M_B2`：假設 M／P 每 job 比例和 toolagent B1 一樣（1.91 倍），約 161,000 執行緒秒、約 75 分鐘。
+  - toolagent 兩個 B2 block：用 B1 的每 job 速率 × B2 倍數 f。f 在 TRX40 的 Mooncake 上 NOT_MEASURED。
+  - 剩下約 668,000 ＋ 431,800 ×（f − 1）執行緒秒，用 35.8 的並行度：
+    - f＝1.0 → 約 **06:00**；
+    - f＝1.5 → 約 **07:40**；
+    - f＝2.5（acvlab Bailian 的倍數）→ 約 **11:00**。
+  - 之後 collect＋核對＋commit 另外要約 10–20 分鐘〔推算〕。
+  - `toolagent_P_B2` 跑到一部分時（〔推算〕約 03:00 之後），可以用同樣的曲線和 `toolagent_P_B1` 比，量出 f，再更新這裡。
+- **接下來**：照 21:15 的計畫，逐 block 核對；全部完成後 `collect --plans p4_b1 p4_b2`，commit／push，通知 icpe-data。
+
 ## 2026-11-06T21:15+08:00 — **sa_p4 完成**（48 個 block、1,004,366 個 job、1,434,342 列，已進 git）；Mooncake 對拍 0 差；**6 個 Mooncake P4 block 21:03:52 開跑**
 
 **sa_p4**
