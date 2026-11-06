@@ -2,6 +2,40 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T13:55+08:00 — P4（W4 雜訊）的規模；使用者決定照 PREREG 全跑；請 icpe-sim 加 `--jobs-from`、先做 v5
+
+**輸入**：icpe-main 的選格清單（`origin/icpe-next-main` c868ef2，`results/icpe_next/main/p4/p4_cells_distinct.csv`；PREREG 偏離 8）。975 格、2,582 個（格, 元件）。
+- 我看過的內容：這個檔的表頭和前 4 列，其中有 4 個 Bailian 格的 `max_headroom` 值；以及我自己數 job 用的欄位（trace、rule、cpu、slow、gpu、components）。沒有看其他上限表。
+
+**job 數**（`scratchpad/p4count.py`；直接用 `x1_sim` 的 `COMPONENT_POLICIES`／`NON_ORACLE`／`POLICIES`／`noise_specs`）
+- 每個元件要跑的組合，照 `next_sim_analyze.py` 的 ④ 定義：
+  - O-ORD／O-DROP／O-PF：該元件的 CPU 規則 × 15 個 GPU 不預測規則（LRU＋TTLA／TTLB × 7 個 TTL）。
+  - O-GPU：10 個 NON_ORACLE × GPU BEL。
+  - O-ALL(report)：(O-ALL, BEL)。
+- 雜訊設定 142 種：
+  - P：λ 0、0.1、0.2、0.3、0.4；M：λ 0、0.1、0.2、0.3。
+  - λ＞0 的每一個 × B1、B2 × 10 個 seed；λ＝0 各 1 個。
+  - 142 種裡 B2 佔 70 種。
+- 不重複的 job：22,638 × 142 ＝ **3,214,596**。
+  - 依紀錄：Mooncake 1,387,340、SemiAnalysis 967,446、CacheWise 336,540、Bailian 322,482、TraceLab 200,788。
+- 用現有的乘積參數排 block 會多跑：依 (trace, rule, cpu, slow) 分組要 509 個 block、5,253,006 個 job（多 63%）；依 (trace, rule) 分組要 10,521,916 個。
+- 〔推算〕時間：用 P1 `_ttl` 實測的 Rust 每 job 平均秒數。
+  - 各紀錄：TraceLab 3.92 s、Mooncake 0.246、Bailian 0.208、CacheWise 0.117、FI 0.046；SemiAnalysis 用 TRX40 `sa_p2` 的中位數 0.62。
+  - 合計約 183 萬執行緒秒。SemiAnalysis 在 TRX40 跑，acvlab 約 10 h、TRX40 約 5 h。
+
+**使用者決定**（AskUserQuestion，11/6 13:5x）：**照 PREREG 全跑**，不縮小 GPU 規則，也不登記新偏離。
+
+**需要 icpe-sim 做什麼**（已傳訊息）
+1. v5（B2 進 Rust）優先審查、G1、push。沒有 v5，160 萬個 B2 job 會退回 Python，跑不完。
+2. `x1 sweep --jobs-from <csv>`：只保留清單裡的 job（`jobs_for` 展開後過濾）。
+   - 清單欄位 trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu。單一 view 的 job 要比對 (slow, gpu)。
+   - 沒給這個選項時，行為不變；給了要驗證：保留下來的 job，結果和不過濾時逐格相同。
+
+**我的排法**（等上面兩項）
+- 一個紀錄變體 × 雜訊模型（P／M，λ 清單不同）× 抽法（B1／B2）＝一個 block。
+- 先跑 B1（現有程式已能用 Rust），B2 等 v5。
+- SemiAnalysis 交給 TRX40。
+
 ## 2026-11-06T13:12+08:00 — merge wt 修正（776486c）、G0（Rust）PASS；TL 的 P3 `*_wt` 開跑
 
 - STATUS_SIM 13:15：icpe-sim 的 wt 修正（選項 A，程式 7193a2d）G1 PASS。
