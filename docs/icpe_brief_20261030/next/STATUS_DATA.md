@@ -2,6 +2,22 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T01:00+08:00 — acvlab 的 P4 深夜加到 48 workers（使用者 11/7 00:5x 同意）；08:00 之後在 block 邊界降回 35
+
+- **使用者決定**（本 session）：我提「深夜把 35 個加到約 48 個，約快三分之一〔推算〕」，使用者回「可以」。也要 TRX40 用更多核心：已轉給 icpe-trx 判斷（TRX40 只有 48 個硬體執行緒，36 workers 約用 45 CPU）。
+- **切換**（`launch/switch_p4_workers_20261107.sh`，log `runs/switch-p4-w48-20261107.log`）：
+  - `p4_b2/bailian_coder_M_B2` 00:52:20 rc=0（run `20261107-002011-icpe-data-p4_b2-bailian_coder_M_B2`）。
+  - 下一個 `bailian_thinking_P_B2` 剛開始，00:52:21 就停下舊佇列（pid 1788262），沒有殘留行程。那個 run 寫上 `STOPPED_NOT_USED`。
+- **新佇列**：pid **2621451**，`--workers 48`，同樣的 plan 和 glob（不含 6 個 Mooncake block），git HEAD c014e76，log `queue-rust-P4-w48-noMC-20261107-005221.log`。
+  - `bailian_thinking_P_B2`、`bailian_thinking_M_B2` rc=0。
+  - `bailian_traceA_P_B2`（run `20261107-005246-…`）：`kept_jobs=43800`（＝`count`）、`unmatched_cells=0`、`py_fallback_jobs=0`、`RUN_DIR=` 空的。
+  - CPU〔推算〕：48＋12 個摘要行程＋1 ≈ 61。切換前整台 load 約 61，其中我們約 44。
+  - 監看：`watch_queues.sh 2621451`。
+- **降回 35**：`switch_p4_workers_20261107.sh 2621451 … 35 08:00` 已在等（log `runs/switch-p4-w35-morning-20261107.log`）。08:00 之後第一個 block 邊界重開成 35 workers。
+- **ETA**〔推算；假設 48 個執行緒的每執行緒速度不變，08:00 之後用 35 個〕：
+  - TraceLab／CacheWise 的 B2 倍數若是 1.0／1.5／2.5 → **06:00／07:50／12:55**。
+  - 全程用 35 個的話是 07:56／10:28／15:33。
+
 ## 2026-11-07T00:50+08:00 — acvlab 的 P4：B1 全部完成；**B2 在 Bailian 慢約 2.5 倍** → ETA 改為 11/7 08:15～16:00〔推算，範圍大〕
 
 - **進度**：佇列 pid 1788262，沒有 block 失敗。
