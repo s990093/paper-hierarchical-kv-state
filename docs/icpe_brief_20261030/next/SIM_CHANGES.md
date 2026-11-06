@@ -273,3 +273,40 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - **對拍不是空的**：λ>0、B1、seed 0 的列，和同一格 λ＝0 的列比，nz_bl 496／496、nz_mc 400／400 至少有一個數值欄不同（`nz_effect.py`、`nz_effect.txt`，在 run 目錄）。
   - 摘要：`results/icpe_next/sim/g1_compare.csv`（+1 列）、`rust_cmp.csv`（+16 列）、`rust_timing.csv`（+17 列）。
 - **有利還是不利**：無（逐格相同）。
+
+
+### 18. `--engine rust` 的父行程準備加快取（icpe-data 11/6 的請求；`code/p3x/x1_rust.py`、`code/p3x/x1_sim.py`，commit c7ef740）
+
+- **為什麼**：
+  - icpe-data 量到：Rust 佇列跑 tl_c4 時，父行程準備了約 16 分鐘，只用 1 個 CPU，另外 35 個執行緒閒著。準備的內容是讀 npz、檢查、建 full／acc、寫 Rust 紀錄檔。
+  - P1–P3 還有 18 個 TraceLab block，同一個紀錄變體要重複準備 6–7 次。
+  - 數字出處：STATUS_DATA 08:25 與 icpe-data 的訊息，是他們的數字。
+- **改了什麼**：
+  - `x1_rust.prepare_cached`：`cmd_sweep` 的 rust 分支改用它，取代原本的 `prep`＋`prepare_trace`。
+    - **快取**：只對 nb: 紀錄。
+      - 鍵＝npz 內容 sha256＋`x1_sim.py`／`x1_nb.py`／`x1_rust.py` 的 sha256＋numpy、Python 版本＋`BF`。
+      - 放在 `$X1_RUST_WORK/prep-<鍵前 24 碼>/`：`lite.pkl`（P 去掉 full、acc）＋`KEY.json`（鍵的組成、lite.pkl 與紀錄檔的 sha256、請求數）。
+      - 寫入方式：先寫暫存目錄再原子搬移。同時有別的 sweep 寫好了，就丟掉自己的。
+    - **命中時的驗證**：
+      - KEY.json 的鍵與組成要相同；
+      - lite.pkl 的 sha256 要相同；
+      - Rust 紀錄檔**重算** sha256 要相同；
+      - 紀錄檔的 n／B／S 要和 lite P 對得上。
+      - 任何一項不過就停下來，不會默默重建。只有「沒有這個目錄」才重建。
+    - **lite P**：一份紀錄的 job 全部走 Rust 時，父行程的 P 不留 full、acc。
+      - Rust 讀紀錄檔；父行程與摘要只用 `len(P["full"])`（`NoFull`：只有長度，其他用法丟錯誤）、`nmax`、`tl`、`kindc`、`ws_GiB`、`user_trigger`。
+      - 有任何 job 退回 Python Engine（B2、慢層上限、STAIR）的紀錄，照舊建完整的 P。
+    - `X1_PREP_CACHE=0` 關掉快取，lite P 不受影響。
+  - `x1_sim.cmd_sweep`：
+    - 一開始的 `prep` 迴圈只在非 rust 時跑，`--engine py` 的路徑不變；
+    - rust 分支改呼叫 `prepare_cached`，stdout 那行多印 `prep=<built|built_saved|cache_hit> <秒> lite=<True|False>`。
+- **驗證**：run `20261106-082036-icpe-sim-g1-c7ef740`（detached checkout c7ef740、nice 10、`X1_RUST_WORK`＝run 自己的 work/，所以第一次一定沒有快取；08:20–09:28，load 約 65–70）。
+  - **G1（Python）**：`--engine py`、6 workers、新功能全關，對 H200 V1：4,416 列 × 29 欄，不同的格子 0 → **PASS**。
+  - **G1（Rust）**：`--engine rust`、2 執行緒：4,416 列 × 29 欄，不同的格子 0 → **PASS**。4 個非 nb 紀錄都是 `prep=built … lite=True`（不快取，但走 lite P）。
+  - **TraceLab c1 子集**（cpu 64，其餘參數照 icpe-data 的 tl_c1；`--engine rust --workers 2`）連跑兩次：
+    - 第一次 `prep=built_saved 672.2s lite=True`，第二次 `prep=cache_hit 9.3s lite=True`（9.3 s 含重算 2.6 GB 紀錄檔的 sha256）。
+    - 兩次都和 0b0ef1e 的 TL c1 整個 block（run `20261106-003131-icpe-sim-rust-tl_c1`，那份已和 icpe-data 的 Python 輸出逐格相同）比：816 列 × 40 欄，不同的格子 0；逐請求 npz 686 個檔、1,632 個陣列，不同 0 → 兩次都 **PASS**。
+    - 單一行程最大 RSS（`time -v`）：14,896,312 KiB → 4,461,960 KiB。牆鐘 1,672.6 s → 1,108.3 s；sweep 本身 999.1 s → 1,098.2 s（共用機器，時段不同）。
+  - **有 job 退回 Python 的紀錄**（Bailian coder、cpu 64、O-BEL、B1＋B2 雜訊）：`prep=built_saved 0.6s lite=False`；和 v4 驗證的 nz_bl Python 輸出比，144 列 × 44 欄，不同的格子 0 → **PASS**。
+  - 摘要：`results/icpe_next/sim/g1_compare.csv`（+2）、`rust_cmp.csv`（+3）、`npz_cmp.csv`（+2）、`rust_prep_cache.csv`（新，+7）。
+- **有利還是不利**：無（逐格相同；只改準備的方式，計算沒有改）。

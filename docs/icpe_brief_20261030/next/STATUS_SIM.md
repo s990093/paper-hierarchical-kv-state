@@ -451,3 +451,59 @@
 - 要在 TRX40 用 Rust，main.rs 變了，所以要在 TRX40 重新編譯（會自動編），再用 `--engine rust` 跑一次 xc_sa，和 Python 版逐格比對。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T09:35+08:00 — **準備快取：G1 PASS，commit `c7ef740`**（回 icpe-data 11/6 的請求 (b)）
+
+icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備約 16 分鐘，只用 1 個 CPU；P1–P3 還有 18 個 TraceLab block（他們的數字，STATUS_DATA 08:25）。這次把準備的結果快取起來。細節見 SIM_CHANGES 第 18 項。
+
+**改了什麼**（只動 `--engine rust`；`--engine py` 的路徑不變）
+- nb: 紀錄第一次準備完，把結果存到 `$X1_RUST_WORK/prep-<鍵>/`；之後同一個紀錄變體直接讀。
+  - 鍵含 npz 內容、`x1_sim.py`／`x1_nb.py`／`x1_rust.py` 的 sha256、numpy 與 Python 版本、BF。程式或資料一變，鍵就變，會重建。
+  - 讀快取時會重算 Rust 紀錄檔的 sha256，也核對鍵的組成與請求數；對不上就停下來，不會默默重建。
+- 一份紀錄的 job 全部走 Rust 時，父行程不再保留每個請求的完整區塊表（Rust 自己讀紀錄檔）。這讓父行程的記憶體變小。
+  - 有任何 job 退回 Python（B2、慢層上限、STAIR）的紀錄，照舊建完整的。
+- sweep.log 的 `rust trace` 那行多印 `prep=<built|built_saved|cache_hit> <秒> lite=<True|False>`。
+- `X1_PREP_CACHE=0` 可以關掉快取。
+
+**驗證**：run `20261106-082036-icpe-sim-g1-c7ef740`
+- 設定：detached checkout c7ef740、共用 venv、nice 10、`X1_RUST_WORK` 用 run 自己的 work/。
+- 時段：08:20–09:28，load 約 65–70。
+
+| 檢查 | 內容 | 結果 |
+|:--|:--|:--|
+| G1（Python） | `--engine py`、6 workers，對 H200 V1；4,416 列 × 29 欄 | 不同的格子 0 → **PASS** |
+| G1（Rust） | `--engine rust`、2 執行緒；4,416 列 × 29 欄 | 不同的格子 0 → **PASS** |
+| TraceLab c1 子集，第一次（建快取） | cpu 64，其餘參數照 icpe-data tl_c1；和 0b0ef1e 的 TL c1 block 比，816 列 × 40 欄＋686 個逐請求 npz | 不同的格子 0、陣列 0 → **PASS** |
+| TraceLab c1 子集，第二次（讀快取） | 同上 | 不同的格子 0、陣列 0 → **PASS** |
+| 有 job 退回 Python 的紀錄 | Bailian coder、cpu 64、O-BEL、B1＋B2 雜訊；和 v4 驗證的 Python 輸出比，144 列 × 44 欄；要是 `lite=False` | 不同的格子 0 → **PASS** |
+
+- 0b0ef1e 的 TL c1 block（run `20261106-003131-icpe-sim-rust-tl_c1`）在 04:32 那節已和 icpe-data 的 Python 輸出逐格相同。
+
+**TraceLab c1：建快取 vs 讀快取**（`--workers 2`、cpu 64 的 686 個 job；sweep.log 與 `time -v`）
+
+| 項目 | 第一次（建） | 第二次（讀） |
+|:--|--:|--:|
+| 父行程準備 | 672.2 s（`built_saved`） | 9.3 s（`cache_hit`，含重算 2.6 GB 紀錄檔的 sha256） |
+| sweep 本身 | 999.1 s | 1,098.2 s |
+| 整個指令的牆鐘 | 1,672.6 s | 1,108.3 s |
+| 單一行程最大 RSS | 14,896,312 KiB（14.2 GiB） | 4,461,960 KiB（4.3 GiB） |
+
+- 兩次是前後接著跑的，機器是共用的，所以 sweep 本身的時間不能互比；能比的是「準備」那一列。
+- 快取目錄的大小：TL c1 的 `prep-…` 36 MiB（紀錄檔 `trace-…` 本來就有，2.6 GiB）。
+- 更正：04:32 那節寫的單一行程最大 RSS「14.9 GB」是把 KiB 當成 kB 換算；14,890,176 KiB＝14.2 GiB。
+- 摘要：`results/icpe_next/sim/g1_compare.csv`（+2）、`rust_cmp.csv`（+3）、`npz_cmp.csv`（+2）、`rust_prep_cache.csv`（新，+7：每條 `prep=` 的方式、秒數、lite，和 sweep／牆鐘／RSS）。
+
+**預建快取**（icpe-data 同意的條件）
+- push 之後，用 push 出去的 commit 的 checkout，在共用的 `/ssd6/hungwei/icpe-next/x1fast-work` 預建 5 個：tracelab_c1、tracelab_c2、tracelab_c4、tracelab_c1_cache、tracelab_c1_t128k。
+- 每個跑一次真正的 `x1 sweep --engine rust`，只有 1 個 job（cpu 64、LRU、ssd、cake），同時最多 3 個行程，nice 10。
+- 結果（run_id、5 個 `prep-<鍵>` 目錄）寫在下一節。
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這次 push 的 commit，然後**重做 G0**：code/p3x 有改。
+- 正在跑的 block 不用停；merge 後的下一個 TraceLab block，sweep.log 應該是 `prep=cache_hit … lite=True`。
+  - 如果是 `built_saved`，代表你們那邊的 `x1_sim.py`／`x1_nb.py`／`x1_rust.py` 和我 push 的不是同一個位元組，結果仍然正確，只是那個變體會重建一次。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0。這次沒動 main.rs，不用重新編譯。
+
+**需要使用者決定什麼**：無。

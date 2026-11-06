@@ -2,6 +2,128 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T10:50+08:00 — **acvlab 的 P1 完成**（36 個 block，已進 git）；兩個佇列進入 P2
+
+- P1 在 acvlab 的最後一個 block 10:41 結束。`collect` 36 個 block → `results/icpe_next/b/{tl,cw,old,bl}_p1/`，共 15.6 MB，單一 xz 檔最大 1.31 MB。
+- 每個紀錄變體的列數：
+  - `_ttl`：6,480 列＝8 個新 TTL 的 GPU 規則 × 15 個 CPU 規則 × CPU 9 個大小 × 3 個慢層 × GPU 閒／忙。
+  - `_trunc`：5,184 列。
+- 筆數：TraceLab 3 個變體、CacheWise 12、Mooncake 4、FI 6、Bailian 3。全部 host acvlab、`--engine rust`。
+- 程式版本：
+  - `tl_c4_*` 起的 block 用 8af643c（準備快取版）。
+  - 之前的 block 用 e3c7d80／acef68c（模擬程式＝1304345）。
+  - 兩版逐位元相同（G0、G1）。
+- SemiAnalysis 的 `sa_p1` 在 `origin/icpe-next-trx`，24 個 block 已完成（STATUS_TRX 09:45）。
+- **所以 5 類紀錄的 P1 都齊了**，icpe-main 可以算 P1 版的上限，然後選 P4 的格子。
+- 現在在跑：佇列 A 在 `tl_p2/tl_c1_nvme807`，佇列 B 在 `tl_p2/tl_c1_load`。
+
+## 2026-11-06T10:10+08:00 — Mooncake／FI 也沒有這種模式 → `old_p3 *_wt` 照跑；目前 git 裡的結果都不受 wt 漏洞影響
+
+- icpe-sim 掃描的結果（`20261106-094552-icpe-sim-wtpanic/zero_block_scan_nonnb.csv`；他們的數字）：
+  - Mooncake conversation／toolagent × R1／R2：0 次，根本沒有 0 塊的請求。
+  - FI 6 週：0 次。有 0 塊的請求，但都是該 session 的第一個請求，不會留下過期的一筆。
+- 結論：已在 git 的 wt 結果（`sens_rep` 的 cw／bl／mc／fi `*_wt`），以及 GPU 0 的 H200 t1／p01（也就是 G0 參考，都是 Mooncake），**都不受影響**。
+- 佇列 A 的自動程序換成 v2：`/ssd6/hungwei/icpe-next/launch/hold_wt_v2_20261106.sh`。
+  - 走到 `tl_p3/tl_c1_wt` 就停，改跑 `cw_p3:*_wt old_p3:*_wt bl_p3:*_wt`（15 個 block）。
+  - 只有 `tl_p3 *_wt`（3 個 block）等 icpe-sim 修正，以及使用者對語意的決定。
+- `sens_rep tl_wt` 從來沒跑過：11/5 TraceLab 在等記憶體修正。之後改由修正後的 `tl_p3 *_wt` 涵蓋。
+
+## 2026-11-06T10:00+08:00 — wt 的問題是模型漏洞（Python 也會出錯）；TraceLab／舊紀錄的 P3 `*_wt` 先不跑
+
+**icpe-sim 的初步結論**（訊息 11/6 09:5x；run `20261106-094552-icpe-sim-wtpanic`；他們的數字，完整內容會寫進 STATUS_SIM）
+- Python 引擎跑同一個 job 也出錯（IndexError，同一行），所以**不是只有 Rust 有這個問題**。
+- 原因：一個 session 先有 block，下一個請求變成 0 塊時，`_turn_end_wt` 只把它從 `cpu_set` 拿掉，沒有從 LRU 順序表拿掉，留下過期的一筆。
+  - 會預取的規則（O-PF、LRU+RPF）碰到時會直接 panic。
+  - 用自己順序表的規則（LRU 家族、O-DROP、O-NOW、ARC、S3FIFO）**不會報錯，但會默默影響** `n_demote`、`cpu_residence_s_mean`；ARC／S3FIFO 的淘汰順序也可能被改變。
+- 只影響 wt 和 GPU 0。wb＋GPU（主結果、P1、P2、pfgpu）不受影響。
+- 有這種模式的紀錄：SemiAnalysis 每個變體 198 次、TraceLab 34 次（c1_t128k 1 次）；CacheWise、Bailian 0 次；Mooncake／FI 還在查。
+- 要修就得決定模型的語意，icpe-sim 會問使用者。修完之後，受影響格子的數字會變。
+
+**我的處理**（只改排程順序，不改程式、不繞過）
+- 佇列 A：`/ssd6/hungwei/icpe-next/launch/hold_wt_20261106.sh`。
+  - 一走到 `tl_p3/tl_c1_wt` 就停，改跑 `cw_p3:*_wt bl_p3:*_wt`（18 執行緒，13 個 block）。這兩類紀錄沒有這種模式，修不修結果都一樣。
+  - `tl_p3 *_wt`、`old_p3 *_wt` 等修正與使用者決定之後再跑。Mooncake／FI 的模式數如果是 0，old 的部分先排進去。
+- 佇列 B 照跑：P3 是 pfgpu，屬於 wb。
+- **可能受影響、要另外處理的**（已提醒 icpe-sim）：
+  - 11/5 用 Python 跑的 `sens_rep` `mc_wt`、`fi_wt`，要看 Mooncake／FI 的模式數。
+  - GPU 0 的舊結果，例如 H200 t1／p01，也就是 G0 的參考檔。
+
+## 2026-11-06T09:50+08:00 — TraceLab 準備快取生效；TRX40 的 `wt` block 在 Rust panic（acvlab 的 P3 `*_wt` 也可能碰到）
+
+**準備快取**（icpe-sim 預建 5 個：run `20261106-093010-icpe-sim-prewarm-8b6520f`，09:30–09:42）
+- `tl_p1/tl_c4_trunc`（09:39 開始）：`prep=cache_hit 7.7s lite=True`。
+- `tl_p1/tl_c4_ttl`（09:35 開始，當時快取還沒好）：`prep=built 274.4s lite=True`。
+- 之後的 TraceLab block，準備時間從約 16 min 降到約 10 s。
+
+**TRX40 的失敗**（STATUS_TRX 09:45，origin/icpe-next-trx @ 98b0d2f；他們的數字）
+- `sa_p1`、`sa_p2` 各 24 個 block 已完成、已進 git。
+- `sa_p3/sa_N16_s1_wt` 在 Rust 的 `src/main.rs:667` panic，佇列照規則停下來。
+  - 位置：`demote()` 開預取時 `next_access(bl[bl.len()-1])`，`bl` 是空的。
+- 已通知 icpe-sim，請它確認兩件事：
+  1. Python 引擎跑同一個 job 會不會也出錯。
+  2. 已經跑完、沒有 panic 的格子不會被默默算錯。我的推論：G1／xcheck 的 bl／mc／fi × wt 都是 0 個不同，而且碰到這個情況會直接 panic、不會繼續算。
+- **對 acvlab 的影響**：佇列 A 的最後一段是 P3 的 `*_wt`，〔推算〕約 11:00 之後才會開始。
+  - 如果在那之前沒有修好、又碰到 panic，佇列 A 會照規則停下來（CLAUDE.md 規則 2），我回報，不繞過。
+  - 修好的話，走 G1 → 寫進 STATUS_SIM → 我 merge → G0。
+- `sens_rep` 在 `origin/icpe-next-trx` 上目前沒有 `sa_t128k`（STATUS_DATA 08:20 的更正）。
+
+## 2026-11-06T09:35+08:00 — merge 準備快取（8b6520f）、G0（Rust）PASS
+
+- **先試再合**：佇列在跑，每個新 block 開跑時會讀 data worktree 的程式，所以先在暫時的 detached worktree 試合併，跑 G0，通過後才 merge 進 data worktree。
+  - 試合併：icpe-next-data HEAD＋8b6520f。和 c7ef740 比，模擬程式沒有差異。
+  - sha256 前 7 碼和 icpe-sim 給的對照相同：`x1_sim.py` 2723419、`x1_nb.py` 8251e25、`x1_rust.py` 28f82fd。
+  - **G0（Rust）PASS**：run `20261106-093120-icpe-data-g0-rust-merged-c7ef740`，`--workers 8`，**128,064 格 0 個不同**，sweep 114 s。
+  - 正式 merge：8af643c。tree `4c38203…` 和試合併的 tree 逐位元相同。暫時的 worktree 已移除。
+- **之後開始的 block 都用快取版**：正在跑的 `tl_c2_ttl`、`tl_c2_trunc` 不受影響。
+  - icpe-sim 從 09:30 起預先建 5 個 TraceLab 變體的快取：run `20261106-093010-icpe-sim-prewarm-8b6520f`，同時最多 3 個行程。
+  - 確認方式：下一個 TraceLab block 的 stdout 看到 `prep=cache_hit … lite=True` 就是命中。
+  - 如果看到 `built_saved`，表示快取還沒建好，結果一樣正確，只是那一次照舊要約 16 分鐘。
+
+## 2026-11-06T09:05+08:00 — 使用者決定：全合成的工作負載（ShareGPT、W7 地圖）照計畫，ICPE 之後再做
+
+- 使用者問「人工數據」那塊做了沒有。我的回答分三種：
+  1. **合成到達**：對話內部全用真實資料，只合成對話的開始時間。
+     - 包括 CacheWise、SemiAnalysis 的固定並行 N，以及 TraceLab c2／c4 的壓縮 2×／4×。
+     - 已在主結果裡，P1–P3 正在跑。
+  2. **ShareGPT 全合成**（NEXT_PLAN §5.6 的選跑）：沒做。
+  3. **W7 參數掃描地圖**（NEXT_PLAN「ICPE 之後」）：沒做。
+- **使用者決定**（AskUserQuestion，11/6 09:0x）：「照計畫，ICPE 之後再做」。
+  - 11/9 前專心做 P1–P4 與分析。
+  - 論文只用合成到達的結果，限制一節寫明「沒有做全合成」。
+
+## 2026-11-06T08:40+08:00 — **主結果全部完成**（acvlab 4 類＋TRX40 的 SemiAnalysis）；佇列拆成兩個；icpe-main 開了
+
+**做完什麼**
+- acvlab 最後 3 個主結果 block 用 Rust 跑完，已收進 git（e8bcdaf）：
+
+  | block | run | 列數 | sweep 時間 |
+  |:--|:--|--:|--:|
+  | `tl_main/tl_c4` | `20261106-075035-icpe-data-tl_main-tl_c4` | 7,344 | 1,950 s（其中約 16 min 是準備） |
+  | `old_main/fi6w` | `20261106-082307-icpe-data-old_main-fi6w` | 44,064 | 438 s |
+  | `bl_main/bailian3` | `20261106-083025-icpe-data-bl_main-bailian3` | 22,032 | 116 s |
+
+  - 程式都是 e3c7d80（模擬程式＝icpe-sim 1304345），35 個執行緒，host acvlab。
+- **主結果 5 類全部齊了**：
+  - acvlab：`cw_main` 12、`tl_main` 3、`old_main` 2、`bl_main` 1。
+  - TRX40：`sa_main` 12（`origin/icpe-next-trx`）。
+- **佇列拆成兩個**（08:25 的 (a)）：交接程序 08:32:25 執行。
+  - 舊佇列剛開始的 `tl_p1/tl_c1_ttl`（run `20261106-083222-…`）停掉，留了 `STOPPED_NOT_USED`。
+  - 佇列 A：pid 1751802，18 個執行緒，log `queue-rust-A-w18-20261106-083225.log`。
+  - 佇列 B：pid 1752970，17 個執行緒，log `queue-rust-B-w17-20261106-083225.log`。
+  - 監看：
+    - 每分鐘把兩個佇列的進度、記憶體、load 寫到 `mem-guard-rust2-20261106.log`；MemAvailable < 60 GiB 就停兩個佇列。
+    - load 連續 10 分鐘 > 140 時通知。
+- **icpe-main**（使用者決定：主結果的分析另開 session）：08:33 開。
+  - tmux `icpe-main`，Opus 5.5、effort xhigh、remote control。
+  - worktree `/ssd6/hungwei/icpe-next/main-ana`，branch `icpe-next-main`，從 e8bcdaf 開出來。
+  - prompt：`/ssd6/hungwei/icpe-next/main_prompt_20261106.md`。
+  - 範圍：主結果 3 個 TTL 的版本 → P1 版（先核對列數）→ P4 選格 → P2／P3 版。分析的選擇先問使用者，不跑模擬、不動佇列。
+  - 它會寫 `STATUS_MAIN.md`。
+
+**接下來**
+- icpe-sim 的 TraceLab 準備快取：G1 PASS、push 之後，我 merge、做 G0，再確認新 block 的 log 是 `prep=cache_hit`。
+- 每一級跑完就收進 git。
+
 ## 2026-11-06T08:25+08:00 — 使用者決定加速 (a)(b)(c)；CPU 上限維持 44
 
 **量到的**：Rust 佇列跑 `tl_c4`。
