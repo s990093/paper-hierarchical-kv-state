@@ -5,6 +5,51 @@
 
 ---
 
+## 2026-11-07T03:45+08:00 — 第 2 段（v6：慢層上限的 Rust 版）與第 3 段（v7：加速）完成，**和 Python 逐位元相同**；第 4 段（第 2–5 項的新功能，只有 Rust）進行中
+
+**使用者的指示（原話）**
+- 「ok push 跟 後段都你做不需要跟其他session 做」
+- 「好就這樣」：第 2 段之後接著做低風險的加速。
+- 「也就是 python 不寫完整移植 rust」：之後的新功能只寫 Rust。
+- 「第 2 到 5 細節 都可以你決定 符合實驗命題且有規範 其他 paper 合理這樣 我要睡了 都交給妳」
+- 「這太電腦改用更高執行緒加速 也可」：Rust 驗證改用 16 個 worker。
+
+**第 2 段：v6（`code/icpe/rux_x1fast/v6_slowcap/`；報告 `next/rux/V6_SLOWCAP.md`、`V6_rows.csv`）**
+- 慢層容量上限照 `x1_sim.py` 一字不改移植。`code/p3x/*` 沒動。
+- **功能打開**：3 份紀錄（Mooncake conversation R1、Bailian coder、SemiAnalysis N16 s1）× 4 組子集（main、wt、pfgpu、noise B1／B2）× 7 種慢層規則。對 Python：CSV 177,072 格、npz 11,424 個陣列，**0 個不同**。
+- **功能關閉**：G1 128,064 格、xc_sa 1,280 格，0 個不同。
+- **第一版有錯，已改**：`make_room` 尾端少了一次 `_slow_enforce`（py:1580–1581）。Mooncake 主子集有 225 格不同，照規則停下、改好、全部重跑（run `20261107-004914-…-v6-val-mc`，§3c）。
+- **速度**：
+  - 主子集 12 worker，Python ÷ Rust＝26.3×（Mooncake）、51.1×（Bailian）、44.2×（SemiAnalysis）。
+  - 單執行緒同一個 job 20–66×。
+  - 正式格子每種紀錄在這台約 0.5–2.3 小時〔推算〕。
+
+**第 3 段：v7（`v7_fast/`；報告 `V7_FAST.md`、`V7_rows.csv`）**
+- 做了 ANALYSIS §3d 的候選 2（LRU2 有序集合）、3（PENS 成本快取）、5（快速路徑＋補記 `clean_q`）。
+- 驗證模式與一般模式各對拍 3 份紀錄 × 4 組子集，重用 v6 那次的 Python 參考，**0 個不同**。G1、xc_sa 也 0 個不同。
+- 單執行緒 v6 ÷ v7：
+  - Bailian 慢層 LRU2 12.6×、PENS 2.2×；
+  - Mooncake LRU2 3.1×；
+  - SemiAnalysis 各規則 1.16–1.26×。
+- 16 worker 主子集：Bailian 54.5 → 37.1 s，SemiAnalysis 71.8 → 60.2 s。
+- 候選 1（慢層 BEL lazy heap）、4（7 種規則共用前段）**沒做**。
+
+**第 4 段（進行中）：第 2–5 項（`v8_features/`；語意 `next/rux/SEMANTICS_2to5.md`）**
+- 語意由 icpe-rux 決定（使用者授權），依據 PR、NP、SS 與外部系統。
+  - APC：session LRU，從尾端一塊一塊逐出。wb 下第一次逐出時整個 session 寫進 CPU；④ 也有 BELP。
+  - 排隊：FCFS-1，只跑固定並行的紀錄。
+  - W3：CUEP（釘住）／CUEO（立刻逐出）。
+  - W5：CPU 層 INT4＋M3-g 的一次拆完殘差。
+- **要登記**：PR:57、95 要求跑之前登記。PREREG 由 h200／icpe-data 寫，`SEMANTICS_2to5.md` 是登記內容的草稿。
+- **W3 的資料**：nb 檔現在只存「使用者觸發」，「none」會被當成工具觸發。要 icpe-data 在 nb 檔多存一欄「工具觸發」。
+- 狀態與驗證結果見下一節（做完再寫）。
+
+**規則遵守**
+- 每個 run 都用 `rux_run.sh`（cmd.sh、context.txt、exit_code、mem.log）。v6／v7 共 21 個 run，MemAvailable 最低 10.4 GiB。
+- 沒有跑正式 block、沒有動佇列、沒有改別人的檔。CacheWise 不在這台。
+
+---
+
 ## 2026-11-07T00:40+08:00 — 第 1 段（分析）完成：未支援的 7 項模擬的形態、時間、Rust 缺口、加速候選；**停下來等使用者決定**
 
 完整報告：`docs/icpe_brief_20261030/next/rux/ANALYSIS.md`；摘要 CSV：同目錄 `ANALYSIS_rows.csv`（每列有 run_id、ts、host、threads、load）。
