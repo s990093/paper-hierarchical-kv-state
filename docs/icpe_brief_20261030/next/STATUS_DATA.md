@@ -2,6 +2,17 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T10:10+08:00 — Mooncake／FI 也沒有這種模式 → `old_p3 *_wt` 照跑；目前 git 裡的結果都不受 wt 漏洞影響
+
+- icpe-sim 掃描的結果（`20261106-094552-icpe-sim-wtpanic/zero_block_scan_nonnb.csv`；他們的數字）：
+  - Mooncake conversation／toolagent × R1／R2：0 次，根本沒有 0 塊的請求。
+  - FI 6 週：0 次。有 0 塊的請求，但都是該 session 的第一個請求，不會留下過期的一筆。
+- 結論：已在 git 的 wt 結果（`sens_rep` 的 cw／bl／mc／fi `*_wt`），以及 GPU 0 的 H200 t1／p01（也就是 G0 參考，都是 Mooncake），**都不受影響**。
+- 佇列 A 的自動程序換成 v2：`/ssd6/hungwei/icpe-next/launch/hold_wt_v2_20261106.sh`。
+  - 走到 `tl_p3/tl_c1_wt` 就停，改跑 `cw_p3:*_wt old_p3:*_wt bl_p3:*_wt`（15 個 block）。
+  - 只有 `tl_p3 *_wt`（3 個 block）等 icpe-sim 修正，以及使用者對語意的決定。
+- `sens_rep tl_wt` 從來沒跑過：11/5 TraceLab 在等記憶體修正。之後改由修正後的 `tl_p3 *_wt` 涵蓋。
+
 ## 2026-11-06T10:00+08:00 — wt 的問題是模型漏洞（Python 也會出錯）；TraceLab／舊紀錄的 P3 `*_wt` 先不跑
 
 **icpe-sim 的初步結論**（訊息 11/6 09:5x；run `20261106-094552-icpe-sim-wtpanic`；他們的數字，完整內容會寫進 STATUS_SIM）
