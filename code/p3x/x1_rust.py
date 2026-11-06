@@ -7,6 +7,9 @@ jobs.txt 那一行多一欄 `nz=P|M,<λ>,B1,<seed>`。審查與驗證見 SIM_CHA
 這裡只做「Python 準備輸入 → Rust 跑 → 讀回逐請求陣列填進原本的 View」：之後的 summarize、存 npz、寫 CSV 全部是
 x1_sim 原本那一段（_job_rows），所以輸出欄位與格式和 Python 引擎相同。
   prepare_trace：紀錄 → CSR 二進位檔（父行程做一次，內容 sha256 定址、可共用）
+  prepare_cached：父行程的準備（x1_sim.prep＋prepare_trace）。nb: 紀錄存一份快取（$X1_RUST_WORK/prep-<鍵>/），
+    鍵＝紀錄檔內容 sha256＋x1_sim／x1_nb／x1_rust 的 sha256＋numpy／Python 版本；命中就不用重建（SIM_CHANGES 第 18 項）。
+    這份紀錄的 job 全部走 Rust 時，父行程的 P 不留 full／acc（lite P；Rust 讀紀錄檔，父行程與摘要只用到其他欄位）。
   Server：每份紀錄一個常駐的 x1fast（紀錄只讀一次、多執行緒）；write_job／read_outputs：一個 job 的輸入目錄與讀回
 Rust 版沒有的功能（W4 雜訊的 B2 抽法、慢層容量上限、STAIR）→ unsupported() 回傳原因，那些 job 用 Python Engine（x1_sim 先跑 Rust 的、再跑這些）。
 
@@ -15,15 +18,20 @@ Rust 版沒有的功能（W4 雜訊的 B2 抽法、慢層容量上限、STAIR）
   X1_RUST_WORK   工作目錄（紀錄的二進位檔、每個 job 的暫存；預設 /ssd6/hungwei/icpe-next/x1fast-work）
   X1_CARGO、CARGO_HOME、RUSTUP_HOME   編譯用（預設 acvlab 上 icpe-ana 裝的工具鏈）
   X1_RUST_TIMING_LOG   選填：每個 job 一行 JSON（Rust 引擎時間、Rust 端總時間、從派出到讀回）
+  X1_PREP_CACHE  0＝不用也不寫準備的快取（預設 1）；lite P 不受影響
 """
 from __future__ import annotations
 
+import gc
 import hashlib
 import itertools
 import json
 import os
+import pickle
 import shutil
 import subprocess
+import socket
+import sys
 import tempfile
 import threading
 import time
@@ -36,6 +44,9 @@ SRC_FILES = ("Cargo.toml", os.path.join("src", "main.rs"))
 WORK = os.environ.get("X1_RUST_WORK", "/ssd6/hungwei/icpe-next/x1fast-work")
 TOOLS = "/ssd6/hungwei/icpe-next/ana-bench/tools"
 GiB = 1 << 30
+TRACE_FILES = ("meta.i64", "req_off.i64", "req_blk.u32", "nall.i64", "kind.i64", "sess.i64", "parent.i64", "t.f64",
+               "acc_off.i64", "acc_req.i64")     # prepare_trace 寫的順序（sha256 照這個順序算）
+PREP_CACHE = os.environ.get("X1_PREP_CACHE", "1") != "0"
 
 _TDIR = {}          # (trace, rule) → 紀錄的二進位檔目錄（父行程準備；fork 出來的 worker 繼承）
 _BIN = None
@@ -151,6 +162,7 @@ def prepare_trace(P, trace, rule):
     put("t.f64", P["tl"], np.float64)
     put("acc_off.i64", aoff, np.int64)
     put("acc_req.i64", areq, np.int64)
+    assert tuple(os.path.basename(p) for p in files) == TRACE_FILES
     sha = _sha_files(files)
     with open(os.path.join(tmp, "SOURCE.txt"), "w") as fh:
         fh.write(f"trace={trace} rule={rule} n_req={n} B={B} S={S} chunks={m} sha256={sha}\n")
@@ -165,6 +177,118 @@ def prepare_trace(P, trace, rule):
             assert os.path.isdir(dst), dst
     _TDIR[(trace, rule)] = dst
     return dst, sha
+
+
+class NoFull:
+    """lite P 的 full：只記請求數（make_views、read_outputs 只用 len(P["full"])）。其他用法 → 錯誤，不會默默用到。"""
+    __slots__ = ("n",)
+
+    def __init__(self, n):
+        self.n = int(n)
+
+    def __len__(self):
+        return self.n
+
+    def _no(self, *a):
+        raise RuntimeError("lite P 沒有 full（逐請求的 block 清單）：這份紀錄應該只有 Rust 的 job（x1_rust.prepare_cached）")
+    __getitem__ = __iter__ = _no
+
+
+def _lite(P):
+    """P 去掉 full、acc（父行程最大的兩個結構）；其他欄位是同一個物件。"""
+    return {k: v for k, v in P.items() if k not in ("full", "acc")}
+
+
+def prep_key(XS, trace, rule):
+    """準備的快取鍵。只有 nb: 紀錄（$X1_NB_DIR/<名稱>.npz，一個檔案就是全部輸入）；其他紀錄 → None（不快取）。
+    P 只由紀錄檔、x1_nb.prepare_nb、x1_sim.prep（用到模組常數 BF）決定；p3_fvar 只換 constants() 與 OUTDIR，不影響 P。"""
+    if not trace.startswith("nb:"):
+        return None
+    import x1_nb
+    path = os.path.join(x1_nb.NB_DIR, f"{trace[3:]}.npz")
+    parts = dict(trace=trace, rule=rule, nb_path=path, nb_sha256=file_sha(path),
+                 code_sha256=_sha_files([XS.__file__, x1_nb.__file__, os.path.abspath(__file__)]),
+                 numpy=np.__version__, python=sys.version.split()[0], BF=XS.BF)    # prep 的 ws_GiB 用到 BF
+    return hashlib.sha256(json.dumps(parts, sort_keys=True).encode()).hexdigest(), parts
+
+
+def _prep_dir(key):
+    return os.path.join(WORK, f"prep-{key[:24]}")
+
+
+def _save_prep(key, parts, P, tsha):
+    """lite P（pickle）＋KEY.json，寫進暫存目錄再搬到 prep-<鍵>/（同時有別的 sweep 寫好了就丟掉自己的）。"""
+    tmp = tempfile.mkdtemp(prefix="prep-tmp-", dir=WORK)
+    pk = os.path.join(tmp, "lite.pkl")
+    with open(pk, "wb") as fh:
+        pickle.dump(_lite(P), fh, protocol=5)
+    info = dict(key=key, parts=parts, n_req=len(P["full"]), trace_sha256=tsha, lite_sha256=file_sha(pk),
+                created=time.strftime("%Y-%m-%dT%H:%M:%S%z"), host=socket.gethostname())
+    with open(os.path.join(tmp, "KEY.json"), "w") as fh:
+        json.dump(info, fh, ensure_ascii=False, indent=1)
+    dst = _prep_dir(key)
+    if os.path.isdir(dst):
+        shutil.rmtree(tmp)
+    else:
+        try:
+            os.rename(tmp, dst)
+        except OSError:
+            shutil.rmtree(tmp)
+            assert os.path.isdir(dst), dst
+
+
+def _load_prep(XS, key, parts, trace, rule):
+    """命中 → 驗證後放進 XS._PCACHE（lite P）與 _TDIR，回傳 (紀錄檔目錄, sha)；沒有這個目錄 → None。
+    驗證：KEY.json 的鍵與組成相同、lite.pkl 的 sha256、紀錄檔重算 sha256、紀錄檔的 n／B／S 和 lite P 對得上。不過 → 停下來。"""
+    d = _prep_dir(key)
+    if not os.path.isdir(d):
+        return None
+    with open(os.path.join(d, "KEY.json")) as fh:
+        info = json.load(fh)
+    assert info["key"] == key and info["parts"] == parts, f"{d}: KEY.json 和這次的鍵對不上"
+    pk = os.path.join(d, "lite.pkl")
+    assert file_sha(pk) == info["lite_sha256"], f"{d}: lite.pkl 的 sha256 不對（刪掉這個目錄會重建）"
+    tdir = os.path.join(WORK, f"trace-{info['trace_sha256'][:24]}")
+    assert os.path.isdir(tdir), f"{d}: 紀錄檔目錄 {tdir} 不見了（刪掉 {d} 會重建）"
+    tsha = _sha_files([os.path.join(tdir, f) for f in TRACE_FILES])
+    assert tsha == info["trace_sha256"], f"{tdir}: 紀錄檔的 sha256 不對"
+    with open(pk, "rb") as fh:          # 自己寫的檔（上面已驗 sha256）；內容只有 dict／list／numpy 陣列
+        L = pickle.load(fh)
+    n, B, S = np.fromfile(os.path.join(tdir, "meta.i64"), np.int64).tolist()
+    assert n == info["n_req"] == len(L["tl"]) == len(L["nall"]) and B == int(L["B"]) and S == int(L["R"]["n_sess"]), \
+        (d, n, B, S, info["n_req"])
+    L["full"] = NoFull(n)
+    XS._PCACHE[(trace, rule)] = L
+    _TDIR[(trace, rule)] = tdir
+    return tdir, tsha
+
+
+def prepare_cached(XS, trace, rule, lite):
+    """sweep --engine rust 的父行程準備：P（XS._PCACHE）＋Rust 的紀錄檔（_TDIR）。回傳 (紀錄檔目錄, sha, 怎麼來的, 秒)。
+    lite＝這份紀錄的 job 全部走 Rust（沒有退回 Python Engine 的）：P 不留 full、acc。
+      - nb: 紀錄、快取有 → 讀快取（cache_hit）；沒有 → 照舊建（XS.prep＋prepare_trace）並存快取（built_saved）。
+    lite＝False（有 job 要退回 Python Engine，要完整的 P）→ 照舊建；nb: 紀錄的快取沒有就順便存。"""
+    t0 = time.time()
+    k = prep_key(XS, trace, rule) if PREP_CACHE else None
+    if k is not None and lite:
+        r = _load_prep(XS, k[0], k[1], trace, rule)
+        if r is not None:
+            return r + ("cache_hit", time.time() - t0)
+    P = XS.prep(trace, rule)
+    tdir, tsha = prepare_trace(P, trace, rule)
+    how = "built"
+    if k is not None:
+        assert file_sha(k[1]["nb_path"]) == k[1]["nb_sha256"], f"{k[1]['nb_path']}：準備期間檔案被改了"
+        if not os.path.isdir(_prep_dir(k[0])):
+            _save_prep(k[0], k[1], P, tsha)
+            how = "built_saved"
+    if lite:
+        L = _lite(P)
+        L["full"] = NoFull(len(P["full"]))
+        XS._PCACHE[(trace, rule)] = L
+        del P
+        gc.collect()
+    return tdir, tsha, how, time.time() - t0
 
 
 class RustEng:
