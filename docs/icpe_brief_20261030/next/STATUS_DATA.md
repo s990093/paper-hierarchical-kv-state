@@ -2,6 +2,136 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T14:15+08:00 — **acvlab 的 P1–P3（偏離 6）全部完成**；TRX40 的 SA P1–P3 也完成
+
+- TraceLab 的 P3 `*_wt` 已收進 git，3 個 block，各 7,344 列，程式是 363024a（wt 修正）：
+
+  | block | run | sweep 時間 |
+  |:--|:--|--:|
+  | `tl_c1_wt` | `20261106-131021-icpe-data-tl_p3-tl_c1_wt` | 2,083 s（含自己建準備 1,187 s） |
+  | `tl_c2_wt` | `20261106-134505-icpe-data-tl_p3-tl_c2_wt` | 880 s |
+  | `tl_c4_wt` | `20261106-135947-icpe-data-tl_p3-tl_c4_wt` | 819 s |
+
+- **acvlab 的 P1–P3 都在 git 裡**：
+  - `{tl,cw,old,bl}_p1`：36 個 block。
+  - `{tl,cw,old,bl}_p2`：36 個 block。
+  - `{tl,cw,old,bl}_p3`：36 個 block。
+  - `sens_rep` 的 `tl_cacheprefix`、`tl_t128k`。
+- **TRX40**（STATUS_TRX 14:20，c8e554f）：
+  - `sa_p1`、`sa_p2`、`sa_p3` 各 24 個 block。其中 `sa_p3 *_wt` 是用 776486c 重跑的，12 個 block、88,128 列（c3e5681）。
+  - `sens_rep sa_t128k` 也完成了。
+- **P4**：icpe-trx 在 TRX40 跑 `sa_p4_b1`、`sa_p4_b2`，用 36 個執行緒（使用者在那邊的選擇）。
+  - v5 和 `--jobs-from` 都 merge、G0 PASS 之後，我會在這裡寫「icpe-trx 可以開始 sa_p4」和 commit。
+- acvlab 目前沒有佇列在跑，等 icpe-sim 的 v5（約 15:00）和 `--jobs-from`（約 16:15）。
+
+## 2026-11-06T14:05+08:00 — P4 的排程寫進 `next_b_queue.py`（plan `p4_b1`／`p4_b2`／`sa_p4_b1`／`sa_p4_b2`）；共 3,301,642 個 job
+
+- 把 icpe-main 的選格清單同步進本分支：`results/icpe_next/main/p4/`，4 個檔，取自 `origin/icpe-next-main` c868ef2，內容沒有改。
+- `next_b_queue.py`：
+  - `p4_blocks()` 依 PREREG 偏離 8 的清單，每個紀錄 × 模型（P／M）× 抽法（B1／B2）排一個 block。
+    - 每個（格, 元件）展開成 ④ 要的 (CPU 規則, GPU 規則) 組合，整理成 job 清單 `(trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu)`。
+    - 開跑時把清單寫進 `<run>/jobs.csv`，x1 sweep 加 `--jobs-from <run>/jobs.csv`。這個選項要等 icpe-sim 實作好、我 merge 並做完 G0 之後才有。
+    - 雜訊參數：
+      - P 的 B1：λ 0、0.1、0.2、0.3、0.4；P 的 B2：λ 0.1–0.4。
+      - M 的 B1：λ 0–0.3；M 的 B2：λ 0.1–0.3。
+      - seed 都是 0–9。λ＝0 只在 B1 的 block 跑一次（自檢）。
+  - `count` 支援雜訊參數和 job 清單的過濾，規則照 icpe-sim 說的：job 的某一個 view 在清單裡就保留。
+- **`count` 的結果**（`count --plans p4_b1 p4_b2 sa_p4_b1 sa_p4_b2`）：
+  - `p4_b1` 1,164,816、`p4_b2` 1,132,460、`sa_p4_b1` 509,256、`sa_p4_b2` 495,110，**合計 3,301,642**。
+  - 比 13:55 我自己數的 3,214,596 多 2.7%。原因是 sweep 會把 GDSF 按 (慢層, GPU 閒／忙) 拆成好幾個 job，我自己數的時候當成一個。以 `count` 為準。
+- **分工**：`p4_b1`、`p4_b2` 在 acvlab 跑；`sa_p4_b1`、`sa_p4_b2` 給 TRX40。
+
+## 2026-11-06T13:55+08:00 — P4（W4 雜訊）的規模；使用者決定照 PREREG 全跑；請 icpe-sim 加 `--jobs-from`、先做 v5
+
+**輸入**：icpe-main 的選格清單（`origin/icpe-next-main` c868ef2，`results/icpe_next/main/p4/p4_cells_distinct.csv`；PREREG 偏離 8）。975 格、2,582 個（格, 元件）。
+- 我看過的內容：這個檔的表頭和前 4 列，其中有 4 個 Bailian 格的 `max_headroom` 值；以及我自己數 job 用的欄位（trace、rule、cpu、slow、gpu、components）。沒有看其他上限表。
+
+**job 數**（`scratchpad/p4count.py`；直接用 `x1_sim` 的 `COMPONENT_POLICIES`／`NON_ORACLE`／`POLICIES`／`noise_specs`）
+- 每個元件要跑的組合，照 `next_sim_analyze.py` 的 ④ 定義：
+  - O-ORD／O-DROP／O-PF：該元件的 CPU 規則 × 15 個 GPU 不預測規則（LRU＋TTLA／TTLB × 7 個 TTL）。
+  - O-GPU：10 個 NON_ORACLE × GPU BEL。
+  - O-ALL(report)：(O-ALL, BEL)。
+- 雜訊設定 142 種：
+  - P：λ 0、0.1、0.2、0.3、0.4；M：λ 0、0.1、0.2、0.3。
+  - λ＞0 的每一個 × B1、B2 × 10 個 seed；λ＝0 各 1 個。
+  - 142 種裡 B2 佔 70 種。
+- 不重複的 job：22,638 × 142 ＝ **3,214,596**。
+  - 依紀錄：Mooncake 1,387,340、SemiAnalysis 967,446、CacheWise 336,540、Bailian 322,482、TraceLab 200,788。
+- 用現有的乘積參數排 block 會多跑：依 (trace, rule, cpu, slow) 分組要 509 個 block、5,253,006 個 job（多 63%）；依 (trace, rule) 分組要 10,521,916 個。
+- 〔推算〕時間：用 P1 `_ttl` 實測的 Rust 每 job 平均秒數。
+  - 各紀錄：TraceLab 3.92 s、Mooncake 0.246、Bailian 0.208、CacheWise 0.117、FI 0.046；SemiAnalysis 用 TRX40 `sa_p2` 的中位數 0.62。
+  - 合計約 183 萬執行緒秒。SemiAnalysis 在 TRX40 跑，acvlab 約 10 h、TRX40 約 5 h。
+
+**使用者決定**（AskUserQuestion，11/6 13:5x）：**照 PREREG 全跑**，不縮小 GPU 規則，也不登記新偏離。
+
+**需要 icpe-sim 做什麼**（已傳訊息）
+1. v5（B2 進 Rust）優先審查、G1、push。沒有 v5，160 萬個 B2 job 會退回 Python，跑不完。
+2. `x1 sweep --jobs-from <csv>`：只保留清單裡的 job（`jobs_for` 展開後過濾）。
+   - 清單欄位 trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu。單一 view 的 job 要比對 (slow, gpu)。
+   - 沒給這個選項時，行為不變；給了要驗證：保留下來的 job，結果和不過濾時逐格相同。
+
+**我的排法**（等上面兩項）
+- 一個紀錄變體 × 雜訊模型（P／M，λ 清單不同）× 抽法（B1／B2）＝一個 block。
+- 先跑 B1（現有程式已能用 Rust），B2 等 v5。
+- SemiAnalysis 交給 TRX40。
+
+## 2026-11-06T13:12+08:00 — merge wt 修正（776486c）、G0（Rust）PASS；TL 的 P3 `*_wt` 開跑
+
+- STATUS_SIM 13:15：icpe-sim 的 wt 修正（選項 A，程式 7193a2d）G1 PASS。
+- **先試合併**：在 detached worktree 把 icpe-next-data HEAD 和 776486c 合併。模擬程式和 7193a2d 沒有差異，改動只有 `x1_sim.py`、`main.rs` 各 4 行。
+  - **G0（Rust）PASS**：run `20261106-130931-icpe-data-g0-rust-merged-7193a2d`，`--workers 32`，**128,064 格 0 個不同**，sweep 32.5 s。執行檔重新編譯，`src_sha256=e9497446…`。
+  - 正式 merge 是 363024a，tree `be27bef…` 和試合併相同。暫時的 worktree 已移除。
+- **TL 的 wt**：佇列 pid 3034018，跑 `tl_p3:*_wt`（3 個 block），35 個執行緒，13:10:21 開始，log `queue-rust-TLwt-w35-20261106-131021.log`。監看用 `watch_queues.sh 3034018`。
+  - x1_sim.py 改了，準備快取的鍵也變了。icpe-sim 正在用 776486c 重新預建 5 個 TL 快取；預建完成前開始的 block 會自己建（lite 約 5 min）。
+- 已經跑完的 CW／old／BL `*_wt` 不重跑：那幾種紀錄沒有 0 塊的模式（STATUS_DATA 10:10）。icpe-sim 的修改前後對照也確認，修正只影響 SA 的 ARC、S3FIFO（相對差 ≤3.6e-5）和計數欄。
+
+## 2026-11-06T13:10+08:00 — acvlab 的 P3 除了 TL wt 都完成；兩個 TL 代表格完成；目前沒有佇列在跑
+
+- 佇列 A3（pid 2650007）：20 個 block 全部 rc=0，11:56:18 → 13:03:23。
+- `collect` 35 個 block，已進 git：
+  - P3 的 33 個：CW／old／BL 的 `*_wt` 15 個；全部紀錄的 `*_pfgpu` 18 個。
+  - `sens_rep/tl_cacheprefix`、`sens_rep/tl_t128k`：各 1,632 列。STATUS_DATA 08:20 更正的漏排，這兩個補完了。
+  - 全部 host acvlab、Rust，單一 xz 檔最大 1.30 MB。
+- **偏離 6 在 acvlab 還沒做的，只剩 `tl_p3 *_wt` 3 個 block**：等 icpe-sim 的 wt 修正（7193a2d）push、寫進 STATUS_SIM，我再先試合併、做 G0，然後跑。
+- **目前 acvlab 上沒有我們的佇列**，CPU 是空的。
+- P4 要等 icpe-main 從版本 B（`origin/icpe-next-main` baa508d）選出格子，加上 B2 的 Rust 版通過驗證。
+
+## 2026-11-06T12:55+08:00 — **acvlab 的 P2 完成**（36 個 block，已進 git ed37d48）；B 換成 B'；只剩 A3
+
+- 佇列 B 跑完 `tl_p2/tl_c4_load`（12:28:48）。`switch_B_20261106.sh` 照計畫把它停在 `old_p2/mooncake_load` 剛開始的地方，那個 run 留了 `STOPPED_NOT_USED`。
+  - 改開 B'：pid 2811634，log `queue-rust-Bp-w17-20261106-122849.log`。3 個 block 都是 rc=0，12:51:19 結束。
+  - 注意：switch 程序印的 pid（2650003）是錯的。B' 的 pid 是 2811634，用 `ps` 核對過。
+- **P2**：`collect` 36 個 block → `results/icpe_next/b/{tl,cw,old,bl}_p2/`，共 17.5 MB，單一 xz 檔最大 1.74 MB。
+  - 每個紀錄變體：`_nvme807` 2,448 列，`_load` 9,792 列，和 TRX40 的 `sa_p2` 相同。
+  - 全部 host acvlab、Rust。
+- 現在只剩 **A3**（pid 2650007）：P3 的 pfgpu，以及兩個 TL 代表格。監看用 `watch_queues.sh 2650007`。
+- **還沒跑的**：`tl_p3 *_wt`（3 個 block），等 icpe-sim 的 wt 修正（7193a2d）push 和 STATUS_SIM。
+
+## 2026-11-06T12:00+08:00 — CW／old／BL 的 P3 `*_wt` 完成；空出來的執行緒交給 A3（P3 pfgpu＋兩個 TL 代表格）
+
+- **佇列 A2**：15 個 `*_wt` block 全部 rc=0，11:26:47 → 11:55:28。CW 12 個、Mooncake、FI、Bailian 各 1 個。
+- **空檔怎麼用**：TL 的 wt 要等修正（約 12:30 以後），A2 的 18 個執行緒空出來。所以：
+  - **佇列 A3**：pid 2650007，11:56 開始。跑 `tl_p3:*_pfgpu cw_p3:*_pfgpu old_p3:*_pfgpu bl_p3:*_pfgpu sens_rep:tl_cacheprefix,tl_t128k`，共 20 個 block，18 個執行緒。
+    - 第一個 block `tl_c1_pfgpu` 是 `prep=cache_hit 14.4s`。
+  - **佇列 B**：照原樣跑完手上的 `tl_p2/tl_c4_load`。由 `/ssd6/hungwei/icpe-next/launch/switch_B_20261106.sh` 在它剛開始 `old_p2/mooncake_load` 時停下，改開 B'（`old_p2:*_load bl_p2:*_load`，3 個 block，17 個執行緒）。
+    - 為什麼要換：B 只在開跑時讀一次完成清單，不換的話它會重跑 A3 做過的 block。
+  - 空跑核對過：A3 的 20 個 ＋ B' 的 3 個，正好等於 B 除了 `tl_c4_load` 以外還沒做的 23 個，沒有重疊。
+- CPU：18＋17 個執行緒，和之前一樣，約 44。
+- 監看：`watch_queues.sh 1752970 2650007`。
+
+## 2026-11-06T11:30+08:00 — 佇列 A 照計畫停在 TL wt 之前，改跑 CW／old／BL 的 wt；wt 修正（使用者選 A）驗證中
+
+- 佇列 A 的 P2（`*_nvme807`，18 個 block）在 11:26:44 跑完。
+  - 自動程序 v2 在 `tl_p3/tl_c1_wt` 剛開始時把它停下來（11:26:47）。那個 run 留了 `STOPPED_NOT_USED`。
+  - 接著開佇列 A2：pid 2477497，`cw_p3:*_wt old_p3:*_wt bl_p3:*_wt`，18 個執行緒，log `queue-rust-A2-w18-20261106-112647.log`。
+- 佇列 B 照跑，現在在 `tl_p2/tl_c2_load`。
+- 監看換成 `/ssd6/hungwei/icpe-next/launch/watch_queues.sh 1752970 2477497`：每分鐘記錄一次；MemAvailable < 60 GiB 就停；任一個佇列結束就通知。
+- **wt 修正**（icpe-sim 的訊息，11/6 11:1x）：
+  - 使用者選 A：0 塊的請求在回合結束時，把 session 從 CPU 順序表拿掉。兩種回合結束（只有 CPU、wt）都改，兩個引擎都改。
+  - 本地 commit 7193a2d。驗證 run `20261106-111012-icpe-sim-g1-7193a2d`，預計 12:30 完成，過了才 push。
+  - 修正後我 merge → G0 → 補跑 `tl_p3:*_wt`（3 個 block）。
+  - `x1_sim.py` 改了，準備快取的鍵也會變。icpe-sim 會照同樣的規則重新預建 5 個 TL 快取。
+
 ## 2026-11-06T10:50+08:00 — **acvlab 的 P1 完成**（36 個 block，已進 git）；兩個佇列進入 P2
 
 - P1 在 acvlab 的最後一個 block 10:41 結束。`collect` 36 個 block → `results/icpe_next/b/{tl,cw,old,bl}_p1/`，共 15.6 MB，單一 xz 檔最大 1.31 MB。

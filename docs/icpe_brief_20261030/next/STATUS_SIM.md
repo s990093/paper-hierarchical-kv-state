@@ -507,3 +507,114 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 - merge 後重做 G0。這次沒動 main.rs，不用重新編譯。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T09:45+08:00 — TraceLab 的 5 個準備快取已預建好（commit `8b6520f`）
+
+照 icpe-data 的三個條件做：G1 PASS 並 push 之後才建；用 push 出去的 8b6520f 的 checkout；同時最多 3 個行程（`xargs -P 3`）、nice 10。
+
+- run `20261106-093010-icpe-sim-prewarm-8b6520f`，09:30–09:42。
+- 每個變體跑一次真正的 `x1 sweep --engine rust --workers 1`，只有 1 個 job（cpu 64、LRU、ssd、cake），寫進預設的 `X1_RUST_WORK=/ssd6/hungwei/icpe-next/x1fast-work`。這些 job 的輸出只用來建快取，不進 results。
+
+| 變體 | 快取目錄（`x1fast-work/` 下） | 請求數 | 準備 | 單一行程最大 RSS |
+|:--|:--|--:|:--|--:|
+| tracelab_c1 | `prep-a3f71ec72081e4fbb9c02d46` | 665,453 | built_saved 489.6 s | 14,898,640 KiB |
+| tracelab_c2 | `prep-efb9003b774446ea4a9819e7` | 665,453 | built_saved 501.7 s | 14,896,388 KiB |
+| tracelab_c4 | `prep-cd3ae942467af748a1740430` | 665,453 | built_saved 475.5 s | 14,902,280 KiB |
+| tracelab_c1_cache | `prep-7b7e4a2049eceda53d4f1c94` | 665,453 | built_saved 200.4 s | 15,825,936 KiB |
+| tracelab_c1_t128k | `prep-d735ce3b9194edc1cd73d64f` | 195,550 | built_saved 19.4 s | 1,918,008 KiB |
+
+- 5 個的 KEY.json 裡 code_sha256 都是 `c2cf7b268b98…`（`x1_sim.py`、`x1_nb.py`、`x1_rust.py` 三個檔合起來的 sha256）。tracelab_c1 的鍵和 09:35 那節驗證 run 自己建的相同，所以換 checkout 不會換鍵。
+- **讀快取的檢查**：tracelab_c1_t128k 用同一個指令再跑一次 → `prep=cache_hit 1.3s lite=True`；和第一次的輸出逐格比，2 列 × 32 欄，不同的格子 0。
+- 摘要：`results/icpe_next/sim/rust_prep_cache.csv`（+6）。
+- 快取共 155 MiB〔算術：36×4＋11〕。
+
+**需要 icpe-data 做什麼**：merge 8b6520f（或之後的 commit）、重做 G0 之後，TraceLab block 的 sweep.log 應該是 `prep=cache_hit … lite=True`。
+
+**需要使用者決定什麼**：無。
+
+## 2026-11-06T10:10+08:00 — **`--gpu-write wt` 的 panic：Python 也會出錯（模型的邊界情況，不是 Rust 獨有）**；修法要使用者決定
+
+回 icpe-trx（STATUS_TRX 09:45，98b0d2f）與 icpe-data 的急件。run `20261106-094552-icpe-sim-wtpanic`（acvlab，checkout 8b6520f，nice 10）。
+
+**重現**
+- Rust：參數照 next_b_queue 的 `sa_N16_s1_wt`，只留 O-ALL、O-PF、LRU+RPF，`--workers 1`（一次一個 job）。第 472 個 job panic，`src/main.rs:667:41`、`index out of bounds: the len is 0`，和 TRX40 相同。
+  - 那個 job：O-PF、CPU 8 GiB、GPU 111.0625 GiB wt、TTLB:10、pf-target cpu（留在 `work/jobs/` 的 jobs.txt）。
+- **Python**：同一組參數（O-PF、cpu 8、TTLB:10、三種慢層，6 個 job）用 `--engine py` 跑 → `IndexError: list index out of range`，位置是 `demote()` 的 `T = XT.next_access(self.acc, self.sb[s][-1], self.cur)`。和 Rust 同一行。
+  - 探針（`py_demote_probe.py`：demote 拿到沒有 block 的 session 時印出狀態，不改行為）：`s=119 st=S_CPU in_cpu_set=False in_lru=True order=lru pf=opf`；這個 session 的第 2、3 個請求都是 0 個完整 block（nall＝1）。
+
+**原因**（兩個引擎相同）
+- 回合結束（CPU-only 的 `step` 與 wt 的 `_turn_end_wt`）：新請求有 block → `_order_add(s)`；**沒有 block → 只做 `cpu_set.discard(s)`，沒有把 s 從順序結構（LRU 串列、ARC 的 T1／T2、S3FIFO 的佇列）拿掉。**
+- s 上一回合留在 CPU 時已經在順序結構裡，所以留下一個過期的項目（st＝S_CPU、sb＝空）。
+- LRU 的 `select()` 取 `next(iter(self.lru))`，會選到它 → `demote(s)`：
+  - 有預取（O-PF、LRU+RPF）→ `sb[s][-1]` 出錯；
+  - 沒有預取 → **不會出錯，但多算一次「空的降級」**：不寫任何 block，但計入 `n_demote`、`cpu_residence_s_mean`；ARC／S3FIFO 的過期項目還帶著舊的大小（t1b／t2b、s3sb／s3mb），可能改變之後選誰。
+- 用 cpu_set 選的順序（BEL、BELS、LRU2、PENS、FREQ2Q、PRED）和會檢查 cpu_set 的 GDSF 不受影響。
+- **wb＋GPU 不會發生**：GPU 回合開始時已經 `_order_remove(s)`。所以 ICPE-next 主結果、P1、P2、pfgpu（都是 wb、GPU 111.0625 GiB）不受影響。
+
+**哪些紀錄有這種模式**（同一 session 已有 block 的請求之後、出現 0 個完整 block 的請求；`zero_block_scan.py`、`zero_block_scan_nonnb.py`，輸出 csv 在 run 目錄）
+
+| 紀錄 | 這種請求數／請求數 |
+|:--|:--|
+| SemiAnalysis（12 個變體各自） | 198／98,827 |
+| semianalysis_N16_s1_t128k | 125／40,799 |
+| TraceLab c1、c2、c4、c1_cache、c2_cache、c4_cache | 34／665,453 |
+| tracelab_c1_t128k | 1／195,550 |
+| Bailian（3 份）、CacheWise（全部）、Mooncake（conversation、toolagent × R1、R2）、FI（6 週＋t128k） | 0 |
+
+- Bailian 有 0-block 請求（coder 5,472、thinking 2,012、traceA 11,728），FI 有兩週各 53、17 個，但都是 session 的第一個請求，不會留下過期項目。
+
+**已經跑完的結果**
+- git 裡的 wt 結果只有 sens_rep 的 bl_wt、cw_wt、fi_wt、mc_wt，這四份紀錄都沒有這種模式 → **不受影響**。
+- GPU 0 的舊結果（H200 t1／p01，G0／G1 的參考）是 Mooncake → 不受影響。
+- 會受影響、還沒跑的：TraceLab 與 SemiAnalysis 的 `*_wt`（tl_p3、sa_p3、sens_rep 的 tl_wt、sa_wt）。
+
+**選項**（需要使用者決定：這是模型語意，§5.10 沒寫）
+- **A（建議）**：新請求沒有完整 block 時，把 session 從 CPU 的順序結構拿掉（`_order_remove(s)`，取代只做 `cpu_set.discard(s)`）。CPU-only 與 wt 兩個回合結束都改，兩個引擎都改。
+  - 理由：原本的 `cpu_set.discard` 就是「這個 session 在 CPU 沒有東西」的意思；wb 路徑本來就這樣做。session 在 CPU 沒有東西可降級。
+  - 影響：只改 TraceLab／SemiAnalysis 的 wt（和沒有在用的 GPU 0）格子；git 裡的結果都不變；G1 不變（Mooncake 沒有這種模式）。
+- **B**：保留過期項目，只在 `demote` 裡跳過空 session 的預取。git 裡的結果同樣不變；但 TL／SA 的 wt 格子會保留「空的降級」（`n_demote`、`cpu_residence_s_mean`；ARC／S3FIFO 的舊大小）。
+- **C**：不修；TraceLab／SemiAnalysis 的 `*_wt` 不跑，記成沒跑。
+- 有利還是不利預測：A 和 B 的差別落在 LRU 系列、ARC、S3FIFO、O-DROP、O-NOW、O-PF（LRU 順序）的 TL／SA wt 格子；方向 NOT_MEASURED。選 A 之後，我會在驗證時量「修改前後哪些格子不同」。
+
+**icpe-data 的處理**（他們的訊息）：佇列 A 碰到第一個 tl_p3 `*_wt` 就停，改跑 cw_p3、bl_p3 的 `*_wt`；old_p3 `*_wt` 可排（Mooncake／FI 不受影響）。
+
+**需要使用者決定什麼**：上面的 A／B／C。
+
+## 2026-11-06T13:15+08:00 — **wt 修正（選項 A）：G1 PASS，commit `7193a2d`**；TRX40 出錯的 block 跑得完
+
+回 10:10 那節（使用者選 A）。細節見 SIM_CHANGES 第 19 項。
+
+**改了什麼**
+- 新請求沒有完整 block 時，回合結束改成 `_order_remove(s)`（Rust：`order_remove(s)`），取代只做 `cpu_set.discard(s)`。
+- CPU-only 的 `step` 與 wt 的 `_turn_end_wt` 都改，兩個引擎各兩行。
+
+**驗證**：run `20261106-111012-icpe-sim-g1-7193a2d`（detached checkout 7193a2d、共用 venv、nice 10；11:10–13:07）
+- **G1**：Python、Rust 各 4,416 列 × 29 欄，不同的格子 0 → **PASS**。
+- **xc_sa**（wb，應該不受影響）：Rust 對 icpe-data 的 Python 輸出，32 列，不同的格子 0。
+- **新程式 Python 對 Rust**：SemiAnalysis wt 子集 102 列、TraceLab c1 wt 子集 22 列，不同的格子都是 0。
+- **跑得完**（Rust 8 執行緒，退回 Python 0 個，沒有 panic）：
+  - TRX40 出錯的整個 `sa_N16_s1_wt`：6,174 個 job、7,344 列，sweep 496 s；
+  - TraceLab c1 wt 的 O-PF、LRU+RPF、O-ALL（全部 CPU × GPU 規則 × 慢層）：1,296 列，sweep 865 s。
+- **修改前後**（同參數，舊的 Rust 對新的；`wt_fix_effect.csv`）：
+  - SemiAnalysis 90 列中 48 列不同，TraceLab 18 列中 12 列不同。
+  - 平均 TTFT 有變的只有 SemiAnalysis 的 ARC（相對差 ≤ +9.8e-6）和 S3FIFO（−3.6e-5 到 +8.4e-7）；其餘只差計數（`n_demote`、`n_drop`、`cpu_residence_s_mean`）。
+  - 預測的格子平均 TTFT 不變。方向不一、大小可以忽略（只量了 CPU 8、TTLB:10 的子集）。
+- 摘要：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`rust_cmp.csv`（+3 列）、`wt_fix_effect.csv`（新）、`wt_fix_complete.csv`（新）。
+
+**影響範圍**（同 10:10 那節）
+- 會變的：SemiAnalysis、TraceLab 的 GPU 層關閉或 wt 的格子。
+- 不變的：git 裡所有結果（wb＋GPU；wt 的只有 Bailian／CacheWise／Mooncake／FI，這些紀錄沒有這種模式）。
+- **準備快取的鍵含 `x1_sim.py` 的 sha256**，所以 8b6520f 預建的 5 個 TraceLab 快取不會再命中。push 之後我照同樣的規則（5 個、同時最多 3 個行程）用這次的 commit 重新預建，好了另寫一行。
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這次 push 的 commit，**重做 G0**（code/p3x 有改）。
+- 之後可以放開 TraceLab 的 `*_wt`（`hold_wt_v2_20261106.sh`）；SemiAnalysis 的 `*_wt` 也可以跑。
+- 已經跑完的 cw／old／bl 的 `*_wt` 不用重跑（那些紀錄沒有這種模式）。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0；main.rs 變了，Rust 會自動重新編譯。
+- 照 06:14 那節的規則，用 `--engine rust` 跑一次 xc_sa 和 Python 版逐格比對，之後再跑 12 個 `_wt` block。
+
+**下一步**（我）：B2 進 Rust（icpe-ana v5）。已審查完，接著換進 main.rs、跑驗證（G1、14 個 xcheck、Bailian B1＋B2、Mooncake B2、SemiAnalysis B2 子集）。另外把目前的引擎同步到 kvsweep（使用者 11/6 的要求）。
+
+**需要使用者決定什麼**：無。
