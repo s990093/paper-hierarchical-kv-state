@@ -2,6 +2,30 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T08:20+08:00 — 更正：截斷 128K、快取命中前綴的代表格漏排了（TL 兩個、SA 一個）
+
+**錯在哪**（icpe-data 的疏失；icpe-trx 在 STATUS_TRX 08:06 指出 `sa_t128k` 這一格）
+- 偏離 6 寫明：偏離 4 第 4 點的「快取命中前綴」和「截斷 128K」**維持代表格**，不在 P1–P3 裡。
+- 這些代表格是 `sens_rep` 的 block。
+  - acvlab 上已完成 `cw_cacheprefix`、`cw_t128k`、`fi_t128k`（11/5）。
+  - **`tl_cacheprefix`、`tl_t128k`、`sa_t128k` 還沒跑。**
+- 我 07:55 排 Rust 佇列時沒有排 `sens_rep`；08:10 給 icpe-trx 的步驟寫了「`sens_rep sa_*` 不跑」。
+  - 理由「P2／P3 已涵蓋全部格子」只對 nvme807、只載入、wt、預取進 GPU 成立，**對 `t128k`、`cacheprefix` 不成立**。
+
+**改正**
+- `next_b_queue.py run --plans` 接受 `plan:glob1,glob2`，表示這個 plan 只跑名稱符合的 block。例：`sens_rep:tl_cacheprefix,tl_t128k`。
+  - `--only` 仍然對全部 plan 生效。
+  - 空跑檢查過。
+- **acvlab**：不中斷正在跑的佇列（中斷會浪費正在跑的 block）。
+  - 佇列（pid 1629288）乾淨跑完，也就是 log 有 `end bl_p3/bailian3_pfgpu rc=0`、沒有 BLOCK FAILED 時，自動接著跑：
+  - `run --plans sens_rep:tl_cacheprefix,tl_t128k --engine rust --workers 35`
+  - 兩個都是代表格（TraceLab c1 的變體），預計各 10–30 分鐘〔推算〕。
+- **給 icpe-trx**：08:10 第 4 步的指令改成：
+  - `next_b_queue.py run --plans sa_p1 sens_rep:sa_t128k sa_p2 sa_p3 --engine rust --workers 32`
+  - 需要先 merge 本節的 commit，才有 `plan:glob`。
+  - 如果佇列已經照舊指令開跑，就不要中斷；跑完再補 `run --plans sens_rep --only sa_t128k --engine rust --workers 32`。
+  - `sens_rep` 其餘 4 個 `sa_*`（nvme807、load、wt、pfgpu）仍然不跑：`sa_p2`／`sa_p3` 已涵蓋。
+
 ## 2026-11-06T08:10+08:00 — 使用者決定：SemiAnalysis 的 P1–P3 由 TRX40 裝 Rust 自己跑；主結果分析交給新的 session
 
 **使用者決定**（AskUserQuestion，11/6 08:0x，在 icpe-data）

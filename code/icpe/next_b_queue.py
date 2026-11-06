@@ -277,11 +277,17 @@ def sha256(p):
 def cmd_run(a):
     P = blocks()
     dn = done_set()
-    if any(p.endswith("_p1") for p in a.plans):
+    # 'plan:pat1,pat2' ＝這個 plan 只跑名稱符合這些 glob 的 block（例 sens_rep:tl_cacheprefix,tl_t128k）；--only 對全部 plan 生效
+    specs = [(x.split(":", 1)[0], x.split(":", 1)[1].split(",") if ":" in x else []) for x in a.plans]
+    for plan, _ in specs:
+        assert plan in P, f"沒有這個 plan：{plan}"
+    if any(p.endswith("_p1") for p, _ in specs):
         check_p1(import_xs())
-    for plan in a.plans:
+    for plan, pats in specs:
         for name, tr, args in P[plan]:
             if a.only and not any(fnmatch.fnmatch(name, pat) for pat in a.only):
+                continue
+            if pats and not any(fnmatch.fnmatch(name, pat) for pat in pats):
                 continue
             if (plan, name) in dn:
                 print(f"[skip] {plan}/{name} 已完成（{dn[(plan, name)]['run_id']}）", flush=True)
