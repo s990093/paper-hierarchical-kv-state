@@ -3,6 +3,17 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T08:58+08:00 — **`sa_p1` 完成**（24 個 block，Rust，36 workers）；`sa_p2` 在跑
+
+- 佇列 `queue-sa_p123-rust-w36-20261106-080648.log`：`sa_p1` 24 個 block 都 rc=0，08:06:48 → 08:53:56（47 分鐘）。run_id＝`20261106-HHMMSS-icpe-trx-sa_p1-<block>`（第一個 `…-080648-…-sa_N16_s1_ttl`，最後一個 `…-085152-…-sa_N72_s3_trunc`）。
+- collect → `results/icpe_next/b/sa_p1/<block>/`（commit c800ea8，9.2 MB）：
+  - 12 個 `_ttl`：各 6,480 列（job 6,480）；12 個 `_trunc`：各 5,184 列（job 4,824）。合計 135,648 job、139,968 列。
+  - 每個檔：`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`、`code_sha`＝`a27559138492+rs43dbe828`；24 個 run 都 `py_fallback_jobs=0`。
+- 時間：sweep 每個 block 69.0–132.4 s，合計 2,467 s。`rust_timing.jsonl`（135,648 筆＝job 數）：Rust 引擎每 job `run_s` 中位數 0.629 s、p90 0.940 s、最長 1.924 s；從派出到讀回中位數 0.637 s、最長 2.288 s。
+- 記憶體（mem.log 08:06:48–08:53:56，93 筆）：行程群組 PSS 最高 2.9 GiB，MemAvailable 最低 53.4 GiB；swap 958–959 MiB；load1 最高 40.2。保護都沒觸發。
+- 下一個：`sa_p2/sa_N16_s1_nvme807` 08:53:56 開跑。〔算術〕照 `sa_p1` 的速度（約 48 job/s，含每個 block 的準備時間），`sa_p2`＋`sa_p3` 共 214,056 job 約 75 分鐘 → 約 10:10 跑完；之後 merge 23865ee、跑 `sens_rep --only sa_t128k`。
+- 不解讀上限（分析由新的分析 session 做）。
+
 ## 2026-11-06T08:12+08:00 — **三項對拍都 0 個不同**；Rust 佇列 `sa_p1 sa_p2 sa_p3` 開跑（36 workers，使用者決定）
 
 **對拍**（STATUS_DATA 08:10 第 3 步；`$ROOT/tools/verify_rust2.sh eeaecef`；`--engine rust --workers 32`；比對 run `20261106-080609-icpe-trx-compare-eeaecef`）
