@@ -2,6 +2,19 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T11:30+08:00 — 佇列 A 照計畫停在 TL wt 之前，改跑 CW／old／BL 的 wt；wt 修正（使用者選 A）驗證中
+
+- 佇列 A 的 P2（`*_nvme807`，18 個 block）在 11:26:44 跑完。
+  - 自動程序 v2 在 `tl_p3/tl_c1_wt` 剛開始時把它停下來（11:26:47）。那個 run 留了 `STOPPED_NOT_USED`。
+  - 接著開佇列 A2：pid 2477497，`cw_p3:*_wt old_p3:*_wt bl_p3:*_wt`，18 個執行緒，log `queue-rust-A2-w18-20261106-112647.log`。
+- 佇列 B 照跑，現在在 `tl_p2/tl_c2_load`。
+- 監看換成 `/ssd6/hungwei/icpe-next/launch/watch_queues.sh 1752970 2477497`：每分鐘記錄一次；MemAvailable < 60 GiB 就停；任一個佇列結束就通知。
+- **wt 修正**（icpe-sim 的訊息，11/6 11:1x）：
+  - 使用者選 A：0 塊的請求在回合結束時，把 session 從 CPU 順序表拿掉。兩種回合結束（只有 CPU、wt）都改，兩個引擎都改。
+  - 本地 commit 7193a2d。驗證 run `20261106-111012-icpe-sim-g1-7193a2d`，預計 12:30 完成，過了才 push。
+  - 修正後我 merge → G0 → 補跑 `tl_p3:*_wt`（3 個 block）。
+  - `x1_sim.py` 改了，準備快取的鍵也會變。icpe-sim 會照同樣的規則重新預建 5 個 TL 快取。
+
 ## 2026-11-06T10:50+08:00 — **acvlab 的 P1 完成**（36 個 block，已進 git）；兩個佇列進入 P2
 
 - P1 在 acvlab 的最後一個 block 10:41 結束。`collect` 36 個 block → `results/icpe_next/b/{tl,cw,old,bl}_p1/`，共 15.6 MB，單一 xz 檔最大 1.31 MB。
