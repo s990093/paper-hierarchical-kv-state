@@ -2,6 +2,17 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T13:10+08:00 — acvlab 的 P3 除了 TL wt 都完成；兩個 TL 代表格完成；目前沒有佇列在跑
+
+- 佇列 A3（pid 2650007）：20 個 block 全部 rc=0，11:56:18 → 13:03:23。
+- `collect` 35 個 block，已進 git：
+  - P3 的 33 個：CW／old／BL 的 `*_wt` 15 個；全部紀錄的 `*_pfgpu` 18 個。
+  - `sens_rep/tl_cacheprefix`、`sens_rep/tl_t128k`：各 1,632 列。STATUS_DATA 08:20 更正的漏排，這兩個補完了。
+  - 全部 host acvlab、Rust，單一 xz 檔最大 1.30 MB。
+- **偏離 6 在 acvlab 還沒做的，只剩 `tl_p3 *_wt` 3 個 block**：等 icpe-sim 的 wt 修正（7193a2d）push、寫進 STATUS_SIM，我再先試合併、做 G0，然後跑。
+- **目前 acvlab 上沒有我們的佇列**，CPU 是空的。
+- P4 要等 icpe-main 從版本 B（`origin/icpe-next-main` baa508d）選出格子，加上 B2 的 Rust 版通過驗證。
+
 ## 2026-11-06T12:55+08:00 — **acvlab 的 P2 完成**（36 個 block，已進 git ed37d48）；B 換成 B'；只剩 A3
 
 - 佇列 B 跑完 `tl_p2/tl_c4_load`（12:28:48）。`switch_B_20261106.sh` 照計畫把它停在 `old_p2/mooncake_load` 剛開始的地方，那個 run 留了 `STOPPED_NOT_USED`。
