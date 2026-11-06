@@ -8,6 +8,10 @@
 //   run_dir/jobs.txt：每行 `jobid order act hook pf dead_cut cap G gorder gttl gwrite pft view_id,view_id,...`
 //   輸出 run_dir/out/<jobid>/...
 //
+// icpe-sim（2026-11-06，SIM_CHANGES 20）：本檔＝origin/icpe-next-ana @ 43e7ffc 的 code/icpe/ana_x1fast/v5_noise_b2/src/main.rs（sha256 a5c7c130…）
+// 原樣複製，只加 SIM_CHANGES 19 的兩行（turn_end 新請求沒有完整 block → order_remove，取代只做 cpu_set.discard）。
+// icpe-ana v5（2026-11-06）：v4 加 B2 抽法（每次問都重抽）。B2 的亂數順序取決於 Python 走訪 cpu_set（CPython 3.12 的 set）的順序，
+// 所以 B2 時 ISet 另外照 CPython setobject.c 維護同樣的雜湊表，select（BEL／BELS）與 make_room（O-PF）照它的順序走訪。
 // icpe-ana v4（2026-11-06）：在 icpe-sim 0b0ef1e 的 code/p3x/x1fast/src/main.rs 上加 W4 雜訊（B1；CPython random.Random 逐位元重現）。
 // 沒有 nz= 欄位時和 0b0ef1e 逐位元相同。以下是 icpe-sim 原本的說明：
 // icpe-sim（2026-11-06）：本檔＝origin/icpe-next-ana @ aee1527 的 code/icpe/ana_x1fast/v3_prefix_fork/src/main.rs
@@ -261,7 +265,7 @@ impl Mt {
 
 // W4 雜訊（照 x1_sim._noise_init／_nz_sample／_nz；只支援 B1 抽法）
 #[derive(Clone)]
-struct Noise { model_p: bool, lam: f64, rng: Mt, gaps: Vec<f64>, nzd: Vec<Option<(f64, f64, f64)>> }
+struct Noise { model_p: bool, b1: bool, lam: f64, rng: Mt, gaps: Vec<f64>, nzd: Vec<Option<(f64, f64, f64)>> }
 
 // ------------------------------------------------------------------ 有序串列（OrderedDict）與集合
 #[derive(Clone)]
@@ -292,17 +296,97 @@ impl OList {
     }
 }
 
+// CPython 3.12 Objects/setobject.c 的雜湊表（鍵＝session id，hash(int)＝int）：set_add_entry（重用探測路上最後一個 dummy）、
+// set_insert_clean、set_table_resize（fill*5 >= mask*3 時 → used>50000 ? used*2 : used*4）、set_discard_entry（留 dummy）、走訪＝表的索引順序。
 #[derive(Clone)]
-struct ISet { items: Vec<usize>, pos: Vec<i64> }
+struct PySet { tab: Vec<i64>, mask: usize, fill: usize, used: usize, slot: Vec<i64> }
+const PS_EMPTY: i64 = -1;
+const PS_DUMMY: i64 = -2;
+impl PySet {
+    fn new(n: usize) -> Self { PySet { tab: vec![PS_EMPTY; 8], mask: 7, fill: 0, used: 0, slot: vec![-1; n] } }
+    // 呼叫者保證 k 不在集合裡（found_active 的情況由 ISet 的 pos 先擋掉）
+    fn add(&mut self, k: usize) {
+        let mask = self.mask;
+        let mut i = k & mask;
+        let mut perturb = k;
+        let mut free: Option<usize> = None;
+        let e_unused;
+        'outer: loop {
+            let mut probes = if i + 9 <= mask { 9 } else { 0 };
+            let mut e = i;
+            loop {
+                let v = self.tab[e];
+                if v == PS_EMPTY { e_unused = e; break 'outer; }
+                if v == PS_DUMMY { free = Some(e); }
+                e += 1;
+                if probes == 0 { break; }
+                probes -= 1;
+            }
+            perturb >>= 5;
+            i = (i.wrapping_mul(5).wrapping_add(1).wrapping_add(perturb)) & mask;
+        }
+        if let Some(f) = free {
+            self.used += 1; self.tab[f] = k as i64; self.slot[k] = f as i64;
+            return;
+        }
+        self.fill += 1; self.used += 1; self.tab[e_unused] = k as i64; self.slot[k] = e_unused as i64;
+        if self.fill * 5 < mask * 3 { return; }
+        let minused = if self.used > 50000 { self.used * 2 } else { self.used * 4 };
+        self.resize(minused);
+    }
+    fn resize(&mut self, minused: usize) {
+        let mut newsize = 8usize;
+        while newsize <= minused { newsize <<= 1; }
+        if newsize == 8 && self.mask == 7 && self.fill == self.used { return; }
+        let old = std::mem::replace(&mut self.tab, vec![PS_EMPTY; newsize]);
+        self.mask = newsize - 1;
+        self.fill = self.used;
+        for &k in &old {
+            if k >= 0 { self.insert_clean(k as usize); }
+        }
+    }
+    fn insert_clean(&mut self, k: usize) {
+        let mask = self.mask;
+        let mut i = k & mask;
+        let mut perturb = k;
+        loop {
+            if self.tab[i] == PS_EMPTY { self.tab[i] = k as i64; self.slot[k] = i as i64; return; }
+            if i + 9 <= mask {
+                for j in 1..=9 {
+                    if self.tab[i + j] == PS_EMPTY { self.tab[i + j] = k as i64; self.slot[k] = (i + j) as i64; return; }
+                }
+            }
+            perturb >>= 5;
+            i = (i.wrapping_mul(5).wrapping_add(1).wrapping_add(perturb)) & mask;
+        }
+    }
+    fn discard(&mut self, k: usize) {
+        let p = self.slot[k];
+        if p < 0 { return; }
+        self.tab[p as usize] = PS_DUMMY; self.used -= 1; self.slot[k] = -1;
+    }
+    fn order(&self) -> Vec<usize> { self.tab.iter().filter(|&&v| v >= 0).map(|&v| v as usize).collect() }
+}
+
+#[derive(Clone)]
+struct ISet { items: Vec<usize>, pos: Vec<i64>, py: Option<PySet> }
 impl ISet {
-    fn new(n: usize) -> Self { ISet { items: Vec::new(), pos: vec![-1; n] } }
-    fn add(&mut self, s: usize) { if self.pos[s] < 0 { self.pos[s] = self.items.len() as i64; self.items.push(s); } }
+    fn new(n: usize) -> Self { ISet { items: Vec::new(), pos: vec![-1; n], py: None } }
+    fn add(&mut self, s: usize) {
+        if self.pos[s] < 0 {
+            self.pos[s] = self.items.len() as i64; self.items.push(s);
+            if let Some(p) = &mut self.py { p.add(s); }
+        }
+    }
     fn discard(&mut self, s: usize) {
         let p = self.pos[s];
         if p < 0 { return; }
         let last = *self.items.last().unwrap();
         self.items[p as usize] = last; self.pos[last] = p; self.items.pop(); self.pos[s] = -1;
+        if let Some(p) = &mut self.py { p.discard(s); }
     }
+    // 走訪順序：B2 時＝CPython set 的順序；否則任意（鍵都含 last／x，不影響結果）
+    fn order(&self) -> Vec<usize> { match &self.py { Some(p) => p.order(), None => self.items.clone() } }
     fn has(&self, s: usize) -> bool { self.pos[s] >= 0 }
     fn is_empty(&self) -> bool { self.items.is_empty() }
 }
@@ -415,7 +499,9 @@ impl<'a> Eng<'a> {
         let Some(cell) = &self.noise else { return idx };
         let mut nz = cell.borrow_mut();
         if nz.lam == 0.0 { return idx; }
-        let d = match nz.nzd[s] { Some(d) => d, None => { let d = Self::nz_sample(&mut nz); nz.nzd[s] = Some(d); d } };
+        let d = if nz.b1 {
+            match nz.nzd[s] { Some(d) => d, None => { let d = Self::nz_sample(&mut nz); nz.nzd[s] = Some(d); d } }
+        } else { Self::nz_sample(&mut nz) };   // B2：每次問都重抽
         let (u, g, eps) = d;
         let tl = &self.tr.t;
         let tq_target: f64;
@@ -565,7 +651,7 @@ impl<'a> Eng<'a> {
     }
     fn select(&mut self) -> Option<usize> {
         if self.cpu_set.is_empty() { return None; }
-        let items: Vec<usize> = self.cpu_set.items.clone();
+        let items: Vec<usize> = self.cpu_set.order();
         match self.order {
             Ord_::Lru => Some(self.lru.head as usize),
             Ord_::Pred => items.iter().copied().max_by_key(|&x| -self.last[x]),
@@ -756,7 +842,7 @@ impl<'a> Eng<'a> {
         let order: Vec<usize> = if self.pf == Pf::Opf {
             let tc = self.st_t[cand];
             let mut el: Vec<(i64, i64, usize)> = Vec::new();
-            for &x in &self.cpu_set.items {
+            for x in self.cpu_set.order() {
                 let nx = self.next_req(x, 0).0;
                 if nx > tc { el.push((nx, -self.last[x], x)); }
             }
@@ -1059,7 +1145,7 @@ impl<'a> Eng<'a> {
             if self.has_gpf { self.advance_prefetch_gpu(tf, t); } else { self.advance_prefetch(tf, t); }
         }
         self.cur = r as i64;
-        if let Some(cell) = &self.noise { let mut nz = cell.borrow_mut(); let d = Self::nz_sample(&mut nz); nz.nzd[tr.sess[r] as usize] = Some(d); }
+        if let Some(cell) = &self.noise { let mut nz = cell.borrow_mut(); if nz.b1 { let d = Self::nz_sample(&mut nz); nz.nzd[tr.sess[r] as usize] = Some(d); } }
         let blocks = tr.blocks(r);
         if self.g > 0 { return self.step_gpu(r, t, blocks, lay, tend); }
         lay.clear();
@@ -1367,7 +1453,7 @@ fn load_run_data(rd_: &str) -> RunData {
 
 // ---- 一個 job 的規格
 struct Spec<'b> { jid: &'b str, order: Ord_, act: Act, hook: Hook, pf: Pf, dead_cut: f64, c: f64, g: i64, gorder: u8, gttl: f64,
-                  gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, i64)> }
+                  gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, bool, i64)> }
 
 fn parse_spec(line: &str) -> Spec<'_> {
     let x: Vec<&str> = line.split_whitespace().collect();
@@ -1384,9 +1470,9 @@ fn parse_spec(line: &str) -> Spec<'_> {
         if let Some(v) = extra.strip_prefix("nz=") {
             let f: Vec<&str> = v.split(',').collect();
             assert!(f.len() == 4 && (f[0] == "P" || f[0] == "M"), "nz={}", v);
-            assert!(f[2] == "B1", "Rust 只支援 B1 抽法（B2 請改用 Python）：nz={}", v);
+            assert!(f[2] == "B1" || f[2] == "B2", "抽法只有 B1／B2：nz={}", v);
             assert!(nz.is_none(), "nz 欄位重複：{}", line);
-            nz = Some((f[0] == "P", parse_f(f[1]), f[3].parse::<i64>().unwrap()));
+            nz = Some((f[0] == "P", parse_f(f[1]), f[2] == "B1", f[3].parse::<i64>().unwrap()));
         } else { panic!("jobs.txt 有不支援的欄位 {}（這一版不支援慢層上限）：{}", extra, line); }
     }
     let sp = Spec { jid: x[0], order, act, hook, pf, dead_cut: parse_f(x[5]), c: parse_f(x[6]), g: x[7].parse().unwrap(), gorder,
@@ -1420,7 +1506,7 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
     let (g, pf) = (sp.g, sp.pf);
     let has_gpf = g > 0 && sp.pf_gpu && pf != Pf::No;
     // W4 雜訊（照 x1_sim._noise_init：gaps[r]＝同一個 session 下一次請求的時間差，沒有下一次＝INF）
-    let noise = sp.nz.map(|(model_p, lam, seed)| {
+    let noise = sp.nz.map(|(model_p, lam, b1, seed)| {
         assert!((0.0..1.0).contains(&lam));
         let mut gaps = vec![0.0f64; nreq];
         let mut nxt: Vec<i64> = vec![-1; ns];
@@ -1429,14 +1515,14 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
             gaps[r] = if nxt[s] >= 0 { tr.t[nxt[s] as usize] - tr.t[r] } else { INF as f64 };
             nxt[s] = r as i64;
         }
-        RefCell::new(Noise { model_p, lam, rng: Mt::from_seed(seed), gaps, nzd: vec![None; ns] })
+        RefCell::new(Noise { model_p, b1, lam, rng: Mt::from_seed(seed), gaps, nzd: vec![None; ns] })
     });
     Eng {
         tr, views, order, act, hook: sp.hook, pf, dead_cut: sp.dead_cut, c: sp.c, i4,
         ref_cpu: vec![0; nb], ref_live: vec![0; nb], on_slow: vec![false; nb], fmt: vec![0; nb], pf_done: vec![0.0; nb], pf_owner: vec![-1; nb],
         sb: vec![-1; ns], st: vec![S_NONE; ns], last: vec![-1; ns], prev: vec![-1; ns], nreq: vec![0; ns], spf: vec![0; ns],
         st_t: vec![INF; ns], pfdone: vec![false; ns],
-        cpu_used: 0, cur: -1, cpu_set: ISet::new(ns), lru: OList::new(ns),
+        cpu_used: 0, cur: -1, cpu_set: { let mut c = ISet::new(ns); if matches!(sp.nz, Some((_, _, false, _))) { c.py = Some(PySet::new(ns)); } c }, lru: OList::new(ns),
         n_demote: 0, n_drop: 0, n_unpf: 0, res_sum: 0.0, w_slow_blocks: 0,
         t1: OList::new(ns), t2: OList::new(ns), b1: OList::new(ns), b2: OList::new(ns), t1b: 0, t2b: 0, b1b: 0, b2b: 0, arc_p: 0.0,
         s3s: OList::new(ns), s3m: OList::new(ns), s3g: OList::new(ns), s3f: vec![-1; ns], s3sb: 0, s3mb: 0, s3size: vec![0; ns],

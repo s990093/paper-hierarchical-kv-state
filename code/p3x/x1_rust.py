@@ -4,6 +4,9 @@
 引擎部分一行沒改，只改 main() 的輸入輸出（加常駐模式）。審查與驗證見 SIM_CHANGES 第 16 項。
 W4 雜訊的 B1 抽法＝icpe-ana v4（origin/icpe-next-ana @ 279eb7e 的 code/icpe/ana_x1fast/v4_noise_on_0b0ef1e/src/main.rs，原樣複製）：
 jobs.txt 那一行多一欄 `nz=P|M,<λ>,B1,<seed>`。審查與驗證見 SIM_CHANGES 第 17 項。
+W4 雜訊的 B2 抽法＝icpe-ana v5（origin/icpe-next-ana @ 43e7ffc 的 code/icpe/ana_x1fast/v5_noise_b2/src/main.rs，原樣複製＋SIM_CHANGES 19 的兩行）：
+`nz=P|M,<λ>,B2,<seed>`。B2 每次問都重抽，亂數的順序跟著 Python 走訪 cpu_set（CPython 3.12 的 set）的順序，v5 照 setobject.c 重現；
+所以只有 Python 3.12 時才交給 Rust，其他版本退回 Python Engine。審查與驗證見 SIM_CHANGES 第 20 項。
 這裡只做「Python 準備輸入 → Rust 跑 → 讀回逐請求陣列填進原本的 View」：之後的 summarize、存 npz、寫 CSV 全部是
 x1_sim 原本那一段（_job_rows），所以輸出欄位與格式和 Python 引擎相同。
   prepare_trace：紀錄 → CSR 二進位檔（父行程做一次，內容 sha256 定址、可共用）
@@ -11,7 +14,7 @@ x1_sim 原本那一段（_job_rows），所以輸出欄位與格式和 Python �
     鍵＝紀錄檔內容 sha256＋x1_sim／x1_nb／x1_rust 的 sha256＋numpy／Python 版本；命中就不用重建（SIM_CHANGES 第 18 項）。
     這份紀錄的 job 全部走 Rust 時，父行程的 P 不留 full／acc（lite P；Rust 讀紀錄檔，父行程與摘要只用到其他欄位）。
   Server：每份紀錄一個常駐的 x1fast（紀錄只讀一次、多執行緒）；write_job／read_outputs：一個 job 的輸入目錄與讀回
-Rust 版沒有的功能（W4 雜訊的 B2 抽法、慢層容量上限、STAIR）→ unsupported() 回傳原因，那些 job 用 Python Engine（x1_sim 先跑 Rust 的、再跑這些）。
+Rust 版沒有的功能（慢層容量上限、STAIR；Python 不是 3.12 時的 B2）→ unsupported() 回傳原因，那些 job 用 Python Engine（x1_sim 先跑 Rust 的、再跑這些）。
 
 環境變數：
   X1_RUST_BIN    已編好的執行檔（不給就用 X1_CARGO 編 code/p3x/x1fast，放 $X1_RUST_WORK/build-<原始碼 sha>/）
@@ -96,20 +99,22 @@ def binary():
 
 
 def unsupported(planner, nz, sc):
-    """Rust 版不支援的功能 → 原因字串；支援 → None。W4 雜訊只支援 B1 抽法（v4）。"""
+    """Rust 版不支援的功能 → 原因字串；支援 → None。W4 雜訊：B1（v4）、B2（v5；只在 Python 3.12，見檔頭）。"""
     if sc is not None:
         return "slow_cap"
-    if nz is not None and nz["draw"] != "B1":
+    if nz is not None and nz["draw"] not in ("B1", "B2"):
         return "noise_" + str(nz["draw"])
+    if nz is not None and nz["draw"] == "B2" and sys.version_info[:2] != (3, 12):
+        return "noise_B2_py" + "%d%d" % sys.version_info[:2]
     if planner != "cake":
         return "stair"
     return None
 
 
 def nz_field(nz):
-    """W4 雜訊（B1）→ jobs.txt 多出來的那一欄 `nz=P|M,<λ>,B1,<seed>`；λ 用 repr（Rust 的 parse 讀回同一個 double）。"""
+    """W4 雜訊（B1／B2）→ jobs.txt 多出來的那一欄 `nz=P|M,<λ>,B1|B2,<seed>`；λ 用 repr（Rust 的 parse 讀回同一個 double）。"""
     m, lam, dr, seed = nz["model"], float(nz["lam"]), nz["draw"], int(nz["seed"])
-    assert m in ("P", "M") and dr == "B1" and 0.0 <= lam < 1.0, nz
+    assert m in ("P", "M") and dr in ("B1", "B2") and 0.0 <= lam < 1.0, nz
     return f"nz={m},{lam!r},{dr},{seed}"
 
 
@@ -326,7 +331,7 @@ def check_job(XS, policy, views, K, gkw):
 
 def write_job(XS, P, policy, cap_bytes, views, K, gkw, nz=None):
     """一個 job 的輸入目錄（views.txt、f*／fc*、fc_idle.f64、i4.txt、一行的 jobs.txt）。f／Fc 直接取自 Python 的 View。
-    nz＝W4 雜訊（x1_sim 的 noise spec；只能是 B1，見 unsupported）→ jobs.txt 多一欄 nz=…（同 Engine(noise=nz)；λ＝0 也照送）。"""
+    nz＝W4 雜訊（x1_sim 的 noise spec；B1 或 B2，見 unsupported）→ jobs.txt 多一欄 nz=…（同 Engine(noise=nz)；λ＝0 也照送）。"""
     check_job(XS, policy, views, K, gkw)
     o, a, h, pf = XS.POLICIES[policy]
     G = int(gkw.get("gpu_cap", 0))

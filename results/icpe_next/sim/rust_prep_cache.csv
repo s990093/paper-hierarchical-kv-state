@@ -12,3 +12,8 @@ run_id,ts,host,tag,trace,rule,prep,prep_s,lite,sweep_s,wall_s,max_rss_kib,source
 20261106-093010-icpe-sim-prewarm-8b6520f,2026-11-06T09:42:07+08:00,acvlab,tracelab_c1_cache,nb:tracelab_c1_cache,nb,built_saved,200.4,True,10.8,212.5,15825936,tracelab_c1_cache/sweep.log
 20261106-093010-icpe-sim-prewarm-8b6520f,2026-11-06T09:39:13+08:00,acvlab,tracelab_c1_t128k,nb:tracelab_c1_t128k,nb,built_saved,19.4,True,1.1,21.3,1918008,tracelab_c1_t128k/sweep.log
 20261106-093010-icpe-sim-prewarm-8b6520f,2026-11-06T09:42:48+08:00,acvlab,hitcheck_t128k,nb:tracelab_c1_t128k,nb,cache_hit,1.3,True,1.5,NOT_MEASURED,NOT_MEASURED,hitcheck_t128k/sweep.log
+20261106-130916-icpe-sim-prewarm-776486c,2026-11-06T13:30:12+08:00,acvlab,tracelab_c1,nb:tracelab_c1,nb,built_saved,1224.2,True,15.8,1253.8,14895228,tracelab_c1/sweep.log
+20261106-130916-icpe-sim-prewarm-776486c,2026-11-06T13:30:21+08:00,acvlab,tracelab_c2,nb:tracelab_c2,nb,built_saved,1236.8,True,12.2,1263.1,14896496,tracelab_c2/sweep.log
+20261106-130916-icpe-sim-prewarm-776486c,2026-11-06T13:30:28+08:00,acvlab,tracelab_c4,nb:tracelab_c4,nb,built_saved,1239.3,True,16.0,1269.4,14893316,tracelab_c4/sweep.log
+20261106-130916-icpe-sim-prewarm-776486c,2026-11-06T13:42:26+08:00,acvlab,tracelab_c1_cache,nb:tracelab_c1_cache,nb,built_saved,706.4,True,26.2,734.2,15813300,tracelab_c1_cache/sweep.log
+20261106-130916-icpe-sim-prewarm-776486c,2026-11-06T13:30:54+08:00,acvlab,tracelab_c1_t128k,nb:tracelab_c1_t128k,nb,built_saved,29.6,True,2.0,32.9,1912404,tracelab_c1_t128k/sweep.log
