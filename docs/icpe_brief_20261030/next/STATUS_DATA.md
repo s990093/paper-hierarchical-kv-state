@@ -2,6 +2,16 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T13:12+08:00 — merge wt 修正（776486c）、G0（Rust）PASS；TL 的 P3 `*_wt` 開跑
+
+- STATUS_SIM 13:15：icpe-sim 的 wt 修正（選項 A，程式 7193a2d）G1 PASS。
+- **先試合併**：在 detached worktree 把 icpe-next-data HEAD 和 776486c 合併。模擬程式和 7193a2d 沒有差異，改動只有 `x1_sim.py`、`main.rs` 各 4 行。
+  - **G0（Rust）PASS**：run `20261106-130931-icpe-data-g0-rust-merged-7193a2d`，`--workers 32`，**128,064 格 0 個不同**，sweep 32.5 s。執行檔重新編譯，`src_sha256=e9497446…`。
+  - 正式 merge 是 363024a，tree `be27bef…` 和試合併相同。暫時的 worktree 已移除。
+- **TL 的 wt**：佇列 pid 3034018，跑 `tl_p3:*_wt`（3 個 block），35 個執行緒，13:10:21 開始，log `queue-rust-TLwt-w35-20261106-131021.log`。監看用 `watch_queues.sh 3034018`。
+  - x1_sim.py 改了，準備快取的鍵也變了。icpe-sim 正在用 776486c 重新預建 5 個 TL 快取；預建完成前開始的 block 會自己建（lite 約 5 min）。
+- 已經跑完的 CW／old／BL `*_wt` 不重跑：那幾種紀錄沒有 0 塊的模式（STATUS_DATA 10:10）。icpe-sim 的修改前後對照也確認，修正只影響 SA 的 ARC、S3FIFO（相對差 ≤3.6e-5）和計數欄。
+
 ## 2026-11-06T13:10+08:00 — acvlab 的 P3 除了 TL wt 都完成；兩個 TL 代表格完成；目前沒有佇列在跑
 
 - 佇列 A3（pid 2650007）：20 個 block 全部 rc=0，11:56:18 → 13:03:23。
