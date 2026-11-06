@@ -2,6 +2,18 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T12:00+08:00 — CW／old／BL 的 P3 `*_wt` 完成；空出來的執行緒交給 A3（P3 pfgpu＋兩個 TL 代表格）
+
+- **佇列 A2**：15 個 `*_wt` block 全部 rc=0，11:26:47 → 11:55:28。CW 12 個、Mooncake、FI、Bailian 各 1 個。
+- **空檔怎麼用**：TL 的 wt 要等修正（約 12:30 以後），A2 的 18 個執行緒空出來。所以：
+  - **佇列 A3**：pid 2650007，11:56 開始。跑 `tl_p3:*_pfgpu cw_p3:*_pfgpu old_p3:*_pfgpu bl_p3:*_pfgpu sens_rep:tl_cacheprefix,tl_t128k`，共 20 個 block，18 個執行緒。
+    - 第一個 block `tl_c1_pfgpu` 是 `prep=cache_hit 14.4s`。
+  - **佇列 B**：照原樣跑完手上的 `tl_p2/tl_c4_load`。由 `/ssd6/hungwei/icpe-next/launch/switch_B_20261106.sh` 在它剛開始 `old_p2/mooncake_load` 時停下，改開 B'（`old_p2:*_load bl_p2:*_load`，3 個 block，17 個執行緒）。
+    - 為什麼要換：B 只在開跑時讀一次完成清單，不換的話它會重跑 A3 做過的 block。
+  - 空跑核對過：A3 的 20 個 ＋ B' 的 3 個，正好等於 B 除了 `tl_c4_load` 以外還沒做的 23 個，沒有重疊。
+- CPU：18＋17 個執行緒，和之前一樣，約 44。
+- 監看：`watch_queues.sh 1752970 2650007`。
+
 ## 2026-11-06T11:30+08:00 — 佇列 A 照計畫停在 TL wt 之前，改跑 CW／old／BL 的 wt；wt 修正（使用者選 A）驗證中
 
 - 佇列 A 的 P2（`*_nvme807`，18 個 block）在 11:26:44 跑完。
