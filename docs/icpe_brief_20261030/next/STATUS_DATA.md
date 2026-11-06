@@ -2,6 +2,25 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T09:50+08:00 — TraceLab 準備快取生效；TRX40 的 `wt` block 在 Rust panic（acvlab 的 P3 `*_wt` 也可能碰到）
+
+**準備快取**（icpe-sim 預建 5 個：run `20261106-093010-icpe-sim-prewarm-8b6520f`，09:30–09:42）
+- `tl_p1/tl_c4_trunc`（09:39 開始）：`prep=cache_hit 7.7s lite=True`。
+- `tl_p1/tl_c4_ttl`（09:35 開始，當時快取還沒好）：`prep=built 274.4s lite=True`。
+- 之後的 TraceLab block，準備時間從約 16 min 降到約 10 s。
+
+**TRX40 的失敗**（STATUS_TRX 09:45，origin/icpe-next-trx @ 98b0d2f；他們的數字）
+- `sa_p1`、`sa_p2` 各 24 個 block 已完成、已進 git。
+- `sa_p3/sa_N16_s1_wt` 在 Rust 的 `src/main.rs:667` panic，佇列照規則停下來。
+  - 位置：`demote()` 開預取時 `next_access(bl[bl.len()-1])`，`bl` 是空的。
+- 已通知 icpe-sim，請它確認兩件事：
+  1. Python 引擎跑同一個 job 會不會也出錯。
+  2. 已經跑完、沒有 panic 的格子不會被默默算錯。我的推論：G1／xcheck 的 bl／mc／fi × wt 都是 0 個不同，而且碰到這個情況會直接 panic、不會繼續算。
+- **對 acvlab 的影響**：佇列 A 的最後一段是 P3 的 `*_wt`，〔推算〕約 11:00 之後才會開始。
+  - 如果在那之前沒有修好、又碰到 panic，佇列 A 會照規則停下來（CLAUDE.md 規則 2），我回報，不繞過。
+  - 修好的話，走 G1 → 寫進 STATUS_SIM → 我 merge → G0。
+- `sens_rep` 在 `origin/icpe-next-trx` 上目前沒有 `sa_t128k`（STATUS_DATA 08:20 的更正）。
+
 ## 2026-11-06T09:35+08:00 — merge 準備快取（8b6520f）、G0（Rust）PASS
 
 - **先試再合**：佇列在跑，每個新 block 開跑時會讀 data worktree 的程式，所以先在暫時的 detached worktree 試合併，跑 G0，通過後才 merge 進 data worktree。
