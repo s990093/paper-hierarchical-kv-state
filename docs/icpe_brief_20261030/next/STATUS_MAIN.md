@@ -3,6 +3,29 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-06T21:14+08:00 — P4（W4 雜訊）的分析選擇：使用者在看任何 P4 數字之前決定；全部到齊再算
+
+**使用者決定**（本 session，AskUserQuestion，11/6 約 21:13）
+- 當時 P4 只有 SemiAnalysis 進 git：`origin/icpe-next-trx` b6eb4cd，48 個 block、96 個檔。icpe-main 只看了檔名和 CSV 的欄位名稱，**沒有讀任何 P4 的數字**。
+- 決定照 PREREG 第 6 項與 §3 B、C；PREREG 沒寫到的部分如下：
+  1. **只報告：格數。** 對每種雜訊設定（模型, λ, 抽法），報 10 個 seed 的中位數仍 ≥15%／≥5% 的格數，加上 PREREG 要的 seed 間中位數、最小–最大、平均±標準差。**不下新的判定字**，所以不改 PREREG。
+  2. **B1 主、B2 並列。** 主表用 B1，B2 放在旁邊當對照，和 `h200` 在 §3 B 的解讀一致。主模型照 PREREG 是 P。
+  3. **佇列 seed：兩種都報，分開為主。** 主表每個佇列 seed（s1／s2／s3）各自 10 個雜訊 seed，和版本 A／B 判定的粒度相同。另報 3 × 10＝30 個合起來的中位數與範圍（§3 C 的「交叉 3 × 10」）。
+  4. **全部到齊再算。** 要等 acvlab 的其餘 P4 和 TRX40 的 6 個 Mooncake block 都進 git，SemiAnalysis 不先算。
+- 照之前的做法、不另外問的：
+  - 上限用 `next_sim_analyze.py`（原樣使用），λ＝0 自檢不過就停。
+  - p90 只報告；寫入飽和的格照列，另外標註。
+  - 雜訊的 ② 用沒有雜訊的列，也就是 P1 正式的 sweep。
+
+**已看過哪些正式結果**：和 14:23 那節相同。P4 一個數字都沒看過。
+
+**時間**〔推算，別的 session 寫的〕
+- acvlab 的其餘 P4 約 11/7 04:40–05:35（STATUS_DATA 19:50，8d70cbc）。
+- TRX40 的 6 個 Mooncake block 21:03:52 開始，約 3 h（icpe-data 的訊息、STATUS_TRX 21:15）。
+- 全部進 git 後 icpe-data 會通知 icpe-main。
+
+**還沒 push**：照使用者的話，等資料出來再說。本節只在本機。
+
 ## 2026-11-06T14:23+08:00 — 第 4 步：P2／P3 敏感度（3 個 TTL）完成；工具類的判定字在每個敏感度都和版本 A 相同
 
 **使用者決定**（本 session；都在 run 開跑 14:16:10 之前、沒有看過任何 P2／P3 結果時）
