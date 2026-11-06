@@ -3,6 +3,46 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T01:15+08:00 — **使用者決定：TRX40 改 46 workers、跑到完不降回**；01:08 在 block 邊界重開；`conversation_P_B2` 完成（3／6）；ETA 改為約 05:00～10:00〔推算〕
+
+- **使用者決定**（00:52 在 icpe-data 說「TRX40 也是 吃更多 核心」，由 icpe-data 轉達。我在這邊用 AskUserQuestion 直接問，使用者 00:55 前後選了）：
+  - **46 workers**，留約 2 個執行緒給這台共用機器的其他人。
+  - **跑到完，不在 08:00 降回 36**。
+- **依據**：
+  - TRX40 是 Threadripper 3960X，24 核 48 執行緒（`lscpu`）。
+  - 36 workers 時 load 約 36，`top` 閒置 24.2%（00:52）。
+  - 之前說「load 90 不會更快」是 Python 引擎時的情況。Rust 是 1 個 worker 約 1 個執行緒。
+  - 加上去的 worker 落在 SMT 的第二個執行緒。〔推算〕只快約 5–15%，NOT_MEASURED。
+- **重開方式**：腳本 `$ROOT/tools/relaunch_at_boundary.sh`（機器工具，不在 git）。
+  - 等舊 log 出現 `end   p4_b2/conversation_P_B2 rc=0`，SIGTERM 舊行程群組 2231622。
+  - 用同樣的 `--plans 'p4_b1:toolagent_*' 'p4_b2:conversation_*,toolagent_*' --engine rust`、改 `--workers 46` 重開。
+  - memwatch 6144、swapguard 2933、diskguard 50 GiB 重新掛上。
+- **實際經過**：
+  - 01:08:04 `conversation_P_B2` rc=0 → SIGTERM → 01:08:05 舊佇列結束。
+  - 01:08:06 新佇列起來：pgid 2301987，log `$ROOT/runs/queue-p4mc-rust-w46-20261107-010805.log`。
+  - 新佇列 `[skip]` 了 3 個已完成的 block，從 `conversation_M_B2` 開始。
+  - 被停掉的半截 run `20261107-010804-icpe-trx-p4_b2-conversation_M_B2` 只活了約 1 秒：沒有 `exit_code`，stdout／stderr 都是 0 bytes。它不在 DONE 裡，collect 不會收；我留著沒刪。
+  - 新的 `conversation_M_B2`（run `20261107-010806-…`）開頭核對正常：
+    - `kept_jobs=153870` 等於 count；`unmatched_cells=0`；`py_fallback_jobs=0`。
+    - `RUN_DIR` 是空的；stderr 寫 `threads 46`。
+    - context 記的 git HEAD 是 b0a43121，工作目錄是乾淨的。
+  - 01:09 `top` 三次取樣：nice 81–96%、閒置 4–16%。
+- **`conversation_P_B2` 完成**：00:30:49 → 01:08:04，2,235 s。
+  - 核對都通過：rc=0；kept 205,160 等於 count；unmatched 0；py_fallback 0；`req/` 0 個檔；`rust_timing` 205,160 行。
+  - `run_s` 合計 78,914 s；每 job 0.385；中位數／p90／max 0.056／1.507／2.482。
+  - 00:50 我外推的 110,500–113,900 高估了約 40%。原因是用 toolagent 的曲線套 conversation，不適用。
+- **ETA**〔推算〕：
+  - 換算基準：36 workers 時的有效並行度 35.8。46 workers 時假設快 5–15%。
+  - `conversation_M_B2`：用 `conversation_P_B2` 的 0.385 × toolagent 的 M／P 比 1.91 估，約 113,000 執行緒秒，約 01:55–02:00 結束。
+  - toolagent 兩個 B2 block 的 B2 倍數 f 仍是 NOT_MEASURED：
+    - f＝1 → 約 05:00；
+    - f＝1.5 → 約 06:30；
+    - f＝2.5 → 約 09:10–10:00。
+  - 之後 collect＋核對＋commit 另外約 10–20 分鐘。
+- **之後怎麼量**：
+  - `toolagent_P_B2` 現在跑在 46 workers 下，SMT 會把每個 job 的 `run_s` 拉高，所以和 B1（36 workers）比出來的是「f × SMT 膨脹」的合併倍數。
+  - 不過推算 `toolagent_M_B2` 的牆鐘時間要用的正是這個合併倍數。`toolagent_P_B2` 跑到一半時會有背景等待叫醒我，到時再更新這裡。
+
 ## 2026-11-07T00:50+08:00 — Mooncake P4：**2／6 完成**（rc=0、核對通過），第 3 個 `conversation_P_B2` 跑到約 53%；toolagent 比原本估的慢，**完成時間改為 11/7 約 06:00～11:00**〔推算〕
 
 回覆 icpe-data 的詢問（訊息，見 STATUS_DATA 00:50）。
