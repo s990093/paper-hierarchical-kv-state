@@ -1,0 +1,2 @@
+run_id,ts,host,name,files_a,files_b,rows_a,rows_b,code_sha_a,code_sha_b,only_cols_a,only_cols_b,key_cols,n_value_cols,dup_a,dup_b,rows_a_missing_in_b,rows_overlap,rows_differ,n_diff_cells,max_abs_diff,max_rel_diff,result,detail
+20261106-110854-icpe-main-verB-p1,2026-11-06T11:09:36+08:00,acvlab,cw_main_ttl7_vs_cw_p1_ttl,17,12,19840,77760,f7038ddfaf9c,ed2f4c78c88a+rs43dbe828,,,trace;rule;cpu_GiB;policy;slow;gpu;restore;gpu_GiB;gpu_write;gpu_policy;pf_target,29,0,0,0,19840,0,0,0.0,0.0,IDENTICAL,
