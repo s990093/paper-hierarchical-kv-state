@@ -2,6 +2,37 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T02:35+08:00 — acvlab 的 P4：Bailian、CacheWise 的 B2 全部完成；TraceLab B2 跑到 1／6；**B2 倍數：CacheWise 1.01、TraceLab c1 1.10、Bailian traceA 1.58／1.71** → ETA 約 06:15〔推算〕
+
+- **進度**：佇列 pid 2621451（48 workers），沒有 block 失敗。
+  - `bailian_traceA_P_B2`、`bailian_traceA_M_B2` 跑完，02:01:41 結束。
+  - 18 個 `cachewise_*_B2`：02:01:41 → 02:15:39，全部 rc=0。
+  - `tracelab_c1_P_B2`：02:15:39 → 02:30:35，rc=0，run `20261107-021539-icpe-data-p4_b2-tracelab_c1_P_B2`。
+  - 現在跑 `tracelab_c1_M_B2`。還剩 5 個 TraceLab B2 block。
+- **核對**：這個佇列到目前跑完的 23 個 block 全部通過：`kept_jobs`＝`count`、`unmatched_cells=0`、`py_fallback_jobs=0`、`export RUN_DIR=` 空的、沒有 npz、`exit_code`＝0。
+  - 23 個是 4 個 Bailian B2、18 個 CacheWise B2、`tracelab_c1_P_B2`。
+  - TraceLab 是 `prep=cache_hit`。
+- **B2 對 B1 的倍數**：每個 job 平均 `run_s`，B2 除以 B1，資料來自兩個 run 的 `rust_timing.jsonl`。
+  - B1 用 35 workers 跑，B2 用 48 workers，所以倍數裡也含 48 個 worker 互搶的效應。CacheWise 只有 1.01，可見這個效應在 acvlab 上不大。
+
+  | 範圍 | B1 job 數 | B1 每 job run_s | B2 job 數 | B2 每 job run_s | 倍數 |
+  |:--|--:|--:|--:|--:|--:|
+  | `bailian_traceA_P` | 44,895 | 1.418 | 43,800 | 2.239 | 1.58 |
+  | `bailian_traceA_M` | 33,945 | 1.773 | 32,850 | 3.030 | 1.71 |
+  | `cachewise_N64*`＋`N72*`（12 個 block） | 175,320 | 0.191 | 170,450 | 0.194 | 1.01 |
+  | `tracelab_c1_P` | 8,815 | 4.293 | 8,600 | 4.701 | 1.10 |
+
+  - 以牆鐘時間算：`tracelab_c1_P` 的 B1 是 1,125 s × 35 ÷ 8,815 ＝ 4.47 執行緒秒／job，B2 是 896 s × 48 ÷ 8,600 ＝ 5.00，倍數 1.12。
+  - 加上 00:50 那節的 Bailian coder 2.46，B2 變慢的程度因資料集而異。TRX40 的 Mooncake toolagent 約 1.9（STATUS_TRX 02:25，含 46 workers 的 SMT 效應）。
+- **ETA**〔推算〕：
+  - 剩 5 個 TraceLab B2 block。用各自 B1 的牆鐘速率（c1_M 4.34、c2_P 5.74、c2_M 5.51、c4_P 6.75、c4_M 6.26 執行緒秒／job）乘上倍數，除以 48。
+  - 倍數用 1.0／1.12／1.3 → **05:50／06:14／06:50**。
+  - 都在 08:00 之前，所以降回 35 workers 的切換不會觸發。佇列結束後那支腳本會印 `SWITCH ABORTED: queue … exited before 08:00` 後退出，這是正常的。
+  - 之後 `collect --plans p4_b1 p4_b2`、核對 manifest、commit、push，約 20～30 分鐘。
+- **TRX40 的 6 個 Mooncake block**（STATUS_TRX 02:25，31a28798）：完成 4／6。icpe-trx 估 07:10～08:15 進 git〔推算〕。
+  - 進 git 之後，我把 6 個目錄 checkout 進 icpe-next-data。
+  - 兩邊都齊了之後，通知 icpe-main 開始寫 P4 的結果。
+
 ## 2026-11-07T01:00+08:00 — acvlab 的 P4 深夜加到 48 workers（使用者 11/7 00:5x 同意）；08:00 之後在 block 邊界降回 35
 
 - **使用者決定**（本 session）：我提「深夜把 35 個加到約 48 個，約快三分之一〔推算〕」，使用者回「可以」。也要 TRX40 用更多核心：已轉給 icpe-trx 判斷（TRX40 只有 48 個硬體執行緒，36 workers 約用 45 CPU）。
