@@ -3,6 +3,31 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T13:15+08:00 — merge wt 修正（icpe-next-sim 776486c，程式＝7193a2d）；三項對拍全部 0 差；12 個 `_wt` 開跑
+
+**依據**：STATUS_SIM 13:15（@ 776486c，git 上讀過）「需要 icpe-trx 做什麼：merge 後重做 G0；main.rs 變了會自動重編；用 `--engine rust` 跑 xc_sa 和 Python 版逐格比對，之後再跑 12 個 `_wt` block」；icpe-sim 也直接傳訊息請我 merge 776486c。icpe-data 還沒把它併進 `icpe-next-data`（13:09 查過），所以直接 merge icpe-next-sim。
+
+**做完什麼**
+- `git merge --no-ff origin/icpe-next-sim` → **2b73df1**（無衝突）。`git diff 776486c HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 是空的。
+  - 一起進來的還有準備快取 c7ef740（`X1_PREP_CACHE` 預設 1，快取寫在 `X1_RUST_WORK`＝`$ROOT/x1fast-work`）。`code/icpe/next_b_queue.py` 沒變（icpe-next-data 的 23865ee 沒併）。
+- Rust 自動重新編譯：src_sha256 `e9497446…`，bin `x1fast-work/build-e94974467f6f608c/fast/x1fast3`（bin_sha256 `f4c5e7d7…`）；新的 `code_sha`＝`fd0dccbf7093+rse9497446`。
+- **三項對拍**（`verify_rust2.sh 2b73df1`，`--engine rust --workers 32`，13:10:30–13:12:47，memwatch／swapguard 有開；compare run `20261106-131244-icpe-trx-compare-2b73df1`）：
+
+| 項目 | run | 對照 | 結果 |
+|:--|:--|:--|:--|
+| (a) G0 | `20261106-131030-icpe-trx-g0-rust-2b73df1`（26.5 s） | H200 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz` | 4,416 列，128,064 格，不同 0 |
+| (b1) xc_sa | `20261106-131030-icpe-trx-xc_sa-rust-2b73df1`（17.6 s） | `results/icpe_next/b/xcheck/xc_sa`（icpe-data 的 Python） | 32 列，1,280 格，不同 0 |
+| (b2) xc_sa | 同上 | TRX40 的 Python xc_sa（run `20261105-105555-icpe-trx-xcheck-xc_sa-54fa2d8`），`next_sim_cmp.py` | 32 列 × 40 欄，不同 0，CMP PASS |
+| (c) sa_N16_s1 整個 block | `20261106-131030-icpe-trx-sa_N16_s1-rust-2b73df1`（89.9 s） | `results/icpe_next/b/sa_main/sa_N16_s1` | 7,344 列，293,760 格，不同 0 |
+
+  - 三個 run 都 `py_fallback_jobs=0`。(b)(c) 都是 wb＋GPU，照 STATUS_SIM 不受這次修正影響，結果也的確沒變。
+- **12 個 `_wt` 開跑**：`run --plans sa_p3 --only 'sa_N*_wt' --engine rust --workers 36`。先 `--dry-run` 確認剛好選到 12 個 `_wt` block，沒有建立任何 run 目錄。13:12:59 開始，pgid 2091475，log `$ROOT/runs/queue-sa_p3_wt-rust-w36-20261106-131259.log`。memwatch（6,144 MiB）和 swapguard（2,933 MiB）都有開。
+  - 開跑前 swap 959 MiB、MemAvailable 57.7 GiB。
+  - 舊的失敗 run `20261106-093803-icpe-trx-sa_p3-sa_N16_s1_wt` 不收。
+
+**需要別的 session 做什麼**：無。
+**需要使用者決定什麼**：無。
+
 ## 2026-11-06T11:22+08:00 — `sa_p3` 的 12 個 `_pfgpu`＋`sens_rep sa_t128k` 完成；`_wt` 等 icpe-sim 的修正（7193a2d）
 
 **使用者決定（本 session，11/6 約 11:05，AskUserQuestion）**：等 icpe-sim 修，期間先用現在這版 Rust 跑 `_pfgpu` 和 `sa_t128k`，出錯就停；修好後 merge → 重做三項對拍 → 跑 12 個 `_wt`。已直接通知 icpe-sim（SendMessage）。
