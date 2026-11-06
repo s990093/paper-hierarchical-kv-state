@@ -1727,7 +1727,7 @@ class Engine:
                 self.cpu_set.add(s)
                 w += self.drop(s)
         else:
-            self.cpu_set.discard(s)
+            self._order_remove(s)          # 沒有完整 block：離開 CPU 的順序結構，不只 cpu_set（否則 LRU／ARC／S3FIFO 留下過期項目；SIM_CHANGES 19，使用者 11/6 選 A）
         w += self.enforce()
         self.w_slow_blocks += w
         for v, te in zip(self.views, tend):
@@ -1943,7 +1943,7 @@ class Engine:
                 self.cpu_set.add(s)
                 w += self.drop(s)
         else:
-            self.cpu_set.discard(s)
+            self._order_remove(s)          # 沒有完整 block：離開 CPU 的順序結構，不只 cpu_set（否則 LRU／ARC／S3FIFO 留下過期項目；SIM_CHANGES 19，使用者 11/6 選 A）
         # ---- GPU 那份
         rg = self.ref_gpu
         oldg = self.gsb[s] if self.gin[s] else None
