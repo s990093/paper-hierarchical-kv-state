@@ -154,3 +154,7 @@
 
 - `icpe-main` 在 `origin/icpe-next-main` @ `ed4863d` 加了「偏離 7 更正」（acvlab `date -u` 2026-11-06T00:57:25Z）：只把偏離 7 裡「使用者選『登記』的時候（09:0x）」更正為 08:51–08:53（acvlab 本地），先後順序不變；不改偏離 7 內容、不佔編號。我核過：只在檔尾加一節、0 行刪除。
 - 本分支**只同步 `PREREG.md`**（取 ed4863d 的版本）。同步前，`origin/icpe-next-data` 的 PREREG 和本分支 1c0973f 相同（已含偏離 7）。`h200` 下一個偏離編號仍是 8。
+
+## 2026-11-06（台灣）— 偏離 8 的編號給 `icpe-main`
+
+- `icpe-main` 問偏離 8 能不能用（P4 雜訊選格的解讀；使用者在 `icpe-main` 決定登記、由 `icpe-main` 寫）。我查了 origin 上所有 `icpe-next-*` 分支和 `main` 的 `PREREG.md`（a e594171、ana 43e7ffc、b 19f3e85、data 16bbb24、main-branch c2bd12c、sim 88a81e3、trx 6209515、main ff71545）：都沒有偏離 8，最大是偏離 7；`h200` 也沒有待登記的偏離 → **偏離 8 給 `icpe-main`，`h200` 下一個從 9 開始**（登記前仍先查各分支）。
