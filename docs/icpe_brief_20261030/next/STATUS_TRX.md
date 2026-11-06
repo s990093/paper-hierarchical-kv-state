@@ -3,6 +3,25 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T11:22+08:00 — `sa_p3` 的 12 個 `_pfgpu`＋`sens_rep sa_t128k` 完成；`_wt` 等 icpe-sim 的修正（7193a2d）
+
+**使用者決定（本 session，11/6 約 11:05，AskUserQuestion）**：等 icpe-sim 修，期間先用現在這版 Rust 跑 `_pfgpu` 和 `sa_t128k`，出錯就停；修好後 merge → 重做三項對拍 → 跑 12 個 `_wt`。已直接通知 icpe-sim（SendMessage）。
+
+**icpe-sim 的回覆**（STATUS_SIM 10:10 @ 88a81e3，已在 git 上核對）：
+- Python 在同一個 job 也出錯（O-PF、CPU 8、wt、TTLB:10；`demote()` 的 `self.sb[s][-1]` → IndexError）→ 模型的邊界情況，不是 Rust 獨有。
+- 原因：新請求沒有完整 block 時，回合結束只做 `cpu_set.discard(s)`，順序結構（LRU／ARC／S3FIFO）留下過期項目。SemiAnalysis 每個變體 198 個這種請求；`semianalysis_N16_s1_t128k` 125 個。
+- **wb＋GPU 不會發生**（GPU 回合開始時已 `_order_remove`）→ `sa_main`、`sa_p1`、`sa_p2`、`_pfgpu`、`sa_t128k`、三項對拍不受影響。我查過本機每個 SA run 的 cmd.sh：除了失敗的 `sa_p3/sa_N16_s1_wt`，全部是 `--gpu-gib 111.0625 --gpu-write wb`。
+- 修法：使用者在 icpe-sim 選 A（兩個回合結束都 `order_remove`，兩個引擎都改），commit 7193a2d；驗證 run `20261106-111012-icpe-sim-g1-7193a2d`（最後跑整個 `sa_N16_s1_wt` Rust block），預計 12:30，過了寫 STATUS_SIM。`main.rs` 有改 → TRX40 merge 後會重新編譯。
+
+**做完什麼**
+- 佇列：`run --plans sa_p3 sens_rep --only 'sa_N*_pfgpu' 'sa_t128k' --engine rust --workers 36`（先 `--dry-run` 確認只選到這 13 個 block；`'*_pfgpu'` 會選到 sens_rep 其他資料集的格子，所以不用）。11:06:08 → 11:19:19，log `$ROOT/runs/queue-sa_pfgpu_t128k-rust-w36-20261106-110608.log`；程式同三項對拍（git HEAD 98b0d2f，`code/` 和 eeaecef 相同）。
+- `results/icpe_next/b/sa_p3/<變體>_pfgpu/`：12 個 block，各 1,296 列（job 1,296），sweep 45.9–53.8 s，合計 610 s。
+- `results/icpe_next/b/sens_rep/sa_t128k/`：run `20261106-111913-icpe-trx-sens_rep-sa_t128k`，1,372 job、1,632 列，sweep 4.1 s（`--traces nb:semianalysis_N16_s1_t128k --gpu-gib 111.0625 --gpu-write wb --pf-target cpu`）。
+- 13 個檔都 `run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`、`code_sha`＝`a27559138492+rs43dbe828`，13 個 run 都 `py_fallback_jobs=0`。
+- 記憶體（27 筆）：PSS 最高 3.2 GiB，MemAvailable 最低 53.2 GiB；swap 959 MiB；load1 最高 32.5。
+
+**還沒跑**：`sa_p3` 的 12 個 `_wt`（74,088 job）。失敗的 run `20261106-093803-icpe-trx-sa_p3-sa_N16_s1_wt` 不收。
+
 ## 2026-11-06T09:45+08:00 — `sa_p2` 完成；**`sa_p3` 第一個 block（`sa_N16_s1_wt`）失敗：Rust 引擎 panic（`src/main.rs:667`）→ 佇列停了**
 
 **`sa_p2` 完成**
