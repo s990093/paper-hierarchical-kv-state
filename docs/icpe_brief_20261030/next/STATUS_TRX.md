@@ -3,6 +3,51 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T06:20+08:00 — **Mooncake P4 的 6 個 block 全部完成並進 git**（a9769257；1,040,346 個 job、1,243,186 列）；TRX40 目前沒有佇列在跑
+
+- **佇列**：21:03:52 → 06:07:24。6 個 block 都 rc=0，沒有 FAILED／KILLED，三個守門程式都沒觸發。
+  - 36 workers：log `$ROOT/runs/queue-p4mc-rust-w36-20261106-210352.log`。
+  - 01:08 起 46 workers：log `$ROOT/runs/queue-p4mc-rust-w46-20261107-010805.log`。
+
+  | block | run | workers | 牆鐘 | job 數（＝count） | 列數 | `run_s` 合計 | 每 job `run_s` | 每 job 牆鐘 |
+  |:--|:--|--:|--:|--:|--:|--:|--:|--:|
+  | `p4_b1/toolagent_P_B1` | `20261106-210352-…` | 36 | 5,092 s | 196,718 | 236,488 | 181,817 | 0.924 | 0.0259 s |
+  | `p4_b1/toolagent_M_B1` | `20261106-222844-…` | 36 | 7,325 s | 148,738 | 178,808 | 262,866 | 1.767 | 0.0492 s |
+  | `p4_b2/conversation_P_B2` | `20261107-003049-…` | 36 | 2,235 s | 205,160 | 242,360 | 78,914 | 0.385 | 0.0109 s |
+  | `p4_b2/conversation_M_B2` | `20261107-010806-…` | 46 | 2,246 s | 153,870 | 181,770 | 101,491 | 0.660 | 0.0146 s |
+  | `p4_b2/toolagent_P_B2` | `20261107-014532-…` | 46 | 6,241 s | 191,920 | 230,720 | 284,493 | 1.482 | 0.0325 s |
+  | `p4_b2/toolagent_M_B2` | `20261107-032933-…` | 46 | 9,471 s | 143,940 | 173,040 | 434,257 | 3.017 | 0.0658 s |
+
+- **逐 block 核對**，6／6 通過：
+  - `exit_code` 0；`kept_jobs` 等於 count；`unmatched_cells=0`；`py_fallback_jobs=0`。
+  - `RUN_DIR` 是空的，`req/` 0 個檔；`rust_timing.jsonl` 行數等於 kept。
+  - stderr 只有 `session groups…`／`x1fast serve…` 兩種行。
+- **程式**：
+  - block 的 context 記的 git HEAD 有 96477494（2 個）、b0a43121（1 個）、e9f6c7f0（1 個）、31a28798（1 個），被停掉的半截 run 是 b0a43121。
+  - `git diff 313a9aff 31a28798 -- code` 是 0 行，中間只改了 STATUS 檔。
+  - 只有第一個 block 啟動時工作目錄不乾淨：當時 `sa_p4_b1/`、`sa_p4_b2/` 兩個結果目錄還沒 commit（未追蹤），不是程式。
+- **collect**（06:08:10 → 06:10:42）：只寫出這 6 個目錄、12 個檔（各一個 `x1_sweep.csv.xz`＋`manifest.json`）。
+  - 每個檔：
+    - `run_id` 單一值，且是該 block 的 run；`host` 都是 `acvlab-TRX40-AORUS-MASTER`；`code_sha` 都是 `3280b1c8799b+rs62b0932b`；`ts` 沒有空值。
+    - `noise_model`／`noise_draw` 和 block 名稱一致；`trace` 和 block 名稱一致；`rule` 是 R1、R2；`noise_seed` 0–9。
+  - `manifest.json` 的 rows 等於原始 `out/x1/x1_sweep.csv` 的列數（6／6）。
+  - `noise_lambda` 的集合和 sa_p4 同類的檔一樣：P_B1 0.0–0.4、M_B1 0.0–0.3、P_B2 0.1–0.4、M_B2 0.1–0.3。
+- **大小**：
+  - xz 合計 51 MB：`p4_b1` 17 MB、`p4_b2` 34 MB。
+  - 6 個 xz 都超過 1 MiB，最大 11.9 MB（`conversation_P_B2`）。
+  - 照使用者對 sa_p4 的決定（commit as is）同樣處理。
+- **資源**：
+  - 36 workers 那段：MemAvailable 最低 52,342 MiB，PSS 最高 1,977 MiB，load1 最高 42.56。
+  - 46 workers 那段：MemAvailable 最低 55,105 MiB，PSS 最高 2,474 MiB，load1 最高 47.05。
+  - swap 一直 790 MiB；/ssd4 剩 541–542 GiB。
+- **B2 對 B1 的速度**（只有 toolagent 兩種都有；B2 是 46 workers、B1 是 36 workers，B2 本身的倍數和 SMT 影響分不開）：
+  - 每 job 牆鐘：P 是 1.26 倍，M 是 1.34 倍。
+  - 每 job `run_s`：P 是 1.60 倍，M 是 1.71 倍。
+  - 02:25 時用重區段的 2.15–2.40 倍推算 06:55～08:00 結束，實際 06:07:24，推算偏晚。
+- **沒有收的**：被停掉的半截 run `20261107-010804-icpe-trx-p4_b2-conversation_M_B2`（01:15 節）。它不在 DONE 裡，collect 沒有收；留在 `$ROOT/runs/`。
+- **需要別的 session 做的**：icpe-data 從 `icpe-next-trx` 把 `results/icpe_next/b/p4_b1/toolagent_{P,M}_B1/` 和 `p4_b2/{conversation,toolagent}_{P,M}_B2/` checkout 進 icpe-next-data（照 19:20 的約定）。
+- **TRX40 現在**：沒有佇列在跑。STATUS_DATA 19:20 的 6 個 Mooncake block 都做完了，沒有別的已分配工作。
+
 ## 2026-11-07T02:25+08:00 — Mooncake P4：**4／6 完成**；`toolagent_P_B2` 過半；toolagent 的 B2 比 B1 慢約 2 倍以上（含 SMT 影響）→ **ETA 約 07:10～08:15**〔推算〕
 
 - **佇列**：pgid 2301987（46 workers），沒有 FAILED／KILLED，三個守門程式都沒觸發。
