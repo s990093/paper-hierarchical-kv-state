@@ -257,3 +257,18 @@
 ### 偏離 7 更正（2026-11-06T00:57:25Z（acvlab 的 `date -u`）；只更正時間標記，不改偏離 7 的內容；`icpe-main` 寫）
 
 - 偏離 7「寫本節時已經看過的正式結果」第二點的「使用者選『登記』的時候（**09:0x**）」是筆誤，實際是 **08:51–08:53**（acvlab 本地時間）：版本 A 在 08:50:41 跑完並回報使用者之後、偏離 7 的 `date -u` 2026-11-06T00:53:20Z 之前。先後順序不變（看過版本 A 之後才決定登記；決定 1–3 時只看過 manifest 的摘要）。icpe-data 指出；核對方式見 STATUS_MAIN 08:58 節。
+
+### 偏離 8（2026-11-06T04:41:49Z（acvlab 的 `date -u`）；**P4（W4 雜訊）選格的解讀**；使用者在 `icpe-main` 決定，由 `icpe-main` 寫；號碼由 `h200` 確認可用）
+
+- 原文：§3 B「範圍：④ 對 ② 上限 ≥15% 的每一格、每個元件（NEXT_PLAN W4）」；偏離 6 的 P4「範圍照 §3 B」，`icpe-data` 的解讀「P4 的 ≥15% 用 P1 之後的上限選格」。沒寫的是：用哪一版的上限表、只報告的 O-ALL(report) 算不算、Mooncake 的 rule＝min 怎麼處理。
+- **1. 選格用的上限**＝版本 B（P1 正式值；偏離 6 `icpe-data` 的解讀「用 P1 之後的上限選格」，版本 B 的算法是使用者在 `icpe-main` 同意的計畫）：每類紀錄 main＋`_p1` 的 `_ttl`，④ 和 ② 都有 7 個 TTL，沒有 `--rival-only-gpu`，不含 `cw_main_ttl7`；主指標＝回來請求的平均 TTFT，不截尾（run `20261106-110854-icpe-main-verB-p1`，`results/icpe_next/main/verB/*_p1_headroom_components.csv.xz`）。偏離 5 的算法、`--dead-h`、p90 都不拿來選格。
+- **2. 元件**＝O-ORD、O-DROP、O-NOW、O-PF、O-GPU，**加上 O-ALL(report)**（使用者選「加上 O-ALL(report)」）。O-ALL(report) 加雜訊的結果仍然只報告、不進判定（§4、偏離 6）。
+- **3. Mooncake 只列 R1、R2**（`icpe-main` 的說明，不改要跑的格子）：rule＝min 是兩者取小，min ≥15% 一定代表 R1、R2 都 ≥15%，所以不另列、也不少跑（程式自檢：322 筆 min ≥15%，R1、R2 都在清單裡）。
+- **4. 「≥15%」**＝headroom ≥ 0.15（和 §1 相同）。寫入頻寬飽和的格子照列，另標 `write_saturated`（偏離 7 第 3 點）。
+- **結果（選格清單）**：2,582 個（格, 元件）、975 個不同的格；依元件 O-ALL(report) 888、O-GPU 781、O-ORD 434、O-PF 282、O-DROP 197、O-NOW 0；依紀錄 Mooncake 891／216 格、SemiAnalysis 849／389、CacheWise 369／179、Bailian 272／98、TraceLab 201／93、FreeInference 0。清單：`results/icpe_next/main/p4/{p4_cells.csv.xz,p4_cells_distinct.csv,p4_summary.csv}`（run `20261106-124122-icpe-main-p4cells`，`code/icpe/main_p4cells.py`）。只挑 5 個判定元件時是 1,694 個（格, 元件）、868 個格。
+- **不改**：門檻（15%／5%）、主指標、規則集合；雜訊的模型、抽法、λ、seed 數、λ＝0 自檢、和 §3 C 佇列 seed 的交叉，全部照 §3 B／偏離 6。
+
+**寫本節時 `icpe-main` 已經看過的正式結果**（照實列出）：
+- 版本 A（3 個 TTL，run `20261106-084846-icpe-main-verA-ttl3`）的全部表（偏離 7 已列）。
+- **使用者做決定（第 2 點、要登記）的時候**：版本 B（run `20261106-110854-icpe-main-verB-p1`）的全部輸出都已經回報使用者，包括正式判定、偏離 5 的算法、`--dead-h 1800／3600`、p90、論文兩個 Mooncake 舊測試的新舊並列，以及各元件 ≥15% 的格數。提問時已寫明兩種選法各有幾格（1,694 對 2,582）。決定的時間在版本 B 跑完（acvlab 本地 11:15:21）之後、commit baa508d（12:40:25）之前。
+- W4 雜訊的結果：還沒有，一個都沒看過（還沒跑）。
