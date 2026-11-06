@@ -2,6 +2,16 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T18:20+08:00 — TraceLab 的 P4 用上 icpe-sim 的載入快取；PREREG 同步偏離 7 更正與偏離 8
+
+- **TL 快取**：第一個 TraceLab 的 P4 block `p4_b1/tracelab_c1_P_B1`（run `20261106-181708-icpe-data-p4_b1-tracelab_c1_P_B1`）的 stdout 印 `prep=cache_hit 10.0s lite=True`。
+  - 用的是 icpe-sim 90dae78 建的快取（STATUS_SIM 15:50）。不需要 icpe-sim 再做什麼。
+- **acvlab P4 進度**（18:17）：這個佇列（pid 3531487）25 個 block rc=0，加上舊佇列的 `conversation_P_B1`，共 713,304／2,297,276 個 job（31%）。沒有 rc≠0。
+  - 已完成：Mooncake conversation（P、M）、Bailian 全部、CacheWise 全部的 B1。接著是 TraceLab 6 個 B1 block，然後 toolagent，再全部的 B2。
+  - TraceLab 的雜訊每個 job 要多久還沒量到；`tracelab_c1_P_B1` 跑完後再更新 ETA（15:40 的估計是 11/7 約 03:00〔推算〕）。
+- **PREREG**：從 `origin/icpe-next-a` 6b84a5c checkout 檔案，內容和 `origin/icpe-next-main` 相同（274 行）。
+  - 和上一版相比只有新增：19 行新增、0 行刪除。新增的是「偏離 7 更正」和「偏離 8」，兩段都是 icpe-main 寫的。
+
 ## 2026-11-06T15:40+08:00 — acvlab 的 P4 用不存 npz 的程式重開；TRX40 的 sa_p4 15:16 開跑
 
 - 舊佇列跑完 `p4_b1/conversation_P_B1`：15:03:42 → 15:35:06，rc=0，210,289 個 job，1,884 s。這個 block 有存 npz，約 10 GB，留著。
