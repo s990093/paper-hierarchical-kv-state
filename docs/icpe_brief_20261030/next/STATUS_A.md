@@ -158,3 +158,9 @@
 ## 2026-11-06（台灣）— 偏離 8 的編號給 `icpe-main`
 
 - `icpe-main` 問偏離 8 能不能用（P4 雜訊選格的解讀；使用者在 `icpe-main` 決定登記、由 `icpe-main` 寫）。我查了 origin 上所有 `icpe-next-*` 分支和 `main` 的 `PREREG.md`（a e594171、ana 43e7ffc、b 19f3e85、data 16bbb24、main-branch c2bd12c、sim 88a81e3、trx 6209515、main ff71545）：都沒有偏離 8，最大是偏離 7；`h200` 也沒有待登記的偏離 → **偏離 8 給 `icpe-main`，`h200` 下一個從 9 開始**（登記前仍先查各分支）。
+
+## 2026-11-06 13:55（台灣）— 收到 PREREG 偏離 8（`icpe-main` 寫）
+
+- `icpe-main` 把偏離 8 寫在 `origin/icpe-next-main` @ `df8b74c`（acvlab `date -u` 2026-11-06T04:41:49Z）：P4（W4 雜訊）選格＝版本 B（P1 正式值）上限 ≥0.15 的每個（格, 元件）；元件＝5 個判定元件＋O-ALL(report)（只報告）；Mooncake 只列 R1／R2；寫入飽和照列另標。清單 2,582 個（格, 元件）、975 個格（run `20261106-124122-icpe-main-p4cells`）。節內寫明使用者決定時已看過版本 A、B 的全部輸出，W4 雜訊結果還沒看過。我核過：只在檔尾加一節、0 行刪除；`origin/icpe-next-main` tip c868ef2 的 PREREG 和 df8b74c 相同。
+- 本分支**只同步 `PREREG.md`**（取 df8b74c 的版本）。`h200` 下一個偏離編號是 9。
+- W6（2026-11-06 13:51 台灣）：仍等 DL_Lab5 的 24507（05:39 開始，已跑 8 小時 11 分）。
