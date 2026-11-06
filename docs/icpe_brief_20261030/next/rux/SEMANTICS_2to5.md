@@ -31,7 +31,7 @@
 | 2-5 | ④ 要不要也有 | **要**。④ 的 GPU 不預測規則集合和 ② 相同（含 APC）。另加 **BELP**：同樣「從尾端一塊一塊逐出」，但選 session 照 Belady（下次回來最晚的先逐出），讓 ④ 的 GPU oracle 也有 block 粒度 | PR:177–182「兩邊規則集合相同」；不加 BELP 時 ④ 少了 ② 有的機制（上限偏低，不可以）。**探索證實**：SemiAnalysis 上若 ④ 沒有 BELP，O-GPU 的最大上限會從 44% 被壓到 25%。`next_sim_analyze.py` 現在把 BEL 以外的 GPU 規則都當成不預測，正式分析要改成 BELP 只進 ④ 的 O-GPU |
 | 2-6 | 要重算哪些格子 | 建議登記：主結果（APC 不依時間，P2 的時間設定一起出）＋P3 的 wt；P4、慢層上限另外登記 | PR:95「受影響的格子全部重算」、PR:126「格子另外定」。**跑什麼不是 icpe-rux 決定**，這裡只是建議。**探索結果**（V8_FEATURES §4a-2）：APC 在 SemiAnalysis（長 session）上讓 ② 最多快 28%、O-GPU 上限明顯下降；Mooncake toolagent、Bailian 幾乎沒變 → 重算至少要包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise） |
 | 2-7 | TTL 要不要也改 block 粒度 | **不改**，維持 session 粒度 | PR:30 的 TTL 以「這個對話的 KV」為單位 |
-| 2-8 | 和其他功能 | 預取進 GPU（pf-target gpu）× APC：**不支援**（程式斷言），P3 的預取進 GPU 格子不放 APC；慢層上限、W4 雜訊、W5：照常 | 預取進 GPU 的路徑假設 GPU 上是整個 session；BELP 有雜訊時用有雜訊的「下次回來」（同 GPU BEL） |
+| 2-8 | 和其他功能 | 預取進 GPU（pf-target gpu）× APC：**不支援**（程式斷言），P3 的預取進 GPU 格子不放 APC；慢層上限、W4 雜訊、W5：照常 | 預取進 GPU 的路徑假設 GPU 上是整個 session；BELP 有雜訊時用有雜訊的「下次回來」（同 GPU BEL）。**另外（審查 F1、F3）**：wb 下 session 寫進 CPU 之後，GPU 留的乾淨前段和 CPU／慢層那份是獨立的。(a) CPU 端把 session 丟掉時，GPU 前段照 GPU 規則留著；(b) CPU 預取會跳過 GPU 上已經有的塊，之後那些塊被 GPU 逐出時不會再預取。兩者都和 v7 的 wt 相同 |
 
 ## 2. 項目 3：排隊
 
@@ -67,7 +67,7 @@
 
 | # | 問題 | 決定 | 依據 |
 |:--|:--|:--|:--|
-| 4-1 | 線索做什麼 | **兩個 GPU 規則都做**：**CUEP**＝這一輪的輸出有工具呼叫（下一個請求由工具觸發）→ 釘在 GPU 直到這個 session 的下一個請求；其他輪照 GPU LRU。**CUEO**＝有工具呼叫 → 回合結束立刻逐出 GPU（wb：寫進 CPU；wt：放掉 GPU 副本）；其他輪照 GPU LRU。全部釘住而 GPU 滿時，放掉「對話開始時間最晚」的那個（PR:30 的規則） | NP:42「留在／搬回」、NP:320「留在 GPU／搬回 CPU」；InferCept 的 Preserve／Swap；Continuum 對工具呼叫的請求釘 GPU、TTL 的極端版（NP:42） |
+| 4-1 | 線索做什麼 | **兩個 GPU 規則都做**：**CUEP**＝這一輪的輸出有工具呼叫（下一個請求由工具觸發）→ 釘在 GPU 直到這個 session 的下一個請求；其他輪照 GPU LRU。**CUEO**＝有工具呼叫 → 回合結束立刻逐出 GPU（wb：寫進 CPU；wt：放掉 GPU 副本）；其他輪照 GPU LRU。全部釘住而 GPU 滿時，放掉「對話開始時間最晚」的那個（PR:30 的規則） | NP:42「留在／搬回」、NP:320「留在 GPU／搬回 CPU」；InferCept 的 Preserve／Swap；Continuum 對工具呼叫的請求釘 GPU、TTL 的極端版（NP:42）。**另外（審查 F5）**：wb 下 CUEO 每次都把整個 session 重寫進 CPU（一個 session 只在一層，同 v7），讓 ③ 略弱，是保守方向 |
 | 4-2 | 線索怎麼來 | 每個請求一個旗標 cue[r]＝**這一輪的輸出有工具呼叫**（真實系統在回合結束時就看得到，不用預測）。session 的最後一輪照資料。只用有欄位的紀錄：TraceLab（`tools` 非空）、CacheWise（`trigger`）、FreeInference（`step_trigger`）。**Mooncake、SemiAnalysis、Bailian 沒有欄位 → NOT_MEASURED** | TraceLab 原始紀錄（run `20261107-033551-icpe-rux-w3-cue-stats-tracelab`）：665,453 輪、8,058 個 session；扣掉每個 session 的最後一輪後，「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%（561,508＋82,094 ÷ 657,395）；有呼叫但下一輪不是工具結果 11,921 輪（1.8%）、沒呼叫但下一輪是工具結果 1,872 輪（0.3%）；85.6% 的輪有工具呼叫。現在的 nb 檔只存 `user＝(trigger=="user")`，所以不改 nb 檔：`v8_features/make_cue.py` 照 `next_b_convert.py` 的排序，從原始檔另外產生 `cue.u8`，再和 nb 檔的 t、sess 核對 sha256 |
 | 4-3 | 指標 | 主要：f＝(T② − T③) ÷ (T② − T④c)，每個上限 ≥15% 的元件 c 各算；次要（和 C2 一樣）：NP:43 的 (T① − T③) ÷ (T① − T④O-PF)。「大部分」的門檻：**建議登記 f > 0.5** | PR:21 的字面是「拿走大部分」 |
 | 4-4 | 配哪些 CPU 規則 | **NON_ORACLE（10 個）**；③＝每格在 {CUEP, CUEO} × CPU 規則裡取最快 | 只配 LRU 可能比 ② 還慢（f < 0）；和 ② 的「事後挑最快」同一種 |

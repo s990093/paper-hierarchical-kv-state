@@ -80,7 +80,7 @@ def write_job(XS_, P, policy, cap_bytes, views, K, gkw, nz=None, sc=None):
         _CUE_ARR.tofile(os.path.join(jd, "cue.u8"))
         extra.append("cue=1")
     if W5:
-        assert gkw.get("pf_target", "cpu") == "cpu", "W5 不支援預取進 GPU"
+        assert not (gkw.get("pf_target", "cpu") == "gpu" and XS_.POLICIES[policy][3]), "W5 不支援預取進 GPU"
         i4 = int(K["int4_bytes"])
         w = []
         for v in views:

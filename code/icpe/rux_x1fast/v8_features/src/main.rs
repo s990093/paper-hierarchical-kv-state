@@ -1308,7 +1308,7 @@ impl<'a> Eng<'a> {
             if fm == 0 {
                 self.fmt[b] = 1; self.cpu_used += self.cpu_bf; cw += 1;
             } else if fm == 2 {
-                self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; cw += 1;
+                self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; if self.cpu_bf != self.i4 { cw += 1; }   // v8（審查 F2）：W5 下 INT4 預取塊轉成 CPU 塊不用寫
                 let o = self.pf_owner[b];
                 if o >= 0 { self.spf[o as usize] -= 1; self.pf_owner[b] = -1; }
             }
@@ -1334,7 +1334,7 @@ impl<'a> Eng<'a> {
                 if fm == 0 {
                     self.fmt[b] = 1; self.cpu_used += self.cpu_bf; cw += 1;
                 } else if fm == 2 {
-                    self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; cw += 1;
+                    self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; if self.cpu_bf != self.i4 { cw += 1; }   // 審查 F2
                     let o = self.pf_owner[b];
                     if o >= 0 { self.spf[o as usize] -= 1; self.pf_owner[b] = -1; }
                 }
@@ -1380,6 +1380,19 @@ impl<'a> Eng<'a> {
         assert!(rc == self.ref_gc, "r={} APC：ref_gc 和重算的不同", r);
         let used = rg.iter().filter(|&&c| c > 0).count() as i64 * BF;
         assert_eq!(used, self.gpu_used, "r={} APC：gpu_used", r);
+        // 審查 F7：ref_live＝S_GPU／S_CPU／S_SLOW 的 session 的塊、ref_cpu＝S_CPU 的、cpu_used＝每塊的格式大小（含 W5）
+        let nbk = self.ref_live.len();
+        let (mut rl, mut rcp) = (vec![0i64; nbk], vec![0i64; nbk]);
+        for u in 0..self.st.len() {
+            let su = self.st[u];
+            if su == S_GPU || su == S_CPU || su == S_SLOW {
+                for &b in self.sbl(u) { rl[b as usize] += 1; if su == S_CPU { rcp[b as usize] += 1; } }
+            }
+        }
+        assert!(rl == self.ref_live, "r={} APC：ref_live 和重算的不同", r);
+        assert!(rcp == self.ref_cpu, "r={} APC：ref_cpu 和重算的不同", r);
+        let cu: i64 = self.fmt.iter().map(|&f| if f == 1 { self.cpu_bf } else if f == 2 { self.i4 } else { 0 }).sum();
+        assert_eq!(cu, self.cpu_used, "r={} APC：cpu_used", r);
         assert!(self.gpu_used <= self.g, "r={} APC：GPU 超過預算", r);
     }
     #[inline]
@@ -1612,7 +1625,7 @@ impl<'a> Eng<'a> {
             if fm == 0 {
                 self.fmt[b] = 1; self.cpu_used += self.cpu_bf; cw += 1;
             } else if fm == 2 {
-                self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; cw += 1;
+                self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; if self.cpu_bf != self.i4 { cw += 1; }   // v8（審查 F2）：W5 下 INT4 預取塊轉成 CPU 塊不用寫
                 let o = self.pf_owner[b];
                 if o >= 0 { self.spf[o as usize] -= 1; self.pf_owner[b] = -1; }
             }
@@ -1830,7 +1843,7 @@ impl<'a> Eng<'a> {
             if fm == 0 {
                 self.fmt[b] = 1; self.cpu_used += self.cpu_bf; cw += 1;
             } else if fm == 2 {
-                self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; cw += 1;
+                self.fmt[b] = 1; self.cpu_used += self.cpu_bf - self.i4; if self.cpu_bf != self.i4 { cw += 1; }   // v8（審查 F2）：W5 下 INT4 預取塊轉成 CPU 塊不用寫
                 let o = self.pf_owner[b];
                 if o >= 0 { self.spf[o as usize] -= 1; self.pf_owner[b] = -1; }
             }
@@ -1996,7 +2009,7 @@ fn parse_spec(line: &str) -> Spec<'_> {
     if sp.pf != Pf::No { assert!(sp.vids.len() == 1); }
     if sp.g > 0 && (sp.gorder == 2 || sp.gorder == 3) { assert!(sp.vids.len() == 1); }     // v8：4–7 不依時間
     if sp.q { assert!(sp.vids.len() == 1, "排隊：一個 job 只能 1 個時間設定"); }
-    if sp.gorder >= 4 { assert!(sp.g > 0, "GPU 規則 {} 要開 GPU 層", x[8]); assert!(!sp.pf_gpu, "GPU 規則 {} 不支援預取進 GPU", x[8]); }
+    if sp.gorder >= 4 { assert!(sp.g > 0, "GPU 規則 {} 要開 GPU 層", x[8]); assert!(!(sp.pf_gpu && sp.pf != Pf::No), "GPU 規則 {} 不支援預取進 GPU", x[8]); }
     if sp.gorder == 4 || sp.gorder == 5 { assert!(sp.cue, "cuep／cueo 要 cue=1"); }
     sp
 }
@@ -2008,7 +2021,7 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
     let w5dv: Option<&Vec<f64>> = if sp.w5.is_some() {
         let w = rdat.w5d.as_ref().expect("w5= 但沒有 w5.f64");
         assert_eq!(w.len(), 2 * sp.vids.len(), "w5.f64：每個時間設定 2 個值");
-        assert!(!sp.pf_gpu, "W5 不支援預取進 GPU");
+        assert!(!(sp.pf_gpu && sp.pf != Pf::No), "W5 不支援預取進 GPU");
         Some(w)
     } else { None };
     let views: Vec<View> = sp.vids.iter().enumerate().map(|(j, &k)| {

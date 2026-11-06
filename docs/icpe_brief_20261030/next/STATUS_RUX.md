@@ -7,11 +7,11 @@
 
 ## 2026-11-07T04:30+08:00 — 第 4 段（v8：第 2–5 項的新功能，只有 Rust）：APC、W5 完成並接進 sweep；W3 引擎完成、缺資料；排隊**要使用者決定 Q3-a**
 
-報告：`next/rux/V8_FEATURES.md`；語意：`next/rux/SEMANTICS_2to5.md`；程式：`code/icpe/rux_x1fast/v8_features/`（最終版 `main.rs` sha256 `a4ded3ca…`）。
+報告：`next/rux/V8_FEATURES.md`；語意：`next/rux/SEMANTICS_2to5.md`；程式：`code/icpe/rux_x1fast/v8_features/`（最終版 `main.rs` sha256 `d1502d2d…`；獨立審查後改了 3 處，見 V8_FEATURES §3b）。
 
 **驗證（沒有 Python 參考，照使用者同意的做法）**
-- **新功能關閉時**：v8＝Python。3 份紀錄 × 4 組子集，CSV 177,072 格、npz 11,424 個陣列，0 個不同（`…-v8f-reg-mc／bl／sa`）。G1、xc_sa 0 個不同（`…-v8f-off-g1`、`…-v8f-off-xc_sa`）。
-- **四項新功能**：最終版 `smoke_v8.py` 在 3 份紀錄上共 2,088 項，**0 個 FAIL**（`…-v8f-smoke-mc／sa／bl`）。檢查方式：
+- **新功能關閉時**：v8＝Python。3 份紀錄 × 4 組子集，CSV 177,072 格、npz 11,424 個陣列，0 個不同（`…-v8g-reg-mc／bl／sa`）。G1、xc_sa 0 個不同（`…-v8g-off-g1`、`…-v8g-off-xc_sa`）。
+- **四項新功能**：最終版 `smoke_v8.py` 在 3 份紀錄上共 2,088 項，**0 個 FAIL**（`…-v8g-smoke-mc／sa／bl`）。檢查方式：
   - 退化檢查：新功能設成等於沒開時＝v7。
   - 精確重算：排隊。
   - 不變量：W5 的位元組。
@@ -34,6 +34,15 @@
   - 上限有升有降：O-GPU −6 到 −8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多 +39 個百分點。
   - **違反 NP:53 事先登記的預期**（「下降或不變；若上升，要查原因」）。
   - 查了上升超過 5 個百分點的 45 個 (格, 元件)：O-DROP、O-ORD、O-PF 的 ④ 用 INT4 多出來的 CPU 容量，慢層載入減 79–99.5%，② 只減 13–26%；大多在 nfs。
+
+**獨立審查**（另一個 agent 只讀程式、對照 SEMANTICS）
+- 沒有找到引用數、所有權或選擇邏輯上的錯。
+- 改了 3 處：
+  - F2：W5 不重複計寫入；
+  - F6：放寬預取進 GPU 的斷言；
+  - F7：稽核多重算 ref_live、ref_cpu、cpu_used。
+- 改完重跑全部：2,088 PASS，對 Python 0 個不同。W5 探索的上限逐列不變。
+- 另外 4 點和 v7 的 wt 行為一致，所以不改、寫明（APC × CPU 預取、CPU 丟 session 後的 GPU 前段等）。
 
 **還沒做／要決定**
 - **Q3-a（使用者）**：排隊的 ④ 知不知道排隊造成的新服務順序。
