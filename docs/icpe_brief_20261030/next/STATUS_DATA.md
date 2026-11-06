@@ -2,6 +2,22 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T18:40+08:00 — acvlab P4 的 ETA 更新：11/7 約 06:50〔推算〕（15:40 估 03:00 偏低）
+
+- `p4_b1/tracelab_c1_P_B1` 跑完：18:17:08 → 18:35:53，rc=0，8,815 個 job。`unmatched_cells=0`，`py_fallback_jobs=0`。
+- **實測速率**（block 時間 × 35 ÷ job 數，用這個佇列和舊佇列 `conversation_P_B1` 的 log）：
+
+  | 紀錄 | 執行緒秒／job | 用了多少 job |
+  |:--|--:|--:|
+  | Mooncake conversation | 0.374 | 369,288 |
+  | Bailian | 1.324 | 167,184 |
+  | CacheWise | 0.264 | 176,832 |
+  | TraceLab（只有 c1） | 4.467 | 8,815 |
+
+- 剩下的 job × 上面的速率（toolagent 用 conversation 的速率；B2 用 B1 的速率；TL c2／c4 用 c1 的速率）：約 154 萬執行緒秒，35 個執行緒約 12.3 h → **11/7 約 06:50 跑完〔推算〕**。TraceLab 約占剩餘的 58%。
+  - 15:40 估 03:00，偏低的原因：Mooncake 用 0.31（實測 0.374），Bailian 沒有單獨估。
+- 執行緒數不變，維持約 44 個 CPU 的上限。
+
 ## 2026-11-06T18:20+08:00 — TraceLab 的 P4 用上 icpe-sim 的載入快取；PREREG 同步偏離 7 更正與偏離 8
 
 - **TL 快取**：第一個 TraceLab 的 P4 block `p4_b1/tracelab_c1_P_B1`（run `20261106-181708-icpe-data-p4_b1-tracelab_c1_P_B1`）的 stdout 印 `prep=cache_hit 10.0s lite=True`。
