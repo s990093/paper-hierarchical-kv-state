@@ -178,7 +178,7 @@ def p4_blocks():
                         "--gpu-write", "wb", "--gpu-policies", *gps, "--pf-target", "cpu", "--noise-models", model,
                         "--noise-lambdas", *P4_LAMS[(model, draw)], "--noise-draws", draw, "--noise-seeds", *map(str, range(10))]
                 out[("sa_" if sa else "") + "p4_" + draw.lower()].append((f"{short}_{model}_{draw}",
-                                                                           dict(traces=[trace], rules=rules, jobs=jobs), args))
+                                                                           dict(traces=[trace], rules=rules, jobs=jobs, no_npz=True), args))
     return out
 
 
@@ -288,7 +288,9 @@ def cmd_count(a):
 def run_block(plan, name, tr, args, workers, dry, engine="py"):
     rid = datetime.now().strftime("%Y%m%d-%H%M%S") + f"-{TAG}-{plan}-{name}"
     run = f"{RUNS}/{rid}"
-    env = {"RUN_ID": rid, "RUN_DIR": f"{run}/req", "P3_CONST": "h200", "P3_TIER": "h200cpu",
+    # RUN_DIR＝x1_sim 存逐請求 npz 的地方（只用在 x1_boot）；P4 的 block 設 no_npz → 空字串＝不存（PREREG 的 P4 分析只用 sweep CSV；
+    # 存的話 SA 約 1.2 TB、TL 約 0.9 TB〔推算〕，共用磁碟放不下；icpe-trx 11/6 15:15 的請求、STATUS_DATA 15:25）
+    env = {"RUN_ID": rid, "RUN_DIR": "" if tr.get("no_npz") else f"{run}/req", "P3_CONST": "h200", "P3_TIER": "h200cpu",
            "M7_TIER_PARAMS": f"{REPO}/results/icpe_h200/t1/tier_params_h200cpu.json", "M7_RES": f"{REPO}/results/m7_write_policy_h200",
            "X1_NB_DIR": NB_DIR, "X1_TRACE_DIR": MOONCAKE, "X1_FI_DIR": FI_DIR,
            "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
