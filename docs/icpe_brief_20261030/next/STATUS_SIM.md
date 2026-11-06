@@ -531,3 +531,51 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 **需要 icpe-data 做什麼**：merge 8b6520f（或之後的 commit）、重做 G0 之後，TraceLab block 的 sweep.log 應該是 `prep=cache_hit … lite=True`。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T10:10+08:00 — **`--gpu-write wt` 的 panic：Python 也會出錯（模型的邊界情況，不是 Rust 獨有）**；修法要使用者決定
+
+回 icpe-trx（STATUS_TRX 09:45，98b0d2f）與 icpe-data 的急件。run `20261106-094552-icpe-sim-wtpanic`（acvlab，checkout 8b6520f，nice 10）。
+
+**重現**
+- Rust：參數照 next_b_queue 的 `sa_N16_s1_wt`，只留 O-ALL、O-PF、LRU+RPF，`--workers 1`（一次一個 job）。第 472 個 job panic，`src/main.rs:667:41`、`index out of bounds: the len is 0`，和 TRX40 相同。
+  - 那個 job：O-PF、CPU 8 GiB、GPU 111.0625 GiB wt、TTLB:10、pf-target cpu（留在 `work/jobs/` 的 jobs.txt）。
+- **Python**：同一組參數（O-PF、cpu 8、TTLB:10、三種慢層，6 個 job）用 `--engine py` 跑 → `IndexError: list index out of range`，位置是 `demote()` 的 `T = XT.next_access(self.acc, self.sb[s][-1], self.cur)`。和 Rust 同一行。
+  - 探針（`py_demote_probe.py`：demote 拿到沒有 block 的 session 時印出狀態，不改行為）：`s=119 st=S_CPU in_cpu_set=False in_lru=True order=lru pf=opf`；這個 session 的第 2、3 個請求都是 0 個完整 block（nall＝1）。
+
+**原因**（兩個引擎相同）
+- 回合結束（CPU-only 的 `step` 與 wt 的 `_turn_end_wt`）：新請求有 block → `_order_add(s)`；**沒有 block → 只做 `cpu_set.discard(s)`，沒有把 s 從順序結構（LRU 串列、ARC 的 T1／T2、S3FIFO 的佇列）拿掉。**
+- s 上一回合留在 CPU 時已經在順序結構裡，所以留下一個過期的項目（st＝S_CPU、sb＝空）。
+- LRU 的 `select()` 取 `next(iter(self.lru))`，會選到它 → `demote(s)`：
+  - 有預取（O-PF、LRU+RPF）→ `sb[s][-1]` 出錯；
+  - 沒有預取 → **不會出錯，但多算一次「空的降級」**：不寫任何 block，但計入 `n_demote`、`cpu_residence_s_mean`；ARC／S3FIFO 的過期項目還帶著舊的大小（t1b／t2b、s3sb／s3mb），可能改變之後選誰。
+- 用 cpu_set 選的順序（BEL、BELS、LRU2、PENS、FREQ2Q、PRED）和會檢查 cpu_set 的 GDSF 不受影響。
+- **wb＋GPU 不會發生**：GPU 回合開始時已經 `_order_remove(s)`。所以 ICPE-next 主結果、P1、P2、pfgpu（都是 wb、GPU 111.0625 GiB）不受影響。
+
+**哪些紀錄有這種模式**（同一 session 已有 block 的請求之後、出現 0 個完整 block 的請求；`zero_block_scan.py`、`zero_block_scan_nonnb.py`，輸出 csv 在 run 目錄）
+
+| 紀錄 | 這種請求數／請求數 |
+|:--|:--|
+| SemiAnalysis（12 個變體各自） | 198／98,827 |
+| semianalysis_N16_s1_t128k | 125／40,799 |
+| TraceLab c1、c2、c4、c1_cache、c2_cache、c4_cache | 34／665,453 |
+| tracelab_c1_t128k | 1／195,550 |
+| Bailian（3 份）、CacheWise（全部）、Mooncake（conversation、toolagent × R1、R2）、FI（6 週＋t128k） | 0 |
+
+- Bailian 有 0-block 請求（coder 5,472、thinking 2,012、traceA 11,728），FI 有兩週各 53、17 個，但都是 session 的第一個請求，不會留下過期項目。
+
+**已經跑完的結果**
+- git 裡的 wt 結果只有 sens_rep 的 bl_wt、cw_wt、fi_wt、mc_wt，這四份紀錄都沒有這種模式 → **不受影響**。
+- GPU 0 的舊結果（H200 t1／p01，G0／G1 的參考）是 Mooncake → 不受影響。
+- 會受影響、還沒跑的：TraceLab 與 SemiAnalysis 的 `*_wt`（tl_p3、sa_p3、sens_rep 的 tl_wt、sa_wt）。
+
+**選項**（需要使用者決定：這是模型語意，§5.10 沒寫）
+- **A（建議）**：新請求沒有完整 block 時，把 session 從 CPU 的順序結構拿掉（`_order_remove(s)`，取代只做 `cpu_set.discard(s)`）。CPU-only 與 wt 兩個回合結束都改，兩個引擎都改。
+  - 理由：原本的 `cpu_set.discard` 就是「這個 session 在 CPU 沒有東西」的意思；wb 路徑本來就這樣做。session 在 CPU 沒有東西可降級。
+  - 影響：只改 TraceLab／SemiAnalysis 的 wt（和沒有在用的 GPU 0）格子；git 裡的結果都不變；G1 不變（Mooncake 沒有這種模式）。
+- **B**：保留過期項目，只在 `demote` 裡跳過空 session 的預取。git 裡的結果同樣不變；但 TL／SA 的 wt 格子會保留「空的降級」（`n_demote`、`cpu_residence_s_mean`；ARC／S3FIFO 的舊大小）。
+- **C**：不修；TraceLab／SemiAnalysis 的 `*_wt` 不跑，記成沒跑。
+- 有利還是不利預測：A 和 B 的差別落在 LRU 系列、ARC、S3FIFO、O-DROP、O-NOW、O-PF（LRU 順序）的 TL／SA wt 格子；方向 NOT_MEASURED。選 A 之後，我會在驗證時量「修改前後哪些格子不同」。
+
+**icpe-data 的處理**（他們的訊息）：佇列 A 碰到第一個 tl_p3 `*_wt` 就停，改跑 cw_p3、bl_p3 的 `*_wt`；old_p3 `*_wt` 可排（Mooncake／FI 不受影響）。
+
+**需要使用者決定什麼**：上面的 A／B／C。
