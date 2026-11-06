@@ -2,6 +2,27 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T00:50+08:00 — acvlab 的 P4：B1 全部完成；**B2 在 Bailian 慢約 2.5 倍** → ETA 改為 11/7 08:15～16:00〔推算，範圍大〕
+
+- **進度**：佇列 pid 1788262，沒有 block 失敗。
+  - `p4_b1` 交給 acvlab 的 block 全部 rc=0。最後一個是 `tracelab_c4_M_B1`，23:18:02 結束。
+  - `p4_b2` 從 23:18 開始。`bailian_coder_P_B2` 00:20:11 rc=0；`bailian_coder_M_B2` 跑到 24,327／33,390。
+- **新發現：B2 的 job 比 B1 慢**。用兩個 run 的 `rust_timing.jsonl` 比（`run_s` 是單一執行緒的秒數）：
+
+  | block | job 數 | run_s 中位數 | run_s 合計 |
+  |:--|--:|--:|--:|
+  | `p4_b1/bailian_coder_P_B1` | 45,633 | 0.268 | 52,047 |
+  | `p4_b2/bailian_coder_P_B2` | 44,520 | 0.444 | 130,072 |
+
+  - 每個 job 平均約 2.5 倍。
+  - SA 在 TRX40 沒有這個現象：`sa_p4_b1` 的 sweep 合計 10,701 s、`sa_p4_b2` 9,758 s（STATUS_TRX 21:15），job 數相近。
+  - 慢多少看紀錄而定，原因還沒查（B2 是每次呼叫都重抽，v5 在 Rust 裡模擬 CPython 的 set 順序）。不影響結果的正確性：`py_fallback_jobs=0`，Rust 對 Python 的 B2 對拍 0 差（STATUS_ANA 43e7ffc）。
+- **ETA**〔推算〕：
+  - acvlab 還剩 B2 的 Bailian 118,020 個 job（用 2.46 倍）、CacheWise 171,920、TraceLab 103,110。
+  - TL 和 CW 的 B2 倍數還沒量。用 1.0／1.5／2.5 倍估：**08:15／10:47／15:52**。
+  - CacheWise 的 B2 在 Bailian 之後跑，TraceLab 的 B2 最後跑。量到之後再縮小範圍。
+- **TRX40 的 6 個 Mooncake block**：00:45 還沒進 git（icpe-trx 估約 3 h，是用 B1 的速率算的）。其中 4 個是 B2，可能也比較慢。已傳訊息請 icpe-trx 回報進度。
+
 ## 2026-11-06T19:50+08:00 — acvlab 的 P4 佇列已重開（不含交給 TRX40 的 6 個 Mooncake block）；ETA 更正為 11/7 約 04:40–05:35〔推算〕
 
 - **切換**（`switch_p4_mooncake_trx_20261106.sh`，log `runs/switch-p4-mooncake-trx-20261106.log`）：
