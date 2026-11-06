@@ -28,8 +28,8 @@
 | 2-2 | wb 下被逐出的資料 | **寫進 CPU（BF16）**（PR:54 的資料流）。做法：session 回合結束後第一次被逐出塊時，把**整個 session** 寫進 CPU（session 進 CPU 層，CPU 規則照舊、以 session 為單位）；GPU 留下的前段變成「乾淨的副本」，之後從尾端逐出、不用再寫 | 保留「session 不在 GPU 的那份只在一層」的不變量，CPU／慢層規則一行不改。代價：寫入與 CPU 占用比逐塊寫回（SGLang HiCache write_back）早一點 → ② 略弱 → 上限略偏高（保守）。逐塊寫回要讓 CPU 層存半個 session，**不做**，論文寫明 |
 | 2-3 | wt | **CPU 照舊（回合結束就寫）；GPU 副本照 2-1 的順序從尾端逐出，不寫** | 和 vLLM＋LMCache、SGLang HiCache 的預設（write_through）相同；P3 的敏感度 |
 | 2-4 | 塊大小 | **512 token** | NP:269（常數都是 512 量的）；PR:28 的 GPU 預算 1,777 塊 |
-| 2-5 | ④ 要不要也有 | **要**。④ 的 GPU 不預測規則集合和 ② 相同（含 APC）。另加 **BELP**：同樣「從尾端一塊一塊逐出」，但選 session 照 Belady（下次回來最晚的先逐出），讓 ④ 的 GPU oracle 也有 block 粒度 | PR:177–182「兩邊規則集合相同」；不加 BELP 時 ④ 少了 ② 有的機制（上限偏低，不可以） |
-| 2-6 | 要重算哪些格子 | 建議登記：主結果（APC 不依時間，P2 的時間設定一起出）＋P3 的 wt；P4、慢層上限另外登記 | PR:95「受影響的格子全部重算」、PR:126「格子另外定」。**跑什麼不是 icpe-rux 決定**，這裡只是建議 |
+| 2-5 | ④ 要不要也有 | **要**。④ 的 GPU 不預測規則集合和 ② 相同（含 APC）。另加 **BELP**：同樣「從尾端一塊一塊逐出」，但選 session 照 Belady（下次回來最晚的先逐出），讓 ④ 的 GPU oracle 也有 block 粒度 | PR:177–182「兩邊規則集合相同」；不加 BELP 時 ④ 少了 ② 有的機制（上限偏低，不可以）。**探索證實**：SemiAnalysis 上若 ④ 沒有 BELP，O-GPU 的最大上限會從 44% 被壓到 25%。`next_sim_analyze.py` 現在把 BEL 以外的 GPU 規則都當成不預測，正式分析要改成 BELP 只進 ④ 的 O-GPU |
+| 2-6 | 要重算哪些格子 | 建議登記：主結果（APC 不依時間，P2 的時間設定一起出）＋P3 的 wt；P4、慢層上限另外登記 | PR:95「受影響的格子全部重算」、PR:126「格子另外定」。**跑什麼不是 icpe-rux 決定**，這裡只是建議。**探索結果**（V8_FEATURES §4a-2）：APC 在 SemiAnalysis（長 session）上讓 ② 最多快 28%、O-GPU 上限明顯下降；Mooncake toolagent、Bailian 幾乎沒變 → 重算至少要包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise） |
 | 2-7 | TTL 要不要也改 block 粒度 | **不改**，維持 session 粒度 | PR:30 的 TTL 以「這個對話的 KV」為單位 |
 | 2-8 | 和其他功能 | 預取進 GPU（pf-target gpu）× APC：**不支援**（程式斷言），P3 的預取進 GPU 格子不放 APC；慢層上限、W4 雜訊、W5：照常 | 預取進 GPU 的路徑假設 GPU 上是整個 session；BELP 有雜訊時用有雜訊的「下次回來」（同 GPU BEL） |
 

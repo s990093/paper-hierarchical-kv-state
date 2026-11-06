@@ -24,11 +24,16 @@
   - BELP 捷徑：832 格相同、快 2.3 倍。
 
 **探索（Mooncake toolagent R1／R2；不是正式結果）**
-- APC 加進 ② 和 ④：上限最多變 0.03 個百分點，幾乎沒有影響。BELP 讓 O-GPU 的 ④ 略強，中位數 +0.2 到 +0.6 個百分點。
+- APC 加進 ② 和 ④（另外跑了 SemiAnalysis N16 s1、Bailian coder；三份都重現版本 B 的表，逐值相同）：
+  - Mooncake toolagent、Bailian：上限最多變 0.03 個百分點。
+  - **SemiAnalysis（長 session）明顯**：APC 在每格都是 ② 的最佳，② 最多快 28%；O-GPU（④ 加 BELP）上限中位數 8.5% → 4.6%，111 GiB、nfs 從 18–21% 降到 6–9%，≥15% 的格 6 → 4。
+  - **④ 一定要有 BELP**：沒有的話，SemiAnalysis 的 O-GPU 最大上限會被壓到 25%（有 BELP 是 44%）。
+  - 正式分析要改 `next_sim_analyze.py`（icpe-main 的檔）：BELP 只進 ④ 的 O-GPU。
+  - 建議 PR:95 的重算至少包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise）。
 - W5（CPU 111／128／256 GiB）：
   - 上限有升有降：O-GPU −6 到 −8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多 +39 個百分點。
   - **違反 NP:53 事先登記的預期**（「下降或不變；若上升，要查原因」）。
-  - 看了一格：④ 用多出來的 CPU 容量，慢層載入減 73%；② 的最佳做法本來就丟掉大部分 session。
+  - 查了上升超過 5 個百分點的 45 個 (格, 元件)：O-DROP、O-ORD、O-PF 的 ④ 用 INT4 多出來的 CPU 容量，慢層載入減 79–99.5%，② 只減 13–26%；大多在 nfs。
 
 **還沒做／要決定**
 - **Q3-a（使用者）**：排隊的 ④ 知不知道排隊造成的新服務順序。

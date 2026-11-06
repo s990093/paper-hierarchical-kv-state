@@ -2,7 +2,7 @@
 
 > 2026-11-07。程式：`code/icpe/rux_x1fast/v8_features/`（README 有用法）。語意：`SEMANTICS_2to5.md`（icpe-rux 依使用者授權決定，**正式跑之前要登記進 PREREG**）。
 > **沒有 Python 參考**（使用者：「python 不寫完整移植 rust」）。所以「對」的意思是：退化檢查、精確重算、不變量稽核、兩份實作互比都過；**語意本身理解錯是這些抓不到的**，建議另一個 session 審 SEMANTICS 與程式的對應。
-> 探索的數字（§4）**不是正式結果**：只有一個變體、3 個 CPU 容量，沒有登記。
+> 探索的數字（§4）**不是正式結果**：APC 只有 3 個變體、W5 只有 1 個變體，各 3 個 CPU 容量，沒有登記。
 
 ## 0. 問題／要證明什麼
 
@@ -21,9 +21,12 @@
   - APC 一次逐出整個 session 時＝LRU／BEL。
   - W5 走新路徑但參數等於沒開時＝BF16：254,592 格相同。
   - BELP 的捷徑＝每塊全掃。
-- **探索**（Mooncake toolagent，不是正式結果）：
-  - **APC 幾乎不影響上限**，最多 0.03 個百分點。BELP 讓 O-GPU 的 ④ 略強。
-  - **W5 讓上限有升有降**：O-GPU −6 到 −8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多升 39 個百分點。這違反 NP:53 事先登記的預期（「下降或不變」），要查原因。看了一格，和「oracle 更能用多出來的 CPU 容量」一致。
+- **探索**（不是正式結果；APC：Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder；W5：Mooncake toolagent）：
+  - **APC 的影響看紀錄**：
+    - Mooncake toolagent、Bailian：上限最多變 0.03 個百分點。
+    - **SemiAnalysis（長的 Claude Code session）明顯**：APC 在每一格都成為 ② 的最佳，② 最多快 28%；O-GPU 上限在 111.0625 GiB、nfs 從 18–21% 降到 6–9%，≥15% 的格 6 → 4。
+  - **④ 一定要有 BELP**：在 SemiAnalysis 上，若 ② 有 APC、④ 只有 session 粒度的 BEL，O-GPU 的最大上限會從 46% 被壓到 25%；加了 BELP 是 44%。這印證 SEMANTICS 2-5。
+  - **W5 讓上限有升有降**：O-GPU −6 到 −8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多升 39 個百分點。這違反 NP:53 事先登記的預期（「下降或不變；若上升，要查原因」）。查了：上升超過 5 個百分點的 45 個 (格, 元件) 裡，O-DROP、O-ORD、O-PF 的 ④ 慢層載入減 79–99.5%（中位數），② 只減 13–26%。O-NOW 是 BF16 時上限本來就是負的。oracle 比對手更能用 INT4 多出來的 CPU 容量，大多發生在 nfs（§4b）。
 - **排隊沒做完**：open-loop 和照紀錄順序的 closed-loop 都不適合固定並行的紀錄。正確的工作守恆 closed-loop **要先請使用者決定 Q3-a**（SEMANTICS §2a）。
 - **W3**：引擎做好了，**資料還沒有**。nb 檔要多一欄「這一輪的輸出有工具呼叫」；TraceLab 原始紀錄上它和「下一輪由工具結果觸發」一致 96.9%。
 
@@ -97,7 +100,7 @@
 - 拿掉 APC、BELP 的列重算，版本 B 表上這些格的 306 列（`mc_p1_headroom_components.csv.xz`，origin/icpe-next-main 最後改在 `baa508d0`）全部對上。
 - T_oracle、T_rival、上限、最佳對手、oracle 的組合，**逐值相同、0 個不同**。
 
-**結果**（逐列：`V8_explore_apc_rows.csv`、`V8_explore_ogpu_belp_rows.csv`）
+**結果**（逐列：`V8_explore_apc_ta_rows.csv`、`V8_explore_ogpu_belp_ta_rows.csv`）
 - **APC 幾乎沒有影響**：
   - 306 列裡，② 最多快 **0.035%**（R1、111.0625 GiB、nfs、閒：0.243572 → 0.243487 s），④ 最多快 0.004%，上限最多變 **0.027 個百分點**。
   - 上限 ≥15% 的格數每個元件都不變。
@@ -111,6 +114,40 @@
   - APC 每個 job 0.18 s（LRU 0.17 s），幾乎不多花。
   - BELP 在這次的執行檔（每逐出一塊都全掃）要 78.8 s，是 BEL（1.76 s）的 45 倍。
   - v8 最終版加了「不改結果的捷徑」（§3），速度見 §3。
+
+### 4a-2. APC／BELP：SemiAnalysis N16 s1、Bailian coder（同樣的設定）
+
+- runs：
+  - SemiAnalysis：`20261107-043703-icpe-rux-v8-explore-apc-sa`（4,728 個 job、155 s）＋`…-043939-…-apc-sa-analyze`；
+  - Bailian：`20261107-043945-icpe-rux-v8-explore-apc-bl`（4,728 個 job、190 s）＋`…-044256-…-apc-bl-analyze`；
+  - 執行檔 `rs702ecaed`（v8 最終版）。
+- **重現檢查**：兩份版本 B 表上這些格各 108 列，**逐值相同、0 個不同**（`sa_p1`、`bl_p1_headroom_components.csv.xz`，origin/icpe-next-main `baa508d0`）。
+- 逐列：`V8_explore_apc_sa_rows.csv`、`V8_explore_ogpu_belp_sa_rows.csv`、`V8_explore_apc_bl_rows.csv`、`V8_explore_ogpu_belp_bl_rows.csv`。
+
+| | Mooncake toolagent R1／R2 | SemiAnalysis N16 s1 | Bailian coder |
+|:--|:--|:--|:--|
+| APC 成為 ② 的最佳 | 9／306 列 | **108／108 列** | 45／108 列 |
+| ② 變快（中位數／最多） | 0％／0.035％ | **4–5％／28％** | 0％／0.02％ |
+| 上限下降最多（百分點；只有 ② 加 APC 時） | 0.03 | **21.7**（O-ALL；O-GPU 21.2） | 0.02 |
+| O-GPU 上限（② 加 APC、④ 加 BELP）：中位數 | 25.1 → 25.3％（R1） | **8.5 → 4.6％** | 13.7 → 14.1％ |
+| 〃 最大 | 40.4 → 40.9％（R1） | 46.2 → 43.6％ | 34.3 → 35.1％ |
+| 〃 ≥15％ 的格 | 14 → 14（R1）、13 → 13（R2） | **6 → 4** | 8 → 8 |
+| BELP 比 BEL 好的格 | 12／18、13／18 | 17／18 | 18／18 |
+
+- **SemiAnalysis 變化最大的格**（O-GPU；② 加 APC、④ 加 BELP）：
+  - 111.0625 GiB、nfs、GPU 忙：20.7% → 8.6%（② 7.79 → 6.76 s，④ 6.18 → 6.18 s）；
+  - GPU 閒：18.0% → 5.7%。
+  - CPU 8 GiB、nfs 那幾格幾乎不變，約 42–46%。
+- **只有 ② 加 APC、④ 沒有 BELP 時**：SemiAnalysis 的 O-GPU 最大上限 46.2% → 25.0%，被低估一半。所以 ④ 的 O-GPU 一定要包含 BELP（SEMANTICS 2-5）。
+  - 註：`next_sim_analyze.py` 把 BEL 以外的 GPU 規則都當成不預測。BELP 是 oracle，正式分析要改那支程式（icpe-main 的檔），讓 O-GPU 的 ④＝min(BEL, BELP)，而且 BELP 不可以進 ②。
+- O-PF 在 SemiAnalysis 有一格上升 47 個百分點，那格的上限從 −98% 變 −59%，原本就是負的，沒有意義。
+- **解讀**〔推論〕：
+  - SemiAnalysis 是長的 Claude Code session（每個 session 平均 47 個請求、上下文很長）。session 粒度的 GPU 規則一次要整個留或整個丟，逐塊留住前段就有差。
+  - Mooncake toolagent、Bailian 的 session 短，差不多。
+  - TraceLab、CacheWise 也是長的 agent session，**很可能也受影響，NOT_MEASURED**（不在這台）。
+- **建議**：
+  - PR:95「APC 做好後受影響的格子全部重算」至少要包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise）。
+  - ④ 的 O-GPU 要同時加 BELP。
 
 ### 4b. W5（同一個變體，CPU 111.0625、128、256 GiB）
 
@@ -194,6 +231,9 @@
 | `20261107-033906-…-v8-explore-apc-ta`、`…-040117-…-v8-explore-apc-analyze` | APC 探索 | §4a |
 | `20261107-040115-…-w5-base`、`…-040512-…-w5-int4`、`…-040843-…-w5-analyze`、`…-040948-…-w5-degen` | W5 探索 | §4b |
 | `20261107-041355-…-v8-belp-speed-ta` | BELP 捷徑 | §3 |
+| `20261107-043703-…-v8-explore-apc-sa`、`…-043939-…-apc-sa-analyze` | APC 探索：SemiAnalysis N16 s1 | §4a-2 |
+| `20261107-043945-…-v8-explore-apc-bl`、`…-044256-…-apc-bl-analyze` | APC 探索：Bailian coder | §4a-2 |
+| `20261107-043718-…-v8-w5-mechanism` | W5 上升的格：載入次數的變化 | §4b |
 | `20261107-035250-…-v8f-reg-mc`、`…-035436-…-v8f-reg-bl`、`…-035817-…-v8f-reg-sa`、`…-040213-…-v8f-off-g1`、`…-040439-…-v8f-off-xc_sa` | 最終版：新功能關閉 | 0 個不同 |
 | `20261107-035250-…-v8f-smoke-mc／sa／bl` | 最終版：新功能 | 2,088 PASS，0 FAIL |
 
