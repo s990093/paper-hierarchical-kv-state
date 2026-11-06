@@ -1727,7 +1727,7 @@ class Engine:
                 self.cpu_set.add(s)
                 w += self.drop(s)
         else:
-            self.cpu_set.discard(s)
+            self._order_remove(s)          # 沒有完整 block：離開 CPU 的順序結構，不只 cpu_set（否則 LRU／ARC／S3FIFO 留下過期項目；SIM_CHANGES 19，使用者 11/6 選 A）
         w += self.enforce()
         self.w_slow_blocks += w
         for v, te in zip(self.views, tend):
@@ -1943,7 +1943,7 @@ class Engine:
                 self.cpu_set.add(s)
                 w += self.drop(s)
         else:
-            self.cpu_set.discard(s)
+            self._order_remove(s)          # 沒有完整 block：離開 CPU 的順序結構，不只 cpu_set（否則 LRU／ARC／S3FIFO 留下過期項目；SIM_CHANGES 19，使用者 11/6 選 A）
         # ---- GPU 那份
         rg = self.ref_gpu
         oldg = self.gsb[s] if self.gin[s] else None
@@ -2287,9 +2287,10 @@ def cmd_sweep(a):
     _NZ_COLS = any(n is not None for n in nspecs)
     sspecs = slow_specs(a.slow_cap_frac, a.slow_policies)
     _SC_COLS = any(x is not None for x in sspecs)
-    for tr in a.traces:
-        for ru in a.rules:
-            prep(tr, ru)
+    if getattr(a, "engine", "py") != "rust":      # --engine rust：父行程的準備在下面（x1_rust.prepare_cached）
+        for tr in a.traces:
+            for ru in a.rules:
+                prep(tr, ru)
     J = jobs_for(a.traces, a.rules, a.cpu, a.policies, a.modes, slows=a.slows, gspecs=gspecs, nspecs=nspecs, sspecs=sspecs)
     # 重的（預取、scan）先跑
     J.sort(key=lambda j: (POLICIES[j[3]][3] is None, POLICIES[j[3]][0] not in ("bel", "bels", "pens", "pred", "lru2")))
@@ -2305,10 +2306,12 @@ def cmd_sweep(a):
         _XR = _xr
         rsha = _XR.src_sha()
         b = _XR.binary()
+        fb_tr = {(j[0], j[1]) for j in J if _XR.unsupported(PLANNER, j[6], j[7])}    # 有 job 退回 Python Engine 的紀錄（要完整的 P）
         for tr in a.traces:
             for ru in a.rules:
-                td, tsha = _XR.prepare_trace(prep(tr, ru), tr, ru)
-                print(f"rust trace {tr} {ru} -> {td}", flush=True)
+                lite = (tr, ru) not in fb_tr
+                td, tsha, how, dt = _XR.prepare_cached(sys.modules[__name__], tr, ru, lite)
+                print(f"rust trace {tr} {ru} -> {td} prep={how} {dt:.1f}s lite={lite}", flush=True)
         nfb = {}
         for j in J:
             why = _XR.unsupported(PLANNER, j[6], j[7])

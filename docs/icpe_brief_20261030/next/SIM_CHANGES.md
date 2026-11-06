@@ -273,3 +273,73 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - **對拍不是空的**：λ>0、B1、seed 0 的列，和同一格 λ＝0 的列比，nz_bl 496／496、nz_mc 400／400 至少有一個數值欄不同（`nz_effect.py`、`nz_effect.txt`，在 run 目錄）。
   - 摘要：`results/icpe_next/sim/g1_compare.csv`（+1 列）、`rust_cmp.csv`（+16 列）、`rust_timing.csv`（+17 列）。
 - **有利還是不利**：無（逐格相同）。
+
+
+### 18. `--engine rust` 的父行程準備加快取（icpe-data 11/6 的請求；`code/p3x/x1_rust.py`、`code/p3x/x1_sim.py`，commit c7ef740）
+
+- **為什麼**：
+  - icpe-data 量到：Rust 佇列跑 tl_c4 時，父行程準備了約 16 分鐘，只用 1 個 CPU，另外 35 個執行緒閒著。準備的內容是讀 npz、檢查、建 full／acc、寫 Rust 紀錄檔。
+  - P1–P3 還有 18 個 TraceLab block，同一個紀錄變體要重複準備 6–7 次。
+  - 數字出處：STATUS_DATA 08:25 與 icpe-data 的訊息，是他們的數字。
+- **改了什麼**：
+  - `x1_rust.prepare_cached`：`cmd_sweep` 的 rust 分支改用它，取代原本的 `prep`＋`prepare_trace`。
+    - **快取**：只對 nb: 紀錄。
+      - 鍵＝npz 內容 sha256＋`x1_sim.py`／`x1_nb.py`／`x1_rust.py` 的 sha256＋numpy、Python 版本＋`BF`。
+      - 放在 `$X1_RUST_WORK/prep-<鍵前 24 碼>/`：`lite.pkl`（P 去掉 full、acc）＋`KEY.json`（鍵的組成、lite.pkl 與紀錄檔的 sha256、請求數）。
+      - 寫入方式：先寫暫存目錄再原子搬移。同時有別的 sweep 寫好了，就丟掉自己的。
+    - **命中時的驗證**：
+      - KEY.json 的鍵與組成要相同；
+      - lite.pkl 的 sha256 要相同；
+      - Rust 紀錄檔**重算** sha256 要相同；
+      - 紀錄檔的 n／B／S 要和 lite P 對得上。
+      - 任何一項不過就停下來，不會默默重建。只有「沒有這個目錄」才重建。
+    - **lite P**：一份紀錄的 job 全部走 Rust 時，父行程的 P 不留 full、acc。
+      - Rust 讀紀錄檔；父行程與摘要只用 `len(P["full"])`（`NoFull`：只有長度，其他用法丟錯誤）、`nmax`、`tl`、`kindc`、`ws_GiB`、`user_trigger`。
+      - 有任何 job 退回 Python Engine（B2、慢層上限、STAIR）的紀錄，照舊建完整的 P。
+    - `X1_PREP_CACHE=0` 關掉快取，lite P 不受影響。
+  - `x1_sim.cmd_sweep`：
+    - 一開始的 `prep` 迴圈只在非 rust 時跑，`--engine py` 的路徑不變；
+    - rust 分支改呼叫 `prepare_cached`，stdout 那行多印 `prep=<built|built_saved|cache_hit> <秒> lite=<True|False>`。
+- **驗證**：run `20261106-082036-icpe-sim-g1-c7ef740`（detached checkout c7ef740、nice 10、`X1_RUST_WORK`＝run 自己的 work/，所以第一次一定沒有快取；08:20–09:28，load 約 65–70）。
+  - **G1（Python）**：`--engine py`、6 workers、新功能全關，對 H200 V1：4,416 列 × 29 欄，不同的格子 0 → **PASS**。
+  - **G1（Rust）**：`--engine rust`、2 執行緒：4,416 列 × 29 欄，不同的格子 0 → **PASS**。4 個非 nb 紀錄都是 `prep=built … lite=True`（不快取，但走 lite P）。
+  - **TraceLab c1 子集**（cpu 64，其餘參數照 icpe-data 的 tl_c1；`--engine rust --workers 2`）連跑兩次：
+    - 第一次 `prep=built_saved 672.2s lite=True`，第二次 `prep=cache_hit 9.3s lite=True`（9.3 s 含重算 2.6 GB 紀錄檔的 sha256）。
+    - 兩次都和 0b0ef1e 的 TL c1 整個 block（run `20261106-003131-icpe-sim-rust-tl_c1`，那份已和 icpe-data 的 Python 輸出逐格相同）比：816 列 × 40 欄，不同的格子 0；逐請求 npz 686 個檔、1,632 個陣列，不同 0 → 兩次都 **PASS**。
+    - 單一行程最大 RSS（`time -v`）：14,896,312 KiB → 4,461,960 KiB。牆鐘 1,672.6 s → 1,108.3 s；sweep 本身 999.1 s → 1,098.2 s（共用機器，時段不同）。
+  - **有 job 退回 Python 的紀錄**（Bailian coder、cpu 64、O-BEL、B1＋B2 雜訊）：`prep=built_saved 0.6s lite=False`；和 v4 驗證的 nz_bl Python 輸出比，144 列 × 44 欄，不同的格子 0 → **PASS**。
+  - 摘要：`results/icpe_next/sim/g1_compare.csv`（+2）、`rust_cmp.csv`（+3）、`npz_cmp.csv`（+2）、`rust_prep_cache.csv`（新，+7）。
+- **有利還是不利**：無（逐格相同；只改準備的方式，計算沒有改）。
+
+### 19. 新請求沒有完整 block 時，session 離開 CPU 的順序結構（`--gpu-write wt` 的 panic；`code/p3x/x1_sim.py`、`code/p3x/x1fast/src/main.rs`，commit 7193a2d）
+
+- **為什麼**：
+  - TRX40 跑 `sa_p3/sa_N16_s1_wt`（`--gpu-write wt`）時，Rust 在 `demote()` 開預取那行 panic（STATUS_TRX 09:45，98b0d2f）。
+  - acvlab 重現（run `20261106-094552-icpe-sim-wtpanic`）：同一個 job（O-PF、CPU 8、wt、TTLB:10）**Python 也出錯**，`IndexError` 在同一行（`self.sb[s][-1]`）。所以這是模型本身的邊界情況，不是移植的錯。
+  - 原因：回合結束（CPU-only 的 `step` 與 wt 的 `_turn_end_wt`）時，新請求沒有完整 block → 只做 `cpu_set.discard(s)`，沒有把 s 從順序結構拿掉。s 上一回合留在 CPU 時已經在 LRU 串列（ARC 的 T1／T2、S3FIFO 的佇列）裡，所以留下過期項目（st＝S_CPU、sb＝空）。
+    - LRU 的 `select()` 選到它 → `demote(s)`：有預取（O-PF、LRU+RPF）時 `sb[s][-1]` 出錯；沒有預取時多算一次「空的降級」（計入 `n_demote`、`cpu_residence_s_mean`）。
+    - ARC／S3FIFO 的過期項目還帶著舊的大小，可能改變之後選誰。
+    - wb＋GPU 的回合開始已經 `_order_remove(s)`，不會發生。
+  - 哪些紀錄有這種模式（同一 session 已有 block 的請求之後、出現 0 個完整 block 的請求）：SemiAnalysis 每個變體 198 個、TraceLab 34 個（c1_t128k 1 個）；Bailian、CacheWise、Mooncake、FI 都是 0。
+  - **使用者 11/6 的決定**（AskUserQuestion，選項見 STATUS_SIM 10:10）：選 A。
+- **改了什麼**：兩個回合結束的 `else: self.cpu_set.discard(s)` → `self._order_remove(s)`（Rust：`self.cpu_set.discard(s)` → `self.order_remove(s)`），兩個引擎各兩行。
+  - `_order_remove` 第一步就是 `cpu_set.discard(s)`，所以 cpu_set 上的操作和原本完全一樣；多出來的只有從 LRU、ARC T1／T2、S3FIFO 拿掉（不在裡面就什麼都不做）、GDSF 的版本號＋1。
+  - 用 cpu_set 選的順序（BEL、BELS、LRU2、PENS、FREQ2Q、PRED）行為不變。GDSF 原本就會跳過不在 cpu_set 的項目。
+- **驗證**：run `20261106-111012-icpe-sim-g1-7193a2d`（detached checkout 7193a2d、共用 venv、nice 10；11:10–13:07）。
+  - **G1**：Python、Rust 各 4,416 列 × 29 欄，不同的格子 0 → **PASS**。
+  - **xc_sa**（wb，應該不受影響）：Rust 和 icpe-data 的 Python 輸出比，32 列 × 40 欄，不同的格子 0。
+  - **新程式 Python 對 Rust**：
+    - SemiAnalysis N16_s1 wt（CPU 8、17 個規則、TTLB:10、3 種慢層）：102 列 × 40 欄，不同的格子 0；
+    - TraceLab c1 wt（CPU 8、11 個受影響的規則、TTLB:10、ssd）：22 列 × 40 欄，不同的格子 0。
+  - **跑得完**（Rust 8 執行緒，退回 Python 0 個，沒有 panic）：
+    - TRX40 出錯的整個 `sa_N16_s1_wt` block：6,174 個 job、7,344 列，sweep 496 s；
+    - TraceLab c1 wt 的 O-PF、LRU+RPF、O-ALL × 9 個 CPU × 8 個 GPU 規則 × 3 種慢層：1,296 列，sweep 865 s。
+  - 摘要：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`rust_cmp.csv`（+3 列）、`wt_fix_effect.csv`（新）、`wt_fix_complete.csv`（新）。
+- **有利還是不利**：方向不一，大小可以忽略；主要的效果是「本來跑不了的格子現在跑得了」。
+  - 比法：同一組參數用修改前的 Rust（8b6520f 的執行檔，build-43dbe828）和修改後的比，按規則分（`wt_fix_effect.csv`）。修改前跑不了 O-PF、LRU+RPF，所以這兩個只有修改後的。
+  - SemiAnalysis（90 列）：48 列有不同。
+    - 平均 TTFT 有變的只有 ARC（nfs，+6.7e-6、+9.8e-6，相對差）和 S3FIFO（−3.6e-5 到 +8.4e-7）。
+    - 其他只差計數：LRU 系列、O-DROP 的 `n_demote`、`cpu_residence_s_mean`（例：LRU 86,149 → 86,125）；LRU+NONE、O-NOW 的 `n_drop`。
+  - TraceLab（18 列）：12 列有不同，只差計數（各少 1 次），平均 TTFT 不變。
+  - 預測的格子（O-BEL、O-BELS、O-ALL、O-DROP、O-NOW）平均 TTFT 不變。
+  - 所以對「預測值不值得」的影響：ARC 變慢一點點（有利預測）、S3FIFO 多半變快一點點（不利預測），相對差 ≤3.6e-5，遠小於 5%／15% 的門檻。這只是 CPU 8、TTLB:10 的子集，其他格子 NOT_MEASURED。
