@@ -343,3 +343,36 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - TraceLab（18 列）：12 列有不同，只差計數（各少 1 次），平均 TTFT 不變。
   - 預測的格子（O-BEL、O-BELS、O-ALL、O-DROP、O-NOW）平均 TTFT 不變。
   - 所以對「預測值不值得」的影響：ARC 變慢一點點（有利預測）、S3FIFO 多半變快一點點（不利預測），相對差 ≤3.6e-5，遠小於 5%／15% 的門檻。這只是 CPU 8、TTLB:10 的子集，其他格子 NOT_MEASURED。
+
+
+### 20. Rust 引擎加 W4 雜訊的 B2 抽法（icpe-ana v5；`code/p3x/x1fast/src/main.rs`、`code/p3x/x1_rust.py`，commit 4a4baa4）
+
+- **為什麼**：icpe-data 11/6 的請求 (c)：P4 開跑前把 B2 也移進 Rust，照 B1 的分工（icpe-ana 寫，icpe-sim 審查、包裝、G1、雜訊格對拍）。
+- **改了什麼**：
+  - `main.rs`＝origin/icpe-next-ana @ 43e7ffc 的 `code/icpe/ana_x1fast/v5_noise_b2/src/main.rs`（sha256 a5c7c130…）原樣複製，再加第 19 項的兩行（v5 以 v4 為底，所以要補上）。Cargo.toml 不換（v5 的套件名是 x1fast_v5，我們維持 x1fast3）。
+  - `x1_rust.py`：`unsupported()` 讓 B2 走 Rust，**但只在 Python 3.12**，其他版本回 `noise_B2_py<版本>` 退回 Python。理由見下面的審查。`nz_field` 接受 B2。
+  - 還會退回 Python 的：慢層容量上限、STAIR。
+- **審查**（self-review，對照 `x1_sim.py`）：
+  - **B2 的語意**：`_nz` 在 λ＝0 時直接回傳、不抽；B1 用 step 時抽的那份，B2 每次呼叫都 `_nz_sample()`（random、choice、uniform）。v5 的 `nz()` 相同；step 只有 B1 才抽。
+  - **亂數順序＝呼叫 `_nz` 的順序**：Python 在 BEL／BELS 的 `select()`（`max(self.cpu_set, key=…)`）與 opf 的 `make_room`（`for x in self.cpu_set`）照 **CPython set 的走訪順序**呼叫 `next_req` → `_nz`。
+    - v5 在 B2 時讓 ISet 另外維護一份照 `setobject.c` 的雜湊表（PySet），這兩處改用它的順序。
+    - 我讀過 v5 的 PySet（add：探測 LINEAR_PROBES＝9，一次看 10 格，路上的 dummy 記成 freeslot；insert_clean；resize：比 minused 大的最小 2 的冪，8 格且沒有 dummy 時不動，重插照舊表的索引順序、跳過 dummy；discard 留 dummy；走訪＝表的索引順序），和我對 CPython 3.12 `setobject.c` 的理解一致。這台機器上沒有 CPython 的 C 原始碼，所以這一點是憑理解，不是逐行對原始碼。
+    - **icpe-sim 的獨立檢查**：把 v5 的 PySet 逐行翻成 Python（`pyset_port_check.py`，run `20261106-094552-icpe-sim-wtpanic`），和 venv 的 CPython 3.12.15 真正的 set 走訪順序比。4 組隨機 add／discard（最多 250,000 次、集合最大 165,362 個元素，含 >50,000 的成長規則），快照 628 個，全部相同。
+    - icpe-ana 的 fuzz（`pyset_test/pyset.rs` 和 main.rs 裡的 `impl PySet` 去掉註解與空白後相同）：隨機 add／discard 8 組、74,339 個快照和 CPython 3.12.15 全部相同（他們的數字，`results/icpe_next/ana/pyset_order_fuzz.csv`）。
+    - 這個順序是 CPython 的實作細節，所以 B2 只在 Python 3.12 時交給 Rust。
+  - **每個 key 只算一次、照順序**：Python `max(…, key=)` 照走訪順序每個元素算一次 key；Rust `max_by_key` 也是。BEL 與 BELS 的 key 都只呼叫一次 `next_req`。平手時 Python 取第一個、Rust 取最後一個，但 key 都含 `-last[x]`（每個 session 不同），不會平手。
+  - **GPU**：GPU 的 BEL 與 opf 的 `_g_make_room` 走 `glru`（OrderedDict）；Rust 的 `OList::items()` 從頭到尾，順序相同。
+  - **其他呼叫點**（`dead()` 的兩個短路在 `next_req` 之前、onow、hook、`_pf_push` 等）：照 icpe-ana 列的清單抽查，和 Python 一致。
+  - **沒有雜訊與 B1**：`ISet.py`＝None，`order()` 回傳原本的 items，順序和 v4 相同。
+- **icpe-ana 的對拍**（逐請求陣列＋summarize 每欄的 sha，對 `Engine(noise=dict(…, draw="B2"))`）：Bailian 330／330、Mooncake conversation 330／330；v5 回歸 846／846（STATUS_ANA 10:44；他們的數字）。
+- **驗證**（icpe-sim）：run `20261106-131043-icpe-sim-g1-4a4baa4`（detached checkout 4a4baa4、共用 venv、nice 10；Python 6 workers、Rust 2 執行緒；13:42–14:18）。
+  - **G1**（`--engine rust`，新功能全關，對 H200 V1）：4,416 列 × 29 欄，不同的格子 0 → **PASS**。（`x1_sim.py` 沒改，Python 引擎的 G1 同 7193a2d。）
+  - **xcheck**：0b0ef1e 那 14 個 block 用 Rust 再跑，對 icpe-data 的 Python 輸出，全部不同的格子 0（SemiAnalysis、Bailian、Mooncake、FI × wb、wt、nvme807、只載入、預取到 GPU）。
+  - **B2 對拍**（退回 Python 0 個）：
+    - Bailian：P、M × λ 0、0.1、0.3 × **B1、B2** × seed 0、7；GPU 0／111 GiB；pf-target cpu、gpu。1,764 個 job 全部走 Rust（v4 時 784 個 B2 要退回 Python）。和 v4 驗證的 Python 參考比：2,232 列 × 44 欄，不同的格子 0。
+    - Mooncake conversation R1：同上但只有 B2、pf-target cpu。Python 對 Rust：1,000 列 × 41 欄，不同的格子 0。
+    - SemiAnalysis N16_s1：CPU 8；LRU、O-BEL、O-PF、O-ALL；GPU 0 與 111 GiB wt（碰得到第 19 項的路徑）；TTLB:10；P、M、λ 0.3、B2、seed 0。Python 對 Rust：24 列 × 44 欄，不同的格子 0。
+  - **對拍不是空的**（`b2_effect.py`，在 run 目錄）：Bailian 同一格 B2 對 B1（λ>0）896／992 列至少一個數值欄不同；Mooncake B2 的 λ>0 對 λ＝0 352／400 列不同。
+  - sweep 時間（Rust 2 執行緒／Python 6 workers，不同時段，只供參考）：Mooncake B2 92 s／1,061 s；SemiAnalysis B2 子集 11 s／160 s；Bailian B1＋B2 全部 Rust 303 s。
+  - 摘要：`results/icpe_next/sim/g1_compare.csv`（+1 列）、`rust_cmp.csv`（+17 列）。
+- **有利還是不利**：無（逐格相同）。

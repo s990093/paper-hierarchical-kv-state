@@ -618,3 +618,35 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 **下一步**（我）：B2 進 Rust（icpe-ana v5）。已審查完，接著換進 main.rs、跑驗證（G1、14 個 xcheck、Bailian B1＋B2、Mooncake B2、SemiAnalysis B2 子集）。另外把目前的引擎同步到 kvsweep（使用者 11/6 的要求）。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T14:25+08:00 — **B2 進 Rust（icpe-ana v5）：G1 PASS，commit `4a4baa4`**；TraceLab 快取已用 776486c 重建
+
+回 icpe-data 11/6 的請求 (c)（P4 的 B2 job 不用再退回 Python）。細節見 SIM_CHANGES 第 20 項。
+
+**改了什麼**
+- `main.rs`＝icpe-ana v5（43e7ffc，sha256 a5c7c130…）原樣＋第 19 項的兩行＋兩行檔頭註解（sha256 3642370a…；icpe-ana 已核對）。
+- `x1_rust.py`：B2 交給 Rust，**只在 Python 3.12**（v5 照 CPython 3.12 的 set 走訪順序抽亂數；其他版本退回 Python，原因 `noise_B2_py<版本>`）。
+- 還會退回 Python 的：慢層容量上限、STAIR。
+
+**驗證**：run `20261106-131043-icpe-sim-g1-4a4baa4`（13:42–14:18）
+- G1（Rust）4,416 列不同的格子 0 → **PASS**；`x1_sim.py` 沒改，Python 引擎同 7193a2d。
+- 14 個 xcheck block：Rust 對 icpe-data 的 Python 輸出，全部不同的格子 0。
+- B2 對拍（全部走 Rust，退回 Python 0 個）：Bailian B1＋B2 2,232 列、Mooncake B2 1,000 列、SemiAnalysis B2 子集（GPU 0 與 wt）24 列，不同的格子都是 0。
+- 不是空的：Bailian 同一格 B2 對 B1 有 896／992 列不同；Mooncake B2 的 λ>0 對 λ＝0 有 352／400 列不同。
+- 摘要：`g1_compare.csv`（+1）、`rust_cmp.csv`（+17）。
+
+**TraceLab 快取**：run `20261106-130916-icpe-sim-prewarm-776486c`（13:09–13:42，最多 3 個行程、nice 10，exit 0）。
+- c1、c2、c4 各約 1,225–1,240 s，c1_cache 706 s，c1_t128k 30 s；最大 RSS 約 14.9 GB（c1_cache 15.8 GB）。`rust_prep_cache.csv` +5 列。
+- **這批只對 776486c 有效**：快取的鍵含 `x1_rust.py` 的 sha256，4a4baa4 改了它；下一個 commit（`--jobs-from`）會改 `x1_sim.py`。照 icpe-data 的意思，兩個都 push 之後再一起重建。
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這次 push 的 commit，重做 G0（code/p3x 有改）。
+- 之後 B2 的 job 加 `--engine rust` 就不會退回 Python（stdout 的 `py_fallback_jobs` 應該是 0）。venv 必須是 Python 3.12，否則 B2 會退回 Python。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0；main.rs 變了會自動重編。TRX40 的 venv 若不是 Python 3.12，B2 會退回 Python（stdout 會看到 `noise_B2_py…`）。
+- 用 `--engine rust` 跑一次 xc_sa 和 Python 版逐格比。
+
+**下一步**（我）：`--jobs-from`（icpe-data 的 P4 請求），驗證接著開跑，預計 16:15 左右 push；之後重建 TraceLab 快取、把引擎同步到 kvsweep。
+
+**需要使用者決定什麼**：無。
