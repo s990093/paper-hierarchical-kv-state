@@ -228,3 +228,28 @@
 - `tl_main/tl_c2`：只看了列數（7,344）和 manifest。**沒有算上限**。
 - `tl_main/tl_c4` 與 `old_main/fi6w` 的 Python 半成品：只看了 sweep 進度列。
 - STATUS_SIM 03:15、04:32、06:14 三節：都是 Python 對 Rust 的逐格比對、時間和記憶體，沒有上限。
+
+### 偏離 7（2026-11-06T00:53:20Z（acvlab 的 `date -u`）；**判定方式的釐清**：PREREG §1 推翻條件與 §4 標記沒寫到的幾點；使用者在 `icpe-main` 決定（AskUserQuestion，11/6 08:4x），並選「登記，由 icpe-main（我）寫」（11/6 09:0x）；不改任何格子、規則、門檻、主指標；當下 `icpe-main` 已經看過的正式結果列在本節最後）
+
+使用者的決定（選項原文）：
+1. **「原始／合成各下一個判定字」**：推翻條件「只要有一份真實的工具類紀錄，對最強的不預測做法上限 ≥15%」，原始到達與合成到達的紀錄**各自判定、不合併**（PREREG §4「合成到達的結果和原始到達的分開報」的延伸）。
+   - 原始到達：TraceLab c1、Mooncake、FreeInference、Bailian。
+   - 合成到達：CacheWise、SemiAnalysis（固定並行 N）、TraceLab c2／c4（開始時間壓縮 2×／4×）。
+2. **「R1、R2 各自下判定」**：Mooncake 的兩種重建規則各自判定。`next_sim_analyze.py` 輸出的 `rule=min` 列只報告。這和先前論文、`FIG1_DATA.md` 用 `rule=min` 的慣例不同。
+3. **「照算、另外標格數」**：寫入頻寬飽和（`write_saturated`）的格子不排除；另報「≥15% 的格子裡有幾格飽和」。
+
+`icpe-main` 照既有文件寫下的解讀（不是新決定，寫明以免歧義；使用者可以改）：
+- 算判定的元件＝O-ORD、O-DROP、O-NOW、O-PF、O-GPU；O-ALL(report) 與截尾版只報告（§4、偏離 6）。
+- 工具類＝NEXT_PLAN W2／§5.2 的分法：TraceLab、CacheWise、SemiAnalysis、FreeInference、Mooncake toolagent。Mooncake conversation（聊天）與 Bailian（NEXT_PLAN §5.2「是聊天／API 服務紀錄，不是工具 agent」）只報告。
+- 「上限 ≥15%」照字面：一個變體（紀錄變體 × rule）只要任一算判定的元件、任一格（CPU × 慢層 × GPU 閒／忙）≥15% 就算。
+- 推翻條件的後半「沒有簡單線索能拿走大部分」：簡單線索（W3 的線索 (a)）沒登記也沒跑 → NOT_MEASURED。所以 ≥15% 成立時，推翻條件寫「未定」；≥15% 不成立時，推翻條件不成立。
+- 實作：`code/icpe/main_summary.py`（只彙總、套門檻，不重算上限）。
+
+**為什麼要釐清**：要下判定就必須定這幾點，PREREG 沒寫。
+
+**寫本節時 `icpe-main` 已經看過的正式結果**（照實列出）：
+- **使用者做決定 1–3 的時候**（08:4x）：只看過 manifest 的 `stdout_tail` 欄（只印了前 600 字元）：
+  - `analysis/sa_main_ttl3/manifest.json`（run `20261106-074822-icpe-trx-analyze-sa_main-ttl3`）：SemiAnalysis N16 s1 的 O-ALL(report)、O-DROP、O-GPU、O-NOW、O-ORD 五列摘要。O-GPU、O-ORD、O-ALL(report) 有 ≥15% 的格子。
+  - `analysis/cw_main_ttl3`、`cw_main_final` 的 manifest：CacheWise N16 s1、s2 的部分元件列，最大都 <1.2%。
+  - 提問時我已向使用者寫明「已經看到 SemiAnalysis N16 s1（合成到達）有 ≥15% 的格子」。
+- **使用者選「登記」的時候**（09:0x）：版本 A（3 個 TTL，run `20261106-084846-icpe-main-verA-ttl3`）的全部判定表、by_trace、by_cpu 摘要，已回報使用者。決定 1–3 在看過版本 A 之後**沒有改**。

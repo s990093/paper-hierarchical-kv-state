@@ -2274,6 +2274,49 @@ def jobs_for(traces, rules, cpus, policies, modes=MODES, slows=None, gspecs=None
     return J
 
 
+JOBS_FROM_COLS = ("trace", "rule", "cpu_GiB", "policy", "gpu_policy", "slow", "gpu")
+
+
+def cell_key(tr, ru, c, p, gs, k):
+    """--jobs-from：一個 view 的格子鍵。寫法和 x1_sweep.csv 相同（cpu_GiB 當浮點數；GPU 層關閉＝gpu_policy "none"）。"""
+    return (tr, ru, float(c), p, gs["pol"] if gs else "none", k[0], k[1])
+
+
+def filter_jobs(J, path, traces, rules):
+    """--jobs-from <csv>（ICPE next，icpe-data 11/6 的 P4 請求）：jobs_for 照常展開之後，只留下「某一個 view 的
+    (trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu) 在清單裡」的 job；留下的 job 原封不動（整個 job 照算，
+    包括清單沒列到的其他 view），順序不變。只看一個 view 的 job（有預取或 TTL）＝它自己的 (slow, gpu) 要在清單裡。
+    restore、gpu_GiB、gpu_write、pf_target、雜訊、慢層上限不在鍵裡，照命令列參數。
+    清單裡屬於這次 traces×rules、但這次的參數產生不出 job 的格子 → 印出來（只警告，不停）。"""
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    rows = list(csv.DictReader(raw.decode("utf-8-sig").splitlines()))
+    miss = [c for c in JOBS_FROM_COLS if not rows or c not in rows[0]]
+    if miss:
+        raise SystemExit(f"--jobs-from {path}：沒有資料列或缺欄位 {miss}（要有 {', '.join(JOBS_FROM_COLS)}）")
+    cells = set()
+    for r in rows:
+        v = [r[c].strip() for c in JOBS_FROM_COLS]
+        cells.add((v[0], v[1], float(v[2]), v[3], v[4], v[5], v[6]))
+    mine = {x for x in cells if x[0] in traces and x[1] in rules}
+    keep, can = [], set()
+    for j in J:
+        ks = [cell_key(j[0], j[1], j[2], j[3], j[5], k) for k in j[4]]
+        can.update(ks)
+        if any(x in mine for x in ks):
+            keep.append(j)
+    un = sorted(mine - can)
+    byp = {}
+    for x in un:
+        byp[x[3]] = byp.get(x[3], 0) + 1
+    print(f"jobs_from={path} sha256={hashlib.sha256(raw).hexdigest()} rows={len(rows)} cells={len(cells)} "
+          f"cells_this_sweep={len(mine)} kept_jobs={len(keep)} dropped_jobs={len(J) - len(keep)} "
+          f"unmatched_cells={len(un)} {byp}", flush=True)
+    for x in un[:10]:
+        print(f"jobs_from unmatched（這次的參數產生不出 job）: {x}", flush=True)
+    return keep
+
+
 def cmd_sweep(a):
     global _K, _GPU_COLS, _NZ_COLS, _SC_COLS, _ENGINE, _XR
     import multiprocessing as mp
@@ -2292,6 +2335,8 @@ def cmd_sweep(a):
             for ru in a.rules:
                 prep(tr, ru)
     J = jobs_for(a.traces, a.rules, a.cpu, a.policies, a.modes, slows=a.slows, gspecs=gspecs, nspecs=nspecs, sspecs=sspecs)
+    if getattr(a, "jobs_from", None):      # ICPE next（icpe-data 11/6，P4）：只跑清單裡的格子；不給＝原本的路徑
+        J = filter_jobs(J, a.jobs_from, a.traces, a.rules)
     # 重的（預取、scan）先跑
     J.sort(key=lambda j: (POLICIES[j[3]][3] is None, POLICIES[j[3]][0] not in ("bel", "bels", "pens", "pred", "lru2")))
     out_path = os.path.join(OUTDIR, a.out)
@@ -2732,6 +2777,8 @@ def main():
     s.add_argument("--noise-seeds", nargs="+", type=int, default=list(range(10)))
     s.add_argument("--slow-cap-frac", nargs="*", type=float, default=[], help="慢層容量上限＝比例 × n_blocks_full（INT4 塊）；不給＝沒有上限")
     s.add_argument("--slow-policies", nargs="+", default=SLOW_POLICIES, help="慢層滿時的規則：LRU LRU2 ARC S3FIFO GDSF PENS BEL")
+    s.add_argument("--jobs-from", default=None,
+                   help="CSV（欄位 trace,rule,cpu_GiB,policy,gpu_policy,slow,gpu）：只跑「某一個 view 在清單裡」的 job（見 filter_jobs）；不給＝全部")
     s = sp.add_parser("analyze")
     s.add_argument("--sweep", nargs="+", default=["x1_sweep.csv"])
     s.add_argument("--src-run", nargs="*", default=[])

@@ -123,7 +123,63 @@ def blocks():
         f = f"{REPO}/results/icpe_next/b/{base}_ttl7/cells.csv"
         if os.path.exists(f):
             P[f"{base}_ttl7"] = ttl7_blocks(f)
+    P.update(p4_blocks())
     return P
+
+
+# PREREG 偏離 6 的 P4（W4 雜訊，§3 B）：選格＝icpe-main 的清單（偏離 8；origin/icpe-next-main c868ef2）。
+# 每個（格, 元件）要跑的組合＝next_sim_analyze 的 ④：O-ORD／O-DROP／O-NOW／O-PF＝該元件的 CPU 規則 × 15 個 GPU 不預測規則；
+# O-GPU＝NON_ORACLE × BEL；O-ALL(report)＝(O-ALL, BEL)。雜訊：P 的 λ＝0–0.4、M 的 λ＝0–0.3，λ＞0 × 10 個 seed，λ＝0 一次（自檢）。
+# 一個 block＝一個紀錄 × 模型（P／M，λ 清單不同）× 抽法（B1／B2）；只跑清單裡的 job（x1 sweep --jobs-from，icpe-sim）。
+P4_CELLS = f"{REPO}/results/icpe_next/main/p4/p4_cells_distinct.csv"
+P4_GP_NO = ["LRU"] + [f"TTL{s}:{t}" for s in "AB" for t in sorted(TTL3 + TTL7_EXTRA, key=float)]
+P4_LAMS = {("P", "B1"): ["0", "0.1", "0.2", "0.3", "0.4"], ("P", "B2"): ["0.1", "0.2", "0.3", "0.4"],
+           ("M", "B1"): ["0", "0.1", "0.2", "0.3"], ("M", "B2"): ["0.1", "0.2", "0.3"]}
+P4_COLS = ["trace", "rule", "cpu_GiB", "policy", "gpu_policy", "slow", "gpu"]
+
+
+def _cpu_str(v):
+    x = float(v)
+    return str(int(x)) if x.is_integer() else repr(x)
+
+
+def p4_combos(XS, c):
+    if c in XS.COMPONENT_POLICIES:
+        return [(p, g) for p in XS.COMPONENT_POLICIES[c] for g in P4_GP_NO]
+    if c == "O-GPU":
+        return [(p, "BEL") for p in XS.NON_ORACLE]
+    if c == "O-ALL(report)":
+        return [("O-ALL", "BEL")]
+    raise SystemExit(f"P4：不認得的元件 {c}")
+
+
+def p4_blocks():
+    if not os.path.exists(P4_CELLS):
+        return {}
+    XS = import_xs()
+    by = {}
+    for r in csv.DictReader(open(P4_CELLS)):
+        assert r["gpu_GiB"] == "111.0625" and r["gpu_write"] == "wb" and r["restore"] == "cake" and float(r["slow_cap_frac"]) == 0, r
+        sa = r["family_input"] == "SemiAnalysis"
+        by.setdefault((sa, r["trace"]), []).append(r)
+    out = {"p4_b1": [], "p4_b2": [], "sa_p4_b1": [], "sa_p4_b2": []}
+    for (sa, trace), rows in sorted(by.items()):
+        jobs = sorted({(trace, r["rule"], _cpu_str(r["cpu_GiB"]), p, g, r["slow"], r["gpu"])
+                       for r in rows for c in r["components"].split(";") for p, g in p4_combos(XS, c)})
+        cpus = sorted({j[2] for j in jobs}, key=float)
+        rules = sorted({j[1] for j in jobs})
+        slows = sorted({j[5] for j in jobs})
+        pols = sorted({j[3] for j in jobs})
+        gps = sorted({j[4] for j in jobs}, key=lambda g: (g != "LRU", g != "BEL", g))
+        short = trace[3:] if trace.startswith("nb:") else trace
+        for draw in ("B1", "B2"):
+            for model in ("P", "M"):
+                args = ["--cpu", *cpus, "--policies", *pols, "--slows", *slows, "--modes", "cake", "--gpu-gib", "111.0625",
+                        "--gpu-write", "wb", "--gpu-policies", *gps, "--pf-target", "cpu", "--noise-models", model,
+                        "--noise-lambdas", *P4_LAMS[(model, draw)], "--noise-draws", draw, "--noise-seeds", *map(str, range(10))]
+                out[("sa_" if sa else "") + "p4_" + draw.lower()].append((f"{short}_{model}_{draw}",
+                                                                           dict(traces=[trace], rules=rules, jobs=jobs), args))
+    return out
 
 
 def ttl7_blocks(path):
@@ -212,8 +268,14 @@ def cmd_count(a):
                 if nm not in XS.SLOWS and nm not in XS.EXTRA_SLOWS:
                     XS.EXTRA_SLOWS.append(nm)
             gs = XS.gpu_specs([float(x) for x in d["gpu-gib"]], d["gpu-write"], d["gpu-policies"], d["pf-target"])
+            ns = XS.noise_specs(d["noise-models"], [float(x) for x in d["noise-lambdas"]], d["noise-draws"],
+                                [int(x) for x in d["noise-seeds"]]) if d.get("noise-models") else None
             J = XS.jobs_for(tr["traces"], tr["rules"], [float(x) for x in d["cpu"]], d["policies"], d["modes"],
-                            slows=d["slows"], gspecs=gs)
+                            slows=d["slows"], gspecs=gs, nspecs=ns)
+            if tr.get("jobs"):         # 同 --jobs-from：job 的某一個 view 的鍵在清單裡就保留
+                keep = {(t, r, float(c), p, g, s, gp) for t, r, c, p, g, s, gp in tr["jobs"]}
+                J = [j for j in J if any((j[0], j[1], float(j[2]), j[3], j[5]["pol"] if j[5] else "none", v[0], v[1]) in keep
+                                         for v in j[4])]
             nv = len(tr["traces"]) * len(tr["rules"])
             print(f"{plan:10s} {name:28s} variants={nv} jobs={len(J):7d} per_variant={len(J) / nv:9.1f}")
             ptot += len(J)
@@ -236,6 +298,8 @@ def run_block(plan, name, tr, args, workers, dry, engine="py"):
             "--out-root", f"{run}/out", "x1", "sweep", "--traces", *tr["traces"], "--rules", *tr["rules"], *args, "--workers", str(workers)]
     if engine == "rust":
         argv += ["--engine", "rust"]
+    if tr.get("jobs"):                 # P4：只跑清單裡的 job（清單寫在 run 目錄，sweep 印它的 sha256）
+        argv += ["--jobs-from", f"{run}/jobs.csv"]
     cmd = "cd " + REPO + "\n" + "".join(f"export {k}={v}\n" for k, v in env.items()) + "exec nice -n 10 " + " ".join(argv) + "\n"
     if dry:
         print(cmd)
@@ -243,6 +307,11 @@ def run_block(plan, name, tr, args, workers, dry, engine="py"):
     os.makedirs(f"{run}/req", exist_ok=True)
     with open(f"{run}/cmd.sh", "w") as fh:
         fh.write(cmd)
+    if tr.get("jobs"):
+        with open(f"{run}/jobs.csv", "w", newline="") as fh:
+            w = csv.writer(fh)
+            w.writerow(P4_COLS)
+            w.writerows(tr["jobs"])
     with open(f"{run}/context.txt", "w") as fh:
         fh.write(f"date: {datetime.now().astimezone().isoformat()}\nhost: {socket.gethostname()}\nplan: {plan}\nblock: {name}\nengine: {engine}\n")
         fh.write("git HEAD: " + sh(f"git -C {REPO} rev-parse HEAD"))
@@ -277,11 +346,17 @@ def sha256(p):
 def cmd_run(a):
     P = blocks()
     dn = done_set()
-    if any(p.endswith("_p1") for p in a.plans):
+    # 'plan:pat1,pat2' ＝這個 plan 只跑名稱符合這些 glob 的 block（例 sens_rep:tl_cacheprefix,tl_t128k）；--only 對全部 plan 生效
+    specs = [(x.split(":", 1)[0], x.split(":", 1)[1].split(",") if ":" in x else []) for x in a.plans]
+    for plan, _ in specs:
+        assert plan in P, f"沒有這個 plan：{plan}"
+    if any(p.endswith("_p1") for p, _ in specs):
         check_p1(import_xs())
-    for plan in a.plans:
+    for plan, pats in specs:
         for name, tr, args in P[plan]:
             if a.only and not any(fnmatch.fnmatch(name, pat) for pat in a.only):
+                continue
+            if pats and not any(fnmatch.fnmatch(name, pat) for pat in pats):
                 continue
             if (plan, name) in dn:
                 print(f"[skip] {plan}/{name} 已完成（{dn[(plan, name)]['run_id']}）", flush=True)
