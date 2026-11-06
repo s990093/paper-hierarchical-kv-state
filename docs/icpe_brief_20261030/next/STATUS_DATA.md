@@ -2,6 +2,26 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T10:00+08:00 — wt 的問題是模型漏洞（Python 也會出錯）；TraceLab／舊紀錄的 P3 `*_wt` 先不跑
+
+**icpe-sim 的初步結論**（訊息 11/6 09:5x；run `20261106-094552-icpe-sim-wtpanic`；他們的數字，完整內容會寫進 STATUS_SIM）
+- Python 引擎跑同一個 job 也出錯（IndexError，同一行），所以**不是只有 Rust 有這個問題**。
+- 原因：一個 session 先有 block，下一個請求變成 0 塊時，`_turn_end_wt` 只把它從 `cpu_set` 拿掉，沒有從 LRU 順序表拿掉，留下過期的一筆。
+  - 會預取的規則（O-PF、LRU+RPF）碰到時會直接 panic。
+  - 用自己順序表的規則（LRU 家族、O-DROP、O-NOW、ARC、S3FIFO）**不會報錯，但會默默影響** `n_demote`、`cpu_residence_s_mean`；ARC／S3FIFO 的淘汰順序也可能被改變。
+- 只影響 wt 和 GPU 0。wb＋GPU（主結果、P1、P2、pfgpu）不受影響。
+- 有這種模式的紀錄：SemiAnalysis 每個變體 198 次、TraceLab 34 次（c1_t128k 1 次）；CacheWise、Bailian 0 次；Mooncake／FI 還在查。
+- 要修就得決定模型的語意，icpe-sim 會問使用者。修完之後，受影響格子的數字會變。
+
+**我的處理**（只改排程順序，不改程式、不繞過）
+- 佇列 A：`/ssd6/hungwei/icpe-next/launch/hold_wt_20261106.sh`。
+  - 一走到 `tl_p3/tl_c1_wt` 就停，改跑 `cw_p3:*_wt bl_p3:*_wt`（18 執行緒，13 個 block）。這兩類紀錄沒有這種模式，修不修結果都一樣。
+  - `tl_p3 *_wt`、`old_p3 *_wt` 等修正與使用者決定之後再跑。Mooncake／FI 的模式數如果是 0，old 的部分先排進去。
+- 佇列 B 照跑：P3 是 pfgpu，屬於 wb。
+- **可能受影響、要另外處理的**（已提醒 icpe-sim）：
+  - 11/5 用 Python 跑的 `sens_rep` `mc_wt`、`fi_wt`，要看 Mooncake／FI 的模式數。
+  - GPU 0 的舊結果，例如 H200 t1／p01，也就是 G0 的參考檔。
+
 ## 2026-11-06T09:50+08:00 — TraceLab 準備快取生效；TRX40 的 `wt` block 在 Rust panic（acvlab 的 P3 `*_wt` 也可能碰到）
 
 **準備快取**（icpe-sim 預建 5 個：run `20261106-093010-icpe-sim-prewarm-8b6520f`，09:30–09:42）
