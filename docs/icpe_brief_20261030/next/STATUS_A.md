@@ -141,3 +141,11 @@
 - `icpe-data` 在 `origin/icpe-next-data` @ `813617a` 加了「偏離 6 補記」（acvlab `date -u` 2026-11-05T23:49:08Z；使用者在 `icpe-data` 選「兩個都停，全改 Rust」）：正在用 Python 跑的 `tl_main/tl_c4`、`old_main/fi6w` 停掉、整個 block 用 Rust 從頭重跑，Python 半成品不收；W4 雜訊 B1 也用 Rust（`icpe-sim` 1304345）。不改格子、規則、判準。我核過：只在檔尾加一節，沒有刪改前面任何一行。沒有佔新的偏離編號（`h200` 下一個仍是偏離 7）。
 - 本分支照前兩次的做法**只同步 `PREREG.md`**（取 813617a 的版本，和 `origin/icpe-next-data` 目前的 tip 7a59fb1 相同）。
 - W6（2026-11-06 07:51 台灣）：DL_Lab5 的 24508、24509 已結束，24507 從 05:39 開始在跑；24443（W6c）等它結束，24444（W6a）接在後面。
+
+## 2026-11-06 09:00（台灣）— 收到 PREREG 偏離 7（`icpe-main` 寫）
+
+- 新的 session `icpe-main`（分支 `icpe-next-main`）把偏離 7 寫在 `origin/icpe-next-main` @ `bcd0bad`（acvlab `date -u` 2026-11-06T00:53:20Z；使用者在 `icpe-main` 選「由 icpe-main 寫」）：判定方式的釐清——原始／合成到達各自下判定、Mooncake R1／R2 各自判定（`rule=min` 只報告）、寫入飽和的格子照算並另報格數；另寫了 `icpe-main` 的解讀（算判定的元件、工具類的分法、「≥15%」照字面、「沒有簡單線索能拿走大部分」＝NOT_MEASURED → 推翻條件寫「未定」）。不改格子、規則、門檻、主指標。
+- 我核過：和本分支 c987bbd 的 PREREG 比，只在檔尾加一節（0 行刪除），前面含偏離 6 補記都在。`origin/icpe-next-data` 的 PREREG 目前和本分支 c987bbd 相同（還沒有偏離 7）。
+- 節內照實寫了：使用者做決定 1–3 時，`icpe-main` 已看過 SemiAnalysis N16 s1（合成到達）有 ≥15% 的格子、CacheWise N16 s1／s2 部分元件最大 <1.2%；選「登記」時已看過版本 A（3 個 TTL）的全部判定表。
+- 本分支照前幾次的做法**只同步 `PREREG.md`**（取 bcd0bad 的版本）。`h200` 下一個偏離編號是 8（登記前先看 `icpe-next-data`、`icpe-next-main` 兩個分支有沒有更新的偏離）。
+- W6（2026-11-06 08:55 台灣）：仍等 DL_Lab5 的 24507（05:39 開始跑）。
