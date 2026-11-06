@@ -4,6 +4,34 @@
 > icpe-ana 是分析 session：不跑正式模擬、不動佇列、不改 `code/p3x/*`。
 > 本分支只放**沒有 CacheWise** 的東西；CacheWise 上做過的速度與對拍只留在 acvlab。
 
+## 2026-11-06T10:44+08:00 — W4 雜訊 B2 也移植進 Rust（v5）：對拍全部相同
+
+**起因**：使用者 11/6 08:1x 要 B2 也進 Rust（icpe-data 轉達，STATUS_DATA 08:25）。分工同 B1：icpe-ana 寫，icpe-sim 審查、包裝、驗證。
+
+**做完什麼**
+- `code/icpe/ana_x1fast/v5_noise_b2/src/main.rs`（sha256 `a5c7c130…`）＝v4（`1b0e7e08…`，icpe-sim 現行版）＋B2。B1 與沒有雜訊的路徑不變。
+- **B2＝每次呼叫 `_nz` 都重抽**（random、choice、uniform 各一次）；λ＝0 直接回傳、不抽（同 Python）；回合開始不抽（只有 B1 抽）。
+- **難點：抽的順序**。Python 的 O-BEL／O-BELS 選擇、O-PF 的 `make_room` 都照 `cpu_set`（CPython 3.12 的 `set`）的走訪順序逐一問 `_nz`；這個順序取決於雜湊表裡的位置（add 會重用探測路上最後一個 dummy、表滿 3/5 就重建）。
+  - v5 在 B2 時另外照 CPython 3.12 `Objects/setobject.c` 維護同一個雜湊表（`PySet`），select 與 make_room 照它的順序走訪。B1 與沒有雜訊時不建，走訪順序不影響結果（鍵都含 last／x）。
+  - GPU 層（`glru`）本來就是 OrderedDict 順序；其餘呼叫點（dead 的短路、demote／pf_push、回合結束的 hook、GPU BEL、GPU 預取騰空間）逐一核對過，和 Python 的條件與先後相同。
+  - next_req 快取存的是加雜訊前的值，每次查詢都會呼叫 nz，所以快取不會少抽。
+- 工作描述的 `nz=` 欄位現在接受 B2（`nz=P|M,<λ>,B2,<seed>`）。
+
+**驗證**〔實測；彙總 CSV 在 `results/icpe_next/ana/`〕
+| 項目 | 結果 | run_id |
+|:--|--:|:--|
+| set 走訪順序：Rust `PySet` 對 CPython 3.12.15 的 set，隨機 add／discard（最多 40 萬次）每隔一段比一次順序 | 8／8 組、74,339 個快照全部相同 | `20261106-101035-icpe-ana-pyset-fuzz`（`pyset_order_fuzz.csv`） |
+| B2 對拍：Bailian coder（CPU 8／64 × 7 個規則 × GPU 關／wb LRU／BEL／TTLA:10／預取進 GPU／wt × P 0、0.2、0.4、M 0.1、0.3，只取用到預知的 job） | 330／330 相同 | `20261106-081921-…-v5-noise2-nb_bailian_coder`（前 201 個；被我設的 50 分鐘上限中斷）＋`20261106-090954-…`（接續其餘 129 個） |
+| B2 對拍：Mooncake conversation（同一個矩陣） | 330／330 相同 | `20261106-095212-icpe-ana-diff-v5-noise2-conversation` |
+| 雜訊有作用（不是兩邊都沒加）：λ>0 的列和同格 λ=0 比，sha 不同的 | Bailian 224／264、Mooncake 230／264 | 同上 |
+| 回歸：v5 只跑 Rust，和先前已對過 Python 的 sha 比（B1 雜訊、寬矩陣、窄矩陣） | 846／846 相同 | `…-v5reg-*`（`rust_v5_regression.csv`） |
+
+速度中位數 21–27×（機器有其他負載，只當參考）。
+
+**需要 icpe-sim 做什麼**：審查 v5 → 換進 `code/p3x/x1fast` → 包裝裡 draw＝B2 不再退回 Python → G1＋B2 的 Python 對 Rust 對拍 → 寫 STATUS_SIM。
+
+**還是 Python 的**：慢層容量上限、STAIR。
+
 ## 2026-11-06T03:05+08:00 — W4 雜訊（B1）移植進 Rust：以 icpe-sim `0b0ef1e` 為底，對拍全部相同
 
 **使用者 11/6**：「icpe-ana（我） 改sim」→ 雜訊由 icpe-ana 移植；`code/p3x/` 仍由 icpe-sim 合併（我不改）。

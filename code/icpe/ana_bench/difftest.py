@@ -62,6 +62,11 @@ elif matrix == "noise":   # W4 雜訊（B1）：用到完美預知的規則 × �
     POLS = ["O-BEL", "O-BELS", "O-DROP", "O-NOW", "O-PF", "O-ALL", "LRU"]
     GSETS = [("wb", "LRU", "cpu"), ("wb", "BEL", "cpu"), ("wb", "TTLA:10", "cpu"), None]
     NZS = [("P", 0.0, 3), ("P", 0.2, 3), ("P", 0.4, 7), ("M", 0.1, 3), ("M", 0.3, 9)]
+elif matrix == "noise2":  # W4 雜訊 B2（每次問都重抽）：亂數順序跟著 cpu_set 的走訪順序，所以加預取進 GPU、wt
+    CPUS = [8.0, 64.0]
+    POLS = ["O-BEL", "O-BELS", "O-DROP", "O-NOW", "O-PF", "O-ALL", "LRU"]
+    GSETS = [None, ("wb", "LRU", "cpu"), ("wb", "BEL", "cpu"), ("wb", "TTLA:10", "cpu"), ("wb", "BEL", "gpu"), ("wt", "LRU", "cpu")]
+    NZS = [("P", 0.0, 3, "B2"), ("P", 0.2, 3, "B2"), ("P", 0.4, 0, "B2"), ("M", 0.1, 3, "B2"), ("M", 0.3, 7, "B2")]
 else:   # speed：正式網格裡最常見的形狀
     CPUS = [64.0]
     POLS = ["LRU", "LRU2", "ARC", "S3FIFO", "GDSF", "PENS", "O-BEL", "O-PF", "LRU+RPF"]
@@ -86,7 +91,7 @@ for c in CPUS:
             for nz in NZS:
                 if nz is not None and not XS.uses_oracle(p, gs):
                     continue
-                JOBS.append((p, c, gs, keys, None if nz is None else dict(model=nz[0], lam=nz[1], draw="B1", seed=nz[2])))
+                JOBS.append((p, c, gs, keys, None if nz is None else dict(model=nz[0], lam=nz[1], draw=nz[3] if len(nz) > 3 else "B1", seed=nz[2])))
 
 # ---- 時間設定的常數（用原本的 View 建，保證同一份 f、Fc、頻寬）
 rdir = os.path.join(work, f"run_{matrix}_{trace.replace(':', '_')}")
@@ -149,6 +154,8 @@ for line in open(os.path.join(rdir, "timing.txt")):
 nsame = ndiff = 0
 with open(out, "a") as fo:
     for j, (p, c, gs, keys, nz) in enumerate(JOBS):
+        if j < int(os.environ.get("DIFF_FROM", "0")):   # 接續被中斷的對拍：前面的 job 已經在另一個 run 比過
+            continue
         od = os.path.join(rdir, "out", f"j{j}")
         views = XS.make_views(K, P, keys)
         for k, v in enumerate(views):

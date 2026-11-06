@@ -1,0 +1,9 @@
+seed,n_ops,keyspace,snapshots,identical,run_id,host,generator_python,note
+1,2000,50,109,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3
+2,20000,1000,1020,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3
+3,200000,100000,10132,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3
+4,300000,5000,15213,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3
+5,100000,300000,5071,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3
+6,50000,20,2526,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3
+7,400000,400000,20221,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3
+8,400000,3000,20047,True,20261106-101035-icpe-ana-pyset-fuzz,acvlab,3.12.15,expected order from shared venv CPython; compared with system python3

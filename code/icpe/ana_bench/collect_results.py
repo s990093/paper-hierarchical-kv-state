@@ -28,9 +28,9 @@ write("interp_bench_sa.csv", rows)
 # 2. Rust 對拍（逐 job）
 rows = []
 for d in sorted(glob.glob(f"{RUNS}/*-icpe-ana-diff*")):
-    if not ok(d) or not os.path.exists(f"{d}/diff.jsonl"):
+    if not ok(d) or not os.path.exists(f"{d}/diff.jsonl") or "-diff-v5reg-" in d:   # v5reg：只跑 Rust（--no-ref），另收在下面
         continue
-    ver = ("v4_noise_on_0b0ef1e" if "-diff-v4s-" in d else "v4_noise_on_v3" if "-diff-v4-" in d else
+    ver = ("v5_noise_b2" if "-diff-v5-" in d else "v4_noise_on_0b0ef1e" if "-diff-v4s-" in d else "v4_noise_on_v3" if "-diff-v4-" in d else
            "v3_prefix_fork" if "-diff-fork-" in d else "v2_nextreq_cache" if "-diff-cache2-" in d else
            "v1_port" if "-diff-cache-" not in d else None)
     if ver is None:
@@ -71,3 +71,27 @@ for d in sorted(glob.glob(f"{RUNS}/*-icpe-ana-bottleneck-sa")):
             r = json.loads(l); sh = r.pop("share")
             r.update({f"share_{k}": v for k, v in sh.items()}); rows.append(r)
 write("bottleneck_sa.csv", rows)
+# CPython 3.12 set 走訪順序 vs Rust PySet（v5 的 B2 用）
+rows = []
+for f in sorted(glob.glob(f"{RUNS}/*-icpe-ana-pyset-fuzz/summary.jsonl")):
+    rows += [json.loads(l) for l in open(f)]
+write("pyset_order_fuzz.csv", rows)
+# v5 回歸：只跑 Rust，逐 job 和先前已對過 Python 的 run 的 sha_ref 比
+REG = {"noise-nb_bailian_coder": "v4s-noise-nb_bailian_coder", "noise-conversation": "v4s-noise-conversation",
+       "broad-nb_bailian_coder": "v4s-broad-nb_bailian_coder", "narrow-conversation": "fork-narrow-conversation"}
+rows = []
+for d in sorted(glob.glob(f"{RUNS}/*-icpe-ana-diff-v5reg-*")):
+    key = d.split("-diff-v5reg-")[1]
+    refs = sorted(glob.glob(f"{RUNS}/*-icpe-ana-diff-{REG[key]}"))
+    if key not in REG or not refs:
+        continue
+    ref = {}
+    for l in open(f"{refs[-1]}/diff.jsonl"):
+        r = json.loads(l); ref[r["job"]] = r
+    for l in open(f"{d}/diff.jsonl"):
+        r = json.loads(l); o = ref.get(r["job"])
+        rows.append(dict(trace=r["trace"], matrix=r["matrix"], job=r["job"], policy=r["policy"], cpu_GiB=r["cpu_GiB"], gpu=r["gpu"],
+                         noise=r.get("noise", "none"), sha_rust_v5=r["sha_rust"], sha_ref_python=None if o is None else o["sha_ref"],
+                         ref_run_id=os.path.basename(refs[-1]), identical=None if o is None else o["sha_ref"] == r["sha_rust"],
+                         ts=r["ts"], host=r["host"], run_id=r["run_id"], engine="v5_noise_b2"))
+write("rust_v5_regression.csv", rows)
