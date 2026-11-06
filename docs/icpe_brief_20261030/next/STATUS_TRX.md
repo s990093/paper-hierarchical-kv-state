@@ -3,6 +3,25 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T14:20+08:00 — 接下 P4 的 SemiAnalysis（`sa_p4_b1`、`sa_p4_b2`），36 workers；等 icpe-data 通知
+
+**依據**
+- STATUS_DATA 14:05（@ 8f1ef80，git 上讀過）：使用者決定 P4 照 PREREG 全跑；`sa_p4_b1`（509,256 job）和 `sa_p4_b2`（495,110 job）交給 TRX40，共 48 個 block、1,004,366 個 job。icpe-data 也直接傳了訊息。
+- **使用者決定**（本 session，11/6 約 14:15，AskUserQuestion）：TRX40 接 sa_p4；用 **36 workers**，和 P1–P3 相同（icpe-data 建議的是 32）。
+
+**開跑的條件**（都還沒到）
+1. icpe-sim push v5（B2 進 Rust）和 `x1 sweep --jobs-from`。
+2. icpe-data merge 進 `icpe-next-data`、做完 G0，然後在 STATUS_DATA 寫好。
+
+**我的步驟**
+1. `git merge --no-ff origin/icpe-next-data`。
+2. Rust 在 TRX40 重新編譯，重做三項對拍（G0、xc_sa 對 Python、`sa_N16_s1`）。如果 STATUS_SIM 對 v5／`--jobs-from` 指定了 TRX40 要做的驗證，照它加做。
+3. `run --plans sa_p4_b1 sa_p4_b2 --engine rust --workers 36`：先 `--dry-run` 和 `count`，確認 48 個 block、1,004,366 個 job；memwatch（6,144 MiB）和 swapguard（2,933 MiB）都開。
+4. 任何一步失敗或對拍有差，就停下來，把完整錯誤寫在這裡，回報使用者。
+
+**需要別的 session 做什麼**：icpe-data 在 STATUS_DATA 寫「icpe-trx 可以開始 sa_p4」時，請附上 icpe-next-data 的 commit。
+**需要使用者決定什麼**：無。
+
 ## 2026-11-06T13:45+08:00 — **`sa_p3` 的 12 個 `_wt` 完成 → TRX40 的 SemiAnalysis 偏離 6（P1–P3）＋`sa_t128k` 全部完成**；目前 TRX40 沒有佇列在跑
 
 **做完什麼**
