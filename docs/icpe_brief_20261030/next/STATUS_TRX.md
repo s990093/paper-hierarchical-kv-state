@@ -3,6 +3,36 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T13:45+08:00 — **`sa_p3` 的 12 個 `_wt` 完成 → TRX40 的 SemiAnalysis 偏離 6（P1–P3）＋`sa_t128k` 全部完成**；目前 TRX40 沒有佇列在跑
+
+**做完什麼**
+- 佇列 `run --plans sa_p3 --only 'sa_N*_wt' --engine rust --workers 36`：12 個 block 都 rc=0，13:12:59 → 13:37:22（24 分鐘）。log `$ROOT/runs/queue-sa_p3_wt-rust-w36-20261106-131259.log`；沒有 `*_KILLED`，swapguard log 是空的。
+- `collect --plans sa_p3` → `results/icpe_next/b/sa_p3/<變體>_wt/`：12 個 block，各 7,344 列（job 6,174），合計 74,088 job、88,128 列。之前收的 12 個 `_pfgpu` 沒有變動。
+  - 12 個檔都 `run_id` 單一值，等於各自的 run（`20261106-131259…sa_N16_s1_wt` 到 `20261106-133506…sa_N72_s3_wt`）。
+  - `host` 都是 `acvlab-TRX40-AORUS-MASTER`，`code_sha` 都是 `fd0dccbf7093+rse9497446`，`gpu_write` 都是 `wt`，`ts` 沒有空值。
+  - 12 個 run 都 `py_fallback_jobs=0`，`rust_timing.jsonl` 各 6,174 筆。
+- 程式：第一個 block 的 context 記 git HEAD 2b73df1，其餘 11 個記 a1608f2。中間的 commit 只改了 STATUS_TRX（`git diff --stat 2b73df1 a1608f2` 只有這一個檔），所以 12 個 block 的程式相同，也和三項對拍相同。
+- sweep 每個 block 88.8–121.8 s，合計 1,296 s。`rust_timing` 74,088 筆：`run_s` 中位數 0.578 s、p90 0.902 s、最長 1.851 s。
+- 記憶體（49 筆，每 30 s）：PSS 最高 2.8 GiB，MemAvailable 最低 53.5 GiB；swap 959 MiB，整段沒變；load1 最高 39.4。
+- 早上失敗的 run `20261106-093803-icpe-trx-sa_p3-sa_N16_s1_wt`（舊程式）不收；同一個 block 這次用新程式跑完。
+
+**TRX40 的 SemiAnalysis 總表**（全部在 git 裡）
+
+| 目錄 | block | 列 | code_sha |
+|:--|--:|--:|:--|
+| `sa_main` | 12 | 88,128 | （Python，見 11/5 各節） |
+| `sa_p1`（`_ttl`、`_trunc`） | 24 | 139,968 | `a27559138492+rs43dbe828` |
+| `sa_p2`（`_nvme807`、`_load`） | 24 | 146,880 | `a27559138492+rs43dbe828` |
+| `sa_p3` `_pfgpu` | 12 | 15,552 | `a27559138492+rs43dbe828` |
+| `sa_p3` `_wt` | 12 | 88,128 | `fd0dccbf7093+rse9497446` |
+| `sens_rep/sa_t128k` | 1 | 1,632 | `a27559138492+rs43dbe828` |
+
+- `_wt` 用的是修正後的程式，其他用修正前的程式。照 STATUS_SIM 10:10／13:15，wb＋GPU 的格子在兩版之間不變；本機的三項對拍（13:15 那節）也顯示 wb 的 xc_sa 和 `sa_N16_s1` 在新程式下 0 差。
+- 不解讀上限。P4（雜訊）不在 TRX40 的工作範圍。
+
+**需要別的 session 做什麼**：無。
+**需要使用者決定什麼**：無。
+
 ## 2026-11-06T13:15+08:00 — merge wt 修正（icpe-next-sim 776486c，程式＝7193a2d）；三項對拍全部 0 差；12 個 `_wt` 開跑
 
 **依據**：STATUS_SIM 13:15（@ 776486c，git 上讀過）「需要 icpe-trx 做什麼：merge 後重做 G0；main.rs 變了會自動重編；用 `--engine rust` 跑 xc_sa 和 Python 版逐格比對，之後再跑 12 個 `_wt` block」；icpe-sim 也直接傳訊息請我 merge 776486c。icpe-data 還沒把它併進 `icpe-next-data`（13:09 查過），所以直接 merge icpe-next-sim。
