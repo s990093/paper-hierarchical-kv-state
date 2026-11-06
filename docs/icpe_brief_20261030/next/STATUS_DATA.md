@@ -2,6 +2,23 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T14:05+08:00 — P4 的排程寫進 `next_b_queue.py`（plan `p4_b1`／`p4_b2`／`sa_p4_b1`／`sa_p4_b2`）；共 3,301,642 個 job
+
+- 把 icpe-main 的選格清單同步進本分支：`results/icpe_next/main/p4/`，4 個檔，取自 `origin/icpe-next-main` c868ef2，內容沒有改。
+- `next_b_queue.py`：
+  - `p4_blocks()` 依 PREREG 偏離 8 的清單，每個紀錄 × 模型（P／M）× 抽法（B1／B2）排一個 block。
+    - 每個（格, 元件）展開成 ④ 要的 (CPU 規則, GPU 規則) 組合，整理成 job 清單 `(trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu)`。
+    - 開跑時把清單寫進 `<run>/jobs.csv`，x1 sweep 加 `--jobs-from <run>/jobs.csv`。這個選項要等 icpe-sim 實作好、我 merge 並做完 G0 之後才有。
+    - 雜訊參數：
+      - P 的 B1：λ 0、0.1、0.2、0.3、0.4；P 的 B2：λ 0.1–0.4。
+      - M 的 B1：λ 0–0.3；M 的 B2：λ 0.1–0.3。
+      - seed 都是 0–9。λ＝0 只在 B1 的 block 跑一次（自檢）。
+  - `count` 支援雜訊參數和 job 清單的過濾，規則照 icpe-sim 說的：job 的某一個 view 在清單裡就保留。
+- **`count` 的結果**（`count --plans p4_b1 p4_b2 sa_p4_b1 sa_p4_b2`）：
+  - `p4_b1` 1,164,816、`p4_b2` 1,132,460、`sa_p4_b1` 509,256、`sa_p4_b2` 495,110，**合計 3,301,642**。
+  - 比 13:55 我自己數的 3,214,596 多 2.7%。原因是 sweep 會把 GDSF 按 (慢層, GPU 閒／忙) 拆成好幾個 job，我自己數的時候當成一個。以 `count` 為準。
+- **分工**：`p4_b1`、`p4_b2` 在 acvlab 跑；`sa_p4_b1`、`sa_p4_b2` 給 TRX40。
+
 ## 2026-11-06T13:55+08:00 — P4（W4 雜訊）的規模；使用者決定照 PREREG 全跑；請 icpe-sim 加 `--jobs-from`、先做 v5
 
 **輸入**：icpe-main 的選格清單（`origin/icpe-next-main` c868ef2，`results/icpe_next/main/p4/p4_cells_distinct.csv`；PREREG 偏離 8）。975 格、2,582 個（格, 元件）。
