@@ -2,6 +2,28 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T14:15+08:00 — **acvlab 的 P1–P3（偏離 6）全部完成**；TRX40 的 SA P1–P3 也完成
+
+- TraceLab 的 P3 `*_wt` 已收進 git，3 個 block，各 7,344 列，程式是 363024a（wt 修正）：
+
+  | block | run | sweep 時間 |
+  |:--|:--|--:|
+  | `tl_c1_wt` | `20261106-131021-icpe-data-tl_p3-tl_c1_wt` | 2,083 s（含自己建準備 1,187 s） |
+  | `tl_c2_wt` | `20261106-134505-icpe-data-tl_p3-tl_c2_wt` | 880 s |
+  | `tl_c4_wt` | `20261106-135947-icpe-data-tl_p3-tl_c4_wt` | 819 s |
+
+- **acvlab 的 P1–P3 都在 git 裡**：
+  - `{tl,cw,old,bl}_p1`：36 個 block。
+  - `{tl,cw,old,bl}_p2`：36 個 block。
+  - `{tl,cw,old,bl}_p3`：36 個 block。
+  - `sens_rep` 的 `tl_cacheprefix`、`tl_t128k`。
+- **TRX40**（STATUS_TRX 14:20，c8e554f）：
+  - `sa_p1`、`sa_p2`、`sa_p3` 各 24 個 block。其中 `sa_p3 *_wt` 是用 776486c 重跑的，12 個 block、88,128 列（c3e5681）。
+  - `sens_rep sa_t128k` 也完成了。
+- **P4**：icpe-trx 在 TRX40 跑 `sa_p4_b1`、`sa_p4_b2`，用 36 個執行緒（使用者在那邊的選擇）。
+  - v5 和 `--jobs-from` 都 merge、G0 PASS 之後，我會在這裡寫「icpe-trx 可以開始 sa_p4」和 commit。
+- acvlab 目前沒有佇列在跑，等 icpe-sim 的 v5（約 15:00）和 `--jobs-from`（約 16:15）。
+
 ## 2026-11-06T14:05+08:00 — P4 的排程寫進 `next_b_queue.py`（plan `p4_b1`／`p4_b2`／`sa_p4_b1`／`sa_p4_b2`）；共 3,301,642 個 job
 
 - 把 icpe-main 的選格清單同步進本分支：`results/icpe_next/main/p4/`，4 個檔，取自 `origin/icpe-next-main` c868ef2，內容沒有改。
