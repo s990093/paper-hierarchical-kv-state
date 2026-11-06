@@ -579,3 +579,42 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 **icpe-data 的處理**（他們的訊息）：佇列 A 碰到第一個 tl_p3 `*_wt` 就停，改跑 cw_p3、bl_p3 的 `*_wt`；old_p3 `*_wt` 可排（Mooncake／FI 不受影響）。
 
 **需要使用者決定什麼**：上面的 A／B／C。
+
+## 2026-11-06T13:15+08:00 — **wt 修正（選項 A）：G1 PASS，commit `7193a2d`**；TRX40 出錯的 block 跑得完
+
+回 10:10 那節（使用者選 A）。細節見 SIM_CHANGES 第 19 項。
+
+**改了什麼**
+- 新請求沒有完整 block 時，回合結束改成 `_order_remove(s)`（Rust：`order_remove(s)`），取代只做 `cpu_set.discard(s)`。
+- CPU-only 的 `step` 與 wt 的 `_turn_end_wt` 都改，兩個引擎各兩行。
+
+**驗證**：run `20261106-111012-icpe-sim-g1-7193a2d`（detached checkout 7193a2d、共用 venv、nice 10；11:10–13:07）
+- **G1**：Python、Rust 各 4,416 列 × 29 欄，不同的格子 0 → **PASS**。
+- **xc_sa**（wb，應該不受影響）：Rust 對 icpe-data 的 Python 輸出，32 列，不同的格子 0。
+- **新程式 Python 對 Rust**：SemiAnalysis wt 子集 102 列、TraceLab c1 wt 子集 22 列，不同的格子都是 0。
+- **跑得完**（Rust 8 執行緒，退回 Python 0 個，沒有 panic）：
+  - TRX40 出錯的整個 `sa_N16_s1_wt`：6,174 個 job、7,344 列，sweep 496 s；
+  - TraceLab c1 wt 的 O-PF、LRU+RPF、O-ALL（全部 CPU × GPU 規則 × 慢層）：1,296 列，sweep 865 s。
+- **修改前後**（同參數，舊的 Rust 對新的；`wt_fix_effect.csv`）：
+  - SemiAnalysis 90 列中 48 列不同，TraceLab 18 列中 12 列不同。
+  - 平均 TTFT 有變的只有 SemiAnalysis 的 ARC（相對差 ≤ +9.8e-6）和 S3FIFO（−3.6e-5 到 +8.4e-7）；其餘只差計數（`n_demote`、`n_drop`、`cpu_residence_s_mean`）。
+  - 預測的格子平均 TTFT 不變。方向不一、大小可以忽略（只量了 CPU 8、TTLB:10 的子集）。
+- 摘要：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`rust_cmp.csv`（+3 列）、`wt_fix_effect.csv`（新）、`wt_fix_complete.csv`（新）。
+
+**影響範圍**（同 10:10 那節）
+- 會變的：SemiAnalysis、TraceLab 的 GPU 層關閉或 wt 的格子。
+- 不變的：git 裡所有結果（wb＋GPU；wt 的只有 Bailian／CacheWise／Mooncake／FI，這些紀錄沒有這種模式）。
+- **準備快取的鍵含 `x1_sim.py` 的 sha256**，所以 8b6520f 預建的 5 個 TraceLab 快取不會再命中。push 之後我照同樣的規則（5 個、同時最多 3 個行程）用這次的 commit 重新預建，好了另寫一行。
+
+**需要 icpe-data 做什麼**
+- `git merge --no-ff` 這次 push 的 commit，**重做 G0**（code/p3x 有改）。
+- 之後可以放開 TraceLab 的 `*_wt`（`hold_wt_v2_20261106.sh`）；SemiAnalysis 的 `*_wt` 也可以跑。
+- 已經跑完的 cw／old／bl 的 `*_wt` 不用重跑（那些紀錄沒有這種模式）。
+
+**需要 icpe-trx 做什麼**
+- merge 後重做 G0；main.rs 變了，Rust 會自動重新編譯。
+- 照 06:14 那節的規則，用 `--engine rust` 跑一次 xc_sa 和 Python 版逐格比對，之後再跑 12 個 `_wt` block。
+
+**下一步**（我）：B2 進 Rust（icpe-ana v5）。已審查完，接著換進 main.rs、跑驗證（G1、14 個 xcheck、Bailian B1＋B2、Mooncake B2、SemiAnalysis B2 子集）。另外把目前的引擎同步到 kvsweep（使用者 11/6 的要求）。
+
+**需要使用者決定什麼**：無。
