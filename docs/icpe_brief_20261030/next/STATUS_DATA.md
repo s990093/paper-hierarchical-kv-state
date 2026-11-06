@@ -2,6 +2,29 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T06:40+08:00 — **P4 的資料全部到齊**：68 個 block（acvlab 62＋TRX40 6）在 icpe-next-data 的 `results/icpe_next/b/p4_b{1,2}/`；SA 的 48 個在 icpe-next-trx 的 `sa_p4_b{1,2}/`
+
+- **acvlab 的佇列**（pid 2621451，48 workers）：最後一個 `p4_b2/tracelab_c4_M_B2` 05:22:07 → 06:25:24，rc=0。整個 P4 沒有 block 失敗。
+  - 現在 acvlab 沒有佇列在跑。
+  - 08:00 降回 35 的切換腳本印出 `SWITCH ABORTED: queue 2621451 exited before 08:00` 後退出，和預期一致。
+- **collect**：`next_b_queue.py collect --plans p4_b1 p4_b2`，log 是 `runs/collect-p4-20261107-061356.log`（61 個）和 `runs/collect-p4-20261107-062553.log`（1 個）。
+- **commit**（都已 push）：
+  - **8e7fc13**：TRX40 的 6 個 Mooncake 目錄，從 `origin/icpe-next-trx` a976925 checkout，blob 完全相同。
+    - `p4_b1/toolagent_{P,M}_B1`、`p4_b2/{conversation,toolagent}_{P,M}_B2`，1,243,186 列。
+  - **b0d84c4**：acvlab 的 62 個目錄，1,717,656 列。
+    - Bailian、CacheWise、TraceLab 的 B1＋B2，Mooncake conversation 的 B1。
+  - 68 個合計 **2,960,842 列**。
+  - 用 xz 照原樣 commit（最大 11.8 MB，合計約 93 MB）。依據是 icpe-trx 的使用者對 SA 的決定；我 11/7 跟使用者說過 acvlab 也照做，使用者沒有反對。
+- **核對**（68 個檔全部通過；腳本在 session scratchpad，結果見下）：
+  - `run_id` 單一值且等於 manifest，`host` 單一值，`code_sha`＝`3280b1c8799b+rs62b0932b`。
+  - `noise_model`／`noise_draw` 和 block 名稱一致，`trace` 單一值，`ts` 沒有空的。
+  - CSV 列數＝manifest 的 `rows`。
+  - 欄數：Mooncake 46；nb trace 49，多出 `n_ret_user`、`sum_ret_user`、`mean_ret_user`，和已在 git 的 `cw_main` 相同，是每格的彙總值，不是逐使用者的數字。
+  - acvlab 的 62 個 run：`exit_code`＝0、沒有 `STOPPED_NOT_USED`、`kept_jobs`＝`count`、`unmatched_cells=0`、`py_fallback_jobs=0`。
+  - 例外：`p4_b1/conversation_P_B1` 有存 npz（210,289 個，`RUN_DIR` 不是空的）。這是 15:40 那節記過的：那個 block 是改成不存 npz 之前開跑的。npz 不影響 sweep CSV。b0d84c4 的 commit 訊息寫「no npz」，漏了這個例外，以這裡為準。
+- **SA 的 P4**：在 `origin/icpe-next-trx` 的 `results/icpe_next/b/sa_p4_b1/`、`sa_p4_b2/`，各 24 個 block（b6eb4cd）。
+- **下一步**：通知 icpe-main，資料齊了，請它照 PREREG 寫 P4 的結果。
+
 ## 2026-11-07T03:55+08:00 — load 已回到約 107；那個外來工作已結束 → acvlab P4 的 ETA 回到約 06:25（06:05～06:50）〔推算〕
 
 - 03:40 起 load 開始下降。03:40～03:50 連續 10 分鐘 <120，03:50 是 107.9。03:50 時那個 43 執行緒的工作已不在行程表上。
