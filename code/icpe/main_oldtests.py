@@ -98,9 +98,9 @@ def main():
 
         def n(trunc, filt, gb="total", grp="all"):
             q = T2[(T2.source == a.check_v0) & (T2.trunc == trunc) & (T2.rule == "min") & (T2.comp_set == "4comp")
-                   & (T2.filter == filt) & (T2.group_by == gb) & (T2.group == grp)]
+                   & (T2["filter"] == filt) & (T2.group_by == gb) & (T2.group == grp)]
             return int(q.n_ge15.iloc[0]) if len(q) else 0
-        u = T2[(T2.source == a.check_v0) & (T2.rule == "min") & (T2.comp_set == "4comp") & (T2.group_by == "total") & (T2.filter == "all")]
+        u = T2[(T2.source == a.check_v0) & (T2.rule == "min") & (T2.comp_set == "4comp") & (T2.group_by == "total") & (T2["filter"] == "all")]
         assert set(u.n_cells_universe) == {192}, f"V0 T2 的格子不是 192：{set(u.n_cells_universe)}"
         exp = {("none", "all", "total", "all"): 95, ("none", "all", "cpu_GiB", "128.0"): 28, ("none", "all", "cpu_GiB", "256.0"): 31,
                ("none", "all", "cpu_GiB", "512.0"): 24, ("none", "all", "cpu_GiB", "1024.0"): 12,
