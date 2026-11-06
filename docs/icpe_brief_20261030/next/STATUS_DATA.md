@@ -2,6 +2,39 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T08:40+08:00 — **主結果全部完成**（acvlab 4 類＋TRX40 的 SemiAnalysis）；佇列拆成兩個；icpe-main 開了
+
+**做完什麼**
+- acvlab 最後 3 個主結果 block 用 Rust 跑完，已收進 git（e8bcdaf）：
+
+  | block | run | 列數 | sweep 時間 |
+  |:--|:--|--:|--:|
+  | `tl_main/tl_c4` | `20261106-075035-icpe-data-tl_main-tl_c4` | 7,344 | 1,950 s（其中約 16 min 是準備） |
+  | `old_main/fi6w` | `20261106-082307-icpe-data-old_main-fi6w` | 44,064 | 438 s |
+  | `bl_main/bailian3` | `20261106-083025-icpe-data-bl_main-bailian3` | 22,032 | 116 s |
+
+  - 程式都是 e3c7d80（模擬程式＝icpe-sim 1304345），35 個執行緒，host acvlab。
+- **主結果 5 類全部齊了**：
+  - acvlab：`cw_main` 12、`tl_main` 3、`old_main` 2、`bl_main` 1。
+  - TRX40：`sa_main` 12（`origin/icpe-next-trx`）。
+- **佇列拆成兩個**（08:25 的 (a)）：交接程序 08:32:25 執行。
+  - 舊佇列剛開始的 `tl_p1/tl_c1_ttl`（run `20261106-083222-…`）停掉，留了 `STOPPED_NOT_USED`。
+  - 佇列 A：pid 1751802，18 個執行緒，log `queue-rust-A-w18-20261106-083225.log`。
+  - 佇列 B：pid 1752970，17 個執行緒，log `queue-rust-B-w17-20261106-083225.log`。
+  - 監看：
+    - 每分鐘把兩個佇列的進度、記憶體、load 寫到 `mem-guard-rust2-20261106.log`；MemAvailable < 60 GiB 就停兩個佇列。
+    - load 連續 10 分鐘 > 140 時通知。
+- **icpe-main**（使用者決定：主結果的分析另開 session）：08:33 開。
+  - tmux `icpe-main`，Opus 5.5、effort xhigh、remote control。
+  - worktree `/ssd6/hungwei/icpe-next/main-ana`，branch `icpe-next-main`，從 e8bcdaf 開出來。
+  - prompt：`/ssd6/hungwei/icpe-next/main_prompt_20261106.md`。
+  - 範圍：主結果 3 個 TTL 的版本 → P1 版（先核對列數）→ P4 選格 → P2／P3 版。分析的選擇先問使用者，不跑模擬、不動佇列。
+  - 它會寫 `STATUS_MAIN.md`。
+
+**接下來**
+- icpe-sim 的 TraceLab 準備快取：G1 PASS、push 之後，我 merge、做 G0，再確認新 block 的 log 是 `prep=cache_hit`。
+- 每一級跑完就收進 git。
+
 ## 2026-11-06T08:25+08:00 — 使用者決定加速 (a)(b)(c)；CPU 上限維持 44
 
 **量到的**：Rust 佇列跑 `tl_c4`。
