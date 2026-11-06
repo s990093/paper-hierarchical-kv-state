@@ -1,0 +1,13 @@
+{
+ "plan": "sa_p2",
+ "block": "sa_N64_s2_load",
+ "run_id": "20261106-091606-icpe-trx-sa_p2-sa_N64_s2_load",
+ "host": "acvlab-TRX40-AORUS-MASTER",
+ "run_dir": "/ssd4/hungwei/icpe-next/runs/20261106-091606-icpe-trx-sa_p2-sa_N64_s2_load",
+ "rows": 9792,
+ "elapsed_s": 183.9,
+ "finished": "2026-11-06T09:19:10+08:00",
+ "cmd": "cd /home/hungwei/paper-hierarchical-kv-state\nexport RUN_ID=20261106-091606-icpe-trx-sa_p2-sa_N64_s2_load\nexport RUN_DIR=/ssd4/hungwei/icpe-next/runs/20261106-091606-icpe-trx-sa_p2-sa_N64_s2_load/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/home/hungwei/paper-hierarchical-kv-state/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/home/hungwei/paper-hierarchical-kv-state/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd4/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd4/hungwei/icpe-next/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd4/hungwei/icpe-next/runs/20261106-091606-icpe-trx-sa_p2-sa_N64_s2_load/rust_timing.jsonl\nexec nice -n 10 /ssd4/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /home/hungwei/paper-hierarchical-kv-state/results/icpe_h200/p01/calib --out-root /ssd4/hungwei/icpe-next/runs/20261106-091606-icpe-trx-sa_p2-sa_N64_s2_load/out x1 sweep --traces nb:semianalysis_N64_s2 --rules nb --cpu 8 16 32 64 128 256 512 1024 111.0625 --policies LRU LRU2 ARC S3FIFO GDSF PENS FREQ2Q LRU+NONE LRU+2HW LRU+2HA LRU+RPF O-BEL O-BELS O-DROP O-NOW O-PF O-ALL --slows ssd b32 nfs nvme807 --modes load --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU BEL TTLA:0.3 TTLA:10 TTLA:300 TTLB:0.3 TTLB:10 TTLB:300 --pf-target cpu --workers 36 --engine rust\n",
+ "context": "date: 2026-11-06T09:16:06.618839+08:00\nhost: acvlab-TRX40-AORUS-MASTER\nplan: sa_p2\nblock: sa_N64_s2_load\nengine: rust\ngit HEAD: b68d034735c5e9d68a7007dde8ca59f2b16206ca\ngit status:\nuptime:  09:16:06 up 6 days, 13:20, 10 users,  load average: 33.94, 34.28, 34.26\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:              62           6           5           0          52          56\nSwap:              7           0           7\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:semianalysis_N64_s2: sha256 87597dd234bb512e2d8e5a8f587048de333e6411a3953853fbd6d75ecbd07187  /ssd4/hungwei/icpe-next/datasets/x1_nb/semianalysis_N64_s2.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}
