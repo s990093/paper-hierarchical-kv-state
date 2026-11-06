@@ -3,6 +3,30 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T15:20+08:00 — merge icpe-data 的「P4 不存 npz」（f828e79）；**sa_p4 開跑**（48 個 block、1,004,366 個 job、36 workers）
+
+**依據**：STATUS_DATA 15:25（@ f828e79，git 上讀過）。PREREG 的 P4 只要 seed 間的中位數、最小–最大、平均±標準差，`next_sim_analyze.py` 只讀 sweep CSV，所以不需要逐請求 npz。P4 的 block 帶 `no_npz=True` → `RUN_DIR` 是空字串，x1_sim 不存 npz。
+
+**做完什麼**
+- `git merge --no-ff origin/icpe-next-data` → **4f5c831**。這次只改了 `code/icpe/next_b_queue.py`（6 行）。
+  - `git diff 424d390 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 是空的：模擬程式和 15:15 那節對拍過的相同，所以沒有重做對拍。
+  - `git diff origin/icpe-next-data HEAD -- code/` 也是空的。
+  - 我查過 `RUN_DIR` 在 `x1_rust.py`、`p3_fvar.py`、`p3_platform.py` 都沒有用到，x1_sim 只用在 `_job_rows` 存 npz（`if rd:`）。
+- **dry-run**：48 個 block 都是 `export RUN_DIR=`（空的），都有 `--jobs-from` 和 `--workers 36 --engine rust`。
+- **開跑**：`run --plans sa_p4_b1 sa_p4_b2 --engine rust --workers 36`，15:16:47，pgid 2121436，log `$ROOT/runs/queue-sa_p4-rust-w36-20261106-151647.log`。
+  - 守門程式：memwatch（6,144 MiB）、swapguard（2,933 MiB），另加 **diskguard**（新的機器工具 `$ROOT/tools/diskguard.sh`，/ssd4 剩不到 50 GiB 就停）。
+  - 開跑前：swap 947 MiB、MemAvailable 57.8 GiB、/ssd4 剩 548 GiB。
+- **第一個 block**（`sa_p4_b1/semianalysis_N16_s1_P_B1`，run `20261106-151647-icpe-trx-sa_p4_b1-semianalysis_N16_s1_P_B1`）：
+  - `jobs_from=` 那行：rows 287、cells 287、`kept_jobs=8323`（＝`count`）、`dropped_jobs=39893`、`unmatched_cells=0`。
+  - `py_fallback_jobs=0`，`code_sha=3280b1c8799b+rs62b0932b`。
+  - `req/` 是空的（0 個檔），run 目錄 1.6 MB。
+- 〔推算〕時間：1,004,366 job × 0.578 s（`sa_p3 _wt` 的 `run_s` 中位數）÷ 36 ≈ 4.5 h，約 19:45 跑完。B2 的速度還沒量。
+
+**接下來**：每個 block 跑完核對 `kept_jobs`＝`count`、`unmatched_cells=0`、`py_fallback_jobs=0`。全部跑完後 `collect`，檢查每個檔的 `run_id`／`host`／`code_sha`，再 commit／push。任何 block 失敗就停下來，把完整錯誤寫在這裡。
+
+**需要別的 session 做什麼**：無。
+**需要使用者決定什麼**：無。
+
 ## 2026-11-06T15:15+08:00 — merge icpe-next-data（v5＋`--jobs-from`＋P4 plan）、對拍全部 0 差、count／dry-run 正確；**sa_p4 沒有開跑：逐請求 npz 估計約 1,164 GiB，/ssd4 只剩 548 GiB** → 使用者選「請 icpe-data 加不寫 npz 的開關」
 
 **做完什麼**
