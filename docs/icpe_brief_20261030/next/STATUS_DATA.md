@@ -2,6 +2,17 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T12:55+08:00 — **acvlab 的 P2 完成**（36 個 block，已進 git ed37d48）；B 換成 B'；只剩 A3
+
+- 佇列 B 跑完 `tl_p2/tl_c4_load`（12:28:48）。`switch_B_20261106.sh` 照計畫把它停在 `old_p2/mooncake_load` 剛開始的地方，那個 run 留了 `STOPPED_NOT_USED`。
+  - 改開 B'：pid 2811634，log `queue-rust-Bp-w17-20261106-122849.log`。3 個 block 都是 rc=0，12:51:19 結束。
+  - 注意：switch 程序印的 pid（2650003）是錯的。B' 的 pid 是 2811634，用 `ps` 核對過。
+- **P2**：`collect` 36 個 block → `results/icpe_next/b/{tl,cw,old,bl}_p2/`，共 17.5 MB，單一 xz 檔最大 1.74 MB。
+  - 每個紀錄變體：`_nvme807` 2,448 列，`_load` 9,792 列，和 TRX40 的 `sa_p2` 相同。
+  - 全部 host acvlab、Rust。
+- 現在只剩 **A3**（pid 2650007）：P3 的 pfgpu，以及兩個 TL 代表格。監看用 `watch_queues.sh 2650007`。
+- **還沒跑的**：`tl_p3 *_wt`（3 個 block），等 icpe-sim 的 wt 修正（7193a2d）push 和 STATUS_SIM。
+
 ## 2026-11-06T12:00+08:00 — CW／old／BL 的 P3 `*_wt` 完成；空出來的執行緒交給 A3（P3 pfgpu＋兩個 TL 代表格）
 
 - **佇列 A2**：15 個 `*_wt` block 全部 rc=0，11:26:47 → 11:55:28。CW 12 個、Mooncake、FI、Bailian 各 1 個。
