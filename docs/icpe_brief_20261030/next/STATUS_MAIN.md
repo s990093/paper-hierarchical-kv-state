@@ -3,15 +3,23 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
-## 2026-11-06T09:15+08:00 — 偏離 7 的同步狀態
+## 2026-11-06T08:58+08:00 — 更正：本檔與 PREREG 偏離 7 的時間標記（icpe-data 指出）
+
+- **錯在我**：下面各節原本的節名時間（09:00、09:05、09:15）和「使用者決定 09:0x」是我估的，沒有用 `date`。icpe-data 在 SendMessage 指出：我傳訊息之後 acvlab 的鐘才 08:56。我傳給 icpe-data 的訊息也寫了「09:05 節」，那就是本檔現在的 08:54 節。
+- 用 git 與檔案時間核對後的實際時間：開跑版本 A 08:48:46；版本 A 跑完 08:50:41（`exit_code` 的 mtime）；使用者選「commit＋push」與「偏離 7 由 icpe-main 寫」在 08:51–08:53（回報版本 A 之後、偏離 7 的 `date -u` 00:53:20Z 之前）；commit 9cba644／bcd0bad 08:54:39；commit 91a4d9d 08:56:14。下面各節的節名已改成實際時間。
+- **先後順序不變**：使用者是在看過版本 A 之後才決定登記；做決定 1–3（08:4x，08:46:20 merge 之前）時只看過 manifest 的摘要。
+- 偏離 7 的同步（git 核對）：`origin/icpe-next-data` @ b46635e、`origin/icpe-next-a` @ 1c0973f 的 `PREREG.md` 都和 bcd0bad 逐字相同。
+- PREREG 偏離 7 原文寫的「09:0x」也是錯的。PREREG 只往後加，所以在檔尾加了一節「偏離 7 更正」（`date -u` 2026-11-06T00:57:25Z），不改原文。要不要 push、其他分支要不要再同步：等使用者決定。
+
+## 2026-11-06T08:56+08:00 — 偏離 7 的同步狀態
 
 - h200 回覆（SendMessage）：已核過、已同步。我在 git 上確認：`origin/icpe-next-a` @ 1c0973f 的 `PREREG.md` 和 `icpe-next-main` @ bcd0bad **完全相同**（`git diff` 是空的）。h200 下一個偏離編號是 8。
 - `origin/icpe-next-data` 的 `PREREG.md` 還**沒有**偏離 7。已用 SendMessage 提醒 icpe-data；要不要同步由 icpe-data 決定。之後合併分支時要注意兩邊的 PREREG 一致。
 - P1：背景每 15 分鐘 fetch 一次，等全部 P1 block 進 git（cw 24、tl 6、old 4、bl 2、sa 24）。
 
-## 2026-11-06T09:05+08:00 — PREREG 偏離 7（判定方式的釐清）已寫；版本 A 進 git
+## 2026-11-06T08:54+08:00 — PREREG 偏離 7（判定方式的釐清）已寫；版本 A 進 git
 
-**使用者決定**（AskUserQuestion，11/6 09:0x）
+**使用者決定**（AskUserQuestion，11/6 08:51–08:53：版本 A 08:50:41 跑完、回報之後，偏離 7 的 `date -u` 00:53:20Z 之前）
 - 版本 A：全部 commit，push `icpe-next-main`。
 - 判定規則（原始／合成到達各下判定字、Mooncake R1／R2 各自判定、寫入飽和照算另標）：**登記成 PREREG 偏離 7，由 icpe-main 寫**。
 
@@ -25,7 +33,7 @@
 
 **接下來**：等 `{cw,tl,old,bl}_p1` 與 `sa_p1` 全部進 git。
 
-## 2026-11-06T09:00+08:00 — 版本 A（3 個 TTL）完成：對拍 6／6 相同、格數自檢 PASS；判定（版本 A，不是正式值）
+## 2026-11-06T08:51+08:00 — 版本 A（3 個 TTL）完成：對拍 6／6 相同、格數自檢 PASS；判定（版本 A，不是正式值）
 
 **run** `20261106-084846-icpe-main-verA-ttl3`（`/ssd6/hungwei/icpe-next/runs/` 下；cmd.sh、context.txt、stdout／stderr、exit_code＝0；git HEAD bf7915f；牆鐘 1:40、最大 RSS 338 MB；nice 19、單一行程）。
 - `next_sim_analyze.py` 原樣，`--pf-target cpu`，6 類紀錄分開跑（避免 `rule=min` 複製單一規則的紀錄）；CacheWise 另跑偏離 5 版（`cw_main`＋`cw_main_ttl7`＋`--rival-only-gpu` 8 個 TTL，內建自檢 PASS）。p90 另跑，只報告。
@@ -43,7 +51,7 @@
 - 寫入飽和：≥15% 的格子裡只有 Mooncake 有（conversation 69、toolagent 72 格），其他紀錄 0。
 - CacheWise 3 TTL 與偏離 5 版：算判定的 5 個元件 ≥15% 格數相同（O-GPU 111、O-ORD 48、O-PF 31）。
 
-## 2026-11-06T08:50+08:00 — 開工；使用者對 4 個分析選擇的決定；版本 A（3 個 TTL）開算
+## 2026-11-06T08:49+08:00 — 開工；使用者對 4 個分析選擇的決定；版本 A（3 個 TTL）開算
 
 **讀了什麼**：CLAUDE.md、NEXT_PLAN_20261104、PREREG（§1、§3、偏離 1–6、偏離 6 補記）、STATUS_DATA（到 08:25）、STATUS_SIM（到 06:14）、STATUS_A（到 07:55）、STATUS_ANA（`origin/icpe-next-ana` 279eb7e，到 03:05）、STATUS_TRX（`origin/icpe-next-trx` 87a5a86，到 08:12）、`code/icpe/next_sim_analyze.py`。
 
@@ -57,7 +65,7 @@
 3. **Mooncake**：**R1、R2 各自下判定**（不是以前慣例的 `rule=min`；`rule=min` 的列照程式輸出、只報告）。
 4. **寫入頻寬飽和的格子**（`write_saturated`）：照算、另外標格數，不排除。
 - 工具類的分法（不是新決定，照 NEXT_PLAN W2／§5.2）：TraceLab、CacheWise、SemiAnalysis、FreeInference、Mooncake toolagent＝工具類；Mooncake conversation、Bailian＝只報告。
-- 要不要把 2、3 登記成 PREREG 的釐清：→ 已登記為偏離 7（見 09:05 那節）。
+- 要不要把 2、3 登記成 PREREG 的釐清：→ 已登記為偏離 7（見 08:54 那節）。
 
 **已看過哪些正式結果**（照偏離 5 的慣例照實列出）
 - 開工前讀 manifest 時，`stdout_tail` 欄裡的摘要表（我只印了前 600 字元）：
