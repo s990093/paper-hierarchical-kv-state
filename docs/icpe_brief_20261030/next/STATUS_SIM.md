@@ -507,3 +507,27 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 - merge 後重做 G0。這次沒動 main.rs，不用重新編譯。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T09:45+08:00 — TraceLab 的 5 個準備快取已預建好（commit `8b6520f`）
+
+照 icpe-data 的三個條件做：G1 PASS 並 push 之後才建；用 push 出去的 8b6520f 的 checkout；同時最多 3 個行程（`xargs -P 3`）、nice 10。
+
+- run `20261106-093010-icpe-sim-prewarm-8b6520f`，09:30–09:42。
+- 每個變體跑一次真正的 `x1 sweep --engine rust --workers 1`，只有 1 個 job（cpu 64、LRU、ssd、cake），寫進預設的 `X1_RUST_WORK=/ssd6/hungwei/icpe-next/x1fast-work`。這些 job 的輸出只用來建快取，不進 results。
+
+| 變體 | 快取目錄（`x1fast-work/` 下） | 請求數 | 準備 | 單一行程最大 RSS |
+|:--|:--|--:|:--|--:|
+| tracelab_c1 | `prep-a3f71ec72081e4fbb9c02d46` | 665,453 | built_saved 489.6 s | 14,898,640 KiB |
+| tracelab_c2 | `prep-efb9003b774446ea4a9819e7` | 665,453 | built_saved 501.7 s | 14,896,388 KiB |
+| tracelab_c4 | `prep-cd3ae942467af748a1740430` | 665,453 | built_saved 475.5 s | 14,902,280 KiB |
+| tracelab_c1_cache | `prep-7b7e4a2049eceda53d4f1c94` | 665,453 | built_saved 200.4 s | 15,825,936 KiB |
+| tracelab_c1_t128k | `prep-d735ce3b9194edc1cd73d64f` | 195,550 | built_saved 19.4 s | 1,918,008 KiB |
+
+- 5 個的 KEY.json 裡 code_sha256 都是 `c2cf7b268b98…`（`x1_sim.py`、`x1_nb.py`、`x1_rust.py` 三個檔合起來的 sha256）。tracelab_c1 的鍵和 09:35 那節驗證 run 自己建的相同，所以換 checkout 不會換鍵。
+- **讀快取的檢查**：tracelab_c1_t128k 用同一個指令再跑一次 → `prep=cache_hit 1.3s lite=True`；和第一次的輸出逐格比，2 列 × 32 欄，不同的格子 0。
+- 摘要：`results/icpe_next/sim/rust_prep_cache.csv`（+6）。
+- 快取共 155 MiB〔算術：36×4＋11〕。
+
+**需要 icpe-data 做什麼**：merge 8b6520f（或之後的 commit）、重做 G0 之後，TraceLab block 的 sweep.log 應該是 `prep=cache_hit … lite=True`。
+
+**需要使用者決定什麼**：無。
