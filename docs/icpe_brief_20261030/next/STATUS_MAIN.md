@@ -3,6 +3,92 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-06T12:42+08:00 — 版本 B（P1 正式值）完成：判定字和版本 A 相同；P4 選格清單；PREREG 偏離 8
+
+**使用者決定**（AskUserQuestion，本 session）：
+- P1 進 git 之後（icpe-data 10:46 通知；合併 c472cdb 11:03:54 之前）：版本 B「照計畫開始」；重疊列「要核對」。
+- 看過版本 B 全部結果之後（run 11:15:21 跑完之後、baa508d 12:40:25 之前）：「全部 commit 並 push」；P4「加上 O-ALL(report)」；「登記，由 icpe-main 寫」。
+
+**做完什麼**
+- 合併：c472cdb＝`origin/icpe-next-data` @ d30ae7c。`PREREG.md` 有衝突，取我這邊：對方那份是我這邊的前段（有偏離 7、沒有偏離 7 更正），所以就是聯集，0 行刪除。df1ec60＝`origin/icpe-next-trx` @ 98b0d2f（sa_p1、sa_p2）。`next_sim_analyze.py` 沒變；`x1_sim.py` 只改了 Rust 的準備流程。
+- 核對工具（fb61730）：`main_rowcheck.py`、`main_overlap.py`、`main_ab.py`。P4 選格（50b04e8）：`main_p4cells.py`。
+- run `20261106-110735-icpe-main-verB-p1` **失敗**（exit 1），在算任何上限表之前：`FileNotFoundError: 'results/icpe_next/b/sa_main_ttl7/*/x1_sweep.csv.xz'`。原因是我的 cmd.sh 寫錯：`sa_main_ttl7` 只有 `cells.csv`，那次補跑照 STATUS_DATA 08:10 沒跑。run 目錄留了 `FAILED_SCRIPT_BUG`。
+- run `20261106-110854-icpe-main-verB-p1`（PASS，6 分 24 秒）只拿掉 SemiAnalysis 那一行重疊核對，其他相同。結果在 `results/icpe_next/main/verB/`、`results/icpe_next/main/oldtests_verB/`（baa508d，已 push）。
+  - 正式算法：每類紀錄 main＋`_p1` 的 `_ttl`；④ 和 ② 都有 7 個 TTL；沒有 `--rival-only-gpu`；不含 `cw_main_ttl7`。
+  - 並列：偏離 5 的算法（`verB_dev5`）。
+  - 只報告：`--dead-h 1800／3600`（加 `_trunc`）、p90。
+
+**核對（全部 PASS）**
+- **列數**（`rowcheck.csv`）：18 份 sweep 都是完整網格（main 17×8、`_ttl` 15×8、`_trunc` 6×16，每個（紀錄, 規則）54 格）。42 個（紀錄, 規則）× 每個元件都是 54 格，和版本 A 相同（`verAB_by_trace.csv`）。
+- **重疊列**（`overlap.csv`）：`cw_main_ttl7` 對 `cw_p1` 的 `_ttl` 重疊 19,840 列，逐格相同。兩邊程式是 f7038ddfaf9c（Python）對 ed2f4c78c88a+rs43dbe828（Rust）。SemiAnalysis 沒有第二份結果，NOT_MEASURED。
+- **逐格關係**（`cellcheck.csv`，30/30）：
+  - B 的 O-GPU ≤ A。
+  - 偏離 5 的算法 ≤ A。
+  - B 和偏離 5 的 O-GPU、O-ALL 完全相同。
+  - 截尾版的 O-ORD、O-PF、O-GPU 和不截尾的完全相同。
+- **舊模擬器**：`--check-v0` 仍重現論文的 50.5%、95、36。
+
+**判定**（`verB_verdict.csv`；和 A 並列在 `verAB_verdict.csv`）
+
+| 類別 | 版本 A | 版本 B（正式） |
+|:--|:--|:--|
+| 原始到達・工具類 | 9 個變體中 3 個 ≥15%，最大 62.4% | 3/9，最大 62.4% |
+| 合成到達・工具類 | 21/26，最大 55.0% | 21/26，最大 52.9% |
+| 原始到達・非工具類（只報告） | 5/5，最大 61.6% | 5/5，最大 61.6% |
+
+- 原始工具類成立的是 Mooncake toolagent R1 57.8%、R2 62.4%，和 TraceLab c1 38.9%。FreeInference 6 週都 ≤0.9%。
+- 推翻條件：未定（W3 NOT_MEASURED）。偏離 5 的算法並列：判定字、各類的變體數都相同。
+
+**A 到 B 變了什麼**
+- SemiAnalysis 的 O-GPU 降 3–4 個百分點（例：N64 s1 從 54.7% 到 51.7%）；≥15% 的格從 355 降到 333。
+- 有些元件因為 ④ 也多了 TTL 而小升：Mooncake toolagent R1 從 57.4% 到 57.8%；原始工具類的 O-PF 最大值從 52.0% 到 53.3%。
+- CacheWise 剛好卡在門檻邊：N32 s1 14.8%（不成立），N32 s2 15.4%（成立，2 格）。
+- O-NOW 在所有紀錄都沒有一格 ≥15%（最大 8.9%）。
+- ≥15% 的 1,694 個（格, 判定元件）裡有 144 個寫入飽和，全部在 Mooncake。
+
+**截尾（只報告，`verB_h1800`／`verB_h3600`）**
+- 定義：`-H{H}`＝紀錄最後 H 秒內不准判「不回來」（`x1_sim.py:707`、`:1228`）。
+- 只有 O-DROP、O-NOW 會變。O-DROP ≥15% 的格：
+  - 原始非工具類 120 → 20（H1800）→ 0（H3600）。
+  - 原始工具類 77 → 9 → 0。
+  - Mooncake 的 O-DROP 最大值從 55.7% 降到 0.0%（H3600）。
+- 〔判讀〕O-DROP 的上限幾乎全部來自紀錄尾端，和 EVIDENCE B2 的舊結論一致；撐住判定的是 O-GPU、O-ORD、O-PF。
+
+**論文的兩個 Mooncake 舊測試**（`oldtests_verB_*`；rule=min、Cake）
+
+| 測試 | old_V0（論文） | old_V1 | new 版本 A | new 版本 B |
+|:--|--:|--:|--:|--:|
+| T1：conversation O-PF、SSD、CPU 128 GiB | 50.5% | 53.2% | 39.1% | 37.8% |
+| T2：192 格 ≥15%（不截尾） | 95 | 97 | 113 | 111 |
+| T2：不截尾、只算不飽和 | 62 | 65 | 79 | 77 |
+| T2：截尾 H3600＋只算不飽和 | 36 | 38 | NOT_MEASURED | **38** |
+
+- 新 B 的 38 格依 CPU 分：128 GiB 16、256 GiB 15、512 GiB 7、1,024 GiB 0（V0 是 16／12／8／0）。
+- 依慢層分：ssd 17、b32 21、nfs 0（V0 是 19／17／0）。依元件分：O-ORD 18、O-PF 20、O-DROP 0。
+- 只報告：R1 40 格、R2 42 格；O-GPU 25 格。
+
+**P4（W4 雜訊）選格清單：給 icpe-data 排模擬**（PREREG 偏離 8；run `20261106-124122-icpe-main-p4cells`；43134be）
+- 選法：版本 B 正式上限 ≥0.15 的每一（格, 元件）。元件＝O-ORD、O-DROP、O-NOW、O-PF、O-GPU＋O-ALL(report)；O-ALL 加雜訊後仍只報告。Mooncake 只列 R1／R2（min 已涵蓋，程式自檢 322 筆）。
+- 規模：2,582 個（格, 元件）、975 個不同的格。
+  - 依元件：O-ALL(report) 888、O-GPU 781、O-ORD 434、O-PF 282、O-DROP 197、O-NOW 0。
+  - 依紀錄（格×元件／格）：Mooncake 891／216、SemiAnalysis 849／389、CacheWise 369／179、Bailian 272／98、TraceLab 201／93、FreeInference 0。
+- 檔案（`results/icpe_next/main/p4/`）：
+  - `p4_cells_distinct.csv`：每格一列，`components`＝要加雜訊的元件；排模擬用這份。
+  - `p4_cells.csv.xz`：每個（格, 元件）一列，含 ④／② 的做法、headroom、`write_saturated`。
+  - `p4_summary.csv`：格數。
+  - 格的座標＝(trace, rule, cpu_GiB, slow, gpu, restore, gpu_GiB, gpu_write, slow_cap_frac)，全部是主時間設定（wb、111.0625 GiB、cake）。
+- 雜訊的模型、抽法、λ、seed、λ＝0 自檢，照 §3 B／偏離 6，偏離 8 沒有改。
+
+**PREREG 偏離 8**（df8b74c，append-only，15 行新增、0 行刪除）：P4 選格的解讀。號碼由 h200 確認可用（h200 之後從 9 開始編）。
+
+**寫本節時已經看過的正式結果**：版本 A 全部（前面各節）；版本 B 全部輸出（判定、偏離 5 的算法、截尾、p90、舊測試、各元件格數）；P4 清單。W4 雜訊：沒有看過任何結果（還沒跑）。
+
+**需要別的 session 做什麼**
+- icpe-data：依 `results/icpe_next/main/p4/p4_cells_distinct.csv` 排 P4。
+- h200：同步 PREREG 偏離 8（df8b74c）。
+
+**接下來**：第 4 步 P2／P3，等 `_p2`／`_p3` 進 git，在 3 個 TTL 的基礎上算，不重複算和 `sens_rep` 重疊的代表格。目前 git 上：sa_p2 已完成；sa_p3 的第一個 block 失敗（STATUS_TRX：Rust panic），等 icpe-trx 處理。
+
 ## 2026-11-06T09:05+08:00 — 論文的兩個 Mooncake 舊測試：照原定義在新、舊模擬器上重算並列（使用者決定）
 
 **使用者決定**（AskUserQuestion，11/6 09:0x，本 session）：論文的 50.5%（conversation 預取、CPU 128 GiB）與「192 格裡截尾 H3600＋排除寫入飽和後 36 格 ≥15%」（EVIDENCE B9）——**新模擬器照原定義重算，和舊值並列**；**完全照舊定義**（rule=min、4 個元件、CPU 128–1,024 GiB、192 格），另外並列 R1／R2 與 O-GPU（只報告，不改偏離 7 的判定）。
