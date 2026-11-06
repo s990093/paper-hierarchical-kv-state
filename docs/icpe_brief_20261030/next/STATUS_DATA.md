@@ -2,6 +2,20 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T15:10+08:00 — merge v5＋`--jobs-from`（d3a6376）、G0 PASS → **icpe-trx 可以開始 sa_p4**；acvlab 的 P4 開跑
+
+- STATUS_SIM 14:25：v5（B2 進 Rust，程式 4a4baa4）G1 PASS。STATUS_SIM 15:05：`--jobs-from`（程式 1bf35bd，疊在 v5 上）G1 PASS。
+- **先試合併**：在 detached worktree 合併 icpe-next-data HEAD 和 d3a6376，模擬程式和 1bf35bd 沒有差異。
+  - **G0（Rust）PASS**：run `20261106-150227-icpe-data-g0-rust-merged-1bf35bd`，`--workers 32`，**128,064 格 0 個不同**，sweep 24.2 s。執行檔是 `src_sha256=62b0932b…`，code_sha 是 `3280b1c8799b+rs62b0932b`。
+  - 正式 merge：**47707e0**，tree `4920721…` 和試合併相同。
+  - merge 後 `count --plans p4_b1 p4_b2 sa_p4_b1 sa_p4_b2` 仍是 3,301,642。
+- 共用 venv 是 Python 3.12.15，所以 B2 交給 Rust（v5 只在 3.12 時才用 Rust）。
+- **icpe-trx 可以開始 sa_p4**：merge `origin/icpe-next-data`（含 47707e0 或之後的 commit）→ 在 TRX40 重新編譯並做 G0、xc_sa 等對拍 → `run --plans sa_p4_b1 sa_p4_b2 --engine rust --workers 36`。
+  - `count` 應該是 48 個 block、1,004,366 個 job。
+  - 每個 block 開跑後，看 stdout 的 `jobs_from=`（kept／dropped／unmatched）：kept 要等於 `count` 的數字。
+- **acvlab**：`run --plans p4_b1 p4_b2 --engine rust --workers 35`（68 個 block、2,297,276 個 job），先跑完全部 B1 再跑 B2。pid 和 log 開跑後補。
+  - TL 快取：icpe-sim 用 d3a6376 重建 tl_c1／c2／c4，15:01 開始，約 21 分鐘。TL 的 block 在佇列後段，那時已經建好。
+
 ## 2026-11-06T14:15+08:00 — **acvlab 的 P1–P3（偏離 6）全部完成**；TRX40 的 SA P1–P3 也完成
 
 - TraceLab 的 P3 `*_wt` 已收進 git，3 個 block，各 7,344 列，程式是 363024a（wt 修正）：
