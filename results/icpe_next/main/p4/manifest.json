@@ -1,0 +1,15 @@
+{
+ "run_id": "20261106-124122-icpe-main-p4cells",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261106-124122-icpe-main-p4cells",
+ "cmd": "set -euo pipefail\ncd /ssd6/hungwei/icpe-next/main-ana\nexport RUN_ID=20261106-124122-icpe-main-p4cells OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1\nV=results/icpe_next/main/verB\n# P4（W4 雜訊）選格：版本 B（P1 正式值）上限 ≥15% 的每一格、每個元件；元件＝5 個判定元件＋O-ALL(report)（使用者 11/6）；PREREG 偏離 8\nnice -n 19 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/main_p4cells.py \\\n  --headroom CacheWise=$V/cw_p1_headroom_components.csv.xz TraceLab=$V/tl_p1_headroom_components.csv.xz SemiAnalysis=$V/sa_p1_headroom_components.csv.xz Bailian=$V/bl_p1_headroom_components.csv.xz Mooncake=$V/mc_p1_headroom_components.csv.xz FreeInference=$V/fi_p1_headroom_components.csv.xz \\\n  --components O-ORD O-DROP O-NOW O-PF O-GPU \"O-ALL(report)\" --thr 0.15 --out-dir /ssd6/hungwei/icpe-next/runs/20261106-124122-icpe-main-p4cells/out\n",
+ "context": "2026-11-06T12:41:22+08:00\nhost=acvlab\ngit HEAD: 50b04e8cd40117cd9c3d093df215b5df3f11b6ac\ngit status:\n 12:41:22 up 21 days, 35 min, 46 users,  load average: 63.78, 69.60, 74.02\n               total        used        free      shared  buff/cache   available\nMem:             440         102          42           1         295         331\nSwap:              1           1           0\nGPU: not used\n",
+ "exit_code": "0",
+ "stdout": "自檢 PASS：rule=min ≥0.15 的 322 筆，R1、R2 都在清單裡\nP4：2582 個（格, 元件），975 個不同的格；依元件 {'O-ALL(report)': 888, 'O-GPU': 781, 'O-ORD': 434, 'O-PF': 282, 'O-DROP': 197}\n              cell_comp  cells\ntrace_class                   \nBailian             272     98\nCacheWise           369    179\nMooncake            891    216\nSemiAnalysis        849    389\nTraceLab            201     93\n→ /ssd6/hungwei/icpe-next/runs/20261106-124122-icpe-main-p4cells/out/{p4_cells,p4_cells_distinct,p4_summary}.csv\n",
+ "note": "P4（W4 雜訊）要跑的格子（PREREG §3 B、偏離 6 的 P4、偏離 8）：版本 B（P1 正式值，results/icpe_next/main/verB/*_p1_headroom_components.csv.xz，run 20261106-110854-icpe-main-verB-p1）上限 ≥15% 的每一格、每個元件；元件＝O-ORD、O-DROP、O-NOW、O-PF、O-GPU＋O-ALL(report)（使用者 11/6）；rule=min 不列（R1、R2 已涵蓋，程式自檢）。p4_cells＝每個（格, 元件）一列；p4_cells_distinct＝每格一列＋要加雜訊的元件；p4_summary＝格數。O-ALL(report) 仍只報告（judged=False）。",
+ "files": {
+  "p4_cells.csv.xz": "40e6e629b39fe78f645067ceca79be38b48f6e690da9a1b7a7d9655dccd1d723",
+  "p4_cells_distinct.csv": "9036e8ad531d34a80365b707b27656477223c3dae540be060db80cfd647e0131",
+  "p4_summary.csv": "95f34d972630ff86113b782fec9decaa014fbff9f96c915b14864cc9ffd842e3"
+ }
+}
