@@ -3,6 +3,71 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T19:20+08:00 — sa_p4 跑到 38／48；**使用者決定：sa_p4 跑完後，TRX40 接 acvlab P4 裡還沒開始的 Mooncake block**（清單等 icpe-data 定）
+
+**依據**
+- icpe-main 的訊息（11/6 約 19:10）轉述使用者在 icpe-main 的話：「那帮我在 RTX 上面继续跑 P4 的任务，可以直接交给他。」
+  - 哪些 block 搬由 icpe-data 定；CacheWise 一律留在 acvlab；同一個 block 不能兩台都跑。
+- **使用者在本 session 確認**（AskUserQuestion，11/6 約 19:15）：**只接 Mooncake**。
+  - 這改了 11/6 早上「TRX40 只做 SemiAnalysis」的決定，也把我寫 results 的範圍擴大到這幾個 Mooncake block（`results/icpe_next/b/p4_b1|p4_b2/<block>/`）。
+  - Bailian、TraceLab 不搬：TRX40 上沒有這兩份資料。
+
+**sa_p4 進度**
+- 19:05 時 38／48 個 block rc=0，沒有 FAILED／KILLED。swap 947 MiB 沒變，/ssd4 剩 547 GiB。
+- 剩 10 個 B2 block（`N64_s2`–`N72_s3`）。〔推算〕用同一批變體的 B1 時間（519–1,060 s），約 21:00 跑完。
+
+**TRX40 上的 Mooncake 資料**
+- `$ROOT/datasets/mooncake/traces` 的 sha256：
+  - `conversation_trace.jsonl` `b8cbb061…`、`toolagent_trace.jsonl` `48a2db1a…`
+  - 和 STATUS_DATA 11/4 23:55 的值相同。
+- 不用搬任何資料。
+
+**job 數**（run `20261106-191245-icpe-trx-count-p4-acvlab`，`count --plans p4_b1 p4_b2`）
+- 合計 2,297,276，和 STATUS_DATA 相同。
+- 依 STATUS_DATA 18:20，acvlab 還沒開始的 Mooncake block 有 6 個，共 **1,040,346** 個 job：
+
+  | block | job |
+  |:--|--:|
+  | `p4_b1/toolagent_P_B1` | 196,718 |
+  | `p4_b1/toolagent_M_B1` | 148,738 |
+  | `p4_b2/conversation_P_B2` | 205,160 |
+  | `p4_b2/conversation_M_B2` | 153,870 |
+  | `p4_b2/toolagent_P_B2` | 191,920 |
+  | `p4_b2/toolagent_M_B2` | 143,940 |
+
+- 〔推算〕用 acvlab 實測的 0.374 執行緒秒／job（STATUS_DATA 18:40），36 workers 約 3 h。TRX40 跑 Mooncake 的速度 NOT_MEASURED。
+- 〔推算〕acvlab 照 18:40 的速率，約 22:00 會跑到 `toolagent_P_B1`。所以跳過的設定要在那之前做好。
+- **dry-run**：
+  - 指令：`run --plans p4_b1:toolagent_P_B1,toolagent_M_B1 p4_b2:conversation_P_B2,conversation_M_B2,toolagent_P_B2,toolagent_M_B2 --engine rust --workers 36 --dry-run`
+  - 剛好這 6 個 block。都是 `export RUN_DIR=`（空的），都有 `--jobs-from`，`X1_TRACE_DIR` 是上面的目錄。沒有建立 run 目錄。
+
+**計畫**（清單以 icpe-data 在 STATUS_DATA 寫的為準）
+1. sa_p4 跑完 → `collect`、核對、commit／push（照 15:20 那節）。
+2. 等 icpe-data 在 STATUS_DATA 寫好 TRX40 的 block 清單，以及 acvlab 佇列（pid 3531487）怎麼跳過這些 block。
+3. `git merge --no-ff origin/icpe-next-data`。
+   - `git diff 4f5c831 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 要是空的。不是空的就重做三項對拍。
+   - `code_sha` 要等於 acvlab P4 的 `3280b1c8799b+rs62b0932b`。
+4. **Mooncake 的雜訊對拍**：G0 本身就是 Mooncake conversation，15:05 在這份程式上已經 0 差，但它不含雜訊。所以另外比一個 Mooncake toolagent 的 B1＋B2 子集：同樣參數在 TRX40 用 Python 和 Rust 各跑一次，要 0 個不同的格子。
+5. 照清單用 `--plans p4_b1:<…> p4_b2:<…>` 指定 block，`--engine rust --workers 36`。
+   - 守門程式照舊：memwatch 6,144、swapguard 2,933、diskguard 50 GiB。
+   - 每個 block 核對：`kept_jobs`＝`count`、`unmatched_cells=0`、`py_fallback_jobs=0`、`req/` 是空的。
+6. 跑完 `collect --plans p4_b1 p4_b2`。
+   - 只收 TRX40 跑的這幾個 block，`host` 要是 `acvlab-TRX40-AORUS-MASTER`。
+   - commit／push 前在這裡寫清單，避免和 acvlab 收的檔重疊。
+7. 任何一步失敗或有差，就停下來，把完整錯誤寫在這裡，並回報使用者。
+
+**舊計畫的兩步不重跑**（使用者問的，run `20261106-163455-icpe-trx-oldplan-coverage`）
+- 舊計畫的 `sa_main_ttl7`（20 個 block）和 `sens_rep sa_*`（4 個 block）：dry-run 後，逐一拿參數去和已完成的 P1–P3 比。
+- 24 個都是某個已完成 block 的子集，0 個沒涵蓋：
+  - `sa_main_ttl7` → `sa_p1 *_ttl`
+  - nvme807、load → `sa_p2`
+  - wt、pfgpu → `sa_p3`
+- 唯一沒涵蓋的 `sa_t128k` 已經在 11:22 跑完。
+- 注意：比的是參數。「參數是子集，所以 job 也是子集」是〔推論〕。
+
+**需要別的 session 做什麼**：**icpe-data**：在 STATUS_DATA 寫 TRX40 的 block 清單，以及 acvlab 佇列跳過這些 block 的做法（附 commit）。已傳訊息。
+**需要使用者決定什麼**：無（已決定，見上）。
+
 ## 2026-11-06T15:20+08:00 — merge icpe-data 的「P4 不存 npz」（f828e79）；**sa_p4 開跑**（48 個 block、1,004,366 個 job、36 workers）
 
 **依據**：STATUS_DATA 15:25（@ f828e79，git 上讀過）。PREREG 的 P4 只要 seed 間的中位數、最小–最大、平均±標準差，`next_sim_analyze.py` 只讀 sweep CSV，所以不需要逐請求 npz。P4 的 block 帶 `no_npz=True` → `RUN_DIR` 是空字串，x1_sim 不存 npz。
