@@ -3,6 +3,57 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T09:45+08:00 — `sa_p2` 完成；**`sa_p3` 第一個 block（`sa_N16_s1_wt`）失敗：Rust 引擎 panic（`src/main.rs:667`）→ 佇列停了**
+
+**`sa_p2` 完成**
+- 24 個 block 都 rc=0，08:53:56 → 09:38:03（44 分鐘）→ `results/icpe_next/b/sa_p2/`（commit dc8892c，12 MB）：12 個 `_nvme807` 各 2,448 列、12 個 `_load` 各 9,792 列；合計 124,416 job、146,880 列。每個檔 `run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`、`code_sha`＝`a27559138492+rs43dbe828`；24 個 run 都 `py_fallback_jobs=0`。
+- sweep 每個 block 30.3–171.0 s，合計 2,251 s。`rust_timing.jsonl` 124,416 筆：`run_s` 中位數 0.619 s、p90 0.916 s、最長 1.919 s。
+- 記憶體（88 筆）：PSS 最高 3.0 GiB，MemAvailable 最低 53.3 GiB；swap 959 MiB；load1 最高 40.8。
+
+**`sa_p3` 失敗**（完整錯誤；沒有重試）
+- run `20261106-093803-icpe-trx-sa_p3-sa_N16_s1_wt`，exit 1。git HEAD b68d034（程式＝eeaecef，sim 1304345，`bin_sha256=ceaf3065…`，和三項對拍相同）。
+- 指令（cmd.sh 最後一行的尾段）：`… x1 sweep --traces nb:semianalysis_N16_s1 --rules nb --cpu 8 16 32 64 128 256 512 1024 111.0625 --policies LRU LRU2 ARC S3FIFO GDSF PENS FREQ2Q LRU+NONE LRU+2HW LRU+2HA LRU+RPF O-BEL O-BELS O-DROP O-NOW O-PF O-ALL --slows ssd b32 nfs --modes cake --gpu-gib 111.0625 --gpu-write wt --gpu-policies LRU BEL TTLA:0.3 TTLA:10 TTLA:300 TTLB:0.3 TTLB:10 TTLB:300 --pf-target cpu --workers 36 --engine rust`
+- 跑到 400／6,174 個 job（stdout 最後一行 `[400/6174 8s] … O-ALL …`；`rust_timing.jsonl` 400 筆）。
+- stderr.log 全文：
+  ```
+  session groups: 550 groups for 2090 sessions, largest 153
+  x1fast serve: trace_load_s 0.649105179 threads 36
+
+  thread '<unnamed>' (2052850) panicked at src/main.rs:667:41:
+  index out of bounds: the len is 0 but the index is 18446744073709551615
+  note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+  thread '<unnamed>' (2052865) panicked at src/main.rs:667:41:
+  index out of bounds: the len is 0 but the index is 18446744073709551615
+  Traceback (most recent call last):
+    File ".../code/icpe/p3_fvar.py", line 163, in <module>
+      main()
+    File ".../code/icpe/p3_fvar.py", line 137, in main
+      XS.main()
+    File ".../code/p3x/x1_sim.py", line 2740, in main
+      {"selftest": cmd_selftest, "sweep": cmd_sweep, "analyze": cmd_analyze}[a.cmd](a)
+    File ".../code/p3x/x1_sim.py", line 2347, in cmd_sweep
+      _rust_sweep(JR, a.workers, put)
+    File ".../code/p3x/x1_sim.py", line 2401, in _rust_sweep
+      raise RuntimeError(f"x1fast（常駐，{ev[1].tdir}）提早結束，exit {ev[1].p.wait()}（錯誤訊息在 stderr）")
+  RuntimeError: x1fast（常駐，/ssd4/hungwei/icpe-next/x1fast-work/trace-7cfa6556228f0469c7dc5113）提早結束，exit -6（錯誤訊息在 stderr）
+  ```
+- 佇列 log：`BLOCK FAILED sa_p3/sa_N16_s1_wt rc=1` → 佇列 09:38 結束（`sa_p3` 其餘 23 個 block 沒跑）。保護沒觸發，沒有殘留行程。
+- `src/main.rs:667` 是 `demote()` 裡開預取時的 `let t = self.tr.next_access(bl[bl.len() - 1], self.cur);`：`bl`（`self.sbl(s)`）是空的，`len()-1` 溢位。只看到這一行，沒有找出是哪個 job（哪個策略／TTL／CPU 大小）；Python 引擎在同一個 job 會不會出錯 NOT_MEASURED。
+- **需要 icpe-sim 做什麼**：看 `--gpu-write wt` 時 `demote()` 為什麼會拿到沒有 block 的 session（重現：上面的指令、`nb:semianalysis_N16_s1`）。程式歸 icpe-sim，我不改。
+- **需要使用者決定什麼**：`sa_p3` 怎麼繼續（已問）。
+
+## 2026-11-06T08:58+08:00 — **`sa_p1` 完成**（24 個 block，Rust，36 workers）；`sa_p2` 在跑
+
+- 佇列 `queue-sa_p123-rust-w36-20261106-080648.log`：`sa_p1` 24 個 block 都 rc=0，08:06:48 → 08:53:56（47 分鐘）。run_id＝`20261106-HHMMSS-icpe-trx-sa_p1-<block>`（第一個 `…-080648-…-sa_N16_s1_ttl`，最後一個 `…-085152-…-sa_N72_s3_trunc`）。
+- collect → `results/icpe_next/b/sa_p1/<block>/`（commit c800ea8，9.2 MB）：
+  - 12 個 `_ttl`：各 6,480 列（job 6,480）；12 個 `_trunc`：各 5,184 列（job 4,824）。合計 135,648 job、139,968 列。
+  - 每個檔：`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`、`code_sha`＝`a27559138492+rs43dbe828`；24 個 run 都 `py_fallback_jobs=0`。
+- 時間：sweep 每個 block 69.0–132.4 s，合計 2,467 s。`rust_timing.jsonl`（135,648 筆＝job 數）：Rust 引擎每 job `run_s` 中位數 0.629 s、p90 0.940 s、最長 1.924 s；從派出到讀回中位數 0.637 s、最長 2.288 s。
+- 記憶體（mem.log 08:06:48–08:53:56，93 筆）：行程群組 PSS 最高 2.9 GiB，MemAvailable 最低 53.4 GiB；swap 958–959 MiB；load1 最高 40.2。保護都沒觸發。
+- 下一個：`sa_p2/sa_N16_s1_nvme807` 08:53:56 開跑。〔算術〕照 `sa_p1` 的速度（約 48 job/s，含每個 block 的準備時間），`sa_p2`＋`sa_p3` 共 214,056 job 約 75 分鐘 → 約 10:10 跑完；之後 merge 23865ee、跑 `sens_rep --only sa_t128k`。
+- 不解讀上限（分析由新的分析 session 做）。
+
 ## 2026-11-06T08:12+08:00 — **三項對拍都 0 個不同**；Rust 佇列 `sa_p1 sa_p2 sa_p3` 開跑（36 workers，使用者決定）
 
 **對拍**（STATUS_DATA 08:10 第 3 步；`$ROOT/tools/verify_rust2.sh eeaecef`；`--engine rust --workers 32`；比對 run `20261106-080609-icpe-trx-compare-eeaecef`）
