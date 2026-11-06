@@ -3,6 +3,24 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-06T09:05+08:00 — 論文的兩個 Mooncake 舊測試：照原定義在新、舊模擬器上重算並列（使用者決定）
+
+**使用者決定**（AskUserQuestion，11/6 09:0x，本 session）：論文的 50.5%（conversation 預取、CPU 128 GiB）與「192 格裡截尾 H3600＋排除寫入飽和後 36 格 ≥15%」（EVIDENCE B9）——**新模擬器照原定義重算，和舊值並列**；**完全照舊定義**（rule=min、4 個元件、CPU 128–1,024 GiB、192 格），另外並列 R1／R2 與 O-GPU（只報告，不改偏離 7 的判定）。
+
+**做完什麼**：`code/icpe/main_oldtests.py`；run `20261106-090440-icpe-main-oldtests-verA`（第一次 `…-090416-…` 因我的腳本查表錯誤 exit 1，留了 `FAILED_SCRIPT_BUG`，修正後重跑）→ `results/icpe_next/main/oldtests_verA/`。
+- **定義核對 PASS**：在舊 V0 表（論文數字的來源 `results/icpe_h200/t1/p01/sim_V0/x1/`）上重現 50.5%、95／192（依 CPU 28／31／24／12、依慢層 nfs 42／ssd 29／b32 24）、H3600＋不飽和 36（16／12／8／0；ssd 19／b32 17／nfs 0）。
+- **發現**：論文的數字來自 **V0** 常數（舊模擬器 sim_V0），新模擬器用 PREREG §4 的 **V1**。所以並列三欄：old_V0（論文）、old_V1（同一舊模擬器、V1 常數）、new（GPU 層，版本 A、3 個 TTL，不是正式值）。
+
+| 測試（rule=min、Cake） | old_V0（論文） | old_V1 | new 版本 A |
+|:--|--:|--:|--:|
+| T1：conversation O-PF、SSD、CPU 128 GiB | 50.5% | 53.2% | 39.1% |
+| T2：192 格 ≥15%（不截尾） | 95 | 97 | 113 |
+| T2：不截尾、只算不飽和 | 62 | 65 | 79 |
+| T2：截尾 H3600＋只算不飽和 | 36 | 38 | NOT_MEASURED（要 old_p1 的截尾列） |
+
+- 新模擬器不截尾的 113 格裡 O-DROP 41 格；舊模擬器截尾 H3600 後 O-DROP 是 0 格（B2：大半是紀錄太短）。所以新的截尾後格數要等版本 B，現在不能推。
+- 只報告：新模擬器的 O-GPU 在同一組 48 格（2 紀錄 × 4 容量 × 3 慢層 × 2）裡 36 格 ≥15%（rule=min）。
+
 ## 2026-11-06T08:58+08:00 — 更正：本檔與 PREREG 偏離 7 的時間標記（icpe-data 指出）
 
 - **錯在我**：下面各節原本的節名時間（09:00、09:05、09:15）和「使用者決定 09:0x」是我估的，沒有用 `date`。icpe-data 在 SendMessage 指出：我傳訊息之後 acvlab 的鐘才 08:56。我傳給 icpe-data 的訊息也寫了「09:05 節」，那就是本檔現在的 08:54 節。
