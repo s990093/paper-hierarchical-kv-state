@@ -3,6 +3,37 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T02:25+08:00 — Mooncake P4：**4／6 完成**；`toolagent_P_B2` 過半；toolagent 的 B2 比 B1 慢約 2 倍以上（含 SMT 影響）→ **ETA 約 07:10～08:15**〔推算〕
+
+- **佇列**：pgid 2301987（46 workers），沒有 FAILED／KILLED，三個守門程式都沒觸發。
+
+  | block | workers | 起 → 迄 | 牆鐘 | job 數 | `run_s` 合計 | 每 job | 中位數／p90／max |
+  |:--|--:|:--|--:|--:|--:|--:|:--|
+  | `p4_b2/conversation_M_B2` | 46 | 01:08:06 → 01:45:32 | 2,246 s | 153,870 | 101,491 | 0.660 | 0.279／1.450／2.427 |
+  | `p4_b2/toolagent_P_B2` | 46 | 01:45:32 → 跑中 | — | 96,315／191,920（02:20:08） | 94,125（到目前） | 0.977（到目前） | — |
+  | `p4_b2/toolagent_M_B2` | 46 | 未開始 | | 143,940 | | | |
+
+- **`conversation_M_B2` 核對**都通過：
+  - rc=0；kept 153,870 等於 count；unmatched 0；py_fallback 0。
+  - `req/` 0 個檔；`rust_timing` 153,870 行；stderr 只有 `session groups…`／`x1fast serve… threads 46`。
+- **`toolagent_P_B2` 開頭**正常：`kept_jobs=191920` 等於 count；`unmatched_cells=0`；`py_fallback_jobs=0`；`req/` 0 個檔。
+- **資源**（46 workers，01:08:06 → 02:20）：
+  - MemAvailable 最低 55,176 MiB；PSS 最高 2,272 MiB。
+  - swap 一直 790 MiB；load1 最高 46.83；/ssd4 剩 541 GiB。
+  - 有效並行度（`run_s` 合計 ÷ 牆鐘）：`conversation_M_B2` 是 45.2，36 workers 時約 35.8。但 46 workers 時每個 job 的 `run_s` 會被 SMT 拉高，所以這不等於快了 26%。實際加速 NOT_MEASURED。
+- **toolagent B2 對 B1**：
+  - 比較方法：`toolagent_P_B2`（46 workers）和 `toolagent_P_B1`（36 workers），依 job 序位比例切 5% 一段，比每段平均 `run_s`。
+  - 結果：
+    - 前 30% 的輕 job，比例 0.40–1.08；
+    - 30–50% 重 job 開始的區段，1.79–2.40；
+    - 累積到 50%：1.92 倍（94,125 對 48,909）。
+  - 這是「B2 倍數 × SMT 膨脹」合在一起的倍數，兩者分不開。兩個 block 的 job 清單也不完全一樣（191,920 對 196,718），序位只能大致對齊。
+- **ETA**〔推算〕：
+  - `toolagent_P_B2`：剩下的 `run_s` 用 B1 後半段 × 1.92～2.37 估，總計約 350,000–409,000 執行緒秒。用並行度 45.2，約 **03:55～04:20** 結束。
+  - `toolagent_M_B2`：用 `toolagent_M_B1` 的 262,866 × 工作量比（143,940／148,738）× 1.92～2.37，約 488,000–603,000 執行緒秒、3.0–3.7 h。約 **06:55～08:00** 結束。
+  - 之後 collect＋核對＋commit 約 10–20 分鐘 → **約 07:10～08:15** 進 git。
+- **接下來**：同上，等佇列結束（背景等待 `wait_plan.sh … 2301987`），逐 block 核對、collect、commit／push、通知 icpe-data。
+
 ## 2026-11-07T01:15+08:00 — **使用者決定：TRX40 改 46 workers、跑到完不降回**；01:08 在 block 邊界重開；`conversation_P_B2` 完成（3／6）；ETA 改為約 05:00～10:00〔推算〕
 
 - **使用者決定**（00:52 在 icpe-data 說「TRX40 也是 吃更多 核心」，由 icpe-data 轉達。我在這邊用 AskUserQuestion 直接問，使用者 00:55 前後選了）：
