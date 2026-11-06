@@ -139,7 +139,12 @@
   - GPU 閒：18.0% → 5.7%。
   - CPU 8 GiB、nfs 那幾格幾乎不變，約 42–46%。
 - **只有 ② 加 APC、④ 沒有 BELP 時**：SemiAnalysis 的 O-GPU 最大上限 46.2% → 25.0%，被低估一半。所以 ④ 的 O-GPU 一定要包含 BELP（SEMANTICS 2-5）。
-  - 註：`next_sim_analyze.py` 把 BEL 以外的 GPU 規則都當成不預測。BELP 是 oracle，正式分析要改那支程式（icpe-main 的檔），讓 O-GPU 的 ④＝min(BEL, BELP)，而且 BELP 不可以進 ②。
+  - 註：`next_sim_analyze.py` 把 BEL 以外的 GPU 規則都當成不預測，BELP 會被誤放進 ②。所以另寫了 `analyze_v8.py`：
+    - 原檔不改，只在執行時換 `analyze()` 的兩處：BELP 不進任何「不預測」集合；O-GPU 的 ④＝NON_ORACLE × {BEL, BELP}。
+    - 檢查（run `20261107-044507-icpe-rux-v8-analyze-check-ta`，toolagent 的探索 sweep）：
+      - O-GPU 以外 252 列＝原本的分析（拿掉 BELP 列），0 個不同；
+      - O-GPU 36 列＝`explore_apc.py` 的獨立算法，0 個不同（其中 25 列 ④ 用 BELP）。
+    - 正式分析用它。
 - O-PF 在 SemiAnalysis 有一格上升 47 個百分點，那格的上限從 −98% 變 −59%，原本就是負的，沒有意義。
 - **解讀**〔推論〕：
   - SemiAnalysis 是長的 Claude Code session（每個 session 平均 47 個請求、上下文很長）。session 粒度的 GPU 規則一次要整個留或整個丟，逐塊留住前段就有差。
@@ -234,6 +239,7 @@
 | `20261107-043703-…-v8-explore-apc-sa`、`…-043939-…-apc-sa-analyze` | APC 探索：SemiAnalysis N16 s1 | §4a-2 |
 | `20261107-043945-…-v8-explore-apc-bl`、`…-044256-…-apc-bl-analyze` | APC 探索：Bailian coder | §4a-2 |
 | `20261107-043718-…-v8-w5-mechanism` | W5 上升的格：載入次數的變化 | §4b |
+| `20261107-044507-…-v8-analyze-check-ta` | analyze_v8 的檢查 | §4a-2 |
 | `20261107-035250-…-v8f-reg-mc`、`…-035436-…-v8f-reg-bl`、`…-035817-…-v8f-reg-sa`、`…-040213-…-v8f-off-g1`、`…-040439-…-v8f-off-xc_sa` | 最終版：新功能關閉 | 0 個不同 |
 | `20261107-035250-…-v8f-smoke-mc／sa／bl` | 最終版：新功能 | 2,088 PASS，0 FAIL |
 

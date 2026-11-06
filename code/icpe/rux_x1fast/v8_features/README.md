@@ -29,6 +29,9 @@
 | `smoke_v8.py` | 驗證：`--tests queue cue w5 apc`（見下） |
 | `sweep_v8.py` | 用 v8 跑 `x1 sweep --engine rust`：多認 GPU 規則 `APC`、`BELP`（Python 的 Engine 遇到這兩個就停，不能退回 Python）；`RUX_W5=1` → 每個 job 都是 W5，CSV 多一欄 `cpu_fmt`（輸出放另一個目錄）。排隊、W3 還沒接進 sweep |
 | `explore_w5.py` | 探索：W5 的上限表（BF16、強制 INT4、每個組合挑較快的格式） |
+| `analyze_v8.py` | **正式分析用**：`next_sim_analyze.py` 加上「BELP 是 oracle、只進 O-GPU 的 ④」（原檔一行不改，只在執行時換 `analyze()` 的兩處）；APC 照原本的規則＝② 和 ④ 都有 |
+| `check_analyze_v8.py` | 檢查 analyze_v8：O-GPU 以外＝原本的分析（拿掉 BELP 列）；O-GPU＝獨立算法 |
+| `w5_mechanism.py` | W5 上限上升的格：④／② 的載入次數變化 |
 | `cmp_pol.py` | 同一個 x1_sweep.csv 裡兩個 GPU 規則逐格比（APC 一次逐出整個 session 時要＝LRU） |
 | `explore_apc.py` | 探索：APC／BELP 加進 GPU 規則後的上限表（重現版本 B → 加 APC → O-GPU 加 BELP） |
 | `w3_cue_stats.py` | TraceLab 原始紀錄上，「輸出有工具呼叫」和「下一輪由工具結果觸發」的一致率 |

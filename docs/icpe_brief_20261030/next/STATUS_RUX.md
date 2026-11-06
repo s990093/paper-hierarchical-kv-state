@@ -28,7 +28,7 @@
   - Mooncake toolagent、Bailian：上限最多變 0.03 個百分點。
   - **SemiAnalysis（長 session）明顯**：APC 在每格都是 ② 的最佳，② 最多快 28%；O-GPU（④ 加 BELP）上限中位數 8.5% → 4.6%，111 GiB、nfs 從 18–21% 降到 6–9%，≥15% 的格 6 → 4。
   - **④ 一定要有 BELP**：沒有的話，SemiAnalysis 的 O-GPU 最大上限會被壓到 25%（有 BELP 是 44%）。
-  - 正式分析要改 `next_sim_analyze.py`（icpe-main 的檔）：BELP 只進 ④ 的 O-GPU。
+  - 原本的 `next_sim_analyze.py` 會把 BELP 當成不預測。所以另寫 `v8_features/analyze_v8.py`（原檔不改）：BELP 只進 ④ 的 O-GPU。已檢查和原本的分析、獨立算法都 0 個不同。
   - 建議 PR:95 的重算至少包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise）。
 - W5（CPU 111／128／256 GiB）：
   - 上限有升有降：O-GPU −6 到 −8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多 +39 個百分點。
