@@ -3,6 +3,60 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T21:15+08:00 — **sa_p4 完成**（48 個 block、1,004,366 個 job、1,434,342 列，已進 git）；Mooncake 對拍 0 差；**6 個 Mooncake P4 block 21:03:52 開跑**
+
+**sa_p4**
+- **佇列**：15:16:47 → 20:58:03，48 個 block 都 rc=0，沒有 FAILED／KILLED，三個守門程式都沒觸發。log `$ROOT/runs/queue-sa_p4-rust-w36-20261106-151647.log`。
+- **逐 block 核對**，48／48 通過：
+  - `kept_jobs`＝`count`（run `20261106-150924-icpe-trx-count-sa_p4`），合計 1,004,366。
+  - `unmatched_cells=0`、`py_fallback_jobs=0`、exit 0、`req/` 0 個檔。
+  - `rust_timing.jsonl` 的筆數＝`kept_jobs`。
+- **`collect --plans sa_p4_b1 sa_p4_b2`**：
+  - `sa_p4_b1` 24 個 block、727,272 列；`sa_p4_b2` 24 個 block、707,070 列。
+  - 合計 1,434,342 列，和 15:15 那節估 npz 時數的 view 數相同。
+  - 每個檔都檢查過：
+    - `run_id` 單一值，且是該 block 的 run。
+    - `host`＝`acvlab-TRX40-AORUS-MASTER`，`code_sha`＝`3280b1c8799b+rs62b0932b`。
+    - `ts` 沒有空值。
+    - `noise_model`／`noise_draw` 都和 block 名稱一致。
+- **程式**：block 的 context 記的 git HEAD 有 4f5c831（1 個）、cdea0d4（38 個）、afc6e76（1 個）、313a9af（8 個）。`git diff 4f5c831 313a9af -- code` 是空的，中間只改了 STATUS 檔。
+- **時間**：sweep 時間每個 block 20–1,059 s；`sa_p4_b1` 合計 10,701 s，`sa_p4_b2` 合計 9,758 s。
+  - `rust_timing` 1,004,366 筆：`run_s` 中位數 0.726 s、p90 0.985 s、最長 2.270 s。
+- **記憶體**（677 筆）：MemAvailable 最低 47.3 GiB（48,435 MiB）；PSS 合計最高 3.3 GiB；swap 790–947 MiB，沒有超過開跑時的量；load1 最高 43.8。/ssd4 剩 547–548 GiB。
+- **檔案大小**：48 個 xz（preset 9）合計 101 MB，36 個超過 1 MiB，最大 4.5 MB（`sa_p4_b1/semianalysis_N72_s3_P_B1`）。
+  - CLAUDE.md 寫進 git 的檔要 < 1 MB。git 是資料到 acvlab 和分析 session 的唯一管道。
+  - **使用者決定**（本 session，11/6 約 21:10，AskUserQuestion）：照原樣 commit。
+
+**Mooncake 的雜訊對拍**（`$ROOT/tools/mcheck.sh 4f5c831`，19:15:35–19:20:39）
+- 參數：`--traces toolagent --rules R1 R2 --cpu 8 --policies LRU O-BEL O-PF O-ALL --slows ssd --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU TTLB:10 --pf-target cpu --noise-models P M --noise-lambdas 0.3 --noise-draws B1 B2 --noise-seeds 0`，`--workers 8`。
+- Rust：run `20261106-191535-icpe-trx-mc_noise-rust-4f5c831`，19 s，`py_fallback_jobs=0`。
+- Python：run `20261106-191535-icpe-trx-mc_noise-py-4f5c831`，285 s。
+- `next_sim_cmp.py`（compare run `20261106-192039-icpe-trx-compare-mc_noise-4f5c831`）：96 列 × 41 欄，鍵含 4 個雜訊欄，不同的格子 0，**CMP PASS**。
+
+**merge 和對拍**
+- merge `origin/icpe-next-data` @ 58fdfae（STATUS_DATA 19:20 的最終清單）→ **313a9af**。只改了文件；`code/` 和 4f5c831 相同。
+- 三項對拍（`verify_rust2.sh 313a9af`，21:01:05–21:03:00；compare run `20261106-210300-icpe-trx-compare-313a9af`）都是 0 個不同：
+  - (a) G0：128,064 格，IDENTICAL。
+  - (b1) xc_sa 對 icpe-data：1,280 格。
+  - (b2) xc_sa 對 TRX40 的 Python：CMP PASS。
+  - (c) `sa_N16_s1` 整個 block：293,760 格。
+  - `code_sha`＝`3280b1c8799b+rs62b0932b`。
+
+**Mooncake P4 開跑**
+- 指令：`run --plans 'p4_b1:toolagent_*' 'p4_b2:conversation_*,toolagent_*' --engine rust --workers 36`，21:03:52，pgid 2231622。
+  - log `$ROOT/runs/queue-p4mc-rust-w36-20261106-210352.log`。
+  - 守門程式：memwatch 6,144、swapguard 2,933、diskguard 50 GiB。
+  - 開跑前：MemAvailable 53.8 GiB，swap 790 MiB，/ssd4 剩 542 GiB。
+- **第一個 block**（`p4_b1/toolagent_P_B1`，run `20261106-210352-icpe-trx-p4_b1-toolagent_P_B1`）：
+  - `kept_jobs=196718`（＝`count`），`unmatched_cells=0`，`py_fallback_jobs=0`。
+  - `export RUN_DIR=`（空的），`req/` 0 個檔，`code_sha=3280b1c8799b+rs62b0932b`。
+- 〔推算〕約 3 h（acvlab 的 0.374 執行緒秒／job）。TRX40 跑 Mooncake 的速度 NOT_MEASURED。
+
+**接下來**：每個 block 照上面核對；全部跑完後 `collect --plans p4_b1 p4_b2`，只會有這 6 個目錄；檢查後 commit／push，並通知 icpe-data。
+
+**需要別的 session 做什麼**：無。
+**需要使用者決定什麼**：無。
+
 ## 2026-11-06T19:20+08:00 — sa_p4 跑到 38／48；**使用者決定：sa_p4 跑完後，TRX40 接 acvlab P4 裡還沒開始的 Mooncake block**（清單等 icpe-data 定）
 
 **依據**
