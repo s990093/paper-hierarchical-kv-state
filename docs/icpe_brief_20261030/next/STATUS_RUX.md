@@ -30,7 +30,7 @@
   - **④ 一定要有 BELP**：沒有的話，SemiAnalysis 的 O-GPU 最大上限會被壓到 25%（有 BELP 是 44%）。
   - 原本的 `next_sim_analyze.py` 會把 BELP 當成不預測。所以另寫 `v8_features/analyze_v8.py`（原檔不改）：BELP 只進 ④ 的 O-GPU。已檢查和原本的分析、獨立算法都 0 個不同。
   - 建議 PR:95 的重算至少包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise）。
-- W5（CPU 111／128／256 GiB）：
+- W5（CPU 111／128／256 GiB；另外跑了 SemiAnalysis、Bailian：多半照 NP:53 下降，SemiAnalysis 的 O-GPU ≥15% 的格 4 → 0、Bailian 8 → 2；下面的上升主要是 Mooncake toolagent 的現象）：
   - 上限有升有降：O-GPU −6 到 −8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多 +39 個百分點。
   - **違反 NP:53 事先登記的預期**（「下降或不變；若上升，要查原因」）。
   - 查了上升超過 5 個百分點的 45 個 (格, 元件)：O-DROP、O-ORD、O-PF 的 ④ 用 INT4 多出來的 CPU 容量，慢層載入減 79–99.5%，② 只減 13–26%；大多在 nfs。

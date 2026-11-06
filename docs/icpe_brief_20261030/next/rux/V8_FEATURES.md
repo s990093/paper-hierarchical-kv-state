@@ -2,7 +2,7 @@
 
 > 2026-11-07。程式：`code/icpe/rux_x1fast/v8_features/`（README 有用法）。語意：`SEMANTICS_2to5.md`（icpe-rux 依使用者授權決定，**正式跑之前要登記進 PREREG**）。
 > **沒有 Python 參考**（使用者：「python 不寫完整移植 rust」）。所以「對」的意思是：退化檢查、精確重算、不變量稽核、兩份實作互比都過；**語意本身理解錯是這些抓不到的**，建議另一個 session 審 SEMANTICS 與程式的對應。
-> 探索的數字（§4）**不是正式結果**：APC 只有 3 個變體、W5 只有 1 個變體，各 3 個 CPU 容量，沒有登記。
+> 探索的數字（§4）**不是正式結果**：APC、W5 各 3 個變體（Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder），各 3 個 CPU 容量，沒有登記。
 
 ## 0. 問題／要證明什麼
 
@@ -21,12 +21,12 @@
   - APC 一次逐出整個 session 時＝LRU／BEL。
   - W5 走新路徑但參數等於沒開時＝BF16：254,592 格相同。
   - BELP 的捷徑＝每塊全掃。
-- **探索**（不是正式結果；APC：Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder；W5：Mooncake toolagent）：
+- **探索**（不是正式結果；APC、W5 都是 Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder）：
   - **APC 的影響看紀錄**：
     - Mooncake toolagent、Bailian：上限最多變 0.03 個百分點。
     - **SemiAnalysis（長的 Claude Code session）明顯**：APC 在每一格都成為 ② 的最佳，② 最多快 28%；O-GPU 上限在 111.0625 GiB、nfs 從 18–21% 降到 6–9%，≥15% 的格 6 → 4。
   - **④ 一定要有 BELP**：在 SemiAnalysis 上，若 ② 有 APC、④ 只有 session 粒度的 BEL，O-GPU 的最大上限會從 46% 被壓到 25%；加了 BELP 是 44%。這印證 SEMANTICS 2-5。
-  - **W5 讓上限有升有降**：O-GPU −6 到 −8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多升 39 個百分點。這違反 NP:53 事先登記的預期（「下降或不變；若上升，要查原因」）。查了：上升超過 5 個百分點的 45 個 (格, 元件) 裡，O-DROP、O-ORD、O-PF 的 ④ 慢層載入減 79–99.5%（中位數），② 只減 13–26%。O-NOW 是 BF16 時上限本來就是負的。oracle 比對手更能用 INT4 多出來的 CPU 容量，大多發生在 nfs（§4b）。
+  - **W5（CPU 層 INT4＋一次拆完）多半讓上限下降，但不是全部**：SemiAnalysis 每個元件都降（O-GPU 最大 20.7% → 1.4%，≥15% 的格 4 → 0）；Bailian 多數降（O-GPU ≥15% 的格 8 → 2）；**Mooncake toolagent 的 O-DROP、O-ORD 上升**，nfs 的格最多升 39 個百分點，違反 NP:53 事先登記的預期（「下降或不變；若上升，要查原因」）。查了：上升超過 5 個百分點的 45 個 (格, 元件) 裡，O-DROP、O-ORD、O-PF 的 ④ 慢層載入減 79–99.5%（中位數），② 只減 13–26%。oracle 比對手更能用 INT4 多出來的 CPU 容量（§4b）。
 - **排隊沒做完**：open-loop 和照紀錄順序的 closed-loop 都不適合固定並行的紀錄。正確的工作守恆 closed-loop **要先請使用者決定 Q3-a**（SEMANTICS §2a）。
 - **W3**：引擎做好了，**資料還沒有**。nb 檔要多一欄「這一輪的輸出有工具呼叫」；TraceLab 原始紀錄上它和「下一輪由工具結果觸發」一致 96.9%。
 
@@ -166,7 +166,7 @@
   - allowed＝每個組合事後挑兩種格式裡較快的（SEMANTICS 5-2）。
 - **端到端退化檢查**（run `20261107-040948-icpe-rux-v8-explore-w5-degen`）：走 W5 的路徑、參數等於沒開（`RUX_W5=degen`），和 BF16 的 sweep 比。全部 17 × 16 個規則：CSV 254,592 格、npz 19,584 個陣列，**0 個不同**。這補上 `smoke_v8.py` 沒涵蓋的 O-DROP、O-BELS、O-ALL、FREQ2Q、LRU+NONE、LRU+2HW。
 
-**結果**（逐列：`V8_explore_w5_rows.csv`）
+**結果**（逐列：`V8_explore_w5_ta_rows.csv`）
 - **W5 幾乎全面更快**：9,792 個組合裡 9,788 個 W5 較快，所以 forced 和 allowed 的上限相同。
 - **② 和 ④ 都變快**（中位數）：② 快 18–25%；④ 視元件快 5–24%（O-ALL 5%、O-GPU 10%、O-PF 16%、O-ORD 22%、O-DROP 22%、O-NOW 24%）。
 - **上限有升有降**（每格變化的中位數，百分點）：
@@ -193,7 +193,7 @@
     | ② LRU+2HW × TTLA:100 | W5 | 13,539 | 2,380 | 39,501 | 19,997 |
 
   - 和推測一致：④ 用多出來的容量，把慢層載入減 73%、重算減 43%；② 的最佳做法本來就丟掉大部分 session，重算只少 16%。
-  - **擴大到全部**（run `20261107-043718-icpe-rux-v8-w5-mechanism`，`w5_mechanism.py`，只讀上面的輸出；逐列 `V8_w5_mechanism_rows.csv`）：
+  - **擴大到全部**（run `20261107-043718-icpe-rux-v8-w5-mechanism`，`w5_mechanism.py`，只讀上面的輸出；逐列 `V8_w5_mechanism_ta_rows.csv`）：
     - 上限升超過 5 個百分點的 (格, 元件) 有 45 個：O-DROP 9、O-ORD 16、O-PF 8、O-NOW 12。nfs 33 個、b32 5 個、ssd 4 個。
     - 各元件的中位數（回來請求的次數，W5 相對 BF16）：
 
@@ -209,6 +209,29 @@
     - O-NOW 兩邊的載入減得一樣多。上升的 12 格都在 nfs：BF16 時上限是負的（−12% 到 −31%，④ 比 ② 慢），W5 下變成 −17% 到 +4.5%，沒有一格超過 15%。
     - 所以 NP:53「CPU 層的對手變強 → 上限下降」只對 O-GPU、O-PF 的中位數成立；CPU 層變大時，oracle 也一起變強。
 - 只有一個變體、3 個 CPU 容量；**不是正式結果**，正式範圍要登記（PR:57）。
+
+### 4b-2. W5：SemiAnalysis N16 s1、Bailian coder（同樣的設定）
+
+- runs：
+  - SemiAnalysis：`20261107-044431-…-w5-base-sa`、`…-044702-…-w5-int4-sa`、`…-044937-…-w5-analyze-sa`；
+  - Bailian：`20261107-044942-…-w5-base-bl`、`…-045033-…-w5-int4-bl`、`…-045148-…-w5-analyze-bl`。
+- 逐列：`V8_explore_w5_sa_rows.csv`、`V8_explore_w5_bl_rows.csv`、`V8_w5_mechanism_sa_rows.csv`、`V8_w5_mechanism_bl_rows.csv`。
+- W5 較快的組合：SemiAnalysis 4,895／4,896，Bailian 4,894／4,896，所以 forced＝allowed。
+
+| 元件 | toolagent R1：中位數變化（百分點）、≥15% 的格 | SemiAnalysis | Bailian |
+|:--|:--|:--|:--|
+| O-GPU | −8.1，18 → 8 | −3.4，4 → 0（最大 20.7% → 1.4%） | −3.7，8 → 2 |
+| O-ALL(report) | −8.8，18 → 18 | −4.5，0 → 0 | −5.1，17 → 13 |
+| O-PF | −5.1，18 → 14 | −1.9，0 → 0 | −5.2，8 → 6 |
+| O-ORD | **+2.2**，17 → 14 | −3.0，4 → 0 | −1.1，6 → 6 |
+| O-DROP | **+0.1**（最多 +30），18 → 16 | −0.2，0 → 0 | −0.4（最多 +5.0），6 → 6 |
+| O-NOW | 0.0，0 → 0 | 0.0，0 → 0 | 0.0，0 → 0 |
+
+- 上升超過 5 個百分點的 (格, 元件)：toolagent 45 個、SemiAnalysis 4 個（O-PF 3 個、O-ALL 1 個，都在 nfs）、Bailian 1 個（O-DROP、nfs）。
+- **解讀**〔推論〕：
+  - 「W5 讓上限上升」主要是 Mooncake toolagent 的現象。那裡 ④ 在 nfs 能用多出來的 CPU 容量，把慢層載入幾乎消掉。
+  - SemiAnalysis、Bailian 上，W5 照 NP:53 的預期讓上限下降：CPU 層的對手變強。
+  - 這個「看紀錄」的差別要登記。正式範圍（PR:118 的 7 個代表變體）跑完才知道普不普遍。
 
 ## 5. 還沒做、要決定的
 
@@ -240,6 +263,7 @@
 | `20261107-043945-…-v8-explore-apc-bl`、`…-044256-…-apc-bl-analyze` | APC 探索：Bailian coder | §4a-2 |
 | `20261107-043718-…-v8-w5-mechanism` | W5 上升的格：載入次數的變化 | §4b |
 | `20261107-044507-…-v8-analyze-check-ta` | analyze_v8 的檢查 | §4a-2 |
+| `20261107-044431／044702／044937-…-w5-*-sa`、`20261107-044942／045033／045148-…-w5-*-bl` | W5 探索：SemiAnalysis、Bailian | §4b-2 |
 | `20261107-035250-…-v8f-reg-mc`、`…-035436-…-v8f-reg-bl`、`…-035817-…-v8f-reg-sa`、`…-040213-…-v8f-off-g1`、`…-040439-…-v8f-off-xc_sa` | 最終版：新功能關閉 | 0 個不同 |
 | `20261107-035250-…-v8f-smoke-mc／sa／bl` | 最終版：新功能 | 2,088 PASS，0 FAIL |
 
