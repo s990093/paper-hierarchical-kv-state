@@ -45,12 +45,30 @@
 | 3-6 | 一個 job 幾個時間設定 | **1 個**（每個時間設定的服務時間不同 → 開始時刻不同） | ANALYSIS §5 |
 | — | 排隊時的預取 | **不加新機制**：等待中的請求不會因為在佇列裡就被預取 | 加了會讓 ② 更強；不加 → ② 略弱 → 上限偏高（保守）。論文寫明 |
 
+### 2a. 實作後的發現（2026-11-07 04:00）：open-loop 不適合固定並行的紀錄；要改 closed-loop，這需要使用者決定
+
+- **open-loop FCFS-1（`q=1`，上表 3-1 的字面）**：已實作、精確重算全部相同。但 SemiAnalysis N16 s1 上，nfs 加 GPU 忙的時間設定平均要等 **2,000–19,000 秒**（run `20261107-034507-icpe-rux-v8-smoke-q2-sa`），雖然整段的 ρ 只有 0.26–0.33。
+  - 原因：固定並行的紀錄是 N 個 agent「拿到回覆才送下一個」（closed-loop）。open-loop 照紀錄的時刻一直送，忙的時候會在佇列裡堆上好幾個小時。
+  - 所以 open-loop 的數字**沒有意義**。
+- **closed-loop、照紀錄順序服務（`q=2`）**：每個 session 的等待會延後它之後的請求，但服務順序仍照紀錄順序。已實作、精確重算全部相同。
+  - 但這個模型會讓 GPU 空等一個被延後的請求，後面的人一起等。
+  - 和工作守恆的 closed-loop 事件模擬（同樣的服務時間、依延後後的到達排序）比：平均等待大 30–300 倍（例如 CPU 111 GiB、LRU、ssd 閒：506 s 對 1.6 s）。
+  - **不能用**，程式碼留著只當紀錄。
+- **該用的模型**：工作守恆的 closed-loop FCFS，依延後後的到達時刻服務（vLLM `benchmark_serving --max-concurrency` 這類固定並行的量法就是 closed-loop）。
+  - 用同樣的服務時間估：SemiAnalysis N16 在 ssd、GPU 閒時平均等 **1.5–1.8 s**（服務時間 1.4–2.2 s）；nfs、GPU 忙時 13–274 s。
+  - 所以排隊對固定並行的紀錄**影響不小**〔推算：服務時間是沒排隊時的，排隊會改快取狀態，實際值要引擎算〕。
+- **為什麼今晚沒做**：服務順序會和請求序號不同。引擎很多地方假設「目前的請求序號只會變大」，包括 oracle 的「下次回來」（`next_access(b, after=cur)`）、「下次回來」的快取、預取。所以要先決定：
+  - **(Q3-a) ④ 知不知道排隊造成的新順序？**
+    - 選項 1：只知道紀錄的順序（近似）。
+    - 選項 2：知道（要先跑一次沒有 oracle 的模擬得到順序，再用那個順序跑 oracle，兩次的順序可能不同）。
+  - 這是使用者要決定的事。決定後，引擎改成事件驅動，約 150–250 行〔推算〕，要另外驗證。
+
 ## 3. 項目 4：W3 的線索 (a)（③ 的簡單線索）
 
 | # | 問題 | 決定 | 依據 |
 |:--|:--|:--|:--|
 | 4-1 | 線索做什麼 | **兩個 GPU 規則都做**：**CUEP**＝這一輪的輸出有工具呼叫（下一個請求由工具觸發）→ 釘在 GPU 直到這個 session 的下一個請求；其他輪照 GPU LRU。**CUEO**＝有工具呼叫 → 回合結束立刻逐出 GPU（wb：寫進 CPU；wt：放掉 GPU 副本）；其他輪照 GPU LRU。全部釘住而 GPU 滿時，放掉「對話開始時間最晚」的那個（PR:30 的規則） | NP:42「留在／搬回」、NP:320「留在 GPU／搬回 CPU」；InferCept 的 Preserve／Swap；Continuum 對工具呼叫的請求釘 GPU、TTL 的極端版（NP:42） |
-| 4-2 | 線索怎麼來 | 每個請求一個旗標 cue[r]＝**同一個 session 的下一個請求是工具觸發的**（真實系統在回合結束時看得到輸出裡的工具呼叫）。session 的最後一輪＝0。只用有欄位的紀錄：TraceLab、CacheWise（`trigger`）、FreeInference（`step_trigger`）。**Mooncake、SemiAnalysis、Bailian 沒有欄位 → NOT_MEASURED** | 現在的 nb 檔只存 `user＝(trigger=="user")`，「none」也會變 False；要 icpe-data 在 nb 檔多存一欄「工具觸發」（`next_b_convert.py`），引擎只吃 0／1 陣列 |
+| 4-2 | 線索怎麼來 | 每個請求一個旗標 cue[r]＝**這一輪的輸出有工具呼叫**（真實系統在回合結束時就看得到，不用預測）。session 的最後一輪照資料。只用有欄位的紀錄：TraceLab（`tools` 非空）、CacheWise（`trigger`）、FreeInference（`step_trigger`）。**Mooncake、SemiAnalysis、Bailian 沒有欄位 → NOT_MEASURED** | TraceLab 原始紀錄（run `20261107-033551-icpe-rux-w3-cue-stats-tracelab`）：665,453 輪、8,058 個 session；扣掉每個 session 的最後一輪後，「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%（561,508＋82,094 ÷ 657,395）；有呼叫但下一輪不是工具結果 11,921 輪（1.8%）、沒呼叫但下一輪是工具結果 1,872 輪（0.3%）；85.6% 的輪有工具呼叫。現在的 nb 檔只存 `user＝(trigger=="user")`，要 icpe-data 在 nb 檔多存一欄「這一輪的輸出有工具呼叫」（`next_b_convert.py`），引擎只吃 0／1 陣列（`cue.u8`） |
 | 4-3 | 指標 | 主要：f＝(T② − T③) ÷ (T② − T④c)，每個上限 ≥15% 的元件 c 各算；次要（和 C2 一樣）：NP:43 的 (T① − T③) ÷ (T① − T④O-PF)。「大部分」的門檻：**建議登記 f > 0.5** | PR:21 的字面是「拿走大部分」 |
 | 4-4 | 配哪些 CPU 規則 | **NON_ORACLE（10 個）**；③＝每格在 {CUEP, CUEO} × CPU 規則裡取最快 | 只配 LRU 可能比 ② 還慢（f < 0）；和 ② 的「事後挑最快」同一種 |
 | 4-5 | 範圍 | 有欄位的工具類變體全部（TraceLab c1／c2／c4、CacheWise、FreeInference），f 只在上限 ≥15% 的格子報 | TraceLab c1 是唯一「原始到達、上限 ≥15%、有欄位」的變體 |
