@@ -3,6 +3,27 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T08:06+08:00 — 使用者決定：Rust 跑 SemiAnalysis 的 P1–P3；裝好 rustc 1.99.1、merge 到 9be4925；三項對拍在跑
+
+**使用者決定**
+- 在本 session（AskUserQuestion，11/6 07:5x）：「改用 Rust 跑偏離 6」。
+- 在 icpe-data（STATUS_DATA 08:10 @ 9be4925，以這節為準）：TRX40 裝 Rust 自己跑 `sa_p1` → `sa_p2` → `sa_p3`；`sa_main_ttl7`、`sens_rep sa_*` **不跑**（理由寫在該節：P2／P3 已涵蓋全部格子）。
+- 注意（事實，不是建議）：`sens_rep` 的 5 個 `sa_*` 格裡，`sa_t128k`（截斷 128K 的紀錄 `semianalysis_N16_s1_t128k`）在 `sa_p1`–`sa_p3` 裡沒有對應的 block；另外 4 個（nvme807、load、wt、pfgpu）有。
+
+**做完什麼**
+- **Rust 工具鏈**：`micromamba create -p $ROOT/tools/rust -c conda-forge rust=1.99.1`（使用者權限；log `$ROOT/tools/rust-install-*.log`）→ `rustc 1.99.1 (58cf8f9c3 2026-10-13)`、`cargo 1.99.1 (5f94df478 2026-08-27)`。版本和 STATUS_DATA 08:10 要的相同；裝法是 conda-forge 不是 rustup（使用者在本 session 選的選項寫明 conda-forge）。cargo 要 `RUSTC=$ROOT/tools/rust/bin/rustc`（不然找不到 rustc）。環境：`X1_CARGO=$ROOT/tools/rust/bin/cargo CARGO_HOME=$ROOT/tools/cargo-home RUSTUP_HOME=$ROOT/tools/rustup-unused X1_RUST_WORK=$ROOT/x1fast-work`。試編（scratchpad 目標目錄）4.9 s 成功。
+- **merge**：
+  - 741bc2c：`origin/icpe-next-data` @ bc1e040（Rust 0b0ef1e、`run --engine rust`、偏離 6 的 `sa_p1`–`sa_p3`）。
+  - **eeaecef**：`origin/icpe-next-data` @ 9be4925（含 icpe-sim 47a4617）。`git diff 1304345 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` **是空的**。
+- **job 數**：run `20261106-075249-icpe-trx-count-sa-p1p3`（`count --plans sa_p1 sa_p2 sa_p3 sens_rep`，在 741bc2c；`code/icpe/next_b_queue.py` 在 eeaecef 沒變）：`sa_p1` 135,648、`sa_p2` 124,416、`sa_p3` 89,640（合計 349,704，和 STATUS_DATA 的數相同）；`sens_rep` 的 `sa_*` 5 格合計 5,336（不跑）。
+- **作廢**：07:52 在 741bc2c 上開的 G0／xc_sa（py＋rust）四個 run `20261106-075222-icpe-trx-{g0,xc_sa}-{py,rust}-741bc2c`：08:02 手動 SIGTERM（py 兩個還在跑；rust 兩個 exit 0 但沒比）。理由：STATUS_DATA 08:10 要用 47a4617／1304345 重做。目錄裡留了 `SUPERSEDED`，不當驗證證據。
+
+**現在在跑**：STATUS_DATA 08:10 第 3 步的三項對拍（`$ROOT/tools/verify_rust2.sh eeaecef`，08:03:43 開始，log `$ROOT/runs/verify-rust2-eeaecef-20261106-080343.log`；memwatch 6 GiB、swapguard 2,933 MiB）。都是 `--engine rust --workers 32`，依序：
+- (a) G0：run `20261106-080343-icpe-trx-g0-rust-eeaecef` → H200 參考（`next_b_g0.py`）。
+- (b) xc_sa：run `20261106-080343-icpe-trx-xc_sa-rust-eeaecef` → `results/icpe_next/b/xcheck/xc_sa`（`next_b_g0.py`）＋TRX40 的 Python xc_sa（run `20261105-105555-icpe-trx-xcheck-xc_sa-54fa2d8`；`next_sim_cmp.py`）。
+- (c) 整個 `sa_N16_s1` block：run `20261106-080343-icpe-trx-sa_N16_s1-rust-eeaecef`（manifest 的 cmd＋`--engine rust --workers 32`）→ `results/icpe_next/b/sa_main/sa_N16_s1/x1_sweep.csv.xz`（`next_b_g0.py`）。
+- 三項都 0 個不同 → `run --plans sa_p1 sa_p2 sa_p3 --engine rust --workers 32`。有任何不同 → 停、寫這裡。
+
 ## 2026-11-06T07:55+08:00 — **`sa_main` 12／12 完成**；3 個 TTL 的分析＋`ttl7cells` 完成；下一步等使用者決定
 
 **做完什麼**
