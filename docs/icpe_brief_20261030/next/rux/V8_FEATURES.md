@@ -28,7 +28,7 @@
   - **④ 一定要有 BELP**：在 SemiAnalysis 上，若 ② 有 APC、④ 只有 session 粒度的 BEL，O-GPU 的最大上限會從 46% 被壓到 25%；加了 BELP 是 44%。這印證 SEMANTICS 2-5。
   - **W5（CPU 層 INT4＋一次拆完）多半讓上限下降，但不是全部**：SemiAnalysis 每個元件都降（O-GPU 最大 20.7% → 1.4%，≥15% 的格 4 → 0）；Bailian 多數降（O-GPU ≥15% 的格 8 → 2）；**Mooncake toolagent 的 O-DROP、O-ORD 上升**，nfs 的格最多升 39 個百分點，違反 NP:53 事先登記的預期（「下降或不變；若上升，要查原因」）。查了：上升超過 5 個百分點的 45 個 (格, 元件) 裡，O-DROP、O-ORD、O-PF 的 ④ 慢層載入減 79–99.5%（中位數），② 只減 13–26%。oracle 比對手更能用 INT4 多出來的 CPU 容量（§4b）。
 - **排隊沒做完**：open-loop 和照紀錄順序的 closed-loop 都不適合固定並行的紀錄。正確的工作守恆 closed-loop **要先請使用者決定 Q3-a**（SEMANTICS §2a）。
-- **W3**：引擎做好了，**資料還沒有**。nb 檔要多一欄「這一輪的輸出有工具呼叫」；TraceLab 原始紀錄上它和「下一輪由工具結果觸發」一致 96.9%。
+- **W3**：引擎、sweep、分析都做好了，TraceLab 的 cue 也產生了：從原始檔產生、排序照轉換程式，不用改 nb 檔。**真資料沒在這台跑**：TraceLab 準備階段約 14 GiB，記憶體不夠。README 有 acvlab 上的指令，③ 只要約 450 個 job。TraceLab 原始紀錄上，「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%。
 
 ## 2. 做了什麼
 
@@ -36,7 +36,7 @@
 |:--|:--|:--|
 | 2 APC | 完成，接進 sweep（`--gpu-policies APC BELP`） | GPU 規則 APC（session LRU、尾端一塊一塊逐出）、BELP（同樣逐塊、選 session 照 Belady，給 ④ 的 O-GPU 用） |
 | 3 排隊 | **只做了一半**：open-loop（`q=1`）與「照紀錄順序的 closed-loop」（`q=2`）都做了、也驗了，但兩個都**不適合**固定並行的紀錄（§3c）。正確的模型（工作守恆的 closed-loop）要先決定 oracle 知道什麼（Q3-a） | jobs.txt `q=1`／`q=2`；沒接進 sweep |
-| 4 W3 線索 | 引擎完成（GPU 規則 CUEP、CUEO）；**資料還沒有**：nb 檔要多一欄「這一輪的輸出有工具呼叫」（icpe-data） | jobs.txt `cue=1`＋`cue.u8`；沒接進 sweep |
+| 4 W3 線索 | 引擎完成（GPU 規則 CUEP、CUEO），**接進 sweep**（`RUX_CUE_FILE`）、分析（`analyze_w3.py`）。TraceLab 的 cue 用 `make_cue.py` 從原始檔產生，排序照轉換程式，在有 nb 檔的機器用 `check` 對齊。**這台沒跑真資料**：TraceLab c1 的 Python 準備階段要約 14 GiB，這台只有 22 GiB，而且 sweep 會 fork | README 有 acvlab 的指令。管線在 SemiAnalysis（代用 cue）上端到端跑通：run `20261107-045622-icpe-rux-w3-pipeline-sa-proxy` |
 | 5 W5 | 完成，接進 sweep（`RUX_W5=1`） | CPU 層 INT4＋一次拆完的殘差 |
 
 ## 3. 驗證
@@ -239,7 +239,7 @@
   - **Q3-a**：排隊的 ④ 知不知道排隊造成的新服務順序（SEMANTICS §2a）。決定後才寫工作守恆的 closed-loop 引擎。
   - **登記**：SEMANTICS_2to5.md 是 PREREG 的草稿，要由 h200／icpe-data 寫進去，並列出已看過的版本 A、B 結果，以及這份探索。
 - **要別人做**：
-  - **icpe-data**：nb 檔多存一欄「這一輪的輸出有工具呼叫」（TraceLab：`tools` 非空；CacheWise：`trigger`；FreeInference：`step_trigger`），W3 才能跑真資料。
+  - **icpe-data（acvlab）**：照 README 跑 W3 on TraceLab c1：`make_cue.py tracelab` → `check` → sweep CUEP／CUEO → `analyze_w3.py`。這就是 PR:21 推翻條件的後半。CacheWise、FreeInference 的 cue 要另外寫：CacheWise 用 `trigger`，FreeInference 用 `step_trigger`。
   - **icpe-sim**：審 v6／v7／v8，決定要不要併進 `code/p3x/x1fast`；把 W3、排隊接進 sweep。
   - **另一個 session**：審 SEMANTICS 與 v8 程式的對應。
 - **還可以做的**：
@@ -263,6 +263,9 @@
 | `20261107-043945-…-v8-explore-apc-bl`、`…-044256-…-apc-bl-analyze` | APC 探索：Bailian coder | §4a-2 |
 | `20261107-043718-…-v8-w5-mechanism` | W5 上升的格：載入次數的變化 | §4b |
 | `20261107-044507-…-v8-analyze-check-ta` | analyze_v8 的檢查 | §4a-2 |
+| `20261107-045446-icpe-rux-w3-make-cue-tracelab` | TraceLab c1／c2／c4 的 cue（665,453 個請求、574,485 個有工具呼叫） | §2 |
+| `20261107-045622-icpe-rux-w3-pipeline-sa-proxy` | W3 管線端到端（SemiAnalysis、代用 cue；只測管線） | §2 |
+| `20261107-045650-icpe-rux-v8-w5-wrapper-regress` | sweep 包裝改寫後 W5 不變（2,430 格相同） | §2 |
 | `20261107-044431／044702／044937-…-w5-*-sa`、`20261107-044942／045033／045148-…-w5-*-bl` | W5 探索：SemiAnalysis、Bailian | §4b-2 |
 | `20261107-035250-…-v8f-reg-mc`、`…-035436-…-v8f-reg-bl`、`…-035817-…-v8f-reg-sa`、`…-040213-…-v8f-off-g1`、`…-040439-…-v8f-off-xc_sa` | 最終版：新功能關閉 | 0 個不同 |
 | `20261107-035250-…-v8f-smoke-mc／sa／bl` | 最終版：新功能 | 2,088 PASS，0 FAIL |

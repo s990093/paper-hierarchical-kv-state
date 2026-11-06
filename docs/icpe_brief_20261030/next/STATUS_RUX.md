@@ -39,7 +39,7 @@
 - **Q3-a（使用者）**：排隊的 ④ 知不知道排隊造成的新服務順序。
   - open-loop（`q=1`）在 SemiAnalysis 上平均要等 2,000–19,000 秒；照紀錄順序的 closed-loop（`q=2`）多等 30–300 倍。兩個都不能用。
   - 正確的工作守恆 closed-loop 要先決定這件事。
-- **W3 的資料（icpe-data）**：nb 檔要多一欄「這一輪的輸出有工具呼叫」。TraceLab 原始紀錄上，這欄和「下一輪由工具結果觸發」一致 96.9%。
+- **W3（icpe-data 在 acvlab 上跑）**：工具鏈都好了，指令在 `v8_features/README.md`。流程是 make_cue → check → sweep CUEP／CUEO → analyze_w3，③ 只要約 450 個 job，不用改 nb 檔。這台記憶體不夠跑 TraceLab，所以只在 SemiAnalysis 上用代用 cue 跑通管線。TraceLab 原始紀錄上，「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%。
 - **登記（h200／icpe-data）**：SEMANTICS_2to5.md 是 PREREG 的草稿。
 - **審查（icpe-sim 或另一個 session）**：審語意與程式的對應，決定要不要併進 `code/p3x/x1fast`。
 

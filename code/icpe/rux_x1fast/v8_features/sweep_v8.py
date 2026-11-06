@@ -7,7 +7,7 @@
   3. x1_sim.parse_gpol 多認 APC、BELP（不依時間 → 一個 job 跑多個時間設定，同 LRU／BEL）；CSV 的 gpu_policy 欄就寫 APC／BELP。
   4. Python 的 Engine 遇到 APC／BELP 就停（沒有 Python 版；不支援的 job 不可以退回 Python）。
 W5：環境變數 RUX_W5=1 → 每個 job 都加 w5（CPU 層 INT4＋一次拆完的殘差），CSV 多一欄 cpu_fmt＝int4_oneshot（輸出放另一個目錄）。
-排隊、W3 線索還沒接進 sweep（只能用 smoke_v8.py 的直接寫 job 方式跑；見 README）。"""
+W3 線索：RUX_CUE_FILE=<cue.u8>（make_cue.py）→ GPU 規則 CUEP、CUEO（③；分析用 analyze_w3.py）。排隊還沒接進 sweep。"""
 import inspect
 import os
 import sys
@@ -29,7 +29,7 @@ assert _src.count(_OLD) == 1, "x1_sim._rust_sweep 和預期的不同（write_job
 exec(compile(_src.replace(_OLD, _OLD[:-1] + ", sc=j[7])"), XS.__file__ + ":_rust_sweep[v8]", "exec"), XS.__dict__)
 assert XS._rust_sweep.__code__.co_filename.endswith("[v8]"), "_rust_sweep 沒有換成 v8 版"
 
-NEW_GPU = ("APC", "BELP")
+NEW_GPU = ("APC", "BELP", "CUEP", "CUEO")
 _parse_gpol = XS.parse_gpol
 
 
@@ -50,23 +50,37 @@ def _engine_init(self, *a, **k):
 
 XS.Engine.__init__ = _engine_init
 
+# W3 線索（RUX_CUE_FILE=<cue.u8>，make_cue.py 產生）：GPU 規則 CUEP／CUEO 的 job 加 `cue=1`＋這個檔（長度必須＝請求數）。
+# 一次 sweep 只能一份紀錄（cue 檔是那份紀錄的）。CUEP／CUEO 是 ③（簡單線索），分析用 analyze_w3.py，不可以混進 ②。
+CUE_FILE = os.environ.get("RUX_CUE_FILE", "")
+CUE = ("CUEP", "CUEO")
+
 # W5（RUX_W5=1）：每個 job 都是「CPU 層 INT4＋一次拆完的殘差」（SEMANTICS 5-1）；CSV 多一欄 cpu_fmt＝int4_oneshot。
 # 殘差 d1＝(T_meas − 64·i4 ÷ r_cpu) ÷ 64，T_meas＝P0-1b S4（fa3）32K、CPU、INT4 全部載入的還原中位數（閒／忙）。
 W5 = os.environ.get("RUX_W5", "0") in ("1", "degen")       # degen＝驗證用：走 W5 的路徑但 w5＝BF、dc1＝0、dc2＝d（＝沒開）
 W5_DEGEN = os.environ.get("RUX_W5", "0") == "degen"
+import numpy as _np
+_T = {}
 if W5:
     import csv as _csv
-    import numpy as _np
-    _T = {}
     for _r in _csv.DictReader(open(os.path.join(REPO, "results/icpe_h200/p01/grid/llama_s4_fa3/summary.csv"))):
         if _r["length"] == "32768" and _r["bw_name"] == "cpu" and _r["config"] == "E1" and _r["mode"] == "loadall":
             _T[_r["gpu_state"]] = float(_r["median_t_restore"])
     assert set(_T) == {"idle", "busy"}, _T
-    _write_job = x1_rust_v6.write_job
+_CUE_ARR = _np.fromfile(CUE_FILE, _np.uint8) if CUE_FILE else None
+_write_job = x1_rust_v6.write_job
 
-    def write_job(XS_, P, policy, cap_bytes, views, K, gkw, nz=None, sc=None):
+
+def write_job(XS_, P, policy, cap_bytes, views, K, gkw, nz=None, sc=None):
+    jd = _write_job(XS_, P, policy, cap_bytes, views, K, gkw, nz=nz, sc=sc)
+    extra = []
+    if gkw.get("gpu_cap", 0) and gkw.get("gpu_policy") in CUE:
+        assert _CUE_ARR is not None, "GPU 規則 CUEP／CUEO 要設 RUX_CUE_FILE"
+        assert len(_CUE_ARR) == len(P["full"]), ("cue 檔的長度和請求數不同", len(_CUE_ARR), len(P["full"]))
+        _CUE_ARR.tofile(os.path.join(jd, "cue.u8"))
+        extra.append("cue=1")
+    if W5:
         assert gkw.get("pf_target", "cpu") == "cpu", "W5 不支援預取進 GPU"
-        jd = _write_job(XS_, P, policy, cap_bytes, views, K, gkw, nz=nz, sc=sc)
         i4 = int(K["int4_bytes"])
         w = []
         for v in views:
@@ -77,12 +91,16 @@ if W5:
             assert d1 > 0, (v.gpu, d1)
             w += [d1, d1]
         _np.array(w, _np.float64).tofile(os.path.join(jd, "w5.f64"))
+        extra.append(f"w5={(64 << 20) if W5_DEGEN else i4}")
+    if extra:
         jp = os.path.join(jd, "jobs.txt")
         ln = open(jp).read().strip()
-        open(jp, "w").write(ln + f" w5={(64 << 20) if W5_DEGEN else i4}\n")
-        return jd
+        open(jp, "w").write(ln + " " + " ".join(extra) + "\n")
+    return jd
 
-    x1_rust_v6.write_job = write_job
+
+x1_rust_v6.write_job = write_job
+if W5:
     _job_rows = XS._job_rows
 
     def _job_rows_w5(*a, **k):

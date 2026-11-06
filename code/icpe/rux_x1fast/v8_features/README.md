@@ -32,6 +32,8 @@
 | `analyze_v8.py` | **正式分析用**：`next_sim_analyze.py` 加上「BELP 是 oracle、只進 O-GPU 的 ④」（原檔一行不改，只在執行時換 `analyze()` 的兩處）；APC 照原本的規則＝② 和 ④ 都有 |
 | `check_analyze_v8.py` | 檢查 analyze_v8：O-GPU 以外＝原本的分析（拿掉 BELP 列）；O-GPU＝獨立算法 |
 | `w5_mechanism.py` | W5 上限上升的格：④／② 的載入次數變化 |
+| `make_cue.py` | W3 的每請求旗標 `cue.u8`：`tracelab`＝照 `next_b_convert.py` 的排序，從原始檔的 `tools` 產生；`proxy`＝用 nb 的 user_trigger 代用（只測管線）；`check`＝和 nb 檔的 t、sess 核對 sha256 |
+| `analyze_w3.py` | W3 的分析：③＝NON_ORACLE × {CUEP, CUEO} 取最快；f_c＝(T② − T③) ÷ (T② − T④c)、f_NP43 |
 | `cmp_pol.py` | 同一個 x1_sweep.csv 裡兩個 GPU 規則逐格比（APC 一次逐出整個 session 時要＝LRU） |
 | `explore_apc.py` | 探索：APC／BELP 加進 GPU 規則後的上限表（重現版本 B → 加 APC → O-GPU 加 BELP） |
 | `w3_cue_stats.py` | TraceLab 原始紀錄上，「輸出有工具呼叫」和「下一輪由工具結果觸發」的一致率 |
@@ -50,6 +52,21 @@
 - **兩份實作互比**（BELP）：預設的捷徑和 `X1FAST_BELP_SLOW=1`（每逐出一塊都全掃）逐位元相同；驗證模式下每次選擇也另外全掃比對。
   - 捷徑：逐出的塊沒有別人持有時，其他 session 的鍵都不變。被選的 session 的鍵沒有變小，就仍是最大，不用重掃。只在沒有雜訊時用。
 - **抓不到的**：語意本身理解錯。所以語意先寫成文件，建議另一個 session 審。
+
+## W3 在有 TraceLab 的機器（acvlab）上怎麼跑
+
+```bash
+V=code/icpe/rux_x1fast/v8_features
+python -I $V/make_cue.py tracelab --compress 1 2 4 --out <cue 目錄>      # 只讀原始檔的中繼資料，記憶體小
+python -I $V/make_cue.py check tracelab_c1 <cue 目錄>                    # 和 nb 檔對齊（t、sess 的 sha256）→ CUE_CHECK PASS
+RUX_CUE_FILE=<cue 目錄>/tracelab_c1.cue.u8 python -I $V/sweep_v8.py --variant V1 --calib results/icpe_h200/p01/calib --out-root <out> \
+  x1 sweep --traces nb:tracelab_c1 --rules nb --cpu 8 16 32 64 128 256 512 1024 111.0625 \
+  --policies LRU LRU2 ARC S3FIFO GDSF PENS LRU+NONE LRU+2HW LRU+2HA LRU+RPF --slows ssd b32 nfs --modes cake \
+  --gpu-gib 111.0625 --gpu-write wb --gpu-policies CUEP CUEO --pf-target cpu --engine rust
+python -I $V/analyze_w3.py --sweep <out>/x1/x1_sweep.csv --headroom <tl_p1_headroom_components.csv（版本 B，解壓）> --out <分析目錄>
+```
+- ③ 只要 NON_ORACLE × {CUEP, CUEO} 的 job。② 和 ④ 用版本 B 的正式表，因為引擎逐位元相同。
+- 這台已經試產 TraceLab c1／c2／c4 的 cue：665,453 個請求，574,485 個（86.3%）有工具呼叫。檔在 `/root/icpe-next/datasets/x1_cue/`，不進 git。
 
 ## 怎麼重現
 
