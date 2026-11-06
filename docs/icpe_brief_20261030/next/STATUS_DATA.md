@@ -2,6 +2,21 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T15:40+08:00 — acvlab 的 P4 用不存 npz 的程式重開；TRX40 的 sa_p4 15:16 開跑
+
+- 舊佇列跑完 `p4_b1/conversation_P_B1`：15:03:42 → 15:35:06，rc=0，210,289 個 job，1,884 s。這個 block 有存 npz，約 10 GB，留著。
+  - 15:35:07 停在 `conversation_M_B1` 剛開始的地方，那個 run 留了 `STOPPED_NOT_USED`。
+- **新佇列**：pid 3531487，`run --plans p4_b1 p4_b2 --engine rust --workers 35`，git HEAD f828e79，log `queue-rust-P4-w35-nonpz-20261106-153507.log`。
+  - 第一個 block `conversation_M_B1`：cmd 是 `export RUN_DIR=`，req/ 是空的。
+  - `kept_jobs=158999`，和 `count` 相同；`unmatched_cells=0`、`py_fallback_jobs=0`。
+- 監看：`watch_queues.sh 3531487`，以及 load 監看。
+- **時間**〔推算〕：Mooncake 的雜訊 job 實測約 0.31 執行緒秒（210,289 個 job × 35 ÷ 1,884 s）。
+  - TraceLab 用 P1 的 3.9 s 加約 25%（雜訊的額外成本）來估，約佔總量 2／3。
+  - 合計約 150 萬執行緒秒，35 個執行緒約 12 h → **11/7 約 03:00** 跑完。順序是全部 B1 先跑，再跑 B2。
+- **TRX40**（STATUS_TRX 15:20，cdea0d4）：merge f828e79 之後，15:16:47 開跑 `sa_p4_b1 sa_p4_b2`，36 個執行緒。
+  - 48 個 block 都是 `RUN_DIR=` 空的。第一個 block 的 kept 等於 `count`。
+  - 他們估約 19:45 跑完。
+
 ## 2026-11-06T15:25+08:00 — P4 不存逐請求 npz（icpe-trx 的請求；兩台都適用）→ **icpe-trx 請 merge 本節的 commit 後再開始 sa_p4**
 
 - **問題**（STATUS_TRX 15:15，8d9d34b；他們的數字）：`next_b_queue` 設 `RUN_DIR=<run>/req`，x1_sim 每個 job 都會存一個 npz。
