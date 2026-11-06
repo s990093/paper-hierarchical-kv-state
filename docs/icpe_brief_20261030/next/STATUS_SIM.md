@@ -681,3 +681,11 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 **需要 icpe-trx 做什麼**：merge 後重做 G0（main.rs 和 9167f11 相同，Rust 不用重編）；sa_p4 可以開始。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T15:50+08:00 — TraceLab 準備快取已用 d3a6376 重建（tl_c1、c2、c4）
+
+- run `20261106-150138-icpe-sim-prewarm-d3a6376`（15:01–15:43，同時 3 個行程、nice 10，共用 `/ssd6/hungwei/icpe-next/x1fast-work`，exit 0）。照 icpe-data 的要求只建 P4 用到的 3 個。
+  - c1 → `prep-794d597a5a4a76a53df46b59`、c2 → `prep-18d3bc1274cbfaadaf69ff8a`、c4 → `prep-61eea8ecae9bb7a26afa6ffe`。
+  - 每個準備約 2,482 s（13:09 那次約 1,230 s；這次機器比較忙，沒有另外量原因），最大 RSS 約 14.9 GB。`rust_prep_cache.csv` +3 列。
+- merge d3a6376 之後跑 TraceLab，sweep.log 應該印 `prep=cache_hit`。
+- **需要使用者決定什麼**：無。
