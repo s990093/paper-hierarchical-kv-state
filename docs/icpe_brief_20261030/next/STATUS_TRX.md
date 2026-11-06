@@ -1,0 +1,320 @@
+# STATUS_TRX（icpe-trx，TRX40）
+
+> 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
+> 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
+
+## 2026-11-06T08:12+08:00 — **三項對拍都 0 個不同**；Rust 佇列 `sa_p1 sa_p2 sa_p3` 開跑（36 workers，使用者決定）
+
+**對拍**（STATUS_DATA 08:10 第 3 步；`$ROOT/tools/verify_rust2.sh eeaecef`；`--engine rust --workers 32`；比對 run `20261106-080609-icpe-trx-compare-eeaecef`）
+- 執行檔：`src_sha256=43dbe828…`、`bin_sha256=ceaf3065f96e46e1fefb834ca3586806771cace604a75456ca46a5c3922c197b`（TRX40 用 rustc 1.99.1 自己編）；code_sha `a27559138492+rs43dbe828`（和 acvlab 的 G0 rust run `20261106-074940-icpe-data-g0-rust-merged-1304345` 相同）；三個 run 的 `py_fallback_jobs=0`。
+- (a) G0：run `20261106-080343-icpe-trx-g0-rust-eeaecef`，sweep 18.4 s（`time -v` 牆鐘 25.8 s）→ H200 參考：4,416 列 × 29 欄＝**128,064 格，0 個不同**，`G0_RESULT IDENTICAL`。
+- (b) xc_sa：run `20261106-080343-icpe-trx-xc_sa-rust-eeaecef`，sweep 1.9 s → `results/icpe_next/b/xcheck/xc_sa`：32 列 × 40 欄＝**1,280 格，0 個不同**；→ TRX40 的 Python xc_sa（run `20261105-105555-icpe-trx-xcheck-xc_sa-54fa2d8`）：`next_sim_cmp.py` **CMP PASS**（欄位、列數相同，不同的格子 0）。
+- (c) 整個 `sa_N16_s1` block：run `20261106-080343-icpe-trx-sa_N16_s1-rust-eeaecef`，6,174 job，sweep 90.1 s（`time -v` 牆鐘 1:43.5，最大 RSS 2.9 GB）→ `results/icpe_next/b/sa_main/sa_N16_s1/x1_sweep.csv.xz`：7,344 列 × 40 欄＝**293,760 格，0 個不同**，`G0_RESULT IDENTICAL`。〔算術〕同一個 block 的 Python（40 workers）sweep 3,903 s。
+- 記憶體（mem.log，10 筆）：行程群組 PSS 最高 2.7 GiB，MemAvailable 最低 53.4 GiB，swap 958 MiB。
+
+**使用者決定（本 session，11/6 08:0x，AskUserQuestion）**：使用者說「用更多核心，最後 load 90 上下」；我說明 TRX40 只有 48 個硬體執行緒、load 90 不會更快後，使用者選 **36 workers（約 45 CPU）**。所以不是 STATUS_DATA 08:10 的 32。
+
+**開跑**：08:06:48，`env … NEXT_B_TAG=icpe-trx RUSTC=… X1_CARGO=… CARGO_HOME=… RUSTUP_HOME=… X1_RUST_WORK=$ROOT/x1fast-work python -I code/icpe/next_b_queue.py run --plans sa_p1 sa_p2 sa_p3 --engine rust --workers 36`（git HEAD 9a78df5；log `$ROOT/runs/queue-sa_p123-rust-w36-20261106-080648.log`；memwatch 6 GiB、swapguard 2,933 MiB）。第一個 block `sa_p1/sa_N16_s1_ttl`（run `20261106-080648-icpe-trx-sa_p1-sa_N16_s1_ttl`）：stdout 印 `jobs=6480 workers=36 code_sha=a27559138492+rs43dbe828`。
+- 每個 plan 跑完：`collect` → commit → push，記 run_id、時間、記憶體、`rust_timing.jsonl`。
+- **`sa_t128k`**：icpe-data 在 STATUS_DATA 08:20（23865ee）更正，要跑。佇列已照舊指令開跑，不中斷；`sa_p3` 跑完後 merge 23865ee（只改 `next_b_queue.py`），再跑 `run --plans sens_rep --only sa_t128k --engine rust --workers 36`。`sens_rep` 其餘 4 個 `sa_*` 不跑。
+
+## 2026-11-06T08:06+08:00 — 使用者決定：Rust 跑 SemiAnalysis 的 P1–P3；裝好 rustc 1.99.1、merge 到 9be4925；三項對拍在跑
+
+**使用者決定**
+- 在本 session（AskUserQuestion，11/6 07:5x）：「改用 Rust 跑偏離 6」。
+- 在 icpe-data（STATUS_DATA 08:10 @ 9be4925，以這節為準）：TRX40 裝 Rust 自己跑 `sa_p1` → `sa_p2` → `sa_p3`；`sa_main_ttl7`、`sens_rep sa_*` **不跑**（理由寫在該節：P2／P3 已涵蓋全部格子）。
+- 注意（事實，不是建議）：`sens_rep` 的 5 個 `sa_*` 格裡，`sa_t128k`（截斷 128K 的紀錄 `semianalysis_N16_s1_t128k`）在 `sa_p1`–`sa_p3` 裡沒有對應的 block；另外 4 個（nvme807、load、wt、pfgpu）有。
+
+**做完什麼**
+- **Rust 工具鏈**：`micromamba create -p $ROOT/tools/rust -c conda-forge rust=1.99.1`（使用者權限；log `$ROOT/tools/rust-install-*.log`）→ `rustc 1.99.1 (58cf8f9c3 2026-10-13)`、`cargo 1.99.1 (5f94df478 2026-08-27)`。版本和 STATUS_DATA 08:10 要的相同；裝法是 conda-forge 不是 rustup（使用者在本 session 選的選項寫明 conda-forge）。cargo 要 `RUSTC=$ROOT/tools/rust/bin/rustc`（不然找不到 rustc）。環境：`X1_CARGO=$ROOT/tools/rust/bin/cargo CARGO_HOME=$ROOT/tools/cargo-home RUSTUP_HOME=$ROOT/tools/rustup-unused X1_RUST_WORK=$ROOT/x1fast-work`。試編（scratchpad 目標目錄）4.9 s 成功。
+- **merge**：
+  - 741bc2c：`origin/icpe-next-data` @ bc1e040（Rust 0b0ef1e、`run --engine rust`、偏離 6 的 `sa_p1`–`sa_p3`）。
+  - **eeaecef**：`origin/icpe-next-data` @ 9be4925（含 icpe-sim 47a4617）。`git diff 1304345 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` **是空的**。
+- **job 數**：run `20261106-075249-icpe-trx-count-sa-p1p3`（`count --plans sa_p1 sa_p2 sa_p3 sens_rep`，在 741bc2c；`code/icpe/next_b_queue.py` 在 eeaecef 沒變）：`sa_p1` 135,648、`sa_p2` 124,416、`sa_p3` 89,640（合計 349,704，和 STATUS_DATA 的數相同）；`sens_rep` 的 `sa_*` 5 格合計 5,336（不跑）。
+- **作廢**：07:52 在 741bc2c 上開的 G0／xc_sa（py＋rust）四個 run `20261106-075222-icpe-trx-{g0,xc_sa}-{py,rust}-741bc2c`：08:02 手動 SIGTERM（py 兩個還在跑；rust 兩個 exit 0 但沒比）。理由：STATUS_DATA 08:10 要用 47a4617／1304345 重做。目錄裡留了 `SUPERSEDED`，不當驗證證據。
+
+**現在在跑**：STATUS_DATA 08:10 第 3 步的三項對拍（`$ROOT/tools/verify_rust2.sh eeaecef`，08:03:43 開始，log `$ROOT/runs/verify-rust2-eeaecef-20261106-080343.log`；memwatch 6 GiB、swapguard 2,933 MiB）。都是 `--engine rust --workers 32`，依序：
+- (a) G0：run `20261106-080343-icpe-trx-g0-rust-eeaecef` → H200 參考（`next_b_g0.py`）。
+- (b) xc_sa：run `20261106-080343-icpe-trx-xc_sa-rust-eeaecef` → `results/icpe_next/b/xcheck/xc_sa`（`next_b_g0.py`）＋TRX40 的 Python xc_sa（run `20261105-105555-icpe-trx-xcheck-xc_sa-54fa2d8`；`next_sim_cmp.py`）。
+- (c) 整個 `sa_N16_s1` block：run `20261106-080343-icpe-trx-sa_N16_s1-rust-eeaecef`（manifest 的 cmd＋`--engine rust --workers 32`）→ `results/icpe_next/b/sa_main/sa_N16_s1/x1_sweep.csv.xz`（`next_b_g0.py`）。
+- 三項都 0 個不同 → `run --plans sa_p1 sa_p2 sa_p3 --engine rust --workers 32`。有任何不同 → 停、寫這裡。
+
+## 2026-11-06T07:55+08:00 — **`sa_main` 12／12 完成**；3 個 TTL 的分析＋`ttl7cells` 完成；下一步等使用者決定
+
+**做完什麼**
+- 最後一個 block：run `20261106-030157-icpe-trx-sa_main-sa_N72_s3`，exit 0，sweep 5,805 s（queue 03:01:57 → 04:38:54），7,344 列 → `results/icpe_next/b/sa_main/sa_N72_s3/`（commit de566f7）。記憶體（183 筆）：PSS 合計最高 10.4 GiB，MemAvailable 最低 45.6 GiB；swap 980 MiB。佇列 04:38:54 結束，兩個保護跟著結束、都沒觸發。
+- `sa_main` 12 個 block 都在 `results/icpe_next/b/sa_main/`：每個 7,344 列、`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`；程式都是 8ef0ada（＝sim 54fa2d8，maxtasksperchild 4），40 worker。sweep 時間 3,789–5,888 s，12 個合計 60,634 s。
+- **分析**（STATUS_DATA 09:00 第 6 步之 1）：run `20261106-074822-icpe-trx-analyze-sa_main-ttl3`，exit 0，stderr 空。`next_sim_analyze.py --sweep results/icpe_next/b/sa_main/*/x1_sweep.csv.xz --out-prefix sa_main_ttl3 --pf-target cpu`（`export RUN_ID`、`nice -n 10`；git HEAD de566f7，`code/` 和 8ef0ada 相同）。headroom_components 3,888 列、violations 5,322 列 → `results/icpe_next/b/analysis/sa_main_ttl3/`（兩個都 xz，解壓後和 run 目錄的原檔 `cmp` 相同；`manifest.json` 照 `analysis/cw_main_ttl3/` 的格式）。
+- **`ttl7cells`**（第 6 步之 2）：run `20261106-074827-icpe-trx-ttl7cells-sa_main`，exit 0：`cells=466／648  (trace,rule,cpu,slow)=253  jobs=40480` → `results/icpe_next/b/sa_main_ttl7/cells.csv`（每列有 run_id、ts、host、src_analysis_run_id）。
+- 上兩項 commit f0b13bb。不解讀、不下判定。
+
+**使用者決定（11/6，AskUserQuestion）**：TRX40 **只做 SemiAnalysis**。FreeInference、Bailian 的 P1–P3 不在 TRX40 跑。
+
+**還沒決定**：`sa_main` 之後 TRX40 跑什麼（Python 照 09:00 跑 `sa_main_ttl7`＋`sens_rep sa_*`，或改 Rust 跑偏離 6 的 `sa_p1`→`sens_rep sa_*`→`sa_p2`→`sa_p3`）。已再問使用者。在那之前 TRX40 不跑模擬、不 merge。
+- git 上（fetch 07:5x）：`origin/icpe-next-data` @ bc1e040 已 merge Rust 引擎（875fb2b → 304fd72）、G0（rust）PASS、佇列加 `run --engine rust`；`origin/icpe-next-sim` @ 47a4617 再加 W4 雜訊 B1（G1 PASS，STATUS_SIM 06:14），icpe-data 還沒 merge 這個。
+
+## 2026-11-06T03:25+08:00 — Rust 引擎 G1 PASS（STATUS_SIM 03:15）＋偏離 6 已登記 → `sa_main` 之後跑什麼，問使用者
+
+- **git 上看到的**（fetch 03:2x）：
+  - `origin/icpe-next-sim` @ 875fb2b，STATUS_SIM 03:15：`x1 sweep --engine rust`（程式 0b0ef1e），G1 py／rust 都 4,416×29、0 格不同；xcheck 14 個 block（含 xc_sa）0 格不同。預設仍是 py。code/p3x 有改 → merge 後要重做 G0、xc_sa。
+  - `origin/icpe-next-data` @ 3102df4：PREREG 偏離 6（1546086；P1＝全部格子 7 個 TTL、② ④ 同一組＋截尾規則；P2 nvme807＋只載入；P3 wt＋預取進 GPU）；`next_b_queue.py` 加了 `sa_p1`／`sa_p2`／`sa_p3`（3385802）；使用者 11/6：Rust 的佇列 CPU 約 1.25×workers。**icpe-data 還沒 merge 0b0ef1e。**
+  - TRX40 沒有 Rust 工具鏈（`cargo`、`rustc` 都不在）。
+- 〔算術〕SemiAnalysis 的 P1–P3＝每個變體 11,304＋10,368＋7,470＝29,142 job × 12＝349,704 job。照 `sa_main` 在 TRX40 的 Python 速度（40 worker 約 1.2 job/s）約 80 h，11/9 前跑不完；Rust 在 TRX40 的速度 NOT_MEASURED。
+- **問使用者**：`sa_main` 跑完（約 04:40）之後，TRX40 照 STATUS_DATA 09:00 用 Python 跑 `sa_main_ttl7`＋`sens_rep sa_*`，還是改成 Rust 跑偏離 6 的 `sa_p1`（取代 `sa_main_ttl7`）→ `sens_rep sa_*` → `sa_p2` → `sa_p3`（要在 `$ROOT` 裝 Rust 工具鏈、merge、G0＋xc_sa py／rust 都比）。不管選哪個，3 個 TTL 的分析＋`ttl7cells` 照做（幾秒，偏離 6：沒做完的優先度照偏離 4／5 報告）。
+
+## 2026-11-06T03:03+08:00 — `sa_main` 第 11／12 個 block 完成（`sa_N64_s3`）
+
+- run `20261106-012556-icpe-trx-sa_main-sa_N64_s3`：exit 0，sweep 5,750 s（queue 01:25:56 → 03:01:57），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N64_s3/`（`x1_sweep.csv.xz` 601 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 01:25:56–03:01:57，181 筆）：本組 PSS 合計最高 10.4 GiB，MemAvailable 最低 45.8 GiB；swap 980–981 MiB。兩個保護都沒觸發。
+- 最後一個 `sa_N72_s3` 03:01:57 開跑。〔算術〕照 s1／s2 的 N72 約 5,850–5,890 s → 約 11/6 04:40 跑完。
+
+## 2026-11-06T01:27+08:00 — `sa_main` 第 10／12 個 block 完成（`sa_N32_s3`）
+
+- run `20261106-000537-icpe-trx-sa_main-sa_N32_s3`：exit 0，sweep 4,807 s（queue 00:05:37 → 01:25:56），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N32_s3/`（`x1_sweep.csv.xz` 571 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 00:05:37–01:25:56，151 筆）：本組 PSS 合計最高 10.0 GiB，MemAvailable 最低 45.9 GiB；swap 981 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N64_s3` 01:25:56 開跑。〔算術〕剩 2 個 block，照 s1／s2 同 N 的時間約 3.2 h → `sa_main` 約 11/6 04:40 跑完。
+
+## 2026-11-06T00:08+08:00 — `sa_main` 第 9／12 個 block 完成（`sa_N16_s3`）；icpe-ana 的 Rust 引擎與補跑草案（記錄，現在不動）
+
+- run `20261105-230217-icpe-trx-sa_main-sa_N16_s3`：exit 0，sweep 3,789 s（queue 23:02:17 → 00:05:37），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N16_s3/`（`x1_sweep.csv.xz` 537 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 23:02:17–00:05:37，120 筆）：本組 PSS 合計最高 9.8 GiB，MemAvailable 最低 46.5 GiB；swap 981 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N32_s3` 00:05:37 開跑。〔算術〕剩 3 個 block，照 s1／s2 同 N 的時間約 4.6 h → `sa_main` 約 11/6 04:40 跑完。
+- **sa_main 跑完後的步驟已備好**（本機 `$ROOT/tools/sa_post_main.sh`，不進 repo，只做過 `bash -n`）：§4.1 的殼跑 `next_sim_analyze.py … --out-prefix sa_main_ttl3 --pf-target cpu`（`export RUN_ID`、`nice -n 10`）→ 另一個殼跑 `ttl7cells --plan sa_main`。表的放法照 icpe-data 的 `analysis/cw_main_ttl3/`（headroom_components xz＋violations＋manifest.json）。檢查內容後才 commit。
+- **icpe-ana 的訊息**（資訊；以 git 為準，已核對 `origin/icpe-next-ana` 的 STATUS_ANA）：
+  - aee1527（23:58 節）：Rust 版 x1 引擎，和 `x1_sim.py` 逐位元相同；用本分支 `sa_main/sa_N16_s1` 對過 7,344／7,344 列相同。要等 icpe-sim 在 STATUS_SIM 寫 G1／xcheck PASS 才用；只用在還沒開始的 block。**`sa_main` 照舊用 Python 跑完。**
+  - 2e32946（00:20 節）：使用者 11/6 決定補回偏離 4 砍掉的格子（P1–P4），PREREG 偏離 6 由 icpe-data 寫（目前是草稿）。TRX40 的分工**草案**：SemiAnalysis 的補跑＋`sens_rep sa_*`，以及 SemiAnalysis、FreeInference、Bailian 的 P1–P3（Rust 要在 TRX40 另外編、另外對拍）。
+  - icpe-trx 的立場：等偏離 6 正式登記＋STATUS_SIM 的驗證；在那之前照 STATUS_DATA 09:00 的步驟走（`sa_main_ttl7`、`sens_rep sa_*` 用目前的 Python 佇列，除非 STATUS 改了）。
+  - **草案裡超出 TRX40 目前授權的兩點**（要使用者決定，輪到時問）：
+    1. FreeInference 的資料能不能放 TRX40：STATUS_DATA 09:00 的授權清單只有 SemiAnalysis、Bailian（Apache-2.0）、TraceLab（CC BY 4.0）；FreeInference 不在清單上。
+    2. 寫入範圍：使用者給 icpe-trx 的只有 `results/icpe_next/b/` 底下的 `sa_*`（＋`analysis/sa_*`、`sens_rep/sa_*`）。FreeInference、Bailian 的下載、轉換、結果目錄都在範圍外。
+
+## 2026-11-05T23:03+08:00 — `sa_main` 第 8／12 個 block 完成（`sa_N72_s2`）；s2 四個都進 results
+
+- run `20261105-212443-icpe-trx-sa_main-sa_N72_s2`：exit 0，sweep 5,842 s（queue 21:24:43 → 23:02:17），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N72_s2/`（`x1_sweep.csv.xz` 607 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 21:24:43–23:02:17，184 筆）：本組 PSS 合計最高 10.8 GiB，MemAvailable 最低 45.5 GiB；swap 981 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N16_s3` 23:02:17 開跑。
+- 〔算術〕s2 四個 block 合計 20,207 s（s1：20,276 s）。剩 s3 的 4 個 → 約 5.6 h → `sa_main` 約 11/6 04:40 跑完。
+
+## 2026-11-05T21:26+08:00 — `sa_main` 第 7／12 個 block 完成（`sa_N64_s2`）
+
+- run `20261105-194923-icpe-trx-sa_main-sa_N64_s2`：exit 0，sweep 5,708 s（queue 19:49:23 → 21:24:43），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N64_s2/`（`x1_sweep.csv.xz` 601 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 19:49:23–21:24:43，180 筆）：本組 PSS 合計最高 10.2 GiB，MemAvailable 最低 46.0 GiB；swap 977–981 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N72_s2` 21:24:43 開跑。
+- 〔算術〕剩 5 個 block；照 s1 同 N 的時間 → 約 7.3 h → `sa_main` 約 11/6 04:40 跑完。
+
+## 2026-11-05T19:50+08:00 — `sa_main` 第 6／12 個 block 完成（`sa_N32_s2`）
+
+- run `20261105-182807-icpe-trx-sa_main-sa_N32_s2`：exit 0，sweep 4,865 s（queue 18:28:07 → 19:49:23），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N32_s2/`（`x1_sweep.csv.xz` 576 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 18:28:07–19:49:23，153 筆）：本組 PSS 合計最高 10.1 GiB，MemAvailable 最低 45.8 GiB；swap 959–977 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N64_s2` 19:49:23 開跑。
+- 〔算術〕剩 6 個 block；照 s1 同 N 的時間 → 約 8.9 h → `sa_main` 約 11/6 04:40 跑完。
+
+## 2026-11-05T18:29+08:00 — `sa_main` 第 5／12 個 block 完成（`sa_N16_s2`）
+
+- run `20261105-172446-icpe-trx-sa_main-sa_N16_s2`：exit 0，sweep 3,792 s（queue 17:24:46 → 18:28:07），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N16_s2/`（`x1_sweep.csv.xz` 536 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 17:24:46–18:28:07，119 筆）：本組 PSS 合計最高 9.5 GiB，MemAvailable 最低 46.6 GiB；swap 958–959 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N32_s2` 18:28:07 開跑。
+- 〔算術〕剩 7 個 block；照 s1 同 N 的時間 → 約 10.2 h → `sa_main` 約 11/6 04:40 跑完（和 17:26 的估計相同）。
+
+## 2026-11-05T17:26+08:00 — `sa_main` 第 4／12 個 block 完成（`sa_N72_s1`）；s1 四個都進 results
+
+- run `20261105-154628-icpe-trx-sa_main-sa_N72_s1`：exit 0，sweep 5,888 s（queue 15:46:28 → 17:24:46），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N72_s1/`（`x1_sweep.csv.xz` 606 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 15:46:28–17:24:46，186 筆）：本組 PSS 合計最高 10.4 GiB，MemAvailable 最低 44.1 GiB；swap 959–978 MiB。兩個保護都沒觸發。
+- 下一個 `sa_N16_s2` 17:24:46 開跑。
+- 〔算術〕s1 四個 block 合計 20,276 s（N16 3,903／N32 4,771／N64 5,714／N72 5,888）。剩 8 個＝s2、s3 各 4 個；假設和 s1 同 N 一樣快 → 約 11.3 h → `sa_main` 約 11/6 04:40 跑完。
+
+## 2026-11-05T15:48+08:00 — `sa_main` 第 3／12 個 block 完成（`sa_N64_s1`）
+
+- run `20261105-141103-icpe-trx-sa_main-sa_N64_s1`：exit 0，sweep 5,714 s（queue 14:11:03 → 15:46:28），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N64_s1/`（`x1_sweep.csv.xz` 601 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（mem.log 14:11:03–15:46:28，180 筆）：本組 PSS 合計最高 10.3 GiB，MemAvailable 最低 46.0 GiB；swap 2,357 → 978 MiB（往下掉：別人的頁換回記憶體）。兩個保護都沒觸發。
+- 下一個 `sa_N72_s1` 15:46:28 開跑。
+- 〔算術〕s1 三個 block：N16 3,903 s、N32 4,771 s、N64 5,714 s。剩 9 個 block（N72_s1＋s2、s3 各 4 個）；假設 s2、s3 和 s1 同 N 的時間一樣、N72 每個 5,700–6,500 s → 合計約 12.7–13.4 h → `sa_main` 約 11/6 04:30–05:30 跑完。
+
+## 2026-11-05T14:13+08:00 — `sa_main` 第 2／12 個 block 完成（`sa_N32_s1`）
+
+- run `20261105-125122-icpe-trx-sa_main-sa_N32_s1`：exit 0，sweep 4,771 s（queue 12:51:22 → 14:11:03），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N32_s1/`（`x1_sweep.csv.xz` 577 KiB＋`manifest.json`；`run_id` 單一值、`host`＝`acvlab-TRX40-AORUS-MASTER`）。commit 8523791。
+- 記憶體（同一個 mem.log，12:51:22–14:11:03，150 筆）：本組 PSS 合計最高 10.2 GiB，MemAvailable 最低 47.8 GiB；swap 2,357–2,401 MiB（沒有往上漲）。兩個保護都還在跑、都沒觸發。
+- 下一個 `sa_N64_s1` 14:11:03 開跑。
+- 〔算術〕N32 比 N16 多 22%（4,771 vs 3,903 s）。剩 10 個 block：N16×2 約 130 分、N32×2 約 160 分，N64／N72 共 6 個還沒量到——每個抓 80–110 分 → 合計約 13–16 h → `sa_main` 約 11/6 03:00–06:00 跑完。
+
+## 2026-11-05T12:53+08:00 — `sa_main` 第 1／12 個 block 完成（`sa_N16_s1`）
+
+- run `20261105-114609-icpe-trx-sa_main-sa_N16_s1`：exit 0，sweep 3,903 s（queue 記 3,912.7 s），6,174 job，7,344 列 → collect 進 `results/icpe_next/b/sa_main/sa_N16_s1/`（`x1_sweep.csv.xz` 548 KiB＋`manifest.json`；`host`＝`acvlab-TRX40-AORUS-MASTER`）。
+- 記憶體（`queue-sa_main-w40-20261105-114609.mem.log`）：本組 PSS 合計最高 9.7 GiB（11:55:10），MemAvailable 最低 49.6 GiB；swap 2,442 → 2,406 MiB（沒有增加）。兩個保護都沒觸發。
+- 下一個 `sa_N32_s1` 12:51:22 開跑（同一條佇列）。
+- 〔算術〕剩 11 個 block × 65 分鐘 ≈ 12 h；CacheWise 的 block 隨 N 變大最多慢約 40%，所以約 12–17 h → `sa_main` 約 11/6 01:00–06:00 跑完。之後是分析＋`ttl7cells`、`sa_main_ttl7`、`sens_rep 'sa_*'`。
+
+## 2026-11-05T11:47+08:00 — G1 PASS＋merge；**`sa_main` 開跑（40 worker、maxtasks 4）**
+
+- icpe-sim：54fa2d8 的 **G1 PASS**（STATUS_SIM 984dc4f 11:45，run `20261105-100635-icpe-sim-g1-54fa2d8`，4,416 列 × 29 欄 0 格不同、自檢 997／997；我在 git 上看過那一節）。原因：開 GPU 層時 Engine 有循環參照、fork 出來的 worker 幾乎不做 gen2 gc（SIM_CHANGES 第 15 項）。
+- icpe-data：merge 進 `icpe-next-data` @ 2dc6c8a。
+- 我：merge `origin/icpe-next-data` @ 2dc6c8a → **`8ef0ada`**。`git diff 54fa2d8 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` **是空的** → 11:08 節在 54fa2d8 上做的 G0（128,064 格 0 不同）、xc_sa（1,280 格 0 不同）適用。`next_b_queue.py`、`next_b_g0.py` 和 828e1d3 相同。
+- **開跑**：11:46:09，`python -I code/icpe/next_b_queue.py run --plans sa_main --workers 40`（程式 8ef0ada；`X1_MAXTASKS` 沒設 → stdout `maxtasksperchild=4`；log `$ROOT/runs/queue-sa_main-w40-20261105-114609.log`）。保護：memwatch（MemAvailable < 6 GiB 停）、swapguard（swap > 2,933 MiB 停，使用者 09:4x 的上限）。開跑時 MemAvailable 58.3 GiB、swap 2,442 MiB（09:57 那次留下的別人的頁）、load 0.5。
+- 第一個 block `sa_N16_s1`（run `20261105-114609-icpe-trx-sa_main-sa_N16_s1`）。每個 block 跑完：`collect --plans sa_main` → commit → push。
+
+## 2026-11-05T11:08+08:00 — 54fa2d8 上提前做 G0、xc_sa：都 IDENTICAL；仍等 G1 PASS＋icpe-data merge
+
+- 為了 G1／merge 一到就能開跑，先在 detached worktree `$ROOT/wt-sim-54fa2d8`（icpe-sim 54fa2d8，`--maxtasks` 預設 4）做我這邊要重做的兩個對拍：
+  - **G0**：run `20261105-105553-icpe-trx-g0-54fa2d8`（16 worker、新功能全關；stdout 印 `maxtasksperchild=4`；sweep 679 s、`/usr/bin/time` 11:21）。
+  - **xc_sa**：run `20261105-105555-icpe-trx-xcheck-xc_sa-54fa2d8`（同 queue 的 xc_sa 參數、16 worker）。不 collect。
+  - 兩個 run 的 cmd.sh 最後一步的比對失敗（`next_b_g0.py` 是 icpe-data 的檔，不在 icpe-sim 的 worktree：`can't open file '.../wt-sim-54fa2d8/code/icpe/next_b_g0.py'`，exit 2）；sweep 本身都跑完。兩個目錄留了 `COMPARE_FAILED_SEE_NEXT_RUN`。
+  - **比對**：run `20261105-110736-icpe-trx-compare-54fa2d8`（repo 828e1d3 的 `next_b_g0.py`）：
+    - G0 對 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz`：**4,416 列 × 29 欄＝128,064 格，0 個不同**。
+    - xc_sa 對 `results/icpe_next/b/xcheck/xc_sa/x1_sweep.csv.xz`：**32 列 × 40 欄＝1,280 格，0 個不同**。
+- 開跑條件：STATUS_SIM 寫 54fa2d8 的 G1 PASS ＋ icpe-data merge ＋ 我 merge 後 `git diff 54fa2d8 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 是空的（是空的，上面兩個對拍就適用；不是空的就重做）。然後 `sa_main` 40 worker。
+
+## 2026-11-05T10:25+08:00 — icpe-sim 的修正 54fa2d8（`--maxtasks`，預設 4）在 TRX40 試跑：40 worker 記憶體持平；等 G1＋merge
+
+- icpe-sim 54fa2d8（`origin/icpe-next-sim`）：`x1 sweep --maxtasks`（預設 4、`$X1_MAXTASKS`；0＝原本）→ `Pool(maxtasksperchild)`。G1 跑中（icpe-sim 10:1x 的訊息；以 STATUS_SIM 為準）。
+- **試跑**（不進 results/；程式＝detached worktree `$ROOT/wt-sim-54fa2d8` @ 54fa2d8，G1 未過）：run `20261105-100804-icpe-trx-trial-maxtasks4-w40`——sa_N16_s1、和 `sa_main` 相同的 sweep 參數、**40 worker**、`maxtasksperchild=4`（stdout 有印）。跑到 1,329／6,174 job（968 s，涵蓋最重的 O-ALL、O-PF、LRU+RPF 段）後手動停（`STOPPED` 檔）。
+  - 本組 PSS 合計：最高 **9.4 GiB**（10:09:46），之後在 7.3–8.8 GiB 之間，沒有往上漲（修正前同一段：889 job 時 39.4 GiB）。
+  - MemAvailable 最低 50.2 GiB；swap 2,495 → 2,486 MiB（沒有增加）。
+  - 速度：1,329 job／968 s＝每秒 1.37 個（修正前 40 worker 前 540 個：1.37）。
+- **計畫**：G1 PASS（STATUS_SIM）→ icpe-data merge 進 `icpe-next-data` → 我 merge、G0＋xc_sa（新程式）→ `sa_main` 用 **40 worker**（使用者先前決定的值；上面的量測顯示記憶體夠）。
+- 〔算術〕照每秒 1.37 個 job：一個 block 約 75 分鐘，`sa_main` 12 個約 15 h（N 大的 block 可能更久，CacheWise 多約 40%）。
+
+## 2026-11-05T10:05+08:00 — **卡住**：worker 的記憶體每個 job 都在累積、不釋放 → `sa_main` 在 62 GiB 上跑不完；20 worker 的 block 被 swap 保護停掉
+
+**發生什麼**
+- 20 worker 的 run `20261105-092452-icpe-trx-sa_main-sa_N16_s1`：**09:57:27 swapguard 觸發**（swap 3,125 MiB > 使用者允許的 2,933 MiB），停在 1,958／6,174 job（1,946 s）。留了 `ABORTED`、`SWAPGUARD_KILLED`，不 collect。停掉前本組 PSS 49.3 GiB、MemAvailable 10.4 GiB。停掉後 MemAvailable 59.5 GiB、swap 2,503 MiB（別人的頁，慢慢換回）。
+- 兩次 run 的本組 PSS 合計 vs 已跑的 job 數（`mem.log`＋stdout 的進度列）：
+
+| run | 已跑 job | 本組 PSS 合計 | 合計 ÷ job 數 |
+|:--|:--|:--|:--|
+| 40 worker | 889 | 39.4 GiB | 44 MiB |
+| 20 worker | 約 950（09:41:54） | 36.5 GiB | 約 38 MiB |
+| 20 worker | 約 1,410（09:49:12） | 43.0 GiB | 約 30 MiB |
+| 20 worker | 1,958（09:57） | 49.3 GiB | 約 25 MiB |
+
+  合計大致跟「已跑的 job 數」走，和 worker 數關係不大。重的 job（O-ALL、O-PF、LRU+RPF）漲得快，後面的（O-BEL、PENS）慢一些，但**沒有持平**。
+
+**診斷試跑**（不進 results/）：run `20261105-095815-icpe-trx-trial-memgrowth-w1`——1 worker、SA N16 s1、CPU 128、PENS／LRU2／GDSF／ARC／S3FIFO／LRU × GPU LRU／BEL、ssd、cake，14 個 job（142 s）；每 2 s 記 worker 的 `smaps_rollup`（`worker_rss.log`）。
+- worker 的 Private_Dirty：開始 148 MiB → 14 個 job 後 388 MiB，**只升不降**；有的 job 一次 +45 MiB，有的持平（GDSF 4 個 job 只在第一個 +44）。RSS 958 → 1,198 MiB。
+- 結論（這台量到的）：worker 每跑一個 job 都留下一些記憶體、之後不還。`sa_main` 一個 block 6,174 個 job，20 worker 時每個 worker 約 309 個 → 照上面的量推〔算術〕每個 worker 5–14 GiB，這台 62 GiB 不管幾個 worker 都裝不下。
+- 是程式裡的洩漏還是 malloc 碎片，我分不出來；沒看程式改什麼，也沒有改。
+
+**需要 icpe-sim 做什麼**（擋 TRX40 的全部 SA 工作）
+- `x1_sim.py` 2278 行的 `mp.get_context("fork").Pool(a.workers)` 加 `maxtasksperchild`（例如 8–16），或找出跨 job 留下的東西。前者不改任何 job 的計算，worker 只是跑完 k 個 job 就換一個新的（從父行程重新 fork）。要做 G1。
+- acvlab 也一樣會累積，只是 440 GiB 看不出來；TraceLab（記憶體較大）40 worker 可能也值得看一下 mem-watch。
+
+**需要 icpe-data 做什麼**：上面的修正 G1 過了以後 merge 進 `icpe-next-data`；我 merge、重做 G0＋xc_sa、再開 `sa_main`。
+
+**使用者決定（11/5 10:0x，在 icpe-trx）**：選「請 icpe-sim 加 maxtasksperchild」。已用 SendMessage 通知 icpe-sim（請求）與 icpe-data（告知）；以本檔為準。在修正 G1 過、merge 進 `icpe-next-data` 之前，TRX40 不跑任何 SA 的模擬。
+
+## 2026-11-05T09:41+08:00 — 20 worker 的記憶體也在漲；**使用者：允許 swap 小幅增加**
+
+- 20 worker（run `20261105-092452-icpe-trx-sa_main-sa_N16_s1`）09:40:20：本組 PSS 34.4 GiB（09:36 是 25.8 GiB），MemAvailable 23.5 GiB，swap 885 MiB（還沒增加）。09:38 時每個 worker PSS 中位數 1.54 GiB、最大 1.87 GiB；RSS 中位數 2.29 GiB、最大 2.62 GiB。
+- 父行程（p3_fvar）RSS 0.95 GiB，其中和 worker 共用約 0.76 GiB；worker 的 RSS 已經比父行程大，所以不只是 copy-on-write。
+- `x1_sim.py` 把重的 job（預取、scan）排在最前面先跑（`J.sort(...)`，2266 行），所以現在這段是記憶體最高的一段；每個 worker 的峰值**沒量到**。程式裡除了 `_PCACHE`（每份紀錄一個，父行程 fork 前就載好）沒有跨 job 的快取。
+- 09:39 加了 swap 保護 `$ROOT/tools/swapguard.sh`（swap 用量 > 門檻就 SIGTERM 整組），門檻先設 1,141 MiB（基準＋256）。
+- **使用者決定（11/5 09:4x，在 icpe-trx）**：選「允許 swap 小幅增加」＝swap 最多比基準多 2 GiB（門檻 **2,933 MiB**），MemAvailable < 6 GiB 才停。被換出去的是別的使用者閒置的桌面程式（gnome-shell 等）的頁，不影響模擬結果。這是對「不准用到 swap」的放寬，使用者明講。
+  - 另兩個選項（沒選）：繼續 20、被停就降 12；現在就停、改 12 重跑。
+
+## 2026-11-05T09:26+08:00 — 40 worker 記憶體不夠、swap 增加 → 停掉作廢；**`sa_main` 改 20 worker 重跑**
+
+**發生什麼**
+- run `20261105-091241-icpe-trx-sa_main-sa_N16_s1`（40 worker）跑到 889／6174 job（681 s），**09:24 我手動停掉**（`kill -TERM` 整個行程群組），留了 `ABORTED` 檔，不 collect。
+- 記憶體（`$ROOT/runs/queue-sa_main-w40-20261105-091241.{mem.log,pss-5min.txt,pss-abort.txt}`）：
+
+| 時間 | 本組 PSS 合計 | 每個 worker PSS | MemAvailable | swap 用量 |
+|:--|:--|:--|:--|:--|
+| 09:13:14 | 5.5 GiB | — | 50.2 GiB | 245 MiB |
+| 09:17:49（開跑 5 分鐘） | 20.0 GiB | 中位數 501 MiB、p90 552、最大 637 | 36 GiB | 244 MiB |
+| 09:21:06 | 28.9 GiB | — | 26.9 GiB | 264 MiB（開始增加） |
+| 09:23:4x（停掉前） | 39.4 GiB | 中位數 968 MiB、最大 1,248；私有中位數 949 | 19.4 GiB | 885 MiB |
+
+- swap 的增加不是本組被換出（本組每個行程 `VmSwap` 都是 0），是記憶體壓力把別的使用者閒置的頁（gnome-shell、update-manager、uid 1010 的行程）擠進 swap。照規則「不准用到 swap」，仍然算本組造成的，所以停。
+- 漲法：09:17:49 → 09:19:00 只多 1.5 GiB；09:19 以後每 30 s 多約 2 GiB，時間上和 job 從 O-ALL（前 432 個）換到 O-PF／LRU+RPF 一致。所以看起來是這類 job 比較吃記憶體，不像單純越跑越漏；每個 worker 的上限**沒量到**。
+- 停掉後 swap 留在 885 MiB（被換出的頁要等那些行程用到才換回）。之後的基準改成 885 MiB。
+
+**處理**：照使用者 09:08 的決定（被停就作廢、降 worker 重跑）。09:24:52 重開 `run --plans sa_main --workers 20`（程式 828e1d3；log `$ROOT/runs/queue-sa_main-w20-20261105-092452.log`；記憶體監看同前）。20 是我依上面的量測選的：每個 worker 以 1.25–1.5 GiB 估，合計 25–30 GiB；本組約 29 GiB 時 swap 開始增加。之後在 block 之間依量到的峰值調整。
+
+**對時間的影響**〔算術〕：40 worker 時每秒約 1.37 個 job（前 540 個）。20 worker 約一半，一個 block 約 2.5 h，`sa_main` 12 個約 30–40 h。實際時間等第一個 block 跑完再寫。
+
+**需要 icpe-sim 知道**（不擋，只是告知）：SemiAnalysis（98,827 請求、4,200 萬 chunk）每個 worker 在 O-PF／LRU+RPF 的 job 上 PSS 約 1–1.25 GiB 而且還在漲（PSS 接近 RSS 的 2 GiB）。如果是 fork 後的 copy-on-write（refcount 碰到父行程的物件），共用的部分會慢慢變私有。這台 62 GiB，worker 數因此受限。
+
+## 2026-11-05T09:14+08:00 — 指紋（不含 meta_json）13／13 相同；G0 PASS；xc_sa IDENTICAL；**`sa_main` 開跑（40 worker）**
+
+**做完什麼**
+- **merge** `origin/icpe-next-data` @ ec74563 → `828e1d3`（`--no-ff`）。模擬程式 `code/p3x`、`code/icpe/p3_fvar.py`、`code/p3_platform.py` 和 f4f5668 逐位元相同（`git diff` 空）；改到的只有 `next_b_queue.py`（digest 跳過 `meta_json`）、`next_sim_analyze.py`（`--rival-only-gpu`）、`next_a_*` 與文件。
+- **指紋**：run `20261105-091102-icpe-trx-npz-digest-nometa`（程式 828e1d3 的 `next_b_queue.py digest`）對 `npz_digest.csv` 的 `content_sha256_no_meta`（acvlab run `20261105-090851-icpe-data-npz-digest-nometa`）：**13／13 SAME**（`DIGEST_RESULT IDENTICAL`）。和本檔 09:07 節的表也相同。icpe-data 的訊息說它比過也是 13／13；這裡是我自己重算、重比的結果。
+- **4. G0 PASS**：run `20261105-090000-icpe-trx-g0-f4f5668`（程式 f4f5668、新功能全關、16 worker、nice 10）：
+  - 指令：`P3_CONST=h200 P3_TIER=h200cpu M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json M7_RES=results/m7_write_policy_h200 X1_TRACE_DIR=$ROOT/datasets/mooncake/traces RUN_DIR=<run>/req OMP_NUM_THREADS=1 python -I code/icpe/p3_fvar.py --variant V1 --calib results/icpe_h200/p01/calib --out-root <run>/out x1 sweep --workers 16`（acvlab 的 G0 cmd.sh 在 acvlab 上、這裡看不到；照 STATUS_SIM G1 的指令＋queue 的環境變數組的）。
+  - `next_b_g0.py results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz <run>/out/x1/x1_sweep.csv`：**4,416 列 × 29 欄＝128,064 格，0 個不同**（`G0_RESULT IDENTICAL`）。
+  - sweep 1,328 個 job 687 s（16 worker）；最大 RSS（單一行程）385 MiB；整組 PSS 最多 2.96 GiB。
+  - G0 跑在 merge 前的 f4f5668；merge 沒有改模擬程式（上面），所以沒有重做。
+- **5. xc_sa IDENTICAL**：run `20261105-091126-icpe-trx-xcheck-xc_sa`（程式 828e1d3、16 worker、28 job、sweep 40.6 s），比對 run `20261105-091229-icpe-trx-xcheck-compare-xc_sa`：`next_b_g0.py results/icpe_next/b/xcheck/xc_sa/x1_sweep.csv.xz <run>/out/x1/x1_sweep.csv` → **32 列 × 40 欄＝1,280 格，0 個不同**。沒有 collect。
+  - 記憶體（09:12:03 一次取樣，`/proc/<pid>/smaps_rollup`）：16 個 worker 的 PSS 149–205 MiB、parent 174 MiB、queue 11 MiB，合計 3.2 GiB。這是 CPU 64 GiB 的小格子；`sa_main` 有到 1,024 GiB 的容量，worker 可能更大，開跑後再量。
+- **6. `sa_main` 開跑**：09:12:41，`python -I code/icpe/next_b_queue.py run --plans sa_main --workers 40`（程式 828e1d3；setsid；log `$ROOT/runs/queue-sa_main-w40-20261105-091241.log`；記憶體監看 `…091241.mem.log`，每 30 s，MemAvailable < 6 GiB 就停整組）。開跑時 MemAvailable 55 GiB、swap 245 MiB（基準）、load 6.1。第一個 block `sa_N16_s1`。
+
+**卡住什麼**：無。
+
+**需要別的 session 做什麼**：無。
+
+**需要使用者決定什麼**：無。
+
+## 2026-11-05T09:07+08:00 — 轉換完成；**npz 內容指紋 13／13 和 acvlab 不同 → 停**（原因：指紋含 `meta_json`）；G0 跑中；**等 icpe-data 的新指紋**
+
+**做完什麼**
+- **3. 轉換**：run `20261105-085858-icpe-trx-convert-semianalysis`（exit 0）。p3x＝`git archive 6b17191 code/p3x` 解到 `$ROOT/code-archive/p3x-6b17191`。
+  - `TIARA_DATASETS=$ROOT/datasets python -I code/icpe/next_b_convert.py semianalysis --N 16 32 64 72 --seeds 1 2 3 --out-dir $ROOT/datasets/x1_nb --p3x <archive>/code/p3x`：3 分 50 秒，最大 RSS 2.03 GiB（`/usr/bin/time -v`）。
+  - 截斷版 `semianalysis --N 16 --seeds 1 --trunc-128k ...`：48 秒，最大 RSS 1.66 GiB。
+  - 規則 6：`len(hash_ids)×64=in` 98827／98827。
+- **指紋比對**：run `20261105-090355-icpe-trx-npz-digest`（exit 1）：`next_b_queue.py digest <13 個名字>` 和 `results/icpe_next/b/traces/npz_digest.csv` **13 個全部不同**（`DIGEST_RESULT DIFFER n=13 bad=13`）。照步驟 3「不同就停」：**SA 的 xcheck／正式模擬都沒開始。**
+
+**原因（診斷，沒有改任何程式）**
+- npz 裡除了 8 個資料陣列（`full_key`、`full_off`、`kind`、`nall`、`parent`、`sess`、`t`、`user_trigger`）還有一個 **`meta_json`** 字串陣列，內容含 `run_id`、`ts`、`host`、`argv`（含 `--out-dir`、`--p3x` 的絕對路徑）、`source.file`（絕對路徑）。
+- `cmd_digest` 把 `meta_json` 也算進去 → 換一台機器、甚至同一台重轉一次，指紋必然不同。所以 `npz_digest.csv` 的值在別台**照定義就不可能相同**。
+- 診斷 run `20261105-090538-icpe-trx-digest-diag`（腳本在該 run 目錄的 `digest_diag.py`，不在 repo）：
+  - (a) 同一套算法、**跳過 `meta_json`** 的指紋 `content_sha256_no_meta`（下表）——acvlab 沒有這個值可比。
+  - (b) `meta_json` 解出來的統計欄，和 git 裡 acvlab 的 `results/icpe_next/b/traces/trace_summary.csv` 同名列逐欄比（n_conv、active_median／p10、n_req、n_sess、n_cont、full_chunks_total、n_keys、span_h、inp_tokens_median／p90、frac_inp_gt_128k、trunc_frac_req_cut、time_fix_within_session、rule6）：**13／13 全部相同**（`SUMMARY_FIELDS_RESULT ALL_SAME`）。這是彙總量相同，不是逐位元相同。
+  - 先前兩個診斷 run `…090500…`（腳本 bug：`meta_json` 是 0 維，`ABORTED`）、`…090513…`（欄位對應錯：n_keys 在 `meta.check`，`SUPERSEDED`）作廢。
+
+| name | content_sha256_no_meta（TRX40） |
+|:--|:--|
+| semianalysis_N16_s1 | 3d6192cae774cdb66036527301ded814692b0b457d1f8c926907a9cb4c962b04 |
+| semianalysis_N16_s1_t128k | f51da2d56ca961a47110ea13061ae2ee28b01879ad42b18956b25a461e81608f |
+| semianalysis_N16_s2 | 460bb9572953b039ba3d589a97afa80549fd6ec309aee8fc62f09f93890b52fd |
+| semianalysis_N16_s3 | 8ab19616850d09c155f58b9d53838dab92ebf0b4321cd9133d05c7068120eefe |
+| semianalysis_N32_s1 | 517b8bbe9ce428ba7bb76eb76aba54ddf9404bb6c5162fb2f6680efa743a8b7a |
+| semianalysis_N32_s2 | 0fb05f6661031aa0b8b8b93bee3a4a4484c9d02875d66f4598904ff05656ff4c |
+| semianalysis_N32_s3 | 6ceac31f0c802142e7ba0f8ac9fe6d8f9ba8a6699bc0604743b3258773481584 |
+| semianalysis_N64_s1 | f844e1a3b954bfccbff9814c25d4cddb8da50e69030aae5675f48fddc3b0c038 |
+| semianalysis_N64_s2 | f5fd5d2534b099cf57e7f63261992c3c4444df73da48bde2378ace2aa18e54b4 |
+| semianalysis_N64_s3 | 2074092728cf504f15fcf7337bff9114ada9008b11bec727b91ac7a8fa2d09b6 |
+| semianalysis_N72_s1 | ef0f0a9fbd1832f7025886376353475a1320328ba2bc7235144352867d5553a1 |
+| semianalysis_N72_s2 | d12b3468afc7c667bea791332e1f7a879bf9e748cd1733cce8ce4ef6049872e6 |
+| semianalysis_N72_s3 | af8752b4bf015d9b2227be6d51c6d71594d7cdf36edc8bf829958de1ff190686 |
+
+**跑中**：G0 run `20261105-090000-icpe-trx-g0-f4f5668`（Mooncake，16 worker；和 SA 的紀錄無關，所以沒停）。
+
+**卡住什麼**：SA 紀錄的跨機器相等性沒有逐位元的證據（上面的原因）。
+
+**需要 icpe-data 做什麼**
+- `cmd_digest` 跳過 `meta_json`（或只留 meta 裡和機器無關的欄），在 acvlab 對同 13 個名字重算，寫進 `npz_digest.csv`（或另一個欄）。我會和上表逐名比。上表的算法＝`cmd_digest` 原樣、只在 `k == "meta_json"` 時 `continue`。
+- 同一個問題也影響 h200 的 Bailian／FI 指紋比對。
+
+**使用者決定（11/5 09:08，在 icpe-trx）**
+- **等 icpe-data 的新指紋**：acvlab 用「不含 `meta_json`」的算法重算、寫進 git，13 個都和上表相同，才跑 `xc_sa` → `sa_main`。在那之前 SA 什麼都不跑（xcheck 也不跑）。
+- **`sa_main` 直接 40 worker**（使用者：「CPU：48 執行緒 改吃40?」→ 選「sa_main 直接 40」）：第一個 block 就開 40，不先用 16 量。保險＝記憶體監看（MemAvailable < 6 GiB 就停整組；被停的 block 作廢、降 worker 重跑）。swap 以 245 MiB 為基準，增加就記錄並回報。
+
+## 2026-11-05T09:00+08:00 — repo、venv、下載完成；轉換＋G0 跑中
+
+**機器**：`acvlab-TRX40-AORUS-MASTER`，Threadripper 3960X 48 執行緒，62 GiB RAM，swap 8 GiB（開跑前別人已用約 245 MiB，以這個為基準，不准再增加）。Titan RTX 不碰。
+
+**做完什麼**
+- **0. Repo**：用本機已有的 clone（`/home/hungwei/paper-hierarchical-kv-state`），分支 `icpe-next-trx` 從 `origin/icpe-next-data` @ `f4f5668` 開。
+  - `$ROOT=/ssd4/hungwei/icpe-next`（/ssd4 剩 958G、45%），底下 `venv/`、`uv-python/`、`datasets/`、`runs/`、`hf-home/`、`tools/`、`code-archive/`。程式在 repo 裡，和資料分開。
+- **1. venv**：`$ROOT/venv`，Python **3.12.15**、numpy **2.3.5**、pandas **3.0.5**、pyarrow **25.0.1**、python-dateutil **4.0.0**、tzdata **2026.6**（`uv pip freeze` 只有這 5 個）。
+  - 這台沒有 `uv`、`curl`、`pip`。另外用 micromamba（conda-forge）建工具環境 `$ROOT/tools/env`（uv 0.13.7、curl 8.23.0、huggingface_hub 的 `hf` 2.4.0），只用來裝 Python 與下載，和模擬用的 venv 分開。
+  - Python：`uv python install 3.12.15 --install-dir $ROOT/uv-python --no-bin`（cpython-3.12.15-linux-x86_64-gnu）。
+  - repo 的 `.claude/settings.json` 把 `HF_HOME`、`UV_*` 指到 `/ssd7`（這台沒有），還設了 `HF_HUB_ENABLE_HF_TRANSFER=1`；每條指令都明確蓋掉／unset。
+- **2. 下載**：run `20261105-085632-icpe-trx-dl-semianalysis-mooncake`（exit 0）。`TIARA_SKIP_VENV=1 TIARA_HOME=$ROOT TIARA_DATASETS=$ROOT/datasets HF_HOME=$ROOT/hf-home TIARA_PY=$ROOT/venv/bin/python TIARA_HF_CLI=$ROOT/tools/env/bin/hf bash code/setup_3090_data.sh semianalysis mooncake`。
+  - SemiAnalysis：revision 23f152f6，`hf_verify semianalysisai/cc-traces-weka-062126 sha=23f152f6f0f9399a85901b89a6458def0ef16729 files=3 bad=0`；`traces.jsonl` sha256 `29b6a19e…`。
+  - Mooncake：commit d750cdda，6 個檔 git-blob OK；conversation sha256 `b8cbb061…`、toolagent `48a2db1a…`（和指定的相同）；單位驗算 4 份都是 rate=1.000000。
+
+**卡住什麼**：無。
+
+**需要別的 session 做什麼**：無。
+
+**需要使用者決定什麼**：無。
