@@ -1,0 +1,13 @@
+{
+ "plan": "p4_b2",
+ "block": "cachewise_N72_s2_P_B2",
+ "run_id": "20261107-021003-icpe-data-p4_b2-cachewise_N72_s2_P_B2",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-021003-icpe-data-p4_b2-cachewise_N72_s2_P_B2",
+ "rows": 26760,
+ "elapsed_s": 92.1,
+ "finished": "2026-11-07T02:11:36+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261107-021003-icpe-data-p4_b2-cachewise_N72_s2_P_B2\nexport RUN_DIR=\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd6/hungwei/icpe-next/runs/20261107-021003-icpe-data-p4_b2-cachewise_N72_s2_P_B2/rust_timing.jsonl\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261107-021003-icpe-data-p4_b2-cachewise_N72_s2_P_B2/out x1 sweep --traces nb:cachewise_N72_s2 --rules nb --cpu 8 16 32 64 111.0625 128 256 --policies ARC GDSF LRU LRU+2HA LRU+2HW LRU+NONE LRU+RPF LRU2 O-ALL O-BEL O-BELS O-PF PENS S3FIFO --slows b32 nfs ssd --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU BEL TTLA:0.3 TTLA:1 TTLA:10 TTLA:100 TTLA:3 TTLA:30 TTLA:300 TTLB:0.3 TTLB:1 TTLB:10 TTLB:100 TTLB:3 TTLB:30 TTLB:300 --pf-target cpu --noise-models P --noise-lambdas 0.1 0.2 0.3 0.4 --noise-draws B2 --noise-seeds 0 1 2 3 4 5 6 7 8 9 --workers 48 --engine rust --jobs-from /ssd6/hungwei/icpe-next/runs/20261107-021003-icpe-data-p4_b2-cachewise_N72_s2_P_B2/jobs.csv\n",
+ "context": "date: 2026-11-07T02:10:03.305615+08:00\nhost: acvlab\nplan: p4_b2\nblock: cachewise_N72_s2_P_B2\nengine: rust\ngit HEAD: 871db0b660b7a000b62eaaeaf4f34c910234885c\ngit status:\nuptime:  02:10:03 up 21 days, 14:04, 41 users,  load average: 87.96, 85.41, 84.19\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440          71          37           3         331         361\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:cachewise_N72_s2: sha256 24ce41ed3ab51903724096b40ad783c3ad23160f4255244d2696be7451d6ce89  /ssd6/hungwei/icpe-next/datasets/x1_nb/cachewise_N72_s2.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}

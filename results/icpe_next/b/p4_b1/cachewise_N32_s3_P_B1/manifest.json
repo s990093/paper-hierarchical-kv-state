@@ -1,0 +1,13 @@
+{
+ "plan": "p4_b1",
+ "block": "cachewise_N32_s3_P_B1",
+ "run_id": "20261106-175719-icpe-data-p4_b1-cachewise_N32_s3_P_B1",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261106-175719-icpe-data-p4_b1-cachewise_N32_s3_P_B1",
+ "rows": 41,
+ "elapsed_s": 58.1,
+ "finished": "2026-11-06T17:58:18+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261106-175719-icpe-data-p4_b1-cachewise_N32_s3_P_B1\nexport RUN_DIR=\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd6/hungwei/icpe-next/runs/20261106-175719-icpe-data-p4_b1-cachewise_N32_s3_P_B1/rust_timing.jsonl\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261106-175719-icpe-data-p4_b1-cachewise_N32_s3_P_B1/out x1 sweep --traces nb:cachewise_N32_s3 --rules nb --cpu 8 --policies O-ALL --slows nfs --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies BEL --pf-target cpu --noise-models P --noise-lambdas 0 0.1 0.2 0.3 0.4 --noise-draws B1 --noise-seeds 0 1 2 3 4 5 6 7 8 9 --workers 35 --engine rust --jobs-from /ssd6/hungwei/icpe-next/runs/20261106-175719-icpe-data-p4_b1-cachewise_N32_s3_P_B1/jobs.csv\n",
+ "context": "date: 2026-11-06T17:57:19.919690+08:00\nhost: acvlab\nplan: p4_b1\nblock: cachewise_N32_s3_P_B1\nengine: rust\ngit HEAD: b557b4ed18da7496ec376af328a02751565216b3\ngit status:\nuptime:  17:57:19 up 21 days,  5:51, 42 users,  load average: 54.19, 68.59, 74.96\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440          76           3           9         360         350\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:cachewise_N32_s3: sha256 91dfc2f9f304895a9e62e2bbef3bf6356e44dad4658f4969a3e0ac5f7c6c2385  /ssd6/hungwei/icpe-next/datasets/x1_nb/cachewise_N32_s3.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}
