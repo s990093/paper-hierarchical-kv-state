@@ -3,6 +3,32 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T14:30+08:00 — 先 merge v5（B2 進 Rust，icpe-next-sim 4356484，程式 4a4baa4）；對拍全部 0 差，B2 在 TRX40 走 Rust
+
+**依據**：STATUS_SIM 14:25（@ 4356484，git 上讀過）「需要 icpe-trx 做什麼：merge 後重做 G0；venv 不是 3.12 的話 B2 會退回 Python；用 `--engine rust` 跑 xc_sa 和 Python 版逐格比」；icpe-sim 也直接傳了訊息。sa_p4 還要等 `--jobs-from`。TRX40 現在是閒的，所以先把 v5 併進來驗證，提早發現 TRX40 特有的問題（例如編譯失敗、B2 退回 Python）。
+
+**做完什麼**
+- TRX40 的 venv 是 **Python 3.12.15**（`$ROOT/venv/bin/python -I -c 'import sys;print(sys.version)'`），所以 B2 會交給 Rust。
+- `git merge --no-ff origin/icpe-next-sim` → **9167f11**（無衝突）。`git diff 4356484 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 是空的。
+- Rust 自動重新編譯：src_sha256 `62b0932b…`，bin `x1fast-work/build-62b0932bb6cd6d9d/fast/x1fast3`（bin_sha256 `576b78a0…`）。新的 `code_sha`＝`fd0dccbf7093+rs62b0932b`。
+- **三項對拍**（`verify_rust2.sh 9167f11`，14:21:50–14:24:05；compare run `20261106-142405-icpe-trx-compare-9167f11`）：
+  - (a) G0：128,064 格，不同 0。
+  - (b1) xc_sa 對 icpe-data 的 Python：1,280 格，不同 0。
+  - (b2) xc_sa 對 TRX40 的 Python：32 列 × 40 欄，不同 0，CMP PASS。
+  - (c) `sa_N16_s1` 整個 block：293,760 格，不同 0。
+  - 都是 `py_fallback_jobs=0`。
+- **B2 對拍**（新的機器工具 `$ROOT/tools/b2check.sh`）：
+  - 參數照 SIM_CHANGES 20 的 SemiAnalysis B2 子集：`--traces nb:semianalysis_N16_s1 --rules nb --cpu 8 --policies LRU O-BEL O-PF O-ALL --slows ssd --modes cake --gpu-gib 0 111.0625 --gpu-write wt --gpu-policies TTLB:10 --pf-target cpu --noise-models P M --noise-lambdas 0.3 --noise-draws B2 --noise-seeds 0`，`--workers 8`。
+  - Rust：run `20261106-142406-icpe-trx-sa_b2-rust-9167f11`，3 s，`py_fallback_jobs=0`，stdout 沒有 `noise_B2_py`。
+  - Python：run `20261106-142406-icpe-trx-sa_b2-py-9167f11`，91 s。
+  - `next_sim_cmp.py`（compare run `20261106-142540-icpe-trx-compare-b2-9167f11`）：24 列 × 44 欄，鍵含 4 個 noise 欄，不同的格子 0，**CMP PASS**。
+- 記憶體：MemAvailable 最低 53.8 GiB，swap 959 MiB 沒變。
+
+**還沒做**：sa_p4 仍然等 `--jobs-from`。icpe-sim 預計 15:30–16:15 push；之後 icpe-data 要 merge 進 icpe-next-data、做 G0。到時我 merge icpe-next-data、重做上面的對拍，再 dry-run／count，然後開跑（見 14:20 那節）。
+
+**需要別的 session 做什麼**：無。
+**需要使用者決定什麼**：無。
+
 ## 2026-11-06T14:20+08:00 — 接下 P4 的 SemiAnalysis（`sa_p4_b1`、`sa_p4_b2`），36 workers；等 icpe-data 通知
 
 **依據**
