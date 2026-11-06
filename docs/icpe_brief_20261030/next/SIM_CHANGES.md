@@ -376,3 +376,32 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - sweep 時間（Rust 2 執行緒／Python 6 workers，不同時段，只供參考）：Mooncake B2 92 s／1,061 s；SemiAnalysis B2 子集 11 s／160 s；Bailian B1＋B2 全部 Rust 303 s。
   - 摘要：`results/icpe_next/sim/g1_compare.csv`（+1 列）、`rust_cmp.csv`（+17 列）。
 - **有利還是不利**：無（逐格相同）。
+
+### 21. `x1 sweep --jobs-from <csv>`：只跑清單裡的格子（icpe-data 11/6 的 P4 請求；`code/p3x/x1_sim.py`，commit 1bf35bd）
+
+- **為什麼**：
+  - 使用者 11/6 13:5x 決定 P4 照 PREREG 全跑（icpe-data 轉達）。
+  - icpe-main 的 P4 清單（origin/icpe-next-main c868ef2，`results/icpe_next/main/p4/p4_cells_distinct.csv`）是零散的格子。
+  - 用現有的乘積參數，最好的分組也要多跑 63%（525 萬對 321 萬 job，icpe-data 的數字）；分得更細就會有上千個 block，每個都要重新準備。
+- **改了什麼**（只在 `cmd_sweep`：`jobs_for` 展開之後、排序之前；引擎、`jobs_for`、job 的內容都沒改）：
+  - 新選項 `--jobs-from <csv>`，欄位 `trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu`（其他欄忽略）。
+  - `filter_jobs`：一個 job 留下 ⇔ 它**某一個** view 的 (trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu) 在清單裡。
+    - 只看一個 view 的 job（有預取的規則，或 GPU 規則是 TTL）＝它自己的 (slow, gpu) 要在清單裡。
+    - 涵蓋多個 view 的 job：一個 view 命中就整個照算（其他 view 的列也會輸出）。GDSF 按 (slow, gpu) 切的 job 也一樣。
+    - 留下的 job 原封不動、順序不變。雜訊、慢層上限、restore、gpu_GiB、gpu_write、pf_target 不在鍵裡，照命令列參數。
+  - 比對：cpu_GiB 當浮點數；其他欄是字串（前後空白去掉），寫法和 x1_sweep.csv 相同；GPU 層關閉的 job，gpu_policy＝`none`。
+  - stdout 印：清單的 sha256、列數、格子數、屬於這次 traces×rules 的格子數、保留和丟掉的 job 數、`unmatched_cells`（清單裡有、這次的參數產生不出 job 的格子，按 policy 分，列前 10 個；只警告不停）。
+    - 有雜訊的 sweep 不替沒用到預知的規則產生 job，所以那些規則在雜訊 block 會算進 unmatched，這是正常的。
+  - 缺欄位或沒有資料列 → 停下來（SystemExit）。
+  - 沒給這個選項 → 程式路徑和原本完全相同。
+- **驗證**：run `20261106-142035-icpe-sim-g1-1bf35bd`（detached checkout 1bf35bd、共用 venv、nice 10；Python 6 workers、Rust 2 執行緒；14:20–14:59）。
+  - **G1**（沒給新選項）：Python、Rust 各 4,416 列 × 29 欄，不同的格子 0 → **PASS**。
+  - **測試清單**（`build_list.py`，seed 20261106）：icpe-main `p4_cells_distinct.csv` 裡 nb:bailian_coder、CPU 8／64／111.0625 的 18 個格子 × 隨機的 (policy, gpu_policy)，加 12 個 GPU 0（`none`）格子，再加 3 個故意產生不出 job 的格子（CPU 16、不在 --policies 的 LRU2、別的紀錄）。共 151 列。
+  - **block**（Bailian nb）：CPU 8、64、111.0625；LRU、GDSF、ARC、LRU+RPF、O-BEL、O-DROP、O-PF、O-ALL；ssd、b32、nfs；GPU 0 與 111.0625 wb × LRU、BEL、TTLA:10、TTLB:10。
+    - t1（沒有雜訊）：540 個 job → 加選項後留 130、丟 410（Rust 與 Python 都一樣）。
+    - t2（P、M × λ 0.3 × B1、B2 × seed 0）：1,248 個 job → 留 320、丟 928。
+  - **逐格相同**（`next_sim_cmp --ref-subset`，ref＝同一 block 不加選項的 Rust 輸出）：t1 Rust 255 列、t1 Python 255 列、t2 Rust 680 列，不同的格子都是 0。
+  - **列的集合**（`jf_check.py`，不呼叫 `filter_jobs`：從不加選項的輸出、按 job 的切法重新推出應該留下的列）：三組都相同（255、255、680）。另外：清單裡產生得出來的格子全部出現在輸出；單一 view 的列全部在清單裡；stdout 的 kept_jobs、unmatched_cells 和推出來的相同。
+  - **unmatched**：t1 2 個（LRU2、CPU 16；別的紀錄那列不算在這次的 traces×rules）；t2 56 個，其中 55 個是沒用到預知的規則（ARC 11、GDSF 12、LRU 16、LRU+RPF 15）在雜訊 block 不產生 job，符合預期。
+  - 摘要：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`rust_cmp.csv`（+3 列）、`jobs_from_check.csv`（新）。
+- **有利還是不利**：無（只選要跑哪些 job，不改任何 job 的計算）。

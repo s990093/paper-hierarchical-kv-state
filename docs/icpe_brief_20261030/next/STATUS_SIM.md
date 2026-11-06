@@ -650,3 +650,34 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 **下一步**（我）：`--jobs-from`（icpe-data 的 P4 請求），驗證接著開跑，預計 16:15 左右 push；之後重建 TraceLab 快取、把引擎同步到 kvsweep。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T15:05+08:00 — **`x1 sweep --jobs-from <csv>`：G1 PASS，commit `1bf35bd`**（icpe-data 的 P4 請求）
+
+細節見 SIM_CHANGES 第 21 項。
+
+**怎麼用**
+- `x1 sweep … --jobs-from <csv>`，CSV 要有 `trace, rule, cpu_GiB, policy, gpu_policy, slow, gpu`（其他欄忽略）。
+- 一個 job 留下 ⇔ 它某一個 view 的這 7 欄在清單裡：
+  - 有預取或 TTL 的 job 只有一個 view，所以就是它自己的 (slow, gpu) 要在清單裡；
+  - 涵蓋多個 view 的 job 只要一個 view 命中就整個照算（其他 view 的列也會輸出）。
+- 寫法：cpu_GiB 當浮點數比（8 和 8.0 相同）；其他欄是字串，和 x1_sweep.csv 相同；**GPU 層關閉的 job，gpu_policy 寫 `none`**。restore、gpu_GiB、gpu_write、pf_target、雜訊照命令列。
+- stdout 的 `jobs_from=` 那行：清單 sha256、列數、格子數、`cells_this_sweep`、`kept_jobs`、`dropped_jobs`、`unmatched_cells {policy: 數量}`，再列前 10 個 unmatched。
+  - unmatched＝清單裡有、這次的參數產生不出 job 的格子；只警告，不停。
+  - 有雜訊的 block：沒用到預知的規則（LRU、ARC、GDSF、LRU+RPF 等，GPU 規則不是 BEL 時）本來就不產生 job，會算進 unmatched，這是正常的。
+- 不給這個選項 → 和原本完全相同。
+
+**驗證**：run `20261106-142035-icpe-sim-g1-1bf35bd`（14:20–14:59）
+- G1：Python、Rust 各 4,416 列不同的格子 0 → **PASS**。
+- 測試清單取 p4_cells_distinct 的 Bailian 格子（含 GPU 0、TTL、3 個故意不存在的格子）。同一個 block 加和不加選項：
+  - 沒有雜訊：540 個 job 留 130；Rust、Python 的輸出（各 255 列）和不加選項的逐格相同。
+  - B1、B2 雜訊：1,248 個 job 留 320；680 列逐格相同。
+  - 獨立推算的列集合、job 數、unmatched 數都和實際相同；清單裡產生得出來的格子一格不少。
+- 摘要：`g1_compare.csv`（+2）、`rust_cmp.csv`（+3）、`jobs_from_check.csv`（新）。
+
+**準備快取**：`x1_sim.py` 變了，快取的鍵跟著變。push 後我照 icpe-data 的要求只重建 tl_c1、c2、c4（最多 3 個行程、nice 10、共用 x1fast-work），好了另外通知。
+
+**需要 icpe-data 做什麼**：`git merge --no-ff` 這次 push 的 commit（含 v5 4a4baa4 與這個），重做 G0，然後照你的 P4 排法跑。
+
+**需要 icpe-trx 做什麼**：merge 後重做 G0（main.rs 和 9167f11 相同，Rust 不用重編）；sa_p4 可以開始。
+
+**需要使用者決定什麼**：無。
