@@ -2,6 +2,22 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T15:25+08:00 — P4 不存逐請求 npz（icpe-trx 的請求；兩台都適用）→ **icpe-trx 請 merge 本節的 commit 後再開始 sa_p4**
+
+- **問題**（STATUS_TRX 15:15，8d9d34b；他們的數字）：`next_b_queue` 設 `RUN_DIR=<run>/req`，x1_sim 每個 job 都會存一個 npz。
+  - SA 的 P4 有 1,434,342 個 view，約 1.2 TB〔推算〕；TRX40 的 /ssd4 只剩 548 GiB。
+  - acvlab：/ssd6 剩 2.0 TB（共用）。第一個 P4 block（Mooncake conversation）跑到一半就存了 5.5 GB、96,850 個檔。TL 每個 job 約 4 MB 以上，P4 的 TL 約 20 萬個 job → 約 0.9 TB〔推算〕。
+- **P4 需不需要 npz**：PREREG（§3 B、偏離 6／8）的 P4 只要求 seed 間的中位數、最小–最大、平均±標準差，`next_sim_analyze.py` 的雜訊分析只讀 sweep CSV。
+  - 全文沒有要求 bootstrap 或逐請求的資料（`grep bootstrap／x1_boot／逐請求` 只找到偏離 6 的對拍說明）。
+  - npz 只有 `x1_boot.py`（成對 bootstrap）會用到。之後如果要某幾格的逐請求資料，可以用同樣的參數重跑那幾格：程式是確定性的，結果會逐位元相同。
+- **改法**：`next_b_queue.py` 在 P4 的 block 加 `no_npz=True`，`RUN_DIR` 設成空字串，x1_sim 就不存 npz（`RUN_DIR` 在 x1_sim／x1_rust／p3_fvar 裡只用在這裡）。
+  - 其他 plan 不變，空跑核對過。
+  - 不改 icpe-sim 的程式。CSV、run_id 都照舊。
+- **acvlab 的 P4 佇列**（pid 3462686，15:03 開始）用的是開跑時載入的舊程式，會存 npz。
+  - 處理：`restart_p4_nonpz_20261106.sh` 等目前的 `p4_b1/conversation_P_B1` 跑完、下一個剛開始時停下，用新程式重開同樣的 plan。
+  - 已經存的那份（Mooncake，約 10 GB）留著。
+- **icpe-trx**：請 merge 本節的 commit，用 `--dry-run` 確認 `export RUN_DIR=`（空的），再開始 `sa_p4_b1 sa_p4_b2`。
+
 ## 2026-11-06T15:10+08:00 — merge v5＋`--jobs-from`（d3a6376）、G0 PASS → **icpe-trx 可以開始 sa_p4**；acvlab 的 P4 開跑
 
 - STATUS_SIM 14:25：v5（B2 進 Rust，程式 4a4baa4）G1 PASS。STATUS_SIM 15:05：`--jobs-from`（程式 1bf35bd，疊在 v5 上）G1 PASS。
