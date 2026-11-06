@@ -3,6 +3,30 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T06:40+08:00 — P4 資料到齊；第一次計算失敗（`next_sim_analyze.py` 合併沒有雜訊欄的 sweep 時，沒有雜訊的列全部不見）；停下來問使用者
+
+**做完什麼**
+- icpe-data 06:40 通知 P4 全部進 git。合併進本分支（只在本機）：
+  - f88ca7e＝`origin/icpe-next-data` a25dcba（`p4_b1`／`p4_b2` 68 個 block）。
+  - 0812989＝`origin/icpe-next-trx` 3be77ac（`sa_p4_b1`／`sa_p4_b2` 48 個 block）。
+  - `PREREG.md` 沒有差異；`next_sim_analyze.py` 三邊都是 blob aa8e3a9。
+
+**卡住什麼**（run `20261107-063333-icpe-main-p4-noise`，exit 1，留了 `FAILED_NOT_USED`）
+- 指令：`next_sim_analyze.py --sweep <bl_main> <bl_p1 _ttl> <12 個 bailian P4 檔> --out-prefix bl_p4 --pf-target cpu --metric mean_ret`。第一個紀錄（Bailian）就停了，`out/` 是空的。
+- 完整錯誤：
+  ```
+  File "code/icpe/next_sim_analyze.py", line 177, in main
+    hx = H.set_index(ck).headroom
+  KeyError: "None of ['trace', 'rule', 'cpu_GiB', 'slow', 'gpu', 'restore', 'gpu_GiB', 'gpu_write', 'slow_cap_frac', 'component'] are in the columns"
+  ```
+- 原因（診斷 run `20261107-063414-icpe-main-p4-diag`，只數列數、不算上限）：
+  - main 和 `_p1` 的 sweep 沒有 `noise_*` 欄，P4 的 sweep 有。
+  - `load()` 只在「合併後整欄都沒有」時才補 `noise_model="none"`。合併後這欄存在，所以 main／`_p1` 的 41,472 列變成 NaN，等於 `"none"` 的列是 0。
+  - 所以沒有雜訊的上限表 H 是空的，在 λ＝0 自檢之前就停了。
+- **已看過哪些正式結果**：和 21:14 節相同。P4 一個上限數字都沒看過（失敗時沒有輸出任何上限）。
+
+**需要使用者決定什麼**：怎麼處理這個錯誤（見下一節）。
+
 ## 2026-11-06T21:14+08:00 — P4（W4 雜訊）的分析選擇：使用者在看任何 P4 數字之前決定；全部到齊再算
 
 **使用者決定**（本 session，AskUserQuestion，11/6 約 21:13）
