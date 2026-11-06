@@ -2,6 +2,18 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T09:35+08:00 — merge 準備快取（8b6520f）、G0（Rust）PASS
+
+- **先試再合**：佇列在跑，每個新 block 開跑時會讀 data worktree 的程式，所以先在暫時的 detached worktree 試合併，跑 G0，通過後才 merge 進 data worktree。
+  - 試合併：icpe-next-data HEAD＋8b6520f。和 c7ef740 比，模擬程式沒有差異。
+  - sha256 前 7 碼和 icpe-sim 給的對照相同：`x1_sim.py` 2723419、`x1_nb.py` 8251e25、`x1_rust.py` 28f82fd。
+  - **G0（Rust）PASS**：run `20261106-093120-icpe-data-g0-rust-merged-c7ef740`，`--workers 8`，**128,064 格 0 個不同**，sweep 114 s。
+  - 正式 merge：8af643c。tree `4c38203…` 和試合併的 tree 逐位元相同。暫時的 worktree 已移除。
+- **之後開始的 block 都用快取版**：正在跑的 `tl_c2_ttl`、`tl_c2_trunc` 不受影響。
+  - icpe-sim 從 09:30 起預先建 5 個 TraceLab 變體的快取：run `20261106-093010-icpe-sim-prewarm-8b6520f`，同時最多 3 個行程。
+  - 確認方式：下一個 TraceLab block 的 stdout 看到 `prep=cache_hit … lite=True` 就是命中。
+  - 如果看到 `built_saved`，表示快取還沒建好，結果一樣正確，只是那一次照舊要約 16 分鐘。
+
 ## 2026-11-06T09:05+08:00 — 使用者決定：全合成的工作負載（ShareGPT、W7 地圖）照計畫，ICPE 之後再做
 
 - 使用者問「人工數據」那塊做了沒有。我的回答分三種：
