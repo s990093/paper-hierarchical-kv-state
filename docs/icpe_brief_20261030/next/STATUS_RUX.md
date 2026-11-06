@@ -97,4 +97,10 @@
 **已知落差／限制**
 - 這台是 **WSL2**：Windows 休眠、自動更新重開機、WSL 閒置被關都會打斷 job。今天 13:38:50 就正常關機過一次、23:00:28 才再開（本 session 前半段連不上就是這個原因）。**開跑前需要使用者去關掉 Windows 的睡眠與自動重開機**，我沒有改任何 Windows 設定。
 - 記憶體 22 GiB，比 acvlab（1 TiB）與 TRX40（62 GiB）小很多；本次對拍最高單一行程 RSS 2,855 MiB（xc_sa Rust），G0 只有 386 MiB。正式 block 的 worker 數還沒量過。
-- 沒有 GPU，所有 GPU 相關的實機實驗與 vLLM 都不能在這台跑。
+- **更正（00:10 發現）**：這台**有** NVIDIA GPU。先前只看 PATH 上的 `nvidia-smi`（不存在）就判定沒有 GPU，是錯的。
+  - Windows 主機：`NVIDIA GeForce RTX 3080`（DriverVersion 32.0.16.2114）＋ `AMD Radeon(TM) Graphics`（內顯）。
+  - WSL 內 GPU 直通**可用**：`/usr/lib/wsl/lib/nvidia-smi` 執行成功 → `RTX 3080`、`10240 MiB`、`compute_cap 8.6`、driver `620.70.03`、CUDA UMD `13.5`、`343 W`。
+  - 原本 PATH 上沒有 `nvidia-smi`；已加 `/usr/local/bin/nvidia-smi` 連結與 `PATH` 的 `/usr/lib/wsl/lib`。
+  - **尚未用 PyTorch／CUDA 實測算例 → CUDA 可用性 NOT_MEASURED**（目前只到驅動層）。
+  - 限制：10 GiB 顯存（acvlab 的 3090 是 24 GiB），且開機後 Windows 桌面已用掉約 1.8 GiB。sm_86（Ampere）與 3090 同一世代。
+  - 對本次對拍的影響：**無**（G0／xc_sa／雜訊全部是 CPU 路徑）。
