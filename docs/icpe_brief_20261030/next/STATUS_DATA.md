@@ -2,6 +2,84 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T08:10+08:00 — 使用者決定：SemiAnalysis 的 P1–P3 由 TRX40 裝 Rust 自己跑；主結果分析交給新的 session
+
+**使用者決定**（AskUserQuestion，11/6 08:0x，在 icpe-data）
+- 問題：SemiAnalysis 的 P1–P3（349,704 個 job）在哪裡跑。
+- 背景：STATUS_TRX 07:55 寫明，TRX40 用 Python 約要 80 h，11/9 前跑不完；TRX40 沒有 Rust。
+- 選項有三個：搬到 acvlab 的 Rust 佇列；TRX40 裝 Rust 自己跑；TRX40 照舊計畫用 Python。
+- **使用者選「TRX40 裝 Rust 自己跑」。**
+  - 這也回答了 STATUS_TRX 07:55 的「還沒決定」：改用 Rust 跑偏離 6 的 P1–P3，舊計畫的 `sa_main_ttl7`、`sens_rep sa_*` **不跑**。
+  - 不跑舊計畫的理由：P2／P3 已涵蓋全部格子，包括代表格。
+
+**另一個使用者決定（同一時段）**
+- 主結果齊了以後，另開一個 session（Opus、effort xhigh、tmux、remote control）專門做主結果的分析。
+- icpe-data 繼續跑實驗。新 session 的名稱和範圍，開的時候寫在這裡。
+
+**給 `icpe-trx`（TRX40）的步驟**：照順序做；任何一步出現不同的格子或失敗，就停下來、記完整錯誤、寫進 STATUS_TRX。
+1. **merge**：`git merge --no-ff origin/icpe-next-data`，要含本節的 commit。
+   - 裡面有 icpe-sim 的 47a4617（Rust 引擎＋W4 雜訊 B1，G1 PASS）和 `next_b_queue.py run --engine rust`。
+   - 模擬程式應和 icpe-sim 的 1304345 逐位元相同；用 `git diff 1304345 HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 確認是空的。
+2. **裝 Rust**：用使用者權限（rustup，不用 sudo），裝在 TRX40 自己的目錄。
+   - 版本和 acvlab 相同：**rustc 1.99.1 stable**（cargo 1.99.1），`--profile minimal` 就夠。
+   - `code/p3x/x1fast` 沒有外部套件（Cargo.lock 只有自己），可以 `--offline` 編譯。
+   - 環境變數：
+     - `X1_CARGO`、`CARGO_HOME`、`RUSTUP_HOME` 指到 TRX40 的工具鏈。程式的預設值是 acvlab 的路徑，TRX40 上不存在。
+     - `X1_RUST_WORK` 指到 TRX40 自己的目錄。
+   - 第一次 `--engine rust` 會自己編譯。
+3. **對拍**（三項都要 0 個不同）：
+   - (a) **G0（rust）**：照 acvlab run `20261106-074940-icpe-data-g0-rust-merged-1304345` 的 `cmd.sh`，換成 TRX40 的路徑，用 `--engine rust`。
+     - 和 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz` 用 `next_b_g0.py` 比。
+     - 要 `G0_RESULT IDENTICAL`，128,064 格。
+   - (b) **xc_sa**：用 `--engine rust` 重跑，和你們 Python 版的 xc_sa 逐格比。
+   - (c) **一個完整的正式 block**：照 `results/icpe_next/b/sa_main/sa_N16_s1/manifest.json` 的 `cmd` 加 `--engine rust`，放新的 run 目錄。
+     - **不要**用 `next_b_queue.py run`：它會跳過已完成的 block。
+     - 和同一個 manifest 的 `x1_sweep.csv.xz` 用 `next_b_g0.py` 比；它可讀 .xz，也會去掉 host 欄。要 7,344 列 0 個不同。
+     - 理由：Rust 在 TRX40 上是新編的執行檔，結果和 CPU 型號無關只是〔推論〕（STATUS_SIM 03:15），要用整個 block 實測。
+4. **跑**：`next_b_queue.py run --plans sa_p1 sa_p2 sa_p3 --engine rust --workers 32`。
+   - TRX40 的環境變數照舊（`NEXT_B_TAG=icpe-trx` 等）。
+   - CPU：約 1.25×workers，32 時約 41 個，和原本 Python 的 40 worker 差不多。workers 用 4 的倍數（STATUS_SIM 04:32）。
+   - 記憶體保護和監看照 `sa_main` 的做法。
+   - job 數〔算術〕：P1 135,648、P2 124,416、P3 89,640。和 `next_b_queue.py count --plans sa_p1 sa_p2 sa_p3` 核對。
+5. **收**：每個 plan 跑完就 `collect`，commit 並 push 到 `icpe-next-trx`，在 STATUS_TRX 寫 run_id、時間、記憶體。
+   - 不解讀上限：分析由新的分析 session 做。
+   - Rust 在 TRX40 上的每 job 時間記下來（`rust_timing.jsonl`），這是 NOT_MEASURED 的項目。
+
+## 2026-11-06T07:55+08:00 — 使用者決定「兩個都停，全改 Rust」；merge 47a4617、G0 PASS；Rust 佇列開跑
+
+**使用者決定**（AskUserQuestion，03:25 提問、07:4x 回答）：「兩個都停，全改 Rust」。
+- 停掉兩個 Python 佇列，剩下的 block 全部用一個 Rust 佇列跑，CPU 總量約 44。
+- 已登記：**PREREG 偏離 6 補記**（813617a，`date -u` 2026-11-05T23:49:08Z）。改的是偏離 6 第 1 點「只用在還沒開始的 block」。
+  - 同一個 block 不會混用兩種引擎。Python 跑到一半的輸出不收、不用。
+- 回答時的進度和提問時差很多：tl_c4 從 454 變成 3,835／6,174，fi6w 從 22,693 變成 34,993／37,044。
+  - 照現況重算〔推算〕：tl_c4 用 Python 還要約 3 h，用 Rust 重跑約 30 min。改用 Rust 仍然比較快，所以照做。
+
+**做完什麼**
+- **停掉兩個 Python 佇列**：07:49:20 對兩個 process group 送 `kill -TERM`，2 秒內全部結束。
+  - `tl_main/tl_c4`（run `20261106-022134-…-tl_c4`）停在 3,847／6,174。
+  - `old_main/fi6w`（run `20261105-222021-…-fi6w`）停在 35,022／37,044。
+  - 兩個 run 目錄都留了 `STOPPED_NOT_USED` 說明檔，沒有寫進完成清單。
+- **merge `origin/icpe-next-sim` @ 47a4617**（e3c7d80）：Rust 引擎加 W4 雜訊 B1。驗證見 STATUS_SIM 06:14。
+  - merge 後的模擬程式和 1304345 逐位元相同。
+- **G0（Rust）PASS**：run `20261106-074940-icpe-data-g0-rust-merged-1304345`，`--workers 32`。
+  - **128,064 格，0 個不同**；`py_fallback_jobs=0`；sweep 29.7 s。
+  - code_sha `a27559138492+rs43dbe828`。
+
+**現在在跑什麼**：Rust 佇列，pid 1629288，07:50:35 開始。
+- 指令：`next_b_queue.py run --plans tl_main old_main bl_main tl_p1 cw_p1 old_p1 bl_p1 tl_p2 cw_p2 old_p2 bl_p2 tl_p3 cw_p3 old_p3 bl_p3 --engine rust --workers 35`
+- log：`/ssd6/hungwei/icpe-next/runs/queue-rust-w35-20261106-0750*.log`
+- 順序：
+  1. 先補完主結果：tl_c4 → fi6w → bailian3。
+  2. 再照 P1 → P2 → P3。每一級裡依 TraceLab → CacheWise → Mooncake／FI → Bailian。
+- CPU：35 個 Rust 執行緒、8 個摘要行程（35//4）、1 個父行程，約 44 個。
+  - 摘要行程數 ÷ 執行緒數＝0.23。icpe-sim 量到 TraceLab 需要約 0.17（STATUS_SIM 04:32），所以夠用。
+- 監看：
+  - 每分鐘記 MemAvailable、load、行程樹 PSS 和進度，寫到 `mem-guard-rust-20261106.log`。MemAvailable < 60 GiB 就停佇列。
+  - load 連續 10 分鐘 > 140 時通知。
+- 還沒排的：
+  - P4（W4 雜訊）：要先用 P1 之後的上限選 ≥15% 的格子。
+  - SemiAnalysis 的 P1–P3：在 TRX40。plan `sa_p1`／`sa_p2`／`sa_p3` 已在 `next_b_queue.py`，icpe-trx 要先 merge 47a4617、在 TRX40 編譯並對拍 Rust。
+
 ## 2026-11-06T03:25+08:00 — tl_c2 完成；merge Rust 引擎（875fb2b）、G0（Rust）PASS；佇列工具加 `--engine rust`
 
 **做完什麼**
@@ -23,7 +101,7 @@
 - 40 worker：`tl_main/tl_c4`，02:21 開始，03:16 時 454／6,174。
 - 4 worker：`old_main/fi6w`，03:16 時 22,693／37,044。
 
-**需要使用者決定什麼**：Rust 要不要接手已經開始的 `tl_c4`（見下一節）。
+**需要使用者決定什麼**：Rust 要不要接手已經開始的 `tl_c4`。→ 已決定，見 07:55 那節。
 
 ## 2026-11-06T00:45+08:00 — 偏離 6 的 P1–P3 排程已加；job 數和 icpe-ana 的推算完全相同
 

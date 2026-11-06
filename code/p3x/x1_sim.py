@@ -2377,7 +2377,7 @@ def _rust_sweep(JR, workers, put):
                     P = prep(*key)
                     t0 = time.time()
                     views = make_views(_K, P, j[4])
-                    jd = _XR.write_job(me, P, j[3], j[2] * GiB, views, _K, _gpu_kw(j[5]))
+                    jd = _XR.write_job(me, P, j[3], j[2] * GiB, views, _K, _gpu_kw(j[5]), nz=j[6])
                     meta[jd] = (j, t0)
                     srv[key].submit(jd)
                     inflight += 1

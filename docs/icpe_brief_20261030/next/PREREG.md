@@ -206,3 +206,25 @@
   - 補格子是使用者的決定。
   - ④ 的問題是 `icpe-ana` 草稿提出的機制問題，不是看了數字之後挑方向。
   - ④ 擴充後，上限只會變大或不變，方向對我們的主張不利。
+
+### 偏離 6 補記（2026-11-05T23:49:08Z（acvlab 的 `date -u`）；**改偏離 6 第 1 點「只用在還沒開始的 block」**；使用者在 `icpe-data` 決定（AskUserQuestion，11/6 03:25 提問、07:4x 回答），由 `icpe-data` 寫；不改任何格子、規則、判準）
+
+使用者的決定：選項「兩個都停，全改 Rust」——停掉 acvlab 上兩個正在跑的 Python 佇列，剩下的 block 全部用一個 Rust 佇列跑。
+
+**改什麼**
+- 偏離 6 第 1 點「只用在還沒開始的 block。已經用 Python 跑完或正在跑的 block 不重跑」改成：
+  - 已經用 Python **跑完**的 block 不重跑（不變）。
+  - 正在用 Python 跑的 `tl_main/tl_c4`、`old_main/fi6w` **停掉、整個 block 用 Rust 從頭重跑**。
+  - Python 跑到一半的輸出留在 /ssd6 的 run 目錄，**不收、不用**。同一個 block 不會一部分用 Python、一部分用 Rust。
+- 新增：`icpe-sim` 在 STATUS_SIM 2026-11-06T06:14 節寫明 W4 雜訊 B1 也進 Rust（commit 1304345；G1、14 個 xcheck、雜訊格 Python 對 Rust 逐格都是 0 個不同）。`icpe-data` merge 並做 G0 之後，B1 雜訊的 sweep 也用 Rust。B2、慢層容量上限、STAIR 仍由該 job 自動改用 Python。
+
+**為什麼**（CPU 預算，不是看了結果）
+- 使用者定的 CPU 總用量約 44。兩個 Python 佇列（40＋4 worker）佔滿時，Rust 沒有 CPU 可用。
+- 提問時（03:25）`tl_c4` 做到 454／6,174；Python 還要約 8–11 h〔推算〕，Rust 約 30 min〔推算，依 STATUS_SIM 03:15 量到的 TraceLab 每 job 時間〕。
+- 使用者回答時（07:4x）`tl_c4` 3,835／6,174、`fi6w` 34,993／37,044。停掉仍比等 Python 跑完快〔推算〕。
+- 兩個引擎的結果逐位元相同：G1、14 個 xcheck、TraceLab c1 整個 block 7,344 列與 6,174 個 npz（STATUS_SIM 04:32），以及 acvlab 的 G0。所以這個改動只影響時間，不影響數字。
+
+**寫本節時 `icpe-data` 已經看過的正式結果**（偏離 6 列過的之外）：
+- `tl_main/tl_c2`：只看了列數（7,344）和 manifest。**沒有算上限**。
+- `tl_main/tl_c4` 與 `old_main/fi6w` 的 Python 半成品：只看了 sweep 進度列。
+- STATUS_SIM 03:15、04:32、06:14 三節：都是 Python 對 Rust 的逐格比對、時間和記憶體，沒有上限。
