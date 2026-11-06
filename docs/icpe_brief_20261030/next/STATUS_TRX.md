@@ -3,6 +3,39 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T15:15+08:00 — merge icpe-next-data（v5＋`--jobs-from`＋P4 plan）、對拍全部 0 差、count／dry-run 正確；**sa_p4 沒有開跑：逐請求 npz 估計約 1,164 GiB，/ssd4 只剩 548 GiB** → 使用者選「請 icpe-data 加不寫 npz 的開關」
+
+**做完什麼**
+- 依據 STATUS_DATA 15:10（@ 7947e95）：「icpe-trx 可以開始 sa_p4」。
+- `git merge --no-ff origin/icpe-next-data` → **424d390**（無衝突）。
+  - `git diff origin/icpe-next-data HEAD -- code/` 是空的；`git diff 1bf35bd HEAD -- code/p3x code/icpe/p3_fvar.py code/p3_platform.py` 也是空的。
+  - main.rs 和 9167f11 相同，Rust 沒有重編（src `62b0932b…`）。`code_sha`＝`3280b1c8799b+rs62b0932b`，和 icpe-data 的 G0 相同。
+- **對拍**（`verify_rust2.sh 424d390`＋`b2check.sh 424d390`，15:05:11–15:08:54），全部不同的格子 0，`py_fallback_jobs=0`：
+  - G0：128,064 格。
+  - xc_sa：對 icpe-data 的 Python 1,280 格；對 TRX40 的 Python，CMP PASS。
+  - `sa_N16_s1` 整個 block：293,760 格。
+  - B2 子集 Python 對 Rust：24 列 × 44 欄，CMP PASS。
+- **count**：run `20261106-150924-icpe-trx-count-sa_p4`。48 個 block；`sa_p4_b1` 509,256、`sa_p4_b2` 495,110，**合計 1,004,366**，和 STATUS_DATA 相同。
+- **dry-run**：`run --plans sa_p4_b1 sa_p4_b2 --engine rust --workers 36 --dry-run`。48 個 block 都有 `--jobs-from <run>/jobs.csv` 和 `--engine rust`，沒有建立 run 目錄。
+
+**為什麼沒開跑：磁碟**
+- 每個 job 跑完，`x1_sim._job_rows` 會在 `$RUN_DIR`（佇列設成 `<run>/req`）存一個逐請求 TTFT 的 npz。檔名含雜訊參數，所以每個 job 一個檔，不會互相覆蓋。
+- 實測：`sa_p1` 的 `_ttl` block 每個 job 1 個 view，**每個 view 700–922 kB**，依變體而定。`sa_p3` 的 `sa_N72_s3_wt` 的 run 目錄 6.3 GiB 幾乎全是 `req/`。`$ROOT/runs` 目前共 400 GiB。
+- 〔推算〕把 P4 每個 job 的 view 數（用同一個 `jobs_for`＋`--jobs-from` 的過濾算）乘上同一變體的每 view 位元組。
+  - run `20261106-151238-icpe-trx-p4-npz-est`，程式 `$ROOT/tools/p4_npz_est.py`，只讀程式、不跑模擬。
+  - 結果：1,434,342 個 view，**約 1,250 GB（1,164 GiB）**。
+  - `/ssd4` 剩 587.8 GB（548 GiB，`df -B1`）→ **放不下**，約跑到 4 成就會滿。/ssd4 是共用磁碟，滿了也會影響別人。
+- 使用者決定（本 session，11/6 約 15:12，AskUserQuestion）：**請 icpe-data 加一個讓 P4 不寫 npz 的開關**。npz 是 `x1_boot.py` 成對 bootstrap 用的，所以先請 icpe-data 確認 P4 的分析要不要用；不用的話，sa_p4 只寫 sweep CSV。TRX40 在那之前不跑 P4。
+
+**需要別的 session 做什麼**
+- **icpe-data**：
+  1. 確認 PREREG 的 P4 分析需不需要逐請求 npz。必要時問 icpe-main／icpe-ana。
+  2. 不需要的話，在 `next_b_queue.py` 加開關，讓 P4 的 block 不設 `RUN_DIR`、或不寫 npz；需要改 `x1_sim` 的話請 icpe-sim 改。
+  3. 好了在 STATUS_DATA 寫 commit。
+- **acvlab 的 P4 也要看一下**：`p4_b1`＋`p4_b2` 有 2,297,276 個 job。TraceLab 每個 job 約 4.4 MB（STATUS_DATA 11/4 的數字），應該也要先算磁碟。
+
+**需要使用者決定什麼**：無（已決定，見上）。
+
 ## 2026-11-06T14:30+08:00 — 先 merge v5（B2 進 Rust，icpe-next-sim 4356484，程式 4a4baa4）；對拍全部 0 差，B2 在 TRX40 走 Rust
 
 **依據**：STATUS_SIM 14:25（@ 4356484，git 上讀過）「需要 icpe-trx 做什麼：merge 後重做 G0；venv 不是 3.12 的話 B2 會退回 Python；用 `--engine rust` 跑 xc_sa 和 Python 版逐格比」；icpe-sim 也直接傳了訊息。sa_p4 還要等 `--jobs-from`。TRX40 現在是閒的，所以先把 v5 併進來驗證，提早發現 TRX40 特有的問題（例如編譯失敗、B2 退回 Python）。
