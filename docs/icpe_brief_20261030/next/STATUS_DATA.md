@@ -2,6 +2,21 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-06T10:50+08:00 — **acvlab 的 P1 完成**（36 個 block，已進 git）；兩個佇列進入 P2
+
+- P1 在 acvlab 的最後一個 block 10:41 結束。`collect` 36 個 block → `results/icpe_next/b/{tl,cw,old,bl}_p1/`，共 15.6 MB，單一 xz 檔最大 1.31 MB。
+- 每個紀錄變體的列數：
+  - `_ttl`：6,480 列＝8 個新 TTL 的 GPU 規則 × 15 個 CPU 規則 × CPU 9 個大小 × 3 個慢層 × GPU 閒／忙。
+  - `_trunc`：5,184 列。
+- 筆數：TraceLab 3 個變體、CacheWise 12、Mooncake 4、FI 6、Bailian 3。全部 host acvlab、`--engine rust`。
+- 程式版本：
+  - `tl_c4_*` 起的 block 用 8af643c（準備快取版）。
+  - 之前的 block 用 e3c7d80／acef68c（模擬程式＝1304345）。
+  - 兩版逐位元相同（G0、G1）。
+- SemiAnalysis 的 `sa_p1` 在 `origin/icpe-next-trx`，24 個 block 已完成（STATUS_TRX 09:45）。
+- **所以 5 類紀錄的 P1 都齊了**，icpe-main 可以算 P1 版的上限，然後選 P4 的格子。
+- 現在在跑：佇列 A 在 `tl_p2/tl_c1_nvme807`，佇列 B 在 `tl_p2/tl_c1_load`。
+
 ## 2026-11-06T10:10+08:00 — Mooncake／FI 也沒有這種模式 → `old_p3 *_wt` 照跑；目前 git 裡的結果都不受 wt 漏洞影響
 
 - icpe-sim 掃描的結果（`20261106-094552-icpe-sim-wtpanic/zero_block_scan_nonnb.csv`；他們的數字）：
