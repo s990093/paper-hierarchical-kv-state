@@ -1,0 +1,800 @@
+run_id,ts,host,trace,cpu_GiB,policy,gpu_policy,config,metric,value,unit,kind,threads,n,load_1m_min,load_1m_max,note
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,-,trace_n_req,12031,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,-,trace_n_sess,8520,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,-,trace_B,182790,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,-,trace_n_blocks_full,170899,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,-,trace_chunks,276491,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,-,py_prep_s,0.16,s,measured,1,,0.21,0.21,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:11+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,-,trace_n_req,12031,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:11+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,-,trace_n_sess,8520,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:11+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,-,trace_B,182790,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:11+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,-,trace_n_blocks_full,170899,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:11+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,-,trace_chunks,276491,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:11+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,-,py_prep_s,0.18,s,measured,1,,3.21,3.21,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,-,trace_n_req,43011,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,-,trace_n_sess,26406,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,-,trace_B,157083,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,-,trace_n_blocks_full,157083,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,-,trace_chunks,462269,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,-,py_prep_s,0.18,s,measured,1,,0.28,0.28,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,-,trace_n_req,43011,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,-,trace_n_sess,26406,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,-,trace_B,157083,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,-,trace_n_blocks_full,157083,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,-,trace_chunks,462269,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,-,py_prep_s,0.17,s,measured,1,,1.14,1.14,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:46+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,-,trace_n_req,98827,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:46+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,-,trace_n_sess,2090,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:46+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,-,trace_B,710051,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:46+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,-,trace_n_blocks_full,710051,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:46+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,-,trace_chunks,42212088,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:46+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,-,py_prep_s,6.79,s,measured,1,,0.77,0.77,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,-,trace_n_req,12031,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,-,trace_n_sess,8520,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,-,trace_B,182790,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,-,trace_n_blocks_full,170899,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,-,trace_chunks,276491,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,-,py_prep_s,0.17,s,measured,1,,3.28,3.28,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:01+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,-,trace_n_req,43011,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:01+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,-,trace_n_sess,26406,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:01+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,-,trace_B,157083,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:01+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,-,trace_n_blocks_full,157083,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:01+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,-,trace_chunks,462269,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:01+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,-,py_prep_s,0.18,s,measured,1,,3.26,3.26,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:12+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,-,trace_n_req,98827,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:12+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,-,trace_n_sess,2090,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:12+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,-,trace_B,710051,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:12+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,-,trace_n_blocks_full,710051,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:12+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,-,trace_chunks,42212088,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:12+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,-,py_prep_s,6.38,s,measured,1,,2.61,2.61,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,-,trace_n_req,12031,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,-,trace_n_sess,8520,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,-,trace_B,182790,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,-,trace_n_blocks_full,170899,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,-,trace_chunks,276491,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,-,py_prep_s,0.17,s,measured,1,,3.28,3.28,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:04+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,-,trace_n_req,43011,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:04+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,-,trace_n_sess,26406,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:04+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,-,trace_B,157083,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:04+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,-,trace_n_blocks_full,157083,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:04+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,-,trace_chunks,462269,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:04+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,-,py_prep_s,0.18,s,measured,1,,3.26,3.26,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,-,trace_n_req,98827,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,-,trace_n_sess,2090,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,-,trace_B,710051,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,-,trace_n_blocks_full,710051,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,-,trace_chunks,42212088,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,-,py_prep_s,6.92,s,measured,1,,2.26,2.26,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,-,trace_n_req,12031,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,-,trace_n_sess,8520,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,-,trace_B,182790,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,-,trace_n_blocks_full,170899,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,-,trace_chunks,276491,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,-,py_prep_s,0.17,s,measured,1,,3.3,3.3,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:59+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,-,trace_n_req,43011,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:59+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,-,trace_n_sess,26406,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:59+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,-,trace_B,157083,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:59+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,-,trace_n_blocks_full,157083,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:59+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,-,trace_chunks,462269,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:59+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,-,py_prep_s,0.16,s,measured,1,,3.28,3.28,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:13+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,-,trace_n_req,98827,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:13+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,-,trace_n_sess,2090,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:13+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,-,trace_B,710051,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:13+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,-,trace_n_blocks_full,710051,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:13+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,-,trace_chunks,42212088,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:13+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,-,py_prep_s,6.88,s,measured,1,,3.38,3.38,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,py_cpu_s,4.1203,s,measured,1,3,3.12,3.21,min 4.1195 max 4.2077; digests same (f34fac37bef57081); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,counter_n_demote,8423,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,counter_n_gevict,9870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,py_cpu_s,12.0613,s,measured,1,3,3.1,3.21,min 11.9415 max 12.0879; digests same (f6bdf83b233d8c79); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,counter_n_sc_clean,18654,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,counter_n_sc_drop,3238,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,counter_n_demote,8423,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,counter_n_drop,3238,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,counter_n_gevict,9870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:00+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,rust_cpu_s,0.19167,s,measured,1,3,3.1,3.1,min 0.18361 max 0.19483; digests same (f34fac37bef57081); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,py_cpu_s,0.1649,s,measured,1,5,0.28,2.61,min 0.1617 max 0.2745; digests same (8450276160ab39ef); n_views 1
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,counter_n_drop,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,py_cpu_s,0.2676,s,measured,1,5,0.21,2.61,min 0.2455 max 0.354; digests same (97584d305f4f7a57); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,py_cpu_s,0.3745,s,measured,1,5,0.28,2.64,min 0.3667 max 0.39; digests same (51bd1921c6af5384); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,counter_n_sc_clean,33991,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,counter_n_sc_drop,4271,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,counter_n_drop,4271,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,py_cpu_s,11.0257,s,measured,1,5,0.77,2.81,min 10.9542 max 11.1185; digests same (9ca51c4b8d92b738); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,counter_n_sc_clean,34941,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,counter_n_sc_drop,3872,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,counter_n_drop,3872,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,py_cpu_s,0.3017,s,measured,1,5,1.11,2.81,min 0.2759 max 0.3873; digests same (63b2c17e987f6096); n_views 1
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,counter_n_sc_clean,34263,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,counter_n_sc_drop,4966,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,counter_n_drop,4966,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,py_cpu_s,0.3509,s,measured,1,5,0.28,2.61,min 0.3461 max 0.3667; digests same (dae5901818b18d02); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,counter_n_sc_clean,34158,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,counter_n_sc_drop,3896,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,counter_n_drop,3896,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,py_cpu_s,2.0853,s,measured,1,5,0.28,2.64,min 1.9969 max 2.1406; digests same (03ec503b3d2606c9); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,counter_n_sc_clean,34038,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,counter_n_sc_drop,4249,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,counter_n_drop,4249,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,py_cpu_s,9.3065,s,measured,1,5,0.28,2.78,min 9.1532 max 9.3889; digests same (2dd8ab5297f5963f); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,counter_n_sc_clean,40265,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,counter_n_sc_drop,7456,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,counter_n_drop,7456,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,py_cpu_s,0.3736,s,measured,1,5,0.28,2.64,min 0.3655 max 0.3865; digests same (51bd1921c6af5384); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,counter_sc_cap,85449,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,counter_n_sc_clean,33991,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,counter_n_sc_drop,4271,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,counter_n_demote,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,counter_n_drop,4271,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,counter_n_gevict,11870,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:37+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,rust_cpu_s,0.00956,s,measured,1,5,2.81,2.81,min 0.00797 max 0.01048; digests same (8450276160ab39ef); n_views 1
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:37+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,rust_cpu_s,0.01339,s,measured,1,5,2.81,2.81,min 0.01065 max 0.01533; digests same (97584d305f4f7a57); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,py_cpu_s,7.6672,s,measured,1,3,1.07,1.27,min 7.6185 max 7.7041; digests same (d679f3ea2d1637c1); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,counter_n_demote,26180,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,counter_n_gevict,26892,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,py_cpu_s,74.8708,s,measured,1,3,1.02,1.27,min 74.5137 max 74.9878; digests same (0657481b04ce9ad3); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,counter_n_sc_clean,21430,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,counter_n_sc_drop,11115,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,counter_n_demote,26180,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,counter_n_drop,11115,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,counter_n_gevict,26892,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,rust_cpu_s,0.15981,s,measured,1,3,1.02,1.02,min 0.15764 max 0.16193; digests same (d679f3ea2d1637c1); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,py_cpu_s,0.3607,s,measured,1,3,0.28,3.3,min 0.3433 max 0.399; digests same (45b44cf6291070aa); n_views 1
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,counter_n_drop,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,py_cpu_s,0.6077,s,measured,1,3,0.28,3.3,min 0.6065 max 0.7095; digests same (d4285864e75f3bc4); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,py_cpu_s,0.8507,s,measured,1,3,0.95,3.23,min 0.8355 max 0.9607; digests same (260d04fea2d8fe81); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,counter_n_sc_clean,38692,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,counter_n_sc_drop,13834,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,counter_n_drop,13834,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,py_cpu_s,76.1749,s,measured,1,3,2.17,3.3,min 75.14 max 76.4524; digests same (78cde5302557bea8); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,counter_n_sc_clean,40089,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,counter_n_sc_drop,11361,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,counter_n_drop,11361,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,py_cpu_s,0.6275,s,measured,1,3,2.17,3.3,min 0.5939 max 0.6433; digests same (34df451649e6bcc5); n_views 1
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,counter_n_sc_clean,38001,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,counter_n_sc_drop,13765,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,counter_n_drop,13765,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,py_cpu_s,0.8421,s,measured,1,3,0.28,3.3,min 0.7852 max 0.8619; digests same (fa8593fe21eb43a8); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,counter_n_sc_clean,38735,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,counter_n_sc_drop,11508,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,counter_n_drop,11508,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,py_cpu_s,15.409,s,measured,1,3,0.28,3.3,min 15.3158 max 15.6885; digests same (2e9d5dcbb9a22650); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,counter_n_sc_clean,38420,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,counter_n_sc_drop,14498,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,counter_n_drop,14498,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,py_cpu_s,61.1584,s,measured,1,3,1.11,3.38,min 60.0523 max 61.7134; digests same (2839fb017ce8a7e6); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,counter_n_sc_clean,41349,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,counter_n_sc_drop,18587,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,counter_n_drop,18587,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,py_cpu_s,0.8587,s,measured,1,3,0.95,3.38,min 0.8586 max 0.8932; digests same (260d04fea2d8fe81); n_views 6
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,counter_sc_cap,78541,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,counter_n_sc_clean,38692,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,counter_n_sc_drop,13834,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,counter_n_demote,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,counter_n_drop,13834,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,counter_n_gevict,33661,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:27+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,rust_cpu_s,0.01668,s,measured,1,3,2.17,2.17,min 0.01617 max 0.01753; digests same (45b44cf6291070aa); n_views 1
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:27+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,rust_cpu_s,0.02975,s,measured,1,3,2.17,2.17,min 0.02252 max 0.03597; digests same (d4285864e75f3bc4); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,py_cpu_s,7.506,s,measured,1,1,1.11,1.48,min 7.506 max 7.506; digests same (6f05f2dbd93fb9a0); n_views 1
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,counter_n_drop,0,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,py_cpu_s,13.186,s,measured,1,1,0.77,1.11,min 13.186 max 13.186; digests same (945fb244d4ed3daf); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,py_cpu_s,24.6314,s,measured,1,1,2.5,2.67,min 24.6314 max 24.6314; digests same (2c14b69881c661b6); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,counter_sc_cap,355025,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,counter_n_sc_clean,168739,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,counter_n_sc_drop,361,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,counter_n_drop,361,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,py_cpu_s,24.9643,s,measured,1,1,3.14,3.21,min 24.9643 max 24.9643; digests same (0810638887611d2a); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,counter_sc_cap,355025,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,counter_n_sc_clean,157921,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,counter_n_sc_drop,193,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,counter_n_drop,193,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,py_cpu_s,18.9203,s,measured,1,1,3.11,3.14,min 18.9203 max 18.9203; digests same (28e4010ca0fda2f8); n_views 1
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,counter_sc_cap,355025,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,counter_n_sc_clean,175223,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,counter_n_sc_drop,819,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,counter_n_drop,819,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,py_cpu_s,24.7447,s,measured,1,1,1.48,2.13,min 24.7447 max 24.7447; digests same (0810638887611d2a); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,counter_sc_cap,355025,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,counter_n_sc_clean,157921,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,counter_n_sc_drop,193,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,counter_n_drop,193,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,py_cpu_s,24.7659,s,measured,1,1,2.13,2.5,min 24.7659 max 24.7659; digests same (2211032669ce3077); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,counter_sc_cap,355025,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,counter_n_sc_clean,157773,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,counter_n_sc_drop,189,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,counter_n_drop,189,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,py_cpu_s,25.8668,s,measured,1,1,2.84,3.21,min 25.8668 max 25.8668; digests same (5daf554de419c812); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,counter_sc_cap,355025,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,counter_n_sc_clean,175899,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,counter_n_sc_drop,938,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,counter_n_drop,938,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,py_cpu_s,24.4964,s,measured,1,1,2.67,2.84,min 24.4964 max 24.4964; digests same (2c14b69881c661b6); n_views 6
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,counter_sc_cap,355025,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,counter_n_sc_clean,168739,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,counter_n_sc_drop,361,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,counter_n_demote,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,counter_n_drop,361,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,counter_n_gevict,17185,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:00+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,rust_cpu_s,0.15873,s,measured,1,1,3.1,3.1,min 0.15873 max 0.15873; digests same (6f05f2dbd93fb9a0); n_views 1
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,rust_cpu_s,0.29802,s,measured,1,1,3.1,3.1,min 0.29802 max 0.29802; digests same (945fb244d4ed3daf); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,py_cpu_s,0.1795,s,measured,1,3,3.3,3.3,min 0.1768 max 0.1854; digests same (0ad65213459fb7a2); n_views 1
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,counter_n_demote,11670,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,counter_n_gevict,11971,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,rust_cpu_s,0.00964,s,measured,1,3,3.28,3.28,min 0.00877 max 0.01235; digests same (0ad65213459fb7a2); n_views 1
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,py_cpu_s,0.264,s,measured,1,3,3.28,3.28,min 0.2633 max 0.2782; digests same (2a3ecf5eadc6cc3f); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,counter_n_demote,11358,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,counter_n_gevict,11870,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:57+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,rust_cpu_s,0.01406,s,measured,1,3,3.28,3.28,min 0.01273 max 0.0158; digests same (2a3ecf5eadc6cc3f); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,py_cpu_s,0.2581,s,measured,1,3,3.28,3.28,min 0.2566 max 0.2728; digests same (19e7aeb1ca542b68); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,counter_n_demote,10658,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,counter_n_gevict,11870,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:59+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,rust_cpu_s,0.01131,s,measured,1,3,3.28,3.28,min 0.01092 max 0.01265; digests same (19e7aeb1ca542b68); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,py_cpu_s,0.4192,s,measured,1,3,3.28,3.28,min 0.3945 max 0.4503; digests same (0d14c89413aa8e6b); n_views 1
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,counter_n_demote,32973,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,counter_n_gevict,35620,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:01+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,rust_cpu_s,0.01804,s,measured,1,3,3.26,3.28,min 0.01797 max 0.01839; digests same (0d14c89413aa8e6b); n_views 1
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,py_cpu_s,0.6334,s,measured,1,3,3.26,3.26,min 0.6054 max 0.6482; digests same (ca80399822e4d48a); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,counter_n_demote,30613,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,counter_n_gevict,33661,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:03+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,rust_cpu_s,0.03049,s,measured,1,3,3.26,3.26,min 0.02934 max 0.03474; digests same (ca80399822e4d48a); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,py_cpu_s,0.6059,s,measured,1,3,3.23,3.26,min 0.6058 max 0.6674; digests same (c8b351c7e59cdf57); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,counter_n_demote,28442,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,counter_n_gevict,33661,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:06+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,rust_cpu_s,0.02387,s,measured,1,3,3.23,3.23,min 0.02278 max 0.02619; digests same (c8b351c7e59cdf57); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,py_cpu_s,15.1985,s,measured,1,3,2.78,3.38,min 15.1137 max 15.285; digests same (9c93f0e31bd1c0f9); n_views 1
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,counter_n_demote,12520,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,counter_n_gevict,53328,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:03+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,rust_cpu_s,0.30118,s,measured,1,3,2.72,2.72,min 0.29108 max 0.30876; digests same (9c93f0e31bd1c0f9); n_views 1
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,py_cpu_s,12.9012,s,measured,1,3,2.31,2.61,min 12.8794 max 13.1465; digests same (30c9d8f7a558ecce); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,counter_n_demote,6169,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,counter_n_gevict,17185,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,rust_cpu_s,0.29552,s,measured,1,3,2.29,2.31,min 0.28598 max 0.30078; digests same (30c9d8f7a558ecce); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,py_cpu_s,13.0952,s,measured,1,3,2.13,2.26,min 13.0759 max 13.1079; digests same (9539396d8e16e792); n_views 6
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,counter_sc_cap,-1,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,counter_n_sc_clean,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,counter_n_sc_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,counter_n_demote,3050,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,counter_n_drop,0,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,counter_n_gevict,17185,count,measured,1,,,,
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:47+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,rust_cpu_s,0.29677,s,measured,1,3,2.12,2.12,min 0.28795 max 0.29969; digests same (9539396d8e16e792); n_views 6
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,ratio_py_over_rust,21.5,x,推算,1,,,,py 4.1203 / rust_v5 0.19167
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:15+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['f34fac37bef57081'] rust ['f34fac37bef57081']
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:27+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,ratio_sc_over_nocap,2.927,x,推算,1,,,,py sc:BEL 12.0613 / py nocap6 4.1203
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,ratio_py_over_rust,17.25,x,推算,1,,,,py 0.1649 / rust_v5 0.00956
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap1,digest_py_eq_rust,1,bool,measured,1,,,,py ['8450276160ab39ef'] rust ['8450276160ab39ef']
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,ratio_py_over_rust,19.99,x,推算,1,,,,py 0.2676 / rust_v5 0.01339
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:35+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['97584d305f4f7a57'] rust ['97584d305f4f7a57']
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,ratio_sc_over_nocap,1.399,x,推算,1,,,,py sc:ARC 0.3745 / py nocap6 0.2676
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,ratio_sc_over_nocap,41.202,x,推算,1,,,,py sc:BEL 11.0257 / py nocap6 0.2676
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:59+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,ratio_sc_over_nocap,1.83,x,推算,1,,,,py sc:GDSF 0.3017 / py nocap1 0.1649
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:36+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,ratio_sc_over_nocap,1.311,x,推算,1,,,,py sc:LRU 0.3509 / py nocap6 0.2676
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU2,ratio_sc_over_nocap,7.793,x,推算,1,,,,py sc:LRU2 2.0853 / py nocap6 0.2676
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:48+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:PENS,ratio_sc_over_nocap,34.778,x,推算,1,,,,py sc:PENS 9.3065 / py nocap6 0.2676
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:17:39+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:S3FIFO,ratio_sc_over_nocap,1.396,x,推算,1,,,,py sc:S3FIFO 0.3736 / py nocap6 0.2676
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,ratio_py_over_rust,47.98,x,推算,1,,,,py 7.6672 / rust_v5 0.15981
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:29:06+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['d679f3ea2d1637c1'] rust ['d679f3ea2d1637c1']
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:30:21+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,ratio_sc_over_nocap,9.765,x,推算,1,,,,py sc:BEL 74.8708 / py nocap6 7.6672
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,ratio_py_over_rust,21.62,x,推算,1,,,,py 0.3607 / rust_v5 0.01668
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap1,digest_py_eq_rust,1,bool,measured,1,,,,py ['45b44cf6291070aa'] rust ['45b44cf6291070aa']
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,ratio_py_over_rust,20.43,x,推算,1,,,,py 0.6077 / rust_v5 0.02975
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:38+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['d4285864e75f3bc4'] rust ['d4285864e75f3bc4']
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:55+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,ratio_sc_over_nocap,1.4,x,推算,1,,,,py sc:ARC 0.8507 / py nocap6 0.6077
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:14+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,ratio_sc_over_nocap,125.35,x,推算,1,,,,py sc:BEL 76.1749 / py nocap6 0.6077
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:20:15+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,ratio_sc_over_nocap,1.74,x,推算,1,,,,py sc:GDSF 0.6275 / py nocap1 0.3607
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:39+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,ratio_sc_over_nocap,1.386,x,推算,1,,,,py sc:LRU 0.8421 / py nocap6 0.6077
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU2,ratio_sc_over_nocap,25.356,x,推算,1,,,,py sc:LRU2 15.4090 / py nocap6 0.6077
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:18:58+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:PENS,ratio_sc_over_nocap,100.639,x,推算,1,,,,py sc:PENS 61.1584 / py nocap6 0.6077
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:17:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:S3FIFO,ratio_sc_over_nocap,1.413,x,推算,1,,,,py sc:S3FIFO 0.8587 / py nocap6 0.6077
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,ratio_py_over_rust,47.29,x,推算,1,,,,py 7.5060 / rust_v5 0.15873
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:07+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap1,digest_py_eq_rust,1,bool,measured,1,,,,py ['6f05f2dbd93fb9a0'] rust ['6f05f2dbd93fb9a0']
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,ratio_py_over_rust,44.25,x,推算,1,,,,py 13.1860 / rust_v5 0.29802
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:17:59+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['945fb244d4ed3daf'] rust ['945fb244d4ed3daf']
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:21+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:ARC,ratio_sc_over_nocap,1.868,x,推算,1,,,,py sc:ARC 24.6314 / py nocap6 13.1860
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:36+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,ratio_sc_over_nocap,1.893,x,推算,1,,,,py sc:BEL 24.9643 / py nocap6 13.1860
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:55+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:GDSF,ratio_sc_over_nocap,2.521,x,推算,1,,,,py sc:GDSF 18.9203 / py nocap1 7.5060
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:31+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,ratio_sc_over_nocap,1.877,x,推算,1,,,,py sc:LRU 24.7447 / py nocap6 13.1860
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:18:56+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU2,ratio_sc_over_nocap,1.878,x,推算,1,,,,py sc:LRU2 24.7659 / py nocap6 13.1860
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:20:11+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:PENS,ratio_sc_over_nocap,1.962,x,推算,1,,,,py sc:PENS 25.8668 / py nocap6 13.1860
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:19:45+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:S3FIFO,ratio_sc_over_nocap,1.858,x,推算,1,,,,py sc:S3FIFO 24.4964 / py nocap6 13.1860
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,ratio_py_over_rust,18.62,x,推算,1,,,,py 0.1795 / rust_v5 0.00964
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:55+08:00,RUX3DPRO,conversation,111.0625,LRU,TTLA:10,nocap1,digest_py_eq_rust,1,bool,measured,1,,,,py ['0ad65213459fb7a2'] rust ['0ad65213459fb7a2']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,ratio_py_over_rust,18.78,x,推算,1,,,,py 0.2640 / rust_v5 0.01406
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:56+08:00,RUX3DPRO,conversation,128.0,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['2a3ecf5eadc6cc3f'] rust ['2a3ecf5eadc6cc3f']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,ratio_py_over_rust,22.82,x,推算,1,,,,py 0.2581 / rust_v5 0.01131
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:22:58+08:00,RUX3DPRO,conversation,256.0,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['19e7aeb1ca542b68'] rust ['19e7aeb1ca542b68']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,ratio_py_over_rust,23.24,x,推算,1,,,,py 0.4192 / rust_v5 0.01804
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:00+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,TTLA:10,nocap1,digest_py_eq_rust,1,bool,measured,1,,,,py ['0d14c89413aa8e6b'] rust ['0d14c89413aa8e6b']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,ratio_py_over_rust,20.77,x,推算,1,,,,py 0.6334 / rust_v5 0.03049
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:02+08:00,RUX3DPRO,nb:bailian_coder,128.0,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['ca80399822e4d48a'] rust ['ca80399822e4d48a']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,ratio_py_over_rust,25.38,x,推算,1,,,,py 0.6059 / rust_v5 0.02387
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:bailian_coder,256.0,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['c8b351c7e59cdf57'] rust ['c8b351c7e59cdf57']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,ratio_py_over_rust,50.46,x,推算,1,,,,py 15.1985 / rust_v5 0.30118
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:23:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,TTLA:10,nocap1,digest_py_eq_rust,1,bool,measured,1,,,,py ['9c93f0e31bd1c0f9'] rust ['9c93f0e31bd1c0f9']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,ratio_py_over_rust,43.66,x,推算,1,,,,py 12.9012 / rust_v5 0.29552
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:24:25+08:00,RUX3DPRO,nb:semianalysis_N16_s1,128.0,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['30c9d8f7a558ecce'] rust ['30c9d8f7a558ecce']
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,ratio_py_over_rust,44.13,x,推算,1,,,,py 13.0952 / rust_v5 0.29677
+20261107-002255-icpe-rux-prof-shapes,2026-11-07T00:25:18+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256.0,LRU,LRU,nocap6,digest_py_eq_rust,1,bool,measured,1,,,,py ['9539396d8e16e792'] rust ['9539396d8e16e792']
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_total_s,0.416,s,measured,1,,2.81,2.81,cProfile 開著（比不開慢）
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top1,0.1733,share,measured,1,,,,x1_sim.py:restore ncalls 72186 tottime 0.0721 cumtime 0.0721
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top2,0.1662,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 12031 tottime 0.0691 cumtime 0.408
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top3,0.1596,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 12031 tottime 0.0664 cumtime 0.2523
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top4,0.0957,share,measured,1,,,,x1_sim.py:_fix_g ncalls 270716 tottime 0.0398 cumtime 0.0398
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top5,0.094,share,measured,1,,,,x1_sim.py:demote ncalls 11443 tottime 0.0391 cumtime 0.0805
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top6,0.0654,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 11870 tottime 0.0272 cumtime 0.0542
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top7,0.0384,share,measured,1,,,,x1_sim.py:_g_release ncalls 11870 tottime 0.016 cumtime 0.016
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,nocap6,cprof_top8,0.0302,share,measured,1,,,,x1_sim.py:write ncalls 144372 tottime 0.0126 cumtime 0.0126
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,ops_slow_select,3896,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,ops_slow_add,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,ops_slow_remove,6973,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,ops_slow_select_mem_mean,4250.8,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,ops_slow_select_mem_max,4506,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_total_s,0.836,s,measured,1,,2.81,2.81,cProfile 開著（比不開慢）
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top1,0.1758,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 442065 tottime 0.1469 cumtime 0.2778
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top2,0.1001,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 12031 tottime 0.0837 cumtime 0.6448
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top3,0.0946,share,measured,1,,,,x1_sim.py:_fix_g ncalls 442065 tottime 0.0791 cumtime 0.0791
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top4,0.0943,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 12031 tottime 0.0789 cumtime 0.8182
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top5,0.0939,share,measured,1,,,,x1_sim.py:restore ncalls 72186 tottime 0.0785 cumtime 0.0785
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top6,0.0672,share,measured,1,,,,x1_sim.py:demote ncalls 11443 tottime 0.0562 cumtime 0.2446
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top7,0.0667,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 395843 tottime 0.0558 cumtime 0.0558
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:19:38+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,cprof_top8,0.0445,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 11870 tottime 0.0372 cumtime 0.0687
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,ops_slow_select,3872,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,ops_slow_add,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,ops_slow_remove,6973,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,ops_slow_select_mem_mean,4584.6,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,ops_slow_select_mem_max,5115,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_total_s,30.355,s,measured,1,,2.81,2.81,cProfile 開著（比不開慢）
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top1,0.2168,share,measured,1,,,,x1_sim.py:next_req ncalls 17751636 tottime 6.5795 cumtime 23.6582
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top2,0.197,share,measured,1,,,,x1_sim.py:excl_start ncalls 17751636 tottime 5.9813 cumtime 6.7623
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top3,0.1733,share,measured,1,,,,x1_trace.py:next_access ncalls 17751636 tottime 5.261 cumtime 9.537
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top4,0.1147,share,measured,1,,,,x1_sim.py:<lambda> ncalls 17751636 tottime 3.4807 cumtime 27.1389
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top5,0.0798,share,measured,1,,,,~:<built-in method builtins.max> ncalls 7744 tottime 2.423 cumtime 29.5619
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top6,0.0786,share,measured,1,,,,~:<built-in method builtins.len> ncalls 53290226 tottime 2.3863 cumtime 2.3863
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top7,0.0582,share,measured,1,,,,~:<method 'get' of 'dict' objects> ncalls 17784769 tottime 1.7656 cumtime 1.7656
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:BEL,cprof_top8,0.0557,share,measured,1,,,,~:<built-in method _bisect.bisect_right> ncalls 17751636 tottime 1.6922 cumtime 1.6922
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,ops_slow_select,4966,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,ops_slow_add,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,ops_slow_remove,7988,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,ops_slow_select_mem_mean,3123.3,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,ops_slow_select_mem_max,3909,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_total_s,0.645,s,measured,1,,2.97,2.97,cProfile 開著（比不開慢）
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top1,0.1945,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 442740 tottime 0.1253 cumtime 0.2262
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top2,0.1036,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 12031 tottime 0.0668 cumtime 0.5604
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top3,0.0975,share,measured,1,,,,x1_sim.py:_fix_g ncalls 442740 tottime 0.0629 cumtime 0.0629
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top4,0.0703,share,measured,1,,,,x1_sim.py:demote ncalls 11443 tottime 0.0453 cumtime 0.197
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top5,0.0607,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 395046 tottime 0.0392 cumtime 0.0392
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top6,0.0596,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 12031 tottime 0.0384 cumtime 0.6276
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top7,0.0463,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 11870 tottime 0.0298 cumtime 0.0587
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:09+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:GDSF,cprof_top8,0.033,share,measured,1,,,,x1_sim.py:drop ncalls 4966 tottime 0.0213 cumtime 0.055
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,ops_slow_select,4271,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,ops_slow_add,11443,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,ops_slow_remove,7345,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,ops_slow_select_mem_mean,4091.3,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,ops_slow_select_mem_max,4218,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_total_s,0.76,s,measured,1,,2.97,2.97,cProfile 開著（比不開慢）
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top1,0.1632,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 442998 tottime 0.1241 cumtime 0.2236
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top2,0.1065,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 12031 tottime 0.081 cumtime 0.5703
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top3,0.103,share,measured,1,,,,x1_sim.py:restore ncalls 72186 tottime 0.0784 cumtime 0.0784
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top4,0.1015,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 12031 tottime 0.0772 cumtime 0.7417
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top5,0.0813,share,measured,1,,,,x1_sim.py:_fix_g ncalls 442998 tottime 0.0618 cumtime 0.0618
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top6,0.058,share,measured,1,,,,x1_sim.py:demote ncalls 11443 tottime 0.0441 cumtime 0.1937
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top7,0.0513,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 396009 tottime 0.039 cumtime 0.039
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:20:10+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:ARC,cprof_top8,0.0395,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 11870 tottime 0.0301 cumtime 0.0591
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_total_s,12.918,s,measured,1,,3.1,3.1,cProfile 開著（比不開慢）
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top1,0.2152,share,measured,1,,,,x1_sim.py:_next_req_bl ncalls 7390848 tottime 2.7799 cumtime 7.6696
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top2,0.1775,share,measured,1,,,,x1_trace.py:next_access ncalls 7390848 tottime 2.2924 cumtime 4.2151
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top3,0.1465,share,measured,1,,,,x1_sim.py:_g_next ncalls 7390848 tottime 1.8921 cumtime 10.0634
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top4,0.1041,share,measured,1,,,,x1_sim.py:<lambda> ncalls 7390848 tottime 1.3447 cumtime 11.408
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top5,0.082,share,measured,1,,,,~:<built-in method builtins.len> ncalls 22210603 tottime 1.0587 cumtime 1.0587
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top6,0.081,share,measured,1,,,,~:<built-in method builtins.max> ncalls 9870 tottime 1.0463 cumtime 12.4543
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top7,0.075,share,measured,1,,,,~:<built-in method _bisect.bisect_right> ncalls 7390848 tottime 0.969 cumtime 0.969
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:13+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,nocap6,cprof_top8,0.0443,share,measured,1,,,,~:<method 'get' of 'dict' objects> ncalls 7390848 tottime 0.5724 cumtime 0.5724
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,ops_slow_select,3238,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,ops_slow_add,8423,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,ops_slow_remove,4652,count,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,ops_slow_select_mem_mean,3570.0,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,ops_slow_select_mem_max,3794,sessions,measured,1,,,,
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_total_s,33.975,s,measured,1,,3.08,3.08,cProfile 開著（比不開慢）
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top1,0.1684,share,measured,1,,,,x1_trace.py:next_access ncalls 18950347 tottime 5.7224 cumtime 10.7082
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top2,0.14,share,measured,1,,,,x1_sim.py:excl_start ncalls 11559499 tottime 4.7548 cumtime 5.2665
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top3,0.1292,share,measured,1,,,,x1_sim.py:next_req ncalls 11559499 tottime 4.3908 cumtime 16.5355
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top4,0.1069,share,measured,1,,,,x1_sim.py:<lambda> ncalls 18950347 tottime 3.6331 cumtime 18.8194
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top5,0.0832,share,measured,1,,,,x1_sim.py:_next_req_bl ncalls 7390848 tottime 2.8258 cumtime 7.834
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top6,0.0821,share,measured,1,,,,~:<built-in method builtins.max> ncalls 16346 tottime 2.7902 cumtime 33.1999
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top7,0.0761,share,measured,1,,,,~:<built-in method builtins.len> ncalls 56885091 tottime 2.5871 cumtime 2.5871
+20261107-001735-icpe-rux-prof-sc-mc,2026-11-07T00:21:47+08:00,RUX3DPRO,conversation,111.0625,LRU,BEL,sc:BEL,cprof_top8,0.0606,share,measured,1,,,,~:<method 'get' of 'dict' objects> ncalls 18974550 tottime 2.0582 cumtime 2.0582
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_total_s,1.102,s,measured,1,,2.17,2.17,cProfile 開著（比不開慢）
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top1,0.2172,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 43011 tottime 0.2392 cumtime 1.0728
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top2,0.177,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 43011 tottime 0.195 cumtime 0.6064
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top3,0.1697,share,measured,1,,,,x1_sim.py:restore ncalls 258066 tottime 0.1869 cumtime 0.1869
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top4,0.0666,share,measured,1,,,,x1_sim.py:demote ncalls 30960 tottime 0.0734 cumtime 0.1345
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top5,0.0526,share,measured,1,,,,x1_sim.py:_fix_g ncalls 403903 tottime 0.0579 cumtime 0.0579
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top6,0.0506,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 33661 tottime 0.0558 cumtime 0.1143
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top7,0.0405,share,measured,1,,,,x1_sim.py:write ncalls 516132 tottime 0.0446 cumtime 0.0446
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:29+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,nocap6,cprof_top8,0.0295,share,measured,1,,,,~:<method 'append' of 'list' objects> ncalls 373738 tottime 0.0325 cumtime 0.0325
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,ops_slow_select,11508,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,ops_slow_add,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,ops_slow_remove,19754,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,ops_slow_select_mem_mean,11216.1,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,ops_slow_select_mem_max,11395,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_total_s,1.742,s,measured,1,,2.17,2.17,cProfile 開著（比不開慢）
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top1,0.1558,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 43011 tottime 0.2714 cumtime 1.1996
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top2,0.1446,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 43011 tottime 0.2519 cumtime 1.6897
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top3,0.1164,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 690492 tottime 0.2028 cumtime 0.3549
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top4,0.1123,share,measured,1,,,,x1_sim.py:restore ncalls 258066 tottime 0.1957 cumtime 0.1957
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top5,0.053,share,measured,1,,,,x1_sim.py:_fix_g ncalls 690492 tottime 0.0923 cumtime 0.0923
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top6,0.0464,share,measured,1,,,,x1_sim.py:demote ncalls 30960 tottime 0.0809 cumtime 0.3015
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top7,0.0349,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 546854 tottime 0.0607 cumtime 0.0607
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:25:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,cprof_top8,0.034,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 33661 tottime 0.0592 cumtime 0.1211
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,ops_slow_select,11361,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,ops_slow_add,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,ops_slow_remove,19754,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,ops_slow_select_mem_mean,11381.2,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,ops_slow_select_mem_max,11614,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_total_s,203.911,s,measured,1,,2.17,2.17,cProfile 開著（比不開慢）
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top1,0.2278,share,measured,1,,,,x1_sim.py:next_req ncalls 129302135 tottime 46.446 cumtime 161.5616
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top2,0.1988,share,measured,1,,,,x1_sim.py:excl_start ncalls 129302135 tottime 40.5393 cumtime 45.8843
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top3,0.1725,share,measured,1,,,,x1_trace.py:next_access ncalls 129302135 tottime 35.177 cumtime 63.9087
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top4,0.117,share,measured,1,,,,x1_sim.py:<lambda> ncalls 129302135 tottime 23.8504 cumtime 185.412
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top5,0.0812,share,measured,1,,,,~:<built-in method builtins.max> ncalls 22722 tottime 16.5611 cumtime 201.9731
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top6,0.0787,share,measured,1,,,,~:<built-in method builtins.len> ncalls 388031755 tottime 16.0573 cumtime 16.0573
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top7,0.0631,share,measured,1,,,,~:<method 'get' of 'dict' objects> ncalls 129395325 tottime 12.8758 cumtime 12.8758
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:54+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:BEL,cprof_top8,0.0514,share,measured,1,,,,~:<built-in method _bisect.bisect_right> ncalls 129302135 tottime 10.491 cumtime 10.491
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,ops_slow_select,13765,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,ops_slow_add,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,ops_slow_remove,21830,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,ops_slow_select_mem_mean,10144.1,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,ops_slow_select_mem_max,11975,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_total_s,1.299,s,measured,1,,1.15,1.15,cProfile 開著（比不開慢）
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top1,0.1482,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 719470 tottime 0.1925 cumtime 0.3397
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top2,0.1158,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 43011 tottime 0.1504 cumtime 1.0815
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top3,0.0807,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 43011 tottime 0.1048 cumtime 1.25
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top4,0.0695,share,measured,1,,,,x1_sim.py:_fix_g ncalls 719470 tottime 0.0902 cumtime 0.0902
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top5,0.0558,share,measured,1,,,,x1_sim.py:demote ncalls 30960 tottime 0.0725 cumtime 0.2746
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top6,0.0447,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 571794 tottime 0.0581 cumtime 0.0581
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top7,0.0413,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 33661 tottime 0.0536 cumtime 0.1094
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:56+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:GDSF,cprof_top8,0.037,share,measured,1,,,,x1_sim.py:drop ncalls 13765 tottime 0.0481 cumtime 0.1311
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,ops_slow_select,13834,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,ops_slow_add,30960,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,ops_slow_remove,22079,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,ops_slow_select_mem_mean,10227.2,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,ops_slow_select_mem_max,11348,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_total_s,1.714,s,measured,1,,1.15,1.15,cProfile 開著（比不開慢）
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top1,0.1359,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 43011 tottime 0.2329 cumtime 1.6607
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top2,0.1273,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 43011 tottime 0.2182 cumtime 1.2046
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top3,0.1127,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 724745 tottime 0.1932 cumtime 0.3382
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top4,0.1071,share,measured,1,,,,x1_sim.py:restore ncalls 258066 tottime 0.1836 cumtime 0.1836
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top5,0.0511,share,measured,1,,,,x1_sim.py:_fix_g ncalls 724745 tottime 0.0876 cumtime 0.0876
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top6,0.0451,share,measured,1,,,,x1_sim.py:select ncalls 44794 tottime 0.0773 cumtime 0.073
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top7,0.0424,share,measured,1,,,,x1_sim.py:demote ncalls 30960 tottime 0.0728 cumtime 0.2727
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:28:57+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:ARC,cprof_top8,0.0341,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 571531 tottime 0.0584 cumtime 0.0584
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_total_s,24.539,s,measured,1,,1.02,1.02,cProfile 開著（比不開慢）
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top1,0.2633,share,measured,1,,,,x1_sim.py:_next_req_bl ncalls 13045176 tottime 6.461 cumtime 14.9831
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top2,0.1578,share,measured,1,,,,x1_trace.py:next_access ncalls 13045176 tottime 3.8729 cumtime 7.1865
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top3,0.1371,share,measured,1,,,,x1_sim.py:_g_next ncalls 13045176 tottime 3.3652 cumtime 19.2488
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top4,0.0934,share,measured,1,,,,x1_sim.py:<lambda> ncalls 13045176 tottime 2.2921 cumtime 21.5409
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top5,0.0833,share,measured,1,,,,~:<built-in method builtins.len> ncalls 39290147 tottime 2.0441 cumtime 2.0441
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top6,0.0733,share,measured,1,,,,~:<built-in method builtins.max> ncalls 26892 tottime 1.7983 cumtime 23.3392
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top7,0.0598,share,measured,1,,,,~:<built-in method _bisect.bisect_right> ncalls 13045176 tottime 1.4671 cumtime 1.4671
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:33:31+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,nocap6,cprof_top8,0.0468,share,measured,1,,,,~:<method 'get' of 'dict' objects> ncalls 13045176 tottime 1.1483 cumtime 1.1483
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,ops_slow_select,11115,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,ops_slow_add,26180,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,ops_slow_remove,15199,count,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,ops_slow_select_mem_mean,10972.9,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,ops_slow_select_mem_max,11132,sessions,measured,1,,,,
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_total_s,211.971,s,measured,1,,1.01,1.01,cProfile 開著（比不開慢）
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top1,0.1999,share,measured,1,,,,x1_sim.py:next_req ncalls 121964177 tottime 42.3764 cumtime 149.0757
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top2,0.1781,share,measured,1,,,,x1_sim.py:excl_start ncalls 121964177 tottime 37.7466 cumtime 42.7287
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top3,0.1702,share,measured,1,,,,x1_trace.py:next_access ncalls 135009353 tottime 36.0862 cumtime 66.2465
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top4,0.1163,share,measured,1,,,,x1_sim.py:<lambda> ncalls 135009353 tottime 24.6515 cumtime 171.4049
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top5,0.0816,share,measured,1,,,,~:<built-in method builtins.max> ncalls 49122 tottime 17.2924 cumtime 210.1248
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top6,0.0795,share,measured,1,,,,~:<built-in method builtins.len> ncalls 405152917 tottime 16.8423 cumtime 16.8423
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top7,0.0645,share,measured,1,,,,~:<method 'get' of 'dict' objects> ncalls 135088161 tottime 13.6629 cumtime 13.6629
+20261107-001737-icpe-rux-prof-sc-bl,2026-11-07T00:37:03+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,BEL,sc:BEL,cprof_top8,0.0514,share,measured,1,,,,~:<built-in method _bisect.bisect_right> ncalls 135009353 tottime 10.894 cumtime 10.894
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_total_s,17.465,s,measured,1,,3.1,3.1,cProfile 開著（比不開慢）
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top1,0.4054,share,measured,1,,,,x1_sim.py:restore ncalls 592962 tottime 7.0813 cumtime 7.0813
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top2,0.1668,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 98827 tottime 2.9127 cumtime 6.9902
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top3,0.143,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 98827 tottime 2.4978 cumtime 17.3744
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top4,0.0918,share,measured,1,,,,x1_sim.py:_fix_g ncalls 13250323 tottime 1.6027 cumtime 1.6027
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top5,0.0527,share,measured,1,,,,x1_sim.py:_g_evict_wb ncalls 17185 tottime 0.9209 cumtime 1.6683
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top6,0.0448,share,measured,1,,,,~:<method 'append' of 'list' objects> ncalls 12339225 tottime 0.783 cumtime 0.783
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top7,0.0414,share,measured,1,,,,x1_sim.py:_g_release ncalls 17185 tottime 0.7238 cumtime 0.7238
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:21:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,nocap6,cprof_top8,0.0327,share,measured,1,,,,x1_sim.py:demote ncalls 7505 tottime 0.5703 cumtime 1.1694
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,ops_slow_select,193,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,ops_slow_add,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,ops_slow_remove,5610,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,ops_slow_select_mem_mean,1895.6,sessions,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,ops_slow_select_mem_max,1919,sessions,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_total_s,46.708,s,measured,1,,3.07,3.07,cProfile 開著（比不開慢）
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top1,0.2436,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 46620252 tottime 11.3797 cumtime 19.8775
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top2,0.1703,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 98827 tottime 7.9526 cumtime 36.0268
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top3,0.151,share,measured,1,,,,x1_sim.py:restore ncalls 592962 tottime 7.0518 cumtime 7.0518
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top4,0.102,share,measured,1,,,,x1_sim.py:_fix_g ncalls 46620252 tottime 4.7636 cumtime 4.7636
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top5,0.0731,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 36340848 tottime 3.4122 cumtime 3.4122
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top6,0.0577,share,measured,1,,,,x1_sim.py:_slow_enforce ncalls 98827 tottime 2.6939 cumtime 4.6103
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top7,0.0571,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 98827 tottime 2.6659 cumtime 46.5659
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:04+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,cprof_top8,0.0348,share,measured,1,,,,x1_sim.py:_g_release ncalls 98825 tottime 1.626 cumtime 1.626
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,ops_slow_select,193,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,ops_slow_add,7505,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,ops_slow_remove,5610,count,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,ops_slow_select_mem_mean,1895.6,sessions,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,ops_slow_select_mem_max,1919,sessions,measured,1,,,,
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_total_s,46.466,s,measured,1,,3.49,3.49,cProfile 開著（比不開慢）
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top1,0.2412,share,measured,1,,,,x1_sim.py:_fix_sc ncalls 46620252 tottime 11.2084 cumtime 19.212
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top2,0.1683,share,measured,1,,,,x1_sim.py:_turn_end_wb ncalls 98827 tottime 7.8206 cumtime 35.9269
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top3,0.1505,share,measured,1,,,,x1_sim.py:restore ncalls 592962 tottime 6.9925 cumtime 6.9925
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top4,0.0931,share,measured,1,,,,x1_sim.py:_fix_g ncalls 46620252 tottime 4.3251 cumtime 4.3251
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top5,0.0727,share,measured,1,,,,x1_sim.py:_slow_holders ncalls 36340848 tottime 3.3798 cumtime 3.3798
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top6,0.0568,share,measured,1,,,,x1_sim.py:_slow_enforce ncalls 98827 tottime 2.6405 cumtime 5.3782
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top7,0.0559,share,measured,1,,,,x1_sim.py:_step_gpu ncalls 98827 tottime 2.5988 cumtime 46.3267
+20261107-001739-icpe-rux-prof-sc-sa,2026-11-07T00:22:50+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:BEL,cprof_top8,0.0347,share,measured,1,,,,x1_sim.py:_g_release ncalls 98825 tottime 1.6142 cumtime 1.6142
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:33+08:00,RUX3DPRO,conversation,8,LRU,LRU,sc:LRU,first_overflow_sc_cap,85449,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:33+08:00,RUX3DPRO,conversation,8,LRU,LRU,sc:LRU,first_overflow_first_clean_r,5406,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:33+08:00,RUX3DPRO,conversation,8,LRU,LRU,sc:LRU,first_overflow_first_drop_r,5434,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:33+08:00,RUX3DPRO,conversation,8,LRU,LRU,sc:LRU,first_overflow_rstar,5406,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:33+08:00,RUX3DPRO,conversation,8,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.4493,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:33+08:00,RUX3DPRO,conversation,8,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,36208,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:33+08:00,RUX3DPRO,conversation,8,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,3976,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,32,LRU,LRU,sc:LRU,first_overflow_sc_cap,85449,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,32,LRU,LRU,sc:LRU,first_overflow_first_clean_r,5428,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,32,LRU,LRU,sc:LRU,first_overflow_first_drop_r,5464,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,32,LRU,LRU,sc:LRU,first_overflow_rstar,5428,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,32,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.4512,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,32,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,35958,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,32,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,3959,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,first_overflow_sc_cap,85449,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,first_overflow_first_clean_r,5489,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,first_overflow_first_drop_r,5537,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,first_overflow_rstar,5489,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.4562,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,34158,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,111.0625,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,3896,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,256,LRU,LRU,sc:LRU,first_overflow_sc_cap,85449,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,256,LRU,LRU,sc:LRU,first_overflow_first_clean_r,5600,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,256,LRU,LRU,sc:LRU,first_overflow_first_drop_r,5705,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,256,LRU,LRU,sc:LRU,first_overflow_rstar,5600,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,256,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.4655,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,256,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,27454,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,256,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,3768,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,1024,LRU,LRU,sc:LRU,first_overflow_sc_cap,85449,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,1024,LRU,LRU,sc:LRU,first_overflow_first_clean_r,6462,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,1024,LRU,LRU,sc:LRU,first_overflow_first_drop_r,6625,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,1024,LRU,LRU,sc:LRU,first_overflow_rstar,6462,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,1024,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.5371,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,1024,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,11530,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:34+08:00,RUX3DPRO,conversation,1024,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,3164,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,8,LRU,LRU,sc:LRU,first_overflow_sc_cap,78541,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,8,LRU,LRU,sc:LRU,first_overflow_first_clean_r,20696,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,8,LRU,LRU,sc:LRU,first_overflow_first_drop_r,20878,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,8,LRU,LRU,sc:LRU,first_overflow_rstar,20696,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,8,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.4812,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,8,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,48261,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,8,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,11733,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,32,LRU,LRU,sc:LRU,first_overflow_sc_cap,78541,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,32,LRU,LRU,sc:LRU,first_overflow_first_clean_r,20743,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,32,LRU,LRU,sc:LRU,first_overflow_first_drop_r,20978,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,32,LRU,LRU,sc:LRU,first_overflow_rstar,20743,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,32,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.4823,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,32,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,46157,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:36+08:00,RUX3DPRO,nb:bailian_coder,32,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,11674,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,first_overflow_sc_cap,78541,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,first_overflow_first_clean_r,20975,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,first_overflow_first_drop_r,21269,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,first_overflow_rstar,20975,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.4877,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,38735,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,111.0625,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,11508,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,256,LRU,LRU,sc:LRU,first_overflow_sc_cap,78541,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,256,LRU,LRU,sc:LRU,first_overflow_first_clean_r,21462,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,256,LRU,LRU,sc:LRU,first_overflow_first_drop_r,21824,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,256,LRU,LRU,sc:LRU,first_overflow_rstar,21462,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,256,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.499,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,256,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,29211,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:37+08:00,RUX3DPRO,nb:bailian_coder,256,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,11183,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:38+08:00,RUX3DPRO,nb:bailian_coder,1024,LRU,LRU,sc:LRU,first_overflow_sc_cap,78541,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:38+08:00,RUX3DPRO,nb:bailian_coder,1024,LRU,LRU,sc:LRU,first_overflow_first_clean_r,24566,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:38+08:00,RUX3DPRO,nb:bailian_coder,1024,LRU,LRU,sc:LRU,first_overflow_first_drop_r,25195,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:38+08:00,RUX3DPRO,nb:bailian_coder,1024,LRU,LRU,sc:LRU,first_overflow_rstar,24566,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:38+08:00,RUX3DPRO,nb:bailian_coder,1024,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.5712,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:38+08:00,RUX3DPRO,nb:bailian_coder,1024,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,11859,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:21:38+08:00,RUX3DPRO,nb:bailian_coder,1024,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,9452,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:08+08:00,RUX3DPRO,nb:semianalysis_N16_s1,8,LRU,LRU,sc:LRU,first_overflow_sc_cap,355025,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:08+08:00,RUX3DPRO,nb:semianalysis_N16_s1,8,LRU,LRU,sc:LRU,first_overflow_first_clean_r,89026,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:08+08:00,RUX3DPRO,nb:semianalysis_N16_s1,8,LRU,LRU,sc:LRU,first_overflow_first_drop_r,89189,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:08+08:00,RUX3DPRO,nb:semianalysis_N16_s1,8,LRU,LRU,sc:LRU,first_overflow_rstar,89026,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:08+08:00,RUX3DPRO,nb:semianalysis_N16_s1,8,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.9008,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:08+08:00,RUX3DPRO,nb:semianalysis_N16_s1,8,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,321971,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:08+08:00,RUX3DPRO,nb:semianalysis_N16_s1,8,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,193,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,32,LRU,LRU,sc:LRU,first_overflow_sc_cap,355025,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,32,LRU,LRU,sc:LRU,first_overflow_first_clean_r,89028,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,32,LRU,LRU,sc:LRU,first_overflow_first_drop_r,89279,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,32,LRU,LRU,sc:LRU,first_overflow_rstar,89028,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,32,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.9008,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,32,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,285032,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:29+08:00,RUX3DPRO,nb:semianalysis_N16_s1,32,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,193,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:49+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,first_overflow_sc_cap,355025,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:49+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,first_overflow_first_clean_r,89297,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:49+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,first_overflow_first_drop_r,89444,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:49+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,first_overflow_rstar,89297,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:49+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.9036,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:49+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,157921,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:22:49+08:00,RUX3DPRO,nb:semianalysis_N16_s1,111.0625,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,193,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256,LRU,LRU,sc:LRU,first_overflow_sc_cap,355025,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256,LRU,LRU,sc:LRU,first_overflow_first_clean_r,89566,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256,LRU,LRU,sc:LRU,first_overflow_first_drop_r,89660,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256,LRU,LRU,sc:LRU,first_overflow_rstar,89566,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.9063,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,39206,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:05+08:00,RUX3DPRO,nb:semianalysis_N16_s1,256,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,179,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:20+08:00,RUX3DPRO,nb:semianalysis_N16_s1,1024,LRU,LRU,sc:LRU,first_overflow_sc_cap,355025,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:20+08:00,RUX3DPRO,nb:semianalysis_N16_s1,1024,LRU,LRU,sc:LRU,first_overflow_first_clean_r,92911,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:20+08:00,RUX3DPRO,nb:semianalysis_N16_s1,1024,LRU,LRU,sc:LRU,first_overflow_first_drop_r,93094,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:20+08:00,RUX3DPRO,nb:semianalysis_N16_s1,1024,LRU,LRU,sc:LRU,first_overflow_rstar,92911,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:20+08:00,RUX3DPRO,nb:semianalysis_N16_s1,1024,LRU,LRU,sc:LRU,first_overflow_rstar_frac,0.9401,frac,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:20+08:00,RUX3DPRO,nb:semianalysis_N16_s1,1024,LRU,LRU,sc:LRU,first_overflow_n_sc_clean,9711,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-002132-icpe-rux-first-overflow,2026-11-07T00:23:20+08:00,RUX3DPRO,nb:semianalysis_N16_s1,1024,LRU,LRU,sc:LRU,first_overflow_n_sc_drop,142,count,measured,1,,,,r*＝第一次真的清副本或丟 session 的請求序號；1 個時間設定（ssd idle）
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7,jobs_per_variant,129924,jobs,measured,1,,,,x1_sim.jobs_for 直接數
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7,rows_per_variant,139104,rows,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7,nocap_jobs_per_variant,18342,jobs,measured,1,,,,同集合、沒有上限（v5 支援）
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7:LRU,jobs_per_variant_by_slow_policy,18342,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7:LRU2,jobs_per_variant_by_slow_policy,18342,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7:ARC,jobs_per_variant_by_slow_policy,18342,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7:S3FIFO,jobs_per_variant_by_slow_policy,18342,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7:GDSF,jobs_per_variant_by_slow_policy,19872,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7:PENS,jobs_per_variant_by_slow_policy,18342,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 23,GPU 16,full_cpu23_gpu16_slow7:BEL,jobs_per_variant_by_slow_policy,18342,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7,jobs_per_variant,95796,jobs,measured,1,,,,x1_sim.jobs_for 直接數
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7,rows_per_variant,102816,rows,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7,nocap_jobs_per_variant,13518,jobs,measured,1,,,,同集合、沒有上限（v5 支援）
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7:LRU,jobs_per_variant_by_slow_policy,13518,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7:LRU2,jobs_per_variant_by_slow_policy,13518,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7:ARC,jobs_per_variant_by_slow_policy,13518,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7:S3FIFO,jobs_per_variant_by_slow_policy,13518,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7:GDSF,jobs_per_variant_by_slow_policy,14688,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7:PENS,jobs_per_variant_by_slow_policy,13518,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 17,GPU 16,cpu17_gpu16_slow7:BEL,jobs_per_variant_by_slow_policy,13518,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7,jobs_per_variant,54540,jobs,measured,1,,,,x1_sim.jobs_for 直接數
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7,rows_per_variant,56700,rows,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7,nocap_jobs_per_variant,7740,jobs,measured,1,,,,同集合、沒有上限（v5 支援）
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7:LRU,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7:LRU2,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7:ARC,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7:S3FIFO,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7:GDSF,jobs_per_variant_by_slow_policy,8100,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7:PENS,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_only_nonoracle10_gpuno15_slow7:BEL,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_4_only_nonoracle10_gpuno15_BEL,jobs_per_variant,7740,jobs,measured,1,,,,x1_sim.jobs_for 直接數
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_4_only_nonoracle10_gpuno15_BEL,rows_per_variant,8100,rows,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_4_only_nonoracle10_gpuno15_BEL,nocap_jobs_per_variant,7740,jobs,measured,1,,,,同集合、沒有上限（v5 支援）
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_4_only_nonoracle10_gpuno15_BEL:BEL,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6,jobs_per_variant,46800,jobs,measured,1,,,,x1_sim.jobs_for 直接數
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6,rows_per_variant,48600,rows,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6,nocap_jobs_per_variant,7740,jobs,measured,1,,,,同集合、沒有上限（v5 支援）
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6:LRU,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6:LRU2,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6:ARC,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6:S3FIFO,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6:GDSF,jobs_per_variant_by_slow_policy,8100,jobs,measured,1,,,,
+20261107-001901-icpe-rux-count-jobs-sc,2026-11-07T00:19:01+08:00,RUX3DPRO,(每個變體),9 個,CPU 10,GPU 15,oslow_2_only_nonoracle10_gpuno15_slow6:PENS,jobs_per_variant_by_slow_policy,7740,jobs,measured,1,,,,

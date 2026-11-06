@@ -1,7 +1,44 @@
 # STATUS_RUX（icpe-rux，RUX3DPRO）
 
 本檔由 icpe-rux 寫，最新的一節在最上面。格式照 `STATUS_TRX.md`。
-**本次只做「環境＋對拍」：沒有開跑任何正式模擬、沒有動佇列、沒有改別人的檔。**
+**到目前為止：沒有開跑任何正式模擬、沒有動佇列、沒有改別人的檔。**
+
+---
+
+## 2026-11-07T00:40+08:00 — 第 1 段（分析）完成：未支援的 7 項模擬的形態、時間、Rust 缺口、加速候選；**停下來等使用者決定**
+
+完整報告：`docs/icpe_brief_20261030/next/rux/ANALYSIS.md`；摘要 CSV：同目錄 `ANALYSIS_rows.csv`（每列有 run_id、ts、host、threads、load）。
+
+**做完什麼**
+- 前提：重新抽查第一份 prompt 的對拍，全部 0 個不同；雜訊 B1／B2 的比對上一段沒存檔，重跑一次（run `20261107-001138-icpe-rux-recheck-noise`）。上一段有 7 個 run 目錄缺 `exit_code`（比對 run 都有），之後的 run 一律用 `code/icpe/rux_x1fast/stage1/rux_run.sh`（寫 exit_code、每 5 s 記 MemAvailable 與 load、< 3 GiB 自動停）。
+- pull：paper repo 的遠端各分支沒有新 commit；kvsweep fast-forward 到 `6d3c5f9`。
+- Bailian coder 在這台轉成 npz，指紋和 acvlab 相同（`192949471c…`）。
+- 慢層上限（項目 1）在 Mooncake、Bailian、SemiAnalysis 各一個代表 job 上量 Python（有／沒有上限、7 種慢層規則）與 Rust v5（沒有上限），加 cProfile 與操作次數；用 `jobs_for` 數 job；量第一次超過上限的位置 r\*。
+- 其他項目（APC、排隊、W3、W5）量了最接近的 v5 job 形狀。
+
+**主要發現**
+- Python ÷ Rust v5（沒有上限、逐請求指紋全部相同）：這台 17–50 倍（Mooncake、Bailian 約 20 倍，SemiAnalysis 約 44–50 倍）。
+- 慢層上限讓 Python 變慢的原因有兩種：
+  - SemiAnalysis：7 種規則都約 1.9×，因為開上限時關掉 `_fix` 快速路徑（`_fix` 呼叫 ×3.52）。
+  - Mooncake／Bailian：LRU2、PENS、BEL 每次丟 session 都掃全部慢層 session → 7.8–125×（Bailian BEL 一個 job 76 s，1.29 億次 `next_req`）。
+- Rust 照抄版〔推算〕：比 Python 快 20 倍以上，但 Mooncake／Bailian 的 LRU2、PENS、BEL 仍會是 v5 一般 job 的 30–100 倍 → 之後值得做 lazy heap 等加速（逐位元相同）。
+- 第一次超過上限在 Mooncake／Bailian 約第 45–57% 個請求、SemiAnalysis 約 90%：在那之前 7 種慢層規則的狀態相同，可共用。
+- ARC 與 S3FIFO 在 3 份紀錄的代表 job 輸出逐位元相同（SemiAnalysis 上 BEL 和 LRU 也相同）；只看了 1 個 job，報告裡有說明。
+- Rust 版最大的風險：`clean_q` 的順序取決於每一次 `_fix` 呼叫，v5 的三個快速路徑（rs:1198、1302、1366）開上限時必須關掉。
+
+**卡住什麼**：無；照指示停下來等決定。
+
+**需要使用者決定什麼**（細節見 ANALYSIS.md §9）
+- D0：項目 2–5 的 Python 參考實作由誰寫。
+- D1-1：「被丟的對話回來時全部重算」照 Python（別人還持有的共用前綴照常還原）是否就是 PREREG 的意思。
+- D1-2：「先丟乾淨副本」「×7 配對」要不要請 h200 寫進 PREREG。
+- D1-3：第 2 段只做照抄版（建議），還是接著做低風險的加速。
+- D1-4：慢層上限要跑的格子（不卡第 2 段）。
+- D1-5：第 2 段驗證也涵蓋 wt 與預取進 GPU（我的預設：要）。
+- D1-6：TraceLab 要不要在這台量（記憶體 22 GiB）。
+- 項目 2–5 的語意選項。
+
+**需要別的 session 做什麼**：無（第 2 段做完才通知 icpe-sim）。
 
 ---
 
