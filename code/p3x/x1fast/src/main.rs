@@ -1126,7 +1126,7 @@ impl<'a> Eng<'a> {
                 w += self.drop_(s);
             }
         } else {
-            self.cpu_set.discard(s);
+            self.order_remove(s);          // 沒有完整 block：離開 CPU 的順序結構，不只 cpu_set（否則 LRU／ARC／S3FIFO 留下過期項目；SIM_CHANGES 19，使用者 11/6 選 A）
         }
         w += self.enforce();
         self.w_slow_blocks += w;
@@ -1294,7 +1294,7 @@ impl<'a> Eng<'a> {
                 w += self.drop_(s);
             }
         } else {
-            self.cpu_set.discard(s);
+            self.order_remove(s);          // 沒有完整 block：離開 CPU 的順序結構，不只 cpu_set（否則 LRU／ARC／S3FIFO 留下過期項目；SIM_CHANGES 19，使用者 11/6 選 A）
         }
         // ---- GPU 那份
         let gin = self.glru.inn[s];
