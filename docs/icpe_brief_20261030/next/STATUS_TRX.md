@@ -3,6 +3,21 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-06T08:12+08:00 — **三項對拍都 0 個不同**；Rust 佇列 `sa_p1 sa_p2 sa_p3` 開跑（36 workers，使用者決定）
+
+**對拍**（STATUS_DATA 08:10 第 3 步；`$ROOT/tools/verify_rust2.sh eeaecef`；`--engine rust --workers 32`；比對 run `20261106-080609-icpe-trx-compare-eeaecef`）
+- 執行檔：`src_sha256=43dbe828…`、`bin_sha256=ceaf3065f96e46e1fefb834ca3586806771cace604a75456ca46a5c3922c197b`（TRX40 用 rustc 1.99.1 自己編）；code_sha `a27559138492+rs43dbe828`（和 acvlab 的 G0 rust run `20261106-074940-icpe-data-g0-rust-merged-1304345` 相同）；三個 run 的 `py_fallback_jobs=0`。
+- (a) G0：run `20261106-080343-icpe-trx-g0-rust-eeaecef`，sweep 18.4 s（`time -v` 牆鐘 25.8 s）→ H200 參考：4,416 列 × 29 欄＝**128,064 格，0 個不同**，`G0_RESULT IDENTICAL`。
+- (b) xc_sa：run `20261106-080343-icpe-trx-xc_sa-rust-eeaecef`，sweep 1.9 s → `results/icpe_next/b/xcheck/xc_sa`：32 列 × 40 欄＝**1,280 格，0 個不同**；→ TRX40 的 Python xc_sa（run `20261105-105555-icpe-trx-xcheck-xc_sa-54fa2d8`）：`next_sim_cmp.py` **CMP PASS**（欄位、列數相同，不同的格子 0）。
+- (c) 整個 `sa_N16_s1` block：run `20261106-080343-icpe-trx-sa_N16_s1-rust-eeaecef`，6,174 job，sweep 90.1 s（`time -v` 牆鐘 1:43.5，最大 RSS 2.9 GB）→ `results/icpe_next/b/sa_main/sa_N16_s1/x1_sweep.csv.xz`：7,344 列 × 40 欄＝**293,760 格，0 個不同**，`G0_RESULT IDENTICAL`。〔算術〕同一個 block 的 Python（40 workers）sweep 3,903 s。
+- 記憶體（mem.log，10 筆）：行程群組 PSS 最高 2.7 GiB，MemAvailable 最低 53.4 GiB，swap 958 MiB。
+
+**使用者決定（本 session，11/6 08:0x，AskUserQuestion）**：使用者說「用更多核心，最後 load 90 上下」；我說明 TRX40 只有 48 個硬體執行緒、load 90 不會更快後，使用者選 **36 workers（約 45 CPU）**。所以不是 STATUS_DATA 08:10 的 32。
+
+**開跑**：08:06:48，`env … NEXT_B_TAG=icpe-trx RUSTC=… X1_CARGO=… CARGO_HOME=… RUSTUP_HOME=… X1_RUST_WORK=$ROOT/x1fast-work python -I code/icpe/next_b_queue.py run --plans sa_p1 sa_p2 sa_p3 --engine rust --workers 36`（git HEAD 9a78df5；log `$ROOT/runs/queue-sa_p123-rust-w36-20261106-080648.log`；memwatch 6 GiB、swapguard 2,933 MiB）。第一個 block `sa_p1/sa_N16_s1_ttl`（run `20261106-080648-icpe-trx-sa_p1-sa_N16_s1_ttl`）：stdout 印 `jobs=6480 workers=36 code_sha=a27559138492+rs43dbe828`。
+- 每個 plan 跑完：`collect` → commit → push，記 run_id、時間、記憶體、`rust_timing.jsonl`。
+- **`sa_t128k`**：icpe-data 在 STATUS_DATA 08:20（23865ee）更正，要跑。佇列已照舊指令開跑，不中斷；`sa_p3` 跑完後 merge 23865ee（只改 `next_b_queue.py`），再跑 `run --plans sens_rep --only sa_t128k --engine rust --workers 36`。`sens_rep` 其餘 4 個 `sa_*` 不跑。
+
 ## 2026-11-06T08:06+08:00 — 使用者決定：Rust 跑 SemiAnalysis 的 P1–P3；裝好 rustc 1.99.1、merge 到 9be4925；三項對拍在跑
 
 **使用者決定**
