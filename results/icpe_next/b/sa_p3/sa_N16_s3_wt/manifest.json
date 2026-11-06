@@ -1,0 +1,13 @@
+{
+ "plan": "sa_p3",
+ "block": "sa_N16_s3_wt",
+ "run_id": "20261106-132909-icpe-trx-sa_p3-sa_N16_s3_wt",
+ "host": "acvlab-TRX40-AORUS-MASTER",
+ "run_dir": "/ssd4/hungwei/icpe-next/runs/20261106-132909-icpe-trx-sa_p3-sa_N16_s3_wt",
+ "rows": 7344,
+ "elapsed_s": 105.3,
+ "finished": "2026-11-06T13:30:55+08:00",
+ "cmd": "cd /home/hungwei/paper-hierarchical-kv-state\nexport RUN_ID=20261106-132909-icpe-trx-sa_p3-sa_N16_s3_wt\nexport RUN_DIR=/ssd4/hungwei/icpe-next/runs/20261106-132909-icpe-trx-sa_p3-sa_N16_s3_wt/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/home/hungwei/paper-hierarchical-kv-state/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/home/hungwei/paper-hierarchical-kv-state/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd4/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd4/hungwei/icpe-next/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd4/hungwei/icpe-next/runs/20261106-132909-icpe-trx-sa_p3-sa_N16_s3_wt/rust_timing.jsonl\nexec nice -n 10 /ssd4/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /home/hungwei/paper-hierarchical-kv-state/results/icpe_h200/p01/calib --out-root /ssd4/hungwei/icpe-next/runs/20261106-132909-icpe-trx-sa_p3-sa_N16_s3_wt/out x1 sweep --traces nb:semianalysis_N16_s3 --rules nb --cpu 8 16 32 64 128 256 512 1024 111.0625 --policies LRU LRU2 ARC S3FIFO GDSF PENS FREQ2Q LRU+NONE LRU+2HW LRU+2HA LRU+RPF O-BEL O-BELS O-DROP O-NOW O-PF O-ALL --slows ssd b32 nfs --modes cake --gpu-gib 111.0625 --gpu-write wt --gpu-policies LRU BEL TTLA:0.3 TTLA:10 TTLA:300 TTLB:0.3 TTLB:10 TTLB:300 --pf-target cpu --workers 36 --engine rust\n",
+ "context": "date: 2026-11-06T13:29:09.884407+08:00\nhost: acvlab-TRX40-AORUS-MASTER\nplan: sa_p3\nblock: sa_N16_s3_wt\nengine: rust\ngit HEAD: a1608f2fb5a5aa2f73d8b7419172773de0cc4d50\ngit status:\nuptime:  13:29:09 up 6 days, 17:33, 10 users,  load average: 40.30, 35.91, 24.97\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:              62           6           4           0          52          56\nSwap:              7           0           7\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:semianalysis_N16_s3: sha256 558b23300dc543c7660536dbd12850b6af18f088e7d7089db560c438f54babb0  /ssd4/hungwei/icpe-next/datasets/x1_nb/semianalysis_N16_s3.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}
