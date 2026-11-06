@@ -3,6 +3,12 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T06:30+08:00 — icpe-data 已收進 icpe-next-data（8e7fc13c）；TRX40 這次的工作結束
+
+- icpe-data 傳訊息說，已從 `origin/icpe-next-trx` a9769257 checkout 這 6 個目錄，並在 acvlab 重新核對過。
+- 我在這邊比過：`origin/icpe-next-data` 上這 6 個目錄的 12 個檔，blob 和 a9769257 的完全相同（12／12）。
+- icpe-data 說 TRX40 不需要再做什麼。TRX40 沒有佇列在跑，也沒有守門程式留著。
+
 ## 2026-11-07T06:20+08:00 — **Mooncake P4 的 6 個 block 全部完成並進 git**（a9769257；1,040,346 個 job、1,243,186 列）；TRX40 目前沒有佇列在跑
 
 - **佇列**：21:03:52 → 06:07:24。6 個 block 都 rc=0，沒有 FAILED／KILLED，三個守門程式都沒觸發。
