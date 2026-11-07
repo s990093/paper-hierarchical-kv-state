@@ -4,7 +4,7 @@
 
 ## 1 修改後的結論
 
-原本的結論是「再加預測，多半不划算」。擴大驗證之後要改成：**預測值不值得做，要看工作負載**。在真實的 agent 服務紀錄（FreeInference）上，就算預測百分之百準，首字延遲也只能少不到 1%；但在會呼叫工具的 agent 紀錄（Mooncake toolagent、TraceLab）上，即使對手已經是我們能做到最強的不預測做法（GPU 層加 TTL、十幾種固定規則逐格挑最快），完美預知仍能讓首字延遲少 39–62%：原始到達的 9 個工具類變體裡有 3 個、合成並行的 26 個裡有 21 個，超過事先登記的 15% 門檻。省下來的時間主要來自決定「**誰留在 GPU 和 CPU 裡**」，不是預取；而「這一輪有沒有呼叫工具」這種免費線索一點都拿不到（TraceLab 的原始與合成到達都一樣），所以事先寫好的推翻條件成立。但這段空間要預測得準才拿得到：只要 10% 的預測是亂猜，超過 15% 的格子就剩不到一半。
+原本的結論是「再加預測，多半不划算」。擴大驗證之後要改成：**預測值不值得做，要看工作負載**。在真實的 agent 服務紀錄（FreeInference）上，就算預測百分之百準，首字延遲也只能少不到 1%；但在會呼叫工具的 agent 紀錄（Mooncake toolagent、TraceLab）上，即使對手已經是我們能做到最強的不預測做法（GPU 層加 TTL、十幾種固定規則逐格挑最快），完美預知仍能讓首字延遲少 39–62%：原始到達的 9 個工具類變體裡有 3 個、合成並行的 26 個裡有 21 個，超過事先登記的 15% 門檻。省下來的時間主要來自決定「**誰留在 GPU 和 CPU 裡**」，不是預取；而「這一輪有沒有呼叫工具」這種免費線索一點都拿不到（TraceLab 的原始與合成到達都一樣），所以事先寫好的推翻條件成立。預測不準時：回來時間差 ±30%，這段空間幾乎不變；把一部分預測換成亂猜時，目前的模擬掉很多，但其中一部分是模擬器的規則造成的（猜錯的預取副本不丟、過期的預測一直當成「馬上回來」），規則補上後會重跑，修正版取代目前的數字（第 6 節）。
 
 **直覺**〔判讀〕：把 GPU 想成書桌、CPU 想成書架。一般的 agent 服務上，照常規整理（固定規則）就幾乎都找得到書，知道誰先回來也沒得省；寫程式、呼叫工具的 agent 同時有很多個在跑，每個都佔一大疊書，書桌和書架放不下時，「先收誰」選錯就要重搬一次，這時知道誰先回來才有價值。
 
@@ -81,7 +81,7 @@
 
 ![](figs/fig4_p4.png)
 
-**圖 4　預測不準時，還剩多少值得做**。怎麼看：100%＝沒有雜訊時能少等 ≥15% 的格子都還在。實線（主）照 PBKV 的做法，把 λ 比例的預測換成亂猜。看到什麼：回來時間差 ±30% 幾乎沒影響；但只要 10% 亂猜，原始工具類剩 48%、合成剩 22%。
+**圖 4　預測不準時，還剩多少值得做**。怎麼看：100%＝沒有雜訊時能少等 ≥15% 的格子都還在。實線（主）照 PBKV 的做法，把 λ 比例的預測換成亂猜。看到什麼：回來時間差 ±30% 幾乎沒影響；只要 10% 亂猜，原始工具類剩 48%、合成剩 22%。**待修正**：模型 P 的下降有一部分來自模擬器規則（第 6 節），修正版會取代這兩條線。
 
 ![](figs/fig5_w3.png)
 
@@ -139,12 +139,13 @@
 
 **摘要（照上面的結構改寫，英文約 230 字**）〔建議；版本 C 出來後換數字〕
 
-> LLM agents and multi-turn chat leave gaps between requests, during which serving systems move a session's KV cache out of GPU memory; when the user or a tool result returns, the cache must be restored before the first token. Recent agent-serving systems predict who returns and when, and report large gains over LRU or prefix caching. We ask a narrower question: how much can prediction still save over the strongest non-predictive policy? On an NVIDIA H200 we measure how to restore parked KV (load, recompute, Cake, INT4), and in trace-driven simulation over 40 variants of seven traces we compare a perfect oracle against the per-cell best of 10 CPU-tier and 15 GPU-tier non-predictive rules, including Continuum-style TTLs, with thresholds preregistered before any result. Restoration needs no prediction: a fixed table suffices, with INT4 plus Cake fastest on slow tiers (11.0–40.7% over the runner-up). Prediction pays only on some workloads: on a production agent-serving trace the oracle cuts time to first token (TTFT) by under 1%, but on tool-calling traces by up to 62%, exceeding 15% in 3 of 9 real-arrival and 21 of 26 synthetic-concurrency variants, mostly by choosing what stays in GPU and CPU memory rather than by prefetching. A free tool-call cue captures none of this gap, yet the gap requires accurate prediction: with 10% of predictions randomized, fewer than half of these cells stay above 15%. Measure the oracle against a strong baseline before building a predictor.
+> LLM agents and multi-turn chat leave gaps between requests, during which serving systems move a session's KV cache out of GPU memory; when the user or a tool result returns, the cache must be restored before the first token. Recent agent-serving systems predict who returns and when, and report large gains over LRU or prefix caching. We ask a narrower question: how much can prediction still save over the strongest non-predictive policy? On an NVIDIA H200 we measure how to restore parked KV (load, recompute, Cake, INT4), and in trace-driven simulation over 40 variants of seven traces we compare a perfect oracle against the per-cell best of 10 CPU-tier and 15 GPU-tier non-predictive rules, including Continuum-style TTLs, with thresholds preregistered before any result. Restoration needs no prediction: a fixed table suffices, with INT4 plus Cake fastest on slow tiers (11.0–40.7% over the runner-up). Prediction pays only on some workloads: on a production agent-serving trace the oracle cuts time to first token (TTFT) by under 1%, but on tool-calling traces by up to 62%, exceeding 15% in 3 of 9 real-arrival and 21 of 26 synthetic-concurrency variants, mostly by choosing what stays in GPU and CPU memory rather than by prefetching. A free tool-call cue captures none of this gap, and the gap survives ±30% error in predicted return times. Measure the oracle against a strong baseline before building a predictor.
 
 **中文對照**
 
-> LLM agent 與多輪對話的請求之間常有空檔，服務系統會把對話的 KV cache 移出 GPU；使用者或工具結果回來時，要先把它搬回，才出得了第一個字。近來的 agent 服務系統會預測誰、何時回來，並報告比 LRU 或前綴快取大幅的提升。我們問一個更窄的問題：對最強的不預測做法，預測還能多省多少？我們在 NVIDIA H200 上實測停放的 KV 怎麼還原（載入、重算、Cake、INT4），並在 7 份紀錄、40 個變體上做紀錄驅動模擬，拿完美預知和「每格在 10 個 CPU 規則與 15 個 GPU 規則（含 Continuum 式 TTL）裡挑最快」的做法比，門檻在看任何結果之前登記。還原不需要預測：照一張固定的表選就夠，慢層上 INT4 加 Cake 最快（比次佳快 11.0–40.7%）。預測只在部分工作負載上值得：真實 agent 服務紀錄上，完美預知只讓首字延遲（TTFT）少不到 1%；工具呼叫的紀錄上最多少 62%，原始到達的 9 個變體裡 3 個、合成並行的 26 個裡 21 個超過 15%，主要靠決定誰留在 GPU 與 CPU 記憶體，而不是預取。免費的工具呼叫線索一點都拿不到，但這段空間要預測得準：10% 的預測換成亂猜，超過 15% 的格子剩不到一半。蓋預測器之前，先拿完美預知和強對手比一次。
+> LLM agent 與多輪對話的請求之間常有空檔，服務系統會把對話的 KV cache 移出 GPU；使用者或工具結果回來時，要先把它搬回，才出得了第一個字。近來的 agent 服務系統會預測誰、何時回來，並報告比 LRU 或前綴快取大幅的提升。我們問一個更窄的問題：對最強的不預測做法，預測還能多省多少？我們在 NVIDIA H200 上實測停放的 KV 怎麼還原（載入、重算、Cake、INT4），並在 7 份紀錄、40 個變體上做紀錄驅動模擬，拿完美預知和「每格在 10 個 CPU 規則與 15 個 GPU 規則（含 Continuum 式 TTL）裡挑最快」的做法比，門檻在看任何結果之前登記。還原不需要預測：照一張固定的表選就夠，慢層上 INT4 加 Cake 最快（比次佳快 11.0–40.7%）。預測只在部分工作負載上值得：真實 agent 服務紀錄上，完美預知只讓首字延遲（TTFT）少不到 1%；工具呼叫的紀錄上最多少 62%，原始到達的 9 個變體裡 3 個、合成並行的 26 個裡 21 個超過 15%，主要靠決定誰留在 GPU 與 CPU 記憶體，而不是預取。免費的工具呼叫線索一點都拿不到；預測的回來時間差 ±30%，這段空間幾乎不變。蓋預測器之前，先拿完美預知和強對手比一次。
 
+- 摘要暫時不寫「10% 亂猜」的結果：模型 P 的數字要等修正版（第 6 節）。
 - 和舊稿摘要相比：第三個結論翻過來；加了「對手最強」與「事先登記」兩句；收尾改成一句給設計者的話（Ask the Tool 的寫法）。
 - 標題建議維持「組合地圖」主軸再加預測：*When the Session Returns: Restoring Parked KV Cache on H200, and Where Prediction Still Pays*。投稿版的每個數字要用 `paper-claim-audit` 逐句核對。
 
@@ -154,7 +155,7 @@
 |:--|:--|:--|
 | 版本 C：對手加 vLLM 的前綴快取（APC），④ 的 GPU 層加 block 粒度 Belady（BELP） | 進行中；SemiAnalysis 並行 16、32 共 6 個已完成，其餘在兩台機器上跑；CacheWise 等之後 | ② 變強、數字會降；**TraceLab c1 能不能過 15% 取決於 BELP**（加 BELP 是看過探索才決定的，所以會並列「不含 BELP」） |
 | W3 線索：TraceLab c2、c4（合成到達）、FreeInference | **已完成**（11/7 10:50）：c2 36 格、c4 61 格全部沒拿走一半；FreeInference 6 週沒有 ≥15% 的格 | 合成到達的推翻條件也成立（以版本 B 為準） |
-| P4 雜訊：O-PF 的異常（λ 10% 就幾乎不預取） | icpe-sim 檢查中 | 若是程式錯誤，圖 4 的部分數字要重算 |
+| P4 雜訊：模型 P 的斷崖 | icpe-sim 查完（11/7 11:02）：不是算錯，是模擬器兩條 PREREG 沒寫的規則（猜錯的預取副本不丟；過期的預測一直當成「馬上回來」）。**使用者選 B**：登記偏離、改程式、重跑，修正版取代正式結果，並排進佇列 | 圖 4 的模型 P 兩條線；主結果的 O-PF 也可能變（目前只量了一格：沒有雜訊時慢 0.7–5.3%）。11/10 摘要前大概來不及 |
 | P4 改用版本 C 的選格與對手 | 未決定 | 圖 4 |
 | GPU 實機重播（W6，H200） | 等 GPU | 目前預測的結果**全部是模擬** |
 | 打字線索（Mooncake 對話）用新模擬器重測 | 未做 | 舊稿「打字線索拿走八成」能不能留 |
@@ -167,7 +168,7 @@
 
 ## 7 一句話給老師
 
-在最強的不預測對手之上，預測的價值集中在「工具類 agent 的記憶體淘汰」：值得做、免費線索拿不到、但要預測得準；一般 agent 服務不值得做。正在等版本 C 確認這個結論在更強的對手（APC）下還成立。
+在最強的不預測對手之上，預測的價值集中在「工具類 agent 的記憶體淘汰」：值得做、免費線索拿不到，對回來時間的誤差不敏感；一般 agent 服務不值得做。正在等版本 C 確認這個結論在更強的對手（APC）下還成立。
 
 ## 8 數字出處
 

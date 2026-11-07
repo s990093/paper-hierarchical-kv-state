@@ -3,7 +3,26 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
-## 2026-11-07T11:00+08:00 — 推翻條件（以版本 B 為準）：**合成到達・工具類也成立**（TraceLab c2、c4 的 W3）；給老師的文件；O-PF 異常交給 icpe-sim
+## 2026-11-07T11:08+08:00 — P4 模型 P 的斷崖：icpe-sim 查明是模擬器兩條沒登記的規則；**使用者選 B（補規則、重跑、修正版取代正式結果、排進佇列）**；文件加註
+
+**icpe-sim 的結論**（STATUS_SIM 11:02，origin/icpe-next-sim 631d17c；icpe-main 看過該節）
+- 不是算錯：用「只記錄、不改計算」的包裝重跑，正式值逐值相同（SemiAnalysis O-PF 17／17、CacheWise O-GPU 35／35、Mooncake O-GPU 8／8）。
+- 機制 1（O-PF）：預取進 CPU 的副本，預測錯了也幾乎不會被丟；4–11 個就把 SemiAnalysis 一格的 16 GiB 塞滿，之後一直滿著，所以幾乎和 λ、seed、B1／B2 無關。
+- 機制 2（O-GPU，B1）：抽到的回來時間已經過了，就被夾成「下一個請求」；B1 不重抽，不會再回來的對話一直被當成「馬上回來」，GPU 的 BEL 不逐出它們。
+- 兩者都讓有雜訊的預測看起來比實際差。機制 1 在 λ＝0 時也有影響：量到的一格，O-PF 慢 0.7%（idle）／5.3%（busy），其他格 NOT_MEASURED。
+
+**使用者決定**（本 session）
+- 10:52 之後、11:07 之前（commit 390870d 之後、本節的 PDF run 20261107-110709 之前），AskUserQuestion：先選「C：並列修正版」，以及「先加註雜訊的問題再 push」。icpe-main 已把 C 傳給 icpe-sim。
+- 同一段時間裡、C 之後，使用者直接改成 **B**：「B：補規則、全部重跑…也加入排班」。icpe-main 已更正給 icpe-sim，並通知 icpe-data 排程。
+- 流程：icpe-sim 登記偏離（號碼問 h200）→ 改 Python 與 Rust、做 G1 → 列出要重跑的範圍（P4 受影響的 block；main／_p1／P2／P3 的 O-PF 列；版本 C；icpe-data 補充：chat_main、chat_p1 與對話資料集的版本 C）→ icpe-data 排程並先回報 → 修正版取代正式結果。
+- icpe-data 回覆：G1 通過、merge 並做完 G0 之前，不開跑任何修正版。
+
+**文件加註**（不改任何數字）
+- 給老師的文件：結論段、圖 4 圖說、第 6 節的表、一句話，都把模型 P 的下降標成「待修正版取代」；摘要（英文、中文）改用模型 M 的結果：「the gap survives ±30% error in predicted return times」。
+- 11/7 的報告（`main_report_20261107/REPORT.md`）開頭加更正：修正版出來前，不要引用「10% 亂猜剩不到一半」那幾句。
+- `results/icpe_next/main/p4/noise/` 不動，是正式結果；之後由修正版取代時，舊版保留並標明。
+
+## 2026-11-07T10:51+08:00 — 推翻條件（以版本 B 為準）：**合成到達・工具類也成立**（TraceLab c2、c4 的 W3）；給老師的文件；O-PF 異常交給 icpe-sim
 
 **W3 合成到達**（TRX40，`origin/icpe-next-trx` ab78226，STATUS_TRX 10:55；`w3_verdict.csv` 照抄）
 - 先決條件（偏離 9＋補記）：9 個變體都重算版本 B 的表，324／324 個（格, 元件）、7 欄 0 差；c2 是 run `20261107-090206-icpe-trx-rux-tl_c2-reproB`，c4 與 FreeInference 是各自 `run_apc_formal` 的第 2 步。
