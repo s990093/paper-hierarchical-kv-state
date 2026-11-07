@@ -1053,3 +1053,27 @@
 - 今天（11/7）深夜或 11/8 上午進 git。ICPE 摘要（11/10）前就可能好，全文（11/17）前一定來得及。
 - 若規則 6 (b) 不過，就停下回報，時間另估。
 
+
+### 偏離 17 更正（2026-11-07T05:00:18Z（H200 head node 的 `date -u`，寫進本檔的時間）；**OpenHands 的規則 6 (b) 沒過，照實記錄後照跑**；使用者在 `icpe-data` 決定（AskUserQuestion）；由 `h200` 收錄，下面照抄 STATUS_DATA 那一節；不佔編號；只改 OpenHands 的規則 6 (b)，門檻與其他照偏離 17）
+
+**h200 的收錄說明**
+- **原文**：`origin/icpe-next-data` @ `1af8839` 的 STATUS_DATA「2026-11-07T13:10+08:00 — 偏離 17 的更正（登記）」，下面照抄，只把節標題從 `##` 降成 `####`。轉換停下的完整錯誤在同一檔的「2026-11-07T13:00+08:00」節（commit `32160d0`，run `20261107-125559-icpe-data-conv-agent-openhands`，exit 1，沒寫出任何 nb）。
+- **時間**：1af8839 的 commit 時間 12:58:45 +0800，和節內 acvlab `date -u` 04:58:45Z 一致；32160d0 是 12:57:05 +0800。節名的「13:10」「13:00」和內文「13:0x」都晚於 commit 時間，照實記，以 commit 時間為準。
+- **h200 核對**：1a92a02 → 1af8839 的 STATUS_DATA 只在檔頭加節、0 行刪除。
+- **方向**：OpenHands 的輸入用 Llama token 算，比 Claude 回報的少（增量中位數 0.795；第一次呼叫總量 0.45）。輸入偏短 → 工作集與還原成本偏小。對上限的影響方向 NOT_MEASURED，論文要照原文寫明「可能少算」。
+- **登記時已經看過的**：照原文，只有轉換統計，沒有 OpenHands 的模擬結果；`h200` 沒有看過 OpenHands、mini-SWE-agent 的任何模擬輸出。
+
+#### 2026-11-07T13:10+08:00 — **偏離 17 的更正（登記）**：OpenHands 規則 6 (b) 沒過，**使用者決定照實記錄後照跑**；本節 commit 時 OpenHands 還沒寫出任何 nb、沒跑任何模擬
+
+- **使用者決定**（AskUserQuestion，本 session 13:0x）：選「照實記錄後照跑」。
+  - 我給的選項還有兩個：「改用回報的 token 數」（Claude 的 prompt_tokens＋上一輪是前綴、不跨軌跡共用），以及「OpenHands 不跑」。
+- **改什麼**：只對 OpenHands 的規則 6 (b) 放行，門檻不改，照實寫進每個 nb 的 meta（`rule6.prompt_tokens_increment.pass=false` 與 `override`）。
+  - 檢查結果：中位數 0.795（門檻 [0.8, 1.25]），p10 0.717、p90 0.875，100% 在 [0.5, 2]。
+  - 規則 6 (a)、合格條件、時間、固定並行、版本 B／C 都照偏離 17。
+- **理由**（寫給審查的人）：
+  1. 模擬的是 Llama-3.1-8B 的 KV，用 Llama tokenizer 算的 token 數才是要的量。Claude 的 prompt_tokens 只拿來驗算有沒有漏內容。
+  2. 比值很集中，比較像 tokenizer 和 Anthropic 工具訊息包裝格式的固定比例差，不像漏了某一段〔推測，Claude 的 tokenizer 不公開，無法證實〕。
+  3. 第一次呼叫的總量比 0.45：Anthropic 端加的工具格式化和系統內容，我們沒有辦法重建。報告時要寫明，OpenHands 的輸入長度可能少算這一段，第一次呼叫約少 1,900 個 Claude token。
+- **程式**：`next_b_convert.py agent --rule6b-override "<理由>"`，沒給這個參數就照舊停下。
+- **已經看過的**：只有轉換統計（13:00 那節），沒有任何 OpenHands 的模擬結果。mini-SWE-agent 的版本 B 已照偏離 17 開跑（12:57）。
+- 請 h200 記成偏離 17 的更正，不要新號。OpenHands 的模擬等 h200 收好再跑；轉換現在先做。
