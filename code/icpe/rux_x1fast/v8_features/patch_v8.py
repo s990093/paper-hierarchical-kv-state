@@ -28,23 +28,25 @@ rep("// icpe-rux v7（2026-11-07，code/icpe/rux_x1fast/v7_fast）", """// icpe-
 # ================================================================== Spec：新欄位
 rep("""                  gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, bool, i64)>, sc: Option<(SRule, i64)> }""",
     """                  gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, bool, i64)>, sc: Option<(SRule, i64)>,
-                  q: bool, qc: bool, cue: bool, w5: Option<i64> }""")
+                  q: bool, qc: bool, cue: bool, w5: Option<i64>, qpost: bool }""")
 rep("""    let gorder: u8 = match x[8] { "-" => 0, "lru" => 0, "bel" => 1, "ttla" => 2, "ttlb" => 3, o => panic!("gorder {}", o) };""",
     """    let gorder: u8 = match x[8] { "-" => 0, "lru" => 0, "bel" => 1, "ttla" => 2, "ttlb" => 3,
                                   "cuep" => 4, "cueo" => 5, "apc" => 6, "belp" => 7, o => panic!("gorder {}", o) };   // v8：4–7""")
 rep("""    let mut sc: Option<(SRule, i64)> = None;
     for extra in &x[13..] {""", """    let mut sc: Option<(SRule, i64)> = None;
-    let (mut q, mut qc, mut cue, mut w5) = (false, false, false, None);
+    let (mut q, mut qc, mut cue, mut w5, mut qpost) = (false, false, false, None, false);
     for extra in &x[13..] {
         if *extra == "q=1" || *extra == "q=2" { assert!(!q); q = true; qc = *extra == "q=2"; continue; }   // v8 排隊：1＝open-loop、2＝closed-loop
         if *extra == "cue=1" { assert!(!cue); cue = true; continue; }                 // v8 W3 線索：<job 目錄>/cue.u8
+        if *extra == "qpost=1" { assert!(!qpost); qpost = true; continue; }           // v8 排隊（一階近似，事後算；SEMANTICS §2b）
         if let Some(v) = extra.strip_prefix("w5=") {                                  // v8 W5：CPU 每塊位元組
             assert!(w5.is_none()); let b: i64 = v.parse().unwrap(); assert!(b > 0); w5 = Some(b); continue;
         }""")
 rep("""                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz, sc };
     if sp.pf != Pf::No { assert!(sp.vids.len() == 1); }
     if sp.g > 0 && sp.gorder >= 2 { assert!(sp.vids.len() == 1); }""",
-    """                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz, sc, q, qc, cue, w5 };
+    """                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz, sc, q, qc, cue, w5, qpost };
+    if sp.qpost { assert!(!sp.q, "qpost 和 q 不能同時開"); }
     if sp.pf != Pf::No { assert!(sp.vids.len() == 1); }
     if sp.g > 0 && (sp.gorder == 2 || sp.gorder == 3) { assert!(sp.vids.len() == 1); }     // v8：4–7 不依時間
     if sp.q { assert!(sp.vids.len() == 1, "排隊：一個 job 只能 1 個時間設定"); }
@@ -81,7 +83,7 @@ rep("""        grp, gep: vec![0; ns], multi, diverged: false, noise, sc,""",
 rep("""    let (g, pf) = (sp.g, sp.pf);
     let has_gpf = g > 0 && sp.pf_gpu && pf != Pf::No;""", """    let (g, pf) = (sp.g, sp.pf);
     let has_gpf = g > 0 && sp.pf_gpu && pf != Pf::No;
-    if sp.q || sp.cue || sp.w5.is_some() || sp.gorder >= 4 { assert!(!multi, "v8 的新功能不支援共用前段（multi）"); }""")
+    if sp.q || sp.cue || sp.w5.is_some() || sp.gorder >= 4 || sp.qpost { assert!(!multi, "v8 的新功能不支援共用前段（multi）"); }""")
 
 # ================================================================== A. 排隊
 rep("""        let tr = self.tr;
@@ -406,6 +408,70 @@ rep("""    fn g_enforce(&mut self, now: f64) -> i64 {
                 if self.ref_gpu[b] != 0 { bc = None; }                       // 逐出的塊還有別人持有 → 別人的鍵可能變了 → 下次全掃
                 continue;
             }""")
+
+# ================================================================== E. 排隊的一階近似（qpost=1；SEMANTICS §2b）
+# 快取照原本（不排隊、照紀錄順序）跑完；之後每個時間設定各做一次工作守恆的 closed-loop FCFS：
+#   每個 session 的第一個請求在紀錄的時刻到；之後的請求到達＝紀錄的時刻＋這個 session 上一個請求「開始服務比紀錄晚多少」；
+#   GPU 一次服務一個、照到達先後（同時到照請求序號）、服務時間＝這個時間設定的 TTFT（還原＋prefill）；TTFT 加上等待。
+rep("""    cpu_bf: i64,
+    // v8 APC：""", """    cpu_bf: i64,
+    // v8 排隊的一階近似：qpost＝開；qpw／qps＝每個時間設定的等待、開始時刻（稽核用）
+    qpost: bool, qpw: Vec<Vec<f64>>, qps: Vec<Vec<f64>>,
+    // v8 APC：""")
+rep("""        cpu_bf: sp.w5.unwrap_or(BF),""", """        cpu_bf: sp.w5.unwrap_or(BF),
+        qpost: sp.qpost, qpw: Vec::new(), qps: Vec::new(),""")
+rep("""    // v8 排隊：記等待、TTFT 加上等待、GPU 忙到這個請求完成（＝開始＋服務時間）""", """    // v8 排隊的一階近似（qpost）：模擬跑完之後呼叫一次
+    fn q_post(&mut self) {
+        let tr = self.tr;
+        let n = tr.t.len();
+        let ns = tr.ns;
+        let mut first = vec![usize::MAX; ns];
+        let mut prev = vec![usize::MAX; ns];
+        let mut nxt = vec![usize::MAX; n];
+        for r in 0..n {
+            let s = tr.sess[r] as usize;
+            if first[s] == usize::MAX { first[s] = r; } else { nxt[prev[s]] = r; }
+            prev[s] = r;
+        }
+        for v in self.views.iter_mut() {
+            let mut wait = vec![0.0f64; n];
+            let mut start = vec![0.0f64; n];
+            let mut heap: BinaryHeap<Reverse<(F, usize)>> = BinaryHeap::new();
+            for s in 0..ns { if first[s] != usize::MAX { heap.push(Reverse((F(tr.t[first[s]]), first[s]))); } }
+            let mut free = f64::NEG_INFINITY;
+            let mut done = 0usize;
+            while let Some(Reverse((a, r))) = heap.pop() {
+                let a = a.0;
+                let st = if free > a { free } else { a };
+                wait[r] = st - a;
+                start[r] = st;
+                free = st + v.ttft[r];
+                let late = st - tr.t[r];
+                let nr = nxt[r];
+                if nr != usize::MAX { heap.push(Reverse((F(tr.t[nr] + late), nr))); }
+                done += 1;
+            }
+            assert_eq!(done, n, "qpost：有請求沒排到");
+            for r in 0..n { v.ttft[r] += wait[r]; }
+            self.qpw.push(wait);
+            self.qps.push(start);
+        }
+    }
+
+    // v8 排隊：記等待、TTFT 加上等待、GPU 忙到這個請求完成（＝開始＋服務時間）""")
+rep("""    for r in 0..tr.t.len() { e.step(r, &mut lay, &mut tend); }
+    let run_s = tj.elapsed().as_secs_f64();""", """    for r in 0..tr.t.len() { e.step(r, &mut lay, &mut tend); }
+    if e.qpost { e.q_post(); }
+    let run_s = tj.elapsed().as_secs_f64();""")
+rep("""            for r in 0..nreq { e.step(r, &mut lay, &mut tend); }
+            return vec![(u[0], finish(&e, sp.jid, tj.elapsed().as_secs_f64(), ""))];""", """            for r in 0..nreq { e.step(r, &mut lay, &mut tend); }
+            if e.qpost { e.q_post(); }
+            return vec![(u[0], finish(&e, sp.jid, tj.elapsed().as_secs_f64(), ""))];""")
+rep("""    if e.apc { wr_i64(&format!("{}/eng_v8.i64", od), &[e.n_gblk]); }""", """    if e.apc { wr_i64(&format!("{}/eng_v8.i64", od), &[e.n_gblk]); }
+    for (k, (w, st)) in e.qpw.iter().zip(e.qps.iter()).enumerate() {
+        wr_f64(&format!("{}/v{}_qpw.f64", od, k), w);
+        wr_f64(&format!("{}/v{}_qps.f64", od, k), st);
+    }""")
 
 open(dst, "w", encoding="utf-8").write(s)
 print("v7 sha256", V7[:16], "-> v8 sha256", hashlib.sha256(s.encode()).hexdigest())

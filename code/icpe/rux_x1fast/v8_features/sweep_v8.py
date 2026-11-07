@@ -53,6 +53,8 @@ XS.Engine.__init__ = _engine_init
 # W3 線索（RUX_CUE_FILE=<cue.u8>，make_cue.py 產生）：GPU 規則 CUEP／CUEO 的 job 加 `cue=1`＋這個檔（長度必須＝請求數）。
 # 一次 sweep 只能一份紀錄（cue 檔是那份紀錄的）。CUEP／CUEO 是 ③（簡單線索），分析用 analyze_w3.py，不可以混進 ②。
 CUE_FILE = os.environ.get("RUX_CUE_FILE", "")
+# 排隊的一階近似（RUX_QPOST=1；SEMANTICS §2b）：每個 job 加 `qpost=1`，CSV 多一欄 queue＝closed_post（輸出放另一個目錄）
+QPOST = os.environ.get("RUX_QPOST", "0") == "1"
 CUE = ("CUEP", "CUEO")
 
 # W5（RUX_W5=1）：每個 job 都是「CPU 層 INT4＋一次拆完的殘差」（SEMANTICS 5-1）；CSV 多一欄 cpu_fmt＝int4_oneshot。
@@ -79,6 +81,8 @@ def write_job(XS_, P, policy, cap_bytes, views, K, gkw, nz=None, sc=None):
         assert len(_CUE_ARR) == len(P["full"]), ("cue 檔的長度和請求數不同", len(_CUE_ARR), len(P["full"]))
         _CUE_ARR.tofile(os.path.join(jd, "cue.u8"))
         extra.append("cue=1")
+    if QPOST:
+        extra.append("qpost=1")
     if W5:
         assert not (gkw.get("pf_target", "cpu") == "gpu" and XS_.POLICIES[policy][3]), "W5 不支援預取進 GPU"
         i4 = int(K["int4_bytes"])
@@ -100,16 +104,36 @@ def write_job(XS_, P, policy, cap_bytes, views, K, gkw, nz=None, sc=None):
 
 
 x1_rust_v6.write_job = write_job
-if W5:
+if QPOST:
+    _read_outputs = x1_rust_v6.read_outputs
+
+    def read_outputs(jd, P, views, gkw, policy):
+        eng = _read_outputs(jd, P, views, gkw, policy)
+        for k, v in enumerate(views):
+            w = _np.fromfile(os.path.join(jd, "out", "j0", f"v{k}_qpw.f64"), _np.float64)
+            v._qw = (float(w.mean()), float(_np.percentile(w, 90)), float((w > 0).mean()))
+        return eng
+
+    x1_rust_v6.read_outputs = read_outputs
+if W5 or QPOST:
     _job_rows = XS._job_rows
 
-    def _job_rows_w5(*a, **k):
+    def _job_rows_v8(*a, **k):
         rows = _job_rows(*a, **k)
         for r in rows:
-            r["cpu_fmt"] = "w5_degen" if W5_DEGEN else "int4_oneshot"
+            if W5:
+                r["cpu_fmt"] = "w5_degen" if W5_DEGEN else "int4_oneshot"
+            if QPOST:
+                r["queue"] = "closed_post"
+        if QPOST:
+            views = a[2]
+            assert len(rows) == len(views), (len(rows), len(views))
+            for r, v in zip(rows, views):
+                assert r["slow"] == v.slow_name and r["gpu"] == v.gpu
+                r["qwait_mean"], r["qwait_p90"], r["qwait_frac"] = v._qw
         return rows
 
-    XS._job_rows = _job_rows_w5
+    XS._job_rows = _job_rows_v8
 
 import p3_fvar  # noqa: E402
 

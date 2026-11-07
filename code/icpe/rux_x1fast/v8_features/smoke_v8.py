@@ -392,7 +392,94 @@ def t_queue2():
                        wc_mean_wait=float(wc.mean()), wc_p90_wait=float(np.percentile(wc, 90)))
 
 
+# ------------------------------------------------------------------ 排隊的一階近似（qpost=1）
+def closed_post(t, sess, svc):
+    """Python 版（照 Rust 的運算順序）：工作守恆 closed-loop FCFS；到達＝紀錄時刻＋這個 session 上一個請求開始得比紀錄晚多少。"""
+    import heapq
+    n = len(t)
+    nxt = [-1] * n
+    first, prev = {}, {}
+    for r in range(n):
+        s = int(sess[r])
+        if s not in first:
+            first[s] = r
+        else:
+            nxt[prev[s]] = r
+        prev[s] = r
+    H = [(float(t[r]), r) for r in first.values()]
+    heapq.heapify(H)
+    free = -np.inf
+    W = np.zeros(n)
+    S = np.zeros(n)
+    while H:
+        a, r = heapq.heappop(H)
+        st = free if free > a else a
+        W[r] = st - a
+        S[r] = st
+        free = st + svc[r]
+        late = st - t[r]
+        if nxt[r] >= 0:
+            heapq.heappush(H, (float(t[nxt[r]] + late), nxt[r]))
+    return W, S
+
+
+def t_qpost():
+    td2 = os.path.join(a.out, "trace_spread")
+    if not os.path.isdir(td2):
+        os.makedirs(td2)
+        for f in os.listdir(TDIR):
+            if f != "t.f64":
+                os.symlink(os.path.join(TDIR, f), os.path.join(td2, f))
+        (np.arange(NREQ, dtype=np.float64) * 1e6).tofile(os.path.join(td2, "t.f64"))
+    arr = np.fromfile(os.path.join(TDIR, "t.f64"), np.float64)
+    sess = sess_of()
+    T = w5_d1()
+    for cpu in a.cpus:
+        for pol, gp, gw, extra in (("LRU", "LRU", "wb", []), ("O-BEL", "BEL", "wb", []), ("GDSF", "TTLA:10", "wb", []),
+                                   ("LRU+RPF", "LRU", "wb", []), ("LRU", "LRU", "wt", []), ("O-PF", "TTLB:10", "wb", []),
+                                   ("LRU", "apc", "wb", []), ("LRU", "LRU", "wb", ["w5"])):
+            tdep = pol not in ("LRU", "O-BEL") or gp.startswith("TTL")
+            vk = ONE if tdep else V6
+            go = "apc" if gp == "apc" else None
+            gpol = "LRU" if gp == "apc" else gp
+            ex, fl = [], {}
+            if extra == ["w5"]:
+                ex, fl = [f"w5={K['int4_bytes']}"], {"w5.f64": w5_file(vk, "real", T)}
+            tag = f"cpu={cpu} {pol} {gp} {gw} {'+'.join(extra) or '-'} views={len(vk)}"
+            jd0, nv = job(pol, cpu, vk, gw=gw, gpol=gpol, go=go, extras=ex, files=fl)
+            jdq, _ = job(pol, cpu, vk, gw=gw, gpol=gpol, go=go, extras=ex + ["qpost=1"], files=fl)
+            # 1. 退化：到達改成 r × 10^6 秒 → 等待全 0 → 和沒開 qpost 逐位元相同
+            r0s, rqs = run("v8", jd0, nv, tdir=td2), run("v8", jdq, nv, tdir=td2)
+            same(f"qpost_spread_eq_noq {tag}", rqs, r0s)
+            if rqs[0] != "CRASH":
+                zw = all((np.fromfile(os.path.join(jdq, "out", "j0", f"v{k}_qpw.f64"), np.float64) == 0).all() for k in range(nv))
+                report(f"qpost_spread_zero_wait {tag}", zw)
+            # 2. 原本的到達：服務時間＝沒開 qpost 的 TTFT；Python 照同樣的運算重算等待、開始時刻、TTFT，逐位元相同
+            r0 = run("v8", jd0, nv)
+            rq = run("v8", jdq, nv)
+            if rq[0] == "CRASH" or r0[0] == "CRASH":
+                report(f"qpost_real_exact {tag}", False, crash=(rq[1] if rq[0] == "CRASH" else r0[1])["stderr"][-500:])
+            else:
+                ok, info = True, []
+                for k in range(nv):
+                    svc = np.frombuffer(r0[1][f"v{k}_ttft.f64"], np.float64)
+                    tq = np.frombuffer(rq[1][f"v{k}_ttft.f64"], np.float64)
+                    w = np.fromfile(os.path.join(jdq, "out", "j0", f"v{k}_qpw.f64"), np.float64)
+                    st = np.fromfile(os.path.join(jdq, "out", "j0", f"v{k}_qps.f64"), np.float64)
+                    W, S = closed_post(arr, sess, svc)
+                    ok &= bool(np.array_equal(W, w) and np.array_equal(S, st) and np.array_equal(svc + W, tq))
+                    # 其他輸出（還原時間、命中數、I/O 線、引擎計數）和沒開 qpost 相同：快取狀態不受影響
+                    for nm in (f"v{k}_rest.f64", f"v{k}_nc.i32", f"v{k}_ns.i32", f"v{k}_nr.i32", f"v{k}_ng.i32", f"v{k}_chan.f64", f"v{k}_chanb.i64"):
+                        ok &= r0[1][nm] == rq[1][nm]
+                    inv = float(np.mean(S[1:] < np.maximum.accumulate(S)[:-1]))
+                    info.append(dict(mean_wait=float(W.mean()), p90_wait=float(np.percentile(W, 90)), frac_wait=float((W > 0).mean()),
+                                     mean_svc=float(svc.mean()), frac_reordered=inv))
+                ok &= rq[1]["eng.i64"] == r0[1]["eng.i64"]
+                report(f"qpost_real_exact {tag}", ok, views=info[:2] if nv > 1 else info)
+            shutil.rmtree(jd0, ignore_errors=True); shutil.rmtree(jdq, ignore_errors=True)
+
+
 for t in a.tests:
-    {"cue": t_cue, "queue": t_queue, "queue2": t_queue2, "w5": t_w5, "apc": t_apc}[t]()
+    {"cue": t_cue, "queue": t_queue, "queue2": t_queue2, "w5": t_w5, "apc": t_apc, "qpost": t_qpost}[t]()
 print(f"V8_RESULT {'PASS' if FAIL == 0 else 'FAIL'} fail={FAIL} trace={a.trace}", flush=True)
 sys.exit(1 if FAIL else 0)

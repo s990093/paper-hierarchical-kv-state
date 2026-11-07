@@ -6,6 +6,9 @@
   python -I make_cue.py proxy <nb 名稱> --out <目錄>                   → 代用：cue[r]＝同一個 session 的下一個請求不是使用者觸發（nb 的 user_trigger）。
                                                                         「none」會被當成工具；只給沒有工具欄位的紀錄測管線用
   python -I make_cue.py check <nb 名稱> <目錄>                         → nb 檔的 t、sess 和 .cue.json 記的 sha256 相同才 PASS
+  python -I make_cue.py fi <週> [<週> ...] --out <目錄>               → <目錄>/fi_<週>.cue.u8：FreeInference（x1_fi.prepare_fi 的順序＝模擬器的順序，
+                                                                        天生對齊）；cue[r]＝同一 session 的下一個請求 step_trigger＝tool（FreeInference 只有
+                                                                        tool／user 兩種，沒有 TraceLab 的「none」問題）
 TraceLab 的 `tools`（這一輪輸出的工具呼叫）不在 agent_traces.load_tracelab 的欄位裡，這裡另外讀一次原始檔，用 (session_id, round_index) 對上。"""
 import argparse, gzip, hashlib, json, os, sys
 
@@ -89,10 +92,35 @@ def cmd_check(a):
     sys.exit(0 if ok else 1)
 
 
+def cmd_fi(a):
+    import x1_fi
+    os.makedirs(a.out, exist_ok=True)
+    for wk in a.weeks:
+        P = x1_fi.prepare_fi(wk)
+        sess, ut = np.asarray(P["R"]["sess"]), np.asarray(P["user_trigger"]).astype(bool)
+        n = len(sess)
+        assert n == len(P["full"])
+        cue = np.zeros(n, np.uint8)
+        nxt = {}
+        for r in range(n - 1, -1, -1):
+            s = int(sess[r])
+            if s in nxt:
+                cue[r] = 0 if ut[nxt[s]] else 1
+            nxt[s] = r
+        name = f"fi_{wk}"
+        cue.tofile(os.path.join(a.out, f"{name}.cue.u8"))
+        meta = dict(name=name, trace=f"fi:{wk}", rule="cue[r]＝同一 session 的下一個請求 step_trigger＝tool（FreeInference）", n_req=int(n),
+                    n_cue=int(cue.sum()), sha_t=sha(np.asarray(P["t"], np.float64)), sha_sess=sha(np.asarray(sess, np.int64)),
+                    source="x1_fi.prepare_fi（模擬器的順序）")
+        json.dump(meta, open(os.path.join(a.out, f"{name}.cue.json"), "w"), ensure_ascii=False, indent=1)
+        print(json.dumps(meta, ensure_ascii=False), flush=True)
+
+
 ap = argparse.ArgumentParser()
 sp = ap.add_subparsers(dest="cmd", required=True)
 x = sp.add_parser("tracelab"); x.add_argument("--compress", nargs="+", type=int, default=[1]); x.add_argument("--out", required=True)
 x = sp.add_parser("proxy"); x.add_argument("name"); x.add_argument("--out", required=True)
 x = sp.add_parser("check"); x.add_argument("name"); x.add_argument("dir")
+x = sp.add_parser("fi"); x.add_argument("weeks", nargs="+"); x.add_argument("--out", required=True)
 a = ap.parse_args()
-{"tracelab": cmd_tracelab, "proxy": cmd_proxy, "check": cmd_check}[a.cmd](a)
+{"tracelab": cmd_tracelab, "proxy": cmd_proxy, "check": cmd_check, "fi": cmd_fi}[a.cmd](a)

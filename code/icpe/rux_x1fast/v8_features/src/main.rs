@@ -516,6 +516,8 @@ struct Eng<'a> {
     cue: &'a [u8],
     // v8 W5：cpu_bf＝CPU 層每塊位元組（沒開＝BF）
     cpu_bf: i64,
+    // v8 排隊的一階近似：qpost＝開；qpw／qps＝每個時間設定的等待、開始時刻（稽核用）
+    qpost: bool, qpw: Vec<Vec<f64>>, qps: Vec<Vec<f64>>,
     // v8 APC：apc＝GPU 規則是 apc／belp；gn[s]＝s 的 GPU 副本還在 GPU 上的前段塊數；ref_gc[b]＝wb 下「已經寫進 CPU 的乾淨 GPU 副本」的引用數
     //（ref_gpu 裡面的一部分；活的 GPU 引用＝ref_gpu − ref_gc）；n_gblk＝逐出的塊數；apc_whole＝驗證用：一次逐出整個 session（＝GPU LRU／BEL）
     apc: bool, apc_whole: bool, gn: Vec<usize>, ref_gc: Vec<i64>, n_gblk: i64, v8chk: usize,
@@ -1677,6 +1679,44 @@ impl<'a> Eng<'a> {
         self.sc_check(r);
     }
 
+    // v8 排隊的一階近似（qpost）：模擬跑完之後呼叫一次
+    fn q_post(&mut self) {
+        let tr = self.tr;
+        let n = tr.t.len();
+        let ns = tr.ns;
+        let mut first = vec![usize::MAX; ns];
+        let mut prev = vec![usize::MAX; ns];
+        let mut nxt = vec![usize::MAX; n];
+        for r in 0..n {
+            let s = tr.sess[r] as usize;
+            if first[s] == usize::MAX { first[s] = r; } else { nxt[prev[s]] = r; }
+            prev[s] = r;
+        }
+        for v in self.views.iter_mut() {
+            let mut wait = vec![0.0f64; n];
+            let mut start = vec![0.0f64; n];
+            let mut heap: BinaryHeap<Reverse<(F, usize)>> = BinaryHeap::new();
+            for s in 0..ns { if first[s] != usize::MAX { heap.push(Reverse((F(tr.t[first[s]]), first[s]))); } }
+            let mut free = f64::NEG_INFINITY;
+            let mut done = 0usize;
+            while let Some(Reverse((a, r))) = heap.pop() {
+                let a = a.0;
+                let st = if free > a { free } else { a };
+                wait[r] = st - a;
+                start[r] = st;
+                free = st + v.ttft[r];
+                let late = st - tr.t[r];
+                let nr = nxt[r];
+                if nr != usize::MAX { heap.push(Reverse((F(tr.t[nr] + late), nr))); }
+                done += 1;
+            }
+            assert_eq!(done, n, "qpost：有請求沒排到");
+            for r in 0..n { v.ttft[r] += wait[r]; }
+            self.qpw.push(wait);
+            self.qps.push(start);
+        }
+    }
+
     // v8 排隊：記等待、TTFT 加上等待、GPU 忙到這個請求完成（＝開始＋服務時間）
     fn q_note(&mut self, r: usize, t: f64, done: f64) {
         let a = if self.qc { self.tr.t[r] + self.qd[self.tr.sess[r] as usize] } else { self.tr.t[r] };
@@ -1961,7 +2001,7 @@ fn load_run_data(rd_: &str) -> RunData {
 // ---- 一個 job 的規格
 struct Spec<'b> { jid: &'b str, order: Ord_, act: Act, hook: Hook, pf: Pf, dead_cut: f64, c: f64, g: i64, gorder: u8, gttl: f64,
                   gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, bool, i64)>, sc: Option<(SRule, i64)>,
-                  q: bool, qc: bool, cue: bool, w5: Option<i64> }
+                  q: bool, qc: bool, cue: bool, w5: Option<i64>, qpost: bool }
 
 fn parse_spec(line: &str) -> Spec<'_> {
     let x: Vec<&str> = line.split_whitespace().collect();
@@ -1976,10 +2016,11 @@ fn parse_spec(line: &str) -> Spec<'_> {
     // icpe-ana v4：13 欄，或 13 欄＋`nz=P|M,<lam>,B1,<seed>`（W4 雜訊，只支援 B1）；其他多出來的欄位（慢層上限等）→ 停下來
     let mut nz = None;
     let mut sc: Option<(SRule, i64)> = None;
-    let (mut q, mut qc, mut cue, mut w5) = (false, false, false, None);
+    let (mut q, mut qc, mut cue, mut w5, mut qpost) = (false, false, false, None, false);
     for extra in &x[13..] {
         if *extra == "q=1" || *extra == "q=2" { assert!(!q); q = true; qc = *extra == "q=2"; continue; }   // v8 排隊：1＝open-loop、2＝closed-loop
         if *extra == "cue=1" { assert!(!cue); cue = true; continue; }                 // v8 W3 線索：<job 目錄>/cue.u8
+        if *extra == "qpost=1" { assert!(!qpost); qpost = true; continue; }           // v8 排隊（一階近似，事後算；SEMANTICS §2b）
         if let Some(v) = extra.strip_prefix("w5=") {                                  // v8 W5：CPU 每塊位元組
             assert!(w5.is_none()); let b: i64 = v.parse().unwrap(); assert!(b > 0); w5 = Some(b); continue;
         }
@@ -2005,7 +2046,8 @@ fn parse_spec(line: &str) -> Spec<'_> {
     }
     let sp = Spec { jid: x[0], order, act, hook, pf, dead_cut: parse_f(x[5]), c: parse_f(x[6]), g: x[7].parse().unwrap(), gorder,
                     gttl: if x[9] == "-" { 0.0 } else { parse_f(x[9]) }, gwb: x[10] != "wt", pf_gpu: x[11] == "gpu",
-                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz, sc, q, qc, cue, w5 };
+                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz, sc, q, qc, cue, w5, qpost };
+    if sp.qpost { assert!(!sp.q, "qpost 和 q 不能同時開"); }
     if sp.pf != Pf::No { assert!(sp.vids.len() == 1); }
     if sp.g > 0 && (sp.gorder == 2 || sp.gorder == 3) { assert!(sp.vids.len() == 1); }     // v8：4–7 不依時間
     if sp.q { assert!(sp.vids.len() == 1, "排隊：一個 job 只能 1 個時間設定"); }
@@ -2044,7 +2086,7 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
     }
     let (g, pf) = (sp.g, sp.pf);
     let has_gpf = g > 0 && sp.pf_gpu && pf != Pf::No;
-    if sp.q || sp.cue || sp.w5.is_some() || sp.gorder >= 4 { assert!(!multi, "v8 的新功能不支援共用前段（multi）"); }
+    if sp.q || sp.cue || sp.w5.is_some() || sp.gorder >= 4 || sp.qpost { assert!(!multi, "v8 的新功能不支援共用前段（multi）"); }
     // v6：慢層容量上限（= Engine._sc_init；上限塊數由 Python 算好）。慢層 GDSF 的成本表＝views[0]（同 x1_sim._job 的 gdsf_view）：
     // g_c[i]＝max(f_i − (i4 ÷ slow_r ＋ d), 0)（SlowOrder.__init__；max 照 Python：0 > x 才取 0）
     let sc = sp.sc.map(|(rule, cap)| {
@@ -2102,6 +2144,7 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
         qc: sp.qc, qd: if sp.qc { vec![0.0; ns] } else { Vec::new() }, qarr: if sp.q { vec![0.0; nreq] } else { Vec::new() },
         cue: if sp.cue { let c = rdat.cue.as_deref().expect("cue=1 但沒有 cue.u8"); assert_eq!(c.len(), nreq, "cue.u8 的長度"); c } else { &[] },
         cpu_bf: sp.w5.unwrap_or(BF),
+        qpost: sp.qpost, qpw: Vec::new(), qps: Vec::new(),
         apc: g > 0 && sp.gorder >= 6, apc_whole: env::var("X1FAST_APC_WHOLE").map(|s| s == "1").unwrap_or(false),
         gn: vec![0; ns], ref_gc: vec![0; if g > 0 { nb } else { 0 }], n_gblk: 0,
         v8chk: env::var("X1FAST_V8_CHECK").ok().and_then(|s| s.parse().ok()).unwrap_or(0),
@@ -2129,6 +2172,10 @@ fn write_out(e: &Eng, od: &str) {
     wr_f64(&format!("{}/eng.f64", od), &[e.res_sum]);
     if let Some(sc) = &e.sc { wr_i64(&format!("{}/eng_sc.i64", od), &[sc.cap, sc.n_clean, sc.n_drop]); }
     if e.apc { wr_i64(&format!("{}/eng_v8.i64", od), &[e.n_gblk]); }
+    for (k, (w, st)) in e.qpw.iter().zip(e.qps.iter()).enumerate() {
+        wr_f64(&format!("{}/v{}_qpw.f64", od, k), w);
+        wr_f64(&format!("{}/v{}_qps.f64", od, k), st);
+    }
     if e.qon {
         wr_f64(&format!("{}/qwait.f64", od), &e.qwait);
         wr_f64(&format!("{}/qstart.f64", od), &e.qstart);
@@ -2149,6 +2196,7 @@ fn run_job_dir(tr: &Trace, grp: &[u32], sstart: &[f64], jd: &str) -> f64 {
     let tj = Instant::now();
     let mut e = new_eng(tr, grp, sstart, &rdat, &sp, sp.order, sp.act, false, false);
     for r in 0..tr.t.len() { e.step(r, &mut lay, &mut tend); }
+    if e.qpost { e.q_post(); }
     let run_s = tj.elapsed().as_secs_f64();
     write_out(&e, &format!("{}/out/{}", jd, sp.jid));
     fs::write(format!("{}/timing.txt", jd), format!("{} {}\n", sp.jid, run_s)).unwrap();
@@ -2291,6 +2339,7 @@ fn main() {
             let tj = Instant::now();
             let mut e = build(&sp, sp.order, sp.act, false, false);
             for r in 0..nreq { e.step(r, &mut lay, &mut tend); }
+            if e.qpost { e.q_post(); }
             return vec![(u[0], finish(&e, sp.jid, tj.elapsed().as_secs_f64(), ""))];
         }
         let specs: Vec<Spec> = u.iter().map(|&i| parse_spec(all[i])).collect();
