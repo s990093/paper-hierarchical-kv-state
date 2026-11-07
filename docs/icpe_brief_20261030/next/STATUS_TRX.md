@@ -3,6 +3,23 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T15:45+08:00 — **使用者決定 TRX40 接偏離 14 的重跑**，以及 P4 版本 C 的 5 組；現在只做準備，還沒跑任何東西
+
+- **來源**：icpe-main 15:3x 轉達使用者在 icpe-main 說的「把 TRX40 把任务交给他，或者是把重一點任务给他」。依規則，我在這裡用 AskUserQuestion 直接問了使用者（15:4x）。答案照抄：
+  - 偏離 14 的重跑：「接，照這個流程 (Recommended)」。流程是：
+    - icpe-sim push 驗證過的引擎後，同步並編 Rust。
+    - 先證明 TRX40 能逐位元重現，才開正式 block。
+    - block 由 icpe-data 分配，CacheWise 照舊不放 TRX40。
+  - P4 加跑版本 C 的 5 組（偏離 10 第 5 點，清單在 `origin/icpe-next-main` 58252b4f 的 `results/icpe_next/main/p4/verC/p4_cells_verC_add.csv`）：「接，等引擎定了再開 (Recommended)」。要用哪個引擎（雜訊＋偏離 14 規則＋APC/BELP）icpe-sim 還沒定。
+- **git 上的狀態（15:3x fetch）**：
+  - `origin/icpe-next-sim` 在 0786f56f（STATUS_SIM 14:05：`--pf-expire` 在修好、重新驗證之前不要用）。icpe-main 說的 63b8e32（使用者選 A：`--pf-gpu-recheck` 放在旗標後面）還沒 push。
+  - 偏離 14 的正文在 PREREG（fe345222）。重跑清單由 icpe-sim 寫進 STATUS_SIM、icpe-data 排程，現在還沒有。
+- **TRX40 上現有的資料**：SemiAnalysis（N16／N32／N64／N72 的 nb）、Mooncake traces、TraceLab、FreeInference、UltraChat、LMSYS-Chat-1M。沒有 CacheWise（不准放），也沒有 Bailian。
+- **重現檢查的提案**（開正式 block 前；細節等 icpe-sim 指定）：
+  - 旗標關：照以前的三項，(a) G0 對 H200 的 4,416 列；(b) xc_sa 對 icpe-data 的 Python、對 TRX40 的 Python；(c) 整個 `sa_N16_s1` block 對 git 上的正式結果。
+  - 旗標開：在 TRX40 有的資料上，Python 對 Rust 逐格比，再加跨機器的參考（請 icpe-sim／icpe-data 提供 acvlab 上同樣參數的輸出）。
+- **資源（15:40）**：MemAvailable 55 GiB、/ssd4 剩 509 GiB、load 0.29。
+
 ## 2026-11-07T11:40+08:00 — **LMSYS-Chat-1M 版本 B、C 跑完**：下載（使用者登入 HF、同意條款）→ 轉換 → chat_main＋chat_p1 12 個 block → 版本 B 上限表（rowcheck 12/12 PASS）→ 版本 C 6 個變體，重現 324/324、0 差
 
 - **下載**：
