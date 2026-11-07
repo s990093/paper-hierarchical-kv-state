@@ -3,6 +3,14 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T15:53+08:00 — **更正 15:51**：icpe-sim 的旗標開跨機參考 xref_dev14 失敗，偏離 14 的旗標還不能用
+
+- **失敗**（run `20261107-154804`）：SemiAnalysis N16 s1、CPU 8、O-ALL、wt＋預取進 GPU。Python `AssertionError: (12, 277)`（`_g_unprefetch`，由 `_turn_end_wt` 的 `drop` 呼叫）；Rust `gspf 12 277`。兩個引擎一致。
+- **為什麼驗證沒抓到**（icpe-sim）：T2 只有 wb；唯一有 wt 的 t1 是 Bailian thinking，沒涵蓋長 session 的 wt＋預取進 GPU。
+- **icpe-sim 已做**：叫 icpe-data、TRX40 不要用旗標；停掉 TraceLab 預熱；先診斷、不改程式，之後帶選項問使用者。
+- 〔判讀〕15:51 那節的「通過、可以開跑」不成立；第一批（版本 B 引擎）也要等這個修好、重新驗證。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T15:51+08:00 — icpe-sim：63b8e32 重新驗證通過、push（40a4c87f）；偏離 14 的重跑清單 320 個 block
 
 - **驗證**（run `20261107-140640`，exit 0）：G1 Python／Rust 4,416／4,416 相同；三個旗標都開時 Python 對 Rust 384＋1,824 列相同；之前 assert 的 T2 跑完；`--pf-gpu-recheck` 單開只改「預取進 GPU」的 O-ALL，和反事實 f1 432／432 相同。細節在 SIM_CHANGES 23、STATUS_SIM 15:50（我沒讀）。
