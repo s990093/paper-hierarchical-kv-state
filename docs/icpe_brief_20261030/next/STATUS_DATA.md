@@ -2,6 +2,40 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T14:05+08:00 — **agent 軌跡（偏離 17＋更正）完成**：mini-SWE-agent、OpenHands 的版本 B、C 都進 git
+
+- PREREG 已同步：偏離 17（d1f4ca2）、偏離 17 更正（5294f5f）。
+  - h200 核對時間時發現，我 13:00、13:10 兩節的節名時間比 commit 時間晚。以 commit 為準：32160d0 是 12:57:05，1af8839 是 12:58:45；使用者在這兩者之間決定。
+- **版本 B**（v7 62b0932b，35 workers）：
+  - mini-SWE-agent：log `queue-rust-agent-ms-verB-w35-20261107-125714.log`，12:57:14 → 13:01:30。
+  - OpenHands：log `queue-rust-agent-oh-verB-w35-20261107-130130.log`，13:01:35 → 13:06:41。
+  - 48 個 block 全部通過：
+    - `jobs`＝`count`（6,174／6,480），`rust_timing` 行數＝jobs。
+    - `py_fallback_jobs=0`，`code_sha` 3280b1c8799b+rs62b0932b，rc 0。
+  - 有存 npz，同 chat。collect → `results/icpe_next/b/agent_main/{ms,oh}_*`、`agent_p1/{ms,oh}_*_ttl`。
+- **版本 B 上限表**：run `20261107-130214-icpe-data-verB-ms_p1`、`20261107-130756-icpe-data-verB-oh_p1`。
+  - main_rowcheck（b54d3cff）：ms、oh 的 main 17×8、_ttl 15×8，每個 (trace, rule) 54 格，PASS。
+  - 結果收在 `results/icpe_next/b/analysis/{ms,oh}_p1/`。
+  - 前一次 oh 的 run `20261107-130736-…` 因為我用 sed 改 cmd.sh 時把輸出目錄弄錯，在寫出任何東西之前就停了，已標 `FAILED_NOT_USED`。
+- **版本 C**：`next_chat_verc.sh`，v8 worktree＝icpe-next-rux 4a713386，13:08 → 14:03。
+  - 24 個變體都 rc 0、**`REPRODUCED cells=324`**。
+  - 24 個 MANIFEST 都是 code_sha 3280b1c8799b+rse7f6ee8f、main.rs 48e4efce。
+  - 結果收在 `results/icpe_next/apc/{miniswe,openhands}_N{16,32,64,72}_s{1,2,3}/`。
+- **照抄上限表的摘要**（每份 12 個變體 × 54 格＝648 個（格, 元件）；中位數範圍＝12 個變體各自的中位數）。
+  - **不解讀、不下判定**，判定由 icpe-main 做。
+  - O-PF、O-ALL 的列等偏離 14 修正版重跑後可能會變。
+  - OpenHands 的規則 6 (b) 沒過，照使用者決定放行；報告時要標。
+
+| 資料集 | 版本 | O-ORD max／≥15% | O-PF max／≥15% | O-DROP max／≥15% | O-GPU max／中位數範圍／≥15% | O-ALL(report) max／≥15% |
+|:--|:--|:--|:--|:--|:--|:--|
+| mini-SWE-agent | B | 0.061／0 | 0.089／0 | 0.115／0 | 0.093／0–0.016／0 | 0.109／0 |
+| mini-SWE-agent | C | 0.061／0 | 0.088／0 | 0.109／0 | 0.094／0–0.015／0 | 0.108／0 |
+| OpenHands | B | 0.520／120 | 0.585／124 | 0.329／53 | 0.585／0–0.201／280 | 0.740／306 |
+| OpenHands | C | 0.520／119 | 0.585／124 | 0.329／53 | 0.577／0–0.201／278 | 0.726／306 |
+
+- O-NOW 兩份最大都 ≤0.010。
+- **下一步**：通知 icpe-main。偏離 14 的重跑清單裡會列入 `agent_main`／`agent_p1`，icpe-sim 已確認。
+
 ## 2026-11-07T13:10+08:00 — **偏離 17 的更正（登記）**：OpenHands 規則 6 (b) 沒過，**使用者決定照實記錄後照跑**；本節 commit 時 OpenHands 還沒寫出任何 nb、沒跑任何模擬
 
 - **使用者決定**（AskUserQuestion，本 session 13:0x）：選「照實記錄後照跑」。
