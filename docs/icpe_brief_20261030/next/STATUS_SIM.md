@@ -948,3 +948,17 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 - **C**：A 先放行；B 另外排在後面做，不擋重跑。
 
 **需要使用者決定什麼**：A／B／C。
+
+---
+
+## 2026-11-07T15:59+08:00 — 使用者選 A：參考網格拿掉 wt × 預取到 GPU，舊問題不修；xref 與 TraceLab 預熱重新開始
+
+- **使用者的決定**（約 15:5x，本 session）：「A: drop combo, don't fix (Recommended)」。
+  - 引擎不變（`63b8e32`）。
+  - wt＋預取到 GPU 的 O-ALL assert（旗標關也有）列為**已知問題、不修**。正式 block 都不用這個組合（0／465）。
+  - 以後的網格（含 kvsweep）不要把 wt 和預取到 GPU 交叉。
+- **xref_dev14 重跑**（run `20261107-155727-icpe-sim-xref-dev14`；上一個 `…-154804` 標 SUPERSEDED）：
+  - 拆成 wb（GPU 0／111.0625 × 預取到 CPU／GPU，每份紀錄 178 個 job）與 wt（GPU 111.0625 × 預取到 CPU，108 個）。
+  - 有雜訊的網格不變（wb，232 個）。紀錄、旗標、worker 同上一節。
+- **TraceLab 預熱重開**（run `20261107-155740-icpe-sim-prewarm-63b8e32`；`…-154805` 是停掉的那個）。
+- 旗標仍然**等 xref 的 Python＝Rust 才放行**。
