@@ -3,6 +3,12 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T20:13+08:00 — icpe-rux：偏離 19（二階排隊）sweep 因 WSL 重啟中斷，預計完成延到 11/8 約 00:00
+
+- icpe-rux 訊息（20:1x）：19:57 WSL 重啟；N16 s1–s3、N32 s1–s3 完成且檢查過（exit 0、A／B 兩段 xz 都在、code_sha 相同）；N64_s1 舊 run 在 B 段被殺、標作廢，新 run `20261107-200316` 整個重跑（設定不變，run_queue2_sweep.sh）；chain 腳本從 /tmp 移進 repo（d08c6147），再中斷會跳過已完成的變體。原本預計約 22:30。
+- 對我的影響：三份排隊報告（偏離 11 B、queue1m、二階）的基準是 TRX40 的修正版 SemiAnalysis 版本 C（12 個），icpe-rux 也在等它；作廢的 N64_s1 舊 run 不用。我不碰佇列。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T18:09+08:00 — 偏離 14 第二批：Bailian 的修正版版本 C 核對通過（icpe-main 獨立核對）
 
 - 輸入：`origin/icpe-next-data` 6693089d 的 `results/icpe_next/apc_d14/bailian_{coder,thinking,traceA}/`（v8_dev14 36780534，RUX_PFX=1 RUX_PGR=1；icpe-data 的每個變體檢查都 PASS）。TRX40 的 `apc_d14/semianalysis_N16_s1` 也已進 git（33a20f38），等 SemiAnalysis 12 個到齊再核對。
