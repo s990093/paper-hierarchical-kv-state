@@ -16,25 +16,30 @@ echo "== $x $(date -Is)：$PM {$BM}；$PP {$BT}"
 $PY code/icpe/main_d14patch.py --list $LIST --root $B --plan $PM --block $BM --out-dir $I
 $PY code/icpe/main_d14patch.py --list $LIST --root $B --plan $PP --block $BT --out-dir $I/p1
 M=$(for b in $BM; do echo $I/$PM/$b/x1_sweep.csv; done); T=$(for b in $BT; do echo $I/p1/$PP/$b/x1_sweep.csv; done)
+# 原本的版本 B 表：有的家族存 .csv.xz、有的存 .csv（wc），兩個都找、必須剛好一個
+OLD=$(ls $B/analysis/${x}_p1/${x}_p1_headroom_components.csv $B/analysis/${x}_p1/${x}_p1_headroom_components.csv.xz 2>/dev/null || true)
+if [ "$(echo $OLD | wc -w)" != 1 ]; then echo "原本的 ${x}_p1 上限表不是剛好一個：[$OLD]" >&2; exit 3; fi
+NEWCHK=$(ls $B/analysis_d14/${x}_p1/${x}_p1_headroom_components.csv $B/analysis_d14/${x}_p1/${x}_p1_headroom_components.csv.xz 2>/dev/null || true)
+if [ "$(echo $NEWCHK | wc -w)" != 1 ]; then echo "icpe-data 的 ${x}_p1 檢查表不是剛好一個：[$NEWCHK]" >&2; exit 3; fi
 $PY code/icpe/main_rowcheck.py --label ${x}_d14_main --sweep $M --expect-cells 54 --expect-cpu 17 --expect-gpu 8 --out $O/rowcheck.csv
 $PY code/icpe/main_rowcheck.py --label ${x}_d14_p1_ttl --sweep $T --expect-cells 54 --expect-cpu 15 --expect-gpu 8 --out $O/rowcheck.csv
 $PY $AN --sweep $M $T --out-dir $O --out-prefix ${x}_p1 --pf-target cpu > $O/${x}_analyze_stdout.log   # next_sim_analyze 會印摘要表 → 不進主 log
 echo "next_sim_analyze ${x}_p1 完成（摘要在 out/${x}_analyze_stdout.log，未顯示）"
-$PY - $O/${x}_p1_headroom_components.csv $B/analysis_d14/${x}_p1/${x}_p1_headroom_components.csv.xz <<'PYEOF'
+$PY - $O/${x}_p1_headroom_components.csv $NEWCHK <<'PYEOF'
 import sys, pandas as pd
 k = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "gpu_GiB", "gpu_write", "slow_cap_frac", "component"]
 a, b = (pd.read_csv(p).drop(columns=["run_id", "ts", "host"]).sort_values(k).reset_index(drop=True) for p in sys.argv[1:])
 pd.testing.assert_frame_equal(a, b, check_exact=True)
 print(f"偏離 14 版本 B：我的 p1 和 icpe-data 的檢查表逐格相同（{len(a)} 列）← {sys.argv[2]}")
 PYEOF
-$PY code/icpe/main_ab.py cells --name ${x}_p1_d14_eqsel_old_nonPF --x $O/${x}_p1_headroom_components.csv --y $B/analysis/${x}_p1/${x}_p1_headroom_components.csv.xz --rel eqsel --component O-ORD O-DROP O-NOW O-GPU --out $O/cellcheck.csv
-$PY - $x $O $B "$SHOW" <<'PYEOF'
+$PY code/icpe/main_ab.py cells --name ${x}_p1_d14_eqsel_old_nonPF --x $O/${x}_p1_headroom_components.csv --y $OLD --rel eqsel --component O-ORD O-DROP O-NOW O-GPU --out $O/cellcheck.csv
+$PY - $x $O $OLD "$SHOW" <<'PYEOF'
 import sys, os, socket
 from datetime import datetime
 import pandas as pd
-x, O, B, show = sys.argv[1:]
+x, O, OLD, show = sys.argv[1:]
 k = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "gpu_GiB", "gpu_write", "slow_cap_frac", "component"]
-n = pd.read_csv(f"{O}/{x}_p1_headroom_components.csv"); o = pd.read_csv(f"{B}/analysis/{x}_p1/{x}_p1_headroom_components.csv.xz")
+n = pd.read_csv(f"{O}/{x}_p1_headroom_components.csv"); o = pd.read_csv(OLD)
 m = n.merge(o, on=k, suffixes=("", "_old"))
 assert len(m) == len(n) == len(o)
 rows = []

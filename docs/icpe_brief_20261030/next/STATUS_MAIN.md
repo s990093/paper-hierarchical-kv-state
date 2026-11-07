@@ -3,6 +3,12 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T17:26+08:00 — h200：hgx-cn01 16:35:56 節點故障（GPU 從 Slurm 消失、DRAIN，要管理員修）；W6a 自動重排、從頭重跑，原預計時間作廢
+
+- h200 的訊息（STATUS_A f6ab910）：同時打掉別人的 job（TedKuo 24727、chihchung 24728／24729）。W6a 24724 自動重新排隊，使用者決定讓它從頭重跑；W6b 24687 仍排在它後面；TraceLab 重播在 W6b 之後。原本的「W6a 11/8 0–1 點結束」作廢，要看節點何時恢復。
+- 偏離 19 已同步到 icpe-next-a（f1d6e22 的 PREREG）。
+- 〔判讀〕GPU 實機的三項（W6a、W6b、TraceLab 重播）全部延後，時間未知；11/17 全文前能不能有 TraceLab 重播更不確定。
+
 ## 2026-11-07T17:17+08:00 — 二階排隊（偏離 19）開跑；使用者：論文的排隊敏感度三份都報
 
 - **icpe-rux**（訊息；`origin/icpe-next-rux` 6da749c4；我沒讀登記全文）：偏離 19 登記並 push，使用者看過稿選「push 並開跑」。SemiAnalysis 12 個變體 × 9 個容量 × 版本 C 全部規則；④ 只知道紀錄順序；到達不早於同 session 上一個完成；一階用同一規則重跑（`queue1m/`），二階和一階只差回饋；重負載只報告；兩段都開 pfx=1。引擎 v9＝v8_dev14＋qev（9496c4f6），新基底上驗證 2,856／2,856 兩輪。模擬約 5–6 小時、22:30 前〔推算〕；比較基準＝TRX40 第二批的修正版 SemiAnalysis 版本 C，分析要等那些表。
@@ -20,7 +26,11 @@
 - **變了什麼**（p1，〔模擬〕；Bailian 是非工具類、只報告）：O-PF 83／162 格變，−0.09～+0.16 個百分點，≥15% 的格 42 → 42，最大 48.06% → 48.09%；O-ALL(report) 47／162 格變，最大 +15.2 個百分點（53.4% → 55.0%），≥15% 97 → 97。
 - **FreeInference**（17:18 補；merge 7963a43f 沒有衝突）：run `20261107-171746-icpe-main-d14-verB-fi`（exit 0）；核對全 PASS（補列 3 個 block、rowcheck 3／3、p1＝icpe-data `analysis_d14/fi_p1` 1,944 列、5 張表的四個不變元件各 1,296 相同、逐格關係）。O-PF 71／324 格變（−0.02～+0.2 個百分點），最大 0.85% 不變；O-ALL 最大 1.06% → 1.19%；仍然全部 <1.2%，0 格 ≥5%。
 - **UltraChat、LMSYS**（17:21 補；merge `origin/icpe-next-trx` 01f265ae 沒有衝突）：新腳本 `code/icpe/main_d14_nb.sh`（對話／agent 只有 p1；**對話資料集只印檢查與變動格數、不印上限的值**，照使用者等第二批再判定的決定）。run `20261107-172032-icpe-main-d14-verB-chat-uc-lm`（exit 0）：補列各 12 個 block、rowcheck 4／4、p1＝icpe-data `analysis_d14/{uc,lm}_p1` 各 1,944 列、四個不變元件 eqsel 各 1,296 相同；**6 個元件都 0 格變**（O-PF、O-ALL 也沒變）。
-- **寫本節時已經看過的正式結果**：Bailian、FreeInference 的偏離 14 版本 B 表；UltraChat、LMSYS 只看了檢查結果和變動格數（0），沒看上限的值。
+- **ShareGPT、WildChat、mini-SWE-agent、OpenHands**（2026-11-07T17:26+08:00 補；merge `origin/icpe-next-data` 007d9d42 沒有衝突）：
+  - run `20261107-172315-icpe-main-d14-verB-sg-wc-ms-oh` **失敗、不用**：sg 全 PASS 後，在 wc 的 eqsel 停下：`FileNotFoundError: [Errno 2] No such file or directory: 'results/icpe_next/b/analysis/wc_p1/wc_p1_headroom_components.csv.xz'`——原本的 wc 表存成 `.csv`（不是 `.csv.xz`）。`main_d14_nb.sh` 改成兩種副檔名都找、必須剛好一個。
+  - run `20261107-172411-icpe-main-d14-verB-sg-wc-ms-oh`（exit 0）：四份的補列、rowcheck、p1＝icpe-data `analysis_d14/<x>_p1`（1,944／972／3,888／3,888 列）、四個不變元件 eqsel 全 PASS。
+  - 變動格數：sg O-PF 237／324、O-ALL 244／324；wc O-PF 2／162；ms、oh 0（agent 的版本 B 不受偏離 14 影響，值和 14:11 那節相同）。對話資料集沒看上限的值。
+- **寫本節時已經看過的正式結果**：Bailian、FreeInference、mini-SWE-agent、OpenHands 的偏離 14 版本 B 表；UltraChat、LMSYS、ShareGPT、WildChat 只看了檢查結果和變動格數，沒看上限的值。
 
 ## 2026-11-07T17:01+08:00 — 第一批開跑（acvlab 17:00:38）
 
