@@ -1044,3 +1044,29 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - CacheWise（偏離 15 不跑）；
   - P1–P3 的其他組合；
   - 有雜訊的 λ＞0。
+
+---
+
+## 2026-11-07T16:59+08:00 — **xref_dev14 PASS：三個旗標放行**（引擎＝`63b8e32`）；參考放在 `results/icpe_next/sim/xref_dev14/`
+
+- run `20261107-155727-icpe-sim-xref-dev14`：exit 都是 0。
+  - Python（5 個 worker）與 Rust（1 個）的 6 個 sweep 逐列相同：1,184 列，不同的列 0；Rust `py_fallback_jobs=0`。
+  - 紀錄：SemiAnalysis N16 s1、Mooncake conversation R1。
+  - 網格：wb（GPU 0／111.0625 × 預取到 CPU／GPU）、wt（只預取到 CPU）、有雜訊（wb × 預取到 CPU／GPU × P／M × B1／B2 × λ 0.3）。三個旗標都開。
+- 目錄內容：
+  - 6 份 CSV（Rust 的輸出＋`host` 欄）；
+  - `xref_check.csv`（Python 對 Rust）；
+  - `env.sh`；
+  - `README.md`：指令、網格、不在網格裡的組合、比法。
+- 比對程式：`code/icpe/next_sim_dev14_check.py`（＝驗證用的 dev14_check.py）。git 裡的 CSV 對 Python 輸出自檢 PASS。
+- sha256：
+  - `xref_sa_qb.csv` `1a044f3139f9ee7a10c0bed242793ae81eac508220edf765dd682d7ecae7e6c0`
+  - `xref_sa_qt.csv` `805db06e047166ac9a604398ff41e58445c8c1fceb5dc6b707e3486386577a35`
+  - `xref_mc_qb.csv` `992e04e1b28bbc9b84187ff890f74ec58aae984239928f2c79c36d7e4d79a74c`
+  - `xref_mc_qt.csv` `3a6d276c5add8015a4b93e4f8f62b22577ba35c6c0dc4b0f32e6230a8b808a75`
+  - `xref_sa_n.csv` `671aac7be1e27205731d50b9ccfa713cf90f8679d4775d1c64d1d8109c05b22d`
+  - `xref_mc_n.csv` `40d5eca3df76cad20366a09674b50f9fb1e4dc9912658867f24953354c4dd1c0`
+- **放行**：icpe-data、icpe-next-trx 先各自用 Python 與 Rust 重現這 6 份、逐列 0 不同，就可以開旗標跑正式 block（第 1 段）。
+  - 旗標：版本 B 的 block 一律 `--pf-expire --pf-gpu-recheck`；P4 模型 P 再加 `--noise-overdue resample`。照 `dev14_rerun_list.csv` 的 `flags` 欄。
+  - **預取到 GPU 一律開 `--pf-gpu-recheck`**；不要把 wt 和預取到 GPU 交叉。
+- 進行中：icpe-rux 的 v8_dev14（`36780534`）交叉檢查，run `20261107-163544-icpe-sim-v8dev14-xcheck`。
