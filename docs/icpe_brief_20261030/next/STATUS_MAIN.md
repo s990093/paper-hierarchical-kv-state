@@ -3,6 +3,46 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T12:28+08:00 — **版本 C（正式主表，論文版不含 CacheWise）：判定字和版本 B 相同；推翻條件（原始、合成）都成立；不靠 BELP、也不靠 O-PF**
+
+**使用者決定**（本 session）
+- 11:5x（AskUserQuestion）：偏離 15「push」；版本 C「現在算，O-PF 標待修正」。
+- 12:1x（AskUserQuestion）：run `20261107-121543` 的逐格核對停在 2 格（上限差 3.4×10⁻²¹，選到的組合和兩個 T 都相同）→「改成更完整的核對再跑」（`main_ab.py --rel eqsel`：組合與 T 逐位元相同、上限差 ≤1e-12）。
+
+**做了什麼**（run `20261107-122216-icpe-main-verC`，exit 0；結果 `results/icpe_next/main/verC/`）
+- 合併：`origin/icpe-next-trx` 291e7d6、`origin/icpe-next-rux` b3c351c（PREREG 衝突取本分支，是對方的超集）；PREREG 從 `origin/icpe-next-a` bb04c54 同步（偏離 16，0 行刪除）。
+- 輸入：版本 C＝`results/icpe_next/apc/<變體>/verC_headroom_components.csv`（analyze_v8），28 個變體（SemiAnalysis 12、Mooncake 4、Bailian 3、TraceLab 3、FreeInference 6），每個都先逐值重現版本 B（icpe-rux／icpe-trx）。
+- 新工具：`main_rowfilter.py`（拿掉 BELP 的列）、`main_summary.py --verdict-exclude`（迴歸：不給時版本 B 的輸出逐欄相同）、`main_w3c.py`（W3 換表重算 f）、`main_ab.py --rel eqsel`。
+
+**核對（全部 PASS）**
+- rowcheck 5／5：每個 (trace, rule) 54 格、CPU 17 × GPU 18、cake／wb／預取到 CPU。
+- analyze_v8 對 next_sim_analyze（拿掉 BELP）：O-ORD／O-DROP／O-NOW／O-PF／O-ALL 的組合與 T 逐位元相同，上限 26 格在 1e-12 內、其餘完全相同；O-GPU 不含 BELP ≤ 含 BELP，每格都成立。
+- 格數自檢 30 個 (trace, rule)；並列表三版格數相同（178 列）。
+- `main_w3c.py` 用版本 B 的表重算 9 個變體，n_ge15、f ≤ 0.5 的格數、f 中位數都和 TRX40 的 `w3_verdict.csv` 相同。
+
+**判定**（照偏離 7；`verC_verdict.csv`；論文版不含 CacheWise）
+
+| 類別 | 版本 B（論文版） | **版本 C（正式）** | C、判定不用 O-PF | C 不含 BELP（只報告） |
+|:--|:--|:--|:--|:--|
+| 原始・工具類 | 3/9，最大 62.4% | **3/9，62.4%** | 3/9 | 3/9 |
+| 合成・工具類 | 14/14，52.9% | **14/14，56.8%** | 14/14 | 14/14，52.7% |
+| 原始・非工具類（只報告） | 5/5，61.6% | **5/5，61.6%** | 5/5 | 5/5 |
+
+- ≥15% 的（格, 元件），判定元件、R1／R2：原始工具類 352 → 351（C）→ 336（不含 BELP）；合成工具類 632 → 586 → 542；原始非工具類 520 不變。
+- SemiAnalysis（B → C）：O-GPU 333 → 321、O-ORD 183 → 161、O-PF 19 → 10；O-GPU 最大 52.9% → 56.8%。和 icpe-rux 回報的相同（icpe-main 自己算的）。Mooncake、Bailian 幾乎不變。
+- **TraceLab c1（推翻條件靠的那個）**：O-GPU 38.9%（B）→ 39.2%（C）→ **17.0%（不含 BELP，2 格 ≥15%）**；O-ORD 23.3% → 21.9% → 21.9%（4 格）。所以不含 BELP 時前半仍成立（偏離 10 擔心的「39% → 5%」是探索只看 3 個 CPU 容量）。
+
+**推翻條件（版本 C，偏離 9＋偏離 10 第 5 點；`w3_C_verdict.csv`）**
+- TraceLab c1：≥15% 的 20 格全部 f ≤ 0.5 → 後半成立 → **原始到達・工具類：推翻條件成立**。
+- TraceLab c2：35／35、c4：59／59 → **合成到達・工具類：推翻條件成立**。
+- FreeInference 6 週：前半不成立。
+- 不含 BELP（只報告）：c1 6／6、c2 21／21、c4 58／58，同樣成立。
+- 判定的 270 列裡，TraceLab 三個變體的線索做法都沒有一格贏過最好的固定規則（`n_cue_beats_rival` 0）。
+
+**待修正**：O-PF、O-ALL 兩欄等偏離 14 的修正版取代；判定不用 O-PF 時判定字相同，所以判定不受影響〔判讀〕。
+
+**已看過哪些正式結果**：版本 C 的全部輸出（本節）；其他同前。對話資料集：仍然沒看過。
+
 ## 2026-11-07T11:47+08:00 — **CacheWise 從論文拿掉（授權），內部保留**；PREREG 偏離 15 草稿（號碼待 h200 確認，還沒 push）
 
 - 來源：使用者在 icpe-data 說「CacheWise 下先停 放不了paper」（STATUS_DATA 11:45，ba6ae12；icpe-data 轉告原話）。

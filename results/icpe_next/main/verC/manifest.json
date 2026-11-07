@@ -1,0 +1,153 @@
+{
+ "what": "Version C (PREREG deviation 10: APC in rival and oracle, BELP in O-GPU oracle) summary and verdicts, paper set without CacheWise (deviation 15); O-PF/O-ALL pending deviation 14; side by side with version B paper set and C without BELP (report only, user 11/7); W3 recomputed with version C (deviation 10 point 5)",
+ "run_id": "20261107-122216-icpe-main-verC",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-122216-icpe-main-verC",
+ "inputs": {
+  "verC": "results/icpe_next/apc/<variant>/verC_headroom_components.csv and x1_sweep.csv.xz (icpe-next-rux b3c351c: SemiAnalysis 12, Mooncake 2, Bailian 3; icpe-next-trx 291e7d6: TraceLab 3, FreeInference 6; each reproduced version B 0 differing before version C)",
+  "verB": "results/icpe_next/main/verB/*_p1_headroom_components.csv.xz (run 20261106-110854-icpe-main-verB-p1), without CacheWise",
+  "w3": "results/icpe_next/v8_explore/w3/*/w3_rows.csv (TRX40)"
+ },
+ "checks": "rowcheck 5/5 PASS (54 cells, 17 CPU x 18 GPU); analyze_v8 vs next_sim_analyze without BELP: chosen combos and T bit-identical, headroom within 1e-12 for O-ORD/O-DROP/O-NOW/O-PF/O-ALL (26 cells within tolerance, rest exact); O-GPU without BELP <= with BELP in every cell; summary cell-count self-check PASS (30 trace/rule); main_w3c with version B reproduces TRX40 w3_verdict for 9 variants",
+ "failed_runs_not_used": [
+  "20261107-121543-icpe-main-verC (exact-equality check stopped on 2 cells differing by 3.4e-21; user chose eqsel)"
+ ],
+ "not_in_git": "filtered sweeps (in/) and *_violations.csv stay in the run dir",
+ "files": {
+  "bl_CnoBELP_headroom_components.csv": {
+   "bytes": 391207,
+   "sha256": "7eb60786bf9ed68705c2b5c77240ef28aa414bba160047a174fa03b228325978"
+  },
+  "bl_verC_headroom_components.csv": {
+   "bytes": 310136,
+   "sha256": "cf945ea1864d8b2b6b4438ed1b1198ca0e642ac9b03a628a1242b181cd0df409"
+  },
+  "cellcheck.csv": {
+   "bytes": 3875,
+   "sha256": "c1e32c6a1d5db3cc18d1122bc9b4a67d0b4889c81ec49df60e09f626a4da6bf6"
+  },
+  "fi_CnoBELP_headroom_components.csv.xz": {
+   "bytes": 31488,
+   "sha256": "b59ea72711704c289c8a6d4726f70efb45edc9a88f9669ab3ceef4d57aa4a49c"
+  },
+  "fi_verC_headroom_components.csv": {
+   "bytes": 641330,
+   "sha256": "f0251bf5d5b0245e84e553baaa6c550e0c2e4089bc59cc150e466805a1520c5f"
+  },
+  "mc_CnoBELP_headroom_components.csv": {
+   "bytes": 659012,
+   "sha256": "230cb935d7b1eea9ac54c97dc72000b0a256793a7e18d44e2b2f1f89208e068e"
+  },
+  "mc_verC_headroom_components.csv": {
+   "bytes": 601043,
+   "sha256": "b54c6334b7fe2ae82bc7f6e84218731a02af7a39ba05d6d00221768f102aa506"
+  },
+  "rowcheck.csv": {
+   "bytes": 14308,
+   "sha256": "2da387d66e74862f82d494a7a07175e1e036e57421bd63904e0eb2fa14bddb05"
+  },
+  "sa_CnoBELP_headroom_components.csv.xz": {
+   "bytes": 100780,
+   "sha256": "22bd50a7ed68be2863f2821fceca0caa8757adc2621442df15a56e03fe42694e"
+  },
+  "sa_verC_headroom_components.csv.xz": {
+   "bytes": 90408,
+   "sha256": "95f36eaa2fc02db6482e148618601a760b8a66472288b10b737c3de2a3e2924d"
+  },
+  "tl_CnoBELP_headroom_components.csv": {
+   "bytes": 369599,
+   "sha256": "dbd3802143def1a27270812fc8b3bdc23a27232d172f9d4f5374748bb3ff4e83"
+  },
+  "tl_verC_headroom_components.csv": {
+   "bytes": 310833,
+   "sha256": "2e3c0d5f7cc02222f2c7c9248c5487285b2991cf9869d4e4932557fa8ad024e6"
+  },
+  "verBC_by_trace.csv": {
+   "bytes": 35382,
+   "sha256": "373a0b9ce508ac09d86411357cb98ece1ff45f35287bf254440ae7d09e2d0978"
+  },
+  "verBC_verdict.csv": {
+   "bytes": 23028,
+   "sha256": "921b6dfc81a97519a8478fd430762bba006ca8a9330fc0ca6192936699977123"
+  },
+  "verB_paper_by_cpu.csv": {
+   "bytes": 481107,
+   "sha256": "41fcf6ed04ffea2feebad8394fd3db85844bbf09a10b3efdf6a2a9a00905a4dc"
+  },
+  "verB_paper_by_trace.csv": {
+   "bytes": 72170,
+   "sha256": "1fbf4194afa4c0b8f6c412385b203d84b7c3b5024112b74cc5f35a80e438a205"
+  },
+  "verB_paper_verdict.csv": {
+   "bytes": 8393,
+   "sha256": "a4b26adb51a437e628e9f6fdd2e297f5f5b9bedebcfb2dc6b83c86e888efd8f2"
+  },
+  "verC_by_cpu.csv": {
+   "bytes": 649811,
+   "sha256": "d69881bf647d278002db8fae0a71e3cee8a8354bebb4963e923ab480ac6f9227"
+  },
+  "verC_by_trace.csv": {
+   "bytes": 92328,
+   "sha256": "d0dcebb658224747b8e86d7d6f81bcb5be893660c6663244caa0bed3ccb01b92"
+  },
+  "verC_noBELP_by_cpu.csv": {
+   "bytes": 487587,
+   "sha256": "1ffdfd0a7de48883ed74168a8f9c3f9269d4abc56c7e4782d09485efadd24bf8"
+  },
+  "verC_noBELP_by_trace.csv": {
+   "bytes": 79455,
+   "sha256": "e8e73edbedfe450d1fb2a7664d711e749c0c355e21492cc2cbcd537b1680fe84"
+  },
+  "verC_noBELP_noOPF_by_cpu.csv": {
+   "bytes": 469981,
+   "sha256": "2c0ed1e2b698f33906fc955573406f90137af8226c46a151f1e078545b4c38b4"
+  },
+  "verC_noBELP_noOPF_by_trace.csv": {
+   "bytes": 77401,
+   "sha256": "5afb2792b8984f5aaa503375cc491b4f5829e4bd2806d5a8a0e69dfd20bca51d"
+  },
+  "verC_noBELP_noOPF_verdict.csv": {
+   "bytes": 8166,
+   "sha256": "da6c3b7fb57c6e84c8e7415437c20b810b5dd57e759f1e04da3b55b8712d4ee2"
+  },
+  "verC_noOPF_by_cpu.csv": {
+   "bytes": 515259,
+   "sha256": "d52f18ce99e4b3cc29f005e4234516767c2b203d48d33f6c259aabb8d6b4e964"
+  },
+  "verC_noOPF_by_trace.csv": {
+   "bytes": 77420,
+   "sha256": "e1cd3fadfb58cd9dab3f4ecb426a064ed5ccbcc033d285d259b5c64b4a8c8d05"
+  },
+  "verC_noOPF_verdict.csv": {
+   "bytes": 8381,
+   "sha256": "4bb4e5932001313e94c809733988fc2295ed2ebd2c9ebfcc6ecfab5ad212ce5f"
+  },
+  "verC_verdict.csv": {
+   "bytes": 11078,
+   "sha256": "ce04b184560545d072e78adb706736c6bda08af475cc9fa2577a02e2ffb82833"
+  },
+  "w3_B_rows.csv.xz": {
+   "bytes": 67380,
+   "sha256": "9184bdc18eb92d229bf7d167689acb238fb319173625895ed74b58f16314b03f"
+  },
+  "w3_B_verdict.csv": {
+   "bytes": 1752,
+   "sha256": "b922c5b3170e03764778e97654d8cbabdea7a20733c2f3906ec3744a1b128831"
+  },
+  "w3_C_rows.csv.xz": {
+   "bytes": 68796,
+   "sha256": "0777e15b400fef5f883c41df5ca067f18d8c4197ca66ebca88d7a96d10d6f24d"
+  },
+  "w3_C_verdict.csv": {
+   "bytes": 1751,
+   "sha256": "a2b5f49a5dfa305ebf31274d45c78bc742aa9cf97f3f10c9371223ddb674716b"
+  },
+  "w3_CnoBELP_rows.csv.xz": {
+   "bytes": 69820,
+   "sha256": "d725451b9e59c88748c38c4bc9d43f9212145e9606f9e453eaa97a798779b88a"
+  },
+  "w3_CnoBELP_verdict.csv": {
+   "bytes": 1812,
+   "sha256": "4f6feef2bbd36d85bda3890d432bddcef0bbba5aa0b8fa47d00374d8b00d3b8f"
+  }
+ }
+}
