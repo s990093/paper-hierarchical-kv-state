@@ -110,6 +110,11 @@ def main():
     if not out:
         raise SystemExit("沒有符合的已完成 block")
     new = not os.path.exists(a.out)
+    if not new:
+        with open(a.out, newline="") as fh:
+            old_hdr = next(csv.reader(fh), [])
+        if old_hdr != list(out[0]):
+            raise SystemExit(f"{a.out} 的欄和這次不同（{len(old_hdr)} vs {len(out[0])} 欄）→ 不附加；換一個 --out")
     with open(a.out, "a", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(out[0]))
         if new:
