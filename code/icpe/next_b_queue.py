@@ -137,7 +137,55 @@ def blocks():
             P[f"{base}_ttl7"] = ttl7_blocks(f)
     P.update(p4_blocks())
     P.update(d14_blocks(P))
+    P.update(p4verc_blocks())
     return P
+
+
+# PREREG 偏離 14 第二段：P4 版本 C 的新增 5 對（偏離 10 第 5 點；icpe-main 58252b4f 的 p4_cells_verC_add_distinct.csv）。
+# 組合（icpe-main 16:3x，照偏離 10 §3）：O-PF 的 ④＝O-PF × {LRU, TTLA×7, TTLB×7, APC}；O-GPU 的 ④＝NON_ORACLE × {BEL, BELP}。
+# 其他照版本 B 的 P4（P／M、B1／B2、同一組 λ、10 seed、λ=0 自檢）。引擎＝v8_dev14（icpe-next-rux 36780534），三個旗標都開（環境變數）。
+P4VC_SRC = ("58252b4f", "results/icpe_next/main/p4/verC/p4_cells_verC_add_distinct.csv")
+D14REPO = os.environ.get("NEXT_B_D14REPO", f"{ROOT}/rux-d14-3678053")
+D14_MAIN_RS = "d2048fa38a42c78b"
+
+
+def p4verc_blocks():
+    cp = subprocess.run(["git", "-C", REPO, "show", f"{P4VC_SRC[0]}:{P4VC_SRC[1]}"], capture_output=True, text=True)
+    if cp.returncode != 0:
+        return {}
+    XS = import_xs()
+    by = {}
+    for r in csv.DictReader(io.StringIO(cp.stdout)):
+        assert r["gpu_GiB"] == "111.0625" and r["gpu_write"] == "wb" and r["restore"] == "cake" and float(r["slow_cap_frac"]) == 0, r
+        by.setdefault(r["trace"], []).append(r)
+    out = []
+    for trace, rows in sorted(by.items()):
+        jobs = set()
+        for r in rows:
+            if r["component"] == "O-PF":
+                combos = [(p, g) for p in XS.COMPONENT_POLICIES["O-PF"] for g in P4_GP_NO + ["APC"]]
+            elif r["component"] == "O-GPU":
+                combos = [(p, g) for p in XS.NON_ORACLE for g in ("BEL", "BELP")]
+            else:
+                raise SystemExit(f"P4 版本 C：不認得的元件 {r['component']}")
+            jobs |= {(trace, r["rule"], _cpu_str(r["cpu_GiB"]), p, g, r["slow"], r["gpu"]) for p, g in combos}
+        jobs = sorted(jobs)
+        cpus = sorted({j[2] for j in jobs}, key=float)
+        rules = sorted({j[1] for j in jobs})
+        slows = sorted({j[5] for j in jobs})
+        pols = sorted({j[3] for j in jobs})
+        gps = sorted({j[4] for j in jobs}, key=lambda g: (g != "LRU", g != "BEL", g))
+        short = trace[3:] if trace.startswith("nb:") else trace
+        for draw in ("B1", "B2"):
+            for model in ("P", "M"):
+                args = ["--cpu", *cpus, "--policies", *pols, "--slows", *slows, "--modes", "cake", "--gpu-gib", "111.0625",
+                        "--gpu-write", "wb", "--gpu-policies", *gps, "--pf-target", "cpu", "--noise-models", model,
+                        "--noise-lambdas", *P4_LAMS[(model, draw)], "--noise-draws", draw, "--noise-seeds", *map(str, range(10))]
+                out.append((f"{short}_{model}_{draw}", dict(
+                    traces=[trace], rules=rules, jobs=jobs, no_npz=True, src=f"{P4VC_SRC[0]}:{P4VC_SRC[1]}",
+                    engine_py=f"{D14REPO}/code/icpe/rux_x1fast/v8_dev14/sweep_v8_dev14.py", engine_cwd=D14REPO,
+                    env_extra=dict(RUX_PFX="1", RUX_PGR="1", RUX_NZO="resample")), args))
+    return {"d14_p4verc": out}
 
 
 # PREREG 偏離 14 的重跑（STATUS_DATA 2026-11-07 15:41 起；icpe-sim 的清單 results/icpe_next/sim/dev14_rerun_list.csv，一個 block 一列）。
@@ -173,6 +221,8 @@ def d14_blocks(P):
             new, _ = _replace_opt(args, "--policies", [p for p in orig if p in rp])
             flags = r["flags"].split()
             assert flags and all(f in ("--pf-expire", "--pf-gpu-recheck", "--noise-overdue", "resample") for f in flags), flags
+            # icpe-sim 16:35（SIM_CHANGES 23 更正）：預取到 GPU 的 block 一律要有 --pf-gpu-recheck（只開 --pf-expire 會斷言）
+            assert "--pf-gpu-recheck" in flags, (r["plan"], r["block"], flags)
             tr2 = dict(tr, d14=dict(list_run_id=r["run_id"], jobs_block=int(r["jobs_block"]), jobs_rerun=int(r["jobs_rerun"]),
                                     rerun_policies=rp, flags=flags))
             out.setdefault(f"d14_{r['plan']}", []).append((r["block"], tr2, new + flags))
@@ -316,6 +366,13 @@ def cmd_count(a):
         ptot = 0
         for name, tr, args in P[plan]:
             d = parse_sweep(args)
+            if tr.get("engine_py"):    # v8_dev14 的 GPU 規則（APC、BELP）本 repo 的 x1_sim 不認得 → job 數＝清單的 (t, r, c, p, g) 數 × 雜訊設定數
+                ns = XS.noise_specs(d["noise-models"], [float(x) for x in d["noise-lambdas"]], d["noise-draws"],
+                                    [int(x) for x in d["noise-seeds"]])
+                n5 = len({j[:5] for j in tr["jobs"]})
+                print(f"{plan:10s} {name:28s} cells={len(tr['jobs'])} combos={n5} noise_specs={len(ns)} expect_kept={n5 * len(ns)}")
+                ptot += n5 * len(ns)
+                continue
             for nm in d["slows"]:
                 if nm not in XS.SLOWS and nm not in XS.EXTRA_SLOWS:
                     XS.EXTRA_SLOWS.append(nm)
@@ -353,13 +410,20 @@ def run_block(plan, name, tr, args, workers, dry, engine="py"):
            "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
     if engine == "rust":
         env["X1_RUST_TIMING_LOG"] = f"{run}/rust_timing.jsonl"
-    argv = [PY, "-I", "code/icpe/p3_fvar.py", "--variant", "V1", "--calib", f"{REPO}/results/icpe_h200/p01/calib",
+    # 偏離 14 第二段（d14_p4verc）：換成 v8_dev14 的 sweep（別的 worktree），旗標用環境變數；只准 Rust
+    script, cwd = tr.get("engine_py", "code/icpe/p3_fvar.py"), tr.get("engine_cwd", REPO)
+    if tr.get("engine_py"):
+        assert engine == "rust", "v8_dev14 的 block 只用 --engine rust"
+        rs = sha256(f"{D14REPO}/code/icpe/rux_x1fast/v8_dev14/src/main.rs")[:16]
+        assert rs == D14_MAIN_RS, f"v8_dev14 main.rs 是 {rs}，不是 {D14_MAIN_RS}"
+        env.update(tr["env_extra"])
+    argv = [PY, "-I", script, "--variant", "V1", "--calib", f"{REPO}/results/icpe_h200/p01/calib",
             "--out-root", f"{run}/out", "x1", "sweep", "--traces", *tr["traces"], "--rules", *tr["rules"], *args, "--workers", str(workers)]
     if engine == "rust":
         argv += ["--engine", "rust"]
     if tr.get("jobs"):                 # P4：只跑清單裡的 job（清單寫在 run 目錄，sweep 印它的 sha256）
         argv += ["--jobs-from", f"{run}/jobs.csv"]
-    cmd = "cd " + REPO + "\n" + "".join(f"export {k}={v}\n" for k, v in env.items()) + "exec nice -n 10 " + " ".join(argv) + "\n"
+    cmd = "cd " + cwd + "\n" + "".join(f"export {k}={v}\n" for k, v in env.items()) + "exec nice -n 10 " + " ".join(argv) + "\n"
     if dry:
         print(cmd)
         return 0, rid
@@ -375,6 +439,10 @@ def run_block(plan, name, tr, args, workers, dry, engine="py"):
         fh.write(f"date: {datetime.now().astimezone().isoformat()}\nhost: {socket.gethostname()}\nplan: {plan}\nblock: {name}\nengine: {engine}\n")
         fh.write("git HEAD: " + sh(f"git -C {REPO} rev-parse HEAD"))
         fh.write("git status:\n" + sh(f"git -C {REPO} status --porcelain"))
+        if tr.get("engine_py"):
+            fh.write(f"engine worktree: {cwd} HEAD " + sh(f"git -C {cwd} rev-parse HEAD"))
+            fh.write("engine worktree status:\n" + sh(f"git -C {cwd} status --porcelain"))
+            fh.write(f"jobs source: {tr.get('src')}\n")
         fh.write("uptime: " + sh("uptime"))
         fh.write("free -g:\n" + sh("free -g"))
         fh.write("venv: " + sh(f"{PY} -I -c \"import sys,numpy,pandas,pyarrow;print(sys.version.split()[0],numpy.__version__,pandas.__version__,pyarrow.__version__)\""))
