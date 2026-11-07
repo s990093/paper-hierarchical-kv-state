@@ -3,6 +3,16 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T14:07+08:00 — agent 軌跡（偏離 17＋更正）的分析選擇：使用者在看任何 agent 數字之前決定；現在算、工具類、下判定
+
+**現況**（icpe-data 訊息，`origin/icpe-next-data` a1ea724，STATUS_DATA 14:05）：mini-SWE-agent（ms）、OpenHands（oh）各 12 個變體（固定並行 N16／32／64／72 × seed 1–3），版本 B（`b/agent_main`、`b/agent_p1`、`b/analysis/{ms,oh}_p1`）、版本 C（`apc/{miniswe,openhands}_N*_s*`，24 個都 REPRODUCED cells＝324）都已進 git。icpe-main 只讀了 PREREG 偏離 17 和更正，**沒看任何 agent 的模擬數字**（也沒讀 STATUS_DATA 14:05 的摘要表）。
+
+**使用者決定**（本 session，AskUserQuestion，11/7 14:0x）
+1. **現在算，不等偏離 14**：做法同版本 C 主表——判定照算，另給「不含 O-PF」的判定；O-PF、O-ALL 的列標「待偏離 14 修正」，修正版出來後取代。
+2. **兩份都算工具類、下判定**：歸「合成到達・工具類」；單獨成一節，不併進論文 28 個變體的計數；W3 沒跑，推翻條件後半寫「未定」。
+   - OpenHands 的規則 6 (b) 沒過（增量比中位數 0.795），報告時附註「輸入可能少算」。
+- 照使用者 12:4x「照對話資料集的做法」沿用（不是新選擇）：每個 seed 當一個變體各自判，另報每格 3 個 seed 的中位數和最小–最大；版本 C 正式、版本 B 並列、版本 C 另並列「④ 不含 BELP」；B → C 用 `main_ab.py --rel eqsel` 核對。
+
 ## 2026-11-07T14:03+08:00 — icpe-sim：偏離 14 的重跑清單延後（模擬器舊錯誤，修法待使用者選）；對我已算的結果的影響
 
 - **icpe-sim 的訊息**（STATUS_SIM 2026-11-07T14:05、`origin/icpe-next-sim` 0786f56，我沒有去讀，只轉述）：
