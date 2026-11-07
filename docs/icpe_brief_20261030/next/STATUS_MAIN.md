@@ -3,6 +3,15 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T18:09+08:00 — 偏離 14 第二批：Bailian 的修正版版本 C 核對通過（icpe-main 獨立核對）
+
+- 輸入：`origin/icpe-next-data` 6693089d 的 `results/icpe_next/apc_d14/bailian_{coder,thinking,traceA}/`（v8_dev14 36780534，RUX_PFX=1 RUX_PGR=1；icpe-data 的每個變體檢查都 PASS）。TRX40 的 `apc_d14/semianalysis_N16_s1` 也已進 git（33a20f38），等 SemiAnalysis 12 個到齊再核對。
+- 新腳本 `code/icpe/main_d14_verc.sh`：rowcheck；拿掉 BELP 用 next_sim_analyze 獨立重算、和新 verC 比；新 verC 對舊 apc/ verC。
+- run `20261107-180154-icpe-main-d14-verC-bl`（exit 0）：rowcheck PASS（17 × 18）；獨立重算＝新 verC（O-ORD／O-DROP／O-NOW／O-PF／O-ALL 810／810 逐位元）；O-GPU 不含 BELP ≤ 含 BELP（162）；新 verC 的 O-ORD／O-DROP／O-NOW／O-GPU＝舊 verC（648／648）。
+- 變動〔模擬；Bailian 只報告〕：O-PF 81／162 格變（−0.09～+0.16 個百分點），≥15% 42 → 42；O-ALL 47／162；對手 0 格變。和第一批的版本 B 一樣小。
+- 結果：`results/icpe_next/main/verC_d14/bl_*`。
+- **寫本節時已經看過的正式結果**：Bailian 的修正版版本 C。
+
 ## 2026-11-07T17:54+08:00 — **偏離 14 第一批全部完成**：版本 B 論文版的判定字不變（3／9、14／14、5／5）；淘汰類比例 原始工具 52.6% → 51.8%、合成 95.9% → 94.5%
 
 - **TraceLab**（merge `origin/icpe-next-data` 745f1622）：run `20261107-175226-icpe-main-d14-verB-tl`，核對全 PASS；**偏離 14 沒有改到任何一格**（6 個元件都 0 格變）。
