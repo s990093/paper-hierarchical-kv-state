@@ -1,0 +1,16 @@
+{
+ "run_id": "20261107-175127-icpe-trx-d14-verb-mc",
+ "host": "acvlab-TRX40-AORUS-MASTER",
+ "run_dir": "/ssd4/hungwei/icpe-next/runs/20261107-175127-icpe-trx-d14-verb-mc",
+ "cmd": "export DATAREPO=$REPO NEXT_B_PY=$ROOT/venv/bin/python MAIN_ROWCHECK=$ROOT/code-archive/main-b54d3cff/main_rowcheck.py; bash code/icpe/next_d14_verb.sh mc results/icpe_next/b $ROOT/runs/d14-verb-refs/mc_p1_headroom_components.csv.xz\n",
+ "context": "2026-11-07T17:51:27+08:00\nacvlab-TRX40-AORUS-MASTER\nname: d14-verb-mc\nrepo HEAD: c281d7c5f9376f590dcd36b5d77e5c98e7ed774d branch icpe-next-trx\nrepo status:\n?? results/icpe_next/b/d14_old_main/mooncake/\n?? results/icpe_next/b/d14_old_p1/mooncake_trunc/\n?? results/icpe_next/b/d14_old_p1/mooncake_ttl/\nuptime:  17:51:27 up 7 days, 21:56, 12 users,  load average: 57.36, 59.07, 50.61\n               total        used        free      shared  buff/cache   available\nMem:           64173        9074        3149           7       52626       55098\nSwap:           8191        3088        5103\n/dev/sdc        1.8T  1.3T  438G  75% /ssd4\nenv:\nREPO=/home/hungwei/paper-hierarchical-kv-state\nROOT=/ssd4/hungwei/icpe-next\nRUN_ID=20261107-175127-icpe-trx-d14-verb-mc\nRUN=/ssd4/hungwei/icpe-next/runs/20261107-175127-icpe-trx-d14-verb-mc\n",
+ "table_sha256_uncompressed": "322593827ac6be4995321224c8f3fc4d4f7204a8d05a0acace9c2d27f1caad30",
+ "files": {
+  "mc_p1_headroom_components.csv.xz": "532c9d24784634506764ebf2b803a30f3e7f8d3237b220adb011f1a8b31e79b7",
+  "mc_p1_violations.csv.xz": "07541f6377b2ff91242098303ea3fcd4ab074820a43921209bdb68fd5852c105",
+  "patch_summary.csv": "74553e5c66e5908b7ba0b86f7be423f9c409c8a943173ca4607d098b78fb9889",
+  "rowcheck.csv": "85e88de59a9b1b29384b2e5eb63f6b8dc413cefc6e21b70fd13f90b7d507107d",
+  "table_vs_verB.csv": "7a70d490424835b86f83b72182bf82e664e2ae12beaf50394495f4c61ddf98e9"
+ },
+ "note": "PREREG 偏離 14 第一段的版本 B 檢查表（icpe-trx，TRX40；next_d14_verb.sh）：mc 的 main＋P1 _ttl，原本的列換上 d14 列（next_d14_patch.py）後用 next_sim_analyze 算；O-PF、O-ALL(report) 以外的元件和原本的版本 B 表 origin/icpe-next-main 58252b4f results/icpe_next/main/verB/mc_p1_headroom_components.csv.xz（sha256 80a8b4d0e36e…） 逐值相同（table_vs_verB.csv，D14_TABLE_RESULT IDENTICAL）。給第二段的重現檢查用；論文用的正式表由 icpe-main 另外算"
+}
