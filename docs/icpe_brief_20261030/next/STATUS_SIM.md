@@ -904,3 +904,47 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - 開 APC／BELP、有雜訊、開 resample → 一次整個 session 的 APC＝LRU、BELP＝BEL。
 
 **需要使用者決定什麼**：無。
+
+---
+
+## 2026-11-07T15:56+08:00 — **旗標開的跨機器參考（xref_dev14）失敗**：wt＋預取到 GPU 的 O-ALL 在 SemiAnalysis assert；**旗標關也一樣**（舊問題），正式 block 都沒用這個組合；要使用者決定
+
+**15:50 那節的「驗證 PASS」只對它列的網格成立**。三個旗標還沒放行，已告訴 icpe-data、icpe-next-trx、icpe-main 不要用（icpe-data：不用、TRX40 暫停）。
+
+**完整錯誤**（run `20261107-154804-icpe-sim-xref-dev14`；凍結的 worktree `g1-63b8e32`；兩個引擎都在第一個 sweep `sa_q` 停下，`exit_code_py`＝31、`exit_code_rs`＝51，比對沒跑）
+- Python（`py_sa_q.log`；第 16／334 個 job 之後）：
+  ```
+  File ".../x1_sim.py", line 1834, in _step_gpu → self._turn_end_wt(r, blocks, tend)
+  File ".../x1_sim.py", line 1998, in _turn_end_wt → w += self.drop(s)
+  File ".../x1_sim.py", line 1526, in drop → self._g_unprefetch(s, self.sb[s], push=False)
+  File ".../x1_sim.py", line 1147, in _g_unprefetch → assert self.gspf[s] == 0, (s, self.gspf[s])
+  AssertionError: (12, 277)
+  ```
+- Rust（`rs_sa_q.log`；第 20 個 job 之後）：`thread '<unnamed>' panicked at src/main.rs:1099:9: gspf 12 277` → `RuntimeError: x1fast（常駐，…/x1fast-work/trace-7cfa6556228f0469c7dc5113）提早結束，exit -6`。
+- 意思：session 被丟時，還有 GPU 預取副本不在它的 sb 裡，找不到就 assert。
+
+**範圍**（只診斷，同一份程式）
+- run `20261107-155318-icpe-sim-xref-wt-repro`（Rust）：SemiAnalysis N16 s1、CPU 8、O-ALL、b32、GPU 111.0625、**wt＋預取到 GPU**，4 個 GPU 規則 × 旗標 {關、只 `--pf-expire`、只 `--pf-gpu-recheck`、兩個都開}。**16 個組合全部 panic**：LRU `gspf 12 277`，BEL／TTLA:10／TTLB:30 `gspf 9 114`，和旗標無關。
+- run `20261107-155403-icpe-sim-wtpfgpu-scope`：
+  - Python 旗標關（BEL）：`AssertionError: (9, 114)`，和 Rust 相同。
+  - **正式 block 用的組合沒事**：SemiAnalysis N16 s1、CPU 8／64、O-ALL／O-PF／LRU+RPF、4 個 GPU 規則，以下 4 個 sweep 各 48 個 job 都跑完（Rust，exit 0）：
+    - wb＋預取到 GPU，旗標關、旗標開；
+    - wt＋預取到 CPU，旗標關、旗標開。
+- **正式 block 都沒有 wt＋預取到 GPU**：icpe-next-data `8e54d587` 的 `next_b_queue.blocks()` 465 個 block 裡 0 個。`_wt` 都是預取到 CPU，`_pfgpu` 都是 wb。G1（沒有 GPU 層）也沒有。
+- 所以：
+  - 這是旗標關也有的舊問題，只在 wt＋預取到 GPU。正式結果、G1、G0 都不受影響（icpe-data 剛做的 G0：40a4c87 合併後 Rust 旗標關 128,064 格 0 不同，run `20261107-155259-icpe-data-g0-rust-merged-40a4c87`）。
+  - 偏離 14 的三個旗標沒有造成它。
+  - 是我設計的參考網格把 wt 和預取到 GPU 交叉了。t1 也交叉了，但 Bailian thinking 沒碰到。
+  - 原因還沒查（NOT_MEASURED）。推測和 SIM_CHANGES 19 同類：wt 的回合結束換掉 sb[s] 時，舊的 GPU 預取副本沒有先收回。
+- 已停：TraceLab 預熱（run `20261107-154805`，留 STOPPED；c1、c2 開始建了、沒建完）。程式若要改，x1_sim 的 sha 會變，快取的鍵也會變。
+
+**選項**（要使用者決定）
+- **A（建議）**：參考網格拿掉「wt × 預取到 GPU」，其他照舊（wb＋預取到 GPU、wt＋預取到 CPU、GPU 0，有雜訊與沒有雜訊）。
+  - 這個舊問題寫進 SIM_CHANGES／kvsweep 的已知問題，不修。理由：正式 block 都不用這個組合。
+  - 引擎不變（`63b8e32`）；參考跑完、Python＝Rust 就放行旗標。
+- **B**：先查原因、修（放在新旗標或改預設），重新驗證，再做參考。
+  - 會晚：修＋驗證約 2–3 小時〔推估〕。TraceLab 快取要用新程式重建（每個變體約 41 分鐘）。
+  - 正式結果不會因此改變，因為沒用到這個組合。
+- **C**：A 先放行；B 另外排在後面做，不擋重跑。
+
+**需要使用者決定什麼**：A／B／C。
