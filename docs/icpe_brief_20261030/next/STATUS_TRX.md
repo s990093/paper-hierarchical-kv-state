@@ -3,7 +3,7 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
-## 2026-11-07T17:56+08:00 — 第二段第一個變體 **semianalysis_N16_s1：D14_VERC_DONE**（三關都過）→ `results/icpe_next/apc_d14/semianalysis_N16_s1/`；第一段非 P4 的 124 個 block 全部 OK，進入 P4
+## 2026-11-07T17:54+08:00 — 第二段第一個變體 **semianalysis_N16_s1：D14_VERC_DONE**（三關都過）→ `results/icpe_next/apc_d14/semianalysis_N16_s1/`；第一段非 P4 的 124 個 block 全部 OK，進入 P4
 
 - **semianalysis_N16_s1**（run `20261107-174218-icpe-trx-d14verc-semianalysis_N16_s1`）：
   - sweep：`engine=rust src_sha256=4eca5bda…`、`py_fallback_jobs=0`；`jobs=14184 workers=16 code_sha=3280b1c8799b+rs4eca5bda`；`sweep done 651.8` s。
