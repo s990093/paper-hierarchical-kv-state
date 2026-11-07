@@ -2,6 +2,29 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T13:00+08:00 — agent 軌跡（偏離 17）：**mini-SWE-agent 轉換通過**；**OpenHands 的規則 6 (b) 不過 → 停**，等使用者決定
+
+- h200 已把 12:55 那節收成 **PREREG 偏離 17**（origin/icpe-next-a d1f4ca2）。PREREG 已同步。
+- 程式：`code/icpe/next_agent_traces.py`（載入）＋`next_b_convert.py agent`＋`next_b_queue.py` 的 `agent_main`／`agent_p1`（每份 12＋12 個 block）。
+- **mini-SWE-agent**（run `20261107-125541-icpe-data-conv-agent-miniswe`，rc 0）：
+  - 軌跡 499 個，全部合格；成功呼叫 13,884 次，FormatError 3,517 次不模擬。
+  - 規則 6：
+    - (c) api_calls＝成功＋FormatError：499／499。
+    - (a) 鍵的延伸 13,385／13,385。
+    - (b) Llama 增量 ÷ Qwen 回報的 prompt_tokens 增量：n 13,385，中位數 0.990（p10 0.951、p90 1.015），100% 在 [0.5, 2]。第一次呼叫的總量比中位數 0.902（只報告）。
+  - 12 個 nb：`miniswe_N{16,32,64,72}_s{1,2,3}`，各 13,884 個請求、499 個 session、303,234 個完整塊。span 1.0–3.7 h。
+- **OpenHands**（run `20261107-125559-icpe-data-conv-agent-openhands`，**exit 1，沒有寫出任何 nb**）：
+  - 軌跡 299 個，全部合格；呼叫 8,021 次，其中 214 次是沒有 tool call 的 agent 訊息，沒有 usage。
+  - 兩個 commit 的原始碼相同。工具＝execute_bash、finish、str_replace_editor。
+  - 規則 6 (a)：7,722／7,722。
+  - **規則 6 (b) 不過**，錯誤原文：`[openhands] 規則 6 (b) 不過：{'n': 7296, 'median': 0.7952094090648307, 'p10': 0.717391304347826, 'p90': 0.875, 'frac_in_0p5_2': 1.0, 'first_call_total_ratio_median': 0.45227142035652673} → 停`
+  - 登記的門檻：中位數 ∈ [0.8, 1.25]，而且 ≥90% 在 [0.5, 2.0]。第二項過了，中位數 0.795 低於 0.8。
+  - 可能的原因〔推測，沒驗證〕：Anthropic 的 tokenizer（不公開）和 Llama 不同，而且 tool_use／tool_result 每則都有包裝 token。
+    - 比值很集中（p10–p90 是 0.72–0.88），比較像固定比例的差異，不像漏了某一段內容。
+    - 第一次呼叫的總量比 0.45：Anthropic 端另外加的工具格式化和系統內容，我們沒有，差約 1,900 個 Claude token。
+  - 診斷（只報告）：模型輸出的 Llama token（content＋tool 參數）÷ Claude 的 completion_tokens，中位數 0.465（p10 0.29、p90 0.77）。這個比較混了 tool_use 的結構 token，不能拿來單獨證明 tokenizer 的比例。
+- **照規則停下**，不改門檻，不換方法。mini-SWE-agent 照登記先跑；OpenHands 等使用者決定。
+
 ## 2026-11-07T12:55+08:00 — **agent 軌跡補登記**（mini-SWE-agent、OpenHands）：使用者決定補跑；**本節 commit 時還沒跑任何一格模擬，也還沒寫轉換程式**
 
 > 時間：acvlab `date -u` 2026-11-07T04:52:16Z。請 h200 收成 **PREREG 偏離 17**（h200 說的下一個號碼）。

@@ -815,3 +815,241 @@
 - 拆的行數記在 meta 的 `filter.load_stats.ultrachat_multi_obj_lines`。
 - 失敗的 run `20261107-110038-icpe-trx-conv-chat-ultrachat` 沒寫出任何 nb。
 
+
+### 偏離 14（2026-11-07T03:12:47Z（acvlab 的 `date -u`，寫進本檔的時間）；**P4 雜訊斷崖的兩條修正規則：O-PF 預取的副本過期就丟、模型 P 抽到已經過去的時間就重抽；修正版取代正式結果**；使用者在 `icpe-main` 決定（11/7 10:52–11:07 之間：`icpe-main` 的 commit `390870d`（10:51:49）之後、PDF run `20261107-110709` 之前；先選「C：正式結果不動、修正版並列」，後改「B：補規則、全部重跑」），由 `icpe-sim` 寫（使用者在 `icpe-sim` 用 AskUserQuestion 選，11:08:39 發問、11:09:16 回答）；號碼由 `h200` 給；門檻、主指標、規則集合、比較層級都不改）
+
+**這是看過 P4 結果之後才補的規則。**
+
+**為什麼**
+- P4（偏離 6、8）跑完後，`icpe-main` 發現：在合成到達的紀錄上，O-PF 在模型 P、λ>0 時上限變成負值，而且幾乎不隨 λ、抽法、seed 變。使用者請 `icpe-sim` 查，只查不改。
+- `icpe-sim` 查到的結果寫在 STATUS_SIM 2026-11-07T11:02 節（`origin/icpe-next-sim` `631d17c`）：
+  - **不是算錯。** 只記錄、不改計算的重跑，逐值重現 P4。
+  - 原因是兩條 PREREG 沒寫、完美預知時（幾乎）碰不到的模擬器規則：
+    1. **O-PF 預取進 CPU 的副本幾乎不會被丟掉。** 只有三種情況會釋放：本人回來讀、被別的 session 寫回成 BF16、或 CPU 上沒有別的 session。模型 P 會把「不會再回來」猜成會回來（第 6 項本來就允許猜錯生死）。猜錯時，這些副本會一直佔著 CPU。
+    2. **模型 P 抽到已經過去的時間。** 模型 P 抽的是「上次回合結束＋間隔」，時間已經過去時，就換算成「下一個請求」。B1 要到這個對話的下一次請求才重抽，所以不會再回來的對話會一直被當成「馬上回來」，GPU 層的 BEL、CPU 的 O-BEL 永遠不會逐出它。
+- **方向。** 兩條都讓有雜訊的預測看起來比實際差，和第 2 項的理由「到對預測最有利的地方去測」相反。
+
+**規則 (i)：O-PF 預取的副本過期就丟**
+- **適用範圍：**
+  - CPU 規則有完美預取的：O-PF、O-ALL（O-ALL 仍然只報告）。
+  - 預取到 CPU（主結果），以及預取到 GPU（第 2 項的敏感度）。
+  - 有沒有雜訊、λ 多少都適用，λ＝0 也一樣。
+  - LRU+RPF（近期預取）不適用。
+- **怎麼做：**
+  - 時機：每個請求 r 開始處理時，排在 GPU 層 TTLA 到期與推進預取之前。
+  - 對象：每個還留著預取副本的 session s。它的「預測下次被讀的請求」sT 是降級或離開 GPU 時算的；有雜訊時是加了雜訊的值。
+  - 條件：sT ≤ r−1，也就是預測的那個請求已經處理過了。
+  - 動作：丟掉 s 全部的預取副本（CPU 的 INT4 副本，或預取進 GPU 的那份），資料還在慢層。s 不再放回預取佇列，下次被降級或離開 GPU 時，照原本的規則重新算 sT、重新排。
+- **完美預知時也會改到結果。** 開 GPU 層時，回合結束只釋放自己的預取副本，所以被別的 session 讀走的副本會留在 CPU 上，這條規則會把它們丟掉。因此主結果（沒有雜訊）的 O-PF、O-ALL 也照新規則重算，範圍見下面。
+- **登記前已經看過的效果**（只在診斷程式裡；SemiAnalysis N32 s2、CPU 16 GiB、b32、GPU TTLB:30）：
+  - λ＝0：mean_ret 在 idle 降 0.7%、busy 降 5.3%。
+  - 模型 P、λ＝0.1、idle：上限從 −2.9% 變成 +14.7% 到 +15.6%。
+  - 規則 (i) 是看過這些效果之後選的。另一個窄版（只在預測的那個請求沒有讀它時才丟）λ＝0 逐值不變，但只解掉一部分，使用者沒有選。
+
+**規則 (a)：模型 P 抽到已經過去的時間就重抽**
+- **適用範圍：** 模型 P、λ>0 時，每一次以機率 λ「換成經驗分佈的值」。模型 M 和 λ＝0 不受影響。
+- **條件：** 抽到的間隔 g 是有限值，而且「上次回合結束＋g」≤ 目前請求（模擬器正在處理或剛處理完的那個）的時間。
+- **動作：**
+  - 從同一份經驗分佈裡，「間隔 > 已經過的時間（目前請求的時間 − 上次回合結束）」的那一部分重新均勻抽一個。「之後不再回來」也算在裡面，照它的經驗比例。
+  - 用同一個亂數串流，多抽一次（`randrange`）。
+  - 這取代原本「換算後至少是下一個請求」的做法；那個下限只留著處理浮點誤差。
+- **B1：** 重抽的值取代存著的那一組，到這個對話的下一次請求前（或又過期時）都照用。**B2：** 只用在這一次詢問。
+- 規則 (a) 登記前沒有跑過任何結果。
+
+**實作與驗證**（`icpe-sim`；細節寫在 SIM_CHANGES／STATUS_SIM）
+- `x1_sim.py` 和 x1fast（Rust）都加兩個旗標：`--pf-expire`（規則 i）、`--noise-overdue resample`（規則 a）。
+  - 旗標沒開時，和現在的程式逐位元相同（G1）。
+  - 旗標開了以後，Python 和 Rust 逐格相同。
+  - 開了旗標的列多兩欄：`pf_expire`、`noise_overdue`。
+- 版本 C 的 v8 由 `icpe-rux` 移植同樣兩條規則，`icpe-sim` 對拍。
+
+**範圍：修正版取代正式結果**
+- **規則 (i)：** 所有正式 block 裡 CPU 規則是 O-PF、O-ALL 的 job，打開旗標重跑，分析時用重跑的列取代舊的列。
+  - 正式 block 包括主結果、P1–P3、P4、版本 C、偏離 13 的對話資料集。
+  - 其他 CPU 規則不受影響，不重跑。G1 會驗證：旗標打開時，其他規則逐位元不變。
+- **規則 (a)：** P4 模型 P、λ>0 的全部 job，兩個旗標都打開重跑。模型 M 和 λ＝0 只重跑 O-PF、O-ALL。
+- **GPU 層關閉的格子：** 如果驗證出規則 (i) 不改結果，就不重跑，寫在 STATUS_SIM。
+- 具體的 block 清單、在哪台跑：`icpe-sim` 寫進 STATUS_SIM，`icpe-data` 排程，排之前先回報使用者。
+- 舊結果留在 git 裡、不刪。報告只用修正版，需要時標「偏離 14 之前」。11/10 的摘要可能來不及用修正版，使用者知道。
+
+**不改：**
+- 門檻（15%／5%）、主指標、規則集合、比較層級。
+- 雜訊模型 P、M 的定義（除了規則 (a) 那一點）、抽法 B1／B2、λ、seed 數。
+- λ＝0 自檢：規則 (i) 打開時，兩邊都打開再比。
+
+**登記前已經看過的結果**（`icpe-sim`；照實列）
+- **P4 的彙總：** `icpe-main` 的 `p4_cells.csv.xz`（`origin/icpe-next-main` `cc3d7bd`）。
+  - 看過的範圍：O-PF、O-GPU、O-ORD，按紀錄 × 模型 × 抽法 × λ 的中位數、最小、最大。
+  - 其中 λ＝0 的列，就是這些 P4 格子在主結果（版本 B）的上限。
+  - 另外看過 SemiAnalysis、TraceLab、CacheWise O-PF 的逐格 λ＝0 與 0.1 的值。
+- **少數格子的逐 seed 值：** run `20261107-082202-icpe-main-p4-noise` 的 `sa_`／`cw_`／`mc_R1_p4_noise_headroom.csv`。
+  - SemiAnalysis N32 s2、16 GiB、b32 的 O-PF；
+  - CacheWise 的 O-GPU（N32 s2 與 N64 s1 的前幾格）；
+  - Mooncake toolagent R1 8／16 GiB 的 O-GPU。
+- `icpe-main` 訊息裡的 TraceLab c2 例子。
+- **`icpe-sim` 自己的診斷 run**（`20261107-105321`、`-105614`、`-104850`、`-105925`、`-110002`，以及更早的版本）：上面那些格子的重跑與反事實。
+- **主結果（P1–P3、版本 B／C）整張的上限表與判定：** 就我的紀錄沒有看過。以前只做過逐格「相同／不同」的對拍。
+
+### 偏離 16（2026-11-07T03:58:42Z（H200 head node 的 `date -u`）；**W6b 的 run set**（§5 W6b、偏離 3 第 3 點「跑哪些做法、幾次：在 `x1_gpu.py` 改好之後、跑之前另外登記」）；使用者在 `h200` 決定（AskUserQuestion：11/7 約 11:5x「現在準備，不動排隊中的程式」；約 11:58「6 次」「每格取各 rep 的中位數」）；由 `h200` 寫；W6b 還沒有任何 GPU 資料，S_orig 也還沒算；門檻、主指標都不改。編號：偏離 15 已給 `icpe-main`（CacheWise 從論文拿掉），寫進本檔時它還沒寫入，所以本節排在它前面）
+
+**1. 程式**（`origin/icpe-next-a` 的 `f095976` 與本節的 commit）
+- **不改 `code/icpe/x1_gpu.py`、`code/p3x/x1_sim.py`。** W6c／W6a 的 job（24443、24444）排隊中，開跑時會讀這兩支。偏離 1 寫「`x1_gpu.py` 由 `h200` 改」；實際做法改成新檔 `code/icpe/next_a_w6b.py` 包住它：import x1_gpu，照原樣呼叫它的 `replay`、`cmd_sim`、`cmd_gpu`，只換做法清單。
+- **x1_gpu.py 原本跑不了 GDSF**：`make_engine` 不傳 `gdsf_view`。第一次自測 run `20261107-115225-icpe-next-w6b-selftest` 在 GDSF 停下（`AttributeError: 'NoneType' object has no attribute 'slow_name'`，x1_sim.py:413），標 `FAILED_NOT_USED`。next_a_w6b.py 換掉 `X1G.make_engine`：GDSF 照 x1_sim 自己 sweep 的寫法傳 `views[0]`；其他做法照原樣。
+- **自測**（head node，CPU）：run `20261107-115434-icpe-next-w6b-selftest`，8 個做法 × CPU 128／256：重播迴圈（模型時間）和 `Engine.run` 逐請求逐位元相同（TTFT、慢層讀寫位元組、預取位元組），**16／16 PASS**，各 1,535 個請求。只記 PASS／FAIL，沒有記、沒有印任何 TTFT。
+- 程式 sha256 前 16 碼：x1_gpu.py ca74a722a923246d、x1_sim.py 047b06485b0bdb3d、x1_trace.py 8f659c970f386486。
+- runner：`code/icpe/next_a_w6b.sh`（檔名不在 `next_a_*.py` 樣式內，同偏離 3 第 5 點，只有 `h200` 用）。
+
+**2. 設定**（同 W6a、T1G P02，不另選）
+- Mooncake conversation、規則 R1；k＝8（`sha1(session_id) mod 8 == 0` 的 session）；CPU 128／256 GiB ÷ 8。
+- 慢層 ssd、GPU 閒、Cake 還原；T1 常數（`P3_TIER=h200cpu`、`M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json`）；不設 `M7_ATTN`（sdpa）；Llama-3.1-8B；`gpu_guard` 全程監看。
+
+**3. 做法**：8 個＝O-ORD 的 ② 和 ④，取自 x1_sim 的 `RIVALS["O-ORD"]`、`COMPONENT_POLICIES["O-ORD"]`。
+- ②：LRU、LRU2、ARC、S3FIFO、GDSF、PENS。
+- ④：O-BEL、O-BELS。
+
+**4. 次數與順序**
+- 每個設定（容量 × 做法）**6 次**（rep 0–5），共 96 個 run，輸出 `results/icpe_next/a/w6b/gpu_requests.csv`。
+- 先冒煙：8 個做法各跑前 100 個請求（CPU 128，`gpu_smoke.csv`），不進分析。
+- 每一輪 16 個設定，用 `random.Random(20261108＋rep)` 打亂。
+- 被污染（exit 3）照暴露重跑，最多 3 次；其他失敗停下回報，接著跑用 `--from`。
+
+**5. 模擬參考**
+- **S_orig**＝同一個模擬器在同一份縮小 trace、同一容量上的結果：`next_a_w6b.py sim`（＝`x1_gpu.cmd_sim`）→ `sim_requests.csv`。在本節 push 之後、任何 GPU 資料之前，在 head node 算。
+- **S_real**（到達時間換成 GPU run 實際的開始時間）在 GPU 之後算，只報告。
+
+**6. 判準**（P0-2 §6 的三條，都對 S_orig；`next_a_w6b.py analyze --reps 6`）
+- **每格的 GPU 值**＝6 個 rep 的「回來請求平均 TTFT」的**中位數**。只用乾淨、請求數完整的 run；同一個 rep 有多個乾淨的 run 時取最後一個。
+- (1) **比值**：16 格（容量 × 做法）的 GPU 值 ÷ S_orig 都在 [0.9, 1.1]。
+- (2) **排序**：每個容量內，S_orig 相對差 ≥5% 的每一對做法，GPU 值的先後相同；<5% 的列出、不判。
+- (3) **headroom 正負號**：每個容量，O-ORD 的上限＝(min ② − min ④) ÷ min ②，GPU 和 S_orig 同號；S_orig 的 |上限| <2% 的列出、不判。O-BEL、O-BELS 各自對 min ② 的上限只報告。
+- **判定字**：三條都成立＝PASS；任一條不成立＝FAIL；有格子缺 rep＝INCOMPLETE（缺的寫 NOT_MEASURED）。
+- **只報告**：每格各 rep 的最小、最大，以及對應的比值範圍；對 S_real 的比值。
+
+**7. 排程**
+- `sbatch --dependency=afterany:24444 code/icpe/next_a_w6b.sh --reps 6`（`--time 36:00:00`，1 張 GPU）。
+- 時間〔推算〕：T1G P02 的 12 個 run 的 `gpu_guard` 檔名時間，間隔平均約 16.4 分鐘 → 96 個 run 約 26 小時。
+- 量時間不和我們自己的 job 同時跑（runner 開跑時查，同 W6a）；跑完再用 sacct 查有沒有重疊。
+
+**8. 登記時已經看過的**
+- W6b：沒有任何 GPU 資料；S_orig 還沒算；自測只看 PASS／FAIL。
+- 舊結果：X1 全尺寸模擬（`x1_sweep.csv.gz`）；P0-2／T1G P02 的結果（`docs/h200/icpe/P0-2_x1_gpu_validation.md`、`docs/h200/icpe/T1G_gpu_rerun.md`，包括 GPU 上的 LRU、FREQ2Q、O-BEL）。今天讀 T1G 的 `selftest.csv` 前兩列時，看到 k＝8、CPU 128 的 LRU、FREQ2Q 模擬 mean_ret。
+- W6c、W6a：還沒跑。
+
+### 偏離 15（2026-11-07T03:47:09Z（acvlab 的 `date -u`，寫進本檔的時間）；**CacheWise 從論文拿掉（授權），內部分析保留**；使用者在 `icpe-data` 說「CacheWise 下先停 放不了paper」（STATUS_DATA 11:45，`origin/icpe-next-data` ba6ae12），範圍與要不要登記在 `icpe-main` 用 AskUserQuestion 決定（11/7 11:4x，本節寫入之前），由 `icpe-main` 寫；號碼由 `h200` 給；門檻、主指標、判定方式、其他紀錄都不改）
+
+- **原文**：§4「必跑＝TraceLab、CacheWise、SemiAnalysis、Bailian」「CacheWise 沒有授權：原始資料、轉換後的紀錄、逐對話的數字都不進 git」；偏離 4 第 3 項的 40 個登記變體含 CacheWise 12 個（並行 16／32／64／72 × s1–s3）。
+- **為什麼**：CacheWise 的紀錄（github `cachewise-project/cachewise-coding-traces`）沒有宣告授權（NEXT_PLAN §5.5：repo issue #1 沒有回覆），使用者判定不能放進論文。**理由是授權，不是結果。**
+- **決定**（使用者在 `icpe-main` 選「論文拿掉，內部保留」與「登記，由 icpe-main 寫」）：
+  1. **論文**（ICPE 投稿）的表、圖、摘要、判定字只用其餘 6 份紀錄、28 個變體：原始到達 14 個（FreeInference 6、Mooncake toolagent R1／R2、Mooncake 對話 R1／R2、TraceLab c1、Bailian 3），合成到達 14 個（SemiAnalysis 12、TraceLab c2、c4）。
+  2. **內部**（STATUS 檔、給內部的報告）保留 CacheWise 的結果，並列「含／不含 CacheWise」。git 裡已有的 CacheWise 彙總照 §4 的規則保留（只有每格的彙總，沒有原始資料、轉換後的紀錄或逐對話的數字）。
+  3. CacheWise 的新工作先不跑（使用者在 `icpe-data`）：偏離 10 的版本 C 12 個變體、偏離 11 的 W5 與排隊、偏離 14 重跑清單裡的 CacheWise block。
+  4. 對話資料集（偏離 13）不受影響。
+- **照實列出拿掉前後**（以版本 B 為準，run `20261106-110854-icpe-main-verB-p1`，`results/icpe_next/main/verB/verB_verdict.csv`；判定照偏離 7）：
+  - 原始到達・工具類：3／9 → 3／9（CacheWise 不在這類）。
+  - **合成到達・工具類：21／26 → 14／14**，最大值都是 52.9%。拿掉的 12 個裡 7 個 ≥15%、5 個 <15%（並行 16 的 s1–s3、並行 32 的 s1、s3）。判定字（≥15% 成立）不變。
+  - 原始到達・非工具類（只報告）：不變。
+  - 推翻條件（偏離 9）：不變，依據是 TraceLab c1、c2、c4，CacheWise 沒有線索欄位、沒跑 W3。
+  - P4（偏離 8）：合成工具類的（格, 元件）從 822 變 632；模型 P、B1 在 λ 0.1–0.4 中位數仍 ≥15% 的格數不變（181／139／117／78，CacheWise 的在 λ 0.1 已全部 <15%）。
+- **方向**：拿掉的 12 個裡有 5 個沒過門檻，所以拿掉後合成工具類看起來更一致地過門檻（26 個裡 21 個 → 14 個全部）。這偏向「預測仍有空間」；論文寫到合成工具類時要附這一句，並在內部報告並列含 CacheWise 的 21／26。
+- **寫本節時 `icpe-main` 已經看過的結果**：CacheWise 的版本 A、B、P2／P3、P4 的全部輸出（STATUS_MAIN 各節、偏離 7、8 已列）；本節的前後對照是 11:4x 用已進 git 的彙總算的。對話資料集（偏離 13）的模擬數字：沒有看過。
+
+### 偏離 17（補登記）（2026-11-07T04:54:11Z（H200 head node 的 `date -u`，寫進本檔的時間）；**公開 agent 軌跡 mini-SWE-agent、OpenHands 的主網格＋版本 C**（§4「選跑的紀錄……要跑之前另補登記」）；跑不跑、到達方式、範圍由使用者在 `icpe-main` 決定（11/7 約 12:4x），資料來源（授權）由使用者在 `icpe-data` 決定（12:4x），細節由 `icpe-data` 寫在 STATUS_DATA；形式照偏離 13（使用者在 `h200` 選的「編號偏離、標補登記、h200 照抄」）；由 `h200` 寫，下面照抄 STATUS_DATA 那一節；主結果、門檻、主指標都不改）
+
+**h200 的收錄說明**
+- **原文**：`origin/icpe-next-data` @ `1a92a02` 的 STATUS_DATA「2026-11-07T12:55+08:00 — agent 軌跡補登記」（commit 12:53:02 +0800；acvlab `date -u` 2026-11-07T04:52:16Z）。下面照抄，只把節標題從 `##` 降成 `####`，其他字不改。
+- **登記時間**：照偏離 13 的做法，以那節的 commit 時間為準；寫進本檔的時間是本節標題的時間。
+- **號碼**：`h200` 對 `icpe-main` 說「下一個偏離編號是 17」，原意是 `h200` 自己下一個用 17，`icpe-data` 讀成給這份的號碼。寫入前查過各分支，最大是 16，沒有 17，`h200` 也沒有待登記的偏離，所以照用；`h200` 自己下一個從 18 開始。
+- **h200 核對**（git 物件）：
+  - 220fe73 → 1a92a02 的 STATUS_DATA 只在檔頭加一節（88 行）、0 行刪除。
+  - 版本 B／C、機器、引擎、重現檢查照偏離 13 補寫的第 1–4 點；偏離 14 修正版出來後 O-PF／O-ALL 一起重跑；歸「合成到達」、單獨成一節，和偏離 13 的對話資料集同一種地位。
+  - 我注意到、照實記的一點：mini-SWE-agent 的 `FormatError` 呼叫（3,517 次，佔 13,884＋3,517 次的 20.2%〔算術〕）因為沒有回覆與時間，不模擬；它們的 prompt 是下一次呼叫 prompt 的前綴。
+- **登記時已經看過的**：照原文，只有資料的欄位與計數，沒有轉換程式、沒有任何模擬。`h200` 沒有看過這兩份資料的任何模擬輸出。
+
+#### 2026-11-07T12:55+08:00 — **agent 軌跡補登記**（mini-SWE-agent、OpenHands）：使用者決定補跑；**本節 commit 時還沒跑任何一格模擬，也還沒寫轉換程式**
+
+> 時間：acvlab `date -u` 2026-11-07T04:52:16Z。請 h200 收成 **PREREG 偏離 17**（h200 說的下一個號碼）。
+> 已經看過的只有資料的欄位與計數（下面列出），沒有任何模擬結果。
+
+**使用者決定**
+- 來源：icpe-main 轉達，11/7 約 12:4x 在 icpe-main 用 AskUserQuestion 決定。
+  - 補兩份公開的 agent 軌跡，做法照對話資料集（偏離 13）。
+  - 先登記才跑；授權要能放進論文；要有真實時間，沒有就停下回報。
+  - 到達方式：固定並行 16／32／64／72 × 3 個 seed（同 SemiAnalysis）。
+  - 只跑主網格＋版本 C，版本 C 要先逐值重現版本 B。
+  - 單獨成一節，分析由 icpe-main 做。
+  - 偏離 14 修正版出來後，O-PF／O-ALL 一樣重跑。
+- 理由：對手論文（PBKV、SAGA、CacheScout、Continuum）用的都是 SWE-bench 類題目集。
+- 我查資料後問使用者（AskUserQuestion，本 session 12:4x），使用者選：
+  1. **mini-SWE-agent**：SWE-bench 排行榜的官方軌跡（`SWE-bench/experiments`＋它的 S3）**沒有授權**（GitHub API `license: null`，README 沒有使用條款）。改用 **MIT 的第三方軌跡**。
+  2. **OpenHands**：軌跡沒有記錄系統提示，**從當時的 OpenHands 原始碼（MIT）還原**，再照偏離 13 切 token。
+
+**資料**（新的空目錄；逐檔對 HF 的 LFS sha256，非 LFS 的檔對 git blob sha1；只讀 JSON，Python 用 `-I`；不進 git）
+
+| 名稱 | 來源 | 授權 | 內容 |
+|:--|:--|:--|:--|
+| mini-SWE-agent | HF `tarsur385/qwen3-30b-a3b-instruct-2507-swebench-verified-mini-swe-agent` @ 58389eb5426db5a3ae6159faa37498072b4735ff | MIT | mini-SWE-agent 跑 SWE-bench Verified，Qwen3-30B-A3B-Instruct-2507，`trajectories/*.traj.json` 499 個；503 個檔全部對上 |
+| OpenHands | HF `OpenHands/openhands-evaluation-outputs` @ aa8977805b4cefd317001d80ddf1ad52790e9d23，`outputs/SWE-bench_Lite-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_100_N_v2.2-no-hint/output.jsonl`（sha256 c520a3c6…＝LFS） | MIT | CodeActAgent（function calling）跑 SWE-bench Lite，Claude 3.5 Sonnet（2024-10-22），最多 100 步，299 個 instance |
+| OpenHands 原始碼 | GitHub `OpenHands/OpenHands`（原 All-Hands-AI），軌跡 metadata 記的兩個 commit 61874438、6333c6ad 的 `openhands/agenthub/codeact_agent/` | MIT | 兩個 commit 的 4 個檔逐位元相同；`function_calling.py` sha256 4a0f35c9… |
+
+- OpenHands 只用這一個 run：最新版本 v2.2、最多 100 步、每次呼叫都有 usage。19 個 run 各用不同的模型和版本，不混在一起。
+
+**已經看過的欄位與計數**（不是結果）
+- **mini-SWE-agent**：
+  - 每則 assistant 訊息有 `extra.timestamp`（回覆完成），`extra.response` 有 `created`（伺服器收到請求的秒，整數）和 `usage.prompt_tokens`（Qwen 的 token）。
+  - 每則 tool 訊息有 `extra.timestamp`（工具結束）。user 訊息沒有時間。
+  - 499／499 個軌跡：`info.model_stats.api_calls`＝assistant 訊息數＋`FormatError` 回饋訊息數。全部共 13,884 次成功呼叫、3,517 次格式錯誤。
+  - prompt_tokens 在同一軌跡內嚴格遞增（0 次下降），表示輸入只往後加。
+  - `created` − 前一個有時間戳的訊息：中位數 −0.44 s，沒有 < −1 s 的。
+- **OpenHands**：
+  - history 每個事件都有 `timestamp`。agent 的動作帶 `tool_call_metadata.model_response`，含 id、choices、`usage.prompt_tokens`（Claude 的 token）。
+  - 每個 instance 的呼叫數中位數 18、最多 100。prompt_tokens 在同一軌跡內 7,509 次相鄰比較都沒有下降。
+  - 原始碼：function calling 模式的系統提示＝`function_calling.SYSTEM_PROMPT`，工具＝`get_tools(...)` 的 `ChatCompletionToolParam` 定義。
+
+**轉換**（`next_b_convert.py` 的新子命令 `agent`，寫在之後的 commit；規則在這裡先定）
+- **session**：一條軌跡＝一個 session＝一個「對話」（排固定並行的單位）。沒有子 agent。不複製。
+- **合格**：至少 2 次有時間的成功呼叫，時間戳都齊全；不合格的依原因計數。全部合格的都用，不抽樣。
+- **請求**：每次「成功」的 LLM 呼叫一個請求。
+  - mini-SWE-agent 的 `FormatError` 呼叫沒有記錄回覆與時間，不模擬，次數記在 meta。它們的 prompt 是下一次呼叫 prompt 的前綴。
+  - OpenHands 一次回覆裡有多個 tool call（`total_calls_in_response`>1）時，依 `model_response.id` 合成一次呼叫。
+- **請求的輸入（Llama-3.1 tokenizer，同偏離 13：NousResearch 鏡像 d10aef79、sha256 79e3e522…、tokenizers 0.23.3）**：這次呼叫之前的全部訊息，照 Llama 3.1 格式組起來，再加 assistant 開頭。
+  - **mini-SWE-agent**：
+    - system／user 訊息原文。
+    - assistant＝`content`，再接每個 tool call 的 `{"name", "arguments"}` JSON。
+    - tool 訊息用 Llama 3.1 的 `ipython` 角色、原文。
+  - **OpenHands**：
+    - 系統訊息＝`SYSTEM_PROMPT`，加上這個 run 實際呼叫過的工具定義（`execute_bash`、`finish` 一定有，其他照軌跡出現的）的 JSON。用 `ast` 從原始碼取字面值，不執行原始碼。
+    - 之後照事件順序：
+      - user 的 message 動作 → user。
+      - agent 的動作 → assistant＝`model_response.choices[0].message` 的 `content`＋tool calls JSON；同一個 response 只算一次。
+      - 對應的 observation → `ipython` 角色、`content` 原文。
+      - environment 的 error → user。
+- **chunk 鍵**：整段 token 每 512 一塊的鏈式 blake2b（同偏離 13）。內容相同的前綴跨 session 共用，例如系統提示、相同的題目描述。
+- **規則 6**（任何一項不過就停）：
+  - (a) 每個請求的鍵是上一個請求的延伸，要 100%。
+  - (b) **用供應商回報的 prompt_tokens 驗算**：相鄰兩次呼叫，我們 Llama token 的增量 ÷ 回報的增量，中位數要在 [0.8, 1.25]，而且 ≥90% 的比值在 [0.5, 2.0]。
+    - 這個比值也報第一次呼叫的總量比，只報告；因為 tokenizer 不同，總量比不是判準。
+  - (c) mini-SWE-agent：api_calls＝成功＋格式錯誤，要 100%。
+- **時間（真實，只合成對話開始）**：
+  - **請求時間**：
+    - mini-SWE-agent：max(前一個有時間戳的訊息, `response.created`)。`created` 是整數秒，前一個訊息的時間是它的下界。
+    - OpenHands：這次呼叫第一個動作之前，最後一個事件的時間。
+  - **呼叫結束**：assistant 的 `timestamp`（mini）／動作的 `timestamp`（OpenHands）。
+  - 對話內的偏移＝請求時間 − 第一個請求時間，原樣保留。
+  - **對話長度**＝最後一次呼叫的結束 − 第一個請求時間。
+  - **開始時間**：固定並行 N＝16、32、64、72，順序＝`default_rng(seed).permutation`，seed 1–3；同 SemiAnalysis 的 `fixed_concurrency`。
+- **nb 名稱**：`miniswe_N{N}_s{s}`、`openhands_N{N}_s{s}`，每份 12 個。
+
+**模擬與版本**（同偏離 13 補寫的第 1–4 點）
+- 版本 B：plan `agent_main`（17×8，block `ms_N…_s…`／`oh_N…_s…`）＋`agent_p1`（`_ttl`，15 × 新的 8 個 TTL），v7 62b0932b。上限表 `next_sim_analyze --pf-target cpu`，先 rowcheck。
+- 版本 C：`next_chat_verc.sh`（v8 48e4efce，icpe-next-rux 4a713386），重現檢查必須 `REPRODUCED`。
+- 機器：都在 acvlab。
+- 不跑 P1–P4、W3。偏離 14 修正版出來後，O-PF／O-ALL 的列一起重跑。
+
+**報告**：判定與彙總由 icpe-main 做，歸「合成到達」，單獨成一節，不和論文的 28 個變體合併計數。
+
+**時間估計**〔推算〕
+- 寫轉換程式：mini 約 1 h；OpenHands 約 2 h，要從原始碼取系統提示與工具。
+- 模擬：每份 24 個 block（main＋_ttl），12 個版本 C，單份約 1 h。
+- 今天（11/7）深夜或 11/8 上午進 git。ICPE 摘要（11/10）前就可能好，全文（11/17）前一定來得及。
+- 若規則 6 (b) 不過，就停下回報，時間另估。
+
