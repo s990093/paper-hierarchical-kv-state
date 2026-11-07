@@ -1,0 +1,66 @@
+{
+ "exp": "w3",
+ "variant": "tracelab_c1",
+ "collected_ts": "2026-11-07T09:03:15+08:00",
+ "collected_host": "acvlab-TRX40-AORUS-MASTER",
+ "repo_commit_at_collect": "c0e063328fb14f916ecd0eb3d0d83dc703515974",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-083210-icpe-trx-rux-tl_c1-apc",
+   "ts": "2026-11-07T08:32:10+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  },
+  {
+   "run_id": "20261107-084950-icpe-trx-rux-tl_c1-reproB",
+   "ts": "2026-11-07T08:49:50+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  },
+  {
+   "run_id": "20261107-084104-icpe-trx-rux-tl_c1-w3",
+   "ts": "2026-11-07T08:41:04+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-084104-icpe-trx-rux-tl_c1-w3/out/x1/x1_sweep.csv",
+   "sha256_source": "4f806a93ddc4afd3e4f4be0609e02f4b72f8262f729c049176e8a943eb988a2f",
+   "bytes_source": 448287,
+   "rows": 1080
+  },
+  {
+   "file": "w3_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-084104-icpe-trx-rux-tl_c1-w3/a/w3_rows.csv",
+   "sha256_source": "3134050cd26a863e0e63164f1fdd1bcc7f7a0a05cd025f96aaa66152f65a5c9e",
+   "bytes_source": 101801,
+   "rows": 324
+  },
+  {
+   "file": "w3_verdict.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-084104-icpe-trx-rux-tl_c1-w3/a/w3_verdict.csv",
+   "sha256_source": "bad14ecff920fbc2bc213651bb17090158ad60eed37024b463099c86b8c335dc",
+   "bytes_source": 362,
+   "rows": 1
+  },
+  {
+   "file": "tracelab_c1.cue.json",
+   "source": "/ssd4/hungwei/icpe-next/rux-trx/cue/tracelab_c1.cue.json",
+   "sha256_source": "f4df6b79f4754b3ea29914ca29815bf5a702879560c7a50a60265f43c8f5e7b5",
+   "bytes_source": 399,
+   "rows": null
+  }
+ ],
+ "note": "W3 照 PREREG 偏離 9（8f04a91c）判定；sweep 在 rux worktree 8f04a91c 跑；先決條件（偏離 9 補記 aec99d11：9 個容量）＝版本 B 重現檢查 108（CPU 8/111.0625/1024，run 20261107-083210-icpe-trx-rux-tl_c1-apc）＋216（16–512 GiB，run 20261107-084950-icpe-trx-rux-tl_c1-reproB）＝324 格×元件，7 欄全部 0 差；TRX40",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

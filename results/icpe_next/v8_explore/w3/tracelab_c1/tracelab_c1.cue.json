@@ -1,0 +1,9 @@
+{
+ "name": "tracelab_c1",
+ "rule": "cue[r]＝這一輪輸出的 tools 非空（TraceLab 原始紀錄）",
+ "n_req": 665453,
+ "n_cue": 574485,
+ "sha_t": "a761221af4812de608137e1775e4eb4c4d12662302524b72f50a638d398ee3e8",
+ "sha_sess": "461381d11e93ef0fac442d82b2afe719ee1fb252bcbf961ffb9aa888187d9d2f",
+ "source": "agent_traces.load_tracelab＋原始檔的 tools；排序照 next_b_convert.finalize"
+}

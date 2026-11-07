@@ -1,0 +1,70 @@
+{
+ "exp": "apc",
+ "variant": "tracelab_c1",
+ "collected_ts": "2026-11-07T10:24:12+08:00",
+ "collected_host": "acvlab-TRX40-AORUS-MASTER",
+ "repo_commit_at_collect": "7a89a9b59fc0dc07e33ccff85badb8d72831ac3b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-100449-icpe-trx-rux-tl_c1-apcformal",
+   "ts": "2026-11-07T10:04:49+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-100449-icpe-trx-rux-tl_c1-apcformal/out/x1/x1_sweep.csv",
+   "sha256_source": "b0de233c69360fa6fdaea803ce82939584d398f28db8f517bd7438d61e2362a7",
+   "bytes_source": 6991459,
+   "rows": 16524
+  },
+  {
+   "file": "verC_headroom_components.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-100449-icpe-trx-rux-tl_c1-apcformal/a/verC_headroom_components.csv",
+   "sha256_source": "93d323aaa23bce585a8498aa67609682d65f8fa9e3a853bfdf4c447ac67df21c",
+   "bytes_source": 104208,
+   "rows": 324
+  },
+  {
+   "file": "verC_violations.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-100449-icpe-trx-rux-tl_c1-apcformal/a/verC_violations.csv",
+   "sha256_source": "0ddfc963c5e3d8ae61981cc7d952e7caccf0561aae90d949e68402816eb4f097",
+   "bytes_source": 49038,
+   "rows": 202
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-100449-icpe-trx-rux-tl_c1-apcformal/a/base_headroom_components.csv",
+   "sha256_source": "0807a87145e87f790c893e9616c92c141844cd428eede861a5670eac9ca12cea",
+   "bytes_source": 106208,
+   "rows": 324
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-100449-icpe-trx-rux-tl_c1-apcformal/a/explore_apc_rows.csv",
+   "sha256_source": "c08a93c53b1c36f5363eb34ef199bd73445ee1010e1603878bd682b7b76ae10b",
+   "bytes_source": 246331,
+   "rows": 324
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-100449-icpe-trx-rux-tl_c1-apcformal/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "bedbf41239c0824e72c6af10f24e31c033e4bb1ad84960f7442cc859d1c323fb",
+   "bytes_source": 11785,
+   "rows": 54
+  }
+ ],
+ "note": "PREREG 偏離 10 的正式 APC 重算（版本 C）；重現檢查＝版本 B 的 16 個 GPU 規則，全部格 7 欄逐值相同",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

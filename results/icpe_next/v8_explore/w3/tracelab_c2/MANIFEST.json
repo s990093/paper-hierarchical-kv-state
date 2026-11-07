@@ -1,0 +1,61 @@
+{
+ "exp": "w3",
+ "variant": "tracelab_c2",
+ "collected_ts": "2026-11-07T10:47:51+08:00",
+ "collected_host": "acvlab-TRX40-AORUS-MASTER",
+ "repo_commit_at_collect": "c0e063328fb14f916ecd0eb3d0d83dc703515974",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-090206-icpe-trx-rux-tl_c2-reproB",
+   "ts": "2026-11-07T09:02:06+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  },
+  {
+   "run_id": "20261107-092256-icpe-trx-rux-tl_c2-w3",
+   "ts": "2026-11-07T09:22:56+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-092256-icpe-trx-rux-tl_c2-w3/out/x1/x1_sweep.csv",
+   "sha256_source": "064e9b98b88cb7aadc9218351b1a5309940e01cde161dc726c5b5187094db214",
+   "bytes_source": 448405,
+   "rows": 1080
+  },
+  {
+   "file": "w3_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-092256-icpe-trx-rux-tl_c2-w3/a/w3_rows.csv",
+   "sha256_source": "7bebfc49d892492091ce5a2ef837f01f95b3b77dc7456fba4b1b97818e23051a",
+   "bytes_source": 101858,
+   "rows": 324
+  },
+  {
+   "file": "w3_verdict.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-092256-icpe-trx-rux-tl_c2-w3/a/w3_verdict.csv",
+   "sha256_source": "fb1ea68d6f3bba11d11dac53b787c186fd8fd96cd721d3944fcf4c6d9e20c971",
+   "bytes_source": 362,
+   "rows": 1
+  },
+  {
+   "file": "tracelab_c2.cue.json",
+   "source": "/ssd4/hungwei/icpe-next/rux-trx/cue/tracelab_c2.cue.json",
+   "sha256_source": "512c78c6efe276a17758b8e5a09ff8ade8fc5f34e7658312e556c3cd88cfca08",
+   "bytes_source": 399,
+   "rows": null
+  }
+ ],
+ "note": "W3 照 PREREG 偏離 9（8f04a91c）判定；sweep 在 rux worktree 8f04a91c 跑；先決條件（偏離 9 補記 aec99d11：9 個容量）＝版本 B 重現檢查 324 格×元件（CPU 8–1024 與 111.0625，run 20261107-090206-icpe-trx-rux-tl_c2-reproB），7 欄全部 0 差；TRX40",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

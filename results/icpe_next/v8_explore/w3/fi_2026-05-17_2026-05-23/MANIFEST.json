@@ -1,0 +1,66 @@
+{
+ "exp": "w3",
+ "variant": "fi_2026-05-17_2026-05-23",
+ "collected_ts": "2026-11-07T10:47:51+08:00",
+ "collected_host": "acvlab-TRX40-AORUS-MASTER",
+ "repo_commit_at_collect": "c0e063328fb14f916ecd0eb3d0d83dc703515974",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-095233-icpe-trx-rux-fi-cue",
+   "ts": "2026-11-07T09:52:33+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  },
+  {
+   "run_id": "20261107-095548-icpe-trx-rux-fi_w1-apcformal",
+   "ts": "2026-11-07T09:55:48+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  },
+  {
+   "run_id": "20261107-095625-icpe-trx-rux-fi_w1-w3",
+   "ts": "2026-11-07T09:56:25+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-095625-icpe-trx-rux-fi_w1-w3/out/x1/x1_sweep.csv",
+   "sha256_source": "f38fb5eecfa47e1a0d070b13037ffc071e7d2576293ff0fb5c0d4add4939495a",
+   "bytes_source": 420829,
+   "rows": 1080
+  },
+  {
+   "file": "w3_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-095625-icpe-trx-rux-fi_w1-w3/a/w3_rows.csv",
+   "sha256_source": "dc227cd0425f242863679671d3f4c5814210ed7b89a6360071a9dbb087c5ab77",
+   "bytes_source": 94037,
+   "rows": 324
+  },
+  {
+   "file": "w3_verdict.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-095625-icpe-trx-rux-fi_w1-w3/a/w3_verdict.csv",
+   "sha256_source": "fe099007c2e978c5a48372137e5de8090ea7dd642f89847b21c134a08a1089b7",
+   "bytes_source": 337,
+   "rows": 1
+  },
+  {
+   "file": "fi_2026-05-17_2026-05-23.cue.json",
+   "source": "/ssd4/hungwei/icpe-next/rux-trx/cue/fi_2026-05-17_2026-05-23.cue.json",
+   "sha256_source": "e33526e9e0fb1a9e49bd3d63628a6dd061d0d8cfc76727626247aa09f9d96897",
+   "bytes_source": 418,
+   "rows": null
+  }
+ ],
+ "note": "W3 照 PREREG 偏離 9（8f04a91c；W3／sweep 程式與 7a89a9b5 0 差）判定；sweep 在 rux worktree 7a89a9b5 跑；cue＝make_cue.py fi（run 20261107-095233-icpe-trx-rux-fi-cue）；先決條件（偏離 9 補記 aec99d11：9 個容量）＝偏離 10 正式 APC（run_apc_formal.sh）第 2 步的版本 B 重現檢查 324 格×元件（run 20261107-095548-icpe-trx-rux-fi_w1-apcformal），7 欄全部 0 差；TRX40",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

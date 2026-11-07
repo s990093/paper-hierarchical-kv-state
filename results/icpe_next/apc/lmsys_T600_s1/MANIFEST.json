@@ -1,0 +1,70 @@
+{
+ "exp": "apc",
+ "variant": "lmsys_T600_s1",
+ "collected_ts": "2026-11-07T11:38:49+08:00",
+ "collected_host": "acvlab-TRX40-AORUS-MASTER",
+ "repo_commit_at_collect": "4a7133869e55a5d696fef3b2afae2ebd922741b7",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-113724-icpe-trx-rux-verC-lmsys_T600_s1",
+   "ts": "2026-11-07T11:37:24+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-113724-icpe-trx-rux-verC-lmsys_T600_s1/out/x1/x1_sweep.csv",
+   "sha256_source": "6cb39265c83b96496f99ad74e93751a60f45e6e3e9976ff24a55db6c18cd54cd",
+   "bytes_source": 6216860,
+   "rows": 16524
+  },
+  {
+   "file": "verC_headroom_components.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-113724-icpe-trx-rux-verC-lmsys_T600_s1/a/verC_headroom_components.csv",
+   "sha256_source": "4f28f7368b968c70021b31d4ab60c162fa917d30515cdc64a95b50d99b0e4177",
+   "bytes_source": 102993,
+   "rows": 324
+  },
+  {
+   "file": "verC_violations.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-113724-icpe-trx-rux-verC-lmsys_T600_s1/a/verC_violations.csv",
+   "sha256_source": "571c90c8d6bd9e4cd8c2fb299a8d99ae1437941fac07c04083d8d8869ec71515",
+   "bytes_source": 20520,
+   "rows": 81
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-113724-icpe-trx-rux-verC-lmsys_T600_s1/a/base_headroom_components.csv",
+   "sha256_source": "fc00d6f5a99f885c62a473e574194067c614ee39d35d845ef764ecae36496ee3",
+   "bytes_source": 102996,
+   "rows": 324
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-113724-icpe-trx-rux-verC-lmsys_T600_s1/a/explore_apc_rows.csv",
+   "sha256_source": "18421c5f6d3eee456b9e4ec6b2186b62d2e3aa237ab10dd5ea0fac63b111831e",
+   "bytes_source": 230320,
+   "rows": 324
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-113724-icpe-trx-rux-verC-lmsys_T600_s1/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "1586a7d2ad071e74936e35b6d175e442c28aafa82c2eac1a743a2ed6fd9ffd0c",
+   "bytes_source": 12184,
+   "rows": 54
+  }
+ ],
+ "note": "對話資料集的版本 C（STATUS_DATA 2026-11-07T11:05 第 3 點；rux 4a713386 的 run_apc_formal.sh 步驟）；重現檢查＝版本 B 的 16 個 GPU 規則對 TRX40 算的版本 B 表（lm_p1_headroom_components.csv），全部格 7 欄逐值相同",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

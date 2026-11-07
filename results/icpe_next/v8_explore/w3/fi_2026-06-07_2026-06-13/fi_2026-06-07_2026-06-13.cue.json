@@ -1,0 +1,10 @@
+{
+ "name": "fi_2026-06-07_2026-06-13",
+ "trace": "fi:2026-06-07_2026-06-13",
+ "rule": "cue[r]＝同一 session 的下一個請求 step_trigger＝tool（FreeInference）",
+ "n_req": 6859,
+ "n_cue": 6422,
+ "sha_t": "b2ca461af4973751dc62bdbbd2608b5c4cd32ecddc991a0f36552e2d32a3accd",
+ "sha_sess": "3d7dd833a258136e7189ce7bea7bcf545775ec526866ed0fac2877c9811130f4",
+ "source": "x1_fi.prepare_fi（模擬器的順序）"
+}

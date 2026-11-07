@@ -2,6 +2,145 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T11:05+08:00 — 對話資料集補登記的**補寫：版本 B／C、哪台、哪版引擎**（h200 轉達使用者「請 icpe-data 先補寫」；寫完才恢復模擬）
+
+> 時間：acvlab `date -u` 2026-11-07T03:04:39Z。h200 會把 11:00 那節和本節一起收成 **PREREG 偏離 13（補登記）**（使用者在 h200 選的；STATUS_A 11:00，0c58272、6239918）。
+
+**照實記錄：補寫之前已經跑了什麼**
+- 11:00 那節（688ad0b）commit 之後，我在 10:59:29 開了 `chat_main:sg_*`（版本 A 的格子，35 workers）。h200 的訊息是之後才到的。
+  - `sg_T60_s1`（run `20261107-105929-…`）、`sg_T600_s1`（run `20261107-110031-…`）跑完，rc=0。
+  - `sg_T60_s2` 跑到一半，11:02:04 停下整個行程群組，沒有殘留行程。那個 run（`20261107-110137-…`）寫上 `STOPPED_NOT_USED`。
+  - WildChat 還沒開始。
+- 我沒有看這兩個 block 的輸出，沒有算任何表。只在確認佇列有沒有在跑時，看到兩行進度輸出，各是一個 job 的 `mean_ret`。
+- 這兩個 block 的格子和下面版本 B 的 `chat_main` 部分完全相同，所以留著當版本 B 的輸入，不重跑。
+
+**1. 報哪些版本**（照偏離 10 第 5 點的主表地位）
+- **版本 C 是正式表**：block 粒度 APC 進 ②、BELP 進 ④ 的 O-GPU，analyze_v8。
+- **版本 B 並列**，標「② 不含 block 粒度 APC」。
+- 版本 A 不單獨報。它的格子（`chat_main`）是版本 B 的一部分。
+- 11:00 那節寫的「偏離 4 第 2 項的 ≥10% 補跑」作廢：版本 B 的每一格本來就有 7 個 TTL，沒有要補的。
+
+**2. 版本 B**（和主結果版本 B 的輸入同構：icpe-main 的 verB＝main＋P1 `_ttl`，run `20261106-110854-icpe-main-verB-p1`）
+- `chat_main`：CPU 17 個規則 × GPU 8 個（LRU、BEL、TTLA／TTLB × 0.3／10／300），也就是 11:00 那節的格子。
+- `chat_p1`：每個 `chat_main` block 對一個 `<名稱>_ttl`。
+  - CPU＝NON_ORACLE 10 個＋元件規則 5 個；GPU＝新的 8 個 TTL（TTLA／TTLB × 1／3／30／100）。
+  - 和 `cw_p1` 等的 `_ttl` 相同，每個 block 6,480 個 job。
+  - 不跑 `_trunc`，截尾只報告，不在範圍內。
+- **引擎**：x1fast v7，Rust src 62b0932b（`code_sha` 3280b1c8799b+rs62b0932b），`next_b_queue.py run --engine rust`。和 P1–P4 相同，模擬器沒改。
+- **上限表**：`next_sim_analyze.py --sweep <chat_main 的 sweep> <chat_p1 的 _ttl sweep> --pf-target cpu`。
+  - 每個資料集一份：sg、wc、lm、uc。
+  - 旗標同 verB 的第 3 步第一行。開算前先用 `main_rowcheck.py` 核對列數：main 17×8、_ttl 15×8、每個 (trace, rule) 54 格。
+
+**3. 版本 C**（照偏離 10 第 1–4 點，步驟同 `run_apc_formal.sh`）
+- **引擎**：v8，`code/icpe/rux_x1fast/v8_features/`，`src/main.rs` sha256 48e4efce…，`code_sha` 3280b1c8799b+rse7f6ee8f。
+  - 固定用 `origin/icpe-next-rux` 4a713386 的檔，也就是 SemiAnalysis 正式 APC 那次的版本。
+  - v8 的 sweep_v8／explore_apc／analyze_v8／x1_rust_v6 和現在的 icpe-next-rux 逐位元相同；x1_sim 和我們的相同。
+- **格子**：CPU 9 個容量 × 17 個 CPU 規則 × ssd／b32／nfs × Cake × GPU 111.0625 GiB wb × GPU 18 個規則（版本 B 的 16 個＋APC＋BELP），預取到 CPU。
+- **步驟**，任何一步失敗就停：
+  1. sweep_v8。
+  2. explore_apc.py 重現檢查：只用版本 B 的 16 個 GPU 規則重算上限表，和第 2 點的版本 B 表全部格、全部元件、7 欄逐值相同，必須 `REPRODUCED`；不同就停，那個變體不報版本 C。
+  3. analyze_v8.py 算 verC 表。
+  4. collect_v8.py 寫進 `results/icpe_next/apc/<變體>/`。
+- 因為重現檢查要用版本 B 的表，所以每台都是先跑完版本 B，再跑版本 C。
+
+**4. 哪台跑哪些**：版本 B、C 都在同一台跑。
+
+| 資料集 | 變體 | 機器 | 版本 B 引擎 | 版本 C 引擎 |
+|:--|:--|:--|:--|:--|
+| ShareGPT | `sharegpt_T{60,600}_s{1,2,3}` | acvlab（icpe-data） | v7 62b0932b | v8 48e4efce |
+| WildChat-1M | `wildchat_s{1,2,3}` | acvlab（icpe-data） | v7 62b0932b | v8 48e4efce |
+| LMSYS-Chat-1M | `lmsys_T{60,600}_s{1,2,3}` | TRX40（icpe-trx） | v7 62b0932b | v8 48e4efce |
+| UltraChat | `ultrachat_T{60,600}_s{1,2,3}` | TRX40（icpe-trx） | v7 62b0932b | v8 48e4efce |
+
+**5. 判定與彙總**：由 icpe-main 照版本 B／C 的流程做（`main_summary.py`）。
+- 這四份都歸「合成到達」，偏離 7 的「原始、合成各自判」。
+- 單獨成一節，不和主結果的 40 個變體合併計數。
+- 不跑 P4（偏離 10 第 5 點「版本 C ≥15% 的格補跑 P4」不適用，範圍只有主網格）。
+
+**6. UltraChat 的轉換規則補一條**（icpe-trx 11:15 查到，STATUS_TRX 334317cd）
+- 上游有 3 行 jsonl 是兩個 JSON 物件直接接在一起：train_3 第 127,819 行、train_4 第 82,900 行、train_7 第 90,760 行。
+- 檔案的 sha256 和 HF 的 LFS 記錄相同，是上游本來就這樣。
+- 規則：用 `json.JSONDecoder.raw_decode` 依序拆成多筆，每筆當一個對話。拆不開就停。
+- 拆的行數記在 meta 的 `filter.load_stats.ultrachat_multi_obj_lines`。
+- 失敗的 run `20261107-110038-icpe-trx-conv-chat-ultrachat` 沒寫出任何 nb。
+
+## 2026-11-07T11:00+08:00 — **對話資料集補登記**（ShareGPT、WildChat-1M、LMSYS-Chat-1M、UltraChat）：使用者決定 11/9 前補跑主網格；**本節 commit 時還沒跑任何一格模擬**
+
+> 時間：acvlab `date -u` 2026-11-07T02:57:51Z。本節是 PREREG §4「選跑的紀錄……要跑之前另補登記」的登記。
+> 已經看過的只有轉換統計（下面列出），沒有任何模擬結果。PREREG.md 是 h200 管的檔，我不改；已請 h200 把本節收進 PREREG 的附錄。
+
+**使用者決定**（本 session，11/7 上午）
+- 問題是「ShareGPT 這種大家常用的資料集是不是都跑了」。我回答：計畫裡必跑的 7 份都跑完了；ShareGPT 沒跑，是 11/6 決定 ICPE 之後再做。
+- 使用者選「ShareGPT＋WildChat 都補」（AskUserQuestion）。之後又說：acvlab 只跑兩個，其他的（LMSYS-Chat-1M、UltraChat）交給 TRX40；rux-proj 也可以幫忙。
+- 分工：
+  - acvlab 跑 ShareGPT、WildChat-1M。
+  - TRX40 跑 LMSYS-Chat-1M、UltraChat。icpe-trx 的使用者已確認，排在它手上的 W5 之後。
+  - rux-proj 那台還在跑它登記過的模擬，14:00 以後才有空，所以這次不用。
+- 範圍：只跑主網格。不跑 P1～P4、敏感度、截斷 128K。
+- Azure、BurstGPT 不跑：只有時間和長度，沒有內容也沒有對話分組，模擬器無從判斷前綴重用，**不能跑**，不是漏掉。
+
+**資料**（每份放新的空目錄，sha256 記進 README.txt，並和 HF 的 LFS sha256 核對；只讀 JSON／parquet，Python 用 `-I`）
+
+| 資料集 | 來源 | 授權 | 機器 |
+|:--|:--|:--|:--|
+| ShareGPT | HF `anon8231489123/ShareGPT_Vicuna_unfiltered` @ 192ab218，`HTML_cleaned_raw_dataset/sg_90k_part{1,2}_html_cleaned.json` | Apache-2.0 | acvlab |
+| WildChat-1M | HF `allenai/WildChat-1M` @ 7d6490e4，`data/train-000{00..13}-of-00014.parquet` | ODC-BY | acvlab |
+| LMSYS-Chat-1M | HF `lmsys/lmsys-chat-1m` @ 200748d9，`data/*.parquet`（6 個） | LMSYS-Chat-1M 授權協議（gated，不准轉發） | TRX40 |
+| UltraChat | HF `openbmb/UltraChat` @ f220fe79，`train_{0..9}.jsonl` | MIT | TRX40 |
+
+- ShareGPT 用沒切段的那份。`ShareGPT_V3_unfiltered_cleaned_split.json` 會把超過 2,048 token 的對話切開，破壞多輪前綴。
+- 原始資料、轉換後的紀錄、逐對話的數字都不進 git，只放彙總。
+
+**轉換**：`next_b_convert.py chat --source <sharegpt|wildchat|lmsys|ultrachat> --seeds 1 2 3`。完整規則寫在程式開頭的註解。
+- **合格的對話**：
+  - 訊息嚴格 user／assistant 交替，由 user 開始。
+  - 內容都是字串，user 至少 2 輪。
+  - WildChat 另外要每個 assistant 都有 timestamp，而且最後一則是 assistant。
+- **抽樣**：合格的依載入順序編號，`default_rng(0).choice` 不放回抽 **9,000 個**（CachedAttention 的 9K sessions）。
+- **token**：Llama-3.1-8B-Instruct 的 tokenizer，NousResearch 鏡像 @ d10aef79，`tokenizer.json` sha256 79e3e522…（程式固定檢查），`tokenizers` 0.23.3。
+  - 每則訊息單獨切，再照 Llama 3.1 的對話格式組起來，不加 system 訊息。
+  - 第 k 個 user 訊息觸發第 k 個請求。輸入＝到這則 user 訊息為止的整段，加上 assistant 的開頭。
+- **chunk 鍵**：整段 token 每 512 個一塊，做鏈式 blake2b。內容相同的前綴共用鍵，不同對話也一樣，和 vLLM 前綴快取的行為一致。
+- **規則 6**：
+  - (a) 每個請求的鍵是上一個請求的鍵的延伸，要 100%。
+  - (b) 前 300 個對話「整段文字一次切」和「逐則切再組」的長度差，中位數 >1% 就停。
+  - 另外 `x1_nb.write_nb` 會查鏈式前綴。
+- **時間**：
+  - ShareGPT、LMSYS、UltraChat 沒有時間，照 Pensieve／CachedAttention：
+    - 對話開始＝Poisson，λ＝1 個對話／秒。
+    - 同一個對話裡兩個請求的間隔＝指數分佈的思考時間，平均 **T＝60 s（主）**、**600 s（敏感度）**。
+    - 同一個 seed 的 T60 和 T600 用同一組亂數，T600 的間隔正好是 T60 的 10 倍。
+    - **不加生成時間**：模擬器不模擬解碼，也沒有量過每 token 的解碼時間（NOT_MEASURED，不自己編）。
+  - WildChat：對話內用真實間隔。
+    - 第 k 個請求的偏移＝第 k 個 assistant 的 timestamp − 第 1 個的。這是伺服器收到完整回覆的時間；請求本身的到達時間沒有記錄。
+    - 對話開始一樣合成：Poisson λ＝1／s。原始的絕對時間太稀，一年約 100 萬個對話，壓不出記憶體壓力。
+  - seed＝1、2、3。每個 seed 決定對話順序、開始時間和思考時間。
+- **nb 名稱和 block**（plan `chat_main`，每個 block 6,174 個 job，共 21 個 block、129,654 個 job）：
+  - `sharegpt_T{60,600}_s{1,2,3}` → `sg_T…_s…`；`lmsys_…` → `lm_…`；`ultrachat_…` → `uc_…`。
+  - `wildchat_s{1,2,3}` → `wc_s…`。
+
+**模擬**：和主結果相同的主網格（`next_b_queue.py` 的 `sweep_args()` 預設）。
+- CPU 8／16／32／64／128／256／512／1,024／111.0625 GiB × 17 個 CPU 規則。
+- 慢層 ssd／b32／nfs，cake 還原。GPU 111.0625 GiB，GPU 規則 LRU、BEL、TTLA／TTLB × 0.3／10／300，寫回 wb，預取到 CPU。
+- 常數、重算 V1、Llama-3.1-8B 都和 PREREG §4 相同。程式碼和模擬器沒改，只加轉換和 plan，`code_sha` 的 Rust 部分仍是 62b0932b。
+- PREREG 偏離 4 第 2 項（④ 對 ② 上限 ≥10% 的格子，用 7 個 TTL 補跑 ②）照樣適用：分析產生 `chat_main_ttl7/cells.csv` 之後補跑。
+
+**分析和報告**：
+- 指標、表格、門檻都和主結果相同（PREREG §1、§4）。每個資料集報 3 個 seed 的中位數和範圍。
+- **單獨成一節**，不和主結果的數字合併。每個結果標明到達方式：
+  - ShareGPT／LMSYS／UltraChat：「Poisson 開始＋合成思考時間 T60／T600：對手論文的條件，不代表真實使用」。
+  - WildChat：「Poisson 開始＋真實的對話內間隔」。
+- 跑完不改上面任何參數。轉換或規則 6 失敗就停下回報，不換方法硬跑。
+
+**已經看過的轉換統計**（不是模擬結果）：ShareGPT，run `20261107-105613-icpe-data-conv-chat-sharegpt`
+- 對話 76,920 個，合格 53,457 個。不合格的：user 少於 2 輪 22,596 個，沒有交替 867 個。
+- 抽 9,000 個 → 88,269 個請求（79,269 個是回來的請求）。
+- 規則 6：(a) 79,269／79,269。(b) 300 個對話的長度差全部是 0。
+- 輸入 token 中位數 2,303、p90 16,220，沒有 >128K 的。
+- 不同的完整塊 50,641 個，工作集上限約 3,165 GiB（BF16）。
+- T60 的間隔中位數 41.6 s，s1 的 span 9.2 h；T600 的 span 76.5 h。
+- 前一次跑（`20261107-105557-…`）因為 README 的 sha256 解析錯誤在讀資料前就停了，已標 `FAILED_NOT_USED`。解析改成接受「sha256 路徑」兩欄的格式。
+
 ## 2026-11-07T06:40+08:00 — **P4 的資料全部到齊**：68 個 block（acvlab 62＋TRX40 6）在 icpe-next-data 的 `results/icpe_next/b/p4_b{1,2}/`；SA 的 48 個在 icpe-next-trx 的 `sa_p4_b{1,2}/`
 
 - **acvlab 的佇列**（pid 2621451，48 workers）：最後一個 `p4_b2/tracelab_c4_M_B2` 05:22:07 → 06:25:24，rc=0。整個 P4 沒有 block 失敗。
