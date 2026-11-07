@@ -3,6 +3,39 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T08:30+08:00 — **使用者決定：TRX40 跑 icpe-rux 交辦的 TraceLab 與 FreeInference 探索**（APC／BELP、W3 線索、W5）；TraceLab 已下載，轉換中
+
+- **來源**：icpe-rux（rux-proj）兩則訊息，轉述使用者的話：
+  - 「icpe-next-trx 目前空的 叫他模擬」「把 TraceLab 給他」「CacheWise 都先不跑」；
+  - 「FreeInference 也是」「分工一下」。
+- **使用者在這邊直接回答**（AskUserQuestion）：
+  - TraceLab：**照做，三個都跑**。任何一步失敗或對不上就停下來回報。
+  - FreeInference：**也跑**，排在 TraceLab c1 之後。
+  - 結果放**新目錄 `results/icpe_next/rux_trx/`**：只放分析程式的彙總 CSV（有 run_id、ts、host）。原始 sweep CSV 留在 /ssd4，STATUS_TRX 寫路徑。
+- **範圍變更**：這改掉了 11/6「TRX40 只做 SemiAnalysis」。STATUS_DATA 的授權清單沒有 FreeInference，這次是使用者明確交辦。
+  - FreeInference：HF `harvardMadsys/freeinference_agentic_trace` @ 16d3c04d，CC-BY-4.0。
+  - git 不放原始資料或轉換後的紀錄。CacheWise 仍然不碰。
+- **性質**：探索，不是正式 block。語意還沒登記（PR:57／95），由 icpe-rux 找 icpe-main 協調。不動任何佇列。
+- **程式**：唯讀 worktree `$ROOT/rux-wt` = `origin/icpe-next-rux` b7444163（detached）。不在那裡 commit。
+  - 每一步用 `$ROOT/tools/rux_run.sh <name> '<指令>'` 跑（機器工具，不在 git），照 CLAUDE.md §4.1 留 `cmd.sh`／`context.txt`／stdout／stderr／`exit_code`。
+  - 每一步都是 `nice -n 10`，掛 memwatch 6144 MiB、swapguard 2933 MiB、diskguard 50 GiB。
+- **0a. 下載 TraceLab**：run `20261107-082511-icpe-trx-rux-tl-download`，rc=0。
+  - `syfi_coding_trace.jsonl.gz` sha256 `11ce51ec0a25e3d1…`，等於指定值（`sha256sum -c` OK）。
+  - 放在 `$ROOT/datasets/tracelab/`，`README.txt` 由腳本寫。
+  - 前兩次失敗，都是我呼叫時漏設東西，資料沒有動：
+    - `20261107-082442-…`：`setup_3090_data.sh: line 27: TIARA_VENV: unbound variable`。我用 `TIARA_PLATFORM=C_H200` 跳過 env_3090.sh，漏設了 `TIARA_VENV`。
+    - `20261107-082450-…`：`setup_3090_data.sh: line 30: curl: command not found`。這台沒有 curl。
+  - 改照 11/5 下載 SemiAnalysis 的同一條指令重跑，只把 `$ROOT/tools/env/bin`（工具環境的 curl）加到 PATH 後面：
+    `PATH=$PATH:$ROOT/tools/env/bin TIARA_SKIP_VENV=1 TIARA_HOME=$ROOT TIARA_DATASETS=$ROOT/datasets HF_HOME=$ROOT/hf-home TIARA_PY=$ROOT/venv/bin/python TIARA_HF_CLI=$ROOT/tools/env/bin/hf bash $REPO/code/setup_3090_data.sh tracelab`
+- **對照表**（版本 B，`origin/icpe-next-main` c868ef2d），放在 `$ROOT/rux-trx/ref/`：
+  - `tl_p1_verB.csv`：blob 48da5cd4，973 行。
+  - `fi_p1_verB.csv`：blob 8322cf03，1,945 行。
+- **0b. 轉換**：run `20261107-082523-icpe-trx-rux-tl-convert` 進行中，輸出到 `$ROOT/datasets/x1_nb_rux/`，和 SA 的 nb 目錄分開。規則 6 的單位驗算：665,453／665,453＝1.0000。
+- **接下來**（icpe-rux 的優先順序）：
+  1. TraceLab：cue 與 `CUE_CHECK`（c1、c2、c4），然後 APC／BELP 的重現檢查。重現檢查不是 0 差就停。之後跑 c1 的 W3。
+  2. FreeInference：下載，然後重現檢查（先一週），再跑 6 週的 W3。
+  3. 兩份的 APC／W5。
+
 ## 2026-11-07T06:30+08:00 — icpe-data 已收進 icpe-next-data（8e7fc13c）；TRX40 這次的工作結束
 
 - icpe-data 傳訊息說，已從 `origin/icpe-next-trx` a9769257 checkout 這 6 個目錄，並在 acvlab 重新核對過。
