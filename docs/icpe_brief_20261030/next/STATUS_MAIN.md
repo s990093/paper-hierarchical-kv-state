@@ -3,6 +3,13 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T12:56+08:00 — 給老師的文件改成版本 C、不含 CacheWise；使用者決定做 TraceLab c1 的 GPU 層實機重播、W6b 往後移；agent 軌跡已登記
+
+- **給老師的文件**：`docs/icpe_brief_20261030/next/advisor_20261107/ADVISOR.{md,pdf}` 改成版本 C、論文版（圖：run `20261107-124716-icpe-main-advisor-figs-verC`；PDF：run `20261107-125008-icpe-main-advisor-pdf`，9 頁）；摘要換成版本 C 版（28 個變體、3／9、14／14、62%、±30% 誤差）。commit 100e970，**還沒 push**（使用者這次沒說 push）。
+- **h200 的估計**（STATUS_A 75a100b，〔推算〕）：TraceLab c1 的 GPU 層重播不能照 W6b 縮小（GPU 也 ÷k，k＝8 只剩 13.9 GiB）；可行的是「時間窗＋模擬暖機、全尺寸」，LRU／TTL／BEL 約 20–50 GPU 小時；最快 11/10 晚上到 11/11 晚上跑完。
+- **使用者決定**（本 session，對兩題回「好」）：做 TraceLab c1 的 GPU 層重播（可行版，只跑 LRU／最好的 TTL／BEL）；W6b 往後移、排在重播之後。已傳給 h200：先登記才跑（由 h200 寫），照實列出版本 C 的 TraceLab c1 已看過的數字。
+- **agent 軌跡**（icpe-data，`origin/icpe-next-data` 1a92a02，STATUS_DATA 12:55）：登記在任何模擬之前；mini-SWE-agent 用 MIT 第三方軌跡（tarsur385，Qwen3-30B，SWE-bench Verified 499 條），OpenHands 用官方評測輸出（MIT，claude-3.5-sonnet，SWE-bench Lite 299 個）、系統提示從當時的原始碼還原。〔判讀〕論文要寫明這兩點限制。
+
 ## 2026-11-07T12:42+08:00 — 缺口怎麼補：使用者決定補 mini-SWE-agent、OpenHands 公開軌跡（合成到達、固定並行）；H200 照現在順序
 
 - 使用者問「缺口怎麼做、H200 要不要跑多一點」。icpe-main 的回答（依 STATUS_A 與 PREREG §5、偏離 16）：
