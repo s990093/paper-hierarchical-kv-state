@@ -2,6 +2,51 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T15:56+08:00 — 重跑清單到了、試合併 G0 PASS、重跑 plan 寫好；**旗標開的參考失敗，icpe-sim 叫停** → 不正式 merge、不開跑；分工改成按資料家族
+
+- **icpe-sim 的清單**：origin/icpe-next-sim 40a4c87f 的 `results/icpe_next/sim/dev14_rerun_list.csv`（run `20261107-154406`）。
+  - 要重跑 320 個 block、2,177,676 個 job，其中 P4 佔 1,940,988。
+  - CacheWise 126 個 block 照偏離 15 排除；xcheck 只當參考。
+- **試合併**（scratch worktree `/ssd6/hungwei/icpe-next/g0-40a4c87`，merge commit 4ffd7f5d）：
+  - PREREG 衝突：兩邊都是 icpe-next-a 的前綴，我這邊的就等於 icpe-next-a 5294f5f，取我這邊。
+  - 引擎檔和 63b8e328 相同，x1_sim sha256 8b53588b…。
+  - **G0（Rust，旗標關）PASS**：run `20261107-155259-icpe-data-g0-rust-merged-40a4c87`，128,064 格 0 個不同，sweep 23.8 s；code_sha `3180504e8d57+rs0bfacb59`。
+  - **沒有正式 merge 進 icpe-next-data**，理由見下。
+- **icpe-sim 叫停**（15:5x 訊息）：旗標開的參考 `xref_dev14`（run `20261107-154804`）在兩個引擎都失敗。
+  - Python：SemiAnalysis N16 s1、CPU 8、O-ALL、三個旗標都開，`_turn_end_wt → drop → _g_unprefetch` 出 `AssertionError: (12, 277)`。
+  - Rust：同一個 job，`main.rs:1099 gspf 12 277`。
+  - 這條 wt＋GPU 預取＋O-ALL 的路徑，之前的驗證網格沒涵蓋到。
+  - icpe-sim 正在診斷，修好之後引擎的 commit 會變。**三個旗標都不用**，TRX40 也已叫它等。
+- **重跑 plan 寫好**（`next_b_queue.py`）：
+  - 清單裡 action=rerun 的 block → plan `d14_<原 plan>`，block 名稱不變。
+  - 參數＝原本的參數，`--policies` 換成清單的 rerun_policies，再加清單的 flags。P4 保留原本的 `jobs.csv`。
+  - 清單不存在時，`d14_blocks` 回傳空的，現有 plan 都不受影響。
+  - **count 核對**（在試合併的 worktree 跑）：
+    - 300 個 block 的 job 數等於清單的 `jobs_rerun`。
+    - 另 20 個是模型 P 的 B1，整個 block 重跑，等於 `jobs_block`。照 icpe-sim 的建議，多跑的 16,321 個是 λ=0 的非 opf job。
+    - **0 個不符**，合計 2,193,997。
+- **分工改成按資料家族**：以 STATUS_DATA 15:41／15:44 的暫定分工為底，把 Mooncake 移去 TRX40。
+  - **原因**：照暫定分工，TRX40 只會拿到約 1／3 的 CPU 時間，不符合「TRX40 做重的部分」。
+  - Mooncake 的原始檔兩台的 sha256 前 12 碼相同：conversation b8cbb061a852、toolagent 48a2db1a13d3。
+  - 8 個 Mooncake P4 block 裡，原本就有 6 個是 TRX40 跑的。
+  - 估計的根據：原本那次 run 的 `rust_timing.jsonl`，加總要重跑的那些規則的 `run_s`。旗標開了之後每個 job 的時間可能不同，所以這只是〔推算〕。
+
+| 機器 | 家族 | block | job | 估計執行緒時數〔推算〕 |
+|:--|:--|--:|--:|:--|
+| TRX40 | SemiAnalysis（main、P1–P3、sens_rep sa_*、sa_p4）、Mooncake（old_* 的 mooncake、sens_rep mc_*、8 個 Mooncake P4）、UltraChat／LMSYS | 180 | 1,697,648（78%） | Mooncake 約 185（P4 的 P＝原本整個 block 的時間；M 用 acvlab conversation_M_B1 的比例 3.6% 推）；SemiAnalysis 約 100–110（原本 sa_p4 5.7 h × 36 workers，依 P 約佔一半推；main／P1–P3 的時間記在 TRX40，這裡沒有）；合計約 300 |
+| acvlab | TraceLab（main、P1–P3、sens_rep tl_*、P4）、Bailian、FreeInference、ShareGPT／WildChat、mini-SWE／OpenHands | 140 | 480,028（22%） | TraceLab 約 270（P4 234）、Bailian 約 100、其餘約 5；合計約 375 |
+
+  - 牆鐘〔推算〕：TRX40 約 300／45 ≈ 7 h（46 workers，上次量到的有效並行度 45.2）；acvlab 約 375／35 ≈ 11 h（35 workers，機器是共用的）。
+  - 如果 TRX40 先跑完，再把 acvlab 還沒開始的 TraceLab block 移過去。TRX40 的 TraceLab nb 在 `x1_nb_rux`，移之前要先比對 sha256。
+  - 第二段（版本 C）用同一個家族分工。
+- **開跑順序**（每台都一樣）：main → 對話／agent 的 main＋P1 → P1–P3 → sens_rep → P4。main 與 P1 的列是主表要用的，所以放前面。
+- **什麼時候開跑**：要四個條件都滿足。
+  1. icpe-sim 修好旗標並清掉。
+  2. `xref_dev14` 進 git。
+  3. 我正式 merge，並重做 G0，旗標關要 IDENTICAL、旗標開要等於 xref。
+  4. TRX40 過它自己的關。
+  - 開跑前先向使用者回報。
+
 ## 2026-11-07T15:44+08:00 — 第二段的分工確定：**RUX3DPRO 不排進第二段**
 
 - icpe-rux 問過 icpe-main 版本 C 修正列由誰跑。它的提案是 RUX 跑 SemiAnalysis 12、Mooncake 2、Bailian 3，TRX 跑 TraceLab 3、FreeInference 6，也就是原本誰跑版本 C 就由誰重跑。

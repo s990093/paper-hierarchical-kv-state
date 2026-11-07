@@ -136,7 +136,47 @@ def blocks():
         if os.path.exists(f):
             P[f"{base}_ttl7"] = ttl7_blocks(f)
     P.update(p4_blocks())
+    P.update(d14_blocks(P))
     return P
+
+
+# PREREG 偏離 14 的重跑（STATUS_DATA 2026-11-07 15:41 起；icpe-sim 的清單 results/icpe_next/sim/dev14_rerun_list.csv，一個 block 一列）。
+# action=rerun 的 block → plan d14_<原 plan>，block 名稱不變。參數＝原 block 的參數，--policies 換成清單的 rerun_policies
+# （照原本的順序取交集），再加清單的 flags。P4 保留原本的 jobs 清單（--jobs-from），x1 sweep 自己和縮小後的 policies 取交集。
+# 其他 job 不重跑：icpe-sim 驗證過旗標開時逐位元相同，沿用原本的列。
+D14_LIST = f"{REPO}/results/icpe_next/sim/dev14_rerun_list.csv"
+
+
+def _replace_opt(args, opt, vals):
+    i = args.index(opt)
+    j = i + 1
+    while j < len(args) and not args[j].startswith("--"):
+        j += 1
+    return args[:i + 1] + list(vals) + args[j:], args[i + 1:j]
+
+
+def d14_blocks(P):
+    if not os.path.exists(D14_LIST):
+        return {}
+    out = {}
+    with open(D14_LIST, newline="") as fh:
+        for r in csv.DictReader(fh):
+            if r["action"] != "rerun":
+                continue
+            base = {name: (tr, args) for name, tr, args in P.get(r["plan"], [])}
+            assert r["block"] in base, f"偏離 14 清單的 block 不在 blocks()：{r['plan']}/{r['block']}"
+            tr, args = base[r["block"]]
+            assert " ".join(tr["traces"]) == r["traces"] and " ".join(tr["rules"]) == r["rules"], (r["plan"], r["block"], tr)
+            rp = r["rerun_policies"].split()
+            _, orig = _replace_opt(args, "--policies", [])
+            assert rp and set(rp) <= set(orig), (r["plan"], r["block"], rp, orig)
+            new, _ = _replace_opt(args, "--policies", [p for p in orig if p in rp])
+            flags = r["flags"].split()
+            assert flags and all(f in ("--pf-expire", "--pf-gpu-recheck", "--noise-overdue", "resample") for f in flags), flags
+            tr2 = dict(tr, d14=dict(list_run_id=r["run_id"], jobs_block=int(r["jobs_block"]), jobs_rerun=int(r["jobs_rerun"]),
+                                    rerun_policies=rp, flags=flags))
+            out.setdefault(f"d14_{r['plan']}", []).append((r["block"], tr2, new + flags))
+    return out
 
 
 # PREREG 偏離 6 的 P4（W4 雜訊，§3 B）：選格＝icpe-main 的清單（偏離 8；origin/icpe-next-main c868ef2）。
@@ -289,7 +329,12 @@ def cmd_count(a):
                 J = [j for j in J if any((j[0], j[1], float(j[2]), j[3], j[5]["pol"] if j[5] else "none", v[0], v[1]) in keep
                                          for v in j[4])]
             nv = len(tr["traces"]) * len(tr["rules"])
-            print(f"{plan:10s} {name:28s} variants={nv} jobs={len(J):7d} per_variant={len(J) / nv:9.1f}")
+            d14 = ""
+            if tr.get("d14"):          # 偏離 14：和 icpe-sim 清單的 jobs_rerun 比（等於＝只重跑受影響的；等於 jobs_block＝整個 block）
+                e = tr["d14"]
+                d14 = (f" list_rerun={e['jobs_rerun']} list_block={e['jobs_block']} "
+                       + ("MATCH_RERUN" if len(J) == e["jobs_rerun"] else "WHOLE_BLOCK" if len(J) == e["jobs_block"] else "MISMATCH"))
+            print(f"{plan:10s} {name:28s} variants={nv} jobs={len(J):7d} per_variant={len(J) / nv:9.1f}{d14}")
             ptot += len(J)
         print(f"{plan:10s} TOTAL jobs={ptot}")
         tot += ptot
@@ -416,7 +461,10 @@ def cmd_collect(a):
         ctx = open(f"{r['run']}/context.txt").read()
         man = dict(plan=plan, block=name, run_id=r["run_id"], host=host, run_dir=r["run"], rows=rows, elapsed_s=r["elapsed_s"],
                    finished=r["ts"], cmd=open(f"{r['run']}/cmd.sh").read(), context=ctx,
-                   note="方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）")
+                   note=("PREREG 偏離 14 的重跑（icpe-sim 清單 results/icpe_next/sim/dev14_rerun_list.csv）：只含清單 rerun_policies 的列"
+                         "（P4 另受 jobs.csv 限制）；同一 block 其他規則的列沿用 results/icpe_next/b/<原 plan>/<block>/。旗標見 cmd"
+                         if plan.startswith("d14_") else
+                         "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"))
         with open(f"{dst}/manifest.json", "w") as fh:
             json.dump(man, fh, ensure_ascii=False, indent=1)
         n += 1
