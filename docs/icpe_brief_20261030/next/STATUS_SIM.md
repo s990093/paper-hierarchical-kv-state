@@ -1070,3 +1070,37 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - 旗標：版本 B 的 block 一律 `--pf-expire --pf-gpu-recheck`；P4 模型 P 再加 `--noise-overdue resample`。照 `dev14_rerun_list.csv` 的 `flags` 欄。
   - **預取到 GPU 一律開 `--pf-gpu-recheck`**；不要把 wt 和預取到 GPU 交叉。
 - 進行中：icpe-rux 的 v8_dev14（`36780534`）交叉檢查，run `20261107-163544-icpe-sim-v8dev14-xcheck`。
+
+---
+
+## 2026-11-07T17:27+08:00 — 規則 (i) 在 λ＝0 什麼時候會觸發（回答 icpe-data 17:1x：ShareGPT 變很多，UltraChat／LMSYS／agent 幾乎不變，合不合理）
+
+- **規則本身**：`_pf_expire` 看 `sT[s]`。`sT[s]` 是 s「最後一塊」的下一次存取（`next_access(acc, sb[s][-1], cur)`），不是 s 自己的下一個請求。
+  - λ＝0 時，只有「那一塊已經被存取、s 的預取副本卻沒被用掉」才會丟。
+  - 要同時滿足：
+    - (1) s 被降到慢層、又被預取回 CPU（手上有預取副本）；
+    - (2) 它最後一塊的下一次存取來自**別的 session**（跨 session 共用的塊）。
+  - 如果是 s 自己回來，副本會被用掉，不會觸發。
+- **資料**（run `20261107-172443-icpe-sim-pfexp-lastblock`，只讀紀錄、不跑模擬；`results/icpe_next/sim/dev14_pfexp_lastblock.csv`）：每個請求的最後一塊，下一次被存取時屬於哪個 session。
+
+| 紀錄 | 請求 | 跨 session 共用的塊 | 最後一塊下一次是別的 session | 同一個 session | 之後沒有再存取 |
+|:--|--:|--:|--:|--:|--:|
+| Bailian coder | 43,011 | 9.6% | 5,515（14.7%） | 14,455 | 17,569 |
+| Mooncake conversation R1 | 12,031 | 6.1% | 1,777（14.8%） | 3,509 | 6,745 |
+| Mooncake toolagent R1 | 23,608 | 6.2% | 3,369（14.3%） | 7,038 | 13,201 |
+| OpenHands N16 s1 | 8,021 | 0.011% | 119（1.5%） | 7,603 | 299 |
+| ShareGPT T60 s1 | 70,046（有完整塊的） | 4.3% | 717（1.0%） | 62,261 | 7,068 |
+| SemiAnalysis N32 s1 | 98,420 | 6.2% | 374（0.38%） | 86,744 | 11,302 |
+| WildChat s1 | 23,086 | 0.55% | 17（0.07%） | 16,897 | 6,172 |
+| mini-SWE N16 s1 | 13,884 | 0 | 0 | 13,385 | 499 |
+
+- **和 icpe-data 的觀察對得上**：
+  - mini-SWE 沒有跨 session 共用的最後一塊 → 0 變。
+  - WildChat 只有 17 次 → 2／162 變。
+  - ShareGPT 有 717 次 → 變很多。ShareGPT 有重複或共用開頭的對話。
+  - Bailian、Mooncake 約 14–15% → 變很多。
+- **對不太上、但說得通的**：
+  - OpenHands 有 119 次，icpe-data 卻量到 0 變。條件 (1) 也要成立，OpenHands N16 工作集小，可能根本沒降到慢層、沒有預取副本。〔推論，沒量 n_pfexp〕
+  - SemiAnalysis 只有 0.38%，影響卻大（λ＝0 最多 −15%）。每次觸發丟掉的副本可能很大（長 session）。〔推論〕
+- 沒量（NOT_MEASURED）：UltraChat、LMSYS（acvlab 沒有 nb；icpe-data 已逐列確認 uc_T60_s1、lm_T600_s2 沒變）；TraceLab（紀錄太大，這次沒跑）。
+- **結論**：這個模式合理，不是程式錯。規則 (i) 只在跨 session 共用最後一塊、而且有預取副本時作用。
