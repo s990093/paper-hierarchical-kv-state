@@ -272,3 +272,91 @@
 - 版本 A（3 個 TTL，run `20261106-084846-icpe-main-verA-ttl3`）的全部表（偏離 7 已列）。
 - **使用者做決定（第 2 點、要登記）的時候**：版本 B（run `20261106-110854-icpe-main-verB-p1`）的全部輸出都已經回報使用者，包括正式判定、偏離 5 的算法、`--dead-h 1800／3600`、p90、論文兩個 Mooncake 舊測試的新舊並列，以及各元件 ≥15% 的格數。提問時已寫明兩種選法各有幾格（1,694 對 2,582）。決定的時間在版本 B 跑完（acvlab 本地 11:15:21）之後、commit baa508d（12:40:25）之前。
 - W4 雜訊的結果：還沒有，一個都沒看過（還沒跑）。
+
+### 偏離 9（2026-11-07T00:36:50Z（RUX3DPRO 的 `date -u`）；**W3 線索 (a) 的規則**（推翻條件的後半）；使用者決定登記、由 `icpe-rux` 寫；號碼由 `h200` 給；只登記 W3，APC、W5、排隊不在本節）
+
+**經過**
+- 使用者的決定由 `icpe-main` 轉達（11/7 約 08:45）：W3 的規則要在 TRX40 跑任何 W3 sweep 之前登記，由 `icpe-rux` 寫。
+- PREREG、NEXT_PLAN 沒有依據的三點，使用者在 `icpe-rux` 用 AskUserQuestion 定了（11/7 約 08:50）：第 3 點的比例、第 4 點的門檻與彙總。使用者也同意由 `icpe-rux` 直接寫進本檔。
+- 為什麼要登記：§1 的推翻條件（「只要有一份真實的工具類紀錄，對最強的不預測做法上限 ≥15%，又沒有簡單線索能拿走大部分」）的後半，偏離 7 寫「W3 沒登記也沒跑 → NOT_MEASURED → 未定」。TraceLab c1 是原始到達、工具類、上限 ≥15% 的變體。先看結果再定規則，結果就不能當正式證據，所以先登記。
+
+**1. 線索 (a) 的定義**（依據 NEXT_PLAN W3 第 42 行「工具一開始執行，就把這個對話的 KV 留在／搬回 CPU（不需預測，相當於 Continuum 的 TTL 的極端版）」、§4 表 ③「工具一開始執行就留在 GPU／搬回 CPU」）
+- **每個請求的旗標** cue[r] ∈ {0, 1}＝請求 r 這一輪的輸出有工具呼叫。回合結束時系統就看得到工具要開始執行，不用預測。
+  - TraceLab（release v0.0.2，`syfi_coding_trace.jsonl.gz` sha256 `11ce51ec0a25e3d1d95b025bca2f7d1647e47571eb7cc968acd5fc64d4b4fb65`）：cue[r]＝該輪原始紀錄的 `tools` 非空。
+    - 請求順序照 `code/icpe/next_b_convert.py` 的 `conv_tracelab`＋`finalize`。
+    - 程式：`code/icpe/rux_x1fast/v8_features/make_cue.py tracelab`。
+    - 跑之前必須用 `make_cue.py check` 對 nb 檔核對 t、sess 的 sha256，要印 `CUE_CHECK PASS`。
+    - tracelab_c1：665,453 個請求、cue＝1 有 574,485 個。TRX40 與 RUX3DPRO 各自產生，sha 相同。
+  - FreeInference（HF `harvardMadsys/freeinference_agentic_trace` @ `16d3c04d`）：cue[r]＝同一 session 的下一個請求 `step_trigger`＝tool。
+    - FreeInference 只記觸發來源，只有 tool／user 兩種。session 的最後一個請求＝0。
+    - 程式：`make_cue.py fi`，順序直接取自 `x1_fi.prepare_fi`。
+  - 沒有欄位的紀錄（Mooncake toolagent、SemiAnalysis）：不跑，推翻條件的後半維持「未定」（偏離 7）。
+  - CacheWise：這次不跑（使用者 11/7「CacheWise 都先不跑」）。之後要跑，得另寫 cue 程式（`trigger`），並補登記 cue 的定義；其他照本節。
+- **③ 的兩個 GPU 規則**（引擎 `code/icpe/rux_x1fast/v8_features/`，v8 `src/main.rs` sha256 `48e4efce…`；sweep 用 `sweep_v8.py`＋`RUX_CUE_FILE`）：
+  - **CUEP**：cue＝1 的回合結束後，這個對話的 KV 釘在 GPU，直到它的下一個請求；cue＝0 的回合照 GPU LRU。GPU 滿而且全部釘住時，放掉對話開始時間最晚的那個（同 §2 第 3 項的 TTL 規則）。
+  - **CUEO**：cue＝1 的回合結束時立刻逐出 GPU（wb：寫進 CPU，整個對話寫一次）；cue＝0 照 GPU LRU。
+- **驗證**（`smoke_v8.py`，3 份紀錄）：
+  - cue 全 0 時，CUEP、CUEO＝GPU LRU，逐位元相同；
+  - cue 全 1 時，CUEP＝TTLB:∞，逐位元相同；
+  - 不開新功能時，引擎和 Python 參考逐位元相同。
+  - 另外有一個只讀的獨立審查，見 `docs/icpe_brief_20261030/next/rux/V8_FEATURES.md`。
+
+**2. 跑哪些紀錄、哪些格**
+- **紀錄**：
+  - TraceLab c1（原始到達）、c2、c4（合成到達）；
+  - FreeInference 6 週：2026-05-17_2026-05-23、05-24_05-30、05-31_06-06、06-07_06-13、06-14_06-20、06-21_06-27（原始到達）。
+  - 原始、合成各自判定（偏離 7 第 1 點）。
+- **格**＝主結果的格（偏離 4 第 3 項）：
+  - CPU 9 個容量（8、16、32、64、128、256、512、1024、111.0625 GiB）× 慢層 ssd／b32／nfs × GPU 閒／忙 × Cake；
+  - GPU 111.0625 GiB、wb、預取到 CPU。
+- **CPU 規則**：`x1_sim.NON_ORACLE` 的 10 個，同 ② 的組成（偏離 2 第 5 點「每個 CPU 對手都配」）。
+- 一個變體約 450 個 job：CPU 10 × GPU {CUEP, CUEO} × CPU 9 個容量，時間相關的規則依時間設定拆。
+
+**3. 怎麼算**
+- 主指標：回來請求的平均 TTFT（`mean_ret`），不截尾（§1、偏離 8 第 1 點）。
+- T③（每格）＝min over {CPU ∈ NON_ORACLE} × {GPU ∈ {CUEP, CUEO}} 的 mean_ret：事後挑最快，同 ②（§2 第 3 項）。
+  - 一格要 20 個組合都跑了才算；少了，那格＝NOT_MEASURED。
+- T②、T④c＝推翻條件前半用的同一份上限表，現在是版本 B（`results/icpe_next/main/verB/{tl,fi}_p1_headroom_components.csv.xz`，run `20261106-110854-icpe-main-verB-p1`，偏離 8 第 1 點）。
+  - 跑 ③ 的機器要先證明環境和版本 B 相同：同一個變體重算版本 B 的表，逐值相同（`explore_apc.py` 的重現檢查，0 個不同）。不同就停，不判。
+- **比例**（使用者選「相對 ②（PR:21）」）：f_c＝(T② − T③) ÷ (T② − T④c)，每個 (格, 元件 c) 一個。
+  - c＝O-ORD、O-DROP、O-NOW、O-PF、O-GPU（偏離 7：算判定的元件）。O-ALL(report) 也算，只報告。
+  - NEXT_PLAN 第 43 行的 C2 算法 (T① − T③) ÷ (T① − T④O-PF) 只報告，不進判定。
+- 程式：`code/icpe/rux_x1fast/v8_features/analyze_w3.py --sweep <③ 的 x1_sweep.csv> --headroom <版本 B 的表>`，輸出 `w3_rows.csv`、`w3_verdict.csv`。
+
+**4. 判定**（使用者選：門檻「f > 0.5」、彙總「逐格，任一格成立就算」）
+- (格, 元件) 的上限 ≥ 0.15（§1、偏離 8 第 4 點），而且 ③ 齊全，才判。
+- 「簡單線索拿走大部分」＝該 (格, 元件) 的 f_c > 0.5。
+- 一個變體（紀錄變體 × rule；FreeInference 每週一個變體）：
+  - 只要有任一個「上限 ≥15%、③ 齊全」的 (格, 元件) f_c ≤ 0.5 → 推翻條件的後半**成立**（沒有簡單線索能拿走大部分）。
+  - 所有「上限 ≥15%、③ 齊全」的 (格, 元件) 都 f_c > 0.5，而且沒有 ③ 不齊的 ≥15% 格 → 後半**不成立**（簡單線索拿走大部分）。
+  - 沒有 ≥15% 的 (格, 元件) → 前半就不成立（偏離 7）。
+  - 有 ≥15% 的格但 ③ 都不齊、或只剩不齊的格 → **未定**。
+- 推翻條件：前半與後半都成立的變體，只要有一個（「只要有一份真實的工具類紀錄」）→ 推翻條件成立。原始、合成各自下判定字（偏離 7 第 1 點）。
+- 寫入頻寬飽和（`write_saturated`）的格照算，另報「上限 ≥15%、f ≤ 0.5 的格裡有幾格飽和」（偏離 7 第 3 點）。
+- 多個 CPU 容量、慢層、GPU 閒／忙不合併，照上面逐格判。
+- Mooncake 的 R1／R2：沒有欄位，不適用，見第 1 點。
+- p90 等其他指標只報告。
+
+**5. 方向（照實寫）**
+- ③ 是兩個規則 × 10 個 CPU 規則事後挑最快，對線索有利 → 線索比較容易「拿走大部分」→ 比較不容易推翻，偏向保住「預測沒有多大優勢」的結論。
+- 反過來，CUEO 在 wb 下每次都把整個對話重寫進 CPU，讓 ③ 略弱。
+
+**寫本節時 `icpe-rux` 已經看過的結果**（照實列出）：
+- **版本 B**：
+  - 讀過 Mooncake、SemiAnalysis、Bailian 的 `*_p1_headroom_components.csv.xz` 全部列，用來重現與探索。
+  - 透過研究報告看過 STATUS_MAIN 的摘要：原始到達的工具類變體 ≥15% 的是 Mooncake toolagent R1 57.8%、R2 62.4%、TraceLab c1 38.9%。
+  - **沒有打開** TraceLab、FreeInference 的版本 B 表。
+- **W3**：
+  - **沒有看過任何 TraceLab、FreeInference 的 ③ 或 f**（還沒跑）。
+  - 看過 TraceLab 原始紀錄的線索統計（runs `20261107-033551-icpe-rux-w3-cue-stats-tracelab`、`20261107-045446-icpe-rux-w3-make-cue-tracelab`）：
+    - 「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%；
+    - cue＝1 的比例 86.3%。
+  - 看過 SemiAnalysis N16 s1 用代用 cue 的管線測試（runs `20261107-045622-icpe-rux-w3-pipeline-sa-proxy`、`20261107-083542-icpe-rux-w3-analyze-recheck-sa-proxy`）：
+    - 代用 cue＝下一個請求不是使用者觸發，SemiAnalysis 幾乎全是 1，不是真的線索。
+    - 3 個 CPU 容量下，③ 在每一格都比 ② 慢，f 為負，「後半成立」。
+    - 只當管線測試，不是證據；SemiAnalysis 沒有欄位，不在第 2 點的範圍裡。
+- **其他探索**（不是正式結果，`docs/icpe_brief_20261030/next/rux/V8_FEATURES.md` §4、`results/icpe_next/v8_explore/`）：
+  - APC／BELP、W5：Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder；
+  - 排隊：SemiAnalysis N16／N32／N64／N72 s1。
+  - 使用者在 08:50 做決定前，已看過這些的摘要。
+- TRX40 的 TraceLab c1 APC／BELP 探索在本節寫好時還在跑，結果沒有看過。

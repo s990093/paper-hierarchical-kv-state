@@ -169,3 +169,8 @@
 
 - `icpe-rux`（跨 session 的名字 `rux-proj`，分支 `icpe-next-rux`）問下一個偏離編號，用來登記 W3 線索 (a) 的規則（使用者 11/7 約 08:45 經 `icpe-main` 轉達；要在 TRX40 跑 W3 sweep 之前登記；push 前會先問使用者）。我查了 origin 上的 icpe-next-a 6b84a5c、ana 43e7ffc、b 19f3e85、data a25dcba、main-branch c868ef2、rux 4558329、sim 90dae78、trx 6872edf 和 main ff71545 的 `PREREG.md`：最大都是偏離 8，沒有 9；`h200` 沒有待登記的偏離 → **偏離 9 給 `icpe-rux`，`h200` 下一個從 10 開始**（登記前仍先查各分支）。
 - W6（2026-11-07 08:33 台灣）：仍等 DL_Lab5 的 24507（2026-11-06 05:39 開始，已跑 1 天 2 小時 53 分；h200q 上限 2 天）。
+
+## 2026-11-07（台灣）— 收到 PREREG 偏離 9（`icpe-rux` 寫）
+
+- `icpe-rux` 把偏離 9 寫在 `origin/icpe-next-rux` @ `8f04a91`（RUX3DPRO `date -u` 2026-11-07T00:36:50Z）：W3 線索 (a) 的規則——cue 的定義（TraceLab：該輪 `tools` 非空；FreeInference：下一個請求 `step_trigger`＝tool）、③ 的兩個 GPU 規則 CUEP／CUEO × `NON_ORACLE` 10 個 CPU 規則、紀錄＝TraceLab c1／c2／c4＋FI 6 週、格＝主結果的格、f_c＝(T② − T③) ÷ (T② − T④c)、判定門檻 f > 0.5、逐格任一格成立就算。節內照實列了寫的時候已看過的結果。我核過：和本分支 b87bca8 的 PREREG 比，只在檔尾加一節、0 行刪除；push 時 data／main／trx 分支最大都是偏離 8。
+- 本分支**只同步 `PREREG.md`**（取 8f04a91 的版本）。`h200` 下一個偏離編號是 10。
