@@ -1,0 +1,160 @@
+run_id,ts,host,fig,series,label,x,y,src
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,Mooncake toolagent R2,62.362,1.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,Mooncake toolagent R1,57.826,2.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,TraceLab c1,38.949,3.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,FreeInference 06-21,0.853,4.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,FreeInference 06-14,0.598,5.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,FreeInference 05-24,0.255,6.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,FreeInference 06-07,0.216,7.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,FreeInference 05-17,0.08,8.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・工具類,FreeInference 05-31,0.046,9.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N72 s3,52.935,12.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N32 s3,51.891,13.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N72 s3,51.764,14.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N32 s2,51.708,15.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N64 s1,51.677,16.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N72 s2,51.462,17.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N32 s1,50.803,18.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N72 s2,50.592,19.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N64 s3,50.532,20.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N72 s1,50.492,21.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N72 s1,49.967,22.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N64 s3,49.135,23.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N64 s2,49.112,24.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N64 s2,47.599,25.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N16 s1,46.171,26.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,TraceLab c4（壓縮 4×）,45.784,27.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N64 s1,45.776,28.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,TraceLab c2（壓縮 2×）,44.474,29.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N16 s2,42.455,30.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,SemiAnalysis N16 s3,41.602,31.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N32 s2,15.381,32.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N32 s1,14.77,33.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N32 s3,11.703,34.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N16 s3,1.86,35.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N16 s1,1.161,36.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,合成到達・工具類,CacheWise N16 s2,1.058,37.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・非工具類（只報告）,Mooncake 對話 R1,61.551,40.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・非工具類（只報告）,Mooncake 對話 R2,60.234,41.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・非工具類（只報告）,Bailian coder,48.062,42.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・非工具類（只報告）,Bailian traceA,47.534,43.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig1,原始到達・非工具類（只報告）,Bailian thinking,18.823,44.0,results/icpe_next/main/verB/verB_verdict.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・工具類,O-GPU,O-GPU,114.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・工具類,O-ORD,O-ORD,71.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・工具類,O-PF,O-PF,90.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・工具類,O-DROP,O-DROP,77.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・工具類,O-NOW,O-NOW,0.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,合成到達・工具類,O-GPU,O-GPU,504.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,合成到達・工具類,O-ORD,O-ORD,261.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,合成到達・工具類,O-PF,O-PF,57.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,合成到達・工具類,O-DROP,O-DROP,0.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,合成到達・工具類,O-NOW,O-NOW,0.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・非工具類（只報告）,O-GPU,O-GPU,163.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・非工具類（只報告）,O-ORD,O-ORD,102.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・非工具類（只報告）,O-PF,O-PF,135.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・非工具類（只報告）,O-DROP,O-DROP,120.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig2,原始到達・非工具類（只報告）,O-NOW,O-NOW,0.0,results/icpe_next/main/verB/verB_by_trace.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,8 GiB,8.0,11.481,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,16 GiB,16.0,12.963,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,32 GiB,32.0,14.815,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,64 GiB,64.0,18.148,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,111.062 GiB,111.0625,18.889,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,128 GiB,128.0,18.519,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,256 GiB,256.0,17.407,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,512 GiB,512.0,12.593,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・工具類,1024 GiB,1024.0,5.556,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,8 GiB,8.0,15.256,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,16 GiB,16.0,15.385,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,32 GiB,32.0,19.359,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,64 GiB,64.0,19.359,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,111.062 GiB,111.0625,15.385,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,128 GiB,128.0,13.974,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,256 GiB,256.0,5.0,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,512 GiB,512.0,1.667,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,合成到達・工具類,1024 GiB,1024.0,0.0,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,8 GiB,8.0,34.667,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,16 GiB,16.0,38.0,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,32 GiB,32.0,43.333,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,64 GiB,64.0,44.667,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,111.062 GiB,111.0625,45.333,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,128 GiB,128.0,46.0,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,256 GiB,256.0,43.333,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,512 GiB,512.0,34.667,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig3,原始到達・非工具類（只報告）,1024 GiB,1024.0,16.667,results/icpe_next/main/verB/verB_by_cpu.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=168/352,0.1,47.727,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=93/352,0.2,26.42,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=58/352,0.3,16.477,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=30/352,0.4,8.523,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B2：同上，每次查詢重抽,n=126/352,0.1,35.795,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B2：同上，每次查詢重抽,n=78/352,0.2,22.159,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B2：同上，每次查詢重抽,n=59/352,0.3,16.761,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|P-B2：同上，每次查詢重抽,n=41/352,0.4,11.648,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|M：回來時間 ×(1±λ),n=350/352,0.1,99.432,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|M：回來時間 ×(1±λ),n=341/352,0.2,96.875,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・工具類|M：回來時間 ×(1±λ),n=334/352,0.3,94.886,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=181/822,0.1,22.019,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=139/822,0.2,16.91,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=117/822,0.3,14.234,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=78/822,0.4,9.489,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B2：同上，每次查詢重抽,n=708/822,0.1,86.131,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B2：同上，每次查詢重抽,n=650/822,0.2,79.075,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B2：同上，每次查詢重抽,n=560/822,0.3,68.127,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|P-B2：同上，每次查詢重抽,n=426/822,0.4,51.825,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|M：回來時間 ×(1±λ),n=797/822,0.1,96.959,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|M：回來時間 ×(1±λ),n=770/822,0.2,93.674,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,合成到達・工具類|M：回來時間 ×(1±λ),n=763/822,0.3,92.822,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=201/520,0.1,38.654,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=97/520,0.2,18.654,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=52/520,0.3,10.0,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B1：λ 的預測換成亂猜，每回合抽一次（主）,n=24/520,0.4,4.615,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B2：同上，每次查詢重抽,n=142/520,0.1,27.308,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B2：同上，每次查詢重抽,n=88/520,0.2,16.923,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B2：同上，每次查詢重抽,n=50/520,0.3,9.615,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|P-B2：同上，每次查詢重抽,n=26/520,0.4,5.0,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|M：回來時間 ×(1±λ),n=511/520,0.1,98.269,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|M：回來時間 ×(1±λ),n=498/520,0.2,95.769,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig4,原始到達・非工具類（只報告）|M：回來時間 ×(1±λ),n=493/520,0.3,94.808,results/icpe_next/main/p4/noise/p4_by_class.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 8 GiB b32 忙,0.8169,0.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 8 GiB b32 忙,2.4113,0.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 8 GiB b32 閒,0.823,1.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 8 GiB b32 閒,2.4475,1.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 8 GiB nfs 忙,0.6105,2.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 8 GiB nfs 忙,3.869,2.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 8 GiB nfs 閒,0.6385,3.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 8 GiB nfs 閒,3.6089,3.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 16 GiB b32 忙,0.8236,4.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 16 GiB b32 忙,2.3161,4.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 16 GiB b32 閒,0.8293,5.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 16 GiB b32 閒,2.3679,5.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 16 GiB nfs 忙,0.6266,6.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 16 GiB nfs 忙,3.6601,6.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 16 GiB nfs 閒,0.654,7.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 16 GiB nfs 閒,3.5256,7.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 32 GiB b32 忙,0.839,8.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 32 GiB b32 忙,2.1837,8.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 32 GiB b32 閒,0.8379,9.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 32 GiB b32 閒,2.2961,9.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 32 GiB nfs 忙,0.6785,10.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 32 GiB nfs 忙,3.1189,10.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 32 GiB nfs 閒,0.6976,11.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 32 GiB nfs 閒,3.0616,11.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 64 GiB nfs 忙,0.7999,12.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 64 GiB nfs 忙,2.5494,12.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 64 GiB nfs 閒,0.8019,13.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 64 GiB nfs 閒,2.5436,13.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 111 GiB nfs 忙,0.7873,14.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 111 GiB nfs 忙,1.7138,14.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 111 GiB nfs 閒,0.7837,15.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 111 GiB nfs 閒,1.7911,15.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 128 GiB nfs 忙,0.8428,16.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 128 GiB nfs 忙,2.3738,16.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-GPU 128 GiB nfs 閒,0.8296,17.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-GPU 128 GiB nfs 閒,2.5179,17.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-ORD 64 GiB nfs 忙,0.7986,18.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-ORD 64 GiB nfs 忙,2.5494,18.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-ORD 64 GiB nfs 閒,0.8048,19.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-ORD 64 GiB nfs 閒,2.4548,19.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-ORD 111 GiB nfs 忙,0.7671,20.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-ORD 111 GiB nfs 忙,1.6109,20.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,oracle,O-ORD 111 GiB nfs 閒,0.7733,21.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
+20261107-104634-icpe-main-advisor-figs,2026-11-07T10:46:37+08:00,acvlab,fig5,cue,O-ORD 111 GiB nfs 閒,1.637,21.0,/ssd6/hungwei/icpe-next/runs/20261107-104634-icpe-main-advisor-figs/in/w3_rows_tracelab_c1.csv
