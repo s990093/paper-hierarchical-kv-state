@@ -1,0 +1,13 @@
+{
+ "plan": "p4_b1",
+ "block": "bailian_thinking_P_B1",
+ "run_id": "20261106-165508-icpe-data-p4_b1-bailian_thinking_P_B1",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261106-165508-icpe-data-p4_b1-bailian_thinking_P_B1",
+ "rows": 5453,
+ "elapsed_s": 10.7,
+ "finished": "2026-11-06T16:55:19+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261106-165508-icpe-data-p4_b1-bailian_thinking_P_B1\nexport RUN_DIR=\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd6/hungwei/icpe-next/runs/20261106-165508-icpe-data-p4_b1-bailian_thinking_P_B1/rust_timing.jsonl\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261106-165508-icpe-data-p4_b1-bailian_thinking_P_B1/out x1 sweep --traces nb:bailian_thinking --rules nb --cpu 8 16 32 --policies ARC GDSF LRU LRU+2HA LRU+2HW LRU+NONE LRU+RPF LRU2 O-ALL O-DROP O-PF PENS S3FIFO --slows nfs --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU BEL TTLA:0.3 TTLA:1 TTLA:10 TTLA:100 TTLA:3 TTLA:30 TTLA:300 TTLB:0.3 TTLB:1 TTLB:10 TTLB:100 TTLB:3 TTLB:30 TTLB:300 --pf-target cpu --noise-models P --noise-lambdas 0 0.1 0.2 0.3 0.4 --noise-draws B1 --noise-seeds 0 1 2 3 4 5 6 7 8 9 --workers 35 --engine rust --jobs-from /ssd6/hungwei/icpe-next/runs/20261106-165508-icpe-data-p4_b1-bailian_thinking_P_B1/jobs.csv\n",
+ "context": "date: 2026-11-06T16:55:08.473630+08:00\nhost: acvlab\nplan: p4_b1\nblock: bailian_thinking_P_B1\nengine: rust\ngit HEAD: b557b4ed18da7496ec376af328a02751565216b3\ngit status:\nuptime:  16:55:08 up 21 days,  4:49, 44 users,  load average: 66.55, 68.16, 73.03\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440          72          33           9         334         354\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:bailian_thinking: sha256 a47ff70634afb45c11928e0e14b8427ccfaf1ea1c77af4f7284611f97d65d724  /ssd6/hungwei/icpe-next/datasets/x1_nb/bailian_thinking.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}

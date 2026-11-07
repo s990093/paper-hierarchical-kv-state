@@ -83,6 +83,11 @@ def blocks():
                      ("fi6w", dict(traces=[f"fi:{w}" for w in FI_WEEKS], rules=["session_id"]), sweep_args())]
     P["sa_main"] = [(f"sa_N{N}_s{s}", nb(f"semianalysis_N{N}_s{s}"), sweep_args()) for s in (1, 2, 3) for N in (16, 32, 64, 72)]
     P["bl_main"] = [("bailian3", dict(traces=[f"nb:bailian_{f}" for f in ("traceA", "thinking", "coder")], rules=["nb"]), sweep_args())]
+    # 公開對話資料集（使用者 11/7；STATUS_DATA 2026-11-07 的補登記）：只跑主網格，不跑 P1–P4／敏感度。
+    # acvlab：ShareGPT（sg_）、WildChat（wc_）；TRX40：LMSYS-Chat-1M（lm_）、UltraChat（uc_）。nb 由 next_b_convert.py chat 產生。
+    P["chat_main"] = ([(f"{k}_T{T}_s{s}", nb(f"{src}_T{T}_s{s}"), sweep_args())
+                       for k, src in (("sg", "sharegpt"), ("lm", "lmsys"), ("uc", "ultrachat")) for s in (1, 2, 3) for T in (60, 600)]
+                      + [(f"wc_s{s}", nb(f"wildchat_s{s}"), sweep_args()) for s in (1, 2, 3)])
     # 敏感度代表格：每份紀錄 1 個變體 × CPU 111.0625、128
     rep = [("cw", nb("cachewise_N16_s1")), ("tl", nb("tracelab_c1")), ("sa", nb("semianalysis_N16_s1")), ("bl", nb("bailian_coder")),
            ("mc", dict(traces=["conversation", "toolagent"], rules=["R1"])), ("fi", dict(traces=[f"fi:{FI_WEEKS[0]}"], rules=["session_id"]))]

@@ -74,7 +74,7 @@ def _readme_sha(ds_dir, rel):
     if os.path.exists(rd):
         for ln in open(rd):
             x = ln.split()
-            if len(x) >= 3 and x[-1] == rel and len(x[0]) == 64:
+            if len(x) >= 2 and x[-1] == rel and len(x[0]) == 64:
                 want = x[0]
     if want is not None and want != got:
         raise SystemExit(f"{p}: sha256 {got} ≠ README.txt 記錄的 {want} → 停")
@@ -379,9 +379,231 @@ def conv_fi(a, x1nb):
     return res
 
 
+# ------------------------------------------------------------------ 公開對話資料集（使用者 11/7：ShareGPT、WildChat、LMSYS-Chat-1M、UltraChat；
+# 登記＝STATUS_DATA 2026-11-07「對話資料集補登記」那節，跑模擬之前 commit）
+# 共同規則：
+#   * 合格的對話：訊息嚴格 user、assistant 交替、由 user 開始（最後可以停在 user）、內容都是字串、user 至少 2 輪；
+#     WildChat 另外要每個 assistant 都有 timestamp、最後一則是 assistant。不合格的依原因計數（meta.filter）。
+#   * 抽樣：合格的對話依載入順序編號，numpy default_rng(0).choice(不放回) 抽 CHAT_N＝9,000 個（CachedAttention 的 9K sessions）。
+#   * token：Llama-3.1-8B-Instruct 的 tokenizer（NousResearch 鏡像 @ d10aef79，tokenizer.json sha256 固定），每則訊息單獨切，
+#     再照 Llama 3.1 的對話格式組起來：<|begin_of_text|>，每則訊息＝<|start_header_id|>角色<|end_header_id|>\n\n 內容 <|eot_id|>；
+#     不加 system 訊息。第 k 個 user 訊息觸發第 k 個請求，請求的輸入＝到這則 user 訊息為止的整段＋assistant 的開頭（4 個 token）。
+#     所以上一個請求的輸入一定是下一個請求的前綴（只往後加）。
+#   * chunk 鍵：整段 token 序列每 512 個一塊做鏈式 blake2b（前一塊的摘要＋這一塊的 token），內容相同的前綴（不同對話也一樣）共用鍵，
+#     和 vLLM 前綴快取的行為一致。
+#   * 規則 6（用 A 驗算 B）：把前 CHAT_CHECK 個抽到的對話照同一格式組成「文字」，整段一次切 token，和逐則切再組起來的長度比；
+#     差異（|整段−逐則|／整段）的中位數 >1% 就停。另外檢查每個請求的鍵是上一個請求的鍵的延伸（write_nb 也會查）。
+#   * 時間：
+#       - ShareGPT、LMSYS-Chat-1M、UltraChat（沒有時間）：照 Pensieve／CachedAttention。對話開始＝Poisson，λ＝1 個對話／秒
+#         （對話順序＝default_rng(seed).permutation）；同一個對話裡兩個請求的間隔＝思考時間 ~ 指數分佈，平均 T＝60 s（主）／600 s（敏感度）。
+#         同一個 seed 的 T60 與 T600 用同一組單位指數亂數（T600＝T60 的間隔 ×10），到達順序也相同。
+#         不加生成時間：模擬器不模擬解碼，也沒有量過的每 token 解碼時間（NOT_MEASURED，不自己編）。
+#       - WildChat-1M：對話內用真實時間。第 k 個請求的偏移＝第 k 個 assistant 的 timestamp − 第 1 個 assistant 的 timestamp
+#         （伺服器收到完整回覆的時間；請求本身的到達時間沒有記錄，用回覆完成時間代替，誤差是相鄰兩輪生成時間的差）。
+#         對話開始一樣合成：Poisson λ＝1／s、同樣的 seed 與順序規則。原始的絕對時間太稀（一年約 100 萬個對話），不用。
+CHAT_N = 9000
+CHAT_LAMBDA = 1.0
+CHAT_T = (60, 600)
+CHAT_CHECK = 300
+TOK_SHA = "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4"
+BOT, SHD, EHD, EOT, NL2 = 128000, 128006, 128007, 128009, 271
+ROLE_TOK = {"user": [882], "assistant": [78191]}
+CHAT_SRC = dict(
+    sharegpt=dict(dir="sharegpt", files=["HTML_cleaned_raw_dataset/sg_90k_part1_html_cleaned.json",
+                                         "HTML_cleaned_raw_dataset/sg_90k_part2_html_cleaned.json"],
+                  hf="anon8231489123/ShareGPT_Vicuna_unfiltered", rev="192ab2185289094fc556ec8ce5ce1e8e587154ca", license="Apache-2.0"),
+    wildchat=dict(dir="wildchat-1m", files=[f"data/train-{i:05d}-of-00014.parquet" for i in range(14)],
+                  hf="allenai/WildChat-1M", rev="7d6490e462285cf85d91eabea0f9a954fbddcd1f", license="ODC-BY"),
+    lmsys=dict(dir="lmsys-chat-1m", files=None, hf="lmsys/lmsys-chat-1m", rev="200748d9d3cddcc9d782887541057aca0b18c5da",
+               license="LMSYS-Chat-1M Dataset License Agreement (no redistribution)"),
+    ultrachat=dict(dir="ultrachat", files=[f"train_{i}.jsonl" for i in range(10)], hf="openbmb/UltraChat",
+                   rev="f220fe796ce3ed62fbe1681b45ce6cbc9c6cabe0", license="MIT"),
+)
+
+
+def _tokenizer(path, pylibs):
+    h = hashlib.sha256(open(path, "rb").read()).hexdigest()
+    if h != TOK_SHA:
+        raise SystemExit(f"{path}: tokenizer sha256 {h} ≠ {TOK_SHA} → 停")
+    if pylibs:
+        sys.path.insert(0, pylibs)
+    from tokenizers import Tokenizer
+    tk = Tokenizer.from_file(path)
+    for s, want in (("<|begin_of_text|>", BOT), ("<|start_header_id|>", SHD), ("<|end_header_id|>", EHD), ("<|eot_id|>", EOT)):
+        assert tk.token_to_id(s) == want, (s, tk.token_to_id(s))
+    for s, want in (("\n\n", [NL2]), ("user", ROLE_TOK["user"]), ("assistant", ROLE_TOK["assistant"])):
+        assert tk.encode(s, add_special_tokens=False).ids == want, s
+    import tokenizers
+    return tk, dict(file=path, sha256=h, tokenizers_version=tokenizers.__version__)
+
+
+def _iter_chat(src, d, files):
+    """依固定順序逐一產生 (對話 id, [(role, content, ts秒或None)])；role 已正規化成 user／assistant，其他角色原樣保留（之後判不合格）。"""
+    if src == "sharegpt":
+        rmap = {"human": "user", "gpt": "assistant"}
+        for f in files:
+            for r in json.load(open(os.path.join(d, f))):
+                yield r.get("id"), [(rmap.get(m.get("from"), str(m.get("from"))), m.get("value"), None) for m in (r.get("conversations") or [])]
+    elif src == "ultrachat":
+        for f in files:
+            with open(os.path.join(d, f)) as fh:
+                for ln in fh:
+                    r = json.loads(ln)
+                    yield r.get("id"), [("user" if i % 2 == 0 else "assistant", c, None) for i, c in enumerate(r.get("data") or [])]
+    elif src in ("wildchat", "lmsys"):
+        import pyarrow.parquet as pq
+        idc = "conversation_hash" if src == "wildchat" else "conversation_id"
+        for f in files:
+            pf = pq.ParquetFile(os.path.join(d, f))
+            for g in range(pf.num_row_groups):
+                for r in pf.read_row_group(g, columns=[idc, "conversation"]).to_pylist():
+                    msgs = []
+                    for m in r["conversation"] or []:
+                        ts = m.get("timestamp") if src == "wildchat" else None
+                        msgs.append((m.get("role"), m.get("content"), ts.timestamp() if ts is not None else None))
+                    yield r[idc], msgs
+    else:
+        raise SystemExit(src)
+
+
+def _chat_ok(src, msgs):
+    for i, (role, c, ts) in enumerate(msgs):
+        if role != ("user" if i % 2 == 0 else "assistant"):
+            return "not_alternating"
+        if not isinstance(c, str):
+            return "content_not_str"
+        if src == "wildchat" and role == "assistant" and ts is None:
+            return "assistant_no_ts"
+    if sum(1 for m in msgs if m[0] == "user") < 2:
+        return "lt2_user_turns"
+    if src == "wildchat" and msgs[-1][0] != "assistant":
+        return "ends_with_user"
+    return None
+
+
+def conv_chat(a, x1nb):
+    src = a.source
+    S = CHAT_SRC[src]
+    d = os.path.join(a.src_dir or AT.DS, S["dir"])
+    files = S["files"]
+    if files is None:                     # LMSYS 的 parquet 檔名有雜湊尾碼：依名稱排序取 data/*.parquet
+        files = sorted(f"data/{x}" for x in os.listdir(os.path.join(d, "data")) if x.endswith(".parquet"))
+        assert len(files) == 6, files
+    shas = [_readme_sha(d, f) for f in files]
+    assert all(s["readme_sha256"] for s in shas), "README.txt 沒有記 sha256 → 停"
+    tk, tok_meta = _tokenizer(a.tokenizer, a.pylibs)
+    # 第一輪：合格與否，只記編號
+    filt, elig, n_all = {}, [], 0
+    for i, (cid, msgs) in enumerate(_iter_chat(src, d, files)):
+        n_all += 1
+        why = _chat_ok(src, msgs) or "ok"
+        filt[why] = filt.get(why, 0) + 1
+        if why == "ok":
+            elig.append(i)
+    n_pick = min(CHAT_N, len(elig))
+    pick = set(np.asarray(elig)[np.sort(np.random.default_rng(0).choice(len(elig), size=n_pick, replace=False))].tolist())
+    print(f"[{src}] 對話 {n_all}，合格 {len(elig)}，抽 {n_pick}；{filt}", flush=True)
+    # 第二輪：取出抽到的對話
+    convs = [(cid, msgs) for i, (cid, msgs) in enumerate(_iter_chat(src, d, files)) if i in pick]
+    assert len(convs) == n_pick, (len(convs), n_pick)
+    flat = [c for _, msgs in convs for (_, c, _) in msgs]
+    ids = [e.ids for e in tk.encode_batch(flat, add_special_tokens=False)]
+    # 組序列、算請求
+    kg = KeyGen()
+    req = []          # (對話序號, 請求序號 k, inp, keys, 第 k 個 assistant 的 ts)
+    p = n_ext_ok = n_ext = 0
+    seq_lens = []
+    for ci, (cid, msgs) in enumerate(convs):
+        seq = [BOT]
+        reqpos = []
+        for (role, _, ts) in msgs:
+            if role == "assistant":
+                seq += ids[p] + [EOT]          # assistant 的開頭在 user 那一步已經加了
+            else:
+                seq += [SHD] + ROLE_TOK["user"] + [EHD, NL2] + ids[p] + [EOT] + [SHD] + ROLE_TOK["assistant"] + [EHD, NL2]
+                reqpos.append(len(seq))
+            p += 1
+        ats = [ts for (role, _, ts) in msgs if role == "assistant"]
+        H, pv = [], b""
+        for j in range(len(seq) // CHUNK):
+            pv = hashlib.blake2b(pv + np.asarray(seq[CHUNK * j:CHUNK * (j + 1)], np.int32).tobytes(), digest_size=16).digest()
+            H.append(kg.of(pv))
+        prev = None
+        for k, pos in enumerate(reqpos):
+            ks = H[:pos // CHUNK]
+            if prev is not None:
+                n_ext += 1
+                n_ext_ok += int(ks[:len(prev)] == prev)
+            req.append((ci, k, pos, ks, ats[k] if k < len(ats) else None))
+            prev = ks
+        seq_lens.append(len(seq))
+    assert p == len(flat)
+    rule_ext = AT._check(f"{src} 請求的鍵＝上一個請求的鍵的延伸", n_ext_ok, n_ext, thr=1.0)
+    # 規則 6：整段文字一次切 vs 逐則切再組
+    diffs = []
+    for cid, msgs in convs[:CHAT_CHECK]:
+        txt = "<|begin_of_text|>" + "".join(
+            (f"<|start_header_id|>user<|end_header_id|>\n\n{c}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n" if role == "user"
+             else f"{c}<|eot_id|>") for (role, c, _) in msgs)
+        n_whole = len(tk.encode(txt, add_special_tokens=False).ids)
+        n_parts = 1 + sum((len(tk.encode(c, add_special_tokens=False).ids) + (9 if role == "user" else 1)) for (role, c, _) in msgs)
+        diffs.append(abs(n_whole - n_parts) / max(n_whole, 1))
+    diffs = np.asarray(diffs)
+    tok_check = dict(n=len(diffs), median=float(np.median(diffs)), p90=float(np.quantile(diffs, .9)), max=float(diffs.max()),
+                     frac_exact=float((diffs == 0).mean()))
+    print(f"[{src}] 規則 6（整段切 vs 逐則切）：{tok_check}", flush=True)
+    if not tok_check["median"] <= 0.01:
+        raise SystemExit(f"[{src}] 整段切與逐則切的長度差中位數 {tok_check['median']:.4f} > 1% → 停")
+    R = pd.DataFrame(req, columns=["conv", "k", "inp", "keys", "ats"])
+    n_conv = len(convs)
+    res = []
+    variants = [None] if src == "wildchat" else list(CHAT_T)
+    for seed in a.seeds:
+        rng = np.random.default_rng(seed)
+        order = rng.permutation(n_conv)
+        st_o = np.cumsum(rng.exponential(1.0 / CHAT_LAMBDA, n_conv))
+        start = np.empty(n_conv)
+        start[order] = st_o
+        unit = rng.exponential(1.0, len(R))             # 每個請求一個單位指數亂數；每個對話的第一個不用
+        for T in variants:
+            x = R[["conv", "k", "inp"]].copy()
+            if T is not None:
+                g = np.where(x.k.values == 0, 0.0, unit * T)
+                off = pd.Series(g).groupby(x.conv.values).cumsum().values
+                arrival = dict(kind="poisson_sessions+exp_think", lam_per_s=CHAT_LAMBDA, think_mean_s=T, seed=seed)
+                name = f"{src}_T{T}_s{seed}"
+            else:
+                a0 = R.groupby("conv").ats.transform("first")
+                off = (R.ats - a0).values.astype(float)
+                assert np.isfinite(off).all()
+                arrival = dict(kind="poisson_sessions+real_gaps(assistant_ts)", lam_per_s=CHAT_LAMBDA, seed=seed)
+                name = f"{src}_s{seed}"
+            x["t"] = start[x.conv.values] + off
+            x["sess"] = x.conv
+            x["user"] = True
+            gaps = pd.Series(off).groupby(x.conv.values).diff().dropna()
+            dur = pd.Series(off).groupby(x.conv.values).max().values
+            m = base_meta(src, a)
+            m.update(source=dict(hf=S["hf"], revision=S["rev"], license=S["license"], files=shas), tokenizer=tok_meta,
+                     filter=dict(n_conv_all=n_all, n_eligible=len(elig), n_sampled=n_pick, reasons=filt, sample_seed=0),
+                     rule6=dict(keys_extend=rule_ext, tokenize_whole_vs_parts=tok_check),
+                     conv_tokens=dict(median=float(np.median(seq_lens)), p90=float(np.quantile(seq_lens, .9)), max=int(max(seq_lens))),
+                     arrival=dict(arrival, n_conv=n_conv, **active_profile(start, dur)),
+                     gap_s=dict(median=float(gaps.median()), p10=float(gaps.quantile(.1)), p90=float(gaps.quantile(.9)),
+                                frac_lt_0=float((gaps < 0).mean())))
+            res.append(finalize(name, x[["sess", "t", "inp", "user"]], list(R["keys"].values), a.out_dir, x1nb, m, False))
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("trace", choices=["cachewise", "tracelab", "semianalysis", "bailian", "fi"])
+    ap.add_argument("trace", choices=["cachewise", "tracelab", "semianalysis", "bailian", "fi", "chat"])
+    ap.add_argument("--source", choices=list(CHAT_SRC), help="chat：哪一份對話資料集")
+    ap.add_argument("--src-dir", default=None, help="chat：資料集的上層目錄（預設 agent_traces.DS）；底下是 sharegpt／wildchat-1m／lmsys-chat-1m／ultrachat")
+    ap.add_argument("--tokenizer", default="/ssd7/hungwei/hf-cache/huggingface/hub/models--NousResearch--Meta-Llama-3.1-8B-Instruct/"
+                    "snapshots/d10aef7999a2b5ba950ab3974312feeedbfe0b77/tokenizer.json")
+    ap.add_argument("--pylibs", default=os.environ.get("NEXT_B_PYLIBS", "/ssd6/hungwei/icpe-next/pylibs"),
+                    help="chat：裝 tokenizers 的旁路目錄（python -I 不讀 PYTHONPATH）")
     ap.add_argument("--weeks", nargs="+", default=["2026-05-17_2026-05-23"])
     ap.add_argument("--N", nargs="+", type=int, default=[16, 32, 64, 72])
     ap.add_argument("--seeds", nargs="+", type=int, default=[1, 2, 3])
@@ -394,7 +616,10 @@ def main():
     ap.add_argument("--p3x", default=os.path.join(REPO, "code", "p3x"))
     a = ap.parse_args()
     x1nb = _x1nb(a.p3x)
-    fn = dict(cachewise=conv_cachewise, tracelab=conv_tracelab, semianalysis=conv_semianalysis, bailian=conv_bailian, fi=conv_fi)[a.trace]
+    if a.trace == "chat" and not a.source:
+        ap.error("chat 要給 --source")
+    fn = dict(cachewise=conv_cachewise, tracelab=conv_tracelab, semianalysis=conv_semianalysis, bailian=conv_bailian, fi=conv_fi,
+              chat=conv_chat)[a.trace]
     res = fn(a, x1nb)
     summ = os.path.join(a.out_dir, "next_b_trace_summary.jsonl")
     with open(summ, "a") as fh:
