@@ -3,6 +3,41 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T17:15+08:00 — **xref_dev14 在 TRX40 重現：Python 6/6、Rust 6/6 PASS**（1,184 列，0 列不同）→ **第一段 180 個 d14 block 開跑**（17:10:19）
+
+- **merge**：
+  - `origin/icpe-next-sim` b7d2ee57 → 553a3cee（xref_dev14 的 6 個 CSV、README、env.sh、`next_sim_dev14_check.py`；`code/p3x` 沒變）。
+  - `origin/icpe-next-data` a3e848fd → 86e30c34（只有 STATUS_DATA；17:01 那節＝TRX40 的第一段 GO，條件是先重現 xref）。
+- **xref_dev14 重現**：
+  - 腳本 `$ROOT/tools/xref_dev14_trx.sh <py|rust> <workers>`：README 的 6 個 sweep，env.sh 的路徑換成 TRX40 的；`ON="--pf-expire --noise-overdue resample --pf-gpu-recheck"`，`RUN_DIR=""`。
+  - 比對：`code/icpe/next_sim_dev14_check.py <ref> <new> <out> <run_id> <tag> all`。
+  - **第一次啟動失敗（我的腳本錯）**：run `20261107-165931-icpe-trx-xref-dev14-{py,rust}`，rc 3。
+    - 我用 `:` 切 sweep 參數，把 `nb:semianalysis_N16_s1` 切斷成 `--traces nb`。
+    - 錯誤：`FileNotFoundError: [Errno 2] No such file or directory: '/ssd4/hungwei/icpe-next/datasets/mooncake/traces/nb_trace.jsonl'`。
+    - 引擎沒跑到任何 job。兩個目錄留了 `FAILED.txt`，不當證據。改用 `|` 當分隔符後重跑。
+  - **重跑**：run `20261107-165948-icpe-trx-xref-dev14-rust`（6 workers，16:59:48 → 17:01:19）、`20261107-165948-icpe-trx-xref-dev14-py`（40 workers，16:59:48 → 17:10:00），都是 rc 0，沒有 `*KILLED`。
+    - Python 3.12.15。Rust：`src_sha256=0bfacb59…`、`py_fallback_jobs=0`。
+    - 照抄：
+
+      | sweep | job | 列 | Rust | Python |
+      |:--|--:|--:|:--|:--|
+      | sa_qb | 178 | 208 | `DEV14 trx-rust-sa_qb PASS` | `DEV14 trx-py-sa_qb PASS` |
+      | sa_qt | 108 | 128 | PASS | PASS |
+      | mc_qb | 178 | 208 | PASS | PASS |
+      | mc_qt | 108 | 128 | PASS | PASS |
+      | sa_n | 232 | 256 | PASS | PASS |
+      | mc_n | 232 | 256 | PASS | PASS |
+
+- **第一段開跑**：外層 run `20261107-171019-icpe-trx-d14-stage1-queue`（`trx_run.sh`：nice 10；memwatch 6,144 MiB、ownswapguard 本組 256 MiB、diskguard 50 GiB）。
+  - 指令：`next_b_queue.py run --engine rust --workers 46 --plans <$ROOT/tools/d14_trx_plans.txt 的 15 項，照 icpe-data 的順序>`，repo 86e30c34。
+  - 開跑時整機 swap 3,090 MiB（舊的 2,933 上限在這裡就會停）；本組 swap 0 MiB；MemAvailable 56–58 GiB。
+  - 第一個 block `d14_sa_main/sa_N16_s1` 用了 16 s，864 個 job。
+- **逐 block 檢查**：腳本 `$ROOT/tools/d14_blockcheck.py <count 的 stdout> <runs>`，照 icpe-data 17:01 的要求：
+  - 全部 block：rc 0、`jobs=` 等於 count、`rust_timing.jsonl` 行數等於 jobs、`py_fallback_jobs=0`、`code_sha=3180504e8d57+rs0bfacb59`、沒有 `*KILLED`。
+  - P4 另外要求：`kept_jobs` 等於 count、`unmatched_cells=0`。
+  - 第一個 block：`OK d14_sa_main/sa_N16_s1 jobs=864 timing=864`。
+- **之後**：每個家族的 main＋P1 `_ttl` 跑完就 collect、push，通知 icpe-data 和 icpe-main。家族指 sa、mc、uc、lm。
+
 ## 2026-11-07T16:05+08:00 — merge `origin/icpe-next-data` 4bae90be（含 icpe-sim f5b2960c，引擎 63b8e32）；**旗標全關三項對拍 0 差**；count **MATCH_RERUN 300／WHOLE_BLOCK 20／MISMATCH 0／ALL TOTAL 2,193,997**；TRX40 的 180 個 d14 block dry-run OK；**還沒跑任何 d14 block**（等 xref_dev14）
 
 - **merge**：9a00c00d。PREREG 的衝突 icpe-data 已在 c68abaad 解掉；我這邊沒有衝突。
