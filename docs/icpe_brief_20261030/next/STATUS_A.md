@@ -185,3 +185,7 @@
 
 - `icpe-rux` 在 `origin/icpe-next-rux` @ `aec99d1`（RUX3DPRO `date -u` 2026-11-07T00:52:12Z）加了「偏離 9 補記」：W3 前的版本 B 重現檢查要涵蓋 W3 會判的全部格（9 個 CPU 容量 × ssd／b32／nfs × GPU 閒／忙 × Cake，每個變體各自做，任一格不同 → 該變體不判）。TraceLab c1 先前只重現 3 個容量就算了 W3 判定（icpe-next-trx `9e1064f0`），依本補記改為待確認。節內照實寫了使用者與 `icpe-rux` 決定前已看過 TraceLab c1 的 W3 結果。規則、門檻、判定不改，不佔編號。我核過：只在檔尾加一節、0 行刪除；data／main／trx 分支最大仍是偏離 8。
 - 本分支**只同步 `PREREG.md`**（取 aec99d1 的版本）。`h200` 下一個偏離編號仍是 10。
+
+## 2026-11-07 09:00（台灣）— 偏離 10 的編號給 `icpe-rux`
+
+- `icpe-rux` 再要一個偏離編號，用來登記 block 粒度 APC（第二批；APC 加進 ② 和 ④、O-GPU 的 ④ 加 BELP、重算全部登記變體的主結果格、APC 版上限表成為正式主表；使用者在 `icpe-rux` 決定，push 前會再問使用者）。我查了 origin 上的 icpe-next-a 282b06d、ana 43e7ffc、b 19f3e85、data a25dcba、main-branch c868ef2、rux aec99d1、sim 90dae78、trx dce4005 和 main ff71545：最大是偏離 9，沒有 10；`h200` 沒有待登記的偏離（W6b 的 run set 還沒寫程式、沒排）→ **偏離 10 給 `icpe-rux`，`h200` 下一個從 11 開始**（登記前仍先查各分支）。
