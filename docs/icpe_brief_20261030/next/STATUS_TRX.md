@@ -3,6 +3,38 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T11:15+08:00 — 對話資料集準備：tokenizer、tokenizers、UltraChat 好了；**UltraChat 轉換失敗（JSONDecodeError: Extra data）→ 停**，等 icpe-data
+
+- **merge**：origin/icpe-next-data 688ad0bc（icpe-data 的登記，STATUS_DATA「11:00 對話資料集補登記」）→ icpe-next-trx 0142cdb6。
+  - code 只改 `next_b_convert.py`（新子命令 `chat`）和 `next_b_queue.py`（plan `chat_main`）。模擬器和 Rust src 沒動。
+  - 一起進來的還有 icpe-next-data 已有的 P4 acvlab 結果（b0d84c45）和 STATUS_DATA。
+- **tokenizer**：`NousResearch/Meta-Llama-3.1-8B-Instruct` @ d10aef79 的 tokenizer.json，在 `$ROOT/hf-home/hub/models--NousResearch--Meta-Llama-3.1-8B-Instruct/snapshots/d10aef7999a2b5ba950ab3974312feeedbfe0b77/`。
+  - sha256 79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4，跟 icpe-data 給的一樣（run `20261107-105712-icpe-trx-dl-llama31-tokenizer`）。
+- **tokenizers 0.23.3**：`$ROOT/tools/env/bin/python -m pip install --no-deps --only-binary=:all: --no-compile --target $ROOT/pylibs/tokenizers-0.23 "tokenizers>=0.23,<0.24"`（run `20261107-105737-icpe-trx-pip-tokenizers`）。共用 venv 沒動（它也沒有 pip）。試切過，vocab 128,256。
+- **UltraChat 下載**：
+  - 第一次（run `20261107-105811-icpe-trx-dl-ultrachat`）rc=1，是我的指令錯：`hf download … --include 'train_*.jsonl' README.md`。CLI 印 `UserWarning: Ignoring --include since filenames have been explicitly set.`，只下了 README.md，接著 `sha256sum: train_0.jsonl: No such file or directory`。我刪掉它建的目錄（只有 .cache 和 README），失敗的 run 留著（`FAILED.txt`）。
+  - 第二次（run `20261107-105843-icpe-trx-dl-ultrachat`）明確列 11 個檔名，rc=0。10 個 `train_*.jsonl` 的 sha256 與位元組數都等於 HF 的 LFS 記錄（`ULTRACHAT_SHA_OK`）。
+  - `$ROOT/datasets/ultrachat/README.txt` 照 icpe-data 要的格式（`sha256  相對路徑`，說明行以 `#` 開頭）；資料檔設成唯讀。
+- **UltraChat 轉換失敗 → 停**：run `20261107-110038-icpe-trx-conv-chat-ultrachat`（`trx_run.sh`＝§4.1 的殼＋三個守門；repo 0142cdb6），exit 1，16.6 s，最大 RSS 228 MB。
+  - 指令：`python -I code/icpe/next_b_convert.py chat --source ultrachat --src-dir $ROOT/datasets --tokenizer <上面的 tokenizer.json> --pylibs $ROOT/pylibs/tokenizers-0.23 --out-dir $ROOT/datasets/x1_nb --seeds 1 2 3`。
+  - 完整錯誤（stderr）：
+    ```
+    File "code/icpe/next_b_convert.py", line 497, in conv_chat
+      for i, (cid, msgs) in enumerate(_iter_chat(src, d, files)):
+    File "code/icpe/next_b_convert.py", line 451, in _iter_chat
+      r = json.loads(ln)
+    json.decoder.JSONDecodeError: Extra data: line 1 column 13052 (char 13051)
+    ```
+  - stdout 是空的（還在第一輪，沒印計數）。沒有寫出任何 nb（`x1_nb` 仍是 27 個檔）。
+  - **原因**（唯讀檢查，scratchpad 的 `find_bad_jsonl.py` 逐行 `json.loads`）：1,468,349 行裡有 3 行各有兩個 JSON 物件接在一起（`…"]}{"id"…`），後面沒有別的字元：
+    - train_3.jsonl 第 127,819 行（第一個物件 id 578253，錯在第 13,052 欄，就是這次的錯誤）
+    - train_4.jsonl 第 82,900 行（id 683335，第 9,289 欄）
+    - train_7.jsonl 第 90,760 行（id 1141196，第 15,658 欄）
+    - 其他 7 個檔 0 行。檔案本身跟 HF 的 sha256 一樣，所以是上游資料就這樣，不是下載壞掉。
+  - 要怎麼處理（例如一行拆成兩個物件，或算不合格）是轉換規則的問題，等 icpe-data 決定、改程式、commit 之後再跑。我沒改程式，也沒有繞過去。
+- **LMSYS-Chat-1M**：還沒下載，等使用者在 HF 同意條款並登入 TRX40。
+- 機器工具新增 `$ROOT/tools/trx_run.sh`（主 repo 版的 rux_run.sh：§4.1 的殼、nice 10、memwatch 6,144／swapguard 2,933／diskguard 50 GiB）。
+
 ## 2026-11-07T11:05+08:00 — W5（PREREG 偏離 11 A）tracelab_c1、FreeInference 05-17 跑完；base 跟版本 C 在 3 個容量逐值相同；使用者決定 TRX40 接 LMSYS-Chat-1M＋UltraChat（W5 之後準備，登記前不跑模擬）
 
 - **W5 run**（rux worktree d35aed35，`run_w5_formal.sh … 40`，各 4,728 個 job，`engine=rust`、`py_fallback_jobs=0`、`code_sha=3280b1c8799b+rse7f6ee8f`）：
