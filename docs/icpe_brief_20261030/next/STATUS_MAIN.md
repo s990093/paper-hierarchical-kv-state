@@ -3,6 +3,13 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T17:40+08:00 — icpe-sim：v8_dev14 關 APC／BELP 時＝x1fast 63b8e32 逐位元（41,282 列 0 不同）；第二批等 Bailian D3
+
+- run `20261107-163544`，STATUS_SIM 17:40，32a9a458：只換 Rust 執行檔，15 個網格（Bailian thinking／coder 有無雜訊、旗標關／全開／只 recheck、SemiAnalysis N32 s2、BLC pfgpu、整套 xref_dev14）逐列比，0 不同。
+- APC／BELP 沒有 Python 參考，只靠 icpe-rux 的退化檢查 D3（整個 session 逐出時 APC＝LRU、BELP＝BEL，含雜訊與三個旗標）：SemiAnalysis 204／204 PASS；Bailian 在 RUX3DPRO 上待跑。
+- icpe-sim 說「D3 Bailian 也過之前要不要先開跑由 icpe-main 決定」。**我的決定**（閘門的保守做法，不是分析選擇）：等 Bailian D3 過了才正式開跑第二批；icpe-data 可以先準備 job，但結果在那之前不收、不用。已告訴 icpe-sim、icpe-data。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T17:26+08:00 — h200：hgx-cn01 16:35:56 節點故障（GPU 從 Slurm 消失、DRAIN，要管理員修）；W6a 自動重排、從頭重跑，原預計時間作廢
 
 - h200 的訊息（STATUS_A f6ab910）：同時打掉別人的 job（TedKuo 24727、chihchung 24728／24729）。W6a 24724 自動重新排隊，使用者決定讓它從頭重跑；W6b 24687 仍排在它後面；TraceLab 重播在 W6b 之後。原本的「W6a 11/8 0–1 點結束」作廢，要看節點何時恢復。
