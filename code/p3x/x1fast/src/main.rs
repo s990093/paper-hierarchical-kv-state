@@ -11,6 +11,7 @@
 // icpe-sim（2026-11-07，SIM_CHANGES 22；PREREG 偏離 14）：jobs.txt 可多兩欄 `pfx=1`（(i) O-PF 預取的副本過期就丟，Eng::pf_expire）、
 // `nzo=resample`（(a) 模型 P 抽到已經過去的時間就從更長的那部分重抽，Eng::nz）。沒有這兩欄時和 4a4baa4 逐位元相同。
 // (a) 的重抽會用亂數，所以 B1 也要照 Python 走訪 cpu_set 的順序（同 B2：nzo=resample 時 cpu_set 也開 PySet，只在 Python 3.12 有效）。
+// icpe-sim（2026-11-07，SIM_CHANGES 23）：jobs.txt 可多一欄 `pgr=1`（預取到 GPU 時騰完空間再查候選，被丟就不預取＝Engine(pf_gpu_recheck)）。
 // icpe-sim（2026-11-06，SIM_CHANGES 20）：本檔＝origin/icpe-next-ana @ 43e7ffc 的 code/icpe/ana_x1fast/v5_noise_b2/src/main.rs（sha256 a5c7c130…）
 // 原樣複製，只加 SIM_CHANGES 19 的兩行（turn_end 新請求沒有完整 block → order_remove，取代只做 cpu_set.discard）。
 // icpe-ana v5（2026-11-06）：v4 加 B2 抽法（每次問都重抽）。B2 的亂數順序取決於 Python 走訪 cpu_set（CPython 3.12 的 set）的順序，
@@ -453,6 +454,7 @@ struct Eng<'a> {
     multi: bool, diverged: bool,
     noise: Option<RefCell<Noise>>,
     pfx: bool,   // 偏離 14 (i)：只在 pf＝Opf 時為真
+    pgr: bool,   // SIM_CHANGES 23
 }
 
 impl<'a> Eng<'a> {
@@ -1046,17 +1048,18 @@ impl<'a> Eng<'a> {
         }
     }
     // 偏離 14 (i)＝Engine._pf_expire：預測被讀的請求 st_t ≤ cur、還留著預取副本 → 丟掉全部副本，不再排回（pfdone）
+    // 已丟（S_DROP）的 session 跳過（sb 已清空；那種副本來自 GPU 預取騰空間時候選被丟，見 Python 的說明）
     fn pf_expire(&mut self) {
         let cur = self.cur;
         if self.has_gpf {
-            let ex: Vec<usize> = self.gpf_sessions.items.iter().copied().filter(|&x| self.gspf[x] > 0 && self.st_t[x] <= cur).collect();
+            let ex: Vec<usize> = self.gpf_sessions.items.iter().copied().filter(|&x| self.gspf[x] > 0 && self.st_t[x] <= cur && self.st[x] != S_DROP).collect();
             for s in ex {
                 let bl = self.sbl(s);
                 self.g_unprefetch(s, bl, false);
                 self.pfdone[s] = true;
             }
         } else {
-            let ex: Vec<usize> = self.pf_sessions.items.iter().copied().filter(|&x| self.spf[x] > 0 && self.st_t[x] <= cur).collect();
+            let ex: Vec<usize> = self.pf_sessions.items.iter().copied().filter(|&x| self.spf[x] > 0 && self.st_t[x] <= cur && self.st[x] != S_DROP).collect();
             for s in ex {
                 for &b in self.sbl(s) {
                     let b = b as usize;
@@ -1150,6 +1153,8 @@ impl<'a> Eng<'a> {
                 self.pfheap.push(Reverse((key, s)));
                 return;
             }
+            // SIM_CHANGES 23（pgr=1）：騰空間時候選被丟（O-ALL 的 O-NOW）→ 不預取（Python 的說明）
+            if self.pgr && !(self.st[s] == S_CPU || self.st[s] == S_SLOW) { continue; }
             for b in todo {
                 let fm = self.fmt[b];
                 let tf = if fm != 0 { self.views[0].cpu.t_free } else { self.views[0].slow.t_free };
@@ -1498,7 +1503,7 @@ fn load_run_data(rd_: &str) -> RunData {
 
 // ---- 一個 job 的規格
 struct Spec<'b> { jid: &'b str, order: Ord_, act: Act, hook: Hook, pf: Pf, dead_cut: f64, c: f64, g: i64, gorder: u8, gttl: f64,
-                  gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, bool, i64)>, pfx: bool, nzo_rs: bool }
+                  gwb: bool, pf_gpu: bool, vids: Vec<usize>, nz: Option<(bool, f64, bool, i64)>, pfx: bool, nzo_rs: bool, pgr: bool }
 
 fn parse_spec(line: &str) -> Spec<'_> {
     let x: Vec<&str> = line.split_whitespace().collect();
@@ -1512,8 +1517,12 @@ fn parse_spec(line: &str) -> Spec<'_> {
     // icpe-ana v4：13 欄，或 13 欄＋`nz=P|M,<lam>,B1,<seed>`（W4 雜訊，只支援 B1）；其他多出來的欄位（慢層上限等）→ 停下來
     let mut nz = None;
     let (mut pfx, mut nzo_rs, mut seen_pfx, mut seen_nzo) = (false, false, false, false);
+    let mut pgr = false;
     for extra in &x[13..] {
-        if let Some(v) = extra.strip_prefix("pfx=") {          // 偏離 14 (i)
+        if let Some(v) = extra.strip_prefix("pgr=") {          // SIM_CHANGES 23
+            assert!(v == "1" && !pgr, "pgr={}：{}", v, line);
+            pgr = true;
+        } else if let Some(v) = extra.strip_prefix("pfx=") {          // 偏離 14 (i)
             assert!(v == "1" && !seen_pfx, "pfx={}：{}", v, line);
             pfx = true; seen_pfx = true;
         } else if let Some(v) = extra.strip_prefix("nzo=") {   // 偏離 14 (a)
@@ -1529,7 +1538,7 @@ fn parse_spec(line: &str) -> Spec<'_> {
     }
     let sp = Spec { jid: x[0], order, act, hook, pf, dead_cut: parse_f(x[5]), c: parse_f(x[6]), g: x[7].parse().unwrap(), gorder,
                     gttl: if x[9] == "-" { 0.0 } else { parse_f(x[9]) }, gwb: x[10] != "wt", pf_gpu: x[11] == "gpu",
-                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz, pfx, nzo_rs };
+                    vids: x[12].split(',').map(|v| v.parse().unwrap()).collect(), nz, pfx, nzo_rs, pgr };
     if sp.pf != Pf::No { assert!(sp.vids.len() == 1); }
     if sp.g > 0 && sp.gorder >= 2 { assert!(sp.vids.len() == 1); }
     sp
@@ -1586,7 +1595,7 @@ fn new_eng<'a>(tr: &'a Trace, grp: &'a [u32], sstart: &[f64], rdat: &'a RunData,
         gpver: vec![0; ns], gttlheap: BinaryHeap::new(), n_gevict: 0, n_gexpire: 0, g_wb_blocks: 0, sstart: sstart.to_vec(),
         has_gpf, gpf: vec![-1; if has_gpf { nb } else { 0 }], gpf_done: vec![0.0; if has_gpf { nb } else { 0 }],
         gspf: vec![0; ns], gpf_sessions: ISet::new(ns),
-        grp, gep: vec![0; ns], multi, diverged: false, noise, pfx: sp.pfx && pf == Pf::Opf,
+        grp, gep: vec![0; ns], multi, diverged: false, noise, pfx: sp.pfx && pf == Pf::Opf, pgr: sp.pgr,
         nx_cache: [(0..ns).map(|_| Cell::new((0, 0, 0))).collect(), (0..ns).map(|_| Cell::new((0, 0, 0))).collect(),
                    (0..ns).map(|_| Cell::new((0, 0, 0))).collect()],
     }

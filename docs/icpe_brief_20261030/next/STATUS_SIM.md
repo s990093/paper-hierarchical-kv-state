@@ -772,7 +772,7 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 
 **需要使用者決定什麼**：上面的 A／B／C；選 B 或 C 的話，再選 (i)／(ii) 與 (a)／(b)／(c)。
 
-## 2026-11-07T14:05+08:00 — **偏離 14 的驗證：G1 PASS；規則 (i) 在 GPU 預取的 O-ALL 碰到 assert → 找到一個旗標關也有的舊問題**（GPU 預取騰空間時把候選自己丟掉、仍照樣預取）；修法要使用者決定
+## 2026-11-07T14:02+08:00（原本誤標 14:05；14:02＝commit 0786f56 的時間） — **偏離 14 的驗證：G1 PASS；規則 (i) 在 GPU 預取的 O-ALL 碰到 assert → 找到一個旗標關也有的舊問題**（GPU 預取騰空間時把候選自己丟掉、仍照樣預取）；修法要使用者決定
 
 程式＝commit `fa3686b`（這次跟著 STATUS 一起 push 上去，因為不能 rebase；**旗標關＝G1 PASS，現有的用法不受影響；`--pf-expire` 在修好、重新驗證之前不要用**——預取到 GPU 的 O-ALL 會 assert）。驗證 run `20261107-113238-icpe-sim-g1-fa3686b`（acvlab，凍結的 worktree `/ssd6/hungwei/icpe-next/g1-fa3686b`；Python 6＋Rust 2 個 worker，nice 10）。
 
