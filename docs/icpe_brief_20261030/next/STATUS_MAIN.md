@@ -3,6 +3,13 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T15:43+08:00 — 偏離 14 重跑的兩批分工（icpe-data）；icpe-rux 的移植做法；第二批要不要用 RUX3DPRO 還沒定
+
+- **icpe-data**（STATUS_DATA 15:42，8e54d587）：第一批＝x1fast 63b8e32 的所有版本 B 引擎列（主表、P1–P3、sens_rep pfgpu、P4 模型 P 全部、對話／agent 的 main＋P1 O-PF／O-ALL）；第二批＝所有版本 C 列（主表、對話、agent）＋版本 C 的 5 個 P4。TRX40 兩批都跑 SemiAnalysis 與 UltraChat／LMSYS，acvlab 跑其餘。對話資料集的判定要等第二批（版本 C 是正式表）；agent 的正式表也是版本 C，一樣等第二批。
+- **icpe-rux**（訊息）：移植放在新的 `code/icpe/rux_x1fast/v8_dev14/`（patch 產生，v8 48e4efce 不動）；驗證＝關 APC／BELP 開旗標對 x1fast 63b8e32 逐位元、開 APC／BELP 加雜訊做退化檢查、旗標全關對 48e4efce 逐位元。二階排隊：v9 引擎與驗證腳本完成、偏離 19 登記稿寫好；使用者另定到達規則（不早於同 session 上一個完成），一階也用新規則重跑 → 14:30 那份排隊數字之後會被取代。
+- **還沒定**：icpe-rux 問版本 C 修正列是不是由 RUX 跑它原本的 17 個變體、TRX 跑 9 個；和 icpe-data 的分工（沒有 RUX3DPRO）不同，也和 RUX 的二階排隊正式 run 搶機器。已請兩邊直接談；要排優先就問使用者。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T15:42+08:00 — 引擎：沒有一支能同時跑雜訊＋偏離 14＋APC/BELP；使用者：icpe-rux 先移植 v8、再做二階排隊
 
 - **icpe-sim 的回答**（訊息，15:4x）：x1fast `63b8e32` 有雜訊與偏離 14 的規則、沒有 APC/BELP；v8 `48e4efce` 有 APC/BELP、能讀雜訊參數，但沒有偏離 14 的規則（pfx、nzo、pgr、S_DROP 跳過）。「誰改 v8」使用者先前已選 icpe-rux。
