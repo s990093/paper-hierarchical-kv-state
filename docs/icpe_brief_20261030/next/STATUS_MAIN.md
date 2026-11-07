@@ -3,6 +3,22 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T14:03+08:00 — icpe-sim：偏離 14 的重跑清單延後（模擬器舊錯誤，修法待使用者選）；對我已算的結果的影響
+
+- **icpe-sim 的訊息**（STATUS_SIM 2026-11-07T14:05、`origin/icpe-next-sim` 0786f56，我沒有去讀，只轉述）：
+  - 通過（fa3686b）：G1 Python／Rust 4,416／4,416 格相同；兩個旗標都開時 Python 對 Rust 2,208 列相同；SemiAnalysis 對診斷用反事實 36／36。
+  - 沒過：Bailian coder、預取進 GPU、O-ALL，旗標關對開；兩個引擎都 assert（`gspf 13807 9`）。
+  - 原因（舊路徑，旗標關也有）：GPU 預取器替某個 session 騰空間時，可能把同一個 session 丟掉（O-ALL 裡的 O-NOW），之後仍把它的 block 預取進 GPU，留下屬於已丟 session 的副本。
+  - 範圍：只有 `pfgpu` block（sens_rep、各 `_p3`）的 O-ALL 列。Bailian coder 432 列裡 145 列會變，mean_ret −0.0056%～+0.0031%；Mooncake、CacheWise 代表格 0；其他紀錄 NOT_MEASURED。
+  - 選項：A（icpe-sim 建議）新旗標 `--pf-gpu-recheck`、預設關，在 `pfgpu` 重跑時和 `--pf-expire` 一起開；B 改成預設；C 不修。修好並重新驗證前不能用 `--pf-expire`。
+- **對我已算的結果**（本機核對 `results/icpe_next/main/p23/*_pfgpu_headroom_components.csv.xz` 的元件欄）：
+  - 受影響的只可能是第 4 步 P3「預取進 GPU」的 O-ALL(report) 列：bl 162、cw 648、fi 324、mc 216、sa 648、tl 162，共 2,160 列。
+  - 這些列不進任何判定（偏離 7 只判 5 個元件），P3 那節的表、配對、p90 也都只用判定元件；給老師的文件沒有引用 O-ALL。〔判讀〕判定字不會變。
+  - 主表（版本 B／C）是預取到 CPU，不受影響。
+- **時程**：P4 修正版（偏離 14）要等修法選定、重新驗證、出清單、icpe-data 排程後才會有；11/10 摘要前更不可能。摘要和給老師的文件裡 P4 的數字維持「待修正」。
+- **寫本節時已經看過的正式結果**：沒有新的。
+- **需要使用者決定什麼**：icpe-sim 的 A／B／C（已轉告使用者）。
+
 ## 2026-11-07T12:56+08:00 — 給老師的文件改成版本 C、不含 CacheWise；使用者決定做 TraceLab c1 的 GPU 層實機重播、W6b 往後移；agent 軌跡已登記
 
 - **給老師的文件**：`docs/icpe_brief_20261030/next/advisor_20261107/ADVISOR.{md,pdf}` 改成版本 C、論文版（圖：run `20261107-124716-icpe-main-advisor-figs-verC`；PDF：run `20261107-125008-icpe-main-advisor-pdf`，9 頁）；摘要換成版本 C 版（28 個變體、3／9、14／14、62%、±30% 誤差）。commit 100e970，**還沒 push**（使用者這次沒說 push）。
