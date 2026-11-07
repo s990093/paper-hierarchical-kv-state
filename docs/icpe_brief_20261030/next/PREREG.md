@@ -890,6 +890,51 @@
 - **`icpe-sim` 自己的診斷 run**（`20261107-105321`、`-105614`、`-104850`、`-105925`、`-110002`，以及更早的版本）：上面那些格子的重跑與反事實。
 - **主結果（P1–P3、版本 B／C）整張的上限表與判定：** 就我的紀錄沒有看過。以前只做過逐格「相同／不同」的對拍。
 
+### 偏離 16（2026-11-07T03:58:42Z（H200 head node 的 `date -u`）；**W6b 的 run set**（§5 W6b、偏離 3 第 3 點「跑哪些做法、幾次：在 `x1_gpu.py` 改好之後、跑之前另外登記」）；使用者在 `h200` 決定（AskUserQuestion：11/7 約 11:5x「現在準備，不動排隊中的程式」；約 11:58「6 次」「每格取各 rep 的中位數」）；由 `h200` 寫；W6b 還沒有任何 GPU 資料，S_orig 也還沒算；門檻、主指標都不改。編號：偏離 15 已給 `icpe-main`（CacheWise 從論文拿掉），寫進本檔時它還沒寫入，所以本節排在它前面）
+
+**1. 程式**（`origin/icpe-next-a` 的 `f095976` 與本節的 commit）
+- **不改 `code/icpe/x1_gpu.py`、`code/p3x/x1_sim.py`。** W6c／W6a 的 job（24443、24444）排隊中，開跑時會讀這兩支。偏離 1 寫「`x1_gpu.py` 由 `h200` 改」；實際做法改成新檔 `code/icpe/next_a_w6b.py` 包住它：import x1_gpu，照原樣呼叫它的 `replay`、`cmd_sim`、`cmd_gpu`，只換做法清單。
+- **x1_gpu.py 原本跑不了 GDSF**：`make_engine` 不傳 `gdsf_view`。第一次自測 run `20261107-115225-icpe-next-w6b-selftest` 在 GDSF 停下（`AttributeError: 'NoneType' object has no attribute 'slow_name'`，x1_sim.py:413），標 `FAILED_NOT_USED`。next_a_w6b.py 換掉 `X1G.make_engine`：GDSF 照 x1_sim 自己 sweep 的寫法傳 `views[0]`；其他做法照原樣。
+- **自測**（head node，CPU）：run `20261107-115434-icpe-next-w6b-selftest`，8 個做法 × CPU 128／256：重播迴圈（模型時間）和 `Engine.run` 逐請求逐位元相同（TTFT、慢層讀寫位元組、預取位元組），**16／16 PASS**，各 1,535 個請求。只記 PASS／FAIL，沒有記、沒有印任何 TTFT。
+- 程式 sha256 前 16 碼：x1_gpu.py ca74a722a923246d、x1_sim.py 047b06485b0bdb3d、x1_trace.py 8f659c970f386486。
+- runner：`code/icpe/next_a_w6b.sh`（檔名不在 `next_a_*.py` 樣式內，同偏離 3 第 5 點，只有 `h200` 用）。
+
+**2. 設定**（同 W6a、T1G P02，不另選）
+- Mooncake conversation、規則 R1；k＝8（`sha1(session_id) mod 8 == 0` 的 session）；CPU 128／256 GiB ÷ 8。
+- 慢層 ssd、GPU 閒、Cake 還原；T1 常數（`P3_TIER=h200cpu`、`M7_TIER_PARAMS=results/icpe_h200/t1/tier_params_h200cpu.json`）；不設 `M7_ATTN`（sdpa）；Llama-3.1-8B；`gpu_guard` 全程監看。
+
+**3. 做法**：8 個＝O-ORD 的 ② 和 ④，取自 x1_sim 的 `RIVALS["O-ORD"]`、`COMPONENT_POLICIES["O-ORD"]`。
+- ②：LRU、LRU2、ARC、S3FIFO、GDSF、PENS。
+- ④：O-BEL、O-BELS。
+
+**4. 次數與順序**
+- 每個設定（容量 × 做法）**6 次**（rep 0–5），共 96 個 run，輸出 `results/icpe_next/a/w6b/gpu_requests.csv`。
+- 先冒煙：8 個做法各跑前 100 個請求（CPU 128，`gpu_smoke.csv`），不進分析。
+- 每一輪 16 個設定，用 `random.Random(20261108＋rep)` 打亂。
+- 被污染（exit 3）照暴露重跑，最多 3 次；其他失敗停下回報，接著跑用 `--from`。
+
+**5. 模擬參考**
+- **S_orig**＝同一個模擬器在同一份縮小 trace、同一容量上的結果：`next_a_w6b.py sim`（＝`x1_gpu.cmd_sim`）→ `sim_requests.csv`。在本節 push 之後、任何 GPU 資料之前，在 head node 算。
+- **S_real**（到達時間換成 GPU run 實際的開始時間）在 GPU 之後算，只報告。
+
+**6. 判準**（P0-2 §6 的三條，都對 S_orig；`next_a_w6b.py analyze --reps 6`）
+- **每格的 GPU 值**＝6 個 rep 的「回來請求平均 TTFT」的**中位數**。只用乾淨、請求數完整的 run；同一個 rep 有多個乾淨的 run 時取最後一個。
+- (1) **比值**：16 格（容量 × 做法）的 GPU 值 ÷ S_orig 都在 [0.9, 1.1]。
+- (2) **排序**：每個容量內，S_orig 相對差 ≥5% 的每一對做法，GPU 值的先後相同；<5% 的列出、不判。
+- (3) **headroom 正負號**：每個容量，O-ORD 的上限＝(min ② − min ④) ÷ min ②，GPU 和 S_orig 同號；S_orig 的 |上限| <2% 的列出、不判。O-BEL、O-BELS 各自對 min ② 的上限只報告。
+- **判定字**：三條都成立＝PASS；任一條不成立＝FAIL；有格子缺 rep＝INCOMPLETE（缺的寫 NOT_MEASURED）。
+- **只報告**：每格各 rep 的最小、最大，以及對應的比值範圍；對 S_real 的比值。
+
+**7. 排程**
+- `sbatch --dependency=afterany:24444 code/icpe/next_a_w6b.sh --reps 6`（`--time 36:00:00`，1 張 GPU）。
+- 時間〔推算〕：T1G P02 的 12 個 run 的 `gpu_guard` 檔名時間，間隔平均約 16.4 分鐘 → 96 個 run 約 26 小時。
+- 量時間不和我們自己的 job 同時跑（runner 開跑時查，同 W6a）；跑完再用 sacct 查有沒有重疊。
+
+**8. 登記時已經看過的**
+- W6b：沒有任何 GPU 資料；S_orig 還沒算；自測只看 PASS／FAIL。
+- 舊結果：X1 全尺寸模擬（`x1_sweep.csv.gz`）；P0-2／T1G P02 的結果（`docs/h200/icpe/P0-2_x1_gpu_validation.md`、`docs/h200/icpe/T1G_gpu_rerun.md`，包括 GPU 上的 LRU、FREQ2Q、O-BEL）。今天讀 T1G 的 `selftest.csv` 前兩列時，看到 k＝8、CPU 128 的 LRU、FREQ2Q 模擬 mean_ret。
+- W6c、W6a：還沒跑。
+
 ### 偏離 15（2026-11-07T03:47:09Z（acvlab 的 `date -u`，寫進本檔的時間）；**CacheWise 從論文拿掉（授權），內部分析保留**；使用者在 `icpe-data` 說「CacheWise 下先停 放不了paper」（STATUS_DATA 11:45，`origin/icpe-next-data` ba6ae12），範圍與要不要登記在 `icpe-main` 用 AskUserQuestion 決定（11/7 11:4x，本節寫入之前），由 `icpe-main` 寫；號碼由 `h200` 給；門檻、主指標、判定方式、其他紀錄都不改）
 
 - **原文**：§4「必跑＝TraceLab、CacheWise、SemiAnalysis、Bailian」「CacheWise 沒有授權：原始資料、轉換後的紀錄、逐對話的數字都不進 git」；偏離 4 第 3 項的 40 個登記變體含 CacheWise 12 個（並行 16／32／64／72 × s1–s3）。
