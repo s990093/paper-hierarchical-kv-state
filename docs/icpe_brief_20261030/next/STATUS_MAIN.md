@@ -3,6 +3,17 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T17:54+08:00 — **偏離 14 第一批全部完成**：版本 B 論文版的判定字不變（3／9、14／14、5／5）；淘汰類比例 原始工具 52.6% → 51.8%、合成 95.9% → 94.5%
+
+- **TraceLab**（merge `origin/icpe-next-data` 745f1622）：run `20261107-175226-icpe-main-d14-verB-tl`，核對全 PASS；**偏離 14 沒有改到任何一格**（6 個元件都 0 格變）。
+- **Mooncake**（merge `origin/icpe-next-trx` 827b5df6）：run `20261107-175309-icpe-main-d14-verB-mc`，核對全 PASS；O-PF 234／324 格變，≥15% 272 → 288（往上 16、往下 0），最大 57.7% → 57.8%；O-ALL 165／216。
+  - O-PF 的 T_rival 有 7 格變、best_rival_gpu_policy 5 格：我核對過**全是 rule＝min 的列**，R1、R2 的對手各 108／108 相同——next_sim_analyze 每格取上限較小的 rule，O-PF 的 ④ 變了會讓 min 選到的 rule 換邊（icpe-data 的解釋，成立）。
+- **彙總**：run `20261107-175423-icpe-main-d14-verB-summary`（exit 0），`results/icpe_next/main/verB_d14/verB_d14_paper_*`、`verB_vs_d14_*`、`eviction_share_B_vs_d14.csv`。
+  - 判定（版本 B 論文版，不含 CacheWise）〔模擬〕：原始工具類 3／9（最大 62.4%）、合成工具類 14／14（52.9%）、原始非工具類 5／5（61.6%）——和修正前相同；不算 O-PF 也相同。
+  - **淘汰類比例**（≥15% 的（格, 判定元件）裡 O-GPU＋O-ORD；不含 rule＝min）：原始工具類 185／352＝52.6% → 185／357＝51.8%（O-PF 90 → 95）；合成工具類 606／632＝95.9% → 606／641＝94.5%（O-PF 26 → 35）。
+  - 〔判讀〕摘要「mostly by choosing what stays in GPU and CPU memory rather than by prefetching」在版本 B 修正後還成立（原始工具類淘汰 51.8%、預取 26.6%），但原始工具類只剩 1.8 個百分點的餘裕。版本 C 的最終值等第二批。
+- **寫本節時已經看過的正式結果**：所有家族的偏離 14 版本 B 表（對話資料集只看檢查與變動格數）；本節的彙總。
+
 ## 2026-11-07T17:40+08:00 — icpe-sim：v8_dev14 關 APC／BELP 時＝x1fast 63b8e32 逐位元（41,282 列 0 不同）；第二批等 Bailian D3
 
 - run `20261107-163544`，STATUS_SIM 17:40，32a9a458：只換 Rust 執行檔，15 個網格（Bailian thinking／coder 有無雜訊、旗標關／全開／只 recheck、SemiAnalysis N32 s2、BLC pfgpu、整套 xref_dev14）逐列比，0 不同。

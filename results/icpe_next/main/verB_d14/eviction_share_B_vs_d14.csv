@@ -1,0 +1,7 @@
+run_id,ts,host,version,arrival,tool_type,n_ge15_total,n_ge15_OGPU,n_ge15_OORD,n_ge15_OPF,n_ge15_ODROP,n_ge15_ONOW,eviction_share
+20261107-175423-icpe-main-d14-verB-summary,2026-11-07T17:54:39+08:00,acvlab,B_paper,raw,False,520,163,102,135,120,0,0.5096153846153846
+20261107-175423-icpe-main-d14-verB-summary,2026-11-07T17:54:39+08:00,acvlab,B_paper,raw,True,352,114,71,90,77,0,0.5255681818181818
+20261107-175423-icpe-main-d14-verB-summary,2026-11-07T17:54:39+08:00,acvlab,B_paper,synthetic,True,632,393,213,26,0,0,0.9588607594936709
+20261107-175423-icpe-main-d14-verB-summary,2026-11-07T17:54:39+08:00,acvlab,B_d14,raw,False,525,163,102,140,120,0,0.5047619047619047
+20261107-175423-icpe-main-d14-verB-summary,2026-11-07T17:54:39+08:00,acvlab,B_d14,raw,True,357,114,71,95,77,0,0.5182072829131653
+20261107-175423-icpe-main-d14-verB-summary,2026-11-07T17:54:39+08:00,acvlab,B_d14,synthetic,True,641,393,213,35,0,0,0.9453978159126365
