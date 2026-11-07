@@ -3,6 +3,36 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T11:05+08:00 — W5（PREREG 偏離 11 A）tracelab_c1、FreeInference 05-17 跑完；base 跟版本 C 在 3 個容量逐值相同；使用者決定 TRX40 接 LMSYS-Chat-1M＋UltraChat（W5 之後準備，登記前不跑模擬）
+
+- **W5 run**（rux worktree d35aed35，`run_w5_formal.sh … 40`，各 4,728 個 job，`engine=rust`、`py_fallback_jobs=0`、`code_sha=3280b1c8799b+rse7f6ee8f`）：
+  - `20261107-104717-icpe-trx-rux-tl_c1-w5`：10:47:18 → 10:55:10，rc=0，sweep 465 s。BF16 那一半＝`20261107-100449-icpe-trx-rux-tl_c1-apcformal` 的 sweep（5,508 列）。
+  - `20261107-105510-icpe-trx-rux-fi_w1-w5`：10:55:10 → 10:55:38，rc=0，sweep 5.4 s。BF16＝`20261107-095548-icpe-trx-rux-fi_w1-apcformal` 的 sweep（5,508 列）。
+  - 兩個都印 `W5_FORMAL_DONE`，沒有 `*KILLED`。資源：MemAvailable 最低 46,978 MiB，swap 最高 1,394 MiB，PSS 最高 9,255 MiB。
+- **核對 base＝版本 C**（scratchpad 的 `cmp_w5_base.py`，先用 icpe-rux 的 semianalysis_N16_s1 試過 108／108 相同）：W5 的 `a/base_headroom_components.csv` 對 `results/icpe_next/apc/<變體>/verC_headroom_components.csv` 在 111.0625／128／256 GiB，以 13 個鍵配對，13 個值欄逐字串比：
+  - tracelab_c1：108 列全部配上，各欄不同數全部 0 → `W5_BASE_VS_VERC IDENTICAL rows=108`。
+  - fi_2026-05-17_2026-05-23：同上，108 列，全部 0 → `IDENTICAL`。
+- **結果**（explore_w5 和 w5_mechanism 的輸出照抄，不解讀）：
+  - tracelab_c1，各元件 18 格的 max（base／forced／allowed）與 ≥15% 格數（base／forced／allowed）：
+    - O-ALL(report)：0.0905／0.0076／0.0076，0／0／0
+    - O-GPU：0.1704／0.0151／0.0151，2／0／0
+    - O-ORD：0.2188／0.0449／0.0449，2／0／0
+    - O-PF：0.0220／−0.0026／−0.0026，0／0／0
+    - O-DROP：0.0236／0.0245／0.0245，0／0／0
+    - O-NOW：0.0006／0.0004／0.0004，0／0／0
+    - `W5 較快的組合：5508／5508`。
+    - w5_mechanism（allowed 比 base 升高 > 5 個百分點）：5 個（格, 元件）。O-ALL(report) 中位升高 59.42 個百分點（b32 1 格、nfs 2 格），O-PF 50.29 個百分點（nfs 2 格）。
+  - fi_2026-05-17_2026-05-23：每個元件的 max 都 ≤ 0.0001，≥15% 都是 0；`W5 較快的組合：5113／5508`；w5_mechanism 0 列。
+- **收進 repo**：`results/icpe_next/w5/{tracelab_c1,fi_2026-05-17_2026-05-23}/`，各 8 個檔，是 run_w5_formal.sh 自己用 collect_v8（d35aed35）收的，原樣複製。
+  - sha256 都對過 MANIFEST。
+  - `x1_sweep_bf16.csv.xz` 的 run_id 是 apcformal 的 run，不是 W5 的 run，不在 MANIFEST 的 runs 裡，但寫在 MANIFEST 的 note（BF16 sweep 的路徑）。icpe-rux 的 semianalysis_N16_s1 也是這樣。
+- **使用者決定（在這邊，AskUserQuestion）**：icpe-data 轉達，11/9 前補跑公開對話資料集，TRX40 負責 **LMSYS-Chat-1M** 和 **UltraChat**。
+  - 使用者選「接，但等 W5 跑完再準備」，兩個都是。
+  - 範圍：只跑 `chat_main` 主網格，時間是合成的，結果單獨一節。
+  - icpe-data 登記、commit 並 push、傳完整指令之前，不跑模擬。
+  - LMSYS-Chat-1M 是 gated，要使用者在 HF 同意條款並在 TRX40 登入（`HF_HOME=$ROOT/hf-home`）。目前 TRX40 沒有 HF token。
+  - 原始資料、轉換後的紀錄都不進 git。
+
 ## 2026-11-07T10:55+08:00 — 流程跑完（PIPE_ALL_DONE 10:46:26）：**9 個變體的 9 容量版本 B 重現全部 324／324 格×元件、7 欄 0 差**；W3 再判 8 個變體（照抄）；偏離 10 正式 APC 9 個變體收進 repo；W5（偏離 11）開跑
 
 - **流程**：背景殼 09:06 → 10:46:26 印 `PIPE_ALL_DONE`，exit 0。19 個 run 的 `exit_code` 全是 0，沒有 `*KILLED`。
