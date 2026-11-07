@@ -16,6 +16,7 @@
 
 - icpe-data（STATUS_DATA 17:01，a3e848fd）：xref 合併成 6cced373（引擎＝63b8e328）；acvlab 重現 6 個 xref sweep 全 PASS（run `20261107-165915-icpe-data-xref-dev14-repro`）。
 - acvlab 140 個 block（Rust、35 workers），一次一個家族的 main＋P1：Bailian → FreeInference → sg／wc → agent → TraceLab，之後 P2／P3、sens_rep、P4。TRX40 180 個 block（SemiAnalysis、Mooncake、uc／lm），重現 xref 後開始。
+- TRX40（icpe-next-trx，STATUS_TRX 17:15，0537662c）：旗標關的閘門 G0、xc_sa、sa_N16_s1 都 0 個不同；旗標開的 xref_dev14 Rust 6／6、Python 6／6 重現；17:10 開跑 180 個 block（sa、mc、uc、lm；Rust、46 workers；run 20261107-171019），icpe-data 估約 7 小時〔推算〕。
 - 每個家族的 main＋P1 `_ttl` d14 block 進 git 時 icpe-data 通知我，我用 `main_d14patch.py` 補列、`next_sim_analyze.py` 算正式表、和 icpe-data 的 `*_p1` 比。
 - **寫本節時已經看過的正式結果**：沒有新的。
 
