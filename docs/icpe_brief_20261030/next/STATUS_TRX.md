@@ -3,6 +3,32 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T09:00+08:00 — **使用者決定：W3 的前置重現檢查要涵蓋全部 9 個 CPU 容量** → **c1 的 W3 判定改為「待確認」**；c2 的 3 容量檢查停掉；改用新流程
+
+- **使用者的決定**（11/7 約 08:47，在 icpe-main，icpe-main 轉達）：
+  - 偏離 9 第 3 點要「同一個變體重算版本 B 的表、逐值相同」，W3 才能判。
+  - c1 只檢查了 CPU 8／111.0625／1024（108 格×元件）。但 c1 判定用的 22 個 ≥15% (格, 元件) 裡，有 14 個在 16／32／64／128 GiB，不在檢查範圍內。
+  - 要做的：
+    1. c1 補 16／32／64／128／256／512 GiB，版本 B 的規則組合（17 × 16），對 `tl_p1_headroom_components`（blob 48da5cd4）。合計應是 324 格×元件、0 差。**W3 不用重跑。**
+    2. c2、c4 和 FreeInference 6 週：重現檢查涵蓋全部 9 個容量（FreeInference 對 `fi_p1_headroom_components`）。
+    3. 補完之前，`analyze_w3` 的結果只能當「待確認」。
+    4. 任何一格不同就停，回報 icpe-main 和 icpe-rux。
+- **所以**：
+  - **08:55 節的 tracelab_c1 W3 判定字（「後半成立」）目前只算「待確認」，不是判定**，要等 c1 的 6 個容量補完、324 個格×元件 0 差。
+  - 已 commit 的檔（9e1064f0、16ba40f6）不改。
+- **停掉的 run**：`20261107-084318-icpe-trx-rux-tl_c2-repro`（舊流程的 c2，3 個容量）。
+  - 08:49:29 我送 SIGTERM 給 pgid 2430140，當時做到 1,843／4,506 個 job，`exit_code` 143。這是我刻意停的，不是失敗。
+  - 原因：舊流程（`rux_variant.sh`）在 3 容量通過後會直接接 W3，不符合新決定。
+  - 這個 run 的結果不用。
+- **新流程**（`$ROOT/tools/rux_repro_w3.sh`，機器工具；08:50 開始，背景執行）：
+  - 每個變體：版本 B 規則組合在指定容量 sweep → `explore_apc.py` → 印 `EXPLORE_RESULT REPRODUCED` 才接 W3；任何一步失敗或沒重現就停。
+  - 依序：
+    1. `tl_c1`：只補 6 個容量（16 32 64 128 256 512），不跑 W3。
+    2. `tl_c2`、`tl_c4`：9 個容量重現 → W3。
+    3. `make_cue.py fi`（6 週）。
+    4. FreeInference 第 1–6 週：9 個容量重現 → W3（`--traces fi:<週> --rules session_id`）。
+  - FreeInference 第一週的完整 APC（含 BELP）和 W5 排在這之後，照 icpe-rux 的優先順序。
+
 ## 2026-11-07T08:55+08:00 — **W3 tracelab_c1 完成**（PREREG 偏離 9）；`analyze_w3` 的判定字：「後半成立：沒有簡單線索能拿走大部分」；收進 `v8_explore/w3/tracelab_c1/`；c2、c4 開跑
 
 - **run** `20261107-084104-icpe-trx-rux-tl_c1-w3`：rc=0，08:41:04 → 08:42:19。
