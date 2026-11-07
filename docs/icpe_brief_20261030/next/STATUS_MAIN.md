@@ -10,6 +10,7 @@
 - run `20261107-180154-icpe-main-d14-verC-bl`（exit 0）：rowcheck PASS（17 × 18）；獨立重算＝新 verC（O-ORD／O-DROP／O-NOW／O-PF／O-ALL 810／810 逐位元）；O-GPU 不含 BELP ≤ 含 BELP（162）；新 verC 的 O-ORD／O-DROP／O-NOW／O-GPU＝舊 verC（648／648）。
 - 變動〔模擬；Bailian 只報告〕：O-PF 81／162 格變（−0.09～+0.16 個百分點），≥15% 42 → 42；O-ALL 47／162；對手 0 格變。和第一批的版本 B 一樣小。
 - 結果：`results/icpe_next/main/verC_d14/bl_*`。
+- **FreeInference**（18:25 補；merge 498c169c 沒有衝突）：run `20261107-182456-icpe-main-d14-verC-fi`（exit 0）：rowcheck PASS；獨立重算＝新 verC（1,620 格，1,596 逐位元、24 格在 1e-12 內，最大差 3.4e-21，同版本 C 當初）；O-GPU 不含 BELP ≤ 含 BELP（324）；四個不變元件＝舊 verC（1,296）。O-PF 73／324 格變（≤0.2 個百分點），判定元件最大 0.99% 不變（摘要的「under 1%（max 0.99%）」不受影響）。
 - **寫本節時已經看過的正式結果**：Bailian 的修正版版本 C。
 
 ## 2026-11-07T17:54+08:00 — **偏離 14 第一批全部完成**：版本 B 論文版的判定字不變（3／9、14／14、5／5）；淘汰類比例 原始工具 52.6% → 51.8%、合成 95.9% → 94.5%
