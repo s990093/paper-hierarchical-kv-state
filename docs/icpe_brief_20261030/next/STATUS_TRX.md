@@ -3,6 +3,33 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T08:40+08:00 — 轉換、cue 都完成（CUE_CHECK 3／3 PASS，c1 和 icpe-rux 的值相同）；**W3 照使用者決定暫停，等 PREREG 登記**；TraceLab c1 的 APC／BELP 開跑
+
+- **使用者的決定（第 2 次）**：在這邊用 AskUserQuestion 問。
+  - 結果改照 icpe-rux 的 `results/icpe_next/v8_explore/<實驗>/<變體>/`（origin/icpe-next-rux 2b859912 的 README）。
+  - sweep 的 `x1_sweep.csv.xz` 也進 git，另寫 `MANIFEST.json`，用 `collect_v8.py` 收。
+  - 取代 08:30 寫的 `rux_trx/`。
+- **使用者的決定（11/7 約 08:45，在 icpe-main，icpe-main 轉達）**：**W3 先登記才跑**。
+  - TraceLab c1／c2／c4 和 FreeInference 的 W3 sweep（CUEP／CUEO）、`analyze_w3` 都**不跑**，等 icpe-rux 把 W3 的規則登記進 PREREG，並通知 commit 號碼。
+  - 下載、轉換、make_cue、CUE_CHECK、APC／BELP、W5 照常。
+- **0b. 轉換**：run `20261107-082523-icpe-trx-rux-tl-convert`，rc=0，08:25:23 → 08:31:09。
+  - c1、c2、c4 都是 n_req 665,453、n_sess 8,058、chunks 222,667,849；span_h 分別是 7,282.8／4,258.9／2,994.8。輸出在 `$ROOT/datasets/x1_nb_rux/`。
+  - 記憶體：MemAvailable 最低 46,428 MiB，PSS 最高 11,838 MiB。
+  - **swap 從 790 漲到 1,381 MiB**，還在 2,933 MiB 上限內。可用記憶體一直有 46 GiB 以上，應該是核心換出閒置頁〔推論〕。之後繼續盯。
+- **worktree 移到 2b859912**（08:31，轉換之後、cue 之前）。
+  - `git diff --stat b7444163 2b859912 -- code`：只有 `collect_v8.py`（新檔）和 `explore_queue.py`（我不用）。
+  - 轉換用的 `next_b_convert.py` 兩版相同。
+- **0c. cue**：run `20261107-083128-icpe-trx-rux-tl-cue`，rc=0。
+  - `make_cue.py tracelab --compress 1 2 4`，然後 `check` 三次：**`CUE_CHECK PASS`** tracelab_c1／c2／c4，n_req nb=665,453＝cue。
+  - tracelab_c1 的 `.cue.json`：n_req 665,453、n_cue 574,485、sha_t `a761221af4812de6…`、sha_sess `461381d11e93ef0f…`。**和 icpe-rux 在 RUX3DPRO 算的相同。**
+  - c2、c4 的 n_cue 也是 574,485；sha_t／sha_sess 不同，因為時間被壓縮了。
+  - 檔在 `$ROOT/rux-trx/cue/`；`cue.u8` 不進 git。
+- **0d. FreeInference 下載**：run `20261107-082812-icpe-trx-rux-fi-download`，rc=0，提前做，只用網路。
+  - `hf_verify harvardMadsys/freeinference_agentic_trace sha=16d3c04dae6ccaa0c48a9064e204e3a8f1eb9ade files=81 bad=0`，7.8 GiB。
+  - 放在 `$ROOT/datasets/freeinference_agentic_trace/`，README.txt 由腳本寫。
+- **1. TraceLab c1 的 APC／BELP**：run `20261107-083210-icpe-trx-rux-tl_c1-apc`，08:32:10 開始，40 workers。
+  - 跑完接 `explore_apc.py`。它的第一行是重現檢查，不是全部 0 差就停下來回報，後面都不跑。
+
 ## 2026-11-07T08:30+08:00 — **使用者決定：TRX40 跑 icpe-rux 交辦的 TraceLab 與 FreeInference 探索**（APC／BELP、W3 線索、W5）；TraceLab 已下載，轉換中
 
 - **來源**：icpe-rux（rux-proj）兩則訊息，轉述使用者的話：
