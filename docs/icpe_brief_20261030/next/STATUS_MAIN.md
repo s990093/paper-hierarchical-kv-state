@@ -7,6 +7,7 @@
 
 - icpe-data（STATUS_DATA 16:34，bde77b6c）：第二批照使用者決定整份重跑，重現檢查照我寫的，另加非預取策略的 sweep 列和舊 `apc/` 逐位元相同。版本 B 的 P4 也是「④ 集合全跑取最小」（p4_combos：元件 CPU 策略 × LRU＋TTL×14；O-GPU＝NON_ORACLE × BEL；O-ALL＝(O-ALL, BEL)），版本 C 照偏離 10 加 APC／BELP，約 12k 個 job（推算），在 acvlab 用 v8_dev14 跑。
 - **分工**（照 agent 的前例，我定的工作分配，不是分析選擇）：icpe-data 用 `next_d14_patch.py` 自己做第二批閘門用的 `*_p1` 表、不等我；icpe-main 用自己寫的補列步驟獨立算正式表（main 的 p1、p90、dev5、h1800、h3600；對話／agent 照舊），再和 icpe-data 的 `*_p1` 逐值比，不同就停。
+- **補列程式**：icpe-data 把規則寫明（訊息 16:4x；`next_d14_patch.py` 在 icpe-next-data）。我照文字規則獨立寫了 `code/icpe/main_d14patch.py`（沒有讀它的程式）；自測（scratchpad，bailian3 的 sweep 造一份假的 d14：O-PF／O-ALL 2,592 列改 mean_ret）：補對 2,592 列、其他列不動；故意把 LRU 放進 rerun_policies 時照預期停下。正式資料還沒進來。
 - 〔注意〕第一批是「只重跑 O-PF／O-ALL 的列再補回」（icpe-sim 的重跑清單），和使用者對第二批選的「整份重跑」不同；x1fast 的「非預取規則不變」icpe-sim 直接驗證過。已告訴使用者，要改再說。
 - **寫本節時已經看過的正式結果**：沒有新的。
 
