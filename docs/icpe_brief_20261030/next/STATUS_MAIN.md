@@ -19,7 +19,8 @@
 - **核對（全 PASS）**：補列 3 個 block；rowcheck 3／3；我的 p1＝icpe-data `b/analysis_d14/bl_p1` 逐格相同（972 列）；5 張表的 O-ORD／O-DROP／O-NOW／O-GPU 和舊版本 B eqsel 完全相同（各 648）；dev5＝p1 的 O-GPU／O-ALL、截尾＝不截尾的 O-ORD／O-PF／O-GPU。
 - **變了什麼**（p1，〔模擬〕；Bailian 是非工具類、只報告）：O-PF 83／162 格變，−0.09～+0.16 個百分點，≥15% 的格 42 → 42，最大 48.06% → 48.09%；O-ALL(report) 47／162 格變，最大 +15.2 個百分點（53.4% → 55.0%），≥15% 97 → 97。
 - **FreeInference**（17:18 補；merge 7963a43f 沒有衝突）：run `20261107-171746-icpe-main-d14-verB-fi`（exit 0）；核對全 PASS（補列 3 個 block、rowcheck 3／3、p1＝icpe-data `analysis_d14/fi_p1` 1,944 列、5 張表的四個不變元件各 1,296 相同、逐格關係）。O-PF 71／324 格變（−0.02～+0.2 個百分點），最大 0.85% 不變；O-ALL 最大 1.06% → 1.19%；仍然全部 <1.2%，0 格 ≥5%。
-- **寫本節時已經看過的正式結果**：Bailian、FreeInference 的偏離 14 版本 B 表。
+- **UltraChat、LMSYS**（17:21 補；merge `origin/icpe-next-trx` 01f265ae 沒有衝突）：新腳本 `code/icpe/main_d14_nb.sh`（對話／agent 只有 p1；**對話資料集只印檢查與變動格數、不印上限的值**，照使用者等第二批再判定的決定）。run `20261107-172032-icpe-main-d14-verB-chat-uc-lm`（exit 0）：補列各 12 個 block、rowcheck 4／4、p1＝icpe-data `analysis_d14/{uc,lm}_p1` 各 1,944 列、四個不變元件 eqsel 各 1,296 相同；**6 個元件都 0 格變**（O-PF、O-ALL 也沒變）。
+- **寫本節時已經看過的正式結果**：Bailian、FreeInference 的偏離 14 版本 B 表；UltraChat、LMSYS 只看了檢查結果和變動格數（0），沒看上限的值。
 
 ## 2026-11-07T17:01+08:00 — 第一批開跑（acvlab 17:00:38）
 
