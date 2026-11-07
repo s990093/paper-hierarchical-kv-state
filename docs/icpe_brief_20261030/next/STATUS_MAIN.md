@@ -18,7 +18,8 @@
 - run `20261107-170424-icpe-main-d14-verB-bl`（17:04:24 → 17:04:46，exit 0；stderr 只有 pandas 的 DtypeWarning：新旗標欄在保留列是空的、分析不用）；結果 `results/icpe_next/main/verB_d14/bl_*`（ce575f6b）。
 - **核對（全 PASS）**：補列 3 個 block；rowcheck 3／3；我的 p1＝icpe-data `b/analysis_d14/bl_p1` 逐格相同（972 列）；5 張表的 O-ORD／O-DROP／O-NOW／O-GPU 和舊版本 B eqsel 完全相同（各 648）；dev5＝p1 的 O-GPU／O-ALL、截尾＝不截尾的 O-ORD／O-PF／O-GPU。
 - **變了什麼**（p1，〔模擬〕；Bailian 是非工具類、只報告）：O-PF 83／162 格變，−0.09～+0.16 個百分點，≥15% 的格 42 → 42，最大 48.06% → 48.09%；O-ALL(report) 47／162 格變，最大 +15.2 個百分點（53.4% → 55.0%），≥15% 97 → 97。
-- **寫本節時已經看過的正式結果**：Bailian 的偏離 14 版本 B 表（本 run）。
+- **FreeInference**（17:18 補；merge 7963a43f 沒有衝突）：run `20261107-171746-icpe-main-d14-verB-fi`（exit 0）；核對全 PASS（補列 3 個 block、rowcheck 3／3、p1＝icpe-data `analysis_d14/fi_p1` 1,944 列、5 張表的四個不變元件各 1,296 相同、逐格關係）。O-PF 71／324 格變（−0.02～+0.2 個百分點），最大 0.85% 不變；O-ALL 最大 1.06% → 1.19%；仍然全部 <1.2%，0 格 ≥5%。
+- **寫本節時已經看過的正式結果**：Bailian、FreeInference 的偏離 14 版本 B 表。
 
 ## 2026-11-07T17:01+08:00 — 第一批開跑（acvlab 17:00:38）
 

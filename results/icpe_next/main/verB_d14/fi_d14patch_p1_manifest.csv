@@ -1,0 +1,3 @@
+run_id,ts,host,plan,block,action,base_rows,d14_rows,replaced,out
+20261107-171746-icpe-main-d14-verB-fi,2026-11-07T17:17:49+08:00,acvlab,old_p1,fi6w_ttl,rerun,38880,2592,2592,/ssd6/hungwei/icpe-next/runs/20261107-171746-icpe-main-d14-verB-fi/in/p1/old_p1/fi6w_ttl/x1_sweep.csv
+20261107-171746-icpe-main-d14-verB-fi,2026-11-07T17:17:49+08:00,acvlab,old_p1,fi6w_trunc,rerun,31104,10368,10368,/ssd6/hungwei/icpe-next/runs/20261107-171746-icpe-main-d14-verB-fi/in/p1/old_p1/fi6w_trunc/x1_sweep.csv
