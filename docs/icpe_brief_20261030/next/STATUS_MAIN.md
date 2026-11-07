@@ -3,6 +3,46 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T14:14+08:00 — **agent 軌跡（偏離 17）結果**：核對全過；OpenHands N32／64／72 的 9 個變體 ≥15%（最大 58.5%），mini-SWE-agent 12 個都 <15%（最大 10.9%）
+
+**輸入與做法**（照 14:05 那節使用者的決定）
+- merge `origin/icpe-next-data` a1ea724 → e151a58f。PREREG.md 衝突：我的版本是 `origin/icpe-next-a`（＝`origin/icpe-next-data`）的逐位元前段，取對方的版本（多了偏離 17 和更正）。
+- 程式：`main_summary.py` 的 classify() 加 miniswe／openhands（合成到達、固定並行、工具類）；新的 `main_seedagg.py`（3 個 seed 逐格取中位數、最小–最大，只報告）。commit cbc5db8f，和 run 用的工作樹相同。
+- run `20261107-140839-icpe-main-agent`（14:08:39 → 14:10:21，exit 0，stderr 空）；結果在 `results/icpe_next/main/agent/`（manifest.json）。
+
+**核對（全部 PASS）**
+- 回歸：用新 classify() 重算版本 C 論文版，和 git 上的 `verC_{by_trace,verdict,by_cpu}` 逐格相同。
+- rowcheck 6／6（B main 17×8、B `_ttl` 15×8、C 17×18；每個 (trace, rule) 54 格；cake／wb／預取到 CPU）。
+- 我算的版本 B（next_sim_analyze 原樣）和 icpe-data 的 `b/analysis/{ms,oh}_p1` 逐格相同（各 3,888 列），和 v8 的 base 表 eqsel 3,888／3,888 完全相同。
+- 不含 BELP：O-ORD／O-DROP／O-NOW／O-PF／O-ALL 和版本 C 逐格相同（各 3,240），O-GPU 不含 BELP ≤ 含 BELP（各 648）。
+- 格數自檢 24 個 (trace, rule)；B／C／C 不含 BELP 格數相同；seed 齊全（8 個設定、2,592 格）。
+
+**判定（合成到達・工具類，單獨一節，只算 agent 的 24 個變體）**〔模擬〕
+| 版本 | ≥15% 的變體 | 判定元件最大 | 推翻條件 |
+|:--|:--|:--|:--|
+| C（正式） | 9／24：OpenHands N32、N64、N72 × s1–s3 | 58.5%（OpenHands N64 s2，O-PF） | 未定（agent 沒跑 W3） |
+| C，不含 O-PF | 9／24 | 57.7%（OpenHands N32 s2，O-GPU） | 同上 |
+| C 不含 BELP，不含 O-PF（只報告） | 9／24 | 56.8% | — |
+| B（並列） | 9／24 | 58.5% | 同上 |
+
+- mini-SWE-agent 12 個變體都 <15%：N16 0.2%、N32 1.2%、N64 7.1%、N72 10.9%（seed 最大；都是 O-DROP）。OpenHands N16 三個 seed 都 <0.5%。
+- OpenHands ≥15% 的（格, 元件）共 574 個，寫入飽和 0。每個變體以 O-GPU 最多（N32 11–14 格、N64／N72 39–42 格），O-ORD、O-PF、O-DROP 也有。
+- 依 CPU 容量（版本 C）：OpenHands N32 只有 CPU 8–32 GiB 有 ≥15%（最大 57.7%）；N64、N72 在 8–64 GiB 最大約 52%–58%，CPU 256–1024 GiB 也還有 18%–19%。工作集約 1 TiB（1,024 GiB＝工作集的 0.935（OpenHands）、1.083（mini））。
+- **3 個 seed 的中位數**（版本 C，判定元件）：OpenHands N32／N64／N72 的最大中位數 55.8%／56.7%／56.1%（那格的範圍 51.7%–57.7%、55.2%–58.5%、55.4%–57.2%）；中位數 ≥15% 的格 33／77／77，三個 seed 都 ≥15% 的 29／70／74。不含 O-PF：55.8%／51.5%／50.3%。
+- 〔判讀〕並行數決定一切：N16 時兩份都幾乎沒有空間；OpenHands 到 N32 就超過 15%，mini-SWE-agent 到 N72 也只有 10.9%。差別的原因（每個 session 的上下文長度？）我沒有量，NOT_MEASURED。
+
+**要附註的**（照偏離 17 和更正）
+- OpenHands 的規則 6 (b) 沒過（增量比中位數 0.795）：輸入可能少算（第一次呼叫約少 1,900 個 Claude token），對上限的影響方向 NOT_MEASURED。
+- mini-SWE-agent 的 FormatError 呼叫（3,517 次，20.2%）不模擬。
+- O-PF、O-ALL 待偏離 14 的重跑取代；判定不靠 O-PF（不含 O-PF 也是 9／24）。
+- 到達是合成（固定並行），軌跡內用真實時間；不和論文 28 個變體合併計數。
+
+**寫本節時已經看過的正式結果**：前面各節；本 run 的全部輸出。沒讀 STATUS_DATA 14:05 的摘要表。
+
+**需要別的 session 做什麼**：無。偏離 14 修正版出來後，icpe-data 照偏離 17 一起重跑 O-PF／O-ALL，進 git 後通知 icpe-main 重算。
+
+**需要使用者決定什麼**：要不要把 agent 這一節加進給老師的文件和摘要（還沒改）；push。
+
 ## 2026-11-07T14:05+08:00 — agent 軌跡（偏離 17＋更正）的分析選擇：使用者在看任何 agent 數字之前決定；現在算、工具類、下判定
 
 **現況**（icpe-data 訊息，`origin/icpe-next-data` a1ea724，STATUS_DATA 14:05）：mini-SWE-agent（ms）、OpenHands（oh）各 12 個變體（固定並行 N16／32／64／72 × seed 1–3），版本 B（`b/agent_main`、`b/agent_p1`、`b/analysis/{ms,oh}_p1`）、版本 C（`apc/{miniswe,openhands}_N*_s*`，24 個都 REPRODUCED cells＝324）都已進 git。icpe-main 只讀了 PREREG 偏離 17 和更正，**沒看任何 agent 的模擬數字**（也沒讀 STATUS_DATA 14:05 的摘要表）。
