@@ -3,7 +3,23 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
-## 2026-11-07T17:53+08:00 — 偏離 14 第一段：**Mooncake 的 main＋P1 完成並收進 git**；檢查表 mc_p1 `D14_TABLE_RESULT IDENTICAL`；第一段的 sa 全部（main、P1–P3）都過了檢查
+## 2026-11-07T17:56+08:00 — 第二段第一個變體 **semianalysis_N16_s1：D14_VERC_DONE**（三關都過）→ `results/icpe_next/apc_d14/semianalysis_N16_s1/`；第一段非 P4 的 124 個 block 全部 OK，進入 P4
+
+- **semianalysis_N16_s1**（run `20261107-174218-icpe-trx-d14verc-semianalysis_N16_s1`）：
+  - sweep：`engine=rust src_sha256=4eca5bda…`、`py_fallback_jobs=0`；`jobs=14184 workers=16 code_sha=3280b1c8799b+rs4eca5bda`；`sweep done 651.8` s。
+  - `D14_SWEEP_RESULT IDENTICAL`：opf 以外的列和舊的 apc sweep 逐位元相同。
+  - 重現檢查，照抄：`版本 B 表上 324 格×元件，對上 324；各欄不同數 {… 全部 0}` → `EXPLORE_RESULT REPRODUCED cells=324`。
+  - 修正版版本 C 表照抄（元件、格數、max、median、n_ge15、n_ge5）：
+    - O-ALL(report)：54、0.258435、0.036459、6、21。
+    - O-GPU：54、0.436013、0.051263、12、27。
+    - O-PF：54、0.043018、0.001076、0、0。
+  - collect：7 個檔加 MANIFEST.json。用我的 `check_v8_collect.py` 核對 sha256、run_id／ts、列數、code_sha，`bad 0`。
+- **第一段**：
+  - 我的檢查都是 OK：d14_old_p2／p3 的 Mooncake 4 個、d14_sens_rep 的 9 個（sa_* 5 個、mc_* 4 個）。
+  - 非 P4 的 124 個 block 全部跑完，0 失敗。17:53:53 開始 d14_sa_p4_b1。
+- 修正：上一節的時間標籤由 17:53 改成 17:52（commit 時間是 17:52:15）。
+
+## 2026-11-07T17:52+08:00 — 偏離 14 第一段：**Mooncake 的 main＋P1 完成並收進 git**；檢查表 mc_p1 `D14_TABLE_RESULT IDENTICAL`；第一段的 sa 全部（main、P1–P3）都過了檢查
 
 - **block**：
   - d14_old_main/mooncake（3,456 job）。
