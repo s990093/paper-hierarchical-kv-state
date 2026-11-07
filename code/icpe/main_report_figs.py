@@ -213,7 +213,8 @@ def fig5(w3, out):
     ax.axvline(1, color=REF, linestyle="--", linewidth=1)
     ax.text(1.02, len(g) - 0.3, "② 最好的固定規則＝1", color=INK2, fontsize=8)
     ax.set_xscale("log")
-    ax.set_xticks([0.5, 0.75, 1, 1.5, 2, 3, 4], ["0.5", "0.75", "1", "1.5", "2", "3", "4"])
+    tk = [t for t in [0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8] if t <= max(4, float(g.r3.max()) * 1.1)]
+    ax.set_xticks(tk, [f"{t:g}" for t in tk])
     ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_yticks(ys, g.lab, fontsize=7.5)
     ax.invert_yaxis()
