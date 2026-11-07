@@ -2,6 +2,40 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T20:20+08:00 — 第二段：acvlab 42／45 個變體收進 `apc_d14/`（全部過檢查）；TraceLab 第二段開跑；blockcheck 修正；負載紀錄
+
+- **第二段已收（acvlab，`next_d14_verc_queue.sh`，20 workers，nice 10）**：佇列 log `runs/queue-d14verc-stage2-acvlab-w20-20261107-174123.log`，33 個變體都 rc=0，最後 `QUEUE_EXIT 0`（20:15:18）。
+  - 每個變體都過了：`D14_SWEEP_RESULT IDENTICAL`、`EXPLORE_RESULT REPRODUCED`、`py_fallback_jobs=0`、`src_sha256=4eca5bda`。
+  - 和舊的 `apc/` 版本 C 表逐格比（7 欄）。O-PF、O-ALL(report) 以外的元件和 T_rival 都沒變。
+
+| 變體 | commit | 每個變體的格子 | O-PF 有變 | O-ALL(report) 有變 |
+|:--|:--|--:|--:|--:|
+| bailian_coder | 6693089d | 54 | 50 | 40 |
+| bailian_thinking | 6693089d | 54 | 6 | 0 |
+| bailian_traceA | 6693089d | 54 | 25 | 7 |
+| fi 05-17、05-24、05-31、06-07 | 498c169c | 54 | 0 | 0 |
+| fi 06-14 | 498c169c | 54 | 36 | 0 |
+| fi 06-21 | 498c169c | 54 | 37 | 32 |
+| sharegpt ×6 | 512444a4 | 54 | 36–44 | 34–44 |
+| wildchat s1／s2／s3 | 512444a4 | 54 | 0／2／2 | 0 |
+| miniswe ×12 | fe0c8a7c | 54 | 0 | 0 |
+| openhands ×12 | fe0c8a7c | 54 | 0 | 0 |
+
+  - miniswe、openhands 的 0：每份 sweep 16,524 列都是 `pf_expire=True`、`pf_gpu_recheck=True`，所以是真的沒變（和第一段一致；λ=0 時規則 (i) 在這兩種 trace 上不觸發，見 17:45 那節 icpe-sim 的解釋）。
+- **接著跑（自動串接）**：
+  - TraceLab ×3 第二段：20:15:30 開跑，log `runs/queue-d14verc-stage2-tl-acvlab-w20-*.log`。第一段檢查表 `analysis_d14/tl_p1` 已在 745f1622。
+  - 然後是 `d14_p4verc`（16 個 block、12,496 個 job，20 workers）。收之前用 blockcheck 的 `--p4verc-expect` 核 job 數。
+- **第一段的尾巴（acvlab，35 workers）**：bl_p2／p3、fi6w p2／p3、tl_p2／p3 跑完了。現在在跑 `d14_sens_rep`（到 20:2x 完成 11 個 block，失敗 0），之後是 tracelab、bailian 的 p4_b1／b2。全部跑完後再核對、收進 git。
+- **blockcheck 修正（16529109、a6a7bf1a）**：
+  - 起因：TRX40 收之前發現，P4 模型 M 的 d14 block 把 `--policies` 縮成 rerun_policies，但沿用整份 jobs.csv，所以 `unmatched_cells>0` 是預期中的；舊的檢查把這種情況判成 FAIL。
+  - 改成：`unmatched_cells` 要等於 jobs.csv 裡規則不在 `--policies` 的格子數，而且 `--policies` 裡的規則一格都不能 unmatched。
+  - 新的欄位讓表頭變了，所以新結果寫到 `d14_blockcheck_v2.csv`。工具也會拒絕附加到表頭不同的 CSV。舊的 `b/d14_blockcheck.csv` 不動。
+- **負載紀錄**：19:12 acvlab load 229（96 threads）。其中 ming0531 約 43 核，我的兩個佇列合計約 24 核（nice 10），available 記憶體 285 GiB。照使用者 11/5 的規則，我沒有減 workers，只做紀錄。20:16 load 已降到 84（1 分鐘平均），available 342 GiB。
+
+**卡住什麼**：無。
+**需要 icpe-sim 做什麼**：無。
+**需要使用者決定什麼**：無。
+
 ## 2026-11-07T17:45+08:00 — 第一段：8 個家族的 main＋P1 收完（兩台）；**第二段在 acvlab 開跑（17:41:23）**
 
 - **第一段已收進 git 的家族**（block 核對都 PASS；檢查表都是 `D14_TABLE_RESULT IDENTICAL`，也就是 O-ORD、O-DROP、O-NOW、O-GPU 和原本的版本 B 表相同）：
