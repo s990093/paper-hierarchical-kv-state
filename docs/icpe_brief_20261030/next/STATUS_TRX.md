@@ -3,6 +3,171 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T17:19+08:00 — 偏離 14 第一段：**UltraChat、LMSYS 的 main＋P1 `_ttl` 完成並收進 git**；檢查表 uc_p1／lm_p1 `D14_TABLE_RESULT IDENTICAL`；佇列繼續（sa_p1 起）
+
+- **已跑完並通過檢查的 block**（佇列 run `20261107-171019-icpe-trx-d14-stage1-queue`）：
+
+  | plan | block | 每個 block 的 job |
+  |:--|--:|--:|
+  | d14_sa_main | 12 | 864 |
+  | d14_old_main:mooncake | 1 | 3,456 |
+  | d14_chat_main uc/lm | 12 | 864 |
+  | d14_chat_p1 uc/lm | 12 | 432 |
+
+  - 我的檢查（`d14_blockcheck.py`）：`D14_BLOCKCHECK ok=37 bad=0`。
+  - icpe-data 的 `code/icpe/next_d14_blockcheck.py`（run `20261107-171749-icpe-trx-d14-blockcheck-uc-lm`）：`D14_BLOCKCHECK PASS n=37 fail=0`。輸出放在 `results/icpe_next/b/d14_blockcheck_trx.csv`（37 列；之後每收一個家族就更新）。
+- **collect**：`next_b_queue.py collect --plans d14_chat_main d14_chat_p1`，collected 24。
+  - 輸出在 `results/icpe_next/b/d14_chat_main/{uc,lm}_T{60,600}_s{1,2,3}` 和 `d14_chat_p1/*_ttl`，每個 block 只含清單 rerun_policies（O-PF、O-ALL）的列。
+  - LMSYS 和以前的 chat_main／chat_p1 一樣只放彙總的 sweep 列，沒有逐對話的數字。
+- **第一段的版本 B 檢查表**（`next_d14_verb.sh`；DATAREPO＝本 repo；NEXT_B_PY、MAIN_ROWCHECK 用 TRX40 的路徑；run `20261107-171807-icpe-trx-d14-verb-{uc,lm}`，rc 0）：
+  - patch：`D14_PATCH_OK blocks=12`。chat_p1 每個 block 是 `base=6480 d14=432 replaced=432 kept=6048`。
+  - rowcheck：`uc_main_d14`、`lm_main_d14` 都是 44064 rows、cells 54、cpu 17、gpu 8，PASS；`uc_p1_ttl_d14`、`lm_p1_ttl_d14` 都是 38880 rows、cells 54、cpu 15、gpu 8，PASS。
+  - 和原本的版本 B 表 `results/icpe_next/b/analysis/{uc,lm}_p1` 比，照抄：
+    - 兩個家族的 6 個元件都是 `x=324 y=324 matched=324`，7 欄 ndiff 全部 0。
+    - O-PF、O-ALL(report) 是 `skipped=True`（不要求相同），ndiff 也是 0。
+    - 結果 `D14_TABLE_RESULT IDENTICAL`。
+  - 照 icpe-data 的格式（bl_p1，246d3fed）收在 `results/icpe_next/b/analysis_d14/{uc,lm}_p1/`：表 .csv.xz、violations .csv.xz、table_vs_verB.csv、rowcheck.csv、patch_summary.csv、manifest.json（含 run_id、cmd、context、各檔 sha256）。
+  - table_sha256_uncompressed：uc 1b5745c94382…、lm 794899a08cc8…。
+- **佇列**：17:17:31 開始 d14_sa_p1。資源：MemAvailable 最低 55.6 GiB；本組 swap 0 MiB；/ssd4 剩 490 GiB。
+
+## 2026-11-07T17:12+08:00 — **xref_dev14 在 TRX40 重現：Python 6/6、Rust 6/6 PASS**（1,184 列，0 列不同）→ **第一段 180 個 d14 block 開跑**（17:10:19）
+
+- **merge**：
+  - `origin/icpe-next-sim` b7d2ee57 → 553a3cee（xref_dev14 的 6 個 CSV、README、env.sh、`next_sim_dev14_check.py`；`code/p3x` 沒變）。
+  - `origin/icpe-next-data` a3e848fd → 86e30c34（只有 STATUS_DATA；17:01 那節＝TRX40 的第一段 GO，條件是先重現 xref）。
+- **xref_dev14 重現**：
+  - 腳本 `$ROOT/tools/xref_dev14_trx.sh <py|rust> <workers>`：README 的 6 個 sweep，env.sh 的路徑換成 TRX40 的；`ON="--pf-expire --noise-overdue resample --pf-gpu-recheck"`，`RUN_DIR=""`。
+  - 比對：`code/icpe/next_sim_dev14_check.py <ref> <new> <out> <run_id> <tag> all`。
+  - **第一次啟動失敗（我的腳本錯）**：run `20261107-165931-icpe-trx-xref-dev14-{py,rust}`，rc 3。
+    - 我用 `:` 切 sweep 參數，把 `nb:semianalysis_N16_s1` 切斷成 `--traces nb`。
+    - 錯誤：`FileNotFoundError: [Errno 2] No such file or directory: '/ssd4/hungwei/icpe-next/datasets/mooncake/traces/nb_trace.jsonl'`。
+    - 引擎沒跑到任何 job。兩個目錄留了 `FAILED.txt`，不當證據。改用 `|` 當分隔符後重跑。
+  - **重跑**：run `20261107-165948-icpe-trx-xref-dev14-rust`（6 workers，16:59:48 → 17:01:19）、`20261107-165948-icpe-trx-xref-dev14-py`（40 workers，16:59:48 → 17:10:00），都是 rc 0，沒有 `*KILLED`。
+    - Python 3.12.15。Rust：`src_sha256=0bfacb59…`、`py_fallback_jobs=0`。
+    - 照抄：
+
+      | sweep | job | 列 | Rust | Python |
+      |:--|--:|--:|:--|:--|
+      | sa_qb | 178 | 208 | `DEV14 trx-rust-sa_qb PASS` | `DEV14 trx-py-sa_qb PASS` |
+      | sa_qt | 108 | 128 | PASS | PASS |
+      | mc_qb | 178 | 208 | PASS | PASS |
+      | mc_qt | 108 | 128 | PASS | PASS |
+      | sa_n | 232 | 256 | PASS | PASS |
+      | mc_n | 232 | 256 | PASS | PASS |
+
+- **第一段開跑**：外層 run `20261107-171019-icpe-trx-d14-stage1-queue`（`trx_run.sh`：nice 10；memwatch 6,144 MiB、ownswapguard 本組 256 MiB、diskguard 50 GiB）。
+  - 指令：`next_b_queue.py run --engine rust --workers 46 --plans <$ROOT/tools/d14_trx_plans.txt 的 15 項，照 icpe-data 的順序>`，repo 86e30c34。
+  - 開跑時整機 swap 3,090 MiB（舊的 2,933 上限在這裡就會停）；本組 swap 0 MiB；MemAvailable 56–58 GiB。
+  - 第一個 block `d14_sa_main/sa_N16_s1` 用了 16 s，864 個 job。
+- **逐 block 檢查**：腳本 `$ROOT/tools/d14_blockcheck.py <count 的 stdout> <runs>`，照 icpe-data 17:01 的要求：
+  - 全部 block：rc 0、`jobs=` 等於 count、`rust_timing.jsonl` 行數等於 jobs、`py_fallback_jobs=0`、`code_sha=3180504e8d57+rs0bfacb59`、沒有 `*KILLED`。
+  - P4 另外要求：`kept_jobs` 等於 count、`unmatched_cells=0`。
+  - 第一個 block：`OK d14_sa_main/sa_N16_s1 jobs=864 timing=864`。
+- **之後**：每個家族的 main＋P1 `_ttl` 跑完就 collect、push，通知 icpe-data 和 icpe-main。家族指 sa、mc、uc、lm。
+
+## 2026-11-07T16:03+08:00 — merge `origin/icpe-next-data` 4bae90be（含 icpe-sim f5b2960c，引擎 63b8e32）；**旗標全關三項對拍 0 差**；count **MATCH_RERUN 300／WHOLE_BLOCK 20／MISMATCH 0／ALL TOTAL 2,193,997**；TRX40 的 180 個 d14 block dry-run OK；**還沒跑任何 d14 block**（等 xref_dev14）
+
+- **merge**：9a00c00d。PREREG 的衝突 icpe-data 已在 c68abaad 解掉；我這邊沒有衝突。
+  - 引擎檔和 40a4c87f 相同：x1_sim 8b53588b85c3、x1_rust 0d89c4ba33c5、x1_nb 8251e2587464，main.rs 逐字相同。
+  - 唯讀 worktree `$ROOT/sim-wt-40a4c87f` 留著，不再用。
+- **旗標全關三項對拍**（主 repo 9a00c00d；外層 run `20261107-160107-icpe-trx-verify-dev14-off-9a00c00d`，rc 0，16:01:07 → 16:03:02；新守門 ownswapguard 本組 swap 0 MiB；MemAvailable 最低 56,090 MiB）：
+  - `code_sha 3180504e8d57+rs0bfacb59`，`py_fallback_jobs=0`。
+  - (a) G0：4,416 列，128,064 格，不同 0，`G0_RESULT IDENTICAL`。
+  - (b1) xc_sa 對 icpe-data：1,280 格，不同 0。
+  - (b2) xc_sa 對 TRX40 的 Python：`CMP PASS`。
+  - (c) `sa_N16_s1` 整個 block 對 git：293,760 格，不同 0。
+- **count**（run `20261107-160107-icpe-trx-count-d14-all`，全部 25 個 d14_ plan）：rc 0。照 icpe-data 要的檢查：
+  - `MATCH_RERUN` 300、`WHOLE_BLOCK` 20、`MISMATCH` 0。
+  - `ALL TOTAL jobs=2193997`。
+- **dry-run TRX40 這份**（run `20261107-160131-icpe-trx-dryrun-d14-trx`）：
+  - 指令：`run --dry-run --engine rust --workers 46`。plan 照 icpe-data 的順序，清單在 `$ROOT/tools/d14_trx_plans.txt`。
+  - rc 0，180 個 block：
+
+    | plan | block 數 |
+    |:--|--:|
+    | d14_sa_main | 12 |
+    | d14_old_main | 1 |
+    | d14_chat_main | 12 |
+    | d14_chat_p1 | 12 |
+    | d14_sa_p1、d14_sa_p2、d14_sa_p3 | 各 24 |
+    | d14_old_p1、d14_old_p2、d14_old_p3 | 各 2 |
+    | d14_sens_rep | 9 |
+    | d14_sa_p4_b1、d14_sa_p4_b2 | 各 24 |
+    | d14_p4_b1、d14_p4_b2 | 各 4 |
+
+  - 逐 block 檢查（腳本讀 dry-run 的 stdout）：
+    - 非 P4 的 124 個都有 `--pf-expire --pf-gpu-recheck`。
+    - P4 模型 P 的 28 個另外有 `--noise-overdue resample`，模型 M 的 28 個沒有。
+    - P4 的 56 個都有 `--jobs-from`。
+    - 沒有 wt × 預取到 GPU 的組合。
+    - 25 個 nb 紀錄都在 `$ROOT/datasets/x1_nb`，另有 Mooncake 的 conversation、toolagent 兩個原始檔。
+    - 沒有 CacheWise。
+  - 磁碟：非 P4 的 block 照程式存 npz，但只重跑 O-PF／O-ALL。以前完整的 sa_main N72 block 的 req 是 6.2 GiB。/ssd4 剩 498 GiB，diskguard 50 GiB。
+- **還沒做**：旗標開的那一關，要用 Python 和 Rust 各比一次 icpe-sim 的 xref_dev14，它在 git 上還沒有。之後 icpe-data 說可以，才開正式 block。
+
+## 2026-11-07T15:58+08:00 — 偏離 14 引擎 40a4c87f 在 TRX40 上**旗標全關的三項對拍都 0 差**；旗標開的參考失敗（icpe-sim），**HOLD**；**使用者決定 swap 守門改看本組自己的 swap**；分工加上 Mooncake
+
+- **同步方式**：
+  - 試 `git merge --no-commit origin/icpe-next-sim`（40a4c87f），PREREG.md 是 add/add 衝突。那份不是我的檔案，所以 `git merge --abort`，分支沒有變（仍是 5acbc46e）。
+  - icpe-data 會在 icpe-next-data 合好，我之後只 merge icpe-next-data。
+  - 為了先驗引擎，開了唯讀的 detached worktree `$ROOT/sim-wt-40a4c87f`，不在那裡 commit。
+  - 引擎檔的 sha256 和 icpe-sim 給的相同：x1_sim.py 8b53588b85c3、x1_rust.py 0d89c4ba33c5、x1_nb.py 8251e2587464。
+- **對拍**：外層 run `20261107-155247-icpe-trx-verify-dev14-off-40a4c87f`（`trx_run.sh`；三個守門），rc 0，15:52:47 → 15:55:31。
+  - 用的是新腳本 `$ROOT/tools/verify_dev14_off.sh`，比對方法同 `verify_rust2.sh`：sweep 在 worktree 跑，參考檔和比對程式用主 repo。
+  - 三個新旗標都沒開。
+  - Rust 在 TRX40 重編：src_sha256 0bfacb59…（等於 icpe-sim 給的值）、bin_sha256 1d024543…。三個 run 的 `code_sha` 都是 `3180504e8d57+rs0bfacb59`，`py_fallback_jobs=0`。
+  - 比對 run `20261107-155530-icpe-trx-compare-40a4c87f`，照抄：
+
+| 項目 | sweep run | 參考 | 結果 |
+|:--|:--|:--|:--|
+| (a) G0 | `20261107-155247-icpe-trx-g0-rust-40a4c87f`（26.6 s） | H200 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz` | 4,416 列，128,064 格，不同 0，`G0_RESULT IDENTICAL` |
+| (b1) xc_sa | `20261107-155247-icpe-trx-xc_sa-rust-40a4c87f`（44.8 s） | `results/icpe_next/b/xcheck/xc_sa`（icpe-data 的 Python） | 32 列，1,280 格，不同 0 |
+| (b2) xc_sa | 同上 | TRX40 的 Python xc_sa（run `20261105-105555-…-54fa2d8`），`next_sim_cmp.py` | 32 列 × 40 欄，不同 0，`CMP PASS` |
+| (c) sa_N16_s1 | `20261107-155247-icpe-trx-sa_N16_s1-rust-40a4c87f`（1:30.6） | `results/icpe_next/b/sa_main/sa_N16_s1/x1_sweep.csv.xz` | 7,344 列，293,760 格，不同 0，`G0_RESULT IDENTICAL` |
+
+- **HOLD**：
+  - icpe-sim 15:5x 通知：旗標開的參考（xref_dev14）在 SemiAnalysis N16 s1、CPU 8、O-ALL、wt＋預取到 GPU、三個旗標全開時失敗。
+    - Python：`AssertionError: (12, 277)`（`_g_unprefetch` ← `drop` ← `_turn_end_wt`）。
+    - Rust：`gspf 12 277`（main.rs:1099）。
+  - 所以 flags-on 的引擎 commit 會改，40a4c87f 不是最後版。icpe-data 也說先不要 merge、不要跑。
+  - 我沒有用過任何一個新旗標。
+- **swap**（需要使用者決定，見下）：
+  - 這次跑的時候 swap 從 1,431 漲到 2,825 MiB，在 15:53:18 → 15:53:48 之間（xc_sa 那一步）。MemAvailable 一直在 56 GiB 以上，swapguard 沒有觸發。
+  - 現在換出去的頁幾乎都是別的使用者的閒置行程（例：另一位使用者的 `MainThread` 兩個各 793／710 MiB，跑了將近 2 天；gnome-shell 250 MiB）。我自己的行程合計 VmSwap 17 MiB。
+  - 上限 2,933 MiB 是 11/5 09:4x 使用者定的「比基準多 2 GiB」，基準是當時的值。現在離上限只剩 108 MiB，正式 block 很可能一開就被 swapguard 停掉。
+  - **使用者決定（15:5x，在本 session 用 AskUserQuestion）**：「改看我自己的 swap (Recommended)」。這個選項的說明是：只算這次 run 那一組行程自己的 VmSwap，超過 256 MiB 就停；可用記憶體低於 6 GiB 就停的規則照舊；別人被換出的頁不算，但只要我的模擬開始用到 swap 就停。
+  - **實作**：新守門 `$ROOT/tools/ownswapguard.sh <pgid> <log> 256 5`。
+    - 每 5 s 把 `pgrep -g` 那一組行程的 VmSwap 加總，超過 256 MiB → SIGTERM 整組，寫 `OWNSWAP_KILLED`。
+    - 每 30 s 記一筆：本組 VmSwap、行程數、整機 swap（只供參考）。
+  - `trx_run.sh`、`rux_run.sh`、`relaunch_at_boundary.sh` 改成掛這個守門，取代 `swapguard.sh … 2933`。改之前的版本留在 `*.bak-20261107-swap`；`swapguard.sh` 本身沒刪。
+  - 模擬的子行程（Pool worker、常駐的 x1fast）都沒有 setsid，留在同一個行程群組裡，所以會算進去。
+  - 試跑 `20261107-155720-icpe-trx-guardtest-ownswap`（只有 `sleep 8`，不是結果）：swap.log 第一筆 `0 2 2825`。
+- **分工更新**（icpe-data，STATUS_DATA 15:56，c0da1c65）：TRX40 另外接 Mooncake。理由：只有 SemiAnalysis＋uc/lm 的話，TRX40 只分到約 1/3 的 CPU 時間，而使用者要 TRX40 接重的部分。
+  - plan 名稱：
+    - SemiAnalysis：`d14_sa_main`、`d14_sa_p1..p3`、`d14_sens_rep:sa_*`、`d14_sa_p4_b1/b2`。
+    - Mooncake：`d14_old_main:mooncake`、`d14_old_p1..p3:mooncake_*`、`d14_sens_rep:mc_*`、`d14_p4_b1/b2:conversation_*,toolagent_*`。
+    - UltraChat/LMSYS：`d14_chat_main:uc_*,lm_*`、`d14_chat_p1:uc_*,lm_*`。
+  - 規模是 icpe-data 的估計：180 個 block，1,697,648 個 job，約 300 執行緒小時，46 workers 約 7 小時。
+  - Mooncake 原始檔兩台的 sha256 前 12 碼相同（conversation b8cbb061a852、toolagent 48a2db1a13d3）。
+  - 還是 HOLD：icpe-data 要等 icpe-sim 說 xref 過了，才給正式 merge 的 commit。
+
+## 2026-11-07T15:45+08:00 — **使用者決定 TRX40 接偏離 14 的重跑**，以及 P4 版本 C 的 5 組；現在只做準備，還沒跑任何東西
+
+- **來源**：icpe-main 15:3x 轉達使用者在 icpe-main 說的「把 TRX40 把任务交给他，或者是把重一點任务给他」。依規則，我在這裡用 AskUserQuestion 直接問了使用者（15:4x）。答案照抄：
+  - 偏離 14 的重跑：「接，照這個流程 (Recommended)」。流程是：
+    - icpe-sim push 驗證過的引擎後，同步並編 Rust。
+    - 先證明 TRX40 能逐位元重現，才開正式 block。
+    - block 由 icpe-data 分配，CacheWise 照舊不放 TRX40。
+  - P4 加跑版本 C 的 5 組（偏離 10 第 5 點，清單在 `origin/icpe-next-main` 58252b4f 的 `results/icpe_next/main/p4/verC/p4_cells_verC_add.csv`）：「接，等引擎定了再開 (Recommended)」。要用哪個引擎（雜訊＋偏離 14 規則＋APC/BELP）icpe-sim 還沒定。
+- **git 上的狀態（15:3x fetch）**：
+  - `origin/icpe-next-sim` 在 0786f56f（STATUS_SIM 14:05：`--pf-expire` 在修好、重新驗證之前不要用）。icpe-main 說的 63b8e32（使用者選 A：`--pf-gpu-recheck` 放在旗標後面）還沒 push。
+  - 偏離 14 的正文在 PREREG（fe345222）。重跑清單由 icpe-sim 寫進 STATUS_SIM、icpe-data 排程，現在還沒有。
+- **TRX40 上現有的資料**：SemiAnalysis（N16／N32／N64／N72 的 nb）、Mooncake traces、TraceLab、FreeInference、UltraChat、LMSYS-Chat-1M。沒有 CacheWise（不准放），也沒有 Bailian。
+- **重現檢查的提案**（開正式 block 前；細節等 icpe-sim 指定）：
+  - 旗標關：照以前的三項，(a) G0 對 H200 的 4,416 列；(b) xc_sa 對 icpe-data 的 Python、對 TRX40 的 Python；(c) 整個 `sa_N16_s1` block 對 git 上的正式結果。
+  - 旗標開：在 TRX40 有的資料上，Python 對 Rust 逐格比，再加跨機器的參考（請 icpe-sim／icpe-data 提供 acvlab 上同樣參數的輸出）。
+- **資源（15:40）**：MemAvailable 55 GiB、/ssd4 剩 509 GiB、load 0.29。
+
 ## 2026-11-07T11:40+08:00 — **LMSYS-Chat-1M 版本 B、C 跑完**：下載（使用者登入 HF、同意條款）→ 轉換 → chat_main＋chat_p1 12 個 block → 版本 B 上限表（rowcheck 12/12 PASS）→ 版本 C 6 個變體，重現 324/324、0 差
 
 - **下載**：
