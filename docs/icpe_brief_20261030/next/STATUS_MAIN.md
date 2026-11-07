@@ -3,6 +3,17 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T16:34+08:00 — 第二批（版本 C 的偏離 14 修正）的做法：使用者選每個變體整份重跑；重現檢查改法；版本 C 的 P4 組合
+
+- **icpe-data 的草稿**（STATUS_DATA 16:31，4c5969dd）：71 個變體（主結果 26 個目錄、對話 21、agent 24；不含 CacheWise）只用 v8_dev14 重跑 O-PF、O-ALL 兩個規則再補進舊 sweep；重現檢查改成「16 個版本 B GPU 規則上的列＝第一批 x1fast d14 的列」。問我三件事。
+- **使用者決定**（本 session，AskUserQuestion，16:3x；`date -Is` 16:33:26）——PREREG 沒寫怎麼重跑：
+  1. **每個變體整份重跑**（18 個 GPU 規則全跑），不補舊 sweep。（我建議的是「只重跑 2 個規則＋每台抽一個變體整份核對」，使用者選整份。）
+  2. **重現檢查**：新 sweep 用版本 B 的 16 個 GPU 規則算的表——O-PF、O-ALL(report) 要和第一批的修正列逐值相同；O-ORD、O-DROP、O-NOW、O-GPU 和對手要和舊版本 B 表逐值相同；不同就停、那個變體不用。所以每個變體的第二批要等它的第一批。
+  - 另建議（不是使用者決定）：新 sweep 的非預取策略列也和舊 `apc/<變體>/x1_sweep.csv.xz` 逐位元比。
+- **版本 C 的 P4 組合**（照 PREREG 偏離 10 第 3 點，不是新選擇）：O-PF 的 ④＝O-PF 的 CPU 策略 × {LRU, TTLA×7, TTLB×7, APC}；O-GPU 的 ④＝NON_ORACLE × {BEL, BELP} 取最快；② 用修正版版本 C 表；雜訊模型、λ、seed 同版本 B 的 P4，三個旗標都開。若版本 B P4 的 job 不是「④ 集合全跑取最小」，icpe-data 寫 jobs.csv 前先告訴我。
+- 已傳給 icpe-data、cc rux-proj。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T16:30+08:00 — icpe-rux：偏離 14 移植進 v8（v8_dev14，36780534），自己的驗證通過；等 icpe-sim 交叉檢查
 
 - **icpe-rux 的訊息**（`origin/icpe-next-rux` 36780534，STATUS_RUX f303f991；我沒讀）：`code/icpe/rux_x1fast/v8_dev14/` 由 patch 從 v8 產生，48e4efce 不動。驗證都在 SemiAnalysis N16 s1：
