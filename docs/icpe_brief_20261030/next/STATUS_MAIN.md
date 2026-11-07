@@ -3,6 +3,15 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T14:21+08:00 — icpe-rux：偏離 11 的 W5、排隊敏感度跑完（只報告，主結果不變）；我只轉述、沒重算
+
+- **來源**：icpe-rux 的訊息（`origin/icpe-next-rux` f63f4879，STATUS_RUX 最上面一節）。偏離 11 寫明分析由 icpe-rux 用 `explore_queue.py`／analyze_v8 做，只報告；icpe-main 沒有重算，也沒讀 STATUS_RUX 的表。
+- **W5**（cake，每變體 18 格）：沒有任何格因為 W5 從 <15% 變成 ≥15%；有幾格往下（Mooncake tool R1 O-GPU 18 → 8、Bailian coder O-GPU 8 → 3）。〔判讀〕這幾個變體在 W5 下仍有 ≥15% 的格，變體層級的判定字不變（只看訊息裡的格數）。
+- **排隊**（SemiAnalysis 12 × 54 格）：輕負載 0 → 0；中負載往上跨（O-GPU 9 → 34、O-ORD 1 → 14、O-PF 0 → 10）；重負載只報告、不可靠。
+  - 〔判讀〕中負載加了排隊後上限變大，主結果（不含排隊）在這些格是偏保守的一邊；論文照偏離 11 寫成敏感度。
+- **寫本節時已經看過的正式結果**：上面這些（只來自訊息）。
+- **需要使用者決定什麼**：icpe-rux 空出來後接哪一項（UltraChat 備援、BELP 加速、二階排隊）——已轉告使用者。
+
 ## 2026-11-07T14:11+08:00 — **agent 軌跡（偏離 17）結果**：核對全過；OpenHands N32／64／72 的 9 個變體 ≥15%（最大 58.5%），mini-SWE-agent 12 個都 <15%（最大 10.9%）
 
 **輸入與做法**（照 14:05 那節使用者的決定）
