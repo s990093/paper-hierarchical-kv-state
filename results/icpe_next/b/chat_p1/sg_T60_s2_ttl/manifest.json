@@ -1,0 +1,13 @@
+{
+ "plan": "chat_p1",
+ "block": "sg_T60_s2_ttl",
+ "run_id": "20261107-111246-icpe-data-chat_p1-sg_T60_s2_ttl",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-111246-icpe-data-chat_p1-sg_T60_s2_ttl",
+ "rows": 6480,
+ "elapsed_s": 48.6,
+ "finished": "2026-11-07T11:13:36+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261107-111246-icpe-data-chat_p1-sg_T60_s2_ttl\nexport RUN_DIR=/ssd6/hungwei/icpe-next/runs/20261107-111246-icpe-data-chat_p1-sg_T60_s2_ttl/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd6/hungwei/icpe-next/runs/20261107-111246-icpe-data-chat_p1-sg_T60_s2_ttl/rust_timing.jsonl\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261107-111246-icpe-data-chat_p1-sg_T60_s2_ttl/out x1 sweep --traces nb:sharegpt_T60_s2 --rules nb --cpu 8 16 32 64 128 256 512 1024 111.0625 --policies LRU LRU2 ARC S3FIFO GDSF PENS LRU+NONE LRU+2HW LRU+2HA LRU+RPF O-BEL O-BELS O-DROP O-NOW O-PF --slows ssd b32 nfs --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies TTLA:1 TTLA:3 TTLA:30 TTLA:100 TTLB:1 TTLB:3 TTLB:30 TTLB:100 --pf-target cpu --workers 35 --engine rust\n",
+ "context": "date: 2026-11-07T11:12:46.908415+08:00\nhost: acvlab\nplan: chat_p1\nblock: sg_T60_s2_ttl\nengine: rust\ngit HEAD: c715f050df3edda4e8bd6bb553098238c44588f5\ngit status:\nuptime:  11:12:46 up 21 days, 23:07, 41 users,  load average: 79.76, 75.79, 65.90\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440          74          40          12         324         349\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:sharegpt_T60_s2: sha256 fa5f90ae484a8728bf0d45b8823e84efaa5ac6688aad82f24a35ee4df9976e13  /ssd6/hungwei/icpe-next/datasets/x1_nb/sharegpt_T60_s2.npz\n",
+ "note": "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"
+}

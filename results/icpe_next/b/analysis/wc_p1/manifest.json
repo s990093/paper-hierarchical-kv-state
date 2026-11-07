@@ -1,0 +1,24 @@
+{
+ "run_id": "20261107-111857-icpe-data-verB-wc_p1",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-111857-icpe-data-verB-wc_p1",
+ "cmd": "set -euo pipefail\ncd /ssd6/hungwei/icpe-next/data\nexport OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1\nPY=\"nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I\"; B=results/icpe_next/b; O=/ssd6/hungwei/icpe-next/runs/20261107-111857-icpe-data-verB-wc_p1/out\nRC=/ssd6/hungwei/icpe-next/code-archive/main-b54d3cff/main_rowcheck.py   # icpe-next-main b54d3cff 的 main_rowcheck.py（同 TRX40 的 uc_p1）\n$PY $RC --label wc_main --sweep $B/chat_main/wc_*/x1_sweep.csv.xz --expect-cells 54 --expect-cpu 17 --expect-gpu 8 --out $O/rowcheck.csv\n$PY $RC --label wc_p1_ttl --sweep $B/chat_p1/wc_*_ttl/x1_sweep.csv.xz --expect-cells 54 --expect-cpu 15 --expect-gpu 8 --out $O/rowcheck.csv\necho ROWCHECK_OK\n$PY code/icpe/next_sim_analyze.py --sweep $B/chat_main/wc_*/x1_sweep.csv.xz $B/chat_p1/wc_*_ttl/x1_sweep.csv.xz --out-dir $O --out-prefix wc_p1 --pf-target cpu\necho VERB_DONE\n",
+ "context": "2026-11-07T11:18:57+08:00\nacvlab\nname: verB-wc_p1\nrepo HEAD: c715f050df3edda4e8bd6bb553098238c44588f5\n M code/icpe/next_chat_verc.sh\n?? results/icpe_next/b/chat_main/\n?? results/icpe_next/b/chat_p1/\n               total        used        free      shared  buff/cache   available\nMem:          451054       76736       36432       12467      337885      357493\nSwap:           2047        2047           0\n",
+ "exit_code": "0",
+ "stdout_tail": "ROWCHECK wc_main: 3 (file, trace, rule), 22032 rows, cells [np.int64(54)] cpu [np.int64(17)] gpu [np.int64(8)]: PASS\nROWCHECK wc_p1_ttl: 3 (file, trace, rule), 19440 rows, cells [np.int64(54)] cpu [np.int64(15)] gpu [np.int64(8)]: PASS\nROWCHECK_OK\n                                   n_cells       max    median  n_ge15  n_ge5\ntrace          rule component                                                \nnb:wildchat_s1 nb   O-ALL(report)       54  0.226424  0.064760       6     54\n                    O-DROP              54  0.169713  0.052759       3     28\n                    O-GPU               54  0.198147  0.059938       4     54\n                    O-NOW               54  0.002270  0.000092       0      0\n                    O-ORD               54  0.091534  0.006498       0      8\n                    O-PF                54  0.180535  0.011804       2     10\nnb:wildchat_s2 nb   O-ALL(report)       54  0.226428  0.064212       6     54\n                    O-DROP              54  0.160640  0.050952       3     28\n                    O-GPU               54  0.194120  0.059396       4     54\n                    O-NOW               54  0.002787  0.000071       0      0\n                    O-ORD               54  0.091390  0.005930       0      9\n                    O-PF                54  0.175433  0.011461       2     10\nnb:wildchat_s3 nb   O-ALL(report)       54  0.230585  0.064698       7     54\n                    O-DROP              54  0.152813  0.050251       2     27\n                    O-GPU               54  0.196311  0.059530       4     54\n                    O-NOW               54  0.002217  0.000121       0      0\n                    O-ORD               54  0.091491  0.006775       0      9\n                    O-PF                54  0.184640  0.012983       2     10\n→ /ssd6/hungwei/icpe-next/runs/20261107-111857-icpe-data-verB-wc_p1/out/wc_p1_headroom_components.csv（972 列）、violations（63 列）\nVERB_DONE\n",
+ "note": "對話資料集 WildChat-1M 的版本 B 上限表（STATUS_DATA 2026-11-07T11:05 第 2 點；PREREG 偏離 13 補登記）：chat_main（17×8）＋chat_p1 _ttl（15×8），next_sim_analyze.py --pf-target cpu，旗標同 icpe-main verB 第 3 步第一行。開算前 main_rowcheck.py（icpe-next-main b54d3cff）PASS。② 不含 block 粒度 APC。到達時間是合成的（Poisson 對話開始＋真實的對話內間隔）。不解讀、不下判定。",
+ "files": {
+  "rowcheck.csv": {
+   "sha256": "715c3e5ef673b4ffb59c0fc9e7821f2c9c9a1bf491874812bf09838dcf24ddee",
+   "bytes": 2202
+  },
+  "wc_p1_headroom_components.csv": {
+   "sha256": "8659f2da0bd382cdc019307719b04547a09f310e6922f941904ba34995d6f56a",
+   "bytes": 459683
+  },
+  "wc_p1_violations.csv": {
+   "sha256": "6397abe660ad8cd057bf9c6a193d277586b5f7e9187443ac65e7d23a9df8169f",
+   "bytes": 12212
+  }
+ }
+}

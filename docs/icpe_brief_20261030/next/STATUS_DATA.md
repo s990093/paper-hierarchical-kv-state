@@ -2,6 +2,64 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T11:35+08:00 — **對話資料集 3／4 份完成**（ShareGPT、WildChat 在 acvlab，UltraChat 在 TRX40）：版本 B、C 都進 git；LMSYS 等使用者登入 HF
+
+**完成了什麼**（照偏離 13＝STATUS_DATA 11:00＋11:05）
+- **acvlab 版本 B**：
+  - 佇列 `chat_main:sg_*,wc_*`＋`chat_p1:sg_*,wc_*`，35 workers，log `runs/queue-rust-chat-verB-w35-20261107-110540.log`。
+  - 11:05:40 → 11:17:18。補寫前已跑完的 `sg_T60_s1`、`sg_T600_s1` 由完成清單跳過。
+  - 18 個 block 全部通過：
+    - `jobs`＝`count`（6,174／6,480），`rust_timing` 行數＝jobs。
+    - `py_fallback_jobs=0`，`code_sha`＝3280b1c8799b+rs62b0932b，`exit_code` 0，沒有 `STOPPED_NOT_USED`。
+  - 有存逐請求 npz：這兩個 plan 沒設 no_npz，ShareGPT 每個 block 約 1.8 GB。npz 不進 git，不影響 sweep。我給 icpe-trx 的指令寫「沒有 npz」，是我寫錯了。
+  - collect → `results/icpe_next/b/chat_main/{sg,wc}_*`、`chat_p1/{sg,wc}_*_ttl`，log `runs/collect-chat-*.log`。
+- **acvlab 版本 B 上限表**：run `20261107-111850-icpe-data-verB-sg_p1`、`20261107-111857-icpe-data-verB-wc_p1`。
+  - 先跑 `main_rowcheck.py`（icpe-next-main b54d3cff，sha256 cde7fb3f，和 TRX40 用的同一份）：sg、wc 的 main（17×8）、_ttl（15×8）每個 (trace, rule) 都是 54 格，PASS。
+  - 結果收在 `results/icpe_next/b/analysis/{sg,wc}_p1/`，有 manifest。
+- **acvlab 版本 C**：`code/icpe/next_chat_verc.sh`，v8 worktree＝icpe-next-rux 4a713386，run `20261107-1119xx…1129xx-icpe-data-verC-<變體>`。
+  - 9 個變體都 rc 0。
+  - `explore_apc` 對本機版本 B 表 **9／9 `REPRODUCED cells=324`**。
+  - `code_sha`＝3280b1c8799b+rse7f6ee8f，main.rs 48e4efce。
+  - 結果收在 `results/icpe_next/apc/{sharegpt_T{60,600}_s{1,2,3},wildchat_s{1,2,3}}/`，是 collect_v8 收的原樣。
+- **TRX40 的 UltraChat**（icpe-next-trx a65347cb，STATUS_TRX 11:20）：版本 B 12 個 block，uc_p1 表，rowcheck PASS；版本 C 6／6 `REPRODUCED`。
+  - 我在 acvlab 核對過：
+    - 12 個 sweep 的 run_id 單一值且＝manifest，code_sha 62b0932b，CSV 列數＝manifest；
+    - CPU／GPU 規則數是 17×8 或 15×8；
+    - 6 個 apc MANIFEST 的 code_sha 是 e7f6ee8f、main.rs 48e4efce、收集時的 commit 4a713386。
+  - 已從 icpe-next-trx checkout 進來，blob 不變。
+- **轉換統計**：
+  - WildChat（run `20261107-105720-icpe-data-conv-chat-wildchat`）：
+    - HF 上實際有 837,989 個對話，合格 331,483 個（不合格的都是 user 少於 2 輪）。
+    - 抽 9,000 個 → 39,884 個請求。
+    - 規則 6 (a) 30,884／30,884；(b) 中位數 0，最大 0.05%，99% 完全相同。
+    - 輸入中位數 702、p90 3,431 token。真實間隔中位數 127 s、p90 1,209 s。span 約 246 h。
+  - UltraChat（icpe-trx 照抄）：
+    - 1,468,352 個對話，合格 1,468,294 個，一行兩個物件的有 3 行。
+    - 抽 9,000 個 → 34,595 個請求。規則 6 (a)、(b) 都完全相同。
+    - 輸入中位數 528 token。
+
+**照抄上限表的摘要**（headroom＝④ 對 ② 的上限；每個資料集合併 3 個 seed，每個元件 162 格＝3 × 54；中位數範圍＝3 個 seed 各自的中位數）。
+- **不解讀、不下判定**，判定由 icpe-main 照偏離 7、10、13 做。
+- O-PF、O-ALL 的列會因 P4 斷崖的修正（icpe-sim 的規則 (i)，偏離 14 待登記）重跑，下表的那兩列之後可能會變。
+
+| 資料集 | 版本 | O-ORD max／中位數／≥15% | O-PF max／中位數／≥15% | O-DROP max／≥15% | O-GPU max／中位數／≥15% | O-ALL(report) max／≥15% |
+|:--|:--|:--|:--|:--|:--|:--|
+| ShareGPT T60 | B | 0.387／0.066–0.069／36 | 0.409／0.126–0.128／70 | 0.155／1 | 0.432／0.184–0.188／126 | 0.654／138 |
+| ShareGPT T60 | C | 0.386／0.065–0.069／36 | 0.409／0.126–0.128／69 | 0.155／1 | 0.440／0.183–0.187／126 | 0.654／138 |
+| ShareGPT T600 | B | 0.299／0.066–0.068／33 | 0.682／0.184–0.187／99 | 0.125／0 | 0.379／0.179–0.181／116 | 0.733／147 |
+| ShareGPT T600 | C | 0.299／0.065–0.068／33 | 0.682／0.184–0.187／99 | 0.125／0 | 0.381／0.178–0.180／113 | 0.732／145 |
+| WildChat | B | 0.092／0.006–0.007／0 | 0.185／0.012–0.013／6 | 0.170／8 | 0.198／0.059–0.060／12 | 0.231／19 |
+| WildChat | C | 0.092／0.006–0.007／0 | 0.184／0.012–0.013／6 | 0.170／8 | 0.197／0.059–0.060／12 | 0.230／18 |
+| UltraChat T60 | B、C | 0／0／0 | 0／0／0 | 0／0 | 0／0／0 | 0／0 |
+| UltraChat T600 | B、C | 0.027／0／0 | 0.032／0／0 | 0.067／0 | 0.067／0.052–0.053／0 | 0.067／0 |
+
+- O-NOW 在四份裡最大都 ≤0.004。
+
+**還沒做**
+- **LMSYS-Chat-1M**：TRX40 等使用者在 HF 同意條款並登入。登入後照同樣的步驟做：下載、轉換、B、C。
+- **彙總與判定**：交給 icpe-main。
+- **P4 斷崖修正的重跑**：等 icpe-sim 的偏離 14 和 G1。對話資料集的 O-PF／O-ALL 列已請 icpe-sim 列進清單。
+
 ## 2026-11-07T11:05+08:00 — 對話資料集補登記的**補寫：版本 B／C、哪台、哪版引擎**（h200 轉達使用者「請 icpe-data 先補寫」；寫完才恢復模擬）
 
 > 時間：acvlab `date -u` 2026-11-07T03:04:39Z。h200 會把 11:00 那節和本節一起收成 **PREREG 偏離 13（補登記）**（使用者在 h200 選的；STATUS_A 11:00，0c58272、6239918）。

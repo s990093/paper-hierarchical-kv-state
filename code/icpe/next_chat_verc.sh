@@ -31,7 +31,7 @@ echo "== 重現檢查（版本 B 的 16 個 GPU 規則）$(date -Is)"
 grep -q "EXPLORE_RESULT REPRODUCED" $RUN/explore_apc.log || { echo "版本 B 沒有重現 → 停（這個變體不報版本 C）"; exit 1; }
 echo "== 版本 C $(date -Is)"
 ( cd $RUN && $ROOT/venv/bin/python -I $V8/analyze_v8.py --sweep $RUN/out/x1/x1_sweep.csv --out-dir $RUN/a --out-prefix verC ) | tee $RUN/analyze_verC.log
-$ROOT/venv/bin/python -I $V8/collect_v8.py apc chat_$NB --base $DATAREPO/results/icpe_next/apc --sweep $RUN/out/x1/x1_sweep.csv \
+$ROOT/venv/bin/python -I $V8/collect_v8.py apc $NB --base $DATAREPO/results/icpe_next/apc --sweep $RUN/out/x1/x1_sweep.csv \
   --files $RUN/a/verC_headroom_components.csv $RUN/a/verC_violations.csv $RUN/a/base_headroom_components.csv $RUN/a/explore_apc_rows.csv $RUN/a/explore_ogpu_belp_rows.csv \
   --runs $RUN --note "PREREG 偏離 13（對話資料集）的版本 C：v8 48e4efce（icpe-next-rux 4a713386）；重現檢查＝本機版本 B 表（chat_main＋chat_p1 _ttl），全部格 7 欄逐值相同"
 echo "CHAT_VERC_DONE $NB"
