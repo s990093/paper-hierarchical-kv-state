@@ -37,10 +37,17 @@ if [ -z "${NEXT_A_W6B_REEXEC:-}" ] && [ -n "${SLURM_JOB_ID:-}" ]; then
   echo "[next_a_w6b] 改執行 repo 裡的版本：$REPO/code/icpe/next_a_w6b.sh（git $(git -C "$REPO" rev-parse --short HEAD)）"
   exec bash "$REPO/code/icpe/next_a_w6b.sh" "$@"
 fi
-REPS=""; DRY=0; LIST=0; FROM=""
+REPS=""; DRY=0; LIST=0; FROM=""; REP_FROM=""; REP_TO=""; SMOKE=1; TAG=""
+# 2026-11-07 PREREG 偏離 21（W6 用 4 張卡）：--rep-from／--rep-to 只跑其中幾輪（每輪內的打亂不變：seed 20261108＋輪次）、
+# --no-smoke 不跑冒煙、--tag T 讓這一份寫自己的 gpu_requests_T.csv／overlap_T.csv（同時跑的幾份不寫同一個檔；跑完再合併）。
+# 不帶這些參數時和原本一樣。
 while [ $# -gt 0 ]; do
   case "$1" in
     --reps) REPS="$2"; shift 2 ;;
+    --rep-from) REP_FROM="$2"; shift 2 ;;
+    --rep-to) REP_TO="$2"; shift 2 ;;
+    --no-smoke) SMOKE=0; shift ;;
+    --tag) TAG="$2"; shift 2 ;;
     --dry-run) DRY=1; shift ;;
     --list) LIST=1; DRY=1; shift ;;
     --from) FROM="$2"; shift 2 ;;
@@ -49,6 +56,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 [[ "$REPS" =~ ^[1-9][0-9]*$ ]] || { echo "要 --reps <正整數>（PREREG 登記的次數）" >&2; exit 2; }
+REP_FROM=${REP_FROM:-0}; REP_TO=${REP_TO:-$((REPS - 1))}
+[[ "$REP_FROM" =~ ^[0-9]+$ && "$REP_TO" =~ ^[0-9]+$ ]] && [ "$REP_FROM" -le "$REP_TO" ] && [ "$REP_TO" -lt "$REPS" ] \
+  || { echo "--rep-from／--rep-to 要在 0..$((REPS - 1)) 之內、而且 from ≤ to" >&2; exit 2; }
+[ -z "$TAG" ] || [[ "$TAG" =~ ^[A-Za-z0-9]+$ ]] || { echo "--tag 只能是英數字" >&2; exit 2; }
+SFX=${TAG:+_$TAG}
 [ "$DRY" = 1 ] && export TIARA_SKIP_CONDA=1
 # 模型權重只在 hgx-cn01 本地 /tmp（memory h200-models-on-tmp）；這支只檢查、不下載
 export ICPE_MODEL_ROOT="${ICPE_MODEL_ROOT:-/tmp/hungweilai-models/hf-cache}"
@@ -85,7 +97,7 @@ PY
 fi
 
 STARTED=1; [ -n "$FROM" ] && STARTED=0
-OVL="$W6B/overlap.csv"
+OVL="$W6B/overlap$SFX.csv"
 # step <名字> <短名> <指令...>：等節點上沒有我們自己的別的 job → 跑 → sacct 查重疊（t1g.py overlap，寫 $OVL）。
 # 被污染（exit 3）或重疊 → 照暴露重跑，最多 3 次；3 次都不乾淨 → 停下回報。其他非 0 → 停下回報（規則 2）。分析只用 overlap＝0 的 run。
 step() {
@@ -112,13 +124,15 @@ step() {
 }
 
 POLS="LRU LRU2 ARC S3FIFO GDSF PENS O-BEL O-BELS"
-for pol in $POLS; do
-  step "W6B-SMOKE-$pol" "icpe-next-w6b-smoke-$pol" python code/icpe/next_a_w6b.py gpu --out "$W6B" --cpu 128 --policy "$pol" --max-req 100 --csv gpu_smoke.csv
-done
-ORDER=$(python3 - "$REPS" <<'PY'
+if [ "$SMOKE" = 1 ]; then
+  for pol in $POLS; do
+    step "W6B-SMOKE-$pol" "icpe-next-w6b-smoke-$pol" python code/icpe/next_a_w6b.py gpu --out "$W6B" --cpu 128 --policy "$pol" --max-req 100 --csv "gpu_smoke$SFX.csv"
+  done
+fi
+ORDER=$(python3 - "$REP_FROM" "$REP_TO" <<'PY'
 import random, sys
 pols = "LRU LRU2 ARC S3FIFO GDSF PENS O-BEL O-BELS".split()
-for rep in range(int(sys.argv[1])):
+for rep in range(int(sys.argv[1]), int(sys.argv[2]) + 1):
     runs = [(c, p) for c in (128, 256) for p in pols]
     random.Random(20261108 + rep).shuffle(runs)
     for c, p in runs:
@@ -126,7 +140,7 @@ for rep in range(int(sys.argv[1])):
 PY
 )
 while read -r c pol rep; do
-  step "W6B-$c-$pol-r$rep" "icpe-next-w6b-$c-$pol-r$rep" python code/icpe/next_a_w6b.py gpu --out "$W6B" --cpu "$c" --policy "$pol" --rep "$rep"
+  step "W6B-$c-$pol-r$rep" "icpe-next-w6b-$c-$pol-r$rep" python code/icpe/next_a_w6b.py gpu --out "$W6B" --cpu "$c" --policy "$pol" --rep "$rep" --csv "gpu_requests$SFX.csv"
 done <<< "$ORDER"
-[ "$DRY" = 0 ] && echo "[next_a_w6b] $(date -Is) reps=$REPS 完成"
+[ "$DRY" = 0 ] && echo "[next_a_w6b] $(date -Is) reps=$REPS rep $REP_FROM..$REP_TO tag=${TAG:-無} 完成"
 exit 0

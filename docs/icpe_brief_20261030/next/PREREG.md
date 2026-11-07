@@ -1198,3 +1198,33 @@
 - W6a：已跑完的 run 沒有看過任何做法的 TTFT 或 gap。為了回答「Rust／編譯加速有沒有用」，我在 head node 算過 10 個 run 的 (ΣTTFT＋Σd2h) ÷ 牆鐘時間（平均 0.95、範圍 0.79–0.99，0.79 是只有 100 個請求的冒煙），只看了這個比例，沒有分做法。
 - W6b：只有 S_orig（偏離 16）；沒有任何 GPU 資料。
 - T2 的全部結果；W6c 的結果（b018d02）。
+
+### 偏離 21（2026-11-07T14:27:38Z（H200 head node 的 `date -u`）；**W6 改用 4 張卡同時跑（兩個 NUMA 節點各 2 張），超出 T2 量過的範圍**；使用者在 `h200` 決定（11/7 22:2x：「gpu 那塊我希望在 11/8 當天可以把任務都給跑掉 一定要並行 現在太慢」；AskUserQuestion 選「4 張（每個 NUMA 節點 2 張）」）；由 `h200` 寫；取代偏離 20 的做法（偏離 20 的 job 24745 一個 run 都沒跑就取消）；W6a、W6b 的 run set、判準、門檻、分析程式都不改）
+
+**經過**
+- 偏離 20 的 24745（2 張卡）：W6b 在一張卡上約 27 h〔推算〕，11/9 凌晨才跑完；使用者要求 11/8 當天跑完。24745 在 hold 中、沒有開跑，取消。
+- 權重：`s3-fetch`（job 24742）22:26:19 COMPLETED（llama、qwen、qwen14 都驗證通過）。
+
+**做法**
+- 一個 job `icpe-next-w6q`（`code/icpe/next_a_w6q.sh`）：`--gres=gpu:4 --gpus-per-socket=2 --sockets-per-node=2`（h200q 的 job_submit 改成 64 CPU、4×170G）；上限 1.5 天。
+- 開跑時 `next_a_corun.py plan --n 4` 核對：兩個 NUMA 節點各 2 張才跑；不是、或查不到 → exit 2、一個 run 都不跑。卡照 (NUMA, PCI) 排序，第 i 張給 lane i：
+  - lane 0 W6a：`next_a_w6.sh --part w6a --from W6A-256-LRU-r0`（35 個 run）。
+  - lane 1 W6b 冒煙 8 個＋第 0、1 輪：`next_a_w6b.sh --reps 6 --rep-from 0 --rep-to 1 --tag r01`。
+  - lane 2 W6b 第 2、3 輪：`--rep-from 2 --rep-to 3 --tag r23 --no-smoke`。
+  - lane 3 W6b 第 4、5 輪：`--rep-from 4 --rep-to 5 --tag r45 --no-smoke`。
+  - 所以 lane 0、1 在同一個 NUMA 節點，lane 2、3 在另一個。
+- `next_a_w6b.sh` 加 `--rep-from`／`--rep-to`／`--no-smoke`／`--tag`；不帶時和原本相同。我核過：不帶參數的 `--list` 和改之前逐字相同（104 步）；三份的 `--list` 合起來＝原本的 104 步、順序相同。每一輪內的打亂不變（seed 20261108＋輪次）。
+- W6b 三份各寫 `gpu_requests_<tag>.csv`、`overlap_<tag>.csv`（冒煙寫 `gpu_smoke_r01.csv`）：`x1_gpu.py` 逐列寫、每 100 列 flush，多個 process 寫同一個檔會交錯。跑完在 head node 把三份串接成 `gpu_requests.csv`、`overlap.csv`（只串接、不刪列、依 run_id 排序），再照偏離 16 算 S_real、跑 analyze。
+- 每條 lane `taskset` 到自己那張卡 NUMA 節點上的 16 個 CPU（Slurm 給的 CPU 不夠時照編號均分，記在 `corun_plan_<job>.json`）。兩支 runner 的 wait-clear、sacct 重疊檢查、GpuWatcher、重跑規則都照舊；同一個 job 的其他 lane 不算「我們自己的別的 job」。
+- lane 的開始、結束、exit 寫 `results/icpe_next/a/w6ab/corun.csv`（多一欄 `ovl`：那條 lane 的 overlap 檔）。
+
+**超出 T2 的地方（照實寫）**
+- T2 只量過「兩個 job、卡在不同 NUMA 節點」（回來請求平均 TTFT +0.34%，95% CI −0.18～+0.77%）。同一個 NUMA 節點的兩張卡一起跑、4 個同時跑：NOT_MEASURED。主機記憶體頻寬、PCIe、CPU 的爭用可能讓時間變長，會偏多少不知道。
+- W6a 的判定用同一輪 LRU、HINT-PF、O-PF 三個 run 的比值；W6b 的第一條判準是實測 ÷ 模擬落在 [0.9, 1.1]（絕對量），比較容易受爭用影響。
+- 判準不改。W6a、W6b 的報告都要寫明「4 個同時跑，超出 T2 量過的範圍」。
+
+**只報告**
+- `next_a_corun.py classify`：每個 run 的時間窗對同一個 job 其他 lane 的活動時間窗算覆蓋率；n_concurrent＝1＋（覆蓋率 ≥ 0.9 的 lane 數），有 0＜c＜0.9 的 lane → partial（同 T2 §3）。報各 lane 的 n_concurrent 分布，以及 W6a 每個 gap、W6b 每一格用到的 run 的 n_concurrent。
+- 預計〔推算：每個 run 約 16.6 分鐘，沒算爭用造成的變慢〕：lane 0 約 9.7 h、lane 1 約 9.2 h、lane 2／3 各約 8.9 h → 從開跑起約 10 小時全部跑完。
+
+**已經看過的（揭露）**：和偏離 20 相同，沒有新的。
