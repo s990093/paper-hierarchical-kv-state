@@ -14,9 +14,10 @@ ap.add_argument("--sweep", nargs="*", default=[])
 ap.add_argument("--files", nargs="*", default=[])
 ap.add_argument("--runs", nargs="*", default=[])
 ap.add_argument("--note", default="")
+ap.add_argument("--base", default="", help="結果的上層目錄（相對 REPO）；預設 results/icpe_next/v8_explore/<實驗>。偏離 10 的正式 APC 重算用 results/icpe_next/apc")
 a = ap.parse_args()
 REPO = os.environ["REPO"]
-out = os.path.join(REPO, "results", "icpe_next", "v8_explore", a.exp, a.variant)
+out = os.path.join(REPO, a.base, a.variant) if a.base else os.path.join(REPO, "results", "icpe_next", "v8_explore", a.exp, a.variant)
 os.makedirs(out, exist_ok=True)
 
 
