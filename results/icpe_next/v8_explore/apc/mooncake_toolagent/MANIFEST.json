@@ -1,0 +1,62 @@
+{
+ "exp": "apc",
+ "variant": "mooncake_toolagent",
+ "collected_ts": "2026-11-07T08:25:50+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit": "b744416333daaf04c44c9c4e1b0cb5a43d657c6b",
+ "v8_main_rs_sha256": "48e4efcee98cb5e54040d8b21fd61726007617d8be17d82f09347ebdf13ee7d2",
+ "sweep_code_sha": [
+  "3280b1c8799b+rsdb455a36"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-033906-icpe-rux-v8-explore-apc-ta",
+   "ts": "2026-11-07T03:39:06+08:00",
+   "host": "RUX3DPRO"
+  },
+  {
+   "run_id": "20261107-040117-icpe-rux-v8-explore-apc-analyze",
+   "ts": "2026-11-07T04:01:17+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-033906-icpe-rux-v8-explore-apc-ta/out/x1/x1_sweep.csv",
+   "sha256_source": "76ff1005d1fd5054e76df15a09c7689fb1a781614965949fcdbcd6041adcc8e1",
+   "bytes_source": 3930760,
+   "rows": 11016
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-040117-icpe-rux-v8-explore-apc-analyze/a/explore_apc_rows.csv",
+   "sha256_source": "af3e8528da0b90eb56d88145f65b9c33372b4a62d983ffc9f7115dbb1ef12c75",
+   "bytes_source": 207916,
+   "rows": 306
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-040117-icpe-rux-v8-explore-apc-analyze/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "b3a8bc06151900f6931a382f3ebd80caed8d8eeefdf1106eebde12c8adafedb1",
+   "bytes_source": 7236,
+   "rows": 36
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-040117-icpe-rux-v8-explore-apc-analyze/a/base_headroom_components.csv",
+   "sha256_source": "d7833bb59127f6ce53b99adc6ff472bd24f72dac5f2597441b21f91bd4029e8c",
+   "bytes_source": 93717,
+   "rows": 306
+  },
+  {
+   "file": "apc_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-040117-icpe-rux-v8-explore-apc-analyze/a/apc_headroom_components.csv",
+   "sha256_source": "937e968e94bcde3b860c0b07130a6ff21fbd665392c3ec1953366bdc07b5df42",
+   "bytes_source": 93717,
+   "rows": 306
+  }
+ ],
+ "note": "探索（不是正式結果）；V8_FEATURES §4a",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

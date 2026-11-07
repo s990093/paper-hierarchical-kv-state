@@ -28,8 +28,11 @@ if a.noq_sweep:
     N = pd.concat([pd.read_csv(p) for p in a.noq_sweep], ignore_index=True)
     M = Q.merge(N, on=K, suffixes=("", "_n"))
     skip = {"run_id", "ts", "elapsed_s", "code_sha", "host", "queue", "qwait_mean", "qwait_p90", "qwait_frac"}
-    diffcols = sorted(c for c in Q.columns if c not in skip and c not in K and c + "_n" in M.columns
-                      and not (M[c].astype(str) == M[c + "_n"].astype(str)).all())
+    def same_col(x, y):
+        if pd.api.types.is_numeric_dtype(x) and pd.api.types.is_numeric_dtype(y):
+            return bool(((x == y) | (x.isna() & y.isna())).all())          # NaN＝NaN 算相同
+        return bool((x.astype(str) == y.astype(str)).all())
+    diffcols = sorted(c for c in Q.columns if c not in skip and c not in K and c + "_n" in M.columns and not same_col(M[c], M[c + "_n"]))
     ge = bool((M.mean_ret >= M.mean_ret_n - 1e-12).all())
     print(f"端到端：{len(M)} 個組合對上；不同的欄＝{diffcols}；有排隊的 mean_ret ≥ 沒排隊：{ge}")
     ttft_cols = {"n_ret_user", "sum_ret_user", "mean_ret_user", "sum_ret", "mean_ret", "median_ret", "p90_ret", "total_all", "mean_all"}
