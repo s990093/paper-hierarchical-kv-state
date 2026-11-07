@@ -3,6 +3,26 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T21:22+08:00 — **偏離 14 第二段在 TRX40 全部完成：26／26 個變體**（sa 12、mc 2、uc 6、lm 6），每個都 `D14_SWEEP_RESULT IDENTICAL`＋`EXPLORE_RESULT REPRODUCED`＋`D14_VERC_DONE`
+
+- **commit**：
+  - 33a20f38、0d31b1c2、7acdc85b、4d869178、eea67e71、81466427（20:18 節以前）。
+  - 7c0e95c3：semianalysis_N64_s3，lmsys_T{60,600}_s{1,2,3}。
+  - 9478c325：semianalysis_N72_s1，ultrachat_T{60,600}_s{1,2,3}。
+  - e47af649：semianalysis_N72_s2、N72_s3。
+  - 全部在 `results/icpe_next/apc_d14/<變體>/`。
+- **兩個佇列的碰撞檢查**（icpe-data 20:2x 提醒：done 清單只記已完成的，不記跑到一半的）：
+  - 邊界守門 `$ROOT/runs/d14-stage2-boundary-guard.log`：`21:21:50 chat queue already ended; main queue may continue (it will skip done uc/lm)`。所以沒有停主佇列，也沒有半途的 uc/lm 目錄。
+  - 主佇列印 12 行 `[skip] … 已完成`，然後印 `D14_VERC_QUEUE_DONE`，rc 0，21:21:49 結束。
+  - chat 佇列（run `20261107-201739`）印 `D14_VERC_QUEUE_DONE`，rc 0，20:42:08 結束。
+  - 收進 git 前逐變體核對：26 個變體都只有 1 個 run 印 `D14_VERC_DONE <v>`；MANIFEST 的 run_id＝那個 run；`check_v8_collect.py` 都是 `bad 0`。
+  - `next_d14_verc_done.txt` 有 26 行。
+- **O-ALL(report) max**（analyze_v8 照抄）：
+  - lmsys：T600 s1／s2／s3＝0.043990／0.034217／0.037636；T60 全部 0.0。
+  - ultrachat：T600 s1／s2／s3＝0.065979／0.065719／0.066789，n_ge15 都是 0。
+  - 其他變體的表在各自的 `verC_headroom_components.csv`。
+- **第一段**：21:2x 時 d14_sa_p4_b2 還在跑，0 失敗。P4 全部跑完後用 blockcheck v2 檢查、collect。
+
 ## 2026-11-07T20:18+08:00 — 第二段：**Mooncake 兩個變體都完成**；sa 已收 9／12；chat 變體另開一個佇列；第一段 146／180
 
 - **commit 進度**（每個變體都印 `D14_SWEEP_RESULT IDENTICAL`、`EXPLORE_RESULT REPRODUCED`、`D14_VERC_DONE`，collect 核對 `bad 0`）：
