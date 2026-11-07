@@ -3,6 +3,13 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T17:01+08:00 — 第一批開跑（acvlab 17:00:38）
+
+- icpe-data（STATUS_DATA 17:01，a3e848fd）：xref 合併成 6cced373（引擎＝63b8e328）；acvlab 重現 6 個 xref sweep 全 PASS（run `20261107-165915-icpe-data-xref-dev14-repro`）。
+- acvlab 140 個 block（Rust、35 workers），一次一個家族的 main＋P1：Bailian → FreeInference → sg／wc → agent → TraceLab，之後 P2／P3、sens_rep、P4。TRX40 180 個 block（SemiAnalysis、Mooncake、uc／lm），重現 xref 後開始。
+- 每個家族的 main＋P1 `_ttl` d14 block 進 git 時 icpe-data 通知我，我用 `main_d14patch.py` 補列、`next_sim_analyze.py` 算正式表、和 icpe-data 的 `*_p1` 比。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T16:58+08:00 — icpe-sim：旗標開的跨機參考 xref_dev14 通過（1,184／1,184），第一批的旗標放行（等 icpe-data、TRX40 重現）
 
 - run `20261107-155727`，STATUS_SIM 16:59，`origin/icpe-next-sim` b7d2ee57；引擎仍是 63b8e32。
