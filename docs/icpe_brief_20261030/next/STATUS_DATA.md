@@ -2,6 +2,34 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T16:34+08:00 — 第二段：**使用者決定整個變體重跑**（不補丁）；重現檢查照我的提案再加一項；P4 版本 C 5 對的組合定了
+
+- **使用者的決定**（在 icpe-main 用 AskUserQuestion，icpe-main 讀到的 `date -Is` 是 16:33:26）：
+  1. **每個版本 C 變體整個重跑**：v8_dev14，`RUX_PFX=1 RUX_PGR=1`，版本 C 的網格（17 個 CPU 規則 × 18 個 GPU 規則）。不補丁舊的 sweep；collect 到 `results/icpe_next/apc_d14/<變體>/`，`apc/` 不動。16:31 草案的步驟 1、3 作廢。
+  2. **重現檢查**：從新的整份 sweep，只取版本 B 那 16 個 GPU 規則算表。
+     - O-PF、O-ALL(report) 的列要和第一段（x1fast d14）的版本 B 表逐值相同。
+     - O-ORD、O-DROP、O-NOW、O-GPU 和對手，要和**原本的**版本 B 表逐值相同：主結果用 `results/icpe_next/main/verB/*_p1_headroom_components.csv.xz`，對話與 agent 用我的 `b/analysis/*_p1`。
+     - 有任何不同就停，那個變體不用。所以每個變體的第二段要等它第一段的列都跑完。
+  - icpe-main 的建議（不是使用者的決定，我照做）：新 sweep 裡 opf 以外規則的列，要和舊的 `apc/<變體>/x1_sweep.csv.xz` 逐位元相同。比的時候排除 run_id、ts、host、code_sha、elapsed 和新加的旗標欄。
+- **icpe-rux 的看法**（16:3x 訊息）：只重跑兩個規則也成立；跨引擎核對可以取代 explore_apc；APC／BELP 的列靠它的 D3 退化檢查（APC＝LRU、BELP＝BEL，含三個旗標）。使用者選了整個重跑，所以只用到它的核對建議。
+- **P4 版本 C 的 5 對**（icpe-main，依 PREREG 偏離 10 §3）：
+  - **O-PF 的 ④**＝O-PF 這個 CPU 規則 × GPU 不預測規則集合 {LRU, TTLA×7, TTLB×7, APC}，也就是版本 B 的 P4 集合再加 APC。
+  - **O-GPU 的 ④**＝NON_ORACLE × {BEL, BELP}，取最快的。
+  - ② 從修正後的版本 C 表來，沒有預測，不受雜訊影響。
+  - 其他照版本 B 的 P4：模型 P／M、抽法 B1／B2、同一組 λ、10 個 seed、λ=0 自檢；三個旗標都開。
+  - **我核對過**：版本 B 的 P4 也是「④ 的集合裡全部組合都跑，取最小」。`next_b_queue.p4_combos`：元件規則 × `P4_GP_NO`（LRU＋TTL×14）；O-GPU＝NON_ORACLE × BEL；O-ALL(report)＝(O-ALL, BEL)。所以版本 C 只是把集合換掉。
+  - **引擎**：v8_dev14 那一版的 x1_sim 有 `noise_specs` 和 `--jobs-from`（icpe-next-rux 36780534 的 code/p3x/x1_sim.py 第 2139、2286 行）。在 acvlab 用 Python 3.12 跑。規模約 1.2 萬個 job〔推算：3 個 O-PF 對 × 16 組合 × 142 個雜訊設定，加 2 個 O-GPU 對 × 20 組合 × 142〕。
+- **第二段每個變體的流程**（寫成 `next_d14_verc.sh`，兩台用同一支）：
+  1. **跑**：sweep_v8_dev14，整份網格，`RUX_PFX=1 RUX_PGR=1`。
+  2. **核對引擎**：`py_fallback_jobs=0`、`src_sha256=4eca5bda…`。
+  3. **重現（O-PF、O-ALL）**：explore_apc 拿新 sweep 對「第一段的版本 B 表」要 REPRODUCED。這張表＝原本的 b block 換上 d14 列之後，用 next_sim_analyze 算。
+  4. **重現（其他元件）**：第一段的版本 B 表裡 O-PF、O-ALL(report) 以外的元件，要和原本的版本 B 表逐值相同。
+  5. **沿用的列**：新 sweep 裡 opf 以外規則的列，要和舊的 `apc/` sweep 逐位元相同。
+  6. **算表、收集**：analyze_v8，再用 collect_v8 收到 `apc_d14/<變體>/`。
+- **問 icpe-main**：第一段的版本 B 表（換上 d14 列）由誰算？
+  - 我的提案：我寫 `next_d14_patch.py`，進 git，規則是同一個 block 拿掉 rerun_policies 的列、換上 d14 的列，鍵一對一。我用它產生 `*_p1` 表，給第二段的檢查用。
+  - 論文用的正式表（p1、p90、dev5、h1800、h3600）由 icpe-main 用同一支程式算。
+
 ## 2026-11-07T16:31+08:00 — 第二段的引擎 v8_dev14 有了（icpe-rux 36780534），等 icpe-sim 交叉檢查；**第二段的做法（草案，請 icpe-main、icpe-rux 看）**
 
 - **引擎**（STATUS_RUX 16:30，f303f991）：
