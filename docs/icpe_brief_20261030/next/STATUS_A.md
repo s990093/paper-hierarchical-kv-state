@@ -364,3 +364,13 @@
 - 來源 `origin/icpe-next-rux` 6da749c4（17:15:31 +0800）。我核過：那一筆 PREREG 只加檔尾 93 行、0 行刪除，前 660 行和它的上一版逐位元組相同；它的分支沒有 13–18，所以本節接在 icpe-next-a 的檔尾（偏離 17 更正之後），檔尾 93 行和 6da749c4 的檔尾逐位元組相同。
 - 內容：SemiAnalysis 12 個變體的二階（事件驅動）排隊敏感度＋一階用同一個到達規則重跑（qpost=2），兩段都開偏離 14 的 pfx=1；主結果仍是版本 C。標題寫明「18 是 h200 自己留的，所以本節可能排在 18 前面」。
 - 現在各分支最大是 19、沒有 18；**偏離 18 仍留給 `h200`（TraceLab c1 GPU 層重播）**，h200 再之後從 20 開始。
+
+## 2026-11-07 17:23（台灣）— hgx-cn01 節點故障，W6a（24724）被 Slurm 重新排隊
+- 16:35:56 Slurm：`JOB 24724 ON hgx-cn01 CANCELLED ... DUE TO NODE FAILURE`。節點 16:36:09 起 `IDLE+DRAIN+INVALID_REG`，Reason＝`gres/gpu count reported lower than configured (0 < 8)`（slurmd 16:36:09 重啟，BootTime 沒變）。同時被打掉的還有 24727（TedKuo）、24728／24729（chihchung），都是 NODE_FAIL。要管理員修。
+- 24724 被自動重新排隊（PENDING，Priority）；W6b 24687 仍 afterany:24724。節點恢復後 24724 會用原參數 `--from W6A-256-LRU-r0` 從頭重跑。
+- 故障前的征兆（gpu_guard）：15:58:29（兩筆）、16:08:30 `nvidia-smi --query-gpu=index,uuid` 逾時 20 秒 → 128-HINT-PF-r0 第 1 次（20261107-154126）、第 2 次（20261107-155832）判 UNOBSERVED_DURING_RUN（污染）。第 3 次（20261107-161457，16:14:57–16:31:21）0 次逾時、CLEAN、overlap 0。14:35–15:41 的 4 個 run（256-LRU-r0、256-HINT-PF-r0、128-LRU-r0、256-O-PF-r0）0 次逾時、CLEAN、overlap 0。128-HINT-PF-r1（20261107-163121）跑到一半被打斷，沒有輸出列。
+- 使用者決定（AskUserQuestion，17:2x，我還沒看任何 run 的 TTFT）：
+  - 24724「讓它自己重跑」（不 hold、不改參數）；前 5 格會再跑一次，分析照登記取每格「乾淨的最後一個」。
+  - 第 3 次的 128-HINT-PF-r0「用，照規則走」（GpuWatcher 判乾淨就算乾淨）。重跑後若有更新的乾淨 run，分析照登記取最後一個。
+- job 的 Slurm log 重新排隊後會被覆寫，故障前那份另存在 `/work/ChihChungHsu/hungweilai/tiara-runs/slurm-icpe-next-w6a-24724.before-nodefail.out`（6,122 bytes）。
+- 注意：節點若重開機，`/tmp/hungweilai-models` 的權重可能不見；runner 會在 `fetch_models.py check` 停（exit 3），24724 一停 W6b（afterany）也會開跑並在同一步停。那時要先 s3-fetch 再重送。
