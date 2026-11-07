@@ -3,6 +3,35 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T08:20+08:00 — P4 第二次計算：Bailian、TraceLab 核對全過；**Mooncake 的 λ＝0 自檢失敗**（只在 rule＝min，原因已查明），停下來問使用者
+
+**使用者決定**（本 session，AskUserQuestion，11/7 約 07:5x，看任何 P4 上限數字之前）
+- 06:40 節的錯誤：「我先補欄位再餵進去」。`code/icpe/main_addnoisecols.py`（9ec8d94）把 main／`_p1` 的 sweep 逐字複製（只用 csv 模組讀字串，不解析數值），列尾補 `noise_*`＝`load()` 的預設，寫在 run 目錄的 `in/`、不進 git；`next_sim_analyze.py` 原樣使用。
+- 3 × 10 合起來的表：「只合湊滿 30 的格」，湊不滿的另列格數。
+
+**run `20261107-080102-icpe-main-p4-noise`**（exit 1；留了 `FAILED_NOT_USED`）
+- Bailian、TraceLab：補欄檢查通過；沒有雜訊的上限表和版本 B 逐格相同（mean 與 p90 各 972／972，`out/cellcheck.csv`）；λ＝0 自檢通過（P、M 各 272 格、201 格，mean 與 p90）。
+- Mooncake：補欄檢查通過，接著 `next_sim_analyze.py` 停在：
+  ```
+  File "code/icpe/next_sim_analyze.py", line 188, in main
+    assert dmax == 0.0, f"λ＝0 的上限和沒有雜訊的不同（最大差 {dmax}）：{spec}"
+  AssertionError: λ＝0 的上限和沒有雜訊的不同（最大差 0.13384690486638032）：('M', 0.0, 'B1', 0)
+  ```
+- CacheWise、SemiAnalysis 沒有跑到。
+
+**原因**（診斷 run `20261107-081616-icpe-main-p4-diag-l0`；照 `main()` 的雜訊流程重做 λ＝0 的兩個設定，只數不同的格數）
+- R1 457、R2 434 個（格, 元件）：**0 個不同**。P、M 都一樣。
+- rule＝min 353 個：**31 個不同**，全部是「這格這個元件只有 R1 或只有 R2 有跑雜訊」的；兩個規則都有跑的 322 個：0 個不同。
+  - 偏離 8 第 3 點：Mooncake 只列 R1／R2，所以只有一個規則 ≥15% 的格，另一個規則沒有跑雜訊。
+  - `analyze()` 的 rule＝min 是對「有的規則」取小，只有一個規則時就等於那個規則，不是真的 min；沒有雜訊時是兩個規則取小。自檢比到這 31 個就不同。
+  - 這 31 個的版本 B min 都 <15%（另一個規則 <15%），本來就不在選格清單裡。
+- λ＝0 的原始列：P、M 各 11,827 列，和 main／`_p1` 同一個（格, CPU 規則, GPU 規則）的列在 mean_ret、median_ret、p90_ret、n_ret、n_req、sum_ret、rho_w、rho_r、total_all 都逐值相同。
+- 〔判讀〕模擬本身在 λ＝0 和沒有雜訊完全相同；失敗來自 `next_sim_analyze.py` 的 rule＝min 遇到「只跑一個規則」的格。
+
+**已看過哪些正式結果**：上面的格數與最大差；Bailian／TraceLab 的核對結果（PASS 與格數）。P4 加雜訊後的上限、seed 間統計，一個都沒看過。
+
+**需要使用者決定什麼**：Mooncake 怎麼處理（下一節）。
+
 ## 2026-11-07T06:40+08:00 — P4 資料到齊；第一次計算失敗（`next_sim_analyze.py` 合併沒有雜訊欄的 sweep 時，沒有雜訊的列全部不見）；停下來問使用者
 
 **做完什麼**
