@@ -343,3 +343,13 @@
 ## 2026-11-07 15:12（台灣）— PREREG 偏離 19 給 `icpe-rux`
 - `icpe-rux` 要一個編號，登記「二階（事件驅動）排隊」（使用者約 11/7 15:0x 在 `icpe-main` 決定，`icpe-main` 轉達）：SemiAnalysis 固定並行紀錄、單一 GPU、closed-loop FCFS、快取依服務順序演進；屬敏感度，主結果仍是版本 C（不含排隊）；偏離 11 只登記了一階 qpost。`icpe-rux` 寫稿、給使用者看過再 push。
 - origin 上 icpe-next-a 343ae74、ana 43e7ffc、b 19f3e85、data a1ea724、main-branch d470771、rux f63f487、sim 0786f56、trx 291e7d6、main ff71545：最大是偏離 17，沒有 18、19。**偏離 18 留給 `h200` 自己（TraceLab c1 GPU 層重播，還沒寫）**，所以 **偏離 19 給 `icpe-rux`**；`h200` 之後要再用號從 20 開始（登記前仍先查各分支）。檔案裡的順序可能是 19 在 18 前面，照 push 先後接。
+
+## 2026-11-07 15:14（台灣）— W6c 分析完；W6a（24724）14:35 開跑
+- **W6c**（job 24443，run 20261107-120752-icpe-next-w6c-c1，第 1 次就乾淨；`calib_c1_try1.csv` 與 `calib_c1.csv` 逐位元組相同）。分析 run 20261107-151253-w6c-analyze（`next_a_w6_analyze.py w6c`，head node）→ `results/icpe_next/a/w6c/{w6c_f.csv,w6c_report.json,calib_for_sim/}`。
+  - 0–79 塊逐塊比值（W6c ÷ V1 實測，V1＝20261022-205934-icpe-p01-c1）：中位數 0.998，最小 0.978、最大 1.022。
+  - 80–255 塊（W6c 實測 ÷ V1 的線性外插）：中位數 1.005，最小 0.989、最大 1.024。
+  - 0–255 塊加總：W6c 11,510.7 ms；V1 實測＋外插 11,457.1 ms（W6c 多 0.47%）。線性擬合：W6c 斜率 0.2132 ms／塊、截距 17.79 ms；V1 0.2104、17.93。
+  - 意思：V1 只量到 80 塊、之後線性外插的做法，在 80–255 塊和實測差 ±2.4% 以內。敏感度（偏離 4 第 6 點）用 `calib_for_sim/`（整份換，偏離 3），還沒跑。
+- **W6a**：DL_Lab5 的 24707 在 14:35:09 結束（COMPLETED），24724 14:35:10 開跑。到 15:08 為止 256-LRU-r0（20261107-143513）、256-HINT-PF-r0（20261107-145155）跑完、overlap＝0；第 3 個 128-LRU-r0 15:08 開始。照 T1G 平均約 16.4 分鐘／run，剩下的約 34 個 run 約 9–10 小時，預計 11/8 凌晨 0–1 點跑完〔推算〕。
+- 同節點上另有 chihchung 帳號的 TrustGCD（24728、24729）與其他使用者的 job；`t1g.py wait-clear` 只等 `$USER`（hungweilai）的 job，這些照 T1G 的條件不等（由 GpuWatcher 管同一張卡上的外來 process）。
+- 群組配額 1514G／1536G（剩約 22G）。
