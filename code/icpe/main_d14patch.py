@@ -2,7 +2,7 @@
 兩邊的輸出由 icpe-main 逐值比對）。不解析數值，csv 模組逐字處理。
 
   python -I code/icpe/main_d14patch.py --list results/icpe_next/sim/dev14_rerun_list.csv --root results/icpe_next/b \
-      --plan <plan> [<plan> ...] --out-dir <dir>
+      --plan <plan> [<plan> ...] [--block <block> ...] --out-dir <dir>
   → <dir>/<plan>/<block>/x1_sweep.csv（補好的）＋ <dir>/d14patch_manifest.csv
 
 規則（icpe-data 2026-11-07 16:4x 的訊息，資料都在 git）：
@@ -58,6 +58,7 @@ def main():
     ap.add_argument("--root", required=True)
     ap.add_argument("--plan", nargs="+", required=True)
     ap.add_argument("--out-dir", required=True)
+    ap.add_argument("--block", nargs="*", default=[], help="只補這些 block（同一個 plan 裡有別的家族、還沒跑完時用）；沒給＝plan 裡全部")
     a = ap.parse_args()
     meta = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
                 host=socket.gethostname())
@@ -68,9 +69,9 @@ def main():
             die(f"{a.list} 沒有 {c} 欄（欄：{list(L[0])}）")
     man = []
     for plan in a.plan:
-        todo = [r for r in L if r["plan"] == plan]
+        todo = [r for r in L if r["plan"] == plan and (not a.block or r["block"] in a.block)]
         if not todo:
-            die(f"清單裡沒有 plan={plan}")
+            die(f"清單裡沒有 plan={plan}" + (f" 的 block {a.block}" if a.block else ""))
         for r in todo:
             blk = r["block"]
             if r["action"] != "rerun":
