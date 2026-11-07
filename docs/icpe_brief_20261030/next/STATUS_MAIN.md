@@ -3,7 +3,7 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
-## 2026-11-07T14:07+08:00 — agent 軌跡（偏離 17＋更正）的分析選擇：使用者在看任何 agent 數字之前決定；現在算、工具類、下判定
+## 2026-11-07T14:05+08:00 — agent 軌跡（偏離 17＋更正）的分析選擇：使用者在看任何 agent 數字之前決定；現在算、工具類、下判定
 
 **現況**（icpe-data 訊息，`origin/icpe-next-data` a1ea724，STATUS_DATA 14:05）：mini-SWE-agent（ms）、OpenHands（oh）各 12 個變體（固定並行 N16／32／64／72 × seed 1–3），版本 B（`b/agent_main`、`b/agent_p1`、`b/analysis/{ms,oh}_p1`）、版本 C（`apc/{miniswe,openhands}_N*_s*`，24 個都 REPRODUCED cells＝324）都已進 git。icpe-main 只讀了 PREREG 偏離 17 和更正，**沒看任何 agent 的模擬數字**（也沒讀 STATUS_DATA 14:05 的摘要表）。
 
