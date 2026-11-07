@@ -344,7 +344,7 @@
 - `icpe-rux` 要一個編號，登記「二階（事件驅動）排隊」（使用者約 11/7 15:0x 在 `icpe-main` 決定，`icpe-main` 轉達）：SemiAnalysis 固定並行紀錄、單一 GPU、closed-loop FCFS、快取依服務順序演進；屬敏感度，主結果仍是版本 C（不含排隊）；偏離 11 只登記了一階 qpost。`icpe-rux` 寫稿、給使用者看過再 push。
 - origin 上 icpe-next-a 343ae74、ana 43e7ffc、b 19f3e85、data a1ea724、main-branch d470771、rux f63f487、sim 0786f56、trx 291e7d6、main ff71545：最大是偏離 17，沒有 18、19。**偏離 18 留給 `h200` 自己（TraceLab c1 GPU 層重播，還沒寫）**，所以 **偏離 19 給 `icpe-rux`**；`h200` 之後要再用號從 20 開始（登記前仍先查各分支）。檔案裡的順序可能是 19 在 18 前面，照 push 先後接。
 
-## 2026-11-07 15:14（台灣）— W6c 分析完；W6a（24724）14:35 開跑
+## 2026-11-07 15:13（台灣）— W6c 分析完；W6a（24724）14:35 開跑
 - **W6c**（job 24443，run 20261107-120752-icpe-next-w6c-c1，第 1 次就乾淨；`calib_c1_try1.csv` 與 `calib_c1.csv` 逐位元組相同）。分析 run 20261107-151253-w6c-analyze（`next_a_w6_analyze.py w6c`，head node）→ `results/icpe_next/a/w6c/{w6c_f.csv,w6c_report.json,calib_for_sim/}`。
   - 0–79 塊逐塊比值（W6c ÷ V1 實測，V1＝20261022-205934-icpe-p01-c1）：中位數 0.998，最小 0.978、最大 1.022。
   - 80–255 塊（W6c 實測 ÷ V1 的線性外插）：中位數 1.005，最小 0.989、最大 1.024。
@@ -353,3 +353,9 @@
 - **W6a**：DL_Lab5 的 24707 在 14:35:09 結束（COMPLETED），24724 14:35:10 開跑。到 15:08 為止 256-LRU-r0（20261107-143513）、256-HINT-PF-r0（20261107-145155）跑完、overlap＝0；第 3 個 128-LRU-r0 15:08 開始。照 T1G 平均約 16.4 分鐘／run，剩下的約 34 個 run 約 9–10 小時，預計 11/8 凌晨 0–1 點跑完〔推算〕。
 - 同節點上另有 chihchung 帳號的 TrustGCD（24728、24729）與其他使用者的 job；`t1g.py wait-clear` 只等 `$USER`（hungweilai）的 job，這些照 T1G 的條件不等（由 GpuWatcher 管同一張卡上的外來 process）。
 - 群組配額 1514G／1536G（剩約 22G）。
+
+## 2026-11-07 15:16（台灣）— W6b（24687）改排在 W6a 後面、放開（使用者決定）
+- 使用者（15:1x，問「W6a 跑完時 TraceLab 的 job 還沒送出，W6b 怎麼辦」）選「先放 W6b，TraceLab 排它後面」。15:13:50 `scontrol update jobid=24687 dependency=afterany:24724` ＋ `scontrol release 24687` → PENDING（Dependency，afterany:24724）。上限 1-12:00:00。
+- 順序因此變成：W6a（24724，預計 11/8 0–1 點結束〔推算〕）→ W6b（24687，96 個 run 約 26 小時〔推算〕，約 11/9 凌晨結束）→ TraceLab c1 GPU 層重播（程式、自測、偏離 18 準備好、給使用者看過後再送，排 afterany:24687）。
+- W6b 開跑時執行本 worktree 的 `next_a_w6b.sh`／`next_a_w6b.py`／`x1_gpu.py`／`x1_sim.py`，W6b 跑完前這幾支不動；TraceLab 的程式放另一個 worktree。
+- 更正：上一節標題原寫 15:14，實際 commit 約 15:13，已改。
