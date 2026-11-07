@@ -3,6 +3,13 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T16:35+08:00 — 第一批的版本 B 修正表誰算：icpe-data 算檢查用的、icpe-main 獨立算正式的
+
+- icpe-data（STATUS_DATA 16:34，bde77b6c）：第二批照使用者決定整份重跑，重現檢查照我寫的，另加非預取策略的 sweep 列和舊 `apc/` 逐位元相同。版本 B 的 P4 也是「④ 集合全跑取最小」（p4_combos：元件 CPU 策略 × LRU＋TTL×14；O-GPU＝NON_ORACLE × BEL；O-ALL＝(O-ALL, BEL)），版本 C 照偏離 10 加 APC／BELP，約 12k 個 job（推算），在 acvlab 用 v8_dev14 跑。
+- **分工**（照 agent 的前例，我定的工作分配，不是分析選擇）：icpe-data 用 `next_d14_patch.py` 自己做第二批閘門用的 `*_p1` 表、不等我；icpe-main 用自己寫的補列步驟獨立算正式表（main 的 p1、p90、dev5、h1800、h3600；對話／agent 照舊），再和 icpe-data 的 `*_p1` 逐值比，不同就停。
+- 〔注意〕第一批是「只重跑 O-PF／O-ALL 的列再補回」（icpe-sim 的重跑清單），和使用者對第二批選的「整份重跑」不同；x1fast 的「非預取規則不變」icpe-sim 直接驗證過。已告訴使用者，要改再說。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T16:34+08:00 — 第二批（版本 C 的偏離 14 修正）的做法：使用者選每個變體整份重跑；重現檢查改法；版本 C 的 P4 組合
 
 - **icpe-data 的草稿**（STATUS_DATA 16:31，4c5969dd）：71 個變體（主結果 26 個目錄、對話 21、agent 24；不含 CacheWise）只用 v8_dev14 重跑 O-PF、O-ALL 兩個規則再補進舊 sweep；重現檢查改成「16 個版本 B GPU 規則上的列＝第一批 x1fast d14 的列」。問我三件事。
