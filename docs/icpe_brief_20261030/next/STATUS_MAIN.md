@@ -3,6 +3,34 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T09:15+08:00 — **推翻條件（以版本 B 為準）：原始到達・工具類成立**（TraceLab c1，W3 照偏離 9）；版本 C 的判定等表；版本 C 另並列「④ 不含 BELP」（只報告）
+
+**使用者決定**（本 session，11/7 約 09:12，回覆 icpe-main 的兩個問題「好」）
+1. 現在就把「以版本 B 為準：原始工具類推翻條件成立（TraceLab c1）」寫進本檔的正式判定；版本 C 的判定等它的表出來再補。
+2. 版本 C（偏離 10）的上限表與判定，另外並列一份「④ 不含 BELP」，標成只報告。
+   - 理由：偏離 10 寫明，使用者在看過探索（TraceLab c1 的 O-GPU 上限：④ 只有 BEL 時 39.0%→5.1%，加 BELP 39.2%）之後才選「加 BELP」；而原始工具類的推翻條件只能靠 TraceLab c1（Mooncake toolagent 沒有線索欄位）。並列讓讀者看到結論靠哪個選擇。
+   - 做法（之後做）：版本 C 的 sweep 拿掉 BELP 的列，用 `next_sim_analyze.py` 原樣算（APC 在那裡是不預測的 GPU 規則；O-GPU 的 ④＝NON_ORACLE × BEL）。
+
+**依據**
+- PREREG 偏離 9（W3 規則；origin/icpe-next-rux 8f04a91，commit 08:37:10+08:00）、偏離 9 更正（e7e0c77）、偏離 9 補記（aec99d1：重現檢查要涵蓋全部 9 個容量）。
+- TRX40 的 W3：run `20261107-084104-icpe-trx-rux-tl_c1-w3`（worktree 8f04a91，開跑在登記之後）；結果 `origin/icpe-next-trx` 9e1064f／16ba40f／4ca0d65 的 `results/icpe_next/v8_explore/w3/tracelab_c1/`。
+- 先決條件（偏離 9 第 3 點＋補記）：TraceLab c1 重算版本 B 的表，324／324 個（格, 元件）、7 欄全部 0 差（run `20261107-083210-icpe-trx-rux-tl_c1-apc` 108 個＋`20261107-084950-icpe-trx-rux-tl_c1-reproB` 216 個；STATUS_TRX 09:10）。
+
+**判定**（照偏離 9 第 4 點；`w3_verdict.csv` 照抄）
+- TraceLab c1（原始到達、工具類）：上限 ≥15% 的（格, 元件）22 個（O-GPU 18、O-ORD 4），③ 都齊全，**22 個都 f ≤ 0.5**；寫入飽和 0；f 中位數 −7.409、最小 −8.909 → 後半「沒有簡單線索能拿走大部分」**成立**。前半（版本 B 38.9%）成立。
+- → **原始到達・工具類：推翻條件成立**，結論照 §1 改成「在這類工作負載上預測仍有空間」（以版本 B 為準）。
+- 其他變體：Mooncake toolagent R1／R2 沒有線索欄位 → 後半未定（偏離 9 第 1 點）；FreeInference 6 週前半不成立（版本 B 最大 0.9%）；合成到達（TraceLab c2／c4）TRX40 在跑，SemiAnalysis 沒有欄位、CacheWise 沒跑 → 合成到達的推翻條件目前未定。
+
+**icpe-main 的核對**（讀 `w3_rows.csv`；〔判讀〕標在句尾）
+- 判定的 270 列（54 格 × 5 元件）：線索做法（T③）沒有一格比最好的固定規則（T②）快（`cue_beats_rival` 全 False），T③ ÷ T② 最小 1.47；T③ ÷ T①（LRU, LRU）中位數 1.678，54 格沒有一格 <1。
+- 所以就算 ③ 改成「線索規則或 ② 的做法取最快」，f＝0，仍 ≤ 0.5；22 格全部 f ≤ 0.5，判定也和「逐格任一」的彙總方式無關。〔判讀〕
+- 版本 C 的 ② 規則只多不少（多 APC），T② 只會更小，所以上限為正的格 f 仍為負，後半在版本 C 也成立；版本 C 會變的只有前半（取決於 ④ 的 BELP）。〔判讀〕
+- 限制：W3 與版本 C 用的 v8 引擎、`analyze_w3.py`、`analyze_v8.py` 沒有經過 icpe-sim 審查（使用者 11/7「不用」轉給 icpe-sim）。
+
+**時間標記更正（icpe-main 的錯）**：我給 icpe-rux、icpe-trx 的訊息把使用者決定「W3 先登記」的時間寫成「約 08:45」，實際約 08:28–08:30（訊息在 08:31:28 之前送出）；兩邊已照實更正（偏離 9 更正 e7e0c77、STATUS_TRX 08:45 105d0a0）。
+
+**已看過哪些正式結果**：上面 W3 c1 的判定與 `w3_rows.csv` 的比值；偏離 9／10／11 的內容（含其中列出的探索摘要）。P4 加雜訊後的上限：還沒看過。
+
 ## 2026-11-07T08:20+08:00 — P4 第二次計算：Bailian、TraceLab 核對全過；**Mooncake 的 λ＝0 自檢失敗**（只在 rule＝min，原因已查明），停下來問使用者
 
 **使用者決定**（本 session，AskUserQuestion，11/7 約 07:5x，看任何 P4 上限數字之前）
