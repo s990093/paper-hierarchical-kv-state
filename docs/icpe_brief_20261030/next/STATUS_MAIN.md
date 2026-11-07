@@ -9,6 +9,7 @@
 - APC／BELP 沒有 Python 參考，只靠 icpe-rux 的退化檢查 D3（整個 session 逐出時 APC＝LRU、BELP＝BEL，含雜訊與三個旗標）：SemiAnalysis 204／204 PASS；Bailian 在 RUX3DPRO 上待跑。
 - icpe-sim 說「D3 Bailian 也過之前要不要先開跑由 icpe-main 決定」。**我的決定**（閘門的保守做法，不是分析選擇）：等 Bailian D3 過了才正式開跑第二批；icpe-data 可以先準備 job，但結果在那之前不收、不用。已告訴 icpe-sim、icpe-data。
 - **閘門過了**（icpe-rux 訊息，17:4x）：Bailian D3 coder 408／408、thinking 408／408（run `20261107-165928-icpe-rux-d14-d3-bailian`，V8_DEV14.md 1cdde989）；已告訴 icpe-data 第二批 GO。
+- **使用者**（本 session，17:45）：「开始跑」→ 已轉給 icpe-data、icpe-next-trx（後者送達未確認）。我不碰佇列；開跑由兩邊做，等它們回報 run／佇列 id。
 - **icpe-data 的第二批計畫，我回 GO（條件：Bailian D3 PASS 之後）**：acvlab 和第一批的尾巴同時跑、20 workers；順序 bl、fi、sg、wc、ms、oh（第一批檢查表已有）→ tl → d14_p4verc（16 個 block、12,496 個 job）；TRX40 跑 sa、uc、lm，mc 等它的第一批表。每個變體收進 `apc_d14/` 前要 `D14_SWEEP_RESULT IDENTICAL`（非預取列＝舊 apc sweep）、`EXPLORE_RESULT REPRODUCED`（＝第一批表）、py_fallback 0、src 4eca5bda；不過就停、回報。照使用者 16:3x 的決定。
 - **寫本節時已經看過的正式結果**：沒有新的。
 
