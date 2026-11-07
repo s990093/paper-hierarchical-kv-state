@@ -195,3 +195,7 @@
 - `icpe-rux` 把偏離 10 寫在 `origin/icpe-next-rux` @ `935dcd7`（RUX3DPRO `date -u` 2026-11-07T00:59:09Z）：block 粒度 APC 的定義（session LRU 選 session、尾端逐塊逐出；wb／wt）；APC 加進 ② 與 O-ORD／O-DROP／O-NOW／O-PF 的 ④；O-GPU 的 ④＝{BEL, BELP}；40 個登記變體的主結果格全部重算（18 個 GPU 規則，先過版本 B 重現檢查）；APC 版（版本 C）取代版本 B 成為正式主表，版本 B 保留並列；W3 的 f、P4 選格改用版本 C。節內照實列了決定時已看過的 APC／BELP 探索摘要。我核過：和本分支 ab8955c 的 PREREG 比，只在檔尾加一節、0 行刪除；data／main／trx 分支最大仍是偏離 8。
 - 本分支**只同步 `PREREG.md`**（取 935dcd7 的版本）。`h200` 下一個偏離編號是 11。
 - W6（09:01 台灣）：仍等 DL_Lab5 的 24507。
+
+## 2026-11-07 09:05（台灣）之二 — 偏離 11 的編號給 `icpe-rux`
+
+- `icpe-rux` 再要一個編號，用來把 W5（CPU 層 INT4＋一次拆完，敏感度）與排隊（一階近似 qpost，敏感度）合登一節（使用者在 `icpe-rux` 定了範圍與地位，push 前會再問使用者）。origin 上 icpe-next-a c0952cc、ana 43e7ffc、b 19f3e85、data a25dcba、main-branch c868ef2、rux 7a89a9b、sim 90dae78、trx 4ca0d65、main ff71545：最大是偏離 10，沒有 11；`h200` 沒有待登記的偏離 → **偏離 11 給 `icpe-rux`，`h200` 下一個從 12 開始**（登記前仍先查各分支）。
