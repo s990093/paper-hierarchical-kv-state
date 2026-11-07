@@ -173,6 +173,8 @@ def d14_blocks(P):
             new, _ = _replace_opt(args, "--policies", [p for p in orig if p in rp])
             flags = r["flags"].split()
             assert flags and all(f in ("--pf-expire", "--pf-gpu-recheck", "--noise-overdue", "resample") for f in flags), flags
+            # icpe-sim 16:35（SIM_CHANGES 23 更正）：預取到 GPU 的 block 一律要有 --pf-gpu-recheck（只開 --pf-expire 會斷言）
+            assert "--pf-gpu-recheck" in flags, (r["plan"], r["block"], flags)
             tr2 = dict(tr, d14=dict(list_run_id=r["run_id"], jobs_block=int(r["jobs_block"]), jobs_rerun=int(r["jobs_rerun"]),
                                     rerun_policies=rp, flags=flags))
             out.setdefault(f"d14_{r['plan']}", []).append((r["block"], tr2, new + flags))
