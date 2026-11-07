@@ -1,0 +1,82 @@
+{
+ "exp": "w5",
+ "variant": "semianalysis_N16_s1",
+ "collected_ts": "2026-11-07T09:16:44+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit_at_collect": "4a7133869e55a5d696fef3b2afae2ebd922741b7",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1",
+   "ts": "2026-11-07T09:10:18+08:00",
+   "host": "RUX3DPRO"
+  },
+  {
+   "run_id": "20261107-091642-icpe-rux-w5-formal-mech-semianalysis_N16_s1",
+   "ts": "2026-11-07T09:16:42+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep_bf16.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1/base_bf16.csv",
+   "sha256_source": "bfe8bf6a2304095868da83ab74bed281b8f418dfc6aa17fe194096147567891a",
+   "bytes_source": 2278563,
+   "rows": 5508
+  },
+  {
+   "file": "x1_sweep_w5.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1/out/x1/x1_sweep.csv",
+   "sha256_source": "516dbdf5e3171f73387593d3bdc1750e48e4647664b26705ea55e3be1078fb18",
+   "bytes_source": 2348973,
+   "rows": 5508
+  },
+  {
+   "file": "explore_w5_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1/a/explore_w5_rows.csv",
+   "sha256_source": "6e65668a9f6aed301e8ea869f26d0cb7f2b5d0c2737066a83e70d2e87becae74",
+   "bytes_source": 31949,
+   "rows": 108
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1/a/base_headroom_components.csv",
+   "sha256_source": "286158227c9fb42cde191a5ef5d4526ff67a760f3141c74cfa954fddf8e394a7",
+   "bytes_source": 36477,
+   "rows": 108
+  },
+  {
+   "file": "allowed_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1/a/allowed_headroom_components.csv",
+   "sha256_source": "e2b2a4b37bc0469bdf31a58fdceb97d5e751cceaec4a61e0ee49c828231c5750",
+   "bytes_source": 42583,
+   "rows": 108
+  },
+  {
+   "file": "forced_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1/a/forced_headroom_components.csv",
+   "sha256_source": "0afa3384245a9e9ef7a8dc65e2b986105d4601d648c092c74e90eae150b20019",
+   "bytes_source": 36319,
+   "rows": 108
+  },
+  {
+   "file": "w5_mechanism_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-091642-icpe-rux-w5-formal-mech-semianalysis_N16_s1/a/w5_mechanism_rows.csv",
+   "sha256_source": "219269ca9a32be08678afac6a4154d421f9575ab41ffcd8f09d0e095176320c7",
+   "bytes_source": 1555,
+   "rows": 3
+  }
+ ],
+ "note": "PREREG 偏離 11 A 的 W5 敏感度；登記的算法＝allowed（每組事後挑 BF16／W5 較快）；BF16＝偏離 10 的正式 sweep：/root/paper-hierarchical-kv-state/results/icpe_next/apc/semianalysis_N16_s1/x1_sweep.csv.xz；機制表（w5_mechanism_rows）由第二個 run 用 allowed 重做（第一個 run 用的是 forced）",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

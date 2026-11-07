@@ -1,0 +1,94 @@
+{
+ "exp": "w5",
+ "variant": "semianalysis_N16_s1",
+ "collected_ts": "2026-11-07T08:25:54+08:00",
+ "collected_host": "RUX3DPRO",
+ "sweep_code_sha": [
+  "3280b1c8799b+rs088c7bd5",
+  "3280b1c8799b+rs702ecaed"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-044431-icpe-rux-v8-explore-w5-base-sa",
+   "ts": "2026-11-07T04:44:31+08:00",
+   "host": "RUX3DPRO"
+  },
+  {
+   "run_id": "20261107-052011-icpe-rux-v8g-w5-int4-sa",
+   "ts": "2026-11-07T05:20:11+08:00",
+   "host": "RUX3DPRO"
+  },
+  {
+   "run_id": "20261107-052322-icpe-rux-v8g-w5-analyze-sa",
+   "ts": "2026-11-07T05:23:22+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep_bf16.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-044431-icpe-rux-v8-explore-w5-base-sa/out/x1/x1_sweep.csv",
+   "sha256_source": "f7c7c48d07443658f64bb543d307f93fee02139e2acf4532a71bca436322c2a2",
+   "bytes_source": 1998345,
+   "rows": 4896
+  },
+  {
+   "file": "x1_sweep_w5.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-052011-icpe-rux-v8g-w5-int4-sa/out/x1/x1_sweep.csv",
+   "sha256_source": "20615bf84f0c2b1e7202bf248a16b31b6a6cbd5fa3280328a5417ce1ee1502bc",
+   "bytes_source": 2017895,
+   "rows": 4896
+  },
+  {
+   "file": "explore_w5_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-052322-icpe-rux-v8g-w5-analyze-sa/a/explore_w5_rows.csv",
+   "sha256_source": "7328a46c46a7d59bba212bc496ac80086ce497995adb48e62315cdfa6646714b",
+   "bytes_source": 30646,
+   "rows": 108
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-052322-icpe-rux-v8g-w5-analyze-sa/a/base_headroom_components.csv",
+   "sha256_source": "f53d77edcbaa5dc2c57cc20fdb2f6cca7393e219d41ae3171d7d02d2626134e2",
+   "bytes_source": 34818,
+   "rows": 108
+  },
+  {
+   "file": "forced_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-052322-icpe-rux-v8g-w5-analyze-sa/a/forced_headroom_components.csv",
+   "sha256_source": "f3037d93a57e675a1b23019d5c6b43da8ff4c5bc64986ce7be360479cd5c7161",
+   "bytes_source": 34015,
+   "rows": 108
+  },
+  {
+   "file": "allowed_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-052322-icpe-rux-v8g-w5-analyze-sa/a/allowed_headroom_components.csv",
+   "sha256_source": "655764827ce38a669fea297a81c99275866b694631d887353c1ab94866f6fd03",
+   "bytes_source": 39307,
+   "rows": 108
+  },
+  {
+   "file": "w5_mechanism_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-052322-icpe-rux-v8g-w5-analyze-sa/w5_mechanism_rows.csv",
+   "sha256_source": "4e418cb3fd0287b07823d9157bb2e1072b5f34aa87c133ae3a84b2e29c4ce13f",
+   "bytes_source": 1414,
+   "rows": 4
+  }
+ ],
+ "note": "探索（不是正式結果）；V8_FEATURES §4b；W5 用審查後的 v8（d1502d2d）重跑，BF16 沿用",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄",
+ "repo_commit_at_collect": "b744416333daaf04c44c9c4e1b0cb5a43d657c6b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rs088c7bd5",
+   "main_rs_sha256": "d1502d2dbaafd73a",
+   "first_commit": "b1c2e9ef"
+  },
+  {
+   "code_sha": "3280b1c8799b+rs702ecaed",
+   "main_rs_sha256": "a4ded3ca9bffa6df",
+   "first_commit": "62b25568"
+  }
+ ],
+ "manifest_fix": "2026-11-07：原本的 v8_main_rs_sha256 欄是收集時的檔案，不是 sweep 用的引擎（icpe-next-trx 指出），改成 engine_used（依 sweep 的 code_sha 對回 git）"
+}

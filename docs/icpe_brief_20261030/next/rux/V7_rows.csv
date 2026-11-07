@@ -1,0 +1,560 @@
+run_id,ts,host,trace,subset,metric,value,unit,kind,threads,note
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,csv_rows,1680,rows,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,csv_cells_compared,48720,cells,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,npz_files,1104,files,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,npz_arrays_compared,3360,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,npz_arrays_differing,0,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,rust_jobs,1104,jobs,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,rust_sweep_wall_s,17.16,s,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,rust_max_rss_MiB,252.1,MiB,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,py_jobs,1104,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,py_sweep_wall_s,462.64,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,py_max_rss_MiB,211.2,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,main,py_over_rust_sweep_wall,27.0,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,csv_rows,112,rows,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,csv_cells_compared,3248,cells,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,npz_files,28,files,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,npz_arrays_compared,224,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,npz_arrays_differing,0,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,rust_jobs,28,jobs,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,rust_sweep_wall_s,2.63,s,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,rust_max_rss_MiB,234.2,MiB,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,py_jobs,28,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,py_sweep_wall_s,54.64,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,py_max_rss_MiB,188.5,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,noise,py_over_rust_sweep_wall,20.8,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,csv_rows,56,rows,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,csv_cells_compared,1624,cells,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,npz_files,56,files,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,npz_arrays_compared,112,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,npz_arrays_differing,0,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,rust_jobs,56,jobs,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,rust_sweep_wall_s,0.95,s,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,rust_max_rss_MiB,282.5,MiB,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,py_jobs,56,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,py_sweep_wall_s,26.76,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,py_max_rss_MiB,194.9,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,pfgpu,py_over_rust_sweep_wall,28.2,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,csv_rows,56,rows,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,csv_cells_compared,1624,cells,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,npz_files,20,files,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,npz_arrays_compared,112,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,npz_arrays_differing,0,arrays,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,rust_jobs,20,jobs,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,rust_sweep_wall_s,0.65,s,measured,16,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,rust_max_rss_MiB,205.5,MiB,measured,,
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,py_jobs,20,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,py_sweep_wall_s,14.11,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,py_max_rss_MiB,197.9,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031311-icpe-rux-v7-chk-mc,2026-11-07T03:13:11+08:00,RUX3DPRO,conversation,wt,py_over_rust_sweep_wall,21.7,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,csv_rows,1680,rows,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,csv_cells_compared,53760,cells,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,npz_files,1104,files,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,npz_arrays_compared,3360,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,npz_arrays_differing,0,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,rust_jobs,1104,jobs,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,rust_sweep_wall_s,61.76,s,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,rust_max_rss_MiB,509.2,MiB,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,py_jobs,1104,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,py_sweep_wall_s,2853.77,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,py_max_rss_MiB,197.1,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,main,py_over_rust_sweep_wall,46.2,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,csv_rows,112,rows,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,csv_cells_compared,3584,cells,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,npz_files,28,files,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,npz_arrays_compared,224,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,npz_arrays_differing,0,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,rust_jobs,28,jobs,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,rust_sweep_wall_s,9.83,s,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,rust_max_rss_MiB,473.0,MiB,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,py_jobs,28,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,py_sweep_wall_s,415.48,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,py_max_rss_MiB,186.1,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,noise,py_over_rust_sweep_wall,42.3,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,csv_rows,56,rows,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,csv_cells_compared,1792,cells,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,npz_files,56,files,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,npz_arrays_compared,112,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,npz_arrays_differing,0,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,rust_jobs,56,jobs,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,rust_sweep_wall_s,4.27,s,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,rust_max_rss_MiB,495.5,MiB,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_jobs,56,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_sweep_wall_s,197.24,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_max_rss_MiB,210.4,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_over_rust_sweep_wall,46.2,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,csv_rows,56,rows,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,csv_cells_compared,1792,cells,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,npz_files,20,files,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,npz_arrays_compared,112,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,npz_arrays_differing,0,arrays,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,rust_jobs,20,jobs,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,rust_sweep_wall_s,2.63,s,measured,16,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,rust_max_rss_MiB,388.9,MiB,measured,,
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,py_jobs,20,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,py_sweep_wall_s,92.41,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,py_max_rss_MiB,188.5,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031346-icpe-rux-v7-chk-bl,2026-11-07T03:13:46+08:00,RUX3DPRO,nb:bailian_coder,wt,py_over_rust_sweep_wall,35.1,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,csv_rows,1680,rows,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,csv_cells_compared,53760,cells,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,npz_files,1104,files,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,npz_arrays_compared,3360,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,npz_arrays_differing,0,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,rust_jobs,1104,jobs,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,rust_sweep_wall_s,66.08,s,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,rust_max_rss_MiB,2969.5,MiB,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_jobs,1104,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_sweep_wall_s,3263.17,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_max_rss_MiB,2111.7,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_over_rust_sweep_wall,49.4,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,csv_rows,112,rows,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,csv_cells_compared,3584,cells,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,npz_files,28,files,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,npz_arrays_compared,224,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,npz_arrays_differing,0,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,rust_jobs,28,jobs,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,rust_sweep_wall_s,2.37,s,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,rust_max_rss_MiB,2106.0,MiB,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_jobs,28,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_sweep_wall_s,81.83,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_max_rss_MiB,2111.7,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_over_rust_sweep_wall,34.5,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,csv_rows,56,rows,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,csv_cells_compared,1792,cells,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,npz_files,56,files,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,npz_arrays_compared,112,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,npz_arrays_differing,0,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,rust_jobs,56,jobs,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,rust_sweep_wall_s,6.25,s,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,rust_max_rss_MiB,2766.1,MiB,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_jobs,56,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_sweep_wall_s,253.89,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_max_rss_MiB,2111.7,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_over_rust_sweep_wall,40.6,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,csv_rows,56,rows,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,csv_cells_compared,1792,cells,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,npz_files,20,files,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,npz_arrays_compared,112,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,npz_arrays_differing,0,arrays,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,rust_jobs,20,jobs,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,rust_sweep_wall_s,2.04,s,measured,16,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,rust_max_rss_MiB,2376.3,MiB,measured,,
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_jobs,20,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_sweep_wall_s,61.6,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_max_rss_MiB,2111.4,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031517-icpe-rux-v7-chk-sa,2026-11-07T03:15:17+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_over_rust_sweep_wall,30.2,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,csv_rows,1680,rows,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,csv_cells_compared,48720,cells,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,npz_files,1104,files,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,npz_arrays_compared,3360,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,npz_arrays_differing,0,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,rust_jobs,1104,jobs,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,rust_sweep_wall_s,17.04,s,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,rust_max_rss_MiB,252.6,MiB,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,py_jobs,1104,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,py_sweep_wall_s,462.64,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,py_max_rss_MiB,211.2,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,main,py_over_rust_sweep_wall,27.2,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,csv_rows,112,rows,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,csv_cells_compared,3248,cells,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,npz_files,28,files,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,npz_arrays_compared,224,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,npz_arrays_differing,0,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,rust_jobs,28,jobs,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,rust_sweep_wall_s,2.76,s,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,rust_max_rss_MiB,233.9,MiB,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,py_jobs,28,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,py_sweep_wall_s,54.64,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,py_max_rss_MiB,188.5,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,noise,py_over_rust_sweep_wall,19.8,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,csv_rows,56,rows,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,csv_cells_compared,1624,cells,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,npz_files,56,files,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,npz_arrays_compared,112,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,npz_arrays_differing,0,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,rust_jobs,56,jobs,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,rust_sweep_wall_s,0.88,s,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,rust_max_rss_MiB,283.8,MiB,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,py_jobs,56,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,py_sweep_wall_s,26.76,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,py_max_rss_MiB,194.9,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,pfgpu,py_over_rust_sweep_wall,30.4,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,csv_rows,56,rows,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,csv_cells_compared,1624,cells,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,npz_files,20,files,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,npz_arrays_compared,112,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,npz_arrays_differing,0,arrays,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,rust_jobs,20,jobs,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,rust_sweep_wall_s,0.66,s,measured,16,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,rust_max_rss_MiB,204.9,MiB,measured,,
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,py_jobs,20,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,py_sweep_wall_s,14.11,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,py_max_rss_MiB,197.9,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031657-icpe-rux-v7-val-mc,2026-11-07T03:16:57+08:00,RUX3DPRO,conversation,wt,py_over_rust_sweep_wall,21.4,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,csv_rows,1680,rows,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,csv_cells_compared,53760,cells,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,npz_files,1104,files,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,npz_arrays_compared,3360,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,npz_arrays_differing,0,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,rust_jobs,1104,jobs,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,rust_sweep_wall_s,37.1,s,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,rust_max_rss_MiB,509.1,MiB,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,py_jobs,1104,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,py_sweep_wall_s,2853.77,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,py_max_rss_MiB,197.1,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,main,py_over_rust_sweep_wall,76.9,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,csv_rows,112,rows,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,csv_cells_compared,3584,cells,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,npz_files,28,files,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,npz_arrays_compared,224,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,npz_arrays_differing,0,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,rust_jobs,28,jobs,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,rust_sweep_wall_s,9.71,s,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,rust_max_rss_MiB,473.4,MiB,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,py_jobs,28,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,py_sweep_wall_s,415.48,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,py_max_rss_MiB,186.1,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,noise,py_over_rust_sweep_wall,42.8,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,csv_rows,56,rows,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,csv_cells_compared,1792,cells,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,npz_files,56,files,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,npz_arrays_compared,112,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,npz_arrays_differing,0,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,rust_jobs,56,jobs,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,rust_sweep_wall_s,2.34,s,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,rust_max_rss_MiB,496.3,MiB,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_jobs,56,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_sweep_wall_s,197.24,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_max_rss_MiB,210.4,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,pfgpu,py_over_rust_sweep_wall,84.3,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,csv_rows,56,rows,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,csv_cells_compared,1792,cells,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,npz_files,20,files,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,npz_arrays_compared,112,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,npz_arrays_differing,0,arrays,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,rust_jobs,20,jobs,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,rust_sweep_wall_s,1.5,s,measured,16,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,rust_max_rss_MiB,396.6,MiB,measured,,
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,py_jobs,20,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,py_sweep_wall_s,92.41,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,py_max_rss_MiB,188.5,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031727-icpe-rux-v7-val-bl,2026-11-07T03:17:27+08:00,RUX3DPRO,nb:bailian_coder,wt,py_over_rust_sweep_wall,61.6,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,csv_rows,1680,rows,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,csv_cells_compared,53760,cells,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,npz_files,1104,files,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,npz_arrays_compared,3360,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,npz_arrays_differing,0,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,rust_jobs,1104,jobs,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,rust_sweep_wall_s,60.22,s,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,rust_max_rss_MiB,3071.3,MiB,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_jobs,1104,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_sweep_wall_s,3263.17,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_max_rss_MiB,2111.7,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,main,py_over_rust_sweep_wall,54.2,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,csv_rows,112,rows,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,csv_cells_compared,3584,cells,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,npz_files,28,files,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,npz_arrays_compared,224,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,npz_arrays_differing,0,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,rust_jobs,28,jobs,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,rust_sweep_wall_s,2.27,s,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,rust_max_rss_MiB,2094.8,MiB,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_jobs,28,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_sweep_wall_s,81.83,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_max_rss_MiB,2111.7,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,noise,py_over_rust_sweep_wall,36.0,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,csv_rows,56,rows,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,csv_cells_compared,1792,cells,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,npz_files,56,files,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,npz_arrays_compared,112,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,npz_arrays_differing,0,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,rust_jobs,56,jobs,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,rust_sweep_wall_s,6.03,s,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,rust_max_rss_MiB,2783.5,MiB,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_jobs,56,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_sweep_wall_s,253.89,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_max_rss_MiB,2111.7,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,pfgpu,py_over_rust_sweep_wall,42.1,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,csv_rows,56,rows,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,csv_cells_compared,1792,cells,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,csv_cells_differing,0,cells,measured,,only_ref 0 only_new 0
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,npz_files,20,files,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,npz_arrays_compared,112,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,npz_arrays_differing,0,arrays,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,rust_jobs,20,jobs,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,rust_sweep_wall_s,1.93,s,measured,16,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,rust_max_rss_MiB,2380.7,MiB,measured,,
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_jobs,20,jobs,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_sweep_wall_s,61.6,s,measured,12,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_max_rss_MiB,2111.4,MiB,measured,,沿用前一次的 Python 參考（硬連結）
+20261107-031828-icpe-rux-v7-val-sa,2026-11-07T03:18:28+08:00,RUX3DPRO,nb:semianalysis_N16_s1,wt,py_over_rust_sweep_wall,31.9,x,推算,16,同一批 job、Rust 16 worker／Python 12 worker、不同時段（Python 是沿用的參考）
+20261107-032254-icpe-rux-v7-off-g1,2026-11-07T03:22:54+08:00,RUX3DPRO,g1,feature_off,g0_cells_compared,128064,cells,measured,,
+20261107-032254-icpe-rux-v7-off-g1,2026-11-07T03:22:54+08:00,RUX3DPRO,g1,feature_off,g0_cells_differing,0,cells,measured,,G0_RESULT IDENTICAL
+20261107-032334-icpe-rux-v7-off-xc_sa,2026-11-07T03:23:34+08:00,RUX3DPRO,xc_sa,feature_off,g0_cells_compared,1280,cells,measured,,
+20261107-032334-icpe-rux-v7-off-xc_sa,2026-11-07T03:23:34+08:00,RUX3DPRO,xc_sa,feature_off,g0_cells_differing,0,cells,measured,,G0_RESULT IDENTICAL
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,py_cpu_s_median,7.7598,s,measured,1,"n 1 min 7.7598 max 7.7598 load 10.12–10.12 digests same b8b11be1cc2217f6 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,rust_v6_cpu_s_median,0.17324,s,measured,1,"n 3 min 0.16311 max 0.17864 load 2.84–10.12 digests same b8b11be1cc2217f6 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,rust_v7_cpu_s_median,0.16938,s,measured,1,"n 3 min 0.16843 max 0.17081 load 2.84–10.12 digests same b8b11be1cc2217f6 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,py_cpu_s_median,13.4508,s,measured,1,"n 1 min 13.4508 max 13.4508 load 11.77–11.77 digests same 5dc7fbde3447e211 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,rust_v6_cpu_s_median,0.29977,s,measured,1,"n 3 min 0.29869 max 0.32488 load 2.91–11.77 digests same 5dc7fbde3447e211 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,rust_v7_cpu_s_median,0.30093,s,measured,1,"n 3 min 0.29787 max 0.30963 load 2.84–11.77 digests same 5dc7fbde3447e211 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,py_cpu_s_median,24.8095,s,measured,1,"n 1 min 24.8095 max 24.8095 load 6.33–6.33 digests same 747119795bf18122 sc(clean,drop) [168739, 361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,rust_v6_cpu_s_median,0.56314,s,measured,1,"n 3 min 0.52881 max 0.57313 load 2.77–6.33 digests same 747119795bf18122 sc(clean,drop) [168739, 361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,rust_v7_cpu_s_median,0.46345,s,measured,1,"n 3 min 0.45654 max 0.49668 load 2.77–6.33 digests same 747119795bf18122 sc(clean,drop) [168739, 361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,py_cpu_s_median,24.447,s,measured,1,"n 1 min 24.447 max 24.447 load 3.63–3.63 digests same c2ac89185048d33e sc(clean,drop) [157921, 193]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,rust_v6_cpu_s_median,0.55369,s,measured,1,"n 3 min 0.53792 max 0.55506 load 2.65–3.68 digests same c2ac89185048d33e sc(clean,drop) [157921, 193]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,rust_v7_cpu_s_median,0.46475,s,measured,1,"n 3 min 0.44542 max 0.47061 load 2.65–3.63 digests same c2ac89185048d33e sc(clean,drop) [157921, 193]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,py_cpu_s_median,18.9063,s,measured,1,"n 1 min 18.9063 max 18.9063 load 4.67–4.67 digests same 8bca7cfa050fa919 sc(clean,drop) [175417, 819]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,rust_v6_cpu_s_median,0.40704,s,measured,1,"n 3 min 0.396 max 0.4221 load 2.71–4.67 digests same 8bca7cfa050fa919 sc(clean,drop) [175417, 819]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,rust_v7_cpu_s_median,0.33295,s,measured,1,"n 3 min 0.31593 max 0.34383 load 2.71–4.67 digests same 8bca7cfa050fa919 sc(clean,drop) [175417, 819]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,py_cpu_s_median,25.6537,s,measured,1,"n 1 min 25.6537 max 25.6537 load 9.18–9.18 digests same c2ac89185048d33e sc(clean,drop) [157921, 193]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,rust_v6_cpu_s_median,0.53523,s,measured,1,"n 3 min 0.5325 max 0.58196 load 2.84–9.18 digests same c2ac89185048d33e sc(clean,drop) [157921, 193]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,rust_v7_cpu_s_median,0.46275,s,measured,1,"n 3 min 0.46149 max 0.49849 load 2.84–9.18 digests same c2ac89185048d33e sc(clean,drop) [157921, 193]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,py_cpu_s_median,25.1224,s,measured,1,"n 1 min 25.1224 max 25.1224 load 7.14–7.14 digests same 83be49f4e2280e41 sc(clean,drop) [157773, 189]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,rust_v6_cpu_s_median,0.54606,s,measured,1,"n 3 min 0.53758 max 0.57573 load 2.84–7.41 digests same 83be49f4e2280e41 sc(clean,drop) [157773, 189]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,rust_v7_cpu_s_median,0.45925,s,measured,1,"n 3 min 0.45672 max 0.47754 load 2.77–7.41 digests same 83be49f4e2280e41 sc(clean,drop) [157773, 189]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,py_cpu_s_median,25.6736,s,measured,1,"n 1 min 25.6736 max 25.6736 load 4.27–4.27 digests same 67c87310a65b5249 sc(clean,drop) [175899, 938]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,rust_v6_cpu_s_median,0.58646,s,measured,1,"n 3 min 0.58215 max 0.60964 load 2.71–4.27 digests same 67c87310a65b5249 sc(clean,drop) [175899, 938]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,rust_v7_cpu_s_median,0.46488,s,measured,1,"n 3 min 0.46212 max 0.46947 load 2.71–4.27 digests same 67c87310a65b5249 sc(clean,drop) [175899, 938]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,py_cpu_s_median,24.6994,s,measured,1,"n 1 min 24.6994 max 24.6994 load 5.09–5.09 digests same 747119795bf18122 sc(clean,drop) [168739, 361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,rust_v6_cpu_s_median,0.56149,s,measured,1,"n 3 min 0.54759 max 0.56402 load 2.77–5.27 digests same 747119795bf18122 sc(clean,drop) [168739, 361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,rust_v7_cpu_s_median,0.47471,s,measured,1,"n 3 min 0.45803 max 0.47821 load 2.71–5.27 digests same 747119795bf18122 sc(clean,drop) [168739, 361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,py_over_rust_v6,44.8,x,推算,1,py 7.7598 / rust_v6 0.17324
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,py_over_rust_v7,45.8,x,推算,1,py 7.7598 / rust_v7 0.16938
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,py_over_rust_v6,44.9,x,推算,1,py 13.4508 / rust_v6 0.29977
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,py_over_rust_v7,44.7,x,推算,1,py 13.4508 / rust_v7 0.30093
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,py_over_rust_v6,44.1,x,推算,1,py 24.8095 / rust_v6 0.56314
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,py_over_rust_v7,53.5,x,推算,1,py 24.8095 / rust_v7 0.46345
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,py_over_rust_v6,44.2,x,推算,1,py 24.4470 / rust_v6 0.55369
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,py_over_rust_v7,52.6,x,推算,1,py 24.4470 / rust_v7 0.46475
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,py_over_rust_v6,46.4,x,推算,1,py 18.9063 / rust_v6 0.40704
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,py_over_rust_v7,56.8,x,推算,1,py 18.9063 / rust_v7 0.33295
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,py_over_rust_v6,47.9,x,推算,1,py 25.6537 / rust_v6 0.53523
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,py_over_rust_v7,55.4,x,推算,1,py 25.6537 / rust_v7 0.46275
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,py_over_rust_v6,46.0,x,推算,1,py 25.1224 / rust_v6 0.54606
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,py_over_rust_v7,54.7,x,推算,1,py 25.1224 / rust_v7 0.45925
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,py_over_rust_v6,43.8,x,推算,1,py 25.6736 / rust_v6 0.58646
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,py_over_rust_v7,55.2,x,推算,1,py 25.6736 / rust_v7 0.46488
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,py_over_rust_v6,44.0,x,推算,1,py 24.6994 / rust_v6 0.56149
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,py_over_rust_v7,52.0,x,推算,1,py 24.6994 / rust_v7 0.47471
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,rust_v6_over_v7,1.02,x,推算,1,v6 0.17324 / v7 0.16938
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap1,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,rust_v6_over_v7,1.0,x,推算,1,v6 0.29977 / v7 0.30093
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,nocap6,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,rust_v6_over_v7,1.22,x,推算,1,v6 0.56314 / v7 0.46345
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:ARC,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,rust_v6_over_v7,1.19,x,推算,1,v6 0.55369 / v7 0.46475
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:BEL,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,rust_v6_over_v7,1.22,x,推算,1,v6 0.40704 / v7 0.33295
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:GDSF,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,rust_v6_over_v7,1.16,x,推算,1,v6 0.53523 / v7 0.46275
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,rust_v6_over_v7,1.19,x,推算,1,v6 0.54606 / v7 0.45925
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:LRU2,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,rust_v6_over_v7,1.26,x,推算,1,v6 0.58646 / v7 0.46488
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:PENS,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,rust_v6_over_v7,1.18,x,推算,1,v6 0.56149 / v7 0.47471
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:semianalysis_N16_s1,sc:S3FIFO,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,py_cpu_s_median,0.1839,s,measured,1,"n 3 min 0.1721 max 0.2233 load 7.71–13.18 digests same 95605ab1b7ca685d sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,rust_v6_cpu_s_median,0.00926,s,measured,1,"n 5 min 0.00851 max 0.01032 load 6.54–13.18 digests same 95605ab1b7ca685d sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,rust_v7_cpu_s_median,0.00938,s,measured,1,"n 5 min 0.00884 max 0.01033 load 6.54–13.18 digests same 95605ab1b7ca685d sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,py_cpu_s_median,0.2929,s,measured,1,"n 3 min 0.268 max 0.3179 load 7.71–13.18 digests same 715e60d10ab13cdc sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,rust_v6_cpu_s_median,0.01167,s,measured,1,"n 5 min 0.01051 max 0.01188 load 6.54–13.18 digests same 715e60d10ab13cdc sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,rust_v7_cpu_s_median,0.01143,s,measured,1,"n 5 min 0.01097 max 0.01206 load 6.54–13.18 digests same 715e60d10ab13cdc sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,py_cpu_s_median,0.397,s,measured,1,"n 3 min 0.3831 max 0.4299 load 7.41–13.18 digests same 6ebe4f49402c425a sc(clean,drop) [33991, 4271]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,rust_v6_cpu_s_median,0.01411,s,measured,1,"n 5 min 0.01358 max 0.01614 load 6.54–13.18 digests same 6ebe4f49402c425a sc(clean,drop) [33991, 4271]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,rust_v7_cpu_s_median,0.01456,s,measured,1,"n 5 min 0.01351 max 0.01471 load 6.54–13.18 digests same 6ebe4f49402c425a sc(clean,drop) [33991, 4271]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,py_cpu_s_median,11.877,s,measured,1,"n 3 min 11.7847 max 11.9411 load 6.97–11.15 digests same f0601d45e1c921f0 sc(clean,drop) [34941, 3872]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,rust_v6_cpu_s_median,0.44934,s,measured,1,"n 5 min 0.42395 max 0.47322 load 6.54–11.15 digests same f0601d45e1c921f0 sc(clean,drop) [34941, 3872]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,rust_v7_cpu_s_median,0.43355,s,measured,1,"n 5 min 0.42502 max 0.44714 load 6.54–11.15 digests same f0601d45e1c921f0 sc(clean,drop) [34941, 3872]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,py_cpu_s_median,0.3156,s,measured,1,"n 3 min 0.3095 max 0.3235 load 7.41–13.18 digests same 32dd4fcfc24726a1 sc(clean,drop) [34263, 4973]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,rust_v6_cpu_s_median,0.01302,s,measured,1,"n 5 min 0.01237 max 0.01396 load 6.54–13.18 digests same 32dd4fcfc24726a1 sc(clean,drop) [34263, 4973]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,rust_v7_cpu_s_median,0.0132,s,measured,1,"n 5 min 0.01134 max 0.01412 load 6.54–13.18 digests same 32dd4fcfc24726a1 sc(clean,drop) [34263, 4973]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,py_cpu_s_median,0.3903,s,measured,1,"n 3 min 0.3628 max 0.4732 load 7.71–13.18 digests same e63f430481fca6c5 sc(clean,drop) [34158, 3896]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,rust_v6_cpu_s_median,0.01387,s,measured,1,"n 5 min 0.01349 max 0.01511 load 6.54–13.18 digests same e63f430481fca6c5 sc(clean,drop) [34158, 3896]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,rust_v7_cpu_s_median,0.01356,s,measured,1,"n 5 min 0.01279 max 0.01513 load 6.54–13.18 digests same e63f430481fca6c5 sc(clean,drop) [34158, 3896]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,py_cpu_s_median,2.2483,s,measured,1,"n 3 min 2.2222 max 2.3539 load 7.71–13.18 digests same 98314b88708c6c6b sc(clean,drop) [34038, 4249]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,rust_v6_cpu_s_median,0.04657,s,measured,1,"n 5 min 0.04559 max 0.05934 load 6.54–13.18 digests same 98314b88708c6c6b sc(clean,drop) [34038, 4249]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,rust_v7_cpu_s_median,0.01526,s,measured,1,"n 5 min 0.0145 max 0.01674 load 6.54–13.18 digests same 98314b88708c6c6b sc(clean,drop) [34038, 4249]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,py_cpu_s_median,9.9497,s,measured,1,"n 3 min 9.8547 max 10.3651 load 7.41–12.45 digests same a62daedae59eb9dc sc(clean,drop) [40265, 7456]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,rust_v6_cpu_s_median,0.21783,s,measured,1,"n 5 min 0.19553 max 0.22114 load 6.54–12.45 digests same a62daedae59eb9dc sc(clean,drop) [40265, 7456]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,rust_v7_cpu_s_median,0.23598,s,measured,1,"n 5 min 0.21581 max 0.2633 load 6.54–12.45 digests same a62daedae59eb9dc sc(clean,drop) [40265, 7456]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,py_cpu_s_median,0.4064,s,measured,1,"n 3 min 0.386 max 0.4188 load 7.41–13.18 digests same 6ebe4f49402c425a sc(clean,drop) [33991, 4271]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,rust_v6_cpu_s_median,0.01378,s,measured,1,"n 5 min 0.0134 max 0.01483 load 6.54–13.18 digests same 6ebe4f49402c425a sc(clean,drop) [33991, 4271]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,rust_v7_cpu_s_median,0.01431,s,measured,1,"n 5 min 0.01388 max 0.01562 load 6.54–13.18 digests same 6ebe4f49402c425a sc(clean,drop) [33991, 4271]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,py_over_rust_v6,19.9,x,推算,1,py 0.1839 / rust_v6 0.00926
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,py_over_rust_v7,19.6,x,推算,1,py 0.1839 / rust_v7 0.00938
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,py_over_rust_v6,25.1,x,推算,1,py 0.2929 / rust_v6 0.01167
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,py_over_rust_v7,25.6,x,推算,1,py 0.2929 / rust_v7 0.01143
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,py_over_rust_v6,28.1,x,推算,1,py 0.3970 / rust_v6 0.01411
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,py_over_rust_v7,27.3,x,推算,1,py 0.3970 / rust_v7 0.01456
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,py_over_rust_v6,26.4,x,推算,1,py 11.8770 / rust_v6 0.44934
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,py_over_rust_v7,27.4,x,推算,1,py 11.8770 / rust_v7 0.43355
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,py_over_rust_v6,24.2,x,推算,1,py 0.3156 / rust_v6 0.01302
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,py_over_rust_v7,23.9,x,推算,1,py 0.3156 / rust_v7 0.01320
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,py_over_rust_v6,28.1,x,推算,1,py 0.3903 / rust_v6 0.01387
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,py_over_rust_v7,28.8,x,推算,1,py 0.3903 / rust_v7 0.01356
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,py_over_rust_v6,48.3,x,推算,1,py 2.2483 / rust_v6 0.04657
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,py_over_rust_v7,147.3,x,推算,1,py 2.2483 / rust_v7 0.01526
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,py_over_rust_v6,45.7,x,推算,1,py 9.9497 / rust_v6 0.21783
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,py_over_rust_v7,42.2,x,推算,1,py 9.9497 / rust_v7 0.23598
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,py_over_rust_v6,29.5,x,推算,1,py 0.4064 / rust_v6 0.01378
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,py_over_rust_v7,28.4,x,推算,1,py 0.4064 / rust_v7 0.01431
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,rust_v6_over_v7,0.99,x,推算,1,v6 0.00926 / v7 0.00938
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap1,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,rust_v6_over_v7,1.02,x,推算,1,v6 0.01167 / v7 0.01143
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,nocap6,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,rust_v6_over_v7,0.97,x,推算,1,v6 0.01411 / v7 0.01456
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:ARC,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,rust_v6_over_v7,1.04,x,推算,1,v6 0.44934 / v7 0.43355
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:BEL,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,rust_v6_over_v7,0.99,x,推算,1,v6 0.01302 / v7 0.01320
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:GDSF,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,rust_v6_over_v7,1.02,x,推算,1,v6 0.01387 / v7 0.01356
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,rust_v6_over_v7,3.05,x,推算,1,v6 0.04657 / v7 0.01526
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:LRU2,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,rust_v6_over_v7,0.92,x,推算,1,v6 0.21783 / v7 0.23598
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:PENS,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,rust_v6_over_v7,0.96,x,推算,1,v6 0.01378 / v7 0.01431
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,conversation,sc:S3FIFO,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,py_cpu_s_median,0.4488,s,measured,1,"n 1 min 0.4488 max 0.4488 load 13.18–13.18 digests same a06a790ab8c88cac sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,rust_v6_cpu_s_median,0.02101,s,measured,1,"n 3 min 0.01685 max 0.02109 load 4.08–13.18 digests same a06a790ab8c88cac sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,rust_v7_cpu_s_median,0.01645,s,measured,1,"n 3 min 0.01639 max 0.02253 load 4.08–13.18 digests same a06a790ab8c88cac sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,py_cpu_s_median,0.7337,s,measured,1,"n 1 min 0.7337 max 0.7337 load 13.18–13.18 digests same a4b1f5dfd60ee012 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,rust_v6_cpu_s_median,0.02416,s,measured,1,"n 3 min 0.02342 max 0.0245 load 4.08–13.18 digests same a4b1f5dfd60ee012 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,rust_v7_cpu_s_median,0.02507,s,measured,1,"n 3 min 0.0248 max 0.02999 load 4.08–13.18 digests same a4b1f5dfd60ee012 sc(clean,drop) [0, 0]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,py_cpu_s_median,0.8648,s,measured,1,"n 1 min 0.8648 max 0.8648 load 11.15–11.15 digests same 0cc7a24d729dc4b1 sc(clean,drop) [38692, 13834]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,rust_v6_cpu_s_median,0.03325,s,measured,1,"n 3 min 0.0313 max 0.03398 load 4.08–11.15 digests same 0cc7a24d729dc4b1 sc(clean,drop) [38692, 13834]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,rust_v7_cpu_s_median,0.03144,s,measured,1,"n 3 min 0.03041 max 0.03352 load 4.08–11.15 digests same 0cc7a24d729dc4b1 sc(clean,drop) [38692, 13834]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,py_cpu_s_median,80.0056,s,measured,1,"n 1 min 80.0056 max 80.0056 load 6.33–6.33 digests same 3ec4f519f1a374a1 sc(clean,drop) [40089, 11361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,rust_v6_cpu_s_median,1.22085,s,measured,1,"n 3 min 1.21737 max 1.31853 load 3.99–6.54 digests same 3ec4f519f1a374a1 sc(clean,drop) [40089, 11361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,rust_v7_cpu_s_median,1.27309,s,measured,1,"n 3 min 1.21548 max 1.27455 load 3.99–6.54 digests same 3ec4f519f1a374a1 sc(clean,drop) [40089, 11361]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,py_cpu_s_median,0.6913,s,measured,1,"n 1 min 0.6913 max 0.6913 load 10.65–10.65 digests same 0e910dce5c6952b6 sc(clean,drop) [38001, 13766]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,rust_v6_cpu_s_median,0.02668,s,measured,1,"n 3 min 0.02586 max 0.02775 load 4.08–10.65 digests same 0e910dce5c6952b6 sc(clean,drop) [38001, 13766]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,rust_v7_cpu_s_median,0.02796,s,measured,1,"n 3 min 0.02555 max 0.02851 load 4.08–10.65 digests same 0e910dce5c6952b6 sc(clean,drop) [38001, 13766]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,py_cpu_s_median,0.9416,s,measured,1,"n 1 min 0.9416 max 0.9416 load 13.18–13.18 digests same 5e22e0b4a90a4e74 sc(clean,drop) [38735, 11508]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,rust_v6_cpu_s_median,0.03087,s,measured,1,"n 3 min 0.02855 max 0.03202 load 4.08–13.18 digests same 5e22e0b4a90a4e74 sc(clean,drop) [38735, 11508]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,rust_v7_cpu_s_median,0.03005,s,measured,1,"n 3 min 0.02845 max 0.03133 load 4.08–13.18 digests same 5e22e0b4a90a4e74 sc(clean,drop) [38735, 11508]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,py_cpu_s_median,16.3975,s,measured,1,"n 1 min 16.3975 max 16.3975 load 13.18–13.18 digests same cdf137462e289d3d sc(clean,drop) [38420, 14498]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,rust_v6_cpu_s_median,0.43972,s,measured,1,"n 3 min 0.41514 max 0.4594 load 4.08–13.18 digests same cdf137462e289d3d sc(clean,drop) [38420, 14498]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,rust_v7_cpu_s_median,0.0348,s,measured,1,"n 3 min 0.0345 max 0.03712 load 4.08–13.18 digests same cdf137462e289d3d sc(clean,drop) [38420, 14498]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,py_cpu_s_median,64.1136,s,measured,1,"n 1 min 64.1136 max 64.1136 load 10.65–10.65 digests same 6c3896b49559378d sc(clean,drop) [41349, 18587]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,rust_v6_cpu_s_median,1.46925,s,measured,1,"n 3 min 1.39679 max 1.51536 load 4.08–10.65 digests same 6c3896b49559378d sc(clean,drop) [41349, 18587]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,rust_v7_cpu_s_median,0.68161,s,measured,1,"n 3 min 0.61178 max 0.69811 load 4.08–10.65 digests same 6c3896b49559378d sc(clean,drop) [41349, 18587]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,py_cpu_s_median,0.8989,s,measured,1,"n 1 min 0.8989 max 0.8989 load 10.65–10.65 digests same 0cc7a24d729dc4b1 sc(clean,drop) [38692, 13834]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,rust_v6_cpu_s_median,0.03153,s,measured,1,"n 3 min 0.03043 max 0.03387 load 4.08–10.65 digests same 0cc7a24d729dc4b1 sc(clean,drop) [38692, 13834]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,rust_v7_cpu_s_median,0.0385,s,measured,1,"n 3 min 0.02967 max 0.04034 load 4.08–10.65 digests same 0cc7a24d729dc4b1 sc(clean,drop) [38692, 13834]"
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,py_over_rust_v6,21.4,x,推算,1,py 0.4488 / rust_v6 0.02101
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,py_over_rust_v7,27.3,x,推算,1,py 0.4488 / rust_v7 0.01645
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,py_over_rust_v6,30.4,x,推算,1,py 0.7337 / rust_v6 0.02416
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,py_over_rust_v7,29.3,x,推算,1,py 0.7337 / rust_v7 0.02507
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,py_over_rust_v6,26.0,x,推算,1,py 0.8648 / rust_v6 0.03325
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,py_over_rust_v7,27.5,x,推算,1,py 0.8648 / rust_v7 0.03144
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,py_over_rust_v6,65.5,x,推算,1,py 80.0056 / rust_v6 1.22085
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,py_over_rust_v7,62.8,x,推算,1,py 80.0056 / rust_v7 1.27309
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,py_over_rust_v6,25.9,x,推算,1,py 0.6913 / rust_v6 0.02668
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,py_over_rust_v7,24.7,x,推算,1,py 0.6913 / rust_v7 0.02796
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,py_over_rust_v6,30.5,x,推算,1,py 0.9416 / rust_v6 0.03087
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,py_over_rust_v7,31.3,x,推算,1,py 0.9416 / rust_v7 0.03005
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,py_over_rust_v6,37.3,x,推算,1,py 16.3975 / rust_v6 0.43972
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,py_over_rust_v7,471.2,x,推算,1,py 16.3975 / rust_v7 0.03480
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,py_over_rust_v6,43.6,x,推算,1,py 64.1136 / rust_v6 1.46925
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,py_over_rust_v7,94.1,x,推算,1,py 64.1136 / rust_v7 0.68161
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,py_over_rust_v6,28.5,x,推算,1,py 0.8989 / rust_v6 0.03153
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,digest_py_eq_rust_v6,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,py_over_rust_v7,23.3,x,推算,1,py 0.8989 / rust_v7 0.03850
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,digest_py_eq_rust_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,rust_v6_over_v7,1.28,x,推算,1,v6 0.02101 / v7 0.01645
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap1,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,rust_v6_over_v7,0.96,x,推算,1,v6 0.02416 / v7 0.02507
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,nocap6,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,rust_v6_over_v7,1.06,x,推算,1,v6 0.03325 / v7 0.03144
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:ARC,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,rust_v6_over_v7,0.96,x,推算,1,v6 1.22085 / v7 1.27309
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:BEL,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,rust_v6_over_v7,0.95,x,推算,1,v6 0.02668 / v7 0.02796
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:GDSF,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,rust_v6_over_v7,1.03,x,推算,1,v6 0.03087 / v7 0.03005
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,rust_v6_over_v7,12.64,x,推算,1,v6 0.43972 / v7 0.03480
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:LRU2,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,rust_v6_over_v7,2.16,x,推算,1,v6 1.46925 / v7 0.68161
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:PENS,digest_v6_eq_v7,1,bool,measured,1,
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,rust_v6_over_v7,0.82,x,推算,1,v6 0.03153 / v7 0.03850
+20261107-032339-icpe-rux-speed-v67,2026-11-07T03:23:39+08:00,RUX3DPRO,nb:bailian_coder,sc:S3FIFO,digest_v6_eq_v7,1,bool,measured,1,

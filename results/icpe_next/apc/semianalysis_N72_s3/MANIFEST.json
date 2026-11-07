@@ -1,0 +1,70 @@
+{
+ "exp": "apc",
+ "variant": "semianalysis_N72_s3",
+ "collected_ts": "2026-11-07T11:15:30+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit_at_collect": "f054a1aaf2ca26a0f164c3c588187efa01c2e553",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-110355-icpe-rux-apc-formal-semianalysis_N72_s3",
+   "ts": "2026-11-07T11:03:55+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-110355-icpe-rux-apc-formal-semianalysis_N72_s3/out/x1/x1_sweep.csv",
+   "sha256_source": "21f458367f1df2b21fcc19bc903fad896609912cc106d714b07661a2f72a7b75",
+   "bytes_source": 6924163,
+   "rows": 16524
+  },
+  {
+   "file": "verC_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-110355-icpe-rux-apc-formal-semianalysis_N72_s3/a/verC_headroom_components.csv",
+   "sha256_source": "ec84f3ca8c7760257bd43a8df53c924a8ebfad553b7d8dee80c6c81bcb289382",
+   "bytes_source": 109019,
+   "rows": 324
+  },
+  {
+   "file": "verC_violations.csv",
+   "source": "/root/icpe-next/runs/20261107-110355-icpe-rux-apc-formal-semianalysis_N72_s3/a/verC_violations.csv",
+   "sha256_source": "41c123916bfef762d3685812c1416f7e09953a4147401e0cc355e7d3dffc923d",
+   "bytes_source": 266772,
+   "rows": 1076
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-110355-icpe-rux-apc-formal-semianalysis_N72_s3/a/base_headroom_components.csv",
+   "sha256_source": "0bb9227a7abae8065f9fb96263901e78dfd14848ba92bcbbde97eb98ff1b9e48",
+   "bytes_source": 110075,
+   "rows": 324
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-110355-icpe-rux-apc-formal-semianalysis_N72_s3/a/explore_apc_rows.csv",
+   "sha256_source": "8487247103c2e2798979aac7ddb3aff0283dbb93753bf0028544c19a87b792f8",
+   "bytes_source": 249171,
+   "rows": 324
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-110355-icpe-rux-apc-formal-semianalysis_N72_s3/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "a576ab133581ed076bf292229111c94397c030c197c3452615ae05373c0525aa",
+   "bytes_source": 11924,
+   "rows": 54
+  }
+ ],
+ "note": "PREREG 偏離 10 的正式 APC 重算（版本 C）；重現檢查＝版本 B 的 16 個 GPU 規則，全部格 7 欄逐值相同",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

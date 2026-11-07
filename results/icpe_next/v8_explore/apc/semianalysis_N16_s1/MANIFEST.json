@@ -1,0 +1,69 @@
+{
+ "exp": "apc",
+ "variant": "semianalysis_N16_s1",
+ "collected_ts": "2026-11-07T08:25:50+08:00",
+ "collected_host": "RUX3DPRO",
+ "sweep_code_sha": [
+  "3280b1c8799b+rs702ecaed"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-043703-icpe-rux-v8-explore-apc-sa",
+   "ts": "2026-11-07T04:37:03+08:00",
+   "host": "RUX3DPRO"
+  },
+  {
+   "run_id": "20261107-043939-icpe-rux-v8-explore-apc-sa-analyze",
+   "ts": "2026-11-07T04:39:39+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-043703-icpe-rux-v8-explore-apc-sa/out/x1/x1_sweep.csv",
+   "sha256_source": "660b83cd45a91d620bb60517a59e99acc5cccb8b377a8576dffc5bd4d8f2f070",
+   "bytes_source": 2210455,
+   "rows": 5508
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-043939-icpe-rux-v8-explore-apc-sa-analyze/a/explore_apc_rows.csv",
+   "sha256_source": "0e9307066181ce445fa980becc217b5c7a14852f986f89066b067cfc366833f4",
+   "bytes_source": 80238,
+   "rows": 108
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-043939-icpe-rux-v8-explore-apc-sa-analyze/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "bceba3447be8ae6db501f13b1c23f95ceaacb3faaf2e6fc290939681959917d0",
+   "bytes_source": 3992,
+   "rows": 18
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-043939-icpe-rux-v8-explore-apc-sa-analyze/a/base_headroom_components.csv",
+   "sha256_source": "1e24caca9c4c69204cbbc843928d0303ad4c83c4d65556d8cc4304060cf6e30a",
+   "bytes_source": 35219,
+   "rows": 108
+  },
+  {
+   "file": "apc_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-043939-icpe-rux-v8-explore-apc-sa-analyze/a/apc_headroom_components.csv",
+   "sha256_source": "33797301654deaf77d79614576a92f024205e0d7aaaa64fa88eca7f23ecfb1e0",
+   "bytes_source": 34482,
+   "rows": 108
+  }
+ ],
+ "note": "探索（不是正式結果）；V8_FEATURES §4a",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄",
+ "repo_commit_at_collect": "b744416333daaf04c44c9c4e1b0cb5a43d657c6b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rs702ecaed",
+   "main_rs_sha256": "a4ded3ca9bffa6df",
+   "first_commit": "62b25568"
+  }
+ ],
+ "manifest_fix": "2026-11-07：原本的 v8_main_rs_sha256 欄是收集時的檔案，不是 sweep 用的引擎（icpe-next-trx 指出），改成 engine_used（依 sweep 的 code_sha 對回 git）"
+}

@@ -1,0 +1,390 @@
+# x1fast v8：第 2–5 項的新功能（只有 Rust；icpe-rux 第 4 段，RUX3DPRO）
+
+> 2026-11-07。程式：`code/icpe/rux_x1fast/v8_features/`（README 有用法）。語意：`SEMANTICS_2to5.md`（icpe-rux 依使用者授權決定，**正式跑之前要登記進 PREREG**）。
+> **沒有 Python 參考**（使用者：「python 不寫完整移植 rust」）。所以「對」的意思是：退化檢查、精確重算、不變量稽核、兩份實作互比都過；**語意本身理解錯是這些抓不到的**，建議另一個 session 審 SEMANTICS 與程式的對應。
+> 探索的數字（§4）**不是正式結果**：APC、W5 各 3 個變體（Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder），各 3 個 CPU 容量，沒有登記。
+
+## 0. 問題／要證明什麼
+
+- **問題**：第 2–5 項（block 粒度 APC、排隊、W3 線索 (a)、W5）現有的 Rust 和 Python 都沒有。使用者要直接寫 Rust，語意交給 icpe-rux 決定。
+- **要證明**：
+  1. 新功能關閉時，v8 和 v7 逐位元相同，所以和 Python 也相同。
+  2. 新功能照語意文件運作：退化檢查、精確重算、稽核都要過。
+  3. 這些功能對上限有沒有影響（探索）。
+
+## 1. 結論
+
+- **新功能關閉時和 Python 逐位元相同**：v8 最終版（`main.rs` sha256 `48e4efce…`；審查後再加排隊的一階近似 qpost；偏離 9、10 登記的就是這一版）對 v6 那次的 Python 參考，3 份紀錄 × 4 組子集，CSV 177,072 格、npz 11,424 個陣列，0 個不同；G1、xc_sa 0 個不同。
+- **四項新功能的驗證**全部通過：最終版在 3 份紀錄上共 **2,232 項**（每份 744，含 qpost 的 48 項），0 個 FAIL（§3；runs `20261107-082513-icpe-rux-v8h-smoke-mc／sa／bl`）。對拍與 G1、xc_sa：`…-v8h-reg-mc／bl／sa`、`…-v8h-off-g1`、`…-v8h-off-xc_sa`，0 個不同。
+- **端到端**：
+  - sweep 管線重現版本 B 的 toolagent 上限表：306 列逐值相同。
+  - APC 一次逐出整個 session 時＝LRU／BEL。
+  - W5 走新路徑但參數等於沒開時＝BF16：254,592 格相同。
+  - BELP 的捷徑＝每塊全掃。
+- **探索**（不是正式結果；APC、W5 都是 Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder）：
+  - **APC 的影響看紀錄**：
+    - Mooncake toolagent、Bailian：上限最多變 0.03 個百分點。
+    - **SemiAnalysis（長的 Claude Code session）明顯**：APC 在每一格都成為 ② 的最佳，② 最多快 28%；O-GPU 上限在 111.0625 GiB、nfs 從 18–21% 降到 6–9%，≥15% 的格 6 → 4。
+  - **④ 一定要有 BELP**：在 SemiAnalysis 上，若 ② 有 APC、④ 只有 session 粒度的 BEL，O-GPU 的最大上限會從 46% 被壓到 25%；加了 BELP 是 44%。這印證 SEMANTICS 2-5。
+  - **W5（CPU 層 INT4＋一次拆完）多半讓上限下降，但不是全部**：SemiAnalysis 每個元件都降（O-GPU 最大 20.7% → 1.4%，≥15% 的格 4 → 0）；Bailian 多數降（O-GPU ≥15% 的格 8 → 2）；**Mooncake toolagent 的 O-DROP、O-ORD 上升**，nfs 的格最多升 39 個百分點，違反 NP:53 事先登記的預期（「下降或不變；若上升，要查原因」）。查了：上升超過 5 個百分點的 45 個 (格, 元件) 裡，O-DROP、O-ORD、O-PF 的 ④ 慢層載入減 79–99.5%（中位數），② 只減 13–26%。oracle 比對手更能用 INT4 多出來的 CPU 容量（§4b）。
+- **排隊（一階近似）**：輕負載時幾乎不改上限（中位數 −0.3 個百分點）；負載愈重上限愈大，O-GPU ≥15% 的格在 N64、N72 變成全部 18 格。這和 NP:266「不排隊對預測有利」的方向相反。重負載的格不可靠：重排太多、而且單一 GPU 不切實際（§4c）。Q3-a 由 icpe-rux 決定：④ 只知道紀錄的順序（SEMANTICS §2b）。
+- **W3**：引擎、sweep、分析都做好了，TraceLab 的 cue 也產生了：從原始檔產生、排序照轉換程式，不用改 nb 檔。**真資料沒在這台跑**：TraceLab 準備階段約 14 GiB，記憶體不夠。README 有 acvlab 上的指令，③ 只要約 450 個 job。TraceLab 原始紀錄上，「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%。
+
+## 2. 做了什麼
+
+| 項目 | 狀態 | 用法 |
+|:--|:--|:--|
+| 2 APC | 完成，接進 sweep（`--gpu-policies APC BELP`） | GPU 規則 APC（session LRU、尾端一塊一塊逐出）、BELP（同樣逐塊、選 session 照 Belady，給 ④ 的 O-GPU 用） |
+| 3 排隊 | **一階近似完成**（`qpost=1`，Q3-a 由 icpe-rux 決定，SEMANTICS §2b），接進 sweep（`RUX_QPOST=1`），SemiAnalysis 4 種並行數的探索做完（§4c）。`q=1`（open-loop）、`q=2`（照紀錄順序的 closed-loop）都不適合固定並行的紀錄，只當紀錄（§3c）。二階（排隊回饋到快取狀態）**沒做** | `RUX_QPOST=1`；分析 `explore_queue.py` |
+| 4 W3 線索 | 引擎完成（GPU 規則 CUEP、CUEO），**接進 sweep**（`RUX_CUE_FILE`）、分析（`analyze_w3.py`）。TraceLab 的 cue 用 `make_cue.py` 從原始檔產生，排序照轉換程式，在有 nb 檔的機器用 `check` 對齊。**這台沒跑真資料**：TraceLab c1 的 Python 準備階段要約 14 GiB，這台只有 22 GiB，而且 sweep 會 fork | README 有 acvlab 的指令。管線在 SemiAnalysis（代用 cue）上端到端跑通：run `20261107-045622-icpe-rux-w3-pipeline-sa-proxy` |
+| 5 W5 | 完成，接進 sweep（`RUX_W5=1`） | CPU 層 INT4＋一次拆完的殘差 |
+
+## 3. 驗證
+
+**新功能關閉時＝Python**
+- v8 最終版（`d1502d2d…`）對 v6 那次的 Python 參考，3 份紀錄 × 4 組子集：CSV 177,072 格、npz 11,424 個陣列，0 個不同。runs：`20261107-051148-icpe-rux-v8g-reg-mc`、`…-051228-…-v8g-reg-bl`、`…-051344-…-v8g-reg-sa`（審查前的版本 `a4ded3ca` 也跑過一次：`…-v8f-reg-*`，同樣 0 個不同）。
+- G1 128,064 格、xc_sa 1,280 格，0 個不同：`20261107-051544-icpe-rux-v8g-off-g1`、`…-051634-…-v8g-off-xc_sa`（審查前：`…-v8f-off-*`）。
+
+**新功能**（`smoke_v8.py --tests queue queue2 cue w5 apc`）
+- 每份紀錄 696 項，3 份紀錄共 **2,088 項，0 個 FAIL**。
+- runs：`20261107-051148-icpe-rux-v8g-smoke-mc／sa／bl`。審查前的版本也跑過一次（`…-035250-…-v8f-smoke-*`），同樣 2,088 PASS。逐類數字在 `V8_rows.csv`。
+- 審查後的版本，APC 稽核多重算了 ref_live、ref_cpu、cpu_used（F7），也全部通過。
+- 每一類在每份紀錄的項數都相同：
+
+| 檢查 | 每份紀錄的項數 | 做法 |
+|:--|--:|:--|
+| `w5_degen_eq_v7` | 110 | W5 路徑、w5＝BF、dc1＝0、dc2＝d → 和 v7 逐位元相同（CPU 11 規則 × GPU 4 種 × 慢層上限開／關 × CPU 8／111 GiB） |
+| `w5_real_bytes` | 110 | 真的 W5：CPU 讀的位元組＝CPU 命中塊數 × i4；寫入是 i4 的整數倍 |
+| `apc_whole_eq_v7_LRU`、`belp_whole_eq_v7_BEL` | 42＋42 | 一次逐出整個 session ＝ v7 GPU LRU／BEL（CPU 7 規則 × wb／wt × 慢層上限 × CPU 2 種） |
+| `apc_partial_audit`、`belp_partial_audit` | 42＋42 | 逐塊逐出；每 200 個請求從頭重算 ref_gpu、ref_gc、gpu_used；斷言 S_GPU 完整、不超過預算；BELP 每次選擇另外全掃比對 |
+| `belp_fast_eq_slow` | 42 | 兩份實作互比：捷徑＝每塊全掃 |
+| `apc_bigGPU_eq_v7`、`belp_bigGPU_eq_v7` | 42＋42 | GPU 夠大、不會逐出 → ＝v7 |
+| `belp_*_noiseB1` | 2＋2 | 有 W4 雜訊 B1 時 BELP 一次整個＝BEL；逐塊稽核 |
+| `apc_w5_audit`、`apc_queue_audit` | 2＋2 | APC 和 W5、排隊一起開，稽核通過 |
+| `cue0_cuep／cueo_eq_v7_lru` | 16＋16 | 線索全 0 → ＝GPU LRU |
+| `cue1_cuep_eq_v7_ttlb_inf` | 16 | 線索全 1 → CUEP＝TTLB:∞ |
+| `cue_rand_*_runs` | 16＋16 | 合成線索（Bernoulli 0.5）能跑完 |
+| `queue_spread_*`、`queue2_spread_eq_noqueue` | 20＋20＋16 | 到達改成 r × 10⁶ 秒 → q=1／q=2＝沒有排隊，等待全 0 |
+| `queue_real_exact`、`queue2_real_exact` | 20＋16 | 原本的到達：開始時刻、等待、TTFT 逐請求精確重算（位元相同） |
+| `noq_v8_eq_v7` | 2 | 沒有新欄位的 job：v8＝v7 |
+
+**端到端（sweep）**
+- 管線重現版本 B：§4a，306 列逐值相同。
+- APC 一次逐出整個 session：run `20261107-033743-icpe-rux-v8-sweep-whole-mc`，wb、wt 各 1,040 格，APC＝LRU、BELP＝BEL，0 個不同；`py_fallback_jobs=0`。
+- W5 的退化：§4b，254,592 格。
+- BELP 捷徑：run `20261107-041355-icpe-rux-v8-belp-speed-ta`。和每塊全掃比，CSV 832 格、npz 64 個陣列，0 個不同。14 個 job 合計 571 → 246 執行緒秒（快 2.3 倍）；平均仍要 17.5 s，約是 BEL 的 10 倍。
+
+**另外**
+- W3 的資料：TraceLab 原始紀錄（run `20261107-033551-icpe-rux-w3-cue-stats-tracelab`），「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%（SEMANTICS 4-2）。
+- 舊執行檔上的測試（`20261107-033505-…-v8-smoke-all-sa／bl`）是我停掉的，被最終版取代，所以沒有 exit_code。停掉前 476＋593 PASS、0 FAIL。
+
+### 3b. 獨立審查（2026-11-07 05:05；另一個 agent 只讀程式、對照 SEMANTICS）
+
+**結論**：沒有找到引用數、所有權或選擇邏輯上的錯，BELP 捷徑的論證成立。提出 7 點：
+
+| # | 內容 | 處理 |
+|:--|:--|:--|
+| F1 | APC（wb）下，S_SLOW 的 session 還可能有乾淨的 GPU 前段。CPU 預取會跳過 GPU 上已經有的塊（`ref_gpu==0` 才預取）並標成做完，之後那些塊被 GPU 逐出時就不會再預取 | **不改，寫明**：v7 的 wt 也是同樣行為（已和 Python 逐位元相同），APC 照同一套規則才一致。② 的 LRU+RPF、④ 的 O-PF 都受影響，方向與大小 NOT_MEASURED。只在 GPU 留的前段超過 Cake 的交會點時才有差（CPU 小、GPU 大時較可能） |
+| F2 | W5 下，預取進來的 INT4 塊轉給 CPU 上的 session 時，格式沒變卻算了一次寫入 | **已改**：只有格式真的變（cpu_bf ≠ i4）才算。W5 探索用新版重跑：3 份紀錄的上限、②、④ **逐列和改之前相同**，只有寫入量的統計變了 |
+| F3 | APC（wb）下，CPU 端把 session 丟掉（none／2hw／onow、慢層上限）時，它乾淨的 GPU 前段還留著，直到被 GPU 規則逐出 | **不改，寫明**：v7 的 wt 也一樣。BELP 會先逐出它（下次回來＝∞）；APC 照 LRU |
+| F4 | `q=2` 的到達可能早於同一個 session 上一個請求的完成 | **不改**：`q=2` 本來就不能用（§3c）。寫工作守恆版時要處理 |
+| F5 | CUEO（wb）每次有工具呼叫都把整個 session 重寫進 CPU | **不改，寫明**：和 v7 wb「一個 session 只在一層」一致；讓 ③ 略弱（保守方向） |
+| F6 | `--pf-target gpu` 但規則本身沒有預取時，APC／CUE／W5 的斷言也會停 | **已改**：只有真的「預取進 GPU」才停（引擎與 sweep_v8） |
+| F7 | APC 的稽核沒有重算 ref_live、ref_cpu、cpu_used | **已改**：稽核多重算這三個（ref_live＝S_GPU／S_CPU／S_SLOW 的 session 的塊；ref_cpu＝S_CPU 的；cpu_used＝每塊的格式大小） |
+
+改完之後重跑：最終版 smoke（3 份紀錄）、新功能關閉的對拍、G1、xc_sa、W5 探索（見下面的 run 表）。
+
+### 3c. 排隊的發現
+
+見 `SEMANTICS_2to5.md` §2a：
+- **open-loop**：SemiAnalysis N16 在 nfs、GPU 忙時平均等 2,000–19,000 秒，沒有意義。
+- **照紀錄順序的 closed-loop**：比工作守恆的版本多等 30–300 倍。
+- **正確的模型**：工作守恆的 closed-loop。用同樣的服務時間估，ssd、GPU 閒時平均等 1.5–1.8 s，服務時間本身是 1.4–2.2 s，所以排隊不能忽略。
+
+## 4. 探索（不是正式結果）
+
+### 4a. APC／BELP（Mooncake toolagent R1／R2；版本 B 上限最高的工具類變體）
+
+**怎麼跑**
+- `sweep_v8.py`：CPU 8、111.0625、1,024 GiB × CPU 17 個規則（POL17）× 慢層 ssd／b32／nfs × GPU wb 111.0625 GiB × GPU 18 個規則（LRU、BEL、**APC、BELP**、TTLA／TTLB 各 7 個）。
+- 9,456 個 job、16 worker，牆鐘 22 分鐘（run `20261107-033906-icpe-rux-v8-explore-apc-ta`，執行檔 `rsdb455a36`）。
+- 分析（run `20261107-040117-icpe-rux-v8-explore-apc-analyze`，`explore_apc.py`）：
+  - 同版本 B 的算法（`next_sim_analyze.py`，沒有 `--rival-only-gpu`）；
+  - APC 是不預測的 GPU 規則，② 和 ④ 都有；
+  - O-GPU 的 ④ 另外加 BELP，自己算。
+
+**重現檢查（先證明管線對）**
+- 拿掉 APC、BELP 的列重算，版本 B 表上這些格的 306 列（`mc_p1_headroom_components.csv.xz`，origin/icpe-next-main 最後改在 `baa508d0`）全部對上。
+- T_oracle、T_rival、上限、最佳對手、oracle 的組合，**逐值相同、0 個不同**。
+
+**結果**（逐列：`V8_explore_apc_ta_rows.csv`、`V8_explore_ogpu_belp_ta_rows.csv`）
+- **APC 幾乎沒有影響**：
+  - 306 列裡，② 最多快 **0.035%**（R1、111.0625 GiB、nfs、閒：0.243572 → 0.243487 s），④ 最多快 0.004%，上限最多變 **0.027 個百分點**。
+  - 上限 ≥15% 的格數每個元件都不變。
+  - APC 只在 nfs 的格子成為最佳：② 9 列、④ 5 列。
+- **O-GPU 的 ④ 加 BELP**：上限略升。R1 中位數 25.06% → 25.25%、最大 40.44% → 40.91%；R2 中位數 23.85% → 24.46%、最大 36.66% → 37.43%。BELP 比 BEL 好的格：R1 12／18、R2 13／18。
+- **解讀**〔推論〕：
+  - 這個變體在 111 GiB 的 GPU 上，逐塊保留前段帶來的額外命中很少。
+  - 所以「② 不含 block 粒度 APC」這個缺口在 Mooncake toolagent 上不影響結論。
+  - **其他變體 NOT_MEASURED**（TraceLab 的 session 長很多，可能不同）。
+- **速度**：
+  - APC 每個 job 0.18 s（LRU 0.17 s），幾乎不多花。
+  - BELP 在這次的執行檔（每逐出一塊都全掃）要 78.8 s，是 BEL（1.76 s）的 45 倍。
+  - v8 最終版加了「不改結果的捷徑」（§3），速度見 §3。
+
+### 4a-2. APC／BELP：SemiAnalysis N16 s1、Bailian coder（同樣的設定）
+
+- runs：
+  - SemiAnalysis：`20261107-043703-icpe-rux-v8-explore-apc-sa`（4,728 個 job、155 s）＋`…-043939-…-apc-sa-analyze`；
+  - Bailian：`20261107-043945-icpe-rux-v8-explore-apc-bl`（4,728 個 job、190 s）＋`…-044256-…-apc-bl-analyze`；
+  - 執行檔 `rs702ecaed`（v8 最終版）。
+- **重現檢查**：兩份版本 B 表上這些格各 108 列，**逐值相同、0 個不同**（`sa_p1`、`bl_p1_headroom_components.csv.xz`，origin/icpe-next-main `baa508d0`）。
+- 逐列：`V8_explore_apc_sa_rows.csv`、`V8_explore_ogpu_belp_sa_rows.csv`、`V8_explore_apc_bl_rows.csv`、`V8_explore_ogpu_belp_bl_rows.csv`。
+
+| | Mooncake toolagent R1／R2 | SemiAnalysis N16 s1 | Bailian coder |
+|:--|:--|:--|:--|
+| APC 成為 ② 的最佳 | 9／306 列 | **108／108 列** | 45／108 列 |
+| ② 變快（中位數／最多） | 0％／0.035％ | **4–5％／28％** | 0％／0.02％ |
+| 上限下降最多（百分點；只有 ② 加 APC 時） | 0.03 | **21.7**（O-ALL；O-GPU 21.2） | 0.02 |
+| O-GPU 上限（② 加 APC、④ 加 BELP）：中位數 | 25.1 → 25.3％（R1） | **8.5 → 4.6％** | 13.7 → 14.1％ |
+| 〃 最大 | 40.4 → 40.9％（R1） | 46.2 → 43.6％ | 34.3 → 35.1％ |
+| 〃 ≥15％ 的格 | 14 → 14（R1）、13 → 13（R2） | **6 → 4** | 8 → 8 |
+| BELP 比 BEL 好的格 | 12／18、13／18 | 17／18 | 18／18 |
+
+- **SemiAnalysis 變化最大的格**（O-GPU；② 加 APC、④ 加 BELP）：
+  - 111.0625 GiB、nfs、GPU 忙：20.7% → 8.6%（② 7.79 → 6.76 s，④ 6.18 → 6.18 s）；
+  - GPU 閒：18.0% → 5.7%。
+  - CPU 8 GiB、nfs 那幾格幾乎不變，約 42–46%。
+- **只有 ② 加 APC、④ 沒有 BELP 時**：SemiAnalysis 的 O-GPU 最大上限 46.2% → 25.0%，被低估一半。所以 ④ 的 O-GPU 一定要包含 BELP（SEMANTICS 2-5）。
+  - 註：`next_sim_analyze.py` 把 BEL 以外的 GPU 規則都當成不預測，BELP 會被誤放進 ②。所以另寫了 `analyze_v8.py`：
+    - 原檔不改，只在執行時換 `analyze()` 的兩處：BELP 不進任何「不預測」集合；O-GPU 的 ④＝NON_ORACLE × {BEL, BELP}。
+    - 檢查（run `20261107-044507-icpe-rux-v8-analyze-check-ta`，toolagent 的探索 sweep）：
+      - O-GPU 以外 252 列＝原本的分析（拿掉 BELP 列），0 個不同；
+      - O-GPU 36 列＝`explore_apc.py` 的獨立算法，0 個不同（其中 25 列 ④ 用 BELP）。
+    - 正式分析用它。
+- O-PF 在 SemiAnalysis 有一格上升 47 個百分點，那格的上限從 −98% 變 −59%，原本就是負的，沒有意義。
+- **解讀**〔推論〕：
+  - SemiAnalysis 是長的 Claude Code session（每個 session 平均 47 個請求、上下文很長）。session 粒度的 GPU 規則一次要整個留或整個丟，逐塊留住前段就有差。
+  - Mooncake toolagent、Bailian 的 session 短，差不多。
+  - TraceLab、CacheWise 也是長的 agent session，**很可能也受影響，NOT_MEASURED**（不在這台）。
+- **建議**：
+  - PR:95「APC 做好後受影響的格子全部重算」至少要包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise）。
+  - ④ 的 O-GPU 要同時加 BELP。
+
+### 4a-3. APC／BELP：TraceLab c1（icpe-next-trx 在 TRX40 跑；icpe-next-trx `0cfa480b`，`results/icpe_next/v8_explore/apc/tracelab_c1/`）
+
+- **重現檢查**：版本 B 表上 108 列（格 × 元件）逐值相同，7 欄都 0 個不同。
+- **sweep**：4,728 個 job，40 worker 跑 384 s，沒有任何 job 退回 Python。引擎 `rse7f6ee8f`（main.rs `48e4efce`）。
+- **結果**（cake，每個元件 18 格；TRX 回報的摘要）：
+
+| 元件 | 上限最大：沒有 APC → 有 APC | ≥15% 的格 |
+|:--|:--|:--|
+| O-GPU（④ 只有 BEL） | 39.0% → **5.1%** | 6 → 0 |
+| O-ALL(report) | 41.4% → 9.1% | 4 → 0 |
+| O-ORD | 23.3% → 21.9% | 2 → 2 |
+| O-PF | 6.0% → 7.8% | 0 → 0 |
+| O-DROP、O-NOW | 約 1% 以下 | 0 → 0 |
+
+- **O-GPU 的 ④ 加上 BELP**：最大 39.0% → 39.2%，BELP 在 18／18 格勝過 BEL。
+- **解讀**〔推論〕：
+  - TraceLab 是長的 coding-agent session，APC 讓 ② 變強很多。如果 ④ 只有 session 粒度的 BEL，O-GPU 的上限幾乎消失。
+  - ④ 也逐塊（BELP）之後，O-GPU 的上限回到原本的水準。
+  - 所以 APC 的正式重算**一定要同時加 BELP**（SEMANTICS 2-5），否則 TraceLab 的結論會從「≥15%」錯翻成「<15%」。
+
+### 4a-4. W3 線索：TraceLab c1（照 PREREG 偏離 9 跑；**判定已確認**（9 個容量的重現 324／324、0 個不同，icpe-next-trx `4ca0d65b`）；icpe-next-trx `9e1064f0`／`16ba40f6`，`results/icpe_next/v8_explore/w3/tracelab_c1/`）
+
+- **已確認**（09:10）：TRX40 補完 16–512 GiB，9 個容量合計 324／324 個 (格, 元件)、7 欄都 0 個不同（runs `20261107-083210-…-tl_c1-apc`、`20261107-084950-…-tl_c1-reproB`）。照偏離 10 第 5 點，版本 C 出來後 f 要用版本 C 的 ②、④ 重算，兩個都報。
+- 原本記為待確認的原因：使用者約 08:47 在 icpe-main 決定，W3 前的重現檢查要涵蓋**全部 9 個容量**。W3 用的是版本 B 在 9 個容量上的 ② 和 ④，我原本建議的 3 個容量不夠。c1 已經過了 3 個容量（8、111.0625、1,024 GiB；108／108、0 個不同），16–512 GiB 的 6 個 TRX40 正在補跑，補完 0 差才確認下面的判定。
+- 先決條件（到目前為止）：版本 B 重現 108／108、0 個不同，3 個容量。
+- W3 sweep：worktree `8f04a91c`，360 個 job，72 s，沒有任何 job 退回 Python。
+- ③ 每格都選 CUEO（54 格）。
+- **判定**（`w3_verdict.csv`）：
+  - 判了 270 個 (格, 元件)。上限 ≥15% 的有 22 個（O-GPU 18、O-ORD 4），③ 都齊全；22 個都 f ≤ 0.5，其中寫入飽和 0 個。
+  - f_c 中位數 −7.41、最小 −8.91。
+  - → 「**後半成立：沒有簡單線索能拿走大部分**」。
+  - 前半（版本 B：TraceLab c1 上限 38.9% ≥ 15%）也成立。照偏離 7、9，**原始到達的推翻條件成立**：「在這類工作負載上預測仍有空間」。這要等 9 個容量的重現都 0 差才算數。
+- **為什麼 f 是負的**（icpe-rux 讀 TRX 的 `w3_rows.csv`，`git show` 讀出，沒有重跑）：
+  - ③ 比什麼都不做還慢：T③ ÷ T①（(LRU, LRU) 基準）中位數 1.68，54 格沒有一格比基準快；② 是 0.95。
+  - 例：CPU 8 GiB、nfs、GPU 忙：T① 10.6 s、T② 9.86 s、T④ 6.02 s、T③ 38.1 s。
+  - 〔推論〕TraceLab 有 86% 的回合有工具呼叫，線索幾乎一直亮著、沒有區分力：
+    - CUEO＝幾乎每回合都把 KV 逐出 GPU，工具結果回來時要重新載入，CPU 小時還會掉到慢層；
+    - CUEP＝幾乎全部釘住（≈ TTL ∞），比 ② 事後挑的 TTL 差。
+- **判定穩不穩**：
+  - (a) 即使把 ③ 改成「線索規則或 ② 的做法取最快」，T③＝T②，f＝0，仍然 ≤ 0.5，判定不變。
+  - (b) ② 加 APC、④ 加 BELP（§4a-3，探索）之後，O-GPU 上限仍約 39%，前半仍成立；正式的 ② 還不含 APC（偏離 6 第 3 點）。
+  - (c) 偏離 9 更正已寫明：逐格任一成立的彙總偏向推翻。這裡是 22／22 格都 f ≤ 0.5，和怎麼彙總無關。
+- **還沒判的**：TraceLab c2、c4（合成到達）、FreeInference 6 週（TRX 在跑）。Mooncake toolagent R1／R2 沒有欄位，維持「未定」。
+
+### 4b. W5（同一個變體，CPU 111.0625、128、256 GiB）
+
+**怎麼跑**
+- 同一組 CPU 17 × GPU 16 個規則（LRU、BEL、TTLA／TTLB × 7），各 9,012 個 job、16 worker：
+  - BF16（現在的 CPU 層）：run `20261107-040115-icpe-rux-v8-explore-w5-base`，231 s；
+  - W5（`RUX_W5=1`）：run `20261107-040512-icpe-rux-v8-explore-w5-int4`，207 s。
+- 分析：`explore_w5.py`，run `20261107-040843-icpe-rux-v8-explore-w5-analyze`。三種情況都用版本 B 的算法：
+  - base＝BF16；
+  - forced＝全部 W5；
+  - allowed＝每個組合事後挑兩種格式裡較快的（SEMANTICS 5-2）。
+- **端到端退化檢查**（run `20261107-040948-icpe-rux-v8-explore-w5-degen`）：走 W5 的路徑、參數等於沒開（`RUX_W5=degen`），和 BF16 的 sweep 比。全部 17 × 16 個規則：CSV 254,592 格、npz 19,584 個陣列，**0 個不同**。這補上 `smoke_v8.py` 沒涵蓋的 O-DROP、O-BELS、O-ALL、FREQ2Q、LRU+NONE、LRU+2HW。
+
+**結果**（逐列：`V8_explore_w5_ta_rows.csv`）
+- **W5 幾乎全面更快**：9,792 個組合裡 9,788 個 W5 較快，所以 forced 和 allowed 的上限相同。
+- **② 和 ④ 都變快**（中位數）：② 快 18–25%；④ 視元件快 5–24%（O-ALL 5%、O-GPU 10%、O-PF 16%、O-ORD 22%、O-DROP 22%、O-NOW 24%）。
+- **上限有升有降**（每格變化的中位數，百分點）：
+
+  | 元件 | R1 | R2 | 上限 ≥15% 的格數（R1：base → W5） |
+  |:--|--:|--:|:--|
+  | O-GPU | −8.1 | −6.3 | 18 → 8 |
+  | O-ALL(report) | −8.8 | −7.8 | 18 → 18 |
+  | O-PF | −5.1 | −3.3 | 18 → 14 |
+  | O-NOW | 0.0 | 0.0 | 0 → 0 |
+  | O-DROP | +0.1 | +2.7 | 18 → 16 |
+  | O-ORD | +2.2 | +6.0 | 17 → 14 |
+
+- **NP:53 事先登記的預期是「上限下降或不變；若上升，要查原因」**。O-ORD 的中位數上升，O-DROP 在 nfs 的格最多升 **30–39 個百分點**。例：R2、111.0625 GiB、nfs、閒，13.4% → 52.5%：④ 0.424 → 0.198 s，② 0.489 → 0.417 s。
+  - 退化檢查證明程式路徑是對的，所以這是模型的效應，不是接錯〔推論〕。
+  - 可能的原因〔推論，沒有驗證〕：INT4 讓 CPU 層多放 3.2 倍。O-DROP 丟掉不會再回來的 session 後，能把要回來的都留在 CPU、避開 nfs；不預測的規則留著那些不會回來的 session，仍要從 nfs 讀。
+  - **查了一格**（R2、111.0625 GiB、nfs、閒；同一份 sweep 的引擎計數，沒有新的模擬），回來請求的次數：
+
+    | 這格的最佳組合 | 格式 | CPU 載入 | 慢層載入 | 重算 | 丟掉 session |
+    |:--|:--|--:|--:|--:|--:|
+    | ④ O-DROP × TTLA:100 | BF16 | 10,660 | 5,110 | 34,387 | 12,629 |
+    | ④ O-DROP × TTLB:300 | W5 | 24,926 | 1,361 | 19,520 | 12,629 |
+    | ② LRU+2HA × TTLA:300 | BF16 | 6,507 | 1,874 | 46,821 | 21,230 |
+    | ② LRU+2HW × TTLA:100 | W5 | 13,539 | 2,380 | 39,501 | 19,997 |
+
+  - 和推測一致：④ 用多出來的容量，把慢層載入減 73%、重算減 43%；② 的最佳做法本來就丟掉大部分 session，重算只少 16%。
+  - **擴大到全部**（run `20261107-043718-icpe-rux-v8-w5-mechanism`，`w5_mechanism.py`，只讀上面的輸出；逐列 `V8_w5_mechanism_ta_rows.csv`）：
+    - 上限升超過 5 個百分點的 (格, 元件) 有 45 個：O-DROP 9、O-ORD 16、O-PF 8、O-NOW 12。nfs 33 個、b32 5 個、ssd 4 個。
+    - 各元件的中位數（回來請求的次數，W5 相對 BF16）：
+
+    | 元件 | 上限變化（百分點） | ④ 慢層載入 | ② 慢層載入 | ④ 重算 | ② 重算 |
+    |:--|--:|--:|--:|--:|--:|
+    | O-DROP | +28.5 | −79% | −13% | −40% | −18% |
+    | O-ORD | +10.2 | −99.5% | −25% | −32% | −17% |
+    | O-PF | +22.7 | −87% | −26% | −44% | −24% |
+    | O-NOW | +16.1 | −28% | −28% | −26% | −27% |
+
+  - 解讀〔推論〕：
+    - O-DROP、O-ORD、O-PF：慢層愈慢（nfs），④ 愈能用多出來的 CPU 容量把慢層載入幾乎消掉，② 只能消掉一小部分。
+    - O-NOW 兩邊的載入減得一樣多。上升的 12 格都在 nfs：BF16 時上限是負的（−12% 到 −31%，④ 比 ② 慢），W5 下變成 −17% 到 +4.5%，沒有一格超過 15%。
+    - 所以 NP:53「CPU 層的對手變強 → 上限下降」只對 O-GPU、O-PF 的中位數成立；CPU 層變大時，oracle 也一起變強。
+- 只有一個變體、3 個 CPU 容量；**不是正式結果**，正式範圍要登記（PR:57）。
+
+### 4b-2. W5：SemiAnalysis N16 s1、Bailian coder（同樣的設定）
+
+- runs：
+  - SemiAnalysis：`20261107-044431-…-w5-base-sa`、`…-044702-…-w5-int4-sa`、`…-044937-…-w5-analyze-sa`；
+  - Bailian：`20261107-044942-…-w5-base-bl`、`…-045033-…-w5-int4-bl`、`…-045148-…-w5-analyze-bl`。
+- 逐列：`V8_explore_w5_sa_rows.csv`、`V8_explore_w5_bl_rows.csv`、`V8_w5_mechanism_sa_rows.csv`、`V8_w5_mechanism_bl_rows.csv`。
+- W5 較快的組合：SemiAnalysis 4,895／4,896，Bailian 4,894／4,896，所以 forced＝allowed。
+
+| 元件 | toolagent R1：中位數變化（百分點）、≥15% 的格 | SemiAnalysis | Bailian |
+|:--|:--|:--|:--|
+| O-GPU | −8.1，18 → 8 | −3.4，4 → 0（最大 20.7% → 1.4%） | −3.7，8 → 2 |
+| O-ALL(report) | −8.8，18 → 18 | −4.5，0 → 0 | −5.1，17 → 13 |
+| O-PF | −5.1，18 → 14 | −1.9，0 → 0 | −5.2，8 → 6 |
+| O-ORD | **+2.2**，17 → 14 | −3.0，4 → 0 | −1.1，6 → 6 |
+| O-DROP | **+0.1**（最多 +30），18 → 16 | −0.2，0 → 0 | −0.4（最多 +5.0），6 → 6 |
+| O-NOW | 0.0，0 → 0 | 0.0，0 → 0 | 0.0，0 → 0 |
+
+- 上升超過 5 個百分點的 (格, 元件)：toolagent 45 個、SemiAnalysis 4 個（O-PF 3 個、O-ALL 1 個，都在 nfs）、Bailian 1 個（O-DROP、nfs）。
+- **解讀**〔推論〕：
+  - 「W5 讓上限上升」主要是 Mooncake toolagent 的現象。那裡 ④ 在 nfs 能用多出來的 CPU 容量，把慢層載入幾乎消掉。
+  - SemiAnalysis、Bailian 上，W5 照 NP:53 的預期讓上限下降：CPU 層的對手變強。
+  - 這個「看紀錄」的差別要登記。正式範圍（PR:118 的 7 個代表變體）跑完才知道普不普遍。
+
+### 4c. 排隊（一階近似 qpost；SemiAnalysis 4 種並行數）
+
+**怎麼跑**
+- runs：`20261107-081129／081345／081641／082012-icpe-rux-v8-explore-queue-N16_s1／N32_s1／N64_s1／N72_s1`，分析在 `20261107-082508-…-queue-analyze`（`explore_queue.py`）。
+- 每個變體：CPU 8、111.0625、1,024 GiB × CPU 17 × GPU 16 個規則（同版本 B），`RUX_QPOST=1`，4,506 個 job，約 3 分鐘。
+- 沒排隊的對照＝版本 B 的 `sa_p1` 表。N16 s1 上這張表已經在 §4a-2 逐值重現過。
+- **端到端檢查**（N16 s1，和沒排隊的 sweep 比）：
+  - 4,896 個組合對上。只有 TTFT 衍生的欄位不同：mean_ret、median_ret、p90_ret、sum_ret、mean_all、total_all、mean_ret_user。
+  - 其他欄位逐格相同，NaN＝NaN 算相同。
+  - 有排隊的 mean_ret 每格都 ≥ 沒排隊的。
+- 結果在 `results/icpe_next/v8_explore/queue/semianalysis_*/`。
+
+**結果**（上限 ≥15% 的格數，沒排隊 → 有排隊；每個元件 18 格）
+
+| 變體 | O-GPU | O-ALL(report) | O-ORD | O-PF | O-GPU 上限最大（沒排隊 → 有排隊） | (LRU, LRU) 平均等待的中位數 |
+|:--|:--|:--|:--|:--|:--|--:|
+| N16 s1 | 6 → 8 | 2 → 7 | 2 → 3 | 0 → 0 | 46% → 82% | 輕 1.5 s／中 5 s／重 339 s |
+| N32 s1 | 8 → 12 | 7 → 12 | 2 → 5 | 0 → 3 | 51% → 85% | 中 16 s／重 536 s |
+| N64 s1 | 12 → **18** | 10 → 14 | 6 → 7 | 1 → 1 | 52% → 81% | 全部重：1,849 s |
+| N72 s1 | 10 → **18** | 9 → 14 | 6 → 7 | 1 → 1 | 50% → 74% | 全部重：2,323 s |
+
+依負載分組，每格上限的變化（百分點，中位數；括號內是範圍）：
+- N16：輕（24 格）−0.3（−1.8 到 +0.8）；中（54）+0.3（−14.8 到 +21.2）；重（30）+1.4。
+- N32：中（54）+1.8（−1.4 到 +46.4）；重（54）+2.2。
+
+O-DROP、O-NOW、O-PF 在幾個重負載的格降很多，最多 −370 個百分點。那些格的上限本來就接近 0 或是負的，分母很小，沒有意義。
+
+**解讀**〔推論〕
+- **輕負載**（ssd、GPU 閒，平均等不到 2 s）：排隊幾乎不改上限，中位數 −0.3 個百分點。
+- **負載愈重，上限愈大**：O-GPU 上限 ≥15% 的格，N64、N72 從 10–12 變成全部 18 格。原因是 ④ 服務得快，後面的人等得也少，排隊放大了兩邊服務時間的差。
+- **和 NP:266 的方向相反**：NP:266 說「不排隊對預測有利、上限偏高」，依據是 B6 的低負載重播。這裡低負載時幾乎沒差，高負載時上限反而變大。
+- **但重負載的格不可靠**，原因有兩個：
+  1. 重排很多（§2b 的量測：nfs、GPU 忙時位移中位數約 2,000 名），一階近似不準。
+  2. 單一 GPU 撐 N64、N72 的 agent，平均要等 30–40 分鐘，真實系統會加機器。
+- 所以結論只用輕、中負載的格：N16、N32 的 ssd／b32。
+- **要登記**：排隊的格子要怎麼取（負載上限、GPU 數），PR:57。
+
+## 5. 還沒做、要決定的
+
+- **使用者決定**：
+  - **Q3-a**：排隊的 ④ 知不知道排隊造成的新服務順序（SEMANTICS §2a）。決定後才寫工作守恆的 closed-loop 引擎。
+  - **登記**：SEMANTICS_2to5.md 是 PREREG 的草稿，要由 h200／icpe-data 寫進去，並列出已看過的版本 A、B 結果，以及這份探索。
+- **要別人做**：
+  - **icpe-data（acvlab）**：照 README 跑 W3 on TraceLab c1：`make_cue.py tracelab` → `check` → sweep CUEP／CUEO → `analyze_w3.py`。這就是 PR:21 推翻條件的後半。CacheWise、FreeInference 的 cue 要另外寫：CacheWise 用 `trigger`，FreeInference 用 `step_trigger`。
+  - **icpe-sim**：審 v6／v7／v8，決定要不要併進 `code/p3x/x1fast`；把 W3、排隊接進 sweep。
+  - **另一個 session**：審 SEMANTICS 與 v8 程式的對應。
+- **還可以做的**：
+  - W5 上限上升的原因多看幾格；
+  - BELP 再加速（現在是 BEL 的 10 倍時間）；
+  - 慢層上限的加速候選 1、4。
+
+## 5b. 引擎版本對照（sweep 的 `code_sha` 後半＝Cargo.toml＋main.rs 的 sha256）
+
+| code_sha | v8 main.rs | git | 用在哪些結果 |
+|:--|:--|:--|:--|
+| `rsdb455a36` | `c5642d2a…` | **沒進 git**（03:39 的開發版） | APC：Mooncake toolagent（§4a） |
+| `rs702ecaed` | `a4ded3ca…` | `62b25568` | APC：SemiAnalysis、Bailian；W5 的 BF16 那半 |
+| `rs088c7bd5` | `d1502d2d…` | `b1c2e9ef`（審查後） | W5 的 INT4 那半（重跑） |
+| `rse7f6ee8f` | `48e4efce…` | `b7444163` 起（加 qpost） | 排隊（§4c）；TRX40 的全部結果 |
+
+- 這幾版之間，APC／BELP／W5／W3 的程式路徑**結果相同**。後來多的只有四樣：
+  - q=2、qpost（不開就不影響）；
+  - BELP 的捷徑（已驗證和每塊全掃逐位元相同）；
+  - 審查的 F2（只影響 W5 的寫入量；W5 重跑後上限逐列相同）；
+  - F6、F7（斷言、稽核）。
+- 另外每一版都重新對過一次：新功能關閉時和 Python 0 個不同；版本 B 的重現在 rsdb455a36、rs702ecaed、rse7f6ee8f 上都逐值相同。
+- `results/icpe_next/v8_explore/*/*/MANIFEST.json` 原本有一欄 `v8_main_rs_sha256`，記的是**收集時**的檔，不是 sweep 用的引擎。icpe-next-trx 指出後已改成 `engine_used`，依 sweep 的 code_sha 對回 git。
+
+## 6. run 目錄（`/root/icpe-next/runs/`）
+
+| run | 內容 | 結果 |
+|:--|:--|:--|
+| `20261107-031517-icpe-rux-v8-smoke-qc-mc`、`…-031722-…-v8-smoke-w5-mc`、`…-032149-…-v8-smoke-apc-mc` | 開發中的 Mooncake 測試（排隊＋線索、W5、APC） | 142、220、260 PASS，0 FAIL |
+| `20261107-033505-…-v8-smoke-all-sa／bl` | 舊執行檔上的測試，**被我停掉** | 停掉前 476、593 PASS，0 FAIL |
+| `20261107-034306-…-v8-smoke-q2-sa`（exit 1，測試程式的錯）、`…-034507-…-v8-smoke-q2-sa` | closed-loop 排隊的測試 | 第二次 94 PASS |
+| `20261107-033729-…-v8-sweep-whole-mc`（exit 1，忘了建 req 目錄）、`…-033743-…-v8-sweep-whole-mc` | sweep 端到端 | 第二次 0 個不同 |
+| `20261107-033551-icpe-rux-w3-cue-stats-tracelab` | TraceLab 線索統計 | §3 |
+| `20261107-033906-…-v8-explore-apc-ta`、`…-040117-…-v8-explore-apc-analyze` | APC 探索 | §4a |
+| `20261107-040115-…-w5-base`、`…-040512-…-w5-int4`、`…-040843-…-w5-analyze`、`…-040948-…-w5-degen` | W5 探索 | §4b |
+| `20261107-041355-…-v8-belp-speed-ta` | BELP 捷徑 | §3 |
+| `20261107-043703-…-v8-explore-apc-sa`、`…-043939-…-apc-sa-analyze` | APC 探索：SemiAnalysis N16 s1 | §4a-2 |
+| `20261107-043945-…-v8-explore-apc-bl`、`…-044256-…-apc-bl-analyze` | APC 探索：Bailian coder | §4a-2 |
+| `20261107-043718-…-v8-w5-mechanism` | W5 上升的格：載入次數的變化 | §4b |
+| `20261107-044507-…-v8-analyze-check-ta` | analyze_v8 的檢查 | §4a-2 |
+| `20261107-045446-icpe-rux-w3-make-cue-tracelab` | TraceLab c1／c2／c4 的 cue（665,453 個請求、574,485 個有工具呼叫） | §2 |
+| `20261107-045622-icpe-rux-w3-pipeline-sa-proxy` | W3 管線端到端（SemiAnalysis、代用 cue；只測管線） | §2 |
+| `20261107-045650-icpe-rux-v8-w5-wrapper-regress` | sweep 包裝改寫後 W5 不變（2,430 格相同） | §2 |
+| `20261107-044431／044702／044937-…-w5-*-sa`、`20261107-044942／045033／045148-…-w5-*-bl` | W5 探索：SemiAnalysis、Bailian | §4b-2 |
+| `20261107-035250-…-v8f-reg-mc`、`…-035436-…-v8f-reg-bl`、`…-035817-…-v8f-reg-sa`、`…-040213-…-v8f-off-g1`、`…-040439-…-v8f-off-xc_sa` | 審查前的版本：新功能關閉 | 0 個不同 |
+| `20261107-035250-…-v8f-smoke-mc／sa／bl` | 審查前的版本：新功能 | 2,088 PASS，0 FAIL |
+| `20261107-051148-…-v8g-smoke-mc／sa／bl`、`…-051148／051228／051344-…-v8g-reg-*`、`…-051544-…-v8g-off-g1`、`…-051634-…-v8g-off-xc_sa` | **最終版（`d1502d2d`）**：新功能、新功能關閉 | 2,088 PASS、0 個不同 |
+| `20261107-051639／052011／052327-…-v8g-w5-int4-ta／sa／bl`、`…-052005／052322／052457-…-v8g-w5-analyze-*` | 最終版重跑 W5 探索（BF16 那半沿用） | 上限、②、④ 和審查前逐列相同 |
+
+所有 run 的 MemAvailable 都沒有低於 3 GiB。

@@ -1,0 +1,70 @@
+{
+ "exp": "apc",
+ "variant": "mooncake_conversation",
+ "collected_ts": "2026-11-07T11:22:52+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit_at_collect": "f054a1aaf2ca26a0f164c3c588187efa01c2e553",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-111534-icpe-rux-apc-formal-mooncake_conversation",
+   "ts": "2026-11-07T11:15:34+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-111534-icpe-rux-apc-formal-mooncake_conversation/out/x1/x1_sweep.csv",
+   "sha256_source": "74ebbf69b0b1455dd4c9ffbb8facdea0b95e8f5a1585c624d6524d27c28169ed",
+   "bytes_source": 12365016,
+   "rows": 33048
+  },
+  {
+   "file": "verC_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-111534-icpe-rux-apc-formal-mooncake_conversation/a/verC_headroom_components.csv",
+   "sha256_source": "8c8ccb700c74b9f78c6ff28424acfed4f6bf809934dcc766c046b889c2f2121b",
+   "bytes_source": 305364,
+   "rows": 918
+  },
+  {
+   "file": "verC_violations.csv",
+   "source": "/root/icpe-next/runs/20261107-111534-icpe-rux-apc-formal-mooncake_conversation/a/verC_violations.csv",
+   "sha256_source": "7d55e5d2cdc3efdb5fffe406156f8370150184b4eac99df17a3fda2e0f80551a",
+   "bytes_source": 275067,
+   "rows": 1124
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-111534-icpe-rux-apc-formal-mooncake_conversation/a/base_headroom_components.csv",
+   "sha256_source": "aab76aa469a010bafaa61ea00fdca6e64901032f6739ee8ac7e2835622501d09",
+   "bytes_source": 305313,
+   "rows": 918
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-111534-icpe-rux-apc-formal-mooncake_conversation/a/explore_apc_rows.csv",
+   "sha256_source": "4a88a300f7e75aef8e0ee9e5be8619e1056e8745d59d39f3bb0fb5079989887c",
+   "bytes_source": 679513,
+   "rows": 918
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-111534-icpe-rux-apc-formal-mooncake_conversation/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "dd324906a1c2fd42b60388b341f446d073f3211ce579b733d649d461639c6780",
+   "bytes_source": 22740,
+   "rows": 108
+  }
+ ],
+ "note": "PREREG 偏離 10 的正式 APC 重算（版本 C）；重現檢查＝版本 B 的 16 個 GPU 規則，全部格 7 欄逐值相同",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

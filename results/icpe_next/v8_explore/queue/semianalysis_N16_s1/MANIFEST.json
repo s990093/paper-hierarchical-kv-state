@@ -1,0 +1,55 @@
+{
+ "exp": "queue",
+ "variant": "semianalysis_N16_s1",
+ "collected_ts": "2026-11-07T08:28:28+08:00",
+ "collected_host": "RUX3DPRO",
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-081129-icpe-rux-v8-explore-queue-N16_s1",
+   "ts": "2026-11-07T08:11:29+08:00",
+   "host": "RUX3DPRO"
+  },
+  {
+   "run_id": "20261107-082508-icpe-rux-v8-explore-queue-analyze",
+   "ts": "2026-11-07T08:25:08+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-081129-icpe-rux-v8-explore-queue-N16_s1/out/x1/x1_sweep.csv",
+   "sha256_source": "8e0b178aef567de5cfc2aca7b0f74536ca22310b7531c781d2ecb35f1aa2f343",
+   "bytes_source": 2212074,
+   "rows": 4896
+  },
+  {
+   "file": "queue_rows.csv",
+   "source": "/tmp/claude-0/-root-Proj/9b665884-4136-490d-9d48-a63c59c9d13e/scratchpad/qsplit/N16_s1/queue_rows.csv",
+   "sha256_source": "64e0c856e95c51494bfd9fbfdf3f4d8836acb0ed03ac3663f82512b38648ed6e",
+   "bytes_source": 29496,
+   "rows": 108
+  },
+  {
+   "file": "queue_headroom_components.csv",
+   "source": "/tmp/claude-0/-root-Proj/9b665884-4136-490d-9d48-a63c59c9d13e/scratchpad/qsplit/N16_s1/queue_headroom_components.csv",
+   "sha256_source": "80bef1ff90b2407f3c76ad218dca75f8d6f1eea1fd711b2658b8c00330cf4a31",
+   "bytes_source": 51574,
+   "rows": 108
+  }
+ ],
+ "note": "探索（不是正式結果）；排隊的一階近似 qpost（SEMANTICS §2b）；無排隊的對照＝版本 B 的 sa_p1 表；負載重的格不可靠",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄",
+ "repo_commit_at_collect": "2b859912671ec2d5479bef5f3324d036c2a8b2aa",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "manifest_fix": "2026-11-07：原本的 v8_main_rs_sha256 欄是收集時的檔案，不是 sweep 用的引擎（icpe-next-trx 指出），改成 engine_used（依 sweep 的 code_sha 對回 git）"
+}
