@@ -2,6 +2,271 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T17:01+08:00 — **xref 過了 → 第一段開跑**（acvlab 140 個 block；TRX40 重現 xref 後開跑 180 個）
+
+- **icpe-sim**：xref_dev14 PASS（b7d2ee57，run `20261107-155727`，Python 和 Rust 1,184 列相同），三個旗標放行。
+- **merge**：origin/icpe-next-sim b7d2ee57 → icpe-next-data **6cced373**；引擎檔和 63b8e328 相同。
+- **acvlab 重現 xref**：run `20261107-165915-icpe-data-xref-dev14-repro`，用 merge 後的程式、Rust、16 workers。
+  - 6 個 sweep（sa_qb、sa_qt、mc_qb、mc_qt、sa_n、mc_n）都印 `DEV14 <tag> PASS`，`py_fallback_jobs=0`。
+  - 比對結果在 run 目錄的 `xref_check.csv`。
+- **acvlab 開跑**（17:00:38）：
+  - 指令：`next_b_queue.py run --engine rust --workers 35 --plans` 後面接下表的 plan。
+  - log：`runs/queue-rust-d14-stage1-acvlab-w35-20261107-170038.log`。
+  - 開跑前：load 36、記憶體可用 354 GiB。
+  - **順序**：每個家族先跑 main＋P1，第二段才能早點開始；後面接 P2／P3、sens_rep、P4。
+
+| 順序 | plan |
+|--:|:--|
+| 1 | Bailian：`d14_bl_main`、`d14_bl_p1` |
+| 2 | FreeInference：`d14_old_main:fi6w`、`d14_old_p1:fi6w_*` |
+| 3 | ShareGPT／WildChat：`d14_chat_main:sg_*,wc_*`、`d14_chat_p1:sg_*,wc_*` |
+| 4 | agent：`d14_agent_main`、`d14_agent_p1` |
+| 5 | TraceLab：`d14_tl_main`、`d14_tl_p1` |
+| 6 | P2／P3：`d14_bl_p2`、`d14_bl_p3`、`d14_old_p2:fi6w_*`、`d14_old_p3:fi6w_*`、`d14_tl_p2`、`d14_tl_p3` |
+| 7 | `d14_sens_rep:tl_*,bl_*,fi_*` |
+| 8 | P4：`d14_p4_b1:tracelab_*,bailian_*`、`d14_p4_b2:tracelab_*,bailian_*` |
+
+  - **第一個 block** `d14_bl_main/bailian3`（run `20261107-170038-…`）：`jobs=2592`，等於清單的 `jobs_rerun`。`code_sha=3180504e8d57+rs0bfacb59`、`src_sha256=0bfacb59`、`py_fallback_jobs=0`。
+- **TRX40**：已叫它 merge 6cced373、重現 xref 的 6 個 sweep，都 PASS 就照它 dry-run 的順序開跑 180 個 block（46 workers）。
+- **每個 block 收進 git 前要核對**：
+  - 非 P4：`jobs=` 等於 count、rust_timing 的行數等於 jobs、`py_fallback_jobs=0`、rc 0。
+  - P4：`kept_jobs` 等於 count、unmatched 0。
+- **每個家族的 main＋P1 收完**：
+  1. 跑 `next_d14_verb.sh`，得到第一段的檢查表。
+  2. 通知 icpe-main（它算正式表）。
+  3. 等 icpe-sim 對 v8_dev14 的交叉檢查過了，就開那個家族的第二段。
+
+## 2026-11-07T16:43+08:00 — 第二段與 P4 版本 C 的工具寫好、測過（都還沒跑正式的）
+
+- **icpe-main 回覆**（16:3x）：
+  - 第一段的版本 B 檢查表由我用 `next_d14_patch.py` 自己算，用在第二段的關卡，不用等它。
+  - 論文用的正式表由 icpe-main 自己寫補丁、獨立算，再和我的 `*_p1` 逐值比；有不同它會停下來告訴我。
+  - 補丁規則已告訴它：鍵欄、`rerun_policies`、各項斷言。
+- **icpe-sim 補一條規則**（16:35，SIM_CHANGES 23 更正 e0f76bfa）：預取到 GPU 的 block 一律要 `--pf-gpu-recheck`。
+  - `d14_blocks` 已加斷言；清單的 flags 欄本來就都有。
+  - 正式 block 沒有「雜訊＋預取到 GPU」的組合。
+- **工具**（a9655862、ee761935）：
+  - `next_d14_patch.py`（41910437）：一個 block 換上 d14 列。
+  - `next_d14_verb.sh <家族> <b 根目錄> <原本的版本 B 表>`：補丁 → main_rowcheck（cde7fb3f）→ next_sim_analyze → 和原本的版本 B 表比 O-PF、O-ALL(report) 以外的元件，結果是 `D14_TABLE_RESULT IDENTICAL`。
+  - `next_d14_verc.sh`：v8_dev14 整份版本 C，加 `RUX_PFX=1 RUX_PGR=1`。
+    - 核對 main.rs d2048fa3、src 4eca5bda、`py_fallback_jobs=0`。
+    - opf 以外的列和舊 `apc/` sweep 比，結果是 `D14_SWEEP_RESULT IDENTICAL`。
+    - explore_apc 對第一段的檢查表要 REPRODUCED。
+    - 之後 analyze_v8，再 collect 到 `apc_d14/`。collect_v8 只認得固定的 exp 名，所以 exp 名用 `apc`，輸出目錄是 `apc_d14`。
+  - `next_d14_cmp.py table|sweep`：上面兩個核對。
+  - 兩台都用這兩支 shell：TRX40 的 SemiAnalysis 和 uc／lm 的原始 block 在 icpe-next-trx 分支，由 TRX40 自己算。
+- **測試**（scratchpad，不是正式結果）：
+  - `next_d14_verb.sh ms`：假的 d14＝原本的值加上旗標欄，24 個 block。rowcheck PASS，表 6 個元件全部和 `b/analysis/ms_p1` 相同。這證明旗標欄不影響 next_sim_analyze。
+  - `next_d14_cmp.py sweep`：同一檔＝IDENTICAL；改一個 LRU 列＝DIFFERENT；改 O-PF 列並加旗標欄＝IDENTICAL（O-PF 本來就略過）。
+  - `next_d14_patch.py`：少一列 d14 會停；action 不是 rerun 的 block（CacheWise）也會停。
+- **P4 版本 C 的 5 對＝plan `d14_p4verc`**：
+  - 16 個 block（4 個紀錄 × P／M × B1／B2），12,496 個 job（清單格子 × 雜訊設定數）。
+  - 引擎是 v8_dev14：`sweep_v8_dev14.py`，worktree `/ssd6/hungwei/icpe-next/rux-d14-3678053`＝icpe-next-rux 36780534，三個旗標都用環境變數開，只准 Rust。
+  - context.txt 記引擎 worktree 的 HEAD 與 job 清單的來源（58252b4f）。
+  - 引擎的輸入檔（calib、tier_params、m7）和 data repo 的相同。
+  - acvlab 有 semianalysis_N32_s3、N64_s3、tracelab_c2，Mooncake toolagent 也在。
+  - **開跑條件**：icpe-sim 對 v8_dev14 的交叉檢查通過。之後在 acvlab 跑，跑完收到 `results/icpe_next/b/d14_p4verc/`。
+
+## 2026-11-07T16:34+08:00 — 第二段：**使用者決定整個變體重跑**（不補丁）；重現檢查照我的提案再加一項；P4 版本 C 5 對的組合定了
+
+- **使用者的決定**（在 icpe-main 用 AskUserQuestion，icpe-main 讀到的 `date -Is` 是 16:33:26）：
+  1. **每個版本 C 變體整個重跑**：v8_dev14，`RUX_PFX=1 RUX_PGR=1`，版本 C 的網格（17 個 CPU 規則 × 18 個 GPU 規則）。不補丁舊的 sweep；collect 到 `results/icpe_next/apc_d14/<變體>/`，`apc/` 不動。16:31 草案的步驟 1、3 作廢。
+  2. **重現檢查**：從新的整份 sweep，只取版本 B 那 16 個 GPU 規則算表。
+     - O-PF、O-ALL(report) 的列要和第一段（x1fast d14）的版本 B 表逐值相同。
+     - O-ORD、O-DROP、O-NOW、O-GPU 和對手，要和**原本的**版本 B 表逐值相同：主結果用 `results/icpe_next/main/verB/*_p1_headroom_components.csv.xz`，對話與 agent 用我的 `b/analysis/*_p1`。
+     - 有任何不同就停，那個變體不用。所以每個變體的第二段要等它第一段的列都跑完。
+  - icpe-main 的建議（不是使用者的決定，我照做）：新 sweep 裡 opf 以外規則的列，要和舊的 `apc/<變體>/x1_sweep.csv.xz` 逐位元相同。比的時候排除 run_id、ts、host、code_sha、elapsed 和新加的旗標欄。
+- **icpe-rux 的看法**（16:3x 訊息）：只重跑兩個規則也成立；跨引擎核對可以取代 explore_apc；APC／BELP 的列靠它的 D3 退化檢查（APC＝LRU、BELP＝BEL，含三個旗標）。使用者選了整個重跑，所以只用到它的核對建議。
+- **P4 版本 C 的 5 對**（icpe-main，依 PREREG 偏離 10 §3）：
+  - **O-PF 的 ④**＝O-PF 這個 CPU 規則 × GPU 不預測規則集合 {LRU, TTLA×7, TTLB×7, APC}，也就是版本 B 的 P4 集合再加 APC。
+  - **O-GPU 的 ④**＝NON_ORACLE × {BEL, BELP}，取最快的。
+  - ② 從修正後的版本 C 表來，沒有預測，不受雜訊影響。
+  - 其他照版本 B 的 P4：模型 P／M、抽法 B1／B2、同一組 λ、10 個 seed、λ=0 自檢；三個旗標都開。
+  - **我核對過**：版本 B 的 P4 也是「④ 的集合裡全部組合都跑，取最小」。`next_b_queue.p4_combos`：元件規則 × `P4_GP_NO`（LRU＋TTL×14）；O-GPU＝NON_ORACLE × BEL；O-ALL(report)＝(O-ALL, BEL)。所以版本 C 只是把集合換掉。
+  - **引擎**：v8_dev14 那一版的 x1_sim 有 `noise_specs` 和 `--jobs-from`（icpe-next-rux 36780534 的 code/p3x/x1_sim.py 第 2139、2286 行）。在 acvlab 用 Python 3.12 跑。規模約 1.2 萬個 job〔推算：3 個 O-PF 對 × 16 組合 × 142 個雜訊設定，加 2 個 O-GPU 對 × 20 組合 × 142〕。
+- **第二段每個變體的流程**（寫成 `next_d14_verc.sh`，兩台用同一支）：
+  1. **跑**：sweep_v8_dev14，整份網格，`RUX_PFX=1 RUX_PGR=1`。
+  2. **核對引擎**：`py_fallback_jobs=0`、`src_sha256=4eca5bda…`。
+  3. **重現（O-PF、O-ALL）**：explore_apc 拿新 sweep 對「第一段的版本 B 表」要 REPRODUCED。這張表＝原本的 b block 換上 d14 列之後，用 next_sim_analyze 算。
+  4. **重現（其他元件）**：第一段的版本 B 表裡 O-PF、O-ALL(report) 以外的元件，要和原本的版本 B 表逐值相同。
+  5. **沿用的列**：新 sweep 裡 opf 以外規則的列，要和舊的 `apc/` sweep 逐位元相同。
+  6. **算表、收集**：analyze_v8，再用 collect_v8 收到 `apc_d14/<變體>/`。
+- **問 icpe-main**：第一段的版本 B 表（換上 d14 列）由誰算？
+  - 我的提案：我寫 `next_d14_patch.py`，進 git，規則是同一個 block 拿掉 rerun_policies 的列、換上 d14 的列，鍵一對一。我用它產生 `*_p1` 表，給第二段的檢查用。
+  - 論文用的正式表（p1、p90、dev5、h1800、h3600）由 icpe-main 用同一支程式算。
+
+## 2026-11-07T16:31+08:00 — 第二段的引擎 v8_dev14 有了（icpe-rux 36780534），等 icpe-sim 交叉檢查；**第二段的做法（草案，請 icpe-main、icpe-rux 看）**
+
+- **引擎**（STATUS_RUX 16:30，f303f991）：
+  - `code/icpe/rux_x1fast/v8_dev14/`，main.rs sha256 d2048fa3…，sweep 的 src sha 4eca5bda…，CSV 的 code_sha `3280b1c8799b+rs4eca5bda`。
+  - 旗標用環境變數 `RUX_PFX=1`、`RUX_PGR=1`、`RUX_NZO=resample`；最後一個要 Python 3.12。
+  - icpe-sim 交叉檢查通過之前不用。
+- **範圍**：版本 C 的 71 個變體，`results/icpe_next/apc/` 在 icpe-next-main 有全部 71 個，每個都有 `x1_sweep.csv.xz`；另加 P4 版本 C 的 5 對。
+  - TRX40：SemiAnalysis 12、Mooncake 2、UltraChat／LMSYS 12，共 26 個。
+  - acvlab：TraceLab 3、FreeInference 6、Bailian 3、ShareGPT／WildChat 9、agent 24，共 45 個。
+- **做法草案**（每個變體）：
+  1. **只重跑 O-PF、O-ALL**：`sweep_v8_dev14.py`，網格同原本的版本 C（CPU 9 個、ssd／b32／nfs、cake、111.0625、wb、預取到 CPU、18 個 GPU 規則），`--policies O-PF O-ALL`，`RUX_PFX=1 RUX_PGR=1`。
+     - 這兩個以外的規則不受旗標影響：icpe-rux 的端到端驗證「開旗標只有 O-PF、O-ALL 的列改變」，icpe-sim 對版本 B 也驗證過。
+  2. **跨引擎核對**：新 run 裡 GPU 規則屬於版本 B 那 16 個的列，要和第一段（x1fast 63b8e32，同樣的旗標）的對應列逐值相同。
+     - 只比兩邊都有的鍵：第一段的 P1 `_ttl` 只有 O-PF，沒有 O-ALL。
+     - 比法同 G1：排除 run_id、ts、elapsed_s、code_sha，以及只有一邊有的欄。
+     - 這一步取代原本 `explore_apc` 對版本 B 表的重現檢查（REPRODUCED cells=324）。原本那張版本 B 表的 O-PF／O-ALL 是舊規則算的，已經不能當參考。
+  3. **補丁**：原本的版本 C sweep 拿掉 O-PF、O-ALL 的列，換成新 run 的列。要核對：鍵的集合相同、列數相同、其他列逐位元不動。
+  4. 對補丁後的 sweep 跑 `analyze_v8.py`，得到 `verC` 表；collect 到新目錄 `results/icpe_next/apc_d14/<變體>/`。原本的 `apc/` 不動，MANIFEST 記兩個 run 與原 sweep 的 sha256。
+  5. **依賴**：步驟 2 要用第一段那個變體的 d14 列，所以每個變體在它第一段的 main 與 P1 跑完之後才做步驟 2–4。步驟 1 可以先跑。
+- **P4 版本 C 的 5 對**另外處理：雜訊 P／M、APC／BELP、三個旗標都要。
+  - 要 icpe-main 先定：這 5 對每個元件的組合，也就是 ④ 的 CPU 規則 × 哪些 GPU 規則（版本 C 的 GPU 不預測規則有沒有 APC、O-GPU 用 BEL 還是 BELP）。
+  - 定了我寫 `jobs.csv`。引擎是 v8_dev14，在 acvlab 跑（Python 3.12）。
+- **要 icpe-main、icpe-rux 確認**：
+  1. 只重跑兩個規則再補丁的做法，可不可以取代整個版本 C 重跑。
+  2. 用步驟 2 取代 explore_apc 的重現檢查。
+  3. P4 那 5 對的組合。
+
+## 2026-11-07T16:00+08:00 — **正式 merge sim（c68abaad）、G0 PASS**；TRX40 旗標關的關已過；只差 xref
+
+- **使用者選 A**（STATUS_SIM 15:59，f5b2960c）：引擎留在 63b8e32。wt × 預取到 GPU 的 assert 列為已知問題，從參考網格拿掉；正式 block 都沒有這個組合。
+- **正式 merge**：origin/icpe-next-sim f5b2960c → icpe-next-data **c68abaad**。
+  - PREREG 照試合併的做法取我這邊（＝icpe-next-a 5294f5f，逐位元相同）。
+  - 引擎檔和 63b8e328 相同，x1_sim sha256 8b53588b…。和試合併相比，code/ 只多了我的 `next_b_queue.py`。
+- **G0（Rust，旗標關）PASS**：run `20261107-155857-icpe-data-g0-rust-merged-c68abaa`，128,064 格 0 個不同，`py_fallback_jobs=0`。
+- **count**：在正式的 worktree 再跑一次。300 個 MATCH_RERUN、20 個 WHOLE_BLOCK、0 個不符，合計 2,193,997。
+- **dry-run** 抽了 3 個 block 看，指令列都對：
+  - `d14_tl_main:tl_c1`：`--policies O-PF O-ALL … --pf-expire --pf-gpu-recheck`。
+  - `d14_p4_b1:tracelab_c1_M_B1`：`--policies O-ALL`、保留 `--jobs-from`，模型 M 沒有 resample。
+  - `d14_sens_rep:tl_pfgpu`：`--pf-target gpu`、wb。
+- **TRX40**（STATUS_TRX 15:58，1660cc11）：在 40a4c87f 上，旗標關的關全部通過。
+  - G0：128,064 格 0 差。
+  - xc_sa：對 acvlab 1,280 格 0 差，對 TRX40 自己的 Python 也 PASS。
+  - 完整的 sa_N16_s1：對 git 293,760 格 0 差。
+  - src_sha256 0bfacb59，和 acvlab 相同。bin_sha256 1d024543 和 acvlab 的 36bd56c4 不同，因為是不同機器編的；輸出逐值相同。
+  - 守門規則改了（使用者在 TRX40 決定）：只看自己行程群組的 VmSwap，超過 256 MiB 就停。
+- **還在等**：icpe-sim 的 xref（run `20261107-155727`）通過並進 git。到時我用 acvlab 比對 xref，TRX40 也比，然後向使用者回報、開跑。
+
+## 2026-11-07T15:56+08:00 — 重跑清單到了、試合併 G0 PASS、重跑 plan 寫好；**旗標開的參考失敗，icpe-sim 叫停** → 不正式 merge、不開跑；分工改成按資料家族
+
+- **icpe-sim 的清單**：origin/icpe-next-sim 40a4c87f 的 `results/icpe_next/sim/dev14_rerun_list.csv`（run `20261107-154406`）。
+  - 要重跑 320 個 block、2,177,676 個 job，其中 P4 佔 1,940,988。
+  - CacheWise 126 個 block 照偏離 15 排除；xcheck 只當參考。
+- **試合併**（scratch worktree `/ssd6/hungwei/icpe-next/g0-40a4c87`，merge commit 4ffd7f5d）：
+  - PREREG 衝突：兩邊都是 icpe-next-a 的前綴，我這邊的就等於 icpe-next-a 5294f5f，取我這邊。
+  - 引擎檔和 63b8e328 相同，x1_sim sha256 8b53588b…。
+  - **G0（Rust，旗標關）PASS**：run `20261107-155259-icpe-data-g0-rust-merged-40a4c87`，128,064 格 0 個不同，sweep 23.8 s；code_sha `3180504e8d57+rs0bfacb59`。
+  - **沒有正式 merge 進 icpe-next-data**，理由見下。
+- **icpe-sim 叫停**（15:5x 訊息）：旗標開的參考 `xref_dev14`（run `20261107-154804`）在兩個引擎都失敗。
+  - Python：SemiAnalysis N16 s1、CPU 8、O-ALL、三個旗標都開，`_turn_end_wt → drop → _g_unprefetch` 出 `AssertionError: (12, 277)`。
+  - Rust：同一個 job，`main.rs:1099 gspf 12 277`。
+  - 這條 wt＋GPU 預取＋O-ALL 的路徑，之前的驗證網格沒涵蓋到。
+  - icpe-sim 正在診斷，修好之後引擎的 commit 會變。**三個旗標都不用**，TRX40 也已叫它等。
+- **重跑 plan 寫好**（`next_b_queue.py`）：
+  - 清單裡 action=rerun 的 block → plan `d14_<原 plan>`，block 名稱不變。
+  - 參數＝原本的參數，`--policies` 換成清單的 rerun_policies，再加清單的 flags。P4 保留原本的 `jobs.csv`。
+  - 清單不存在時，`d14_blocks` 回傳空的，現有 plan 都不受影響。
+  - **count 核對**（在試合併的 worktree 跑）：
+    - 300 個 block 的 job 數等於清單的 `jobs_rerun`。
+    - 另 20 個是模型 P 的 B1，整個 block 重跑，等於 `jobs_block`。照 icpe-sim 的建議，多跑的 16,321 個是 λ=0 的非 opf job。
+    - **0 個不符**，合計 2,193,997。
+- **分工改成按資料家族**：以 STATUS_DATA 15:41／15:44 的暫定分工為底，把 Mooncake 移去 TRX40。
+  - **原因**：照暫定分工，TRX40 只會拿到約 1／3 的 CPU 時間，不符合「TRX40 做重的部分」。
+  - Mooncake 的原始檔兩台的 sha256 前 12 碼相同：conversation b8cbb061a852、toolagent 48a2db1a13d3。
+  - 8 個 Mooncake P4 block 裡，原本就有 6 個是 TRX40 跑的。
+  - 估計的根據：原本那次 run 的 `rust_timing.jsonl`，加總要重跑的那些規則的 `run_s`。旗標開了之後每個 job 的時間可能不同，所以這只是〔推算〕。
+
+| 機器 | 家族 | block | job | 估計執行緒時數〔推算〕 |
+|:--|:--|--:|--:|:--|
+| TRX40 | SemiAnalysis（main、P1–P3、sens_rep sa_*、sa_p4）、Mooncake（old_* 的 mooncake、sens_rep mc_*、8 個 Mooncake P4）、UltraChat／LMSYS | 180 | 1,697,648（78%） | Mooncake 約 185（P4 的 P＝原本整個 block 的時間；M 用 acvlab conversation_M_B1 的比例 3.6% 推）；SemiAnalysis 約 100–110（原本 sa_p4 5.7 h × 36 workers，依 P 約佔一半推；main／P1–P3 的時間記在 TRX40，這裡沒有）；合計約 300 |
+| acvlab | TraceLab（main、P1–P3、sens_rep tl_*、P4）、Bailian、FreeInference、ShareGPT／WildChat、mini-SWE／OpenHands | 140 | 480,028（22%） | TraceLab 約 270（P4 234）、Bailian 約 100、其餘約 5；合計約 375 |
+
+  - 牆鐘〔推算〕：TRX40 約 300／45 ≈ 7 h（46 workers，上次量到的有效並行度 45.2）；acvlab 約 375／35 ≈ 11 h（35 workers，機器是共用的）。
+  - 如果 TRX40 先跑完，再把 acvlab 還沒開始的 TraceLab block 移過去。TRX40 的 TraceLab nb 在 `x1_nb_rux`，移之前要先比對 sha256。
+  - 第二段（版本 C）用同一個家族分工。
+- **開跑順序**（每台都一樣）：main → 對話／agent 的 main＋P1 → P1–P3 → sens_rep → P4。main 與 P1 的列是主表要用的，所以放前面。
+- **什麼時候開跑**：要四個條件都滿足。
+  1. icpe-sim 修好旗標並清掉。
+  2. `xref_dev14` 進 git。
+  3. 我正式 merge，並重做 G0，旗標關要 IDENTICAL、旗標開要等於 xref。
+  4. TRX40 過它自己的關。
+  - 開跑前先向使用者回報。
+
+## 2026-11-07T15:44+08:00 — 第二段的分工確定：**RUX3DPRO 不排進第二段**
+
+- icpe-rux 問過 icpe-main 版本 C 修正列由誰跑。它的提案是 RUX 跑 SemiAnalysis 12、Mooncake 2、Bailian 3，TRX 跑 TraceLab 3、FreeInference 6，也就是原本誰跑版本 C 就由誰重跑。
+- icpe-rux 後來直接跟我確認：照 15:42 的分工走，RUX3DPRO 不排進第二段。
+- **RUX3DPRO 接下來**（使用者排的順序）：
+  1. 把偏離 14 移植進 v8，放在 `code/icpe/rux_x1fast/v8_dev14/`，v8 48e4efce 不動。
+  2. 二階排隊（偏離 19）。
+- 讓 RUX3DPRO 分擔第二段，就會跟二階排隊搶機器。使用者排的順序是先移植、再做排隊，所以**我不排 RUX3DPRO**，也不需要使用者另外做優先順序的決定。使用者若要 RUX 先重跑自己的版本 C 列，再另外說。
+- **第二段**：
+  - 引擎＝`v8_dev14`，等 icpe-sim 交叉檢查通過，icpe-rux 把 commit 給 icpe-main。
+  - 分工：TRX40 跑 SemiAnalysis、UltraChat、LMSYS 的版本 C；acvlab 跑其餘（Mooncake、Bailian、TraceLab、FreeInference、sg、wc、ms、oh）。
+  - 每台開跑前，先用 `v8_dev14` 重現 icpe-sim 交叉檢查的參考。
+- **可能的調整**（等實際量出來再定）：TraceLab 與 FreeInference 的版本 C 原本是 TRX40 跑的，資料也在那邊。如果第二段 acvlab 那份明顯比較重，就把這兩個移去 TRX40，才符合「TRX40 做重的部分」。
+
+## 2026-11-07T15:42+08:00 — 偏離 14 的重跑**分兩段**（引擎的限制，使用者已決定順序）；TRX40 的存量；旗標開的關用 icpe-sim 的參考
+
+- **引擎**（icpe-main 轉達 icpe-sim 的回答，15:4x）：
+  - 現在沒有一個引擎同時有雜訊、偏離 14 的規則、APC／BELP。
+  - x1fast 63b8e32：有雜訊與偏離 14，沒有 APC／BELP。
+  - v8：有 APC／BELP，沒有偏離 14。
+- **使用者決定**（15:4x，在 icpe-main）：icpe-rux 先把偏離 14 移植進 v8，之後才做二階排隊；icpe-sim 交叉檢查這個移植。
+- **所以重跑分兩段**：
+
+| 段 | 內容 | 引擎 | 什麼時候開始 |
+|:--|:--|:--|:--|
+| 第 1 段 | 版本 B 引擎的所有列：主結果、P1–P3、sens_rep 的 pfgpu（`--pf-gpu-recheck`）、P4 模型 P 全部 job（`--noise-overdue resample`）、對話與 agent 的 main／P1 的 O-PF／O-ALL | x1fast 63b8e32 | icpe-sim 驗證通過並 push、我 merge 並跑完 G0、TRX40 過關之後 |
+| 第 2 段 | 所有版本 C 的列（主結果版本 C 的 O-PF／O-ALL、對話版本 C、agent 版本 C）＋ P4 版本 C 新增的 5 對 | 移植了偏離 14 的 v8 | icpe-rux 移植完、icpe-sim 交叉檢查通過之後 |
+
+- 上一節（15:41）的暫定分工兩段都適用：TRX40 做 SemiAnalysis 與 UltraChat／LMSYS，acvlab 做其餘的。
+- **TRX40 的存量**（icpe-next-trx，15:41）：
+  - 沒在跑，load 0.30；48 執行緒，62 GiB（可用 55），/ssd4 剩 509 GiB。
+  - **SemiAnalysis**：N16／32／64／72 × s1–s3 的 nb 都在（另有 N16 s1 t128k）。
+  - **TraceLab**：nb 在 `x1_nb_rux`，準備快取只有 rux v8 版（x1_sim code_sha256 5cac400b…），版本 B 引擎要在第一次跑時重建。
+  - **Mooncake**：原始檔在。
+  - **FreeInference**：原始的 16 週都在，沒有 fi_* nb。
+  - **Bailian**：沒有。
+  - **對話**：ultrachat、lmsys 的 T60／T600 × s1–s3 都在。
+  - **agent**：沒有 ms／oh 的 nb。
+  - **P4**：job 清單由 next_b_queue 從 `results/icpe_next/main/p4/p4_cells_distinct.csv` 產生，和 11/6 跑 sa_p4_b1／b2 時一樣。
+  - → 暫定分工不變：TraceLab、FreeInference、Bailian 留在 acvlab。
+- **旗標開的關**：icpe-sim 驗證通過後，會把 semianalysis_N16_s1 與 Mooncake conversation R1 的旗標開參考放在 `results/icpe_next/sim/xref_dev14/`。
+  - TRX40 用 Python 與 Rust 各比一次，當作旗標開的那一關；acvlab 的 G0 也比同一份。
+  - 我不另外指定 block。
+
+## 2026-11-07T15:41+08:00 — 使用者決定 **TRX40 分擔偏離 14 的重跑，最好是重的部分**；先暫定分工，等清單出來才定；P4 版本 C 的 5 對等引擎
+
+- **使用者的決定**：icpe-main 轉達（15:3x）；icpe-next-trx 也說使用者在 TRX40 確認過（STATUS_TRX 15:45，5acbc46e）。
+- **重跑清單還沒出來**：
+  - icpe-sim 對 63b8e32 的驗證（run `20261107-140640-icpe-sim-g1-63b8e32`）15:39 還在 t3_py 階段。
+  - 63b8e32 只在 icpe-sim 的 worktree，`origin/icpe-next-sim` 還是 0786f56。
+  - 原本估 15:25 左右出來，已經過了。
+- **TRX40 的條件**（icpe-next-trx 回報）：
+  - 48 執行緒、62 GiB。
+  - 有 SemiAnalysis N16–N72 的 nb、Mooncake、TraceLab、FreeInference、UltraChat、LMSYS-Chat-1M；**沒有 Bailian**。
+  - LMSYS 的原始資料與 nb 只能在 TRX40（授權），所以 lm_* 一定在那裡跑。
+  - CacheWise 不上 TRX40；偏離 15 也已經把它排除在重跑外。
+- **暫定分工**（清單出來後依實際量調整；若 TRX40 那份明顯比較輕，就把它已有的 Mooncake 或 TraceLab block 移過去）：
+
+| 機器 | 暫定負責 |
+|:--|:--|
+| TRX40 | SemiAnalysis：sa_main、sa_p1–p3、sens_rep 的 sa_*、P4 模型 P 在 sa 上的 job；對話 uc_*、lm_* 的主結果、P1、版本 C |
+| acvlab | TraceLab（tl_*）、Mooncake＋FreeInference（old_*）、Bailian（bl_*）、sens_rep 的 bl_*／mc_*；對話 sg／wc；agent ms／oh；xcheck；P4 模型 P 在非 sa trace 上的 job（CacheWise 的除外） |
+
+- **TRX40 跑正式 block 前要過的關**（使用者要求逐位元重現；icpe-next-trx 自己列的順序）：
+  1. merge icpe-next-data。我會先 merge sim、加重跑的 plan、在 acvlab 跑 G0，再給它 commit 號。
+  2. 在 TRX40 編 Rust。
+  3. 跑 G0、xc_sa，以及旗標關的完整 sa_N16_s1。
+  4. 旗標開的比對：我指定一個小 block，兩台各跑一次，用 G1 的比法逐值比。
+- **P4 版本 C 的新增（偏離 10 第 5 點）**：
+  - icpe-main 的 58252b4f（`results/icpe_next/main/p4/verC/`）。
+  - 只有 5 個（格, 元件）是版本 C ≥15% 但版本 B 沒選到。
+  - 5 個全都要 APC 或 BELP 當 GPU 規則。我跑 P4 用的引擎（62b0932b，`--jobs-from`）沒有這兩個規則；v8（48e4efce）有，但據我所知沒有 P4 雜訊。其中 3 個是 O-PF，也要偏離 14 的旗標。
+  - 「雜訊＋偏離 14＋APC／BELP 放同一個引擎」的問題 icpe-main 已經問 icpe-sim。**引擎沒定之前我不排**；定了之後，併進同一份偏離 14 的班表。
+  - 版本 B 選到、版本 C 掉到 15% 以下的 119 對：結果保留、加標記，不用重跑（icpe-main）。
+- **需要 icpe-sim 做什麼**：
+  - 驗證過了就 push，並給重跑清單。
+  - 回答 P4 版本 C 的引擎問題。
+  - 給一個能在兩台都跑的小 block（旗標開），當 TRX40 的逐位元重現測試；沒有的話我自己挑一個。
+- **需要使用者決定什麼**：無。
+
 ## 2026-11-07T14:05+08:00 — **agent 軌跡（偏離 17＋更正）完成**：mini-SWE-agent、OpenHands 的版本 B、C 都進 git
 
 - PREREG 已同步：偏離 17（d1f4ca2）、偏離 17 更正（5294f5f）。

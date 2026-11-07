@@ -136,7 +136,97 @@ def blocks():
         if os.path.exists(f):
             P[f"{base}_ttl7"] = ttl7_blocks(f)
     P.update(p4_blocks())
+    P.update(d14_blocks(P))
+    P.update(p4verc_blocks())
     return P
+
+
+# PREREG 偏離 14 第二段：P4 版本 C 的新增 5 對（偏離 10 第 5 點；icpe-main 58252b4f 的 p4_cells_verC_add_distinct.csv）。
+# 組合（icpe-main 16:3x，照偏離 10 §3）：O-PF 的 ④＝O-PF × {LRU, TTLA×7, TTLB×7, APC}；O-GPU 的 ④＝NON_ORACLE × {BEL, BELP}。
+# 其他照版本 B 的 P4（P／M、B1／B2、同一組 λ、10 seed、λ=0 自檢）。引擎＝v8_dev14（icpe-next-rux 36780534），三個旗標都開（環境變數）。
+P4VC_SRC = ("58252b4f", "results/icpe_next/main/p4/verC/p4_cells_verC_add_distinct.csv")
+D14REPO = os.environ.get("NEXT_B_D14REPO", f"{ROOT}/rux-d14-3678053")
+D14_MAIN_RS = "d2048fa38a42c78b"
+
+
+def p4verc_blocks():
+    cp = subprocess.run(["git", "-C", REPO, "show", f"{P4VC_SRC[0]}:{P4VC_SRC[1]}"], capture_output=True, text=True)
+    if cp.returncode != 0:
+        return {}
+    XS = import_xs()
+    by = {}
+    for r in csv.DictReader(io.StringIO(cp.stdout)):
+        assert r["gpu_GiB"] == "111.0625" and r["gpu_write"] == "wb" and r["restore"] == "cake" and float(r["slow_cap_frac"]) == 0, r
+        by.setdefault(r["trace"], []).append(r)
+    out = []
+    for trace, rows in sorted(by.items()):
+        jobs = set()
+        for r in rows:
+            if r["component"] == "O-PF":
+                combos = [(p, g) for p in XS.COMPONENT_POLICIES["O-PF"] for g in P4_GP_NO + ["APC"]]
+            elif r["component"] == "O-GPU":
+                combos = [(p, g) for p in XS.NON_ORACLE for g in ("BEL", "BELP")]
+            else:
+                raise SystemExit(f"P4 版本 C：不認得的元件 {r['component']}")
+            jobs |= {(trace, r["rule"], _cpu_str(r["cpu_GiB"]), p, g, r["slow"], r["gpu"]) for p, g in combos}
+        jobs = sorted(jobs)
+        cpus = sorted({j[2] for j in jobs}, key=float)
+        rules = sorted({j[1] for j in jobs})
+        slows = sorted({j[5] for j in jobs})
+        pols = sorted({j[3] for j in jobs})
+        gps = sorted({j[4] for j in jobs}, key=lambda g: (g != "LRU", g != "BEL", g))
+        short = trace[3:] if trace.startswith("nb:") else trace
+        for draw in ("B1", "B2"):
+            for model in ("P", "M"):
+                args = ["--cpu", *cpus, "--policies", *pols, "--slows", *slows, "--modes", "cake", "--gpu-gib", "111.0625",
+                        "--gpu-write", "wb", "--gpu-policies", *gps, "--pf-target", "cpu", "--noise-models", model,
+                        "--noise-lambdas", *P4_LAMS[(model, draw)], "--noise-draws", draw, "--noise-seeds", *map(str, range(10))]
+                out.append((f"{short}_{model}_{draw}", dict(
+                    traces=[trace], rules=rules, jobs=jobs, no_npz=True, src=f"{P4VC_SRC[0]}:{P4VC_SRC[1]}",
+                    engine_py=f"{D14REPO}/code/icpe/rux_x1fast/v8_dev14/sweep_v8_dev14.py", engine_cwd=D14REPO,
+                    env_extra=dict(RUX_PFX="1", RUX_PGR="1", RUX_NZO="resample")), args))
+    return {"d14_p4verc": out}
+
+
+# PREREG 偏離 14 的重跑（STATUS_DATA 2026-11-07 15:41 起；icpe-sim 的清單 results/icpe_next/sim/dev14_rerun_list.csv，一個 block 一列）。
+# action=rerun 的 block → plan d14_<原 plan>，block 名稱不變。參數＝原 block 的參數，--policies 換成清單的 rerun_policies
+# （照原本的順序取交集），再加清單的 flags。P4 保留原本的 jobs 清單（--jobs-from），x1 sweep 自己和縮小後的 policies 取交集。
+# 其他 job 不重跑：icpe-sim 驗證過旗標開時逐位元相同，沿用原本的列。
+D14_LIST = f"{REPO}/results/icpe_next/sim/dev14_rerun_list.csv"
+
+
+def _replace_opt(args, opt, vals):
+    i = args.index(opt)
+    j = i + 1
+    while j < len(args) and not args[j].startswith("--"):
+        j += 1
+    return args[:i + 1] + list(vals) + args[j:], args[i + 1:j]
+
+
+def d14_blocks(P):
+    if not os.path.exists(D14_LIST):
+        return {}
+    out = {}
+    with open(D14_LIST, newline="") as fh:
+        for r in csv.DictReader(fh):
+            if r["action"] != "rerun":
+                continue
+            base = {name: (tr, args) for name, tr, args in P.get(r["plan"], [])}
+            assert r["block"] in base, f"偏離 14 清單的 block 不在 blocks()：{r['plan']}/{r['block']}"
+            tr, args = base[r["block"]]
+            assert " ".join(tr["traces"]) == r["traces"] and " ".join(tr["rules"]) == r["rules"], (r["plan"], r["block"], tr)
+            rp = r["rerun_policies"].split()
+            _, orig = _replace_opt(args, "--policies", [])
+            assert rp and set(rp) <= set(orig), (r["plan"], r["block"], rp, orig)
+            new, _ = _replace_opt(args, "--policies", [p for p in orig if p in rp])
+            flags = r["flags"].split()
+            assert flags and all(f in ("--pf-expire", "--pf-gpu-recheck", "--noise-overdue", "resample") for f in flags), flags
+            # icpe-sim 16:35（SIM_CHANGES 23 更正）：預取到 GPU 的 block 一律要有 --pf-gpu-recheck（只開 --pf-expire 會斷言）
+            assert "--pf-gpu-recheck" in flags, (r["plan"], r["block"], flags)
+            tr2 = dict(tr, d14=dict(list_run_id=r["run_id"], jobs_block=int(r["jobs_block"]), jobs_rerun=int(r["jobs_rerun"]),
+                                    rerun_policies=rp, flags=flags))
+            out.setdefault(f"d14_{r['plan']}", []).append((r["block"], tr2, new + flags))
+    return out
 
 
 # PREREG 偏離 6 的 P4（W4 雜訊，§3 B）：選格＝icpe-main 的清單（偏離 8；origin/icpe-next-main c868ef2）。
@@ -276,6 +366,13 @@ def cmd_count(a):
         ptot = 0
         for name, tr, args in P[plan]:
             d = parse_sweep(args)
+            if tr.get("engine_py"):    # v8_dev14 的 GPU 規則（APC、BELP）本 repo 的 x1_sim 不認得 → job 數＝清單的 (t, r, c, p, g) 數 × 雜訊設定數
+                ns = XS.noise_specs(d["noise-models"], [float(x) for x in d["noise-lambdas"]], d["noise-draws"],
+                                    [int(x) for x in d["noise-seeds"]])
+                n5 = len({j[:5] for j in tr["jobs"]})
+                print(f"{plan:10s} {name:28s} cells={len(tr['jobs'])} combos={n5} noise_specs={len(ns)} expect_kept={n5 * len(ns)}")
+                ptot += n5 * len(ns)
+                continue
             for nm in d["slows"]:
                 if nm not in XS.SLOWS and nm not in XS.EXTRA_SLOWS:
                     XS.EXTRA_SLOWS.append(nm)
@@ -289,7 +386,12 @@ def cmd_count(a):
                 J = [j for j in J if any((j[0], j[1], float(j[2]), j[3], j[5]["pol"] if j[5] else "none", v[0], v[1]) in keep
                                          for v in j[4])]
             nv = len(tr["traces"]) * len(tr["rules"])
-            print(f"{plan:10s} {name:28s} variants={nv} jobs={len(J):7d} per_variant={len(J) / nv:9.1f}")
+            d14 = ""
+            if tr.get("d14"):          # 偏離 14：和 icpe-sim 清單的 jobs_rerun 比（等於＝只重跑受影響的；等於 jobs_block＝整個 block）
+                e = tr["d14"]
+                d14 = (f" list_rerun={e['jobs_rerun']} list_block={e['jobs_block']} "
+                       + ("MATCH_RERUN" if len(J) == e["jobs_rerun"] else "WHOLE_BLOCK" if len(J) == e["jobs_block"] else "MISMATCH"))
+            print(f"{plan:10s} {name:28s} variants={nv} jobs={len(J):7d} per_variant={len(J) / nv:9.1f}{d14}")
             ptot += len(J)
         print(f"{plan:10s} TOTAL jobs={ptot}")
         tot += ptot
@@ -308,13 +410,20 @@ def run_block(plan, name, tr, args, workers, dry, engine="py"):
            "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1", "MKL_NUM_THREADS": "1"}
     if engine == "rust":
         env["X1_RUST_TIMING_LOG"] = f"{run}/rust_timing.jsonl"
-    argv = [PY, "-I", "code/icpe/p3_fvar.py", "--variant", "V1", "--calib", f"{REPO}/results/icpe_h200/p01/calib",
+    # 偏離 14 第二段（d14_p4verc）：換成 v8_dev14 的 sweep（別的 worktree），旗標用環境變數；只准 Rust
+    script, cwd = tr.get("engine_py", "code/icpe/p3_fvar.py"), tr.get("engine_cwd", REPO)
+    if tr.get("engine_py"):
+        assert engine == "rust", "v8_dev14 的 block 只用 --engine rust"
+        rs = sha256(f"{D14REPO}/code/icpe/rux_x1fast/v8_dev14/src/main.rs")[:16]
+        assert rs == D14_MAIN_RS, f"v8_dev14 main.rs 是 {rs}，不是 {D14_MAIN_RS}"
+        env.update(tr["env_extra"])
+    argv = [PY, "-I", script, "--variant", "V1", "--calib", f"{REPO}/results/icpe_h200/p01/calib",
             "--out-root", f"{run}/out", "x1", "sweep", "--traces", *tr["traces"], "--rules", *tr["rules"], *args, "--workers", str(workers)]
     if engine == "rust":
         argv += ["--engine", "rust"]
     if tr.get("jobs"):                 # P4：只跑清單裡的 job（清單寫在 run 目錄，sweep 印它的 sha256）
         argv += ["--jobs-from", f"{run}/jobs.csv"]
-    cmd = "cd " + REPO + "\n" + "".join(f"export {k}={v}\n" for k, v in env.items()) + "exec nice -n 10 " + " ".join(argv) + "\n"
+    cmd = "cd " + cwd + "\n" + "".join(f"export {k}={v}\n" for k, v in env.items()) + "exec nice -n 10 " + " ".join(argv) + "\n"
     if dry:
         print(cmd)
         return 0, rid
@@ -330,6 +439,10 @@ def run_block(plan, name, tr, args, workers, dry, engine="py"):
         fh.write(f"date: {datetime.now().astimezone().isoformat()}\nhost: {socket.gethostname()}\nplan: {plan}\nblock: {name}\nengine: {engine}\n")
         fh.write("git HEAD: " + sh(f"git -C {REPO} rev-parse HEAD"))
         fh.write("git status:\n" + sh(f"git -C {REPO} status --porcelain"))
+        if tr.get("engine_py"):
+            fh.write(f"engine worktree: {cwd} HEAD " + sh(f"git -C {cwd} rev-parse HEAD"))
+            fh.write("engine worktree status:\n" + sh(f"git -C {cwd} status --porcelain"))
+            fh.write(f"jobs source: {tr.get('src')}\n")
         fh.write("uptime: " + sh("uptime"))
         fh.write("free -g:\n" + sh("free -g"))
         fh.write("venv: " + sh(f"{PY} -I -c \"import sys,numpy,pandas,pyarrow;print(sys.version.split()[0],numpy.__version__,pandas.__version__,pyarrow.__version__)\""))
@@ -416,7 +529,10 @@ def cmd_collect(a):
         ctx = open(f"{r['run']}/context.txt").read()
         man = dict(plan=plan, block=name, run_id=r["run_id"], host=host, run_dir=r["run"], rows=rows, elapsed_s=r["elapsed_s"],
                    finished=r["ts"], cmd=open(f"{r['run']}/cmd.sh").read(), context=ctx,
-                   note="方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）")
+                   note=("PREREG 偏離 14 的重跑（icpe-sim 清單 results/icpe_next/sim/dev14_rerun_list.csv）：只含清單 rerun_policies 的列"
+                         "（P4 另受 jobs.csv 限制）；同一 block 其他規則的列沿用 results/icpe_next/b/<原 plan>/<block>/。旗標見 cmd"
+                         if plan.startswith("d14_") else
+                         "方案 A（STATUS_DATA 2026-11-05T00:20；PREREG 偏離 4）；② 不含 block 粒度 APC（PREREG 偏離 2 第 3 項）"))
         with open(f"{dst}/manifest.json", "w") as fh:
             json.dump(man, fh, ensure_ascii=False, indent=1)
         n += 1
