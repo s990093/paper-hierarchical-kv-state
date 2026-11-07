@@ -2,6 +2,24 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T11:55+08:00 — 使用者：**W6（H200 的 GPU 實測）改由 h200 session 做**；P1–P4 以外還要跑的清單
+
+- 使用者問「論文除了 P1–P4 還有什麼要跑」。我照各 STATUS 與 PREREG 整理（11:50 時）：
+  - **在跑**：RUX3DPRO 的偏離 10 版本 C、偏離 11A W5、偏離 11B 排隊，rux 估 14:00–14:30 跑完〔推算〕。
+    - 偏離 10 版本 C：SemiAnalysis 還剩 N72 s2／s3，Mooncake、Bailian 3 個變體還沒跑。
+    - 偏離 11A W5：還剩 Bailian coder、Mooncake 2 個。
+    - 偏離 11B 排隊：SemiAnalysis 12 個變體。
+  - **還沒排**：
+    - 偏離 14 重跑：等 G1。
+    - 偏離 10 第 5 點「版本 C ≥15% 的格補跑 P4」：等 icpe-main 的版本 C 表。
+    - W6：GPU 實測。
+  - **不跑**：W7（使用者叫停）、CacheWise 的新工作（11:45）。
+- **使用者決定**，原話：「W6：H200 上的 GPU 實測 改叫 h200 session 做」。已傳訊息給 h200，附上 PREREG §5 的登記內容：
+  - 順序 W6c→W6a→W6b；
+  - W6c 的代表格要在看結果之前補登記；
+  - W6b 的 x1_gpu.py 由誰改要問使用者。
+- acvlab 不碰 GPU。W6c 之後要用實測 f(i) 重跑模擬時，再由 h200 告訴我排在哪台。
+
 ## 2026-11-07T11:50+08:00 — **對話資料集 4／4 份到齊**：LMSYS-Chat-1M（TRX40）的版本 B、C 收進 icpe-next-data
 
 - icpe-trx 推上 icpe-next-trx 291e7d60（STATUS_TRX 11:40）。
