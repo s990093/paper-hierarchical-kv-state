@@ -5,14 +5,14 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=170G
-#SBATCH --time=18:00:00
+#SBATCH --time=36:00:00
 #SBATCH -o slurm-%x-%j.out
 # =============================================================================
 # next_a_w6b.sh — W6b：Mooncake 對話「淘汰順序」（O-ORD）的 GPU 縮小重播（PREREG §5、偏離 1、偏離 3 第 3 點；
 # run set 要在送出之前登記成 PREREG 的偏離）。和 next_a_w6.sh 分開寫：W6c／W6a 的 job 排隊中，開跑時會執行 repo 裡的
 # next_a_w6.sh，那支在它們跑完前不能改。
 #
-#   sbatch --dependency=afterany:24444 code/icpe/next_a_w6b.sh --reps <登記的次數>
+#   sbatch --dependency=afterany:24444 code/icpe/next_a_w6b.sh --reps 6     # PREREG 偏離 16：6 次；96 個 run 約 26 小時〔推算〕
 #   bash code/icpe/next_a_w6b.sh --reps <n> --dry-run | --list ；--from <步驟> 接著跑
 #
 # 設定同 W6a／T1G P02：Mooncake conversation R1、k＝8、CPU 128／256 GiB ÷ 8、ssd／idle／cake、T1 常數（P3_TIER=h200cpu、
