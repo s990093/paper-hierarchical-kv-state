@@ -3,7 +3,51 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
-## 2026-11-07T17:53+08:00 — 偏離 14 第一段：**Mooncake 的 main＋P1 完成並收進 git**；檢查表 mc_p1 `D14_TABLE_RESULT IDENTICAL`；第一段的 sa 全部（main、P1–P3）都過了檢查
+## 2026-11-07T18:20+08:00 — 第二段：**semianalysis_N16_s2、mooncake_conversation 的 D14_VERC_DONE**（三關都過）；P4 的檢查規則已由 icpe-data 修正（16529109），重跑後 PASS
+
+- **semianalysis_N16_s2**（run `20261107-175409-icpe-trx-d14verc-semianalysis_N16_s2`）：
+  - `sweep done 774.8` s。
+  - `D14_SWEEP_RESULT IDENTICAL`。
+  - `EXPLORE_RESULT REPRODUCED cells=324`。
+  - collect 核對 `bad 0`。
+- **mooncake_conversation**（run `20261107-175229-icpe-trx-d14verc-mooncake_conversation`；workers 8）：
+  - `jobs=28368`、`sweep done 1613.3` s。
+  - `D14_SWEEP_RESULT IDENTICAL`。
+  - 重現檢查照抄：`版本 B 表上 918 格×元件，對上 918；各欄不同數 {… 全部 0}` → `EXPLORE_RESULT REPRODUCED cells=918`。
+  - 修正版版本 C 表照抄（元件、格數、max、median、n_ge15、n_ge5）：
+    - R1：O-ALL(report) 54、0.774894、0.515780、54、54；O-GPU 54、0.396864、0.274374、50、54；O-PF 54、0.577518、0.357424、50、54。
+    - R2：O-ALL(report) 54、0.733756、0.474015、54、54；O-GPU 54、0.357856、0.234131、46、54；O-PF 54、0.541065、0.332592、48、54。
+  - collect 核對 `bad 0`。
+- **P4 的檢查（第一段）**：
+  - 18:1x 我發現 d14 的 P4 模型 M block 每個都有 `unmatched_cells` > 0，icpe-data 的檢查（舊版）會把它們判成 FAIL。
+    - 例：semianalysis_N16_s1_M_B1 `kept_jobs=217`（＝count，MATCH_RERUN）、`unmatched_cells=280`。
+    - unmatched 的格子都是 opf 以外的 CPU 規則（ARC、GDSF、LRU、LRU+2HA、LRU+2HW）。
+  - 原因（icpe-data 確認）：模型 M 的 d14 block 把 `--policies` 縮成 rerun_policies，但用整份 jobs.csv，所以其他規則的格子這次產生不出 job，那些列沿用原本的 p4 block。不是計算錯。
+  - 在等確認的期間，我沒有 collect 任何 P4 block，佇列繼續跑。使用者在 18:1x 收到回報。
+  - icpe-data 修了檢查（icpe-next-data 16529109，merge → 9128468c）：
+    - unmatched 必須剛好等於 jobs.csv 裡規則不在 `--policies` 的格子數。
+    - `--policies` 裡的規則一格都不能 unmatched。
+  - 重跑（run `20261107-181312-icpe-trx-d14-blockcheck-p4-test`）：`D14_BLOCKCHECK PASS n=10 fail=0`。模型 M 的 unmatched＝expected（280/280、100/100、80/80、510/510、510/510），模型 P 是 0/0。
+  - 之後的檢查都寫到新檔 `results/icpe_next/b/d14_blockcheck_trx_v2.csv`，舊的 `d14_blockcheck_trx.csv`（111 列，一個 header）不動。
+  - 我自己的 `d14_blockcheck.py` 也改成同樣的規則。
+
+## 2026-11-07T17:54+08:00 — 第二段第一個變體 **semianalysis_N16_s1：D14_VERC_DONE**（三關都過）→ `results/icpe_next/apc_d14/semianalysis_N16_s1/`；第一段非 P4 的 124 個 block 全部 OK，進入 P4
+
+- **semianalysis_N16_s1**（run `20261107-174218-icpe-trx-d14verc-semianalysis_N16_s1`）：
+  - sweep：`engine=rust src_sha256=4eca5bda…`、`py_fallback_jobs=0`；`jobs=14184 workers=16 code_sha=3280b1c8799b+rs4eca5bda`；`sweep done 651.8` s。
+  - `D14_SWEEP_RESULT IDENTICAL`：opf 以外的列和舊的 apc sweep 逐位元相同。
+  - 重現檢查，照抄：`版本 B 表上 324 格×元件，對上 324；各欄不同數 {… 全部 0}` → `EXPLORE_RESULT REPRODUCED cells=324`。
+  - 修正版版本 C 表照抄（元件、格數、max、median、n_ge15、n_ge5）：
+    - O-ALL(report)：54、0.258435、0.036459、6、21。
+    - O-GPU：54、0.436013、0.051263、12、27。
+    - O-PF：54、0.043018、0.001076、0、0。
+  - collect：7 個檔加 MANIFEST.json。用我的 `check_v8_collect.py` 核對 sha256、run_id／ts、列數、code_sha，`bad 0`。
+- **第一段**：
+  - 我的檢查都是 OK：d14_old_p2／p3 的 Mooncake 4 個、d14_sens_rep 的 9 個（sa_* 5 個、mc_* 4 個）。
+  - 非 P4 的 124 個 block 全部跑完，0 失敗。17:53:53 開始 d14_sa_p4_b1。
+- 修正：上一節的時間標籤由 17:53 改成 17:52（commit 時間是 17:52:15）。
+
+## 2026-11-07T17:52+08:00 — 偏離 14 第一段：**Mooncake 的 main＋P1 完成並收進 git**；檢查表 mc_p1 `D14_TABLE_RESULT IDENTICAL`；第一段的 sa 全部（main、P1–P3）都過了檢查
 
 - **block**：
   - d14_old_main/mooncake（3,456 job）。
