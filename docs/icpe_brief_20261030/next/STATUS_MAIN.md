@@ -3,7 +3,7 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
-## 2026-11-07T11:40+08:00 — 對話資料集（偏離 13）的分析選擇：使用者在看任何對話資料集的數字之前決定；等 4 份到齊、等偏離 14 的修正版再算
+## 2026-11-07T11:33+08:00 — 對話資料集（偏離 13）的分析選擇：使用者在看任何對話資料集的數字之前決定；等 4 份到齊、等偏離 14 的修正版再算
 
 **現況**（icpe-data 訊息、`origin/icpe-next-data` 59be8e8）：ShareGPT（T60／T600 × s1–3）、WildChat（s1–3）、UltraChat（T60／T600 × s1–3）的版本 B（`chat_main`、`chat_p1`、`analysis/{sg,wc,uc}_p1`）和版本 C（`results/icpe_next/apc/<變體>/`）都已進 git；LMSYS 等使用者登入 HF。icpe-main 只列了檔名，**沒看任何對話資料集的模擬數字**（也沒讀 STATUS_DATA 11:35 的摘要表）。
 
@@ -11,7 +11,7 @@
 - 照偏離 7 和 Bailian／Mooncake 對話的先例，這四份是聊天資料，歸「非工具類」：只報告有沒有過 15%，推翻條件寫「不適用」。（照既有規則，不是新選擇。）
 - 版本 C 也並列「④ 不含 BELP」（使用者 11/7 對版本 C 的決定）。
 
-**使用者決定**（本 session，AskUserQuestion，11/7 約 11:3x）
+**使用者決定**（本 session，AskUserQuestion，11/7 11:2x–11:33，commit 6de573b 之前）
 1. **等 4 份到齊再算**（LMSYS 進 git 之後）。
 2. **判定單位**：每個 seed 當一個變體各自判（同主結果 SemiAnalysis s1–s3 的做法），另報每格 3 個 seed 的中位數和最小–最大。
 3. **T600 只報告**：判定用 T60 和 WildChat；T600 並列數字、不下判定。
