@@ -1,0 +1,57 @@
+{
+ "exp": "apc",
+ "variant": "tracelab_c1",
+ "collected_ts": "2026-11-07T08:40:45+08:00",
+ "collected_host": "acvlab-TRX40-AORUS-MASTER",
+ "repo_commit": "2b859912671ec2d5479bef5f3324d036c2a8b2aa",
+ "v8_main_rs_sha256": "48e4efcee98cb5e54040d8b21fd61726007617d8be17d82f09347ebdf13ee7d2",
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-083210-icpe-trx-rux-tl_c1-apc",
+   "ts": "2026-11-07T08:32:10+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-083210-icpe-trx-rux-tl_c1-apc/out/x1/x1_sweep.csv",
+   "sha256_source": "4a682c2b2b7cbd7fdd3f3ce793a797158a79ef933154e8bd3d1b443410815ddd",
+   "bytes_source": 2295901,
+   "rows": 5508
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-083210-icpe-trx-rux-tl_c1-apc/a/explore_apc_rows.csv",
+   "sha256_source": "78a22cb2d4c74a79cea7bb87d082a7bf38297fe673599304051dc4bd622a5c8d",
+   "bytes_source": 79721,
+   "rows": 108
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-083210-icpe-trx-rux-tl_c1-apc/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "fed25b14a12dfcf1d136e9327fccc21aba09a4d61a0d63259eb078b66c2ab6fb",
+   "bytes_source": 3932,
+   "rows": 18
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-083210-icpe-trx-rux-tl_c1-apc/a/base_headroom_components.csv",
+   "sha256_source": "32097be4cda98fde59dd409464262038bbadede129bb14a56a057b28ee767077",
+   "bytes_source": 34359,
+   "rows": 108
+  },
+  {
+   "file": "apc_headroom_components.csv",
+   "source": "/ssd4/hungwei/icpe-next/runs/20261107-083210-icpe-trx-rux-tl_c1-apc/a/apc_headroom_components.csv",
+   "sha256_source": "5eafd6f84dce26272d819d3c357a7da605cf212207f8421d76704506b3ef2183",
+   "bytes_source": 33648,
+   "rows": 108
+  }
+ ],
+ "note": "探索（不是正式結果）；TRX40；含版本 B 重現檢查 108/108 格×元件 0 差（EXPLORE_RESULT REPRODUCED）",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

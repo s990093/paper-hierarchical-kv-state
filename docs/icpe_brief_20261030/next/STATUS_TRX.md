@@ -3,6 +3,39 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T08:50+08:00 — **TraceLab c1 的版本 B 重現檢查通過（108／108 格×元件，各欄 0 差）**；APC／BELP 探索收進 `v8_explore/apc/tracelab_c1/`；c1 的 W3 開跑
+
+- **run** `20261107-083210-icpe-trx-rux-tl_c1-apc`：rc=0，08:32:10 → 08:39:59，worktree 2b859912。
+  - sweep：4,728 個 job，384 s，40 workers，`py_fallback_jobs=0`；`rust_timing.jsonl` 4,728 行；`x1_sweep.csv` 5,508 列。
+  - `code_sha=3280b1c8799b+rse7f6ee8f`：`rs` 後面是 v8 的 `Cargo.toml`＋`src/main.rs` 的 sha256（照 `x1_rust_v6.src_sha()` 重算，同值）。`main.rs` sha256 是 `48e4efce…`。
+  - 資源：MemAvailable 最低 43,198 MiB，PSS 最高 13,528 MiB，swap 一直 1,381 MiB（沒有再漲），load1 最高 41.84。
+- **重現檢查**（`explore_apc.py` 的第一行，照抄）：
+  `重現檢查：版本 B 表上 108 格×元件，對上 108；各欄不同數 {'T_oracle': 0, 'T_rival': 0, 'headroom': 0, 'best_rival': 0, 'best_rival_gpu_policy': 0, 'oracle_policy': 0, 'oracle_gpu_policy': 0}` → `EXPLORE_RESULT REPRODUCED cells=108`。
+  - 對照表是版本 B 的 `tl_p1_headroom_components`（blob 48da5cd4），CPU 8／111.0625／1024 三個容量。
+  - **這表示 TRX40 的 TraceLab 轉換＋v8 引擎算出的版本 B 表，和 acvlab 的逐值相同。偏離 9 對 tracelab_c1 的先決條件滿足。**
+- **APC／BELP 的摘要表**（`explore_apc.py` 印的，restore＝cake，每個元件 18 格；探索，不是正式結果，我不解讀）：
+
+  | 元件 | max_base | max_apc | n15_base | n15_apc | med_d_rival | med_d_hr_pt | rival_apc | oracle_apc |
+  |:--|--:|--:|--:|--:|--:|--:|--:|--:|
+  | O-ALL(report) | 0.4137 | 0.0905 | 4 | 0 | −0.0419 | −3.9279 | 17 | 0 |
+  | O-DROP | 0.0130 | 0.0136 | 0 | 0 | −0.0679 | 0.1447 | 18 | 18 |
+  | O-GPU | 0.3895 | 0.0514 | 6 | 0 | −0.0419 | −4.0439 | 17 | 0 |
+  | O-NOW | 0.0007 | 0.0007 | 0 | 0 | −0.0679 | 0.0048 | 18 | 18 |
+  | O-ORD | 0.2329 | 0.2188 | 2 | 2 | −0.0666 | 0.0007 | 18 | 18 |
+  | O-PF | 0.0601 | 0.0780 | 0 | 0 | −0.0419 | 0.9114 | 17 | 18 |
+
+  - O-GPU 的 ④ 加上 BELP：18 格，max_old 0.3895 → max_new 0.3923，med 0.0754 → 0.0615，BELP 比 BEL 快的有 18 格。
+- **收集**：用 `collect_v8.py apc tracelab_c1`（worktree 2b859912 時執行），檔案在 `results/icpe_next/v8_explore/apc/tracelab_c1/`，共 596K：
+  - `x1_sweep.csv.xz`（5,508 列）；
+  - `explore_apc_rows.csv`（108）、`explore_ogpu_belp_rows.csv`（18）、`base_headroom_components.csv`（108）、`apc_headroom_components.csv`（108），每個 CSV 都有 run_id、ts、host；
+  - `MANIFEST.json`（repo_commit 2b859912，v8_main_rs_sha256 48e4efce…，sweep_code_sha `3280b1c8799b+rse7f6ee8f`）。
+- **icpe-rux 的 c2、c4、FreeInference 第 2–6 週**：重現檢查只跑版本 B 的設定（17 × 16 個規則，CPU 8／111.0625／1024），然後跑 `explore_apc.py`。c1 和 FreeInference 第一週跑完整 APC（含 BELP）。
+- **偏離 9 更正**：origin/icpe-next-rux e7e0c778，只改 PREREG 的文字，`git diff 8f04a91c e7e0c778 -- code` 是 0 行。worktree 留在 8f04a91c。
+- **W3 tracelab_c1 開跑**：run `…-icpe-trx-rux-tl_c1-w3`。
+  - worktree 8f04a91c；`main.rs` sha256 仍是 48e4efce…。
+  - `RUX_CUE_FILE=$ROOT/rux-trx/cue/tracelab_c1.cue.u8`；CPU 9 個容量 × NON_ORACLE 10 × {CUEP, CUEO} × ssd／b32／nfs，40 workers。
+  - 跑完接 `analyze_w3.py --headroom tl_p1_verB.csv`。
+
 ## 2026-11-07T08:45+08:00 — W3 的規則已登記（PREREG 偏離 9，origin/icpe-next-rux 8f04a91c）；**更正 08:40 節的時間**；W3 等 c1 的重現檢查通過才開始
 
 - **更正**（icpe-main 來訊）：08:40 節寫「使用者 11/7 約 08:45 決定 W3 先登記才跑」，時間是照抄 icpe-main 訊息的錯。實際是 acvlab 本地時間約 08:28–08:30。舊節不改。
