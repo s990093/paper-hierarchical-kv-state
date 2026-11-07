@@ -1170,3 +1170,31 @@
   - 重負載 (LRU, LRU) 的平均等待：二階 865 s，一階 `qpost=2` 2,630 s。
   - 輕負載：二階和 `qpost=2` 的 mean TTFT 差 −9%～+9%。GPU 用 LRU 的組二階比較快，GPU 用 BELP 的組二階比較慢。
 - 上限表在登記前沒有算；端到端試跑算出的上限表沒有讀。
+
+### 偏離 20（2026-11-07T14:18:16Z（H200 head node 的 `date -u`）；**W6a 和 W6b 在同一個 job 的兩張卡上同時跑（兩張卡在不同 NUMA 節點；依 T2 的 CAL-OK）**；使用者在 `h200` 決定（11/7 約 22:0x：我建議「只把 W6a、W6b 並行，留在 T2 量過的範圍內，TraceLab 照樣單獨跑」，使用者回「好可以」；22:1x「恢復了幫我搶卡」→ 先送出、登記稿之後給使用者看）；由 `h200` 寫；號碼是 `h200` 自己的（18 仍留給 TraceLab c1 GPU 層重播）；W6a、W6b 的 run set、判準、門檻、分析都不改）
+
+**經過**
+- §5 的量時間規則：量時間的 job 不和我們自己的 job 同時跑（memory `h200-no-self-cotenancy-for-timing`）。11/7 起兩支 runner 每個 run 前等、跑完用 sacct 查重疊。
+- 11/7 16:35:56 hgx-cn01 節點故障（`gres/gpu count reported lower than configured (0 < 8)`），W6a 24724 被重新排隊；節點 21:36 重開機、22:12 恢復；24724、24687（W6b）都在檢查權重那一步停（exit 3，/tmp 的權重不見），一個 run 都沒跑。權重由 `s3-fetch`（job 24742）重抓。
+- 使用者問「並行真的太虧了？」。T2（`docs/h200/icpe/T2_parallel_calibration.md`，cc7dce1）：兩個我們的單卡 job、卡在不同 NUMA 節點時，縮小版 GPU 重播（`x1_gpu.py gpu --k 8 --cpu 128 --policy HINT-PF --max-req 600`，T1 常數）回來請求平均 TTFT 變慢 +0.34%（95% CI −0.18～+0.77%），7 個還原微基準 −2.19%～+0.94%；判定 CAL-OK、同時最多 2 個。範圍：兩個 job、卡在不同 NUMA 節點（只量過 PCI 31:00.0（NUMA 0）＋E5:00.0（NUMA 1）這一對）；同一個 NUMA、三個以上、MPS：沒量過。
+- 省下的時間〔推算，每個 run 約 16.6 分鐘〕：依序 W6a 約 9.7 h＋W6b 約 27 h；同時跑約 27 h。
+
+**做法**
+- 一個 Slurm job `icpe-next-w6ab`（`code/icpe/next_a_w6ab.sh`）：`--gres=gpu:2 --gpus-per-socket=1 --sockets-per-node=2`（h200q 的 job_submit 改成 32 CPU、2×170G）。
+- 開跑時 `code/icpe/next_a_corun.py plan` 核對：CUDA_VISIBLE_DEVICES 剛好兩張卡；各自的 PCI（nvidia-smi）→ sysfs 的 `numa_node`；兩張卡在兩個不同的 NUMA 節點才平行。不是、或任何一項查不到 → exit 2、一個 run 都不跑、停下回報（不自動改成依序跑）。
+- 卡 A 跑 W6a（`next_a_w6.sh --part w6a --from W6A-256-LRU-r0`，即使用者 17:2x「讓它自己重跑」的範圍）；卡 B 跑 W6b（`next_a_w6b.sh --reps 6`，偏離 16）。各自 `taskset` 到自己那張卡所在 NUMA 節點上的 16 個 CPU；Slurm 給的 CPU 不是兩邊各一半時照編號對半分。卡、PCI、NUMA、CPU、分法寫 `results/icpe_next/a/w6ab/corun_plan_<job>.json`。
+- 和 T2 不同的地方（照實寫）：
+  - T2 是兩個各自的單卡 job，CPU 由 Slurm 給（31 那張的 pinned 緩衝和卡同一個 NUMA 節點，E5 那張不同）；這裡是同一個 job、CPU 照卡的 NUMA 節點分。
+  - T2 的重播只量了 HINT-PF、CPU 128 GiB；W6b 還有 LRU、LRU2、ARC、S3FIFO、GDSF、PENS、O-BEL、O-BELS 和 CPU 256 GiB。都是同一支 x1_gpu 重播程式（W6b 經 `next_a_w6b.py` 呼叫）。
+- 兩支 runner 一行不改：每個 run 前照舊等節點上沒有我們自己的「別的 job」（`t1g.py wait-clear` 用同一個 job id，所以同一個 job 的另一邊不算）；跑完照舊用 sacct 查和我們自己的別的 job 有沒有重疊；GpuWatcher 照舊只看自己那張卡（另一邊在別張卡，不算外來 process）。污染或重疊照舊重跑，最多 3 次。
+- 兩邊 runner 的開始、結束、exit 寫 `results/icpe_next/a/w6ab/corun.csv`。
+- 送出：`sbatch --dependency=afterok:24742 code/icpe/next_a_w6ab.sh --w6b-reps 6`。TraceLab c1 GPU 層重播（偏離 18，還沒寫）排在這個 job 後面、單獨跑。
+
+**判定與報告**
+- W6a 的判準（§5）、W6b 的判準（偏離 16）、兩個分析程式都不改；同時跑的 run 和單獨跑的 run 一樣用。W6a 每格照舊取乾淨的最後一個（所以 24724 在 14:35–16:31 跑的那幾格會被這次的新 run 取代；12:10 的 128-O-PF-r0 照舊保留）。
+- 只報告：`next_a_corun.py classify` 用每個 run 的時間窗（各自的 overlap.csv）對另一邊 runner 的活動時間窗算覆蓋率，≥ 0.9＝par、0＝solo、其他＝partial（同 T2 §3）；報各邊 par／solo／partial 的 run 數，W6a 的每個 gap 列出用到的 run 是 par 還是 solo。
+
+**已經看過的（揭露）**
+- W6a：已跑完的 run 沒有看過任何做法的 TTFT 或 gap。為了回答「Rust／編譯加速有沒有用」，我在 head node 算過 10 個 run 的 (ΣTTFT＋Σd2h) ÷ 牆鐘時間（平均 0.95、範圍 0.79–0.99，0.79 是只有 100 個請求的冒煙），只看了這個比例，沒有分做法。
+- W6b：只有 S_orig（偏離 16）；沒有任何 GPU 資料。
+- T2 的全部結果；W6c 的結果（b018d02）。
