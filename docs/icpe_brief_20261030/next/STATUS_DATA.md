@@ -2,6 +2,49 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T17:45+08:00 — 第一段：8 個家族的 main＋P1 收完（兩台）；**第二段在 acvlab 開跑（17:41:23）**
+
+- **第一段已收進 git 的家族**（block 核對都 PASS；檢查表都是 `D14_TABLE_RESULT IDENTICAL`，也就是 O-ORD、O-DROP、O-NOW、O-GPU 和原本的版本 B 表相同）：
+
+| 家族 | 機器 | commit | 格子 | O-PF 有變 | O-ALL(report) 有變 |
+|:--|:--|:--|--:|--:|--:|
+| Bailian | acvlab | 246d3fed | 162 | 83 | 47 |
+| FreeInference | acvlab | 7963a43f | 324 | 71 | 32 |
+| ShareGPT | acvlab | 007d9d42 | 324 | 237 | 244 |
+| WildChat | acvlab | 007d9d42 | 162 | 2 | 0 |
+| mini-SWE | acvlab | 007d9d42 | 648 | 0 | 0 |
+| OpenHands | acvlab | 007d9d42 | 648 | 0 | 0 |
+| UltraChat | TRX40 | 01f265ae | 324 | 0 | 0 |
+| LMSYS | TRX40 | 01f265ae | 324 | 0 | 0 |
+| SemiAnalysis | TRX40 | f94f1d88 | 648 | 564 | 575 |
+
+  - uc_T60_s1、lm_T600_s2 我逐列核過：864 列都是 `pf_expire=True`，O-PF／O-ALL 的列和原本逐位元相同。所以 0 是真的沒變，不是旗標沒開。
+  - **icpe-sim 的解釋**（STATUS_SIM 17:27，`dev14_pfexp_lastblock.csv`）：λ=0 時規則 (i) 要同時滿足兩件事才會觸發：(1) 這個 session 有預取副本；(2) 它最後一塊的下一次存取來自別的 session。
+    - 這種請求的比例：Bailian coder 14.7%、Mooncake 約 14–15%、ShareGPT 1.0%、OpenHands 1.5%、WildChat 0.07%、mini-SWE 0。
+    - OpenHands 有這種請求卻 0 變化，icpe-sim 推測是沒有發生降級（NOT_MEASURED）。
+    - 結論：分布合理，不是 bug，第二段可以建立在上面。
+  - **icpe-main 的正式表**（0cb3371f，它自己寫的補丁）：bl、fi、uc、lm、sg、wc、ms、oh、sa 的 `*_p1` 都和我們的檢查表相同。
+  - 還沒好：TraceLab（acvlab，P1 的 tl_c4_trunc 在跑）、Mooncake（TRX40）。
+- **第二段的閘**：
+  - icpe-sim 交叉檢查 v8_dev14 PASS：不開 APC／BELP，15 個網格、41,282 列和 x1fast 相同（run `20261107-163544`，STATUS_SIM 17:40）。
+  - icpe-rux 的 D3（APC／BELP 退化檢查）PASS：SemiAnalysis 204／204、Bailian coder 408／408、Bailian thinking 408／408（run `20261107-165928`，icpe-next-rux 1cdde989）。
+  - icpe-main 17:4x 說 GO；使用者在 icpe-main 說「开始跑」（約 17:45，icpe-main 轉達）。
+  - 36780534 之後 icpe-rux 的 commit 沒有改到 v8_dev14、v8_features、p3x。
+- **acvlab 第二段開跑**：
+  - `next_d14_verc_queue.sh`（cdb9f0b1），20 workers，和第一段的尾巴同時跑。
+  - log：`runs/queue-d14verc-stage2-acvlab-w20-20261107-174123.log`；第一個變體 bailian_coder 的 run 是 `20261107-174123-icpe-data-d14verc-bailian_coder`。
+  - 順序：bailian ×3 → fi ×6 → sharegpt ×6 → wildchat ×3 → miniswe ×12 → openhands ×12，共 33 個。之後 tracelab ×3（等它的第一段檢查表），再來是 `d14_p4verc`。
+  - 每個變體都要過這些才收到 `apc_d14/`；任何一項不過，佇列就停：
+    - `D14_SWEEP_RESULT IDENTICAL`（opf 以外的列 vs 舊 apc）
+    - `EXPLORE_RESULT REPRODUCED`（vs 第一段的檢查表）
+    - `py_fallback_jobs=0`、`src_sha256=4eca5bda`
+- **負載**：17:45 load 107／96 執行緒。
+  - 我的行程合計約 49 核：第一段 35 workers＋第二段 20 workers，都是 nice 10。
+  - 其他使用者約 40 核，其中一位最近加到約 15 核。
+  - 記憶體可用 350 GiB。
+  - 照使用者 11/5 的決定（別人造成的高負載不降 worker）不降，只記錄。
+- **TRX40**：已叫它開 sa、uc、lm 的第二段（和它第一段的尾巴同時跑），mc 等它的第一段檢查表。修正版 SemiAnalysis 版本 C 的路徑由 TRX40 直接告訴 icpe-rux（偏離 19 要用）。
+
 ## 2026-11-07T17:01+08:00 — **xref 過了 → 第一段開跑**（acvlab 140 個 block；TRX40 重現 xref 後開跑 180 個）
 
 - **icpe-sim**：xref_dev14 PASS（b7d2ee57，run `20261107-155727`，Python 和 Rust 1,184 列相同），三個旗標放行。
