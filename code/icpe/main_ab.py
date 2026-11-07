@@ -1,7 +1,7 @@
 """main_ab.py — icpe-main：版本之間的並列與逐格關係核對（版本 A 對版本 B；使用者 2026-11-06）。
 
   python -I code/icpe/main_ab.py cells --name <名稱> --x <headroom_components.csv> --y <headroom_components.csv> \
-      --rel le|eq [--component O-GPU ...] --out <cellcheck.csv（附加）>
+      --rel le|eq [--component O-GPU ...] [--rule R1 ...] --out <cellcheck.csv（附加）>
       逐格（(格, 元件)）核對 x 的 headroom 和 y 的關係：le＝x ≤ y（容許 1e-12，超過就算違反；剛好在容許內的另計）；eq＝完全相同。
       兩邊的 (格, 元件) 集合必須相同。違反就照實寫進輸出、exit 1。
       用途：版本 B（7 個 TTL）的 O-GPU ≤ 版本 A（3 個 TTL）——O-GPU 的 ④ 只用 BEL（兩版相同）、② 在 B 多了 8 個 TTL 規則（只少不多），
@@ -35,6 +35,8 @@ def cells(a):
     X, Y = pd.read_csv(a.x), pd.read_csv(a.y)
     if a.component:
         X, Y = X[X.component.isin(a.component)], Y[Y.component.isin(a.component)]
+    if a.rule:                      # 只比這些 rule（例：Mooncake 的 R1、R2 分開算時，各和版本 B 的同一個 rule 比；2026-11-07）
+        X, Y = X[X.rule.isin(a.rule)], Y[Y.rule.isin(a.rule)]
     M = X[CELL + ["headroom"]].merge(Y[CELL + ["headroom"]], on=CELL, how="outer", suffixes=("_x", "_y"), indicator=True)
     only = int((M._merge != "both").sum())
     M = M[M._merge == "both"]
@@ -45,7 +47,7 @@ def cells(a):
     else:
         viol, within, smaller, same = int((d != 0).sum()), 0, 0, int((d == 0).sum())
     ok = only == 0 and viol == 0 and len(M) > 0
-    r = dict(meta(), name=a.name, rel=a.rel, components=";".join(a.component) or "all", file_x=a.x, file_y=a.y,
+    r = dict(meta(), name=a.name, rel=a.rel, components=";".join(a.component) or "all", rules=";".join(a.rule) or "all", file_x=a.x, file_y=a.y,
              n_x=len(X), n_y=len(Y), n_unmatched=only, n_matched=len(M), n_violate=viol, n_within_tol=within,
              n_x_smaller=smaller, n_equal=same, max_x_minus_y=float(d.max()) if len(d) else float("nan"),
              min_x_minus_y=float(d.min()) if len(d) else float("nan"), result="PASS" if ok else "FAIL")
@@ -104,6 +106,7 @@ def main():
     c.add_argument("--y", required=True)
     c.add_argument("--rel", choices=["le", "eq"], required=True)
     c.add_argument("--component", nargs="*", default=[])
+    c.add_argument("--rule", nargs="*", default=[], help="只比這些 rule（兩邊都過濾）")
     c.add_argument("--out", required=True)
     t = sp.add_parser("table")
     t.add_argument("--bytrace", nargs="+", required=True)
