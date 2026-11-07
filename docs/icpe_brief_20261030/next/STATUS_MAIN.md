@@ -3,6 +3,23 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T20:55+08:00 — **對話資料集（偏離 13）判定**：修正版版本 C，合成到達・非工具類 6／12 個變體 ≥15%（ShareGPT T60 ×3、WildChat ×3），最大 44.0%；UltraChat、LMSYS 的 T60 剛好 0%
+
+- **UltraChat、LMSYS 的第二批核對**（merge `origin/icpe-next-trx` 9478c325，沒有衝突）：run `20261107-204818-icpe-main-d14-verC-uc-lm`（exit 0；只印變動格數）：rowcheck 2／2；獨立重算＝新 verC（uc 1,620 逐位元；lm 1,620，1 格在 1e-12 內）；O-GPU 不含 BELP ≤ 含 BELP；四個不變元件＝舊 verC。**6 個元件都 0 格變、對手 0 格變**。結果 `results/icpe_next/main/verC_d14/{uc,lm}_*`。
+  - icpe-trx 20:4x 的訊息裡直接附了 lm／uc T600 的 O-ALL(report) 最大值（只報告的元件）；我在跑判定之前就看到了，照實記。
+- **判定**：run `20261107-205213-icpe-main-chat`（exit 0），照使用者 11:33 的決定（4 份到齊、偏離 14 修正版之後；每個 seed 各自判＋3 個 seed 的中位數與最小–最大；T600 只報告；版本 C 正式、B 並列、C 另並列不含 BELP；合成到達・非工具類；單獨成一節）。
+  - `main_summary.py` 加了對話資料集的 classify（到達細節照登記：`poisson_start_synthetic_think_T60／T600`、WildChat `poisson_start_real_intra_gaps`）和 `--trace-regex`（T60＋WildChat 判定、T600 只報告分開跑）。回歸：用 run 140839 的輸入重算 agent 版本 C，by_trace／verdict／by_cpu 和 git 上逐格相同。
+  - 版本 C 的輸入＝`apc_d14/` 21 個變體的 verC 表；版本 B＝`main/verB_d14/{sg,wc,uc,lm}_p1`（偏離 14 第一批補好的）；C 不含 BELP＝`main/verC_d14/*_d14_CnoBELP`。三版格數相同（main_ab table PASS）。
+  - 〔模擬；非工具類只報告，推翻條件不適用〕**版本 C**：12 個變體裡 6 個 ≥15%：
+    - ShareGPT T60 s1／s2／s3：44.0／43.3／42.0%（都是 O-GPU），≥15% 的（格, 元件）78／77／77 個；3 個 seed 的中位數最大 43.3%（42.0–44.0%）。
+    - WildChat s1／s2／s3：19.7／19.5／19.7%（O-GPU），9／9／8 個；中位數最大 19.7%。
+    - UltraChat T60、LMSYS T60：每個 seed、每一格、每個元件都**剛好 0**。原因：最好的不預測做法（ARC／LRU＋APC）GPU 一次都不用逐出，回來的請求全部在 GPU 命中（lmsys s1 32,409／32,409、ultrachat s1 13,581／13,581），完美預知沒有可省的。不是算錯：T_oracle＝T_rival 324／324，sweep 裡每格的 mean_ret 都有多個不同值。
+  - **版本 B** 6／12、最大 43.2%；**C 不含 BELP** ShareGPT T60 中位數最大 42.5%、WildChat 19.6%：判定字和版本 C 相同。
+  - **T600（只報告）**，3 個 seed 的中位數最大：ShareGPT 68.0%（O-PF；≥15% 的格 82）、UltraChat 6.6%、LMSYS 3.8%。
+  - 版本 C 各 seed ≥15% 的（格, 元件）分佈（`chat_verC_verdict.csv` 的 ge15_components）：ShareGPT 主要是 O-GPU（42／42／42）和 O-PF（24／23／22）、O-ORD 12；WildChat O-GPU 4、O-DROP 2–3、O-PF 2。
+- 結果：`results/icpe_next/main/chat/`（chat_ver{B,C}[_T600]_*、chat_verC_noBELP[_T600]_*、chatBC[_T600]_*、chat_seed_*）。
+- **寫本節時已經看過的正式結果**：四份對話資料集的修正版版本 C、版本 B、C 不含 BELP（第一次看對話資料集的值）。
+
 ## 2026-11-07T20:13+08:00 — icpe-rux：偏離 19（二階排隊）sweep 因 WSL 重啟中斷，預計完成延到 11/8 約 00:00
 
 - icpe-rux 訊息（20:1x）：19:57 WSL 重啟；N16 s1–s3、N32 s1–s3 完成且檢查過（exit 0、A／B 兩段 xz 都在、code_sha 相同）；N64_s1 舊 run 在 B 段被殺、標作廢，新 run `20261107-200316` 整個重跑（設定不變，run_queue2_sweep.sh）；chain 腳本從 /tmp 移進 repo（d08c6147），再中斷會跳過已完成的變體。原本預計約 22:30。

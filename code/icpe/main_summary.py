@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import socket
 from datetime import datetime
 
@@ -33,6 +34,7 @@ JUDGED = ["O-ORD", "O-DROP", "O-NOW", "O-PF", "O-GPU"]
 REPORT_ONLY = ["O-ALL(report)"]
 THR, THR5 = 0.15, 0.05
 CELL = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "gpu_GiB", "gpu_write", "slow_cap_frac"]
+CHAT = {"sharegpt": "ShareGPT", "lmsys": "LMSYS-Chat-1M", "ultrachat": "UltraChat"}
 
 
 def classify(trace):
@@ -60,6 +62,13 @@ def classify(trace):
         return "mini-SWE-agent", "synthetic", f"fixed_concurrency_{t.split('_')[1]}", True
     if t.startswith("openhands_N"):
         return "OpenHands", "synthetic", f"fixed_concurrency_{t.split('_')[1]}", True
+    # 對話資料集（偏離 13）：對話開始都是 Poisson → 合成到達；聊天＝非工具類、只報告（偏離 7 與 Bailian／Mooncake conversation 的先例；
+    # STATUS_MAIN 11:33）。到達細節照登記的標籤：T60／T600＝合成思考時間；WildChat＝真實的對話內間隔。
+    m = re.match(r"^(sharegpt|lmsys|ultrachat)_T(60|600)_s\d+$", t)
+    if m:
+        return CHAT[m.group(1)], "synthetic", f"poisson_start_synthetic_think_T{m.group(2)}", False
+    if re.match(r"^wildchat_s\d+$", t):
+        return "WildChat-1M", "synthetic", "poisson_start_real_intra_gaps", False
     raise ValueError(f"不認得的紀錄 {trace!r}：先在 classify() 寫明它的到達方式與類別")
 
 
@@ -74,6 +83,8 @@ def main():
     ap.add_argument("--report-only", action="store_true", help="只出 by_trace／by_cpu、不下判定（例：p90，PREREG §1 只報告）")
     ap.add_argument("--verdict-exclude", nargs="*", default=[], metavar="COMPONENT",
                     help="判定時不用這些元件（by_trace 照列）；例：O-PF 待偏離 14 的修正版取代時，看判定靠不靠它（使用者 2026-11-07）")
+    ap.add_argument("--trace-regex", default="", metavar="REGEX",
+                    help="只用 trace 符合的列（re.search）；例：對話資料集的 T600 只報告、和 T60 分開跑（使用者 2026-11-07 11:33）")
     a = ap.parse_args()
     meta = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
                 host=socket.gethostname(), version=a.version)
@@ -91,6 +102,12 @@ def main():
         h["src_file"] = path
         parts.append(h)
     H = pd.concat(parts, ignore_index=True)
+    if a.trace_regex:                                              # 沒給就不加這欄（和之前的輸出逐欄相同）
+        keep = H.trace.str.contains(a.trace_regex, regex=True)
+        assert keep.any(), f"--trace-regex {a.trace_regex!r} 沒有符合的 trace"
+        print(f"--trace-regex {a.trace_regex!r}：用 {H.trace[keep].nunique()} 個 trace、拿掉 {H.trace[~keep].nunique()} 個")
+        H = H[keep].reset_index(drop=True)
+        meta["trace_regex"] = a.trace_regex
     dup = H.duplicated(CELL + ["component"]).sum()
     assert dup == 0, f"(格, 元件) 有 {dup} 列重複：同一個紀錄放進了兩份輸入？"
     cl = {t: classify(t) for t in H.trace.unique()}
