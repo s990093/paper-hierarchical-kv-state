@@ -3,6 +3,15 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T22:33+08:00 — h200：W6 改 4 張卡並行（job 24766，22:31 開跑），預計 11/8 約 08:00 跑完；TraceLab c1 GPU 重播接在後面
+
+- h200 訊息（22:3x）：使用者 22:2x「11/8 當天要把 GPU 任務跑掉，一定要並行」→ job 24766（icpe-next-w6q）4 條 lane：W6a 一張、W6b 第 0–1／2–3／4–5 輪各一張；兩個 NUMA 節點各 2 張卡。預計 11/8 約 08:00 跑完〔h200 推算，每 run 約 16.6 分；前 100 個請求的速度和單獨跑相同〕。
+- 超出 T2 量過的範圍（T2 只量過 2 個 job、不同 NUMA）→ 登記成 PREREG 偏離 21（**還沒 push，等使用者看**）；偏離 20（2 張卡版）已 push（8d6257b），它的 job 24745 沒跑就取消。
+- 之前的 24724、24687 在節點重開機後因權重不見 exit 3，沒跑；權重已由 s3-fetch 24742 重抓。
+- TraceLab c1 GPU 層重播：使用者選 1 次（LRU、TTLB:30、BEL 各一個 run、3 張卡同時跑）；程式今晚寫，偏離 18 給使用者看過再送，目標 11/8 W6 跑完後接著跑。
+- 對我的影響：W6a／W6b 的結果最快 11/8 早上，TraceLab 重播更晚；11/8 定稿的摘要用不用得上，看它們幾點到。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T20:55+08:00 — **對話資料集（偏離 13）判定**：修正版版本 C，合成到達・非工具類 6／12 個變體 ≥15%（ShareGPT T60 ×3、WildChat ×3），最大 44.0%；UltraChat、LMSYS 的 T60 剛好 0%
 
 - **UltraChat、LMSYS 的第二批核對**（merge `origin/icpe-next-trx` 9478c325，沒有衝突）：run `20261107-204818-icpe-main-d14-verC-uc-lm`（exit 0；只印變動格數）：rowcheck 2／2；獨立重算＝新 verC（uc 1,620 逐位元；lm 1,620，1 格在 1e-12 內）；O-GPU 不含 BELP ≤ 含 BELP；四個不變元件＝舊 verC。**6 個元件都 0 格變、對手 0 格變**。結果 `results/icpe_next/main/verC_d14/{uc,lm}_*`。
