@@ -691,8 +691,13 @@ def conv_agent(a, x1nb):
     rule_b = dict(n=len(r), median=float(np.median(r)), p10=float(np.quantile(r, .1)), p90=float(np.quantile(r, .9)),
                   frac_in_0p5_2=float(((r >= 0.5) & (r <= 2.0)).mean()), first_call_total_ratio_median=float(np.median(first_ratio)))
     print(f"[{src}] 規則 6 (b)（Llama 增量 ÷ 供應商 prompt_tokens 增量）：{rule_b}", flush=True)
-    if not (0.8 <= rule_b["median"] <= 1.25 and rule_b["frac_in_0p5_2"] >= 0.9):
-        raise SystemExit(f"[{src}] 規則 6 (b) 不過：{rule_b} → 停")
+    rule_b["pass"] = bool(0.8 <= rule_b["median"] <= 1.25 and rule_b["frac_in_0p5_2"] >= 0.9)
+    if not rule_b["pass"]:
+        if not a.rule6b_override:
+            raise SystemExit(f"[{src}] 規則 6 (b) 不過：{rule_b} → 停")
+        # 只在使用者決定照跑、且已登記時用（OpenHands：STATUS_DATA 2026-11-07 13:10，偏離 17 的更正）；不改門檻，照實記進 meta
+        rule_b["override"] = a.rule6b_override
+        print(f"[{src}] 規則 6 (b) 沒過，照使用者決定放行（已登記）：{a.rule6b_override}", flush=True)
     R = pd.DataFrame(rows, columns=["conv", "k", "inp", "keys", "off", "end", "user"])
     neg = int((R.groupby("conv").off.diff() < 0).sum())
     dur = np.asarray(conv_dur)
@@ -732,6 +737,7 @@ def main():
     ap.add_argument("--files", nargs="+", default=["traceA", "traceB", "thinking", "coder"])
     ap.add_argument("--prefix-rule", choices=["struct", "cache"], default="struct")
     ap.add_argument("--trunc-128k", action="store_true")
+    ap.add_argument("--rule6b-override", default="", help="agent：規則 6 (b) 沒過時照跑的理由（必須已登記；寫進 meta）")
     ap.add_argument("--out-dir", default=os.environ.get("X1_NB_DIR", "/ssd6/hungwei/icpe-next/datasets/x1_nb"))
     ap.add_argument("--p3x", default=os.path.join(REPO, "code", "p3x"))
     a = ap.parse_args()
