@@ -374,3 +374,11 @@
   - 第 3 次的 128-HINT-PF-r0「用，照規則走」（GpuWatcher 判乾淨就算乾淨）。重跑後若有更新的乾淨 run，分析照登記取最後一個。
 - job 的 Slurm log 重新排隊後會被覆寫，故障前那份另存在 `/work/ChihChungHsu/hungweilai/tiara-runs/slurm-icpe-next-w6a-24724.before-nodefail.out`（6,122 bytes）。
 - 注意：節點若重開機，`/tmp/hungweilai-models` 的權重可能不見；runner 會在 `fetch_models.py check` 停（exit 3），24724 一停 W6b（afterany）也會開跑並在同一步停。那時要先 s3-fetch 再重送。
+
+## 2026-11-07 22:19（台灣）— 節點恢復；W6a ∥ W6b 合成一個 job（24745）；偏離 20（本機 commit，等使用者看過再 push）
+- 節點 21:36 重開機、22:12 恢復（`sinfo` mixed）。24724（W6a）22:12:12–22:12:16、24687（W6b）22:12:16–22:12:18 都 FAILED exit 3：`/tmp/hungweilai-models` 的 Llama 戳記不在（重開機清掉），一個 run 都沒跑。
+- 22:14 送 `s3-fetch`（job 24742，`code/r_h200_s3.sh --part fetch`：llama、qwen、qwen14，不量時間）。
+- 使用者 22:0x 同意「只把 W6a、W6b 並行（T2 範圍），TraceLab 照樣單獨跑」；22:1x「恢復了幫我搶卡」。→ 寫 `code/icpe/next_a_corun.py`（plan／classify／selftest，selftest 7/7 PASS）、`code/icpe/next_a_w6ab.sh`；`sbatch --test-only` 接受 `--gres=gpu:2 --gpus-per-socket=1 --sockets-per-node=2`。PREREG 偏離 20 寫進本檔（`date -u` 2026-11-07T14:18:16Z），本機 commit 3356562，**還沒 push**（給使用者看過再 push）。
+- 送出 **job 24745 `icpe-next-w6ab`**：`sbatch --dependency=afterok:24742 code/icpe/next_a_w6ab.sh --w6b-reps 6`；`scontrol` 顯示 TresPerSocket=gres/gpu:1、Socks/Node=2、32 CPU、340G、上限 2 天。開跑時兩張卡不在不同 NUMA 節點 → exit 2、不跑。
+- 預計〔推算〕：s3-fetch 結束後開跑；W6a 約 9.7 h、W6b 約 27 h 同時跑 → 約 27 h 後兩邊都完成。TraceLab（偏離 18，還沒寫）排在 24745 後面、單獨跑。
+- 使用者 22:1x 說「還有三張卡可以用」：實驗室上限 4 張，24745 用 2 張。第 3 個我們的 job 會讓兩支 runner 的 wait-clear 一直等（T2 只量過同時 2 個），所以 W6 跑的時候不再送我們自己的 GPU job。
