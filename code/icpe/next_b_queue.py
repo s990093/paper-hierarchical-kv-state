@@ -118,6 +118,9 @@ def blocks():
         P[f"{k}_p3"] = [x for name, tr, _ in P[base] for x in (
             (f"{name}_wt", tr, sweep_args(write="wt")),
             (f"{name}_pfgpu", tr, sweep_args(pf="gpu")))]
+    # 對話資料集的版本 B（STATUS_DATA 11:30 補寫）：chat_main（17 CPU × 8 GPU）＋ chat_p1 的 _ttl（NON_ORACLE＋元件規則 15 × 新的 8 個 TTL），
+    # 和主結果版本 B 的輸入同構（icpe-main 的 verB：main＋_p1 _ttl）。不跑 _trunc（只報告的截尾，不在這次範圍）。
+    P["chat_p1"] = [(f"{name}_ttl", tr, sweep_args(gpol=GPOL_TTL7, pols=NON_ORACLE + COMP5)) for name, tr, _ in P["chat_main"]]
     # 跨機器對拍（新功能開啟）：acvlab 先跑並 collect（--allow-xcheck）當參考；別台跑同一個 block，用 next_b_g0.py 逐值比，相同才開跑正式的
     xa = sweep_args(["64"], ["--slows", "ssd", "--modes", "cake"], gpol=["LRU", "BEL", "TTLA:10", "TTLB:10"],
                     pols=["LRU", "GDSF", "O-BEL", "O-PF"])

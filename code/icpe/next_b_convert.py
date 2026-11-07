@@ -405,6 +405,7 @@ CHAT_N = 9000
 CHAT_LAMBDA = 1.0
 CHAT_T = (60, 600)
 CHAT_CHECK = 300
+CHAT_STATS = {}          # 載入時的特殊情況計數（例：UltraChat 一行兩個物件）；寫進 meta.filter.load_stats
 TOK_SHA = "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4"
 BOT, SHD, EHD, EOT, NL2 = 128000, 128006, 128007, 128009, 271
 ROLE_TOK = {"user": [882], "assistant": [78191]}
@@ -445,11 +446,24 @@ def _iter_chat(src, d, files):
             for r in json.load(open(os.path.join(d, f))):
                 yield r.get("id"), [(rmap.get(m.get("from"), str(m.get("from"))), m.get("value"), None) for m in (r.get("conversations") or [])]
     elif src == "ultrachat":
+        # 上游有 3 行是兩個 JSON 物件直接接在一起（icpe-trx 查到：train_3 第 127,819 行、train_4 第 82,900 行、train_7 第 90,760 行；
+        # 檔案 sha256＝HF 的 LFS 記錄，是上游本來就這樣）。規則（STATUS_DATA 11:30 補寫）：用 raw_decode 依序拆成多筆，每筆都是一個對話；
+        # 拆出來的行數記在 CHAT_STATS["ultrachat_multi_obj_lines"]。拆不開（剩下的不是 JSON）就停。
+        dec = json.JSONDecoder()
         for f in files:
             with open(os.path.join(d, f)) as fh:
                 for ln in fh:
-                    r = json.loads(ln)
-                    yield r.get("id"), [("user" if i % 2 == 0 else "assistant", c, None) for i, c in enumerate(r.get("data") or [])]
+                    s = ln.strip()
+                    pos, objs = 0, []
+                    while pos < len(s):
+                        r, pos = dec.raw_decode(s, pos)
+                        objs.append(r)
+                        while pos < len(s) and s[pos].isspace():
+                            pos += 1
+                    if len(objs) > 1:
+                        CHAT_STATS["ultrachat_multi_obj_lines"] = CHAT_STATS.get("ultrachat_multi_obj_lines", 0) + 1
+                    for r in objs:
+                        yield r.get("id"), [("user" if i % 2 == 0 else "assistant", c, None) for i, c in enumerate(r.get("data") or [])]
     elif src in ("wildchat", "lmsys"):
         import pyarrow.parquet as pq
         idc = "conversation_hash" if src == "wildchat" else "conversation_id"
@@ -500,6 +514,7 @@ def conv_chat(a, x1nb):
         filt[why] = filt.get(why, 0) + 1
         if why == "ok":
             elig.append(i)
+    load_stats = dict(CHAT_STATS)          # 只算第一輪（第二輪會再讀一次）
     n_pick = min(CHAT_N, len(elig))
     pick = set(np.asarray(elig)[np.sort(np.random.default_rng(0).choice(len(elig), size=n_pick, replace=False))].tolist())
     print(f"[{src}] 對話 {n_all}，合格 {len(elig)}，抽 {n_pick}；{filt}", flush=True)
@@ -585,7 +600,8 @@ def conv_chat(a, x1nb):
             dur = pd.Series(off).groupby(x.conv.values).max().values
             m = base_meta(src, a)
             m.update(source=dict(hf=S["hf"], revision=S["rev"], license=S["license"], files=shas), tokenizer=tok_meta,
-                     filter=dict(n_conv_all=n_all, n_eligible=len(elig), n_sampled=n_pick, reasons=filt, sample_seed=0),
+                     filter=dict(n_conv_all=n_all, n_eligible=len(elig), n_sampled=n_pick, reasons=filt, sample_seed=0,
+                                 load_stats=load_stats),
                      rule6=dict(keys_extend=rule_ext, tokenize_whole_vs_parts=tok_check),
                      conv_tokens=dict(median=float(np.median(seq_lens)), p90=float(np.quantile(seq_lens, .9)), max=int(max(seq_lens))),
                      arrival=dict(arrival, n_conv=n_conv, **active_profile(start, dur)),
