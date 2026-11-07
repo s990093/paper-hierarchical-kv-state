@@ -2,6 +2,68 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T11:05+08:00 — 對話資料集補登記的**補寫：版本 B／C、哪台、哪版引擎**（h200 轉達使用者「請 icpe-data 先補寫」；寫完才恢復模擬）
+
+> 時間：acvlab `date -u` 2026-11-07T03:04:39Z。h200 會把 11:00 那節和本節一起收成 **PREREG 偏離 13（補登記）**（使用者在 h200 選的；STATUS_A 11:00，0c58272、6239918）。
+
+**照實記錄：補寫之前已經跑了什麼**
+- 11:00 那節（688ad0b）commit 之後，我在 10:59:29 開了 `chat_main:sg_*`（版本 A 的格子，35 workers）。h200 的訊息是之後才到的。
+  - `sg_T60_s1`（run `20261107-105929-…`）、`sg_T600_s1`（run `20261107-110031-…`）跑完，rc=0。
+  - `sg_T60_s2` 跑到一半，11:02:04 停下整個行程群組，沒有殘留行程。那個 run（`20261107-110137-…`）寫上 `STOPPED_NOT_USED`。
+  - WildChat 還沒開始。
+- 我沒有看這兩個 block 的輸出，沒有算任何表。只在確認佇列有沒有在跑時，看到兩行進度輸出，各是一個 job 的 `mean_ret`。
+- 這兩個 block 的格子和下面版本 B 的 `chat_main` 部分完全相同，所以留著當版本 B 的輸入，不重跑。
+
+**1. 報哪些版本**（照偏離 10 第 5 點的主表地位）
+- **版本 C 是正式表**：block 粒度 APC 進 ②、BELP 進 ④ 的 O-GPU，analyze_v8。
+- **版本 B 並列**，標「② 不含 block 粒度 APC」。
+- 版本 A 不單獨報。它的格子（`chat_main`）是版本 B 的一部分。
+- 11:00 那節寫的「偏離 4 第 2 項的 ≥10% 補跑」作廢：版本 B 的每一格本來就有 7 個 TTL，沒有要補的。
+
+**2. 版本 B**（和主結果版本 B 的輸入同構：icpe-main 的 verB＝main＋P1 `_ttl`，run `20261106-110854-icpe-main-verB-p1`）
+- `chat_main`：CPU 17 個規則 × GPU 8 個（LRU、BEL、TTLA／TTLB × 0.3／10／300），也就是 11:00 那節的格子。
+- `chat_p1`：每個 `chat_main` block 對一個 `<名稱>_ttl`。
+  - CPU＝NON_ORACLE 10 個＋元件規則 5 個；GPU＝新的 8 個 TTL（TTLA／TTLB × 1／3／30／100）。
+  - 和 `cw_p1` 等的 `_ttl` 相同，每個 block 6,480 個 job。
+  - 不跑 `_trunc`，截尾只報告，不在範圍內。
+- **引擎**：x1fast v7，Rust src 62b0932b（`code_sha` 3280b1c8799b+rs62b0932b），`next_b_queue.py run --engine rust`。和 P1–P4 相同，模擬器沒改。
+- **上限表**：`next_sim_analyze.py --sweep <chat_main 的 sweep> <chat_p1 的 _ttl sweep> --pf-target cpu`。
+  - 每個資料集一份：sg、wc、lm、uc。
+  - 旗標同 verB 的第 3 步第一行。開算前先用 `main_rowcheck.py` 核對列數：main 17×8、_ttl 15×8、每個 (trace, rule) 54 格。
+
+**3. 版本 C**（照偏離 10 第 1–4 點，步驟同 `run_apc_formal.sh`）
+- **引擎**：v8，`code/icpe/rux_x1fast/v8_features/`，`src/main.rs` sha256 48e4efce…，`code_sha` 3280b1c8799b+rse7f6ee8f。
+  - 固定用 `origin/icpe-next-rux` 4a713386 的檔，也就是 SemiAnalysis 正式 APC 那次的版本。
+  - v8 的 sweep_v8／explore_apc／analyze_v8／x1_rust_v6 和現在的 icpe-next-rux 逐位元相同；x1_sim 和我們的相同。
+- **格子**：CPU 9 個容量 × 17 個 CPU 規則 × ssd／b32／nfs × Cake × GPU 111.0625 GiB wb × GPU 18 個規則（版本 B 的 16 個＋APC＋BELP），預取到 CPU。
+- **步驟**，任何一步失敗就停：
+  1. sweep_v8。
+  2. explore_apc.py 重現檢查：只用版本 B 的 16 個 GPU 規則重算上限表，和第 2 點的版本 B 表全部格、全部元件、7 欄逐值相同，必須 `REPRODUCED`；不同就停，那個變體不報版本 C。
+  3. analyze_v8.py 算 verC 表。
+  4. collect_v8.py 寫進 `results/icpe_next/apc/<變體>/`。
+- 因為重現檢查要用版本 B 的表，所以每台都是先跑完版本 B，再跑版本 C。
+
+**4. 哪台跑哪些**：版本 B、C 都在同一台跑。
+
+| 資料集 | 變體 | 機器 | 版本 B 引擎 | 版本 C 引擎 |
+|:--|:--|:--|:--|:--|
+| ShareGPT | `sharegpt_T{60,600}_s{1,2,3}` | acvlab（icpe-data） | v7 62b0932b | v8 48e4efce |
+| WildChat-1M | `wildchat_s{1,2,3}` | acvlab（icpe-data） | v7 62b0932b | v8 48e4efce |
+| LMSYS-Chat-1M | `lmsys_T{60,600}_s{1,2,3}` | TRX40（icpe-trx） | v7 62b0932b | v8 48e4efce |
+| UltraChat | `ultrachat_T{60,600}_s{1,2,3}` | TRX40（icpe-trx） | v7 62b0932b | v8 48e4efce |
+
+**5. 判定與彙總**：由 icpe-main 照版本 B／C 的流程做（`main_summary.py`）。
+- 這四份都歸「合成到達」，偏離 7 的「原始、合成各自判」。
+- 單獨成一節，不和主結果的 40 個變體合併計數。
+- 不跑 P4（偏離 10 第 5 點「版本 C ≥15% 的格補跑 P4」不適用，範圍只有主網格）。
+
+**6. UltraChat 的轉換規則補一條**（icpe-trx 11:15 查到，STATUS_TRX 334317cd）
+- 上游有 3 行 jsonl 是兩個 JSON 物件直接接在一起：train_3 第 127,819 行、train_4 第 82,900 行、train_7 第 90,760 行。
+- 檔案的 sha256 和 HF 的 LFS 記錄相同，是上游本來就這樣。
+- 規則：用 `json.JSONDecoder.raw_decode` 依序拆成多筆，每筆當一個對話。拆不開就停。
+- 拆的行數記在 meta 的 `filter.load_stats.ultrachat_multi_obj_lines`。
+- 失敗的 run `20261107-110038-icpe-trx-conv-chat-ultrachat` 沒寫出任何 nb。
+
 ## 2026-11-07T11:00+08:00 — **對話資料集補登記**（ShareGPT、WildChat-1M、LMSYS-Chat-1M、UltraChat）：使用者決定 11/9 前補跑主網格；**本節 commit 時還沒跑任何一格模擬**
 
 > 時間：acvlab `date -u` 2026-11-07T02:57:51Z。本節是 PREREG §4「選跑的紀錄……要跑之前另補登記」的登記。
