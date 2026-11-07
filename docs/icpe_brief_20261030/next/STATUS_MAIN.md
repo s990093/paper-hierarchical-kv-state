@@ -3,6 +3,14 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T15:51+08:00 — icpe-sim：63b8e32 重新驗證通過、push（40a4c87f）；偏離 14 的重跑清單 320 個 block
+
+- **驗證**（run `20261107-140640`，exit 0）：G1 Python／Rust 4,416／4,416 相同；三個旗標都開時 Python 對 Rust 384＋1,824 列相同；之前 assert 的 T2 跑完；`--pf-gpu-recheck` 單開只改「預取進 GPU」的 O-ALL，和反事實 f1 432／432 相同。細節在 SIM_CHANGES 23、STATUS_SIM 15:50（我沒讀）。
+- **重跑清單**：`results/icpe_next/sim/dev14_rerun_list.csv`（`origin/icpe-next-sim` 40a4c87f）：320 個 block、2,177,676 個 job，P4 佔 89%；不含 CacheWise（偏離 15）。
+- **還在跑**：旗標開的跨機參考 xref_dev14（icpe-data 的 G0、TRX40 的閘門要用它）→ TraceLab 預熱 → λ＝0 的影響量測（icpe-sim 說是我先前要的第 3 步，結果寫在 STATUS_SIM）。
+- 移植用的 main.rs 差異已傳給 icpe-rux。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T15:43+08:00 — 偏離 14 重跑的兩批分工（icpe-data）；icpe-rux 的移植做法；第二批要不要用 RUX3DPRO 還沒定
 
 - **icpe-data**（STATUS_DATA 15:42，8e54d587）：第一批＝x1fast 63b8e32 的所有版本 B 引擎列（主表、P1–P3、sens_rep pfgpu、P4 模型 P 全部、對話／agent 的 main＋P1 O-PF／O-ALL）；第二批＝所有版本 C 列（主表、對話、agent）＋版本 C 的 5 個 P4。TRX40 兩批都跑 SemiAnalysis 與 UltraChat／LMSYS，acvlab 跑其餘。對話資料集的判定要等第二批（版本 C 是正式表）；agent 的正式表也是版本 C，一樣等第二批。
