@@ -1228,3 +1228,7 @@
 - 預計〔推算：每個 run 約 16.6 分鐘，沒算爭用造成的變慢〕：lane 0 約 9.7 h、lane 1 約 9.2 h、lane 2／3 各約 8.9 h → 從開跑起約 10 小時全部跑完。
 
 **已經看過的（揭露）**：和偏離 20 相同，沒有新的。
+
+### 偏離 21 補記（2026-11-07T14:29:15Z（H200 head node 的 `date -u`）；**Slurm 的要卡方式改了，其他照偏離 21**；不佔編號；沒有任何 run）
+- job 24747（`--gres=gpu:4 --gpus-per-socket=2 --sockets-per-node=2`）22:27:39 開跑，Slurm 給 IDX 1、2、3、5（PCI 31、51、63、AB → NUMA 0 三張、NUMA 1 一張）；`next_a_corun.py plan --n 4` 判「不是兩個節點各 2 張」→ exit 2，一個 run 都沒跑（`results/icpe_next/a/w6ab/corun_plan_24747.json`）。原因：節點的 GPU 設定是 `gpu:h200:8(S:0-1)`，Slurm 不知道每張卡在哪個 socket，`--gpus-per-socket` 沒有作用。
+- 改成 `--gres=gpu:4 --ntasks-per-socket=2 --gres-flags=enforce-binding`：用 `srun` 試兩次（只印卡和 NUMA，幾秒，job 24748、24749），兩次都拿到 PCI 31、51（NUMA 0）＋AB、CB（NUMA 1）。開跑時照舊核對，不是兩個節點各 2 張就 exit 2。

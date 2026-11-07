@@ -3,8 +3,8 @@
 #SBATCH --partition=h200q
 #SBATCH --account=ChihChungHsu
 #SBATCH --gres=gpu:4
-#SBATCH --gpus-per-socket=2
-#SBATCH --sockets-per-node=2
+#SBATCH --ntasks-per-socket=2
+#SBATCH --gres-flags=enforce-binding
 #SBATCH --cpus-per-task=16
 #SBATCH --time=1-12:00:00
 #SBATCH -o slurm-%x-%j.out
@@ -16,7 +16,9 @@
 #   sbatch [--dependency=afterok:<s3-fetch>] code/icpe/next_a_w6q.sh
 #   bash code/icpe/next_a_w6q.sh --dry-run
 #
-# 一個 job 4 張卡：--gres=gpu:4 --gpus-per-socket=2 --sockets-per-node=2（h200q 的 job_submit 改成 64 CPU、4×170G）。
+# 一個 job 4 張卡：--gres=gpu:4 --ntasks-per-socket=2 --gres-flags=enforce-binding（h200q 的 job_submit 改成 4 task × 16 CPU、4×170G）。
+# Slurm 的 GPU 只記 S:0-1（不知道每張卡在哪個 socket），--gpus-per-socket 沒有作用（24747 拿到 NUMA 0 三張、1 一張）；
+# 改成每個 socket 2 個 task＋enforce-binding 之後，srun 試兩次都拿到兩個 NUMA 節點各 2 張（偏離 21 補記）。
 # 開跑時 next_a_corun.py plan --n 4 核對：兩個 NUMA 節點各 2 張；不是、或查不到 → exit 2、一個 run 都不跑。
 # 卡照 (NUMA, PCI) 排序，lane 0..3：
 #   0 w6a      next_a_w6.sh  --part w6a --from W6A-256-LRU-r0                  → results/icpe_next/a/w6a/{gpu_requests,overlap}.csv
