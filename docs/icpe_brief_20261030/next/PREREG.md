@@ -889,3 +889,21 @@
 - `icpe-main` 訊息裡的 TraceLab c2 例子。
 - **`icpe-sim` 自己的診斷 run**（`20261107-105321`、`-105614`、`-104850`、`-105925`、`-110002`，以及更早的版本）：上面那些格子的重跑與反事實。
 - **主結果（P1–P3、版本 B／C）整張的上限表與判定：** 就我的紀錄沒有看過。以前只做過逐格「相同／不同」的對拍。
+
+### 偏離 15（2026-11-07T03:47:09Z（acvlab 的 `date -u`，寫進本檔的時間）；**CacheWise 從論文拿掉（授權），內部分析保留**；使用者在 `icpe-data` 說「CacheWise 下先停 放不了paper」（STATUS_DATA 11:45，`origin/icpe-next-data` ba6ae12），範圍與要不要登記在 `icpe-main` 用 AskUserQuestion 決定（11/7 11:4x，本節寫入之前），由 `icpe-main` 寫；號碼由 `h200` 給；門檻、主指標、判定方式、其他紀錄都不改）
+
+- **原文**：§4「必跑＝TraceLab、CacheWise、SemiAnalysis、Bailian」「CacheWise 沒有授權：原始資料、轉換後的紀錄、逐對話的數字都不進 git」；偏離 4 第 3 項的 40 個登記變體含 CacheWise 12 個（並行 16／32／64／72 × s1–s3）。
+- **為什麼**：CacheWise 的紀錄（github `cachewise-project/cachewise-coding-traces`）沒有宣告授權（NEXT_PLAN §5.5：repo issue #1 沒有回覆），使用者判定不能放進論文。**理由是授權，不是結果。**
+- **決定**（使用者在 `icpe-main` 選「論文拿掉，內部保留」與「登記，由 icpe-main 寫」）：
+  1. **論文**（ICPE 投稿）的表、圖、摘要、判定字只用其餘 6 份紀錄、28 個變體：原始到達 14 個（FreeInference 6、Mooncake toolagent R1／R2、Mooncake 對話 R1／R2、TraceLab c1、Bailian 3），合成到達 14 個（SemiAnalysis 12、TraceLab c2、c4）。
+  2. **內部**（STATUS 檔、給內部的報告）保留 CacheWise 的結果，並列「含／不含 CacheWise」。git 裡已有的 CacheWise 彙總照 §4 的規則保留（只有每格的彙總，沒有原始資料、轉換後的紀錄或逐對話的數字）。
+  3. CacheWise 的新工作先不跑（使用者在 `icpe-data`）：偏離 10 的版本 C 12 個變體、偏離 11 的 W5 與排隊、偏離 14 重跑清單裡的 CacheWise block。
+  4. 對話資料集（偏離 13）不受影響。
+- **照實列出拿掉前後**（以版本 B 為準，run `20261106-110854-icpe-main-verB-p1`，`results/icpe_next/main/verB/verB_verdict.csv`；判定照偏離 7）：
+  - 原始到達・工具類：3／9 → 3／9（CacheWise 不在這類）。
+  - **合成到達・工具類：21／26 → 14／14**，最大值都是 52.9%。拿掉的 12 個裡 7 個 ≥15%、5 個 <15%（並行 16 的 s1–s3、並行 32 的 s1、s3）。判定字（≥15% 成立）不變。
+  - 原始到達・非工具類（只報告）：不變。
+  - 推翻條件（偏離 9）：不變，依據是 TraceLab c1、c2、c4，CacheWise 沒有線索欄位、沒跑 W3。
+  - P4（偏離 8）：合成工具類的（格, 元件）從 822 變 632；模型 P、B1 在 λ 0.1–0.4 中位數仍 ≥15% 的格數不變（181／139／117／78，CacheWise 的在 λ 0.1 已全部 <15%）。
+- **方向**：拿掉的 12 個裡有 5 個沒過門檻，所以拿掉後合成工具類看起來更一致地過門檻（26 個裡 21 個 → 14 個全部）。這偏向「預測仍有空間」；論文寫到合成工具類時要附這一句，並在內部報告並列含 CacheWise 的 21／26。
+- **寫本節時 `icpe-main` 已經看過的結果**：CacheWise 的版本 A、B、P2／P3、P4 的全部輸出（STATUS_MAIN 各節、偏離 7、8 已列）；本節的前後對照是 11:4x 用已進 git 的彙總算的。對話資料集（偏離 13）的模擬數字：沒有看過。

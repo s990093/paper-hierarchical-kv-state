@@ -3,6 +3,14 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T11:47+08:00 — **CacheWise 從論文拿掉（授權），內部保留**；PREREG 偏離 15 草稿（號碼待 h200 確認，還沒 push）
+
+- 來源：使用者在 icpe-data 說「CacheWise 下先停 放不了paper」（STATUS_DATA 11:45，ba6ae12；icpe-data 轉告原話）。
+- 使用者在本 session 決定（AskUserQuestion，11:4x）：「論文拿掉，內部保留」；「登記，由 icpe-main 寫」。
+- 拿掉前後（版本 B，`verB_verdict.csv`；icpe-main 用已進 git 的彙總算）：合成工具類 21／26 → 14／14（最大都 52.9%）；原始工具類 3／9 不變；推翻條件不變；P4 合成工具類的（格, 元件）822 → 632，模型 P、B1 仍 ≥15% 的格數不變；H2 合成工具類淘汰占比 93.1% → 95.9%。
+- 做了什麼：PREREG 從 `origin/icpe-next-a` e93074f 同步（d0e6516；偏離 9–14，0 行刪除），在檔尾加偏離 15 草稿（寫明理由是授權、看過的結果、前後對照、方向）。號碼已請 h200 確認；push 前先給使用者看。
+- 之後要改：給老師的文件與報告的論文用部分（摘要的「40 variants of seven traces」→ 28／six；「21 of 26 synthetic」→「14 of 14」；主結果表、圖 1–4）出「不含 CacheWise」的版本，內部版並列含 CacheWise 的數字。
+
 ## 2026-11-07T11:33+08:00 — 對話資料集（偏離 13）的分析選擇：使用者在看任何對話資料集的數字之前決定；等 4 份到齊、等偏離 14 的修正版再算
 
 **現況**（icpe-data 訊息、`origin/icpe-next-data` 59be8e8）：ShareGPT（T60／T600 × s1–3）、WildChat（s1–3）、UltraChat（T60／T600 × s1–3）的版本 B（`chat_main`、`chat_p1`、`analysis/{sg,wc,uc}_p1`）和版本 C（`results/icpe_next/apc/<變體>/`）都已進 git；LMSYS 等使用者登入 HF。icpe-main 只列了檔名，**沒看任何對話資料集的模擬數字**（也沒讀 STATUS_DATA 11:35 的摘要表）。
