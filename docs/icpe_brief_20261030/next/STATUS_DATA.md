@@ -2,6 +2,42 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T15:41+08:00 — 使用者決定 **TRX40 分擔偏離 14 的重跑，最好是重的部分**；先暫定分工，等清單出來才定；P4 版本 C 的 5 對等引擎
+
+- **使用者的決定**：icpe-main 轉達（15:3x）；icpe-next-trx 也說使用者在 TRX40 確認過（STATUS_TRX 15:45，5acbc46e）。
+- **重跑清單還沒出來**：
+  - icpe-sim 對 63b8e32 的驗證（run `20261107-140640-icpe-sim-g1-63b8e32`）15:39 還在 t3_py 階段。
+  - 63b8e32 只在 icpe-sim 的 worktree，`origin/icpe-next-sim` 還是 0786f56。
+  - 原本估 15:25 左右出來，已經過了。
+- **TRX40 的條件**（icpe-next-trx 回報）：
+  - 48 執行緒、62 GiB。
+  - 有 SemiAnalysis N16–N72 的 nb、Mooncake、TraceLab、FreeInference、UltraChat、LMSYS-Chat-1M；**沒有 Bailian**。
+  - LMSYS 的原始資料與 nb 只能在 TRX40（授權），所以 lm_* 一定在那裡跑。
+  - CacheWise 不上 TRX40；偏離 15 也已經把它排除在重跑外。
+- **暫定分工**（清單出來後依實際量調整；若 TRX40 那份明顯比較輕，就把它已有的 Mooncake 或 TraceLab block 移過去）：
+
+| 機器 | 暫定負責 |
+|:--|:--|
+| TRX40 | SemiAnalysis：sa_main、sa_p1–p3、sens_rep 的 sa_*、P4 模型 P 在 sa 上的 job；對話 uc_*、lm_* 的主結果、P1、版本 C |
+| acvlab | TraceLab（tl_*）、Mooncake＋FreeInference（old_*）、Bailian（bl_*）、sens_rep 的 bl_*／mc_*；對話 sg／wc；agent ms／oh；xcheck；P4 模型 P 在非 sa trace 上的 job（CacheWise 的除外） |
+
+- **TRX40 跑正式 block 前要過的關**（使用者要求逐位元重現；icpe-next-trx 自己列的順序）：
+  1. merge icpe-next-data。我會先 merge sim、加重跑的 plan、在 acvlab 跑 G0，再給它 commit 號。
+  2. 在 TRX40 編 Rust。
+  3. 跑 G0、xc_sa，以及旗標關的完整 sa_N16_s1。
+  4. 旗標開的比對：我指定一個小 block，兩台各跑一次，用 G1 的比法逐值比。
+- **P4 版本 C 的新增（偏離 10 第 5 點）**：
+  - icpe-main 的 58252b4f（`results/icpe_next/main/p4/verC/`）。
+  - 只有 5 個（格, 元件）是版本 C ≥15% 但版本 B 沒選到。
+  - 5 個全都要 APC 或 BELP 當 GPU 規則。我跑 P4 用的引擎（62b0932b，`--jobs-from`）沒有這兩個規則；v8（48e4efce）有，但據我所知沒有 P4 雜訊。其中 3 個是 O-PF，也要偏離 14 的旗標。
+  - 「雜訊＋偏離 14＋APC／BELP 放同一個引擎」的問題 icpe-main 已經問 icpe-sim。**引擎沒定之前我不排**；定了之後，併進同一份偏離 14 的班表。
+  - 版本 B 選到、版本 C 掉到 15% 以下的 119 對：結果保留、加標記，不用重跑（icpe-main）。
+- **需要 icpe-sim 做什麼**：
+  - 驗證過了就 push，並給重跑清單。
+  - 回答 P4 版本 C 的引擎問題。
+  - 給一個能在兩台都跑的小 block（旗標開），當 TRX40 的逐位元重現測試；沒有的話我自己挑一個。
+- **需要使用者決定什麼**：無。
+
 ## 2026-11-07T14:05+08:00 — **agent 軌跡（偏離 17＋更正）完成**：mini-SWE-agent、OpenHands 的版本 B、C 都進 git
 
 - PREREG 已同步：偏離 17（d1f4ca2）、偏離 17 更正（5294f5f）。
