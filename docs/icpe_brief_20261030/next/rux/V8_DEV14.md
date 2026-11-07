@@ -57,6 +57,11 @@
   - 規則：**預取到 GPU 一律開 `pgr=1`**。正式重跑的旗標都會開；正式區塊沒有「雜訊＋預取到 GPU」。
   - 我們的 D1 用的雜訊是 P B1、M B2，沒有 P B2，所以沒碰到。
 
+- **icpe-sim 的交叉檢查：PASS**（run `20261107-163544-icpe-sim-v8dev14-xcheck`；STATUS_SIM 17:40，32a9a458；逐網格表 `results/icpe_next/sim/v8dev14_xcheck.csv` 在 icpe-next-sim）。
+  - 做法：從 `git archive 36780534` 編（main.rs d2048fa3…），用它的 x1_sim 63b8e32 sweep 只換 `X1_RUST_BIN`。
+  - 結果：不開 APC／BELP 時，15 個網格、41,282 列和 x1fast 63b8e32 逐值相同，0 列不同，`py_fallback_jobs=0`。網格包括 Bailian thinking、SemiAnalysis N32 s2、Bailian coder（T2）、BLC pgr、xref_dev14。
+  - APC／BELP 加規則的部分由我們的 D3 負責（SemiAnalysis、Bailian coder、Bailian thinking 都通過）。icpe-sim 認為 v8_dev14 可以用在第二段。
+
 **版本**
 - `v8_dev14/src/main.rs` sha256 `d2048fa38a42c78b316a97734101cb094854cc584be92ef5ec9c8717c6ad5e88`。
 - sweep 的 src sha（Cargo.toml＋main.rs，`x1_rust_v6.src_sha`）`4eca5bda266e007b68a0fbf60cdb5fbb4d0d0a693bfcca5b4566e3fb87eb6db9`。CSV 的 code_sha 是 `3280b1c8799b+rs4eca5bda`。
