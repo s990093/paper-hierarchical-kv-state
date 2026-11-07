@@ -354,7 +354,7 @@
 - 同節點上另有 chihchung 帳號的 TrustGCD（24728、24729）與其他使用者的 job；`t1g.py wait-clear` 只等 `$USER`（hungweilai）的 job，這些照 T1G 的條件不等（由 GpuWatcher 管同一張卡上的外來 process）。
 - 群組配額 1514G／1536G（剩約 22G）。
 
-## 2026-11-07 15:16（台灣）— W6b（24687）改排在 W6a 後面、放開（使用者決定）
+## 2026-11-07 15:14（台灣）— W6b（24687）改排在 W6a 後面、放開（使用者決定）
 - 使用者（15:1x，問「W6a 跑完時 TraceLab 的 job 還沒送出，W6b 怎麼辦」）選「先放 W6b，TraceLab 排它後面」。15:13:50 `scontrol update jobid=24687 dependency=afterany:24724` ＋ `scontrol release 24687` → PENDING（Dependency，afterany:24724）。上限 1-12:00:00。
 - 順序因此變成：W6a（24724，預計 11/8 0–1 點結束〔推算〕）→ W6b（24687，96 個 run 約 26 小時〔推算〕，約 11/9 凌晨結束）→ TraceLab c1 GPU 層重播（程式、自測、偏離 18 準備好、給使用者看過後再送，排 afterany:24687）。
 - W6b 開跑時執行本 worktree 的 `next_a_w6b.sh`／`next_a_w6b.py`／`x1_gpu.py`／`x1_sim.py`，W6b 跑完前這幾支不動；TraceLab 的程式放另一個 worktree。
