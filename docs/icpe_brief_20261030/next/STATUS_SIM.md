@@ -962,3 +962,22 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - 有雜訊的網格不變（wb，232 個）。紀錄、旗標、worker 同上一節。
 - **TraceLab 預熱重開**（run `20261107-155740-icpe-sim-prewarm-63b8e32`；`…-154805` 是停掉的那個）。
 - 旗標仍然**等 xref 的 Python＝Rust 才放行**。
+
+---
+
+## 2026-11-07T16:08+08:00 — TraceLab c1／c2／c4 的準備快取建好（`63b8e32`）
+
+- run `20261107-155740-icpe-sim-prewarm-63b8e32`：exit 0。
+  - 凍結的 worktree `g1-63b8e32`：x1_sim.py sha256 **`8b53588b85c3…`**、x1_nb.py `8251e2587464…`、x1_rust.py `0d89c4ba33c5…`。
+  - Rust src `0bfacb59…`；code_sha `3180504e8d57+rs0bfacb59`。
+  - `X1_RUST_WORK=/ssd6/hungwei/icpe-next/x1fast-work`；同時 2 個。
+
+| 變體 | 快取目錄 | n_req | 準備 | 牆鐘（含 1 個 job） | 最大 RSS |
+|:--|:--|--:|--:|--:|--:|
+| tracelab_c1 | `prep-a3909a4652a7c575dd8b1cea` | 665,453 | 372.3 s | 6:35 | 14.2 GiB |
+| tracelab_c2 | `prep-b4cdd780b7651a9983b658f3` | 665,453 | 369.6 s | 6:33 | 14.2 GiB |
+| tracelab_c4 | `prep-8fa8552aea93c4ed7af4a22e` | 665,453 | 130.3 s | 2:28 | 14.2 GiB |
+
+- 三個的 KEY.json 都是 `code_sha256` `362b98a15fc4…`（x1_sim／x1_nb／x1_rust 合起來的 sha），`lite=True`、`prep=built_saved`。
+- 這次比 11/6（約 2,482 s／變體）快很多。原因沒查（NOT_MEASURED）。
+- 用同一份程式（`63b8e32` 或之後只改文件的 commit）跑 TraceLab，應該會印 `prep=cache_hit`。
