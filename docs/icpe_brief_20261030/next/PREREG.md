@@ -272,3 +272,546 @@
 - 版本 A（3 個 TTL，run `20261106-084846-icpe-main-verA-ttl3`）的全部表（偏離 7 已列）。
 - **使用者做決定（第 2 點、要登記）的時候**：版本 B（run `20261106-110854-icpe-main-verB-p1`）的全部輸出都已經回報使用者，包括正式判定、偏離 5 的算法、`--dead-h 1800／3600`、p90、論文兩個 Mooncake 舊測試的新舊並列，以及各元件 ≥15% 的格數。提問時已寫明兩種選法各有幾格（1,694 對 2,582）。決定的時間在版本 B 跑完（acvlab 本地 11:15:21）之後、commit baa508d（12:40:25）之前。
 - W4 雜訊的結果：還沒有，一個都沒看過（還沒跑）。
+
+### 偏離 9（2026-11-07T00:36:50Z（RUX3DPRO 的 `date -u`）；**W3 線索 (a) 的規則**（推翻條件的後半）；使用者決定登記、由 `icpe-rux` 寫；號碼由 `h200` 給；只登記 W3，APC、W5、排隊不在本節）
+
+**經過**
+- 使用者的決定由 `icpe-main` 轉達（11/7 約 08:45）：W3 的規則要在 TRX40 跑任何 W3 sweep 之前登記，由 `icpe-rux` 寫。
+- PREREG、NEXT_PLAN 沒有依據的三點，使用者在 `icpe-rux` 用 AskUserQuestion 定了（11/7 約 08:50）：第 3 點的比例、第 4 點的門檻與彙總。使用者也同意由 `icpe-rux` 直接寫進本檔。
+- 為什麼要登記：§1 的推翻條件（「只要有一份真實的工具類紀錄，對最強的不預測做法上限 ≥15%，又沒有簡單線索能拿走大部分」）的後半，偏離 7 寫「W3 沒登記也沒跑 → NOT_MEASURED → 未定」。TraceLab c1 是原始到達、工具類、上限 ≥15% 的變體。先看結果再定規則，結果就不能當正式證據，所以先登記。
+
+**1. 線索 (a) 的定義**（依據 NEXT_PLAN W3 第 42 行「工具一開始執行，就把這個對話的 KV 留在／搬回 CPU（不需預測，相當於 Continuum 的 TTL 的極端版）」、§4 表 ③「工具一開始執行就留在 GPU／搬回 CPU」）
+- **每個請求的旗標** cue[r] ∈ {0, 1}＝請求 r 這一輪的輸出有工具呼叫。回合結束時系統就看得到工具要開始執行，不用預測。
+  - TraceLab（release v0.0.2，`syfi_coding_trace.jsonl.gz` sha256 `11ce51ec0a25e3d1d95b025bca2f7d1647e47571eb7cc968acd5fc64d4b4fb65`）：cue[r]＝該輪原始紀錄的 `tools` 非空。
+    - 請求順序照 `code/icpe/next_b_convert.py` 的 `conv_tracelab`＋`finalize`。
+    - 程式：`code/icpe/rux_x1fast/v8_features/make_cue.py tracelab`。
+    - 跑之前必須用 `make_cue.py check` 對 nb 檔核對 t、sess 的 sha256，要印 `CUE_CHECK PASS`。
+    - tracelab_c1：665,453 個請求、cue＝1 有 574,485 個。TRX40 與 RUX3DPRO 各自產生，sha 相同。
+  - FreeInference（HF `harvardMadsys/freeinference_agentic_trace` @ `16d3c04d`）：cue[r]＝同一 session 的下一個請求 `step_trigger`＝tool。
+    - FreeInference 只記觸發來源，只有 tool／user 兩種。session 的最後一個請求＝0。
+    - 程式：`make_cue.py fi`，順序直接取自 `x1_fi.prepare_fi`。
+  - 沒有欄位的紀錄（Mooncake toolagent、SemiAnalysis）：不跑，推翻條件的後半維持「未定」（偏離 7）。
+  - CacheWise：這次不跑（使用者 11/7「CacheWise 都先不跑」）。之後要跑，得另寫 cue 程式（`trigger`），並補登記 cue 的定義；其他照本節。
+- **③ 的兩個 GPU 規則**（引擎 `code/icpe/rux_x1fast/v8_features/`，v8 `src/main.rs` sha256 `48e4efce…`；sweep 用 `sweep_v8.py`＋`RUX_CUE_FILE`）：
+  - **CUEP**：cue＝1 的回合結束後，這個對話的 KV 釘在 GPU，直到它的下一個請求；cue＝0 的回合照 GPU LRU。GPU 滿而且全部釘住時，放掉對話開始時間最晚的那個（同 §2 第 3 項的 TTL 規則）。
+  - **CUEO**：cue＝1 的回合結束時立刻逐出 GPU（wb：寫進 CPU，整個對話寫一次）；cue＝0 照 GPU LRU。
+- **驗證**（`smoke_v8.py`，3 份紀錄）：
+  - cue 全 0 時，CUEP、CUEO＝GPU LRU，逐位元相同；
+  - cue 全 1 時，CUEP＝TTLB:∞，逐位元相同；
+  - 不開新功能時，引擎和 Python 參考逐位元相同。
+  - 另外有一個只讀的獨立審查，見 `docs/icpe_brief_20261030/next/rux/V8_FEATURES.md`。
+
+**2. 跑哪些紀錄、哪些格**
+- **紀錄**：
+  - TraceLab c1（原始到達）、c2、c4（合成到達）；
+  - FreeInference 6 週：2026-05-17_2026-05-23、05-24_05-30、05-31_06-06、06-07_06-13、06-14_06-20、06-21_06-27（原始到達）。
+  - 原始、合成各自判定（偏離 7 第 1 點）。
+- **格**＝主結果的格（偏離 4 第 3 項）：
+  - CPU 9 個容量（8、16、32、64、128、256、512、1024、111.0625 GiB）× 慢層 ssd／b32／nfs × GPU 閒／忙 × Cake；
+  - GPU 111.0625 GiB、wb、預取到 CPU。
+- **CPU 規則**：`x1_sim.NON_ORACLE` 的 10 個，同 ② 的組成（偏離 2 第 5 點「每個 CPU 對手都配」）。
+- 一個變體約 450 個 job：CPU 10 × GPU {CUEP, CUEO} × CPU 9 個容量，時間相關的規則依時間設定拆。
+
+**3. 怎麼算**
+- 主指標：回來請求的平均 TTFT（`mean_ret`），不截尾（§1、偏離 8 第 1 點）。
+- T③（每格）＝min over {CPU ∈ NON_ORACLE} × {GPU ∈ {CUEP, CUEO}} 的 mean_ret：事後挑最快，同 ②（§2 第 3 項）。
+  - 一格要 20 個組合都跑了才算；少了，那格＝NOT_MEASURED。
+- T②、T④c＝推翻條件前半用的同一份上限表，現在是版本 B（`results/icpe_next/main/verB/{tl,fi}_p1_headroom_components.csv.xz`，run `20261106-110854-icpe-main-verB-p1`，偏離 8 第 1 點）。
+  - 跑 ③ 的機器要先證明環境和版本 B 相同：同一個變體重算版本 B 的表，逐值相同（`explore_apc.py` 的重現檢查，0 個不同）。不同就停，不判。
+- **比例**（使用者選「相對 ②（PR:21）」）：f_c＝(T② − T③) ÷ (T② − T④c)，每個 (格, 元件 c) 一個。
+  - c＝O-ORD、O-DROP、O-NOW、O-PF、O-GPU（偏離 7：算判定的元件）。O-ALL(report) 也算，只報告。
+  - NEXT_PLAN 第 43 行的 C2 算法 (T① − T③) ÷ (T① − T④O-PF) 只報告，不進判定。
+- 程式：`code/icpe/rux_x1fast/v8_features/analyze_w3.py --sweep <③ 的 x1_sweep.csv> --headroom <版本 B 的表>`，輸出 `w3_rows.csv`、`w3_verdict.csv`。
+
+**4. 判定**（使用者選：門檻「f > 0.5」、彙總「逐格，任一格成立就算」）
+- (格, 元件) 的上限 ≥ 0.15（§1、偏離 8 第 4 點），而且 ③ 齊全，才判。
+- 「簡單線索拿走大部分」＝該 (格, 元件) 的 f_c > 0.5。
+- 一個變體（紀錄變體 × rule；FreeInference 每週一個變體）：
+  - 只要有任一個「上限 ≥15%、③ 齊全」的 (格, 元件) f_c ≤ 0.5 → 推翻條件的後半**成立**（沒有簡單線索能拿走大部分）。
+  - 所有「上限 ≥15%、③ 齊全」的 (格, 元件) 都 f_c > 0.5，而且沒有 ③ 不齊的 ≥15% 格 → 後半**不成立**（簡單線索拿走大部分）。
+  - 沒有 ≥15% 的 (格, 元件) → 前半就不成立（偏離 7）。
+  - 有 ≥15% 的格但 ③ 都不齊、或只剩不齊的格 → **未定**。
+- 推翻條件：前半與後半都成立的變體，只要有一個（「只要有一份真實的工具類紀錄」）→ 推翻條件成立。原始、合成各自下判定字（偏離 7 第 1 點）。
+- 寫入頻寬飽和（`write_saturated`）的格照算，另報「上限 ≥15%、f ≤ 0.5 的格裡有幾格飽和」（偏離 7 第 3 點）。
+- 多個 CPU 容量、慢層、GPU 閒／忙不合併，照上面逐格判。
+- Mooncake 的 R1／R2：沒有欄位，不適用，見第 1 點。
+- p90 等其他指標只報告。
+
+**5. 方向（照實寫）**
+- ③ 是兩個規則 × 10 個 CPU 規則事後挑最快，對線索有利 → 線索比較容易「拿走大部分」→ 比較不容易推翻，偏向保住「預測沒有多大優勢」的結論。
+- 反過來，CUEO 在 wb 下每次都把整個對話重寫進 CPU，讓 ③ 略弱。
+
+**寫本節時 `icpe-rux` 已經看過的結果**（照實列出）：
+- **版本 B**：
+  - 讀過 Mooncake、SemiAnalysis、Bailian 的 `*_p1_headroom_components.csv.xz` 全部列，用來重現與探索。
+  - 透過研究報告看過 STATUS_MAIN 的摘要：原始到達的工具類變體 ≥15% 的是 Mooncake toolagent R1 57.8%、R2 62.4%、TraceLab c1 38.9%。
+  - **沒有打開** TraceLab、FreeInference 的版本 B 表。
+- **W3**：
+  - **沒有看過任何 TraceLab、FreeInference 的 ③ 或 f**（還沒跑）。
+  - 看過 TraceLab 原始紀錄的線索統計（runs `20261107-033551-icpe-rux-w3-cue-stats-tracelab`、`20261107-045446-icpe-rux-w3-make-cue-tracelab`）：
+    - 「輸出有工具呼叫」和「下一輪由工具結果觸發」一致 96.9%；
+    - cue＝1 的比例 86.3%。
+  - 看過 SemiAnalysis N16 s1 用代用 cue 的管線測試（runs `20261107-045622-icpe-rux-w3-pipeline-sa-proxy`、`20261107-083542-icpe-rux-w3-analyze-recheck-sa-proxy`）：
+    - 代用 cue＝下一個請求不是使用者觸發，SemiAnalysis 幾乎全是 1，不是真的線索。
+    - 3 個 CPU 容量下，③ 在每一格都比 ② 慢，f 為負，「後半成立」。
+    - 只當管線測試，不是證據；SemiAnalysis 沒有欄位，不在第 2 點的範圍裡。
+- **其他探索**（不是正式結果，`docs/icpe_brief_20261030/next/rux/V8_FEATURES.md` §4、`results/icpe_next/v8_explore/`）：
+  - APC／BELP、W5：Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder；
+  - 排隊：SemiAnalysis N16／N32／N64／N72 s1。
+  - 使用者在 08:50 做決定前，已看過這些的摘要。
+- TRX40 的 TraceLab c1 APC／BELP 探索在本節寫好時還在跑，結果沒有看過。
+
+### 偏離 9 更正（2026-11-07T00:40:03Z（RUX3DPRO 的 `date -u`）；更正偏離 9 的兩個時間，並照實補一句「方向」；規則、門檻、判定都不改；`icpe-rux` 寫，使用者同意補方向（AskUserQuestion，11/7 約 08:40））
+
+- **時間 1**：偏離 9「經過」寫「icpe-main 轉達（11/7 約 08:45）」，是錯的，我照抄了 `icpe-main` 給的時間。
+  - 實際：使用者在 `icpe-main` 決定「W3 先登記、由 icpe-rux 寫」是 acvlab 本地時間約 08:28–08:30。
+  - `icpe-main` 的訊息在 08:31:28（+08:00）之前送出。
+  - `icpe-main` 指出並提供時間。
+- **時間 2**：偏離 9「經過」寫「使用者在 `icpe-rux` 用 AskUserQuestion 定了（11/7 約 08:50）」，是錯的，我估錯了。照 `icpe-rux` 這邊的紀錄：
+  - 定三點、同意直接寫入：在 08:29:19（commit `45583298`）之後、08:35:26 之前。08:35:26 是 run `20261107-083526-icpe-rux-w3-analyze-recheck-sa-proxy` 開始的時間，這個 run 用的已經是照答案改好的 `analyze_w3.py`。
+  - 同意 push：在 08:37:10（commit `8f04a91c`）之後、push 之前。
+- **先後順序不變**：
+  1. 使用者決定（08:28–08:35）；
+  2. 登記（偏離 9 的 `date -u` 00:36:50Z＝08:36:50，commit 08:37:10）；
+  3. push；
+  4. TRX40 收到 `8f04a91c` 之後才跑 W3。到本更正為止，TRX40 還沒開始任何 W3 sweep，它的 TraceLab c1 還在跑 APC／BELP 的重現檢查。
+- **方向，補充偏離 9 第 5 點**：
+  - 第 4 點的彙總「逐格，任一個上限 ≥15%、③ 齊全的 (格, 元件) f_c ≤ 0.5 就算後半成立」會讓後半容易成立，推翻條件也就比較容易成立，偏向「預測仍有空間」。
+  - 這和第 5 點寫的「③ 事後挑最快，對線索有利」方向相反，影響可能更大。
+  - 規則照使用者的選擇，不改。`icpe-main` 指出。
+- **寫本更正時看過的結果**：同偏離 9。另外仍然沒有看過任何 TraceLab、FreeInference 的 W3 結果。
+
+### 偏離 9 補記（2026-11-07T00:52:12Z（RUX3DPRO 的 `date -u`）；**偏離 9 第 3 點「先證明環境和版本 B 相同」要重算哪些格**；使用者決定（約 08:47，在 `icpe-main`；`icpe-next-trx` 轉達），使用者在 `icpe-rux` 指示「你做掉」（11/7 約 08:52），由 `icpe-rux` 寫；規則、門檻、判定都不改）
+
+- **原文**：偏離 9 第 3 點「跑 ③ 的機器要先證明環境和版本 B 相同：同一個變體重算版本 B 的表，逐值相同（`explore_apc.py` 的重現檢查，0 個不同）。不同就停，不判。」沒寫要重算哪些格。
+- **決定**：重現檢查要涵蓋 W3 會判的**全部格**，也就是偏離 9 第 2 點的格。
+  - 範圍：9 個 CPU 容量（8、16、32、64、128、256、512、1024、111.0625 GiB）× 慢層 ssd／b32／nfs × GPU 閒／忙 × Cake。
+  - 規則集合同版本 B：CPU 17 × GPU 16，不含 APC、BELP。
+  - 每個變體各自做。
+  - 每一格、每一個元件都要逐值相同：T_oracle、T_rival、上限、最佳對手的 CPU 與 GPU 規則、oracle 的 CPU 與 GPU 規則。
+  - 任何一格不同 → 那個變體停，不判（＝NOT_MEASURED）。
+- **已經發生的事**（照實寫）：
+  - TraceLab c1 在本補記之前，只重現了 3 個容量（8、111.0625、1,024 GiB；108／108、0 個不同），就跑了 W3 並算出判定（icpe-next-trx `9e1064f0`）。
+  - 依本補記，這個判定**待確認**：16–512 GiB 這 6 個容量的重現也 0 個不同，才算數；有任何一格不同，c1 就不判。
+  - W3 的 sweep 和 `analyze_w3.py` 的結果不必重跑，只是先決條件要補齊。
+- **寫本補記時已經看過的結果**：
+  - 除了偏離 9 與其更正列的之外，`icpe-rux` 和使用者都看過 TraceLab c1 的 W3 結果（使用者在 08:47 決定之前已經看過）：
+    - 上限 ≥15% 的 (格, 元件) 有 22 個（O-GPU 18、O-ORD 4），全部 f_c ≤ 0.5，f_c 中位數 −7.41；
+    - `w3_verdict.csv` 的判定字是「後半成立」。
+  - TraceLab c1 的 APC／BELP 探索也看過了（icpe-next-trx `0cfa480b`）。
+  - 這些結果都**不影響**本補記的內容：本補記只把先決條件定得更嚴，不改規則、門檻、判定。
+- **方向**：先決條件更嚴 → 可以判的變體只會變少（較多「未定」），不改任何一個 f。
+
+### 偏離 10（2026-11-07T00:59:09Z（RUX3DPRO 的 `date -u`）；**block 粒度 APC 加進 ②、④ 的 O-GPU 加 BELP、APC 版成為正式主表**（PR:95 承諾的第二批）；使用者在 `icpe-rux` 決定（AskUserQuestion，11/7 08:56:16 之後、08:58:48 之前：前者是發問前寫入的檔、後者是照答案寫的草稿的修改時間），由 `icpe-rux` 寫；號碼由 `h200` 給）
+
+**經過**
+- 偏離 2 第 3 點（PR:95）：「APC：第一批＝GPU-LRU（session 粒度下完全相同，不另外跑）；第二批再加 block 粒度」，並登記「block 粒度 APC 做好後加進 ②；在那之前的結果標明 ② 不含」。
+- PR:55：APC 的確切定義要登記。PR:126：第二批的格子另外定、跑之前登記。
+- 語意：使用者 11/7 授權 `icpe-rux` 決定第 2–5 項的細節（`docs/icpe_brief_20261030/next/rux/SEMANTICS_2to5.md` §1）。
+- 本節的三個決定：使用者 11/7 在 `icpe-rux` 選的，選項原文見下面第 3、4、5 點。
+
+**1. APC 的定義**（SEMANTICS 2-1–2-4、2-7、2-8）
+- **逐出的順序**：
+  - GPU 滿了才逐出。
+  - 先選回合結束時刻最早的 session（session LRU），從它的尾端一塊一塊逐出（512-token 塊），直到 GPU 用量 ≤ 預算（PR:28 的 1,777 塊）。
+  - 共用的塊要等 GPU 上所有持有者都放掉才真的空出來。
+  - 依據：
+    - vLLM APC 的 free queue：釋放的塊照相反順序排，從頭逐出最久沒用的；同一個請求尾端先出。
+    - 一次服務一個請求時，這和「全域 block LRU＋尾端先出」選到同樣的塊。
+- **wb**（主結果）：
+  - session 回合結束後第一次被逐出塊時，整個 session 寫進 CPU（BF16，PR:54 的資料流）；session 進 CPU 層，CPU、慢層的規則照舊。
+  - GPU 上留下的前段變成乾淨的副本，之後從尾端逐出、不用再寫。
+  - 比逐塊寫回早寫一點 → ② 略弱 → 上限略偏高。
+- **wt**：CPU 照舊（回合結束就寫），GPU 副本照同樣的順序逐出、不寫。
+- **TTL** 維持 session 粒度（§2 第 3 項）。
+- 預取進 GPU × APC 不支援，P3 的「預取進 GPU」格子不放 APC。
+- **引擎**：`code/icpe/rux_x1fast/v8_features/`（v8，`src/main.rs` sha256 `48e4efce…`）；sweep 用 `sweep_v8.py --gpu-policies … APC BELP`。
+- **驗證**（沒有 Python 參考；使用者 11/7 決定只寫 Rust）：
+  - 一次逐出整個 session 時＝v7 的 GPU LRU／BEL，逐位元相同；
+  - GPU 夠大時＝v7；
+  - 每 200 個請求從頭重算 GPU 引用數、CPU 引用數與用量的稽核；
+  - 新功能關閉時和 Python 參考 0 個不同；
+  - 一次只讀的獨立審查（`V8_FEATURES.md` §3b）。
+
+**2. BELP**
+- 同樣「從尾端一塊一塊逐出」，但選 session 照 Belady：下次回來最晚的先逐出，鍵同 GPU BEL。是完美預測（oracle）。
+- 只進 ④ 的 O-GPU，不進 ②，也不進其他元件的 ④。
+
+**3. ②、④ 怎麼組成**（使用者選「加 BELP」）
+- APC 是不預測的 GPU 規則。
+  - ② 的每個元件、以及 O-ORD、O-DROP、O-NOW、O-PF 的 ④，GPU 不預測規則集合都多一個 APC（PR:177–182「兩邊規則集合相同」）。
+  - 也就是 {LRU, TTLA×7, TTLB×7, APC}。
+- O-GPU：
+  - ④＝NON_ORACLE × {BEL, BELP} 取最快；
+  - ②＝NON_ORACLE × {LRU, TTLA×7, TTLB×7, APC}。
+  - 依據：② 有 block 粒度的不預測規則，④ 沒有 block 粒度的完美規則，上限會被低估。探索：TraceLab c1 上 O-GPU 上限最大值，④ 只有 BEL 時 39%→5%，加 BELP 是 39.2%。
+- O-ALL(report)：照舊（只報告，④ 固定 (O-ALL, BEL, BEL)）。
+- 程式：`code/icpe/rux_x1fast/v8_features/analyze_v8.py`。
+  - 就是 `next_sim_analyze.py`，只多一點：BELP 不進任何不預測集合，O-GPU 的 ④ 含 BELP。
+  - 檢查：O-GPU 以外的元件＝拿掉 BELP 列後原本的分析；O-GPU＝獨立算法；都 0 個不同。
+
+**4. 重算哪些格**（使用者選「全部登記變體的主結果格」）
+- **紀錄變體**：偏離 4 第 3 項的全部 40 個，即 CacheWise 12、TraceLab 3、SemiAnalysis 12、Bailian 3、Mooncake 4、FreeInference 6。
+  - CacheWise 在使用者恢復之後才跑（使用者 11/7「CacheWise 都先不跑」）。
+- **格**：主結果的格，即 CPU 9 個容量 × 慢層 ssd／b32／nfs × GPU 閒／忙 × Cake，GPU 111.0625 GiB、wb、預取到 CPU。
+- **規則**：
+  - CPU 17 個（偏離 4 第 1 項）；
+  - GPU 18 個＝版本 B 的 16 個（LRU、BEL、TTLA／TTLB × 7）＋ APC ＋ BELP。
+  - 每個變體重跑全部 18 個 GPU 規則，不和舊的 sweep 合併。
+- **重現檢查**：同一個變體只用版本 B 的 16 個 GPU 規則重算上限表，要和版本 B 的表（`results/icpe_next/main/verB/*_p1_headroom_components.csv.xz`）全部格、全部元件、7 欄逐值相同（同偏離 9 補記）。不同就停，那個變體不重算。
+- **分工**：
+  - TraceLab、FreeInference：TRX40（icpe-next-trx）；
+  - SemiAnalysis、Mooncake、Bailian：RUX3DPRO（icpe-rux）；
+  - CacheWise：之後在 acvlab。
+- **結果**：`results/icpe_next/apc/<變體>/`，內容：
+  - `x1_sweep.csv.xz`；
+  - analyze_v8 的 `*_headroom_components.csv`；
+  - `MANIFEST.json`，記 run、引擎 code_sha、檔案 sha256。
+- 彙總與判定字由 `icpe-main` 照版本 B 的流程做（`main_summary.py`）。
+
+**5. 新表的地位**（使用者選「成為正式主表」）
+- APC 版的上限表（以下稱「版本 C」）取代版本 B，成為 §1 推翻條件前半的表。
+  - 判定方式照偏離 7：只判 5 個元件；原始、合成各自判；R1／R2 各自判；寫入飽和照算另標。
+- 偏離 9 的 W3 用「前半同一份表」，所以 T②、T④ 改用版本 C 重算 f。
+- P4 的選格（偏離 8 第 1 點）改用版本 C：
+  - 版本 C 下 ≥15%、版本 B 沒選到的格，補跑 P4；
+  - 版本 B 選到、版本 C 下 <15% 的格，已經有的結果保留並標明。
+- 版本 B 保留，標「② 不含 block 粒度 APC」，和版本 C 並列。
+- 門檻（15%／5%）、主指標（回來請求的平均 TTFT，不截尾）都不改。
+
+**6. 方向**
+- APC 進 ② → ② 變強 → 上限下降。
+- BELP 進 ④ 的 O-GPU → ④ 變強 → 上限上升。
+- 兩者一起是為了公平（第 3 點）。
+- wb 的「整個 session 一次寫進 CPU」讓 ② 略弱（上限略偏高）。
+
+**寫本節時 `icpe-rux` 與使用者已經看過的結果**（照實列出；都不是正式結果）：
+- **APC／BELP 探索**（CPU 8、111.0625、1,024 GiB；`docs/icpe_brief_20261030/next/rux/V8_FEATURES.md` §4a、`results/icpe_next/v8_explore/apc/`）：
+  - Mooncake toolagent R1／R2、Bailian coder：上限最多變 0.03 個百分點。
+  - SemiAnalysis N16 s1：② 最多快 28%；O-GPU（④ 加 BELP）上限中位數 8.5%→4.6%，≥15% 的格 6→4。
+  - TraceLab c1（TRX40，icpe-next-trx `0cfa480b`）：
+    - O-GPU 上限最大值：④ 只有 BEL 時 39.0%→5.1%，加 BELP 是 39.2%；
+    - O-ORD 23.3%→21.9%。
+- 使用者做三個決定時，已經看過上面這些摘要。
+- 版本 A、B 的表與判定（偏離 7、8 已列）；W3 的結果（偏離 9 補記已列）；W5、排隊的探索摘要。
+
+### 偏離 11（2026-11-07T01:05:49Z（RUX3DPRO 的 `date -u`）；**W5 與排隊兩個敏感度**（PR:57「排隊模型、W3、W5…要跑之前另補登記」）；使用者在 `icpe-rux` 決定（AskUserQuestion，11/7 09:01:38 之後、09:03:39 之前：前者是 RUX3DPRO 開始正式 APC 重算、確認它在跑之後才發問，後者是照答案之後的第一個 commit `7a89a9b5`），由 `icpe-rux` 寫；號碼由 `h200` 給；主結果、門檻、主指標都不改）
+
+**經過**
+- 兩項的語意由使用者授權 `icpe-rux` 決定（11/7），見 `docs/icpe_brief_20261030/next/rux/SEMANTICS_2to5.md`：W5 是 §4，排隊是 §2b。
+- 排隊的 Q3-a（④ 知不知道排隊造成的新順序），使用者答「我不知道你決定」，由 `icpe-rux` 定為「④ 只知道紀錄的順序」（§2b）。
+- 本節四個決定的選項原文見下面。
+- 引擎：`code/icpe/rux_x1fast/v8_features/`（v8，`src/main.rs` sha256 `48e4efce…`，和偏離 10 同一版）。
+- 規則集合：同偏離 10 的版本 C，即 CPU 17 × GPU 18（版本 B 的 16 個＋APC＋BELP），分析用 `analyze_v8.py`。
+
+**A. W5（CPU 層 INT4＋一次拆完）**
+1. **定義**（SEMANTICS 5-1–5-4）：
+   - CPU 層的每個塊都是 INT4：占 i4 位元組，容量照這個算。
+   - 還原 CPU 上的塊時，每塊讀 i4 ÷ r_cpu，再加「一次拆完的殘差」d1＝(T_meas − 64·i4 ÷ r_cpu) ÷ 64。
+     - T_meas：P0-1b S4（fa3）在 32K、CPU、INT4、全部載入時的還原中位數，GPU 閒 0.02914 s、忙 0.03327 s。
+     - 出處：`results/icpe_h200/p01/grid/llama_s4_fa3/summary.csv`，run `20261022-232344-icpe-p01b-llama-s4-fa3`。
+     - 32K 的總時間和實測相同；長度依賴 NOT_MEASURED。
+   - 預取進 CPU 的 INT4 塊也用 d1。CPU → 慢層是直接複製，不再量化。
+   - 量化時間不計，和現有的慢層 INT4 寫入一致。
+   - 還原照舊用 Cake。
+   - sweep 用 `sweep_v8.py` 並設 `RUX_W5=1`，CSV 多一欄 `cpu_fmt`。
+   - 驗證：參數設成等於沒開時和 v7 逐位元相同（17 × 16 個規則的 sweep 254,592 格 0 個不同）；位元組不變量；獨立審查（F2 已改）。
+2. **格**（使用者選「7 個代表變體 × 111／128／256」）：
+   - 變體：PR:118 的 7 個代表變體，即 CacheWise N16 s1、TraceLab c1、SemiAnalysis N16 s1、Bailian coder、Mooncake conversation R1、Mooncake toolagent R1、FreeInference 第 1 週（`2026-05-17_2026-05-23`）。CacheWise 在使用者恢復之後才跑。
+   - CPU 容量：111.0625、128、256 GiB，是 NP:52 和 PR:118 的聯集。
+   - 時間設定：主時間設定（ssd／b32／nfs × 閒／忙 × Cake），GPU 111.0625 GiB、wb、預取到 CPU。
+   - 只跑 W5 那一半；BF16 那一半直接用偏離 10 正式重算的同一個 sweep（同一版引擎）。
+3. **怎麼算**（使用者選「敏感度，每組事後挑較快格式」）：
+   - 每個 (格, CPU 規則, GPU 規則) 的 mean_ret 取 BF16 和 W5 較小的那個，② 和 ④ 都一樣。這和 ② 的「事後挑最快」是同一種。
+   - 之後用 `analyze_v8.py` 算 W5 的上限表，和版本 C 同一格比較。
+   - **主結果不變**，W5 只報告：每個變體 × 元件的上限、≥15% 的格數、和版本 C 的差。
+4. **NP:53 的「若上升，要查原因」**：
+   - 上限比版本 C 升高超過 5 個百分點的 (格, 元件)，都要報 ④ 和 ② 的最佳組合在回來請求上「CPU 載入／慢層載入／重算」次數的變化。
+   - 程式：`v8_features/w5_mechanism.py`（門檻 5）。
+5. **分工**：
+   - TraceLab c1、FreeInference 第 1 週：TRX40；
+   - SemiAnalysis、Bailian、Mooncake：RUX3DPRO；
+   - 結果放 `results/icpe_next/w5/<變體>/`。
+
+**B. 排隊（一階近似 `qpost`）**
+1. **定義**（SEMANTICS §2b）：
+   - 快取的決定，包括所有 oracle，都在沒有排隊、照紀錄順序的模擬裡做（④ 只知道紀錄的順序）。
+   - 之後每個時間設定各做一次工作守恆的 closed-loop FCFS：
+     - 每個 session 的第一個請求在紀錄的時刻到；之後的請求到達＝紀錄的時刻＋這個 session 上一個請求「開始服務比紀錄晚多少」。
+     - 單一 GPU，照到達先後服務，同時到照請求序號。
+     - 服務時間＝這個時間設定的 TTFT（還原＋prefill；解碼不算，NP:276）。
+     - 回報的 TTFT＝等待＋服務。
+   - sweep 用 `sweep_v8.py` 並設 `RUX_QPOST=1`，CSV 多 `queue`、`qwait_mean`、`qwait_p90`、`qwait_frac` 四欄。
+   - 驗證：
+     - 到達拉開時＝沒排隊；
+     - Python 精確重算逐位元相同；
+     - 快取狀態不變（每份紀錄 48 項）；
+     - sweep 端到端只有 TTFT 衍生的欄位不同。
+2. **格**（使用者選「全部格，重負載只報告」）：
+   - 固定並行的紀錄：SemiAnalysis 12 個變體（RUX3DPRO），CacheWise 12 個（使用者恢復後在 acvlab 跑）。
+   - × 主結果的格（CPU 9 個容量 × ssd／b32／nfs × 閒／忙 × Cake）× 版本 C 的規則集合。
+3. **負載分級**（每格依 (LRU, LRU) 那一組的平均等待）：輕 < 2 s、中 2–20 s、重 ≥ 20 s。
+   - 重負載的格服務順序重排很多，例如 nfs、GPU 忙時服務排名的位移中位數約 2,000（run `20261107-080926-icpe-rux-v8-qpost-reorder-sa`），一階近似不可靠。
+   - **重負載的格只報告、標「不可靠」，不拿來下結論。**
+4. **地位**（使用者選「敏感度，主結果標『不含排隊』」）：
+   - 固定並行紀錄的主判定維持不排隊（版本 C），照 NP:266 標「上限（不含排隊）」。
+   - 排隊結果另外報：每個變體 × 元件在輕、中負載格的上限、≥15% 的格數、和版本 C 的差。
+   - 也照實報 NP:266「不排隊對預測有利」這個方向在輕、中負載格上是否成立。
+5. 結果放 `results/icpe_next/queue/<變體>/`，分析用 `v8_features/explore_queue.py`（負載分級同上）。
+
+**C. 方向（照實寫）**
+- W5：② 和 ④ 都可以事後挑格式，對兩邊一樣。CPU 層變大時，oracle 也一起變強；探索裡看到上限可能上升。
+- 排隊：④ 不知道排隊造成的新順序 → ④ 略弱 → 上限略偏低，這是 §0 說不可以的方向。輕負載時重排小、偏差小；重負載的格不下結論。
+
+**寫本節時 `icpe-rux` 與使用者已經看過的結果**（照實列出；都不是正式結果；`docs/icpe_brief_20261030/next/rux/V8_FEATURES.md` §4、`results/icpe_next/v8_explore/`）：
+- **W5 探索**（CPU 111.0625、128、256）：
+  - Mooncake toolagent R1／R2：O-GPU 上限中位數降 6–8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多 +39。上升的格裡，④ 的慢層載入減 79–99.5%，② 減 13–26%。
+  - SemiAnalysis N16 s1：各元件下降，O-GPU ≥15% 的格 4→0。
+  - Bailian coder：多數下降，O-GPU ≥15% 的格 8→2。
+- **排隊探索**（SemiAnalysis N16／N32／N64／N72 s1，CPU 8、111.0625、1,024）：
+  - 輕負載上限幾乎不變，中位數 −0.3 個百分點。
+  - 負載越重上限越大，O-GPU ≥15% 的格在 N64、N72 變成 18／18。
+- 使用者做四個決定時已經看過上面的摘要。
+- 其他：版本 A、B；APC 探索（偏離 10 已列）；W3 TraceLab c1 的結果（偏離 9 補記已列，9 個容量的重現 TRX40 已補完、0 個不同）。
+
+### 偏離 12（2026-11-07T02:13:34Z（RUX3DPRO 的 `date -u`）；**W7 合成參數地圖**（PR:57「W7…要跑之前另補登記」；NEXT_PLAN W7）；使用者在 `icpe-rux` 決定（AskUserQuestion，11/7 約 09:35；細節交給 `icpe-rux`；之後補充「需要用 rust 寫」），由 `icpe-rux` 寫；號碼由 `h200` 給；**只給 CCGrid 版，ICPE 論文不用**（使用者 11/6「ICPE 之後」）；主結果、門檻、主指標都不改）
+
+**經過**
+- 使用者的決定（選項原文）：
+  - 維度：「9 維（全部）」。
+  - 抽樣：「LHS 10d × 3 seed」→ 90 點 × 3 seed＝270 份合成紀錄。
+  - 判定：「逐點判＋最多加密一輪」。
+  - 細節：「交給 icpe-rux，push 前給你看」。
+  - 看過草稿後（AskUserQuestion，11/7 10:05 之後）：
+    - 「push 並通知」；
+    - GPU 容量選「GPU 固定 111.0625 GiB」，另一個選項是「GPU 隨 WS_ref 縮放」。
+- 設計文件：`docs/icpe_brief_20261030/next/rux/W7_DESIGN.md`。
+- 程式：`code/icpe/rux_x1fast/w7/`。
+  - 生成器 `w7gen` 是 Rust，無外部 crate，`src/main.rs` sha256 `cfadca3f…`。
+  - 引擎不改：v8 `main.rs` 48e4efce，和偏離 10、11 同一版。
+
+**1. 合成模型**（W7_DESIGN §2）
+- 9 個維度。每個點的 u∈[0,1)^9 由 LHS 給，種子 20261107，`design.csv` 的 sha256＝`ab39ad31…0fe8`：
+
+| 維度 | 範圍 | 意義 |
+|:--|:--|:--|
+| T2 輪數 | 2–200，對數均勻 | 每個 session 的輪數 ~ Geometric(1/平均) |
+| T3 間隔分佈族 | exp／lognormal（σ 1.5684）／lomax（α 1.5） | 各占 1/3 |
+| T4 間隔平均 | 1–600 s，對數均勻 | 工具與人混合後的平均；人＝工具 × 51.33（FI week01 中位數比） |
+| T5 工具比例 | 0–1，均勻 | 回來的請求由工具觸發的機率 |
+| T6 起始內容 | 512–65,536 token，對數均勻 | 每個 session 取 log-normal，σ 0.5 |
+| T7 每輪增量 | 16–8,192 token，對數均勻 | log-normal，σ 1.0 |
+| T8 system prompt | 0–32,767 token，均勻 | 所有新對話共用前綴 |
+| T9 fork 比例 | 0–0.5，均勻 | 新 session 從當下活著的 session fork，共用前綴 |
+| T10 並行 N | 8–128，對數均勻後取整 | 固定並行 |
+
+- 固定的部分：
+  - 每份 ≥ 20,000 個請求。
+  - 上下文上限 1,048,576 token，超過就結束 session。根據：SemiAnalysis 實測最大 990,208 token，主結果沒有截在 128K。
+  - 服務時間用 FI 的 `service_constants`，只用來排時刻，TTFT 由引擎算。
+  - 512-token 塊的鏈式鍵。
+  - 每份的 seed＝1、2、3。
+
+**2. 引擎網格**
+- 版本 C 全套：CPU 17 × GPU 18 規則 × ssd／b32／nfs × 閒／忙 × Cake。GPU **111.0625 GiB（固定）**、wb、預取到 CPU。每份 14,184 個 job。
+- **CPU 容量**：9 個水準，WS_ref × 2^k，k＝−6..2，取整到 1/16 GiB。
+  - WS_ref＝活工作集的時間加權平均：活 session 最新請求的完整塊的聯集，× 64 MiB。
+  - 真實紀錄的 WS_ref：Bailian coder 361、SemiAnalysis N16 s1 439、N72 s1 870 GiB。主結果的 8–1,024 GiB 等於 WS_ref 的 0.009–2.8 倍，2^−6 到 2^2 涵蓋這個範圍。
+- **設計診斷**（只看輸入）：
+  - 270 份的 WS_ref 中位數 83 GiB，57.8% 小於 GPU。
+  - 這些點大多用不到 CPU 層，上限應該接近 0。這是地圖的一部分，WS_ref／GPU 當衍生變數報告。
+
+**3. 判定**
+- **單位**：(點, 水準 k, 慢層, 閒／忙, 元件)，cake。上限取 3 個 seed 的中位數，另報最小、最大。≥ 0.15 就算在區域內（PR:22）。
+- **元件**：`analyze_v8` 算。判定元件是 O-ORD、O-DROP、O-NOW、O-PF、O-GPU（偏離 7）；O-ALL(report) 只報告；寫入飽和照算，另報格數。
+- **報告**：
+  - 每個元件在區域內的比例、各水準的比例、seed 之間的範圍。
+  - 9 維＋WS_ref／GPU 和上限的 Spearman 等級相關，只報告。
+- **加密一輪**：某個判定元件的比例在 [5%, 95%] 才可以做，要先再登記範圍與點數，最多一輪。
+- **報法**：和真實紀錄分開報（EXT:88、PR:56）；結論只寫「在這個合成模型裡」。
+
+**4. 驗證**（W7_DESIGN §4）
+- `x1_nb.check`。
+- 時刻遞推逐位元。
+- 固定並行 ≤ N。
+- 鍵的來源（system prompt、上一輪延伸、fork 來自活 session、新鍵不重複）。
+- WS_ref 用 Rust 和 Python 兩份實作，逐位元相同。
+- 重產逐位元相同。
+- LHS 分層。
+- 實現值和設定值相符（工具比例、間隔平均、分佈族中位數、fork 比例）。
+
+**5. 執行**
+- RUX3DPRO，`run_w7.sh`，16 個 worker，排在偏離 10／11 的正式 run 之後。
+- 估計約 7–11 小時〔推算〕。
+  - 試跑（8 個 worker、和正式 APC 鏈同時跑）：最重的 w7_p051_s2（2,227 萬塊）1,432 s，中位數大小的 w7_p070_s1（202 萬塊）107 s。
+  - 依塊數線性外推，270 份在同樣條件下合計 21 小時；16 個 worker 獨占估計快 2–3 倍。
+- 結果放 `results/icpe_next/w7/formal/`，只放彙總。270 份 x1_sweep 不進 git，sha256 記在 `w7_traces.csv`。
+- 中斷時用新的 run 目錄接著跑，已完成的紀錄直接沿用。
+
+**6. 揭露**
+- 登記前跑了 4 份合成紀錄的試跑，只為了量時間、確認引擎能跑：
+  - run `20261107-093048-…-w7-pilot-timing`，用的是 128K 上限的舊版。
+  - run `20261107-093834-…-w7-pilot-timing2`。
+- 另外跑了 `run_w7.sh` 的端到端煙霧測試：只跑點 0 的 3 個 seed，收集到暫存目錄、不進 git。
+  - run `20261107-100727-…-w7-smoke-runner`：抓到 `w7_map.py` 的欄名重複，腳本在那一步停下；修正後用接續模式跑 run `20261107-101311-…-w7-smoke-runner-resume`。
+  - 這個地圖也有算出來，同樣沒讀，只看標記行。
+- 上限表有算出來，icpe-rux 沒有讀。
+- 只在 sweep 的進度行看到 5 個 job 的 mean_ret（W7_DESIGN §5）。
+- 範圍、上限、GPU、CPU 水準都在這之前定下。
+
+### 偏離 13（補登記）（2026-11-07T03:06:54Z（H200 head node 的 `date -u`，寫進本檔的時間）；**公開對話資料集 ShareGPT、WildChat-1M、LMSYS-Chat-1M、UltraChat 的主網格**（§4「選跑的紀錄……要跑之前另補登記」；WildChat、LMSYS、UltraChat 不在 §4 的選跑清單裡）；跑不跑、範圍、分工由使用者在 `icpe-data` 決定（11/7 上午），細節由 `icpe-data` 寫在 STATUS_DATA；收成編號偏離（標「補登記」）、以及「請 icpe-data 先補寫版本 B／C」由使用者在 `h200` 決定（AskUserQuestion，約 11:00 台灣；`origin/icpe-next-a` 的 STATUS_A「2026-11-07 11:00」節，0c58272、6239918）；由 `h200` 寫，下面照抄 STATUS_DATA 兩節；主結果、門檻、主指標都不改）
+
+**h200 的收錄說明**
+- **原文**：`origin/icpe-next-data` 的 STATUS_DATA 兩節，下面照抄，只把節標題從 `##` 降成 `####`，其他字不改。兩節衝突時以補寫為準（補寫作廢原節的「≥10% 補跑」）。
+  - 原節「2026-11-07T11:00+08:00 — 對話資料集補登記」：commit `688ad0b`（10:58:29 +0800；acvlab `date -u` 2026-11-07T02:57:51Z）。
+  - 補寫「2026-11-07T11:05+08:00 — 對話資料集補登記的補寫」：commit `e56c2be`（11:05:11 +0800；acvlab `date -u` 2026-11-07T03:04:39Z）。
+- **登記時間**：照使用者選的，以兩節的 commit 時間為準；寫進本檔的時間是本節標題的時間。
+- **h200 核對**（H200 head node，git 物件）：
+  - 688ad0b → e56c2be 的 STATUS_DATA 只在檔頭加一節、0 行刪除；11:00 那節在兩個 commit 裡逐字相同。
+  - 版本 B 的 `chat_main` 網格＝`next_b_queue.py`（688ad0b）第 68–70 行 `sweep_args()` 預設、第 88–90 行 `chat_main`。
+  - 版本 C 的引擎：`4a713386` 的 `code/icpe/rux_x1fast/v8_features/src/main.rs` sha256＝48e4efcee98cb5e54040d8b21fd61726007617d8be17d82f09347ebdf13ee7d2。`src/main.rs`、`sweep_v8.py`、`explore_apc.py`、`analyze_v8.py`、`v6_slowcap/x1_rust_v6.py` 和 `origin/icpe-next-rux` @ `f054a1a` 相同；`collect_v8.py` 在 4a713386 之後改過（+3／−2 行），本登記固定用 4a713386 的版本。
+  - 補寫第 6 點引用的 STATUS_TRX「11:15」節是 `origin/icpe-next-trx` 的 `334317cd`，commit 時間 11:02:11 +0800（節名的時間和 commit 時間不同，照實記）。
+- **登記前已經跑、已經看過的**（補寫開頭照實列了）：
+  - 688ad0b commit 之後、使用者「先補寫」的決定傳到 `icpe-data` 之前，acvlab 在 10:59:29 開了版本 A 的 `chat_main:sg_*`。`sg_T60_s1`、`sg_T600_s1` 跑完（rc＝0），留作版本 B `chat_main` 的輸入。`sg_T60_s2` 在 11:02:04 停下，標 `STOPPED_NOT_USED`。
+  - `icpe-data` 沒看這兩個 block 的輸出、沒算任何表；看過兩行進度輸出（各一個 job 的 `mean_ret`）和 ShareGPT 的轉換統計。
+  - `h200` 沒看過這四份資料集的任何模擬輸出。
+
+#### 2026-11-07T11:00+08:00 — **對話資料集補登記**（ShareGPT、WildChat-1M、LMSYS-Chat-1M、UltraChat）：使用者決定 11/9 前補跑主網格；**本節 commit 時還沒跑任何一格模擬**
+
+> 時間：acvlab `date -u` 2026-11-07T02:57:51Z。本節是 PREREG §4「選跑的紀錄……要跑之前另補登記」的登記。
+> 已經看過的只有轉換統計（下面列出），沒有任何模擬結果。PREREG.md 是 h200 管的檔，我不改；已請 h200 把本節收進 PREREG 的附錄。
+
+**使用者決定**（本 session，11/7 上午）
+- 問題是「ShareGPT 這種大家常用的資料集是不是都跑了」。我回答：計畫裡必跑的 7 份都跑完了；ShareGPT 沒跑，是 11/6 決定 ICPE 之後再做。
+- 使用者選「ShareGPT＋WildChat 都補」（AskUserQuestion）。之後又說：acvlab 只跑兩個，其他的（LMSYS-Chat-1M、UltraChat）交給 TRX40；rux-proj 也可以幫忙。
+- 分工：
+  - acvlab 跑 ShareGPT、WildChat-1M。
+  - TRX40 跑 LMSYS-Chat-1M、UltraChat。icpe-trx 的使用者已確認，排在它手上的 W5 之後。
+  - rux-proj 那台還在跑它登記過的模擬，14:00 以後才有空，所以這次不用。
+- 範圍：只跑主網格。不跑 P1～P4、敏感度、截斷 128K。
+- Azure、BurstGPT 不跑：只有時間和長度，沒有內容也沒有對話分組，模擬器無從判斷前綴重用，**不能跑**，不是漏掉。
+
+**資料**（每份放新的空目錄，sha256 記進 README.txt，並和 HF 的 LFS sha256 核對；只讀 JSON／parquet，Python 用 `-I`）
+
+| 資料集 | 來源 | 授權 | 機器 |
+|:--|:--|:--|:--|
+| ShareGPT | HF `anon8231489123/ShareGPT_Vicuna_unfiltered` @ 192ab218，`HTML_cleaned_raw_dataset/sg_90k_part{1,2}_html_cleaned.json` | Apache-2.0 | acvlab |
+| WildChat-1M | HF `allenai/WildChat-1M` @ 7d6490e4，`data/train-000{00..13}-of-00014.parquet` | ODC-BY | acvlab |
+| LMSYS-Chat-1M | HF `lmsys/lmsys-chat-1m` @ 200748d9，`data/*.parquet`（6 個） | LMSYS-Chat-1M 授權協議（gated，不准轉發） | TRX40 |
+| UltraChat | HF `openbmb/UltraChat` @ f220fe79，`train_{0..9}.jsonl` | MIT | TRX40 |
+
+- ShareGPT 用沒切段的那份。`ShareGPT_V3_unfiltered_cleaned_split.json` 會把超過 2,048 token 的對話切開，破壞多輪前綴。
+- 原始資料、轉換後的紀錄、逐對話的數字都不進 git，只放彙總。
+
+**轉換**：`next_b_convert.py chat --source <sharegpt|wildchat|lmsys|ultrachat> --seeds 1 2 3`。完整規則寫在程式開頭的註解。
+- **合格的對話**：
+  - 訊息嚴格 user／assistant 交替，由 user 開始。
+  - 內容都是字串，user 至少 2 輪。
+  - WildChat 另外要每個 assistant 都有 timestamp，而且最後一則是 assistant。
+- **抽樣**：合格的依載入順序編號，`default_rng(0).choice` 不放回抽 **9,000 個**（CachedAttention 的 9K sessions）。
+- **token**：Llama-3.1-8B-Instruct 的 tokenizer，NousResearch 鏡像 @ d10aef79，`tokenizer.json` sha256 79e3e522…（程式固定檢查），`tokenizers` 0.23.3。
+  - 每則訊息單獨切，再照 Llama 3.1 的對話格式組起來，不加 system 訊息。
+  - 第 k 個 user 訊息觸發第 k 個請求。輸入＝到這則 user 訊息為止的整段，加上 assistant 的開頭。
+- **chunk 鍵**：整段 token 每 512 個一塊，做鏈式 blake2b。內容相同的前綴共用鍵，不同對話也一樣，和 vLLM 前綴快取的行為一致。
+- **規則 6**：
+  - (a) 每個請求的鍵是上一個請求的鍵的延伸，要 100%。
+  - (b) 前 300 個對話「整段文字一次切」和「逐則切再組」的長度差，中位數 >1% 就停。
+  - 另外 `x1_nb.write_nb` 會查鏈式前綴。
+- **時間**：
+  - ShareGPT、LMSYS、UltraChat 沒有時間，照 Pensieve／CachedAttention：
+    - 對話開始＝Poisson，λ＝1 個對話／秒。
+    - 同一個對話裡兩個請求的間隔＝指數分佈的思考時間，平均 **T＝60 s（主）**、**600 s（敏感度）**。
+    - 同一個 seed 的 T60 和 T600 用同一組亂數，T600 的間隔正好是 T60 的 10 倍。
+    - **不加生成時間**：模擬器不模擬解碼，也沒有量過每 token 的解碼時間（NOT_MEASURED，不自己編）。
+  - WildChat：對話內用真實間隔。
+    - 第 k 個請求的偏移＝第 k 個 assistant 的 timestamp − 第 1 個的。這是伺服器收到完整回覆的時間；請求本身的到達時間沒有記錄。
+    - 對話開始一樣合成：Poisson λ＝1／s。原始的絕對時間太稀，一年約 100 萬個對話，壓不出記憶體壓力。
+  - seed＝1、2、3。每個 seed 決定對話順序、開始時間和思考時間。
+- **nb 名稱和 block**（plan `chat_main`，每個 block 6,174 個 job，共 21 個 block、129,654 個 job）：
+  - `sharegpt_T{60,600}_s{1,2,3}` → `sg_T…_s…`；`lmsys_…` → `lm_…`；`ultrachat_…` → `uc_…`。
+  - `wildchat_s{1,2,3}` → `wc_s…`。
+
+**模擬**：和主結果相同的主網格（`next_b_queue.py` 的 `sweep_args()` 預設）。
+- CPU 8／16／32／64／128／256／512／1,024／111.0625 GiB × 17 個 CPU 規則。
+- 慢層 ssd／b32／nfs，cake 還原。GPU 111.0625 GiB，GPU 規則 LRU、BEL、TTLA／TTLB × 0.3／10／300，寫回 wb，預取到 CPU。
+- 常數、重算 V1、Llama-3.1-8B 都和 PREREG §4 相同。程式碼和模擬器沒改，只加轉換和 plan，`code_sha` 的 Rust 部分仍是 62b0932b。
+- PREREG 偏離 4 第 2 項（④ 對 ② 上限 ≥10% 的格子，用 7 個 TTL 補跑 ②）照樣適用：分析產生 `chat_main_ttl7/cells.csv` 之後補跑。
+
+**分析和報告**：
+- 指標、表格、門檻都和主結果相同（PREREG §1、§4）。每個資料集報 3 個 seed 的中位數和範圍。
+- **單獨成一節**，不和主結果的數字合併。每個結果標明到達方式：
+  - ShareGPT／LMSYS／UltraChat：「Poisson 開始＋合成思考時間 T60／T600：對手論文的條件，不代表真實使用」。
+  - WildChat：「Poisson 開始＋真實的對話內間隔」。
+- 跑完不改上面任何參數。轉換或規則 6 失敗就停下回報，不換方法硬跑。
+
+**已經看過的轉換統計**（不是模擬結果）：ShareGPT，run `20261107-105613-icpe-data-conv-chat-sharegpt`
+- 對話 76,920 個，合格 53,457 個。不合格的：user 少於 2 輪 22,596 個，沒有交替 867 個。
+- 抽 9,000 個 → 88,269 個請求（79,269 個是回來的請求）。
+- 規則 6：(a) 79,269／79,269。(b) 300 個對話的長度差全部是 0。
+- 輸入 token 中位數 2,303、p90 16,220，沒有 >128K 的。
+- 不同的完整塊 50,641 個，工作集上限約 3,165 GiB（BF16）。
+- T60 的間隔中位數 41.6 s，s1 的 span 9.2 h；T600 的 span 76.5 h。
+- 前一次跑（`20261107-105557-…`）因為 README 的 sha256 解析錯誤在讀資料前就停了，已標 `FAILED_NOT_USED`。解析改成接受「sha256 路徑」兩欄的格式。
+
+#### 2026-11-07T11:05+08:00 — 對話資料集補登記的**補寫：版本 B／C、哪台、哪版引擎**（h200 轉達使用者「請 icpe-data 先補寫」；寫完才恢復模擬）
+
+> 時間：acvlab `date -u` 2026-11-07T03:04:39Z。h200 會把 11:00 那節和本節一起收成 **PREREG 偏離 13（補登記）**（使用者在 h200 選的；STATUS_A 11:00，0c58272、6239918）。
+
+**照實記錄：補寫之前已經跑了什麼**
+- 11:00 那節（688ad0b）commit 之後，我在 10:59:29 開了 `chat_main:sg_*`（版本 A 的格子，35 workers）。h200 的訊息是之後才到的。
+  - `sg_T60_s1`（run `20261107-105929-…`）、`sg_T600_s1`（run `20261107-110031-…`）跑完，rc=0。
+  - `sg_T60_s2` 跑到一半，11:02:04 停下整個行程群組，沒有殘留行程。那個 run（`20261107-110137-…`）寫上 `STOPPED_NOT_USED`。
+  - WildChat 還沒開始。
+- 我沒有看這兩個 block 的輸出，沒有算任何表。只在確認佇列有沒有在跑時，看到兩行進度輸出，各是一個 job 的 `mean_ret`。
+- 這兩個 block 的格子和下面版本 B 的 `chat_main` 部分完全相同，所以留著當版本 B 的輸入，不重跑。
+
+**1. 報哪些版本**（照偏離 10 第 5 點的主表地位）
+- **版本 C 是正式表**：block 粒度 APC 進 ②、BELP 進 ④ 的 O-GPU，analyze_v8。
+- **版本 B 並列**，標「② 不含 block 粒度 APC」。
+- 版本 A 不單獨報。它的格子（`chat_main`）是版本 B 的一部分。
+- 11:00 那節寫的「偏離 4 第 2 項的 ≥10% 補跑」作廢：版本 B 的每一格本來就有 7 個 TTL，沒有要補的。
+
+**2. 版本 B**（和主結果版本 B 的輸入同構：icpe-main 的 verB＝main＋P1 `_ttl`，run `20261106-110854-icpe-main-verB-p1`）
+- `chat_main`：CPU 17 個規則 × GPU 8 個（LRU、BEL、TTLA／TTLB × 0.3／10／300），也就是 11:00 那節的格子。
+- `chat_p1`：每個 `chat_main` block 對一個 `<名稱>_ttl`。
+  - CPU＝NON_ORACLE 10 個＋元件規則 5 個；GPU＝新的 8 個 TTL（TTLA／TTLB × 1／3／30／100）。
+  - 和 `cw_p1` 等的 `_ttl` 相同，每個 block 6,480 個 job。
+  - 不跑 `_trunc`，截尾只報告，不在範圍內。
+- **引擎**：x1fast v7，Rust src 62b0932b（`code_sha` 3280b1c8799b+rs62b0932b），`next_b_queue.py run --engine rust`。和 P1–P4 相同，模擬器沒改。
+- **上限表**：`next_sim_analyze.py --sweep <chat_main 的 sweep> <chat_p1 的 _ttl sweep> --pf-target cpu`。
+  - 每個資料集一份：sg、wc、lm、uc。
+  - 旗標同 verB 的第 3 步第一行。開算前先用 `main_rowcheck.py` 核對列數：main 17×8、_ttl 15×8、每個 (trace, rule) 54 格。
+
+**3. 版本 C**（照偏離 10 第 1–4 點，步驟同 `run_apc_formal.sh`）
+- **引擎**：v8，`code/icpe/rux_x1fast/v8_features/`，`src/main.rs` sha256 48e4efce…，`code_sha` 3280b1c8799b+rse7f6ee8f。
+  - 固定用 `origin/icpe-next-rux` 4a713386 的檔，也就是 SemiAnalysis 正式 APC 那次的版本。
+  - v8 的 sweep_v8／explore_apc／analyze_v8／x1_rust_v6 和現在的 icpe-next-rux 逐位元相同；x1_sim 和我們的相同。
+- **格子**：CPU 9 個容量 × 17 個 CPU 規則 × ssd／b32／nfs × Cake × GPU 111.0625 GiB wb × GPU 18 個規則（版本 B 的 16 個＋APC＋BELP），預取到 CPU。
+- **步驟**，任何一步失敗就停：
+  1. sweep_v8。
+  2. explore_apc.py 重現檢查：只用版本 B 的 16 個 GPU 規則重算上限表，和第 2 點的版本 B 表全部格、全部元件、7 欄逐值相同，必須 `REPRODUCED`；不同就停，那個變體不報版本 C。
+  3. analyze_v8.py 算 verC 表。
+  4. collect_v8.py 寫進 `results/icpe_next/apc/<變體>/`。
+- 因為重現檢查要用版本 B 的表，所以每台都是先跑完版本 B，再跑版本 C。
+
+**4. 哪台跑哪些**：版本 B、C 都在同一台跑。
+
+| 資料集 | 變體 | 機器 | 版本 B 引擎 | 版本 C 引擎 |
+|:--|:--|:--|:--|:--|
+| ShareGPT | `sharegpt_T{60,600}_s{1,2,3}` | acvlab（icpe-data） | v7 62b0932b | v8 48e4efce |
+| WildChat-1M | `wildchat_s{1,2,3}` | acvlab（icpe-data） | v7 62b0932b | v8 48e4efce |
+| LMSYS-Chat-1M | `lmsys_T{60,600}_s{1,2,3}` | TRX40（icpe-trx） | v7 62b0932b | v8 48e4efce |
+| UltraChat | `ultrachat_T{60,600}_s{1,2,3}` | TRX40（icpe-trx） | v7 62b0932b | v8 48e4efce |
+
+**5. 判定與彙總**：由 icpe-main 照版本 B／C 的流程做（`main_summary.py`）。
+- 這四份都歸「合成到達」，偏離 7 的「原始、合成各自判」。
+- 單獨成一節，不和主結果的 40 個變體合併計數。
+- 不跑 P4（偏離 10 第 5 點「版本 C ≥15% 的格補跑 P4」不適用，範圍只有主網格）。
+
+**6. UltraChat 的轉換規則補一條**（icpe-trx 11:15 查到，STATUS_TRX 334317cd）
+- 上游有 3 行 jsonl 是兩個 JSON 物件直接接在一起：train_3 第 127,819 行、train_4 第 82,900 行、train_7 第 90,760 行。
+- 檔案的 sha256 和 HF 的 LFS 記錄相同，是上游本來就這樣。
+- 規則：用 `json.JSONDecoder.raw_decode` 依序拆成多筆，每筆當一個對話。拆不開就停。
+- 拆的行數記在 meta 的 `filter.load_stats.ultrachat_multi_obj_lines`。
+- 失敗的 run `20261107-110038-icpe-trx-conv-chat-ultrachat` 沒寫出任何 nb。
+
