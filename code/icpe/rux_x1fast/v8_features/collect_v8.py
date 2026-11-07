@@ -8,7 +8,7 @@ import argparse, hashlib, json, lzma, os, shutil, socket, subprocess, sys
 from datetime import datetime
 
 ap = argparse.ArgumentParser()
-ap.add_argument("exp", choices=["apc", "w3", "w5", "queue", "slowcap", "w7"])
+ap.add_argument("exp", choices=["apc", "w3", "w5", "queue", "slowcap", "w7", "queue2", "queue1m"])
 ap.add_argument("variant")
 ap.add_argument("--sweep", nargs="*", default=[])
 ap.add_argument("--files", nargs="*", default=[])
@@ -59,18 +59,25 @@ for d in a.runs:
     ctx = open(os.path.join(d, "context.txt")).read().splitlines()
     runs.append(dict(run_id=os.path.basename(d.rstrip("/")), ts=ctx[0].strip(), host=ctx[1].strip()))
 def engine_map():
-    """sweep 的 code_sha（rs 後面＝Cargo.toml＋main.rs 的 sha256，x1_rust_v6.src_sha）→ git 裡哪個 commit 的 v8 main.rs。"""
-    cargo = open(os.path.join(REPO, "code/icpe/rux_x1fast/v8_features/Cargo.toml"), "rb").read()
+    """sweep 的 code_sha（rs 後面＝Cargo.toml＋main.rs 的 sha256，x1_rust_v6.src_sha）→ git 裡哪個 commit 的 main.rs（v8、v8_dev14（偏離 14 的規則），或 v9 的二階排隊）。
+    v8_dev14、v9 的 Cargo.toml 和 v8 相同；v8 的項目和加它們之前完全相同，其他的項目多一欄 engine_dir。"""
     out = {}
-    cs = subprocess.run(["git", "-C", REPO, "log", "--format=%h", "--", "code/icpe/rux_x1fast/v8_features/src/main.rs"],
-                        capture_output=True, text=True).stdout.split()
-    for c in cs:
-        mr = subprocess.run(["git", "-C", REPO, "show", f"{c}:code/icpe/rux_x1fast/v8_features/src/main.rs"], capture_output=True).stdout
-        h = hashlib.sha256()
-        for nm, bb in (("Cargo.toml", cargo), ("main.rs", mr)):
-            h.update(nm.encode() + b"\0" + bb)
-        out.setdefault(h.hexdigest()[:8], dict(main_rs_sha256=hashlib.sha256(mr).hexdigest()[:16], first_commit=c))
-        out[h.hexdigest()[:8]]["first_commit"] = c          # git log 由新到舊 → 最後寫的是最早的 commit
+    for d in ("v8_features", "v8_dev14", "v9_qev"):
+        cp_ = os.path.join(REPO, f"code/icpe/rux_x1fast/{d}/Cargo.toml")
+        if not os.path.exists(cp_):
+            continue
+        cargo = open(cp_, "rb").read()
+        cs = subprocess.run(["git", "-C", REPO, "log", "--format=%h", "--", f"code/icpe/rux_x1fast/{d}/src/main.rs"],
+                            capture_output=True, text=True).stdout.split()
+        for c in cs:
+            mr = subprocess.run(["git", "-C", REPO, "show", f"{c}:code/icpe/rux_x1fast/{d}/src/main.rs"], capture_output=True).stdout
+            h = hashlib.sha256()
+            for nm, bb in (("Cargo.toml", cargo), ("main.rs", mr)):
+                h.update(nm.encode() + b"\0" + bb)
+            out.setdefault(h.hexdigest()[:8], dict(main_rs_sha256=hashlib.sha256(mr).hexdigest()[:16], first_commit=c))
+            out[h.hexdigest()[:8]]["first_commit"] = c          # git log 由新到舊 → 最後寫的是最早的 commit
+            if d != "v8_features":
+                out[h.hexdigest()[:8]]["engine_dir"] = d
     return out
 
 

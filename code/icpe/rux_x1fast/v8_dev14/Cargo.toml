@@ -1,0 +1,16 @@
+[package]
+name = "x1fast3"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+
+# 跑分用：LTO＋單一 codegen unit＋panic=abort（只改最佳化，不改 IEEE 運算語意）
+[profile.fast]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+panic = "abort"

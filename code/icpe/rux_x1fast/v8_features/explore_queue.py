@@ -16,11 +16,12 @@ ap.add_argument("--qsweep", nargs="+", required=True)
 ap.add_argument("--ref", required=True)
 ap.add_argument("--out", required=True)
 ap.add_argument("--noq-sweep", nargs="*", default=[])
+ap.add_argument("--queue-tag", default="closed_post")      # 偏離 19：v9 的 qpost=2 → closed_post2（其他算法相同）
 a = ap.parse_args()
 REPO = os.environ["REPO"]
 os.makedirs(a.out, exist_ok=True)
 Q = pd.concat([pd.read_csv(p) for p in a.qsweep], ignore_index=True)
-assert (Q.queue == "closed_post").all()
+assert (Q.queue == a.queue_tag).all()
 K = ["trace", "rule", "cpu_GiB", "policy", "slow", "gpu", "restore", "gpu_GiB", "gpu_write", "gpu_policy", "pf_target", "slow_cap_frac", "slow_policy"]
 K = [k for k in K if k in Q.columns]
 ok_e2e = True
