@@ -1,8 +1,9 @@
 """main_ab.py — icpe-main：版本之間的並列與逐格關係核對（版本 A 對版本 B；使用者 2026-11-06）。
 
   python -I code/icpe/main_ab.py cells --name <名稱> --x <headroom_components.csv> --y <headroom_components.csv> \
-      --rel le|eq [--component O-GPU ...] [--rule R1 ...] --out <cellcheck.csv（附加）>
-      逐格（(格, 元件)）核對 x 的 headroom 和 y 的關係：le＝x ≤ y（容許 1e-12，超過就算違反；剛好在容許內的另計）；eq＝完全相同。
+      --rel le|eq|eqsel [--component O-GPU ...] [--rule R1 ...] --out <cellcheck.csv（附加）>
+      逐格（(格, 元件)）核對 x 的 headroom 和 y 的關係：le＝x ≤ y（容許 1e-12，超過就算違反；剛好在容許內的另計）；eq＝完全相同；
+      eqsel＝選到的組合與 T_oracle、T_rival 逐位元相同、上限差 ≤1e-12（兩支不同程式之間用）。
       兩邊的 (格, 元件) 集合必須相同。違反就照實寫進輸出、exit 1。
       用途：版本 B（7 個 TTL）的 O-GPU ≤ 版本 A（3 個 TTL）——O-GPU 的 ④ 只用 BEL（兩版相同）、② 在 B 多了 8 個 TTL 規則（只少不多），
       所以每格只能變小或不變；偏離 5 算法的每個元件也一樣（④ 不變、② 多了規則）。正式 B 與偏離 5 的 O-GPU 必須完全相同。
@@ -20,6 +21,7 @@ import socket
 import sys
 from datetime import datetime
 
+import numpy as np
 import pandas as pd
 
 CELL = ["trace", "rule", "cpu_GiB", "slow", "gpu", "restore", "gpu_GiB", "gpu_write", "slow_cap_frac", "component"]
@@ -37,12 +39,24 @@ def cells(a):
         X, Y = X[X.component.isin(a.component)], Y[Y.component.isin(a.component)]
     if a.rule:                      # 只比這些 rule（例：Mooncake 的 R1、R2 分開算時，各和版本 B 的同一個 rule 比；2026-11-07）
         X, Y = X[X.rule.isin(a.rule)], Y[Y.rule.isin(a.rule)]
-    M = X[CELL + ["headroom"]].merge(Y[CELL + ["headroom"]], on=CELL, how="outer", suffixes=("_x", "_y"), indicator=True)
+    SEL = ["oracle_policy", "oracle_gpu_policy", "T_oracle", "best_rival", "best_rival_gpu_policy", "T_rival"]
+    extra = SEL if a.rel == "eqsel" else []
+    M = X[CELL + ["headroom"] + extra].merge(Y[CELL + ["headroom"] + extra], on=CELL, how="outer", suffixes=("_x", "_y"),
+                                              indicator=True)
     only = int((M._merge != "both").sum())
     M = M[M._merge == "both"]
     d = M.headroom_x - M.headroom_y
     if a.rel == "le":
         viol, within = int((d > TOL).sum()), int(((d > 0) & (d <= TOL)).sum())
+        smaller, same = int((d < 0).sum()), int((d == 0).sum())
+    elif a.rel == "eqsel":
+        # 兩支程式（例：analyze_v8 對 next_sim_analyze）：選到的組合與兩個 T 值必須逐位元相同；上限只容許浮點捨入（|差| ≤ TOL），
+        # 另計「完全相同」與「在容許內」各幾格（使用者 2026-11-07 選「改成更完整的核對」）。
+        selbad = np.zeros(len(M), dtype=bool)
+        for c in SEL:
+            selbad |= (M[f"{c}_x"] != M[f"{c}_y"]).to_numpy()
+        viol = int((selbad | (d.abs() > TOL).to_numpy()).sum())
+        within = int(((~selbad) & (d != 0).to_numpy() & (d.abs() <= TOL).to_numpy()).sum())
         smaller, same = int((d < 0).sum()), int((d == 0).sum())
     else:
         viol, within, smaller, same = int((d != 0).sum()), 0, 0, int((d == 0).sum())
@@ -104,7 +118,7 @@ def main():
     c.add_argument("--name", required=True)
     c.add_argument("--x", required=True)
     c.add_argument("--y", required=True)
-    c.add_argument("--rel", choices=["le", "eq"], required=True)
+    c.add_argument("--rel", choices=["le", "eq", "eqsel"], required=True)
     c.add_argument("--component", nargs="*", default=[])
     c.add_argument("--rule", nargs="*", default=[], help="只比這些 rule（兩邊都過濾）")
     c.add_argument("--out", required=True)
