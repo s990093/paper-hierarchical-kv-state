@@ -406,7 +406,7 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - 摘要：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`rust_cmp.csv`（+3 列）、`jobs_from_check.csv`（新）。
 - **有利還是不利**：無（只選要跑哪些 job，不改任何 job 的計算）。
 
-### 22. PREREG 偏離 14：`--pf-expire`（O-PF 預取的副本過期就丟）、`--noise-overdue resample`（模型 P 抽到已經過去的時間就重抽）（`code/p3x/x1_sim.py`、`code/p3x/x1_rust.py`、`code/p3x/x1fast/src/main.rs`，commit `fa3686b`；「(i) 跳過已丟的 session」在第 23 項的 commit @@C23@@）
+### 22. PREREG 偏離 14：`--pf-expire`（O-PF 預取的副本過期就丟）、`--noise-overdue resample`（模型 P 抽到已經過去的時間就重抽）（`code/p3x/x1_sim.py`、`code/p3x/x1_rust.py`、`code/p3x/x1fast/src/main.rs`，commit `fa3686b`；「(i) 跳過已丟的 session」在第 23 項的 commit `63b8e32`）
 
 - **為什麼**：P4 的 O-PF／O-GPU 斷崖（STATUS_SIM 11/7 11:02）。使用者選 B：補規則、全部重跑、修正版取代正式結果。規則照 PREREG 偏離 14（fe34522）。
 - **改了什麼**：兩個旗標，預設關。沒開時程式路徑和原本相同。
@@ -429,7 +429,7 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - (a) 讓不會再回來的對話不再一直被當成「馬上回來」。
   - 這是 PREREG 偏離 14 登記的方向：原本的寫法低估了有雜訊時預測的價值。
 
-### 23. `--pf-gpu-recheck`：GPU 預取騰完空間後重查候選，被丟就不預取（舊問題的修正，使用者 11/7 選 A）；偏離 14 (i) 跳過已丟的 session（`code/p3x/x1_sim.py`、`code/p3x/x1_rust.py`、`code/p3x/x1fast/src/main.rs`，commit @@C23@@）
+### 23. `--pf-gpu-recheck`：GPU 預取騰完空間後重查候選，被丟就不預取（舊問題的修正，使用者 11/7 選 A）；偏離 14 (i) 跳過已丟的 session（`code/p3x/x1_sim.py`、`code/p3x/x1_rust.py`、`code/p3x/x1fast/src/main.rs`，commit `63b8e32`）
 
 - **為什麼**：第 22 項的驗證（T2）在預取到 GPU 的 O-ALL assert（`gspf 13807 9`，兩個引擎相同）。原因是旗標關也有的舊路徑（STATUS_SIM 2026-11-07T14:02）：
   - `_advance_prefetch_gpu` 先算好候選 s 要搬的塊，再 `_g_make_room`；騰空間（wb 寫回 → `enforce`）時 O-ALL 的 O-NOW 部分可能把 s 自己丟掉。
@@ -440,5 +440,12 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - **`--pf-gpu-recheck`** → `Engine(pf_gpu_recheck=True)`，Rust 是 jobs.txt 的 `pgr=1`。`_advance_prefetch_gpu` 在 `_g_make_room` 成功之後：候選已不在 CPU／慢層 → `continue`（不預取，不推回 heap）。預取到 CPU 的路徑沒改（候選在慢層，`make_room` 只動 CPU 上的 session；只有設了慢層容量才可能丟到候選，正式 block 都沒設）。
   - **偏離 14 (i) 跳過已丟的 session**（`_pf_expire`／`pf_expire` 的篩選多 `st ≠ S_DROP`，CPU、GPU 兩條路徑）：沒開 `--pf-gpu-recheck` 時，那種副本照旗標關的方式留著，不會 assert。
   - **CSV**：開了才每列多 `pf_gpu_recheck`（True），npz 檔名多 `_pgr`，stdout 印 `sim_changes23 pf_gpu_recheck=True`。沒開＝原本的欄位。
-- **驗證**：@@V23@@
+- **驗證**（第 22、23 項一起；run `20261107-140640-icpe-sim-g1-63b8e32`，凍結的 worktree `g1-63b8e32`，acvlab；Rust src `0bfacb59…`，`py_fallback_jobs=0`）：**全部 PASS**。
+  - G1（三個旗標都關，對 H200 V1 的 4,416 列 × 29 欄）：Python、Rust 不同的格子 0。
+  - 三個旗標都開，Python 對 Rust（bailian_thinking；8 個規則 × CPU 8／64 × GPU 0／111.0625 × wb／wt × 4 個 GPU 規則 × 預取到 CPU／GPU）：沒有雜訊 384 列、有雜訊（P／M × λ 0／0.3 × B1／B2）1,824 列，不同的列 0。
+  - 旗標關 vs 開（Rust；bailian_coder，17 個規則 × CPU 7 × 3 種慢層 × GPU 0／111.0625 × 4 個 GPU 規則 × 預取到 CPU／GPU）：沒有雜訊 4,074 列、有雜訊 12,600 列都跑完（第一次 assert 的那個網格）。**不含 opf 的規則，在沒有雜訊、模型 M、λ＝0 的列全部相同**；會變的只有 O-PF／O-ALL（(i)）與模型 P、λ＞0 的列（(a)）。
+  - 旗標關 vs 只開 `--pf-gpu-recheck`（同一個網格，沒有雜訊）：只有「O-ALL、預取到 GPU」的列不同（168 列中 61 列），其他 3,906 列相同。
+  - 只開 `--pf-gpu-recheck` 對反事實 run `20261107-130238` 的 blc_f1（bailian_coder，bl_p3 的 pfgpu O-ALL 網格）：432 列，Python、Rust 都 0 個不同。
+  - SemiAnalysis N32 s2 開 `--pf-expire`（P／M × λ 0／0.1／0.3 × B1／B2 × seed 0／1）對診斷反事實 run `20261107-105614`：36 列，Python、Rust 都 0 個不同。
+  - 逐檔：`results/icpe_next/sim/g1_compare.csv`、`dev14_check.csv`（run_id＝上面那個）。
 - **有利還是不利**：只動 O-ALL（預測規則）的預取到 GPU。量到的格子裡有升有降、都在 ±0.006% 以內，方向沒有一致。
