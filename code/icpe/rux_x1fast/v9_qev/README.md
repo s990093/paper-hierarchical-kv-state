@@ -13,6 +13,8 @@
 | `run_queue2_analyze.sh` | 一個變體的分析與收集：和修正版版本 C（icpe-data 第二段）比 → `results/icpe_next/queue1m/`、`results/icpe_next/queue2/` |
 | `run_queue2_chain.sh` | 12 個變體的模擬，一個變體一個 run；已完成的跳過、沒跑完的用新 run 整個重跑，檢查 code_sha（11/7 19:57 WSL 重啟後從 scratchpad 移進來） |
 | `run_queue2_chain_analyze.sh` | 12 個（或指定的）變體的分析：從 `origin/icpe-next-trx` 的 `results/icpe_next/apc_d14/` 取修正版版本 C，逐個跑 `run_queue2_analyze.sh` |
+| `agg_queue2.py` | 12 個變體的加總表：偏離 11 B、一階 `qpost=2`、二階三種並列；各自 vs 自己的基準、回饋（二階 vs 一階）、到達規則＋pfx（一階新規則 vs 偏離 11 B，預取元件分開）、負載交叉表。檢查：非預取元件的新舊基準逐值相同 |
+| `run_queue2_finalize.sh` | 收尾：分析還沒收集的變體，再跑加總表 → `results/icpe_next/queue2/aggregate_SA12/`（不 commit） |
 
 重產與編譯：
 ```
