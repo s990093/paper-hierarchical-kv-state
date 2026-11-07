@@ -2,6 +2,22 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T11:50+08:00 — **對話資料集 4／4 份到齊**：LMSYS-Chat-1M（TRX40）的版本 B、C 收進 icpe-next-data
+
+- icpe-trx 推上 icpe-next-trx 291e7d60（STATUS_TRX 11:40）。
+  - 版本 B：`chat_main:lm_*`＋`chat_p1:lm_*` 12 個 block，11:34:54 → 11:36:46。
+  - 上限表：run `20261107-113711-icpe-trx-verB-lm_p1`，rowcheck PASS。
+  - 版本 C：6 個變體 `REPRODUCED cells=324`。
+- 我在 acvlab 核對過：
+  - 12 個 sweep 的 run_id 單一值且＝manifest，code_sha 62b0932b，CSV 列數＝manifest，規則數 17×8／15×8，trace 和 block 一致。
+  - 6 個 apc MANIFEST 的 code_sha 是 e7f6ee8f、main.rs 48e4efce、收集時的 commit 4a713386。
+  - 已原樣 checkout 進來。sweep CSV 只有模擬結果，沒有內容欄；LMSYS 的原始資料和 nb 只在 TRX40。
+- 照抄 icpe-trx 的摘要（不解讀）：
+  - T60 三個 seed 全部 0。
+  - T600 的 O-ALL(report) 最大 0.034–0.044。
+  - 版本 B、C 的 ≥15%、≥5% 格數都是 0。
+- **四份到齊，但先不通知 icpe-main 開算**。使用者在 icpe-main 決定（STATUS_MAIN 11:33）要等偏離 14 修正版的 O-PF／O-ALL 列重跑完，整份才算。
+
 ## 2026-11-07T11:45+08:00 — 使用者：**CacheWise 先停，「放不了 paper」**；acvlab 目前沒有要跑的，等偏離 14 的重跑清單
 
 - 使用者問「acvlab 有要跑東西嗎」。我回答：
