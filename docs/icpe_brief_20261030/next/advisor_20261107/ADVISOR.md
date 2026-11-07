@@ -184,7 +184,7 @@
 | 版本 C ≥15% 的格補跑 P4（偏離 10 第 5 點） | 還沒排 | 圖 4 改成以版本 C 選格 |
 | 四份聊天資料集（ShareGPT、WildChat、LMSYS、UltraChat） | 四份的版本 B、C 都跑完；等偏離 14 的 O-PF 重跑後再算（使用者決定） | 單獨一節，回答「為什麼沒跑 ShareGPT」 |
 | mini-SWE-agent、OpenHands 公開軌跡 | **已完成**（第 3.6 節）；O-PF 一欄待偏離 14 重跑 | 單獨一節，補 SWE-bench 這一類 |
-| GPU 實機重播（W6，H200） | W6c（重算校準到 128K）跑完、還沒分析；W6a（打字線索）和別人的 job 重疊，停掉等對方跑完再送；接著是 **TraceLab c1 的 GPU 層重播**（使用者 11/7 決定：NFS、CPU 8 GiB、GPU 閒；GPU 規則 LRU、TTLB:30、BEL；從紀錄時間的中位數起連續 5,000 個請求，跨 25 小時；2 次），再來 W6b（Mooncake 對話的淘汰順序） | 目前預測的結果**全部是模擬**；重播只有整份紀錄約 0.75% 的請求，只能說「這一段在 GPU 上和模擬一致」 |
+| GPU 實機重播（W6，H200） | W6c（重算校準到 128K）完成：80–255 塊的實測和線性外插只差中位數 0.5%。W6a（打字線索）14:35 開跑，預計 11/8 凌晨 0–1 點結束；接著 W6b（Mooncake 對話的淘汰順序，96 個 run，約 26 小時，約 11/9 凌晨結束）；再來 **TraceLab c1 的 GPU 層重播**（使用者 11/7 決定：NFS、CPU 8 GiB、GPU 閒；GPU 規則 LRU、TTLB:30、BEL；從紀錄時間的中位數起連續 5,000 個請求，跨 25 小時；2 次；先登記偏離 18、給使用者看過才送）。時間都是 h200 的推算 | 目前預測的結果**全部是模擬**；重播只有整份紀錄約 0.75% 的請求，只能說「這一段在 GPU 上和模擬一致」 |
 | 打字線索（Mooncake 對話）用新模擬器重測 | 未做 | 舊稿「打字線索拿走八成」能不能留 |
 | W5（CPU 層存 INT4）、排隊模型 | **已完成**（icpe-rux，只報告）：W5 沒有任何格因此升過 15%；排隊在中負載（等 2–20 秒）讓上限變大，主結果不含排隊、是保守的一邊。二階（事件驅動）排隊：使用者決定在 RUX3DPRO 做，先登記 | 不改主判定 |
 | 論文改稿、摘要登記（11/10 19:59）、引用與數字核對 | 未開始 | — |
@@ -199,7 +199,7 @@
 
 - 版本 C（論文版）：run `20261107-122216-icpe-main-verC`，`results/icpe_next/main/verC/`（`verC_verdict.csv`、`verC_by_trace.csv`、`verC_noBELP_*`、`verC_noOPF_*`、`verB_paper_*`、`w3_C_*`）；輸入是 `results/icpe_next/apc/<變體>/`（icpe-rux、icpe-trx 跑的）。
 - SWE-bench agent 軌跡（第 3.6 節）：run `20261107-140839-icpe-main-agent`，`results/icpe_next/main/agent/`（`agent_verC_verdict.csv`、`agent_verC_noOPF_*`、`agent_verC_noBELP_*`、`agent_verB_*`、`agent_seed_*`）；輸入 `results/icpe_next/apc/{miniswe,openhands}_*`、`results/icpe_next/b/agent_*`（icpe-data）。圖 6：run `20261107-151225-icpe-main-agent-fig`（`code/icpe/main_agent_fig.py`，點在 `figs/fig6_data.csv`）。
-- W5、排隊：icpe-rux 的 STATUS_RUX 14:30（`origin/icpe-next-rux` f63f4879），本文件只轉述、沒重算。W6 與 TraceLab 重播的設計：STATUS_A 13:06（`origin/icpe-next-a` 343ae74f）。
+- W5、排隊：icpe-rux 的 STATUS_RUX 14:30（`origin/icpe-next-rux` f63f4879），本文件只轉述、沒重算。W6 與 TraceLab 重播的設計、順序和時間：STATUS_A 13:06（`origin/icpe-next-a` 343ae74f）與 h200 15:1x 的訊息（STATUS_A e8ad29a，W6c 分析 b018d02）。
 - 版本 B：run `20261106-110854-icpe-main-verB-p1`，`results/icpe_next/main/verB/`。P2／P3：`results/icpe_next/main/p23/`。
 - P4：runs `20261107-082202-icpe-main-p4-noise`、`20261107-094535-icpe-main-p4-summary`，`results/icpe_next/main/p4/noise/`（以版本 B 選格；圖 4 加總時拿掉 CacheWise）。
 - W3：TRX40 runs `20261107-084104-icpe-trx-rux-tl_c1-w3`、`20261107-092256-icpe-trx-rux-tl_c2-w3`、`20261107-095115-icpe-trx-rux-tl_c4-w3`；版本 C 重算見上；PREREG 偏離 9。

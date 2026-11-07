@@ -11,6 +11,7 @@
   - 第 1 節、第 7 節各加一句；資料集表加兩列；第 6 節「還沒做完的」更新（偏離 14 的舊問題、W5／排隊完成、TraceLab c1 重播的設計、W6 現況、版本 C 選格補跑 P4）。
   - 摘要加一句：「Public SWE-bench agent trajectories show the same split: up to 58% for OpenHands, under 11% for mini-SWE-agent.」英文 248 字。58% 含 O-PF（待修正），不算 O-PF 是 57.7%。
   - PDF：run `20261107-151349-icpe-main-advisor-pdf`。
+  - 15:15 再改一次：h200 15:1x 說 GPU 順序改成 W6a → W6b → TraceLab 重播（使用者在 h200 決定），W6c 已分析；第 6 節那一列照改。PDF：run `20261107-151500-icpe-main-advisor-pdf`。
 - **寫本節時已經看過的正式結果**：前面各節；STATUS_DATA 14:05 的 agent 摘要表（分析完成之後才讀）；STATUS_A 13:06、STATUS_SIM 14:05、STATUS_RUX 14:30 的進度文字（沒讀 STATUS_TRX 的對話資料集表）。
 
 ## 2026-11-07T14:21+08:00 — icpe-rux：偏離 11 的 W5、排隊敏感度跑完（只報告，主結果不變）；我只轉述、沒重算
