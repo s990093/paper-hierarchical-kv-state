@@ -3,6 +3,26 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T17:53+08:00 — 偏離 14 第一段：**Mooncake 的 main＋P1 完成並收進 git**；檢查表 mc_p1 `D14_TABLE_RESULT IDENTICAL`；第一段的 sa 全部（main、P1–P3）都過了檢查
+
+- **block**：
+  - d14_old_main/mooncake（3,456 job）。
+  - d14_old_p1/mooncake_ttl（1,728 job，17:47:30 → 17:47:38）、mooncake_trunc（6,912 job，17:47:38 → 17:51:10）。
+  - 我的檢查 `ok=2 bad=0`。d14_sa_p3 的 24 個也 `ok=24 bad=0`。
+  - icpe-data 的檢查（run `20261107-175120-icpe-trx-d14-blockcheck-mc`，plans 到 d14_old_p1 為止）：`D14_BLOCKCHECK PASS n=111 fail=0`。`results/icpe_next/b/d14_blockcheck_trx.csv` 換成這次的 111 列。
+- **collect**：`collect --plans d14_old_main d14_old_p1`，collected 3，輸出在 `results/icpe_next/b/d14_old_main/mooncake`、`d14_old_p1/mooncake_{ttl,trunc}`。
+- **檢查表**：run `20261107-175127-icpe-trx-d14-verb-mc`，rc 0。
+  - 參考表：`origin/icpe-next-main` 58252b4f 的 `verB/mc_p1_headroom_components.csv.xz`，sha256 80a8b4d0e36e…。
+  - patch：`D14_PATCH_OK blocks=2`。
+  - rowcheck：`mc_main_d14` 29376 rows（54／17／8）PASS；`mc_p1_ttl_d14` 25920 rows（54／15／8）PASS。
+  - 照抄：
+    - O-DROP、O-GPU、O-NOW、O-ORD：x=324 y=324 matched=324，7 欄 ndiff 全部 0。
+    - O-PF（skipped）：x=324 matched=324；T_oracle 234、T_rival 7、headroom 234、best_rival_gpu_policy 5、oracle_gpu_policy 113，其他 0。
+    - O-ALL(report)（skipped）：x=216 y=216 matched=216；T_oracle 165、headroom 165，其他 0。
+    - 結果 `D14_TABLE_RESULT IDENTICAL`。
+  - 收在 `results/icpe_next/b/analysis_d14/mc_p1/`。table_sha256_uncompressed 322593827ac6…。
+- **之後**：Mooncake 的第二段（mooncake_conversation、mooncake_toolagent）另外開一個 `next_d14_verc_queue.sh` 跑，和 sa/uc/lm 那個佇列的變體不重疊。
+
 ## 2026-11-07T17:47+08:00 — **偏離 14 第二段（修正版版本 C）開跑**：sa 12＋uc 6＋lm 6 個變體，和第一段的後半同時跑；第一段 sa_p2 24／24 OK
 
 - **GO 的來源**：
