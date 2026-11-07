@@ -3,7 +3,7 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
-## 2026-11-07T14:14+08:00 — **agent 軌跡（偏離 17）結果**：核對全過；OpenHands N32／64／72 的 9 個變體 ≥15%（最大 58.5%），mini-SWE-agent 12 個都 <15%（最大 10.9%）
+## 2026-11-07T14:11+08:00 — **agent 軌跡（偏離 17）結果**：核對全過；OpenHands N32／64／72 的 9 個變體 ≥15%（最大 58.5%），mini-SWE-agent 12 個都 <15%（最大 10.9%）
 
 **輸入與做法**（照 14:05 那節使用者的決定）
 - merge `origin/icpe-next-data` a1ea724 → e151a58f。PREREG.md 衝突：我的版本是 `origin/icpe-next-a`（＝`origin/icpe-next-data`）的逐位元前段，取對方的版本（多了偏離 17 和更正）。
