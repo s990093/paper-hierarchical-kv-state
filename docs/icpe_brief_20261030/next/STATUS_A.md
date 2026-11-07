@@ -393,3 +393,4 @@
 - **24766** 22:31:29 開跑：IDX 1、2、5、6；lane 0 W6a＝PCI 31（NUMA 0，CPU 16–31）、lane 1 W6b r01＝51（NUMA 0，32–47）、lane 2 W6b r23＝AB（NUMA 1，80–95）、lane 3 W6b r45＝CB（NUMA 1，96–111）；CPU 分法 local。四條 lane 的第一個 run 都在 22:31:32–33 開始。lane 的 log：`slurm-icpe-next-w6q-24766-<lane>.out`。
 - 預計〔推算：每個 run 約 16.6 分鐘、沒算 4 個同時跑的變慢〕：約 11/8 早上 8–9 點全部跑完。之後在 head node：合併 W6b 三份 csv → S_real → analyze；W6a analyze；`next_a_corun.py classify`。
 - TraceLab c1 GPU 層重播：使用者選 1 次（LRU、TTLB:30、BEL 各一個 run，3 張卡同時跑）。程式今晚開始寫，偏離 18 給使用者看過再送。
+- 揭露（22:33）：確認速度時我印了 run 目錄 stdout 的進度列，裡面有第 0／100／200 個請求「單一請求」的 ttft（24724 的 256-LRU-r0 solo 與 24766 四條 lane 的第 100 個）。速度：四條 lane 的前 100 個請求都是 62 s，和 solo 的 62 s 相同。之後查進度只印「第幾個／秒數」，不印 ttft。
