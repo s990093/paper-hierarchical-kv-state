@@ -3,6 +3,16 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T16:30+08:00 — icpe-rux：偏離 14 移植進 v8（v8_dev14，36780534），自己的驗證通過；等 icpe-sim 交叉檢查
+
+- **icpe-rux 的訊息**（`origin/icpe-next-rux` 36780534，STATUS_RUX f303f991；我沒讀）：`code/icpe/rux_x1fast/v8_dev14/` 由 patch 從 v8 產生，48e4efce 不動。驗證都在 SemiAnalysis N16 s1：
+  - 旗標全關＝v8 48e4efce 逐位元 564／564；
+  - 關 APC／BELP、開旗標＝x1fast 63b8e328 逐位元 1,908 組；另 2 組兩邊在同一處 assert（只開 pfx、沒開 pgr；參考版本身的行為）；
+  - 整個 session 的 APC＝LRU、BELP＝BEL（含雜訊與三個旗標）204／204；wt 2,414／2,414。
+- **還差**：icpe-sim 用 t1n／t1q／T2／xref_dev14 交叉檢查；過了之後第二批（版本 C 列＋5 個 P4）才能排，TRX40 也要對這個 commit 再做重現檢查。
+- **二階排隊**：v9 改從 v8_dev14 產生、要重驗；偏離 19 登記稿接著給使用者看。icpe-rux 打算正式 run 開 pfx=1、比較基準用修正版版本 C，會寫進登記稿請使用者確認。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T15:53+08:00 — **更正 15:51**：icpe-sim 的旗標開跨機參考 xref_dev14 失敗，偏離 14 的旗標還不能用
 
 - **失敗**（run `20261107-154804`）：SemiAnalysis N16 s1、CPU 8、O-ALL、wt＋預取進 GPU。Python `AssertionError: (12, 277)`（`_g_unprefetch`，由 `_turn_end_wt` 的 `drop` 呼叫）；Rust `gspf 12 277`。兩個引擎一致。
