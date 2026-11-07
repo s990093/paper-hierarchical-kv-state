@@ -3,6 +3,41 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T08:55+08:00 — **W3 tracelab_c1 完成**（PREREG 偏離 9）；`analyze_w3` 的判定字：「後半成立：沒有簡單線索能拿走大部分」；收進 `v8_explore/w3/tracelab_c1/`；c2、c4 開跑
+
+- **run** `20261107-084104-icpe-trx-rux-tl_c1-w3`：rc=0，08:41:04 → 08:42:19。
+  - worktree 8f04a91c。偏離 9 的 commit 時間是 08:37:10，這個 run 在它之後開始。
+  - sweep：360 個 job，71.9 s，40 workers，`py_fallback_jobs=0`，`code_sha=3280b1c8799b+rse7f6ee8f`；`rust_timing.jsonl` 360 行。
+  - `RUX_CUE_FILE=$ROOT/rux-trx/cue/tracelab_c1.cue.u8`（`CUE_CHECK PASS`，08:40 節）。
+  - 資源：MemAvailable 最低 46,263 MiB，PSS 最高 11,009 MiB，swap 1,381 MiB。
+- **先決條件**：同一變體的版本 B 重現檢查 108／108 0 差（run `20261107-083210-…-tl_c1-apc`，08:50 節）。
+- **`analyze_w3.py` 的輸出**（照抄；③ 選到的 GPU 規則：CUEO 54 格）：
+
+  | 元件 | n | n_ge15 | cue_beats_rival | f_c_med | f_c_max | f_c_med_ge15 | n_f_gt_half_ge15 |
+  |:--|--:|--:|--:|--:|--:|--:|--:|
+  | O-ALL(report) | 54 | 15 | 0 | −8.273 | 21.238 | −6.209 | 0 |
+  | O-DROP | 54 | 0 | 0 | −244.121 | −32.184 | NaN | 0 |
+  | O-GPU | 54 | 18 | 0 | −10.929 | −3.356 | −7.413 | 0 |
+  | O-NOW | 54 | 0 | 0 | −1085.825 | 8189.312 | NaN | 0 |
+  | O-ORD | 54 | 4 | 0 | −38.622 | −2.623 | −5.131 | 0 |
+  | O-PF | 54 | 0 | 0 | −29.344 | 327.587 | NaN | 0 |
+
+  - f_NP43 的中位數 −5.96。
+  - **判定（偏離 9）**：
+    - n_cells_judged 270；≥15% 的 (格, 元件) 22 個，③ 齊全 22 個；
+    - 其中 f ≤ 0.5 的 22 個，寫入飽和的 0 個；
+    - f_c 中位數 −7.4087、最小 −8.9094。
+    - **verdict＝「後半成立：沒有簡單線索能拿走大部分」**。
+  - `W3_RESULT cells=54 rows=324`。
+  - 這是登記程式算出的判定字，照抄。推翻條件整體怎麼判、原始／合成怎麼合，由 icpe-main／icpe-rux 依偏離 9 做，我不解讀。
+- **收集**：`collect_v8.py w3 tracelab_c1`（worktree 8f04a91c），檔案在 `results/icpe_next/v8_explore/w3/tracelab_c1/`：
+  - `x1_sweep.csv.xz`、`w3_rows.csv`（324 列）、`w3_verdict.csv`（1 列），CSV 都有 run_id、ts、host；
+  - `tracelab_c1.cue.json`；
+  - `MANIFEST.json`，runs 列了重現檢查的 run 和 W3 的 run。
+- **接著**：c2、c4 各自先跑版本 B 設定的重現檢查（17 × 16 規則，CPU 8／111.0625／1024，`explore_apc.py`），印 `EXPLORE_RESULT REPRODUCED` 才接 W3；沒通過就停。
+  - 用 `$ROOT/tools/rux_variant.sh`（機器工具）依序跑。
+  - `rux_run.sh` 加了 `X1_FI_DIR=$ROOT/datasets/freeinference_agentic_trace/release`，給之後的 FreeInference 用。
+
 ## 2026-11-07T08:50+08:00 — **TraceLab c1 的版本 B 重現檢查通過（108／108 格×元件，各欄 0 差）**；APC／BELP 探索收進 `v8_explore/apc/tracelab_c1/`；c1 的 W3 開跑
 
 - **run** `20261107-083210-icpe-trx-rux-tl_c1-apc`：rc=0，08:32:10 → 08:39:59，worktree 2b859912。
