@@ -1,0 +1,3 @@
+run_id,ts,host,pf_target,metric,dead_h,trace,rule,cpu_GiB,slow,gpu,restore,gpu_GiB,gpu_write,slow_cap_frac,component,oracle_policy,oracle_gpu_policy,oracle_slow_policy,T_oracle,rival,rival_gpu_policy,rival_slow_policy,T_rival,oracle_slower_by
+adhoc,2026-11-07T11:28:30+08:00,acvlab,cpu,mean_ret,0,nb:wildchat_s1,nb,512.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,APC,none,0.036124,LRU+2HW,APC,none,0.036122,5.536791982730746e-05
+adhoc,2026-11-07T11:28:30+08:00,acvlab,cpu,mean_ret,0,nb:wildchat_s1,nb,1024.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,APC,none,0.03583,LRU+2HW,APC,none,0.035828,5.582226191810875e-05

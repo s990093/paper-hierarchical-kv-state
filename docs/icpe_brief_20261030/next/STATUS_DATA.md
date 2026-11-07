@@ -2,6 +2,428 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T16:00+08:00 — **正式 merge sim（c68abaad）、G0 PASS**；TRX40 旗標關的關已過；只差 xref
+
+- **使用者選 A**（STATUS_SIM 15:59，f5b2960c）：引擎留在 63b8e32。wt × 預取到 GPU 的 assert 列為已知問題，從參考網格拿掉；正式 block 都沒有這個組合。
+- **正式 merge**：origin/icpe-next-sim f5b2960c → icpe-next-data **c68abaad**。
+  - PREREG 照試合併的做法取我這邊（＝icpe-next-a 5294f5f，逐位元相同）。
+  - 引擎檔和 63b8e328 相同，x1_sim sha256 8b53588b…。和試合併相比，code/ 只多了我的 `next_b_queue.py`。
+- **G0（Rust，旗標關）PASS**：run `20261107-155857-icpe-data-g0-rust-merged-c68abaa`，128,064 格 0 個不同，`py_fallback_jobs=0`。
+- **count**：在正式的 worktree 再跑一次。300 個 MATCH_RERUN、20 個 WHOLE_BLOCK、0 個不符，合計 2,193,997。
+- **dry-run** 抽了 3 個 block 看，指令列都對：
+  - `d14_tl_main:tl_c1`：`--policies O-PF O-ALL … --pf-expire --pf-gpu-recheck`。
+  - `d14_p4_b1:tracelab_c1_M_B1`：`--policies O-ALL`、保留 `--jobs-from`，模型 M 沒有 resample。
+  - `d14_sens_rep:tl_pfgpu`：`--pf-target gpu`、wb。
+- **TRX40**（STATUS_TRX 15:58，1660cc11）：在 40a4c87f 上，旗標關的關全部通過。
+  - G0：128,064 格 0 差。
+  - xc_sa：對 acvlab 1,280 格 0 差，對 TRX40 自己的 Python 也 PASS。
+  - 完整的 sa_N16_s1：對 git 293,760 格 0 差。
+  - src_sha256 0bfacb59，和 acvlab 相同。bin_sha256 1d024543 和 acvlab 的 36bd56c4 不同，因為是不同機器編的；輸出逐值相同。
+  - 守門規則改了（使用者在 TRX40 決定）：只看自己行程群組的 VmSwap，超過 256 MiB 就停。
+- **還在等**：icpe-sim 的 xref（run `20261107-155727`）通過並進 git。到時我用 acvlab 比對 xref，TRX40 也比，然後向使用者回報、開跑。
+
+## 2026-11-07T15:56+08:00 — 重跑清單到了、試合併 G0 PASS、重跑 plan 寫好；**旗標開的參考失敗，icpe-sim 叫停** → 不正式 merge、不開跑；分工改成按資料家族
+
+- **icpe-sim 的清單**：origin/icpe-next-sim 40a4c87f 的 `results/icpe_next/sim/dev14_rerun_list.csv`（run `20261107-154406`）。
+  - 要重跑 320 個 block、2,177,676 個 job，其中 P4 佔 1,940,988。
+  - CacheWise 126 個 block 照偏離 15 排除；xcheck 只當參考。
+- **試合併**（scratch worktree `/ssd6/hungwei/icpe-next/g0-40a4c87`，merge commit 4ffd7f5d）：
+  - PREREG 衝突：兩邊都是 icpe-next-a 的前綴，我這邊的就等於 icpe-next-a 5294f5f，取我這邊。
+  - 引擎檔和 63b8e328 相同，x1_sim sha256 8b53588b…。
+  - **G0（Rust，旗標關）PASS**：run `20261107-155259-icpe-data-g0-rust-merged-40a4c87`，128,064 格 0 個不同，sweep 23.8 s；code_sha `3180504e8d57+rs0bfacb59`。
+  - **沒有正式 merge 進 icpe-next-data**，理由見下。
+- **icpe-sim 叫停**（15:5x 訊息）：旗標開的參考 `xref_dev14`（run `20261107-154804`）在兩個引擎都失敗。
+  - Python：SemiAnalysis N16 s1、CPU 8、O-ALL、三個旗標都開，`_turn_end_wt → drop → _g_unprefetch` 出 `AssertionError: (12, 277)`。
+  - Rust：同一個 job，`main.rs:1099 gspf 12 277`。
+  - 這條 wt＋GPU 預取＋O-ALL 的路徑，之前的驗證網格沒涵蓋到。
+  - icpe-sim 正在診斷，修好之後引擎的 commit 會變。**三個旗標都不用**，TRX40 也已叫它等。
+- **重跑 plan 寫好**（`next_b_queue.py`）：
+  - 清單裡 action=rerun 的 block → plan `d14_<原 plan>`，block 名稱不變。
+  - 參數＝原本的參數，`--policies` 換成清單的 rerun_policies，再加清單的 flags。P4 保留原本的 `jobs.csv`。
+  - 清單不存在時，`d14_blocks` 回傳空的，現有 plan 都不受影響。
+  - **count 核對**（在試合併的 worktree 跑）：
+    - 300 個 block 的 job 數等於清單的 `jobs_rerun`。
+    - 另 20 個是模型 P 的 B1，整個 block 重跑，等於 `jobs_block`。照 icpe-sim 的建議，多跑的 16,321 個是 λ=0 的非 opf job。
+    - **0 個不符**，合計 2,193,997。
+- **分工改成按資料家族**：以 STATUS_DATA 15:41／15:44 的暫定分工為底，把 Mooncake 移去 TRX40。
+  - **原因**：照暫定分工，TRX40 只會拿到約 1／3 的 CPU 時間，不符合「TRX40 做重的部分」。
+  - Mooncake 的原始檔兩台的 sha256 前 12 碼相同：conversation b8cbb061a852、toolagent 48a2db1a13d3。
+  - 8 個 Mooncake P4 block 裡，原本就有 6 個是 TRX40 跑的。
+  - 估計的根據：原本那次 run 的 `rust_timing.jsonl`，加總要重跑的那些規則的 `run_s`。旗標開了之後每個 job 的時間可能不同，所以這只是〔推算〕。
+
+| 機器 | 家族 | block | job | 估計執行緒時數〔推算〕 |
+|:--|:--|--:|--:|:--|
+| TRX40 | SemiAnalysis（main、P1–P3、sens_rep sa_*、sa_p4）、Mooncake（old_* 的 mooncake、sens_rep mc_*、8 個 Mooncake P4）、UltraChat／LMSYS | 180 | 1,697,648（78%） | Mooncake 約 185（P4 的 P＝原本整個 block 的時間；M 用 acvlab conversation_M_B1 的比例 3.6% 推）；SemiAnalysis 約 100–110（原本 sa_p4 5.7 h × 36 workers，依 P 約佔一半推；main／P1–P3 的時間記在 TRX40，這裡沒有）；合計約 300 |
+| acvlab | TraceLab（main、P1–P3、sens_rep tl_*、P4）、Bailian、FreeInference、ShareGPT／WildChat、mini-SWE／OpenHands | 140 | 480,028（22%） | TraceLab 約 270（P4 234）、Bailian 約 100、其餘約 5；合計約 375 |
+
+  - 牆鐘〔推算〕：TRX40 約 300／45 ≈ 7 h（46 workers，上次量到的有效並行度 45.2）；acvlab 約 375／35 ≈ 11 h（35 workers，機器是共用的）。
+  - 如果 TRX40 先跑完，再把 acvlab 還沒開始的 TraceLab block 移過去。TRX40 的 TraceLab nb 在 `x1_nb_rux`，移之前要先比對 sha256。
+  - 第二段（版本 C）用同一個家族分工。
+- **開跑順序**（每台都一樣）：main → 對話／agent 的 main＋P1 → P1–P3 → sens_rep → P4。main 與 P1 的列是主表要用的，所以放前面。
+- **什麼時候開跑**：要四個條件都滿足。
+  1. icpe-sim 修好旗標並清掉。
+  2. `xref_dev14` 進 git。
+  3. 我正式 merge，並重做 G0，旗標關要 IDENTICAL、旗標開要等於 xref。
+  4. TRX40 過它自己的關。
+  - 開跑前先向使用者回報。
+
+## 2026-11-07T15:44+08:00 — 第二段的分工確定：**RUX3DPRO 不排進第二段**
+
+- icpe-rux 問過 icpe-main 版本 C 修正列由誰跑。它的提案是 RUX 跑 SemiAnalysis 12、Mooncake 2、Bailian 3，TRX 跑 TraceLab 3、FreeInference 6，也就是原本誰跑版本 C 就由誰重跑。
+- icpe-rux 後來直接跟我確認：照 15:42 的分工走，RUX3DPRO 不排進第二段。
+- **RUX3DPRO 接下來**（使用者排的順序）：
+  1. 把偏離 14 移植進 v8，放在 `code/icpe/rux_x1fast/v8_dev14/`，v8 48e4efce 不動。
+  2. 二階排隊（偏離 19）。
+- 讓 RUX3DPRO 分擔第二段，就會跟二階排隊搶機器。使用者排的順序是先移植、再做排隊，所以**我不排 RUX3DPRO**，也不需要使用者另外做優先順序的決定。使用者若要 RUX 先重跑自己的版本 C 列，再另外說。
+- **第二段**：
+  - 引擎＝`v8_dev14`，等 icpe-sim 交叉檢查通過，icpe-rux 把 commit 給 icpe-main。
+  - 分工：TRX40 跑 SemiAnalysis、UltraChat、LMSYS 的版本 C；acvlab 跑其餘（Mooncake、Bailian、TraceLab、FreeInference、sg、wc、ms、oh）。
+  - 每台開跑前，先用 `v8_dev14` 重現 icpe-sim 交叉檢查的參考。
+- **可能的調整**（等實際量出來再定）：TraceLab 與 FreeInference 的版本 C 原本是 TRX40 跑的，資料也在那邊。如果第二段 acvlab 那份明顯比較重，就把這兩個移去 TRX40，才符合「TRX40 做重的部分」。
+
+## 2026-11-07T15:42+08:00 — 偏離 14 的重跑**分兩段**（引擎的限制，使用者已決定順序）；TRX40 的存量；旗標開的關用 icpe-sim 的參考
+
+- **引擎**（icpe-main 轉達 icpe-sim 的回答，15:4x）：
+  - 現在沒有一個引擎同時有雜訊、偏離 14 的規則、APC／BELP。
+  - x1fast 63b8e32：有雜訊與偏離 14，沒有 APC／BELP。
+  - v8：有 APC／BELP，沒有偏離 14。
+- **使用者決定**（15:4x，在 icpe-main）：icpe-rux 先把偏離 14 移植進 v8，之後才做二階排隊；icpe-sim 交叉檢查這個移植。
+- **所以重跑分兩段**：
+
+| 段 | 內容 | 引擎 | 什麼時候開始 |
+|:--|:--|:--|:--|
+| 第 1 段 | 版本 B 引擎的所有列：主結果、P1–P3、sens_rep 的 pfgpu（`--pf-gpu-recheck`）、P4 模型 P 全部 job（`--noise-overdue resample`）、對話與 agent 的 main／P1 的 O-PF／O-ALL | x1fast 63b8e32 | icpe-sim 驗證通過並 push、我 merge 並跑完 G0、TRX40 過關之後 |
+| 第 2 段 | 所有版本 C 的列（主結果版本 C 的 O-PF／O-ALL、對話版本 C、agent 版本 C）＋ P4 版本 C 新增的 5 對 | 移植了偏離 14 的 v8 | icpe-rux 移植完、icpe-sim 交叉檢查通過之後 |
+
+- 上一節（15:41）的暫定分工兩段都適用：TRX40 做 SemiAnalysis 與 UltraChat／LMSYS，acvlab 做其餘的。
+- **TRX40 的存量**（icpe-next-trx，15:41）：
+  - 沒在跑，load 0.30；48 執行緒，62 GiB（可用 55），/ssd4 剩 509 GiB。
+  - **SemiAnalysis**：N16／32／64／72 × s1–s3 的 nb 都在（另有 N16 s1 t128k）。
+  - **TraceLab**：nb 在 `x1_nb_rux`，準備快取只有 rux v8 版（x1_sim code_sha256 5cac400b…），版本 B 引擎要在第一次跑時重建。
+  - **Mooncake**：原始檔在。
+  - **FreeInference**：原始的 16 週都在，沒有 fi_* nb。
+  - **Bailian**：沒有。
+  - **對話**：ultrachat、lmsys 的 T60／T600 × s1–s3 都在。
+  - **agent**：沒有 ms／oh 的 nb。
+  - **P4**：job 清單由 next_b_queue 從 `results/icpe_next/main/p4/p4_cells_distinct.csv` 產生，和 11/6 跑 sa_p4_b1／b2 時一樣。
+  - → 暫定分工不變：TraceLab、FreeInference、Bailian 留在 acvlab。
+- **旗標開的關**：icpe-sim 驗證通過後，會把 semianalysis_N16_s1 與 Mooncake conversation R1 的旗標開參考放在 `results/icpe_next/sim/xref_dev14/`。
+  - TRX40 用 Python 與 Rust 各比一次，當作旗標開的那一關；acvlab 的 G0 也比同一份。
+  - 我不另外指定 block。
+
+## 2026-11-07T15:41+08:00 — 使用者決定 **TRX40 分擔偏離 14 的重跑，最好是重的部分**；先暫定分工，等清單出來才定；P4 版本 C 的 5 對等引擎
+
+- **使用者的決定**：icpe-main 轉達（15:3x）；icpe-next-trx 也說使用者在 TRX40 確認過（STATUS_TRX 15:45，5acbc46e）。
+- **重跑清單還沒出來**：
+  - icpe-sim 對 63b8e32 的驗證（run `20261107-140640-icpe-sim-g1-63b8e32`）15:39 還在 t3_py 階段。
+  - 63b8e32 只在 icpe-sim 的 worktree，`origin/icpe-next-sim` 還是 0786f56。
+  - 原本估 15:25 左右出來，已經過了。
+- **TRX40 的條件**（icpe-next-trx 回報）：
+  - 48 執行緒、62 GiB。
+  - 有 SemiAnalysis N16–N72 的 nb、Mooncake、TraceLab、FreeInference、UltraChat、LMSYS-Chat-1M；**沒有 Bailian**。
+  - LMSYS 的原始資料與 nb 只能在 TRX40（授權），所以 lm_* 一定在那裡跑。
+  - CacheWise 不上 TRX40；偏離 15 也已經把它排除在重跑外。
+- **暫定分工**（清單出來後依實際量調整；若 TRX40 那份明顯比較輕，就把它已有的 Mooncake 或 TraceLab block 移過去）：
+
+| 機器 | 暫定負責 |
+|:--|:--|
+| TRX40 | SemiAnalysis：sa_main、sa_p1–p3、sens_rep 的 sa_*、P4 模型 P 在 sa 上的 job；對話 uc_*、lm_* 的主結果、P1、版本 C |
+| acvlab | TraceLab（tl_*）、Mooncake＋FreeInference（old_*）、Bailian（bl_*）、sens_rep 的 bl_*／mc_*；對話 sg／wc；agent ms／oh；xcheck；P4 模型 P 在非 sa trace 上的 job（CacheWise 的除外） |
+
+- **TRX40 跑正式 block 前要過的關**（使用者要求逐位元重現；icpe-next-trx 自己列的順序）：
+  1. merge icpe-next-data。我會先 merge sim、加重跑的 plan、在 acvlab 跑 G0，再給它 commit 號。
+  2. 在 TRX40 編 Rust。
+  3. 跑 G0、xc_sa，以及旗標關的完整 sa_N16_s1。
+  4. 旗標開的比對：我指定一個小 block，兩台各跑一次，用 G1 的比法逐值比。
+- **P4 版本 C 的新增（偏離 10 第 5 點）**：
+  - icpe-main 的 58252b4f（`results/icpe_next/main/p4/verC/`）。
+  - 只有 5 個（格, 元件）是版本 C ≥15% 但版本 B 沒選到。
+  - 5 個全都要 APC 或 BELP 當 GPU 規則。我跑 P4 用的引擎（62b0932b，`--jobs-from`）沒有這兩個規則；v8（48e4efce）有，但據我所知沒有 P4 雜訊。其中 3 個是 O-PF，也要偏離 14 的旗標。
+  - 「雜訊＋偏離 14＋APC／BELP 放同一個引擎」的問題 icpe-main 已經問 icpe-sim。**引擎沒定之前我不排**；定了之後，併進同一份偏離 14 的班表。
+  - 版本 B 選到、版本 C 掉到 15% 以下的 119 對：結果保留、加標記，不用重跑（icpe-main）。
+- **需要 icpe-sim 做什麼**：
+  - 驗證過了就 push，並給重跑清單。
+  - 回答 P4 版本 C 的引擎問題。
+  - 給一個能在兩台都跑的小 block（旗標開），當 TRX40 的逐位元重現測試；沒有的話我自己挑一個。
+- **需要使用者決定什麼**：無。
+
+## 2026-11-07T14:05+08:00 — **agent 軌跡（偏離 17＋更正）完成**：mini-SWE-agent、OpenHands 的版本 B、C 都進 git
+
+- PREREG 已同步：偏離 17（d1f4ca2）、偏離 17 更正（5294f5f）。
+  - h200 核對時間時發現，我 13:00、13:10 兩節的節名時間比 commit 時間晚。以 commit 為準：32160d0 是 12:57:05，1af8839 是 12:58:45；使用者在這兩者之間決定。
+- **版本 B**（v7 62b0932b，35 workers）：
+  - mini-SWE-agent：log `queue-rust-agent-ms-verB-w35-20261107-125714.log`，12:57:14 → 13:01:30。
+  - OpenHands：log `queue-rust-agent-oh-verB-w35-20261107-130130.log`，13:01:35 → 13:06:41。
+  - 48 個 block 全部通過：
+    - `jobs`＝`count`（6,174／6,480），`rust_timing` 行數＝jobs。
+    - `py_fallback_jobs=0`，`code_sha` 3280b1c8799b+rs62b0932b，rc 0。
+  - 有存 npz，同 chat。collect → `results/icpe_next/b/agent_main/{ms,oh}_*`、`agent_p1/{ms,oh}_*_ttl`。
+- **版本 B 上限表**：run `20261107-130214-icpe-data-verB-ms_p1`、`20261107-130756-icpe-data-verB-oh_p1`。
+  - main_rowcheck（b54d3cff）：ms、oh 的 main 17×8、_ttl 15×8，每個 (trace, rule) 54 格，PASS。
+  - 結果收在 `results/icpe_next/b/analysis/{ms,oh}_p1/`。
+  - 前一次 oh 的 run `20261107-130736-…` 因為我用 sed 改 cmd.sh 時把輸出目錄弄錯，在寫出任何東西之前就停了，已標 `FAILED_NOT_USED`。
+- **版本 C**：`next_chat_verc.sh`，v8 worktree＝icpe-next-rux 4a713386，13:08 → 14:03。
+  - 24 個變體都 rc 0、**`REPRODUCED cells=324`**。
+  - 24 個 MANIFEST 都是 code_sha 3280b1c8799b+rse7f6ee8f、main.rs 48e4efce。
+  - 結果收在 `results/icpe_next/apc/{miniswe,openhands}_N{16,32,64,72}_s{1,2,3}/`。
+- **照抄上限表的摘要**（每份 12 個變體 × 54 格＝648 個（格, 元件）；中位數範圍＝12 個變體各自的中位數）。
+  - **不解讀、不下判定**，判定由 icpe-main 做。
+  - O-PF、O-ALL 的列等偏離 14 修正版重跑後可能會變。
+  - OpenHands 的規則 6 (b) 沒過，照使用者決定放行；報告時要標。
+
+| 資料集 | 版本 | O-ORD max／≥15% | O-PF max／≥15% | O-DROP max／≥15% | O-GPU max／中位數範圍／≥15% | O-ALL(report) max／≥15% |
+|:--|:--|:--|:--|:--|:--|:--|
+| mini-SWE-agent | B | 0.061／0 | 0.089／0 | 0.115／0 | 0.093／0–0.016／0 | 0.109／0 |
+| mini-SWE-agent | C | 0.061／0 | 0.088／0 | 0.109／0 | 0.094／0–0.015／0 | 0.108／0 |
+| OpenHands | B | 0.520／120 | 0.585／124 | 0.329／53 | 0.585／0–0.201／280 | 0.740／306 |
+| OpenHands | C | 0.520／119 | 0.585／124 | 0.329／53 | 0.577／0–0.201／278 | 0.726／306 |
+
+- O-NOW 兩份最大都 ≤0.010。
+- **下一步**：通知 icpe-main。偏離 14 的重跑清單裡會列入 `agent_main`／`agent_p1`，icpe-sim 已確認。
+
+## 2026-11-07T13:10+08:00 — **偏離 17 的更正（登記）**：OpenHands 規則 6 (b) 沒過，**使用者決定照實記錄後照跑**；本節 commit 時 OpenHands 還沒寫出任何 nb、沒跑任何模擬
+
+- **使用者決定**（AskUserQuestion，本 session 13:0x）：選「照實記錄後照跑」。
+  - 我給的選項還有兩個：「改用回報的 token 數」（Claude 的 prompt_tokens＋上一輪是前綴、不跨軌跡共用），以及「OpenHands 不跑」。
+- **改什麼**：只對 OpenHands 的規則 6 (b) 放行，門檻不改，照實寫進每個 nb 的 meta（`rule6.prompt_tokens_increment.pass=false` 與 `override`）。
+  - 檢查結果：中位數 0.795（門檻 [0.8, 1.25]），p10 0.717、p90 0.875，100% 在 [0.5, 2]。
+  - 規則 6 (a)、合格條件、時間、固定並行、版本 B／C 都照偏離 17。
+- **理由**（寫給審查的人）：
+  1. 模擬的是 Llama-3.1-8B 的 KV，用 Llama tokenizer 算的 token 數才是要的量。Claude 的 prompt_tokens 只拿來驗算有沒有漏內容。
+  2. 比值很集中，比較像 tokenizer 和 Anthropic 工具訊息包裝格式的固定比例差，不像漏了某一段〔推測，Claude 的 tokenizer 不公開，無法證實〕。
+  3. 第一次呼叫的總量比 0.45：Anthropic 端加的工具格式化和系統內容，我們沒有辦法重建。報告時要寫明，OpenHands 的輸入長度可能少算這一段，第一次呼叫約少 1,900 個 Claude token。
+- **程式**：`next_b_convert.py agent --rule6b-override "<理由>"`，沒給這個參數就照舊停下。
+- **已經看過的**：只有轉換統計（13:00 那節），沒有任何 OpenHands 的模擬結果。mini-SWE-agent 的版本 B 已照偏離 17 開跑（12:57）。
+- 請 h200 記成偏離 17 的更正，不要新號。OpenHands 的模擬等 h200 收好再跑；轉換現在先做。
+
+## 2026-11-07T13:00+08:00 — agent 軌跡（偏離 17）：**mini-SWE-agent 轉換通過**；**OpenHands 的規則 6 (b) 不過 → 停**，等使用者決定
+
+- h200 已把 12:55 那節收成 **PREREG 偏離 17**（origin/icpe-next-a d1f4ca2）。PREREG 已同步。
+- 程式：`code/icpe/next_agent_traces.py`（載入）＋`next_b_convert.py agent`＋`next_b_queue.py` 的 `agent_main`／`agent_p1`（每份 12＋12 個 block）。
+- **mini-SWE-agent**（run `20261107-125541-icpe-data-conv-agent-miniswe`，rc 0）：
+  - 軌跡 499 個，全部合格；成功呼叫 13,884 次，FormatError 3,517 次不模擬。
+  - 規則 6：
+    - (c) api_calls＝成功＋FormatError：499／499。
+    - (a) 鍵的延伸 13,385／13,385。
+    - (b) Llama 增量 ÷ Qwen 回報的 prompt_tokens 增量：n 13,385，中位數 0.990（p10 0.951、p90 1.015），100% 在 [0.5, 2]。第一次呼叫的總量比中位數 0.902（只報告）。
+  - 12 個 nb：`miniswe_N{16,32,64,72}_s{1,2,3}`，各 13,884 個請求、499 個 session、303,234 個完整塊。span 1.0–3.7 h。
+- **OpenHands**（run `20261107-125559-icpe-data-conv-agent-openhands`，**exit 1，沒有寫出任何 nb**）：
+  - 軌跡 299 個，全部合格；呼叫 8,021 次，其中 214 次是沒有 tool call 的 agent 訊息，沒有 usage。
+  - 兩個 commit 的原始碼相同。工具＝execute_bash、finish、str_replace_editor。
+  - 規則 6 (a)：7,722／7,722。
+  - **規則 6 (b) 不過**，錯誤原文：`[openhands] 規則 6 (b) 不過：{'n': 7296, 'median': 0.7952094090648307, 'p10': 0.717391304347826, 'p90': 0.875, 'frac_in_0p5_2': 1.0, 'first_call_total_ratio_median': 0.45227142035652673} → 停`
+  - 登記的門檻：中位數 ∈ [0.8, 1.25]，而且 ≥90% 在 [0.5, 2.0]。第二項過了，中位數 0.795 低於 0.8。
+  - 可能的原因〔推測，沒驗證〕：Anthropic 的 tokenizer（不公開）和 Llama 不同，而且 tool_use／tool_result 每則都有包裝 token。
+    - 比值很集中（p10–p90 是 0.72–0.88），比較像固定比例的差異，不像漏了某一段內容。
+    - 第一次呼叫的總量比 0.45：Anthropic 端另外加的工具格式化和系統內容，我們沒有，差約 1,900 個 Claude token。
+  - 診斷（只報告）：模型輸出的 Llama token（content＋tool 參數）÷ Claude 的 completion_tokens，中位數 0.465（p10 0.29、p90 0.77）。這個比較混了 tool_use 的結構 token，不能拿來單獨證明 tokenizer 的比例。
+- **照規則停下**，不改門檻，不換方法。mini-SWE-agent 照登記先跑；OpenHands 等使用者決定。
+
+## 2026-11-07T12:55+08:00 — **agent 軌跡補登記**（mini-SWE-agent、OpenHands）：使用者決定補跑；**本節 commit 時還沒跑任何一格模擬，也還沒寫轉換程式**
+
+> 時間：acvlab `date -u` 2026-11-07T04:52:16Z。請 h200 收成 **PREREG 偏離 17**（h200 說的下一個號碼）。
+> 已經看過的只有資料的欄位與計數（下面列出），沒有任何模擬結果。
+
+**使用者決定**
+- 來源：icpe-main 轉達，11/7 約 12:4x 在 icpe-main 用 AskUserQuestion 決定。
+  - 補兩份公開的 agent 軌跡，做法照對話資料集（偏離 13）。
+  - 先登記才跑；授權要能放進論文；要有真實時間，沒有就停下回報。
+  - 到達方式：固定並行 16／32／64／72 × 3 個 seed（同 SemiAnalysis）。
+  - 只跑主網格＋版本 C，版本 C 要先逐值重現版本 B。
+  - 單獨成一節，分析由 icpe-main 做。
+  - 偏離 14 修正版出來後，O-PF／O-ALL 一樣重跑。
+- 理由：對手論文（PBKV、SAGA、CacheScout、Continuum）用的都是 SWE-bench 類題目集。
+- 我查資料後問使用者（AskUserQuestion，本 session 12:4x），使用者選：
+  1. **mini-SWE-agent**：SWE-bench 排行榜的官方軌跡（`SWE-bench/experiments`＋它的 S3）**沒有授權**（GitHub API `license: null`，README 沒有使用條款）。改用 **MIT 的第三方軌跡**。
+  2. **OpenHands**：軌跡沒有記錄系統提示，**從當時的 OpenHands 原始碼（MIT）還原**，再照偏離 13 切 token。
+
+**資料**（新的空目錄；逐檔對 HF 的 LFS sha256，非 LFS 的檔對 git blob sha1；只讀 JSON，Python 用 `-I`；不進 git）
+
+| 名稱 | 來源 | 授權 | 內容 |
+|:--|:--|:--|:--|
+| mini-SWE-agent | HF `tarsur385/qwen3-30b-a3b-instruct-2507-swebench-verified-mini-swe-agent` @ 58389eb5426db5a3ae6159faa37498072b4735ff | MIT | mini-SWE-agent 跑 SWE-bench Verified，Qwen3-30B-A3B-Instruct-2507，`trajectories/*.traj.json` 499 個；503 個檔全部對上 |
+| OpenHands | HF `OpenHands/openhands-evaluation-outputs` @ aa8977805b4cefd317001d80ddf1ad52790e9d23，`outputs/SWE-bench_Lite-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_100_N_v2.2-no-hint/output.jsonl`（sha256 c520a3c6…＝LFS） | MIT | CodeActAgent（function calling）跑 SWE-bench Lite，Claude 3.5 Sonnet（2024-10-22），最多 100 步，299 個 instance |
+| OpenHands 原始碼 | GitHub `OpenHands/OpenHands`（原 All-Hands-AI），軌跡 metadata 記的兩個 commit 61874438、6333c6ad 的 `openhands/agenthub/codeact_agent/` | MIT | 兩個 commit 的 4 個檔逐位元相同；`function_calling.py` sha256 4a0f35c9… |
+
+- OpenHands 只用這一個 run：最新版本 v2.2、最多 100 步、每次呼叫都有 usage。19 個 run 各用不同的模型和版本，不混在一起。
+
+**已經看過的欄位與計數**（不是結果）
+- **mini-SWE-agent**：
+  - 每則 assistant 訊息有 `extra.timestamp`（回覆完成），`extra.response` 有 `created`（伺服器收到請求的秒，整數）和 `usage.prompt_tokens`（Qwen 的 token）。
+  - 每則 tool 訊息有 `extra.timestamp`（工具結束）。user 訊息沒有時間。
+  - 499／499 個軌跡：`info.model_stats.api_calls`＝assistant 訊息數＋`FormatError` 回饋訊息數。全部共 13,884 次成功呼叫、3,517 次格式錯誤。
+  - prompt_tokens 在同一軌跡內嚴格遞增（0 次下降），表示輸入只往後加。
+  - `created` − 前一個有時間戳的訊息：中位數 −0.44 s，沒有 < −1 s 的。
+- **OpenHands**：
+  - history 每個事件都有 `timestamp`。agent 的動作帶 `tool_call_metadata.model_response`，含 id、choices、`usage.prompt_tokens`（Claude 的 token）。
+  - 每個 instance 的呼叫數中位數 18、最多 100。prompt_tokens 在同一軌跡內 7,509 次相鄰比較都沒有下降。
+  - 原始碼：function calling 模式的系統提示＝`function_calling.SYSTEM_PROMPT`，工具＝`get_tools(...)` 的 `ChatCompletionToolParam` 定義。
+
+**轉換**（`next_b_convert.py` 的新子命令 `agent`，寫在之後的 commit；規則在這裡先定）
+- **session**：一條軌跡＝一個 session＝一個「對話」（排固定並行的單位）。沒有子 agent。不複製。
+- **合格**：至少 2 次有時間的成功呼叫，時間戳都齊全；不合格的依原因計數。全部合格的都用，不抽樣。
+- **請求**：每次「成功」的 LLM 呼叫一個請求。
+  - mini-SWE-agent 的 `FormatError` 呼叫沒有記錄回覆與時間，不模擬，次數記在 meta。它們的 prompt 是下一次呼叫 prompt 的前綴。
+  - OpenHands 一次回覆裡有多個 tool call（`total_calls_in_response`>1）時，依 `model_response.id` 合成一次呼叫。
+- **請求的輸入（Llama-3.1 tokenizer，同偏離 13：NousResearch 鏡像 d10aef79、sha256 79e3e522…、tokenizers 0.23.3）**：這次呼叫之前的全部訊息，照 Llama 3.1 格式組起來，再加 assistant 開頭。
+  - **mini-SWE-agent**：
+    - system／user 訊息原文。
+    - assistant＝`content`，再接每個 tool call 的 `{"name", "arguments"}` JSON。
+    - tool 訊息用 Llama 3.1 的 `ipython` 角色、原文。
+  - **OpenHands**：
+    - 系統訊息＝`SYSTEM_PROMPT`，加上這個 run 實際呼叫過的工具定義（`execute_bash`、`finish` 一定有，其他照軌跡出現的）的 JSON。用 `ast` 從原始碼取字面值，不執行原始碼。
+    - 之後照事件順序：
+      - user 的 message 動作 → user。
+      - agent 的動作 → assistant＝`model_response.choices[0].message` 的 `content`＋tool calls JSON；同一個 response 只算一次。
+      - 對應的 observation → `ipython` 角色、`content` 原文。
+      - environment 的 error → user。
+- **chunk 鍵**：整段 token 每 512 一塊的鏈式 blake2b（同偏離 13）。內容相同的前綴跨 session 共用，例如系統提示、相同的題目描述。
+- **規則 6**（任何一項不過就停）：
+  - (a) 每個請求的鍵是上一個請求的延伸，要 100%。
+  - (b) **用供應商回報的 prompt_tokens 驗算**：相鄰兩次呼叫，我們 Llama token 的增量 ÷ 回報的增量，中位數要在 [0.8, 1.25]，而且 ≥90% 的比值在 [0.5, 2.0]。
+    - 這個比值也報第一次呼叫的總量比，只報告；因為 tokenizer 不同，總量比不是判準。
+  - (c) mini-SWE-agent：api_calls＝成功＋格式錯誤，要 100%。
+- **時間（真實，只合成對話開始）**：
+  - **請求時間**：
+    - mini-SWE-agent：max(前一個有時間戳的訊息, `response.created`)。`created` 是整數秒，前一個訊息的時間是它的下界。
+    - OpenHands：這次呼叫第一個動作之前，最後一個事件的時間。
+  - **呼叫結束**：assistant 的 `timestamp`（mini）／動作的 `timestamp`（OpenHands）。
+  - 對話內的偏移＝請求時間 − 第一個請求時間，原樣保留。
+  - **對話長度**＝最後一次呼叫的結束 − 第一個請求時間。
+  - **開始時間**：固定並行 N＝16、32、64、72，順序＝`default_rng(seed).permutation`，seed 1–3；同 SemiAnalysis 的 `fixed_concurrency`。
+- **nb 名稱**：`miniswe_N{N}_s{s}`、`openhands_N{N}_s{s}`，每份 12 個。
+
+**模擬與版本**（同偏離 13 補寫的第 1–4 點）
+- 版本 B：plan `agent_main`（17×8，block `ms_N…_s…`／`oh_N…_s…`）＋`agent_p1`（`_ttl`，15 × 新的 8 個 TTL），v7 62b0932b。上限表 `next_sim_analyze --pf-target cpu`，先 rowcheck。
+- 版本 C：`next_chat_verc.sh`（v8 48e4efce，icpe-next-rux 4a713386），重現檢查必須 `REPRODUCED`。
+- 機器：都在 acvlab。
+- 不跑 P1–P4、W3。偏離 14 修正版出來後，O-PF／O-ALL 的列一起重跑。
+
+**報告**：判定與彙總由 icpe-main 做，歸「合成到達」，單獨成一節，不和論文的 28 個變體合併計數。
+
+**時間估計**〔推算〕
+- 寫轉換程式：mini 約 1 h；OpenHands 約 2 h，要從原始碼取系統提示與工具。
+- 模擬：每份 24 個 block（main＋_ttl），12 個版本 C，單份約 1 h。
+- 今天（11/7）深夜或 11/8 上午進 git。ICPE 摘要（11/10）前就可能好，全文（11/17）前一定來得及。
+- 若規則 6 (b) 不過，就停下回報，時間另估。
+
+## 2026-11-07T12:00+08:00 — **更正 11:55**：W6 本來就歸 h200，而且已經排了；我說的「現在不排」與兩個「未定」是過時的
+
+- h200 回覆：
+  - PREREG 偏離 1 寫明「GPU 的工作都歸 h200」。
+  - W6 已排：Slurm job 24443（W6c）→ 24444（W6a），等 DL_Lab5 的 job 24507 跑完。11:46 時剩約 17 h 52 m，所以約 11/8 05:40 以後才開始〔推算〕。
+- 我列的兩個「未定」其實已在偏離 1、3、4 定了：
+  - W6c 的敏感度跑偏離 4 第 4 點的代表格（偏離 4 第 6 點）。
+  - x1_gpu.py 由 h200 改（偏離 1）。
+  - W6b 缺 O-ORD 的其他固定對手；跑哪些、跑幾次，等程式改好後另外登記（偏離 3 第 3 點）。
+- **錯在我**：只讀了 PREREG §5 的原文，沒有對照之後的偏離 1、3、4。使用者的決定和 h200 的現況一致，沒有要改的。
+- W6c 出來、要用實測 f(i) 重跑代表格時，h200 會告訴我排在哪台。
+
+## 2026-11-07T11:55+08:00 — 使用者：**W6（H200 的 GPU 實測）改由 h200 session 做**；P1–P4 以外還要跑的清單
+
+- 使用者問「論文除了 P1–P4 還有什麼要跑」。我照各 STATUS 與 PREREG 整理（11:50 時）：
+  - **在跑**：RUX3DPRO 的偏離 10 版本 C、偏離 11A W5、偏離 11B 排隊，rux 估 14:00–14:30 跑完〔推算〕。
+    - 偏離 10 版本 C：SemiAnalysis 還剩 N72 s2／s3，Mooncake、Bailian 3 個變體還沒跑。
+    - 偏離 11A W5：還剩 Bailian coder、Mooncake 2 個。
+    - 偏離 11B 排隊：SemiAnalysis 12 個變體。
+  - **還沒排**：
+    - 偏離 14 重跑：等 G1。
+    - 偏離 10 第 5 點「版本 C ≥15% 的格補跑 P4」：等 icpe-main 的版本 C 表。
+    - W6：GPU 實測。
+  - **不跑**：W7（使用者叫停）、CacheWise 的新工作（11:45）。
+- **使用者決定**，原話：「W6：H200 上的 GPU 實測 改叫 h200 session 做」。已傳訊息給 h200，附上 PREREG §5 的登記內容：
+  - 順序 W6c→W6a→W6b；
+  - W6c 的代表格要在看結果之前補登記；
+  - W6b 的 x1_gpu.py 由誰改要問使用者。
+- acvlab 不碰 GPU。W6c 之後要用實測 f(i) 重跑模擬時，再由 h200 告訴我排在哪台。
+
+## 2026-11-07T11:50+08:00 — **對話資料集 4／4 份到齊**：LMSYS-Chat-1M（TRX40）的版本 B、C 收進 icpe-next-data
+
+- icpe-trx 推上 icpe-next-trx 291e7d60（STATUS_TRX 11:40）。
+  - 版本 B：`chat_main:lm_*`＋`chat_p1:lm_*` 12 個 block，11:34:54 → 11:36:46。
+  - 上限表：run `20261107-113711-icpe-trx-verB-lm_p1`，rowcheck PASS。
+  - 版本 C：6 個變體 `REPRODUCED cells=324`。
+- 我在 acvlab 核對過：
+  - 12 個 sweep 的 run_id 單一值且＝manifest，code_sha 62b0932b，CSV 列數＝manifest，規則數 17×8／15×8，trace 和 block 一致。
+  - 6 個 apc MANIFEST 的 code_sha 是 e7f6ee8f、main.rs 48e4efce、收集時的 commit 4a713386。
+  - 已原樣 checkout 進來。sweep CSV 只有模擬結果，沒有內容欄；LMSYS 的原始資料和 nb 只在 TRX40。
+- 照抄 icpe-trx 的摘要（不解讀）：
+  - T60 三個 seed 全部 0。
+  - T600 的 O-ALL(report) 最大 0.034–0.044。
+  - 版本 B、C 的 ≥15%、≥5% 格數都是 0。
+- **四份到齊，但先不通知 icpe-main 開算**。使用者在 icpe-main 決定（STATUS_MAIN 11:33）要等偏離 14 修正版的 O-PF／O-ALL 列重跑完，整份才算。
+
+## 2026-11-07T11:45+08:00 — 使用者：**CacheWise 先停，「放不了 paper」**；acvlab 目前沒有要跑的，等偏離 14 的重跑清單
+
+- 使用者問「acvlab 有要跑東西嗎」。我回答：
+  - 對話資料集已做完；偏離 14 的 G1 由 icpe-sim 在 acvlab 跑。
+  - 被暫停的 CacheWise 工作只剩這些：偏離 10 版本 C 12 個變體、偏離 11 的 W5 代表格與排隊 12 個變體。
+- 問要不要恢復（AskUserQuestion），使用者原話：**「CacheWise 下先停 放不了paper」**。
+- 照這句做：
+  - acvlab 不跑任何 CacheWise 的新工作。
+  - 偏離 14 的重跑清單裡如果有 CacheWise 的 block，**我先不排**，除非使用者另外說。
+- 「放不了 paper」對已有的 CacheWise 結果怎麼處理（主結果、P1–P4 裡的 CacheWise 12 個變體），由使用者和 icpe-main 決定。我已轉告 icpe-main 原話，不自己解讀。
+- 偏離 14：已登記（icpe-next-sim fe34522，PREREG 第 819 行起）。icpe-sim 的 G1（run `20261107-113238-icpe-sim-g1-fa3686b`）正在 acvlab 跑。
+- LMSYS：TRX40 版本 B 已開跑（11:34:54）。轉換統計照抄在 icpe-trx 的訊息：100 萬個對話，合格 334,319 個，抽 9,000 個 → 36,371 個請求，規則 6 (a) 100%、(b) 中位數 0。
+
+## 2026-11-07T11:35+08:00 — **對話資料集 3／4 份完成**（ShareGPT、WildChat 在 acvlab，UltraChat 在 TRX40）：版本 B、C 都進 git；LMSYS 等使用者登入 HF
+
+**完成了什麼**（照偏離 13＝STATUS_DATA 11:00＋11:05）
+- **acvlab 版本 B**：
+  - 佇列 `chat_main:sg_*,wc_*`＋`chat_p1:sg_*,wc_*`，35 workers，log `runs/queue-rust-chat-verB-w35-20261107-110540.log`。
+  - 11:05:40 → 11:17:18。補寫前已跑完的 `sg_T60_s1`、`sg_T600_s1` 由完成清單跳過。
+  - 18 個 block 全部通過：
+    - `jobs`＝`count`（6,174／6,480），`rust_timing` 行數＝jobs。
+    - `py_fallback_jobs=0`，`code_sha`＝3280b1c8799b+rs62b0932b，`exit_code` 0，沒有 `STOPPED_NOT_USED`。
+  - 有存逐請求 npz：這兩個 plan 沒設 no_npz，ShareGPT 每個 block 約 1.8 GB。npz 不進 git，不影響 sweep。我給 icpe-trx 的指令寫「沒有 npz」，是我寫錯了。
+  - collect → `results/icpe_next/b/chat_main/{sg,wc}_*`、`chat_p1/{sg,wc}_*_ttl`，log `runs/collect-chat-*.log`。
+- **acvlab 版本 B 上限表**：run `20261107-111850-icpe-data-verB-sg_p1`、`20261107-111857-icpe-data-verB-wc_p1`。
+  - 先跑 `main_rowcheck.py`（icpe-next-main b54d3cff，sha256 cde7fb3f，和 TRX40 用的同一份）：sg、wc 的 main（17×8）、_ttl（15×8）每個 (trace, rule) 都是 54 格，PASS。
+  - 結果收在 `results/icpe_next/b/analysis/{sg,wc}_p1/`，有 manifest。
+- **acvlab 版本 C**：`code/icpe/next_chat_verc.sh`，v8 worktree＝icpe-next-rux 4a713386，run `20261107-1119xx…1129xx-icpe-data-verC-<變體>`。
+  - 9 個變體都 rc 0。
+  - `explore_apc` 對本機版本 B 表 **9／9 `REPRODUCED cells=324`**。
+  - `code_sha`＝3280b1c8799b+rse7f6ee8f，main.rs 48e4efce。
+  - 結果收在 `results/icpe_next/apc/{sharegpt_T{60,600}_s{1,2,3},wildchat_s{1,2,3}}/`，是 collect_v8 收的原樣。
+- **TRX40 的 UltraChat**（icpe-next-trx a65347cb，STATUS_TRX 11:20）：版本 B 12 個 block，uc_p1 表，rowcheck PASS；版本 C 6／6 `REPRODUCED`。
+  - 我在 acvlab 核對過：
+    - 12 個 sweep 的 run_id 單一值且＝manifest，code_sha 62b0932b，CSV 列數＝manifest；
+    - CPU／GPU 規則數是 17×8 或 15×8；
+    - 6 個 apc MANIFEST 的 code_sha 是 e7f6ee8f、main.rs 48e4efce、收集時的 commit 4a713386。
+  - 已從 icpe-next-trx checkout 進來，blob 不變。
+- **轉換統計**：
+  - WildChat（run `20261107-105720-icpe-data-conv-chat-wildchat`）：
+    - HF 上實際有 837,989 個對話，合格 331,483 個（不合格的都是 user 少於 2 輪）。
+    - 抽 9,000 個 → 39,884 個請求。
+    - 規則 6 (a) 30,884／30,884；(b) 中位數 0，最大 0.05%，99% 完全相同。
+    - 輸入中位數 702、p90 3,431 token。真實間隔中位數 127 s、p90 1,209 s。span 約 246 h。
+  - UltraChat（icpe-trx 照抄）：
+    - 1,468,352 個對話，合格 1,468,294 個，一行兩個物件的有 3 行。
+    - 抽 9,000 個 → 34,595 個請求。規則 6 (a)、(b) 都完全相同。
+    - 輸入中位數 528 token。
+
+**照抄上限表的摘要**（headroom＝④ 對 ② 的上限；每個資料集合併 3 個 seed，每個元件 162 格＝3 × 54；中位數範圍＝3 個 seed 各自的中位數）。
+- **不解讀、不下判定**，判定由 icpe-main 照偏離 7、10、13 做。
+- O-PF、O-ALL 的列會因 P4 斷崖的修正（icpe-sim 的規則 (i)，偏離 14 待登記）重跑，下表的那兩列之後可能會變。
+
+| 資料集 | 版本 | O-ORD max／中位數／≥15% | O-PF max／中位數／≥15% | O-DROP max／≥15% | O-GPU max／中位數／≥15% | O-ALL(report) max／≥15% |
+|:--|:--|:--|:--|:--|:--|:--|
+| ShareGPT T60 | B | 0.387／0.066–0.069／36 | 0.409／0.126–0.128／70 | 0.155／1 | 0.432／0.184–0.188／126 | 0.654／138 |
+| ShareGPT T60 | C | 0.386／0.065–0.069／36 | 0.409／0.126–0.128／69 | 0.155／1 | 0.440／0.183–0.187／126 | 0.654／138 |
+| ShareGPT T600 | B | 0.299／0.066–0.068／33 | 0.682／0.184–0.187／99 | 0.125／0 | 0.379／0.179–0.181／116 | 0.733／147 |
+| ShareGPT T600 | C | 0.299／0.065–0.068／33 | 0.682／0.184–0.187／99 | 0.125／0 | 0.381／0.178–0.180／113 | 0.732／145 |
+| WildChat | B | 0.092／0.006–0.007／0 | 0.185／0.012–0.013／6 | 0.170／8 | 0.198／0.059–0.060／12 | 0.231／19 |
+| WildChat | C | 0.092／0.006–0.007／0 | 0.184／0.012–0.013／6 | 0.170／8 | 0.197／0.059–0.060／12 | 0.230／18 |
+| UltraChat T60 | B、C | 0／0／0 | 0／0／0 | 0／0 | 0／0／0 | 0／0 |
+| UltraChat T600 | B、C | 0.027／0／0 | 0.032／0／0 | 0.067／0 | 0.067／0.052–0.053／0 | 0.067／0 |
+
+- O-NOW 在四份裡最大都 ≤0.004。
+
+**還沒做**
+- **LMSYS-Chat-1M**：TRX40 等使用者在 HF 同意條款並登入。登入後照同樣的步驟做：下載、轉換、B、C。
+- **彙總與判定**：交給 icpe-main。
+- **P4 斷崖修正的重跑**：等 icpe-sim 的偏離 14 和 G1。對話資料集的 O-PF／O-ALL 列已請 icpe-sim 列進清單。
+
 ## 2026-11-07T11:05+08:00 — 對話資料集補登記的**補寫：版本 B／C、哪台、哪版引擎**（h200 轉達使用者「請 icpe-data 先補寫」；寫完才恢復模擬）
 
 > 時間：acvlab `date -u` 2026-11-07T03:04:39Z。h200 會把 11:00 那節和本節一起收成 **PREREG 偏離 13（補登記）**（使用者在 h200 選的；STATUS_A 11:00，0c58272、6239918）。

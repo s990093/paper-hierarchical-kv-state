@@ -611,10 +611,119 @@ def conv_chat(a, x1nb):
     return res
 
 
+# ------------------------------------------------------------------ 公開 agent 軌跡（PREREG 偏離 17；STATUS_DATA 2026-11-07 12:55）
+AGENT_SRC = dict(
+    miniswe=dict(dir="miniswe-qwen3-30b", hf="tarsur385/qwen3-30b-a3b-instruct-2507-swebench-verified-mini-swe-agent",
+                 rev="58389eb5426db5a3ae6159faa37498072b4735ff", license="MIT"),
+    openhands=dict(dir="openhands-eval", hf="OpenHands/openhands-evaluation-outputs", rev="aa8977805b4cefd317001d80ddf1ad52790e9d23",
+                   license="MIT", file="outputs/SWE-bench_Lite-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_100_N_v2.2-no-hint/output.jsonl",
+                   src="openhands-src"),
+)
+ROLE_TOK_ALL = {"system": [9125], "user": [882], "assistant": [78191]}   # ipython 由 tokenizer 取得並核對
+
+
+def conv_agent(a, x1nb):
+    import next_agent_traces as NAT
+    src = a.source
+    S = AGENT_SRC[src]
+    base = a.src_dir or AT.DS
+    d = os.path.join(base, S["dir"])
+    tk, tok_meta = _tokenizer(a.tokenizer, a.pylibs)
+    roles = dict(ROLE_TOK_ALL)
+    roles["ipython"] = tk.encode("ipython", add_special_tokens=False).ids
+    for r, ids in roles.items():
+        assert tk.encode(r, add_special_tokens=False).ids == ids, r
+    if src == "miniswe":
+        files = [ln.split()[1] for ln in open(os.path.join(d, "README.txt")) if ln.strip() and not ln.startswith("#")]
+        shas = [_readme_sha(d, f) for f in files if f.startswith("trajectories/")]
+        assert len(shas) == 499 and all(s["readme_sha256"] for s in shas), len(shas)
+        sess, st = NAT.load_miniswe(d)
+        rule_c = AT._check("miniswe api_calls＝成功＋FormatError", st["api_eq"], st["n_traj"], thr=1.0)
+        shas = dict(n_files=len(shas), readme=os.path.join(d, "README.txt"))
+    else:
+        shas = [_readme_sha(d, S["file"])]
+        sd = os.path.join(base, S["src"])
+        src_sha = [_readme_sha(sd, f"{c}/{f}") for c in ("61874438105ba42dfc2bcb955d329d5c925e41d5", "6333c6ad58d790e8728bd3c8ecd5850173b1280e")
+                   for f in ("codeact_agent.py", "function_calling.py", "event.py")]
+        assert all(s["readme_sha256"] for s in shas + src_sha)
+        sess, st = NAT.load_openhands(os.path.join(d, S["file"]), sd)
+        rule_c = None
+        shas = dict(data=shas, source=src_sha)
+    print(f"[{src}] 軌跡 {st['n_traj']}，合格 {st['n_ok']}，成功呼叫 {st['calls_ok']}；{ {k: v for k, v in st.items() if k not in ('n_traj', 'n_ok', 'calls_ok')} }", flush=True)
+    # token 化（逐則切，再組；同偏離 13）
+    flat = [txt for s in sess for (_, txt) in s["msgs"]]
+    ids = [e.ids for e in tk.encode_batch(flat, add_special_tokens=False)]
+    kg = KeyGen()
+    rows = []          # (sess, k, inp, keys, t_req, t_end, user)
+    p = 0
+    ratios, first_ratio, n_ext_ok, n_ext = [], [], 0, 0
+    conv_dur, conv_t0 = [], []
+    for si, s in enumerate(sess):
+        seq, mstart = [BOT], []
+        for (role, _) in s["msgs"]:
+            mstart.append(len(seq))
+            seq += [SHD] + roles[role] + [EHD, NL2] + ids[p] + [EOT]
+            p += 1
+        H, pv = [], b""
+        for j in range(len(seq) // CHUNK):
+            pv = hashlib.blake2b(pv + np.asarray(seq[CHUNK * j:CHUNK * (j + 1)], np.int32).tobytes(), digest_size=16).digest()
+            H.append(kg.of(pv))
+        prev = None
+        t0 = s["calls"][0]["t_req"]
+        for k, c in enumerate(s["calls"]):
+            assert s["msgs"][c["m"]][0] == "assistant"
+            inp = mstart[c["m"]] + 4                      # 到這則 assistant 訊息之前＋assistant 開頭
+            ks = H[:inp // CHUNK]
+            if prev is not None:
+                n_ext += 1
+                n_ext_ok += int(ks[:len(prev[0])] == prev[0])
+                if c["ptok"] is not None and prev[2] is not None and c["ptok"] > prev[2]:
+                    ratios.append((inp - prev[1]) / (c["ptok"] - prev[2]))
+            elif c["ptok"]:
+                first_ratio.append(inp / c["ptok"])
+            rows.append((si, k, inp, ks, c["t_req"] - t0, c["t_end"] - t0, k == 0))
+            prev = (ks, inp, c["ptok"])
+        conv_t0.append(t0)
+        conv_dur.append(max(c["t_end"] for c in s["calls"]) - t0)
+    assert p == len(flat)
+    rule_a = AT._check(f"{src} 請求的鍵＝上一個請求的鍵的延伸", n_ext_ok, n_ext, thr=1.0)
+    r = np.asarray(ratios)
+    rule_b = dict(n=len(r), median=float(np.median(r)), p10=float(np.quantile(r, .1)), p90=float(np.quantile(r, .9)),
+                  frac_in_0p5_2=float(((r >= 0.5) & (r <= 2.0)).mean()), first_call_total_ratio_median=float(np.median(first_ratio)))
+    print(f"[{src}] 規則 6 (b)（Llama 增量 ÷ 供應商 prompt_tokens 增量）：{rule_b}", flush=True)
+    rule_b["pass"] = bool(0.8 <= rule_b["median"] <= 1.25 and rule_b["frac_in_0p5_2"] >= 0.9)
+    if not rule_b["pass"]:
+        if not a.rule6b_override:
+            raise SystemExit(f"[{src}] 規則 6 (b) 不過：{rule_b} → 停")
+        # 只在使用者決定照跑、且已登記時用（OpenHands：STATUS_DATA 2026-11-07 13:10，偏離 17 的更正）；不改門檻，照實記進 meta
+        rule_b["override"] = a.rule6b_override
+        print(f"[{src}] 規則 6 (b) 沒過，照使用者決定放行（已登記）：{a.rule6b_override}", flush=True)
+    R = pd.DataFrame(rows, columns=["conv", "k", "inp", "keys", "off", "end", "user"])
+    neg = int((R.groupby("conv").off.diff() < 0).sum())
+    dur = np.asarray(conv_dur)
+    res = []
+    for N in a.N:
+        for seed in a.seeds:
+            st0, order = fixed_concurrency(dur, N, seed)
+            x = R[["conv", "inp", "user"]].copy()
+            x["t"] = st0[R.conv.values] + R.off.values
+            x["sess"] = x.conv
+            name = f"{src}_N{N}_s{seed}"
+            m = base_meta(src, a)
+            gaps = R.groupby("conv").off.diff().dropna()
+            m.update(source=dict(hf=S["hf"], revision=S["rev"], license=S["license"], files=shas), tokenizer=tok_meta,
+                     loader=st, rule6=dict(keys_extend=rule_a, prompt_tokens_increment=rule_b, api_calls=rule_c),
+                     arrival=dict(kind="fixed_concurrency", N=N, seed=seed, n_conv=len(sess), **active_profile(st0, dur)),
+                     gap_s=dict(median=float(gaps.median()), p10=float(gaps.quantile(.1)), p90=float(gaps.quantile(.9)), n_negative=neg),
+                     conv_dur_s=dict(median=float(np.median(dur)), p90=float(np.quantile(dur, .9)), max=float(dur.max())))
+            res.append(finalize(name, x[["sess", "t", "inp", "user"]], list(R["keys"].values), a.out_dir, x1nb, m, False))
+    return res
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("trace", choices=["cachewise", "tracelab", "semianalysis", "bailian", "fi", "chat"])
-    ap.add_argument("--source", choices=list(CHAT_SRC), help="chat：哪一份對話資料集")
+    ap.add_argument("trace", choices=["cachewise", "tracelab", "semianalysis", "bailian", "fi", "chat", "agent"])
+    ap.add_argument("--source", choices=list(CHAT_SRC) + list(AGENT_SRC), help="chat／agent：哪一份資料集")
     ap.add_argument("--src-dir", default=None, help="chat：資料集的上層目錄（預設 agent_traces.DS）；底下是 sharegpt／wildchat-1m／lmsys-chat-1m／ultrachat")
     ap.add_argument("--tokenizer", default="/ssd7/hungwei/hf-cache/huggingface/hub/models--NousResearch--Meta-Llama-3.1-8B-Instruct/"
                     "snapshots/d10aef7999a2b5ba950ab3974312feeedbfe0b77/tokenizer.json")
@@ -628,14 +737,15 @@ def main():
     ap.add_argument("--files", nargs="+", default=["traceA", "traceB", "thinking", "coder"])
     ap.add_argument("--prefix-rule", choices=["struct", "cache"], default="struct")
     ap.add_argument("--trunc-128k", action="store_true")
+    ap.add_argument("--rule6b-override", default="", help="agent：規則 6 (b) 沒過時照跑的理由（必須已登記；寫進 meta）")
     ap.add_argument("--out-dir", default=os.environ.get("X1_NB_DIR", "/ssd6/hungwei/icpe-next/datasets/x1_nb"))
     ap.add_argument("--p3x", default=os.path.join(REPO, "code", "p3x"))
     a = ap.parse_args()
     x1nb = _x1nb(a.p3x)
-    if a.trace == "chat" and not a.source:
-        ap.error("chat 要給 --source")
+    if a.trace in ("chat", "agent") and not a.source:
+        ap.error("chat／agent 要給 --source")
     fn = dict(cachewise=conv_cachewise, tracelab=conv_tracelab, semianalysis=conv_semianalysis, bailian=conv_bailian, fi=conv_fi,
-              chat=conv_chat)[a.trace]
+              chat=conv_chat, agent=conv_agent)[a.trace]
     res = fn(a, x1nb)
     summ = os.path.join(a.out_dir, "next_b_trace_summary.jsonl")
     with open(summ, "a") as fh:
