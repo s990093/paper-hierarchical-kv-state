@@ -1,10 +1,16 @@
 {
  "exp": "apc",
  "variant": "tracelab_c1",
- "collected_ts": "2026-11-07T08:40:45+08:00",
+ "collected_ts": "2026-11-07T08:44:02+08:00",
  "collected_host": "acvlab-TRX40-AORUS-MASTER",
- "repo_commit": "2b859912671ec2d5479bef5f3324d036c2a8b2aa",
- "v8_main_rs_sha256": "48e4efcee98cb5e54040d8b21fd61726007617d8be17d82f09347ebdf13ee7d2",
+ "repo_commit_at_collect": "c0e063328fb14f916ecd0eb3d0d83dc703515974",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
  "sweep_code_sha": [
   "3280b1c8799b+rse7f6ee8f"
  ],
@@ -52,6 +58,6 @@
    "rows": 108
   }
  ],
- "note": "探索（不是正式結果）；TRX40；含版本 B 重現檢查 108/108 格×元件 0 差（EXPLORE_RESULT REPRODUCED）",
+ "note": "探索（不是正式結果）；TRX40；含版本 B 重現檢查 108/108 格×元件 0 差（EXPLORE_RESULT REPRODUCED）；sweep 在 rux worktree 2b859912 跑；用 c0e06332 的 collect_v8.py 重收",
  "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
 }
