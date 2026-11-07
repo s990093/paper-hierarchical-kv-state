@@ -1,0 +1,16 @@
+{
+ "run_id": "20261107-172200-icpe-data-d14-verb-oh",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-172200-icpe-data-d14-verb-oh",
+ "cmd": "RUN_ID=20261107-172200-icpe-data-d14-verb-oh RUN=/ssd6/hungwei/icpe-next/runs/20261107-172200-icpe-data-d14-verb-oh DATAREPO=/ssd6/hungwei/icpe-next/data bash code/icpe/next_d14_verb.sh oh results/icpe_next/b results/icpe_next/b/analysis/oh_p1/oh_p1_headroom_components.csv.xz\n",
+ "context": "2026-11-07T17:22:00+08:00\nacvlab\n7963a43fc8efc89547fc52eb24e96381e3faa22f\n?? results/icpe_next/b/analysis_d14/ms_p1/\n?? results/icpe_next/b/analysis_d14/sg_p1/\n?? results/icpe_next/b/analysis_d14/wc_p1/\n?? results/icpe_next/b/d14_agent_main/\n?? results/icpe_next/b/d14_agent_p1/\n?? results/icpe_next/b/d14_chat_main/\n?? results/icpe_next/b/d14_chat_p1/\n",
+ "table_sha256_uncompressed": "ad627241e64f6898b23ac7e1518d822b3a5ef5ad57c512458e51190083861c7f",
+ "files": {
+  "oh_p1_headroom_components.csv.xz": "8882a878e707016a8d3cb52457dc7d36fe537935e1af0e7c76691991d145b456",
+  "oh_p1_violations.csv.xz": "11076b1fbc093693bbd552842af6116c29284b2bf4d3bb4cced3b40b9c6da7bd",
+  "patch_summary.csv": "e82c2cc6497df6f8eff561cb0dae8fc9524242c34bd38691524a4b3907094961",
+  "rowcheck.csv": "54429b27fd3090138c4f5dfb1405a37e14f094e1ffdbd26bf829c86b480f1725",
+  "table_vs_verB.csv": "d36e4d53e1dedd767eecfc3b53bcc118370d626d625b29a6c5e9d725d52b7690"
+ },
+ "note": "PREREG 偏離 14 第一段的版本 B 檢查表（icpe-data；next_d14_verb.sh）：oh 的 main＋P1 _ttl，原本的列換上 d14 列（next_d14_patch.py）後用 next_sim_analyze 算；O-PF、O-ALL(report) 以外的元件和原本的版本 B 表逐值相同（table_vs_verB.csv）。給第二段的重現檢查用；論文用的正式表由 icpe-main 另外算"
+}

@@ -1,0 +1,13 @@
+{
+ "plan": "d14_agent_main",
+ "block": "oh_N16_s2",
+ "run_id": "20261107-171837-icpe-data-d14_agent_main-oh_N16_s2",
+ "host": "acvlab",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-171837-icpe-data-d14_agent_main-oh_N16_s2",
+ "rows": 864,
+ "elapsed_s": 2.0,
+ "finished": "2026-11-07T17:18:39+08:00",
+ "cmd": "cd /ssd6/hungwei/icpe-next/data\nexport RUN_ID=20261107-171837-icpe-data-d14_agent_main-oh_N16_s2\nexport RUN_DIR=/ssd6/hungwei/icpe-next/runs/20261107-171837-icpe-data-d14_agent_main-oh_N16_s2/req\nexport P3_CONST=h200\nexport P3_TIER=h200cpu\nexport M7_TIER_PARAMS=/ssd6/hungwei/icpe-next/data/results/icpe_h200/t1/tier_params_h200cpu.json\nexport M7_RES=/ssd6/hungwei/icpe-next/data/results/m7_write_policy_h200\nexport X1_NB_DIR=/ssd6/hungwei/icpe-next/datasets/x1_nb\nexport X1_TRACE_DIR=/ssd8/hungwei/paper-hkv/datasets/mooncake/traces\nexport X1_FI_DIR=/ssd8/hungwei/paper-hkv/datasets/freeinference_agentic_trace/release\nexport OMP_NUM_THREADS=1\nexport OPENBLAS_NUM_THREADS=1\nexport MKL_NUM_THREADS=1\nexport X1_RUST_TIMING_LOG=/ssd6/hungwei/icpe-next/runs/20261107-171837-icpe-data-d14_agent_main-oh_N16_s2/rust_timing.jsonl\nexec nice -n 10 /ssd6/hungwei/icpe-next/venv/bin/python -I code/icpe/p3_fvar.py --variant V1 --calib /ssd6/hungwei/icpe-next/data/results/icpe_h200/p01/calib --out-root /ssd6/hungwei/icpe-next/runs/20261107-171837-icpe-data-d14_agent_main-oh_N16_s2/out x1 sweep --traces nb:openhands_N16_s2 --rules nb --cpu 8 16 32 64 128 256 512 1024 111.0625 --policies O-PF O-ALL --slows ssd b32 nfs --modes cake --gpu-gib 111.0625 --gpu-write wb --gpu-policies LRU BEL TTLA:0.3 TTLA:10 TTLA:300 TTLB:0.3 TTLB:10 TTLB:300 --pf-target cpu --pf-expire --pf-gpu-recheck --workers 35 --engine rust\n",
+ "context": "date: 2026-11-07T17:18:37.000462+08:00\nhost: acvlab\nplan: d14_agent_main\nblock: oh_N16_s2\nengine: rust\ngit HEAD: 7963a43fc8efc89547fc52eb24e96381e3faa22f\ngit status:\nuptime:  17:18:37 up 22 days,  5:13, 42 users,  load average: 51.10, 41.62, 37.16\nfree -g:\n               total        used        free      shared  buff/cache   available\nMem:             440          76          15           3         347         353\nSwap:              1           1           0\nvenv: 3.12.15 2.3.5 3.0.5 25.0.1\ntrace nb:openhands_N16_s2: sha256 c699adf9087810458e31e94c6934ba1a58e215cae13f26188e39fa45ba7fe30c  /ssd6/hungwei/icpe-next/datasets/x1_nb/openhands_N16_s2.npz\n",
+ "note": "PREREG 偏離 14 的重跑（icpe-sim 清單 results/icpe_next/sim/dev14_rerun_list.csv）：只含清單 rerun_policies 的列（P4 另受 jobs.csv 限制）；同一 block 其他規則的列沿用 results/icpe_next/b/<原 plan>/<block>/。旗標見 cmd"
+}
