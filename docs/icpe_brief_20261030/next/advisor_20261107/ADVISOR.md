@@ -1,10 +1,10 @@
 # 預測在工具類 agent 上仍有空間：擴大驗證的結果與論文寫法（給老師，2026-11-07）
 
-> 數字**以版本 B 為準**（對手還沒加 vLLM 式前綴快取 APC；加了之後的「版本 C」正在算，見第 5 節）。標記：〔模擬〕紀錄驅動模擬；〔實測〕H200 上量的（引自論文稿 `PAPER.md` v4.2）；〔判讀〕作者的解讀；〔建議〕還沒寫進論文稿。每個數字的出處在第 8 節。
+> 數字**以版本 B 為準**（對手還沒加 vLLM 式前綴快取 APC；加了之後的「版本 C」正在算，見第 6 節）。標記：〔模擬〕紀錄驅動模擬；〔實測〕H200 上量的（引自論文稿 `PAPER.md` v4.2）；〔判讀〕作者的解讀；〔建議〕還沒寫進論文稿。每個數字的出處在第 8 節。
 
 ## 1 修改後的結論
 
-原本的結論是「再加預測，多半不划算」。擴大驗證之後要改成：**預測值不值得做，要看工作負載。**在真實的 agent 服務紀錄（FreeInference）上，就算預測百分之百準，首字延遲也只能少不到 1%；但在會呼叫工具的 agent 紀錄（Mooncake toolagent、TraceLab）上，即使對手已經是我們能做到最強的不預測做法（GPU 層加 TTL、十幾種固定規則逐格挑最快），完美預知仍能讓首字延遲少 39–62%：原始到達的 9 個工具類變體裡有 3 個、合成並行的 26 個裡有 21 個，超過事先登記的 15% 門檻。省下來的時間主要來自決定「**誰留在 GPU 和 CPU 裡**」，不是預取；而「這一輪有沒有呼叫工具」這種免費線索一點都拿不到，所以事先寫好的推翻條件成立。但這段空間要預測得準才拿得到：只要 10% 的預測是亂猜，超過 15% 的格子就剩不到一半。
+原本的結論是「再加預測，多半不划算」。擴大驗證之後要改成：**預測值不值得做，要看工作負載**。在真實的 agent 服務紀錄（FreeInference）上，就算預測百分之百準，首字延遲也只能少不到 1%；但在會呼叫工具的 agent 紀錄（Mooncake toolagent、TraceLab）上，即使對手已經是我們能做到最強的不預測做法（GPU 層加 TTL、十幾種固定規則逐格挑最快），完美預知仍能讓首字延遲少 39–62%：原始到達的 9 個工具類變體裡有 3 個、合成並行的 26 個裡有 21 個，超過事先登記的 15% 門檻。省下來的時間主要來自決定「**誰留在 GPU 和 CPU 裡**」，不是預取；而「這一輪有沒有呼叫工具」這種免費線索一點都拿不到（TraceLab 的原始與合成到達都一樣），所以事先寫好的推翻條件成立。但這段空間要預測得準才拿得到：只要 10% 的預測是亂猜，超過 15% 的格子就剩不到一半。
 
 **直覺**〔判讀〕：把 GPU 想成書桌、CPU 想成書架。一般的 agent 服務上，照常規整理（固定規則）就幾乎都找得到書，知道誰先回來也沒得省；寫程式、呼叫工具的 agent 同時有很多個在跑，每個都佔一大疊書，書桌和書架放不下時，「先收誰」選錯就要重搬一次，這時知道誰先回來才有價值。
 
@@ -69,23 +69,23 @@
 
 ![](figs/fig1_verB_max.png)
 
-**圖 1　每個紀錄變體「完美預知最多能少等多久」。**怎麼看：每個點是一個變體，越往右越值得做預測；虛線是 15% 門檻。看到什麼：原始工具類兩極化，FreeInference 貼在 0，Mooncake toolagent、TraceLab c1 遠超過門檻；合成並行裡，SemiAnalysis 從同時 16 個對話起就都過門檻；CacheWise 要同時 64 個以上才過。
+**圖 1　每個紀錄變體「完美預知最多能少等多久」**。怎麼看：每個點是一個變體，越往右越值得做預測；虛線是 15% 門檻。看到什麼：原始工具類兩極化，FreeInference 貼在 0，Mooncake toolagent、TraceLab c1 遠超過門檻；合成並行裡，SemiAnalysis 從同時 16 個對話起就都過門檻；CacheWise 要同時 64 個以上才過。
 
 ![](figs/fig2_components.png)
 
-**圖 2　能少等 ≥15% 的地方，靠的是預測哪個動作。**怎麼看：柱子越高，這個動作越值得預測。看到什麼：工具類主要在「GPU 裡留誰」與「CPU 先淘汰誰」（合成 93%、原始 53%）；預取主要在 Mooncake 上大（原始工具類的 90 格全是 Mooncake toolagent）。
+**圖 2　能少等 ≥15% 的地方，靠的是預測哪個動作**。怎麼看：柱子越高，這個動作越值得預測。看到什麼：工具類主要在「GPU 裡留誰」與「CPU 先淘汰誰」（合成 93%、原始 53%）；預取主要在 Mooncake 上大（原始工具類的 90 格全是 Mooncake toolagent）。
 
 ![](figs/fig3_cpu.png)
 
-**圖 3　CPU 記憶體多大時最值得預測：中間最大。**怎麼看：x 軸是 CPU 記憶體大小，111 GiB＝和 GPU 的 KV 預算一樣大。看到什麼：太小時誰都放不下，沒得挑；太大時什麼都放得下，不用挑；中間最值得預測。所以登記的「隨容量下降」只在 CPU 大於 GPU 預算之後成立。
+**圖 3　CPU 記憶體多大時最值得預測：中間最大**。怎麼看：x 軸是 CPU 記憶體大小，111 GiB＝和 GPU 的 KV 預算一樣大。看到什麼：太小時誰都放不下，沒得挑；太大時什麼都放得下，不用挑；中間最值得預測。所以登記的「隨容量下降」只在 CPU 大於 GPU 預算之後成立。
 
 ![](figs/fig4_p4.png)
 
-**圖 4　預測不準時，還剩多少值得做。**怎麼看：100%＝沒有雜訊時能少等 ≥15% 的格子都還在。實線（主）照 PBKV 的做法，把 λ 比例的預測換成亂猜。看到什麼：回來時間差 ±30% 幾乎沒影響；但只要 10% 亂猜，原始工具類剩 48%、合成剩 22%。
+**圖 4　預測不準時，還剩多少值得做**。怎麼看：100%＝沒有雜訊時能少等 ≥15% 的格子都還在。實線（主）照 PBKV 的做法，把 λ 比例的預測換成亂猜。看到什麼：回來時間差 ±30% 幾乎沒影響；但只要 10% 亂猜，原始工具類剩 48%、合成剩 22%。
 
 ![](figs/fig5_w3.png)
 
-**圖 5　免費線索拿得走嗎：TraceLab c1 的 22 格，線索做法都比最好的固定規則慢。**怎麼看：1＝最好的固定規則；藍點（完美預知）在左邊＝更快，橘點（工具呼叫線索）在右邊＝更慢。看到什麼：線索做法慢 1.6–3.9 倍，因為 86% 的回合都有工具呼叫，分不出誰先回來。照登記，「拿走完美預知收益的一半以上」才算線索有用；22 格全部沒有。
+**圖 5　免費線索拿得走嗎：TraceLab c1 的 22 格，線索做法都比最好的固定規則慢**。怎麼看：1＝最好的固定規則；藍點（完美預知）在左邊＝更快，橘點（工具呼叫線索）在右邊＝更慢。看到什麼：線索做法慢 1.6–3.9 倍，因為 86% 的回合都有工具呼叫，分不出誰先回來。照登記，「拿走完美預知收益的一半以上」才算線索有用；22 格全部沒有。合成到達的 TraceLab c2、c4 也一樣：36 格、61 格全部沒有，線索做法慢 1.37–2.97 倍。
 
 ### 3.5 可信度怎麼確認
 
@@ -137,7 +137,7 @@
 3. 它們都報「比 LRU／前綴快取快多少」。**我們的差別是對手最強**，這一點要放在摘要前半，讀者才知道我們的數字為什麼比較小、也比較可信。
 4. 我們是量測研究，不是新系統；寫法最接近 CacheWise（「既有研究沒看 X，我們收集真實紀錄來看」）和 Ask the Tool（「We show that …」＋一句話結論）。
 
-**摘要（照上面的結構改寫，英文約 230 字）**〔建議；版本 C 出來後換數字〕
+**摘要（照上面的結構改寫，英文約 230 字**）〔建議；版本 C 出來後換數字〕
 
 > LLM agents and multi-turn chat leave gaps between requests, during which serving systems move a session's KV cache out of GPU memory; when the user or a tool result returns, the cache must be restored before the first token. Recent agent-serving systems predict who returns and when, and report large gains over LRU or prefix caching. We ask a narrower question: how much can prediction still save over the strongest non-predictive policy? On an NVIDIA H200 we measure how to restore parked KV (load, recompute, Cake, INT4), and in trace-driven simulation over 40 variants of seven traces we compare a perfect oracle against the per-cell best of 10 CPU-tier and 15 GPU-tier non-predictive rules, including Continuum-style TTLs, with thresholds preregistered before any result. Restoration needs no prediction: a fixed table suffices, with INT4 plus Cake fastest on slow tiers (11.0–40.7% over the runner-up). Prediction pays only on some workloads: on a production agent-serving trace the oracle cuts time to first token (TTFT) by under 1%, but on tool-calling traces by up to 62%, exceeding 15% in 3 of 9 real-arrival and 21 of 26 synthetic-concurrency variants, mostly by choosing what stays in GPU and CPU memory rather than by prefetching. A free tool-call cue captures none of this gap, yet the gap requires accurate prediction: with 10% of predictions randomized, fewer than half of these cells stay above 15%. Measure the oracle against a strong baseline before building a predictor.
 
@@ -153,7 +153,7 @@
 | 項目 | 狀態 | 會影響什麼 |
 |:--|:--|:--|
 | 版本 C：對手加 vLLM 的前綴快取（APC），④ 的 GPU 層加 block 粒度 Belady（BELP） | 進行中；SemiAnalysis 並行 16、32 共 6 個已完成，其餘在兩台機器上跑；CacheWise 等之後 | ② 變強、數字會降；**TraceLab c1 能不能過 15% 取決於 BELP**（加 BELP 是看過探索才決定的，所以會並列「不含 BELP」） |
-| W3 線索：TraceLab c2、c4（合成到達）、FreeInference | TRX40 進行中 | 合成到達的推翻條件；目前未定 |
+| W3 線索：TraceLab c2、c4（合成到達）、FreeInference | **已完成**（11/7 10:50）：c2 36 格、c4 61 格全部沒拿走一半；FreeInference 6 週沒有 ≥15% 的格 | 合成到達的推翻條件也成立（以版本 B 為準） |
 | P4 雜訊：O-PF 的異常（λ 10% 就幾乎不預取） | icpe-sim 檢查中 | 若是程式錯誤，圖 4 的部分數字要重算 |
 | P4 改用版本 C 的選格與對手 | 未決定 | 圖 4 |
 | GPU 實機重播（W6，H200） | 等 GPU | 目前預測的結果**全部是模擬** |
@@ -173,7 +173,7 @@
 
 - 版本 B：run `20261106-110854-icpe-main-verB-p1`，`results/icpe_next/main/verB/`。P2／P3：`results/icpe_next/main/p23/`。
 - P4：runs `20261107-082202-icpe-main-p4-noise`、`20261107-094535-icpe-main-p4-summary`，`results/icpe_next/main/p4/noise/`。
-- W3：TRX40 run `20261107-084104-icpe-trx-rux-tl_c1-w3`；`origin/icpe-next-trx` 的 `results/icpe_next/v8_explore/w3/tracelab_c1/`；PREREG 偏離 9。
+- W3：TRX40 runs `20261107-084104-icpe-trx-rux-tl_c1-w3`、`20261107-092256-icpe-trx-rux-tl_c2-w3`、`20261107-095115-icpe-trx-rux-tl_c4-w3`（`origin/icpe-next-trx` ab78226）；`origin/icpe-next-trx` 的 `results/icpe_next/v8_explore/w3/tracelab_c1/`；PREREG 偏離 9。
 - 圖與第 3.3 節的表：run `20261107-104634-icpe-main-advisor-figs`（`code/icpe/main_report_figs.py`；每個點在 `figs/fig_data.csv`，表在 `figs/table_main.csv`）。
 - 同類論文：arXiv 2605.06472（PBKV）、2605.00528（SAGA）、2608.14624（CacheScout）、2606.16824（CacheWise）、2511.02230（Continuum）、2507.07400（KVFlow）、2609.18849（Ask the Tool）、2410.03065（Cake）；2026-11-07 讀 arXiv 的摘要頁與 HTML 全文，圖片內的軸名讀不到。字數是人工概數。
 - 實測數字（11.0–40.7%）與資料集說明：`docs/icpe_paper_20261030/PAPER.md` v4.2、`docs/icpe_brief_20261030/NEXT_PLAN_20261104.md` §5.5，本文件沒有重新核對實測值。

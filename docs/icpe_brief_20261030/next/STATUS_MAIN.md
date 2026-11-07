@@ -3,6 +3,23 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T11:00+08:00 — 推翻條件（以版本 B 為準）：**合成到達・工具類也成立**（TraceLab c2、c4 的 W3）；給老師的文件；O-PF 異常交給 icpe-sim
+
+**W3 合成到達**（TRX40，`origin/icpe-next-trx` ab78226，STATUS_TRX 10:55；`w3_verdict.csv` 照抄）
+- 先決條件（偏離 9＋補記）：9 個變體都重算版本 B 的表，324／324 個（格, 元件）、7 欄 0 差；c2 是 run `20261107-090206-icpe-trx-rux-tl_c2-reproB`，c4 與 FreeInference 是各自 `run_apc_formal` 的第 2 步。
+- tracelab_c2（run `20261107-092256-icpe-trx-rux-tl_c2-w3`）：≥15% 的（格, 元件）36 個，③ 都齊全，36 個都 f ≤ 0.5（中位數 −5.06）；寫入飽和 0。
+- tracelab_c4（run `20261107-095115-icpe-trx-rux-tl_c4-w3`）：61 個，都 f ≤ 0.5（中位數 −2.60）；寫入飽和 0。
+- FreeInference 6 週：沒有 ≥15% 的格 → 前半不成立。
+- → **合成到達・工具類：推翻條件成立**（TraceLab c2、c4；以版本 B 為準）。SemiAnalysis、CacheWise 沒有線索欄位或沒跑，未定，但不影響「只要一份」的判定。
+- icpe-main 的核對（讀 `w3_rows.csv`）：c2、c4 判定的各 270 列裡，線索做法沒有一格贏過最好的固定規則（T③ ÷ T② 最小 1.40、1.29），所以判定和 ③ 的定義、彙總方式無關。〔判讀〕
+
+**其他**
+- 使用者 11/7 約 10:30：P4 的 O-PF 異常「好」→ 已傳訊息請 icpe-sim 查（只查、回報，不改正式結果）。附了 TraceLab c2 一格的證據：λ＝0.1 時 O-PF 的 `prefetch_GiB` 從 728,431 降到 86.7、`ret_cpu_loads` 從 38,046,877 降到 2,835（`p4_b1/tracelab_c2_P_B1`，10 個 seed 平均）。
+- 給老師的文件：`docs/icpe_brief_20261030/next/advisor_20261107/ADVISOR.{md,pdf}`（新結論、資料集、主結果表、圖、8 篇同類論文的圖表與摘要寫法、改寫的摘要）。圖：run `20261107-104634-icpe-main-advisor-figs`。
+- 版本 C：TRX40 已完成 TraceLab 3 個、FreeInference 6 週（ab78226）；RUX3DPRO 進行中。icpe-main 還沒算版本 C 的表（等全部到齊）。
+
+**已看過哪些正式結果**：加上 W3 c2、c4 的判定與 `w3_rows.csv` 的比值；TRX40 訊息裡的版本 C O-ALL(report) 最大值（c1 15.3%、c2 32.4%、c4 51.4%；FreeInference ≤1.1%）。
+
 ## 2026-11-07T09:55+08:00 — **P4（W4 雜訊）結果**：核對全過；主表（模型 P、B1）上限 ≥15% 的格隨 λ 明顯減少，但原始工具類 3 個變體到 λ＝0.4 都還有格 ≥15%；模型 M 幾乎不變
 
 **問題**：PREREG 第 6 項／§3 B：上限 ≥15% 的格（偏離 8 的 2,582 個（格, 元件），以版本 B 為準、② 不含 APC），加上 oracle 雜訊之後還剩多少。照使用者 11/6 21:13 的決定只報格數，不下新的判定字。
