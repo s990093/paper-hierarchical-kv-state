@@ -2,6 +2,40 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T17:01+08:00 — **xref 過了 → 第一段開跑**（acvlab 140 個 block；TRX40 重現 xref 後開跑 180 個）
+
+- **icpe-sim**：xref_dev14 PASS（b7d2ee57，run `20261107-155727`，Python 和 Rust 1,184 列相同），三個旗標放行。
+- **merge**：origin/icpe-next-sim b7d2ee57 → icpe-next-data **6cced373**；引擎檔和 63b8e328 相同。
+- **acvlab 重現 xref**：run `20261107-165915-icpe-data-xref-dev14-repro`，用 merge 後的程式、Rust、16 workers。
+  - 6 個 sweep（sa_qb、sa_qt、mc_qb、mc_qt、sa_n、mc_n）都印 `DEV14 <tag> PASS`，`py_fallback_jobs=0`。
+  - 比對結果在 run 目錄的 `xref_check.csv`。
+- **acvlab 開跑**（17:00:38）：
+  - 指令：`next_b_queue.py run --engine rust --workers 35 --plans` 後面接下表的 plan。
+  - log：`runs/queue-rust-d14-stage1-acvlab-w35-20261107-170038.log`。
+  - 開跑前：load 36、記憶體可用 354 GiB。
+  - **順序**：每個家族先跑 main＋P1，第二段才能早點開始；後面接 P2／P3、sens_rep、P4。
+
+| 順序 | plan |
+|--:|:--|
+| 1 | Bailian：`d14_bl_main`、`d14_bl_p1` |
+| 2 | FreeInference：`d14_old_main:fi6w`、`d14_old_p1:fi6w_*` |
+| 3 | ShareGPT／WildChat：`d14_chat_main:sg_*,wc_*`、`d14_chat_p1:sg_*,wc_*` |
+| 4 | agent：`d14_agent_main`、`d14_agent_p1` |
+| 5 | TraceLab：`d14_tl_main`、`d14_tl_p1` |
+| 6 | P2／P3：`d14_bl_p2`、`d14_bl_p3`、`d14_old_p2:fi6w_*`、`d14_old_p3:fi6w_*`、`d14_tl_p2`、`d14_tl_p3` |
+| 7 | `d14_sens_rep:tl_*,bl_*,fi_*` |
+| 8 | P4：`d14_p4_b1:tracelab_*,bailian_*`、`d14_p4_b2:tracelab_*,bailian_*` |
+
+  - **第一個 block** `d14_bl_main/bailian3`（run `20261107-170038-…`）：`jobs=2592`，等於清單的 `jobs_rerun`。`code_sha=3180504e8d57+rs0bfacb59`、`src_sha256=0bfacb59`、`py_fallback_jobs=0`。
+- **TRX40**：已叫它 merge 6cced373、重現 xref 的 6 個 sweep，都 PASS 就照它 dry-run 的順序開跑 180 個 block（46 workers）。
+- **每個 block 收進 git 前要核對**：
+  - 非 P4：`jobs=` 等於 count、rust_timing 的行數等於 jobs、`py_fallback_jobs=0`、rc 0。
+  - P4：`kept_jobs` 等於 count、unmatched 0。
+- **每個家族的 main＋P1 收完**：
+  1. 跑 `next_d14_verb.sh`，得到第一段的檢查表。
+  2. 通知 icpe-main（它算正式表）。
+  3. 等 icpe-sim 對 v8_dev14 的交叉檢查過了，就開那個家族的第二段。
+
 ## 2026-11-07T16:43+08:00 — 第二段與 P4 版本 C 的工具寫好、測過（都還沒跑正式的）
 
 - **icpe-main 回覆**（16:3x）：
