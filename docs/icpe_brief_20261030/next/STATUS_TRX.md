@@ -3,6 +3,45 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T11:40+08:00 — **LMSYS-Chat-1M 版本 B、C 跑完**：下載（使用者登入 HF、同意條款）→ 轉換 → chat_main＋chat_p1 12 個 block → 版本 B 上限表（rowcheck 12/12 PASS）→ 版本 C 6 個變體，重現 324/324、0 差
+
+- **下載**：
+  - 第一次 run `20261107-113215-icpe-trx-dl-lmsys` 失敗，rc 1。使用者已登入（`hf auth whoami` → 使用者的 HF 帳號），但帳號還沒取得存取權：`Error: Access denied. Dataset 'lmsys/lmsys-chat-1m' requires approval.` 沒有下載到任何 parquet，我刪掉建出來的目錄（只有 README.md 和 .cache），留 `FAILED.txt`。
+  - 使用者在 HF 同意條款之後，run `20261107-113321-icpe-trx-dl-lmsys` 成功，rc 0。6 個 parquet 的 sha256 和位元組數都等於 HF 的 LFS 記錄（`LMSYS_SHA_OK`）。
+  - `$ROOT/datasets/lmsys-chat-1m/README.txt` 是 `sha256  data/…parquet` 格式，資料檔設成唯讀。授權禁止轉發，所以原始資料、nb、逐對話的數字都不進 git。
+- **轉換**：run `20261107-113408-icpe-trx-conv-chat-lmsys`，repo a65347cb，rc 0，30 s，最大 RSS 1.8 GB。6 個 nb 各 n_req 36,371、n_sess 9,000、chunks 41,085。
+  - stdout 照抄：
+    - `對話 1000000，合格 334319，抽 9000；{'lt2_user_turns': 665681, 'ok': 334319}`
+    - `規則 6：27371/27371 = 1.0000`
+    - `規則 6（整段切 vs 逐則切）：{'n': 300, 'median': 0.0, 'p90': 0.0, 'max': 0.004761904761904762, 'frac_exact': 0.99}`
+  - span_h：T60 是 4.2／3.2／4.6，T600 是 29.4／27.2／30.0。seed 1 的其他統計已傳給 icpe-data。
+- **版本 B 模擬**：`next_b_queue.py run --plans 'chat_main:lm_*' 'chat_p1:lm_*' --engine rust --workers 40`，佇列 log `$ROOT/runs/queue-chat-lm-rust-w40-20261107-113454.log`，11:34:54 → 11:36:46。
+  - 12 個 block 都 rc 0，`py_fallback_jobs=0`，`code_sha=3280b1c8799b+rs62b0932b`，沒有 `*KILLED`。npz 照程式存在 `req/`。
+  - 資源：MemAvailable 最低 57,312 MiB，swap 1,429 MiB。
+  - collect → `results/icpe_next/b/chat_main/lm_*`（各 7,344 列）、`chat_p1/lm_*_ttl`（各 6,480 列）。
+- **版本 B 上限表**：run `20261107-113711-icpe-trx-verB-lm_p1`，rc 0。
+  - `ROWCHECK lm_main: … 44064 rows, cells 54 cpu 17 gpu 8: PASS`、`ROWCHECK lm_p1_ttl: … 38880 rows, cells 54 cpu 15 gpu 8: PASS`。
+  - 1,944 列、violations 168 列，收在 `results/icpe_next/b/analysis/lm_p1/`。
+  - 照抄（max／median／n_ge15／n_ge5）：
+    - T60 三個 seed：全部 0。
+    - T600_s1：O-ALL(report) 0.044064／0.021591／0／0；O-DROP 0.046114；O-GPU 0.044064；O-ORD 0.018689；O-PF 0.027114。
+    - T600_s2：O-ALL(report) 0.034217／0.019395／0／0；O-PF 0.019334。
+    - T600_s3：O-ALL(report) 0.037636／0.020285／0／0；O-PF 0.022427。
+- **版本 C**：rux worktree 4a713386，`rux_verc_chat.sh`（步驟同 UltraChat），參考表＝上面的 `lm_p1_headroom_components.csv`。
+  - **使用者 11:37 要求盡量讓 CPU 跑滿**（CPU 上下抖）。
+    - 量的原因：一個 block 6,174 個 job 的 Rust 計算合計 89 s（每個 job 約 7 ms）。整個 block 8.8 s × 40 workers＝352 worker 秒，只用了約 25%；其餘是每個 job 的 Python 派送（約 30 ms）、開頭的載入和尾巴的空檔。
+    - 所以版本 C 改成 6 個變體同時跑，每個 8 workers，合計 48。`mpstat` 在跑的時候：%nice 86.7、%sys 9.9、%idle 3.1。
+  - 6 個 run 是 `20261107-113722`／`113724`／`113725`／`113726`／`113727`／`113728` `-icpe-trx-rux-verC-lmsys_{T60_s1,T600_s1,T60_s2,T600_s2,T60_s3,T600_s3}`，11:37:22 → 11:38:53。每個 14,184 個 job，rc 0，`py_fallback_jobs=0`，`code_sha=3280b1c8799b+rse7f6ee8f`。MemAvailable 最低 56,893 MiB。
+  - **重現檢查 6 個都是**（照抄）`版本 B 表上 324 格×元件，對上 324；各欄不同數 {… 全部 0}` → `EXPLORE_RESULT REPRODUCED cells=324`。
+  - 版本 C 表（analyze_v8 照抄，max／median）：
+    - T60：全部 0.0。
+    - T600_s1：O-ALL(report) 0.043990／0.021591，O-DROP 0.046114，O-GPU 0.043990，O-PF 0.026963。
+    - T600_s2：O-ALL(report) 0.034217／0.019395，O-PF 0.019180。
+    - T600_s3：O-ALL(report) 0.037636／0.020285，O-PF 0.022427。
+    - n_ge15 全部 0、n_ge5 全部 0；belp_wins 0。
+  - 收在 `results/icpe_next/apc/lmsys_*`，collect_v8 原樣。sha256 對過 MANIFEST；sweep 16,524 列；`code_sha` 只有一個。sweep CSV 沒有任何內容欄，只有模擬結果。
+- **TRX40 現在沒有交辦中的工作**。CPU 之後會閒置，要不要接別的由使用者決定。
+
 ## 2026-11-07T11:20+08:00 — **UltraChat 版本 B、C 跑完**：轉換（e56c2be0 修好一行兩物件）→ chat_main＋chat_p1 12 個 block → 版本 B 上限表（rowcheck 12/12 PASS）→ 版本 C 6 個變體，重現 324/324、0 差
 
 - **使用者決定（在這邊，AskUserQuestion）**：icpe-data 轉達了使用者在 h200 的決定（PREREG 偏離 13；STATUS_DATA 11:05）：對話資料集的版本 B、C 都由同一台機器跑。使用者在這邊確認 TRX40 接 UltraChat 和 LMSYS 的 B 和 C（選「接，B 和 C 都跑」）。
