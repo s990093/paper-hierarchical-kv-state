@@ -1,0 +1,87 @@
+{
+ "what": "P4 (W4 noise) summary tables - PREREG item 6, sec 3 B/C, deviations 6 and 8; user decisions in STATUS_MAIN 2026-11-06T21:14 and 2026-11-07 sections",
+ "stage1": {
+  "run_id": "20261107-082202-icpe-main-p4-noise",
+  "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-082202-icpe-main-p4-noise",
+  "tool": "code/icpe/next_sim_analyze.py (unchanged, blob aa8e3a9) after main_addnoisecols.py (noise_* defaults appended verbatim to main/_p1 sweeps) and main_rulesplit.py (Mooncake R1/R2 separately)",
+  "checks": "exact table == version B cell by cell (12/12 PASS, mean_ret and p90_ret); lambda=0 self-check 24/24 (see stage1_*)",
+  "inputs": "main + _p1 _ttl sweeps (version B inputs) + p4_b1/p4_b2 (icpe-next-data a25dcba) + sa_p4_b1/sa_p4_b2 (icpe-next-trx b6eb4cd)",
+  "not_in_git": "per-seed noise_headroom CSVs and per-family noise_summary CSVs stay in the run dir (out/)"
+ },
+ "stage2": {
+  "run_id": "20261107-094535-icpe-main-p4-summary",
+  "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-094535-icpe-main-p4-summary",
+  "tool": "code/icpe/main_p4.py",
+  "checks": "2582 (cell, component) x 16 noise specs all present with n_seeds 1/10; headroom_exact == version B; Mooncake min (report only) 322 (cell, component), lambda=0 equal to version B min"
+ },
+ "failed_runs_not_used": [
+  "20261107-063333-icpe-main-p4-noise (KeyError, noise_model NaN)",
+  "20261107-080102-icpe-main-p4-noise (lambda=0 self-check on Mooncake rule=min)"
+ ],
+ "files": {
+  "p4_by_class.csv": {
+   "bytes": 17655,
+   "sha256": "109bba89da55b7f1205f5c3aed907a702001a84ac9b1578e28fbfd45758b3f42"
+  },
+  "p4_by_trace.csv": {
+   "bytes": 662112,
+   "sha256": "d0db192ebc212a0341789f9bf4c6ec0bbbfdb1db5574c13686a97f09e2458589"
+  },
+  "p4_by_trace_wide.csv": {
+   "bytes": 297599,
+   "sha256": "3becab1a1635d005c4ff39cf57c6831905d67c5c7a114614c1b3877b5176d985"
+  },
+  "p4_cells.csv.xz": {
+   "bytes": 1528152,
+   "sha256": "f49278adddd590fe94ceda27557b1e191e1af631f7707f677088ca235488b12e"
+  },
+  "p4_extra.csv": {
+   "bytes": 75,
+   "sha256": "f800935df508496103adab54d5181975ccb0e4dfaedaacc18a20f085491009a6"
+  },
+  "p4_p90_by_class.csv": {
+   "bytes": 17465,
+   "sha256": "49042ec9bcb086455286cb41095924c6a26b5e7d69a39e946fb10219d7f83926"
+  },
+  "p4_p90_by_trace.csv": {
+   "bytes": 657375,
+   "sha256": "ef4b10bb34dd1774f73603d42ff48bf6f0b67da28d8b8b8537f232bb265d361d"
+  },
+  "p4_p90_by_trace_wide.csv": {
+   "bytes": 294894,
+   "sha256": "04b537f3d2f1d5f0cafc5d099fc8054d98b960a9932f69b9c516f3173946f216"
+  },
+  "p4_p90_cells.csv.xz": {
+   "bytes": 1422384,
+   "sha256": "a94e5ffa825b6d1e967bbf8f7826a9af04314a25ec586129b67664376efc1d5e"
+  },
+  "p4_p90_extra.csv": {
+   "bytes": 75,
+   "sha256": "f800935df508496103adab54d5181975ccb0e4dfaedaacc18a20f085491009a6"
+  },
+  "p4_p90_pooled.csv": {
+   "bytes": 69023,
+   "sha256": "98219c3c64a6a420433d43e20dc1c6b3716203042bf100e863564cc007a951a8"
+  },
+  "p4_p90_pooled_cells.csv.xz": {
+   "bytes": 231456,
+   "sha256": "2d99a541c1c28a5a9cb603444d6ca4708179717d94d2f3de9abc6620417c60ee"
+  },
+  "p4_pooled.csv": {
+   "bytes": 69940,
+   "sha256": "56897988c90bebf2d5ca644fd019e39cdd497f9afdafd6115e4fef59fd200a34"
+  },
+  "p4_pooled_cells.csv.xz": {
+   "bytes": 238120,
+   "sha256": "fe6fe98a67ae4c2f586686c4b71ac12f76e3cdc6d51f49f73438fb77762d8820"
+  },
+  "stage1_cellcheck.csv": {
+   "bytes": 3835,
+   "sha256": "5ca67c1b0c54c3a8354436fc6554bad202a5dc93623ccd5dc4a1310639355b0d"
+  },
+  "stage1_lambda0_selfcheck.txt": {
+   "bytes": 1776,
+   "sha256": "a08b69ab2077d1d7eaec68591396c23fc2f992dfba29555f4541d6d85491fdf2"
+  }
+ }
+}
