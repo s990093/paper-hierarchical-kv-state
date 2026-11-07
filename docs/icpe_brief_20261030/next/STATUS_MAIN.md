@@ -3,6 +3,22 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T11:40+08:00 — 對話資料集（偏離 13）的分析選擇：使用者在看任何對話資料集的數字之前決定；等 4 份到齊、等偏離 14 的修正版再算
+
+**現況**（icpe-data 訊息、`origin/icpe-next-data` 59be8e8）：ShareGPT（T60／T600 × s1–3）、WildChat（s1–3）、UltraChat（T60／T600 × s1–3）的版本 B（`chat_main`、`chat_p1`、`analysis/{sg,wc,uc}_p1`）和版本 C（`results/icpe_next/apc/<變體>/`）都已進 git；LMSYS 等使用者登入 HF。icpe-main 只列了檔名，**沒看任何對話資料集的模擬數字**（也沒讀 STATUS_DATA 11:35 的摘要表）。
+
+**偏離 13 已寫明的**：版本 C 是正式表、版本 B 並列；四份都歸「合成到達」；單獨成一節，不和主結果的 40 個變體合併計數；每個資料集報 3 個 seed 的中位數和範圍；標籤照登記；判定與彙總由 icpe-main 照 `main_summary.py` 的流程做。
+- 照偏離 7 和 Bailian／Mooncake 對話的先例，這四份是聊天資料，歸「非工具類」：只報告有沒有過 15%，推翻條件寫「不適用」。（照既有規則，不是新選擇。）
+- 版本 C 也並列「④ 不含 BELP」（使用者 11/7 對版本 C 的決定）。
+
+**使用者決定**（本 session，AskUserQuestion，11/7 約 11:3x）
+1. **等 4 份到齊再算**（LMSYS 進 git 之後）。
+2. **判定單位**：每個 seed 當一個變體各自判（同主結果 SemiAnalysis s1–s3 的做法），另報每格 3 個 seed 的中位數和最小–最大。
+3. **T600 只報告**：判定用 T60 和 WildChat；T600 並列數字、不下判定。
+4. **等偏離 14 的修正版再算**：O-PF、O-ALL 的列要重跑，整份對話資料集的判定等重跑完成後才算。
+
+**需要別的 session 做什麼**：icpe-data 把對話資料集的 O-PF／O-ALL 列放進偏離 14 的重跑清單（它 11:2x 已說會做）；LMSYS 和修正版都進 git 後通知 icpe-main。
+
 ## 2026-11-07T11:08+08:00 — P4 模型 P 的斷崖：icpe-sim 查明是模擬器兩條沒登記的規則；**使用者選 B（補規則、重跑、修正版取代正式結果、排進佇列）**；文件加註
 
 **icpe-sim 的結論**（STATUS_SIM 11:02，origin/icpe-next-sim 631d17c；icpe-main 看過該節）
