@@ -243,3 +243,14 @@
 
 - `icpe-main` 要一個編號，用來登記「CacheWise 從論文拿掉、內部分析保留；論文的表、圖、摘要只用 6 份紀錄、28 個變體」（使用者 11/7 約 11:4x 在 `icpe-main` 決定；理由是授權，使用者在 `icpe-data` 說「CacheWise 下先停 放不了paper」；`icpe-main` 會寫明是看過結果之後的決定、以及拿掉前後的判定字：合成工具類 21/26 → 14/14，原始工具類和推翻條件不變；push 前先給使用者看）。origin 上 icpe-next-a e93074f、ana 43e7ffc、b 19f3e85、data 8637e7b、main-branch dfeaeb7、rux f054a1a、sim fe34522、trx 291e7d6、main ff71545：最大是偏離 14，沒有 15；`h200` 沒有待登記的偏離 → **偏離 15 給 `icpe-main`，`h200` 下一個從 16 開始**（登記前仍先查各分支）。
 - `icpe-data` 轉達使用者 11/7 約 11:55（acvlab 的鐘）的話「W6：H200 上的 GPU 實測 改叫 h200 session 做」。W6 本來就歸 `h200`（偏離 1「GPU 的工作都歸 h200」），而且 24443（W6c）→ 24444（W6a）已排，等 DL_Lab5 的 24507（11:46 時剩 17 小時 52 分）。`icpe-data` 列的待定項目已在偏離 1、3、4 定了：W6c 敏感度跑偏離 4 第 4 點的代表格（偏離 4 第 6 點）；x1_gpu.py 由 `h200` 改（偏離 1）；W6b 缺的是 O-ORD 的其他固定對手，跑哪些、幾次在程式改好後另外登記（偏離 3 第 3 點）。
+
+## 2026-11-07 11:56（台灣）— W6b 的程式準備好（還沒登記、還沒送出）
+
+- 使用者 11:4x（AskUserQuestion）選「現在準備，不動排隊中的程式」。
+- **不改** `code/icpe/x1_gpu.py`、`code/p3x/x1_sim.py`、`code/icpe/next_a_w6.sh`（24443／24444 開跑時會讀）。新寫兩支：
+  - `code/icpe/next_a_w6b.py`：import x1_gpu，照原樣呼叫它的 replay／cmd_sim／cmd_gpu，做法＝O-ORD 的 ②（LRU、LRU2、ARC、S3FIFO、GDSF、PENS，＝x1_sim `RIVALS["O-ORD"]`）和 ④（O-BEL、O-BELS，＝`COMPONENT_POLICIES["O-ORD"]`）；子命令 selftest／sim／gpu／analyze。
+  - `code/icpe/next_a_w6b.sh`：GPU runner（結構同 next_a_w6.sh；`--reps` 必填；8 個做法各冒煙 100 個請求；每輪 16 個設定用 seed 20261108＋輪次打亂；自己人同節點就等、污染重跑最多 3 次）。檔名不在 `next_a_*.py` 樣式內（同偏離 3 第 5 點的 next_a_w6.sh），只有 `h200` 用。
+- **x1_gpu.py 原本跑不了 GDSF**：`make_engine` 不傳 `gdsf_view`，GDSF 的 Engine 在建構時失敗。第一次自測 run `20261107-115225-icpe-next-w6b-selftest` 在 GDSF 停下（`AttributeError: 'NoneType' object has no attribute 'slow_name'`，x1_sim.py:413），run 目錄標 `FAILED_NOT_USED`。修法：next_a_w6b.py 換掉 `X1G.make_engine`，GDSF 照 x1_sim 自己 sweep 的寫法傳 `views[0]`（GDSF 只用這個 view 的 slow_name、d、f；GpuView 是 View 的子類別、同一組 VIEW 參數）。
+- **自測**（head node，CPU）：run `20261107-115434-icpe-next-w6b-selftest` → `results/icpe_next/a/w6b/selftest.csv`：8 個做法 × CPU 128／256，重播迴圈（模型時間）≡ Engine.run 逐請求逐位元（TTFT、慢層讀寫位元組、預取位元組）**16／16 PASS**，各 1,535 個請求。只記 PASS／FAIL，沒有記、沒有印任何 TTFT（登記前不看模擬數字）。程式 sha256 前 16 碼：x1_gpu.py ca74a722a923246d、x1_sim.py 047b06485b0bdb3d、x1_trace.py 8f659c970f386486。
+- runner `--dry-run`／`--list` 在 head node 跑過（reps＝3 時 8 個冒煙＋48 個 run）；analyze 只用假資料在 scratchpad 測過（PASS／INCOMPLETE 兩條路徑）。
+- **還要使用者決定、再登記成偏離 16**：每個設定跑幾次（rep 數）、多個 rep 怎麼彙總進判準。S_orig 在登記之後才算。
