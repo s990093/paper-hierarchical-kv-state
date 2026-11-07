@@ -1104,3 +1104,31 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - SemiAnalysis 只有 0.38%，影響卻大（λ＝0 最多 −15%）。每次觸發丟掉的副本可能很大（長 session）。〔推論〕
 - 沒量（NOT_MEASURED）：UltraChat、LMSYS（acvlab 沒有 nb；icpe-data 已逐列確認 uc_T60_s1、lm_T600_s2 沒變）；TraceLab（紀錄太大，這次沒跑）。
 - **結論**：這個模式合理，不是程式錯。規則 (i) 只在跨 session 共用最後一塊、而且有預取副本時作用。
+
+---
+
+## 2026-11-07T17:40+08:00 — **icpe-rux 的 v8_dev14（`36780534`）交叉檢查 PASS**：不開 APC／BELP 時和 x1fast `63b8e32` 逐位元相同（15 個網格、41,282 列、0 不同）
+
+- run `20261107-163544-icpe-sim-v8dev14-xcheck`（acvlab；Rust 4 個 worker，nice 10；exit 0）。
+- **怎麼做**：
+  - 從 `origin/icpe-next-rux` `36780534` 取 `code/icpe/rux_x1fast/v8_dev14/`（`git archive`）。`src/main.rs` sha256 `d2048fa38a42…`，和 icpe-rux 說的相同；Cargo.toml／Cargo.lock 和 x1fast 相同。
+  - 在 acvlab 用 icpe-ana 的工具鏈編（`cargo build --profile fast --offline --locked`）。執行檔的 sha256 是 `a4014e0ba27f…`；x1_rust 的 `file_sha`（自己的組合雜湊）是 `d50fa4f063a2…`，sweep 的 log 印的是這個。
+  - 用 x1_sim `63b8e32` 的 sweep，**只把執行檔換掉**（`X1_RUST_BIN`），不開 APC／BELP。
+    - log 的 `src_sha256` 仍印 x1fast 的 `0bfacb59…`，因為 x1_rust 算的是 code/p3x/x1fast 的原始碼；實際執行的是上面那個 bin。
+  - 每個網格都和 x1fast 的輸出逐列比（`next_sim_dev14_check.py` mode all）。x1fast 的輸出來自驗證 run `20261107-140640` 與 xref run `20261107-155727` 的 rs_*。
+
+| 網格 | 內容 | 列 | 不同 |
+|:--|:--|--:|--:|
+| t1q／t1n | Bailian thinking，三個旗標，wb／wt × 預取到 CPU／GPU，沒有雜訊／有雜訊 | 384／1,824 | 0／0 |
+| t3 | SemiAnalysis N32 s2，`--pf-expire`，P／M × λ 0／0.1／0.3 × B1／B2 × 2 seed | 36 | 0 |
+| t2_off／t2_on／t2p_on | Bailian coder 17 規則網格：旗標關／`--pf-expire --noise-overdue resample --pf-gpu-recheck`／只 `--pf-gpu-recheck` | 4,074 × 3 | 0 |
+| t2n_off／t2n_on | 同上＋雜訊 P／M × λ 0／0.3 × B1／B2 | 12,600 × 2 | 0 |
+| t4 | Bailian coder bl_p3 pfgpu O-ALL 網格，`--pf-gpu-recheck` | 432 | 0 |
+| xref 6 份 | SemiAnalysis N16 s1、Mooncake conversation R1（同 `xref_dev14/`） | 1,184 | 0 |
+
+  - 合計 41,282 列，不同的列 0。每個 sweep 都是 `py_fallback_jobs=0`。逐檔：`results/icpe_next/sim/v8dev14_xcheck.csv`。
+- 和 icpe-rux 自己的驗證互補：
+  - 他們有 SemiAnalysis N16 s1 的 D1（旗標關＝v8）、D2（＝x1fast，1,908 組）、D3（APC＝LRU、BELP＝BEL，加雜訊與旗標，204 組），以及 wt 只預取到 CPU（2,414 項）。
+  - 這裡補上 Bailian、Mooncake、SemiAnalysis N32 s2 的網格。
+  - Bailian 版的 D3 由 icpe-rux 在 RUX3DPRO 跑（約 17:00 之後）。
+- **結論**：v8_dev14 的偏離 14／SIM_CHANGES 23 部分和 x1fast 相同。APC／BELP 加這些規則的部分沒有 Python 參考，只有 icpe-rux 的退化檢查（D3）。第 2 段（版本 C）的引擎可以用 v8_dev14 `36780534`，前提是 icpe-rux 的 Bailian D3 也通過。
