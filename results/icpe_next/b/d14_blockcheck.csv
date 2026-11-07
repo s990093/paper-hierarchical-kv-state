@@ -2,3 +2,6 @@ run_id,ts,host,plan,block,block_run_id,jobs,want,rust_timing,code_sha,result,why
 20261107-170214-icpe-data-d14-blockcheck-bl,2026-11-07T17:02:14+08:00,acvlab,d14_bl_main,bailian3,20261107-170038-icpe-data-d14_bl_main-bailian3,2592,2592,2592,3180504e8d57+rs0bfacb59,PASS,
 20261107-170214-icpe-data-d14-blockcheck-bl,2026-11-07T17:02:14+08:00,acvlab,d14_bl_p1,bailian3_trunc,20261107-170059-icpe-data-d14_bl_p1-bailian3_trunc,5184,5184,5184,3180504e8d57+rs0bfacb59,PASS,
 20261107-170214-icpe-data-d14-blockcheck-bl,2026-11-07T17:02:14+08:00,acvlab,d14_bl_p1,bailian3_ttl,20261107-170053-icpe-data-d14_bl_p1-bailian3_ttl,1296,1296,1296,3180504e8d57+rs0bfacb59,PASS,
+20261107-171619-icpe-data-d14-blockcheck-fi,2026-11-07T17:16:19+08:00,acvlab,d14_old_main,fi6w,20261107-170200-icpe-data-d14_old_main-fi6w,5184,5184,5184,3180504e8d57+rs0bfacb59,PASS,
+20261107-171619-icpe-data-d14-blockcheck-fi,2026-11-07T17:16:19+08:00,acvlab,d14_old_p1,fi6w_trunc,20261107-171113-icpe-data-d14_old_p1-fi6w_trunc,10368,10368,10368,3180504e8d57+rs0bfacb59,PASS,
+20261107-171619-icpe-data-d14-blockcheck-fi,2026-11-07T17:16:19+08:00,acvlab,d14_old_p1,fi6w_ttl,20261107-170639-icpe-data-d14_old_p1-fi6w_ttl,2592,2592,2592,3180504e8d57+rs0bfacb59,PASS,
