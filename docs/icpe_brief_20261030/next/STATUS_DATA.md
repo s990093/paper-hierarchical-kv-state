@@ -2,6 +2,37 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T16:43+08:00 — 第二段與 P4 版本 C 的工具寫好、測過（都還沒跑正式的）
+
+- **icpe-main 回覆**（16:3x）：
+  - 第一段的版本 B 檢查表由我用 `next_d14_patch.py` 自己算，用在第二段的關卡，不用等它。
+  - 論文用的正式表由 icpe-main 自己寫補丁、獨立算，再和我的 `*_p1` 逐值比；有不同它會停下來告訴我。
+  - 補丁規則已告訴它：鍵欄、`rerun_policies`、各項斷言。
+- **icpe-sim 補一條規則**（16:35，SIM_CHANGES 23 更正 e0f76bfa）：預取到 GPU 的 block 一律要 `--pf-gpu-recheck`。
+  - `d14_blocks` 已加斷言；清單的 flags 欄本來就都有。
+  - 正式 block 沒有「雜訊＋預取到 GPU」的組合。
+- **工具**（a9655862、ee761935）：
+  - `next_d14_patch.py`（41910437）：一個 block 換上 d14 列。
+  - `next_d14_verb.sh <家族> <b 根目錄> <原本的版本 B 表>`：補丁 → main_rowcheck（cde7fb3f）→ next_sim_analyze → 和原本的版本 B 表比 O-PF、O-ALL(report) 以外的元件，結果是 `D14_TABLE_RESULT IDENTICAL`。
+  - `next_d14_verc.sh`：v8_dev14 整份版本 C，加 `RUX_PFX=1 RUX_PGR=1`。
+    - 核對 main.rs d2048fa3、src 4eca5bda、`py_fallback_jobs=0`。
+    - opf 以外的列和舊 `apc/` sweep 比，結果是 `D14_SWEEP_RESULT IDENTICAL`。
+    - explore_apc 對第一段的檢查表要 REPRODUCED。
+    - 之後 analyze_v8，再 collect 到 `apc_d14/`。collect_v8 只認得固定的 exp 名，所以 exp 名用 `apc`，輸出目錄是 `apc_d14`。
+  - `next_d14_cmp.py table|sweep`：上面兩個核對。
+  - 兩台都用這兩支 shell：TRX40 的 SemiAnalysis 和 uc／lm 的原始 block 在 icpe-next-trx 分支，由 TRX40 自己算。
+- **測試**（scratchpad，不是正式結果）：
+  - `next_d14_verb.sh ms`：假的 d14＝原本的值加上旗標欄，24 個 block。rowcheck PASS，表 6 個元件全部和 `b/analysis/ms_p1` 相同。這證明旗標欄不影響 next_sim_analyze。
+  - `next_d14_cmp.py sweep`：同一檔＝IDENTICAL；改一個 LRU 列＝DIFFERENT；改 O-PF 列並加旗標欄＝IDENTICAL（O-PF 本來就略過）。
+  - `next_d14_patch.py`：少一列 d14 會停；action 不是 rerun 的 block（CacheWise）也會停。
+- **P4 版本 C 的 5 對＝plan `d14_p4verc`**：
+  - 16 個 block（4 個紀錄 × P／M × B1／B2），12,496 個 job（清單格子 × 雜訊設定數）。
+  - 引擎是 v8_dev14：`sweep_v8_dev14.py`，worktree `/ssd6/hungwei/icpe-next/rux-d14-3678053`＝icpe-next-rux 36780534，三個旗標都用環境變數開，只准 Rust。
+  - context.txt 記引擎 worktree 的 HEAD 與 job 清單的來源（58252b4f）。
+  - 引擎的輸入檔（calib、tier_params、m7）和 data repo 的相同。
+  - acvlab 有 semianalysis_N32_s3、N64_s3、tracelab_c2，Mooncake toolagent 也在。
+  - **開跑條件**：icpe-sim 對 v8_dev14 的交叉檢查通過。之後在 acvlab 跑，跑完收到 `results/icpe_next/b/d14_p4verc/`。
+
 ## 2026-11-07T16:34+08:00 — 第二段：**使用者決定整個變體重跑**（不補丁）；重現檢查照我的提案再加一項；P4 版本 C 5 對的組合定了
 
 - **使用者的決定**（在 icpe-main 用 AskUserQuestion，icpe-main 讀到的 `date -Is` 是 16:33:26）：
