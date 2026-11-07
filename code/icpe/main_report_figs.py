@@ -128,15 +128,15 @@ def fig3(verb, out):
     C = pd.read_csv(src)
     C = C[C.component.isin(JUDGED) & (C.rule != "min")].copy()
     C["cls"] = cls_of(C)
-    T = C.groupby(["cls", "cpu_GiB"]).agg(n=("n_cells", "sum"), ge=("n_ge15", "sum")).reset_index()
+    T = C.groupby(["cls", "cpu_GiB"]).agg(n=("n_cells", "sum"), k15=("n_ge15", "sum")).reset_index()
     cpus = sorted(T.cpu_GiB.unique())
     fig, ax = plt.subplots(figsize=(7.2, 3.4))
     x = np.arange(len(cpus))
     for _, _, name, col in CLS:
         g = T[T.cls == name].set_index("cpu_GiB").loc[cpus]
-        share = g.ge / g.n * 100
+        share = g.k15 / g.n * 100
         ax.plot(x, share, color=col, linewidth=2, marker="o", markersize=5, markeredgecolor=SURF, label=name, zorder=3)
-        for xx, c, s, n, ge in zip(x, cpus, share, g.n, g.ge):
+        for xx, c, s in zip(x, cpus, share):
             rec("fig3", name, f"{c:g} GiB", float(c), round(float(s), 3), src)
     ax.set_xticks(x, [("111\n(=GPU)" if abs(c - 111.0625) < 1e-6 else f"{c:g}") for c in cpus])
     ax.set_xlabel("CPU 記憶體容量（GiB）")
