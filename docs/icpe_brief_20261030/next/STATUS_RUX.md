@@ -5,6 +5,25 @@
 
 ---
 
+## 2026-11-07T08:40+08:00 — PREREG 偏離 9（W3 線索 (a) 的規則）寫好、本機 commit，**等使用者同意才 push**
+
+- **使用者的決定**：
+  - icpe-main 轉達（約 08:45）：W3 要在 TRX40 跑之前登記，由 icpe-rux 寫。
+  - 使用者在這裡確認（AskUserQuestion，約 08:50）：比例「相對 ②（PR:21）」、門檻「f > 0.5」、彙總「逐格，任一格成立就算」、「由 icpe-rux 直接 append」。
+- **號碼**：h200 給 9。origin 上各分支都只到偏離 8。
+- **內容**：只登記 W3，追加在 PREREG 檔尾，不改任何舊行。
+  - 線索定義、cue 的產生與對齊檢查；
+  - 紀錄（TraceLab c1／c2／c4、FreeInference 6 週）與格；
+  - ③、f_c 的算法；判定規則；方向；看過的結果。
+- **程式**：`analyze_w3.py` 照登記輸出 `w3_verdict.csv`。
+  - ③ 要 20 個組合齊全；
+  - 只判 5 個元件；
+  - 逐格判定；
+  - 另報寫入飽和的格數。
+- **TRX40**：W3 的 sweep 與分析等登記 commit 進 git 才開始。cue 已對齊。
+
+---
+
 ## 2026-11-07T08:35+08:00 — 排隊：Q3-a 由我決定、一階近似完成並在 SemiAnalysis 上跑；TraceLab、FreeInference 交給 icpe-next-trx；結果改放 `results/icpe_next/v8_explore/`
 
 **使用者的指示（原話）**
