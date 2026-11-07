@@ -8,6 +8,7 @@
 - **icpe-data**（STATUS_DATA 15:42，8e54d587）：第一批＝x1fast 63b8e32 的所有版本 B 引擎列（主表、P1–P3、sens_rep pfgpu、P4 模型 P 全部、對話／agent 的 main＋P1 O-PF／O-ALL）；第二批＝所有版本 C 列（主表、對話、agent）＋版本 C 的 5 個 P4。TRX40 兩批都跑 SemiAnalysis 與 UltraChat／LMSYS，acvlab 跑其餘。對話資料集的判定要等第二批（版本 C 是正式表）；agent 的正式表也是版本 C，一樣等第二批。
 - **icpe-rux**（訊息）：移植放在新的 `code/icpe/rux_x1fast/v8_dev14/`（patch 產生，v8 48e4efce 不動）；驗證＝關 APC／BELP 開旗標對 x1fast 63b8e32 逐位元、開 APC／BELP 加雜訊做退化檢查、旗標全關對 48e4efce 逐位元。二階排隊：v9 引擎與驗證腳本完成、偏離 19 登記稿寫好；使用者另定到達規則（不早於同 session 上一個完成），一階也用新規則重跑 → 14:30 那份排隊數字之後會被取代。
 - **還沒定**：icpe-rux 問版本 C 修正列是不是由 RUX 跑它原本的 17 個變體、TRX 跑 9 個；和 icpe-data 的分工（沒有 RUX3DPRO）不同，也和 RUX 的二階排隊正式 run 搶機器。已請兩邊直接談；要排優先就問使用者。
+  - **已定**（icpe-data，STATUS_DATA 15:44，d40971ed）：第二批不用 RUX3DPRO（照使用者「先移植、再二階排隊」的順序，不插隊）；icpe-rux 確認照 15:42 的分工。第二批：TRX40＝SemiAnalysis、UltraChat／LMSYS；acvlab＝其餘（Mooncake、Bailian、TraceLab、FreeInference、sg／wc、ms／oh），acvlab 明顯較重時 TraceLab、FreeInference 移到 TRX40。使用者要改再告訴 icpe-data。
 - **寫本節時已經看過的正式結果**：沒有新的。
 
 ## 2026-11-07T15:42+08:00 — 引擎：沒有一支能同時跑雜訊＋偏離 14＋APC/BELP；使用者：icpe-rux 先移植 v8、再做二階排隊
