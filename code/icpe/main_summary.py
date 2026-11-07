@@ -1,7 +1,7 @@
 """main_summary.py — icpe-main：把各類紀錄的 next_sim_analyze.py 上限表合併成正式彙總表與判定（PREREG §1、§4）。
 
   python -I code/icpe/main_summary.py --version <標籤> --headroom <family>=<headroom_components.csv> ... \
-      --sweep <x1_sweep.csv.xz> ... --out-dir <dir> --out-prefix <prefix> [--expect-cells 54]
+      --sweep <x1_sweep.csv.xz> ... --out-dir <dir> --out-prefix <prefix> [--expect-cells 54] [--verdict-exclude O-PF]
 
 只做彙總與套用登記的門檻，不重算任何上限（上限＝next_sim_analyze.py 的 headroom 欄）。
 
@@ -67,9 +67,14 @@ def main():
     ap.add_argument("--out-prefix", required=True)
     ap.add_argument("--expect-cells", type=int, default=54)
     ap.add_argument("--report-only", action="store_true", help="只出 by_trace／by_cpu、不下判定（例：p90，PREREG §1 只報告）")
+    ap.add_argument("--verdict-exclude", nargs="*", default=[], metavar="COMPONENT",
+                    help="判定時不用這些元件（by_trace 照列）；例：O-PF 待偏離 14 的修正版取代時，看判定靠不靠它（使用者 2026-11-07）")
     a = ap.parse_args()
     meta = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
                 host=socket.gethostname(), version=a.version)
+    if a.verdict_exclude:
+        assert set(a.verdict_exclude) <= set(JUDGED), f"--verdict-exclude 只能是 {JUDGED}"
+        meta["verdict_exclude"] = ";".join(a.verdict_exclude)      # 沒給就不加這欄（和之前的輸出逐欄相同）
 
     parts = []
     for spec in a.headroom:
@@ -112,7 +117,8 @@ def main():
     for k, g in H.groupby(key, sort=True):
         i = g.headroom.idxmax()
         ge15 = g.headroom >= THR
-        rows.append(dict(zip(key, k), judged=k[-1] in JUDGED, verdict_use=(k[-1] in JUDGED and k[2] != "min"),
+        rows.append(dict(zip(key, k), judged=k[-1] in JUDGED,
+                         verdict_use=(k[-1] in JUDGED and k[2] != "min" and k[-1] not in a.verdict_exclude),
                          n_cells=len(g), max=g.headroom.max(), median=g.headroom.median(), min=g.headroom.min(),
                          n_ge15=int(ge15.sum()), n_ge5=int((g.headroom >= THR5).sum()),
                          n_ge15_write_saturated=int((ge15 & g.write_saturated.astype(bool)).sum()),
