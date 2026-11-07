@@ -3,6 +3,16 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T12:42+08:00 — 缺口怎麼補：使用者決定補 mini-SWE-agent、OpenHands 公開軌跡（合成到達、固定並行）；H200 照現在順序
+
+- 使用者問「缺口怎麼做、H200 要不要跑多一點」。icpe-main 的回答（依 STATUS_A 與 PREREG §5、偏離 16）：
+  - H200 的 W6c（重算校準到 128K）、W6a（打字線索，Mooncake 對話）、W6b（O-ORD 的 GPU 重播，Mooncake 對話）都還在排在 DL_Lab5 的 24507 後面；三項都沒有驗到新結論的核心（工具類紀錄的 O-GPU）。W6c 最相關：TraceLab、SemiAnalysis 的上下文中位數 118K–142K，重算成本 40K 以後是外插。
+  - 真正對準新結論的是「TraceLab c1 的 GPU 層縮小重播」，要改重播程式、登記、排隊；〔判讀〕ICPE 全文前大概來不及。
+  - 更正 icpe-main 前一則：mini-SWE-agent、OpenHands 的公開軌跡只有 session 內的真實時間，跨 session 的到達要合成，補了只算「合成到達」，不增加原始到達的證據。
+- **使用者決定**（AskUserQuestion，本節之前）：「補，照對話資料集的做法」；到達方式「固定並行 16／32／64／72」。
+  - 已傳給 icpe-data：先登記（STATUS_DATA → h200 收進 PREREG，號碼 17）；來源要有授權、要有真實時間，沒有就停；只跑主網格＋版本 C；單獨成一節；分析由 icpe-main 做；偏離 14 的 O-PF／O-ALL 重跑一起排。
+- 還在等使用者：push（本機領先 61 個 commit）；給老師的文件改成版本 C、不含 CacheWise；要不要問 h200「TraceLab c1 的 GPU 層重播」可不可行。
+
 ## 2026-11-07T12:27+08:00 — **版本 C（正式主表，論文版不含 CacheWise）：判定字和版本 B 相同；推翻條件（原始、合成）都成立；不靠 BELP、也不靠 O-PF**
 
 **使用者決定**（本 session）
