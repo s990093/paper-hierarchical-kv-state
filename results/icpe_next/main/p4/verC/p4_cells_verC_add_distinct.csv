@@ -1,0 +1,6 @@
+run_id,ts,host,trace_class,arrival,tool_type,trace,rule,cpu_GiB,slow,gpu,restore,gpu_GiB,gpu_write,slow_cap_frac,component
+20261107-153810-icpe-main-p4cells-verC,2026-11-07T15:38:12+08:00,acvlab,Mooncake,raw,True,toolagent,R2,512.0,ssd,idle,cake,111.0625,wb,0.0,O-GPU
+20261107-153810-icpe-main-p4cells-verC,2026-11-07T15:38:12+08:00,acvlab,SemiAnalysis,synthetic,True,nb:semianalysis_N32_s3,nb,32.0,b32,idle,cake,111.0625,wb,0.0,O-PF
+20261107-153810-icpe-main-p4cells-verC,2026-11-07T15:38:12+08:00,acvlab,SemiAnalysis,synthetic,True,nb:semianalysis_N64_s3,nb,32.0,ssd,idle,cake,111.0625,wb,0.0,O-PF
+20261107-153810-icpe-main-p4cells-verC,2026-11-07T15:38:12+08:00,acvlab,TraceLab,synthetic,True,nb:tracelab_c2,nb,16.0,b32,idle,cake,111.0625,wb,0.0,O-PF
+20261107-153810-icpe-main-p4cells-verC,2026-11-07T15:38:12+08:00,acvlab,TraceLab,synthetic,True,nb:tracelab_c2,nb,16.0,ssd,idle,cake,111.0625,wb,0.0,O-GPU
