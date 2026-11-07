@@ -2,6 +2,20 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T15:44+08:00 — 第二段的分工確定：**RUX3DPRO 不排進第二段**
+
+- icpe-rux 問過 icpe-main 版本 C 修正列由誰跑。它的提案是 RUX 跑 SemiAnalysis 12、Mooncake 2、Bailian 3，TRX 跑 TraceLab 3、FreeInference 6，也就是原本誰跑版本 C 就由誰重跑。
+- icpe-rux 後來直接跟我確認：照 15:42 的分工走，RUX3DPRO 不排進第二段。
+- **RUX3DPRO 接下來**（使用者排的順序）：
+  1. 把偏離 14 移植進 v8，放在 `code/icpe/rux_x1fast/v8_dev14/`，v8 48e4efce 不動。
+  2. 二階排隊（偏離 19）。
+- 讓 RUX3DPRO 分擔第二段，就會跟二階排隊搶機器。使用者排的順序是先移植、再做排隊，所以**我不排 RUX3DPRO**，也不需要使用者另外做優先順序的決定。使用者若要 RUX 先重跑自己的版本 C 列，再另外說。
+- **第二段**：
+  - 引擎＝`v8_dev14`，等 icpe-sim 交叉檢查通過，icpe-rux 把 commit 給 icpe-main。
+  - 分工：TRX40 跑 SemiAnalysis、UltraChat、LMSYS 的版本 C；acvlab 跑其餘（Mooncake、Bailian、TraceLab、FreeInference、sg、wc、ms、oh）。
+  - 每台開跑前，先用 `v8_dev14` 重現 icpe-sim 交叉檢查的參考。
+- **可能的調整**（等實際量出來再定）：TraceLab 與 FreeInference 的版本 C 原本是 TRX40 跑的，資料也在那邊。如果第二段 acvlab 那份明顯比較重，就把這兩個移去 TRX40，才符合「TRX40 做重的部分」。
+
 ## 2026-11-07T15:42+08:00 — 偏離 14 的重跑**分兩段**（引擎的限制，使用者已決定順序）；TRX40 的存量；旗標開的關用 icpe-sim 的參考
 
 - **引擎**（icpe-main 轉達 icpe-sim 的回答，15:4x）：
