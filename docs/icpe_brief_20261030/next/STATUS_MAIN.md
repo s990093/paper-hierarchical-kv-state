@@ -3,6 +3,15 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T15:42+08:00 — 引擎：沒有一支能同時跑雜訊＋偏離 14＋APC/BELP；使用者：icpe-rux 先移植 v8、再做二階排隊
+
+- **icpe-sim 的回答**（訊息，15:4x）：x1fast `63b8e32` 有雜訊與偏離 14 的規則、沒有 APC/BELP；v8 `48e4efce` 有 APC/BELP、能讀雜訊參數，但沒有偏離 14 的規則（pfx、nzo、pgr、S_DROP 跳過）。「誰改 v8」使用者先前已選 icpe-rux。
+  - 〔判讀〕所以版本 C 的 O-PF／O-ALL 修正版（主表、對話資料集、agent）和版本 C 選格的 5 個 P4 都卡在 v8 移植；版本 B 那一半（x1fast）驗證過就能跑。
+- **使用者決定**（本 session，AskUserQuestion，15:4x；`date -Is` 15:41:49）：「先移植 v8，再做二階排隊」。二階排隊的登記可以同時寫，正式跑排在移植之後。
+- 已傳給 rux-proj、icpe-sim、icpe-data、icpe-next-trx（兩個 Remote Control 送達未確認）。
+- **使用者在 TRX40 直接確認**（icpe-next-trx 訊息，STATUS_TRX 15:45，5acbc46e）：偏離 14 重跑「接，照這個流程」；版本 C 的 5 個 P4「接，等引擎定了再開」。icpe-data：清單出來後分給 acvlab 與 TRX40（TRX40 拿重的），開跑前先報告使用者。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T15:39+08:00 — 使用者：TRX40 接任務、重的優先；版本 C 的 P4 選格（偏離 10 第 5 點）
 
 - **使用者決定**（本 session，15:3x）：「把 TRX40 把任务交给他，或者是把重一點任务给他」。
