@@ -78,13 +78,13 @@ def fig1(verb, out):
         ax.text(0.5, y + 0.1, name, color=INK, fontsize=9, ha="left", va="center", weight="bold")
         y = ys[-1] + 1.8
     ax.axvline(15, color=REF, linestyle="--", linewidth=1)
-    ax.text(15.6, y - 0.6, "15% 門檻", color=INK2, fontsize=8, va="center")
+    ax.text(15.6, y - 0.6, "15%＝值得做預測（事先登記的門檻）", color=INK2, fontsize=8, va="center")
     ax.set_yticks(ticks, labels, fontsize=7.5)
     ax.set_xlim(0, 72)
     ax.set_ylim(y, -0.8)
-    ax.set_xlabel("完美預知比最好的不預測做法快多少（上限，%）：每個變體 5 個判定元件、54 格裡的最大值")
+    ax.set_xlabel("完美預知讓首字延遲（TTFT）比最好的不預測做法少多少（%）↑ 越大越值得做預測\n（每個變體：5 個判定元件 × 54 格裡的最大值）")
     ax.grid(axis="y", visible=False)
-    ax.set_title("圖 1　版本 B：每個紀錄變體的最大上限", loc="left", fontsize=11)
+    ax.set_title("圖 1　完美預知最多能少等多久（每個紀錄變體；版本 B）", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig1_verB_max.png", dpi=170)
     plt.close(fig)
@@ -115,10 +115,10 @@ def fig2(verb, out):
             if vv:
                 ax.text(b.get_x() + b.get_width() / 2, vv + 6, str(vv), ha="center", va="bottom", fontsize=7, color=INK2)
     ax.set_xticks(x, [nice[c] for c in comps])
-    ax.set_ylabel("上限 ≥15% 的（格, 元件）數")
+    ax.set_ylabel("能少等 ≥15% 的（格, 元件）數")
     ax.grid(axis="x", visible=False)
     ax.legend(fontsize=8, loc="upper right")
-    ax.set_title("圖 2　上限 ≥15% 的空間在哪個動作（版本 B；R1／R2 各算）", loc="left", fontsize=11)
+    ax.set_title("圖 2　能少等 ≥15% 的地方，是靠預測哪個動作（版本 B）", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig2_components.png", dpi=170)
     plt.close(fig)
@@ -140,11 +140,11 @@ def fig3(verb, out):
         for xx, c, s in zip(x, cpus, share):
             rec("fig3", name, f"{c:g} GiB", float(c), round(float(s), 3), src)
     ax.set_xticks(x, [("111\n(=GPU)" if abs(c - 111.0625) < 1e-6 else f"{c:g}") for c in cpus])
-    ax.set_xlabel("CPU 記憶體容量（GiB）")
-    ax.set_ylabel("上限 ≥15% 的（格, 元件）占比（%）")
+    ax.set_xlabel("CPU 記憶體容量（GiB；111＝和 GPU 的 KV 預算一樣大）")
+    ax.set_ylabel("能少等 ≥15% 的格子比例（%）")
     ax.grid(axis="x", visible=False)
     ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=3)
-    ax.set_title("圖 3　上限隨 CPU 容量：先升後降（版本 B）", loc="left", fontsize=11)
+    ax.set_title("圖 3　CPU 記憶體多大時最值得預測：中間最大（版本 B）", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig3_cpu.png", dpi=170)
     plt.close(fig)
@@ -153,9 +153,10 @@ def fig3(verb, out):
 def fig4(p4, out):
     src = f"{p4}/p4_by_class.csv"
     P = pd.read_csv(src)
-    fig, axs = plt.subplots(1, 3, figsize=(7.4, 3.0), sharey=True)
-    series = [("P", "B1", "模型 P、B1（主）", "#2a78d6", "-"), ("P", "B2", "模型 P、B2（並列）", "#eb6834", "--"),
-              ("M", "B1", "模型 M、B1", "#1baf7a", ":")]
+    fig, axs = plt.subplots(1, 3, figsize=(7.4, 3.3), sharey=True)
+    series = [("P", "B1", "P-B1：λ 的預測換成亂猜，每回合抽一次（主）", "#2a78d6", "-"),
+              ("P", "B2", "P-B2：同上，每次查詢重抽", "#eb6834", "--"),
+              ("M", "B1", "M：回來時間 ×(1±λ)", "#1baf7a", ":")]
     for ax, (arr, tool, name, _) in zip(axs, CLS):
         g = P[(P.arrival == arr) & (P.tool_type == tool)]
         base = int(g[(g.noise_model == "P") & (g.noise_draw == "B1") & (g.noise_lambda == 0)].n_cellcomp.iloc[0])
@@ -172,14 +173,14 @@ def fig4(p4, out):
         ax.scatter([0], [100], s=30, color=INK, zorder=4)
         ax.set_title(f"{name}\n（{base} 個（格, 元件））", fontsize=8.5, loc="left")
         ax.set_xticks([0, 0.1, 0.2, 0.3, 0.4], ["0", "10%", "20%", "30%", "40%"])
-        ax.set_xlabel("雜訊 λ")
+        ax.set_xlabel("預測錯誤強度 λ")
         ax.set_ylim(0, 105)
         ax.grid(axis="x", visible=False)
-    axs[0].set_ylabel("中位數仍 ≥15% 的占比（%）")
+    axs[0].set_ylabel("仍能少等 ≥15% 的比例（%）")
     h, l = axs[0].get_legend_handles_labels()
-    fig.legend(h, l, fontsize=8, loc="lower center", ncol=3)
-    fig.suptitle("圖 4　預測不準時還剩多少（P4；10 個 seed 的中位數；λ＝0 是同一次無雜訊）", x=0.01, ha="left", fontsize=11)
-    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    fig.legend(h, l, fontsize=7.5, loc="lower center", ncol=2)
+    fig.suptitle("圖 4　預測不準時，還剩多少值得做（10 個 seed 的中位數；λ＝0＝沒有雜訊）", x=0.01, ha="left", fontsize=11)
+    fig.tight_layout(rect=(0, 0.13, 1, 1))
     fig.savefig(f"{out}/fig4_p4.png", dpi=170)
     plt.close(fig)
 
@@ -198,7 +199,7 @@ def fig5(w3, out):
     for yy, a, b in zip(ys, g.r4, g.r3):
         ax.plot([a, b], [yy, yy], color=GRID, linewidth=1.2, zorder=1)
     ax.scatter(g.r4, ys, s=30, color="#2a78d6", edgecolor=SURF, linewidth=1.2, zorder=3, label="④ 完美預知")
-    ax.scatter(g.r3, ys, s=30, color="#eb6834", edgecolor=SURF, linewidth=1.2, zorder=3, label="③ 工具呼叫線索（CUEP／CUEO 取快）")
+    ax.scatter(g.r3, ys, s=30, color="#eb6834", edgecolor=SURF, linewidth=1.2, zorder=3, label="③ 工具呼叫線索（不用預測；CUEP／CUEO 取快）")
     for yy, (_, r) in zip(ys, g.iterrows()):
         rec("fig5", "oracle", r.lab, round(float(r.r4), 4), int(yy), w3)
         rec("fig5", "cue", r.lab, round(float(r.r3), 4), int(yy), w3)
@@ -209,13 +210,47 @@ def fig5(w3, out):
     ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_yticks(ys, g.lab, fontsize=7.5)
     ax.invert_yaxis()
-    ax.set_xlabel("回來請求的平均 TTFT ÷ ②（對數軸；<1 比最好的固定規則快）")
+    ax.set_xlabel("首字延遲 ÷ 最好的固定規則（對數軸）↓ 越小越好；<1＝比固定規則快")
     ax.grid(axis="y", visible=False)
     ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.45, -0.1), ncol=2)
-    ax.set_title("圖 5　W3（TraceLab c1）：線索做法在 22 格都比最好的固定規則慢", loc="left", fontsize=11)
+    ax.set_title("圖 5　免費線索拿得走嗎？TraceLab c1 的 22 格都比固定規則慢", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig5_w3.png", dpi=170)
     plt.close(fig)
+
+
+def table_main(verb, out):
+    """主結果表（照 PBKV Table 1／SAGA Table 3 的排法：列＝紀錄，欄＝元件；格＝最大值與 ≥15% 的格數）。"""
+    src = f"{verb}/verB_by_trace.csv"
+    B = pd.read_csv(src)
+    B = B[B.verdict_use].copy()
+    B["cls"] = cls_of(B)
+    def grp(t, r):
+        x = t.split(":", 1)[1] if t.startswith(("nb:", "fi:")) else t
+        if t.startswith("fi:"):
+            return "FreeInference（6 週）"
+        if x.startswith("semianalysis_") or x.startswith("cachewise_"):
+            f, n, _ = x.split("_")
+            return f"{'SemiAnalysis' if f == 'semianalysis' else 'CacheWise'} 並行 {n[1:]}（3 個 seed）"
+        return short(t, r)
+    B["grp"] = [grp(t, r) for t, r in zip(B.trace, B.rule)]
+    comps = ["O-GPU", "O-ORD", "O-PF", "O-DROP", "O-NOW"]
+    rows = []
+    for (cl, g), d in B.groupby(["cls", "grp"], sort=False):
+        r = dict(cls=cl, group=g, n_variants=d[["trace", "rule"]].drop_duplicates().shape[0])
+        for c in comps:
+            e = d[d.component == c]
+            r[f"{c}_max_pct"] = round(float(e["max"].max()) * 100, 1)
+            r[f"{c}_n_ge15"] = int(e.n_ge15.sum())
+            r[f"{c}_n_cells"] = int(e.n_cells.sum())
+        r["max_pct"] = max(r[f"{c}_max_pct"] for c in comps)
+        rows.append(r)
+    T = pd.DataFrame(rows)
+    order = [n for _, _, n, _ in CLS]
+    T["o"] = T.cls.map(order.index)
+    T = T.sort_values(["o", "max_pct"], ascending=[True, False]).drop(columns="o")
+    T.insert(0, "src", src)
+    T.to_csv(f"{out}/table_main.csv", index=False)
 
 
 def main():
@@ -231,6 +266,7 @@ def main():
     fig3(a.verb_dir, a.out_dir)
     fig4(a.p4_dir, a.out_dir)
     fig5(a.w3_rows, a.out_dir)
+    table_main(a.verb_dir, a.out_dir)
     meta = dict(run_id=os.environ.get("RUN_ID", "adhoc"), ts=datetime.now().astimezone().isoformat(timespec="seconds"),
                 host=socket.gethostname())
     D = pd.DataFrame(ROWS)
