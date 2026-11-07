@@ -3,6 +3,59 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T10:55+08:00 — 流程跑完（PIPE_ALL_DONE 10:46:26）：**9 個變體的 9 容量版本 B 重現全部 324／324 格×元件、7 欄 0 差**；W3 再判 8 個變體（照抄）；偏離 10 正式 APC 9 個變體收進 repo；W5（偏離 11）開跑
+
+- **流程**：背景殼 09:06 → 10:46:26 印 `PIPE_ALL_DONE`，exit 0。19 個 run 的 `exit_code` 全是 0，沒有 `*KILLED`。
+  - 資源（全部 run 的 mem.log）：MemAvailable 最低 42,786 MiB，swap 最高 1,394 MiB，行程群組 PSS 最高 14,003 MiB；/ssd4 剩 524 GiB。
+  - 引擎：每個 sweep 都是 `engine=rust`、`py_fallback_jobs=0`、`code_sha=3280b1c8799b+rse7f6ee8f`（v8 main.rs 48e4efce）。
+- **重現檢查**（explore_apc.py 對版本 B 表；TraceLab 對 `tl_p1_headroom_components` blob 48da5cd4，FreeInference 對 `fi_p1_headroom_components` blob 8322cf03）。每一行都是照抄 `重現檢查：版本 B 表上 324 格×元件，對上 324；各欄不同數 {… 全部 0}` → `EXPLORE_RESULT REPRODUCED cells=324`：
+
+  | 變體 | run | worktree | 備註 |
+  |:--|:--|:--|:--|
+  | tracelab_c2 | `20261107-090206-icpe-trx-rux-tl_c2-reproB`（13,518 job） | 8f04a91c | W3 的先決條件 |
+  | tracelab_c4 | `20261107-092415-icpe-trx-rux-tl_c4-apcformal`（14,184 job） | 7a89a9b5 | 正式 APC 第 2 步，兼 W3 先決條件 |
+  | fi 第 1–6 週 | `20261107-095548`／`095646`／`095752`／`095837`／`095919`／`100116` `-icpe-trx-rux-fi_w{1..6}-apcformal`（各 14,184 job） | 7a89a9b5 | 同上 |
+  | tracelab_c1 | `20261107-100449-icpe-trx-rux-tl_c1-apcformal` | 7a89a9b5 | 第二次核對（第一次＝108＋216，09:10 節） |
+  | tracelab_c2 | `20261107-102412-icpe-trx-rux-tl_c2-apcformal` | 7a89a9b5 | 第二次核對 |
+
+- **W3**（偏離 9；analyze_w3 的判定照抄，不解讀）。cue：TraceLab 用 08:30 節做好的 `tracelab_c{2,4}.cue.u8`；FreeInference 用 `make_cue.py fi`（run `20261107-095233-icpe-trx-rux-fi-cue`，6 週的 n_req／n_cue＝10,738／9,953、12,827／11,859、7,324／6,828、6,859／6,422、35,659／34,174、56,310／53,594）。每個 W3 是 360 個 job。
+
+  | 變體 | W3 run | n_ge15 | cue 齊全 | f ≤ 0.5 | 其中飽和 | f 中位數 | f 最小 | 判定（照抄） |
+  |:--|:--|--:|--:|--:|--:|--:|--:|:--|
+  | tracelab_c2 | `20261107-092256-…-tl_c2-w3` | 36 | 36 | 36 | 0 | −5.061049 | −9.376651 | 後半成立：沒有簡單線索能拿走大部分 |
+  | tracelab_c4 | `20261107-095115-…-tl_c4-w3` | 61 | 61 | 61 | 0 | −2.603243 | −5.792954 | 後半成立：沒有簡單線索能拿走大部分 |
+  | fi 第 1–6 週 | `…-fi_w{1..6}-w3`（095625／095727／095822／095906／100031／100326） | 0 | 0 | 0 | 0 | NaN | NaN | 前半不成立（沒有上限 ≥15% 的格） |
+
+  - 各元件（≥15% 的格）的 f 中位數與 f > 0.5 的個數（照抄 analyze_w3 的表）：
+    - c2：O-GPU −5.003（24 格，0 個 > 0.5）、O-ORD −5.112（10，0）、O-PF −6.126（2，0）；O-ALL(report) −4.005（30，0）。③ 選到 CUEO（54 格）。
+    - c4：O-GPU −2.460（36，0）、O-ORD −2.623（20，0）、O-PF −3.930（5，0）；O-ALL(report) −1.971（37，0）。③ 選到 CUEO（54 格）。
+    - FreeInference 6 週：每個元件 n_ge15＝0；③ 都選到 CUEP（54 格）。
+  - 先決條件都滿足：c2 的 W3 在 9 容量重現通過之後才跑；c4 和 FreeInference 的 W3 在各自正式 APC 的重現通過之後才跑。
+- **偏離 10 正式 APC（版本 C）**：analyze_v8 的表照抄（每個變體 54 格；欄＝max、median、n_ge15、n_ge5）：
+
+  | 變體 | O-ALL(report) | O-GPU | O-ORD | O-PF |
+  |:--|:--|:--|:--|:--|
+  | tracelab_c1 | 0.153024／0.034788／1／22 | 0.392314／0.074359／16／33 | 0.218800／0.023014／4／21 | 0.137512／0.016512／0／16 |
+  | tracelab_c2 | 0.323644／0.144924／24／33 | 0.462917／0.130289／24／44 | 0.272358／0.055978／8／28 | 0.218775／0.027792／3／24 |
+  | tracelab_c4 | 0.513531／0.278803／36／44 | 0.487513／0.243290／36／54 | 0.349862／0.095379／18／35 | 0.221250／0.019288／5／20 |
+  | fi 05-17 | 0.000768／0.000032／0／0 | 0.000915／0.000079／0／0 | 0.000014／0／0／0 | 0.000682／0／0／0 |
+  | fi 05-24 | 0.002221／0.000314／0／0 | 0.003457／0.000520／0／0 | 0.001541／0／0／0 | 0.000339／0／0／0 |
+  | fi 05-31 | 0.000117／0.000038／0／0 | 0.000117／0.000038／0／0 | 0.000054／0／0／0 | 0／0／0／0 |
+  | fi 06-07 | 0.002192／0.000214／0／0 | 0.002457／0.000286／0／0 | 0.000595／0／0／0 | 0／0／0／0 |
+  | fi 06-14 | 0.007109／0.000666／0／0 | 0.007257／0.000820／0／0 | 0.002063／0.000206／0／0 | 0.004935／0.000366／0／0 |
+  | fi 06-21 | 0.010521／0.001505／0／0 | 0.009889／0.001575／0／0 | 0.007495／0.000758／0／0 | 0.008460／0.000748／0／0 |
+
+  - O-DROP、O-NOW 的列見各變體的 `verC_headroom_components.csv`。
+- **收進 repo 的檔**（這個 commit）：
+  - `results/icpe_next/apc/<變體>/`，9 個變體 × 7 個檔，是 run_apc_formal.sh 自己用 collect_v8（7a89a9b5）收的，原樣複製；`x1_sweep.csv.xz` 每個 16,524 列。
+    - TraceLab 三個的 `x1_sweep.csv.xz` 是 1.4–1.5 MB，超過 CLAUDE.md 的 1 MB 判準；照 icpe-rux 在 d35aed35 進 git 的 `apc/semianalysis_N16_s1/x1_sweep.csv.xz`（1.2 MB）的做法放進來。
+  - `results/icpe_next/v8_explore/w3/<變體>/`，8 個新變體（c2、c4、FreeInference 6 週），用 c0e06332 的 collect_v8 收：x1_sweep.csv.xz（1,080 列）、w3_rows.csv（324 列）、w3_verdict.csv、cue.json。MANIFEST 的 runs 列了重現的 run（和 FreeInference 的 cue run）。
+  - 核對：每個檔的 sha256 等於 MANIFEST 的 `sha256_source`（xz 解壓後比）；每個 CSV 有 run_id、ts（分析 CSV 另有 host），run_id 都在 MANIFEST 的 runs 裡；列數等於 MANIFEST。
+- **W5（PREREG 偏離 11，icpe-rux d35aed35）**：使用者核可的 TraceLab／FreeInference 範圍內，所以沒再問。
+  - 10:47 worktree 從 7a89a9b5 移到 d35aed35。這兩版之間 `code/` 只改 5 個 W5／排隊的檔（explore_queue.py、explore_w5.py、run_queue_formal.sh、run_w5_formal.sh、w5_mechanism.py）；sweep_v8、run_apc_formal 等 0 差。
+  - 依序跑：`20261107-104717-icpe-trx-rux-tl_c1-w5`（`run_w5_formal.sh nb:tracelab_c1 nb tracelab_c1 <tl_c1-apcformal 的 x1_sweep.csv> 40`，4,728 個 job），通過 `W5_FORMAL_DONE` 才接 fi 第 1 週（BF16 那一半用 `fi_w1-apcformal` 的 sweep）。
+  - 跑完要核對：W5 的 `base_headroom_components.csv` 在 111.0625／128／256 GiB 跟 `apc/<變體>/verC_headroom_components.csv` 逐值相同。
+
 ## 2026-11-07T09:15+08:00 — 偏離 10 的不存 npz 開關好了（7a89a9b5）；流程改成「正式 APC（兼 9 容量重現）→ W3」
 
 - **icpe-rux 的修改**：origin/icpe-next-rux 7a89a9b5，只改 `run_apc_formal.sh`。
