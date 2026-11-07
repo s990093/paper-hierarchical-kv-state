@@ -1,0 +1,16 @@
+{
+ "run_id": "20261107-171807-icpe-trx-d14-verb-lm",
+ "host": "acvlab-TRX40-AORUS-MASTER",
+ "run_dir": "/ssd4/hungwei/icpe-next/runs/20261107-171807-icpe-trx-d14-verb-lm",
+ "cmd": "export DATAREPO=$REPO NEXT_B_PY=$ROOT/venv/bin/python MAIN_ROWCHECK=$ROOT/code-archive/main-b54d3cff/main_rowcheck.py; bash code/icpe/next_d14_verb.sh lm results/icpe_next/b results/icpe_next/b/analysis/lm_p1/lm_p1_headroom_components.csv.xz\n",
+ "context": "2026-11-07T17:18:07+08:00\nacvlab-TRX40-AORUS-MASTER\nname: d14-verb-lm\nrepo HEAD: 0504e587767a2d26a773387c3b2584b888ddebfb branch icpe-next-trx\nrepo status:\n?? results/icpe_next/b/d14_chat_main/\n?? results/icpe_next/b/d14_chat_p1/\nuptime:  17:18:07 up 7 days, 21:22, 12 users,  load average: 32.76, 30.08, 22.11\n               total        used        free      shared  buff/cache   available\nMem:           64173        7780        1512           7       55557       56392\nSwap:           8191        3090        5101\n/dev/sdc        1.8T  1.3T  488G  72% /ssd4\nenv:\nREPO=/home/hungwei/paper-hierarchical-kv-state\nROOT=/ssd4/hungwei/icpe-next\nRUN_ID=20261107-171807-icpe-trx-d14-verb-lm\nRUN=/ssd4/hungwei/icpe-next/runs/20261107-171807-icpe-trx-d14-verb-lm\n",
+ "table_sha256_uncompressed": "794899a08cc8497a9fd4e5e06e62a6ccbad5a6179e2f2379d0ce09d09b1effa7",
+ "files": {
+  "lm_p1_headroom_components.csv.xz": "fa58b311fd6ba5f0f84e32fc13b56ec20f6f251ee695bd7929768074f2ff33df",
+  "lm_p1_violations.csv.xz": "178b0775380674d8fd8b74032e7f074d6f008fd90fd4efeadbc92104c35d2b72",
+  "patch_summary.csv": "9946ce14e23f39c87f475fe78747f4fc8cff154fc56bfaa424b160eebb31e14a",
+  "rowcheck.csv": "9e2d49a84bd8d9b873f778e90d3845fba34c314b4926bfd0c2dc011ca3f3841d",
+  "table_vs_verB.csv": "ccb6aba84359b7a17f527aa81559e96790b438056630a1d942a3e6a93e78c245"
+ },
+ "note": "PREREG 偏離 14 第一段的版本 B 檢查表（icpe-trx，TRX40；next_d14_verb.sh）：lm_main＋lm_p1 _ttl（chat_main／chat_p1），原本的列換上 d14 列（next_d14_patch.py）後用 next_sim_analyze 算；O-PF、O-ALL(report) 以外的元件和原本的版本 B 表 results/icpe_next/b/analysis/lm_p1 逐值相同（table_vs_verB.csv，D14_TABLE_RESULT IDENTICAL）。給第二段的重現檢查用；論文用的正式表由 icpe-main 另外算"
+}

@@ -3,6 +3,33 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T17:25+08:00 — 偏離 14 第一段：**UltraChat、LMSYS 的 main＋P1 `_ttl` 完成並收進 git**；檢查表 uc_p1／lm_p1 `D14_TABLE_RESULT IDENTICAL`；佇列繼續（sa_p1 起）
+
+- **已跑完並通過檢查的 block**（佇列 run `20261107-171019-icpe-trx-d14-stage1-queue`）：
+
+  | plan | block | 每個 block 的 job |
+  |:--|--:|--:|
+  | d14_sa_main | 12 | 864 |
+  | d14_old_main:mooncake | 1 | 3,456 |
+  | d14_chat_main uc/lm | 12 | 864 |
+  | d14_chat_p1 uc/lm | 12 | 432 |
+
+  - 我的檢查（`d14_blockcheck.py`）：`D14_BLOCKCHECK ok=37 bad=0`。
+  - icpe-data 的 `code/icpe/next_d14_blockcheck.py`（run `20261107-171749-icpe-trx-d14-blockcheck-uc-lm`）：`D14_BLOCKCHECK PASS n=37 fail=0`。輸出放在 `results/icpe_next/b/d14_blockcheck_trx.csv`（37 列；之後每收一個家族就更新）。
+- **collect**：`next_b_queue.py collect --plans d14_chat_main d14_chat_p1`，collected 24。
+  - 輸出在 `results/icpe_next/b/d14_chat_main/{uc,lm}_T{60,600}_s{1,2,3}` 和 `d14_chat_p1/*_ttl`，每個 block 只含清單 rerun_policies（O-PF、O-ALL）的列。
+  - LMSYS 和以前的 chat_main／chat_p1 一樣只放彙總的 sweep 列，沒有逐對話的數字。
+- **第一段的版本 B 檢查表**（`next_d14_verb.sh`；DATAREPO＝本 repo；NEXT_B_PY、MAIN_ROWCHECK 用 TRX40 的路徑；run `20261107-171807-icpe-trx-d14-verb-{uc,lm}`，rc 0）：
+  - patch：`D14_PATCH_OK blocks=12`。chat_p1 每個 block 是 `base=6480 d14=432 replaced=432 kept=6048`。
+  - rowcheck：`uc_main_d14`、`lm_main_d14` 都是 44064 rows、cells 54、cpu 17、gpu 8，PASS；`uc_p1_ttl_d14`、`lm_p1_ttl_d14` 都是 38880 rows、cells 54、cpu 15、gpu 8，PASS。
+  - 和原本的版本 B 表 `results/icpe_next/b/analysis/{uc,lm}_p1` 比，照抄：
+    - 兩個家族的 6 個元件都是 `x=324 y=324 matched=324`，7 欄 ndiff 全部 0。
+    - O-PF、O-ALL(report) 是 `skipped=True`（不要求相同），ndiff 也是 0。
+    - 結果 `D14_TABLE_RESULT IDENTICAL`。
+  - 照 icpe-data 的格式（bl_p1，246d3fed）收在 `results/icpe_next/b/analysis_d14/{uc,lm}_p1/`：表 .csv.xz、violations .csv.xz、table_vs_verB.csv、rowcheck.csv、patch_summary.csv、manifest.json（含 run_id、cmd、context、各檔 sha256）。
+  - table_sha256_uncompressed：uc 1b5745c94382…、lm 794899a08cc8…。
+- **佇列**：17:17:31 開始 d14_sa_p1。資源：MemAvailable 最低 55.6 GiB；本組 swap 0 MiB；/ssd4 剩 490 GiB。
+
 ## 2026-11-07T17:15+08:00 — **xref_dev14 在 TRX40 重現：Python 6/6、Rust 6/6 PASS**（1,184 列，0 列不同）→ **第一段 180 個 d14 block 開跑**（17:10:19）
 
 - **merge**：
