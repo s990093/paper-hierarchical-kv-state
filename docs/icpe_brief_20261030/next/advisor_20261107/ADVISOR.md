@@ -4,7 +4,7 @@
 
 ## 1 修改後的結論
 
-原本的結論是「再加預測，多半不划算」。擴大驗證之後要改成：**預測值不值得做，要看工作負載**。在真實的 agent 服務紀錄（FreeInference）上，就算預測百分之百準，首字延遲也只能少不到 1%；但在會呼叫工具的 agent 紀錄（Mooncake toolagent、TraceLab）上，即使對手已經是我們能做到最強的不預測做法（GPU 層加 TTL 與前綴快取、十幾種固定規則逐格挑最快），完美預知仍能讓首字延遲少 39–62%：原始到達的 9 個工具類變體裡有 3 個、合成並行的 14 個全部，超過事先登記的 15% 門檻。省下來的時間主要來自決定「**誰留在 GPU 和 CPU 裡**」，不是預取；而「這一輪有沒有呼叫工具」這種免費線索一點都拿不到（TraceLab 的原始與合成到達都一樣），所以事先寫好的推翻條件成立。預測不準時：回來時間差 ±30%，這段空間幾乎不變；把一部分預測換成亂猜時，目前的模擬掉很多，但其中一部分是模擬器的規則造成的，規則補上後會重跑（第 6 節）。
+原本的結論是「再加預測，多半不划算」。擴大驗證之後要改成：**預測值不值得做，要看工作負載**。在真實的 agent 服務紀錄（FreeInference）上，就算預測百分之百準，首字延遲也只能少不到 1%；但在會呼叫工具的 agent 紀錄（Mooncake toolagent、TraceLab）上，即使對手已經是我們能做到最強的不預測做法（GPU 層加 TTL 與前綴快取、十幾種固定規則逐格挑最快），完美預知仍能讓首字延遲少 39–62%：原始到達的 9 個工具類變體裡有 3 個、合成並行的 14 個全部，超過事先登記的 15% 門檻。省下來的時間主要來自決定「**誰留在 GPU 和 CPU 裡**」，不是預取；而「這一輪有沒有呼叫工具」這種免費線索一點都拿不到（TraceLab 的原始與合成到達都一樣），所以事先寫好的推翻條件成立。公開的 SWE-bench agent 軌跡也一樣分兩邊：OpenHands 同時跑 32 個以上時最多少 58%，mini-SWE-agent 同時跑 72 個也不到 11%（第 3.6 節）。預測不準時：回來時間差 ±30%，這段空間幾乎不變；把一部分預測換成亂猜時，目前的模擬掉很多，但其中一部分是模擬器的規則造成的，規則補上後會重跑（第 6 節）。
 
 **直覺**〔判讀〕：把 GPU 想成書桌、CPU 想成書架。一般的 agent 服務上，照常規整理（固定規則）就幾乎都找得到書，知道誰先回來也沒得省；寫程式、呼叫工具的 agent 同時有很多個在跑，每個都佔一大疊書，書桌和書架放不下時，「先收誰」選錯就要重搬一次，這時知道誰先回來才有價值。
 
@@ -29,11 +29,13 @@
 | Mooncake conversation | 同 Mooncake，聊天請求 | 真實 | 否（只報告） | 2 |
 | Bailian | 阿里雲百煉（Qwen）的匿名使用紀錄：coder、thinking、traceA；聊天／API 服務，每份約 2 小時 | 真實 | 否（只報告） | 3 |
 | CacheWise CATraces | CacheWise 論文公開的 94 個真實 Claude Code 對話 | 合成並行 | 是 | 0（內部 12） |
+| mini-SWE-agent | 第三方公開的 mini-SWE-agent 跑 SWE-bench Verified 的 499 條軌跡（Qwen3-30B，MIT）；單獨一節 | 合成並行 | 是 | 另計 12 |
+| OpenHands | OpenHands 官方評測輸出：CodeActAgent 跑 SWE-bench Lite 的 299 條軌跡（Claude 3.5 Sonnet，最多 100 步，MIT）；單獨一節 | 合成並行 | 是 | 另計 12 |
 
 - **CacheWise 不放進論文**：沒有宣告授權（偏離 15）。內部已跑完，拿掉前後的判定字相同：合成工具類從 26 個裡 21 個過門檻變成 14 個全部過；拿掉的 12 個裡有 5 個沒過，所以拿掉後看起來更一致，論文要附這一句。
 - 授權：其他都是 CC BY 4.0 或 Apache-2.0。
 - 「合成並行」的到達時間是人為的，論文要和真實到達分開報（照登記）。
-- **還在補的**（單獨成一節，不和這 28 個合併計數）：ShareGPT、WildChat、LMSYS、UltraChat 四份常用的聊天資料集（偏離 13；等偏離 14 修正版重跑後再算）；mini-SWE-agent、OpenHands 的公開軌跡（補 SWE-bench 這一類；合成到達、固定並行；要先登記）。
+- **單獨成一節、不和這 28 個合併計數的**：mini-SWE-agent、OpenHands 的公開軌跡（補 SWE-bench 這一類；偏離 17；軌跡內用真實時間，對話開始時間用固定並行 16／32／64／72 × 3 個 seed）——**已完成，見第 3.6 節**；ShareGPT、WildChat、LMSYS、UltraChat 四份常用的聊天資料集（偏離 13）——都跑完，等偏離 14 修正版重跑後再算。
 
 ### 3.2 怎麼量（四個層級）
 
@@ -95,6 +97,25 @@
 - **兩支程式互相核對**：版本 C 用 icpe-rux 的分析程式；拿掉 Belady 的列後用原本的分析程式重算，其他元件選到的組合和時間逐位元相同。每台機器的模擬程式先對拍到逐位元相同才用；版本 C 的每個變體都先逐值重現版本 B。
 - W3 的規則在跑之前登記（PREREG 偏離 9），用版本 C 重算 f 後判定不變。
 
+### 3.6 SWE-bench agent 軌跡（單獨一節；合成並行・工具類）〔模擬；版本 C〕
+
+格內＝3 個 seed 各自的「最多少等 %」取中位數（最小–最大）；每個 seed 當一個變體各自判（使用者 11/7 在看數字之前決定）。
+
+| 軌跡 | 並行 16 | 並行 32 | 並行 64 | 並行 72 | ≥15% 的變體 |
+|:--|--:|--:|--:|--:|:--|
+| OpenHands | 0.2%（0.2–0.5） | 55.8%（51.7–57.7） | 56.7%（55.2–58.5） | 56.1%（55.4–57.2） | 9／12（並行 32、64、72 的 9 個） |
+| 　不算 O-PF | 0.2% | 55.8% | 51.9% | 50.3% | 9／12 |
+| mini-SWE-agent | 0.2%（0.2–0.2） | 1.2%（1.2–1.2） | 6.8%（6.7–7.1） | 10.1%（9.8–10.9） | 0／12 |
+
+![](figs/fig6_agent.png)
+
+**圖 6　SWE-bench agent：同時跑的對話一多，OpenHands 就值得預測，mini-SWE-agent 到 72 個也不值得**。怎麼看：x 軸是同時在跑的對話數，點是 3 個 seed 的中位數，誤差棒是最小–最大；虛線是判定不算 O-PF（待修正）。看到什麼：OpenHands 從 16 個的 0.2% 跳到 32 個的 56%，之後持平；mini-SWE-agent 慢慢升到 10%，始終在 15% 以下。
+
+- 判定：24 個變體裡 9 個 ≥15%，全是 OpenHands。不算 O-PF（最大 57.7%）、不算 O-PF 也不用 block 粒度 Belady（56.8%）、換版本 B（58.5%），都還是 9 個。
+- OpenHands ≥15% 的地方，最多的是「GPU 裡留誰」，「CPU 先淘汰誰」、預取、「丟不丟」也有；寫入頻寬飽和 0 格。
+- 〔判讀〕和主結果一樣，值不值得看的是記憶體壓力：並行 16 時兩份都放得下。兩份差這麼多的原因（例如每個對話的上下文長度）還沒量，NOT_MEASURED。
+- **限制**（照實寫進論文）：到達是合成的（固定並行）；OpenHands 的輸入用 Llama tokenizer 重算時，比 Claude 回報的少（增量比中位數 0.795，沒過登記的 0.8；第一次呼叫約少 1,900 個 Claude token），影響方向沒量；mini-SWE-agent 有 20.2% 的呼叫是格式錯誤、沒有回覆，不模擬；agent 沒跑 W3，所以這一節的推翻條件只能寫「未定」。
+
 ## 4 圖表怎麼呈現：同類論文的做法與我們的修改
 
 我們讀了 8 篇同類論文的評估章節（PBKV、SAGA、CacheScout、CacheWise、Continuum、KVFlow、Ask the Tool、Cake）；圖片本身讀不到，下面只寫圖說與正文寫明的部分。
@@ -140,15 +161,16 @@
 3. 它們都報「比 LRU／前綴快取快多少」。**我們的差別是對手最強**，這一點要放在摘要前半，讀者才知道我們的數字為什麼比較小、也比較可信。
 4. 我們是量測研究，不是新系統；寫法最接近 CacheWise（「既有研究沒看 X，我們收集真實紀錄來看」）和 Ask the Tool（「We show that …」＋一句話結論）。
 
-**摘要（照上面的結構改寫；版本 C、論文版；英文約 240 字）**〔建議〕
+**摘要（照上面的結構改寫；版本 C、論文版；英文約 250 字）**〔建議〕
 
-> LLM agents and multi-turn chat leave gaps between requests, during which serving systems move a session's KV cache out of GPU memory; when the user or a tool result returns, the cache must be restored before the first token. Recent agent-serving systems predict who returns and when, and report large gains over LRU or prefix caching. We ask how much prediction can still save over the strongest non-predictive policy. On an NVIDIA H200 we measure how to restore parked KV (load, recompute, Cake, INT4); in trace-driven simulation over 28 variants of six traces, we compare a perfect oracle against the per-cell best of non-predictive rules (10 CPU-tier rules; LRU, Continuum-style TTLs and block-level prefix caching at the GPU tier), with thresholds preregistered before any result. Restoration needs no prediction: a fixed table suffices, with INT4 plus Cake fastest on slow tiers (11.0–40.7% over the runner-up). Prediction pays only on some workloads: on a production agent-serving trace the oracle cuts time to first token (TTFT) by under 1%, but on tool-calling traces by up to 62%, exceeding 15% in 3 of 9 real-arrival and all 14 synthetic-concurrency variants, mostly by choosing what stays in GPU and CPU memory rather than by prefetching. A free tool-call cue captures none of this gap, and the gap survives ±30% error in predicted return times. Measure the oracle against a strong baseline before building a predictor.
+> LLM agents and multi-turn chat leave gaps between requests, during which serving systems move a session's KV cache out of GPU memory; when the user or a tool result returns, the cache must be restored before the first token. Recent agent-serving systems predict who returns and when, and report large gains over LRU or prefix caching. We ask how much prediction can still save over the strongest non-predictive policy. On an NVIDIA H200 we measure how to restore parked KV (load, recompute, Cake, INT4); in trace-driven simulation over 28 variants of six traces, we compare a perfect oracle against the per-cell best of non-predictive rules (10 CPU-tier rules; LRU, Continuum-style TTLs and block-level prefix caching at the GPU tier), with thresholds preregistered before any result. Restoration needs no prediction: a fixed table suffices, with INT4 plus Cake fastest on slow tiers (11.0–40.7% over the runner-up). Prediction pays only on some workloads: on a production agent-serving trace the oracle cuts time to first token (TTFT) by under 1%, but on tool-calling traces by up to 62%, exceeding 15% in 3 of 9 real-arrival and all 14 synthetic-concurrency variants, mostly by choosing what stays in GPU and CPU memory rather than by prefetching. Public SWE-bench agent trajectories show the same split: up to 58% for OpenHands, under 11% for mini-SWE-agent. A free tool-call cue captures none of this gap, and the gap survives ±30% error in predicted return times. Measure the oracle against a strong baseline before building a predictor.
 
 **中文對照**
 
-> LLM agent 與多輪對話的請求之間常有空檔，服務系統會把對話的 KV cache 移出 GPU；使用者或工具結果回來時，要先把它搬回，才出得了第一個字。近來的 agent 服務系統會預測誰、何時回來，並報告比 LRU 或前綴快取大幅的提升。我們問：對最強的不預測做法，預測還能多省多少？我們在 NVIDIA H200 上實測停放的 KV 怎麼還原（載入、重算、Cake、INT4），並在 6 份紀錄、28 個變體上做紀錄驅動模擬，拿完美預知和「每格在不預測的規則裡挑最快」比（10 個 CPU 規則；GPU 層有 LRU、Continuum 式 TTL 和 block 粒度前綴快取），門檻在看任何結果之前登記。還原不需要預測：照一張固定的表選就夠，慢層上 INT4 加 Cake 最快（比次佳快 11.0–40.7%）。預測只在部分工作負載上值得：真實 agent 服務紀錄上，完美預知只讓首字延遲（TTFT）少不到 1%；工具呼叫的紀錄上最多少 62%，原始到達的 9 個變體裡 3 個、合成並行的 14 個全部超過 15%，主要靠決定誰留在 GPU 與 CPU 記憶體，而不是預取。免費的工具呼叫線索一點都拿不到；預測的回來時間差 ±30%，這段空間幾乎不變。蓋預測器之前，先拿完美預知和強對手比一次。
+> LLM agent 與多輪對話的請求之間常有空檔，服務系統會把對話的 KV cache 移出 GPU；使用者或工具結果回來時，要先把它搬回，才出得了第一個字。近來的 agent 服務系統會預測誰、何時回來，並報告比 LRU 或前綴快取大幅的提升。我們問：對最強的不預測做法，預測還能多省多少？我們在 NVIDIA H200 上實測停放的 KV 怎麼還原（載入、重算、Cake、INT4），並在 6 份紀錄、28 個變體上做紀錄驅動模擬，拿完美預知和「每格在不預測的規則裡挑最快」比（10 個 CPU 規則；GPU 層有 LRU、Continuum 式 TTL 和 block 粒度前綴快取），門檻在看任何結果之前登記。還原不需要預測：照一張固定的表選就夠，慢層上 INT4 加 Cake 最快（比次佳快 11.0–40.7%）。預測只在部分工作負載上值得：真實 agent 服務紀錄上，完美預知只讓首字延遲（TTFT）少不到 1%；工具呼叫的紀錄上最多少 62%，原始到達的 9 個變體裡 3 個、合成並行的 14 個全部超過 15%，主要靠決定誰留在 GPU 與 CPU 記憶體，而不是預取。公開的 SWE-bench agent 軌跡也一樣分兩邊：OpenHands 最多少 58%，mini-SWE-agent 不到 11%。免費的工具呼叫線索一點都拿不到；預測的回來時間差 ±30%，這段空間幾乎不變。蓋預測器之前，先拿完美預知和強對手比一次。
 
-- 摘要刻意不寫還在變的結果：10% 亂猜（P4 模型 P，待偏離 14 修正）、四份聊天資料集、SWE-agent 軌跡、GPU 實機重播。
+- 摘要刻意不寫還在變的結果：10% 亂猜（P4 模型 P，待偏離 14 修正）、四份聊天資料集、GPU 實機重播。
+- SWE-bench 那一句（11/7 加）：58% 含 O-PF（待修正），不算 O-PF 是 57.7%，四捨五入一樣；OpenHands 只在並行 ≥32 時過門檻，論文正文要寫明並行數和輸入可能少算（第 3.6 節）。
 - 摘要登記：**11/10（一）19:59（台灣）**；全文 11/17。這些結果出來後，全文前可以補一句；HotCRP 通常允許全文截止前修改摘要，但以 ICPE 的規定為準。
 - 標題建議維持「組合地圖」主軸再加預測：*When the Session Returns: Restoring Parked KV Cache on H200, and Where Prediction Still Pays*。投稿版的每個數字要用 `paper-claim-audit` 逐句核對。
 
@@ -158,23 +180,26 @@
 |:--|:--|:--|
 | 版本 C（對手加 APC；GPU 層的完美淘汰加 block 粒度 Belady） | **已完成**（論文版 28 個變體）；判定字和版本 B 相同 | 不含 Belady 時也成立（第 3.5 節）；CacheWise 不跑（偏離 15） |
 | W3 線索：TraceLab c1、c2、c4、FreeInference | **已完成**；用版本 C 重算後，原始、合成到達的推翻條件都成立 | — |
-| P4 雜訊：模型 P 的斷崖 | 查明是模擬器兩條沒登記的規則；登記偏離 14、改程式、做 G1 中，之後重跑，修正版取代正式結果 | 圖 4 的模型 P 兩條線；O-PF 一欄也可能變（判定不靠它） |
-| 四份聊天資料集（ShareGPT、WildChat、LMSYS、UltraChat） | 版本 B、C 都跑完；等偏離 14 的 O-PF 重跑後再算（使用者決定） | 單獨一節，回答「為什麼沒跑 ShareGPT」 |
-| mini-SWE-agent、OpenHands 公開軌跡 | 使用者決定補（合成到達、固定並行）；先登記才跑 | 單獨一節，補 SWE-bench 這一類 |
-| GPU 實機重播（W6，H200） | 排在別人的工作後面；W6c（重算校準到 128K）、W6a（打字線索）、W6b（Mooncake 對話的淘汰順序） | 目前預測的結果**全部是模擬**；W6 還沒驗到「GPU 層」，已請 h200 估「TraceLab c1 的 GPU 層重播」 |
+| P4 雜訊：模型 P 的斷崖 | 查明是模擬器兩條沒登記的規則；登記偏離 14、改好程式。驗證時另外找到一個舊問題（只影響「預取進 GPU」的 O-ALL，只報告的列），使用者選加旗標修；重新驗證中，之後才出重跑清單，修正版取代正式結果 | 圖 4 的模型 P 兩條線；O-PF 一欄也可能變（判定不靠它）；11/10 摘要前來不及 |
+| 版本 C ≥15% 的格補跑 P4（偏離 10 第 5 點） | 還沒排 | 圖 4 改成以版本 C 選格 |
+| 四份聊天資料集（ShareGPT、WildChat、LMSYS、UltraChat） | 四份的版本 B、C 都跑完；等偏離 14 的 O-PF 重跑後再算（使用者決定） | 單獨一節，回答「為什麼沒跑 ShareGPT」 |
+| mini-SWE-agent、OpenHands 公開軌跡 | **已完成**（第 3.6 節）；O-PF 一欄待偏離 14 重跑 | 單獨一節，補 SWE-bench 這一類 |
+| GPU 實機重播（W6，H200） | W6c（重算校準到 128K）跑完、還沒分析；W6a（打字線索）和別人的 job 重疊，停掉等對方跑完再送；接著是 **TraceLab c1 的 GPU 層重播**（使用者 11/7 決定：NFS、CPU 8 GiB、GPU 閒；GPU 規則 LRU、TTLB:30、BEL；從紀錄時間的中位數起連續 5,000 個請求，跨 25 小時；2 次），再來 W6b（Mooncake 對話的淘汰順序） | 目前預測的結果**全部是模擬**；重播只有整份紀錄約 0.75% 的請求，只能說「這一段在 GPU 上和模擬一致」 |
 | 打字線索（Mooncake 對話）用新模擬器重測 | 未做 | 舊稿「打字線索拿走八成」能不能留 |
-| W5（CPU 層存 INT4）、排隊模型 | 已登記，在跑；只是敏感度 | 不改主判定 |
+| W5（CPU 層存 INT4）、排隊模型 | **已完成**（icpe-rux，只報告）：W5 沒有任何格因此升過 15%；排隊在中負載（等 2–20 秒）讓上限變大，主結果不含排隊、是保守的一邊。二階（事件驅動）排隊：使用者決定在 RUX3DPRO 做，先登記 | 不改主判定 |
 | 論文改稿、摘要登記（11/10 19:59）、引用與數字核對 | 未開始 | — |
 
-**風險**〔判讀〕：原始工具類過門檻的只有兩份紀錄（Mooncake toolagent 只有一小時；TraceLab c1），而且 W3 只有 TraceLab 有線索欄位；有真實多使用者到達時間的公開工具類紀錄很少，短期補不到，論文要寫成限制。預測的結果全部是模擬。
+**風險**〔判讀〕：原始工具類過門檻的只有兩份紀錄（Mooncake toolagent 只有一小時；TraceLab c1），而且 W3 只有 TraceLab 有線索欄位；有真實多使用者到達時間的公開工具類紀錄很少，短期補不到，論文要寫成限制（SWE-bench 軌跡只補了合成到達這一邊）。預測的結果全部是模擬。
 
 ## 7 一句話給老師
 
-在最強的不預測對手之上（含前綴快取與 TTL），預測的價值集中在「工具類 agent 的記憶體淘汰」：值得做、免費線索拿不到，對回來時間的誤差不敏感；一般 agent 服務不值得做。這個結論換更強的對手、拿掉 block 粒度 Belady 都不變；缺的是 GPU 實機驗證與更多真實到達的工具類紀錄。
+在最強的不預測對手之上（含前綴快取與 TTL），預測的價值集中在「工具類 agent 的記憶體淘汰」：值得做、免費線索拿不到，對回來時間的誤差不敏感；一般 agent 服務不值得做；公開的 SWE-bench agent 也一樣看負載（OpenHands 最多 58%，mini-SWE-agent 不到 11%）。這個結論換更強的對手、拿掉 block 粒度 Belady 都不變；缺的是 GPU 實機驗證與更多真實到達的工具類紀錄。
 
 ## 8 數字出處
 
 - 版本 C（論文版）：run `20261107-122216-icpe-main-verC`，`results/icpe_next/main/verC/`（`verC_verdict.csv`、`verC_by_trace.csv`、`verC_noBELP_*`、`verC_noOPF_*`、`verB_paper_*`、`w3_C_*`）；輸入是 `results/icpe_next/apc/<變體>/`（icpe-rux、icpe-trx 跑的）。
+- SWE-bench agent 軌跡（第 3.6 節）：run `20261107-140839-icpe-main-agent`，`results/icpe_next/main/agent/`（`agent_verC_verdict.csv`、`agent_verC_noOPF_*`、`agent_verC_noBELP_*`、`agent_verB_*`、`agent_seed_*`）；輸入 `results/icpe_next/apc/{miniswe,openhands}_*`、`results/icpe_next/b/agent_*`（icpe-data）。圖 6：run `20261107-151225-icpe-main-agent-fig`（`code/icpe/main_agent_fig.py`，點在 `figs/fig6_data.csv`）。
+- W5、排隊：icpe-rux 的 STATUS_RUX 14:30（`origin/icpe-next-rux` f63f4879），本文件只轉述、沒重算。W6 與 TraceLab 重播的設計：STATUS_A 13:06（`origin/icpe-next-a` 343ae74f）。
 - 版本 B：run `20261106-110854-icpe-main-verB-p1`，`results/icpe_next/main/verB/`。P2／P3：`results/icpe_next/main/p23/`。
 - P4：runs `20261107-082202-icpe-main-p4-noise`、`20261107-094535-icpe-main-p4-summary`，`results/icpe_next/main/p4/noise/`（以版本 B 選格；圖 4 加總時拿掉 CacheWise）。
 - W3：TRX40 runs `20261107-084104-icpe-trx-rux-tl_c1-w3`、`20261107-092256-icpe-trx-rux-tl_c2-w3`、`20261107-095115-icpe-trx-rux-tl_c4-w3`；版本 C 重算見上；PREREG 偏離 9。

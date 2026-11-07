@@ -1,0 +1,17 @@
+run_id,ts,host,fig,series,x,y,y_min,y_max,src
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands,16,0.19793386680214997,0.17468820801659,0.45922891769773,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands,32,55.817953318038235,51.65458330342402,57.74139508457653,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands,64,56.68689720379131,55.159390692534714,58.4973353303842,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands,72,56.05444123214708,55.3674132926265,57.211068668384115,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands（不算 O-PF）,16,0.19793386680214997,0.17468820801659,0.45922891769773,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands（不算 O-PF）,32,55.817953318038235,51.65458330342402,57.74139508457653,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands（不算 O-PF）,64,51.93811483467685,51.51234065430644,52.04580863160877,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,OpenHands（不算 O-PF）,72,50.286179538961726,49.53645160074199,51.861446578437274,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent,16,0.21071263011504998,0.18757771829621,0.22332715321084998,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent,32,1.2201989862962301,1.17485027440996,1.23255959456923,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent,64,6.76508217695109,6.670475364945521,7.07490732204852,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent,72,10.14203743768225,9.8146851161294,10.86762573882012,results/icpe_next/main/agent/agent_verC_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent（不算 O-PF）,16,0.21071263011504998,0.18757771829621,0.22332715321084998,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent（不算 O-PF）,32,1.2201989862962301,1.17485027440996,1.23255959456923,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent（不算 O-PF）,64,6.76508217695109,6.670475364945521,7.07490732204852,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
+20261107-151225-icpe-main-agent-fig,2026-11-07T15:12:26+08:00,acvlab,fig6,mini-SWE-agent（不算 O-PF）,72,10.14203743768225,9.8146851161294,10.86762573882012,results/icpe_next/main/agent/agent_verC_noOPF_verdict.csv
