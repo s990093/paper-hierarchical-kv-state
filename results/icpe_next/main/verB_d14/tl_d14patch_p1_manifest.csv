@@ -1,0 +1,7 @@
+run_id,ts,host,plan,block,action,base_rows,d14_rows,replaced,out
+20261107-175226-icpe-main-d14-verB-tl,2026-11-07T17:52:27+08:00,acvlab,tl_p1,tl_c1_ttl,rerun,6480,432,432,/ssd6/hungwei/icpe-next/runs/20261107-175226-icpe-main-d14-verB-tl/in/p1/tl_p1/tl_c1_ttl/x1_sweep.csv
+20261107-175226-icpe-main-d14-verB-tl,2026-11-07T17:52:27+08:00,acvlab,tl_p1,tl_c1_trunc,rerun,5184,1728,1728,/ssd6/hungwei/icpe-next/runs/20261107-175226-icpe-main-d14-verB-tl/in/p1/tl_p1/tl_c1_trunc/x1_sweep.csv
+20261107-175226-icpe-main-d14-verB-tl,2026-11-07T17:52:27+08:00,acvlab,tl_p1,tl_c2_ttl,rerun,6480,432,432,/ssd6/hungwei/icpe-next/runs/20261107-175226-icpe-main-d14-verB-tl/in/p1/tl_p1/tl_c2_ttl/x1_sweep.csv
+20261107-175226-icpe-main-d14-verB-tl,2026-11-07T17:52:27+08:00,acvlab,tl_p1,tl_c2_trunc,rerun,5184,1728,1728,/ssd6/hungwei/icpe-next/runs/20261107-175226-icpe-main-d14-verB-tl/in/p1/tl_p1/tl_c2_trunc/x1_sweep.csv
+20261107-175226-icpe-main-d14-verB-tl,2026-11-07T17:52:27+08:00,acvlab,tl_p1,tl_c4_ttl,rerun,6480,432,432,/ssd6/hungwei/icpe-next/runs/20261107-175226-icpe-main-d14-verB-tl/in/p1/tl_p1/tl_c4_ttl/x1_sweep.csv
+20261107-175226-icpe-main-d14-verB-tl,2026-11-07T17:52:27+08:00,acvlab,tl_p1,tl_c4_trunc,rerun,5184,1728,1728,/ssd6/hungwei/icpe-next/runs/20261107-175226-icpe-main-d14-verB-tl/in/p1/tl_p1/tl_c4_trunc/x1_sweep.csv
