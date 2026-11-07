@@ -3,6 +3,16 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T15:14+08:00 — 使用者「ok」：push；給老師的文件加 agent 一節與摘要一句
+
+- **push**：使用者對「push」回 ok → `origin/icpe-next-main` 7a55f1d3 → d470771d（25 個 commit）。推之前查過：我自己的改動裡沒有 CacheWise 的檔，沒有 >1 MB 的檔。
+- **給老師的文件**（`advisor_20261107/ADVISOR.{md,pdf}`，10 頁）：
+  - 新增第 3.6 節「SWE-bench agent 軌跡」：表（3 個 seed 的中位數與最小–最大）＋圖 6（run `20261107-151225-icpe-main-agent-fig`，`code/icpe/main_agent_fig.py`；前一個 run `20261107-151203` 圖例壓到線，改版面後重畫，沒用）。
+  - 第 1 節、第 7 節各加一句；資料集表加兩列；第 6 節「還沒做完的」更新（偏離 14 的舊問題、W5／排隊完成、TraceLab c1 重播的設計、W6 現況、版本 C 選格補跑 P4）。
+  - 摘要加一句：「Public SWE-bench agent trajectories show the same split: up to 58% for OpenHands, under 11% for mini-SWE-agent.」英文 248 字。58% 含 O-PF（待修正），不算 O-PF 是 57.7%。
+  - PDF：run `20261107-151349-icpe-main-advisor-pdf`。
+- **寫本節時已經看過的正式結果**：前面各節；STATUS_DATA 14:05 的 agent 摘要表（分析完成之後才讀）；STATUS_A 13:06、STATUS_SIM 14:05、STATUS_RUX 14:30 的進度文字（沒讀 STATUS_TRX 的對話資料集表）。
+
 ## 2026-11-07T14:21+08:00 — icpe-rux：偏離 11 的 W5、排隊敏感度跑完（只報告，主結果不變）；我只轉述、沒重算
 
 - **來源**：icpe-rux 的訊息（`origin/icpe-next-rux` f63f4879，STATUS_RUX 最上面一節）。偏離 11 寫明分析由 icpe-rux 用 `explore_queue.py`／analyze_v8 做，只報告；icpe-main 沒有重算，也沒讀 STATUS_RUX 的表。
