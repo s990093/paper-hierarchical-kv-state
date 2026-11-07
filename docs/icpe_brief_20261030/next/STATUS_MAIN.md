@@ -9,6 +9,8 @@
 - **為什麼驗證沒抓到**（icpe-sim）：T2 只有 wb；唯一有 wt 的 t1 是 Bailian thinking，沒涵蓋長 session 的 wt＋預取進 GPU。
 - **icpe-sim 已做**：叫 icpe-data、TRX40 不要用旗標；停掉 TraceLab 預熱；先診斷、不改程式，之後帶選項問使用者。
 - 〔判讀〕15:51 那節的「通過、可以開跑」不成立；第一批（版本 B 引擎）也要等這個修好、重新驗證。
+- **使用者在 icpe-sim 選 A**（STATUS_SIM 15:56、15:59）：wt＋預取進 GPU 這個組合從參考網格拿掉、不修；引擎維持 63b8e32；跨機參考（run `20261107-155727`）Python＝Rust 就放行旗標。TraceLab 預熱重開；λ＝0 影響量測排在 xref 之後。
+  - 我核對「沒有正式 block 用這個組合」：我分析過的 54 份正式上限表（`results/icpe_next/main/p23/` 與 `verB/` 的 `*_headroom_components`）沒有任何一列是 pf_target＝gpu 且 gpu_write＝wt；P3 的 wt 是預取到 CPU、pfgpu 是 wb。
 - **寫本節時已經看過的正式結果**：沒有新的。
 
 ## 2026-11-07T15:51+08:00 — icpe-sim：63b8e32 重新驗證通過、push（40a4c87f）；偏離 14 的重跑清單 320 個 block
