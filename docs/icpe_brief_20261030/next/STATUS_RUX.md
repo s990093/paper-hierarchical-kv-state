@@ -5,6 +5,38 @@
 
 ---
 
+## 2026-11-07T08:35+08:00 — 排隊：Q3-a 由我決定、一階近似完成並在 SemiAnalysis 上跑；TraceLab、FreeInference 交給 icpe-next-trx；結果改放 `results/icpe_next/v8_explore/`
+
+**使用者的指示（原話）**
+- 「Q3-a（排隊） 我不知道你決定。 開始跑 跟要不要通知其他 session 通知icpe main 就好」
+- 「icpe-next-trx 目前空的 叫他模擬 跟 CacheWise 都先不跑」「說錯是把 TraceLab 在 給他」「FreeInference 也是」「分工一下」
+- 「你需要說一下資料計算完放那github?」
+
+**排隊**
+- **Q3-a 的決定**（SEMANTICS §2b）：④ 只知道紀錄的順序。快取決定照紀錄順序做，排隊在事後套上：工作守恆的 closed-loop FCFS，`qpost=1`。
+- **驗證**：
+  - SemiAnalysis 上 48／48 通過：到達拉開時＝沒排隊；Python 精確重算逐位元相同；快取狀態不變。
+  - 重排程度：輕負載小（位移中位數 18 名），重負載大（約 2,000 名）。
+- **結果**（V8_FEATURES §4c；SemiAnalysis N16／N32／N64／N72 s1 × CPU 8／111／1,024）：
+  - 輕負載上限幾乎不變。
+  - 負載愈重上限愈大：O-GPU ≥15% 的格在 N64、N72 變成 18／18。這和 NP:266「不排隊對預測有利」的方向相反。
+  - 重負載的格不可靠。
+- **端到端**：只有 TTFT 衍生的欄位不同。第一次檢查把 NaN 判成不同，是檢查程式的錯，已修。
+
+**分工**
+- **icpe-next-trx**：TraceLab c1／c2／c4、FreeInference 6 週的重現檢查 → W3、APC／BELP、W5。使用者在 TRX 那邊也確認了，已開始。
+- **RUX3DPRO**：SemiAnalysis（排隊、APC、W5）、Mooncake、Bailian。
+- **CacheWise**：先不跑。
+- **通知**：只通知 icpe-main（v6／v7／v8 摘要）。
+
+**結果放法**（`results/icpe_next/v8_explore/README.md`）
+- 各 session 放自己的分支，路徑 `results/icpe_next/v8_explore/<實驗>/<變體>/`。
+- 內容：sweep 的 `x1_sweep.csv.xz`、分析的 CSV、`MANIFEST.json`（run、commit、引擎與檔案的 sha256）。
+- 不放：原始資料、nb 檔、cue 檔、逐請求 npz。
+- 已收：APC、W5（Mooncake toolagent、SemiAnalysis N16 s1、Bailian coder）、排隊（SemiAnalysis 4 個變體）。
+
+---
+
 ## 2026-11-07T04:30+08:00 — 第 4 段（v8：第 2–5 項的新功能，只有 Rust）：APC、W5 完成並接進 sweep；W3 引擎完成、缺資料；排隊**要使用者決定 Q3-a**
 
 報告：`next/rux/V8_FEATURES.md`；語意：`next/rux/SEMANTICS_2to5.md`；程式：`code/icpe/rux_x1fast/v8_features/`（最終版 `main.rs` sha256 `d1502d2d…`；獨立審查後改了 3 處，見 V8_FEATURES §3b）。
