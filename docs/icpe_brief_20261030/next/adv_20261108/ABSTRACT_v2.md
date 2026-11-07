@@ -58,4 +58,4 @@
 ## 6　出處
 
 - 摘要裡每個數字的出處同 `REPLY_TEACHER.md` 第 8 節；11.0–40.7%、寫入時放置 0 收益＝〔實測〕（PAPER.md v4.2，經 ADVISOR.md 第 8 節引用，本文沒重新核對實測值）。
-- 投稿前照 `ADVISOR.md:184`，用 `paper-claim-audit` 逐句核對。
+- 投稿前照 `ADVISOR.md:175`，用 `paper-claim-audit` 逐句核對。
