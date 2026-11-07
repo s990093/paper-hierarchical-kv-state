@@ -1,7 +1,41 @@
 # STATUS_RUX（icpe-rux，RUX3DPRO）
 
 本檔由 icpe-rux 寫，最新的一節在最上面。格式照 `STATUS_TRX.md`。
-**到 11/7 09:20：正式模擬只有使用者同意、登記過的（PREREG 偏離 10 的 APC、偏離 11 的 W5／排隊）；沒有動佇列；別人的檔只有 PREREG 檔尾 append（使用者授權）。**
+**到 11/7 12:10：正式模擬只有使用者同意、登記過的（PREREG 偏離 10 的 APC、偏離 11 的 W5／排隊）；沒有動佇列；別人的檔只有 PREREG 檔尾 append（使用者授權）。**
+
+---
+
+## 2026-11-07T12:10+08:00 — 偏離 10 的正式 APC 重算：RUX3DPRO 這邊 17 個變體全部跑完，版本 B 全部逐值重現（dcc8e00c）；W5／排隊鏈已自動開始
+
+**要證明什麼**：加 APC（② ④）和 BELP（只進 O-GPU ④）之後的版本 C 上限表。前提是只用版本 B 的 16 個 GPU 規則時，能逐值重現版本 B。
+
+**做了什麼**
+- `run_apc_formal.sh` 依序跑完 SemiAnalysis 12 個、Mooncake conversation／toolagent、Bailian coder／thinking／traceA（thinking、traceA 先轉成 nb，run `20261107-115310-icpe-rux-convert-bailian-thinking-traceA`）。鏈結尾印 `CHAIN_APC_OK`。
+- 每個 run 都是 `exit=0`、`py_fallback_jobs=0`，引擎 v8 48e4efce，sweep code_sha `3280b1c8799b+rse7f6ee8f`（MANIFEST 的 engine_used 只有這一個）。
+- **重現檢查**：17 個都是 `EXPLORE_RESULT REPRODUCED`，7 欄全部 0 個不同。SemiAnalysis、Bailian 每個 324 個 (格, 元件)；Mooncake 每個 918 個。
+- 結果在 `results/icpe_next/apc/<變體>/`：f9717083、d35aed35、f054a1aa、dcc8e00c。
+
+**版本 B → 版本 C**（cake；≥15% 的格數，各家族加總；括號內是單格上限變化的範圍）
+
+| 元件 | SemiAnalysis（12 × 54 格） | Mooncake（2 × 162 格） | Bailian（3 × 54 格） |
+|:--|:--|:--|:--|
+| O-GPU | 333 → 321（−0.214～+0.122） | 285 → 287（−0.0001～+0.010） | 67 → 67（−0.0003～+0.009） |
+| O-ORD | 183 → 161（−0.054～+0.010） | 212 → 212 | 26 → 26 |
+| O-PF | 19 → 10（−0.091～+0.910＊） | 272 → 272 | 42 → 42 |
+| O-DROP | 0 → 0 | 228 → 228 | 40 → 40 |
+| O-NOW | 0 → 0 | 0 → 0 | 0 → 0 |
+| O-ALL(report) | 314 → 268 | 216 → 216（2 × 108 格） | 97 → 97 |
+
+- ＊ +0.910 是負的格變得沒那麼負：例如 N16 s1、128 GiB、nfs、閒，O-PF 的上限 −1.735 → −0.826，因為 oracle 的 GPU 規則改用 APC 後變快，對手不變。前 8 大都是這一型，都還是負的。
+- **SemiAnalysis 的 O-GPU 按 N 分**（≥15% 格數，3 個 seed 加總）：N16 34 → 28、N32 80 → 77、N64 109 → 107、N72 110 → 109。
+  - 單一變體的最大值：N16、N32 下降（例如 N16 s1 0.4617 → 0.4360）；N64、N72 上升（例如 N72 s3 0.5294 → 0.5682）。上升是因為 BELP 進了 ④ 的 oracle。
+- Mooncake、Bailian 加了 APC 幾乎不變：最大的變化 0.010，≥15% 的格數只有 Mooncake O-GPU 多 2 格。
+- 寫入飽和照算，另報：只有 Mooncake 有，O-ORD 2 × 54、O-PF 2 × 54、O-GPU 15＋18 格。
+- TRX40 的 9 個變體（TraceLab c1／c2／c4、FreeInference 6 週）在 `origin/icpe-next-trx`，由 icpe-next-trx 自己報。
+
+**接下來**
+- W5／排隊鏈在 `CHAIN_APC_OK` 之後自動開始，12:08 起跑 W5 Bailian coder，接著是 Mooncake 2 個，再來是排隊（SemiAnalysis 12 個）。
+- W7 照使用者的指示停著。
 
 ---
 
