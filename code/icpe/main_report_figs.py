@@ -21,6 +21,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker  # noqa: E402,F401
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
@@ -67,20 +68,20 @@ def fig1(verb, out):
     for arr, tool, name, col in CLS:
         g = V[(V.arrival == arr) & (V.tool_type == tool)].copy()
         g["lab"] = [short(t, r) for t, r in zip(g.trace, g.rule)]
-        g = g.sort_values("max_judged")
-        ys = y + np.arange(len(g))
+        g = g.sort_values("max_judged", ascending=False)
+        ys = y + 1.2 + np.arange(len(g))
         ax.scatter(g.max_judged * 100, ys, s=34, color=col, edgecolor=SURF, linewidth=1.5, zorder=3, label=name)
         for yy, (_, r) in zip(ys, g.iterrows()):
             rec("fig1", name, r.lab, round(float(r.max_judged) * 100, 3), int(yy), src)
         ticks += list(ys)
         labels += list(g.lab)
-        ax.text(71, ys[-1] + 0.6, name, color=INK, fontsize=9, ha="right", va="bottom", weight="bold")
-        y += len(g) + 2.2
+        ax.text(0.5, y + 0.1, name, color=INK, fontsize=9, ha="left", va="center", weight="bold")
+        y = ys[-1] + 1.8
     ax.axvline(15, color=REF, linestyle="--", linewidth=1)
-    ax.text(15.6, -1.4, "15% 門檻", color=INK2, fontsize=8, va="center")
+    ax.text(15.6, y - 0.6, "15% 門檻", color=INK2, fontsize=8, va="center")
     ax.set_yticks(ticks, labels, fontsize=7.5)
     ax.set_xlim(0, 72)
-    ax.set_ylim(-2.2, y - 1)
+    ax.set_ylim(y, -0.8)
     ax.set_xlabel("完美預知比最好的不預測做法快多少（上限，%）：每個變體 5 個判定元件、54 格裡的最大值")
     ax.grid(axis="y", visible=False)
     ax.set_title("圖 1　版本 B：每個紀錄變體的最大上限", loc="left", fontsize=11)
@@ -142,7 +143,7 @@ def fig3(verb, out):
     ax.set_xlabel("CPU 記憶體容量（GiB）")
     ax.set_ylabel("上限 ≥15% 的（格, 元件）占比（%）")
     ax.grid(axis="x", visible=False)
-    ax.legend(fontsize=8, loc="upper right")
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=3)
     ax.set_title("圖 3　上限隨 CPU 容量：先升後降（版本 B）", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig3_cpu.png", dpi=170)
@@ -175,9 +176,10 @@ def fig4(p4, out):
         ax.set_ylim(0, 105)
         ax.grid(axis="x", visible=False)
     axs[0].set_ylabel("中位數仍 ≥15% 的占比（%）")
-    axs[2].legend(fontsize=7, loc="upper right")
+    h, l = axs[0].get_legend_handles_labels()
+    fig.legend(h, l, fontsize=8, loc="lower center", ncol=3)
     fig.suptitle("圖 4　預測不準時還剩多少（P4；10 個 seed 的中位數；λ＝0 是同一次無雜訊）", x=0.01, ha="left", fontsize=11)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
     fig.savefig(f"{out}/fig4_p4.png", dpi=170)
     plt.close(fig)
 
@@ -190,7 +192,7 @@ def fig5(w3, out):
     g["r3"] = g.T_cue / g.T_rival
     g = g.sort_values(["component", "cpu_GiB", "slow", "gpu"]).reset_index(drop=True)
     gl = {"idle": "閒", "busy": "忙"}
-    g["lab"] = [f"{c} {cpu:g} GiB {s} {gl.get(u, u)}" for c, cpu, s, u in zip(g.component, g.cpu_GiB, g.slow, g.gpu)]
+    g["lab"] = [f"{c} {('111' if abs(cpu - 111.0625) < 1e-6 else f'{cpu:g}')} GiB {s} {gl.get(u, u)}" for c, cpu, s, u in zip(g.component, g.cpu_GiB, g.slow, g.gpu)]
     fig, ax = plt.subplots(figsize=(7.2, 5.6))
     ys = np.arange(len(g))
     for yy, a, b in zip(ys, g.r4, g.r3):
@@ -204,11 +206,12 @@ def fig5(w3, out):
     ax.text(1.02, len(g) - 0.3, "② 最好的固定規則＝1", color=INK2, fontsize=8)
     ax.set_xscale("log")
     ax.set_xticks([0.5, 0.75, 1, 1.5, 2, 3, 4], ["0.5", "0.75", "1", "1.5", "2", "3", "4"])
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
     ax.set_yticks(ys, g.lab, fontsize=7.5)
     ax.invert_yaxis()
     ax.set_xlabel("回來請求的平均 TTFT ÷ ②（對數軸；<1 比最好的固定規則快）")
     ax.grid(axis="y", visible=False)
-    ax.legend(fontsize=8, loc="lower right")
+    ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.45, -0.1), ncol=2)
     ax.set_title("圖 5　W3（TraceLab c1）：線索做法在 22 格都比最好的固定規則慢", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig5_w3.png", dpi=170)
