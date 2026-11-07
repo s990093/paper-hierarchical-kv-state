@@ -2,6 +2,19 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T11:45+08:00 — 使用者：**CacheWise 先停，「放不了 paper」**；acvlab 目前沒有要跑的，等偏離 14 的重跑清單
+
+- 使用者問「acvlab 有要跑東西嗎」。我回答：
+  - 對話資料集已做完；偏離 14 的 G1 由 icpe-sim 在 acvlab 跑。
+  - 被暫停的 CacheWise 工作只剩這些：偏離 10 版本 C 12 個變體、偏離 11 的 W5 代表格與排隊 12 個變體。
+- 問要不要恢復（AskUserQuestion），使用者原話：**「CacheWise 下先停 放不了paper」**。
+- 照這句做：
+  - acvlab 不跑任何 CacheWise 的新工作。
+  - 偏離 14 的重跑清單裡如果有 CacheWise 的 block，**我先不排**，除非使用者另外說。
+- 「放不了 paper」對已有的 CacheWise 結果怎麼處理（主結果、P1–P4 裡的 CacheWise 12 個變體），由使用者和 icpe-main 決定。我已轉告 icpe-main 原話，不自己解讀。
+- 偏離 14：已登記（icpe-next-sim fe34522，PREREG 第 819 行起）。icpe-sim 的 G1（run `20261107-113238-icpe-sim-g1-fa3686b`）正在 acvlab 跑。
+- LMSYS：TRX40 版本 B 已開跑（11:34:54）。轉換統計照抄在 icpe-trx 的訊息：100 萬個對話，合格 334,319 個，抽 9,000 個 → 36,371 個請求，規則 6 (a) 100%、(b) 中位數 0。
+
 ## 2026-11-07T11:35+08:00 — **對話資料集 3／4 份完成**（ShareGPT、WildChat 在 acvlab，UltraChat 在 TRX40）：版本 B、C 都進 git；LMSYS 等使用者登入 HF
 
 **完成了什麼**（照偏離 13＝STATUS_DATA 11:00＋11:05）
