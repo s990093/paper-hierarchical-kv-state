@@ -3,7 +3,7 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
-## 2026-11-07T17:25+08:00 — 偏離 14 第一段：**UltraChat、LMSYS 的 main＋P1 `_ttl` 完成並收進 git**；檢查表 uc_p1／lm_p1 `D14_TABLE_RESULT IDENTICAL`；佇列繼續（sa_p1 起）
+## 2026-11-07T17:19+08:00 — 偏離 14 第一段：**UltraChat、LMSYS 的 main＋P1 `_ttl` 完成並收進 git**；檢查表 uc_p1／lm_p1 `D14_TABLE_RESULT IDENTICAL`；佇列繼續（sa_p1 起）
 
 - **已跑完並通過檢查的 block**（佇列 run `20261107-171019-icpe-trx-d14-stage1-queue`）：
 
@@ -30,7 +30,7 @@
   - table_sha256_uncompressed：uc 1b5745c94382…、lm 794899a08cc8…。
 - **佇列**：17:17:31 開始 d14_sa_p1。資源：MemAvailable 最低 55.6 GiB；本組 swap 0 MiB；/ssd4 剩 490 GiB。
 
-## 2026-11-07T17:15+08:00 — **xref_dev14 在 TRX40 重現：Python 6/6、Rust 6/6 PASS**（1,184 列，0 列不同）→ **第一段 180 個 d14 block 開跑**（17:10:19）
+## 2026-11-07T17:12+08:00 — **xref_dev14 在 TRX40 重現：Python 6/6、Rust 6/6 PASS**（1,184 列，0 列不同）→ **第一段 180 個 d14 block 開跑**（17:10:19）
 
 - **merge**：
   - `origin/icpe-next-sim` b7d2ee57 → 553a3cee（xref_dev14 的 6 個 CSV、README、env.sh、`next_sim_dev14_check.py`；`code/p3x` 沒變）。
@@ -65,7 +65,7 @@
   - 第一個 block：`OK d14_sa_main/sa_N16_s1 jobs=864 timing=864`。
 - **之後**：每個家族的 main＋P1 `_ttl` 跑完就 collect、push，通知 icpe-data 和 icpe-main。家族指 sa、mc、uc、lm。
 
-## 2026-11-07T16:05+08:00 — merge `origin/icpe-next-data` 4bae90be（含 icpe-sim f5b2960c，引擎 63b8e32）；**旗標全關三項對拍 0 差**；count **MATCH_RERUN 300／WHOLE_BLOCK 20／MISMATCH 0／ALL TOTAL 2,193,997**；TRX40 的 180 個 d14 block dry-run OK；**還沒跑任何 d14 block**（等 xref_dev14）
+## 2026-11-07T16:03+08:00 — merge `origin/icpe-next-data` 4bae90be（含 icpe-sim f5b2960c，引擎 63b8e32）；**旗標全關三項對拍 0 差**；count **MATCH_RERUN 300／WHOLE_BLOCK 20／MISMATCH 0／ALL TOTAL 2,193,997**；TRX40 的 180 個 d14 block dry-run OK；**還沒跑任何 d14 block**（等 xref_dev14）
 
 - **merge**：9a00c00d。PREREG 的衝突 icpe-data 已在 c68abaad 解掉；我這邊沒有衝突。
   - 引擎檔和 40a4c87f 相同：x1_sim 8b53588b85c3、x1_rust 0d89c4ba33c5、x1_nb 8251e2587464，main.rs 逐字相同。
