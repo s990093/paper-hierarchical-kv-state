@@ -981,3 +981,27 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 - 三個的 KEY.json 都是 `code_sha256` `362b98a15fc4…`（x1_sim／x1_nb／x1_rust 合起來的 sha），`lite=True`、`prep=built_saved`。
 - 這次比 11/6（約 2,482 s／變體）快很多。原因沒查（NOT_MEASURED）。
 - 用同一份程式（`63b8e32` 或之後只改文件的 commit）跑 TraceLab，應該會印 `prep=cache_hit`。
+
+---
+
+## 2026-11-07T16:35+08:00 — 更正 SIM_CHANGES 23 的一句：「不開 `--pf-gpu-recheck` 也不會 assert」只對沒有雜訊成立；**有雜訊＋預取到 GPU 的 O-ALL，旗標關也會 assert**（正式 block 沒有這個組合）
+
+- **icpe-rux 先發現**（移植 v8 時，16:1x）：只開 `pfx=1`、不開 `pgr=1`，O-ALL、wb、預取到 GPU，P B2 λ0.3 seed 7，CPU 16 → 參考版和移植都 `gspf`。
+- **我在 `63b8e32` 上重現**：run `20261107-163044-icpe-sim-pfx-nopgr-repro`。SemiAnalysis N16 s1、CPU 16、O-ALL、b32、GPU 111.0625 wb、預取到 GPU、P B2 λ0.3 seed 7；Rust，Python 只跑 1 個：
+
+| GPU 規則 | 旗標關 | 只 `--pf-expire` | `--pf-expire --noise-overdue resample` | 只 `--pf-gpu-recheck` | 三個都開 |
+|:--|:--|:--|:--|:--|:--|
+| BEL | 跑完 | `gspf 1202 5` | `gspf 51 5` | 跑完 | 跑完 |
+| TTLA:10 | `gspf 19 5`（Python `AssertionError: (19, 5)`，`_turn_end_wb` → `_g_unprefetch`） | `gspf 250 18` | `gspf 63 5` | 跑完 | 跑完 |
+
+- **原因**（推論，和表一致，沒有逐步追）：
+  - SIM_CHANGES 23 的舊路徑留下「屬於已丟 session 的 GPU 預取副本」。
+  - 沒有雜訊時，O-NOW 丟的 session 不會再回來，所以只有規則 (i) 會去找那些副本（已用 S_DROP 跳過修好）。
+  - 有雜訊時，被丟的 session 可能又回來。之後丟它或讓它過期，`_g_unprefetch(s, sb[s])` 找不到舊副本，就會 assert。
+  - `--pf-gpu-recheck` 讓這種副本不會產生，所以兩種情況都沒事。
+- **影響**：
+  - 正式 block 沒有「雜訊 × 預取到 GPU」：P4 都是預取到 CPU，`_pfgpu`／sens_rep pfgpu 都沒有雜訊。正式結果不受影響。
+  - 重跑清單的 `flags` 欄一律有 `--pf-gpu-recheck`。
+  - xref 有雜訊的網格三個旗標都開，不受影響。
+- **規則**：**預取到 GPU 一律要開 `--pf-gpu-recheck`**（不論有沒有 `--pf-expire`）。已改 SIM_CHANGES 23 那句。
+- 程式不改（使用者 15:5x 選 A 的精神：正式不用的組合記成已知問題）。若要讓程式擋掉「預取到 GPU 卻沒開 `--pf-gpu-recheck`」，x1_sim 的 sha 會變、快取要重建；我不建議，除非使用者要。
