@@ -18,7 +18,13 @@
 - 結果：`results/icpe_next/main/verC_d14/bl_*`。
 - **FreeInference**（18:25 補；merge 498c169c 沒有衝突）：run `20261107-182456-icpe-main-d14-verC-fi`（exit 0）：rowcheck PASS；獨立重算＝新 verC（1,620 格，1,596 逐位元、24 格在 1e-12 內，最大差 3.4e-21，同版本 C 當初）；O-GPU 不含 BELP ≤ 含 BELP（324）；四個不變元件＝舊 verC（1,296）。O-PF 73／324 格變（≤0.2 個百分點），判定元件最大 0.99% 不變（摘要的「under 1%（max 0.99%）」不受影響）。
 - **ShareGPT、WildChat**（19:14 補；merge `origin/icpe-next-data` 最新，沒有衝突）：run `20261107-191215-icpe-main-d14-verC-sg-wc`（exit 0；對話資料集不印上限的值）：rowcheck 2／2；獨立重算＝新 verC（sg 1,620 逐位元；wc 810，1 格在 1e-12 內）；O-GPU 不含 BELP ≤ 含 BELP；四個不變元件＝舊 verC（1,296、648）。變動格數：sg O-PF 242／324、O-ALL 244／324；wc O-PF 4／162；對手 0。
-- **寫本節時已經看過的正式結果**：Bailian 的修正版版本 C。
+- **agent 軌跡 ms × 12、oh × 12**（20:19 補；merge `origin/icpe-next-data` fe0c8a7c，沒有衝突）：run `20261107-201650-icpe-main-d14-verC-ms-oh`（exit 0）：rowcheck PASS（各 12 個、17 × 18）；獨立重算＝新 verC（各 3,240 逐位元）；O-GPU 不含 BELP ≤ 含 BELP（各 648）；四個不變元件＝舊 verC（各 2,592）。**6 個元件都 0 格變、對手 0 格變**（和第一批相同：λ＝0 時 pfx 在這兩份軌跡上沒有觸發）。
+  - 所以 agent 版本 C 的判定（9／24 個變體 ≥15%，全是 OpenHands N32／64／72，最大 58.5%；mini-SWE-agent 最大 10.9%）就是修正後的值，O-PF 的「待修正」可以拿掉；不必重算（`results/icpe_next/main/agent/` 不動）。
+- **Mooncake conversation、toolagent**（20:19 補；merge `origin/icpe-next-trx` 1def6b36，沒有衝突）：run `20261107-201840-icpe-main-d14-verC-mc`（exit 0）：rowcheck PASS（4 個 (檔, rule)）；獨立重算＝新 verC（1,512 逐位元）；O-GPU 不含 BELP ≤ 含 BELP（324）；四個不變元件＝舊 verC（1,296）。
+  - 變動〔模擬〕：O-PF 234／324 格變（−0.34～+16.3 個百分點），≥15% 272 → 288（往上 16、往下 0），最大 57.7% → 57.8%；O-ALL(report) 165／216（最大 76.3% → 77.5%）。和第一批的版本 B 數字相同。
+  - O-PF 的 T_rival 7 格變，**全是 rule＝min**（R1、R2 的對手不變），和第一批同一個原因。
+- 結果都在 `results/icpe_next/main/verC_d14/{ms,oh,mc}_*`。
+- **寫本節時已經看過的正式結果**：Bailian、FreeInference、agent、Mooncake 的修正版版本 C（對話資料集只看變動格數）。
 
 ## 2026-11-07T17:54+08:00 — **偏離 14 第一批全部完成**：版本 B 論文版的判定字不變（3／9、14／14、5／5）；淘汰類比例 原始工具 52.6% → 51.8%、合成 95.9% → 94.5%
 
