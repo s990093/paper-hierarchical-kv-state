@@ -98,14 +98,17 @@ def binary():
     return b
 
 
-def unsupported(planner, nz, sc):
-    """Rust 版不支援的功能 → 原因字串；支援 → None。W4 雜訊：B1（v4）、B2（v5；只在 Python 3.12，見檔頭）。"""
+def unsupported(planner, nz, sc, nzo="clamp"):
+    """Rust 版不支援的功能 → 原因字串；支援 → None。W4 雜訊：B1（v4）、B2（v5；只在 Python 3.12，見檔頭）。
+    PREREG 偏離 14 (a)（nzo＝resample）：重抽會用亂數，B1 也要照 CPython 3.12 走訪 set 的順序 → 同 B2，只在 Python 3.12 交給 Rust。"""
     if sc is not None:
         return "slow_cap"
     if nz is not None and nz["draw"] not in ("B1", "B2"):
         return "noise_" + str(nz["draw"])
     if nz is not None and nz["draw"] == "B2" and sys.version_info[:2] != (3, 12):
         return "noise_B2_py" + "%d%d" % sys.version_info[:2]
+    if nz is not None and nzo != "clamp" and sys.version_info[:2] != (3, 12):
+        return "noise_overdue_py" + "%d%d" % sys.version_info[:2]
     if planner != "cake":
         return "stair"
     return None
@@ -329,9 +332,12 @@ def check_job(XS, policy, views, K, gkw):
         assert all(v.slow_name == views[0].slow_name and v.gpu == views[0].gpu for v in views)
 
 
-def write_job(XS, P, policy, cap_bytes, views, K, gkw, nz=None):
+def write_job(XS, P, policy, cap_bytes, views, K, gkw, nz=None, pfx=False, nzo="clamp", pgr=False):
     """一個 job 的輸入目錄（views.txt、f*／fc*、fc_idle.f64、i4.txt、一行的 jobs.txt）。f／Fc 直接取自 Python 的 View。
-    nz＝W4 雜訊（x1_sim 的 noise spec；B1 或 B2，見 unsupported）→ jobs.txt 多一欄 nz=…（同 Engine(noise=nz)；λ＝0 也照送）。"""
+    nz＝W4 雜訊（x1_sim 的 noise spec；B1 或 B2，見 unsupported）→ jobs.txt 多一欄 nz=…（同 Engine(noise=nz)；λ＝0 也照送）。
+    PREREG 偏離 14（SIM_CHANGES 22）：pfx＝True → 多一欄 `pfx=1`（Engine(pf_expire=True)）；nzo＝"resample" → 多一欄
+    `nzo=resample`（Engine(noise_overdue="resample")）。SIM_CHANGES 23：pgr＝True → 多一欄 `pgr=1`
+    （Engine(pf_gpu_recheck=True)）。沒開＝和原本相同的一行。"""
     check_job(XS, policy, views, K, gkw)
     o, a, h, pf = XS.POLICIES[policy]
     G = int(gkw.get("gpu_cap", 0))
@@ -361,7 +367,9 @@ def write_job(XS, P, policy, cap_bytes, views, K, gkw, nz=None):
         gf = ["0", "-", "-", "wb", "cpu"]
     with open(os.path.join(jd, "jobs.txt"), "w") as fh:
         fh.write(" ".join(["j0", o, a, h or "-", pf or "-", repr(dead), repr(cap_bytes)] + gf
-                          + [",".join(str(i) for i in range(len(views)))] + ([] if nz is None else [nz_field(nz)])) + "\n")
+                          + [",".join(str(i) for i in range(len(views)))] + ([] if nz is None else [nz_field(nz)])
+                          + (["pfx=1"] if pfx else []) + ([] if nzo == "clamp" else [f"nzo={nzo}"])
+                          + (["pgr=1"] if pgr else [])) + "\n")
     return jd
 
 

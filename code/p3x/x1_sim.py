@@ -697,7 +697,8 @@ class SlowOrder:
 # ================================================================== 引擎
 class Engine:
     def __init__(self, P, policy, cap_bytes, views, K, gdsf_view=None, check=False, gpu_cap=0, gpu_policy="LRU", gpu_write="wb",
-                 pf_target="cpu", noise=None, slow_cap=None, slow_policy="LRU"):
+                 pf_target="cpu", noise=None, slow_cap=None, slow_policy="LRU", pf_expire=False, noise_overdue="clamp",
+                 pf_gpu_recheck=False):
         self.P = P
         self.full, self.nall, self.acc, self.t = P["full"], P["nall"], P["acc"], P["tl"]
         self.kind, self.sess, self.parent = P["kindc"], P["sessl"], P["parentl"]
@@ -731,6 +732,7 @@ class Engine:
         self.cpu_set = set()
         self.lru = OrderedDict()
         self.n_demote = self.n_drop = self.n_unpf = 0
+        self.n_pfexp = 0              # 偏離 14 (i) 丟掉的次數（只在診斷時看；不進 CSV）
         self.res_sum = 0.0
         self.w_slow_blocks = 0
         # ARC
@@ -766,6 +768,12 @@ class Engine:
         # ICPE next：GPU 快取層（gpu_cap＝0＝關閉，下面都不建、step 走原本的路徑）
         self._fix_fast = True         # 加速：_fix 沒有副作用時可以跳過（慢層容量上限會包一層有副作用的 _fix → False）
         self.noise = None             # W4 雜訊（PREREG §2 第 6 項、§3 B）；None＝完美預知（原本的路徑）
+        # PREREG 偏離 14（SIM_CHANGES 22）：(i) O-PF 預取的副本過期就丟；(a) 模型 P 抽到已經過去的時間就重抽。預設關＝原本的路徑
+        assert noise_overdue in ("clamp", "resample"), noise_overdue
+        self.pfx = bool(pf_expire) and self.pf == "opf"
+        self.nzo_rs = noise_overdue == "resample"
+        # SIM_CHANGES 23（使用者 11/7 選 A）：GPU 預取騰完空間後重查候選；預設關＝原本的路徑
+        self.pgr = bool(pf_gpu_recheck)
         self.G = gpu_cap
         self.pf_target = pf_target
         self.gpf = None               # 預取進 GPU 的塊的主人（只有 pf_target＝gpu 時才建）
@@ -1024,6 +1032,8 @@ class Engine:
             gaps.append(tl[nxt[s]] - tl[r] if s in nxt else INF)
             nxt[s] = r
         self.nz_gaps = gaps[::-1]
+        if self.nzo_rs:                        # 偏離 14 (a)：重抽用（照值排序；INF 排在最後）
+            self.nz_sorted = sorted(self.nz_gaps)
         self.nzd = [None] * self.P["R"]["n_sess"]
         self.next_req = self._next_req_nz      # select（O-BEL／O-BELS）、dead（O-DROP／O-NOW）、make_room（O-PF）都走這個
 
@@ -1055,6 +1065,19 @@ class Engine:
             if g >= INF:
                 return INF
             Tq = tl[self.last[s]] + g
+            if self.nzo_rs:
+                # 偏離 14 (a)：抽到的時間已經過去（換算後會落在已處理的請求）→ 從經驗分佈裡「間隔 > 已經過的時間」那部分均勻重抽
+                # （含 INF＝之後不再回來），同一個亂數串流多抽一次；B1 取代存著的那組。
+                tq = tl[self.cur] if self.cur >= 0 else tl[0]
+                if Tq <= tq:
+                    sg = self.nz_sorted
+                    k = bisect.bisect_right(sg, tq - tl[self.last[s]])
+                    g = sg[k + self.nzrng.randrange(len(sg) - k)]
+                    if self.nz_b1:
+                        self.nzd[s] = (u, g, eps)
+                    if g >= INF:
+                        return INF
+                    Tq = tl[self.last[s]] + g
         else:
             if idx >= len(tl) or eps == 0.0:      # 含 INF（不再回來）；超過紀錄長度（只在截短的自檢裡會發生）照原值
                 return idx
@@ -1063,6 +1086,31 @@ class Engine:
         j = bisect.bisect_left(tl, Tq)
         c = self.cur + 1
         return j if j > c else c
+
+    # ---------------------------------------------------------- PREREG 偏離 14 (i)：O-PF 預取的副本過期就丟
+    def _pf_expire(self):
+        """請求 r 開始時（cur＝r−1；GPU 層 TTLA 到期、推進預取之前）：還留著預取副本、預測被讀的請求 sT ≤ cur 的 session
+        → 丟掉它全部的預取副本（CPU：INT4；GPU：預取進 GPU 的那份；資料還在慢層），不再放回預取佇列（pfdone）。
+        每個 session 的處理互不影響（只減 cpu_used／gpu_used、改它自己的塊），所以和走訪順序無關。
+        已丟（S_DROP）的 session 跳過：它的 sb 已清空，找不到副本；這種副本只會來自 GPU 預取騰空間時候選本身被丟、
+        迴圈仍把它的塊預取進來（旗標關也有；STATUS_SIM 2026-11-07T14:02），留給旗標關的處理方式。"""
+        cur = self.cur
+        if self.gpf is not None:
+            for s in [x for x in self.gpf_sessions if self.gspf[x] > 0 and self.sT[x] <= cur and self.st[x] != S_DROP]:
+                self._g_unprefetch(s, self.sb[s], push=False)
+                self.pfdone[s] = True
+                self.n_pfexp += 1
+        else:
+            for s in [x for x in self.pf_sessions if self.spf[x] > 0 and self.sT[x] <= cur and self.st[x] != S_DROP]:
+                for b in self.sb[s]:
+                    if self.pf_owner[b] == s:
+                        self.cpu_used -= self.i4
+                        self.fmt[b] = 0
+                        self.pf_owner[b] = -1
+                self.spf[s] = 0
+                self.pf_sessions.discard(s)
+                self.pfdone[s] = True
+                self.n_pfexp += 1
 
     # ---------------------------------------------------------- 預取直接搬回 GPU（PREREG §2 第 2 項的敏感度）
     def _pf_push(self, s):
@@ -1160,6 +1208,10 @@ class Engine:
             if st0 >= t_to or not self._g_make_room(s, len(todo) * BF, st0, v):
                 heapq.heappush(self.pfheap, (key, s))
                 return
+            # SIM_CHANGES 23（--pf-gpu-recheck）：騰空間（wb 寫回 → enforce）可能把候選自己丟掉（O-ALL 的 O-NOW）；
+            # 原本照樣把 todo 預取進 GPU，留下屬於已丟 session 的副本（STATUS_SIM 11/7 14:02）。開了就不預取。
+            if self.pgr and self.st[s] not in (S_CPU, S_SLOW):
+                continue
             for b in todo:
                 fm = fmt[b]
                 ch = cpu if fm else slow
@@ -1625,6 +1677,8 @@ class Engine:
     # ---------------------------------------------------------- 一個請求
     def step(self, r):
         t = self.t[r]
+        if self.pfx:              # 偏離 14 (i)；沒開＝原本的路徑
+            self._pf_expire()
         if self.G > 0 and self.gorder == "ttla":
             self._g_expire(t)
         if self.pf:
@@ -2112,6 +2166,9 @@ OUTDIR_A = "x1"
 
 _GPU_COLS = False     # ICPE next：這次 sweep 有沒有開 GPU 層（有＝每列多 gpu_GiB／gpu_write／gpu_policy 與 _gpu_summary 的欄位）
 _NZ_COLS = False      # ICPE next：這次 sweep 有沒有雜訊（有＝每列多 noise_model／noise_lambda／noise_draw／noise_seed）
+_PFX = False          # PREREG 偏離 14 (i)：--pf-expire（開＝每列多 pf_expire）
+_NZO = "clamp"        # PREREG 偏離 14 (a)：--noise-overdue resample（開＝每列多 noise_overdue）
+_PGR = False          # SIM_CHANGES 23：--pf-gpu-recheck（開＝每列多 pf_gpu_recheck）
 _SC_COLS = False      # ICPE next：這次 sweep 有沒有慢層容量上限（有＝每列多 slow_cap_frac／slow_policy／n_slow_clean_evict／n_slow_sess_drop）
 _ENGINE = "py"        # ICPE next：py＝Engine（原本）；rust＝x1_rust 的常駐 x1fast（sweep --engine rust；_rust_sweep）
 _XR = None            # x1_rust 模組（只有 --engine rust 才 import）
@@ -2165,6 +2222,12 @@ def _job(job):
         gkw["noise"] = nz
     if sc is not None:
         gkw.update(slow_cap=sc["frac"], slow_policy=sc["pol"])
+    if _PFX:                 # 偏離 14；沒開＝原本的呼叫
+        gkw["pf_expire"] = True
+    if _NZO != "clamp":
+        gkw["noise_overdue"] = _NZO
+    if _PGR:                 # SIM_CHANGES 23
+        gkw["pf_gpu_recheck"] = True
     eng = Engine(P, policy, cpu_gib * GiB, views, K, gdsf_view=gv, **gkw).run()
     return _job_rows(job, P, views, eng, t0)
 
@@ -2206,6 +2269,12 @@ def _job_rows(job, P, views, eng, t0):
                        noise_draw=nz["draw"] if nz else "none", noise_seed=nz["seed"] if nz else -1)
         if _SC_COLS:
             row.update(slow_cap_frac=sc["frac"] if sc else 0.0, slow_policy=sc["pol"] if sc else "none")
+        if _PFX:                 # 偏離 14：開了才多欄（沒開＝原本的欄位）
+            row.update(pf_expire=True)
+        if _NZO != "clamp":
+            row.update(noise_overdue=_NZO)
+        if _PGR:                 # SIM_CHANGES 23：開了才多欄
+            row.update(pf_gpu_recheck=True)
         if _SC_COLS:
             sm.update(slow_cap_blocks=eng.sc_cap if sc else -1, n_slow_clean_evict=eng.n_sc_clean if sc else 0,
                       n_slow_sess_drop=eng.n_sc_drop if sc else 0)
@@ -2219,6 +2288,12 @@ def _job_rows(job, P, views, eng, t0):
             gtag += f"_nz{nz['model']}{nz['lam']:g}{nz['draw']}s{nz['seed']}"
         if sc is not None:
             gtag += f"_sc{sc['frac']:g}{sc['pol']}"
+        if _PFX:
+            gtag += "_pfx"
+        if _NZO != "clamp":
+            gtag += f"_nzo{_NZO}"
+        if _PGR:
+            gtag += "_pgr"
         np.savez_compressed(os.path.join(rd, f"req_{trace}_{rule}_{cpu_gib}_{policy}{gtag}_{'-'.join(keys[0]) if len(keys) <= 2 else 'n' + str(len(keys))}.npz"),
                             **arrs)
     return out
@@ -2318,7 +2393,7 @@ def filter_jobs(J, path, traces, rules):
 
 
 def cmd_sweep(a):
-    global _K, _GPU_COLS, _NZ_COLS, _SC_COLS, _ENGINE, _XR
+    global _K, _GPU_COLS, _NZ_COLS, _SC_COLS, _ENGINE, _XR, _PFX, _NZO, _PGR
     import multiprocessing as mp
     for nm in a.slows:
         if nm not in SLOWS and nm not in EXTRA_SLOWS:
@@ -2330,6 +2405,13 @@ def cmd_sweep(a):
     _NZ_COLS = any(n is not None for n in nspecs)
     sspecs = slow_specs(a.slow_cap_frac, a.slow_policies)
     _SC_COLS = any(x is not None for x in sspecs)
+    _PFX = bool(getattr(a, "pf_expire", False))              # 偏離 14 (i)
+    _NZO = getattr(a, "noise_overdue", "clamp") or "clamp"   # 偏離 14 (a)
+    _PGR = bool(getattr(a, "pf_gpu_recheck", False))         # SIM_CHANGES 23
+    if _PFX or _NZO != "clamp":
+        print(f"deviation14 pf_expire={_PFX} noise_overdue={_NZO}", flush=True)
+    if _PGR:
+        print("sim_changes23 pf_gpu_recheck=True", flush=True)
     if getattr(a, "engine", "py") != "rust":      # --engine rust：父行程的準備在下面（x1_rust.prepare_cached）
         for tr in a.traces:
             for ru in a.rules:
@@ -2351,7 +2433,7 @@ def cmd_sweep(a):
         _XR = _xr
         rsha = _XR.src_sha()
         b = _XR.binary()
-        fb_tr = {(j[0], j[1]) for j in J if _XR.unsupported(PLANNER, j[6], j[7])}    # 有 job 退回 Python Engine 的紀錄（要完整的 P）
+        fb_tr = {(j[0], j[1]) for j in J if _XR.unsupported(PLANNER, j[6], j[7], _NZO)}    # 有 job 退回 Python Engine 的紀錄（要完整的 P）
         for tr in a.traces:
             for ru in a.rules:
                 lite = (tr, ru) not in fb_tr
@@ -2359,7 +2441,7 @@ def cmd_sweep(a):
                 print(f"rust trace {tr} {ru} -> {td} prep={how} {dt:.1f}s lite={lite}", flush=True)
         nfb = {}
         for j in J:
-            why = _XR.unsupported(PLANNER, j[6], j[7])
+            why = _XR.unsupported(PLANNER, j[6], j[7], _NZO)
             if why:
                 nfb[why] = nfb.get(why, 0) + 1
         sha = f"{sha}+rs{rsha[:8]}"
@@ -2388,7 +2470,7 @@ def cmd_sweep(a):
         r0 = res[0]
         print(f"[{done}/{len(J)} {time.time()-t0:.0f}s] {r0['trace']} {r0['rule']} {r0['cpu_GiB']} {r0['policy']} "
               f"views={len(res)} job={r0['elapsed_s']:.1f}s mean_ret[0]={r0['mean_ret']:.4f}", flush=True)
-    rust_ok = [_ENGINE == "rust" and _XR.unsupported(PLANNER, j[6], j[7]) is None for j in J]
+    rust_ok = [_ENGINE == "rust" and _XR.unsupported(PLANNER, j[6], j[7], _NZO) is None for j in J]
     JR = [j for j, ok in zip(J, rust_ok) if ok]
     JP = [j for j, ok in zip(J, rust_ok) if not ok]          # --engine py（預設）：JP＝J（同樣的順序）＝原本的路徑
     if JR:
@@ -2425,7 +2507,7 @@ def _rust_sweep(JR, workers, put):
                     P = prep(*key)
                     t0 = time.time()
                     views = make_views(_K, P, j[4])
-                    jd = _XR.write_job(me, P, j[3], j[2] * GiB, views, _K, _gpu_kw(j[5]), nz=j[6])
+                    jd = _XR.write_job(me, P, j[3], j[2] * GiB, views, _K, _gpu_kw(j[5]), nz=j[6], pfx=_PFX, nzo=_NZO, pgr=_PGR)
                     meta[jd] = (j, t0)
                     srv[key].submit(jd)
                     inflight += 1
@@ -2777,6 +2859,12 @@ def main():
     s.add_argument("--noise-seeds", nargs="+", type=int, default=list(range(10)))
     s.add_argument("--slow-cap-frac", nargs="*", type=float, default=[], help="慢層容量上限＝比例 × n_blocks_full（INT4 塊）；不給＝沒有上限")
     s.add_argument("--slow-policies", nargs="+", default=SLOW_POLICIES, help="慢層滿時的規則：LRU LRU2 ARC S3FIFO GDSF PENS BEL")
+    s.add_argument("--pf-expire", action="store_true",
+                   help="PREREG 偏離 14 (i)：O-PF／O-ALL 預取的副本，預測被讀的請求過了就丟（不給＝原本）")
+    s.add_argument("--noise-overdue", choices=["clamp", "resample"], default="clamp",
+                   help="PREREG 偏離 14 (a)：模型 P 抽到已經過去的時間 → clamp＝下一個請求（原本）、resample＝從更長的那部分重抽")
+    s.add_argument("--pf-gpu-recheck", action="store_true",
+                   help="SIM_CHANGES 23：預取到 GPU 時，騰完空間再查一次候選；已不在 CPU／慢層（被丟）就不預取（不給＝原本）")
     s.add_argument("--jobs-from", default=None,
                    help="CSV（欄位 trace,rule,cpu_GiB,policy,gpu_policy,slow,gpu）：只跑「某一個 view 在清單裡」的 job（見 filter_jobs）；不給＝全部")
     s = sp.add_parser("analyze")

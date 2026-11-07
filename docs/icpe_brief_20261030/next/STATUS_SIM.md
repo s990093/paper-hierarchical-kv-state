@@ -681,3 +681,284 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
 **需要 icpe-trx 做什麼**：merge 後重做 G0（main.rs 和 9167f11 相同，Rust 不用重編）；sa_p4 可以開始。
 
 **需要使用者決定什麼**：無。
+
+## 2026-11-06T15:50+08:00 — TraceLab 準備快取已用 d3a6376 重建（tl_c1、c2、c4）
+
+- run `20261106-150138-icpe-sim-prewarm-d3a6376`（15:01–15:43，同時 3 個行程、nice 10，共用 `/ssd6/hungwei/icpe-next/x1fast-work`，exit 0）。照 icpe-data 的要求只建 P4 用到的 3 個。
+  - c1 → `prep-794d597a5a4a76a53df46b59`、c2 → `prep-18d3bc1274cbfaadaf69ff8a`、c4 → `prep-61eea8ecae9bb7a26afa6ffe`。
+  - 每個準備約 2,482 s（13:09 那次約 1,230 s；這次機器比較忙，沒有另外量原因），最大 RSS 約 14.9 GB。`rust_prep_cache.csv` +3 列。
+- merge d3a6376 之後跑 TraceLab，sweep.log 應該印 `prep=cache_hit`。
+- **需要使用者決定什麼**：無。
+
+## 2026-11-07T11:02+08:00 — P4 雜訊：O-PF（與 O-GPU）的斷崖查完：**不是算錯，是 PREREG 沒定義的兩條模擬器規則**；要不要改、重跑由使用者決定
+
+**問題**（icpe-main 10:3x 轉達使用者的決定）：P4 裡 O-PF 在模型 P、λ>0 時上限變負，幾乎不隨 λ、B1／B2、seed 變。這是程式錯誤，還是照 PREREG 本來就會這樣？只查、回報，不改正式結果。
+
+**結論**
+- **不是算錯。** 我把引擎包一層「只記錄、不改計算」重跑，正式 P4 的值逐值重現（6 位小數）：
+  - SemiAnalysis O-PF 17／17；
+  - CacheWise O-GPU 35／35；
+  - Mooncake O-GPU 8／8。
+  - Python 與 Rust 之前已經逐格相同（SIM_CHANGES 17、20）。
+- **也不是 PREREG 規定的結果。** PREREG（第 6 項、§3 B）只定義「預測怎麼加雜訊」，沒定義預測錯了以後 O-PF、Belady 怎麼辦。斷崖來自兩條模擬器規則，PREREG 沒寫，而且完美預知時（幾乎）碰不到：
+  1. **O-PF 預取進 CPU 的副本幾乎不會被丟掉。** 只有三種情況會釋放：本人回來讀它、被別的 session 寫回成 BF16、或 CPU 上完全沒有別的 session（`enforce` 才 `unprefetch`）。36 個 SemiAnalysis job 的 `n_unpf` 全部是 0。
+  2. **B1 遇到「預測的時間已經過了」。** 模型 P 抽的是「上次回合結束＋間隔」，時間已過就夾成「下一個請求」（SIM_CHANGES 8 有寫這個換算）。B1 要等這個對話的下一次請求才重抽，所以不會再回來的對話會一直被當成「馬上回來」。
+- **偏差的方向。** 兩條都讓有雜訊的預測看起來比實際差，也就是低估「有雜訊時預測還值多少」，偏向論文「預測沒多大優勢」那邊。PREREG 的原則是到對預測最有利的地方去測（第 2 項的理由），所以這是不保守的方向。
+
+**機制 1：O-PF 的副本一直留著**（SemiAnalysis N32 s2、CPU 16 GiB、b32、GPU TTLB:30；run `20261107-105321-icpe-sim-opf-noise-diag-rec`）
+- **猜錯生死。** 模型 P 本來就會猜錯生死。session 降級到慢層時會變成預取候選，其中把「不會再被讀」換成「會回來」的：λ=0.1 佔 1.25%，λ=0.3 佔 3.8%。
+- **永遠不會被丟。** 這些副本預取進 CPU 後不會被讀，也不會被丟。SemiAnalysis 的對話很大，4–11 個就佔滿 16 GiB：
+  - 16 個「P、λ>0」job 中，14 個在第 2,000–16,000 個請求（共 98,827 個）就滿了，2 個在第 40,000 個；滿了以後每個快照都是滿的。
+  - 滿了以後 CPU 上沒有別的 session（中位數 0），make_room 每步都失敗。
+  - 預取量從 136,176 GiB（idle）／79,913 GiB（busy）掉到 53–1,404 GiB。
+  - 回來時從 CPU 載入的塊從 698 萬（idle）／411 萬（busy）掉到 0.3–7.1 萬。
+- **為什麼幾乎不隨 λ、seed 變。** 幾個副本就能塞滿，所以 λ、抽法、seed 幾乎沒影響（icpe-main 看到 seed 間標準差 <1e-5）。
+- **B2 也一樣。** 預取的順序在降級時算一次就固定，之後不會再問 oracle。
+- **TraceLab、CacheWise 的 O-PF** 徵狀相同（預取量掉三個數量級、CPU 載入幾乎歸零、不隨 λ 變）。不過機制只在 SemiAnalysis 上量過，TraceLab 一個 Python job 太大〔推論〕。
+- **反事實**（只在診斷程式裡做，正式引擎沒有這條；run `20261107-105614-icpe-sim-opf-noise-diag-cf`）。規則：預測被讀的請求已經過了，副本還在，就丟掉，也不再排回預取佇列。
+  - 模型 P、idle：
+    - λ=0.1：mean_ret 3.399 → 2.790–2.820。上限（對正式的對手 3.305，我算的）從 −2.9% 變成 +14.7% 到 +15.6%。
+    - λ=0.3：上限 +7.5% 到 +8.3%。
+    - 和模型 M 一樣逐漸變差，不再是斷崖。
+  - **λ=0 也會變。** idle 2.681 → 2.663（−0.7%），busy 5.582 → 5.288（−5.3%）。
+    - 原因：完美預知時也有副本被「別的 session」讀走後留在 CPU。GPU 開著時，回合結束只釋放自己的預取副本；GPU 關閉的路徑會轉成讀的人的 BF16。這一格有 67–70 次。
+    - 也就是說，**沒有雜訊的正式 O-PF 在這一格也被這條規則拖慢了一點**。其他格（包括主結果）：NOT_MEASURED。
+  - **窄版**（run `20261107-104850-icpe-sim-opf-noise-diag-cfmiss`）：只在「預測的那個請求沒有讀它」時才丟。
+    - λ=0 逐值不變（丟了 0 次）。
+    - 只解掉一部分：模型 P λ=0.1 idle 上限 +3.4% 到 +15.1%，後半段 CPU 仍有 0–16 GiB 的死副本。很多死副本的最後一塊在預測的時刻剛好被別人讀了。
+  - 模型 M 也受影響，但小：後段 CPU 也被不會再讀的副本佔滿（λ=0.3 從第 36,000–50,000 個請求起）。上面的反事實讓 M λ=0.1 idle 的上限從 +4.9%～+9.6% 變成 +11.4%～+12.0%。
+
+**機制 2：GPU 層的 BEL（O-GPU，icpe-main 的第 3 點）**（CacheWise N64 s1、CPU 8、nfs、LRU+RPF＋BEL；run `20261107-105925-icpe-sim-ogpu-noise-diag-cw`）
+- **模型 P、B1。** 後半段 GPU 上大約 10 個對話，其中 5–7 個是不會再回來、但存著的抽樣說「時間已過 → 下一個請求」的。BEL 永遠不逐出它們。
+  - 87–93% 的逐出是「GPU 上有不會再回來的，卻逐出了會回來的」（λ=0 是 0%）。
+  - 逐出次數 3,981 → 12,187–13,897。
+- **B2 每次重抽。** 同一格這個比例是 0.95–3.6%，GPU 上這種對話的中位數是 0，所以是逐漸變差。這和 icpe-main 看到的「B1 111 格全掉、B2 還剩 104 格」一致。
+- O-ORD（CPU 的 BEL）在 SemiAnalysis／TraceLab 的 B1 有極端值（最低 −2.9），推測是同一個機制，沒有量〔推論〕。
+
+**Mooncake toolagent 的 O-GPU、O-ORD 在 B2 掉到 0**（第 3 點的另一半；toolagent R1、CPU 8、ssd、LRU+RPF＋BEL；run `20261107-110002-icpe-sim-ogpu-noise-diag-mc`）
+- 不是上面兩個機制：B2 每次問都重抽，不會卡住（GPU 上被夾住的對話是 0）。
+- λ=0.1 時，B1、B2 的錯誤逐出都是約 1/3（33%、37%；λ=0 是 0%）。λ=0 時 GPU 上同時有約 2,000 個小對話。
+- 我判斷這是 B2「每次問都重抽」的定義直接造成的：同一個 oracle 前後不一致，h200 在 §3 B 的註解就是因此把 B1 當主線。不是程式錯誤，但我沒有再拆細。
+
+**影響範圍**（列出來而已，沒有重算）
+- P4：
+  - O-PF 的全部模型 P 列（兩種抽法）；
+  - O-GPU、O-ORD 的模型 P、B1 列；
+  - 模型 M 的 O-PF 列（影響小）。
+- 主結果（P1–P3，沒有雜訊）：O-PF 也受機制 1 影響，這一格是 −0.7%／−5.3%，其他格 NOT_MEASURED。GPU 關閉的格子推測不受影響（上面那個轉成 BF16 的路徑）〔推論〕。
+
+**選項**（需要使用者決定；我沒有改任何正式程式或結果）
+- **A：不改。** 照現在的結果報，註明「模型 P 下 O-PF、O-GPU（B1）的數字反映的是模擬器沒有『預測錯了要放掉』的規則」。不用重跑。
+- **B：把規則補上，重跑。** 要先在 PREREG 登記偏離（h200 給號），我改 Python 與 Rust、做 G1，再由 icpe-data／icpe-trx 重跑受影響的部分。要決定的細節：
+  - 機制 1 用哪一種：
+    - (i) expire（預測時間過了就丟）：唯一完全消掉斷崖的版本，但改到 λ=0，主結果的 O-PF 也要重跑；
+    - (ii) 窄版：λ=0 不變、只重跑 P4，但只解掉一部分。
+  - 機制 2，抽到的時間已經過了怎麼辦：
+    - (a) 從經驗分佈裡「比已經過的時間更長」的那部分重抽；
+    - (b) 當成不會再回來；
+    - (c) 維持現在（夾成下一個請求）。
+- **C：正式結果不動，另外跑 B 的修正版當敏感度，兩者並列。**
+- **我的建議：C**，機制 1 用 (i)、機制 2 用 (a)。
+  - (i) 是唯一完全消掉斷崖的版本。
+  - (a) 最接近「照經驗分佈抽一個回來時間」的原意。
+  - 主結果的 O-PF 偏差目前只量了一格（0.7%／5.3%）。建議先用 (i) 在主結果的 O-PF 格子量 λ=0 差多少，再決定主結果要不要改。
+
+**檔案**
+- 程式：`code/icpe/next_sim_opf_noise_diag.py`（新；子類別包住 `x1_sim.Engine`，只記錄；反事實只有設 `DIAG_CF` 時才開）。
+  - 5 個 run 都用同一版（sha256 48d31f6d…），run 目錄裡有一份。
+  - 較早的 5 個 run（`20261107-103518-…-opf-noise-diag`、`…-104115-…-rec`、`…-104401-…-cf`、`…-104728-…-cw`、`…-104754-…-mc`）用的是較早的版本（後來只加了摘要函式和窄版反事實），數字和最後一版逐值相同，不引用。
+- 摘要：`results/icpe_next/sim/opf_noise_diag.csv`（108 列＝記錄／expire／窄版 × 36 job）、`results/icpe_next/sim/ogpu_noise_diag.csv`（46 列）。只有彙總計數，沒有逐對話的數字。
+- 執行：Python 引擎，8 個 worker、nice 10，每個 run 2–3 分鐘。
+
+**需要使用者決定什麼**：上面的 A／B／C；選 B 或 C 的話，再選 (i)／(ii) 與 (a)／(b)／(c)。
+
+## 2026-11-07T14:02+08:00（原本誤標 14:05；14:02＝commit 0786f56 的時間） — **偏離 14 的驗證：G1 PASS；規則 (i) 在 GPU 預取的 O-ALL 碰到 assert → 找到一個旗標關也有的舊問題**（GPU 預取騰空間時把候選自己丟掉、仍照樣預取）；修法要使用者決定
+
+程式＝commit `fa3686b`（這次跟著 STATUS 一起 push 上去，因為不能 rebase；**旗標關＝G1 PASS，現有的用法不受影響；`--pf-expire` 在修好、重新驗證之前不要用**——預取到 GPU 的 O-ALL 會 assert）。驗證 run `20261107-113238-icpe-sim-g1-fa3686b`（acvlab，凍結的 worktree `/ssd6/hungwei/icpe-next/g1-fa3686b`；Python 6＋Rust 2 個 worker，nice 10）。
+
+**通過的**
+- G1（新旗標全關，對 H200 V1 的 4,416 列 × 29 欄）：Python、Rust（src `8e969b0e…`）**不同的格子 0**。
+- 兩個旗標都開，Python 對 Rust（bailian_thinking；O-PF、O-ALL 與另外 6 個規則 × GPU 0／111.0625 × wb／wt × 4 個 GPU 規則 × 預取到 CPU／GPU）：沒有雜訊 384 列、有雜訊（P／M × λ 0／0.3 × B1／B2）1,824 列，**不同的列 0**；Rust 沒有退回 Python（`py_fallback_jobs=0`）。
+- SemiAnalysis N32 s2（CPU 16、TTLB:30、P／M × λ 0／0.1／0.3 × B1／B2 × seed 0／1）開 `--pf-expire`，Python 對診斷時的反事實 run `20261107-105614`（expire）：36 列**不同的列 0**。
+- 逐檔：`dev14_check.csv`、`g1_compare.csv`（run 目錄）。
+
+**沒通過的**（完整錯誤）
+- T2（Rust；bailian_coder，17 個規則 × CPU 7 × 3 種慢層 × GPU 0／111.0625 × 4 個 GPU 規則 × 預取到 CPU／GPU；旗標關 vs 開）：開的那次在第 67 個 job 左右
+  `thread '<unnamed>' panicked at src/main.rs:1096:9: gspf 13807 9`（`g_unprefetch` 的 assert）→ `RuntimeError: x1fast（常駐，…/work/trace-7b46693a42819e9d07f6ecaf）提早結束，exit -6` → cmd_B exit 46。
+  之後的 T2n（有雜訊）與 Rust 的 T3 沒有跑；`exit_code_cross`＝63 是因為 `t3_rs` 沒有輸出。
+- **Python 也一樣**（run `20261107-125317-icpe-sim-dev14-gspf-repro`；同一份程式；O-ALL／O-PF、CPU 8／16、預取到 GPU、兩個旗標都開）：`AssertionError: (13807, 9)`，同一個 session、同樣 9 塊 → 不是 Rust 移植的問題，是規則 (i) 的實作碰到一種狀態。
+
+**原因**
+- 探針（`gspf_diag.py`，在 run 目錄）：請求 21973 開始時，session 13807 **已被丟**（S_DROP、sb 清空），卻還擁有 9 個預取進 GPU 的塊（block 90–97、84133）；它的預測被讀請求 sT＝21970 ≤ cur＝21972 → 規則 (i) 照 `sb[s]`（空的）找副本 → 找不到 → assert。
+- 這種副本怎麼來的（**旗標關也有，是舊的程式路徑**）：`_advance_prefetch_gpu`（Rust `advance_prefetch_gpu`）先算好候選 s 要搬的塊（todo），再呼叫 `_g_make_room` 騰 GPU 空間。騰空間會把 GPU 上的 session 寫回 CPU（wb），然後 `enforce`；O-ALL 的 O-NOW 部分會把「已死」的 CPU session 丟掉，**有時丟到的正是候選 s**。迴圈沒有重查 s 的狀態，照樣把 todo 預取進 GPU（`gpf[b]=s`、`gpu_used` 加上去）。
+  - 這些副本的擁有者已經被丟：s 的 sb 已清空，`drop` 裡的取消預取已經做過了。之後只有別的 session 讀到同一塊時才會「認領」它，否則一直佔著 GPU。資料方面：讀的是 CPU／慢層那份；s 被丟之後，那些塊若沒有別的持有者，那份資料其實已經不在了。
+  - 頻率（探針 `mkroom_diag.py`，旗標關，bailian_coder，CPU 8／16 × 3 種慢層 × 4 個 GPU 規則 × GPU 閒／忙）：O-ALL 48 次引擎執行裡 18 次發生，共 26 個事件（每次最多 2 個）；跑完時還留著這種塊的 8 次、各 1 塊。O-PF 不丟 session（n_drop＝0）：只有「候選被降到慢層」（425 次），那沒有問題（迴圈逐塊看 fmt，會改從慢層讀）。
+  - 預取到 CPU（正式結果幾乎都是）：候選在慢層，`make_room` 只降級 CPU 上的 session；只有設了慢層容量時 `_slow_enforce` 才可能丟到候選。正式 block 的 slow_cap_frac 都是 0 → 不會發生。
+- **影響的正式結果**：只有「預取到 GPU」的 O-ALL 列——sens_rep 的 `*_pfgpu` 與各 `*_p3` 的 `*_pfgpu`。主結果、P1、P2、wt、P4、對話資料集、icpe-data 的 xcheck 都是預取到 CPU → 不受影響。G1（沒有 GPU 層）不受影響。icpe-sim 自己的 xcheck（14 個 block，對 icpe-data 的 Python 正式輸出）裡有預取到 GPU 的 block：選 B 時那幾個 block 的 O-ALL 列會和參考不同。
+- **規模**（反事實 run `20261107-130238-icpe-sim-pfgpu-dropcand-cf2`：同一份程式，`_g_make_room` 之後候選已不在 CPU／慢層就跳過；只診斷）：
+
+| 紀錄（只有 O-ALL、預取到 GPU） | 列 | f0 對正式輸出 | 有這種事件的列 | 事件數 | f0 跑完還留著的這種塊 | f1 對 f0 不同的列 | mean_ret 相對差 |
+|:--|--:|:--|--:|--:|--:|--:|:--|
+| bailian_coder（bl_p3 的網格：CPU 9 × 3 種慢層 × 8 個 GPU 規則 × GPU 閒／忙） | 432 | 不同的列 0 | 145 | 163 | 64 | 145 | −0.0056% ～ ＋0.0031%（中位數 0；沒有一列 ≥0.1%） |
+| Mooncake conversation、toolagent R1（sens_rep 的 mc_pfgpu：CPU 111.0625／128） | 96＋96 | 不同的列 0 | 0 | 0 | 0 | 0 | 0 |
+| CacheWise N16 s1（sens_rep 的 cw_pfgpu） | 96 | 不同的列 0 | 0 | 0 | 0 | 0 | 0 |
+
+- 「f0」＝程式不變（只計數），和 icpe-data 的正式輸出逐列相同 → 反事實量到的就是正式引擎；「f1」＝跳過。一列＝一次引擎執行（GPU 閒、忙分開）。
+- 沒量（NOT_MEASURED）：Bailian traceA／thinking（Python 一個 job 約 80 秒，第一次的 run `20261107-125954` 因此停掉）、SemiAnalysis、TraceLab、FI、各 `_p3` 的其他格子。
+- 摘要：`results/icpe_next/sim/pfgpu_dropcand_cf.csv`、`pfgpu_dropcand_events.csv`（頻率那段的數字）。
+
+**選項**（需要使用者決定：這是程式的舊問題，會改到 pfgpu 的 O-ALL 正式列）
+- **A（建議）**：修源頭——GPU 預取在騰完空間之後重查候選，已不在 CPU／慢層就不預取。放在新旗標 `--pf-gpu-recheck`（預設關＝和現在逐位元相同，G1、xcheck、現有的正式輸出都不變）；icpe-data 重跑偏離 14 時，pfgpu 的 block 兩個旗標一起開。pfgpu 的 O-ALL 本來就在偏離 14 的重跑清單裡 → **不多花計算**。SIM_CHANGES 23。
+- **B**：同 A 的修法，但不加旗標、直接改預設。現有 pfgpu 的 O-ALL 正式列就不能再用新程式重現（反正會被重跑取代）；G1 不變；icpe-sim 自己 xcheck 的預取到 GPU block，O-ALL 列要排除或重產參考。好處：之後任何人（kvsweep、版本 C）不用記得開旗標。
+- **C**：不修；這種副本照舊留著（和現在的正式結果一樣）。
+- 不論選哪個：規則 (i) 跳過已丟的 session（它的 sb 已清空，本來就找不到副本）——**已改好，還沒 commit**（Python 2 行、Rust 2 行）。選 A／B 時這條只是保險（不會再有這種副本）；選 C 時，這種副本就照旗標關的方式留著。
+- 有利還是不利預測：這種副本只出現在 O-ALL（預測規則）。量到的格子裡，修掉之後 O-ALL 的 mean_ret 有升有降、都在 ±0.006% 以內；方向沒有一致。
+
+**接下來**（等使用者選）：照選項改兩個引擎 → 重跑這個驗證（T2、T2n、Rust 的 T3 都要跑完）→ 才 push、才給 icpe-data 重跑清單。偏離 14 本身（`fe34522`）不受影響。
+
+---
+
+## 2026-11-07T15:50+08:00 — **偏離 14＋SIM_CHANGES 23 驗證 PASS（`63b8e32`）**；重跑清單（每個 block 一列，給 icpe-data 分機器）；旗標開的跨機器參考與 TraceLab 預熱進行中
+
+**使用者的決定**：11/7 約 14:0x 在本 session 選 A（`--pf-gpu-recheck`，預設關，重跑時和 `--pf-expire` 一起開；SIM_CHANGES 23）。
+
+**做完什麼**
+- 程式＝commit `63b8e32`（本次一起 push；之後只加文件與 `code/icpe/next_sim_dev14_list.py`，引擎檔不變）。
+  - `x1_sim.py` sha256 `8b53588b85c3…`、`x1_rust.py` `0d89c4ba33c5…`、`x1_nb.py` `8251e2587464…`、`x1fast/src/main.rs` 檔案 `2803b0c0922e…`。
+  - x1_rust 印的 Rust `src_sha256`＝`0bfacb59700380ba7850fcd8a7f76d94f3bdcf3eebba87fb40f408afab60054a`；sweep 的 code_sha＝`3180504e8d57`（Python）、`3180504e8d57+rs0bfacb59`（Rust）。
+- **驗證 PASS**（run `20261107-140640-icpe-sim-g1-63b8e32`；凍結的 worktree `g1-63b8e32`；Python 6＋Rust 2 個 worker，nice 10；`exit_code_A／B／cross` 都是 0；Rust 沒有退回 Python）。細節在 SIM_CHANGES 23：
+  - G1（旗標都關）Python、Rust：4,416 列 × 29 欄，不同的格子 0。
+  - 三個旗標都開，Python 對 Rust：沒有雜訊 384 列、有雜訊 1,824 列，不同的列 0。
+  - 旗標關 vs 開（第一次 assert 的 bailian_coder 網格）：沒有雜訊 4,074 列、有雜訊 12,600 列跑完；不含 opf 的規則在沒有雜訊、模型 M、λ＝0 的列全部相同。
+  - 只開 `--pf-gpu-recheck`：只有「O-ALL、預取到 GPU」變（168 列中 61 列）；對反事實 blc_f1 432 列 0 個不同（兩個引擎）。
+  - SemiAnalysis N32 s2 對診斷反事實 36 列 0 個不同（兩個引擎）。
+  - 旗標開時變了的列數（同一個 bailian_coder 網格；只是「有沒有變」，不是大小）：
+
+| 規則 | 雜訊 | GPU 0 | GPU 111.0625、預取到 CPU | GPU 111.0625、預取到 GPU |
+|:--|:--|--:|--:|--:|
+| O-PF、O-ALL | 沒有 | 58／84 | 336／336 | 328／336 |
+| O-PF、O-ALL | λ＝0 | 116／168 | 672／672 | 656／672 |
+| O-PF、O-ALL | P、M（λ 0.3） | 全部 | 全部 | 全部 |
+| 其他規則 | 沒有、λ＝0、M | 0 | 0 | 0 |
+| 其他規則 | P（λ 0.3） | 252／336 | 2,016／2,268 | 84／84 |
+
+  - 逐檔：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`dev14_check.csv`（+69 列）。
+
+**重跑清單（給 icpe-data；第 1 段＝版本 B 引擎的列）**：`results/icpe_next/sim/dev14_rerun_list.csv`
+- run `20261107-154406-icpe-sim-dev14-rerun-list`（`code/icpe/next_sim_dev14_list.py`）：計畫＝icpe-next-data `8e54d587` 的 `next_b_queue.blocks()`（含 P4 的格子清單、`cw_main_ttl7` 的 cells.csv；這三個輸入和 `2df350f7` 逐位元相同）；job 用 `63b8e32` 的 `x1_sim.jobs_for` 展開（和 sweep 開跑時印的 `jobs=` 同一套）。
+  - 上一個 run `…-154317-…` 沒把 xcheck 標成只當參考，已標 SUPERSEDED。
+- 每個 (plan, block) 一列：`jobs_block`、`jobs_rerun`（＝`jobs_rerun_i` ∪ `jobs_rerun_a`）、`rerun_policies`、`pf_targets`、`action`、`flags`、`acvlab_done_run_id`。
+- 哪些 job 要重跑（其他 job 已驗證旗標開時逐位元不變，舊的列直接沿用）：
+  - (i)：CPU 規則有 opf 預取（O-PF、O-ALL、O-ALL-H1800、O-ALL-H3600）。`--pf-gpu-recheck` 只改 O-ALL＋預取到 GPU，已包含在內。
+  - (a)：雜訊模型 P、λ＞0（全部規則；它們都用到完美預知）。
+- 怎麼跑：同一個 block 的參數，`--policies` 只留 `rerun_policies`，加上 `flags` 欄。
+  - 版本 B 的 block 一律 `--pf-expire --pf-gpu-recheck`。後者對預取到 CPU 沒有作用（驗證過），一起開就不用分。
+  - P4 模型 P 的 block 再加 `--noise-overdue resample`。這種 block 只有 λ＝0、不含 opf 的 job 不必重跑；整個 block 重跑最單純。
+  - P4 模型 M 的 block 只重跑 O-PF（`--jobs-from` 同一份清單，`--policies` 限 O-PF）。
+  - Rust 跑 B1／B2＋resample 要 Python 3.12（acvlab 的 venv 是）；其他版本會退回 Python。
+- 各 plan 的合計（`done_acv`＝acvlab 的 done 清單裡有的 block；SemiAnalysis 的 block 不在 acvlab 的清單裡）：
+
+| plan | action | block | done_acv | 原本的 job | 要重跑的 job | 其中 (i) | 其中 (a) |
+|:--|:--|--:|--:|--:|--:|--:|--:|
+| tl_main／_p1／_p2／_p3 | rerun | 3／6／6／6 | 全部 | 105,948 | 18,576 | 18,576 | 0 |
+| old_main／_p1／_p2／_p3 | rerun | 2／4／4／4 | 全部 | 353,160 | 61,920 | 61,920 | 0 |
+| bl_main／_p1／_p2／_p3 | rerun | 1／2／2／2 | 全部 | 105,948 | 18,576 | 18,576 | 0 |
+| sa_main／_p1／_p2／_p3 | rerun | 12／24／24／24 | 0 | 423,792 | 74,304 | 74,304 | 0 |
+| sens_rep（不含 cw） | rerun | 24 | 15 | 29,272 | 4,992 | 4,992 | 0 |
+| chat_main／chat_p1 | rerun | 21／21 | 9／9 | 265,734 | 27,216 | 27,216 | 0 |
+| agent_main／agent_p1 | rerun | 24／24 | 全部 | 303,696 | 31,104 | 31,104 | 0 |
+| p4_b1／p4_b2（不含 cw） | rerun | 16／16 | 14／12 | 1,948,524 | 1,338,010 | 550,250 | 1,097,760 |
+| sa_p4_b1／sa_p4_b2 | rerun | 24／24 | 0 | 1,004,366 | 602,978 | 85,058 | 565,840 |
+| **合計** | rerun | **320** | | | **2,177,676** | 871,996 | 1,663,600 |
+| CacheWise（cw_main／_p1／_p2／_p3、sens_rep 的 cw、p4 的 CacheWise） | excluded_dev15 | 126 | | | （311,800） | | |
+| `cw_main_ttl7` | excluded_dev15 | 17 | | | 0 | | |
+| xcheck | reference_only | 2 | | | — | | |
+
+- (i)、(a) 會重疊（模型 P 的 O-PF），所以兩欄加起來大於合計。P4 佔要重跑的 job 的 89%（1,940,988）。
+- job 的成本不一樣：O-PF／O-ALL 每個 job 只有 1 個 view。所以這裡只給 job 數，**時間 NOT_MEASURED**。
+- 不重跑：`*_ttl7`（只有 NON_ORACLE）。xcheck（旗標關）照舊當對拍；旗標開的關見下面的 xref_dev14。
+- 第 2 段（版本 C 的列＋P4 版本 C 的 5 對）：等 icpe-rux 把偏離 14 移植進 v8（使用者決定的順序），icpe-sim 交叉檢查之後。
+
+**要同步的程式**：icpe-data、icpe-next-trx 同步到本次 push 的 commit（引擎檔＝`63b8e32`）。
+- 準備快取的鍵包含 x1_sim／x1_nb／x1_rust 的 sha → 舊的快取都不會命中，第一次跑會重建。
+
+**進行中**（acvlab，合計 ≤ 8 個 worker，nice 10）
+- **旗標開的跨機器參考** xref_dev14（run `20261107-154804-icpe-sim-xref-dev14`）：
+  - 紀錄：`nb:semianalysis_N16_s1`、Mooncake `conversation` R1。
+  - 沒有雜訊：8 個規則 × CPU 8／64 × b32 × GPU 0／111.0625 × wb／wt × LRU／BEL／TTLA:10／TTLB:30 × 預取到 CPU／GPU，每份紀錄 334 個 job。
+  - 有雜訊：6 個規則 × CPU 8／64 × GPU 111.0625 wb × BEL／TTLB:30 × 預取到 CPU／GPU × P／M × λ 0.3 × B1／B2，每份紀錄 232 個 job。
+  - 三個旗標都開；Python（5 個 worker）、Rust（1 個）都跑，要逐列相同才放進 `results/icpe_next/sim/xref_dev14/`。
+  - SemiAnalysis、Mooncake 不會走到 SIM_CHANGES 23 的那條路徑（反事實裡 0 個事件），所以它只釘住輸出、不測 pgr。
+- **TraceLab c1／c2／c4 的準備快取**（icpe-data 要求；run `20261107-154805-icpe-sim-prewarm-63b8e32`）：
+  - 凍結的 worktree `g1-63b8e32`，x1_sim sha256 `8b53588b85c3…`。
+  - `X1_RUST_WORK=/ssd6/hungwei/icpe-next/x1fast-work`；同時 2 個。上次一個變體約 2,482 s。
+- 之後：λ＝0 的影響量測（icpe-main 的第 3 步；規則 (i) 對主結果 O-PF 的 ④；Rust、5 個 worker）。
+
+**版本 C 的引擎**（icpe-main 15:3x 問；回答同訊息）
+- 現在沒有一個引擎同時有雜訊、偏離 14、APC／BELP：
+  - `63b8e32`：有雜訊與偏離 14，沒有 APC／BELP。
+  - v8 `48e4efce`：有 APC／BELP 與 `nz=`；BELP 讀雜訊後的回來時間，`g_next` → `nz()`。它沒有 pfx／nzo／pgr／S_DROP 跳過。
+- 使用者已決定由 icpe-rux 移植（先於二階排隊）。push 之後我把 main.rs 對 `4a4baa4` 的 diff 給 icpe-rux。
+- 移植好之後我交叉檢查：
+  - v8 關掉 APC／BELP、開旗標 → 和 x1fast `63b8e32` 逐位元相同。
+  - 開 APC／BELP、有雜訊、開 resample → 一次整個 session 的 APC＝LRU、BELP＝BEL。
+
+**需要使用者決定什麼**：無。
+
+---
+
+## 2026-11-07T15:56+08:00 — **旗標開的跨機器參考（xref_dev14）失敗**：wt＋預取到 GPU 的 O-ALL 在 SemiAnalysis assert；**旗標關也一樣**（舊問題），正式 block 都沒用這個組合；要使用者決定
+
+**15:50 那節的「驗證 PASS」只對它列的網格成立**。三個旗標還沒放行，已告訴 icpe-data、icpe-next-trx、icpe-main 不要用（icpe-data：不用、TRX40 暫停）。
+
+**完整錯誤**（run `20261107-154804-icpe-sim-xref-dev14`；凍結的 worktree `g1-63b8e32`；兩個引擎都在第一個 sweep `sa_q` 停下，`exit_code_py`＝31、`exit_code_rs`＝51，比對沒跑）
+- Python（`py_sa_q.log`；第 16／334 個 job 之後）：
+  ```
+  File ".../x1_sim.py", line 1834, in _step_gpu → self._turn_end_wt(r, blocks, tend)
+  File ".../x1_sim.py", line 1998, in _turn_end_wt → w += self.drop(s)
+  File ".../x1_sim.py", line 1526, in drop → self._g_unprefetch(s, self.sb[s], push=False)
+  File ".../x1_sim.py", line 1147, in _g_unprefetch → assert self.gspf[s] == 0, (s, self.gspf[s])
+  AssertionError: (12, 277)
+  ```
+- Rust（`rs_sa_q.log`；第 20 個 job 之後）：`thread '<unnamed>' panicked at src/main.rs:1099:9: gspf 12 277` → `RuntimeError: x1fast（常駐，…/x1fast-work/trace-7cfa6556228f0469c7dc5113）提早結束，exit -6`。
+- 意思：session 被丟時，還有 GPU 預取副本不在它的 sb 裡，找不到就 assert。
+
+**範圍**（只診斷，同一份程式）
+- run `20261107-155318-icpe-sim-xref-wt-repro`（Rust）：SemiAnalysis N16 s1、CPU 8、O-ALL、b32、GPU 111.0625、**wt＋預取到 GPU**，4 個 GPU 規則 × 旗標 {關、只 `--pf-expire`、只 `--pf-gpu-recheck`、兩個都開}。**16 個組合全部 panic**：LRU `gspf 12 277`，BEL／TTLA:10／TTLB:30 `gspf 9 114`，和旗標無關。
+- run `20261107-155403-icpe-sim-wtpfgpu-scope`：
+  - Python 旗標關（BEL）：`AssertionError: (9, 114)`，和 Rust 相同。
+  - **正式 block 用的組合沒事**：SemiAnalysis N16 s1、CPU 8／64、O-ALL／O-PF／LRU+RPF、4 個 GPU 規則，以下 4 個 sweep 各 48 個 job 都跑完（Rust，exit 0）：
+    - wb＋預取到 GPU，旗標關、旗標開；
+    - wt＋預取到 CPU，旗標關、旗標開。
+- **正式 block 都沒有 wt＋預取到 GPU**：icpe-next-data `8e54d587` 的 `next_b_queue.blocks()` 465 個 block 裡 0 個。`_wt` 都是預取到 CPU，`_pfgpu` 都是 wb。G1（沒有 GPU 層）也沒有。
+- 所以：
+  - 這是旗標關也有的舊問題，只在 wt＋預取到 GPU。正式結果、G1、G0 都不受影響（icpe-data 剛做的 G0：40a4c87 合併後 Rust 旗標關 128,064 格 0 不同，run `20261107-155259-icpe-data-g0-rust-merged-40a4c87`）。
+  - 偏離 14 的三個旗標沒有造成它。
+  - 是我設計的參考網格把 wt 和預取到 GPU 交叉了。t1 也交叉了，但 Bailian thinking 沒碰到。
+  - 原因還沒查（NOT_MEASURED）。推測和 SIM_CHANGES 19 同類：wt 的回合結束換掉 sb[s] 時，舊的 GPU 預取副本沒有先收回。
+- 已停：TraceLab 預熱（run `20261107-154805`，留 STOPPED；c1、c2 開始建了、沒建完）。程式若要改，x1_sim 的 sha 會變，快取的鍵也會變。
+
+**選項**（要使用者決定）
+- **A（建議）**：參考網格拿掉「wt × 預取到 GPU」，其他照舊（wb＋預取到 GPU、wt＋預取到 CPU、GPU 0，有雜訊與沒有雜訊）。
+  - 這個舊問題寫進 SIM_CHANGES／kvsweep 的已知問題，不修。理由：正式 block 都不用這個組合。
+  - 引擎不變（`63b8e32`）；參考跑完、Python＝Rust 就放行旗標。
+- **B**：先查原因、修（放在新旗標或改預設），重新驗證，再做參考。
+  - 會晚：修＋驗證約 2–3 小時〔推估〕。TraceLab 快取要用新程式重建（每個變體約 41 分鐘）。
+  - 正式結果不會因此改變，因為沒用到這個組合。
+- **C**：A 先放行；B 另外排在後面做，不擋重跑。
+
+**需要使用者決定什麼**：A／B／C。
+
+---
+
+## 2026-11-07T15:59+08:00 — 使用者選 A：參考網格拿掉 wt × 預取到 GPU，舊問題不修；xref 與 TraceLab 預熱重新開始
+
+- **使用者的決定**（約 15:5x，本 session）：「A: drop combo, don't fix (Recommended)」。
+  - 引擎不變（`63b8e32`）。
+  - wt＋預取到 GPU 的 O-ALL assert（旗標關也有）列為**已知問題、不修**。正式 block 都不用這個組合（0／465）。
+  - 以後的網格（含 kvsweep）不要把 wt 和預取到 GPU 交叉。
+- **xref_dev14 重跑**（run `20261107-155727-icpe-sim-xref-dev14`；上一個 `…-154804` 標 SUPERSEDED）：
+  - 拆成 wb（GPU 0／111.0625 × 預取到 CPU／GPU，每份紀錄 178 個 job）與 wt（GPU 111.0625 × 預取到 CPU，108 個）。
+  - 有雜訊的網格不變（wb，232 個）。紀錄、旗標、worker 同上一節。
+- **TraceLab 預熱重開**（run `20261107-155740-icpe-sim-prewarm-63b8e32`；`…-154805` 是停掉的那個）。
+- 旗標仍然**等 xref 的 Python＝Rust 才放行**。
