@@ -121,6 +121,10 @@ def blocks():
     # 對話資料集的版本 B（STATUS_DATA 11:30 補寫）：chat_main（17 CPU × 8 GPU）＋ chat_p1 的 _ttl（NON_ORACLE＋元件規則 15 × 新的 8 個 TTL），
     # 和主結果版本 B 的輸入同構（icpe-main 的 verB：main＋_p1 _ttl）。不跑 _trunc（只報告的截尾，不在這次範圍）。
     P["chat_p1"] = [(f"{name}_ttl", tr, sweep_args(gpol=GPOL_TTL7, pols=NON_ORACLE + COMP5)) for name, tr, _ in P["chat_main"]]
+    # 公開 agent 軌跡（PREREG 偏離 17；STATUS_DATA 12:55）：同對話資料集的版本 B（main＋_ttl），固定並行 N × seed。
+    P["agent_main"] = [(f"{k}_N{N}_s{s}", nb(f"{src}_N{N}_s{s}"), sweep_args())
+                       for k, src in (("ms", "miniswe"), ("oh", "openhands")) for s in (1, 2, 3) for N in (16, 32, 64, 72)]
+    P["agent_p1"] = [(f"{name}_ttl", tr, sweep_args(gpol=GPOL_TTL7, pols=NON_ORACLE + COMP5)) for name, tr, _ in P["agent_main"]]
     # 跨機器對拍（新功能開啟）：acvlab 先跑並 collect（--allow-xcheck）當參考；別台跑同一個 block，用 next_b_g0.py 逐值比，相同才開跑正式的
     xa = sweep_args(["64"], ["--slows", "ssd", "--modes", "cake"], gpol=["LRU", "BEL", "TTLA:10", "TTLB:10"],
                     pols=["LRU", "GDSF", "O-BEL", "O-PF"])

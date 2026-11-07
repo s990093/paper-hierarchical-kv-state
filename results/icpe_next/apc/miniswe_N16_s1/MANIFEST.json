@@ -1,0 +1,70 @@
+{
+ "exp": "apc",
+ "variant": "miniswe_N16_s1",
+ "collected_ts": "2026-11-07T13:09:39+08:00",
+ "collected_host": "acvlab",
+ "repo_commit_at_collect": "4a7133869e55a5d696fef3b2afae2ebd922741b7",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b744416"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-130848-icpe-data-verC-miniswe_N16_s1",
+   "ts": "2026-11-07T13:08:48+08:00",
+   "host": "acvlab"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/ssd6/hungwei/icpe-next/runs/20261107-130848-icpe-data-verC-miniswe_N16_s1/out/x1/x1_sweep.csv",
+   "sha256_source": "14896d8f2e00fb7289059701675b313cd7864e26eda87653f8858125eb09e1ce",
+   "bytes_source": 5242515,
+   "rows": 16524
+  },
+  {
+   "file": "verC_headroom_components.csv",
+   "source": "/ssd6/hungwei/icpe-next/runs/20261107-130848-icpe-data-verC-miniswe_N16_s1/a/verC_headroom_components.csv",
+   "sha256_source": "03c822500a8921ad796584d977f38afc787d3b887b4d620d3827a1fa60484d58",
+   "bytes_source": 69864,
+   "rows": 324
+  },
+  {
+   "file": "verC_violations.csv",
+   "source": "/ssd6/hungwei/icpe-next/runs/20261107-130848-icpe-data-verC-miniswe_N16_s1/a/verC_violations.csv",
+   "sha256_source": "1dea73f69e14d1f8f86d011a7b25d4c642270d246f7814f897bf30ee2e6f29d7",
+   "bytes_source": 39,
+   "rows": 0
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/ssd6/hungwei/icpe-next/runs/20261107-130848-icpe-data-verC-miniswe_N16_s1/a/base_headroom_components.csv",
+   "sha256_source": "639cb43dc28b83bbfc4b5b6245fb38744c2fb27b04c4fe655004f042ebf993d0",
+   "bytes_source": 69864,
+   "rows": 324
+  },
+  {
+   "file": "explore_apc_rows.csv",
+   "source": "/ssd6/hungwei/icpe-next/runs/20261107-130848-icpe-data-verC-miniswe_N16_s1/a/explore_apc_rows.csv",
+   "sha256_source": "80d2517e826254a11c3405b54a7726ba52c3dea6b203b9a1c1c5e81818afd0e9",
+   "bytes_source": 142754,
+   "rows": 324
+  },
+  {
+   "file": "explore_ogpu_belp_rows.csv",
+   "source": "/ssd6/hungwei/icpe-next/runs/20261107-130848-icpe-data-verC-miniswe_N16_s1/a/explore_ogpu_belp_rows.csv",
+   "sha256_source": "9b70914be02f8e73bf3cb8107c9f7f35f8c5e98e76819957ec0d117c06be1381",
+   "bytes_source": 9126,
+   "rows": 54
+  }
+ ],
+ "note": "PREREG 偏離 13（對話資料集）的版本 C：v8 48e4efce（icpe-next-rux 4a713386）；重現檢查＝本機版本 B 表（chat_main＋chat_p1 _ttl），全部格 7 欄逐值相同",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}
