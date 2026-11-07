@@ -1,7 +1,51 @@
 # STATUS_RUX（icpe-rux，RUX3DPRO）
 
 本檔由 icpe-rux 寫，最新的一節在最上面。格式照 `STATUS_TRX.md`。
-**到 11/7 14:30：正式模擬只有使用者同意、登記過的（PREREG 偏離 10 的 APC、偏離 11 的 W5／排隊）；沒有動佇列；別人的檔只有 PREREG 檔尾 append（使用者授權）。偏離 10、11 在 RUX3DPRO 這邊都跑完了。**
+**到 11/7 16:30：正式模擬只有使用者同意、登記過的（PREREG 偏離 10 的 APC、偏離 11 的 W5／排隊）；沒有動佇列；別人的檔只有 PREREG 檔尾 append（使用者授權）。偏離 10、11 在 RUX3DPRO 這邊都跑完了。偏離 14 已移植成 v8_dev14（36780534）。**
+
+---
+
+## 2026-11-07T16:30+08:00 — 偏離 14 移植成 v8_dev14（36780534），驗證通過；二階排隊（偏離 19）的引擎和驗證完成，正式 run 排在移植之後
+
+**使用者的決定**（照時間）
+- 約 15:0x，在 icpe-main：「让那个机器跑二阶事件」（icpe-main 轉達）。
+- 約 15:12，在 icpe-rux 用 AskUserQuestion：④ 的順序選「紀錄順序」、範圍選「SemiAnalysis 12 個全部」、重負載選「照偏離 11：只報告」。
+- 約 15:40，在 icpe-rux：到達規則選「二階改，一階也重跑」。
+- 約 15:4x，在 icpe-main：「先移植 v8，再做二階排隊（建議）」（icpe-main 轉達）。
+- h200 給偏離 19。登記稿寫好了，還沒 push，要先給使用者看。
+
+**A. 偏離 14 → v8_dev14**（`code/icpe/rux_x1fast/v8_dev14/`，`rux/V8_DEV14.md`）
+- 要證明什麼：一個引擎同時跑雜訊、偏離 14 的規則、APC／BELP。修正版版本 C 的 O-PF／O-ALL 列和 P4 加跑要用它。
+- `make_v8_dev14.py` 從 v8（48e4efce）產生，v8 不動。來源是 icpe-sim 的 x1fast 63b8e328（40a4c87f 驗證過），對 4a4baa48 的差異。
+- **給第二段的資訊**（icpe-data 要的三樣）：
+  - commit：`36780534`（origin/icpe-next-rux）。
+  - `v8_dev14/src/main.rs` sha256 `d2048fa38a42c78b316a97734101cb094854cc584be92ef5ec9c8717c6ad5e88`。
+  - sweep 的 src sha（Cargo.toml＋main.rs）`4eca5bda266e007b68a0fbf60cdb5fbb4d0d0a693bfcca5b4566e3fb87eb6db9`，CSV 的 code_sha `3280b1c8799b+rs4eca5bda`。
+  - 旗標名稱和 x1fast 相同：jobs.txt `pfx=1`、`nzo=resample`、`pgr=1`；CSV `pf_expire`、`noise_overdue`、`pf_gpu_recheck`。
+  - 本分支的 x1_sim 沒有命令列參數，`sweep_v8_dev14.py` 用環境變數 `RUX_PFX=1`、`RUX_NZO=resample`、`RUX_PGR=1` 開。
+- **APC／BELP 和規則的交互作用**：
+  - v8 不准 APC／BELP 預取進 GPU，所以 `pf_expire` 的 GPU 路徑和 `pgr` 碰不到 APC 的部分副本，pfx 只走 CPU 路徑（和 x1fast 同一段程式）。
+  - BELP 經 `nz()` 讀雜訊，所以 `nzo=resample` 也作用在 BELP。
+- **驗證**（SemiAnalysis N16 s1；CPU 16、111.0625 GiB × 17 個 CPU 規則）：
+  - 旗標全關：和 v8 48e4efce 逐位元相同，564／564。
+  - 不開 APC／BELP、開旗標：和 x1fast 63b8e328 逐位元相同 1,908 組。另 2 組兩邊都斷言，panic 訊息相同（`gspf 363 56`、`gspf 911 4`）。條件是只開 pfx、沒開 pgr、O-ALL、預取到 GPU、雜訊 P B2，這是參考版本身的行為；三個旗標全開時同一格跑得完。
+  - 整個 session 的 APC＝LRU、BELP＝BEL（含雜訊與三個旗標）：204／204；逐塊逐出加稽核 204／204。
+  - wt（只預取到 CPU）：2,414／2,414。
+  - sweep 端到端：開旗標只有 O-PF、O-ALL 的列改變。
+  - run：`20261107-155514-icpe-rux-d14-smoke-full`、`161328-…-d14-smoke-oall`、`161521-…-d14-smoke-wt`、`162547-…-d14-sweep-e2e`。
+- icpe-sim 會用它的 t1n／t1q／T2／xref_dev14 再交叉檢查一次。
+
+**B. 二階排隊（偏離 19）**（`code/icpe/rux_x1fast/v9_qev/`，`rux/QUEUE2_DESIGN.md`；還沒 commit）
+- 要證明什麼：排隊的回饋算進去之後（GPU 照服務順序處理、快取照服務順序演進），版本 C 的上限在輕、中負載的格會不會變。屬於敏感度，主結果不變。
+- v9＝`make_v9.py` 從 v8_dev14 產生，加 `qev=1`（二階）、`qpost=2`（一階、到達不早於上一個完成）。
+- 驗證（在 v8 基底上）：v9 不開 qev＝基底、到達拉開＝沒排隊、Python 精確重算排程、稽核、決定性、`qpost=2` 精確重算，2,856／2,856 通過。另有獨立唯讀審查，沒有確定的錯誤。
+  - 換到 v8_dev14 基底之後要重跑。
+- **審查找到的到達問題**：原規則允許請求早於同 session 上一個請求完成就到達。量起來輕負載約 2% 的請求，卻占總等待 16–21%。使用者選「二階改，一階也重跑」。偏離 11 B 的一階結果有同樣的高估，結果不改。
+- **接下來**：
+  1. v9 在 v8_dev14 基底上重驗。
+  2. 正式流程加修正版版本 C（pfx）的基準。
+  3. 登記稿給使用者看，push 後把 commit 給 h200。
+  4. 正式 run（約 12–16 小時〔推算〕）。
 
 ---
 
