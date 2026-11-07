@@ -8,12 +8,13 @@ import argparse, hashlib, json, lzma, os, shutil, socket, subprocess, sys
 from datetime import datetime
 
 ap = argparse.ArgumentParser()
-ap.add_argument("exp", choices=["apc", "w3", "w5", "queue", "slowcap"])
+ap.add_argument("exp", choices=["apc", "w3", "w5", "queue", "slowcap", "w7"])
 ap.add_argument("variant")
 ap.add_argument("--sweep", nargs="*", default=[])
 ap.add_argument("--files", nargs="*", default=[])
 ap.add_argument("--runs", nargs="*", default=[])
 ap.add_argument("--note", default="")
+ap.add_argument("--code-sha", nargs="*", default=[], help="sweep 不進 git 時，直接給 sweep 的 code_sha（W7）")
 ap.add_argument("--base", default="", help="結果的上層目錄（相對 REPO）；預設 results/icpe_next/v8_explore/<實驗>。偏離 10 的正式 APC 重算用 results/icpe_next/apc")
 a = ap.parse_args()
 REPO = os.environ["REPO"]
@@ -43,7 +44,7 @@ def put(src, name, force_xz=False):
 
 
 files = []
-code_sha = set()
+code_sha = set(a.code_sha)
 for s in a.sweep:
     src, _, nm = s.partition("=")
     nm = nm or "x1_sweep"
