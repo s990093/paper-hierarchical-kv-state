@@ -1,0 +1,77 @@
+{
+ "exp": "w5",
+ "variant": "mooncake_conversation_R1",
+ "collected_ts": "2026-11-07T12:13:24+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit_at_collect": "b3c351ce002672b1203471a7260a48256b2ff15b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1",
+   "ts": "2026-11-07T12:12:16+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep_bf16.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1/base_bf16.csv",
+   "sha256_source": "59f09c756803ab52c94dab63bdb56a63f52579849587ceb833429d5d3895e7c2",
+   "bytes_source": 2076342,
+   "rows": 5508
+  },
+  {
+   "file": "x1_sweep_w5.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1/out/x1/x1_sweep.csv",
+   "sha256_source": "be51579f2be17ac05bb577461aad5f45e3b59281e0b432e3470911f229c3b75d",
+   "bytes_source": 2149209,
+   "rows": 5508
+  },
+  {
+   "file": "explore_w5_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1/a/explore_w5_rows.csv",
+   "sha256_source": "a9795c5f673ac9850e4d5d9148bf3b10f1ce1578d9f3237fa2cf53d42e3a2ec7",
+   "bytes_source": 30792,
+   "rows": 108
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1/a/base_headroom_components.csv",
+   "sha256_source": "3516766872e217a4cc60524bc888425ce51fb55d70e38dda42749b4c8a64c8c6",
+   "bytes_source": 36320,
+   "rows": 108
+  },
+  {
+   "file": "allowed_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1/a/allowed_headroom_components.csv",
+   "sha256_source": "f81118b24979a80e21da3a8ec3c6ed948cce9107b00941db20625dadfa640015",
+   "bytes_source": 43013,
+   "rows": 108
+  },
+  {
+   "file": "forced_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1/a/forced_headroom_components.csv",
+   "sha256_source": "f60c2f973490c5a9fd8e9f262dc9e8e62f9ed51673451a6e6c663dd5df42fa76",
+   "bytes_source": 36533,
+   "rows": 108
+  },
+  {
+   "file": "w5_mechanism_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-121216-icpe-rux-w5-formal-mooncake_conversation_R1/a/w5_mechanism_rows.csv",
+   "sha256_source": "c82ea302632ddc72ea0bb5750e5bd3ff7a675c05ad26f5f05a4e5d67968280b1",
+   "bytes_source": 10878,
+   "rows": 34
+  }
+ ],
+ "note": "PREREG 偏離 11 A 的 W5 敏感度；登記的算法＝allowed（每組事後挑 BF16／W5 較快）；BF16＝偏離 10 的正式 sweep：/root/paper-hierarchical-kv-state/results/icpe_next/apc/mooncake_conversation/x1_sweep.csv.xz",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

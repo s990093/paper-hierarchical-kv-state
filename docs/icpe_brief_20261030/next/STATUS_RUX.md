@@ -1,7 +1,86 @@
 # STATUS_RUX（icpe-rux，RUX3DPRO）
 
 本檔由 icpe-rux 寫，最新的一節在最上面。格式照 `STATUS_TRX.md`。
-**到 11/7 12:10：正式模擬只有使用者同意、登記過的（PREREG 偏離 10 的 APC、偏離 11 的 W5／排隊）；沒有動佇列；別人的檔只有 PREREG 檔尾 append（使用者授權）。**
+**到 11/7 14:30：正式模擬只有使用者同意、登記過的（PREREG 偏離 10 的 APC、偏離 11 的 W5／排隊）；沒有動佇列；別人的檔只有 PREREG 檔尾 append（使用者授權）。偏離 10、11 在 RUX3DPRO 這邊都跑完了。**
+
+---
+
+## 2026-11-07T14:30+08:00 — 偏離 11 的正式 W5（另外 3 個變體）、排隊（SemiAnalysis 12 個）跑完；兩者都只報告，主結果不變
+
+**要證明什麼**
+- W5：換成 W5 格式（allowed＝每組事後挑較快的格式）之後，版本 C 的上限會不會變；升高超過 5 個百分點的格要寫機制（NP:53）。
+- 排隊：把排隊等待算進 TTFT（qpost）之後，同一格的上限會不會變。依 (LRU, LRU) 的平均等待分成輕 <2 s、中 2–20 s、重 ≥20 s，重的只報告。
+
+**做了什麼**
+- `chain_w5q.sh` 在 `CHAIN_APC_OK` 之後自動開始，12:08–14:18，印 `CHAIN_W5Q_OK`。
+- 每個 run 都是 `exit=0`、`py_fallback_jobs=0`，引擎 v8 48e4efce，sweep code_sha `3280b1c8799b+rse7f6ee8f`（MANIFEST 的 engine_used 只有這一個）。
+- **W5**（run `20261107-120835`／`121216`／`121326`）：Bailian coder、Mooncake conversation R1、toolagent R1。
+  - 每個變體 4,728 個 job，BF16 和 W5 各 5,508 列。
+  - W5 較快的組合：Bailian coder 5,506、conversation 5,480、toolagent 5,503（各 5,508 組）。
+  - **核對**：每個變體的 `base` 上限表和版本 C 同 3 個容量的 108 個 (格, 元件)，7 欄都是 0 個不同（SemiAnalysis N16 s1 也重新核過）。
+- **排隊**（run `20261107-121712` 到 `140650`）：SemiAnalysis 12 個 × 9 個容量。
+  - 每個都印 `QUEUE_RESULT E2E_OK rows=324`，也就是只有 TTFT 推出來的欄位不同。
+
+**W5 結果**（cake，每個變體 18 格；≥15% 的格數，版本 C → allowed；差＝allowed − 版本 C 的中位數，單位百分點）
+
+| 元件 | SemiAnalysis N16 s1 | Bailian coder | Mooncake conv R1 | Mooncake tool R1 |
+|:--|:--|:--|:--|:--|
+| O-GPU | 2 → 0（−2.36） | 8 → 3（−3.86） | 18 → 13（−4.97） | 18 → 8（−8.43） |
+| O-ORD | 2 → 0（−2.19） | 6 → 6（−1.09） | 18 → 18（+8.10） | 17 → 14（+2.24） |
+| O-PF | 0 → 0（−1.95） | 8 → 6（−5.16） | 18 → 18（−0.95） | 18 → 14（−5.06） |
+| O-DROP | 0 → 0（−0.20） | 6 → 6（−0.37） | 18 → 18（+5.88） | 18 → 16（+0.13） |
+| O-NOW | 0 → 0（+0.13） | 0 → 0（+0.01） | 0 → 0（+0.13） | 0 → 0（0.00） |
+
+- **沒有任何格因為 W5 從 <15% 變成 ≥15%**。反方向的有：
+  - Bailian coder：O-GPU 5 格、O-PF 2 格、O-ALL(report) 4 格。
+  - conversation：O-GPU 5 格。
+  - toolagent：O-GPU 10 格、O-PF 4 格、O-ORD 3 格、O-DROP 2 格。
+- **升高 >5 個百分點的 (格, 元件)**（`w5_mechanism_rows.csv`）：
+  - SemiAnalysis N16 s1：3 個，全部在 nfs（上一節）。
+  - Bailian coder：1 個，O-DROP nfs，+5.02，上限 0.197 → 0.247。
+  - Mooncake conversation：34 個，O-ORD 12、O-DROP 10、O-PF 6、O-NOW 6。
+  - Mooncake toolagent：20 個，O-NOW 6、O-ORD 6、O-DROP 4、O-PF 4。
+- **機制**（兩邊都用 W5 格式）：
+  - O-ORD、O-DROP、O-PF 這 3 個元件：oracle 的慢層載入少得比對手多。
+    - 各元件 oracle 減少量的中位數：Mooncake −68%～−99%，Bailian −62%；對手 −14%～−29%。
+    - 重算也是 oracle 少得多。
+    - 所以 W5 多出來的容量，oracle 用得比對手好。
+    - 這些格本來就 ≥15%，W5 之後更高：O-ORD 0.166–0.494 → 0.240–0.696，O-PF 0.283–0.414 → 0.498–0.579。
+  - O-NOW 的 12 格是負值變得沒那麼負：−0.352～−0.124 → −0.180～+0.040，都還 <15%。兩邊慢層載入少得差不多（−23%～−32%）。
+- 結果在 `results/icpe_next/w5/<變體>/`（含 SemiAnalysis N16 s1 共 4 個）。TRX40 的 TraceLab c1、FreeInference w1 在 `origin/icpe-next-trx`。
+
+**排隊結果**（cake，12 個變體 × 54 格 × 6 元件＝3,888 列）
+- 各負載的格數：輕 282 列（只有 N16）、中 924 列（N16、N32、N64 s2）、重 2,682 列（N64、N72 幾乎全部）。
+
+| 負載 | 元件 | ≥15%（不含 → 含排隊） | 跨過 15%（升／降） | 差的中位數（百分點） |
+|:--|:--|:--|:--|--:|
+| 輕（47 格） | O-GPU／O-ORD／O-PF／O-DROP／O-NOW | 全部 0 → 0 | 0／0 | −0.73～+0.07 |
+| 中（154 格） | O-GPU | 9 → 34 | 25／0 | +1.32 |
+| 中 | O-ORD | 1 → 14 | 13／0 | +0.86 |
+| 中 | O-PF | 0 → 10 | 10／0 | −0.36 |
+| 中 | O-DROP、O-NOW | 0 → 0 | 0／0 | +0.12、−0.33 |
+| 重（447 格，只報告） | O-GPU | 312 → 422 | 117／7 | +20.24 |
+| 重 | O-ORD | 160 → 326 | 166／0 | +17.19 |
+| 重 | O-PF | 10 → 54 | 44／0 | −0.37 |
+| 重 | O-DROP | 0 → 2 | 2／0 | +0.41 |
+| 重 | O-NOW | 0 → 0 | 0／0 | −0.48 |
+
+- 中負載跨上 15% 的：
+  - O-GPU 25 格（N16 12、N32 11、N64 2）。
+  - O-ORD 13 格（N16 6、N32 7）。
+  - O-PF 10 格（全部 N32）。
+  - 這些格 (LRU, LRU) 的平均等待中位數 9–13 s。
+- 讀法〔推論〕：服務時間短一點，排隊等待就短更多，所以含排隊時相對上限變大。
+  - 輕負載（<2 s）：差的絕對值 >5 個百分點的只有 O-PF 1 格。
+  - 中負載：有影響。
+  - 重負載：等待是幾百到幾千秒，而 qpost 是一階的事後 FCFS、不是事件驅動的閉迴路，所以不可靠，只報告。
+- 依登記：主結果維持版本 C、標「不含排隊」；排隊是敏感度。
+- 結果在 `results/icpe_next/queue/<變體>/`（`queue_rows.csv`、`queue_headroom_components.csv`、`x1_sweep.csv.xz`、MANIFEST）。
+
+**接下來**
+- RUX3DPRO 這邊偏離 10、11 都跑完了。機器現在空著。
+- W7 照使用者指示停著。
+- 可以接的：UltraChat（如果 icpe-data 要備援）、BELP 加速、二階排隊（事件驅動）。
 
 ---
 

@@ -1,0 +1,49 @@
+{
+ "exp": "queue",
+ "variant": "semianalysis_N72_s1",
+ "collected_ts": "2026-11-07T13:55:04+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit_at_collect": "b3c351ce002672b1203471a7260a48256b2ff15b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-134257-icpe-rux-queue-formal-semianalysis_N72_s1",
+   "ts": "2026-11-07T13:42:57+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-134257-icpe-rux-queue-formal-semianalysis_N72_s1/out/x1/x1_sweep.csv",
+   "sha256_source": "d3c1da750b8fe2ccaef39a9efb6aece9c4e286b96b11f6aca7701a60ace53816",
+   "bytes_source": 7934663,
+   "rows": 16524
+  },
+  {
+   "file": "queue_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-134257-icpe-rux-queue-formal-semianalysis_N72_s1/a/queue_rows.csv",
+   "sha256_source": "6eab250927712f3c3fbc62e2057ab25e3dac4a3090a97048d2c3789f02f79f34",
+   "bytes_source": 92957,
+   "rows": 324
+  },
+  {
+   "file": "queue_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-134257-icpe-rux-queue-formal-semianalysis_N72_s1/a/queue_headroom_components.csv",
+   "sha256_source": "47cddb5e9d125727ef028901bb893b314fa0225c1de2c404842be66fe7885b4a",
+   "bytes_source": 111916,
+   "rows": 324
+  }
+ ],
+ "note": "PREREG 偏離 11 B 的排隊敏感度（qpost）；對照＝版本 C：/root/paper-hierarchical-kv-state/results/icpe_next/apc/semianalysis_N72_s1/verC_headroom_components.csv；重負載（(LRU,LRU) 平均等待 ≥ 20 s）只報告",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}

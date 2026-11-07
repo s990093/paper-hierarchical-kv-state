@@ -1,0 +1,77 @@
+{
+ "exp": "w5",
+ "variant": "bailian_coder",
+ "collected_ts": "2026-11-07T12:12:12+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit_at_collect": "b3c351ce002672b1203471a7260a48256b2ff15b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rse7f6ee8f"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-120835-icpe-rux-w5-formal-bailian_coder",
+   "ts": "2026-11-07T12:08:35+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep_bf16.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-120835-icpe-rux-w5-formal-bailian_coder/base_bf16.csv",
+   "sha256_source": "4bb173e78435f04a5df0df1ec908736b34aad725c238dd913bba90e27f8655e2",
+   "bytes_source": 2224158,
+   "rows": 5508
+  },
+  {
+   "file": "x1_sweep_w5.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-120835-icpe-rux-w5-formal-bailian_coder/out/x1/x1_sweep.csv",
+   "sha256_source": "2088b399a4a3791c389e06eb6b656e126233bb2dc54fb3f7507fdc2d4f93b62b",
+   "bytes_source": 2282008,
+   "rows": 5508
+  },
+  {
+   "file": "explore_w5_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-120835-icpe-rux-w5-formal-bailian_coder/a/explore_w5_rows.csv",
+   "sha256_source": "31b20b4fe02a2ff1dda1f2db47770b94d813c1d2832706ec4f93fc2ca6abbdbf",
+   "bytes_source": 30114,
+   "rows": 108
+  },
+  {
+   "file": "base_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-120835-icpe-rux-w5-formal-bailian_coder/a/base_headroom_components.csv",
+   "sha256_source": "58c347a6308b984757d5f5ccd0802d379336fb779cd786aec1b367882e4bebb2",
+   "bytes_source": 34640,
+   "rows": 108
+  },
+  {
+   "file": "allowed_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-120835-icpe-rux-w5-formal-bailian_coder/a/allowed_headroom_components.csv",
+   "sha256_source": "05b9b07aabb8c1a9c7ea29ef7a49bcb0d70a713e5e33b93002fc751abc2e1cbb",
+   "bytes_source": 40097,
+   "rows": 108
+  },
+  {
+   "file": "forced_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261107-120835-icpe-rux-w5-formal-bailian_coder/a/forced_headroom_components.csv",
+   "sha256_source": "5ef368fc3270207417b6919926504edd81a4c0cc65455dbe96a97f23480721bf",
+   "bytes_source": 34481,
+   "rows": 108
+  },
+  {
+   "file": "w5_mechanism_rows.csv",
+   "source": "/root/icpe-next/runs/20261107-120835-icpe-rux-w5-formal-bailian_coder/a/w5_mechanism_rows.csv",
+   "sha256_source": "4624945524f64e7699f467e87469bbd6ae296b193882e01614ad24cc2c0067e0",
+   "bytes_source": 835,
+   "rows": 1
+  }
+ ],
+ "note": "PREREG 偏離 11 A 的 W5 敏感度；登記的算法＝allowed（每組事後挑 BF16／W5 較快）；BF16＝偏離 10 的正式 sweep：/root/paper-hierarchical-kv-state/results/icpe_next/apc/bailian_coder/x1_sweep.csv.xz",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}
