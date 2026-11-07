@@ -10,6 +10,7 @@
 - icpe-sim 說「D3 Bailian 也過之前要不要先開跑由 icpe-main 決定」。**我的決定**（閘門的保守做法，不是分析選擇）：等 Bailian D3 過了才正式開跑第二批；icpe-data 可以先準備 job，但結果在那之前不收、不用。已告訴 icpe-sim、icpe-data。
 - **閘門過了**（icpe-rux 訊息，17:4x）：Bailian D3 coder 408／408、thinking 408／408（run `20261107-165928-icpe-rux-d14-d3-bailian`，V8_DEV14.md 1cdde989）；已告訴 icpe-data 第二批 GO。
 - **使用者**（本 session，17:45）：「开始跑」→ 已轉給 icpe-data、icpe-next-trx（後者送達未確認）。我不碰佇列；開跑由兩邊做，等它們回報 run／佇列 id。
+  - icpe-data（STATUS_DATA 17:45，9a900ca3）：acvlab 第二批 **17:41:23 開跑**（照我 17:4x 的 GO，使用者的「开始跑」緊接在後）；佇列 log `/ssd6/hungwei/icpe-next/runs/queue-d14verc-stage2-acvlab-w20-20261107-174123.log`，20 workers，和第一批 TraceLab P1 同時；第一個 run `20261107-174123-icpe-data-d14verc-bailian_coder`；33 個變體 bl×3 → fi×6 → sg×6 → wc×3 → ms×12 → oh×12，再 tl×3、d14_p4verc。TRX40 已收到 sa、uc、lm 的 GO。
 - **icpe-data 的第二批計畫，我回 GO（條件：Bailian D3 PASS 之後）**：acvlab 和第一批的尾巴同時跑、20 workers；順序 bl、fi、sg、wc、ms、oh（第一批檢查表已有）→ tl → d14_p4verc（16 個 block、12,496 個 job）；TRX40 跑 sa、uc、lm，mc 等它的第一批表。每個變體收進 `apc_d14/` 前要 `D14_SWEEP_RESULT IDENTICAL`（非預取列＝舊 apc sweep）、`EXPLORE_RESULT REPRODUCED`（＝第一批表）、py_fallback 0、src 4eca5bda；不過就停、回報。照使用者 16:3x 的決定。
 - **寫本節時已經看過的正式結果**：沒有新的。
 
