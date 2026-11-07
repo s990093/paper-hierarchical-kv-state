@@ -2,6 +2,36 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T15:42+08:00 — 偏離 14 的重跑**分兩段**（引擎的限制，使用者已決定順序）；TRX40 的存量；旗標開的關用 icpe-sim 的參考
+
+- **引擎**（icpe-main 轉達 icpe-sim 的回答，15:4x）：
+  - 現在沒有一個引擎同時有雜訊、偏離 14 的規則、APC／BELP。
+  - x1fast 63b8e32：有雜訊與偏離 14，沒有 APC／BELP。
+  - v8：有 APC／BELP，沒有偏離 14。
+- **使用者決定**（15:4x，在 icpe-main）：icpe-rux 先把偏離 14 移植進 v8，之後才做二階排隊；icpe-sim 交叉檢查這個移植。
+- **所以重跑分兩段**：
+
+| 段 | 內容 | 引擎 | 什麼時候開始 |
+|:--|:--|:--|:--|
+| 第 1 段 | 版本 B 引擎的所有列：主結果、P1–P3、sens_rep 的 pfgpu（`--pf-gpu-recheck`）、P4 模型 P 全部 job（`--noise-overdue resample`）、對話與 agent 的 main／P1 的 O-PF／O-ALL | x1fast 63b8e32 | icpe-sim 驗證通過並 push、我 merge 並跑完 G0、TRX40 過關之後 |
+| 第 2 段 | 所有版本 C 的列（主結果版本 C 的 O-PF／O-ALL、對話版本 C、agent 版本 C）＋ P4 版本 C 新增的 5 對 | 移植了偏離 14 的 v8 | icpe-rux 移植完、icpe-sim 交叉檢查通過之後 |
+
+- 上一節（15:41）的暫定分工兩段都適用：TRX40 做 SemiAnalysis 與 UltraChat／LMSYS，acvlab 做其餘的。
+- **TRX40 的存量**（icpe-next-trx，15:41）：
+  - 沒在跑，load 0.30；48 執行緒，62 GiB（可用 55），/ssd4 剩 509 GiB。
+  - **SemiAnalysis**：N16／32／64／72 × s1–s3 的 nb 都在（另有 N16 s1 t128k）。
+  - **TraceLab**：nb 在 `x1_nb_rux`，準備快取只有 rux v8 版（x1_sim code_sha256 5cac400b…），版本 B 引擎要在第一次跑時重建。
+  - **Mooncake**：原始檔在。
+  - **FreeInference**：原始的 16 週都在，沒有 fi_* nb。
+  - **Bailian**：沒有。
+  - **對話**：ultrachat、lmsys 的 T60／T600 × s1–s3 都在。
+  - **agent**：沒有 ms／oh 的 nb。
+  - **P4**：job 清單由 next_b_queue 從 `results/icpe_next/main/p4/p4_cells_distinct.csv` 產生，和 11/6 跑 sa_p4_b1／b2 時一樣。
+  - → 暫定分工不變：TraceLab、FreeInference、Bailian 留在 acvlab。
+- **旗標開的關**：icpe-sim 驗證通過後，會把 semianalysis_N16_s1 與 Mooncake conversation R1 的旗標開參考放在 `results/icpe_next/sim/xref_dev14/`。
+  - TRX40 用 Python 與 Rust 各比一次，當作旗標開的那一關；acvlab 的 G0 也比同一份。
+  - 我不另外指定 block。
+
 ## 2026-11-07T15:41+08:00 — 使用者決定 **TRX40 分擔偏離 14 的重跑，最好是重的部分**；先暫定分工，等清單出來才定；P4 版本 C 的 5 對等引擎
 
 - **使用者的決定**：icpe-main 轉達（15:3x）；icpe-next-trx 也說使用者在 TRX40 確認過（STATUS_TRX 15:45，5acbc46e）。
