@@ -30,7 +30,7 @@
 - **SemiAnalysis 的 O-GPU 按 N 分**（≥15% 格數，3 個 seed 加總）：N16 34 → 28、N32 80 → 77、N64 109 → 107、N72 110 → 109。
   - 單一變體的最大值：N16、N32 下降（例如 N16 s1 0.4617 → 0.4360）；N64、N72 上升（例如 N72 s3 0.5294 → 0.5682）。上升是因為 BELP 進了 ④ 的 oracle。
 - Mooncake、Bailian 加了 APC 幾乎不變：最大的變化 0.010，≥15% 的格數只有 Mooncake O-GPU 多 2 格。
-- 寫入飽和照算，另報：只有 Mooncake 有，O-ORD 2 × 54、O-PF 2 × 54、O-GPU 15＋18 格。
+- 寫入飽和照算，另報：只有 Mooncake 有。O-ORD、O-PF 各 54＋54 格，O-GPU 15＋18，O-DROP、O-NOW 各 3＋3，O-ALL(report) 2＋2。
 - TRX40 的 9 個變體（TraceLab c1／c2／c4、FreeInference 6 週）在 `origin/icpe-next-trx`，由 icpe-next-trx 自己報。
 
 **接下來**
