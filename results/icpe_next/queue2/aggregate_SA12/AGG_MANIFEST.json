@@ -1,0 +1,117 @@
+{
+ "run_id": "20261108-004610-icpe-rux-q2-agg-SA12",
+ "ts": "2026-11-08T00:46:11+08:00",
+ "host": "RUX3DPRO",
+ "variants": [
+  "semianalysis_N16_s1",
+  "semianalysis_N16_s2",
+  "semianalysis_N16_s3",
+  "semianalysis_N32_s1",
+  "semianalysis_N32_s2",
+  "semianalysis_N32_s3",
+  "semianalysis_N64_s1",
+  "semianalysis_N64_s2",
+  "semianalysis_N64_s3",
+  "semianalysis_N72_s1",
+  "semianalysis_N72_s2",
+  "semianalysis_N72_s3"
+ ],
+ "inputs": [
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N16_s1/queue2_rows.csv",
+   "sha256": "1381591626f207bfc69f2024e02d5d365b5b2e791a87a83365e856fac010c823"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N16_s1/queue_rows.csv",
+   "sha256": "173d0bf5f31a452cf83d99b4c17ab2e2fb376e3b5aba71d7edc0ed1742b60414"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N16_s2/queue2_rows.csv",
+   "sha256": "2bf1c0ea0614ad0d8ad2628bb60fb14d2141ede6ee0b25ce4ae8094bc47bde00"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N16_s2/queue_rows.csv",
+   "sha256": "98e3c9d7e812356e09c1b6a32165372fafdf16fd75d9efd63663dad928bf32aa"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N16_s3/queue2_rows.csv",
+   "sha256": "905d80f67f8afdb8cbac5d4dcdaff845162b28bfe089d52711bb947a33a0216a"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N16_s3/queue_rows.csv",
+   "sha256": "9d3ca7667050677ea6f1adb650ea3519a1819142328321cede88a91456407d4f"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N32_s1/queue2_rows.csv",
+   "sha256": "76de064071382e8cd5f6ddd82d45b88b1b6aa026660d55b6803aa85a51da5823"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N32_s1/queue_rows.csv",
+   "sha256": "f289e14a1e593f09c8aededc5a04cb59fd10bd45a8e7b64d825f5238b7fb6e51"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N32_s2/queue2_rows.csv",
+   "sha256": "db3f60169fbf9593454e97eea5b9bbb21188216f10cf02dc9e0b637962965c78"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N32_s2/queue_rows.csv",
+   "sha256": "f4a98ac01fc9497fb642b3896e7de87964404126433a4b3588b4a142ddc733d8"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N32_s3/queue2_rows.csv",
+   "sha256": "087daf707222a6a72c064f8e6b653b5abf5c8d760aca0007b874feb325f10b9f"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N32_s3/queue_rows.csv",
+   "sha256": "94090e56d77011197ada8d4fd40a94077382341eedf1554b88d5d6cb585e7f7e"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N64_s1/queue2_rows.csv",
+   "sha256": "23ec65c51b7649398adfbde5883321d931cbfac39e9cf00f969a6f9912c4acb4"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N64_s1/queue_rows.csv",
+   "sha256": "4d850daa53045647c11ee242996e4f4f4c699e46959ac97b91d5e75e58401a93"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N64_s2/queue2_rows.csv",
+   "sha256": "4c6ff866494066e633231bf4daef4bc1aae82e1ebf174d38b8bf699d5ebe9193"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N64_s2/queue_rows.csv",
+   "sha256": "64ee1a8022a9884cc6d6ad384d0f0a7b7baedb0eecbdbefab583a16145a53e19"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N64_s3/queue2_rows.csv",
+   "sha256": "33b3f36d1d819e3e65f5556ba700d911d054cbf3c31eebb8e008a453c685c51e"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N64_s3/queue_rows.csv",
+   "sha256": "779270234a802e193c98cf1d3e187220deb8e2c199887f30762ce24dfd7fcc1b"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N72_s1/queue2_rows.csv",
+   "sha256": "63355b11d24f94fa458223d51fbbaa9bc0ab5571643185a508582af7a8369b22"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N72_s1/queue_rows.csv",
+   "sha256": "6eab250927712f3c3fbc62e2057ab25e3dac4a3090a97048d2c3789f02f79f34"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N72_s2/queue2_rows.csv",
+   "sha256": "3699ccee95a486311f4b74f08a809a8d556fa7b74ebbeab01ad6d5e114e28450"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N72_s2/queue_rows.csv",
+   "sha256": "7382f02c26cdb696da230b05479ead573539ed8aefc38f17e6c3a01786e8b257"
+  },
+  {
+   "file": "results/icpe_next/queue2/semianalysis_N72_s3/queue2_rows.csv",
+   "sha256": "64e79d8a6efe65f2440798dacad07c97c6a83091d2dc6ac84e653955b4708cac"
+  },
+  {
+   "file": "results/icpe_next/queue/semianalysis_N72_s3/queue_rows.csv",
+   "sha256": "e560ac091bc0e780cf0cdd1ad6950ca53dadc31908e49a65121659d858e8ba5b"
+  }
+ ]
+}

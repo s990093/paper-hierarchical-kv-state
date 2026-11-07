@@ -1,0 +1,55 @@
+{
+ "exp": "queue2",
+ "variant": "semianalysis_N64_s2",
+ "collected_ts": "2026-11-08T00:45:27+08:00",
+ "collected_host": "RUX3DPRO",
+ "repo_commit_at_collect": "61b97c97c04b5031cabde669967b35237218b534",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rs4d1cc219",
+   "main_rs_sha256": "8fcdab56882d6b4a",
+   "first_commit": "9496c4f6",
+   "engine_dir": "v9_qev"
+  }
+ ],
+ "sweep_code_sha": [
+  "3280b1c8799b+rs4d1cc219"
+ ],
+ "runs": [
+  {
+   "run_id": "20261107-205042-icpe-rux-q2-sweep-semianalysis_N64_s2",
+   "ts": "2026-11-07T20:50:42+08:00",
+   "host": "RUX3DPRO"
+  },
+  {
+   "run_id": "20261108-004520-icpe-rux-q2-analyze-semianalysis_N64_s2",
+   "ts": "2026-11-08T00:45:20+08:00",
+   "host": "RUX3DPRO"
+  }
+ ],
+ "files": [
+  {
+   "file": "x1_sweep.csv.xz",
+   "source": "/root/icpe-next/runs/20261107-205042-icpe-rux-q2-sweep-semianalysis_N64_s2/q/out/x1/x1_sweep.csv",
+   "sha256_source": "877da50fe7456065b2f71c9b7735d8c07edb7dffa58e051a9c1d12b9d9de07f9",
+   "bytes_source": 8118067,
+   "rows": 16524
+  },
+  {
+   "file": "queue2_rows.csv",
+   "source": "/root/icpe-next/runs/20261108-004520-icpe-rux-q2-analyze-semianalysis_N64_s2/q/a/queue2_rows.csv",
+   "sha256_source": "4c6ff866494066e633231bf4daef4bc1aae82e1ebf174d38b8bf699d5ebe9193",
+   "bytes_source": 138641,
+   "rows": 324
+  },
+  {
+   "file": "queue2_headroom_components.csv",
+   "source": "/root/icpe-next/runs/20261108-004520-icpe-rux-q2-analyze-semianalysis_N64_s2/q/a/queue2_headroom_components.csv",
+   "sha256_source": "7ef17f55f01b29ae1a93d5d2bf1f6cb2be3eca03ae8996ad5e968d406928db1e",
+   "bytes_source": 110573,
+   "rows": 324
+  }
+ ],
+ "note": "PREREG 偏離 19 的二階排隊（事件驅動 qev，v9＝v8_dev14＋qev）、偏離 14 pfx=1；比較 1 的基準＝修正版版本 C：/root/icpe-next/datasets/apc_d14_e47af649/semianalysis_N64_s2/verC_headroom_components.csv；一階：m＝qpost=2（queue1m/）、orig＝/root/paper-hierarchical-kv-state/results/icpe_next/queue/semianalysis_N64_s2/queue_rows.csv（偏離 11 B，沒有 pfx）；重負載（二階 (LRU,LRU) 平均等待 ≥ 20 s）只報告",
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+}
