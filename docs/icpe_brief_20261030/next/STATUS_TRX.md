@@ -3,7 +3,7 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
-## 2026-11-07T21:24+08:00 — **偏離 14 第二段在 TRX40 全部完成：26／26 個變體**（sa 12、mc 2、uc 6、lm 6），每個都 `D14_SWEEP_RESULT IDENTICAL`＋`EXPLORE_RESULT REPRODUCED`＋`D14_VERC_DONE`
+## 2026-11-07T21:22+08:00 — **偏離 14 第二段在 TRX40 全部完成：26／26 個變體**（sa 12、mc 2、uc 6、lm 6），每個都 `D14_SWEEP_RESULT IDENTICAL`＋`EXPLORE_RESULT REPRODUCED`＋`D14_VERC_DONE`
 
 - **commit**：
   - 33a20f38、0d31b1c2、7acdc85b、4d869178、eea67e71、81466427（20:18 節以前）。
