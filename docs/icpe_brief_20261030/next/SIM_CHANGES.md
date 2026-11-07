@@ -438,7 +438,12 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - 使用者選 A：修源頭，放在新旗標、預設關；重跑偏離 14 時一起開（pfgpu 的 O-ALL 本來就要重跑）。
 - **改了什麼**：
   - **`--pf-gpu-recheck`** → `Engine(pf_gpu_recheck=True)`，Rust 是 jobs.txt 的 `pgr=1`。`_advance_prefetch_gpu` 在 `_g_make_room` 成功之後：候選已不在 CPU／慢層 → `continue`（不預取，不推回 heap）。預取到 CPU 的路徑沒改（候選在慢層，`make_room` 只動 CPU 上的 session；只有設了慢層容量才可能丟到候選，正式 block 都沒設）。
-  - **偏離 14 (i) 跳過已丟的 session**（`_pf_expire`／`pf_expire` 的篩選多 `st ≠ S_DROP`，CPU、GPU 兩條路徑）：沒開 `--pf-gpu-recheck` 時，那種副本照旗標關的方式留著，不會 assert。
+  - **偏離 14 (i) 跳過已丟的 session**（`_pf_expire`／`pf_expire` 的篩選多 `st ≠ S_DROP`，CPU、GPU 兩條路徑）：沒開 `--pf-gpu-recheck` 時，那種副本照旗標關的方式留著；session 還是被丟的時候，`_pf_expire` 不會為它 assert。
+    - **更正（11/7 16:35，STATUS_SIM 同時間那節）**：原本寫「不會 assert」只對沒有雜訊成立。有雜訊時，被丟的 session 可能又回來；之後丟它（`_turn_end_wb` → `drop`）或讓它過期，`_g_unprefetch` 找不到那些舊副本，就會 assert。
+      - **旗標關也會**：SemiAnalysis N16 s1、CPU 16、O-ALL、wb、預取到 GPU、P B2 λ0.3 seed 7、TTLA:10，Python `AssertionError: (19, 5)`、Rust `gspf 19 5`。
+      - 只開 `--pf-expire` 時也會（icpe-rux 先發現）。
+      - 開 `--pf-gpu-recheck` 就沒有（只開它，或三個都開）。
+      - **預取到 GPU 一律要開 `--pf-gpu-recheck`。** 正式 block 沒有「雜訊 × 預取到 GPU」。
   - **CSV**：開了才每列多 `pf_gpu_recheck`（True），npz 檔名多 `_pgr`，stdout 印 `sim_changes23 pf_gpu_recheck=True`。沒開＝原本的欄位。
 - **驗證**（第 22、23 項一起；run `20261107-140640-icpe-sim-g1-63b8e32`，凍結的 worktree `g1-63b8e32`，acvlab；Rust src `0bfacb59…`，`py_fallback_jobs=0`）：**全部 PASS**。
   - G1（三個旗標都關，對 H200 V1 的 4,416 列 × 29 欄）：Python、Rust 不同的格子 0。

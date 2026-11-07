@@ -962,3 +962,111 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - 有雜訊的網格不變（wb，232 個）。紀錄、旗標、worker 同上一節。
 - **TraceLab 預熱重開**（run `20261107-155740-icpe-sim-prewarm-63b8e32`；`…-154805` 是停掉的那個）。
 - 旗標仍然**等 xref 的 Python＝Rust 才放行**。
+
+---
+
+## 2026-11-07T16:08+08:00 — TraceLab c1／c2／c4 的準備快取建好（`63b8e32`）
+
+- run `20261107-155740-icpe-sim-prewarm-63b8e32`：exit 0。
+  - 凍結的 worktree `g1-63b8e32`：x1_sim.py sha256 **`8b53588b85c3…`**、x1_nb.py `8251e2587464…`、x1_rust.py `0d89c4ba33c5…`。
+  - Rust src `0bfacb59…`；code_sha `3180504e8d57+rs0bfacb59`。
+  - `X1_RUST_WORK=/ssd6/hungwei/icpe-next/x1fast-work`；同時 2 個。
+
+| 變體 | 快取目錄 | n_req | 準備 | 牆鐘（含 1 個 job） | 最大 RSS |
+|:--|:--|--:|--:|--:|--:|
+| tracelab_c1 | `prep-a3909a4652a7c575dd8b1cea` | 665,453 | 372.3 s | 6:35 | 14.2 GiB |
+| tracelab_c2 | `prep-b4cdd780b7651a9983b658f3` | 665,453 | 369.6 s | 6:33 | 14.2 GiB |
+| tracelab_c4 | `prep-8fa8552aea93c4ed7af4a22e` | 665,453 | 130.3 s | 2:28 | 14.2 GiB |
+
+- 三個的 KEY.json 都是 `code_sha256` `362b98a15fc4…`（x1_sim／x1_nb／x1_rust 合起來的 sha），`lite=True`、`prep=built_saved`。
+- 這次比 11/6（約 2,482 s／變體）快很多。原因沒查（NOT_MEASURED）。
+- 用同一份程式（`63b8e32` 或之後只改文件的 commit）跑 TraceLab，應該會印 `prep=cache_hit`。
+
+---
+
+## 2026-11-07T16:35+08:00 — 更正 SIM_CHANGES 23 的一句：「不開 `--pf-gpu-recheck` 也不會 assert」只對沒有雜訊成立；**有雜訊＋預取到 GPU 的 O-ALL，旗標關也會 assert**（正式 block 沒有這個組合）
+
+- **icpe-rux 先發現**（移植 v8 時，16:1x）：只開 `pfx=1`、不開 `pgr=1`，O-ALL、wb、預取到 GPU，P B2 λ0.3 seed 7，CPU 16 → 參考版和移植都 `gspf`。
+- **我在 `63b8e32` 上重現**：run `20261107-163044-icpe-sim-pfx-nopgr-repro`。SemiAnalysis N16 s1、CPU 16、O-ALL、b32、GPU 111.0625 wb、預取到 GPU、P B2 λ0.3 seed 7；Rust，Python 只跑 1 個：
+
+| GPU 規則 | 旗標關 | 只 `--pf-expire` | `--pf-expire --noise-overdue resample` | 只 `--pf-gpu-recheck` | 三個都開 |
+|:--|:--|:--|:--|:--|:--|
+| BEL | 跑完 | `gspf 1202 5` | `gspf 51 5` | 跑完 | 跑完 |
+| TTLA:10 | `gspf 19 5`（Python `AssertionError: (19, 5)`，`_turn_end_wb` → `_g_unprefetch`） | `gspf 250 18` | `gspf 63 5` | 跑完 | 跑完 |
+
+- **原因**（推論，和表一致，沒有逐步追）：
+  - SIM_CHANGES 23 的舊路徑留下「屬於已丟 session 的 GPU 預取副本」。
+  - 沒有雜訊時，O-NOW 丟的 session 不會再回來，所以只有規則 (i) 會去找那些副本（已用 S_DROP 跳過修好）。
+  - 有雜訊時，被丟的 session 可能又回來。之後丟它或讓它過期，`_g_unprefetch(s, sb[s])` 找不到舊副本，就會 assert。
+  - `--pf-gpu-recheck` 讓這種副本不會產生，所以兩種情況都沒事。
+- **影響**：
+  - 正式 block 沒有「雜訊 × 預取到 GPU」：P4 都是預取到 CPU，`_pfgpu`／sens_rep pfgpu 都沒有雜訊。正式結果不受影響。
+  - 重跑清單的 `flags` 欄一律有 `--pf-gpu-recheck`。
+  - xref 有雜訊的網格三個旗標都開，不受影響。
+- **規則**：**預取到 GPU 一律要開 `--pf-gpu-recheck`**（不論有沒有 `--pf-expire`）。已改 SIM_CHANGES 23 那句。
+- 程式不改（使用者 15:5x 選 A 的精神：正式不用的組合記成已知問題）。若要讓程式擋掉「預取到 GPU 卻沒開 `--pf-gpu-recheck`」，x1_sim 的 sha 會變、快取要重建；我不建議，除非使用者要。
+
+---
+
+## 2026-11-07T16:43+08:00 — 偏離 14 規則 (i) 在 λ＝0（沒有雜訊）對主結果 O-PF 的 ④ 的影響（icpe-main 的第 3 步）
+
+- run `20261107-160757-icpe-sim-dev14-lam0-impact`（Rust，2 個 worker，nice 10；凍結的 worktree `g1-63b8e32`；`py_fallback_jobs=0`；exit 0）。
+- 做法：
+  - **on**：O-PF、`--pf-expire`、GPU 111.0625 wb、15 個 GPU 不預測規則（LRU、TTLA／TTLB × 0.3／1／3／10／30／100／300）、CPU 9 種 × ssd／b32／nfs × GPU 閒／忙、預取到 CPU。
+  - **off**：正式輸出（版本 B 的 main＋`_p1 _ttl`；icpe-next-data a1ea7241、icpe-next-trx 291e7d60）的同一格。
+  - **④**＝每格在 15 個 GPU 規則裡最小的 mean_ret（同 next_sim_analyze 的 COMPONENT ④，不含 BEL）。rel4＝④_on／④_off − 1，**負＝開了規則之後 O-PF 變快**。
+  - 對手（②）不受規則 (i) 影響：只有 opf 的規則會變，G1／T2 已驗證。所以 O-PF 的上限只會經由 ④ 改變。
+- 結果（`results/icpe_next/sim/dev14_lam0_impact.csv`）：
+
+| 紀錄 | 格 | ④ 變了的格 | ④ 相對差中位數 | 最小 | 最大 | 第 10 百分位 | 逐列變了的 | 逐列最小 | 逐列最大 |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| Bailian coder | 54 | 50 | −0.0145% | −0.287% | +0.162% | −0.063% | 695／810 | −32.24% | +0.22% |
+| Bailian thinking | 54 | 8 | 0 | −0.018% | +0.035% | 0 | 131／810 | −1.73% | +1.34% |
+| Bailian traceA | 54 | 25 | 0 | −0.104% | +0.051% | −0.005% | 340／810 | −0.59% | +0.28% |
+| Mooncake conversation（R1＋R2） | 108 | 66 | 0 | **−18.03%** | +0.511% | −2.43% | 1,182／1,620 | −48.98% | +1.66% |
+| Mooncake toolagent（R1＋R2） | 108 | 86 | −0.001% | **−15.88%** | +0.412% | −2.14% | 1,259／1,620 | −47.95% | +0.78% |
+| FreeInference 2026-05-17 那週 | 54 | 0 | 0 | 0 | 0 | 0 | 12／810 | −0.01% | 0 |
+| SemiAnalysis N32 s1 | 54 | 48 | −0.0785% | **−14.92%** | +0.588% | **−8.94%** | 720／810 | −35.62% | +0.59% |
+| ShareGPT T60 s1 | 54 | 39 | −0.0016% | −0.869% | +0.208% | −0.097% | 508／810 | −7.35% | +0.94% |
+| WildChat s1 | 54 | 0 | 0 | 0 | 0 | 0 | 20／810 | −0.01% | 0 |
+| TraceLab c1 | 54 | 0 | 0 | 0 | 0 | 0 | 0／810 | 0 | 0 |
+
+- 讀法：
+  - 沒有雜訊時，規則 (i) 對 O-PF 的 ④：
+    - 大多是 0 到千分之幾。
+    - **Mooncake（兩份）、SemiAnalysis 有一部分格明顯變快**：最多 −15% 到 −18%；SemiAnalysis 有 10% 的格快 ≥ 8.9%。
+    - 少數格變慢：最多 +0.59%。
+  - TraceLab c1：810 列都有 `pf_expire=True`，但沒有任何一列變。FI、WildChat 幾乎沒有變。
+  - 每一格的上限怎麼變、判定會不會變，要等 icpe-data 重跑、icpe-main 重算。我不推。
+- 沒量（NOT_MEASURED）：
+  - O-ALL（它也有 opf，也會變）；
+  - 其他變體（SemiAnalysis 其他 N／s、TraceLab c2／c4、FI 其他 5 週、ShareGPT 其他、LMSYS、UltraChat、agent）；
+  - CacheWise（偏離 15 不跑）；
+  - P1–P3 的其他組合；
+  - 有雜訊的 λ＞0。
+
+---
+
+## 2026-11-07T16:59+08:00 — **xref_dev14 PASS：三個旗標放行**（引擎＝`63b8e32`）；參考放在 `results/icpe_next/sim/xref_dev14/`
+
+- run `20261107-155727-icpe-sim-xref-dev14`：exit 都是 0。
+  - Python（5 個 worker）與 Rust（1 個）的 6 個 sweep 逐列相同：1,184 列，不同的列 0；Rust `py_fallback_jobs=0`。
+  - 紀錄：SemiAnalysis N16 s1、Mooncake conversation R1。
+  - 網格：wb（GPU 0／111.0625 × 預取到 CPU／GPU）、wt（只預取到 CPU）、有雜訊（wb × 預取到 CPU／GPU × P／M × B1／B2 × λ 0.3）。三個旗標都開。
+- 目錄內容：
+  - 6 份 CSV（Rust 的輸出＋`host` 欄）；
+  - `xref_check.csv`（Python 對 Rust）；
+  - `env.sh`；
+  - `README.md`：指令、網格、不在網格裡的組合、比法。
+- 比對程式：`code/icpe/next_sim_dev14_check.py`（＝驗證用的 dev14_check.py）。git 裡的 CSV 對 Python 輸出自檢 PASS。
+- sha256：
+  - `xref_sa_qb.csv` `1a044f3139f9ee7a10c0bed242793ae81eac508220edf765dd682d7ecae7e6c0`
+  - `xref_sa_qt.csv` `805db06e047166ac9a604398ff41e58445c8c1fceb5dc6b707e3486386577a35`
+  - `xref_mc_qb.csv` `992e04e1b28bbc9b84187ff890f74ec58aae984239928f2c79c36d7e4d79a74c`
+  - `xref_mc_qt.csv` `3a6d276c5add8015a4b93e4f8f62b22577ba35c6c0dc4b0f32e6230a8b808a75`
+  - `xref_sa_n.csv` `671aac7be1e27205731d50b9ccfa713cf90f8679d4775d1c64d1d8109c05b22d`
+  - `xref_mc_n.csv` `40d5eca3df76cad20366a09674b50f9fb1e4dc9912658867f24953354c4dd1c0`
+- **放行**：icpe-data、icpe-next-trx 先各自用 Python 與 Rust 重現這 6 份、逐列 0 不同，就可以開旗標跑正式 block（第 1 段）。
+  - 旗標：版本 B 的 block 一律 `--pf-expire --pf-gpu-recheck`；P4 模型 P 再加 `--noise-overdue resample`。照 `dev14_rerun_list.csv` 的 `flags` 欄。
+  - **預取到 GPU 一律開 `--pf-gpu-recheck`**；不要把 wt 和預取到 GPU 交叉。
+- 進行中：icpe-rux 的 v8_dev14（`36780534`）交叉檢查，run `20261107-163544-icpe-sim-v8dev14-xcheck`。
