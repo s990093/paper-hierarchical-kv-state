@@ -3,6 +3,20 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T15:39+08:00 — 使用者：TRX40 接任務、重的優先；版本 C 的 P4 選格（偏離 10 第 5 點）
+
+- **使用者決定**（本 session，15:3x）：「把 TRX40 把任务交给他，或者是把重一點任务给他」。
+  - 〔判讀〕現在最重的是偏離 14 的重跑（O-PF／O-ALL 與 P4 模型 P 的列）；清單要等 icpe-sim 重新驗證 63b8e32（使用者選 A）之後才出，分給哪台由 icpe-data 定。
+  - 已傳給 icpe-next-trx（先準備同步、重現引擎，`--pf-expire` 等驗證過才用）、icpe-data（請把清單分一部分給 TRX40）、icpe-sim（清單方便分機器；版本 C 的 P4 要哪個引擎）。icpe-next-trx 走 Remote Control，送達未確認。
+- **版本 C 的 P4 選格**：run `20261107-153810-icpe-main-p4cells-verC`（exit 0），`results/icpe_next/main/p4/verC/`（commit 58252b4f，已 push）。
+  - 照偏離 10 第 5 點；比對單位＝(格, 元件)，元件＝偏離 8 的 5 個判定元件＋O-ALL(report)，論文版（不含 CacheWise）。〔比對單位與元件是我照偏離 8 的做法沿用，PREREG 沒逐字寫〕
+  - 版本 C ≥15% 的 (格, 元件) 2,099 個；版本 B 選過的（論文版）2,213 個。
+  - **要補跑只有 5 個**：SemiAnalysis N32 s3、N64 s3 的 O-PF；TraceLab c2 的 O-PF、O-GPU；Mooncake toolagent R2 的 O-GPU（上限 15.0%–17.3%）。
+  - 版本 B 選了、版本 C <15%（已有結果保留並標明）：119 個（SemiAnalysis 91、TraceLab 28）。
+  - 還沒解決：版本 C 的格要 APC／BELP（v8），雜訊與偏離 14 的規則在 icpe-sim 的引擎——哪個引擎能一起跑，已問 icpe-sim；牽涉移植或登記就交給使用者。
+- **push**：58252b4f 是我自己推的（使用者前面對 push 說 ok；這一個沒有另外問）。
+- **寫本節時已經看過的正式結果**：前面各節；本 run 的輸出。
+
 ## 2026-11-07T15:14+08:00 — 使用者「ok」：push；給老師的文件加 agent 一節與摘要一句
 
 - **push**：使用者對「push」回 ok → `origin/icpe-next-main` 7a55f1d3 → d470771d（25 個 commit）。推之前查過：我自己的改動裡沒有 CacheWise 的檔，沒有 >1 MB 的檔。
