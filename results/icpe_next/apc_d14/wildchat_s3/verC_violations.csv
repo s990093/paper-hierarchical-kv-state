@@ -1,0 +1,5 @@
+run_id,ts,host,pf_target,metric,dead_h,trace,rule,cpu_GiB,slow,gpu,restore,gpu_GiB,gpu_write,slow_cap_frac,component,oracle_policy,oracle_gpu_policy,oracle_slow_policy,T_oracle,rival,rival_gpu_policy,rival_slow_policy,T_rival,oracle_slower_by
+20261107-190348-icpe-data-d14verc-wildchat_s3,2026-11-07T19:05:40+08:00,acvlab,cpu,mean_ret,0,nb:wildchat_s3,nb,512.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,APC,none,0.036201,LRU+2HW,APC,none,0.036198,8.287750704447929e-05
+20261107-190348-icpe-data-d14verc-wildchat_s3,2026-11-07T19:05:40+08:00,acvlab,cpu,mean_ret,0,nb:wildchat_s3,nb,1024.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,APC,none,0.035837,LRU,APC,none,0.035836,2.790490010048555e-05
+20261107-190348-icpe-data-d14verc-wildchat_s3,2026-11-07T19:05:40+08:00,acvlab,cpu,mean_ret,0,nb:wildchat_s3,nb,1024.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,APC,none,0.035837,LRU+NONE,APC,none,0.035832,0.0001395400759097472
+20261107-190348-icpe-data-d14verc-wildchat_s3,2026-11-07T19:05:40+08:00,acvlab,cpu,mean_ret,0,nb:wildchat_s3,nb,1024.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,APC,none,0.035837,LRU+2HW,APC,none,0.035833,0.00011162894538565012
