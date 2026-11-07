@@ -3,6 +3,27 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T20:18+08:00 — 第二段：**Mooncake 兩個變體都完成**；sa 已收 9／12；chat 變體另開一個佇列；第一段 146／180
+
+- **commit 進度**（每個變體都印 `D14_SWEEP_RESULT IDENTICAL`、`EXPLORE_RESULT REPRODUCED`、`D14_VERC_DONE`，collect 核對 `bad 0`）：
+  - 7acdc85b：semianalysis_N16_s3、N32_s1。
+  - 4d869178：N32_s2、N32_s3。
+  - eea67e71：N64_s1、N64_s2。
+  - 81466427：mooncake_toolagent。
+- **mooncake_toolagent**（run `20261107-175229-icpe-trx-d14verc-mooncake_toolagent`）：
+  - `jobs=28368 workers=8`、`sweep done 7006.5` s。
+  - `D14_SWEEP_RESULT IDENTICAL`。
+  - 重現 918／918 格×元件，各欄 0 差，`EXPLORE_RESULT REPRODUCED cells=918`。
+  - 修正版版本 C 表照抄（元件、格數、max、median、n_ge15、n_ge5）：
+    - R1：O-ALL(report) 54、0.710236、0.427014、54、54；O-GPU 54、0.409141、0.252824、49、54；O-PF 54、0.472749、0.298063、47、51。
+    - R2：O-ALL(report) 54、0.724791、0.446673、54、54；O-GPU 54、0.374255、0.249855、48、54；O-PF 54、0.532927、0.310079、48、53。
+  - Mooncake 的佇列（run `20261107-175229-icpe-trx-d14-stage2-verc-mc`）印 `D14_VERC_QUEUE_DONE`，rc 0，20:16:54 結束。
+- **chat 變體另開佇列**：外層 run `20261107-201739-icpe-trx-d14-stage2-verc-chat`，指令 `next_d14_verc_queue.sh 8 lmsys_T{60,600}_s{1,2,3} ultrachat_T{60,600}_s{1,2,3}`，用 Mooncake 佇列空出來的 8 個 worker。
+  - 主佇列（sa→uc→lm）還有 sa 的 N64_s3、N72_s1–s3，每個約 20 分鐘，所以約 21:30 之後才會輪到 uc。
+  - chat 變體很小，這個佇列應該會在那之前跑完〔推算〕。
+  - 跑完的變體記在 `next_d14_verc_done.txt`，主佇列輪到時會跳過，兩個佇列不會同時跑同一個變體。
+- **第一段**：20:1x 時 146／180 個 block 跑完，正在跑 d14_sa_p4_b1 的 N72，0 失敗。
+
 ## 2026-11-07T18:20+08:00 — 第二段：**semianalysis_N16_s2、mooncake_conversation 的 D14_VERC_DONE**（三關都過）；P4 的檢查規則已由 icpe-data 修正（16529109），重跑後 PASS
 
 - **semianalysis_N16_s2**（run `20261107-175409-icpe-trx-d14verc-semianalysis_N16_s2`）：
