@@ -401,3 +401,96 @@
   - TraceLab c1 的 APC／BELP 探索也看過了（icpe-next-trx `0cfa480b`）。
   - 這些結果都**不影響**本補記的內容：本補記只把先決條件定得更嚴，不改規則、門檻、判定。
 - **方向**：先決條件更嚴 → 可以判的變體只會變少（較多「未定」），不改任何一個 f。
+
+### 偏離 10（2026-11-07T00:59:09Z（RUX3DPRO 的 `date -u`）；**block 粒度 APC 加進 ②、④ 的 O-GPU 加 BELP、APC 版成為正式主表**（PR:95 承諾的第二批）；使用者在 `icpe-rux` 決定（AskUserQuestion，11/7 08:56:16 之後、08:58:48 之前：前者是發問前寫入的檔、後者是照答案寫的草稿的修改時間），由 `icpe-rux` 寫；號碼由 `h200` 給）
+
+**經過**
+- 偏離 2 第 3 點（PR:95）：「APC：第一批＝GPU-LRU（session 粒度下完全相同，不另外跑）；第二批再加 block 粒度」，並登記「block 粒度 APC 做好後加進 ②；在那之前的結果標明 ② 不含」。
+- PR:55：APC 的確切定義要登記。PR:126：第二批的格子另外定、跑之前登記。
+- 語意：使用者 11/7 授權 `icpe-rux` 決定第 2–5 項的細節（`docs/icpe_brief_20261030/next/rux/SEMANTICS_2to5.md` §1）。
+- 本節的三個決定：使用者 11/7 在 `icpe-rux` 選的，選項原文見下面第 3、4、5 點。
+
+**1. APC 的定義**（SEMANTICS 2-1–2-4、2-7、2-8）
+- **逐出的順序**：
+  - GPU 滿了才逐出。
+  - 先選回合結束時刻最早的 session（session LRU），從它的尾端一塊一塊逐出（512-token 塊），直到 GPU 用量 ≤ 預算（PR:28 的 1,777 塊）。
+  - 共用的塊要等 GPU 上所有持有者都放掉才真的空出來。
+  - 依據：
+    - vLLM APC 的 free queue：釋放的塊照相反順序排，從頭逐出最久沒用的；同一個請求尾端先出。
+    - 一次服務一個請求時，這和「全域 block LRU＋尾端先出」選到同樣的塊。
+- **wb**（主結果）：
+  - session 回合結束後第一次被逐出塊時，整個 session 寫進 CPU（BF16，PR:54 的資料流）；session 進 CPU 層，CPU、慢層的規則照舊。
+  - GPU 上留下的前段變成乾淨的副本，之後從尾端逐出、不用再寫。
+  - 比逐塊寫回早寫一點 → ② 略弱 → 上限略偏高。
+- **wt**：CPU 照舊（回合結束就寫），GPU 副本照同樣的順序逐出、不寫。
+- **TTL** 維持 session 粒度（§2 第 3 項）。
+- 預取進 GPU × APC 不支援，P3 的「預取進 GPU」格子不放 APC。
+- **引擎**：`code/icpe/rux_x1fast/v8_features/`（v8，`src/main.rs` sha256 `48e4efce…`）；sweep 用 `sweep_v8.py --gpu-policies … APC BELP`。
+- **驗證**（沒有 Python 參考；使用者 11/7 決定只寫 Rust）：
+  - 一次逐出整個 session 時＝v7 的 GPU LRU／BEL，逐位元相同；
+  - GPU 夠大時＝v7；
+  - 每 200 個請求從頭重算 GPU 引用數、CPU 引用數與用量的稽核；
+  - 新功能關閉時和 Python 參考 0 個不同；
+  - 一次只讀的獨立審查（`V8_FEATURES.md` §3b）。
+
+**2. BELP**
+- 同樣「從尾端一塊一塊逐出」，但選 session 照 Belady：下次回來最晚的先逐出，鍵同 GPU BEL。是完美預測（oracle）。
+- 只進 ④ 的 O-GPU，不進 ②，也不進其他元件的 ④。
+
+**3. ②、④ 怎麼組成**（使用者選「加 BELP」）
+- APC 是不預測的 GPU 規則。
+  - ② 的每個元件、以及 O-ORD、O-DROP、O-NOW、O-PF 的 ④，GPU 不預測規則集合都多一個 APC（PR:177–182「兩邊規則集合相同」）。
+  - 也就是 {LRU, TTLA×7, TTLB×7, APC}。
+- O-GPU：
+  - ④＝NON_ORACLE × {BEL, BELP} 取最快；
+  - ②＝NON_ORACLE × {LRU, TTLA×7, TTLB×7, APC}。
+  - 依據：② 有 block 粒度的不預測規則，④ 沒有 block 粒度的完美規則，上限會被低估。探索：TraceLab c1 上 O-GPU 上限最大值，④ 只有 BEL 時 39%→5%，加 BELP 是 39.2%。
+- O-ALL(report)：照舊（只報告，④ 固定 (O-ALL, BEL, BEL)）。
+- 程式：`code/icpe/rux_x1fast/v8_features/analyze_v8.py`。
+  - 就是 `next_sim_analyze.py`，只多一點：BELP 不進任何不預測集合，O-GPU 的 ④ 含 BELP。
+  - 檢查：O-GPU 以外的元件＝拿掉 BELP 列後原本的分析；O-GPU＝獨立算法；都 0 個不同。
+
+**4. 重算哪些格**（使用者選「全部登記變體的主結果格」）
+- **紀錄變體**：偏離 4 第 3 項的全部 40 個，即 CacheWise 12、TraceLab 3、SemiAnalysis 12、Bailian 3、Mooncake 4、FreeInference 6。
+  - CacheWise 在使用者恢復之後才跑（使用者 11/7「CacheWise 都先不跑」）。
+- **格**：主結果的格，即 CPU 9 個容量 × 慢層 ssd／b32／nfs × GPU 閒／忙 × Cake，GPU 111.0625 GiB、wb、預取到 CPU。
+- **規則**：
+  - CPU 17 個（偏離 4 第 1 項）；
+  - GPU 18 個＝版本 B 的 16 個（LRU、BEL、TTLA／TTLB × 7）＋ APC ＋ BELP。
+  - 每個變體重跑全部 18 個 GPU 規則，不和舊的 sweep 合併。
+- **重現檢查**：同一個變體只用版本 B 的 16 個 GPU 規則重算上限表，要和版本 B 的表（`results/icpe_next/main/verB/*_p1_headroom_components.csv.xz`）全部格、全部元件、7 欄逐值相同（同偏離 9 補記）。不同就停，那個變體不重算。
+- **分工**：
+  - TraceLab、FreeInference：TRX40（icpe-next-trx）；
+  - SemiAnalysis、Mooncake、Bailian：RUX3DPRO（icpe-rux）；
+  - CacheWise：之後在 acvlab。
+- **結果**：`results/icpe_next/apc/<變體>/`，內容：
+  - `x1_sweep.csv.xz`；
+  - analyze_v8 的 `*_headroom_components.csv`；
+  - `MANIFEST.json`，記 run、引擎 code_sha、檔案 sha256。
+- 彙總與判定字由 `icpe-main` 照版本 B 的流程做（`main_summary.py`）。
+
+**5. 新表的地位**（使用者選「成為正式主表」）
+- APC 版的上限表（以下稱「版本 C」）取代版本 B，成為 §1 推翻條件前半的表。
+  - 判定方式照偏離 7：只判 5 個元件；原始、合成各自判；R1／R2 各自判；寫入飽和照算另標。
+- 偏離 9 的 W3 用「前半同一份表」，所以 T②、T④ 改用版本 C 重算 f。
+- P4 的選格（偏離 8 第 1 點）改用版本 C：
+  - 版本 C 下 ≥15%、版本 B 沒選到的格，補跑 P4；
+  - 版本 B 選到、版本 C 下 <15% 的格，已經有的結果保留並標明。
+- 版本 B 保留，標「② 不含 block 粒度 APC」，和版本 C 並列。
+- 門檻（15%／5%）、主指標（回來請求的平均 TTFT，不截尾）都不改。
+
+**6. 方向**
+- APC 進 ② → ② 變強 → 上限下降。
+- BELP 進 ④ 的 O-GPU → ④ 變強 → 上限上升。
+- 兩者一起是為了公平（第 3 點）。
+- wb 的「整個 session 一次寫進 CPU」讓 ② 略弱（上限略偏高）。
+
+**寫本節時 `icpe-rux` 與使用者已經看過的結果**（照實列出；都不是正式結果）：
+- **APC／BELP 探索**（CPU 8、111.0625、1,024 GiB；`docs/icpe_brief_20261030/next/rux/V8_FEATURES.md` §4a、`results/icpe_next/v8_explore/apc/`）：
+  - Mooncake toolagent R1／R2、Bailian coder：上限最多變 0.03 個百分點。
+  - SemiAnalysis N16 s1：② 最多快 28%；O-GPU（④ 加 BELP）上限中位數 8.5%→4.6%，≥15% 的格 6→4。
+  - TraceLab c1（TRX40，icpe-next-trx `0cfa480b`）：
+    - O-GPU 上限最大值：④ 只有 BEL 時 39.0%→5.1%，加 BELP 是 39.2%；
+    - O-ORD 23.3%→21.9%。
+- 使用者做三個決定時，已經看過上面這些摘要。
+- 版本 A、B 的表與判定（偏離 7、8 已列）；W3 的結果（偏離 9 補記已列）；W5、排隊的探索摘要。
