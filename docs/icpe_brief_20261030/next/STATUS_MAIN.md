@@ -31,6 +31,7 @@
   - run `20261107-172411-icpe-main-d14-verB-sg-wc-ms-oh`（exit 0）：四份的補列、rowcheck、p1＝icpe-data `analysis_d14/<x>_p1`（1,944／972／3,888／3,888 列）、四個不變元件 eqsel 全 PASS。
   - 變動格數：sg O-PF 237／324、O-ALL 244／324；wc O-PF 2／162；ms、oh 0（agent 的版本 B 不受偏離 14 影響，值和 14:11 那節相同）。對話資料集沒看上限的值。
 - **SemiAnalysis**（17:32 補；merge `origin/icpe-next-trx` f94f1d88 沒有衝突）：run `20261107-173034-icpe-main-d14-verB-sa`（exit 0）；核對全 PASS（補列、rowcheck 3／3、p1＝icpe-data `analysis_d14/sa_p1` 3,888 列、5 張表四個不變元件各 2,592 相同、逐格關係）。〔模擬〕O-PF 564／648 格變（−0.6～+61.9 個百分點；大的是舊值很負的格），≥15% 的格 19 → 28（往上跨 9、往下 0），最大 22.9% → 25.4%；O-ALL(report) ≥15% 314 → 356。
+- **push**（使用者「Push」，17:3x）：`origin/icpe-next-main` 58252b4f → 0cb3371f（73 個 commit，含合併進來的 icpe-next-data／icpe-next-trx commit）；推之前查過我自己的改動沒有 CacheWise 的檔、沒有 >1 MB 的檔。
   - 〔判讀〕版本 B 的 SemiAnalysis：≥15% 的（格, 判定元件）裡淘汰類（O-GPU＋O-ORD）佔 516／544＝94.9%（修正前 516／535＝96.4%）；「主要靠淘汰」在 SemiAnalysis 還成立。原始工具類要看 Mooncake toolagent。
 - **寫本節時已經看過的正式結果**：Bailian、FreeInference、mini-SWE-agent、OpenHands 的偏離 14 版本 B 表；SemiAnalysis；UltraChat、LMSYS、ShareGPT、WildChat 只看了檢查結果和變動格數，沒看上限的值。
 
