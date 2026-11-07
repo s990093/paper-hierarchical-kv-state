@@ -221,3 +221,9 @@
 - 使用者決定（AskUserQuestion，約 11:00 台灣）：
   - 形式：**「偏離 13，標『補登記』」**——由 `h200` 照抄 STATUS_DATA 原文、引用 688ad0b，登記時間以那節的 commit 時間為準，進 PREREG 的時間另記。**偏離 13 保留給這份**；`h200` 自己（W6b）下一個改從 14 開始。
   - 版本：**「請 icpe-data 先補寫」**——`h200` 先不收；請 `icpe-data` 在開跑前於 STATUS_DATA 補寫這四份要不要跑版本 B／C、由哪台用哪版引擎跑；補好後 `h200` 連同原節一起收成偏離 13。
+
+## 2026-11-07 11:10（台灣）— PREREG 偏離 13（補登記）：公開對話資料集，`h200` 寫
+
+- `icpe-data` 照使用者 11:00 的決定補寫好了：`origin/icpe-next-data` @ `e56c2be` 的 STATUS_DATA「2026-11-07T11:05+08:00 — 對話資料集補登記的補寫」（acvlab `date -u` 03:04:39Z）：版本 C 為正式表、版本 B 並列、版本 A 不單獨報；版本 B＝`chat_main`＋`chat_p1` 的 `_ttl`（v7 62b0932b），版本 C＝v8 48e4efce（固定 icpe-next-rux 4a713386 的檔，重現檢查要 REPRODUCED）；acvlab 跑 ShareGPT／WildChat、TRX40 跑 LMSYS／UltraChat，B、C 同台；判定由 icpe-main 做、歸「合成到達」、單獨成一節、不跑 P4；UltraChat 一行兩個 JSON 物件用 raw_decode 拆。補寫開頭照實記了：688ad0b 之後、我的訊息到之前，acvlab 已跑完版本 A 的 `sg_T60_s1`、`sg_T600_s1`（留作版本 B 的輸入），`sg_T60_s2` 停下標 `STOPPED_NOT_USED`；只看過兩行進度輸出。
+- 我寫進 PREREG 的「偏離 13（補登記）」（H200 `date -u` 2026-11-07T03:06:54Z）：收錄說明＋核對（STATUS_DATA 0 行刪除、11:00 節在兩個 commit 逐字相同；v8 `src/main.rs` sha256 48e4efce…；collect_v8.py 在 4a713386 之後改過，固定用 4a713386 的版本；STATUS_TRX「11:15」節的 commit 334317cd 時間是 11:02:11 +0800）＋兩節原文照抄（只把節標題降成 `####`）。寫之前查過各分支：最大是 12，沒有 13。
+- `h200` 下一個偏離編號是 14。
