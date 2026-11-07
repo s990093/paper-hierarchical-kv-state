@@ -1232,3 +1232,6 @@
 ### 偏離 21 補記（2026-11-07T14:29:15Z（H200 head node 的 `date -u`）；**Slurm 的要卡方式改了，其他照偏離 21**；不佔編號；沒有任何 run）
 - job 24747（`--gres=gpu:4 --gpus-per-socket=2 --sockets-per-node=2`）22:27:39 開跑，Slurm 給 IDX 1、2、3、5（PCI 31、51、63、AB → NUMA 0 三張、NUMA 1 一張）；`next_a_corun.py plan --n 4` 判「不是兩個節點各 2 張」→ exit 2，一個 run 都沒跑（`results/icpe_next/a/w6ab/corun_plan_24747.json`）。原因：節點的 GPU 設定是 `gpu:h200:8(S:0-1)`，Slurm 不知道每張卡在哪個 socket，`--gpus-per-socket` 沒有作用。
 - 改成 `--gres=gpu:4 --ntasks-per-socket=2 --gres-flags=enforce-binding`：用 `srun` 試兩次（只印卡和 NUMA，幾秒，job 24748、24749），兩次都拿到 PCI 31、51（NUMA 0）＋AB、CB（NUMA 1）。開跑時照舊核對，不是兩個節點各 2 張就 exit 2。
+
+### 偏離 21 補記 2（2026-11-07T14:31:29Z（H200 head node 的 `date -u`）；不佔編號；沒有任何 run）
+- `sbatch` 加 `--gres-flags=enforce-binding` 被拒（「Requested node configuration is not available」，兩次；`srun` 可以）。拿掉之後 `sbatch --gres=gpu:4 -c 16 --ntasks-per-socket=2` 的探測 job 24765 拿到 IDX 1、2、5、6＝PCI 31、51（NUMA 0）＋AB、CB（NUMA 1），CPU 16–47、80–111。W6 的 job 用這個要法；開跑時照舊核對，不是兩個節點各 2 張就 exit 2。
