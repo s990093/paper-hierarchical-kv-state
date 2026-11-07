@@ -174,3 +174,9 @@
 
 - `icpe-rux` 把偏離 9 寫在 `origin/icpe-next-rux` @ `8f04a91`（RUX3DPRO `date -u` 2026-11-07T00:36:50Z）：W3 線索 (a) 的規則——cue 的定義（TraceLab：該輪 `tools` 非空；FreeInference：下一個請求 `step_trigger`＝tool）、③ 的兩個 GPU 規則 CUEP／CUEO × `NON_ORACLE` 10 個 CPU 規則、紀錄＝TraceLab c1／c2／c4＋FI 6 週、格＝主結果的格、f_c＝(T② − T③) ÷ (T② − T④c)、判定門檻 f > 0.5、逐格任一格成立就算。節內照實列了寫的時候已看過的結果。我核過：和本分支 b87bca8 的 PREREG 比，只在檔尾加一節、0 行刪除；push 時 data／main／trx 分支最大都是偏離 8。
 - 本分支**只同步 `PREREG.md`**（取 8f04a91 的版本）。`h200` 下一個偏離編號是 10。
+
+## 2026-11-07 08:45（台灣）— 收到偏離 9 更正
+
+- `icpe-rux` 在 `origin/icpe-next-rux` @ `e7e0c77`（RUX3DPRO `date -u` 2026-11-07T00:40:03Z）加了「偏離 9 更正」：更正偏離 9「經過」的兩個時間（使用者在 `icpe-main` 決定約 08:28–08:30；在 `icpe-rux` 定三點約 08:29–08:35），先後順序不變；補一句方向：逐格任一成立的彙總偏向「推翻條件成立」，和第 5 點的方向相反。規則、門檻、判定不改，不佔編號。我核過：只在檔尾加一節、0 行刪除；data／main／trx 分支最大仍是偏離 8。
+- 本分支**只同步 `PREREG.md`**（取 e7e0c77 的版本）。`h200` 下一個偏離編號仍是 10。
+- W6（08:40 台灣）：仍等 DL_Lab5 的 24507（已跑 1 天 3 小時）。
