@@ -68,7 +68,7 @@ def fig1(verb, out):
         g = V[(V.arrival == arr) & (V.tool_type == tool)].copy()
         g["lab"] = [short(t, r) for t, r in zip(g.trace, g.rule)]
         g = g.sort_values("max_judged")
-        ys = np.arange(y, y + len(g))
+        ys = y + np.arange(len(g))
         ax.scatter(g.max_judged * 100, ys, s=34, color=col, edgecolor=SURF, linewidth=1.5, zorder=3, label=name)
         for yy, (_, r) in zip(ys, g.iterrows()):
             rec("fig1", name, r.lab, round(float(r.max_judged) * 100, 3), int(yy), src)
