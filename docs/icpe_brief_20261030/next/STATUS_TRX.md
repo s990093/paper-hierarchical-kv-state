@@ -3,6 +3,41 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T11:20+08:00 — **UltraChat 版本 B、C 跑完**：轉換（e56c2be0 修好一行兩物件）→ chat_main＋chat_p1 12 個 block → 版本 B 上限表（rowcheck 12/12 PASS）→ 版本 C 6 個變體，重現 324/324、0 差
+
+- **使用者決定（在這邊，AskUserQuestion）**：icpe-data 轉達了使用者在 h200 的決定（PREREG 偏離 13；STATUS_DATA 11:05）：對話資料集的版本 B、C 都由同一台機器跑。使用者在這邊確認 TRX40 接 UltraChat 和 LMSYS 的 B 和 C（選「接，B 和 C 都跑」）。
+- **merge**：origin/icpe-next-data e56c2be0 → icpe-next-trx 6667a4ee。
+  - code 改兩處：`next_b_convert.py`，UltraChat 一行多個物件用 `raw_decode` 拆開，記在 `filter.load_stats`；`next_b_queue.py`，新 plan `chat_p1`。
+  - 模擬器和 Rust src 沒動。
+- **轉換**：run `20261107-110557-icpe-trx-conv-chat-ultrachat`，rc 0，57 s，最大 RSS 1.9 GB。寫出 6 個 nb：`ultrachat_T{60,600}_s{1,2,3}`，各 n_req 34,595、n_sess 9,000、chunks 26,349。
+  - stdout 照抄：`對話 1468352，合格 1468294，抽 9000；{'ok': 1468294, 'lt2_user_turns': 58}`
+  - `規則 6：25595/25595 = 1.0000`
+  - `規則 6（整段切 vs 逐則切）：{'n': 300, 'median': 0.0, 'p90': 0.0, 'max': 0.0, 'frac_exact': 1.0}`
+  - meta 的 `load_stats.ultrachat_multi_obj_lines`＝3。其他 seed 1 的統計已傳給 icpe-data。
+- **版本 B 模擬**：`next_b_queue.py run --plans 'chat_main:uc_*' 'chat_p1:uc_*' --engine rust --workers 40`，佇列 log `$ROOT/runs/queue-chat-uc-rust-w40-20261107-110736.log`，11:07:36 → 11:09:46。
+  - 12 個 block 都 rc=0。chat_main 每個 6,174 個 job，chat_p1 `_ttl` 每個 6,480 個。
+  - 每個 block 都是 `py_fallback_jobs=0`、`code_sha=3280b1c8799b+rs62b0932b`，沒有 `*KILLED`。資源：MemAvailable 最低 57,240 MiB，swap 1,420 MiB。
+  - 逐請求 npz 存在各 run 的 `req/`（每個 block 約 171 MB，不進 git）。icpe-data 說它原本寫「沒有 npz」是寫錯了，照已 commit 的程式存 npz 是對的。
+  - collect：`next_b_queue.py collect --plans chat_main chat_p1`，結果在 `results/icpe_next/b/chat_main/uc_*`（每個 7,344 列）和 `chat_p1/uc_*_ttl`（每個 6,480 列）。
+- **版本 B 上限表**：run `20261107-111029-icpe-trx-verB-uc_p1`，rc 0。
+  - 先跑 `main_rowcheck.py`（icpe-next-main b54d3cff，sha256 cde7fb3f…，解到 `$ROOT/code-archive/main-b54d3cff/`）：
+    - `ROWCHECK uc_main: 6 (file, trace, rule), 44064 rows, cells 54 cpu 17 gpu 8: PASS`
+    - `ROWCHECK uc_p1_ttl: 6 (file, trace, rule), 38880 rows, cells 54 cpu 15 gpu 8: PASS`
+  - 再跑 `next_sim_analyze.py --sweep chat_main/uc_*/… chat_p1/uc_*_ttl/… --out-prefix uc_p1 --pf-target cpu`：headroom_components 1,944 列、violations 192 列。收在 `results/icpe_next/b/analysis/uc_p1/`。
+  - 照抄（max／median／n_ge15／n_ge5）：
+    - T60 的 3 個 seed：6 個元件全部是 0.000000／0.000000／0／0。
+    - T600_s1：O-ALL(report)＝O-DROP＝O-GPU 0.065979／0.051566／0／54；O-ORD 0.026561／0／0／0；O-PF 0.031703／0／0／0；O-NOW 0.000904。
+    - T600_s2：O-ALL(report)＝O-DROP＝O-GPU 0.065719／0.051617／0／54；O-ORD 0.026508；O-PF 0.030541；O-NOW 0.000781。
+    - T600_s3：O-ALL(report)＝O-DROP＝O-GPU 0.066789／0.053059／0／54；O-ORD 0.025455；O-PF 0.029834；O-NOW 0.000709。
+- **版本 C**：rux worktree 移到 4a713386（sweep_v8／explore_apc／analyze_v8／src／Cargo.toml 和現在的 origin/icpe-next-rux 逐位元相同；main.rs 48e4efce）。
+  - 機器工具 `$ROOT/tools/rux_verc_chat.sh`：步驟同 run_apc_formal.sh，只是參考表用上面的 `uc_p1_headroom_components.csv`，並查 worktree 是 4a713386、`code_sha` 是 3280b1c8799b+rse7f6ee8f。不存 npz。
+  - 6 個 run：`20261107-111046`／`111106`／`111127`／`111147`／`111209`／`111228` `-icpe-trx-rux-verC-ultrachat_{T60_s1,T600_s1,T60_s2,T600_s2,T60_s3,T600_s3}`，11:10:46 → 11:12:50，每個 14,184 個 job，rc=0。
+  - **重現檢查 6 個變體都是**（照抄）`版本 B 表上 324 格×元件，對上 324；各欄不同數 {… 全部 0}` → `EXPLORE_RESULT REPRODUCED cells=324`。
+  - 版本 C 表（analyze_v8 照抄）：T60 的 3 個 seed 全部 0.0；T600 三個 seed 的每個元件的 max／median／n_ge15／n_ge5 都跟上面的版本 B 相同。
+  - O-GPU（④ 含 BELP）：T600 的 max_old＝max_new（0.066／0.0657／0.0668），belp_wins 0；T60 全部 0。
+  - 收在 `results/icpe_next/apc/ultrachat_*`，每個 7 個檔，是 collect_v8（4a713386）收的原樣。sha256 對過 MANIFEST；sweep 16,524 列，`code_sha` 只有 3280b1c8799b+rse7f6ee8f。
+- **LMSYS-Chat-1M**：還在等使用者在 HF 同意條款並登入 TRX40。登入之後照同樣的步驟做。
+
 ## 2026-11-07T11:15+08:00 — 對話資料集準備：tokenizer、tokenizers、UltraChat 好了；**UltraChat 轉換失敗（JSONDecodeError: Extra data）→ 停**，等 icpe-data
 
 - **merge**：origin/icpe-next-data 688ad0bc（icpe-data 的登記，STATUS_DATA「11:00 對話資料集補登記」）→ icpe-next-trx 0142cdb6。
