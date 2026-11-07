@@ -43,6 +43,7 @@
   - 條件：O-ALL、預取到 GPU、**只開 pfx、沒開 pgr**、雜訊 P B2 λ 0.3、CPU 16 GiB、GPU BEL／TTLA:10。
   - 這是參考版本身的行為；三個旗標全開時同一格可以跑完。
 - D3：APC＝LRU、BELP＝BEL（一次逐出整個 session，含雜訊與三個旗標）204／204；逐塊逐出加稽核 204／204 跑完。
+- D3 在 Bailian coder、Bailian thinking 也跑了：各 408／408（run `20261107-165928-icpe-rux-d14-d3-bailian`）。icpe-sim 的交叉檢查沒有 APC／BELP，所以這部分由我們自己補。
 - D4（只報告）：
   - 開旗標後，O-PF、O-ALL 每一組都變。
   - 其他規則只有在 GPU 用 BEL 而且有雜訊 P 時會變（`nzo=resample` 經 GPU BEL 的 `nz()` 作用），符合 icpe-sim 說的「沒有雜訊、模型 M、λ 0 時 opf 以外不變」。
@@ -50,6 +51,11 @@
 - sweep 端到端（run `20261107-162547-icpe-rux-d14-sweep-e2e`）：
   - `RUX_PFX=1 RUX_PGR=1` 時每列多 `pf_expire`、`pf_gpu_recheck`，`py_fallback_jobs=0`。
   - 和沒開比：LRU、O-BEL 的 32 列逐列相同；O-PF、O-ALL 的 32 列都變。
+
+- **icpe-sim 的確認**（STATUS_SIM 16:35，e0f76bfa）：
+  - O-ALL、預取到 GPU、有雜訊（P B2）時，連旗標全關也會 `gspf` 斷言，x1fast 和 Python 都一樣，`pgr=1` 才修得掉。
+  - 規則：**預取到 GPU 一律開 `pgr=1`**。正式重跑的旗標都會開；正式區塊沒有「雜訊＋預取到 GPU」。
+  - 我們的 D1 用的雜訊是 P B1、M B2，沒有 P B2，所以沒碰到。
 
 **版本**
 - `v8_dev14/src/main.rs` sha256 `d2048fa38a42c78b316a97734101cb094854cc584be92ef5ec9c8717c6ad5e88`。
