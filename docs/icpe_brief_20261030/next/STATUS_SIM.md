@@ -1005,3 +1005,42 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - xref 有雜訊的網格三個旗標都開，不受影響。
 - **規則**：**預取到 GPU 一律要開 `--pf-gpu-recheck`**（不論有沒有 `--pf-expire`）。已改 SIM_CHANGES 23 那句。
 - 程式不改（使用者 15:5x 選 A 的精神：正式不用的組合記成已知問題）。若要讓程式擋掉「預取到 GPU 卻沒開 `--pf-gpu-recheck`」，x1_sim 的 sha 會變、快取要重建；我不建議，除非使用者要。
+
+---
+
+## 2026-11-07T16:43+08:00 — 偏離 14 規則 (i) 在 λ＝0（沒有雜訊）對主結果 O-PF 的 ④ 的影響（icpe-main 的第 3 步）
+
+- run `20261107-160757-icpe-sim-dev14-lam0-impact`（Rust，2 個 worker，nice 10；凍結的 worktree `g1-63b8e32`；`py_fallback_jobs=0`；exit 0）。
+- 做法：
+  - **on**：O-PF、`--pf-expire`、GPU 111.0625 wb、15 個 GPU 不預測規則（LRU、TTLA／TTLB × 0.3／1／3／10／30／100／300）、CPU 9 種 × ssd／b32／nfs × GPU 閒／忙、預取到 CPU。
+  - **off**：正式輸出（版本 B 的 main＋`_p1 _ttl`；icpe-next-data a1ea7241、icpe-next-trx 291e7d60）的同一格。
+  - **④**＝每格在 15 個 GPU 規則裡最小的 mean_ret（同 next_sim_analyze 的 COMPONENT ④，不含 BEL）。rel4＝④_on／④_off − 1，**負＝開了規則之後 O-PF 變快**。
+  - 對手（②）不受規則 (i) 影響：只有 opf 的規則會變，G1／T2 已驗證。所以 O-PF 的上限只會經由 ④ 改變。
+- 結果（`results/icpe_next/sim/dev14_lam0_impact.csv`）：
+
+| 紀錄 | 格 | ④ 變了的格 | ④ 相對差中位數 | 最小 | 最大 | 第 10 百分位 | 逐列變了的 | 逐列最小 | 逐列最大 |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| Bailian coder | 54 | 50 | −0.0145% | −0.287% | +0.162% | −0.063% | 695／810 | −32.24% | +0.22% |
+| Bailian thinking | 54 | 8 | 0 | −0.018% | +0.035% | 0 | 131／810 | −1.73% | +1.34% |
+| Bailian traceA | 54 | 25 | 0 | −0.104% | +0.051% | −0.005% | 340／810 | −0.59% | +0.28% |
+| Mooncake conversation（R1＋R2） | 108 | 66 | 0 | **−18.03%** | +0.511% | −2.43% | 1,182／1,620 | −48.98% | +1.66% |
+| Mooncake toolagent（R1＋R2） | 108 | 86 | −0.001% | **−15.88%** | +0.412% | −2.14% | 1,259／1,620 | −47.95% | +0.78% |
+| FreeInference 2026-05-17 那週 | 54 | 0 | 0 | 0 | 0 | 0 | 12／810 | −0.01% | 0 |
+| SemiAnalysis N32 s1 | 54 | 48 | −0.0785% | **−14.92%** | +0.588% | **−8.94%** | 720／810 | −35.62% | +0.59% |
+| ShareGPT T60 s1 | 54 | 39 | −0.0016% | −0.869% | +0.208% | −0.097% | 508／810 | −7.35% | +0.94% |
+| WildChat s1 | 54 | 0 | 0 | 0 | 0 | 0 | 20／810 | −0.01% | 0 |
+| TraceLab c1 | 54 | 0 | 0 | 0 | 0 | 0 | 0／810 | 0 | 0 |
+
+- 讀法：
+  - 沒有雜訊時，規則 (i) 對 O-PF 的 ④：
+    - 大多是 0 到千分之幾。
+    - **Mooncake（兩份）、SemiAnalysis 有一部分格明顯變快**：最多 −15% 到 −18%；SemiAnalysis 有 10% 的格快 ≥ 8.9%。
+    - 少數格變慢：最多 +0.59%。
+  - TraceLab c1：810 列都有 `pf_expire=True`，但沒有任何一列變。FI、WildChat 幾乎沒有變。
+  - 每一格的上限怎麼變、判定會不會變，要等 icpe-data 重跑、icpe-main 重算。我不推。
+- 沒量（NOT_MEASURED）：
+  - O-ALL（它也有 opf，也會變）；
+  - 其他變體（SemiAnalysis 其他 N／s、TraceLab c2／c4、FI 其他 5 週、ShareGPT 其他、LMSYS、UltraChat、agent）；
+  - CacheWise（偏離 15 不跑）；
+  - P1–P3 的其他組合；
+  - 有雜訊的 λ＞0。
