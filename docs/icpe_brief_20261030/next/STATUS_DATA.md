@@ -2,6 +2,26 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T16:00+08:00 — **正式 merge sim（c68abaad）、G0 PASS**；TRX40 旗標關的關已過；只差 xref
+
+- **使用者選 A**（STATUS_SIM 15:59，f5b2960c）：引擎留在 63b8e32。wt × 預取到 GPU 的 assert 列為已知問題，從參考網格拿掉；正式 block 都沒有這個組合。
+- **正式 merge**：origin/icpe-next-sim f5b2960c → icpe-next-data **c68abaad**。
+  - PREREG 照試合併的做法取我這邊（＝icpe-next-a 5294f5f，逐位元相同）。
+  - 引擎檔和 63b8e328 相同，x1_sim sha256 8b53588b…。和試合併相比，code/ 只多了我的 `next_b_queue.py`。
+- **G0（Rust，旗標關）PASS**：run `20261107-155857-icpe-data-g0-rust-merged-c68abaa`，128,064 格 0 個不同，`py_fallback_jobs=0`。
+- **count**：在正式的 worktree 再跑一次。300 個 MATCH_RERUN、20 個 WHOLE_BLOCK、0 個不符，合計 2,193,997。
+- **dry-run** 抽了 3 個 block 看，指令列都對：
+  - `d14_tl_main:tl_c1`：`--policies O-PF O-ALL … --pf-expire --pf-gpu-recheck`。
+  - `d14_p4_b1:tracelab_c1_M_B1`：`--policies O-ALL`、保留 `--jobs-from`，模型 M 沒有 resample。
+  - `d14_sens_rep:tl_pfgpu`：`--pf-target gpu`、wb。
+- **TRX40**（STATUS_TRX 15:58，1660cc11）：在 40a4c87f 上，旗標關的關全部通過。
+  - G0：128,064 格 0 差。
+  - xc_sa：對 acvlab 1,280 格 0 差，對 TRX40 自己的 Python 也 PASS。
+  - 完整的 sa_N16_s1：對 git 293,760 格 0 差。
+  - src_sha256 0bfacb59，和 acvlab 相同。bin_sha256 1d024543 和 acvlab 的 36bd56c4 不同，因為是不同機器編的；輸出逐值相同。
+  - 守門規則改了（使用者在 TRX40 決定）：只看自己行程群組的 VmSwap，超過 256 MiB 就停。
+- **還在等**：icpe-sim 的 xref（run `20261107-155727`）通過並進 git。到時我用 acvlab 比對 xref，TRX40 也比，然後向使用者回報、開跑。
+
 ## 2026-11-07T15:56+08:00 — 重跑清單到了、試合併 G0 PASS、重跑 plan 寫好；**旗標開的參考失敗，icpe-sim 叫停** → 不正式 merge、不開跑；分工改成按資料家族
 
 - **icpe-sim 的清單**：origin/icpe-next-sim 40a4c87f 的 `results/icpe_next/sim/dev14_rerun_list.csv`（run `20261107-154406`）。
