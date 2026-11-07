@@ -3,8 +3,6 @@
  "variant": "semianalysis_N32_s1",
  "collected_ts": "2026-11-07T08:28:28+08:00",
  "collected_host": "RUX3DPRO",
- "repo_commit": "2b859912671ec2d5479bef5f3324d036c2a8b2aa",
- "v8_main_rs_sha256": "48e4efcee98cb5e54040d8b21fd61726007617d8be17d82f09347ebdf13ee7d2",
  "sweep_code_sha": [
   "3280b1c8799b+rse7f6ee8f"
  ],
@@ -44,5 +42,14 @@
   }
  ],
  "note": "探索（不是正式結果）；排隊的一階近似 qpost（SEMANTICS §2b）；無排隊的對照＝版本 B 的 sa_p1 表；負載重的格不可靠",
- "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄",
+ "repo_commit_at_collect": "2b859912671ec2d5479bef5f3324d036c2a8b2aa",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rse7f6ee8f",
+   "main_rs_sha256": "48e4efcee98cb5e5",
+   "first_commit": "b7444163"
+  }
+ ],
+ "manifest_fix": "2026-11-07：原本的 v8_main_rs_sha256 欄是收集時的檔案，不是 sweep 用的引擎（icpe-next-trx 指出），改成 engine_used（依 sweep 的 code_sha 對回 git）"
 }

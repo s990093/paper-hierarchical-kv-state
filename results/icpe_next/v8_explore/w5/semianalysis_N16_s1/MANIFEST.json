@@ -3,8 +3,6 @@
  "variant": "semianalysis_N16_s1",
  "collected_ts": "2026-11-07T08:25:54+08:00",
  "collected_host": "RUX3DPRO",
- "repo_commit": "b744416333daaf04c44c9c4e1b0cb5a43d657c6b",
- "v8_main_rs_sha256": "48e4efcee98cb5e54040d8b21fd61726007617d8be17d82f09347ebdf13ee7d2",
  "sweep_code_sha": [
   "3280b1c8799b+rs088c7bd5",
   "3280b1c8799b+rs702ecaed"
@@ -78,5 +76,19 @@
   }
  ],
  "note": "探索（不是正式結果）；V8_FEATURES §4b；W5 用審查後的 v8（d1502d2d）重跑，BF16 沿用",
- "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄",
+ "repo_commit_at_collect": "b744416333daaf04c44c9c4e1b0cb5a43d657c6b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rs088c7bd5",
+   "main_rs_sha256": "d1502d2dbaafd73a",
+   "first_commit": "b1c2e9ef"
+  },
+  {
+   "code_sha": "3280b1c8799b+rs702ecaed",
+   "main_rs_sha256": "a4ded3ca9bffa6df",
+   "first_commit": "62b25568"
+  }
+ ],
+ "manifest_fix": "2026-11-07：原本的 v8_main_rs_sha256 欄是收集時的檔案，不是 sweep 用的引擎（icpe-next-trx 指出），改成 engine_used（依 sweep 的 code_sha 對回 git）"
 }

@@ -3,8 +3,6 @@
  "variant": "mooncake_toolagent",
  "collected_ts": "2026-11-07T08:25:50+08:00",
  "collected_host": "RUX3DPRO",
- "repo_commit": "b744416333daaf04c44c9c4e1b0cb5a43d657c6b",
- "v8_main_rs_sha256": "48e4efcee98cb5e54040d8b21fd61726007617d8be17d82f09347ebdf13ee7d2",
  "sweep_code_sha": [
   "3280b1c8799b+rsdb455a36"
  ],
@@ -58,5 +56,13 @@
   }
  ],
  "note": "探索（不是正式結果）；V8_FEATURES §4a",
- "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
+ "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄",
+ "repo_commit_at_collect": "b744416333daaf04c44c9c4e1b0cb5a43d657c6b",
+ "engine_used": [
+  {
+   "code_sha": "3280b1c8799b+rsdb455a36",
+   "note": "這個引擎版本沒有進 git（開發中的 v8，main.rs c5642d2a…）。APC／BELP／W5／W3／q=1 的程式和之後的版本相同；之後只多了 q=2、BELP 的捷徑（已驗證＝每塊全掃）、審查的 F2／F6／F7、qpost"
+  }
+ ],
+ "manifest_fix": "2026-11-07：原本的 v8_main_rs_sha256 欄是收集時的檔案，不是 sweep 用的引擎（icpe-next-trx 指出），改成 engine_used（依 sweep 的 code_sha 對回 git）"
 }

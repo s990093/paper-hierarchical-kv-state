@@ -2,8 +2,8 @@
 用法：python -I collect_v8.py <實驗> <變體> --sweep <x1_sweep.csv>[=<存成的名字>] ... --files <分析輸出> ... --runs <run 目錄> ...
   實驗＝apc｜w3｜w5｜queue｜slowcap；變體＝例如 semianalysis_N16_s1、tracelab_c1、fi_2026-05-17_2026-05-23、mooncake_toolagent
   --sweep：x1_sweep.csv（存成 <名字>.csv.xz；預設名字 x1_sweep）；--files：分析的 CSV／JSON（>1 MB 才壓）；
-  --runs：run 目錄（讀 context.txt 的 ts、host）。寫 MANIFEST.json：run_id、ts、host、repo commit、v8 main.rs 的 sha256、
-  sweep 裡的 code_sha、每個檔的 sha256 與列數。不放：原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄。"""
+  --runs：run 目錄（讀 context.txt 的 ts、host）。寫 MANIFEST.json：run_id、ts、host、收集時的 repo commit、sweep 實際用的引擎（code_sha → git 裡的
+  v8 main.rs 與 commit；沒進 git 的開發版另外註明）、每個檔的 sha256 與列數。不放：原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄。"""
 import argparse, hashlib, json, lzma, os, shutil, socket, subprocess, sys
 from datetime import datetime
 
@@ -56,10 +56,31 @@ runs = []
 for d in a.runs:
     ctx = open(os.path.join(d, "context.txt")).read().splitlines()
     runs.append(dict(run_id=os.path.basename(d.rstrip("/")), ts=ctx[0].strip(), host=ctx[1].strip()))
-v8 = os.path.join(REPO, "code/icpe/rux_x1fast/v8_features/src/main.rs")
+def engine_map():
+    """sweep 的 code_sha（rs 後面＝Cargo.toml＋main.rs 的 sha256，x1_rust_v6.src_sha）→ git 裡哪個 commit 的 v8 main.rs。"""
+    cargo = open(os.path.join(REPO, "code/icpe/rux_x1fast/v8_features/Cargo.toml"), "rb").read()
+    out = {}
+    cs = subprocess.run(["git", "-C", REPO, "log", "--format=%h", "--", "code/icpe/rux_x1fast/v8_features/src/main.rs"],
+                        capture_output=True, text=True).stdout.split()
+    for c in cs:
+        mr = subprocess.run(["git", "-C", REPO, "show", f"{c}:code/icpe/rux_x1fast/v8_features/src/main.rs"], capture_output=True).stdout
+        h = hashlib.sha256()
+        for nm, bb in (("Cargo.toml", cargo), ("main.rs", mr)):
+            h.update(nm.encode() + b"\0" + bb)
+        out.setdefault(h.hexdigest()[:8], dict(main_rs_sha256=hashlib.sha256(mr).hexdigest()[:16], first_commit=c))
+        out[h.hexdigest()[:8]]["first_commit"] = c          # git log 由新到舊 → 最後寫的是最早的 commit
+    return out
+
+
+EM = engine_map()
+eng = []
+for cs_ in sorted(code_sha):
+    rs = cs_.split("+rs")[-1][:8] if "+rs" in cs_ else ""
+    e = EM.get(rs)
+    eng.append(dict(code_sha=cs_, **(e if e else dict(note="這個引擎版本沒有進 git（開發中的 v8）；見 V8_FEATURES 的版本表"))))
 m = dict(exp=a.exp, variant=a.variant, collected_ts=datetime.now().astimezone().isoformat(timespec="seconds"), collected_host=socket.gethostname(),
-         repo_commit=subprocess.run(["git", "-C", REPO, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
-         v8_main_rs_sha256=sha(v8), sweep_code_sha=sorted(code_sha), runs=runs, files=files, note=a.note,
+         repo_commit_at_collect=subprocess.run(["git", "-C", REPO, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
+         engine_used=eng, sweep_code_sha=sorted(code_sha), runs=runs, files=files, note=a.note,
          not_in_git="原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄")
 json.dump(m, open(os.path.join(out, "MANIFEST.json"), "w"), ensure_ascii=False, indent=1)
 print(f"→ {out}：{len(files)} 個檔", flush=True)

@@ -171,6 +171,26 @@
   - PR:95「APC 做好後受影響的格子全部重算」至少要包含長 session 的紀錄（SemiAnalysis、TraceLab、CacheWise）。
   - ④ 的 O-GPU 要同時加 BELP。
 
+### 4a-3. APC／BELP：TraceLab c1（icpe-next-trx 在 TRX40 跑；icpe-next-trx `0cfa480b`，`results/icpe_next/v8_explore/apc/tracelab_c1/`）
+
+- **重現檢查**：版本 B 表上 108 列（格 × 元件）逐值相同，7 欄都 0 個不同。
+- **sweep**：4,728 個 job，40 worker 跑 384 s，沒有任何 job 退回 Python。引擎 `rse7f6ee8f`（main.rs `48e4efce`）。
+- **結果**（cake，每個元件 18 格；TRX 回報的摘要）：
+
+| 元件 | 上限最大：沒有 APC → 有 APC | ≥15% 的格 |
+|:--|:--|:--|
+| O-GPU（④ 只有 BEL） | 39.0% → **5.1%** | 6 → 0 |
+| O-ALL(report) | 41.4% → 9.1% | 4 → 0 |
+| O-ORD | 23.3% → 21.9% | 2 → 2 |
+| O-PF | 6.0% → 7.8% | 0 → 0 |
+| O-DROP、O-NOW | 約 1% 以下 | 0 → 0 |
+
+- **O-GPU 的 ④ 加上 BELP**：最大 39.0% → 39.2%，BELP 在 18／18 格勝過 BEL。
+- **解讀**〔推論〕：
+  - TraceLab 是長的 coding-agent session，APC 讓 ② 變強很多。如果 ④ 只有 session 粒度的 BEL，O-GPU 的上限幾乎消失。
+  - ④ 也逐塊（BELP）之後，O-GPU 的上限回到原本的水準。
+  - 所以 APC 的正式重算**一定要同時加 BELP**（SEMANTICS 2-5），否則 TraceLab 的結論會從「≥15%」錯翻成「<15%」。
+
 ### 4b. W5（同一個變體，CPU 111.0625、128、256 GiB）
 
 **怎麼跑**
@@ -300,6 +320,23 @@ O-DROP、O-NOW、O-PF 在幾個重負載的格降很多，最多 −370 個百�
   - W5 上限上升的原因多看幾格；
   - BELP 再加速（現在是 BEL 的 10 倍時間）；
   - 慢層上限的加速候選 1、4。
+
+## 5b. 引擎版本對照（sweep 的 `code_sha` 後半＝Cargo.toml＋main.rs 的 sha256）
+
+| code_sha | v8 main.rs | git | 用在哪些結果 |
+|:--|:--|:--|:--|
+| `rsdb455a36` | `c5642d2a…` | **沒進 git**（03:39 的開發版） | APC：Mooncake toolagent（§4a） |
+| `rs702ecaed` | `a4ded3ca…` | `62b25568` | APC：SemiAnalysis、Bailian；W5 的 BF16 那半 |
+| `rs088c7bd5` | `d1502d2d…` | `b1c2e9ef`（審查後） | W5 的 INT4 那半（重跑） |
+| `rse7f6ee8f` | `48e4efce…` | `b7444163` 起（加 qpost） | 排隊（§4c）；TRX40 的全部結果 |
+
+- 這幾版之間，APC／BELP／W5／W3 的程式路徑**結果相同**。後來多的只有四樣：
+  - q=2、qpost（不開就不影響）；
+  - BELP 的捷徑（已驗證和每塊全掃逐位元相同）；
+  - 審查的 F2（只影響 W5 的寫入量；W5 重跑後上限逐列相同）；
+  - F6、F7（斷言、稽核）。
+- 另外每一版都重新對過一次：新功能關閉時和 Python 0 個不同；版本 B 的重現在 rsdb455a36、rs702ecaed、rse7f6ee8f 上都逐值相同。
+- `results/icpe_next/v8_explore/*/*/MANIFEST.json` 原本有一欄 `v8_main_rs_sha256`，記的是**收集時**的檔，不是 sweep 用的引擎。icpe-next-trx 指出後已改成 `engine_used`，依 sweep 的 code_sha 對回 git。
 
 ## 6. run 目錄（`/root/icpe-next/runs/`）
 
