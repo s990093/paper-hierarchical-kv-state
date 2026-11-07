@@ -212,12 +212,12 @@
 - 本分支**只同步 `PREREG.md`**（取 294d2bd 的版本）。
 - W6（10:15 台灣）：24443、24444 仍等 DL_Lab5 的 24507（剩 19 小時 24 分）；目前 squeue 上本帳號沒有新的 DL_Lab5 job。
 
-## 2026-11-07 11:20（台灣）— 對話資料集補登記：使用者決定編號偏離 13，但先請 `icpe-data` 補寫版本 B／C
+## 2026-11-07 11:00（台灣）— 對話資料集補登記：使用者決定編號偏離 13，但先請 `icpe-data` 補寫版本 B／C
 
 - `icpe-data` 請 `h200` 把 `origin/icpe-next-data` @ `688ad0b` 的 STATUS_DATA「2026-11-07T11:00+08:00 — 對話資料集補登記」（ShareGPT、WildChat-1M、LMSYS-Chat-1M、UltraChat 的主網格；acvlab `date -u` 2026-11-07T02:57:51Z；commit 10:58:29 +0800；寫明還沒跑任何模擬、只看過 ShareGPT 的轉換統計）收進 PREREG，建議用不編號的附錄。
 - 我核對時看到兩點：
   1. PREREG §6 寫 push 之後的任何改動都在文末「偏離」加一節；§4 寫「另補登記」的 W3、W5、W7 先前都登記成偏離 9、11、12；§4 的選跑清單只列 ShareGPT＋Pensieve，另外三份不在清單裡。
   2. 這份登記寫「指標、表格、門檻都和主結果相同」，但網格是 `next_b_queue.py` 的 `sweep_args()` 預設（688ad0b 第 68–70、88–90 行）：GPU 規則 LRU、BEL、TTLA／TTLB × 0.3／10／300，即版本 A；不含偏離 6 的 7 個 TTL（版本 B），也不含偏離 10 的 block 粒度 APC、BELP（版本 C，正式主表）。偏離 10 的重算只涵蓋原本 40 個登記變體。
-- 使用者決定（AskUserQuestion，11:1x 台灣）：
+- 使用者決定（AskUserQuestion，約 11:00 台灣）：
   - 形式：**「偏離 13，標『補登記』」**——由 `h200` 照抄 STATUS_DATA 原文、引用 688ad0b，登記時間以那節的 commit 時間為準，進 PREREG 的時間另記。**偏離 13 保留給這份**；`h200` 自己（W6b）下一個改從 14 開始。
   - 版本：**「請 icpe-data 先補寫」**——`h200` 先不收；請 `icpe-data` 在開跑前於 STATUS_DATA 補寫這四份要不要跑版本 B／C、由哪台用哪版引擎跑；補好後 `h200` 連同原節一起收成偏離 13。
