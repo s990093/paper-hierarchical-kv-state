@@ -2,6 +2,94 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T12:55+08:00 — **agent 軌跡補登記**（mini-SWE-agent、OpenHands）：使用者決定補跑；**本節 commit 時還沒跑任何一格模擬，也還沒寫轉換程式**
+
+> 時間：acvlab `date -u` 2026-11-07T04:52:16Z。請 h200 收成 **PREREG 偏離 17**（h200 說的下一個號碼）。
+> 已經看過的只有資料的欄位與計數（下面列出），沒有任何模擬結果。
+
+**使用者決定**
+- 來源：icpe-main 轉達，11/7 約 12:4x 在 icpe-main 用 AskUserQuestion 決定。
+  - 補兩份公開的 agent 軌跡，做法照對話資料集（偏離 13）。
+  - 先登記才跑；授權要能放進論文；要有真實時間，沒有就停下回報。
+  - 到達方式：固定並行 16／32／64／72 × 3 個 seed（同 SemiAnalysis）。
+  - 只跑主網格＋版本 C，版本 C 要先逐值重現版本 B。
+  - 單獨成一節，分析由 icpe-main 做。
+  - 偏離 14 修正版出來後，O-PF／O-ALL 一樣重跑。
+- 理由：對手論文（PBKV、SAGA、CacheScout、Continuum）用的都是 SWE-bench 類題目集。
+- 我查資料後問使用者（AskUserQuestion，本 session 12:4x），使用者選：
+  1. **mini-SWE-agent**：SWE-bench 排行榜的官方軌跡（`SWE-bench/experiments`＋它的 S3）**沒有授權**（GitHub API `license: null`，README 沒有使用條款）。改用 **MIT 的第三方軌跡**。
+  2. **OpenHands**：軌跡沒有記錄系統提示，**從當時的 OpenHands 原始碼（MIT）還原**，再照偏離 13 切 token。
+
+**資料**（新的空目錄；逐檔對 HF 的 LFS sha256，非 LFS 的檔對 git blob sha1；只讀 JSON，Python 用 `-I`；不進 git）
+
+| 名稱 | 來源 | 授權 | 內容 |
+|:--|:--|:--|:--|
+| mini-SWE-agent | HF `tarsur385/qwen3-30b-a3b-instruct-2507-swebench-verified-mini-swe-agent` @ 58389eb5426db5a3ae6159faa37498072b4735ff | MIT | mini-SWE-agent 跑 SWE-bench Verified，Qwen3-30B-A3B-Instruct-2507，`trajectories/*.traj.json` 499 個；503 個檔全部對上 |
+| OpenHands | HF `OpenHands/openhands-evaluation-outputs` @ aa8977805b4cefd317001d80ddf1ad52790e9d23，`outputs/SWE-bench_Lite-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_100_N_v2.2-no-hint/output.jsonl`（sha256 c520a3c6…＝LFS） | MIT | CodeActAgent（function calling）跑 SWE-bench Lite，Claude 3.5 Sonnet（2024-10-22），最多 100 步，299 個 instance |
+| OpenHands 原始碼 | GitHub `OpenHands/OpenHands`（原 All-Hands-AI），軌跡 metadata 記的兩個 commit 61874438、6333c6ad 的 `openhands/agenthub/codeact_agent/` | MIT | 兩個 commit 的 4 個檔逐位元相同；`function_calling.py` sha256 4a0f35c9… |
+
+- OpenHands 只用這一個 run：最新版本 v2.2、最多 100 步、每次呼叫都有 usage。19 個 run 各用不同的模型和版本，不混在一起。
+
+**已經看過的欄位與計數**（不是結果）
+- **mini-SWE-agent**：
+  - 每則 assistant 訊息有 `extra.timestamp`（回覆完成），`extra.response` 有 `created`（伺服器收到請求的秒，整數）和 `usage.prompt_tokens`（Qwen 的 token）。
+  - 每則 tool 訊息有 `extra.timestamp`（工具結束）。user 訊息沒有時間。
+  - 499／499 個軌跡：`info.model_stats.api_calls`＝assistant 訊息數＋`FormatError` 回饋訊息數。全部共 13,884 次成功呼叫、3,517 次格式錯誤。
+  - prompt_tokens 在同一軌跡內嚴格遞增（0 次下降），表示輸入只往後加。
+  - `created` − 前一個有時間戳的訊息：中位數 −0.44 s，沒有 < −1 s 的。
+- **OpenHands**：
+  - history 每個事件都有 `timestamp`。agent 的動作帶 `tool_call_metadata.model_response`，含 id、choices、`usage.prompt_tokens`（Claude 的 token）。
+  - 每個 instance 的呼叫數中位數 18、最多 100。prompt_tokens 在同一軌跡內 7,509 次相鄰比較都沒有下降。
+  - 原始碼：function calling 模式的系統提示＝`function_calling.SYSTEM_PROMPT`，工具＝`get_tools(...)` 的 `ChatCompletionToolParam` 定義。
+
+**轉換**（`next_b_convert.py` 的新子命令 `agent`，寫在之後的 commit；規則在這裡先定）
+- **session**：一條軌跡＝一個 session＝一個「對話」（排固定並行的單位）。沒有子 agent。不複製。
+- **合格**：至少 2 次有時間的成功呼叫，時間戳都齊全；不合格的依原因計數。全部合格的都用，不抽樣。
+- **請求**：每次「成功」的 LLM 呼叫一個請求。
+  - mini-SWE-agent 的 `FormatError` 呼叫沒有記錄回覆與時間，不模擬，次數記在 meta。它們的 prompt 是下一次呼叫 prompt 的前綴。
+  - OpenHands 一次回覆裡有多個 tool call（`total_calls_in_response`>1）時，依 `model_response.id` 合成一次呼叫。
+- **請求的輸入（Llama-3.1 tokenizer，同偏離 13：NousResearch 鏡像 d10aef79、sha256 79e3e522…、tokenizers 0.23.3）**：這次呼叫之前的全部訊息，照 Llama 3.1 格式組起來，再加 assistant 開頭。
+  - **mini-SWE-agent**：
+    - system／user 訊息原文。
+    - assistant＝`content`，再接每個 tool call 的 `{"name", "arguments"}` JSON。
+    - tool 訊息用 Llama 3.1 的 `ipython` 角色、原文。
+  - **OpenHands**：
+    - 系統訊息＝`SYSTEM_PROMPT`，加上這個 run 實際呼叫過的工具定義（`execute_bash`、`finish` 一定有，其他照軌跡出現的）的 JSON。用 `ast` 從原始碼取字面值，不執行原始碼。
+    - 之後照事件順序：
+      - user 的 message 動作 → user。
+      - agent 的動作 → assistant＝`model_response.choices[0].message` 的 `content`＋tool calls JSON；同一個 response 只算一次。
+      - 對應的 observation → `ipython` 角色、`content` 原文。
+      - environment 的 error → user。
+- **chunk 鍵**：整段 token 每 512 一塊的鏈式 blake2b（同偏離 13）。內容相同的前綴跨 session 共用，例如系統提示、相同的題目描述。
+- **規則 6**（任何一項不過就停）：
+  - (a) 每個請求的鍵是上一個請求的延伸，要 100%。
+  - (b) **用供應商回報的 prompt_tokens 驗算**：相鄰兩次呼叫，我們 Llama token 的增量 ÷ 回報的增量，中位數要在 [0.8, 1.25]，而且 ≥90% 的比值在 [0.5, 2.0]。
+    - 這個比值也報第一次呼叫的總量比，只報告；因為 tokenizer 不同，總量比不是判準。
+  - (c) mini-SWE-agent：api_calls＝成功＋格式錯誤，要 100%。
+- **時間（真實，只合成對話開始）**：
+  - **請求時間**：
+    - mini-SWE-agent：max(前一個有時間戳的訊息, `response.created`)。`created` 是整數秒，前一個訊息的時間是它的下界。
+    - OpenHands：這次呼叫第一個動作之前，最後一個事件的時間。
+  - **呼叫結束**：assistant 的 `timestamp`（mini）／動作的 `timestamp`（OpenHands）。
+  - 對話內的偏移＝請求時間 − 第一個請求時間，原樣保留。
+  - **對話長度**＝最後一次呼叫的結束 − 第一個請求時間。
+  - **開始時間**：固定並行 N＝16、32、64、72，順序＝`default_rng(seed).permutation`，seed 1–3；同 SemiAnalysis 的 `fixed_concurrency`。
+- **nb 名稱**：`miniswe_N{N}_s{s}`、`openhands_N{N}_s{s}`，每份 12 個。
+
+**模擬與版本**（同偏離 13 補寫的第 1–4 點）
+- 版本 B：plan `agent_main`（17×8，block `ms_N…_s…`／`oh_N…_s…`）＋`agent_p1`（`_ttl`，15 × 新的 8 個 TTL），v7 62b0932b。上限表 `next_sim_analyze --pf-target cpu`，先 rowcheck。
+- 版本 C：`next_chat_verc.sh`（v8 48e4efce，icpe-next-rux 4a713386），重現檢查必須 `REPRODUCED`。
+- 機器：都在 acvlab。
+- 不跑 P1–P4、W3。偏離 14 修正版出來後，O-PF／O-ALL 的列一起重跑。
+
+**報告**：判定與彙總由 icpe-main 做，歸「合成到達」，單獨成一節，不和論文的 28 個變體合併計數。
+
+**時間估計**〔推算〕
+- 寫轉換程式：mini 約 1 h；OpenHands 約 2 h，要從原始碼取系統提示與工具。
+- 模擬：每份 24 個 block（main＋_ttl），12 個版本 C，單份約 1 h。
+- 今天（11/7）深夜或 11/8 上午進 git。ICPE 摘要（11/10）前就可能好，全文（11/17）前一定來得及。
+- 若規則 6 (b) 不過，就停下回報，時間另估。
+
 ## 2026-11-07T12:00+08:00 — **更正 11:55**：W6 本來就歸 h200，而且已經排了；我說的「現在不排」與兩個「未定」是過時的
 
 - h200 回覆：
