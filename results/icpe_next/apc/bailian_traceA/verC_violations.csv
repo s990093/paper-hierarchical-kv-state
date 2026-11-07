@@ -1,0 +1,3 @@
+run_id,ts,host,pf_target,metric,dead_h,trace,rule,cpu_GiB,slow,gpu,restore,gpu_GiB,gpu_write,slow_cap_frac,component,oracle_policy,oracle_gpu_policy,oracle_slow_policy,T_oracle,rival,rival_gpu_policy,rival_slow_policy,T_rival,oracle_slower_by
+20261107-120323-icpe-rux-apc-formal-bailian_traceA,2026-11-07T12:08:30+08:00,RUX3DPRO,cpu,mean_ret,0,nb:bailian_traceA,nb,8.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,TTLB:100,none,0.089738,LRU+NONE,TTLB:100,none,0.089057,0.0076467880121719916
+20261107-120323-icpe-rux-apc-formal-bailian_traceA,2026-11-07T12:08:30+08:00,RUX3DPRO,cpu,mean_ret,0,nb:bailian_traceA,nb,16.0,nfs,idle,cake,111.0625,wb,0.0,O-NOW,O-NOW,TTLB:100,none,0.087825,LRU+NONE,TTLB:100,none,0.087801,0.00027334540608872616
