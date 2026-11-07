@@ -406,7 +406,7 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - 摘要：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`rust_cmp.csv`（+3 列）、`jobs_from_check.csv`（新）。
 - **有利還是不利**：無（只選要跑哪些 job，不改任何 job 的計算）。
 
-### 22. PREREG 偏離 14：`--pf-expire`（O-PF 預取的副本過期就丟）、`--noise-overdue resample`（模型 P 抽到已經過去的時間就重抽）（`code/p3x/x1_sim.py`、`code/p3x/x1_rust.py`、`code/p3x/x1fast/src/main.rs`，commit @@C22@@）
+### 22. PREREG 偏離 14：`--pf-expire`（O-PF 預取的副本過期就丟）、`--noise-overdue resample`（模型 P 抽到已經過去的時間就重抽）（`code/p3x/x1_sim.py`、`code/p3x/x1_rust.py`、`code/p3x/x1fast/src/main.rs`，commit `fa3686b`；規則 (i) 跳過已丟的 session 的修改還沒 commit）
 
 - **為什麼**：P4 的 O-PF／O-GPU 斷崖（STATUS_SIM 11/7 11:02）。使用者選 B：補規則、全部重跑、修正版取代正式結果。規則照 PREREG 偏離 14（fe34522）。
 - **改了什麼**：兩個旗標，預設關。沒開時程式路徑和原本相同。
@@ -422,7 +422,7 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
     - 重抽會用亂數，所以 B1 也要照 Python 走訪 cpu_set 的順序：Rust 在 `nzo=resample` 時，B1 也開 v5 的 PySet。
     - 這和 B2 一樣只在 Python 3.12 有效：`x1_rust.unsupported(…, nzo)` 在其他版本回 `noise_overdue_py<版本>`，退回 Python。
   - **CSV**：開了旗標的 sweep 每列多 `pf_expire`（True）／`noise_overdue`（resample），npz 檔名多 `_pfx`／`_nzoresample`；沒開就沒有這兩欄。stdout 印 `deviation14 pf_expire=… noise_overdue=…`。
-- **驗證**：@@V22@@
+- **驗證**：**未完成**。`fa3686b` 的 G1 PASS（Python、Rust 4,416 列不同的格子 0）、兩個旗標都開的 Python 對 Rust 2,208 列相同、SemiAnalysis 對診斷反事實 36 列相同；但旗標關 vs 開（T2）在預取到 GPU 的 O-ALL assert（`gspf 13807 9`），原因是一個旗標關也有的舊問題（GPU 預取騰空間時候選被丟、仍被預取）。見 STATUS_SIM 2026-11-07T14:05；修法等使用者決定，之後重跑全部驗證再填這一欄。
 - **有利還是不利**：都**有利於預測**（上限變大）。
   - (i) 讓 O-PF 不再被永遠不會被讀的副本佔住；λ＝0 時也一樣，因為被別的 session 讀走的副本也會被丟。
   - (a) 讓不會再回來的對話不再一直被當成「馬上回來」。
