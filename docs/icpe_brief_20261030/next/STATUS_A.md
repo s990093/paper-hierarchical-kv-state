@@ -164,3 +164,8 @@
 - `icpe-main` 把偏離 8 寫在 `origin/icpe-next-main` @ `df8b74c`（acvlab `date -u` 2026-11-06T04:41:49Z）：P4（W4 雜訊）選格＝版本 B（P1 正式值）上限 ≥0.15 的每個（格, 元件）；元件＝5 個判定元件＋O-ALL(report)（只報告）；Mooncake 只列 R1／R2；寫入飽和照列另標。清單 2,582 個（格, 元件）、975 個格（run `20261106-124122-icpe-main-p4cells`）。節內寫明使用者決定時已看過版本 A、B 的全部輸出，W4 雜訊結果還沒看過。我核過：只在檔尾加一節、0 行刪除；`origin/icpe-next-main` tip c868ef2 的 PREREG 和 df8b74c 相同。
 - 本分支**只同步 `PREREG.md`**（取 df8b74c 的版本）。`h200` 下一個偏離編號是 9。
 - W6（2026-11-06 13:51 台灣）：仍等 DL_Lab5 的 24507（05:39 開始，已跑 8 小時 11 分）。
+
+## 2026-11-07 08:35（台灣）— 偏離 9 的編號給 `icpe-rux`
+
+- `icpe-rux`（跨 session 的名字 `rux-proj`，分支 `icpe-next-rux`）問下一個偏離編號，用來登記 W3 線索 (a) 的規則（使用者 11/7 約 08:45 經 `icpe-main` 轉達；要在 TRX40 跑 W3 sweep 之前登記；push 前會先問使用者）。我查了 origin 上的 icpe-next-a 6b84a5c、ana 43e7ffc、b 19f3e85、data a25dcba、main-branch c868ef2、rux 4558329、sim 90dae78、trx 6872edf 和 main ff71545 的 `PREREG.md`：最大都是偏離 8，沒有 9；`h200` 沒有待登記的偏離 → **偏離 9 給 `icpe-rux`，`h200` 下一個從 10 開始**（登記前仍先查各分支）。
+- W6（2026-11-07 08:33 台灣）：仍等 DL_Lab5 的 24507（2026-11-06 05:39 開始，已跑 1 天 2 小時 53 分；h200q 上限 2 天）。
