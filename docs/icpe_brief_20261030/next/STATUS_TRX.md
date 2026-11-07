@@ -3,6 +3,26 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T09:15+08:00 — 偏離 10 的不存 npz 開關好了（7a89a9b5）；流程改成「正式 APC（兼 9 容量重現）→ W3」
+
+- **icpe-rux 的修改**：origin/icpe-next-rux 7a89a9b5，只改 `run_apc_formal.sh`。
+  - 預設不存逐請求 npz（`RUN_DIR` 空字串）；`APC_NPZ=1` 才存。
+  - 從 8f04a91c 到 7a89a9b5，以及到更新的 199b0610：sweep_v8、analyze_w3、explore_apc、analyze_v8、make_cue、v8 `src`／`Cargo.toml`、v6_slowcap、`code/p3x`、next_sim_analyze 的 diff 都是 0 行。
+  - 只多了 `collect_v8.py`（engine_used、`--base`）和 `run_apc_formal.sh`。
+- **流程調整**（09:05）：
+  - `rux_formal_w3.sh`（機器工具）：每個變體先跑 `run_apc_formal.sh`。它的第 2 步是 9 個容量的版本 B 重現（16 個規則，7 欄逐值相同），同時算版本 C、收進 `results/icpe_next/apc/<變體>/`。印 `EXPLORE_RESULT REPRODUCED` 和 `APC_FORMAL_DONE` 才接 W3。
+  - 這樣 c4 和 FreeInference 不用另跑一次 16 個規則的重現。
+  - 09:05:28 停掉舊流程的外層殼（pid 2432467，SIGTERM）。那時它正在等 c2，不是失敗。
+  - c2 的 `rux_repro_w3.sh`（pid 2435770）沒停，繼續跑：9 容量重現 run `20261107-090206-…-tl_c2-reproB` → 通過才接 W3，worktree 仍在 8f04a91c。
+- **新流程**（背景，09:06 開始）依序：
+  1. 等 c2 跑完；確認 reproB 是 `REPRODUCED`、W3 的 rc 是 0，否則停。
+  2. worktree 移到 7a89a9b5。
+  3. tl_c4：正式 APC → W3。
+  4. `make_cue.py fi`（6 週）。
+  5. FreeInference 第 1–6 週：正式 APC → W3。
+  6. tl_c1、tl_c2：正式 APC（W3 已做；c2 會再做一次 16 個規則的重現，當二次核對）。
+- 任何一步失敗或沒重現就停，回報 icpe-main 和 icpe-rux。
+
 ## 2026-11-07T09:10+08:00 — **tracelab_c1 的 9 容量重現檢查補完：324／324 格×元件 0 差** → c1 的 W3 先決條件滿足；**使用者決定 TRX40 接偏離 10 的正式 APC 重算，但不存 npz**
 
 - **偏離 9 補記**：origin/icpe-next-rux aec99d11（icpe-rux 寫）。W3 前的版本 B 重現要涵蓋全部 9 個容量。
