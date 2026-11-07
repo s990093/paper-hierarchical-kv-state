@@ -217,8 +217,8 @@ def main():
     Q["qseed"] = Q.trace.map(lambda t: int(QRE.match(t).group(3)))
     pk = ["family_input", "trace_class", "qfam", "N"] + [c for c in CC if c != "trace"] + SPEC
     nq = Q.groupby(pk).qseed.agg(lambda s: tuple(sorted(s))).rename("qseeds").reset_index()
-    full = nq[nq.qseeds == (1, 2, 3)]
-    part = nq[nq.qseeds != (1, 2, 3)]
+    isfull = nq.qseeds.map(lambda t: t == (1, 2, 3)).astype(bool) if len(nq) else pd.Series([], dtype=bool)
+    full, part = nq[isfull], nq[~isfull]
     NHk = NH[["family_input"] + CC + SPEC + ["noise_seed", "headroom"]].merge(
         Q[["family_input", "trace_class", "qfam", "N", "qseed"] + CC + SPEC], on=["family_input"] + CC + SPEC, how="inner")  # 只用選到的（格, 元件）
     NHk = NHk.merge(full[pk], on=pk, how="inner")
