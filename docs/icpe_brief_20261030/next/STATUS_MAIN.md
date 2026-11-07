@@ -3,6 +3,13 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T16:58+08:00 — icpe-sim：旗標開的跨機參考 xref_dev14 通過（1,184／1,184），第一批的旗標放行（等 icpe-data、TRX40 重現）
+
+- run `20261107-155727`，STATUS_SIM 16:59，`origin/icpe-next-sim` b7d2ee57；引擎仍是 63b8e32。
+- 已知、所有網格都排除的組合（沒有正式 block 用到）：wt＋預取進 GPU；雜訊＋預取進 GPU 但沒開 `--pf-gpu-recheck`。
+- 還在跑：icpe-rux v8_dev14（36780534）對 x1fast 的交叉檢查，第二批的閘門。
+- **寫本節時已經看過的正式結果**：沒有新的。
+
 ## 2026-11-07T16:43+08:00 — icpe-sim 的 λ＝0 影響量測：規則 (i) 讓 O-PF 的 ④ 在 Mooncake、SemiAnalysis 最多快 15%–18%；摘要「rather than by prefetching」有風險
 
 - **來源**：icpe-sim 的訊息（run `20261107-160757-icpe-sim-dev14-lam0-impact`，STATUS_SIM 16:43，`results/icpe_next/sim/dev14_lam0_impact.csv`；我沒讀檔，只轉述）。版本 B 的規則集合（15 個不預測 GPU 規則），預取到 CPU、wb，④＝O-PF 在 15 個 GPU 規則上的最小 mean_ret；rel4＝④_on ÷ ④_off − 1。
