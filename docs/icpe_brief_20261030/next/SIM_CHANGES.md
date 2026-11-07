@@ -405,3 +405,25 @@ T1 直寫＋GPU 1 byte ≡ 關閉（逐位元）；T2 每 25 步的 refcount／�
   - **unmatched**：t1 2 個（LRU2、CPU 16；別的紀錄那列不算在這次的 traces×rules）；t2 56 個，其中 55 個是沒用到預知的規則（ARC 11、GDSF 12、LRU 16、LRU+RPF 15）在雜訊 block 不產生 job，符合預期。
   - 摘要：`results/icpe_next/sim/g1_compare.csv`（+2 列）、`rust_cmp.csv`（+3 列）、`jobs_from_check.csv`（新）。
 - **有利還是不利**：無（只選要跑哪些 job，不改任何 job 的計算）。
+
+### 22. PREREG 偏離 14：`--pf-expire`（O-PF 預取的副本過期就丟）、`--noise-overdue resample`（模型 P 抽到已經過去的時間就重抽）（`code/p3x/x1_sim.py`、`code/p3x/x1_rust.py`、`code/p3x/x1fast/src/main.rs`，commit @@C22@@）
+
+- **為什麼**：P4 的 O-PF／O-GPU 斷崖（STATUS_SIM 11/7 11:02）。使用者選 B：補規則、全部重跑、修正版取代正式結果。規則照 PREREG 偏離 14（fe34522）。
+- **改了什麼**：兩個旗標，預設關。沒開時程式路徑和原本相同。
+  - **(i) `--pf-expire`** → `Engine(pf_expire=True)`，Rust 是 jobs.txt 的 `pfx=1`。
+    - 只在 CPU 規則有 `opf`（O-PF、O-ALL）時有作用。
+    - `step(r)` 一開始（GPU 層 TTLA 到期與推進預取之前）呼叫 `_pf_expire()`：還留著預取副本、而且 `sT ≤ cur` 的 session，丟掉全部預取副本，設 `pfdone`，不再排回。
+      - CPU 的副本：INT4 那份；寫法同 `unprefetch`，但不排回、不算 `n_unpf`。
+      - GPU 的副本（`--pf-target gpu`）：`_g_unprefetch(push=False)`。
+    - 每個 session 的處理互不影響，所以和走訪順序無關。
+  - **(a) `--noise-overdue resample`** → `Engine(noise_overdue="resample")`，Rust 是 `nzo=resample`。
+    - 在 `_nz` 模型 P、換成經驗值、而且間隔有限時：若「上次回合結束＋g ≤ 目前請求的時間」，就從排好序的經驗間隔裡 `bisect_right(已經過的時間)` 之後的那部分，用 `randrange` 均勻重抽一個（同一個亂數串流）。B1 把重抽的值存回 `nzd[s]`。
+    - 原本「至少是下一個請求」的下限還在，只處理浮點誤差。模型 M、λ＝0 不受影響。
+    - 重抽會用亂數，所以 B1 也要照 Python 走訪 cpu_set 的順序：Rust 在 `nzo=resample` 時，B1 也開 v5 的 PySet。
+    - 這和 B2 一樣只在 Python 3.12 有效：`x1_rust.unsupported(…, nzo)` 在其他版本回 `noise_overdue_py<版本>`，退回 Python。
+  - **CSV**：開了旗標的 sweep 每列多 `pf_expire`（True）／`noise_overdue`（resample），npz 檔名多 `_pfx`／`_nzoresample`；沒開就沒有這兩欄。stdout 印 `deviation14 pf_expire=… noise_overdue=…`。
+- **驗證**：@@V22@@
+- **有利還是不利**：都**有利於預測**（上限變大）。
+  - (i) 讓 O-PF 不再被永遠不會被讀的副本佔住；λ＝0 時也一樣，因為被別的 session 讀走的副本也會被丟。
+  - (a) 讓不會再回來的對話不再一直被當成「馬上回來」。
+  - 這是 PREREG 偏離 14 登記的方向：原本的寫法低估了有雜訊時預測的價值。
