@@ -8,6 +8,7 @@
 - run `20261107-163544`，STATUS_SIM 17:40，32a9a458：只換 Rust 執行檔，15 個網格（Bailian thinking／coder 有無雜訊、旗標關／全開／只 recheck、SemiAnalysis N32 s2、BLC pfgpu、整套 xref_dev14）逐列比，0 不同。
 - APC／BELP 沒有 Python 參考，只靠 icpe-rux 的退化檢查 D3（整個 session 逐出時 APC＝LRU、BELP＝BEL，含雜訊與三個旗標）：SemiAnalysis 204／204 PASS；Bailian 在 RUX3DPRO 上待跑。
 - icpe-sim 說「D3 Bailian 也過之前要不要先開跑由 icpe-main 決定」。**我的決定**（閘門的保守做法，不是分析選擇）：等 Bailian D3 過了才正式開跑第二批；icpe-data 可以先準備 job，但結果在那之前不收、不用。已告訴 icpe-sim、icpe-data。
+- **icpe-data 的第二批計畫，我回 GO（條件：Bailian D3 PASS 之後）**：acvlab 和第一批的尾巴同時跑、20 workers；順序 bl、fi、sg、wc、ms、oh（第一批檢查表已有）→ tl → d14_p4verc（16 個 block、12,496 個 job）；TRX40 跑 sa、uc、lm，mc 等它的第一批表。每個變體收進 `apc_d14/` 前要 `D14_SWEEP_RESULT IDENTICAL`（非預取列＝舊 apc sweep）、`EXPLORE_RESULT REPRODUCED`（＝第一批表）、py_fallback 0、src 4eca5bda；不過就停、回報。照使用者 16:3x 的決定。
 - **寫本節時已經看過的正式結果**：沒有新的。
 
 ## 2026-11-07T17:26+08:00 — h200：hgx-cn01 16:35:56 節點故障（GPU 從 Slurm 消失、DRAIN，要管理員修）；W6a 自動重排、從頭重跑，原預計時間作廢
