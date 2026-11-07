@@ -1,0 +1,3 @@
+run_id,ts,host,plan,block,action,base_rows,d14_rows,replaced,out
+20261107-175309-icpe-main-d14-verB-mc,2026-11-07T17:53:10+08:00,acvlab,old_p1,mooncake_ttl,rerun,25920,1728,1728,/ssd6/hungwei/icpe-next/runs/20261107-175309-icpe-main-d14-verB-mc/in/p1/old_p1/mooncake_ttl/x1_sweep.csv
+20261107-175309-icpe-main-d14-verB-mc,2026-11-07T17:53:10+08:00,acvlab,old_p1,mooncake_trunc,rerun,20736,6912,6912,/ssd6/hungwei/icpe-next/runs/20261107-175309-icpe-main-d14-verB-mc/in/p1/old_p1/mooncake_trunc/x1_sweep.csv
