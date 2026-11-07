@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=170G
-#SBATCH --time=36:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH -o slurm-%x-%j.out
 # =============================================================================
 # next_a_w6b.sh — W6b：Mooncake 對話「淘汰順序」（O-ORD）的 GPU 縮小重播（PREREG §5、偏離 1、偏離 3 第 3 點；
@@ -19,7 +19,8 @@
 # tier_params_h200cpu.json）、不設 M7_ATTN（sdpa）、Llama-3.1-8B。做法＝O-ORD 的 ②（LRU、LRU2、ARC、S3FIFO、GDSF、PENS）
 # 和 ④（O-BEL、O-BELS），由 code/icpe/next_a_w6b.py 呼叫 x1_gpu.py 的重播（不改 x1_gpu.py）。
 # 先每個做法冒煙 100 個請求，再跑 rep 0..n-1：一輪 16 個設定、n 輪，每輪內用 seed 20261108＋輪次打亂。
-# 量時間：開跑前節點上有我們自己的別的 job → 每 60 s 再查、最多 15 次，還有就退出（memory h200-no-self-cotenancy-for-timing）。
+# 量時間（memory h200-no-self-cotenancy-for-timing；2026-11-07 改）：開跑前與每個 run 前都等到節點上沒有我們自己的別的 job（t1g.py wait-clear，
+# 最多 NEXT_A_WAIT_MIN 分鐘，預設 1440）；每個 run 跑完用 sacct 查重疊（t1g.py overlap → results/icpe_next/a/w6b/overlap.csv）。
 # 被污染（GpuWatcher：外來 process 或查詢失敗，exit 3）的 run 照「暴露」重跑，最多 3 次；污染的 run 留著（CONTAMINATED），分析排除。
 # sbatch 送出時會複製一份；開跑時改執行 repo 裡的版本。job 跑的時候不要原地改這支（bash 邊跑邊讀）。
 # =============================================================================
@@ -65,15 +66,9 @@ if [ "$DRY" = 0 ]; then
   [ -n "${SLURM_JOB_ID:-}" ] || { echo "[next_a_w6b] 不在 Slurm job 裡（head node 不量時間）" >&2; exit 2; }
   python -c 'import sys; sys.path.insert(0, "code"); from gpu_guard import smi_index; print("[next_a_w6b] smi_index(0) =", smi_index(0))' \
     || { echo "[next_a_w6b] cuda:0 對不到 nvidia-smi 的卡 → 停" >&2; exit 2; }
-  for _try in $(seq 1 15); do
-    others=$(squeue -h -w "${SLURMD_NODENAME:-$(hostname -s)}" -u "$USER" -t R -o '%i %j' | awk -v me="$SLURM_JOB_ID" '$1!=me')
-    [ -z "$others" ] && break
-    echo "[next_a_w6b] $(date -Is) 節點上還有我們自己的 job（第 $_try／15 次，60 s 後再查）：$(echo $others)" >&2
-    [ "$_try" -lt 15 ] && sleep 60
-  done
-  if [ -n "$others" ]; then
-    echo "[next_a_w6b] 節點上還有我們自己的 job 在跑 → 停（量時間不和自己人同時跑）：" >&2; echo "$others" >&2; exit 2
-  fi
+  # 2026-11-07 使用者：每個 run 前等、跑完查重疊（DL_Lab5 會在中途送新 job）。開跑前也先等。
+  python3 code/icpe/t1g.py wait-clear --job "$SLURM_JOB_ID" --max-min "${NEXT_A_WAIT_MIN:-1440}" \
+    || { echo "[next_a_w6b] 等不到節點上沒有我們自己的別的 job → 停" >&2; exit 2; }
   python3 "$REPO/code/s3/fetch_models.py" check --root "$ICPE_MODEL_ROOT" --models llama \
     || { echo "[next_a_w6b] Llama 權重不在 $ICPE_MODEL_ROOT（或戳記對不上）→ 停（exit 3）。先跑 s3-fetch，再重送" >&2; exit 3; }
   echo "[next_a_w6b] $(date -Is) reps=$REPS job=$SLURM_JOB_ID node=${SLURMD_NODENAME:-?} git=$(git rev-parse --short HEAD) M7_LLAMA_GLOB=$M7_LLAMA_GLOB"
@@ -90,21 +85,30 @@ PY
 fi
 
 STARTED=1; [ -n "$FROM" ] && STARTED=0
-# step <名字> <短名> <指令...>：exit 3（被污染）→ 照暴露重跑，最多 3 次；其他非 0 → 停下回報（規則 2）
+OVL="$W6B/overlap.csv"
+# step <名字> <短名> <指令...>：等節點上沒有我們自己的別的 job → 跑 → sacct 查重疊（t1g.py overlap，寫 $OVL）。
+# 被污染（exit 3）或重疊 → 照暴露重跑，最多 3 次；3 次都不乾淨 → 停下回報。其他非 0 → 停下回報（規則 2）。分析只用 overlap＝0 的 run。
 step() {
   local name=$1 short=$2; shift 2
   if [ "$STARTED" = 0 ]; then if [ "$name" = "$FROM" ]; then STARTED=1; else return 0; fi; fi
   if [ "$LIST" = 1 ]; then echo "$name"; return 0; fi
   if [ "$DRY" = 1 ]; then printf '[%s] m7run %s ' "$name" "$short"; printf '%q ' "$@"; echo; return 0; fi
-  local att rc
+  local att rc orc t0 t1
   for att in 1 2 3; do
-    echo "=== $(date -Is) $name（第 $att 次）"
+    python3 code/icpe/t1g.py wait-clear --job "$SLURM_JOB_ID" --max-min "${NEXT_A_WAIT_MIN:-1440}" \
+      || { echo "=== $(date -Is) $name：等不到節點空出來 → 停、回報。接著跑：--from $name" >&2; exit 2; }
+    t0=$(date -Is); echo "=== $t0 $name（第 $att 次）"
     m7run "$short" "$@"; rc=$?
-    [ $rc -eq 0 ] && return 0
-    if [ $rc -eq 3 ]; then echo "=== $(date -Is) $name 被污染（exit 3）→ 重跑" >&2; continue; fi
-    echo "=== $(date -Is) $name 失敗（exit $rc）→ 停下、回報（規則 2）。接著跑：sbatch ... code/icpe/next_a_w6b.sh --reps $REPS --from $name" >&2; exit $rc
+    t1=$(date -Is)
+    if [ $rc -ne 0 ] && [ $rc -ne 3 ]; then
+      echo "=== $t1 $name 失敗（exit $rc）→ 停下、回報（規則 2）。接著跑：sbatch ... code/icpe/next_a_w6b.sh --reps $REPS --from $name" >&2; exit $rc
+    fi
+    python3 code/icpe/t1g.py overlap --job "$SLURM_JOB_ID" --start "$t0" --end "$t1" --step "$name" --short "$short" --log "$OVL"; orc=$?
+    [ $orc -eq 2 ] && { echo "=== $name：sacct 查不到重疊 → 停（規則 7）" >&2; exit 2; }
+    [ $orc -eq 0 ] && [ $rc -eq 0 ] && return 0
+    echo "=== $(date -Is) $name：$([ $rc -eq 3 ] && echo '被污染（exit 3）' || echo '和我們自己的 job 重疊') → 照暴露重跑" >&2
   done
-  echo "=== $(date -Is) $name 連續 3 次被污染 → 停下、回報" >&2; exit 3
+  echo "=== $(date -Is) $name 連續 3 次被污染或重疊 → 停下、回報。接著跑：--from $name" >&2; exit 3
 }
 
 POLS="LRU LRU2 ARC S3FIFO GDSF PENS O-BEL O-BELS"

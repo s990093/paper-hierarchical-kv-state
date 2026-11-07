@@ -140,7 +140,12 @@ def cmd_analyze(a):
     R = pd.DataFrame(runs)
     for _, r in R[(R.contaminated != 0) | (R.n != nreq)].iterrows():
         problems.append(f"run {r.run_id}（{r.cpu_GiB} {r.policy} rep{r.rep}）不完整或污染：n={r.n}/{nreq}, contaminated={r.contaminated}（不用）")
-    clean = R[(R.contaminated == 0) & (R.n == nreq)].sort_values("run_id")
+    # 2026-11-07（使用者：每個 run 前等、跑完查重疊）：只用 overlap.csv（t1g.py overlap）裡 overlap＝0 的 run
+    ovl = pd.read_csv(os.path.join(D, "overlap.csv"), dtype=str)
+    ok_ovl = set(ovl[ovl.overlap == "0"].run_id)
+    for _, r in R[~R.run_id.isin(ok_ovl)].iterrows():
+        problems.append(f"run {r.run_id}（{r.cpu_GiB} {r.policy} rep{r.rep}）在 overlap.csv 沒有 overlap＝0 的紀錄 → 不用")
+    clean = R[(R.contaminated == 0) & (R.n == nreq) & R.run_id.isin(ok_ovl)].sort_values("run_id")
     dup = clean.groupby(["cpu_GiB", "policy", "rep"]).size()
     if (dup > 1).any():
         problems.append(f"同一格同一 rep 有多個乾淨的 run：{dup[dup > 1].to_dict()}（取最後一個）")

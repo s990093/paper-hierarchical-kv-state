@@ -52,6 +52,13 @@ def w6a():
     nreq = int(per.n.max())
     problems = [f"run {r.run_id}（{r.cpu_GiB} {r.policy} rep{r.rep}）不完整或污染：n={r.n}/{nreq}, contaminated={r.contaminated}"
                 for _, r in per[(per.contaminated != 0) | (per.n != nreq)].iterrows()]
+    # 2026-11-07（使用者：每個 run 前等、跑完查重疊）：只用 overlap.csv（t1g.py overlap）裡 overlap＝0 的 run；
+    # 沒有紀錄或重疊的不用（DL_Lab5 的 24707 在 24444 中途開始）。
+    ovl = pd.read_csv(os.path.join(d, "overlap.csv"), dtype=str)
+    ok_ovl = set(ovl[ovl.overlap == "0"].run_id)
+    for _, r in per[~per.run_id.isin(ok_ovl)].iterrows():
+        problems.append(f"run {r.run_id}（{r.cpu_GiB} {r.policy} rep{r.rep}）在 overlap.csv 沒有 overlap＝0 的紀錄（和我們自己的 job 重疊或沒查）→ 不用")
+    per = per[per.run_id.isin(ok_ovl)]
     clean = per[(per.contaminated == 0) & (per.n == nreq)].sort_values("run_id").groupby(["cpu_GiB", "policy", "rep"]).tail(1)
     ret = g[(g.kind == 1) & g.run_id.isin(clean.run_id)]
     m = ret.groupby("run_id").ttft.mean().rename("ttft_ret_mean")

@@ -319,3 +319,23 @@
 
 - `icpe-data` 請 `h200` 把 `origin/icpe-next-data` @ `1af8839` 的 STATUS_DATA「13:10 — 偏離 17 的更正（登記）」記成偏離 17 的更正（不佔號）：OpenHands 的規則 6 (b) 中位數 0.795 < 0.8（p10 0.717、p90 0.875、100% 在 [0.5, 2]），使用者在 `icpe-data` 選「照實記錄後照跑」；門檻不改，nb 的 meta 記 pass=false 與 override 理由。
 - 照抄原文＋h200 的收錄說明（含時間不一致：節名 13:10／13:00 晚於 commit 12:58:45／12:57:05，以 commit 為準；輸入偏短、對上限的方向 NOT_MEASURED）。寫進 PREREG（H200 `date -u` 2026-11-07T05:00:18Z），只在檔尾加一節、0 行刪除。
+
+## 2026-11-07 13:06（台灣）— W6c 完成；W6a 和 DL_Lab5 24707 重疊 → 停掉重送；runner 改成每個 run 前等、跑完查重疊；TraceLab 重播的設計已定
+
+- **W6c（24443）完成**：DL_Lab5 的 24507 在 12:07:49 提早結束，W6c 12:07:49 → 12:08:55（exit 0）。run `20261107-120752-icpe-next-w6c-c1` exit 0、沒有污染 → `results/icpe_next/a/w6c/calib_c1.csv`。開跑時同節點只有別人的 job（slurm 輸出照記）。還沒分析。
+- **W6a（24444）**：12:08:55 開始。DL_Lab5 的 24706（12:47:04–12:47:11）、24707（12:47:11 送出、12:47:13 開始，GPU 4／CPU 64–79；W6a 是 GPU 2／CPU 32–47）在 W6a 中途開始。DL_Lab5 算我們自己的 job，T2 的「不同 NUMA 可並行」只量過兩個計時 job，沒量過訓練 job。
+  - 使用者（AskUserQuestion，約 13:03）選「停掉，等 DL_Lab5 跑完再重送」→ 13:03:56 `scancel 24444`。使用者另說「DL_Lab5 那邊要結束讓他跑」→ 24707 不碰。
+  - W6a 的 run（`results/icpe_next/a/w6a/overlap.csv` 用 `t1g.py overlap` 事後補記）：
+    - smoke（12:08:59–12:09:39）exit 0。
+    - `128-O-PF-r0`（run 20261107-121049，12:10:50–12:27:10）exit 0、**沒有重疊 → 有效**。
+    - `256-LRU-r0` 第 1 次（run 20261107-122723）gpu_guard 污染（exit 3）；第 2 次（run 20261107-124406，12:44:07–13:00:35）**和 24706、24707 重疊 → 不用**。
+    - `256-HINT-PF-r0`（run 20261107-130048）被 scancel 中斷、和 24707 重疊 → 不用。
+- **runner 改法**（使用者選「每個 run 前等、跑完查重疊」）：`next_a_w6.sh`、`next_a_w6b.sh` 開跑前與每個 run 前都跑 `t1g.py wait-clear`（等到節點上沒有我們自己的別的 job，最多 1,440 分鐘），每個 run 跑完跑 `t1g.py overlap`（sacct）寫 `<part>/overlap.csv`；污染或重疊就重跑，最多 3 次，3 次都不乾淨就停下回報。分析（`next_a_w6_analyze.py w6a`、`next_a_w6b.py analyze`）只用 overlap.csv 裡 overlap＝0 的 run。這是 PREREG §5「計時不和自己的其他 GPU 工作同時跑」的實作，判準不變。
+- **TraceLab c1 GPU 層重播**：使用者在 `icpe-main` 決定做（acvlab 12:5x），我更正估計後直接問使用者（AskUserQuestion，約 13:00），選：
+  - 格子：NFS、CPU 8 GiB、GPU 閒；CPU 規則 LRU+RPF，GPU 規則 LRU、TTLB:30、BEL。
+  - 時間窗：從紀錄時間的中位數起連續 5,000 個請求，之前用模擬暖機。
+  - 超長請求：整份紀錄每個 session 遇到第一個 >786,432 token 的請求就截掉那一輪和之後。
+  - 次數：2 次。
+  - 順序：W6a → TraceLab 重播 → W6b。W6b（24687）先 `scontrol hold`，TraceLab 的 job 送出後改成排在它後面再放開。
+  - 我在 head node 用 `python -I` 讀 TraceLab 原始檔算的數字（只讀輸入，不是模擬結果）：665,453 請求、8,058 session，跨 7,282.8 小時（2025-09-23 → 2026-07-24），每小時請求數中位數 7、p90 285、最多 4,741；>786,432 token 的請求 1.66%（47 個 session）、>524,288 的 4.92%（79 個）；連續 5,000 個請求的窗口長度中位數 21.0 小時（p10 5.2、p90 75.0）；從時間中位數起的 5,000 個請求跨 25.2 小時。
+- **icpe-data 的時間更正**：偏離 17 更正的使用者決定實際在 12:57:05（32160d0）之後、12:58:45（1af8839）之前（icpe-data 13:1x 的訊息），順序不變；PREREG 不補更正。
