@@ -3,6 +3,52 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T15:58+08:00 — 偏離 14 引擎 40a4c87f 在 TRX40 上**旗標全關的三項對拍都 0 差**；旗標開的參考失敗（icpe-sim），**HOLD**；**使用者決定 swap 守門改看本組自己的 swap**；分工加上 Mooncake
+
+- **同步方式**：
+  - 試 `git merge --no-commit origin/icpe-next-sim`（40a4c87f），PREREG.md 是 add/add 衝突。那份不是我的檔案，所以 `git merge --abort`，分支沒有變（仍是 5acbc46e）。
+  - icpe-data 會在 icpe-next-data 合好，我之後只 merge icpe-next-data。
+  - 為了先驗引擎，開了唯讀的 detached worktree `$ROOT/sim-wt-40a4c87f`，不在那裡 commit。
+  - 引擎檔的 sha256 和 icpe-sim 給的相同：x1_sim.py 8b53588b85c3、x1_rust.py 0d89c4ba33c5、x1_nb.py 8251e2587464。
+- **對拍**：外層 run `20261107-155247-icpe-trx-verify-dev14-off-40a4c87f`（`trx_run.sh`；三個守門），rc 0，15:52:47 → 15:55:31。
+  - 用的是新腳本 `$ROOT/tools/verify_dev14_off.sh`，比對方法同 `verify_rust2.sh`：sweep 在 worktree 跑，參考檔和比對程式用主 repo。
+  - 三個新旗標都沒開。
+  - Rust 在 TRX40 重編：src_sha256 0bfacb59…（等於 icpe-sim 給的值）、bin_sha256 1d024543…。三個 run 的 `code_sha` 都是 `3180504e8d57+rs0bfacb59`，`py_fallback_jobs=0`。
+  - 比對 run `20261107-155530-icpe-trx-compare-40a4c87f`，照抄：
+
+| 項目 | sweep run | 參考 | 結果 |
+|:--|:--|:--|:--|
+| (a) G0 | `20261107-155247-icpe-trx-g0-rust-40a4c87f`（26.6 s） | H200 `results/icpe_h200/t1/p01/sim_V1/x1/x1_sweep.csv.gz` | 4,416 列，128,064 格，不同 0，`G0_RESULT IDENTICAL` |
+| (b1) xc_sa | `20261107-155247-icpe-trx-xc_sa-rust-40a4c87f`（44.8 s） | `results/icpe_next/b/xcheck/xc_sa`（icpe-data 的 Python） | 32 列，1,280 格，不同 0 |
+| (b2) xc_sa | 同上 | TRX40 的 Python xc_sa（run `20261105-105555-…-54fa2d8`），`next_sim_cmp.py` | 32 列 × 40 欄，不同 0，`CMP PASS` |
+| (c) sa_N16_s1 | `20261107-155247-icpe-trx-sa_N16_s1-rust-40a4c87f`（1:30.6） | `results/icpe_next/b/sa_main/sa_N16_s1/x1_sweep.csv.xz` | 7,344 列，293,760 格，不同 0，`G0_RESULT IDENTICAL` |
+
+- **HOLD**：
+  - icpe-sim 15:5x 通知：旗標開的參考（xref_dev14）在 SemiAnalysis N16 s1、CPU 8、O-ALL、wt＋預取到 GPU、三個旗標全開時失敗。
+    - Python：`AssertionError: (12, 277)`（`_g_unprefetch` ← `drop` ← `_turn_end_wt`）。
+    - Rust：`gspf 12 277`（main.rs:1099）。
+  - 所以 flags-on 的引擎 commit 會改，40a4c87f 不是最後版。icpe-data 也說先不要 merge、不要跑。
+  - 我沒有用過任何一個新旗標。
+- **swap**（需要使用者決定，見下）：
+  - 這次跑的時候 swap 從 1,431 漲到 2,825 MiB，在 15:53:18 → 15:53:48 之間（xc_sa 那一步）。MemAvailable 一直在 56 GiB 以上，swapguard 沒有觸發。
+  - 現在換出去的頁幾乎都是別的使用者的閒置行程（例：另一位使用者的 `MainThread` 兩個各 793／710 MiB，跑了將近 2 天；gnome-shell 250 MiB）。我自己的行程合計 VmSwap 17 MiB。
+  - 上限 2,933 MiB 是 11/5 09:4x 使用者定的「比基準多 2 GiB」，基準是當時的值。現在離上限只剩 108 MiB，正式 block 很可能一開就被 swapguard 停掉。
+  - **使用者決定（15:5x，在本 session 用 AskUserQuestion）**：「改看我自己的 swap (Recommended)」。這個選項的說明是：只算這次 run 那一組行程自己的 VmSwap，超過 256 MiB 就停；可用記憶體低於 6 GiB 就停的規則照舊；別人被換出的頁不算，但只要我的模擬開始用到 swap 就停。
+  - **實作**：新守門 `$ROOT/tools/ownswapguard.sh <pgid> <log> 256 5`。
+    - 每 5 s 把 `pgrep -g` 那一組行程的 VmSwap 加總，超過 256 MiB → SIGTERM 整組，寫 `OWNSWAP_KILLED`。
+    - 每 30 s 記一筆：本組 VmSwap、行程數、整機 swap（只供參考）。
+  - `trx_run.sh`、`rux_run.sh`、`relaunch_at_boundary.sh` 改成掛這個守門，取代 `swapguard.sh … 2933`。改之前的版本留在 `*.bak-20261107-swap`；`swapguard.sh` 本身沒刪。
+  - 模擬的子行程（Pool worker、常駐的 x1fast）都沒有 setsid，留在同一個行程群組裡，所以會算進去。
+  - 試跑 `20261107-155720-icpe-trx-guardtest-ownswap`（只有 `sleep 8`，不是結果）：swap.log 第一筆 `0 2 2825`。
+- **分工更新**（icpe-data，STATUS_DATA 15:56，c0da1c65）：TRX40 另外接 Mooncake。理由：只有 SemiAnalysis＋uc/lm 的話，TRX40 只分到約 1/3 的 CPU 時間，而使用者要 TRX40 接重的部分。
+  - plan 名稱：
+    - SemiAnalysis：`d14_sa_main`、`d14_sa_p1..p3`、`d14_sens_rep:sa_*`、`d14_sa_p4_b1/b2`。
+    - Mooncake：`d14_old_main:mooncake`、`d14_old_p1..p3:mooncake_*`、`d14_sens_rep:mc_*`、`d14_p4_b1/b2:conversation_*,toolagent_*`。
+    - UltraChat/LMSYS：`d14_chat_main:uc_*,lm_*`、`d14_chat_p1:uc_*,lm_*`。
+  - 規模是 icpe-data 的估計：180 個 block，1,697,648 個 job，約 300 執行緒小時，46 workers 約 7 小時。
+  - Mooncake 原始檔兩台的 sha256 前 12 碼相同（conversation b8cbb061a852、toolagent 48a2db1a13d3）。
+  - 還是 HOLD：icpe-data 要等 icpe-sim 說 xref 過了，才給正式 merge 的 commit。
+
 ## 2026-11-07T15:45+08:00 — **使用者決定 TRX40 接偏離 14 的重跑**，以及 P4 版本 C 的 5 組；現在只做準備，還沒跑任何東西
 
 - **來源**：icpe-main 15:3x 轉達使用者在 icpe-main 說的「把 TRX40 把任务交给他，或者是把重一點任务给他」。依規則，我在這裡用 AskUserQuestion 直接問了使用者（15:4x）。答案照抄：
