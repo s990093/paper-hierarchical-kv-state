@@ -1132,3 +1132,15 @@ icpe-data 量到：Rust 佇列跑 TraceLab 時，每個 block 父行程先準備
   - 這裡補上 Bailian、Mooncake、SemiAnalysis N32 s2 的網格。
   - Bailian 版的 D3 由 icpe-rux 在 RUX3DPRO 跑（約 17:00 之後）。
 - **結論**：v8_dev14 的偏離 14／SIM_CHANGES 23 部分和 x1fast 相同。APC／BELP 加這些規則的部分沒有 Python 參考，只有 icpe-rux 的退化檢查（D3）。第 2 段（版本 C）的引擎可以用 v8_dev14 `36780534`，前提是 icpe-rux 的 Bailian D3 也通過。
+
+---
+
+## 2026-11-07T17:41+08:00 — 第 2 段的關（icpe-main 17:4x：兩份 D3 都過才開始）**通過**：icpe-rux 的 Bailian D3 408／408 × 2
+
+- icpe-rux 回報（記在 `origin/icpe-next-rux` `1cdde989` 的 `V8_DEV14.md`）：run `20261107-165928-icpe-rux-d14-d3-bailian`，RUX3DPRO。
+  - bailian_coder 408／408、bailian_thinking 408／408。
+  - 內容：CPU 16／111.0625 × 17 規則 × 雜訊（無、P B1、P B2）× 三個旗標全開。
+  - 一次逐出整個 session 時，APC＝GPU LRU、BELP＝GPU BEL，逐位元相同。
+  - 逐塊逐出加 APC 引用數稽核（`X1FAST_V8_CHECK=200`）都跑完。
+- 加上 SemiAnalysis 的 D3（204／204）和我的交叉檢查（17:40，41,282 列），**v8_dev14 `36780534` 可以當第 2 段（版本 C 的 O-PF／O-ALL 列＋P4 版本 C 的 5 對）的引擎**。
+- 我沒有在 acvlab 重跑 D3：x1_sim 沒有 APC／BELP，要用 icpe-rux 的 sweep；這部分照 icpe-rux 的紀錄。
