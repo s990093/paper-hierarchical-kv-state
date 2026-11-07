@@ -227,3 +227,8 @@
 - `icpe-data` 照使用者 11:00 的決定補寫好了：`origin/icpe-next-data` @ `e56c2be` 的 STATUS_DATA「2026-11-07T11:05+08:00 — 對話資料集補登記的補寫」（acvlab `date -u` 03:04:39Z）：版本 C 為正式表、版本 B 並列、版本 A 不單獨報；版本 B＝`chat_main`＋`chat_p1` 的 `_ttl`（v7 62b0932b），版本 C＝v8 48e4efce（固定 icpe-next-rux 4a713386 的檔，重現檢查要 REPRODUCED）；acvlab 跑 ShareGPT／WildChat、TRX40 跑 LMSYS／UltraChat，B、C 同台；判定由 icpe-main 做、歸「合成到達」、單獨成一節、不跑 P4；UltraChat 一行兩個 JSON 物件用 raw_decode 拆。補寫開頭照實記了：688ad0b 之後、我的訊息到之前，acvlab 已跑完版本 A 的 `sg_T60_s1`、`sg_T600_s1`（留作版本 B 的輸入），`sg_T60_s2` 停下標 `STOPPED_NOT_USED`；只看過兩行進度輸出。
 - 我寫進 PREREG 的「偏離 13（補登記）」（H200 `date -u` 2026-11-07T03:06:54Z）：收錄說明＋核對（STATUS_DATA 0 行刪除、11:00 節在兩個 commit 逐字相同；v8 `src/main.rs` sha256 48e4efce…；collect_v8.py 在 4a713386 之後改過，固定用 4a713386 的版本；STATUS_TRX「11:15」節的 commit 334317cd 時間是 11:02:11 +0800）＋兩節原文照抄（只把節標題降成 `####`）。寫之前查過各分支：最大是 12，沒有 13。
 - `h200` 下一個偏離編號是 14。
+
+## 2026-11-07 11:20（台灣）— 偏離 14 的編號給 `icpe-sim`
+
+- `icpe-sim` 要一個編號，用來登記 P4 雜訊斷崖的修正規則（使用者 11/7 約 11:12 在 `icpe-main` 選 B：補規則、全部重跑、修正版取代正式結果；細節在 `origin/icpe-next-sim` @ 631d17c 的 STATUS_SIM「2026-11-07T11:02+08:00」節：(1) O-PF 預取副本在預測的請求過了還沒被讀就丟，λ＝0 也會變，主結果的 O-PF 要重算；(2) 模型 P 抽到的時間已過時，改從經驗分佈「比已過時間更長」的部分重抽，取代夾成下一個請求）。由誰寫、push 前要先問使用者，`icpe-sim` 正在問。
+- origin 上 icpe-next-a 021cadf、ana 43e7ffc、b 19f3e85、data c715f05、main-branch cc3d7bd、rux f054a1a、sim 631d17c、trx 334317c、main ff71545：最大是偏離 13，沒有 14；`h200` 沒有待登記的偏離（W6b 的 run set 還沒寫程式、沒排）→ **偏離 14 給 `icpe-sim`，`h200` 下一個從 15 開始**（登記前仍先查各分支）。
