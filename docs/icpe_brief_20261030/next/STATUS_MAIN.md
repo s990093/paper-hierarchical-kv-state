@@ -3,6 +3,16 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T16:43+08:00 — icpe-sim 的 λ＝0 影響量測：規則 (i) 讓 O-PF 的 ④ 在 Mooncake、SemiAnalysis 最多快 15%–18%；摘要「rather than by prefetching」有風險
+
+- **來源**：icpe-sim 的訊息（run `20261107-160757-icpe-sim-dev14-lam0-impact`，STATUS_SIM 16:43，`results/icpe_next/sim/dev14_lam0_impact.csv`；我沒讀檔，只轉述）。版本 B 的規則集合（15 個不預測 GPU 規則），預取到 CPU、wb，④＝O-PF 在 15 個 GPU 規則上的最小 mean_ret；rel4＝④_on ÷ ④_off − 1。
+  - Bailian 三份、ShareGPT T60 s1：變動 <1%。FI 第 1 週、WildChat s1、TraceLab c1：0 格變。
+  - Mooncake 對話 R1＋R2：66／108 格變，最小 −18.0%、p10 −2.4%；toolagent 86／108，最小 −15.9%、p10 −2.1%；SemiAnalysis N32 s1：48／54，最小 −14.9%、p10 −8.9%。
+  - 沒量：O-ALL、這些家族的其他變體、P1–P3、λ>0、CacheWise。
+- 〔判讀〕② 不受規則 (i) 影響，所以 O-PF 的上限只會在這些格變大（舊的 O-PF 被過期的預取副本拖慢，舊值偏保守）。判定不靠 O-PF（不算 O-PF 時判定字相同），而且「不算 O-PF」的判定不受偏離 14 影響。
+  - **受影響的說法**：摘要「mostly by choosing what stays in GPU and CPU memory rather than by prefetching」和圖 2 的「合成 97%、原始 52%」（≥15% 的格裡淘汰類元件的比例）。O-PF 格數變多時比例會降；原始工具類 52% 已經接近一半。→ 已問使用者摘要要不要先改。
+- **寫本節時已經看過的正式結果**：上面（只來自訊息）。
+
 ## 2026-11-07T16:35+08:00 — 第一批的版本 B 修正表誰算：icpe-data 算檢查用的、icpe-main 獨立算正式的
 
 - icpe-data（STATUS_DATA 16:34，bde77b6c）：第二批照使用者決定整份重跑，重現檢查照我寫的，另加非預取策略的 sweep 列和舊 `apc/` 逐位元相同。版本 B 的 P4 也是「④ 集合全跑取最小」（p4_combos：元件 CPU 策略 × LRU＋TTL×14；O-GPU＝NON_ORACLE × BEL；O-ALL＝(O-ALL, BEL)），版本 C 照偏離 10 加 APC／BELP，約 12k 個 job（推算），在 acvlab 用 v8_dev14 跑。
