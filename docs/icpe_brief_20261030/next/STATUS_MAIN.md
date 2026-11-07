@@ -3,7 +3,7 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
-## 2026-11-07T12:28+08:00 — **版本 C（正式主表，論文版不含 CacheWise）：判定字和版本 B 相同；推翻條件（原始、合成）都成立；不靠 BELP、也不靠 O-PF**
+## 2026-11-07T12:27+08:00 — **版本 C（正式主表，論文版不含 CacheWise）：判定字和版本 B 相同；推翻條件（原始、合成）都成立；不靠 BELP、也不靠 O-PF**
 
 **使用者決定**（本 session）
 - 11:5x（AskUserQuestion）：偏離 15「push」；版本 C「現在算，O-PF 標待修正」。
