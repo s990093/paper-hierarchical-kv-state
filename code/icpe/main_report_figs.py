@@ -35,6 +35,7 @@ plt.rcParams.update({"font.family": ["Noto Sans CJK TC", "DejaVu Sans"], "font.s
                      "grid.color": GRID, "grid.linewidth": 0.6, "axes.spines.top": False, "axes.spines.right": False,
                      "axes.axisbelow": True, "legend.frameon": False})
 ROWS = []
+PREFIX, LABEL, P4_EXCLUDE, W3_EXPECT = "verB", "版本 B", [], 22   # main() 依參數改（版本 C：verC／版本 C）
 
 
 def rec(fig, series, label, x, y, src):
@@ -60,7 +61,7 @@ def short(trace, rule):
 
 
 def fig1(verb, out):
-    src = f"{verb}/verB_verdict.csv"
+    src = f"{verb}/{PREFIX}_verdict.csv"
     V = pd.read_csv(src)
     V = V[V.level == "variant"].copy()
     fig, ax = plt.subplots(figsize=(7.2, 9.6))
@@ -84,9 +85,9 @@ def fig1(verb, out):
     ax.set_ylim(y, -0.8)
     ax.set_xlabel("完美預知讓首字延遲（TTFT）比最好的不預測做法少多少（%）↑ 越大越值得做預測\n（每個變體：5 個判定元件 × 54 格裡的最大值）")
     ax.grid(axis="y", visible=False)
-    ax.set_title("圖 1　完美預知最多能少等多久（每個紀錄變體；版本 B）", loc="left", fontsize=11)
+    ax.set_title(f"圖 1　完美預知最多能少等多久（每個紀錄變體；{LABEL}）", loc="left", fontsize=11)
     fig.tight_layout()
-    fig.savefig(f"{out}/fig1_verB_max.png", dpi=170)
+    fig.savefig(f"{out}/fig1_{PREFIX}_max.png", dpi=170)
     plt.close(fig)
 
 
@@ -95,7 +96,7 @@ def cls_of(df):
 
 
 def fig2(verb, out):
-    src = f"{verb}/verB_by_trace.csv"
+    src = f"{verb}/{PREFIX}_by_trace.csv"
     B = pd.read_csv(src)
     B = B[B.verdict_use].copy()
     B["cls"] = cls_of(B)
@@ -118,14 +119,14 @@ def fig2(verb, out):
     ax.set_ylabel("能少等 ≥15% 的（格, 元件）數")
     ax.grid(axis="x", visible=False)
     ax.legend(fontsize=8, loc="upper right")
-    ax.set_title("圖 2　能少等 ≥15% 的地方，是靠預測哪個動作（版本 B）", loc="left", fontsize=11)
+    ax.set_title(f"圖 2　能少等 ≥15% 的地方，是靠預測哪個動作（{LABEL}）", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig2_components.png", dpi=170)
     plt.close(fig)
 
 
 def fig3(verb, out):
-    src = f"{verb}/verB_by_cpu.csv"
+    src = f"{verb}/{PREFIX}_by_cpu.csv"
     C = pd.read_csv(src)
     C = C[C.component.isin(JUDGED) & (C.rule != "min")].copy()
     C["cls"] = cls_of(C)
@@ -144,7 +145,7 @@ def fig3(verb, out):
     ax.set_ylabel("能少等 ≥15% 的格子比例（%）")
     ax.grid(axis="x", visible=False)
     ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=3)
-    ax.set_title("圖 3　CPU 記憶體多大時最值得預測：中間最大（版本 B）", loc="left", fontsize=11)
+    ax.set_title(f"圖 3　CPU 記憶體多大時最值得預測：中間最大（{LABEL}）", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig3_cpu.png", dpi=170)
     plt.close(fig)
@@ -153,6 +154,11 @@ def fig3(verb, out):
 def fig4(p4, out):
     src = f"{p4}/p4_by_class.csv"
     P = pd.read_csv(src)
+    if P4_EXCLUDE:   # 論文版（偏離 15）：從逐變體表重新加總，拿掉這些紀錄
+        src = f"{p4}/p4_by_trace.csv"
+        T = pd.read_csv(src)
+        T = T[T.judged & ~T.trace.str.contains("|".join(P4_EXCLUDE))]
+        P = T.groupby(["arrival", "tool_type", "noise_model", "noise_draw", "noise_lambda"])[["n_cellcomp", "n_med_ge15"]].sum().reset_index()
     fig, axs = plt.subplots(1, 3, figsize=(7.4, 3.3), sharey=True)
     series = [("P", "B1", "P-B1：λ 的預測換成亂猜，每回合抽一次（主）", "#2a78d6", "-"),
               ("P", "B2", "P-B2：同上，每次查詢重抽", "#eb6834", "--"),
@@ -179,7 +185,7 @@ def fig4(p4, out):
     axs[0].set_ylabel("仍能少等 ≥15% 的比例（%）")
     h, l = axs[0].get_legend_handles_labels()
     fig.legend(h, l, fontsize=7.5, loc="lower center", ncol=2)
-    fig.suptitle("圖 4　預測不準時，還剩多少值得做（10 個 seed 的中位數；λ＝0＝沒有雜訊）", x=0.01, ha="left", fontsize=11)
+    fig.suptitle("圖 4　預測不準時，還剩多少值得做（10 個 seed 的中位數；λ＝0＝沒有雜訊；P4 以版本 B 選格）", x=0.01, ha="left", fontsize=11)
     fig.tight_layout(rect=(0, 0.13, 1, 1))
     fig.savefig(f"{out}/fig4_p4.png", dpi=170)
     plt.close(fig)
@@ -187,8 +193,9 @@ def fig4(p4, out):
 
 def fig5(w3, out):
     W = pd.read_csv(w3)
+    W = W[W.trace == "nb:tracelab_c1"]          # w3 檔可能含 c2、c4、FreeInference（main_w3c 的輸出）
     g = W[W.judged & (W.headroom >= 0.15)].copy()
-    assert len(g) == 22, f"W3 c1 判定的 ≥15% 格應為 22，實際 {len(g)}"
+    assert W3_EXPECT is None or len(g) == W3_EXPECT, f"W3 c1 判定的 ≥15% 格應為 {W3_EXPECT}，實際 {len(g)}"
     g["r4"] = g.T_oracle / g.T_rival
     g["r3"] = g.T_cue / g.T_rival
     g = g.sort_values(["component", "cpu_GiB", "slow", "gpu"]).reset_index(drop=True)
@@ -213,7 +220,7 @@ def fig5(w3, out):
     ax.set_xlabel("首字延遲 ÷ 最好的固定規則（對數軸）↓ 越小越好；<1＝比固定規則快")
     ax.grid(axis="y", visible=False)
     ax.legend(fontsize=8, loc="upper center", bbox_to_anchor=(0.45, -0.1), ncol=2)
-    ax.set_title("圖 5　免費線索拿得走嗎？TraceLab c1 的 22 格都比固定規則慢", loc="left", fontsize=11)
+    ax.set_title(f"圖 5　免費線索拿得走嗎？TraceLab c1 的 {len(g)} 格都比固定規則慢（{LABEL}）", loc="left", fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{out}/fig5_w3.png", dpi=170)
     plt.close(fig)
@@ -221,7 +228,7 @@ def fig5(w3, out):
 
 def table_main(verb, out):
     """主結果表（照 PBKV Table 1／SAGA Table 3 的排法：列＝紀錄，欄＝元件；格＝最大值與 ≥15% 的格數）。"""
-    src = f"{verb}/verB_by_trace.csv"
+    src = f"{verb}/{PREFIX}_by_trace.csv"
     B = pd.read_csv(src)
     B = B[B.verdict_use].copy()
     B["cls"] = cls_of(B)
@@ -250,7 +257,7 @@ def table_main(verb, out):
     T["o"] = T.cls.map(order.index)
     T = T.sort_values(["o", "max_pct"], ascending=[True, False]).drop(columns="o")
     T.insert(0, "src", src)
-    T.to_csv(f"{out}/table_main.csv", index=False)
+    T.to_csv(f"{out}/table_main_{PREFIX}.csv", index=False)
 
 
 def main():
@@ -259,7 +266,13 @@ def main():
     ap.add_argument("--p4-dir", required=True)
     ap.add_argument("--w3-rows", required=True)
     ap.add_argument("--out-dir", required=True)
+    ap.add_argument("--prefix", default="verB", help="上限表的檔名前綴（verB／verC）")
+    ap.add_argument("--label", default="版本 B")
+    ap.add_argument("--p4-exclude", nargs="*", default=[], help="P4 加總時拿掉的紀錄（字串包含）；例：cachewise（偏離 15）")
+    ap.add_argument("--w3-expect", type=int, default=22)
     a = ap.parse_args()
+    global PREFIX, LABEL, P4_EXCLUDE, W3_EXPECT
+    PREFIX, LABEL, P4_EXCLUDE, W3_EXPECT = a.prefix, a.label, a.p4_exclude, a.w3_expect
     os.makedirs(a.out_dir, exist_ok=True)
     fig1(a.verb_dir, a.out_dir)
     fig2(a.verb_dir, a.out_dir)
