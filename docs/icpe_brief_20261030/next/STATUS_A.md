@@ -382,3 +382,14 @@
 - 送出 **job 24745 `icpe-next-w6ab`**：`sbatch --dependency=afterok:24742 code/icpe/next_a_w6ab.sh --w6b-reps 6`；`scontrol` 顯示 TresPerSocket=gres/gpu:1、Socks/Node=2、32 CPU、340G、上限 2 天。開跑時兩張卡不在不同 NUMA 節點 → exit 2、不跑。
 - 預計〔推算〕：s3-fetch 結束後開跑；W6a 約 9.7 h、W6b 約 27 h 同時跑 → 約 27 h 後兩邊都完成。TraceLab（偏離 18，還沒寫）排在 24745 後面、單獨跑。
 - 使用者 22:1x 說「還有三張卡可以用」：實驗室上限 4 張，24745 用 2 張。第 3 個我們的 job 會讓兩支 runner 的 wait-clear 一直等（T2 只量過同時 2 個），所以 W6 跑的時候不再送我們自己的 GPU job。
+
+## 2026-11-07 22:32（台灣）— W6 改 4 張卡同時跑：job 24766 `icpe-next-w6q` 22:31 開跑（偏離 21＋補記 1、2）
+- 使用者 22:2x：「gpu 那塊我希望在 11/8 當天可以把任務都給跑掉 一定要並行 現在太慢」；AskUserQuestion 選「4 張（每個 NUMA 節點 2 張）」、TraceLab「1 次（3 個 run，各一張卡同時跑）」。
+- 24745（偏離 20，2 張卡）hold 後取消，沒有開跑。偏離 20 已 push（8d6257b，使用者 22:2x 同意）。
+- 偏離 21（`date -u` 14:27:38Z）＋補記（14:29Z 左右）＋補記 2：W6a 一條 lane、W6b 第 0–1／2–3／4–5 輪各一條 lane。要卡的方式試了三次：
+  - 24747 `--gpus-per-socket=2`：拿到 NUMA 0 三張＋NUMA 1 一張 → `next_a_corun.py plan` exit 2，沒有 run。
+  - `--gres-flags=enforce-binding`：sbatch 拒收（srun 可以，探測 24748、24749）。
+  - `--gres=gpu:4 -c 16 --ntasks-per-socket=2`：探測 24765 拿到 2＋2 → 用這個。
+- **24766** 22:31:29 開跑：IDX 1、2、5、6；lane 0 W6a＝PCI 31（NUMA 0，CPU 16–31）、lane 1 W6b r01＝51（NUMA 0，32–47）、lane 2 W6b r23＝AB（NUMA 1，80–95）、lane 3 W6b r45＝CB（NUMA 1，96–111）；CPU 分法 local。四條 lane 的第一個 run 都在 22:31:32–33 開始。lane 的 log：`slurm-icpe-next-w6q-24766-<lane>.out`。
+- 預計〔推算：每個 run 約 16.6 分鐘、沒算 4 個同時跑的變慢〕：約 11/8 早上 8–9 點全部跑完。之後在 head node：合併 W6b 三份 csv → S_real → analyze；W6a analyze；`next_a_corun.py classify`。
+- TraceLab c1 GPU 層重播：使用者選 1 次（LRU、TTLB:30、BEL 各一個 run，3 張卡同時跑）。程式今晚開始寫，偏離 18 給使用者看過再送。
