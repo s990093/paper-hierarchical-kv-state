@@ -3,6 +3,30 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T17:47+08:00 — **偏離 14 第二段（修正版版本 C）開跑**：sa 12＋uc 6＋lm 6 個變體，和第一段的後半同時跑；第一段 sa_p2 24／24 OK
+
+- **GO 的來源**：
+  - icpe-data 17:4x：icpe-main 給了 GO。
+  - icpe-main 17:4x 轉達使用者在 icpe-main 說的「开始跑」（約 17:45）。
+  - 這在使用者 15:4x 在本 session 選的「接，等引擎定了再開」範圍內。
+  - 引擎關卡：icpe-sim 對拍 v8_dev14 36780534，41,282 列和 x1fast 63b8e32 相同（STATUS_SIM 17:41）；icpe-rux 的 D3 通過。
+- **merge**：`origin/icpe-next-data` cdb9f0b1 → 9f16f756。新增 `next_d14_verc_queue.sh`、`next_d14_store_table.py`，以及 acvlab 第一段的結果（FI、sg/wc、ms/oh）。沒有改到既有的程式。
+- **引擎 worktree**：`$ROOT/rux-d14-wt`，detached 在 icpe-next-rux 36780534，唯讀，不在那裡 commit。
+  - `v8_dev14/src/main.rs` sha256 d2048fa38a42c78b（等於 next_d14_verc.sh 要求的值）。
+  - origin/icpe-next-rux 之後的 commit 沒有改 v8_dev14、v8_features、p3x（`git diff --stat` 是空的）。
+- **佇列**：外層 run `20261107-174218-icpe-trx-d14-stage2-verc-queue`（`trx_run.sh` 加三個守門），17:42:18 開始。
+  - 指令：`next_d14_verc_queue.sh 16 semianalysis_N{16,32,64,72}_s{1,2,3} ultrachat_T{60,600}_s{1,2,3} lmsys_T{60,600}_s{1,2,3}`。
+  - 環境：`D14REPO=$ROOT/rux-d14-wt`、`DATAREPO`＝本 repo、`NEXT_B_TAG=icpe-trx`；NEXT_B_PY、X1_NB_DIR、X1_TRACE_DIR 和 Rust 工具鏈都用 TRX40 的路徑。
+  - workers 16：第一段還在用 46 個 worker，兩段同時跑，CPU 會超過 48 個執行緒。
+  - 每個變體在 collect 之前一定要過三關，任何一步失敗就停：
+    1. `D14_SWEEP_RESULT IDENTICAL`：opf 以外的列和舊的 apc sweep 逐位元相同。
+    2. `EXPLORE_RESULT REPRODUCED`：版本 B 的 16 個 GPU 規則 × 9 個容量，對第一段的檢查表 `analysis_d14/<fam>_p1`。
+    3. `py_fallback_jobs=0` 且 `src_sha256=4eca5bda`。
+  - 這就是我說過的「v8 的版本在 TRX40 上要另外過一次重現檢查」，每個變體都做。
+  - 舊的 sweep：sa 從 `$ROOT/d14_old_apc/`（sha256 已對過 MANIFEST），uc/lm 從本 repo 的 `results/icpe_next/apc/`。
+  - 第一個變體 semianalysis_N16_s1 有 14,184 個 job，前 200 s 跑了 3,087 個。
+- **第一段**：d14_sa_p2 24 個 block 都 OK（我的檢查）；17:41 跑到 d14_sa_p3，99／180 個 block 完成，0 失敗。
+
 ## 2026-11-07T17:30+08:00 — 偏離 14 第一段：**SemiAnalysis 的 main＋P1 完成並收進 git**；檢查表 sa_p1 `D14_TABLE_RESULT IDENTICAL`
 
 - **block**：d14_sa_main 12 個（每個 864 job）、d14_sa_p1 24 個（`_ttl` 12 個，每個 432 job；`_trunc` 12 個，每個 1,728 job）。
