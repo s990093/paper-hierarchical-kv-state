@@ -1,0 +1,18 @@
+{
+ "what": "Agent trajectories (PREREG deviation 17 + correction): mini-SWE-agent and OpenHands, fixed concurrency N16/32/64/72 x seeds 1-3 (synthetic arrival, tool class, judged per seed; user 2026-11-07 14:0x before seeing any agent number). Version C official (deviation 10), version B alongside, C without BELP (report only), verdict also without O-PF; O-PF/O-ALL pending deviation 14. Separate section, not counted with the paper's 28 variants. 3-seed median/min/max per cell (report only).",
+ "run_id": "20261107-140839-icpe-main-agent",
+ "run_dir": "/ssd6/hungwei/icpe-next/runs/20261107-140839-icpe-main-agent",
+ "inputs": {
+  "verB_sweeps": "results/icpe_next/b/agent_main/{ms,oh}_N*_s* (17x8) + agent_p1/*_ttl (15x8), origin/icpe-next-data a1ea724",
+  "verC": "results/icpe_next/apc/{miniswe,openhands}_N*_s*/verC_headroom_components.csv, base_headroom_components.csv, x1_sweep.csv.xz (icpe-data, analyze_v8 48e4efce)",
+  "code": "code/icpe/main_summary.py (classify() gains miniswe/openhands), code/icpe/main_seedagg.py (new); run used the working tree identical to the commit that adds this directory"
+ },
+ "checks": "main_summary regression: version C paper set recomputed with the new classify() equals git results/icpe_next/main/verC verC_{by_trace,verdict,by_cpu} exactly (minus run_id/ts/host); rowcheck 6/6 PASS (B main 17x8, B _ttl 15x8, C 17x18; 54 cells; cake/wb/pf cpu); my version B (next_sim_analyze) equals icpe-data b/analysis/{ms,oh}_p1 exactly (3888 rows each) and equals v8 base tables under eqsel (3888/3888 exact each); BELP filter verbatim; C without BELP equals C for O-ORD/O-DROP/O-NOW/O-PF/O-ALL (eqsel, 3240/3240 exact each) and O-GPU without BELP <= with BELP (648/648); summary cell-count self-check PASS (24 trace/rule); agentBC n_cells equal across B/C/C_noBELP; seeds complete (8 settings, 2592 cells, seeds 1-3)",
+ "not_in_git": "ms/oh_p1_headroom_components (identical to results/icpe_next/b/analysis/{ms,oh}_p1), ms/oh_base and ms/oh_verC concatenations (concatenations of files already in results/icpe_next/apc), BELP-filtered sweeps (in/), regression outputs (regress/): all under run_dir",
+ "caveats": [
+  "OpenHands rule 6(b) failed (Llama/Claude prompt-token increment median 0.795 < 0.8); user chose to record and run (deviation 17 correction); input length may be undercounted (first call about 1,900 Claude tokens short); effect on headroom NOT_MEASURED",
+  "mini-SWE-agent FormatError calls (3,517, 20.2% of calls) are not simulated (deviation 17)",
+  "O-PF and O-ALL rows pending deviation 14 reruns",
+  "W3 not run for agents: falsification back half NOT_MEASURED"
+ ]
+}

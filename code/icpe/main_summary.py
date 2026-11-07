@@ -55,6 +55,11 @@ def classify(trace):
         return "Mooncake", "raw", "original", True
     if trace.startswith("fi:"):
         return "FreeInference", "raw", "original", True
+    # agent 軌跡（偏離 17＋更正）：固定並行 → 合成到達；工具類、下判定（使用者 2026-11-07 14:0x，在 icpe-main 用 AskUserQuestion）
+    if t.startswith("miniswe_N"):
+        return "mini-SWE-agent", "synthetic", f"fixed_concurrency_{t.split('_')[1]}", True
+    if t.startswith("openhands_N"):
+        return "OpenHands", "synthetic", f"fixed_concurrency_{t.split('_')[1]}", True
     raise ValueError(f"不認得的紀錄 {trace!r}：先在 classify() 寫明它的到達方式與類別")
 
 
