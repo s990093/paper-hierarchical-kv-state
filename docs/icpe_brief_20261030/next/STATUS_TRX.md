@@ -3,6 +3,26 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T09:10+08:00 — **tracelab_c1 的 9 容量重現檢查補完：324／324 格×元件 0 差** → c1 的 W3 先決條件滿足；**使用者決定 TRX40 接偏離 10 的正式 APC 重算，但不存 npz**
+
+- **偏離 9 補記**：origin/icpe-next-rux aec99d11（icpe-rux 寫）。W3 前的版本 B 重現要涵蓋全部 9 個容量。
+  - `git diff 8f04a91c aec99d11` 在 sweep_v8、explore_apc、analyze_w3、make_cue、v8 src、`code/p3x`、next_sim_analyze 上是 0 行。
+- **c1 補 6 個容量**：run `20261107-084950-icpe-trx-rux-tl_c1-reproB`，rc=0，08:49:50 開始。
+  - worktree 8f04a91c；版本 B 的規則組合（17 × 16），CPU 16／32／64／128／256／512。
+  - 9,012 個 job，732 s，40 workers，`py_fallback_jobs=0`，`code_sha=3280b1c8799b+rse7f6ee8f`。
+  - 資源：MemAvailable 最低 47,191 MiB，PSS 最高 9,446 MiB，swap 最高 1,385 MiB。
+  - 重現檢查（照抄）：`重現檢查：版本 B 表上 216 格×元件，對上 216；各欄不同數 {'T_oracle': 0, 'T_rival': 0, 'headroom': 0, 'best_rival': 0, 'best_rival_gpu_policy': 0, 'oracle_policy': 0, 'oracle_gpu_policy': 0}` → `EXPLORE_RESULT REPRODUCED cells=216`。
+  - **c1 合計**：108（CPU 8／111.0625／1024，run `…-083210-…-tl_c1-apc`）＋216＝**324 格×元件，7 欄全部 0 差**，涵蓋 9 個容量 × ssd／b32／nfs × 閒／忙 × Cake × 6 個元件。
+  - **所以 c1 的 W3 先決條件（偏離 9＋補記）滿足。** 08:55 節照抄的 analyze_w3 判定字（「後半成立：沒有簡單線索能拿走大部分」）不再是「待確認」。W3 的 run 和檔都沒有重跑或改動。
+  - `w3/tracelab_c1/MANIFEST.json` 用 c0e06332 的 collect_v8 重收，runs 列了三個 run（3 容量重現、6 容量重現、W3）。其他 4 個檔逐位元相同。
+- **使用者決定（在這邊，AskUserQuestion）**：TRX40 接 **PREREG 偏離 10**（origin/icpe-next-rux 935dcd75，腳本 82af61df `run_apc_formal.sh`）的正式 APC 重算。
+  - 對象：TraceLab c1／c2／c4、FreeInference 6 週；版本 C，結果放 `results/icpe_next/apc/<變體>/`。
+  - **但不存逐請求 npz**：腳本寫死 `RUN_DIR=$RUN/req`，x1_sim 會對每個 job `np.savez_compressed`（每個時間設定存 ttft、rest 兩個陣列）。
+    - 〔推算〕每列約 2 × 665,453 × 8 B ≈ 10.6 MB；c1 在 9 個容量約 16,500 列，壓縮前約 175 GB。每個 TraceLab 變體約 120–175 GB，3 個就超過 /ssd4 剩的 541 GiB。
+  - 已請 icpe-rux 加不存 npz 的開關。加好、我核對 code diff 之後才跑。
+  - 在那之前照目前流程跑（9 容量版本 B 重現 → W3）。
+- **流程**：c2 的 9 容量重現 run `20261107-090206-icpe-trx-rux-tl_c2-reproB` 09:02:07 開始，`jobs=13518`（stdout）。
+
 ## 2026-11-07T09:00+08:00 — **使用者決定：W3 的前置重現檢查要涵蓋全部 9 個 CPU 容量** → **c1 的 W3 判定改為「待確認」**；c2 的 3 容量檢查停掉；改用新流程
 
 - **使用者的決定**（11/7 約 08:47，在 icpe-main，icpe-main 轉達）：

@@ -1,7 +1,7 @@
 {
  "exp": "w3",
  "variant": "tracelab_c1",
- "collected_ts": "2026-11-07T08:44:02+08:00",
+ "collected_ts": "2026-11-07T09:03:15+08:00",
  "collected_host": "acvlab-TRX40-AORUS-MASTER",
  "repo_commit_at_collect": "c0e063328fb14f916ecd0eb3d0d83dc703515974",
  "engine_used": [
@@ -18,6 +18,11 @@
   {
    "run_id": "20261107-083210-icpe-trx-rux-tl_c1-apc",
    "ts": "2026-11-07T08:32:10+08:00",
+   "host": "acvlab-TRX40-AORUS-MASTER"
+  },
+  {
+   "run_id": "20261107-084950-icpe-trx-rux-tl_c1-reproB",
+   "ts": "2026-11-07T08:49:50+08:00",
    "host": "acvlab-TRX40-AORUS-MASTER"
   },
   {
@@ -56,6 +61,6 @@
    "rows": null
   }
  ],
- "note": "W3 照 PREREG 偏離 9（8f04a91c）判定；sweep 在 rux worktree 8f04a91c 跑；先決條件＝同一變體的版本 B 重現檢查 108/108 0 差（run 20261107-083210-icpe-trx-rux-tl_c1-apc）；TRX40；用 c0e06332 的 collect_v8.py 收",
+ "note": "W3 照 PREREG 偏離 9（8f04a91c）判定；sweep 在 rux worktree 8f04a91c 跑；先決條件（偏離 9 補記 aec99d11：9 個容量）＝版本 B 重現檢查 108（CPU 8/111.0625/1024，run 20261107-083210-icpe-trx-rux-tl_c1-apc）＋216（16–512 GiB，run 20261107-084950-icpe-trx-rux-tl_c1-reproB）＝324 格×元件，7 欄全部 0 差；TRX40",
  "not_in_git": "原始資料、nb 檔、cue.u8、逐請求 npz、job 目錄"
 }
