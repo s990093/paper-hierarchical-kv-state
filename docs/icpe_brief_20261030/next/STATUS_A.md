@@ -254,3 +254,14 @@
 - **自測**（head node，CPU）：run `20261107-115434-icpe-next-w6b-selftest` → `results/icpe_next/a/w6b/selftest.csv`：8 個做法 × CPU 128／256，重播迴圈（模型時間）≡ Engine.run 逐請求逐位元（TTFT、慢層讀寫位元組、預取位元組）**16／16 PASS**，各 1,535 個請求。只記 PASS／FAIL，沒有記、沒有印任何 TTFT（登記前不看模擬數字）。程式 sha256 前 16 碼：x1_gpu.py ca74a722a923246d、x1_sim.py 047b06485b0bdb3d、x1_trace.py 8f659c970f386486。
 - runner `--dry-run`／`--list` 在 head node 跑過（reps＝3 時 8 個冒煙＋48 個 run）；analyze 只用假資料在 scratchpad 測過（PASS／INCOMPLETE 兩條路徑）。
 - **還要使用者決定、再登記成偏離 16**：每個設定跑幾次（rep 數）、多個 rep 怎麼彙總進判準。S_orig 在登記之後才算。
+
+## 2026-11-07 12:00（台灣）— PREREG 偏離 16（W6b 的 run set）登記、S_orig 算完、W6b 送出（job 24687）
+
+- 使用者（AskUserQuestion，約 11:58）：每個設定 **6 次**；多個 rep **每格取中位數**再套判準。（第一題「現在準備」的回答時間在 11:47–11:52 之間：上一節寫 11:4x、偏離 16 寫 11:5x，都在這個範圍。）
+- **PREREG 偏離 16**（`h200` 寫，commit `9e52a5f`，H200 `date -u` 2026-11-07T03:58:xxZ）：W6b＝O-ORD 的 ② 6 個＋④ 2 個 × CPU 128／256（k＝8，同 W6a／T1G P02）× 6 次＝96 個 run；判準＝P0-2 §6 三條，每格取 6 個 rep 的中位數；PASS／FAIL／INCOMPLETE。偏離 15 已給 `icpe-main`、還沒寫入，所以 16 排在它前面。寫之前查過各分支：最大是 14。
+- **S_orig**（登記 push 之後、任何 GPU 資料之前；head node）：run `20261107-115902-icpe-next-w6b-sim-orig`（exit 0）→ `results/icpe_next/a/w6b/sim_requests.csv.xz`（24,560 列；未壓縮的 `sim_requests.csv` 留在工作目錄、不進 git，之後 S_real 會接在後面）。
+  - 檢查：LRU 128 的回來請求平均 TTFT 0.30484398001421004 s，和 T1G P02 的 selftest（run `20261028-162428-icpe-t1g-p02-selftest`）逐位相同。
+  - O-ORD 上限〔模擬〕：CPU 128 → 最好的 ② LRU2 0.291972 s、最好的 ④ O-BEL 0.262309 s，上限 10.16%；CPU 256 → GDSF 0.284631 s、O-BEL 0.246323 s，上限 13.46%。兩格都 ≥2%，判準 (3) 兩格都要判。
+- **送出**：`env -u TMPDIR -u CLAUDE_CODE_TMPDIR sbatch --dependency=afterany:24444 code/icpe/next_a_w6b.sh --reps 6` → **job 24687**（1 GPU、36 小時上限；排在 24444 之後）。`--test-only` 的預估開始時間 2026-11-12T08:04（Slurm 的保守估計，照實記）。
+- 鏈：24507（DL_Lab5，剩約 17 小時 40 分）→ 24443（W6c）→ 24444（W6a）→ 24687（W6b）。之前不能改 `next_a_w6.sh`、`next_a_w6b.py`、`next_a_w6b.sh`、`x1_gpu.py`、`x1_sim.py`、`m7_calib.py`、`m7_model.py`。
+- 群組配額（12:00）：/work 1452G／1536G。
