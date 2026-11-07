@@ -1,9 +1,97 @@
 # STATUS_RUX（icpe-rux，RUX3DPRO）
 
 本檔由 icpe-rux 寫，最新的一節在最上面。格式照 `STATUS_TRX.md`。
-**到目前為止：沒有開跑任何正式模擬、沒有動佇列、沒有改別人的檔。**
+**到 11/7 09:20：正式模擬只有使用者同意、登記過的（PREREG 偏離 10 的 APC、偏離 11 的 W5／排隊）；沒有動佇列；別人的檔只有 PREREG 檔尾 append（使用者授權）。**
 
 ---
+
+## 2026-11-07T09:20+08:00 — 偏離 10 的正式 APC 重算開跑（第 1 個變體通過）；偏離 11（W5＋排隊）登記並 push（4a713386）；W5、排隊的正式腳本完成，W5 在 SemiAnalysis N16 s1 跑完
+
+**要證明什麼**
+- 偏離 10：每個紀錄變體的主結果格，加 APC、BELP 之後的上限表（版本 C）。前提是只用版本 B 的 16 個規則時，能逐值重現版本 B。
+- 偏離 11：W5 和排隊兩個敏感度，各自和版本 C 的同一格比較。
+
+**使用者的決定**
+- 偏離 10（APC）：全部登記變體的主結果格；加 BELP；版本 C 成為正式主表；push 並通知（commit 935dcd75）。
+- 偏離 11：AskUserQuestion，11/7 09:01:38 之後、09:03:39 之前。
+  - W5：7 個代表變體 × 111.0625／128／256；敏感度，每組事後挑較快格式。
+  - 排隊：全部格，重負載只報告；敏感度，主結果標「不含排隊」。
+  - push 並通知。
+- 號碼由 h200 給（11）。h200 已回覆：核過，只在檔尾加一節、0 行刪除；origin/icpe-next-a 已同步 PREREG.md；下一號是 12。
+- 已通知 icpe-main（四個決定的摘要）。
+
+**正式 APC 重算**（RUX3DPRO 這邊）
+- 順序：SemiAnalysis 12 個 → Mooncake conversation、toolagent（R1 R2）→ 轉 Bailian thinking／traceA → Bailian coder／thinking／traceA。
+- 腳本：`run_apc_formal.sh`。
+- 引擎：v8 `main.rs` 48e4efce，sweep code_sha `3280b1c8799b+rse7f6ee8f`，`py_fallback_jobs=0`。
+- 第 1 個變體 SemiAnalysis N16 s1：run `20261107-090138-icpe-rux-apc-formal-semianalysis_N16_s1`。
+  - 14,184 個 job，sweep 474.7 s，牆鐘 7:55，最大 RSS 1.16 GiB。
+  - 重現檢查：版本 B 表的 324 個 (格, 元件) 全部對上，7 欄都是 0 個不同 → `EXPLORE_RESULT REPRODUCED`。
+  - 版本 C（54 格，cake）：
+
+| 元件 | 最大 | 中位數 | ≥15% 格數 | ≥5% 格數 |
+|:--|--:|--:|--:|--:|
+| O-GPU | 0.4360 | 0.0513 | 12 | 27 |
+| O-ORD | 0.1818 | 0.0117 | 2 | 10 |
+| O-PF | 0.0397 | −0.0054 | 0 | 0 |
+| O-DROP | 0.0258 | 0.0050 | 0 | 0 |
+| O-NOW | 0.0019 | −0.0002 | 0 | 0 |
+| O-ALL(report) | 0.2300 | 0.0136 | 5 | 10 |
+
+  - 收在 `results/icpe_next/apc/semianalysis_N16_s1/`。
+  - ⚠ 這個 run 有存逐請求 npz（`req/`，11 GB，沒進 git）。原因：它開始時 bash 讀的是舊版腳本，舊版預設會存 npz。第 2 個變體起用 7a89a9b5 的版本，預設不存。
+
+**W5 正式腳本** `run_w5_formal.sh`（偏離 11 A）
+- 每個變體：
+  - 只跑 W5 那一半（`RUX_W5=1`，CPU 111.0625／128／256 × CPU 17 × GPU 18）。
+  - BF16 那一半從偏離 10 的正式 sweep 篩出同一個 rule、同 3 個容量。
+  - 之後依序跑：
+    1. `explore_w5.py`：三份上限表都改用 `analyze_v8`。
+    2. `w5_mechanism.py ... allowed`。
+    3. `collect_v8.py` → `results/icpe_next/w5/<變體>/`。
+- SemiAnalysis N16 s1：
+  - run `20261107-091018-icpe-rux-w5-formal-semianalysis_N16_s1`：4,728 個 job，sweep 314.4 s，`py_fallback_jobs=0`；BF16 與 W5 各 5,508 列，組合相同。
+  - **核對**：
+    - `base` 上限表和版本 C（`apc/semianalysis_N16_s1/verC_headroom_components.csv`）同 3 個容量的 108 個 (格, 元件) 逐值相同，只有 run_id／ts 不同。
+    - 所以「和版本 C 同一格比」＝和 base 比。
+  - **機制表改用 allowed**：
+    - 第一次跑的 `w5_mechanism.py` 用 forced（每個組合都用 W5，是探索版的預設）。偏離 11 登記的是 allowed（每組事後挑較快格式），所以改了程式：第 3 個參數選 forced 或 allowed，並加 `fmt_allowed` 欄。
+    - 用 run `20261107-091642-icpe-rux-w5-formal-mech-semianalysis_N16_s1` 重做（只讀上一個 run 的輸出），重新 collect，MANIFEST 列了兩個 run。
+    - 這個變體 W5 較快的組合是 5,507／5,508，所以兩種算法的結果相同。
+  - **結果**（cake，18 格；只報告，主結果不變）：
+
+| 元件 | 版本 C 最大 | allowed 最大 | 版本 C ≥15% | allowed ≥15% | 差的中位數（百分點） |
+|:--|--:|--:|--:|--:|--:|
+| O-GPU | 0.1867 | 0.0087 | 2 | 0 | −2.36 |
+| O-ORD | 0.1818 | 0.0528 | 2 | 0 | −2.19 |
+| O-PF | 0.0015 | 0.0082 | 0 | 0 | −1.95 |
+| O-DROP | 0.0258 | 0.0193 | 0 | 0 | −0.20 |
+| O-NOW | 0.0007 | 0.0013 | 0 | 0 | +0.13 |
+
+  - NP:53：升高超過 5 個百分點的有 3 個 (格, 元件)，全部在 nfs：
+    - O-PF 2 格，中位數 +27.8 百分點。④ 和 ② 的慢層載入各少 95%、84%。
+    - O-ALL(report) 1 格。
+    - 機制和探索時相同：INT4 讓 CPU 層裝得下更多，慢層載入大減。詳細見 `w5_mechanism_rows.csv`。
+
+**排隊正式腳本** `run_queue_formal.sh`（偏離 11 B）
+- `RUX_QPOST=1`，跑全部 9 個容量 × CPU 17 × GPU 18。
+- 之後跑 `explore_queue.py`：
+  - 和偏離 10 的正式 sweep 做端到端比對：只有 TTFT 衍生的欄位可以不同。這次加上「組合數必須全部對上」的 assert。
+  - 用版本 C 的表做對照，並按 (LRU, LRU) 的平均等待分級：輕 <2 s、中 2–20 s、重 ≥20 s，重的只報告。
+- 端到端不通過就停。之後 collect → `results/icpe_next/queue/<變體>/`。
+- 還沒跑。
+
+**接下來（自動接續）**
+- 正式 APC 鏈（Bailian 為止）跑完並印 `CHAIN_APC_OK` 之後，接著跑：
+  - W5：Bailian coder、Mooncake conversation R1、Mooncake toolagent R1。
+  - 排隊：SemiAnalysis 12 個變體。
+- 任何一步失敗就停。
+- TraceLab c1、FreeInference 第 1 週的 W5 交給 icpe-next-trx（通知中）。
+- 之後是 W7：先把設計和要決定的點給使用者，不在第 2–5 項的授權範圍內。
+
+**卡住什麼**：無。
+
+**需要使用者決定什麼**：目前沒有。W7 開始前會問。
 
 ## 2026-11-07T08:40+08:00 — PREREG 偏離 9（W3 線索 (a) 的規則）登記並 push（8f04a91c），之後補「偏離 9 更正」（e7e0c778）
 

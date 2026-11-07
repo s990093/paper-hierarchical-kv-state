@@ -27,6 +27,7 @@ ok_e2e = True
 if a.noq_sweep:
     N = pd.concat([pd.read_csv(p) for p in a.noq_sweep], ignore_index=True)
     M = Q.merge(N, on=K, suffixes=("", "_n"))
+    assert len(M) == len(Q), f"有排隊的 {len(Q)} 個組合只對上 {len(M)} 個（沒排隊的 sweep 少了格）"
     skip = {"run_id", "ts", "elapsed_s", "code_sha", "host", "queue", "qwait_mean", "qwait_p90", "qwait_frac"}
     def same_col(x, y):
         if pd.api.types.is_numeric_dtype(x) and pd.api.types.is_numeric_dtype(y):

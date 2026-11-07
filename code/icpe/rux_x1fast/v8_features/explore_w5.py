@@ -1,7 +1,7 @@
 """探索（不是正式結果）：W5（CPU 層 INT4＋一次拆完）對上限的影響。
 用法：python -I explore_w5.py <BF16 的 x1_sweep.csv> <W5 的 x1_sweep.csv（sweep_v8 RUX_W5=1）> <輸出目錄>
   base＝現在的 CPU 層（BF16）；forced＝每個組合都用 W5；allowed＝每個 (格, CPU 規則, GPU 規則, 慢層規則) 取兩種格式較快的
-  （SEMANTICS 5-2：「允許 INT4」＝② 和 ④ 都可以事後挑格式）。三份都用 next_sim_analyze（同版本 B 的算法）。
+  （SEMANTICS 5-2：「允許 INT4」＝② 和 ④ 都可以事後挑格式）。三份都用 analyze_v8（同版本 B 的算法；有 APC、BELP 時照偏離 10）。
 輸出 explore_w5_rows.csv（每列有 run_id、ts、host）；印摘要；最後一行 EXPLORE_W5_RESULT。"""
 import os, socket, subprocess, sys
 from datetime import datetime
@@ -30,7 +30,8 @@ paths = {}
 for tag, X in (("base", B), ("forced", W), ("allowed", A)):
     p = os.path.join(out, f"sweep_{tag}.csv")
     X.to_csv(p, index=False)
-    cp = subprocess.run([sys.executable, "-I", os.path.join(REPO, "code/icpe/next_sim_analyze.py"), "--sweep", p, "--out-dir", out, "--out-prefix", tag],
+    # analyze_v8＝next_sim_analyze＋「BELP 是 oracle、只進 O-GPU 的 ④」（偏離 10）；沒有 BELP 列時兩者逐值相同（check_analyze_v8）
+    cp = subprocess.run([sys.executable, "-I", os.path.join(REPO, "code/icpe/rux_x1fast/v8_features/analyze_v8.py"), "--sweep", p, "--out-dir", out, "--out-prefix", tag],
                         capture_output=True, text=True, env=dict(os.environ))
     assert cp.returncode == 0, cp.stderr[-3000:]
     paths[tag] = os.path.join(out, f"{tag}_headroom_components.csv")
