@@ -2,6 +2,33 @@
 
 > 只由 `icpe-data` 寫。格式照 NEXT_PLAN_20261104 §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要 icpe-sim 做什麼／需要使用者決定什麼。最新的一節在最上面。
 
+## 2026-11-07T16:31+08:00 — 第二段的引擎 v8_dev14 有了（icpe-rux 36780534），等 icpe-sim 交叉檢查；**第二段的做法（草案，請 icpe-main、icpe-rux 看）**
+
+- **引擎**（STATUS_RUX 16:30，f303f991）：
+  - `code/icpe/rux_x1fast/v8_dev14/`，main.rs sha256 d2048fa3…，sweep 的 src sha 4eca5bda…，CSV 的 code_sha `3280b1c8799b+rs4eca5bda`。
+  - 旗標用環境變數 `RUX_PFX=1`、`RUX_PGR=1`、`RUX_NZO=resample`；最後一個要 Python 3.12。
+  - icpe-sim 交叉檢查通過之前不用。
+- **範圍**：版本 C 的 71 個變體，`results/icpe_next/apc/` 在 icpe-next-main 有全部 71 個，每個都有 `x1_sweep.csv.xz`；另加 P4 版本 C 的 5 對。
+  - TRX40：SemiAnalysis 12、Mooncake 2、UltraChat／LMSYS 12，共 26 個。
+  - acvlab：TraceLab 3、FreeInference 6、Bailian 3、ShareGPT／WildChat 9、agent 24，共 45 個。
+- **做法草案**（每個變體）：
+  1. **只重跑 O-PF、O-ALL**：`sweep_v8_dev14.py`，網格同原本的版本 C（CPU 9 個、ssd／b32／nfs、cake、111.0625、wb、預取到 CPU、18 個 GPU 規則），`--policies O-PF O-ALL`，`RUX_PFX=1 RUX_PGR=1`。
+     - 這兩個以外的規則不受旗標影響：icpe-rux 的端到端驗證「開旗標只有 O-PF、O-ALL 的列改變」，icpe-sim 對版本 B 也驗證過。
+  2. **跨引擎核對**：新 run 裡 GPU 規則屬於版本 B 那 16 個的列，要和第一段（x1fast 63b8e32，同樣的旗標）的對應列逐值相同。
+     - 只比兩邊都有的鍵：第一段的 P1 `_ttl` 只有 O-PF，沒有 O-ALL。
+     - 比法同 G1：排除 run_id、ts、elapsed_s、code_sha，以及只有一邊有的欄。
+     - 這一步取代原本 `explore_apc` 對版本 B 表的重現檢查（REPRODUCED cells=324）。原本那張版本 B 表的 O-PF／O-ALL 是舊規則算的，已經不能當參考。
+  3. **補丁**：原本的版本 C sweep 拿掉 O-PF、O-ALL 的列，換成新 run 的列。要核對：鍵的集合相同、列數相同、其他列逐位元不動。
+  4. 對補丁後的 sweep 跑 `analyze_v8.py`，得到 `verC` 表；collect 到新目錄 `results/icpe_next/apc_d14/<變體>/`。原本的 `apc/` 不動，MANIFEST 記兩個 run 與原 sweep 的 sha256。
+  5. **依賴**：步驟 2 要用第一段那個變體的 d14 列，所以每個變體在它第一段的 main 與 P1 跑完之後才做步驟 2–4。步驟 1 可以先跑。
+- **P4 版本 C 的 5 對**另外處理：雜訊 P／M、APC／BELP、三個旗標都要。
+  - 要 icpe-main 先定：這 5 對每個元件的組合，也就是 ④ 的 CPU 規則 × 哪些 GPU 規則（版本 C 的 GPU 不預測規則有沒有 APC、O-GPU 用 BEL 還是 BELP）。
+  - 定了我寫 `jobs.csv`。引擎是 v8_dev14，在 acvlab 跑（Python 3.12）。
+- **要 icpe-main、icpe-rux 確認**：
+  1. 只重跑兩個規則再補丁的做法，可不可以取代整個版本 C 重跑。
+  2. 用步驟 2 取代 explore_apc 的重現檢查。
+  3. P4 那 5 對的組合。
+
 ## 2026-11-07T16:00+08:00 — **正式 merge sim（c68abaad）、G0 PASS**；TRX40 旗標關的關已過；只差 xref
 
 - **使用者選 A**（STATUS_SIM 15:59，f5b2960c）：引擎留在 63b8e32。wt × 預取到 GPU 的 assert 列為已知問題，從參考網格拿掉；正式 block 都沒有這個組合。
