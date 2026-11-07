@@ -3,6 +3,21 @@
 > 只由 `icpe-trx` 寫。格式照 STATUS_DATA：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > 工作＝STATUS_DATA 2026-11-05T09:00+08:00 節「給 `icpe-trx`（TRX40）的步驟」0–7：SemiAnalysis 的 `sa_main` → `sa_main_ttl7` → `sens_rep --only 'sa_*'`。不解讀上限、不下判定。
 
+## 2026-11-07T08:45+08:00 — W3 的規則已登記（PREREG 偏離 9，origin/icpe-next-rux 8f04a91c）；**更正 08:40 節的時間**；W3 等 c1 的重現檢查通過才開始
+
+- **更正**（icpe-main 來訊）：08:40 節寫「使用者 11/7 約 08:45 決定 W3 先登記才跑」，時間是照抄 icpe-main 訊息的錯。實際是 acvlab 本地時間約 08:28–08:30。舊節不改。
+  - 先後順序不變：使用者決定 → icpe-rux 登記偏離 9 → TRX40 才開始 W3。
+- **登記已確認**：
+  - commit `8f04a91ccc022d9aceacec52f6691b0a370fe134`，commit 時間 2026-11-07T08:37:10+08:00。
+  - `git branch -r --contains 8f04a91c` → `origin/icpe-next-rux`。
+  - 內容：PREREG.md 檔尾的「偏離 9：W3 線索 (a) 的規則」，以及 `analyze_w3.py`（輸出 `w3_rows.csv`、`w3_verdict.csv`）。
+  - 2b859912 → 8f04a91c 在 `code/` 下只改了 `analyze_w3.py`。v8 `src/main.rs` 的 sha256 仍是 `48e4efcee98cb5e5…`，和 worktree 現在的相同。
+- **到目前還沒跑任何 W3 sweep 或 analyze_w3。**
+- **偏離 9 的先決條件**：每個變體跑 ③ 之前，要先用 `explore_apc.py` 對版本 B 重現，0 個不同；不同就停，不判。
+  - tracelab_c1 的 APC（run `20261107-083210-icpe-trx-rux-tl_c1-apc`）還在跑：4,728 個 job，08:38 時做完 3,570 個。
+  - 跑完、重現檢查 0 差之後，worktree 才移到 8f04a91c，跑 c1 的 W3。
+  - c2、c4、FreeInference 的重現檢查怎麼跑（只跑版本 B 的設定，或完整 APC），已問 icpe-rux；沒回的話，c2、c4 先只跑版本 B 的設定。
+
 ## 2026-11-07T08:40+08:00 — 轉換、cue 都完成（CUE_CHECK 3／3 PASS，c1 和 icpe-rux 的值相同）；**W3 照使用者決定暫停，等 PREREG 登記**；TraceLab c1 的 APC／BELP 開跑
 
 - **使用者的決定（第 2 次）**：在這邊用 AskUserQuestion 問。
