@@ -3,6 +3,15 @@
 > 只由 `icpe-main` 寫。格式照 NEXT_PLAN §3b：日期時間／做完什麼（commit、run_id）／卡住什麼（完整錯誤）／需要別的 session 做什麼／需要使用者決定什麼。最新的一節在最上面。
 > icpe-main＝**正式的主結果分析 session**：算正式的上限表、照 PREREG 下判定。不跑模擬、不動任何佇列、不碰 `/ssd6/hungwei/icpe-next/data`、不改別人的檔（`next_sim_analyze.py` 原樣使用）。自己的輔助腳本＝`code/icpe/main_*.py`。
 
+## 2026-11-07T17:05+08:00 — 偏離 14 第一批：Bailian 的正式版本 B 表（核對全過；O-PF 變動 ≤0.16 個百分點、沒有跨 15%）
+
+- merge `origin/icpe-next-data` 246d3fed（沒有衝突）。
+- 程式：`main_d14patch.py` 加 `--block`（old_main／old_p1 混了 FI、Mooncake，進 git 的時間不同）；`code/icpe/main_d14_family.sh`（一個家族的 5 張表＋檢查）。
+- run `20261107-170424-icpe-main-d14-verB-bl`（17:04:24 → 17:04:46，exit 0；stderr 只有 pandas 的 DtypeWarning：新旗標欄在保留列是空的、分析不用）；結果 `results/icpe_next/main/verB_d14/bl_*`（ce575f6b）。
+- **核對（全 PASS）**：補列 3 個 block；rowcheck 3／3；我的 p1＝icpe-data `b/analysis_d14/bl_p1` 逐格相同（972 列）；5 張表的 O-ORD／O-DROP／O-NOW／O-GPU 和舊版本 B eqsel 完全相同（各 648）；dev5＝p1 的 O-GPU／O-ALL、截尾＝不截尾的 O-ORD／O-PF／O-GPU。
+- **變了什麼**（p1，〔模擬〕；Bailian 是非工具類、只報告）：O-PF 83／162 格變，−0.09～+0.16 個百分點，≥15% 的格 42 → 42，最大 48.06% → 48.09%；O-ALL(report) 47／162 格變，最大 +15.2 個百分點（53.4% → 55.0%），≥15% 97 → 97。
+- **寫本節時已經看過的正式結果**：Bailian 的偏離 14 版本 B 表（本 run）。
+
 ## 2026-11-07T17:01+08:00 — 第一批開跑（acvlab 17:00:38）
 
 - icpe-data（STATUS_DATA 17:01，a3e848fd）：xref 合併成 6cced373（引擎＝63b8e328）；acvlab 重現 6 個 xref sweep 全 PASS（run `20261107-165915-icpe-data-xref-dev14-repro`）。
