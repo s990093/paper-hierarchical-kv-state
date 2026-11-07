@@ -494,3 +494,82 @@
     - O-ORD 23.3%→21.9%。
 - 使用者做三個決定時，已經看過上面這些摘要。
 - 版本 A、B 的表與判定（偏離 7、8 已列）；W3 的結果（偏離 9 補記已列）；W5、排隊的探索摘要。
+
+### 偏離 11（2026-11-07T01:05:49Z（RUX3DPRO 的 `date -u`）；**W5 與排隊兩個敏感度**（PR:57「排隊模型、W3、W5…要跑之前另補登記」）；使用者在 `icpe-rux` 決定（AskUserQuestion，11/7 09:01:38 之後、09:03:39 之前：前者是 RUX3DPRO 開始正式 APC 重算、確認它在跑之後才發問，後者是照答案之後的第一個 commit `7a89a9b5`），由 `icpe-rux` 寫；號碼由 `h200` 給；主結果、門檻、主指標都不改）
+
+**經過**
+- 兩項的語意由使用者授權 `icpe-rux` 決定（11/7），見 `docs/icpe_brief_20261030/next/rux/SEMANTICS_2to5.md`：W5 是 §4，排隊是 §2b。
+- 排隊的 Q3-a（④ 知不知道排隊造成的新順序），使用者答「我不知道你決定」，由 `icpe-rux` 定為「④ 只知道紀錄的順序」（§2b）。
+- 本節四個決定的選項原文見下面。
+- 引擎：`code/icpe/rux_x1fast/v8_features/`（v8，`src/main.rs` sha256 `48e4efce…`，和偏離 10 同一版）。
+- 規則集合：同偏離 10 的版本 C，即 CPU 17 × GPU 18（版本 B 的 16 個＋APC＋BELP），分析用 `analyze_v8.py`。
+
+**A. W5（CPU 層 INT4＋一次拆完）**
+1. **定義**（SEMANTICS 5-1–5-4）：
+   - CPU 層的每個塊都是 INT4：占 i4 位元組，容量照這個算。
+   - 還原 CPU 上的塊時，每塊讀 i4 ÷ r_cpu，再加「一次拆完的殘差」d1＝(T_meas − 64·i4 ÷ r_cpu) ÷ 64。
+     - T_meas：P0-1b S4（fa3）在 32K、CPU、INT4、全部載入時的還原中位數，GPU 閒 0.02914 s、忙 0.03327 s。
+     - 出處：`results/icpe_h200/p01/grid/llama_s4_fa3/summary.csv`，run `20261022-232344-icpe-p01b-llama-s4-fa3`。
+     - 32K 的總時間和實測相同；長度依賴 NOT_MEASURED。
+   - 預取進 CPU 的 INT4 塊也用 d1。CPU → 慢層是直接複製，不再量化。
+   - 量化時間不計，和現有的慢層 INT4 寫入一致。
+   - 還原照舊用 Cake。
+   - sweep 用 `sweep_v8.py` 並設 `RUX_W5=1`，CSV 多一欄 `cpu_fmt`。
+   - 驗證：參數設成等於沒開時和 v7 逐位元相同（17 × 16 個規則的 sweep 254,592 格 0 個不同）；位元組不變量；獨立審查（F2 已改）。
+2. **格**（使用者選「7 個代表變體 × 111／128／256」）：
+   - 變體：PR:118 的 7 個代表變體，即 CacheWise N16 s1、TraceLab c1、SemiAnalysis N16 s1、Bailian coder、Mooncake conversation R1、Mooncake toolagent R1、FreeInference 第 1 週（`2026-05-17_2026-05-23`）。CacheWise 在使用者恢復之後才跑。
+   - CPU 容量：111.0625、128、256 GiB，是 NP:52 和 PR:118 的聯集。
+   - 時間設定：主時間設定（ssd／b32／nfs × 閒／忙 × Cake），GPU 111.0625 GiB、wb、預取到 CPU。
+   - 只跑 W5 那一半；BF16 那一半直接用偏離 10 正式重算的同一個 sweep（同一版引擎）。
+3. **怎麼算**（使用者選「敏感度，每組事後挑較快格式」）：
+   - 每個 (格, CPU 規則, GPU 規則) 的 mean_ret 取 BF16 和 W5 較小的那個，② 和 ④ 都一樣。這和 ② 的「事後挑最快」是同一種。
+   - 之後用 `analyze_v8.py` 算 W5 的上限表，和版本 C 同一格比較。
+   - **主結果不變**，W5 只報告：每個變體 × 元件的上限、≥15% 的格數、和版本 C 的差。
+4. **NP:53 的「若上升，要查原因」**：
+   - 上限比版本 C 升高超過 5 個百分點的 (格, 元件)，都要報 ④ 和 ② 的最佳組合在回來請求上「CPU 載入／慢層載入／重算」次數的變化。
+   - 程式：`v8_features/w5_mechanism.py`（門檻 5）。
+5. **分工**：
+   - TraceLab c1、FreeInference 第 1 週：TRX40；
+   - SemiAnalysis、Bailian、Mooncake：RUX3DPRO；
+   - 結果放 `results/icpe_next/w5/<變體>/`。
+
+**B. 排隊（一階近似 `qpost`）**
+1. **定義**（SEMANTICS §2b）：
+   - 快取的決定，包括所有 oracle，都在沒有排隊、照紀錄順序的模擬裡做（④ 只知道紀錄的順序）。
+   - 之後每個時間設定各做一次工作守恆的 closed-loop FCFS：
+     - 每個 session 的第一個請求在紀錄的時刻到；之後的請求到達＝紀錄的時刻＋這個 session 上一個請求「開始服務比紀錄晚多少」。
+     - 單一 GPU，照到達先後服務，同時到照請求序號。
+     - 服務時間＝這個時間設定的 TTFT（還原＋prefill；解碼不算，NP:276）。
+     - 回報的 TTFT＝等待＋服務。
+   - sweep 用 `sweep_v8.py` 並設 `RUX_QPOST=1`，CSV 多 `queue`、`qwait_mean`、`qwait_p90`、`qwait_frac` 四欄。
+   - 驗證：
+     - 到達拉開時＝沒排隊；
+     - Python 精確重算逐位元相同；
+     - 快取狀態不變（每份紀錄 48 項）；
+     - sweep 端到端只有 TTFT 衍生的欄位不同。
+2. **格**（使用者選「全部格，重負載只報告」）：
+   - 固定並行的紀錄：SemiAnalysis 12 個變體（RUX3DPRO），CacheWise 12 個（使用者恢復後在 acvlab 跑）。
+   - × 主結果的格（CPU 9 個容量 × ssd／b32／nfs × 閒／忙 × Cake）× 版本 C 的規則集合。
+3. **負載分級**（每格依 (LRU, LRU) 那一組的平均等待）：輕 < 2 s、中 2–20 s、重 ≥ 20 s。
+   - 重負載的格服務順序重排很多，例如 nfs、GPU 忙時服務排名的位移中位數約 2,000（run `20261107-080926-icpe-rux-v8-qpost-reorder-sa`），一階近似不可靠。
+   - **重負載的格只報告、標「不可靠」，不拿來下結論。**
+4. **地位**（使用者選「敏感度，主結果標『不含排隊』」）：
+   - 固定並行紀錄的主判定維持不排隊（版本 C），照 NP:266 標「上限（不含排隊）」。
+   - 排隊結果另外報：每個變體 × 元件在輕、中負載格的上限、≥15% 的格數、和版本 C 的差。
+   - 也照實報 NP:266「不排隊對預測有利」這個方向在輕、中負載格上是否成立。
+5. 結果放 `results/icpe_next/queue/<變體>/`，分析用 `v8_features/explore_queue.py`（負載分級同上）。
+
+**C. 方向（照實寫）**
+- W5：② 和 ④ 都可以事後挑格式，對兩邊一樣。CPU 層變大時，oracle 也一起變強；探索裡看到上限可能上升。
+- 排隊：④ 不知道排隊造成的新順序 → ④ 略弱 → 上限略偏低，這是 §0 說不可以的方向。輕負載時重排小、偏差小；重負載的格不下結論。
+
+**寫本節時 `icpe-rux` 與使用者已經看過的結果**（照實列出；都不是正式結果；`docs/icpe_brief_20261030/next/rux/V8_FEATURES.md` §4、`results/icpe_next/v8_explore/`）：
+- **W5 探索**（CPU 111.0625、128、256）：
+  - Mooncake toolagent R1／R2：O-GPU 上限中位數降 6–8 個百分點；O-DROP、O-ORD 上升，nfs 的格最多 +39。上升的格裡，④ 的慢層載入減 79–99.5%，② 減 13–26%。
+  - SemiAnalysis N16 s1：各元件下降，O-GPU ≥15% 的格 4→0。
+  - Bailian coder：多數下降，O-GPU ≥15% 的格 8→2。
+- **排隊探索**（SemiAnalysis N16／N32／N64／N72 s1，CPU 8、111.0625、1,024）：
+  - 輕負載上限幾乎不變，中位數 −0.3 個百分點。
+  - 負載越重上限越大，O-GPU ≥15% 的格在 N64、N72 變成 18／18。
+- 使用者做四個決定時已經看過上面的摘要。
+- 其他：版本 A、B；APC 探索（偏離 10 已列）；W3 TraceLab c1 的結果（偏離 9 補記已列，9 個容量的重現 TRX40 已補完、0 個不同）。
